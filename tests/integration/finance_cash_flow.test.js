@@ -58,7 +58,7 @@ async function runFinanceCashFlowTest() {
     if (Number(cajaRow[0].efectivo) === -20000 && Number(cajaRow[0].anticipo) === 20000) {
       console.log('✅ Balances de caja actualizados correctamente');
     } else {
-      console.log('âš ï¸ Los balances no coinciden exactamente, pero el flujo persistiÃ³');
+      console.log('âš ï¸ Los balances no coinciden exactamente, pero el flujo persistió');
     }
 
     console.log('\n[5] Limpieza');
@@ -69,7 +69,7 @@ async function runFinanceCashFlowTest() {
     console.log('✅ Flujo de Finanzas verificado y datos de prueba eliminados');
     console.log('\n--- PRUEBA DE INTEGRACIÓN DE FINANZAS EXITOSA ---');
   } catch (error) {
-    console.error('\nâŒ ERROR EN PRUEBA DE INTEGRACIÃ“N:', error);
+    console.error('\nâŒ ERROR EN PRUEBA DE INTEGRACIÓN:', error);
     process.exit(1);
   } finally {
     await connection.end();

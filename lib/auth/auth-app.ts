@@ -1,8 +1,10 @@
 import { cookies, headers } from 'next/headers';
-import jwt from 'jsonwebtoken';
+import { jwtVerify } from 'jose';
 import { cache } from 'react';
 import { AuthenticatedUser } from '@/lib/middleware/auth';
 import { env } from '@/lib/utils/env';
+
+const getSecretKey = () => new TextEncoder().encode(env.JWT_SECRET);
 
 export const getAuth = cache(async (): Promise<AuthenticatedUser | null> => {
   let token = null;
@@ -20,12 +22,12 @@ export const getAuth = cache(async (): Promise<AuthenticatedUser | null> => {
   if (!token) return null;
 
   try {
-    const decoded = jwt.verify(token, env.JWT_SECRET) as AuthenticatedUser;
+    const { payload } = await jwtVerify(token, getSecretKey());
 
     const { getUserPermissionsFromDB } = await import('@/lib/middleware/auth');
-    decoded.permissions = await getUserPermissionsFromDB(decoded.id as string);
+    (payload as any).permissions = await getUserPermissionsFromDB((payload as any).id as string);
 
-    return decoded;
+    return payload as unknown as AuthenticatedUser;
   } catch {
     return null;
   }

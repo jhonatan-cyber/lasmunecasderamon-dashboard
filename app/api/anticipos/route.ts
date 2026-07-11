@@ -1,6 +1,5 @@
 import { NextResponse } from 'next/server';
 import { withAppAuth } from '@/lib/api/app-api-wrapper';
-import { AnticipoRepository } from '@/lib/repositories/AnticipoRepository';
 import { AnticipoService } from '@/lib/services/AnticipoService';
 import { logger } from '@/lib/utils/logger';
 
@@ -15,7 +14,7 @@ export const GET = withAppAuth(
     const limit = Math.min(Number(searchParams.get('limit') ?? 50), 200);
     const offset = Number(searchParams.get('offset') ?? 0);
 
-    const { data, total } = await AnticipoRepository.getAll({
+    const { data, total } = await AnticipoService.getAll({
       estado,
       usuario_id,
       startDate,

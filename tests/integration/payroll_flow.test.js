@@ -121,7 +121,7 @@ async function runPayrollIntegrationTest() {
 
     console.log('\n--- PRUEBA DE INTEGRACIÓN DE PAGOS COMPLETADA CON ÉXITO ---');
   } catch (error) {
-    console.error('\nâŒ ERROR EN PRUEBA DE INTEGRACIÃ“N:', error);
+    console.error('\nâŒ ERROR EN PRUEBA DE INTEGRACIÓN:', error);
     process.exit(1);
   } finally {
     await connection.end();

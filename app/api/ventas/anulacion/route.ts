@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
 import { withAppAuth } from '@/lib/api/app-api-wrapper';
-import { SaleRepository } from '@/lib/repositories/SaleRepository';
+import { SaleService } from '@/lib/services/SaleService';
 import { query } from '@/lib/database/db';
 import { enviarMensajeSolicitudAnulacion } from '@/lib/integrations/whatsappService';
 import { ValidationError } from '@/lib/errors/errors';
@@ -10,7 +10,7 @@ export const POST = withAppAuth(async (request: Request, { user }: { params: any
   const body = await request.json();
 
   if (body.requestId) {
-    await SaleRepository.processAnulacion(body.requestId, user.id.toString(), body.status);
+    await SaleService.processAnulacion(body.requestId, user.id.toString(), body.status);
     return NextResponse.json({ success: true, message: 'Solicitud procesada' });
   }
 
@@ -50,7 +50,7 @@ export const POST = withAppAuth(async (request: Request, { user }: { params: any
       totalVenta
     });
 
-  const token = await SaleRepository.requestAnulacion(
+  const token = await SaleService.requestAnulacion(
     body.ventaId,
     body.motivo,
     user.nick || user.name || user.id.toString(),

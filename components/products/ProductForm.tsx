@@ -1,5 +1,5 @@
-/* eslint-disable */
 import { useState } from 'react';
+import NextImage from 'next/image';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Product } from '@/types/product';
@@ -309,7 +309,16 @@ export function ProductForm({
               {}
               <div className='relative w-28 h-28 rounded-xl border-2 border-gray-100 dark:border-slate-700 shadow-sm overflow-hidden bg-gray-50 dark:bg-slate-800'>
                 {imagePreview ? (
-                  <img src={imagePreview} alt='Preview' className='w-full h-full object-cover' />
+                  <NextImage
+                    src={imagePreview}
+                    alt='Preview'
+                    fill
+                    className='object-cover'
+                    sizes='112px'
+                    unoptimized={
+                      imagePreview.startsWith('data:') || imagePreview.startsWith('blob:')
+                    }
+                  />
                 ) : (
                   <div className='w-full h-full flex flex-col items-center justify-center gap-2 text-gray-400'>
                     <Image className='w-10 h-10 stroke-1' />

@@ -1,8 +1,8 @@
 import { NextResponse } from 'next/server';
 import { withAppAuth } from '@/lib/api/app-api-wrapper';
-import { OvertimeRepository } from '@/lib/repositories/OvertimeRepository';
+import { OvertimeService } from '@/lib/services/OvertimeService';
 
 export const GET = withAppAuth(async (_request: Request, { user }: { params: any; user: any }) => {
-  const data = await OvertimeRepository.getByUser(user.id.toString());
+  const data = await OvertimeService.getByUser(user.id.toString());
   return NextResponse.json({ success: true, data });
 });

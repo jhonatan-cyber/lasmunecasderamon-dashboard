@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
 import { withAppApiWrapper } from '@/lib/api/app-api-wrapper';
-import { ServiceRepository } from '@/lib/repositories/ServiceRepository';
+import { ServiceService } from '@/lib/services/ServiceService';
 
 export const GET = withAppApiWrapper(async (request: Request) => {
   const { searchParams } = new URL(request.url);
@@ -10,6 +10,6 @@ export const GET = withAppApiWrapper(async (request: Request) => {
   if (!startDate || !endDate)
     return NextResponse.json({ success: false, message: 'Fechas requeridas' }, { status: 400 });
 
-  const data = await ServiceRepository.getByDates(startDate, endDate);
+  const data = await ServiceService.getByDates(startDate, endDate);
   return NextResponse.json({ success: true, data });
 });

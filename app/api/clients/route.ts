@@ -1,5 +1,4 @@
 import { NextResponse } from 'next/server';
-import { ClientRepository } from '@/lib/repositories/ClientRepository';
 import { ClientService } from '@/lib/services/ClientService';
 import { withAppApiWrapper, withAppAuth } from '@/lib/api/app-api-wrapper';
 
@@ -8,7 +7,7 @@ export const GET = withAppApiWrapper(async (request: Request) => {
   const id = searchParams.get('id');
 
   if (id) {
-    const client = await ClientRepository.getById(id);
+    const client = await ClientService.getById(id);
     if (!client)
       return NextResponse.json(
         { success: false, message: 'Cliente no encontrado' },
@@ -21,7 +20,7 @@ export const GET = withAppApiWrapper(async (request: Request) => {
   const limit = Math.min(Number(searchParams.get('limit') ?? 50), 200);
   const offset = Number(searchParams.get('offset') ?? 0);
 
-  const { data, total } = await ClientRepository.getAll({ search, limit, offset });
+  const { data, total } = await ClientService.getAll({ search, limit, offset });
   return NextResponse.json({ success: true, data, total, limit, offset });
 });
 
@@ -61,7 +60,7 @@ export const DELETE = withAppAuth(
     if (!id)
       return NextResponse.json({ success: false, message: 'El ID es requerido' }, { status: 400 });
 
-    await ClientRepository.delete(id);
+    await ClientService.delete(id);
     return NextResponse.json({ success: true, message: 'Cliente eliminado correctamente' });
   },
   { module: 'clients', action: 'delete' }

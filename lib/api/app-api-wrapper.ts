@@ -1,6 +1,6 @@
 import { ZodError } from 'zod';
-import { ErrorLogRepository } from '@/lib/repositories/ErrorLogRepository';
-import { AuditRepository } from '@/lib/repositories/AuditRepository';
+import { ErrorLogService } from '@/lib/services/ErrorLogService';
+import { AuditService } from '@/lib/services/AuditService';
 import { getAuth } from '@/lib/auth/auth-app';
 import { AuthenticatedUser, UserPermissions } from '@/lib/middleware/auth';
 import { ApiResponse } from './api-response';
@@ -26,6 +26,7 @@ function resolveRequiredPermission(
     : (permissionOrOptions as RequiredPermission);
 }
 
+/** @deprecated Use `withRoute` from `@/lib/api/withRoute` instead. */
 export function withAppApiWrapper(handler: AppRouteHandler) {
   return async (request: Request, context: { params: any }) => {
     try {
@@ -44,14 +45,22 @@ export function withAppApiWrapper(handler: AppRouteHandler) {
         params
       });
 
-      try {
-        await ErrorLogRepository.log({
-          endpoint: `${method} ${url.pathname}`,
-          error_message: message,
-          stack_trace: stack
-        });
-      } catch (logError) {
-        logger.captureException(logError, { context: 'AppApiWrapper:logError' });
+      const isDbError =
+        error instanceof Error &&
+        /^(ETIMEDOUT|ECONNREFUSED|ECONNRESET|PROTOCOL_CONNECTION_LOST|ER_CON_COUNT_ERROR|POOL_CLOSED)$/.test(
+          (error as any).code ?? ''
+        );
+
+      if (!isDbError) {
+        try {
+          await ErrorLogService.log({
+            endpoint: `${method} ${url.pathname}`,
+            error_message: message,
+            stack_trace: stack
+          });
+        } catch (logError) {
+          logger.captureException(logError, { context: 'AppApiWrapper:logError' });
+        }
       }
 
       if (error instanceof ZodError) {
@@ -69,6 +78,7 @@ export function withAppApiWrapper(handler: AppRouteHandler) {
   };
 }
 
+/** @deprecated Use `withAuthRoute` from `@/lib/api/withRoute` instead. */
 export function withAppAuth(
   handler: AuthenticatedAppRouteHandler,
   permissionOrOptions?: RequiredPermission | WithAppAuthOptions
@@ -103,7 +113,7 @@ export function withAppAuth(
         const forwarded = request.headers.get('x-forwarded-for');
         const ip = forwarded ? forwarded.split(',')[0] : 'unknown';
 
-        await AuditRepository.log({
+        await AuditService.log({
           user_id: user.id,
           action: `${request.method} ${url.pathname}`,
           resource_type: requiredPermission?.module || 'system',

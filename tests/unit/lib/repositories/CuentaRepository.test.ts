@@ -2,7 +2,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 const repositoryHarness = vi.hoisted(() => {
   const queryMock = vi.fn();
-  const trxMock = vi.fn();
+  const trxMock = vi.fn().mockResolvedValue([]);
   const withTransactionMock = vi.fn(async (callback: any) => callback(trxMock));
   const generateUUIDMock = vi.fn();
 
@@ -55,8 +55,8 @@ import { CuentaRepository } from '@/lib/repositories/CuentaRepository';
 describe('CuentaRepository hostess links', () => {
   beforeEach(() => {
     vi.clearAllMocks();
-    repositoryHarness.trxMock.mockReset();
-    repositoryHarness.queryMock.mockReset();
+    repositoryHarness.trxMock.mockClear();
+    repositoryHarness.queryMock.mockClear();
     repositoryHarness.generateUUIDMock
       .mockReturnValueOnce('cuenta-1')
       .mockReturnValueOnce('detalle-1')

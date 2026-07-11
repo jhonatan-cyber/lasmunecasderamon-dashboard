@@ -105,7 +105,7 @@ export default function SaleProductModal({
             <div className='w-full'>
               {!Array.isArray(productos) || productos.length === 0 ? (
                 <div className='text-center text-gray-400 py-8 w-full'>
-                  No hay productos en esta categorÃ­a.
+                  No hay productos en esta categoría.
                 </div>
               ) : (
                 <>
@@ -119,7 +119,7 @@ export default function SaleProductModal({
                               Precio
                             </TableHead>
                             <TableHead className={`${CUENTA_TABLE_HEAD_CLASS} text-center`}>
-                              ComisiÃ³n
+                              Comisión
                             </TableHead>
                             <TableHead className={`${CUENTA_TABLE_HEAD_CLASS} text-center`}>
                               Cantidad
@@ -314,7 +314,7 @@ export default function SaleProductModal({
                                       </div>
                                     )
                                   ) : (
-                                    <div className='text-xs text-gray-400'>Sin comisiÃ³n</div>
+                                    <div className='text-xs text-gray-400'>Sin comisión</div>
                                   )}
                                 </TableCell>
                                 <TableCell className={`${CUENTA_TABLE_CELL_CLASS} text-center`}>

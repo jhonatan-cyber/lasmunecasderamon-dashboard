@@ -1,11 +1,11 @@
 import { NextResponse } from 'next/server';
 import { withAppApiWrapper, withAppAuth } from '@/lib/api/app-api-wrapper';
-import { CuentaRepository } from '@/lib/repositories/CuentaRepository';
+import { AccountService } from '@/lib/services/AccountService';
 
 export const GET = withAppApiWrapper(
   async (request: Request, { params }: { params: Promise<{ id: string }> }) => {
     const id = (await params).id;
-    const data = await CuentaRepository.getById(id);
+    const data = await AccountService.getById(id);
     if (!data)
       return NextResponse.json(
         { success: false, message: 'Cuenta no encontrada' },
@@ -19,7 +19,7 @@ export const PUT = withAppAuth(
   async (request: Request, { params, user }: { params: Promise<{ id: string }>; user: any }) => {
     const id = (await params).id;
     const body = await request.json();
-    const cuentaActualizada = await CuentaRepository.updateCuenta(id, body, user.id);
+    const cuentaActualizada = await AccountService.updateCuenta(id, body, user.id);
     return NextResponse.json({
       success: true,
       message: 'Cuenta actualizada correctamente',
@@ -31,7 +31,7 @@ export const PUT = withAppAuth(
 export const DELETE = withAppAuth(
   async (_request: Request, { params }: { params: Promise<{ id: string }>; user: any }) => {
     const id = (await params).id;
-    await CuentaRepository.delete(id);
+    await AccountService.delete(id);
     return NextResponse.json({ success: true, message: 'Cuenta eliminada exitosamente' });
   }
 );

@@ -134,7 +134,7 @@ async function runTests() {
       );
     }
   } catch (error) {
-    console.error('\nâŒ ERROR DURANTE LA INTEGRACIÃ“N:', error);
+    console.error('\nâŒ ERROR DURANTE LA INTEGRACIÓN:', error);
     process.exit(1);
   } finally {
     console.log('\n[3] Limpiando datos de prueba...');

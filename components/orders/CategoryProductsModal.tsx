@@ -1,5 +1,3 @@
-﻿import logger from '@/lib/utils/logger';
-
 import {
   Dialog,
   DialogContent,
@@ -9,9 +7,8 @@ import {
 } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Plus, Minus } from 'lucide-react';
-import React, { useState, useEffect, useMemo, useCallback } from 'react';
+import React from 'react';
 import { formatCurrencyNoDecimals } from '@/lib/utils/formatters';
-import { useDebounce } from 'use-debounce';
 import {
   Table,
   TableBody,
@@ -24,14 +21,8 @@ import { HostessMultiSelect } from '@/components/orders';
 import { IndividualHostessSelect } from '@/components/shared/selects';
 import Paginate from '@/components/shared/Paginate';
 import { RoomSelect } from '@/components/shared/selects';
-import { useRefreshOnFocus } from '@/hooks/shared';
-import {
-  getActiveHostesses,
-  getAssignedHostessIds,
-  getChampagneHostessLimit,
-  hasCommission,
-  isChampagneProduct
-} from '@/components/orders/productModalRules';
+import { hasCommission, isChampagneProduct } from '@/components/orders/productModalRules';
+import { useCategoryProductsModal } from '@/hooks/orders/useCategoryProductsModal';
 
 interface CategoryProductsModalProps {
   open: boolean;
@@ -72,141 +63,30 @@ const CategoryProductsModal: React.FC<CategoryProductsModalProps> = ({
   roomSelections = {},
   onRoomChange = () => {}
 }) => {
-  const [currentPage, setCurrentPage] = useState(1);
-  const [hostessSearchValues, setHostessSearchValues] = useState<{ [key: string]: string }>({});
-  const [anfitrionasDisponibles, setAnfitrionasDisponibles] = useState<any[]>([]);
-  const [loadingAnfitrionas, setLoadingAnfitrionas] = useState(false);
-  const [debouncedSearchValues] = useDebounce(hostessSearchValues, 300);
-
-  const itemsPerPage = 5;
-
-  useEffect(() => {
-    setCurrentPage(1);
-  }, [open, productosCategoria]);
-
-  const refreshAvailableHostesses = useCallback(async () => {
-    const hasAnyRoomSelected = Object.values(roomSelections).some(room => room && room !== '');
-
-    if (!hasAnyRoomSelected) {
-      setAnfitrionasDisponibles([]);
-      return;
-    }
-
-    setLoadingAnfitrionas(true);
-    try {
-      const response = await fetch('/api/anfitrionas/disponibles');
-      const data = await response.json();
-      if (data.success) {
-        setAnfitrionasDisponibles(data.data);
-      }
-    } catch (error) {
-      logger.captureException(error, {
-        context: 'CategoryProductsModal:fetchAnfitrionasDisponibles'
-      });
-    } finally {
-      setLoadingAnfitrionas(false);
-    }
-  }, [roomSelections]);
-
-  useEffect(() => {
-    void refreshAvailableHostesses();
-  }, [refreshAvailableHostesses]);
-
-  useRefreshOnFocus(refreshAvailableHostesses, { enabled: open });
-
-  const totalPages = Math.ceil((productosCategoria?.length || 0) / itemsPerPage);
-  const startIndex = (currentPage - 1) * itemsPerPage;
-  const endIndex = startIndex + itemsPerPage;
-  const currentProductos = productosCategoria?.slice(startIndex, endIndex) || [];
-
-  const requiresRoom = (producto: any) => {
-    const precio = Number(producto.precio || producto.price || 0);
-    const tieneComision = hasCommission(producto);
-    const hayHabitacionesDisponibles = habitaciones && habitaciones.length > 0;
-    return precio >= 30000 && tieneComision && hayHabitacionesDisponibles;
-  };
-
-  const availableHostesses = useMemo(() => getActiveHostesses(anfitrionas || []), [anfitrionas]);
-
-  const getAllAssignedHostesses = useMemo(() => {
-    return getAssignedHostessIds({
-      champagneSelections: champagneHostessSelections,
-      otherSelections: otherProductHostessSelections,
-      cartProducts: productosEnCarrito
-    });
-  }, [champagneHostessSelections, otherProductHostessSelections, productosEnCarrito]);
-
-  const getAvailableHostessesForChampagne = (currentProductId: string) => {
-    const currentSelection = champagneHostessSelections[currentProductId] || [];
-    const hasRoomSelected =
-      roomSelections[currentProductId] && roomSelections[currentProductId] !== '';
-    if (!hasRoomSelected) {
-      return availableHostesses;
-    }
-
-    const filtered = availableHostesses.filter(h => {
-      const hostessId = String(h.id || h.id_usuario);
-
-      if (currentSelection.includes(hostessId)) {
-        return true;
-      }
-
-      if (getAllAssignedHostesses.includes(hostessId)) {
-        return false;
-      }
-
-      return true;
-    });
-
-    return filtered;
-  };
-
-  const getAvailableHostessesForOtherProducts = (currentProductId: string) => {
-    const currentSelection = otherProductHostessSelections[currentProductId] || [];
-    const hasRoomSelected =
-      roomSelections[currentProductId] && roomSelections[currentProductId] !== '';
-
-    logger.info(`[CategoryProductsModal] Producto ${currentProductId}:`, {
-      hasRoomSelected,
-      totalAnfitrionas: availableHostesses.length,
-      anfitrionasEstados: availableHostesses.map(h => ({
-        id: h.id || h.id_usuario,
-        nick: h.nick,
-        estado: h.estado || h.status
-      }))
-    });
-
-    if (!hasRoomSelected) {
-      logger.info(
-        `[CategoryProductsModal] Sin habitacion - mostrando todas: ${availableHostesses.length}`
-      );
-      return availableHostesses;
-    }
-
-    const filtered = availableHostesses.filter(h => {
-      const hostessId = String(h.id || h.id_usuario);
-
-      if (currentSelection.includes(hostessId)) {
-        return true;
-      }
-
-      if (getAllAssignedHostesses.includes(hostessId)) {
-        return false;
-      }
-
-      return true;
-    });
-
-    logger.info(
-      `[CategoryProductsModal] Con habitacion - anfitrionas filtradas: ${filtered.length}`
-    );
-    return filtered;
-  };
-
-  const hasProductsWithCommission = useMemo(
-    () => !loading && productosCategoria?.some(p => hasCommission(p)),
-    [loading, productosCategoria]
-  );
+  const {
+    currentPage,
+    setCurrentPage,
+    currentProductos,
+    totalPages,
+    hostessSearchValues,
+    debouncedSearchValues,
+    setHostessSearchValues,
+    availableHostesses,
+    hasProductsWithCommission,
+    requiresRoom,
+    getAvailableHostessesForChampagne,
+    getAvailableHostessesForOtherProducts
+  } = useCategoryProductsModal({
+    open,
+    loading,
+    productosCategoria,
+    anfitrionas,
+    champagneHostessSelections,
+    otherProductHostessSelections,
+    productosEnCarrito,
+    habitaciones,
+    roomSelections
+  });
 
   return (
     <Dialog open={open} onOpenChange={onClose}>
@@ -219,24 +99,21 @@ const CategoryProductsModal: React.FC<CategoryProductsModalProps> = ({
           </DialogTitle>
           {!loading && hasProductsWithCommission && (
             <div className='text-xs text-gray-700 dark:text-gray-200 mt-2 p-2 bg-blue-50 dark:bg-blue-950/40 border border-blue-200 dark:border-blue-800 rounded'>
-              <strong className='text-gray-900 dark:text-gray-100'>Reglas de asignaciÃ³n:</strong>
-              <br />
-              â€¢{' '}
-              <span className='text-purple-600 dark:text-purple-400 font-medium'>ChampaÃ±as</span>:
-              Selecciona mÃºltiples anfitrionas (lÃ­mite segÃºn precio)
-              <br />
-              â€¢{' '}
+              <strong className='text-gray-900 dark:text-gray-100'>Reglas de asignación:</strong>
+              <br />•{' '}
+              <span className='text-purple-600 dark:text-purple-400 font-medium'>Champañas</span>:
+              Selecciona múltiples anfitrionas (límite según precio)
+              <br />•{' '}
               <span className='text-green-600 dark:text-green-400 font-medium'>
-                Bebidas â‰¥ $30,000
+                Bebidas ≥ $30,000
               </span>
-              : Hasta el mismo nÃºmero de anfitrionas que la cantidad de tragos y se puede asignar
-              habitaciÃ³n para liberar anfitrionas adicionales
-              <br />
-              â€¢{' '}
+              : Hasta el mismo número de anfitrionas que la cantidad de tragos y se puede asignar
+              habitación para liberar anfitrionas adicionales
+              <br />•{' '}
               <span className='text-blue-600 dark:text-blue-400 font-medium'>
                 Bebidas &lt; $30,000
               </span>
-              : Una anfitriona por bebida, sin opciÃ³n de habitaciÃ³n
+              : Una anfitriona por bebida, sin opción de habitación
             </div>
           )}
         </DialogHeader>
@@ -249,7 +126,7 @@ const CategoryProductsModal: React.FC<CategoryProductsModalProps> = ({
             <div className='w-full'>
               {!Array.isArray(productosCategoria) || productosCategoria.length === 0 ? (
                 <div className='text-center text-gray-400 py-8 w-full'>
-                  No hay productos en esta categorÃ­a.
+                  No hay productos en esta categoría.
                 </div>
               ) : (
                 <>
@@ -259,9 +136,9 @@ const CategoryProductsModal: React.FC<CategoryProductsModalProps> = ({
                         <TableRow>
                           <TableHead>PRODUCTO</TableHead>
                           <TableHead className='text-center'>PRECIO</TableHead>
-                          <TableHead className='text-center'>COMISIÃ“N</TableHead>
+                          <TableHead className='text-center'>COMISIÓN</TableHead>
                           <TableHead className='text-center'>CANTIDAD</TableHead>
-                          <TableHead className='text-center'>HABITACIÃ“N</TableHead>
+                          <TableHead className='text-center'>HABITACIÓN</TableHead>
                           <TableHead className='text-center'>ANFITRIONA</TableHead>
                           <TableHead className='text-center'>AGREGAR</TableHead>
                         </TableRow>
@@ -325,12 +202,12 @@ const CategoryProductsModal: React.FC<CategoryProductsModalProps> = ({
                                       }
                                       value={roomSelections[id] || ''}
                                       onChange={roomId => onRoomChange(id, roomId)}
-                                      placeholder='Seleccionar habitaciÃ³n'
+                                      placeholder='Seleccionar habitación'
                                       className='w-full'
                                     />
                                     {roomSelections[id] && (
                                       <div className='text-xs text-green-600 font-medium'>
-                                        âœ“ HabitaciÃ³n asignada
+                                        ✓ Habitación asignada
                                       </div>
                                     )}
                                   </div>
@@ -454,7 +331,7 @@ const CategoryProductsModal: React.FC<CategoryProductsModalProps> = ({
                                             />
                                             {otherProductHostessSelections[id]?.length > 0 ? (
                                               <div className='text-xs text-green-600 font-medium'>
-                                                âœ“ Asignada:{' '}
+                                                ✓ Asignada:{' '}
                                                 {(() => {
                                                   const hostessId =
                                                     otherProductHostessSelections[id][0];
@@ -473,7 +350,7 @@ const CategoryProductsModal: React.FC<CategoryProductsModalProps> = ({
                                               <div className='text-xs text-gray-500'>
                                                 {getAvailableHostessesForOtherProducts(id)
                                                   .length === 0
-                                                  ? 'Todas las anfitrionas estÃ¡n asignadas'
+                                                  ? 'Todas las anfitrionas están asignadas'
                                                   : 'Una anfitriona por bebida'}
                                               </div>
                                             )}
@@ -483,7 +360,7 @@ const CategoryProductsModal: React.FC<CategoryProductsModalProps> = ({
                                     </div>
                                   )
                                 ) : (
-                                  <div className='text-xs text-gray-400'>Sin comisiÃ³n</div>
+                                  <div className='text-xs text-gray-400'>Sin comisión</div>
                                 )}
                               </TableCell>
                               <TableCell className='text-center'>
@@ -523,7 +400,6 @@ const CategoryProductsModal: React.FC<CategoryProductsModalProps> = ({
                     </Table>
                   </div>
 
-                  {}
                   {totalPages > 1 && (
                     <div className='flex justify-center mt-4'>
                       <Paginate

@@ -1,8 +1,81 @@
-﻿import { NextResponse } from 'next/server';
+import { NextResponse } from 'next/server';
 import type { NextRequest } from 'next/server';
 import { jwtVerify } from 'jose';
-import { logger } from '@/lib/utils/logger';
 import { env } from '@/lib/utils/env';
+import { query } from '@/lib/database/db';
+import {
+  PUBLIC_PATHS,
+  AUTHENTICATED_ONLY_APIS,
+  routePermissions,
+  apiRoutePermissions
+} from '@/lib/middleware/proxy-routes';
+
+const actionMap: Record<string, string[]> = {
+  view: [
+    'view',
+    'listar_usuarios',
+    'listar_clientes',
+    'listar_categoria_productos',
+    'listar_productos_categoria',
+    'listar_categorias',
+    'listar_pedidos',
+    'listar_reportes',
+    'listar_ventas',
+    'listar_roles',
+    'listar_asistencias',
+    'listar_horas_extras',
+    'listar_gratificaciones',
+    'listar_caja',
+    'listar_cuentas',
+    'listar_propinas',
+    'listar_comisiones',
+    'listar_pagos',
+    'listar_detalles',
+    'listar_anticipos',
+    'listar_devoluciones',
+    'listar_habitaciones',
+    'listar_privados',
+    'ver_detalles',
+    'ver_dashboard'
+  ],
+  create: ['create', 'crear', 'agregar_productos'],
+  edit: ['edit', 'editar', 'registar_venta', 'registar_cuenta', 'process'],
+  delete: ['delete', 'eliminar', 'anular'],
+  process: ['process', 'registar_venta', 'registar_cuenta'],
+  export: ['export'],
+  anulate: ['anulate', 'anular'],
+  open: ['open'],
+  close: ['close'],
+  withdraw: ['withdraw']
+};
+
+const moduleAliases: Record<string, string[]> = {
+  cash_register: ['cash_register', 'cashregister', 'caja', 'finances'],
+  cashregister: ['cash_register', 'cashregister', 'caja', 'finances'],
+  caja: ['cash_register', 'cashregister', 'caja', 'finances'],
+  finances: ['cash_register', 'cashregister', 'caja', 'finances'],
+  accounts: ['accounts', 'cuentas'],
+  attendance: ['attendance', 'asistencias'],
+  overtime: ['overtime', 'horas_extras'],
+  tips: ['tips', 'propinas'],
+  commissions: ['commissions', 'comisiones'],
+  rooms: ['rooms', 'habitaciones'],
+  private_rooms: ['private_rooms', 'privados'],
+  categories: ['categories', 'categorias'],
+  returns: ['returns', 'devoluciones'],
+  gratificaciones: ['gratificaciones'],
+  payroll: ['payroll', 'pagos_trabajadores'],
+  payroll_details: ['payroll_details'],
+  roles: ['roles'],
+  users: ['users', 'usuarios'],
+  clients: ['clients', 'clientes'],
+  products: ['products', 'productos'],
+  orders: ['orders', 'pedidos'],
+  sales: ['sales', 'ventas'],
+  advances: ['advances', 'anticipos'],
+  reports: ['reports', 'reportes'],
+  settings: ['settings']
+};
 
 function addCspHeaders(request: NextRequest): {
   nonce: string;
@@ -41,150 +114,6 @@ function addCspHeaders(request: NextRequest): {
   return { nonce, cspHeader, headers: requestHeaders };
 }
 
-const PUBLIC_PATHS = [
-  '/',
-  '/login',
-  '/confirmar-anulacion',
-  '/confirmar-anulacion-servicio',
-  '/confirmar-anulacion-cuenta',
-  '/confirmar-anticipo',
-  '/confirmar-anticipo',
-  '/api/auth/login',
-  '/api/auth/reset-password',
-  '/api/login',
-  '/api/auth/me',
-  '/api/logout',
-  '/api/auth/check',
-  '/api/auth/check-session',
-  '/api/auth/check-users',
-  '/api/auth/check-permission',
-  '/api/auth/register-first-user',
-  '/api/test-auth',
-  '/api/health',
-  '/api/reviews/create',
-  '/api/whatsapp/webhook',
-  '/api/ventas/solicitud-anulacion',
-  '/api/ventas/procesar-anulacion',
-  '/api/servicios/solicitud-anulacion',
-  '/api/servicios/procesar-anulacion',
-  '/api/cuentas/solicitud-anulacion',
-  '/api/cuentas/procesar-anulacion',
-  '/api/notifications/pending',
-  '/api/notifications/sse',
-  '/api/notifications/pending-count',
-  '/api/timers/active',
-  '/api/anticipos/solicitud-detalles',
-  '/api/anticipos/aprobar',
-  '/api/swagger',
-  '/api-docs',
-  '/api/docs',
-  '/api/permissions/setup-cajero',
-  '/api/permissions/setup-roles',
-  '/api/permissions/debug',
-  '/api/permissions/test-cajero',
-  '/api/permissions/verify',
-  '/api/roles/setup',
-  '/_next',
-  '/favicon.ico',
-  '/img',
-  '/fonts',
-  '/manifest.json',
-  '/robots.txt',
-  '/sitemap.xml',
-  '/swagger.json',
-  '/access-denied'
-];
-
-const AUTHENTICATED_ONLY_APIS = [
-  '/api/codigo',
-  '/api/users/user',
-  '/api/users',
-
-  '/api/attendance',
-  '/api/attendance-stats',
-
-  '/api/anticipos',
-
-  '/api/tips',
-
-  '/api/overtime',
-
-  '/api/orders',
-
-  '/api/commissions',
-
-  '/api/servicios',
-
-  '/api/sales',
-
-  '/api/cashregister',
-  '/api/caja',
-
-  '/api/cuentas',
-
-  '/api/gratificaciones',
-
-  '/api/stats/logged-users',
-  '/api/anfitrionas',
-  '/api/garzones',
-  '/api/habitaciones',
-  '/api/products',
-  '/api/categories',
-  '/api/clients',
-  '/api/rooms'
-];
-
-const routePermissions: Record<string, { module: string; action: string }> = {
-  '/dashboard': { module: 'dashboard', action: 'view' },
-  '/users': { module: 'users', action: 'view' },
-  '/clients': { module: 'clients', action: 'view' },
-  '/products': { module: 'products', action: 'view' },
-  '/categories': { module: 'categories', action: 'view' },
-  '/orders': { module: 'orders', action: 'view' },
-  '/sales': { module: 'sales', action: 'view' },
-  '/reports': { module: 'reports', action: 'view' },
-  '/roles': { module: 'roles', action: 'view' },
-  '/attendance': { module: 'attendance', action: 'view' },
-  '/overtime': { module: 'overtime', action: 'view' },
-  '/gratificaciones': { module: 'gratificaciones', action: 'view' },
-  '/cash-register': { module: 'finances', action: 'view' },
-  '/accounts': { module: 'accounts', action: 'view' },
-  '/tips': { module: 'tips', action: 'view' },
-  '/commissions': { module: 'commissions', action: 'view' },
-  '/payroll': { module: 'payroll', action: 'view' },
-  '/payroll/calendar': { module: 'payroll_details', action: 'view' },
-  '/advances': { module: 'advances', action: 'view' },
-  '/returns': { module: 'returns', action: 'view' },
-  '/rooms': { module: 'rooms', action: 'view' },
-  '/private-rooms': { module: 'private_rooms', action: 'view' },
-  '/settings': { module: 'settings', action: 'view' },
-  '/garzon-dashboard': { module: 'dashboard', action: 'view' },
-  '/garzon-calendar': { module: 'dashboard', action: 'view' },
-  '/garzon-asistencias': { module: 'dashboard', action: 'view' },
-  '/garzon-anticipos': { module: 'dashboard', action: 'view' },
-  '/garzon-propinas': { module: 'dashboard', action: 'view' },
-  '/garzon-horas-extras': { module: 'overtime', action: 'view' },
-  '/garzon-pedidos': { module: 'dashboard', action: 'view' },
-  '/anfitriona-dashboard': { module: 'dashboard', action: 'view' },
-  '/anfitriona-calendar': { module: 'dashboard', action: 'view' },
-  '/anfitriona-asistencias': { module: 'dashboard', action: 'view' },
-  '/anfitriona-anticipos': { module: 'dashboard', action: 'view' },
-  '/anfitriona-comisiones': { module: 'dashboard', action: 'view' },
-  '/anfitriona-servicios': { module: 'dashboard', action: 'view' },
-  '/cajero-calendar': { module: 'dashboard', action: 'view' },
-  '/cajero-asistencias': { module: 'dashboard', action: 'view' },
-  '/cajero-anticipos': { module: 'dashboard', action: 'view' },
-  '/cajero-propinas': { module: 'dashboard', action: 'view' },
-  '/cajero-horas-extras': { module: 'overtime', action: 'view' }
-};
-
-const apiRoutePermissions: Record<string, { module: string; action: string }> = {
-  '/api/roles': { module: 'roles', action: 'view' },
-  '/api/gratificaciones': { module: 'gratificaciones', action: 'view' },
-  '/api/payroll': { module: 'payroll', action: 'view' },
-  '/api/reports': { module: 'reports', action: 'view' }
-};
-
 async function verifyToken(token: string) {
   try {
     const secret = new TextEncoder().encode(env.JWT_SECRET);
@@ -195,32 +124,50 @@ async function verifyToken(token: string) {
   }
 }
 
-async function checkUserPermission(
+async function localCheckUserPermission(
   userId: number,
   module: string,
-  action: string,
-  request: NextRequest
+  action: string
 ): Promise<boolean> {
   try {
-    const host = request.headers.get('x-forwarded-host') || request.headers.get('host');
-    const protocol =
-      request.headers.get('x-forwarded-proto') || request.nextUrl.protocol.replace(':', '');
-    const baseUrl = host ? `${protocol}://${host}` : request.nextUrl.origin;
+    const userResult = await query<any[]>(
+      'SELECT u.rol_id, r.nombre as rol_nombre FROM usuarios u LEFT JOIN roles r ON u.rol_id = r.id_rol WHERE u.id_usuario = ?',
+      [String(userId)]
+    );
 
-    const response = await fetch(`${baseUrl}/api/auth/check-permission`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json'
-      },
-      body: JSON.stringify({ userId, module, action })
-    });
-
-    if (!response.ok) {
+    if (!userResult || userResult.length === 0) {
       return false;
     }
 
-    const result = await response.json();
-    return result.hasPermission === true;
+    const roleName = userResult[0].rol_nombre?.toLowerCase() || '';
+
+    if (roleName === 'administrador') {
+      return true;
+    }
+
+    const roleId = userResult[0].rol_id;
+    if (!roleId) {
+      return false;
+    }
+
+    const resolvedModules = moduleAliases[module] || [module];
+    const resolvedActions = actionMap[action] || [action];
+
+    const placeholdersModules = resolvedModules.map(() => '?').join(',');
+    const placeholdersActions = resolvedActions.map(() => '?').join(',');
+
+    const perms = await query<any[]>(
+      `SELECT 1 FROM permissions p
+       INNER JOIN role_permissions rp ON p.id = rp.permission_id
+       WHERE rp.role_id = ?
+         AND p.module IN (${placeholdersModules})
+         AND p.action IN (${placeholdersActions})
+         AND p.deleted_at IS NULL
+       LIMIT 1`,
+      [String(roleId), ...resolvedModules, ...resolvedActions]
+    );
+
+    return perms.length > 0;
   } catch (error) {
     return false;
   }
@@ -350,7 +297,7 @@ export default async function proxy(request: NextRequest) {
         );
       }
 
-      const hasPermission = await checkUserPermission(userId, module, action, request);
+      const hasPermission = await localCheckUserPermission(userId, module, action);
 
       if (!hasPermission) {
         return NextResponse.redirect(
@@ -390,7 +337,7 @@ export default async function proxy(request: NextRequest) {
       else if (request.method === 'PUT' || request.method === 'PATCH') requiredAction = 'edit';
       else if (request.method === 'DELETE') requiredAction = 'delete';
 
-      const hasPermission = await checkUserPermission(userId, module, requiredAction, request);
+      const hasPermission = await localCheckUserPermission(userId, module, requiredAction);
 
       if (!hasPermission) {
         return addApiHeaders(

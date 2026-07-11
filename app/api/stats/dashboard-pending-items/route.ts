@@ -1,8 +1,8 @@
 import { NextResponse } from 'next/server';
 import { withAppAuth } from '@/lib/api/app-api-wrapper';
-import { StatsRepository } from '@/lib/repositories/StatsRepository';
+import { StatsService } from '@/lib/services/StatsService';
 
 export const GET = withAppAuth(async () => {
-  const data = await StatsRepository.getDashboardPendingItems();
+  const data = await StatsService.getDashboardPendingItems();
   return NextResponse.json({ success: true, data });
 });

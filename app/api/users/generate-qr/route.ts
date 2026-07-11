@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server';
 import { withAppAuth } from '@/lib/api/app-api-wrapper';
 import { query } from '@/lib/database/db';
 import { ValidationError } from '@/lib/errors/errors';
+import { sendNotificationToAll } from '@/lib/api/sseService';
 import crypto from 'crypto';
 
 export const POST = withAppAuth(async (request: Request, { user }: { params: any; user: any }) => {
@@ -19,6 +20,8 @@ export const POST = withAppAuth(async (request: Request, { user }: { params: any
 
   const qr_token = crypto.randomBytes(16).toString('hex');
   await query('UPDATE usuarios SET qr_token = ? WHERE id_usuario = ?', [qr_token, userId]);
+
+  sendNotificationToAll('qr_token_updated', { userId });
 
   return NextResponse.json({ success: true, qr_token });
 });

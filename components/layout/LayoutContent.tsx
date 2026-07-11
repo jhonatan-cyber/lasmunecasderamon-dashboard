@@ -9,6 +9,7 @@ import { ProtectedAppProviders } from '@/components/providers/ProtectedAppProvid
 import { TimerDisplay } from '@/components/dashboard/TimerDisplay';
 import { useCurrentUser } from '@/hooks/auth/useCurrentUser';
 import { useSessionCheck } from '@/hooks/auth/useSessionCheck';
+import { prefetchAdjacentRoutes } from '@/lib/utils/prefetchPredictive';
 import React from 'react';
 import { cn } from '@/lib/utils/utils';
 import { useEffect } from 'react';
@@ -18,12 +19,21 @@ interface LayoutUser {
 }
 
 function MainLayout({ children, user }: { children: React.ReactNode; user: LayoutUser | null }) {
+  const pathname = usePathname();
+
   useEffect(() => {
     document.body.style.overflow = 'hidden';
     return () => {
       document.body.style.overflow = 'auto';
     };
   }, []);
+
+  // Predictive prefetch: when route changes, warm up cache for adjacent routes
+  useEffect(() => {
+    if (pathname) {
+      prefetchAdjacentRoutes(pathname);
+    }
+  }, [pathname]);
 
   const isAdminOrCajero =
     user?.role?.toLowerCase() === 'administrador' || user?.role?.toLowerCase() === 'cajero';

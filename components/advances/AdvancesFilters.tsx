@@ -77,9 +77,9 @@ export default function AdvancesFilters({
               value={sortBy}
               onChange={setSortBy}
               label='Ordenar por'
-              placeholder='CreaciÃ³n'
+              placeholder='Creación'
               options={[
-                { value: 'fecha_crea', label: 'CreaciÃ³n' },
+                { value: 'fecha_crea', label: 'Creación' },
                 { value: 'monto', label: 'Monto' },
                 { value: 'usuario', label: 'Usuario' }
               ]}

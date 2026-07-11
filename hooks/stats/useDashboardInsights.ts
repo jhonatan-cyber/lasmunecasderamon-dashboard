@@ -1,5 +1,6 @@
 import { useQuery } from '@tanstack/react-query';
 import { queryKeys } from '@/lib/api/queryClient';
+import { useDashboardSSE } from './useDashboardSSE';
 
 export interface DashboardTrend {
   current: number;
@@ -77,6 +78,8 @@ export interface DashboardInsightsResponse {
 }
 
 export const useDashboardInsights = () => {
+  useDashboardSSE();
+
   return useQuery<DashboardInsightsResponse>({
     queryKey: queryKeys.dashboard.insights(),
     queryFn: async () => {
@@ -93,12 +96,6 @@ export const useDashboardInsights = () => {
       return result.data;
     },
     staleTime: 30000,
-    refetchInterval: () => {
-      if (typeof document !== 'undefined' && document.visibilityState === 'visible') {
-        return 60000;
-      }
-      return false;
-    },
     refetchOnWindowFocus: true
   });
 };

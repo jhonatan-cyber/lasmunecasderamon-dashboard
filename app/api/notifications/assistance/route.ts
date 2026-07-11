@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
 import { withAppAuth } from '@/lib/api/app-api-wrapper';
-import { NotificationRepository } from '@/lib/repositories/NotificationRepository';
+import { NotificationService } from '@/lib/services/NotificationService';
 import { sendNotificationToAll } from '@/lib/api/sseService';
 import { ValidationError } from '@/lib/errors/errors';
 
@@ -14,7 +14,7 @@ export const POST = withAppAuth(async (request: Request, { user }: { params: any
       type
     });
 
-  const notificationId = await NotificationRepository.create({
+  const notificationId = await NotificationService.create({
     usuario_id: user.id.toString(),
     tipo: 'asistencia',
     titulo: `Solicitud de ${type}`,

@@ -65,7 +65,7 @@ async function runIntegrationTest() {
     await connection.execute('UPDATE pedidos SET estado = 0 WHERE id_pedido = ?', [testOrderId]);
     console.log('✅ Venta registrada y pedido finalizado.');
 
-    console.log('âš–ï¸ Verificando distribuciÃ³n de comisiones...');
+    console.log('âš–ï¸ Verificando distribución de comisiones...');
     const commissionId = uuidv4();
     await connection.execute(
       'INSERT INTO comisiones (id_comision, venta_id, monto, estado, fecha_crea) VALUES (?, ?, ?, ?, NOW())',
@@ -79,7 +79,7 @@ async function runIntegrationTest() {
     );
     console.log('✅ Comisiones registradas.');
 
-    console.log('ðŸŽ Verificando distribuciÃ³n de propinas...');
+    console.log('ðŸŽ Verificando distribución de propinas...');
 
     const loginId = uuidv4();
     await connection.execute(
@@ -106,18 +106,18 @@ async function runIntegrationTest() {
       testSaleId
     ]);
     if (comms.length > 0 && Number(comms[0].monto) === 5000) {
-      console.log('â­ VALIDACIÃ“N EXITOSA: ComisiÃ³n registrada correctamente.');
+      console.log('â­ VALIDACIÓN EXITOSA: Comisión registrada correctamente.');
     } else {
-      throw new Error('âŒ FALLO: No se encontrÃ³ la comisiÃ³n esperada.');
+      throw new Error('âŒ FALLO: No se encontró la comisión esperada.');
     }
 
     const [tips] = await connection.execute('SELECT * FROM propinas WHERE venta_id = ?', [
       testSaleId
     ]);
     if (tips.length > 0 && Number(tips[0].propina) === 2000) {
-      console.log('â­ VALIDACIÃ“N EXITOSA: Propina registrada correctamente.');
+      console.log('â­ VALIDACIÓN EXITOSA: Propina registrada correctamente.');
     } else {
-      throw new Error('âŒ FALLO: No se encontrÃ³ la propina esperada.');
+      throw new Error('âŒ FALLO: No se encontró la propina esperada.');
     }
 
     const [tipDetails] = await connection.execute(
@@ -125,9 +125,9 @@ async function runIntegrationTest() {
       [tipId]
     );
     if (tipDetails.length > 0 && tipDetails[0].monto === 2000) {
-      console.log('â­ VALIDACIÃ“N EXITOSA: Detalle de propina asignado al usuario.');
+      console.log('â­ VALIDACIÓN EXITOSA: Detalle de propina asignado al usuario.');
     } else {
-      throw new Error('âŒ FALLO: No se encontrÃ³ el detalle de propina.');
+      throw new Error('âŒ FALLO: No se encontró el detalle de propina.');
     }
 
     console.log('\n✨ PRUEBA DE INTEGRACIÓN COMPLETADA CON ÉXITO');

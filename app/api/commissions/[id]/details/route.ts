@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
 import { withAppApiWrapper } from '@/lib/api/app-api-wrapper';
-import { CommissionRepository } from '@/lib/repositories/CommissionRepository';
+import { CommissionService } from '@/lib/services/CommissionService';
 
 export const GET = withAppApiWrapper(
   async (request: Request, { params }: { params: Promise<{ id: string }> }) => {
@@ -11,7 +11,7 @@ export const GET = withAppApiWrapper(
         { status: 400 }
       );
 
-    const data = await CommissionRepository.getDetails(id);
+    const data = await CommissionService.getDetails(id);
     return NextResponse.json({ success: true, data });
   }
 );

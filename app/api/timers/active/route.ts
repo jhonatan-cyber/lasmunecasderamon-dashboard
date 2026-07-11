@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
 import { withAppApiWrapper } from '@/lib/api/app-api-wrapper';
-import { TimerRepository } from '@/lib/repositories/TimerRepository';
+import { TimerService } from '@/lib/services/TimerService';
 import { getNowInBusinessTimezoneISO } from '@/lib/business/timezoneService';
 import { logger } from '@/lib/utils/logger';
 
@@ -14,11 +14,11 @@ export const GET = withAppApiWrapper(async (request: Request) => {
 
   if (nowMs - lastCleanup > 10000) {
     lastCleanup = nowMs;
-    TimerRepository.runAutoCleanup().catch(err =>
+    TimerService.runAutoCleanup().catch(err =>
       logger.error('[timers/active] Auto cleanup failed:', { err })
     );
   }
 
-  const data = await TimerRepository.getActive();
+  const data = await TimerService.getActive();
   return NextResponse.json({ success: true, data, serverTime: getNowInBusinessTimezoneISO() });
 });

@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useMemo } from 'react';
 import { Button } from '../ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../ui/select';
 import { ChevronLeft, ChevronRight, ChevronsLeft, ChevronsRight } from 'lucide-react';
@@ -9,7 +9,7 @@ export interface PaginationProps {
   totalPages: number;
   totalItems: number;
   itemsPerPage: number;
-  visiblePages: number[];
+  visiblePages?: number[];
   onPageChange: (page: number) => void;
   onItemsPerPageChange: (itemsPerPage: number) => void;
   itemsPerPageOptions?: number[];
@@ -18,12 +18,25 @@ export interface PaginationProps {
   className?: string;
 }
 
+const calcVisiblePages = (currentPage: number, totalPages: number) => {
+  if (totalPages <= 1) return [1];
+  const maxVisible = 5;
+  let start = Math.max(1, currentPage - Math.floor(maxVisible / 2));
+  let end = Math.min(totalPages, start + maxVisible - 1);
+  if (end - start + 1 < maxVisible) {
+    start = Math.max(1, end - maxVisible + 1);
+  }
+  const pages = [];
+  for (let i = start; i <= end; i++) pages.push(i);
+  return pages;
+};
+
 export function Pagination({
   currentPage,
   totalPages,
   totalItems,
   itemsPerPage,
-  visiblePages,
+  visiblePages: visiblePagesProp,
   onPageChange,
   onItemsPerPageChange,
   itemsPerPageOptions = [10, 20, 50, 100],
@@ -31,6 +44,11 @@ export function Pagination({
   showTotalItems = true,
   className
 }: PaginationProps) {
+  const visiblePages = useMemo(
+    () => visiblePagesProp ?? calcVisiblePages(currentPage, totalPages),
+    [visiblePagesProp, currentPage, totalPages]
+  );
+
   if (totalPages <= 1) {
     return null;
   }

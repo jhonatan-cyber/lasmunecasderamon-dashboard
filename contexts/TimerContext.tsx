@@ -12,14 +12,11 @@ import React, {
 } from 'react';
 import { useSignals } from '@preact/signals-react/runtime';
 import { toast } from 'sonner';
-import { ConfirmModal } from '@/components/shared/ConfirmModal';
-import { useConfirmModal } from '@/hooks/shared';
 import { TimerExpiredModal } from '@/components/notifications';
-import { parseDateSafe, calculateRemainingTime, formatTime } from '@/lib/utils/timeUtils';
 
-import { useTimerAudio } from '@/hooks/timer/useTimerAudio';
-import { useTimerSync } from '@/hooks/timer/useTimerSync';
 import { useTimerActions } from '@/hooks/timer/useTimerActions';
+import { useTimerSync } from '@/hooks/timer/useTimerSync';
+import { useTimerExpiration } from '@/hooks/timer/useTimerExpiration';
 import {
   activeTimers,
   startGlobalTimerLoop,
@@ -30,6 +27,9 @@ import {
   setGlobalExpirationHandler
 } from '@/lib/store/timerStore';
 import logger from '@/lib/utils/logger';
+
+// Re-export persistence functions from new location for backwards compatibility
+export { saveTimersToStorage, loadTimersFromStorage } from '@/hooks/timer/useTimerPersistence';
 
 export interface Timer {
   id: string;
@@ -107,20 +107,6 @@ interface TimerContextType {
 
 const TimerContext = createContext<TimerContextType | undefined>(undefined);
 
-export const saveTimersToStorage = (timers: Timer[]) => {
-  if (typeof window !== 'undefined') localStorage.setItem('roomTimers', JSON.stringify(timers));
-};
-
-export const loadTimersFromStorage = (): Timer[] => {
-  if (typeof window !== 'undefined') {
-    const stored = localStorage.getItem('roomTimers');
-    if (stored) {
-      return JSON.parse(stored).map((t: any) => ({ ...t, startTime: parseDateSafe(t.startTime) }));
-    }
-  }
-  return [];
-};
-
 export const useTimer = () => {
   const context = useContext(TimerContext);
   if (!context) throw new Error('useTimer debe ser usado dentro de TimerProvider');
@@ -132,10 +118,6 @@ export const TimerProvider: React.FC<{ children: React.ReactNode }> = ({ childre
   const [isInitialized, setIsInitialized] = useState(false);
   const [serverOffset, setServerOffset] = useState(0);
   const refreshCallbackRef = useRef<((servicioId?: string | number) => void) | null>(null);
-  const [timerExpiredNotification, setTimerExpiredNotification] =
-    useState<TimerExpiredNotification | null>(null);
-  const [showTimerExpiredModal, setShowTimerExpiredModal] = useState(false);
-  const { modalState, showConfirm, closeModal } = useConfirmModal();
 
   const setRefreshCallback = useCallback((callback: (servicioId?: string | number) => void) => {
     refreshCallbackRef.current = callback;
@@ -150,38 +132,15 @@ export const TimerProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     serverOffsetSignal.value = serverOffset;
   }, []);
 
-  const { playExpirationSound, announceExpiration } = useTimerAudio(timers, serverOffset);
+  // ── Expiration modal (extracted hook) ──────────────────────────────
+  const {
+    timerExpiredNotification,
+    showTimerExpiredModal,
+    setShowTimerExpiredModal,
+    showTimerExpiredNotification
+  } = useTimerExpiration({ timers, serverOffset });
 
-  const showTimerExpiredNotification = useCallback(
-    (timer: Timer) => {
-      if (timer.remainingTime > 0) {
-        logger.warn(
-          `[TimerContext] Ignorado modal expirado para id:${timer.id} (${timer.roomName}), tiene ${timer.remainingTime}s restantes.`
-        );
-        return;
-      }
-
-      logger.info(
-        `[TimerContext] Abriendo modal para id:${timer.id} (${timer.roomName}) - tipo:${timer.tipoTransaccion}`
-      );
-      setTimerExpiredNotification({
-        id: timer.id,
-        roomName: timer.roomName,
-        servicioCode: timer.servicioCode,
-        clienteNombre: timer.clienteNombre,
-        tiempoTotal: timer.duration,
-        isTemporary: !!timer.isTemporary,
-        tipoTransaccion: timer.tipoTransaccion || 'servicio',
-        anfitrionas: timer.anfitrionas || '',
-        waiterName: timer.waiterName
-      });
-      setShowTimerExpiredModal(true);
-      playExpirationSound();
-      announceExpiration(timer.roomName);
-    },
-    [playExpirationSound, announceExpiration]
-  );
-
+  // ── Timer actions ──────────────────────────────────────────────────
   const {
     startTimer,
     stopTimer,
@@ -193,6 +152,7 @@ export const TimerProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     onRefreshCaja: id => refreshCallbackRef.current?.(id)
   });
 
+  // ── Timer sync with server ─────────────────────────────────────────
   useTimerSync({
     isInitialized,
     setIsInitialized,
@@ -200,6 +160,7 @@ export const TimerProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     onTimerStopped: id => refreshCallbackRef.current?.(id)
   });
 
+  // ── Global timer loop + expiration handler ─────────────────────────
   useEffect(() => {
     startGlobalTimerLoop();
     setGlobalExpirationHandler(instance => {
@@ -238,6 +199,7 @@ export const TimerProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     };
   }, [showTimerExpiredNotification, stopTimer, resumeTimerByServicioId]);
 
+  // ── Timer lookup helpers ───────────────────────────────────────────
   const stopTimerByRoomId = useCallback(
     async (roomId: string) => {
       const t = timers.find(x => x.roomId === roomId);

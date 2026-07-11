@@ -1,11 +1,11 @@
 import { NextResponse } from 'next/server';
 import { withAppApiWrapper, withAppAuth } from '@/lib/api/app-api-wrapper';
-import { RoleRepository } from '@/lib/repositories/RoleRepository';
+import { RoleService } from '@/lib/services/RoleService';
 
 export const GET = withAppApiWrapper(
   async (request: Request, { params }: { params: Promise<{ id: string }> }) => {
     const id = (await params).id;
-    const data = await RoleRepository.getById(id);
+    const data = await RoleService.getById(id);
     if (!data)
       return NextResponse.json({ success: false, message: 'Role not found' }, { status: 404 });
     return NextResponse.json({ success: true, data });
@@ -16,7 +16,7 @@ export const PUT = withAppAuth(
   async (request: Request, { params }: { params: Promise<{ id: string }>; user: any }) => {
     const id = (await params).id;
     const body = await request.json();
-    await RoleRepository.updateRole(id, body);
+    await RoleService.updateRole(id, body);
     return NextResponse.json({ success: true, message: 'Role updated' });
   }
 );
@@ -24,7 +24,7 @@ export const PUT = withAppAuth(
 export const DELETE = withAppAuth(
   async (request: Request, { params }: { params: Promise<{ id: string }>; user: any }) => {
     const id = (await params).id;
-    await RoleRepository.delete(id);
+    await RoleService.delete(id);
     return NextResponse.json({ success: true, message: 'Role deleted' });
   }
 );

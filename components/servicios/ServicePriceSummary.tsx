@@ -11,6 +11,7 @@ interface ServicePriceSummaryProps {
   multiplicadorTiempo: number;
   precioServicio: number;
   precioHabitacion: number;
+  ivaRate?: number;
 }
 
 export const ServicePriceSummary = React.memo<ServicePriceSummaryProps>(({
@@ -22,7 +23,8 @@ export const ServicePriceSummary = React.memo<ServicePriceSummaryProps>(({
   numAnfitrionas,
   multiplicadorTiempo,
   precioServicio,
-  precioHabitacion
+  precioHabitacion,
+  ivaRate = 0.2
 }) => {
   return (
     <div className="bg-gray-50 p-4 rounded-lg space-y-2">
@@ -36,7 +38,7 @@ export const ServicePriceSummary = React.memo<ServicePriceSummaryProps>(({
       </div>
       {iva > 0 && (
         <div className="flex justify-between text-sm text-purple-600">
-          <span>IVA (20%):</span>
+          <span>IVA ({Math.round(ivaRate * 100)}%):</span>
           <span>{formatCurrencyNoDecimals(iva)}</span>
         </div>
       )}
@@ -54,7 +56,7 @@ export const ServicePriceSummary = React.memo<ServicePriceSummaryProps>(({
           <p>Desglose por anfitriona:</p>
           <p>• Servicio: {formatCurrencyNoDecimals(precioServicio)} × {numAnfitrionas}{multiplicadorTiempo > 1 ? ` × ${multiplicadorTiempo} (60min)` : ''}</p>
           <p>• Habitación: {formatCurrencyNoDecimals(precioHabitacion)} × {numAnfitrionas}{multiplicadorTiempo > 1 ? ` × ${multiplicadorTiempo} (60min)` : ''}</p>
-          {iva > 0 && <p>• IVA: {formatCurrencyNoDecimals(iva)} (20% + ajuste para redondeo a $5.000)</p>}
+          {iva > 0 && <p>• IVA: {formatCurrencyNoDecimals(iva)} ({Math.round(ivaRate * 100)}% + ajuste para redondeo a $5.000)</p>}
           <p className="text-blue-600 font-medium mt-1">Comisión por anfitriona: {formatCurrencyNoDecimals(Math.floor(precioServicioTotal / numAnfitrionas))}</p>
         </div>
       )}

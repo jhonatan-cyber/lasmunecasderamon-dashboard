@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
 import { withAppApiWrapper, withAppAuth } from '@/lib/api/app-api-wrapper';
-import { ProductRepository } from '@/lib/repositories/ProductRepository';
+import { ProductService } from '@/lib/services/ProductService';
 
 export const PUT = withAppAuth(
   async (request: Request) => {
@@ -15,7 +15,7 @@ export const PUT = withAppAuth(
       );
     }
 
-    await ProductRepository.reorder(product_orders);
+    await ProductService.reorder(product_orders);
 
     return NextResponse.json({
       success: true,

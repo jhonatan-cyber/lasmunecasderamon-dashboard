@@ -31,6 +31,30 @@ export class ProductService {
     return await ProductRepository.create(validated, foto);
   }
 
+  static async getAll(categoryId?: string | number) {
+    return await ProductRepository.getAll(categoryId?.toString());
+  }
+
+  static async getById(id: string | number) {
+    return await ProductRepository.getById(id.toString());
+  }
+
+  static async search(term: string) {
+    return await ProductRepository.search(term);
+  }
+
+  static async update(id: string | number, data: Record<string, unknown>) {
+    return await ProductRepository.update(id.toString(), data);
+  }
+
+  static async delete(id: string | number) {
+    return await ProductRepository.delete(id.toString());
+  }
+
+  static async reorder(product_orders: Array<{ id: string; orden: number }>) {
+    return await ProductRepository.reorder(product_orders.map(p => ({ id: p.id, display_order: p.orden })));
+  }
+
   static async updateProduct(id: string, body: Partial<ProductInput>, fotoName?: string) {
     const normalizedBody = {
       ...body,

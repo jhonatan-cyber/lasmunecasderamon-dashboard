@@ -1,12 +1,12 @@
 import { NextResponse } from 'next/server';
 import { withAppApiWrapper } from '@/lib/api/app-api-wrapper';
-import { PermissionRepository } from '@/lib/repositories/PermissionRepository';
+import { PermissionService } from '@/lib/services/PermissionService';
 
 export const PUT = withAppApiWrapper(
   async (request: Request, { params }: { params: Promise<{ id: string }> }) => {
     const id = (await params).id;
     const body = await request.json();
-    await PermissionRepository.update(id, body);
+    await PermissionService.update(id, body);
     return NextResponse.json({ success: true, message: 'Permiso actualizado' });
   }
 );
@@ -14,7 +14,7 @@ export const PUT = withAppApiWrapper(
 export const DELETE = withAppApiWrapper(
   async (request: Request, { params }: { params: Promise<{ id: string }> }) => {
     const id = (await params).id;
-    await PermissionRepository.delete(id);
+    await PermissionService.delete(id);
     return NextResponse.json({ success: true, message: 'Permiso eliminado' });
   }
 );

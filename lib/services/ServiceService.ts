@@ -210,4 +210,36 @@ export class ServiceService {
 
     return result;
   }
+
+  static async getAll(params: Record<string, string | undefined>) {
+    return await ServiceRepository.getAll(params as any);
+  }
+
+  static async getById(id: string | number) {
+    return await ServiceRepository.getById(id.toString());
+  }
+
+  static async getByUser(userId: string) {
+    return await ServiceRepository.getByUser(userId);
+  }
+
+  static async getByDates(startDate: string, endDate: string) {
+    return await ServiceRepository.getByDates(startDate, endDate);
+  }
+
+  static async updateService(id: string | number, body: Record<string, unknown>) {
+    return await ServiceRepository.updateService(id.toString(), body);
+  }
+
+  static async updateStatus(id: string | number, estado: number, userId?: string) {
+    return await ServiceRepository.updateStatus(id.toString(), estado, userId);
+  }
+
+  static async processAnulacion(requestId: string, approvedBy: string, status: string) {
+    return await ServiceRepository.processAnulacion(requestId, approvedBy, status);
+  }
+
+  static async requestAnulacion(id: string, motivo: string, userId: string) {
+    return await ServiceRepository.requestAnulacion(id, motivo, userId);
+  }
 }

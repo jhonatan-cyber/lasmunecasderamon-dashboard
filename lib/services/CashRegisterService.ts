@@ -24,4 +24,20 @@ export class CashRegisterService {
     const validated = CajaUpdateSchema.omit({ id_caja: true }).parse(body);
     return await CashRegisterRepository.update(id, validated);
   }
+
+  static async getById(id: string | number) {
+    return await CashRegisterRepository.getById(id.toString());
+  }
+
+  static async getAll() {
+    return await CashRegisterRepository.getAll();
+  }
+
+  static async summary() {
+    return await CashRegisterRepository.summary();
+  }
+
+  static async delete(id: string | number) {
+    return await CashRegisterRepository.delete(id.toString());
+  }
 }

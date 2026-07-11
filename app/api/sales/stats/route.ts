@@ -1,8 +1,8 @@
 import { NextResponse } from 'next/server';
 import { withAppApiWrapper } from '@/lib/api/app-api-wrapper';
-import { StatsRepository } from '@/lib/repositories/StatsRepository';
+import { StatsService } from '@/lib/services/StatsService';
 
 export const GET = withAppApiWrapper(async () => {
-  const data = await StatsRepository.getSalesByMonth();
+  const data = await StatsService.getSalesByMonth();
   return NextResponse.json({ success: true, data });
 });

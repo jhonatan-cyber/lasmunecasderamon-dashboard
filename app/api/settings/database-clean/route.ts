@@ -11,7 +11,7 @@ const PROTECTED_TABLES = [
   'habitaciones',
   'productos',
   'categorias',
-
+  'codigos',
   'role_permissions'
 ];
 
@@ -37,7 +37,7 @@ export const POST = withAppAuth(
         continue;
       }
 
-      await query(`DELETE FROM \`${tableName}\``);
+      await query(`TRUNCATE TABLE \`${tableName}\``);
       deletedTables.push(tableName);
     }
 

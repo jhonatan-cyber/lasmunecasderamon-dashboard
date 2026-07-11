@@ -175,7 +175,7 @@ async function runIntegrationTest() {
     console.log('✅ Limpieza completada');
     console.log('\n--- PRUEBA DE INTEGRACIÓN EXITOSA ---');
   } catch (error) {
-    console.error('\nâŒ ERROR EN PRUEBA DE INTEGRACIÃ“N:', error);
+    console.error('\nâŒ ERROR EN PRUEBA DE INTEGRACIÓN:', error);
     process.exit(1);
   } finally {
     await connection.end();

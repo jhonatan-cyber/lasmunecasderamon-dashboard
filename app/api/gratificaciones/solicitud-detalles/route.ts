@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server';
-import { GratificacionRepository } from '@/lib/repositories/GratificacionRepository';
+import { GratificacionService } from '@/lib/services/GratificacionService';
 import { ApiResponse } from '@/lib/api/api-response';
 
 export async function GET(request: Request) {
@@ -11,7 +11,7 @@ export async function GET(request: Request) {
       return ApiResponse.validationError('Token de solicitud no válido');
     }
 
-    const solicitud = await GratificacionRepository.getSolicitudDetalle(token);
+    const solicitud = await GratificacionService.getSolicitudDetalle(token);
     return NextResponse.json({ success: true, solicitud });
   } catch (error) {
     return ApiResponse.error(error);

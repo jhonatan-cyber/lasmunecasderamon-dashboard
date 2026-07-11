@@ -9,7 +9,7 @@ import {
 } from '@/lib/integrations/whatsappCommandUtils';
 import { processPendingSolicitud } from '@/lib/integrations/whatsappPendingActions';
 import { AnticipoService } from '@/lib/services/AnticipoService';
-import { GratificacionRepository } from '@/lib/repositories/GratificacionRepository';
+import { GratificacionService } from '@/lib/services/GratificacionService';
 
 export async function POST(request: Request) {
   try {
@@ -72,7 +72,7 @@ export async function POST(request: Request) {
 
     const comandoGratificacion = parseGratificacionCommand(mensaje);
     if (comandoGratificacion) {
-      await GratificacionRepository.processSolicitud(
+      await GratificacionService.processSolicitud(
         comandoGratificacion.gratificacionId,
         comandoGratificacion.action === 'aprobar' ? 'approve' : 'reject'
       );

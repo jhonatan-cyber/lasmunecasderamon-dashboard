@@ -4,6 +4,7 @@ import Image from 'next/image';
 import { useLoginForm } from '@/hooks/auth/useLoginForm';
 import { LoginForm } from './LoginForm';
 import { RegisterFirstUserModal } from './RegisterFirstUserModal';
+import { QrCode } from 'lucide-react';
 
 export const LoginView = () => {
   const {
@@ -96,29 +97,38 @@ export const LoginView = () => {
               </p>
 
               <LoginForm
-                step={step}
-                handleLogin={handleLogin}
-                handleVerifyCode={handleVerifyCode}
-                loginData={loginData}
-                setLoginData={setLoginData}
-                showPassword={showPassword}
-                setShowPassword={setShowPassword}
-                emailInputRef={emailInputRef}
-                passwordInputRef={passwordInputRef}
-                submitButtonRef={submitButtonRef}
-                handleKeyDown={handleKeyDown}
-                handlePasswordKeyDown={handlePasswordKeyDown}
-                codigo={codigo}
-                setCodigo={setCodigo}
-                loading={loading}
-                rateLimitRemaining={rateLimitRemaining}
-                hasUsers={hasUsers}
-                onShowRegister={() => setShowRegisterModal(true)}
-                theme={theme}
-                toggleTheme={toggleTheme}
-                setThemeMode={setThemeMode}
-                onSetStep={setStep}
+                form={{
+                  step,
+                  loading,
+                  codigo,
+                  setCodigo,
+                  rateLimitRemaining,
+                  hasUsers
+                }}
+                credentials={{ loginData, setLoginData }}
+                password={{ showPassword, setShowPassword }}
+                inputRefs={{ emailInputRef, passwordInputRef, submitButtonRef }}
+                handlers={{
+                  handleLogin,
+                  handleVerifyCode,
+                  handleKeyDown,
+                  handlePasswordKeyDown
+                }}
+                theme={{ theme, toggleTheme, setThemeMode }}
+                callbacks={{
+                  onShowRegister: () => setShowRegisterModal(true),
+                  onSetStep: setStep
+                }}
               />
+              <div className='mt-6 pt-6 border-t border-gray-100 dark:border-gray-800/80 text-center'>
+                <a
+                  href='/asistencia-qr'
+                  className='inline-flex items-center justify-center gap-2 text-sm font-black uppercase tracking-wider text-amber-600 hover:text-amber-700 dark:text-amber-500 dark:hover:text-amber-400 transition-colors'
+                >
+                  <QrCode className='h-4 w-4' />
+                  Acceso Trabajadores (QR)
+                </a>
+              </div>
             </div>
           </div>
         </div>

@@ -1,5 +1,6 @@
 import { useQuery } from '@tanstack/react-query';
 import { queryKeys } from '@/lib/api/queryClient';
+import { useDashboardSSE } from './useDashboardSSE';
 
 export interface RecentActivityItem {
   id: string;
@@ -11,6 +12,8 @@ export interface RecentActivityItem {
 }
 
 export const useRecentActivity = () => {
+  useDashboardSSE();
+
   return useQuery<RecentActivityItem[]>({
     queryKey: queryKeys.dashboard.recentActivity(),
     queryFn: async () => {
@@ -27,12 +30,6 @@ export const useRecentActivity = () => {
       return result.data || [];
     },
     staleTime: 15000,
-    refetchInterval: () => {
-      if (typeof document !== 'undefined' && document.visibilityState === 'visible') {
-        return 15000;
-      }
-      return false;
-    },
     refetchOnWindowFocus: true
   });
 };

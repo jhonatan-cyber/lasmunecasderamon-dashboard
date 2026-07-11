@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
 import { withAppAuth } from '@/lib/api/app-api-wrapper';
-import { AttendanceRepository } from '@/lib/repositories/AttendanceRepository';
+import { AttendanceService } from '@/lib/services/AttendanceService';
 import { ValidationError } from '@/lib/errors/errors';
 
 export const GET = withAppAuth(async (request: Request, { user }: { params: any; user: any }) => {
@@ -11,14 +11,9 @@ export const GET = withAppAuth(async (request: Request, { user }: { params: any;
 
   let result;
   if (dates) {
-    result = await AttendanceRepository.getByDates(user.id.toString(), dates.split(','));
+    result = await AttendanceService.getByDates(user.id.toString(), dates.split(','));
   } else if (startDate && endDate) {
-    result = await AttendanceRepository.getByUser(
-      user.id.toString(),
-      'detalle',
-      startDate,
-      endDate
-    );
+    result = await AttendanceService.getByUser(user.id.toString(), 'detalle', startDate, endDate);
   } else {
     throw new ValidationError('Faltan parámetros de fecha', { startDate, endDate, dates });
   }

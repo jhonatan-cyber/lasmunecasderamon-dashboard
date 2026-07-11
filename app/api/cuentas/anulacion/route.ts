@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
 import { withAppAuth } from '@/lib/api/app-api-wrapper';
-import { CuentaRepository } from '@/lib/repositories/CuentaRepository';
+import { AccountService } from '@/lib/services/AccountService';
 import { query } from '@/lib/database/db';
 import { enviarMensajeSolicitudAnulacion } from '@/lib/integrations/whatsappService';
 import logger from '@/lib/utils/logger';
@@ -8,7 +8,7 @@ import logger from '@/lib/utils/logger';
 export const POST = withAppAuth(async (request: Request, { user }: { params: any; user: any }) => {
   const body = await request.json();
 
-  const id = await CuentaRepository.requestAnulacion(
+  const id = await AccountService.requestAnulacion(
     body.cuentaId,
     body.motivo || 'Solicitud de anulacion de cuenta',
     user.id.toString(),
