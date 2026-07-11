@@ -2,7 +2,12 @@ import { GratificacionRepository } from '@/lib/repositories/GratificacionReposit
 import type { GratificacionAction } from '@/lib/repositories/gratificacion/GratificacionQueries';
 
 export class GratificacionService {
-  static async request(usuario_id: string, monto: number, descripcion?: string, device_date?: string) {
+  static async request(
+    usuario_id: string,
+    monto: number,
+    descripcion?: string,
+    device_date?: string
+  ) {
     if (!usuario_id) throw new Error('Usuario es requerido');
     if (!monto || monto <= 0) throw new Error('Monto debe ser positivo');
     return await GratificacionRepository.create({ usuario_id, monto, descripcion });

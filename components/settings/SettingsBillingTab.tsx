@@ -3,7 +3,13 @@
 import { useState, useEffect, useCallback } from 'react';
 import { Save, Settings as SettingsIcon } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue
+} from '@/components/ui/select';
 import { toast } from 'sonner';
 import type { BillingConfig } from './settings-types';
 import logger from '@/lib/utils/logger';
@@ -34,7 +40,9 @@ export function SettingsBillingTab() {
     }
   }, []);
 
-  useEffect(() => { fetchConfig(); }, [fetchConfig]);
+  useEffect(() => {
+    fetchConfig();
+  }, [fetchConfig]);
 
   const handleSave = async () => {
     try {
@@ -87,9 +95,7 @@ export function SettingsBillingTab() {
                   max='100'
                   step='0.01'
                   value={config.impuesto_iva}
-                  onChange={e =>
-                    setConfig(prev => ({ ...prev, impuesto_iva: e.target.value }))
-                  }
+                  onChange={e => setConfig(prev => ({ ...prev, impuesto_iva: e.target.value }))}
                   className='w-full px-3 py-2 border border-gray-300 rounded-full focus:ring-2 focus:ring-black focus:border-transparent'
                   placeholder='19'
                 />
@@ -102,9 +108,7 @@ export function SettingsBillingTab() {
                   max='100'
                   step='0.01'
                   value={config.impuesto_propina}
-                  onChange={e =>
-                    setConfig(prev => ({ ...prev, impuesto_propina: e.target.value }))
-                  }
+                  onChange={e => setConfig(prev => ({ ...prev, impuesto_propina: e.target.value }))}
                   className='w-full px-3 py-2 border border-gray-300 rounded-full focus:ring-2 focus:ring-black focus:border-transparent'
                   placeholder='10'
                 />
@@ -132,9 +136,7 @@ export function SettingsBillingTab() {
                 <input
                   type='text'
                   value={config.resolucion_sii}
-                  onChange={e =>
-                    setConfig(prev => ({ ...prev, resolucion_sii: e.target.value }))
-                  }
+                  onChange={e => setConfig(prev => ({ ...prev, resolucion_sii: e.target.value }))}
                   className='w-full px-3 py-2 border border-gray-300 rounded-full focus:ring-2 focus:ring-black focus:border-transparent'
                   placeholder='Resolución SII'
                 />

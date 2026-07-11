@@ -23,11 +23,7 @@ async function ensureConfigs() {
   }
 }
 
-export function useConfigValue<T = string>(
-  category: string,
-  key: string,
-  defaultValue: T
-): T {
+export function useConfigValue<T = string>(category: string, key: string, defaultValue: T): T {
   const [value, setValue] = useState<T>(defaultValue);
 
   useEffect(() => {

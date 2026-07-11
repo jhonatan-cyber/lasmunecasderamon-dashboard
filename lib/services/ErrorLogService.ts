@@ -5,7 +5,12 @@ export class ErrorLogService {
     return await ErrorLogRepository.getAll();
   }
 
-  static async log(data: { endpoint: string; error_message: string; stack_trace?: string; request_body?: string }) {
+  static async log(data: {
+    endpoint: string;
+    error_message: string;
+    stack_trace?: string;
+    request_body?: string;
+  }) {
     return await ErrorLogRepository.log(data);
   }
 }

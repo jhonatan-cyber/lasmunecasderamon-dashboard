@@ -37,7 +37,9 @@ export function SettingsCompanyTab() {
     }
   }, []);
 
-  useEffect(() => { fetchConfig(); }, [fetchConfig]);
+  useEffect(() => {
+    fetchConfig();
+  }, [fetchConfig]);
 
   const handleSave = async () => {
     try {
@@ -87,9 +89,7 @@ export function SettingsCompanyTab() {
                 <input
                   type='text'
                   value={config.empresa_nombre}
-                  onChange={e =>
-                    setConfig(prev => ({ ...prev, empresa_nombre: e.target.value }))
-                  }
+                  onChange={e => setConfig(prev => ({ ...prev, empresa_nombre: e.target.value }))}
                   className='w-full px-3 py-2 border border-gray-300 rounded-full focus:ring-2 focus:ring-black focus:border-transparent'
                   placeholder='Las Muñecas de Ramón'
                 />
@@ -99,9 +99,7 @@ export function SettingsCompanyTab() {
                 <input
                   type='text'
                   value={config.empresa_rut}
-                  onChange={e =>
-                    setConfig(prev => ({ ...prev, empresa_rut: e.target.value }))
-                  }
+                  onChange={e => setConfig(prev => ({ ...prev, empresa_rut: e.target.value }))}
                   className='w-full px-3 py-2 border border-gray-300 rounded-full focus:ring-2 focus:ring-black focus:border-transparent'
                   placeholder='12.345.678-9'
                 />
@@ -125,9 +123,7 @@ export function SettingsCompanyTab() {
                 <input
                   type='text'
                   value={config.empresa_telefono}
-                  onChange={e =>
-                    setConfig(prev => ({ ...prev, empresa_telefono: e.target.value }))
-                  }
+                  onChange={e => setConfig(prev => ({ ...prev, empresa_telefono: e.target.value }))}
                   className='w-full px-3 py-2 border border-gray-300 rounded-full focus:ring-2 focus:ring-black focus:border-transparent'
                   placeholder='+56 9 1234 5678'
                 />
@@ -137,9 +133,7 @@ export function SettingsCompanyTab() {
                 <input
                   type='email'
                   value={config.empresa_email}
-                  onChange={e =>
-                    setConfig(prev => ({ ...prev, empresa_email: e.target.value }))
-                  }
+                  onChange={e => setConfig(prev => ({ ...prev, empresa_email: e.target.value }))}
                   className='w-full px-3 py-2 border border-gray-300 rounded-full focus:ring-2 focus:ring-black focus:border-transparent'
                   placeholder='contacto@empresa.cl'
                 />
@@ -186,9 +180,7 @@ export function SettingsCompanyTab() {
                   <input
                     type='text'
                     value={config.empresa_tiktok || ''}
-                    onChange={e =>
-                      setConfig(prev => ({ ...prev, empresa_tiktok: e.target.value }))
-                    }
+                    onChange={e => setConfig(prev => ({ ...prev, empresa_tiktok: e.target.value }))}
                     className='w-full px-3 py-2 border border-gray-300 rounded-full focus:ring-2 focus:ring-black focus:border-transparent'
                     placeholder='@tiktok'
                   />
