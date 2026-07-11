@@ -1,12 +1,12 @@
 import { NextResponse } from 'next/server';
 import { withAppAuth } from '@/lib/api/app-api-wrapper';
-import { EventRepository } from '@/lib/repositories/EventRepository';
+import { EventService } from '@/lib/services/EventService';
 
 export const GET = withAppAuth(async (request: Request, { user }: { params: any; user: any }) => {
   const { searchParams } = new URL(request.url);
   const startDate = searchParams.get('startDate');
   const endDate = searchParams.get('endDate');
-  const data = await EventRepository.getUserEvents(
+  const data = await EventService.getUserEvents(
     user.id.toString(),
     startDate || undefined,
     endDate || undefined

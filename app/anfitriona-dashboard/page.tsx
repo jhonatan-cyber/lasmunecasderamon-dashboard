@@ -11,7 +11,6 @@ import { toast } from 'sonner';
 
 import { useDashboardSummary } from '@/hooks/stats/useDashboardSummary';
 import { Button } from '@/components/ui/button';
-import logger from '@/lib/utils/logger';
 
 export default function AnfitrionaDashboard() {
   const { user, loading: userLoading, refetch: refetchUser } = useCurrentUser();
@@ -22,33 +21,11 @@ export default function AnfitrionaDashboard() {
     refetch: refreshDashboard
   } = useDashboardSummary();
 
-  useEffect(() => {
-    if (!user?.qr_token) return;
-
-    const checkToken = async () => {
-      try {
-        const res = await fetch(`/api/users/${user.id}`);
-        const data = await res.json();
-        if (data.success && data.user && data.user.qr_token !== user.qr_token) {
-          refetchUser(true);
-        }
-      } catch (e) {
-        logger.captureException(e, { context: 'AnfitrionaDashboard:checkToken' });
-      }
-    };
-
-    const interval = setInterval(checkToken, 60000);
-    window.addEventListener('focus', checkToken);
-    return () => {
-      clearInterval(interval);
-      window.removeEventListener('focus', checkToken);
-    };
-  }, [user?.id, user?.qr_token, refetchUser]);
-
   const [codigoAsistencia, setCodigoAsistencia] = useState<string>('');
 
   useEffect(() => {
     if (!user?.qr_token) return;
+
     const fetchCodigo = async () => {
       try {
         const res = await fetch('/api/codigo/actual', {
@@ -67,13 +44,14 @@ export default function AnfitrionaDashboard() {
         if (payload.type === 'code_changed' && payload.data?.codigo) {
           setCodigoAsistencia(payload.data.codigo);
         }
+        if (payload.type === 'qr_token_updated' && payload.data?.userId === user.id) {
+          refetchUser(true);
+        }
       } catch {}
     };
 
-    return () => {
-      es.close();
-    };
-  }, [user?.qr_token, user?.role]);
+    return () => es.close();
+  }, [user?.qr_token, user?.role, user?.id, refetchUser]);
 
   const [marcandoEntrada, setMarcandoEntrada] = useState(false);
 

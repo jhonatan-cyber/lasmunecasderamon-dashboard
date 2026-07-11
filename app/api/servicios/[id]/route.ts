@@ -1,12 +1,12 @@
 import { NextResponse } from 'next/server';
 import { withAppApiWrapper, withAppAuth } from '@/lib/api/app-api-wrapper';
-import { ServiceRepository } from '@/lib/repositories/ServiceRepository';
+import { ServiceService } from '@/lib/services/ServiceService';
 import { sendNotificationToAll } from '@/lib/api/sseService';
 
 export const GET = withAppApiWrapper(
   async (request: Request, { params }: { params: Promise<{ id: string }> }) => {
     const id = (await params).id;
-    const data = await ServiceRepository.getById(id);
+    const data = await ServiceService.getById(id);
     if (!data)
       return NextResponse.json(
         { success: false, message: 'Servicio no encontrado' },
@@ -20,7 +20,7 @@ export const PUT = withAppAuth(
   async (request: Request, { params }: { params: Promise<{ id: string }>; user: any }) => {
     const id = (await params).id;
     const body = await request.json();
-    await ServiceRepository.updateService(id, body);
+    await ServiceService.updateService(id, body);
     sendNotificationToAll('service_changed', {
       action: 'update',
       id,
@@ -42,7 +42,7 @@ export const PATCH = withAppAuth(
       );
 
     if (onlyEstadoPayload) {
-      await ServiceRepository.updateStatus(id, body.estado, user.id.toString());
+      await ServiceService.updateStatus(id, body.estado, user.id.toString());
       sendNotificationToAll('service_changed', {
         action: 'status',
         id,
@@ -52,7 +52,7 @@ export const PATCH = withAppAuth(
       return NextResponse.json({ success: true, message: 'Estado actualizado' });
     }
 
-    await ServiceRepository.updateService(id, body);
+    await ServiceService.updateService(id, body);
     sendNotificationToAll('service_changed', {
       action: 'update',
       id,
@@ -62,14 +62,12 @@ export const PATCH = withAppAuth(
   }
 );
 
-export const DELETE = withAppAuth(
-  async () => {
-    return NextResponse.json(
-      {
-        success: false,
-        message: 'La eliminacion fisica de servicios esta deshabilitada. Use el flujo de anulacion.'
-      },
-      { status: 409 }
-    );
-  }
-);
+export const DELETE = withAppAuth(async () => {
+  return NextResponse.json(
+    {
+      success: false,
+      message: 'La eliminacion fisica de servicios esta deshabilitada. Use el flujo de anulacion.'
+    },
+    { status: 409 }
+  );
+});

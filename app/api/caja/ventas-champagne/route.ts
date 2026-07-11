@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
 import { withAppApiWrapper } from '@/lib/api/app-api-wrapper';
-import { VentasStatsRepository } from '@/lib/repositories/VentasStatsRepository';
+import { VentasStatsService } from '@/lib/services/VentasStatsService';
 
 export const GET = withAppApiWrapper(async (request: Request) => {
   const { searchParams } = new URL(request.url);
@@ -10,6 +10,6 @@ export const GET = withAppApiWrapper(async (request: Request) => {
     return NextResponse.json({ error: 'caja_id es requerido' }, { status: 400 });
   }
 
-  const data = await VentasStatsRepository.getVentasChampagne(caja_id);
+  const data = await VentasStatsService.getVentasChampagne(caja_id);
   return NextResponse.json({ success: true, ...data }, { status: 200 });
 });

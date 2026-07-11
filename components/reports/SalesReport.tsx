@@ -1,23 +1,15 @@
-/* eslint-disable */
 'use client';
 
-import { useState, useEffect, useMemo } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { CollapsibleCard } from '@/components/ui/collapsible-card';
 import { Button } from '@/components/ui/button';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Badge } from '@/components/ui/badge';
-import logger from '@/lib/utils/logger';
 
 import {
-  Calendar,
-  Download,
   TrendingUp,
   DollarSign,
   ShoppingCart,
   Users,
   CalendarDays,
-  RefreshCw,
+  Download,
 } from 'lucide-react';
 import { formatCurrencyNoDecimals } from '@/lib/utils/formatters';
 import {
@@ -33,30 +25,9 @@ import {
   CartesianGrid,
   Legend,
 } from 'recharts';
-import { formatShortDateEs } from '@/lib/utils/calendarUtils';
-
-interface SalesData {
-  totalVentas: number;
-  cantidadVentas: number;
-  promedioVenta: number;
-  totalPropinas: number;
-  ventasPorMetodo: {
-    efectivo: number;
-    tarjeta: number;
-    transferencia: number;
-  };
-  ventasPorDia: Array<{
-    fecha: string;
-    ventas: number;
-    cantidad: number;
-    propinas: number;
-  }>;
-}
-
-type SalesPeriod = 'today' | 'yesterday' | 'week' | 'month' | 'custom';
+import { useSalesReport, type SalesPeriod } from './hooks/useSalesReport';
 
 const PAYMENT_COLORS = ['#10B981', '#3B82F6', '#8B5CF6'];
-const PAYMENT_LABELS = ['Efectivo', 'Tarjeta', 'Transferencia'];
 
 const formatNumber = (amount: number) => {
   return amount.toString().replace(/\B(?=(\d{3})+(?!\d))/g, '.');
@@ -131,118 +102,22 @@ const BarTooltip = ({ active, payload }: BarTooltipProps) => {
   return null;
 };
 
-const renderPieLabel = ({ cx = 0, cy = 0, midAngle = 0, innerRadius = 0, outerRadius = 0, percent = 0 }: {
-  cx?: number;
-  cy?: number;
-  midAngle?: number;
-  innerRadius?: number;
-  outerRadius?: number;
-  percent?: number;
-}) => {
-  if (percent < 0.05) return null;
-  const RADIAN = Math.PI / 180;
-  const radius = innerRadius + (outerRadius - innerRadius) * 0.5;
-  const x = cx + radius * Math.cos(-midAngle * RADIAN);
-  const y = cy + radius * Math.sin(-midAngle * RADIAN);
-
-  return (
-    <text x={x} y={y} fill="white" textAnchor="middle" dominantBaseline="central" fontSize={13} fontWeight={700}>
-      {`${(percent * 100).toFixed(0)}%`}
-    </text>
-  );
-};
-
 export function SalesReport() {
-  const [period, setPeriod] = useState<SalesPeriod>('today');
-  const [startDate, setStartDate] = useState('');
-  const [endDate, setEndDate] = useState('');
-  const [salesData, setSalesData] = useState<SalesData | null>(null);
-  const [loading, setLoading] = useState(true);
-
-  useEffect(() => {
-    fetchSalesData();
-  }, [period, startDate, endDate]);
-
-  const fetchSalesData = async () => {
-    setLoading(true);
-    try {
-      const params = new URLSearchParams();
-      if (period === 'custom') {
-        params.append('period', 'custom');
-        params.append('startDate', startDate);
-        params.append('endDate', endDate);
-      } else {
-        params.append('period', period);
-      }
-
-      const response = await fetch(`/api/reports/sales?${params}`);
-      const data = await response.json();
-
-      if (data.success) {
-        setSalesData(data.data);
-      }
-    } catch (error) {
-      logger.captureException(error, { context: 'SalesReport:unknown' });
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const getPeriodLabel = (value: SalesPeriod) => {
-    switch (value) {
-      case 'today': return 'Hoy';
-      case 'yesterday': return 'Ayer';
-      case 'week': return 'Esta Semana';
-      case 'month': return 'Este Mes';
-      case 'custom': return 'Personalizado';
-      default: return 'Hoy';
-    }
-  };
-
-  const pieData = useMemo(() => {
-    if (!salesData?.ventasPorMetodo) return [];
-    return [
-      { name: 'Efectivo', value: salesData.ventasPorMetodo.efectivo },
-      { name: 'Tarjeta', value: salesData.ventasPorMetodo.tarjeta },
-      { name: 'Transferencia', value: salesData.ventasPorMetodo.transferencia },
-    ].filter(item => item.value > 0);
-  }, [salesData]);
-
-  const barData = useMemo(() => {
-    if (!salesData?.ventasPorDia) return [];
-    return salesData.ventasPorDia.map(dia => {
-      const fecha = new Date(dia.fecha);
-      return {
-        ...dia,
-        fechaCorta: formatShortDateEs(fecha),
-        diaNum: fecha.getDate().toString().padStart(2, '0'),
-        label: formatShortDateEs(fecha),
-      };
-    });
-  }, [salesData]);
-
-  const paymentItems = useMemo(() => {
-    if (!salesData?.ventasPorMetodo) return [];
-
-    return [
-      { label: 'Efectivo', value: salesData.ventasPorMetodo.efectivo, color: PAYMENT_COLORS[0] },
-      { label: 'Tarjeta', value: salesData.ventasPorMetodo.tarjeta, color: PAYMENT_COLORS[1] },
-      {
-        label: 'Transferencia',
-        value: salesData.ventasPorMetodo.transferencia,
-        color: PAYMENT_COLORS[2]
-      }
-    ].filter(item => item.value > 0);
-  }, [salesData]);
-
-  const paymentTotal = useMemo(
-    () => paymentItems.reduce((sum, item) => sum + item.value, 0),
-    [paymentItems]
-  );
-
-  const exportReport = () => {
-    logger.info('Exportando reporte...');
-  };
+  const {
+    period,
+    startDate,
+    endDate,
+    salesData,
+    loading,
+    pieData,
+    barData,
+    paymentItems,
+    paymentTotal,
+    setPeriod,
+    setStartDate,
+    setEndDate,
+    exportReport
+  } = useSalesReport();
 
   if (loading) {
     return (
@@ -257,7 +132,6 @@ export function SalesReport() {
 
   return (
     <div className="space-y-8 pb-10">
-      {}
       <div className="flex flex-col md:flex-row items-center justify-between gap-6">
         <div className="flex flex-wrap items-center gap-2 bg-gray-100/50 dark:bg-gray-800/50 p-1.5 rounded-2xl border border-gray-200/50 dark:border-gray-700/50 backdrop-blur-sm">
           {[
@@ -311,7 +185,6 @@ export function SalesReport() {
         </div>
       </div>
 
-      {}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
         {[
           { 
@@ -367,7 +240,6 @@ export function SalesReport() {
         ))}
       </div>
 
-      {}
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
         {paymentItems.map((item, index) => (
           <div key={index} className="bg-white dark:bg-gray-800/40 p-4 rounded-2xl border border-gray-100 dark:border-gray-700/50 shadow-sm flex items-center justify-between hover:shadow-md transition-all">
@@ -389,9 +261,7 @@ export function SalesReport() {
         ))}
       </div>
 
-      {}
       <div className="grid grid-cols-1 xl:grid-cols-3 gap-8">
-        {}
         <Card className="xl:col-span-1 border-0 shadow-2xl shadow-gray-200/50 dark:shadow-black/40 rounded-3xl overflow-hidden bg-white dark:bg-gray-800/50 backdrop-blur-md">
           <CardHeader className="border-b border-gray-50 dark:border-gray-700/50 pb-4">
             <CardTitle className="text-lg font-black flex items-center gap-2">
@@ -461,7 +331,6 @@ export function SalesReport() {
           </CardContent>
         </Card>
 
-        {}
         <Card className="xl:col-span-2 border-0 shadow-2xl shadow-gray-200/50 dark:shadow-black/40 rounded-3xl overflow-hidden bg-white dark:bg-gray-800/50 backdrop-blur-md">
           <CardHeader className="border-b border-gray-50 dark:border-gray-700/50 pb-4">
             <CardTitle className="text-lg font-black flex items-center gap-2">

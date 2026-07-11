@@ -1,7 +1,7 @@
 'use client';
 
 import { useCurrentUser } from '@/hooks/auth/useCurrentUser';
-import CajeroCalendar from '@/components/cajero/CajeroCalendar';
+import RoleCalendar from '@/components/shared/RoleCalendar';
 
 export function CajeroCalendarPageClient() {
   const { user, loading } = useCurrentUser();
@@ -28,5 +28,5 @@ export function CajeroCalendarPageClient() {
     );
   }
 
-  return <CajeroCalendar userId={user?.id} />;
+  return <RoleCalendar role='cajero' userId={user?.id} backLink='/' />;
 }

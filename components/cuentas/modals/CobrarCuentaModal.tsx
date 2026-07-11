@@ -20,6 +20,7 @@ import { useCuentaCobro, useCuentaDetail } from '@/hooks/cuentas';
 import { summarizeCuentaDetalles } from '@/lib/utils/cuentas';
 import { ProductCartTable } from '../tables/ProductCartTable';
 import { CreditCard, DollarSign, Loader2 } from 'lucide-react';
+import { useConfigValue } from '@/hooks/shared/useConfigValue';
 
 function formatFecha(fechaStr?: string) {
   if (!fechaStr) return '-';
@@ -68,6 +69,7 @@ export default function CobrarCuentaModal({
   onOrderStatusChange
 }: CobrarCuentaModalProps) {
   const cuentaId = cuenta ? String(cuenta.id_cuenta ?? cuenta.id ?? '') : null;
+  const propinaPct = Number(useConfigValue('facturacion', 'impuesto_propina', '10'));
 
   const {
     searchRoom,
@@ -275,7 +277,7 @@ export default function CobrarCuentaModal({
 
                   <div>
                     <Label className='block text-xs font-medium text-gray-500 mb-1'>
-                      Propina (10%)
+                      Propina ({propinaPct}%)
                     </Label>
                     <div className='flex items-center gap-3 py-2'>
                       <Checkbox
@@ -284,14 +286,16 @@ export default function CobrarCuentaModal({
                         onCheckedChange={checked => {
                           const activa = checked === true;
                           setPropinaActiva(activa);
-                          setPropina(activa ? Math.round((cuentaActual?.total || 0) * 0.1) : 0);
+                          setPropina(
+                            activa ? Math.round(((cuentaActual?.total || 0) * propinaPct) / 100) : 0
+                          );
                         }}
                       />
                       <label
                         htmlFor='propina-checkbox'
                         className='text-sm text-gray-700 cursor-pointer select-none'
                       >
-                        Agregar propina del 10%
+                        Agregar propina del {propinaPct}%
                         {propinaActiva && (
                           <span className='ml-2 font-semibold text-blue-600'>
                             ({formatCurrencyNoDecimals(currentPropina)})

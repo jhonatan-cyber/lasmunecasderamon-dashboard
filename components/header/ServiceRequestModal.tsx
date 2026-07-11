@@ -18,6 +18,7 @@ import { useAnfitrionas } from '@/hooks/personal';
 import { useTimer } from '@/contexts/TimerContext';
 import { useRefreshOnFocus } from '@/hooks/shared';
 import { useAvailableRooms } from '@/hooks/habitaciones';
+import { useIvaRate } from '@/components/providers/IvaRateProvider';
 
 interface ServiceRequestModalProps {
   open: boolean;
@@ -35,6 +36,7 @@ export function ServiceRequestModal({
   const { anfitrionas } = useAnfitrionas(false);
   const { rooms: availableRooms, refetchRooms } = useAvailableRooms();
   const { startTimer } = useTimer();
+  const ivaRate = useIvaRate();
 
   const [rejectReason, setRejectReason] = useState('');
   const [processing, setProcessing] = useState(false);
@@ -113,7 +115,7 @@ export function ServiceRequestModal({
 
     const nuevoSubTotal = precioServicio * numAnfitrionas;
     const precioHabitacionTotal = precioHabitacion * numAnfitrionas;
-    let nuevoIVA = Math.floor(nuevoSubTotal * 0.2);
+    let nuevoIVA = Math.floor(nuevoSubTotal * ivaRate);
     const nuevoTotal = nuevoSubTotal + precioHabitacionTotal + nuevoIVA;
     const totalRedondeado = Math.ceil(nuevoTotal / 5000) * 5000;
     const excedente = totalRedondeado - nuevoTotal;
@@ -305,4 +307,3 @@ export function ServiceRequestModal({
     </Dialog>
   );
 }
-

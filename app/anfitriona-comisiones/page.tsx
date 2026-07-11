@@ -4,7 +4,8 @@ import { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { useCurrentUser } from '@/hooks/auth/useCurrentUser';
-import { ArrowLeft, Search, ChevronUp, ChevronDown } from 'lucide-react';
+import { ArrowLeft, Search } from 'lucide-react';
+import { SortableTh } from '@/components/shared/SortableTh';
 import { useRouter } from 'next/navigation';
 import { Input } from '@/components/ui/input';
 import SelectElements from '@/components/shared/SelectElements';
@@ -234,97 +235,52 @@ export default function AnfitrionaComisionesPage() {
             <table className='w-full'>
               <thead className='bg-gray-50'>
                 <tr>
-                  <th className='px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider'>
-                    <button
-                      onClick={() => handleSort('id_comision')}
-                      className='flex items-center gap-1 hover:text-gray-700'
-                    >
-                      #
-                      {sortField === 'id_comision' ? (
-                        sortDirection === 'asc' ? (
-                          <ChevronUp className='h-4 w-4' />
-                        ) : (
-                          <ChevronDown className='h-4 w-4' />
-                        )
-                      ) : (
-                        <ChevronUp className='h-4 w-4 opacity-0' />
-                      )}
-                    </button>
-                  </th>
-                  <th className='px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider'>
-                    <button
-                      onClick={() => handleSort('codigo')}
-                      className='flex items-center gap-1 hover:text-gray-700'
-                    >
-                      CÓDIGO (Venta/Serv.)
-                      {sortField === 'codigo' ? (
-                        sortDirection === 'asc' ? (
-                          <ChevronUp className='h-4 w-4' />
-                        ) : (
-                          <ChevronDown className='h-4 w-4' />
-                        )
-                      ) : (
-                        <ChevronUp className='h-4 w-4 opacity-0' />
-                      )}
-                    </button>
-                  </th>
-                  <th className='px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider'>
-                    <button
-                      onClick={() => handleSort('comision')}
-                      className='flex items-center gap-1 hover:text-gray-700'
-                    >
-                      COMISIÓN
-                      {sortField === 'comision' ? (
-                        sortDirection === 'asc' ? (
-                          <ChevronUp className='h-4 w-4' />
-                        ) : (
-                          <ChevronDown className='h-4 w-4' />
-                        )
-                      ) : (
-                        <ChevronUp className='h-4 w-4 opacity-0' />
-                      )}
-                    </button>
-                  </th>
+                  <SortableTh
+                    field='id_comision'
+                    sortField={sortField}
+                    sortDirection={sortDirection}
+                    onSort={handleSort}
+                  >
+                    #
+                  </SortableTh>
+                  <SortableTh
+                    field='codigo'
+                    sortField={sortField}
+                    sortDirection={sortDirection}
+                    onSort={handleSort}
+                  >
+                    CÓDIGO (Venta/Serv.)
+                  </SortableTh>
+                  <SortableTh
+                    field='comision'
+                    sortField={sortField}
+                    sortDirection={sortDirection}
+                    onSort={handleSort}
+                  >
+                    COMISIÓN
+                  </SortableTh>
                   <th className='px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider'>
                     TIPO
                   </th>
-                  <th className='px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider'>
-                    <button
-                      onClick={() => handleSort('fecha_crea')}
-                      className='flex items-center gap-1 hover:text-gray-700'
-                    >
-                      FECHA
-                      {sortField === 'fecha_crea' ? (
-                        sortDirection === 'asc' ? (
-                          <ChevronUp className='h-4 w-4' />
-                        ) : (
-                          <ChevronDown className='h-4 w-4' />
-                        )
-                      ) : (
-                        <ChevronUp className='h-4 w-4 opacity-0' />
-                      )}
-                    </button>
-                  </th>
+                  <SortableTh
+                    field='fecha_crea'
+                    sortField={sortField}
+                    sortDirection={sortDirection}
+                    onSort={handleSort}
+                  >
+                    FECHA
+                  </SortableTh>
                   <th className='px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider'>
                     FECHA COBRO
                   </th>
-                  <th className='px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider'>
-                    <button
-                      onClick={() => handleSort('estado')}
-                      className='flex items-center gap-1 hover:text-gray-700'
-                    >
-                      ESTADO
-                      {sortField === 'estado' ? (
-                        sortDirection === 'asc' ? (
-                          <ChevronUp className='h-4 w-4' />
-                        ) : (
-                          <ChevronDown className='h-4 w-4' />
-                        )
-                      ) : (
-                        <ChevronUp className='h-4 w-4 opacity-0' />
-                      )}
-                    </button>
-                  </th>
+                  <SortableTh
+                    field='estado'
+                    sortField={sortField}
+                    sortDirection={sortDirection}
+                    onSort={handleSort}
+                  >
+                    ESTADO
+                  </SortableTh>
                 </tr>
               </thead>
               <tbody className='bg-white divide-y divide-gray-200'>

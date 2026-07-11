@@ -94,4 +94,32 @@ export class UserService {
     }
     return await UserRepository.updateStatus(id, action);
   }
+
+  static async getAll(params?: Record<string, unknown>) {
+    return await UserRepository.getAll(params);
+  }
+
+  static async getById(id: string | number) {
+    return await UserRepository.getById(id.toString());
+  }
+
+  static async delete(id: string | number) {
+    return await UserRepository.delete(id.toString());
+  }
+
+  static async update(id: string | number, body: Record<string, unknown>) {
+    return await UserRepository.update(id.toString(), body);
+  }
+
+  static async getAvailableAnfitrionas() {
+    return await UserRepository.getAvailableAnfitrionas();
+  }
+
+  static async updateServiceStatus(id: string | number, status: number) {
+    return await UserRepository.updateServiceStatus(id.toString(), status);
+  }
+
+  static async getStaff() {
+    return await UserRepository.getStaff();
+  }
 }

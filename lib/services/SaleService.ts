@@ -11,6 +11,7 @@ import { RoomManager } from '@/lib/services/RoomManager';
 import { sendNotificationToAll } from '@/lib/api/sseService';
 import { logger } from '@/lib/utils/logger';
 import { BusinessError } from '@/lib/errors/errors';
+import { NotFoundError } from '@/lib/errors/errors';
 import { z } from 'zod';
 import {
   parsePagosMixtos,
@@ -327,5 +328,29 @@ export class SaleService {
     sendNotificationToAll('timers_updated', { timestamp: now });
 
     return result;
+  }
+
+  static async approveAnulacion(ventaId: string, approvedBy: string, requestedAmount: number) {
+    return await SaleRepository.approveAnulacion(ventaId, approvedBy, requestedAmount);
+  }
+
+  static async getAll(params: Record<string, string | undefined>) {
+    return await SaleRepository.getAll(params as any);
+  }
+
+  static async getById(id: string | number) {
+    return await SaleRepository.getById(id.toString());
+  }
+
+  static async updateStatus(id: string, estado: number, userId?: string) {
+    return await SaleRepository.updateStatus(id, estado, userId);
+  }
+
+  static async processAnulacion(requestId: string, approvedBy: string, status: string) {
+    return await SaleRepository.processAnulacion(requestId, approvedBy, status);
+  }
+
+  static async requestAnulacion(id: string, motivo: string, userId: string, monto: number) {
+    return await SaleRepository.requestAnulacion(id, motivo, userId, monto);
   }
 }

@@ -1,4 +1,6 @@
-﻿import { useState, useMemo, useEffect, useCallback } from 'react';
+﻿'use client';
+
+import { useState, useMemo, useEffect, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -12,6 +14,7 @@ import { useClients } from '@/hooks/clientes/useClients';
 import { useRefreshOnFocus } from '@/hooks/shared';
 import { formatCurrencyCLP, formatNumberCL } from '@/lib/utils/formatters';
 import logger from '@/lib/utils/logger';
+import { useIvaRate } from '@/components/providers/IvaRateProvider';
 
 import {
   ORDER_FIELD_INPUT_WITH_ICON_CLASS,
@@ -47,6 +50,7 @@ export default function ServiceOrderForm({ clientes }: ServiceOrderFormProps) {
     useAnfitrionasDisponibles();
   const { rooms: habitaciones, refetchRooms } = useAvailableRooms();
   const { allClients: clientesDB = [], fetchClients } = useClients();
+  const ivaRate = useIvaRate();
 
   const habitacionesDisponibles = habitaciones?.filter(h => h.estado === 1 || h.status === 1) || [];
 
@@ -176,7 +180,7 @@ export default function ServiceOrderForm({ clientes }: ServiceOrderFormProps) {
     if (metodoPago === 'tarjeta') {
       let nuevoSubTotal = precioServicio * numAnfitrionas;
       let precioHabitacionTotal = precioHabitacion * numAnfitrionas;
-      let nuevoIVA = Math.floor(nuevoSubTotal * 0.2);
+      let nuevoIVA = Math.floor(nuevoSubTotal * ivaRate);
       let nuevoTotal = nuevoSubTotal + precioHabitacionTotal + nuevoIVA;
       const totalRedondeado = Math.ceil(nuevoTotal / 5000) * 5000;
       const excedente = totalRedondeado - nuevoTotal;
@@ -188,7 +192,7 @@ export default function ServiceOrderForm({ clientes }: ServiceOrderFormProps) {
 
   const handleCreateOrder = async () => {
     if (!tempForm.habitacion_id) {
-      showErrorToast('Selecciona una habitaciÃ³n');
+      showErrorToast('Selecciona una habitación');
       return;
     }
 
@@ -221,7 +225,7 @@ export default function ServiceOrderForm({ clientes }: ServiceOrderFormProps) {
 
       if (data.success) {
         showSuccessToast(
-          'Solicitud de servicio enviada exitosamente. Esperando aprobaciÃ³n de cajera.'
+          'Solicitud de servicio enviada exitosamente. Esperando aprobación de cajera.'
         );
         appEventBus.emit('updateServiceRequests');
         appEventBus.emit('refreshNotifications');
@@ -334,9 +338,9 @@ export default function ServiceOrderForm({ clientes }: ServiceOrderFormProps) {
                 tiempo: habitacion?.tiempo || habitacion?.time || 0
               });
             }}
-            label='HabitaciÃ³n'
-            placeholder='Seleccione una habitaciÃ³n'
-            searchPlaceholder='Buscar habitaciÃ³n...'
+            label='Habitación'
+            placeholder='Seleccione una habitación'
+            searchPlaceholder='Buscar habitación...'
             required
             showTime
             showPrice
@@ -398,7 +402,7 @@ export default function ServiceOrderForm({ clientes }: ServiceOrderFormProps) {
 
         {}
         <div>
-          <Label className={ORDER_FIELD_LABEL_CLASS}>MÃ©todo de pago*</Label>
+          <Label className={ORDER_FIELD_LABEL_CLASS}>Método de pago*</Label>
           <Select
             value={tempForm.metodo_pago}
             onValueChange={(value: string) => setTempForm({ ...tempForm, metodo_pago: value })}

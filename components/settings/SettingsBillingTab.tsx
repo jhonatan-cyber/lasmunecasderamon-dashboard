@@ -1,25 +1,67 @@
 'use client';
 
+import { useState, useEffect, useCallback } from 'react';
 import { Save, Settings as SettingsIcon } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import type { BillingConfig, SetBillingConfig } from './settings-types';
+import { toast } from 'sonner';
+import type { BillingConfig } from './settings-types';
+import logger from '@/lib/utils/logger';
 
-interface SettingsBillingTabProps {
-  configLoading: boolean;
-  billingConfig: BillingConfig;
-  setBillingConfig: SetBillingConfig;
-  isSavingConfig: boolean;
-  onSave: () => void;
-}
+export function SettingsBillingTab() {
+  const [config, setConfig] = useState<BillingConfig>({
+    impuesto_iva: '19',
+    impuesto_propina: '10',
+    moneda: 'CLP',
+    facturacion_activada: true,
+    resolucion_sii: ''
+  });
+  const [loading, setLoading] = useState(true);
+  const [saving, setSaving] = useState(false);
 
-export function SettingsBillingTab({
-  configLoading,
-  billingConfig,
-  setBillingConfig,
-  isSavingConfig,
-  onSave
-}: SettingsBillingTabProps) {
+  const fetchConfig = useCallback(async () => {
+    try {
+      setLoading(true);
+      const response = await fetch('/api/configurations');
+      const result = await response.json();
+      if (result.success && result.data?.facturacion) {
+        setConfig(prev => ({ ...prev, ...result.data.facturacion }));
+      }
+    } catch (error) {
+      logger.captureException(error, { context: 'SettingsBillingTab:fetch' });
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  useEffect(() => { fetchConfig(); }, [fetchConfig]);
+
+  const handleSave = async () => {
+    try {
+      setSaving(true);
+      const configs = Object.entries(config).map(([clave, valor]) => ({
+        clave,
+        valor: String(valor)
+      }));
+      const response = await fetch('/api/configurations', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ configs })
+      });
+      const result = await response.json();
+      if (result.success) {
+        toast.success('Configuración de facturación guardada');
+      } else {
+        throw new Error(result.error || 'Error al guardar');
+      }
+    } catch (error) {
+      logger.captureException(error, { context: 'SettingsBillingTab:save' });
+      toast.error('Error al guardar la configuración');
+    } finally {
+      setSaving(false);
+    }
+  };
+
   return (
     <Card>
       <CardHeader>
@@ -29,7 +71,7 @@ export function SettingsBillingTab({
         </CardTitle>
       </CardHeader>
       <CardContent>
-        {configLoading ? (
+        {loading ? (
           <div className='text-center py-8'>
             <div className='animate-spin rounded-full h-8 w-8 border-b-2 border-black mx-auto'></div>
             <p className='text-sm text-gray-600 mt-2'>Cargando configuración...</p>
@@ -41,9 +83,12 @@ export function SettingsBillingTab({
                 <label className='block text-sm font-medium mb-1'>% IVA</label>
                 <input
                   type='number'
-                  value={billingConfig.impuesto_iva}
+                  min='0'
+                  max='100'
+                  step='0.01'
+                  value={config.impuesto_iva}
                   onChange={e =>
-                    setBillingConfig(prev => ({ ...prev, impuesto_iva: e.target.value }))
+                    setConfig(prev => ({ ...prev, impuesto_iva: e.target.value }))
                   }
                   className='w-full px-3 py-2 border border-gray-300 rounded-full focus:ring-2 focus:ring-black focus:border-transparent'
                   placeholder='19'
@@ -53,9 +98,12 @@ export function SettingsBillingTab({
                 <label className='block text-sm font-medium mb-1'>% Propina por defecto</label>
                 <input
                   type='number'
-                  value={billingConfig.impuesto_propina}
+                  min='0'
+                  max='100'
+                  step='0.01'
+                  value={config.impuesto_propina}
                   onChange={e =>
-                    setBillingConfig(prev => ({ ...prev, impuesto_propina: e.target.value }))
+                    setConfig(prev => ({ ...prev, impuesto_propina: e.target.value }))
                   }
                   className='w-full px-3 py-2 border border-gray-300 rounded-full focus:ring-2 focus:ring-black focus:border-transparent'
                   placeholder='10'
@@ -64,15 +112,15 @@ export function SettingsBillingTab({
               <div>
                 <label className='block text-sm font-medium mb-1'>Moneda</label>
                 <Select
-                  value={billingConfig.moneda}
-                  onValueChange={(value: string) => setBillingConfig(prev => ({ ...prev, moneda: value }))}
+                  value={config.moneda}
+                  onValueChange={(value: string) => setConfig(prev => ({ ...prev, moneda: value }))}
                 >
                   <SelectTrigger>
                     <SelectValue placeholder='Seleccionar moneda' />
                   </SelectTrigger>
                   <SelectContent>
                     <SelectItem value='CLP'>CLP - Peso Chileno</SelectItem>
-                    <SelectItem value='USD'>USD - D?lar</SelectItem>
+                    <SelectItem value='USD'>USD - Dólar</SelectItem>
                     <SelectItem value='EUR'>EUR - Euro</SelectItem>
                   </SelectContent>
                 </Select>
@@ -83,9 +131,9 @@ export function SettingsBillingTab({
                 <label className='block text-sm font-medium mb-1'>Resolución SII</label>
                 <input
                   type='text'
-                  value={billingConfig.resolucion_sii}
+                  value={config.resolucion_sii}
                   onChange={e =>
-                    setBillingConfig(prev => ({ ...prev, resolucion_sii: e.target.value }))
+                    setConfig(prev => ({ ...prev, resolucion_sii: e.target.value }))
                   }
                   className='w-full px-3 py-2 border border-gray-300 rounded-full focus:ring-2 focus:ring-black focus:border-transparent'
                   placeholder='Resolución SII'
@@ -95,9 +143,9 @@ export function SettingsBillingTab({
                 <input
                   type='checkbox'
                   id='facturacion_activada'
-                  checked={billingConfig.facturacion_activada}
+                  checked={config.facturacion_activada}
                   onChange={e =>
-                    setBillingConfig(prev => ({
+                    setConfig(prev => ({
                       ...prev,
                       facturacion_activada: e.target.checked
                     }))
@@ -114,12 +162,12 @@ export function SettingsBillingTab({
 
         <div className='mt-6 flex justify-end'>
           <button
-            onClick={onSave}
-            disabled={isSavingConfig}
+            onClick={handleSave}
+            disabled={saving}
             className='flex items-center gap-2 px-6 py-2 bg-black text-white rounded-full hover:bg-gray-800 disabled:opacity-50'
           >
             <Save className='h-4 w-4' />
-            {isSavingConfig ? 'Guardando...' : 'Guardar Configuración'}
+            {saving ? 'Guardando...' : 'Guardar Configuración'}
           </button>
         </div>
       </CardContent>

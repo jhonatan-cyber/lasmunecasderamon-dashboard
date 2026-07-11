@@ -1,14 +1,11 @@
  
-import { useState } from 'react';
 import { Product } from '@/types/product';
 import { toast } from 'sonner';
 import { useGenericFetch } from '../shared/useGenericFetch';
+import { useGenericFilters } from '../shared/useGenericFilters';
 import { useGenericMutations } from '../shared/useGenericMutations';
 
 export default function useProducts(categoryId?: string) {
-  const [searchTerm, setSearchTerm] = useState('');
-  const [filterStatus, setFilterStatus] = useState<number | null>(null);
-
   const endpoint = categoryId ? `/api/products?category_id=${categoryId}` : '/api/products';
 
   const {
@@ -31,6 +28,13 @@ export default function useProducts(categoryId?: string) {
     showToasts: true,
     entityName: 'Producto',
     invalidateKey: endpoint
+  });
+
+  const filters = useGenericFilters(products, {
+    searchFields: ['name', 'code'] as any,
+    initialPageSize: 20,
+    initialSortBy: 'display_order',
+    initialSortOrder: 'asc'
   });
 
   const activateProduct = async (id: string | number) => {
@@ -105,14 +109,20 @@ export default function useProducts(categoryId?: string) {
   };
 
   return {
-    products,
+    products: filters.paginatedData,
+    allProducts: products,
     isLoading,
     isMutating,
     error,
-    searchTerm,
-    setSearchTerm,
-    filterStatus,
-    setFilterStatus,
+    searchTerm: filters.searchTerm,
+    setSearchTerm: filters.setSearchTerm,
+    filterStatus: filters.filterStatus,
+    setFilterStatus: filters.setFilterStatus,
+    sortBy: filters.sortBy,
+    setSortBy: filters.setSortBy,
+    page: filters.page,
+    setPage: filters.setPage,
+    totalPages: filters.totalPages,
     fetchProducts: async () => {
       await refetch();
     },

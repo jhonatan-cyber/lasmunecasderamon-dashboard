@@ -1,13 +1,12 @@
 import { NextResponse } from 'next/server';
 import { withAppApiWrapper, withAppAuth } from '@/lib/api/app-api-wrapper';
-import { CuentaRepository } from '@/lib/repositories/CuentaRepository';
 import { AccountService } from '@/lib/services/AccountService';
 
 export const GET = withAppApiWrapper(async (request: Request) => {
   const { searchParams } = new URL(request.url);
   const tipo = searchParams.get('tipo') || undefined;
   const estado = searchParams.get('estado') || undefined;
-  const data = await CuentaRepository.getAll(tipo, estado);
+  const data = await AccountService.getAll(tipo, estado);
   return NextResponse.json(data);
 });
 

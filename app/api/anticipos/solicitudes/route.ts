@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
 import { withAppAuth } from '@/lib/api/app-api-wrapper';
-import { AnticipoRepository } from '@/lib/repositories/AnticipoRepository';
+import { AnticipoService } from '@/lib/services/AnticipoService';
 import { query } from '@/lib/database/db';
 import { ValidationError } from '@/lib/errors/errors';
 
@@ -23,7 +23,7 @@ export const POST = withAppAuth(async (request: Request, { user }: { params: any
   if (!monto || !motivo)
     throw new ValidationError('monto y motivo son requeridos', { monto, motivo });
 
-  const result = await AnticipoRepository.request(user.id.toString(), Number(monto), motivo);
+  const result = await AnticipoService.request(user.id.toString(), Number(monto), motivo);
   return NextResponse.json(
     { success: true, message: 'Solicitud enviada', data: result },
     { status: 201 }

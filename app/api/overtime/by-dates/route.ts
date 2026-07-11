@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
 import { withAppAuth } from '@/lib/api/app-api-wrapper';
-import { OvertimeRepository } from '@/lib/repositories/OvertimeRepository';
+import { OvertimeService } from '@/lib/services/OvertimeService';
 import { ValidationError } from '@/lib/errors/errors';
 
 export const GET = withAppAuth(async (request: Request, { user }: { params: any; user: any }) => {
@@ -11,9 +11,9 @@ export const GET = withAppAuth(async (request: Request, { user }: { params: any;
 
   let result;
   if (dates) {
-    result = await OvertimeRepository.getByDates(user.id.toString(), dates.split(','));
+    result = await OvertimeService.getByDates(user.id.toString(), dates.split(','));
   } else if (startDate && endDate) {
-    result = await OvertimeRepository.getByUser(user.id.toString(), undefined, startDate, endDate);
+    result = await OvertimeService.getByUser(user.id.toString(), undefined, startDate, endDate);
   } else {
     throw new ValidationError('Faltan parámetros de fecha', { startDate, endDate, dates });
   }

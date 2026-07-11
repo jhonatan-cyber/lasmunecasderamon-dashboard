@@ -77,7 +77,7 @@ export default function AttendanceFilters({
                   { value: 'all', label: 'Todos los roles' },
                   { value: 'administrador', label: 'Administrador' },
                   { value: 'cajero', label: 'Cajero' },
-                  { value: 'garzon', label: 'GarzÃ³n' },
+                  { value: 'garzon', label: 'Garzón' },
                   { value: 'anfitriona', label: 'Anfitriona' }
                 ]}
               />

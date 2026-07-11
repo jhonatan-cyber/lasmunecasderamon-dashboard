@@ -1,4 +1,5 @@
 import { useMemo } from 'react';
+import { useIvaRate } from '@/components/providers/IvaRateProvider';
 
 interface ServicePricingParams {
   precioServicio: number;
@@ -12,8 +13,8 @@ const getTiempoMultiplier = (tiempo: number) => (tiempo === 60 ? 2 : 1);
 
 const roundToNearest5000 = (value: number) => Math.ceil(value / 5000) * 5000;
 
-const calculateTarjetaIva = (subtotal: number, precioHabitacionTotal: number) => {
-  const ivaBase = Math.floor(subtotal * 0.2);
+const calculateTarjetaIva = (subtotal: number, precioHabitacionTotal: number, ivaRate: number) => {
+  const ivaBase = Math.floor(subtotal * ivaRate);
   const totalBase = subtotal + precioHabitacionTotal + ivaBase;
   const totalRedondeado = roundToNearest5000(totalBase);
   return ivaBase + (totalRedondeado - totalBase);
@@ -26,6 +27,8 @@ export function useServicePricing({
   tiempo,
   numAnfitrionas
 }: ServicePricingParams) {
+  const ivaRate = useIvaRate();
+
   const multiplicadorTiempo = useMemo(() => getTiempoMultiplier(tiempo), [tiempo]);
 
   const precioServicioBase = precioServicio * numAnfitrionas;
@@ -44,9 +47,9 @@ export function useServicePricing({
   const iva = useMemo(
     () =>
       metodoPago === 'tarjeta'
-        ? calculateTarjetaIva(precioServicioTotal, precioHabitacionTotal)
+        ? calculateTarjetaIva(precioServicioTotal, precioHabitacionTotal, ivaRate)
         : 0,
-    [metodoPago, precioServicioTotal, precioHabitacionTotal]
+    [metodoPago, precioServicioTotal, precioHabitacionTotal, ivaRate]
   );
 
   const subTotal = precioServicioTotal;
@@ -65,4 +68,3 @@ export function useServicePricing({
     multiplicadorTiempo
   };
 }
-

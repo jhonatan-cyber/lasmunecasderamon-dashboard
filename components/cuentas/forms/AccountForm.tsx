@@ -90,11 +90,11 @@ export default function AccountFormData({
           disabled={loading || !hasCommissionProducts}
           disabledReason={
             !hasCommissionProducts
-              ? 'Agregue productos con comisiÃ³n para seleccionar anfitrionas.'
+              ? 'Agregue productos con comisión para seleccionar anfitrionas.'
               : undefined
           }
           placeholder={
-            hasCommissionProducts ? 'Seleccione anfitriona(s)' : 'Agregue productos con comisiÃ³n'
+            hasCommissionProducts ? 'Seleccione anfitriona(s)' : 'Agregue productos con comisión'
           }
         />
 
@@ -108,14 +108,14 @@ export default function AccountFormData({
           disabledReason={
             !selectedCliente || selectedCliente === 'none'
               ? !hasCommissionProducts
-                ? 'Seleccione un cliente y agregue productos con comisiÃ³n para seleccionar habitaciones.'
+                ? 'Seleccione un cliente y agregue productos con comisión para seleccionar habitaciones.'
                 : 'Seleccione un cliente primero.'
               : !hasCommissionProducts
-                ? 'Agregue productos con comisiÃ³n para seleccionar habitaciones.'
+                ? 'Agregue productos con comisión para seleccionar habitaciones.'
                 : undefined
           }
-          placeholder='Seleccione una habitaciÃ³n'
-          label='HabitaciÃ³n'
+          placeholder='Seleccione una habitación'
+          label='Habitación'
           showPrice={true}
         />
       </div>
@@ -126,7 +126,7 @@ export default function AccountFormData({
           <TimeSelector
             value={selectedTime}
             onChange={onTimeChange}
-            label='Tiempo habitaciÃ³n'
+            label='Tiempo habitación'
             step={5}
             min={5}
           />

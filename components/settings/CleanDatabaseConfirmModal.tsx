@@ -65,6 +65,7 @@ export function CleanDatabaseConfirmModal({
                 <li>Habitaciones</li>
                 <li>Productos</li>
                 <li>Categorias</li>
+                <li>Codigos</li>
                 <li>Relacion roles-permisos</li>
               </ul>
             </div>

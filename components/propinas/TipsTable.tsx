@@ -1,10 +1,18 @@
 'use client';
 
-import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell } from '@/components/ui/table';
+import {
+  Table,
+  TableHeader,
+  TableBody,
+  TableRow,
+  TableHead,
+  TableCell
+} from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Button } from '@/components/ui/button';
 import { Eye, Coins } from 'lucide-react';
+import Image from 'next/image';
 import { formatCurrencyNoDecimals, formatFechaLarga } from '@/lib/utils/formatters';
 import { PropinaResumen } from '@/types/propina';
 import { useUserPermissions } from '@/hooks/auth/useUserPermissions';
@@ -60,9 +68,7 @@ export default function TipsTable({ loading, rows, rowsPerPage, onVerDetalle }: 
               <TableHead className='py-4 px-5 text-xs uppercase text-gray-500'>
                 Última propina
               </TableHead>
-              <TableHead className='py-4 px-5 text-xs uppercase text-gray-500'>
-                Estado
-              </TableHead>
+              <TableHead className='py-4 px-5 text-xs uppercase text-gray-500'>Estado</TableHead>
               {canViewDetail && (
                 <TableHead className='py-4 px-5 text-xs uppercase text-gray-500'>
                   Detalles
@@ -108,9 +114,11 @@ export default function TipsTable({ loading, rows, rowsPerPage, onVerDetalle }: 
                       <div className='flex items-center gap-3'>
                         <div className='h-10 w-10 rounded-full bg-gray-200 dark:bg-slate-700 overflow-hidden flex items-center justify-center'>
                           {propina.usuario_foto && propina.usuario_foto !== '' ? (
-                            <img
+                            <Image
                               src={`/img/users/${propina.usuario_foto}`}
                               alt={propina.nombre_completo || 'Usuario'}
+                              width={40}
+                              height={40}
                               className='w-full h-full object-cover'
                             />
                           ) : (

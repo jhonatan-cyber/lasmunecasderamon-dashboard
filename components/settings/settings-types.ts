@@ -1,4 +1,3 @@
-import type React from 'react';
 import type { Permission } from '@/components/permissions/PermissionTable';
 
 export interface CompanyConfig {
@@ -21,11 +20,6 @@ export interface BillingConfig {
   resolucion_sii: string;
 }
 
-export interface SystemConfig {
-  ambiente: string;
-  timezone: string;
-}
-
 export interface BackupItem {
   id_backup: string;
   nombre: string;
@@ -40,9 +34,5 @@ export interface PermissionFormData {
   action: string;
   description: string;
 }
-
-export type SetCompanyConfig = React.Dispatch<React.SetStateAction<CompanyConfig>>;
-export type SetBillingConfig = React.Dispatch<React.SetStateAction<BillingConfig>>;
-export type SetSystemConfig = React.Dispatch<React.SetStateAction<SystemConfig>>;
 
 export type { Permission };

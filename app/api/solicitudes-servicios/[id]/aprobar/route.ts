@@ -1,13 +1,13 @@
 import { NextResponse } from 'next/server';
 import { withAppAuth } from '@/lib/api/app-api-wrapper';
-import { ServiceRequestRepository } from '@/lib/repositories/ServiceRequestRepository';
+import { ServiceRequestService } from '@/lib/services/ServiceRequestService';
 import { sendNotificationToAll } from '@/lib/api/sseService';
 
 export const PATCH = withAppAuth(
   async (request: Request, { params, user }: { params: Promise<{ id: string }>; user: any }) => {
     const { id } = await params;
     const body = await request.json().catch(() => ({}));
-    const result = await ServiceRequestRepository.approve(
+    const result = await ServiceRequestService.approve(
       id,
       String(user.id),
       body?.habitacion_id ? String(body.habitacion_id) : undefined

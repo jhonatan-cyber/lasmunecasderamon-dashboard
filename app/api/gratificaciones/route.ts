@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
 import { withAppAuth } from '@/lib/api/app-api-wrapper';
-import { GratificacionRepository } from '@/lib/repositories/GratificacionRepository';
+import { GratificacionService } from '@/lib/services/GratificacionService';
 import { ValidationError } from '@/lib/errors/errors';
 
 export const GET = withAppAuth(async (request: Request, { user }: { params: any; user: any }) => {
@@ -10,7 +10,7 @@ export const GET = withAppAuth(async (request: Request, { user }: { params: any;
   const isPrivileged = role === 'administrador' || role === 'cajero';
   const targetUserId = isPrivileged ? userId || undefined : user.id;
 
-  const data = await GratificacionRepository.getAll(targetUserId);
+  const data = await GratificacionService.getAll(targetUserId);
   return NextResponse.json(data);
 });
 
@@ -23,7 +23,7 @@ export const POST = withAppAuth(async (request: Request, { user }: { params: any
   const role = user.role?.toLowerCase() || '';
 
   if (role === 'cajero') {
-    const created = await GratificacionRepository.request(
+    const created = await GratificacionService.request(
       usuario_id,
       Number(monto),
       descripcion,
@@ -41,7 +41,7 @@ export const POST = withAppAuth(async (request: Request, { user }: { params: any
     );
   }
 
-  const created = await GratificacionRepository.create({
+  const created = await GratificacionService.create({
     usuario_id,
     monto: Number(monto),
     descripcion

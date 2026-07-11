@@ -1,11 +1,11 @@
 import { NextResponse } from 'next/server';
 import { withAppApiWrapper } from '@/lib/api/app-api-wrapper';
-import { ServiceRequestRepository } from '@/lib/repositories/ServiceRequestRepository';
+import { ServiceRequestService } from '@/lib/services/ServiceRequestService';
 import { query } from '@/lib/database/db';
 import { logger } from '@/lib/utils/logger';
 
 export const GET = withAppApiWrapper(async () => {
-  const serviciosCount = await ServiceRequestRepository.getPendingCount();
+  const serviciosCount = await ServiceRequestService.getPendingCount();
 
   const pedidosResult = await query<any[]>(
     'SELECT COUNT(*) as count FROM pedidos WHERE estado IN (1, 2)'
