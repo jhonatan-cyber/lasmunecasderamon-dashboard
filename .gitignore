@@ -34,7 +34,7 @@ logs/
 *.log
 
 # Audit reports
-reports/
+/reports/
 playwright-report/
 test-results/
 .cloudflared/

@@ -10,10 +10,7 @@ import logger from '@/lib/utils/logger';
 
 // ── Types ──────────────────────────────────────────────────────────────
 
-type RouteHandler = (
-  request: Request,
-  context: { params: any }
-) => Promise<Response>;
+type RouteHandler = (request: Request, context: { params: any }) => Promise<Response>;
 
 type AuthenticatedHandler = (
   request: Request,
@@ -68,8 +65,7 @@ export function withRoute(
   maybeHandler?: AuthenticatedHandler
 ): (request: Request, context: { params: any }) => Promise<Response> {
   // Normalise overloads
-  const config: RouteConfig =
-    typeof configOrHandler === 'function' ? {} : configOrHandler;
+  const config: RouteConfig = typeof configOrHandler === 'function' ? {} : configOrHandler;
 
   const handler = (
     typeof configOrHandler === 'function' ? configOrHandler : maybeHandler!
@@ -142,7 +138,7 @@ export function withRoute(
       if (error instanceof ZodError) {
         return ApiResponse.validationError(
           'Error de validación de datos',
-          error.issues.map((e) => ({
+          error.issues.map(e => ({
             path: e.path.join('.'),
             message: e.message
           }))

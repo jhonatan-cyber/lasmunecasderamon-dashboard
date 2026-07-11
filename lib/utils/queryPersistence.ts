@@ -33,14 +33,14 @@ export function setupQueryPersistence(queryClient: QueryClient): void {
   if (typeof window === 'undefined') return;
 
   // Prune expired entries on startup
-  indexedDBCache.prune().then((count) => {
+  indexedDBCache.prune().then(count => {
     if (count > 0) {
       logger.debug('[QueryPersistence] Pruned expired entries', { count });
     }
   });
 
   // Subscribe to all query cache events
-  const unsubscribe = queryClient.getQueryCache().subscribe((event) => {
+  const unsubscribe = queryClient.getQueryCache().subscribe(event => {
     if (event.type !== 'updated' && event.type !== 'added') return;
     if (!event.query) return;
 
@@ -60,14 +60,17 @@ export function setupQueryPersistence(queryClient: QueryClient): void {
 
     // On fetch error with no data: restore from cache
     if (state.status === 'error' && !state.data) {
-      indexedDBCache.get(cacheKey).then((cached) => {
-        if (cached?.data) {
-          logger.debug('[QueryPersistence] Restored from cache', {
-            queryKey: query.queryKey,
-          });
-          queryClient.setQueryData(query.queryKey, cached.data);
-        }
-      }).catch(() => {});
+      indexedDBCache
+        .get(cacheKey)
+        .then(cached => {
+          if (cached?.data) {
+            logger.debug('[QueryPersistence] Restored from cache', {
+              queryKey: query.queryKey
+            });
+            queryClient.setQueryData(query.queryKey, cached.data);
+          }
+        })
+        .catch(() => {});
       return;
     }
   });
@@ -75,9 +78,11 @@ export function setupQueryPersistence(queryClient: QueryClient): void {
   // When coming back online, refetch stale queries
   const handleOnline = () => {
     logger.debug('[QueryPersistence] Online, refetching stale queries');
-    queryClient.refetchQueries({
-      type: 'active' as any,
-    }).catch(() => {});
+    queryClient
+      .refetchQueries({
+        type: 'active' as any
+      })
+      .catch(() => {});
   };
 
   window.addEventListener('online', handleOnline);
@@ -94,7 +99,7 @@ export function setupQueryPersistence(queryClient: QueryClient): void {
  * Used for manually checking cache outside React Query lifecycle.
  */
 export async function restoreFromCache<T = unknown>(
-  queryKey: readonly unknown[],
+  queryKey: readonly unknown[]
 ): Promise<T | null> {
   const cacheKey = queryKeyToCacheKey(queryKey);
   const cached = await indexedDBCache.get<T>(cacheKey);
@@ -104,10 +109,7 @@ export async function restoreFromCache<T = unknown>(
 /**
  * Manually persist query data to IndexedDB.
  */
-export async function persistQueryData<T>(
-  queryKey: readonly unknown[],
-  data: T,
-): Promise<void> {
+export async function persistQueryData<T>(queryKey: readonly unknown[], data: T): Promise<void> {
   const cacheKey = queryKeyToCacheKey(queryKey);
   await indexedDBCache.set(cacheKey, data);
 }

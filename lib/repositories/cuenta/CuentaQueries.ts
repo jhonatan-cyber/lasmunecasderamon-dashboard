@@ -354,9 +354,7 @@ export class CuentaQueries {
     );
   }
 
-  static async getById(
-    id: string
-  ): Promise<
+  static async getById(id: string): Promise<
     | (ReturnType<typeof this.normalizeCuentaRow> & {
         solicitudes_anulacion: CuentaAnulacionRow[];
         resumen_financiero: ReturnType<typeof buildFinancialSummary>;

@@ -113,7 +113,9 @@ export function DashboardSkeleton() {
   return (
     <div className='space-y-6'>
       <div className='grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4'>
-        {[...Array(4)].map((_, i) => <StatsCardSkeleton key={i} />)}
+        {[...Array(4)].map((_, i) => (
+          <StatsCardSkeleton key={i} />
+        ))}
       </div>
       <div className='grid grid-cols-1 lg:grid-cols-2 gap-6'>
         <ChartSkeleton />
@@ -138,7 +140,9 @@ export function ReportSkeleton() {
         <SkeletonBlock className='h-10 w-32' />
       </div>
       <div className='grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4'>
-        {[...Array(4)].map((_, i) => <StatsCardSkeleton key={i} />)}
+        {[...Array(4)].map((_, i) => (
+          <StatsCardSkeleton key={i} />
+        ))}
       </div>
       <ChartSkeleton />
       <div className='border rounded-lg p-6'>
@@ -297,7 +301,9 @@ export function RoleSkeleton({
         </div>
         <div className='border rounded-lg p-4'>
           <div className='grid grid-cols-7 gap-2 mb-4'>
-            {[...Array(7)].map((_, i) => <SkeletonBlock key={i} className='h-6 w-full rounded-md' />)}
+            {[...Array(7)].map((_, i) => (
+              <SkeletonBlock key={i} className='h-6 w-full rounded-md' />
+            ))}
           </div>
           {[...Array(5)].map((_, row) => (
             <div key={row} className='grid grid-cols-7 gap-2 mb-2'>
@@ -326,7 +332,10 @@ export function RoleSkeleton({
         </div>
         <div className='grid gap-6 md:grid-cols-2 lg:grid-cols-3'>
           {[...Array(5)].map((_, i) => (
-            <div key={i} className='border-dotted border-2 border-gray-200 rounded-lg p-6 space-y-3'>
+            <div
+              key={i}
+              className='border-dotted border-2 border-gray-200 rounded-lg p-6 space-y-3'
+            >
               <div className='flex items-center justify-between'>
                 <SkeletonBlock className='h-8 w-8 rounded-md' />
                 <SkeletonBlock className='h-8 w-12' />
@@ -427,7 +436,9 @@ export const SalesSkeleton = () => (
     </div>
     <SkeletonBlock className='h-16 w-full rounded-xl' />
     <div className='grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4'>
-      {[...Array(4)].map((_, i) => <StatsCardSkeleton key={i} />)}
+      {[...Array(4)].map((_, i) => (
+        <StatsCardSkeleton key={i} />
+      ))}
     </div>
     <div className='flex justify-center mb-6'>
       <SkeletonBlock className='h-12 w-64 rounded-full' />

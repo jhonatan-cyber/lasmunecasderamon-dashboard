@@ -167,7 +167,9 @@ const database = {
   query,
   withTransaction,
   testConnection,
-  get pool() { return getPool(); },
+  get pool() {
+    return getPool();
+  },
   generateUUID
 };
 

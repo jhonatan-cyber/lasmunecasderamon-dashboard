@@ -1,4 +1,3 @@
- 
 import { Product } from '@/types/product';
 import { toast } from 'sonner';
 import { useGenericFetch } from '../shared/useGenericFetch';
@@ -23,8 +22,15 @@ export default function useProducts(categoryId?: string) {
     }
   });
 
-  const { create, update, remove, isLoading: isMutating } = useGenericMutations<Product>('/api/products', {
-    onSuccess: () => { refetch(); },
+  const {
+    create,
+    update,
+    remove,
+    isLoading: isMutating
+  } = useGenericMutations<Product>('/api/products', {
+    onSuccess: () => {
+      refetch();
+    },
     showToasts: true,
     entityName: 'Producto',
     invalidateKey: endpoint
@@ -134,4 +140,3 @@ export default function useProducts(categoryId?: string) {
     reorderProducts
   };
 }
-
