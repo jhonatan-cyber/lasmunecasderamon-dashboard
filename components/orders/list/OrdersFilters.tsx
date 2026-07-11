@@ -28,7 +28,7 @@ const sortOptions = [
   { value: 'total', label: 'Total' },
   { value: 'subtotal', label: 'Subtotal' },
   { value: 'cliente', label: 'Cliente' },
-  { value: 'codigo', label: 'CÃ³digo' }
+  { value: 'codigo', label: 'Código' }
 ];
 
 const rowsPerPageOptions = [
@@ -70,8 +70,8 @@ export function AdminOrdersFilters({
               onChange={setCurrentSearchTerm}
               placeholder={
                 activeTab === 'productos'
-                  ? 'Buscar cliente, cÃ³digo, garzÃ³n...'
-                  : 'Buscar cliente, habitaciÃ³n...'
+                  ? 'Buscar cliente, código, garzón...'
+                  : 'Buscar cliente, habitación...'
               }
               className='w-full rounded-2xl bg-gray-50/50 dark:bg-slate-900/50 border-gray-200 dark:border-gray-800 h-10'
             />

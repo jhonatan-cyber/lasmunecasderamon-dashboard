@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useMemo } from 'react';
+import { useEffect } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -10,10 +10,9 @@ import {
   formatSoloHora
 } from '@/lib/utils/formatters';
 import { formatLongDateEs } from '@/lib/utils/calendarUtils';
-import { useCuentaDetail } from '@/hooks/cuentas';
-import { summarizeCuentaDetalles } from '@/lib/utils/cuentas';
 import { ProductCartTable } from '../tables/ProductCartTable';
-import type { CuentaAnulacionItem, CuentaRoomHistoryItem } from '@/types/cuenta';
+import type { CuentaRoomHistoryItem } from '@/types/cuenta';
+import { useCuentaDetailModal } from '@/hooks/cuentas/useCuentaDetailModal';
 
 interface CuentaDetailModalProps {
   open: boolean;
@@ -46,6 +45,7 @@ const getClosedReasonLabel = (reason?: CuentaRoomHistoryItem['closedReason']) =>
       return null;
   }
 };
+
 const getAnulacionBadgeClass = (estado?: string) => {
   switch (String(estado || '').toLowerCase()) {
     case 'aprobado':
@@ -62,73 +62,21 @@ export default function CuentaDetailModal({
   onOpenChange,
   cuentaId
 }: CuentaDetailModalProps) {
-  const { cuenta, loading, hasFetched, handleClose, getEstadoBadge } = useCuentaDetail(
-    cuentaId ? String(cuentaId) : null,
-    open
-  );
-
-  const detalleResumen = useMemo(
-    () => summarizeCuentaDetalles(cuenta?.detalles ?? []),
-    [cuenta?.detalles]
-  );
-  const estadoBadge = cuenta ? getEstadoBadge(cuenta.estado) : null;
-  const showLoading = loading || (open && !hasFetched);
-  const resumenFinanciero = cuenta?.resumen_financiero;
-  const historialHabitaciones = (cuenta?.habitaciones_historial_data ??
-    []) as CuentaRoomHistoryItem[];
-  const solicitudesAnulacion = (cuenta?.solicitudes_anulacion ?? []) as CuentaAnulacionItem[];
-
-  const productosTabla = useMemo(
-    () =>
-      detalleResumen.groupedDetalles.map((detalle, index) => {
-        const hostessIds = detalle.hostess_id
-          ? String(detalle.hostess_id)
-              .split(',')
-              .map((id: string) => id.trim())
-          : [];
-        return {
-          id_producto: detalle.id_producto ?? detalle.producto_id ?? detalle.agrupacionKey ?? index,
-          nombre:
-            detalle.producto ||
-            detalle.nombre ||
-            `Producto ID: ${detalle.id_producto ?? detalle.producto_id ?? '-'}`,
-          precio: detalle.precio || 0,
-          cantidad: detalle.cantidad || 0,
-          sub_total: detalle.sub_total || 0,
-          categoria_nombre: detalle.categoria || detalle.categoria_nombre || '',
-          comision: detalle.comision || 0,
-          selectedHostesses: hostessIds
-        };
-      }),
-    [detalleResumen.groupedDetalles]
-  );
-
-  const usuariosCuenta = cuenta?.usuarios ?? [];
-  const comisionPorAnfitriona =
-    usuariosCuenta.length > 0 && detalleResumen.totalComision > 0
-      ? usuariosCuenta.map((usuario: any) => {
-          const usuarioId = String(usuario.usuario_id || usuario.id_usuario || usuario.id || '');
-          const comisionTotal = detalleResumen.groupedDetalles.reduce((sum, item) => {
-            const hostessIds = item.hostess_id
-              ? String(item.hostess_id)
-                  .split(',')
-                  .map((id: string) => id.trim())
-                  .filter(Boolean)
-              : [];
-            if (hostessIds.length > 0 && hostessIds.includes(usuarioId)) {
-              const comisionPorAnfitriona = (item.comision || 0) / hostessIds.length;
-              return sum + comisionPorAnfitriona;
-            }
-            return sum;
-          }, 0);
-
-          return {
-            id: usuarioId,
-            nombre: usuario.usuario_nombre || usuario.nick || usuario.nombre || 'Anfitriona',
-            comision: comisionTotal
-          };
-        })
-      : [];
+  const {
+    cuenta,
+    loading,
+    hasFetched,
+    handleClose,
+    getEstadoBadge,
+    detalleResumen,
+    estadoBadge,
+    showLoading,
+    resumenFinanciero,
+    historialHabitaciones,
+    solicitudesAnulacion,
+    productosTabla,
+    comisionPorAnfitriona
+  } = useCuentaDetailModal(cuentaId, open);
 
   useEffect(() => {
     if (open && !cuentaId) {
@@ -422,7 +370,6 @@ export default function CuentaDetailModal({
                     emptyMessage='No hay productos registrados en esta cuenta'
                   />
 
-                  {}
                   {comisionPorAnfitriona.length > 0 && (
                     <div className='bg-slate-50 dark:bg-slate-800 rounded-lg p-4'>
                       <h4 className='text-sm font-semibold text-gray-700 dark:text-gray-200 mb-3'>

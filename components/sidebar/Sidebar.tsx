@@ -1,7 +1,7 @@
-﻿/* eslint-disable */
-'use client';
+﻿'use client';
 
 import React from 'react';
+import Image from 'next/image';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import type { LucideIcon } from 'lucide-react';
@@ -348,9 +348,13 @@ function SidebarHeader({ isCollapsed, onClose, loading = false }: SidebarHeaderP
           )}
         >
           <div className='flex h-11 w-11 items-center justify-center rounded-2xl bg-gradient-to-br from-white to-slate-50 shadow-sm ring-1 ring-black/5 dark:from-neutral-800 dark:to-neutral-900 dark:ring-white/10'>
-            <img
+            <Image
               src='/img/system/logo1.png'
               alt='Las Muñecas de Ramón'
+              width={0}
+              height={0}
+              sizes='100vw'
+              priority
               style={{
                 height: isCollapsed ? '1.8rem' : loading ? '2rem' : '2.15rem',
                 width: 'auto'

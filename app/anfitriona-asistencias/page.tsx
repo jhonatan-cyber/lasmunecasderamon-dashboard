@@ -4,7 +4,8 @@ import { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { useCurrentUser } from '@/hooks/auth/useCurrentUser';
-import { ArrowLeft, Search, ChevronUp, ChevronDown } from 'lucide-react';
+import { ArrowLeft, Search } from 'lucide-react';
+import { SortableTh } from '@/components/shared/SortableTh';
 import { useRouter } from 'next/navigation';
 import { Input } from '@/components/ui/input';
 import SelectElements from '@/components/shared/SelectElements';
@@ -285,112 +286,57 @@ export default function AnfitrionaAsistenciasPage() {
             <table className='w-full'>
               <thead className='bg-gray-50'>
                 <tr>
-                  <th className='px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider'>
-                    <button
-                      onClick={() => handleSort('id_asistencia')}
-                      className='flex items-center gap-1 hover:text-gray-700'
-                    >
-                      #
-                      {sortField === 'id_asistencia' ? (
-                        sortDirection === 'asc' ? (
-                          <ChevronUp className='h-4 w-4' />
-                        ) : (
-                          <ChevronDown className='h-4 w-4' />
-                        )
-                      ) : (
-                        <ChevronUp className='h-4 w-4 opacity-0' />
-                      )}
-                    </button>
-                  </th>
-                  <th className='px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider'>
-                    <button
-                      onClick={() => handleSort('fecha')}
-                      className='flex items-center gap-1 hover:text-gray-700'
-                    >
-                      FECHA
-                      {sortField === 'fecha' ? (
-                        sortDirection === 'asc' ? (
-                          <ChevronUp className='h-4 w-4' />
-                        ) : (
-                          <ChevronDown className='h-4 w-4' />
-                        )
-                      ) : (
-                        <ChevronUp className='h-4 w-4 opacity-0' />
-                      )}
-                    </button>
-                  </th>
-
-                  <th className='px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider'>
-                    <button
-                      onClick={() => handleSort('sueldo')}
-                      className='flex items-center gap-1 hover:text-gray-700'
-                    >
-                      SUELDO
-                      {sortField === 'sueldo' ? (
-                        sortDirection === 'asc' ? (
-                          <ChevronUp className='h-4 w-4' />
-                        ) : (
-                          <ChevronDown className='h-4 w-4' />
-                        )
-                      ) : (
-                        <ChevronUp className='h-4 w-4 opacity-0' />
-                      )}
-                    </button>
-                  </th>
-                  <th className='px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider'>
-                    <button
-                      onClick={() => handleSort('aporte')}
-                      className='flex items-center gap-1 hover:text-gray-700'
-                    >
-                      APORTE
-                      {sortField === 'aporte' ? (
-                        sortDirection === 'asc' ? (
-                          <ChevronUp className='h-4 w-4' />
-                        ) : (
-                          <ChevronDown className='h-4 w-4' />
-                        )
-                      ) : (
-                        <ChevronUp className='h-4 w-4 opacity-0' />
-                      )}
-                    </button>
-                  </th>
-                  <th className='px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider'>
-                    <button
-                      onClick={() => handleSort('total')}
-                      className='flex items-center gap-1 hover:text-gray-700'
-                    >
-                      TOTAL
-                      {sortField === 'total' ? (
-                        sortDirection === 'asc' ? (
-                          <ChevronUp className='h-4 w-4' />
-                        ) : (
-                          <ChevronDown className='h-4 w-4' />
-                        )
-                      ) : (
-                        <ChevronUp className='h-4 w-4 opacity-0' />
-                      )}
-                    </button>
-                  </th>
+                  <SortableTh
+                    field='id_asistencia'
+                    sortField={sortField}
+                    sortDirection={sortDirection}
+                    onSort={handleSort}
+                  >
+                    #
+                  </SortableTh>
+                  <SortableTh
+                    field='fecha'
+                    sortField={sortField}
+                    sortDirection={sortDirection}
+                    onSort={handleSort}
+                  >
+                    FECHA
+                  </SortableTh>
+                  <SortableTh
+                    field='sueldo'
+                    sortField={sortField}
+                    sortDirection={sortDirection}
+                    onSort={handleSort}
+                  >
+                    SUELDO
+                  </SortableTh>
+                  <SortableTh
+                    field='aporte'
+                    sortField={sortField}
+                    sortDirection={sortDirection}
+                    onSort={handleSort}
+                  >
+                    APORTE
+                  </SortableTh>
+                  <SortableTh
+                    field='total'
+                    sortField={sortField}
+                    sortDirection={sortDirection}
+                    onSort={handleSort}
+                  >
+                    TOTAL
+                  </SortableTh>
                   <th className='px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider'>
                     FECHA DE PAGO
                   </th>
-                  <th className='px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider'>
-                    <button
-                      onClick={() => handleSort('estado')}
-                      className='flex items-center gap-1 hover:text-gray-700'
-                    >
-                      ESTADO
-                      {sortField === 'estado' ? (
-                        sortDirection === 'asc' ? (
-                          <ChevronUp className='h-4 w-4' />
-                        ) : (
-                          <ChevronDown className='h-4 w-4' />
-                        )
-                      ) : (
-                        <ChevronUp className='h-4 w-4 opacity-0' />
-                      )}
-                    </button>
-                  </th>
+                  <SortableTh
+                    field='estado'
+                    sortField={sortField}
+                    sortDirection={sortDirection}
+                    onSort={handleSort}
+                  >
+                    ESTADO
+                  </SortableTh>
                 </tr>
               </thead>
               <tbody className='bg-white divide-y divide-gray-200'>

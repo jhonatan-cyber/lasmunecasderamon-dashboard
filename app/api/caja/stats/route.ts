@@ -1,10 +1,10 @@
 import { NextResponse } from 'next/server';
 import { withAppApiWrapper } from '@/lib/api/app-api-wrapper';
-import { StatsRepository } from '@/lib/repositories/StatsRepository';
+import { StatsService } from '@/lib/services/StatsService';
 import { formatDateLabel } from '@/lib/utils/calendarUtils';
 
 export const GET = withAppApiWrapper(async () => {
-  const stats = await StatsRepository.getCajaGeneralStats();
+  const stats = await StatsService.getCajaGeneralStats();
 
   const formattedStats = {
     ...stats,

@@ -1,7 +1,7 @@
 'use client';
 
 import { useCurrentUser } from '@/hooks/auth/useCurrentUser';
-import AnfitrionaCalendar from '@/components/anfitriona/AnfitrionaCalendar';
+import RoleCalendar from '@/components/shared/RoleCalendar';
 
 export function AnfitrionaCalendarPageClient() {
   const { user, loading } = useCurrentUser();
@@ -28,5 +28,5 @@ export function AnfitrionaCalendarPageClient() {
     );
   }
 
-  return <AnfitrionaCalendar userId={user.id} />;
+  return <RoleCalendar role='anfitriona' userId={user?.id} backLink='/anfitriona-dashboard' />;
 }

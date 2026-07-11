@@ -1,8 +1,8 @@
 import { NextResponse } from 'next/server';
 import { withAppApiWrapper } from '@/lib/api/app-api-wrapper';
-import { RoleRepository } from '@/lib/repositories/RoleRepository';
+import { RoleService } from '@/lib/services/RoleService';
 
 export const GET = withAppApiWrapper(async () => {
-  const data = await RoleRepository.getAdminPermissions();
+  const data = await RoleService.getAdminPermissions();
   return NextResponse.json({ success: true, data });
 });

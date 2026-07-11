@@ -1,6 +1,5 @@
 import { NextResponse } from 'next/server';
 import { withAppApiWrapper, withAppAuth } from '@/lib/api/app-api-wrapper';
-import { CashRegisterRepository } from '@/lib/repositories/CashRegisterRepository';
 import { CashRegisterService } from '@/lib/services/CashRegisterService';
 
 export const GET = withAppAuth(
@@ -9,11 +8,11 @@ export const GET = withAppAuth(
     const resumen = searchParams.get('resumen');
 
     if (resumen === '1') {
-      const data = await CashRegisterRepository.summary();
+      const data = await CashRegisterService.summary();
       return NextResponse.json({ success: true, data });
     }
 
-    const data = await CashRegisterRepository.getAll();
+    const data = await CashRegisterService.getAll();
     return NextResponse.json({ success: true, data });
   },
   { module: 'finances', action: 'read' }
@@ -32,7 +31,8 @@ export const PUT = withAppAuth(
   async (request: Request) => {
     const body = await request.json();
     const { id_caja, ...data } = body;
-    if (!id_caja) return NextResponse.json({ success: false, message: 'ID requerido' }, { status: 400 });
+    if (!id_caja)
+      return NextResponse.json({ success: false, message: 'ID requerido' }, { status: 400 });
 
     await CashRegisterService.updateCaja(id_caja, data);
     return NextResponse.json({ success: true, message: 'Caja actualizada' });

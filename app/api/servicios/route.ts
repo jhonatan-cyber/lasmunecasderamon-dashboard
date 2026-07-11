@@ -1,6 +1,5 @@
 import { NextResponse } from 'next/server';
 import { withAppApiWrapper, withAppAuth } from '@/lib/api/app-api-wrapper';
-import { ServiceRepository } from '@/lib/repositories/ServiceRepository';
 import { ServiceService } from '@/lib/services/ServiceService';
 import { sendNotificationToAll } from '@/lib/api/sseService';
 
@@ -13,7 +12,7 @@ export const GET = withAppApiWrapper(async (request: Request) => {
     limit: searchParams.get('limit') || undefined,
     page: searchParams.get('page') || undefined
   };
-  const data = await ServiceRepository.getAll(params);
+  const data = await ServiceService.getAll(params);
   return NextResponse.json({ success: true, data });
 });
 

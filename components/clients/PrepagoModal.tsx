@@ -251,7 +251,7 @@ function PrepagoForm({
           />
         </div>
         <p className='text-[10px] text-gray-500 dark:text-gray-400'>
-          * El monto se sumarÃ¡ inmediatamente al saldo disponible del cliente.
+          * El monto se sumará inmediatamente al saldo disponible del cliente.
         </p>
       </div>
 

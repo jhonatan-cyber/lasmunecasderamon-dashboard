@@ -1,7 +1,6 @@
-/* eslint-disable */
 'use client';
 
-import { useState, useEffect, useCallback, useRef } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { useSales } from '@/hooks/caja/useSales';
 import { useHabitaciones } from '@/hooks/habitaciones/useHabitaciones';
 import { useTimer } from '@/contexts/TimerContext';
@@ -64,49 +63,27 @@ export default function Sales() {
     await Promise.all([getVentas(), getResumen(), getHabitaciones()]);
   }, [getHabitaciones, getResumen, getVentas]);
 
-  const handleRefreshRef = useRef(handleRefresh);
-
-  useEffect(() => {
-    handleRefreshRef.current = handleRefresh;
-  }, [handleRefresh]);
-
   useEffect(() => {
     handleRefresh();
-  }, []);
-
+  }, [handleRefresh]);
   useRefreshOnFocus(handleRefresh);
 
   useEffect(() => {
-    const handleVentaRegistrada = () => {
-      handleRefreshRef.current();
-    };
-
-    const handleUpdateSales = () => {
-      handleRefreshRef.current();
-    };
-
-    const handleTimerEnded = () => {
-      handleRefreshRef.current();
-    };
-
-    const u1 = appEventBus.on('ventaRegistrada', handleVentaRegistrada);
-    const u2 = appEventBus.on('updateSales', handleUpdateSales);
-    const u3 = appEventBus.on('timer_ended_event', handleTimerEnded);
-
+    const refresh = () => handleRefresh();
+    const unsub1 = appEventBus.on('ventaRegistrada', refresh);
+    const unsub2 = appEventBus.on('updateSales', refresh);
+    const unsub3 = appEventBus.on('timer_ended_event', refresh);
     return () => {
-      u1();
-      u2();
-      u3();
+      unsub1();
+      unsub2();
+      unsub3();
     };
-  }, []);
+  }, [handleRefresh]);
 
   useEffect(() => {
-    setRefreshCallback(() => handleRefreshRef.current);
-  }, [setRefreshCallback]);
-
-  useEffect(() => {
-    setTimerRefreshCallback(() => handleRefreshRef.current);
-  }, [setTimerRefreshCallback]);
+    setRefreshCallback(() => handleRefresh);
+    setTimerRefreshCallback(() => handleRefresh);
+  }, [handleRefresh, setRefreshCallback, setTimerRefreshCallback]);
 
   const filteredVentas = filterVentas(ventas, searchTerm, statusFilter, paymentFilter);
   const sortedAndFilteredVentas = sortVentas(filteredVentas, sortBy, sortOrder);
@@ -172,15 +149,13 @@ export default function Sales() {
     return <SalesError error={error} onRetry={handleRefresh} />;
   }
 
-  const isInitialLoad = loading && ventas.length === 0;
-
   return (
     <PermissionGuard module='sales' action='view'>
       <div className='p-4 sm:p-6 lg:p-10 space-y-4 sm:space-y-6 mt-4 sm:mt-6 lg:mt-10'>
         <CajaStatusBanner />
         <SalesHeader loading={loading} onRefresh={handleRefresh} />
 
-        {isInitialLoad ? (
+        {loading && ventas.length === 0 ? (
           <SalesSkeleton />
         ) : (
           <>

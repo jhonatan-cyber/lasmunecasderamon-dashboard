@@ -2,19 +2,8 @@
 
 import { useState, useEffect } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
-import { Search } from 'lucide-react';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle
-} from '@/components/ui/dialog';
+import { ConfirmModal } from '@/components/shared/ConfirmModal';
 import { PermissionGuard } from '@/components/auth/PermissionGuard';
 import dynamic from 'next/dynamic';
 import { useUserPermissions } from '@/hooks/auth/useUserPermissions';
@@ -264,66 +253,28 @@ export default function OrdersPage() {
       )}
 
       {}
-      <Dialog open={deleteModalOpen} onOpenChange={setDeleteModalOpen}>
-        <DialogContent className='rounded-2xl border border-border/60 bg-white dark:border-zinc-800 dark:bg-zinc-950'>
-          <DialogHeader>
-            <DialogTitle className='text-gray-900 dark:text-zinc-100'>
-              ??Confirmar eliminaci??n?
-            </DialogTitle>
-            <DialogDescription className='text-gray-600 dark:text-zinc-400'>
-              Eliminarás el pedido {orderToDelete?.codigo}. Esta acción no se puede deshacer.
-            </DialogDescription>
-          </DialogHeader>
-          <DialogFooter className='gap-2'>
-            <Button
-              variant='outline'
-              onClick={() => setDeleteModalOpen(false)}
-              className='rounded-full dark:border-zinc-700 dark:bg-zinc-900 dark:text-zinc-100 dark:hover:bg-zinc-800'
-            >
-              Cancelar
-            </Button>
-            <Button
-              variant='destructive'
-              onClick={handleConfirmDelete}
-              disabled={isDeleting}
-              className='rounded-full dark:border-zinc-700 dark:bg-zinc-900 dark:text-zinc-100 dark:hover:bg-zinc-800'
-            >
-              {isDeleting ? 'Eliminando...' : 'Eliminar Pedido'}
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
-
-      {}
-      <Dialog open={deleteServicioModalOpen} onOpenChange={setDeleteServicioModalOpen}>
-        <DialogContent className='rounded-2xl border border-border/60 bg-white dark:border-zinc-800 dark:bg-zinc-950'>
-          <DialogHeader>
-            <DialogTitle className='text-gray-900 dark:text-zinc-100'>
-              ??Confirmar eliminaci??n?
-            </DialogTitle>
-            <DialogDescription className='text-gray-600 dark:text-zinc-400'>
-              Eliminarás la solicitud de servicio #{servicioToDelete?.id_solicitud}.
-            </DialogDescription>
-          </DialogHeader>
-          <DialogFooter className='gap-2'>
-            <Button
-              variant='outline'
-              onClick={() => setDeleteServicioModalOpen(false)}
-              className='rounded-full dark:border-zinc-700 dark:bg-zinc-900 dark:text-zinc-100 dark:hover:bg-zinc-800'
-            >
-              Cancelar
-            </Button>
-            <Button
-              variant='destructive'
-              onClick={handleConfirmDeleteServicio}
-              disabled={isDeletingServicio}
-              className='rounded-full dark:border-zinc-700 dark:bg-zinc-900 dark:text-zinc-100 dark:hover:bg-zinc-800'
-            >
-              {isDeletingServicio ? 'Eliminando...' : 'Eliminar Solicitud'}
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
+      <ConfirmModal
+        open={deleteModalOpen}
+        onOpenChange={setDeleteModalOpen}
+        title='Confirmar eliminación'
+        message={`Eliminarás el pedido ${orderToDelete?.codigo}. Esta acción no se puede deshacer.`}
+        confirmText={isDeleting ? 'Eliminando...' : 'Eliminar Pedido'}
+        type='warning'
+        confirmVariant='destructive'
+        onConfirm={handleConfirmDelete}
+        isLoading={isDeleting}
+      />
+      <ConfirmModal
+        open={deleteServicioModalOpen}
+        onOpenChange={setDeleteServicioModalOpen}
+        title='Confirmar eliminación'
+        message={`Eliminarás la solicitud de servicio #${servicioToDelete?.id_solicitud}.`}
+        confirmText={isDeletingServicio ? 'Eliminando...' : 'Eliminar Solicitud'}
+        type='warning'
+        confirmVariant='destructive'
+        onConfirm={handleConfirmDeleteServicio}
+        isLoading={isDeletingServicio}
+      />
     </PermissionGuard>
   );
 }

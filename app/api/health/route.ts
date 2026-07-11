@@ -1,14 +1,12 @@
-import { NextResponse } from 'next/server';
-import { withAppApiWrapper } from '@/lib/api/app-api-wrapper';
+import { withPublicRoute } from '@/lib/api';
+import { ApiResponse } from '@/lib/api';
 import { query } from '@/lib/database/db';
-
 import { getNowInBusinessTimezone } from '@/lib/business/timezoneService';
 
-export const GET = withAppApiWrapper(async () => {
+export const GET = withPublicRoute(async () => {
   const dbCheck = await query('SELECT 1 as health_check');
-  return NextResponse.json({
-    success: true,
-    data: {
+  return ApiResponse.success(
+    {
       status: 'healthy',
       timestamp: getNowInBusinessTimezone(),
       uptime: process.uptime(),
@@ -18,6 +16,6 @@ export const GET = withAppApiWrapper(async () => {
         total: Math.round(process.memoryUsage().heapTotal / 1024 / 1024)
       }
     },
-    message: 'API funcionando correctamente'
-  });
+    'API funcionando correctamente'
+  );
 });

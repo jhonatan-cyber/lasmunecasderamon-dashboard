@@ -6,20 +6,11 @@ import { Button } from '@/components/ui/button';
 import {
   GratificacionesTable,
   GratificacionesFilters,
-  GratificacionesStatsCards,
-  GratificacionesForm,
   GratificacionesDetailModal
 } from '@/components/gratificaciones';
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogHeader,
-  DialogTitle
-} from '@/components/ui/dialog';
+import { GratificacionDialog } from '@/components/gratificaciones/GratificacionDialog';
 import Pagination from '@/components/gratificaciones/Pagination';
 import { ConfirmModal } from '@/components/shared/ConfirmModal';
-import SelectElements from '@/components/shared/SelectElements';
 import { useGratificaciones } from '@/hooks/personal';
 import { useCashRegisterStatus } from '@/hooks/caja/useCashRegisterStatus';
 import { useUserPermissions } from '@/hooks/auth/useUserPermissions';
@@ -115,28 +106,6 @@ export default function GratificacionesPage() {
     currentPage * rowsPerPage
   );
 
-  const visiblePages = useMemo(() => {
-    if (totalPages <= 1) return [1];
-    const pages = [];
-    const maxVisible = 5;
-    let start = Math.max(1, currentPage - Math.floor(maxVisible / 2));
-    let end = Math.min(totalPages, start + maxVisible - 1);
-
-    if (end - start + 1 < maxVisible) {
-      start = Math.max(1, end - maxVisible + 1);
-    }
-
-    for (let i = start; i <= end; i++) {
-      pages.push(i);
-    }
-    return pages;
-  }, [currentPage, totalPages]);
-
-  const handleOpenForm = () => {
-    setGratificacionToEdit(null);
-    setIsModalOpen(true);
-  };
-
   const handleEdit = (gratificacion: Gratificacion) => {
     setGratificacionToEdit(gratificacion);
     setIsModalOpen(true);
@@ -219,7 +188,10 @@ export default function GratificacionesPage() {
         </div>
         {hasPermission('gratificaciones', 'create') && (
           <Button
-            onClick={handleOpenForm}
+            onClick={() => {
+              setGratificacionToEdit(null);
+              setIsModalOpen(true);
+            }}
             disabled={!hasOpenCaja || cajaLoading}
             className='rounded-full bg-black text-white hover:scale-105 transition-all duration-200'
           >
@@ -321,7 +293,6 @@ export default function GratificacionesPage() {
           totalPages={totalPages}
           totalItems={filteredData.length}
           itemsPerPage={rowsPerPage}
-          visiblePages={visiblePages}
           onPageChange={setCurrentPage}
           onItemsPerPageChange={val => {
             setRowsPerPage(val);
@@ -331,55 +302,13 @@ export default function GratificacionesPage() {
       </div>
 
       {}
-      <Dialog open={isModalOpen} onOpenChange={setIsModalOpen}>
-        <DialogContent className='w-[95vw] max-w-[95vw] sm:w-full sm:max-w-[500px] max-h-[90vh] flex flex-col p-0'>
-          <DialogHeader className='flex-shrink-0 px-6 pt-6 pb-4 border-b'>
-            <DialogTitle className='text-lg sm:text-xl lg:text-2xl font-bold'>
-              {gratificacionToEdit ? 'Editar Gratificación' : 'Nueva Gratificación'}
-            </DialogTitle>
-            <DialogDescription className='sr-only'>Formulario de gratificación</DialogDescription>
-          </DialogHeader>
-          <div className='flex-1 overflow-y-auto px-6 py-4'>
-            <GratificacionesForm
-              open={isModalOpen}
-              onSubmit={handleFormSubmit}
-              onCancel={() => setIsModalOpen(false)}
-              isEditMode={!!gratificacionToEdit}
-              gratificacion={gratificacionToEdit}
-              isLoading={isSubmitLoading}
-              hideButtons={true}
-            />
-          </div>
-          <div className='flex-shrink-0 border-t px-6 py-4 bg-white dark:bg-neutral-900'>
-            <div className='flex flex-col sm:flex-row justify-center gap-2 w-full'>
-              <Button
-                type='button'
-                variant='outline'
-                size='sm'
-                className='rounded-full px-6 hover:scale-105 transition-all duration-200 hover:bg-black hover:text-white w-full sm:w-auto'
-                onClick={() => setIsModalOpen(false)}
-                disabled={isSubmitLoading}
-              >
-                Cancelar
-              </Button>
-              <Button
-                type='submit'
-                form='gratificaciones-form'
-                variant='outline'
-                size='sm'
-                className='bg-black text-white rounded-full px-6 hover:scale-105 transition-all duration-200 w-full sm:w-auto'
-                disabled={isSubmitLoading}
-              >
-                {isSubmitLoading
-                  ? 'Guardando...'
-                  : gratificacionToEdit
-                    ? 'Guardar Cambios'
-                    : 'Guardar'}
-              </Button>
-            </div>
-          </div>
-        </DialogContent>
-      </Dialog>
+      <GratificacionDialog
+        open={isModalOpen}
+        onOpenChange={setIsModalOpen}
+        gratificacion={gratificacionToEdit}
+        isLoading={isSubmitLoading}
+        onSubmit={handleFormSubmit}
+      />
 
       <GratificacionesDetailModal
         isOpen={showDetailModal}

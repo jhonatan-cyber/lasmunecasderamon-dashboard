@@ -66,7 +66,7 @@ export default function TipsFilters({
                 { value: 'nombre_completo', label: 'Nombre' },
                 { value: 'nick', label: 'Nick' },
                 { value: 'total_propinas', label: 'Total propinas' },
-                { value: 'fecha_crea', label: 'Ãšltima propina' }
+                { value: 'fecha_crea', label: 'Última propina' }
               ]}
             />
           </div>

@@ -1,4 +1,4 @@
-import jwt from 'jsonwebtoken';
+import { jwtVerify, SignJWT } from 'jose';
 import { query, generateUUID } from '@/lib/database/db';
 import { logger } from '@/lib/utils/logger';
 import { getSystemTimezone, getNowInBusinessTimezone } from '@/lib/business/timezoneService';
@@ -26,17 +26,18 @@ type TokenRequest = {
   };
 };
 
-export function verifyToken(token: string): AuthenticatedUser | null {
-  try {
-    const decoded = jwt.verify(token, env.JWT_SECRET) as AuthenticatedUser;
+const getSecretKey = () => new TextEncoder().encode(env.JWT_SECRET);
 
-    return decoded;
+export async function verifyToken(token: string): Promise<AuthenticatedUser | null> {
+  try {
+    const { payload } = await jwtVerify(token, getSecretKey());
+    return payload as unknown as AuthenticatedUser;
   } catch {
     return null;
   }
 }
 
-export function generateToken(userData: {
+export async function generateToken(userData: {
   id: string | number;
   username: string;
   name: string;
@@ -44,21 +45,20 @@ export function generateToken(userData: {
   nick?: string;
   email: string;
   role: string;
-}): string {
-  return jwt.sign(
-    {
-      id: userData.id,
-      userId: userData.id,
-      username: userData.username,
-      name: userData.name,
-      lastName: userData.lastName,
-      nick: userData.nick,
-      email: userData.email,
-      role: userData.role
-    },
-    env.JWT_SECRET,
-    { expiresIn: '24h' }
-  );
+}): Promise<string> {
+  return await new SignJWT({
+    id: userData.id,
+    userId: userData.id,
+    username: userData.username,
+    name: userData.name,
+    lastName: userData.lastName,
+    nick: userData.nick,
+    email: userData.email,
+    role: userData.role
+  })
+    .setProtectedHeader({ alg: 'HS256' })
+    .setExpirationTime('24h')
+    .sign(getSecretKey());
 }
 
 export function extractToken(req: TokenRequest): string | null {

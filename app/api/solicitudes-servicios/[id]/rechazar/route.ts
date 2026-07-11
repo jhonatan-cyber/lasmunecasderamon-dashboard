@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server';
 import { withAppAuth } from '@/lib/api/app-api-wrapper';
 import { ValidationError } from '@/lib/errors/errors';
-import { ServiceRequestRepository } from '@/lib/repositories/ServiceRequestRepository';
+import { ServiceRequestService } from '@/lib/services/ServiceRequestService';
 import { sendNotificationToAll } from '@/lib/api/sseService';
 
 export const PATCH = withAppAuth(
@@ -14,7 +14,7 @@ export const PATCH = withAppAuth(
       throw new ValidationError('El motivo de rechazo es requerido');
     }
 
-    const result = await ServiceRequestRepository.reject(id, String(user.id), motivo);
+    const result = await ServiceRequestService.reject(id, String(user.id), motivo);
 
     sendNotificationToAll('service_request_processed', {
       id_solicitud: id,

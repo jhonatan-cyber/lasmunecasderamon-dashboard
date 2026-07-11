@@ -101,58 +101,45 @@ const generateVentasTableHTML = (ctx: CajaExportContext) => {
         <td class="text-right">${formatCurrencyNoDecimals(venta.sub_total)}</td>
         <td class="text-right">${formatCurrencyNoDecimals(venta.propina)}</td>
         <td class="text-center">${formatSoloHora(venta.fecha_crea)}</td>
-        <td class="text-center">${formatMetodoPagoDetalle(venta.metodo_pago, venta.pagos_mixtos)}</td>
+        <td>${formatMetodoPagoDetalle(venta.metodo_pago, venta.pagos_mixtos)}</td>
         <td class="text-right font-bold">${formatCurrencyNoDecimals(venta.total)}</td>
       </tr>
     `
     )
     .join('');
 
+  const totalVentas = (Array.isArray(ctx.filteredVentas) ? ctx.filteredVentas : []).reduce(
+    (sum, v) => sum + (v.total || 0),
+    0
+  );
+  const totalPropinas = (Array.isArray(ctx.filteredVentas) ? ctx.filteredVentas : []).reduce(
+    (sum, v) => sum + (v.propina || 0),
+    0
+  );
+
   return `
-    <div class="info-grid">
-      <div class="info-card">
-        <div class="info-label">Abierta por</div>
-        <div class="info-value">${ctx.caja.cajero_nombre || 'N/A'}</div>
-        <div>${formatFechaLarga(ctx.caja.fecha_apertura)} • ${formatSoloHora(ctx.caja.fecha_apertura)}</div>
-      </div>
-      ${
-        ctx.caja.fecha_cierre
-          ? `
-      <div class="info-card">
-        <div class="info-label">Cerrada por</div>
-        <div class="info-value">${ctx.caja.cajero_cierre_nombre || 'N/A'}</div>
-        <div>${formatFechaLarga(ctx.caja.fecha_cierre)} • ${formatSoloHora(ctx.caja.fecha_cierre)}</div>
-      </div>
-      `
-          : ''
-      }
-    </div>
-    
     <table>
       <thead>
         <tr>
           <th>Cliente</th>
-          <th>Habitación</th>
-          <th class="text-center">Cant.</th>
-          <th class="text-right">Precio</th>
+          <th>Habitación/Lugar</th>
+          <th class="text-center">Detalle</th>
+          <th class="text-right">Subtotal</th>
           <th class="text-right">Propina</th>
           <th class="text-center">Hora</th>
-          <th class="text-center">Método</th>
+          <th>Pago / Distribución</th>
           <th class="text-right">Total</th>
         </tr>
       </thead>
       <tbody>
         ${rows}
-      </tbody>
-      <tfoot>
         <tr class="summary-row">
-          <td colspan="3">Total (${ctx.filteredVentas.length} ventas)</td>
-          <td class="text-right">${formatCurrencyNoDecimals(ctx.filteredVentas.reduce((sum, v) => sum + Number(v.sub_total || 0), 0))}</td>
-          <td class="text-right">${formatCurrencyNoDecimals(ctx.filteredVentas.reduce((sum, v) => sum + Number(v.propina || 0), 0))}</td>
+          <td colspan="3">TOTAL GENERAL (${ctx.filteredVentas.length} ventas)</td>
+          <td colspan="2" class="text-right">Propinas: ${formatCurrencyNoDecimals(totalPropinas)}</td>
           <td colspan="2"></td>
-          <td class="text-right">${formatCurrencyNoDecimals(ctx.filteredVentas.reduce((sum, v) => sum + Number(v.total || 0), 0))}</td>
+          <td class="text-right">${formatCurrencyNoDecimals(totalVentas)}</td>
         </tr>
-      </tfoot>
+      </tbody>
     </table>
   `;
 };
@@ -160,21 +147,25 @@ const generateVentasTableHTML = (ctx: CajaExportContext) => {
 const generateServiciosTableHTML = (ctx: CajaExportContext) => {
   const rows = (Array.isArray(ctx.filteredServicios) ? ctx.filteredServicios : [])
     .map(
-      servicio => `
+      serv => `
       <tr>
-        <td>${servicio.cliente_nombre || 'N/A'}</td>
-        <td>${servicio.anfitrionas_nombres || 'Sin asignar'}</td>
-        <td>${servicio.habitacion_nombre || 'N/A'}</td>
-        <td class="text-right">${formatCurrencyNoDecimals(servicio.precio_servicio)}</td>
-        <td class="text-right">${formatCurrencyNoDecimals(servicio.precio_habitacion)}</td>
-        <td class="text-right">${formatCurrencyNoDecimals(servicio.iva)}</td>
-        <td class="text-center">${formatFechaLarga(servicio.fecha_crea)}</td>
-        <td class="text-center">${formatMetodoPagoDetalle(servicio.metodo_pago, servicio.pagos_mixtos)}</td>
-        <td class="text-right font-bold">${formatCurrencyNoDecimals(servicio.total)}</td>
+        <td>${serv.cliente_nombre || 'Particular'}</td>
+        <td>${serv.anfitrionas_nombres || 'Sin asignar'}</td>
+        <td>${serv.habitacion_nombre || 'N/A'}</td>
+        <td class="text-right">${formatCurrencyNoDecimals(serv.total_habitacion || 0)}</td>
+        <td class="text-right">${formatCurrencyNoDecimals(serv.iva || 0)}</td>
+        <td class="text-center">${formatFechaLarga(serv.fecha_crea)}</td>
+        <td>${formatMetodoPagoDetalle(serv.metodo_pago, serv.pagos_mixtos)}</td>
+        <td class="text-right font-bold">${formatCurrencyNoDecimals(serv.total)}</td>
       </tr>
     `
     )
     .join('');
+
+  const totalServ = (Array.isArray(ctx.filteredServicios) ? ctx.filteredServicios : []).reduce(
+    (sum, s) => sum + (s.total || 0),
+    0
+  );
 
   return `
     <table>
@@ -183,27 +174,20 @@ const generateServiciosTableHTML = (ctx: CajaExportContext) => {
           <th>Cliente</th>
           <th>Anfitrionas</th>
           <th>Habitación</th>
-          <th class="text-right">Precio Servicio</th>
-          <th class="text-right">Precio Habitación</th>
+          <th class="text-right">Total Hab.</th>
           <th class="text-right">IVA</th>
           <th class="text-center">Fecha</th>
-          <th class="text-center">Pago</th>
+          <th>Pago / Distribución</th>
           <th class="text-right">Total</th>
         </tr>
       </thead>
       <tbody>
         ${rows}
-      </tbody>
-      <tfoot>
         <tr class="summary-row">
-          <td colspan="3">Total (${ctx.filteredServicios.length} servicios)</td>
-          <td class="text-right">${formatCurrencyNoDecimals(ctx.filteredServicios.reduce((sum, s) => sum + Number(s.precio_servicio || 0), 0))}</td>
-          <td class="text-right">${formatCurrencyNoDecimals(ctx.filteredServicios.reduce((sum, s) => sum + Number(s.precio_habitacion || 0), 0))}</td>
-          <td class="text-right">${formatCurrencyNoDecimals(ctx.filteredServicios.reduce((sum, s) => sum + Number(s.iva || 0), 0))}</td>
-          <td colspan="2"></td>
-          <td class="text-right">${formatCurrencyNoDecimals(ctx.filteredServicios.reduce((sum, s) => sum + Number(s.total || 0), 0))}</td>
+          <td colspan="7">TOTAL SERVICIOS PRIVADOS (${ctx.filteredServicios.length} servicios)</td>
+          <td class="text-right">${formatCurrencyNoDecimals(totalServ)}</td>
         </tr>
-      </tfoot>
+      </tbody>
     </table>
   `;
 };
@@ -211,15 +195,20 @@ const generateServiciosTableHTML = (ctx: CajaExportContext) => {
 const generateRetirosTableHTML = (ctx: CajaExportContext) => {
   const rows = (Array.isArray(ctx.retiros) ? ctx.retiros : [])
     .map(
-      retiro => `
+      ret => `
       <tr>
-        <td>${formatSoloHora(retiro.fecha_crea)}</td>
-        <td>${retiro.motivo}</td>
-        <td class="text-right font-bold">${formatCurrencyNoDecimals(retiro.monto)}</td>
+        <td class="text-center">${formatSoloHora(ret.fecha_crea)}</td>
+        <td>${ret.motivo}</td>
+        <td class="text-right font-bold">${formatCurrencyNoDecimals(ret.monto)}</td>
       </tr>
     `
     )
     .join('');
+
+  const totalRetiros = (Array.isArray(ctx.retiros) ? ctx.retiros : []).reduce(
+    (sum, r) => sum + (r.monto || 0),
+    0
+  );
 
   return `
     <table>
@@ -232,38 +221,47 @@ const generateRetirosTableHTML = (ctx: CajaExportContext) => {
       </thead>
       <tbody>
         ${rows}
-      </tbody>
-      <tfoot>
         <tr class="summary-row">
-          <td colspan="2">Total (${ctx.retiros.length} retiros)</td>
-          <td class="text-right">${formatCurrencyNoDecimals(ctx.retiros.reduce((sum, r) => sum + Number(r.monto || 0), 0))}</td>
+          <td colspan="2">TOTAL RETIROS (${ctx.retiros.length} movimientos)</td>
+          <td class="text-right">${formatCurrencyNoDecimals(totalRetiros)}</td>
         </tr>
-      </tfoot>
+      </tbody>
     </table>
   `;
 };
 
 const generateResumenHTML = (ctx: CajaExportContext) => {
+  const tableData = [
+    { label: 'Monto Apertura', value: ctx.caja.monto_apertura },
+    { label: 'Ventas Tragos', value: ctx.ventasTragosChicas?.total_venta || 0 },
+    { label: 'Ventas Champaña', value: ctx.ventasChampagne?.total_venta || 0 },
+    { label: 'Ventas Barras', value: ctx.ventasBarras?.total_venta || 0 },
+    { label: 'Servicios', value: ctx.caja.servicios || 0 },
+    { label: 'Prepago Cargado', value: ctx.prepagoCargado },
+    { label: 'Prepago Consumido', value: ctx.prepagoConsumido },
+    { label: 'Ingreso Real a Caja', value: ctx.ingresosReales },
+    { label: 'Efectivo neto', value: ctx.efectivoNeto },
+    { label: 'Tarjeta', value: ctx.tarjetaCaja },
+    { label: 'Transferencia', value: ctx.transferenciaCaja },
+    { label: 'Subtotal antes de egresos', value: ctx.totalMetodosPago },
+    { label: 'Devoluciones', value: -(ctx.caja.devoluciones || 0) },
+    { label: 'Anticipos', value: -(ctx.caja.anticipo || 0) },
+    { label: 'Retiros', value: -ctx.retiros.reduce((sum, r) => sum + (r.monto || 0), 0) },
+    { label: 'Total real', value: ctx.totalReal }
+  ];
+
+  const rows = tableData
+    .map(
+      item => `
+      <tr class="${item.label === 'Total real' ? 'summary-row' : ''}">
+        <td>${item.label}</td>
+        <td class="text-right">${formatCurrencyNoDecimals(item.value)}</td>
+      </tr>
+    `
+    )
+    .join('');
+
   return `
-    <div class="info-grid">
-      <div class="info-card">
-        <div class="info-label">Abierta por</div>
-        <div class="info-value">${ctx.caja.cajero_nombre || 'N/A'}</div>
-        <div>${formatFechaLarga(ctx.caja.fecha_apertura)} • ${formatSoloHora(ctx.caja.fecha_apertura)}</div>
-      </div>
-      ${
-        ctx.caja.fecha_cierre
-          ? `
-      <div class="info-card">
-        <div class="info-label">Cerrada por</div>
-        <div class="info-value">${ctx.caja.cajero_cierre_nombre || 'N/A'}</div>
-        <div>${formatFechaLarga(ctx.caja.fecha_cierre)} • ${formatSoloHora(ctx.caja.fecha_cierre)}</div>
-      </div>
-      `
-          : ''
-      }
-    </div>
-    
     <table>
       <thead>
         <tr>
@@ -272,28 +270,8 @@ const generateResumenHTML = (ctx: CajaExportContext) => {
         </tr>
       </thead>
       <tbody>
-        <tr><td>Monto Apertura</td><td class="text-right">${formatCurrencyNoDecimals(ctx.caja.monto_apertura)}</td></tr>
-        <tr><td>Ventas Tragos</td><td class="text-right">${formatCurrencyNoDecimals(ctx.ventasTragosChicas?.total_venta || 0)}</td></tr>
-        <tr><td>Ventas Champaña</td><td class="text-right">${formatCurrencyNoDecimals(ctx.ventasChampagne?.total_venta || 0)}</td></tr>
-        <tr><td>Ventas Barras</td><td class="text-right">${formatCurrencyNoDecimals(ctx.ventasBarras?.total_venta || 0)}</td></tr>
-        <tr><td>Servicios</td><td class="text-right">${formatCurrencyNoDecimals(ctx.caja.servicios || 0)}</td></tr>
-        <tr><td>Prepago Cargado</td><td class="text-right">${formatCurrencyNoDecimals(ctx.prepagoCargado)}</td></tr>
-        <tr><td>Prepago Consumido</td><td class="text-right">${formatCurrencyNoDecimals(ctx.prepagoConsumido)}</td></tr>
-        <tr><td>Ingreso Real a Caja</td><td class="text-right">${formatCurrencyNoDecimals(ctx.ingresosReales)}</td></tr>
-        <tr><td>Efectivo neto</td><td class="text-right">${formatCurrencyNoDecimals(ctx.efectivoNeto)}</td></tr>
-        <tr><td>Tarjeta</td><td class="text-right">${formatCurrencyNoDecimals(ctx.tarjetaCaja)}</td></tr>
-        <tr><td>Transferencia</td><td class="text-right">${formatCurrencyNoDecimals(ctx.transferenciaCaja)}</td></tr>
-        <tr><td>Subtotal antes de egresos</td><td class="text-right">${formatCurrencyNoDecimals(ctx.totalMetodosPago)}</td></tr>
-        <tr><td>Devoluciones</td><td class="text-right" style="color: red;">-${formatCurrencyNoDecimals(ctx.caja.devoluciones || 0)}</td></tr>
-        <tr><td>Anticipos</td><td class="text-right" style="color: red;">-${formatCurrencyNoDecimals(ctx.caja.anticipo || 0)}</td></tr>
-        <tr><td>Retiros</td><td class="text-right" style="color: red;">-${formatCurrencyNoDecimals(ctx.retiros.reduce((sum, r) => sum + r.monto, 0))}</td></tr>
+        ${rows}
       </tbody>
-      <tfoot>
-        <tr class="summary-row" style="background-color: #e8f5e8; font-size: 14px;">
-          <td>Total real</td>
-          <td class="text-right">${formatCurrencyNoDecimals(ctx.totalReal)}</td>
-        </tr>
-      </tfoot>
     </table>
   `;
 };
@@ -361,7 +339,17 @@ export const getPDFData = (ctx: CajaExportContext) => {
   switch (ctx.activeTab) {
     case 'ventas':
       return {
-        headers: ['#', 'Cliente', 'Habitación', 'Cantidad', 'SubTotal', 'Propina', 'Hora', 'Pago / Distribucion', 'Total'],
+        headers: [
+          '#',
+          'Cliente',
+          'Habitación',
+          'Cantidad',
+          'SubTotal',
+          'Propina',
+          'Hora',
+          'Pago / Distribucion',
+          'Total'
+        ],
         body: ctx.filteredVentas.map((v, i) => [
           (i + 1).toString(),
           v.cliente_nombre || 'General',
@@ -376,7 +364,17 @@ export const getPDFData = (ctx: CajaExportContext) => {
       };
     case 'servicios':
       return {
-        headers: ['#', 'Cliente', 'Anfitrionas', 'Habitación', 'Total Habitación', 'IVA', 'Fecha', 'Pago / Distribución', 'Total'],
+        headers: [
+          '#',
+          'Cliente',
+          'Anfitrionas',
+          'Habitación',
+          'Total Habitación',
+          'IVA',
+          'Fecha',
+          'Pago / Distribución',
+          'Total'
+        ],
         body: ctx.filteredServicios.map((s, i) => [
           (i + 1).toString(),
           s.cliente_nombre || 'N/A',
@@ -392,7 +390,12 @@ export const getPDFData = (ctx: CajaExportContext) => {
     case 'retiros':
       return {
         headers: ['#', 'Hora', 'Motivo', 'Monto'],
-        body: ctx.retiros.map((r, i) => [ (i + 1).toString(), formatSoloHora(r.fecha_crea), r.motivo, r.monto ])
+        body: ctx.retiros.map((r, i) => [
+          (i + 1).toString(),
+          formatSoloHora(r.fecha_crea),
+          r.motivo,
+          r.monto
+        ])
       };
     default:
       return {
@@ -417,4 +420,262 @@ export const getPDFData = (ctx: CajaExportContext) => {
         ]
       };
   }
+};
+
+export const exportToPDF = async (exportContext: CajaExportContext) => {
+  try {
+    const { jsPDF } = await import('jspdf');
+    const autoTable = (await import('jspdf-autotable')).default;
+    const html2canvas = (await import('html2canvas')).default;
+
+    const doc = new jsPDF();
+    const logoUrl = '/img/system/logo2.png';
+    const logoResponse = await fetch(logoUrl);
+    const logoBlob = await logoResponse.blob();
+    const logoBase64 = await new Promise<string>(resolve => {
+      const reader = new FileReader();
+      reader.onloadend = () => resolve(reader.result as string);
+      reader.readAsDataURL(logoBlob);
+    });
+
+    doc.addImage(logoBase64, 'PNG', 14, 8, 40, 20);
+    doc.setFontSize(22);
+    doc.setTextColor(40, 40, 40);
+    doc.text('REPORTE DE CAJA', 160, 18, { align: 'right' });
+    doc.setDrawColor(41, 41, 41);
+    doc.setLineWidth(0.5);
+    doc.line(14, 32, 196, 32);
+
+    doc.setFontSize(10);
+    doc.setTextColor(80, 80, 80);
+    const getDiaSemana = (fecha: string | Date): string => {
+      const date = new Date(fecha);
+      const dias = ['Domingo', 'Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado'];
+      return dias[date.getDay()];
+    };
+    doc.text(
+      `Fecha: ${getDiaSemana(exportContext.caja.fecha_apertura)}, ${formatFechaLarga(exportContext.caja.fecha_apertura)}`,
+      14,
+      40
+    );
+    doc.text(`Cajero: ${exportContext.caja.cajero_nombre}`, 14, 46);
+    doc.text(
+      `Pestaña: ${exportContext.activeTab.charAt(0).toUpperCase() + exportContext.activeTab.slice(1)}`,
+      120,
+      40
+    );
+    doc.text(`Estado: ${exportContext.estadoInfo.label}`, 120, 46);
+
+    if (exportContext.activeTab === 'resumen') {
+      const chartBarsElement = document.getElementById('chart-bars');
+      const chartPieElement = document.getElementById('chart-pie');
+
+      if (chartBarsElement) {
+        const barsCanvas = await html2canvas(chartBarsElement, {
+          scale: 2,
+          backgroundColor: '#ffffff',
+          logging: false
+        });
+        const barsImg = barsCanvas.toDataURL('image/png');
+        doc.addImage(barsImg, 'PNG', 14, 54, 90, 50);
+      }
+
+      if (chartPieElement) {
+        const pieCanvas = await html2canvas(chartPieElement, {
+          scale: 2,
+          backgroundColor: '#ffffff',
+          logging: false
+        });
+        const pieImg = pieCanvas.toDataURL('image/png');
+        doc.addImage(pieImg, 'PNG', 108, 54, 90, 50);
+      }
+    }
+
+    const startY = exportContext.activeTab === 'resumen' ? 110 : 62;
+    let mainTableStartY = startY;
+
+    if (exportContext.activeTab === 'resumen') {
+      doc.setFontSize(11);
+      doc.setTextColor(40, 40, 40);
+      doc.text('Distribucion del dinero', 14, startY);
+      const cardsBottomY = drawResumenDistribucionCards(doc, startY + 4, exportContext);
+      mainTableStartY = cardsBottomY + 10;
+    }
+
+    const tableData = getPDFData(exportContext);
+    const { headers, body } = tableData;
+
+    autoTable(doc, {
+      head: [headers],
+      body,
+      startY: mainTableStartY,
+      styles: {
+        fontSize: 8,
+        cellPadding: 3,
+        overflow: 'linebreak',
+        halign: 'left',
+        valign: 'middle'
+      },
+      headStyles: {
+        fillColor: [41, 41, 41],
+        textColor: 255,
+        fontStyle: 'bold',
+        fontSize: 9
+      },
+      bodyStyles: {
+        fontSize: 8
+      },
+      alternateRowStyles: {
+        fillColor: [248, 248, 248]
+      },
+      columnStyles: {
+        0: { cellWidth: 12 },
+        7: { halign: 'right' },
+        8: { halign: 'right' }
+      },
+      margin: { left: 14, right: 14 }
+    });
+
+    if (exportContext.activeTab === 'ventas' && exportContext.filteredVentas.length > 0) {
+      const lastTable = (doc as any).lastAutoTable;
+      const finalY = lastTable?.finalY || 100;
+      doc.setFontSize(11);
+      doc.setTextColor(40, 40, 40);
+      const totalVentasSum = exportContext.filteredVentas.reduce(
+        (sum, v) => sum + (v.total || 0),
+        0
+      );
+      const totalPropinasSum = exportContext.filteredVentas.reduce(
+        (sum, v) => sum + (v.propina || 0),
+        0
+      );
+      doc.text(`Total Ventas: $${totalVentasSum.toLocaleString('es-CL')}`, 14, finalY + 12);
+      doc.text(`Total Propinas: $${totalPropinasSum.toLocaleString('es-CL')}`, 14, finalY + 19);
+    }
+
+    if (exportContext.activeTab === 'servicios' && exportContext.filteredServicios.length > 0) {
+      const lastTable = (doc as any).lastAutoTable;
+      const finalY = lastTable?.finalY || 100;
+      doc.setFontSize(11);
+      doc.setTextColor(40, 40, 40);
+      const totalServiciosSum = exportContext.filteredServicios.reduce(
+        (sum, s) => sum + (s.total || 0),
+        0
+      );
+      doc.text(`Total Servicios: $${totalServiciosSum.toLocaleString('es-CL')}`, 14, finalY + 12);
+    }
+
+    if (exportContext.activeTab !== 'resumen') {
+      const lastTable = (doc as any).lastAutoTable;
+      const distributionStartY = Math.min((lastTable?.finalY || startY) + 18, 250);
+
+      doc.setFontSize(11);
+      doc.setTextColor(40, 40, 40);
+      doc.text('Distribución del dinero', 14, distributionStartY);
+
+      autoTable(doc, {
+        head: [['Concepto', 'Monto']],
+        body: exportContext.distribucionDinero.map(row => [row.concepto, row.monto]),
+        startY: distributionStartY + 4,
+        styles: {
+          fontSize: 9,
+          cellPadding: 3
+        },
+        headStyles: {
+          fillColor: [41, 41, 41],
+          textColor: 255,
+          fontStyle: 'bold'
+        },
+        columnStyles: {
+          1: { halign: 'right' }
+        },
+        margin: { left: 14, right: 14 }
+      });
+    }
+
+    const pageCount = doc.getNumberOfPages();
+    for (let i = 1; i <= pageCount; i++) {
+      doc.setPage(i);
+      doc.setFontSize(8);
+      doc.setTextColor(150);
+      doc.text(
+        `Página ${i} de ${pageCount} - Las Muñecas de Ramón - Generado: ${formatFechaLarga(new Date().toISOString())}`,
+        doc.internal.pageSize.width / 2,
+        doc.internal.pageSize.height - 10,
+        { align: 'center' }
+      );
+    }
+
+    const formatFechaCorta = (dateStr: string) => {
+      const date = new Date(dateStr);
+      return date.toISOString().split('T')[0];
+    };
+
+    doc.save(
+      `caja-${exportContext.activeTab}-${formatFechaCorta(exportContext.caja.fecha_apertura)}.pdf`
+    );
+  } catch (error) {
+    import('@/lib/utils/logger').then(({ default: logger }) => {
+      logger.captureException(error, { context: 'cajaExportUtils:exportToPDF' });
+    });
+  }
+};
+
+const drawResumenDistribucionCards = (doc: any, startY: number, ctx: CajaExportContext) => {
+  const cards = [
+    {
+      title: 'EFECTIVO NETO',
+      value: formatCurrencyNoDecimals(ctx.efectivoNeto),
+      bg: [30, 41, 59],
+      border: [51, 65, 85],
+      label: [226, 232, 240],
+      valueColor: [255, 255, 255]
+    },
+    {
+      title: 'TARJETA',
+      value: formatCurrencyNoDecimals(ctx.tarjetaCaja),
+      bg: [30, 41, 59],
+      border: [51, 65, 85],
+      label: [226, 232, 240],
+      valueColor: [255, 255, 255]
+    },
+    {
+      title: 'TRANSFERENCIA',
+      value: formatCurrencyNoDecimals(ctx.transferenciaCaja),
+      bg: [30, 41, 59],
+      border: [51, 65, 85],
+      label: [226, 232, 240],
+      valueColor: [255, 255, 255]
+    },
+    {
+      title: 'TOTAL MEDIOS DE PAGO',
+      value: formatCurrencyNoDecimals(ctx.totalMetodosPago),
+      bg: [36, 28, 68],
+      border: [124, 58, 237],
+      label: [167, 139, 250],
+      valueColor: [255, 255, 255]
+    }
+  ];
+
+  const cardWidth = 43;
+  const cardHeight = 18;
+  const gap = 3;
+  const startX = 14;
+
+  cards.forEach((card, index) => {
+    const x = startX + index * (cardWidth + gap);
+    doc.setFillColor(card.bg[0], card.bg[1], card.bg[2]);
+    doc.setDrawColor(card.border[0], card.border[1], card.border[2]);
+    doc.roundedRect(x, startY, cardWidth, cardHeight, 3, 3, 'FD');
+
+    doc.setFontSize(7);
+    doc.setTextColor(card.label[0], card.label[1], card.label[2]);
+    doc.text(card.title, x + 3, startY + 5.5);
+
+    doc.setFontSize(12);
+    doc.setTextColor(card.valueColor[0], card.valueColor[1], card.valueColor[2]);
+    doc.text(card.value, x + 3, startY + 12.8);
+  });
+
+  return startY + cardHeight;
 };

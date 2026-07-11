@@ -2,10 +2,15 @@
 import CompressionPlugin from 'compression-webpack-plugin';
 
 const nextConfig = {
+  serverExternalPackages: ['mysql2'],
   allowedDevOrigins: ['dashboard.xn--lasmuecasderamon-bub.com'],
   images: {
-    unoptimized: true,
     formats: ['image/avif', 'image/webp'],
+    localPatterns: [
+      {
+        pathname: '/img/**'
+      }
+    ],
     remotePatterns: [
       {
         protocol: 'https',
@@ -92,7 +97,6 @@ const nextConfig = {
     }
   },
 
-  // Optimización experimental de paquetes
   experimental: {
     optimizePackageImports: [
       'recharts',
@@ -125,7 +129,6 @@ const nextConfig = {
     if (!isServer) {
       config.externals = [
         ...(config.externals || []),
-        // Prevent mysql2 from being bundled in client - only server-side
         { mysql2: 'mysql2' }
       ];
     }
@@ -135,31 +138,76 @@ const nextConfig = {
         ...config.optimization,
         splitChunks: {
           chunks: 'all',
+          maxSize: 250_000,
+          minSize: 20_000,
           cacheGroups: {
             default: false,
             vendors: false,
 
-            vendor: {
-              name: 'vendor',
+            // Framework core (React, ReactDOM, Next.js)
+            framework: {
+              name: 'framework',
+              test: /[\\/]node_modules[\\/](react|react-dom|react-is|scheduler|next)[\\/]/,
               chunks: 'all',
-              test: /node_modules/,
-              priority: 20
+              priority: 40,
+              enforce: true
             },
+
+            // UI Library — Radix primitives
             radix: {
               name: 'radix',
               test: /[\\/]node_modules[\\/]@radix-ui[\\/]/,
               chunks: 'all',
-              priority: 30
+              priority: 35
             },
+
+            // Charts: recharts + d3
             charts: {
               name: 'charts',
-              test: /[\\/]node_modules[\\/](recharts|d3-)[\\/]/,
+              test: /[\\/]node_modules[\\/](recharts|d3-|victory)[\\/]/,
+              chunks: 'async',
+              priority: 30
+            },
+
+            // PDF generation
+            pdf: {
+              name: 'pdf',
+              test: /[\\/]node_modules[\\/](jspdf|jspdf-autotable|pdf-lib)[\\/]/,
+              chunks: 'async',
+              priority: 30
+            },
+
+            // All other vendor modules
+            vendor: {
+              name: 'vendor',
+              chunks: 'all',
+              test: /node_modules/,
+              priority: 20,
+              minSize: 30_000
+            },
+
+            // Feature-based chunk groups — route-specific components
+            dashboard: {
+              name: 'dashboard',
+              test: /[\\/]components[\\/]dashboard[\\/]/,
               chunks: 'async',
               priority: 25
             },
-            pdf: {
-              name: 'pdf',
-              test: /[\\/]node_modules[\\/](jspdf|jspdf-autotable)[\\/]/,
+            caja: {
+              name: 'caja',
+              test: /[\\/]components[\\/]caja[\\/]/,
+              chunks: 'async',
+              priority: 25
+            },
+            users: {
+              name: 'users',
+              test: /[\\/]components[\\/]users[\\/]/,
+              chunks: 'async',
+              priority: 25
+            },
+            orders: {
+              name: 'orders',
+              test: /[\\/]components[\\/]orders[\\/]/,
               chunks: 'async',
               priority: 25
             },
@@ -169,6 +217,43 @@ const nextConfig = {
               chunks: 'async',
               priority: 25
             },
+            cuentas: {
+              name: 'cuentas',
+              test: /[\\/]components[\\/]cuentas[\\/]/,
+              chunks: 'async',
+              priority: 25
+            },
+            sales: {
+              name: 'sales',
+              test: /[\\/]components[\\/]sales[\\/]/,
+              chunks: 'async',
+              priority: 25
+            },
+            attendance: {
+              name: 'attendance',
+              test: /[\\/]components[\\/]attendance[\\/]/,
+              chunks: 'async',
+              priority: 25
+            },
+
+            // Shared layout & header components
+            layout: {
+              name: 'layout',
+              test: /[\\/]components[\\/](sidebar|header|layout|providers)[\\/]/,
+              chunks: 'all',
+              priority: 15
+            },
+
+            // Shared UI primitives (button, card, dialog, input, etc.)
+            sharedUi: {
+              name: 'shared-ui',
+              test: /[\\/]components[\\/]ui[\\/]/,
+              chunks: 'all',
+              priority: 12,
+              minChunks: 2
+            },
+
+            // Components shared across 2+ routes
             common: {
               name: 'common',
               minChunks: 2,
@@ -213,4 +298,9 @@ const nextConfig = {
   }
 };
 
-export default nextConfig;
+// Bundle analyzer (ANALYZE=true pnpm build:analyze)
+const withBundleAnalyzer = process.env.ANALYZE === 'true'
+  ? (await import('@next/bundle-analyzer')).default({ enabled: true })
+  : (config) => config;
+
+export default withBundleAnalyzer(nextConfig);

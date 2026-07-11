@@ -65,5 +65,7 @@ export const getAssignedHostessIds = (sources: {
     return [];
   });
 
-  return [...champagneAssigned, ...otherProductsAssigned, ...carritoAssigned];
+  return [...champagneAssigned, ...otherProductsAssigned, ...carritoAssigned].filter(
+    (id): id is string => id !== null
+  );
 };

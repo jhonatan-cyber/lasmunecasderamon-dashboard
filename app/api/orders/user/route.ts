@@ -1,8 +1,8 @@
 import { NextResponse } from 'next/server';
 import { withAppAuth } from '@/lib/api/app-api-wrapper';
-import { OrderRepository } from '@/lib/repositories/OrderRepository';
+import { OrderService } from '@/lib/services/OrderService';
 
 export const GET = withAppAuth(async (_request: Request, { user }: { params: any; user: any }) => {
-  const data = await OrderRepository.getByUser(user.id.toString());
+  const data = await OrderService.getByUser(user.id.toString());
   return NextResponse.json({ success: true, data });
 });

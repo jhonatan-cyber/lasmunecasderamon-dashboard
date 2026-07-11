@@ -94,10 +94,10 @@ export const NewSaleSearch = ({
                   <TableHead className={CUENTA_TABLE_HEAD_CLASS}>PRODUCTO</TableHead>
                   <TableHead className={`${CUENTA_TABLE_HEAD_CLASS} text-center`}>PRECIO</TableHead>
                   <TableHead className={`${CUENTA_TABLE_HEAD_CLASS} text-center`}>
-                    COMISIÃ“N
+                    COMISIÓN
                   </TableHead>
                   <TableHead className={`${CUENTA_TABLE_HEAD_CLASS} text-center text-xs`}>
-                    CATEGORÃA
+                    CATEGORÍA
                   </TableHead>
                   <TableHead className={`${CUENTA_TABLE_HEAD_CLASS} text-center`}>
                     ANFITRIONA
@@ -217,7 +217,7 @@ export const NewSaleSearch = ({
                               })()
                             )
                           ) : (
-                            <span className='text-gray-400 text-xs'>Sin comisiÃ³n</span>
+                            <span className='text-gray-400 text-xs'>Sin comisión</span>
                           )}
                         </TableCell>
                         <TableCell className={`${CUENTA_TABLE_CELL_CLASS} text-center`}>
@@ -253,5 +253,3 @@ export const NewSaleSearch = ({
     </div>
   );
 };
-
-

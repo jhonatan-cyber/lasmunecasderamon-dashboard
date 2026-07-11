@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
 import { withAppAuth } from '@/lib/api/app-api-wrapper';
-import { AnticipoRepository } from '@/lib/repositories/AnticipoRepository';
+import { AnticipoService } from '@/lib/services/AnticipoService';
 import { ValidationError } from '@/lib/errors/errors';
 
 export const GET = withAppAuth(async (request: Request, { user }: { params: any; user: any }) => {
@@ -11,9 +11,9 @@ export const GET = withAppAuth(async (request: Request, { user }: { params: any;
 
   let result;
   if (dates) {
-    result = await AnticipoRepository.getByDates(user.id.toString(), dates.split(','));
+    result = await AnticipoService.getByDates(user.id.toString(), dates.split(','));
   } else if (startDate && endDate) {
-    result = await AnticipoRepository.getByUser(user.id.toString(), startDate, endDate);
+    result = await AnticipoService.getByUser(user.id.toString(), startDate, endDate);
   } else {
     throw new ValidationError('Faltan parámetros de fecha', { startDate, endDate, dates });
   }

@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server';
-import { GratificacionRepository } from '@/lib/repositories/GratificacionRepository';
+import { GratificacionService } from '@/lib/services/GratificacionService';
 import { ApiResponse } from '@/lib/api/api-response';
 
 export async function PUT(request: Request) {
@@ -14,10 +14,7 @@ export async function PUT(request: Request) {
       return ApiResponse.validationError('Acción inválida');
     }
 
-    await GratificacionRepository.processSolicitud(
-      token,
-      accion === 'aprobar' ? 'approve' : 'reject'
-    );
+    await GratificacionService.processSolicitud(token, accion === 'aprobar' ? 'approve' : 'reject');
 
     return NextResponse.json({
       success: true,

@@ -2,9 +2,9 @@ import { query as dbQuery } from '@/lib/database/db';
 import { getNowInBusinessTimezone } from '@/lib/business/timezoneService';
 import { enviarWhatsApp as sendWhatsApp } from '@/lib/integrations/whatsappService';
 import { buildSolicitudRespuestaMessage } from '@/lib/notifications/notificationMessages';
-import { NotificationRepository } from '@/lib/repositories/NotificationRepository';
-import { SaleRepository } from '@/lib/repositories/SaleRepository';
-import { ServiceRepository } from '@/lib/repositories/ServiceRepository';
+import { NotificationService } from '@/lib/services/NotificationService';
+import { SaleService } from '@/lib/services/SaleService';
+import { ServiceService } from '@/lib/services/ServiceService';
 import { sendNotificationToAll } from '@/lib/api/sseService';
 import { sendPushByRole } from '@/lib/integrations/pushNotifications';
 import logger from '@/lib/utils/logger';
@@ -73,7 +73,7 @@ async function notifySolicitudResolution(
   };
 
   for (const recipient of recipients) {
-    await NotificationRepository.create({
+    await NotificationService.create({
       usuario_id: recipient.id_usuario,
       tipo: 'solicitud_anulacion_resultado',
       titulo: title,
@@ -194,13 +194,13 @@ export async function processPendingSolicitud(
   const now = getNowInBusinessTimezone();
   if (solicitud.tipo === 'venta') {
     if (solicitud.solicitud_id) {
-      await SaleRepository.processAnulacion(
+      await SaleService.processAnulacion(
         solicitud.solicitud_id,
         'whatsapp',
         accion === 'confirmar' ? 'confirmada' : 'rechazada'
       );
     } else if (accion === 'confirmar' && solicitud.id_venta) {
-      await SaleRepository.approveAnulacion(
+      await SaleService.approveAnulacion(
         solicitud.id_venta,
         'whatsapp',
         Number(solicitud.monto || 0)
@@ -264,7 +264,7 @@ export async function processPendingSolicitud(
     }
   } else {
     if (solicitud.solicitud_id) {
-      await ServiceRepository.processAnulacion(
+      await ServiceService.processAnulacion(
         solicitud.solicitud_id,
         'whatsapp',
         accion === 'confirmar' ? 'confirmada' : 'rechazada'

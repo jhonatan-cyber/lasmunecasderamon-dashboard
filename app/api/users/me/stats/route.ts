@@ -1,23 +1,23 @@
 import { NextResponse } from 'next/server';
 import { withAppAuth } from '@/lib/api/app-api-wrapper';
 import { getAnticipoBalances } from '@/lib/business/anticiposUtils';
-import { AttendanceRepository } from '@/lib/repositories/AttendanceRepository';
-import { TipRepository } from '@/lib/repositories/TipRepository';
-import { ServiceRepository } from '@/lib/repositories/ServiceRepository';
+import { AttendanceService } from '@/lib/services/AttendanceService';
+import { TipService } from '@/lib/services/TipService';
+import { ServiceService } from '@/lib/services/ServiceService';
 import { query } from '@/lib/database/db';
 
 export const GET = withAppAuth(async (_request: Request, { user }: { params: any; user: any }) => {
   const userId = user.id.toString();
 
-  const attendanceData = (await AttendanceRepository.getByUser(userId)) as any;
+  const attendanceData = (await AttendanceService.getByUser(userId)) as any;
   const totalAsistencias = Array.isArray(attendanceData) ? attendanceData.length : 0;
 
-  const tipsData = (await TipRepository.getByUser(userId)) as any;
+  const tipsData = (await TipService.getByUser(userId)) as any;
   const totalPropinas = Array.isArray(tipsData)
     ? tipsData.reduce((sum: number, tip: any) => sum + Number(tip.monto || 0), 0)
     : 0;
 
-  const serviciosData = await ServiceRepository.getByUser(userId);
+  const serviciosData = await ServiceService.getByUser(userId);
   const serviciosCompletados = Array.isArray(serviciosData)
     ? serviciosData.filter((s: any) => s.estado === 1).length
     : 0;

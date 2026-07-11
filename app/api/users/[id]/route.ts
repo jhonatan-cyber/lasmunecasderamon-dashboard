@@ -1,11 +1,12 @@
 import { NextResponse } from 'next/server';
 import { withAppAuth } from '@/lib/api/app-api-wrapper';
-import { UserRepository } from '@/lib/repositories/UserRepository';
+import { UserService } from '@/lib/services/UserService';
+import { sendNotificationToAll } from '@/lib/api/sseService';
 
 export const GET = withAppAuth(
   async (request: Request, { params }: { params: Promise<{ id: string }>; user: any }) => {
     const id = (await params).id;
-    const data = await UserRepository.getById(id);
+    const data = await UserService.getById(id);
     if (!data)
       return NextResponse.json(
         { success: false, message: 'Usuario no encontrado' },
@@ -19,7 +20,8 @@ export const PUT = withAppAuth(
   async (request: Request, { params }: { params: Promise<{ id: string }>; user: any }) => {
     const id = (await params).id;
     const body = await request.json();
-    await UserRepository.update(id, body);
+    await UserService.update(id, body);
+    sendNotificationToAll('profile_updated', { userId: id });
     return NextResponse.json({ success: true, message: 'Usuario actualizado' });
   }
 );
@@ -27,7 +29,7 @@ export const PUT = withAppAuth(
 export const DELETE = withAppAuth(
   async (request: Request, { params }: { params: Promise<{ id: string }>; user: any }) => {
     const id = (await params).id;
-    await UserRepository.delete(id);
+    await UserService.delete(id);
     return NextResponse.json({ success: true, message: 'Usuario eliminado' });
   }
 );

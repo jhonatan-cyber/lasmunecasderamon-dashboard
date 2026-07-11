@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
 import { withAppAuth } from '@/lib/api/app-api-wrapper';
-import { CuentaRepository } from '@/lib/repositories/CuentaRepository';
+import { AccountService } from '@/lib/services/AccountService';
 
 export const POST = withAppAuth(
   async (request: Request, { params, user }: { params: Promise<{ id: string }>; user: any }) => {
@@ -15,7 +15,7 @@ export const POST = withAppAuth(
       habitacion_id: body.habitacion_id ?? null
     };
 
-    await CuentaRepository.cobrar(id, normalizedBody, user.id);
+    await AccountService.cobrar(id, normalizedBody, user.id);
     return NextResponse.json({ success: true, message: 'Cuenta cobrada exitosamente' });
   }
 );

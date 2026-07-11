@@ -1,10 +1,10 @@
 import { NextResponse } from 'next/server';
 import { withAppApiWrapper, withAppAuth } from '@/lib/api/app-api-wrapper';
-import { CategoryRepository } from '@/lib/repositories/CategoryRepository';
+import { CategoryService } from '@/lib/services/CategoryService';
 import { ValidationError } from '@/lib/errors/errors';
 
 export const GET = withAppApiWrapper(async () => {
-  const data = await CategoryRepository.getAll();
+  const data = await CategoryService.getAll();
   return NextResponse.json(
     { success: true, data },
     {
@@ -19,7 +19,7 @@ export const POST = withAppAuth(async (request: Request) => {
   const { name, description } = await request.json();
   if (!name) throw new ValidationError('Nombre requerido');
 
-  const data = await CategoryRepository.create(name, description);
+  const data = await CategoryService.create(name, description);
   return NextResponse.json(
     { success: true, message: 'Categoría creada correctamente', data },
     { status: 201 }
@@ -34,7 +34,7 @@ export const PATCH = withAppAuth(async (request: Request) => {
     const action = searchParams.get('action');
     if (!action) throw new ValidationError('Acción no válida');
 
-    const updated = await CategoryRepository.updateStatus(id, action);
+    const updated = await CategoryService.updateStatus(id, action);
     return NextResponse.json({
       success: true,
       message: `Categoría ${action === 'activate' ? 'activada' : 'desactivada'} correctamente`,
@@ -46,7 +46,7 @@ export const PATCH = withAppAuth(async (request: Request) => {
   const { categories, action } = body;
   if (action === 'reorder') {
     if (!Array.isArray(categories)) throw new ValidationError('Se requiere un array de categorías');
-    await CategoryRepository.reorder(categories);
+    await CategoryService.reorder(categories);
     return NextResponse.json({ success: true, message: 'Orden actualizado correctamente' });
   }
 
@@ -60,7 +60,7 @@ export const PUT = withAppAuth(async (request: Request) => {
 
   if (!id || !name) throw new ValidationError('ID y nombre son requeridos', { id, name });
 
-  const data = await CategoryRepository.update(id, name, description);
+  const data = await CategoryService.update(id, name, description);
   return NextResponse.json({ success: true, message: 'Categoría actualizada correctamente', data });
 });
 
@@ -69,7 +69,7 @@ export const DELETE = withAppAuth(async (request: Request) => {
   const id = searchParams.get('id');
   if (!id) throw new ValidationError('Falta el id');
 
-  await CategoryRepository.delete(id);
+  await CategoryService.delete(id);
   return NextResponse.json({
     success: true,
     message: 'Categoría y productos asociados eliminados correctamente'

@@ -13,32 +13,13 @@ import { ProfilePersonalInfoCard } from '@/components/profile/ProfilePersonalInf
 import { ProfileSecurityCard } from '@/components/profile/ProfileSecurityCard';
 import logger from '@/lib/utils/logger';
 
-import type {
-  ProfileCurrentUser,
-  ProfileRoleOption,
-  ProfileUserData,
-  ProfileUserOption
+import {
+  normalizeProfileUserData,
+  type ProfileCurrentUser,
+  type ProfileRoleOption,
+  type ProfileUserData,
+  type ProfileUserOption
 } from '@/components/profile/profile-types';
-
-function normalizeProfileUserData(rawUser: any): ProfileUserData {
-  return {
-    id: rawUser.id,
-    run: rawUser.run || '',
-    nick: rawUser.nick || '',
-    nombre: rawUser.nombre ?? rawUser.name ?? '',
-    apellido: rawUser.apellido ?? rawUser.lastName ?? '',
-    direccion: rawUser.direccion ?? rawUser.address ?? '',
-    telefono: rawUser.telefono ?? rawUser.phone ?? '',
-    estado_civil: rawUser.estado_civil ?? rawUser.maritalStatus ?? '',
-    rol_id: rawUser.rol_id ?? rawUser.roleId ?? '',
-    role: rawUser.role || '',
-    email: rawUser.email || '',
-    foto: rawUser.foto ?? null,
-    fecha_mod: rawUser.fecha_mod ?? rawUser.updated_at ?? null,
-    qr_token: rawUser.qr_token ?? null,
-    password: rawUser.password ?? ''
-  };
-}
 
 export default function ProfilePage() {
   const [isEditing, setIsEditing] = useState(false);
@@ -418,7 +399,7 @@ export default function ProfilePage() {
   useEffect(() => {
     if (!userData?.qr_token || isAdmin) return;
 
-    const interval = setInterval(async () => {
+    const checkQR = async () => {
       try {
         const res = await fetch(`/api/users/${userData.id}`);
         const data = await res.json();
@@ -426,11 +407,23 @@ export default function ProfilePage() {
           setUserData(data.user);
         }
       } catch (error) {
-        logger.captureException(error, { context: 'Profile:deleteAccount' });
+        logger.captureException(error, { context: 'Profile:checkQR' });
       }
-    }, 5000);
+    };
 
-    return () => clearInterval(interval);
+    const es = new EventSource('/api/notifications/sse');
+    es.onmessage = event => {
+      try {
+        const payload = JSON.parse(event.data);
+        if (payload.type === 'qr_token_updated' && payload.data?.userId == userData.id) {
+          checkQR();
+        }
+      } catch {}
+    };
+
+    return () => {
+      es.close();
+    };
   }, [userData?.id, userData?.qr_token, isAdmin]);
 
   if (userLoading || loadingUserData || loadingRoles) {

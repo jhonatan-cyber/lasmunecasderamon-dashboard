@@ -1,6 +1,6 @@
-﻿import { NextResponse } from 'next/server';
+import { NextResponse } from 'next/server';
 import { withAppAuth } from '@/lib/api/app-api-wrapper';
-import { CategoryRepository } from '@/lib/repositories/CategoryRepository';
+import { CategoryService } from '@/lib/services/CategoryService';
 import { ValidationError } from '@/lib/errors/errors';
 
 export const PUT = withAppAuth(async (request: Request) => {
@@ -8,10 +8,10 @@ export const PUT = withAppAuth(async (request: Request) => {
   const category_orders = Array.isArray(body) ? body : body.category_orders;
 
   if (!Array.isArray(category_orders)) {
-    throw new ValidationError('Se esperaba un array de categorías (category_orders)');
+    throw new ValidationError('Se esperaba un array de categor�as (category_orders)');
   }
 
-  await CategoryRepository.reorder(category_orders);
+  await CategoryService.reorder(category_orders);
 
   return NextResponse.json({
     success: true,

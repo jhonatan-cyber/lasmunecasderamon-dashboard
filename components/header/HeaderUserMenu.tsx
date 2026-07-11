@@ -80,7 +80,7 @@ export function HeaderUserMenu() {
           Perfil
         </DropdownMenuItem>
         {isAdmin && (
-          <DropdownMenuItem onClick={() => router.push('/configuracion')}>
+          <DropdownMenuItem onClick={() => router.push('/settings')}>
             <Settings className='mr-2 h-4 w-4' />
             Configuración
           </DropdownMenuItem>

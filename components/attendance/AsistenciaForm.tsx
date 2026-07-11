@@ -96,7 +96,7 @@ export default function AsistenciaForm({ isOpen, onOpenChange, onSuccess }: Asis
         toast.error(result.message || 'Error al registrar asistencia');
       }
     } catch (error) {
-      toast.error('Error de conexiÃ³n');
+      toast.error('Error de conexión');
     } finally {
       setSubmitting(false);
     }
@@ -222,5 +222,3 @@ export default function AsistenciaForm({ isOpen, onOpenChange, onSuccess }: Asis
     </Dialog>
   );
 }
-
-

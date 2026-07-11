@@ -29,7 +29,23 @@ export class ClientService {
     return await ClientRepository.getHistory(clientId);
   }
 
+  static async update(id: string | number, body: Record<string, unknown>) {
+    return await ClientRepository.update(id.toString(), body);
+  }
+
   static async addPrepago(data: PrepagoInput) {
     return await ClientRepository.addPrepago(data);
+  }
+
+  static async getById(id: string | number) {
+    return await ClientRepository.getById(id.toString());
+  }
+
+  static async getAll(params?: Record<string, unknown>) {
+    return await ClientRepository.getAll(params);
+  }
+
+  static async delete(id: string | number) {
+    return await ClientRepository.delete(id.toString());
   }
 }

@@ -1,12 +1,8 @@
 import { NextResponse } from 'next/server';
-import { withAppApiWrapper, withAppAuth } from '@/lib/api/app-api-wrapper';
-import { UserRepository } from '@/lib/repositories/UserRepository';
+import { withAppAuth } from '@/lib/api/app-api-wrapper';
 import { UserService } from '@/lib/services/UserService';
-import { AuditRepository } from '@/lib/repositories/AuditRepository';
-import path from 'path';
-import fs from 'fs/promises';
-import { existsSync } from 'fs';
-import sharp from 'sharp';
+import { AuditService } from '@/lib/services/AuditService';
+import { processAndSaveImage } from '@/lib/utils/image-utils';
 import logger from '@/lib/utils/logger';
 
 export const dynamic = 'force-dynamic';
@@ -24,7 +20,7 @@ export const GET = withAppAuth(async (request: Request) => {
     offset: searchParams.get('offset') ? parseInt(searchParams.get('offset')!) : undefined
   };
 
-  const { data, total } = await UserRepository.getAll(params);
+  const { data, total } = await UserService.getAll(params);
   return NextResponse.json({ success: true, data, total });
 });
 
@@ -43,28 +39,26 @@ export const POST = withAppAuth(
         const file = foto as unknown as File;
         if (file.size > 0) {
           const buffer = Buffer.from(await file.arrayBuffer());
-          const filename = `user_${Date.now()}.webp`;
-          const uploadDir = path.join(process.cwd(), 'public', 'img', 'users');
-
-          if (!existsSync(uploadDir)) {
-            await fs.mkdir(uploadDir, { recursive: true });
-          }
-
           try {
-            const optimizedBuffer = await sharp(buffer)
-              .resize(500, 500, { fit: 'cover', position: 'center' })
-              .webp({ quality: 80 })
-              .toBuffer();
-
-            await fs.writeFile(path.join(uploadDir, filename), optimizedBuffer);
-            fotoFilename = filename;
-            logger.info(`[USER API POST] Foto guardada OK: ${filename}`);
+            fotoFilename = await processAndSaveImage(buffer, 'user', {
+              width: 500,
+              height: 500,
+              fit: 'cover',
+              position: 'center',
+              quality: 80
+            });
+            logger.info(`[USER API POST] Foto guardada OK: ${fotoFilename}`);
           } catch (sharpError) {
+            // ponytail: processAndSaveImage failed; save raw as fallback
             logger.error(`[USER API POST] Error en Sharp, guardando original:`, {
               error: sharpError
             });
-            const fallbackFilename = `user_${Date.now()}${path.extname(file.name || 'image.png')}`;
-            await fs.writeFile(path.join(uploadDir, fallbackFilename), buffer);
+            const { writeFile, mkdir } = await import('fs/promises');
+            const { join, extname } = await import('path');
+            const fallbackDir = join(process.cwd(), 'public', 'img', 'users');
+            await mkdir(fallbackDir, { recursive: true });
+            const fallbackFilename = `user_fallback_${Date.now()}${extname(file.name || 'image.png')}`;
+            await writeFile(join(fallbackDir, fallbackFilename), buffer);
             fotoFilename = fallbackFilename;
           }
         }
@@ -124,28 +118,24 @@ export const PUT = withAppAuth(async (request: Request, { user }: { user: any })
       const file = foto as unknown as File;
       if (file.size > 0) {
         const buffer = Buffer.from(await file.arrayBuffer());
-        const filename = `user_${Date.now()}.webp`;
-        const uploadDir = path.join(process.cwd(), 'public', 'img', 'users');
-
-        if (!existsSync(uploadDir)) {
-          await fs.mkdir(uploadDir, { recursive: true });
-        }
-
         try {
-          const optimizedBuffer = await sharp(buffer)
-            .resize(500, 500, { fit: 'cover', position: 'center' })
-            .webp({ quality: 80 })
-            .toBuffer();
-
-          await fs.writeFile(path.join(uploadDir, filename), optimizedBuffer);
-          fotoFilename = filename;
-          logger.info(`[USER API PUT] Foto guardada OK: ${filename}`);
-        } catch (sharpError) {
-          logger.error(`[USER API PUT] Error en Sharp, guardando original:`, {
-            error: sharpError
+          fotoFilename = await processAndSaveImage(buffer, 'user', {
+            width: 500,
+            height: 500,
+            fit: 'cover',
+            position: 'center',
+            quality: 80
           });
-          const fallbackFilename = `user_${Date.now()}${path.extname(file.name || 'image.png')}`;
-          await fs.writeFile(path.join(uploadDir, fallbackFilename), buffer);
+          logger.info(`[USER API PUT] Foto guardada OK: ${fotoFilename}`);
+        } catch (sharpError) {
+          // ponytail: processAndSaveImage failed; save raw as fallback
+          logger.error(`[USER API PUT] Error en Sharp, guardando original:`, { error: sharpError });
+          const { writeFile, mkdir } = await import('fs/promises');
+          const { join, extname } = await import('path');
+          const fallbackDir = join(process.cwd(), 'public', 'img', 'users');
+          await mkdir(fallbackDir, { recursive: true });
+          const fallbackFilename = `user_fallback_${Date.now()}${extname(file.name || 'image.png')}`;
+          await writeFile(join(fallbackDir, fallbackFilename), buffer);
           fotoFilename = fallbackFilename;
         }
       }
@@ -169,7 +159,7 @@ export const PUT = withAppAuth(async (request: Request, { user }: { user: any })
 
   if (!isSelfUpdate && !hasWritePermission) {
     try {
-      await AuditRepository.log({
+      await AuditService.log({
         user_id: user.id,
         action: `PUT /api/users FORBIDDEN`,
         resource_type: 'users',
@@ -198,7 +188,7 @@ export const DELETE = withAppAuth(
     if (!id)
       return NextResponse.json({ success: false, message: 'El ID es requerido' }, { status: 400 });
 
-    await UserRepository.delete(id);
+    await UserService.delete(id);
     return NextResponse.json({ success: true, message: 'Usuario eliminado' });
   },
   { module: 'users', action: 'delete' }

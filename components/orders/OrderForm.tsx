@@ -4,7 +4,12 @@ import OrderProductTable from './OrderProductTable';
 import { CustomerSelect } from '@/components/shared/selects';
 import OrderTotalHeader from '@/components/orders/OrderTotalHeader';
 import CategoryCardList from '@/components/shared/CategoryCardList';
-import { useOrderForm, type OrderProducto, type OrderCategory, type OrderProductoPayload } from '@/hooks/personal';
+import {
+  useOrderForm,
+  type OrderProducto,
+  type OrderCategory,
+  type OrderProductoPayload
+} from '@/hooks/personal';
 
 const CategoryProductsModal = dynamic(() => import('@/components/orders/CategoryProductsModal'), {
   loading: () => (
@@ -60,7 +65,8 @@ export default function OrderForm({
   setSearchAnfitriona
 }: OrderFormProps) {
   const {
-    modalOpen, setModalOpen,
+    modalOpen,
+    setModalOpen,
     modalCategoria,
     productosCategoria,
     loadingProductos,
@@ -119,9 +125,7 @@ export default function OrderForm({
       <CategoryCardList
         categorias={categorias}
         onSelect={handleOpenCategoria}
-        filter={(c: OrderCategory) =>
-          c.status === 1 && (c.total_products || 0) > 0
-        }
+        filter={(c: OrderCategory) => c.status === 1 && (c.total_products || 0) > 0}
       />
 
       <div className='mb-6 grid grid-cols-1 gap-6 lg:grid-cols-2 lg:items-start'>
@@ -179,7 +183,7 @@ export default function OrderForm({
             Detalles del pedido
           </div>
           <div className='mt-1 text-sm text-zinc-500 dark:text-zinc-400'>
-            RevisÃ¡ cantidades, comisiones y asignaciones antes de generar el pedido
+            Revisá cantidades, comisiones y asignaciones antes de generar el pedido
           </div>
         </div>
         <OrderProductTable
@@ -195,7 +199,3 @@ export default function OrderForm({
     </div>
   );
 }
-
-
-
-

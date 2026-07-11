@@ -1,7 +1,7 @@
 'use client';
 
 import { useCurrentUser } from '@/hooks/auth/useCurrentUser';
-import GarzonCalendar from '@/components/garzon/GarzonCalendar';
+import RoleCalendar from '@/components/shared/RoleCalendar';
 
 export function GarzonCalendarPageClient() {
   const { user, loading } = useCurrentUser();
@@ -28,5 +28,5 @@ export function GarzonCalendarPageClient() {
     );
   }
 
-  return <GarzonCalendar userId={user?.id} />;
+  return <RoleCalendar role='garzon' userId={user?.id} backLink='/garzon-dashboard' />;
 }

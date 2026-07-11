@@ -1,6 +1,5 @@
 import { NextResponse } from 'next/server';
 import { withAppAuth } from '@/lib/api/app-api-wrapper';
-import { ProductRepository } from '@/lib/repositories/ProductRepository';
 import { ProductService } from '@/lib/services/ProductService';
 import { processAndSaveImage } from '@/lib/utils/image-utils';
 
@@ -44,7 +43,7 @@ export const PUT = withAppAuth(
 export const DELETE = withAppAuth(
   async (request: Request, { params }: { params: Promise<{ id: string }>; user: any }) => {
     const id = (await params).id;
-    await ProductRepository.delete(id);
+    await ProductService.delete(id);
     return NextResponse.json({ success: true, message: 'Producto eliminado' });
   }
 );

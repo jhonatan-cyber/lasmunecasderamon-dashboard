@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
 import { withAppApiWrapper } from '@/lib/api/app-api-wrapper';
-import { CalendarRepository } from '@/lib/repositories/CalendarRepository';
+import { CalendarService } from '@/lib/services/CalendarService';
 
 export const GET = withAppApiWrapper(async (request: Request) => {
   const { searchParams } = new URL(request.url);
@@ -13,6 +13,6 @@ export const GET = withAppApiWrapper(async (request: Request) => {
       { status: 400 }
     );
 
-  const data = await CalendarRepository.getActions(startDate, endDate);
+  const data = await CalendarService.getActions(startDate, endDate);
   return NextResponse.json({ success: true, data });
 });

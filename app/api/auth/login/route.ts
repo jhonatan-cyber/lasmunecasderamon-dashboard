@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
 import { withAppApiWrapper } from '@/lib/api/app-api-wrapper';
-import { AuthRepository } from '@/lib/repositories/AuthRepository';
+import { AuthService } from '@/lib/services/AuthService';
 import { cookies } from 'next/headers';
 import { loginLimiterApp } from '@/lib/middleware/rateLimit';
 import { ApiResponse } from '@/lib/api/api-response';
@@ -11,7 +11,7 @@ export const POST = loginLimiterApp(async (request: Request) => {
     const forwarded = request.headers.get('x-forwarded-for');
     const ip = forwarded ? forwarded.split(',')[0] : 'unknown';
 
-    const result = await AuthRepository.login(body, ip);
+    const result = await AuthService.login(body, ip);
 
     if (result.success && result.token) {
       const cookieStore = await cookies();

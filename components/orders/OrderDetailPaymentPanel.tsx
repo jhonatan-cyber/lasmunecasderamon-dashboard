@@ -64,13 +64,13 @@ export function OrderDetailPaymentPanel({
         <PaymentMethodSelect
           value={metodoPago}
           onChange={setMetodoPago}
-          label='MÃ©todo de pago'
-          placeholder='Seleccione un mÃ©todo de pago'
+          label='Método de pago'
+          placeholder='Seleccione un método de pago'
           required={true}
           className={showMetodoPagoError && !metodoPago ? 'border-red-300' : ''}
         />
         {showMetodoPagoError && !metodoPago && (
-          <div className='text-xs text-red-500 mt-1'>âš ï¸ El mÃ©todo de pago es obligatorio</div>
+          <div className='text-xs text-red-500 mt-1'>âš ï¸ El método de pago es obligatorio</div>
         )}
       </div>
 
@@ -80,16 +80,16 @@ export function OrderDetailPaymentPanel({
             habitaciones={habitacionesActivas}
             value={habitacionId}
             onChange={setHabitacionId}
-            label='HabitaciÃ³n (opcional)'
-            placeholder='Seleccione una habitaciÃ³n'
-            searchPlaceholder='Buscar habitaciÃ³n...'
+            label='Habitación (opcional)'
+            placeholder='Seleccione una habitación'
+            searchPlaceholder='Buscar habitación...'
             filterByStatus={1}
             includeRoomIds={habitacionId ? [habitacionId] : []}
             showTime={true}
             disabled={hasRoomSelectedInOrder}
             disabledReason={
               hasRoomSelectedInOrder
-                ? 'Este pedido ya viene con una habitaciÃ³n seleccionada y no se puede cambiar.'
+                ? 'Este pedido ya viene con una habitación seleccionada y no se puede cambiar.'
                 : undefined
             }
           />
@@ -151,13 +151,13 @@ export function OrderDetailPaymentPanel({
 
         {agregarPropina && (
           <div className='text-xs text-green-600 mt-1'>
-            âœ“ Propina calculada: {formatCurrencyCLP(propina)}
+            ✓ Propina calculada: {formatCurrencyCLP(propina)}
           </div>
         )}
       </div>
 
       <div>
-        <Label className={ORDER_FIELD_LABEL_CLASS}>Total ComisiÃ³n</Label>
+        <Label className={ORDER_FIELD_LABEL_CLASS}>Total Comisión</Label>
         <div className='relative'>
           <DollarSign className='absolute left-2 top-1/2 -translate-y-1/2 pointer-events-none h-3 w-3 sm:h-4 sm:w-4 text-muted-foreground' />
           <Input
@@ -172,5 +172,3 @@ export function OrderDetailPaymentPanel({
     </div>
   );
 }
-
-

@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
 import { withAppApiWrapper } from '@/lib/api/app-api-wrapper';
-import { CalendarRepository } from '@/lib/repositories/CalendarRepository';
+import { CalendarService } from '@/lib/services/CalendarService';
 import { jsonWithNormalizedDates } from '@/lib/api/date-response';
 import { ValidationError } from '@/lib/errors/errors';
 
@@ -17,6 +17,6 @@ export const GET = withAppApiWrapper(async (request: Request) => {
       type
     });
 
-  const data = await CalendarRepository.getData(startDate, endDate, type);
+  const data = await CalendarService.getData(startDate, endDate, type);
   return jsonWithNormalizedDates({ data, type });
 });

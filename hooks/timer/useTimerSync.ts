@@ -1,4 +1,4 @@
-import { useEffect, useRef } from 'react';
+import { useEffect, useRef, useCallback } from 'react';
 import { Timer, saveTimersToStorage, loadTimersFromStorage } from '@/contexts/TimerContext';
 import { parseDateSafe, calculateRemainingTime } from '@/lib/utils/timeUtils';
 import { useSSE } from '@/hooks/shared';
@@ -144,6 +144,23 @@ export function useTimerSync({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
+  // Sync function: cleanup stale timers that weren't removed via SSE (e.g. after reconnect)
+  const syncTimers = useCallback(async () => {
+    if (!isInitialized) return;
+    try {
+      const res = await fetch('/api/timers/active?source=poll');
+      const data = await res.json();
+      if (data.success) {
+        const dbIds = new Set(data.data.map((t: any) => t.servicioId));
+        activeTimers.value = activeTimers
+          .peek()
+          .filter(t => t.isTemporary || dbIds.has(t.servicioId));
+      }
+    } catch (e) {
+      logger.captureException(e, { context: 'useTimerSync:timerPoll' });
+    }
+  }, [isInitialized]);
+
   const sseUrl =
     typeof window !== 'undefined' && !['/', '/login'].includes(window.location.pathname)
       ? '/api/notifications/sse'
@@ -154,6 +171,11 @@ export function useTimerSync({
     const serverOffset = serverOffsetSignal.peek();
 
     switch (payload.type) {
+      // Sync on SSE reconnect — reemplaza periodic polling
+      case 'connected':
+        syncTimers();
+        break;
+
       case 'timer_started': {
         const { servicioId, codigo, roomId, duration, startTime } = payload.data;
 
@@ -236,26 +258,10 @@ export function useTimerSync({
     }
   });
 
+  // Initial sync on mount (one-time, no more periodic polling)
   useEffect(() => {
     if (!isInitialized || periodicSyncStartedRef.current) return;
-
-    const sync = async () => {
-      try {
-        const res = await fetch('/api/timers/active?source=poll');
-        const data = await res.json();
-        if (data.success) {
-          const dbIds = new Set(data.data.map((t: any) => t.servicioId));
-          activeTimers.value = activeTimers
-            .peek()
-            .filter(t => t.isTemporary || dbIds.has(t.servicioId));
-        }
-      } catch (e) {
-        logger.captureException(e, { context: 'useTimerSync:timerPoll' });
-      }
-    };
-
     periodicSyncStartedRef.current = true;
-    const interval = setInterval(sync, 60000);
-    return () => clearInterval(interval);
-  }, [isInitialized]);
+    syncTimers();
+  }, [isInitialized, syncTimers]);
 }

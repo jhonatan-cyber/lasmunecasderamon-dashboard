@@ -2,18 +2,62 @@
 import { useRouter } from 'next/navigation';
 import { toast } from 'sonner';
 
+export interface LoginFormData {
+  email: string;
+  password: string;
+}
+
+export interface UserTemp {
+  id: string | number;
+  email: string;
+  role: string;
+}
+
+const RATE_LIMIT_KEY = 'rate_limit_cooldown';
+
+interface RateLimitCooldown {
+  remaining: number;
+  savedAt: number;
+}
+
+function saveRateLimitCooldown(remaining: number) {
+  try {
+    localStorage.setItem(RATE_LIMIT_KEY, JSON.stringify({ remaining, savedAt: Date.now() }));
+  } catch { /* localStorage no disponible */ }
+}
+
+function clearRateLimitCooldown() {
+  try {
+    localStorage.removeItem(RATE_LIMIT_KEY);
+  } catch { /* localStorage no disponible */ }
+}
+
+function loadRateLimitCooldown(): number {
+  try {
+    const raw = localStorage.getItem(RATE_LIMIT_KEY);
+    if (!raw) return 0;
+    const data: RateLimitCooldown = JSON.parse(raw);
+    const elapsed = Math.floor((Date.now() - data.savedAt) / 1000);
+    return Math.max(0, data.remaining - elapsed);
+  } catch {
+    return 0;
+  }
+}
+
 export const useLoginForm = () => {
   const router = useRouter();
   const [loading, setLoading] = useState(false);
   const [theme, setTheme] = useState('system');
   const [codigo, setCodigo] = useState('');
-  const [loginData, setLoginData] = useState({ email: '', password: '' });
-  const [userTmp, setUserTmp] = useState<any>(null);
+  const [loginData, setLoginData] = useState<LoginFormData>({ email: '', password: '' });
+  const [userTmp, setUserTmp] = useState<UserTemp | null>(null);
   const [step, setStep] = useState<'login' | 'codigo'>('login');
   const [hasUsers, setHasUsers] = useState<boolean | null>(null);
   const [showRegisterModal, setShowRegisterModal] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
-  const [rateLimitRemaining, setRateLimitRemaining] = useState(0);
+  const [rateLimitRemaining, setRateLimitRemaining] = useState(() =>
+    typeof window !== 'undefined' ? loadRateLimitCooldown() : 0
+  );
   const [registerData, setRegisterData] = useState({
     nombre: '',
     apellido: '',
@@ -107,7 +151,12 @@ export const useLoginForm = () => {
   }, [step]);
 
   useEffect(() => {
-    if (rateLimitRemaining <= 0) return;
+    if (rateLimitRemaining <= 0) {
+      clearRateLimitCooldown();
+      return;
+    }
+
+    saveRateLimitCooldown(rateLimitRemaining);
 
     const timer = window.setInterval(() => {
       setRateLimitRemaining(prev => (prev <= 1 ? 0 : prev - 1));

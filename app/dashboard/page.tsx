@@ -18,7 +18,6 @@ import MiniSalesChart from '@/components/dashboard/MiniSalesChart';
 import TopPerformers from '@/components/dashboard/TopPerformers';
 import ForecastInsights from '@/components/dashboard/ForecastInsights';
 import LoggedUsersCards from '@/components/dashboard/LoggedUsersCards';
-import logger from '@/lib/utils/logger';
 
 const DashboardStatsCards = dynamic(() => import('@/components/dashboard/DashboardStatsCards'), {
   loading: () => <ChartSkeleton />
@@ -45,29 +44,6 @@ export default function Dashboard() {
   useEffect(() => {
     if (!user?.qr_token) return;
 
-    const checkToken = async () => {
-      try {
-        const res = await fetch(`/api/users/${user.id}`);
-        const data = await res.json();
-        if (data.success && data.user && data.user.qr_token !== user.qr_token) {
-          refetch(true);
-        }
-      } catch (e) {
-        logger.captureException(e, { context: 'Dashboard:checkToken' });
-      }
-    };
-
-    const interval = setInterval(checkToken, 60000);
-    window.addEventListener('focus', checkToken);
-
-    return () => {
-      clearInterval(interval);
-      window.removeEventListener('focus', checkToken);
-    };
-  }, [user?.id, user?.qr_token, refetch]);
-
-  useEffect(() => {
-    if (!user?.qr_token) return;
     const fetchCodigo = async () => {
       try {
         const res = await fetch('/api/codigo/actual', {
@@ -86,13 +62,14 @@ export default function Dashboard() {
         if (payload.type === 'code_changed' && payload.data?.codigo) {
           setCodigoAsistencia(payload.data.codigo);
         }
+        if (payload.type === 'qr_token_updated' && payload.data?.userId === user.id) {
+          refetch(true);
+        }
       } catch {}
     };
 
-    return () => {
-      es.close();
-    };
-  }, [user?.qr_token, user?.role]);
+    return () => es.close();
+  }, [user?.qr_token, user?.role, user?.id, refetch]);
 
   const [marcandoEntrada, setMarcandoEntrada] = useState(false);
 

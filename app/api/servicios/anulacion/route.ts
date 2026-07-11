@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
 import { withAppAuth } from '@/lib/api/app-api-wrapper';
-import { ServiceRepository } from '@/lib/repositories/ServiceRepository';
+import { ServiceService } from '@/lib/services/ServiceService';
 import { query } from '@/lib/database/db';
 import { enviarMensajeSolicitudAnulacion } from '@/lib/integrations/whatsappService';
 import logger from '@/lib/utils/logger';
@@ -9,11 +9,11 @@ export const POST = withAppAuth(async (request: Request, { user }: { params: any
   const body = await request.json();
 
   if (body.requestId) {
-    await ServiceRepository.processAnulacion(body.requestId, user.id.toString(), body.status);
+    await ServiceService.processAnulacion(body.requestId, user.id.toString(), body.status);
     return NextResponse.json({ success: true, message: 'Solicitud procesada' });
   }
 
-  const token = await ServiceRepository.requestAnulacion(
+  const token = await ServiceService.requestAnulacion(
     body.servicioId,
     body.motivo,
     user.nick || user.name || user.id.toString()
