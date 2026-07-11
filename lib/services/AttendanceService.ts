@@ -34,7 +34,13 @@ export class AttendanceService {
     return await AttendanceRepository.getSummary();
   }
 
-  static async registerManual(usuario_id: string, fecha: string, hora: string, estado: string, user: any) {
+  static async registerManual(
+    usuario_id: string,
+    fecha: string,
+    hora: string,
+    estado: string,
+    user: any
+  ) {
     return await AttendanceRepository.registerManual(usuario_id, fecha, hora, estado, user);
   }
 

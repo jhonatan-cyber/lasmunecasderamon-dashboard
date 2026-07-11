@@ -52,7 +52,9 @@ export class ProductService {
   }
 
   static async reorder(product_orders: Array<{ id: string; orden: number }>) {
-    return await ProductRepository.reorder(product_orders.map(p => ({ id: p.id, display_order: p.orden })));
+    return await ProductRepository.reorder(
+      product_orders.map(p => ({ id: p.id, display_order: p.orden }))
+    );
   }
 
   static async updateProduct(id: string, body: Partial<ProductInput>, fotoName?: string) {

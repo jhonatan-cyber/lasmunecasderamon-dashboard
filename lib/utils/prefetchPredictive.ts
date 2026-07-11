@@ -40,7 +40,7 @@ const ROUTE_ADJACENCY: Record<string, string[]> = {
   '/overtime': ['/attendance', '/users', '/payroll'],
 
   // Settings
-  '/settings': ['/users', '/roles', '/dashboard'],
+  '/settings': ['/users', '/roles', '/dashboard']
 };
 
 // ─── Route → API Endpoint Mapping ───────────────────────────────────
@@ -68,7 +68,7 @@ const ROUTE_API_ENDPOINTS: Record<string, string[]> = {
   '/attendance': ['/api/attendance'],
   '/overtime': ['/api/overtime'],
   '/settings': ['/api/configurations'],
-  '/reports': ['/api/reports/cash-register', '/api/reports/commissions', '/api/reports/sales'],
+  '/reports': ['/api/reports/cash-register', '/api/reports/commissions', '/api/reports/sales']
 };
 
 // ─── Endpoint → React Query Key Mapping ─────────────────────────────
@@ -99,7 +99,7 @@ const ENDPOINT_TO_QUERY_KEY: Record<string, string[]> = {
   '/api/configurations': ['settings'],
   '/api/reports/cash-register': ['reports', 'cashRegister'],
   '/api/reports/commissions': ['reports', 'commissions'],
-  '/api/reports/sales': ['reports', 'sales'],
+  '/api/reports/sales': ['reports', 'sales']
 };
 
 // ─── Prefetch Implementation ──────────────────────────────────────
@@ -124,10 +124,7 @@ type PrefetchOptions = {
  * @param currentRoute - The current pathname (e.g., '/dashboard')
  * @param options - Prefetch options
  */
-export function prefetchAdjacentRoutes(
-  currentRoute: string,
-  options: PrefetchOptions = {},
-): void {
+export function prefetchAdjacentRoutes(currentRoute: string, options: PrefetchOptions = {}): void {
   const { delay = PREFETCH_DELAY, debug = false } = options;
 
   if (typeof window === 'undefined') return;
@@ -183,7 +180,7 @@ async function prefetchEndpoint(endpoint: string): Promise<void> {
     const response = await fetch(endpoint, {
       method: 'GET',
       headers: { 'Content-Type': 'application/json' },
-      credentials: 'include',
+      credentials: 'include'
     });
 
     if (!response.ok) return;

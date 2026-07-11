@@ -31,7 +31,9 @@ export function SettingsMaintenanceTab() {
     }
   }, []);
 
-  useEffect(() => { fetchBackups(); }, [fetchBackups]);
+  useEffect(() => {
+    fetchBackups();
+  }, [fetchBackups]);
 
   const createBackup = async () => {
     try {
@@ -60,7 +62,12 @@ export function SettingsMaintenanceTab() {
   };
 
   const restoreBackup = async (backupId: string) => {
-    if (!confirm('¿Estás seguro de que quieres restaurar este backup? Se sobrescribirán todos los datos actuales.')) return;
+    if (
+      !confirm(
+        '¿Estás seguro de que quieres restaurar este backup? Se sobrescribirán todos los datos actuales.'
+      )
+    )
+      return;
     if (!confirm('¿REALMENTE quieres continuar? Esta acción no se puede deshacer.')) return;
 
     try {

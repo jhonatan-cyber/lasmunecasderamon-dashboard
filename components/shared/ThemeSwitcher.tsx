@@ -1,10 +1,10 @@
-"use client";
+'use client';
 
-import { useTheme } from "next-themes";
-import { useEffect, useState } from "react";
-import { flushSync } from "react-dom";
-import { Moon, Sun } from "lucide-react";
-import { Button } from "@/components/ui/button";
+import { useTheme } from 'next-themes';
+import { useEffect, useState } from 'react';
+import { flushSync } from 'react-dom';
+import { Moon, Sun } from 'lucide-react';
+import { Button } from '@/components/ui/button';
 
 export default function ThemeSwitcher() {
   const { theme, setTheme, systemTheme } = useTheme();
@@ -20,9 +20,9 @@ export default function ThemeSwitcher() {
 
   const changeThemeWithTransition = (newTheme: string) => {
     if (
-      typeof document === "undefined" ||
+      typeof document === 'undefined' ||
       !document.startViewTransition ||
-      window.matchMedia("(prefers-reduced-motion: reduce)").matches
+      window.matchMedia('(prefers-reduced-motion: reduce)').matches
     ) {
       setTheme(newTheme);
       return;
@@ -35,28 +35,16 @@ export default function ThemeSwitcher() {
     });
   };
 
-  const current = theme === "system" ? systemTheme : theme;
+  const current = theme === 'system' ? systemTheme : theme;
 
   const handleToggle = () => {
-    const nextTheme = current === "dark" ? "light" : "dark";
+    const nextTheme = current === 'dark' ? 'light' : 'dark';
     changeThemeWithTransition(nextTheme);
   };
 
   return (
-    <Button
-      variant="ghost"
-      size="icon"
-      aria-label="Cambiar tema"
-      onClick={handleToggle}
-    >
-      {mounted && current === "dark" ? (
-        <Moon className="h-5 w-5" />
-      ) : (
-        <Sun className="h-5 w-5" />
-      )}
+    <Button variant='ghost' size='icon' aria-label='Cambiar tema' onClick={handleToggle}>
+      {mounted && current === 'dark' ? <Moon className='h-5 w-5' /> : <Sun className='h-5 w-5' />}
     </Button>
   );
 }
-
-
-

@@ -21,18 +21,18 @@ const CACHE_NAMES = {
   fonts: 'lmr-fonts-v1',
   api: 'lmr-api-v1',
   navigation: 'lmr-navigation-v1',
-  runtime: 'lmr-runtime-v2',
+  runtime: 'lmr-runtime-v2'
 };
 
 const API_CACHE_CONFIG = {
   maxEntries: 80,
-  maxAgeSeconds: 5 * 60, // 5 minutes
+  maxAgeSeconds: 5 * 60 // 5 minutes
 };
 
 // ═══════════════════════════════════════════════════════════════════════════
 // Install — Fetch precache-manifest.json and populate the precache
 // ═══════════════════════════════════════════════════════════════════════════
-self.addEventListener('install', (event) => {
+self.addEventListener('install', event => {
   console.log('[SW] Installing — precaching build assets');
 
   event.waitUntil(
@@ -52,7 +52,7 @@ self.addEventListener('install', (event) => {
           let failed = 0;
 
           await Promise.allSettled(
-            manifest.map(async (entry) => {
+            manifest.map(async entry => {
               try {
                 const response = await fetch(entry.url, { credentials: 'same-origin' });
                 if (response.ok) {
@@ -84,7 +84,7 @@ self.addEventListener('install', (event) => {
 // ═══════════════════════════════════════════════════════════════════════════
 // Activate — Clean old caches, claim clients
 // ═══════════════════════════════════════════════════════════════════════════
-self.addEventListener('activate', (event) => {
+self.addEventListener('activate', event => {
   console.log('[SW] Activating — cleaning old caches');
 
   const currentCaches = Object.values(CACHE_NAMES);
@@ -92,11 +92,11 @@ self.addEventListener('activate', (event) => {
   event.waitUntil(
     caches
       .keys()
-      .then((cacheNames) =>
+      .then(cacheNames =>
         Promise.all(
           cacheNames
-            .filter((name) => !currentCaches.includes(name))
-            .map((name) => {
+            .filter(name => !currentCaches.includes(name))
+            .map(name => {
               console.log('[SW] Deleting old cache:', name);
               return caches.delete(name);
             })
@@ -109,7 +109,7 @@ self.addEventListener('activate', (event) => {
 // ═══════════════════════════════════════════════════════════════════════════
 // Fetch — Runtime caching strategies
 // ═══════════════════════════════════════════════════════════════════════════
-self.addEventListener('fetch', (event) => {
+self.addEventListener('fetch', event => {
   const { request } = event;
   const url = new URL(request.url);
 
@@ -119,10 +119,7 @@ self.addEventListener('fetch', (event) => {
   // Same-origin only (except fonts and CDN)
   if (url.origin !== self.location.origin) {
     // Google Fonts — stale-while-revalidate
-    if (
-      url.href.includes('fonts.googleapis.com') ||
-      url.href.includes('fonts.gstatic.com')
-    ) {
+    if (url.href.includes('fonts.googleapis.com') || url.href.includes('fonts.gstatic.com')) {
       event.respondWith(fontsStrategy(event));
       return;
     }
@@ -184,7 +181,7 @@ self.addEventListener('fetch', (event) => {
  */
 async function precacheStrategy(event) {
   const cached = await caches.match(event.request, {
-    cacheName: CACHE_NAMES.precache,
+    cacheName: CACHE_NAMES.precache
   });
   if (cached) return cached;
 
@@ -280,7 +277,7 @@ async function apiStrategy(event) {
       const cachedResponse = new Response(blob, {
         status: clone.status,
         statusText: clone.statusText,
-        headers,
+        headers
       });
 
       cache.put(event.request, cachedResponse);
@@ -291,7 +288,7 @@ async function apiStrategy(event) {
     if (!cached) {
       return new Response(JSON.stringify({ success: false, error: 'Offline' }), {
         status: 503,
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 'Content-Type': 'application/json' }
       });
     }
 
@@ -394,7 +391,7 @@ async function trimCache(cacheName, maxEntries) {
     const keys = await cache.keys();
     if (keys.length > maxEntries) {
       const toDelete = keys.slice(0, keys.length - maxEntries);
-      await Promise.all(toDelete.map((request) => cache.delete(request)));
+      await Promise.all(toDelete.map(request => cache.delete(request)));
     }
   } catch {
     // Silently fail — cache trimming is non-critical
@@ -404,7 +401,7 @@ async function trimCache(cacheName, maxEntries) {
 // ═══════════════════════════════════════════════════════════════════════════
 // Push notifications
 // ═══════════════════════════════════════════════════════════════════════════
-self.addEventListener('push', (event) => {
+self.addEventListener('push', event => {
   if (!event.data) return;
 
   try {
@@ -416,30 +413,27 @@ self.addEventListener('push', (event) => {
       vibrate: [100, 50, 100],
       data: {
         url: data.url || '/',
-        timestamp: Date.now(),
+        timestamp: Date.now()
       },
       actions: data.actions || [],
-      requireInteraction: data.requireInteraction || false,
+      requireInteraction: data.requireInteraction || false
     };
 
     event.waitUntil(
-      self.registration.showNotification(
-        data.title || 'Las Muñecas de Ramón',
-        options
-      )
+      self.registration.showNotification(data.title || 'Las Muñecas de Ramón', options)
     );
   } catch (err) {
     console.error('[SW] Error handling push event:', err);
   }
 });
 
-self.addEventListener('notificationclick', (event) => {
+self.addEventListener('notificationclick', event => {
   event.notification.close();
 
   const url = event.notification.data?.url || '/';
 
   event.waitUntil(
-    self.clients.matchAll({ type: 'window' }).then((clientList) => {
+    self.clients.matchAll({ type: 'window' }).then(clientList => {
       for (const client of clientList) {
         if (client.url === url && 'focus' in client) {
           return client.focus();
@@ -453,7 +447,7 @@ self.addEventListener('notificationclick', (event) => {
 // ═══════════════════════════════════════════════════════════════════════════
 // Background Sync
 // ═══════════════════════════════════════════════════════════════════════════
-self.addEventListener('sync', (event) => {
+self.addEventListener('sync', event => {
   if (event.tag === 'sync-pending-data') {
     event.waitUntil(syncPendingData());
   }
@@ -466,7 +460,7 @@ async function syncPendingData() {
 // ═══════════════════════════════════════════════════════════════════════════
 // Message handling
 // ═══════════════════════════════════════════════════════════════════════════
-self.addEventListener('message', (event) => {
+self.addEventListener('message', event => {
   if (!event.data) return;
 
   switch (event.data.type) {
@@ -484,7 +478,7 @@ self.addEventListener('message', (event) => {
 
 async function clearAllCaches() {
   const cacheNames = await caches.keys();
-  return Promise.all(cacheNames.map((name) => caches.delete(name)));
+  return Promise.all(cacheNames.map(name => caches.delete(name)));
 }
 
 console.log('[SW] Template loaded — Workbox will inject precache manifest on build');

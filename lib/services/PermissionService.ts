@@ -5,7 +5,12 @@ export class PermissionService {
     return await PermissionRepository.getAll();
   }
 
-  static async create(data: { name: string; description?: string; module: string; action: string }) {
+  static async create(data: {
+    name: string;
+    description?: string;
+    module: string;
+    action: string;
+  }) {
     return await PermissionRepository.create(data);
   }
 
@@ -13,7 +18,10 @@ export class PermissionService {
     return await PermissionRepository.delete(id);
   }
 
-  static async update(id: string, data: { name?: string; description?: string; module?: string; action?: string }) {
+  static async update(
+    id: string,
+    data: { name?: string; description?: string; module?: string; action?: string }
+  ) {
     return await PermissionRepository.update(id, data);
   }
 }

@@ -23,13 +23,17 @@ interface RateLimitCooldown {
 function saveRateLimitCooldown(remaining: number) {
   try {
     localStorage.setItem(RATE_LIMIT_KEY, JSON.stringify({ remaining, savedAt: Date.now() }));
-  } catch { /* localStorage no disponible */ }
+  } catch {
+    /* localStorage no disponible */
+  }
 }
 
 function clearRateLimitCooldown() {
   try {
     localStorage.removeItem(RATE_LIMIT_KEY);
-  } catch { /* localStorage no disponible */ }
+  } catch {
+    /* localStorage no disponible */
+  }
 }
 
 function loadRateLimitCooldown(): number {
