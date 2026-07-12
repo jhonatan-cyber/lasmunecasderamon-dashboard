@@ -120,13 +120,13 @@ export const LoginView = () => {
                   onSetStep: setStep
                 }}
               />
-              <div className='mt-6 pt-6 border-t border-gray-100 dark:border-gray-800/80 text-center'>
+              <div className='mt-6 pt-6 border-t border-gray-100 dark:border-gray-800/80 text-center w-full'>
                 <a
                   href='/asistencia-qr'
-                  className='inline-flex items-center justify-center gap-2 text-sm font-black uppercase tracking-wider text-amber-600 hover:text-amber-700 dark:text-amber-500 dark:hover:text-amber-400 transition-colors'
+                  className='w-full bg-black text-white rounded-full px-6 py-3 border-2 border-black hover:bg-white hover:text-black hover:scale-105 active:scale-95 transition-all duration-200 inline-flex items-center justify-center gap-2 text-sm font-black uppercase tracking-wider dark:bg-black dark:text-white dark:border-white dark:hover:bg-white dark:hover:text-black dark:hover:border-white cursor-pointer select-none'
                 >
                   <QrCode className='h-4 w-4' />
-                  Acceso Trabajadores (QR)
+                  Asistencia Trabajadores (QR)
                 </a>
               </div>
             </div>

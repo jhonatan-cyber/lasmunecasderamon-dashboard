@@ -18,7 +18,9 @@ const VALID_CLAVES = new Set([
   'facturacion_activada',
   'resolucion_sii',
   'ambiente',
-  'timezone'
+  'timezone',
+  'asistencia_hora_inicio',
+  'asistencia_hora_fin'
 ]);
 
 function validateConfig(clave: string, valor: string): string | null {
@@ -31,6 +33,12 @@ function validateConfig(clave: string, valor: string): string | null {
       return `${clave} debe estar entre 0 y 100`;
     }
   }
+  if (clave === 'asistencia_hora_inicio' || clave === 'asistencia_hora_fin') {
+    const num = Number(valor);
+    if (isNaN(num) || num < 0 || num > 23 || !Number.isInteger(num)) {
+      return `${clave} debe ser una hora válida entre 0 y 23`;
+    }
+  }
   return null;
 }
 
@@ -39,10 +47,11 @@ async function updateConfig(clave: string, valor: string) {
     clave
   ])) as any[];
   if (!existing) {
-    // Insert if key doesn't exist (e.g. empresa_tiktok added later)
+    const categoria = clave.startsWith('asistencia_') ? 'asistencia' : 'empresa';
+    const tipo = clave.startsWith('asistencia_') ? 'number' : 'text';
     await query(
       'INSERT INTO configuraciones (id, clave, valor, categoria, tipo, fecha_crea, fecha_mod) VALUES (?, ?, ?, ?, ?, NOW(), NOW())',
-      [crypto.randomUUID(), clave, String(valor), 'empresa', 'text']
+      [crypto.randomUUID(), clave, String(valor), categoria, tipo]
     );
   } else {
     await query('UPDATE configuraciones SET valor = ?, fecha_mod = NOW() WHERE clave = ?', [
