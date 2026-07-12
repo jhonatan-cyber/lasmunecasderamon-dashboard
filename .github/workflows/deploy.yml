@@ -16,6 +16,11 @@ jobs:
       - name: Set deploy directory
         run: echo "DEPLOY_DIR=/var/www/lasmunecasderamon" >> $GITHUB_ENV
 
+      - name: Resolve SSH host to IPv4
+        run: |
+          RESOLVED_HOST=$(python3 -c "import socket; print(socket.gethostbyname('${{ secrets.SSH_HOST }}'))")
+          echo "SSH_IPV4_HOST=$RESOLVED_HOST" >> $GITHUB_ENV
+
       - name: Install pnpm
         uses: pnpm/action-setup@v4
         with:
@@ -40,7 +45,7 @@ jobs:
       - name: Copy files via SCP
         uses: appleboy/scp-action@v0.1.7
         with:
-          host: ${{ secrets.SSH_HOST }}
+          host: ${{ env.SSH_IPV4_HOST }}
           username: ${{ secrets.SSH_USERNAME }}
           password: ${{ secrets.SSH_PASSWORD }}
           port: 22
@@ -52,7 +57,7 @@ jobs:
       - name: Execute remote commands via SSH
         uses: appleboy/ssh-action@v0.1.10
         with:
-          host: ${{ secrets.SSH_HOST }}
+          host: ${{ env.SSH_IPV4_HOST }}
           username: ${{ secrets.SSH_USERNAME }}
           password: ${{ secrets.SSH_PASSWORD }}
           port: 22
