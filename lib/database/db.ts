@@ -66,8 +66,11 @@ async function executeQuery<T>(sql: string, params: any[], attempt = 0): Promise
 
   try {
     const pool = getPool();
+    const isLimitQuery = /\blimit\b/i.test(sql);
     const [rows] =
-      safeParams.length > 0 ? await pool.execute(sql, safeParams) : await pool.query(sql);
+      safeParams.length > 0 && !isLimitQuery
+        ? await pool.execute(sql, safeParams)
+        : await pool.query(sql, safeParams);
 
     return (rows || []) as T;
   } catch (error: any) {
