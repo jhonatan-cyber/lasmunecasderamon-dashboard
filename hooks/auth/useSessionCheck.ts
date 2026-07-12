@@ -12,7 +12,10 @@ export const useSessionCheck = () => {
     pathname === '/login' ||
     pathname === '/api-docs' ||
     pathname === '/confirmar-anulacion' ||
-    pathname === '/confirmar-anulacion-servicio';
+    pathname === '/confirmar-anulacion-servicio' ||
+    pathname === '/confirmar-anulacion-cuenta' ||
+    pathname === '/confirmar-anticipo' ||
+    pathname === '/asistencia-qr';
 
   const checkSessionStatus = useCallback(async () => {
     if (isPublicPage || isCheckingRef.current) return;

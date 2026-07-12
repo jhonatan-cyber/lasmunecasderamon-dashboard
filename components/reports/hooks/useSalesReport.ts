@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useMemo } from 'react';
+import { useState, useEffect, useMemo, useCallback } from 'react';
 import logger from '@/lib/utils/logger';
 import { formatShortDateEs } from '@/lib/utils/calendarUtils';
 
@@ -68,7 +68,7 @@ export function useSalesReport(): UseSalesReportReturn {
   const [salesData, setSalesData] = useState<SalesData | null>(null);
   const [loading, setLoading] = useState(true);
 
-  const fetchSalesData = async () => {
+  const fetchSalesData = useCallback(async () => {
     setLoading(true);
     try {
       const params = new URLSearchParams();
@@ -91,11 +91,11 @@ export function useSalesReport(): UseSalesReportReturn {
     } finally {
       setLoading(false);
     }
-  };
+  }, [period, startDate, endDate]);
 
   useEffect(() => {
     fetchSalesData();
-  }, [period, startDate, endDate]);
+  }, [fetchSalesData]);
 
   const pieData = useMemo(() => {
     if (!salesData?.ventasPorMetodo) return [];

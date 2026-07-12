@@ -53,7 +53,10 @@ export function useAuthSession({
     pathname === '/login' ||
     pathname === '/api-docs' ||
     pathname === '/confirmar-anulacion' ||
-    pathname === '/confirmar-anulacion-servicio';
+    pathname === '/confirmar-anulacion-servicio' ||
+    pathname === '/confirmar-anulacion-cuenta' ||
+    pathname === '/confirmar-anticipo' ||
+    pathname === '/asistencia-qr';
 
   // ── Session expired handler ────────────────────────────────────────
   const handleSessionExpired = useCallback(() => {

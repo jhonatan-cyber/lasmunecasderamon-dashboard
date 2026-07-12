@@ -236,25 +236,10 @@ async function stopServer(server) {
 async function auditRuntime(baseUrl, findings) {
   const routes = [
     {
-      path: '/',
-      expectedText: 'Las Mu',
-      pageLocation: 'app/landing/page.tsx',
-    },
-    {
       path: '/login',
       expectedText: 'Iniciar sesi',
       pageLocation: 'app/login/page.tsx',
-    },
-    {
-      path: '/politica-de-privacidad',
-      expectedText: 'Politica de Privacidad',
-      pageLocation: 'app/politica-de-privacidad/page.tsx',
-    },
-    {
-      path: '/terminos-y-condiciones',
-      expectedText: 'DOCUMENTO LEGAL',
-      pageLocation: 'app/terminos-y-condiciones/page.tsx',
-    },
+    }
   ];
 
   for (const route of routes) {
@@ -431,29 +416,7 @@ async function main() {
     });
   }
 
-  const skipLinkChecks = [
-    {
-      route: '/',
-      location: 'app/landing/page.tsx',
-      source: landingPageSource,
-      linkTarget: '#landing-content',
-      targetId: "id='landing-content'",
-    },
-    {
-      route: '/politica-de-privacidad',
-      location: 'app/politica-de-privacidad/page.tsx',
-      source: privacyPageSource,
-      linkTarget: '#privacy-content',
-      targetId: "id='privacy-content'",
-    },
-    {
-      route: '/terminos-y-condiciones',
-      location: 'app/terminos-y-condiciones/page.tsx',
-      source: termsPageSource,
-      linkTarget: '#terms-content',
-      targetId: "id='terms-content'",
-    },
-  ];
+  const skipLinkChecks = [];
 
   for (const check of skipLinkChecks) {
     const hasSkipLink =

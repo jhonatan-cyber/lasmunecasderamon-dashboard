@@ -38,7 +38,9 @@ export function setupFetchInterceptor() {
           currentPath === '/' ||
           currentPath === '/login' ||
           currentPath === '/api-docs' ||
-          currentPath.startsWith('/confirmar-anulacion');
+          currentPath.startsWith('/confirmar-anulacion') ||
+          currentPath === '/confirmar-anticipo' ||
+          currentPath === '/asistencia-qr';
 
         if (!isPublicRoute && !url.includes('/login')) {
           isRedirecting = true;
