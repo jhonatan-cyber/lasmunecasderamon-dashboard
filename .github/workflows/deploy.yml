@@ -11,19 +11,19 @@ jobs:
       JWT_SECRET: ${{ secrets.JWT_SECRET }}
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
 
       - name: Set deploy directory
         run: echo "DEPLOY_DIR=/var/www/lasmunecasderamon" >> $GITHUB_ENV
 
       - name: Install pnpm
-        uses: pnpm/action-setup@v2
+        uses: pnpm/action-setup@v4
         with:
           version: 10
           run_install: false
 
       - name: Setup Node.js
-        uses: actions/setup-node@v3
+        uses: actions/setup-node@v4
         with:
           node-version: '20'
           cache: 'pnpm'
@@ -94,12 +94,12 @@ jobs:
             # Limpiar logs anteriores
             pm2 flush
 
-            # Reiniciar con PM2 usando un shell wrapper para evitar SyntaxError de pnpm
-            pm2 delete lasmunecas || true
-            PORT=3000 pm2 start "pnpm start" --name "lasmunecas" --cwd "$DEPLOY_DIR"
+            # Eliminar todos los procesos existentes en PM2 para limpiar la lista y evitar duplicados
+            pm2 delete all || true
+            PORT=3000 pm2 start "pnpm start" --name "lasmunecasderamon-dashboard" --cwd "$DEPLOY_DIR"
             pm2 save
 
             # Verificar estado
             sleep 5
-            pm2 status lasmunecas
+            pm2 status lasmunecasderamon-dashboard
             tail -n 20 logs/pm2-error.log || true
