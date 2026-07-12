@@ -1,12 +1,20 @@
 'use client';
 
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Building2, Database, Key, Settings as SettingsIcon, ShieldAlert } from 'lucide-react';
+import {
+  Building2,
+  Database,
+  Key,
+  Settings as SettingsIcon,
+  ShieldAlert,
+  Clock
+} from 'lucide-react';
 import { SettingsCompanyTab } from '@/components/settings/SettingsCompanyTab';
 import { SettingsBillingTab } from '@/components/settings/SettingsBillingTab';
 import { SettingsPermissionsTab } from '@/components/settings/SettingsPermissionsTab';
 import { SettingsMaintenanceTab } from '@/components/settings/SettingsMaintenanceTab';
 import { SettingsLogsTab } from '@/components/settings/SettingsLogsTab';
+import { SettingsAttendanceTab } from '@/components/settings/SettingsAttendanceTab';
 
 export default function Settings() {
   return (
@@ -33,6 +41,10 @@ export default function Settings() {
             <ShieldAlert className='h-4 w-4' />
             Logs
           </TabsTrigger>
+          <TabsTrigger value='asistencia' className='flex items-center gap-2 rounded-full'>
+            <Clock className='h-4 w-4' />
+            Asistencia
+          </TabsTrigger>
         </TabsList>
 
         <TabsContent value='empresa'>
@@ -53,6 +65,10 @@ export default function Settings() {
 
         <TabsContent value='logs'>
           <SettingsLogsTab />
+        </TabsContent>
+
+        <TabsContent value='asistencia'>
+          <SettingsAttendanceTab />
         </TabsContent>
       </Tabs>
     </div>

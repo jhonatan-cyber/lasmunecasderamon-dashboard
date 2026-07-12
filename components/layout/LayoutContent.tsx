@@ -88,6 +88,7 @@ export default function LayoutContent({ children }: { children: React.ReactNode 
     '/confirmar-anulacion-servicio',
     '/confirmar-anulacion-cuenta',
     '/confirmar-anticipo',
+    '/asistencia-qr',
     '/'
   ].includes(pathname || '/');
 

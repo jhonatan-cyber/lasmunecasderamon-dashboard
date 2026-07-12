@@ -114,7 +114,7 @@ export const PATCH = withAppAuth(async (request: Request) => {
 
   if (!id || !action) {
     return NextResponse.json(
-      { success: false, message: 'ID y acci�n son requeridos' },
+      { success: false, message: 'ID y acción son requeridos' },
       { status: 400 }
     );
   }
@@ -122,7 +122,7 @@ export const PATCH = withAppAuth(async (request: Request) => {
   const status = action === 'activate' ? 1 : action === 'deactivate' ? 0 : null;
 
   if (status === null) {
-    return NextResponse.json({ success: false, message: 'Acci�n no v�lida' }, { status: 400 });
+    return NextResponse.json({ success: false, message: 'Acción no válida' }, { status: 400 });
   }
 
   const data = await ProductService.update(id, { status });

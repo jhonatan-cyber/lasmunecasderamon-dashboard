@@ -78,6 +78,30 @@ export async function getAttendanceStats() {
   return { total: totalUsuarios, ...stats };
 }
 
+async function getAttendanceConfigHours(): Promise<{ startHour: number; endHour: number }> {
+  try {
+    const configRows = await query<any[]>(
+      "SELECT clave, valor FROM configuraciones WHERE clave IN ('asistencia_hora_inicio', 'asistencia_hora_fin')"
+    );
+
+    let startHour = 21;
+    let endHour = 23;
+
+    for (const row of configRows) {
+      if (row.clave === 'asistencia_hora_inicio') {
+        const val = parseInt(row.valor, 10);
+        if (!isNaN(val)) startHour = val;
+      } else if (row.clave === 'asistencia_hora_fin') {
+        const val = parseInt(row.valor, 10);
+        if (!isNaN(val)) endHour = val;
+      }
+    }
+    return { startHour, endHour };
+  } catch {
+    return { startHour: 21, endHour: 23 };
+  }
+}
+
 export async function registerAttendance(
   body: AttendanceRegisterInput,
   currentUser?: { id: string },
@@ -141,7 +165,8 @@ export async function registerAttendance(
     };
   }
 
-  if (hour < 21 || hour >= 23) {
+  const { startHour, endHour } = await getAttendanceConfigHours();
+  if (hour < startHour || hour >= endHour) {
     await BaseRepository.update(query, 'logins', 'usuario_id', targetUser.id_usuario, {
       en_local: 1,
       ...(ipLimpia && { ip_address: ipLimpia })
@@ -163,6 +188,20 @@ export async function registerAttendance(
     en_local: 1,
     ...(ipLimpia && { ip_address: ipLimpia })
   });
+
+  // Regenerar el qr_token del usuario para que sea de un solo uso
+  const newQrToken = generateUUID();
+  await query('UPDATE usuarios SET qr_token = ? WHERE id_usuario = ?', [
+    newQrToken,
+    targetUser.id_usuario
+  ]);
+
+  try {
+    const { sendNotificationToAll } = await import('@/lib/api/sseService');
+    sendNotificationToAll('qr_token_updated', { userId: targetUser.id_usuario });
+  } catch (e) {
+    logger.error('Error al notificar actualización de qr_token', e);
+  }
 
   if (isSystemCode) {
     setTimeout(async () => {
@@ -342,7 +381,8 @@ export async function selfRegisterAttendance(currentUser: { id: string }, ip?: s
     };
   }
 
-  if (hour < 21 || hour >= 23) {
+  const { startHour, endHour } = await getAttendanceConfigHours();
+  if (hour < startHour || hour >= endHour) {
     await BaseRepository.update(query, 'logins', 'usuario_id', currentUser.id, {
       en_local: 1,
       ...(ipLimpia && { ip_address: ipLimpia })
@@ -364,6 +404,20 @@ export async function selfRegisterAttendance(currentUser: { id: string }, ip?: s
     en_local: 1,
     ...(ipLimpia && { ip_address: ipLimpia })
   });
+
+  // Regenerar el qr_token del usuario para que sea de un solo uso
+  const newQrToken = generateUUID();
+  await query('UPDATE usuarios SET qr_token = ? WHERE id_usuario = ?', [
+    newQrToken,
+    currentUser.id
+  ]);
+
+  try {
+    const { sendNotificationToAll } = await import('@/lib/api/sseService');
+    sendNotificationToAll('qr_token_updated', { userId: currentUser.id });
+  } catch (e) {
+    logger.error('Error al notificar actualización de qr_token', e);
+  }
 
   return { success: true, tipo: 'asistencia', message: 'Asistencia registrada correctamente.' };
 }

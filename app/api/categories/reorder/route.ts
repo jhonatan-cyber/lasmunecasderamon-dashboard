@@ -8,7 +8,7 @@ export const PUT = withAppAuth(async (request: Request) => {
   const category_orders = Array.isArray(body) ? body : body.category_orders;
 
   if (!Array.isArray(category_orders)) {
-    throw new ValidationError('Se esperaba un array de categor�as (category_orders)');
+    throw new ValidationError('Se esperaba un array de categorías (category_orders)');
   }
 
   await CategoryService.reorder(category_orders);
