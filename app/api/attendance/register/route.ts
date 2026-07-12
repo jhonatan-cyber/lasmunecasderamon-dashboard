@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server';
 import { withAppApiWrapper } from '@/lib/api/app-api-wrapper';
 import { AttendanceService } from '@/lib/services/AttendanceService';
 import { getAuth } from '@/lib/auth/auth-app';
+import { sendNotificationToAll } from '@/lib/api/sseService';
 
 export const POST = withAppApiWrapper(async (request: Request) => {
   const user = await getAuth();
@@ -13,5 +14,13 @@ export const POST = withAppApiWrapper(async (request: Request) => {
   const ip = forwarded ? forwarded.split(',')[0] : 'unknown';
 
   const result = await AttendanceService.registerAttendance(body, user || undefined, ip);
+
+  if (result.success) {
+    sendNotificationToAll('attendance_registered', {
+      qrToken: body.qrData,
+      user: result.user
+    });
+  }
+
   return NextResponse.json(result);
 });

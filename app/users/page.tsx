@@ -1,4 +1,4 @@
-﻿'use client';
+'use client';
 
 import { useState, useCallback } from 'react';
 import { Plus } from 'lucide-react';
@@ -96,7 +96,7 @@ export default function Users() {
         }
 
         if (shouldGenerateEmail) {
-          formData.set('correo', `${values.nick}@lasmu�ecasderamon.com`);
+          formData.set('correo', `${values.nick}@lasmunecasderamon.com`);
         }
         formData.set('password', values.run);
 
@@ -204,7 +204,7 @@ export default function Users() {
     <div className='w-full max-w-none px-1 sm:px-3 lg:px-4 space-y-6 mt-4 pb-24 sm:pb-8'>
       <div className='flex flex-col sm:flex-row justify-between items-start sm:items-center gap-6'>
         <div>
-          <h1 className='text-3xl font-bold'>Gesti�n de Usuarios</h1>
+          <h1 className='text-3xl font-bold'>Gestión de Usuarios</h1>
           <p className='text-gray-600'>Control de plataforma.</p>
         </div>
         <div className='flex flex-col w-full sm:w-auto items-stretch sm:items-end gap-2'>
@@ -296,4 +296,3 @@ export default function Users() {
     </div>
   );
 }
-

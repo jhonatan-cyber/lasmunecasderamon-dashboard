@@ -1,4 +1,4 @@
-﻿import mysql from 'mysql2/promise';
+import mysql from 'mysql2/promise';
 import { randomUUID } from 'crypto';
 import { getSQLTimezoneOffset } from '@/lib/business/timezoneService';
 import { env } from '@/lib/utils/env';
@@ -66,31 +66,10 @@ async function executeQuery<T>(sql: string, params: any[], attempt = 0): Promise
 
   try {
     const pool = getPool();
-    const hasLimitOrOffset = /LIMIT\s+\?|OFFSET\s+\?/i.test(sql);
+    const [rows] =
+      safeParams.length > 0 ? await pool.execute(sql, safeParams) : await pool.query(sql);
 
-    if (hasLimitOrOffset && safeParams.length > 0) {
-      let finalSql = sql;
-      let paramIndex = 0;
-
-      finalSql = sql.replace(/\?/g, () => {
-        if (paramIndex < safeParams.length) {
-          const param = safeParams[paramIndex++];
-          if (typeof param === 'string') {
-            return `'${param.replace(/'/g, "''")}'`;
-          }
-          return param;
-        }
-        return '?';
-      });
-
-      const [rows] = await pool.query(finalSql);
-      return (rows || []) as T;
-    } else {
-      const [rows] =
-        safeParams.length > 0 ? await pool.execute(sql, safeParams) : await pool.query(sql);
-
-      return (rows || []) as T;
-    }
+    return (rows || []) as T;
   } catch (error: any) {
     const isConnError =
       error?.code === 'ETIMEDOUT' ||
