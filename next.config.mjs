@@ -9,6 +9,9 @@ const nextConfig = {
     localPatterns: [
       {
         pathname: '/img/**'
+      },
+      {
+        pathname: '/api/images/**'
       }
     ],
     remotePatterns: [
