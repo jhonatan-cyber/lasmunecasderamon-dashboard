@@ -116,6 +116,11 @@ self.addEventListener('fetch', event => {
   // Only handle GET requests
   if (request.method !== 'GET') return;
 
+  // Skip Server-Sent Events (SSE) connections
+  if (url.pathname.includes('/sse') || request.headers.get('Accept') === 'text/event-stream') {
+    return;
+  }
+
   // Same-origin only (except fonts and CDN)
   if (url.origin !== self.location.origin) {
     // Google Fonts — stale-while-revalidate
@@ -191,7 +196,7 @@ async function precacheStrategy(event) {
 
   try {
     const response = await fetch(event.request);
-    if (response.ok) {
+    if (response.ok && response.status !== 206) {
       // Warm runtime cache for future requests
       const cache = await caches.open(CACHE_NAMES.static);
       cache.put(event.request, response.clone());
@@ -211,7 +216,7 @@ async function cacheFirst(event) {
 
   try {
     const response = await fetch(event.request);
-    if (response.ok || response.type === 'opaqueredirect') {
+    if ((response.ok && response.status !== 206) || response.type === 'opaqueredirect') {
       const cache = await caches.open(CACHE_NAMES.static);
       cache.put(event.request, response.clone());
     }
@@ -227,7 +232,7 @@ async function cacheFirst(event) {
 async function networkFirstWithFallback(event, cacheName = CACHE_NAMES.runtime) {
   try {
     const response = await fetch(event.request);
-    if (response.ok) {
+    if (response.ok && response.status !== 206) {
       const cache = await caches.open(cacheName);
       cache.put(event.request, response.clone());
     }
@@ -244,7 +249,7 @@ async function networkFirstWithFallback(event, cacheName = CACHE_NAMES.runtime) 
 async function navigationStrategy(event) {
   try {
     const response = await fetch(event.request);
-    if (response.ok) {
+    if (response.ok && response.status !== 206) {
       const cache = await caches.open(CACHE_NAMES.navigation);
       cache.put(event.request, response.clone());
     }
@@ -265,7 +270,7 @@ async function navigationStrategy(event) {
 async function apiStrategy(event) {
   try {
     const response = await fetch(event.request);
-    if (response.ok) {
+    if (response.ok && response.status !== 206) {
       const cache = await caches.open(CACHE_NAMES.api);
 
       // Store with timestamp for TTL validation
@@ -315,7 +320,7 @@ async function imageStrategy(event) {
 
   try {
     const response = await fetch(event.request);
-    if (response.ok) {
+    if (response.ok && response.status !== 206) {
       const cache = await caches.open(CACHE_NAMES.images);
       cache.put(event.request, response.clone());
 
@@ -337,7 +342,7 @@ async function fontsStrategy(event) {
 
   try {
     const response = await fetch(event.request);
-    if (response.ok) {
+    if (response.ok && response.status !== 206) {
       const cache = await caches.open(CACHE_NAMES.fonts);
       cache.put(event.request, response.clone());
     }
@@ -356,7 +361,7 @@ async function staticAssetStrategy(event) {
 
   try {
     const response = await fetch(event.request);
-    if (response.ok) {
+    if (response.ok && response.status !== 206) {
       const cache = await caches.open(CACHE_NAMES.static);
       cache.put(event.request, response.clone());
     }
