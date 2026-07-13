@@ -315,9 +315,6 @@ async function apiStrategy(event) {
  * Image strategy — Cache First with max entries management.
  */
 async function imageStrategy(event) {
-  const cached = await caches.match(event.request);
-  if (cached) return cached;
-
   try {
     const response = await fetch(event.request);
     if (response.ok && response.status !== 206) {
@@ -329,7 +326,8 @@ async function imageStrategy(event) {
     }
     return response;
   } catch {
-    return new Response('Offline', { status: 503 });
+    const cached = await caches.match(event.request);
+    return cached || new Response('Offline', { status: 503 });
   }
 }
 
