@@ -22,7 +22,6 @@ export type SortDirection = 'asc' | 'desc';
 export type StatusFilter = 'proceso' | 'finalizados';
 
 export interface UseAnfitrionaServiciosReturn {
-  // State
   services: Service[];
   loading: boolean;
   searchTerm: string;
@@ -34,7 +33,6 @@ export interface UseAnfitrionaServiciosReturn {
   selectedService: Service | null;
   isEditModalOpen: boolean;
 
-  // Computed
   totalServices: number;
   totalEarnings: number;
   serviciosEnProceso: number;
@@ -45,7 +43,6 @@ export interface UseAnfitrionaServiciosReturn {
   paginatedServices: Service[];
   totalPages: number;
 
-  // Actions
   setSearchTerm: (term: string) => void;
   setRowsPerPage: (rows: number) => void;
   setPage: (page: number) => void;

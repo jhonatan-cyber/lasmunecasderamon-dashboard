@@ -92,24 +92,19 @@ export function useAuthPermissions({
   const [userPermissions, setUserPermissions] = useState<UserPermission[]>([]);
   const [permissionsLoading, setPermissionsLoading] = useState(false);
   const [permissionsLoaded, setPermissionsLoaded] = useState(false);
-
   const permissionsFetchedRef = useRef(false);
   const isFetchingPermissionsRef = useRef(false);
   const pendingPermissionsRefreshRef = useRef(false);
   const isMountedRef = useRef(true);
-
-  // Store callbacks in refs so they stay stable across renders
   const onSessionExpiredRef = useRef(onSessionExpired);
   onSessionExpiredRef.current = onSessionExpired;
 
-  // ── Clear permissions (called by session hook on expired) ──────────
   const clearPermissions = useCallback(() => {
     setUserPermissions([]);
     setPermissionsLoaded(false);
     permissionsFetchedRef.current = false;
   }, []);
 
-  // ── Fetch permissions ──────────────────────────────────────────────
   const fetchPermissions = useCallback(
     async (forceRefresh = false) => {
       const user = getUser();
@@ -168,7 +163,6 @@ export function useAuthPermissions({
     [getUser]
   );
 
-  // ── Permission checks ──────────────────────────────────────────────
   const hasPermission = useCallback(
     (module: string, action: string): boolean => {
       const user = getUser();
@@ -221,7 +215,6 @@ export function useAuthPermissions({
     [userPermissions, getUser]
   );
 
-  // ── Lifecycle: fetch permissions when user becomes available ────────
   useEffect(() => {
     const user = getUser();
     if (user && !permissionsFetchedRef.current && user.role?.toLowerCase() !== 'administrador') {

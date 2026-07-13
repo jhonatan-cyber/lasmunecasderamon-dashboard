@@ -18,19 +18,7 @@ interface AuthContextType {
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
-/**
- * Thin orchestrator composing useAuthSession + useAuthPermissions.
- *
- * Circular dependency broken via getUser getter:
- * - Permissions hook reads user via getUser() instead of a prop,
- *   so it doesn't need to be called after the session hook.
- * - Session hook's SSE handler calls permissions.refresh via the
- *   permissionsResult ref, and permissions hook calls session.clearUser
- *   via onSessionExpired callback.
- */
 export function AuthProvider({ children }: { children: ReactNode }) {
-  // ── Session hook (user fetch, SSE, session expired) ────────────────
-  // onPermissionsRefresh will be wired after permissions hook is created
   const permissionsRefreshRef = useRef<(force?: boolean) => Promise<void>>(async () => {});
 
   const sessionResult = useAuthSession({
@@ -39,9 +27,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
   });
 
-  // ── Permissions hook (fetch, hasPermission, hasAny, hasAll) ────────
-  // Uses getUser getter to break circular dependency — reads user from
-  // session hook via a stable function reference.
   const permissionsResult = useAuthPermissions({
     getUser: () => sessionResult.user,
     onSessionExpired: sessionResult.clearUser
