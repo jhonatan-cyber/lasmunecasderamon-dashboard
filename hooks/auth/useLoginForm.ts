@@ -100,15 +100,6 @@ export const useLoginForm = () => {
     }
   }, [getRedirectTarget, router]);
 
-  const getBaseUrl = () => {
-    if (typeof window !== 'undefined') {
-      const protocol = window.location.protocol;
-      const host = window.location.host;
-      return `${protocol}//${host}`;
-    }
-    return '';
-  };
-
   const applyTheme = (mode: string) => {
     if (typeof window === 'undefined') return;
     const html = document.documentElement;

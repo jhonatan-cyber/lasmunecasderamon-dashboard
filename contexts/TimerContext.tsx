@@ -28,7 +28,6 @@ import {
 } from '@/lib/store/timerStore';
 import logger from '@/lib/utils/logger';
 
-// Re-export persistence functions from new location for backwards compatibility
 export { saveTimersToStorage, loadTimersFromStorage } from '@/hooks/timer/useTimerPersistence';
 
 export interface Timer {
@@ -132,7 +131,6 @@ export const TimerProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     serverOffsetSignal.value = serverOffset;
   }, []);
 
-  // ── Expiration modal (extracted hook) ──────────────────────────────
   const {
     timerExpiredNotification,
     showTimerExpiredModal,
@@ -140,7 +138,6 @@ export const TimerProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     showTimerExpiredNotification
   } = useTimerExpiration({ timers, serverOffset });
 
-  // ── Timer actions ──────────────────────────────────────────────────
   const {
     startTimer,
     stopTimer,
@@ -152,7 +149,6 @@ export const TimerProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     onRefreshCaja: id => refreshCallbackRef.current?.(id)
   });
 
-  // ── Timer sync with server ─────────────────────────────────────────
   useTimerSync({
     isInitialized,
     setIsInitialized,
@@ -160,7 +156,6 @@ export const TimerProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     onTimerStopped: id => refreshCallbackRef.current?.(id)
   });
 
-  // ── Global timer loop + expiration handler ─────────────────────────
   useEffect(() => {
     startGlobalTimerLoop();
     setGlobalExpirationHandler(instance => {
@@ -199,7 +194,6 @@ export const TimerProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     };
   }, [showTimerExpiredNotification, stopTimer, resumeTimerByServicioId]);
 
-  // ── Timer lookup helpers ───────────────────────────────────────────
   const stopTimerByRoomId = useCallback(
     async (roomId: string) => {
       const t = timers.find(x => x.roomId === roomId);
