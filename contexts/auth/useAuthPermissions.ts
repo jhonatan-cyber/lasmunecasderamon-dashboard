@@ -215,12 +215,15 @@ export function useAuthPermissions({
     [userPermissions, getUser]
   );
 
+  const user = getUser();
+  const userId = user?.id;
+  const userRole = user?.role;
+
   useEffect(() => {
-    const user = getUser();
-    if (user && !permissionsFetchedRef.current && user.role?.toLowerCase() !== 'administrador') {
+    if (userId && !permissionsFetchedRef.current && userRole?.toLowerCase() !== 'administrador') {
       fetchPermissions();
     }
-  });
+  }, [userId, userRole, fetchPermissions]);
 
   useEffect(() => {
     isMountedRef.current = true;
