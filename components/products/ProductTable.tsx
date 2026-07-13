@@ -245,8 +245,12 @@ const ProductTable: React.FC<ProductTableProps> = ({
   const hasAnyAction = canEdit || canDelete || canActivate || canDeactivate;
 
   React.useEffect(() => {
-    setLocalProducts(products);
-  }, [products]);
+    const prodIds = products.map(p => p.id).join(',');
+    const localIds = localProducts.map(p => p.id).join(',');
+    if (prodIds !== localIds) {
+      setLocalProducts(products);
+    }
+  }, [products, localProducts]);
 
   const sensors = useSensors(
     useSensor(PointerSensor, {
