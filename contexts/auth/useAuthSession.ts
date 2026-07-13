@@ -58,7 +58,6 @@ export function useAuthSession({
     pathname === '/confirmar-anticipo' ||
     pathname === '/asistencia-qr';
 
-  // ── Session expired handler ────────────────────────────────────────
   const handleSessionExpired = useCallback(() => {
     if (sessionExpiredShownRef.current) return;
     sessionExpiredShownRef.current = true;
@@ -66,7 +65,6 @@ export function useAuthSession({
     setUser(null);
     userFetchedRef.current = false;
 
-    // Notify permissions hook to clear its state
     onSessionExpired?.();
 
     if (typeof window !== 'undefined') {
@@ -84,7 +82,6 @@ export function useAuthSession({
     }, 500);
   }, [pathname, router, onSessionExpired]);
 
-  // ── Fetch user ─────────────────────────────────────────────────────
   const fetchUser = useCallback(
     async (silent = false) => {
       if (!isMountedRef.current || isPublicPage || isFetchingUserRef.current) return;
@@ -134,13 +131,11 @@ export function useAuthSession({
     [handleSessionExpired, isPublicPage, user]
   );
 
-  // ── Clear user (for logout) ────────────────────────────────────────
   const clearUser = useCallback(() => {
     setUser(null);
     userFetchedRef.current = false;
   }, []);
 
-  // ── Lifecycle: fetch user on mount ─────────────────────────────────
   useEffect(() => {
     if (!isPublicPage && !userFetchedRef.current) {
       fetchUser();
@@ -154,7 +149,6 @@ export function useAuthSession({
     };
   }, []);
 
-  // ── SSE: real-time session events ──────────────────────────────────
   const sseUrl = isPublicPage || !user ? null : '/api/notifications/sse';
   useSharedSSE(sseUrl, async payload => {
     if (!user || !payload || payload.type === 'connected') return;
