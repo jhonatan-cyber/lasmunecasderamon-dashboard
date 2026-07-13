@@ -1,4 +1,4 @@
-﻿'use client';
+'use client';
 import React, { useState, useMemo, useCallback } from 'react';
 import { useParams } from 'next/navigation';
 import useProducts from '@/hooks/productos/useProducts';
@@ -95,8 +95,12 @@ const ProductCategoryPage = () => {
   }, [products, searchTerm, filterStatus]);
 
   React.useEffect(() => {
-    setLocalProductsCards(filteredProducts);
-  }, [filteredProducts]);
+    const filteredIds = filteredProducts.map(p => p.id).join(',');
+    const localIds = localProductsCards.map(p => p.id).join(',');
+    if (filteredIds !== localIds) {
+      setLocalProductsCards(filteredProducts);
+    }
+  }, [filteredProducts, localProductsCards]);
 
   React.useEffect(() => {
     if (typeof window === 'undefined') return;
