@@ -42,6 +42,7 @@ export const PUBLIC_PATHS = [
   '/api/permissions/test-cajero',
   '/api/permissions/verify',
   '/api/roles/setup',
+  '/api/images',
   '/_next',
   '/favicon.ico',
   '/img',
