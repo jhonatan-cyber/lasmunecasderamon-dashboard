@@ -1,4 +1,4 @@
-﻿/* eslint-disable no-console */
+/* eslint-disable no-console */
 const crypto = require('crypto');
 function uuidv4() {
   return crypto.randomUUID();
@@ -23,15 +23,20 @@ async function runIntegrationTest() {
 
     const testOrderId = uuidv4();
     const testSaleId = uuidv4();
-    const testClientId = '06dc47fb-d18f-4c25-9035-c4a2a458da9d';
-    const testGarzonId = '1f5a13f4-3834-45e2-bb8d-4b73727aad7f';
-    const testAnfitrionaId = '1f5a13f4-3834-45e2-bb8d-4b73727aad7f';
+    const testClientId = null;
+
+    const [users] = await connection.execute('SELECT id_usuario FROM usuarios LIMIT 1');
+    if (users.length === 0) {
+      throw new Error('No se encontraron usuarios en la base de datos para la prueba.');
+    }
+    const testGarzonId = users[0].id_usuario;
+    const testAnfitrionaId = users[0].id_usuario;
 
     console.log(`ðŸ“ Generando pedido de prueba: ${testOrderId}`);
 
     await connection.execute(
-      'INSERT INTO pedidos (id_pedido, cliente_id, total, propina, estado, fecha_crea) VALUES (?, ?, ?, ?, ?, NOW())',
-      [testOrderId, testClientId, 20000, 2000, 1]
+      'INSERT INTO pedidos (id_pedido, codigo, cliente_id, subtotal, total, total_comision, propina, estado, fecha_crea) VALUES (?, ?, ?, ?, ?, ?, ?, ?, NOW())',
+      [testOrderId, 'TEST-CODE-123', testClientId, 20000, 20000, 5000, 2000, 1]
     );
     console.log('✅ Pedido insertado.');
 
@@ -58,8 +63,8 @@ async function runIntegrationTest() {
     console.log(`ðŸ’° Procesando venta para el pedido: ${testSaleId}`);
 
     await connection.execute(
-      'INSERT INTO ventas (id_venta, pedido_id, total, propina, metodo_pago, fecha_crea) VALUES (?, ?, ?, ?, ?, NOW())',
-      [testSaleId, testOrderId, 20000, 2000, 'Efectivo']
+      'INSERT INTO ventas (id_venta, codigo, pedido_id, sub_total, total, propina, metodo_pago, fecha_crea) VALUES (?, ?, ?, ?, ?, ?, ?, NOW())',
+      [testSaleId, 'TEST-SALE-123', testOrderId, 20000, 22000, 2000, 'Efectivo']
     );
 
     await connection.execute('UPDATE pedidos SET estado = 0 WHERE id_pedido = ?', [testOrderId]);
@@ -96,7 +101,7 @@ async function runIntegrationTest() {
     const detailTipId = uuidv4();
     await connection.execute(
       'INSERT INTO detalle_propinas (id_detalle_propina, propina_id, usuario_id, monto, estado, fecha_crea) VALUES (?, ?, ?, ?, ?, NOW())',
-      [detailTipId, tipId, testGarzonId, 2000, 'pendiente']
+      [detailTipId, tipId, testGarzonId, 2000, 1]
     );
     console.log('✅ Propinas distribuidas.');
 
