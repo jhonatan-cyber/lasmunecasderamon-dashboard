@@ -1,4 +1,4 @@
-﻿'use client';
+'use client';
 
 import { useEffect, useMemo, useState } from 'react';
 import { AlertTriangle, RefreshCw, ShieldCheck } from 'lucide-react';
@@ -118,8 +118,15 @@ export function SettingsLogsTab() {
     }
   };
 
-  const parseDetails = (value?: string | null) => {
+  const parseDetails = (value?: any) => {
     if (!value) return '—';
+    if (typeof value === 'object') {
+      try {
+        return JSON.stringify(value, null, 2);
+      } catch {
+        return '—';
+      }
+    }
     try {
       return JSON.stringify(JSON.parse(value), null, 2);
     } catch {

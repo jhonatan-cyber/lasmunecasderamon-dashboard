@@ -27,8 +27,6 @@ declare global {
   var __lasMunecasDbPoolListenersAttached: boolean | undefined;
 }
 
-// ponytail: lazy pool getter — always reads from globalThis so pool
-// recreation after connection loss is reflected everywhere
 function getPool(): mysql.Pool {
   if (!globalThis.__lasMunecasDbPool) {
     globalThis.__lasMunecasDbPool = mysql.createPool(defaultConfig);
@@ -85,7 +83,6 @@ async function executeQuery<T>(sql: string, params: any[], attempt = 0): Promise
       if (process.env.NODE_ENV === 'development') {
         console.warn(`[DB] Connection lost (attempt ${attempt + 1}/2), recreating pool...`);
       }
-      // ponytail: destroy stale pool, clear globalThis, retry
       try {
         await globalThis.__lasMunecasDbPool?.end().catch(() => {});
       } catch {}

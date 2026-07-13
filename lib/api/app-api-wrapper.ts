@@ -113,12 +113,42 @@ export function withAppAuth(
         const forwarded = request.headers.get('x-forwarded-for');
         const ip = forwarded ? forwarded.split(',')[0] : 'unknown';
 
+        let body: any = null;
+        try {
+          body = await request.clone().json();
+          if (body) {
+            const sensitiveKeys = [
+              'password',
+              'token',
+              'contrasena',
+              'contraseña',
+              'jwt',
+              'secret'
+            ];
+            const sanitize = (obj: any): any => {
+              if (!obj || typeof obj !== 'object') return obj;
+              const clean: any = Array.isArray(obj) ? [] : {};
+              for (const [k, v] of Object.entries(obj)) {
+                if (sensitiveKeys.some(sk => k.toLowerCase().includes(sk))) {
+                  clean[k] = '***';
+                } else if (typeof v === 'object') {
+                  clean[k] = sanitize(v);
+                } else {
+                  clean[k] = v;
+                }
+              }
+              return clean;
+            };
+            body = sanitize(body);
+          }
+        } catch {}
+
         await AuditService.log({
           user_id: user.id,
           action: `${request.method} ${url.pathname}`,
           resource_type: requiredPermission?.module || 'system',
           ip_address: ip,
-          details: { params }
+          details: { params, body }
         });
       } catch (auditError) {
         logger.captureException(auditError, { context: 'AppApiWrapper:auditError' });
