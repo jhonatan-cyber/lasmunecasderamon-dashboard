@@ -32,7 +32,7 @@ export const ServiceRequestCard = ({
 
   return (
     <div
-      className='group cursor-pointer rounded-xl border border-gray-100 bg-white p-5 shadow-sm transition-all hover:border-gray-200 hover:shadow-md dark:border-zinc-800 dark:bg-zinc-900/95 dark:hover:border-zinc-700 dark:hover:shadow-black/20'
+      className='group cursor-pointer rounded-xl border border-gray-100 bg-white p-5 shadow-xs transition-all hover:border-gray-200 hover:shadow-md dark:border-zinc-800 dark:bg-zinc-900/95 dark:hover:border-zinc-700 dark:hover:shadow-black/20'
       onClick={() => onServicioClick(servicio)}
     >
       <div className='flex items-center justify-between'>

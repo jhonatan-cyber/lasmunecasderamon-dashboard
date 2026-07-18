@@ -117,7 +117,7 @@ export function AttendanceCodeModal() {
             }}
             onKeyDown={handleKeyDown}
             placeholder='0000'
-            className='w-32 text-center text-4xl font-mono tracking-[0.5em] border-2 border-gray-300 dark:border-gray-600 rounded-xl bg-transparent focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent px-2 py-3'
+            className='w-32 text-center text-4xl font-mono tracking-[0.5em] border-2 border-gray-300 dark:border-gray-600 rounded-xl bg-transparent focus:outline-hidden focus:ring-2 focus:ring-primary focus:border-transparent px-2 py-3'
             autoFocus
             disabled={loading}
           />

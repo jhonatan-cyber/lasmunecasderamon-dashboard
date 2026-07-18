@@ -57,7 +57,7 @@ export function AnulacionConfirmModal({
   return (
     <Dialog open={open} onOpenChange={handleClose}>
       <DialogContent className='sm:max-w-[425px] max-h-[90vh] flex flex-col p-0'>
-        <DialogHeader className='flex-shrink-0 px-6 pt-6 pb-4 border-b dark:border-gray-700'>
+        <DialogHeader className='shrink-0 px-6 pt-6 pb-4 border-b dark:border-gray-700'>
           <DialogTitle className='flex items-center gap-2 mb-4'>
             {isConfirmada ? (
               <CheckCircle className='text-green-500 dark:text-green-400' />
@@ -168,7 +168,7 @@ export function AnulacionConfirmModal({
           </div>
         </div>
 
-        <div className='flex-shrink-0 border-t dark:border-gray-700 px-6 py-4'>
+        <div className='shrink-0 border-t dark:border-gray-700 px-6 py-4'>
           <div className='flex justify-center items-center'>
             <Button
               onClick={handleAccept}

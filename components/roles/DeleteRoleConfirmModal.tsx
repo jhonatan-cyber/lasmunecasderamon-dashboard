@@ -37,7 +37,7 @@ export function DeleteRoleConfirmModal({
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className='w-[95vw] max-w-[95vw] sm:w-auto sm:max-w-[425px] max-h-[90vh] flex flex-col p-0'>
-        <DialogHeader className='flex-shrink-0 px-6 pt-6 pb-4 border-b'>
+        <DialogHeader className='shrink-0 px-6 pt-6 pb-4 border-b'>
           <DialogTitle className='flex items-center gap-2 mb-4'>
             <AlertTriangle className='text-red-500 w-4 h-4 sm:w-5 sm:h-5' />
             <span className='text-gray-900 dark:text-gray-100 text-base sm:text-lg'>
@@ -65,7 +65,7 @@ export function DeleteRoleConfirmModal({
             </div>
           </div>
         </div>
-        <div className='flex-shrink-0 border-t px-6 py-4'>
+        <div className='shrink-0 border-t px-6 py-4'>
           <div className='flex flex-col sm:flex-row justify-center items-center gap-2 sm:gap-4'>
             <Button
               onClick={handleCancel}

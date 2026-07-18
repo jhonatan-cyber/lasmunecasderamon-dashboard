@@ -106,7 +106,7 @@ export const CardBody = ({
   return (
     <div
       ref={ref}
-      className={`group-hover/card:shadow-2xl group-hover/card:shadow-emerald-500/[0.1] dark:bg-black dark:border-white/[0.2] border-black/[0.1] w-auto h-auto rounded-xl p-6 border transition-all duration-300 ease-out ${className}`}
+      className={`group-hover/card:shadow-2xl group-hover/card:shadow-emerald-500/10 dark:bg-black dark:border-white/20 border-black/10 w-auto h-auto rounded-xl p-6 border transition-all duration-300 ease-out ${className}`}
       onClick={onClick}
       role={role}
       tabIndex={tabIndex}

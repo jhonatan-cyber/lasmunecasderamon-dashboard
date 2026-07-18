@@ -1,3 +1,5 @@
+'use client';
+
 /* eslint-disable */
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
@@ -157,7 +159,7 @@ export default function SaleProductModal({
   return (
     <Dialog open={open} onOpenChange={onClose}>
       <DialogContent className='max-w-6xl max-h-[95vh] flex flex-col p-0'>
-        <DialogHeader className='flex-shrink-0 px-6 pt-6 pb-4 border-b'>
+        <DialogHeader className='shrink-0 px-6 pt-6 pb-4 border-b'>
           <div className='flex items-center justify-between w-full'>
             <div className='flex items-center gap-2'>
               <DialogTitle className='text-lg'>
@@ -171,25 +173,25 @@ export default function SaleProductModal({
             </div>
             <div className='flex items-center gap-2 mr-6'>
               <Button
-                variant={viewMode === 'grid' ? 'ghost' : 'outline'}
+                variant={viewMode === 'grid' ? 'ghost' : 'outline-solid'}
                 size='sm'
                 onClick={() => setViewMode('grid')}
                 className={
                   viewMode === 'grid'
-                    ? 'bg-black text-white dark:bg-white dark:text-black rounded-full  hover:!bg-white hover:!text-black dark:hover:!bg-black dark:hover:!text-white transition-all hover:scale-105 border-2'
-                    : 'bg-white text-black dark:bg-black dark:text-white dark:hover:!bg-white dark:hover:!text-black rounded-full hover:scale-105 transition-all border-2 '
+                    ? 'bg-black text-white dark:bg-white dark:text-black rounded-full  hover:bg-white! hover:text-black! dark:hover:bg-black! dark:hover:text-white! transition-all hover:scale-105 border-2'
+                    : 'bg-white text-black dark:bg-black dark:text-white dark:hover:bg-white! dark:hover:text-black! rounded-full hover:scale-105 transition-all border-2 '
                 }
               >
                 Cuadrícula
               </Button>
               <Button
-                variant={viewMode === 'table' ? 'ghost' : 'outline'}
+                variant={viewMode === 'table' ? 'ghost' : 'outline-solid'}
                 size='sm'
                 onClick={() => setViewMode('table')}
                 className={
                   viewMode === 'table'
-                    ? 'bg-black text-white dark:bg-white dark:text-black rounded-full hover:!bg-white hover:!text-black dark:hover:!bg-black dark:hover:!text-white transition-all hover:scale-105 border-2'
-                    : 'bg-white text-black dark:bg-black dark:text-white dark:hover:!bg-white dark:hover:!text-black rounded-full hover:scale-105 transition-all border-2 '
+                    ? 'bg-black text-white dark:bg-white dark:text-black rounded-full hover:bg-white! hover:text-black! dark:hover:bg-black! dark:hover:text-white! transition-all hover:scale-105 border-2'
+                    : 'bg-white text-black dark:bg-black dark:text-white dark:hover:bg-white! dark:hover:text-black! rounded-full hover:scale-105 transition-all border-2 '
                 }
               >
                 Tabla
@@ -199,7 +201,7 @@ export default function SaleProductModal({
         </DialogHeader>
 
         {}
-        <div className='flex-shrink-0 px-6 py-4 border-b bg-gray-50 space-y-3'>
+        <div className='shrink-0 px-6 py-4 border-b bg-gray-50 space-y-3'>
           <div className='flex items-center gap-4'>
             <div className='flex-1 relative'>
               <Search className='absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400' />
@@ -255,13 +257,13 @@ export default function SaleProductModal({
         </div>
 
         {}
-        <div className='flex-shrink-0 border-t px-6 py-4 bg-gray-50'>
+        <div className='shrink-0 border-t px-6 py-4 bg-gray-50'>
           <div className='flex items-center justify-center'>
             <Button
               onClick={onClose}
               variant='outline'
               size='sm'
-              className='bg-black text-white dark:bg-black dark:text-white  dark:hover:!bg-white dark:hover:!text-black rounded-full px-8 hover:!bg-white hover:!text-black transition-all hover:scale-105 border-2'
+              className='bg-black text-white dark:bg-black dark:text-white  dark:hover:bg-white! dark:hover:text-black! rounded-full px-8 hover:bg-white! hover:text-black! transition-all hover:scale-105 border-2'
               title='Escape para cerrar'
             >
               Cerrar

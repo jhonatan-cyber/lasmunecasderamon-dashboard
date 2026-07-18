@@ -1,12 +1,14 @@
 import { query, generateUUID } from '@/lib/database/db';
 import { getNowInBusinessTimezone } from '@/lib/business/timezoneService';
-import { NotFoundError, BusinessError } from '@/lib/errors/errors';
+import { NotFoundError, BusinessError, DatabaseError } from '@/lib/errors/errors';
+import { logger } from '@/lib/utils/logger';
 import { ServiceService } from '@/lib/services/ServiceService';
 import { ServiceRepository } from './ServiceRepository';
 
 export class ServiceRequestRepository {
   static async getAll(estado?: string) {
-    let sql = `
+    try {
+      let sql = `
       SELECT ss.*, CONCAT(u_sol.nombre, ' ', u_sol.apellido) as solicitado_por_nombre, u_sol.nick as solicitado_por_nick, 
              CONCAT(c.nombre, ' ', c.apellido) as cliente_nombre, h.nombre as habitacion_nombre
       FROM solicitudes_servicios ss
@@ -26,9 +28,14 @@ export class ServiceRequestRepository {
       anfitrionas_ids:
         typeof s.anfitrionas_ids === 'string' ? JSON.parse(s.anfitrionas_ids) : s.anfitrionas_ids
     }));
+    } catch (err) {
+      logger.error('[ServiceRequestRepository] Error en getAll:', { estado, err });
+      throw new DatabaseError('Error al obtener solicitudes de servicio', err);
+    }
   }
 
   static async create(data: any, solicitadoPor: string) {
+    try {
     const id = generateUUID();
     const fecha = getNowInBusinessTimezone(data.device_date);
     await query(
@@ -62,17 +69,27 @@ export class ServiceRequestRepository {
       [data.cliente_id, data.habitacion_id]
     );
     return { id, ...info[0] };
+    } catch (err) {
+      logger.error('[ServiceRequestRepository] Error en create:', { err });
+      throw new DatabaseError('Error al crear solicitud de servicio', err);
+    }
   }
 
   static async getPendingCount() {
-    const res = await query<any[]>(
+    try {
+      const res = await query<any[]>(
       'SELECT COUNT(*) as count FROM solicitudes_servicios WHERE estado = 0'
     );
     return res[0]?.count || 0;
+    } catch (err) {
+      logger.error('[ServiceRequestRepository] Error en getPendingCount:', { err });
+      throw new DatabaseError('Error al obtener conteo de solicitudes pendientes', err);
+    }
   }
 
   static async getPendingServiceRequests(limit: number = 5) {
-    const rows = await query<any[]>(
+    try {
+      const rows = await query<any[]>(
       `SELECT ss.*, CONCAT(u_sol.nombre, ' ', u_sol.apellido) as solicitado_por_nombre, u_sol.nick as solicitado_por_nick, 
              CONCAT(c.nombre, ' ', c.apellido) as cliente_nombre, h.nombre as habitacion_nombre
       FROM solicitudes_servicios ss
@@ -94,14 +111,24 @@ export class ServiceRequestRepository {
       href: '/orders',
       kind: 'service_request' as const
     }));
+    } catch (err) {
+      logger.error('[ServiceRequestRepository] Error en getPendingServiceRequests:', { limit, err });
+      throw new DatabaseError('Error al obtener solicitudes de servicio pendientes', err);
+    }
   }
 
   static async delete(id: string) {
-    await query('DELETE FROM solicitudes_servicios WHERE id_solicitud = ?', [id]);
+    try {
+      await query('DELETE FROM solicitudes_servicios WHERE id_solicitud = ?', [id]);
+    } catch (err) {
+      logger.error('[ServiceRequestRepository] Error en delete:', { id, err });
+      throw new DatabaseError(`Error al eliminar solicitud de servicio ${id}`, err);
+    }
   }
 
   static async getById(id: string) {
-    const rows = await query<any[]>(
+    try {
+      const rows = await query<any[]>(
       `
       SELECT ss.*, CONCAT(u_sol.nombre, ' ', u_sol.apellido) as solicitado_por_nombre, u_sol.nick as solicitado_por_nick,
              CONCAT(c.nombre, ' ', c.apellido) as cliente_nombre, h.nombre as habitacion_nombre
@@ -125,10 +152,16 @@ export class ServiceRequestRepository {
           ? JSON.parse(row.anfitrionas_ids)
           : row.anfitrionas_ids
     };
+    } catch (err) {
+      logger.error('[ServiceRequestRepository] Error en getById:', { id, err });
+      if (err instanceof NotFoundError) throw err;
+      throw new DatabaseError(`Error al obtener solicitud de servicio ${id}`, err);
+    }
   }
 
   static async approve(id: string, processedBy: string, habitacionId?: string) {
-    const solicitud = await this.getById(id);
+    try {
+      const solicitud = await this.getById(id);
 
     if (solicitud.estado !== 'pendiente') {
       throw new BusinessError('La solicitud ya fue procesada', 'SERVICE_REQUEST_ALREADY_PROCESSED');
@@ -189,10 +222,16 @@ export class ServiceRequestRepository {
       tiempo: Number(servicio?.tiempo || solicitud.tiempo || 0),
       total: Number(servicio?.total || total)
     };
+    } catch (err) {
+      logger.error('[ServiceRequestRepository] Error en approve:', { id, err });
+      if (err instanceof NotFoundError || err instanceof BusinessError) throw err;
+      throw new DatabaseError(`Error al aprobar solicitud de servicio ${id}`, err);
+    }
   }
 
   static async reject(id: string, processedBy: string, motivoRechazo: string) {
-    const solicitud = await this.getById(id);
+    try {
+      const solicitud = await this.getById(id);
 
     if (solicitud.estado !== 'pendiente') {
       throw new BusinessError('La solicitud ya fue procesada', 'SERVICE_REQUEST_ALREADY_PROCESSED');
@@ -207,5 +246,10 @@ export class ServiceRequestRepository {
     );
 
     return { id_solicitud: id, estado: 'rechazada', motivo_rechazo: motivoRechazo };
+    } catch (err) {
+      logger.error('[ServiceRequestRepository] Error en reject:', { id, err });
+      if (err instanceof NotFoundError || err instanceof BusinessError) throw err;
+      throw new DatabaseError(`Error al rechazar solicitud de servicio ${id}`, err);
+    }
   }
 }

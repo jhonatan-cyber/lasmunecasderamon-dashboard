@@ -2,14 +2,16 @@ import { query, generateUUID, withTransaction } from '@/lib/database/db';
 import { getNowInBusinessTimezone } from '@/lib/business/timezoneService';
 import { TipRegisterSchema } from '@/lib/business/schemas';
 import { BaseRepository } from './BaseRepository';
-import { BusinessError } from '@/lib/errors/errors';
+import { NotFoundError, BusinessError, DatabaseError } from '@/lib/errors/errors';
+import { logger } from '@/lib/utils/logger';
 import { z } from 'zod';
 
 type TipRegisterInput = z.input<typeof TipRegisterSchema>;
 
 export class TipRepository {
   static async register(body: TipRegisterInput) {
-    const { venta_id, monto, usuario_ids } = TipRegisterSchema.parse(body);
+    try {
+      const { venta_id, monto, usuario_ids } = TipRegisterSchema.parse(body);
 
     const usuarioIdsNormalizados = Array.from(
       new Set((usuario_ids || []).map(id => String(id)).filter(Boolean))
@@ -69,19 +71,24 @@ export class TipRepository {
         fecha_crea: now
       });
 
-      for (let i = 0; i < distribucionUsuarios.length; i++) {
-        const u = distribucionUsuarios[i];
-        const montoPorUsuario = montoBase + (i < resto ? 1 : 0);
-        await BaseRepository.insert(trx, 'detalle_propinas', {
-          id_detalle_propina: generateUUID(),
-          propina_id: id,
-          usuario_id: u.id_usuario,
-          monto: montoPorUsuario,
-          fecha_mod: null,
-          estado: 1,
-          fecha_crea: now
-        });
-      }
+      // OPTIMIZACIÓN: Batch insert multi-row (antes N queries individuales)
+      const detalleRows = distribucionUsuarios.map((u, i) => ({
+        id_detalle_propina: generateUUID(),
+        propina_id: id,
+        usuario_id: u.id_usuario,
+        monto: montoBase + (i < resto ? 1 : 0),
+        fecha_mod: null,
+        estado: 1,
+        fecha_crea: now
+      }));
+
+      const columns = ['id_detalle_propina', 'propina_id', 'usuario_id', 'monto', 'fecha_mod', 'estado', 'fecha_crea'];
+      const placeholders = detalleRows.map(() => `(${columns.map(() => '?').join(', ')})`).join(', ');
+      const values = detalleRows.flatMap(row => columns.map(col => row[col as keyof typeof row]));
+      await trx(
+        `INSERT INTO detalle_propinas (${columns.join(', ')}) VALUES ${placeholders}`,
+        values
+      );
     });
 
     return {
@@ -90,9 +97,15 @@ export class TipRepository {
       count: usuariosCount,
       usuarios_distribucion: usuariosCount
     };
+    } catch (err) {
+      logger.error('[TipRepository] Error en register:', { err });
+      if (err instanceof z.ZodError) throw err;
+      throw new DatabaseError('Error al registrar propina', err);
+    }
   }
 
   static async getSummary(isAdmin: boolean, userId: string, cajaActiva: boolean) {
+    try {
     let where = '';
     const params: any[] = [];
 
@@ -129,10 +142,15 @@ export class TipRepository {
     `,
       params
     );
+    } catch (err) {
+      logger.error('[TipRepository] Error en getSummary:', { isAdmin, userId, err });
+      throw new DatabaseError('Error al obtener resumen de propinas', err);
+    }
   }
 
   static async getByUser(userId: string) {
-    return await query(
+    try {
+      return await query(
       `
       SELECT P.id_propina AS propina_id, DP.id_detalle_propina, P.fecha_crea AS fecha_hora, 
              P.fecha_crea AS fecha_crea,
@@ -147,10 +165,15 @@ export class TipRepository {
     `,
       [userId]
     );
+    } catch (err) {
+      logger.error('[TipRepository] Error en getByUser:', { userId, err });
+      throw new DatabaseError(`Error al obtener propinas del usuario ${userId}`, err);
+    }
   }
 
   static async getDetails(usuario_id: string, startDate?: string, endDate?: string) {
-    let sql = `
+    try {
+      let sql = `
       SELECT
         p.id_propina AS propina_id,
         dp.id_detalle_propina,
@@ -177,9 +200,14 @@ export class TipRepository {
 
     sql += ' ORDER BY p.fecha_crea DESC';
     return await query(sql, params);
+    } catch (err) {
+      logger.error('[TipRepository] Error en getDetails:', { usuario_id, err });
+      throw new DatabaseError(`Error al obtener detalle de propinas del usuario ${usuario_id}`, err);
+    }
   }
 
   static async getByIdWithParticipants(id: string) {
+    try {
     const tip = await query<any[]>(
       `
       SELECT id_propina, venta_id, propina AS monto_total, fecha_crea
@@ -205,5 +233,10 @@ export class TipRepository {
       conteo_usuarios: participantes.length,
       participantes
     };
+    } catch (err) {
+      logger.error('[TipRepository] Error en getByIdWithParticipants:', { id, err });
+      if (err instanceof NotFoundError) throw err;
+      throw new DatabaseError(`Error al obtener propina ${id}`, err);
+    }
   }
 }

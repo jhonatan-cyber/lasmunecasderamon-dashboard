@@ -81,7 +81,7 @@ export function useCajaDetails({ caja, open }: UseCajaDetailsParams) {
     if (!cajaId) return;
     setLoadingVentas(true);
     try {
-      const resp = await fetch(`/api/ventas?caja_id=${cajaId}`);
+      const resp = await fetch(`/api/sales?caja_id=${cajaId}`);
       const data = await resp.json().catch(() => ({ success: false }));
       logger.info('API Ventas response:', data);
 

@@ -100,13 +100,25 @@
       }
     },
     {
-      "files": ["scripts/**/*.js", "scripts/**/*.ts"],
+      "files": ["scripts/**/*.js", "scripts/**/*.ts", "scripts/**/*.mjs"],
       "rules": {
         "no-console": "off"
       }
     },
     {
       "files": ["**/*.config.js", "**/*.config.ts"],
+      "rules": {
+        "no-console": "off"
+      }
+    },
+    {
+      "files": ["public/sw.js", "public/sw-template.js"],
+      "rules": {
+        "no-console": "off"
+      }
+    },
+    {
+      "files": ["lib/utils/logger.ts"],
       "rules": {
         "no-console": "off"
       }

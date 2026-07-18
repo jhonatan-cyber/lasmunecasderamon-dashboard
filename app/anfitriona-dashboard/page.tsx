@@ -11,6 +11,7 @@ import { toast } from 'sonner';
 
 import { useDashboardSummary } from '@/hooks/stats/useDashboardSummary';
 import { Button } from '@/components/ui/button';
+import { Skeleton as BoneyardSkeleton } from 'boneyard-js/react';
 
 export default function AnfitrionaDashboard() {
   const { user, loading: userLoading, refetch: refetchUser } = useCurrentUser();
@@ -71,17 +72,6 @@ export default function AnfitrionaDashboard() {
       setMarcandoEntrada(false);
     }
   };
-
-  if (userLoading || (loadingSummary && !dashboardData)) {
-    return (
-      <div className='p-6 flex items-center justify-center min-h-screen'>
-        <div className='text-center'>
-          <div className='animate-spin rounded-full h-32 w-32 border-b-2 border-blue-600 mx-auto'></div>
-          <p className='mt-4 text-gray-600'>Cargando Dashboard...</p>
-        </div>
-      </div>
-    );
-  }
 
   if (user?.role?.toLowerCase() !== 'anfitriona') {
     return (
@@ -156,6 +146,7 @@ export default function AnfitrionaDashboard() {
   ];
 
   return (
+    <BoneyardSkeleton name="anfitriona-dashboard-main" loading={userLoading || (loadingSummary && !dashboardData)}>
     <div className='p-6 space-y-6'>
       {}
       <div className='space-y-4'>
@@ -197,7 +188,7 @@ export default function AnfitrionaDashboard() {
                   Escanear para marcar
                 </p>
               </div>
-              <div className='bg-white p-6 rounded-[2rem] shadow-2xl scale-110'>
+              <div className='bg-white p-6 rounded-4xl shadow-2xl scale-110'>
                 <LazyQRCode
                   value={user.qr_token}
                   size={160}
@@ -225,7 +216,7 @@ export default function AnfitrionaDashboard() {
               <button
                 onClick={handleMarcarEntrada}
                 disabled={marcandoEntrada}
-                className='w-full flex items-center justify-center gap-2 px-5 py-3 rounded-2xl bg-white/20 hover:bg-white/30 border border-white/30 text-white text-sm font-bold transition-all disabled:opacity-50 disabled:cursor-not-allowed backdrop-blur-sm'
+                className='w-full flex items-center justify-center gap-2 px-5 py-3 rounded-2xl bg-white/20 hover:bg-white/30 border border-white/30 text-white text-sm font-bold transition-all disabled:opacity-50 disabled:cursor-not-allowed backdrop-blur-xs'
               >
                 <LogIn className='h-4 w-4' />
                 {marcandoEntrada ? 'Registrando...' : 'Marcar Entrada'}
@@ -257,5 +248,6 @@ export default function AnfitrionaDashboard() {
         ))}
       </div>
     </div>
+    </BoneyardSkeleton>
   );
 }

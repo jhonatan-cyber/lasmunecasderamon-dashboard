@@ -25,15 +25,17 @@ export const useDevolucionVentasLogic = () => {
       return;
     }
 
+    const total = Number(selectedVenta.total || 0);
     try {
-      const response = await fetch(`/api/ventas/${selectedVenta.id}/solicitar-devolucion`, {
+      const response = await fetch('/api/ventas/anulacion', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
+          ventaId: selectedVenta.id,
           motivo: motivoDevolucion,
-          solicitadoPor: 'Administrador'
+          monto: total,
         }),
       });
 
@@ -42,14 +44,13 @@ export const useDevolucionVentasLogic = () => {
         throw new Error(errorData.error || 'Error al procesar la devolución');
       }
 
-      showSuccessToast('Solicitud de devolución enviada correctamente. El administrador será notificado.');
+      showSuccessToast('Solicitud de devolución enviada correctamente.');
       setIsDevolucionModalOpen(false);
       setMotivoDevolucion('');
       setSelectedVenta(null);
 
       await getVentas();
     } catch (error) {
-    
       showErrorToast('Error al procesar la devolución de la venta');
     }
   };

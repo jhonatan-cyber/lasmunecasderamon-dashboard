@@ -87,7 +87,7 @@ export const DevolucionTable = ({
   const MobileCardView = () => (
     <div className='space-y-4 lg:hidden'>
       {servicios.map(servicio => (
-        <Card key={servicio.id_servicio} className='shadow-sm hover:shadow-md transition-shadow'>
+        <Card key={servicio.id_servicio} className='shadow-xs hover:shadow-md transition-shadow'>
           <CardContent className='p-4'>
             <div className='space-y-3'>
               {}

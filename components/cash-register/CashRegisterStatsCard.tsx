@@ -100,7 +100,7 @@ export function CashRegisterStatsCard({ isCajero = false }: CashRegisterStatsCar
     return (
       <Card
         key={index}
-        className={`shadow-sm backdrop-blur-sm rounded-[2rem] overflow-hidden group hover:scale-[1.02] transition-all duration-300 border ${theme.bgColor} ${theme.borderColor}`}
+        className={`shadow-xs backdrop-blur-xs rounded-4xl overflow-hidden group hover:scale-[1.02] transition-all duration-300 border ${theme.bgColor} ${theme.borderColor}`}
       >
         <CardContent className='p-5'>
           <div className='flex items-center justify-between mb-4'>

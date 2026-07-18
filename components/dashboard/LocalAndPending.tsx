@@ -197,7 +197,7 @@ export default function LocalAndPending() {
         </div>
       ) : (
         <div className='flex flex-col items-center justify-center py-6 rounded-2xl border-2 border-dashed border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-950/10'>
-          <div className='p-2 bg-white dark:bg-slate-800 rounded-full mb-2 shadow-sm'>
+          <div className='p-2 bg-white dark:bg-slate-800 rounded-full mb-2 shadow-xs'>
             <Activity className='h-4 w-4 text-slate-300' />
           </div>
           <p className='text-[10px] font-black uppercase tracking-widest text-slate-400'>

@@ -1,4 +1,4 @@
-import { generateUUID, withTransaction, query } from '@/lib/database/db';
+import { generateUUID, withTransaction, query, type TransactionQuery } from '@/lib/database/db';
 import { getNowInBusinessTimezone } from '@/lib/business/timezoneService';
 import { SaleCreateSchema } from '@/lib/business/schemas';
 import { SaleRepository } from '@/lib/repositories/SaleRepository';
@@ -9,6 +9,7 @@ import { AuditRepository } from '@/lib/repositories/AuditRepository';
 import { TipRepository } from '@/lib/repositories/TipRepository';
 import { RoomManager } from '@/lib/services/RoomManager';
 import { sendNotificationToAll } from '@/lib/api/sseService';
+import { invalidateDashboardCache } from '@/lib/cache/dashboardCache';
 import { logger } from '@/lib/utils/logger';
 import { BusinessError } from '@/lib/errors/errors';
 import { NotFoundError } from '@/lib/errors/errors';
@@ -92,6 +93,7 @@ export class SaleService {
 
       const estado = validated.habitacion_id && validated.tiempo > 0 && !esLibreIngreso ? 2 : 1;
 
+      // === INSERT VENTA PRINCIPAL ===
       await SaleRepository.rawInsert(trx, {
         id_venta: ventaId,
         codigo,
@@ -116,71 +118,76 @@ export class SaleService {
           validated.habitacion_id
         ]);
       }
-      if (validated.usuarios?.length) {
+
+      // === OPTIMIZACIÓN: Validar TODAS las hostesses en UNA query ===
+      // Extraer todos los IDs únicos de hostesses desde usuarios principales + detalles
+      const allRequestedHostessIds = [
+        ...new Set([
+          ...(validated.usuarios || []),
+          ...validated.detalles.flatMap(d => {
+            const ids = d.hostesses?.length ? d.hostesses : (d.hostess_id ? [d.hostess_id] : []);
+            return ids;
+          })
+        ].filter(Boolean))
+      ] as string[];
+
+      let validatedHostessIds: string[] = [];
+      if (allRequestedHostessIds.length > 0) {
         const hostessRows = await trx<any[]>(
           `SELECT DISTINCT u.id_usuario
            FROM usuarios u
            INNER JOIN roles r ON r.id_rol = u.rol_id
            INNER JOIN logins l ON l.usuario_id = u.id_usuario
-           WHERE u.id_usuario IN (${validated.usuarios.map(() => '?').join(', ')})
+           WHERE u.id_usuario IN (${allRequestedHostessIds.map(() => '?').join(', ')})
              AND u.estado = 1
              AND l.estado = 1
              AND l.en_local = 1
              AND LOWER(r.nombre) = 'anfitriona'`,
-          validated.usuarios
+          allRequestedHostessIds
         );
-        const hostessIds = hostessRows.map((row: any) => row.id_usuario);
+        validatedHostessIds = hostessRows.map((row: { id_usuario: string }) => row.id_usuario);
 
-        if (hostessIds.length !== validated.usuarios.length) {
+        if (validatedHostessIds.length !== allRequestedHostessIds.length) {
           throw new BusinessError(
             'Hay anfitrionas seleccionadas que no estan logueadas en el local',
             'HOSTESS_NOT_LOGGED_IN'
           );
         }
-        if (estado === 2) {
-          await RoomManager.pauseConflictingServices(trx, hostessIds, undefined, ventaId);
-        }
-
-        for (const uId of hostessIds) {
-          await SaleRepository.insertUserRelation(trx, ventaId, uId);
-        }
-
-        await RoomManager.updateHostessServiceStatus(trx, hostessIds, undefined, ventaId);
       }
 
-      for (const d of validated.detalles) {
-        const requestedHostesses =
-          d.hostesses && d.hostesses.length > 0 ? d.hostesses : d.hostess_id ? [d.hostess_id] : [];
+      const validatedHostessSet = new Set(validatedHostessIds);
 
-        let hostesses: (string | null)[] = requestedHostesses;
-        if (requestedHostesses.length > 0) {
-          const hostessRows = await trx<any[]>(
-            `SELECT DISTINCT u.id_usuario
-               FROM usuarios u
-               INNER JOIN roles r ON r.id_rol = u.rol_id
-               INNER JOIN logins l ON l.usuario_id = u.id_usuario
-               WHERE u.id_usuario IN (${requestedHostesses.map(() => '?').join(', ')})
-                 AND u.estado = 1
-                 AND l.estado = 1
-                 AND l.en_local = 1
-                 AND LOWER(r.nombre) = 'anfitriona'`,
-            requestedHostesses
-          );
+      // === VALIDACIÓN DE USUARIOS PRINCIPALES + RELACIONES ===
+      if (validated.usuarios?.length) {
+        const mainHostessIds = validated.usuarios.filter((id: string) =>
+          validatedHostessSet.has(id)
+        );
 
-          hostesses = hostessRows.map((row: any) => row.id_usuario);
-          if (hostesses.length !== requestedHostesses.length) {
-            throw new BusinessError(
-              'Hay anfitrionas seleccionadas que no estan logueadas en el local',
-              'HOSTESS_NOT_LOGGED_IN'
-            );
-          }
+        if (estado === 2) {
+          await RoomManager.pauseConflictingServices(trx, mainHostessIds, undefined, ventaId);
         }
+
+        // BATCH INSERT ventas_usuarios
+        await SaleService.batchInsertUserRelations(trx, ventaId, mainHostessIds, now);
+
+        await RoomManager.updateHostessServiceStatus(trx, mainHostessIds, undefined, ventaId);
+      }
+
+      // === OPTIMIZACIÓN: BATCH INSERTS para detalles y comisiones ===
+      const detailRows: Array<Record<string, unknown>> = [];
+      const commissionMainRows: Array<Record<string, unknown>> = [];
+      const commissionDetailRows: Array<Record<string, unknown>> = [];
+
+      for (const d of validated.detalles) {
+        const requestedHostesses = d.hostesses?.length ? d.hostesses : (d.hostess_id ? [d.hostess_id] : []);
+        const hostesses = requestedHostesses.length > 0
+          ? requestedHostesses.filter((id: string) => validatedHostessSet.has(id))
+          : [];
 
         const totalComm = Math.round(d.comision || 0);
         const totalQty = Math.max(1, Number(d.cantidad || 1));
         const isChampagne = Boolean(d.isChampagne);
-        const effectiveHostesses =
-          hostesses.length === 0 ? [null] : isChampagne ? hostesses : hostesses.slice(0, totalQty);
+        const effectiveHostesses = hostesses.length === 0 ? [null] : isChampagne ? hostesses : hostesses.slice(0, totalQty);
         const hostessCount = Math.max(1, effectiveHostesses.length);
 
         const commissionByIndex = new Array(hostessCount).fill(0);
@@ -204,7 +211,6 @@ export class SaleService {
 
           for (let i = 0; i < hostessCount; i++) {
             const qtyPart = i === hostessCount - 1 ? remainingQty : baseQty === 0 ? 1 : baseQty;
-
             remainingQty -= qtyPart;
             quantityByIndex[i] = qtyPart;
             subtotalByIndex[i] = d.precio * qtyPart;
@@ -223,8 +229,9 @@ export class SaleService {
           const qtyPart = quantityByIndex[i];
           const subPart = subtotalByIndex[i];
 
-          await SaleRepository.insertDetail(trx, {
-            id_detalle_venta: generateUUID(),
+          const detailId = generateUUID();
+          detailRows.push({
+            id_detalle_venta: detailId,
             venta_id: ventaId,
             producto_id: d.producto_id,
             precio: d.precio,
@@ -236,15 +243,38 @@ export class SaleService {
           });
 
           if (hostessId && commPart > 0) {
-            await CommissionRepository.createWithDetail(trx, {
+            const commissionId = generateUUID();
+            commissionMainRows.push({
+              id_comision: commissionId,
               venta_id: ventaId,
               usuario_id: hostessId,
-              monto: commPart
+              monto: commPart,
+              estado: 1,
+              fecha_crea: now
+            });
+            commissionDetailRows.push({
+              id_detalle_comision: generateUUID(),
+              comision_id: commissionId,
+              usuario_id: hostessId,
+              comision: commPart,
+              estado: 1,
+              fecha_crea: now
             });
           }
         }
       }
 
+      // BATCH INSERT detalles
+      if (detailRows.length > 0) {
+        await SaleService.batchInsertDetails(trx, detailRows);
+      }
+
+      // BATCH INSERT comisiones + detalle_comisiones
+      if (commissionMainRows.length > 0) {
+        await SaleService.batchInsertCommissions(trx, commissionMainRows, commissionDetailRows);
+      }
+
+      // === ACTUALIZACIÓN CAJA ===
       if (cajaId && !skipCashRegisterPosting) {
         if (esMixto) {
           const deltas = calcularDeltasCaja(pagosMixtos);
@@ -272,6 +302,7 @@ export class SaleService {
         }
       }
 
+      // === AUDITORÍA ===
       await AuditRepository.log(
         {
           user_id: createdBy,
@@ -287,12 +318,11 @@ export class SaleService {
         await trx('UPDATE pedidos SET estado = 0 WHERE id_pedido = ?', [pedidoId]);
       }
 
+      // === PROPI NAS ===
       if (validated.propina && validated.propina > 0) {
         try {
           const pedidoUsuarios = pedidoId
-            ? await trx<any[]>('SELECT mesero_id FROM pedidos WHERE id_pedido = ? LIMIT 1', [
-                pedidoId
-              ])
+            ? await trx<any[]>('SELECT mesero_id FROM pedidos WHERE id_pedido = ? LIMIT 1', [pedidoId])
             : [];
           const destinatariosPropina = Array.from(
             new Set(
@@ -325,9 +355,95 @@ export class SaleService {
       };
     });
 
+    // SSE notification (no bloquea — broadcast es síncrono en memoria)
     sendNotificationToAll('timers_updated', { timestamp: now });
 
+    // Invalidar caché del dashboard para que los datos frescos se reflejen
+    invalidateDashboardCache({ userId: createdBy });
+
     return result;
+  }
+
+  // ================================================================
+  // OPTIMIZACIÓN: Batch inserts para reducir queries N+1
+  // ================================================================
+
+  /**
+   * Batch insert para detalle_ventas. Reemplaza N inserts individuales
+   * por un solo INSERT multi-row.
+   */
+  private static async batchInsertDetails(
+    trx: TransactionQuery,
+    rows: Array<Record<string, unknown>>
+  ): Promise<void> {
+    const columns = [
+      'id_detalle_venta', 'venta_id', 'producto_id', 'precio',
+      'comision', 'cantidad', 'sub_total', 'hostess_id', 'fecha_crea'
+    ];
+    const placeholders = rows.map(() => `(${columns.map(() => '?').join(', ')})`).join(', ');
+    const values = rows.flatMap(row => columns.map(col => row[col]));
+
+    await trx(
+      `INSERT INTO detalle_ventas (${columns.join(', ')}) VALUES ${placeholders}`,
+      values
+    );
+  }
+
+  /**
+   * Batch insert para comisiones + detalle_comisiones.
+   * Inserta ambas tablas en un solo batch cada una.
+   */
+  private static async batchInsertCommissions(
+    trx: TransactionQuery,
+    mainRows: Array<Record<string, unknown>>,
+    detailRows: Array<Record<string, unknown>>
+  ): Promise<void> {
+    if (mainRows.length === 0) return;
+
+    // Batch insert comisiones
+    const mainColumns = ['id_comision', 'venta_id', 'monto', 'estado', 'fecha_crea'];
+    const mainPlaceholders = mainRows.map(() => `(${mainColumns.map(() => '?').join(', ')})`).join(', ');
+    const mainValues = mainRows.flatMap(row => mainColumns.map(col => row[col]));
+
+    await trx(
+      `INSERT INTO comisiones (${mainColumns.join(', ')}) VALUES ${mainPlaceholders}`,
+      mainValues
+    );
+
+    // Batch insert detalle_comisiones
+    const detailCols = ['id_detalle_comision', 'comision_id', 'usuario_id', 'comision', 'estado', 'fecha_crea'];
+    const detailPlaceholders = detailRows.map(() => `(${detailCols.map(() => '?').join(', ')})`).join(', ');
+    const detailValues = detailRows.flatMap(row => detailCols.map(col => row[col]));
+
+    await trx(
+      `INSERT INTO detalle_comisiones (${detailCols.join(', ')}) VALUES ${detailPlaceholders}`,
+      detailValues
+    );
+  }
+
+  /**
+   * Batch insert para ventas_usuarios. Reemplaza N inserts individuales
+   * por un solo INSERT multi-row.
+   */
+  private static async batchInsertUserRelations(
+    trx: TransactionQuery,
+    ventaId: string,
+    usuarioIds: string[],
+    now: string
+  ): Promise<void> {
+    if (usuarioIds.length === 0) return;
+
+    const columns = ['id_usuario_venta', 'venta_id', 'usuario_id', 'fecha_crea'];
+    const rows = usuarioIds.map(usuarioId => [
+      generateUUID(), ventaId, usuarioId, now
+    ]);
+    const placeholders = rows.map(() => `(${columns.map(() => '?').join(', ')})`).join(', ');
+    const values = rows.flat();
+
+    await trx(
+      `INSERT INTO ventas_usuarios (${columns.join(', ')}) VALUES ${placeholders}`,
+      values
+    );
   }
 
   static async approveAnulacion(ventaId: string, approvedBy: string, requestedAmount: number) {

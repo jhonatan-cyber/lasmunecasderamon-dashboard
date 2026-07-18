@@ -1,7 +1,9 @@
-﻿import { Client } from '@/types/client';
+'use client';
+
+import { Client } from '@/types/client';
 import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';
-import React, { useState, useCallback } from 'react';
+import React from 'react';
 import { Trash, Pencil, Eye, Phone, User, MoreVertical, Wallet } from 'lucide-react';
 import {
   Table,
@@ -22,7 +24,7 @@ import {
 import { Button } from '@/components/ui/button';
 import { DeleteClientConfirmModal } from './DeleteClientConfirmModal';
 import { Card, CardContent } from '@/components/ui/card';
-import { useUserPermissions } from '@/hooks/auth/useUserPermissions';
+import { useClientTable } from '@/hooks/clients/useClientTable';
 
 interface ClientTableProps {
   clients: Client[];
@@ -115,44 +117,16 @@ const MobileCardView = React.memo(
                     </div>
                   </div>
                   {hasAnyAction && (
-                    <Tooltip>
-                      <TooltipTrigger asChild>
-                        <DropdownMenu>
-                          <DropdownMenuTrigger asChild>
-                            <Button
-                              variant='ghost'
-                              size='icon'
-                              className='hover:bg-gray-200 dark:hover:bg-slate-800 rounded-full p-2'
-                            >
-                              <MoreVertical className='h-4 w-4' />
-                            </Button>
-                          </DropdownMenuTrigger>
-                          <DropdownMenuContent align='end' className='w-44'>
-                            {canViewDetails && (
-                              <DropdownMenuItem onClick={() => onViewDetails(client)}>
-                                <Eye className='mr-2 h-4 w-4 text-blue-600' /> Ver detalles
-                              </DropdownMenuItem>
-                            )}
-                            {canEdit && (
-                              <DropdownMenuItem onClick={() => onEdit(client)}>
-                                <Pencil className='mr-2 h-4 w-4 text-purple-600' /> Editar
-                              </DropdownMenuItem>
-                            )}
-                            {canDelete && (
-                              <DropdownMenuItem onClick={() => handleDeleteClick(client)}>
-                                <Trash className='mr-2 h-4 w-4 text-red-600' /> Eliminar
-                              </DropdownMenuItem>
-                            )}
-                            <DropdownMenuItem onClick={() => onLoadPrepago(client)}>
-                              <Wallet className='mr-2 h-4 w-4 text-green-600' /> Cargar saldo
-                            </DropdownMenuItem>
-                          </DropdownMenuContent>
-                        </DropdownMenu>
-                      </TooltipTrigger>
-                      <TooltipContent>
-                        <p>Acciones del cliente</p>
-                      </TooltipContent>
-                    </Tooltip>
+                    <ClientActionsDropdown
+                      client={client}
+                      canViewDetails={canViewDetails}
+                      canEdit={canEdit}
+                      canDelete={canDelete}
+                      onViewDetails={onViewDetails}
+                      onEdit={onEdit}
+                      onLoadPrepago={onLoadPrepago}
+                      handleDeleteClick={handleDeleteClick}
+                    />
                   )}
                 </div>
 
@@ -175,7 +149,7 @@ const MobileCardView = React.memo(
 
 MobileCardView.displayName = 'MobileCardView';
 
-interface DropdownMenuWithTooltipProps {
+interface ClientActionsDropdownProps {
   client: Client;
   canViewDetails: boolean;
   canEdit: boolean;
@@ -186,7 +160,7 @@ interface DropdownMenuWithTooltipProps {
   handleDeleteClick: (client: Client) => void;
 }
 
-const DropdownMenuWithTooltip = ({
+const ClientActionsDropdown = ({
   client,
   canViewDetails,
   canEdit,
@@ -194,8 +168,8 @@ const DropdownMenuWithTooltip = ({
   onViewDetails,
   onEdit,
   onLoadPrepago,
-  handleDeleteClick
-}: DropdownMenuWithTooltipProps) => {
+  handleDeleteClick,
+}: ClientActionsDropdownProps) => {
   return (
     <div className='flex justify-center'>
       <DropdownMenu>
@@ -304,56 +278,32 @@ const DesktopTableView = React.memo(
   }: DesktopTableViewProps) => (
     <TooltipProvider>
       <div className='hidden lg:block'>
-        <div className='bg-white dark:bg-slate-900/40 backdrop-blur-sm rounded-3xl border-none shadow-md overflow-hidden'>
+        <div className='bg-white dark:bg-slate-900/40 backdrop-blur-xs rounded-3xl border-none shadow-md overflow-hidden'>
           <Table>
             <TableHeader className='bg-gray-100 dark:bg-slate-900/50'>
               <TableRow className='hover:bg-transparent border-gray-100 dark:border-gray-800'>
                 <TableHead className='py-4 px-5 text-xs uppercase text-gray-500'>#</TableHead>
                 <TableHead className='py-4 px-5 text-xs uppercase text-gray-500'>RUN</TableHead>
                 <TableHead className='py-4 px-5 text-xs uppercase text-gray-500'>Nombre</TableHead>
-                <TableHead className='py-4 px-5 text-xs uppercase text-gray-500'>
-                  Apellido
-                </TableHead>
-                <TableHead className='py-4 px-5 text-xs uppercase text-gray-500'>
-                  Teléfono
-                </TableHead>
+                <TableHead className='py-4 px-5 text-xs uppercase text-gray-500'>Apellido</TableHead>
+                <TableHead className='py-4 px-5 text-xs uppercase text-gray-500'>Teléfono</TableHead>
                 <TableHead className='py-4 px-5 text-xs uppercase text-gray-500'>Estado</TableHead>
-                <TableHead className='py-4 px-5 text-xs uppercase text-gray-500'>
-                  Saldo Prepago
-                </TableHead>
-                <TableHead className='py-4 px-5 text-xs uppercase text-gray-500'>
-                  Acciones
-                </TableHead>
+                <TableHead className='py-4 px-5 text-xs uppercase text-gray-500'>Saldo Prepago</TableHead>
+                <TableHead className='py-4 px-5 text-xs uppercase text-gray-500'>Acciones</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
               {loading
                 ? Array.from({ length: pageSize }).map((_, i) => (
                     <TableRow key={`loading-${i}`}>
-                      <TableCell>
-                        <Skeleton className='h-4 w-8 mx-auto' />
-                      </TableCell>
-                      <TableCell>
-                        <Skeleton className='h-4 w-16 mx-auto' />
-                      </TableCell>
-                      <TableCell>
-                        <Skeleton className='h-4 w-20 mx-auto' />
-                      </TableCell>
-                      <TableCell>
-                        <Skeleton className='h-4 w-20 mx-auto' />
-                      </TableCell>
-                      <TableCell>
-                        <Skeleton className='h-4 w-24 mx-auto' />
-                      </TableCell>
-                      <TableCell>
-                        <Skeleton className='h-4 w-16 mx-auto' />
-                      </TableCell>
-                      <TableCell>
-                        <Skeleton className='h-4 w-14 mx-auto' />
-                      </TableCell>
-                      <TableCell>
-                        <Skeleton className='h-4 w-16 mx-auto' />
-                      </TableCell>
+                      <TableCell><Skeleton className='h-4 w-8 mx-auto' /></TableCell>
+                      <TableCell><Skeleton className='h-4 w-16 mx-auto' /></TableCell>
+                      <TableCell><Skeleton className='h-4 w-20 mx-auto' /></TableCell>
+                      <TableCell><Skeleton className='h-4 w-20 mx-auto' /></TableCell>
+                      <TableCell><Skeleton className='h-4 w-24 mx-auto' /></TableCell>
+                      <TableCell><Skeleton className='h-4 w-16 mx-auto' /></TableCell>
+                      <TableCell><Skeleton className='h-4 w-14 mx-auto' /></TableCell>
+                      <TableCell><Skeleton className='h-4 w-16 mx-auto' /></TableCell>
                     </TableRow>
                   ))
                 : clients.map((client, idx) => (
@@ -366,25 +316,15 @@ const DesktopTableView = React.memo(
                           {(currentPage - 1) * pageSize + idx + 1}
                         </Badge>
                       </TableCell>
-                      <TableCell className='py-3 px-4 text-center'>
-                        {renderRun(client.run)}
-                      </TableCell>
-                      <TableCell className='py-3 px-4 text-center font-medium'>
-                        {client.name}
-                      </TableCell>
+                      <TableCell className='py-3 px-4 text-center'>{renderRun(client.run)}</TableCell>
+                      <TableCell className='py-3 px-4 text-center font-medium'>{client.name}</TableCell>
                       <TableCell className='py-3 px-4 text-center'>{client.lastName}</TableCell>
-                      <TableCell className='py-3 px-4 text-center'>
-                        {renderPhone(client.phone)}
-                      </TableCell>
+                      <TableCell className='py-3 px-4 text-center'>{renderPhone(client.phone)}</TableCell>
                       <TableCell className='py-3 px-4 text-center'>
                         {client.status === 1 ? (
-                          <Badge className='bg-green-100 text-green-700 rounded-full px-3 py-1'>
-                            Activo
-                          </Badge>
+                          <Badge className='bg-green-100 text-green-700 rounded-full px-3 py-1'>Activo</Badge>
                         ) : (
-                          <Badge className='bg-red-200 text-red-600 rounded-full px-3 py-1'>
-                            Inactivo
-                          </Badge>
+                          <Badge className='bg-red-200 text-red-600 rounded-full px-3 py-1'>Inactivo</Badge>
                         )}
                       </TableCell>
                       <TableCell className='py-3 px-4 text-center font-bold text-green-600'>
@@ -392,7 +332,7 @@ const DesktopTableView = React.memo(
                       </TableCell>
                       <TableCell className='py-3 px-4 text-center'>
                         {hasAnyAction && (
-                          <DropdownMenuWithTooltip
+                          <ClientActionsDropdown
                             client={client}
                             canViewDetails={canViewDetails}
                             canEdit={canEdit}
@@ -427,57 +367,20 @@ export function ClientTable({
   pageSize,
   isMutating = false
 }: ClientTableProps) {
-  const [deleteModalOpen, setDeleteModalOpen] = useState(false);
-  const [clientToDelete, setClientToDelete] = useState<Client | null>(null);
-  const { hasPermission } = useUserPermissions();
+  const {
+    deleteModalOpen,
+    clientToDelete,
+    canViewDetails,
+    canEdit,
+    canDelete,
+    hasAnyAction,
+    handleDeleteClick,
+    handleConfirmDelete,
+    renderRun,
+    renderPhone,
+    setDeleteModalOpen,
+  } = useClientTable();
 
-  const canViewDetails = hasPermission('clients', 'view_details');
-  const canEdit = hasPermission('clients', 'edit');
-  const canDelete = hasPermission('clients', 'delete');
-
-  const hasAnyAction = canViewDetails || canEdit || canDelete;
-
-  const handleDeleteClick = (client: Client) => {
-    setClientToDelete(client);
-    setDeleteModalOpen(true);
-  };
-
-  const handleConfirmDelete = () => {
-    if (clientToDelete) {
-      onDelete(clientToDelete);
-      setClientToDelete(null);
-    }
-  };
-
-  const renderRun = useCallback((run: string | undefined | null) => {
-    if (!run || run === '0') {
-      return (
-        <Badge
-          variant='outline'
-          className='text-purple-600 border-purple-300 bg-purple-50 dark:bg-purple-900/20 dark:border-purple-800 text-xs sm:text-sm'
-        >
-          <User className='h-3 w-3 mr-1' />
-          Sin RUN
-        </Badge>
-      );
-    }
-    return run;
-  }, []);
-
-  const renderPhone = useCallback((phone: string | undefined | null | '0') => {
-    if (!phone || phone === '0') {
-      return (
-        <Badge
-          variant='outline'
-          className='text-purple-600 border-purple-300 bg-purple-50 dark:bg-purple-900/20 dark:border-purple-800 text-xs sm:text-sm'
-        >
-          <Phone className='h-3 w-3 mr-1' />
-          Sin teléfono
-        </Badge>
-      );
-    }
-    return phone;
-  }, []);
   if (!loading && clients.length === 0) {
     return (
       <Card className='border-none shadow-md rounded-3xl bg-white dark:bg-slate-900/40 overflow-hidden'>
@@ -528,7 +431,10 @@ export function ClientTable({
       <DeleteClientConfirmModal
         open={deleteModalOpen}
         onOpenChange={setDeleteModalOpen}
-        onConfirm={handleConfirmDelete}
+        onConfirm={() => {
+          const client = handleConfirmDelete();
+          if (client) onDelete(client);
+        }}
         clientName={clientToDelete ? `${clientToDelete.name} ${clientToDelete.lastName}` : '---'}
       />
     </div>

@@ -290,6 +290,7 @@ export default function ServiceOrderForm({ clientes }: ServiceOrderFormProps) {
     tempForm.clientes_ids.length,
     tempForm.tiempo,
     tempForm.metodo_pago
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   ]);
 
   const ivaCalculado = useMemo(() => {
@@ -314,6 +315,7 @@ export default function ServiceOrderForm({ clientes }: ServiceOrderFormProps) {
     tempForm.anfitrionas_ids.length,
     tempForm.tiempo,
     tempForm.metodo_pago
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   ]);
   return (
     <div className='space-y-6'>

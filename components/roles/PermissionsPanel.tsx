@@ -210,7 +210,7 @@ export function PermissionsPanel({ selectedRole }: PermissionsPanelProps) {
                     ) : (
                       <ChevronRight className='h-4 w-4 text-zinc-600 dark:text-neutral-400' />
                     )}
-                    <h4 className='font-medium text-zinc-800 dark:text-neutral-200 capitalize break-words'>
+                    <h4 className='font-medium text-zinc-800 dark:text-neutral-200 capitalize wrap-break-word'>
                       {getModuleDisplayName(module)}
                     </h4>
                     <Badge variant='outline' className='text-xs'>
@@ -264,7 +264,7 @@ export function PermissionsPanel({ selectedRole }: PermissionsPanelProps) {
                               className='rounded border-zinc-300 dark:border-neutral-600 text-black focus:ring-black'
                               disabled={!canAssignPermissions}
                             />
-                            <span className='text-sm font-medium text-zinc-800 dark:text-neutral-100 break-words'>
+                            <span className='text-sm font-medium text-zinc-800 dark:text-neutral-100 wrap-break-word'>
                               {permission.name}
                             </span>
                             {selectedPermissions.includes(permission.id.toString()) && (
@@ -273,7 +273,7 @@ export function PermissionsPanel({ selectedRole }: PermissionsPanelProps) {
                               </Badge>
                             )}
                           </div>
-                          <p className='text-xs text-zinc-600 dark:text-neutral-400 ml-6 mt-1 break-words'>
+                          <p className='text-xs text-zinc-600 dark:text-neutral-400 ml-6 mt-1 wrap-break-word'>
                             {permission.description}
                           </p>
                         </div>
@@ -287,7 +287,7 @@ export function PermissionsPanel({ selectedRole }: PermissionsPanelProps) {
       </div>
 
       {}
-      <div className='flex-shrink-0 bg-white dark:bg-neutral-900 border-t border-gray-200 dark:border-neutral-800 p-3 sm:p-4'>
+      <div className='shrink-0 bg-white dark:bg-neutral-900 border-t border-gray-200 dark:border-neutral-800 p-3 sm:p-4'>
         <div className='flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 text-sm'>
           <div className='flex items-center justify-between sm:justify-start gap-2'>
             <span className='text-zinc-600 dark:text-neutral-400'>Permisos seleccionados:</span>

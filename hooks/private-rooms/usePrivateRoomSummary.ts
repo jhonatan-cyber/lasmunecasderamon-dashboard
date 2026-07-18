@@ -1,4 +1,5 @@
 import { useMemo } from 'react';
+import { getCardSplit } from '@/components/orders/productModalRules';
 
 interface PrivateRoomSummaryParams {
   formData: {
@@ -80,13 +81,7 @@ export function usePrivateRoomSummary({
     return 4 - formData.usuarios.length;
   }, [hasComision, formData.usuarios.length]);
 
-  const desgloseTarjeta = useMemo(() => {
-    const redondearMiles = (monto: number) => Math.round(monto / 1000) * 1000;
-    const venta = redondearMiles(total * 0.51);
-    const propina = redondearMiles(Math.max(0, total * 0.49));
-
-    return { venta, propina };
-  }, [total]);
+  const desgloseTarjeta = useMemo(() => getCardSplit(total), [total]);
 
   const precioHabitacionBoleta = useMemo(() => {
     const cantidadAnfitrionas = formData.usuarios.length || 1;

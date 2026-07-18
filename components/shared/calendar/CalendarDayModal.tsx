@@ -140,7 +140,7 @@ export default function CalendarDayModal({
   return (
     <Dialog open={isOpen && selectedDates.length > 0} onOpenChange={onClose}>
       <DialogContent className='max-w-[95vw] w-full max-h-[90vh] flex flex-col p-0'>
-        <DialogHeader className='flex-shrink-0 px-6 pt-6 pb-4 border-b'>
+        <DialogHeader className='shrink-0 px-6 pt-6 pb-4 border-b'>
           <DialogTitle className='text-lg font-semibold'>
             {formatDatesList(selectedDates)}
           </DialogTitle>
@@ -161,7 +161,7 @@ export default function CalendarDayModal({
                         ? 'bg-black text-white hover:bg-gray-800'
                         : 'border border-gray-300 text-gray-700 hover:bg-gray-50 dark:border-gray-600 dark:text-gray-300 dark:hover:bg-gray-700'
                     }`}
-                    variant={selectedDataType === key ? 'default' : 'outline'}
+                    variant={selectedDataType === key ? 'default' : 'outline-solid'}
                     onClick={() => setSelectedDataType(key)}
                   >
                     {config.title} ({count})
@@ -456,7 +456,7 @@ export default function CalendarDayModal({
           </div>
         </div>
 
-        <div className='flex-shrink-0 border-t px-6 py-4'>
+        <div className='shrink-0 border-t px-6 py-4'>
           <div className='flex justify-center'>
             <Button
               variant='outline'

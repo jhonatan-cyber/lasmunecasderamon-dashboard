@@ -12,6 +12,7 @@ import SelectElements from '@/components/shared/SelectElements';
 import Paginate from '@/components/shared/Paginate';
 import { formatDateLabel, formatDateTimeDmyLabel } from '@/lib/utils/calendarUtils';
 import { formatCurrencyCLP } from '@/lib/utils/formatters';
+import { Skeleton as BoneyardSkeleton } from 'boneyard-js/react';
 import logger from '@/lib/utils/logger';
 
 interface Advance {
@@ -165,6 +166,7 @@ export default function AnfitrionaAnticiposPage() {
 
   return (
     <div className='p-6 space-y-6'>
+      <BoneyardSkeleton name="anfitriona-anticipos-main" loading={loading}>
       {}
       <div className='flex justify-between items-center'>
         <div>
@@ -258,14 +260,7 @@ export default function AnfitrionaAnticiposPage() {
                 </tr>
               </thead>
               <tbody className='bg-white divide-y divide-gray-200'>
-                {loading ? (
-                  <tr>
-                    <td colSpan={5} className='px-6 py-4 text-center'>
-                      <div className='animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto'></div>
-                      <p className='mt-2 text-gray-600'>Cargando anticipos...</p>
-                    </td>
-                  </tr>
-                ) : paginatedAdvances.length === 0 ? (
+                {paginatedAdvances.length === 0 ? (
                   <tr>
                     <td colSpan={5} className='px-6 py-4 text-center text-gray-500'>
                       No se encontraron anticipos
@@ -313,6 +308,7 @@ export default function AnfitrionaAnticiposPage() {
       <div className='flex justify-center'>
         <Paginate page={page} totalPages={totalPages} setPage={setPage} />
       </div>
+      </BoneyardSkeleton>
     </div>
   );
 }

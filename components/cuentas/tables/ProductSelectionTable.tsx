@@ -31,7 +31,7 @@ export default function ProductTable({
   onRemoveProducto
 }: ProductTableProps) {
   return (
-    <div className='bg-white dark:bg-slate-900/40 backdrop-blur-sm rounded-3xl border-none shadow-md overflow-hidden'>
+    <div className='bg-white dark:bg-slate-900/40 backdrop-blur-xs rounded-3xl border-none shadow-md overflow-hidden'>
       <div className='overflow-x-auto'>
         <table className='min-w-full w-full'>
           <thead className='bg-gray-100 dark:bg-slate-900/50'>

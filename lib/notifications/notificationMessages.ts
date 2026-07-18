@@ -1,6 +1,7 @@
 import { formatCurrencyCLP } from '@/lib/utils/formatters';
 import { formatLongDateEs } from '@/lib/utils/calendarUtils';
 import { getNowInBusinessTimezone } from '@/lib/business/timezoneService';
+import { ROUTES } from '@/lib/constants/routes';
 
 function getNowDate() {
   const bizNow = getNowInBusinessTimezone();
@@ -88,7 +89,7 @@ export function buildAnticipoRequestMessage({
   baseUrl,
   token,
 }: AnticipoRequestMessageInput) {
-  const confirmUrl = baseUrl && token ? `${baseUrl}/confirmar-anticipo?token=${token}` : null;
+  const confirmUrl = baseUrl && token ? `${baseUrl}${ROUTES.CONFIRMAR_ANTICIPO}?token=${token}` : null;
 
   return `💰 *NUEVA SOLICITUD DE ANTICIPO*
 

@@ -1,3 +1,5 @@
+'use client';
+
 import NextImage from 'next/image';
 import { memo, useRef, useEffect, useState, useCallback } from 'react';
 import { Control } from 'react-hook-form';
@@ -184,7 +186,7 @@ function ImageUploadFieldComponent({
           <div
             ref={containerRef}
             className={cn(
-              'relative w-full max-w-[200px] aspect-square rounded-2xl border-2 border-dashed transition-all duration-300 flex flex-col items-center justify-center cursor-pointer shadow-sm',
+              'relative w-full max-w-[200px] aspect-square rounded-2xl border-2 border-dashed transition-all duration-300 flex flex-col items-center justify-center cursor-pointer shadow-xs',
               isDragging
                 ? 'border-blue-500 bg-blue-50 scale-105'
                 : 'border-gray-200 hover:border-gray-400 bg-gray-50/50',
@@ -243,7 +245,7 @@ function ImageUploadFieldComponent({
               <div className='flex flex-col items-center justify-center p-4 text-center text-gray-400 gap-2'>
                 <div
                   className={cn(
-                    'p-3 rounded-full bg-white shadow-sm border transition-colors',
+                    'p-3 rounded-full bg-white shadow-xs border transition-colors',
                     isDragging ? 'text-blue-500 border-blue-200' : 'text-gray-400 border-gray-100'
                   )}
                 >
@@ -264,7 +266,7 @@ function ImageUploadFieldComponent({
                       </span>
                     ))}
                   </div>
-                  <p className='text-[10px] text-gray-400 dark:text-gray-500 mt-3 font-medium italic italic'>
+                  <p className='text-[10px] text-gray-400 dark:text-gray-500 mt-3 font-medium italic'>
                     Hasta 5MB
                   </p>
                 </div>

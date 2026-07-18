@@ -9,7 +9,7 @@ import { CategoryFilters } from '@/components/categories/CategoryFilters';
 import { CategoryGrid } from '@/components/categories/CategoryGrid';
 import { CategoryFormModal } from '@/components/categories/CategoryFormModal';
 import { PermissionGuard } from '@/components/auth/PermissionGuard';
-import { CategoriesSkeleton } from '@/components/shared/Skeletons';
+import { Skeleton as BoneyardSkeleton } from 'boneyard-js/react';
 import Paginate from '@/components/shared/Paginate';
 import { type CategoryFormValues } from '@/components/categories/CategoryFormModal';
 
@@ -101,10 +101,9 @@ export default function Categories() {
     setPage(1);
   }, [setSearchTerm]);
 
-  if (isLoading) return <CategoriesSkeleton />;
-
   return (
     <PermissionGuard module='categories' action='view'>
+      <BoneyardSkeleton name="categories-main" loading={isLoading}>
       <div className='p-4 sm:p-6 lg:p-10 space-y-4 sm:space-y-6 mt-4 sm:mt-6 lg:mt-10'>
         <CategoryHeader onCreateClick={openCreateModal} />
 
@@ -147,6 +146,7 @@ export default function Categories() {
           isMutating={isMutating}
         />
       </div>
+      </BoneyardSkeleton>
     </PermissionGuard>
   );
 }

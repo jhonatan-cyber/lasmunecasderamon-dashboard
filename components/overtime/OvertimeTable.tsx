@@ -64,7 +64,7 @@ export default function OvertimeTable({
     <div className='lg:hidden space-y-4'>
       {loading
         ? Array.from({ length: pageSize }).map((_, i) => (
-            <Card key={i} className='rounded-3xl border-none shadow-sm p-4'>
+            <Card key={i} className='rounded-3xl border-none shadow-xs p-4'>
               <Skeleton className='h-6 w-1/2 mb-4' />
               <div className='space-y-2'>
                 <Skeleton className='h-4 w-full' />
@@ -141,7 +141,7 @@ export default function OvertimeTable({
 
   const renderDesktopTableView = () => (
     <div className='hidden lg:block'>
-      <div className='bg-white dark:bg-slate-900/40 backdrop-blur-sm rounded-3xl border-none shadow-md overflow-hidden'>
+      <div className='bg-white dark:bg-slate-900/40 backdrop-blur-xs rounded-3xl border-none shadow-md overflow-hidden'>
         <Table>
           <TableHeader className='bg-gray-100 dark:bg-slate-900/50'>
             <TableRow className='hover:bg-transparent border-gray-100 dark:border-gray-800'>

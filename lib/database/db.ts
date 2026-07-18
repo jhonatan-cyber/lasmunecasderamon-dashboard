@@ -2,6 +2,10 @@ import mysql from 'mysql2/promise';
 import { randomUUID } from 'crypto';
 import { getSQLTimezoneOffset } from '@/lib/business/timezoneService';
 import { env } from '@/lib/utils/env';
+import { logger } from '@/lib/utils/logger';
+import { QueryLogRepository } from '@/lib/repositories/QueryLogRepository';
+
+const SLOW_QUERY_THRESHOLD_MS = 50;
 
 const dbTzOffset = getSQLTimezoneOffset();
 
@@ -98,7 +102,27 @@ async function executeQuery<T>(sql: string, params: any[], attempt = 0): Promise
 }
 
 export async function query<T = any>(sql: string, params: any[] = []): Promise<T> {
-  return executeQuery<T>(sql, params);
+  const start = performance.now();
+  try {
+    return await executeQuery<T>(sql, params);
+  } finally {
+    const duration = performance.now() - start;
+    if (duration > SLOW_QUERY_THRESHOLD_MS) {
+      const truncatedSql = sql.length > 200 ? sql.substring(0, 200) + '...' : sql;
+      logger.warn(`[DB] Slow query (${duration.toFixed(1)}ms)`, {
+        sql: truncatedSql,
+        paramsCount: params.length,
+        durationMs: Math.round(duration * 10) / 10,
+        threshold: SLOW_QUERY_THRESHOLD_MS
+      });
+      QueryLogRepository.log({
+        sql: truncatedSql,
+        params_count: params.length,
+        duration_ms: Math.round(duration * 10) / 10,
+        query_type: 'query'
+      });
+    }
+  }
 }
 
 export async function withTransaction<T>(
@@ -107,14 +131,62 @@ export async function withTransaction<T>(
   const connection = await getPool().getConnection();
   await connection.beginTransaction();
 
+  let queryCount = 0;
+  let totalQueryTime = 0;
+
   try {
     const trx = async <R>(sql: string, params: any[] = []): Promise<R> => {
-      const [rows] = await connection.execute(sql, params);
-      return rows as unknown as R;
+      const qStart = performance.now();
+      try {
+        const [rows] = await connection.execute(sql, params);
+        return rows as unknown as R;
+      } finally {
+        const qDuration = performance.now() - qStart;
+        queryCount++;
+        totalQueryTime += qDuration;
+
+        if (qDuration > SLOW_QUERY_THRESHOLD_MS) {
+          const truncatedSql = sql.length > 200 ? sql.substring(0, 200) + '...' : sql;
+          logger.warn(`[DB] Slow query in transaction (${qDuration.toFixed(1)}ms)`, {
+            sql: truncatedSql,
+            paramsCount: params.length,
+            durationMs: Math.round(qDuration * 10) / 10,
+            threshold: SLOW_QUERY_THRESHOLD_MS
+          });
+          QueryLogRepository.log({
+            sql: truncatedSql,
+            params_count: params.length,
+            duration_ms: Math.round(qDuration * 10) / 10,
+            query_type: 'transaction_query'
+          });
+        }
+      }
     };
 
+    const txStart = performance.now();
     const result = await callback(trx);
     await connection.commit();
+
+    const txDuration = performance.now() - txStart;
+    if (txDuration > SLOW_QUERY_THRESHOLD_MS * 2) {
+      logger.warn(`[DB] Slow transaction (${txDuration.toFixed(1)}ms, ${queryCount} queries)`, {
+        durationMs: Math.round(txDuration * 10) / 10,
+        queryCount,
+        avgQueryMs: queryCount > 0 ? Math.round((totalQueryTime / queryCount) * 10) / 10 : 0,
+        totalQueryTimeMs: Math.round(totalQueryTime * 10) / 10,
+        threshold: SLOW_QUERY_THRESHOLD_MS * 2
+      });
+      QueryLogRepository.log({
+        sql: `Transaction with ${queryCount} queries`,
+        params_count: 0,
+        duration_ms: Math.round(txDuration * 10) / 10,
+        query_type: 'transaction',
+        query_count: queryCount,
+        avg_query_ms: queryCount > 0 ? Math.round((totalQueryTime / queryCount) * 10) / 10 : 0,
+        total_query_time_ms: Math.round(totalQueryTime * 10) / 10
+      });
+    }
+
     return result;
   } catch (error) {
     await connection.rollback();

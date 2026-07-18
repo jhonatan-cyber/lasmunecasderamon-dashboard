@@ -89,7 +89,7 @@ export function ProfileUserSelector({
             <p className='text-sm text-slate-600 mb-6'>
               Escaneá este código con tu aplicación móvil para registrar tu presencia.
             </p>
-            <div className='inline-block p-4 bg-white rounded-2xl shadow-sm border border-slate-100'>
+            <div className='inline-block p-4 bg-white rounded-2xl shadow-xs border border-slate-100'>
               <LazyQRCode value={userData.qr_token} size={200} level='M' includeMargin={true} />
             </div>
             <div className='mt-4 flex flex-col items-center gap-2'>

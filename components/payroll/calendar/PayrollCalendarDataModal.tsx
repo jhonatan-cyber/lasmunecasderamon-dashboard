@@ -106,7 +106,7 @@ export function PayrollCalendarDataModal({
   return (
     <Dialog open={open && selectedDatesCount > 0} onOpenChange={onOpenChange}>
       <DialogContent className='max-w-[95vw] w-full max-h-[90vh] flex flex-col p-0'>
-        <DialogHeader className='flex-shrink-0 px-6 pt-6 pb-4 border-b'>
+        <DialogHeader className='shrink-0 px-6 pt-6 pb-4 border-b'>
           <DialogTitle className='text-lg font-semibold'>{formattedDates}</DialogTitle>
         </DialogHeader>
 
@@ -154,7 +154,7 @@ export function PayrollCalendarDataModal({
                     ? 'bg-black text-white hover:bg-gray-800'
                     : 'border border-gray-300 text-gray-700 hover:bg-gray-50 dark:border-gray-600 dark:text-gray-300 dark:hover:bg-gray-700'
                 }`}
-                variant={showVentasTable ? 'default' : 'outline'}
+                variant={showVentasTable ? 'default' : 'outline-solid'}
                 disabled={isLoading}
                 onClick={() => {
                   onToggleTable(true);
@@ -169,7 +169,7 @@ export function PayrollCalendarDataModal({
                     ? 'bg-black text-white hover:bg-gray-800'
                     : 'border border-gray-300 text-gray-700 hover:bg-gray-50 dark:border-gray-600 dark:text-gray-300 dark:hover:bg-gray-700'
                 }`}
-                variant={!showVentasTable ? 'default' : 'outline'}
+                variant={!showVentasTable ? 'default' : 'outline-solid'}
                 disabled={isLoading}
                 onClick={() => {
                   onToggleTable(false);
@@ -201,7 +201,7 @@ export function PayrollCalendarDataModal({
 
             <div className='mt-6'>
               {currentData.length === 0 ? (
-                <div className='bg-white dark:bg-slate-900/40 backdrop-blur-sm rounded-3xl border-none shadow-md overflow-hidden p-8 text-center'>
+                <div className='bg-white dark:bg-slate-900/40 backdrop-blur-xs rounded-3xl border-none shadow-md overflow-hidden p-8 text-center'>
                   <div className='text-gray-500 dark:text-gray-400 text-lg font-medium mb-2'>
                     No hay datos de {currentLabel}
                   </div>
@@ -210,7 +210,7 @@ export function PayrollCalendarDataModal({
                   </div>
                 </div>
               ) : (
-                <div className='bg-white dark:bg-slate-900/40 backdrop-blur-sm rounded-3xl border-none shadow-md overflow-hidden'>
+                <div className='bg-white dark:bg-slate-900/40 backdrop-blur-xs rounded-3xl border-none shadow-md overflow-hidden'>
                   <div className='overflow-x-auto'>
                     <Table className='min-w-full'>
                       <TableHeader className='bg-gray-100 dark:bg-slate-900/50'>
@@ -318,7 +318,7 @@ export function PayrollCalendarDataModal({
           </div>
         </div>
 
-        <div className='flex-shrink-0 border-t px-6 py-4'>
+        <div className='shrink-0 border-t px-6 py-4'>
           <div className='flex justify-center'>
             <Button
               variant='outline'

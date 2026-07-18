@@ -54,7 +54,7 @@ export default function TipsTable({ loading, rows, rowsPerPage, onVerDetalle }: 
   }
 
   return (
-    <div className='bg-white dark:bg-slate-900/40 backdrop-blur-sm rounded-3xl border-none shadow-md overflow-hidden'>
+    <div className='bg-white dark:bg-slate-900/40 backdrop-blur-xs rounded-3xl border-none shadow-md overflow-hidden'>
       <div className='overflow-x-auto'>
         <Table className='min-w-full text-base text-center'>
           <TableHeader className='bg-gray-100 dark:bg-slate-900/50'>

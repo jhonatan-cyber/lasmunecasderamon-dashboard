@@ -1,5 +1,9 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
+vi.mock('@/lib/utils/env', () => ({
+  env: { JWT_SECRET: 'test-secret', JWT_REFRESH_SECRET: 'test-refresh' }
+}));
+
 const jsonResponse = (body: unknown, init?: ResponseInit) => Response.json(body, init);
 
 describe('auth route contract', () => {
@@ -67,8 +71,8 @@ describe('auth route contract', () => {
     vi.doMock('next/headers', () => ({
       cookies: vi.fn().mockResolvedValue({ delete: deleteCookie })
     }));
-    vi.doMock('@/lib/api/app-api-wrapper', () => ({
-      withAppApiWrapper: (handler: any) => handler
+    vi.doMock('@/lib/api/withRoute', () => ({
+      withPublicRoute: (handler: any) => handler
     }));
     vi.doMock('@/lib/auth/auth-app', () => ({
       getAuth: vi.fn().mockResolvedValue({ id: 'user-1' })
@@ -92,8 +96,8 @@ describe('auth route contract', () => {
     vi.doMock('next/server', () => ({
       NextResponse: { json: jsonResponse }
     }));
-    vi.doMock('@/lib/api/app-api-wrapper', () => ({
-      withAppAuth: (handler: any) => {
+    vi.doMock('@/lib/api/withRoute', () => ({
+      withRoute: (_options: any, handler: any) => {
         return (request: Request, context: any = { params: {} }) =>
           handler(request, { ...context, user: { id: 'user-1' } });
       }
@@ -123,18 +127,20 @@ describe('auth route contract', () => {
 
     await expect(response.json()).resolves.toEqual({
       success: true,
-      user: {
-        id: 'user-1',
-        username: 'ana',
-        name: 'Ana',
-        lastName: 'Ramon',
-        email: 'ana@test.com',
-        role: 'anfitriona',
-        foto: 'ana.png',
-        nick: 'ana',
-        phone: '70000000',
-        address: 'Centro',
-        estado_civil: 'soltera'
+      data: {
+        user: {
+          id: 'user-1',
+          username: 'ana',
+          name: 'Ana',
+          lastName: 'Ramon',
+          email: 'ana@test.com',
+          role: 'anfitriona',
+          foto: 'ana.png',
+          nick: 'ana',
+          phone: '70000000',
+          address: 'Centro',
+          estado_civil: 'soltera'
+        }
       }
     });
   });
@@ -148,8 +154,8 @@ describe('auth route contract', () => {
     vi.doMock('next/server', () => ({
       NextResponse: { json: jsonResponse }
     }));
-    vi.doMock('@/lib/api/app-api-wrapper', () => ({
-      withAppAuth: (handler: any) => {
+    vi.doMock('@/lib/api/withRoute', () => ({
+      withRoute: (_options: any, handler: any) => {
         return (request: Request, context: any = { params: {} }) =>
           handler(request, { ...context, user: { id: 'user-1' } });
       }

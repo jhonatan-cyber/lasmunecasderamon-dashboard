@@ -9,7 +9,7 @@ import Paginate from '@/components/shared/Paginate';
 import { Room } from '@/types/room';
 import { PermissionGuard } from '@/components/auth/PermissionGuard';
 import { useUserPermissions } from '@/hooks/auth/useUserPermissions';
-import { RoomsSkeleton } from '@/components/shared/Skeletons';
+import { Skeleton as BoneyardSkeleton } from 'boneyard-js/react';
 import { toTitleCase } from '@/lib/utils/formatters';
 
 import { RoomsHeader } from '@/components/rooms/RoomsHeader';
@@ -151,10 +151,9 @@ const RoomsPage = () => {
     setPage(1);
   };
 
-  if (isLoading) return <RoomsSkeleton />;
-
   return (
     <PermissionGuard module='rooms' action='view'>
+      <BoneyardSkeleton name="rooms-main" loading={isLoading}>
       <div className='flex flex-col gap-4 sm:gap-6 p-4 sm:p-6 lg:p-10 mt-4 sm:mt-6 lg:mt-10'>
         <RoomsHeader
           showTableView={showTableView}
@@ -237,6 +236,7 @@ const RoomsPage = () => {
           isMutating={isMutating}
         />
       </div>
+      </BoneyardSkeleton>
     </PermissionGuard>
   );
 };

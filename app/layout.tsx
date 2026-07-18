@@ -6,10 +6,12 @@ import { ThemeProvider } from '@/components/providers/ThemeProvider';
 import { ErrorBoundary } from '@/components/shared/ErrorBoundary';
 import { siteConfig } from '@/lib/api/site';
 import ServiceWorkerRegister from '@/components/providers/ServiceWorkerRegister';
+import BonesRegistry from '@/components/providers/BonesRegistry';
 
 import './globals.css';
 import '@/styles/sidebar.css';
 import '@/styles/notifications.css';
+import '@/styles/landing.css';
 
 export const metadata: Metadata = {
   metadataBase: new URL(siteConfig.url),
@@ -86,6 +88,7 @@ export default async function RootLayout({ children }: { children: React.ReactNo
               duration={4000}
             />
             <ServiceWorkerRegister />
+            <BonesRegistry />
           </ThemeProvider>
         </ErrorBoundary>
       </body>

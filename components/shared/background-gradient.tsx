@@ -18,10 +18,10 @@ export const BackgroundGradient: React.FC<BackgroundGradientProps> = ({
       <div
         className={cn(
           'absolute inset-0 rounded-[22px]',
-          'bg-gradient-to-br from-transparent via-transparent to-transparent',
+          'bg-linear-to-br from-transparent via-transparent to-transparent',
 
-          "before:content-[''] before:absolute before:-inset-0.5 before:rounded-[24px] before:bg-gradient-to-br before:from-blue-500/20 before:via-purple-500/20 before:to-emerald-500/20 before:blur-2xl before:opacity-60 dark:before:opacity-40",
-          "after:content-[''] after:absolute after:-inset-0.5 after:rounded-[24px] after:bg-gradient-to-tr after:from-emerald-500/10 after:via-purple-500/10 after:to-blue-500/10 after:blur-3xl after:opacity-60 dark:after:opacity-40"
+          "before:content-[''] before:absolute before:-inset-0.5 before:rounded-[24px] before:bg-linear-to-br before:from-blue-500/20 before:via-purple-500/20 before:to-emerald-500/20 before:blur-2xl before:opacity-60 dark:before:opacity-40",
+          "after:content-[''] after:absolute after:-inset-0.5 after:rounded-[24px] after:bg-linear-to-tr after:from-emerald-500/10 after:via-purple-500/10 after:to-blue-500/10 after:blur-3xl after:opacity-60 dark:after:opacity-40"
         )}
         aria-hidden='true'
       />

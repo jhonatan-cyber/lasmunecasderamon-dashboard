@@ -55,7 +55,7 @@ export function CajaChartsSection({
     <div id='charts-container' className='grid grid-cols-1 lg:grid-cols-2 gap-6'>
       <div
         id='chart-bars'
-        className='bg-white dark:bg-gray-800 p-6 rounded-2xl border border-gray-200 dark:border-gray-700 shadow-sm'
+        className='bg-white dark:bg-gray-800 p-6 rounded-2xl border border-gray-200 dark:border-gray-700 shadow-xs'
       >
         <h4 className='text-sm font-bold text-gray-900 dark:text-white mb-2 flex items-center gap-2'>
           <TrendingUp className='w-4 h-4 text-blue-500' />
@@ -114,7 +114,7 @@ export function CajaChartsSection({
 
       <div
         id='chart-pie'
-        className='bg-white dark:bg-gray-800 p-6 rounded-2xl border border-gray-200 dark:border-gray-700 shadow-sm'
+        className='bg-white dark:bg-gray-800 p-6 rounded-2xl border border-gray-200 dark:border-gray-700 shadow-xs'
       >
         <h4 className='text-sm font-bold text-gray-900 dark:text-white mb-2 flex items-center gap-2'>
           <Wallet className='w-4 h-4 text-emerald-500' />

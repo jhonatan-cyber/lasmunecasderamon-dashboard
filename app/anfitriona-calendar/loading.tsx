@@ -1,5 +1,5 @@
-import { RoleCalendarSkeleton } from '@/components/shared/Skeletons';
+﻿import { Skeleton } from '@/components/shared/Skeleton';
 
 export default function Loading() {
-  return <RoleCalendarSkeleton />;
+  return <Skeleton name="anfitriona-calendar-main" loading={true} />;
 }

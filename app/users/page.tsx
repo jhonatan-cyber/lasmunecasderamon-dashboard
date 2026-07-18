@@ -6,6 +6,7 @@ import { toast } from 'sonner';
 
 import { Button } from '@/components/ui/button';
 import Paginate from '@/components/shared/Paginate';
+import { EMAIL_DOMAIN } from '@/lib/constants/email';
 
 import { useUsers } from '@/hooks/personal';
 import { useCurrentUser } from '@/hooks/auth/useCurrentUser';
@@ -19,7 +20,7 @@ import { UserFilters } from '@/components/users/UserFilters';
 import { type UserFormValues } from '@/hooks/personal';
 import { ExportButtons } from '@/components/users/ExportButtons';
 import { PermissionGuard } from '@/components/auth/PermissionGuard';
-import { UsersSkeleton } from '@/components/shared/Skeletons';
+import { Skeleton as BoneyardSkeleton } from 'boneyard-js/react';
 import dynamic from 'next/dynamic';
 
 const UserDetailsModal = dynamic(
@@ -96,7 +97,7 @@ export default function Users() {
         }
 
         if (shouldGenerateEmail) {
-          formData.set('correo', `${values.nick}@lasmunecasderamon.com`);
+          formData.set('correo', `${values.nick}${EMAIL_DOMAIN}`);
         }
         formData.set('password', values.run);
 
@@ -229,10 +230,7 @@ export default function Users() {
       </div>
 
       <PermissionGuard module='users' action='view'>
-        {isLoading ? (
-          <UsersSkeleton />
-        ) : (
-          <>
+        <BoneyardSkeleton name="users-main" loading={isLoading}>
             <UserFilters
               searchTerm={searchTerm}
               setSearchTerm={setSearchTerm}
@@ -267,8 +265,7 @@ export default function Users() {
                 <Paginate page={page} totalPages={totalPages} setPage={setPage} />
               </div>
             )}
-          </>
-        )}
+      </BoneyardSkeleton>
 
         <UserDetailsModal
           user={selectedUser}

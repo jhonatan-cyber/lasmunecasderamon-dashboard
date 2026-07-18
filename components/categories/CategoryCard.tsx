@@ -1,3 +1,5 @@
+'use client';
+
 import {
   Edit,
   Trash2,
@@ -182,7 +184,7 @@ export default function CategoryCard({
   return (
     <CardContainer className='inter-var'>
       <CardBody
-        className={`bg-white relative group/card hover:shadow-2xl hover:shadow-emerald-500/[0.1] dark:bg-black dark:border-white/[0.2] border-black/[0.1] w-auto h-auto rounded-xl p-4 sm:p-6 border ${isDragging ? 'opacity-50' : ''}`}
+        className={`bg-white relative group/card hover:shadow-2xl hover:shadow-emerald-500/10 dark:bg-black dark:border-white/20 border-black/10 w-auto h-auto rounded-xl p-4 sm:p-6 border ${isDragging ? 'opacity-50' : ''}`}
       >
         {}
         <div className='flex items-start justify-between pb-3'>

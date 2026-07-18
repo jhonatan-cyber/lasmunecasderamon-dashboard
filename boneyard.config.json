@@ -1,0 +1,64 @@
+{
+  "breakpoints": [375, 768, 1280],
+  "out": "./bones",
+  "wait": 400,
+  "color": "#f3f4f6",
+  "animate": "pulse",
+  "auth": {
+    "cookies": [
+      {
+        "name": "token",
+        "value": "eyJhbGciOiJIUzI1NiJ9.eyJpZCI6IjY0MWYzODM3LTNmYzItNGRkZi04ZDAzLWRlNzUwMWE2Mjc1NiIsInVzZXJJZCI6IjY0MWYzODM3LTNmYzItNGRkZi04ZDAzLWRlNzUwMWE2Mjc1NiIsInVzZXJuYW1lIjoiSmhvbmF0YW4iLCJuYW1lIjoiSmhvbmF0YW4iLCJsYXN0TmFtZSI6IkFuY2FzaSBGbG9yZXMiLCJuaWNrIjoiQWRtaW4iLCJlbWFpbCI6IkFkbWluQGxhc211w7FlY2FzZGVyYW1vbi5jb20iLCJyb2xlIjoiQWRtaW5pc3RyYWRvciIsImV4cCI6MTgxNTU5OTk3MH0.BdMpr0QGWzOGsw5mgdzzoAxHM9Z1teny_Mxdt3klfZ4",
+        "domain": "localhost",
+        "path": "/",
+        "httpOnly": true,
+        "secure": false,
+        "sameSite": "Lax"
+      }
+    ],
+    "headers": {
+      "Authorization": "Bearer eyJhbGciOiJIUzI1NiJ9.eyJpZCI6IjY0MWYzODM3LTNmYzItNGRkZi04ZDAzLWRlNzUwMWE2Mjc1NiIsInVzZXJJZCI6IjY0MWYzODM3LTNmYzItNGRkZi04ZDAzLWRlNzUwMWE2Mjc1NiIsInVzZXJuYW1lIjoiSmhvbmF0YW4iLCJuYW1lIjoiSmhvbmF0YW4iLCJsYXN0TmFtZSI6IkFuY2FzaSBGbG9yZXMiLCJuaWNrIjoiQWRtaW4iLCJlbWFpbCI6IkFkbWluQGxhc211w7FlY2FzZGVyYW1vbi5jb20iLCJyb2xlIjoiQWRtaW5pc3RyYWRvciIsImV4cCI6MTgxNTU5OTk3MH0.BdMpr0QGWzOGsw5mgdzzoAxHM9Z1teny_Mxdt3klfZ4"
+    }
+  },
+  "routes": [
+    "/accounts",
+    "/accounts/new",
+    "/advances",
+    "/anfitriona-anticipos",
+    "/anfitriona-asistencias",
+    "/anfitriona-calendar",
+    "/anfitriona-comisiones",
+    "/anfitriona-dashboard",
+    "/anfitriona-servicios",
+    "/attendance",
+    "/cajero-anticipos",
+    "/cajero-asistencias",
+    "/cajero-calendar",
+    "/cajero-horas-extras",
+    "/cajero-propinas",
+    "/cash-register",
+    "/categories",
+    "/clients",
+    "/dashboard",
+    "/garzon-anticipos",
+    "/garzon-asistencias",
+    "/garzon-calendar",
+    "/garzon-dashboard",
+    "/garzon-horas-extras",
+    "/garzon-pedidos",
+    "/garzon-propinas",
+    "/login",
+    "/orders",
+    "/orders/new",
+    "/payroll/summary",
+    "/private-rooms/new",
+    "/products",
+    "/products/category/[id]",
+    "/profile",
+    "/reports",
+    "/returns/sales",
+    "/rooms",
+    "/sales",
+    "/users"
+  ]
+}

@@ -1,3 +1,5 @@
+'use client';
+
 import Image from 'next/image';
 import React, { useState } from 'react';
 import { Product } from '@/types/product';
@@ -84,7 +86,7 @@ const ProductCard: React.FC<ProductCardProps> = ({
   return (
     <>
       <Card
-        className='group relative border-none bg-white dark:bg-slate-900/40 backdrop-blur-sm shadow-md hover:shadow-xl transition-all duration-300 rounded-[2rem] overflow-hidden'
+        className='group relative border-none bg-white dark:bg-slate-900/40 backdrop-blur-xs shadow-md hover:shadow-xl transition-all duration-300 rounded-4xl overflow-hidden'
         ref={isDraggable ? setNodeRef : undefined}
         style={style}
       >
@@ -93,7 +95,7 @@ const ProductCard: React.FC<ProductCardProps> = ({
           <div
             {...attributes}
             {...listeners}
-            className='absolute top-4 left-4 z-20 cursor-grab active:cursor-grabbing p-2 bg-white/80 dark:bg-slate-900/80 rounded-full shadow-sm opacity-0 group-hover:opacity-100 transition-opacity'
+            className='absolute top-4 left-4 z-20 cursor-grab active:cursor-grabbing p-2 bg-white/80 dark:bg-slate-900/80 rounded-full shadow-xs opacity-0 group-hover:opacity-100 transition-opacity'
           >
             <GripVertical className='w-4 h-4 text-gray-400 group-active:text-purple-500' />
           </div>
@@ -107,7 +109,7 @@ const ProductCard: React.FC<ProductCardProps> = ({
                 <Button
                   variant='ghost'
                   size='icon'
-                  className='h-8 w-8 bg-white/80 dark:bg-slate-900/80 hover:bg-white dark:hover:bg-slate-800 rounded-full shadow-sm opacity-0 group-hover:opacity-100 transition-all duration-300'
+                  className='h-8 w-8 bg-white/80 dark:bg-slate-900/80 hover:bg-white dark:hover:bg-slate-800 rounded-full shadow-xs opacity-0 group-hover:opacity-100 transition-all duration-300'
                 >
                   <MoreVertical className='h-4 w-4 text-gray-600 dark:text-gray-300' />
                 </Button>
@@ -165,7 +167,7 @@ const ProductCard: React.FC<ProductCardProps> = ({
         </div>
 
         {}
-        <div className='relative w-full aspect-[4/3] overflow-hidden group-hover:scale-105 transition-transform duration-500'>
+        <div className='relative w-full aspect-4/3 overflow-hidden group-hover:scale-105 transition-transform duration-500'>
           <Image
             src={
               !product.foto || product.foto === 'default.png' || product.foto === ''
@@ -198,7 +200,7 @@ const ProductCard: React.FC<ProductCardProps> = ({
           <div className='space-y-1.5'>
             <div className='flex items-center gap-2 text-gray-400 dark:text-gray-500'>
               <TagIcon className='h-3 w-3' />
-              <span className='text-[10px] uppercase font-bold tracking-[0.1em]'>
+              <span className='text-[10px] uppercase font-bold tracking-widest'>
                 {product.code}
               </span>
             </div>

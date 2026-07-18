@@ -67,7 +67,7 @@ export const CajaCard = ({
   const balanceActual = efectivoNeto + Number(caja.tarjeta || 0) + Number(caja.transferencia || 0);
 
   return (
-    <Card className='group border border-slate-100 dark:border-white/10 shadow-sm hover:shadow-xl transition-all duration-300 bg-white dark:bg-slate-900/40 backdrop-blur-sm rounded-[2rem] overflow-hidden'>
+    <Card className='group border border-slate-100 dark:border-white/10 shadow-xs hover:shadow-xl transition-all duration-300 bg-white dark:bg-slate-900/40 backdrop-blur-xs rounded-4xl overflow-hidden'>
       <CardHeader className='pb-4 pt-6 px-6'>
         <div className='flex items-start justify-between'>
           <div className='space-y-1'>
@@ -82,7 +82,7 @@ export const CajaCard = ({
           </div>
           <Badge
             variant='outline'
-            className={`${estadoInfo.color} rounded-full px-4 py-1.5 border font-semibold text-[10px] uppercase tracking-wider shadow-sm`}
+            className={`${estadoInfo.color} rounded-full px-4 py-1.5 border font-semibold text-[10px] uppercase tracking-wider shadow-xs`}
           >
             <Icon className='w-3 h-3 mr-1.5' />
             {estadoInfo.label}
@@ -142,7 +142,7 @@ export const CajaCard = ({
           </div>
 
           <div className='pt-2'>
-            <div className='flex flex-col items-center justify-center p-4 bg-black/[0.02] dark:bg-white/[0.02] rounded-2xl border border-black/5 dark:border-white/5'>
+            <div className='flex flex-col items-center justify-center p-4 bg-black/2 dark:bg-white/2 rounded-2xl border border-black/5 dark:border-white/5'>
               <span className='text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] mb-1'>
                 Balance Actual
               </span>

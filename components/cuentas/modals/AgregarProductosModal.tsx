@@ -13,6 +13,7 @@ import { useMasterData, useRefreshOnFocus } from '@/hooks/shared';
 import { useCuentaDetail } from '@/hooks/cuentas';
 import { useTimer } from '@/contexts/TimerContext';
 import { RoomSelect } from '@/components/shared/selects';
+import { isExpensiveDrink } from '@/components/orders/productModalRules';
 import { TimeSelect } from '@/components/shared/selects';
 import { Badge } from '@/components/ui/badge';
 import { formatLongDateEs } from '@/lib/utils/calendarUtils';
@@ -94,7 +95,7 @@ export default function AgregarProductosModal({
   useRefreshOnFocus(refreshAll, { enabled: open, immediate: false });
 
   const requiresRoomTimeSelection = useMemo(() => {
-    return productosCarrito.some(p => Number(p.precio || 0) >= 30000);
+    return productosCarrito.some(p => isExpensiveDrink(p));
   }, [productosCarrito]);
 
   const handleOpenCategoria = useCallback(async (cat: Categoria) => {
@@ -281,7 +282,7 @@ export default function AgregarProductosModal({
     <>
       <Dialog open={open} onOpenChange={handleClose}>
         <DialogContent className='sm:max-w-6xl max-h-[90vh] flex flex-col p-0'>
-          <DialogHeader className='flex-shrink-0 px-6 pt-6 pb-4 border-b'>
+          <DialogHeader className='shrink-0 px-6 pt-6 pb-4 border-b'>
             <div className='flex items-center justify-center'>
               <DialogTitle className='text-xl font-semibold'>
                 Agregar Productos a la Cuenta

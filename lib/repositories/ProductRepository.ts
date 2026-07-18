@@ -32,6 +32,7 @@ export class ProductRepository {
         status: row.estado,
         foto: row.foto,
         display_order: row.display_order,
+        max_anfitrionas: row.max_anfitrionas ?? null,
         created_at: row.fecha_crea,
         updated_at: row.fecha_mod
       }),
@@ -111,6 +112,7 @@ export class ProductRepository {
     if (data.category_id !== undefined) updateData.categoria_id = data.category_id;
     if (data.price !== undefined) updateData.precio = data.price;
     if (data.commission !== undefined) updateData.comision = data.commission;
+    if (data.max_anfitrionas !== undefined) updateData.max_anfitrionas = data.max_anfitrionas;
     if (data.description !== undefined) updateData.descripcion = data.description;
     if (data.status !== undefined) updateData.estado = data.status;
     if (foto !== undefined) {

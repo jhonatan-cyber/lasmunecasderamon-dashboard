@@ -2,6 +2,8 @@ import { query, generateUUID } from '@/lib/database/db';
 import { getNowInBusinessTimezone } from '@/lib/business/timezoneService';
 import { UserSchema, type UserType } from '@/lib/business/schemas';
 import { BaseRepository } from './BaseRepository';
+import { NotFoundError, DatabaseError } from '@/lib/errors/errors';
+import { logger } from '@/lib/utils/logger';
 
 export class UserRepository {
   private static readonly TABLE = 'usuarios';
@@ -45,7 +47,8 @@ export class UserRepository {
     limit?: number;
     offset?: number;
   }): Promise<{ data: UserType[]; total: number }> {
-    let where = 'WHERE 1=1';
+    try {
+      let where = 'WHERE 1=1';
     let sqlParams: any[] = [];
 
     if (params?.anfitrionas === '1') {
@@ -95,10 +98,15 @@ export class UserRepository {
       data: data.map(row => this.mapUserFromDB(row)),
       total
     };
+    } catch (err) {
+      logger.error('[UserRepository] Error en getAll:', { err });
+      throw new DatabaseError('Error al obtener lista de usuarios', err);
+    }
   }
 
   static async getById(id: string): Promise<UserType | null> {
-    const results = await query<any[]>(
+    try {
+      const results = await query<any[]>(
       `
       SELECT u.*, r.nombre as rol_nombre, r.id_rol 
       FROM usuarios u 
@@ -109,23 +117,38 @@ export class UserRepository {
     );
 
     return results.length > 0 ? this.mapUserFromDB(results[0]) : null;
+    } catch (err) {
+      logger.error('[UserRepository] Error en getById:', { id, err });
+      throw new DatabaseError(`Error al obtener usuario ${id}`, err);
+    }
   }
 
   static async getByRun(run: string): Promise<UserType | null> {
-    const row = await BaseRepository.findOne<any>(query, this.TABLE, 'run', run);
+    try {
+      const row = await BaseRepository.findOne<any>(query, this.TABLE, 'run', run);
     return row ? this.mapUserFromDB(row) : null;
+    } catch (err) {
+      logger.error('[UserRepository] Error en getByRun:', { run, err });
+      throw new DatabaseError(`Error al obtener usuario por RUN ${run}`, err);
+    }
   }
 
   static async getByNick(nick: string): Promise<UserType | null> {
-    const row = await BaseRepository.findOne<any>(query, this.TABLE, 'nick', nick);
+    try {
+      const row = await BaseRepository.findOne<any>(query, this.TABLE, 'nick', nick);
     return row ? this.mapUserFromDB(row) : null;
+    } catch (err) {
+      logger.error('[UserRepository] Error en getByNick:', { nick, err });
+      throw new DatabaseError(`Error al obtener usuario por nick ${nick}`, err);
+    }
   }
 
   static async create(
     data: Partial<UserType> & { password?: string; email?: string },
     fotoFilename: string = 'default.png'
   ): Promise<UserType | null> {
-    const id = generateUUID();
+    try {
+      const id = generateUUID();
     await BaseRepository.insert(query, this.TABLE, {
       [this.ID_COL]: id,
       run: data.run,
@@ -148,6 +171,10 @@ export class UserRepository {
       fecha_crea: getNowInBusinessTimezone()
     });
     return await this.getById(id);
+    } catch (err) {
+      logger.error('[UserRepository] Error en create:', { err });
+      throw new DatabaseError('Error al crear usuario', err);
+    }
   }
 
   static async update(
@@ -155,7 +182,8 @@ export class UserRepository {
     data: Partial<UserType> & { password?: string; email?: string },
     fotoFilename: string | null = null
   ): Promise<UserType | null> {
-    const upData: any = {
+    try {
+      const upData: any = {
       run: data.run,
       nick: data.nick,
       nombre: data.name,
@@ -176,27 +204,49 @@ export class UserRepository {
 
     await BaseRepository.update(query, this.TABLE, this.ID_COL, id, upData);
     return await this.getById(id);
+    } catch (err) {
+      logger.error('[UserRepository] Error en update:', { id, err });
+      if (err instanceof NotFoundError) throw err;
+      throw new DatabaseError(`Error al actualizar usuario ${id}`, err);
+    }
   }
 
   static async updateStatus(id: string, action: string): Promise<UserType | null> {
-    const newStatus = action === 'activate' ? 1 : 0;
+    try {
+      const newStatus = action === 'activate' ? 1 : 0;
     await BaseRepository.update(query, this.TABLE, this.ID_COL, id, {
       estado: newStatus,
       fecha_mod: getNowInBusinessTimezone()
     });
     return await this.getById(id);
+    } catch (err) {
+      logger.error('[UserRepository] Error en updateStatus:', { id, action, err });
+      if (err instanceof NotFoundError) throw err;
+      throw new DatabaseError(`Error al actualizar estado del usuario ${id}`, err);
+    }
   }
 
   static async updateServiceStatus(id: string, status: number): Promise<void> {
-    await BaseRepository.update(query, this.TABLE, this.ID_COL, id, { estado_servicio: status });
+    try {
+      await BaseRepository.update(query, this.TABLE, this.ID_COL, id, { estado_servicio: status });
+    } catch (err) {
+      logger.error('[UserRepository] Error en updateServiceStatus:', { id, status, err });
+      throw new DatabaseError(`Error al actualizar estado de servicio del usuario ${id}`, err);
+    }
   }
 
   static async delete(id: string): Promise<void> {
-    await BaseRepository.delete(query, this.TABLE, this.ID_COL, id);
+    try {
+      await BaseRepository.delete(query, this.TABLE, this.ID_COL, id);
+    } catch (err) {
+      logger.error('[UserRepository] Error en delete:', { id, err });
+      throw new DatabaseError(`Error al eliminar usuario ${id}`, err);
+    }
   }
 
   static async getStaff(): Promise<UserType[]> {
-    const results = await query<any[]>(`
+    try {
+      const results = await query<any[]>(`
       SELECT 
         U.*, R.nombre as rol_nombre, R.id_rol
       FROM usuarios U
@@ -207,10 +257,15 @@ export class UserRepository {
     `);
 
     return results.map(row => this.mapUserFromDB(row));
+    } catch (err) {
+      logger.error('[UserRepository] Error en getStaff:', { err });
+      throw new DatabaseError('Error al obtener staff', err);
+    }
   }
 
   static async getAvailableAnfitrionas(): Promise<UserType[]> {
-    const data = await query<any[]>(`
+    try {
+      const data = await query<any[]>(`
       SELECT u.*, r.nombre as rol_nombre, r.id_rol
       FROM usuarios u
       INNER JOIN roles r ON u.rol_id = r.id_rol
@@ -221,5 +276,9 @@ export class UserRepository {
         AND l.en_local = 1
     `);
     return data.map(row => this.mapUserFromDB(row));
+    } catch (err) {
+      logger.error('[UserRepository] Error en getAvailableAnfitrionas:', { err });
+      throw new DatabaseError('Error al obtener anfitrionas disponibles', err);
+    }
   }
 }

@@ -4,7 +4,7 @@ import { Suspense, useEffect, useState } from 'react';
 import dynamic from 'next/dynamic';
 import { useCurrentUser } from '@/hooks/auth/useCurrentUser';
 import { useRouter } from 'next/navigation';
-import { DashboardSkeleton, ChartSkeleton } from '@/components/shared/Skeletons';
+import { Skeleton as BoneyardSkeleton } from 'boneyard-js/react';
 import { LazyQRCode } from '@/components/shared/LazyQRCode';
 import { Medal, TrendingUp, BarChart3, Activity, Clock, ShieldCheck, LogIn } from 'lucide-react';
 import { toast } from 'sonner';
@@ -20,7 +20,7 @@ import ForecastInsights from '@/components/dashboard/ForecastInsights';
 import LoggedUsersCards from '@/components/dashboard/LoggedUsersCards';
 
 const DashboardStatsCards = dynamic(() => import('@/components/dashboard/DashboardStatsCards'), {
-  loading: () => <ChartSkeleton />
+  loading: () => <div className='h-32 bg-slate-100 dark:bg-slate-800 rounded-2xl animate-pulse' />
 });
 
 export default function Dashboard() {
@@ -111,9 +111,7 @@ export default function Dashboard() {
         </div>
       </div>
 
-      {shouldShowSkeleton ? (
-        <DashboardSkeleton />
-      ) : (
+      <BoneyardSkeleton name="dashboard-main" loading={shouldShowSkeleton}>
         <div className='space-y-12 animate-in fade-in slide-in-from-bottom-4 duration-1000'>
           {}
           <section className='space-y-6'>
@@ -247,7 +245,7 @@ export default function Dashboard() {
                         Escanear para marcar
                       </p>
                     </div>
-                    <div className='bg-white p-6 rounded-[2rem] shadow-2xl scale-110'>
+                    <div className='bg-white p-6 rounded-4xl shadow-2xl scale-110'>
                       <LazyQRCode
                         value={user.qr_token}
                         size={160}
@@ -275,7 +273,7 @@ export default function Dashboard() {
                     <button
                       onClick={handleMarcarEntrada}
                       disabled={marcandoEntrada}
-                      className='w-full flex items-center justify-center gap-2 px-5 py-3 rounded-2xl bg-white/20 hover:bg-white/30 border border-white/30 text-white text-sm font-bold transition-all disabled:opacity-50 disabled:cursor-not-allowed backdrop-blur-sm'
+                      className='w-full flex items-center justify-center gap-2 px-5 py-3 rounded-2xl bg-white/20 hover:bg-white/30 border border-white/30 text-white text-sm font-bold transition-all disabled:opacity-50 disabled:cursor-not-allowed backdrop-blur-xs'
                     >
                       <LogIn className='h-4 w-4' />
                       {marcandoEntrada ? 'Registrando...' : 'Marcar Entrada'}
@@ -286,7 +284,7 @@ export default function Dashboard() {
             )}
           </section>
         </div>
-      )}
+      </BoneyardSkeleton>
     </div>
   );
 }

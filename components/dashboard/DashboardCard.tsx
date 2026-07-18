@@ -39,7 +39,7 @@ export default function DashboardCard({
 
   return (
     <Card 
-      className={`shadow-sm border ${borderColor} transition-all duration-200 group ${
+      className={`shadow-xs border ${borderColor} transition-all duration-200 group ${
         isClickable 
           ? 'hover:shadow-md hover:scale-105 cursor-pointer hover:border-gray-300' 
           : 'hover:shadow-md'

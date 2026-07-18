@@ -4,7 +4,7 @@ import { useState, useMemo } from 'react';
 import dynamic from 'next/dynamic';
 import { useAsistencias, useAttendanceStats, useUsers } from '@/hooks/personal';
 import { PermissionGuard } from '@/components/auth/PermissionGuard';
-import { ReportSkeleton } from '@/components/shared/Skeletons';
+import { Skeleton as BoneyardSkeleton } from 'boneyard-js/react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Button } from '@/components/ui/button';
 import { Plus } from 'lucide-react';
@@ -84,8 +84,6 @@ export default function AttendancePage() {
     [users]
   );
 
-  if (loading || statsLoading || usersLoading) return <ReportSkeleton />;
-
   const handleClearFilters = () => {
     setSearchTerm('');
     setPageSize(10);
@@ -96,6 +94,7 @@ export default function AttendancePage() {
 
   return (
     <PermissionGuard module='attendance' action='view'>
+      <BoneyardSkeleton name="attendance-main" loading={loading || statsLoading || usersLoading}>
       <div className='p-4 sm:p-6 lg:p-10 space-y-4 sm:space-y-6 mt-4 sm:mt-6 lg:mt-10'>
         <div className='flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 sm:gap-6 mb-6'>
           <div>
@@ -134,7 +133,7 @@ export default function AttendancePage() {
         />
 
         <Tabs defaultValue='history' className='w-full'>
-          <TabsList className='grid w-full grid-cols-2 mb-6 p-1 rounded-full max-w-md mx-auto border border-gray-200 dark:border-slate-700 shadow-sm'>
+          <TabsList className='grid w-full grid-cols-2 mb-6 p-1 rounded-full max-w-md mx-auto border border-gray-200 dark:border-slate-700 shadow-xs'>
             <TabsTrigger
               value='history'
               className='rounded-full data-[state=active]:bg-black data-[state=active]:text-white dark:data-[state=active]:bg-white dark:data-[state=active]:text-black transition-all font-bold text-xs uppercase tracking-wider'
@@ -150,7 +149,7 @@ export default function AttendancePage() {
           </TabsList>
 
           <TabsContent value='history'>
-            <div className='shadow-md border-none bg-white dark:bg-slate-900/40 backdrop-blur-sm rounded-3xl overflow-hidden'>
+            <div className='shadow-md border-none bg-white dark:bg-slate-900/40 backdrop-blur-xs rounded-3xl overflow-hidden'>
               <div className='overflow-x-auto'>
                 <AttendanceTable data={paginatedData} />
               </div>
@@ -179,6 +178,7 @@ export default function AttendancePage() {
         onOpenChange={setAsistenciaFormOpen}
         onSuccess={fetchAsistencias}
       />
+      </BoneyardSkeleton>
     </PermissionGuard>
   );
 }

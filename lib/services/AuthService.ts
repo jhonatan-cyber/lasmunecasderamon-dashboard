@@ -11,4 +11,5 @@ export class AuthService {
   static registerFirstUser = AuthRepository.registerFirstUser;
   static checkSession = AuthRepository.checkSession;
   static getSystemDateTime = AuthRepository.getSystemDateTime;
+  static clearForcePasswordChange = AuthRepository.clearForcePasswordChange;
 }

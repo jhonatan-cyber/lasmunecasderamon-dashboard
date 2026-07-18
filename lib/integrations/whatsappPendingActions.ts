@@ -7,6 +7,7 @@ import { SaleService } from '@/lib/services/SaleService';
 import { ServiceService } from '@/lib/services/ServiceService';
 import { sendNotificationToAll } from '@/lib/api/sseService';
 import { sendPushByRole } from '@/lib/integrations/pushNotifications';
+import { getAdminWhatsApp } from '@/lib/business/whatsappConfig';
 import logger from '@/lib/utils/logger';
 
 type PendingSolicitud = {
@@ -164,8 +165,7 @@ async function adjustCuentaCommission(
 
 export async function processPendingSolicitud(
   solicitud: PendingSolicitud,
-  accion: Action,
-  adminWhatsApp: string
+  accion: Action
 ) {
   const nuevoEstado =
     accion === 'confirmar'
@@ -283,6 +283,7 @@ export async function processPendingSolicitud(
 
   await notifySolicitudResolution(solicitud, accion, estadoTexto);
   try {
+    const adminWhatsApp = await getAdminWhatsApp();
     await sendWhatsApp(adminWhatsApp, mensajeRespuesta);
   } catch (err) {
     logger.error('[WhatsappPendingActions] Error enviando respuesta por WhatsApp:', { err });

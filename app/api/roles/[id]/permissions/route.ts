@@ -1,8 +1,8 @@
 import { NextResponse } from 'next/server';
-import { withAppApiWrapper, withAppAuth } from '@/lib/api/app-api-wrapper';
+import { withPublicRoute, withRoute } from '@/lib/api/withRoute';
 import { query, withTransaction } from '@/lib/database/db';
 
-export const GET = withAppApiWrapper(
+export const GET = withPublicRoute(
   async (_request: Request, { params }: { params: Promise<{ id: string }> }) => {
     const roleId = (await params).id;
 
@@ -29,8 +29,8 @@ export const GET = withAppApiWrapper(
   }
 );
 
-export const PUT = withAppAuth(
-  async (request: Request, { params }: { params: Promise<{ id: string }>; user: any }) => {
+export const PUT = withRoute({ auth: true, audit: true, module: 'users', action: 'write' },
+  async (request: Request, { params }: { params: Promise<{ id: string }> }) => {
     const roleId = (await params).id;
     const body = await request.json();
     const permissionIds = Array.isArray(body?.permissions) ? body.permissions : [];

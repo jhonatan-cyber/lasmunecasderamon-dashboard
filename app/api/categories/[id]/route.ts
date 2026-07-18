@@ -1,10 +1,10 @@
 import { NextResponse } from 'next/server';
-import { withAppAuth } from '@/lib/api/app-api-wrapper';
+import { withRoute } from '@/lib/api/withRoute';
 import { CategoryService } from '@/lib/services/CategoryService';
 import { ValidationError } from '@/lib/errors/errors';
 
-export const PUT = withAppAuth(
-  async (request: Request, { params }: { params: Promise<{ id: string }>; user: any }) => {
+export const PUT = withRoute({ auth: true, audit: true, module: 'products', action: 'write' }, 
+  async (request: Request, { params }: { params: Promise<{ id: string }> }) => {
     const id = (await params).id;
     const { name, description } = await request.json();
     if (!name) throw new ValidationError('Nombre es requerido');
@@ -14,8 +14,8 @@ export const PUT = withAppAuth(
   }
 );
 
-export const PATCH = withAppAuth(
-  async (request: Request, { params }: { params: Promise<{ id: string }>; user: any }) => {
+export const PATCH = withRoute({ auth: true, audit: true, module: 'products', action: 'write' },
+  async (request: Request, { params }: { params: Promise<{ id: string }> }) => {
     const id = (await params).id;
     const { searchParams } = new URL(request.url);
     const action = searchParams.get('action');
@@ -31,8 +31,8 @@ export const PATCH = withAppAuth(
   }
 );
 
-export const DELETE = withAppAuth(
-  async (_request: Request, { params }: { params: Promise<{ id: string }>; user: any }) => {
+export const DELETE = withRoute({ auth: true, audit: true, module: 'products', action: 'delete' },
+  async (_request: Request, { params }: { params: Promise<{ id: string }> }) => {
     const id = (await params).id;
     await CategoryService.delete(id);
     return NextResponse.json({

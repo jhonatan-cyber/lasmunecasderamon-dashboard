@@ -66,7 +66,7 @@ export default function FinancialSummary() {
       </div>
 
       <Card className='overflow-hidden border-slate-200/80 dark:border-slate-800'>
-        <CardHeader className='border-b border-slate-200/80 bg-gradient-to-r from-slate-50 to-white dark:border-slate-800 dark:from-slate-950 dark:to-slate-900'>
+        <CardHeader className='border-b border-slate-200/80 bg-linear-to-r from-slate-50 to-white dark:border-slate-800 dark:from-slate-950 dark:to-slate-900'>
           <div className='flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between'>
             <div>
               <CardTitle className='text-lg'>Consolidado financiero</CardTitle>
@@ -112,7 +112,7 @@ export default function FinancialSummary() {
           })}
 
           <div className='rounded-2xl border border-dashed border-slate-300 bg-slate-50/80 p-4 dark:border-slate-700 dark:bg-slate-900/30'>
-            <div className='flex h-10 w-10 items-center justify-center rounded-2xl bg-white text-slate-700 shadow-sm dark:bg-slate-800 dark:text-slate-200'>
+            <div className='flex h-10 w-10 items-center justify-center rounded-2xl bg-white text-slate-700 shadow-xs dark:bg-slate-800 dark:text-slate-200'>
               <PiggyBank className='h-4 w-4' />
             </div>
             <p className='mt-3 text-sm font-semibold text-slate-900 dark:text-slate-100'>

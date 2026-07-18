@@ -7,9 +7,9 @@ import { useRefreshOnFocus } from '@/hooks/shared';
 import {
   getActiveHostesses,
   getAssignedHostessIds,
-  getChampagneHostessLimit,
   hasCommission,
-  isChampagneProduct
+  isChampagneProduct,
+  isExpensiveDrink
 } from '@/components/orders/productModalRules';
 
 interface UseCategoryProductsModalProps {
@@ -42,7 +42,7 @@ export interface UseCategoryProductsModalReturn {
   availableHostesses: any[];
 
   // Computed
-  getAllAssignedHostesses: string[];
+  getAllAssignedHostesses: (number | null)[];
   hasProductsWithCommission: boolean;
 
   // Methods
@@ -110,15 +110,14 @@ export function useCategoryProductsModal({
   const currentProductos = productosCategoria?.slice(startIndex, endIndex) || [];
 
   const requiresRoom = (producto: any) => {
-    const precio = Number(producto.precio || producto.price || 0);
     const tieneComision = hasCommission(producto);
     const hayHabitacionesDisponibles = habitaciones && habitaciones.length > 0;
-    return precio >= 30000 && tieneComision && hayHabitacionesDisponibles;
+    return isExpensiveDrink(producto) && tieneComision && hayHabitacionesDisponibles;
   };
 
   const availableHostesses = useMemo(() => getActiveHostesses(anfitrionas || []), [anfitrionas]);
 
-  const getAllAssignedHostesses = useMemo(() => {
+  const getAllAssignedHostesses: (number | null)[] = useMemo(() => {
     return getAssignedHostessIds({
       champagneSelections: champagneHostessSelections,
       otherSelections: otherProductHostessSelections,
@@ -141,7 +140,7 @@ export function useCategoryProductsModal({
         return true;
       }
 
-      if (getAllAssignedHostesses.includes(hostessId)) {
+      if (getAllAssignedHostesses.includes(Number(hostessId))) {
         return false;
       }
 
@@ -165,7 +164,7 @@ export function useCategoryProductsModal({
         return true;
       }
 
-      if (getAllAssignedHostesses.includes(hostessId)) {
+      if (getAllAssignedHostesses.includes(Number(hostessId))) {
         return false;
       }
 

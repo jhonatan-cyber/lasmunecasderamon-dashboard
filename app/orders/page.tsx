@@ -10,7 +10,7 @@ import { useUserPermissions } from '@/hooks/auth/useUserPermissions';
 import { useCashRegisterStatus } from '@/hooks/caja/useCashRegisterStatus';
 import { useOrdersList, Order, SolicitudServicio } from '@/hooks/orders/useOrdersList';
 import { useOrderDetail } from '@/hooks/orders/useOrderDetail';
-import { ReportSkeleton } from '@/components/shared/Skeletons';
+import { Skeleton as BoneyardSkeleton } from 'boneyard-js/react';
 import { toast } from 'sonner';
 import { appEventBus } from '@/lib/utils/eventBus';
 
@@ -133,10 +133,9 @@ export default function OrdersPage() {
     error: orderDetailError
   } = useOrderDetail(selectedOrderId);
 
-  if (loadingOrders && orders.length === 0) return <ReportSkeleton />;
-
   return (
     <PermissionGuard module='orders' action='view'>
+      <BoneyardSkeleton name="orders-main" loading={loadingOrders && orders.length === 0}>
       <div className='p-4 sm:p-6 lg:p-10 space-y-4 sm:space-y-6 mt-4 sm:mt-6 lg:mt-10'>
         <OrdersHeader
           hasOpenCaja={hasOpenCaja}
@@ -171,13 +170,13 @@ export default function OrdersPage() {
           <TabsList className='grid w-full max-w-md mx-auto grid-cols-2 rounded-full bg-gray-100 p-1 mb-8 dark:bg-zinc-900 dark:border dark:border-zinc-800'>
             <TabsTrigger
               value='productos'
-              className='rounded-full text-gray-600 dark:text-zinc-400 data-[state=active]:bg-white data-[state=active]:text-gray-900 data-[state=active]:shadow-sm dark:data-[state=active]:bg-zinc-100 dark:data-[state=active]:text-zinc-900'
+              className='rounded-full text-gray-600 dark:text-zinc-400 data-[state=active]:bg-white data-[state=active]:text-gray-900 data-[state=active]:shadow-xs dark:data-[state=active]:bg-zinc-100 dark:data-[state=active]:text-zinc-900'
             >
               Productos
             </TabsTrigger>
             <TabsTrigger
               value='servicios'
-              className='rounded-full text-gray-600 dark:text-zinc-400 data-[state=active]:bg-white data-[state=active]:text-gray-900 data-[state=active]:shadow-sm dark:data-[state=active]:bg-zinc-100 dark:data-[state=active]:text-zinc-900'
+              className='rounded-full text-gray-600 dark:text-zinc-400 data-[state=active]:bg-white data-[state=active]:text-gray-900 data-[state=active]:shadow-xs dark:data-[state=active]:bg-zinc-100 dark:data-[state=active]:text-zinc-900'
             >
               Servicios
             </TabsTrigger>
@@ -275,6 +274,7 @@ export default function OrdersPage() {
         onConfirm={handleConfirmDeleteServicio}
         isLoading={isDeletingServicio}
       />
+      </BoneyardSkeleton>
     </PermissionGuard>
   );
 }

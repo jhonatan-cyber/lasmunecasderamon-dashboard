@@ -3,7 +3,7 @@ import { CajaSchema, type CajaType } from '@/lib/business/schemas';
 import { getNowInBusinessTimezone } from '@/lib/business/timezoneService';
 import { BaseRepository } from './BaseRepository';
 import { logger } from '@/lib/utils/logger';
-import { ConflictError, NotFoundError, BusinessError } from '@/lib/errors/errors';
+import { ConflictError, NotFoundError, BusinessError, DatabaseError } from '@/lib/errors/errors';
 
 export class CashRegisterRepository {
   private static async getPrepagoMetrics(
@@ -14,7 +14,8 @@ export class CashRegisterRepository {
     prepago_consumido: number;
     prepago_pendiente_clientes: number;
   }> {
-    if (!fechaApertura) {
+    try {
+      if (!fechaApertura) {
       const [saldoRow] = await query<any[]>(
         'SELECT COALESCE(SUM(saldo), 0) as saldo_pendiente FROM clientes'
       );
@@ -50,6 +51,10 @@ export class CashRegisterRepository {
       prepago_consumido: Number(movimientosRow?.prepago_consumido || 0),
       prepago_pendiente_clientes: Number(saldoRow?.saldo_pendiente || 0)
     };
+    } catch (err) {
+      logger.error('[CashRegisterRepository] Error en getPrepagoMetrics:', { err });
+      throw new DatabaseError('Error al obtener métricas de prepago', err);
+    }
   }
 
   private static mapCajaFromDB(row: any): CajaType {
@@ -87,11 +92,16 @@ export class CashRegisterRepository {
   }
 
   static async getCurrentCajaId(trx?: TransactionQuery): Promise<string | null> {
-    const qFunc = trx || query;
+    try {
+      const qFunc = trx || query;
     const res = await qFunc<any[]>(
       'SELECT id_caja FROM cajas WHERE estado = 1 ORDER BY fecha_apertura DESC LIMIT 1'
     );
     return res[0]?.id_caja || null;
+    } catch (err) {
+      logger.error('[CashRegisterRepository] Error en getCurrentCajaId:', { err });
+      throw new DatabaseError('Error al obtener caja activa', err);
+    }
   }
 
   static async updateBalances(
@@ -148,14 +158,20 @@ export class CashRegisterRepository {
     const values = dedupedEntries.map(([_, v]) => v);
 
     logger.debug('[CashRegisterRepository] updateBalances:', { id_caja, setClause, values });
-    await trx(`UPDATE cajas SET ${setClause} WHERE id_caja = ? AND estado = 1`, [
-      ...values,
-      id_caja
-    ]);
+    try {
+      await trx(`UPDATE cajas SET ${setClause} WHERE id_caja = ? AND estado = 1`, [
+        ...values,
+        id_caja
+      ]);
+    } catch (err) {
+      logger.error('[CashRegisterRepository] Error en updateBalances:', { id_caja, err });
+      throw new DatabaseError(`Error al actualizar balances de caja ${id_caja}`, err);
+    }
   }
 
   static async summary(): Promise<any> {
-    const row = await query<any[]>(`
+    try {
+      const row = await query<any[]>(`
       SELECT c.*, CONCAT(u.nombre, ' ', u.apellido) as usuario_apertura
       FROM cajas c
       LEFT JOIN usuarios u ON c.usuario_id_apertura = u.id_usuario
@@ -213,10 +229,15 @@ export class CashRegisterRepository {
       efectivo_en_caja: Number(cajaRow.efectivo || 0) + Number(cajaRow.monto_apertura || 0),
       total_efectivo: Number(cajaRow.efectivo || 0) + Number(cajaRow.monto_apertura || 0)
     };
+    } catch (err) {
+      logger.error('[CashRegisterRepository] Error en summary:', { err });
+      throw new DatabaseError('Error al obtener resumen de caja', err);
+    }
   }
 
   static async getAll(): Promise<CajaType[]> {
-    const results = await query<any[]>(`
+    try {
+      const results = await query<any[]>(`
       SELECT c.*,
              CONCAT(u1.nombre, ' ', u1.apellido) as cajero_nombre,
              COALESCE((
@@ -229,10 +250,15 @@ export class CashRegisterRepository {
       WHERE c.estado IN (0, 1) ORDER BY c.fecha_apertura DESC
     `);
     return results.map(row => this.mapCajaFromDB(row));
+    } catch (err) {
+      logger.error('[CashRegisterRepository] Error en getAll:', { err });
+      throw new DatabaseError('Error al obtener lista de cajas', err);
+    }
   }
 
   static async getById(id: string): Promise<CajaType | null> {
-    const res = await query<any[]>(
+    try {
+      const res = await query<any[]>(
       `
       SELECT c.*, 
              CONCAT(u1.nombre, ' ', u1.apellido) as cajero_nombre,
@@ -255,10 +281,15 @@ export class CashRegisterRepository {
 
     const prepagoMetrics = await this.getPrepagoMetrics(res[0].fecha_apertura, res[0].fecha_cierre);
     return this.mapCajaFromDB({ ...res[0], ...prepagoMetrics });
+    } catch (err) {
+      logger.error('[CashRegisterRepository] Error en getById:', { id, err });
+      throw new DatabaseError(`Error al obtener caja ${id}`, err);
+    }
   }
 
   static async open(usuario_id: string, monto_apertura: number): Promise<CajaType | null> {
-    const open = await query<any[]>(
+    try {
+      const open = await query<any[]>(
       'SELECT id_caja, usuario_id_apertura FROM cajas WHERE estado = 1 ORDER BY fecha_apertura DESC LIMIT 1'
     );
     if (open.length > 0) {
@@ -283,15 +314,27 @@ export class CashRegisterRepository {
       estado: 1
     });
     return await this.getById(id);
+    } catch (err) {
+      logger.error('[CashRegisterRepository] Error en open:', { usuario_id, err });
+      if (err instanceof ConflictError || err instanceof NotFoundError) throw err;
+      throw new DatabaseError(`Error al abrir caja para usuario ${usuario_id}`, err);
+    }
   }
 
   static async update(id: string, data: any): Promise<CajaType | null> {
-    await BaseRepository.update(query, 'cajas', 'id_caja', id, data);
+    try {
+      await BaseRepository.update(query, 'cajas', 'id_caja', id, data);
     return await this.getById(id);
+    } catch (err) {
+      logger.error('[CashRegisterRepository] Error en update:', { id, err });
+      if (err instanceof NotFoundError) throw err;
+      throw new DatabaseError(`Error al actualizar caja ${id}`, err);
+    }
   }
 
   static async close(id: string, usuario_id_cierre: string): Promise<CajaType | null> {
-    const caja = await BaseRepository.findOne<any>(query, 'cajas', 'id_caja', id);
+    try {
+      const caja = await BaseRepository.findOne<any>(query, 'cajas', 'id_caja', id);
     if (!caja || caja.estado !== 1) throw new NotFoundError('Caja abierta');
 
     const montoCierre =
@@ -313,9 +356,19 @@ export class CashRegisterRepository {
       estado: 0
     });
     return await this.getById(id);
+    } catch (err) {
+      logger.error('[CashRegisterRepository] Error en close:', { id, err });
+      if (err instanceof NotFoundError) throw err;
+      throw new DatabaseError(`Error al cerrar caja ${id}`, err);
+    }
   }
 
   static async delete(id: string): Promise<void> {
-    await BaseRepository.update(query, 'cajas', 'id_caja', id, { estado: -1 });
+    try {
+      await BaseRepository.update(query, 'cajas', 'id_caja', id, { estado: -1 });
+    } catch (err) {
+      logger.error('[CashRegisterRepository] Error en delete:', { id, err });
+      throw new DatabaseError(`Error al eliminar caja ${id}`, err);
+    }
   }
 }

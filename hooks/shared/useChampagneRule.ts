@@ -1,11 +1,13 @@
 import { useEffect } from 'react';
 import { toast } from 'sonner';
+import { isChampagneProduct as checkIsChampagne, getHostessLimit } from '@/components/orders/productModalRules';
 
 interface ChampagneProduct {
   categoria?: string;
   category?: string;
   precio?: number;
   price?: number;
+  max_anfitrionas?: number | null;
   [key: string]: unknown;
 }
 
@@ -21,14 +23,7 @@ export function useChampagneRule(
   selectedAnfitrionas?: string[],
   setSelectedAnfitrionas?: (value: string[]) => void
 ): UseChampagneRuleReturn {
-  const isChampagneProduct = (producto: ChampagneProduct): boolean => {
-    const categoria = (producto?.categoria || producto?.category || '').toLowerCase();
-    return (
-      categoria.includes('champaña') ||
-      categoria.includes('shampaña') ||
-      categoria.includes('champagne')
-    );
-  };
+  const isChampagneProduct = (producto: ChampagneProduct): boolean => checkIsChampagne(producto as any);
 
   const hasChampagneProducts = Array.isArray(productos)
     ? productos.some(isChampagneProduct)
@@ -38,14 +33,12 @@ export function useChampagneRule(
     ? Math.max(...productos.filter(isChampagneProduct).map(p => Number(p.precio ?? p.price ?? 0)))
     : 0;
 
-  let maxAnfitrionas = 1;
-  if (hasChampagneProducts) {
-    if (maxChampagnePrice >= 240000) maxAnfitrionas = 5;
-    else if (maxChampagnePrice >= 200000) maxAnfitrionas = 4;
-    else if (maxChampagnePrice >= 140000) maxAnfitrionas = 3;
-    else if (maxChampagnePrice >= 120000) maxAnfitrionas = 2;
-    else maxAnfitrionas = 1;
-  }
+  const champagneProducts = Array.isArray(productos) ? productos.filter(isChampagneProduct) : [];
+  const maxChampagneProduct = champagneProducts.find(
+    p => Number(p.precio ?? p.price ?? 0) === maxChampagnePrice
+  );
+  let maxAnfitrionas = maxChampagneProduct ? getHostessLimit(maxChampagneProduct as any) : 1;
+  if (!hasChampagneProducts) maxAnfitrionas = 1;
 
   useEffect(() => {
     if (

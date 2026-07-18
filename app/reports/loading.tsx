@@ -1,5 +1,5 @@
-import { ReportSkeleton } from '@/components/shared/Skeletons';
+﻿import { Skeleton } from '@/components/shared/Skeleton';
 
 export default function Loading() {
-  return <ReportSkeleton />;
+  return <Skeleton name="reports-main" loading={true} />;
 }

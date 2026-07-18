@@ -1,9 +1,9 @@
 import { NextResponse } from 'next/server';
-import { withAppAuth } from '@/lib/api/app-api-wrapper';
+import { withRoute } from '@/lib/api/withRoute';
 import { AccountService } from '@/lib/services/AccountService';
 
-export const POST = withAppAuth(
-  async (request: Request, { params, user }: { params: Promise<{ id: string }>; user: any }) => {
+export const POST = withRoute({ auth: true, audit: true, module: 'finances', action: 'write' },
+  async (request: Request, { params, user }) => {
     const id = (await params).id;
     const body = await request.json();
 

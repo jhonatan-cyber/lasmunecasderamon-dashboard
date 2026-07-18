@@ -49,7 +49,7 @@ export const NewSaleSummary = ({
         <div className='text-xs font-bold uppercase tracking-widest text-gray-400 dark:text-neutral-500'>
           TOTAL A PAGAR
         </div>
-        <div className='my-2 bg-gradient-to-r from-gray-900 to-gray-600 bg-clip-text text-5xl font-black text-transparent dark:from-white dark:to-neutral-400'>
+        <div className='my-2 bg-linear-to-r from-gray-900 to-gray-600 bg-clip-text text-5xl font-black text-transparent dark:from-white dark:to-neutral-400'>
           {formatCurrencyNoDecimals(total)}
         </div>
 

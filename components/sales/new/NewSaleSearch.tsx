@@ -19,7 +19,7 @@ import {
   CUENTA_TABLE_ROW_CLASS
 } from '@/components/cuentas/tables/cuentaTableStyles';
 import { formatCurrencyNoDecimals } from '@/lib/utils/formatters';
-import { HostessMultiSelect } from '@/components/orders';
+import { HostessMultiSelect, getHostessLimit, isExpensiveDrink } from '@/components/orders';
 import { IndividualHostessSelect } from '@/components/shared/selects';
 
 interface NewSaleSearchProps {
@@ -131,14 +131,7 @@ export const NewSaleSearch = ({
                     const id = String(producto.id_producto || producto.id);
                     const isChampagne = isChampagneProduct(producto);
                     const hasComm = (producto.comision || producto.commission || 0) > 0;
-                    const champagneHostessLimit = (() => {
-                      const precio = Number(producto.precio || producto.price || 0);
-                      if (precio >= 240000) return 5;
-                      if (precio >= 200000) return 4;
-                      if (precio >= 140000) return 3;
-                      if (precio >= 120000) return 2;
-                      return 1;
-                    })();
+                    const champagneHostessLimit = getHostessLimit(producto);
                     return (
                       <TableRow key={idx} className={CUENTA_TABLE_ROW_CLASS}>
                         <TableCell className={CUENTA_TABLE_CELL_CLASS}>{producto.nombre}</TableCell>
@@ -174,10 +167,9 @@ export const NewSaleSearch = ({
                               </div>
                             ) : (
                               (() => {
-                                const precio = Number(producto.precio || producto.price || 0);
                                 const cantidad = 1;
 
-                                if (precio >= 30000) {
+                                if (isExpensiveDrink(producto)) {
                                   return (
                                     <div className='space-y-2'>
                                       <HostessMultiSelect

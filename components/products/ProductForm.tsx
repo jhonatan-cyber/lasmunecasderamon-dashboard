@@ -1,3 +1,5 @@
+'use client';
+
 import { useState } from 'react';
 import NextImage from 'next/image';
 import { Button } from '@/components/ui/button';
@@ -85,7 +87,7 @@ export function ProductFormModal({
           <Button
             type='submit'
             form='product-form'
-            className='bg-black text-white dark:bg-black dark:text-white  dark:hover:!bg-white dark:hover:!text-black rounded-full px-8 hover:!bg-white hover:!text-black transition-all hover:scale-105 border-2'
+            className='bg-black text-white dark:bg-black dark:text-white  dark:hover:bg-white! dark:hover:text-black! rounded-full px-8 hover:bg-white! hover:text-black! transition-all hover:scale-105 border-2'
             disabled={isMutating}
           >
             {isMutating ? (
@@ -307,8 +309,8 @@ export function ProductForm({
           >
             <div className='p-4 flex flex-col items-center gap-3'>
               {}
-              <div className='relative w-28 h-28 rounded-xl border-2 border-gray-100 dark:border-slate-700 shadow-sm overflow-hidden bg-gray-50 dark:bg-slate-800'>
-                {imagePreview ? (
+              <div className='relative w-28 h-28 rounded-xl border-2 border-gray-100 dark:border-slate-700 shadow-xs overflow-hidden bg-gray-50 dark:bg-slate-800'>                  {imagePreview ? (
+                  // eslint-disable-next-line jsx-a11y/alt-text -- NextImage aliased as NextImage, but alt prop is provided
                   <NextImage
                     src={imagePreview}
                     alt='Preview'

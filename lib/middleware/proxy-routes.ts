@@ -1,12 +1,15 @@
+import { ROUTES } from '@/lib/constants/routes';
+
 export const PUBLIC_PATHS = [
   '/',
   '/login',
   '/asistencia-qr',
   '/api/public/users',
-  '/confirmar-anulacion',
-  '/confirmar-anulacion-servicio',
-  '/confirmar-anulacion-cuenta',
-  '/confirmar-anticipo',
+  ROUTES.CONFIRMAR_ANULACION,
+  ROUTES.CONFIRMAR_ANULACION_SERVICIO,
+  ROUTES.CONFIRMAR_ANULACION_CUENTA,
+  ROUTES.CONFIRMAR_ANTICIPO,
+  ROUTES.CONFIRMAR_GRATIFICACION,
   '/api/auth/login',
   '/api/auth/reset-password',
   '/api/login',
@@ -51,7 +54,12 @@ export const PUBLIC_PATHS = [
   '/robots.txt',
   '/sitemap.xml',
   '/swagger.json',
-  '/access-denied'
+  '/access-denied',
+  '/sw.js',
+  '/precache-manifest.json',
+  '/offline',
+  '/change-password',
+  '/api/auth/change-password'
 ];
 
 export const AUTHENTICATED_ONLY_APIS = [

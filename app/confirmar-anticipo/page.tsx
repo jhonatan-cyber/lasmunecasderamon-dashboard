@@ -161,7 +161,7 @@ function ConfirmarAnticipoContent() {
 
           <CardContent className='space-y-6 pt-4'>
             {}
-            <div className='grid grid-cols-1 gap-4 bg-white dark:bg-gray-900 p-6 rounded-2xl border border-gray-100 dark:border-gray-800 shadow-sm'>
+            <div className='grid grid-cols-1 gap-4 bg-white dark:bg-gray-900 p-6 rounded-2xl border border-gray-100 dark:border-gray-800 shadow-xs'>
               <div className='flex items-center gap-4'>
                 <div className='p-3 bg-blue-100 dark:bg-blue-900/40 rounded-xl'>
                   <User className='h-6 w-6 text-blue-600 dark:text-blue-400' />

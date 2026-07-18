@@ -9,7 +9,7 @@ import { formatCurrencyNoDecimals } from '@/lib/utils/formatters';
 import { CuentaFilters, CuentaStatsCards, CuentaTable, CuentaHeader } from '@/components/cuentas';
 import Paginate from '@/components/shared/Paginate';
 import { PermissionGuard } from '@/components/auth/PermissionGuard';
-import { ReportSkeleton } from '@/components/shared/Skeletons';
+import { Skeleton as BoneyardSkeleton } from 'boneyard-js/react';
 
 type TabType = 'pending' | 'paid';
 
@@ -53,7 +53,7 @@ export function AccountsPageClient() {
     return result;
   }, [cuentasData, searchTerm, activeTab]);
 
-  if (isLoading || cajaLoading) return <ReportSkeleton />;
+  // ponytail: loading handled via BoneyardSkeleton below
 
   const pendingCount = cuentasData.filter(c => c.estado === 1).length;
   const paidCount = cuentasData.filter(c => c.estado === 0).length;
@@ -63,6 +63,7 @@ export function AccountsPageClient() {
 
   return (
     <PermissionGuard module='accounts' action='view'>
+      <BoneyardSkeleton name="accounts-main" loading={isLoading || cajaLoading}>
       <div className='p-4 sm:p-6 lg:p-10 space-y-4 sm:space-y-6 mt-4 sm:mt-6 lg:mt-10'>
         <CuentaHeader loading={isLoading} onRefresh={() => getCuentas()} />
         <CuentaStatsCards cuentas={cuentasData} formatCurrency={formatCurrencyNoDecimals} />
@@ -101,7 +102,7 @@ export function AccountsPageClient() {
             }}
             className={`flex items-center gap-2 px-5 py-2 text-sm font-semibold transition-all ${
               activeTab === 'pending'
-                ? 'bg-amber-100 text-amber-700 rounded-full shadow-sm'
+                ? 'bg-amber-100 text-amber-700 rounded-full shadow-xs'
                 : 'text-gray-500 hover:bg-gray-100 rounded-full'
             }`}
           >
@@ -122,7 +123,7 @@ export function AccountsPageClient() {
             }}
             className={`flex items-center gap-2 px-5 py-2 text-sm font-semibold transition-all ${
               activeTab === 'paid'
-                ? 'bg-green-100 text-green-700 rounded-full shadow-sm'
+                ? 'bg-green-100 text-green-700 rounded-full shadow-xs'
                 : 'text-gray-500 hover:bg-gray-100 rounded-full'
             }`}
           >
@@ -154,6 +155,7 @@ export function AccountsPageClient() {
           </div>
         )}
       </div>
+      </BoneyardSkeleton>
     </PermissionGuard>
   );
 }

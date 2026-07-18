@@ -7,7 +7,7 @@ import PayrollRoleButtons from '@/components/payroll/PayrollRoleButtons';
 import { usePayroll } from '@/hooks/personal';
 import { PermissionGuard } from '@/components/auth/PermissionGuard';
 import { useUserPermissions } from '@/hooks/auth/useUserPermissions';
-import { ReportSkeleton } from '@/components/shared/Skeletons';
+import { Skeleton as BoneyardSkeleton } from 'boneyard-js/react';
 
 export function PayrollPageClient() {
   const {
@@ -43,49 +43,49 @@ export function PayrollPageClient() {
     });
   }, [paginated, sortBy, sortOrder]);
 
-  if (loading) return <ReportSkeleton />;
-
   return (
     <PermissionGuard module='payroll' action='view'>
-      <div className='p-4 sm:p-6 lg:p-10 space-y-4 sm:space-y-6 mt-4 sm:mt-6 lg:mt-10'>
-        <div className='flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 sm:gap-6 mb-4 sm:mb-6'>
-          <div className='flex flex-col'>
-            <h1 className='text-xl sm:text-2xl lg:text-3xl font-bold'>Pagos a Trabajadores</h1>
-            <p className='text-sm sm:text-base text-gray-600'>
-              Gestiona los sueldos pendientes de los trabajadores
-            </p>
+      <BoneyardSkeleton name="payroll-main" loading={loading}>
+        <div className='p-4 sm:p-6 lg:p-10 space-y-4 sm:space-y-6 mt-4 sm:mt-6 lg:mt-10'>
+          <div className='flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 sm:gap-6 mb-4 sm:mb-6'>
+            <div className='flex flex-col'>
+              <h1 className='text-xl sm:text-2xl lg:text-3xl font-bold'>Pagos a Trabajadores</h1>
+              <p className='text-sm sm:text-base text-gray-600'>
+                Gestiona los sueldos pendientes de los trabajadores
+              </p>
+            </div>
           </div>
+          <PayrollFilters
+            searchTerm={searchTerm}
+            setSearchTerm={setSearchTerm}
+            sortBy={sortBy}
+            setSortBy={setSortBy}
+            sortOrder={sortOrder}
+            setSortOrder={setSortOrder}
+            rowsPerPage={rowsPerPage}
+            setRowsPerPage={setRowsPerPage}
+            setPage={setPage}
+            onClear={() => {
+              setSortBy('usuario');
+              setSortOrder('asc');
+              clearFilters();
+            }}
+          />
+          <PayrollRoleButtons roleFilter={roleFilter} setRoleFilter={setRoleFilter} />
+          <PayrollTable
+            key={`payroll-${userPermissions.length}`}
+            rows={sortedRows}
+            loading={loading}
+            error={error}
+            page={page}
+            totalPages={totalPages}
+            setPage={setPage}
+            onRefetch={() => {
+              fetchPayroll();
+            }}
+          />
         </div>
-        <PayrollFilters
-          searchTerm={searchTerm}
-          setSearchTerm={setSearchTerm}
-          sortBy={sortBy}
-          setSortBy={setSortBy}
-          sortOrder={sortOrder}
-          setSortOrder={setSortOrder}
-          rowsPerPage={rowsPerPage}
-          setRowsPerPage={setRowsPerPage}
-          setPage={setPage}
-          onClear={() => {
-            setSortBy('usuario');
-            setSortOrder('asc');
-            clearFilters();
-          }}
-        />
-        <PayrollRoleButtons roleFilter={roleFilter} setRoleFilter={setRoleFilter} />
-        <PayrollTable
-          key={`payroll-${userPermissions.length}`}
-          rows={sortedRows}
-          loading={loading}
-          error={error}
-          page={page}
-          totalPages={totalPages}
-          setPage={setPage}
-          onRefetch={() => {
-            fetchPayroll();
-          }}
-        />
-      </div>
+      </BoneyardSkeleton>
     </PermissionGuard>
   );
 }
