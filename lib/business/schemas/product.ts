@@ -7,6 +7,7 @@ export const ProductSchema = z.object({
   category_id: z.union([z.string(), z.number()]).transform(v => String(v)).refine(v => v !== 'NaN' && v !== 'undefined' && v.length > 0, 'Categoría requerida'),
   price: z.preprocess(v => Number(v), z.number()),
   commission: z.preprocess(v => Number(v), z.number()),
+  max_anfitrionas: z.number().nullable().optional(),
   description: z.string().optional(),
   status: z.preprocess(v => Number(v), z.number()),
   foto: z.string().nullable().optional(),

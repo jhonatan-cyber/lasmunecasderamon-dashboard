@@ -11,8 +11,6 @@ export interface AppEvents {
   openServiceRequestModal: { solicitud: any };
   updateServiceRequests: void;
   'test-notification': { type: string; data: any };
-  'sse-reconnect': void;
-  'sse-message': any;
   cajaClosed: void;
   cajaOpened: void;
   updateSales: void;

@@ -51,7 +51,7 @@ export default function RoleCalendar({ role, userId, backLink }: RoleCalendarPro
 
   const renderMonthView = () => {
     return (
-      <div className='bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700'>
+      <div className='bg-white dark:bg-gray-800 rounded-lg shadow-xs border border-gray-200 dark:border-gray-700'>
         <div className='flex items-center justify-between p-4 border-b border-gray-200 dark:border-gray-700'>
           <div className='flex items-center gap-4'>
             <Button variant='ghost' size='sm' onClick={() => navigate(-1)}>
@@ -122,7 +122,7 @@ export default function RoleCalendar({ role, userId, backLink }: RoleCalendarPro
               return (
                 <div key={key} className='flex items-center gap-2'>
                   <div
-                    className={`w-6 h-3 bg-gradient-to-r ${bgClass} rounded-sm shadow-sm border ${borderClass}`}
+                    className={`w-6 h-3 bg-linear-to-r ${bgClass} rounded-sm shadow-xs border ${borderClass}`}
                   ></div>
                   <span className='text-gray-700 dark:text-gray-300 font-medium'>
                     {config.indicatorLabel} = {config.title}

@@ -10,6 +10,7 @@ const MIGRATIONS = [
   'fix_detalle_pedido_id_type.sql',
   'add_es_temporal_to_servicios.sql',
   'add_performance_indexes.sql',
+  'create_query_logs_table.sql',
 ];
 
 async function run() {

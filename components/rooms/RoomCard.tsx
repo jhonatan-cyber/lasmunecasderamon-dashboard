@@ -1,3 +1,5 @@
+'use client';
+
 import React, { useState } from 'react';
 import { Room } from '@/types/room';
 import { Button } from '@/components/ui/button';
@@ -109,12 +111,12 @@ const RoomCard: React.FC<{
               <div
                 {...attributes}
                 {...listeners}
-                className='w-8 h-8 bg-gray-100 rounded-lg flex items-center justify-center flex-shrink-0 cursor-grab active:cursor-grabbing hover:bg-gray-200 transition-colors'
+                className='w-8 h-8 bg-gray-100 rounded-lg flex items-center justify-center shrink-0 cursor-grab active:cursor-grabbing hover:bg-gray-200 transition-colors'
               >
                 <GripVertical className='w-4 h-4 text-gray-600' />
               </div>
             ) : (
-              <div className='w-8 h-8 bg-gray-100 rounded-lg flex items-center justify-center flex-shrink-0'>
+              <div className='w-8 h-8 bg-gray-100 rounded-lg flex items-center justify-center shrink-0'>
                 <Bed className='w-4 h-4 text-gray-600' />
               </div>
             )}
@@ -144,7 +146,7 @@ const RoomCard: React.FC<{
                 <Button
                   variant='ghost'
                   size='icon'
-                  className={`transition-opacity h-7 w-7 rounded-lg flex-shrink-0 ${isDraggable ? 'opacity-0 group-hover:opacity-100' : ''}`}
+                  className={`transition-opacity h-7 w-7 rounded-lg shrink-0 ${isDraggable ? 'opacity-0 group-hover:opacity-100' : ''}`}
                 >
                   <MoreVertical className='h-3 w-3' />
                 </Button>
@@ -194,7 +196,7 @@ const RoomCard: React.FC<{
         <div className='grid grid-cols-2 gap-2 sm:gap-3 mb-3 sm:mb-4'>
           <div className='bg-gray-50 rounded-lg p-2 sm:p-3 min-w-0'>
             <div className='flex items-center gap-1 text-gray-600 mb-1'>
-              <DollarSign className='w-3 h-3 flex-shrink-0' />
+              <DollarSign className='w-3 h-3 shrink-0' />
               <span className='text-xs font-medium truncate'>Precio</span>
             </div>
             <p className='text-sm sm:text-base font-bold text-gray-900 truncate'>
@@ -204,7 +206,7 @@ const RoomCard: React.FC<{
 
           <div className='bg-gray-50 rounded-lg p-2 sm:p-3 min-w-0'>
             <div className='flex items-center gap-1 text-gray-600 mb-1'>
-              <Percent className='w-3 h-3 flex-shrink-0' />
+              <Percent className='w-3 h-3 shrink-0' />
               <span className='text-xs font-medium truncate'>Comisión</span>
             </div>
             <p className='text-sm sm:text-base font-bold text-gray-900 truncate'>
@@ -220,7 +222,7 @@ const RoomCard: React.FC<{
         <div className='grid grid-cols-2 gap-2 sm:gap-3 mb-3 sm:mb-4'>
           <div className='bg-gray-50 rounded-lg p-2 sm:p-3 min-w-0'>
             <div className='flex items-center gap-1 text-gray-600 mb-1'>
-              <Clock className='w-3 h-3 flex-shrink-0' />
+              <Clock className='w-3 h-3 shrink-0' />
               <span className='text-xs font-medium truncate'>Duración</span>
             </div>
             <p className='text-sm sm:text-base font-bold text-gray-900 truncate'>{room.time} min</p>
@@ -228,7 +230,7 @@ const RoomCard: React.FC<{
 
           <div className='bg-gray-50 rounded-lg p-2 sm:p-3 min-w-0'>
             <div className='flex items-center gap-1 text-gray-600 mb-1'>
-              <Bed className='w-3 h-3 flex-shrink-0' />
+              <Bed className='w-3 h-3 shrink-0' />
               <span className='text-xs font-medium truncate'>ID</span>
             </div>
             <p className='text-sm sm:text-base font-bold text-gray-900 truncate'>#{room.id}</p>

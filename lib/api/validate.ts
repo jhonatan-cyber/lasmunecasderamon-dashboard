@@ -1,81 +1,29 @@
 import { z } from 'zod';
 import { NextResponse } from 'next/server';
-import { createErrorResponse } from './middleware/errorHandler';
 
-export interface ValidationResult<T> {
-  success: true;
-  data: T;
+export function validate<T>(schema: z.ZodType<T>, data: unknown): T {
+  return schema.parse(data);
 }
 
-export interface ValidationError {
-  success: false;
-  errors: z.ZodIssue[];
-}
-
-export type ValidateResult<T> = ValidationResult<T> | ValidationError;
-
-export function validateSchema<T extends z.ZodType>(
-  schema: T,
+export function validateOrResponse<T>(
+  schema: z.ZodType<T>,
   data: unknown
-): ValidateResult<z.infer<T>> {
+): T | NextResponse {
   const result = schema.safeParse(data);
-
-  if (result.success) {
-    return {
-      success: true,
-      data: result.data
-    };
+  if (!result.success) {
+    const issues = result.error.issues;
+    return NextResponse.json(
+      {
+        success: false,
+        message: 'Error de validación',
+        error: {
+          code: 'VALIDATION_ERROR',
+          message: issues.map(i => i.message).join(', '),
+          details: issues
+        }
+      },
+      { status: 400 }
+    );
   }
-
-  return {
-    success: false,
-    errors: result.error.issues
-  };
+  return result.data;
 }
-
-export function validateRequestBody<T extends z.ZodType>(
-  schema: T,
-  body: unknown
-): NextResponse | null {
-  const result = validateSchema(schema, body);
-
-  if (result.success) {
-    return null;
-  }
-
-  const errorData = result as ValidationError;
-  return createErrorResponse('Error de validación', 'VALIDATION_ERROR', 400, errorData.errors);
-}
-
-export function validateQueryParams<T extends z.ZodType>(
-  schema: T,
-  params: Record<string, string | string[] | undefined>
-): ValidateResult<z.infer<T>> {
-  const flatParams: Record<string, string> = {};
-
-  for (const [key, value] of Object.entries(params)) {
-    if (Array.isArray(value)) {
-      flatParams[key] = value[0] || '';
-    } else if (value !== undefined) {
-      flatParams[key] = value;
-    }
-  }
-
-  return validateSchema(schema, flatParams);
-}
-
-export const idSchema = z.object({
-  id: z.coerce.number().int().positive('ID debe ser un número positivo')
-});
-
-export const paginationSchema = z.object({
-  page: z.coerce.number().int().min(1).default(1),
-  limit: z.coerce.number().int().min(1).max(100).default(20),
-  sortBy: z.string().optional(),
-  sortOrder: z.enum(['asc', 'desc']).optional()
-});
-
-export const dateRangeSchema = z.object({
-  startDate: z.string().datetime().optional(),
-  endDate: z.string().datetime().optional()
-});

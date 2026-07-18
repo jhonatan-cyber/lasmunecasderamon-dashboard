@@ -36,7 +36,7 @@ export function DeleteProductConfirmModal({
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className='sm:max-w-[425px] flex flex-col p-0 overflow-hidden rounded-2xl'>
-        <DialogHeader className='flex-shrink-0 px-6 pt-6 pb-4 border-b dark:border-slate-800'>
+        <DialogHeader className='shrink-0 px-6 pt-6 pb-4 border-b dark:border-slate-800'>
           <DialogTitle className='flex items-center gap-2'>
             <AlertTriangle className='text-red-500 w-5 h-5' />
             <span className='text-gray-900 dark:text-neutral-100'>Confirmar Eliminación</span>
@@ -62,7 +62,7 @@ export function DeleteProductConfirmModal({
             </p>
           </div>
         </div>
-        <div className='flex-shrink-0 border-t dark:border-slate-800 px-6 py-4 bg-gray-50 dark:bg-slate-900/50'>
+        <div className='shrink-0 border-t dark:border-slate-800 px-6 py-4 bg-gray-50 dark:bg-slate-900/50'>
           <div className='flex flex-col sm:flex-row justify-center items-center gap-2 sm:gap-4 w-full'>
             <Button
               onClick={handleCancel}

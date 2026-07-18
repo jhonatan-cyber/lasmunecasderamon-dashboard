@@ -1,9 +1,9 @@
 import { NextResponse } from 'next/server';
-import { withAppApiWrapper } from '@/lib/api/app-api-wrapper';
+import { withPublicRoute } from '@/lib/api/withRoute';
 import { VentasStatsService } from '@/lib/services/VentasStatsService';
 import { ValidationError } from '@/lib/errors/errors';
 
-export const GET = withAppApiWrapper(async (request: Request) => {
+export const GET = withPublicRoute(async (request: Request) => {
   const { searchParams } = new URL(request.url);
   const caja_id = searchParams.get('caja_id');
 

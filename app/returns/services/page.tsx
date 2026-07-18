@@ -78,7 +78,7 @@ export default function DevolucionesServiciosPage() {
 
   useEffect(() => {
     getServicios();
-  }, []);
+  }, [getServicios]);
 
   if (error) {
     return (
@@ -102,7 +102,7 @@ export default function DevolucionesServiciosPage() {
         clearFilters={clearFilters}
       />
 
-      <Card className='shadow-sm sm:shadow-md'>
+      <Card className='shadow-xs sm:shadow-md'>
         <CardHeader className='pb-4 sm:pb-6'>
           <div className='flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 sm:gap-4'>
             <CardTitle className='text-lg sm:text-xl lg:text-2xl'>
@@ -110,7 +110,7 @@ export default function DevolucionesServiciosPage() {
               {filteredServicios.length})
             </CardTitle>
             <Button
-              variant={showAnulados ? 'default' : 'outline'}
+              variant={showAnulados ? 'default' : 'outline-solid'}
               size='sm'
               onClick={() => setShowAnulados(!showAnulados)}
               className='w-full sm:w-auto bg-black text-white rounded-full hover:scale-105 transition-all duration-200 text-sm sm:text-base px-4 py-2'

@@ -1,17 +1,7 @@
-'use client';
-
-import { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Badge } from '@/components/ui/badge';
-import {
-  Accordion,
-  AccordionContent,
-  AccordionItem,
-  AccordionTrigger
-} from '@/components/ui/accordion';
-import { Search, HelpCircle, Book, MessageCircle, Mail, Phone, ExternalLink } from 'lucide-react';
+import { HelpAccordion } from '@/components/help/HelpAccordion';
+import { Book, ExternalLink, MessageCircle, Mail, Phone } from 'lucide-react';
 
 const faqData = [
   {
@@ -32,7 +22,7 @@ const faqData = [
     id: '3',
     question: '¿Puedo exportar mis datos?',
     answer:
-      "Sí, puedes exportar tus datos desde la sección de Reportes. Selecciona el período deseado y haz clic en 'Exportar PDF' o 'Exportar Excel'.",
+      'Sí, puedes exportar tus datos desde la sección de Reportes. Selecciona el período deseado y haz clic en \'Exportar PDF\' o \'Exportar Excel\'.',
     category: 'Reportes'
   },
   {
@@ -79,30 +69,11 @@ const helpResources = [
 ];
 
 export default function Help() {
-  const [searchTerm, setSearchTerm] = useState('');
-
-  const filteredFAQ = faqData.filter(
-    item =>
-      item.question.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      item.answer.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      item.category.toLowerCase().includes(searchTerm.toLowerCase())
-  );
-
   return (
     <div className='p-6 space-y-6'>
       <div>
         <h1 className='text-2xl font-bold text-gray-900'>Centro de Ayuda</h1>
         <p className='text-gray-600'>Encuentra respuestas a tus preguntas y obtén soporte</p>
-      </div>
-
-      <div className='relative max-w-md'>
-        <Search className='absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400' />
-        <Input
-          placeholder='Buscar en la ayuda...'
-          value={searchTerm}
-          onChange={e => setSearchTerm(e.target.value)}
-          className='pl-10'
-        />
       </div>
 
       <div className='grid gap-6 md:grid-cols-2 lg:grid-cols-4'>
@@ -121,41 +92,7 @@ export default function Help() {
         ))}
       </div>
 
-      <Card>
-        <CardHeader>
-          <CardTitle className='flex items-center gap-2'>
-            <HelpCircle className='h-5 w-5' />
-            Preguntas Frecuentes
-          </CardTitle>
-        </CardHeader>
-        <CardContent>
-          {filteredFAQ.length === 0 ? (
-            <div className='text-center py-8'>
-              <p className='text-gray-500'>
-                No se encontraron resultados para &ldquo;{searchTerm}&rdquo;
-              </p>
-            </div>
-          ) : (
-            <Accordion type='single' collapsible className='w-full'>
-              {filteredFAQ.map(item => (
-                <AccordionItem key={item.id} value={item.id}>
-                  <AccordionTrigger className='text-left'>
-                    <div className='flex items-center gap-2'>
-                      <span>{item.question}</span>
-                      <Badge variant='outline' className='text-xs'>
-                        {item.category}
-                      </Badge>
-                    </div>
-                  </AccordionTrigger>
-                  <AccordionContent>
-                    <p className='text-gray-600'>{item.answer}</p>
-                  </AccordionContent>
-                </AccordionItem>
-              ))}
-            </Accordion>
-          )}
-        </CardContent>
-      </Card>
+      <HelpAccordion faqData={faqData} />
 
       <div className='grid gap-6 md:grid-cols-2'>
         <Card>

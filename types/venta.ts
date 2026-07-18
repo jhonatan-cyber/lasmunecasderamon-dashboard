@@ -70,7 +70,7 @@ export interface VentaDetalleCreate {
   cantidad: number;
   sub_total: number;
   hostess_id?: string | number | null;
-  hostesses?: Array<string | number>;
+  hostesses?: number[];
   isChampagne?: boolean;
 }
 

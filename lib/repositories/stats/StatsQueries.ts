@@ -1,7 +1,8 @@
 import { query } from '@/lib/database/db';
 import { type StatsGeneralType } from '@/lib/business/schemas';
 import { getNowInBusinessTimezone } from '@/lib/business/timezoneService';
-import { NotFoundError } from '@/lib/errors/errors';
+import { NotFoundError, DatabaseError } from '@/lib/errors/errors';
+import { logger } from '@/lib/utils/logger';
 import { TimerRepository } from '../TimerRepository';
 import { ServiceRequestRepository } from '../ServiceRequestRepository';
 import { RoomRepository } from '../RoomRepository';
@@ -24,7 +25,13 @@ import type {
 } from '../types';
 
 export class StatsQueries {
-  static async getDashboardAlerts() {
+  static async getDashboardAlerts(options?: {
+    timers?: any[];
+    rooms?: any[];
+  }) {
+    try {
+      const { timers: preloadedTimers, rooms: preloadedRooms } = options || {};
+
     const [cashRegisterRows, pendingOrdersRows, rooms, pendingServiceRequests, timers] =
       await Promise.all([
         query<any[]>(
@@ -41,9 +48,9 @@ export class StatsQueries {
           WHERE estado = 1
         `
         ),
-        RoomRepository.getAll(),
+        preloadedRooms ? Promise.resolve(preloadedRooms) : RoomRepository.getAll(),
         ServiceRequestRepository.getPendingCount(),
-        TimerRepository.getActive()
+        preloadedTimers ? Promise.resolve(preloadedTimers) : TimerRepository.getActive()
       ]);
 
     const activeCaja = cashRegisterRows[0]?.total || 0;
@@ -75,115 +82,128 @@ export class StatsQueries {
         pendingServiceRequests
       }
     };
+    } catch (err) {
+      logger.error('[StatsQueries] Error en getDashboardAlerts:', { err });
+      throw new DatabaseError('Error al obtener alertas del dashboard', err);
+    }
   }
 
   static async getDashboardPendingItems() {
-    const [orders, serviceRequests] = await Promise.all([
-      this.getPendingOrders(5),
-      ServiceRequestRepository.getPendingServiceRequests(5)
-    ]);
+    try {
+      const [orders, serviceRequests] = await Promise.all([
+        this.getPendingOrders(5),
+        ServiceRequestRepository.getPendingServiceRequests(5)
+      ]);
 
-    return {
-      orders,
-      serviceRequests
-    };
+      return {
+        orders,
+        serviceRequests
+      };
+    } catch (err) {
+      logger.error('[StatsQueries] Error en getDashboardPendingItems:', { err });
+      throw new DatabaseError('Error al obtener elementos pendientes del dashboard', err);
+    }
+  }
+
+  /**
+   * Helper: query comparativa (hoy vs ayer, esta semana vs anterior).
+   * Reutilizado por getDashboardInsights y getDashboardComposite.
+   */
+  private static async runComparisonQuery(now: string, yesterday: string) {
+    try {
+      return await query<any[]>(
+        `SELECT
+          COALESCE((SELECT SUM(v.total) FROM ventas v WHERE v.estado IN (1, 2) AND v.fecha_crea >= DATE(?) AND v.fecha_crea < DATE_ADD(DATE(?), INTERVAL 1 DAY)), 0) AS sales_today,
+          COALESCE((SELECT SUM(v.total) FROM ventas v WHERE v.estado IN (1, 2) AND v.fecha_crea >= DATE(?) AND v.fecha_crea < DATE_ADD(DATE(?), INTERVAL 1 DAY)), 0) AS sales_yesterday,
+          COALESCE((SELECT SUM(s.total) FROM servicios s WHERE s.estado IN (1, 2) AND s.fecha_crea >= DATE(?) AND s.fecha_crea < DATE_ADD(DATE(?), INTERVAL 1 DAY)), 0) AS services_today,
+          COALESCE((SELECT SUM(s.total) FROM servicios s WHERE s.estado IN (1, 2) AND s.fecha_crea >= DATE(?) AND s.fecha_crea < DATE_ADD(DATE(?), INTERVAL 1 DAY)), 0) AS services_yesterday,
+          COALESCE((SELECT COUNT(*) FROM ventas v WHERE v.estado IN (1, 2) AND YEARWEEK(v.fecha_crea, 1) = YEARWEEK(DATE(?), 1)), 0) AS sales_count_week,
+          COALESCE((SELECT COUNT(*) FROM ventas v WHERE v.estado IN (1, 2) AND YEARWEEK(v.fecha_crea, 1) = YEARWEEK(DATE_SUB(DATE(?), INTERVAL 7 DAY), 1)), 0) AS sales_count_previous_week,
+          COALESCE((SELECT SUM(v.total) FROM ventas v WHERE v.estado IN (1, 2) AND YEARWEEK(v.fecha_crea, 1) = YEARWEEK(DATE(?), 1)), 0) AS sales_total_week,
+          COALESCE((SELECT SUM(v.total) FROM ventas v WHERE v.estado IN (1, 2) AND YEARWEEK(v.fecha_crea, 1) = YEARWEEK(DATE_SUB(DATE(?), INTERVAL 7 DAY), 1)), 0) AS sales_total_previous_week,
+          COALESCE((SELECT SUM(v.total) FROM ventas v WHERE v.estado IN (1, 2) AND v.fecha_crea >= DATE(?) AND v.fecha_crea < DATE_ADD(DATE(?), INTERVAL 1 DAY) AND TIME(v.fecha_crea) <= TIME(?)), 0) AS sales_same_time_today,
+          COALESCE((SELECT SUM(v.total) FROM ventas v WHERE v.estado IN (1, 2) AND v.fecha_crea >= DATE(?) AND v.fecha_crea < DATE_ADD(DATE(?), INTERVAL 1 DAY) AND TIME(v.fecha_crea) <= TIME(?)), 0) AS sales_same_time_yesterday
+        `,
+      [
+        now, now, yesterday, yesterday,
+        now, now, yesterday, yesterday,
+        now, now, now, now, now, now, now,
+        yesterday, yesterday, now
+      ]
+    );
+    } catch (err) {
+      logger.error('[StatsQueries] Error en runComparisonQuery:', { err });
+      throw new DatabaseError('Error al ejecutar query comparativa', err);
+    }
+  }
+
+  /**
+   * Helper: query de ranking (productos, habitaciones, staff).
+   * Reutilizado por getDashboardInsights y getDashboardComposite.
+   */
+  private static async runRankingQuery(now: string, yesterday: string) {
+    try {
+      return await query<any[]>(
+        `SELECT * FROM (
+          SELECT 'product' AS ranking_type, p.nombre AS item_name, SUM(dv.cantidad) AS primary_value, SUM(dv.sub_total) AS secondary_value
+          FROM detalle_ventas dv
+          INNER JOIN ventas v ON v.id_venta = dv.venta_id
+          INNER JOIN productos p ON p.id_producto = dv.producto_id
+          WHERE v.estado IN (1, 2) AND v.fecha_crea >= DATE(?) AND v.fecha_crea < DATE_ADD(DATE(?), INTERVAL 1 DAY)
+          GROUP BY p.id_producto, p.nombre
+          UNION ALL
+          SELECT 'room' AS ranking_type, room_activity.item_name, room_activity.operations_count AS primary_value, room_activity.total_generated AS secondary_value
+          FROM (
+            SELECT h.nombre AS item_name, COUNT(*) AS operations_count, SUM(activity.total) AS total_generated
+            FROM (
+              SELECT habitacion_id, total FROM servicios WHERE estado IN (1, 2) AND fecha_crea >= DATE(?) AND fecha_crea < DATE_ADD(DATE(?), INTERVAL 1 DAY)
+              UNION ALL
+              SELECT habitacion_id, total FROM ventas WHERE estado IN (1, 2) AND fecha_crea >= DATE(?) AND fecha_crea < DATE_ADD(DATE(?), INTERVAL 1 DAY)
+            ) activity
+            INNER JOIN habitaciones h ON h.id_habitacion = activity.habitacion_id
+            GROUP BY h.id_habitacion, h.nombre
+          ) room_activity
+          UNION ALL
+          SELECT 'staff' AS ranking_type, staff_activity.item_name, staff_activity.operations_count AS primary_value, staff_activity.total_generated AS secondary_value
+          FROM (
+            SELECT CONCAT(u.nombre, ' ', u.apellido) AS item_name, COUNT(*) AS operations_count, SUM(staff_source.total) AS total_generated
+            FROM (
+              SELECT ds.usuario_id, s.total FROM detalle_servicios ds INNER JOIN servicios s ON s.id_servicio = ds.servicio_id WHERE s.estado IN (1, 2) AND s.fecha_crea >= DATE(?) AND s.fecha_crea < DATE_ADD(DATE(?), INTERVAL 1 DAY)
+              UNION ALL
+              SELECT vu.usuario_id, v.total FROM ventas_usuarios vu INNER JOIN ventas v ON v.id_venta = vu.venta_id WHERE v.estado IN (1, 2) AND v.fecha_crea >= DATE(?) AND v.fecha_crea < DATE_ADD(DATE(?), INTERVAL 1 DAY)
+            ) staff_source
+            INNER JOIN usuarios u ON u.id_usuario = staff_source.usuario_id
+            GROUP BY u.id_usuario, u.nombre, u.apellido
+          ) staff_activity
+        ) rankings WHERE secondary_value > 0 OR primary_value > 0 ORDER BY ranking_type ASC, secondary_value DESC, primary_value DESC        `,
+      [now, now, now, now, now, now, now, now, now, now]
+    );
+    } catch (err) {
+      logger.error('[StatsQueries] Error en runRankingQuery:', { err });
+      throw new DatabaseError('Error al ejecutar query de ranking', err);
+    }
   }
 
   static async getDashboardInsights() {
+    try {
     const now = getNowInBusinessTimezone();
     const yesterday = getNowInBusinessTimezone(Date.now() - 24 * 60 * 60 * 1000);
     const hoursElapsed = Number(now.slice(11, 13) || 0);
     const minutesElapsed = Number(now.slice(14, 16) || 0);
     const elapsedMinutesToday = Math.max(1, hoursElapsed * 60 + minutesElapsed);
 
+    // OPTIMIZACIÓN: Las alerts ya incluyen activeServices y expiringServices del TimerRepository.
+    // No necesitamos llamar a TimerRepository.getActive() 3 veces — alerts.summary basta.
+    // getLoggedUsers() se mantiene porque alerts no lo incluye.
     const [
       comparisonsRows,
       rankingRows,
       alerts,
-      servicesActive,
-      expiringServices,
       totalLoggedUsers
     ] = await Promise.all([
-      query<any[]>(
-        `SELECT
-            COALESCE((SELECT SUM(v.total) FROM ventas v WHERE v.estado IN (1, 2) AND v.fecha_crea >= DATE(?) AND v.fecha_crea < DATE_ADD(DATE(?), INTERVAL 1 DAY)), 0) AS sales_today,
-            COALESCE((SELECT SUM(v.total) FROM ventas v WHERE v.estado IN (1, 2) AND v.fecha_crea >= DATE(?) AND v.fecha_crea < DATE_ADD(DATE(?), INTERVAL 1 DAY)), 0) AS sales_yesterday,
-            COALESCE((SELECT SUM(s.total) FROM servicios s WHERE s.estado IN (1, 2) AND s.fecha_crea >= DATE(?) AND s.fecha_crea < DATE_ADD(DATE(?), INTERVAL 1 DAY)), 0) AS services_today,
-            COALESCE((SELECT SUM(s.total) FROM servicios s WHERE s.estado IN (1, 2) AND s.fecha_crea >= DATE(?) AND s.fecha_crea < DATE_ADD(DATE(?), INTERVAL 1 DAY)), 0) AS services_yesterday,
-            COALESCE((SELECT COUNT(*) FROM ventas v WHERE v.estado IN (1, 2) AND YEARWEEK(v.fecha_crea, 1) = YEARWEEK(DATE(?), 1)), 0) AS sales_count_week,
-            COALESCE((SELECT COUNT(*) FROM ventas v WHERE v.estado IN (1, 2) AND YEARWEEK(v.fecha_crea, 1) = YEARWEEK(DATE_SUB(DATE(?), INTERVAL 7 DAY), 1)), 0) AS sales_count_previous_week,
-            COALESCE((SELECT SUM(v.total) FROM ventas v WHERE v.estado IN (1, 2) AND YEARWEEK(v.fecha_crea, 1) = YEARWEEK(DATE(?), 1)), 0) AS sales_total_week,
-            COALESCE((SELECT SUM(v.total) FROM ventas v WHERE v.estado IN (1, 2) AND YEARWEEK(v.fecha_crea, 1) = YEARWEEK(DATE_SUB(DATE(?), INTERVAL 7 DAY), 1)), 0) AS sales_total_previous_week,
-            COALESCE((SELECT SUM(v.total) FROM ventas v WHERE v.estado IN (1, 2) AND v.fecha_crea >= DATE(?) AND v.fecha_crea < DATE_ADD(DATE(?), INTERVAL 1 DAY) AND TIME(v.fecha_crea) <= TIME(?)), 0) AS sales_same_time_today,
-            COALESCE((SELECT SUM(v.total) FROM ventas v WHERE v.estado IN (1, 2) AND v.fecha_crea >= DATE(?) AND v.fecha_crea < DATE_ADD(DATE(?), INTERVAL 1 DAY) AND TIME(v.fecha_crea) <= TIME(?)), 0) AS sales_same_time_yesterday
-          `,
-        [
-          now,
-          now,
-          yesterday,
-          yesterday,
-          now,
-          now,
-          yesterday,
-          yesterday,
-          now,
-          now,
-          now,
-          now,
-          now,
-          now,
-          now,
-          yesterday,
-          yesterday,
-          now
-        ]
-      ),
-      query<any[]>(
-        `SELECT * FROM (
-            SELECT 'product' AS ranking_type, p.nombre AS item_name, SUM(dv.cantidad) AS primary_value, SUM(dv.sub_total) AS secondary_value
-            FROM detalle_ventas dv
-            INNER JOIN ventas v ON v.id_venta = dv.venta_id
-            INNER JOIN productos p ON p.id_producto = dv.producto_id
-            WHERE v.estado IN (1, 2) AND v.fecha_crea >= DATE(?) AND v.fecha_crea < DATE_ADD(DATE(?), INTERVAL 1 DAY)
-            GROUP BY p.id_producto, p.nombre
-            UNION ALL
-            SELECT 'room' AS ranking_type, room_activity.item_name, room_activity.operations_count AS primary_value, room_activity.total_generated AS secondary_value
-            FROM (
-              SELECT h.nombre AS item_name, COUNT(*) AS operations_count, SUM(activity.total) AS total_generated
-              FROM (
-                SELECT habitacion_id, total FROM servicios WHERE estado IN (1, 2) AND fecha_crea >= DATE(?) AND fecha_crea < DATE_ADD(DATE(?), INTERVAL 1 DAY)
-                UNION ALL
-                SELECT habitacion_id, total FROM ventas WHERE estado IN (1, 2) AND fecha_crea >= DATE(?) AND fecha_crea < DATE_ADD(DATE(?), INTERVAL 1 DAY)
-              ) activity
-              INNER JOIN habitaciones h ON h.id_habitacion = activity.habitacion_id
-              GROUP BY h.id_habitacion, h.nombre
-            ) room_activity
-            UNION ALL
-            SELECT 'staff' AS ranking_type, staff_activity.item_name, staff_activity.operations_count AS primary_value, staff_activity.total_generated AS secondary_value
-            FROM (
-              SELECT CONCAT(u.nombre, ' ', u.apellido) AS item_name, COUNT(*) AS operations_count, SUM(staff_source.total) AS total_generated
-              FROM (
-                SELECT ds.usuario_id, s.total FROM detalle_servicios ds INNER JOIN servicios s ON s.id_servicio = ds.servicio_id WHERE s.estado IN (1, 2) AND s.fecha_crea >= DATE(?) AND s.fecha_crea < DATE_ADD(DATE(?), INTERVAL 1 DAY)
-                UNION ALL
-                SELECT vu.usuario_id, v.total FROM ventas_usuarios vu INNER JOIN ventas v ON v.id_venta = vu.venta_id WHERE v.estado IN (1, 2) AND v.fecha_crea >= DATE(?) AND v.fecha_crea < DATE_ADD(DATE(?), INTERVAL 1 DAY)
-              ) staff_source
-              INNER JOIN usuarios u ON u.id_usuario = staff_source.usuario_id
-              GROUP BY u.id_usuario, u.nombre, u.apellido
-            ) staff_activity
-          ) rankings WHERE secondary_value > 0 OR primary_value > 0 ORDER BY ranking_type ASC, secondary_value DESC, primary_value DESC`,
-        [now, now, now, now, now, now, now, now, now, now]
-      ),
+      this.runComparisonQuery(now, yesterday),
+      this.runRankingQuery(now, yesterday),
       this.getDashboardAlerts(),
-      TimerRepository.getActive().then(
-        timers => timers.filter(timer => timer.tipoTransaccion !== 'pedido').length
-      ),
-      TimerRepository.getActive().then(
-        timers =>
-          timers.filter(timer => {
-            const remaining = Number(timer.remainingTime || 0);
-            return remaining > 0 && remaining <= 15 * 60;
-          }).length
-      ),
       this.getLoggedUsers().then(
         users => users.anfitrionas.logueadas + users.garzones.logueadas + users.cajeros.logueadas
       )
@@ -200,6 +220,10 @@ export class StatsQueries {
         : 0;
     const yesterdaySalesSameTime = Number(comparisonBase.sales_same_time_yesterday || 0);
     const todaySalesSameTime = Number(comparisonBase.sales_same_time_today || 0);
+
+    // Usar valores ya calculados por getDashboardAlerts en vez de re-consultar TimerRepository
+    const servicesActive = alerts.summary.activeServices;
+    const expiringServices = alerts.summary.expiringServices;
 
     return buildDashboardInsights({
       salesToday: comparisonBase.sales_today,
@@ -221,8 +245,8 @@ export class StatsQueries {
       pendingOrders: alerts.summary.pendingOrders,
       pendingServiceRequests: alerts.summary.pendingServiceRequests,
       totalLoggedUsers,
-      totalTeamMembers: 0, // Not available directly here
-      teamCoverageRate: 0, // Not available directly here
+      totalTeamMembers: 0,
+      teamCoverageRate: 0,
       openCashRegisters: 0,
       rankingRows,
       openingAmount: 0,
@@ -236,9 +260,15 @@ export class StatsQueries {
       yesterdaySalesSameTime,
       elapsedMinutesToday
     });
+    } catch (err) {
+      logger.error('[StatsQueries] Error en getDashboardInsights:', { err });
+      if (err instanceof NotFoundError) throw err;
+      throw new DatabaseError('Error al obtener insights del dashboard', err);
+    }
   }
 
   static async getRecentActivity(limit: number = 8) {
+    try {
     const activities = await query<any[]>(
       `
       SELECT * FROM (
@@ -293,10 +323,15 @@ export class StatsQueries {
         }
       };
     });
+    } catch (err) {
+      logger.error('[StatsQueries] Error en getRecentActivity:', { err });
+      throw new DatabaseError('Error al obtener actividad reciente', err);
+    }
   }
 
   static async getHabitacionesStats(cajaId: string) {
-    return await query<any[]>(
+    try {
+      return await query<any[]>(
       `
       SELECT 
         COALESCE(SUM(s.precio_servicio), 0) as monto_servicio,
@@ -310,10 +345,16 @@ export class StatsQueries {
     `,
       [cajaId]
     );
+    } catch (err) {
+      logger.error('[StatsQueries] Error en getHabitacionesStats:', { cajaId, err });
+      throw new DatabaseError(`Error al obtener estadísticas de habitaciones para caja ${cajaId}`, err);
+    }
   }
 
   static async getCajaGeneralStats(): Promise<any> {
-    const now = getNowInBusinessTimezone();
+    try {
+      const now = getNowInBusinessTimezone();
+
     const cajaRows = await query<any[]>(
       `SELECT id_caja, fecha_apertura, usuario_id_apertura, monto_apertura, efectivo,
               tarjeta, transferencia, comision, anticipo, devolucion, iva,
@@ -394,10 +435,16 @@ export class StatsQueries {
         minutosAbierta: Number(cajaRow.minutos_abierta || 0)
       }
     };
+    } catch (err) {
+      logger.error('[StatsQueries] Error en getCajaGeneralStats:', { err });
+      if (err instanceof NotFoundError) throw err;
+      throw new DatabaseError('Error al obtener estadísticas generales de caja', err);
+    }
   }
 
   static async getLoggedUsers() {
-    const roles = await query<any[]>(`SELECT id_rol, nombre FROM roles`);
+    try {
+      const roles = await query<any[]>(`SELECT id_rol, nombre FROM roles`);
     const users = await query<any[]>(
       `SELECT u.id_usuario, u.nick, u.estado, u.rol_id, r.nombre as rol_nombre
        FROM usuarios u
@@ -419,10 +466,15 @@ export class StatsQueries {
       garzones: filterByRole('garzon'),
       cajeros: filterByRole('cajero')
     };
+    } catch (err) {
+      logger.error('[StatsQueries] Error en getLoggedUsers:', { err });
+      throw new DatabaseError('Error al obtener usuarios logueados', err);
+    }
   }
 
   static async getSalesByMonth(offset: number = 0) {
-    return await query<any[]>(
+    try {
+      return await query<any[]>(
       `
       SELECT 
         DATE_FORMAT(fecha_crea, '%Y-%m') as mes,
@@ -436,9 +488,14 @@ export class StatsQueries {
     `,
       [offset * 12]
     );
+    } catch (err) {
+      logger.error('[StatsQueries] Error en getSalesByMonth:', { offset, err });
+      throw new DatabaseError('Error al obtener ventas por mes', err);
+    }
   }
 
   static async getSalesByWeek(offset: number = 0) {
+    try {
     const queryStr = `
       SELECT 
         DATE_FORMAT(days.d, '%Y-%u') as semana,
@@ -463,9 +520,14 @@ export class StatsQueries {
     `;
     const now = getNowInBusinessTimezone();
     return await query<any[]>(queryStr, [now, offset]);
+    } catch (err) {
+      logger.error('[StatsQueries] Error en getSalesByWeek:', { offset, err });
+      throw new DatabaseError('Error al obtener ventas por semana', err);
+    }
   }
 
   static async getPendingOrders(limit: number) {
+    try {
     const orders = await OrderRepository.getAll(20);
     return orders
       .filter(order => Number(order.estado) === 1)
@@ -480,10 +542,15 @@ export class StatsQueries {
         href: '/orders',
         kind: 'order' as const
       }));
+    } catch (err) {
+      logger.error('[StatsQueries] Error en getPendingOrders:', { limit, err });
+      throw new DatabaseError('Error al obtener pedidos pendientes', err);
+    }
   }
 
   static async getDashboardComposite() {
-    const now = getNowInBusinessTimezone();
+    try {
+      const now = getNowInBusinessTimezone();
     const yesterday = getNowInBusinessTimezone(Date.now() - 24 * 60 * 60 * 1000);
     const hoursElapsed = Number(now.slice(11, 13) || 0);
     const minutesElapsed = Number(now.slice(14, 16) || 0);
@@ -540,76 +607,9 @@ export class StatsQueries {
             }
           ]),
 
-      query<any[]>(
-        `SELECT
-          COALESCE((SELECT SUM(v.total) FROM ventas v WHERE v.estado IN (1, 2) AND v.fecha_crea >= DATE(?) AND v.fecha_crea < DATE_ADD(DATE(?), INTERVAL 1 DAY)), 0) AS sales_today,
-          COALESCE((SELECT SUM(v.total) FROM ventas v WHERE v.estado IN (1, 2) AND v.fecha_crea >= DATE(?) AND v.fecha_crea < DATE_ADD(DATE(?), INTERVAL 1 DAY)), 0) AS sales_yesterday,
-          COALESCE((SELECT SUM(s.total) FROM servicios s WHERE s.estado IN (1, 2) AND s.fecha_crea >= DATE(?) AND s.fecha_crea < DATE_ADD(DATE(?), INTERVAL 1 DAY)), 0) AS services_today,
-          COALESCE((SELECT SUM(s.total) FROM servicios s WHERE s.estado IN (1, 2) AND s.fecha_crea >= DATE(?) AND s.fecha_crea < DATE_ADD(DATE(?), INTERVAL 1 DAY)), 0) AS services_yesterday,
-          COALESCE((SELECT COUNT(*) FROM ventas v WHERE v.estado IN (1, 2) AND YEARWEEK(v.fecha_crea, 1) = YEARWEEK(DATE(?), 1)), 0) AS sales_count_week,
-          COALESCE((SELECT COUNT(*) FROM ventas v WHERE v.estado IN (1, 2) AND YEARWEEK(v.fecha_crea, 1) = YEARWEEK(DATE_SUB(DATE(?), INTERVAL 7 DAY), 1)), 0) AS sales_count_previous_week,
-          COALESCE((SELECT SUM(v.total) FROM ventas v WHERE v.estado IN (1, 2) AND YEARWEEK(v.fecha_crea, 1) = YEARWEEK(DATE(?), 1)), 0) AS sales_total_week,
-          COALESCE((SELECT SUM(v.total) FROM ventas v WHERE v.estado IN (1, 2) AND YEARWEEK(v.fecha_crea, 1) = YEARWEEK(DATE_SUB(DATE(?), INTERVAL 7 DAY), 1)), 0) AS sales_total_previous_week,
-          COALESCE((SELECT SUM(v.total) FROM ventas v WHERE v.estado IN (1, 2) AND v.fecha_crea >= DATE(?) AND v.fecha_crea < DATE_ADD(DATE(?), INTERVAL 1 DAY) AND TIME(v.fecha_crea) <= TIME(?)), 0) AS sales_same_time_today,
-          COALESCE((SELECT SUM(v.total) FROM ventas v WHERE v.estado IN (1, 2) AND v.fecha_crea >= DATE(?) AND v.fecha_crea < DATE_ADD(DATE(?), INTERVAL 1 DAY) AND TIME(v.fecha_crea) <= TIME(?)), 0) AS sales_same_time_yesterday
-        `,
-        [
-          now,
-          now,
-          yesterday,
-          yesterday,
-          now,
-          now,
-          yesterday,
-          yesterday,
-          now,
-          now,
-          now,
-          now,
-          now,
-          now,
-          now,
-          yesterday,
-          yesterday,
-          now
-        ]
-      ),
+      this.runComparisonQuery(now, yesterday),
 
-      query<any[]>(
-        `SELECT * FROM (
-          SELECT 'product' AS ranking_type, p.nombre AS item_name, SUM(dv.cantidad) AS primary_value, SUM(dv.sub_total) AS secondary_value
-          FROM detalle_ventas dv
-          INNER JOIN ventas v ON v.id_venta = dv.venta_id
-          INNER JOIN productos p ON p.id_producto = dv.producto_id
-          WHERE v.estado IN (1, 2) AND v.fecha_crea >= DATE(?) AND v.fecha_crea < DATE_ADD(DATE(?), INTERVAL 1 DAY)
-          GROUP BY p.id_producto, p.nombre
-          UNION ALL
-          SELECT 'room' AS ranking_type, room_activity.item_name, room_activity.operations_count AS primary_value, room_activity.total_generated AS secondary_value
-          FROM (
-            SELECT h.nombre AS item_name, COUNT(*) AS operations_count, SUM(activity.total) AS total_generated
-            FROM (
-              SELECT habitacion_id, total FROM servicios WHERE estado IN (1, 2) AND fecha_crea >= DATE(?) AND fecha_crea < DATE_ADD(DATE(?), INTERVAL 1 DAY)
-              UNION ALL
-              SELECT habitacion_id, total FROM ventas WHERE estado IN (1, 2) AND fecha_crea >= DATE(?) AND fecha_crea < DATE_ADD(DATE(?), INTERVAL 1 DAY)
-            ) activity
-            INNER JOIN habitaciones h ON h.id_habitacion = activity.habitacion_id
-            GROUP BY h.id_habitacion, h.nombre
-          ) room_activity
-          UNION ALL
-          SELECT 'staff' AS ranking_type, staff_activity.item_name, staff_activity.operations_count AS primary_value, staff_activity.total_generated AS secondary_value
-          FROM (
-            SELECT CONCAT(u.nombre, ' ', u.apellido) AS item_name, COUNT(*) AS operations_count, SUM(staff_source.total) AS total_generated
-            FROM (
-              SELECT ds.usuario_id, s.total FROM detalle_servicios ds INNER JOIN servicios s ON s.id_servicio = ds.servicio_id WHERE s.estado IN (1, 2) AND s.fecha_crea >= DATE(?) AND s.fecha_crea < DATE_ADD(DATE(?), INTERVAL 1 DAY)
-              UNION ALL
-              SELECT vu.usuario_id, v.total FROM ventas_usuarios vu INNER JOIN ventas v ON v.id_venta = vu.venta_id WHERE v.estado IN (1, 2) AND v.fecha_crea >= DATE(?) AND v.fecha_crea < DATE_ADD(DATE(?), INTERVAL 1 DAY)
-            ) staff_source
-            INNER JOIN usuarios u ON u.id_usuario = staff_source.usuario_id
-            GROUP BY u.id_usuario, u.nombre, u.apellido
-          ) staff_activity
-        ) rankings WHERE secondary_value > 0 OR primary_value > 0 ORDER BY ranking_type ASC, secondary_value DESC, primary_value DESC`,
-        [now, now, now, now, now, now, now, now, now, now]
-      ),
+      this.runRankingQuery(now, yesterday),
 
       this.getLoggedUsers(),
 
@@ -725,10 +725,16 @@ export class StatsQueries {
         }
       }
     };
+    } catch (err) {
+      logger.error('[StatsQueries] Error en getDashboardComposite:', { err });
+      if (err instanceof NotFoundError) throw err;
+      throw new DatabaseError('Error al obtener composite del dashboard', err);
+    }
   }
 
   static async getUserDashboardSummary(userId: string, role: string) {
-    const roleLower = role.toLowerCase();
+    try {
+      const roleLower = role.toLowerCase();
 
     const userRes = await query<any[]>(
       'SELECT sueldo, aporte, descuento FROM usuarios WHERE id_usuario = ?',
@@ -852,5 +858,10 @@ export class StatsQueries {
       horasExtrasPendientes: horasExtrasPendientesArr.length,
       comisionesPendientes: comisiones.filter(c => c.estado === 1).length
     };
+    } catch (err) {
+      logger.error('[StatsQueries] Error en getUserDashboardSummary:', { userId, role, err });
+      if (err instanceof NotFoundError) throw err;
+      throw new DatabaseError(`Error al obtener resumen de dashboard para usuario ${userId}`, err);
+    }
   }
 }

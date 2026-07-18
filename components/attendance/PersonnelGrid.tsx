@@ -47,7 +47,7 @@ export function PersonnelGrid({ personnel, onSelect }: PersonnelGridProps) {
                 (e.target as HTMLImageElement).src = '/placeholder-user.jpg';
               }}
             />
-            <div className='absolute inset-0 bg-gradient-to-t from-black/80 via-black/40 to-transparent opacity-80 group-hover:opacity-90 transition-opacity' />
+            <div className='absolute inset-0 bg-linear-to-t from-black/80 via-black/40 to-transparent opacity-80 group-hover:opacity-90 transition-opacity' />
           </div>
 
           <div className='relative h-[280px] flex flex-col justify-end p-5'>
@@ -64,7 +64,7 @@ export function PersonnelGrid({ personnel, onSelect }: PersonnelGridProps) {
                   </span>
                   <span className='text-sm font-bold text-white'>@{person.nick}</span>
                 </div>
-                <Badge className='bg-white/20 backdrop-blur-sm text-white font-black text-[10px] px-3 py-1.5 rounded-xl border border-white/20 uppercase tracking-wider'>
+                <Badge className='bg-white/20 backdrop-blur-xs text-white font-black text-[10px] px-3 py-1.5 rounded-xl border border-white/20 uppercase tracking-wider'>
                   {person.role}
                 </Badge>
               </div>

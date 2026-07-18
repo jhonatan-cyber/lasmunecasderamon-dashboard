@@ -45,7 +45,7 @@ export default function TimerExpiredModal({
         </DialogTitle>
 
         {}
-        <div className='bg-gradient-to-r from-red-500 to-red-600 text-white p-4 flex-shrink-0'>
+        <div className='bg-linear-to-r from-red-500 to-red-600 text-white p-4 shrink-0'>
           <div className='flex items-center justify-center gap-3'>
             <Clock className='w-8 h-8' />
             <div className='text-center'>
@@ -124,7 +124,7 @@ export default function TimerExpiredModal({
                       return (
                         <span
                           key={index}
-                          className='text-xs font-semibold bg-pink-50 dark:bg-pink-900/40 text-pink-600 dark:text-pink-300 px-2.5 py-1 rounded-full border border-pink-100 dark:border-pink-800 shadow-sm'
+                          className='text-xs font-semibold bg-pink-50 dark:bg-pink-900/40 text-pink-600 dark:text-pink-300 px-2.5 py-1 rounded-full border border-pink-100 dark:border-pink-800 shadow-xs'
                         >
                           {name}
                         </span>
@@ -186,7 +186,7 @@ export default function TimerExpiredModal({
         </div>
 
         {}
-        <div className='p-4 border-t flex justify-center flex-shrink-0'>
+        <div className='p-4 border-t flex justify-center shrink-0'>
           <Button
             className='px-8 py-2 rounded-full bg-red-600 hover:bg-red-700 text-white font-medium w-full sm:w-auto'
             onClick={handleClose}

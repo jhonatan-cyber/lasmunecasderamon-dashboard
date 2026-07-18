@@ -35,7 +35,7 @@ export function PrivateRoomSummaryCard({
   const showImportantNote = metodoPago === 'tarjeta' && total > 0;
 
   return (
-    <div className='rounded-2xl border border-stone-200 bg-stone-50/90 p-3 shadow-sm ring-1 ring-stone-100 backdrop-blur dark:border-stone-800 dark:bg-stone-950/50 dark:ring-stone-900 sm:p-4'>
+    <div className='rounded-2xl border border-stone-200 bg-stone-50/90 p-3 shadow-xs ring-1 ring-stone-100 backdrop-blur-sm dark:border-stone-800 dark:bg-stone-950/50 dark:ring-stone-900 sm:p-4'>
       <div className='mb-3 flex items-start justify-between gap-3'>
         <div>
           <p className='text-[10px] font-black uppercase tracking-[0.26em] text-stone-400'>

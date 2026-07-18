@@ -57,7 +57,7 @@ export default function GratificacionesDetailModal({
   return (
     <Dialog open={isOpen} onOpenChange={handleOpenChange}>
       <DialogContent className='w-[95vw] max-w-[95vw] sm:w-full sm:max-w-[650px] max-h-[90vh] flex flex-col p-0 overflow-hidden'>
-        <DialogHeader className='flex-shrink-0 px-6 pt-6 pb-4 border-b bg-zinc-50 dark:bg-neutral-900'>
+        <DialogHeader className='shrink-0 px-6 pt-6 pb-4 border-b bg-zinc-50 dark:bg-neutral-900'>
           <div className='flex justify-between items-center'>
             <div>
               <DialogTitle className='text-lg sm:text-xl lg:text-2xl font-bold'>
@@ -195,7 +195,7 @@ export default function GratificacionesDetailModal({
           </div>
         </div>
 
-        <DialogFooter className='flex-shrink-0 border-t px-6 py-4 bg-zinc-50 dark:bg-neutral-900'>
+        <DialogFooter className='shrink-0 border-t px-6 py-4 bg-zinc-50 dark:bg-neutral-900'>
           <div className='flex justify-center w-full'>
             <DialogClose asChild>
               <Button

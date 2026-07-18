@@ -208,7 +208,7 @@ export default function TipsPage() {
               }}
               className={`flex items-center gap-2 px-5 py-2 text-sm font-semibold transition-all ${
                 activeTab === 'pending'
-                  ? 'bg-amber-100 text-amber-700 rounded-full shadow-sm'
+                  ? 'bg-amber-100 text-amber-700 rounded-full shadow-xs'
                   : 'text-gray-500 hover:bg-gray-100 rounded-full'
               }`}
             >
@@ -231,7 +231,7 @@ export default function TipsPage() {
               }}
               className={`flex items-center gap-2 px-5 py-2 text-sm font-semibold transition-all ${
                 activeTab === 'paid'
-                  ? 'bg-green-100 text-green-700 rounded-full shadow-sm'
+                  ? 'bg-green-100 text-green-700 rounded-full shadow-xs'
                   : 'text-gray-500 hover:bg-gray-100 rounded-full'
               }`}
             >

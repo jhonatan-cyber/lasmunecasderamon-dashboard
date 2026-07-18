@@ -206,7 +206,7 @@ export function PermissionModal({
           <Button
             type='submit'
             form='permission-form'
-            className='bg-black text-white dark:bg-black dark:text-white dark:hover:!bg-white dark:hover:!text-black rounded-full px-8 hover:!bg-white hover:!text-black transition-all hover:scale-105 border-2'
+            className='bg-black text-white dark:bg-black dark:text-white dark:hover:bg-white! dark:hover:text-black! rounded-full px-8 hover:bg-white! hover:text-black! transition-all hover:scale-105 border-2'
             disabled={isLoading}
           >
             {isLoading ? (

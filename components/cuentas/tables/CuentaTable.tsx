@@ -160,7 +160,7 @@ export default function CuentaTable({
 
   if (loading) {
     return (
-      <div className='bg-white dark:bg-slate-900/40 backdrop-blur-sm rounded-3xl border-none shadow-md overflow-hidden p-8'>
+      <div className='bg-white dark:bg-slate-900/40 backdrop-blur-xs rounded-3xl border-none shadow-md overflow-hidden p-8'>
         <div className='animate-pulse space-y-4'>
           <div className='h-12 bg-gray-100 dark:bg-gray-800 rounded-xl' />
           <div className='h-12 bg-gray-100 dark:bg-gray-800 rounded-xl' />
@@ -172,7 +172,7 @@ export default function CuentaTable({
 
   if (rows.length === 0) {
     return (
-      <div className='bg-white dark:bg-slate-900/40 backdrop-blur-sm rounded-3xl border-none shadow-md overflow-hidden p-8'>
+      <div className='bg-white dark:bg-slate-900/40 backdrop-blur-xs rounded-3xl border-none shadow-md overflow-hidden p-8'>
         <div className='text-center py-12'>
           <div className='w-16 h-16 bg-gray-100 dark:bg-gray-800 rounded-full flex items-center justify-center mx-auto mb-4'>
             <Receipt className='w-8 h-8 text-gray-400' />
@@ -187,7 +187,7 @@ export default function CuentaTable({
   const MobileCardView = () => (
     <div className='space-y-4 lg:hidden'>
       {rows.map(cuenta => (
-        <Card key={cuenta.id_cuenta} className='shadow-sm hover:shadow-md transition-shadow'>
+        <Card key={cuenta.id_cuenta} className='shadow-xs hover:shadow-md transition-shadow'>
           <CardContent className='p-4'>
             <div className='space-y-3'>
               <div className='flex items-center justify-between'>
@@ -346,7 +346,7 @@ export default function CuentaTable({
 
   const DesktopTableView = () => (
     <div className='hidden lg:block'>
-      <div className='bg-white dark:bg-slate-900/40 backdrop-blur-sm rounded-3xl border-none shadow-md overflow-hidden'>
+      <div className='bg-white dark:bg-slate-900/40 backdrop-blur-xs rounded-3xl border-none shadow-md overflow-hidden'>
         <div className='overflow-x-auto'>
           <Table className='min-w-full text-base text-center'>
             <TableHeader className='bg-gray-100 dark:bg-slate-900/50'>
@@ -607,7 +607,7 @@ export default function CuentaTable({
             </Button>
             <Button
               onClick={handleConfirmarSolicitudAnulacion}
-              className='bg-black text-white dark:bg-black dark:text-white dark:hover:!bg-white dark:hover:!text-black rounded-full px-8 hover:!bg-white hover:!text-black transition-all hover:scale-105 border-2'
+              className='bg-black text-white dark:bg-black dark:text-white dark:hover:bg-white! dark:hover:text-black! rounded-full px-8 hover:bg-white! hover:text-black! transition-all hover:scale-105 border-2'
               disabled={anulandoCuenta}
             >
               {anulandoCuenta ? (

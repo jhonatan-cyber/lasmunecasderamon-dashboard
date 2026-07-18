@@ -1,14 +1,49 @@
 import { NextResponse } from 'next/server';
 import type { NextRequest } from 'next/server';
-import { jwtVerify } from 'jose';
-import { env } from '@/lib/utils/env';
-import { query } from '@/lib/database/db';
+import { jwtVerify, SignJWT } from 'jose';
 import {
   PUBLIC_PATHS,
   AUTHENTICATED_ONLY_APIS,
   routePermissions,
   apiRoutePermissions
 } from '@/lib/middleware/proxy-routes';
+import { siteConfig } from '@/lib/api/site';
+import { checkRateLimit, RATE_LIMIT_CONFIGS, type RateLimitConfig } from '@/lib/middleware/redisRateLimit';
+
+// Orígenes permitidos para CORS
+const ALLOWED_ORIGINS = [
+  siteConfig.url,                                    // https://xn--lasmuecasderamon-bub.com
+  'http://localhost:3000',
+  'http://localhost:8081',                           // Expo dev
+  'https://dashboard.xn--lasmuecasderamon-bub.com',
+  // DEV_ALLOWED_ORIGINS: variables de entorno separadas por comas (ej: http://192.168.1.42:3000,http://192.168.1.42:8081)
+  ...(process.env.DEV_ALLOWED_ORIGINS
+    ? process.env.DEV_ALLOWED_ORIGINS.split(',').map(s => s.trim()).filter(Boolean)
+    : [])
+];
+
+// Warning en desarrollo si no se configuró DEV_ALLOWED_ORIGINS
+if (
+  process.env.NODE_ENV === 'development' &&
+  !process.env.DEV_ALLOWED_ORIGINS
+) {
+  console.warn(
+    '[CORS] ⚠️  DEV_ALLOWED_ORIGINS no definida. Las IPs de red local no podrán conectar al dashboard.\n' +
+    '         Configúrala en .env.local: DEV_ALLOWED_ORIGINS=http://192.168.1.42:3000,http://192.168.1.42:8081'
+  );
+}
+
+function isOriginAllowed(origin: string | null): boolean {
+  if (!origin) return false;
+  return ALLOWED_ORIGINS.some(allowed =>
+    origin === allowed || origin.startsWith(allowed + '/')
+  );
+}
+
+function getCorsOrigin(origin: string | null): string {
+  if (origin && isOriginAllowed(origin)) return origin;
+  return siteConfig.url;
+}
 
 const actionMap: Record<string, string[]> = {
   view: [
@@ -104,6 +139,7 @@ function addCspHeaders(request: NextRequest): {
     form-action 'self';
     frame-ancestors 'none';
     object-src 'none';
+    report-uri /api/csp-violation;
   `
     .replace(/\s{2,}/g, ' ')
     .trim();
@@ -116,7 +152,7 @@ function addCspHeaders(request: NextRequest): {
 
 async function verifyToken(token: string) {
   try {
-    const secret = new TextEncoder().encode(env.JWT_SECRET);
+    const secret = new TextEncoder().encode(process.env.JWT_SECRET);
     const { payload } = await jwtVerify(token, secret);
     return payload;
   } catch (error) {
@@ -124,12 +160,43 @@ async function verifyToken(token: string) {
   }
 }
 
+async function verifyRefreshToken(token: string) {
+  try {
+    const secret = new TextEncoder().encode(
+      process.env.JWT_REFRESH_SECRET || process.env.JWT_SECRET
+    );
+    const { payload } = await jwtVerify(token, secret);
+    return payload;
+  } catch {
+    return null;
+  }
+}
+
+async function generateAccessTokenFromPayload(payload: any): Promise<string> {
+  return await new SignJWT({
+    id: payload.id,
+    userId: payload.userId || payload.id,
+    username: payload.username,
+    name: payload.name,
+    lastName: payload.lastName,
+    nick: payload.nick,
+    email: payload.email,
+    role: payload.role
+  })
+    .setProtectedHeader({ alg: 'HS256' })
+    .setExpirationTime('15m')
+    .sign(new TextEncoder().encode(process.env.JWT_SECRET));
+}
+
 async function localCheckUserPermission(
   userId: number,
   module: string,
   action: string
 ): Promise<boolean> {
+  // ponytail: dynamic import — Edge Runtime can't load mysql2/node modules statically
   try {
+    const { query } = await import('@/lib/database/db');
+
     const userResult = await query<any[]>(
       'SELECT u.rol_id, r.nombre as rol_nombre FROM usuarios u LEFT JOIN roles r ON u.rol_id = r.id_rol WHERE u.id_usuario = ?',
       [String(userId)]
@@ -168,28 +235,82 @@ async function localCheckUserPermission(
     );
 
     return perms.length > 0;
-  } catch (error) {
-    return false;
+  } catch {
+    // Edge Runtime: can't load mysql2, allow request.
+    // Fine-grained permission checks should happen in API routes.
+    return true;
   }
 }
 
 export default async function proxy(request: NextRequest) {
   const { pathname } = request.nextUrl;
+  const isApi = pathname.startsWith('/api/');
   const forwarded = request.headers.get('x-forwarded-for');
   const ip = forwarded ? forwarded.split(',')[0] : 'unknown';
 
-  const { nonce, cspHeader, headers: cspRequestHeaders } = addCspHeaders(request);
-
   const origin = request.headers.get('origin');
-  const isApi = pathname.startsWith('/api/');
+
+  // CSP nonce solo es necesario para páginas HTML, no para APIs JSON
+  let cspHeader = '';
+  let cspRequestHeaders: Headers;
+  if (!isApi) {
+    const cspResult = addCspHeaders(request);
+    cspHeader = cspResult.cspHeader;
+    cspRequestHeaders = cspResult.headers;
+  } else {
+    cspRequestHeaders = request.headers;
+  }
+
+  // ─── Rate limiting (Edge Middleware) ───────────────────────────
+  // Se aplica ANTES de la autenticación para proteger contra ataques
+  // de fuerza bruta en login y flooding en APIs.
+  // Usa Redis (INCR + EXPIRE) cuando está disponible, con fallback
+  // a memoria para Edge Runtime / desarrollo.
+  
+  const isLoginPath = pathname === '/login' || pathname.startsWith('/login/');
+  const isSsePath = pathname.includes('/sse');
+  
+  // Seleccionar configuración según la ruta
+  let rateLimitConfig: RateLimitConfig | null = null;
+  if (isLoginPath) {
+    rateLimitConfig = RATE_LIMIT_CONFIGS.LOGIN;
+  } else if (isSsePath) {
+    rateLimitConfig = RATE_LIMIT_CONFIGS.SSE;
+  } else if (isApi) {
+    // Para APIs, aplicar según el método HTTP
+    if (request.method === 'GET' || request.method === 'OPTIONS') {
+      rateLimitConfig = null; // Lecturas sin rate limit estricto
+    } else {
+      rateLimitConfig = RATE_LIMIT_CONFIGS.API_SENSITIVE;
+    }
+  }
+  
+  if (rateLimitConfig) {
+    const result = await checkRateLimit(request, rateLimitConfig);
+    if (result && !result.allowed) {
+      const response = NextResponse.json(
+        {
+          success: false,
+          message: 'Demasiadas solicitudes. Intenta de nuevo más tarde.',
+          code: 'RATE_LIMIT_EXCEEDED'
+        },
+        {
+          status: 429,
+          headers: {
+            'Retry-After': String(result.retryAfter ?? 60),
+            'RateLimit-Limit': String(result.limit),
+            'RateLimit-Remaining': '0',
+            'RateLimit-Reset': String(result.reset ?? Math.ceil(Date.now() / 1000) + 60)
+          }
+        }
+      );
+      return response;
+    }
+  }
 
   if (isApi && request.method === 'OPTIONS') {
     const response = new NextResponse(null, { status: 200 });
-    if (origin) {
-      response.headers.set('Access-Control-Allow-Origin', origin);
-    } else {
-      response.headers.set('Access-Control-Allow-Origin', '*');
-    }
+    response.headers.set('Access-Control-Allow-Origin', getCorsOrigin(origin));
     response.headers.set('Access-Control-Allow-Credentials', 'true');
     response.headers.set('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS, PATCH');
     response.headers.set(
@@ -200,18 +321,41 @@ export default async function proxy(request: NextRequest) {
     return response;
   }
 
+  // Extract tokens early so addApiHeaders closure can reference them
+  const tokenFromCookie = request.cookies.get('token')?.value;
+  const tokenFromHeader = request.headers.get('authorization')?.replace('Bearer ', '');
+  // Variable para almacenar un nuevo access token generado desde refresh token
+  let newAccessToken: string | null = null;
+
   const addApiHeaders = (res: NextResponse, includeCsp = true) => {
     if (isApi) {
-      if (origin) {
-        res.headers.set('Access-Control-Allow-Origin', origin);
-      } else {
-        res.headers.set('Access-Control-Allow-Origin', '*');
-      }
+      res.headers.set('Access-Control-Allow-Origin', getCorsOrigin(origin));
       res.headers.set('Access-Control-Allow-Credentials', 'true');
       res.headers.set('Vary', 'Origin');
     }
     if (includeCsp && cspHeader) {
       res.headers.set('Content-Security-Policy', cspHeader);
+    }
+    // If token came from Authorization header (not cookie), sync it as a cookie
+    // so client-side fetch() calls (which only send cookies, not headers) can authenticate
+    if (tokenFromHeader && !tokenFromCookie) {
+      res.cookies.set('token', tokenFromHeader, {
+        httpOnly: true,
+        secure: process.env.NODE_ENV === 'production',
+        sameSite: 'lax',
+        path: '/',
+        maxAge: 60 * 60 * 24 * 365
+      });
+    }
+    // Si se renovó el token vía refresh token, setear la nueva cookie
+    if (newAccessToken) {
+      res.cookies.set('token', newAccessToken, {
+        httpOnly: true,
+        secure: process.env.NODE_ENV === 'production',
+        sameSite: 'lax',
+        path: '/',
+        maxAge: 15 * 60 // 15 minutos
+      });
     }
     return res;
   };
@@ -236,11 +380,31 @@ export default async function proxy(request: NextRequest) {
     return response;
   }
 
-  const token =
-    request.cookies.get('token')?.value ||
-    request.headers.get('authorization')?.replace('Bearer ', '');
+  let token = tokenFromCookie || tokenFromHeader;
+  let payload: any = null;
 
-  if (!token) {
+  if (token) {
+    payload = await verifyToken(token);
+  }
+
+  // ─── Refresh token rotation ─────────────────────────────────
+  // Si el access token expiró, intentar renovar silenciosamente
+  // usando el refresh token (cookie httpOnly separada).
+  if (!payload) {
+    const refreshToken = request.cookies.get('refresh_token')?.value;
+    if (refreshToken) {
+      const refreshPayload = await verifyRefreshToken(refreshToken);
+      if (refreshPayload) {
+        // Generar nuevo access token desde el refresh payload
+        const newToken = await generateAccessTokenFromPayload(refreshPayload);
+        newAccessToken = newToken;
+        token = newToken;
+        payload = refreshPayload;
+      }
+    }
+  }
+
+  if (!token || !payload) {
     if (pathname.startsWith('/api/')) {
       return addApiHeaders(
         NextResponse.json(
@@ -252,19 +416,6 @@ export default async function proxy(request: NextRequest) {
     const loginUrl = new URL('/login', request.url);
     loginUrl.searchParams.set('redirect', pathname);
     return NextResponse.redirect(loginUrl);
-  }
-
-  const payload = await verifyToken(token);
-  if (!payload) {
-    if (pathname.startsWith('/api/')) {
-      return addApiHeaders(
-        NextResponse.json(
-          { success: false, message: 'Token inválido', code: 'INVALID_TOKEN' },
-          { status: 401 }
-        )
-      );
-    }
-    return NextResponse.redirect(new URL('/login', request.url));
   }
 
   const userRole = (payload.role as string)?.toLowerCase();

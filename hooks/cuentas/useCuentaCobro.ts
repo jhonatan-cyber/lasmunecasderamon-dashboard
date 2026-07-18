@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { toast } from 'sonner';
 import logger from '@/lib/utils/logger';
+import { isChampagneProduct } from '@/components/orders/productModalRules';
 
 export function useCuentaCobro() {
   const [rooms, setRooms] = useState<any[]>([]);
@@ -37,29 +38,6 @@ export function useCuentaCobro() {
           (r.numero || '').toLowerCase().includes(searchRoom.toLowerCase())
       )
     : habitacionesActivas;
-
-  const isChampagneProduct = (producto: any) => {
-    const normalized =
-      typeof producto === 'string'
-        ? producto
-        : [
-            producto?.categoria,
-            producto?.categoria_nombre,
-            producto?.category,
-            producto?.product_name,
-            producto?.nombre,
-            producto?.producto
-          ]
-            .filter(Boolean)
-            .join(' ');
-
-    const categoria = normalized.toLowerCase();
-    return (
-      categoria.includes('champaña') ||
-      categoria.includes('shampaña') ||
-      categoria.includes('champagne')
-    );
-  };
 
   const resetStates = () => {
     setSearchRoom('');

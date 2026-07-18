@@ -7,9 +7,10 @@ export const securityHeaders = {
   'X-XSS-Protection': '1; mode=block',
   'Referrer-Policy': 'strict-origin-when-cross-origin',
   'Permissions-Policy': 'camera=(), microphone=(), geolocation=()',
-  'Strict-Transport-Security': 'max-age=31536000; includeSubDomains',
-  'Content-Security-Policy':
-    "default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval'; style-src 'self' 'unsafe-inline'; img-src 'self' data: https:; font-src 'self' data:; connect-src 'self' ws: wss:;"
+  'Strict-Transport-Security': 'max-age=31536000; includeSubDomains'
+  // NOTA: Content-Security-Policy se maneja exclusivamente desde proxy.ts
+  // con nonces por request para máxima seguridad.
+  // No agregar CSP aquí porque anularía la política nonce-based.
 };
 
 export function withSecurityHeaders(handler: NextApiHandler) {

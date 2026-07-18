@@ -1,12 +1,12 @@
 import { NextResponse } from 'next/server';
-import { withAppAuth } from '@/lib/api/app-api-wrapper';
+import { withRoute } from '@/lib/api/withRoute';
 import { getAnticipoBalances } from '@/lib/business/anticiposUtils';
 import { AttendanceService } from '@/lib/services/AttendanceService';
 import { TipService } from '@/lib/services/TipService';
 import { ServiceService } from '@/lib/services/ServiceService';
 import { query } from '@/lib/database/db';
 
-export const GET = withAppAuth(async (_request: Request, { user }: { params: any; user: any }) => {
+export const GET = withRoute({ auth: true, audit: true }, async (_request: Request, { user }: { params: any; user: any }) => {
   const userId = user.id.toString();
 
   const attendanceData = (await AttendanceService.getByUser(userId)) as any;

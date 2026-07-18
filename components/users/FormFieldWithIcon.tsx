@@ -1,3 +1,5 @@
+'use client';
+
 import { memo, useCallback, useRef } from 'react';
 import { Control, FieldPath, FieldValues } from 'react-hook-form';
 import { FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';

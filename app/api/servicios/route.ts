@@ -1,9 +1,11 @@
 import { NextResponse } from 'next/server';
-import { withAppApiWrapper, withAppAuth } from '@/lib/api/app-api-wrapper';
+import { withPublicRoute, withRoute } from '@/lib/api/withRoute';
 import { ServiceService } from '@/lib/services/ServiceService';
 import { sendNotificationToAll } from '@/lib/api/sseService';
+import { ServiceCreateSchema } from '@/lib/business/schemas/service';
+import { validateOrResponse } from '@/lib/api/validate';
 
-export const GET = withAppApiWrapper(async (request: Request) => {
+export const GET = withPublicRoute(async (request: Request) => {
   const { searchParams } = new URL(request.url);
   const params = {
     all: searchParams.get('all') || undefined,
@@ -16,9 +18,11 @@ export const GET = withAppApiWrapper(async (request: Request) => {
   return NextResponse.json({ success: true, data });
 });
 
-export const POST = withAppAuth(async (request: Request, { user }) => {
+export const POST = withRoute({ auth: true, audit: true }, async (request: Request, { user }) => {
   const body = await request.json();
-  const result = await ServiceService.createService(body, user.id.toString());
+  const validated = validateOrResponse(ServiceCreateSchema, body);
+  if (validated instanceof NextResponse) return validated;
+  const result = await ServiceService.createService(validated, user.id.toString());
   sendNotificationToAll('service_changed', {
     action: 'create',
     id: result.id,

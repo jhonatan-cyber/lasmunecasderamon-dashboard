@@ -104,7 +104,7 @@ export default function AttendanceTable({ data }: AttendanceTableProps) {
   }
 
   const TableView = () => (
-    <div className='hidden sm:block bg-white dark:bg-slate-900/40 backdrop-blur-sm rounded-3xl border-none shadow-md overflow-hidden'>
+    <div className='hidden sm:block bg-white dark:bg-slate-900/40 backdrop-blur-xs rounded-3xl border-none shadow-md overflow-hidden'>
       <div className='overflow-x-auto'>
         <Table className='min-w-full text-base text-center'>
           <TableHeader className='bg-gray-100 dark:bg-slate-900/50'>
@@ -205,7 +205,7 @@ export default function AttendanceTable({ data }: AttendanceTableProps) {
       {data.map(item => (
         <div
           key={item.id_usuario}
-          className='bg-white dark:bg-slate-900/40 rounded-2xl border border-gray-200 dark:border-gray-800 p-4 shadow-sm'
+          className='bg-white dark:bg-slate-900/40 rounded-2xl border border-gray-200 dark:border-gray-800 p-4 shadow-xs'
         >
           <div className='flex items-start justify-between gap-2'>
             <div className='flex items-center gap-3 min-w-0'>

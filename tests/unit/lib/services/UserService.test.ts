@@ -72,7 +72,9 @@ describe('UserService.createUser', () => {
       }),
       'default.png'
     );
-    expect(result).toEqual({ id: 'new-user' });
+    expect(result).toHaveProperty('user', { id: 'new-user' });
+    expect(result).toHaveProperty('rawPassword');
+    expect(typeof (result as any).rawPassword).toBe('string');
   });
 
   it('usa el fotoFilename proporcionado', async () => {

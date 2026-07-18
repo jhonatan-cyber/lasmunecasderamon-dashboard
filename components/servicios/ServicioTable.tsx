@@ -104,7 +104,7 @@ export default function ServicioTable({
   }
 
   return (
-    <div className='bg-white rounded-lg shadow-sm border'>
+    <div className='bg-white rounded-lg shadow-xs border'>
       <div className='overflow-x-auto'>
         <Table>
           <TableHeader>

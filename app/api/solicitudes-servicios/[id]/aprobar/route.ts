@@ -1,9 +1,9 @@
 import { NextResponse } from 'next/server';
-import { withAppAuth } from '@/lib/api/app-api-wrapper';
+import { withRoute } from '@/lib/api/withRoute';
 import { ServiceRequestService } from '@/lib/services/ServiceRequestService';
 import { sendNotificationToAll } from '@/lib/api/sseService';
 
-export const PATCH = withAppAuth(
+export const PATCH = withRoute({ auth: true, audit: true, module: 'orders', action: 'process' },
   async (request: Request, { params, user }: { params: Promise<{ id: string }>; user: any }) => {
     const { id } = await params;
     const body = await request.json().catch(() => ({}));
@@ -21,6 +21,5 @@ export const PATCH = withAppAuth(
     sendNotificationToAll('timers_updated', { timestamp: new Date().toISOString() });
 
     return NextResponse.json({ success: true, data: result });
-  },
-  { requiredPermission: { module: 'orders', action: 'process' } }
+  }
 );

@@ -1,0 +1,71 @@
+{
+  "breakpoints": {
+    "375": {
+      "name": "garzon-asistencias-main",
+      "viewportWidth": 375,
+      "width": 375,
+      "height": 900,
+      "bones": [
+        [
+          6.4,
+          402,
+          87.2,
+          32,
+          8
+        ],
+        [
+          6.4,
+          450,
+          87.2,
+          48,
+          8
+        ]
+      ]
+    },
+    "768": {
+      "name": "garzon-asistencias-main",
+      "viewportWidth": 768,
+      "width": 768,
+      "height": 900,
+      "bones": [
+        [
+          28.3773,
+          414,
+          43.2434,
+          32,
+          8
+        ],
+        [
+          28.3773,
+          462,
+          43.2434,
+          24,
+          8
+        ]
+      ]
+    },
+    "1280": {
+      "name": "garzon-asistencias-main",
+      "viewportWidth": 1280,
+      "width": 1280,
+      "height": 900,
+      "bones": [
+        [
+          37.0264,
+          414,
+          25.946,
+          32,
+          8
+        ],
+        [
+          37.0264,
+          462,
+          25.946,
+          24,
+          8
+        ]
+      ]
+    }
+  },
+  "_hash": "169df8ebdb75680f54585622d59b7a90"
+}

@@ -3,6 +3,7 @@
 import dynamic from 'next/dynamic';
 import Link from 'next/link';
 import { SwaggerUIWrapper } from '@/components/shared/SwaggerUIWrapper';
+import { EMAIL_DOMAIN } from '@/lib/constants/email';
 
 import { useSwaggerWarnings } from '@/hooks/docs/useSwaggerWarnings';
 import './swagger-styles.css';
@@ -82,7 +83,7 @@ export default function ApiDocsPage() {
           {}
           <div className='bg-white rounded-2xl p-6 border border-slate-200 hover:border-slate-300 transition-colors'>
             <div className='flex items-start space-x-4'>
-              <div className='w-10 h-10 bg-blue-100 rounded-xl flex items-center justify-center flex-shrink-0'>
+              <div className='w-10 h-10 bg-blue-100 rounded-xl flex items-center justify-center shrink-0'>
                 <svg
                   className='w-5 h-5 text-blue-600'
                   fill='none'
@@ -113,7 +114,7 @@ export default function ApiDocsPage() {
           {}
           <div className='bg-white rounded-2xl p-6 border border-slate-200 hover:border-slate-300 transition-colors'>
             <div className='flex items-start space-x-4'>
-              <div className='w-10 h-10 bg-green-100 rounded-xl flex items-center justify-center flex-shrink-0'>
+              <div className='w-10 h-10 bg-green-100 rounded-xl flex items-center justify-center shrink-0'>
                 <svg
                   className='w-5 h-5 text-green-600'
                   fill='none'
@@ -147,7 +148,7 @@ export default function ApiDocsPage() {
           {}
           <div className='bg-white rounded-2xl p-6 border border-slate-200 hover:border-slate-300 transition-colors'>
             <div className='flex items-start space-x-4'>
-              <div className='w-10 h-10 bg-purple-100 rounded-xl flex items-center justify-center flex-shrink-0'>
+              <div className='w-10 h-10 bg-purple-100 rounded-xl flex items-center justify-center shrink-0'>
                 <svg
                   className='w-5 h-5 text-purple-600'
                   fill='none'
@@ -387,7 +388,7 @@ export default function ApiDocsPage() {
               </Link>
 
               <a
-                href='mailto:soporte@lasmuñecasderamon.com'
+                href={'mailto:soporte' + EMAIL_DOMAIN}
                 className='inline-flex items-center space-x-2 px-6 py-3 bg-slate-600 text-white rounded-xl hover:bg-slate-700 transition-colors font-medium'
               >
                 <svg className='w-4 h-4' fill='none' stroke='currentColor' viewBox='0 0 24 24'>

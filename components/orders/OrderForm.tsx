@@ -1,14 +1,15 @@
-﻿import { useCallback } from 'react';
+'use client';
+
 import dynamic from 'next/dynamic';
 import OrderProductTable from './OrderProductTable';
-import { CustomerSelect } from '@/components/shared/selects';
-import OrderTotalHeader from '@/components/orders/OrderTotalHeader';
 import CategoryCardList from '@/components/shared/CategoryCardList';
+import OrderFormHeader from './OrderFormHeader';
+import OrderFormError from './OrderFormError';
 import {
   useOrderForm,
   type OrderProducto,
   type OrderCategory,
-  type OrderProductoPayload
+  type OrderProductoPayload,
 } from '@/hooks/personal';
 
 const CategoryProductsModal = dynamic(() => import('@/components/orders/CategoryProductsModal'), {
@@ -20,7 +21,7 @@ const CategoryProductsModal = dynamic(() => import('@/components/orders/Category
       </div>
     </div>
   ),
-  ssr: false
+  ssr: false,
 });
 
 interface OrderFormProps {
@@ -62,7 +63,7 @@ export default function OrderForm({
   searchCliente,
   setSearchCliente,
   searchAnfitriona,
-  setSearchAnfitriona
+  setSearchAnfitriona,
 }: OrderFormProps) {
   const {
     modalOpen,
@@ -87,7 +88,7 @@ export default function OrderForm({
     handleOtherProductHostessChange,
     handleRoomChange,
     handleAgregarProducto,
-    handleSubmitInternal
+    handleSubmitInternal,
   } = useOrderForm({
     productos,
     selectedCliente,
@@ -96,29 +97,8 @@ export default function OrderForm({
     onUpdateCantidad,
     onAssignHostess,
     onToggleComision,
-    onSubmit
+    onSubmit,
   });
-
-  const handleUpdateCantidadAction = useCallback(
-    (index: number, nuevaCantidad: number) => {
-      if (onUpdateCantidad) onUpdateCantidad(index, nuevaCantidad);
-    },
-    [onUpdateCantidad]
-  );
-
-  const handleAssignHostessAction = useCallback(
-    (index: number, hostessId: string) => {
-      onAssignHostess?.(index, hostessId);
-    },
-    [onAssignHostess]
-  );
-
-  const handleToggleComisionAction = useCallback(
-    (index: number) => {
-      if (onToggleComision) onToggleComision(index);
-    },
-    [onToggleComision]
-  );
 
   return (
     <div className='space-y-8'>
@@ -128,28 +108,17 @@ export default function OrderForm({
         filter={(c: OrderCategory) => c.status === 1 && (c.total_products || 0) > 0}
       />
 
-      <div className='mb-6 grid grid-cols-1 gap-6 lg:grid-cols-2 lg:items-start'>
-        <div className='flex-1'>
-          <CustomerSelect
-            clientes={clientes}
-            value={selectedCliente}
-            onChange={setSelectedCliente}
-            label='Cliente (Opcional)'
-            placeholder='Sin cliente seleccionado'
-            required={false}
-            className='w-full'
-          />
-        </div>
-
-        <OrderTotalHeader
-          total={total}
-          subtotal={subtotal}
-          onSubmit={handleSubmitInternal}
-          tipPercentage={propina}
-          tipEnabled={propinaHabilitada}
-          onTipChange={handleTipChange}
-        />
-      </div>
+      <OrderFormHeader
+        clientes={clientes}
+        selectedCliente={selectedCliente}
+        onClienteChange={setSelectedCliente}
+        total={total}
+        subtotal={subtotal}
+        tipPercentage={propina}
+        tipEnabled={propinaHabilitada}
+        onSubmit={handleSubmitInternal}
+        onTipChange={handleTipChange}
+      />
 
       <CategoryProductsModal
         open={modalOpen}
@@ -171,11 +140,7 @@ export default function OrderForm({
         onRoomChange={handleRoomChange}
       />
 
-      {error && (
-        <div className='rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700 dark:border-red-900/70 dark:bg-red-950/40 dark:text-red-300'>
-          {error}
-        </div>
-      )}
+      <OrderFormError message={error} />
 
       <div className='mt-8'>
         <div className='mb-4 text-center'>
@@ -189,9 +154,9 @@ export default function OrderForm({
         <OrderProductTable
           productos={productos}
           onRemoveProducto={onRemoveProducto}
-          onUpdateCantidad={handleUpdateCantidadAction}
-          onToggleComision={handleToggleComisionAction}
-          onAssignHostess={handleAssignHostessAction}
+          onUpdateCantidad={onUpdateCantidad}
+          onToggleComision={onToggleComision}
+          onAssignHostess={onAssignHostess}
           anfitrionas={anfitrionas}
           habitaciones={rooms}
         />

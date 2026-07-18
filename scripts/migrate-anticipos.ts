@@ -1,11 +1,12 @@
 import mysql from 'mysql2/promise';
+import 'dotenv/config';
 
 const config = {
-  host: '127.0.0.1',
-  user: 'root',
-  password: '',
-  database: 'lasmunecasderamon',
-  port: 3306,
+  host: process.env.DB_HOST || '127.0.0.1',
+  user: process.env.DB_USER || 'root',
+  password: process.env.DB_PASSWORD || '',
+  database: process.env.DB_NAME || 'lasmunecasderamon',
+  port: parseInt(process.env.DB_PORT || '3306', 10),
   timezone: '-04:00',
   dateStrings: true,
   charset: 'utf8mb4'

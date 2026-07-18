@@ -130,7 +130,7 @@ export function DevolucionesVentasPageClient() {
       {}
       <div className='flex gap-2 mb-4'>
         <Button
-          variant={activeTab === 'pendientes' ? 'default' : 'outline'}
+          variant={activeTab === 'pendientes' ? 'default' : 'outline-solid'}
           onClick={() => setActiveTab('pendientes')}
           className='flex items-center gap-2'
         >
@@ -138,7 +138,7 @@ export function DevolucionesVentasPageClient() {
           Pendientes ({solicitudes.length})
         </Button>
         <Button
-          variant={activeTab === 'anuladas' ? 'default' : 'outline'}
+          variant={activeTab === 'anuladas' ? 'default' : 'outline-solid'}
           onClick={() => setActiveTab('anuladas')}
           className='flex items-center gap-2'
         >
@@ -149,7 +149,7 @@ export function DevolucionesVentasPageClient() {
 
       {}
       {activeTab === 'pendientes' && (
-        <Card className='shadow-sm'>
+        <Card className='shadow-xs'>
           <CardHeader className='p-4 sm:p-6'>
             <CardTitle className='text-lg sm:text-xl lg:text-2xl'>
               Solicitudes de Anulación Pendientes
@@ -219,7 +219,7 @@ export function DevolucionesVentasPageClient() {
             clearFilters={clearFilters}
           />
 
-          <Card className='shadow-sm'>
+          <Card className='shadow-xs'>
             <CardHeader className='p-4 sm:p-6'>
               <CardTitle className='text-lg sm:text-xl lg:text-2xl'>
                 Ventas Anuladas ({filteredVentas.length})

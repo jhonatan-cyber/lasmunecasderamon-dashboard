@@ -1,8 +1,8 @@
 import { NextResponse } from 'next/server';
-import { withAppAuth } from '@/lib/api/app-api-wrapper';
+import { withRoute } from '@/lib/api/withRoute';
 import { NotificationService } from '@/lib/services/NotificationService';
 
-export const GET = withAppAuth(async (request: Request, { user }: { params: any; user: any }) => {
+export const GET = withRoute({ auth: true, audit: true }, async (request: Request, { user }: { params: any; user: any }) => {
   const { searchParams } = new URL(request.url);
   const type = searchParams.get('type');
 
@@ -18,7 +18,7 @@ export const GET = withAppAuth(async (request: Request, { user }: { params: any;
   return NextResponse.json({ success: true, data });
 });
 
-export const POST = withAppAuth(async (request: Request, { user }: { params: any; user: any }) => {
+export const POST = withRoute({ auth: true, audit: true }, async (request: Request, { user }: { params: any; user: any }) => {
   const { token, deviceType } = await request.json();
   await NotificationService.registerToken(user.id.toString(), token, deviceType);
   return NextResponse.json({ success: true, message: 'Token registrado' });

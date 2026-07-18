@@ -166,7 +166,7 @@ export default function OperationalAlerts() {
 
   return (
     <Card className='overflow-hidden border-slate-200/80 dark:border-slate-800'>
-      <CardHeader className='border-b border-slate-200/80 bg-gradient-to-r from-slate-50 to-white dark:border-slate-800 dark:from-slate-950 dark:to-slate-900'>
+      <CardHeader className='border-b border-slate-200/80 bg-linear-to-r from-slate-50 to-white dark:border-slate-800 dark:from-slate-950 dark:to-slate-900'>
         <div className='flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between'>
           <div>
             <CardTitle className='flex items-center gap-2 text-xl'>
@@ -222,7 +222,7 @@ export default function OperationalAlerts() {
               <div className='flex items-start justify-between gap-3'>
                 <div
                   className={cn(
-                    'flex h-10 w-10 items-center justify-center rounded-2xl bg-white/80 shadow-sm dark:bg-black/10',
+                    'flex h-10 w-10 items-center justify-center rounded-2xl bg-white/80 shadow-xs dark:bg-black/10',
                     severity.icon
                   )}
                 >
@@ -260,7 +260,7 @@ export default function OperationalAlerts() {
 
         {summary.occupiedRooms === 0 && (
           <div className='rounded-2xl border border-dashed border-slate-300 bg-slate-50/70 p-4 dark:border-slate-700 dark:bg-slate-900/40'>
-            <div className='flex h-10 w-10 items-center justify-center rounded-2xl bg-white shadow-sm dark:bg-slate-800'>
+            <div className='flex h-10 w-10 items-center justify-center rounded-2xl bg-white shadow-xs dark:bg-slate-800'>
               <DoorClosed className='h-5 w-5 text-slate-500' />
             </div>
             <p className='mt-4 text-sm font-semibold text-slate-900 dark:text-slate-100'>

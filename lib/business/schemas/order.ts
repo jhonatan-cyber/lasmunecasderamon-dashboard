@@ -11,9 +11,9 @@ export const OrderSchema = z.object({
   propina: z.number().optional().default(0),
   estado: z.number().optional().default(1),
   fecha_crea: z.string().or(z.date()).optional(),
-  cliente_nombre: z.string().optional(),
-  mesero_nombre: z.string().optional(),
-  mesero_nick: z.string().optional(),
+  cliente_nombre: z.string().nullable().optional(),
+  mesero_nombre: z.string().nullable().optional(),
+  mesero_nick: z.string().nullable().optional(),
   nicks: z.string().nullable().optional(),
 });
 

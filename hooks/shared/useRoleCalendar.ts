@@ -312,7 +312,7 @@ export function useRoleCalendar({ role, userId }: UseRoleCalendarProps): UseRole
     } finally {
       setIsLoading(false);
     }
-  }, [currentDate, userId, role]);
+  }, [currentDate, userId, role, isAnfitriona]);
 
   useEffect(() => {
     fetchCalendarData();

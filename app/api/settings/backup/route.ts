@@ -1,9 +1,9 @@
 import { NextResponse } from 'next/server';
-import { withAppAuth } from '@/lib/api/app-api-wrapper';
+import { withRoute } from '@/lib/api/withRoute';
 import { query } from '@/lib/database/db';
 import { logger } from '@/lib/utils/logger';
 
-export const POST = withAppAuth(
+export const POST = withRoute({ auth: true, audit: true, module: 'settings', action: 'write' },
   async (request: Request, { user }: { params: any; user: any }) => {
     const body = await request.json();
     const { nombre, descripcion } = body;
@@ -82,11 +82,10 @@ export const POST = withAppAuth(
         fecha_crea: now
       }
     });
-  },
-  { requiredPermission: { module: 'settings', action: 'write' } }
+  }
 );
 
-export const GET = withAppAuth(
+export const GET = withRoute({ auth: true, audit: true, module: 'settings', action: 'read' },
   async () => {
     const backups = (await query(`
       SELECT id_backup, nombre, descripcion, tablas_incluidas, registros_count,
@@ -103,6 +102,5 @@ export const GET = withAppAuth(
     }));
 
     return NextResponse.json({ success: true, backups: parsedBackups });
-  },
-  { requiredPermission: { module: 'settings', action: 'read' } }
+  }
 );

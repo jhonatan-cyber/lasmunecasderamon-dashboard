@@ -1,11 +1,12 @@
 const mysql = require('mysql2/promise');
+require('dotenv').config({ path: require('path').resolve(__dirname, '..', '.env') });
 
 const config = {
-  host: '***REMOVED***',
-  user: 'nuwesoft',
-  password: '***REMOVED***',
-  database: 'lasmunecasderamon',
-  port: 3306
+  host: process.env.DB_HOST || 'localhost',
+  user: process.env.DB_USER || 'root',
+  password: process.env.DB_PASSWORD || '',
+  database: process.env.DB_NAME || 'lasmunecasderamon',
+  port: parseInt(process.env.DB_PORT || '3306', 10)
 };
 
 async function main() {

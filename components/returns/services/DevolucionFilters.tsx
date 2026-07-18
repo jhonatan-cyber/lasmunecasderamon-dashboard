@@ -24,7 +24,7 @@ export const DevolucionFilters = ({
   updateFilter,
   clearFilters
 }: DevolucionFiltersProps) => (
-  <Card className='mb-4 sm:mb-6 shadow-sm'>
+  <Card className='mb-4 sm:mb-6 shadow-xs'>
     <CardContent className='pt-4 sm:pt-6 p-4 sm:p-6'>
       <div className='flex flex-col gap-4 sm:gap-6'>
         {}
@@ -97,7 +97,7 @@ export const DevolucionFilters = ({
                     onClick={clearFilters}
                     variant='outline'
                     size='icon'
-                    className='w-10 h-10 flex items-center justify-center rounded-2xl border-gray-200 dark:border-gray-800 hover:scale-110 transition-all duration-200 hover:bg-black hover:text-white dark:hover:bg-white dark:hover:text-black shadow-sm'
+                    className='w-10 h-10 flex items-center justify-center rounded-2xl border-gray-200 dark:border-gray-800 hover:scale-110 transition-all duration-200 hover:bg-black hover:text-white dark:hover:bg-white dark:hover:text-black shadow-xs'
                   >
                     <Trash2 className='w-4 h-4' />
                   </Button>

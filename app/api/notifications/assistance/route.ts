@@ -1,10 +1,10 @@
 import { NextResponse } from 'next/server';
-import { withAppAuth } from '@/lib/api/app-api-wrapper';
+import { withRoute } from '@/lib/api/withRoute';
 import { NotificationService } from '@/lib/services/NotificationService';
 import { sendNotificationToAll } from '@/lib/api/sseService';
 import { ValidationError } from '@/lib/errors/errors';
 
-export const POST = withAppAuth(async (request: Request, { user }: { params: any; user: any }) => {
+export const POST = withRoute({ auth: true, audit: true }, async (request: Request, { user }: { params: any; user: any }) => {
   const { servicioId, roomName, type } = await request.json();
 
   if (!servicioId || !roomName || !type)

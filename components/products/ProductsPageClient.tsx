@@ -3,7 +3,7 @@
 import { useRouter } from 'next/navigation';
 import { useCategories, Category } from '@/hooks/productos/useCategories';
 import { PermissionGuard } from '@/components/auth/PermissionGuard';
-import { ProductsSkeleton } from '@/components/shared/Skeletons';
+import { Skeleton as BoneyardSkeleton } from 'boneyard-js/react';
 import CategoryCard from '@/components/products/CategoryCard';
 
 export function ProductsPageClient() {
@@ -11,10 +11,9 @@ export function ProductsPageClient() {
   const { filteredCategories, isLoading: categoriesLoading } = useCategories();
   const activeCategories = (filteredCategories as Category[]).filter(cat => cat.status === 1);
 
-  if (categoriesLoading) return <ProductsSkeleton />;
-
   return (
     <PermissionGuard module='products' action='view'>
+      <BoneyardSkeleton name="products-main" loading={categoriesLoading}>
       <div className='p-4 sm:p-6 lg:p-10 space-y-4 sm:space-y-6 mt-4 sm:mt-6 lg:mt-10'>
         <div>
           <h1 className='text-xl sm:text-2xl lg:text-3xl font-bold text-gray-900'>Productos</h1>
@@ -39,6 +38,7 @@ export function ProductsPageClient() {
           </div>
         )}
       </div>
+      </BoneyardSkeleton>
     </PermissionGuard>
   );
 }

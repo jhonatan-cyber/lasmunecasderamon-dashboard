@@ -57,7 +57,7 @@ export function PayrollCalendarDetailModal({
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className='max-w-2xl w-full max-h-[90vh] flex flex-col p-0'>
-        <DialogHeader className='flex-shrink-0 px-6 pt-6 pb-4 border-b'>
+        <DialogHeader className='shrink-0 px-6 pt-6 pb-4 border-b'>
           <DialogTitle className='text-lg font-semibold'>
             {detailTitle}
             <span className='ml-2 text-gray-500 font-normal'>{selectedItem.codigo}</span>
@@ -263,7 +263,7 @@ export function PayrollCalendarDetailModal({
           </div>
         </div>
 
-        <div className='flex-shrink-0 border-t px-6 py-4'>
+        <div className='shrink-0 border-t px-6 py-4'>
           <div className='flex justify-center'>
             <Button
               variant='outline'

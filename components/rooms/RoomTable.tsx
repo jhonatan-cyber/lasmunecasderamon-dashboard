@@ -1,3 +1,5 @@
+'use client';
+
 import React, { useState, useMemo } from "react";
 import { Room } from "@/types/room";
 import { MoreVertical, Edit, Trash2, Check, Power, Bed, GripVertical } from "lucide-react";
@@ -314,7 +316,7 @@ const RoomTable: React.FC<RoomTableProps> = ({
   return (
     <TooltipProvider>
       <div className='space-y-4'>
-        <div className='bg-white dark:bg-slate-900/40 backdrop-blur-sm rounded-3xl border-none shadow-md overflow-hidden'>
+        <div className='bg-white dark:bg-slate-900/40 backdrop-blur-xs rounded-3xl border-none shadow-md overflow-hidden'>
           <div className='overflow-x-auto'>
             <DndContext
               sensors={sensors}

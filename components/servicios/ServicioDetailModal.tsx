@@ -42,7 +42,7 @@ export function ServicioDetailModal({
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className='max-w-2xl max-h-[90vh] flex flex-col p-0 bg-white dark:bg-neutral-900'>
-        <DialogHeader className='flex-shrink-0 px-6 pt-6 pb-4 border-b'>
+        <DialogHeader className='shrink-0 px-6 pt-6 pb-4 border-b'>
           <DialogTitle className='text-center text-lg font-bold text-black dark:text-neutral-100'>
             Información del Servicio
           </DialogTitle>
@@ -231,7 +231,7 @@ export function ServicioDetailModal({
           </div>
         </div>
 
-        <div className='flex-shrink-0 border-t px-6 py-4'>
+        <div className='shrink-0 border-t px-6 py-4'>
           <div className='flex justify-center gap-4'>
             {mostrarBotonEditar && (
               <Button

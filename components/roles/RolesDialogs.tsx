@@ -70,7 +70,7 @@ export function RolesDialogs({
         }}
       >
         <DialogContent className='w-[95vw] max-w-[95vw] sm:w-auto sm:max-w-[500px] max-h-[90vh] flex flex-col p-0'>
-          <DialogHeader className='flex-shrink-0 px-6 pt-6 pb-4 border-b'>
+          <DialogHeader className='shrink-0 px-6 pt-6 pb-4 border-b'>
             <DialogTitle className='text-lg sm:text-xl lg:text-2xl'>
               {isEditMode ? 'Editar Rol' : 'Agregar Nuevo Rol'}
             </DialogTitle>
@@ -87,7 +87,7 @@ export function RolesDialogs({
               hideButtons={true}
             />
           </div>
-          <div className='flex-shrink-0 border-t px-6 py-4'>
+          <div className='shrink-0 border-t px-6 py-4'>
             <div className='flex flex-col sm:flex-row justify-center gap-2 w-full'>
               <Button
                 type='button'
@@ -124,7 +124,7 @@ export function RolesDialogs({
 
       <Dialog open={isPermissionsModalOpen} onOpenChange={setIsPermissionsModalOpen}>
         <DialogContent className='w-[95vw] max-w-[95vw] sm:hidden h-[90vh] flex flex-col p-0 overflow-hidden'>
-          <DialogHeader className='flex-shrink-0 px-4 pt-4 pb-3 border-b'>
+          <DialogHeader className='shrink-0 px-4 pt-4 pb-3 border-b'>
             <DialogTitle className='text-base font-semibold'>
               {selectedRole ? `Permisos del Rol: ${selectedRole.name}` : 'Permisos del Rol'}
             </DialogTitle>

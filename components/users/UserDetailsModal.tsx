@@ -128,7 +128,7 @@ export function UserDetailsModal({ user, isOpen, onClose }: UserDetailsModalProp
                   </h3>
                   <div className='space-y-2 sm:space-y-3'>
                     <div className='flex items-start'>
-                      <CreditCard className='h-3 w-3 sm:h-4 sm:w-4 mt-1 mr-2 text-gray-400 flex-shrink-0' />
+                      <CreditCard className='h-3 w-3 sm:h-4 sm:w-4 mt-1 mr-2 text-gray-400 shrink-0' />
                       <div>
                         <p className='text-xs sm:text-sm font-medium'>ID</p>
                         <p className='text-xs sm:text-sm text-gray-600 font-mono'>
@@ -138,7 +138,7 @@ export function UserDetailsModal({ user, isOpen, onClose }: UserDetailsModalProp
                     </div>
 
                     <div className='flex items-start'>
-                      <CreditCard className='h-3 w-3 sm:h-4 sm:w-4 mt-1 mr-2 text-gray-400 flex-shrink-0' />
+                      <CreditCard className='h-3 w-3 sm:h-4 sm:w-4 mt-1 mr-2 text-gray-400 shrink-0' />
                       <div>
                         <p className='text-xs sm:text-sm font-medium'>RUT</p>
                         <p className='text-xs sm:text-sm text-gray-600'>
@@ -148,7 +148,7 @@ export function UserDetailsModal({ user, isOpen, onClose }: UserDetailsModalProp
                     </div>
 
                     <div className='flex items-start'>
-                      <AtSign className='h-3 w-3 sm:h-4 sm:w-4 mt-1 mr-2 text-gray-400 flex-shrink-0' />
+                      <AtSign className='h-3 w-3 sm:h-4 sm:w-4 mt-1 mr-2 text-gray-400 shrink-0' />
                       <div>
                         <p className='text-xs sm:text-sm font-medium'>Email</p>
                         <p className='text-xs sm:text-sm text-gray-600'>
@@ -158,7 +158,7 @@ export function UserDetailsModal({ user, isOpen, onClose }: UserDetailsModalProp
                     </div>
 
                     <div className='flex items-start'>
-                      <Phone className='h-3 w-3 sm:h-4 sm:w-4 mt-1 mr-2 text-gray-400 flex-shrink-0' />
+                      <Phone className='h-3 w-3 sm:h-4 sm:w-4 mt-1 mr-2 text-gray-400 shrink-0' />
                       <div>
                         <p className='text-xs sm:text-sm font-medium'>Teléfono</p>
                         <p className='text-xs sm:text-sm text-gray-600'>
@@ -168,7 +168,7 @@ export function UserDetailsModal({ user, isOpen, onClose }: UserDetailsModalProp
                     </div>
 
                     <div className='flex items-start'>
-                      <MapPin className='h-3 w-3 sm:h-4 sm:w-4 mt-1 mr-2 text-gray-400 flex-shrink-0' />
+                      <MapPin className='h-3 w-3 sm:h-4 sm:w-4 mt-1 mr-2 text-gray-400 shrink-0' />
                       <div>
                         <p className='text-xs sm:text-sm font-medium'>Dirección</p>
                         <p className='text-xs sm:text-sm text-gray-600'>
@@ -178,7 +178,7 @@ export function UserDetailsModal({ user, isOpen, onClose }: UserDetailsModalProp
                     </div>
 
                     <div className='flex items-start'>
-                      <Heart className='h-3 w-3 sm:h-4 sm:w-4 mt-1 mr-2 text-gray-400 flex-shrink-0' />
+                      <Heart className='h-3 w-3 sm:h-4 sm:w-4 mt-1 mr-2 text-gray-400 shrink-0' />
                       <div>
                         <p className='text-xs sm:text-sm font-medium'>Estado Civil</p>
                         <Badge
@@ -196,7 +196,7 @@ export function UserDetailsModal({ user, isOpen, onClose }: UserDetailsModalProp
                     </div>
 
                     <div className='flex items-start'>
-                      <Building className='h-3 w-3 sm:h-4 sm:w-4 mt-1 mr-2 text-gray-400 flex-shrink-0' />
+                      <Building className='h-3 w-3 sm:h-4 sm:w-4 mt-1 mr-2 text-gray-400 shrink-0' />
                       <div>
                         <p className='text-xs sm:text-sm font-medium'>AFP</p>
                         <p className='text-xs sm:text-sm text-gray-600'>
@@ -214,7 +214,7 @@ export function UserDetailsModal({ user, isOpen, onClose }: UserDetailsModalProp
                   </h3>
                   <div className='space-y-2 sm:space-y-3'>
                     <div className='flex items-start'>
-                      <TrendingUp className='h-3 w-3 sm:h-4 sm:w-4 mt-1 mr-2 text-gray-400 flex-shrink-0' />
+                      <TrendingUp className='h-3 w-3 sm:h-4 sm:w-4 mt-1 mr-2 text-gray-400 shrink-0' />
                       <div>
                         <p className='text-xs sm:text-sm font-medium'>Sueldo</p>
                         <p className='text-sm text-gray-600'>
@@ -224,7 +224,7 @@ export function UserDetailsModal({ user, isOpen, onClose }: UserDetailsModalProp
                     </div>
 
                     <div className='flex items-start'>
-                      <DollarSign className='h-4 w-4 mt-1 mr-2 text-gray-400 flex-shrink-0' />
+                      <DollarSign className='h-4 w-4 mt-1 mr-2 text-gray-400 shrink-0' />
                       <div>
                         <p className='text-sm font-medium'>Aporte AFP</p>
                         <p className='text-sm text-gray-600'>
@@ -234,7 +234,7 @@ export function UserDetailsModal({ user, isOpen, onClose }: UserDetailsModalProp
                     </div>
 
                     <div className='flex items-start'>
-                      <Coins className='h-4 w-4 mt-1 mr-2 text-gray-400 flex-shrink-0' />
+                      <Coins className='h-4 w-4 mt-1 mr-2 text-gray-400 shrink-0' />
                       <div>
                         <p className='text-sm font-medium'>Descuento de habitación</p>
                         <p className='text-sm text-gray-600'>
@@ -270,7 +270,7 @@ export function UserDetailsModal({ user, isOpen, onClose }: UserDetailsModalProp
         <div className='border-t p-4 bg-gray-50 dark:bg-slate-900/50 flex justify-center px-6 rounded-b-2xl'>
           <Button
             onClick={onClose}
-            className='bg-black text-white dark:bg-black dark:text-white dark:hover:!bg-white dark:hover:!text-black rounded-full px-8 transition-all hover:!bg-white hover:!text-black hover:scale-105 border-2'
+            className='bg-black text-white dark:bg-black dark:text-white dark:hover:bg-white! dark:hover:text-black! rounded-full px-8 transition-all hover:bg-white! hover:text-black! hover:scale-105 border-2'
           >
             Cerrar
           </Button>

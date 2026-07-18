@@ -1,3 +1,5 @@
+'use client';
+
 import { Card } from '@/components/ui/card';
 import { Wine, ChevronLeft, ChevronRight, Loader2 } from 'lucide-react';
 import React, { useState } from 'react';

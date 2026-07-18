@@ -92,7 +92,7 @@ export default function CommissionsDetalleModal({
   return (
     <Dialog open={open} onOpenChange={onClose}>
       <DialogContent className='w-[98vw] max-w-6xl max-h-[90vh] flex flex-col p-0'>
-        <DialogHeader className='flex-shrink-0 px-2 sm:px-4 pt-4 sm:pt-6 pb-2 border-b dark:border-gray-800'>
+        <DialogHeader className='shrink-0 px-2 sm:px-4 pt-4 sm:pt-6 pb-2 border-b dark:border-gray-800'>
           <DialogTitle className='text-center text-base sm:text-lg font-semibold dark:text-gray-100'>
             Detalle de Comisiones
           </DialogTitle>
@@ -150,7 +150,7 @@ export default function CommissionsDetalleModal({
             <h3 className='text-sm font-semibold mb-4 text-center text-gray-600 dark:text-gray-400'>
               Detalle de Comisiones
             </h3>
-            <div className='bg-white dark:bg-slate-900/40 backdrop-blur-sm rounded-3xl border-none shadow-md overflow-hidden'>
+            <div className='bg-white dark:bg-slate-900/40 backdrop-blur-xs rounded-3xl border-none shadow-md overflow-hidden'>
               <div className='overflow-x-auto'>
                 <Table className='min-w-full text-base text-center'>
                   <TableHeader className='bg-gray-100 dark:bg-slate-900/50'>
@@ -278,7 +278,7 @@ export default function CommissionsDetalleModal({
         </div>
 
         {}
-        <div className='flex-shrink-0 border-t dark:border-gray-800 px-2 sm:px-4 py-4'>
+        <div className='shrink-0 border-t dark:border-gray-800 px-2 sm:px-4 py-4'>
           <div className='flex justify-center'>
             <Button
               size='sm'

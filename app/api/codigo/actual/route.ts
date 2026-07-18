@@ -1,11 +1,11 @@
 import { NextResponse } from 'next/server';
-import { withAppAuth } from '@/lib/api/app-api-wrapper';
+import { withRoute } from '@/lib/api/withRoute';
 import { ApiResponse } from '@/lib/api/api-response';
 import { query } from '@/lib/database/db';
 import { logger } from '@/lib/utils/logger';
 import { generateRandomCode4 } from '@/lib/utils/codeUtils';
 
-export const GET = withAppAuth(async (_request: Request, { user }: { params: any; user: any }) => {
+export const GET = withRoute({ auth: true, audit: true }, async (_request: Request, { user }: { params: any; user: any }) => {
   try {
     const role = String(user?.role || '').toLowerCase();
     const canReadAttendanceCode =

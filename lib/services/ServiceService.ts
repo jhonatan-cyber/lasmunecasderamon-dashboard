@@ -5,6 +5,7 @@ import { ServiceRepository } from '@/lib/repositories/ServiceRepository';
 import { CashRegisterRepository } from '@/lib/repositories/CashRegisterRepository';
 import { RoomManager } from '@/lib/services/RoomManager';
 import { sendNotificationToAll } from '@/lib/api/sseService';
+import { invalidateDashboardCache } from '@/lib/cache/dashboardCache';
 import { BusinessError } from '@/lib/errors/errors';
 import { z } from 'zod';
 import {
@@ -48,28 +49,11 @@ export class ServiceService {
     const pagosMixtos: MixedPayment[] = parsePagosMixtos(v.pagos_mixtos);
 
     const cajaId = await CashRegisterRepository.getCurrentCajaId();
-    const numAnfitrionas = Math.max(1, v.usuarios.length);
-    const precioServicioInput = Number(v.precio_servicio || 0);
-
-    let comisionHabitacion = 0;
-    if (v.habitacion_id) {
-      const habitacion = await query<any[]>(
-        'SELECT comision_anfitriona FROM habitaciones WHERE id_habitacion = ?',
-        [v.habitacion_id]
-      );
-      comisionHabitacion = Number(habitacion[0]?.comision_anfitriona || 0);
-    }
-
-    const tieneComisionHabitacion = comisionHabitacion > 0;
-    const comisionIndividualBase = tieneComisionHabitacion
-      ? Math.floor(comisionHabitacion / numAnfitrionas)
-      : precioServicioInput;
-    const comisionTotal = tieneComisionHabitacion
-      ? comisionHabitacion
-      : precioServicioInput * numAnfitrionas;
 
     const result = await withTransaction(async trx => {
       let prepagoMonto = 0;
+      const numAnfitrionas = Math.max(1, v.usuarios.length);
+      const precioServicioInput = Number(v.precio_servicio || 0);
       const esMixto = v.metodo_pago === 'mixto';
       const prepagoSolicitado = esMixto
         ? pagosMixtos
@@ -94,7 +78,9 @@ export class ServiceService {
         });
       }
 
+      // OPTIMIZACIÓN: Query ÚNICA de habitación (antes se hacía 2 veces)
       let esLibreIngreso = false;
+      let comisionHabitacion = 0;
       if (v.habitacion_id) {
         const roomRows = await trx<any[]>(
           'SELECT precio, comision_anfitriona FROM habitaciones WHERE id_habitacion = ?',
@@ -103,9 +89,18 @@ export class ServiceService {
         if (roomRows.length > 0) {
           const roomPrice = Number(roomRows[0].precio || 0);
           const roomCommission = Number(roomRows[0].comision_anfitriona || 0);
+          comisionHabitacion = roomCommission;
           esLibreIngreso = roomPrice <= 0 || roomCommission <= 0;
         }
       }
+
+      const tieneComisionHabitacion = comisionHabitacion > 0;
+      const comisionIndividualBase = tieneComisionHabitacion
+        ? Math.floor(comisionHabitacion / numAnfitrionas)
+        : precioServicioInput;
+      const comisionTotal = tieneComisionHabitacion
+        ? comisionHabitacion
+        : precioServicioInput * numAnfitrionas;
 
       await ServiceRepository.rawInsert(trx, {
         id_servicio: servicioId,
@@ -148,31 +143,53 @@ export class ServiceService {
         [commissionId, servicioId, comisionTotal, now]
       );
 
+      // OPTIMIZACIÓN: Batch inserts para hostesses (antes 2N queries)
       const remainder = tieneComisionHabitacion ? comisionTotal % numAnfitrionas : 0;
+
+      const detalleComisionRows: Array<Record<string, unknown>> = [];
+      const detalleServicioRows: Array<Record<string, unknown>> = [];
 
       for (const [index, uId] of hostessIds.entries()) {
         const comisionIndividual = comisionIndividualBase + (index === 0 ? remainder : 0);
 
-        await trx(
-          'INSERT INTO detalle_comisiones (id_detalle_comision, comision_id, usuario_id, comision, estado, fecha_crea) VALUES (?, ?, ?, ?, 1, ?)',
-          [generateUUID(), commissionId, uId, comisionIndividual, now]
-        );
+        detalleComisionRows.push({
+          id_detalle_comision: generateUUID(),
+          comision_id: commissionId,
+          usuario_id: uId,
+          comision: comisionIndividual,
+          estado: 1,
+          fecha_crea: now
+        });
 
-        await trx(
-          'INSERT INTO detalle_servicios (id_detalle_servicio, usuario_id, servicio_id, comision, fecha_crea) VALUES (?, ?, ?, ?, ?)',
-          [generateUUID(), uId, servicioId, comisionIndividual, now]
-        );
+        detalleServicioRows.push({
+          id_detalle_servicio: generateUUID(),
+          usuario_id: uId,
+          servicio_id: servicioId,
+          comision: comisionIndividual,
+          fecha_crea: now
+        });
       }
 
+      if (detalleComisionRows.length > 0) {
+        await ServiceService.batchInsertDetalleComisiones(trx, detalleComisionRows);
+      }
+      if (detalleServicioRows.length > 0) {
+        await ServiceService.batchInsertDetalleServicios(trx, detalleServicioRows);
+      }
+
+      // OPTIMIZACIÓN: Batch insert para clientes (antes M queries)
       const clientesArray =
         v.clientes && v.clientes.length > 0 ? v.clientes : v.cliente_id ? [v.cliente_id] : [];
-      for (const clienteId of clientesArray) {
-        if (clienteId) {
-          await trx(
-            'INSERT INTO detalle_servicios_clientes (id, servicio_id, cliente_id) VALUES (?, ?, ?)',
-            [generateUUID(), servicioId, clienteId]
-          );
-        }
+      const clientRows = clientesArray
+        .filter(Boolean)
+        .map(clienteId => [generateUUID(), servicioId, clienteId]);
+
+      if (clientRows.length > 0) {
+        const placeholders = clientRows.map(() => '(?, ?, ?)').join(', ');
+        await trx(
+          `INSERT INTO detalle_servicios_clientes (id, servicio_id, cliente_id) VALUES ${placeholders}`,
+          clientRows.flat()
+        );
       }
 
       if (cajaId) {
@@ -208,7 +225,42 @@ export class ServiceService {
 
     sendNotificationToAll('timers_updated', { timestamp: now });
 
+    // Invalidar caché del dashboard al crear un servicio
+    invalidateDashboardCache({ userId: createdBy });
+
     return result;
+  }
+
+  // ================================================================
+  // OPTIMIZACIÓN: Batch inserts para reducir queries N+1
+  // ================================================================
+
+  private static async batchInsertDetalleComisiones(
+    trx: any,
+    rows: Array<Record<string, unknown>>
+  ): Promise<void> {
+    const columns = ['id_detalle_comision', 'comision_id', 'usuario_id', 'comision', 'estado', 'fecha_crea'];
+    const placeholders = rows.map(() => `(${columns.map(() => '?').join(', ')})`).join(', ');
+    const values = rows.flatMap(row => columns.map(col => row[col]));
+
+    await trx(
+      `INSERT INTO detalle_comisiones (${columns.join(', ')}) VALUES ${placeholders}`,
+      values
+    );
+  }
+
+  private static async batchInsertDetalleServicios(
+    trx: any,
+    rows: Array<Record<string, unknown>>
+  ): Promise<void> {
+    const columns = ['id_detalle_servicio', 'usuario_id', 'servicio_id', 'comision', 'fecha_crea'];
+    const placeholders = rows.map(() => `(${columns.map(() => '?').join(', ')})`).join(', ');
+    const values = rows.flatMap(row => columns.map(col => row[col]));
+
+    await trx(
+      `INSERT INTO detalle_servicios (${columns.join(', ')}) VALUES ${placeholders}`,
+      values
+    );
   }
 
   static async getAll(params: Record<string, string | undefined>) {

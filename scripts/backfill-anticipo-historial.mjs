@@ -2,9 +2,15 @@ import 'dotenv/config';
 import mysql from 'mysql2/promise';
 
 async function backfill() {
+  if (!process.env.DB_PASSWORD) {
+    console.error('❌ ERROR: DB_PASSWORD no está definida en el archivo .env');
+    console.error('   Creá un archivo .env con las credenciales de la base de datos');
+    process.exit(1);
+  }
+
   const connection = await mysql.createConnection({
-    host: process.env.DB_HOST || '***REMOVED***',
-    user: process.env.DB_USER || 'nuwesoft',
+    host: process.env.DB_HOST || '127.0.0.1',
+    user: process.env.DB_USER || 'root',
     password: process.env.DB_PASSWORD,
     database: process.env.DB_NAME || 'lasmunecasderamon',
     port: Number(process.env.DB_PORT || 3306),

@@ -1,3 +1,5 @@
+'use client';
+
 import React, { useMemo } from 'react';
 import { Button } from '../ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../ui/select';
@@ -109,7 +111,7 @@ export function Pagination({
           {visiblePages.map(page => (
             <Button
               key={page}
-              variant={currentPage === page ? 'default' : 'outline'}
+              variant={currentPage === page ? 'default' : 'outline-solid'}
               size='sm'
               onClick={() => onPageChange(page)}
               className='w-8 h-8 p-0'

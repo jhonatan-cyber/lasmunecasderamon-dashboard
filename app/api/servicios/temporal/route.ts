@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server';
-import { withAppAuth } from '@/lib/api/app-api-wrapper';
+import { withRoute } from '@/lib/api/withRoute';
 import { ServiceService } from '@/lib/services/ServiceService';
 import { sendNotificationToAll } from '@/lib/api/sseService';
 
@@ -8,7 +8,7 @@ function toStringArray(value: unknown): string[] {
   return value.map(item => String(item ?? '').trim()).filter(Boolean);
 }
 
-export const POST = withAppAuth(async (request: Request, { user }) => {
+export const POST = withRoute({ auth: true, audit: true }, async (request: Request, { user }) => {
   const body = await request.json();
 
   const payload = {

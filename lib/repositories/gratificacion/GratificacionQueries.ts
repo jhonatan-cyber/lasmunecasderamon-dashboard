@@ -3,7 +3,9 @@ import { getNowInBusinessTimezone } from '@/lib/business/timezoneService';
 import { enviarWhatsApp } from '@/lib/integrations/whatsappService';
 import { sendNotificationToAll } from '@/lib/api/sseService';
 import { sendPushByRole, sendPushNotification } from '@/lib/integrations/pushNotifications';
-import { NotFoundError, BusinessError } from '@/lib/errors/errors';
+import { getAdminWhatsApp } from '@/lib/business/whatsappConfig';
+import { ROUTES } from '@/lib/constants/routes';
+import { NotFoundError, BusinessError, DatabaseError } from '@/lib/errors/errors';
 import { BaseRepository } from '../BaseRepository';
 import { formatCurrencyCLP } from '@/lib/utils/formatters';
 import logger from '@/lib/utils/logger';
@@ -26,7 +28,8 @@ function getEstadoTexto(estado: number) {
 }
 
 export async function getAllGratificaciones(userId?: string) {
-  const tableCheck = await query<any[]>("SHOW TABLES LIKE 'gratificaciones'");
+  try {
+    const tableCheck = await query<any[]>("SHOW TABLES LIKE 'gratificaciones'");
   if (tableCheck.length === 0) return [];
 
   let sql = `
@@ -59,6 +62,10 @@ export async function getAllGratificaciones(userId?: string) {
     estado: Number(row.estado),
     estado_texto: getEstadoTexto(Number(row.estado))
   }));
+  } catch (err) {
+    logger.error('[GratificacionQueries] Error en getAllGratificaciones:', { userId, err });
+    throw new DatabaseError('Error al obtener lista de gratificaciones', err);
+  }
 }
 
 export async function createGratificacion(data: {
@@ -66,7 +73,8 @@ export async function createGratificacion(data: {
   monto: number;
   descripcion?: string;
 }) {
-  const tableCheck = await query<any[]>("SHOW TABLES LIKE 'gratificaciones'");
+  try {
+    const tableCheck = await query<any[]>("SHOW TABLES LIKE 'gratificaciones'");
   const id = generateUUID();
   const now = getNowInBusinessTimezone();
   if (tableCheck.length === 0) return id;
@@ -81,6 +89,10 @@ export async function createGratificacion(data: {
   });
   const res = await query<any[]>('SELECT * FROM gratificaciones WHERE id = ?', [id]);
   return res.length > 0 ? res[0] : null;
+  } catch (err) {
+    logger.error('[GratificacionQueries] Error en createGratificacion:', { err });
+    throw new DatabaseError('Error al crear gratificación', err);
+  }
 }
 
 export async function requestGratificacion(
@@ -89,7 +101,8 @@ export async function requestGratificacion(
   descripcion: string | undefined,
   requestedByUserId: string
 ) {
-  const tableCheck = await query<any[]>("SHOW TABLES LIKE 'gratificaciones'");
+  try {
+    const tableCheck = await query<any[]>("SHOW TABLES LIKE 'gratificaciones'");
   if (tableCheck.length === 0) {
     throw new BusinessError(
       'La tabla de gratificaciones no existe',
@@ -151,11 +164,10 @@ export async function requestGratificacion(
     fecha_crea: now
   });
 
-  const adminWhatsApp =
-    process.env.ADMIN_WHATSAPP_NUMBER?.replace('whatsapp:', '') || '59172419112';
-  const baseUrl = process.env.PUBLIC_BASE_URL || '';
+  const adminWhatsApp = await getAdminWhatsApp();
+  const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || '';
   const confirmUrl = baseUrl
-    ? `${baseUrl}/confirmar-gratificacion?token=${encodeURIComponent(id)}`
+    ? `${baseUrl}${ROUTES.CONFIRMAR_GRATIFICACION}?token=${encodeURIComponent(id)}`
     : null;
 
   const message = `*NUEVA SOLICITUD DE GRATIFICACIÓN*
@@ -208,9 +220,15 @@ ${
 
   const created = await query<any[]>('SELECT * FROM gratificaciones WHERE id = ?', [id]);
   return created.length > 0 ? created[0] : null;
+    } catch (err) {
+      logger.error('[GratificacionQueries] Error en requestGratificacion:', { targetUserId, monto, err });
+      if (err instanceof NotFoundError || err instanceof BusinessError) throw err;
+      throw new DatabaseError(`Error al solicitar gratificación para usuario ${targetUserId}`, err);
+    }
 }
 
 export async function getGratificacionSolicitudDetalle(id: string) {
+  try {
   const rows = await query<any[]>(
     `
     SELECT
@@ -242,6 +260,11 @@ export async function getGratificacionSolicitudDetalle(id: string) {
     descripcion: row.descripcion || '',
     fecha: row.fecha_crea
   };
+    } catch (err) {
+      logger.error('[GratificacionQueries] Error en getGratificacionSolicitudDetalle:', { id, err });
+      if (err instanceof NotFoundError || err instanceof BusinessError) throw err;
+      throw new DatabaseError(`Error al obtener detalle de solicitud de gratificación ${id}`, err);
+    }
 }
 
 export async function processGratificacionSolicitud(
@@ -249,7 +272,8 @@ export async function processGratificacionSolicitud(
   action: GratificacionAction,
   adminId?: string
 ) {
-  return await withTransaction(async trx => {
+  try {
+    return await withTransaction(async trx => {
     const rows = await trx<any[]>(
       `
       SELECT
@@ -300,8 +324,7 @@ export async function processGratificacionSolicitud(
     const title = approved ? 'Gratificación aprobada' : 'Gratificación rechazada';
     const employeeName = `${solicitud.nombre} ${solicitud.apellido}`.trim();
     const amountText = formatCurrencyCLP(Number(solicitud.monto || 0));
-    const adminWhatsApp =
-      process.env.ADMIN_WHATSAPP_NUMBER?.replace('whatsapp:', '') || '59172419112';
+    const adminWhatsApp = await getAdminWhatsApp();
 
     await Promise.allSettled([
       solicitud.telefono
@@ -339,18 +362,33 @@ export async function processGratificacionSolicitud(
 
     return { ok: true, id, estado: nextState };
   });
+    } catch (err) {
+      logger.error('[GratificacionQueries] Error en processGratificacionSolicitud:', { id, action, err });
+      if (err instanceof NotFoundError || err instanceof BusinessError) throw err;
+      throw new DatabaseError(`Error al procesar solicitud de gratificación ${id}`, err);
+    }
 }
 
 export async function updateGratificacion(
   id: string,
   data: { monto: number; descripcion?: string }
 ) {
-  const now = getNowInBusinessTimezone();
+  try {
+    const now = getNowInBusinessTimezone();
   await BaseRepository.update(query, 'gratificaciones', 'id', id, { ...data, fecha_mod: now });
   const res = await query<any[]>('SELECT * FROM gratificaciones WHERE id = ?', [id]);
   return res.length > 0 ? res[0] : null;
+  } catch (err) {
+    logger.error('[GratificacionQueries] Error en updateGratificacion:', { id, err });
+    throw new DatabaseError(`Error al actualizar gratificación ${id}`, err);
+  }
 }
 
 export async function deleteGratificacion(id: string) {
-  await BaseRepository.delete(query, 'gratificaciones', 'id', id);
+  try {
+    await BaseRepository.delete(query, 'gratificaciones', 'id', id);
+  } catch (err) {
+    logger.error('[GratificacionQueries] Error en deleteGratificacion:', { id, err });
+    throw new DatabaseError(`Error al eliminar gratificación ${id}`, err);
+  }
 }

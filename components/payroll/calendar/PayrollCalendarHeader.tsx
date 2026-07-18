@@ -60,14 +60,14 @@ export function PayrollCalendarHeader({
 
         <div className='flex gap-1 ml-4'>
           <Button
-            variant={currentView === 'multi' ? 'default' : 'outline'}
+            variant={currentView === 'multi' ? 'default' : 'outline-solid'}
             size='sm'
             onClick={() => onChangeView('multi')}
           >
             <Grid3X3 className='w-3 h-3 sm:w-4 sm:h-4' />
           </Button>
           <Button
-            variant={currentView === 'month' ? 'default' : 'outline'}
+            variant={currentView === 'month' ? 'default' : 'outline-solid'}
             size='sm'
             onClick={() => onChangeView('month')}
           >

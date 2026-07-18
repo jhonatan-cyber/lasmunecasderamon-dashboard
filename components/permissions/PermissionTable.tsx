@@ -232,7 +232,7 @@ const DesktopTableView = React.memo(({
 }: DesktopTableViewProps) => (
   <TooltipProvider>
     <div className='hidden lg:block'>
-      <div className='bg-white dark:bg-slate-900/40 backdrop-blur-sm rounded-3xl border-none shadow-md overflow-hidden'>
+      <div className='bg-white dark:bg-slate-900/40 backdrop-blur-xs rounded-3xl border-none shadow-md overflow-hidden'>
         <Table>
           <TableHeader className='bg-gray-100 dark:bg-slate-900/50'>
             <TableRow className='hover:bg-transparent border-gray-100 dark:border-gray-800'>

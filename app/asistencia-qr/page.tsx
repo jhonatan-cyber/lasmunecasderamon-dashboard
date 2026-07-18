@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { Search, ArrowLeft, QrCode } from 'lucide-react';
 import {
   Dialog,
@@ -12,8 +12,8 @@ import {
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { LazyQRCode } from '@/components/shared/LazyQRCode';
-import Link from 'next/link';
 import Image from 'next/image';
+import { useRouter } from 'next/navigation';
 import { useSharedSSE } from '@/hooks/shared';
 import { toast } from 'sonner';
 import ThemeSwitcher from '@/components/shared/ThemeSwitcher';
@@ -31,6 +31,8 @@ export default function AsistenciaQrPage() {
   const [users, setUsers] = useState<PublicUser[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
+  const [exiting, setExiting] = useState(false);
+  const exitTimer = useRef<ReturnType<typeof setTimeout>>(undefined);
   const [selectedUser, setSelectedUser] = useState<PublicUser | null>(null);
   const [config, setConfig] = useState<{
     asistencia_hora_inicio: number;
@@ -64,7 +66,18 @@ export default function AsistenciaQrPage() {
 
   useEffect(() => {
     fetchUsers(true);
+    return () => clearTimeout(exitTimer.current);
   }, [fetchUsers]);
+
+  const router = useRouter();
+
+  const handleExit = useCallback((e: React.MouseEvent) => {
+    e.preventDefault();
+    setExiting(true);
+    exitTimer.current = setTimeout(() => {
+      router.push('/login');
+    }, 300);
+  }, [router]);
 
   useSharedSSE('/api/notifications/sse', (payload: any) => {
     if (payload.type === 'attendance_registered') {
@@ -126,10 +139,15 @@ export default function AsistenciaQrPage() {
       user.role.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
+  const isWithinTimeWindow = () => {
+    const currentHour = getHourInTimezone(config.timezone);
+    return currentHour >= config.asistencia_hora_inicio && currentHour < config.asistencia_hora_fin;
+  };
+
   return (
-    <div className='min-h-screen bg-white dark:bg-neutral-950 text-neutral-900 dark:text-white font-sans selection:bg-neutral-900 dark:selection:bg-white selection:text-white dark:selection:text-black transition-colors duration-300'>
+    <div className={`min-h-screen bg-white dark:bg-neutral-950 text-neutral-900 dark:text-white font-sans selection:bg-neutral-900 dark:selection:bg-white selection:text-white dark:selection:text-black transition-colors duration-300 ${exiting ? 'animate-out fade-out slide-out-to-bottom-2 duration-300' : 'animate-in fade-in slide-in-from-bottom-2 duration-500'}`}>
       {/* Background decoration */}
-      <div className='absolute inset-0 bg-[radial-gradient(ellipse_at_top_right,_var(--tw-gradient-stops))] from-neutral-200/40 dark:from-neutral-900/40 via-white dark:via-neutral-950 to-white dark:to-neutral-950 pointer-events-none' />
+      <div className='absolute inset-0 bg-[radial-gradient(ellipse_at_top_right,var(--tw-gradient-stops))] from-neutral-200/40 dark:from-neutral-900/40 via-white dark:via-neutral-950 to-white dark:to-neutral-950 pointer-events-none' />
 
       <div className='relative max-w-7xl mx-auto px-4 py-8 sm:px-6 lg:px-8'>
         {/* Header */}
@@ -145,8 +163,8 @@ export default function AsistenciaQrPage() {
           </div>
 
           <div className='flex flex-row items-center gap-4 self-start md:self-auto'>
-            {config.systemCode && (
-              <div className='flex items-center gap-3 bg-white dark:bg-neutral-900/60 border border-neutral-200 dark:border-neutral-800/80 px-4 py-2 rounded-2xl shadow-inner select-none'>
+            {config.systemCode && isWithinTimeWindow() && (
+              <div className='flex items-center gap-3 bg-white dark:bg-neutral-900/60 border border-neutral-200 dark:border-neutral-800/80 px-4 py-2 rounded-2xl shadow-inner select-none animate-in fade-in zoom-in duration-300'>
                 <div className='flex items-center justify-center bg-neutral-100 dark:bg-neutral-800 p-2 rounded-xl text-neutral-900 dark:text-white'>
                   <QrCode className='h-5 w-5' />
                 </div>
@@ -162,13 +180,11 @@ export default function AsistenciaQrPage() {
             )}
 
             <Button
-              asChild
+              onClick={handleExit}
               className='bg-black text-white rounded-full px-6 py-2 border-2 border-black dark:border-white hover:bg-white hover:text-black hover:scale-105 active:scale-95 transition-all duration-200 gap-2 w-fit h-[48px] inline-flex items-center justify-center'
             >
-              <Link href='/login'>
-                <ArrowLeft className='h-4 w-4' />
-                Volver al Login
-              </Link>
+              <ArrowLeft className='h-4 w-4' />
+              Volver al Login
             </Button>
 
             <ThemeSwitcher />

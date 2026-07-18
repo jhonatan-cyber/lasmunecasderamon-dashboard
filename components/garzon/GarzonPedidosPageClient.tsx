@@ -64,6 +64,7 @@ export default function GarzonPedidosPage() {
     if (user && !userLoading) {
       fetchOrders();
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [user, userLoading]);
 
   useOrdersSSE(data => {

@@ -115,7 +115,7 @@ export default function CuentaFormDialog({ open, onClose, onSuccess }: CuentaFor
   return (
     <Dialog open={open} onOpenChange={handleClose}>
       <DialogContent className='sm:max-w-[800px] max-h-[90vh] flex flex-col p-0'>
-        <DialogHeader className='flex-shrink-0 px-6 pt-6 pb-4 border-b'>
+        <DialogHeader className='shrink-0 px-6 pt-6 pb-4 border-b'>
           <DialogTitle className='text-center text-2xl font-semibold'>Nueva Cuenta</DialogTitle>
         </DialogHeader>
 
@@ -277,7 +277,7 @@ export default function CuentaFormDialog({ open, onClose, onSuccess }: CuentaFor
           </div>
 
           {}
-          <div className='flex-shrink-0 border-t px-6 py-4'>
+          <div className='shrink-0 border-t px-6 py-4'>
             <div className='flex justify-center gap-2 w-full'>
               <Button
                 type='button'

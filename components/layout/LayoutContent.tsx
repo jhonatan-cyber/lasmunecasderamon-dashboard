@@ -3,6 +3,7 @@
 import { usePathname } from 'next/navigation';
 import { Header } from '@/components/header';
 import { Sidebar } from '@/components/sidebar';
+import { isPublicRoute } from '@/lib/constants/routes';
 import { SidebarProvider } from '@/contexts/SidebarContext';
 import { RouteGuard } from '@/components/auth/RouteGuard';
 import { ProtectedAppProviders } from '@/components/providers/ProtectedAppProviders';
@@ -13,6 +14,7 @@ import { prefetchAdjacentRoutes } from '@/lib/utils/prefetchPredictive';
 import React from 'react';
 import { cn } from '@/lib/utils/utils';
 import { useEffect } from 'react';
+import { ThresholdSync } from '@/components/providers/ThresholdSync';
 
 interface LayoutUser {
   role?: string;
@@ -81,23 +83,15 @@ function ProtectedLayoutContent({ children }: { children: React.ReactNode }) {
 export default function LayoutContent({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
 
-  const isPublicRoute = [
-    '/login',
-    '/api-docs',
-    '/confirmar-anulacion',
-    '/confirmar-anulacion-servicio',
-    '/confirmar-anulacion-cuenta',
-    '/confirmar-anticipo',
-    '/asistencia-qr',
-    '/'
-  ].includes(pathname || '/');
+  const isPublic = isPublicRoute(pathname || '/') || ['/', '/login', '/api-docs', '/asistencia-qr'].includes(pathname || '/');
 
-  if (isPublicRoute) {
+  if (isPublic) {
     return <>{children}</>;
   }
 
   return (
     <ProtectedAppProviders>
+      <ThresholdSync />
       <ProtectedLayoutContent>{children}</ProtectedLayoutContent>
     </ProtectedAppProviders>
   );

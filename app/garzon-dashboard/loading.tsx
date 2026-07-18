@@ -1,5 +1,5 @@
-import { RoleDashboardSkeleton } from '@/components/shared/Skeletons';
+﻿import { Skeleton } from '@/components/shared/Skeleton';
 
 export default function Loading() {
-  return <RoleDashboardSkeleton />;
+  return <Skeleton name="garzon-dashboard-main" loading={true} />;
 }

@@ -1,8 +1,10 @@
 import { NextResponse } from 'next/server';
 import { ClientService } from '@/lib/services/ClientService';
-import { withAppApiWrapper, withAppAuth } from '@/lib/api/app-api-wrapper';
+import { withPublicRoute, withRoute } from '@/lib/api/withRoute';
+import { ClientSchema } from '@/lib/business/schemas/client';
+import { validateOrResponse } from '@/lib/api/validate';
 
-export const GET = withAppApiWrapper(async (request: Request) => {
+export const GET = withPublicRoute(async (request: Request) => {
   const { searchParams } = new URL(request.url);
   const id = searchParams.get('id');
 
@@ -24,44 +26,39 @@ export const GET = withAppApiWrapper(async (request: Request) => {
   return NextResponse.json({ success: true, data, total, limit, offset });
 });
 
-export const POST = withAppAuth(
-  async request => {
-    const body = await request.json();
-    const data = await ClientService.createClient(body);
-    return NextResponse.json(
-      { success: true, message: 'Cliente creado correctamente', data },
-      { status: 201 }
-    );
-  },
-  { module: 'clients', action: 'write' }
-);
+export const POST = withRoute({ auth: true, audit: true, module: 'clients', action: 'write' }, async request => {
+  const body = await request.json();
+  const validated = validateOrResponse(ClientSchema, body);
+  if (validated instanceof NextResponse) return validated;
+  const data = await ClientService.createClient(validated);
+  return NextResponse.json(
+    { success: true, message: 'Cliente creado correctamente', data },
+    { status: 201 }
+  );
+});
 
-export const PUT = withAppAuth(
-  async request => {
-    const { searchParams } = new URL(request.url);
-    const id = searchParams.get('id');
-    const body = await request.json();
+export const PUT = withRoute({ auth: true, audit: true, module: 'clients', action: 'write' }, async request => {
+  const { searchParams } = new URL(request.url);
+  const id = searchParams.get('id');
+  const body = await request.json();
 
-    const targetId = id || body.id;
-    if (!targetId)
-      return NextResponse.json({ success: false, message: 'El ID es requerido' }, { status: 400 });
+  const targetId = id || body.id;
+  if (!targetId)
+    return NextResponse.json({ success: false, message: 'El ID es requerido' }, { status: 400 });
 
-    const data = await ClientService.updateClient(targetId, body);
-    return NextResponse.json({ success: true, message: 'Cliente actualizado correctamente', data });
-  },
-  { module: 'clients', action: 'write' }
-);
+  const validated = validateOrResponse(ClientSchema, body);
+  if (validated instanceof NextResponse) return validated;
+  const data = await ClientService.updateClient(targetId, validated);
+  return NextResponse.json({ success: true, message: 'Cliente actualizado correctamente', data });
+});
 
-export const DELETE = withAppAuth(
-  async request => {
-    const { searchParams } = new URL(request.url);
-    const id = searchParams.get('id');
+export const DELETE = withRoute({ auth: true, audit: true, module: 'clients', action: 'delete' }, async request => {
+  const { searchParams } = new URL(request.url);
+  const id = searchParams.get('id');
 
-    if (!id)
-      return NextResponse.json({ success: false, message: 'El ID es requerido' }, { status: 400 });
+  if (!id)
+    return NextResponse.json({ success: false, message: 'El ID es requerido' }, { status: 400 });
 
-    await ClientService.delete(id);
-    return NextResponse.json({ success: true, message: 'Cliente eliminado correctamente' });
-  },
-  { module: 'clients', action: 'delete' }
-);
+  await ClientService.delete(id);
+  return NextResponse.json({ success: true, message: 'Cliente eliminado correctamente' });
+});

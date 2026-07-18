@@ -13,7 +13,7 @@ import { ClientStatsCards } from '@/components/clients/ClientStatsCards';
 import { useClientModals } from '@/hooks/clients/useClientModals';
 import Paginate from '@/components/shared/Paginate';
 import { PermissionGuard } from '@/components/auth/PermissionGuard';
-import { ClientsSkeleton } from '@/components/shared/Skeletons';
+import { Skeleton as BoneyardSkeleton } from 'boneyard-js/react';
 import { type ClientFormValues } from '@/hooks/personal';
 
 export default function Clients() {
@@ -94,10 +94,9 @@ export default function Clients() {
 
   useRefreshOnFocus(fetchClients);
 
-  if (isLoading && allClients.length === 0) return <ClientsSkeleton />;
-
   return (
     <PermissionGuard module='clients' action='view'>
+      <BoneyardSkeleton name="clients-main" loading={isLoading && allClients.length === 0}>
       <div className='p-4 sm:p-6 lg:p-10 space-y-4 sm:space-y-6 mt-4 sm:mt-6 lg:mt-10'>
         <ClientHeader allClients={allClients} onCreateClick={openCreateModal} />
 
@@ -179,6 +178,7 @@ export default function Clients() {
           isPrepagoSubmitting={prepagoSubmitting}
         />
       </div>
+      </BoneyardSkeleton>
     </PermissionGuard>
   );
 }

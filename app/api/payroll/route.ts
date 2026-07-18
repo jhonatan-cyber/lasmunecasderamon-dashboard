@@ -1,13 +1,13 @@
 import { NextResponse } from 'next/server';
-import { withAppApiWrapper } from '@/lib/api/app-api-wrapper';
+import { withPublicRoute } from '@/lib/api/withRoute';
 import { PayrollService } from '@/lib/services/PayrollService';
 
-export const GET = withAppApiWrapper(async () => {
+export const GET = withPublicRoute(async () => {
   const data = await PayrollService.getSummary();
   return NextResponse.json({ success: true, data });
 });
 
-export const POST = withAppApiWrapper(async (request: Request) => {
+export const POST = withPublicRoute(async (request: Request) => {
   const { usuario_id } = await request.json();
   if (!usuario_id)
     return NextResponse.json(

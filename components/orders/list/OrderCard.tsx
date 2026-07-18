@@ -54,7 +54,7 @@ export const OrderCard = ({
 
   return (
     <div
-      className={`p-4 border border-gray-100 dark:border-gray-800 rounded-xl transition-all duration-200 bg-white shadow-sm dark:bg-zinc-900/95 ${
+      className={`p-4 border border-gray-100 dark:border-gray-800 rounded-xl transition-all duration-200 bg-white shadow-xs dark:bg-zinc-900/95 ${
         canProcess
           ? 'hover:shadow-md hover:border-gray-200 dark:hover:border-zinc-700 cursor-pointer'
           : 'cursor-not-allowed opacity-60 grayscale'

@@ -1,8 +1,8 @@
 import { NextResponse } from 'next/server';
-import { withAppApiWrapper, withAppAuth } from '@/lib/api/app-api-wrapper';
+import { withPublicRoute, withRoute } from '@/lib/api/withRoute';
 import { SaleService } from '@/lib/services/SaleService';
 
-export const GET = withAppApiWrapper(
+export const GET = withPublicRoute(
   async (request: Request, { params }: { params: Promise<{ id: string }> }) => {
     const id = (await params).id;
     const data = await SaleService.getById(id);
@@ -12,7 +12,8 @@ export const GET = withAppApiWrapper(
   }
 );
 
-export const PATCH = withAppAuth(
+export const PATCH = withRoute(
+  { auth: true, audit: true },
   async (request: Request, { params, user }: { params: Promise<{ id: string }>; user: any }) => {
     const id = (await params).id;
     const body = await request.json();
@@ -28,7 +29,8 @@ export const PATCH = withAppAuth(
   }
 );
 
-export const DELETE = withAppAuth(
+export const DELETE = withRoute(
+  { auth: true, audit: true, module: 'sales', action: 'delete' },
   async () => {
     return NextResponse.json(
       {
@@ -37,6 +39,5 @@ export const DELETE = withAppAuth(
       },
       { status: 409 }
     );
-  },
-  { requiredPermission: { module: 'sales', action: 'delete' } }
+  }
 );

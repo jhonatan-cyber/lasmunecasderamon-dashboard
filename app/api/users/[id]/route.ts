@@ -1,10 +1,11 @@
 import { NextResponse } from 'next/server';
-import { withAppAuth } from '@/lib/api/app-api-wrapper';
+import { withRoute } from '@/lib/api/withRoute';
 import { UserService } from '@/lib/services/UserService';
 import { sendNotificationToAll } from '@/lib/api/sseService';
 
-export const GET = withAppAuth(
-  async (request: Request, { params }: { params: Promise<{ id: string }>; user: any }) => {
+export const GET = withRoute(
+  { auth: true, audit: true },
+  async (request: Request, { params }: { params: Promise<{ id: string }> }) => {
     const id = (await params).id;
     const data = await UserService.getById(id);
     if (!data)
@@ -16,8 +17,9 @@ export const GET = withAppAuth(
   }
 );
 
-export const PUT = withAppAuth(
-  async (request: Request, { params }: { params: Promise<{ id: string }>; user: any }) => {
+export const PUT = withRoute(
+  { auth: true, audit: true },
+  async (request: Request, { params }: { params: Promise<{ id: string }> }) => {
     const id = (await params).id;
     const body = await request.json();
     await UserService.update(id, body);
@@ -26,8 +28,9 @@ export const PUT = withAppAuth(
   }
 );
 
-export const DELETE = withAppAuth(
-  async (request: Request, { params }: { params: Promise<{ id: string }>; user: any }) => {
+export const DELETE = withRoute(
+  { auth: true, audit: true },
+  async (request: Request, { params }: { params: Promise<{ id: string }> }) => {
     const id = (await params).id;
     await UserService.delete(id);
     return NextResponse.json({ success: true, message: 'Usuario eliminado' });

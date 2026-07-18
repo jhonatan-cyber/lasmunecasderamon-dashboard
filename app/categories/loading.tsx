@@ -1,5 +1,5 @@
-import { CategoriesSkeleton } from '@/components/shared/Skeletons';
+﻿import { Skeleton } from '@/components/shared/Skeleton';
 
 export default function Loading() {
-  return <CategoriesSkeleton />;
+  return <Skeleton name="categories-main" loading={true} />;
 }

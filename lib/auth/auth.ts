@@ -27,6 +27,41 @@ type TokenRequest = {
 };
 
 const getSecretKey = () => new TextEncoder().encode(env.JWT_SECRET);
+const getRefreshSecretKey = () => new TextEncoder().encode(env.JWT_REFRESH_SECRET);
+
+const TOKEN_PAYLOAD_FIELDS = {
+  id: null as string | number | null,
+  userId: null as string | number | null,
+  username: null as string | null,
+  name: null as string | null,
+  lastName: null as string | null,
+  nick: null as string | null,
+  email: null as string | null,
+  role: null as string | null
+};
+
+type TokenPayload = { [K in keyof typeof TOKEN_PAYLOAD_FIELDS]: string | number | null };
+
+function buildPayload(userData: {
+  id: string | number;
+  username: string;
+  name: string;
+  lastName: string;
+  nick?: string;
+  email: string;
+  role: string;
+}): TokenPayload {
+  return {
+    id: userData.id,
+    userId: userData.id,
+    username: userData.username,
+    name: userData.name,
+    lastName: userData.lastName,
+    nick: userData.nick || null,
+    email: userData.email,
+    role: userData.role
+  };
+}
 
 export async function verifyToken(token: string): Promise<AuthenticatedUser | null> {
   try {
@@ -37,7 +72,21 @@ export async function verifyToken(token: string): Promise<AuthenticatedUser | nu
   }
 }
 
-export async function generateToken(userData: {
+/** Verify a refresh token with the refresh secret */
+export async function verifyRefreshToken(token: string): Promise<TokenPayload | null> {
+  try {
+    const { payload } = await jwtVerify(token, getRefreshSecretKey());
+    return payload as TokenPayload;
+  } catch {
+    return null;
+  }
+}
+
+/**
+ * Access token: 15 minutos de expiración.
+ * Usa JWT_SECRET (misma clave que antes, pero expiración más corta).
+ */
+export async function generateAccessToken(userData: {
   id: string | number;
   username: string;
   name: string;
@@ -46,20 +95,36 @@ export async function generateToken(userData: {
   email: string;
   role: string;
 }): Promise<string> {
-  return await new SignJWT({
-    id: userData.id,
-    userId: userData.id,
-    username: userData.username,
-    name: userData.name,
-    lastName: userData.lastName,
-    nick: userData.nick,
-    email: userData.email,
-    role: userData.role
-  })
+  return await new SignJWT(buildPayload(userData))
     .setProtectedHeader({ alg: 'HS256' })
-    .setExpirationTime('24h')
+    .setExpirationTime('15m')
     .sign(getSecretKey());
 }
+
+/**
+ * Refresh token: 7 días de expiración.
+ * Usa JWT_REFRESH_SECRET (clave separada de access token).
+ */
+export async function generateRefreshToken(userData: {
+  id: string | number;
+  username: string;
+  name: string;
+  lastName: string;
+  nick?: string;
+  email: string;
+  role: string;
+}): Promise<string> {
+  return await new SignJWT(buildPayload(userData))
+    .setProtectedHeader({ alg: 'HS256' })
+    .setExpirationTime('7d')
+    .sign(getRefreshSecretKey());
+}
+
+/**
+ * generateToken legacy — mantiene compatibilidad.
+ * Ahora genera un access token de 15 minutos.
+ */
+export const generateToken = generateAccessToken;
 
 export function extractToken(req: TokenRequest): string | null {
   const auth = req.headers?.authorization;
@@ -76,19 +141,24 @@ export function extractToken(req: TokenRequest): string | null {
 
 const ROLES_PARA_REGISTRAR = ['cajero', 'garzon', 'anfitriona'];
 
-export async function registrarLogin(usuarioId: string | number): Promise<void> {
+export async function registrarLogin(
+  usuarioId: string | number,
+  rolNombre?: string
+): Promise<void> {
   try {
-    const userRole = await query<any[]>(
-      `
-      SELECT r.nombre as rol_nombre 
-      FROM usuarios u 
-      INNER JOIN roles r ON u.rol_id = r.id_rol 
-      WHERE u.id_usuario = ?
-    `,
-      [usuarioId]
-    );
-
-    const rol = userRole[0]?.rol_nombre?.toLowerCase() || '';
+    let rol: string;
+    if (rolNombre) {
+      rol = rolNombre.toLowerCase();
+    } else {
+      const userRole = await query<any[]>(
+        `SELECT r.nombre as rol_nombre 
+         FROM usuarios u 
+         INNER JOIN roles r ON u.rol_id = r.id_rol 
+         WHERE u.id_usuario = ?`,
+        [usuarioId]
+      );
+      rol = userRole[0]?.rol_nombre?.toLowerCase() || '';
+    }
     if (!ROLES_PARA_REGISTRAR.includes(rol)) {
       return;
     }

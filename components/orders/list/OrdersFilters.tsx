@@ -57,7 +57,7 @@ export function AdminOrdersFilters({
   const setCurrentSearchTerm = activeTab === 'productos' ? setSearchTerm : setSearchServiciosTerm;
 
   return (
-    <Card className='shadow-md border-none bg-white dark:bg-slate-900/40 backdrop-blur-sm rounded-3xl overflow-hidden mb-6 mx-4 sm:mx-8'>
+    <Card className='shadow-md border-none bg-white dark:bg-slate-900/40 backdrop-blur-xs rounded-3xl overflow-hidden mb-6 mx-4 sm:mx-8'>
       <CardContent className='p-6'>
         <div className='flex flex-col lg:flex-row gap-4 items-end'>
           {}
@@ -128,7 +128,7 @@ export function AdminOrdersFilters({
                   onClick={onClearFilters}
                   variant='outline'
                   size='icon'
-                  className='w-10 h-10 flex items-center justify-center rounded-2xl border-gray-200 dark:border-gray-800 hover:scale-110 transition-all duration-200 hover:bg-black hover:text-white dark:hover:bg-white dark:hover:text-black shadow-sm'
+                  className='w-10 h-10 flex items-center justify-center rounded-2xl border-gray-200 dark:border-gray-800 hover:scale-110 transition-all duration-200 hover:bg-black hover:text-white dark:hover:bg-white dark:hover:text-black shadow-xs'
                 >
                   <Trash2 className='w-4 h-4' />
                 </Button>

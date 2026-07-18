@@ -12,6 +12,7 @@ import SelectElements from '@/components/shared/SelectElements';
 import Paginate from '@/components/shared/Paginate';
 import { formatDateLabel, formatDateTimeDmyLabel } from '@/lib/utils/calendarUtils';
 import { formatCurrencyCLP } from '@/lib/utils/formatters';
+import { Skeleton as BoneyardSkeleton } from 'boneyard-js/react';
 import logger from '@/lib/utils/logger';
 
 interface Commission {
@@ -153,6 +154,7 @@ export default function AnfitrionaComisionesPage() {
 
   return (
     <div className='p-6 space-y-6'>
+      <BoneyardSkeleton name="anfitriona-comisiones-main" loading={loading}>
       {}
       <div className='flex justify-between items-center'>
         <div>
@@ -284,14 +286,7 @@ export default function AnfitrionaComisionesPage() {
                 </tr>
               </thead>
               <tbody className='bg-white divide-y divide-gray-200'>
-                {loading ? (
-                  <tr>
-                    <td colSpan={7} className='px-6 py-4 text-center'>
-                      <div className='animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto'></div>
-                      <p className='mt-2 text-gray-600'>Cargando comisiones...</p>
-                    </td>
-                  </tr>
-                ) : paginatedCommissions.length === 0 ? (
+                {paginatedCommissions.length === 0 ? (
                   <tr>
                     <td colSpan={7} className='px-6 py-4 text-center text-gray-500'>
                       No se encontraron comisiones
@@ -358,6 +353,7 @@ export default function AnfitrionaComisionesPage() {
       <div className='flex justify-center'>
         <Paginate page={page} totalPages={totalPages} setPage={setPage} />
       </div>
+      </BoneyardSkeleton>
     </div>
   );
 }

@@ -3,13 +3,14 @@ import { getNowInBusinessTimezone } from '@/lib/business/timezoneService';
 import { AttendanceRegisterSchema } from '@/lib/business/schemas';
 import { BaseRepository } from '../BaseRepository';
 import logger from '../../utils/logger';
-import { ValidationError } from '@/lib/errors/errors';
+import { ValidationError, DatabaseError } from '@/lib/errors/errors';
 import { z } from 'zod';
 
 type AttendanceRegisterInput = z.input<typeof AttendanceRegisterSchema>;
 
 export async function getAttendanceSummary() {
-  const sql = `
+  try {
+    const sql = `
    SELECT
       U.id_usuario, U.nick, CONCAT(U.nombre, ' ', U.apellido) AS nombre_completo,
       U.foto AS usuario_foto,
@@ -29,10 +30,15 @@ export async function getAttendanceSummary() {
     ORDER BY nombre_completo;
   `;
   return await rawQuery(sql);
+  } catch (err) {
+    logger.error('[AttendanceQueries] Error en getAttendanceSummary:', { err });
+    throw new DatabaseError('Error al obtener resumen de asistencias', err);
+  }
 }
 
 export async function getAttendanceStats() {
-  const bizNow = getNowInBusinessTimezone();
+  try {
+    const bizNow = getNowInBusinessTimezone();
   const fechaHoy = bizNow.substring(0, 10);
   const cajaRes = await query<any[]>(
     'SELECT id_caja, fecha_apertura, fecha_cierre FROM cajas WHERE estado = 1 ORDER BY fecha_apertura DESC LIMIT 1'
@@ -76,6 +82,10 @@ export async function getAttendanceStats() {
   }
 
   return { total: totalUsuarios, ...stats };
+  } catch (err) {
+    logger.error('[AttendanceQueries] Error en getAttendanceStats:', { err });
+    throw new DatabaseError('Error al obtener estadísticas de asistencia', err);
+  }
 }
 
 async function getAttendanceConfigHours(): Promise<{ startHour: number; endHour: number }> {
@@ -107,7 +117,8 @@ export async function registerAttendance(
   currentUser?: { id: string },
   ip?: string
 ) {
-  const { qrData } = AttendanceRegisterSchema.parse(body);
+  try {
+    const { qrData } = AttendanceRegisterSchema.parse(body);
   let targetUser: any = null;
   let isSystemCode = false;
 
@@ -219,6 +230,11 @@ export async function registerAttendance(
     message: 'Tu asistencia ha sido registrada',
     user: { id: targetUser.id_usuario, nombre: targetUser.nombre, apellido: targetUser.apellido }
   };
+    } catch (err) {
+      logger.error('[AttendanceQueries] Error en registerAttendance:', { err });
+      if (err instanceof ValidationError || err instanceof z.ZodError) throw err;
+      throw new DatabaseError('Error al registrar asistencia', err);
+    }
 }
 
 export async function getAttendanceByUser(
@@ -227,7 +243,8 @@ export async function getAttendanceByUser(
   startDate?: string,
   endDate?: string
 ) {
-  if (tipo === 'detalle') {
+  try {
+    if (tipo === 'detalle') {
     let sql = `
       SELECT
         A.id_asistencia, A.usuario_id, A.fecha, A.hora, A.fecha_pago,
@@ -284,10 +301,15 @@ export async function getAttendanceByUser(
     WHERE U.id_usuario = ?
   `;
   return await query(sql, [userId]);
+    } catch (err) {
+      logger.error('[AttendanceQueries] Error en getAttendanceByUser:', { userId, err });
+      throw new DatabaseError(`Error al obtener asistencias del usuario ${userId}`, err);
+    }
 }
 
 export async function getAttendanceHoy() {
-  const fechaHoy = getNowInBusinessTimezone().substring(0, 10);
+  try {
+    const fechaHoy = getNowInBusinessTimezone().substring(0, 10);
   return await query(
     `
     SELECT
@@ -302,10 +324,15 @@ export async function getAttendanceHoy() {
   `,
     [fechaHoy]
   );
+  } catch (err) {
+    logger.error('[AttendanceQueries] Error en getAttendanceHoy:', { err });
+    throw new DatabaseError('Error al obtener asistencias del día', err);
+  }
 }
 
 export async function getAttendanceByDates(userId: string, dates: string[]) {
-  if (dates.length === 0) return [];
+  try {
+    if (dates.length === 0) return [];
   return await query(
     `
     SELECT * FROM asistencias
@@ -314,6 +341,10 @@ export async function getAttendanceByDates(userId: string, dates: string[]) {
   `,
     [userId, dates]
   );
+  } catch (err) {
+    logger.error('[AttendanceQueries] Error en getAttendanceByDates:', { userId, err });
+    throw new DatabaseError(`Error al obtener asistencias por fechas del usuario ${userId}`, err);
+  }
 }
 
 export async function registerAttendanceManual(
@@ -323,7 +354,8 @@ export async function registerAttendanceManual(
   estado: string,
   currentUser?: any
 ) {
-  const existing = await query<any[]>(
+  try {
+    const existing = await query<any[]>(
     'SELECT id_asistencia FROM asistencias WHERE usuario_id = ? AND fecha = ?',
     [usuarioId, fecha]
   );
@@ -355,9 +387,14 @@ export async function registerAttendanceManual(
   });
 
   return { success: true, message: 'Asistencia registrada manualmente' };
+  } catch (err) {
+    logger.error('[AttendanceQueries] Error en registerAttendanceManual:', { usuarioId, fecha, err });
+    throw new DatabaseError(`Error al registrar asistencia manual para usuario ${usuarioId}`, err);
+  }
 }
 
 export async function selfRegisterAttendance(currentUser: { id: string }, ip?: string) {
+  try {
   const nowStr = getNowInBusinessTimezone();
   const hour = parseInt(nowStr.substring(11, 13), 10);
   const fechaHoy = nowStr.substring(0, 10);
@@ -420,4 +457,8 @@ export async function selfRegisterAttendance(currentUser: { id: string }, ip?: s
   }
 
   return { success: true, tipo: 'asistencia', message: 'Asistencia registrada correctamente.' };
+    } catch (err) {
+      logger.error('[AttendanceQueries] Error en selfRegisterAttendance:', { userId: currentUser.id, err });
+      throw new DatabaseError('Error al registrar auto-asistencia', err);
+    }
 }

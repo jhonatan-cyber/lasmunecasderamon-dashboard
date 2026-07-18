@@ -47,7 +47,7 @@ export function UserFilters({
   };
 
   return (
-    <Card className='shadow-md border-none bg-white dark:bg-slate-900/40 backdrop-blur-sm rounded-3xl overflow-hidden'>
+    <Card className='shadow-md border-none bg-white dark:bg-slate-900/40 backdrop-blur-xs rounded-3xl overflow-hidden'>
       <CardContent className='p-3 sm:p-6'>
         <div className='flex flex-col lg:flex-row gap-6 items-end'>
           {}
@@ -89,7 +89,7 @@ export function UserFilters({
             </div>
 
             {}
-            <div className='w-[70%] sm:w-auto min-w-0 sm:min-w-[160px] order-3 sm:order-none'>
+            <div className='w-[70%] sm:w-auto min-w-0 sm:min-w-[160px] order-3 sm:order-0'>
               <Label
                 htmlFor='role'
                 className='mb-2 block text-xs font-bold uppercase tracking-wider text-gray-500 dark:text-gray-400 ml-1'
@@ -111,7 +111,7 @@ export function UserFilters({
             </div>
 
             {}
-            <div className='w-[calc(50%-0.5rem)] sm:w-auto order-2 sm:order-none'>
+            <div className='w-[calc(50%-0.5rem)] sm:w-auto order-2 sm:order-0'>
               <SelectElements
                 value={pageSize}
                 onChange={handlePageSizeChange}
@@ -121,7 +121,7 @@ export function UserFilters({
             </div>
 
             {}
-            <div className='w-[20%] sm:w-auto order-4 sm:order-none'>
+            <div className='w-[20%] sm:w-auto order-4 sm:order-0'>
               <TooltipProvider>
                 <Tooltip delayDuration={300}>
                   <TooltipTrigger asChild>
@@ -129,7 +129,7 @@ export function UserFilters({
                       <Button
                         onClick={onClearFilters}
                         size='icon'
-                        className='w-full sm:w-10 h-10 flex items-center justify-center rounded-full border border-gray-300 dark:border-gray-700 shadow-sm bg-gray-100 dark:bg-slate-900/50 text-gray-900 dark:text-gray-100 transition-all duration-200 hover:scale-110 hover:!bg-red-500 hover:!text-white hover:!border-red-500'
+                        className='w-full sm:w-10 h-10 flex items-center justify-center rounded-full border border-gray-300 dark:border-gray-700 shadow-xs bg-gray-100 dark:bg-slate-900/50 text-gray-900 dark:text-gray-100 transition-all duration-200 hover:scale-110 hover:bg-red-500! hover:text-white! hover:border-red-500!'
                       >
                         <Trash2 className='w-4 h-4' />
                       </Button>

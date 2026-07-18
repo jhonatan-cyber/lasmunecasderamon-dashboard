@@ -94,7 +94,7 @@ export default function CuentaDetailModal({
   return (
     <Dialog open={open} onOpenChange={localHandleClose}>
       <DialogContent className='sm:max-w-5xl max-h-[90vh] flex flex-col p-0 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl shadow-md'>
-        <DialogHeader className='flex-shrink-0 px-6 pt-6 pb-4 border-b border-slate-200 dark:border-slate-800'>
+        <DialogHeader className='shrink-0 px-6 pt-6 pb-4 border-b border-slate-200 dark:border-slate-800'>
           <div className='flex items-center justify-center'>
             <DialogTitle className='text-start text-xl font-semibold tracking-tight text-slate-900 dark:text-white'>
               Detalles de Cuenta
@@ -218,7 +218,7 @@ export default function CuentaDetailModal({
                     {historialHabitaciones.map((item, index) => (
                       <div
                         key={`${item.roomId}-${item.startedAt}-${index}`}
-                        className='rounded-2xl border bg-white p-4 shadow-sm'
+                        className='rounded-2xl border bg-white p-4 shadow-xs'
                       >
                         <div className='flex flex-col gap-3 md:flex-row md:items-start md:justify-between'>
                           {getClosedReasonLabel(item.closedReason) && (
@@ -307,7 +307,7 @@ export default function CuentaDetailModal({
 
                   <div className='space-y-3'>
                     {solicitudesAnulacion.map(solicitud => (
-                      <div key={solicitud.id} className='rounded-2xl border bg-white p-4 shadow-sm'>
+                      <div key={solicitud.id} className='rounded-2xl border bg-white p-4 shadow-xs'>
                         <div className='flex flex-col gap-3 md:flex-row md:items-start md:justify-between'>
                           <div className='space-y-1'>
                             <div className='flex items-center gap-2'>
@@ -425,7 +425,7 @@ export default function CuentaDetailModal({
           )}
         </div>
 
-        <div className='flex-shrink-0 border-t px-6 py-4'>
+        <div className='shrink-0 border-t px-6 py-4'>
           <div className='flex justify-center gap-2 w-full'>
             <Button
               variant='outline'

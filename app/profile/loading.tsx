@@ -1,5 +1,5 @@
-import { ProfileSkeleton } from '@/components/shared/Skeletons';
+﻿import { Skeleton } from '@/components/shared/Skeleton';
 
 export default function Loading() {
-  return <ProfileSkeleton />;
+  return <Skeleton name="profile-main" loading={true} />;
 }

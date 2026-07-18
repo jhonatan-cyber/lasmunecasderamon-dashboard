@@ -1,3 +1,5 @@
+﻿import { Skeleton } from '@/components/shared/Skeleton';
+
 export default function Loading() {
-  return null
+  return <Skeleton name="orders-main" loading={true} />;
 }

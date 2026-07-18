@@ -72,7 +72,7 @@ export function CommissionsList({
         ? Array.from({ length: 5 }, (_, i) => (
             <div
               key={i}
-              className='bg-white dark:bg-slate-900/40 backdrop-blur-sm rounded-3xl shadow-md p-4 space-y-3'
+              className='bg-white dark:bg-slate-900/40 backdrop-blur-xs rounded-3xl shadow-md p-4 space-y-3'
             >
               <div className='flex justify-between items-start'>
                 <Skeleton className='h-4 w-28 rounded' />
@@ -89,7 +89,7 @@ export function CommissionsList({
         : paginatedCommissions.map(commission => (
             <div
               key={commission.id}
-              className='bg-white dark:bg-slate-900/40 backdrop-blur-sm rounded-3xl shadow-md border-none p-4 space-y-3'
+              className='bg-white dark:bg-slate-900/40 backdrop-blur-xs rounded-3xl shadow-md border-none p-4 space-y-3'
             >
               {}
               <div className='flex justify-between items-start'>
@@ -165,7 +165,7 @@ export function CommissionsList({
   );
 
   const DesktopTableView = () => (
-    <div className='hidden lg:block bg-white dark:bg-slate-900/40 backdrop-blur-sm rounded-3xl border-none shadow-md overflow-hidden'>
+    <div className='hidden lg:block bg-white dark:bg-slate-900/40 backdrop-blur-xs rounded-3xl border-none shadow-md overflow-hidden'>
       <div className='overflow-x-auto'>
         <Table className='min-w-full text-base text-center'>
           <TableHeader className='bg-gray-100 dark:bg-slate-900/50'>

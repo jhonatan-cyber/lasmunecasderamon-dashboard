@@ -1,9 +1,10 @@
 import { NextResponse } from 'next/server';
 import { ClientService } from '@/lib/services/ClientService';
-import { withAppAuth } from '@/lib/api/app-api-wrapper';
+import { withRoute } from '@/lib/api/withRoute';
 import { ApiResponse } from '@/lib/api/api-response';
 
-export const POST = withAppAuth(
+export const POST = withRoute(
+  { auth: true, audit: true, module: 'clients', action: 'write' },
   async (request, { user }) => {
     const body = await request.json();
     const { cliente_id, monto, tipo, metodo_pago, pagos_mixtos, metadatos } = body;
@@ -30,6 +31,5 @@ export const POST = withAppAuth(
     } catch (error: unknown) {
       return ApiResponse.error(error);
     }
-  },
-  { module: 'clients', action: 'write' }
+  }
 );

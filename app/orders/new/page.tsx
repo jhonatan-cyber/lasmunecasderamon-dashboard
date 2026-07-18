@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation';
 import { Button } from '@/components/ui/button';
 import { ArrowLeft } from 'lucide-react';
 import { useMasterData, useRefreshOnFocus } from '@/hooks/shared';
+import { isChampagneProduct } from '@/components/orders/productModalRules';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { OrderForm, ServiceOrderFormNew as ServiceOrderForm } from '@/components/orders';
 
@@ -92,10 +93,7 @@ export default function NewOrder() {
     const clienteId = selectedCliente || '1';
   };
 
-  const hasChampagne = productos.some((item: any) => {
-    const cat = (item.categoria || '').toLowerCase();
-    return cat.includes('champaña') || cat.includes('shampaña') || cat.includes('champagne');
-  });
+  const hasChampagne = productos.some((item: any) => isChampagneProduct(item));
 
   return (
     <>
