@@ -49,10 +49,10 @@ export function useCuentaDetail(cuentaId: string | null, open: boolean) {
       (
         {
           0: { label: 'Cobrada', variant: 'success' },
-          1: { label: 'Activa', variant: 'default' },
-          2: { label: 'Solicitud anul.', variant: 'outline' },
-          3: { label: 'Anulada', variant: 'destructive' },
-          4: { label: 'Saldo pendiente', variant: 'secondary' }
+          1: { label: 'Por Cobrar', variant: 'destructive' },
+          2: { label: 'Solicitud Anul.', variant: 'outline' },
+          3: { label: 'Anulada', variant: 'secondary' },
+          4: { label: 'Anul. Parcial', variant: 'outline' }
         } as Record<string, EstadoBadge>
       )[estadoStr] || { label: 'Desconocido', variant: 'outline' as const }
     );

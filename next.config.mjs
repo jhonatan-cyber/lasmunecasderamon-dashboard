@@ -26,8 +26,29 @@ const nextConfig = {
 
   compress: true,
 
+  async rewrites() {
+    return [
+      {
+        // Serve sw.js directly from public/ — prevents any redirect or
+        // compression negotiation that blocks ServiceWorker registration
+        source: '/sw.js',
+        destination: '/sw.js'
+      }
+    ];
+  },
+
   async headers() {
     return [
+      {
+        // Service worker must be served without redirects, no-cache,
+        // and with the correct MIME type
+        source: '/sw.js',
+        headers: [
+          { key: 'Content-Type', value: 'application/javascript; charset=utf-8' },
+          { key: 'Cache-Control', value: 'no-cache, no-store, must-revalidate' },
+          { key: 'Service-Worker-Allowed', value: '/' }
+        ]
+      },
       {
         source: '/api/notifications/sse',
         headers: [
@@ -52,10 +73,6 @@ const nextConfig = {
       {
         source: '/api/:path*',
         headers: [
-          {
-            key: 'Access-Control-Allow-Origin',
-            value: '*'
-          },
           {
             key: 'Access-Control-Allow-Methods',
             value: 'GET,POST,PUT,PATCH,DELETE,OPTIONS'
@@ -83,15 +100,25 @@ const nextConfig = {
         ]
       },
       {
-        source: '/:path*',
+        // CSP is handled by proxy.ts middleware with per-request nonces.
+        // Removing static CSP here to avoid conflicting with proxy.ts nonce-based policy.
+        source: '/((?!api).*)',
         headers: [
           {
             key: 'X-DNS-Prefetch-Control',
             value: 'on'
           },
           {
-            key: 'Content-Security-Policy',
-            value: "default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval'; style-src 'self' 'unsafe-inline'; img-src 'self' blob: data: https:; font-src 'self' data: https:; connect-src 'self' https: ws: wss:;"
+            key: 'Strict-Transport-Security',
+            value: 'max-age=31536000; includeSubDomains'
+          },
+          {
+            key: 'Referrer-Policy',
+            value: 'strict-origin-when-cross-origin'
+          },
+          {
+            key: 'Permissions-Policy',
+            value: 'camera=(), microphone=(), geolocation=()'
           }
         ]
       }

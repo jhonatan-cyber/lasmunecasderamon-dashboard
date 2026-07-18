@@ -1,12 +1,12 @@
 import { NextResponse } from 'next/server';
-import { withAppAuth } from '@/lib/api/app-api-wrapper';
+import { withRoute } from '@/lib/api/withRoute';
 import { SaleService } from '@/lib/services/SaleService';
 import { query } from '@/lib/database/db';
 import { enviarMensajeSolicitudAnulacion } from '@/lib/integrations/whatsappService';
 import { ValidationError } from '@/lib/errors/errors';
 import logger from '@/lib/utils/logger';
 
-export const POST = withAppAuth(async (request: Request, { user }: { params: any; user: any }) => {
+export const POST = withRoute({ auth: true, audit: true, module: 'sales', action: 'anulate' }, async (request: Request, { user }: { params: any; user: any }) => {
   const body = await request.json();
 
   if (body.requestId) {
@@ -57,18 +57,12 @@ export const POST = withAppAuth(async (request: Request, { user }: { params: any
     montoSolicitado
   );
 
-  const adminWhatsApp =
-    process.env.ADMIN_WHATSAPP_NUMBER?.replace('whatsapp:', '') || '59172419112';
-  const baseUrl =
-    process.env.NEXT_PUBLIC_BASE_URL ||
-    process.env.PUBLIC_BASE_URL ||
-    'https://dev.lasmuñecasderamon.com';
+  const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || '';
 
   logger.info('[Anulacion] baseUrl configurada:', baseUrl);
 
   try {
     await enviarMensajeSolicitudAnulacion({
-      numeroAdmin: adminWhatsApp,
       tipo: 'venta',
       codigo: ventaInfo[0]?.codigo || body.ventaId,
       clienteNombre: ventaInfo[0]?.cliente_nombre || 'Sin cliente registrado',

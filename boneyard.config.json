@@ -1,0 +1,64 @@
+{
+  "breakpoints": [375, 768, 1280],
+  "out": "./bones",
+  "wait": 400,
+  "color": "#f3f4f6",
+  "animate": "pulse",
+  "auth": {
+    "cookies": [
+      {
+        "name": "token",
+        "value": "REDACTED_JWT",
+        "domain": "localhost",
+        "path": "/",
+        "httpOnly": true,
+        "secure": false,
+        "sameSite": "Lax"
+      }
+    ],
+    "headers": {
+      "Authorization": "Bearer REDACTED_JWT"
+    }
+  },
+  "routes": [
+    "/accounts",
+    "/accounts/new",
+    "/advances",
+    "/anfitriona-anticipos",
+    "/anfitriona-asistencias",
+    "/anfitriona-calendar",
+    "/anfitriona-comisiones",
+    "/anfitriona-dashboard",
+    "/anfitriona-servicios",
+    "/attendance",
+    "/cajero-anticipos",
+    "/cajero-asistencias",
+    "/cajero-calendar",
+    "/cajero-horas-extras",
+    "/cajero-propinas",
+    "/cash-register",
+    "/categories",
+    "/clients",
+    "/dashboard",
+    "/garzon-anticipos",
+    "/garzon-asistencias",
+    "/garzon-calendar",
+    "/garzon-dashboard",
+    "/garzon-horas-extras",
+    "/garzon-pedidos",
+    "/garzon-propinas",
+    "/login",
+    "/orders",
+    "/orders/new",
+    "/payroll/summary",
+    "/private-rooms/new",
+    "/products",
+    "/products/category/[id]",
+    "/profile",
+    "/reports",
+    "/returns/sales",
+    "/rooms",
+    "/sales",
+    "/users"
+  ]
+}

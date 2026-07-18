@@ -27,7 +27,7 @@ import {
   rectSortingStrategy
 } from '@dnd-kit/sortable';
 import { PermissionGuard } from '@/components/auth/PermissionGuard';
-import { ProductsSkeleton } from '@/components/shared/Skeletons';
+import { Skeleton as BoneyardSkeleton } from 'boneyard-js/react';
 
 const tablePageSizes = [5, 10, 20, 40];
 const cardPageSizes = [8, 12, 24, 48];
@@ -229,12 +229,14 @@ const ProductCategoryPage = () => {
     setOpenDialog(true);
   };
 
-  if (categoriesLoading || (filteredCategories.length === 0 && categoriesLoading)) {
-    return <ProductsSkeleton />;
-  }
-
-  if (isLoading) {
-    return <ProductsSkeleton />;
+  if (!category && categoriesLoading) {
+    return (
+      <BoneyardSkeleton name="category-products-main" loading={true}>
+        <div className='p-4 sm:p-6 lg:p-10 space-y-4 sm:space-y-6 mt-4 sm:mt-6 lg:mt-10'>
+          <div className='text-center text-gray-500'>Cargando categorías...</div>
+        </div>
+      </BoneyardSkeleton>
+    );
   }
 
   if (!category && categoryId) {
@@ -282,55 +284,68 @@ const ProductCategoryPage = () => {
 
         {}
         <div className='hidden lg:block'>
-          {showTableView ? (
-            <>
-              <div className='overflow-x-auto'>
-                <ProductTable
-                  products={paginatedProducts}
-                  onEdit={handleEdit}
-                  onDelete={handleDelete}
-                  onActivate={handleActivate}
-                  onDeactivate={handleDeactivate}
-                  onReorder={reorderProducts}
-                  isLoading={isLoading}
-                  isMutating={isMutating}
-                  currentPage={page}
-                  pageSize={pageSize}
-                />
-              </div>
+            {showTableView ? (
+              <>
+                <div className='overflow-x-auto'>
+                  <BoneyardSkeleton name="category-products-table" loading={isLoading}>
+                    <ProductTable
+                      products={paginatedProducts.length > 0 ? paginatedProducts : (isLoading ? [
+                        { id: 1, code: 'DUMMY-1', name: 'Nombre Producto Dummy Largo', price: 9990, commission: 1000, status: 1, foto: 'default.png' },
+                        { id: 2, code: 'DUMMY-2', name: 'Nombre Producto Dummy Largo', price: 9990, commission: 1000, status: 1, foto: 'default.png' },
+                        { id: 3, code: 'DUMMY-3', name: 'Nombre Producto Dummy Largo', price: 9990, commission: 1000, status: 1, foto: 'default.png' }
+                      ] as unknown as Product[] : [])}
+                      onEdit={handleEdit}
+                      onDelete={handleDelete}
+                      onActivate={handleActivate}
+                      onDeactivate={handleDeactivate}
+                      onReorder={reorderProducts}
+                      isLoading={isLoading}
+                      isMutating={isMutating}
+                      currentPage={page}
+                      pageSize={pageSize}
+                    />
+                  </BoneyardSkeleton>
+                </div>
               {totalPages > 1 && (
                 <div className='flex justify-center mt-4 sm:mt-6'>
                   <Paginate page={page} totalPages={totalPages} setPage={setPage} />
                 </div>
               )}
             </>
-          ) : (
-            <>
-              <DndContext
-                sensors={sensors}
-                collisionDetection={closestCenter}
-                onDragEnd={handleDragEndCards}
-              >
-                <SortableContext
-                  items={paginatedProductsCards.map(p => p.id)}
-                  strategy={rectSortingStrategy}
-                >
-                  <div className='grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 sm:gap-6'>
-                    {paginatedProductsCards.map(product => (
-                      <ProductCard
-                        key={product.id}
-                        product={product}
-                        onEdit={handleEdit}
-                        onDelete={handleDelete}
-                        onActivate={handleActivate}
-                        onDeactivate={handleDeactivate}
-                        isDraggable={true}
-                        isLoading={isMutating}
-                      />
-                    ))}
-                  </div>
-                </SortableContext>
-              </DndContext>
+            ) : (
+              <>
+                <BoneyardSkeleton name="category-products-cards" loading={isLoading}>
+                  <DndContext
+                    sensors={sensors}
+                    collisionDetection={closestCenter}
+                    onDragEnd={handleDragEndCards}
+                  >
+                    <SortableContext
+                      items={paginatedProductsCards.map(p => p.id)}
+                      strategy={rectSortingStrategy}
+                    >
+                      <div className='grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 sm:gap-6'>
+                        {(paginatedProductsCards.length > 0 ? paginatedProductsCards : (isLoading ? [
+                          { id: 1, code: 'DUMMY-1', name: 'Nombre Producto Dummy', price: 9990, commission: 1000, status: 1, foto: 'default.png' },
+                          { id: 2, code: 'DUMMY-2', name: 'Nombre Producto Dummy', price: 9990, commission: 1000, status: 1, foto: 'default.png' },
+                          { id: 3, code: 'DUMMY-3', name: 'Nombre Producto Dummy', price: 9990, commission: 1000, status: 1, foto: 'default.png' },
+                          { id: 4, code: 'DUMMY-4', name: 'Nombre Producto Dummy', price: 9990, commission: 1000, status: 1, foto: 'default.png' }
+                        ] as unknown as Product[] : [])).map(product => (
+                          <ProductCard
+                            key={product.id}
+                            product={product}
+                            onEdit={handleEdit}
+                            onDelete={handleDelete}
+                            onActivate={handleActivate}
+                            onDeactivate={handleDeactivate}
+                            isDraggable={true}
+                            isLoading={isMutating}
+                          />
+                        ))}
+                      </div>
+                    </SortableContext>
+                  </DndContext>
+                </BoneyardSkeleton>
               {totalPagesCards > 1 && (
                 <div className='flex justify-center mt-4 sm:mt-6'>
                   <Paginate page={pageCards} totalPages={totalPagesCards} setPage={setPageCards} />
@@ -342,31 +357,36 @@ const ProductCategoryPage = () => {
 
         {}
         <div className='lg:hidden'>
-          <DndContext
-            sensors={sensors}
-            collisionDetection={closestCenter}
-            onDragEnd={handleDragEndCards}
-          >
-            <SortableContext
-              items={paginatedProductsCards.map(p => p.id)}
-              strategy={rectSortingStrategy}
+          <BoneyardSkeleton name="category-products-mobile" loading={isLoading}>
+            <DndContext
+              sensors={sensors}
+              collisionDetection={closestCenter}
+              onDragEnd={handleDragEndCards}
             >
-              <div className='grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6'>
-                {paginatedProductsCards.map(product => (
-                  <ProductCard
-                    key={product.id}
-                    product={product}
-                    onEdit={handleEdit}
-                    onDelete={handleDelete}
-                    onActivate={handleActivate}
-                    onDeactivate={handleDeactivate}
-                    isDraggable={true}
-                    isLoading={isMutating}
-                  />
-                ))}
-              </div>
-            </SortableContext>
-          </DndContext>
+              <SortableContext
+                items={paginatedProductsCards.map(p => p.id)}
+                strategy={rectSortingStrategy}
+              >
+                <div className='grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6'>
+                  {(paginatedProductsCards.length > 0 ? paginatedProductsCards : (isLoading ? [
+                    { id: 1, code: 'DUMMY-1', name: 'Nombre Producto Dummy', price: 9990, commission: 1000, status: 1, foto: 'default.png' },
+                    { id: 2, code: 'DUMMY-2', name: 'Nombre Producto Dummy', price: 9990, commission: 1000, status: 1, foto: 'default.png' }
+                  ] as unknown as Product[] : [])).map(product => (
+                    <ProductCard
+                      key={product.id}
+                      product={product}
+                      onEdit={handleEdit}
+                      onDelete={handleDelete}
+                      onActivate={handleActivate}
+                      onDeactivate={handleDeactivate}
+                      isDraggable={true}
+                      isLoading={isMutating}
+                    />
+                  ))}
+                </div>
+              </SortableContext>
+            </DndContext>
+          </BoneyardSkeleton>
           {totalPagesCards > 1 && (
             <div className='flex justify-center mt-4 sm:mt-6'>
               <Paginate page={pageCards} totalPages={totalPagesCards} setPage={setPageCards} />

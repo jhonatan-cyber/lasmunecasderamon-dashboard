@@ -51,7 +51,7 @@ export function CajaOperationsTables({
   return (
     <div className='px-6 space-y-12 pb-12'>
       {}
-      <div className='bg-gray-50 dark:bg-gray-800 p-8 rounded-[2rem] border border-gray-100 dark:border-gray-800'>
+      <div className='bg-gray-50 dark:bg-gray-800 p-8 rounded-4xl border border-gray-100 dark:border-gray-800'>
         <h5 className='font-medium text-lg mb-6 text-gray-900 dark:text-white flex items-center gap-2'>
           <ArrowDownCircle className='w-5 h-5 text-orange-600 dark:text-orange-400' />
           Historial de Retiros
@@ -70,7 +70,7 @@ export function CajaOperationsTables({
             {retiros.map((retiro, index) => (
               <div
                 key={index}
-                className='flex justify-between items-center p-4 bg-white dark:bg-gray-900 rounded-xl border border-gray-100 dark:border-gray-800 shadow-sm transition-all hover:shadow-md'
+                className='flex justify-between items-center p-4 bg-white dark:bg-gray-900 rounded-xl border border-gray-100 dark:border-gray-800 shadow-xs transition-all hover:shadow-md'
               >
                 <div className='flex items-center gap-4'>
                   <div className='w-10 h-10 bg-orange-50 dark:bg-orange-900/20 rounded-full flex items-center justify-center'>

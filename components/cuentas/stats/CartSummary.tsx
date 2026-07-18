@@ -21,7 +21,7 @@ function CartSummaryComponent({ total, itemCount, onSubmit, loading }: CartSumma
       <Button
         onClick={onSubmit}
         disabled={loading || itemCount === 0}
-        className="bg-black text-white dark:bg-black dark:text-white  dark:hover:!bg-white dark:hover:!text-black rounded-full hover:!bg-white hover:!text-black transition-all hover:scale-105 border-2"
+        className="bg-black text-white dark:bg-black dark:text-white  dark:hover:bg-white! dark:hover:text-black! rounded-full hover:bg-white! hover:text-black! transition-all hover:scale-105 border-2"
       >
         <ShoppingCart className="mr-2 h-4 w-4" />
         {loading ? 'Agregando...' : 'Agregar'}

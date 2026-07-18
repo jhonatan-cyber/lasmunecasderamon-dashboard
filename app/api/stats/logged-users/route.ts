@@ -1,8 +1,13 @@
 import { NextResponse } from 'next/server';
-import { withAppApiWrapper } from '@/lib/api/app-api-wrapper';
+import { withPublicRoute } from '@/lib/api/withRoute';
 import { StatsService } from '@/lib/services/StatsService';
+import { DashboardCache, DASHBOARD_CACHE_KEYS, DASHBOARD_TTL } from '@/lib/cache/dashboardCache';
 
-export const GET = withAppApiWrapper(async () => {
-  const data = await StatsService.getLoggedUsers();
+export const GET = withPublicRoute(async () => {
+  const { data } = await DashboardCache.getOrFetch(
+    DASHBOARD_CACHE_KEYS.LOGGED_USERS,
+    () => StatsService.getLoggedUsers(),
+    DASHBOARD_TTL.LOGGED_USERS
+  );
   return NextResponse.json({ success: true, data });
 });

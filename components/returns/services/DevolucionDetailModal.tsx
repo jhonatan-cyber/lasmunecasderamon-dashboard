@@ -61,7 +61,7 @@ export function DevolucionDetailModal({
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className='max-w-3xl max-h-[90vh] flex flex-col p-0'>
-        <DialogHeader className='flex-shrink-0 px-6 pt-6 pb-4 border-b'>
+        <DialogHeader className='shrink-0 px-6 pt-6 pb-4 border-b'>
           <DialogTitle className='text-center text-lg font-bold mb-2'>
             Devolución de Servicio
           </DialogTitle>
@@ -290,7 +290,7 @@ export function DevolucionDetailModal({
           </div>
         </div>
 
-        <div className='flex-shrink-0 border-t px-6 py-4'>
+        <div className='shrink-0 border-t px-6 py-4'>
           <div className='flex justify-end gap-2'>
             <Button variant='outline' onClick={() => onOpenChange(false)}>
               Cancelar

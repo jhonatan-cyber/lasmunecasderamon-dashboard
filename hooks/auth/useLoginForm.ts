@@ -1,6 +1,9 @@
-﻿import { useState, useEffect, useRef, useCallback } from 'react';
+'use client';
+
+import { useState, useEffect, useRef, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import { toast } from 'sonner';
+import { EMAIL_DOMAIN } from '@/lib/constants/email';
 
 export interface LoginFormData {
   email: string;
@@ -200,7 +203,7 @@ export const useLoginForm = () => {
     try {
       let emailToSend = emailValue;
       if (!emailToSend.includes('@')) {
-        emailToSend = `${emailToSend}@lasmuñecasderamon.com`;
+        emailToSend = `${emailToSend}${EMAIL_DOMAIN}`;
       }
 
       const res = await fetch('/api/auth/login', {
@@ -237,6 +240,14 @@ export const useLoginForm = () => {
         return;
       }
 
+      // S7: Redirigir a cambio forzado de contraseña si aplica
+      if (data.user?.forcePasswordChange) {
+        toast.info('Debés cambiar tu contraseña antes de continuar', { duration: 5000 });
+        setLoading(false);
+        router.replace('/change-password');
+        return;
+      }
+
       toast.success('¡Bienvenido al sistema!');
       if (data.user?.role) {
         localStorage.setItem('userRole', data.user.role);
@@ -261,7 +272,7 @@ export const useLoginForm = () => {
     try {
       let emailToSend = loginData.email.trim();
       if (!emailToSend.includes('@')) {
-        emailToSend = `${emailToSend}@lasmuñecasderamon.com`;
+        emailToSend = `${emailToSend}${EMAIL_DOMAIN}`;
       }
 
       const res = await fetch('/api/auth/login', {
@@ -287,6 +298,14 @@ export const useLoginForm = () => {
         setLoading(false);
         return;
       }
+      // S7: Redirigir a cambio forzado de contraseña si aplica
+      if (data.user?.forcePasswordChange) {
+        toast.info('Debés cambiar tu contraseña antes de continuar', { duration: 5000 });
+        setLoading(false);
+        router.replace('/change-password');
+        return;
+      }
+
       toast.success('¡Bienvenido al sistema!');
       if (data.user?.role) {
         localStorage.setItem('userRole', data.user.role);
@@ -311,7 +330,7 @@ export const useLoginForm = () => {
 
       let emailOriginal = registerData.email.trim();
       if (!emailOriginal.includes('@')) {
-        emailOriginal = `${emailOriginal}@lasmuñecasderamon.com`;
+        emailOriginal = `${emailOriginal}${EMAIL_DOMAIN}`;
       }
 
       const res = await fetch('/api/auth/register-first-user', {

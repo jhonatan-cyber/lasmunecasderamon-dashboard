@@ -1,3 +1,5 @@
+import { isPublicRoute } from '@/lib/constants/routes';
+
 let isRedirecting = false;
 
 export function setupFetchInterceptor() {
@@ -34,15 +36,14 @@ export function setupFetchInterceptor() {
               : '';
 
         const currentPath = window.location.pathname;
-        const isPublicRoute =
+        const isPublic =
           currentPath === '/' ||
           currentPath === '/login' ||
           currentPath === '/api-docs' ||
-          currentPath.startsWith('/confirmar-anulacion') ||
-          currentPath === '/confirmar-anticipo' ||
+          isPublicRoute(currentPath) ||
           currentPath === '/asistencia-qr';
 
-        if (!isPublicRoute && !url.includes('/login')) {
+        if (!isPublic && !url.includes('/login')) {
           isRedirecting = true;
           const clonedResponse = response.clone();
           try {

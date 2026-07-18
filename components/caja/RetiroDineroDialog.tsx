@@ -219,7 +219,7 @@ export function RetiroDineroDialog({
         </div>
 
         {}
-        <div className='flex-shrink-0 border-t border-gray-100 dark:border-gray-800 p-6 bg-gray-50 dark:bg-slate-900/50 flex justify-center gap-4'>
+        <div className='shrink-0 border-t border-gray-100 dark:border-gray-800 p-6 bg-gray-50 dark:bg-slate-900/50 flex justify-center gap-4'>
           <Button
             type='button'
             variant='outline'

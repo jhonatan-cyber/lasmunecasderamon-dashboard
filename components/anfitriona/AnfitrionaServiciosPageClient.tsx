@@ -172,7 +172,7 @@ export default function AnfitrionaServiciosPage() {
           }}
           className='w-full sm:w-auto'
         >
-          <TabsList className='grid w-full grid-cols-2 bg-white/50 dark:bg-black/20 p-1 rounded-xl border shadow-sm h-12'>
+          <TabsList className='grid w-full grid-cols-2 bg-white/50 dark:bg-black/20 p-1 rounded-xl border shadow-xs h-12'>
             <TabsTrigger
               value='proceso'
               className='rounded-lg px-4 sm:px-12 py-2 data-[state=active]:bg-black data-[state=active]:text-white transition-all duration-200'

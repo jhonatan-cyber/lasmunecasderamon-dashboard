@@ -1,9 +1,9 @@
 import { NextResponse } from 'next/server';
-import { withAppApiWrapper, withAppAuth } from '@/lib/api/app-api-wrapper';
+import { withPublicRoute, withRoute } from '@/lib/api/withRoute';
 import { CategoryService } from '@/lib/services/CategoryService';
 import { ValidationError } from '@/lib/errors/errors';
 
-export const GET = withAppApiWrapper(async () => {
+export const GET = withPublicRoute(async () => {
   const data = await CategoryService.getAll();
   return NextResponse.json(
     { success: true, data },
@@ -15,7 +15,7 @@ export const GET = withAppApiWrapper(async () => {
   );
 });
 
-export const POST = withAppAuth(async (request: Request) => {
+export const POST = withRoute({ auth: true, audit: true, module: 'products', action: 'write' }, async (request: Request) => {
   const { name, description } = await request.json();
   if (!name) throw new ValidationError('Nombre requerido');
 
@@ -26,7 +26,7 @@ export const POST = withAppAuth(async (request: Request) => {
   );
 });
 
-export const PATCH = withAppAuth(async (request: Request) => {
+export const PATCH = withRoute({ auth: true, audit: true, module: 'products', action: 'write' }, async (request: Request) => {
   const { searchParams } = new URL(request.url);
   const id = searchParams.get('id');
 
@@ -53,7 +53,7 @@ export const PATCH = withAppAuth(async (request: Request) => {
   throw new ValidationError('Acción no válida');
 });
 
-export const PUT = withAppAuth(async (request: Request) => {
+export const PUT = withRoute({ auth: true, audit: true, module: 'products', action: 'write' }, async (request: Request) => {
   const { searchParams } = new URL(request.url);
   const id = searchParams.get('id');
   const { name, description } = await request.json();
@@ -64,7 +64,7 @@ export const PUT = withAppAuth(async (request: Request) => {
   return NextResponse.json({ success: true, message: 'Categoría actualizada correctamente', data });
 });
 
-export const DELETE = withAppAuth(async (request: Request) => {
+export const DELETE = withRoute({ auth: true, audit: true, module: 'products', action: 'delete' }, async (request: Request) => {
   const { searchParams } = new URL(request.url);
   const id = searchParams.get('id');
   if (!id) throw new ValidationError('Falta el id');

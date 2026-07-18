@@ -1,34 +1,40 @@
 import { NextResponse } from 'next/server';
-import { withAppAuth } from '@/lib/api/app-api-wrapper';
+import { withRoute } from '@/lib/api/withRoute';
 import { getNowInBusinessTimezone } from '@/lib/business/timezoneService';
 import { query } from '@/lib/database/db';
+import { DashboardCache, DASHBOARD_CACHE_KEYS, DASHBOARD_TTL } from '@/lib/cache/dashboardCache';
 
-export const GET = withAppAuth(async () => {
-  const now = getNowInBusinessTimezone();
-  const currentMonth = now.substring(0, 7);
+export const GET = withRoute({ auth: true, audit: true }, async () => {
+  const { data } = await DashboardCache.getOrFetch(
+    DASHBOARD_CACHE_KEYS.STATS,
+    async () => {
+      const now = getNowInBusinessTimezone();
+      const currentMonth = now.substring(0, 7);
 
-  const statsResult = await query<any[]>(
-    `SELECT COUNT(*) as totalVentas, COALESCE(SUM(total), 0) as totalIngresos
-     FROM ventas
-     WHERE DATE(fecha_crea) >= ? AND DATE(fecha_crea) < ?`,
-    [`${currentMonth}-01`, `${currentMonth}-31`]
+      const statsResult = await query<any[]>(
+        `SELECT COUNT(*) as totalVentas, COALESCE(SUM(total), 0) as totalIngresos
+         FROM ventas
+         WHERE DATE(fecha_crea) >= ? AND DATE(fecha_crea) < ?`,
+        [`${currentMonth}-01`, `${currentMonth}-31`]
+      );
+      const stats = statsResult[0] || { totalVentas: 0, totalIngresos: 0 };
+      const weeklyIncome = await getWeeklyIncome(now);
+
+      return {
+        totalSales: Number(stats.totalVentas) || 0,
+        totalIncome: Number(stats.totalIngresos) || 0,
+        monthlyGoal: 5000000,
+        currentProgress: Number(stats.totalIngresos) || 0,
+        weeklyIncome,
+        badges: [],
+        totalEarnings: 0,
+        svcCount: 0
+      };
+    },
+    DASHBOARD_TTL.STATS
   );
-  const stats = statsResult[0] || { totalVentas: 0, totalIngresos: 0 };
-  const weeklyIncome = await getWeeklyIncome(now);
 
-  return NextResponse.json({
-    success: true,
-    data: {
-      totalSales: Number(stats.totalVentas) || 0,
-      totalIncome: Number(stats.totalIngresos) || 0,
-      monthlyGoal: 5000000,
-      currentProgress: Number(stats.totalIngresos) || 0,
-      weeklyIncome,
-      badges: [],
-      totalEarnings: 0,
-      svcCount: 0
-    }
-  });
+  return NextResponse.json({ success: true, data });
 });
 
 async function getWeeklyIncome(now: string) {

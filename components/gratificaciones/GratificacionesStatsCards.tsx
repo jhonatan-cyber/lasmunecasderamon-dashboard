@@ -73,14 +73,14 @@ export default function GratificacionesStatsCards({
       {stats.map((stat, index) => (
         <Card
           key={index}
-          className={`overflow-hidden border-none shadow-sm group hover:shadow-md transition-all duration-300`}
+          className={`overflow-hidden border-none shadow-xs group hover:shadow-md transition-all duration-300`}
         >
           <div
             className={`${stat.bgColor} p-4 h-full flex flex-col justify-between border-b-4 ${stat.borderColor}`}
           >
             <div className='flex justify-between items-start mb-4'>
               <div
-                className={`p-2 rounded-xl bg-white dark:bg-neutral-800 shadow-sm group-hover:scale-110 transition-transform duration-300`}
+                className={`p-2 rounded-xl bg-white dark:bg-neutral-800 shadow-xs group-hover:scale-110 transition-transform duration-300`}
               >
                 <stat.icon className={`h-5 w-5 ${stat.iconColor}`} />
               </div>

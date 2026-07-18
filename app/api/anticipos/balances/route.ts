@@ -1,10 +1,11 @@
 import { NextResponse } from 'next/server';
-import { withAppAuth } from '@/lib/api/app-api-wrapper';
+import { withRoute } from '@/lib/api/withRoute';
 import { getAnticipoBalances } from '@/lib/business/anticiposUtils';
 
 export const dynamic = 'force-dynamic';
 
-export const GET = withAppAuth(
+export const GET = withRoute(
+  { auth: true, audit: true, module: 'advances', action: 'read' },
   async (request: Request) => {
     const { searchParams } = new URL(request.url);
     const usuario_id = searchParams.get('usuario_id');
@@ -26,6 +27,5 @@ export const GET = withAppAuth(
       const msg = error instanceof Error ? error.message : 'Error al obtener saldos';
       return NextResponse.json({ success: false, message: msg }, { status: 500 });
     }
-  },
-  { module: 'advances', action: 'read' }
+  }
 );

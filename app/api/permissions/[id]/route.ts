@@ -1,8 +1,8 @@
 import { NextResponse } from 'next/server';
-import { withAppApiWrapper } from '@/lib/api/app-api-wrapper';
+import { withPublicRoute } from '@/lib/api/withRoute';
 import { PermissionService } from '@/lib/services/PermissionService';
 
-export const PUT = withAppApiWrapper(
+export const PUT = withPublicRoute(
   async (request: Request, { params }: { params: Promise<{ id: string }> }) => {
     const id = (await params).id;
     const body = await request.json();
@@ -11,7 +11,7 @@ export const PUT = withAppApiWrapper(
   }
 );
 
-export const DELETE = withAppApiWrapper(
+export const DELETE = withPublicRoute(
   async (request: Request, { params }: { params: Promise<{ id: string }> }) => {
     const id = (await params).id;
     await PermissionService.delete(id);

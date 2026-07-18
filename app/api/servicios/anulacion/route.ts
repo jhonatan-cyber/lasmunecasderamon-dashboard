@@ -1,11 +1,11 @@
 import { NextResponse } from 'next/server';
-import { withAppAuth } from '@/lib/api/app-api-wrapper';
+import { withRoute } from '@/lib/api/withRoute';
 import { ServiceService } from '@/lib/services/ServiceService';
 import { query } from '@/lib/database/db';
 import { enviarMensajeSolicitudAnulacion } from '@/lib/integrations/whatsappService';
 import logger from '@/lib/utils/logger';
 
-export const POST = withAppAuth(async (request: Request, { user }: { params: any; user: any }) => {
+export const POST = withRoute({ auth: true, audit: true }, async (request: Request, { user }: { params: any; user: any }) => {
   const body = await request.json();
 
   if (body.requestId) {
@@ -30,13 +30,10 @@ export const POST = withAppAuth(async (request: Request, { user }: { params: any
     [body.servicioId]
   );
 
-  const adminWhatsApp =
-    process.env.ADMIN_WHATSAPP_NUMBER?.replace('whatsapp:', '') || '59172419112';
-  const baseUrl = process.env.PUBLIC_BASE_URL || process.env.NEXT_PUBLIC_APP_URL || '';
+  const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || '';
 
   try {
     await enviarMensajeSolicitudAnulacion({
-      numeroAdmin: adminWhatsApp,
       tipo: 'servicio',
       codigo: servicioInfo[0]?.codigo || body.servicioId,
       clienteNombre: servicioInfo[0]?.cliente_nombre || 'Sin cliente registrado',

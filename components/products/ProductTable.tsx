@@ -1,3 +1,5 @@
+'use client';
+
 import Image from 'next/image';
 import React, { useState } from 'react';
 import { Product } from '@/types/product';
@@ -127,7 +129,7 @@ const SortableRow: React.FC<SortableRowProps> = ({
         </Badge>
       </TableCell>
       <TableCell className='py-3 px-2 sm:px-4 text-center'>
-        <div className='relative mx-auto flex h-12 w-12 shrink-0 items-center justify-center overflow-hidden rounded-xl border border-gray-100 bg-gray-50 shadow-sm transition-all group-hover:shadow'>
+        <div className='relative mx-auto flex h-12 w-12 shrink-0 items-center justify-center overflow-hidden rounded-xl border border-gray-100 bg-gray-50 shadow-xs transition-all group-hover:shadow-sm'>
           <Image
             src={
               !product.foto || product.foto === 'default.png' || product.foto === ''
@@ -293,7 +295,7 @@ const ProductTable: React.FC<ProductTableProps> = ({
 
   return (
     <TooltipProvider>
-      <div className='bg-white dark:bg-slate-900/40 backdrop-blur-sm rounded-3xl border-none shadow-md overflow-hidden'>
+      <div className='bg-white dark:bg-slate-900/40 backdrop-blur-xs rounded-3xl border-none shadow-md overflow-hidden'>
         <div className='overflow-x-auto'>
           <DndContext
             sensors={sensors}

@@ -3,7 +3,8 @@ import { getNowInBusinessTimezone } from '@/lib/business/timezoneService';
 import { ClientSchema, type ClientType } from '@/lib/business/schemas';
 import { BaseRepository } from './BaseRepository';
 import { CashRegisterRepository } from './CashRegisterRepository';
-import { BusinessError } from '@/lib/errors/errors';
+import { BusinessError, NotFoundError, DatabaseError } from '@/lib/errors/errors';
+import { logger } from '@/lib/utils/logger';
 import {
   parsePagosMixtos,
   validatePagosMixtos,
@@ -54,7 +55,8 @@ export class ClientRepository {
     limit?: number;
     offset?: number;
   }): Promise<{ data: ClientType[]; total: number }> {
-    const limit = params?.limit ?? 50;
+    try {
+      const limit = params?.limit ?? 50;
     const offset = params?.offset ?? 0;
     const sqlParams: any[] = [];
 
@@ -80,10 +82,15 @@ export class ClientRepository {
     const data = await query<any[]>(dataSql, [...sqlParams, limit, offset]);
 
     return { data: data.map(row => this.mapClientFromDB(row)), total };
+    } catch (err) {
+      logger.error('[ClientRepository] Error en getAll:', { search: params?.search, err });
+      throw new DatabaseError('Error al obtener lista de clientes', err);
+    }
   }
 
   static async getById(id: string): Promise<ClientType | null> {
-    const clients = await query<any[]>(
+    try {
+      const clients = await query<any[]>(
       `
       SELECT c.*, 
       COALESCE((SELECT SUM(total) FROM cuentas WHERE cliente_id = c.id_cliente AND estado = 1), 0) as deuda
@@ -93,21 +100,36 @@ export class ClientRepository {
       [id]
     );
     return clients.length > 0 ? this.mapClientFromDB(clients[0]) : null;
+    } catch (err) {
+      logger.error('[ClientRepository] Error en getById:', { id, err });
+      throw new DatabaseError(`Error al obtener cliente ${id}`, err);
+    }
   }
 
   static async getByIdForUpdate(trx: TransactionQuery, id: string): Promise<ClientType | null> {
-    const row = await BaseRepository.findOne<any>(trx, 'clientes', 'id_cliente', id);
+    try {
+      const row = await BaseRepository.findOne<any>(trx, 'clientes', 'id_cliente', id);
     return row ? this.mapClientFromDB(row) : null;
+    } catch (err) {
+      logger.error('[ClientRepository] Error en getByIdForUpdate:', { id, err });
+      throw new DatabaseError(`Error al obtener cliente ${id} para actualizar`, err);
+    }
   }
 
   static async updateBalance(trx: TransactionQuery, id: string, amount: number): Promise<void> {
-    await trx('UPDATE clientes SET saldo = saldo + ? WHERE id_cliente = ?', [amount, id]);
+    try {
+      await trx('UPDATE clientes SET saldo = saldo + ? WHERE id_cliente = ?', [amount, id]);
+    } catch (err) {
+      logger.error('[ClientRepository] Error en updateBalance:', { id, amount, err });
+      throw new DatabaseError(`Error al actualizar saldo del cliente ${id}`, err);
+    }
   }
 
   static async create(
     data: Pick<ClientType, 'run' | 'name' | 'lastName' | 'phone'>
   ): Promise<ClientType | null> {
-    const id = generateUUID();
+    try {
+      const id = generateUUID();
     const now = getNowInBusinessTimezone();
     await BaseRepository.insert(query, 'clientes', {
       id_cliente: id,
@@ -119,10 +141,15 @@ export class ClientRepository {
     });
 
     return await this.getById(id);
+    } catch (err) {
+      logger.error('[ClientRepository] Error en create:', { err });
+      throw new DatabaseError('Error al crear cliente', err);
+    }
   }
 
   static async update(id: string, data: Partial<ClientType>): Promise<ClientType | null> {
-    const now = getNowInBusinessTimezone();
+    try {
+      const now = getNowInBusinessTimezone();
     const upData: any = {
       run: data.run,
       nombre: data.name,
@@ -133,14 +160,25 @@ export class ClientRepository {
 
     await BaseRepository.update(query, 'clientes', 'id_cliente', id, upData);
     return await this.getById(id);
+    } catch (err) {
+      logger.error('[ClientRepository] Error en update:', { id, err });
+      if (err instanceof NotFoundError) throw err;
+      throw new DatabaseError(`Error al actualizar cliente ${id}`, err);
+    }
   }
 
   static async delete(id: string): Promise<void> {
-    await BaseRepository.delete(query, 'clientes', 'id_cliente', id);
+    try {
+      await BaseRepository.delete(query, 'clientes', 'id_cliente', id);
+    } catch (err) {
+      logger.error('[ClientRepository] Error en delete:', { id, err });
+      throw new DatabaseError(`Error al eliminar cliente ${id}`, err);
+    }
   }
 
   static async getHistory(clientId: string): Promise<any[]> {
-    const moves = await query<any[]>(
+    try {
+      const moves = await query<any[]>(
       `
       SELECT 
         id_movimiento as id,
@@ -257,6 +295,10 @@ export class ClientRepository {
     return results.sort(
       (a, b) => new Date(b.fecha_crea).getTime() - new Date(a.fecha_crea).getTime()
     );
+    } catch (err) {
+      logger.error('[ClientRepository] Error en getHistory:', { clientId, err });
+      throw new DatabaseError(`Error al obtener historial del cliente ${clientId}`, err);
+    }
   }
 
   static async addPrepago(data: {
@@ -268,7 +310,8 @@ export class ClientRepository {
     usuario_id?: string;
     metadatos?: any;
   }): Promise<void> {
-    const moveId = generateUUID();
+    try {
+      const moveId = generateUUID();
     const now = getNowInBusinessTimezone();
     const metodoPago = String(data.metodo_pago || 'efectivo');
     const pagosMixtos = parsePagosMixtos(data.pagos_mixtos);
@@ -318,5 +361,10 @@ export class ClientRepository {
         this.getPrepagoCajaDeltas(data.monto, metodoPago, pagosMixtos)
       );
     });
+    } catch (err) {
+      logger.error('[ClientRepository] Error en addPrepago:', { cliente_id: data.cliente_id, err });
+      if (err instanceof BusinessError || err instanceof NotFoundError) throw err;
+      throw new DatabaseError(`Error al agregar prepago para cliente ${data.cliente_id}`, err);
+    }
   }
 }

@@ -203,7 +203,7 @@ export function CommissionsReport() {
     <div className="space-y-8 pb-10">
       {}
       <div className="flex flex-col md:flex-row items-center justify-between gap-6">
-        <div className="flex flex-wrap items-center gap-2 bg-gray-100/50 dark:bg-gray-800/50 p-1.5 rounded-2xl border border-gray-200/50 dark:border-gray-700/50 backdrop-blur-sm">
+        <div className="flex flex-wrap items-center gap-2 bg-gray-100/50 dark:bg-gray-800/50 p-1.5 rounded-2xl border border-gray-200/50 dark:border-gray-700/50 backdrop-blur-xs">
           {[
             { id: 'current_month', label: 'Mes Actual' },
             { id: 'last_month', label: 'Mes Anterior' },
@@ -216,7 +216,7 @@ export function CommissionsReport() {
               onClick={() => setPeriod(chip.id)}
               className={`px-4 py-2 rounded-xl text-sm font-semibold transition-all duration-300 ${
                 period === chip.id
-                  ? 'bg-white dark:bg-gray-700 text-green-600 dark:text-green-400 shadow-sm scale-105'
+                  ? 'bg-white dark:bg-gray-700 text-green-600 dark:text-green-400 shadow-xs scale-105'
                   : 'text-gray-500 hover:text-gray-700 dark:hover:text-gray-300 hover:bg-gray-200/50 dark:hover:bg-gray-700/50'
               }`}
             >
@@ -232,14 +232,14 @@ export function CommissionsReport() {
                 type="date"
                 value={startDate}
                 onChange={(e) => setStartDate(e.target.value)}
-                className="px-3 py-2 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl text-sm shadow-sm focus:ring-2 focus:ring-green-500/20 outline-none transition-all"
+                className="px-3 py-2 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl text-sm shadow-xs focus:ring-2 focus:ring-green-500/20 outline-hidden transition-all"
               />
               <span className="text-gray-400 font-bold">→</span>
               <input
                 type="date"
                 value={endDate}
                 onChange={(e) => setEndDate(e.target.value)}
-                className="px-3 py-2 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl text-sm shadow-sm focus:ring-2 focus:ring-green-500/20 outline-none transition-all"
+                className="px-3 py-2 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl text-sm shadow-xs focus:ring-2 focus:ring-green-500/20 outline-hidden transition-all"
               />
             </div>
           )}
@@ -297,10 +297,10 @@ export function CommissionsReport() {
           },
         ].map((stat, i) => (
           <Card key={i} className={`relative border-0 shadow-xl shadow-gray-200/50 dark:shadow-black/20 overflow-hidden group hover:scale-[1.02] transition-all duration-300`}>
-            <div className={`absolute inset-0 bg-gradient-to-br ${stat.grad} opacity-50`}></div>
+            <div className={`absolute inset-0 bg-linear-to-br ${stat.grad} opacity-50`}></div>
             <CardHeader className="relative flex flex-row items-center justify-between space-y-0 pb-2">
               <CardTitle className="text-xs font-bold uppercase tracking-wider text-gray-500 dark:text-gray-400">{stat.title}</CardTitle>
-              <div className={`w-10 h-10 rounded-2xl bg-white dark:bg-gray-800 shadow-sm flex items-center justify-center group-hover:rotate-12 transition-transform`}>
+              <div className={`w-10 h-10 rounded-2xl bg-white dark:bg-gray-800 shadow-xs flex items-center justify-center group-hover:rotate-12 transition-transform`}>
                 <stat.icon className={`h-5 w-5 text-${stat.color}-600 dark:text-${stat.color}-400`} />
               </div>
             </CardHeader>
@@ -478,7 +478,7 @@ export function CommissionsReport() {
                 {Array.from({ length: totalPages }, (_, i) => (
                   <Button
                     key={i}
-                    variant={tablePage === i ? 'default' : 'outline'}
+                    variant={tablePage === i ? 'default' : 'outline-solid'}
                     size="sm"
                     className="w-8 h-8 p-0"
                     onClick={() => setTablePage(i)}
@@ -504,7 +504,7 @@ export function CommissionsReport() {
       {}
       <CollapsibleCard
         title={<><BarChart3 className="h-5 w-5" /> Comisiones por Día de la Semana</>}
-        headerClassName="bg-gradient-to-r from-indigo-600 to-blue-600 text-white"
+        headerClassName="bg-linear-to-r from-indigo-600 to-blue-600 text-white"
       >
         <div className="h-[320px] sm:h-[450px] w-full">
           {dailyChartData.length > 0 ? (

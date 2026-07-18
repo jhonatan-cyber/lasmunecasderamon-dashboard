@@ -23,7 +23,7 @@ export function RoomsHeader({
       <div className='flex flex-col sm:flex-row gap-2 items-center'>
         <div className='flex gap-2 items-center'>
           <Button
-            variant={showTableView ? 'default' : 'outline'}
+            variant={showTableView ? 'default' : 'outline-solid'}
             size='sm'
             onClick={() => setShowTableView(true)}
             className='rounded-full hover:scale-105 transition-all duration-200 text-xs sm:text-sm'
@@ -32,7 +32,7 @@ export function RoomsHeader({
             Tabla
           </Button>
           <Button
-            variant={!showTableView ? 'default' : 'outline'}
+            variant={!showTableView ? 'default' : 'outline-solid'}
             size='sm'
             onClick={() => setShowTableView(false)}
             className='rounded-full hover:scale-105 transition-all duration-200 text-xs sm:text-sm'

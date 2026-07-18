@@ -197,7 +197,7 @@ export default function GratificacionesTable({
 
   const DesktopTableView = () => (
     <div className='hidden lg:block'>
-      <div className='bg-white dark:bg-neutral-900 rounded-xl border border-gray-100 dark:border-neutral-800 shadow-sm overflow-hidden'>
+      <div className='bg-white dark:bg-neutral-900 rounded-xl border border-gray-100 dark:border-neutral-800 shadow-xs overflow-hidden'>
         <Table>
           <TableHeader>
             <TableRow className='bg-zinc-50 dark:bg-neutral-800/50'>

@@ -3,6 +3,7 @@
 import Image from 'next/image';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { EMAIL_DOMAIN } from '@/lib/constants/email';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Separator } from '@/components/ui/separator';
@@ -121,7 +122,7 @@ export function ProfilePersonalInfoCard({
                   placeholder='usuario123'
                 />
                 <p className='mt-1 text-xs text-muted-foreground'>
-                  El email se actualizará automáticamente: {userData.nick}@lasmuñecasderamon.com
+                    El email se actualizará automáticamente: {userData.nick}{EMAIL_DOMAIN}
                   {isSpecialRole && (
                     <span className='font-medium text-orange-600'>
                       {' '}
@@ -209,7 +210,7 @@ export function ProfilePersonalInfoCard({
                 />
                 <p className='mt-1 text-xs text-muted-foreground'>
                   Se actualiza automáticamente con el nickname: {userData.nick || ''}
-                  @lasmuñecasderamon.com
+                  {EMAIL_DOMAIN}
                 </p>
               </div>
 
@@ -266,7 +267,7 @@ export function ProfilePersonalInfoCard({
                 />
                 <p className='mt-1 text-xs text-muted-foreground'>
                   El email se actualizará automáticamente: {userData.nick || ''}
-                  @lasmuñecasderamon.com
+                  {EMAIL_DOMAIN}
                   {isSpecialRole && (
                     <span className='font-medium text-orange-600'>
                       {' '}

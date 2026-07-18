@@ -1,4 +1,6 @@
 import { query } from '@/lib/database/db';
+import { DatabaseError } from '@/lib/errors/errors';
+import { logger } from '@/lib/utils/logger';
 
 type CommissionPeriod = 'current_month' | 'last_month' | 'current_year' | 'last_year' | 'custom';
 
@@ -49,7 +51,8 @@ export async function getCommissionsReport(
   startDate?: string | null,
   endDate?: string | null
 ) {
-  const range = buildDateRange('c.fecha_crea', period, startDate, endDate);
+  try {
+    const range = buildDateRange('c.fecha_crea', period, startDate, endDate);
 
   const commissions = await query<any[]>(
     `
@@ -199,4 +202,8 @@ export async function getCommissionsReport(
       promedio_comision: Number(row.promedio_comision || 0)
     }))
   };
+  } catch (err) {
+    logger.error('[CommissionReport] Error en getCommissionsReport:', { period, startDate, endDate, err });
+    throw new DatabaseError('Error al obtener reporte de comisiones', err);
+  }
 }

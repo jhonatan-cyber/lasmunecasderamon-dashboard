@@ -3,6 +3,7 @@
 import { useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { AlertCircle, Home, RefreshCw } from 'lucide-react';
+import { EMAIL_DOMAIN } from '@/lib/constants/email';
 import Link from 'next/link';
 
 export default function GlobalError({
@@ -61,10 +62,10 @@ export default function GlobalError({
             <p className='text-sm text-gray-500 dark:text-gray-500'>
               ¿Necesitás ayuda? Contactanos al{' '}
               <a
-                href='mailto:soporte@lasmunecasderamon.com'
+                href='mailto:soporte${EMAIL_DOMAIN}'
                 className='text-blue-600 hover:underline'
               >
-                soporte@lasmunecasderamon.com
+                soporte${EMAIL_DOMAIN}
               </a>
             </p>
           </div>

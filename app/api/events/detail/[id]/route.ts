@@ -1,10 +1,10 @@
 import { NextResponse } from 'next/server';
-import { withAppApiWrapper } from '@/lib/api/app-api-wrapper';
+import { withPublicRoute } from '@/lib/api/withRoute';
 import { EventService } from '@/lib/services/EventService';
 
 export const dynamic = 'force-dynamic';
 
-export const GET = withAppApiWrapper(
+export const GET = withPublicRoute(
   async (request: Request, { params }: { params: Promise<{ id: string }> }) => {
     const { id } = await params;
     const { searchParams } = new URL(request.url);

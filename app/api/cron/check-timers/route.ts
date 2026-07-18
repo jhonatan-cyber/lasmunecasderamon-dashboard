@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server';
-import { withAppApiWrapper } from '@/lib/api/app-api-wrapper';
+import { withPublicRoute } from '@/lib/api/withRoute';
 import { query, withTransaction } from '@/lib/database/db';
 import { sendPushNotification, sendPushByRole } from '@/lib/integrations/pushNotifications';
 import { sendNotificationToAll } from '@/lib/api/sseService';
@@ -10,7 +10,7 @@ export const dynamic = 'force-dynamic';
 
 const globalForCron = globalThis as typeof globalThis & { __attendanceCheckDate?: string };
 
-export const GET = withAppApiWrapper(async () => {
+export const GET = withPublicRoute(async () => {
   const bizNow = getNowInBusinessTimezone();
   const now = new Date(bizNow.replace(' ', 'T'));
   const tz = getSystemTimezone();

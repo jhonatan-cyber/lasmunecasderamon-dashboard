@@ -1,10 +1,10 @@
 import { NextResponse } from 'next/server';
-import { withAppAuth } from '@/lib/api/app-api-wrapper';
+import { withRoute } from '@/lib/api/withRoute';
 import { query } from '@/lib/database/db';
 import { logger } from '@/lib/utils/logger';
 
-export const POST = withAppAuth(
-  async (request: Request, { params }: { params: Promise<{ id: string }>; user: any }) => {
+export const POST = withRoute({ auth: true, audit: true, module: 'settings', action: 'write' },
+  async (request: Request, { params }: { params: Promise<{ id: string }> }) => {
     const id = (await params).id;
 
     const backups = (await query('SELECT * FROM backups WHERE id_backup = ?', [id])) as any[];
@@ -69,6 +69,5 @@ export const POST = withAppAuth(
         { status: 500 }
       );
     }
-  },
-  { requiredPermission: { module: 'settings', action: 'write' } }
+  }
 );

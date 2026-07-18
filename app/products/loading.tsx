@@ -1,5 +1,5 @@
-import { ProductsSkeleton } from '@/components/shared/Skeletons';
+﻿import { Skeleton } from '@/components/shared/Skeleton';
 
 export default function Loading() {
-  return <ProductsSkeleton />;
+  return <Skeleton name="products-main" loading={true} />;
 }

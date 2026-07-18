@@ -1,8 +1,10 @@
 import { NextResponse } from 'next/server';
-import { withAppApiWrapper, withAppAuth } from '@/lib/api/app-api-wrapper';
+import { withPublicRoute, withRoute } from '@/lib/api/withRoute';
 import { RoomService } from '@/lib/services/RoomService';
+import { RoomSchema } from '@/lib/business/schemas/room';
+import { validateOrResponse } from '@/lib/api/validate';
 
-export const GET = withAppApiWrapper(async (request: Request) => {
+export const GET = withPublicRoute(async (request: Request) => {
   const { searchParams } = new URL(request.url);
   const id = searchParams.get('id');
   const status = searchParams.get('status') || undefined;
@@ -21,13 +23,15 @@ export const GET = withAppApiWrapper(async (request: Request) => {
   return NextResponse.json({ success: true, data });
 });
 
-export const POST = withAppAuth(async (request: Request) => {
+export const POST = withRoute({ auth: true, audit: true }, async (request: Request) => {
   const body = await request.json();
-  const data = await RoomService.createRoom(body);
+  const validated = validateOrResponse(RoomSchema, body);
+  if (validated instanceof NextResponse) return validated;
+  const data = await RoomService.createRoom(validated);
   return NextResponse.json({ success: true, message: 'Habitación creada', data }, { status: 201 });
 });
 
-export const PUT = withAppAuth(async (request: Request) => {
+export const PUT = withRoute({ auth: true, audit: true }, async (request: Request) => {
   const { searchParams } = new URL(request.url);
   const id = searchParams.get('id');
   const body = await request.json();
@@ -36,7 +40,9 @@ export const PUT = withAppAuth(async (request: Request) => {
   if (!targetId)
     return NextResponse.json({ success: false, message: 'ID es requerido' }, { status: 400 });
 
-  const data = await RoomService.update(targetId, body);
+  const validated = validateOrResponse(RoomSchema, body);
+  if (validated instanceof NextResponse) return validated;
+  const data = await RoomService.update(targetId, validated);
   return NextResponse.json({
     success: true,
     message: 'Habitación actualizada correctamente',
@@ -44,7 +50,7 @@ export const PUT = withAppAuth(async (request: Request) => {
   });
 });
 
-export const PATCH = withAppAuth(async (request: Request) => {
+export const PATCH = withRoute({ auth: true, audit: true }, async (request: Request) => {
   const { searchParams } = new URL(request.url);
   const id = searchParams.get('id');
   const action = searchParams.get('action');
@@ -59,7 +65,7 @@ export const PATCH = withAppAuth(async (request: Request) => {
   return NextResponse.json({ success: true, message: 'Estado actualizado correctamente', data });
 });
 
-export const DELETE = withAppAuth(async (request: Request) => {
+export const DELETE = withRoute({ auth: true, audit: true }, async (request: Request) => {
   const { searchParams } = new URL(request.url);
   const id = searchParams.get('id');
 

@@ -32,8 +32,8 @@ export function FinancialCard({
 }: FinancialCardProps) {
   return (
     <div className="relative group">
-      <div className={`absolute -inset-1 bg-gradient-to-r ${gradientFrom} ${gradientTo} rounded-[2.5rem] blur opacity-20 group-hover:opacity-40 transition duration-1000 group-hover:duration-200`}></div>
-      <div className="relative bg-white dark:bg-gray-950 p-8 rounded-[2rem] border border-gray-100 dark:border-gray-800 h-full flex flex-col justify-center">
+      <div className={`absolute -inset-1 bg-linear-to-r ${gradientFrom} ${gradientTo} rounded-[2.5rem] blur-sm opacity-20 group-hover:opacity-40 transition duration-1000 group-hover:duration-200`}></div>
+      <div className="relative bg-white dark:bg-gray-950 p-8 rounded-4xl border border-gray-100 dark:border-gray-800 h-full flex flex-col justify-center">
         <div className="text-center space-y-3">
           <div className={`text-[10px] ${textColor} font-black uppercase tracking-[0.3em]`}>{title}</div>
           <div className={`text-4xl font-black ${mainColor}`}>

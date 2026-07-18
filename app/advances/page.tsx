@@ -11,7 +11,7 @@ import Paginate from '@/components/shared/Paginate';
 import { toast } from 'sonner';
 import { PermissionGuard } from '@/components/auth/PermissionGuard';
 import { useUserPermissions } from '@/hooks/auth/useUserPermissions';
-import { ReportSkeleton } from '@/components/shared/Skeletons';
+import { Skeleton as BoneyardSkeleton } from 'boneyard-js/react';
 import { AdvancesHeader } from '@/components/advances/AdvancesHeader';
 import { AdvancesCajaAlert } from '@/components/advances/AdvancesCajaAlert';
 import { AdvancesDialog } from '@/components/advances/AdvancesDialog';
@@ -48,10 +48,6 @@ export default function AdvancesPage() {
   const [advanceError, setAdvanceError] = useState<string | null>(null);
   const [advanceSaving, setAdvanceSaving] = useState(false);
   const [activeTab, setActiveTab] = useState<TabType>('pending');
-
-  if (loading || cajaLoading) {
-    return <ReportSkeleton />;
-  }
 
   const canCreate = hasPermission('anticipos', 'crear');
 
@@ -118,6 +114,7 @@ export default function AdvancesPage() {
 
   return (
     <PermissionGuard module='advances' action='view'>
+      <BoneyardSkeleton name="advances-main" loading={loading || cajaLoading}>
       <div className='p-4 sm:p-6 lg:p-10 space-y-4 sm:space-y-6 mt-4 sm:mt-6 lg:mt-10'>
         <AdvancesHeader
           canCreate={canCreate}
@@ -158,7 +155,7 @@ export default function AdvancesPage() {
               }}
               className={`flex items-center gap-2 px-5 py-2 text-sm font-semibold transition-all ${
                 activeTab === 'pending'
-                  ? 'bg-amber-100 text-amber-700 rounded-full shadow-sm'
+                  ? 'bg-amber-100 text-amber-700 rounded-full shadow-xs'
                   : 'text-gray-500 hover:bg-gray-100 rounded-full'
               }`}
             >
@@ -181,7 +178,7 @@ export default function AdvancesPage() {
               }}
               className={`flex items-center gap-2 px-5 py-2 text-sm font-semibold transition-all ${
                 activeTab === 'paid'
-                  ? 'bg-green-100 text-green-700 rounded-full shadow-sm'
+                  ? 'bg-green-100 text-green-700 rounded-full shadow-xs'
                   : 'text-gray-500 hover:bg-gray-100 rounded-full'
               }`}
             >
@@ -223,6 +220,7 @@ export default function AdvancesPage() {
         error={advanceError}
         efectivoEnCaja={efectivoEnCaja}
       />
+      </BoneyardSkeleton>
     </PermissionGuard>
   );
 }

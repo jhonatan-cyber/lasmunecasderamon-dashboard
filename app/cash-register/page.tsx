@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Skeleton } from '@/components/ui/skeleton';
+import { Skeleton as BoneyardSkeleton } from 'boneyard-js/react';
 import { Button } from '@/components/ui/button';
 import { useCashRegister } from '@/hooks/caja/useCashRegister';
 import { useCurrentUser } from '@/hooks/auth/useCurrentUser';
@@ -135,7 +135,7 @@ export default function CashRegister() {
     return (
       <div className='p-6 min-h-[60vh] flex items-center justify-center'>
         <Card className='max-w-md w-full border-none shadow-2xl bg-white/80 dark:bg-slate-900/40 backdrop-blur-xl rounded-[2.5rem] p-8 text-center'>
-          <div className='w-20 h-20 bg-rose-50 dark:bg-rose-500/10 rounded-[2rem] flex items-center justify-center mx-auto mb-6'>
+          <div className='w-20 h-20 bg-rose-50 dark:bg-rose-500/10 rounded-4xl flex items-center justify-center mx-auto mb-6'>
             <AlertTriangle className='h-10 w-10 text-rose-500' />
           </div>
           <h3 className='text-2xl font-black text-slate-900 dark:text-white mb-2'>
@@ -174,7 +174,7 @@ export default function CashRegister() {
 
           <div className='flex flex-col sm:flex-row gap-3 w-full sm:w-auto'>
             {openCajasCount > 0 ? (
-              <div className='flex items-center gap-3 pl-4 pr-6 py-3 bg-amber-50 dark:bg-amber-500/5 border border-amber-100 dark:border-amber-500/10 rounded-2xl shadow-sm animate-pulse'>
+              <div className='flex items-center gap-3 pl-4 pr-6 py-3 bg-amber-50 dark:bg-amber-500/5 border border-amber-100 dark:border-amber-500/10 rounded-2xl shadow-xs animate-pulse'>
                 <div className='bg-amber-100 dark:bg-amber-500/20 p-2 rounded-xl'>
                   <Info className='h-4 w-4 text-amber-600' />
                 </div>
@@ -213,7 +213,7 @@ export default function CashRegister() {
             </div>
           )}
 
-          <TabsContent value='cajas' className='space-y-6 outline-none'>
+          <TabsContent value='cajas' className='space-y-6 outline-hidden'>
             {!isCajero && (
               <CajaFilters
                 searchTerm={searchTerm}
@@ -224,26 +224,8 @@ export default function CashRegister() {
               />
             )}
 
-            {loading ? (
-              <div className='grid gap-6 grid-cols-1 sm:grid-cols-2 xl:grid-cols-3'>
-                {[...Array(6)].map((_, i) => (
-                  <Card
-                    key={i}
-                    className='border border-slate-100 dark:border-white/10 shadow-sm bg-white dark:bg-slate-900/40 rounded-[2rem] overflow-hidden p-8 space-y-6'
-                  >
-                    <div className='flex justify-between items-start'>
-                      <div className='space-y-2'>
-                        <Skeleton className='h-6 w-32 rounded-lg' />
-                        <Skeleton className='h-4 w-24 rounded-lg' />
-                      </div>
-                      <Skeleton className='h-8 w-20 rounded-full' />
-                    </div>
-                    <Skeleton className='h-24 w-full rounded-2xl' />
-                    <Skeleton className='h-12 w-full rounded-2xl' />
-                  </Card>
-                ))}
-              </div>
-            ) : filteredCajas.length === 0 ? (
+            <BoneyardSkeleton name="cash-register-main" loading={loading}>
+            {filteredCajas.length === 0 ? (
               <div className='flex flex-col items-center justify-center py-20 text-center space-y-6'>
                 <div className='w-24 h-24 bg-slate-100 dark:bg-white/5 rounded-[2.5rem] flex items-center justify-center'>
                   <Wallet className='h-12 w-12 text-slate-300' />
@@ -277,9 +259,10 @@ export default function CashRegister() {
                 ))}
               </div>
             )}
+            </BoneyardSkeleton>
           </TabsContent>
 
-          <TabsContent value='resumen' className='outline-none'>
+          <TabsContent value='resumen' className='outline-hidden'>
             <CashRegisterDetailedStats />
           </TabsContent>
         </Tabs>

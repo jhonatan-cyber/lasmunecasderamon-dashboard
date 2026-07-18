@@ -95,7 +95,7 @@ export default function OvertimeDetailModal({
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
       <DialogContent className='max-w-4xl max-h-[90vh] flex flex-col p-0'>
-        <DialogHeader className='flex-shrink-0 px-6 pt-6 pb-4 border-b dark:border-gray-700'>
+        <DialogHeader className='shrink-0 px-6 pt-6 pb-4 border-b dark:border-gray-700'>
           <div className='flex items-center justify-between'>
             <DialogTitle className='text-xl font-bold dark:text-white'>
               Detalle de Horas Extras
@@ -184,7 +184,7 @@ export default function OvertimeDetailModal({
               </div>
             ) : (
               <div className='space-y-6'>
-                <div className='bg-white dark:bg-slate-900/40 backdrop-blur-sm rounded-3xl border-none shadow-md overflow-hidden'>
+                <div className='bg-white dark:bg-slate-900/40 backdrop-blur-xs rounded-3xl border-none shadow-md overflow-hidden'>
                   <Table>
                     <TableHeader className='bg-gray-100 dark:bg-slate-900/50'>
                       <TableRow className='hover:bg-transparent border-gray-100 dark:border-gray-800'>

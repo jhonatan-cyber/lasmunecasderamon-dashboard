@@ -1,8 +1,9 @@
 import { NextResponse } from 'next/server';
-import { withAppAuth } from '@/lib/api/app-api-wrapper';
+import { withRoute } from '@/lib/api/withRoute';
 import { PermissionsCache } from '@/lib/auth/permissions-cache';
 
-export const POST = withAppAuth(
+export const POST = withRoute(
+  { auth: true, audit: true },
   async (_request: Request, { user }: { params: any; user: { id: string; role?: string } }) => {
     if (user.role?.toLowerCase() !== 'administrador') {
       return NextResponse.json(

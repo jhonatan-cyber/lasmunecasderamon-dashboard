@@ -1,5 +1,5 @@
 export const CUENTA_TABLE_CARD_CLASS =
-  'bg-white dark:bg-slate-900/40 backdrop-blur-sm rounded-3xl border-none shadow-md overflow-hidden';
+  'bg-white dark:bg-slate-900/40 backdrop-blur-xs rounded-3xl border-none shadow-md overflow-hidden';
 
 export const CUENTA_TABLE_CLASS = 'min-w-full text-base text-center';
 

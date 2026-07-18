@@ -1,5 +1,5 @@
-import { RoleTableSkeleton } from '@/components/shared/Skeletons';
+﻿import { Skeleton } from '@/components/shared/Skeleton';
 
 export default function Loading() {
-  return <RoleTableSkeleton />;
+  return <Skeleton name="cajero-asistencias-main" loading={true} />;
 }

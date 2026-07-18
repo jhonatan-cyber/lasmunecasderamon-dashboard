@@ -69,7 +69,7 @@ export function AdvancesDialog({
           <Button
             type='submit'
             form='advance-form'
-            className='bg-black text-white dark:bg-white dark:text-black dark:hover:!bg-gray-200 dark:hover:!text-black rounded-full px-8 hover:!bg-gray-800 hover:!text-white transition-all hover:scale-105 border-2'
+            className='bg-black text-white dark:bg-white dark:text-black dark:hover:bg-gray-200! dark:hover:text-black! rounded-full px-8 hover:bg-gray-800! hover:text-white! transition-all hover:scale-105 border-2'
             disabled={isLoading}
           >
             {isLoading ? (

@@ -161,31 +161,34 @@ export default function CajaDetails({ caja, open, onOpenChange }: CajaDetailsPro
 
   const handlePrint = () => {
     const printContent = generatePrintContent(getCajaExportContext());
-    const printWindow = window.open('', '_blank');
+    // Use Blob URL instead of document.write() for security and CSP compliance
+    const blob = new Blob([printContent], { type: 'text/html;charset=utf-8' });
+    const url = URL.createObjectURL(blob);
+    const printWindow = window.open(url, '_blank');
     if (printWindow) {
-      printWindow.document.write(printContent);
-      printWindow.document.close();
-      printWindow.focus();
-      setTimeout(() => {
+      printWindow.onload = () => {
         printWindow.print();
         printWindow.close();
-      }, 250);
+        URL.revokeObjectURL(url);
+      };
+      // Fallback if onload doesn't fire (e.g., already loaded)
+      setTimeout(() => URL.revokeObjectURL(url), 5000);
     }
   };
 
   return (
     <>
-      <style dangerouslySetInnerHTML={{ __html: printStyles }} />
+      <style>{printStyles}</style>
       <Dialog open={open} onOpenChange={onOpenChange}>
         <DialogContent className='max-w-7xl max-h-[95vh] flex flex-col p-0 w-[95vw] overflow-hidden rounded-2xl border-none shadow-2xl bg-white dark:bg-slate-900 print:max-w-full print:w-full print:h-auto print:overflow-visible print:max-h-none'>
-          <DialogHeader className='p-6 pb-2 border-b flex-shrink-0 bg-white dark:bg-slate-900 print:hidden'>
+          <DialogHeader className='p-6 pb-2 border-b shrink-0 bg-white dark:bg-slate-900 print:hidden'>
             <div className='flex items-center justify-between'>
               <DialogTitle className='text-xl font-bold text-slate-900 dark:text-white flex items-center gap-4'>
                 <Calendar className='w-5 h-5 text-gray-500' />
                 Detalles de Caja - {getDiaSemana(caja.fecha_apertura)}{' '}
                 <Badge
                   variant='secondary'
-                  className={`${estadoInfo.color} rounded-xl px-4 py-1 text-xs font-black uppercase tracking-widest border shadow-sm`}
+                  className={`${estadoInfo.color} rounded-xl px-4 py-1 text-xs font-black uppercase tracking-widest border shadow-xs`}
                 >
                   {estadoInfo.label}
                 </Badge>
@@ -213,7 +216,7 @@ export default function CajaDetails({ caja, open, onOpenChange }: CajaDetailsPro
             </div>
           </DialogHeader>
 
-          <div className='sticky top-0 z-20 bg-white/95 dark:bg-slate-900/95 backdrop-blur-sm border-b border-gray-100 dark:border-gray-800 px-6 py-4 print:hidden'>
+          <div className='sticky top-0 z-20 bg-white/95 dark:bg-slate-900/95 backdrop-blur-xs border-b border-gray-100 dark:border-gray-800 px-6 py-4 print:hidden'>
             <div className='space-y-4'>
               <CajaPaymentSummary
                 isLoading={isLoadingSummary}
@@ -239,25 +242,25 @@ export default function CajaDetails({ caja, open, onOpenChange }: CajaDetailsPro
             <TabsList className='mx-6 mt-4 bg-gray-100 dark:bg-gray-800 p-1 rounded-xl print:hidden'>
               <TabsTrigger
                 value='resumen'
-                className='rounded-lg data-[state=active]:bg-white dark:data-[state=active]:bg-gray-700 data-[state=active]:shadow-sm'
+                className='rounded-lg data-[state=active]:bg-white dark:data-[state=active]:bg-gray-700 data-[state=active]:shadow-xs'
               >
                 Resumen
               </TabsTrigger>
               <TabsTrigger
                 value='ventas'
-                className='rounded-lg data-[state=active]:bg-white dark:data-[state=active]:bg-gray-700 data-[state=active]:shadow-sm'
+                className='rounded-lg data-[state=active]:bg-white dark:data-[state=active]:bg-gray-700 data-[state=active]:shadow-xs'
               >
                 Ventas ({ventas.length})
               </TabsTrigger>
               <TabsTrigger
                 value='servicios'
-                className='rounded-lg data-[state=active]:bg-white dark:data-[state=active]:bg-gray-700 data-[state=active]:shadow-sm'
+                className='rounded-lg data-[state=active]:bg-white dark:data-[state=active]:bg-gray-700 data-[state=active]:shadow-xs'
               >
                 Servicios ({servicios.length})
               </TabsTrigger>
               <TabsTrigger
                 value='retiros'
-                className='rounded-lg data-[state=active]:bg-white dark:data-[state=active]:bg-gray-700 data-[state=active]:shadow-sm'
+                className='rounded-lg data-[state=active]:bg-white dark:data-[state=active]:bg-gray-700 data-[state=active]:shadow-xs'
               >
                 Retiros ({retiros.length})
               </TabsTrigger>
@@ -407,7 +410,7 @@ export default function CajaDetails({ caja, open, onOpenChange }: CajaDetailsPro
             </div>
           </Tabs>
 
-          <div className='flex-shrink-0 border-t border-slate-100 dark:border-slate-800 p-4 bg-gray-50 dark:bg-slate-900/50 flex justify-center px-6 rounded-b-2xl print:hidden'>
+          <div className='shrink-0 border-t border-slate-100 dark:border-slate-800 p-4 bg-gray-50 dark:bg-slate-900/50 flex justify-center px-6 rounded-b-2xl print:hidden'>
             <Button
               variant='outline'
               size='sm'

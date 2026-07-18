@@ -59,7 +59,7 @@ export default function SalesWithRoomTab({
 
   if (ventasConHabitacion.length === 0) {
     return (
-      <div className='text-center py-12 bg-white dark:bg-neutral-900 rounded-lg border dark:border-neutral-800 shadow-sm'>
+      <div className='text-center py-12 bg-white dark:bg-neutral-900 rounded-lg border dark:border-neutral-800 shadow-xs'>
         <Bed className='h-12 w-12 text-gray-400 dark:text-gray-500 mx-auto mb-4' />
         <h3 className='text-lg font-medium text-gray-900 dark:text-neutral-100 mb-2'>
           No hay ventas con habitación activas

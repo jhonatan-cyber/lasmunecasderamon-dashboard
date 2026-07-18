@@ -1,4 +1,6 @@
-﻿import {
+﻿'use client';
+
+import {
   Dialog,
   DialogContent,
   DialogHeader,
@@ -19,6 +21,7 @@ import {
 } from '@/components/ui/table';
 import { HostessMultiSelect } from '@/components/orders';
 import { IndividualHostessSelect } from '@/components/shared/selects';
+import { isExpensiveDrink } from '@/components/orders/productModalRules';
 import Paginate from '@/components/shared/Paginate';
 import {
   CUENTA_TABLE_CARD_CLASS,
@@ -91,7 +94,7 @@ export default function SaleProductModal({
   return (
     <Dialog open={open} onOpenChange={onClose}>
       <DialogContent className='max-w-4xl max-h-[90vh] flex flex-col p-0'>
-        <DialogHeader className='flex-shrink-0 px-6 pt-6 pb-4 border-b'>
+        <DialogHeader className='shrink-0 px-6 pt-6 pb-4 border-b'>
           <DialogTitle>
             {categoria ? `Productos de ${categoria.nombre || categoria.name}` : 'Productos'}
           </DialogTitle>
@@ -228,12 +231,9 @@ export default function SaleProductModal({
                                           const currentProduct = productos.find(
                                             p => String(p.id_producto || p.id) === id
                                           );
-                                          const precio = Number(
-                                            currentProduct?.precio || currentProduct?.price || 0
-                                          );
                                           const cantidad = cantidades[id] || 1;
 
-                                          if (precio >= 30000) {
+                                          if (isExpensiveDrink(currentProduct)) {
                                             return (
                                               <>
                                                 <HostessMultiSelect
@@ -368,7 +368,7 @@ export default function SaleProductModal({
             </div>
           )}
         </div>
-        <DialogFooter className='flex-shrink-0 border-t px-6 py-4'>
+        <DialogFooter className='shrink-0 border-t px-6 py-4'>
           <div className='w-full flex justify-center'>
             <Button
               onClick={onClose}

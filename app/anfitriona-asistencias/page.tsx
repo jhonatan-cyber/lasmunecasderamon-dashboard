@@ -10,7 +10,7 @@ import { useRouter } from 'next/navigation';
 import { Input } from '@/components/ui/input';
 import SelectElements from '@/components/shared/SelectElements';
 import Paginate from '@/components/shared/Paginate';
-import { RoleTableSkeleton } from '@/components/shared/Skeletons';
+import { Skeleton as BoneyardSkeleton } from 'boneyard-js/react';
 import { formatDateTimeLabel, formatDateLabel } from '@/lib/utils/calendarUtils';
 import { formatCurrencyCLP } from '@/lib/utils/formatters';
 import logger from '@/lib/utils/logger';
@@ -105,10 +105,6 @@ export default function AnfitrionaAsistenciasPage() {
       </div>
     );
   }
-  if (loading || userLoading) {
-    return <RoleTableSkeleton />;
-  }
-
   if (user?.role?.toLowerCase() !== 'anfitriona') {
     return (
       <div className='p-6 flex items-center justify-center min-h-screen'>
@@ -208,6 +204,7 @@ export default function AnfitrionaAsistenciasPage() {
 
   return (
     <div className='p-6 space-y-6'>
+      <BoneyardSkeleton name="anfitriona-asistencias-main" loading={loading || userLoading}>
       {}
       <div className='flex justify-between items-center'>
         <div>
@@ -340,14 +337,7 @@ export default function AnfitrionaAsistenciasPage() {
                 </tr>
               </thead>
               <tbody className='bg-white divide-y divide-gray-200'>
-                {loading ? (
-                  <tr key='loading'>
-                    <td colSpan={7} className='px-6 py-4 text-center'>
-                      <div className='animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto'></div>
-                      <p className='mt-2 text-gray-600'>Cargando asistencias...</p>
-                    </td>
-                  </tr>
-                ) : paginatedAttendances.length === 0 ? (
+                {paginatedAttendances.length === 0 ? (
                   <tr key='empty'>
                     <td colSpan={7} className='px-6 py-4 text-center text-gray-500'>
                       No se encontraron asistencias
@@ -402,6 +392,7 @@ export default function AnfitrionaAsistenciasPage() {
       <div className='flex justify-center'>
         <Paginate page={page} totalPages={totalPages} setPage={setPage} />
       </div>
+      </BoneyardSkeleton>
     </div>
   );
 }

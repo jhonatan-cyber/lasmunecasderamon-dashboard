@@ -109,7 +109,7 @@ export function RolesContent({
 
       <div className='grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6'>
         <div className='space-y-4'>
-          <div className='bg-white dark:bg-neutral-900 rounded-lg shadow-sm border border-gray-200 dark:border-neutral-800 p-4 sm:p-6'>
+          <div className='bg-white dark:bg-neutral-900 rounded-lg shadow-xs border border-gray-200 dark:border-neutral-800 p-4 sm:p-6'>
             <div className='flex flex-col sm:flex-row gap-4'>
               <div className='flex-1'>
                 <div className='relative'>
@@ -177,7 +177,7 @@ export function RolesContent({
         </div>
 
         <div className='hidden lg:block'>
-          <div className='bg-white dark:bg-neutral-900 rounded-lg shadow-sm border border-gray-200 dark:border-neutral-800 p-4 sm:p-6 flex flex-col h-[600px]'>
+          <div className='bg-white dark:bg-neutral-900 rounded-lg shadow-xs border border-gray-200 dark:border-neutral-800 p-4 sm:p-6 flex flex-col h-[600px]'>
             <PermissionsPanel selectedRole={selectedRole} />
           </div>
         </div>

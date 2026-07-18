@@ -1,10 +1,10 @@
 import { NextResponse } from 'next/server';
-import { withAppApiWrapper } from '@/lib/api/app-api-wrapper';
+import { withPublicRoute } from '@/lib/api/withRoute';
 import { ServiceRequestService } from '@/lib/services/ServiceRequestService';
 import { query } from '@/lib/database/db';
 import { logger } from '@/lib/utils/logger';
 
-export const GET = withAppApiWrapper(async () => {
+export const GET = withPublicRoute(async () => {
   const serviciosCount = await ServiceRequestService.getPendingCount();
 
   const pedidosResult = await query<any[]>(
@@ -18,8 +18,10 @@ export const GET = withAppApiWrapper(async () => {
 
   return NextResponse.json({
     success: true,
-    count: totalCount,
-    serviciosCount,
-    pedidosCount
+    data: {
+      count: totalCount,
+      serviciosCount,
+      pedidosCount
+    }
   });
 });

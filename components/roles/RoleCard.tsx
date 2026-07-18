@@ -46,7 +46,7 @@ export function RoleCard({
 
   return (
     <div
-      className={`w-full bg-white dark:bg-neutral-900 rounded-lg shadow-sm border border-gray-200 dark:border-neutral-800 p-3 sm:p-6 hover:shadow-md transition-all duration-200 cursor-pointer ${
+      className={`w-full bg-white dark:bg-neutral-900 rounded-lg shadow-xs border border-gray-200 dark:border-neutral-800 p-3 sm:p-6 hover:shadow-md transition-all duration-200 cursor-pointer ${
         selected ? 'ring-2 ring-black dark:ring-neutral-200' : ''
       }`}
       onClick={onSelect}
@@ -57,10 +57,10 @@ export function RoleCard({
             <Shield className='h-4 w-4 sm:h-6 sm:w-6 text-white' />
           </div>
           <div className='min-w-0'>
-            <h3 className='text-sm sm:text-lg font-semibold text-black dark:text-neutral-100 break-words'>
+            <h3 className='text-sm sm:text-lg font-semibold text-black dark:text-neutral-100 wrap-break-word'>
               {role.name || 'Sin nombre'}
             </h3>
-            <p className='text-xs sm:text-sm text-zinc-600 dark:text-neutral-400 break-words'>
+            <p className='text-xs sm:text-sm text-zinc-600 dark:text-neutral-400 wrap-break-word'>
               {role.description || 'Sin descripción'}
             </p>
           </div>

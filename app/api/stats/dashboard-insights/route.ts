@@ -1,8 +1,13 @@
 import { NextResponse } from 'next/server';
-import { withAppAuth } from '@/lib/api/app-api-wrapper';
+import { withRoute } from '@/lib/api/withRoute';
 import { StatsService } from '@/lib/services/StatsService';
+import { DashboardCache, DASHBOARD_CACHE_KEYS, DASHBOARD_TTL } from '@/lib/cache/dashboardCache';
 
-export const GET = withAppAuth(async () => {
-  const data = await StatsService.getDashboardInsights();
+export const GET = withRoute({ auth: true, audit: true }, async () => {
+  const { data } = await DashboardCache.getOrFetch(
+    DASHBOARD_CACHE_KEYS.INSIGHTS,
+    () => StatsService.getDashboardInsights(),
+    DASHBOARD_TTL.INSIGHTS
+  );
   return NextResponse.json({ success: true, data });
 });

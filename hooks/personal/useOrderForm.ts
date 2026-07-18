@@ -7,6 +7,7 @@ import { showSuccessToast, showErrorToast } from '@/lib/utils/toastUtils';
 import { formatCurrencyNoDecimals } from '@/lib/utils/formatters';
 import { appEventBus } from '@/lib/utils/eventBus';
 import { useConfigValue } from '@/hooks/shared/useConfigValue';
+import { isChampagneProduct, getHostessLimit } from '@/components/orders/productModalRules';
 
 export type OrderProducto = {
   id_producto?: string | number;
@@ -19,7 +20,7 @@ export type OrderProducto = {
   cantidad?: number;
   subtotal?: number;
   generaComision?: number;
-  selectedHostesses?: string[];
+  selectedHostesses?: number[];
   isChampagne?: boolean;
   selectedRoom?: string | null;
   requiresRoom?: boolean;
@@ -45,7 +46,7 @@ export type OrderProductoPayload = OrderProducto & {
   subtotal: number;
   generaComision: number;
   hostessId: string;
-  selectedHostesses: string[];
+  selectedHostesses: number[];
   isChampagne: boolean;
   selectedRoom: string | null;
   requiresRoom: boolean;
@@ -215,11 +216,6 @@ export function useOrderForm({
       }
     }
 
-    const isChampagneProduct = (p: OrderProducto) => {
-      const cat = (p.categoria || p.category_name || '').toLowerCase();
-      return cat.includes('champaña') || cat.includes('shampaña') || cat.includes('champagne');
-    };
-
     const anfitrionasUnicasBebidasNoChampagne = Array.from(
       new Set(
         bebidasConComision
@@ -248,12 +244,7 @@ export function useOrderForm({
 
     for (const producto of bebidasConComision) {
       if (isChampagneProduct(producto)) {
-        const precio = Number(producto.precio || producto.price || 0);
-        let limit = 1;
-        if (precio >= 240000) limit = 5;
-        else if (precio >= 200000) limit = 4;
-        else if (precio >= 140000) limit = 3;
-        else if (precio >= 120000) limit = 2;
+        const limit = getHostessLimit(producto);
         if ((producto.selectedHostesses || []).length > limit) {
           setError(
             `La champaña "${producto.nombre || producto.name}" excede el límite de ${limit}`

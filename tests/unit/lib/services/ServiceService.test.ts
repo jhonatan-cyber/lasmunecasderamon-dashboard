@@ -141,6 +141,9 @@ describe('ServiceService.createService', () => {
       if (sql.includes('SELECT DISTINCT u.id_usuario')) {
         return (params || []).map((id: unknown) => ({ id_usuario: String(id) }));
       }
+      if (sql.includes('FROM habitaciones')) {
+        return [{ comision_anfitriona: 101, precio: 50000 }];
+      }
       return [];
     });
 
@@ -152,7 +155,14 @@ describe('ServiceService.createService', () => {
     const commissionCalls = serviceHarness.transactionMock.mock.calls.filter(
       ([sql]) => typeof sql === 'string' && sql.includes('INSERT INTO detalle_comisiones')
     );
-    const insertedAmounts = commissionCalls.map(call => Number(call[1]?.[3] || 0));
+    const insertedAmounts = commissionCalls.flatMap(call => {
+      const params = (call[1] || []) as unknown[];
+      const amounts = [];
+      for (let i = 3; i < params.length; i += 6) {
+        amounts.push(Number(params[i] || 0));
+      }
+      return amounts;
+    });
 
     expect(insertedAmounts).toEqual([51, 50]);
     expect(insertedAmounts.reduce((sum, value) => sum + value, 0)).toBe(101);

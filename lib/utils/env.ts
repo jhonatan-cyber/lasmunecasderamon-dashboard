@@ -97,29 +97,52 @@ export function validateJwtSecret(secret: string | undefined): EntropyValidation
 
 function validateStartupEnv() {
   const jwtValidation = validateJwtSecret(process.env.JWT_SECRET);
+  const refreshValidation = validateJwtSecret(process.env.JWT_REFRESH_SECRET);
+
+  let hasError = false;
 
   if (!jwtValidation.valid) {
     logger.error('JWT_SECRET validation failed at startup:', {
       reasons: jwtValidation.reasons,
       score: jwtValidation.score
     });
+    hasError = true;
+  }
 
+  if (!refreshValidation.valid) {
+    logger.error('JWT_REFRESH_SECRET validation failed at startup:', {
+      reasons: refreshValidation.reasons,
+      score: refreshValidation.score
+    });
+    hasError = true;
+  }
+
+  if (hasError) {
     console.error('\n============================================');
-    console.error('SECURITY ERROR: JWT_SECRET is missing or weak');
+    console.error('SECURITY ERROR: JWT secrets are missing or weak');
     console.error('============================================');
     console.error('Requirements:');
     console.error('  - Minimum 64 characters');
     console.error('  - High entropy (random characters)');
     console.error('  - No repeated patterns or common words');
     console.error('');
-    console.error('Issues found:');
-    jwtValidation.reasons.forEach(reason => console.error(`  - ${reason}`));
+    if (!jwtValidation.valid) {
+      console.error('--- JWT_SECRET ---');
+      jwtValidation.reasons.forEach(reason => console.error(`  - ${reason}`));
+    }
+    if (!refreshValidation.valid) {
+      console.error('--- JWT_REFRESH_SECRET ---');
+      refreshValidation.reasons.forEach(reason => console.error(`  - ${reason}`));
+    }
     console.error('============================================\n');
 
     process.exit(1);
   }
 
-  logger.info('JWT_SECRET validation passed', { score: jwtValidation.score });
+  logger.info('JWT secrets validation passed', {
+    jwtScore: jwtValidation.score,
+    refreshScore: refreshValidation.score
+  });
 }
 
 const isBuildTime = process.env.NEXT_PHASE === 'phase-production-build';
@@ -139,12 +162,12 @@ const envSchema = z.object({
   DB_NAME: z.string().default('lasmunecasderamon'),
   DB_PORT: z.coerce.number().default(3306),
   JWT_SECRET: z.string().min(8, 'JWT_SECRET debe tener al menos 8 caracteres'),
+  JWT_REFRESH_SECRET: z.string().min(8, 'JWT_REFRESH_SECRET debe tener al menos 8 caracteres').default(process.env.JWT_SECRET || ''),
   TWILIO_ACCOUNT_SID: z.string().optional(),
   TWILIO_AUTH_TOKEN: z.string().optional(),
   TWILIO_WHATSAPP_NUMBER: z.string().optional(),
   ADMIN_WHATSAPP_NUMBER: z.string().optional(),
-  NEXT_PUBLIC_BASE_URL: z.string().url().default('http://localhost'),
-  NEXT_PUBLIC_API_URL: z.string().default('/api')
+  NEXT_PUBLIC_BASE_URL: z.string().url().default('http://localhost')
 });
 
 const _env = envSchema.safeParse(process.env);

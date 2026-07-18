@@ -42,7 +42,7 @@ export function ServicioCardHeader({
     <div className='flex flex-wrap items-start justify-between gap-3'>
       <div className='min-w-0 flex-1 space-y-2'>
         <div className='flex flex-wrap items-center gap-2'>
-          <div className='flex items-center gap-2 rounded-full border border-zinc-200/70 bg-zinc-50/90 px-3 py-1.5 shadow-sm backdrop-blur dark:border-zinc-800 dark:bg-zinc-900/70'>
+          <div className='flex items-center gap-2 rounded-full border border-zinc-200/70 bg-zinc-50/90 px-3 py-1.5 shadow-xs backdrop-blur-sm dark:border-zinc-800 dark:bg-zinc-900/70'>
             <Home className='h-4 w-4 text-zinc-500 dark:text-zinc-400' />
             <span className='text-base font-semibold tracking-tight text-zinc-900 dark:text-zinc-50'>
               {habitacionNumero}
@@ -108,7 +108,7 @@ export function ServicioCardTimerSection({
   if (!isAdminOrCajero) return null;
 
   return (
-    <div className='rounded-2xl border border-zinc-200/70 bg-zinc-50/80 px-4 py-3 shadow-sm backdrop-blur dark:border-zinc-800 dark:bg-zinc-900/50'>
+    <div className='rounded-2xl border border-zinc-200/70 bg-zinc-50/80 px-4 py-3 shadow-xs backdrop-blur-sm dark:border-zinc-800 dark:bg-zinc-900/50'>
       <div className='flex items-center justify-between gap-3'>
         <div className='flex items-center gap-2'>
           <Clock
@@ -131,7 +131,7 @@ export function ServicioCardTimerSection({
                 type='number'
                 value={editTiempo}
                 onChange={e => setEditTiempo(Number(e.target.value))}
-                className='h-9 w-20 rounded-full border-zinc-300/80 bg-white text-center text-sm shadow-sm dark:border-zinc-700 dark:bg-zinc-900'
+                className='h-9 w-20 rounded-full border-zinc-300/80 bg-white text-center text-sm shadow-xs dark:border-zinc-700 dark:bg-zinc-900'
                 min={1}
                 disabled={isSaving}
               />
@@ -388,7 +388,7 @@ export function ServicioCardActions({
           size='sm'
           variant='outline'
           onClick={onStopTimer}
-          className='rounded-full border-red-200/80 px-4 text-red-600 shadow-sm hover:bg-red-50 dark:border-red-900/60 dark:text-red-300 dark:hover:bg-red-950/20'
+          className='rounded-full border-red-200/80 px-4 text-red-600 shadow-xs hover:bg-red-50 dark:border-red-900/60 dark:text-red-300 dark:hover:bg-red-950/20'
         >
           <Square className='mr-1 h-3 w-3' />
           Finalizar

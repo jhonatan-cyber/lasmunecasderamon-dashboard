@@ -430,7 +430,7 @@ export const RoomsSkeleton = ListPageSkeleton;
 /** @deprecated Use {@link ListPageSkeleton} instead */
 export const SalesSkeleton = () => (
   <div className='p-4 sm:p-6 lg:p-10 space-y-4 sm:space-y-6 mt-4 sm:mt-6 lg:mt-10'>
-    <div className='flex justify-between items-center bg-white dark:bg-slate-900 p-4 rounded-xl border dark:border-slate-800 shadow-sm'>
+    <div className='flex justify-between items-center bg-white dark:bg-slate-900 p-4 rounded-xl border dark:border-slate-800 shadow-xs'>
       <SkeletonBlock className='h-8 w-48' />
       <SkeletonBlock className='h-10 w-10 rounded-full' />
     </div>

@@ -56,7 +56,7 @@ export function AnulacionModal({
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className='flex max-h-[90vh] w-[95vw] max-w-[95vw] flex-col p-0 sm:w-auto sm:max-w-[425px]'>
-        <DialogHeader className='flex-shrink-0 border-b px-6 pt-6 pb-4 dark:border-gray-700'>
+        <DialogHeader className='shrink-0 border-b px-6 pt-6 pb-4 dark:border-gray-700'>
           <DialogTitle className='mb-4 flex items-center gap-2 text-lg text-red-600 dark:text-red-400 sm:mb-6 sm:text-xl'>
             <AlertTriangle className='h-4 w-4 sm:h-5 sm:w-5' />
             Solicitud Anulación
@@ -126,7 +126,7 @@ export function AnulacionModal({
           </div>
         </div>
 
-        <div className='flex-shrink-0 border-t px-6 py-4 dark:border-gray-700'>
+        <div className='shrink-0 border-t px-6 py-4 dark:border-gray-700'>
           <div className='flex flex-col items-center justify-center gap-4 sm:flex-row'>
             <Button
               size='sm'

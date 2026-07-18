@@ -2,4 +2,4 @@ export { OrderForm, ServiceOrderFormNew, OrderTotalHeader, CategoryProductsModal
 export { default as CustomerSelect } from '../shared/selects/CustomerSelect';
 export { default as OrderDetailModal } from './OrderDetailModal';
 export { OrderDetailInfoPanel, OrderDetailPaymentPanel, OrderDetailTotalsSummary, getOrderRoomId, getOrderRoomName } from './detail';
-export { isChampagneProduct, hasCommission, getChampagneHostessLimit, getActiveHostesses, getAssignedHostessIds } from './productModalRules';
+export { isChampagneProduct, hasCommission, getHostessLimit, getChampagneHostessLimit, getActiveHostesses, getAssignedHostessIds, computeOrderHostessLimit, isExpensiveDrink, expensiveDrinkThreshold, setExpensiveDrinkThreshold, cardSplitVenta, cardSplitPropina, setCardSplit, getCardSplit } from './productModalRules';

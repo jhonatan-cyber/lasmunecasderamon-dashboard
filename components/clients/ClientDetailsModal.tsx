@@ -147,7 +147,7 @@ function ClientDetails({ client, onClose }: { client: Client; onClose: () => voi
               No hay movimientos registrados para este cliente.
             </div>
           ) : (
-            <div className='rounded-xl border dark:border-gray-800 overflow-hidden bg-white dark:bg-gray-950 shadow-sm overflow-x-auto'>
+            <div className='rounded-xl border dark:border-gray-800 overflow-hidden bg-white dark:bg-gray-950 shadow-xs overflow-x-auto'>
               <Table>
                 <TableHeader className='bg-gray-50 dark:bg-gray-900/50'>
                   <TableRow>

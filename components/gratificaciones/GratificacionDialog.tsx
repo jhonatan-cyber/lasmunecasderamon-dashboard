@@ -29,7 +29,7 @@ export function GratificacionDialog({
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className='w-[95vw] max-w-[95vw] sm:w-full sm:max-w-[500px] max-h-[90vh] flex flex-col p-0'>
-        <DialogHeader className='flex-shrink-0 px-6 pt-6 pb-4 border-b'>
+        <DialogHeader className='shrink-0 px-6 pt-6 pb-4 border-b'>
           <DialogTitle className='text-lg sm:text-xl lg:text-2xl font-bold'>
             {gratificacion ? 'Editar Gratificación' : 'Nueva Gratificación'}
           </DialogTitle>
@@ -46,7 +46,7 @@ export function GratificacionDialog({
             hideButtons={true}
           />
         </div>
-        <div className='flex-shrink-0 border-t px-6 py-4 bg-white dark:bg-neutral-900'>
+        <div className='shrink-0 border-t px-6 py-4 bg-white dark:bg-neutral-900'>
           <div className='flex flex-col sm:flex-row justify-center gap-2 w-full'>
             <Button
               type='button'

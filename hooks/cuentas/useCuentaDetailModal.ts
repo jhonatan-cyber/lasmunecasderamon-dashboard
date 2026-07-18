@@ -13,7 +13,7 @@ interface ProductRow {
   sub_total: number;
   categoria_nombre: string;
   comision: number;
-  selectedHostesses: string[];
+  selectedHostesses: number[];
 }
 
 interface CommissionRow {
@@ -74,7 +74,7 @@ export function useCuentaDetailModal(
         const hostessIds = detalle.hostess_id
           ? String(detalle.hostess_id)
               .split(',')
-              .map((id: string) => id.trim())
+              .map((id: string) => Number(id.trim()))
           : [];
         return {
           id_producto: detalle.id_producto ?? detalle.producto_id ?? detalle.agrupacionKey ?? index,

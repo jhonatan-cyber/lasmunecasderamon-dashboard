@@ -3,7 +3,7 @@ import * as argon2 from 'argon2';
 import { generateToken, registrarLogin } from '@/lib/auth/auth';
 import { getSystemTimezone, getNowInBusinessTimezone } from '@/lib/business/timezoneService';
 import crypto from 'crypto';
-import { ValidationError, NotFoundError, BusinessError, ConflictError } from '@/lib/errors/errors';
+import { ValidationError, NotFoundError, BusinessError, ConflictError, DatabaseError } from '@/lib/errors/errors';
 import type { UserPermissions } from '@/lib/middleware/auth';
 import logger from '@/lib/utils/logger';
 
@@ -63,8 +63,14 @@ export async function getUserPermissions(
   roleId: string | number,
   roleName?: string
 ): Promise<UserPermissions> {
+  const roleKey = (roleName?.toLowerCase() || 'administrador') as string;
+
+  // Optimización: admin retorna defaults sin consultar DB
+  if (roleKey === 'administrador') {
+    return DEFAULT_PERMISSIONS.administrador;
+  }
+
   if (!roleId) {
-    const roleKey = (roleName?.toLowerCase() || 'administrador') as string;
     return DEFAULT_PERMISSIONS[roleKey] || DEFAULT_PERMISSIONS.administrador;
   }
 
@@ -164,7 +170,8 @@ export async function loginUser(
   creds: { email?: string; password?: string; qr_token?: string; codigo?: string },
   ip?: string
 ) {
-  let user: any = null;
+  try {
+    let user: any = null;
 
   if (creds.qr_token) {
     const users = await query<any[]>(
@@ -224,7 +231,7 @@ export async function loginUser(
     if (valid.length === 0) throw new ValidationError('Código de verificación incorrecto');
   }
 
-  const token = await generateToken({
+  const tokenPromise = generateToken({
     id: user.id_usuario,
     username: user.username || user.nombre,
     name: user.nombre,
@@ -233,7 +240,9 @@ export async function loginUser(
     email: user.email,
     role: user.rol_nombre
   });
-  await registrarLogin(user.id_usuario);
+
+  // Optimización: registrarLogin fire-and-forget (no bloqueante, tiene try/catch)
+  registrarLogin(user.id_usuario, user.rol_nombre).catch(() => {});
 
   const usedQrOrCodigo = !!(creds.qr_token || creds.codigo);
   const marksAsis = (isCajeroRole && needsCode) || (needsCode && usedQrOrCodigo);
@@ -257,20 +266,40 @@ export async function loginUser(
     ]);
   }
 
+  // Optimización: await del tokenPromise + mapAuthenticatedUser en paralelo
+  const [resolvedToken, mappedUser] = await Promise.all([
+    tokenPromise,
+    mapAuthenticatedUser(user)
+  ]);
+
+  // S7: Forzar cambio de contraseña en primer login
+  const forcePasswordChange = user.force_password_change === 1 || user.force_password_change === '1';
+
   return {
     success: true,
-    token,
-    user: await mapAuthenticatedUser(user),
+    token: resolvedToken,
+    user: { ...mappedUser, forcePasswordChange },
     asistenciaRegistrada
   };
+    } catch (err) {
+      logger.error('[AuthQueries] Error en loginUser:', { err });
+      if (err instanceof ValidationError) throw err;
+      throw new DatabaseError('Error al iniciar sesión', err);
+    }
 }
 
 export async function logoutUser(userId: string) {
-  await query('DELETE FROM logins WHERE usuario_id = ?', [userId]);
+  try {
+    await query('DELETE FROM logins WHERE usuario_id = ?', [userId]);
+  } catch (err) {
+    logger.error('[AuthQueries] Error en logoutUser:', { userId, err });
+    throw new DatabaseError(`Error al cerrar sesión del usuario ${userId}`, err);
+  }
 }
 
 export async function resetPassword(run: string) {
-  const normalizedRun = run.trim();
+  try {
+    const normalizedRun = run.trim();
   const users = await query<any[]>(
     `SELECT id_usuario, run, email, nick, nombre, apellido
      FROM usuarios
@@ -287,7 +316,7 @@ export async function resetPassword(run: string) {
   }
 
   const hashedPassword = await argon2.hash(String(user.run).trim());
-  await query('UPDATE usuarios SET password = ?, fecha_mod = ? WHERE id_usuario = ?', [
+  await query('UPDATE usuarios SET password = ?, force_password_change = 1, fecha_mod = ? WHERE id_usuario = ?', [
     hashedPassword,
     getNowInBusinessTimezone(),
     user.id_usuario
@@ -304,10 +333,20 @@ export async function resetPassword(run: string) {
       nick: user.nick
     }
   };
+  } catch (err) {
+    logger.error('[AuthQueries] Error en resetPassword:', { run, err });
+    if (err instanceof ValidationError) throw err;
+    throw new DatabaseError('Error al resetear contraseña', err);
+  }
 }
 
 export async function cerrarTodasSesiones() {
-  await query('DELETE FROM logins');
+  try {
+    await query('DELETE FROM logins');
+  } catch (err) {
+    logger.error('[AuthQueries] Error en cerrarTodasSesiones:', { err });
+    throw new DatabaseError('Error al cerrar todas las sesiones', err);
+  }
 }
 
 export async function getAuthLogs(filters: {
@@ -338,12 +377,22 @@ export async function getAuthLogs(filters: {
     params.push(filters.fecha_fin);
   }
   sql += ' ORDER BY l.last_login DESC';
-  return await query(sql, params);
+  try {
+    return await query(sql, params);
+  } catch (err) {
+    logger.error('[AuthQueries] Error en getAuthLogs:', { filters, err });
+    throw new DatabaseError('Error al obtener logs de autenticación', err);
+  }
 }
 
 export async function checkUsersExist() {
-  const users = await query<any[]>('SELECT COUNT(*) as count FROM usuarios');
+  try {
+    const users = await query<any[]>('SELECT COUNT(*) as count FROM usuarios');
   return Number(users[0].count) > 0;
+  } catch (err) {
+    logger.error('[AuthQueries] Error en checkUsersExist:', { err });
+    throw new DatabaseError('Error al verificar existencia de usuarios', err);
+  }
 }
 
 export async function registerFirstUser(data: {
@@ -353,7 +402,8 @@ export async function registerFirstUser(data: {
   password: string;
   ci: string;
 }) {
-  const hasUsers = await checkUsersExist();
+  try {
+    const hasUsers = await checkUsersExist();
   if (hasUsers) throw new ConflictError('Ya existen usuarios registrados');
 
   if (!data.password || data.password.trim().length < 8) {
@@ -385,10 +435,16 @@ export async function registerFirstUser(data: {
 
   const res = await query<any[]>('SELECT * FROM usuarios WHERE id_usuario = ?', [id]);
   return { success: true, data: res[0] };
+  } catch (err) {
+    logger.error('[AuthQueries] Error en registerFirstUser:', { err });
+    if (err instanceof ConflictError || err instanceof ValidationError) throw err;
+    throw new DatabaseError('Error al registrar primer usuario', err);
+  }
 }
 
 export async function checkSession(userId: string) {
-  const users = await query<any[]>(
+  try {
+    const users = await query<any[]>(
     `SELECT u.*, r.nombre as rol_nombre FROM usuarios u LEFT JOIN roles r ON u.rol_id = r.id_rol WHERE u.id_usuario = ?`,
     [userId]
   );
@@ -409,6 +465,23 @@ export async function checkSession(userId: string) {
 
   if (needsCode && !hasAsis) return { success: true, debeDesconectar: true };
   return { success: true, debeDesconectar: false };
+  } catch (err) {
+    logger.error('[AuthQueries] Error en checkSession:', { userId, err });
+    throw new DatabaseError(`Error al verificar sesión del usuario ${userId}`, err);
+  }
+}
+
+export async function clearForcePasswordChange(userId: string) {
+  try {
+    await query('UPDATE usuarios SET force_password_change = 0, fecha_mod = ? WHERE id_usuario = ?', [
+    getNowInBusinessTimezone(),
+    userId
+  ]);
+  return { success: true };
+  } catch (err) {
+    logger.error('[AuthQueries] Error en clearForcePasswordChange:', { userId, err });
+    throw new DatabaseError(`Error al limpiar force_password_change para usuario ${userId}`, err);
+  }
 }
 
 export { getSystemDateTime };

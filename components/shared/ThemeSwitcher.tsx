@@ -1,6 +1,6 @@
 'use client';
 
-import { useTheme } from 'next-themes';
+import { useTheme } from '@wrksz/themes/client';
 import { useEffect, useState } from 'react';
 import { flushSync } from 'react-dom';
 import { Moon, Sun } from 'lucide-react';
@@ -18,7 +18,7 @@ export default function ThemeSwitcher() {
     return () => window.clearTimeout(timeoutId);
   }, []);
 
-  const changeThemeWithTransition = (newTheme: string) => {
+  const changeThemeWithTransition = (newTheme: 'light' | 'dark' | 'system') => {
     if (
       typeof document === 'undefined' ||
       !document.startViewTransition ||

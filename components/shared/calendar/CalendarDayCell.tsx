@@ -76,7 +76,7 @@ export default function CalendarDayCell({
       indicators.push(
         <div
           key={key}
-          className={`w-full h-3 bg-gradient-to-r ${config.indicatorBg} rounded-sm text-[11px] text-white text-center leading-none mb-1 shadow-sm border`}
+          className={`w-full h-3 bg-linear-to-r ${config.indicatorBg} rounded-sm text-[11px] text-white text-center leading-none mb-1 shadow-xs border`}
         >
           <span className='font-semibold'>{config.indicatorLabel}</span>
         </div>

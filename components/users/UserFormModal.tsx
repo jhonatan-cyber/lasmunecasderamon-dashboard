@@ -179,7 +179,7 @@ export function UserFormModal({
                         onChange={handleRunChange}
                         onBlur={handleRunBlur}
                         placeholder='12.345.678-5'
-                        className='flex h-10 w-full rounded-full border border-input bg-gray-100 pl-10 sm:pl-12 py-2 text-base ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 md:text-sm dark:bg-gray-800 dark:text-gray-100 dark:border-gray-700 dark:focus-visible:ring-gray-400'
+                        className='flex h-10 w-full rounded-full border border-input bg-gray-100 pl-10 sm:pl-12 py-2 text-base ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 md:text-sm dark:bg-gray-800 dark:text-gray-100 dark:border-gray-700 dark:focus-visible:ring-gray-400'
                       />
                     </div>
                     {runError && <p className='text-red-500 text-xs mt-1'>{runError}</p>}
@@ -187,7 +187,7 @@ export function UserFormModal({
 
                   {}
                   <FormFieldWithIcon
-                    control={form.control}
+                    control={form.control as any}
                     name='nick'
                     label='Nick'
                     placeholder='Nick del usuario'
@@ -198,7 +198,7 @@ export function UserFormModal({
 
                 {}
                 <ImageUploadField
-                  control={form.control}
+                  control={form.control as any}
                   initialImageUrl={user?.foto}
                   onImageChange={setImageFile}
                 />
@@ -207,9 +207,8 @@ export function UserFormModal({
               {}
               <div className='grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6'>
                 {}
-                <FormFieldWithIcon
-                  control={form.control}
-                  name='name'
+                <FormFieldWithIcon                    control={form.control as any}
+                    name='name'
                   label='Nombre'
                   placeholder='Nombre(s)'
                   icon={User}
@@ -217,9 +216,8 @@ export function UserFormModal({
                 />
 
                 {}
-                <FormFieldWithIcon
-                  control={form.control}
-                  name='lastName'
+                <FormFieldWithIcon                    control={form.control as any}
+                    name='lastName'
                   label='Apellido'
                   placeholder='Apellido(s)'
                   icon={FileSignature}
@@ -229,7 +227,7 @@ export function UserFormModal({
                 {}
                 <div className='lg:col-span-2'>
                   <FormFieldWithIcon
-                    control={form.control}
+                    control={form.control as any}
                     name='address'
                     label='Dirección'
                     placeholder='Dirección completa'
@@ -239,24 +237,22 @@ export function UserFormModal({
                 </div>
 
                 {}
-                <FormFieldWithIcon
-                  control={form.control}
-                  name='phone'
+                <FormFieldWithIcon                    control={form.control as any}
+                    name='phone'
                   label='Teléfono'
                   placeholder='Telefono'
                   icon={Phone}
                 />
 
                 {}
-                <MaritalStatusSelect control={form.control} name='maritalStatus' />
+                <MaritalStatusSelect control={form.control as any} name='maritalStatus' />
 
                 {}
-                <AfpInputField control={form.control} name='afp' />
+                <AfpInputField control={form.control as any} name='afp' />
 
                 {}
-                <RoleSelect
-                  control={form.control}
-                  name='rol_id'
+                <RoleSelect                    control={form.control as any}
+                    name='rol_id'
                   roles={roles}
                   isLoading={isLoadingRoles}
                   label='Rol'
@@ -264,9 +260,8 @@ export function UserFormModal({
                 />
 
                 {}
-                <NumberInputField
-                  control={form.control}
-                  name='salary'
+                <NumberInputField                    control={form.control as any}
+                    name='salary'
                   label='Monto en Sueldo'
                   icon={DollarSign}
                   formattedValue={sueldo.formattedValue}
@@ -274,9 +269,8 @@ export function UserFormModal({
                 />
 
                 {}
-                <NumberInputField
-                  control={form.control}
-                  name='contributions'
+                <NumberInputField                    control={form.control as any}
+                    name='contributions'
                   label='Monto en Aporte AFP'
                   icon={Coins}
                   formattedValue={aporte.formattedValue}
@@ -284,9 +278,8 @@ export function UserFormModal({
                 />
 
                 {}
-                <HousingDiscountField
-                  control={form.control}
-                  watch={form.watch}
+                <HousingDiscountField                    control={form.control as any}
+                    watch={form.watch}
                   discountName='discount'
                   formattedValue={descuento.formattedValue}
                   onValueChange={descuento.handleChange}
@@ -299,7 +292,7 @@ export function UserFormModal({
           <Button
             onClick={onCancel}
             variant='outline'
-            className='rounded-full px-6 dark:hover:!bg-white dark:hover:!text-black transition-all hover:scale-105'
+            className='rounded-full px-6 dark:hover:bg-white! dark:hover:text-black! transition-all hover:scale-105'
             disabled={isMutating || isSubmitting}
           >
             Cancelar
@@ -307,7 +300,7 @@ export function UserFormModal({
           <Button
             type='submit'
             form='user-form'
-            className='bg-black text-white dark:bg-black dark:text-white  dark:hover:!bg-white dark:hover:!text-black rounded-full px-8 hover:!bg-white hover:!text-black transition-all hover:scale-105 border-2'
+            className='bg-black text-white dark:bg-black dark:text-white  dark:hover:bg-white! dark:hover:text-black! rounded-full px-8 hover:bg-white! hover:text-black! transition-all hover:scale-105 border-2'
             disabled={isMutating || isSubmitting}
           >
             {isMutating || isSubmitting ? (

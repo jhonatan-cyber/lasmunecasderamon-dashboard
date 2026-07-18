@@ -1,9 +1,5 @@
-import {
-  SaleQueries,
-  type MixedPayment,
-  type AllocationRow,
-  type VentaRefundDetailRow
-} from './sale/SaleQueries';
+import { SaleQueries } from './sale/SaleQueries';
+import { type MixedPayment, type AllocationRow, type VentaRefundDetailRow } from './sale/saleHelpers';
 import { type SaleType } from '@/lib/business/schemas';
 import { type query, type TransactionQuery } from '@/lib/database/db';
 

@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import logger from '@/lib/utils/logger';
 
 interface CodigoVerificacionHeaderProps {
@@ -10,7 +10,7 @@ interface CodigoVerificacionHeaderProps {
 export function CodigoVerificacionHeader({ userRole }: CodigoVerificacionHeaderProps) {
   const [codigo, setCodigo] = useState<string>('');
 
-  const fetchCodigo = async () => {
+  const fetchCodigo = useCallback(async () => {
     try {
       const res = await fetch('/api/codigo/actual', {
         headers: {
@@ -24,7 +24,7 @@ export function CodigoVerificacionHeader({ userRole }: CodigoVerificacionHeaderP
     } catch (error) {
       logger.captureException(error, { context: 'CodigoVerificacionHeader:fetchCodigo' });
     }
-  };
+  }, [userRole]);
 
   useEffect(() => {
     const role = userRole?.toLowerCase();
@@ -38,8 +38,8 @@ export function CodigoVerificacionHeader({ userRole }: CodigoVerificacionHeaderP
       window.addEventListener('focus', handleFocus);
       return () => window.removeEventListener('focus', handleFocus);
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [userRole]);
+ 
+  }, [userRole, fetchCodigo]);
 
   if (
     !userRole ||

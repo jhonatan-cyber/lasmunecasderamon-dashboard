@@ -439,7 +439,11 @@ INSERT INTO `configuraciones` (`id`, `clave`, `valor`, `descripcion`, `categoria
 ('f719e730-2cec-11f1-8130-f83dc65328af', 'facturacion_activada', 'true', 'Si la facturación está activa', 'facturacion', 'boolean', '2026-03-31 06:32:46', NULL),
 ('f719e7ab-2cec-11f1-8130-f83dc65328af', 'resolucion_sii', '', 'Número de resolución SII', 'facturacion', 'text', '2026-03-31 06:32:46', NULL),
 ('f719e832-2cec-11f1-8130-f83dc65328af', 'ambiente', 'produccion', 'Ambiente: desarrollo o produccion', 'sistema', 'text', '2026-03-31 06:32:46', NULL),
-('f719e8a9-2cec-11f1-8130-f83dc65328af', 'timezone', 'America/Santiago', 'Zona horaria', 'sistema', 'text', '2026-03-31 06:32:46', NULL);
+('f719e8a9-2cec-11f1-8130-f83dc65328af', 'timezone', 'America/Santiago', 'Zona horaria', 'sistema', 'text', '2026-03-31 06:32:46', NULL),
+('f719e8b0-2cec-11f1-8130-f83dc65328af', 'threshold_producto_caro', '30000', 'Precio mínimo para considerar un producto como "caro" (requiere habitación + anfitriona)', 'comisiones', 'number', '2026-03-31 06:32:46', NULL),
+('f719e8b1-2cec-11f1-8130-f83dc65328af', 'split_tarjeta_venta', '51', 'Porcentaje del pago con tarjeta que se registra como venta', 'comisiones', 'number', '2026-03-31 06:32:46', NULL),
+('f719e8b2-2cec-11f1-8130-f83dc65328af', 'split_tarjeta_propina', '49', 'Porcentaje del pago con tarjeta que se registra como propina', 'comisiones', 'number', '2026-03-31 06:32:46', NULL),
+('f719e8b3-2cec-11f1-8130-f83dc65328af', 'admin_whatsapp', '', 'Número de WhatsApp para notificaciones al administrador', 'sistema', 'text', '2026-03-31 06:32:46', NULL);
 
 -- --------------------------------------------------------
 
@@ -1153,7 +1157,8 @@ CREATE TABLE `productos` (
   `fecha_mod` datetime DEFAULT NULL,
   `fecha_baja` datetime DEFAULT NULL,
   `estado` int NOT NULL DEFAULT '1',
-  `foto` varchar(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL DEFAULT 'default.png'
+  `foto` varchar(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL DEFAULT 'default.png',
+  `max_anfitrionas` int DEFAULT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 --

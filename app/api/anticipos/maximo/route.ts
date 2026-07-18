@@ -1,9 +1,9 @@
 import { NextResponse } from 'next/server';
-import { withAppAuth } from '@/lib/api/app-api-wrapper';
+import { withRoute } from '@/lib/api/withRoute';
 import { getAnticipoBalances } from '@/lib/business/anticiposUtils';
 import { query } from '@/lib/database/db';
 
-export const GET = withAppAuth(async (_request: Request, { user }: { params: any; user: any }) => {
+export const GET = withRoute({ auth: true, audit: true }, async (_request: Request, { user }: { params: any; user: any }) => {
   const balances = await getAnticipoBalances(user.id.toString());
 
   const pendingCheck = await query<any[]>(

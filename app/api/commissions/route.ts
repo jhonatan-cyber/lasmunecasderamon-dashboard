@@ -1,8 +1,8 @@
 import { NextResponse } from 'next/server';
-import { withAppApiWrapper } from '@/lib/api/app-api-wrapper';
+import { withPublicRoute } from '@/lib/api/withRoute';
 import { CommissionService } from '@/lib/services/CommissionService';
 
-export const GET = withAppApiWrapper(async (request: Request) => {
+export const GET = withPublicRoute(async (request: Request) => {
   const { searchParams } = new URL(request.url);
   const stats = searchParams.get('stats');
   const status = searchParams.get('status') || undefined;
@@ -18,7 +18,7 @@ export const GET = withAppApiWrapper(async (request: Request) => {
   return NextResponse.json({ success: true, data });
 });
 
-export const POST = withAppApiWrapper(async (request: Request) => {
+export const POST = withPublicRoute(async (request: Request) => {
   const body = await request.json();
   const id = await CommissionService.create(body);
   return NextResponse.json({ success: true, message: 'Comisión creada', id }, { status: 201 });

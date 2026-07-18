@@ -1,8 +1,8 @@
 import { NextResponse } from 'next/server';
-import { withAppApiWrapper } from '@/lib/api/app-api-wrapper';
+import { withPublicRoute } from '@/lib/api/withRoute';
 import { StatsService } from '@/lib/services/StatsService';
 
-export const GET = withAppApiWrapper(async () => {
+export const GET = withPublicRoute(async () => {
   const stats = await StatsService.getCajaGeneralStats();
 
   const hasOpenCaja = !!stats.caja_id;

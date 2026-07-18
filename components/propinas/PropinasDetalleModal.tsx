@@ -48,7 +48,7 @@ export default function PropinasDetalleModal({
   return (
     <Dialog open={open} onOpenChange={onClose}>
       <DialogContent className='w-[95vw] max-w-[95vw] sm:w-auto sm:max-w-[700px] max-h-[90vh] flex flex-col p-0'>
-        <DialogHeader className='flex-shrink-0 px-4 sm:px-6 pt-4 sm:pt-6 pb-2 border-b'>
+        <DialogHeader className='shrink-0 px-4 sm:px-6 pt-4 sm:pt-6 pb-2 border-b'>
           <DialogTitle className='text-center text-base sm:text-lg font-semibold'>
             Información de las Propinas
           </DialogTitle>
@@ -77,7 +77,7 @@ export default function PropinasDetalleModal({
             <h3 className='text-xs sm:text-sm font-semibold mb-4 text-center text-gray-600'>
               Detalle de las Propinas
             </h3>
-            <div className='bg-white dark:bg-slate-900/40 backdrop-blur-sm rounded-3xl border-none shadow-md overflow-hidden'>
+            <div className='bg-white dark:bg-slate-900/40 backdrop-blur-xs rounded-3xl border-none shadow-md overflow-hidden'>
               <Table className='min-w-full'>
                 <TableHeader className='bg-gray-100 dark:bg-slate-900/50'>
                   <TableRow className='hover:bg-transparent'>
@@ -187,13 +187,13 @@ export default function PropinasDetalleModal({
         </div>
 
         {}
-        <div className='flex-shrink-0 border-t px-4 sm:px-6 py-4'>
+        <div className='shrink-0 border-t px-4 sm:px-6 py-4'>
           <div className='flex justify-center'>
             <Button
               size='sm'
               variant='outline'
               onClick={onClose}
-              className='bg-black text-white dark:bg-black dark:text-white  dark:hover:!bg-white dark:hover:!text-black rounded-full px-8 hover:!bg-white hover:!text-black transition-all hover:scale-105 border-2'
+              className='bg-black text-white dark:bg-black dark:text-white  dark:hover:bg-white! dark:hover:text-black! rounded-full px-8 hover:bg-white! hover:text-black! transition-all hover:scale-105 border-2'
             >
               Cerrar
             </Button>

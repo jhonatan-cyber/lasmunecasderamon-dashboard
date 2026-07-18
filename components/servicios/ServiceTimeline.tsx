@@ -88,7 +88,7 @@ export const ServiceTimeline: React.FC<ServiceTimelineProps> = ({ servicioId }) 
   }
 
   return (
-    <div className='relative space-y-4 before:absolute before:inset-0 before:ml-5 before:-translate-x-px before:h-full before:w-0.5 before:bg-gradient-to-b before:from-transparent before:via-slate-300 before:to-transparent dark:before:via-slate-700'>
+    <div className='relative space-y-4 before:absolute before:inset-0 before:ml-5 before:-translate-x-px before:h-full before:w-0.5 before:bg-linear-to-b before:from-transparent before:via-slate-300 before:to-transparent dark:before:via-slate-700'>
       {logs.map((log, index) => (
         <div key={log.id} className='relative flex items-center justify-between gap-4'>
           <div className='flex items-center gap-4'>

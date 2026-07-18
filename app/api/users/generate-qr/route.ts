@@ -1,11 +1,11 @@
 import { NextResponse } from 'next/server';
-import { withAppAuth } from '@/lib/api/app-api-wrapper';
+import { withRoute } from '@/lib/api/withRoute';
 import { query } from '@/lib/database/db';
 import { ValidationError } from '@/lib/errors/errors';
 import { sendNotificationToAll } from '@/lib/api/sseService';
 import crypto from 'crypto';
 
-export const POST = withAppAuth(async (request: Request, { user }: { params: any; user: any }) => {
+export const POST = withRoute({ auth: true, audit: true, module: 'users', action: 'write' }, async (request: Request) => {
   const { userId } = await request.json();
 
   if (!userId) throw new ValidationError('userId es requerido');

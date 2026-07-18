@@ -87,7 +87,7 @@ export default function ServicioCard({
         }
       }
     },
-    [servicio?.id_servicio, actualizarAnfitrionas, onUpdate]
+    [servicio && servicio.id_servicio, actualizarAnfitrionas, onUpdate]
   );
 
   const mainFrozenRemainingTime = temporaryTimer?.datosTemporales?.tiempo_principal_congelado;
@@ -222,7 +222,7 @@ export default function ServicioCard({
 
   return (
     <Card
-      className={`relative w-full cursor-pointer overflow-hidden border border-zinc-200/70 bg-white shadow-sm transition-all duration-300 hover:-translate-y-0.5 hover:shadow-lg dark:border-zinc-800/70 dark:bg-zinc-950/95 dark:shadow-black/20 ${showAllServices ? 'hover:cursor-pointer' : ''} ${isCriticalTime ? 'animate-pulse-red border-red-500/80 shadow-red-100/30 dark:border-red-900/70 dark:shadow-red-950/20' : isLowTime ? 'animate-pulse-yellow border-amber-400/80 shadow-amber-100/30 dark:border-amber-900/70 dark:shadow-amber-950/10' : 'hover:border-zinc-300 dark:hover:border-zinc-700'} ${isLowTime && !isCriticalTime ? 'bg-amber-50/40 dark:bg-amber-950/10' : ''} ${isCriticalTime ? 'bg-red-50/40 dark:bg-red-950/15' : ''}`}
+      className={`relative w-full cursor-pointer overflow-hidden border border-zinc-200/70 bg-white shadow-xs transition-all duration-300 hover:-translate-y-0.5 hover:shadow-lg dark:border-zinc-800/70 dark:bg-zinc-950/95 dark:shadow-black/20 ${showAllServices ? 'hover:cursor-pointer' : ''} ${isCriticalTime ? 'animate-pulse-red border-red-500/80 shadow-red-100/30 dark:border-red-900/70 dark:shadow-red-950/20' : isLowTime ? 'animate-pulse-yellow border-amber-400/80 shadow-amber-100/30 dark:border-amber-900/70 dark:shadow-amber-950/10' : 'hover:border-zinc-300 dark:hover:border-zinc-700'} ${isLowTime && !isCriticalTime ? 'bg-amber-50/40 dark:bg-amber-950/10' : ''} ${isCriticalTime ? 'bg-red-50/40 dark:bg-red-950/15' : ''}`}
       onClick={handleCardClick}
     >
       <div className='relative space-y-3.5 p-4 md:p-5'>
@@ -300,9 +300,9 @@ export default function ServicioCard({
       />
 
       {showConfirm && (
-        <div className='fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-[100] p-4'>
+        <div className='fixed inset-0 bg-black/60 backdrop-blur-xs flex items-center justify-center z-100 p-4'>
           <div className='bg-white dark:bg-gray-800 rounded-lg shadow-xl max-w-sm w-full flex flex-col max-h-[90vh] overflow-hidden'>
-            <div className='p-6 border-b text-center flex-shrink-0'>
+            <div className='p-6 border-b text-center shrink-0'>
               <Clock className='w-12 h-12 text-red-500 mx-auto mb-2' />
               <h3 className='text-lg font-semibold text-gray-900 dark:text-gray-100'>
                 ¿Finalizar sesión?
@@ -313,7 +313,7 @@ export default function ServicioCard({
                 Se liberará la habitación y se guardará el registro.
               </p>
             </div>
-            <div className='p-6 border-t flex-shrink-0'>
+            <div className='p-6 border-t shrink-0'>
               <div className='flex gap-3'>
                 <button
                   className='flex-1 rounded-md border px-4 py-2 text-sm'

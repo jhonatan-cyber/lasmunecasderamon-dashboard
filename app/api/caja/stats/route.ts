@@ -1,9 +1,9 @@
 import { NextResponse } from 'next/server';
-import { withAppApiWrapper } from '@/lib/api/app-api-wrapper';
+import { withPublicRoute } from '@/lib/api/withRoute';
 import { StatsService } from '@/lib/services/StatsService';
 import { formatDateLabel } from '@/lib/utils/calendarUtils';
 
-export const GET = withAppApiWrapper(async () => {
+export const GET = withPublicRoute(async () => {
   const stats = await StatsService.getCajaGeneralStats();
 
   const formattedStats = {
@@ -14,8 +14,5 @@ export const GET = withAppApiWrapper(async () => {
     fecha_apertura: stats.fecha_apertura_raw ? formatDateLabel(stats.fecha_apertura_raw) : 'N/A'
   };
 
-  return NextResponse.json({
-    success: true,
-    ...formattedStats
-  });
+  return NextResponse.json({ success: true, data: formattedStats });
 });

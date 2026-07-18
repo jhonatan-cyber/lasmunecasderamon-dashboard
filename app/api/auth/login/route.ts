@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
-import { withAppApiWrapper } from '@/lib/api/app-api-wrapper';
 import { AuthService } from '@/lib/services/AuthService';
+import { generateRefreshToken } from '@/lib/auth/auth';
 import { cookies } from 'next/headers';
 import { loginLimiterApp } from '@/lib/middleware/rateLimit';
 import { ApiResponse } from '@/lib/api/api-response';
@@ -15,13 +15,42 @@ export const POST = loginLimiterApp(async (request: Request) => {
 
     if (result.success && result.token) {
       const cookieStore = await cookies();
+      const isProduction = process.env.NODE_ENV === 'production';
+
+      // Access token (15 min) — cookie httpOnly
       cookieStore.set('token', result.token, {
         httpOnly: true,
-        secure: process.env.NODE_ENV === 'production',
+        secure: isProduction,
         sameSite: 'lax',
         path: '/',
-        maxAge: 60 * 60 * 24
+        maxAge: 15 * 60
       });
+
+      // Refresh token (7 días) — cookie httpOnly separada
+      const userData = (result as any).user as Record<string, unknown> | undefined;
+      if (userData && userData.id) {
+        try {
+          const refreshToken = await generateRefreshToken({
+            id: userData.id as string | number,
+            username: String(userData.username || userData.name || ''),
+            name: String(userData.name || ''),
+            lastName: String(userData.lastName || ''),
+            nick: userData.nick ? String(userData.nick) : undefined,
+            email: String(userData.email || ''),
+            role: String(userData.role || '')
+          });
+          cookieStore.set('refresh_token', refreshToken, {
+            httpOnly: true,
+            secure: isProduction,
+            sameSite: 'lax',
+            path: '/',
+            maxAge: 7 * 24 * 60 * 60
+          });
+        } catch {
+          // Refresh token no crítico para el login inicial
+        }
+      }
+
       return NextResponse.json(result);
     }
 

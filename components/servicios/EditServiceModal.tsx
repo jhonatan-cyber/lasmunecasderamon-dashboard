@@ -66,7 +66,7 @@ export default function EditServiceModal({
   return (
     <Dialog open={open} onOpenChange={handleClose}>
       <DialogContent className='w-[95vw] max-w-[95vw] sm:w-auto sm:max-w-[600px] max-h-[90vh] flex flex-col p-0'>
-        <DialogHeader className='flex-shrink-0 px-4 sm:px-6 pt-4 sm:pt-6 pb-4 border-b'>
+        <DialogHeader className='shrink-0 px-4 sm:px-6 pt-4 sm:pt-6 pb-4 border-b'>
           <DialogTitle className='flex items-center justify-between'>
             <span>Crear Nuevo Servicio + Timer</span>
             <div className='flex items-center gap-2 text-sm text-blue-600'>
@@ -128,7 +128,7 @@ export default function EditServiceModal({
         </div>
 
         {}
-        <div className='flex-shrink-0 border-t px-4 sm:px-6 py-4'>
+        <div className='shrink-0 border-t px-4 sm:px-6 py-4'>
           <div className='flex gap-3'>
             <Button
               variant='outline'

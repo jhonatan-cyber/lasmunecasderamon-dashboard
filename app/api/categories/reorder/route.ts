@@ -1,9 +1,9 @@
 import { NextResponse } from 'next/server';
-import { withAppAuth } from '@/lib/api/app-api-wrapper';
+import { withRoute } from '@/lib/api/withRoute';
 import { CategoryService } from '@/lib/services/CategoryService';
 import { ValidationError } from '@/lib/errors/errors';
 
-export const PUT = withAppAuth(async (request: Request) => {
+export const PUT = withRoute({ auth: true, audit: true, module: 'products', action: 'write' }, async (request: Request) => {
   const body = await request.json();
   const category_orders = Array.isArray(body) ? body : body.category_orders;
 
