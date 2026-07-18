@@ -1,3 +1,5 @@
+'use client';
+
 /* eslint-disable */
 import { useMemo } from 'react';
 import { User as UserType } from '@/types/user';
@@ -122,7 +124,7 @@ export function UserTable({
 
   const DesktopTableView = () => (
     <div className='hidden lg:block'>
-      <div className='bg-white dark:bg-slate-900/40 backdrop-blur-sm rounded-3xl border-none shadow-md overflow-hidden'>
+      <div className='bg-white dark:bg-slate-900/40 backdrop-blur-xs rounded-3xl border-none shadow-md overflow-hidden'>
         <Table className='min-w-full text-base text-center'>
           <TableHeader className='border-b last:border-b-0 bg-gray-100 dark:bg-slate-900/50 group'>
             <TableRow>

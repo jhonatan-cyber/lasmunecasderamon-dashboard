@@ -89,7 +89,7 @@ export default function DashboardStatsCards() {
   return (
     <div className='space-y-6'>
       {}
-      <Card className='bg-gradient-to-br from-gray-900 to-gray-800 text-white border-none shadow-xl'>
+      <Card className='bg-linear-to-br from-gray-900 to-gray-800 text-white border-none shadow-xl'>
         <CardHeader className='pb-2'>
           <CardTitle className='text-sm font-medium text-gray-400 uppercase tracking-wider'>
             Total Neto a Cobrar Estimado

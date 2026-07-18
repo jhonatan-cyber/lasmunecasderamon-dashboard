@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useRef } from 'react';
 import { useRouter, usePathname } from 'next/navigation';
 import { toast } from 'sonner';
+import { isPublicRoute } from '@/lib/constants/routes';
 
 export const useSessionCheck = () => {
   const router = useRouter();
@@ -11,10 +12,7 @@ export const useSessionCheck = () => {
     pathname === '/' ||
     pathname === '/login' ||
     pathname === '/api-docs' ||
-    pathname === '/confirmar-anulacion' ||
-    pathname === '/confirmar-anulacion-servicio' ||
-    pathname === '/confirmar-anulacion-cuenta' ||
-    pathname === '/confirmar-anticipo' ||
+    isPublicRoute(pathname) ||
     pathname === '/asistencia-qr';
 
   const checkSessionStatus = useCallback(async () => {

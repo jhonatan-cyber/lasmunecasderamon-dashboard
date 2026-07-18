@@ -1,9 +1,10 @@
 import { NextResponse } from 'next/server';
-import { withAppAuth } from '@/lib/api/app-api-wrapper';
+import { withRoute } from '@/lib/api/withRoute';
 import { AnticipoService } from '@/lib/services/AnticipoService';
 import { ValidationError } from '@/lib/errors/errors';
 
-export const PUT = withAppAuth(
+export const PUT = withRoute(
+  { auth: true, audit: true, module: 'advances', action: 'process' },
   async (request: Request, context: { params: Promise<{ id: string }>; user: any }) => {
     const { id } = await context.params;
     const { estado, entregado_por } = await request.json();
@@ -20,6 +21,5 @@ export const PUT = withAppAuth(
     }
 
     return NextResponse.json({ success: true, message: 'Anticipo procesado correctamente' });
-  },
-  { requiredPermission: { module: 'advances', action: 'process' } }
+  }
 );

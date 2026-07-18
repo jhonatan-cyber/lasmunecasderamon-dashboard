@@ -1,11 +1,11 @@
 import { NextResponse } from 'next/server';
-import { withAppAuth } from '@/lib/api/app-api-wrapper';
+import { withRoute } from '@/lib/api/withRoute';
 import { AccountService } from '@/lib/services/AccountService';
 import { query } from '@/lib/database/db';
 import { enviarMensajeSolicitudAnulacion } from '@/lib/integrations/whatsappService';
 import logger from '@/lib/utils/logger';
 
-export const POST = withAppAuth(async (request: Request, { user }: { params: any; user: any }) => {
+export const POST = withRoute({ auth: true, audit: true, module: 'finances', action: 'write' }, async (request: Request, { params, user }) => {
   const body = await request.json();
 
   const id = await AccountService.requestAnulacion(
@@ -25,13 +25,10 @@ export const POST = withAppAuth(async (request: Request, { user }: { params: any
     [body.cuentaId]
   );
 
-  const adminWhatsApp =
-    process.env.ADMIN_WHATSAPP_NUMBER?.replace('whatsapp:', '') || '59172419112';
-  const baseUrl = process.env.PUBLIC_BASE_URL || process.env.NEXT_PUBLIC_APP_URL || '';
+  const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || '';
 
   try {
     await enviarMensajeSolicitudAnulacion({
-      numeroAdmin: adminWhatsApp,
       tipo: 'cuenta',
       codigo: cuentaInfo[0]?.codigo || body.cuentaId,
       clienteNombre:

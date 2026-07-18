@@ -145,7 +145,7 @@ export const getVentaDetails = async <T extends VentaSearchRow>(
 
   if (!venta || !venta.detalles || !Array.isArray(venta.detalles)) {
     try {
-      const response = await fetch(`/api/ventas/${ventaId}`);
+      const response = await fetch(`/api/sales/${ventaId}`);
       if (response.ok) {
         const json = await response.json();
         venta = json.data as T;

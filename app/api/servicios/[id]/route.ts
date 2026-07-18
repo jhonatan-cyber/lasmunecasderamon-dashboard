@@ -1,9 +1,9 @@
 import { NextResponse } from 'next/server';
-import { withAppApiWrapper, withAppAuth } from '@/lib/api/app-api-wrapper';
+import { withPublicRoute, withRoute } from '@/lib/api/withRoute';
 import { ServiceService } from '@/lib/services/ServiceService';
 import { sendNotificationToAll } from '@/lib/api/sseService';
 
-export const GET = withAppApiWrapper(
+export const GET = withPublicRoute(
   async (request: Request, { params }: { params: Promise<{ id: string }> }) => {
     const id = (await params).id;
     const data = await ServiceService.getById(id);
@@ -16,8 +16,8 @@ export const GET = withAppApiWrapper(
   }
 );
 
-export const PUT = withAppAuth(
-  async (request: Request, { params }: { params: Promise<{ id: string }>; user: any }) => {
+export const PUT = withRoute({ auth: true, audit: true },
+  async (request: Request, { params }: { params: Promise<{ id: string }> }) => {
     const id = (await params).id;
     const body = await request.json();
     await ServiceService.updateService(id, body);
@@ -30,7 +30,7 @@ export const PUT = withAppAuth(
   }
 );
 
-export const PATCH = withAppAuth(
+export const PATCH = withRoute({ auth: true, audit: true },
   async (request: Request, { params, user }: { params: Promise<{ id: string }>; user: any }) => {
     const id = (await params).id;
     const body = await request.json();
@@ -62,7 +62,7 @@ export const PATCH = withAppAuth(
   }
 );
 
-export const DELETE = withAppAuth(async () => {
+export const DELETE = withRoute({ auth: true, audit: true }, async () => {
   return NextResponse.json(
     {
       success: false,

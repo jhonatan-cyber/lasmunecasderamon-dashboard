@@ -13,7 +13,7 @@ export default function PayrollRoleButtons({ roleFilter, setRoleFilter }: Props)
     <div className="flex flex-wrap items-center justify-center gap-2">
       <Button
         size="sm"
-        variant={roleFilter === 'all' ? 'default' : 'outline'}
+        variant={roleFilter === 'all' ? 'default' : 'outline-solid'}
         className="rounded-full"
         onClick={() => setRoleFilter('all')}
       >
@@ -21,7 +21,7 @@ export default function PayrollRoleButtons({ roleFilter, setRoleFilter }: Props)
       </Button>
       <Button
         size="sm"
-        variant={roleFilter === 'anfitriona' ? 'default' : 'outline'}
+        variant={roleFilter === 'anfitriona' ? 'default' : 'outline-solid'}
         className="rounded-full"
         onClick={() => setRoleFilter('anfitriona')}
       >
@@ -29,7 +29,7 @@ export default function PayrollRoleButtons({ roleFilter, setRoleFilter }: Props)
       </Button>
       <Button
         size="sm"
-        variant={roleFilter === 'garzon' ? 'default' : 'outline'}
+        variant={roleFilter === 'garzon' ? 'default' : 'outline-solid'}
         className="rounded-full"
         onClick={() => setRoleFilter('garzon')}
       >
@@ -37,7 +37,7 @@ export default function PayrollRoleButtons({ roleFilter, setRoleFilter }: Props)
       </Button>
       <Button
         size="sm"
-        variant={roleFilter === 'cajero' ? 'default' : 'outline'}
+        variant={roleFilter === 'cajero' ? 'default' : 'outline-solid'}
         className="rounded-full"
         onClick={() => setRoleFilter('cajero')}
       >

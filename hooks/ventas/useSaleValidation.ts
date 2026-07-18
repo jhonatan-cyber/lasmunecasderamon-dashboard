@@ -5,7 +5,7 @@ import { useSales } from '@/hooks/caja/useSales';
 import { useTimer } from '@/contexts/TimerContext';
 import { VentaCreate } from '@/types/venta';
 import logger from '@/lib/utils/logger';
-import { isChampagneProduct } from './useSaleHostessLogic';
+import { isChampagneProduct, isExpensiveDrink } from '@/components/orders/productModalRules';
 
 export interface SaleFormState {
   selectedCliente: string;
@@ -73,7 +73,7 @@ export function useSaleValidation({
   // ── Derived product rules ───────────────────────────────────────────
   const hasChampagneProducts = useMemo(() => productos.some(isChampagneProduct), [productos]);
   const hasHighValueProducts = useMemo(
-    () => productos.some(p => Number(p.precio ?? p.price ?? 0) >= 30000),
+    () => productos.some(p => isExpensiveDrink(p)),
     [productos]
   );
   const requiresRoom = hasChampagneProducts || hasHighValueProducts;
@@ -175,7 +175,7 @@ export function useSaleValidation({
       comision: producto.comision ?? producto.commission ?? 0,
       cantidad,
       subtotal: precio * cantidad,
-      selectedHostesses: producto.selectedHostesses || [],
+      selectedHostesses: (producto.selectedHostesses || []).map((h: number) => Number(h)),
       isChampagne: producto.isChampagne || isChampagneProduct(producto)
     };
 
@@ -262,7 +262,7 @@ export function useSaleValidation({
         sub_total: totals.subtotal,
         total: totals.total,
         detalles: productos.map(p => {
-          const selectedHostesses = Array.isArray(p.selectedHostesses) ? p.selectedHostesses : [];
+          const selectedHostesses = Array.isArray(p.selectedHostesses) ? p.selectedHostesses.map((h: number) => Number(h)) : [];
           const normalizedDetail = {
             producto_id: p.id,
             precio: p.precio,

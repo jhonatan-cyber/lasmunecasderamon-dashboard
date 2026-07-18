@@ -116,10 +116,10 @@ export default function CobrarCuentaModal({
   const productosTabla = useMemo(
     () =>
       detalleResumen.groupedDetalles.map((item, index) => {
-        const hostessIds = item.hostess_id
+        const hostessIds: number[] = item.hostess_id
           ? String(item.hostess_id)
               .split(',')
-              .map((id: string) => id.trim())
+              .map((id: string) => Number(id.trim()))
           : [];
         return {
           id_producto: item.id_producto ?? item.producto_id ?? item.agrupacionKey ?? index,
@@ -184,7 +184,7 @@ export default function CobrarCuentaModal({
       }}
     >
       <DialogContent className='sm:max-w-4xl max-h-[90vh] flex flex-col p-0 bg-white rounded-xl shadow-md'>
-        <DialogHeader className='flex-shrink-0 px-6 pt-6 pb-4 border-b'>
+        <DialogHeader className='shrink-0 px-6 pt-6 pb-4 border-b'>
           <DialogTitle className='text-start text-xl font-semibold tracking-tight'>
             Cobrar Cuenta
           </DialogTitle>
@@ -405,7 +405,7 @@ export default function CobrarCuentaModal({
           )}
         </div>
 
-        <div className='flex-shrink-0 border-t px-6 py-4'>
+        <div className='shrink-0 border-t px-6 py-4'>
           <div className='flex justify-center gap-4'>
             <Button
               size='sm'
@@ -418,7 +418,7 @@ export default function CobrarCuentaModal({
             <Button
               size='sm'
               variant='outline'
-              className='bg-black text-white dark:bg-black dark:text-white dark:hover:!bg-white dark:hover:!text-black rounded-full px-8 hover:!bg-white hover:!text-black transition-all hover:scale-105 border-2'
+              className='bg-black text-white dark:bg-black dark:text-white dark:hover:bg-white! dark:hover:text-black! rounded-full px-8 hover:bg-white! hover:text-black! transition-all hover:scale-105 border-2'
               onClick={handleCobrarCuenta}
               disabled={isCobrando}
             >

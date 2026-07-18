@@ -1,9 +1,9 @@
 import { NextResponse } from 'next/server';
-import { withAppAuth } from '@/lib/api/app-api-wrapper';
+import { withRoute } from '@/lib/api/withRoute';
 import { GratificacionService } from '@/lib/services/GratificacionService';
 import { ValidationError } from '@/lib/errors/errors';
 
-export const GET = withAppAuth(async (request: Request, { user }: { params: any; user: any }) => {
+export const GET = withRoute({ auth: true, audit: true }, async (request: Request, { user }: { params: any; user: any }) => {
   const { searchParams } = new URL(request.url);
   const userId = searchParams.get('userId');
   const role = user.role?.toLowerCase() || '';
@@ -14,7 +14,7 @@ export const GET = withAppAuth(async (request: Request, { user }: { params: any;
   return NextResponse.json(data);
 });
 
-export const POST = withAppAuth(async (request: Request, { user }: { params: any; user: any }) => {
+export const POST = withRoute({ auth: true, audit: true }, async (request: Request, { user }: { params: any; user: any }) => {
   const { usuario_id, monto, descripcion } = await request.json();
   if (!usuario_id || !monto) {
     throw new ValidationError('usuario_id y monto son requeridos', { usuario_id, monto });

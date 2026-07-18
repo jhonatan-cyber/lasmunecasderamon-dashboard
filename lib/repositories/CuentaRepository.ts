@@ -3,10 +3,9 @@ import {
   type CuentaDetalle,
   type CuentaCreateBody,
   type CuentaUpdateBody,
-  type CuentaCobrarBody,
-  type CuentaRoomHistoryItem,
-  type CuentaRoomHistoryViewItem
+  type CuentaCobrarBody
 } from './cuenta/CuentaQueries';
+import type { CuentaRoomHistoryItem, CuentaRoomHistoryViewItem } from './cuenta/CuentaRoomHistory';
 
 export type {
   CuentaDetalle,

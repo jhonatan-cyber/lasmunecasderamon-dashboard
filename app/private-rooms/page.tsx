@@ -17,7 +17,6 @@ import { useEffect, useState, useCallback, useRef } from 'react';
 import { useRefreshOnFocus } from '@/hooks/shared';
 import { PermissionGuard } from '@/components/auth/PermissionGuard';
 import { useUserPermissions } from '@/hooks/auth/useUserPermissions';
-import { StatsCardSkeleton } from '@/components/shared/Skeletons';
 import { ServicioWithDetails } from '@/types/servicio';
 
 export default function ServiciosPage() {
@@ -149,7 +148,7 @@ export default function ServiciosPage() {
         {loading || loadingAll ? (
           <div className='grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-8'>
             {[...Array(4)].map((_, i) => (
-              <StatsCardSkeleton key={i} />
+              <div key={i} className='h-24 bg-slate-100 dark:bg-slate-800 rounded-2xl animate-pulse' />
             ))}
           </div>
         ) : (

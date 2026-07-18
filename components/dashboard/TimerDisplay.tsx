@@ -1,3 +1,5 @@
+'use client';
+
 /* eslint-disable */
 import { useTimer, useCountdown } from '@/contexts/TimerContext';
 import { Clock, Square, ChevronDown, ChevronUp } from 'lucide-react';
@@ -76,7 +78,7 @@ const TimerItem = memo(
 
     return (
       <div
-        className={`mb-1 flex items-center justify-between rounded border p-1.5 shadow-sm ${tipoInfo.bgColor} ${tipoInfo.borderColor}`}
+        className={`mb-1 flex items-center justify-between rounded border p-1.5 shadow-xs ${tipoInfo.bgColor} ${tipoInfo.borderColor}`}
       >
         <div className='flex-1 min-w-0'>
           <div className='flex flex-col'>

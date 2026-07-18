@@ -64,9 +64,25 @@ class RedisCache {
     }
   }
 
+  private async scanKeys(pattern: string): Promise<string[]> {
+    const keys: string[] = [];
+    const stream = redisClient.scanStream({
+      match: pattern,
+      count: 100,
+    });
+
+    return new Promise((resolve, reject) => {
+      stream.on('data', (resultKeys: string[]) => {
+        if (resultKeys.length) keys.push(...resultKeys);
+      });
+      stream.on('end', () => resolve(keys));
+      stream.on('error', reject);
+    });
+  }
+
   async delPattern(pattern: string): Promise<void> {
     try {
-      const keys = await redisClient.keys(this.getKey(pattern));
+      const keys = await this.scanKeys(this.getKey(pattern));
       if (keys.length > 0) {
         await redisClient.del(...keys);
       }
@@ -123,7 +139,7 @@ class RedisCache {
 
   async invalidatePattern(pattern: string): Promise<void> {
     try {
-      const keys = await redisClient.keys(this.getKey(pattern));
+      const keys = await this.scanKeys(this.getKey(pattern));
       if (keys.length > 0) {
         await redisClient.del(...keys);
       }

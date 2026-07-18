@@ -59,7 +59,7 @@ function PendingSection({
             <Link
               key={item.id}
               href={item.href}
-              className='group block rounded-2xl border border-slate-200/80 bg-white p-4 transition-all duration-200 hover:-translate-y-0.5 hover:shadow-sm dark:border-slate-800 dark:bg-slate-950/30'
+              className='group block rounded-2xl border border-slate-200/80 bg-white p-4 transition-all duration-200 hover:-translate-y-0.5 hover:shadow-xs dark:border-slate-800 dark:bg-slate-950/30'
             >
               <div className='flex items-start justify-between gap-3'>
                 <div>

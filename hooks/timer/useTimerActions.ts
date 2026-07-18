@@ -99,7 +99,7 @@ export function useTimerActions({ onNotificationExpira, onRefreshCaja }: TimerAc
         updates.push(updateServiceStatus(timer.servicioId, 1));
       } else if (tTipo === 'venta') {
         updates.push(
-          fetch(`/api/ventas/${timer.servicioId}`, {
+          fetch(`/api/sales/${timer.servicioId}`, {
             method: 'PATCH',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ action: 'stop' })

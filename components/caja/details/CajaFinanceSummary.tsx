@@ -41,7 +41,7 @@ export function CajaFinanceSummary({
 
         <div className='grid grid-cols-1 md:grid-cols-4 gap-6 animate-in fade-in slide-in-from-bottom-4 duration-500'>
           {}
-          <div className='md:col-span-4 bg-white dark:bg-gray-800 p-8 rounded-[2.5rem] border border-gray-200 dark:border-gray-700 shadow-sm flex items-center justify-between group overflow-hidden relative mb-4'>
+          <div className='md:col-span-4 bg-white dark:bg-gray-800 p-8 rounded-[2.5rem] border border-gray-200 dark:border-gray-700 shadow-xs flex items-center justify-between group overflow-hidden relative mb-4'>
             <div className='absolute top-0 right-0 p-4 opacity-5 group-hover:scale-110 transition-transform'>
               <Calendar className='w-32 h-32 -mr-8 -mt-8' />
             </div>
@@ -61,7 +61,7 @@ export function CajaFinanceSummary({
           </div>
 
           {}
-          <div className='bg-white dark:bg-gray-950 p-6 rounded-[2rem] border border-gray-100 dark:border-gray-800 shadow-sm hover:shadow-xl transition-all hover:-translate-y-1'>
+          <div className='bg-white dark:bg-gray-950 p-6 rounded-4xl border border-gray-100 dark:border-gray-800 shadow-xs hover:shadow-xl transition-all hover:-translate-y-1'>
             <div className='text-center space-y-4'>
               <div className='w-10 h-10 bg-gray-50 dark:bg-gray-900/50 rounded-full flex items-center justify-center mx-auto'>
                 <DollarSign className='w-5 h-5 text-gray-500' />
@@ -82,7 +82,7 @@ export function CajaFinanceSummary({
           </div>
 
           {}
-          <div className='bg-white dark:bg-gray-950 p-6 rounded-[2rem] border border-gray-100 dark:border-gray-800 shadow-sm hover:shadow-xl transition-all hover:-translate-y-1'>
+          <div className='bg-white dark:bg-gray-950 p-6 rounded-4xl border border-gray-100 dark:border-gray-800 shadow-xs hover:shadow-xl transition-all hover:-translate-y-1'>
             <div className='text-center space-y-4'>
               <div className='w-10 h-10 bg-gray-50 dark:bg-gray-900/50 rounded-full flex items-center justify-center mx-auto'>
                 <ShoppingCart className='w-5 h-5 text-gray-500' />
@@ -103,7 +103,7 @@ export function CajaFinanceSummary({
           </div>
 
           {}
-          <div className='bg-white dark:bg-gray-950 p-6 rounded-[2rem] border border-gray-100 dark:border-gray-800 shadow-sm hover:shadow-xl transition-all hover:-translate-y-1'>
+          <div className='bg-white dark:bg-gray-950 p-6 rounded-4xl border border-gray-100 dark:border-gray-800 shadow-xs hover:shadow-xl transition-all hover:-translate-y-1'>
             <div className='text-center space-y-4'>
               <div className='w-10 h-10 bg-gray-50 dark:bg-gray-900/50 rounded-full flex items-center justify-center mx-auto'>
                 <TrendingUp className='w-5 h-5 text-gray-500' />
@@ -124,7 +124,7 @@ export function CajaFinanceSummary({
           </div>
 
           {}
-          <div className='bg-white dark:bg-gray-950 p-6 rounded-[2rem] border border-gray-100 dark:border-gray-800 shadow-sm hover:shadow-xl transition-all hover:-translate-y-1'>
+          <div className='bg-white dark:bg-gray-950 p-6 rounded-4xl border border-gray-100 dark:border-gray-800 shadow-xs hover:shadow-xl transition-all hover:-translate-y-1'>
             <div className='text-center space-y-4'>
               <div className='w-10 h-10 bg-gray-50 dark:bg-gray-900/50 rounded-full flex items-center justify-center mx-auto'>
                 <Home className='w-5 h-5 text-gray-500' />

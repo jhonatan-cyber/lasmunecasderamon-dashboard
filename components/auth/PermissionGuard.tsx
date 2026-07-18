@@ -95,7 +95,7 @@ export function PermissionGuard({
           </p>
           <div className='bg-yellow-50 border border-yellow-200 rounded-lg p-3'>
             <div className='flex items-start'>
-              <AlertTriangle className='h-5 w-5 text-yellow-600 mt-0.5 mr-2 flex-shrink-0' />
+              <AlertTriangle className='h-5 w-5 text-yellow-600 mt-0.5 mr-2 shrink-0' />
               <div className='text-sm text-yellow-800'>
                 <p className='font-medium'>Permisos requeridos:</p>
                 <p className='mt-1'>

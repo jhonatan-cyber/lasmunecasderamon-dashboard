@@ -1,10 +1,10 @@
 import { NextResponse } from 'next/server';
-import { withAppAuth } from '@/lib/api/app-api-wrapper';
+import { withRoute } from '@/lib/api/withRoute';
 import { query } from '@/lib/database/db';
 import { logger } from '@/lib/utils/logger';
 
-export const GET = withAppAuth(
-  async (request: Request, { params }: { params: Promise<{ id: string }>; user: any }) => {
+export const GET = withRoute({ auth: true, audit: true, module: 'settings', action: 'read' },
+  async (request: Request, { params }: { params: Promise<{ id: string }> }) => {
     const id = (await params).id;
 
     const backups = (await query(
@@ -32,6 +32,5 @@ export const GET = withAppAuth(
         'Content-Disposition': `attachment; filename="${filename}"`
       }
     });
-  },
-  { requiredPermission: { module: 'settings', action: 'read' } }
+  }
 );

@@ -67,7 +67,7 @@ export const useSales = () => {
 
   const getVentaById = async (id: string | number): Promise<VentaWithDetails | null> => {
     try {
-      const response = await fetch(`/api/ventas/${id}`);
+      const response = await fetch(`/api/sales/${id}`);
       if (!response.ok) {
         throw new Error('Error al cargar la venta');
       }
@@ -140,8 +140,8 @@ export const useSales = () => {
       setMutationLoading(true);
       setError(null);
       try {
-        const response = await fetch(`/api/ventas/${id}`, {
-          method: 'PUT',
+        const response = await fetch(`/api/sales/${id}`, {
+          method: 'PATCH',
           headers: {
             'Content-Type': 'application/json'
           },
@@ -172,7 +172,7 @@ export const useSales = () => {
       setMutationLoading(true);
       setError(null);
       try {
-        const response = await fetch(`/api/ventas/${id}`, {
+        const response = await fetch(`/api/sales/${id}`, {
           method: 'DELETE'
         });
 
@@ -227,53 +227,7 @@ export const useSales = () => {
     }
   }, []);
 
-  const cancelarVenta = useCallback(
-    async (id: string | number, motivo?: string): Promise<boolean> => {
-      try {
-        const response = await fetch(`/api/ventas/${id}/solicitar-anulacion`, {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json'
-          },
-          body: JSON.stringify({ motivo })
-        });
-
-        if (!response.ok) {
-          throw new Error('Error al cancelar venta');
-        }
-
-        return true;
-      } catch (err) {
-        setError(err instanceof Error ? err.message : 'Error desconocido');
-        return false;
-      }
-    },
-    []
-  );
-
-  const devolverVenta = useCallback(
-    async (id: string | number, motivo?: string): Promise<boolean> => {
-      try {
-        const response = await fetch(`/api/ventas/${id}/devolver`, {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json'
-          },
-          body: JSON.stringify({ motivo })
-        });
-
-        if (!response.ok) {
-          throw new Error('Error al devolver venta');
-        }
-
-        return true;
-      } catch (err) {
-        setError(err instanceof Error ? err.message : 'Error desconocido');
-        return false;
-      }
-    },
-    []
-  );
+  // ponytail: removed cancelarVenta and devolverVenta — both pointed to non-existent routes
 
   const clearError = useCallback(() => {
     setError(null);
@@ -302,8 +256,8 @@ export const useSales = () => {
     updateVenta,
     deleteVenta,
     getResumen,
-    cancelarVenta,
-    devolverVenta,
+    cancelarVenta: undefined,
+    devolverVenta: undefined,
     clearError
   };
 };

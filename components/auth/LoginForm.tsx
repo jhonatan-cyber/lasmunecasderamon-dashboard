@@ -3,6 +3,7 @@
 import { Mail, Lock, Eye, EyeOff, Sun, Moon, Monitor } from 'lucide-react';
 import { useRef, useState } from 'react';
 import { Button } from '@/components/ui/button';
+import { EMAIL_DOMAIN } from '@/lib/constants/email';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import logger from '@/lib/utils/logger';
@@ -127,7 +128,7 @@ export const LoginForm = ({
                 className='absolute top-1/2 -translate-y-1/2 text-gray-400 dark:text-gray-500 text-sm pointer-events-none'
                 style={{ left: `${48 + loginData.email.length * 8.5}px` }}
               >
-                @lasmuñecasderamon.com
+                {EMAIL_DOMAIN}
               </span>
             )}
           </div>
@@ -165,7 +166,7 @@ export const LoginForm = ({
                 runSingleTap(passwordTapRef, () => setShowPassword(!showPassword));
               }}
               aria-label={showPassword ? 'Ocultar contrasena' : 'Mostrar contrasena'}
-              className='absolute right-2 top-1/2 z-30 -translate-y-1/2 rounded-md p-2 text-gray-400 transition-colors hover:text-gray-600 focus:outline-none focus:ring-2 focus:ring-gray-300 dark:text-gray-500 dark:focus:ring-gray-600 touch-manipulation cursor-pointer pointer-events-auto'
+              className='absolute right-2 top-1/2 z-30 -translate-y-1/2 rounded-md p-2 text-gray-400 transition-colors hover:text-gray-600 focus:outline-hidden focus:ring-2 focus:ring-gray-300 dark:text-gray-500 dark:focus:ring-gray-600 touch-manipulation cursor-pointer pointer-events-auto'
               style={{ WebkitTapHighlightColor: 'transparent' }}
             >
               {showPassword ? <EyeOff className='w-5 h-5' /> : <Eye className='w-5 h-5' />}
@@ -196,7 +197,7 @@ export const LoginForm = ({
 
         {}
         <div className='flex justify-center mt-4'>
-          <div className='flex items-center gap-2 rounded-full border border-gray-200 bg-white p-1 shadow-sm dark:border-gray-800 dark:bg-gray-900'>
+          <div className='flex items-center gap-2 rounded-full border border-gray-200 bg-white p-1 shadow-xs dark:border-gray-800 dark:bg-gray-900'>
             {themeOptions.map(opt => {
               const Icon = opt.icon;
               const isActive = theme === opt.value;
@@ -251,7 +252,7 @@ export const LoginForm = ({
   return (
     <form className='space-y-5' onSubmit={handleVerifyCode}>
       <div className='text-center mb-6'>
-        <div className='bg-gradient-to-r from-blue-50 to-indigo-50 dark:from-blue-900/20 dark:to-indigo-900/20 rounded-xl p-6 border border-blue-200 dark:border-blue-800'>
+        <div className='bg-linear-to-r from-blue-50 to-indigo-50 dark:from-blue-900/20 dark:to-indigo-900/20 rounded-xl p-6 border border-blue-200 dark:border-blue-800'>
           <div className='flex items-center justify-center mb-3'>
             <div className='w-12 h-12 bg-blue-100 dark:bg-blue-800 rounded-full flex items-center justify-center'>
               <span className='text-2xl'>🔐</span>

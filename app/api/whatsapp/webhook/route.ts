@@ -21,8 +21,11 @@ export async function POST(request: Request) {
 
     const mensaje = normalizeWhatsAppMessage(Body);
     const numeroRemitente = From.replace('whatsapp:', '');
-    const adminWhatsApp =
-      process.env.ADMIN_WHATSAPP_NUMBER?.replace('whatsapp:', '') || '59172419112';
+    const adminWhatsApp = process.env.ADMIN_WHATSAPP_NUMBER?.replace('whatsapp:', '');
+
+    if (!adminWhatsApp) {
+      return NextResponse.json({ error: 'ADMIN_WHATSAPP_NUMBER no configurado' }, { status: 500 });
+    }
 
     if (numeroRemitente !== adminWhatsApp) return NextResponse.json({ message: 'No autorizado' });
 
@@ -87,20 +90,19 @@ export async function POST(request: Request) {
       if (index >= 0 && index < todasLasSolicitudes.length) {
         await processPendingSolicitud(
           todasLasSolicitudes[index],
-          isApprovalAction(action) ? 'confirmar' : 'rechazar',
-          adminWhatsApp
+          isApprovalAction(action) ? 'confirmar' : 'rechazar'
         );
         return NextResponse.json({ message: 'Procesado' });
       }
     }
 
     if (['si', 'confirmar', 'aprobar'].includes(mensaje) && todasLasSolicitudes.length > 0) {
-      await processPendingSolicitud(todasLasSolicitudes[0], 'confirmar', adminWhatsApp);
+      await processPendingSolicitud(todasLasSolicitudes[0], 'confirmar');
       return NextResponse.json({ message: 'Confirmado' });
     }
 
     if (['no', 'rechazar'].includes(mensaje) && todasLasSolicitudes.length > 0) {
-      await processPendingSolicitud(todasLasSolicitudes[0], 'rechazar', adminWhatsApp);
+      await processPendingSolicitud(todasLasSolicitudes[0], 'rechazar');
       return NextResponse.json({ message: 'Rechazado' });
     }
 

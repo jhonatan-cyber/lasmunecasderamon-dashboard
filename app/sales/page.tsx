@@ -34,7 +34,7 @@ import {
 } from '@/lib/business/salesUtils';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import SalesWithRoomTab from '@/components/sales/SalesWithRoomTab';
-import { SalesSkeleton } from '@/components/shared/Skeletons';
+import { Skeleton as BoneyardSkeleton } from 'boneyard-js/react';
 import dynamic from 'next/dynamic';
 import { useRefreshOnFocus } from '@/hooks/shared';
 
@@ -155,9 +155,8 @@ export default function Sales() {
         <CajaStatusBanner />
         <SalesHeader loading={loading} onRefresh={handleRefresh} />
 
-        {loading && ventas.length === 0 ? (
-          <SalesSkeleton />
-        ) : (
+        <BoneyardSkeleton name="sales-main" loading={loading && ventas.length === 0}>
+        {ventas.length === 0 ? (
           <>
             <SalesStatsCards ventas={ventas} />
 
@@ -179,7 +178,7 @@ export default function Sales() {
             />
 
             <Tabs defaultValue='all' className='w-full'>
-              <TabsList className='grid w-full grid-cols-2 mb-6 p-1 bg-gray-200/80 dark:bg-slate-800/80 rounded-full max-w-md mx-auto border dark:border-slate-700 shadow-sm'>
+              <TabsList className='grid w-full grid-cols-2 mb-6 p-1 bg-gray-200/80 dark:bg-slate-800/80 rounded-full max-w-md mx-auto border dark:border-slate-700 shadow-xs'>
                 <TabsTrigger
                   value='all'
                   className='rounded-full data-[state=active]:bg-black data-[state=active]:text-white dark:data-[state=active]:bg-white dark:data-[state=active]:text-black transition-all'
@@ -230,7 +229,8 @@ export default function Sales() {
               </TabsContent>
             </Tabs>
           </>
-        )}
+        ) : null}
+        </BoneyardSkeleton>
       </div>
 
       <SalesDetailModal

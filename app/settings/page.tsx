@@ -7,7 +7,8 @@ import {
   Key,
   Settings as SettingsIcon,
   ShieldAlert,
-  Clock
+  Clock,
+  Users
 } from 'lucide-react';
 import { SettingsCompanyTab } from '@/components/settings/SettingsCompanyTab';
 import { SettingsBillingTab } from '@/components/settings/SettingsBillingTab';
@@ -15,6 +16,7 @@ import { SettingsPermissionsTab } from '@/components/settings/SettingsPermission
 import { SettingsMaintenanceTab } from '@/components/settings/SettingsMaintenanceTab';
 import { SettingsLogsTab } from '@/components/settings/SettingsLogsTab';
 import { SettingsAttendanceTab } from '@/components/settings/SettingsAttendanceTab';
+import { SettingsComisionesTab } from '@/components/settings/SettingsComisionesTab';
 
 export default function Settings() {
   return (
@@ -32,6 +34,10 @@ export default function Settings() {
           <TabsTrigger value='permisos' className='flex items-center gap-2 rounded-full'>
             <Key className='h-4 w-4' />
             Permisos
+          </TabsTrigger>
+          <TabsTrigger value='comisiones' className='flex items-center gap-2 rounded-full'>
+            <Users className='h-4 w-4' />
+            Comisiones
           </TabsTrigger>
           <TabsTrigger value='mantenimiento' className='flex items-center gap-2 rounded-full'>
             <Database className='h-4 w-4' />
@@ -57,6 +63,10 @@ export default function Settings() {
 
         <TabsContent value='permisos'>
           <SettingsPermissionsTab />
+        </TabsContent>
+
+        <TabsContent value='comisiones'>
+          <SettingsComisionesTab />
         </TabsContent>
 
         <TabsContent value='mantenimiento'>

@@ -1,8 +1,9 @@
 import { NextResponse } from 'next/server';
-import { withAppApiWrapper, withAppAuth } from '@/lib/api/app-api-wrapper';
+import { withRoute } from '@/lib/api/withRoute';
 import { AnticipoService } from '@/lib/services/AnticipoService';
 
-export const PUT = withAppAuth(
+export const PUT = withRoute(
+  { auth: true, audit: true, module: 'advances', action: 'process' },
   async (request: Request) => {
     const body = await request.json();
     const { token, accion } = body;
@@ -26,6 +27,5 @@ export const PUT = withAppAuth(
       const msg = error instanceof Error ? error.message : 'Error al procesar solicitud';
       return NextResponse.json({ success: false, message: msg }, { status: 400 });
     }
-  },
-  { module: 'finances', action: 'write' }
+  }
 );

@@ -31,8 +31,6 @@ export async function POST(request: Request) {
   }
 
   const solicitud = rows[0];
-  const adminWhatsApp =
-    process.env.ADMIN_WHATSAPP_NUMBER?.replace('whatsapp:', '') || '59172419112';
 
   await processPendingSolicitud(
     {
@@ -44,8 +42,7 @@ export async function POST(request: Request) {
       total: Number(solicitud.total || 0),
       monto: Number(solicitud.monto || 0)
     },
-    action,
-    adminWhatsApp
+    action
   );
 
   return NextResponse.json({ success: true });

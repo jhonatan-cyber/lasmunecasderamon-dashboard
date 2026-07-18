@@ -8,7 +8,19 @@ export async function GET(
 ) {
   try {
     const { filename } = await params;
-    const filePath = path.join(process.cwd(), 'public', 'img', 'products', filename);
+    // Sanitize: prevent path traversal by resolving and verifying the path
+    // stays within the intended products images directory
+    const safeFilename = path.basename(filename);
+    const productsDir = path.join(process.cwd(), 'public', 'img', 'products');
+    const filePath = path.join(productsDir, safeFilename);
+
+    // Double-check: resolved path must be inside productsDir
+    if (!filePath.startsWith(productsDir + path.sep)) {
+      return NextResponse.json(
+        { success: false, message: 'Invalid filename' },
+        { status: 400 }
+      );
+    }
 
     let imageBuffer: Buffer;
     let contentType = 'image/jpeg';

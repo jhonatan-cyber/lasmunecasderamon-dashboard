@@ -188,7 +188,7 @@ Responsive typography:
 ```html
 <div class="bg-blue-500">Blue background</div>
 <div class="bg-gray-100">Light gray background</div>
-<div class="bg-gradient-to-r from-blue-500 to-purple-600">
+<div class="bg-linear-to-r from-blue-500 to-purple-600">
   Gradient background
 </div>
 ```

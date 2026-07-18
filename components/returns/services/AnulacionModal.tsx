@@ -29,7 +29,7 @@ export function AnulacionModal({ open, onOpenChange, servicio, onConfirm }: Anul
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className='sm:max-w-[425px] max-h-[90vh] flex flex-col p-0'>
-        <DialogHeader className="flex-shrink-0 px-6 pt-6 pb-4 border-b dark:border-gray-700">
+        <DialogHeader className="shrink-0 px-6 pt-6 pb-4 border-b dark:border-gray-700">
           <DialogTitle className="text-gray-900 dark:text-gray-100">Solicitar Anulación de Servicio</DialogTitle>
         </DialogHeader>
         <form onSubmit={handleSubmit} className='flex flex-col flex-1'>
@@ -73,7 +73,7 @@ export function AnulacionModal({ open, onOpenChange, servicio, onConfirm }: Anul
             </div>
           </div>
 
-          <div className="flex-shrink-0 border-t dark:border-gray-700 px-6 py-4">
+          <div className="shrink-0 border-t dark:border-gray-700 px-6 py-4">
             <div className='flex justify-end space-x-2'>
               <Button
                 type='button'

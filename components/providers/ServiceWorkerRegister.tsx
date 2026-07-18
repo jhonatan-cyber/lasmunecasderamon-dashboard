@@ -156,7 +156,7 @@ export default function ServiceWorkerRegister() {
     <>
       {/* Update available banner — only show when there's a waiting update */}
       {updateAvailable && (
-        <div className='fixed bottom-4 right-4 z-[9999] flex items-center gap-3 rounded-xl border border-blue-500/20 bg-blue-500/10 px-4 py-3 shadow-lg backdrop-blur-md'>
+        <div className='fixed bottom-4 right-4 z-9999 flex items-center gap-3 rounded-xl border border-blue-500/20 bg-blue-500/10 px-4 py-3 shadow-lg backdrop-blur-md'>
           <div className='flex-1 text-sm text-blue-200'>
             <span className='font-medium text-blue-100'>Nueva versión disponible</span>
             <p className='mt-0.5 text-xs text-blue-300/70'>

@@ -85,7 +85,7 @@ export default function PayrollTable({
   return (
     <div>
       {error && <div className='text-red-600 text-sm mb-3'>{error}</div>}
-      <div className='mt-4 sm:mt-6 bg-white dark:bg-slate-900/40 backdrop-blur-sm rounded-3xl border-none shadow-md overflow-hidden'>
+      <div className='mt-4 sm:mt-6 bg-white dark:bg-slate-900/40 backdrop-blur-xs rounded-3xl border-none shadow-md overflow-hidden'>
         <div className='overflow-x-auto'>
           <Table className='min-w-full text-base text-center'>
             <TableHeader className='bg-gray-100 dark:bg-slate-900/50'>

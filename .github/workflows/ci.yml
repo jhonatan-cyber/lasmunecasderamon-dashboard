@@ -12,6 +12,7 @@ jobs:
     runs-on: ubuntu-latest
     env:
       JWT_SECRET: ${{ secrets.JWT_SECRET || 'test-secret' }}
+      JWT_REFRESH_SECRET: ${{ secrets.JWT_REFRESH_SECRET || 'test-refresh-secret' }}
       NEXT_PUBLIC_BASE_URL: ${{ secrets.NEXT_PUBLIC_BASE_URL || 'http://localhost:3000' }}
       BASE_URL: ${{ secrets.BASE_URL || 'http://localhost:3000' }}
       PORT: '3000'
@@ -49,6 +50,7 @@ jobs:
     runs-on: ubuntu-latest
     env:
       JWT_SECRET: ${{ secrets.JWT_SECRET || 'test-secret' }}
+      JWT_REFRESH_SECRET: ${{ secrets.JWT_REFRESH_SECRET || 'test-refresh-secret' }}
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4

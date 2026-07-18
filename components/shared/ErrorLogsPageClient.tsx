@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import { Button } from '@/components/ui/button';
-import { ErrorLogsSkeleton } from '@/components/shared/Skeletons';
+import { Skeleton as BoneyardSkeleton } from 'boneyard-js/react';
 import { formatLongDateEs } from '@/lib/utils/calendarUtils';
 import logger from '@/lib/utils/logger';
 
@@ -27,9 +27,8 @@ export function ErrorLogsPageClient() {
     fetchLogs();
   }, []);
 
-  if (loading) return <ErrorLogsSkeleton />;
-
   return (
+    <BoneyardSkeleton name="error-logs-main" loading={loading}>
     <div className='p-8'>
       <div className='flex justify-between items-center mb-4'>
         <h1 className='text-2xl font-bold'>Error Logs (ultimos 50)</h1>
@@ -78,5 +77,6 @@ export function ErrorLogsPageClient() {
         </div>
       )}
     </div>
+    </BoneyardSkeleton>
   );
 }

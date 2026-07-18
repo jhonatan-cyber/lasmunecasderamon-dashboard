@@ -305,7 +305,7 @@ export default function MiniSalesChart() {
             onClick={refreshData}
             disabled={isRefreshing}
             className={cn(
-              'p-3 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 text-slate-500 hover:text-emerald-500 hover:border-emerald-500/30 transition-all shadow-sm',
+              'p-3 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 text-slate-500 hover:text-emerald-500 hover:border-emerald-500/30 transition-all shadow-xs',
               isRefreshing && 'animate-spin text-emerald-500'
             )}
           >
@@ -313,7 +313,7 @@ export default function MiniSalesChart() {
           </button>
 
           {}
-          <div className='flex items-center bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 p-1 shadow-sm'>
+          <div className='flex items-center bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 p-1 shadow-xs'>
             <button
               onClick={() =>
                 viewMode === 'month'
@@ -353,7 +353,7 @@ export default function MiniSalesChart() {
             }}
             disabled={viewMode === 'month' ? yearOffset === 0 : weekOffset === 0}
             className={cn(
-              'px-6 py-3 rounded-2xl text-[10px] font-black uppercase tracking-[0.2em] transition-all border shadow-sm',
+              'px-6 py-3 rounded-2xl text-[10px] font-black uppercase tracking-[0.2em] transition-all border shadow-xs',
               (viewMode === 'month' ? yearOffset === 0 : weekOffset === 0)
                 ? 'bg-slate-100 dark:bg-slate-800/50 text-slate-400 border-transparent opacity-50 cursor-not-allowed'
                 : 'bg-white dark:bg-slate-900 text-emerald-500 border-slate-200 dark:border-slate-800 hover:border-emerald-500/30'
@@ -391,8 +391,8 @@ export default function MiniSalesChart() {
       </div>
 
       {}
-      <div className='relative h-[450px] w-full bg-white/40 dark:bg-slate-900/20 backdrop-blur-sm rounded-[3rem] p-8 border border-slate-200/60 dark:border-slate-800/60 shadow-inner overflow-hidden'>
-        <div className='absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-transparent via-emerald-500/20 to-transparent' />
+      <div className='relative h-[450px] w-full bg-white/40 dark:bg-slate-900/20 backdrop-blur-xs rounded-[3rem] p-8 border border-slate-200/60 dark:border-slate-800/60 shadow-inner overflow-hidden'>
+        <div className='absolute top-0 left-0 w-full h-1 bg-linear-to-r from-transparent via-emerald-500/20 to-transparent' />
 
         <ResponsiveContainer width='100%' height='100%'>
           {viewMode === 'week' ? (

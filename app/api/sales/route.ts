@@ -1,8 +1,10 @@
 import { NextResponse } from 'next/server';
-import { withAppApiWrapper, withAppAuth } from '@/lib/api/app-api-wrapper';
+import { withPublicRoute, withRoute } from '@/lib/api/withRoute';
 import { SaleService } from '@/lib/services/SaleService';
+import { SaleCreateSchema } from '@/lib/business/schemas/sale';
+import { validateOrResponse } from '@/lib/api/validate';
 
-export const GET = withAppApiWrapper(async (request: Request) => {
+export const GET = withPublicRoute(async (request: Request) => {
   const { searchParams } = new URL(request.url);
   const params = {
     tipo: searchParams.get('tipo') || undefined,
@@ -16,9 +18,11 @@ export const GET = withAppApiWrapper(async (request: Request) => {
   return NextResponse.json({ success: true, data });
 });
 
-export const POST = withAppAuth(async (request: Request, { user }: { params: any; user: any }) => {
+export const POST = withRoute({ auth: true, audit: true, module: 'sales', action: 'write' }, async (request: Request, { user }: { params: any; user: any }) => {
   const body = await request.json();
-  const result = await SaleService.createSale(body, user.id.toString());
+  const validated = validateOrResponse(SaleCreateSchema, body);
+  if (validated instanceof NextResponse) return validated;
+  const result = await SaleService.createSale(validated, user.id.toString());
   return NextResponse.json(
     { success: true, message: 'Venta procesada', data: result },
     { status: 201 }

@@ -1,8 +1,8 @@
 import { NextResponse } from 'next/server';
-import { withAppApiWrapper } from '@/lib/api/app-api-wrapper';
+import { withPublicRoute } from '@/lib/api/withRoute';
 import { TipService } from '@/lib/services/TipService';
 
-export const GET = withAppApiWrapper(
+export const GET = withPublicRoute(
   async (request: Request, { params }: { params: Promise<{ id: string }> }) => {
     const id = (await params).id;
 

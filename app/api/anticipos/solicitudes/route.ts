@@ -1,10 +1,10 @@
 import { NextResponse } from 'next/server';
-import { withAppAuth } from '@/lib/api/app-api-wrapper';
+import { withRoute } from '@/lib/api/withRoute';
 import { AnticipoService } from '@/lib/services/AnticipoService';
 import { query } from '@/lib/database/db';
 import { ValidationError } from '@/lib/errors/errors';
 
-export const GET = withAppAuth(async (_request: Request, { user }: { params: any; user: any }) => {
+export const GET = withRoute({ auth: true, audit: true }, async (_request: Request, { user }: { params: any; user: any }) => {
   const solicitudes = await query(
     `SELECT A.*, CONCAT(U.nombre, ' ', U.apellido) AS usuario_nombre, U.nick
      FROM anticipos A
@@ -16,7 +16,7 @@ export const GET = withAppAuth(async (_request: Request, { user }: { params: any
   return NextResponse.json({ success: true, data: solicitudes });
 });
 
-export const POST = withAppAuth(async (request: Request, { user }: { params: any; user: any }) => {
+export const POST = withRoute({ auth: true, audit: true, module: 'advances', action: 'write' }, async (request: Request, { user }: { params: any; user: any }) => {
   const body = await request.json();
   const { monto, motivo } = body;
 

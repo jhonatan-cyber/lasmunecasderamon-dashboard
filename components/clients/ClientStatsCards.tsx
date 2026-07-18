@@ -28,7 +28,7 @@ export function ClientStatsCards({ clients }: ClientStatsCardsProps) {
           backgroundColor: 'rgba(59, 130, 246, 0.1)',
           border: '1px solid rgba(59, 130, 246, 0.2)'
         }}
-        className='shadow-sm border-none backdrop-blur-sm rounded-3xl overflow-hidden group hover:scale-[1.02] transition-all duration-300'
+        className='shadow-xs border-none backdrop-blur-xs rounded-3xl overflow-hidden group hover:scale-[1.02] transition-all duration-300'
       >
         <CardContent className='p-5'>
           <div className='flex items-center justify-between mb-4'>
@@ -54,7 +54,7 @@ export function ClientStatsCards({ clients }: ClientStatsCardsProps) {
           backgroundColor: 'rgba(16, 185, 129, 0.1)',
           border: '1px solid rgba(16, 185, 129, 0.2)'
         }}
-        className='shadow-sm border-none backdrop-blur-sm rounded-3xl overflow-hidden group hover:scale-[1.02] transition-all duration-300'
+        className='shadow-xs border-none backdrop-blur-xs rounded-3xl overflow-hidden group hover:scale-[1.02] transition-all duration-300'
       >
         <CardContent className='p-5'>
           <div className='flex items-center justify-between mb-4'>
@@ -82,7 +82,7 @@ export function ClientStatsCards({ clients }: ClientStatsCardsProps) {
           backgroundColor: 'rgba(245, 158, 11, 0.1)',
           border: '1px solid rgba(245, 158, 11, 0.2)'
         }}
-        className='shadow-sm border-none backdrop-blur-sm rounded-3xl overflow-hidden group hover:scale-[1.02] transition-all duration-300'
+        className='shadow-xs border-none backdrop-blur-xs rounded-3xl overflow-hidden group hover:scale-[1.02] transition-all duration-300'
       >
         <CardContent className='p-5'>
           <div className='flex items-center justify-between mb-4'>
@@ -110,7 +110,7 @@ export function ClientStatsCards({ clients }: ClientStatsCardsProps) {
           backgroundColor: 'rgba(139, 92, 246, 0.1)',
           border: '1px solid rgba(139, 92, 246, 0.2)'
         }}
-        className='shadow-sm border-none backdrop-blur-sm rounded-3xl overflow-hidden group hover:scale-[1.02] transition-all duration-300'
+        className='shadow-xs border-none backdrop-blur-xs rounded-3xl overflow-hidden group hover:scale-[1.02] transition-all duration-300'
       >
         <CardContent className='p-5'>
           <div className='flex items-center justify-between mb-4'>

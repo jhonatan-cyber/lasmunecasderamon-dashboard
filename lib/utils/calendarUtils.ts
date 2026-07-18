@@ -26,9 +26,6 @@ export const toDateKey = (value?: string | Date | null) => {
 
 export const toDateKeys = (dates: Date[]) => dates.map(date => toDateKey(date));
 
-export const matchesDateKey = (value: string | Date | null | undefined, dateKey: string) =>
-  toDateKey(value) === dateKey;
-
 export const matchesAnyDateKey = (value: string | Date | null | undefined, dateKeys: string[]) =>
   dateKeys.includes(toDateKey(value));
 

@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
-import { withAppApiWrapper, withAppAuth } from '@/lib/api/app-api-wrapper';
+import { withRoute } from '@/lib/api/withRoute';
 import { query } from '@/lib/database/db';
+import { clearAdminWhatsAppCache } from '@/lib/business/whatsappConfig';
 
 const VALID_CLAVES = new Set([
   'empresa_nombre',
@@ -20,7 +21,11 @@ const VALID_CLAVES = new Set([
   'ambiente',
   'timezone',
   'asistencia_hora_inicio',
-  'asistencia_hora_fin'
+  'asistencia_hora_fin',
+  'threshold_producto_caro',
+  'split_tarjeta_venta',
+  'split_tarjeta_propina',
+  'admin_whatsapp'
 ]);
 
 function validateConfig(clave: string, valor: string): string | null {
@@ -39,6 +44,17 @@ function validateConfig(clave: string, valor: string): string | null {
       return `${clave} debe ser una hora válida entre 0 y 23`;
     }
   }
+  if (clave === 'threshold_producto_caro' || clave === 'split_tarjeta_venta' || clave === 'split_tarjeta_propina') {
+    const num = Number(valor);
+    if (isNaN(num) || num < 0 || !Number.isInteger(num)) {
+      return `${clave} debe ser un número entero positivo`;
+    }
+  }
+  if (clave === 'admin_whatsapp') {
+    if (valor && !/^\+?\d{7,15}$/.test(valor.replace('whatsapp:', ''))) {
+      return 'admin_whatsapp debe ser un número válido (ej: 59172419112)';
+    }
+  }
   return null;
 }
 
@@ -47,8 +63,8 @@ async function updateConfig(clave: string, valor: string) {
     clave
   ])) as any[];
   if (!existing) {
-    const categoria = clave.startsWith('asistencia_') ? 'asistencia' : 'empresa';
-    const tipo = clave.startsWith('asistencia_') ? 'number' : 'text';
+    const categoria = clave.startsWith('asistencia_') ? 'asistencia' : clave === 'threshold_producto_caro' ? 'comisiones' : clave.startsWith('split_tarjeta_') ? 'comisiones' : clave === 'admin_whatsapp' ? 'sistema' : 'empresa';
+    const tipo = clave.startsWith('asistencia_') || clave === 'threshold_producto_caro' || clave.startsWith('split_tarjeta_') ? 'number' : 'text';
     await query(
       'INSERT INTO configuraciones (id, clave, valor, categoria, tipo, fecha_crea, fecha_mod) VALUES (?, ?, ?, ?, ?, NOW(), NOW())',
       [crypto.randomUUID(), clave, String(valor), categoria, tipo]
@@ -61,7 +77,7 @@ async function updateConfig(clave: string, valor: string) {
   }
 }
 
-export const GET = withAppAuth(async () => {
+export const GET = withRoute({ auth: true, audit: true }, async () => {
   const configs = (await query(`
     SELECT id, clave, valor, descripcion, categoria, tipo
     FROM configuraciones
@@ -95,7 +111,7 @@ export const GET = withAppAuth(async () => {
   return NextResponse.json({ success: true, data: grouped });
 });
 
-export const PUT = withAppAuth(async (req: Request) => {
+export const PUT = withRoute({ auth: true, audit: true, module: 'settings', action: 'write' }, async (req: Request) => {
   const body = await req.json();
   const errors: string[] = [];
 
@@ -110,6 +126,7 @@ export const PUT = withAppAuth(async (req: Request) => {
       }
       await updateConfig(clave, String(valor));
     }
+    if (body.configs.some((c: any) => c.clave === 'admin_whatsapp')) clearAdminWhatsAppCache();
     return NextResponse.json({
       success: errors.length === 0,
       message:
@@ -132,6 +149,8 @@ export const PUT = withAppAuth(async (req: Request) => {
   }
 
   await updateConfig(clave, String(valor));
+
+  if (clave === 'admin_whatsapp') clearAdminWhatsAppCache();
 
   return NextResponse.json({ success: true, message: 'Configuración actualizada' });
 });

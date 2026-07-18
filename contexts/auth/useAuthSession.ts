@@ -2,6 +2,7 @@ import { useState, useEffect, useCallback, useRef } from 'react';
 import { usePathname, useRouter } from 'next/navigation';
 import { toast } from 'sonner';
 import { useSharedSSE } from '@/hooks/shared';
+import { isPublicRoute } from '@/lib/constants/routes';
 import logger from '@/lib/utils/logger';
 
 export interface CurrentUser {
@@ -52,10 +53,7 @@ export function useAuthSession({
     pathname === '/' ||
     pathname === '/login' ||
     pathname === '/api-docs' ||
-    pathname === '/confirmar-anulacion' ||
-    pathname === '/confirmar-anulacion-servicio' ||
-    pathname === '/confirmar-anulacion-cuenta' ||
-    pathname === '/confirmar-anticipo' ||
+    isPublicRoute(pathname) ||
     pathname === '/asistencia-qr';
 
   const handleSessionExpired = useCallback(() => {

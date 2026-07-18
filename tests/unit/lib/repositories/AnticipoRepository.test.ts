@@ -218,74 +218,31 @@ describe('AnticipoRepository.grant', () => {
   it('inserta historial con solicitud + aprobado + entregado', async () => {
     await AnticipoRepository.grant('user-1', 100, 'Directo admin', undefined, 'admin-uuid-1');
 
-    expect(BaseRepository.insert).toHaveBeenCalledWith(
-      repositoryHarness.queryMock,
-      'anticipo_historial',
-      {
-        anticipo_id: 'ant-1',
-        accion: 'solicitud',
-        usuario_id: 'user-1',
-        fecha_crea: '2026-04-11 12:00:00'
-      }
+    const histCalls = repositoryHarness.queryMock.mock.calls.filter(
+      ([sql]) => typeof sql === 'string' && sql.includes('anticipo_historial')
     );
+    expect(histCalls).toHaveLength(1);
 
-    expect(BaseRepository.insert).toHaveBeenCalledWith(
-      repositoryHarness.queryMock,
-      'anticipo_historial',
-      {
-        anticipo_id: 'ant-1',
-        accion: 'aprobado',
-        usuario_id: 'admin-uuid-1',
-        fecha_crea: '2026-04-11 12:00:00'
-      }
-    );
-
-    expect(BaseRepository.insert).toHaveBeenCalledWith(
-      repositoryHarness.queryMock,
-      'anticipo_historial',
-      {
-        anticipo_id: 'ant-1',
-        accion: 'entregado',
-        usuario_id: 'admin-uuid-1',
-        fecha_crea: '2026-04-11 12:00:00'
-      }
-    );
-
-    const histCalls = vi
-      .mocked(BaseRepository.insert)
-      .mock.calls.filter(c => c[1] === 'anticipo_historial');
-    expect(histCalls).toHaveLength(3);
+    const histValues: unknown[] = histCalls[0][1];
+    expect(histValues).toHaveLength(12);
+    expect(histValues.slice(0, 4)).toEqual(['ant-1', 'solicitud', 'user-1', '2026-04-11 12:00:00']);
+    expect(histValues.slice(4, 8)).toEqual(['ant-1', 'aprobado', 'admin-uuid-1', '2026-04-11 12:00:00']);
+    expect(histValues.slice(8, 12)).toEqual(['ant-1', 'entregado', 'admin-uuid-1', '2026-04-11 12:00:00']);
   });
 
   it('inserta historial sin usuario_id en aprobado/entregado si no se pasa adminId', async () => {
     await AnticipoRepository.grant('user-1', 100, 'Sin admin', undefined, undefined);
 
-    expect(BaseRepository.insert).toHaveBeenCalledWith(
-      repositoryHarness.queryMock,
-      'anticipo_historial',
-      expect.objectContaining({
-        accion: 'solicitud',
-        usuario_id: 'user-1'
-      })
+    const histCalls = repositoryHarness.queryMock.mock.calls.filter(
+      ([sql]) => typeof sql === 'string' && sql.includes('anticipo_historial')
     );
+    expect(histCalls).toHaveLength(1);
 
-    expect(BaseRepository.insert).toHaveBeenCalledWith(
-      repositoryHarness.queryMock,
-      'anticipo_historial',
-      expect.objectContaining({
-        accion: 'aprobado',
-        usuario_id: undefined
-      })
-    );
-
-    expect(BaseRepository.insert).toHaveBeenCalledWith(
-      repositoryHarness.queryMock,
-      'anticipo_historial',
-      expect.objectContaining({
-        accion: 'entregado',
-        usuario_id: undefined
-      })
-    );
+    const histValues: unknown[] = histCalls[0][1];
+    expect(histValues).toHaveLength(12);
+    expect(histValues.slice(0, 4)).toEqual(['ant-1', 'solicitud', 'user-1', '2026-04-11 12:00:00']);
+    expect(histValues.slice(4, 8)).toEqual(['ant-1', 'aprobado', undefined, '2026-04-11 12:00:00']);
+    expect(histValues.slice(8, 12)).toEqual(['ant-1', 'entregado', undefined, '2026-04-11 12:00:00']);
   });
 });
 

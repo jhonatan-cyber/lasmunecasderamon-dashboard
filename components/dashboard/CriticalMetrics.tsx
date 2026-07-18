@@ -54,7 +54,7 @@ function CriticalAlert({ count, label }: { count: number; label: string }) {
     <div className='flex items-center gap-1 mt-2 px-2 py-1 rounded-lg bg-rose-500/10 border border-rose-500/20'>
       <div className='relative'>
         <AlertTriangle className='h-3 w-3 text-rose-500' />
-        <div className='absolute inset-0 bg-rose-500 blur-sm opacity-50 animate-pulse' />
+        <div className='absolute inset-0 bg-rose-500 blur-xs opacity-50 animate-pulse' />
       </div>
       <span className='text-[10px] font-black text-rose-600 dark:text-rose-400 uppercase tracking-tighter'>
         {count} {label}

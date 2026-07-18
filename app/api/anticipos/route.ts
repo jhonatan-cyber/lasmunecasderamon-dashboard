@@ -1,9 +1,10 @@
 import { NextResponse } from 'next/server';
-import { withAppAuth } from '@/lib/api/app-api-wrapper';
+import { withRoute } from '@/lib/api/withRoute';
 import { AnticipoService } from '@/lib/services/AnticipoService';
 import { logger } from '@/lib/utils/logger';
 
-export const GET = withAppAuth(
+export const GET = withRoute(
+  { auth: true, audit: true, module: 'advances', action: 'read' },
   async (request: Request) => {
     const { searchParams } = new URL(request.url);
     const estado =
@@ -23,11 +24,11 @@ export const GET = withAppAuth(
       offset
     });
     return NextResponse.json({ success: true, data, total, limit, offset });
-  },
-  { requiredPermission: { module: 'finances', action: 'read' } }
+  }
 );
 
-export const POST = withAppAuth(
+export const POST = withRoute(
+  { auth: true, audit: true, module: 'advances', action: 'write' },
   async (request: Request, { user }) => {
     const body = await request.json();
     const { action, usuario_id, monto, device_date } = body;
@@ -65,6 +66,5 @@ export const POST = withAppAuth(
       logger.error('Error granting advance:', { error });
       return NextResponse.json({ success: false, message: msg }, { status: 400 });
     }
-  },
-  { requiredPermission: { module: 'finances', action: 'write' } }
+  }
 );

@@ -1,4 +1,5 @@
- 
+'use client';
+
 import { Button } from '@/components/ui/button';
 import { ReceiptText, ShoppingCart } from 'lucide-react';
 import React, { useState } from 'react';

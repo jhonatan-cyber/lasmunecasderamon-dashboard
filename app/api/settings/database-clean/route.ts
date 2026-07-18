@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server';
-import { withAppAuth } from '@/lib/api/app-api-wrapper';
+import { withRoute } from '@/lib/api/withRoute';
 import { query } from '@/lib/database/db';
 import { logger } from '@/lib/utils/logger';
 
@@ -15,7 +15,7 @@ const PROTECTED_TABLES = [
   'role_permissions'
 ];
 
-export const POST = withAppAuth(
+export const POST = withRoute({ auth: true, audit: true, module: 'settings', action: 'write' },
   async () => {
     const tables = (await query(`
       SELECT TABLE_NAME
@@ -56,6 +56,5 @@ export const POST = withAppAuth(
       deletedCount: deletedTables.length,
       skippedCount: skippedTables.length
     });
-  },
-  { requiredPermission: { module: 'settings', action: 'write' } }
+  }
 );

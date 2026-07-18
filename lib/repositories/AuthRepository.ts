@@ -8,7 +8,8 @@ import {
   checkUsersExist,
   registerFirstUser,
   checkSession,
-  getSystemDateTime
+  getSystemDateTime,
+  clearForcePasswordChange
 } from './auth/AuthQueries';
 
 export class AuthRepository {
@@ -22,4 +23,5 @@ export class AuthRepository {
   static registerFirstUser = registerFirstUser;
   static checkSession = checkSession;
   static getSystemDateTime = getSystemDateTime;
+  static clearForcePasswordChange = clearForcePasswordChange;
 }

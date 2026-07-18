@@ -146,7 +146,8 @@ export default function NuevoServicioPage() {
     formData.clientes.length,
     formData.metodo_pago,
     pagosMixtos,
-    selectedRoom
+    selectedRoom,
+    ivaRate
   ]);
 
   useEffect(() => {
@@ -453,7 +454,7 @@ export default function NuevoServicioPage() {
                       numericValue === '' ? 0 : Math.max(0, parseInt(numericValue) || 0)
                   });
                 }}
-                className='w-full bg-gray-100 dark:bg-slate-900/50 py-1 pl-9 text-sm sm:text-base border border-gray-300 dark:border-gray-700 rounded-full h-[40px] focus:outline-none focus:border-black'
+                className='w-full bg-gray-100 dark:bg-slate-900/50 py-1 pl-9 text-sm sm:text-base border border-gray-300 dark:border-gray-700 rounded-full h-[40px] focus:outline-hidden focus:border-black'
                 placeholder='0'
                 disabled={isServicePriceLocked}
                 readOnly={isServicePriceLocked}
@@ -511,7 +512,7 @@ export default function NuevoServicioPage() {
                     });
                   }
                 }}
-                className='w-full bg-gray-100 dark:bg-slate-900/50 py-1 pl-9 text-sm sm:text-base border border-gray-300 dark:border-gray-700 rounded-full h-[40px] focus:outline-none focus:border-black'
+                className='w-full bg-gray-100 dark:bg-slate-900/50 py-1 pl-9 text-sm sm:text-base border border-gray-300 dark:border-gray-700 rounded-full h-[40px] focus:outline-hidden focus:border-black'
                 placeholder='0'
                 disabled={formData.metodo_pago !== 'tarjeta'}
               />

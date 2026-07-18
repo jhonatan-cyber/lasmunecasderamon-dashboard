@@ -5,8 +5,9 @@ import { Button } from '@/components/ui/button';
 import { useCurrentUser } from '@/hooks/auth/useCurrentUser';
 import { useUserImage } from '@/contexts/UserImageContext';
 import { toast } from 'sonner';
+import { EMAIL_DOMAIN } from '@/lib/constants/email';
 import { formatDateLabel } from '@/lib/utils/calendarUtils';
-import { ProfileSkeleton } from '@/components/shared/Skeletons';
+import { Skeleton as BoneyardSkeleton } from 'boneyard-js/react';
 import { ProfileHeader } from '@/components/profile/ProfileHeader';
 import { ProfileUserSelector } from '@/components/profile/ProfileUserSelector';
 import { ProfilePersonalInfoCard } from '@/components/profile/ProfilePersonalInfoCard';
@@ -174,7 +175,7 @@ export default function ProfilePage() {
     setUserData({
       ...userData,
       nick: newNick,
-      email: `${newNick}@lasmuñecasderamon.com`
+      email: `${newNick}${EMAIL_DOMAIN}`
     });
   };
 
@@ -184,7 +185,7 @@ export default function ProfilePage() {
     setUserData({
       ...userData,
       nick: newNick,
-      email: `${newNick}@lasmuñecasderamon.com`
+      email: `${newNick}${EMAIL_DOMAIN}`
     });
   };
 
@@ -426,10 +427,6 @@ export default function ProfilePage() {
     };
   }, [userData?.id, userData?.qr_token, isAdmin]);
 
-  if (userLoading || loadingUserData || loadingRoles) {
-    return <ProfileSkeleton />;
-  }
-
   if (!userData) {
     return (
       <div className='container mx-auto p-6'>
@@ -454,6 +451,7 @@ export default function ProfilePage() {
   })();
 
   return (
+    <BoneyardSkeleton name="profile-main" loading={userLoading || loadingUserData || loadingRoles}>
     <div className='flex flex-col gap-4 sm:gap-6 p-4 sm:p-6 lg:p-10 mt-4 sm:mt-6 lg:mt-10'>
       <ProfileHeader
         currentUser={currentUser}
@@ -508,5 +506,6 @@ export default function ProfilePage() {
         />
       </div>
     </div>
+    </BoneyardSkeleton>
   );
 }

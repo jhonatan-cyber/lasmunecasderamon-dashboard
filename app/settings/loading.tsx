@@ -1,5 +1,5 @@
-import { SettingsSkeleton } from '@/components/shared/Skeletons';
+﻿import { Skeleton } from '@/components/shared/Skeleton';
 
 export default function Loading() {
-  return <SettingsSkeleton />;
+  return <Skeleton name="settings-main" loading={true} />;
 }

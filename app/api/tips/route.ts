@@ -1,9 +1,9 @@
 import { NextResponse } from 'next/server';
-import { withAppAuth } from '@/lib/api/app-api-wrapper';
+import { withRoute } from '@/lib/api/withRoute';
 import { TipService } from '@/lib/services/TipService';
 import { ValidationError } from '@/lib/errors/errors';
 
-export const GET = withAppAuth(async (request: Request, { user }: { params: any; user: any }) => {
+export const GET = withRoute({ auth: true, audit: true }, async (request: Request, { user }: { params: any; user: any }) => {
   const { searchParams } = new URL(request.url);
   const tipo = searchParams.get('tipo');
   const usuario_id = searchParams.get('usuario_id');
@@ -22,7 +22,7 @@ export const GET = withAppAuth(async (request: Request, { user }: { params: any;
   return NextResponse.json({ success: false, message: 'Tipo inválido' }, { status: 400 });
 });
 
-export const POST = withAppAuth(async (request: Request) => {
+export const POST = withRoute({ auth: true, audit: true }, async (request: Request) => {
   const { venta_id, monto } = await request.json();
   if (!venta_id || !monto || monto <= 0)
     throw new ValidationError('Venta ID y monto son requeridos', { venta_id, monto });

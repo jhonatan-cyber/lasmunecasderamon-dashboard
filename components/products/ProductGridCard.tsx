@@ -71,7 +71,7 @@ export const ProductGridCard = React.memo<ProductGridCardProps>(
                 <Button
                   size='sm'
                   onClick={onAddToCart}
-                  className='bg-black text-white dark:bg-black dark:text-white  dark:hover:!bg-white dark:hover:!text-black rounded-full hover:!bg-white hover:!text-black transition-all hover:scale-105 border-2'
+                  className='bg-black text-white dark:bg-black dark:text-white  dark:hover:bg-white! dark:hover:text-black! rounded-full hover:bg-white! hover:text-black! transition-all hover:scale-105 border-2'
                 >
                   <Plus className='w-3 h-3' />
                 </Button>

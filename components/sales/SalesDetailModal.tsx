@@ -157,7 +157,7 @@ export function SalesDetailModal({
           <div className='space-y-4'>
             {}
             <div className='flex items-center gap-3'>
-              <Clock className='w-4 h-4 text-gray-400 flex-shrink-0' />
+              <Clock className='w-4 h-4 text-gray-400 shrink-0' />
               <div>
                 <span className='text-[10px] text-gray-400 dark:text-gray-500 uppercase tracking-wider block font-bold'>
                   Fecha
@@ -170,7 +170,7 @@ export function SalesDetailModal({
 
             {}
             <div className='flex items-center gap-3'>
-              <Home className='w-4 h-4 text-indigo-500 flex-shrink-0' />
+              <Home className='w-4 h-4 text-indigo-500 shrink-0' />
               <div>
                 <span className='text-[10px] text-gray-400 dark:text-gray-500 uppercase tracking-wider block font-bold'>
                   Habitación
@@ -186,7 +186,7 @@ export function SalesDetailModal({
 
             {}
             <div className='flex items-center gap-3'>
-              <User className='w-4 h-4 text-blue-500 flex-shrink-0' />
+              <User className='w-4 h-4 text-blue-500 shrink-0' />
               <div>
                 <span className='text-[10px] text-gray-400 dark:text-gray-500 uppercase tracking-wider block font-bold'>
                   Cliente
@@ -202,7 +202,7 @@ export function SalesDetailModal({
 
             {}
             <div className='flex items-center gap-3'>
-              <User className='w-4 h-4 text-green-500 flex-shrink-0' />
+              <User className='w-4 h-4 text-green-500 shrink-0' />
               <div>
                 <span className='text-[10px] text-gray-400 dark:text-gray-500 uppercase tracking-wider block font-bold'>
                   Vendido por
@@ -221,7 +221,7 @@ export function SalesDetailModal({
             {}
             {selectedVenta.pedido_id && (
               <div className='flex items-center gap-3'>
-                <Receipt className='w-4 h-4 text-amber-500 flex-shrink-0' />
+                <Receipt className='w-4 h-4 text-amber-500 shrink-0' />
                 <div>
                   <span className='text-[10px] text-gray-400 dark:text-gray-500 uppercase tracking-wider block font-bold'>
                     Pedido por
@@ -236,7 +236,7 @@ export function SalesDetailModal({
 
             {}
             <div className='flex items-start gap-3'>
-              <Users className='w-4 h-4 text-purple-500 flex-shrink-0 mt-1' />
+              <Users className='w-4 h-4 text-purple-500 shrink-0 mt-1' />
               <div className='flex-1'>
                 <span className='text-[10px] text-gray-400 dark:text-gray-500 uppercase tracking-wider block font-bold'>
                   Anfitrionas

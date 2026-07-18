@@ -1,10 +1,5 @@
 import { useState } from 'react';
-
-// ── Product rule detectors (pure functions, no hook needed) ─────────
-export const isChampagneProduct = (producto: any): boolean => {
-  const cat = (producto?.categoria || producto?.category || '').toLowerCase();
-  return cat.includes('champaña') || cat.includes('shampaña') || cat.includes('champagne');
-};
+import { isChampagneProduct } from '@/components/orders/productModalRules';
 
 // ── Hostess selection state ─────────────────────────────────────────
 export interface HostessSelections {

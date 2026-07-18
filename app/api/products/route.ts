@@ -1,9 +1,9 @@
 import { NextResponse } from 'next/server';
-import { withAppApiWrapper, withAppAuth } from '@/lib/api/app-api-wrapper';
+import { withPublicRoute, withRoute } from '@/lib/api/withRoute';
 import { ProductService } from '@/lib/services/ProductService';
 import { processAndSaveImage } from '@/lib/utils/image-utils';
 
-export const GET = withAppApiWrapper(async (request: Request) => {
+export const GET = withPublicRoute(async (request: Request) => {
   const { searchParams } = new URL(request.url);
   const categoryId = searchParams.get('category_id') || searchParams.get('categoryId') || undefined;
   const term = searchParams.get('term');
@@ -28,7 +28,7 @@ export const GET = withAppApiWrapper(async (request: Request) => {
   return NextResponse.json({ success: true, data });
 });
 
-export const POST = withAppAuth(async (request: Request) => {
+export const POST = withRoute({ auth: true, audit: true, module: 'products', action: 'write' }, async (request: Request) => {
   const contentType = request.headers.get('content-type') || '';
   let payload: any = {};
   let fotoName = 'default.png';
@@ -63,7 +63,7 @@ export const POST = withAppAuth(async (request: Request) => {
   );
 });
 
-export const PUT = withAppAuth(async (request: Request) => {
+export const PUT = withRoute({ auth: true, audit: true, module: 'products', action: 'write' }, async (request: Request) => {
   const { searchParams } = new URL(request.url);
   const id = searchParams.get('id');
 
@@ -107,14 +107,14 @@ export const PUT = withAppAuth(async (request: Request) => {
   return NextResponse.json({ success: true, message: 'Producto actualizado correctamente', data });
 });
 
-export const PATCH = withAppAuth(async (request: Request) => {
+export const PATCH = withRoute({ auth: true, audit: true, module: 'products', action: 'write' }, async (request: Request) => {
   const { searchParams } = new URL(request.url);
   const id = searchParams.get('id');
   const action = searchParams.get('action');
 
   if (!id || !action) {
     return NextResponse.json(
-      { success: false, message: 'ID y acción son requeridos' },
+      { success: false, message: 'ID y accion son requeridos' },
       { status: 400 }
     );
   }
@@ -122,7 +122,7 @@ export const PATCH = withAppAuth(async (request: Request) => {
   const status = action === 'activate' ? 1 : action === 'deactivate' ? 0 : null;
 
   if (status === null) {
-    return NextResponse.json({ success: false, message: 'Acción no válida' }, { status: 400 });
+    return NextResponse.json({ success: false, message: 'Accion no valida' }, { status: 400 });
   }
 
   const data = await ProductService.update(id, { status });
@@ -134,7 +134,7 @@ export const PATCH = withAppAuth(async (request: Request) => {
   });
 });
 
-export const DELETE = withAppAuth(async (request: Request) => {
+export const DELETE = withRoute({ auth: true, audit: true, module: 'products', action: 'delete' }, async (request: Request) => {
   const { searchParams } = new URL(request.url);
   const id = searchParams.get('id');
 

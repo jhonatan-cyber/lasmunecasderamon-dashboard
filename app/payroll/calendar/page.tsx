@@ -318,7 +318,7 @@ export default function PayrollCalendarPage() {
           </h1>
         </div>
 
-        <div className='flex-1 bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700'>
+        <div className='flex-1 bg-white dark:bg-gray-800 rounded-lg shadow-xs border border-gray-200 dark:border-gray-700'>
           <PayrollCalendarHeader
             title={getTitle()}
             currentView={currentView}

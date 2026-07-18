@@ -40,7 +40,7 @@ export function CategoryFilters({
   };
 
   return (
-    <Card className='shadow-md border-none bg-white dark:bg-slate-900/40 backdrop-blur-sm rounded-3xl overflow-hidden'>
+    <Card className='shadow-md border-none bg-white dark:bg-slate-900/40 backdrop-blur-xs rounded-3xl overflow-hidden'>
       <CardContent className='p-6'>
         <div className='flex flex-col lg:flex-row gap-6 items-end'>
           {}
@@ -100,7 +100,7 @@ export function CategoryFilters({
                       <Button
                         onClick={onClearFilters}
                         size='icon'
-                        className='w-10 h-10 flex items-center justify-center rounded-full border border-gray-300 dark:border-gray-700 shadow-sm bg-gray-100 dark:bg-slate-900/50 text-gray-900 dark:text-gray-100 transition-all duration-200 hover:scale-110 hover:!bg-red-500 hover:!text-white hover:!border-red-500'
+                        className='w-10 h-10 flex items-center justify-center rounded-full border border-gray-300 dark:border-gray-700 shadow-xs bg-gray-100 dark:bg-slate-900/50 text-gray-900 dark:text-gray-100 transition-all duration-200 hover:scale-110 hover:bg-red-500! hover:text-white! hover:border-red-500!'
                       >
                         <Trash2 className='w-4 h-4' />
                       </Button>

@@ -1,5 +1,5 @@
-import { DashboardSkeleton } from '@/components/shared/Skeletons';
+﻿import { Skeleton } from '@/components/shared/Skeleton';
 
 export default function Loading() {
-  return <DashboardSkeleton />;
+  return <Skeleton name="dashboard-main" loading={true} />;
 }

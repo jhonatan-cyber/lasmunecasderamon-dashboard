@@ -82,7 +82,7 @@ export function PagosMixtosSection({
                     )
                   );
                 }}
-                className='w-full rounded-full border border-slate-300 bg-white py-2 pl-9 pr-3 text-sm text-slate-900 focus:border-black focus:outline-none dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100 dark:focus:border-slate-400'
+                className='w-full rounded-full border border-slate-300 bg-white py-2 pl-9 pr-3 text-sm text-slate-900 focus:border-black focus:outline-hidden dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100 dark:focus:border-slate-400'
               />
             </div>
             {pago.metodo === 'tarjeta' && Number(pago.baseMonto || 0) > 0 && (
@@ -119,7 +119,7 @@ export function PagosMixtosSection({
               size='sm'
               disabled={sinSaldo}
               onClick={() => onUpdate([...pagosMixtos, crearPagoMixto(metodo, 0)])}
-              className='rounded-full uppercase text-[10px] font-black h-8 px-4 border-slate-300 shadow-sm'
+              className='rounded-full uppercase text-[10px] font-black h-8 px-4 border-slate-300 shadow-xs'
             >
               + {metodo}
             </Button>

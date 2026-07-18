@@ -31,7 +31,7 @@ export default function ConfirmDeleteRoomDialog({
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className='max-w-[420px] flex flex-col p-0 overflow-hidden rounded-2xl'>
-        <DialogHeader className='flex-shrink-0 px-6 pt-6 pb-4 border-b dark:border-slate-800'>
+        <DialogHeader className='shrink-0 px-6 pt-6 pb-4 border-b dark:border-slate-800'>
           <DialogTitle className='flex items-center gap-2'>
             <AlertTriangle className='text-red-500 w-5 h-5' />
             <span className='text-gray-900 dark:text-neutral-100'>Confirmar Eliminación</span>

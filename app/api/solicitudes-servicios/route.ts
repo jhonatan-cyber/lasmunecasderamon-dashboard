@@ -1,17 +1,17 @@
 import { NextResponse } from 'next/server';
-import { withAppApiWrapper, withAppAuth } from '@/lib/api/app-api-wrapper';
+import { withPublicRoute, withRoute } from '@/lib/api/withRoute';
 import { ServiceRequestService } from '@/lib/services/ServiceRequestService';
 import { sendNotificationToAll } from '@/lib/api/sseService';
 import { ValidationError } from '@/lib/errors/errors';
 
-export const GET = withAppApiWrapper(async (request: Request) => {
+export const GET = withPublicRoute(async (request: Request) => {
   const { searchParams } = new URL(request.url);
   const estado = searchParams.get('estado') || undefined;
   const data = await ServiceRequestService.getAll(estado);
   return NextResponse.json({ success: true, data });
 });
 
-export const POST = withAppAuth(async (request: Request, { user }: { params: any; user: any }) => {
+export const POST = withRoute({ auth: true, audit: true, module: 'orders', action: 'write' }, async (request: Request, { user }: { params: any; user: any }) => {
   const body = await request.json();
   const result = await ServiceRequestService.create(body, user.id.toString());
 
@@ -24,7 +24,7 @@ export const POST = withAppAuth(async (request: Request, { user }: { params: any
   return NextResponse.json({ success: true, data: result }, { status: 201 });
 });
 
-export const DELETE = withAppAuth(
+export const DELETE = withRoute({ auth: true, audit: true, module: 'orders', action: 'delete' },
   async (request: Request) => {
     const { searchParams } = new URL(request.url);
     const id = searchParams.get('id');
@@ -33,6 +33,5 @@ export const DELETE = withAppAuth(
     await ServiceRequestService.delete(id);
     sendNotificationToAll('service_request_deleted', { id });
     return NextResponse.json({ success: true, message: 'Solicitud eliminada' });
-  },
-  { requiredPermission: { module: 'orders', action: 'delete' } }
+  }
 );

@@ -1,13 +1,12 @@
 import { NextResponse } from 'next/server';
-import { withAppAuth } from '@/lib/api/app-api-wrapper';
+import { withRoute } from '@/lib/api/withRoute';
 import { UserService } from '@/lib/services/UserService';
-import { AuditService } from '@/lib/services/AuditService';
 import { processAndSaveImage } from '@/lib/utils/image-utils';
 import logger from '@/lib/utils/logger';
 
 export const dynamic = 'force-dynamic';
 
-export const GET = withAppAuth(async (request: Request) => {
+export const GET = withRoute({ auth: true, audit: true }, async (request: Request) => {
   const { searchParams } = new URL(request.url);
   const params = {
     anfitrionas: searchParams.get('anfitrionas') || undefined,
@@ -24,7 +23,8 @@ export const GET = withAppAuth(async (request: Request) => {
   return NextResponse.json({ success: true, data, total });
 });
 
-export const POST = withAppAuth(
+export const POST = withRoute(
+  { auth: true, audit: true, module: 'users', action: 'write' },
   async (request: Request) => {
     const contentType = request.headers.get('content-type') || '';
     let body: any;
@@ -74,13 +74,18 @@ export const POST = withAppAuth(
       foto: fotoFilename,
       body: { ...body, password: '***' }
     });
-    const data = await UserService.createUser(body, fotoFilename);
-    return NextResponse.json({ success: true, message: 'Usuario creado', data }, { status: 201 });
-  },
-  { module: 'users', action: 'write' }
+    const result = await UserService.createUser(body, fotoFilename);
+    return NextResponse.json({
+      success: true,
+      message: 'Usuario creado',
+      data: result.user,
+      plainPassword: result.rawPassword // S7: Contraseña temporal para compartir con el usuario
+    }, { status: 201 });
+  }
 );
 
-export const PATCH = withAppAuth(
+export const PATCH = withRoute(
+  { auth: true, audit: true, module: 'users', action: 'write' },
   async (request: Request) => {
     const { searchParams } = new URL(request.url);
     const id = searchParams.get('id');
@@ -99,11 +104,10 @@ export const PATCH = withAppAuth(
       message: `Estado del usuario actualizado correctamente`,
       data
     });
-  },
-  { module: 'users', action: 'write' }
+  }
 );
 
-export const PUT = withAppAuth(async (request: Request, { user }: { user: any }) => {
+export const PUT = withRoute({ auth: true, audit: true }, async (request: Request, { user }: { params: any; user: any }) => {
   const contentType = request.headers.get('content-type') || '';
   let body: any;
   let id: string | null = null;
@@ -152,25 +156,8 @@ export const PUT = withAppAuth(async (request: Request, { user }: { user: any })
   if (!id)
     return NextResponse.json({ success: false, message: 'El ID es requerido' }, { status: 400 });
 
-  const isAdministrator = user.role?.toLowerCase() === 'administrador';
-  const isSelfUpdate = user.id?.toString() === id.toString();
-  const userPermissions = (user.permissions as any)?.users;
-  const hasWritePermission = isAdministrator || (userPermissions && userPermissions.write === true);
-
-  if (!isSelfUpdate && !hasWritePermission) {
-    try {
-      await AuditService.log({
-        user_id: user.id,
-        action: `PUT /api/users FORBIDDEN`,
-        resource_type: 'users',
-        details: { userId: user.id, requestId: id, isSelfUpdate, userRole: user.role }
-      });
-    } catch (e) {}
-
-    return NextResponse.json(
-      { success: false, message: 'Permisos insuficientes' },
-      { status: 403 }
-    );
+  if (user.id?.toString() !== id.toString() && !(user.permissions as any)?.users?.write) {
+    return NextResponse.json({ success: false, message: 'Permisos insuficientes' }, { status: 403 });
   }
 
   logger.info(`[USER API PUT] Actualizando usuario ${id}`, {
@@ -181,7 +168,8 @@ export const PUT = withAppAuth(async (request: Request, { user }: { user: any })
   return NextResponse.json({ success: true, message: 'Usuario actualizado', data });
 });
 
-export const DELETE = withAppAuth(
+export const DELETE = withRoute(
+  { auth: true, audit: true, module: 'users', action: 'delete' },
   async (request: Request) => {
     const { searchParams } = new URL(request.url);
     const id = searchParams.get('id');
@@ -190,6 +178,5 @@ export const DELETE = withAppAuth(
 
     await UserService.delete(id);
     return NextResponse.json({ success: true, message: 'Usuario eliminado' });
-  },
-  { module: 'users', action: 'delete' }
+  }
 );

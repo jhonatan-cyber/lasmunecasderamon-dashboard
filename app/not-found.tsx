@@ -1,9 +1,8 @@
-'use client';
-
 import { Button } from '@/components/ui/button';
-import { Home, Search, ArrowLeft } from 'lucide-react';
+import { Home, Search } from 'lucide-react';
 import Link from 'next/link';
 import { siteConfig } from '@/lib/api/site';
+import { GoBackButton } from '@/components/shared/GoBackButton';
 
 export default function NotFound() {
   return (
@@ -34,10 +33,7 @@ export default function NotFound() {
             </Button>
           </Link>
 
-          <Button variant='outline' onClick={() => window.history.back()} className='gap-2'>
-            <ArrowLeft className='w-4 h-4' />
-            Volver atrás
-          </Button>
+          <GoBackButton />
         </div>
 
         {}

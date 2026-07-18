@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server';
-import { withAppApiWrapper } from '@/lib/api/app-api-wrapper';
+import { withPublicRoute } from '@/lib/api/withRoute';
 import { TimerService } from '@/lib/services/TimerService';
 import { getNowInBusinessTimezoneISO } from '@/lib/business/timezoneService';
 import { logger } from '@/lib/utils/logger';
@@ -8,7 +8,7 @@ export const dynamic = 'force-dynamic';
 
 let lastCleanup = 0;
 
-export const GET = withAppApiWrapper(async (request: Request) => {
+export const GET = withPublicRoute(async (request: Request) => {
   const businessNowISO = getNowInBusinessTimezoneISO();
   const nowMs = new Date(businessNowISO).getTime();
 

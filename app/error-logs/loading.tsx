@@ -1,5 +1,5 @@
-import { ErrorLogsSkeleton } from '@/components/shared/Skeletons';
+﻿import { Skeleton } from '@/components/shared/Skeleton';
 
 export default function Loading() {
-  return <ErrorLogsSkeleton />;
+  return <Skeleton name="error-logs-main" loading={true} />;
 }

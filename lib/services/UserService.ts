@@ -3,6 +3,8 @@ import { UserRepository } from '@/lib/repositories/UserRepository';
 import { ValidationError, NotFoundError } from '@/lib/errors/errors';
 import { PermissionsCache } from '@/lib/auth/permissions-cache';
 import * as argon2 from 'argon2';
+import crypto from 'crypto';
+import { EMAIL_DOMAIN } from '@/lib/constants/email';
 import fs from 'fs/promises';
 import path from 'path';
 import { existsSync } from 'fs';
@@ -28,10 +30,13 @@ export class UserService {
     if (existing) {
       throw new ValidationError('El RUN ya está registrado');
     }
-    const email = `${validated.nick}@lasmuñecasderamon.com`;
-    const password = await argon2.hash(validated.run);
+    const email = `${validated.nick}${EMAIL_DOMAIN}`;
+    // S7: Generar contraseña aleatoria segura en vez de usar el RUN
+    const rawPassword = crypto.randomBytes(12).toString('hex'); // 24 caracteres hex
+    const password = await argon2.hash(rawPassword);
 
-    return await UserRepository.create({ ...validated, email, password }, fotoFilename);
+    const user = await UserRepository.create({ ...validated, email, password }, fotoFilename);
+    return { user, rawPassword };
   }
 
   static async updateUser(id: string, body: UserUpdateInput, fotoFilename: string | null = null) {
@@ -60,7 +65,7 @@ export class UserService {
       }
     }
     const { id: _validatedId, email: _validatedEmail, ...validatedWithoutId } = validated;
-    const updateData: Partial<UserType> & { email?: string; password?: string } = {
+    const updateData: Partial<UserType> & { email?: string; password?: string; force_password_change?: number } = {
       ...validatedWithoutId,
       email: undefined
     };
@@ -69,7 +74,9 @@ export class UserService {
       updateData.email = `${validated.nick}@lasmuñecasderamon.com`;
     }
     if (validated.run) {
+      // S7: Al resetear contraseña al RUN, forzar cambio en próximo login
       updateData.password = await argon2.hash(validated.run);
+      updateData.force_password_change = 1;
     }
 
     const result = await UserRepository.update(id.toString(), updateData, fotoFilename);
