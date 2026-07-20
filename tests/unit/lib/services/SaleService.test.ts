@@ -42,12 +42,20 @@ vi.mock('@/lib/api/sseService', () => ({
   sendNotificationToAll: vi.fn()
 }));
 
+const mockLogger = vi.hoisted(() => ({
+  debug: vi.fn(),
+  info: vi.fn(),
+  warn: vi.fn(),
+  error: vi.fn()
+}));
 vi.mock('@/lib/utils/logger', () => ({
-  logger: { debug: vi.fn(), info: vi.fn(), warn: vi.fn(), error: vi.fn() }
+  logger: mockLogger,
+  default: mockLogger
 }));
 
 vi.mock('@/lib/business/timezoneService', () => ({
-  getNowInBusinessTimezone: () => '2026-04-10 10:00:00'
+  getNowInBusinessTimezone: () => '2026-04-10 10:00:00',
+  getSystemTimezone: () => 'America/Santiago'
 }));
 
 import {
