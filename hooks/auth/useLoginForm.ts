@@ -64,7 +64,7 @@ export const useLoginForm = () => {
       console.log('[LOGIN] check after login failed:', e);
     }
 
-    window.location.assign(target);
+    router.replace(target);
   }, [getRedirectTarget]);
 
   const applyTheme = (mode: string) => {
