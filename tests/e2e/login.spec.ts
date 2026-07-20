@@ -117,3 +117,109 @@ test.describe('Login flow', () => {
     console.log('✓ Sin errores useRef en navegación asistencia-qr → login');
   });
 });
+
+test.describe('Session persistence', () => {
+  test('6. Sesión persiste después de recargar la página', async ({ page }) => {
+    test.setTimeout(60_000);
+
+    await page.goto(`${BASE}/login`, { waitUntil: 'domcontentloaded' });
+    await expect(page.locator('#nick')).toBeVisible({ timeout: 15_000 });
+    await page.locator('#nick').fill(TEST_USER);
+    await page.locator('#password').fill(TEST_PASSWORD);
+    await page.locator('button[type="submit"]').first().click();
+
+    // Handle optional 2FA code step
+    const codeStep = page.locator('input[placeholder="0000"]');
+    if (await codeStep.isVisible({ timeout: 3000 }).catch(() => false)) {
+      console.log('⚠  Código 2FA detectado — saltando test');
+      test.skip();
+      return;
+    }
+
+    // Wait for redirect away from login
+    await page.waitForURL(url => !url.toString().includes('/login'), { timeout: 20_000 });
+    const dashboardUrl = page.url();
+    console.log('✓ Dashboard tras login:', dashboardUrl);
+
+    // Refresh the page
+    await page.reload({ waitUntil: 'networkidle' });
+    await page.waitForTimeout(3000);
+
+    // Should still be on dashboard after refresh
+    const afterRefreshUrl = page.url();
+    console.log('✓ URL tras refresh:', afterRefreshUrl);
+    expect(afterRefreshUrl).not.toContain('/login');
+  });
+
+  test('7. Auto-refresh funciona cuando el access token expira', async ({ page }) => {
+    test.setTimeout(60_000);
+
+    await page.goto(`${BASE}/login`, { waitUntil: 'domcontentloaded' });
+    await expect(page.locator('#nick')).toBeVisible({ timeout: 15_000 });
+    await page.locator('#nick').fill(TEST_USER);
+    await page.locator('#password').fill(TEST_PASSWORD);
+    await page.locator('button[type="submit"]').first().click();
+
+    const codeStep = page.locator('input[placeholder="0000"]');
+    if (await codeStep.isVisible({ timeout: 3000 }).catch(() => false)) {
+      console.log('⚠  Código 2FA detectado — saltando test');
+      test.skip();
+      return;
+    }
+
+    await page.waitForURL(url => !url.toString().includes('/login'), { timeout: 20_000 });
+
+    // Ensure we have a refresh_token cookie
+    const hasRefreshToken = await page.evaluate(() => document.cookie.includes('refresh_token'));
+    console.log('✓ refresh_token cookie presente:', hasRefreshToken);
+    expect(hasRefreshToken).toBeTruthy();
+
+    // Remove the access token cookie to simulate expiration
+    await page.evaluate(() => {
+      document.cookie = 'token=; Max-Age=0; path=/';
+    });
+
+    // Navigate — proxy should auto-refresh via refresh_token cookie
+    await page.goto(`${BASE}/dashboard`, { waitUntil: 'networkidle' });
+
+    // Should NOT redirect to login
+    const finalUrl = page.url();
+    console.log('✓ URL tras remover token:', finalUrl);
+    expect(finalUrl).not.toContain('/login');
+    expect(finalUrl).toContain('/dashboard');
+  });
+
+  test('8. Logout limpia la sesión y redirige al login', async ({ page }) => {
+    test.setTimeout(60_000);
+
+    // Login first
+    await page.goto(`${BASE}/login`, { waitUntil: 'domcontentloaded' });
+    await expect(page.locator('#nick')).toBeVisible({ timeout: 15_000 });
+    await page.locator('#nick').fill(TEST_USER);
+    await page.locator('#password').fill(TEST_PASSWORD);
+    await page.locator('button[type="submit"]').first().click();
+
+    const codeStep = page.locator('input[placeholder="0000"]');
+    if (await codeStep.isVisible({ timeout: 3000 }).catch(() => false)) {
+      console.log('⚠  Código 2FA detectado — saltando test');
+      test.skip();
+      return;
+    }
+
+    await page.waitForURL(url => !url.toString().includes('/login'), { timeout: 20_000 });
+    console.log('✓ Login exitoso');
+
+    // Logout via POST (route only handles POST)
+    const logoutResp = await page.request.post(`${BASE}/api/auth/logout`);
+    expect(logoutResp.ok()).toBeTruthy();
+    console.log('✓ Logout endpoint OK');
+
+    // Try to access dashboard — should redirect to login
+    await page.goto(`${BASE}/dashboard`, { waitUntil: 'domcontentloaded' });
+    await page.waitForTimeout(3000);
+
+    const afterLogoutUrl = page.url();
+    console.log('✓ URL tras logout:', afterLogoutUrl);
+    expect(afterLogoutUrl).toContain('/login');
+  });
+});
