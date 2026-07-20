@@ -27,7 +27,6 @@ export const LoginView = () => {
     registerData,
     setRegisterData,
     registerLoading,
-    rateLimitRemaining,
     handleLogin,
     handleVerifyCode,
     handleRegister,
@@ -103,7 +102,6 @@ export const LoginView = () => {
                   loading,
                   codigo,
                   setCodigo,
-                  rateLimitRemaining,
                   hasUsers
                 }}
                 credentials={{ loginData, setLoginData }}

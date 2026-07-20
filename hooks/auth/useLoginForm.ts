@@ -16,40 +16,7 @@ export interface UserTemp {
   role: string;
 }
 
-const RATE_LIMIT_KEY = 'rate_limit_cooldown';
-
-interface RateLimitCooldown {
-  remaining: number;
-  savedAt: number;
-}
-
-function saveRateLimitCooldown(remaining: number) {
-  try {
-    localStorage.setItem(RATE_LIMIT_KEY, JSON.stringify({ remaining, savedAt: Date.now() }));
-  } catch {
-    /* localStorage no disponible */
-  }
-}
-
-function clearRateLimitCooldown() {
-  try {
-    localStorage.removeItem(RATE_LIMIT_KEY);
-  } catch {
-    /* localStorage no disponible */
-  }
-}
-
-function loadRateLimitCooldown(): number {
-  try {
-    const raw = localStorage.getItem(RATE_LIMIT_KEY);
-    if (!raw) return 0;
-    const data: RateLimitCooldown = JSON.parse(raw);
-    const elapsed = Math.floor((Date.now() - data.savedAt) / 1000);
-    return Math.max(0, data.remaining - elapsed);
-  } catch {
-    return 0;
-  }
-}
+// ponytail: client-side rate limit removed — server handles it in prod
 
 export const useLoginForm = () => {
   const router = useRouter();
@@ -62,9 +29,6 @@ export const useLoginForm = () => {
   const [hasUsers, setHasUsers] = useState<boolean | null>(null);
   const [showRegisterModal, setShowRegisterModal] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
-  const [rateLimitRemaining, setRateLimitRemaining] = useState(() =>
-    typeof window !== 'undefined' ? loadRateLimitCooldown() : 0
-  );
   const [registerData, setRegisterData] = useState({
     nombre: '',
     apellido: '',
@@ -87,21 +51,21 @@ export const useLoginForm = () => {
 
   const redirectAfterLogin = useCallback(async () => {
     const target = getRedirectTarget();
-
+    console.log('[LOGIN] redirectAfterLogin target:', target);
     try {
-      await fetch('/api/auth/check', {
+      const checkRes = await fetch('/api/auth/check', {
         method: 'GET',
         credentials: 'include',
         cache: 'no-store'
       });
-    } catch {}
-
-    if (typeof window !== 'undefined') {
-      window.location.assign(target);
-    } else {
-      router.replace(target);
+      const checkData = await checkRes.json();
+      console.log('[LOGIN] check after login:', checkRes.status, checkData);
+    } catch (e) {
+      console.log('[LOGIN] check after login failed:', e);
     }
-  }, [getRedirectTarget, router]);
+
+    window.location.assign(target);
+  }, [getRedirectTarget]);
 
   const applyTheme = (mode: string) => {
     if (typeof window === 'undefined') return;
@@ -149,21 +113,6 @@ export const useLoginForm = () => {
   }, [step]);
 
   useEffect(() => {
-    if (rateLimitRemaining <= 0) {
-      clearRateLimitCooldown();
-      return;
-    }
-
-    saveRateLimitCooldown(rateLimitRemaining);
-
-    const timer = window.setInterval(() => {
-      setRateLimitRemaining(prev => (prev <= 1 ? 0 : prev - 1));
-    }, 1000);
-
-    return () => window.clearInterval(timer);
-  }, [rateLimitRemaining]);
-
-  useEffect(() => {
     const saved = typeof window !== 'undefined' ? localStorage.getItem('theme') : null;
     const initialTheme =
       saved === 'dark' || saved === 'light' || saved === 'system' ? saved : 'system';
@@ -191,8 +140,8 @@ export const useLoginForm = () => {
   }, [router, setThemeMode]);
 
   const handleLogin = async (e?: React.FormEvent) => {
+    if (loading) return;
     if (e) e.preventDefault();
-    if (rateLimitRemaining > 0) return;
     const emailValue = loginData.email.trim();
     const passwordValue = loginData.password.trim();
     if (!emailValue || !passwordValue) {
@@ -206,22 +155,17 @@ export const useLoginForm = () => {
         emailToSend = `${emailToSend}${EMAIL_DOMAIN}`;
       }
 
+      const body = JSON.stringify({ ...loginData, email: emailToSend, password: passwordValue });
+      console.log('[LOGIN] sending:', body);
       const res = await fetch('/api/auth/login', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         credentials: 'include',
-        body: JSON.stringify({ ...loginData, email: emailToSend, password: passwordValue })
+        body
       });
 
       const data = await res.json();
-
-      if (res.status === 429 || data.code === 'RATE_LIMIT_EXCEEDED') {
-        const retryAfter = Number(data.retryAfter || res.headers.get('Retry-After') || 60);
-        setRateLimitRemaining(retryAfter);
-        toast.error(`Demasiados intentos. Esperá ${retryAfter}s para volver a intentar.`);
-        setLoading(false);
-        return;
-      }
+      console.log('[LOGIN] response:', res.status, data);
 
       if (data.requiereCodigo === true) {
         setUserTmp(data.user);
@@ -263,7 +207,6 @@ export const useLoginForm = () => {
 
   const handleVerifyCode = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (rateLimitRemaining > 0) return;
     if (codigo.length !== 4) {
       toast.error('El código debe tener 4 dígitos');
       return;
@@ -286,13 +229,6 @@ export const useLoginForm = () => {
         })
       });
       const data = await res.json();
-      if (res.status === 429 || data.code === 'RATE_LIMIT_EXCEEDED') {
-        const retryAfter = Number(data.retryAfter || res.headers.get('Retry-After') || 60);
-        setRateLimitRemaining(retryAfter);
-        toast.error(`Demasiados intentos. Esperá ${retryAfter}s para volver a intentar.`);
-        setLoading(false);
-        return;
-      }
       if (!data.success) {
         toast.error(data.message || 'Código incorrecto');
         setLoading(false);
@@ -414,7 +350,6 @@ export const useLoginForm = () => {
     registerData,
     setRegisterData,
     registerLoading,
-    rateLimitRemaining,
     handleLogin,
     handleVerifyCode,
     handleRegister,
