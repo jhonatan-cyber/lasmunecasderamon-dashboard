@@ -29,10 +29,6 @@ describe('auth route contract', () => {
     vi.doMock('@/lib/repositories/AuthRepository', () => ({
       AuthRepository: { login: loginMock }
     }));
-    vi.doMock('@/lib/middleware/rateLimit', () => ({
-      loginLimiterApp: (handler: any) => handler
-    }));
-
     const route = await import('@/app/api/auth/login/route');
     const response = await route.POST(
       new Request('http://localhost/api/auth/login', {
@@ -52,7 +48,7 @@ describe('auth route contract', () => {
     expect(setCookie).toHaveBeenCalledWith(
       'token',
       'jwt-token',
-      expect.objectContaining({ httpOnly: true, sameSite: 'lax', path: '/' })
+      expect.objectContaining({ httpOnly: true, sameSite: 'strict', path: '/' })
     );
     await expect(response.json()).resolves.toEqual({
       success: true,

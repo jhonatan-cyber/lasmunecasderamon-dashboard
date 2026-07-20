@@ -1,4 +1,3 @@
- 
 'use client';
 
 import { useEffect, useState } from 'react';
@@ -11,11 +10,10 @@ import { PermissionGuard } from '@/components/auth/PermissionGuard';
 import { Skeleton as BoneyardSkeleton } from '@/components/shared/Skeleton';
 import { formatLongDateEs } from '@/lib/utils/calendarUtils';
 
-
 const SalesReport = dynamic(
   () => import('@/components/reports/SalesReport').then(mod => ({ default: mod.SalesReport })),
   {
-    loading: () => <BoneyardSkeleton name="report-sales-content" loading={true} />,
+    loading: () => <BoneyardSkeleton name='report-sales-content' loading={true} />,
     ssr: false
   }
 );
@@ -26,7 +24,7 @@ const CommissionsReport = dynamic(
       default: mod.CommissionsReport
     })),
   {
-    loading: () => <BoneyardSkeleton name="report-commissions-content" loading={true} />,
+    loading: () => <BoneyardSkeleton name='report-commissions-content' loading={true} />,
     ssr: false
   }
 );
@@ -37,7 +35,7 @@ const CashRegisterReport = dynamic(
       default: mod.CashRegisterReport
     })),
   {
-    loading: () => <BoneyardSkeleton name="report-cash-content" loading={true} />,
+    loading: () => <BoneyardSkeleton name='report-cash-content' loading={true} />,
     ssr: false
   }
 );
@@ -81,12 +79,12 @@ export default function ReportsPage() {
   useEffect(() => setMounted(true), []);
 
   if (!mounted) {
-    return <BoneyardSkeleton name="reports-main" loading={true} />;
+    return <BoneyardSkeleton name='reports-main' loading={true} />;
   }
 
   return (
     <PermissionGuard module='reports' action='view'>
-      <BoneyardSkeleton name="reports-main" loading={false}>
+      <BoneyardSkeleton name='reports-main' loading={false}>
         <div className='p-6 space-y-6'>
           {}
           <div className='flex items-center justify-between'>
@@ -96,18 +94,16 @@ export default function ReportsPage() {
             </div>
             <div className='flex items-center gap-2'>
               <Button
-                variant="ghost"
-                size="icon"
+                variant='ghost'
+                size='icon'
                 onClick={handleRefresh}
-                className="h-9 w-9 text-gray-500 hover:text-blue-600 hover:bg-blue-50 transition-colors"
-                title="Refrescar datos"
+                className='h-9 w-9 text-gray-500 hover:text-blue-600 hover:bg-blue-50 transition-colors'
+                title='Refrescar datos'
               >
-                <RefreshCw className="h-4 w-4" />
+                <RefreshCw className='h-4 w-4' />
               </Button>
               <div className='hidden sm:flex h-6 w-px bg-gray-200 dark:bg-gray-700 mx-1'></div>
-              <span className='text-sm text-gray-500'>
-                {formatLongDateEs(new Date())}
-              </span>
+              <span className='text-sm text-gray-500'>{formatLongDateEs(new Date())}</span>
             </div>
           </div>
 
@@ -120,21 +116,25 @@ export default function ReportsPage() {
                 <Card
                   key={report.id}
                   className={`group cursor-pointer transition-all duration-300 border-2 ${
-                    isActive 
-                      ? 'border-blue-500 shadow-lg shadow-blue-500/10 scale-[1.02] bg-blue-50/30 dark:bg-blue-900/10' 
+                    isActive
+                      ? 'border-blue-500 shadow-lg shadow-blue-500/10 scale-[1.02] bg-blue-50/30 dark:bg-blue-900/10'
                       : 'border-transparent hover:border-gray-200 dark:hover:border-gray-700 hover:shadow-md'
                   }`}
                   onClick={() => setActiveReport(report.id)}
                 >
                   <CardHeader className='pb-3'>
                     <div className='flex items-center gap-3'>
-                      <div className={`p-2.5 rounded-xl transition-transform duration-300 group-hover:scale-110 ${
-                        isActive ? report.color : 'bg-gray-100 dark:bg-gray-800 text-gray-500'
-                      } text-white`}>
+                      <div
+                        className={`p-2.5 rounded-xl transition-transform duration-300 group-hover:scale-110 ${
+                          isActive ? report.color : 'bg-gray-100 dark:bg-gray-800 text-gray-500'
+                        } text-white`}
+                      >
                         <IconComponent className='h-5 w-5' />
                       </div>
-                      <div className="flex-1">
-                        <CardTitle className={`text-lg transition-colors ${isActive ? 'text-blue-700 dark:text-blue-400' : ''}`}>
+                      <div className='flex-1'>
+                        <CardTitle
+                          className={`text-lg transition-colors ${isActive ? 'text-blue-700 dark:text-blue-400' : ''}`}
+                        >
                           {report.title}
                         </CardTitle>
                         <p className='text-xs text-gray-500 mt-0.5'>{report.description}</p>
@@ -154,7 +154,9 @@ export default function ReportsPage() {
                   <div className='p-2 rounded-lg bg-blue-100 dark:bg-blue-900/30'>
                     <BarChart3 className='h-6 w-6 text-blue-600 dark:text-blue-400' />
                   </div>
-                  <h2 className='text-2xl font-bold text-gray-900 dark:text-gray-100'>Reporte de Ventas</h2>
+                  <h2 className='text-2xl font-bold text-gray-900 dark:text-gray-100'>
+                    Reporte de Ventas
+                  </h2>
                 </div>
                 <SalesReport key={`sales-${refreshKey}`} />
               </div>
@@ -180,7 +182,9 @@ export default function ReportsPage() {
                   <div className='p-2 rounded-lg bg-yellow-100 dark:bg-yellow-900/30'>
                     <DollarSign className='h-6 w-6 text-yellow-600 dark:text-yellow-400' />
                   </div>
-                  <h2 className='text-2xl font-bold text-gray-900 dark:text-gray-100'>Reporte de Caja</h2>
+                  <h2 className='text-2xl font-bold text-gray-900 dark:text-gray-100'>
+                    Reporte de Caja
+                  </h2>
                 </div>
                 <CashRegisterReport key={`cash-${refreshKey}`} />
               </div>
@@ -191,4 +195,3 @@ export default function ReportsPage() {
     </PermissionGuard>
   );
 }
-

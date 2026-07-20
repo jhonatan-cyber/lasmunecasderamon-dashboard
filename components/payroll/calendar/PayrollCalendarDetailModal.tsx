@@ -64,22 +64,26 @@ export function PayrollCalendarDetailModal({
           </DialogTitle>
         </DialogHeader>
 
-        <div className='flex-1 overflow-y-auto px-6 py-4'>
-          <div className='grid grid-cols-2 gap-4 mb-4'>
-            <div className='p-4 bg-gray-50 dark:bg-gray-800 rounded-lg'>
+        <div className='flex-1 overflow-y-auto px-4 sm:px-6 py-4'>
+          <div className='grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4 mb-4'>
+            <div className='p-3 sm:p-4 bg-gray-50 dark:bg-gray-800 rounded-lg'>
               <div className='text-xs text-gray-500 dark:text-gray-400 uppercase mb-1'>Cliente</div>
-              <div className='font-medium'>{selectedItem.cliente || 'N/A'}</div>
+              <div className='font-medium text-sm sm:text-base'>
+                {selectedItem.cliente || 'N/A'}
+              </div>
             </div>
-            <div className='p-4 bg-gray-50 dark:bg-gray-800 rounded-lg'>
+            <div className='p-3 sm:p-4 bg-gray-50 dark:bg-gray-800 rounded-lg'>
               <div className='text-xs text-gray-500 dark:text-gray-400 uppercase mb-1'>
                 Habitación
               </div>
-              <div className='font-medium'>{selectedItem.habitacion || 'N/A'}</div>
+              <div className='font-medium text-sm sm:text-base'>
+                {selectedItem.habitacion || 'N/A'}
+              </div>
             </div>
           </div>
 
-          <div className='mb-4'>
-            <div className='p-4 bg-purple-50 dark:bg-purple-900/20 border border-purple-200 dark:border-purple-800 rounded-lg'>
+          <div className='mb-3 sm:mb-4'>
+            <div className='p-3 sm:p-4 bg-purple-50 dark:bg-purple-900/20 border border-purple-200 dark:border-purple-800 rounded-lg'>
               <div className='text-xs text-purple-600 dark:text-purple-400 uppercase mb-2 font-semibold'>
                 Anfitrionas Involucradas
               </div>
@@ -99,37 +103,37 @@ export function PayrollCalendarDetailModal({
           </div>
 
           {selectedItemType === 'venta' ? (
-            <div className='space-y-4'>
-              <div className='grid grid-cols-2 gap-4'>
-                <div className='p-4 bg-gray-50 dark:bg-gray-800 rounded-lg'>
+            <div className='space-y-3 sm:space-y-4'>
+              <div className='grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4'>
+                <div className='p-3 sm:p-4 bg-gray-50 dark:bg-gray-800 rounded-lg'>
                   <div className='text-xs text-gray-500 dark:text-gray-400 uppercase mb-1'>
                     Precio Habitación
                   </div>
-                  <div className='font-medium'>
+                  <div className='font-medium text-sm sm:text-base'>
                     {formatCurrencyCLP(selectedItem.precio || selectedItem.precioHabitacion || 0)}
                   </div>
                 </div>
-                <div className='p-4 bg-green-50 dark:bg-green-900/20 rounded-lg'>
+                <div className='p-3 sm:p-4 bg-green-50 dark:bg-green-900/20 rounded-lg'>
                   <div className='text-xs text-green-600 dark:text-green-400 uppercase mb-1'>
                     Propina Total
                   </div>
-                  <div className='font-medium text-green-600 dark:text-green-400'>
+                  <div className='font-medium text-sm sm:text-base text-green-600 dark:text-green-400'>
                     {formatCurrencyCLP(selectedItem.propina_total || selectedItem.propina || 0)}
                   </div>
                 </div>
-                <div className='p-4 bg-gray-50 dark:bg-gray-800 rounded-lg'>
+                <div className='p-3 sm:p-4 bg-gray-50 dark:bg-gray-800 rounded-lg'>
                   <div className='text-xs text-gray-500 dark:text-gray-400 uppercase mb-1'>
                     Subtotal
                   </div>
-                  <div className='font-medium'>
+                  <div className='font-medium text-sm sm:text-base'>
                     {formatCurrencyCLP(selectedItem.sub_total || selectedItem.subtotal || 0)}
                   </div>
                 </div>
-                <div className='p-4 bg-blue-50 dark:bg-blue-900/20 rounded-lg'>
+                <div className='p-3 sm:p-4 bg-blue-50 dark:bg-blue-900/20 rounded-lg'>
                   <div className='text-xs text-blue-600 dark:text-blue-400 uppercase mb-1'>
                     Comisión Total
                   </div>
-                  <div className='font-medium text-blue-600 dark:text-blue-400'>
+                  <div className='font-medium text-sm sm:text-base text-blue-600 dark:text-blue-400'>
                     {formatCurrencyCLP(
                       selectedItem.comision_total ||
                         selectedItem.total_comision ||
@@ -158,74 +162,76 @@ export function PayrollCalendarDetailModal({
                   'text-blue-600 dark:text-blue-400'
                 )}
 
-              <div className='p-4 bg-black text-white rounded-lg'>
+              <div className='p-3 sm:p-4 bg-black text-white rounded-lg'>
                 <div className='text-xs text-gray-400 uppercase mb-1'>Total Venta</div>
-                <div className='text-2xl font-bold'>
+                <div className='text-xl sm:text-2xl font-bold'>
                   {formatCurrencyCLP(selectedItem.total || 0)}
                 </div>
               </div>
             </div>
           ) : (
-            <div className='space-y-4'>
-              <div className='grid grid-cols-2 gap-4'>
-                <div className='p-4 bg-gray-50 dark:bg-gray-800 rounded-lg'>
+            <div className='space-y-3 sm:space-y-4'>
+              <div className='grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4'>
+                <div className='p-3 sm:p-4 bg-gray-50 dark:bg-gray-800 rounded-lg'>
                   <div className='text-xs text-gray-500 dark:text-gray-400 uppercase mb-1'>
                     Tiempo
                   </div>
-                  <div className='font-medium'>
+                  <div className='font-medium text-sm sm:text-base'>
                     {selectedItem.tiempo}
                     {selectedItem.tiempo && !selectedItem.tiempo.toString().includes('hrs')
                       ? ' min'
                       : ''}
                   </div>
                 </div>
-                <div className='p-4 bg-gray-50 dark:bg-gray-800 rounded-lg'>
+                <div className='p-3 sm:p-4 bg-gray-50 dark:bg-gray-800 rounded-lg'>
                   <div className='text-xs text-gray-500 dark:text-gray-400 uppercase mb-1'>
                     Método de Pago
                   </div>
-                  <div className='font-medium'>
+                  <div className='font-medium text-sm sm:text-base'>
                     {selectedItem.metodo_pago || selectedItem.metodoPago || 'N/A'}
                   </div>
                 </div>
-                <div className='p-4 bg-gray-50 dark:bg-gray-800 rounded-lg'>
+                <div className='p-3 sm:p-4 bg-gray-50 dark:bg-gray-800 rounded-lg'>
                   <div className='text-xs text-gray-500 dark:text-gray-400 uppercase mb-1'>
                     Precio Habitación
                   </div>
-                  <div className='font-medium'>
+                  <div className='font-medium text-sm sm:text-base'>
                     {formatCurrencyCLP(
                       selectedItem.precio_habitacion || selectedItem.precioHabitacion || 0
                     )}
                   </div>
                 </div>
-                <div className='p-4 bg-gray-50 dark:bg-gray-800 rounded-lg'>
+                <div className='p-3 sm:p-4 bg-gray-50 dark:bg-gray-800 rounded-lg'>
                   <div className='text-xs text-gray-500 dark:text-gray-400 uppercase mb-1'>
                     Precio Servicio
                   </div>
-                  <div className='font-medium'>
+                  <div className='font-medium text-sm sm:text-base'>
                     {formatCurrencyCLP(
                       selectedItem.precio_servicio || selectedItem.precioServicio || 0
                     )}
                   </div>
                 </div>
-                <div className='p-4 bg-gray-50 dark:bg-gray-800 rounded-lg'>
+                <div className='p-3 sm:p-4 bg-gray-50 dark:bg-gray-800 rounded-lg'>
                   <div className='text-xs text-gray-500 dark:text-gray-400 uppercase mb-1'>IVA</div>
-                  <div className='font-medium'>{formatCurrencyCLP(selectedItem.iva || 0)}</div>
+                  <div className='font-medium text-sm sm:text-base'>
+                    {formatCurrencyCLP(selectedItem.iva || 0)}
+                  </div>
                 </div>
-                <div className='p-4 bg-gray-50 dark:bg-gray-800 rounded-lg'>
+                <div className='p-3 sm:p-4 bg-gray-50 dark:bg-gray-800 rounded-lg'>
                   <div className='text-xs text-gray-500 dark:text-gray-400 uppercase mb-1'>
                     Subtotal
                   </div>
-                  <div className='font-medium'>
+                  <div className='font-medium text-sm sm:text-base'>
                     {formatCurrencyCLP(selectedItem.sub_total || selectedItem.subtotal || 0)}
                   </div>
                 </div>
               </div>
 
-              <div className='p-4 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg'>
+              <div className='p-3 sm:p-4 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg'>
                 <div className='text-xs text-blue-600 dark:text-blue-400 uppercase mb-1'>
                   Comisión Total
                 </div>
-                <div className='text-xl font-bold text-blue-600 dark:text-blue-400'>
+                <div className='text-lg sm:text-xl font-bold text-blue-600 dark:text-blue-400'>
                   {formatCurrencyCLP(selectedItem.comision_total || 0)}
                 </div>
               </div>
@@ -239,17 +245,17 @@ export function PayrollCalendarDetailModal({
                   'text-blue-600 dark:text-blue-400'
                 )}
 
-              <div className='p-4 bg-black text-white rounded-lg'>
+              <div className='p-3 sm:p-4 bg-black text-white rounded-lg'>
                 <div className='text-xs text-gray-400 uppercase mb-1'>Total Servicio</div>
-                <div className='text-2xl font-bold'>
+                <div className='text-xl sm:text-2xl font-bold'>
                   {formatCurrencyCLP(selectedItem.total || 0)}
                 </div>
               </div>
             </div>
           )}
 
-          <div className='grid grid-cols-2 gap-4 mt-4'>
-            <div className='p-4 bg-gray-50 dark:bg-gray-800 rounded-lg'>
+          <div className='grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4 mt-4'>
+            <div className='p-3 sm:p-4 bg-gray-50 dark:bg-gray-800 rounded-lg'>
               <div className='text-xs text-gray-500 dark:text-gray-400 uppercase mb-1'>
                 {selectedItemType === 'venta' ? 'Fecha de Venta' : 'Fecha y Hora'}
               </div>

@@ -1,3 +1,8 @@
+// ponytail: DEPRECATED — App Router doesn't use NextApiRequest/NextApiResponse.
+// Input validation (content-type, body size, sanitization) moved to withRoute.ts.
+// Security headers set directly in proxy.ts addApiHeaders().
+// Kept only as reference. Do NOT import for new routes.
+
 import { NextApiRequest, NextApiResponse, NextApiHandler } from 'next';
 import { logger } from '@/lib/utils/logger';
 
@@ -174,4 +179,3 @@ const securityMiddleware = {
 };
 
 export default securityMiddleware;
-

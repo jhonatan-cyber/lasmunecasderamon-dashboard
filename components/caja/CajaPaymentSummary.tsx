@@ -49,7 +49,9 @@ function PaymentSummaryCard({
         </div>
         <div>
           <p className='text-xs font-bold text-slate-600 dark:text-slate-300 uppercase'>{label}</p>
-          <p className={`text-lg font-black ${valueClassName}`}>{formatCurrencyNoDecimals(value)}</p>
+          <p className={`text-lg font-black ${valueClassName}`}>
+            {formatCurrencyNoDecimals(value)}
+          </p>
           {note && <p className='text-[11px] text-slate-500 dark:text-slate-400'>{note}</p>}
         </div>
       </div>
@@ -64,7 +66,7 @@ export function CajaPaymentSummary({
   transferenciaCaja
 }: CajaPaymentSummaryProps) {
   return (
-    <div className='grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-4'>
+    <div className='grid grid-cols-2 sm:grid-cols-2 xl:grid-cols-3 gap-4'>
       {isLoading ? (
         <>
           <PaymentSummarySkeleton />
@@ -86,12 +88,14 @@ export function CajaPaymentSummary({
             accentClass='bg-sky-500/10'
             icon={<CreditCard className='w-5 h-5 text-sky-600 dark:text-sky-400' />}
           />
-          <PaymentSummaryCard
-            label='Transferencia'
-            value={transferenciaCaja}
-            accentClass='bg-violet-500/10'
-            icon={<ArrowDownCircle className='w-5 h-5 text-violet-600 dark:text-violet-400' />}
-          />
+          <div className='col-span-2 sm:col-span-1 xl:col-span-1'>
+            <PaymentSummaryCard
+              label='Transferencia'
+              value={transferenciaCaja}
+              accentClass='bg-violet-500/10'
+              icon={<ArrowDownCircle className='w-5 h-5 text-violet-600 dark:text-violet-400' />}
+            />
+          </div>
         </>
       )}
     </div>

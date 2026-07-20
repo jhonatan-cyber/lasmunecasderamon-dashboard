@@ -1,3 +1,8 @@
+// ponytail: DEPRECATED — superseded by lib/middleware/redisRateLimit.ts
+// redisRateLimit has Redis + in-memory fallback built in, with automatic failover.
+// This file kept only as reference. Do NOT import from here for new routes.
+// Use RATE_LIMIT_CONFIGS from redisRateLimit.ts + proxy.ts middleware instead.
+
 import { NextRequest, NextResponse } from 'next/server';
 import { NextApiRequest, NextApiResponse, NextApiHandler } from 'next';
 import { logger } from '@/lib/utils/logger';

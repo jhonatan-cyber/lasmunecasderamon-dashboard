@@ -1,7 +1,7 @@
 'use client';
 
 import { Button } from '@/components/ui/button';
-import { Plus, AlertCircle } from 'lucide-react';
+import { Plus } from 'lucide-react';
 import { useHabitaciones } from '@/hooks/habitaciones/useHabitaciones';
 import ServicioCard from '@/components/servicios/ServicioCard';
 import Paginate from '@/components/shared/Paginate';
@@ -12,12 +12,13 @@ import { ServiceDetailModal } from '@/components/servicios/ServiceDetailModal';
 import { useServiceLogic } from '@/hooks/servicios/useServiceLogic';
 import { useCashRegisterStatus } from '@/hooks/caja/useCashRegisterStatus';
 import { useTimer } from '@/contexts/TimerContext';
-import { toast } from 'sonner';
 import { useEffect, useState, useCallback, useRef } from 'react';
 import { useRefreshOnFocus } from '@/hooks/shared';
 import { PermissionGuard } from '@/components/auth/PermissionGuard';
 import { useUserPermissions } from '@/hooks/auth/useUserPermissions';
 import { ServicioWithDetails } from '@/types/servicio';
+import { CajaStatusBanner } from '@/components/sales/CajaStatusBanner';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 
 export default function ServiciosPage() {
   const { getHabitaciones } = useHabitaciones();
@@ -84,16 +85,6 @@ export default function ServiciosPage() {
 
   useRefreshOnFocus(refreshServicesAndRooms);
 
-  const handleCreateServicioWithCheck = () => {
-    if (!hasOpenCaja) {
-      toast.error(
-        'No se puede crear un servicio sin caja abierta. Por favor, abra una caja primero.'
-      );
-      return;
-    }
-    handleCreateServicio();
-  };
-
   const handleShowServiceDetail = (servicio: ServicioWithDetails) => {
     if (showAllServices) {
       setSelectedServicio(servicio);
@@ -104,7 +95,8 @@ export default function ServiciosPage() {
   return (
     <PermissionGuard module='private_rooms' action='view'>
       <div className='p-4 sm:p-6 lg:p-10 space-y-4 sm:space-y-6 mt-4 sm:mt-6 lg:mt-10'>
-        {}
+        <CajaStatusBanner entityName='servicios privados' />
+
         <div className='flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 sm:gap-6 mb-6'>
           <div>
             <h1 className='text-xl sm:text-2xl lg:text-3xl font-bold text-gray-900'>
@@ -115,32 +107,36 @@ export default function ServiciosPage() {
             </p>
           </div>
           {canCreate && (
-            <Button
-              onClick={handleCreateServicioWithCheck}
-              disabled={cajaLoading || !hasOpenCaja}
-              className={`whitespace-nowrap inline-flex items-center rounded-full px-6 py-2 transition-all duration-200 text-sm sm:text-base w-full sm:w-auto ${
-                hasOpenCaja
-                  ? 'bg-black text-white hover:bg-white/90 hover:text-black dark:hover:bg-white dark:hover:text-black hover:scale-105 shadow-md'
-                  : 'bg-gray-300 text-gray-500 cursor-not-allowed'
-              }`}
-            >
-              {cajaLoading ? (
-                <>
-                  <div className='animate-spin rounded-full h-3 w-3 sm:h-4 sm:w-4 border-b-2 border-gray-500 mr-1' />
-                  Verificando...
-                </>
-              ) : hasOpenCaja ? (
-                <>
-                  <Plus className='w-3 h-3 sm:w-4 sm:h-4 mr-1' />
-                  Nuevo Registro
-                </>
-              ) : (
-                <>
-                  <AlertCircle className='w-3 h-3 sm:w-4 sm:h-4 mr-1' />
-                  Caja Cerrada
-                </>
-              )}
-            </Button>
+            <TooltipProvider>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <span tabIndex={0} className='w-full sm:w-auto block sm:inline'>
+                    <Button
+                      onClick={handleCreateServicio}
+                      disabled={cajaLoading || !hasOpenCaja}
+                      className='whitespace-nowrap inline-flex items-center rounded-full px-6 py-2 transition-all duration-200 text-sm sm:text-base w-full sm:w-auto bg-black text-white hover:bg-white/90 hover:text-black dark:hover:bg-white dark:hover:text-black hover:scale-105 shadow-md disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:bg-black disabled:hover:text-white disabled:dark:hover:bg-black disabled:dark:hover:text-white disabled:hover:scale-100'
+                    >
+                      {cajaLoading ? (
+                        <>
+                          <div className='animate-spin rounded-full h-3 w-3 sm:h-4 sm:w-4 border-b-2 border-gray-500 mr-1' />
+                          Verificando...
+                        </>
+                      ) : (
+                        <>
+                          <Plus className='w-3 h-3 sm:w-4 sm:h-4 mr-1' />
+                          Nuevo Servicio
+                        </>
+                      )}
+                    </Button>
+                  </span>
+                </TooltipTrigger>
+                {!hasOpenCaja && !cajaLoading && (
+                  <TooltipContent>
+                    <p>Caja cerrada</p>
+                  </TooltipContent>
+                )}
+              </Tooltip>
+            </TooltipProvider>
           )}
         </div>
 
@@ -148,7 +144,10 @@ export default function ServiciosPage() {
         {loading || loadingAll ? (
           <div className='grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-8'>
             {[...Array(4)].map((_, i) => (
-              <div key={i} className='h-24 bg-slate-100 dark:bg-slate-800 rounded-2xl animate-pulse' />
+              <div
+                key={i}
+                className='h-24 bg-slate-100 dark:bg-slate-800 rounded-2xl animate-pulse'
+              />
             ))}
           </div>
         ) : (

@@ -107,37 +107,37 @@ export function AdminOrdersFilters({
           </div>
 
           {}
-          <div className='w-full lg:w-[100px]'>
-            <FilterSelect
-              value={String(rowsPerPage)}
-              onChange={(v: string) => {
-                setRowsPerPage(Number(v));
-                setPage(1);
-              }}
-              label='Listado'
-              placeholder='Listado'
-              options={rowsPerPageOptions}
-            />
+          <div className='w-full lg:w-[140px] flex gap-1 items-end'>
+            <div className='flex-1'>
+              <FilterSelect
+                value={String(rowsPerPage)}
+                onChange={(v: string) => {
+                  setRowsPerPage(Number(v));
+                  setPage(1);
+                }}
+                label='Listado'
+                placeholder='Listado'
+                options={rowsPerPageOptions}
+              />
+            </div>
+            <TooltipProvider>
+              <Tooltip delayDuration={300}>
+                <TooltipTrigger asChild>
+                  <Button
+                    onClick={onClearFilters}
+                    variant='outline'
+                    size='icon'
+                    className='w-10 h-10 flex items-center justify-center rounded-2xl border-gray-200 dark:border-gray-800 hover:scale-110 transition-all duration-200 hover:bg-black hover:text-white dark:hover:bg-white dark:hover:text-black shadow-xs'
+                  >
+                    <Trash2 className='w-4 h-4' />
+                  </Button>
+                </TooltipTrigger>
+                <TooltipContent className='bg-black text-white dark:bg-white dark:text-black rounded-xl border-none text-xs font-bold px-3 py-1.5 shadow-xl'>
+                  <p>Limpiar filtros</p>
+                </TooltipContent>
+              </Tooltip>
+            </TooltipProvider>
           </div>
-
-          {}
-          <TooltipProvider>
-            <Tooltip delayDuration={300}>
-              <TooltipTrigger asChild>
-                <Button
-                  onClick={onClearFilters}
-                  variant='outline'
-                  size='icon'
-                  className='w-10 h-10 flex items-center justify-center rounded-2xl border-gray-200 dark:border-gray-800 hover:scale-110 transition-all duration-200 hover:bg-black hover:text-white dark:hover:bg-white dark:hover:text-black shadow-xs'
-                >
-                  <Trash2 className='w-4 h-4' />
-                </Button>
-              </TooltipTrigger>
-              <TooltipContent className='bg-black text-white dark:bg-white dark:text-black rounded-xl border-none text-xs font-bold px-3 py-1.5 shadow-xl'>
-                <p>Limpiar filtros</p>
-              </TooltipContent>
-            </Tooltip>
-          </TooltipProvider>
         </div>
       </CardContent>
     </Card>

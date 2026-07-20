@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+
 import { Skeleton as BoneyardSkeleton } from 'boneyard-js/react';
 import { Button } from '@/components/ui/button';
 import { useCashRegister } from '@/hooks/caja/useCashRegister';
@@ -47,6 +47,7 @@ export default function CashRegister() {
   const [showDetails, setShowDetails] = useState(false);
   const [showCerrarDialog, setShowCerrarDialog] = useState(false);
   const [showRetiroDialog, setShowRetiroDialog] = useState(false);
+  const [cashierTab, setCashierTab] = useState('cajas');
 
   const isCajero = user?.role === 'cajero';
 
@@ -193,27 +194,33 @@ export default function CashRegister() {
         <CashRegisterStatsCard isCajero={isCajero} />
 
         {}
-        <Tabs defaultValue='cajas' className='space-y-8'>
+        <div className='space-y-8'>
           {!isCajero && (
-            <div className='flex justify-center w-full'>
-              <TabsList className='inline-flex p-1 bg-transparent rounded-3xl'>
-                <TabsTrigger
-                  value='cajas'
-                  className='rounded-2xl px-8 py-2.5 text-sm font-bold data-[state=active]:bg-black data-[state=active]:text-white data-[state=active]:shadow-xl transition-all'
-                >
-                  Listado de Cajas
-                </TabsTrigger>
-                <TabsTrigger
-                  value='resumen'
-                  className='rounded-2xl px-8 py-2.5 text-sm font-bold data-[state=active]:bg-black data-[state=active]:text-white data-[state=active]:shadow-xl transition-all'
-                >
-                  Análisis Global
-                </TabsTrigger>
-              </TabsList>
+            <div className='flex justify-center gap-3 border-b pb-1'>
+              <button
+                onClick={() => setCashierTab('cajas')}
+                className={`flex items-center gap-2 px-5 py-2 text-sm font-semibold transition-all ${
+                  cashierTab === 'cajas'
+                    ? 'bg-amber-100 text-amber-700 rounded-full shadow-xs'
+                    : 'text-gray-500 hover:bg-gray-100 rounded-full'
+                }`}
+              >
+                Listado de Cajas
+              </button>
+              <button
+                onClick={() => setCashierTab('resumen')}
+                className={`flex items-center gap-2 px-5 py-2 text-sm font-semibold transition-all ${
+                  cashierTab === 'resumen'
+                    ? 'bg-green-100 text-green-700 rounded-full shadow-xs'
+                    : 'text-gray-500 hover:bg-gray-100 rounded-full'
+                }`}
+              >
+                Análisis Global
+              </button>
             </div>
           )}
 
-          <TabsContent value='cajas' className='space-y-6 outline-hidden'>
+          <div className='space-y-6 outline-hidden'>
             {!isCajero && (
               <CajaFilters
                 searchTerm={searchTerm}
@@ -224,48 +231,50 @@ export default function CashRegister() {
               />
             )}
 
-            <BoneyardSkeleton name="cash-register-main" loading={loading}>
-            {filteredCajas.length === 0 ? (
-              <div className='flex flex-col items-center justify-center py-20 text-center space-y-6'>
-                <div className='w-24 h-24 bg-slate-100 dark:bg-white/5 rounded-[2.5rem] flex items-center justify-center'>
-                  <Wallet className='h-12 w-12 text-slate-300' />
+            <BoneyardSkeleton name='cash-register-main' loading={loading}>
+              {filteredCajas.length === 0 ? (
+                <div className='flex flex-col items-center justify-center py-20 text-center space-y-6'>
+                  <div className='w-24 h-24 bg-slate-100 dark:bg-white/5 rounded-[2.5rem] flex items-center justify-center'>
+                    <Wallet className='h-12 w-12 text-slate-300' />
+                  </div>
+                  <div className='space-y-2'>
+                    <h3 className='text-2xl font-black text-slate-900 dark:text-white uppercase tracking-tighter'>
+                      {searchTerm || filterStatus !== 'all'
+                        ? 'Sin coincidencias'
+                        : 'Sin cajas activas'}
+                    </h3>
+                    <p className='text-slate-500 font-medium max-w-sm mx-auto'>
+                      {searchTerm || filterStatus !== 'all'
+                        ? 'No encontramos lo que buscas con los filtros actuales.'
+                        : 'Todavía no hay registros en el sistema. ¡Abre una nueva caja para empezar!'}
+                    </p>
+                  </div>
                 </div>
-                <div className='space-y-2'>
-                  <h3 className='text-2xl font-black text-slate-900 dark:text-white uppercase tracking-tighter'>
-                    {searchTerm || filterStatus !== 'all'
-                      ? 'Sin coincidencias'
-                      : 'Sin cajas activas'}
-                  </h3>
-                  <p className='text-slate-500 font-medium max-w-sm mx-auto'>
-                    {searchTerm || filterStatus !== 'all'
-                      ? 'No encontramos lo que buscas con los filtros actuales.'
-                      : 'Todavía no hay registros en el sistema. ¡Abre una nueva caja para empezar!'}
-                  </p>
+              ) : (
+                <div className='grid gap-6 grid-cols-1 md:grid-cols-2 xl:grid-cols-3'>
+                  {filteredCajas.map(caja => (
+                    <CajaCard
+                      key={caja.id_caja}
+                      caja={caja}
+                      onViewDetails={handleViewDetails}
+                      onCloseCaja={handleCloseCaja}
+                      onRetirar={handleRetirar}
+                      canCloseCaja={canCloseCaja}
+                      canRetirar={canWithdrawMoney}
+                      canViewDetails={canViewDetails}
+                    />
+                  ))}
                 </div>
-              </div>
-            ) : (
-              <div className='grid gap-6 grid-cols-1 md:grid-cols-2 xl:grid-cols-3'>
-                {filteredCajas.map(caja => (
-                  <CajaCard
-                    key={caja.id_caja}
-                    caja={caja}
-                    onViewDetails={handleViewDetails}
-                    onCloseCaja={handleCloseCaja}
-                    onRetirar={handleRetirar}
-                    canCloseCaja={canCloseCaja}
-                    canRetirar={canWithdrawMoney}
-                    canViewDetails={canViewDetails}
-                  />
-                ))}
-              </div>
-            )}
+              )}
             </BoneyardSkeleton>
-          </TabsContent>
+          </div>
 
-          <TabsContent value='resumen' className='outline-hidden'>
-            <CashRegisterDetailedStats />
-          </TabsContent>
-        </Tabs>
+          {cashierTab === 'resumen' && !isCajero && (
+            <div className='outline-hidden'>
+              <CashRegisterDetailedStats />
+            </div>
+          )}
+        </div>
 
         {}
         <CerrarCajaDialog

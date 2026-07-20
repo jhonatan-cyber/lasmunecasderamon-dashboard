@@ -97,67 +97,67 @@ export function ClientFilters({
             </div>
 
             {}
-            <div className='w-full sm:w-auto min-w-[180px]'>
-              <Label className='mb-2 block text-xs font-bold uppercase tracking-wider text-gray-500 dark:text-gray-400 ml-1'>
-                Ordenar por
-              </Label>
-              <div className='flex gap-1'>
-                <Select value={sortBy} onValueChange={setSortBy}>
-                  <SelectTrigger className='rounded-r-none'>
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value='name'>Nombre</SelectItem>
-                    <SelectItem value='lastName'>Apellido</SelectItem>
-                    <SelectItem value='run'>RUT</SelectItem>
-                    <SelectItem value='phone'>Teléfono</SelectItem>
-                    <SelectItem value='saldo_prepago'>Saldo Prepago</SelectItem>
-                    <SelectItem value='created_at'>Fecha Creación</SelectItem>
-                  </SelectContent>
-                </Select>
-                <Button
-                  variant='outline'
-                  size='icon'
-                  onClick={() => setSortOrder(sortOrder === 'asc' ? 'desc' : 'asc')}
-                  className='h-10 w-10 rounded-full border border-gray-300 dark:border-gray-700 bg-gray-100 dark:bg-slate-900/50 text-gray-900 dark:text-gray-100 hover:bg-gray-200 dark:hover:bg-gray-700'
-                >
-                  {sortOrder === 'asc' ? (
-                    <SortAsc className='h-4 w-4' />
-                  ) : (
-                    <SortDesc className='h-4 w-4' />
-                  )}
-                </Button>
+            <div className='w-full sm:w-auto grid grid-cols-2 gap-4 sm:flex sm:gap-4 sm:items-end'>
+              <div>
+                <Label className='mb-2 block text-xs font-bold uppercase tracking-wider text-gray-500 dark:text-gray-400 ml-1'>
+                  Ordenar por
+                </Label>
+                <div className='flex gap-1'>
+                  <Select value={sortBy} onValueChange={setSortBy}>
+                    <SelectTrigger className='rounded-r-none'>
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value='name'>Nombre</SelectItem>
+                      <SelectItem value='lastName'>Apellido</SelectItem>
+                      <SelectItem value='run'>RUT</SelectItem>
+                      <SelectItem value='phone'>Teléfono</SelectItem>
+                      <SelectItem value='saldo_prepago'>Saldo Prepago</SelectItem>
+                      <SelectItem value='created_at'>Fecha Creación</SelectItem>
+                    </SelectContent>
+                  </Select>
+                  <Button
+                    variant='outline'
+                    size='icon'
+                    onClick={() => setSortOrder(sortOrder === 'asc' ? 'desc' : 'asc')}
+                    className='h-10 w-10 rounded-full border border-gray-300 dark:border-gray-700 bg-gray-100 dark:bg-slate-900/50 text-gray-900 dark:text-gray-100 hover:bg-gray-200 dark:hover:bg-gray-700'
+                  >
+                    {sortOrder === 'asc' ? (
+                      <SortAsc className='h-4 w-4' />
+                    ) : (
+                      <SortDesc className='h-4 w-4' />
+                    )}
+                  </Button>
+                </div>
               </div>
-            </div>
 
-            {}
-            <div className='w-full sm:w-auto'>
-              <SelectElements
-                value={pageSize}
-                onChange={handlePageSizeChange}
-                options={[5, 10, 20, 40]}
-                label='LISTAR'
-              />
-            </div>
+              <div className='flex items-end gap-2'>
+                <div>
+                  <SelectElements
+                    value={pageSize}
+                    onChange={handlePageSizeChange}
+                    options={[5, 10, 20, 40]}
+                    label='LISTAR'
+                  />
+                </div>
 
-            {}
-            <div className='w-full sm:w-auto'>
-              <TooltipProvider>
-                <Tooltip delayDuration={300}>
-                  <TooltipTrigger asChild>
-                    <Button
-                      onClick={onClearFilters}
-                      size='icon'
-                      className='w-10 h-10 flex items-center justify-center rounded-full border border-gray-300 dark:border-gray-700 shadow-xs bg-gray-100 dark:bg-slate-900/50 text-gray-900 dark:text-gray-100 transition-all duration-200 hover:scale-110 hover:bg-red-500! hover:text-white! hover:border-red-500!'
-                    >
-                      <Trash2 className='w-4 h-4' />
-                    </Button>
-                  </TooltipTrigger>
-                  <TooltipContent className='bg-black text-white dark:bg-white dark:text-black rounded-xl border-none text-xs font-bold px-3 py-1.5 shadow-xl'>
-                    <p>Limpiar filtros</p>
-                  </TooltipContent>
-                </Tooltip>
-              </TooltipProvider>
+                <TooltipProvider>
+                  <Tooltip delayDuration={300}>
+                    <TooltipTrigger asChild>
+                      <Button
+                        onClick={onClearFilters}
+                        size='icon'
+                        className='w-10 h-10 flex items-center justify-center rounded-full border border-gray-300 dark:border-gray-700 shadow-xs bg-gray-100 dark:bg-slate-900/50 text-gray-900 dark:text-gray-100 transition-all duration-200 hover:scale-110 hover:bg-red-500! hover:text-white! hover:border-red-500!'
+                      >
+                        <Trash2 className='w-4 h-4' />
+                      </Button>
+                    </TooltipTrigger>
+                    <TooltipContent className='bg-black text-white dark:bg-white dark:text-black rounded-xl border-none text-xs font-bold px-3 py-1.5 shadow-xl'>
+                      <p>Limpiar filtros</p>
+                    </TooltipContent>
+                  </Tooltip>
+                </TooltipProvider>
+              </div>
             </div>
           </div>
         </div>

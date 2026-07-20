@@ -139,11 +139,15 @@ export function CashRegisterStatsCard({ isCajero = false }: CashRegisterStatsCar
 
   return (
     <div className='space-y-4 w-full'>
-      <div className='grid grid-cols-1 sm:grid-cols-2 gap-4 w-full'>
+      <div className='grid grid-cols-2 gap-4 w-full'>
         {statsCards.slice(0, 2).map((stat, i) => renderCard(stat, i))}
       </div>
-      <div className='grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 w-full'>
-        {statsCards.slice(2, 5).map((stat, i) => renderCard(stat, i + 2))}
+      <div className='grid grid-cols-2 lg:grid-cols-3 gap-4 w-full'>
+        {statsCards.slice(2, 5).map((stat, i) => (
+          <div key={i + 2} className={i === 2 ? 'col-span-2 lg:col-span-1' : ''}>
+            {renderCard(stat, i + 2)}
+          </div>
+        ))}
       </div>
     </div>
   );

@@ -1,4 +1,4 @@
-import db from "@/lib/database/db";
+import db from '@/lib/database/db';
 
 export type TransactionCallback<T> = (trx: typeof db.query) => Promise<T>;
 
@@ -9,10 +9,12 @@ export const withTransaction = async <T>(callback: TransactionCallback<T>): Prom
     await connection.beginTransaction();
 
     const trx = async <R = any>(sql: string, values?: any[]): Promise<R> => {
-      const { getSQLTimezoneOffset } = require("@/lib/business/timezoneService");
+      const { getSQLTimezoneOffset } = require('@/lib/business/timezoneService');
       const dbTz = getSQLTimezoneOffset();
-      await connection.query(`SET time_zone = '${dbTz}'`);
-      await connection.query("SET SESSION sql_mode=(SELECT REPLACE(@@sql_mode,'ONLY_FULL_GROUP_BY',''))");
+      await connection.query('SET time_zone = ?', [dbTz]);
+      await connection.query(
+        "SET SESSION sql_mode=(SELECT REPLACE(@@sql_mode,'ONLY_FULL_GROUP_BY',''))"
+      );
 
       const [rows] = await connection.query(sql, values);
       return rows as unknown as R;
@@ -30,4 +32,3 @@ export const withTransaction = async <T>(callback: TransactionCallback<T>): Prom
     connection.release();
   }
 };
-

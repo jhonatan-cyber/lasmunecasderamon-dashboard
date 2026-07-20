@@ -1,3 +1,5 @@
+'use client';
+
 import { useState } from 'react';
 
 interface UseSaleAnulacionFormProps {
@@ -5,26 +7,23 @@ interface UseSaleAnulacionFormProps {
   onConfirm: (payload: { motivo: string; monto: number }) => void;
 }
 
-export function useSaleAnulacionForm({
-  onOpenChange,
-  onConfirm
-}: UseSaleAnulacionFormProps) {
-  const [motivo, setMotivo] = useState("");
-  const [monto, setMonto] = useState("");
+export function useSaleAnulacionForm({ onOpenChange, onConfirm }: UseSaleAnulacionFormProps) {
+  const [motivo, setMotivo] = useState('');
+  const [monto, setMonto] = useState('');
 
   const handleConfirm = () => {
     const montoNumerico = Number(monto.replace(/\D/g, ''));
 
     if (motivo.trim() && montoNumerico > 0) {
       onConfirm({ motivo: motivo.trim(), monto: montoNumerico });
-      setMotivo("");
-      setMonto("");
+      setMotivo('');
+      setMonto('');
     }
   };
 
   const handleCancel = () => {
-    setMotivo("");
-    setMonto("");
+    setMotivo('');
+    setMonto('');
     onOpenChange(false);
   };
 

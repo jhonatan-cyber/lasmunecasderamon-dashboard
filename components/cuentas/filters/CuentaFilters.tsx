@@ -66,31 +66,30 @@ export default function CuentaFilters({
 
           <div className='flex flex-wrap sm:flex-nowrap gap-4 w-full lg:w-auto items-end'>
             {}
-            <div className='w-full sm:w-auto min-w-[160px]'>
-              <Label
-                htmlFor='rowsPerPage'
-                className='mb-2 block text-xs font-bold uppercase tracking-wider text-gray-500 dark:text-gray-400 ml-1'
-              >
-                Listar
-              </Label>
-              <Select
-                value={rowsPerPage.toString()}
-                onValueChange={(v: string) => handleRowsPerPageChange(Number(v))}
-              >
-                <SelectTrigger id='rowsPerPage'>
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value='5'>5</SelectItem>
-                  <SelectItem value='10'>10</SelectItem>
-                  <SelectItem value='20'>20</SelectItem>
-                  <SelectItem value='50'>50</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
+            <div className='flex items-end gap-2'>
+              <div className='min-w-[160px]'>
+                <Label
+                  htmlFor='rowsPerPage'
+                  className='mb-2 block text-xs font-bold uppercase tracking-wider text-gray-500 dark:text-gray-400 ml-1'
+                >
+                  Listar
+                </Label>
+                <Select
+                  value={rowsPerPage.toString()}
+                  onValueChange={(v: string) => handleRowsPerPageChange(Number(v))}
+                >
+                  <SelectTrigger id='rowsPerPage'>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value='5'>5</SelectItem>
+                    <SelectItem value='10'>10</SelectItem>
+                    <SelectItem value='20'>20</SelectItem>
+                    <SelectItem value='50'>50</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
 
-            {}
-            <div className='w-full sm:w-auto'>
               <TooltipProvider>
                 <Tooltip delayDuration={300}>
                   <TooltipTrigger asChild>

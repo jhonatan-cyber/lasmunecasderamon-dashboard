@@ -16,10 +16,7 @@ export async function GET(
 
     // Double-check: resolved path must be inside productsDir
     if (!filePath.startsWith(productsDir + path.sep)) {
-      return NextResponse.json(
-        { success: false, message: 'Invalid filename' },
-        { status: 400 }
-      );
+      return NextResponse.json({ success: false, message: 'Invalid filename' }, { status: 400 });
     }
 
     let imageBuffer: Buffer;
@@ -55,7 +52,9 @@ export async function GET(
       }
     });
   } catch (error: unknown) {
-    const msg = error instanceof Error ? error.message : 'Error desconocido';
-    return NextResponse.json({ error: msg }, { status: 500 });
+    if (process.env.NODE_ENV === 'development') {
+      console.error('[Images]', error);
+    }
+    return NextResponse.json({ error: 'Error interno del servidor' }, { status: 500 });
   }
 }

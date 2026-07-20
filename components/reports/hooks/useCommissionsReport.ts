@@ -1,3 +1,5 @@
+'use client';
+
 import { useEffect, useMemo, useReducer, useCallback } from 'react';
 import logger from '@/lib/utils/logger';
 

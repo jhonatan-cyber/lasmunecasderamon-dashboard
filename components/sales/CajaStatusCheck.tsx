@@ -62,7 +62,7 @@ export function CajaStatusCheck({ onStatusChange }: CajaStatusCheckProps) {
               variant='outline'
               size='sm'
               onClick={() => router.push('/cash-register')}
-              className='ml-4 border-red-300 text-red-700 hover:bg-red-100 dark:border-red-700 dark:text-red-200 dark:hover:bg-red-900/50'
+              className='ml-4 rounded-full border-red-300 text-red-700 hover:bg-red-100 dark:border-red-700 dark:text-red-200 dark:hover:bg-red-900/50'
             >
               Abrir Caja
             </Button>

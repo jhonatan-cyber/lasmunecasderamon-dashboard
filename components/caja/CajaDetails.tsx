@@ -5,7 +5,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/u
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import Image from 'next/image';
-import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
+
 import { Skeleton } from '@/components/ui/skeleton';
 import logger from '@/lib/utils/logger';
 
@@ -234,86 +234,65 @@ export default function CajaDetails({ caja, open, onOpenChange }: CajaDetailsPro
             </div>
           </div>
 
-          <Tabs
-            value={activeTab}
-            onValueChange={setActiveTab}
-            className='flex-1 flex flex-col min-h-0'
-          >
-            <TabsList className='mx-6 mt-4 bg-gray-100 dark:bg-gray-800 p-1 rounded-xl print:hidden'>
-              <TabsTrigger
-                value='resumen'
-                className='rounded-lg data-[state=active]:bg-white dark:data-[state=active]:bg-gray-700 data-[state=active]:shadow-xs'
+          <div className='flex-1 flex flex-col min-h-0'>
+            <div className='flex justify-center gap-2 mx-6 mt-4 border-b pb-1 print:hidden'>
+              <button
+                onClick={() => setActiveTab('resumen')}
+                className={`px-4 py-2 text-sm font-semibold transition-all rounded-full ${
+                  activeTab === 'resumen'
+                    ? 'bg-gray-900 text-white shadow-xs dark:bg-white dark:text-black'
+                    : 'text-gray-500 hover:bg-gray-100 dark:hover:bg-gray-800'
+                }`}
               >
                 Resumen
-              </TabsTrigger>
-              <TabsTrigger
-                value='ventas'
-                className='rounded-lg data-[state=active]:bg-white dark:data-[state=active]:bg-gray-700 data-[state=active]:shadow-xs'
+              </button>
+              <button
+                onClick={() => setActiveTab('ventas')}
+                className={`px-4 py-2 text-sm font-semibold transition-all rounded-full ${
+                  activeTab === 'ventas'
+                    ? 'bg-gray-900 text-white shadow-xs dark:bg-white dark:text-black'
+                    : 'text-gray-500 hover:bg-gray-100 dark:hover:bg-gray-800'
+                }`}
               >
                 Ventas ({ventas.length})
-              </TabsTrigger>
-              <TabsTrigger
-                value='servicios'
-                className='rounded-lg data-[state=active]:bg-white dark:data-[state=active]:bg-gray-700 data-[state=active]:shadow-xs'
+              </button>
+              <button
+                onClick={() => setActiveTab('servicios')}
+                className={`px-4 py-2 text-sm font-semibold transition-all rounded-full ${
+                  activeTab === 'servicios'
+                    ? 'bg-gray-900 text-white shadow-xs dark:bg-white dark:text-black'
+                    : 'text-gray-500 hover:bg-gray-100 dark:hover:bg-gray-800'
+                }`}
               >
                 Servicios ({servicios.length})
-              </TabsTrigger>
-              <TabsTrigger
-                value='retiros'
-                className='rounded-lg data-[state=active]:bg-white dark:data-[state=active]:bg-gray-700 data-[state=active]:shadow-xs'
+              </button>
+              <button
+                onClick={() => setActiveTab('retiros')}
+                className={`px-4 py-2 text-sm font-semibold transition-all rounded-full ${
+                  activeTab === 'retiros'
+                    ? 'bg-gray-900 text-white shadow-xs dark:bg-white dark:text-black'
+                    : 'text-gray-500 hover:bg-gray-100 dark:hover:bg-gray-800'
+                }`}
               >
                 Retiros ({retiros.length})
-              </TabsTrigger>
-            </TabsList>
+              </button>
+            </div>
 
             <div className='flex-1 overflow-y-auto custom-scrollbar p-6 print:overflow-visible print:max-h-none'>
-              <TabsContent value='resumen' className='mt-0 space-y-8'>
-                <div className='grid grid-cols-1 md:grid-cols-2 gap-4 print:grid-cols-2'>
-                  <div className='bg-gray-50 dark:bg-gray-800/50 p-4 rounded-2xl border border-gray-200 dark:border-gray-700'>
-                    <div className='mb-3'>
-                      <p className='text-xs font-bold text-gray-500 uppercase mb-2'>Abierta por</p>
-                      <div className='flex items-center gap-2'>
-                        <Avatar className='h-8 w-8'>
-                          {caja.cajero_foto && caja.cajero_foto !== '' ? (
-                            <Image
-                              src={`/img/users/${caja.cajero_foto}?v=${imageVersion}`}
-                              alt={caja.cajero_nombre || 'Usuario'}
-                              width={32}
-                              height={32}
-                              className='w-full h-full object-cover rounded-full'
-                            />
-                          ) : (
-                            <AvatarImage
-                              src='/img/users/default.png'
-                              alt={caja.cajero_nombre || 'Usuario'}
-                            />
-                          )}
-                          <AvatarFallback className='bg-emerald-100 text-emerald-700 font-bold text-xs'>
-                            {caja.cajero_nombre?.substring(0, 2).toUpperCase()}
-                          </AvatarFallback>
-                        </Avatar>
-                        <p className='font-bold text-gray-900 dark:text-white'>
-                          {caja.cajero_nombre || 'N/A'}
-                        </p>
-                      </div>
-                    </div>
-                    <p className='text-sm text-gray-600 dark:text-gray-400'>
-                      {formatFechaLarga(caja.fecha_apertura)} •{' '}
-                      {formatSoloHora(caja.fecha_apertura)}
-                    </p>
-                  </div>
-                  {caja.fecha_cierre && (
+              {activeTab === 'resumen' && (
+                <div className='mt-0 space-y-8'>
+                  <div className='grid grid-cols-1 md:grid-cols-2 gap-4 print:grid-cols-2'>
                     <div className='bg-gray-50 dark:bg-gray-800/50 p-4 rounded-2xl border border-gray-200 dark:border-gray-700'>
                       <div className='mb-3'>
                         <p className='text-xs font-bold text-gray-500 uppercase mb-2'>
-                          Cerrada por
+                          Abierta por
                         </p>
                         <div className='flex items-center gap-2'>
                           <Avatar className='h-8 w-8'>
-                            {caja.cajero_cierre_foto && caja.cajero_cierre_foto !== '' ? (
+                            {caja.cajero_foto && caja.cajero_foto !== '' ? (
                               <Image
-                                src={`/img/users/${caja.cajero_cierre_foto}?v=${imageVersion}`}
-                                alt={caja.cajero_cierre_nombre || 'Usuario'}
+                                src={`/img/users/${caja.cajero_foto}?v=${imageVersion}`}
+                                alt={caja.cajero_nombre || 'Usuario'}
                                 width={32}
                                 height={32}
                                 className='w-full h-full object-cover rounded-full'
@@ -321,94 +300,138 @@ export default function CajaDetails({ caja, open, onOpenChange }: CajaDetailsPro
                             ) : (
                               <AvatarImage
                                 src='/img/users/default.png'
-                                alt={caja.cajero_cierre_nombre || 'Usuario'}
+                                alt={caja.cajero_nombre || 'Usuario'}
                               />
                             )}
-                            <AvatarFallback className='bg-slate-100 text-slate-700 font-bold text-xs'>
-                              {caja.cajero_cierre_nombre?.substring(0, 2).toUpperCase()}
+                            <AvatarFallback className='bg-emerald-100 text-emerald-700 font-bold text-xs'>
+                              {caja.cajero_nombre?.substring(0, 2).toUpperCase()}
                             </AvatarFallback>
                           </Avatar>
                           <p className='font-bold text-gray-900 dark:text-white'>
-                            {caja.cajero_cierre_nombre || 'N/A'}
+                            {caja.cajero_nombre || 'N/A'}
                           </p>
                         </div>
                       </div>
                       <p className='text-sm text-gray-600 dark:text-gray-400'>
-                        {formatFechaLarga(caja.fecha_cierre)} • {formatSoloHora(caja.fecha_cierre)}
+                        {formatFechaLarga(caja.fecha_apertura)} •{' '}
+                        {formatSoloHora(caja.fecha_apertura)}
                       </p>
                     </div>
-                  )}
+                    {caja.fecha_cierre && (
+                      <div className='bg-gray-50 dark:bg-gray-800/50 p-4 rounded-2xl border border-gray-200 dark:border-gray-700'>
+                        <div className='mb-3'>
+                          <p className='text-xs font-bold text-gray-500 uppercase mb-2'>
+                            Cerrada por
+                          </p>
+                          <div className='flex items-center gap-2'>
+                            <Avatar className='h-8 w-8'>
+                              {caja.cajero_cierre_foto && caja.cajero_cierre_foto !== '' ? (
+                                <Image
+                                  src={`/img/users/${caja.cajero_cierre_foto}?v=${imageVersion}`}
+                                  alt={caja.cajero_cierre_nombre || 'Usuario'}
+                                  width={32}
+                                  height={32}
+                                  className='w-full h-full object-cover rounded-full'
+                                />
+                              ) : (
+                                <AvatarImage
+                                  src='/img/users/default.png'
+                                  alt={caja.cajero_cierre_nombre || 'Usuario'}
+                                />
+                              )}
+                              <AvatarFallback className='bg-slate-100 text-slate-700 font-bold text-xs'>
+                                {caja.cajero_cierre_nombre?.substring(0, 2).toUpperCase()}
+                              </AvatarFallback>
+                            </Avatar>
+                            <p className='font-bold text-gray-900 dark:text-white'>
+                              {caja.cajero_cierre_nombre || 'N/A'}
+                            </p>
+                          </div>
+                        </div>
+                        <p className='text-sm text-gray-600 dark:text-gray-400'>
+                          {formatFechaLarga(caja.fecha_cierre)} •{' '}
+                          {formatSoloHora(caja.fecha_cierre)}
+                        </p>
+                      </div>
+                    )}
+                  </div>
+
+                  <CajaChartsSection
+                    isLoading={isLoadingSummary}
+                    totalIngresos={totalIngresos}
+                    totalEgresos={totalEgresos}
+                    ventasTragos={ventasTragosChicas?.total_venta || 0}
+                    ventasChampagne={ventasChampagne?.total_venta || 0}
+                    ventasBarras={ventasBarras?.total_venta || 0}
+                    servicios={caja?.servicios || 0}
+                  />
+
+                  <CajaFinancialDetails
+                    isLoading={isLoadingSummary}
+                    efectivoNeto={efectivoNeto}
+                    ventasTragos={ventasTragosChicas?.total_venta || 0}
+                    ventasChampagne={ventasChampagne?.total_venta || 0}
+                    ventasBarras={ventasBarras?.total_venta || 0}
+                    servicios={caja?.servicios || 0}
+                    prepagoCargado={prepagoCargado}
+                    prepagoConsumido={prepagoConsumido}
+                    ingresosReales={ingresosReales}
+                    devoluciones={Number(caja?.devoluciones || 0)}
+                    anticipos={Number(caja?.anticipo || 0)}
+                    retirosTotal={retiros.reduce((sum, r) => sum + Number(r.monto || 0), 0)}
+                    totalReal={totalReal}
+                    prepagoPendienteClientes={prepagoPendienteClientes}
+                  />
                 </div>
+              )}
 
-                <CajaChartsSection
-                  isLoading={isLoadingSummary}
-                  totalIngresos={totalIngresos}
-                  totalEgresos={totalEgresos}
-                  ventasTragos={ventasTragosChicas?.total_venta || 0}
-                  ventasChampagne={ventasChampagne?.total_venta || 0}
-                  ventasBarras={ventasBarras?.total_venta || 0}
-                  servicios={caja?.servicios || 0}
-                />
+              {activeTab === 'ventas' && (
+                <div className='mt-0 space-y-4'>
+                  <CajaVentasTable
+                    loading={loadingVentas}
+                    ventas={ventas}
+                    filteredVentas={filteredVentas}
+                    search={searchVentas}
+                    onSearchChange={setSearchVentas}
+                    getRows={getVentasForDisplay}
+                    page={ventasPage}
+                    totalPages={totalPages(filteredVentas)}
+                    onPageChange={setVentasPage}
+                    onRetry={fetchVentas}
+                  />
+                </div>
+              )}
 
-                <CajaFinancialDetails
-                  isLoading={isLoadingSummary}
-                  efectivoNeto={efectivoNeto}
-                  ventasTragos={ventasTragosChicas?.total_venta || 0}
-                  ventasChampagne={ventasChampagne?.total_venta || 0}
-                  ventasBarras={ventasBarras?.total_venta || 0}
-                  servicios={caja?.servicios || 0}
-                  prepagoCargado={prepagoCargado}
-                  prepagoConsumido={prepagoConsumido}
-                  ingresosReales={ingresosReales}
-                  devoluciones={Number(caja?.devoluciones || 0)}
-                  anticipos={Number(caja?.anticipo || 0)}
-                  retirosTotal={retiros.reduce((sum, r) => sum + Number(r.monto || 0), 0)}
-                  totalReal={totalReal}
-                  prepagoPendienteClientes={prepagoPendienteClientes}
-                />
-              </TabsContent>
+              {activeTab === 'servicios' && (
+                <div className='mt-0 space-y-4'>
+                  <CajaServiciosTable
+                    loading={loadingServicios}
+                    servicios={servicios}
+                    filteredServicios={filteredServicios}
+                    search={searchServicios}
+                    onSearchChange={setSearchServicios}
+                    getRows={getServiciosForDisplay}
+                    page={serviciosPage}
+                    totalPages={totalPages(filteredServicios)}
+                    onPageChange={setServiciosPage}
+                  />
+                </div>
+              )}
 
-              <TabsContent value='ventas' className='mt-0 space-y-4'>
-                <CajaVentasTable
-                  loading={loadingVentas}
-                  ventas={ventas}
-                  filteredVentas={filteredVentas}
-                  search={searchVentas}
-                  onSearchChange={setSearchVentas}
-                  getRows={getVentasForDisplay}
-                  page={ventasPage}
-                  totalPages={totalPages(filteredVentas)}
-                  onPageChange={setVentasPage}
-                  onRetry={fetchVentas}
-                />
-              </TabsContent>
-
-              <TabsContent value='servicios' className='mt-0 space-y-4'>
-                <CajaServiciosTable
-                  loading={loadingServicios}
-                  servicios={servicios}
-                  filteredServicios={filteredServicios}
-                  search={searchServicios}
-                  onSearchChange={setSearchServicios}
-                  getRows={getServiciosForDisplay}
-                  page={serviciosPage}
-                  totalPages={totalPages(filteredServicios)}
-                  onPageChange={setServiciosPage}
-                />
-              </TabsContent>
-
-              <TabsContent value='retiros' className='mt-0 space-y-4'>
-                <CajaRetirosList
-                  loading={retirosLoading}
-                  retiros={retiros}
-                  getRows={getRetirosForDisplay}
-                  page={retirosPage}
-                  totalPages={totalPages(retiros)}
-                  onPageChange={setRetirosPage}
-                />
-              </TabsContent>
+              {activeTab === 'retiros' && (
+                <div className='mt-0 space-y-4'>
+                  <CajaRetirosList
+                    loading={retirosLoading}
+                    retiros={retiros}
+                    getRows={getRetirosForDisplay}
+                    page={retirosPage}
+                    totalPages={totalPages(retiros)}
+                    onPageChange={setRetirosPage}
+                  />
+                </div>
+              )}
             </div>
-          </Tabs>
+          </div>
 
           <div className='shrink-0 border-t border-slate-100 dark:border-slate-800 p-4 bg-gray-50 dark:bg-slate-900/50 flex justify-center px-6 rounded-b-2xl print:hidden'>
             <Button

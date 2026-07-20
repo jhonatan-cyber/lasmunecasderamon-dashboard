@@ -3,28 +3,50 @@ import * as argon2 from 'argon2';
 import { generateToken, registrarLogin } from '@/lib/auth/auth';
 import { getSystemTimezone, getNowInBusinessTimezone } from '@/lib/business/timezoneService';
 import crypto from 'crypto';
-import { ValidationError, NotFoundError, BusinessError, ConflictError, DatabaseError } from '@/lib/errors/errors';
+import {
+  ValidationError,
+  NotFoundError,
+  BusinessError,
+  ConflictError,
+  DatabaseError
+} from '@/lib/errors/errors';
 import type { UserPermissions } from '@/lib/middleware/auth';
+import { SecurityAlertService } from '@/lib/services/SecurityAlertService';
 import logger from '@/lib/utils/logger';
 
 const ROLES_CON_CODIGO = ['cajero', 'garzon', 'anfitriona'];
 const SHIFT_START = 21 * 60;
 const SHIFT_END = 23 * 60;
 
+const ADMIN_PERMS: UserPermissions = {
+  users: { read: true, write: true, delete: true },
+  sales: { read: true, write: true, delete: true, anulate: true },
+  products: { read: true, write: true, delete: true },
+  clients: { read: true, write: true, delete: true },
+  finances: { read: true, write: true, delete: true },
+  reports: { read: true, export: true },
+  settings: { read: true, write: true },
+  orders: { read: true, write: true, delete: true, process: true },
+  advances: { read: true, write: true, delete: true, process: true },
+  commissions: { read: true, write: true, delete: true },
+  payroll: { read: true, write: true },
+  rooms: { read: true, write: true, delete: true },
+  attendance: { read: true, write: true },
+  overtime: { read: true, write: true },
+  tips: { read: true, write: true },
+  gratificaciones: { read: true, write: true, delete: true },
+  accounts: { read: true, write: true, edit: true },
+  categories: { read: true, write: true },
+  returns: { read: true, write: true, delete: true },
+  dashboard: { read: true },
+  private_rooms: { read: true, write: true }
+};
+
 const DEFAULT_PERMISSIONS: Record<string, UserPermissions> = {
-  administrador: {
-    users: { read: true, write: true, delete: true },
-    sales: { read: true, write: true, delete: true, anulate: true },
-    products: { read: true, write: true, delete: true },
-    clients: { read: true, write: true, delete: true },
-    finances: { read: true, write: true, delete: true },
-    reports: { read: true, export: true },
-    settings: { read: true, write: true },
-    orders: { read: true, write: true, delete: true, process: true },
-    advances: { read: true, write: true, delete: true, process: true }
-  },
+  administrador: ADMIN_PERMS,
   cajero: {
-    users: { read: true, write: true, delete: false },
+    ...ADMIN_PERMS,
+    users: { read: true, write: true, delete: true },
     sales: { read: true, write: true, delete: false, anulate: false },
     products: { read: true, write: false, delete: false },
     clients: { read: true, write: true, delete: false },
@@ -32,9 +54,14 @@ const DEFAULT_PERMISSIONS: Record<string, UserPermissions> = {
     reports: { read: false, export: false },
     settings: { read: false, write: false },
     orders: { read: true, write: true, delete: false, process: true },
-    advances: { read: true, write: true, delete: false, process: true }
+    advances: { read: true, write: true, delete: false, process: true },
+    commissions: { read: true, write: true, delete: false },
+    gratificaciones: { read: true, write: true, delete: false },
+    returns: { read: true, write: true, delete: false },
+    private_rooms: { read: true, write: true }
   },
   garzon: {
+    ...ADMIN_PERMS,
     users: { read: false, write: false, delete: false },
     sales: { read: false, write: false, delete: false, anulate: false },
     products: { read: false, write: false, delete: false },
@@ -43,9 +70,21 @@ const DEFAULT_PERMISSIONS: Record<string, UserPermissions> = {
     reports: { read: false, export: false },
     settings: { read: false, write: false },
     orders: { read: true, write: true, delete: false, process: true },
-    advances: { read: true, write: true, delete: false, process: false }
+    advances: { read: true, write: true, delete: false, process: false },
+    commissions: { read: false, write: false, delete: false },
+    payroll: { read: false, write: false },
+    rooms: { read: false, write: false, delete: false },
+    attendance: { read: false, write: false },
+    overtime: { read: false, write: false },
+    tips: { read: false, write: false },
+    gratificaciones: { read: false, write: false, delete: false },
+    accounts: { read: false, write: false, edit: false },
+    categories: { read: false, write: false },
+    returns: { read: false, write: false, delete: false },
+    private_rooms: { read: false, write: false }
   },
   anfitriona: {
+    ...ADMIN_PERMS,
     users: { read: false, write: false, delete: false },
     sales: { read: false, write: false, delete: false, anulate: false },
     products: { read: false, write: false, delete: false },
@@ -54,7 +93,18 @@ const DEFAULT_PERMISSIONS: Record<string, UserPermissions> = {
     reports: { read: false, export: false },
     settings: { read: false, write: false },
     orders: { read: false, write: false, delete: false, process: false },
-    advances: { read: true, write: false, delete: false, process: false }
+    advances: { read: true, write: false, delete: false, process: false },
+    commissions: { read: false, write: false, delete: false },
+    payroll: { read: false, write: false },
+    rooms: { read: false, write: false, delete: false },
+    attendance: { read: false, write: false },
+    overtime: { read: false, write: false },
+    tips: { read: false, write: false },
+    gratificaciones: { read: false, write: false, delete: false },
+    accounts: { read: false, write: false, edit: false },
+    categories: { read: false, write: false },
+    returns: { read: false, write: false, delete: false },
+    private_rooms: { read: false, write: false }
   }
 };
 
@@ -98,7 +148,19 @@ export async function getUserPermissions(
       reports: { read: false, export: false },
       settings: { read: false, write: false },
       orders: { read: false, write: false, delete: false, process: false },
-      advances: { read: false, write: false, delete: false, process: false }
+      advances: { read: false, write: false, delete: false, process: false },
+      commissions: { read: false, write: false, delete: false },
+      payroll: { read: false, write: false },
+      rooms: { read: false, write: false, delete: false },
+      attendance: { read: false, write: false },
+      overtime: { read: false, write: false },
+      tips: { read: false, write: false },
+      gratificaciones: { read: false, write: false, delete: false },
+      accounts: { read: false, write: false, edit: false },
+      categories: { read: false, write: false },
+      returns: { read: false, write: false, delete: false },
+      dashboard: { read: false },
+      private_rooms: { read: false, write: false }
     };
 
     const actionMap: Record<string, string> = {
@@ -173,23 +235,26 @@ export async function loginUser(
   try {
     let user: any = null;
 
-  if (creds.qr_token) {
-    const users = await query<any[]>(
-      `SELECT u.*, r.nombre as rol_nombre FROM usuarios u LEFT JOIN roles r ON u.rol_id = r.id_rol WHERE u.qr_token = ? AND u.estado = 1`,
-      [creds.qr_token]
-    );
-    if (users.length === 0) throw new ValidationError('Código QR no válido o expirado');
-    user = users[0];
-    const nextQR = crypto.randomBytes(16).toString('hex');
-    await query('UPDATE usuarios SET qr_token = ? WHERE id_usuario = ?', [nextQR, user.id_usuario]);
-    user.qr_token = nextQR;
-  } else if (creds.email && creds.password) {
-    const normalizedIdentifier = String(creds.email).trim();
-    const nickIdentifier = normalizedIdentifier.includes('@')
-      ? normalizedIdentifier.split('@')[0]
-      : normalizedIdentifier;
-    const users = await query<any[]>(
-      `SELECT u.*, r.nombre as rol_nombre
+    if (creds.qr_token) {
+      const users = await query<any[]>(
+        `SELECT u.*, r.nombre as rol_nombre FROM usuarios u LEFT JOIN roles r ON u.rol_id = r.id_rol WHERE u.qr_token = ? AND u.estado = 1`,
+        [creds.qr_token]
+      );
+      if (users.length === 0) throw new ValidationError('Código QR no válido o expirado');
+      user = users[0];
+      const nextQR = crypto.randomBytes(16).toString('hex');
+      await query('UPDATE usuarios SET qr_token = ? WHERE id_usuario = ?', [
+        nextQR,
+        user.id_usuario
+      ]);
+      user.qr_token = nextQR;
+    } else if (creds.email && creds.password) {
+      const normalizedIdentifier = String(creds.email).trim();
+      const nickIdentifier = normalizedIdentifier.includes('@')
+        ? normalizedIdentifier.split('@')[0]
+        : normalizedIdentifier;
+      const users = await query<any[]>(
+        `SELECT u.*, r.nombre as rol_nombre
        FROM usuarios u
        LEFT JOIN roles r ON u.rol_id = r.id_rol
        WHERE u.estado = 1
@@ -198,94 +263,115 @@ export async function loginUser(
            OR LOWER(u.nick) = LOWER(?)
          )
        LIMIT 1`,
-      [normalizedIdentifier, nickIdentifier]
-    );
-    if (users.length === 0) throw new ValidationError('Credenciales inválidas');
-    user = users[0];
-    const isMatch = await argon2.verify(user.password, creds.password);
-    if (!isMatch) throw new ValidationError('Contraseña incorrecta');
-  } else {
-    throw new ValidationError('Proporcione QR o credenciales');
-  }
-
-  const { hora, totalMinutos, dateString, timeString } = getSystemDateTime();
-  const rol = user.rol_nombre?.toLowerCase() || '';
-  const isCajeroRole = rol === 'cajero' || rol === 'cajera';
-  const needsCode =
-    ROLES_CON_CODIGO.includes(rol) && totalMinutos >= SHIFT_START && totalMinutos <= SHIFT_END;
-  const hasAsis =
-    (
-      await query<any[]>(
-        'SELECT id_asistencia FROM asistencias WHERE usuario_id = ? AND fecha = ?',
-        [user.id_usuario, dateString]
-      )
-    ).length > 0;
-
-  if (needsCode && !hasAsis && !creds.qr_token && !isCajeroRole) {
-    if (!creds.codigo)
-      return {
-        requiereCodigo: true,
-        user: { id: user.id_usuario, email: user.email, role: user.rol_nombre }
-      };
-    const valid = await query<any[]>('SELECT codigo FROM codigos WHERE codigo = ?', [creds.codigo]);
-    if (valid.length === 0) throw new ValidationError('Código de verificación incorrecto');
-  }
-
-  const tokenPromise = generateToken({
-    id: user.id_usuario,
-    username: user.username || user.nombre,
-    name: user.nombre,
-    lastName: user.apellido,
-    nick: user.nick,
-    email: user.email,
-    role: user.rol_nombre
-  });
-
-  // Optimización: registrarLogin fire-and-forget (no bloqueante, tiene try/catch)
-  registrarLogin(user.id_usuario, user.rol_nombre).catch(() => {});
-
-  const usedQrOrCodigo = !!(creds.qr_token || creds.codigo);
-  const marksAsis = (isCajeroRole && needsCode) || (needsCode && usedQrOrCodigo);
-  let asistenciaRegistrada = false;
-  if (marksAsis && !hasAsis) {
-    await query(
-      'INSERT INTO asistencias (id_asistencia, usuario_id, fecha, hora, estado) VALUES (?, ?, ?, ?, 1)',
-      [generateUUID(), user.id_usuario, dateString, timeString]
-    );
-    await query('UPDATE logins SET en_local = 1 WHERE usuario_id = ? AND estado = 1', [
-      user.id_usuario
-    ]);
-    if (creds.codigo) {
-      const { regenerateAttendanceCode } = await import('@/lib/business/codigoService');
-      await regenerateAttendanceCode();
+        [normalizedIdentifier, nickIdentifier]
+      );
+      if (users.length === 0) {
+        // 🔒 Alerta de seguridad: intento de login con usuario inexistente
+        if (ip) {
+          SecurityAlertService.checkFailedLogin(normalizedIdentifier, ip).catch(() => {});
+        }
+        throw new ValidationError('Credenciales inválidas');
+      }
+      user = users[0];
+      const isMatch = await argon2.verify(user.password, creds.password);
+      if (!isMatch) {
+        // 🔒 Alerta de seguridad: contraseña incorrecta
+        const userIdentifier = user.email || user.nick || user.id_usuario;
+        if (ip && !creds.qr_token) {
+          const { blocked } = await SecurityAlertService.checkFailedLogin(userIdentifier, ip);
+          if (blocked) {
+            throw new ValidationError(
+              'Cuenta bloqueada temporalmente por múltiples intentos fallidos. Intenta de nuevo más tarde.'
+            );
+          }
+        }
+        throw new ValidationError('Contraseña incorrecta');
+      }
+    } else {
+      throw new ValidationError('Proporcione QR o credenciales');
     }
-    asistenciaRegistrada = true;
-  } else if (usedQrOrCodigo && !marksAsis) {
-    await query('UPDATE logins SET en_local = 1 WHERE usuario_id = ? AND estado = 1', [
-      user.id_usuario
-    ]);
-  }
 
-  // Optimización: await del tokenPromise + mapAuthenticatedUser en paralelo
-  const [resolvedToken, mappedUser] = await Promise.all([
-    tokenPromise,
-    mapAuthenticatedUser(user)
-  ]);
+    const { hora, totalMinutos, dateString, timeString } = getSystemDateTime();
+    const rol = user.rol_nombre?.toLowerCase() || '';
+    const isCajeroRole = rol === 'cajero' || rol === 'cajera';
+    const needsCode =
+      ROLES_CON_CODIGO.includes(rol) && totalMinutos >= SHIFT_START && totalMinutos <= SHIFT_END;
+    const hasAsis =
+      (
+        await query<any[]>(
+          'SELECT id_asistencia FROM asistencias WHERE usuario_id = ? AND fecha = ?',
+          [user.id_usuario, dateString]
+        )
+      ).length > 0;
 
-  // S7: Forzar cambio de contraseña en primer login
-  const forcePasswordChange = user.force_password_change === 1 || user.force_password_change === '1';
-
-  return {
-    success: true,
-    token: resolvedToken,
-    user: { ...mappedUser, forcePasswordChange },
-    asistenciaRegistrada
-  };
-    } catch (err) {
-      logger.error('[AuthQueries] Error en loginUser:', { err });
-      if (err instanceof ValidationError) throw err;
-      throw new DatabaseError('Error al iniciar sesión', err);
+    if (needsCode && !hasAsis && !creds.qr_token && !isCajeroRole) {
+      if (!creds.codigo)
+        return {
+          requiereCodigo: true,
+          user: { id: user.id_usuario, email: user.email, role: user.rol_nombre }
+        };
+      const valid = await query<any[]>('SELECT codigo FROM codigos WHERE codigo = ?', [
+        creds.codigo
+      ]);
+      if (valid.length === 0) throw new ValidationError('Código de verificación incorrecto');
     }
+
+    const tokenPromise = generateToken({
+      id: user.id_usuario,
+      username: user.username || user.nombre,
+      name: user.nombre,
+      lastName: user.apellido,
+      nick: user.nick,
+      email: user.email,
+      role: user.rol_nombre
+    });
+
+    // Optimización: registrarLogin fire-and-forget (no bloqueante, tiene try/catch)
+    registrarLogin(user.id_usuario, user.rol_nombre).catch(() => {});
+
+    const usedQrOrCodigo = !!(creds.qr_token || creds.codigo);
+    const marksAsis = (isCajeroRole && needsCode) || (needsCode && usedQrOrCodigo);
+    let asistenciaRegistrada = false;
+    if (marksAsis && !hasAsis) {
+      await query(
+        'INSERT INTO asistencias (id_asistencia, usuario_id, fecha, hora, estado) VALUES (?, ?, ?, ?, 1)',
+        [generateUUID(), user.id_usuario, dateString, timeString]
+      );
+      await query('UPDATE logins SET en_local = 1 WHERE usuario_id = ? AND estado = 1', [
+        user.id_usuario
+      ]);
+      if (creds.codigo) {
+        const { regenerateAttendanceCode } = await import('@/lib/business/codigoService');
+        await regenerateAttendanceCode();
+      }
+      asistenciaRegistrada = true;
+    } else if (usedQrOrCodigo && !marksAsis) {
+      await query('UPDATE logins SET en_local = 1 WHERE usuario_id = ? AND estado = 1', [
+        user.id_usuario
+      ]);
+    }
+
+    // Optimización: await del tokenPromise + mapAuthenticatedUser en paralelo
+    const [resolvedToken, mappedUser] = await Promise.all([
+      tokenPromise,
+      mapAuthenticatedUser(user)
+    ]);
+
+    // S7: Forzar cambio de contraseña en primer login
+    const forcePasswordChange =
+      user.force_password_change === 1 || user.force_password_change === '1';
+
+    return {
+      success: true,
+      token: resolvedToken,
+      user: { ...mappedUser, forcePasswordChange },
+      asistenciaRegistrada
+    };
+  } catch (err) {
+    logger.error('[AuthQueries] Error en loginUser:', { err });
+    if (err instanceof ValidationError) throw err;
+    throw new DatabaseError('Error al iniciar sesión', err);
+  }
 }
 
 export async function logoutUser(userId: string) {
@@ -300,39 +386,38 @@ export async function logoutUser(userId: string) {
 export async function resetPassword(run: string) {
   try {
     const normalizedRun = run.trim();
-  const users = await query<any[]>(
-    `SELECT id_usuario, run, email, nick, nombre, apellido
+    const users = await query<any[]>(
+      `SELECT id_usuario, run, email, nick, nombre, apellido
      FROM usuarios
      WHERE estado = 1
      AND run = ?
      LIMIT 1`,
-    [normalizedRun]
-  );
+      [normalizedRun]
+    );
 
-  if (users.length === 0) throw new ValidationError('Usuario no encontrado');
-  const user = users[0];
-  if (!user.run || String(user.run).trim().length === 0) {
-    throw new ValidationError('El usuario no tiene RUN registrado');
-  }
-
-  const hashedPassword = await argon2.hash(String(user.run).trim());
-  await query('UPDATE usuarios SET password = ?, force_password_change = 1, fecha_mod = ? WHERE id_usuario = ?', [
-    hashedPassword,
-    getNowInBusinessTimezone(),
-    user.id_usuario
-  ]);
-
-  return {
-    success: true,
-    message: 'La contraseña fue reseteada correctamente',
-    user: {
-      id: user.id_usuario,
-      name: user.nombre,
-      lastName: user.apellido,
-      email: user.email,
-      nick: user.nick
+    if (users.length === 0) throw new ValidationError('Usuario no encontrado');
+    const user = users[0];
+    if (!user.run || String(user.run).trim().length === 0) {
+      throw new ValidationError('El usuario no tiene RUN registrado');
     }
-  };
+
+    const hashedPassword = await argon2.hash(String(user.run).trim());
+    await query(
+      'UPDATE usuarios SET password = ?, force_password_change = 1, fecha_mod = ? WHERE id_usuario = ?',
+      [hashedPassword, getNowInBusinessTimezone(), user.id_usuario]
+    );
+
+    return {
+      success: true,
+      message: 'La contraseña fue reseteada correctamente',
+      user: {
+        id: user.id_usuario,
+        name: user.nombre,
+        lastName: user.apellido,
+        email: user.email,
+        nick: user.nick
+      }
+    };
   } catch (err) {
     logger.error('[AuthQueries] Error en resetPassword:', { run, err });
     if (err instanceof ValidationError) throw err;
@@ -388,7 +473,7 @@ export async function getAuthLogs(filters: {
 export async function checkUsersExist() {
   try {
     const users = await query<any[]>('SELECT COUNT(*) as count FROM usuarios');
-  return Number(users[0].count) > 0;
+    return Number(users[0].count) > 0;
   } catch (err) {
     logger.error('[AuthQueries] Error en checkUsersExist:', { err });
     throw new DatabaseError('Error al verificar existencia de usuarios', err);
@@ -404,37 +489,39 @@ export async function registerFirstUser(data: {
 }) {
   try {
     const hasUsers = await checkUsersExist();
-  if (hasUsers) throw new ConflictError('Ya existen usuarios registrados');
+    if (hasUsers) throw new ConflictError('Ya existen usuarios registrados');
 
-  if (!data.password || data.password.trim().length < 8) {
-    throw new ValidationError('La contraseña inicial debe tener al menos 8 caracteres');
-  }
+    if (!data.password || data.password.trim().length < 8) {
+      throw new ValidationError('La contraseña inicial debe tener al menos 8 caracteres');
+    }
 
-  const hashedPassword = await argon2.hash(data.password.trim());
-  const id = generateUUID();
+    const hashedPassword = await argon2.hash(data.password.trim());
+    const id = generateUUID();
 
-  let adminRoleId = '';
-  const roles = await query<any[]>('SELECT id_rol FROM roles WHERE nombre = ?', ['Administrador']);
-  if (roles.length > 0) {
-    adminRoleId = roles[0].id_rol;
-  } else {
-    adminRoleId = generateUUID();
-    await query('INSERT INTO roles (id_rol, nombre, descripcion, estado) VALUES (?, ?, ?, 1)', [
-      adminRoleId,
-      'Administrador',
-      'Admin con todos los permisos'
+    let adminRoleId = '';
+    const roles = await query<any[]>('SELECT id_rol FROM roles WHERE nombre = ?', [
+      'Administrador'
     ]);
-  }
+    if (roles.length > 0) {
+      adminRoleId = roles[0].id_rol;
+    } else {
+      adminRoleId = generateUUID();
+      await query('INSERT INTO roles (id_rol, nombre, descripcion, estado) VALUES (?, ?, ?, 1)', [
+        adminRoleId,
+        'Administrador',
+        'Admin con todos los permisos'
+      ]);
+    }
 
-  const now = getNowInBusinessTimezone();
-  await query(
-    `INSERT INTO usuarios (id_usuario, run, nombre, apellido, email, password, rol_id, estado, fecha_crea, estado_servicio)
+    const now = getNowInBusinessTimezone();
+    await query(
+      `INSERT INTO usuarios (id_usuario, run, nombre, apellido, email, password, rol_id, estado, fecha_crea, estado_servicio)
      VALUES (?, ?, ?, ?, ?, ?, ?, 1, ?, 0)`,
-    [id, data.ci, data.nombre, data.apellido, data.email, hashedPassword, adminRoleId, now]
-  );
+      [id, data.ci, data.nombre, data.apellido, data.email, hashedPassword, adminRoleId, now]
+    );
 
-  const res = await query<any[]>('SELECT * FROM usuarios WHERE id_usuario = ?', [id]);
-  return { success: true, data: res[0] };
+    const res = await query<any[]>('SELECT * FROM usuarios WHERE id_usuario = ?', [id]);
+    return { success: true, data: res[0] };
   } catch (err) {
     logger.error('[AuthQueries] Error en registerFirstUser:', { err });
     if (err instanceof ConflictError || err instanceof ValidationError) throw err;
@@ -445,26 +532,26 @@ export async function registerFirstUser(data: {
 export async function checkSession(userId: string) {
   try {
     const users = await query<any[]>(
-    `SELECT u.*, r.nombre as rol_nombre FROM usuarios u LEFT JOIN roles r ON u.rol_id = r.id_rol WHERE u.id_usuario = ?`,
-    [userId]
-  );
-  if (users.length === 0) return { success: false, message: 'Usuario no encontrado' };
-  const user = users[0];
+      `SELECT u.*, r.nombre as rol_nombre FROM usuarios u LEFT JOIN roles r ON u.rol_id = r.id_rol WHERE u.id_usuario = ?`,
+      [userId]
+    );
+    if (users.length === 0) return { success: false, message: 'Usuario no encontrado' };
+    const user = users[0];
 
-  const { totalMinutos, dateString } = getSystemDateTime();
-  const rol = user.rol_nombre?.toLowerCase() || '';
-  const needsCode =
-    ROLES_CON_CODIGO.includes(rol) && totalMinutos >= SHIFT_START && totalMinutos <= SHIFT_END;
-  const hasAsis =
-    (
-      await query<any[]>(
-        'SELECT id_asistencia FROM asistencias WHERE usuario_id = ? AND fecha = ?',
-        [user.id_usuario, dateString]
-      )
-    ).length > 0;
+    const { totalMinutos, dateString } = getSystemDateTime();
+    const rol = user.rol_nombre?.toLowerCase() || '';
+    const needsCode =
+      ROLES_CON_CODIGO.includes(rol) && totalMinutos >= SHIFT_START && totalMinutos <= SHIFT_END;
+    const hasAsis =
+      (
+        await query<any[]>(
+          'SELECT id_asistencia FROM asistencias WHERE usuario_id = ? AND fecha = ?',
+          [user.id_usuario, dateString]
+        )
+      ).length > 0;
 
-  if (needsCode && !hasAsis) return { success: true, debeDesconectar: true };
-  return { success: true, debeDesconectar: false };
+    if (needsCode && !hasAsis) return { success: true, debeDesconectar: true };
+    return { success: true, debeDesconectar: false };
   } catch (err) {
     logger.error('[AuthQueries] Error en checkSession:', { userId, err });
     throw new DatabaseError(`Error al verificar sesión del usuario ${userId}`, err);
@@ -473,11 +560,11 @@ export async function checkSession(userId: string) {
 
 export async function clearForcePasswordChange(userId: string) {
   try {
-    await query('UPDATE usuarios SET force_password_change = 0, fecha_mod = ? WHERE id_usuario = ?', [
-    getNowInBusinessTimezone(),
-    userId
-  ]);
-  return { success: true };
+    await query(
+      'UPDATE usuarios SET force_password_change = 0, fecha_mod = ? WHERE id_usuario = ?',
+      [getNowInBusinessTimezone(), userId]
+    );
+    return { success: true };
   } catch (err) {
     logger.error('[AuthQueries] Error en clearForcePasswordChange:', { userId, err });
     throw new DatabaseError(`Error al limpiar force_password_change para usuario ${userId}`, err);

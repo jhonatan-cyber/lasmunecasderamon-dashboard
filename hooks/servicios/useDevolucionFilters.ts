@@ -1,3 +1,5 @@
+'use client';
+
 import { useState } from 'react';
 
 export interface DevolucionFilters {
@@ -15,7 +17,10 @@ export const useDevolucionFilters = () => {
     rowsPerPage: 10
   });
 
-  const updateFilter = (key: keyof DevolucionFilters, value: DevolucionFilters[keyof DevolucionFilters]) => {
+  const updateFilter = (
+    key: keyof DevolucionFilters,
+    value: DevolucionFilters[keyof DevolucionFilters]
+  ) => {
     setFilters(prev => ({
       ...prev,
       [key]: value,
@@ -33,4 +38,4 @@ export const useDevolucionFilters = () => {
   };
 
   return { filters, updateFilter, clearFilters };
-}; 
+};

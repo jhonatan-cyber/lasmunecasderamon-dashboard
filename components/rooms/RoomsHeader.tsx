@@ -20,8 +20,8 @@ export function RoomsHeader({
   return (
     <div className='flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 sm:gap-6'>
       <h1 className='text-xl sm:text-2xl lg:text-3xl font-bold'>Habitaciones</h1>
-      <div className='flex flex-col sm:flex-row gap-2 items-center'>
-        <div className='flex gap-2 items-center'>
+      <div className='flex flex-col sm:flex-row gap-2 items-center w-full sm:w-auto'>
+        <div className='hidden sm:flex gap-2 items-center'>
           <Button
             variant={showTableView ? 'default' : 'outline-solid'}
             size='sm'

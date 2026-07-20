@@ -1,4 +1,5 @@
- 
+'use client';
+
 import { useCallback } from 'react';
 import {
   Cuenta,
@@ -10,7 +11,14 @@ import { useGenericFetch } from '../shared/useGenericFetch';
 import { useGenericMutations } from '../shared/useGenericMutations';
 
 export const useCuentas = () => {
-  const { data: cuentas, isLoading, error, refetch } = useGenericFetch<CuentaWithDetails>('/api/cuentas');
+  const {
+    data: cuentas,
+    isLoading,
+    error,
+    refetch
+  } = useGenericFetch<CuentaWithDetails>('/api/cuentas', {
+    transform: result => result?.data || []
+  });
 
   const { create, update, remove } = useGenericMutations<CuentaWithDetails>('/api/cuentas', {
     onSuccess: () => {
@@ -19,17 +27,26 @@ export const useCuentas = () => {
     showToasts: false
   });
 
-  const createCuenta = useCallback(async (cuentaData: CreateCuentaRequest) => {
-    return await create(cuentaData as any);
-  }, [create]);
+  const createCuenta = useCallback(
+    async (cuentaData: CreateCuentaRequest) => {
+      return await create(cuentaData as any);
+    },
+    [create]
+  );
 
-  const updateCuenta = useCallback(async (cuentaData: UpdateCuentaRequest) => {
-    return await update(cuentaData as any);
-  }, [update]);
+  const updateCuenta = useCallback(
+    async (cuentaData: UpdateCuentaRequest) => {
+      return await update(cuentaData as any);
+    },
+    [update]
+  );
 
-  const deleteCuenta = useCallback(async (id: string | number) => {
-    return await remove(id);
-  }, [remove]);
+  const deleteCuenta = useCallback(
+    async (id: string | number) => {
+      return await remove(id);
+    },
+    [remove]
+  );
 
   const getCuentaById = useCallback(async (id: string | number) => {
     try {
@@ -58,4 +75,3 @@ export const useCuentas = () => {
     getCuentaById
   };
 };
-

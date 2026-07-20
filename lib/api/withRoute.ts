@@ -71,9 +71,61 @@ export function withRoute(
     typeof configOrHandler === 'function' ? configOrHandler : maybeHandler!
   ) as RouteHandler;
 
+  // ponytail: max request body size — 10 MB
+  const MAX_BODY_SIZE = 10 * 1024 * 1024;
+
+  function sanitizeValue(value: unknown): unknown {
+    if (typeof value === 'string') return value.replace(/[<>]/g, '');
+    if (Array.isArray(value)) return value.map(sanitizeValue);
+    if (value && typeof value === 'object') {
+      const sanitized: Record<string, unknown> = {};
+      for (const [k, v] of Object.entries(value)) sanitized[k] = sanitizeValue(v);
+      return sanitized;
+    }
+    return value;
+  }
+
   return async (request: Request, context: { params: any }): Promise<Response> => {
     try {
       let user: AuthenticatedUser | undefined;
+
+      // ─── Input validation (all routes, not just auth'd) ────────────
+      if (['POST', 'PUT', 'PATCH'].includes(request.method)) {
+        const contentType = request.headers.get('content-type') || '';
+        if (contentType && !contentType.includes('application/json')) {
+          return NextResponse.json(
+            {
+              success: false,
+              message: 'Content-Type debe ser application/json',
+              code: 'INVALID_CONTENT_TYPE'
+            },
+            { status: 400 }
+          );
+        }
+        const contentLength = parseInt(request.headers.get('content-length') || '0', 10);
+        if (contentLength > MAX_BODY_SIZE) {
+          return NextResponse.json(
+            {
+              success: false,
+              message: 'El cuerpo de la solicitud es demasiado grande',
+              code: 'PAYLOAD_TOO_LARGE'
+            },
+            { status: 413 }
+          );
+        }
+        // ponytail: URL query param sanitization (XSS)
+        const url = new URL(request.url);
+        for (const [key, value] of url.searchParams.entries()) {
+          if (value.includes('<') || value.includes('>')) {
+            url.searchParams.set(key, value.replace(/[<>]/g, ''));
+          }
+        }
+        if (url.searchParams.toString() !== new URL(request.url).searchParams.toString()) {
+          // Reconstruct request with sanitized URL
+          const sanitizedUrl = url.toString();
+          request = new Request(sanitizedUrl, request);
+        }
+      }
 
       // Auth check
       if (config.auth) {

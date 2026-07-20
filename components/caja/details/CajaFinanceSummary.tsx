@@ -39,9 +39,9 @@ export function CajaFinanceSummary({
           Resumen Financiero Consolidado
         </h5>
 
-        <div className='grid grid-cols-1 md:grid-cols-4 gap-6 animate-in fade-in slide-in-from-bottom-4 duration-500'>
+        <div className='grid grid-cols-2 md:grid-cols-4 gap-6 animate-in fade-in slide-in-from-bottom-4 duration-500'>
           {}
-          <div className='md:col-span-4 bg-white dark:bg-gray-800 p-8 rounded-[2.5rem] border border-gray-200 dark:border-gray-700 shadow-xs flex items-center justify-between group overflow-hidden relative mb-4'>
+          <div className='col-span-2 md:col-span-4 bg-white dark:bg-gray-800 p-8 rounded-[2.5rem] border border-gray-200 dark:border-gray-700 shadow-xs flex items-center justify-between group overflow-hidden relative mb-4'>
             <div className='absolute top-0 right-0 p-4 opacity-5 group-hover:scale-110 transition-transform'>
               <Calendar className='w-32 h-32 -mr-8 -mt-8' />
             </div>
@@ -142,7 +142,7 @@ export function CajaFinanceSummary({
         </div>
 
         {}
-        <div className='grid grid-cols-1 md:grid-cols-3 gap-8 mt-16 pt-12 border-t border-gray-100 dark:border-gray-800'>
+        <div className='grid grid-cols-2 md:grid-cols-3 gap-8 mt-16 pt-12 border-t border-gray-100 dark:border-gray-800'>
           <FinancialCard
             title='Total Propinas'
             mainValue={formatCurrencyNoDecimals(totalPropinas)}
@@ -195,19 +195,21 @@ export function CajaFinanceSummary({
             ]}
           />
 
-          <FinancialCard
-            title='Total Egresos'
-            mainValue={formatCurrencyNoDecimals(totalEgresos)}
-            gradientFrom='from-rose-500/20'
-            gradientTo='to-red-500/20'
-            textColor='text-rose-600 dark:text-rose-400'
-            mainColor='text-rose-700 dark:text-rose-300'
-            breakdown={[
-              { label: 'Devoluciones', value: formatCurrencyNoDecimals(caja.devoluciones) },
-              { label: 'Anticipos', value: formatCurrencyNoDecimals(caja.anticipo || 0) },
-              { label: 'Retiros', value: formatCurrencyNoDecimals(retirosMonto), isSpecial: true }
-            ]}
-          />
+          <div className='col-span-2 md:col-span-1'>
+            <FinancialCard
+              title='Total Egresos'
+              mainValue={formatCurrencyNoDecimals(totalEgresos)}
+              gradientFrom='from-rose-500/20'
+              gradientTo='to-red-500/20'
+              textColor='text-rose-600 dark:text-rose-400'
+              mainColor='text-rose-700 dark:text-rose-300'
+              breakdown={[
+                { label: 'Devoluciones', value: formatCurrencyNoDecimals(caja.devoluciones) },
+                { label: 'Anticipos', value: formatCurrencyNoDecimals(caja.anticipo || 0) },
+                { label: 'Retiros', value: formatCurrencyNoDecimals(retirosMonto), isSpecial: true }
+              ]}
+            />
+          </div>
         </div>
 
         {}

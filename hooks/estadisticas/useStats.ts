@@ -1,3 +1,5 @@
+'use client';
+
 /* eslint-disable */
 import { useMemo } from 'react';
 import { useGenericFetch } from '../shared/useGenericFetch';
@@ -47,7 +49,7 @@ export function useStats<T = any>({
     }
   });
 
-  const data = (Array.isArray(rawData) && rawData.length > 0) ? rawData[0] : (rawData as any);
+  const data = Array.isArray(rawData) && rawData.length > 0 ? rawData[0] : (rawData as any);
 
   return {
     data,
@@ -58,5 +60,3 @@ export function useStats<T = any>({
     }
   };
 }
-
-

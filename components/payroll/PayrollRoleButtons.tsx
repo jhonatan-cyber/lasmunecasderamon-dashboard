@@ -1,6 +1,6 @@
-"use client";
+'use client';
 
-import { Button } from "@/components/ui/button";
+import { Button } from '@/components/ui/button';
 import { RoleFilter } from '@/hooks/personal';
 
 interface Props {
@@ -10,42 +10,41 @@ interface Props {
 
 export default function PayrollRoleButtons({ roleFilter, setRoleFilter }: Props) {
   return (
-    <div className="flex flex-wrap items-center justify-center gap-2">
-      <Button
-        size="sm"
-        variant={roleFilter === 'all' ? 'default' : 'outline-solid'}
-        className="rounded-full"
-        onClick={() => setRoleFilter('all')}
-      >
-        Todos
-      </Button>
-      <Button
-        size="sm"
-        variant={roleFilter === 'anfitriona' ? 'default' : 'outline-solid'}
-        className="rounded-full"
-        onClick={() => setRoleFilter('anfitriona')}
-      >
-        Anfitrionas
-      </Button>
-      <Button
-        size="sm"
-        variant={roleFilter === 'garzon' ? 'default' : 'outline-solid'}
-        className="rounded-full"
-        onClick={() => setRoleFilter('garzon')}
-      >
-        Garzones
-      </Button>
-      <Button
-        size="sm"
-        variant={roleFilter === 'cajero' ? 'default' : 'outline-solid'}
-        className="rounded-full"
-        onClick={() => setRoleFilter('cajero')}
-      >
-        Cajeros
-      </Button>
+    <div className='overflow-x-auto'>
+      <div className='flex items-center gap-2 w-max mx-auto px-1 py-0.5'>
+        <Button
+          size='sm'
+          variant={roleFilter === 'all' ? 'default' : 'outline-solid'}
+          className='rounded-full shrink-0'
+          onClick={() => setRoleFilter('all')}
+        >
+          Todos
+        </Button>
+        <Button
+          size='sm'
+          variant={roleFilter === 'anfitriona' ? 'default' : 'outline-solid'}
+          className='rounded-full shrink-0'
+          onClick={() => setRoleFilter('anfitriona')}
+        >
+          Anfitrionas
+        </Button>
+        <Button
+          size='sm'
+          variant={roleFilter === 'garzon' ? 'default' : 'outline-solid'}
+          className='rounded-full shrink-0'
+          onClick={() => setRoleFilter('garzon')}
+        >
+          Garzones
+        </Button>
+        <Button
+          size='sm'
+          variant={roleFilter === 'cajero' ? 'default' : 'outline-solid'}
+          className='rounded-full shrink-0'
+          onClick={() => setRoleFilter('cajero')}
+        >
+          Cajeros
+        </Button>
+      </div>
     </div>
   );
 }
-
-
-

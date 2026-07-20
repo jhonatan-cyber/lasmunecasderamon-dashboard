@@ -1,3 +1,5 @@
+'use client';
+
 import { useState, useCallback, useRef, useEffect } from 'react';
 import { CurrentUser } from './useAuthSession';
 import logger from '@/lib/utils/logger';
@@ -97,7 +99,9 @@ export function useAuthPermissions({
   const pendingPermissionsRefreshRef = useRef(false);
   const isMountedRef = useRef(true);
   const onSessionExpiredRef = useRef(onSessionExpired);
-  onSessionExpiredRef.current = onSessionExpired;
+  useEffect(() => {
+    onSessionExpiredRef.current = onSessionExpired;
+  }, [onSessionExpired]);
 
   const clearPermissions = useCallback(() => {
     setUserPermissions([]);
@@ -106,6 +110,7 @@ export function useAuthPermissions({
   }, []);
 
   const fetchPermissions = useCallback(
+    // eslint-disable-next-line react-hooks/preserve-manual-memoization
     async (forceRefresh = false) => {
       const user = getUser();
       if (!isMountedRef.current || !user?.id || user.role?.toLowerCase() === 'administrador') {

@@ -56,22 +56,27 @@ export const formatErrorResponse = (error: unknown) => {
   }
 
   if (error instanceof Error) {
+    // ponytail: generic errors leak internal details — log full error server-side,
+    // return safe message to client
+    if (process.env.NODE_ENV === 'development') {
+      console.error('[Error]', error.message, error.stack);
+    }
     return {
       success: false,
-      message: error.message,
+      message: 'Error interno del servidor',
       error: {
         code: 'UNKNOWN_ERROR',
-        message: error.message
+        message: 'Error interno del servidor'
       }
     };
   }
 
   return {
     success: false,
-    message: 'Error desconocido',
+    message: 'Error interno del servidor',
     error: {
       code: 'UNKNOWN_ERROR',
-      message: 'Error desconocido'
+      message: 'Error interno del servidor'
     }
   };
 };

@@ -1,3 +1,5 @@
+'use client';
+
 import { useState, useEffect } from 'react';
 import { Room } from '@/types/room';
 
@@ -34,7 +36,7 @@ export function useRoomForm({ open, initialValues, onSubmit }: UseRoomFormProps)
         time: initialValues.time ? String(initialValues.time) : '',
         comision_anfitriona: initialValues.comision_anfitriona
           ? formatNumberWithSeparators(String(initialValues.comision_anfitriona))
-          : '',
+          : ''
       });
     } else if (open) {
       setForm(initialFormState);
@@ -45,9 +47,14 @@ export function useRoomForm({ open, initialValues, onSubmit }: UseRoomFormProps)
   const validate = () => {
     const newErrors: { [key: string]: string } = {};
     if (!form.name.trim()) newErrors.name = 'El nombre es requerido';
-    if (!form.price.trim() || isNaN(Number(form.price.replace(/\./g, '')))) newErrors.price = 'Precio válido requerido';
+    if (!form.price.trim() || isNaN(Number(form.price.replace(/\./g, ''))))
+      newErrors.price = 'Precio válido requerido';
     if (!form.time.trim() || isNaN(Number(form.time))) newErrors.time = 'Tiempo válido requerido';
-    if (form.comision_anfitriona && (isNaN(Number(form.comision_anfitriona.replace(/\./g, ''))) || Number(form.comision_anfitriona.replace(/\./g, '')) < 0)) {
+    if (
+      form.comision_anfitriona &&
+      (isNaN(Number(form.comision_anfitriona.replace(/\./g, ''))) ||
+        Number(form.comision_anfitriona.replace(/\./g, '')) < 0)
+    ) {
       newErrors.comision_anfitriona = 'La comisión debe ser un monto válido mayor o igual a 0';
     }
     setErrors(newErrors);
@@ -73,7 +80,10 @@ export function useRoomForm({ open, initialValues, onSubmit }: UseRoomFormProps)
 
   const handleBlur = (e: React.FocusEvent<HTMLInputElement>) => {
     const { name } = e.target;
-    if (['price', 'time', 'comision_anfitriona'].includes(name) && !form[name as keyof RoomFormValues]) {
+    if (
+      ['price', 'time', 'comision_anfitriona'].includes(name) &&
+      !form[name as keyof RoomFormValues]
+    ) {
       const initialValue = initialValues ? (initialValues as any)[name] : '';
       setForm(prev => ({
         ...prev,
@@ -81,7 +91,7 @@ export function useRoomForm({ open, initialValues, onSubmit }: UseRoomFormProps)
           ? name !== 'time'
             ? formatNumberWithSeparators(String(initialValue))
             : String(initialValue)
-          : '',
+          : ''
       }));
     }
   };

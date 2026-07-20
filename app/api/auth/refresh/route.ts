@@ -37,7 +37,11 @@ export const POST = loginLimiterApp(async (request: NextRequest) => {
       cookieStore.delete('token');
       cookieStore.delete('refresh_token');
       return NextResponse.json(
-        { success: false, message: 'Refresh token inválido o expirado', code: 'INVALID_REFRESH_TOKEN' },
+        {
+          success: false,
+          message: 'Refresh token inválido o expirado',
+          code: 'INVALID_REFRESH_TOKEN'
+        },
         { status: 401 }
       );
     }
@@ -45,7 +49,11 @@ export const POST = loginLimiterApp(async (request: NextRequest) => {
     // Generar nuevos tokens (rotation)
     if (!payload.id || !payload.role) {
       return NextResponse.json(
-        { success: false, message: 'Refresh token inválido: datos incompletos', code: 'INVALID_REFRESH_TOKEN' },
+        {
+          success: false,
+          message: 'Refresh token inválido: datos incompletos',
+          code: 'INVALID_REFRESH_TOKEN'
+        },
         { status: 401 }
       );
     }
@@ -70,7 +78,7 @@ export const POST = loginLimiterApp(async (request: NextRequest) => {
     cookieStore.set('token', newAccessToken, {
       httpOnly: true,
       secure: isProduction,
-      sameSite: 'lax',
+      sameSite: 'strict',
       path: '/',
       maxAge: 15 * 60 // 15 minutos
     });
@@ -89,7 +97,7 @@ export const POST = loginLimiterApp(async (request: NextRequest) => {
     cookieStore.set('refresh_token', newRefreshToken, {
       httpOnly: true,
       secure: isProduction,
-      sameSite: 'lax',
+      sameSite: 'strict',
       path: '/',
       maxAge: 7 * 24 * 60 * 60 // 7 días
     });
