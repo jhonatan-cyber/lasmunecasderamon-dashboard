@@ -1,4 +1,5 @@
- 
+'use client';
+
 import { useState } from 'react';
 import { VentaWithDetails } from '@/types/venta';
 import { showSuccessToast, showErrorToast } from '@/lib/utils/toastUtils';
@@ -30,13 +31,13 @@ export const useDevolucionVentasLogic = () => {
       const response = await fetch('/api/ventas/anulacion', {
         method: 'POST',
         headers: {
-          'Content-Type': 'application/json',
+          'Content-Type': 'application/json'
         },
         body: JSON.stringify({
           ventaId: selectedVenta.id,
           motivo: motivoDevolucion,
-          monto: total,
-        }),
+          monto: total
+        })
       });
 
       if (!response.ok) {
@@ -72,6 +73,6 @@ export const useDevolucionVentasLogic = () => {
     handleVerDetalles,
     handleDevolucion,
     confirmarDevolucion,
-    resetDevolucionModal,
+    resetDevolucionModal
   };
-}; 
+};

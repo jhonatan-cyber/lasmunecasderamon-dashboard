@@ -1,7 +1,6 @@
 'use client';
 
 import { useState } from 'react';
-import { Clock, CheckCircle } from 'lucide-react';
 import { useCashRegisterStatus } from '@/hooks/caja/useCashRegisterStatus';
 import { useAnticipos } from '@/hooks/personal';
 import AdvancesTable from '@/components/advances/AdvancesTable';
@@ -13,8 +12,8 @@ import { PermissionGuard } from '@/components/auth/PermissionGuard';
 import { useUserPermissions } from '@/hooks/auth/useUserPermissions';
 import { Skeleton as BoneyardSkeleton } from 'boneyard-js/react';
 import { AdvancesHeader } from '@/components/advances/AdvancesHeader';
-import { AdvancesCajaAlert } from '@/components/advances/AdvancesCajaAlert';
 import { AdvancesDialog } from '@/components/advances/AdvancesDialog';
+import { CajaStatusBanner } from '@/components/sales/CajaStatusBanner';
 
 type TabType = 'pending' | 'paid';
 
@@ -59,12 +58,6 @@ export default function AdvancesPage() {
   ).length;
 
   const handleOpenDialog = () => {
-    if (!hasOpenCaja) {
-      toast.error(
-        'No se puede crear anticipos sin caja abierta. Por favor, abre una caja primero.'
-      );
-      return;
-    }
     setAdvanceError(null);
     setOpenDialog(true);
   };
@@ -114,112 +107,110 @@ export default function AdvancesPage() {
 
   return (
     <PermissionGuard module='advances' action='view'>
-      <BoneyardSkeleton name="advances-main" loading={loading || cajaLoading}>
-      <div className='p-4 sm:p-6 lg:p-10 space-y-4 sm:space-y-6 mt-4 sm:mt-6 lg:mt-10'>
-        <AdvancesHeader
-          canCreate={canCreate}
-          hasOpenCaja={hasOpenCaja}
-          cajaLoading={cajaLoading}
-          onOpenDialog={handleOpenDialog}
-        />
+      <BoneyardSkeleton name='advances-main' loading={loading || cajaLoading}>
+        <div className='p-4 sm:p-6 lg:p-10 space-y-4 sm:space-y-6 mt-4 sm:mt-6 lg:mt-10'>
+          <CajaStatusBanner entityName='anticipos' />
 
-        <AdvancesCajaAlert cajaLoading={cajaLoading} hasOpenCaja={hasOpenCaja} />
-
-        <div className='px-4 sm:px-8'>
-          <AdvancesStatsCards advances={allAnticipos || []} />
-        </div>
-
-        <div className='px-4 sm:px-8 mt-4 sm:mt-6'>
-          <AdvancesFilters
-            searchTerm={searchTerm}
-            setSearchTerm={setSearchTerm}
-            statusFilter={statusFilter}
-            setStatusFilter={setStatusFilter}
-            sortBy={sortBy}
-            setSortBy={setSortBy}
-            sortOrder={sortOrder}
-            setSortOrder={setSortOrder}
-            pageSize={pageSize}
-            setPageSize={setPageSize}
-            onClearFilters={onClearFilters}
-            loading={loading}
-            isAdmin={isAdmin}
+          <AdvancesHeader
+            canCreate={canCreate}
+            hasOpenCaja={hasOpenCaja}
+            cajaLoading={cajaLoading}
+            onOpenDialog={handleOpenDialog}
           />
 
-          {}
-          <div className='flex justify-center gap-3 border-b pb-1 mb-4'>
-            <button
-              onClick={() => {
-                setActiveTab('pending');
-                setPage(1);
-              }}
-              className={`flex items-center gap-2 px-5 py-2 text-sm font-semibold transition-all ${
-                activeTab === 'pending'
-                  ? 'bg-amber-100 text-amber-700 rounded-full shadow-xs'
-                  : 'text-gray-500 hover:bg-gray-100 rounded-full'
-              }`}
-            >
-              <Clock className='h-4 w-4' />
-              Por Cobrar
-              <span
-                className={`ml-1.5 px-2.5 py-0.5 rounded-full text-xs font-bold ${
-                  activeTab === 'pending'
-                    ? 'bg-amber-600 text-white'
-                    : 'bg-amber-100 text-amber-800'
-                }`}
-              >
-                {pendingCount}
-              </span>
-            </button>
-            <button
-              onClick={() => {
-                setActiveTab('paid');
-                setPage(1);
-              }}
-              className={`flex items-center gap-2 px-5 py-2 text-sm font-semibold transition-all ${
-                activeTab === 'paid'
-                  ? 'bg-green-100 text-green-700 rounded-full shadow-xs'
-                  : 'text-gray-500 hover:bg-gray-100 rounded-full'
-              }`}
-            >
-              <CheckCircle className='h-4 w-4' />
-              Cobrados
-              <span
-                className={`ml-1.5 px-2.5 py-0.5 rounded-full text-xs font-bold ${
-                  activeTab === 'paid' ? 'bg-green-600 text-white' : 'bg-green-100 text-green-800'
-                }`}
-              >
-                {paidCount}
-              </span>
-            </button>
+          <div className='px-4 sm:px-8'>
+            <AdvancesStatsCards advances={allAnticipos || []} />
           </div>
 
-          <div className='overflow-x-auto'>
-            <AdvancesTable
-              advances={anticipos}
+          <div className='px-4 sm:px-8 mt-4 sm:mt-6'>
+            <AdvancesFilters
+              searchTerm={searchTerm}
+              setSearchTerm={setSearchTerm}
+              statusFilter={statusFilter}
+              setStatusFilter={setStatusFilter}
+              sortBy={sortBy}
+              setSortBy={setSortBy}
+              sortOrder={sortOrder}
+              setSortOrder={setSortOrder}
+              pageSize={pageSize}
+              setPageSize={setPageSize}
+              onClearFilters={onClearFilters}
               loading={loading}
               isAdmin={isAdmin}
-              onAction={processAnticipo}
-              activeTab={activeTab}
             />
-          </div>
 
-          {totalPages > 1 && (
-            <div className='flex justify-center mt-4 sm:mt-6'>
-              <Paginate page={page} totalPages={totalPages} setPage={setPage} />
+            {}
+            <div className='flex justify-center gap-3 border-b pb-1 mb-4'>
+              <button
+                onClick={() => {
+                  setActiveTab('pending');
+                  setPage(1);
+                }}
+                className={`flex items-center gap-1.5 px-5 py-2 text-sm font-semibold transition-all ${
+                  activeTab === 'pending'
+                    ? 'bg-amber-100 text-amber-700 rounded-full shadow-xs'
+                    : 'text-gray-500 hover:bg-gray-100 rounded-full'
+                }`}
+              >
+                Por Cobrar
+                <span
+                  className={`ml-1.5 px-2.5 py-0.5 rounded-full text-xs font-bold ${
+                    activeTab === 'pending'
+                      ? 'bg-amber-600 text-white'
+                      : 'bg-amber-100 text-amber-800'
+                  }`}
+                >
+                  {pendingCount}
+                </span>
+              </button>
+              <button
+                onClick={() => {
+                  setActiveTab('paid');
+                  setPage(1);
+                }}
+                className={`flex items-center gap-1.5 px-5 py-2 text-sm font-semibold transition-all ${
+                  activeTab === 'paid'
+                    ? 'bg-green-100 text-green-700 rounded-full shadow-xs'
+                    : 'text-gray-500 hover:bg-gray-100 rounded-full'
+                }`}
+              >
+                Cobrados
+                <span
+                  className={`ml-1.5 px-2.5 py-0.5 rounded-full text-xs font-bold ${
+                    activeTab === 'paid' ? 'bg-green-600 text-white' : 'bg-green-100 text-green-800'
+                  }`}
+                >
+                  {paidCount}
+                </span>
+              </button>
             </div>
-          )}
-        </div>
-      </div>
 
-      <AdvancesDialog
-        open={openDialog}
-        onOpenChange={setOpenDialog}
-        onSubmit={handleAdvanceSubmit}
-        isLoading={advanceSaving}
-        error={advanceError}
-        efectivoEnCaja={efectivoEnCaja}
-      />
+            <div className='overflow-x-auto'>
+              <AdvancesTable
+                advances={anticipos}
+                loading={loading}
+                isAdmin={isAdmin}
+                onAction={processAnticipo}
+                activeTab={activeTab}
+              />
+            </div>
+
+            {totalPages > 1 && (
+              <div className='flex justify-center mt-4 sm:mt-6'>
+                <Paginate page={page} totalPages={totalPages} setPage={setPage} />
+              </div>
+            )}
+          </div>
+        </div>
+
+        <AdvancesDialog
+          open={openDialog}
+          onOpenChange={setOpenDialog}
+          onSubmit={handleAdvanceSubmit}
+          isLoading={advanceSaving}
+          error={advanceError}
+          efectivoEnCaja={efectivoEnCaja}
+        />
       </BoneyardSkeleton>
     </PermissionGuard>
   );

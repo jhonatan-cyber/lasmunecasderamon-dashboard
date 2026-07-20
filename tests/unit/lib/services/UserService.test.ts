@@ -73,8 +73,8 @@ describe('UserService.createUser', () => {
       'default.png'
     );
     expect(result).toHaveProperty('user', { id: 'new-user' });
-    expect(result).toHaveProperty('rawPassword');
-    expect(typeof (result as any).rawPassword).toBe('string');
+    expect(result).toHaveProperty('tempPassword');
+    expect(typeof (result as any).tempPassword).toBe('string');
   });
 
   it('usa el fotoFilename proporcionado', async () => {
@@ -135,7 +135,7 @@ describe('UserService.updateUser', () => {
       expect.objectContaining({ password: 'hashed-password' }),
       null
     );
-    expect(result).toMatchObject({ name: 'New' });
+    expect(result.user).toMatchObject({ name: 'New' });
   });
 
   it('invalida el caché de permisos cuando cambia el rol', async () => {

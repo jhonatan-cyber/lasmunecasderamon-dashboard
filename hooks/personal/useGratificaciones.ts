@@ -1,7 +1,12 @@
- 
+'use client';
+
 import { useState, useEffect, useCallback } from 'react';
 import { useGenericFetch } from '../shared/useGenericFetch';
-import { Gratificacion, CreateGratificacionRequest, GratificacionDetail } from '@/types/gratificacion';
+import {
+  Gratificacion,
+  CreateGratificacionRequest,
+  GratificacionDetail
+} from '@/types/gratificacion';
 
 export interface UpdateGratificacionRequest {
   id: string | number;
@@ -10,79 +15,90 @@ export interface UpdateGratificacionRequest {
 }
 
 export const useGratificaciones = () => {
-  const { data: gratificaciones, isLoading: loading, error, refetch: getGratificaciones } = useGenericFetch<Gratificacion>(
-    '/api/gratificaciones',
-    {
-      transform: (result) => Array.isArray(result) ? result : []
-    }
-  );
+  const {
+    data: gratificaciones,
+    isLoading: loading,
+    error,
+    refetch: getGratificaciones
+  } = useGenericFetch<Gratificacion>('/api/gratificaciones', {
+    transform: result => (Array.isArray(result) ? result : [])
+  });
 
   const [detailsLoading, setDetailsLoading] = useState(false);
   const [detailsError, setDetailsError] = useState<string | null>(null);
   const [gratificacionesDetails, setGratificacionesDetails] = useState<GratificacionDetail[]>([]);
 
-  const createGratificacion = useCallback(async (gratificacionData: CreateGratificacionRequest) => {
-    try {
-      const response = await fetch('/api/gratificaciones', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(gratificacionData)
-      });
+  const createGratificacion = useCallback(
+    async (gratificacionData: CreateGratificacionRequest) => {
+      try {
+        const response = await fetch('/api/gratificaciones', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(gratificacionData)
+        });
 
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.message || 'Error al crear la gratificación');
+        if (!response.ok) {
+          const errorData = await response.json();
+          throw new Error(errorData.message || 'Error al crear la gratificación');
+        }
+
+        const result = await response.json();
+        await getGratificaciones();
+        return result;
+      } catch (err) {
+        throw err;
       }
+    },
+    [getGratificaciones]
+  );
 
-      const result = await response.json();
-      await getGratificaciones();
-      return result;
-    } catch (err) {
-      throw err;
-    }
-  }, [getGratificaciones]);
+  const updateGratificacion = useCallback(
+    async (gratificacionData: UpdateGratificacionRequest) => {
+      try {
+        const response = await fetch('/api/gratificaciones', {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(gratificacionData)
+        });
 
-  const updateGratificacion = useCallback(async (gratificacionData: UpdateGratificacionRequest) => {
-    try {
-      const response = await fetch('/api/gratificaciones', {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(gratificacionData)
-      });
+        if (!response.ok) {
+          const errorData = await response.json();
+          throw new Error(errorData.message || 'Error al actualizar la gratificación');
+        }
 
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.message || 'Error al actualizar la gratificación');
+        const result = await response.json();
+        await getGratificaciones();
+        return result;
+      } catch (err) {
+        throw err;
       }
+    },
+    [getGratificaciones]
+  );
 
-      const result = await response.json();
-      await getGratificaciones();
-      return result;
-    } catch (err) {
-      throw err;
-    }
-  }, [getGratificaciones]);
+  const deleteGratificacion = useCallback(
+    async (id: string | number) => {
+      try {
+        const response = await fetch('/api/gratificaciones', {
+          method: 'DELETE',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ id })
+        });
 
-  const deleteGratificacion = useCallback(async (id: string | number) => {
-    try {
-      const response = await fetch('/api/gratificaciones', {
-        method: 'DELETE',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ id })
-      });
+        if (!response.ok) {
+          const errorData = await response.json();
+          throw new Error(errorData.message || 'Error al eliminar la gratificación');
+        }
 
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.message || 'Error al eliminar la gratificación');
+        const result = await response.json();
+        await getGratificaciones();
+        return result;
+      } catch (err) {
+        throw err;
       }
-
-      const result = await response.json();
-      await getGratificaciones();
-      return result;
-    } catch (err) {
-      throw err;
-    }
-  }, [getGratificaciones]);
+    },
+    [getGratificaciones]
+  );
 
   const getGratificacionesDetails = useCallback(async (userId: number) => {
     try {
@@ -136,4 +152,3 @@ export const useGratificaciones = () => {
     gratificacionesDetails
   };
 };
-

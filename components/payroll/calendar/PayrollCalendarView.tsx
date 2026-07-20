@@ -163,7 +163,7 @@ export function PayrollCalendarView({
         {weekdays.map(day => (
           <div
             key={day}
-            className='p-3 text-center text-sm font-semibold text-gray-700 dark:text-gray-300 bg-gray-50 dark:bg-gray-700'
+            className='p-1.5 sm:p-3 text-center text-[10px] sm:text-sm font-semibold text-gray-700 dark:text-gray-300 bg-gray-50 dark:bg-gray-700'
           >
             {day}
           </div>
@@ -171,8 +171,7 @@ export function PayrollCalendarView({
       </div>
 
       <div
-        className='grid grid-cols-7'
-        style={{ minHeight: '500px' }}
+        className='grid grid-cols-7 min-h-[300px] sm:min-h-[500px]'
         onMouseUp={handleMouseUp}
         onMouseLeave={handleMouseUp}
       >
@@ -183,7 +182,7 @@ export function PayrollCalendarView({
           return (
             <div
               key={index}
-              className={`min-h-[80px] p-2 border-r border-b border-gray-200 dark:border-gray-700 ${
+              className={`min-h-[50px] sm:min-h-[80px] p-0.5 sm:p-2 border-r border-b border-gray-200 dark:border-gray-700 ${
                 canViewDetails
                   ? 'cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-700'
                   : 'cursor-not-allowed opacity-60'
@@ -201,7 +200,7 @@ export function PayrollCalendarView({
               onMouseEnter={() => handleMouseEnter(day.date)}
             >
               <div
-                className={`text-sm font-medium mb-1 ${
+                className={`text-[11px] sm:text-sm font-medium mb-0.5 sm:mb-1 ${
                   !day.isCurrentMonth
                     ? 'text-gray-400 dark:text-gray-600'
                     : isCurrentDay

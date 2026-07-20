@@ -20,6 +20,7 @@ import { useConfirmModal } from '@/hooks/shared';
 import { ConfirmModal } from '@/components/shared/ConfirmModal';
 import { showSuccessToast, showErrorToast } from '@/lib/utils/toastUtils';
 import { useUserPermissions } from '@/hooks/auth/useUserPermissions';
+import { Wallet } from 'lucide-react';
 import { useCurrentUser } from '@/hooks/auth/useCurrentUser';
 
 interface PayrollTableProps {
@@ -82,10 +83,128 @@ export default function PayrollTable({
       }
     }
   };
+  const rowToCard = (r: PayrollRow) => (
+    <div
+      key={r.id_usuario}
+      className='bg-white dark:bg-slate-900/40 rounded-2xl border border-gray-100 dark:border-gray-800 p-4 space-y-3'
+    >
+      <div className='flex items-center justify-between'>
+        <div className='flex items-center gap-3'>
+          <Avatar className='h-10 w-10'>
+            {r.usuario_foto && r.usuario_foto !== '' ? (
+              <AvatarImage
+                src={`/img/users/${r.usuario_foto}`}
+                alt={r.usuario || 'Usuario'}
+                className='w-full h-full object-cover rounded-full'
+              />
+            ) : (
+              <AvatarFallback className='bg-purple-100 text-purple-700 font-bold text-xs'>
+                {r.usuario?.substring(0, 2).toUpperCase() || 'NA'}
+              </AvatarFallback>
+            )}
+          </Avatar>
+          <div>
+            <p className='font-semibold text-sm'>{r.usuario}</p>
+            <Badge className='bg-purple-100 text-purple-700 dark:bg-purple-900/30 dark:text-purple-300 rounded-full px-2 py-0.5 text-[10px] font-medium'>
+              {r.rol}
+            </Badge>
+          </div>
+        </div>
+        <div className='text-right'>
+          <p className='text-xs text-gray-400'>Total a Pagar</p>
+          <p className='font-bold text-sm'>{formatCurrencyNoDecimals(r.total)}</p>
+        </div>
+      </div>
+      <div className='grid grid-cols-2 gap-2 text-xs'>
+        <div className='flex justify-between bg-gray-50 dark:bg-slate-900/20 rounded-lg px-3 py-2'>
+          <span className='text-gray-400'>Sueldos</span>
+          <span className='font-medium'>{formatCurrencyNoDecimals(r.sueldos)}</span>
+        </div>
+        <div className='flex justify-between bg-gray-50 dark:bg-slate-900/20 rounded-lg px-3 py-2'>
+          <span className='text-gray-400'>Desc. AFP</span>
+          <span className='font-medium'>{formatCurrencyNoDecimals(r.aportes)}</span>
+        </div>
+        <div className='flex justify-between bg-gray-50 dark:bg-slate-900/20 rounded-lg px-3 py-2'>
+          <span className='text-gray-400'>Com. Ventas</span>
+          <span className='font-medium'>{formatCurrencyNoDecimals(r.ventas)}</span>
+        </div>
+        <div className='flex justify-between bg-gray-50 dark:bg-slate-900/20 rounded-lg px-3 py-2'>
+          <span className='text-gray-400'>Servicios</span>
+          <span className='font-medium'>{formatCurrencyNoDecimals(r.servicios)}</span>
+        </div>
+        <div className='flex justify-between bg-gray-50 dark:bg-slate-900/20 rounded-lg px-3 py-2'>
+          <span className='text-gray-400'>Propinas</span>
+          <span className='font-medium'>{formatCurrencyNoDecimals(r.propinas)}</span>
+        </div>
+        <div className='flex justify-between bg-gray-50 dark:bg-slate-900/20 rounded-lg px-3 py-2'>
+          <span className='text-gray-400'>Desc. Hab.</span>
+          <span className='font-medium'>{formatCurrencyNoDecimals(r.descuentos)}</span>
+        </div>
+        <div className='flex justify-between bg-gray-50 dark:bg-slate-900/20 rounded-lg px-3 py-2'>
+          <span className='text-gray-400'>Hs. Extras</span>
+          <span className='font-medium'>{formatCurrencyNoDecimals(r.total_monto_horas)}</span>
+        </div>
+        <div className='flex justify-between bg-gray-50 dark:bg-slate-900/20 rounded-lg px-3 py-2'>
+          <span className='text-gray-400'>Gratif.</span>
+          <span className='font-medium'>{formatCurrencyNoDecimals(r.gratificaciones)}</span>
+        </div>
+        <div className='flex justify-between bg-gray-50 dark:bg-slate-900/20 rounded-lg px-3 py-2 col-span-2'>
+          <span className='text-gray-400'>Anticipos</span>
+          <span className='font-medium'>{formatCurrencyNoDecimals(r.anticipos)}</span>
+        </div>
+      </div>
+      {canPay && (
+        <Button
+          size='sm'
+          onClick={() => handlePay(r)}
+          className='w-full rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-semibold'
+        >
+          Pagar {formatCurrencyNoDecimals(r.total)}
+        </Button>
+      )}
+    </div>
+  );
+
   return (
     <div>
       {error && <div className='text-red-600 text-sm mb-3'>{error}</div>}
-      <div className='mt-4 sm:mt-6 bg-white dark:bg-slate-900/40 backdrop-blur-xs rounded-3xl border-none shadow-md overflow-hidden'>
+
+      {}
+      <div className='block lg:hidden space-y-3'>
+        {loading ? (
+          Array.from({ length: 3 }).map((_, i) => (
+            <div
+              key={i}
+              className='bg-white dark:bg-slate-900/40 rounded-2xl border border-gray-100 dark:border-gray-800 p-4 space-y-3'
+            >
+              <div className='flex items-center gap-3'>
+                <Skeleton className='h-10 w-10 rounded-full' />
+                <div className='space-y-2'>
+                  <Skeleton className='h-4 w-24' />
+                  <Skeleton className='h-3 w-16' />
+                </div>
+              </div>
+              <div className='grid grid-cols-2 gap-2'>
+                {Array.from({ length: 5 }).map((_, j) => (
+                  <Skeleton key={j} className='h-8 rounded-lg' />
+                ))}
+              </div>
+            </div>
+          ))
+        ) : rows.length === 0 ? (
+          <div className='flex flex-col items-center gap-3 py-16'>
+            <div className='w-14 h-14 bg-gray-100 dark:bg-slate-800 rounded-full flex items-center justify-center'>
+              <Wallet className='w-6 h-6 text-gray-400' />
+            </div>
+            <p className='text-sm font-medium text-gray-500'>No hay registros de pagos</p>
+          </div>
+        ) : (
+          rows.map(r => rowToCard(r))
+        )}
+      </div>
+
+      {}
+      <div className='hidden lg:block mt-4 sm:mt-6 bg-white dark:bg-slate-900/40 backdrop-blur-xs rounded-3xl border-none shadow-md overflow-hidden'>
         <div className='overflow-x-auto'>
           <Table className='min-w-full text-base text-center'>
             <TableHeader className='bg-gray-100 dark:bg-slate-900/50'>
@@ -143,7 +262,7 @@ export default function PayrollTable({
                   <TableCell colSpan={canPay ? 13 : 12} className='py-16 text-center'>
                     <div className='flex flex-col items-center gap-3'>
                       <div className='w-14 h-14 bg-gray-100 dark:bg-slate-800 rounded-full flex items-center justify-center'>
-                        <span className='text-2xl'>💰</span>
+                        <Wallet className='w-6 h-6 text-gray-400' />
                       </div>
                       <p className='text-sm font-medium text-gray-500'>No hay registros de pagos</p>
                     </div>

@@ -1,8 +1,9 @@
- 
-import { useState, useCallback } from "react";
-import { Order } from "@/types/order";
-import { showSuccessToast, showErrorToast } from "@/lib/utils/toastUtils";
-import { useGenericFetch } from "../shared/useGenericFetch";
+'use client';
+
+import { useState, useCallback } from 'react';
+import { Order } from '@/types/order';
+import { showSuccessToast, showErrorToast } from '@/lib/utils/toastUtils';
+import { useGenericFetch } from '../shared/useGenericFetch';
 
 export default function useOrders() {
   const [orderDetail, setOrderDetail] = useState<any[]>([]);
@@ -16,87 +17,96 @@ export default function useOrders() {
     isLoading: fetchLoading,
     error: fetchError,
     refetch: fetchOrders,
-    setData: setOrders, 
+    setData: setOrders
   } = useGenericFetch<Order>('/api/orders', {
     initialFetch: true,
-    transform: (data) => data.success ? data.data : []
+    transform: data => (data.success ? data.data : [])
   });
 
   const isLoading = fetchLoading || mutationLoading;
   const error = fetchError || mutationError;
 
-  const createOrder = useCallback(async (order: Partial<Order>) => {
-    setMutationLoading(true);
-    setMutationError(null);
-    try {
-      const res = await fetch("/api/orders", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(order),
-      });
-      const data = await res.json();
-      if (data.success) {
-        showSuccessToast(data.message || "Pedido creado correctamente");
-        await fetchOrders();
-      } else {
-        showErrorToast(data.message || "Error al crear pedido");
-        setMutationError(data.message || "Error al crear pedido");
+  const createOrder = useCallback(
+    async (order: Partial<Order>) => {
+      setMutationLoading(true);
+      setMutationError(null);
+      try {
+        const res = await fetch('/api/orders', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(order)
+        });
+        const data = await res.json();
+        if (data.success) {
+          showSuccessToast(data.message || 'Pedido creado correctamente');
+          await fetchOrders();
+        } else {
+          showErrorToast(data.message || 'Error al crear pedido');
+          setMutationError(data.message || 'Error al crear pedido');
+        }
+      } catch (err) {
+        showErrorToast('Error de red al crear pedido');
+        setMutationError('Error de red al crear pedido');
+      } finally {
+        setMutationLoading(false);
       }
-    } catch (err) {
-      showErrorToast("Error de red al crear pedido");
-      setMutationError("Error de red al crear pedido");
-    } finally {
-      setMutationLoading(false);
-    }
-  }, [fetchOrders]);
+    },
+    [fetchOrders]
+  );
 
-  const updateOrder = useCallback(async (order: Partial<Order>) => {
-    setMutationLoading(true);
-    setMutationError(null);
-    try {
-      const res = await fetch(`/api/orders?id=${order.id}`, {
-        method: "PUT",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(order),
-      });
-      const data = await res.json();
-      if (data.success) {
-        showSuccessToast(data.message || "Pedido actualizado correctamente");
-        await fetchOrders();
-      } else {
-        showErrorToast(data.message || "Error al actualizar pedido");
-        setMutationError(data.message || "Error al actualizar pedido");
+  const updateOrder = useCallback(
+    async (order: Partial<Order>) => {
+      setMutationLoading(true);
+      setMutationError(null);
+      try {
+        const res = await fetch(`/api/orders?id=${order.id}`, {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(order)
+        });
+        const data = await res.json();
+        if (data.success) {
+          showSuccessToast(data.message || 'Pedido actualizado correctamente');
+          await fetchOrders();
+        } else {
+          showErrorToast(data.message || 'Error al actualizar pedido');
+          setMutationError(data.message || 'Error al actualizar pedido');
+        }
+      } catch (err) {
+        showErrorToast('Error de red al actualizar pedido');
+        setMutationError('Error de red al actualizar pedido');
+      } finally {
+        setMutationLoading(false);
       }
-    } catch (err) {
-      showErrorToast("Error de red al actualizar pedido");
-      setMutationError("Error de red al actualizar pedido");
-    } finally {
-      setMutationLoading(false);
-    }
-  }, [fetchOrders]);
+    },
+    [fetchOrders]
+  );
 
-  const deleteOrder = useCallback(async (id: number) => {
-    setMutationLoading(true);
-    setMutationError(null);
-    try {
-      const res = await fetch(`/api/orders?id=${id}`, {
-        method: "DELETE",
-      });
-      const data = await res.json();
-      if (data.success) {
-        showSuccessToast(data.message || "Pedido eliminado correctamente");
-        await fetchOrders();
-      } else {
-        showErrorToast(data.message || "Error al eliminar pedido");
-        setMutationError(data.message || "Error al eliminar pedido");
+  const deleteOrder = useCallback(
+    async (id: number) => {
+      setMutationLoading(true);
+      setMutationError(null);
+      try {
+        const res = await fetch(`/api/orders?id=${id}`, {
+          method: 'DELETE'
+        });
+        const data = await res.json();
+        if (data.success) {
+          showSuccessToast(data.message || 'Pedido eliminado correctamente');
+          await fetchOrders();
+        } else {
+          showErrorToast(data.message || 'Error al eliminar pedido');
+          setMutationError(data.message || 'Error al eliminar pedido');
+        }
+      } catch (err) {
+        showErrorToast('Error de red al eliminar pedido');
+        setMutationError('Error de red al eliminar pedido');
+      } finally {
+        setMutationLoading(false);
       }
-    } catch (err) {
-      showErrorToast("Error de red al eliminar pedido");
-      setMutationError("Error de red al eliminar pedido");
-    } finally {
-      setMutationLoading(false);
-    }
-  }, [fetchOrders]);
+    },
+    [fetchOrders]
+  );
 
   const fetchOrderDetail = useCallback(async (id: number | string) => {
     setIsDetailLoading(true);
@@ -107,10 +117,10 @@ export default function useOrders() {
       if (data.success) {
         setOrderDetail(data.data);
       } else {
-        setDetailError(data.message || "Error al obtener el detalle del pedido");
+        setDetailError(data.message || 'Error al obtener el detalle del pedido');
       }
     } catch (err) {
-      setDetailError("Error de red al obtener el detalle del pedido");
+      setDetailError('Error de red al obtener el detalle del pedido');
     } finally {
       setIsDetailLoading(false);
     }
@@ -126,9 +136,9 @@ export default function useOrders() {
     fetchOrders,
     fetchOrderDetail,
     refetch: fetchOrders,
-    setOrders, 
+    setOrders,
     createOrder,
     updateOrder,
-    deleteOrder,
+    deleteOrder
   };
-} 
+}

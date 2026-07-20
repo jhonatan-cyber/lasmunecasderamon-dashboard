@@ -1,3 +1,5 @@
+'use client';
+
 import { useQuery } from '@tanstack/react-query';
 import { queryKeys } from '@/lib/api/queryClient';
 import { useDashboardSSE } from './useDashboardSSE';

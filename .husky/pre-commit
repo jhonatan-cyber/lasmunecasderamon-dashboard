@@ -3,6 +3,10 @@
 
 echo "🚀 Ejecutando pre-commit hooks..."
 
+# 0. Check all files have 'use client' where needed
+echo "🔍 Verificando directiva 'use client' en archivos con hooks..."
+npm run check:use-client || exit 1
+
 # 1. Lint and format staged files
 echo "🧐 Linting y formateo de archivos staged..."
 npx lint-staged || exit 1

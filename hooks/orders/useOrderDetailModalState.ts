@@ -1,3 +1,5 @@
+'use client';
+
 import { useEffect, useMemo, useState } from 'react';
 import { formatNumberCL } from '@/lib/utils/formatters';
 import { computeHostessLimit, extractHostessIds } from '@/components/orders/detail';

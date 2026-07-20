@@ -32,7 +32,7 @@ export function CajaSummaryMetrics({
   totalReal
 }: CajaSummaryMetricsProps) {
   return (
-    <div className='grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-4'>
+    <div className='grid grid-cols-2 sm:grid-cols-2 xl:grid-cols-3 gap-4'>
       {isLoading ? (
         <>
           <MetricSkeleton />
@@ -76,7 +76,7 @@ export function CajaSummaryMetrics({
             </div>
           </div>
 
-          <div className='bg-emerald-50 dark:bg-emerald-900/20 p-3 rounded-xl border border-emerald-100 dark:border-emerald-800'>
+          <div className='col-span-2 sm:col-span-1 xl:col-span-1 bg-emerald-50 dark:bg-emerald-900/20 p-3 rounded-xl border border-emerald-100 dark:border-emerald-800'>
             <div className='flex items-center gap-3'>
               <div className='w-10 h-10 bg-emerald-500/10 rounded-lg flex items-center justify-center'>
                 <Wallet className='w-5 h-5 text-emerald-600 dark:text-emerald-400' />

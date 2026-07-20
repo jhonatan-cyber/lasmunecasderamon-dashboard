@@ -1,3 +1,5 @@
+'use client';
+
 import { useState, useCallback, useMemo } from 'react';
 import { Room } from '@/types/room';
 import { showSuccessToast, showErrorToast } from '@/lib/utils/toastUtils';

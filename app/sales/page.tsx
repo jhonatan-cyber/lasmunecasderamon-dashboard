@@ -21,6 +21,7 @@ import {
   SalesError,
   CajaStatusBanner
 } from '@/components/sales';
+import { useCashRegisterStatus } from '@/hooks/caja/useCashRegisterStatus';
 import {
   filterVentas,
   sortVentas,
@@ -32,7 +33,6 @@ import {
   metodoPagoLabels,
   anfitrionaColors
 } from '@/lib/business/salesUtils';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import SalesWithRoomTab from '@/components/sales/SalesWithRoomTab';
 import { Skeleton as BoneyardSkeleton } from 'boneyard-js/react';
 import dynamic from 'next/dynamic';
@@ -58,6 +58,9 @@ export default function Sales() {
   const [page, setPage] = useState(1);
   const [sortBy, setSortBy] = useState('fecha_crea');
   const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('desc');
+  const [salesTab, setSalesTab] = useState('all');
+
+  const { hasOpenCaja, loading: cajaLoading } = useCashRegisterStatus();
 
   const handleRefresh = useCallback(async () => {
     await Promise.all([getVentas(), getResumen(), getHabitaciones()]);
@@ -153,83 +156,95 @@ export default function Sales() {
     <PermissionGuard module='sales' action='view'>
       <div className='p-4 sm:p-6 lg:p-10 space-y-4 sm:space-y-6 mt-4 sm:mt-6 lg:mt-10'>
         <CajaStatusBanner />
-        <SalesHeader loading={loading} onRefresh={handleRefresh} />
+        <SalesHeader
+          loading={loading}
+          onRefresh={handleRefresh}
+          cajaDisabled={cajaLoading || !hasOpenCaja}
+        />
 
-        <BoneyardSkeleton name="sales-main" loading={loading && ventas.length === 0}>
-        {ventas.length === 0 ? (
-          <>
-            <SalesStatsCards ventas={ventas} />
+        <BoneyardSkeleton name='sales-main' loading={loading && ventas.length === 0}>
+          {ventas.length === 0 ? (
+            <>
+              <SalesStatsCards ventas={ventas} />
 
-            <SalesFilters
-              searchTerm={searchTerm}
-              setSearchTerm={setSearchTerm}
-              filterStatus={statusFilter}
-              setFilterStatus={setStatusFilter}
-              filterMetodoPago={paymentFilter}
-              setFilterMetodoPago={setPaymentFilter}
-              sortBy={sortBy}
-              setSortBy={setSortBy}
-              sortOrder={sortOrder}
-              setSortOrder={setSortOrder}
-              onClearFilters={handleClearFilters}
-              rowsPerPage={rowsPerPage}
-              setRowsPerPage={setRowsPerPage}
-              setPage={setPage}
-            />
+              <SalesFilters
+                searchTerm={searchTerm}
+                setSearchTerm={setSearchTerm}
+                filterStatus={statusFilter}
+                setFilterStatus={setStatusFilter}
+                filterMetodoPago={paymentFilter}
+                setFilterMetodoPago={setPaymentFilter}
+                sortBy={sortBy}
+                setSortBy={setSortBy}
+                sortOrder={sortOrder}
+                setSortOrder={setSortOrder}
+                onClearFilters={handleClearFilters}
+                rowsPerPage={rowsPerPage}
+                setRowsPerPage={setRowsPerPage}
+                setPage={setPage}
+              />
 
-            <Tabs defaultValue='all' className='w-full'>
-              <TabsList className='grid w-full grid-cols-2 mb-6 p-1 bg-gray-200/80 dark:bg-slate-800/80 rounded-full max-w-md mx-auto border dark:border-slate-700 shadow-xs'>
-                <TabsTrigger
-                  value='all'
-                  className='rounded-full data-[state=active]:bg-black data-[state=active]:text-white dark:data-[state=active]:bg-white dark:data-[state=active]:text-black transition-all'
+              <div className='flex justify-center gap-3 border-b pb-1 mb-6'>
+                <button
+                  onClick={() => setSalesTab('all')}
+                  className={`flex items-center gap-2 px-5 py-2 text-sm font-semibold transition-all ${
+                    salesTab === 'all'
+                      ? 'bg-amber-100 text-amber-700 rounded-full shadow-xs'
+                      : 'text-gray-500 hover:bg-gray-100 rounded-full'
+                  }`}
                 >
                   Todas las ventas
-                </TabsTrigger>
-                <TabsTrigger
-                  value='with-room'
-                  className='rounded-full data-[state=active]:bg-black data-[state=active]:text-white dark:data-[state=active]:bg-white dark:data-[state=active]:text-black transition-all'
+                </button>
+                <button
+                  onClick={() => setSalesTab('with-room')}
+                  className={`flex items-center gap-2 px-5 py-2 text-sm font-semibold transition-all ${
+                    salesTab === 'with-room'
+                      ? 'bg-green-100 text-green-700 rounded-full shadow-xs'
+                      : 'text-gray-500 hover:bg-gray-100 rounded-full'
+                  }`}
                 >
                   Ventas con habitación
-                </TabsTrigger>
-              </TabsList>
+                </button>
+              </div>
 
-              <TabsContent value='all' className='space-y-4'>
-                <SalesList
-                  loading={loading}
-                  paginatedVentas={paginatedVentas}
-                  searchTerm={searchTerm}
-                  filterStatus={statusFilter}
-                  filterMetodoPago={paymentFilter}
-                  statusColors={statusColors}
-                  statusLabels={statusLabels}
-                  metodoPagoLabels={metodoPagoLabels}
-                  anfitrionaColors={anfitrionaColors}
-                  formatCurrency={formatCurrency}
-                  onVerDetalles={handleViewDetails}
-                  onAnularVenta={handleAnularVenta}
-                  page={page}
-                  setPage={setPage}
-                  totalPages={totalPages}
-                />
+              {salesTab === 'all' && (
+                <div className='space-y-4'>
+                  <SalesList
+                    loading={loading}
+                    paginatedVentas={paginatedVentas}
+                    searchTerm={searchTerm}
+                    filterStatus={statusFilter}
+                    filterMetodoPago={paymentFilter}
+                    statusColors={statusColors}
+                    statusLabels={statusLabels}
+                    metodoPagoLabels={metodoPagoLabels}
+                    anfitrionaColors={anfitrionaColors}
+                    formatCurrency={formatCurrency}
+                    onVerDetalles={handleViewDetails}
+                    onAnularVenta={handleAnularVenta}
+                    page={page}
+                    setPage={setPage}
+                    totalPages={totalPages}
+                  />
 
-                {filteredVentas.length > rowsPerPage && (
-                  <div className='flex justify-center'>
-                    <Paginate page={page} totalPages={totalPages} setPage={setPage} />
-                  </div>
-                )}
-              </TabsContent>
+                  {filteredVentas.length > rowsPerPage && (
+                    <div className='flex justify-center'>
+                      <Paginate page={page} totalPages={totalPages} setPage={setPage} />
+                    </div>
+                  )}
+                </div>
+              )}
 
-              <TabsContent value='with-room'>
+              {salesTab === 'with-room' && (
                 <SalesWithRoomTab
                   ventas={sortedAndFilteredVentas as VentaWithDetails[]}
                   loading={loading}
                   onRefresh={handleRefresh}
                   onVerDetalles={handleViewDetails}
                 />
-              </TabsContent>
-            </Tabs>
-          </>
-        ) : null}
+              )}
+            </>
+          ) : null}
         </BoneyardSkeleton>
       </div>
 

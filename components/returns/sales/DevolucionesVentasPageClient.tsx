@@ -14,7 +14,7 @@ import { DevolucionFiltersComponent } from '@/components/returns/sales/Devolucio
 import { DevolucionTable } from '@/components/returns/sales/DevolucionTable';
 import { DevolucionModal } from '@/components/returns/sales/DevolucionModal';
 import { formatCurrencyCLP } from '@/lib/utils/formatters';
-import { CheckCircle, XCircle, Clock, ExternalLink } from 'lucide-react';
+
 import logger from '@/lib/utils/logger';
 
 interface SolicitudAnulacion {
@@ -128,23 +128,41 @@ export function DevolucionesVentasPageClient() {
       <DevolucionHeader />
 
       {}
-      <div className='flex gap-2 mb-4'>
-        <Button
-          variant={activeTab === 'pendientes' ? 'default' : 'outline-solid'}
+      <div className='flex justify-center gap-3 border-b pb-1 mb-4'>
+        <button
           onClick={() => setActiveTab('pendientes')}
-          className='flex items-center gap-2'
+          className={`flex items-center gap-2 px-5 py-2 text-sm font-semibold transition-all ${
+            activeTab === 'pendientes'
+              ? 'bg-amber-100 text-amber-700 rounded-full shadow-xs'
+              : 'text-gray-500 hover:bg-gray-100 rounded-full'
+          }`}
         >
-          <Clock className='w-4 h-4' />
-          Pendientes ({solicitudes.length})
-        </Button>
-        <Button
-          variant={activeTab === 'anuladas' ? 'default' : 'outline-solid'}
+          Pendientes
+          <span
+            className={`ml-1.5 px-2.5 py-0.5 rounded-full text-xs font-bold ${
+              activeTab === 'pendientes' ? 'bg-amber-600 text-white' : 'bg-amber-100 text-amber-800'
+            }`}
+          >
+            {solicitudes.length}
+          </span>
+        </button>
+        <button
           onClick={() => setActiveTab('anuladas')}
-          className='flex items-center gap-2'
+          className={`flex items-center gap-2 px-5 py-2 text-sm font-semibold transition-all ${
+            activeTab === 'anuladas'
+              ? 'bg-green-100 text-green-700 rounded-full shadow-xs'
+              : 'text-gray-500 hover:bg-gray-100 rounded-full'
+          }`}
         >
-          <XCircle className='w-4 h-4' />
-          Anuladas ({filteredVentas.length})
-        </Button>
+          Anuladas
+          <span
+            className={`ml-1.5 px-2.5 py-0.5 rounded-full text-xs font-bold ${
+              activeTab === 'anuladas' ? 'bg-green-600 text-white' : 'bg-green-100 text-green-800'
+            }`}
+          >
+            {filteredVentas.length}
+          </span>
+        </button>
       </div>
 
       {}
@@ -167,7 +185,7 @@ export function DevolucionesVentasPageClient() {
                 {solicitudes.map(sol => (
                   <div
                     key={sol.id}
-                    className='flex items-center justify-between p-4 border rounded-lg bg-gray-50 dark:bg-gray-900'
+                    className='flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 p-4 border rounded-lg bg-gray-50 dark:bg-gray-900'
                   >
                     <div className='flex-1'>
                       <div className='font-bold text-lg'>Venta #{sol.codigo}</div>
@@ -189,16 +207,16 @@ export function DevolucionesVentasPageClient() {
                         size='sm'
                         variant='destructive'
                         onClick={() => handleProcesarSolicitud(sol.id, 'rechazada')}
+                        className='flex-1 sm:flex-none text-xs sm:text-sm rounded-full'
                       >
-                        <XCircle className='w-4 h-4 mr-1' />
                         Rechazar
                       </Button>
                       <Button
                         size='sm'
                         variant='default'
                         onClick={() => handleProcesarSolicitud(sol.id, 'confirmada')}
+                        className='flex-1 sm:flex-none text-xs sm:text-sm rounded-full'
                       >
-                        <CheckCircle className='w-4 h-4 mr-1' />
                         Aprobar
                       </Button>
                     </div>

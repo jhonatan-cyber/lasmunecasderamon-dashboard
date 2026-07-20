@@ -1,3 +1,5 @@
+'use client';
+
 import { memo } from 'react';
 import { Button } from '@/components/ui/button';
 import { Plus, Minus, Trash2 } from 'lucide-react';
@@ -56,7 +58,7 @@ function ProductCartTableComponent({
 }: ProductCartTableProps) {
   const showActions = !readOnly;
   const showHostessesColumn = showActions || forceShowHostesses;
-  const columnCount = showActions ? 7 : (showHostessesColumn ? 6 : 5);
+  const columnCount = showActions ? 7 : showHostessesColumn ? 6 : 5;
   const getCommissionValue = (producto: ProductoCarrito) => {
     const commission = producto.comision || 0;
     return commissionMode === 'raw' ? commission : commission * (producto.cantidad || 0);
@@ -127,8 +129,7 @@ function ProductCartTableComponent({
                       {producto.selectedHostesses && producto.selectedHostesses.length > 0 ? (
                         producto.selectedHostesses.map((hostessId, idx) => {
                           const hostess = anfitrionas.find(
-                            h =>
-                              String(h.id || h.id_usuario || h.usuario_id) === String(hostessId)
+                            h => String(h.id || h.id_usuario || h.usuario_id) === String(hostessId)
                           );
                           return (
                             <Badge
@@ -180,9 +181,9 @@ function ProductCartTableComponent({
                 <TableCell className={`${CUENTA_TABLE_CELL_CLASS} text-center`}>
                   {formatCurrencyNoDecimals(producto.precio || 0)}
                 </TableCell>
-                  <TableCell className={`${CUENTA_TABLE_CELL_CLASS} text-center`}>
-                    {formatCurrencyNoDecimals(getCommissionValue(producto))}
-                  </TableCell>
+                <TableCell className={`${CUENTA_TABLE_CELL_CLASS} text-center`}>
+                  {formatCurrencyNoDecimals(getCommissionValue(producto))}
+                </TableCell>
                 <TableCell className={`${CUENTA_TABLE_CELL_CLASS} text-center`}>
                   {formatCurrencyNoDecimals(producto.sub_total || 0)}
                 </TableCell>

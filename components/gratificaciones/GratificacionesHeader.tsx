@@ -4,30 +4,30 @@ import { Button } from '@/components/ui/button';
 import { Plus } from 'lucide-react';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 
-interface AdvancesHeaderProps {
+interface GratificacionesHeaderProps {
   canCreate: boolean;
   hasOpenCaja: boolean | null;
   cajaLoading: boolean;
   onOpenDialog: () => void;
 }
 
-export function AdvancesHeader({
+export function GratificacionesHeader({
   canCreate,
   hasOpenCaja,
   cajaLoading,
   onOpenDialog
-}: AdvancesHeaderProps) {
+}: GratificacionesHeaderProps) {
   const disabled = cajaLoading || !hasOpenCaja;
 
   return (
-    <div className='flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 sm:gap-6 pt-4 sm:pt-8 px-4 sm:px-8'>
-      <div className='flex items-center gap-4'>
-        <div>
-          <h1 className='text-xl sm:text-2xl lg:text-3xl font-bold text-gray-900'>Anticipos</h1>
-          <p className='text-sm sm:text-base text-gray-600 mt-2'>
-            Gestiona los anticipos de sueldo del personal
-          </p>
-        </div>
+    <div className='flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 sm:gap-6'>
+      <div>
+        <h1 className='text-xl sm:text-2xl lg:text-3xl font-bold text-gray-900 dark:text-gray-100'>
+          Listado de Gratificaciones
+        </h1>
+        <p className='text-sm sm:text-base text-gray-600 dark:text-gray-400'>
+          Control de bonificaciones de personal
+        </p>
       </div>
       {canCreate && (
         <TooltipProvider>
@@ -47,7 +47,7 @@ export function AdvancesHeader({
                   ) : (
                     <>
                       <Plus className='mr-2' />
-                      Nuevo Anticipo
+                      Nueva gratificación
                     </>
                   )}
                 </Button>

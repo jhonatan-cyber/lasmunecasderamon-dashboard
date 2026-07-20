@@ -1,3 +1,5 @@
+'use client';
+
 import { useState, useCallback } from 'react';
 import { Timer, TimerExpiredNotification } from '@/contexts/TimerContext';
 import { useTimerAudio } from '@/hooks/timer/useTimerAudio';

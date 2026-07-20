@@ -1,3 +1,5 @@
+'use client';
+
 import { useCallback, useRef } from 'react';
 import { Timer } from '@/contexts/TimerContext';
 import { toast } from 'sonner';

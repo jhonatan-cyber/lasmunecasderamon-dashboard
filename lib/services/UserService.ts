@@ -32,11 +32,11 @@ export class UserService {
     }
     const email = `${validated.nick}${EMAIL_DOMAIN}`;
     // S7: Generar contraseña aleatoria segura en vez de usar el RUN
-    const rawPassword = crypto.randomBytes(12).toString('hex'); // 24 caracteres hex
-    const password = await argon2.hash(rawPassword);
+    const tempPassword = crypto.randomBytes(12).toString('hex'); // 24 caracteres hex
+    const password = await argon2.hash(tempPassword);
 
     const user = await UserRepository.create({ ...validated, email, password }, fotoFilename);
-    return { user, rawPassword };
+    return { user, tempPassword };
   }
 
   static async updateUser(id: string, body: UserUpdateInput, fotoFilename: string | null = null) {
@@ -65,7 +65,11 @@ export class UserService {
       }
     }
     const { id: _validatedId, email: _validatedEmail, ...validatedWithoutId } = validated;
-    const updateData: Partial<UserType> & { email?: string; password?: string; force_password_change?: number } = {
+    const updateData: Partial<UserType> & {
+      email?: string;
+      password?: string;
+      force_password_change?: number;
+    } = {
       ...validatedWithoutId,
       email: undefined
     };
@@ -73,9 +77,11 @@ export class UserService {
     if (validated.nick) {
       updateData.email = `${validated.nick}@lasmuñecasderamon.com`;
     }
+    let newTempPassword: string | undefined;
     if (validated.run) {
-      // S7: Al resetear contraseña al RUN, forzar cambio en próximo login
-      updateData.password = await argon2.hash(validated.run);
+      // S7: Generar contraseña aleatoria segura en vez de usar el RUN
+      newTempPassword = crypto.randomBytes(12).toString('hex'); // 24 caracteres hex
+      updateData.password = await argon2.hash(newTempPassword);
       updateData.force_password_change = 1;
     }
 
@@ -85,7 +91,7 @@ export class UserService {
       PermissionsCache.invalidate(id.toString());
     }
 
-    return result;
+    return { user: result, newTempPassword };
   }
 
   static async toggleUserStatus(id: string, action: string) {

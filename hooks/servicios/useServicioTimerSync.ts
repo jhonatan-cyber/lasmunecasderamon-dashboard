@@ -1,3 +1,5 @@
+'use client';
+
 import { useEffect } from 'react';
 import { useServicios } from '@/hooks/servicios/useServicios';
 import { useTimer } from '@/contexts/TimerContext';
@@ -11,7 +13,7 @@ export const useServicioTimerSync = () => {
 
     timers.forEach(timer => {
       const servicio = servicios.find(s => String(s.id_servicio) === String(timer.servicioId));
-      
+
       if (servicio) {
         if (servicio.estado === 2 && !timer.isPaused) {
           pauseTimerByServicioId(timer.servicioId);
@@ -20,5 +22,5 @@ export const useServicioTimerSync = () => {
     });
   }, [servicios, timers, pauseTimerByServicioId, resumeTimerByServicioId]);
 
-  return null; 
-}; 
+  return null;
+};

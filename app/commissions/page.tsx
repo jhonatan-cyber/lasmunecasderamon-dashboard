@@ -142,7 +142,6 @@ export default function CommissionsPage() {
                   : 'text-gray-500 hover:bg-gray-100 rounded-full'
               }`}
             >
-              <Clock className='h-4 w-4' />
               Pendientes de Pago
               <span
                 className={`ml-1.5 px-2.5 py-0.5 rounded-full text-xs font-bold ${
@@ -162,7 +161,6 @@ export default function CommissionsPage() {
                   : 'text-gray-500 hover:bg-gray-100 rounded-full'
               }`}
             >
-              <CheckCircle className='h-4 w-4' />
               Pagadas
               <span
                 className={`ml-1.5 px-2.5 py-0.5 rounded-full text-xs font-bold ${

@@ -31,7 +31,7 @@ export const OrdersStats = ({ activeTab, orders, servicios }: OrdersStatsProps) 
     };
 
     return (
-      <div className='grid gap-4 grid-cols-1 md:grid-cols-2 lg:grid-cols-4 mb-6 px-4 sm:px-8'>
+      <div className='grid gap-4 grid-cols-2 md:grid-cols-2 lg:grid-cols-4 mb-6 px-4 sm:px-8'>
         {}
         <Card
           style={{
@@ -178,7 +178,7 @@ export const OrdersStats = ({ activeTab, orders, servicios }: OrdersStatsProps) 
   };
 
   return (
-    <div className='grid gap-4 grid-cols-1 md:grid-cols-3 mb-6 px-4 sm:px-8'>
+    <div className='grid gap-4 grid-cols-2 sm:grid-cols-3 mb-6 px-4 sm:px-8'>
       {}
       <Card
         style={{
@@ -247,7 +247,7 @@ export const OrdersStats = ({ activeTab, orders, servicios }: OrdersStatsProps) 
           backgroundColor: 'rgba(16, 185, 129, 0.1)',
           border: '1px solid rgba(16, 185, 129, 0.2)'
         }}
-        className='shadow-xs border-none backdrop-blur-xs rounded-4xl overflow-hidden group hover:scale-[1.02] transition-all duration-300'
+        className='col-span-2 sm:col-span-1 shadow-xs border-none backdrop-blur-xs rounded-4xl overflow-hidden group hover:scale-[1.02] transition-all duration-300'
       >
         <CardContent className='p-5'>
           <div className='flex items-center justify-between mb-4'>

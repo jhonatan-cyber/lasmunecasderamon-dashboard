@@ -1,3 +1,5 @@
+'use client';
+
 /* eslint-disable react-hooks/incompatible-library */
 import { useForm, Controller } from 'react-hook-form';
 import { useState, useEffect } from 'react';
@@ -96,4 +98,3 @@ export function useGratificacionForm({ gratificacion, open, onSubmit }: UseGrati
     onFormSubmit: handleSubmit(handleFormSubmit)
   };
 }
-

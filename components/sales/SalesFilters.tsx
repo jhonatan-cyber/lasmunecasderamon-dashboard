@@ -83,99 +83,99 @@ export function SalesFilters({
             </Select>
           </div>
 
-          {}
-          <div className='w-full lg:w-[130px]'>
-            <Label className='mb-2 block text-[10px] font-black uppercase tracking-widest text-gray-400 ml-1'>
-              Método
-            </Label>
-            <Select value={filterMetodoPago} onValueChange={setFilterMetodoPago}>
-              <SelectTrigger>
-                <SelectValue placeholder='Método' />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value='all'>Todos</SelectItem>
-                <SelectItem value='efectivo'>Efectivo</SelectItem>
-                <SelectItem value='tarjeta'>Tarjeta</SelectItem>
-                <SelectItem value='transferencia'>Transferencia</SelectItem>
-                <SelectItem value='prepago'>Prepago</SelectItem>
-              </SelectContent>
-            </Select>
-          </div>
-
-          {}
-          <div className='w-full lg:w-[180px]'>
-            <Label className='mb-2 block text-[10px] font-black uppercase tracking-widest text-gray-400 ml-1'>
-              Ordenar por
-            </Label>
-            <div className='flex gap-1'>
-              <Select value={sortBy} onValueChange={setSortBy}>
-                <SelectTrigger className='rounded-r-none'>
-                  <SelectValue />
+          <div className='grid grid-cols-2 lg:flex gap-4 w-full lg:w-auto'>
+            <div className='w-full lg:w-[130px]'>
+              <Label className='mb-2 block text-[10px] font-black uppercase tracking-widest text-gray-400 ml-1'>
+                Método
+              </Label>
+              <Select value={filterMetodoPago} onValueChange={setFilterMetodoPago}>
+                <SelectTrigger>
+                  <SelectValue placeholder='Método' />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value='fecha_crea'>Fecha</SelectItem>
-                  <SelectItem value='total'>Monto</SelectItem>
-                  <SelectItem value='cliente_nombre'>Cliente</SelectItem>
-                  <SelectItem value='codigo'>Código</SelectItem>
+                  <SelectItem value='all'>Todos</SelectItem>
+                  <SelectItem value='efectivo'>Efectivo</SelectItem>
+                  <SelectItem value='tarjeta'>Tarjeta</SelectItem>
+                  <SelectItem value='transferencia'>Transferencia</SelectItem>
+                  <SelectItem value='prepago'>Prepago</SelectItem>
                 </SelectContent>
               </Select>
-              <Button
-                variant='outline'
-                size='icon'
-                onClick={() => setSortOrder(sortOrder === 'asc' ? 'desc' : 'asc')}
-                className='h-10 w-10 rounded-r-2xl border-l-0 border-gray-200 dark:border-gray-800 bg-gray-50/50 rounded-l-none'
-              >
-                {sortOrder === 'asc' ? (
-                  <SortAsc className='h-4 w-4' />
-                ) : (
-                  <SortDesc className='h-4 w-4' />
-                )}
-              </Button>
+            </div>
+
+            <div className='w-full lg:w-[180px]'>
+              <Label className='mb-2 block text-[10px] font-black uppercase tracking-widest text-gray-400 ml-1'>
+                Ordenar por
+              </Label>
+              <div className='flex gap-1'>
+                <Select value={sortBy} onValueChange={setSortBy}>
+                  <SelectTrigger className='rounded-r-none'>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value='fecha_crea'>Fecha</SelectItem>
+                    <SelectItem value='total'>Monto</SelectItem>
+                    <SelectItem value='cliente_nombre'>Cliente</SelectItem>
+                    <SelectItem value='codigo'>Código</SelectItem>
+                  </SelectContent>
+                </Select>
+                <Button
+                  variant='outline'
+                  size='icon'
+                  onClick={() => setSortOrder(sortOrder === 'asc' ? 'desc' : 'asc')}
+                  className='h-10 w-10 rounded-r-2xl border-l-0 border-gray-200 dark:border-gray-800 bg-gray-50/50 rounded-l-none'
+                >
+                  {sortOrder === 'asc' ? (
+                    <SortAsc className='h-4 w-4' />
+                  ) : (
+                    <SortDesc className='h-4 w-4' />
+                  )}
+                </Button>
+              </div>
             </div>
           </div>
 
           {}
-          <div className='w-full lg:w-[100px]'>
-            <Label className='mb-2 block text-[10px] font-black uppercase tracking-widest text-gray-400 ml-1'>
-              Listado
-            </Label>
-            <Select
-              value={String(rowsPerPage)}
-              onValueChange={(v: string) => {
-                setRowsPerPage(Number(v));
-                setPage(1);
-              }}
-            >
-              <SelectTrigger>
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value='5'>5</SelectItem>
-                <SelectItem value='10'>10</SelectItem>
-                <SelectItem value='20'>20</SelectItem>
-                <SelectItem value='40'>40</SelectItem>
-              </SelectContent>
-            </Select>
+          <div className='w-full lg:w-[140px] flex gap-1 items-end'>
+            <div className='flex-1'>
+              <Label className='mb-2 block text-[10px] font-black uppercase tracking-widest text-gray-400 ml-1'>
+                Listado
+              </Label>
+              <Select
+                value={String(rowsPerPage)}
+                onValueChange={(v: string) => {
+                  setRowsPerPage(Number(v));
+                  setPage(1);
+                }}
+              >
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value='5'>5</SelectItem>
+                  <SelectItem value='10'>10</SelectItem>
+                  <SelectItem value='20'>20</SelectItem>
+                  <SelectItem value='40'>40</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            <TooltipProvider>
+              <Tooltip delayDuration={300}>
+                <TooltipTrigger asChild>
+                  <Button
+                    onClick={onClearFilters}
+                    variant='outline'
+                    size='icon'
+                    className='w-10 h-10 flex items-center justify-center rounded-2xl border-gray-200 dark:border-gray-800 hover:scale-110 transition-all duration-200 hover:bg-black hover:text-white dark:hover:bg-white dark:hover:text-black shadow-xs'
+                  >
+                    <Trash2 className='w-4 h-4' />
+                  </Button>
+                </TooltipTrigger>
+                <TooltipContent className='bg-black text-white dark:bg-white dark:text-black rounded-xl border-none text-xs font-bold px-3 py-1.5 shadow-xl'>
+                  <p>Limpiar filtros</p>
+                </TooltipContent>
+              </Tooltip>
+            </TooltipProvider>
           </div>
-
-          {}
-          <TooltipProvider>
-            <Tooltip delayDuration={300}>
-              <TooltipTrigger asChild>
-                <Button
-                  onClick={onClearFilters}
-                  variant='outline'
-                  size='icon'
-                  className='w-10 h-10 flex items-center justify-center rounded-2xl border-gray-200 dark:border-gray-800 hover:scale-110 transition-all duration-200 hover:bg-black hover:text-white dark:hover:bg-white dark:hover:text-black shadow-xs'
-                >
-                  <Trash2 className='w-4 h-4' />
-                </Button>
-              </TooltipTrigger>
-              <TooltipContent className='bg-black text-white dark:bg-white dark:text-black rounded-xl border-none text-xs font-bold px-3 py-1.5 shadow-xl'>
-                <p>Limpiar filtros</p>
-              </TooltipContent>
-            </Tooltip>
-          </TooltipProvider>
         </div>
       </CardContent>
     </Card>

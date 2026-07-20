@@ -188,9 +188,9 @@ export default function GarzonPedidosPage() {
   return (
     <div className='p-4 sm:p-6 lg:p-10 space-y-4 sm:space-y-6 mt-4 sm:mt-6 lg:mt-10'>
       {}
-      <div className='flex items-center justify-between'>
+      <div className='flex items-center justify-between gap-2 flex-wrap'>
         <div>
-          <h1 className='text-2xl font-bold text-gray-900'>Listado de Pedidos</h1>
+          <h1 className='text-xl sm:text-2xl font-bold text-gray-900'>Listado de Pedidos</h1>
           <p className='text-gray-600'>
             Pedidos realizados por {user?.name} {user?.lastName}
           </p>
@@ -327,8 +327,8 @@ export default function GarzonPedidosPage() {
 
       {}
       {filteredOrders.length > 0 && (
-        <div className='flex items-center justify-between'>
-          <div className='flex items-center space-x-2'>
+        <div className='flex flex-col sm:flex-row items-center justify-between gap-4'>
+          <div className='flex items-center gap-2'>
             <span className='text-sm text-gray-700'>Mostrar</span>
             <SelectElements
               value={rowsPerPage}
@@ -341,7 +341,7 @@ export default function GarzonPedidosPage() {
             <span className='text-sm text-gray-700'>por página</span>
           </div>
 
-          <div className='flex justify-center flex-1'>
+          <div className='flex justify-center'>
             <Paginate page={currentPage} totalPages={totalPages} setPage={setCurrentPage} />
           </div>
         </div>

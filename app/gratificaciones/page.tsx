@@ -1,14 +1,16 @@
 'use client';
 
 import { useState, useMemo } from 'react';
-import { Plus, AlertCircle, Clock, CheckCircle } from 'lucide-react';
-import { Button } from '@/components/ui/button';
+import { AlertCircle } from 'lucide-react';
 import {
   GratificacionesTable,
   GratificacionesFilters,
-  GratificacionesDetailModal
+  GratificacionesDetailModal,
+  GratificacionesStatsCards
 } from '@/components/gratificaciones';
 import { GratificacionDialog } from '@/components/gratificaciones/GratificacionDialog';
+import { GratificacionesHeader } from '@/components/gratificaciones/GratificacionesHeader';
+import { CajaStatusBanner } from '@/components/sales/CajaStatusBanner';
 import Pagination from '@/components/gratificaciones/Pagination';
 import { ConfirmModal } from '@/components/shared/ConfirmModal';
 import { useGratificaciones } from '@/hooks/personal';
@@ -153,13 +155,6 @@ export default function GratificacionesPage() {
 
   const formatCurrency = (amount: number) => formatCurrencyNoDecimals(amount);
 
-  const totalPagado = gratificaciones
-    .filter(g => g.estado === 0)
-    .reduce((acc, g) => acc + g.monto, 0);
-  const totalPorPagar = gratificaciones
-    .filter(g => g.estado === 1)
-    .reduce((acc, g) => acc + g.monto, 0);
-
   if (error) {
     return (
       <div className='flex flex-col items-center justify-center min-h-[60vh] gap-4'>
@@ -178,36 +173,22 @@ export default function GratificacionesPage() {
 
   return (
     <div className='p-6 space-y-6'>
-      {}
-      <div className='flex items-center justify-between'>
-        <div>
-          <h1 className='text-2xl font-bold text-gray-900 dark:text-gray-100'>
-            Listado de Gratificaciones
-          </h1>
-          <p className='text-gray-600 dark:text-gray-400'>Control de bonificaciones de personal</p>
-        </div>
-        {hasPermission('gratificaciones', 'create') && (
-          <Button
-            onClick={() => {
-              setGratificacionToEdit(null);
-              setIsModalOpen(true);
-            }}
-            disabled={!hasOpenCaja || cajaLoading}
-            className='rounded-full bg-black text-white hover:scale-105 transition-all duration-200'
-          >
-            <Plus className='w-4 h-4 mr-2' />
-            Nueva gratificación
-          </Button>
-        )}
-      </div>
+      <CajaStatusBanner entityName='gratificaciones' />
 
-      {}
-      <div className='text-center'>
-        <p className='text-sm text-gray-500'>TOTAL POR PAGAR</p>
-        <p className='text-2xl font-bold text-gray-900 dark:text-gray-100'>
-          {formatCurrency(totalPorPagar)}
-        </p>
-      </div>
+      <GratificacionesHeader
+        canCreate={hasPermission('gratificaciones', 'create')}
+        hasOpenCaja={hasOpenCaja}
+        cajaLoading={cajaLoading}
+        onOpenDialog={() => {
+          setGratificacionToEdit(null);
+          setIsModalOpen(true);
+        }}
+      />
+
+      <GratificacionesStatsCards
+        gratificaciones={gratificaciones}
+        formatCurrency={formatCurrency}
+      />
 
       {}
       <div className='flex justify-center gap-3 border-b pb-1'>
@@ -216,13 +197,12 @@ export default function GratificacionesPage() {
             setActiveTab('pending');
             setCurrentPage(1);
           }}
-          className={`flex items-center gap-2 px-5 py-2 text-sm font-semibold transition-all ${
+          className={`flex items-center gap-1.5 px-5 py-2 text-sm font-semibold transition-all ${
             activeTab === 'pending'
               ? 'bg-amber-100 text-amber-700 rounded-full shadow-xs'
               : 'text-gray-500 hover:bg-gray-100 rounded-full'
           }`}
         >
-          <Clock className='h-4 w-4' />
           Por Pagar
           <span
             className={`ml-1.5 px-2.5 py-0.5 rounded-full text-xs font-bold ${
@@ -237,13 +217,12 @@ export default function GratificacionesPage() {
             setActiveTab('paid');
             setCurrentPage(1);
           }}
-          className={`flex items-center gap-2 px-5 py-2 text-sm font-semibold transition-all ${
+          className={`flex items-center gap-1.5 px-5 py-2 text-sm font-semibold transition-all ${
             activeTab === 'paid'
               ? 'bg-green-100 text-green-700 rounded-full shadow-xs'
               : 'text-gray-500 hover:bg-gray-100 rounded-full'
           }`}
         >
-          <CheckCircle className='h-4 w-4' />
           Pagadas
           <span
             className={`ml-1.5 px-2.5 py-0.5 rounded-full text-xs font-bold ${

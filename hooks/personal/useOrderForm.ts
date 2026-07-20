@@ -1,3 +1,5 @@
+'use client';
+
 import { useState, useMemo, useCallback } from 'react';
 import { generateRandomCode } from '@/lib/utils/codeUtils';
 import { useRouter } from 'next/navigation';

@@ -1,6 +1,11 @@
+'use client';
+
 import { useEffect } from 'react';
 import { toast } from 'sonner';
-import { isChampagneProduct as checkIsChampagne, getHostessLimit } from '@/components/orders/productModalRules';
+import {
+  isChampagneProduct as checkIsChampagne,
+  getHostessLimit
+} from '@/components/orders/productModalRules';
 
 interface ChampagneProduct {
   categoria?: string;
@@ -23,7 +28,8 @@ export function useChampagneRule(
   selectedAnfitrionas?: string[],
   setSelectedAnfitrionas?: (value: string[]) => void
 ): UseChampagneRuleReturn {
-  const isChampagneProduct = (producto: ChampagneProduct): boolean => checkIsChampagne(producto as any);
+  const isChampagneProduct = (producto: ChampagneProduct): boolean =>
+    checkIsChampagne(producto as any);
 
   const hasChampagneProducts = Array.isArray(productos)
     ? productos.some(isChampagneProduct)

@@ -1,3 +1,5 @@
+'use client';
+
 import { useEffect, useRef, useCallback } from 'react';
 import { Timer, saveTimersToStorage, loadTimersFromStorage } from '@/contexts/TimerContext';
 import { parseDateSafe, calculateRemainingTime } from '@/lib/utils/timeUtils';

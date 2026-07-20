@@ -1,3 +1,5 @@
+'use client';
+
 import { useState } from 'react';
 import { Client } from '@/types/client';
 import { useGenericFetch } from '../shared/useGenericFetch';
@@ -61,7 +63,9 @@ export function useClients() {
 
       setData((prev: Client[] | undefined) =>
         (prev || []).map((c: Client) =>
-          String(c.id) === String(payload.id) ? { ...c, ...payload, updated_at: new Date().toISOString() } : c
+          String(c.id) === String(payload.id)
+            ? { ...c, ...payload, updated_at: new Date().toISOString() }
+            : c
         )
       );
 
@@ -76,7 +80,9 @@ export function useClients() {
     try {
       const res = await removeMutation(id);
 
-      setData((prev: Client[] | undefined) => (prev || []).filter((c: Client) => String(c.id) !== String(id)));
+      setData((prev: Client[] | undefined) =>
+        (prev || []).filter((c: Client) => String(c.id) !== String(id))
+      );
 
       return res;
     } finally {
@@ -123,4 +129,3 @@ export function useClients() {
     updateClientSaldo
   };
 }
-

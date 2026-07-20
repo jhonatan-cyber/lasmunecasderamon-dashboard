@@ -26,7 +26,7 @@ export default function CommissionsStatsCards({
 }: CommissionsStatsCardsProps) {
   if (isLoading) {
     return (
-      <div className='grid gap-4 grid-cols-1 md:grid-cols-4 mb-6'>
+      <div className='grid gap-4 grid-cols-2 lg:grid-cols-4 mb-6'>
         {[1, 2, 3, 4].map(i => (
           <Card
             key={i}
@@ -49,7 +49,7 @@ export default function CommissionsStatsCards({
   }
 
   return (
-    <div className='grid gap-4 grid-cols-1 md:grid-cols-4 mb-6'>
+    <div className='grid gap-4 grid-cols-2 lg:grid-cols-4 mb-6'>
       {}
       <Card
         style={{

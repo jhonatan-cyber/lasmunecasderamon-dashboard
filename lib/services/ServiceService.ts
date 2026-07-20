@@ -4,6 +4,7 @@ import { getNowInBusinessTimezone } from '@/lib/business/timezoneService';
 import { ServiceRepository } from '@/lib/repositories/ServiceRepository';
 import { CashRegisterRepository } from '@/lib/repositories/CashRegisterRepository';
 import { RoomManager } from '@/lib/services/RoomManager';
+import { SecurityAlertService } from '@/lib/services/SecurityAlertService';
 import { sendNotificationToAll } from '@/lib/api/sseService';
 import { invalidateDashboardCache } from '@/lib/cache/dashboardCache';
 import { BusinessError } from '@/lib/errors/errors';
@@ -239,7 +240,14 @@ export class ServiceService {
     trx: any,
     rows: Array<Record<string, unknown>>
   ): Promise<void> {
-    const columns = ['id_detalle_comision', 'comision_id', 'usuario_id', 'comision', 'estado', 'fecha_crea'];
+    const columns = [
+      'id_detalle_comision',
+      'comision_id',
+      'usuario_id',
+      'comision',
+      'estado',
+      'fecha_crea'
+    ];
     const placeholders = rows.map(() => `(${columns.map(() => '?').join(', ')})`).join(', ');
     const values = rows.flatMap(row => columns.map(col => row[col]));
 
@@ -288,7 +296,26 @@ export class ServiceService {
   }
 
   static async processAnulacion(requestId: string, approvedBy: string, status: string) {
-    return await ServiceRepository.processAnulacion(requestId, approvedBy, status);
+    const result = await ServiceRepository.processAnulacion(requestId, approvedBy, status);
+    // 🔒 Verificar anulaciones masivas
+    try {
+      const serviceInfo = await query<any[]>(
+        `SELECT s.codigo, s.total FROM servicios s
+         INNER JOIN solicitudes_anulacion_servicios sas ON sas.servicio_id = s.id_servicio
+         WHERE sas.id = ? LIMIT 1`,
+        [requestId]
+      );
+      if (serviceInfo.length > 0) {
+        SecurityAlertService.checkMassAnulation({
+          entityType: 'servicio',
+          entityId: requestId,
+          entityCode: serviceInfo[0].codigo,
+          userId: approvedBy,
+          totalAmount: Number(serviceInfo[0].total || 0)
+        }).catch(() => {});
+      }
+    } catch {}
+    return result;
   }
 
   static async requestAnulacion(id: string, motivo: string, userId: string) {

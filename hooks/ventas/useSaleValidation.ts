@@ -1,3 +1,5 @@
+'use client';
+
 import { useState, useEffect, useMemo, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import { toast } from 'sonner';
@@ -72,10 +74,7 @@ export function useSaleValidation({
 
   // ── Derived product rules ───────────────────────────────────────────
   const hasChampagneProducts = useMemo(() => productos.some(isChampagneProduct), [productos]);
-  const hasHighValueProducts = useMemo(
-    () => productos.some(p => isExpensiveDrink(p)),
-    [productos]
-  );
+  const hasHighValueProducts = useMemo(() => productos.some(p => isExpensiveDrink(p)), [productos]);
   const requiresRoom = hasChampagneProducts || hasHighValueProducts;
 
   // ── localStorage persistence ────────────────────────────────────────
@@ -262,7 +261,9 @@ export function useSaleValidation({
         sub_total: totals.subtotal,
         total: totals.total,
         detalles: productos.map(p => {
-          const selectedHostesses = Array.isArray(p.selectedHostesses) ? p.selectedHostesses.map((h: number) => Number(h)) : [];
+          const selectedHostesses = Array.isArray(p.selectedHostesses)
+            ? p.selectedHostesses.map((h: number) => Number(h))
+            : [];
           const normalizedDetail = {
             producto_id: p.id,
             precio: p.precio,

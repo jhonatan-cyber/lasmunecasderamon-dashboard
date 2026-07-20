@@ -48,6 +48,58 @@ export interface UserPermissions {
     delete: boolean;
     process: boolean;
   };
+  commissions: {
+    read: boolean;
+    write: boolean;
+    delete: boolean;
+  };
+  payroll: {
+    read: boolean;
+    write: boolean;
+  };
+  rooms: {
+    read: boolean;
+    write: boolean;
+    delete: boolean;
+  };
+  attendance: {
+    read: boolean;
+    write: boolean;
+  };
+  overtime: {
+    read: boolean;
+    write: boolean;
+  };
+  tips: {
+    read: boolean;
+    write: boolean;
+  };
+  gratificaciones: {
+    read: boolean;
+    write: boolean;
+    delete: boolean;
+  };
+  accounts: {
+    read: boolean;
+    write: boolean;
+    edit: boolean;
+  };
+  categories: {
+    read: boolean;
+    write: boolean;
+  };
+  returns: {
+    read: boolean;
+    write: boolean;
+    delete: boolean;
+  };
+  dashboard: {
+    read: boolean;
+  };
+  private_rooms: {
+    read: boolean;
+    write: boolean;
+  };
 }
 
 export interface AuthenticatedUser {
@@ -73,7 +125,19 @@ const rolePermissions: Record<string, UserPermissions> = {
     reports: { read: true, export: true },
     settings: { read: true, write: true },
     orders: { read: true, write: true, delete: true, process: true },
-    advances: { read: true, write: true, delete: true, process: true }
+    advances: { read: true, write: true, delete: true, process: true },
+    commissions: { read: true, write: true, delete: true },
+    payroll: { read: true, write: true },
+    rooms: { read: true, write: true, delete: true },
+    attendance: { read: true, write: true },
+    overtime: { read: true, write: true },
+    tips: { read: true, write: true },
+    gratificaciones: { read: true, write: true, delete: true },
+    accounts: { read: true, write: true, edit: true },
+    categories: { read: true, write: true },
+    returns: { read: true, write: true, delete: true },
+    dashboard: { read: true },
+    private_rooms: { read: true, write: true }
   },
   cajero: {
     users: { read: true, write: true, delete: true },
@@ -84,7 +148,19 @@ const rolePermissions: Record<string, UserPermissions> = {
     reports: { read: false, export: false },
     settings: { read: false, write: false },
     orders: { read: true, write: true, delete: false, process: true },
-    advances: { read: true, write: true, delete: false, process: true }
+    advances: { read: true, write: true, delete: false, process: true },
+    commissions: { read: true, write: true, delete: false },
+    payroll: { read: true, write: true },
+    rooms: { read: true, write: true, delete: false },
+    attendance: { read: true, write: true },
+    overtime: { read: true, write: true },
+    tips: { read: true, write: true },
+    gratificaciones: { read: true, write: true, delete: false },
+    accounts: { read: true, write: true, edit: true },
+    categories: { read: true, write: false },
+    returns: { read: true, write: true, delete: false },
+    dashboard: { read: true },
+    private_rooms: { read: true, write: true }
   },
   garzon: {
     users: { read: false, write: false, delete: false },
@@ -95,7 +171,19 @@ const rolePermissions: Record<string, UserPermissions> = {
     reports: { read: false, export: false },
     settings: { read: false, write: false },
     orders: { read: false, write: false, delete: false, process: false },
-    advances: { read: true, write: false, delete: false, process: false }
+    advances: { read: true, write: false, delete: false, process: false },
+    commissions: { read: false, write: false, delete: false },
+    payroll: { read: false, write: false },
+    rooms: { read: false, write: false, delete: false },
+    attendance: { read: false, write: false },
+    overtime: { read: false, write: false },
+    tips: { read: false, write: false },
+    gratificaciones: { read: false, write: false, delete: false },
+    accounts: { read: false, write: false, edit: false },
+    categories: { read: false, write: false },
+    returns: { read: false, write: false, delete: false },
+    dashboard: { read: true },
+    private_rooms: { read: false, write: false }
   },
   anfitriona: {
     users: { read: false, write: false, delete: false },
@@ -106,7 +194,19 @@ const rolePermissions: Record<string, UserPermissions> = {
     reports: { read: false, export: false },
     settings: { read: false, write: false },
     orders: { read: false, write: false, delete: false, process: false },
-    advances: { read: true, write: false, delete: false, process: false }
+    advances: { read: true, write: false, delete: false, process: false },
+    commissions: { read: false, write: false, delete: false },
+    payroll: { read: false, write: false },
+    rooms: { read: false, write: false, delete: false },
+    attendance: { read: false, write: false },
+    overtime: { read: false, write: false },
+    tips: { read: false, write: false },
+    gratificaciones: { read: false, write: false, delete: false },
+    accounts: { read: false, write: false, edit: false },
+    categories: { read: false, write: false },
+    returns: { read: false, write: false, delete: false },
+    dashboard: { read: true },
+    private_rooms: { read: false, write: false }
   }
 };
 
@@ -149,7 +249,19 @@ export async function getUserPermissionsFromDB(userId: string): Promise<UserPerm
       reports: { read: false, export: false },
       settings: { read: false, write: false },
       orders: { read: false, write: false, delete: false, process: false },
-      advances: { read: false, write: false, delete: false, process: false }
+      advances: { read: false, write: false, delete: false, process: false },
+      commissions: { read: false, write: false, delete: false },
+      payroll: { read: false, write: false },
+      rooms: { read: false, write: false, delete: false },
+      attendance: { read: false, write: false },
+      overtime: { read: false, write: false },
+      tips: { read: false, write: false },
+      gratificaciones: { read: false, write: false, delete: false },
+      accounts: { read: false, write: false, edit: false },
+      categories: { read: false, write: false },
+      returns: { read: false, write: false, delete: false },
+      dashboard: { read: false },
+      private_rooms: { read: false, write: false }
     };
 
     const actionMap: Record<string, string> = {

@@ -1,6 +1,6 @@
 'use client';
 
-import { Clock, DollarSign, Gift, ShoppingCart, Users, Zap } from 'lucide-react';
+import { AlertTriangle, Clock, DollarSign, Gift, ShoppingCart, Users, Zap } from 'lucide-react';
 
 interface PayrollCalendarLegendProps {
   canViewDetails: boolean;
@@ -45,8 +45,9 @@ export function PayrollCalendarLegend({ canViewDetails }: PayrollCalendarLegendP
         {canViewDetails ? (
           <p>• Seleccioná fechas para ver los detalles de ventas y servicios</p>
         ) : (
-          <p className='text-amber-600 dark:text-amber-400 font-medium'>
-            ⚠️ No tenés permiso para ver los detalles de las fechas
+          <p className='text-amber-600 dark:text-amber-400 font-medium flex items-center gap-1.5'>
+            <AlertTriangle className='w-4 h-4' />
+            No tenés permiso para ver los detalles de las fechas
           </p>
         )}
       </div>

@@ -2,7 +2,6 @@
 
 import { useState, useEffect } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { ConfirmModal } from '@/components/shared/ConfirmModal';
 import { PermissionGuard } from '@/components/auth/PermissionGuard';
 import dynamic from 'next/dynamic';
@@ -21,6 +20,7 @@ import {
   OrderCard,
   ServiceRequestCard
 } from '@/components/orders/list';
+import { CajaStatusBanner } from '@/components/sales/CajaStatusBanner';
 
 const OrderDetailModal = dynamic(
   () => import('@/components/orders').then(mod => mod.OrderDetailModal),
@@ -135,145 +135,169 @@ export default function OrdersPage() {
 
   return (
     <PermissionGuard module='orders' action='view'>
-      <BoneyardSkeleton name="orders-main" loading={loadingOrders && orders.length === 0}>
-      <div className='p-4 sm:p-6 lg:p-10 space-y-4 sm:space-y-6 mt-4 sm:mt-6 lg:mt-10'>
-        <OrdersHeader
-          hasOpenCaja={hasOpenCaja}
-          cajaLoading={cajaLoading}
-          onCreateOrder={() => router.push('/orders/new')}
-        />
+      <BoneyardSkeleton name='orders-main' loading={loadingOrders && orders.length === 0}>
+        <div className='p-4 sm:p-6 lg:p-10 space-y-4 sm:space-y-6 mt-4 sm:mt-6 lg:mt-10'>
+          <CajaStatusBanner entityName='pedidos' />
 
-        <OrdersStats activeTab={activeTab} orders={orders} servicios={servicios} />
+          <OrdersHeader
+            hasOpenCaja={hasOpenCaja}
+            cajaLoading={cajaLoading}
+            onCreateOrder={() => router.push('/orders/new')}
+          />
 
-        <AdminOrdersFilters
-          searchTerm={searchTerm}
-          setSearchTerm={setSearchTerm}
-          searchServiciosTerm={searchServiciosTerm}
-          setSearchServiciosTerm={setSearchServiciosTerm}
-          activeTab={activeTab}
-          sortBy={sortBy}
-          setSortBy={setSortBy}
-          sortOrder={sortOrder}
-          setSortOrder={setSortOrder}
-          onClearFilters={() => {
-            setSearchTerm('');
-            setSearchServiciosTerm('');
-            setSortBy('total');
-            setSortOrder('desc');
-          }}
-          rowsPerPage={10}
-          setRowsPerPage={() => {}}
-          setPage={() => {}}
-        />
+          <OrdersStats activeTab={activeTab} orders={orders} servicios={servicios} />
 
-        <Tabs value={activeTab} onValueChange={setActiveTab} className='w-full'>
-          <TabsList className='grid w-full max-w-md mx-auto grid-cols-2 rounded-full bg-gray-100 p-1 mb-8 dark:bg-zinc-900 dark:border dark:border-zinc-800'>
-            <TabsTrigger
-              value='productos'
-              className='rounded-full text-gray-600 dark:text-zinc-400 data-[state=active]:bg-white data-[state=active]:text-gray-900 data-[state=active]:shadow-xs dark:data-[state=active]:bg-zinc-100 dark:data-[state=active]:text-zinc-900'
+          <AdminOrdersFilters
+            searchTerm={searchTerm}
+            setSearchTerm={setSearchTerm}
+            searchServiciosTerm={searchServiciosTerm}
+            setSearchServiciosTerm={setSearchServiciosTerm}
+            activeTab={activeTab}
+            sortBy={sortBy}
+            setSortBy={setSortBy}
+            sortOrder={sortOrder}
+            setSortOrder={setSortOrder}
+            onClearFilters={() => {
+              setSearchTerm('');
+              setSearchServiciosTerm('');
+              setSortBy('total');
+              setSortOrder('desc');
+            }}
+            rowsPerPage={10}
+            setRowsPerPage={() => {}}
+            setPage={() => {}}
+          />
+
+          <div className='flex justify-center gap-3 border-b pb-1 mb-8'>
+            <button
+              onClick={() => setActiveTab('productos')}
+              className={`flex items-center gap-2 px-5 py-2 text-sm font-semibold transition-all ${
+                activeTab === 'productos'
+                  ? 'bg-amber-100 text-amber-700 rounded-full shadow-xs'
+                  : 'text-gray-500 hover:bg-gray-100 rounded-full'
+              }`}
             >
               Productos
-            </TabsTrigger>
-            <TabsTrigger
-              value='servicios'
-              className='rounded-full text-gray-600 dark:text-zinc-400 data-[state=active]:bg-white data-[state=active]:text-gray-900 data-[state=active]:shadow-xs dark:data-[state=active]:bg-zinc-100 dark:data-[state=active]:text-zinc-900'
+              <span
+                className={`ml-1.5 px-2.5 py-0.5 rounded-full text-xs font-bold ${
+                  activeTab === 'productos'
+                    ? 'bg-amber-600 text-white'
+                    : 'bg-amber-100 text-amber-800'
+                }`}
+              >
+                {filteredOrders.length}
+              </span>
+            </button>
+            <button
+              onClick={() => setActiveTab('servicios')}
+              className={`flex items-center gap-2 px-5 py-2 text-sm font-semibold transition-all ${
+                activeTab === 'servicios'
+                  ? 'bg-green-100 text-green-700 rounded-full shadow-xs'
+                  : 'text-gray-500 hover:bg-gray-100 rounded-full'
+              }`}
             >
               Servicios
-            </TabsTrigger>
-          </TabsList>
+              <span
+                className={`ml-1.5 px-2.5 py-0.5 rounded-full text-xs font-bold ${
+                  activeTab === 'servicios'
+                    ? 'bg-green-600 text-white'
+                    : 'bg-green-100 text-green-800'
+                }`}
+              >
+                {filteredServicios.length}
+              </span>
+            </button>
+          </div>
 
-          <TabsContent
-            value='productos'
-            className='space-y-4 animate-in fade-in slide-in-from-bottom-2 duration-300'
-          >
-            {filteredOrders.length === 0 ? (
-              <div className='text-center py-20 rounded-2xl border border-dashed border-gray-200 bg-white dark:border-zinc-800 dark:bg-zinc-900/70'>
-                <p className='font-medium text-gray-400 dark:text-zinc-500'>
-                  No se encontraron ??rdenes de productos
-                </p>
-              </div>
-            ) : (
-              <div className='grid grid-cols-1 xl:grid-cols-2 gap-4'>
-                {filteredOrders.map(order => (
-                  <OrderCard
-                    key={order.id_pedido || order.id}
-                    order={order}
-                    canDelete={canDelete}
-                    canProcess={canProcess}
-                    hasOpenCaja={hasOpenCaja}
-                    onOrderClick={handleOrderClick}
-                    onDeleteClick={handleDeleteClick}
-                  />
-                ))}
-              </div>
-            )}
-          </TabsContent>
+          {activeTab === 'productos' && (
+            <div className='space-y-4 animate-in fade-in slide-in-from-bottom-2 duration-300'>
+              {filteredOrders.length === 0 ? (
+                <div className='text-center py-20 rounded-2xl border border-dashed border-gray-200 bg-white dark:border-zinc-800 dark:bg-zinc-900/70'>
+                  <p className='font-medium text-gray-400 dark:text-zinc-500'>
+                    No se encontraron órdenes de productos
+                  </p>
+                </div>
+              ) : (
+                <div className='grid grid-cols-1 xl:grid-cols-2 gap-4'>
+                  {filteredOrders.map(order => (
+                    <OrderCard
+                      key={order.id_pedido || order.id}
+                      order={order}
+                      canDelete={canDelete}
+                      canProcess={canProcess}
+                      hasOpenCaja={hasOpenCaja}
+                      onOrderClick={handleOrderClick}
+                      onDeleteClick={handleDeleteClick}
+                    />
+                  ))}
+                </div>
+              )}
+            </div>
+          )}
 
-          <TabsContent
-            value='servicios'
-            className='space-y-4 animate-in fade-in slide-in-from-bottom-2 duration-300'
-          >
-            {filteredServicios.length === 0 ? (
-              <div className='text-center py-20 rounded-2xl border border-dashed border-gray-200 bg-white dark:border-zinc-800 dark:bg-zinc-900/70'>
-                <p className='font-medium text-gray-400 dark:text-zinc-500'>
-                  No hay solicitudes de servicio pendientes
-                </p>
-              </div>
-            ) : (
-              <div className='grid grid-cols-1 gap-4'>
-                {filteredServicios.map(servicio => (
-                  <ServiceRequestCard
-                    key={servicio.id_solicitud}
-                    servicio={servicio}
-                    canDelete={canDelete}
-                    onServicioClick={s =>
-                      appEventBus.emit('openServiceRequestModal', { solicitud: s })
-                    }
-                    onDeleteClick={handleDeleteServicioClick}
-                  />
-                ))}
-              </div>
-            )}
-          </TabsContent>
-        </Tabs>
-      </div>
+          {activeTab === 'servicios' && (
+            <div className='space-y-4 animate-in fade-in slide-in-from-bottom-2 duration-300'>
+              {filteredServicios.length === 0 ? (
+                <div className='text-center py-20 rounded-2xl border border-dashed border-gray-200 bg-white dark:border-zinc-800 dark:bg-zinc-900/70'>
+                  <p className='font-medium text-gray-400 dark:text-zinc-500'>
+                    No hay solicitudes de servicio pendientes
+                  </p>
+                </div>
+              ) : (
+                <div className='grid grid-cols-1 gap-4'>
+                  {filteredServicios.map(servicio => (
+                    <ServiceRequestCard
+                      key={servicio.id_solicitud}
+                      servicio={servicio}
+                      canDelete={canDelete}
+                      onServicioClick={s =>
+                        appEventBus.emit('openServiceRequestModal', { solicitud: s })
+                      }
+                      onDeleteClick={handleDeleteServicioClick}
+                    />
+                  ))}
+                </div>
+              )}
+            </div>
+          )}
+        </div>
 
-      {modalOpen && selectedOrderId && (
-        <OrderDetailModal
-          open={modalOpen}
-          onClose={() => setModalOpen(false)}
-          orderId={selectedOrderId}
-          orderCode={selectedOrderCode}
-          detail={orderDetail}
-          isLoading={loadingDetail}
-          error={orderDetailError}
-          onOrderStatusChange={() => {}}
+        {modalOpen && selectedOrderId && (
+          <OrderDetailModal
+            open={modalOpen}
+            onClose={() => setModalOpen(false)}
+            orderId={selectedOrderId}
+            orderCode={selectedOrderCode}
+            detail={orderDetail}
+            isLoading={loadingDetail}
+            error={orderDetailError}
+            onOrderStatusChange={() => {}}
+          />
+        )}
+
+        {}
+        <ConfirmModal
+          open={deleteModalOpen}
+          onOpenChange={setDeleteModalOpen}
+          title='Confirmar eliminación'
+          message={`Eliminarás el pedido ${orderToDelete?.codigo}. Esta acción no se puede deshacer.`}
+          confirmText={isDeleting ? 'Eliminando...' : 'Eliminar Pedido'}
+          type='warning'
+          confirmVariant='destructive'
+          onConfirm={handleConfirmDelete}
+          isLoading={isDeleting}
         />
-      )}
-
-      {}
-      <ConfirmModal
-        open={deleteModalOpen}
-        onOpenChange={setDeleteModalOpen}
-        title='Confirmar eliminación'
-        message={`Eliminarás el pedido ${orderToDelete?.codigo}. Esta acción no se puede deshacer.`}
-        confirmText={isDeleting ? 'Eliminando...' : 'Eliminar Pedido'}
-        type='warning'
-        confirmVariant='destructive'
-        onConfirm={handleConfirmDelete}
-        isLoading={isDeleting}
-      />
-      <ConfirmModal
-        open={deleteServicioModalOpen}
-        onOpenChange={setDeleteServicioModalOpen}
-        title='Confirmar eliminación'
-        message={`Eliminarás la solicitud de servicio #${servicioToDelete?.id_solicitud}.`}
-        confirmText={isDeletingServicio ? 'Eliminando...' : 'Eliminar Solicitud'}
-        type='warning'
-        confirmVariant='destructive'
-        onConfirm={handleConfirmDeleteServicio}
-        isLoading={isDeletingServicio}
-      />
+        <ConfirmModal
+          open={deleteServicioModalOpen}
+          onOpenChange={setDeleteServicioModalOpen}
+          title='Confirmar eliminación'
+          message={`Eliminarás la solicitud de servicio #${servicioToDelete?.id_solicitud}.`}
+          confirmText={isDeletingServicio ? 'Eliminando...' : 'Eliminar Solicitud'}
+          type='warning'
+          confirmVariant='destructive'
+          onConfirm={handleConfirmDeleteServicio}
+          isLoading={isDeletingServicio}
+        />
       </BoneyardSkeleton>
     </PermissionGuard>
   );
