@@ -127,20 +127,18 @@ describe('auth route contract', () => {
 
     await expect(response.json()).resolves.toEqual({
       success: true,
-      data: {
-        user: {
-          id: 'user-1',
-          username: 'ana',
-          name: 'Ana',
-          lastName: 'Ramon',
-          email: 'ana@test.com',
-          role: 'anfitriona',
-          foto: 'ana.png',
-          nick: 'ana',
-          phone: '70000000',
-          address: 'Centro',
-          estado_civil: 'soltera'
-        }
+      user: {
+        id: 'user-1',
+        username: 'ana',
+        name: 'Ana',
+        lastName: 'Ramon',
+        email: 'ana@test.com',
+        role: 'anfitriona',
+        foto: 'ana.png',
+        nick: 'ana',
+        phone: '70000000',
+        address: 'Centro',
+        estado_civil: 'soltera'
       }
     });
   });
