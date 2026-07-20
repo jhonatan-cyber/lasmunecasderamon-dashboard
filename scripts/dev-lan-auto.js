@@ -3,9 +3,10 @@ const { spawn } = require('child_process');
 const path = require('path');
 
 const port = process.env.PORT || '3000';
-const host = 'localhost';
+const host = '0.0.0.0';
+const publicHost = 'localhost';
 
-console.log(`[dev] Servidor: http://${host}:${port}`);
+console.log(`[dev] Servidor: http://${publicHost}:${port}`);
 
 const command = `pnpm exec next dev --hostname ${host} --port ${String(port)}`;
 const child = spawn(command, [], { stdio: 'inherit', shell: true, windowsHide: false });

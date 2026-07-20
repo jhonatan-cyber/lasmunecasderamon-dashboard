@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback, useRef } from 'react';
+import { useState, useEffect, useCallback, useRef, useMemo } from 'react';
 import { usePathname, useRouter } from 'next/navigation';
 import { toast } from 'sonner';
 import { useSharedSSE } from '@/hooks/shared';
@@ -49,12 +49,25 @@ export function useAuthSession({
   const sessionExpiredShownRef = useRef(false);
   const isMountedRef = useRef(true);
 
-  const isPublicPage =
-    pathname === '/' ||
-    pathname === '/login' ||
-    pathname === '/api-docs' ||
-    isPublicRoute(pathname) ||
-    pathname === '/asistencia-qr';
+  const isPublicPage = useMemo(
+    () =>
+      pathname === '/' ||
+      pathname === '/login' ||
+      pathname === '/api-docs' ||
+      isPublicRoute(pathname) ||
+      pathname === '/asistencia-qr',
+    [pathname]
+  );
+
+  const pathnameRef = useRef(pathname);
+  const routerRef = useRef(router);
+  const onSessionExpiredRef = useRef(onSessionExpired);
+
+  useEffect(() => {
+    pathnameRef.current = pathname;
+    routerRef.current = router;
+    onSessionExpiredRef.current = onSessionExpired;
+  }, [pathname, router, onSessionExpired]);
 
   const handleSessionExpired = useCallback(() => {
     if (sessionExpiredShownRef.current) return;
@@ -63,7 +76,7 @@ export function useAuthSession({
     setUser(null);
     userFetchedRef.current = false;
 
-    onSessionExpired?.();
+    onSessionExpiredRef.current?.();
 
     if (typeof window !== 'undefined') {
       localStorage.removeItem('auth_role_hint');
@@ -75,16 +88,16 @@ export function useAuthSession({
     });
 
     setTimeout(() => {
-      router.push(`/login?redirect=${encodeURIComponent(pathname || '')}`);
+      routerRef.current.push(`/login?redirect=${encodeURIComponent(pathnameRef.current || '')}`);
       sessionExpiredShownRef.current = false;
     }, 500);
-  }, [pathname, router, onSessionExpired]);
+  }, []);
 
   const fetchUser = useCallback(
     async (silent = false) => {
       if (!isMountedRef.current || isPublicPage || isFetchingUserRef.current) return;
       isFetchingUserRef.current = true;
-      if (!silent || !user) {
+      if (!silent || !userFetchedRef.current) {
         setUserLoading(true);
       }
       try {
@@ -126,7 +139,7 @@ export function useAuthSession({
         isFetchingUserRef.current = false;
       }
     },
-    [handleSessionExpired, isPublicPage, user]
+    [handleSessionExpired, isPublicPage]
   );
 
   const clearUser = useCallback(() => {
