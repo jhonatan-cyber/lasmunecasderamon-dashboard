@@ -397,6 +397,23 @@ export default async function proxy(request: NextRequest) {
         newAccessToken = newToken;
         token = newToken;
         payload = refreshPayload;
+
+        // ♻️ Sync refreshed token into request headers so API route handlers
+        // (which read cookies from the incoming request) see the valid token
+        // instead of the expired one — prevents 401 on /api/auth/me after refresh.
+        const newCookieValue = `token=${newAccessToken}`;
+        const cookieHeaders = new Headers(cspRequestHeaders);
+        const existingCookieStr = cookieHeaders.get('cookie') || '';
+        const cleanedCookieStr = existingCookieStr
+          .split(';')
+          .map(c => c.trim())
+          .filter(c => !c.startsWith('token='))
+          .join('; ');
+        cookieHeaders.set(
+          'cookie',
+          cleanedCookieStr ? `${cleanedCookieStr}; ${newCookieValue}` : newCookieValue
+        );
+        cspRequestHeaders = cookieHeaders;
       }
     }
   }
