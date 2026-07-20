@@ -8,36 +8,37 @@ import {
   apiRoutePermissions
 } from '@/lib/middleware/proxy-routes';
 import { siteConfig } from '@/lib/api/site';
-import { checkRateLimit, RATE_LIMIT_CONFIGS, type RateLimitConfig } from '@/lib/middleware/redisRateLimit';
+import {
+  checkRateLimit,
+  RATE_LIMIT_CONFIGS,
+  type RateLimitConfig
+} from '@/lib/middleware/redisRateLimit';
 
 // Orígenes permitidos para CORS
 const ALLOWED_ORIGINS = [
-  siteConfig.url,                                    // https://xn--lasmuecasderamon-bub.com
+  siteConfig.url, // https://xn--lasmuecasderamon-bub.com
   'http://localhost:3000',
-  'http://localhost:8081',                           // Expo dev
+  'http://localhost:8081', // Expo dev
   'https://dashboard.xn--lasmuecasderamon-bub.com',
   // DEV_ALLOWED_ORIGINS: variables de entorno separadas por comas (ej: http://192.168.1.42:3000,http://192.168.1.42:8081)
   ...(process.env.DEV_ALLOWED_ORIGINS
-    ? process.env.DEV_ALLOWED_ORIGINS.split(',').map(s => s.trim()).filter(Boolean)
+    ? process.env.DEV_ALLOWED_ORIGINS.split(',')
+        .map(s => s.trim())
+        .filter(Boolean)
     : [])
 ];
 
 // Warning en desarrollo si no se configuró DEV_ALLOWED_ORIGINS
-if (
-  process.env.NODE_ENV === 'development' &&
-  !process.env.DEV_ALLOWED_ORIGINS
-) {
+if (process.env.NODE_ENV === 'development' && !process.env.DEV_ALLOWED_ORIGINS) {
   console.warn(
     '[CORS] ⚠️  DEV_ALLOWED_ORIGINS no definida. Las IPs de red local no podrán conectar al dashboard.\n' +
-    '         Configúrala en .env.local: DEV_ALLOWED_ORIGINS=http://192.168.1.42:3000,http://192.168.1.42:8081'
+      '         Configúrala en .env.local: DEV_ALLOWED_ORIGINS=http://192.168.1.42:3000,http://192.168.1.42:8081'
   );
 }
 
 function isOriginAllowed(origin: string | null): boolean {
   if (!origin) return false;
-  return ALLOWED_ORIGINS.some(allowed =>
-    origin === allowed || origin.startsWith(allowed + '/')
-  );
+  return ALLOWED_ORIGINS.some(allowed => origin === allowed || origin.startsWith(allowed + '/'));
 }
 
 function getCorsOrigin(origin: string | null): string {
@@ -261,50 +262,46 @@ export default async function proxy(request: NextRequest) {
     cspRequestHeaders = request.headers;
   }
 
-  // ─── Rate limiting (Edge Middleware) ───────────────────────────
-  // Se aplica ANTES de la autenticación para proteger contra ataques
-  // de fuerza bruta en login y flooding en APIs.
-  // Usa Redis (INCR + EXPIRE) cuando está disponible, con fallback
-  // a memoria para Edge Runtime / desarrollo.
-  
-  const isLoginPath = pathname === '/login' || pathname.startsWith('/login/');
-  const isSsePath = pathname.includes('/sse');
-  
-  // Seleccionar configuración según la ruta
-  let rateLimitConfig: RateLimitConfig | null = null;
-  if (isLoginPath) {
-    rateLimitConfig = RATE_LIMIT_CONFIGS.LOGIN;
-  } else if (isSsePath) {
-    rateLimitConfig = RATE_LIMIT_CONFIGS.SSE;
-  } else if (isApi) {
-    // Para APIs, aplicar según el método HTTP
-    if (request.method === 'GET' || request.method === 'OPTIONS') {
-      rateLimitConfig = null; // Lecturas sin rate limit estricto
-    } else {
-      rateLimitConfig = RATE_LIMIT_CONFIGS.API_SENSITIVE;
+  // ponytail: skip rate limiting in dev
+  const isProd = process.env.NODE_ENV === 'production';
+  if (isProd) {
+    const isLoginPath = pathname === '/login' || pathname.startsWith('/login/');
+    const isSsePath = pathname.includes('/sse');
+
+    let rateLimitConfig: RateLimitConfig | null = null;
+    if (isLoginPath) {
+      rateLimitConfig = RATE_LIMIT_CONFIGS.LOGIN;
+    } else if (isSsePath) {
+      rateLimitConfig = RATE_LIMIT_CONFIGS.SSE;
+    } else if (isApi) {
+      if (request.method === 'GET' || request.method === 'OPTIONS') {
+        rateLimitConfig = null;
+      } else {
+        rateLimitConfig = RATE_LIMIT_CONFIGS.API_SENSITIVE;
+      }
     }
-  }
-  
-  if (rateLimitConfig) {
-    const result = await checkRateLimit(request, rateLimitConfig);
-    if (result && !result.allowed) {
-      const response = NextResponse.json(
-        {
-          success: false,
-          message: 'Demasiadas solicitudes. Intenta de nuevo más tarde.',
-          code: 'RATE_LIMIT_EXCEEDED'
-        },
-        {
-          status: 429,
-          headers: {
-            'Retry-After': String(result.retryAfter ?? 60),
-            'RateLimit-Limit': String(result.limit),
-            'RateLimit-Remaining': '0',
-            'RateLimit-Reset': String(result.reset ?? Math.ceil(Date.now() / 1000) + 60)
+
+    if (rateLimitConfig) {
+      const result = await checkRateLimit(request, rateLimitConfig);
+      if (result && !result.allowed) {
+        const response = NextResponse.json(
+          {
+            success: false,
+            message: 'Demasiadas solicitudes. Intenta de nuevo más tarde.',
+            code: 'RATE_LIMIT_EXCEEDED'
+          },
+          {
+            status: 429,
+            headers: {
+              'Retry-After': String(result.retryAfter ?? 60),
+              'RateLimit-Limit': String(result.limit),
+              'RateLimit-Remaining': '0',
+              'RateLimit-Reset': String(result.reset ?? Math.ceil(Date.now() / 1000) + 60)
+            }
           }
-        }
-      );
-      return response;
+        );
+        return response;
+      }
     }
   }
 
@@ -515,5 +512,6 @@ export default async function proxy(request: NextRequest) {
 }
 
 export const config = {
-  matcher: ['/((?!_next/static|_next/image|favicon.ico|public).*)']
+  // ponytail: _next/webpack-hmr excluded so HMR WebSocket is not intercepted
+  matcher: ['/((?!_next/static|_next/image|_next/webpack-hmr|favicon.ico|public).*)']
 };

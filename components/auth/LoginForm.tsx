@@ -14,7 +14,6 @@ interface FormState {
   loading: boolean;
   codigo: string;
   setCodigo: (val: string) => void;
-  rateLimitRemaining: number;
   hasUsers: boolean | null;
 }
 
@@ -72,7 +71,7 @@ export const LoginForm = ({
   theme: themeState,
   callbacks
 }: LoginFormProps) => {
-  const { step, loading, codigo, setCodigo, rateLimitRemaining, hasUsers } = form;
+  const { step, loading, codigo, setCodigo, hasUsers } = form;
   const { loginData, setLoginData } = credentials;
   const { showPassword, setShowPassword } = password;
   const { emailInputRef, passwordInputRef, submitButtonRef } = inputRefs;

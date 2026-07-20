@@ -97,6 +97,10 @@ export function createAppRouterLimiter(windowMs: number, max: number) {
 
   return function (handler: AppRouterHandler): AppRouterHandler {
     return async function (request: NextRequest): Promise<NextResponse> {
+      if (process.env.NODE_ENV === 'development') {
+        return handler(request);
+      }
+
       cleanupExpiredEntriesApp();
 
       const forwarded = request.headers.get('x-forwarded-for');
