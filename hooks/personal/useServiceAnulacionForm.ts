@@ -1,3 +1,5 @@
+'use client';
+
 import React, { useState } from 'react';
 import { ServicioWithDetails } from '@/types/servicio';
 import { showSuccessToast, showErrorToast } from '@/lib/utils/toastUtils';

@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server';
-import { withPublicRoute } from '@/lib/api/withRoute';
+import { withPublicRoute, withRoute } from '@/lib/api/withRoute';
 import { CommissionService } from '@/lib/services/CommissionService';
 
 export const GET = withPublicRoute(async (request: Request) => {
@@ -18,8 +18,11 @@ export const GET = withPublicRoute(async (request: Request) => {
   return NextResponse.json({ success: true, data });
 });
 
-export const POST = withPublicRoute(async (request: Request) => {
-  const body = await request.json();
-  const id = await CommissionService.create(body);
-  return NextResponse.json({ success: true, message: 'Comisión creada', id }, { status: 201 });
-});
+export const POST = withRoute(
+  { auth: true, audit: true, module: 'commissions', action: 'write' },
+  async (request: Request) => {
+    const body = await request.json();
+    const id = await CommissionService.create(body);
+    return NextResponse.json({ success: true, message: 'Comisión creada', id }, { status: 201 });
+  }
+);

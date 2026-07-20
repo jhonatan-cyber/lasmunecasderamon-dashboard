@@ -1,3 +1,5 @@
+'use client';
+
 import { useState } from 'react';
 import { useEmployees } from '@/hooks/personal';
 import { formatNumberCL } from '@/lib/utils/formatters';
@@ -15,7 +17,12 @@ export function useOvertimeForm({ onSubmit }: UseOvertimeFormProps) {
   const [monto, setMonto] = useState('');
   const [montoDisplay, setMontoDisplay] = useState('');
 
-  const reset = () => { setSelectedUser(''); setHora(''); setMonto(''); setMontoDisplay(''); };
+  const reset = () => {
+    setSelectedUser('');
+    setHora('');
+    setMonto('');
+    setMontoDisplay('');
+  };
 
   const handleMontoChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const raw = e.target.value.replace(/\./g, '').replace(/[^0-9]/g, '');
@@ -41,7 +48,6 @@ export function useOvertimeForm({ onSubmit }: UseOvertimeFormProps) {
     montoDisplay,
     handleMontoChange,
     calculateTotal,
-    handleSubmit,
+    handleSubmit
   };
 }
-

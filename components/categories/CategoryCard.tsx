@@ -4,7 +4,6 @@ import {
   Edit,
   Trash2,
   CheckCircle,
-  Tag,
   Eye,
   Package,
   EyeOff,
@@ -60,90 +59,6 @@ const statusLabels = {
   0: 'Inactiva'
 };
 
-const generateColor = (name: string, id: string) => {
-  const colors = [
-    '#3B82F6',
-    '#1D4ED8',
-    '#2563EB',
-    '#1E40AF',
-    '#1E3A8A',
-
-    '#10B981',
-    '#059669',
-    '#047857',
-    '#065F46',
-    '#064E3B',
-
-    '#8B5CF6',
-    '#7C3AED',
-    '#6D28D9',
-    '#5B21B6',
-    '#4C1D95',
-
-    '#F59E0B',
-    '#D97706',
-    '#B45309',
-    '#92400E',
-    '#78350F',
-
-    '#EF4444',
-    '#DC2626',
-    '#B91C1C',
-    '#991B1B',
-    '#7F1D1D',
-
-    '#6B7280',
-    '#4B5563',
-    '#374151',
-    '#1F2937',
-    '#111827',
-
-    '#06B6D4',
-    '#0891B2',
-    '#0E7490',
-    '#155E75',
-    '#164E63',
-
-    '#84CC16',
-    '#65A30D',
-    '#4D7C0F',
-    '#3F6212',
-    '#365314',
-
-    '#EC4899',
-    '#DB2777',
-    '#BE185D',
-    '#9D174D',
-    '#831843',
-
-    '#6366F1',
-    '#4F46E5',
-    '#4338CA',
-    '#3730A3',
-    '#312E81',
-
-    '#10B981',
-    '#059669',
-    '#047857',
-    '#065F46',
-    '#064E3B',
-
-    '#14B8A6',
-    '#0D9488',
-    '#0F766E',
-    '#115E59',
-    '#134E4A'
-  ];
-
-  let hash = 0;
-  const strId = String(id);
-  for (let i = 0; i < strId.length; i++) {
-    hash = strId.charCodeAt(i) + ((hash << 5) - hash);
-  }
-  const colorIndex = Math.abs(hash) % colors.length;
-  return colors[colorIndex];
-};
-
 export default function CategoryCard({
   category,
   onEdit,
@@ -159,8 +74,6 @@ export default function CategoryCard({
   isLoading = false
 }: CategoryCardProps) {
   const [showDeleteModal, setShowDeleteModal] = useState(false);
-
-  const categoryColor = generateColor(category.name, category.id);
 
   const hasAnyAction = canEdit || canDelete || canActivate || canDeactivate;
 
@@ -193,12 +106,7 @@ export default function CategoryCard({
             <div {...dragHandleProps} className='cursor-grab active:cursor-grabbing touch-none'>
               <GripVertical className='h-4 w-4 sm:h-5 sm:w-5 text-gray-400 hover:text-gray-600' />
             </div>
-            <div
-              className='w-8 h-8 sm:w-12 sm:h-12 rounded-lg flex items-center justify-center'
-              style={{ backgroundColor: categoryColor + '15' }}
-            >
-              <Tag className='h-4 w-4 sm:h-6 sm:w-6' style={{ color: categoryColor }} />
-            </div>
+
             <div>
               <div className='text-base sm:text-lg font-semibold text-neutral-600 dark:text-white'>
                 {category.name || 'Sin nombre'}

@@ -151,10 +151,11 @@ export function AnulacionProvider({ children }: { children: React.ReactNode }) {
     const checkPendingNotifications = async () => {
       try {
         const response = await fetch('/api/notifications/pending');
-        const data = await response.json();
+        const result = await response.json();
 
-        if (data.success && data.notifications.length > 0) {
-          data.notifications.forEach((notification: any) => {
+        const notifications = result.data ?? [];
+        if (result.success && notifications.length > 0) {
+          notifications.forEach((notification: any) => {
             try {
               const notificationData = JSON.parse(notification.datos);
 

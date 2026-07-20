@@ -1,4 +1,5 @@
- 
+'use client';
+
 import { useState, useCallback, useMemo } from 'react';
 import { useGenericFetch } from '../shared/useGenericFetch';
 import { useGenericMutations } from '../shared/useGenericMutations';
@@ -52,7 +53,12 @@ export function useCategories(): UseCategoriesReturn {
 
   const [searchTerm, setSearchTerm] = useState('');
 
-  const { create, update, remove, isLoading: isMutating } = useGenericMutations<Category>('/api/categories', {
+  const {
+    create,
+    update,
+    remove,
+    isLoading: isMutating
+  } = useGenericMutations<Category>('/api/categories', {
     onSuccess: refetchCategories,
     showToasts: false
   });
@@ -120,7 +126,9 @@ export function useCategories(): UseCategoriesReturn {
         if (setData) {
           setData((prev: Category[] | undefined) =>
             (prev || []).map((c: Category) =>
-              String(c.id) === String(id) ? { ...c, ...category, updated_at: new Date().toISOString() } : c
+              String(c.id) === String(id)
+                ? { ...c, ...category, updated_at: new Date().toISOString() }
+                : c
             )
           );
         } else {
@@ -139,7 +147,9 @@ export function useCategories(): UseCategoriesReturn {
       try {
         const res = await remove(id);
         if (setData) {
-          setData((prev: Category[] | undefined) => (prev || []).filter((c: Category) => String(c.id) !== String(id)));
+          setData((prev: Category[] | undefined) =>
+            (prev || []).filter((c: Category) => String(c.id) !== String(id))
+          );
         } else {
           await refetchCategories();
         }
@@ -156,12 +166,16 @@ export function useCategories(): UseCategoriesReturn {
       const previous = categories ? [...categories] : [];
       try {
         if (setData) {
-          setData((prev: Category[] | undefined) => (prev || []).map((c: Category) => (String(c.id) === String(id) ? { ...c, status: 1 } : c)));
+          setData((prev: Category[] | undefined) =>
+            (prev || []).map((c: Category) =>
+              String(c.id) === String(id) ? { ...c, status: 1 } : c
+            )
+          );
         }
 
         const res = await fetch(`/api/categories?id=${id}&action=activate`, { method: 'PATCH' });
         const data = await res.json();
- 
+
         if (!data.success) {
           if (setData) setData(previous);
           const { showErrorToast } = await import('@/lib/utils/toastUtils');
@@ -170,7 +184,9 @@ export function useCategories(): UseCategoriesReturn {
         }
 
         if (setData && data.category) {
-          setData((prev: Category[] | undefined) => (prev || []).map((c: Category) => (c.id === id ? { ...c, ...data.category } : c)));
+          setData((prev: Category[] | undefined) =>
+            (prev || []).map((c: Category) => (c.id === id ? { ...c, ...data.category } : c))
+          );
         } else {
           await refetchCategories();
         }
@@ -193,7 +209,11 @@ export function useCategories(): UseCategoriesReturn {
       const previous = categories ? [...categories] : [];
       try {
         if (setData) {
-          setData((prev: Category[] | undefined) => (prev || []).map((c: Category) => (String(c.id) === String(id) ? { ...c, status: 0 } : c)));
+          setData((prev: Category[] | undefined) =>
+            (prev || []).map((c: Category) =>
+              String(c.id) === String(id) ? { ...c, status: 0 } : c
+            )
+          );
         }
 
         const res = await fetch(`/api/categories?id=${id}&action=deactivate`, { method: 'PATCH' });
@@ -207,7 +227,9 @@ export function useCategories(): UseCategoriesReturn {
         }
 
         if (setData && data.category) {
-          setData((prev: Category[] | undefined) => (prev || []).map((c: Category) => (c.id === id ? { ...c, ...data.category } : c)));
+          setData((prev: Category[] | undefined) =>
+            (prev || []).map((c: Category) => (c.id === id ? { ...c, ...data.category } : c))
+          );
         } else {
           await refetchCategories();
         }
@@ -231,7 +253,7 @@ export function useCategories(): UseCategoriesReturn {
       try {
         if (setData) {
           const optimistic = (newOrder || []).map((c, idx) => ({ ...c, display_order: idx }));
-       
+
           const seen = new Set<string>();
           setData(
             optimistic.filter(item => {
@@ -253,7 +275,7 @@ export function useCategories(): UseCategoriesReturn {
         });
 
         const data = await res.json();
-   
+
         if (!data.success) {
           if (setData) setData(previous);
           const { showErrorToast } = await import('@/lib/utils/toastUtils');
@@ -273,7 +295,6 @@ export function useCategories(): UseCategoriesReturn {
 
         return { success: true, message: data.message };
       } catch (e) {
-      
         if (setData) setData(previous);
         const { showErrorToast } = await import('@/lib/utils/toastUtils');
         showErrorToast('Error de red al actualizar el orden');
@@ -326,7 +347,9 @@ export function useCategories(): UseCategoriesReturn {
         }
 
         if (action === 'deleted') {
-          setData((prev: Category[] | undefined) => (prev || []).filter((c: Category) => String(c.id) !== String(payload.id)));
+          setData((prev: Category[] | undefined) =>
+            (prev || []).filter((c: Category) => String(c.id) !== String(payload.id))
+          );
           return;
         }
 
@@ -348,7 +371,9 @@ export function useCategories(): UseCategoriesReturn {
         if (action === 'activated' || action === 'deactivated') {
           const newStatus = action === 'activated' ? 1 : 0;
           setData((prev: Category[] | undefined) =>
-            (prev || []).map((c: Category) => (String(c.id) === String(payload.id) ? { ...c, status: newStatus } : c))
+            (prev || []).map((c: Category) =>
+              String(c.id) === String(payload.id) ? { ...c, status: newStatus } : c
+            )
           );
           return;
         }
@@ -378,4 +403,3 @@ export function useCategories(): UseCategoriesReturn {
     reorderCategories
   };
 }
-

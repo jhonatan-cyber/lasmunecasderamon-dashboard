@@ -1,15 +1,15 @@
- 
+'use client';
+
 import { useState } from 'react';
 import { ServicioWithDetails } from '@/types/servicio';
-import {  showErrorToast } from '@/lib/utils/toastUtils';
+import { showErrorToast } from '@/lib/utils/toastUtils';
 import { useTimer } from '@/contexts/TimerContext';
-
 
 export const useDevolucionLogic = () => {
   const [selectedServicio, setSelectedServicio] = useState<ServicioWithDetails | null>(null);
   const [isDetailModalOpen, setIsDetailModalOpen] = useState(false);
   const [isAnulacionModalOpen, setIsAnulacionModalOpen] = useState(false);
-  
+
   const handleVerDetalles = (servicio: ServicioWithDetails) => {
     setSelectedServicio(servicio);
     setIsDetailModalOpen(true);
@@ -63,4 +63,3 @@ export const useDevolucionLogic = () => {
     resetAnulacionModal
   };
 };
-

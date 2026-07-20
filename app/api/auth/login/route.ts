@@ -2,10 +2,11 @@ import { NextResponse } from 'next/server';
 import { AuthService } from '@/lib/services/AuthService';
 import { generateRefreshToken } from '@/lib/auth/auth';
 import { cookies } from 'next/headers';
-import { loginLimiterApp } from '@/lib/middleware/rateLimit';
 import { ApiResponse } from '@/lib/api/api-response';
 
-export const POST = loginLimiterApp(async (request: Request) => {
+// ponytail: rate limiting handled in proxy.ts via redisRateLimit (Redis + memory fallback)
+// loginLimiterApp from '@/lib/middleware/rateLimit' removed — was duplicate in-memory only
+export const POST = async (request: Request) => {
   try {
     const body = await request.json();
     const forwarded = request.headers.get('x-forwarded-for');
@@ -21,7 +22,7 @@ export const POST = loginLimiterApp(async (request: Request) => {
       cookieStore.set('token', result.token, {
         httpOnly: true,
         secure: isProduction,
-        sameSite: 'lax',
+        sameSite: 'strict',
         path: '/',
         maxAge: 15 * 60
       });
@@ -42,7 +43,7 @@ export const POST = loginLimiterApp(async (request: Request) => {
           cookieStore.set('refresh_token', refreshToken, {
             httpOnly: true,
             secure: isProduction,
-            sameSite: 'lax',
+            sameSite: 'strict',
             path: '/',
             maxAge: 7 * 24 * 60 * 60
           });
@@ -62,4 +63,4 @@ export const POST = loginLimiterApp(async (request: Request) => {
   } catch (error) {
     return ApiResponse.error(error);
   }
-});
+};

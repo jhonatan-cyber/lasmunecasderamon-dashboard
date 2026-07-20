@@ -1,4 +1,5 @@
- 
+'use client';
+
 import { useState, useCallback, useMemo } from 'react';
 
 interface UseProductSelectionParams {
@@ -17,16 +18,19 @@ export function useProductSelection({
   onCantidadChange,
   onAgregarProducto
 }: UseProductSelectionParams) {
-  const [selectedProducts, setSelectedProducts] = useState<{[key: string]: number}>({});
+  const [selectedProducts, setSelectedProducts] = useState<{ [key: string]: number }>({});
 
-  const handleAddToSelection = useCallback((producto: any) => {
-    const id = getProductId(producto);
-    const cantidad = cantidades[id] || 1;
-    setSelectedProducts(prev => ({
-      ...prev,
-      [id]: cantidad
-    }));
-  }, [cantidades]);
+  const handleAddToSelection = useCallback(
+    (producto: any) => {
+      const id = getProductId(producto);
+      const cantidad = cantidades[id] || 1;
+      setSelectedProducts(prev => ({
+        ...prev,
+        [id]: cantidad
+      }));
+    },
+    [cantidades]
+  );
 
   const handleRemoveFromSelection = useCallback((id: string) => {
     setSelectedProducts(prev => {
@@ -75,4 +79,3 @@ export function useProductSelection({
     totalValue
   };
 }
-

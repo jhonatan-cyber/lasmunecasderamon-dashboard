@@ -1,3 +1,4 @@
+'use client';
 
 import { useState, useEffect, useCallback } from 'react';
 import { useGenericFetch } from '../shared/useGenericFetch';
@@ -14,37 +15,42 @@ export interface OvertimeDetail {
 }
 
 export const useOvertime = () => {
-  const { data: overtime, isLoading: loading, error, refetch: getOvertime } = useGenericFetch<Overtime>(
-    '/api/overtime',
-    {
-      transform: (result) => result.success && Array.isArray(result.data) ? result.data : []
-    }
-  );
+  const {
+    data: overtime,
+    isLoading: loading,
+    error,
+    refetch: getOvertime
+  } = useGenericFetch<Overtime>('/api/overtime', {
+    transform: result => (result.success && Array.isArray(result.data) ? result.data : [])
+  });
 
   const [detailsLoading, setDetailsLoading] = useState(false);
   const [detailsError, setDetailsError] = useState<string | null>(null);
   const [overtimeDetails, setOvertimeDetails] = useState<OvertimeDetail[]>([]);
 
-  const createOvertime = useCallback(async (overtimeData: CreateOvertimeRequest) => {
-    try {
-      const response = await fetch('/api/overtime', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(overtimeData)
-      });
+  const createOvertime = useCallback(
+    async (overtimeData: CreateOvertimeRequest) => {
+      try {
+        const response = await fetch('/api/overtime', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(overtimeData)
+        });
 
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.message || 'Error al crear la hora extra');
+        if (!response.ok) {
+          const errorData = await response.json();
+          throw new Error(errorData.message || 'Error al crear la hora extra');
+        }
+
+        const result = await response.json();
+        await getOvertime();
+        return result;
+      } catch (err) {
+        throw err;
       }
-
-      const result = await response.json();
-      await getOvertime();
-      return result;
-    } catch (err) {
-      throw err;
-    }
-  }, [getOvertime]);
+    },
+    [getOvertime]
+  );
 
   const getOvertimeDetails = useCallback(async (userId: string) => {
     try {
@@ -97,4 +103,3 @@ export const useOvertime = () => {
     overtimeDetails
   };
 };
-

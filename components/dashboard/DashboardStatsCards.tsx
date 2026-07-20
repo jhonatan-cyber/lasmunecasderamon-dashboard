@@ -22,7 +22,7 @@ export default function DashboardStatsCards() {
 
   if (loadingSummary && !dashboardData) {
     return (
-      <div className='grid gap-4 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5'>
+      <div className='grid gap-4 grid-cols-2 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5'>
         {Array.from({ length: 5 }).map((_, i) => (
           <div key={i} className='h-32 bg-gray-200 dark:bg-gray-700 rounded-lg animate-pulse' />
         ))}
@@ -103,10 +103,12 @@ export default function DashboardStatsCards() {
         </CardContent>
       </Card>
 
-      <div className='grid gap-4 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5'>
-        {stats.map(item => (
+      <div className='grid gap-4 grid-cols-2 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5'>
+        {stats.map((item, index) => (
           <Link key={item.title} href={item.href}>
-            <Card className='hover:shadow-md transition-shadow cursor-pointer border-gray-200 h-full'>
+            <Card
+              className={`hover:shadow-md transition-shadow cursor-pointer border-gray-200 h-full ${index === stats.length - 1 ? 'col-span-2 md:col-span-1' : ''}`}
+            >
               <CardHeader className='flex flex-row items-center justify-between pb-2 space-y-0'>
                 <CardTitle className='text-sm font-medium'>{item.title}</CardTitle>
                 <item.icon className={`h-4 w-4 ${item.color}`} />

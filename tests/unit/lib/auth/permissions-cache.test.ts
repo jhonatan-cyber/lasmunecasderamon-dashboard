@@ -11,7 +11,19 @@ const mockPerms: UserPermissions = {
   reports: { read: false, export: false },
   settings: { read: false, write: false },
   orders: { read: true, write: false, delete: false, process: false },
-  advances: { read: false, write: false, delete: false, process: false }
+  advances: { read: false, write: false, delete: false, process: false },
+  commissions: { read: false, write: false, delete: false },
+  payroll: { read: false, write: false },
+  rooms: { read: false, write: false, delete: false },
+  attendance: { read: false, write: false },
+  overtime: { read: false, write: false },
+  tips: { read: false, write: false },
+  gratificaciones: { read: false, write: false, delete: false },
+  accounts: { read: false, write: false, edit: false },
+  categories: { read: false, write: false },
+  returns: { read: false, write: false, delete: false },
+  dashboard: { read: false },
+  private_rooms: { read: false, write: false }
 };
 
 beforeEach(() => {

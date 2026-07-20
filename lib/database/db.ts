@@ -35,7 +35,7 @@ function getPool(): mysql.Pool {
       globalThis.__lasMunecasDbPool.on('connection', async (connection: any) => {
         try {
           const promiseConnection = connection.promise();
-          await promiseConnection.query(`SET time_zone = '${getSQLTimezoneOffset()}'`);
+          await promiseConnection.query('SET time_zone = ?', [getSQLTimezoneOffset()]);
           await promiseConnection.query(
             "SET SESSION sql_mode=(SELECT REPLACE(@@sql_mode,'ONLY_FULL_GROUP_BY',''))"
           );
@@ -125,7 +125,65 @@ export async function withTransaction<T>(
   }
 }
 
+// Lista blanca de tablas permitidas para rawQuery — evita inyección SQL
+const ALLOWED_RAW_TABLES = new Set([
+  'asistencias',
+  'usuarios',
+  'roles',
+  'ventas',
+  'servicios',
+  'cuentas',
+  'productos',
+  'categorias',
+  'pedidos',
+  'detalle_pedidos',
+  'clientes',
+  'anticipos',
+  'propinas',
+  'comisiones',
+  'horas_extras',
+  'gratificaciones',
+  'cajas',
+  'detalle_cuentas',
+  'logins',
+  'habitaciones',
+  'codigos',
+  'permisos',
+  'role_permissions',
+  'permissions',
+  'configuraciones',
+  'notificaciones',
+  'backups',
+  'eventos',
+  'detalle_ventas',
+  'solicitudes_anulacion_ventas',
+  'solicitudes_anulacion_servicios',
+  'solicitudes_anulacion_cuentas',
+  'historial_anticipos',
+  'pagos'
+]);
+
+/**
+ * Valida que los nombres de tabla en una consulta SQL estén en la whitelist.
+ * Extrae nombres de tabla después de FROM, JOIN, UPDATE, INTO, TABLE.
+ */
+function validateTableNames(sql: string): boolean {
+  const tableRefPattern = /(?:FROM|JOIN|UPDATE|INTO|TABLE)\s+`?(\w+)`?/gi;
+  let match;
+  while ((match = tableRefPattern.exec(sql)) !== null) {
+    const tableName = match[1].toLowerCase();
+    if (!ALLOWED_RAW_TABLES.has(tableName)) {
+      return false;
+    }
+  }
+  return true;
+}
+
 export async function rawQuery(sql: string) {
+  // Validar que las tablas referenciadas estén en whitelist
+  if (!validateTableNames(sql)) {
+    throw new Error('Seguridad: Tabla no permitida en rawQuery');
+  }
   const [rows] = await getPool().query(sql);
   return rows;
 }

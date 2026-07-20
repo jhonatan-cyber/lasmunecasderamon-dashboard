@@ -1,3 +1,5 @@
+'use client';
+
 import { useState, useEffect } from 'react';
 import { toast } from 'sonner';
 import { useCuentas } from '@/hooks/caja/useCuentas';

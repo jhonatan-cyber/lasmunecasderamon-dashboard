@@ -8,6 +8,7 @@ import { CommissionRepository } from '@/lib/repositories/CommissionRepository';
 import { AuditRepository } from '@/lib/repositories/AuditRepository';
 import { TipRepository } from '@/lib/repositories/TipRepository';
 import { RoomManager } from '@/lib/services/RoomManager';
+import { SecurityAlertService } from '@/lib/services/SecurityAlertService';
 import { sendNotificationToAll } from '@/lib/api/sseService';
 import { invalidateDashboardCache } from '@/lib/cache/dashboardCache';
 import { logger } from '@/lib/utils/logger';
@@ -122,13 +123,15 @@ export class SaleService {
       // === OPTIMIZACIÓN: Validar TODAS las hostesses en UNA query ===
       // Extraer todos los IDs únicos de hostesses desde usuarios principales + detalles
       const allRequestedHostessIds = [
-        ...new Set([
-          ...(validated.usuarios || []),
-          ...validated.detalles.flatMap(d => {
-            const ids = d.hostesses?.length ? d.hostesses : (d.hostess_id ? [d.hostess_id] : []);
-            return ids;
-          })
-        ].filter(Boolean))
+        ...new Set(
+          [
+            ...(validated.usuarios || []),
+            ...validated.detalles.flatMap(d => {
+              const ids = d.hostesses?.length ? d.hostesses : d.hostess_id ? [d.hostess_id] : [];
+              return ids;
+            })
+          ].filter(Boolean)
+        )
       ] as string[];
 
       let validatedHostessIds: string[] = [];
@@ -179,15 +182,21 @@ export class SaleService {
       const commissionDetailRows: Array<Record<string, unknown>> = [];
 
       for (const d of validated.detalles) {
-        const requestedHostesses = d.hostesses?.length ? d.hostesses : (d.hostess_id ? [d.hostess_id] : []);
-        const hostesses = requestedHostesses.length > 0
-          ? requestedHostesses.filter((id: string) => validatedHostessSet.has(id))
-          : [];
+        const requestedHostesses = d.hostesses?.length
+          ? d.hostesses
+          : d.hostess_id
+            ? [d.hostess_id]
+            : [];
+        const hostesses =
+          requestedHostesses.length > 0
+            ? requestedHostesses.filter((id: string) => validatedHostessSet.has(id))
+            : [];
 
         const totalComm = Math.round(d.comision || 0);
         const totalQty = Math.max(1, Number(d.cantidad || 1));
         const isChampagne = Boolean(d.isChampagne);
-        const effectiveHostesses = hostesses.length === 0 ? [null] : isChampagne ? hostesses : hostesses.slice(0, totalQty);
+        const effectiveHostesses =
+          hostesses.length === 0 ? [null] : isChampagne ? hostesses : hostesses.slice(0, totalQty);
         const hostessCount = Math.max(1, effectiveHostesses.length);
 
         const commissionByIndex = new Array(hostessCount).fill(0);
@@ -322,7 +331,9 @@ export class SaleService {
       if (validated.propina && validated.propina > 0) {
         try {
           const pedidoUsuarios = pedidoId
-            ? await trx<any[]>('SELECT mesero_id FROM pedidos WHERE id_pedido = ? LIMIT 1', [pedidoId])
+            ? await trx<any[]>('SELECT mesero_id FROM pedidos WHERE id_pedido = ? LIMIT 1', [
+                pedidoId
+              ])
             : [];
           const destinatariosPropina = Array.from(
             new Set(
@@ -377,16 +388,20 @@ export class SaleService {
     rows: Array<Record<string, unknown>>
   ): Promise<void> {
     const columns = [
-      'id_detalle_venta', 'venta_id', 'producto_id', 'precio',
-      'comision', 'cantidad', 'sub_total', 'hostess_id', 'fecha_crea'
+      'id_detalle_venta',
+      'venta_id',
+      'producto_id',
+      'precio',
+      'comision',
+      'cantidad',
+      'sub_total',
+      'hostess_id',
+      'fecha_crea'
     ];
     const placeholders = rows.map(() => `(${columns.map(() => '?').join(', ')})`).join(', ');
     const values = rows.flatMap(row => columns.map(col => row[col]));
 
-    await trx(
-      `INSERT INTO detalle_ventas (${columns.join(', ')}) VALUES ${placeholders}`,
-      values
-    );
+    await trx(`INSERT INTO detalle_ventas (${columns.join(', ')}) VALUES ${placeholders}`, values);
   }
 
   /**
@@ -402,7 +417,9 @@ export class SaleService {
 
     // Batch insert comisiones
     const mainColumns = ['id_comision', 'venta_id', 'monto', 'estado', 'fecha_crea'];
-    const mainPlaceholders = mainRows.map(() => `(${mainColumns.map(() => '?').join(', ')})`).join(', ');
+    const mainPlaceholders = mainRows
+      .map(() => `(${mainColumns.map(() => '?').join(', ')})`)
+      .join(', ');
     const mainValues = mainRows.flatMap(row => mainColumns.map(col => row[col]));
 
     await trx(
@@ -411,8 +428,17 @@ export class SaleService {
     );
 
     // Batch insert detalle_comisiones
-    const detailCols = ['id_detalle_comision', 'comision_id', 'usuario_id', 'comision', 'estado', 'fecha_crea'];
-    const detailPlaceholders = detailRows.map(() => `(${detailCols.map(() => '?').join(', ')})`).join(', ');
+    const detailCols = [
+      'id_detalle_comision',
+      'comision_id',
+      'usuario_id',
+      'comision',
+      'estado',
+      'fecha_crea'
+    ];
+    const detailPlaceholders = detailRows
+      .map(() => `(${detailCols.map(() => '?').join(', ')})`)
+      .join(', ');
     const detailValues = detailRows.flatMap(row => detailCols.map(col => row[col]));
 
     await trx(
@@ -434,16 +460,11 @@ export class SaleService {
     if (usuarioIds.length === 0) return;
 
     const columns = ['id_usuario_venta', 'venta_id', 'usuario_id', 'fecha_crea'];
-    const rows = usuarioIds.map(usuarioId => [
-      generateUUID(), ventaId, usuarioId, now
-    ]);
+    const rows = usuarioIds.map(usuarioId => [generateUUID(), ventaId, usuarioId, now]);
     const placeholders = rows.map(() => `(${columns.map(() => '?').join(', ')})`).join(', ');
     const values = rows.flat();
 
-    await trx(
-      `INSERT INTO ventas_usuarios (${columns.join(', ')}) VALUES ${placeholders}`,
-      values
-    );
+    await trx(`INSERT INTO ventas_usuarios (${columns.join(', ')}) VALUES ${placeholders}`, values);
   }
 
   static async approveAnulacion(ventaId: string, approvedBy: string, requestedAmount: number) {
@@ -463,7 +484,26 @@ export class SaleService {
   }
 
   static async processAnulacion(requestId: string, approvedBy: string, status: string) {
-    return await SaleRepository.processAnulacion(requestId, approvedBy, status);
+    const result = await SaleRepository.processAnulacion(requestId, approvedBy, status);
+    // 🔒 Verificar anulaciones masivas
+    try {
+      const saleInfo = await query<any[]>(
+        `SELECT v.codigo, v.total FROM ventas v
+         INNER JOIN solicitudes_anulacion_ventas sav ON sav.venta_id = v.id_venta
+         WHERE sav.id = ? LIMIT 1`,
+        [requestId]
+      );
+      if (saleInfo.length > 0) {
+        SecurityAlertService.checkMassAnulation({
+          entityType: 'venta',
+          entityId: requestId,
+          entityCode: saleInfo[0].codigo,
+          userId: approvedBy,
+          totalAmount: Number(saleInfo[0].total || 0)
+        }).catch(() => {});
+      }
+    } catch {}
+    return result;
   }
 
   static async requestAnulacion(id: string, motivo: string, userId: string, monto: number) {

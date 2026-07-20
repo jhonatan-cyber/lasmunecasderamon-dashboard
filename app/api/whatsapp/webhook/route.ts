@@ -1,4 +1,5 @@
 import { NextResponse } from 'next/server';
+import twilio from 'twilio';
 import { query } from '@/lib/database/db';
 import {
   isApprovalAction,
@@ -11,8 +12,56 @@ import { processPendingSolicitud } from '@/lib/integrations/whatsappPendingActio
 import { AnticipoService } from '@/lib/services/AnticipoService';
 import { GratificacionService } from '@/lib/services/GratificacionService';
 
+/**
+ * Valida la firma de Twilio para evitar solicitudes falsificadas.
+ * Twilio firma cada webhook con X-Twilio-Signature usando tu Auth Token.
+ * Ver: https://www.twilio.com/docs/usage/webhooks/webhooks-security
+ */
+async function validateTwilioRequest(request: Request): Promise<boolean> {
+  const authToken = process.env.TWILIO_AUTH_TOKEN;
+  if (!authToken) {
+    return false;
+  }
+
+  const signature = request.headers.get('x-twilio-signature');
+  if (!signature) {
+    return false;
+  }
+
+  try {
+    // Reconstruir la URL original que Twilio usó para firmar
+    const forwardedProto = request.headers.get('x-forwarded-proto');
+    const forwardedHost = request.headers.get('x-forwarded-host');
+    const url = request.url;
+
+    // Extraer los parámetros POST del body (form-data)
+    const formData = await request.clone().formData();
+    const params: Record<string, string> = {};
+    for (const [key, value] of formData.entries()) {
+      if (typeof value === 'string') {
+        params[key] = value;
+      }
+    }
+
+    return twilio.validateRequest(authToken, signature, url, params);
+  } catch {
+    return false;
+  }
+}
+
 export async function POST(request: Request) {
   try {
+    // Validar firma de Twilio en producción para prevenir suplantación
+    if (process.env.NODE_ENV === 'production') {
+      const isValid = await validateTwilioRequest(request);
+      if (!isValid) {
+        return NextResponse.json(
+          { error: 'Firma inválida: solicitud no autorizada' },
+          { status: 403 }
+        );
+      }
+    }
+
     const formData = await request.formData();
     const Body = formData.get('Body')?.toString();
     const From = formData.get('From')?.toString();

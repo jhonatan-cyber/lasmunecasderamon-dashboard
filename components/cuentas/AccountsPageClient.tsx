@@ -1,12 +1,13 @@
 'use client';
 
 import { useEffect, useState, useMemo } from 'react';
-import { AlertCircle, Clock, CheckCircle } from 'lucide-react';
+import { Clock, CheckCircle } from 'lucide-react';
 import { useCuentas } from '@/hooks/caja/useCuentas';
 import useOrders from '@/hooks/servicios/useOrders';
 import { useCashRegisterStatus } from '@/hooks/caja/useCashRegisterStatus';
 import { formatCurrencyNoDecimals } from '@/lib/utils/formatters';
 import { CuentaFilters, CuentaStatsCards, CuentaTable, CuentaHeader } from '@/components/cuentas';
+import { CajaStatusBanner } from '@/components/sales/CajaStatusBanner';
 import Paginate from '@/components/shared/Paginate';
 import { PermissionGuard } from '@/components/auth/PermissionGuard';
 import { Skeleton as BoneyardSkeleton } from 'boneyard-js/react';
@@ -63,98 +64,85 @@ export function AccountsPageClient() {
 
   return (
     <PermissionGuard module='accounts' action='view'>
-      <BoneyardSkeleton name="accounts-main" loading={isLoading || cajaLoading}>
-      <div className='p-4 sm:p-6 lg:p-10 space-y-4 sm:space-y-6 mt-4 sm:mt-6 lg:mt-10'>
-        <CuentaHeader loading={isLoading} onRefresh={() => getCuentas()} />
-        <CuentaStatsCards cuentas={cuentasData} formatCurrency={formatCurrencyNoDecimals} />
+      <BoneyardSkeleton name='accounts-main' loading={isLoading || cajaLoading}>
+        <div className='p-4 sm:p-6 lg:p-10 space-y-4 sm:space-y-6 mt-4 sm:mt-6 lg:mt-10'>
+          <CajaStatusBanner entityName='cuentas' />
 
-        {!cajaLoading && hasOpenCaja === false && (
-          <div className='bg-yellow-50 border border-yellow-200 rounded-lg p-4'>
-            <div className='flex items-center'>
-              <AlertCircle className='h-5 w-5 text-yellow-600 mr-2' />
-              <div>
-                <h3 className='text-sm font-medium text-yellow-800'>Caja cerrada</h3>
-                <p className='text-sm text-yellow-700 mt-1'>
-                  No se pueden crear nuevas cuentas sin una caja abierta. Por favor, abra una caja
-                  en el modulo de caja primero.
-                </p>
-              </div>
-            </div>
-          </div>
-        )}
+          <CuentaHeader loading={isLoading} onRefresh={() => getCuentas()} />
+          <CuentaStatsCards cuentas={cuentasData} formatCurrency={formatCurrencyNoDecimals} />
 
-        <CuentaFilters
-          searchTerm={searchTerm}
-          setSearchTerm={setSearchTerm}
-          rowsPerPage={rowsPerPage}
-          setRowsPerPage={setRowsPerPage}
-          setPage={setPage}
-          loading={isLoading}
-          onRefresh={() => getCuentas()}
-        />
-
-        {}
-        <div className='flex justify-center gap-3 border-b pb-1'>
-          <button
-            onClick={() => {
-              setActiveTab('pending');
-              setPage(1);
-            }}
-            className={`flex items-center gap-2 px-5 py-2 text-sm font-semibold transition-all ${
-              activeTab === 'pending'
-                ? 'bg-amber-100 text-amber-700 rounded-full shadow-xs'
-                : 'text-gray-500 hover:bg-gray-100 rounded-full'
-            }`}
-          >
-            <Clock className='h-4 w-4' />
-            Abiertas
-            <span
-              className={`ml-1.5 px-2.5 py-0.5 rounded-full text-xs font-bold ${
-                activeTab === 'pending' ? 'bg-amber-600 text-white' : 'bg-amber-100 text-amber-800'
-              }`}
-            >
-              {pendingCount}
-            </span>
-          </button>
-          <button
-            onClick={() => {
-              setActiveTab('paid');
-              setPage(1);
-            }}
-            className={`flex items-center gap-2 px-5 py-2 text-sm font-semibold transition-all ${
-              activeTab === 'paid'
-                ? 'bg-green-100 text-green-700 rounded-full shadow-xs'
-                : 'text-gray-500 hover:bg-gray-100 rounded-full'
-            }`}
-          >
-            <CheckCircle className='h-4 w-4' />
-            Cerradas
-            <span
-              className={`ml-1.5 px-2.5 py-0.5 rounded-full text-xs font-bold ${
-                activeTab === 'paid' ? 'bg-green-600 text-white' : 'bg-green-100 text-green-800'
-              }`}
-            >
-              {paidCount}
-            </span>
-          </button>
-        </div>
-
-        <div className='overflow-x-auto'>
-          <CuentaTable
-            loading={isLoading}
-            rows={paginatedCuentas}
+          <CuentaFilters
+            searchTerm={searchTerm}
+            setSearchTerm={setSearchTerm}
             rowsPerPage={rowsPerPage}
+            setRowsPerPage={setRowsPerPage}
+            setPage={setPage}
+            loading={isLoading}
             onRefresh={() => getCuentas()}
-            onOrderStatusChange={refetchOrders}
           />
-        </div>
 
-        {totalPages > 1 && (
-          <div className='flex justify-center'>
-            <Paginate page={page} totalPages={totalPages} setPage={setPage} />
+          {}
+          <div className='flex justify-center gap-3 border-b pb-1'>
+            <button
+              onClick={() => {
+                setActiveTab('pending');
+                setPage(1);
+              }}
+              className={`flex items-center gap-2 px-5 py-2 text-sm font-semibold transition-all ${
+                activeTab === 'pending'
+                  ? 'bg-amber-100 text-amber-700 rounded-full shadow-xs'
+                  : 'text-gray-500 hover:bg-gray-100 rounded-full'
+              }`}
+            >
+              Abiertas
+              <span
+                className={`ml-1.5 px-2.5 py-0.5 rounded-full text-xs font-bold ${
+                  activeTab === 'pending'
+                    ? 'bg-amber-600 text-white'
+                    : 'bg-amber-100 text-amber-800'
+                }`}
+              >
+                {pendingCount}
+              </span>
+            </button>
+            <button
+              onClick={() => {
+                setActiveTab('paid');
+                setPage(1);
+              }}
+              className={`flex items-center gap-2 px-5 py-2 text-sm font-semibold transition-all ${
+                activeTab === 'paid'
+                  ? 'bg-green-100 text-green-700 rounded-full shadow-xs'
+                  : 'text-gray-500 hover:bg-gray-100 rounded-full'
+              }`}
+            >
+              Cerradas
+              <span
+                className={`ml-1.5 px-2.5 py-0.5 rounded-full text-xs font-bold ${
+                  activeTab === 'paid' ? 'bg-green-600 text-white' : 'bg-green-100 text-green-800'
+                }`}
+              >
+                {paidCount}
+              </span>
+            </button>
           </div>
-        )}
-      </div>
+
+          <div className='overflow-x-auto'>
+            <CuentaTable
+              loading={isLoading}
+              rows={paginatedCuentas}
+              rowsPerPage={rowsPerPage}
+              onRefresh={() => getCuentas()}
+              onOrderStatusChange={refetchOrders}
+            />
+          </div>
+
+          {totalPages > 1 && (
+            <div className='flex justify-center'>
+              <Paginate page={page} totalPages={totalPages} setPage={setPage} />
+            </div>
+          )}
+        </div>
       </BoneyardSkeleton>
     </PermissionGuard>
   );

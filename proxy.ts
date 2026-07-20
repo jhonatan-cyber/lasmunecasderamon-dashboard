@@ -265,7 +265,11 @@ export default async function proxy(request: NextRequest) {
   // ponytail: skip rate limiting in dev
   const isProd = process.env.NODE_ENV === 'production';
   if (isProd) {
-    const isLoginPath = pathname === '/login' || pathname.startsWith('/login/');
+    const isLoginPath =
+      pathname === '/login' ||
+      pathname.startsWith('/login/') ||
+      pathname === '/api/auth/login' ||
+      pathname.startsWith('/api/auth/login/');
     const isSsePath = pathname.includes('/sse');
 
     let rateLimitConfig: RateLimitConfig | null = null;
@@ -329,6 +333,12 @@ export default async function proxy(request: NextRequest) {
       res.headers.set('Access-Control-Allow-Origin', getCorsOrigin(origin));
       res.headers.set('Access-Control-Allow-Credentials', 'true');
       res.headers.set('Vary', 'Origin');
+      res.headers.set('X-Content-Type-Options', 'nosniff');
+      res.headers.set('X-Frame-Options', 'DENY');
+      res.headers.set('X-XSS-Protection', '1; mode=block');
+      res.headers.set('Referrer-Policy', 'strict-origin-when-cross-origin');
+      res.headers.set('Permissions-Policy', 'camera=(), microphone=(), geolocation=()');
+      res.headers.set('Strict-Transport-Security', 'max-age=31536000; includeSubDomains');
     }
     if (includeCsp && cspHeader) {
       res.headers.set('Content-Security-Policy', cspHeader);
@@ -339,7 +349,7 @@ export default async function proxy(request: NextRequest) {
       res.cookies.set('token', tokenFromHeader, {
         httpOnly: true,
         secure: process.env.NODE_ENV === 'production',
-        sameSite: 'lax',
+        sameSite: 'strict',
         path: '/',
         maxAge: 60 * 60 * 24 * 365
       });
@@ -349,7 +359,7 @@ export default async function proxy(request: NextRequest) {
       res.cookies.set('token', newAccessToken, {
         httpOnly: true,
         secure: process.env.NODE_ENV === 'production',
-        sameSite: 'lax',
+        sameSite: 'strict',
         path: '/',
         maxAge: 15 * 60 // 15 minutos
       });
@@ -375,6 +385,22 @@ export default async function proxy(request: NextRequest) {
       response.headers.set('Content-Security-Policy', cspHeader);
     }
     return response;
+  }
+
+  // ─── CSRF: validate Origin on state-changing API requests ───────
+  // If browser sent Origin and it's not allowed, reject.
+  // curl/Postman don't send Origin, so they pass through.
+  // Public paths (WhatsApp webhooks, etc.) already returned above.
+  if (isApi && ['POST', 'PUT', 'DELETE', 'PATCH'].includes(request.method)) {
+    const requestOrigin = request.headers.get('origin');
+    if (requestOrigin && !isOriginAllowed(requestOrigin)) {
+      const response = NextResponse.json(
+        { success: false, message: 'Origen no permitido', code: 'CSRF_REJECTED' },
+        { status: 403 }
+      );
+      addApiHeaders(response);
+      return response;
+    }
   }
 
   let token = tokenFromCookie || tokenFromHeader;

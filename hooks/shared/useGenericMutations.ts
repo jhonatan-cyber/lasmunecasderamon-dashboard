@@ -1,4 +1,5 @@
- 
+'use client';
+
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { toast } from 'sonner';
 
@@ -31,18 +32,17 @@ export function useGenericMutations<T>(
   const request = async (method: 'POST' | 'PUT' | 'DELETE', path: string, body?: BodyInit) => {
     const response = await fetch(`${endpoint}${path}`, {
       method,
-      headers:
-        body instanceof FormData
-          ? {}
-          : body
-            ? { 'Content-Type': 'application/json' }
-            : {},
+      headers: body instanceof FormData ? {} : body ? { 'Content-Type': 'application/json' } : {},
       body
     });
 
     if (!response.ok) {
       const errorData = await response.json().catch(() => ({}));
-      const message = errorData.message || errorData.error?.message || errorData.error || `Error con ${entityName}`;
+      const message =
+        errorData.message ||
+        errorData.error?.message ||
+        errorData.error ||
+        `Error con ${entityName}`;
       throw new Error(message);
     }
 
@@ -72,7 +72,7 @@ export function useGenericMutations<T>(
       const { id, ...payload } = data;
       return request('PUT', `?id=${id}`, JSON.stringify(payload));
     },
-    onSuccess: async (data) => {
+    onSuccess: async data => {
       await handleSuccess(`${entityName} actualizado correctamente`);
     },
     onError: (err: Error) => {
@@ -100,4 +100,3 @@ export function useGenericMutations<T>(
     error: (createMutation.error || updateMutation.error || removeMutation.error)?.message || null
   };
 }
-

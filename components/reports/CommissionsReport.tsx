@@ -1,12 +1,18 @@
 'use client';
 
 import { useState, useEffect, useMemo, useReducer } from 'react';
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { CollapsibleCard } from '@/components/ui/collapsible-card';
-import { Button } from "@/components/ui/button";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Input } from "@/components/ui/input";
-import { Badge } from "@/components/ui/badge";
+import { Button } from '@/components/ui/button';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue
+} from '@/components/ui/select';
+import { Input } from '@/components/ui/input';
+import { Badge } from '@/components/ui/badge';
 import logger from '@/lib/utils/logger';
 import { useCommissionsReport } from './hooks/useCommissionsReport';
 import type { CommissionData, TopPerformer, DailyCommission } from './hooks/useCommissionsReport';
@@ -24,8 +30,8 @@ import {
   ChevronRight,
   Download,
   Calendar
-} from "lucide-react";
-import { formatCurrencyNoDecimals } from "@/lib/utils/formatters";
+} from 'lucide-react';
+import { formatCurrencyNoDecimals } from '@/lib/utils/formatters';
 import {
   BarChart,
   Bar,
@@ -37,10 +43,8 @@ import {
   Cell,
   ComposedChart,
   Line,
-  Legend,
+  Legend
 } from 'recharts';
-
-
 
 const TOP_PERFORMER_COLORS = ['#F59E0B', '#9CA3AF', '#D97706', '#6366F1', '#EC4899'];
 
@@ -67,20 +71,22 @@ const PerformerTooltip = ({ active, payload }: PerformerTooltipProps) => {
   if (active && payload && payload.length) {
     const data = payload[0].payload;
     return (
-      <div className="bg-gray-900/95 backdrop-blur-md border border-gray-700/50 rounded-xl px-4 py-3 shadow-2xl max-w-[220px]">
-        <p className="text-white font-semibold text-sm mb-2">{data.nombre_completo}</p>
-        <div className="space-y-1.5">
-          <div className="flex items-center justify-between gap-4">
-            <span className="text-gray-300 text-xs">Comisiones:</span>
-            <span className="text-emerald-300 font-bold text-sm">$ {formatNumber(data.total_comisiones)}</span>
+      <div className='bg-gray-900/95 backdrop-blur-md border border-gray-700/50 rounded-xl px-4 py-3 shadow-2xl max-w-[220px]'>
+        <p className='text-white font-semibold text-sm mb-2'>{data.nombre_completo}</p>
+        <div className='space-y-1.5'>
+          <div className='flex items-center justify-between gap-4'>
+            <span className='text-gray-300 text-xs'>Comisiones:</span>
+            <span className='text-emerald-300 font-bold text-sm'>
+              $ {formatNumber(data.total_comisiones)}
+            </span>
           </div>
-          <div className="flex items-center justify-between gap-4">
-            <span className="text-gray-300 text-xs">Ventas:</span>
-            <span className="text-blue-300 text-sm">{data.total_ventas_count}</span>
+          <div className='flex items-center justify-between gap-4'>
+            <span className='text-gray-300 text-xs'>Ventas:</span>
+            <span className='text-blue-300 text-sm'>{data.total_ventas_count}</span>
           </div>
-          <div className="flex items-center justify-between gap-4">
-            <span className="text-gray-300 text-xs">Servicios:</span>
-            <span className="text-purple-300 text-sm">{data.total_servicios_count}</span>
+          <div className='flex items-center justify-between gap-4'>
+            <span className='text-gray-300 text-xs'>Servicios:</span>
+            <span className='text-purple-300 text-sm'>{data.total_servicios_count}</span>
           </div>
         </div>
       </div>
@@ -91,36 +97,48 @@ const PerformerTooltip = ({ active, payload }: PerformerTooltipProps) => {
 
 interface DailyTooltipProps {
   active?: boolean;
-  payload?: Array<{ value: number; dataKey: string; name: string; color: string; payload: DailyCommission & { diaCorto: string } }>;
+  payload?: Array<{
+    value: number;
+    dataKey: string;
+    name: string;
+    color: string;
+    payload: DailyCommission & { diaCorto: string };
+  }>;
 }
 
 const DailyTooltip = ({ active, payload }: DailyTooltipProps) => {
   if (active && payload && payload.length) {
     const data = payload[0].payload;
     return (
-      <div className="bg-gray-900/95 backdrop-blur-md border border-gray-700/50 rounded-xl px-4 py-3 shadow-2xl">
-        <p className="text-white font-semibold text-sm mb-2">{data.dia_espanol}</p>
-        <div className="space-y-1.5">
-          <div className="flex items-center justify-between gap-4">
-            <div className="flex items-center gap-1.5">
-              <div className="w-2.5 h-2.5 rounded-full bg-blue-400" />
-              <span className="text-gray-300 text-xs">Ventas:</span>
+      <div className='bg-gray-900/95 backdrop-blur-md border border-gray-700/50 rounded-xl px-4 py-3 shadow-2xl'>
+        <p className='text-white font-semibold text-sm mb-2'>{data.dia_espanol}</p>
+        <div className='space-y-1.5'>
+          <div className='flex items-center justify-between gap-4'>
+            <div className='flex items-center gap-1.5'>
+              <div className='w-2.5 h-2.5 rounded-full bg-blue-400' />
+              <span className='text-gray-300 text-xs'>Ventas:</span>
             </div>
-            <span className="text-white font-bold text-sm">$ {formatNumber(data.total_ventas_monto)}</span>
+            <span className='text-white font-bold text-sm'>
+              $ {formatNumber(data.total_ventas_monto)}
+            </span>
           </div>
-          <div className="flex items-center justify-between gap-4">
-            <div className="flex items-center gap-1.5">
-              <div className="w-2.5 h-2.5 rounded-full bg-purple-400" />
-              <span className="text-gray-300 text-xs">Servicios:</span>
+          <div className='flex items-center justify-between gap-4'>
+            <div className='flex items-center gap-1.5'>
+              <div className='w-2.5 h-2.5 rounded-full bg-purple-400' />
+              <span className='text-gray-300 text-xs'>Servicios:</span>
             </div>
-            <span className="text-white font-bold text-sm">$ {formatNumber(data.total_servicios_monto)}</span>
+            <span className='text-white font-bold text-sm'>
+              $ {formatNumber(data.total_servicios_monto)}
+            </span>
           </div>
-          <div className="flex items-center justify-between gap-4">
-            <div className="flex items-center gap-1.5">
-              <div className="w-2.5 h-2.5 rounded-full bg-emerald-400" />
-              <span className="text-gray-300 text-xs">Comisiones:</span>
+          <div className='flex items-center justify-between gap-4'>
+            <div className='flex items-center gap-1.5'>
+              <div className='w-2.5 h-2.5 rounded-full bg-emerald-400' />
+              <span className='text-gray-300 text-xs'>Comisiones:</span>
             </div>
-            <span className="text-emerald-300 font-bold text-sm">$ {formatNumber(data.total_comisiones)}</span>
+            <span className='text-emerald-300 font-bold text-sm'>
+              $ {formatNumber(data.total_comisiones)}
+            </span>
           </div>
         </div>
       </div>
@@ -132,7 +150,10 @@ const DailyTooltip = ({ active, payload }: DailyTooltipProps) => {
 const ITEMS_PER_PAGE = 5;
 
 const getCommissionRowKey = (commission: CommissionData, absoluteIndex: number) => {
-  const identity = commission.id_usuario ?? commission.nombre_completo ?? `${commission.nombre}-${commission.apellido}`;
+  const identity =
+    commission.id_usuario ??
+    commission.nombre_completo ??
+    `${commission.nombre}-${commission.apellido}`;
   return `${identity}-${absoluteIndex}`;
 };
 
@@ -151,7 +172,7 @@ export function CommissionsReport() {
     setEndDate,
     setTablePage,
     topPerformerChartData,
-    dailyChartData,
+    dailyChartData
   } = useCommissionsReport();
 
   const exportReport = () => {
@@ -159,9 +180,12 @@ export function CommissionsReport() {
   };
 
   const getPerformanceBadge = (comisiones: number, promedio: number) => {
-    if (comisiones >= promedio * 1.5) return 'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400';
-    if (comisiones >= promedio) return 'bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-400';
-    if (comisiones >= promedio * 0.5) return 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-400';
+    if (comisiones >= promedio * 1.5)
+      return 'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400';
+    if (comisiones >= promedio)
+      return 'bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-400';
+    if (comisiones >= promedio * 0.5)
+      return 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-400';
     return 'bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-400';
   };
 
@@ -174,10 +198,10 @@ export function CommissionsReport() {
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center h-64">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto"></div>
-          <p className="mt-2 text-sm text-gray-600">Cargando reporte de comisiones...</p>
+      <div className='flex items-center justify-center h-64'>
+        <div className='text-center'>
+          <div className='animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto'></div>
+          <p className='mt-2 text-sm text-gray-600'>Cargando reporte de comisiones...</p>
         </div>
       </div>
     );
@@ -185,32 +209,32 @@ export function CommissionsReport() {
 
   if (error) {
     return (
-      <div className="text-center text-red-600">
-        <p className="text-sm">Error: {error}</p>
+      <div className='text-center text-red-600'>
+        <p className='text-sm'>Error: {error}</p>
       </div>
     );
   }
 
   if (!data) {
     return (
-      <div className="text-center text-gray-600">
-        <p className="text-sm">No hay datos disponibles</p>
+      <div className='text-center text-gray-600'>
+        <p className='text-sm'>No hay datos disponibles</p>
       </div>
     );
   }
 
   return (
-    <div className="space-y-8 pb-10">
+    <div className='space-y-8 pb-10'>
       {}
-      <div className="flex flex-col md:flex-row items-center justify-between gap-6">
-        <div className="flex flex-wrap items-center gap-2 bg-gray-100/50 dark:bg-gray-800/50 p-1.5 rounded-2xl border border-gray-200/50 dark:border-gray-700/50 backdrop-blur-xs">
+      <div className='flex flex-col md:flex-row items-center justify-between gap-6'>
+        <div className='flex flex-wrap items-center gap-2 bg-gray-100/50 dark:bg-gray-800/50 p-1.5 rounded-2xl border border-gray-200/50 dark:border-gray-700/50 backdrop-blur-xs'>
           {[
             { id: 'current_month', label: 'Mes Actual' },
             { id: 'last_month', label: 'Mes Anterior' },
             { id: 'current_year', label: 'Año Actual' },
             { id: 'last_year', label: 'Año Anterior' },
-            { id: 'custom', label: 'Personalizado' },
-          ].map((chip) => (
+            { id: 'custom', label: 'Personalizado' }
+          ].map(chip => (
             <button
               key={chip.id}
               onClick={() => setPeriod(chip.id)}
@@ -225,163 +249,179 @@ export function CommissionsReport() {
           ))}
         </div>
 
-        <div className="flex items-center gap-3">
+        <div className='flex items-center gap-3'>
           {period === 'custom' && (
-            <div className="flex items-center gap-2 animate-in fade-in zoom-in-95 duration-300">
+            <div className='flex items-center gap-2 animate-in fade-in zoom-in-95 duration-300'>
               <input
-                type="date"
+                type='date'
                 value={startDate}
-                onChange={(e) => setStartDate(e.target.value)}
-                className="px-3 py-2 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl text-sm shadow-xs focus:ring-2 focus:ring-green-500/20 outline-hidden transition-all"
+                onChange={e => setStartDate(e.target.value)}
+                className='px-3 py-2 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl text-sm shadow-xs focus:ring-2 focus:ring-green-500/20 outline-hidden transition-all'
               />
-              <span className="text-gray-400 font-bold">→</span>
+              <span className='text-gray-400 font-bold'>→</span>
               <input
-                type="date"
+                type='date'
                 value={endDate}
-                onChange={(e) => setEndDate(e.target.value)}
-                className="px-3 py-2 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl text-sm shadow-xs focus:ring-2 focus:ring-green-500/20 outline-hidden transition-all"
+                onChange={e => setEndDate(e.target.value)}
+                className='px-3 py-2 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl text-sm shadow-xs focus:ring-2 focus:ring-green-500/20 outline-hidden transition-all'
               />
             </div>
           )}
-          
-          <Button 
-            onClick={exportReport} 
-            variant="default" 
-            className="rounded-xl px-6 bg-emerald-600 hover:bg-emerald-700 dark:bg-emerald-600 dark:hover:bg-emerald-700 shadow-lg shadow-emerald-100 dark:shadow-emerald-900/20 transition-all active:scale-95 text-white"
+
+          <Button
+            onClick={exportReport}
+            variant='default'
+            className='rounded-xl px-6 bg-emerald-600 hover:bg-emerald-700 dark:bg-emerald-600 dark:hover:bg-emerald-700 shadow-lg shadow-emerald-100 dark:shadow-emerald-900/20 transition-all active:scale-95 text-white'
           >
-            <Download className="h-4 w-4 mr-2" />
+            <Download className='h-4 w-4 mr-2' />
             Exportar
           </Button>
         </div>
       </div>
 
       {}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-6">
+      <div className='grid grid-cols-2 md:grid-cols-2 lg:grid-cols-5 gap-6'>
         {[
-          { 
-            title: 'Anfitrionas Activas', 
+          {
+            title: 'Anfitrionas Activas',
             value: data.statistics.total_anfitrionas,
             icon: Users,
             color: 'blue',
             grad: 'from-blue-50 to-indigo-50 dark:from-blue-950/20 dark:to-indigo-950/20'
           },
-          { 
-            title: 'Ventas Generadas', 
+          {
+            title: 'Ventas Generadas',
             value: `$${formatNumber(data.statistics.total_ventas_general)}`,
             sub: `${data.statistics.total_ventas_count} transacciones`,
             icon: TrendingUp,
             color: 'emerald',
             grad: 'from-emerald-50 to-teal-50 dark:from-emerald-950/20 dark:to-teal-950/20'
           },
-          { 
-            title: 'Servicios Realizados', 
+          {
+            title: 'Servicios Realizados',
             value: `$${formatNumber(data.statistics.total_servicios_general)}`,
             sub: `${data.statistics.total_servicios_count} servicios`,
             icon: Target,
             color: 'violet',
             grad: 'from-violet-50 to-purple-50 dark:from-violet-950/20 dark:to-purple-950/20'
           },
-          { 
-            title: 'Comisiones Totales', 
+          {
+            title: 'Comisiones Totales',
             value: `$${formatNumber(data.statistics.total_comisiones_general)}`,
             icon: DollarSign,
             color: 'purple',
             grad: 'from-purple-50 to-fuchsia-50 dark:from-purple-950/20 dark:to-fuchsia-950/20'
           },
-          { 
-            title: 'Promedio x Anfitriona', 
+          {
+            title: 'Promedio x Anfitriona',
             value: `$${formatNumber(Math.round(data.statistics.promedio_comision_por_anfitriona || 0))}`,
             icon: Award,
             color: 'orange',
             grad: 'from-orange-50 to-amber-50 dark:from-orange-950/20 dark:to-amber-950/20'
-          },
+          }
         ].map((stat, i) => (
-          <Card key={i} className={`relative border-0 shadow-xl shadow-gray-200/50 dark:shadow-black/20 overflow-hidden group hover:scale-[1.02] transition-all duration-300`}>
+          <Card
+            key={i}
+            className={`relative border-0 shadow-xl shadow-gray-200/50 dark:shadow-black/20 overflow-hidden group hover:scale-[1.02] transition-all duration-300`}
+          >
             <div className={`absolute inset-0 bg-linear-to-br ${stat.grad} opacity-50`}></div>
-            <CardHeader className="relative flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-xs font-bold uppercase tracking-wider text-gray-500 dark:text-gray-400">{stat.title}</CardTitle>
-              <div className={`w-10 h-10 rounded-2xl bg-white dark:bg-gray-800 shadow-xs flex items-center justify-center group-hover:rotate-12 transition-transform`}>
-                <stat.icon className={`h-5 w-5 text-${stat.color}-600 dark:text-${stat.color}-400`} />
+            <CardHeader className='relative flex flex-row items-center justify-between space-y-0 pb-2'>
+              <CardTitle className='text-xs font-bold uppercase tracking-wider text-gray-500 dark:text-gray-400'>
+                {stat.title}
+              </CardTitle>
+              <div
+                className={`w-10 h-10 rounded-2xl bg-white dark:bg-gray-800 shadow-xs flex items-center justify-center group-hover:rotate-12 transition-transform`}
+              >
+                <stat.icon
+                  className={`h-5 w-5 text-${stat.color}-600 dark:text-${stat.color}-400`}
+                />
               </div>
             </CardHeader>
-            <CardContent className="relative">
-              <div className="text-2xl font-black text-gray-900 dark:text-white tracking-tight">
+            <CardContent className='relative'>
+              <div className='text-2xl font-black text-gray-900 dark:text-white tracking-tight'>
                 {stat.value}
               </div>
-              {stat.sub && (
-                <p className="text-xs font-medium text-gray-500 mt-1">
-                  {stat.sub}
-                </p>
-              )}
+              {stat.sub && <p className='text-xs font-medium text-gray-500 mt-1'>{stat.sub}</p>}
             </CardContent>
           </Card>
         ))}
       </div>
 
       {}
-      <Card className="border-0 shadow-2xl shadow-gray-200/50 dark:shadow-black/40 rounded-3xl overflow-hidden bg-white dark:bg-gray-800/50 backdrop-blur-md">
-        <CardHeader className="border-b border-gray-50 dark:border-gray-700/50 pb-4">
-          <CardTitle className="text-lg font-black flex items-center gap-2">
-            <div className="p-1.5 rounded-lg bg-amber-100 dark:bg-amber-900/30">
-              <Award className="h-4 w-4 text-amber-600" />
+      <Card className='border-0 shadow-2xl shadow-gray-200/50 dark:shadow-black/40 rounded-3xl overflow-hidden bg-white dark:bg-gray-800/50 backdrop-blur-md'>
+        <CardHeader className='border-b border-gray-50 dark:border-gray-700/50 pb-4'>
+          <CardTitle className='text-lg font-black flex items-center gap-2'>
+            <div className='p-1.5 rounded-lg bg-amber-100 dark:bg-amber-900/30'>
+              <Award className='h-4 w-4 text-amber-600' />
             </div>
             Top Performers (Ranking Comisiones)
           </CardTitle>
         </CardHeader>
-        <CardContent className="pt-8">
-          <div className="h-[400px] w-full">
+        <CardContent className='pt-8'>
+          <div className='h-[400px] w-full'>
             {topPerformerChartData.length > 0 ? (
-              <ResponsiveContainer width="100%" height="100%">
+              <ResponsiveContainer width='100%' height='100%'>
                 <BarChart
                   data={topPerformerChartData}
-                  layout="vertical"
+                  layout='vertical'
                   margin={{ top: 5, right: 30, left: 10, bottom: 5 }}
                 >
                   <defs>
                     {TOP_PERFORMER_COLORS.map((color, i) => (
-                      <linearGradient key={`perfGrad${i}`} id={`perfGrad${i}`} x1="0" y1="0" x2="1" y2="0">
-                        <stop offset="0%" stopColor={color} stopOpacity={0.9} />
-                        <stop offset="100%" stopColor={color} stopOpacity={0.6} />
+                      <linearGradient
+                        key={`perfGrad${i}`}
+                        id={`perfGrad${i}`}
+                        x1='0'
+                        y1='0'
+                        x2='1'
+                        y2='0'
+                      >
+                        <stop offset='0%' stopColor={color} stopOpacity={0.9} />
+                        <stop offset='100%' stopColor={color} stopOpacity={0.6} />
                       </linearGradient>
                     ))}
-                    <filter id="shadowBar" height="200%">
-                      <feDropShadow dx="2" dy="2" stdDeviation="3" floodOpacity="0.15"/>
+                    <filter id='shadowBar' height='200%'>
+                      <feDropShadow dx='2' dy='2' stdDeviation='3' floodOpacity='0.15' />
                     </filter>
                   </defs>
                   <CartesianGrid
-                    strokeDasharray="3 3"
-                    stroke="currentColor"
-                    className="text-gray-100 dark:text-gray-700/50"
+                    strokeDasharray='3 3'
+                    stroke='currentColor'
+                    className='text-gray-100 dark:text-gray-700/50'
                     horizontal={false}
                     vertical={true}
                   />
                   <XAxis
-                    type="number"
+                    type='number'
                     tickFormatter={formatCompact}
                     tick={{ fill: 'currentColor', fontSize: 11, fontWeight: 600 }}
-                    className="text-gray-400 dark:text-gray-500"
+                    className='text-gray-400 dark:text-gray-500'
                     tickLine={false}
                     axisLine={false}
                   />
                   <YAxis
-                    type="category"
-                    dataKey="shortName"
+                    type='category'
+                    dataKey='shortName'
                     width={90}
                     tick={{ fill: 'currentColor', fontSize: 11, fontWeight: 700 }}
-                    className="text-gray-700 dark:text-gray-300"
+                    className='text-gray-700 dark:text-gray-300'
                     tickLine={false}
                     axisLine={false}
                   />
-                  <Tooltip 
-                    content={<PerformerTooltip />} 
-                    cursor={{ fill: 'currentColor', className: 'text-gray-50 dark:text-gray-800/40', radius: 8 }}
+                  <Tooltip
+                    content={<PerformerTooltip />}
+                    cursor={{
+                      fill: 'currentColor',
+                      className: 'text-gray-50 dark:text-gray-800/40',
+                      radius: 8
+                    }}
                   />
                   <Bar
-                    dataKey="total_comisiones"
-                    name="Comisión Total"
+                    dataKey='total_comisiones'
+                    name='Comisión Total'
                     radius={[0, 8, 8, 0]}
                     animationDuration={1500}
-                    animationEasing="ease-out"
+                    animationEasing='ease-out'
                     barSize={32}
                     style={{ filter: 'url(#shadowBar)' }}
                   >
@@ -396,8 +436,8 @@ export function CommissionsReport() {
                 </BarChart>
               </ResponsiveContainer>
             ) : (
-              <div className="flex items-center justify-center h-full text-gray-400 italic">
-                <p className="text-sm">No hay datos de performers</p>
+              <div className='flex items-center justify-center h-full text-gray-400 italic'>
+                <p className='text-sm'>No hay datos de performers</p>
               </div>
             )}
           </div>
@@ -406,50 +446,107 @@ export function CommissionsReport() {
 
       {}
       <CollapsibleCard
-        title={<><UserCheck className="h-5 w-5" /> Comisiones por Anfitriona</>}
+        title={
+          <>
+            <UserCheck className='h-5 w-5' /> Comisiones por Anfitriona
+          </>
+        }
         headerRight={
-          <span className="text-sm text-gray-500 dark:text-gray-400 font-normal">
+          <span className='text-sm text-gray-500 dark:text-gray-400 font-normal'>
             {data.commissions.length} anfitrionas
           </span>
         }
       >
-        <div className="overflow-x-auto">
-          <table className="w-full">
+        <div className='overflow-x-auto'>
+          <table className='w-full'>
             <thead>
-              <tr className="border-b border-gray-200 dark:border-gray-700">
-                <th className="text-left py-3 px-4 font-medium text-gray-900 dark:text-gray-100">Anfitriona</th>
-                <th className="text-left py-3 px-4 font-medium text-gray-900 dark:text-gray-100">Ventas</th>
-                <th className="text-left py-3 px-4 font-medium text-gray-900 dark:text-gray-100">Servicios</th>
-                <th className="text-left py-3 px-4 font-medium text-gray-900 dark:text-gray-100">Total Ventas</th>
-                <th className="text-left py-3 px-4 font-medium text-gray-900 dark:text-gray-100">Total Servicios</th>
-                <th className="text-left py-3 px-4 font-medium text-gray-900 dark:text-gray-100">Comisiones</th>
-                <th className="text-left py-3 px-4 font-medium text-gray-900 dark:text-gray-100">Prom/Venta</th>
-                <th className="text-left py-3 px-4 font-medium text-gray-900 dark:text-gray-100">Prom/Servicio</th>
-                <th className="text-left py-3 px-4 font-medium text-gray-900 dark:text-gray-100">Días</th>
-                <th className="text-left py-3 px-4 font-medium text-gray-900 dark:text-gray-100">Prom/Día</th>
-                <th className="text-left py-3 px-4 font-medium text-gray-900 dark:text-gray-100">Rendimiento</th>
+              <tr className='border-b border-gray-200 dark:border-gray-700'>
+                <th className='text-left py-3 px-4 font-medium text-gray-900 dark:text-gray-100'>
+                  Anfitriona
+                </th>
+                <th className='text-left py-3 px-4 font-medium text-gray-900 dark:text-gray-100'>
+                  Ventas
+                </th>
+                <th className='text-left py-3 px-4 font-medium text-gray-900 dark:text-gray-100'>
+                  Servicios
+                </th>
+                <th className='text-left py-3 px-4 font-medium text-gray-900 dark:text-gray-100'>
+                  Total Ventas
+                </th>
+                <th className='text-left py-3 px-4 font-medium text-gray-900 dark:text-gray-100'>
+                  Total Servicios
+                </th>
+                <th className='text-left py-3 px-4 font-medium text-gray-900 dark:text-gray-100'>
+                  Comisiones
+                </th>
+                <th className='text-left py-3 px-4 font-medium text-gray-900 dark:text-gray-100'>
+                  Prom/Venta
+                </th>
+                <th className='text-left py-3 px-4 font-medium text-gray-900 dark:text-gray-100'>
+                  Prom/Servicio
+                </th>
+                <th className='text-left py-3 px-4 font-medium text-gray-900 dark:text-gray-100'>
+                  Días
+                </th>
+                <th className='text-left py-3 px-4 font-medium text-gray-900 dark:text-gray-100'>
+                  Prom/Día
+                </th>
+                <th className='text-left py-3 px-4 font-medium text-gray-900 dark:text-gray-100'>
+                  Rendimiento
+                </th>
               </tr>
             </thead>
             <tbody>
               {data.commissions
                 .slice(tablePage * ITEMS_PER_PAGE, (tablePage + 1) * ITEMS_PER_PAGE)
                 .map((commission, index) => (
-                  <tr key={getCommissionRowKey(commission, tablePage * ITEMS_PER_PAGE + index)} className="border-b border-gray-100 dark:border-gray-800 hover:bg-gray-50 dark:hover:bg-gray-800/50 transition-colors">
-                    <td className="py-3 px-4">
-                      <p className="font-medium text-gray-900 dark:text-gray-100">{commission.nombre_completo}</p>
+                  <tr
+                    key={getCommissionRowKey(commission, tablePage * ITEMS_PER_PAGE + index)}
+                    className='border-b border-gray-100 dark:border-gray-800 hover:bg-gray-50 dark:hover:bg-gray-800/50 transition-colors'
+                  >
+                    <td className='py-3 px-4'>
+                      <p className='font-medium text-gray-900 dark:text-gray-100'>
+                        {commission.nombre_completo}
+                      </p>
                     </td>
-                    <td className="py-3 px-4 text-gray-900 dark:text-gray-200">{commission.total_ventas}</td>
-                    <td className="py-3 px-4 text-gray-900 dark:text-gray-200">{commission.total_servicios}</td>
-                    <td className="py-3 px-4 text-gray-900 dark:text-gray-200">$ {formatNumber(commission.total_ventas_monto)}</td>
-                    <td className="py-3 px-4 text-gray-900 dark:text-gray-200">$ {formatNumber(commission.total_servicios_monto)}</td>
-                    <td className="py-3 px-4 font-semibold text-emerald-600 dark:text-emerald-400">$ {formatNumber(commission.total_comisiones)}</td>
-                    <td className="py-3 px-4 text-gray-900 dark:text-gray-200">$ {formatNumber(commission.promedio_por_venta)}</td>
-                    <td className="py-3 px-4 text-gray-900 dark:text-gray-200">$ {formatNumber(commission.promedio_por_servicio)}</td>
-                    <td className="py-3 px-4 text-gray-900 dark:text-gray-200">{commission.dias_trabajados}</td>
-                    <td className="py-3 px-4 text-gray-900 dark:text-gray-200">$ {formatNumber(commission.promedio_diario)}</td>
-                    <td className="py-3 px-4">
-                      <Badge className={getPerformanceBadge(commission.total_comisiones, data.statistics.promedio_comision_por_anfitriona)}>
-                        {getPerformanceText(commission.total_comisiones, data.statistics.promedio_comision_por_anfitriona)}
+                    <td className='py-3 px-4 text-gray-900 dark:text-gray-200'>
+                      {commission.total_ventas}
+                    </td>
+                    <td className='py-3 px-4 text-gray-900 dark:text-gray-200'>
+                      {commission.total_servicios}
+                    </td>
+                    <td className='py-3 px-4 text-gray-900 dark:text-gray-200'>
+                      $ {formatNumber(commission.total_ventas_monto)}
+                    </td>
+                    <td className='py-3 px-4 text-gray-900 dark:text-gray-200'>
+                      $ {formatNumber(commission.total_servicios_monto)}
+                    </td>
+                    <td className='py-3 px-4 font-semibold text-emerald-600 dark:text-emerald-400'>
+                      $ {formatNumber(commission.total_comisiones)}
+                    </td>
+                    <td className='py-3 px-4 text-gray-900 dark:text-gray-200'>
+                      $ {formatNumber(commission.promedio_por_venta)}
+                    </td>
+                    <td className='py-3 px-4 text-gray-900 dark:text-gray-200'>
+                      $ {formatNumber(commission.promedio_por_servicio)}
+                    </td>
+                    <td className='py-3 px-4 text-gray-900 dark:text-gray-200'>
+                      {commission.dias_trabajados}
+                    </td>
+                    <td className='py-3 px-4 text-gray-900 dark:text-gray-200'>
+                      $ {formatNumber(commission.promedio_diario)}
+                    </td>
+                    <td className='py-3 px-4'>
+                      <Badge
+                        className={getPerformanceBadge(
+                          commission.total_comisiones,
+                          data.statistics.promedio_comision_por_anfitriona
+                        )}
+                      >
+                        {getPerformanceText(
+                          commission.total_comisiones,
+                          data.statistics.promedio_comision_por_anfitriona
+                        )}
                       </Badge>
                     </td>
                   </tr>
@@ -460,27 +557,29 @@ export function CommissionsReport() {
 
         {}
         {data.commissions.length > ITEMS_PER_PAGE && (
-          <div className="flex items-center justify-between mt-4 pt-4 border-t border-gray-200 dark:border-gray-700">
-            <p className="text-sm text-gray-500 dark:text-gray-400">
-              Mostrando {tablePage * ITEMS_PER_PAGE + 1} - {Math.min((tablePage + 1) * ITEMS_PER_PAGE, data.commissions.length)} de {data.commissions.length}
+          <div className='flex items-center justify-between mt-4 pt-4 border-t border-gray-200 dark:border-gray-700'>
+            <p className='text-sm text-gray-500 dark:text-gray-400'>
+              Mostrando {tablePage * ITEMS_PER_PAGE + 1} -{' '}
+              {Math.min((tablePage + 1) * ITEMS_PER_PAGE, data.commissions.length)} de{' '}
+              {data.commissions.length}
             </p>
-            <div className="flex items-center gap-2">
+            <div className='flex items-center gap-2'>
               <Button
-                variant="outline"
-                size="sm"
+                variant='outline'
+                size='sm'
                 onClick={() => setTablePage(Math.max(0, tablePage - 1))}
                 disabled={tablePage === 0}
               >
-                <ChevronLeft className="h-4 w-4 mr-1" />
+                <ChevronLeft className='h-4 w-4 mr-1' />
                 Anterior
               </Button>
-              <div className="flex items-center gap-1">
+              <div className='flex items-center gap-1'>
                 {Array.from({ length: totalPages }, (_, i) => (
                   <Button
                     key={i}
                     variant={tablePage === i ? 'default' : 'outline-solid'}
-                    size="sm"
-                    className="w-8 h-8 p-0"
+                    size='sm'
+                    className='w-8 h-8 p-0'
                     onClick={() => setTablePage(i)}
                   >
                     {i + 1}
@@ -488,13 +587,13 @@ export function CommissionsReport() {
                 ))}
               </div>
               <Button
-                variant="outline"
-                size="sm"
+                variant='outline'
+                size='sm'
                 onClick={() => setTablePage(Math.min(totalPages - 1, tablePage + 1))}
                 disabled={tablePage >= totalPages - 1}
               >
                 Siguiente
-                <ChevronRight className="h-4 w-4 ml-1" />
+                <ChevronRight className='h-4 w-4 ml-1' />
               </Button>
             </div>
           </div>
@@ -503,43 +602,50 @@ export function CommissionsReport() {
 
       {}
       <CollapsibleCard
-        title={<><BarChart3 className="h-5 w-5" /> Comisiones por Día de la Semana</>}
-        headerClassName="bg-linear-to-r from-indigo-600 to-blue-600 text-white"
+        title={
+          <>
+            <BarChart3 className='h-5 w-5' /> Comisiones por Día de la Semana
+          </>
+        }
+        headerClassName='bg-linear-to-r from-indigo-600 to-blue-600 text-white'
       >
-        <div className="h-[320px] sm:h-[450px] w-full">
+        <div className='h-[320px] sm:h-[450px] w-full'>
           {dailyChartData.length > 0 ? (
-            <ResponsiveContainer width="100%" height="100%">
+            <ResponsiveContainer width='100%' height='100%'>
               <ComposedChart
                 data={dailyChartData}
                 margin={{ top: 10, right: 10, left: -10, bottom: 5 }}
               >
                 <defs>
-                  <linearGradient id="ventasGrad" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="0%" stopColor="#3B82F6" stopOpacity={0.9} />
-                    <stop offset="100%" stopColor="#3B82F6" stopOpacity={0.5} />
+                  <linearGradient id='ventasGrad' x1='0' y1='0' x2='0' y2='1'>
+                    <stop offset='0%' stopColor='#3B82F6' stopOpacity={0.9} />
+                    <stop offset='100%' stopColor='#3B82F6' stopOpacity={0.5} />
                   </linearGradient>
-                  <linearGradient id="serviciosGrad" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="0%" stopColor="#8B5CF6" stopOpacity={0.9} />
-                    <stop offset="100%" stopColor="#8B5CF6" stopOpacity={0.5} />
+                  <linearGradient id='serviciosGrad' x1='0' y1='0' x2='0' y2='1'>
+                    <stop offset='0%' stopColor='#8B5CF6' stopOpacity={0.9} />
+                    <stop offset='100%' stopColor='#8B5CF6' stopOpacity={0.5} />
                   </linearGradient>
                 </defs>
                 <CartesianGrid
-                  strokeDasharray="3 3"
-                  stroke="currentColor"
-                  className="text-gray-200 dark:text-gray-700"
+                  strokeDasharray='3 3'
+                  stroke='currentColor'
+                  className='text-gray-200 dark:text-gray-700'
                   vertical={false}
                 />
                 <XAxis
-                  dataKey="diaCorto"
+                  dataKey='diaCorto'
                   tick={{ fill: 'currentColor', fontSize: 10 }}
-                  className="text-gray-600 dark:text-gray-400"
+                  className='text-gray-600 dark:text-gray-400'
                   tickLine={false}
-                  axisLine={{ stroke: 'currentColor', className: 'text-gray-300 dark:text-gray-600' }}
+                  axisLine={{
+                    stroke: 'currentColor',
+                    className: 'text-gray-300 dark:text-gray-600'
+                  }}
                 />
                 <YAxis
                   tickFormatter={formatCompact}
                   tick={{ fill: 'currentColor', fontSize: 10 }}
-                  className="text-gray-500 dark:text-gray-400"
+                  className='text-gray-500 dark:text-gray-400'
                   tickLine={false}
                   axisLine={false}
                   width={45}
@@ -548,30 +654,32 @@ export function CommissionsReport() {
                 <Legend
                   wrapperStyle={{ paddingTop: '8px' }}
                   formatter={(value: string) => (
-                    <span className="text-xs font-medium text-gray-600 dark:text-gray-400">{value}</span>
+                    <span className='text-xs font-medium text-gray-600 dark:text-gray-400'>
+                      {value}
+                    </span>
                   )}
                 />
                 <Bar
-                  dataKey="total_ventas_monto"
-                  name="Ventas"
-                  fill="url(#ventasGrad)"
+                  dataKey='total_ventas_monto'
+                  name='Ventas'
+                  fill='url(#ventasGrad)'
                   radius={[4, 4, 0, 0]}
                   animationDuration={800}
-                  animationEasing="ease-out"
+                  animationEasing='ease-out'
                 />
                 <Bar
-                  dataKey="total_servicios_monto"
-                  name="Servicios"
-                  fill="url(#serviciosGrad)"
+                  dataKey='total_servicios_monto'
+                  name='Servicios'
+                  fill='url(#serviciosGrad)'
                   radius={[4, 4, 0, 0]}
                   animationDuration={800}
-                  animationEasing="ease-out"
+                  animationEasing='ease-out'
                 />
                 <Line
-                  type="monotone"
-                  dataKey="total_comisiones"
-                  name="Comisiones"
-                  stroke="#10B981"
+                  type='monotone'
+                  dataKey='total_comisiones'
+                  name='Comisiones'
+                  stroke='#10B981'
                   strokeWidth={3}
                   dot={{ r: 4, fill: '#10B981', stroke: '#fff', strokeWidth: 2 }}
                   activeDot={{ r: 6, fill: '#10B981', stroke: '#fff', strokeWidth: 2 }}
@@ -580,8 +688,8 @@ export function CommissionsReport() {
               </ComposedChart>
             </ResponsiveContainer>
           ) : (
-            <div className="flex items-center justify-center h-48 text-gray-400">
-              <p className="text-sm">No hay datos de comisiones diarias</p>
+            <div className='flex items-center justify-center h-48 text-gray-400'>
+              <p className='text-sm'>No hay datos de comisiones diarias</p>
             </div>
           )}
         </div>
@@ -589,4 +697,3 @@ export function CommissionsReport() {
     </div>
   );
 }
-

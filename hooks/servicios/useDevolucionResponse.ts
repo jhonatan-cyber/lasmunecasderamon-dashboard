@@ -1,3 +1,5 @@
+'use client';
+
 import { useCallback } from 'react';
 import { useTimer } from '@/contexts/TimerContext';
 import { showSuccessToast, showErrorToast } from '@/lib/utils/toastUtils';
@@ -21,7 +23,6 @@ export const useDevolucionResponse = () => {
   const handleDevolucionRechazada = useCallback(
     async (servicioId: number) => {
       try {
- 
         resumeTimerByServicioId(String(servicioId));
         showSuccessToast(
           'Devolución rechazada. El servicio continúa activo y el temporizador se ha reanudado.'

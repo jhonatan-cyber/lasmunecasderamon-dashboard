@@ -67,9 +67,9 @@ export function ProductFilters({
             />
           </div>
 
-          <div className='flex flex-wrap sm:flex-nowrap gap-4 w-full lg:w-auto items-end'>
+          <div className='w-full lg:w-auto grid grid-cols-2 gap-4 lg:flex lg:gap-4 lg:items-end'>
             {}
-            <div className='w-full sm:w-auto min-w-[160px]'>
+            <div className='min-w-[160px]'>
               <Label
                 htmlFor='status'
                 className='mb-2 block text-xs font-bold uppercase tracking-wider text-gray-500 dark:text-gray-400 ml-1'
@@ -94,17 +94,16 @@ export function ProductFilters({
             </div>
 
             {}
-            <div className='w-full sm:w-auto'>
-              <SelectElements
-                value={pageSize}
-                onChange={handlePageSizeChange}
-                options={viewMode === 'table' ? tablePageSizes : cardPageSizes}
-                label='Mostrar'
-              />
-            </div>
+            <div className='flex items-end gap-2'>
+              <div>
+                <SelectElements
+                  value={pageSize}
+                  onChange={handlePageSizeChange}
+                  options={viewMode === 'table' ? tablePageSizes : cardPageSizes}
+                  label='Mostrar'
+                />
+              </div>
 
-            {}
-            <div className='w-full sm:w-auto'>
               <TooltipProvider>
                 <Tooltip delayDuration={300}>
                   <TooltipTrigger asChild>

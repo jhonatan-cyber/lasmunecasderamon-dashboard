@@ -1,6 +1,7 @@
- 
-import { useState, useCallback } from "react";
-import { useGenericFetch } from "../shared/useGenericFetch";
+'use client';
+
+import { useState, useCallback } from 'react';
+import { useGenericFetch } from '../shared/useGenericFetch';
 
 interface UserOrder {
   id_pedido: number;
@@ -22,10 +23,10 @@ export default function useUserOrders() {
     data: orders,
     isLoading,
     error,
-    refetch: fetchOrders,
-  } = useGenericFetch<UserOrder>("/api/orders/user", {
+    refetch: fetchOrders
+  } = useGenericFetch<UserOrder>('/api/orders/user', {
     initialFetch: true,
-    transform: (data) => (data.success ? data.data : []),
+    transform: data => (data.success ? data.data : [])
   });
 
   const fetchOrderDetail = useCallback(async (id: number | string) => {
@@ -37,10 +38,10 @@ export default function useUserOrders() {
       if (data.success) {
         setOrderDetail(data.data);
       } else {
-        setDetailError(data.message || "Error al obtener el detalle del pedido");
+        setDetailError(data.message || 'Error al obtener el detalle del pedido');
       }
     } catch (err) {
-      setDetailError("Error de red al obtener el detalle del pedido");
+      setDetailError('Error de red al obtener el detalle del pedido');
     } finally {
       setIsDetailLoading(false);
     }
@@ -55,7 +56,6 @@ export default function useUserOrders() {
     detailError,
     fetchOrders,
     fetchOrderDetail,
-    refetch: fetchOrders,
+    refetch: fetchOrders
   };
 }
-

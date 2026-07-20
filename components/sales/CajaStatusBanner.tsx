@@ -1,10 +1,16 @@
+'use client';
+
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Button } from '@/components/ui/button';
 import { AlertTriangle } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { useCashRegister } from '@/hooks/caja/useCashRegister';
 
-export function CajaStatusBanner() {
+interface CajaStatusBannerProps {
+  entityName?: string;
+}
+
+export function CajaStatusBanner({ entityName = 'ventas' }: CajaStatusBannerProps) {
   const { hasOpenCaja, loading, error } = useCashRegister();
   const router = useRouter();
 
@@ -42,14 +48,14 @@ export function CajaStatusBanner() {
         <AlertDescription className='text-red-800 dark:text-red-100'>
           <div className='flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 sm:gap-4'>
             <span className='text-sm sm:text-base'>
-              <strong>No hay caja abierta.</strong> No se pueden realizar ventas sin una caja
+              <strong>No hay caja abierta.</strong> No se pueden realizar {entityName} sin una caja
               abierta.
             </span>
             <Button
               variant='outline'
               size='sm'
               onClick={() => router.push('/cash-register')}
-              className='w-full sm:w-auto border-red-300 text-red-700 hover:bg-red-100 dark:border-red-700 dark:text-red-200 dark:hover:bg-red-900/50 text-sm sm:text-base'
+              className='w-full sm:w-auto rounded-full border-red-300 text-red-700 hover:bg-red-100 dark:border-red-700 dark:text-red-200 dark:hover:bg-red-900/50 text-sm sm:text-base'
             >
               Abrir Caja
             </Button>

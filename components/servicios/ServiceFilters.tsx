@@ -60,18 +60,17 @@ export default function ServiceFilters({
 
           <div className='flex flex-wrap sm:flex-nowrap gap-4 w-full lg:w-auto items-end'>
             {}
-            <div className='w-full sm:w-auto'>
-              <SelectElements
-                value={itemsPerPage}
-                onChange={handleItemsPerPageChange}
-                options={[8, 16, 24, 48]}
-                label='LISTAR'
-              />
-            </div>
+            <div className='flex items-end gap-2 w-full sm:w-auto'>
+              <div>
+                <SelectElements
+                  value={itemsPerPage}
+                  onChange={handleItemsPerPageChange}
+                  options={[8, 16, 24, 48]}
+                  label='LISTAR'
+                />
+              </div>
 
-            {}
-            {onRefresh && (
-              <div className='w-full sm:w-auto'>
+              {onRefresh && (
                 <TooltipProvider>
                   <Tooltip delayDuration={300}>
                     <TooltipTrigger asChild>
@@ -88,12 +87,9 @@ export default function ServiceFilters({
                     </TooltipContent>
                   </Tooltip>
                 </TooltipProvider>
-              </div>
-            )}
+              )}
 
-            {}
-            {hasActiveFilters && (
-              <div className='w-full sm:w-auto'>
+              {hasActiveFilters && (
                 <TooltipProvider>
                   <Tooltip delayDuration={300}>
                     <TooltipTrigger asChild>
@@ -110,8 +106,8 @@ export default function ServiceFilters({
                     </TooltipContent>
                   </Tooltip>
                 </TooltipProvider>
-              </div>
-            )}
+              )}
+            </div>
           </div>
         </div>
       </CardContent>

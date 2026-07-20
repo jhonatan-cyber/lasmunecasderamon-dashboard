@@ -1,15 +1,9 @@
- 
 'use client';
 
 import React from 'react';
 import { AlertTriangle, Loader2 } from 'lucide-react';
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
-import { Button } from "@/components/ui/button";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { Button } from '@/components/ui/button';
 
 interface DeleteUserConfirmModalProps {
   open: boolean;
@@ -24,7 +18,7 @@ export function DeleteUserConfirmModal({
   onOpenChange,
   onConfirm,
   userName,
-  isLoading = false,
+  isLoading = false
 }: DeleteUserConfirmModalProps) {
   const handleConfirm = () => {
     onConfirm();
@@ -52,7 +46,9 @@ export function DeleteUserConfirmModal({
             <div className='bg-red-50 dark:bg-red-950/40 p-4 rounded-xl border border-red-200 dark:border-red-800'>
               <div className='space-y-2 text-sm text-red-900 dark:text-red-100 text-center'>
                 <p>
-                  <strong className='opacity-70 text-xs uppercase tracking-widest block mb-1'>Usuario</strong>
+                  <strong className='opacity-70 text-xs uppercase tracking-widest block mb-1'>
+                    Usuario
+                  </strong>
                   <span className='text-base font-bold'>{userName}</span>
                 </p>
               </div>
@@ -78,8 +74,8 @@ export function DeleteUserConfirmModal({
               className='rounded-full bg-black text-white dark:bg-black dark:text-white dark:border-white dark:hover:bg-white dark:hover:text-black dark:hover:border-white hover:scale-105 transition-all hover:bg-white hover:text-black duration-200 dark:hover:bg-gray-200 text-sm sm:text-base w-full sm:w-auto border-2'
             >
               {isLoading ? (
-                <div className="flex items-center gap-2">
-                  <Loader2 className="w-4 h-4 animate-spin" />
+                <div className='flex items-center gap-2'>
+                  <Loader2 className='w-4 h-4 animate-spin' />
                   <span>Eliminando...</span>
                 </div>
               ) : (

@@ -1,3 +1,5 @@
+'use client';
+
 import { useCallback, useEffect, useRef } from 'react';
 import { Timer } from '@/contexts/TimerContext';
 import { announceVoice, playNotificationSound } from '@/lib/utils/audioUtils';

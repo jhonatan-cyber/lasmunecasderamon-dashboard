@@ -1,3 +1,5 @@
+'use client';
+
 import { useMemo } from 'react';
 import { getCardSplit } from '@/components/orders/productModalRules';
 
@@ -29,7 +31,9 @@ export function usePrivateRoomSummary({
   pagosMixtos
 }: PrivateRoomSummaryParams) {
   const selectedRoom = useMemo(() => {
-    return habitaciones.find(h => String(h.id_habitacion || h.id) === String(formData.habitacion_id));
+    return habitaciones.find(
+      h => String(h.id_habitacion || h.id) === String(formData.habitacion_id)
+    );
   }, [formData.habitacion_id, habitaciones]);
 
   const selectedClientData = useMemo(() => {

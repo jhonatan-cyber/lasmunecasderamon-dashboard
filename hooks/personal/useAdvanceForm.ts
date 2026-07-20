@@ -1,3 +1,5 @@
+'use client';
+
 import { useState, useEffect } from 'react';
 import { useUsers } from '@/hooks/personal';
 import { formatNumberCL } from '@/lib/utils/formatters';
