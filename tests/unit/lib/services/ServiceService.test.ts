@@ -30,7 +30,8 @@ vi.mock('@/lib/api/sseService', () => ({
 }));
 
 vi.mock('@/lib/business/timezoneService', () => ({
-  getNowInBusinessTimezone: () => '2026-04-10 10:00:00'
+  getNowInBusinessTimezone: () => '2026-04-10 10:00:00',
+  getSystemTimezone: () => 'America/Santiago'
 }));
 
 import { ServiceService } from '@/lib/services/ServiceService';

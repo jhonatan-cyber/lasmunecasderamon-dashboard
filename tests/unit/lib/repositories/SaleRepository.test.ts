@@ -12,7 +12,8 @@ vi.mock('@/lib/database/db', () => ({
 }));
 
 vi.mock('@/lib/business/timezoneService', () => ({
-  getNowInBusinessTimezone: () => '2026-04-11 12:00:00'
+  getNowInBusinessTimezone: () => '2026-04-11 12:00:00',
+  getSystemTimezone: () => 'America/Santiago'
 }));
 
 import { SaleRepository } from '@/lib/repositories/SaleRepository';

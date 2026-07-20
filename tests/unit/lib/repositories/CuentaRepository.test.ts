@@ -22,7 +22,8 @@ vi.mock('@/lib/database/db', () => ({
 
 vi.mock('@/lib/business/timezoneService', () => ({
   getNowInBusinessTimezone: () => '2026-05-19 12:00:00',
-  parseBusinessDate: (value: string) => new Date(value)
+  parseBusinessDate: (value: string) => new Date(value),
+  getSystemTimezone: () => 'America/Santiago'
 }));
 
 vi.mock('@/lib/api/sseService', () => ({

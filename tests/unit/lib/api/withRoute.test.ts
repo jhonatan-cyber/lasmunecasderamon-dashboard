@@ -24,22 +24,40 @@ vi.mock('@/lib/auth/auth-app', () => ({
 }));
 
 vi.mock('@/lib/utils/logger', () => {
-  const mocks = { error: vi.fn(), captureException: vi.fn(), info: vi.fn(), warn: vi.fn(), debug: vi.fn() };
-  return { logger: mocks, auditLogger: { login: vi.fn(), logout: vi.fn(), dataAccess: vi.fn(), securityEvent: vi.fn(), error: vi.fn() }, default: mocks };
+  const mocks = {
+    error: vi.fn(),
+    captureException: vi.fn(),
+    info: vi.fn(),
+    warn: vi.fn(),
+    debug: vi.fn()
+  };
+  return {
+    logger: mocks,
+    auditLogger: {
+      login: vi.fn(),
+      logout: vi.fn(),
+      dataAccess: vi.fn(),
+      securityEvent: vi.fn(),
+      error: vi.fn()
+    },
+    default: mocks
+  };
 });
 
 vi.mock('@/lib/api/date-response', () => ({
   normalizeJsonResponseDates: (r: any) => r
 }));
 
-const jsonResponse = (body: unknown, init?: ResponseInit) => Response.json(body, init);
-vi.mock('next/server', () => ({ NextResponse: { json: jsonResponse } }));
+vi.mock('next/server', () => ({
+  NextResponse: { json: (body: unknown, init?: ResponseInit) => Response.json(body, init) }
+}));
 
 import { withRoute, withPublicRoute } from '@/lib/api/withRoute';
 import { ErrorLogService } from '@/lib/services/ErrorLogService';
 import { ApiResponse } from '@/lib/api/api-response';
 
-const okHandler = (_req: Request, _ctx: { params: any }) => Promise.resolve(Response.json({ success: true }));
+const okHandler = (_req: Request, _ctx: { params: any }) =>
+  Promise.resolve(Response.json({ success: true }));
 
 describe('withRoute middleware', () => {
   beforeEach(() => {
@@ -67,20 +85,31 @@ describe('withRoute middleware', () => {
       const handler = vi.fn().mockResolvedValue(Response.json({ success: true }));
       const wrapped = withRoute({ auth: true }, handler as any);
       await wrapped(new Request('http://localhost/test'), { params: {} });
-      expect(handler).toHaveBeenCalledWith(expect.any(Request), expect.objectContaining({ user: mockAuthUser }));
+      expect(handler).toHaveBeenCalledWith(
+        expect.any(Request),
+        expect.objectContaining({ user: mockAuthUser })
+      );
     });
   });
 
   describe('permission guard', () => {
     it('returns 403 when user lacks module permission', async () => {
-      mockAuthUser = { id: 'user-1', role: 'cajero', permissions: { users: { read: true, write: false, delete: false } } };
+      mockAuthUser = {
+        id: 'user-1',
+        role: 'cajero',
+        permissions: { users: { read: true, write: false, delete: false } }
+      };
       const wrapped = withRoute({ auth: true, module: 'users', action: 'write' }, okHandler);
       await wrapped(new Request('http://localhost/test'), { params: {} });
       expect(ApiResponse.forbidden).toHaveBeenCalledWith('Permisos insuficientes');
     });
 
     it('calls handler when user has permission', async () => {
-      mockAuthUser = { id: 'user-1', role: 'cajero', permissions: { users: { read: true, write: true, delete: false } } };
+      mockAuthUser = {
+        id: 'user-1',
+        role: 'cajero',
+        permissions: { users: { read: true, write: true, delete: false } }
+      };
       const handler = vi.fn().mockResolvedValue(Response.json({ success: true }));
       const wrapped = withRoute({ auth: true, module: 'users', action: 'write' }, handler as any);
       await wrapped(new Request('http://localhost/test'), { params: {} });
@@ -88,7 +117,11 @@ describe('withRoute middleware', () => {
     });
 
     it('allows administrador role for any permission', async () => {
-      mockAuthUser = { id: 'admin-1', role: 'administrador', permissions: { users: { read: true, write: false, delete: false } } };
+      mockAuthUser = {
+        id: 'admin-1',
+        role: 'administrador',
+        permissions: { users: { read: true, write: false, delete: false } }
+      };
       const handler = vi.fn().mockResolvedValue(Response.json({ success: true }));
       const wrapped = withRoute({ auth: true, module: 'users', action: 'write' }, handler as any);
       await wrapped(new Request('http://localhost/test'), { params: {} });
@@ -98,7 +131,13 @@ describe('withRoute middleware', () => {
 
   describe('error handling', () => {
     it('returns ZodError as validation error', async () => {
-      const wrapped = withRoute({}, () => Promise.reject(new ZodError([{ code: 'invalid_type', expected: 'string', path: ['name'], message: 'Expected string' }])));
+      const wrapped = withRoute({}, () =>
+        Promise.reject(
+          new ZodError([
+            { code: 'invalid_type', expected: 'string', path: ['name'], message: 'Expected string' }
+          ])
+        )
+      );
       await wrapped(new Request('http://localhost/test'), { params: {} });
       expect(ApiResponse.validationError).toHaveBeenCalled();
     });
