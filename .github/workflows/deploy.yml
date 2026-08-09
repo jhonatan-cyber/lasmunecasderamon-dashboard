@@ -135,3 +135,48 @@ jobs:
               exit 1
             fi
             echo "✅ Health check OK: /api/health respondió 200"
+
+            # --- Health check autenticado (login de seed + ruta protegida) ---
+            # Verifica que el auth real funcione: login con usuario del seed y
+            # GET a una ruta protegida (/api/users/profile) respondiendo 200.
+            # El token se envía como Bearer (la cookie es Secure y curl sobre
+            # http://127.0.0.1 no la reenvía).
+            HC_USER='${{ secrets.HEALTH_CHECK_USER }}'
+            HC_PASS='${{ secrets.HEALTH_CHECK_PASSWORD }}'
+
+            AUTH_TOKEN=""
+            for i in $(seq 1 10); do
+              LOGIN_RESP=$(curl -s -X POST "http://127.0.0.1:3000/api/auth/login" \
+                -H "Content-Type: application/json" \
+                -d "{\"email\":\"$HC_USER\",\"password\":\"$HC_PASS\"}" \
+                --max-time 10)
+              AUTH_TOKEN=$(echo "$LOGIN_RESP" | node -e "let d='';process.stdin.on('data',c=>d+=c).on('end',()=>{try{const j=JSON.parse(d);console.log(j.token||'')}catch(e){console.log('')}})")
+              if [ -n "$AUTH_TOKEN" ]; then
+                break
+              fi
+              sleep 2
+            done
+
+            if [ -z "$AUTH_TOKEN" ]; then
+              echo "::error::Health check autenticado falló: login no devolvió token"
+              tail -n 50 logs/pm2-error.log || true
+              exit 1
+            fi
+
+            AUTH_OK=0
+            for i in $(seq 1 30); do
+              AUTH_CODE=$(curl -s -o /dev/null -w "%{http_code}" -H "Authorization: Bearer $AUTH_TOKEN" --max-time 5 "http://127.0.0.1:3000/api/users/profile" || echo "000")
+              echo "auth check (intento $i/30): HTTP $AUTH_CODE"
+              if [ "$AUTH_CODE" = "200" ]; then
+                AUTH_OK=1
+                break
+              fi
+              sleep 1
+            done
+
+            if [ "$AUTH_OK" != "1" ]; then
+              echo "::error::Health check autenticado falló: /api/users/profile no respondió 200 tras 30s"
+              tail -n 50 logs/pm2-error.log || true
+              exit 1
+            fi
+            echo "✅ Health check autenticado OK: login + /api/users/profile respondió 200"
