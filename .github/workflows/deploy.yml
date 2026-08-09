@@ -180,3 +180,20 @@ jobs:
               exit 1
             fi
             echo "✅ Health check autenticado OK: login + /api/users/profile respondió 200"
+
+      - name: Notify WhatsApp on deploy failure
+        if: failure()
+        run: |
+          # Normaliza el número (acepta con o sin prefijo whatsapp:)
+          TO=$(echo "${{ secrets.ADMIN_WHATSAPP_NUMBER }}" | sed 's/^whatsapp://')
+          FROM=$(echo "${{ secrets.TWILIO_WHATSAPP_NUMBER }}" | sed 's/^whatsapp://')
+          COMMIT_MSG="${{ github.event.head_commit.message }}"
+          COMMIT_MSG=$(echo "$COMMIT_MSG" | head -1)
+          RUN_URL="${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}"
+          BODY=$(printf '⚠️ Deploy FALLÓ en producción\nCommit: %s\nMensaje: %s\nVer: %s' "${{ github.sha }}" "$COMMIT_MSG" "$RUN_URL")
+          curl -s -X POST "https://api.twilio.com/2010-04-01/Accounts/${{ secrets.TWILIO_ACCOUNT_SID }}/Messages.json" \
+            -u "${{ secrets.TWILIO_ACCOUNT_SID }}:${{ secrets.TWILIO_AUTH_TOKEN }}" \
+            --data-urlencode "From=whatsapp:${FROM}" \
+            --data-urlencode "To=whatsapp:${TO}" \
+            --data-urlencode "Body=${BODY}" \
+            --max-time 20
