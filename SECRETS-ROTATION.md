@@ -3,8 +3,10 @@
 **Fecha del hallazgo:** 2026-08-09 **Repositorio afectado:**
 `lasmunecasderamon-dashboard` (origin:
 `github.com/jhonatan-cyber/lasmunecasderamon-dashboard`) **Estado:** historial
-purgado en espejo local (`.dev/git-history-backup.git`), **push pendiente** +
-**rotación pendiente**.
+purgado y **force-push completado** (2026-08-09, rama `main` reescrita a
+`bfbf9d0`), repo local re-sincronizado; **rotación de credenciales pendiente**
+(obligatoria). Espejo canónico: `.dev/git-history-backup-current.git` (el viejo
+quedó en `.dev/git-history-backup-stale-2026-08-09.git`, **NO usar**).
 
 > ⚠️ La purga del historial NO revoca nada: cualquiera que haya tenido acceso al
 > historial (colaboradores, forks, copias) puede tener los secretos. **Rotar es
@@ -27,9 +29,10 @@ purgado en espejo local (`.dev/git-history-backup.git`), **push pendiente** +
 
 ### Paso 0 — Confirmar visibilidad del repo
 
-- [ ] Verificar si el repo en GitHub es **público o privado** (GitHub → Settings
-      → General → Danger Zone → _Change repository visibility_). Si fue público
-      en algún momento, asumir exposición total.
+- [x] Verificado (2026-08-09): el repo es **PRIVADO** (la API de GitHub responde
+      404 sin auth). Baja la exposición, pero igual hay que rotar: asumir que
+      cualquiera con acceso (colaboradores, forks, copias) pudo copiar el
+      historial.
 - [ ] Revisar **forks** y quién tiene acceso de colaborador; asumir que el
       historial se copió.
 
@@ -59,39 +62,57 @@ purgado en espejo local (`.dev/git-history-backup.git`), **push pendiente** +
 
 ### Paso 4 — Aplicar la purga del historial
 
-- [ ] Revisar el espejo purgado: `.dev/git-history-backup.git` (historial
-      reescrito, 0 secretos verificado).
-- [ ] **Force-push** del historial reescrito (ver abajo) y **coordinarse** con
-      quien tenga clones: cada colaborador debe re-clonar (o `git fetch` +
-      `git rebase`) — el historial nuevo NO es compatible con el viejo.
+- [x] **Force-push completado** (2026-08-09): `84f7dc9...bfbf9d0 main` (forced
+      update). Espejo canónico `.dev/git-history-backup-current.git`: 262
+      commits, 0 secretos en 14.189 blobs, árbol del tip **idéntico** al de
+      `origin/main`.
+- [x] **Repo local re-sincronizado**:
+      `git fetch origin && git reset --hard     origin/main` → `main` =
+      `bfbf9d0` (working tree limpio, nada que preservar).
+- [ ] **Colaboradores**: cada clone debe re-clonar (o
+      `git fetch origin &&     git reset --hard origin/main`) — el historial
+      nuevo NO es compatible con el viejo (los hashes de TODOS los commits
+      cambiaron).
 - [ ] GitHub: en _Settings → Danger Zone_ considerar **bloquear force-push** y
       activar protección de rama `main` después de la purga.
 
-## 3. Comandos para aplicar la purga
+## 3. Qué se ejecutó (2026-08-09) y cómo reproducir
 
-El espejo purgado ya está listo y verificado. Para publicarlo:
+### Ejecutado
 
 ```bash
-# 1. Desde el espejo purgado, apuntar al remote real
-cd .dev/git-history-backup.git
+# 0. Fix previo (commit 84f7dc9, push normal): el batch remoto (tailwind-v4)
+#    había reintroducido los valores como fallback en
+#    scripts/run-index-migration.mjs (+ un split roto que rompía el script).
+# 1. Espejo fresco con el historial COMPLETO (262 commits):
+cd .dev
+git clone --mirror https://github.com/jhonatan-cyber/lasmunecasderamon-dashboard.git git-history-backup-current.git
+cd git-history-backup-current.git
+python ../tools/git-filter-repo --replace-text ../tools/replace-secrets.txt
+# 2. Verificación: 262 commits; árbol del tip IDÉNTICO al de origin/main;
+#    escaneo de blobs (cat-file --batch sobre todos los blobs) = 0 secretos.
+# 3. Force-push (solo existe la rama main; 0 tags):
 git remote add origin https://github.com/jhonatan-cyber/lasmunecasderamon-dashboard.git
-
-# 2. Force-push de TODAS las ramas (¡reescribe el historial remoto!)
-git push --force --all origin
-git push --force --tags origin
-
-# 3. En el repo local de trabajo: re-sincronizar sin perder cambios sin commitear
-#    (los cambios actuales del working tree se preservan; el .git se reemplaza)
-git stash push -u -m "antes-de-purga"
-git fetch origin
-git checkout main
-git reset --hard origin/main
-git stash pop
+git push --force origin main        # 84f7dc9...bfbf9d0 main (forced update)
+# 4. Re-sync del repo local de trabajo:
+git fetch origin && git reset --hard origin/main
 ```
+
+### Reproducir desde cero (si hiciera falta re-purgar)
+
+1. `git clone --mirror <origin-url> /tmp/purge.git` (historial completo).
+2. `cd /tmp/purge.git && python <ruta-a-git-filter-repo> --replace-text <ruta-a-replace-secrets.txt>`.
+3. Verificar (igual que arriba) y `git push --force origin <rama>`.
 
 > ⚠️ El force-push rompe los clones existentes: cada colaborador debe hacer
 > `git fetch origin && git reset --hard origin/main` (o re-clonar) y re-aplicar
 > cualquier rama propia sobre el historial nuevo.
+>
+> El espejo viejo `.dev/git-history-backup-stale-2026-08-09.git` estaba
+> **desactualizado** (254 commits, sin el trabajo reciente) — NO usarlo.
+>
+> El historial de la app móvil (`lasmunecasderamon-app`) fue revisado con
+> `git log -S`: **0 ocurrencias** de los valores filtrados → no requiere purga.
 
 ## 4. Prevención a futuro
 
