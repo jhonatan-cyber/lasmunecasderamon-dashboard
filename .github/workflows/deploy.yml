@@ -114,3 +114,24 @@ jobs:
             sleep 5
             pm2 status lasmunecasderamon-dashboard
             tail -n 20 logs/pm2-error.log || true
+
+            # --- Health check post-deploy ---
+            # Espera hasta 30s a que /api/health responda 200; si no, el run falla.
+            HEALTH_URL="http://127.0.0.1:3000/api/health"
+            HEALTH_OK=0
+            for i in $(seq 1 30); do
+              CODE=$(curl -s -o /dev/null -w "%{http_code}" --max-time 5 "$HEALTH_URL" || echo "000")
+              echo "health check (intento $i/30): HTTP $CODE"
+              if [ "$CODE" = "200" ]; then
+                HEALTH_OK=1
+                break
+              fi
+              sleep 1
+            done
+
+            if [ "$HEALTH_OK" != "1" ]; then
+              echo "::error::Health check falló: /api/health no respondió 200 tras 30s de arranque"
+              tail -n 50 logs/pm2-error.log || true
+              exit 1
+            fi
+            echo "✅ Health check OK: /api/health respondió 200"
