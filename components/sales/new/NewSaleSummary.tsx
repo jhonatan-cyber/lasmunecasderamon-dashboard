@@ -1,10 +1,13 @@
 import { ShoppingCart } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { formatCurrencyNoDecimals } from '@/lib/utils/formatters';
+import { useConfigValue } from '@/hooks/shared/useConfigValue';
 
 interface NewSaleSummaryProps {
   subtotal: number;
   propina: number;
+  cargoTarjeta: number;
+  metodoPago: string;
   total: number;
   loading: boolean;
   disabled: boolean;
@@ -14,11 +17,15 @@ interface NewSaleSummaryProps {
 export const NewSaleSummary = ({
   subtotal,
   propina,
+  cargoTarjeta,
+  metodoPago,
   total,
   loading,
   disabled,
   onSubmit
 }: NewSaleSummaryProps) => {
+  const impuestoPropinaPct = Number(useConfigValue('facturacion', 'impuesto_propina', '10'));
+  const esTarjeta = metodoPago === 'tarjeta';
 
   return (
     <div className='my-8 flex flex-col items-center rounded-2xl border-y border-gray-100 bg-gray-50/30 py-10 dark:border-neutral-800 dark:bg-neutral-900/60'>
@@ -36,6 +43,16 @@ export const NewSaleSummary = ({
               {formatCurrencyNoDecimals(subtotal)}
             </div>
           </div>
+          {esTarjeta && cargoTarjeta > 0 && (
+            <div className='text-center'>
+              <div className='text-[10px] font-bold uppercase text-gray-400 dark:text-neutral-500'>
+                Cargo tarjeta ({impuestoPropinaPct}%)
+              </div>
+              <div className='text-lg font-semibold text-indigo-600 dark:text-indigo-400'>
+                {formatCurrencyNoDecimals(cargoTarjeta)}
+              </div>
+            </div>
+          )}
           <div className='text-center'>
             <div className='text-[10px] font-bold uppercase text-gray-400 dark:text-neutral-500'>
               Propina
@@ -52,8 +69,6 @@ export const NewSaleSummary = ({
         <div className='my-2 bg-linear-to-r from-gray-900 to-gray-600 bg-clip-text text-5xl font-black text-transparent dark:from-white dark:to-neutral-400'>
           {formatCurrencyNoDecimals(total)}
         </div>
-
-        
       </div>
 
       <Button

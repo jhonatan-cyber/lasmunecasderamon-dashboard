@@ -1,4 +1,5 @@
 /* eslint-disable no-console */
+require('../../scripts/guard-local-db')();
 const crypto = require('crypto');
 function uuidv4() {
   return crypto.randomUUID();
@@ -134,6 +135,20 @@ async function runIntegrationTest() {
     } else {
       throw new Error('âŒ FALLO: No se encontró el detalle de propina.');
     }
+
+    console.log('\n🧹 Limpiando datos de prueba...');
+    await connection.execute('DELETE FROM detalle_propinas WHERE propina_id = ?', [tipId]);
+    await connection.execute('DELETE FROM propinas WHERE id_propina = ?', [tipId]);
+    await connection.execute('DELETE FROM detalle_comisiones WHERE comision_id = ?', [
+      commissionId
+    ]);
+    await connection.execute('DELETE FROM comisiones WHERE id_comision = ?', [commissionId]);
+    await connection.execute('DELETE FROM detalle_pedidos WHERE pedido_id = ?', [testOrderId]);
+    await connection.execute('DELETE FROM pedidos_usuarios WHERE pedido_id = ?', [testOrderId]);
+    await connection.execute('DELETE FROM ventas WHERE id_venta = ?', [testSaleId]);
+    await connection.execute('DELETE FROM pedidos WHERE id_pedido = ?', [testOrderId]);
+    await connection.execute('DELETE FROM logins WHERE id_login = ?', [loginId]);
+    console.log('✅ Limpieza completada');
 
     console.log('\n✨ PRUEBA DE INTEGRACIÓN COMPLETADA CON ÉXITO');
   } catch (error) {

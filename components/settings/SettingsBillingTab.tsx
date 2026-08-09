@@ -18,6 +18,7 @@ export function SettingsBillingTab() {
   const [config, setConfig] = useState<BillingConfig>({
     impuesto_iva: '19',
     impuesto_propina: '10',
+    propina_venta: '10',
     moneda: 'CLP',
     facturacion_activada: true,
     resolucion_sii: ''
@@ -101,7 +102,9 @@ export function SettingsBillingTab() {
                 />
               </div>
               <div>
-                <label className='block text-sm font-medium mb-1'>% Propina por defecto</label>
+                <label className='block text-sm font-medium mb-1'>
+                  % Propina en pago con tarjeta
+                </label>
                 <input
                   type='number'
                   min='0'
@@ -112,6 +115,28 @@ export function SettingsBillingTab() {
                   className='w-full px-3 py-2 border border-gray-300 rounded-full focus:ring-2 focus:ring-black focus:border-transparent'
                   placeholder='10'
                 />
+                <p className='text-xs text-gray-500 mt-1'>
+                  Cargo de propina que se refleja en la venta al pagar con tarjeta. No se reparte.
+                </p>
+              </div>
+              <div>
+                <label className='block text-sm font-medium mb-1'>
+                  % Propina de venta (reparto)
+                </label>
+                <input
+                  type='number'
+                  min='0'
+                  max='100'
+                  step='0.01'
+                  value={config.propina_venta}
+                  onChange={e => setConfig(prev => ({ ...prev, propina_venta: e.target.value }))}
+                  className='w-full px-3 py-2 border border-gray-300 rounded-full focus:ring-2 focus:ring-black focus:border-transparent'
+                  placeholder='10'
+                />
+                <p className='text-xs text-gray-500 mt-1'>
+                  Porcentaje de las ventas que se distribuye entre los cajeros y garzones activos
+                  del local.
+                </p>
               </div>
               <div>
                 <label className='block text-sm font-medium mb-1'>Moneda</label>

@@ -21,6 +21,7 @@ import { summarizeCuentaDetalles } from '@/lib/utils/cuentas';
 import { ProductCartTable } from '../tables/ProductCartTable';
 import { CreditCard, DollarSign, Loader2 } from 'lucide-react';
 import { useConfigValue } from '@/hooks/shared/useConfigValue';
+import { calcularPropina, calcularCargoTarjeta } from '@/lib/business/saleTotals';
 
 function formatFecha(fechaStr?: string) {
   if (!fechaStr) return '-';
@@ -69,7 +70,8 @@ export default function CobrarCuentaModal({
   onOrderStatusChange
 }: CobrarCuentaModalProps) {
   const cuentaId = cuenta ? String(cuenta.id_cuenta ?? cuenta.id ?? '') : null;
-  const propinaPct = Number(useConfigValue('facturacion', 'impuesto_propina', '10'));
+  const propinaPct = Number(useConfigValue('facturacion', 'propina_venta', '10'));
+  const impuestoPropinaPct = Number(useConfigValue('facturacion', 'impuesto_propina', '10'));
 
   const {
     searchRoom,
@@ -144,7 +146,14 @@ export default function CobrarCuentaModal({
   );
 
   const currentPropina = typeof propina === 'number' ? propina : 0;
-  const totalFinal = (cuentaActual?.total || 0) + currentPropina;
+  // Cargo por pago con tarjeta: línea aparte en la boleta, se suma al total que
+  // paga el cliente pero NO se reparte (solo la propina va a TipRepository).
+  const cargoTarjeta = calcularCargoTarjeta(
+    cuentaActual?.total || 0,
+    impuestoPropinaPct,
+    metodoPago
+  );
+  const totalFinal = (cuentaActual?.total || 0) + currentPropina + cargoTarjeta;
   const habitacionValue = habitacionId ?? '';
   const searchRoomValue = searchRoom ?? '';
 
@@ -159,6 +168,7 @@ export default function CobrarCuentaModal({
       cuentaActual,
       typeof propina === 'number' ? propina : null,
       metodoPago || '',
+      cargoTarjeta,
       () => {
         onClose();
         onCuentaCobrada?.();
@@ -286,9 +296,7 @@ export default function CobrarCuentaModal({
                         onCheckedChange={checked => {
                           const activa = checked === true;
                           setPropinaActiva(activa);
-                          setPropina(
-                            activa ? Math.round(((cuentaActual?.total || 0) * propinaPct) / 100) : 0
-                          );
+                          setPropina(calcularPropina(cuentaActual?.total || 0, propinaPct, activa));
                         }}
                       />
                       <label
@@ -393,6 +401,12 @@ export default function CobrarCuentaModal({
                     {currentPropina > 0 && (
                       <div className='text-sm text-blue-600 font-normal'>
                         + Propina: {formatCurrencyNoDecimals(currentPropina)}
+                      </div>
+                    )}
+                    {cargoTarjeta > 0 && (
+                      <div className='text-sm text-indigo-600 font-normal'>
+                        + Cargo tarjeta ({impuestoPropinaPct}%):{' '}
+                        {formatCurrencyNoDecimals(cargoTarjeta)}
                       </div>
                     )}
                     <div className='text-md font-bold text-black'>

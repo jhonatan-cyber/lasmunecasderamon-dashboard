@@ -47,3 +47,7 @@ cloudflared-windows-amd64.exe
 # Windows reserved device names (artifacts)
 nul
 database/nul
+
+# MariaDB portable de desarrollo (scripts/db-dev.js)
+.dev/
+tests/integration/backups/

@@ -133,6 +133,7 @@ export function SalesReport() {
         salesData={salesData}
         paymentItems={paymentItems}
         paymentTotal={paymentTotal}
+        cargoTarjeta={salesData?.cargoTarjeta || 0}
       />
 
       {/* Charts Row */}

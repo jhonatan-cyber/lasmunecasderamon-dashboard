@@ -2,13 +2,14 @@
 
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { formatCurrencyNoDecimals } from '@/lib/utils/formatters';
-import { TrendingUp, DollarSign, ShoppingCart, Users, LucideIcon } from 'lucide-react';
+import { TrendingUp, DollarSign, ShoppingCart, Users, CreditCard, LucideIcon } from 'lucide-react';
 
 interface SalesData {
   totalVentas: number;
   cantidadVentas: number;
   promedioVenta: number;
   totalPropinas: number;
+  cargoTarjeta: number;
 }
 
 interface PaymentItem {
@@ -21,6 +22,7 @@ interface SalesReportStatsProps {
   salesData: SalesData | null;
   paymentItems: PaymentItem[];
   paymentTotal: number;
+  cargoTarjeta?: number;
 }
 
 function StatCard({
@@ -59,7 +61,7 @@ function StatCard({
   );
 }
 
-export function SalesReportStats({ salesData, paymentItems, paymentTotal }: SalesReportStatsProps) {
+export function SalesReportStats({ salesData, paymentItems, paymentTotal, cargoTarjeta = 0 }: SalesReportStatsProps) {
   return (
     <>
       {/* KPI Cards */}
@@ -96,6 +98,16 @@ export function SalesReportStats({ salesData, paymentItems, paymentTotal }: Sale
           grad='from-amber-50 to-orange-50 dark:from-amber-950/20 dark:to-orange-950/20'
           iconColor='text-amber-600 dark:text-amber-400'
         />
+        {cargoTarjeta > 0 && (
+          <StatCard
+            title='Cargo tarjeta'
+            value={formatCurrencyNoDecimals(cargoTarjeta)}
+            sub='Recargo por pagos con tarjeta'
+            Icon={CreditCard}
+            grad='from-cyan-50 to-sky-50 dark:from-cyan-950/20 dark:to-sky-950/20'
+            iconColor='text-cyan-600 dark:text-cyan-400'
+          />
+        )}
       </div>
 
       {/* Payment Items */}

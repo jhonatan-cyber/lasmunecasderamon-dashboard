@@ -1,4 +1,5 @@
 ﻿/* eslint-disable no-console */
+require('../../scripts/guard-local-db')();
 const mysql = require('mysql2/promise');
 const fs = require('fs');
 const path = require('path');

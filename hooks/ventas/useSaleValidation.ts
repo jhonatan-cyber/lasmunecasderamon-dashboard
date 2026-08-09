@@ -8,6 +8,12 @@ import { useTimer } from '@/contexts/TimerContext';
 import { VentaCreate } from '@/types/venta';
 import logger from '@/lib/utils/logger';
 import { isChampagneProduct, isExpensiveDrink } from '@/components/orders/productModalRules';
+import { useConfigValue } from '@/hooks/shared/useConfigValue';
+import {
+  calcularPropina,
+  calcularCargoTarjeta,
+  calcularTotalVenta
+} from '@/lib/business/saleTotals';
 
 export interface SaleFormState {
   selectedCliente: string;
@@ -30,7 +36,7 @@ export interface SaleFormState {
   setCantidades: React.Dispatch<React.SetStateAction<{ [key: string]: number }>>;
   searchResults: any[];
   searchLoading: boolean;
-  totals: { subtotal: number; propina: number; total: number };
+  totals: { subtotal: number; propina: number; cargoTarjeta: number; total: number };
   commissionTotal: number;
   requiresRoom: boolean;
   isChampagne: (producto: any) => boolean;
@@ -218,11 +224,15 @@ export function useSaleValidation({
   };
 
   // ── Derived values ──────────────────────────────────────────────────
+  const propinaPct = Number(useConfigValue('facturacion', 'propina_venta', '10'));
+  const impuestoPropinaPct = Number(useConfigValue('facturacion', 'impuesto_propina', '10'));
   const totals = useMemo(() => {
     const subtotal = productos.reduce((acc, p) => acc + (p?.subtotal || 0), 0);
-    const propina = enableTip ? Math.round(subtotal * 0.1) : 0;
-    return { subtotal, propina, total: subtotal + propina };
-  }, [productos, enableTip]);
+    const propina = calcularPropina(subtotal, propinaPct, enableTip);
+    const cargoTarjeta = calcularCargoTarjeta(subtotal, impuestoPropinaPct, metodoPago);
+    const total = calcularTotalVenta({ subtotal, propina, impuestoPropinaPct, metodoPago });
+    return { subtotal, propina, cargoTarjeta, total };
+  }, [productos, enableTip, metodoPago, propinaPct, impuestoPropinaPct]);
 
   const commissionTotal = useMemo(() => {
     return productos.reduce(
@@ -259,6 +269,7 @@ export function useSaleValidation({
         metodo_pago: metodoPago as 'efectivo' | 'tarjeta' | 'transferencia' | 'prepago',
         propina: totals.propina,
         sub_total: totals.subtotal,
+        cargo_tarjeta: totals.cargoTarjeta,
         total: totals.total,
         detalles: productos.map(p => {
           const selectedHostesses = Array.isArray(p.selectedHostesses)

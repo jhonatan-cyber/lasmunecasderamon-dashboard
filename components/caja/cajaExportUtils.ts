@@ -10,6 +10,7 @@ export interface CajaExportContext {
   ventasTragosChicas: any;
   ventasChampagne: any;
   ventasBarras: any;
+  totalCargoTarjeta?: number;
   prepagoCargado: number;
   prepagoConsumido: number;
   ingresosReales: number;
@@ -236,6 +237,7 @@ const generateResumenHTML = (ctx: CajaExportContext) => {
     { label: 'Ventas Tragos', value: ctx.ventasTragosChicas?.total_venta || 0 },
     { label: 'Ventas Champaña', value: ctx.ventasChampagne?.total_venta || 0 },
     { label: 'Ventas Barras', value: ctx.ventasBarras?.total_venta || 0 },
+    ...(ctx.totalCargoTarjeta ? [{ label: 'Cargo tarjeta', value: ctx.totalCargoTarjeta }] : []),
     { label: 'Servicios', value: ctx.caja.servicios || 0 },
     { label: 'Prepago Cargado', value: ctx.prepagoCargado },
     { label: 'Prepago Consumido', value: ctx.prepagoConsumido },

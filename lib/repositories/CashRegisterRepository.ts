@@ -109,6 +109,7 @@ export class CashRegisterRepository {
     id_caja: string,
     deltas: {
       venta?: number;
+      cargo_tarjeta?: number;
       servicio?: number;
       efectivo?: number;
       tarjeta?: number;
@@ -128,6 +129,7 @@ export class CashRegisterRepository {
 
     const columnMap: Record<string, string> = {
       venta: 'venta',
+      cargo_tarjeta: 'cargo_tarjeta',
       servicio: 'servicio',
       efectivo: 'efectivo',
       tarjeta: 'tarjeta',

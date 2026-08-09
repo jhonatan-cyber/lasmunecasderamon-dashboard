@@ -152,6 +152,8 @@ export default function NewSale() {
         <NewSaleSummary
           subtotal={totals.subtotal}
           propina={totals.propina}
+          cargoTarjeta={totals.cargoTarjeta}
+          metodoPago={metodoPago}
           total={totals.total}
           loading={loading}
           disabled={loading || !productos.length || !metodoPago || hasOpenCaja === false}

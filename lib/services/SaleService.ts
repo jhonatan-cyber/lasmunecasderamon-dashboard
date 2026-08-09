@@ -103,6 +103,7 @@ export class SaleService {
         habitacion_id: validated.habitacion_id,
         metodo_pago: validated.metodo_pago,
         propina: validated.propina,
+        cargo_tarjeta: validated.cargo_tarjeta,
         sub_total: validated.sub_total,
         total: validated.total,
         total_comision: totalComision,
@@ -285,11 +286,15 @@ export class SaleService {
 
       // === ACTUALIZACIÓN CAJA ===
       if (cajaId && !skipCashRegisterPosting) {
+        // El cargo por tarjeta va a su bucket contable propio (cargo_tarjeta)
+        // y NO infla la métrica de venta: venta = total - propina - cargo.
+        const cargoTarjeta = Number(validated.cargo_tarjeta || 0);
         if (esMixto) {
           const deltas = calcularDeltasCaja(pagosMixtos);
 
           await CashRegisterRepository.updateBalances(trx, cajaId, {
-            venta: validated.total - validated.propina,
+            venta: validated.total - validated.propina - cargoTarjeta,
+            cargo_tarjeta: cargoTarjeta,
             propina: validated.propina,
             efectivo: deltas.efectivo,
             tarjeta: deltas.tarjeta,
@@ -300,7 +305,8 @@ export class SaleService {
         } else {
           const montoMetodoPrincipal = Number(validated.total) - prepagoMonto;
           await CashRegisterRepository.updateBalances(trx, cajaId, {
-            venta: validated.total - validated.propina,
+            venta: validated.total - validated.propina - cargoTarjeta,
+            cargo_tarjeta: cargoTarjeta,
             propina: validated.propina,
             efectivo: validated.metodo_pago === 'efectivo' ? montoMetodoPrincipal : 0,
             tarjeta: validated.metodo_pago === 'tarjeta' ? montoMetodoPrincipal : 0,
@@ -330,23 +336,11 @@ export class SaleService {
       // === PROPI NAS ===
       if (validated.propina && validated.propina > 0) {
         try {
-          const pedidoUsuarios = pedidoId
-            ? await trx<any[]>('SELECT mesero_id FROM pedidos WHERE id_pedido = ? LIMIT 1', [
-                pedidoId
-              ])
-            : [];
-          const destinatariosPropina = Array.from(
-            new Set(
-              [createdBy].concat(
-                pedidoUsuarios[0]?.mesero_id ? [String(pedidoUsuarios[0].mesero_id)] : []
-              )
-            )
-          );
-
+          // Se reparte entre todos los cajeros/garzones activos del local
+          // (ver TipRepository.register), sin importar quién realizó la venta.
           await TipRepository.register({
             venta_id: ventaId,
-            monto: validated.propina,
-            usuario_ids: destinatariosPropina
+            monto: validated.propina
           });
           logger.info(
             `[SaleService] Propina de ${validated.propina} registrada para venta ${ventaId}`

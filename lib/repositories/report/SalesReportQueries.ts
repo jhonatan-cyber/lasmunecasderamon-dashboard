@@ -68,9 +68,10 @@ export async function getSalesReport(
     query<any[]>(
       `
       SELECT
-        COALESCE(SUM(v.total), 0) AS totalVentas,
+        COALESCE(SUM(v.total - COALESCE(v.cargo_tarjeta, 0)), 0) AS totalVentas,
+        COALESCE(SUM(v.cargo_tarjeta), 0) AS cargoTarjeta,
         COUNT(*) AS cantidadVentas,
-        COALESCE(AVG(v.total), 0) AS promedioVenta,
+        COALESCE(AVG(v.total - COALESCE(v.cargo_tarjeta, 0)), 0) AS promedioVenta,
         COALESCE(SUM(v.propina), 0) AS totalPropinas,
         COALESCE(SUM(CASE WHEN LOWER(v.metodo_pago) = 'efectivo' THEN v.total ELSE 0 END), 0) AS efectivo,
         COALESCE(SUM(CASE WHEN LOWER(v.metodo_pago) = 'tarjeta' THEN v.total ELSE 0 END), 0) AS tarjeta,
@@ -85,7 +86,8 @@ export async function getSalesReport(
       `
       SELECT
         DATE(v.fecha_crea) AS fecha,
-        COALESCE(SUM(v.total), 0) AS ventas,
+        COALESCE(SUM(v.total - COALESCE(v.cargo_tarjeta, 0)), 0) AS ventas,
+        COALESCE(SUM(v.cargo_tarjeta), 0) AS cargoTarjeta,
         COUNT(*) AS cantidad,
         COALESCE(SUM(v.propina), 0) AS propinas
       FROM ventas v
@@ -102,6 +104,7 @@ export async function getSalesReport(
 
   return {
     totalVentas: Number(summary.totalVentas || 0),
+    cargoTarjeta: Number(summary.cargoTarjeta || 0),
     cantidadVentas: Number(summary.cantidadVentas || 0),
     promedioVenta: Number(summary.promedioVenta || 0),
     totalPropinas: Number(summary.totalPropinas || 0),
@@ -113,6 +116,7 @@ export async function getSalesReport(
     ventasPorDia: dailyRows.map(row => ({
       fecha: row.fecha,
       ventas: Number(row.ventas || 0),
+      cargoTarjeta: Number(row.cargoTarjeta || 0),
       cantidad: Number(row.cantidad || 0),
       propinas: Number(row.propinas || 0)
     }))

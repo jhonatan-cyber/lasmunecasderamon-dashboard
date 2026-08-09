@@ -29,6 +29,49 @@ const API_CACHE_CONFIG = {
   maxAgeSeconds: 5 * 60 // 5 minutes
 };
 
+// Dev servers run over http (localhost / LAN); production is https.
+// In dev, _next/static chunks are compiled on demand and change with every
+// edit — precaching them would 404 (stale build manifest) or serve stale code
+// (reused chunk names), so they're filtered out of the precache below.
+// ?forceProd=1 on the SW script URL forces production behavior (full precache)
+// so `next build` + `next start` can be verified locally over http.
+const FORCE_PROD = new URL(self.location.href).searchParams.get('forceProd') === '1';
+const IS_DEV = !FORCE_PROD && self.location.protocol !== 'https:';
+
+// Shell routes precached in production so offline navigation works even for
+// pages the user has never visited (install runs without a session, so
+// /dashboard caches the public shell; navigationStrategy overwrites each
+// entry with the real page HTML on the first successful online visit).
+// Skipped in dev — pages compile on demand and go stale instantly.
+const SHELL_ROUTES = ['/', '/login', '/dashboard'];
+
+async function precacheShellRoutes() {
+  const cache = await caches.open(CACHE_NAMES.navigation);
+  const results = await Promise.allSettled(
+    SHELL_ROUTES.map(async route => {
+      const response = await fetch(route, { credentials: 'same-origin' });
+      if (response.ok) {
+        // Rebuild the response: a route that redirects (e.g. '/' → /login)
+        // yields a response with the `redirected` flag, and Chrome refuses to
+        // render a redirected response served by the SW for a navigation.
+        const body = await response.blob();
+        const clean = new Response(body, {
+          status: response.status,
+          statusText: response.statusText,
+          headers: response.headers
+        });
+        await cache.put(route, clean);
+        return `${route} cached`;
+      }
+      return `${route} skipped (${response.status})`;
+    })
+  );
+  console.log(
+    '[SW] Shell routes: ' +
+      results.map(r => (r.status === 'fulfilled' ? r.value : 'failed')).join(' | ')
+  );
+}
+
 // ═══════════════════════════════════════════════════════════════════════════
 // Install — Fetch precache-manifest.json and populate the precache
 // ═══════════════════════════════════════════════════════════════════════════
@@ -44,7 +87,14 @@ self.addEventListener('install', event => {
         if (manifestResp.ok) {
           const manifest = await manifestResp.json();
 
-          console.log(`[SW] Precaching ${manifest.length} assets...`);
+          // In dev, skip ephemeral build chunks (see IS_DEV above)
+          const entries = IS_DEV
+            ? manifest.filter(entry => !entry.url.startsWith('/_next/static/'))
+            : manifest;
+
+          console.log(
+            `[SW] Precaching ${entries.length} assets...${IS_DEV ? ' (dev: build chunks skipped)' : ''}`
+          );
 
           // Individual fetch + put instead of atomic addAll
           // This way, a single flaky asset doesn't block the entire precache
@@ -52,7 +102,7 @@ self.addEventListener('install', event => {
           let failed = 0;
 
           await Promise.allSettled(
-            manifest.map(async entry => {
+            entries.map(async entry => {
               try {
                 const response = await fetch(entry.url, { credentials: 'same-origin' });
                 if (response.ok) {
@@ -74,6 +124,12 @@ self.addEventListener('install', event => {
       } catch (err) {
         // Silently fail — app still works with network
         console.warn('[SW] Precache failed (expected on first load):', err);
+      }
+
+      // Production: precache the shell routes (see SHELL_ROUTES above) so a
+      // fresh offline load of the main pages works without having visited them.
+      if (!IS_DEV) {
+        await precacheShellRoutes();
       }
     })()
   );

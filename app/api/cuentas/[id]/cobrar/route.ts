@@ -12,6 +12,7 @@ export const POST = withRoute({ auth: true, audit: true, module: 'finances', act
       tipoPago: body.tipoPago ?? body.metodo_pago,
       montoFinal: body.montoFinal ?? body.total_cobrado ?? 0,
       propinaFinal: body.propinaFinal ?? body.propina ?? 0,
+      cargo_tarjeta: body.cargo_tarjeta ?? 0,
       habitacion_id: body.habitacion_id ?? null
     };
 

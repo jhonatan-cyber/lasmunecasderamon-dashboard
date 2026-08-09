@@ -22,6 +22,12 @@ const TEMPLATE_SRC = path.join(ROOT, 'public', 'sw-template.js');
 const OUTPUT_DEST = path.join(ROOT, 'public', 'sw.js');
 const PRECACHE_MANIFEST_DEST = path.join(ROOT, 'public', 'precache-manifest.json');
 
+// `--dev` mode: generates a manifest for the dev server.
+// In dev, _next/static chunks are compiled on demand and change with every
+// edit — precaching them would 404 (stale build manifest) or serve stale code
+// (reused chunk names). The dev manifest only lists stable public assets.
+const IS_DEV = process.argv.includes('--dev');
+
 // Static public assets to include in precache manifest
 const PUBLIC_PRECACHE = [
   '/favicon.ico',
@@ -33,13 +39,21 @@ const PUBLIC_PRECACHE = [
 
 async function generateSW() {
   console.log('═══════════════════════════════════════════════');
-  console.log('  🔧 Generating Service Worker with Workbox');
+  console.log(`  🔧 Generating Service Worker with Workbox${IS_DEV ? ' [DEV MODE]' : ''}`);
   console.log('═══════════════════════════════════════════════\n');
 
-  // Check if template exists
-  if (!fs.existsSync(TEMPLATE_SRC)) {
-    console.error(`❌ Template not found: ${TEMPLATE_SRC}`);
-    process.exit(1);
+  // Check if template exists. In dev mode this is only a warning — the
+  // manifest is still written and postinstall must never fail the install.
+  // In prod mode it's fatal: the SW is part of the build.
+  const templateMissing = !fs.existsSync(TEMPLATE_SRC);
+  if (templateMissing) {
+    if (IS_DEV) {
+      console.warn(`⚠️  Template not found: ${TEMPLATE_SRC}`);
+      console.warn('   Continuing in dev mode (manifest will be written, sw.js copy skipped).');
+    } else {
+      console.error(`❌ Template not found: ${TEMPLATE_SRC}`);
+      process.exit(1);
+    }
   }
 
   // Check if build output exists
@@ -59,7 +73,7 @@ async function generateSW() {
 
     // Add public assets
     for (const url of PUBLIC_PRECACHE) {
-      const filePath = path.join(ROOT, url.replace(/^\//, ''));
+      const filePath = path.join(ROOT, 'public', url.replace(/^\//, ''));
       if (fs.existsSync(filePath)) {
         const stats = fs.statSync(filePath);
         precacheEntries.push({
@@ -69,8 +83,9 @@ async function generateSW() {
       }
     }
 
-    // Add build assets from .next/static/ recursively
-    if (fs.existsSync(nextStaticDir)) {
+    // Add build assets from .next/static/ recursively (skipped in dev mode —
+    // dev chunks are ephemeral and would go stale/404)
+    if (!IS_DEV && fs.existsSync(nextStaticDir)) {
       const walkDir = (dir, basePrefix) => {
         const entries = fs.readdirSync(dir, { withFileTypes: true });
         for (const entry of entries) {
@@ -100,18 +115,26 @@ async function generateSW() {
     // ── Step 2: Copy template to SW output ───────────────────────────────
     console.log('\n📝 Generating service worker...');
 
-    fs.copyFileSync(TEMPLATE_SRC, OUTPUT_DEST);
+    if (templateMissing) {
+      console.warn('⚠️  Skipping SW template copy (template missing).');
+    } else {
+      fs.copyFileSync(TEMPLATE_SRC, OUTPUT_DEST);
 
-    const elapsed = ((Date.now() - startTime) / 1000).toFixed(2);
+      const elapsed = ((Date.now() - startTime) / 1000).toFixed(2);
 
-    console.log(`   ✅ SW template copied in ${elapsed}s`);
-    console.log(`   📁 Output: ${OUTPUT_DEST}`);
+      console.log(`   ✅ SW template copied in ${elapsed}s`);
+      console.log(`   📁 Output: ${OUTPUT_DEST}`);
+    }
 
     // Verify the output SW references the precache manifest
-    const outputContent = fs.readFileSync(OUTPUT_DEST, 'utf-8');
-    if (!outputContent.includes('precache-manifest.json')) {
-      console.warn('\n⚠️  Generated SW missing reference to precache-manifest.json.');
-      console.warn('   Check that the install handler fetches precache-manifest.json.');
+    if (fs.existsSync(OUTPUT_DEST)) {
+      const outputContent = fs.readFileSync(OUTPUT_DEST, 'utf-8');
+      if (!outputContent.includes('precache-manifest.json')) {
+        console.warn('\n⚠️  Generated SW missing reference to precache-manifest.json.');
+        console.warn('   Check that the install handler fetches precache-manifest.json.');
+      }
+    } else {
+      console.warn('⚠️  No sw.js output — skipping SW verification.');
     }
 
     // Verify precache-manifest.json was written

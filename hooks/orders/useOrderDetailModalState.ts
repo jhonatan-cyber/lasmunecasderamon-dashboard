@@ -3,6 +3,8 @@
 import { useEffect, useMemo, useState } from 'react';
 import { formatNumberCL } from '@/lib/utils/formatters';
 import { computeHostessLimit, extractHostessIds } from '@/components/orders/detail';
+import { useConfigValue } from '@/hooks/shared/useConfigValue';
+import { calcularPropina } from '@/lib/business/saleTotals';
 import logger from '@/lib/utils/logger';
 
 interface UseOrderDetailModalStateParams {
@@ -26,6 +28,7 @@ export function useOrderDetailModalState({
   const [propinaDisplayValue, setPropinaDisplayValue] = useState('');
   const [showMetodoPagoError, setShowMetodoPagoError] = useState(false);
   const [agregarPropina, setAgregarPropina] = useState(false);
+  const propinaPct = Number(useConfigValue('facturacion', 'propina_venta', '10'));
   const [confirmVentaModalOpen, setConfirmVentaModalOpen] = useState(false);
 
   const resetState = () => {
@@ -108,7 +111,7 @@ export function useOrderDetailModalState({
         setPropinaDisplayValue(formatNumberCL(propinaOriginal));
       } else {
         const totalPedido = detail[0]?.total || 0;
-        const propinaCalculada = Math.round(totalPedido * 0.1);
+        const propinaCalculada = calcularPropina(totalPedido, propinaPct, true);
         setPropina(propinaCalculada);
         setPropinaDisplayValue(formatNumberCL(propinaCalculada));
       }
@@ -119,7 +122,7 @@ export function useOrderDetailModalState({
         setPropinaDisplayValue('');
       }
     }
-  }, [agregarPropina, detail]);
+  }, [agregarPropina, detail, propinaPct]);
 
   useEffect(() => {
     if (metodoPago && showMetodoPagoError) {

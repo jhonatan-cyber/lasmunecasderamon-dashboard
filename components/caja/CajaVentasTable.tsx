@@ -15,6 +15,7 @@ import {
 } from '@/components/ui/table';
 import { Search, ShoppingCart } from 'lucide-react';
 import { formatCurrencyNoDecimals, formatSoloHora } from '@/lib/utils/formatters';
+import { useConfigValue } from '@/hooks/shared/useConfigValue';
 
 interface CajaVentasTableProps {
   loading: boolean;
@@ -52,6 +53,7 @@ export function CajaVentasTable({
   onPageChange,
   onRetry
 }: CajaVentasTableProps) {
+  const propinaPct = Number(useConfigValue('facturacion', 'propina_venta', '10'));
   return (
     <div className='space-y-4'>
       <div className='relative print:hidden'>
@@ -75,12 +77,7 @@ export function CajaVentasTable({
               : 'No hay ventas que coincidan con la busqueda'}
           </p>
           {ventas.length === 0 && (
-            <Button
-              variant='outline'
-              size='sm'
-              onClick={onRetry}
-              className='rounded-full text-xs'
-            >
+            <Button variant='outline' size='sm' onClick={onRetry} className='rounded-full text-xs'>
               Reintentar carga
             </Button>
           )}
@@ -97,7 +94,9 @@ export function CajaVentasTable({
                     <TableHead className='font-bold text-xs'>CAT.</TableHead>
                     <TableHead className='font-bold text-xs text-right'>CANT.</TableHead>
                     <TableHead className='font-bold text-xs text-right'>PRECIO</TableHead>
-                    <TableHead className='font-bold text-xs text-right'>PROPINA</TableHead>
+                    <TableHead className='font-bold text-xs text-right'>
+                      PROPINA ({propinaPct}%)
+                    </TableHead>
                     <TableHead className='font-bold text-xs'>HORA</TableHead>
                     <TableHead className='font-bold text-xs'>METODO</TableHead>
                     <TableHead className='font-bold text-xs text-right'>TOTAL</TableHead>
@@ -111,7 +110,8 @@ export function CajaVentasTable({
                       </TableCell>
                       <TableCell>
                         <Badge variant='outline' className='text-xs'>
-                          {venta.habitacion_nombre || (venta.habitacion_id ? 'Habitacion' : 'Barra')}
+                          {venta.habitacion_nombre ||
+                            (venta.habitacion_id ? 'Habitacion' : 'Barra')}
                         </Badge>
                       </TableCell>
                       <TableCell className='text-sm capitalize text-gray-600'>

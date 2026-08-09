@@ -49,7 +49,7 @@ export const LoginView = () => {
             height={721}
             className='mb-4 w-[320px] h-auto'
             sizes='320px'
-            loading='eager'
+            priority
           />
           <h1 className='text-2xl md:text-3xl font-bold text-center mb-2 text-gray-900 dark:text-white transition-colors duration-300'>
             Bien venido, Las Muñecas de Ramón
@@ -60,13 +60,7 @@ export const LoginView = () => {
             &quot;Un lugar para caballeros&quot;
           </p>
           <div className='flex justify-center mt-8'>
-            <Image
-              src='/img/system/presentation.png'
-              alt='Presentación'
-              width={600}
-              height={200}
-              loading='eager'
-            />
+            <Image src='/img/system/presentation.png' alt='Presentación' width={600} height={200} />
           </div>
         </div>
 
@@ -82,7 +76,6 @@ export const LoginView = () => {
                 height={721}
                 className='w-[200px] h-auto'
                 sizes='200px'
-                loading='eager'
               />
             </div>
 

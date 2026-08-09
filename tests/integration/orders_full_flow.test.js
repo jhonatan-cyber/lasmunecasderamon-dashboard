@@ -1,4 +1,5 @@
 ﻿/* eslint-disable no-console */
+require('../../scripts/guard-local-db')();
 const mysql = require('mysql2/promise');
 require('dotenv').config();
 const crypto = require('crypto');
@@ -106,6 +107,12 @@ async function runTest() {
     console.log(
       dCheck.length > 0 ? 'âœ”ï¸ Detalle del pedido verificado' : 'âŒ Error: Detalle no encontrado'
     );
+
+    console.log('\n🧹 Limpiando datos de prueba...');
+    await connection.execute('DELETE FROM detalle_pedidos WHERE pedido_id = ?', [pedidoId]);
+    await connection.execute('DELETE FROM ventas WHERE id_venta = ?', [ventaId]);
+    await connection.execute('DELETE FROM pedidos WHERE id_pedido = ?', [pedidoId]);
+    console.log('✅ Limpieza completada');
 
     console.log('\n🌟 VALIDACIÓN EXITOSA: El ciclo completo de pedido funciona correctamente.');
   } catch (error) {
