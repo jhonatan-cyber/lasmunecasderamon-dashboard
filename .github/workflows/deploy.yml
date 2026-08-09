@@ -117,7 +117,7 @@ jobs:
 
             # --- Health check post-deploy ---
             # Espera hasta 30s a que /api/health responda 200; si no, el run falla.
-            HEALTH_URL="http://127.0.0.1:3999/api/health"  # TEST: puerto muerto para verificar el path de fallo
+            HEALTH_URL="http://127.0.0.1:3000/api/health"
             HEALTH_OK=0
             for i in $(seq 1 30); do
               CODE=$(curl -s -o /dev/null -w "%{http_code}" --max-time 5 "$HEALTH_URL" || echo "000")
