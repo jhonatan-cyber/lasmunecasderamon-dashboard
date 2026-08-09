@@ -366,6 +366,7 @@ export interface VentaPropinaRow {
 
 export interface VentaResumenRow {
   total_ventas: number;
+  cargo_tarjeta: number;
   efectivo: number;
   tarjeta: number;
   transferencia: number;

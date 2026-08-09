@@ -109,7 +109,11 @@ export default function CajaDetails({ caja, open, onOpenChange }: CajaDetailsPro
     Number(ventasTragosChicas?.total_venta || 0) +
     Number(ventasChampagne?.total_venta || 0) +
     Number(ventasBarras?.total_venta || 0);
-  const totalIngresos = totalVentas + Number(caja?.servicios || 0);
+  const totalCargoTarjeta =
+    Number(ventasTragosChicas?.cargo_tarjeta || 0) +
+    Number(ventasChampagne?.cargo_tarjeta || 0) +
+    Number(ventasBarras?.cargo_tarjeta || 0);
+  const totalIngresos = totalVentas + totalCargoTarjeta + Number(caja?.servicios || 0);
   const ingresosReales =
     Number(caja?.efectivo || 0) + Number(caja?.tarjeta || 0) + Number(caja?.transferencia || 0);
   const efectivoCaja = Number(caja?.efectivo || 0);
@@ -148,6 +152,7 @@ export default function CajaDetails({ caja, open, onOpenChange }: CajaDetailsPro
     ventasTragosChicas,
     ventasChampagne,
     ventasBarras,
+    totalCargoTarjeta,
     prepagoCargado,
     prepagoConsumido,
     ingresosReales,

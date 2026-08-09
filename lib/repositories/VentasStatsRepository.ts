@@ -2,12 +2,14 @@ import { query } from '@/lib/database/db';
 
 export interface VentasBarrasResult {
   total_venta: number;
+  cargo_tarjeta: number;
   monto_productos: number;
   propinas: number;
 }
 
 export interface VentasChampagneResult {
   total_venta: number;
+  cargo_tarjeta: number;
   monto_champagne: number;
   comisiones: number;
   propinas: number;
@@ -15,6 +17,7 @@ export interface VentasChampagneResult {
 
 export interface VentasTragosChicasResult {
   total_venta: number;
+  cargo_tarjeta: number;
   monto_productos: number;
   comisiones: number;
   propinas: number;
@@ -22,9 +25,11 @@ export interface VentasTragosChicasResult {
 
 export class VentasStatsRepository {
   static async getVentasBarras(caja_id: string): Promise<VentasBarrasResult> {
-    const results = await query<any[]>(`
+    const results = await query<any[]>(
+      `
       SELECT 
-        COALESCE(SUM(v.total), 0) as total_venta,
+        COALESCE(SUM(v.total - COALESCE(v.cargo_tarjeta, 0)), 0) as total_venta,
+        COALESCE(SUM(v.cargo_tarjeta), 0) as cargo_tarjeta,
         COALESCE(SUM(v.propina), 0) as propinas,
         (
           SELECT COALESCE(SUM(dv.precio * dv.cantidad), 0)
@@ -42,20 +47,25 @@ export class VentasStatsRepository {
           WHERE dv2.venta_id = v.id_venta
             AND (LOWER(p2.nombre) REGEXP 'champagne|champaña|shampage|champan')
         )
-    `, [caja_id]);
+    `,
+      [caja_id]
+    );
 
-    const row = results[0] || { total_venta: 0, propinas: 0, monto_productos: 0 };
+    const row = results[0] || { total_venta: 0, cargo_tarjeta: 0, propinas: 0, monto_productos: 0 };
     return {
       total_venta: Number(row.total_venta),
+      cargo_tarjeta: Number(row.cargo_tarjeta || 0),
       monto_productos: Number(row.monto_productos),
       propinas: Number(row.propinas)
     };
   }
 
   static async getVentasChampagne(caja_id: string): Promise<VentasChampagneResult> {
-    const results = await query<any[]>(`
+    const results = await query<any[]>(
+      `
       SELECT 
-        COALESCE(SUM(DISTINCT v.total), 0) as total_venta,
+        COALESCE(SUM(DISTINCT v.total - COALESCE(v.cargo_tarjeta, 0)), 0) as total_venta,
+        COALESCE(SUM(DISTINCT v.cargo_tarjeta), 0) as cargo_tarjeta,
         COALESCE(SUM(DISTINCT v.propina), 0) as propinas,
         (
           SELECT COALESCE(SUM(dv.precio * dv.cantidad), 0)
@@ -79,22 +89,30 @@ export class VentasStatsRepository {
             AND (LOWER(p2.nombre) REGEXP 'champagne|champaña|shampage|champan')
         )
       GROUP BY v.id_venta
-    `, [caja_id]);
+    `,
+      [caja_id]
+    );
 
-    const stats = results.reduce((acc, row) => ({
-      total_venta: acc.total_venta + Number(row.total_venta),
-      monto_champagne: acc.monto_champagne + Number(row.monto_champagne),
-      comisiones: acc.comisiones + Number(row.comisiones),
-      propinas: acc.propinas + Number(row.propinas)
-    }), { total_venta: 0, monto_champagne: 0, comisiones: 0, propinas: 0 });
+    const stats = results.reduce(
+      (acc, row) => ({
+        total_venta: acc.total_venta + Number(row.total_venta),
+        cargo_tarjeta: acc.cargo_tarjeta + Number(row.cargo_tarjeta || 0),
+        monto_champagne: acc.monto_champagne + Number(row.monto_champagne),
+        comisiones: acc.comisiones + Number(row.comisiones),
+        propinas: acc.propinas + Number(row.propinas)
+      }),
+      { total_venta: 0, cargo_tarjeta: 0, monto_champagne: 0, comisiones: 0, propinas: 0 }
+    );
 
     return stats;
   }
 
   static async getVentasTragosChicas(caja_id: string): Promise<VentasTragosChicasResult> {
-    const results = await query<any[]>(`
+    const results = await query<any[]>(
+      `
       SELECT 
-        COALESCE(SUM(DISTINCT v.total), 0) as total_venta,
+        COALESCE(SUM(DISTINCT v.total - COALESCE(v.cargo_tarjeta, 0)), 0) as total_venta,
+        COALESCE(SUM(DISTINCT v.cargo_tarjeta), 0) as cargo_tarjeta,
         COALESCE(SUM(DISTINCT v.propina), 0) as propinas,
         (
           SELECT COALESCE(SUM(dc.comision), 0)
@@ -118,20 +136,27 @@ export class VentasStatsRepository {
             AND (LOWER(p2.nombre) REGEXP 'champagne|champaña|shampage|champan')
         )
       GROUP BY v.id_venta
-    `, [caja_id]);
+    `,
+      [caja_id]
+    );
 
-    const stats = results.reduce((acc, row) => {
-      const comisiones = Number(row.comisiones || 0);
-      const propinas = Number(row.propinas || 0);
-      const montoProductos = Number(row.monto_productos || 0);
-      
-      return {
-        total_venta: acc.total_venta + Number(row.total_venta),
-        monto_productos: acc.monto_productos + Math.max(0, montoProductos - propinas - comisiones),
-        comisiones: acc.comisiones + comisiones,
-        propinas: acc.propinas + propinas
-      };
-    }, { total_venta: 0, monto_productos: 0, comisiones: 0, propinas: 0 });
+    const stats = results.reduce(
+      (acc, row) => {
+        const comisiones = Number(row.comisiones || 0);
+        const propinas = Number(row.propinas || 0);
+        const montoProductos = Number(row.monto_productos || 0);
+
+        return {
+          total_venta: acc.total_venta + Number(row.total_venta),
+          cargo_tarjeta: acc.cargo_tarjeta + Number(row.cargo_tarjeta || 0),
+          monto_productos:
+            acc.monto_productos + Math.max(0, montoProductos - propinas - comisiones),
+          comisiones: acc.comisiones + comisiones,
+          propinas: acc.propinas + propinas
+        };
+      },
+      { total_venta: 0, cargo_tarjeta: 0, monto_productos: 0, comisiones: 0, propinas: 0 }
+    );
 
     return stats;
   }

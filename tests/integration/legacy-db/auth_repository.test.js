@@ -1,4 +1,5 @@
 ﻿/* eslint-disable no-console */
+require('../../../scripts/guard-local-db')();
 const mysql = require('mysql2/promise');
 const crypto = require('crypto');
 require('dotenv').config();
@@ -55,6 +56,12 @@ async function runTests() {
     const users = await queryMock('SELECT id_usuario FROM usuarios WHERE estado = 1 LIMIT 1');
     const userId = users[0].id_usuario;
 
+    // Snapshot del estado del usuario para restaurarlo al final y no alterar el seed
+    const [userBefore] = await queryMock('SELECT qr_token FROM usuarios WHERE id_usuario = ?', [
+      userId
+    ]);
+    const loginsBefore = await queryMock('SELECT * FROM logins WHERE usuario_id = ?', [userId]);
+
     await queryMock('UPDATE usuarios SET qr_token = ? WHERE id_usuario = ?', [testQR, userId]);
     console.log(`Token QR configurado para usuario ${userId}.`);
 
@@ -78,6 +85,19 @@ async function runTests() {
     } else {
       throw new Error('El logout no eliminó los registros de la tabla logins');
     }
+
+    // Restaurar el estado del seed (logins y qr_token) borrado/modificado por logout()
+    await queryMock('UPDATE usuarios SET qr_token = ? WHERE id_usuario = ?', [
+      userBefore.qr_token,
+      userId
+    ]);
+    for (const l of loginsBefore) {
+      await queryMock(
+        'INSERT INTO logins (id_login, usuario_id, last_login, estado, en_local, ip_address) VALUES (?, ?, ?, ?, ?, ?)',
+        [l.id_login, l.usuario_id, l.last_login, l.estado, l.en_local || 0, l.ip_address || null]
+      );
+    }
+    console.log('✅ Estado del seed restaurado');
 
     console.log('\n--- PRUEBAS UNITARIAS COMPLETADAS CON ÉXITO ---');
   } catch (error) {

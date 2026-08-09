@@ -403,7 +403,8 @@ export class SaleQueries {
 
         const sql = `
           SELECT 
-            SUM(total) as total_ventas,
+            SUM(total - COALESCE(cargo_tarjeta, 0)) as total_ventas,
+            SUM(COALESCE(cargo_tarjeta, 0)) as cargo_tarjeta,
             SUM(CASE WHEN metodo_pago = 'efectivo' THEN total ELSE 0 END) as efectivo,
             SUM(CASE WHEN metodo_pago = 'tarjeta' THEN total ELSE 0 END) as tarjeta,
             SUM(CASE WHEN metodo_pago = 'transferencia' THEN total ELSE 0 END) as transferencia,

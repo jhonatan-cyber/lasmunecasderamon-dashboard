@@ -16,6 +16,7 @@ import {
   formatFechaLarga,
   formatSoloHora
 } from '@/lib/utils/formatters';
+import { useConfigValue } from '@/hooks/shared/useConfigValue';
 
 interface CajaOperationsTablesProps {
   retirosLoading: boolean;
@@ -48,6 +49,7 @@ export function CajaOperationsTables({
   totalServiciosPages,
   onServiciosPageChange
 }: CajaOperationsTablesProps) {
+  const propinaPct = Number(useConfigValue('facturacion', 'propina_venta', '10'));
   return (
     <div className='px-6 space-y-12 pb-12'>
       {}
@@ -146,8 +148,8 @@ export function CajaOperationsTables({
                     <TableHead className='text-right text-xs sm:text-sm text-gray-700 dark:text-gray-300'>
                       PRECIO
                     </TableHead>
-                    <TableHead className='text-right text-xs sm:text-sm text-gray-700 dark:text-gray-300'>
-                      PROPINA
+                    <TableHead className='text-right text-xs sm:text-sm text-gray-700 dark:text-gray-300 whitespace-nowrap'>
+                      PROPINA ({propinaPct}%)
                     </TableHead>
                     <TableHead className='text-xs sm:text-sm text-gray-700 dark:text-gray-300'>
                       FECHA

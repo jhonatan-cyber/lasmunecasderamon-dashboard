@@ -5,6 +5,7 @@ import { RoomSelect } from '@/components/shared/selects';
 import { PaymentMethodSelect } from '@/components/shared/selects';
 import { TimeSelect } from '@/components/shared/selects';
 import { formatCurrencyNoDecimals } from '@/lib/utils/formatters';
+import { useConfigValue } from '@/hooks/shared/useConfigValue';
 import { Coins } from 'lucide-react';
 
 interface NewSaleConfigurationProps {
@@ -44,6 +45,7 @@ export const NewSaleConfiguration = ({
   enableTip,
   setEnableTip
 }: NewSaleConfigurationProps) => {
+  const propinaPct = Number(useConfigValue('facturacion', 'propina_venta', '10'));
   return (
     <div className='grid grid-cols-1 items-end gap-6 px-2 sm:grid-cols-2 lg:grid-cols-4'>
       <div className={fieldWrapperClass}>
@@ -80,7 +82,7 @@ export const NewSaleConfiguration = ({
         />
       </div>
       <div className={fieldWrapperClass}>
-        <Label className={fieldLabelClass}>Propina Sugerida (10%)</Label>
+        <Label className={fieldLabelClass}>Propina Sugerida ({propinaPct}%)</Label>
         <div
           role='button'
           tabIndex={0}
@@ -116,5 +118,3 @@ export const NewSaleConfiguration = ({
     </div>
   );
 };
-
-

@@ -2,6 +2,7 @@ import React from 'react';
 import { DollarSign, ShoppingCart, TrendingUp, Home, Loader2, Calendar } from 'lucide-react';
 import { FinancialCard } from './FinancialCard';
 import { formatCurrencyNoDecimals } from '@/lib/utils/formatters';
+import { useConfigValue } from '@/hooks/shared/useConfigValue';
 
 interface CajaFinanceSummaryProps {
   caja: any;
@@ -32,6 +33,11 @@ export function CajaFinanceSummary({
   balanceActual,
   retirosMonto
 }: CajaFinanceSummaryProps) {
+  const propinaPct = Number(useConfigValue('facturacion', 'propina_venta', '10'));
+  const totalCargoTarjeta =
+    Number(ventasTragosChicas?.cargo_tarjeta || 0) +
+    Number(ventasChampagne?.cargo_tarjeta || 0) +
+    Number(ventasBarras?.cargo_tarjeta || 0);
   return (
     <div className='py-6 px-6'>
       <div className='max-w-6xl mx-auto space-y-12'>
@@ -144,7 +150,7 @@ export function CajaFinanceSummary({
         {}
         <div className='grid grid-cols-2 md:grid-cols-3 gap-8 mt-16 pt-12 border-t border-gray-100 dark:border-gray-800'>
           <FinancialCard
-            title='Total Propinas'
+            title={`Total Propinas (${propinaPct}%)`}
             mainValue={formatCurrencyNoDecimals(totalPropinas)}
             isLoading={loadingTragosChicas || loadingChampagne || loadingBarras}
             gradientFrom='from-emerald-500/20'
@@ -187,6 +193,15 @@ export function CajaFinanceSummary({
                     ventasBarras.total_venta
                 )
               },
+              ...(totalCargoTarjeta > 0
+                ? [
+                    {
+                      label: 'Cargo tarjeta',
+                      value: formatCurrencyNoDecimals(totalCargoTarjeta),
+                      isSpecial: true
+                    }
+                  ]
+                : []),
               {
                 label: 'Servicios',
                 value: formatCurrencyNoDecimals(caja.servicios),

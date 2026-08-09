@@ -137,6 +137,7 @@ describe('SaleService — lógica de pagos mixtos', () => {
 import { SaleService } from '@/lib/services/SaleService';
 import { CashRegisterRepository } from '@/lib/repositories/CashRegisterRepository';
 import { SaleRepository } from '@/lib/repositories/SaleRepository';
+import { TipRepository } from '@/lib/repositories/TipRepository';
 import { withTransaction } from '@/lib/database/db';
 
 beforeEach(() => {
@@ -238,5 +239,134 @@ describe('SaleService.createSale', () => {
 
     expect(SaleRepository.rawInsert).toHaveBeenCalled();
     expect(CashRegisterRepository.updateBalances).not.toHaveBeenCalled();
+  });
+
+  it('guarda la venta con propina, separa los balances de caja y registra la propina para distribucion', async () => {
+    vi.mocked(CashRegisterRepository.getCurrentCajaId).mockResolvedValue('caja-1');
+
+    await SaleService.createSale(
+      {
+        ...validSaleBody,
+        total: 11000,
+        sub_total: 10000,
+        propina: 1000,
+        codigo: 'V-100'
+      },
+      'user-1'
+    );
+
+    // Se inserta la venta con propina y total desglosado
+    expect(SaleRepository.rawInsert).toHaveBeenCalledWith(
+      expect.anything(),
+      expect.objectContaining({
+        id_venta: 'mock-uuid',
+        codigo: 'V-100',
+        propina: 1000,
+        sub_total: 10000,
+        total: 11000,
+        caja_id: 'caja-1',
+        created_by: 'user-1'
+      })
+    );
+
+    // En caja: venta sin propina + propina por separado
+    expect(CashRegisterRepository.updateBalances).toHaveBeenCalledWith(
+      expect.anything(),
+      'caja-1',
+      {
+        venta: 10000,
+        cargo_tarjeta: 0,
+        propina: 1000,
+        efectivo: 11000,
+        tarjeta: 0,
+        transferencia: 0,
+        prepago: 0,
+        comision: 0
+      }
+    );
+
+    // La propina se registra con la venta y el monto (el reparto lo hace TipRepository)
+    expect(TipRepository.register).toHaveBeenCalledWith({
+      venta_id: 'mock-uuid',
+      monto: 1000
+    });
+  });
+
+  it('lleva el cargo por tarjeta a su bucket contable y no infla la métrica de venta', async () => {
+    vi.mocked(CashRegisterRepository.getCurrentCajaId).mockResolvedValue('caja-1');
+
+    await SaleService.createSale(
+      {
+        ...validSaleBody,
+        total: 12000,
+        sub_total: 10000,
+        propina: 1000,
+        cargo_tarjeta: 1000,
+        metodo_pago: 'tarjeta',
+        codigo: 'V-101'
+      },
+      'user-1'
+    );
+
+    // La venta guarda el cargo en su columna propia
+    expect(SaleRepository.rawInsert).toHaveBeenCalledWith(
+      expect.anything(),
+      expect.objectContaining({ cargo_tarjeta: 1000, total: 12000 })
+    );
+
+    // En caja: venta = total - propina - cargo = 10000 (sin inflar);
+    // el cargo va a su bucket propio y el pago con tarjeta incluye todo.
+    expect(CashRegisterRepository.updateBalances).toHaveBeenCalledWith(
+      expect.anything(),
+      'caja-1',
+      {
+        venta: 10000,
+        cargo_tarjeta: 1000,
+        propina: 1000,
+        efectivo: 0,
+        tarjeta: 12000,
+        transferencia: 0,
+        prepago: 0,
+        comision: 0
+      }
+    );
+
+    // El reparto sigue siendo solo la propina de venta
+    expect(TipRepository.register).toHaveBeenCalledWith({
+      venta_id: 'mock-uuid',
+      monto: 1000
+    });
+  });
+
+  it('no registra propina cuando la venta no trae propina', async () => {
+    vi.mocked(CashRegisterRepository.getCurrentCajaId).mockResolvedValue('caja-1');
+
+    await SaleService.createSale(
+      { ...validSaleBody, total: 15000, sub_total: 15000, propina: 0 },
+      'user-1'
+    );
+
+    expect(TipRepository.register).not.toHaveBeenCalled();
+  });
+
+  it('no falla la venta si el registro de la propina da error (try/catch)', async () => {
+    vi.mocked(CashRegisterRepository.getCurrentCajaId).mockResolvedValue('caja-1');
+    vi.mocked(TipRepository.register).mockRejectedValueOnce(new Error('DB caida'));
+
+    const result = await SaleService.createSale(
+      {
+        ...validSaleBody,
+        total: 11000,
+        sub_total: 10000,
+        propina: 1000
+      },
+      'user-1'
+    );
+
+    expect(TipRepository.register).toHaveBeenCalledWith({
+      venta_id: 'mock-uuid',
+      monto: 1000
+    });
+    expect(result).toEqual(expect.objectContaining({ total: 11000, estado: 1 }));
   });
 });

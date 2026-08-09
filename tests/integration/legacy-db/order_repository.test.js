@@ -1,4 +1,5 @@
 ﻿/* eslint-disable no-console */
+require('../../../scripts/guard-local-db')();
 
 const { z } = require('zod');
 

@@ -251,7 +251,7 @@ CREATE TABLE `cajas` (
   `fecha_apertura` datetime NOT NULL,
   `usuario_id_apertura` varchar(36) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci DEFAULT NULL,
   `monto_apertura` int NOT NULL,
-  `efectivo` int NOT NULL,
+  `efectivo` int NOT NULL DEFAULT '0',
   `tarjeta` int NOT NULL,
   `transferencia` int NOT NULL DEFAULT '0',
   `prepago` int DEFAULT '0',
@@ -259,6 +259,7 @@ CREATE TABLE `cajas` (
   `fecha_cierre` datetime DEFAULT NULL,
   `monto_cierre` int NOT NULL,
   `venta` int NOT NULL DEFAULT '0',
+  `cargo_tarjeta` int NOT NULL DEFAULT '0',
   `servicio` int DEFAULT '0',
   `devolucion` int DEFAULT '0',
   `iva` int NOT NULL DEFAULT '0',
@@ -434,7 +435,8 @@ INSERT INTO `configuraciones` (`id`, `clave`, `valor`, `descripcion`, `categoria
 ('f719e4b1-2cec-11f1-8130-f83dc65328af', 'empresa_instagram', '', 'Instagram URL', 'empresa', 'text', '2026-03-31 06:32:46', NULL),
 ('f719e52c-2cec-11f1-8130-f83dc65328af', 'empresa_whatsapp', '', 'WhatsApp', 'empresa', 'text', '2026-03-31 06:32:46', NULL),
 ('f719e5b3-2cec-11f1-8130-f83dc65328af', 'impuesto_iva', '19', 'Porcentaje de IVA', 'facturacion', 'number', '2026-03-31 06:32:46', NULL),
-('f719e636-2cec-11f1-8130-f83dc65328af', 'impuesto_propina', '10', 'Porcentaje de propina por defecto', 'facturacion', 'number', '2026-03-31 06:32:46', NULL),
+('f719e636-2cec-11f1-8130-f83dc65328af', 'impuesto_propina', '10', 'Cargo de propina que se refleja en la venta al pagar con tarjeta (no se reparte)', 'facturacion', 'number', '2026-03-31 06:32:46', NULL),
+('f719e6c0-2cec-11f1-8130-f83dc65328af', 'propina_venta', '10', 'Porcentaje de propina de venta (se reparte entre cajeros y garzones del local)', 'facturacion', 'number', '2026-03-31 06:32:46', NULL),
 ('f719e6b7-2cec-11f1-8130-f83dc65328af', 'moneda', 'CLP', 'Código de moneda', 'facturacion', 'text', '2026-03-31 06:32:46', NULL),
 ('f719e730-2cec-11f1-8130-f83dc65328af', 'facturacion_activada', 'true', 'Si la facturación está activa', 'facturacion', 'boolean', '2026-03-31 06:32:46', NULL),
 ('f719e7ab-2cec-11f1-8130-f83dc65328af', 'resolucion_sii', '', 'Número de resolución SII', 'facturacion', 'text', '2026-03-31 06:32:46', NULL),
@@ -923,6 +925,8 @@ CREATE TABLE `logins` (
   `id_login` varchar(36) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL,
   `usuario_id` varchar(36) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL,
   `last_login` datetime NOT NULL,
+  `fecha_login` datetime DEFAULT NULL,
+  `token` varchar(255) DEFAULT NULL,
   `estado` int NOT NULL DEFAULT '1',
   `ip_address` varchar(45) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci DEFAULT NULL,
   `en_local` tinyint(1) DEFAULT '0'
@@ -935,7 +939,7 @@ CREATE TABLE `logins` (
 INSERT INTO `logins` (`id_login`, `usuario_id`, `last_login`, `estado`, `ip_address`, `en_local`) VALUES
 ('19805179-bc99-4039-9620-d0c2b839f67a', '6d1c09f9-920b-4aa5-a3cf-0c70685f0ccb', '2026-06-13 12:23:53', 0, NULL, 0),
 ('923b6917-1d01-4e38-9eb1-d93787b345ba', '1f5a13f4-3834-45e2-bb8d-4b73727aad7f', '2026-06-16 10:07:51', 1, '2800:320:ce18:8c00:a4bc:a2d7:4c1d:e8c8', 1),
-('97d663ca-0330-42ce-b669-5632f9d966da', '6d1c09f9-920b-4aa5-a3cf-0c70685f0ccb', '2026-06-19 15:22:17', 1, NULL, 0),
+('97d663ca-0330-42ce-b669-5632f9d966da', '6d1c09f9-920b-4aa5-a3cf-0c70685f0ccb', '2026-06-19 15:22:17', 1, NULL, 1),
 ('a5c7e3d5-d3d3-4f2d-8ae7-dfdc233bc21b', '6d1c09f9-920b-4aa5-a3cf-0c70685f0ccb', '2026-06-18 16:06:12', 0, NULL, 0),
 ('f0e2b488-822b-4b64-8870-1cb1d57b0ed4', '6d1c09f9-920b-4aa5-a3cf-0c70685f0ccb', '2026-06-15 16:49:57', 0, NULL, 0);
 
@@ -1023,7 +1027,7 @@ CREATE TABLE `permissions` (
   `description` text CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci,
   `module` varchar(50) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL,
   `action` varchar(50) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL,
-  `created_at` datetime NOT NULL,
+  `created_at` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP,
   `updated_at` datetime DEFAULT NULL,
   `deleted_at` datetime DEFAULT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
@@ -1236,7 +1240,7 @@ CREATE TABLE `roles` (
   `nombre` varchar(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL,
   `descripcion` text CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL,
   `estado` int NOT NULL DEFAULT '1',
-  `fecha_crea` datetime NOT NULL,
+  `fecha_crea` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP,
   `fecha_mod` datetime DEFAULT NULL,
   `fecha_baja` datetime DEFAULT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
@@ -1449,7 +1453,7 @@ INSERT INTO `role_permissions` (`id`, `role_id`, `permission_id`, `created_at`, 
 
 CREATE TABLE `servicios` (
   `id_servicio` varchar(36) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL,
-  `codigo` varchar(50) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL,
+  `codigo` varchar(50) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL DEFAULT '',
   `cliente_id` varchar(36) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci DEFAULT NULL,
   `habitacion_id` varchar(36) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci DEFAULT NULL,
   `precio_habitacion` int NOT NULL,
@@ -1555,6 +1559,25 @@ CREATE TABLE `solicitudes_anulacion_servicios` (
 -- --------------------------------------------------------
 
 --
+-- Estructura de tabla para la tabla `solicitudes_anulacion`
+--
+
+CREATE TABLE `solicitudes_anulacion` (
+  `id` varchar(36) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL,
+  `venta_id` varchar(36) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci DEFAULT NULL,
+  `token` varchar(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL,
+  `estado` enum('pendiente','confirmada','rechazada') CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci DEFAULT 'pendiente',
+  `fecha_solicitud` datetime NOT NULL,
+  `solicitado_por` varchar(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci DEFAULT 'Usuario del Sistema',
+  `motivo` varchar(500) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci DEFAULT 'Motivo no especificado',
+  `monto` decimal(12,2) DEFAULT NULL,
+  PRIMARY KEY (`id`),
+  KEY `fk_solicitudes_anulacion_venta_id` (`venta_id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- --------------------------------------------------------
+
+--
 -- Estructura de tabla para la tabla `solicitudes_anulacion_ventas`
 --
 
@@ -1609,7 +1632,7 @@ CREATE TABLE `solicitudes_servicios` (
   `tiempo` int NOT NULL,
   `total` decimal(10,2) NOT NULL,
   `solicitado_por` varchar(36) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci DEFAULT NULL,
-  `estado` enum('pendiente','aprobada','rechazada') CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL DEFAULT 'pendiente',
+  `estado` int NOT NULL DEFAULT '0',
   `motivo_rechazo` text CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci,
   `procesado_por` varchar(36) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci DEFAULT NULL,
   `fecha_solicitud` datetime NOT NULL,
@@ -1631,7 +1654,7 @@ INSERT INTO `solicitudes_servicios` (`id_solicitud`, `codigo`, `cliente_id`, `ha
 
 CREATE TABLE `usuarios` (
   `id_usuario` varchar(36) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL,
-  `run` varchar(50) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL,
+  `run` varchar(50) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL DEFAULT '',
   `nick` varchar(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci DEFAULT NULL,
   `nombre` varchar(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL,
   `apellido` varchar(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL,
@@ -1675,14 +1698,15 @@ INSERT INTO `usuarios` (`id_usuario`, `run`, `nick`, `nombre`, `apellido`, `dire
 
 CREATE TABLE `ventas` (
   `id_venta` varchar(36) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL,
-  `codigo` varchar(20) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL,
+  `codigo` varchar(20) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL DEFAULT '',
   `cliente_id` varchar(36) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci DEFAULT NULL,
   `pedido_id` varchar(36) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci DEFAULT NULL,
   `caja_id` varchar(36) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci DEFAULT NULL,
   `habitacion_id` varchar(36) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci DEFAULT NULL,
   `metodo_pago` varchar(50) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL,
-  `propina` int NOT NULL,
-  `sub_total` int NOT NULL,
+  `propina` int NOT NULL DEFAULT '0',
+  `cargo_tarjeta` int NOT NULL DEFAULT '0',
+  `sub_total` int NOT NULL DEFAULT '0',
   `total` int NOT NULL,
   `total_comision` int NOT NULL DEFAULT '0',
   `tiempo` int DEFAULT '0',

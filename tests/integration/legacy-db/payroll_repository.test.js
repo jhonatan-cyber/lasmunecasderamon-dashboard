@@ -1,4 +1,5 @@
 ﻿/* eslint-disable no-console */
+require('../../../scripts/guard-local-db')();
 const mysql = require('mysql2/promise');
 require('dotenv').config();
 

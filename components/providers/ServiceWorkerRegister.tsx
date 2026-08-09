@@ -34,7 +34,11 @@ export function useServiceWorker() {
 
     async function register() {
       try {
-        swRegistration = await navigator.serviceWorker.register('/sw.js', {
+        // Pass the page query string through to the SW script URL so behavior
+        // can be overridden for local testing (e.g. ?forceProd=1 → production
+        // precache over http). No query = plain /sw.js as always.
+        const swUrl = '/sw.js' + (window.location.search || '');
+        swRegistration = await navigator.serviceWorker.register(swUrl, {
           scope: '/',
           updateViaCache: 'none'
         });

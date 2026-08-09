@@ -6,6 +6,7 @@ import { formatShortDateEs } from '@/lib/utils/calendarUtils';
 
 export interface SalesData {
   totalVentas: number;
+  cargoTarjeta: number;
   cantidadVentas: number;
   promedioVenta: number;
   totalPropinas: number;
@@ -17,6 +18,7 @@ export interface SalesData {
   ventasPorDia: Array<{
     fecha: string;
     ventas: number;
+    cargoTarjeta: number;
     cantidad: number;
     propinas: number;
   }>;

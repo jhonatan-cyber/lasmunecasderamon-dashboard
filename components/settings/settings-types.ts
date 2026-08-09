@@ -15,6 +15,7 @@ export interface CompanyConfig {
 export interface BillingConfig {
   impuesto_iva: string;
   impuesto_propina: string;
+  propina_venta: string;
   moneda: string;
   facturacion_activada: boolean;
   resolucion_sii: string;

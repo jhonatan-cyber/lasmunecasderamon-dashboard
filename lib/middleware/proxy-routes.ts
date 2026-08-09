@@ -48,7 +48,14 @@ export const PUBLIC_PATHS = [
   '/precache-manifest.json',
   '/offline',
   '/change-password',
-  '/api/auth/change-password'
+  '/api/auth/change-password',
+  '/swagger.json',
+  '/notification.mp3',
+  '/placeholder-logo.png',
+  '/placeholder-logo.svg',
+  '/placeholder-user.jpg',
+  '/placeholder.jpg',
+  '/placeholder.svg'
 ];
 
 export const AUTHENTICATED_ONLY_APIS = [

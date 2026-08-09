@@ -15,6 +15,7 @@ const VALID_CLAVES = new Set([
   'empresa_tiktok',
   'impuesto_iva',
   'impuesto_propina',
+  'propina_venta',
   'moneda',
   'facturacion_activada',
   'resolucion_sii',
@@ -32,7 +33,7 @@ function validateConfig(clave: string, valor: string): string | null {
   if (!VALID_CLAVES.has(clave)) {
     return `Clave desconocida: ${clave}`;
   }
-  if (clave === 'impuesto_iva' || clave === 'impuesto_propina') {
+  if (clave === 'impuesto_iva' || clave === 'impuesto_propina' || clave === 'propina_venta') {
     const num = Number(valor);
     if (isNaN(num) || num < 0 || num > 100) {
       return `${clave} debe estar entre 0 y 100`;

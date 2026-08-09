@@ -113,16 +113,16 @@ export class StatsQueries {
     try {
       return await query<any[]>(
         `SELECT
-          COALESCE((SELECT SUM(v.total) FROM ventas v WHERE v.estado IN (1, 2) AND v.fecha_crea >= DATE(?) AND v.fecha_crea < DATE_ADD(DATE(?), INTERVAL 1 DAY)), 0) AS sales_today,
-          COALESCE((SELECT SUM(v.total) FROM ventas v WHERE v.estado IN (1, 2) AND v.fecha_crea >= DATE(?) AND v.fecha_crea < DATE_ADD(DATE(?), INTERVAL 1 DAY)), 0) AS sales_yesterday,
+          COALESCE((SELECT SUM(v.total - COALESCE(v.cargo_tarjeta, 0)) FROM ventas v WHERE v.estado IN (1, 2) AND v.fecha_crea >= DATE(?) AND v.fecha_crea < DATE_ADD(DATE(?), INTERVAL 1 DAY)), 0) AS sales_today,
+          COALESCE((SELECT SUM(v.total - COALESCE(v.cargo_tarjeta, 0)) FROM ventas v WHERE v.estado IN (1, 2) AND v.fecha_crea >= DATE(?) AND v.fecha_crea < DATE_ADD(DATE(?), INTERVAL 1 DAY)), 0) AS sales_yesterday,
           COALESCE((SELECT SUM(s.total) FROM servicios s WHERE s.estado IN (1, 2) AND s.fecha_crea >= DATE(?) AND s.fecha_crea < DATE_ADD(DATE(?), INTERVAL 1 DAY)), 0) AS services_today,
           COALESCE((SELECT SUM(s.total) FROM servicios s WHERE s.estado IN (1, 2) AND s.fecha_crea >= DATE(?) AND s.fecha_crea < DATE_ADD(DATE(?), INTERVAL 1 DAY)), 0) AS services_yesterday,
           COALESCE((SELECT COUNT(*) FROM ventas v WHERE v.estado IN (1, 2) AND YEARWEEK(v.fecha_crea, 1) = YEARWEEK(DATE(?), 1)), 0) AS sales_count_week,
           COALESCE((SELECT COUNT(*) FROM ventas v WHERE v.estado IN (1, 2) AND YEARWEEK(v.fecha_crea, 1) = YEARWEEK(DATE_SUB(DATE(?), INTERVAL 7 DAY), 1)), 0) AS sales_count_previous_week,
-          COALESCE((SELECT SUM(v.total) FROM ventas v WHERE v.estado IN (1, 2) AND YEARWEEK(v.fecha_crea, 1) = YEARWEEK(DATE(?), 1)), 0) AS sales_total_week,
-          COALESCE((SELECT SUM(v.total) FROM ventas v WHERE v.estado IN (1, 2) AND YEARWEEK(v.fecha_crea, 1) = YEARWEEK(DATE_SUB(DATE(?), INTERVAL 7 DAY), 1)), 0) AS sales_total_previous_week,
-          COALESCE((SELECT SUM(v.total) FROM ventas v WHERE v.estado IN (1, 2) AND v.fecha_crea >= DATE(?) AND v.fecha_crea < DATE_ADD(DATE(?), INTERVAL 1 DAY) AND TIME(v.fecha_crea) <= TIME(?)), 0) AS sales_same_time_today,
-          COALESCE((SELECT SUM(v.total) FROM ventas v WHERE v.estado IN (1, 2) AND v.fecha_crea >= DATE(?) AND v.fecha_crea < DATE_ADD(DATE(?), INTERVAL 1 DAY) AND TIME(v.fecha_crea) <= TIME(?)), 0) AS sales_same_time_yesterday
+          COALESCE((SELECT SUM(v.total - COALESCE(v.cargo_tarjeta, 0)) FROM ventas v WHERE v.estado IN (1, 2) AND YEARWEEK(v.fecha_crea, 1) = YEARWEEK(DATE(?), 1)), 0) AS sales_total_week,
+          COALESCE((SELECT SUM(v.total - COALESCE(v.cargo_tarjeta, 0)) FROM ventas v WHERE v.estado IN (1, 2) AND YEARWEEK(v.fecha_crea, 1) = YEARWEEK(DATE_SUB(DATE(?), INTERVAL 7 DAY), 1)), 0) AS sales_total_previous_week,
+          COALESCE((SELECT SUM(v.total - COALESCE(v.cargo_tarjeta, 0)) FROM ventas v WHERE v.estado IN (1, 2) AND v.fecha_crea >= DATE(?) AND v.fecha_crea < DATE_ADD(DATE(?), INTERVAL 1 DAY) AND TIME(v.fecha_crea) <= TIME(?)), 0) AS sales_same_time_today,
+          COALESCE((SELECT SUM(v.total - COALESCE(v.cargo_tarjeta, 0)) FROM ventas v WHERE v.estado IN (1, 2) AND v.fecha_crea >= DATE(?) AND v.fecha_crea < DATE_ADD(DATE(?), INTERVAL 1 DAY) AND TIME(v.fecha_crea) <= TIME(?)), 0) AS sales_same_time_yesterday
         `,
       [
         now, now, yesterday, yesterday,
