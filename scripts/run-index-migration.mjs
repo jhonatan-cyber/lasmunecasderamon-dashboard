@@ -6,11 +6,15 @@ import { fileURLToPath } from 'url';
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
 async function runMigration() {
+  const { DB_HOST, DB_USER, DB_PASSWORD, DB_NAME } = process.env;
+  if (!DB_HOST || !DB_USER || !DB_PASSWORD || !DB_NAME) {
+    throw new Error('Faltan variables de entorno DB_HOST, DB_USER, DB_PASSWORD o DB_NAME');
+  }
   const connection = await mysql.createConnection({
-    host: process.env.DB_HOST || '***REMOVED***',
-    user: process.env.DB_USER || 'nuwesoft',
-    password: process.env.DB_PASSWORD || '***REMOVED***',
-    database: process.env.DB_NAME || 'lasmunecasderamon',
+    host: DB_HOST,
+    user: DB_USER,
+    password: DB_PASSWORD,
+    database: DB_NAME,
     connectTimeout: 10000
   });
 
@@ -19,8 +23,7 @@ async function runMigration() {
     const content = fs.readFileSync(sqlPath, 'utf8');
 
     // Split by lines and extract CALL statements
-    const lines = content.split('
-');
+    const lines = content.split(/\r?\n/);
     const callLines = lines.filter(line => line.trim().startsWith('CALL'));
 
     console.log(`Encontrados ${callLines.length} índices para crear...\n`);
