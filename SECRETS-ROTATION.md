@@ -3,10 +3,12 @@
 **Fecha del hallazgo:** 2026-08-09 **Repositorio afectado:**
 `lasmunecasderamon-dashboard` (origin:
 `github.com/jhonatan-cyber/lasmunecasderamon-dashboard`) **Estado:** historial
-purgado y **force-push completado** (2026-08-09, rama `main` reescrita a
-`bfbf9d0`), repo local re-sincronizado; **rotación de credenciales pendiente**
-(obligatoria). Espejo canónico: `.dev/git-history-backup-current.git` (el viejo
-quedó en `.dev/git-history-backup-stale-2026-08-09.git`, **NO usar**).
+purgado y **force-push completado** (2026-08-09, rama `main`reescrita a
+`bfbf9d0`), repo local re-sincronizado; **contraseña de BD rotada (2026-08-09,
+doble contraseña con `RETAIN CURRENT PASSWORD`, sin downtime)**; **rotación de
+Twilio pendiente** (obligatoria). Espejo canónico:
+`.dev/git-history-backup-current.git` (el viejo quedó en
+`.dev/git-history-backup-stale-2026-08-09.git`, **NO usar**).
 
 > ⚠️ La purga del historial NO revoca nada: cualquiera que haya tenido acceso al
 > historial (colaboradores, forks, copias) puede tener los secretos. **Rotar es
@@ -33,17 +35,23 @@ quedó en `.dev/git-history-backup-stale-2026-08-09.git`, **NO usar**).
       404 sin auth). Baja la exposición, pero igual hay que rotar: asumir que
       cualquiera con acceso (colaboradores, forks, copias) pudo copiar el
       historial.
-- [ ] Revisar **forks** y quién tiene acceso de colaborador; asumir que el
-      historial se copió.
+- [x] Revisar **forks** (0 forks en GitHub) y quién tiene acceso de colaborador;
+      asumir que el historial se copió.
 
 ### Paso 1 — Rotar la contraseña de la BD
 
-- [ ] Generar una contraseña nueva (fuerte, p. ej. `openssl rand -base64 24`).
-- [ ] Cambiar la contraseña en MySQL/MariaDB de producción para el usuario de la
-      app y `root` (y en el panel del hosting si aplica).
-- [ ] Actualizar el `.env` local (NO commitear) y los secretos del CI/CD (GitHub
-      → Settings → Secrets: `DB_PASSWORD`).
-- [ ] Confirmar que la app sigue conectando (login + una venta de prueba).
+- [x] Generar una contraseña nueva (fuerte, `openssl rand -base64 24`).
+- [x] Cambiar la contraseña del usuario de la app (`nuwesoft`@`%`, @`localhost`,
+      @`127.0.0.1`) en MySQL 8.4 de producción con
+      `ALTER USER ... IDENTIFIED BY     <nueva> RETAIN CURRENT PASSWORD` (doble
+      contraseña → sin downtime).
+- [ ] Rotar `root@localhost` de la BD (solo accesible en el servidor por SSH /
+      panel del hosting) — **pendiente**.
+- [x] Actualizar el `.env` local (NO commitear) y el secreto del CI/CD
+      `DB_PASSWORD` (vía `gh secret set`).
+- [x] Confirmar que la app sigue conectando tras el deploy (health check +
+      conectividad a la BD; no se creó una venta de prueba en producción para
+      evitar datos sucios).
 
 ### Paso 2 — Rotar Twilio
 
