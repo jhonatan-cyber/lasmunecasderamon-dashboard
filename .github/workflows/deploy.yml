@@ -44,7 +44,7 @@ jobs:
           NEXT_PUBLIC_SOCKET_URL: ${{ secrets.NEXT_PUBLIC_SOCKET_URL }}
 
       - name: Copy files via SCP
-        uses: appleboy/scp-action@v0.1.7
+        uses: appleboy/scp-action@v1.0.0
         with:
           host: ${{ env.SSH_IPV4_HOST }}
           username: ${{ secrets.SSH_USERNAME }}
