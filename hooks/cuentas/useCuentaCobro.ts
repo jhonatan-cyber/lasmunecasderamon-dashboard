@@ -55,13 +55,11 @@ export function useCuentaCobro() {
     cuenta: any,
     propinaMonto: number | null,
     metodoPagoSeleccionado: string,
-    cargoTarjetaMonto: number,
     onSuccess: () => void
   ) => {
     const cuentaId = cuenta?.id_cuenta ?? cuenta?.id ?? null;
     const montoFinal = Number(cuenta?.total ?? cuenta?.sub_total ?? 0);
     const propinaFinal = Number(propinaMonto ?? 0);
-    const cargoTarjetaFinal = Number(cargoTarjetaMonto ?? 0);
 
     if (!cuenta || !cuentaId || !metodoPagoSeleccionado) {
       setShowError(true);
@@ -82,8 +80,7 @@ export function useCuentaCobro() {
           montoFinal,
           total_cobrado: montoFinal,
           propinaFinal,
-          propina: propinaFinal,
-          cargo_tarjeta: cargoTarjetaFinal
+          propina: propinaFinal
         })
       });
 
@@ -113,9 +110,8 @@ export function useCuentaCobro() {
           pedido_id: cuenta?.pedido_id != null ? String(cuenta.pedido_id) : null,
           metodo_pago: metodoPagoSeleccionado,
           propina: propinaFinal,
-          cargo_tarjeta: cargoTarjetaFinal,
           sub_total: Number(cuenta?.sub_total ?? 0),
-          total: montoFinal + propinaFinal + cargoTarjetaFinal,
+          total: montoFinal + propinaFinal,
           total_comision: Number(cuenta?.total_comision ?? 0),
           codigo: cuenta?.codigo,
           detalles:

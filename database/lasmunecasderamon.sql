@@ -435,7 +435,6 @@ INSERT INTO `configuraciones` (`id`, `clave`, `valor`, `descripcion`, `categoria
 ('f719e4b1-2cec-11f1-8130-f83dc65328af', 'empresa_instagram', '', 'Instagram URL', 'empresa', 'text', '2026-03-31 06:32:46', NULL),
 ('f719e52c-2cec-11f1-8130-f83dc65328af', 'empresa_whatsapp', '', 'WhatsApp', 'empresa', 'text', '2026-03-31 06:32:46', NULL),
 ('f719e5b3-2cec-11f1-8130-f83dc65328af', 'impuesto_iva', '19', 'Porcentaje de IVA', 'facturacion', 'number', '2026-03-31 06:32:46', NULL),
-('f719e636-2cec-11f1-8130-f83dc65328af', 'impuesto_propina', '10', 'Cargo de propina que se refleja en la venta al pagar con tarjeta (no se reparte)', 'facturacion', 'number', '2026-03-31 06:32:46', NULL),
 ('f719e6c0-2cec-11f1-8130-f83dc65328af', 'propina_venta', '10', 'Porcentaje de propina de venta (se reparte entre cajeros y garzones del local)', 'facturacion', 'number', '2026-03-31 06:32:46', NULL),
 ('f719e6b7-2cec-11f1-8130-f83dc65328af', 'moneda', 'CLP', 'Código de moneda', 'facturacion', 'text', '2026-03-31 06:32:46', NULL),
 ('f719e730-2cec-11f1-8130-f83dc65328af', 'facturacion_activada', 'true', 'Si la facturación está activa', 'facturacion', 'boolean', '2026-03-31 06:32:46', NULL),

@@ -17,7 +17,6 @@ import logger from '@/lib/utils/logger';
 export function SettingsBillingTab() {
   const [config, setConfig] = useState<BillingConfig>({
     impuesto_iva: '19',
-    impuesto_propina: '10',
     propina_venta: '10',
     moneda: 'CLP',
     facturacion_activada: true,
@@ -100,24 +99,6 @@ export function SettingsBillingTab() {
                   className='w-full px-3 py-2 border border-gray-300 rounded-full focus:ring-2 focus:ring-black focus:border-transparent'
                   placeholder='19'
                 />
-              </div>
-              <div>
-                <label className='block text-sm font-medium mb-1'>
-                  % Propina en pago con tarjeta
-                </label>
-                <input
-                  type='number'
-                  min='0'
-                  max='100'
-                  step='0.01'
-                  value={config.impuesto_propina}
-                  onChange={e => setConfig(prev => ({ ...prev, impuesto_propina: e.target.value }))}
-                  className='w-full px-3 py-2 border border-gray-300 rounded-full focus:ring-2 focus:ring-black focus:border-transparent'
-                  placeholder='10'
-                />
-                <p className='text-xs text-gray-500 mt-1'>
-                  Cargo de propina que se refleja en la venta al pagar con tarjeta. No se reparte.
-                </p>
               </div>
               <div>
                 <label className='block text-sm font-medium mb-1'>

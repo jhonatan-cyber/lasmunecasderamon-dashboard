@@ -103,7 +103,6 @@ export class SaleService {
         habitacion_id: validated.habitacion_id,
         metodo_pago: validated.metodo_pago,
         propina: validated.propina,
-        cargo_tarjeta: validated.cargo_tarjeta,
         sub_total: validated.sub_total,
         total: validated.total,
         total_comision: totalComision,
@@ -286,15 +285,13 @@ export class SaleService {
 
       // === ACTUALIZACIÓN CAJA ===
       if (cajaId && !skipCashRegisterPosting) {
-        // El cargo por tarjeta va a su bucket contable propio (cargo_tarjeta)
-        // y NO infla la métrica de venta: venta = total - propina - cargo.
-        const cargoTarjeta = Number(validated.cargo_tarjeta || 0);
+        // La venta registrada es el total menos la propina (la propina va a su
+        // bucket y se reparte entre cajeros/garzones activos).
         if (esMixto) {
           const deltas = calcularDeltasCaja(pagosMixtos);
 
           await CashRegisterRepository.updateBalances(trx, cajaId, {
-            venta: validated.total - validated.propina - cargoTarjeta,
-            cargo_tarjeta: cargoTarjeta,
+            venta: validated.total - validated.propina,
             propina: validated.propina,
             efectivo: deltas.efectivo,
             tarjeta: deltas.tarjeta,
@@ -305,8 +302,7 @@ export class SaleService {
         } else {
           const montoMetodoPrincipal = Number(validated.total) - prepagoMonto;
           await CashRegisterRepository.updateBalances(trx, cajaId, {
-            venta: validated.total - validated.propina - cargoTarjeta,
-            cargo_tarjeta: cargoTarjeta,
+            venta: validated.total - validated.propina,
             propina: validated.propina,
             efectivo: validated.metodo_pago === 'efectivo' ? montoMetodoPrincipal : 0,
             tarjeta: validated.metodo_pago === 'tarjeta' ? montoMetodoPrincipal : 0,

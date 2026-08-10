@@ -157,10 +157,93 @@ async function runIntegrationTest() {
       throw new Error('La habitación no se liberó tras el cobro');
     }
 
-    console.log(`\n[6] Limpiando datos de prueba`);
+    // ─── ESCENARIO 2: Cobro de cuenta con TARJETA + propina ───
+    // Replica el flujo real de CuentaQueries.cobrar: venta = total de la
+    // cuenta, propina a su bucket (se reparte) y tarjeta = montoCobrar
+    // (cuenta + propina). Ya no existe cargo por tarjeta.
+    console.log(`\n[6] Cobro de cuenta con TARJETA + propina (buckets de caja)`);
+
+    // Caja fresca para mutar sus buckets sin tocar la caja real
+    const freshCajaId = crypto.randomUUID();
+    await connection.execute(
+      `INSERT INTO cajas (
+        id_caja, fecha_apertura, usuario_id_apertura, monto_apertura,
+        efectivo, tarjeta, transferencia, prepago,
+        monto_cierre, venta, cargo_tarjeta, servicio, devolucion, iva, comision, propina, anticipo, estado
+      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+      [freshCajaId, now, userId, 10000, 0, 0, 0, 0, 10000, 0, 0, 0, 0, 0, 0, 0, 0, 1]
+    );
+
+    const cuenta2Id = crypto.randomUUID();
+    const codigo2 = 'INT-C2-' + Math.random().toString(36).substring(2, 8).toUpperCase();
+    const totalCuenta2 = Number(product.precio);
+    const propina2 = 2000;
+    const montoCobrar2 = totalCuenta2 + propina2;
+
+    await connection.execute(
+      `INSERT INTO cuentas (
+        id_cuenta, codigo, cliente_id, sub_total, total, total_comision,
+        propina, estado, fecha_crea, created_by, tiempo
+      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+      [cuenta2Id, codigo2, clientId, totalCuenta2, totalCuenta2, 0, 0, 1, now, userId, 0]
+    );
+
+    // Cobro según CuentaQueries.cobrar (tipoPago tarjeta):
+    //   montoCobrar = montoFinal + propinaFinal
+    //   venta = montoFinal, propina a su bucket, tarjeta = montoCobrar
+    await connection.execute(
+      'UPDATE cuentas SET estado = 0, metodo_pago = ?, cobrado_por = ?, propina = ?, fecha_mod = ? WHERE id_cuenta = ?',
+      ['tarjeta', userId, propina2, new Date(), cuenta2Id]
+    );
+    await connection.execute(
+      `UPDATE cajas
+       SET venta = venta + ?,
+           propina = propina + ?,
+           tarjeta = tarjeta + ?
+       WHERE id_caja = ?`,
+      [totalCuenta2, propina2, montoCobrar2, freshCajaId]
+    );
+
+    const [caja2Rows] = await connection.execute('SELECT * FROM cajas WHERE id_caja = ?', [
+      freshCajaId
+    ]);
+    const c2 = caja2Rows[0];
+    if (Number(c2.venta) !== totalCuenta2) {
+      throw new Error(
+        `caja.venta debe ser el total de la cuenta: esperado ${totalCuenta2}, obtenido ${c2.venta}`
+      );
+    }
+    if (Number(c2.cargo_tarjeta || 0) !== 0) {
+      throw new Error(
+        `caja.cargo_tarjeta debe ser 0 (ya no existe el cargo): obtenido ${c2.cargo_tarjeta}`
+      );
+    }
+    if (Number(c2.propina) !== propina2) {
+      throw new Error(`caja.propina incorrecta: esperado ${propina2}, obtenido ${c2.propina}`);
+    }
+    if (Number(c2.tarjeta) !== montoCobrar2) {
+      throw new Error(
+        `caja.tarjeta debe ser el total cobrado (cuenta + propina): esperado ${montoCobrar2}, obtenido ${c2.tarjeta}`
+      );
+    }
+    console.log(
+      '✅ Caja cobro tarjeta: venta = cuenta, propina aparte, tarjeta = montoCobrar, sin cargo'
+    );
+
+    const [cuenta2Rows] = await connection.execute('SELECT * FROM cuentas WHERE id_cuenta = ?', [
+      cuenta2Id
+    ]);
+    if (cuenta2Rows[0].estado !== 0 || cuenta2Rows[0].metodo_pago !== 'tarjeta') {
+      throw new Error('La cuenta 2 no quedó cobrada (estado=0, metodo=tarjeta)');
+    }
+    console.log('✅ Cuenta 2 cobrada con tarjeta (estado 0)');
+
+    console.log(`\n[7] Limpiando datos de prueba`);
     await connection.execute('DELETE FROM detalle_cuentas WHERE cuenta_id = ?', [cuentaId]);
     await connection.execute('DELETE FROM cuentas_usuarios WHERE cuenta_id = ?', [cuentaId]);
     await connection.execute('DELETE FROM cuentas WHERE id_cuenta = ?', [cuentaId]);
+    await connection.execute('DELETE FROM cuentas WHERE id_cuenta = ?', [cuenta2Id]);
+    await connection.execute('DELETE FROM cajas WHERE id_caja = ?', [freshCajaId]);
 
     await connection.execute(
       `

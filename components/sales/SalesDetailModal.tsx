@@ -40,9 +40,6 @@ export function SalesDetailModal({
   anfitrionaColors,
   metodoPagoLabels
 }: SalesDetailModalProps) {
-  // Hooks primero (regla de hooks): sin early returns antes de useConfigValue.
-  const impuestoPropinaPct = Number(useConfigValue('facturacion', 'impuesto_propina', '10'));
-
   if (!selectedVenta) return null;
 
   const hostesses = Array.from(
@@ -59,12 +56,6 @@ export function SalesDetailModal({
   const statusColor = statusColors[selectedVenta.estado] || 'bg-gray-100 text-gray-800';
   const statusLabel = statusLabels[selectedVenta.estado] || 'Desconocido';
   const metodoPagoLabel = metodoPagoLabels[selectedVenta.metodo_pago] || selectedVenta.metodo_pago;
-
-  // Cargo por tarjeta como línea aparte de la boleta: usa el valor guardado en
-  // la venta (cargo_tarjeta) — el bucket contable propio — para no confundirlo
-  // con recargos de anfitrionas de cuentas/pedidos ni ventas sin cargo.
-  const cargoTarjeta = Number(selectedVenta.cargo_tarjeta || 0);
-  const mostrarCargoTarjeta = selectedVenta.metodo_pago === 'tarjeta' && cargoTarjeta > 0;
 
   const formatFecha = (fecha: string) => {
     try {
@@ -319,16 +310,6 @@ export function SalesDetailModal({
                       ${formatCurrency(selectedVenta.sub_total)}
                     </span>
                   </div>
-                  {mostrarCargoTarjeta && (
-                    <div className='flex items-center justify-between text-sm mt-1'>
-                      <span className='font-bold text-gray-500 uppercase tracking-wide text-[10px]'>
-                        Cargo tarjeta ({impuestoPropinaPct}%)
-                      </span>
-                      <span className='font-bold text-indigo-600'>
-                        ${formatCurrency(cargoTarjeta)}
-                      </span>
-                    </div>
-                  )}
                   {selectedVenta.propina > 0 && (
                     <div className='flex items-center justify-between text-sm mt-1'>
                       <span className='font-bold text-gray-500 uppercase tracking-wide text-[10px]'>

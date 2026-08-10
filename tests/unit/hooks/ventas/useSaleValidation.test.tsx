@@ -43,11 +43,10 @@ const setEnableTip = (result: any, enabled: boolean) => {
   });
 };
 
-describe('useSaleValidation totals (cargo tarjeta / propina)', () => {
+describe('useSaleValidation totals (propina / total)', () => {
   beforeEach(() => {
     configValues.clear();
     configValues.set('propina_venta', '10');
-    configValues.set('impuesto_propina', '10');
     createVentaMock.mockReset();
     window.localStorage.clear();
   });
@@ -57,12 +56,11 @@ describe('useSaleValidation totals (cargo tarjeta / propina)', () => {
     expect(result.current.formState.totals).toEqual({
       subtotal: 0,
       propina: 0,
-      cargoTarjeta: 0,
       total: 0
     });
   });
 
-  it('con tarjeta suma el cargo por tarjeta al total sin mezclarlo con la propina', () => {
+  it('sin propina el total es el subtotal (con cualquier método de pago)', () => {
     const { result } = renderSaleHook();
     addProduct(result);
     setMetodoPago(result, 'tarjeta');
@@ -70,62 +68,34 @@ describe('useSaleValidation totals (cargo tarjeta / propina)', () => {
     expect(result.current.formState.totals).toEqual({
       subtotal: 10000,
       propina: 0,
-      cargoTarjeta: 1000,
-      total: 11000
-    });
-  });
-
-  it('con efectivo no aplica cargo por tarjeta', () => {
-    const { result } = renderSaleHook();
-    addProduct(result);
-    setMetodoPago(result, 'efectivo');
-
-    expect(result.current.formState.totals).toEqual({
-      subtotal: 10000,
-      propina: 0,
-      cargoTarjeta: 0,
       total: 10000
     });
   });
 
-  it('con tarjeta y propina activa los tres conceptos van separados y el total cuadra', () => {
+  it('con efectivo y propina activa el total es subtotal + propina', () => {
     const { result } = renderSaleHook();
     addProduct(result);
-    setMetodoPago(result, 'tarjeta');
+    setMetodoPago(result, 'efectivo');
     setEnableTip(result, true);
 
     expect(result.current.formState.totals).toEqual({
       subtotal: 10000,
       propina: 1000,
-      cargoTarjeta: 1000,
-      total: 12000
+      total: 11000
     });
   });
 
-  it('el cargo se calcula con el porcentaje configurado de impuesto_propina', () => {
-    configValues.set('impuesto_propina', '5');
-    const { result } = renderSaleHook();
-    addProduct(result);
-    setMetodoPago(result, 'tarjeta');
-
-    expect(result.current.formState.totals.cargoTarjeta).toBe(500);
-    expect(result.current.formState.totals.total).toBe(10500);
-  });
-
-  it('la propina usa propina_venta y el cargo usa impuesto_propina (no se mezclan)', () => {
+  it('la propina usa el porcentaje configurado de propina_venta', () => {
     configValues.set('propina_venta', '8');
-    configValues.set('impuesto_propina', '5');
     const { result } = renderSaleHook();
     addProduct(result, 20000);
-    setMetodoPago(result, 'tarjeta');
     setEnableTip(result, true);
 
     expect(result.current.formState.totals.propina).toBe(1600); // 8% de 20000
-    expect(result.current.formState.totals.cargoTarjeta).toBe(1000); // 5% de 20000
-    expect(result.current.formState.totals.total).toBe(22600); // 20000 + 1600 + 1000
+    expect(result.current.formState.totals.total).toBe(21600); // 20000 + 1600
   });
 
-  it('el payload de la venta envía solo la propina al reparto y el total incluye el cargo', async () => {
+  it('el payload de la venta envía la propina (reparto) y el total sin cargo extra', async () => {
     const { result } = renderSaleHook();
     addProduct(result);
     setMetodoPago(result, 'tarjeta');
@@ -141,7 +111,8 @@ describe('useSaleValidation totals (cargo tarjeta / propina)', () => {
     const payload = createVentaMock.mock.calls[0][0];
     expect(payload.sub_total).toBe(10000);
     expect(payload.propina).toBe(1000); // solo la propina de venta se reparte
-    expect(payload.total).toBe(12000); // subtotal + propina + cargo tarjeta
+    expect(payload.total).toBe(11000); // subtotal + propina
     expect(payload.metodo_pago).toBe('tarjeta');
+    expect(payload.cargo_tarjeta).toBeUndefined(); // el cargo por tarjeta ya no existe
   });
 });

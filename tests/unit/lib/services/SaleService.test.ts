@@ -275,7 +275,6 @@ describe('SaleService.createSale', () => {
       'caja-1',
       {
         venta: 10000,
-        cargo_tarjeta: 0,
         propina: 1000,
         efectivo: 11000,
         tarjeta: 0,
@@ -292,39 +291,31 @@ describe('SaleService.createSale', () => {
     });
   });
 
-  it('lleva el cargo por tarjeta a su bucket contable y no infla la métrica de venta', async () => {
+  it('con pago en tarjeta la caja registra venta sin propina y tarjeta = total pagado', async () => {
     vi.mocked(CashRegisterRepository.getCurrentCajaId).mockResolvedValue('caja-1');
 
     await SaleService.createSale(
       {
         ...validSaleBody,
-        total: 12000,
+        total: 11000,
         sub_total: 10000,
         propina: 1000,
-        cargo_tarjeta: 1000,
         metodo_pago: 'tarjeta',
         codigo: 'V-101'
       },
       'user-1'
     );
 
-    // La venta guarda el cargo en su columna propia
-    expect(SaleRepository.rawInsert).toHaveBeenCalledWith(
-      expect.anything(),
-      expect.objectContaining({ cargo_tarjeta: 1000, total: 12000 })
-    );
-
-    // En caja: venta = total - propina - cargo = 10000 (sin inflar);
-    // el cargo va a su bucket propio y el pago con tarjeta incluye todo.
+    // En caja: venta = total - propina = 10000 (sin cargo extra) y
+    // tarjeta = total pagado. No hay bucket de cargo por tarjeta.
     expect(CashRegisterRepository.updateBalances).toHaveBeenCalledWith(
       expect.anything(),
       'caja-1',
       {
         venta: 10000,
-        cargo_tarjeta: 1000,
         propina: 1000,
         efectivo: 0,
-        tarjeta: 12000,
+        tarjeta: 11000,
         transferencia: 0,
         prepago: 0,
         comision: 0

@@ -2,7 +2,7 @@
 -- Migración: Bucket contable propio del cargo por tarjeta
 -- ============================================================
 -- Fecha: 2026-08-09
--- Problema: el cargo por tarjeta (impuesto_propina) se sumaba al total de la
+-- Problema: el cargo por tarjeta se sumaba al total de la
 --           venta, inflando la métrica de ventas.
 -- Solución: columnas `cargo_tarjeta` en `ventas` y `cajas` (DEFAULT 0) para
 --           llevar el cargo a su bucket contable propio, separado de la

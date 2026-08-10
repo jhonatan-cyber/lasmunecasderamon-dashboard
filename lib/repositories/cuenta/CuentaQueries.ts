@@ -56,7 +56,6 @@ export type CuentaCobrarBody = {
   total_cobrado?: number;
   propinaFinal?: number;
   propina?: number;
-  cargo_tarjeta?: number;
   tipoPago?: string;
   metodoPago?: string;
   metodo_pago?: string;
@@ -845,11 +844,9 @@ export class CuentaQueries {
       const now = getNowInBusinessTimezone();
       const montoFinal = Number(body.montoFinal ?? body.total_cobrado ?? cuenta[0].total ?? 0);
       const propinaFinal = Number(body.propinaFinal ?? body.propina ?? 0);
-      const cargoTarjeta = Number(body.cargo_tarjeta ?? 0);
-      // El cliente paga el total de la cuenta + la propina + el cargo por
-      // tarjeta; la venta registrada es el total de la cuenta, la propina va a
-      // su bucket (se reparte) y el cargo por tarjeta a su bucket propio.
-      const montoCobrar = montoFinal + propinaFinal + cargoTarjeta;
+      // El cliente paga el total de la cuenta + la propina; la venta registrada
+      // es el total de la cuenta y la propina va a su bucket (se reparte).
+      const montoCobrar = montoFinal + propinaFinal;
       const tipoPago = body.tipoPago ?? body.metodoPago ?? body.metodo_pago ?? 'efectivo';
       const metodoPago = body.metodoPago ?? body.metodo_pago ?? tipoPago;
       const timing = this.getRemainingMinutes(cuenta[0], parseBusinessDate(now));
@@ -895,7 +892,6 @@ export class CuentaQueries {
       if (idCaja) {
         await CashRegisterRepository.updateBalances(trx, idCaja, {
           venta: montoFinal,
-          cargo_tarjeta: cargoTarjeta,
           propina: propinaFinal,
           efectivo: tipoPago === 'efectivo' ? montoCobrar : 0,
           tarjeta: tipoPago === 'tarjeta' ? montoCobrar : 0,
