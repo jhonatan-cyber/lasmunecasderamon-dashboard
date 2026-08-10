@@ -14,10 +14,10 @@ export default defineConfig({
       all: false,
       include: ['lib/**', 'hooks/**'],
       thresholds: {
-        branches: 55,
-        functions: 35,
-        lines: 45,
-        statements: 45
+        branches: 62,
+        functions: 40,
+        lines: 48,
+        statements: 48
       },
       exclude: ['node_modules/', 'tests/', '**/*.d.ts', '**/*.config.*', '.next/', '**/types/**']
     },

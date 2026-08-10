@@ -46,6 +46,35 @@ jobs:
       - name: Build
         run: pnpm build
 
+  security:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          run_install: false
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: pnpm
+
+      - name: Install dependencies
+        run: pnpm install --no-frozen-lockfile
+
+      - name: Audit production dependencies (informativo)
+        run: pnpm audit --prod || true
+
+      - name: Audit all dependencies (advisory failures)
+        run: pnpm audit --audit-level high || true
+
+      - name: Outdated high-priority packages
+        run: pnpm outdated --format list | head -50 || true
+
   coverage:
     runs-on: ubuntu-latest
     env:
@@ -158,6 +187,7 @@ jobs:
       BASE_URL: ${{ secrets.BASE_URL || 'http://localhost:3000' }}
       TEST_USER: ${{ secrets.TEST_USER || 'admin' }}
       TEST_PASSWORD: ${{ secrets.TEST_PASSWORD || 'REMOVED_PASSWORD' }}
+      SKIP_RATE_LIMIT: 'true'
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4

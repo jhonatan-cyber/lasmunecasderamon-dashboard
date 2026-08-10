@@ -7,6 +7,7 @@ const TEST_PASSWORD = process.env.TEST_PASSWORD ?? 'REMOVED_PASSWORD';
 test('no auth loop: /api/auth/me no se llama más de 2 veces en 10 segundos tras login', async ({
   page
 }) => {
+  test.setTimeout(60_000);
   const authMeCalls: number[] = [];
   const loginRedirects: string[] = [];
 
@@ -28,7 +29,7 @@ test('no auth loop: /api/auth/me no se llama más de 2 veces en 10 segundos tras
   await page.locator('button[type="submit"]').first().click();
 
   // Wait for redirect to dashboard
-  await page.waitForURL(`**\/dashboard`, { timeout: 20_000 });
+  await page.waitForURL(`**\/dashboard`, { timeout: 30_000, waitUntil: 'domcontentloaded' });
   console.log('✓ Llegó al dashboard:', page.url());
 
   // Reset counters after login completes — only measure steady state

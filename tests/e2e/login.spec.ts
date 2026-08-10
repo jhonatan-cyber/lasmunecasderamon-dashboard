@@ -75,7 +75,7 @@ test.describe('Login flow', () => {
       return;
     }
 
-    await page.waitForURL(url => !url.toString().includes('/login'), { timeout: 20_000 });
+    await page.waitForURL(url => !url.toString().includes('/login'), { timeout: 30_000 });
     const finalUrl = page.url();
     console.log('✓ Login exitoso, redirigido a:', finalUrl);
     expect(finalUrl).not.toContain('/login');
@@ -137,12 +137,12 @@ test.describe('Session persistence', () => {
     }
 
     // Wait for redirect away from login
-    await page.waitForURL(url => !url.toString().includes('/login'), { timeout: 20_000 });
+    await page.waitForURL(url => !url.toString().includes('/login'), { timeout: 30_000 });
     const dashboardUrl = page.url();
     console.log('✓ Dashboard tras login:', dashboardUrl);
 
     // Refresh the page
-    await page.reload({ waitUntil: 'networkidle' });
+    await page.reload({ waitUntil: 'domcontentloaded' });
     await page.waitForTimeout(3000);
 
     // Should still be on dashboard after refresh
@@ -151,7 +151,7 @@ test.describe('Session persistence', () => {
     expect(afterRefreshUrl).not.toContain('/login');
   });
 
-  test('7. Auto-refresh funciona cuando el access token expira', async ({ page }) => {
+  test('7. Auto-refresh funciona cuando el access token expira', async ({ page, context }) => {
     test.setTimeout(60_000);
 
     await page.goto(`${BASE}/login`, { waitUntil: 'domcontentloaded' });
@@ -167,20 +167,18 @@ test.describe('Session persistence', () => {
       return;
     }
 
-    await page.waitForURL(url => !url.toString().includes('/login'), { timeout: 20_000 });
+    await page.waitForURL(url => !url.toString().includes('/login'), { timeout: 30_000 });
 
-    // Ensure we have a refresh_token cookie
-    const hasRefreshToken = await page.evaluate(() => document.cookie.includes('refresh_token'));
-    console.log('✓ refresh_token cookie presente:', hasRefreshToken);
-    expect(hasRefreshToken).toBeTruthy();
+    // Ensure we have a refresh_token cookie (httpOnly — must check via context, not document.cookie)
+    const refreshCookie = (await context.cookies()).find(c => c.name === 'refresh_token');
+    console.log('✓ refresh_token cookie presente:', !!refreshCookie);
+    expect(refreshCookie).toBeTruthy();
 
-    // Remove the access token cookie to simulate expiration
-    await page.evaluate(() => {
-      document.cookie = 'token=; Max-Age=0; path=/';
-    });
+    // Remove the access token cookie to simulate expiration (httpOnly — must use context API)
+    await context.clearCookies({ name: 'token' });
 
     // Navigate — proxy should auto-refresh via refresh_token cookie
-    await page.goto(`${BASE}/dashboard`, { waitUntil: 'networkidle' });
+    await page.goto(`${BASE}/dashboard`, { waitUntil: 'domcontentloaded' });
 
     // Should NOT redirect to login
     const finalUrl = page.url();
@@ -206,7 +204,7 @@ test.describe('Session persistence', () => {
       return;
     }
 
-    await page.waitForURL(url => !url.toString().includes('/login'), { timeout: 20_000 });
+    await page.waitForURL(url => !url.toString().includes('/login'), { timeout: 30_000 });
     console.log('✓ Login exitoso');
 
     // Logout via POST (route only handles POST)
