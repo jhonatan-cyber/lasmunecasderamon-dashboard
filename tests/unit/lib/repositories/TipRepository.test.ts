@@ -190,6 +190,23 @@ describe('TipRepository.register — reparto exacto', () => {
     expect(montos.reduce((sum, m) => sum + m, 0)).toBe(9000);
   });
 
+  it('reparte un monto impar (5000 entre 3) repartiendo el resto de a 1 y sumando exacto', async () => {
+    mockStaff();
+
+    await TipRepository.register({ venta_id: 'venta-r3', monto: 5000 });
+
+    const montos = getMontosDetalles();
+    // floor(5000/3) = 1666, resto = 2 → los 2 primeros reciben +1
+    expect(montos).toEqual([1667, 1667, 1666]);
+
+    const suma = montos.reduce((sum, m) => sum + m, 0);
+    expect(suma).toBe(5000);
+    expect(suma).toBe(
+      vi.mocked(BaseRepository.insert).mock.calls.find(c => c[1] === 'propinas')?.[2]
+        .propina as number
+    );
+  });
+
   it('la suma de los detalles coincide SIEMPRE con el monto total de la propina (invariante)', async () => {
     // PRNG determinista (LCG) para que el test sea reproducible
     let seed = 12345;
