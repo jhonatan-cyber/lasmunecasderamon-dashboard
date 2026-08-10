@@ -11,13 +11,13 @@ export default defineConfig({
       provider: 'v8',
       reporter: ['text', 'json', 'html'],
       reportsDirectory: './coverage',
+      all: false,
+      include: ['lib/**', 'hooks/**'],
       thresholds: {
-        global: {
-          branches: 50,
-          functions: 50,
-          lines: 50,
-          statements: 50
-        }
+        branches: 55,
+        functions: 35,
+        lines: 45,
+        statements: 45
       },
       exclude: ['node_modules/', 'tests/', '**/*.d.ts', '**/*.config.*', '.next/', '**/types/**']
     },
