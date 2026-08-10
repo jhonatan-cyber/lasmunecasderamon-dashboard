@@ -263,7 +263,7 @@ export default async function proxy(request: NextRequest) {
   }
 
   // ponytail: skip rate limiting in dev
-  const isProd = process.env.NODE_ENV === 'production';
+  const isProd = process.env.NODE_ENV === 'production' && process.env.SKIP_RATE_LIMIT !== 'true';
   if (isProd) {
     const isLoginPath =
       pathname === '/login' ||
