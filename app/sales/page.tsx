@@ -163,88 +163,86 @@ export default function Sales() {
         />
 
         <BoneyardSkeleton name='sales-main' loading={loading && ventas.length === 0}>
-          {ventas.length === 0 ? (
-            <>
-              <SalesStatsCards ventas={ventas} />
+          <>
+            <SalesStatsCards ventas={ventas} />
 
-              <SalesFilters
-                searchTerm={searchTerm}
-                setSearchTerm={setSearchTerm}
-                filterStatus={statusFilter}
-                setFilterStatus={setStatusFilter}
-                filterMetodoPago={paymentFilter}
-                setFilterMetodoPago={setPaymentFilter}
-                sortBy={sortBy}
-                setSortBy={setSortBy}
-                sortOrder={sortOrder}
-                setSortOrder={setSortOrder}
-                onClearFilters={handleClearFilters}
-                rowsPerPage={rowsPerPage}
-                setRowsPerPage={setRowsPerPage}
-                setPage={setPage}
-              />
+            <SalesFilters
+              searchTerm={searchTerm}
+              setSearchTerm={setSearchTerm}
+              filterStatus={statusFilter}
+              setFilterStatus={setStatusFilter}
+              filterMetodoPago={paymentFilter}
+              setFilterMetodoPago={setPaymentFilter}
+              sortBy={sortBy}
+              setSortBy={setSortBy}
+              sortOrder={sortOrder}
+              setSortOrder={setSortOrder}
+              onClearFilters={handleClearFilters}
+              rowsPerPage={rowsPerPage}
+              setRowsPerPage={setRowsPerPage}
+              setPage={setPage}
+            />
 
-              <div className='flex justify-center gap-3 border-b pb-1 mb-6'>
-                <button
-                  onClick={() => setSalesTab('all')}
-                  className={`flex items-center gap-2 px-5 py-2 text-sm font-semibold transition-all ${
-                    salesTab === 'all'
-                      ? 'bg-amber-100 text-amber-700 rounded-full shadow-xs'
-                      : 'text-gray-500 hover:bg-gray-100 rounded-full'
-                  }`}
-                >
-                  Todas las ventas
-                </button>
-                <button
-                  onClick={() => setSalesTab('with-room')}
-                  className={`flex items-center gap-2 px-5 py-2 text-sm font-semibold transition-all ${
-                    salesTab === 'with-room'
-                      ? 'bg-green-100 text-green-700 rounded-full shadow-xs'
-                      : 'text-gray-500 hover:bg-gray-100 rounded-full'
-                  }`}
-                >
-                  Ventas con habitación
-                </button>
-              </div>
+            <div className='flex justify-center gap-3 border-b pb-1 mb-6'>
+              <button
+                onClick={() => setSalesTab('all')}
+                className={`flex items-center gap-2 px-5 py-2 text-sm font-semibold transition-all ${
+                  salesTab === 'all'
+                    ? 'bg-amber-100 text-amber-700 rounded-full shadow-xs'
+                    : 'text-gray-500 hover:bg-gray-100 rounded-full'
+                }`}
+              >
+                Todas las ventas
+              </button>
+              <button
+                onClick={() => setSalesTab('with-room')}
+                className={`flex items-center gap-2 px-5 py-2 text-sm font-semibold transition-all ${
+                  salesTab === 'with-room'
+                    ? 'bg-green-100 text-green-700 rounded-full shadow-xs'
+                    : 'text-gray-500 hover:bg-gray-100 rounded-full'
+                }`}
+              >
+                Ventas con habitación
+              </button>
+            </div>
 
-              {salesTab === 'all' && (
-                <div className='space-y-4'>
-                  <SalesList
-                    loading={loading}
-                    paginatedVentas={paginatedVentas}
-                    searchTerm={searchTerm}
-                    filterStatus={statusFilter}
-                    filterMetodoPago={paymentFilter}
-                    statusColors={statusColors}
-                    statusLabels={statusLabels}
-                    metodoPagoLabels={metodoPagoLabels}
-                    anfitrionaColors={anfitrionaColors}
-                    formatCurrency={formatCurrency}
-                    onVerDetalles={handleViewDetails}
-                    onAnularVenta={handleAnularVenta}
-                    page={page}
-                    setPage={setPage}
-                    totalPages={totalPages}
-                  />
-
-                  {filteredVentas.length > rowsPerPage && (
-                    <div className='flex justify-center'>
-                      <Paginate page={page} totalPages={totalPages} setPage={setPage} />
-                    </div>
-                  )}
-                </div>
-              )}
-
-              {salesTab === 'with-room' && (
-                <SalesWithRoomTab
-                  ventas={sortedAndFilteredVentas as VentaWithDetails[]}
+            {salesTab === 'all' && (
+              <div className='space-y-4'>
+                <SalesList
                   loading={loading}
-                  onRefresh={handleRefresh}
+                  paginatedVentas={paginatedVentas}
+                  searchTerm={searchTerm}
+                  filterStatus={statusFilter}
+                  filterMetodoPago={paymentFilter}
+                  statusColors={statusColors}
+                  statusLabels={statusLabels}
+                  metodoPagoLabels={metodoPagoLabels}
+                  anfitrionaColors={anfitrionaColors}
+                  formatCurrency={formatCurrency}
                   onVerDetalles={handleViewDetails}
+                  onAnularVenta={handleAnularVenta}
+                  page={page}
+                  setPage={setPage}
+                  totalPages={totalPages}
                 />
-              )}
-            </>
-          ) : null}
+
+                {filteredVentas.length > rowsPerPage && (
+                  <div className='flex justify-center'>
+                    <Paginate page={page} totalPages={totalPages} setPage={setPage} />
+                  </div>
+                )}
+              </div>
+            )}
+
+            {salesTab === 'with-room' && (
+              <SalesWithRoomTab
+                ventas={sortedAndFilteredVentas as VentaWithDetails[]}
+                loading={loading}
+                onRefresh={handleRefresh}
+                onVerDetalles={handleViewDetails}
+              />
+            )}
+          </>
         </BoneyardSkeleton>
       </div>
 

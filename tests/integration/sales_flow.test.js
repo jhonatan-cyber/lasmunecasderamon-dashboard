@@ -199,13 +199,12 @@ async function runIntegrationTest() {
     }
     console.log('✅ Relación con anfitriona persistida correctamente');
 
-    // ─── ESCENARIO 2: Venta con TARJETA + cargo por tarjeta + propina (reparto) ───
-    // La venta con tarjeta suma el cargo (impuesto_propina) al total que paga el
-    // cliente, pero la caja lo guarda en su bucket propio: venta SIN cargo,
-    // cargo_tarjeta aparte, tarjeta = total pagado. Solo la propina se reparte.
-    const cargoTarjeta = Math.round(subtotal * 0.1); // 10% de impuesto_propina
+    // ─── ESCENARIO 2: Venta con TARJETA + propina (reparto) ───
+    // No existe cargo por tarjeta: el total es subtotal + propina. La caja
+    // registra venta = subtotal, tarjeta = total pagado y la propina en su
+    // bucket (se reparte entre todos los cajeros/garzones activos).
     const propina2 = 1000;
-    const total2 = subtotal + propina2 + cargoTarjeta;
+    const total2 = subtotal + propina2;
 
     const freshCaja = await ensureFreshCaja(connection, userId, now);
     created.freshCajaId = freshCaja.id;
@@ -218,9 +217,9 @@ async function runIntegrationTest() {
     await connection.execute(
       `INSERT INTO ventas (
         id_venta, codigo, cliente_id, pedido_id, metodo_pago,
-        sub_total, total, propina, cargo_tarjeta, total_comision,
+        sub_total, total, propina, total_comision,
         caja_id, created_by, estado, fecha_crea
-      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
       [
         created.venta2Id,
         codigo2,
@@ -230,7 +229,6 @@ async function runIntegrationTest() {
         subtotal,
         total2,
         propina2,
-        cargoTarjeta,
         comision,
         freshCaja.id,
         userId,
@@ -262,12 +260,12 @@ async function runIntegrationTest() {
       [created.relacion2Id, created.venta2Id, anfitrionaId, now]
     );
 
-    // Deltas de caja: venta SIN cargo, cargo en su bucket, tarjeta = total pagado
+    // Deltas de caja: venta = subtotal (sin cargo), tarjeta = total pagado
     await connection.execute(
       `UPDATE cajas
-       SET venta = venta + ?, cargo_tarjeta = cargo_tarjeta + ?, tarjeta = tarjeta + ?
+       SET venta = venta + ?, tarjeta = tarjeta + ?
        WHERE id_caja = ?`,
-      [subtotal, cargoTarjeta, total2, freshCaja.id]
+      [subtotal, total2, freshCaja.id]
     );
 
     // Reparto: mismo query de TipRepository (todos los cajeros/garzones activos en local)
@@ -308,17 +306,15 @@ async function runIntegrationTest() {
       created.venta2Id
     ]);
     const v2 = venta2Rows[0];
-    if (Number(v2.cargo_tarjeta) !== cargoTarjeta) {
+    if (Number(v2.cargo_tarjeta || 0) !== 0) {
       throw new Error(
-        `cargo_tarjeta incorrecto: esperado ${cargoTarjeta}, obtenido ${v2.cargo_tarjeta}`
+        `cargo_tarjeta debe ser 0 (ya no existe el cargo): obtenido ${v2.cargo_tarjeta}`
       );
     }
-    if (Number(v2.total) !== subtotal + propina2 + cargoTarjeta) {
-      throw new Error(
-        `total incorrecto: esperado ${subtotal + propina2 + cargoTarjeta}, obtenido ${v2.total}`
-      );
+    if (Number(v2.total) !== subtotal + propina2) {
+      throw new Error(`total incorrecto: esperado ${subtotal + propina2}, obtenido ${v2.total}`);
     }
-    console.log('✅ Venta tarjeta: cargo_tarjeta guardado y total cuadra (sub + propina + cargo)');
+    console.log('✅ Venta tarjeta: sin cargo, total cuadra (sub + propina)');
 
     const [caja2Rows] = await connection.execute('SELECT * FROM cajas WHERE id_caja = ?', [
       freshCaja.id
@@ -326,12 +322,12 @@ async function runIntegrationTest() {
     const c2 = caja2Rows[0];
     if (Number(c2.venta) !== subtotal) {
       throw new Error(
-        `caja.venta debe ser el subtotal SIN cargo: esperado ${subtotal}, obtenido ${c2.venta}`
+        `caja.venta debe ser el subtotal (sin cargo): esperado ${subtotal}, obtenido ${c2.venta}`
       );
     }
-    if (Number(c2.cargo_tarjeta) !== cargoTarjeta) {
+    if (Number(c2.cargo_tarjeta || 0) !== 0) {
       throw new Error(
-        `caja.cargo_tarjeta incorrecto: esperado ${cargoTarjeta}, obtenido ${c2.cargo_tarjeta}`
+        `caja.cargo_tarjeta debe ser 0 (ya no existe el cargo): obtenido ${c2.cargo_tarjeta}`
       );
     }
     if (Number(c2.tarjeta) !== total2) {
@@ -339,7 +335,7 @@ async function runIntegrationTest() {
         `caja.tarjeta debe ser el total pagado: esperado ${total2}, obtenido ${c2.tarjeta}`
       );
     }
-    console.log('✅ Caja: venta sin cargo, cargo_tarjeta en su bucket, tarjeta = total pagado');
+    console.log('✅ Caja: venta = subtotal, tarjeta = total pagado, sin bucket de cargo');
 
     const [prop2Rows] = await connection.execute('SELECT * FROM propinas WHERE id_propina = ?', [
       created.propina2Id
@@ -349,7 +345,7 @@ async function runIntegrationTest() {
         `propina registrada incorrecta: esperado ${propina2}, obtenido ${prop2Rows[0].propina}`
       );
     }
-    console.log('✅ Propina registrada = solo propina_venta (el cargo NO se reparte)');
+    console.log('✅ Propina registrada = solo propina_venta (reparto)');
 
     if (distUsers.length > 0) {
       const [sumRows] = await connection.execute(

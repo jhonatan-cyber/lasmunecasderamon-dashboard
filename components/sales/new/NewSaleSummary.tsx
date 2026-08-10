@@ -1,12 +1,12 @@
-import { ShoppingCart } from 'lucide-react';
+import { Receipt, ShoppingCart } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { formatCurrencyNoDecimals } from '@/lib/utils/formatters';
 import { useConfigValue } from '@/hooks/shared/useConfigValue';
+import { getCardSplit } from '@/components/orders/productModalRules';
 
 interface NewSaleSummaryProps {
   subtotal: number;
   propina: number;
-  cargoTarjeta: number;
   metodoPago: string;
   total: number;
   loading: boolean;
@@ -17,15 +17,16 @@ interface NewSaleSummaryProps {
 export const NewSaleSummary = ({
   subtotal,
   propina,
-  cargoTarjeta,
   metodoPago,
   total,
   loading,
   disabled,
   onSubmit
 }: NewSaleSummaryProps) => {
-  const impuestoPropinaPct = Number(useConfigValue('facturacion', 'impuesto_propina', '10'));
+  const splitVentaPct = Number(useConfigValue('comisiones', 'split_tarjeta_venta', '51'));
+  const splitPropinaPct = Number(useConfigValue('comisiones', 'split_tarjeta_propina', '49'));
   const esTarjeta = metodoPago === 'tarjeta';
+  const splitTarjeta = esTarjeta ? getCardSplit(total) : { venta: 0, propina: 0 };
 
   return (
     <div className='my-8 flex flex-col items-center rounded-2xl border-y border-gray-100 bg-gray-50/30 py-10 dark:border-neutral-800 dark:bg-neutral-900/60'>
@@ -43,16 +44,6 @@ export const NewSaleSummary = ({
               {formatCurrencyNoDecimals(subtotal)}
             </div>
           </div>
-          {esTarjeta && cargoTarjeta > 0 && (
-            <div className='text-center'>
-              <div className='text-[10px] font-bold uppercase text-gray-400 dark:text-neutral-500'>
-                Cargo tarjeta ({impuestoPropinaPct}%)
-              </div>
-              <div className='text-lg font-semibold text-indigo-600 dark:text-indigo-400'>
-                {formatCurrencyNoDecimals(cargoTarjeta)}
-              </div>
-            </div>
-          )}
           <div className='text-center'>
             <div className='text-[10px] font-bold uppercase text-gray-400 dark:text-neutral-500'>
               Propina
@@ -70,6 +61,28 @@ export const NewSaleSummary = ({
           {formatCurrencyNoDecimals(total)}
         </div>
       </div>
+
+      {esTarjeta && total > 0 && (
+        <div className='mb-4 flex items-center gap-3 rounded-xl border border-amber-200/70 bg-amber-50/80 px-3 py-2 dark:border-amber-500/20 dark:bg-amber-500/10'>
+          <div className='flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-amber-100 text-amber-700 dark:bg-amber-500/15 dark:text-amber-300'>
+            <Receipt className='h-4 w-4' />
+          </div>
+          <p className='text-xs leading-5 text-slate-700 dark:text-slate-100'>
+            <span className='font-black uppercase tracking-[0.22em] text-amber-700 dark:text-amber-300'>
+              Tarjetero
+            </span>{' '}
+            Genera venta por{' '}
+            <span className='font-black text-emerald-600 dark:text-emerald-300'>
+              {formatCurrencyNoDecimals(splitTarjeta.venta)}
+            </span>{' '}
+            ({splitVentaPct}%) y propina por{' '}
+            <span className='font-black text-fuchsia-600 dark:text-fuchsia-300'>
+              {formatCurrencyNoDecimals(splitTarjeta.propina)}
+            </span>{' '}
+            ({splitPropinaPct}%). Solo informativo, no afecta la caja.
+          </p>
+        </div>
+      )}
 
       <Button
         onClick={onSubmit}

@@ -6,7 +6,7 @@ import {
   DialogDescription,
   DialogFooter,
   DialogHeader,
-  DialogTitle,
+  DialogTitle
 } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { formatCurrencyCLP } from '@/lib/utils/formatters';
@@ -14,11 +14,10 @@ import { useSales } from '@/hooks/caja/useSales';
 import { useTimer } from '@/contexts/TimerContext';
 import { useAvailableRooms } from '@/hooks/habitaciones';
 import { useRefreshOnFocus } from '@/hooks/shared';
+import { useConfigValue } from '@/hooks/shared/useConfigValue';
 import { formatLongDateEs, formatShortTimeEs } from '@/lib/utils/calendarUtils';
-import {
-  OrderDetailInfoPanel,
-  OrderDetailPaymentPanel,
-} from '@/components/orders/detail';
+import { getCardSplit } from '@/components/orders/productModalRules';
+import { OrderDetailInfoPanel, OrderDetailPaymentPanel } from '@/components/orders/detail';
 import { useOrderDetailModalState } from '@/hooks/orders/useOrderDetailModalState';
 import { useOrderDetailModal } from '@/hooks/orders/useOrderDetailModal';
 import { OrderProducts } from './OrderProducts';
@@ -45,16 +44,12 @@ export default function OrderDetailModal({
   orderId,
   orderCode,
   onVentaRegistrada,
-  onOrderStatusChange,
+  onOrderStatusChange
 }: OrderDetailModalProps) {
   const { rooms, refetchRooms } = useAvailableRooms();
   const { createVenta } = useSales();
   const { startTimer } = useTimer();
-  const {
-    state,
-    setters,
-    derived,
-  } = useOrderDetailModalState({ open, detail, rooms, onClose });
+  const { state, setters, derived } = useOrderDetailModalState({ open, detail, rooms, onClose });
 
   const {
     handleRegistrarVenta,
@@ -65,7 +60,7 @@ export default function OrderDetailModal({
     shouldShowRoomSelector,
     hasRoomSelectedInOrder,
     isClienteRegistrado,
-    isRegistering,
+    isRegistering
   } = useOrderDetailModal({
     open,
     onClose,
@@ -79,10 +74,16 @@ export default function OrderDetailModal({
     startTimer,
     state,
     setters,
-    derived,
+    derived
   });
 
   useRefreshOnFocus(refetchRooms, { enabled: open });
+
+  const totalConfirmar = (detail[0]?.total || 0) + state.propina + derived.recargoAnfitrionas;
+  const splitVentaPct = Number(useConfigValue('comisiones', 'split_tarjeta_venta', '51'));
+  const splitPropinaPct = Number(useConfigValue('comisiones', 'split_tarjeta_propina', '49'));
+  const splitTarjeta =
+    state.metodoPago === 'tarjeta' ? getCardSplit(totalConfirmar) : { venta: 0, propina: 0 };
 
   return (
     <Dialog open={open} onOpenChange={onClose}>
@@ -180,12 +181,27 @@ export default function OrderDetailModal({
                 <strong>Pedido:</strong> {orderCode}
               </div>
               <div>
-                <strong>Total:</strong>{' '}
-                {formatCurrencyCLP((detail[0]?.total || 0) + state.propina + derived.recargoAnfitrionas)}
+                <strong>Total:</strong> {formatCurrencyCLP(totalConfirmar)}
               </div>
               <div>
                 <strong>Método de pago:</strong> {state.metodoPago}
               </div>
+              {state.metodoPago === 'tarjeta' && totalConfirmar > 0 && (
+                <div className='mt-3 flex items-center gap-2 rounded-xl border border-amber-200/70 bg-amber-50/80 px-3 py-2 text-xs leading-5 text-slate-700 dark:border-amber-500/20 dark:bg-amber-500/10 dark:text-slate-100'>
+                  <span className='font-black uppercase tracking-[0.22em] text-amber-700 dark:text-amber-300'>
+                    Tarjetero
+                  </span>{' '}
+                  Genera venta por{' '}
+                  <span className='font-black text-emerald-600 dark:text-emerald-300'>
+                    {formatCurrencyCLP(splitTarjeta.venta)}
+                  </span>{' '}
+                  ({splitVentaPct}%) y propina por{' '}
+                  <span className='font-black text-fuchsia-600 dark:text-fuchsia-300'>
+                    {formatCurrencyCLP(splitTarjeta.propina)}
+                  </span>{' '}
+                  ({splitPropinaPct}%). Solo informativo, no afecta la caja.
+                </div>
+              )}
               {state.propina > 0 && (
                 <div>
                   <strong>Propina:</strong> {formatCurrencyCLP(state.propina)}
@@ -195,7 +211,8 @@ export default function OrderDetailModal({
                 <>
                   <div>
                     <strong>Habitación:</strong>{' '}
-                    {rooms.find((r: any) => r.id === parseInt(state.habitacionId))?.name || state.habitacionId}
+                    {rooms.find((r: any) => r.id === parseInt(state.habitacionId))?.name ||
+                      state.habitacionId}
                   </div>
                   <div>
                     <strong>Tiempo:</strong> {state.tiempoHabitacion} minutos
@@ -207,7 +224,7 @@ export default function OrderDetailModal({
           <DialogFooter className='flex justify-center items-center gap-3 sm:justify-center'>
             <Button
               variant='outline'
-              onClick={(e) => {
+              onClick={e => {
                 e.preventDefault();
                 handleCancelRegistrarVenta();
               }}

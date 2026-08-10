@@ -51,7 +51,6 @@ export const SaleCreateSchema = z.object({
   monto_adicional: z.number().optional().default(0),
   pagos_mixtos: z.any().optional(),
   propina: z.number().optional().default(0),
-  cargo_tarjeta: z.number().optional().default(0),
   usuarios: z.array(z.string()).optional().default([]),
   tiempo: z.number().optional().default(0),
   codigo: z.string().optional(),

@@ -14,7 +14,6 @@ const VALID_CLAVES = new Set([
   'empresa_whatsapp',
   'empresa_tiktok',
   'impuesto_iva',
-  'impuesto_propina',
   'propina_venta',
   'moneda',
   'facturacion_activada',
@@ -33,7 +32,7 @@ function validateConfig(clave: string, valor: string): string | null {
   if (!VALID_CLAVES.has(clave)) {
     return `Clave desconocida: ${clave}`;
   }
-  if (clave === 'impuesto_iva' || clave === 'impuesto_propina' || clave === 'propina_venta') {
+  if (clave === 'impuesto_iva' || clave === 'propina_venta') {
     const num = Number(valor);
     if (isNaN(num) || num < 0 || num > 100) {
       return `${clave} debe estar entre 0 y 100`;
@@ -45,7 +44,11 @@ function validateConfig(clave: string, valor: string): string | null {
       return `${clave} debe ser una hora válida entre 0 y 23`;
     }
   }
-  if (clave === 'threshold_producto_caro' || clave === 'split_tarjeta_venta' || clave === 'split_tarjeta_propina') {
+  if (
+    clave === 'threshold_producto_caro' ||
+    clave === 'split_tarjeta_venta' ||
+    clave === 'split_tarjeta_propina'
+  ) {
     const num = Number(valor);
     if (isNaN(num) || num < 0 || !Number.isInteger(num)) {
       return `${clave} debe ser un número entero positivo`;
@@ -64,8 +67,21 @@ async function updateConfig(clave: string, valor: string) {
     clave
   ])) as any[];
   if (!existing) {
-    const categoria = clave.startsWith('asistencia_') ? 'asistencia' : clave === 'threshold_producto_caro' ? 'comisiones' : clave.startsWith('split_tarjeta_') ? 'comisiones' : clave === 'admin_whatsapp' ? 'sistema' : 'empresa';
-    const tipo = clave.startsWith('asistencia_') || clave === 'threshold_producto_caro' || clave.startsWith('split_tarjeta_') ? 'number' : 'text';
+    const categoria = clave.startsWith('asistencia_')
+      ? 'asistencia'
+      : clave === 'threshold_producto_caro'
+        ? 'comisiones'
+        : clave.startsWith('split_tarjeta_')
+          ? 'comisiones'
+          : clave === 'admin_whatsapp'
+            ? 'sistema'
+            : 'empresa';
+    const tipo =
+      clave.startsWith('asistencia_') ||
+      clave === 'threshold_producto_caro' ||
+      clave.startsWith('split_tarjeta_')
+        ? 'number'
+        : 'text';
     await query(
       'INSERT INTO configuraciones (id, clave, valor, categoria, tipo, fecha_crea, fecha_mod) VALUES (?, ?, ?, ?, ?, NOW(), NOW())',
       [crypto.randomUUID(), clave, String(valor), categoria, tipo]
@@ -112,46 +128,49 @@ export const GET = withRoute({ auth: true, audit: true }, async () => {
   return NextResponse.json({ success: true, data: grouped });
 });
 
-export const PUT = withRoute({ auth: true, audit: true, module: 'settings', action: 'write' }, async (req: Request) => {
-  const body = await req.json();
-  const errors: string[] = [];
+export const PUT = withRoute(
+  { auth: true, audit: true, module: 'settings', action: 'write' },
+  async (req: Request) => {
+    const body = await req.json();
+    const errors: string[] = [];
 
-  // Batch mode: { configs: [{ clave, valor }] }
-  if (body.configs && Array.isArray(body.configs)) {
-    for (const { clave, valor } of body.configs) {
-      if (!clave) continue;
-      const error = validateConfig(clave, String(valor));
-      if (error) {
-        errors.push(error);
-        continue;
+    // Batch mode: { configs: [{ clave, valor }] }
+    if (body.configs && Array.isArray(body.configs)) {
+      for (const { clave, valor } of body.configs) {
+        if (!clave) continue;
+        const error = validateConfig(clave, String(valor));
+        if (error) {
+          errors.push(error);
+          continue;
+        }
+        await updateConfig(clave, String(valor));
       }
-      await updateConfig(clave, String(valor));
+      if (body.configs.some((c: any) => c.clave === 'admin_whatsapp')) clearAdminWhatsAppCache();
+      return NextResponse.json({
+        success: errors.length === 0,
+        message:
+          errors.length > 0
+            ? `${errors.length} configuraciones ignoradas: ${errors.join(', ')}`
+            : `${body.configs.length} configuraciones actualizadas`,
+        errors: errors.length > 0 ? errors : undefined
+      });
     }
-    if (body.configs.some((c: any) => c.clave === 'admin_whatsapp')) clearAdminWhatsAppCache();
-    return NextResponse.json({
-      success: errors.length === 0,
-      message:
-        errors.length > 0
-          ? `${errors.length} configuraciones ignoradas: ${errors.join(', ')}`
-          : `${body.configs.length} configuraciones actualizadas`,
-      errors: errors.length > 0 ? errors : undefined
-    });
+
+    // Single mode (backwards compatible)
+    const { clave, valor } = body;
+    if (!clave) {
+      return NextResponse.json({ success: false, error: 'Clave es requerida' }, { status: 400 });
+    }
+
+    const error = validateConfig(clave, String(valor));
+    if (error) {
+      return NextResponse.json({ success: false, error }, { status: 400 });
+    }
+
+    await updateConfig(clave, String(valor));
+
+    if (clave === 'admin_whatsapp') clearAdminWhatsAppCache();
+
+    return NextResponse.json({ success: true, message: 'Configuración actualizada' });
   }
-
-  // Single mode (backwards compatible)
-  const { clave, valor } = body;
-  if (!clave) {
-    return NextResponse.json({ success: false, error: 'Clave es requerida' }, { status: 400 });
-  }
-
-  const error = validateConfig(clave, String(valor));
-  if (error) {
-    return NextResponse.json({ success: false, error }, { status: 400 });
-  }
-
-  await updateConfig(clave, String(valor));
-
-  if (clave === 'admin_whatsapp') clearAdminWhatsAppCache();
-
-  return NextResponse.json({ success: true, message: 'Configuración actualizada' });
-});
+);

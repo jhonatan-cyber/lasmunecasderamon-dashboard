@@ -6,7 +6,6 @@ export interface Venta {
   habitacion_id: string | number;
   metodo_pago: 'efectivo' | 'tarjeta' | 'transferencia' | 'prepago';
   propina: number;
-  cargo_tarjeta?: number;
   sub_total: number;
   total: number;
   fecha_crea: string;
@@ -57,7 +56,6 @@ export interface VentaCreate {
   habitacion_id?: string | number;
   metodo_pago: 'efectivo' | 'tarjeta' | 'transferencia' | 'prepago';
   propina: number;
-  cargo_tarjeta?: number;
   sub_total: number;
   total: number;
   detalles: VentaDetalleCreate[];
@@ -83,7 +81,6 @@ export interface VentaUpdate {
 
 export interface VentaResumen {
   total_ventas: number;
-  cargo_tarjeta?: number;
   total_efectivo: number;
   total_tarjeta: number;
   total_transferencia: number;
