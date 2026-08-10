@@ -43,6 +43,7 @@
     "test:ci": "vitest run",
     "test:integration:legacy-db": "node scripts/run-legacy-db-tests.js",
     "test:integration:all": "node scripts/run-integration-all.js",
+    "test:e2e": "playwright test --config playwright.config.ts",
     "clean": "node -e \"const fs=require('fs');['.next','tsconfig.tsbuildinfo','tsconfig.typecheck.tsbuildinfo'].forEach(d=>{try{fs.rmSync(d,{recursive:true,force:true})}catch(e){}});console.log('Cache limpiado correctamente')\"",
     "clean:all": "node -e \"const fs=require('fs');['.next','node_modules','tsconfig.tsbuildinfo','tsconfig.typecheck.tsbuildinfo'].forEach(d=>{try{fs.rmSync(d,{recursive:true,force:true})}catch(e){}});console.log('Cache y dependencias limpiados. Ejecuta pnpm install para reinstalar')\"",
     "dev:clean": "pnpm clean && pnpm dev",
