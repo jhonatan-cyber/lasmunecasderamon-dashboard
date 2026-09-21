@@ -1,11 +1,11 @@
 ﻿/* eslint-disable no-console */
 require('../../../scripts/guard-local-db')();
-const mysql = require('mysql2/promise');
+const postgres = require('../../../scripts/postgres-test-client.cjs');
 const crypto = require('crypto');
 require('dotenv').config();
 
 const queryMock = async (sql, params = []) => {
-  const connection = await mysql.createConnection({
+  const connection = await postgres.createConnection({
     host: process.env.DB_HOST,
     user: process.env.DB_USER,
     password: process.env.DB_PASSWORD,
@@ -36,7 +36,7 @@ class PermissionRepository {
   static async create(data) {
     const id = generateUUID();
     await queryMock(
-      'INSERT INTO permissions (id, name, description, module, action) VALUES (?, ?, ?, ?, ?)',
+      'INSERT INTO permissions (id, name, description, module, action, created_at) VALUES (?, ?, ?, ?, ?, now())',
       [id, data.name, data.description || '', data.module, data.action]
     );
     return id;

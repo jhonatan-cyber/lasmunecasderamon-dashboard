@@ -16,9 +16,9 @@ export async function POST(request: Request) {
             c.codigo, c.total,
             COALESCE(cl.nombre, 'Sin cliente registrado') as cliente_nombre
      FROM solicitudes_anulacion_cuentas sac
-     INNER JOIN cuentas c ON BINARY c.id_cuenta = BINARY sac.cuenta_id
-     LEFT JOIN clientes cl ON BINARY cl.id_cliente = BINARY c.cliente_id
-     WHERE BINARY sac.id = BINARY ? AND sac.estado = 'pendiente'
+     INNER JOIN cuentas c ON c.id_cuenta = sac.cuenta_id
+     LEFT JOIN clientes cl ON cl.id_cliente = c.cliente_id
+     WHERE sac.id = ? AND sac.estado = 'pendiente'
      LIMIT 1`,
     [token]
   );

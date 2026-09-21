@@ -174,7 +174,7 @@ export class CashRegisterRepository {
   static async summary(): Promise<any> {
     try {
       const row = await query<any[]>(`
-      SELECT c.*, CONCAT(u.nombre, ' ', u.apellido) as usuario_apertura
+      SELECT c.*, (CAST(u.nombre AS text) || CAST(' ' AS text) || CAST(u.apellido AS text)) as usuario_apertura
       FROM cajas c
       LEFT JOIN usuarios u ON c.usuario_id_apertura = u.id_usuario
       WHERE c.estado = 1
@@ -241,7 +241,7 @@ export class CashRegisterRepository {
     try {
       const results = await query<any[]>(`
       SELECT c.*,
-             CONCAT(u1.nombre, ' ', u1.apellido) as cajero_nombre,
+             (CAST(u1.nombre AS text) || CAST(' ' AS text) || CAST(u1.apellido AS text)) as cajero_nombre,
              COALESCE((
                SELECT SUM(r.monto)
                FROM retiros_caja r
@@ -262,10 +262,10 @@ export class CashRegisterRepository {
     try {
       const res = await query<any[]>(
       `
-      SELECT c.*, 
-             CONCAT(u1.nombre, ' ', u1.apellido) as cajero_nombre,
+      SELECT c.*,
+             (CAST(u1.nombre AS text) || CAST(' ' AS text) || CAST(u1.apellido AS text)) as cajero_nombre,
              u1.foto as cajero_foto,
-             CONCAT(u2.nombre, ' ', u2.apellido) as cajero_cierre_nombre,
+             (CAST(u2.nombre AS text) || CAST(' ' AS text) || CAST(u2.apellido AS text)) as cajero_cierre_nombre,
              u2.foto as cajero_cierre_foto,
              COALESCE((
                SELECT SUM(r.monto)

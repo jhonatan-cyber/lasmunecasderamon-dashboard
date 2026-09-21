@@ -27,15 +27,15 @@ export class VentasStatsRepository {
   static async getVentasBarras(caja_id: string): Promise<VentasBarrasResult> {
     const results = await query<any[]>(
       `
-      SELECT 
+      SELECT
         COALESCE(SUM(v.total - COALESCE(v.cargo_tarjeta, 0)), 0) as total_venta,
         COALESCE(SUM(v.cargo_tarjeta), 0) as cargo_tarjeta,
         COALESCE(SUM(v.propina), 0) as propinas,
-        (
+        COALESCE(SUM((
           SELECT COALESCE(SUM(dv.precio * dv.cantidad), 0)
           FROM detalle_ventas dv
           WHERE dv.venta_id = v.id_venta
-        ) as monto_productos
+        )), 0) as monto_productos
       FROM ventas v
       LEFT JOIN comisiones c ON v.id_venta = c.venta_id
       WHERE v.caja_id = ?
@@ -45,7 +45,7 @@ export class VentasStatsRepository {
           SELECT 1 FROM detalle_ventas dv2
           INNER JOIN productos p2 ON p2.id_producto = dv2.producto_id
           WHERE dv2.venta_id = v.id_venta
-            AND (LOWER(p2.nombre) REGEXP 'champagne|champaña|shampage|champan')
+            AND (LOWER(p2.nombre) ~ 'champagne|champaña|shampage|champan')
         )
     `,
       [caja_id]
@@ -63,7 +63,7 @@ export class VentasStatsRepository {
   static async getVentasChampagne(caja_id: string): Promise<VentasChampagneResult> {
     const results = await query<any[]>(
       `
-      SELECT 
+      SELECT
         COALESCE(SUM(DISTINCT v.total - COALESCE(v.cargo_tarjeta, 0)), 0) as total_venta,
         COALESCE(SUM(DISTINCT v.cargo_tarjeta), 0) as cargo_tarjeta,
         COALESCE(SUM(DISTINCT v.propina), 0) as propinas,
@@ -72,7 +72,7 @@ export class VentasStatsRepository {
           FROM detalle_ventas dv
           INNER JOIN productos p ON p.id_producto = dv.producto_id
           WHERE dv.venta_id = v.id_venta
-            AND (LOWER(p.nombre) REGEXP 'champagne|champaña|shampage|champan')
+            AND (LOWER(p.nombre) ~ 'champagne|champaña|shampage|champan')
         ) as monto_champagne,
         (
           SELECT COALESCE(SUM(dc.comision), 0)
@@ -86,7 +86,7 @@ export class VentasStatsRepository {
           SELECT 1 FROM detalle_ventas dv2
           INNER JOIN productos p2 ON p2.id_producto = dv2.producto_id
           WHERE dv2.venta_id = v.id_venta
-            AND (LOWER(p2.nombre) REGEXP 'champagne|champaña|shampage|champan')
+            AND (LOWER(p2.nombre) ~ 'champagne|champaña|shampage|champan')
         )
       GROUP BY v.id_venta
     `,
@@ -110,7 +110,7 @@ export class VentasStatsRepository {
   static async getVentasTragosChicas(caja_id: string): Promise<VentasTragosChicasResult> {
     const results = await query<any[]>(
       `
-      SELECT 
+      SELECT
         COALESCE(SUM(DISTINCT v.total - COALESCE(v.cargo_tarjeta, 0)), 0) as total_venta,
         COALESCE(SUM(DISTINCT v.cargo_tarjeta), 0) as cargo_tarjeta,
         COALESCE(SUM(DISTINCT v.propina), 0) as propinas,
@@ -133,7 +133,7 @@ export class VentasStatsRepository {
           SELECT 1 FROM detalle_ventas dv2
           INNER JOIN productos p2 ON p2.id_producto = dv2.producto_id
           WHERE dv2.venta_id = v.id_venta
-            AND (LOWER(p2.nombre) REGEXP 'champagne|champaña|shampage|champan')
+            AND (LOWER(p2.nombre) ~ 'champagne|champaña|shampage|champan')
         )
       GROUP BY v.id_venta
     `,

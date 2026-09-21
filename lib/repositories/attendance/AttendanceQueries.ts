@@ -1,4 +1,4 @@
-import { query, rawQuery, generateUUID } from '@/lib/database/db';
+import { query, generateUUID } from '@/lib/database/db';
 import { getNowInBusinessTimezone } from '@/lib/business/timezoneService';
 import { AttendanceRegisterSchema } from '@/lib/business/schemas';
 import { BaseRepository } from '../BaseRepository';
@@ -12,7 +12,7 @@ export async function getAttendanceSummary() {
   try {
     const sql = `
    SELECT
-      U.id_usuario, U.nick, CONCAT(U.nombre, ' ', U.apellido) AS nombre_completo,
+      U.id_usuario, U.nick, (CAST(U.nombre AS text) || CAST(' ' AS text) || CAST(U.apellido AS text)) AS nombre_completo,
       U.foto AS usuario_foto,
       R.nombre AS rol,
       COALESCE(ASIS.total_asistencias, 0) AS total_asistencias,
@@ -25,11 +25,11 @@ export async function getAttendanceSummary() {
     FROM usuarios U
     INNER JOIN roles R ON U.rol_id = R.id_rol
     LEFT JOIN (SELECT usuario_id, COUNT(*) AS total_asistencias FROM asistencias WHERE estado = 1 GROUP BY usuario_id) AS ASIS ON ASIS.usuario_id = U.id_usuario
-    LEFT JOIN (SELECT usuario_id, COUNT(DISTINCT YEARWEEK(fecha, 1)) AS semanas FROM asistencias WHERE estado = 1 AND DAYOFWEEK(fecha) IN (3,4,5,6,7,1) GROUP BY usuario_id) AS SEM ON SEM.usuario_id = U.id_usuario
+    LEFT JOIN (SELECT usuario_id, COUNT(DISTINCT TO_CHAR(fecha, 'IYYY-IW')) AS semanas FROM asistencias WHERE estado = 1 AND (EXTRACT(DOW FROM fecha)::integer + 1) IN (3,4,5,6,7,1) GROUP BY usuario_id) AS SEM ON SEM.usuario_id = U.id_usuario
     WHERE COALESCE(ASIS.total_asistencias, 0) > 0
     ORDER BY nombre_completo;
   `;
-  return await rawQuery(sql);
+  return await query(sql);
   } catch (err) {
     logger.error('[AttendanceQueries] Error en getAttendanceSummary:', { err });
     throw new DatabaseError('Error al obtener resumen de asistencias', err);
@@ -66,7 +66,7 @@ export async function getAttendanceStats() {
 
   if (caja) {
     const perCaja = await query<any[]>(
-      'SELECT DISTINCT usuario_id FROM asistencias WHERE fecha >= ? AND (fecha <= ? OR ? IS NULL) AND estado = 1',
+      'SELECT DISTINCT usuario_id FROM asistencias WHERE fecha >= ? AND (fecha <= ? OR CAST(? AS date) IS NULL) AND estado = 1',
       [caja.fecha_apertura, caja.fecha_cierre, caja.fecha_cierre]
     );
     if (presentesHoy === 0 && perCaja.length > 0) {
@@ -252,26 +252,26 @@ export async function getAttendanceByUser(
         U.sueldo, U.aporte, U.descuento,
         (U.sueldo - U.aporte) AS total,
         (
-          SELECT COUNT(DISTINCT YEARWEEK(A2.fecha, 1))
+          SELECT COUNT(DISTINCT TO_CHAR(A2.fecha, 'IYYY-IW'))
           FROM asistencias A2
           WHERE A2.usuario_id = A.usuario_id
             AND A2.estado = 1
-            AND DAYOFWEEK(A2.fecha) IN (3,4,5,6,7,1)
+            AND (EXTRACT(DOW FROM A2.fecha)::integer + 1) IN (3,4,5,6,7,1)
         ) AS semanas_con_descuento,
         (
-          SELECT COUNT(DISTINCT YEARWEEK(A2.fecha, 1))
+          SELECT COUNT(DISTINCT TO_CHAR(A2.fecha, 'IYYY-IW'))
           FROM asistencias A2
           WHERE A2.usuario_id = A.usuario_id
             AND A2.estado = 1
-            AND DAYOFWEEK(A2.fecha) IN (3,4,5,6,7,1)
+            AND (EXTRACT(DOW FROM A2.fecha)::integer + 1) IN (3,4,5,6,7,1)
         ) * COALESCE(U.descuento, 0) AS descuento_total,
         (U.sueldo - U.aporte) - (
           (
-            SELECT COUNT(DISTINCT YEARWEEK(A2.fecha, 1))
+            SELECT COUNT(DISTINCT TO_CHAR(A2.fecha, 'IYYY-IW'))
             FROM asistencias A2
             WHERE A2.usuario_id = A.usuario_id
               AND A2.estado = 1
-              AND DAYOFWEEK(A2.fecha) IN (3,4,5,6,7,1)
+              AND (EXTRACT(DOW FROM A2.fecha)::integer + 1) IN (3,4,5,6,7,1)
           ) * COALESCE(U.descuento, 0) / GREATEST((SELECT COUNT(*) FROM asistencias A3 WHERE A3.usuario_id = A.usuario_id AND A3.estado = 1), 1)
         ) AS total_final
       FROM asistencias A
@@ -289,14 +289,14 @@ export async function getAttendanceByUser(
 
   const sql = `
     SELECT
-      U.id_usuario, U.nick, CONCAT(U.nombre, ' ', U.apellido) AS nombre_completo,
+      U.id_usuario, U.nick, (CAST(U.nombre AS text) || CAST(' ' AS text) || CAST(U.apellido AS text)) AS nombre_completo,
       COALESCE((SELECT COUNT(*) FROM asistencias A WHERE A.estado = 1 AND A.usuario_id = U.id_usuario), 0) AS total_asistencias,
       COALESCE((SELECT COUNT(*) FROM asistencias A WHERE A.estado = 1 AND A.usuario_id = U.id_usuario), 0) * COALESCE(U.sueldo, 0) AS sueldo_total,
       COALESCE((SELECT COUNT(*) FROM asistencias A WHERE A.estado = 1 AND A.usuario_id = U.id_usuario), 0) * COALESCE(U.aporte, 0) AS aporte_total,
-      COALESCE((SELECT COUNT(DISTINCT YEARWEEK(A.fecha, 1)) FROM asistencias A WHERE A.estado = 1 AND A.usuario_id = U.id_usuario AND DAYOFWEEK(A.fecha) IN (3,4,5,6,7,1)), 0) * COALESCE(U.descuento, 0) AS descuento_total,
+      COALESCE((SELECT COUNT(DISTINCT TO_CHAR(A.fecha, 'IYYY-IW')) FROM asistencias A WHERE A.estado = 1 AND A.usuario_id = U.id_usuario AND (EXTRACT(DOW FROM A.fecha)::integer + 1) IN (3,4,5,6,7,1)), 0) * COALESCE(U.descuento, 0) AS descuento_total,
       (COALESCE((SELECT COUNT(*) FROM asistencias A WHERE A.estado = 1 AND A.usuario_id = U.id_usuario), 0) * COALESCE(U.sueldo, 0)) -
       (COALESCE((SELECT COUNT(*) FROM asistencias A WHERE A.estado = 1 AND A.usuario_id = U.id_usuario), 0) * COALESCE(U.aporte, 0)) -
-      (COALESCE((SELECT COUNT(DISTINCT YEARWEEK(A.fecha, 1)) FROM asistencias A WHERE A.estado = 1 AND A.usuario_id = U.id_usuario AND DAYOFWEEK(A.fecha) IN (3,4,5,6,7,1)), 0) * COALESCE(U.descuento, 0)) AS total_final
+      (COALESCE((SELECT COUNT(DISTINCT TO_CHAR(A.fecha, 'IYYY-IW')) FROM asistencias A WHERE A.estado = 1 AND A.usuario_id = U.id_usuario AND (EXTRACT(DOW FROM A.fecha)::integer + 1) IN (3,4,5,6,7,1)), 0) * COALESCE(U.descuento, 0)) AS total_final
     FROM usuarios U
     WHERE U.id_usuario = ?
   `;
@@ -314,7 +314,7 @@ export async function getAttendanceHoy() {
     `
     SELECT
       A.id_asistencia, A.fecha, A.hora,
-      U.id_usuario, U.nick, CONCAT(U.nombre, ' ', U.apellido) as nombre_completo,
+      U.id_usuario, U.nick, (CAST(U.nombre AS text) || CAST(' ' AS text) || CAST(U.apellido AS text)) as nombre_completo,
       R.nombre as rol
     FROM asistencias A
     INNER JOIN usuarios U ON A.usuario_id = U.id_usuario

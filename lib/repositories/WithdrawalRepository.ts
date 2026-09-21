@@ -6,13 +6,13 @@ import { getNowInBusinessTimezone } from '@/lib/business/timezoneService';
 export class WithdrawalRepository {
   static async getByCajaId(caja_id: string): Promise<RetiroCajaType[]> {
     const results = await query<any[]>(`
-      SELECT r.*, CONCAT(u.nombre, ' ', u.apellido) as usuario_nombre
+      SELECT r.*, (CAST(u.nombre AS text) || CAST(' ' AS text) || CAST(u.apellido AS text)) as usuario_nombre
       FROM retiros_caja r
       LEFT JOIN usuarios u ON r.usuario_id = u.id_usuario
       WHERE r.caja_id = ?
       ORDER BY r.fecha_retiro DESC
     `, [caja_id]);
-    
+
     return results.map(row => ({
       id_retiro: row.id_retiro,
       caja_id: row.caja_id,

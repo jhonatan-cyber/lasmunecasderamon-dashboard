@@ -2,7 +2,7 @@
 import CompressionPlugin from 'compression-webpack-plugin';
 
 const nextConfig = {
-  serverExternalPackages: ['mysql2'],
+  serverExternalPackages: ['pg'],
   allowedDevOrigins: ['dashboard.xn--lasmuecasderamon-bub.com'],
   images: {
     formats: ['image/avif', 'image/webp'],
@@ -139,9 +139,7 @@ const nextConfig = {
       '@radix-ui/react-select',
       '@radix-ui/react-tabs',
       '@radix-ui/react-toast'
-    ],
-
-    optimisticClientCache: true
+    ]
   },
 
   turbopack: {
@@ -163,7 +161,7 @@ const nextConfig = {
     if (!isServer) {
       config.externals = [
         ...(config.externals || []),
-        { mysql2: 'mysql2' }
+        { pg: 'pg' }
       ];
     }
 

@@ -14,9 +14,9 @@ export async function getAnticipoBalances(usuarioId: string): Promise<AnticipoBa
   try {
     if (!cachedTableChecks) {
       const tableChecks = await query<any[]>(
-        `SELECT table_name 
-         FROM information_schema.tables 
-         WHERE table_schema = DATABASE() 
+        `SELECT table_name
+         FROM information_schema.tables
+         WHERE table_schema = current_schema()
          AND table_name IN ('gratificaciones', 'horas_extras')`
       );
       cachedTableChecks = {
@@ -26,7 +26,7 @@ export async function getAnticipoBalances(usuarioId: string): Promise<AnticipoBa
     }
 
     const mainSql = `
-      SELECT 
+      SELECT
         U.id_usuario,
         (COALESCE(A.total_asistencias, 0) * U.sueldo) as monto_sueldo,
         (COALESCE(A.total_asistencias, 0) * U.aporte) as monto_aporte,
@@ -38,11 +38,11 @@ export async function getAnticipoBalances(usuarioId: string): Promise<AnticipoBa
         ${cachedTableChecks.hasHorasExtras ? ', (SELECT COALESCE(SUM(total), 0) FROM horas_extras WHERE usuario_id = U.id_usuario AND estado = 1) as total_horas_extras' : ', 0 as total_horas_extras'}
       FROM usuarios U
       LEFT JOIN (
-        SELECT usuario_id, COUNT(*) AS total_asistencias 
+        SELECT usuario_id, COUNT(*) AS total_asistencias
         FROM asistencias WHERE estado = 1 GROUP BY usuario_id
       ) A ON U.id_usuario = A.usuario_id
       LEFT JOIN (
-        SELECT usuario_id, COUNT(DISTINCT YEARWEEK(fecha, 1)) AS total_semanas 
+        SELECT usuario_id, COUNT(DISTINCT TO_CHAR(fecha, 'IYYY-IW')) AS total_semanas
         FROM asistencias WHERE estado = 1 GROUP BY usuario_id
       ) S ON U.id_usuario = S.usuario_id
       WHERE U.id_usuario = ?

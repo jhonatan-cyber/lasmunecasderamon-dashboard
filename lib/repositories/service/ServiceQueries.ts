@@ -55,7 +55,7 @@ export async function approveAnulacionServicio(
                AND UPPER(tipo) = 'CONSUMO'
                AND (
                  venta_id = ?
-                 OR JSON_UNQUOTE(JSON_EXTRACT(metadatos, '$.venta_id')) = ?
+                 OR (metadatos::jsonb ->> 'venta_id') = ?
                )`,
             [clienteId, servicioId, servicioId]
           )
@@ -108,8 +108,7 @@ export async function approveAnulacionServicio(
 
       await trx('UPDATE comisiones SET estado = 0 WHERE servicio_id = ?', [servicioId]);
       await trx(
-        `UPDATE detalle_comisiones dc INNER JOIN comisiones c ON c.id_comision = dc.comision_id
-         SET dc.estado = 0 WHERE c.servicio_id = ?`, [servicioId]
+        `UPDATE detalle_comisiones dc SET estado = 0 FROM comisiones c WHERE c.id_comision = dc.comision_id AND c.servicio_id = ?`, [servicioId]
       );
 
       if (habitacionId) {
@@ -158,16 +157,16 @@ export async function getAllServicios(params: {
     }
 
     const sql = `
-      SELECT 
+      SELECT
         s.id_servicio, s.codigo, s.cliente_id, s.habitacion_id, s.precio_habitacion,
         s.precio_servicio, s.iva, s.sub_total, s.total, s.tiempo, s.metodo_pago,
         s.caja_id, s.created_by, s.estado, s.es_temporal, s.servicio_original_id,
         s.fecha_crea, s.fecha_mod, s.pagos_mixtos,
         h.nombre as habitacion_numero, h.comision_anfitriona as habitacion_comision,
         cu.nick as creator_nick, cu.nombre as creator_nombre, cu.apellido as creator_apellido, cu.foto as creator_foto,
-        CONCAT(cl.nombre, ' ', cl.apellido) as cliente_nombre,
-        GROUP_CONCAT(DISTINCT u.nick SEPARATOR ', ') as anfitrionas_nombres,
-        GROUP_CONCAT(DISTINCT u.id_usuario SEPARATOR ',') as anfitrionas_ids
+        (CAST(cl.nombre AS text) || CAST(' ' AS text) || CAST(cl.apellido AS text)) as cliente_nombre,
+        STRING_AGG(DISTINCT u.nick, ', ') as anfitrionas_nombres,
+        STRING_AGG(DISTINCT u.id_usuario, ',') as anfitrionas_ids
       FROM servicios s
       LEFT JOIN habitaciones h ON h.id_habitacion = s.habitacion_id
       LEFT JOIN usuarios cu ON cu.id_usuario = s.created_by
@@ -175,7 +174,7 @@ export async function getAllServicios(params: {
       LEFT JOIN detalle_servicios ds ON ds.servicio_id = s.id_servicio
       LEFT JOIN usuarios u ON u.id_usuario = ds.usuario_id
       ${where}
-      GROUP BY s.id_servicio
+      GROUP BY s.id_servicio, h.id_habitacion, cl.id_cliente, cu.id_usuario
       ORDER BY s.fecha_crea DESC
       LIMIT ? OFFSET ?
     `;
@@ -300,7 +299,7 @@ export async function updateServicioStatus(
       } else if (estadoAnterior === 3 && estado === 2) {
         if (prev[0].paused_at) {
           await trx(
-            `UPDATE ${TABLE} SET fecha_crea = DATE_ADD(fecha_crea, INTERVAL TIMESTAMPDIFF(SECOND, paused_at, ?) SECOND), paused_at = NULL WHERE ${ID_COL} = ?`,
+            `UPDATE ${TABLE} SET fecha_crea = (CAST(fecha_crea AS timestamp) + make_interval(secs => CAST(TRUNC(EXTRACT(EPOCH FROM (CAST(? AS timestamp) - CAST(paused_at AS timestamp))) / 1) AS double precision))), paused_at = NULL WHERE ${ID_COL} = ?`,
             [now, id]
           );
           await addServicioLog(id, 'REANUDACION', 'Servicio reanudado manualmente.', userId);
@@ -354,13 +353,13 @@ export async function getServiciosByDates(
 export async function getServiciosByUser(userId: string): Promise<any[]> {
   try {
     return await query<any[]>(
-      `SELECT 
-        s.id_servicio, s.codigo, s.tiempo, s.fecha_crea, s.precio_servicio, 
+      `SELECT
+        s.id_servicio, s.codigo, s.tiempo, s.fecha_crea, s.precio_servicio,
         s.precio_habitacion, s.total, s.metodo_pago, s.estado,
         ds.comision as comision_usuario,
         h.nombre as habitacion, h.comision_anfitriona as habitacion_comision,
-        COALESCE(CONCAT(c.nombre, ' ', c.apellido), 'Sin cliente registrado') as cliente,
-        GROUP_CONCAT(DISTINCT COALESCE(u.nick, CONCAT(u.nombre, ' ', u.apellido)) SEPARATOR ', ') as anfitriona,
+        COALESCE((CAST(c.nombre AS text) || CAST(' ' AS text) || CAST(c.apellido AS text)), 'Sin cliente registrado') as cliente,
+        STRING_AGG(DISTINCT COALESCE(u.nick, (CAST(u.nombre AS text) || CAST(' ' AS text) || CAST(u.apellido AS text))), ', ') as anfitriona,
         cu.nick as creado_por
        FROM servicios s
        INNER JOIN detalle_servicios ds ON s.id_servicio = ds.servicio_id AND ds.usuario_id = ?
@@ -369,7 +368,7 @@ export async function getServiciosByUser(userId: string): Promise<any[]> {
        LEFT JOIN detalle_servicios ds2 ON ds2.servicio_id = s.id_servicio
        LEFT JOIN usuarios u ON u.id_usuario = ds2.usuario_id
        LEFT JOIN usuarios cu ON cu.id_usuario = s.created_by
-       GROUP BY s.id_servicio, ds.comision
+       GROUP BY s.id_servicio, ds.comision, h.id_habitacion, c.id_cliente, cu.id_usuario
        ORDER BY s.fecha_crea DESC`,
       [userId]
     );
@@ -384,14 +383,13 @@ export async function getServicioById(id: string): Promise<ServiceType | null> {
     const res = await query<any[]>(
       `SELECT s.*, h.nombre as habitacion_name, cl.nombre as cliente_name,
               cu.nick as creator_nick, cu.nombre as creator_nombre, cu.apellido as creator_apellido, cu.foto as creator_foto,
-              GROUP_CONCAT(DISTINCT 
-                CASE 
+              STRING_AGG(DISTINCT
+                CASE
                   WHEN u.nick IS NOT NULL AND u.nick != '' THEN u.nick
-                  ELSE CONCAT(u.nombre, ' ', u.apellido)
-                END 
-                SEPARATOR ', '
+                  ELSE (CAST(u.nombre AS text) || CAST(' ' AS text) || CAST(u.apellido AS text))
+                END, ', '
               ) as anfitrionas,
-              GROUP_CONCAT(DISTINCT u.id_usuario SEPARATOR ',') as anfitrionas_ids
+              STRING_AGG(DISTINCT u.id_usuario, ',') as anfitrionas_ids
        FROM servicios s
        LEFT JOIN habitaciones h ON s.habitacion_id = h.id_habitacion
        LEFT JOIN clientes cl ON s.cliente_id = cl.id_cliente
@@ -399,7 +397,7 @@ export async function getServicioById(id: string): Promise<ServiceType | null> {
        LEFT JOIN detalle_servicios ds ON s.id_servicio = ds.servicio_id
        LEFT JOIN usuarios u ON u.id_usuario = ds.usuario_id
        WHERE s.id_servicio = ?
-       GROUP BY s.id_servicio`,
+       GROUP BY s.id_servicio, h.id_habitacion, cl.id_cliente, cu.id_usuario`,
       [id]
     );
     return res.length > 0 ? mapServiceFromDB(res[0]) : null;

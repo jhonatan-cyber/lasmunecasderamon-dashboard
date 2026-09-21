@@ -1,11 +1,11 @@
 ﻿/* eslint-disable no-console */
 require('../../../scripts/guard-local-db')();
-const mysql = require('mysql2/promise');
+const postgres = require('../../../scripts/postgres-test-client.cjs');
 const crypto = require('crypto');
 require('dotenv').config();
 
 const queryMock = async (sql, params = []) => {
-  const connection = await mysql.createConnection({
+  const connection = await postgres.createConnection({
     host: process.env.DB_HOST,
     user: process.env.DB_USER,
     password: process.env.DB_PASSWORD,
@@ -27,7 +27,7 @@ const BaseRepository = {
     const values = Object.values(data);
     const placeholders = keys.map(() => '?').join(', ');
     const sql = `INSERT INTO ${table} (${keys.join(', ')}) VALUES (${placeholders})`;
-    const connection = await mysql.createConnection({
+    const connection = await postgres.createConnection({
       host: process.env.DB_HOST,
       user: process.env.DB_USER,
       password: process.env.DB_PASSWORD,
@@ -42,7 +42,7 @@ const BaseRepository = {
 };
 
 const withTransaction = async callback => {
-  const connection = await mysql.createConnection({
+  const connection = await postgres.createConnection({
     host: process.env.DB_HOST,
     user: process.env.DB_USER,
     password: process.env.DB_PASSWORD,
@@ -85,11 +85,11 @@ class TipRepository {
 
     const sql = `
       SELECT U.id_usuario, U.nick, CONCAT(U.nombre, ' ', U.apellido) AS nombre_completo,
-             MAX(COALESCE(V.fecha_crea, P.fecha_crea)) AS fecha_crea, 
+             MAX(COALESCE(V.fecha_crea, P.fecha_crea)) AS fecha_crea,
              SUM(DP.monto) AS total_propinas,
              SUM(CASE WHEN DP.estado = 1 THEN DP.monto ELSE 0 END) AS propinas_pendientes,
              SUM(CASE WHEN DP.estado = 0 THEN DP.monto ELSE 0 END) AS propinas_cobradas
-      FROM propinas P 
+      FROM propinas P
       INNER JOIN detalle_propinas DP ON DP.propina_id = P.id_propina
       INNER JOIN usuarios U ON U.id_usuario = DP.usuario_id
       LEFT JOIN ventas V ON V.id_venta = P.venta_id
@@ -100,11 +100,11 @@ class TipRepository {
 
   static async getByUser(userId) {
     const sql = `
-      SELECT P.id_propina AS propina_id, DP.id_detalle_propina, P.fecha_crea AS fecha_hora, 
-             COALESCE(V.fecha_crea, P.fecha_crea) AS fecha_crea, 
+      SELECT P.id_propina AS propina_id, DP.id_detalle_propina, P.fecha_crea AS fecha_hora,
+             COALESCE(V.fecha_crea, P.fecha_crea) AS fecha_crea,
              V.codigo AS codigo_venta, DP.monto, V.id_venta AS venta_id,
              DP.estado, CASE WHEN DP.estado = 1 THEN 'Por pagar' ELSE 'Pagado' END AS estado_texto
-      FROM propinas P 
+      FROM propinas P
       INNER JOIN detalle_propinas DP ON DP.propina_id = P.id_propina
       LEFT JOIN ventas V ON V.id_venta = P.venta_id
       WHERE DP.usuario_id = ? ORDER BY COALESCE(V.fecha_crea, P.fecha_crea) DESC
@@ -117,7 +117,7 @@ class TipRepository {
       SELECT DISTINCT u.id_usuario FROM logins l
       INNER JOIN usuarios u ON u.id_usuario = l.usuario_id
       INNER JOIN roles r ON r.id_rol = u.rol_id
-      WHERE l.estado = 1 AND l.en_local = 1 AND u.estado = 1 AND r.nombre IN ('cajero', 'garzon')
+      WHERE l.estado = 1 AND l.en_local = 1 AND u.estado = 1 AND LOWER(r.nombre) IN ('cajero', 'garzon')
     `);
 
     if (logueados.length === 0) throw new Error('No hay usuarios logueados disponibles');
@@ -163,7 +163,7 @@ async function runTests() {
   console.log('--- INICIANDO PRUEBAS UNITARIAS: TIP REPOSITORY ---');
 
   try {
-    const users = await queryMock('SELECT id_usuario, nick FROM usuarios WHERE estado = 1 LIMIT 1');
+    const users = await queryMock("SELECT u.id_usuario, u.nick FROM usuarios u JOIN roles r ON r.id_rol = u.rol_id WHERE u.estado = 1 AND LOWER(r.nombre) IN ('cajero', 'garzon') LIMIT 1");
     if (users.length === 0) throw new Error('No hay usuarios activos para probar');
     const user = users[0];
     console.log(`OK: Usando usuario para pruebas: ${user.nick} (${user.id_usuario})`);
@@ -171,7 +171,7 @@ async function runTests() {
     console.log('PRUEBA 1: register()');
 
     const loginCheck = await queryMock(
-      "SELECT l.id_login FROM logins l INNER JOIN usuarios u ON u.id_usuario = l.usuario_id INNER JOIN roles r ON r.id_rol = u.rol_id WHERE l.estado = 1 AND l.en_local = 1 AND r.nombre IN ('cajero', 'garzon') LIMIT 1"
+      "SELECT l.id_login FROM logins l INNER JOIN usuarios u ON u.id_usuario = l.usuario_id INNER JOIN roles r ON r.id_rol = u.rol_id WHERE l.estado = 1 AND l.en_local = 1 AND LOWER(r.nombre) IN ('cajero', 'garzon') LIMIT 1"
     );
 
     if (loginCheck.length === 0) {
@@ -183,10 +183,9 @@ async function runTests() {
       await BaseRepository.insert('logins', {
         id_login: generateUUID(),
         usuario_id: userId,
-        fecha_login: new Date(),
+        last_login: new Date(),
         estado: 1,
-        en_local: 1,
-        token: 'test-token'
+        en_local: 1
       });
     }
 

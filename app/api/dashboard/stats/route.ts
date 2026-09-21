@@ -10,12 +10,17 @@ export const GET = withRoute({ auth: true, audit: true }, async () => {
     async () => {
       const now = getNowInBusinessTimezone();
       const currentMonth = now.substring(0, 7);
+      const [y, m] = currentMonth.split('-').map(Number);
+      const nextMonthStart =
+        m === 12
+          ? `${y + 1}-01-01`
+          : `${y}-${String(m + 1).padStart(2, '0')}-01`;
 
       const statsResult = await query<any[]>(
-        `SELECT COUNT(*) as totalVentas, COALESCE(SUM(total), 0) as totalIngresos
+        `SELECT COUNT(*) AS "totalVentas", COALESCE(SUM(total), 0) AS "totalIngresos"
          FROM ventas
          WHERE DATE(fecha_crea) >= ? AND DATE(fecha_crea) < ?`,
-        [`${currentMonth}-01`, `${currentMonth}-31`]
+        [`${currentMonth}-01`, nextMonthStart]
       );
       const stats = statsResult[0] || { totalVentas: 0, totalIngresos: 0 };
       const weeklyIncome = await getWeeklyIncome(now);

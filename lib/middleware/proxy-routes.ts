@@ -90,6 +90,8 @@ export const routePermissions: Record<string, { module: string; action: string }
   '/users': { module: 'users', action: 'view' },
   '/clients': { module: 'clients', action: 'view' },
   '/products': { module: 'products', action: 'view' },
+  '/inventory': { module: 'products', action: 'view' },
+  '/bar': { module: 'products', action: 'view' },
   '/categories': { module: 'categories', action: 'view' },
   '/orders': { module: 'orders', action: 'view' },
   '/sales': { module: 'sales', action: 'view' },

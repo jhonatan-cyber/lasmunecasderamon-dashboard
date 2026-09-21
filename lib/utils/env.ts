@@ -1,4 +1,4 @@
-import { z } from 'zod';
+﻿import { z } from 'zod';
 import { logger } from './logger';
 
 export interface EntropyValidationResult {
@@ -157,10 +157,10 @@ if (
 const envSchema = z.object({
   NODE_ENV: z.enum(['development', 'production', 'test']).default('development'),
   DB_HOST: z.string().default('127.0.0.1'),
-  DB_USER: z.string().default('root'),
+  DB_USER: z.string().default('postgres'),
   DB_PASSWORD: z.string().default(''),
   DB_NAME: z.string().default('lasmunecasderamon'),
-  DB_PORT: z.coerce.number().default(3306),
+  DB_PORT: z.coerce.number().default(5432),
   JWT_SECRET: z.string().min(8, 'JWT_SECRET debe tener al menos 8 caracteres'),
   JWT_REFRESH_SECRET: z.string().min(8, 'JWT_REFRESH_SECRET debe tener al menos 8 caracteres').default(process.env.JWT_SECRET || ''),
   TWILIO_ACCOUNT_SID: z.string().optional(),
@@ -173,9 +173,9 @@ const envSchema = z.object({
 const _env = envSchema.safeParse(process.env);
 
 if (!_env.success) {
-  logger.error('Error de validación en variables de entorno:', _env.error.format());
+  logger.error('Error de validaciÃ³n en variables de entorno:', _env.error.format());
 
-  throw new Error('Variables de entorno inválidas');
+  throw new Error('Variables de entorno invÃ¡lidas');
 }
 
 export const env = _env.data;

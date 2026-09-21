@@ -113,26 +113,27 @@ jobs:
   integration:
     runs-on: ubuntu-latest
     services:
-      mariadb:
-        image: mariadb:11.4.4
+      postgres:
+        image: postgres:18
         env:
-          MARIADB_ROOT_PASSWORD: ''
-          MARIADB_ALLOW_EMPTY_ROOT_PASSWORD: 'yes'
-          MARIADB_DATABASE: lasmunecasderamon
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres_ci
+          POSTGRES_DB: lasmunecasderamon_test
         ports:
-          - 3306:3306
+          - 5432:5432
         options: >-
-          --health-cmd="healthcheck.sh --connect --innodb_initialized"
-          --health-interval=10s
+          --health-cmd="pg_isready -U postgres -d lasmunecasderamon_test"
+          --health-interval=5s
           --health-timeout=5s
-          --health-retries=5
-          --command="mariadbd --sql-mode=ERROR_FOR_DIVISION_BY_ZERO,NO_AUTO_CREATE_USER,NO_ENGINE_SUBSTITUTION --character-set-server=utf8mb4 --collation-server=utf8mb4_unicode_ci"
+          --health-retries=10
     env:
       DB_HOST: 127.0.0.1
-      DB_PORT: '3306'
-      DB_USER: root
-      DB_PASSWORD: ''
-      DB_NAME: lasmunecasderamon
+      DB_PORT: '5432'
+      DB_USER: postgres
+      DB_PASSWORD: postgres_ci
+      DB_NAME: lasmunecasderamon_test
+      JWT_SECRET: test-secret
+      JWT_REFRESH_SECRET: test-refresh-secret
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
@@ -154,32 +155,37 @@ jobs:
       - name: Setup database
         run: node scripts/ci-setup-db.js
 
+      - name: PostgreSQL repositories and maintenance
+        run: pnpm test:postgres
+        env:
+          JWT_SECRET: test-secret
+          JWT_REFRESH_SECRET: test-refresh-secret
+
       - name: Integration tests (legacy-db + flows)
         run: pnpm test:integration:all
 
   e2e:
     runs-on: ubuntu-latest
     services:
-      mariadb:
-        image: mariadb:11.4.4
+      postgres:
+        image: postgres:18
         env:
-          MARIADB_ROOT_PASSWORD: ''
-          MARIADB_ALLOW_EMPTY_ROOT_PASSWORD: 'yes'
-          MARIADB_DATABASE: lasmunecasderamon
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres_ci
+          POSTGRES_DB: lasmunecasderamon_test
         ports:
-          - 3306:3306
+          - 5432:5432
         options: >-
-          --health-cmd="healthcheck.sh --connect --innodb_initialized"
-          --health-interval=10s
+          --health-cmd="pg_isready -U postgres -d lasmunecasderamon_test"
+          --health-interval=5s
           --health-timeout=5s
-          --health-retries=5
-          --command="mariadbd --sql-mode=ERROR_FOR_DIVISION_BY_ZERO,NO_AUTO_CREATE_USER,NO_ENGINE_SUBSTITUTION --character-set-server=utf8mb4 --collation-server=utf8mb4_unicode_ci"
+          --health-retries=10
     env:
       DB_HOST: 127.0.0.1
-      DB_PORT: '3306'
-      DB_USER: root
-      DB_PASSWORD: ''
-      DB_NAME: lasmunecasderamon
+      DB_PORT: '5432'
+      DB_USER: postgres
+      DB_PASSWORD: postgres_ci
+      DB_NAME: lasmunecasderamon_test
       JWT_SECRET: ${{ secrets.JWT_SECRET || 'test-secret' }}
       JWT_REFRESH_SECRET: ${{ secrets.JWT_REFRESH_SECRET || 'test-refresh-secret' }}
       NEXT_PUBLIC_BASE_URL: ${{ secrets.NEXT_PUBLIC_BASE_URL || 'http://localhost:3000' }}

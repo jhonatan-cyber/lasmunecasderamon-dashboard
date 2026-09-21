@@ -1,13 +1,13 @@
 ﻿/* eslint-disable no-console */
 require('../../scripts/guard-local-db')();
-const mysql = require('mysql2/promise');
+const postgres = require('../../scripts/postgres-test-client.cjs');
 const crypto = require('crypto');
 require('dotenv').config();
 
 async function runFinanceCashFlowTest() {
   console.log('--- INICIANDO PRUEBA DE INTEGRACIÓN: Finanzas y Caja ---');
 
-  const connection = await mysql.createConnection({
+  const connection = await postgres.createConnection({
     host: process.env.DB_HOST,
     user: process.env.DB_USER,
     password: process.env.DB_PASSWORD,
@@ -25,7 +25,7 @@ async function runFinanceCashFlowTest() {
     const cajaId = crypto.randomUUID();
     const now = new Date();
     await connection.execute(
-      'INSERT INTO cajas (id_caja, fecha_apertura, usuario_id_apertura, monto_apertura, estado) VALUES (?, ?, ?, ?, ?)',
+      'INSERT INTO cajas (id_caja, fecha_apertura, usuario_id_apertura, monto_apertura, estado, efectivo, tarjeta, transferencia, monto_cierre) VALUES (?, ?, ?, ?, ?, 0, 0, 0, 0)',
       [cajaId, now, userId, 100000, 1]
     );
 

@@ -148,7 +148,7 @@ const SIDEBAR_SECTIONS: SidebarSection[] = [
         fallbackAction: 'view'
       },
       {
-        name: 'Productos',
+        name: 'Catálogo de productos',
         href: '/products',
         icon: Package,
         module: 'productos',

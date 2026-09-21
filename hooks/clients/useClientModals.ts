@@ -5,6 +5,7 @@ import { Client } from '@/types/client';
 import { toast } from 'sonner';
 import { usePrepagoForm } from '@/hooks/personal';
 import { formatNumberInput } from '@/lib/utils/formatters';
+import { useAuth } from '@/contexts/AuthContext';
 
 const CLIENT_EMPTY = { run: '', name: '', lastName: '', phone: '' };
 
@@ -15,6 +16,7 @@ type PrepagoMixedPayment = {
 };
 
 export function useClientModals() {
+  const { user } = useAuth();
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isDetailsOpen, setIsDetailsOpen] = useState(false);
   const [isEditMode, setIsEditMode] = useState(false);
@@ -27,6 +29,12 @@ export function useClientModals() {
   const [prepagoPaymentMethod, setPrepagoPaymentMethod] = useState('efectivo');
   const [prepagoMixedPayments, setPrepagoMixedPayments] = useState<PrepagoMixedPayment[]>([]);
   const [isPrepagoAmountManual, setIsPrepagoAmountManual] = useState(false);
+  const [isDevolucionModalOpen, setIsDevolucionModalOpen] = useState(false);
+  const [devolucionClient, setDevolucionClient] = useState<Client | null>(null);
+  const [devolucionAmount, setDevolucionAmount] = useState('');
+  const [devolucionPaymentMethod, setDevolucionPaymentMethod] = useState('transferencia');
+  const [devolucionMotivo, setDevolucionMotivo] = useState('');
+  const [devolucionSubmitting, setDevolucionSubmitting] = useState(false);
 
   const {
     amount: prepagoAmount,
@@ -251,6 +259,85 @@ export function useClientModals() {
     ]
   );
 
+  const openDevolucionModal = useCallback(
+    (client: Client) => {
+      setDevolucionClient(client);
+      setDevolucionAmount('');
+      setDevolucionPaymentMethod('transferencia');
+      setDevolucionMotivo('');
+      setIsDevolucionModalOpen(true);
+    },
+    []
+  );
+
+  const closeDevolucionModal = useCallback(() => {
+    setIsDevolucionModalOpen(false);
+    setDevolucionClient(null);
+    setDevolucionAmount('');
+    setDevolucionPaymentMethod('transferencia');
+    setDevolucionMotivo('');
+  }, []);
+
+  const handleDevolucionSubmit = useCallback(
+    async (
+      e: React.FormEvent,
+      onSuccess?: (clientId: string | number, nuevoSaldo: number) => void
+    ) => {
+      e.preventDefault();
+      if (!devolucionClient || !devolucionAmount) return false;
+      const monto = Number(String(devolucionAmount).replace(/\./g, '')) || 0;
+      if (monto <= 0) {
+        toast.error('Monto invalido');
+        return false;
+      }
+      if (monto > Number(devolucionClient.saldo || 0)) {
+        toast.error('Saldo insuficiente para la devolucion');
+        return false;
+      }
+      const isCajero = user?.role?.toLowerCase().includes('cajero') || user?.role?.toLowerCase().includes('cajera');
+      const endpoint = isCajero ? '/api/clients/devolucion/recordatorio' : '/api/clients/devolucion';
+      setDevolucionSubmitting(true);
+      try {
+        const response = await fetch(endpoint, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            cliente_id: devolucionClient.id,
+            monto,
+            metodo_pago: devolucionPaymentMethod,
+            motivo: devolucionMotivo
+          })
+        });
+        const data = await response.json();
+        if (data.success) {
+          if (isCajero) {
+            toast.success('Recordatorio enviado al administrador por WhatsApp');
+          } else {
+            toast.success('Devolucion realizada correctamente');
+            onSuccess?.(devolucionClient.id, Number(devolucionClient.saldo || 0) - monto);
+          }
+          closeDevolucionModal();
+          return true;
+        }
+        toast.error(data.message || 'Error al realizar devolucion');
+        return false;
+      } catch {
+        toast.error('Error al procesar la solicitud');
+        return false;
+      } finally {
+        setDevolucionSubmitting(false);
+      }
+    },
+    [
+      closeDevolucionModal,
+      devolucionAmount,
+      devolucionClient,
+      devolucionMotivo,
+      devolucionPaymentMethod,
+      user
+    ]
+  );
+
   return {
     isModalOpen,
     setIsModalOpen,
@@ -276,11 +363,25 @@ export function useClientModals() {
     prepagoSubmitting,
     closePrepagoModal,
 
+    isDevolucionModalOpen,
+    setIsDevolucionModalOpen,
+    devolucionClient,
+    devolucionAmount,
+    setDevolucionAmount,
+    devolucionPaymentMethod,
+    setDevolucionPaymentMethod,
+    devolucionMotivo,
+    setDevolucionMotivo,
+    devolucionSubmitting,
+    closeDevolucionModal,
+
     openCreateModal,
     openEditModal,
     openDetailsModal,
     openPrepagoModal,
-    handlePrepagoSubmit
+    handlePrepagoSubmit,
+    openDevolucionModal,
+    handleDevolucionSubmit
   };
 }
 

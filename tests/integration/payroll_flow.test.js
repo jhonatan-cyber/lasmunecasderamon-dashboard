@@ -1,13 +1,13 @@
 ﻿/* eslint-disable no-console */
 require('../../scripts/guard-local-db')();
-const mysql = require('mysql2/promise');
+const postgres = require('../../scripts/postgres-test-client.cjs');
 const crypto = require('crypto');
 require('dotenv').config();
 
 async function runPayrollIntegrationTest() {
   console.log('--- INICIANDO PRUEBA DE INTEGRACIÓN: Flujo de Pagos (Payroll) ---');
 
-  const connection = await mysql.createConnection({
+  const connection = await postgres.createConnection({
     host: process.env.DB_HOST,
     user: process.env.DB_USER,
     password: process.env.DB_PASSWORD,
@@ -51,14 +51,14 @@ async function runPayrollIntegrationTest() {
 
     console.log('\n[2] Verificando resumen de planilla...');
     const PAYROLL_SQL = `
-            SELECT U.id_usuario, 
-                   (IFNULL(ASIS.asistencias * U.sueldo, 0) + IFNULL(HR.total_monto_horas, 0) - IFNULL(ANT.total_anticipos, 0)) AS total
+            SELECT U.id_usuario,
+                   (COALESCE(ASIS.asistencias * U.sueldo, 0) + COALESCE(HR.total_monto_horas, 0) - COALESCE(ANT.total_anticipos, 0)) AS total
             FROM usuarios U
             LEFT JOIN (SELECT usuario_id, COUNT(*) AS asistencias FROM asistencias WHERE estado = 1 GROUP BY usuario_id) AS ASIS ON ASIS.usuario_id = U.id_usuario
             LEFT JOIN (SELECT usuario_id, SUM(total) AS total_monto_horas FROM horas_extras WHERE estado = 1 GROUP BY usuario_id) AS HR ON HR.usuario_id = U.id_usuario
             LEFT JOIN (SELECT usuario_id, SUM(monto) AS total_anticipos FROM anticipos WHERE estado = 1 GROUP BY usuario_id) AS ANT ON ANT.usuario_id = U.id_usuario
             WHERE U.id_usuario = ?
-            GROUP BY U.id_usuario`;
+            `;
 
     const [summary] = await connection.execute(PAYROLL_SQL, [userId]);
     console.log('Fila de resumen encontrada:', JSON.stringify(summary[0], null, 2));

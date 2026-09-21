@@ -57,7 +57,7 @@ export class UserRepository {
 
     if (params?.search) {
       where +=
-        ' AND (u.nombre LIKE ? OR u.apellido LIKE ? OR u.nick LIKE ? OR u.run LIKE ? OR u.email LIKE ?)';
+        ' AND (u.nombre ILIKE ? OR u.apellido ILIKE ? OR u.nick ILIKE ? OR u.run ILIKE ? OR u.email ILIKE ?)';
       const search = `%${params.search}%`;
       sqlParams.push(search, search, search, search, search);
     }
@@ -108,8 +108,8 @@ export class UserRepository {
     try {
       const results = await query<any[]>(
       `
-      SELECT u.*, r.nombre as rol_nombre, r.id_rol 
-      FROM usuarios u 
+      SELECT u.*, r.nombre as rol_nombre, r.id_rol
+      FROM usuarios u
       LEFT JOIN roles r ON u.rol_id = r.id_rol
       WHERE u.id_usuario = ?
     `,
@@ -247,11 +247,11 @@ export class UserRepository {
   static async getStaff(): Promise<UserType[]> {
     try {
       const results = await query<any[]>(`
-      SELECT 
+      SELECT
         U.*, R.nombre as rol_nombre, R.id_rol
       FROM usuarios U
       INNER JOIN roles R ON R.id_rol = U.rol_id
-      WHERE U.estado = 1 
+      WHERE U.estado = 1
       AND (LOWER(R.nombre) LIKE '%garzon%' OR LOWER(R.nombre) LIKE '%mesero%' OR LOWER(R.nombre) LIKE '%cajero%' OR LOWER(R.nombre) LIKE '%anfitriona%')
       ORDER BY U.nombre, U.apellido
     `);

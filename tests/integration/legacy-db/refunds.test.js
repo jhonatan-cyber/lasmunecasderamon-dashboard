@@ -1,11 +1,11 @@
 ﻿/* eslint-disable no-console */
 require('../../../scripts/guard-local-db')();
-const mysql = require('mysql2/promise');
+const postgres = require('../../../scripts/postgres-test-client.cjs');
 const crypto = require('crypto');
 require('dotenv').config();
 
 const queryMock = async (sql, params = []) => {
-  const connection = await mysql.createConnection({
+  const connection = await postgres.createConnection({
     host: process.env.DB_HOST,
     user: process.env.DB_USER,
     password: process.env.DB_PASSWORD,
@@ -27,7 +27,7 @@ const BaseRepository = {
     const values = Object.values(data);
     const setClause = keys.map(k => `${k} = ?`).join(', ');
     const sql = `UPDATE ${table} SET ${setClause} WHERE ${idCol} = ?`;
-    const connection = await mysql.createConnection({
+    const connection = await postgres.createConnection({
       host: process.env.DB_HOST,
       user: process.env.DB_USER,
       password: process.env.DB_PASSWORD,
@@ -44,7 +44,7 @@ const BaseRepository = {
     const values = Object.values(data);
     const placeholders = keys.map(() => '?').join(', ');
     const sql = `INSERT INTO ${table} (${keys.join(', ')}) VALUES (${placeholders})`;
-    const connection = await mysql.createConnection({
+    const connection = await postgres.createConnection({
       host: process.env.DB_HOST,
       user: process.env.DB_USER,
       password: process.env.DB_PASSWORD,
@@ -71,7 +71,7 @@ class SaleRepository {
     const token = generateUUID();
     await queryMock(
       `
-            INSERT INTO solicitudes_anulacion (id, venta_id, token, motivo, solicitado_por, estado, fecha_solicitud)
+            INSERT INTO solicitudes_anulacion_ventas (id, venta_id, token, motivo, solicitado_por, estado, fecha_solicitud)
             VALUES (?, ?, ?, ?, ?, 'pendiente', NOW())
         `,
       [idAnul, id, token, reason, requestedByNick]
@@ -83,7 +83,7 @@ class SaleRepository {
     const dbStatus = status === 'aprobado' ? 'confirmada' : 'rechazada';
 
     if (dbStatus === 'confirmada') {
-      const req = await queryMock('SELECT venta_id FROM solicitudes_anulacion WHERE id = ?', [
+      const req = await queryMock('SELECT venta_id FROM solicitudes_anulacion_ventas WHERE id = ?', [
         requestId
       ]);
       if (req.length > 0) {
@@ -101,7 +101,7 @@ class SaleRepository {
         }
       }
     }
-    await queryMock('UPDATE solicitudes_anulacion SET estado = ? WHERE id = ?', [
+    await queryMock('UPDATE solicitudes_anulacion_ventas SET estado = ? WHERE id = ?', [
       dbStatus,
       requestId
     ]);
@@ -170,6 +170,7 @@ async function testRefunds() {
     testData.saleId = generateUUID();
     await BaseRepository.insert(null, 'ventas', {
       id_venta: testData.saleId,
+      codigo: testData.saleId.slice(0, 8), propina: 0, sub_total: 0, metodo_pago: 'efectivo',
       habitacion_id: testData.habitId,
       total: 100,
       estado: 1,
@@ -196,6 +197,7 @@ async function testRefunds() {
 
     await BaseRepository.insert(null, 'ventas', {
       id_venta: salePrepagoId,
+      codigo: salePrepagoId.slice(0, 8), propina: 0, sub_total: 0, metodo_pago: 'efectivo',
       cliente_id: testData.clientId,
       total: 50,
       estado: 1,
@@ -231,6 +233,7 @@ async function testRefunds() {
     testData.serviceId = generateUUID();
     await BaseRepository.insert(null, 'servicios', {
       id_servicio: testData.serviceId,
+      codigo: testData.serviceId.slice(0, 8), precio_habitacion: 0, precio_servicio: 0, sub_total: 0, tiempo: 0, metodo_pago: 'efectivo',
       habitacion_id: testData.habitId,
       total: 200,
       estado: 1,
@@ -250,6 +253,7 @@ async function testRefunds() {
     const serviceId2 = generateUUID();
     await BaseRepository.insert(null, 'servicios', {
       id_servicio: serviceId2,
+      codigo: serviceId2.slice(0, 8), precio_habitacion: 0, precio_servicio: 0, sub_total: 0, tiempo: 0, metodo_pago: 'efectivo',
       habitacion_id: testData.habitId,
       total: 150,
       estado: 1,
@@ -279,7 +283,7 @@ async function testRefunds() {
     if (testData.serviceId)
       await queryMock('DELETE FROM servicios WHERE id_servicio = ?', [testData.serviceId]);
     if (testData.requestIdSale)
-      await queryMock('DELETE FROM solicitudes_anulacion WHERE id = ?', [testData.requestIdSale]);
+      await queryMock('DELETE FROM solicitudes_anulacion_ventas WHERE id = ?', [testData.requestIdSale]);
     if (testData.requestIdService)
       await queryMock('DELETE FROM solicitudes_anulacion_servicios WHERE id = ?', [
         testData.requestIdService

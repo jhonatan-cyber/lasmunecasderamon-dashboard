@@ -174,6 +174,8 @@ describe('procesarPrepago', () => {
       .fn()
       .mockResolvedValueOnce([{ saldo: 2000 }])
       .mockResolvedValueOnce([])
+      .mockResolvedValueOnce([])
+      .mockResolvedValueOnce([{ saldo: 0 }])
       .mockResolvedValueOnce([]);
 
     const result = await procesarPrepago(trx as any, {
@@ -182,6 +184,7 @@ describe('procesarPrepago', () => {
       prepagoSolicitado: null
     });
     expect(result).toBe(2000);
+    expect(trx.mock.calls[4][0]).toContain('UPDATE cuentas');
   });
 
   it('descuenta el total si prepagoSolicitado es null y saldo >= total', async () => {
@@ -189,7 +192,8 @@ describe('procesarPrepago', () => {
       .fn()
       .mockResolvedValueOnce([{ saldo: 10000 }])
       .mockResolvedValueOnce([])
-      .mockResolvedValueOnce([]);
+      .mockResolvedValueOnce([])
+      .mockResolvedValueOnce([{ saldo: 5000 }]);
 
     const result = await procesarPrepago(trx as any, {
       ...baseParams,
@@ -204,7 +208,8 @@ describe('procesarPrepago', () => {
       .fn()
       .mockResolvedValueOnce([{ saldo: 10000 }])
       .mockResolvedValueOnce([])
-      .mockResolvedValueOnce([]);
+      .mockResolvedValueOnce([])
+      .mockResolvedValueOnce([{ saldo: 7000 }]);
 
     const result = await procesarPrepago(trx as any, { ...baseParams, prepagoSolicitado: 3000 });
     expect(result).toBe(3000);
@@ -231,11 +236,12 @@ describe('procesarPrepago', () => {
       .fn()
       .mockResolvedValueOnce([{ saldo: 5000 }])
       .mockResolvedValueOnce([])
-      .mockResolvedValueOnce([]);
+      .mockResolvedValueOnce([])
+      .mockResolvedValueOnce([{ saldo: 3000 }]);
 
     await procesarPrepago(trx as any, { ...baseParams, prepagoSolicitado: 2000 });
 
-    expect(trx).toHaveBeenCalledTimes(3);
+    expect(trx).toHaveBeenCalledTimes(4);
     expect(trx.mock.calls[1][0]).toContain('UPDATE clientes');
     expect(trx.mock.calls[2][0]).toContain('INSERT INTO clientes_prepago_movimientos');
   });

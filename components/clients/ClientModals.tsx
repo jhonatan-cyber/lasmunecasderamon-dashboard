@@ -3,6 +3,7 @@
 import { ClientFormModal } from './ClientFormModal';
 import { ClientDetailsModal } from './ClientDetailsModal';
 import { PrepagoModal } from './PrepagoModal';
+import { DevolucionModal } from './DevolucionModal';
 import { Client } from '@/types/client';
 import { type ClientFormValues } from '@/hooks/personal';
 
@@ -40,6 +41,18 @@ interface ClientModalsProps {
   ) => void;
   onPrepagoSubmit: (e: React.FormEvent) => Promise<boolean>;
   isPrepagoSubmitting: boolean;
+
+  isDevolucionModalOpen: boolean;
+  onDevolucionModalChange: (open: boolean) => void;
+  devolucionClient: Client | null;
+  devolucionAmount: string;
+  onDevolucionAmountChange: (amount: string) => void;
+  devolucionPaymentMethod: string;
+  onDevolucionPaymentMethodChange: (method: string) => void;
+  devolucionMotivo: string;
+  onDevolucionMotivoChange: (motivo: string) => void;
+  onDevolucionSubmit: (e: React.FormEvent) => Promise<boolean>;
+  isDevolucionSubmitting: boolean;
 }
 
 export function ClientModals({
@@ -65,7 +78,19 @@ export function ClientModals({
   prepagoMixedPayments,
   onPrepagoMixedPaymentsChange,
   onPrepagoSubmit,
-  isPrepagoSubmitting
+  isPrepagoSubmitting,
+
+  isDevolucionModalOpen,
+  onDevolucionModalChange,
+  devolucionClient,
+  devolucionAmount,
+  onDevolucionAmountChange,
+  devolucionPaymentMethod,
+  onDevolucionPaymentMethodChange,
+  devolucionMotivo,
+  onDevolucionMotivoChange,
+  onDevolucionSubmit,
+  isDevolucionSubmitting
 }: ClientModalsProps) {
   return (
     <>
@@ -97,6 +122,20 @@ export function ClientModals({
         onMixedPaymentsChange={onPrepagoMixedPaymentsChange}
         onSubmit={onPrepagoSubmit}
         isSubmitting={isPrepagoSubmitting}
+      />
+
+      <DevolucionModal
+        isOpen={isDevolucionModalOpen}
+        onOpenChange={onDevolucionModalChange}
+        client={devolucionClient}
+        amount={devolucionAmount}
+        onAmountChange={onDevolucionAmountChange}
+        paymentMethod={devolucionPaymentMethod}
+        onPaymentMethodChange={onDevolucionPaymentMethodChange}
+        motivo={devolucionMotivo}
+        onMotivoChange={onDevolucionMotivoChange}
+        onSubmit={onDevolucionSubmit}
+        isSubmitting={isDevolucionSubmitting}
       />
     </>
   );

@@ -1,10 +1,10 @@
 ﻿/* eslint-disable no-console */
 require('../../../scripts/guard-local-db')();
-const mysql = require('mysql2/promise');
+const postgres = require('../../../scripts/postgres-test-client.cjs');
 require('dotenv').config();
 
 const queryMock = async (sql, params = []) => {
-  const connection = await mysql.createConnection({
+  const connection = await postgres.createConnection({
     host: process.env.DB_HOST,
     user: process.env.DB_USER,
     password: process.env.DB_PASSWORD,
@@ -22,7 +22,7 @@ const VentasStatsRepository = {
   getVentasBarras: async caja_id => {
     const results = await queryMock(
       `
-          SELECT 
+          SELECT
             COALESCE(SUM(v.total), 0) as total_venta,
             COALESCE(SUM(dv.precio * dv.cantidad), 0) as monto_productos,
             COALESCE(SUM(v.propina), 0) as propinas
@@ -35,7 +35,7 @@ const VentasStatsRepository = {
               SELECT 1 FROM detalle_ventas dv2
               INNER JOIN productos p2 ON p2.id_producto = dv2.producto_id
               WHERE dv2.venta_id = v.id_venta
-                AND (LOWER(p2.nombre) REGEXP 'champagne|champaña|shampage|champan')
+                AND (LOWER(p2.nombre) ~ 'champagne|champaña|shampage|champan')
             )
         `,
       [caja_id]
@@ -50,7 +50,7 @@ const VentasStatsRepository = {
   getVentasChampagne: async caja_id => {
     const results = await queryMock(
       `
-          SELECT 
+          SELECT
             COALESCE(SUM(DISTINCT v.total), 0) as total_venta,
             COALESCE(SUM(DISTINCT v.propina), 0) as propinas,
             (
@@ -58,7 +58,7 @@ const VentasStatsRepository = {
               FROM detalle_ventas dv
               INNER JOIN productos p ON p.id_producto = dv.producto_id
               WHERE dv.venta_id = v.id_venta
-                AND (LOWER(p.nombre) REGEXP 'champagne|champaña|shampage|champan')
+                AND (LOWER(p.nombre) ~ 'champagne|champaña|shampage|champan')
             ) as monto_champagne,
             (
               SELECT COALESCE(SUM(dc.comision), 0)
@@ -72,7 +72,7 @@ const VentasStatsRepository = {
               SELECT 1 FROM detalle_ventas dv2
               INNER JOIN productos p2 ON p2.id_producto = dv2.producto_id
               WHERE dv2.venta_id = v.id_venta
-                AND (LOWER(p2.nombre) REGEXP 'champagne|champaña|shampage|champan')
+                AND (LOWER(p2.nombre) ~ 'champagne|champaña|shampage|champan')
             )
           GROUP BY v.id_venta
         `,
@@ -91,7 +91,7 @@ const VentasStatsRepository = {
   getVentasTragosChicas: async caja_id => {
     const results = await queryMock(
       `
-          SELECT 
+          SELECT
             COALESCE(SUM(DISTINCT v.total), 0) as total_venta,
             COALESCE(SUM(DISTINCT v.propina), 0) as propinas,
             (
@@ -112,7 +112,7 @@ const VentasStatsRepository = {
               SELECT 1 FROM detalle_ventas dv2
               INNER JOIN productos p2 ON p2.id_producto = dv2.producto_id
               WHERE dv2.venta_id = v.id_venta
-                AND (LOWER(p2.nombre) REGEXP 'champagne|champaña|shampage|champan')
+                AND (LOWER(p2.nombre) ~ 'champagne|champaña|shampage|champan')
             )
           GROUP BY v.id_venta
         `,

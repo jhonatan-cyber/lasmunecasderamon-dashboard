@@ -24,25 +24,25 @@ function buildDateRange(
 
   switch (period) {
     case 'current_month':
-      return { clause: `${column} >= DATE_FORMAT(CURDATE(), '%Y-%m-01')`, params: [] };
+      return { clause: `${column} >= date_trunc('month', CURRENT_DATE)`, params: [] };
     case 'last_month':
       return {
         clause:
-          `${column} >= DATE_FORMAT(DATE_SUB(CURDATE(), INTERVAL 1 MONTH), '%Y-%m-01') ` +
-          `AND ${column} < DATE_FORMAT(CURDATE(), '%Y-%m-01')`,
+          `${column} >= date_trunc('month', (CAST(CURRENT_DATE AS timestamp) - make_interval(months => CAST(1 AS integer)))) ` +
+          `AND ${column} < date_trunc('month', CURRENT_DATE)`,
         params: []
       };
     case 'current_year':
-      return { clause: `${column} >= DATE_FORMAT(CURDATE(), '%Y-01-01')`, params: [] };
+      return { clause: `${column} >= date_trunc('year', CURRENT_DATE)`, params: [] };
     case 'last_year':
       return {
         clause:
-          `${column} >= DATE_FORMAT(DATE_SUB(CURDATE(), INTERVAL 1 YEAR), '%Y-01-01') ` +
-          `AND ${column} < DATE_FORMAT(CURDATE(), '%Y-01-01')`,
+          `${column} >= date_trunc('year', (CAST(CURRENT_DATE AS timestamp) - make_interval(years => CAST(1 AS integer)))) ` +
+          `AND ${column} < date_trunc('year', CURRENT_DATE)`,
         params: []
       };
     default:
-      return { clause: `DATE(${column}) = CURDATE()`, params: [] };
+      return { clause: `DATE(${column}) = CURRENT_DATE`, params: [] };
   }
 }
 
@@ -60,7 +60,7 @@ export async function getCommissionsReport(
       u.id_usuario,
       u.nombre,
       u.apellido,
-      CONCAT(u.nombre, ' ', u.apellido) AS nombre_completo,
+      (CAST(u.nombre AS text) || CAST(' ' AS text) || CAST(u.apellido AS text)) AS nombre_completo,
       COUNT(DISTINCT CASE WHEN c.venta_id IS NOT NULL AND c.venta_id <> '' THEN c.venta_id END) AS total_ventas,
       COUNT(DISTINCT CASE WHEN c.servicio_id IS NOT NULL AND c.servicio_id <> '' THEN c.servicio_id END) AS total_servicios,
       COALESCE(SUM(CASE WHEN c.venta_id IS NOT NULL AND c.venta_id <> '' THEN v.total ELSE 0 END), 0) AS total_ventas_monto,
@@ -69,7 +69,7 @@ export async function getCommissionsReport(
       COALESCE(AVG(CASE WHEN c.venta_id IS NOT NULL AND c.venta_id <> '' THEN dc.comision END), 0) AS promedio_por_venta,
       COALESCE(AVG(CASE WHEN c.servicio_id IS NOT NULL AND c.servicio_id <> '' THEN dc.comision END), 0) AS promedio_por_servicio,
       COUNT(DISTINCT DATE(c.fecha_crea)) AS dias_trabajados,
-      COALESCE(SUM(dc.comision) / NULLIF(COUNT(DISTINCT DATE(c.fecha_crea)), 0), 0) AS promedio_diario
+      COALESCE(SUM(dc.comision)::numeric / NULLIF(COUNT(DISTINCT DATE(c.fecha_crea)), 0), 0) AS promedio_diario
     FROM detalle_comisiones dc
     INNER JOIN comisiones c ON c.id_comision = dc.comision_id
     INNER JOIN usuarios u ON u.id_usuario = dc.usuario_id
@@ -89,8 +89,8 @@ export async function getCommissionsReport(
   const dailyCommissions = await query<any[]>(
     `
     SELECT
-      DAYNAME(c.fecha_crea) AS dia_semana,
-      CASE DAYOFWEEK(c.fecha_crea)
+      TO_CHAR(c.fecha_crea, 'FMDay') AS dia_semana,
+      CASE (EXTRACT(DOW FROM c.fecha_crea)::integer + 1)
         WHEN 1 THEN 'Domingo'
         WHEN 2 THEN 'Lunes'
         WHEN 3 THEN 'Martes'
@@ -105,7 +105,7 @@ export async function getCommissionsReport(
       COALESCE(SUM(CASE WHEN c.servicio_id IS NOT NULL AND c.servicio_id <> '' THEN s.total ELSE 0 END), 0) AS total_servicios_monto,
       COALESCE(SUM(dc.comision), 0) AS total_comisiones,
       COALESCE(AVG(dc.comision), 0) AS promedio_comision,
-      DAYOFWEEK(c.fecha_crea) AS orden
+      (EXTRACT(DOW FROM c.fecha_crea)::integer + 1) AS orden
     FROM detalle_comisiones dc
     INNER JOIN comisiones c ON c.id_comision = dc.comision_id
     INNER JOIN usuarios u ON u.id_usuario = dc.usuario_id
@@ -116,7 +116,7 @@ export async function getCommissionsReport(
       AND dc.estado IN (1, 2)
       AND LOWER(r.nombre) = 'anfitriona'
       AND ${range.clause}
-    GROUP BY DAYOFWEEK(c.fecha_crea), DAYNAME(c.fecha_crea)
+    GROUP BY (EXTRACT(DOW FROM c.fecha_crea)::integer + 1), TO_CHAR(c.fecha_crea, 'FMDay')
     ORDER BY orden ASC
   `,
     range.params

@@ -1,10 +1,10 @@
 ﻿/* eslint-disable no-console */
 require('../../../scripts/guard-local-db')();
-const mysql = require('mysql2/promise');
+const postgres = require('../../../scripts/postgres-test-client.cjs');
 require('dotenv').config();
 
 const queryMock = async (sql, params = []) => {
-  const connection = await mysql.createConnection({
+  const connection = await postgres.createConnection({
     host: process.env.DB_HOST,
     user: process.env.DB_USER,
     password: process.env.DB_PASSWORD,
@@ -20,16 +20,16 @@ const queryMock = async (sql, params = []) => {
 
 class StatsRepository {
   static async getGeneral() {
-    return await queryMock('SELECT COUNT(*) as usersCount FROM usuarios');
+    return await queryMock("SELECT COUNT(*) AS \"usersCount\" FROM usuarios");
   }
   static async getMonthlySales() {
     return await queryMock(
-      'SELECT MONTH(fecha_crea) as mes, SUM(total) as total FROM ventas GROUP BY MONTH(fecha_crea)'
+      'SELECT EXTRACT(MONTH FROM fecha_crea) as mes, SUM(total) as total FROM ventas GROUP BY EXTRACT(MONTH FROM fecha_crea)'
     );
   }
   static async getWeeklySales() {
     return await queryMock(
-      'SELECT DAYNAME(fecha_crea) as dia, SUM(total) as total FROM ventas GROUP BY DAYNAME(fecha_crea)'
+      "SELECT TO_CHAR(fecha_crea, 'FMDay') as dia, SUM(total) as total FROM ventas GROUP BY TO_CHAR(fecha_crea, 'FMDay')"
     );
   }
   static async getDashboardStats() {

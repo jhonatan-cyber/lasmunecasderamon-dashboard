@@ -12,7 +12,7 @@ components/       # UI y componentes por modulo
 hooks/            # Hooks de dominio y UI
 lib/services/     # Logica de negocio
 lib/repositories/ # Acceso a datos con SQL directo
-lib/database/     # Pool MySQL y transacciones
+lib/database/     # Pool PostgreSQL y transacciones
 tests/            # Unit, integration, e2e
 types/            # Tipos TypeScript globales
 ```
@@ -22,7 +22,7 @@ types/            # Tipos TypeScript globales
 - Node.js 22+
 - `corepack` habilitado
 - `pnpm`
-- MySQL y variables de entorno validas para flujos con DB real
+- PostgreSQL 18 y variables de entorno validas para flujos con DB real
 
 ## Instalacion
 
@@ -54,7 +54,7 @@ corepack pnpm test:integration:legacy-db
 
 - `lint:full` en verde
 - `typecheck` en verde con verificacion estricta en `tsconfig.typecheck.json`
-- Tests heredados con MySQL real separados en `tests/integration/legacy-db`
+- Tests heredados adaptados a PostgreSQL real separados en `tests/integration/legacy-db`
 - CI minima para web y movil en `.github/workflows/quality-checks.yml`
 
 ## Testing
@@ -93,8 +93,10 @@ Ubicacion: `tests/integration/legacy-db/`
 NEXT_PUBLIC_BASE_URL=
 NEXT_PUBLIC_API_URL=
 NEXT_PUBLIC_SOCKET_URL=
-DB_HOST=
-DB_USER=
+DB_HOST=127.0.0.1
+DB_PORT=5432
+DB_NAME=lasmunecasderamon
+DB_USER=postgres
 DB_PASSWORD=
 JWT_SECRET=
 ```
@@ -120,3 +122,7 @@ corepack pnpm test:integration:legacy-db
 - [AUTH_CONTRACT.md](./AUTH_CONTRACT.md)
 - [API_ROUTE_AUDIT.md](./API_ROUTE_AUDIT.md)
 - [PLAN_SEGUIMIENTO_CORRECCIONES.md](./PLAN_SEGUIMIENTO_CORRECCIONES.md)
+
+## PostgreSQL
+
+La aplicacion usa `pg`. Instalacion, migraciones, pruebas y recuperacion: [guia de PostgreSQL](docs/POSTGRESQL.md).

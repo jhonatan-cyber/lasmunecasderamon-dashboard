@@ -104,4 +104,35 @@ Si hay varias solicitudes pendientes, responde "1 SI" o "1 NO" sobre la mas reci
   return await enviarWhatsApp(adminWhatsApp, mensaje);
 }
 
+export async function enviarRecordatorioDevolucionSaldo(datos: {
+  clienteNombre: string;
+  clienteRun?: string | null;
+  telefono: string | null;
+  monto: number;
+  motivo?: string | null;
+  solicitadoPor: string;
+  saldoActual?: number | null;
+}): Promise<boolean> {
+  const mensaje = `*🔔 RECORDATORIO DEVOLUCION DE SALDO*
+
+• Cliente: ${datos.clienteNombre}${datos.clienteRun ? ` (${datos.clienteRun})` : ''}
+• Telefono: ${datos.telefono || 'No registrado'}
+• Monto solicitado: ${formatCurrencyCLP(datos.monto)}
+${datos.saldoActual != null ? `• Saldo actual: ${formatCurrencyCLP(datos.saldoActual)}` : ''}
+${datos.motivo ? `• Motivo: ${datos.motivo}` : ''}
+
+*Solicitado por (cajero):* ${datos.solicitadoPor}
+
+Por favor revisar en dashboard: Clientes → Devolucion`;
+
+  const adminWhatsApp = await getAdminWhatsApp();
+  // Fallback a ADMIN_WHATSAPP_NUMBER si no hay config en DB
+  const numeroAdmin = adminWhatsApp || (process.env.ADMIN_WHATSAPP_NUMBER || '').replace('whatsapp:', '');
+  if (!numeroAdmin) {
+    logger.error('❌ No hay numero de admin para recordatorio devolucion');
+    throw new Error('Numero de admin no configurado');
+  }
+  return await enviarWhatsApp(numeroAdmin, mensaje);
+}
+
 

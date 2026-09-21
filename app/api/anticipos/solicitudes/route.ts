@@ -6,7 +6,7 @@ import { ValidationError } from '@/lib/errors/errors';
 
 export const GET = withRoute({ auth: true, audit: true }, async (_request: Request, { user }: { params: any; user: any }) => {
   const solicitudes = await query(
-    `SELECT A.*, CONCAT(U.nombre, ' ', U.apellido) AS usuario_nombre, U.nick
+    `SELECT A.*, (CAST(U.nombre AS text) || CAST(' ' AS text) || CAST(U.apellido AS text)) AS usuario_nombre, U.nick
      FROM anticipos A
      INNER JOIN usuarios U ON U.id_usuario = A.usuario_id
      WHERE A.usuario_id = ? AND A.estado IN (1, 2, 3)

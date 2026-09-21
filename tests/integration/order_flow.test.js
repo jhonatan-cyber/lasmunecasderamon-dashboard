@@ -4,7 +4,7 @@ const crypto = require('crypto');
 function uuidv4() {
   return crypto.randomUUID();
 }
-const mysql = require('mysql2/promise');
+const postgres = require('../../scripts/postgres-test-client.cjs');
 require('dotenv').config();
 
 const dbConfig = {
@@ -19,7 +19,7 @@ async function runIntegrationTest() {
 
   let connection;
   try {
-    connection = await mysql.createConnection(dbConfig);
+    connection = await postgres.createConnection(dbConfig);
     console.log('✅ Conexión a la base de datos establecida.');
 
     const testOrderId = uuidv4();
@@ -41,7 +41,7 @@ async function runIntegrationTest() {
     );
     console.log('✅ Pedido insertado.');
 
-    const [detailCols] = await connection.execute('DESCRIBE detalle_pedidos');
+    const [detailCols] = await connection.execute("SELECT column_name AS \"Field\" FROM information_schema.columns WHERE table_schema = current_schema() AND table_name = 'detalle_pedidos'");
 
     const [prods] = await connection.execute('SELECT id_producto FROM productos LIMIT 1');
     const testProductId = prods.length > 0 ? prods[0].id_producto : 'test-prod-1';

@@ -11,6 +11,10 @@ vi.mock('@/lib/repositories/SaleRepository', () => ({
   SaleRepository: { rawInsert: vi.fn(), insertDetail: vi.fn(), insertUserRelation: vi.fn() }
 }));
 
+vi.mock('@/lib/repositories/InventoryRepository', () => ({
+  InventoryRepository: { consume: vi.fn().mockResolvedValue(undefined) }
+}));
+
 vi.mock('@/lib/repositories/CashRegisterRepository', () => ({
   CashRegisterRepository: { getCurrentCajaId: vi.fn(), updateBalances: vi.fn() }
 }));

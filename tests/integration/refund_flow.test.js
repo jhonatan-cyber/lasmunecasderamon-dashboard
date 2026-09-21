@@ -1,11 +1,11 @@
 ﻿/* eslint-disable no-console */
 require('../../scripts/guard-local-db')();
-const mysql = require('mysql2/promise');
+const postgres = require('../../scripts/postgres-test-client.cjs');
 const crypto = require('crypto');
 require('dotenv').config();
 
 const queryMock = async (sql, params = []) => {
-  const connection = await mysql.createConnection({
+  const connection = await postgres.createConnection({
     host: process.env.DB_HOST,
     user: process.env.DB_USER,
     password: process.env.DB_PASSWORD,
@@ -62,6 +62,7 @@ async function runTests() {
     testData.saleId = generateUUID();
     await BaseRepository.insert(null, 'ventas', {
       id_venta: testData.saleId,
+      codigo: testData.saleId.slice(0, 8), propina: 0, sub_total: 0, metodo_pago: 'efectivo',
       habitacion_id: testData.habitId,
       total: 100,
       estado: 1,
@@ -100,6 +101,7 @@ async function runTests() {
     testData.serviceId = generateUUID();
     await BaseRepository.insert(null, 'servicios', {
       id_servicio: testData.serviceId,
+      codigo: testData.serviceId.slice(0, 8), precio_habitacion: 0, precio_servicio: 0, sub_total: 0, tiempo: 0, metodo_pago: 'efectivo',
       habitacion_id: testData.habitId,
       total: 50,
       estado: 1,

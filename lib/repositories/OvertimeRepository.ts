@@ -5,7 +5,7 @@ import { BaseRepository } from './BaseRepository';
 export class OvertimeRepository {
   static async getAll(userId?: string, startDate?: string, endDate?: string) {
     let sql = `
-      SELECT HR.*, U.id_usuario, CONCAT(U.nombre, ' ', U.apellido) AS usuario, U.foto AS usuario_foto
+      SELECT HR.*, U.id_usuario, (CAST(U.nombre AS text) || CAST(' ' AS text) || CAST(U.apellido AS text)) AS usuario, U.foto AS usuario_foto
       FROM horas_extras HR
       INNER JOIN usuarios U ON U.id_usuario = HR.usuario_id
       WHERE 1=1
@@ -43,7 +43,7 @@ export class OvertimeRepository {
   static async getByDates(userId: string, dates: string[]) {
     if (dates.length === 0) return [];
     let sql = `
-      SELECT HR.*, U.id_usuario, CONCAT(U.nombre, ' ', U.apellido) AS usuario, U.foto AS usuario_foto, HR.fecha_crea, HR.estado
+      SELECT HR.*, U.id_usuario, (CAST(U.nombre AS text) || CAST(' ' AS text) || CAST(U.apellido AS text)) AS usuario, U.foto AS usuario_foto, HR.fecha_crea, HR.estado
       FROM horas_extras HR
       INNER JOIN usuarios U ON U.id_usuario = HR.usuario_id
       WHERE HR.usuario_id = ? AND DATE(HR.fecha_crea) IN (?)

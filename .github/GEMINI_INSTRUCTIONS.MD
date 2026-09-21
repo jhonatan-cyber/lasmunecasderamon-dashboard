@@ -6,7 +6,7 @@ Este documento establece las normativas, estándares arquitectónicos y flujos d
 
 ## 🏗️ 1. Arquitectura y Mejores Prácticas del Stack
 
-El proyecto utiliza un stack moderno (Next.js App Router, React 19, Tailwind CSS, Radix UI, TanStack Query, Zustand, React Hook Form, Zod y MySQL2). Se exige el cumplimiento de las siguientes directrices:
+El proyecto utiliza un stack moderno (Next.js App Router, React 19, Tailwind CSS, Radix UI, TanStack Query, Zustand, React Hook Form, Zod y PostgreSQL (`pg`)). Se exige el cumplimiento de las siguientes directrices:
 
 ### 1.1 Next.js y Renderizado
 - **Server Components Primero:** Utiliza Server Components por defecto para maximizar el rendimiento y el SEO.
@@ -26,10 +26,10 @@ El proyecto utiliza un stack moderno (Next.js App Router, React 19, Tailwind CSS
 - **Composición de Clases:** Utiliza la utilidad `cn()` (una abstracción sobre `clsx` y `tailwind-merge`) para construir o mezclar clases CSS dinámicamente sin conflictos.
 - **Primitivas Accesibles:** Mantén la filosofía basada en el ecosistema `@radix-ui` (o componentes estilo *shadcn/ui*). No reinventes elementos complejos (como modales, selectores o dropdowns) utilizando divs puros; aprovecha la base accesible ya instalada.
 
-### 1.5 Base de Datos (MySQL2) y Seguridad
+### 1.5 Base de Datos (PostgreSQL (`pg`)) y Seguridad
 - **Cero Inyección SQL:** Es inaceptable introducir vulnerabilidades de inyección SQL.
 - **Prohibido:** Nunca concatenes ni interpoles variables de forma directa en un string SQL (ej. ❌ `SELECT * FROM users WHERE id = ${id}`).
-- **Obligatorio:** Emplea rigurosamente **Consultas Preparadas (Prepared Statements)**, enviando los valores dinámicos como un arreglo paralelo (ej. ✅ `db.execute('SELECT * FROM users WHERE id = ?', [id])`).
+- **Obligatorio:** Emplea rigurosamente **Consultas Preparadas (Prepared Statements)**, enviando los valores dinámicos como un arreglo paralelo (ej. ✅ `query('SELECT * FROM users WHERE id = ?', [id])`).
 
 ---
 

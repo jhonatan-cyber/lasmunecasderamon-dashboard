@@ -1,13 +1,13 @@
 ﻿/* eslint-disable no-console */
 require('../../scripts/guard-local-db')();
-const mysql = require('mysql2/promise');
+const postgres = require('../../scripts/postgres-test-client.cjs');
 const crypto = require('crypto');
 require('dotenv').config();
 
 async function runIntegrationTest() {
   console.log('--- INICIANDO PRUEBA DE INTEGRACIÓN: Flujo de Cuentas Completo ---');
 
-  const connection = await mysql.createConnection({
+  const connection = await postgres.createConnection({
     host: process.env.DB_HOST,
     user: process.env.DB_USER,
     password: process.env.DB_PASSWORD,
@@ -58,8 +58,8 @@ async function runIntegrationTest() {
     await connection.execute(
       `
             INSERT INTO cuentas (
-                id_cuenta, codigo, cliente_id, habitacion_id, 
-                sub_total, total, total_comision, propina, 
+                id_cuenta, codigo, cliente_id, habitacion_id,
+                sub_total, total, total_comision, propina,
                 estado, fecha_crea, created_by, tiempo
             ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
         `,
@@ -88,7 +88,7 @@ async function runIntegrationTest() {
     await connection.execute(
       `
             INSERT INTO detalle_cuentas (
-                id_detalle_cuenta, cuenta_id, producto_id, precio, 
+                id_detalle_cuenta, cuenta_id, producto_id, precio,
                 cantidad, sub_total, comision, hostess_id, fecha_crea, created_by
             ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
         `,
@@ -124,8 +124,8 @@ async function runIntegrationTest() {
 
     await connection.execute(
       `
-            UPDATE cuentas 
-            SET estado = 2, metodo_pago = ?, cobrado_por = ?, fecha_mod = ? 
+            UPDATE cuentas
+            SET estado = 2, metodo_pago = ?, cobrado_por = ?, fecha_mod = ?
             WHERE id_cuenta = ?
         `,
       [metodoPago, userId, new Date(), cuentaId]
@@ -137,7 +137,7 @@ async function runIntegrationTest() {
 
     await connection.execute(
       `
-            UPDATE cajas 
+            UPDATE cajas
             SET efectivo = efectivo + ?,
                 propina = propina + ?,
                 venta = venta + ?
@@ -247,7 +247,7 @@ async function runIntegrationTest() {
 
     await connection.execute(
       `
-            UPDATE cajas 
+            UPDATE cajas
             SET efectivo = efectivo - ?,
                 propina = propina - ?,
                 venta = venta - ?

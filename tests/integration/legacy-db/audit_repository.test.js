@@ -1,11 +1,11 @@
 ﻿/* eslint-disable no-console */
 require('../../../scripts/guard-local-db')();
-const mysql = require('mysql2/promise');
+const postgres = require('../../../scripts/postgres-test-client.cjs');
 const crypto = require('crypto');
 require('dotenv').config();
 
 const queryMock = async (sql, params = []) => {
-  const connection = await mysql.createConnection({
+  const connection = await postgres.createConnection({
     host: process.env.DB_HOST,
     user: process.env.DB_USER,
     password: process.env.DB_PASSWORD,
@@ -49,7 +49,7 @@ class AuditRepository {
       `
       SELECT a.*, u.nick as usuario_nick, u.nombre as usuario_nombre
       FROM audit_logs a
-      LEFT JOIN usuarios u ON a.user_id COLLATE utf8mb4_unicode_ci = u.id_usuario
+      LEFT JOIN usuarios u ON a.user_id = u.id_usuario
       ORDER BY a.created_at DESC
       LIMIT ?
     `,

@@ -12,7 +12,10 @@ const BASE_URL = process.env.BASE_URL || 'http://localhost:3000';
 const TIMEOUT_MS = 30_000;
 const MAX_WAIT_MS = 60_000;
 
-const CREDENTIALS = { email: 'admin', password: 'REMOVED_PASSWORD' };
+const CREDENTIALS = {
+  email: process.env.WARMUP_USER || process.env.TEST_USER || 'admin',
+  password: process.env.WARMUP_PASSWORD || process.env.TEST_PASSWORD || 'REMOVED_PASSWORD'
+};
 
 const DASHBOARD_ENDPOINTS = [
   '/api/dashboard/composite',
@@ -83,21 +86,32 @@ async function warmup() {
   if (token) headers['Authorization'] = `Bearer ${token}`;
 
   const results = [];
-  for (const endpoint of DASHBOARD_ENDPOINTS) {
-    const reqStart = Date.now();
-    try {
-      const res = await fetch(`${BASE_URL}${endpoint}`, {
-        signal: AbortSignal.timeout(TIMEOUT_MS),
-        headers
-      });
-      const duration = Date.now() - reqStart;
-      results.push({ endpoint, status: res.status, duration, ok: res.ok });
-      const icon = res.ok ? '✅' : res.status === 401 ? '⚠️' : '❌';
-      console.log(`  ${icon} ${endpoint} → ${res.status} (${duration}ms)`);
-    } catch (err) {
-      const duration = Date.now() - reqStart;
-      results.push({ endpoint, status: 0, duration, ok: false });
-      console.log(`  ❌ ${endpoint} → ERROR (${duration}ms): ${err.message}`);
+  const concurrency = 4;
+  for (let i = 0; i < DASHBOARD_ENDPOINTS.length; i += concurrency) {
+    const batch = DASHBOARD_ENDPOINTS.slice(i, i + concurrency);
+    const batchResults = await Promise.allSettled(
+      batch.map(async endpoint => {
+        const reqStart = Date.now();
+        try {
+          const res = await fetch(`${BASE_URL}${endpoint}`, {
+            signal: AbortSignal.timeout(TIMEOUT_MS),
+            headers,
+            keepalive: true
+          });
+          const duration = Date.now() - reqStart;
+          return { endpoint, status: res.status, duration, ok: res.ok };
+        } catch (err) {
+          const duration = Date.now() - reqStart;
+          return { endpoint, status: 0, duration, ok: false, error: err.message };
+        }
+      })
+    );
+    for (const r of batchResults) {
+      const result = r.status === 'fulfilled' ? r.value : { endpoint: 'unknown', status: 0, duration: 0, ok: false };
+      results.push(result);
+      const icon = result.ok ? '✅' : result.status === 401 ? '⚠️' : '❌';
+      const extra = result.error ? `: ${result.error}` : '';
+      console.log(`  ${icon} ${result.endpoint} → ${result.status} (${result.duration}ms)${extra}`);
     }
   }
 

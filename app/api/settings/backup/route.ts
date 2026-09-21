@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server';
 import { withRoute } from '@/lib/api/withRoute';
 import { query } from '@/lib/database/db';
-import { logger } from '@/lib/utils/logger';
+import { snapshotDatabase } from '@/lib/database/maintenance';
 
 export const POST = withRoute({ auth: true, audit: true, module: 'settings', action: 'write' },
   async (request: Request, { user }: { params: any; user: any }) => {
@@ -13,43 +13,9 @@ export const POST = withRoute({ auth: true, audit: true, module: 'settings', act
     const timeStr = timestamp.toTimeString().split(' ')[0].replace(/:/g, '-');
     const backupName = nombre || `backup_${dateStr}_${timeStr}`;
 
-    const tables = (await query(`
-      SELECT TABLE_NAME
-      FROM information_schema.TABLES
-      WHERE TABLE_SCHEMA = DATABASE()
-      AND TABLE_TYPE = 'BASE TABLE'
-    `)) as Array<{ TABLE_NAME: string }>;
-
-    const backupData: Record<string, any[]> = {};
-    let totalRecords = 0;
-    let totalBytes = 0;
-
-    for (const table of tables) {
-      const tableName = table.TABLE_NAME;
-      if (
-        [
-          'usuarios',
-          'roles',
-          'role_permissions',
-          'permissions',
-          'configuraciones',
-          'backups',
-          '_migrations'
-        ].includes(tableName)
-      )
-        continue;
-
-      try {
-        const data = (await query(`SELECT * FROM \`${tableName}\``)) as any[];
-        if (data.length > 0) {
-          backupData[tableName] = data;
-          totalRecords += data.length;
-          totalBytes += JSON.stringify(data).length;
-        }
-      } catch (err) {
-        logger.warn(`Warning: Could not backup table ${tableName}:`, { err, tableName });
-      }
-    }
+    const backupData = await snapshotDatabase();
+    const totalRecords = Object.values(backupData).reduce((sum, rows) => sum + rows.length, 0);
+    const totalBytes = Buffer.byteLength(JSON.stringify(backupData), 'utf8');
 
     const backupId = crypto.randomUUID();
     const now = new Date().toISOString().replace('T', ' ').split('.')[0];

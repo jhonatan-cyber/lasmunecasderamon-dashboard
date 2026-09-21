@@ -10,7 +10,7 @@ export const POST = withPublicRoute(async (request: Request) => {
 
   const result = await query<any[]>(
     `
-      SELECT v.habitacion_id as habitacionId, h.nombre as habitacionNombre, v.tiempo, vu.usuario_id as anfitrionaId
+      SELECT v.habitacion_id AS "habitacionId", h.nombre AS "habitacionNombre", v.tiempo, vu.usuario_id AS "anfitrionaId"
       FROM ventas v
       INNER JOIN ventas_usuarios vu ON v.id_venta = vu.venta_id
       INNER JOIN habitaciones h ON v.habitacion_id = h.id_habitacion

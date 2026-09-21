@@ -10,9 +10,8 @@ export const initLogsTable = async () => {
         tipo_evento VARCHAR(50) NOT NULL,
         descripcion TEXT,
         fecha_crea TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-        usuario_id VARCHAR(36),
-        INDEX (servicio_id)
-      ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+        usuario_id VARCHAR(36)
+      );
     `;
     const createVentaTableQuery = `
       CREATE TABLE IF NOT EXISTS venta_logs (
@@ -21,9 +20,8 @@ export const initLogsTable = async () => {
         tipo_evento VARCHAR(50) NOT NULL,
         descripcion TEXT,
         fecha_crea TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-        usuario_id VARCHAR(36),
-        INDEX (venta_id)
-      ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+        usuario_id VARCHAR(36)
+      );
     `;
     await query(createTableQuery);
     await query(createVentaTableQuery);

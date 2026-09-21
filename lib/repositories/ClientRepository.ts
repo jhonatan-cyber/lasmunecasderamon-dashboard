@@ -62,7 +62,7 @@ export class ClientRepository {
 
     let where = 'WHERE 1=1';
     if (params?.search) {
-      where += ' AND (c.nombre LIKE ? OR c.apellido LIKE ? OR c.run LIKE ? OR c.telefono LIKE ?)';
+      where += ' AND (c.nombre ILIKE ? OR c.apellido ILIKE ? OR c.run ILIKE ? OR c.telefono ILIKE ?)';
       const s = `%${params.search}%`;
       sqlParams.push(s, s, s, s);
     }
@@ -92,9 +92,9 @@ export class ClientRepository {
     try {
       const clients = await query<any[]>(
       `
-      SELECT c.*, 
+      SELECT c.*,
       COALESCE((SELECT SUM(total) FROM cuentas WHERE cliente_id = c.id_cliente AND estado = 1), 0) as deuda
-      FROM clientes c 
+      FROM clientes c
       WHERE c.id_cliente = ?
     `,
       [id]
@@ -180,7 +180,7 @@ export class ClientRepository {
     try {
       const moves = await query<any[]>(
       `
-      SELECT 
+      SELECT
         id_movimiento as id,
         'CARGA' as category,
         monto,
@@ -191,10 +191,10 @@ export class ClientRepository {
         metadatos as detalle
       FROM clientes_prepago_movimientos cpm
       WHERE cliente_id = ? AND tipo = 'CARGA'
-      
+
       UNION ALL
-      
-      SELECT 
+
+      SELECT
         id_movimiento as id,
         'CONSUMO' as category,
         monto,
@@ -205,13 +205,27 @@ export class ClientRepository {
         metadatos as detalle
       FROM clientes_prepago_movimientos cpm
       WHERE cliente_id = ? AND tipo = 'CONSUMO'
+
+      UNION ALL
+
+      SELECT
+        id_movimiento as id,
+        'DEVOLUCION' as category,
+        monto,
+        metodo_pago,
+        fecha_crea,
+        (SELECT nick FROM usuarios WHERE id_usuario = cpm.usuario_id) as atendido_por,
+        NULL as mesero,
+        metadatos as detalle
+      FROM clientes_prepago_movimientos cpm
+      WHERE cliente_id = ? AND tipo = 'DEVOLUCION'
     `,
-      [clientId, clientId]
+      [clientId, clientId, clientId]
     );
 
     const services = await query<any[]>(
       `
-      SELECT 
+      SELECT
         s.id_servicio as id,
         'SERVICIO' as category,
         s.total as monto,
@@ -230,7 +244,7 @@ export class ClientRepository {
 
     const sales = await query<any[]>(
       `
-      SELECT 
+      SELECT
         v.id_venta as id,
         'CONSUMO' as category,
         v.total as monto,
@@ -360,11 +374,134 @@ export class ClientRepository {
         idCaja,
         this.getPrepagoCajaDeltas(data.monto, metodoPago, pagosMixtos)
       );
+
+      // Crear cuenta prepago automaticamente (visible en modulo cuentas)
+      // Solo actualiza Saldo prepago pendiente, no afecta caja mas alla de lo ya hecho
+      try {
+        const cuentaId = generateUUID();
+        const codigoPrepago = `PREP-${Math.random().toString(36).substring(2, 6).toUpperCase()}${Date.now().toString().slice(-4)}`;
+        await BaseRepository.insert(trx, 'cuentas', {
+          id_cuenta: cuentaId,
+          codigo: codigoPrepago,
+          cliente_id: data.cliente_id,
+          total_comision: 0,
+          habitacion_id: null,
+          sub_total: data.monto,
+          total: data.monto,
+          propina: 0,
+          fecha_crea: now,
+          estado: 1,
+          tiempo: 0,
+          tiempo_actual: 0,
+          tiempo_inicio_actual: null,
+          habitaciones_historial: null,
+          created_by: data.usuario_id || null
+        });
+
+        // Detalle generico para trazabilidad (sin producto especifico)
+        await BaseRepository.insert(trx, 'detalle_cuentas', {
+          id_detalle_cuenta: generateUUID(),
+          cuenta_id: cuentaId,
+          producto_id: null,
+          precio: data.monto,
+          cantidad: 1,
+          sub_total: data.monto,
+          comision: 0,
+          hostess_id: null,
+          fecha_crea: now,
+          created_by: data.usuario_id || null
+        });
+      } catch (cuentaErr) {
+        // No bloquea la recarga si falla la cuenta (log y continua)
+        logger.warn('[ClientRepository] No se pudo crear cuenta prepago automatica:', {
+          cliente_id: data.cliente_id,
+          err: cuentaErr instanceof Error ? cuentaErr.message : String(cuentaErr)
+        });
+      }
     });
     } catch (err) {
       logger.error('[ClientRepository] Error en addPrepago:', { cliente_id: data.cliente_id, err });
       if (err instanceof BusinessError || err instanceof NotFoundError) throw err;
       throw new DatabaseError(`Error al agregar prepago para cliente ${data.cliente_id}`, err);
+    }
+  }
+
+  static async devolverSaldo(data: {
+    cliente_id: string;
+    monto: number;
+    metodo_pago: string;
+    motivo?: string;
+    usuario_id?: string;
+  }): Promise<void> {
+    try {
+      const monto = Number(data.monto);
+      // Devolucion siempre por transferencia (no afecta caja)
+      const metodo = 'transferencia';
+      const motivo = String(data.motivo || 'Devolucion de saldo').trim();
+
+      if (!data.cliente_id || !monto || monto <= 0) {
+        throw new BusinessError('Monto de devolucion invalido', 'MONTO_INVALIDO');
+      }
+
+      const { withTransaction } = await import('@/lib/database/db');
+
+      await withTransaction(async trx => {
+        // Lock cliente y validar saldo (no requiere caja abierta, solo actualiza saldo)
+        const clienteRows = await trx<any[]>(
+          'SELECT saldo FROM clientes WHERE id_cliente = ? FOR UPDATE',
+          [data.cliente_id]
+        );
+        if (!clienteRows || clienteRows.length === 0) {
+          throw new NotFoundError('Cliente no encontrado');
+        }
+        const saldoActual = Number(clienteRows[0].saldo || 0);
+        if (monto > saldoActual) {
+          throw new BusinessError(
+            `Saldo insuficiente. Disponible: $${saldoActual.toLocaleString('es-CL')}`,
+            'SALDO_INSUFICIENTE'
+          );
+        }
+
+        const moveId = generateUUID();
+        const now = getNowInBusinessTimezone();
+        const metadatos = JSON.stringify({ motivo, metodo_devolucion: metodo });
+
+        await BaseRepository.insert(trx, 'clientes_prepago_movimientos', {
+          id_movimiento: moveId,
+          cliente_id: data.cliente_id,
+          tipo: 'DEVOLUCION',
+          monto,
+          metodo_pago: metodo,
+          usuario_id: data.usuario_id || null,
+          fecha_crea: now,
+          metadatos
+        });
+
+        await trx('UPDATE clientes SET saldo = GREATEST(0, saldo - ?) WHERE id_cliente = ?', [
+          monto,
+          data.cliente_id
+        ]);
+
+        // No se descuenta de caja (efectivo/tarjeta/transferencia/devolucion).
+        // Solo se actualiza el saldo del cliente; el "Saldo prepago pendiente clientes"
+        // en caja se calcula como SUM(saldo) y se refleja automaticamente.
+
+        // Auto-cierre de cuentas PREP-* si saldo llega a 0
+        const [saldoRow] = await trx<any[]>(
+          'SELECT saldo FROM clientes WHERE id_cliente = ?',
+          [data.cliente_id]
+        );
+        if (Number(saldoRow?.saldo || 0) === 0) {
+          await trx(
+            `UPDATE cuentas SET estado = 0, fecha_mod = ? WHERE cliente_id = ? AND codigo LIKE 'PREP-%' AND estado = 1`,
+            [now, data.cliente_id]
+          );
+        }
+      });
+    } catch (err) {
+      logger.error('[ClientRepository] Error en devolverSaldo:', { cliente_id: data.cliente_id, err });
+      if (err instanceof BusinessError || err instanceof NotFoundError) throw err;
+      throw new DatabaseError(`Error al devolver saldo para cliente ${data.cliente_id}`, err);
     }
   }
 }

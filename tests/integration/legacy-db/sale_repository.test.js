@@ -1,11 +1,11 @@
 ﻿/* eslint-disable no-console */
 require('../../../scripts/guard-local-db')();
-const mysql = require('mysql2/promise');
+const postgres = require('../../../scripts/postgres-test-client.cjs');
 const crypto = require('crypto');
 require('dotenv').config();
 
 const queryMock = async (sql, params = []) => {
-  const connection = await mysql.createConnection({
+  const connection = await postgres.createConnection({
     host: process.env.DB_HOST,
     user: process.env.DB_USER,
     password: process.env.DB_PASSWORD,
@@ -27,7 +27,7 @@ const BaseRepository = {
     const values = Object.values(data);
     const placeholders = keys.map(() => '?').join(', ');
     const sql = `INSERT INTO ${table} (${keys.join(', ')}) VALUES (${placeholders})`;
-    const connection = await mysql.createConnection({
+    const connection = await postgres.createConnection({
       host: process.env.DB_HOST,
       user: process.env.DB_USER,
       password: process.env.DB_PASSWORD,
@@ -44,7 +44,7 @@ const BaseRepository = {
     const values = Object.values(data);
     const setClause = keys.map(k => `${k} = ?`).join(', ');
     const sql = `UPDATE ${table} SET ${setClause} WHERE ${idCol} = ?`;
-    const connection = await mysql.createConnection({
+    const connection = await postgres.createConnection({
       host: process.env.DB_HOST,
       user: process.env.DB_USER,
       password: process.env.DB_PASSWORD,
@@ -64,7 +64,7 @@ class SaleRepository {
   static async getAll(params) {
     if (params.tipo === 'resumen') {
       const sql = `
-                SELECT 
+                SELECT
                     SUM(total) as total_ventas,
                     SUM(CASE WHEN metodo_pago = 'efectivo' THEN total ELSE 0 END) as efectivo,
                     SUM(CASE WHEN metodo_pago = 'tarjeta' THEN total ELSE 0 END) as tarjeta,
@@ -156,6 +156,7 @@ class SaleRepository {
     await BaseRepository.insert(null, 'ventas', {
       ...data,
       id_venta: id,
+      propina: 0,
       fecha_crea: data.fecha_crea || getNowInBusinessTimezone()
     });
     return id;
@@ -170,7 +171,7 @@ class SaleRepository {
   }
 
   static async delete(id) {
-    const connection = await mysql.createConnection({
+    const connection = await postgres.createConnection({
       host: process.env.DB_HOST,
       user: process.env.DB_USER,
       password: process.env.DB_PASSWORD,
@@ -190,7 +191,7 @@ async function runTests() {
   console.log('--- INICIANDO PRUEBAS UNITARIAS: SaleRepository ---');
   let connection;
   try {
-    connection = await mysql.createConnection({
+    connection = await postgres.createConnection({
       host: process.env.DB_HOST,
       user: process.env.DB_USER,
       password: process.env.DB_PASSWORD,

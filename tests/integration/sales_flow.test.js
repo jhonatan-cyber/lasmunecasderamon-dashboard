@@ -1,6 +1,6 @@
 /* eslint-disable no-console */
 require('../../scripts/guard-local-db')();
-const mysql = require('mysql2/promise');
+const postgres = require('../../scripts/postgres-test-client.cjs');
 const crypto = require('crypto');
 require('dotenv').config();
 
@@ -62,7 +62,7 @@ async function ensureFreshCaja(connection, userId, now) {
 }
 
 async function runIntegrationTest() {
-  const connection = await mysql.createConnection({
+  const connection = await postgres.createConnection({
     host: process.env.DB_HOST,
     user: process.env.DB_USER,
     password: process.env.DB_PASSWORD,

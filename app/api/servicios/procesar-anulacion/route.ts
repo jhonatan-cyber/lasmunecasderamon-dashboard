@@ -18,7 +18,7 @@ export async function POST(request: Request) {
      FROM solicitudes_anulacion_servicios sas
      INNER JOIN servicios s ON s.id_servicio = sas.servicio_id
      LEFT JOIN clientes c ON c.id_cliente = s.cliente_id
-     WHERE BINARY sas.token = BINARY ? AND sas.estado = 'pendiente'
+     WHERE sas.token = ? AND sas.estado = 'pendiente'
      LIMIT 1`,
     [token]
   );

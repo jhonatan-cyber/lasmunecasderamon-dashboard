@@ -1,11 +1,11 @@
 ﻿/* eslint-disable no-console */
 require('../../../scripts/guard-local-db')();
-const mysql = require('mysql2/promise');
+const postgres = require('../../../scripts/postgres-test-client.cjs');
 const crypto = require('crypto');
 require('dotenv').config();
 
 const queryMock = async (sql, params = []) => {
-  const connection = await mysql.createConnection({
+  const connection = await postgres.createConnection({
     host: process.env.DB_HOST,
     user: process.env.DB_USER,
     password: process.env.DB_PASSWORD,
@@ -31,7 +31,7 @@ class ErrorLogRepository {
     const now = new Date();
     const sql =
       'INSERT INTO error_logs (id, endpoint, error_message, stack_trace, request_body, fecha_crea) VALUES (?, ?, ?, ?, ?, ?)';
-    const connection = await mysql.createConnection({
+    const connection = await postgres.createConnection({
       host: process.env.DB_HOST,
       user: process.env.DB_USER,
       password: process.env.DB_PASSWORD,
@@ -72,7 +72,7 @@ async function testErrorLogRepository() {
     console.log('✅ getAll() OK');
 
     console.log('Limpiando datos de prueba...');
-    const connection = await mysql.createConnection({
+    const connection = await postgres.createConnection({
       host: process.env.DB_HOST,
       user: process.env.DB_USER,
       password: process.env.DB_PASSWORD,

@@ -10,7 +10,7 @@ export async function GET(request: Request) {
     const rows = await query<any[]>(
       `SELECT sav.id, sav.token, sav.estado, sav.motivo, sav.monto, sav.solicitado_por, sav.fecha_solicitud,
               v.id_venta as venta_id, v.codigo, v.total,
-              COALESCE(CONCAT(c.nombre, ' ', c.apellido), 'Sin cliente registrado') as cliente_nombre
+              COALESCE((CAST(c.nombre AS text) || CAST(' ' AS text) || CAST(c.apellido AS text)), 'Sin cliente registrado') as cliente_nombre
        FROM solicitudes_anulacion_ventas sav
        INNER JOIN ventas v ON v.id_venta = sav.venta_id
        LEFT JOIN clientes c ON c.id_cliente = v.cliente_id
@@ -28,11 +28,11 @@ export async function GET(request: Request) {
   const rows = await query<any[]>(
     `SELECT sav.id, sav.token, sav.estado, sav.motivo, sav.monto, sav.solicitado_por, sav.fecha_solicitud,
             v.id_venta as venta_id, v.codigo, v.total,
-            COALESCE(CONCAT(c.nombre, ' ', c.apellido), 'Sin cliente registrado') as cliente_nombre
+            COALESCE((CAST(c.nombre AS text) || CAST(' ' AS text) || CAST(c.apellido AS text)), 'Sin cliente registrado') as cliente_nombre
      FROM solicitudes_anulacion_ventas sav
      INNER JOIN ventas v ON v.id_venta = sav.venta_id
      LEFT JOIN clientes c ON c.id_cliente = v.cliente_id
-     WHERE BINARY sav.token = BINARY ? AND sav.estado = 'pendiente'
+     WHERE sav.token = ? AND sav.estado = 'pendiente'
      LIMIT 1`,
     [token]
   );

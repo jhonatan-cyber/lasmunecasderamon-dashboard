@@ -194,7 +194,7 @@ async function localCheckUserPermission(
   module: string,
   action: string
 ): Promise<boolean> {
-  // ponytail: dynamic import — Edge Runtime can't load mysql2/node modules statically
+  // ponytail: dynamic import — Edge Runtime can't load pg/node modules statically
   try {
     const { query } = await import('@/lib/database/db');
 
@@ -237,9 +237,8 @@ async function localCheckUserPermission(
 
     return perms.length > 0;
   } catch {
-    // Edge Runtime: can't load mysql2, allow request.
-    // Fine-grained permission checks should happen in API routes.
-    return true;
+    // Edge Runtime: can't load pg — deny by default, API routes will re-check
+    return false;
   }
 }
 
@@ -279,7 +278,7 @@ export default async function proxy(request: NextRequest) {
       rateLimitConfig = RATE_LIMIT_CONFIGS.SSE;
     } else if (isApi) {
       if (request.method === 'GET' || request.method === 'OPTIONS') {
-        rateLimitConfig = null;
+        rateLimitConfig = RATE_LIMIT_CONFIGS.API_GENERAL;
       } else {
         rateLimitConfig = RATE_LIMIT_CONFIGS.API_SENSITIVE;
       }
@@ -351,7 +350,7 @@ export default async function proxy(request: NextRequest) {
         secure: process.env.NODE_ENV === 'production',
         sameSite: 'strict',
         path: '/',
-        maxAge: 60 * 60 * 24 * 365
+        maxAge: 15 * 60
       });
     }
     // Si se renovó el token vía refresh token, setear la nueva cookie

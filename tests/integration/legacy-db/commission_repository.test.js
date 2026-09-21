@@ -1,11 +1,11 @@
 ﻿/* eslint-disable no-console */
 require('../../../scripts/guard-local-db')();
-const mysql = require('mysql2/promise');
+const postgres = require('../../../scripts/postgres-test-client.cjs');
 const crypto = require('crypto');
 require('dotenv').config();
 
 const queryMock = async (sql, params = []) => {
-  const connection = await mysql.createConnection({
+  const connection = await postgres.createConnection({
     host: process.env.DB_HOST,
     user: process.env.DB_USER,
     password: process.env.DB_PASSWORD,
@@ -27,7 +27,7 @@ const BaseRepository = {
     const values = Object.values(data);
     const placeholders = keys.map(() => '?').join(', ');
     const sql = `INSERT INTO ${table} (${keys.join(', ')}) VALUES (${placeholders})`;
-    const connection = await mysql.createConnection({
+    const connection = await postgres.createConnection({
       host: process.env.DB_HOST,
       user: process.env.DB_USER,
       password: process.env.DB_PASSWORD,
@@ -44,7 +44,7 @@ const BaseRepository = {
     const values = Object.values(data);
     const setClause = keys.map(k => `${k} = ?`).join(', ');
     const sql = `UPDATE ${table} SET ${setClause} WHERE ${idCol} = ?`;
-    const connection = await mysql.createConnection({
+    const connection = await postgres.createConnection({
       host: process.env.DB_HOST,
       user: process.env.DB_USER,
       password: process.env.DB_PASSWORD,
@@ -63,7 +63,7 @@ const getNowInBusinessTimezone = () => new Date();
 class CommissionRepository {
   static async summary() {
     const summary = await queryMock(`
-      SELECT 
+      SELECT
         SUM(monto) as total_comisiones,
         COUNT(*) as cantidad_comisiones,
         SUM(CASE WHEN venta_id IS NOT NULL AND venta_id <> '' AND venta_id <> '0' THEN monto ELSE 0 END) as comision_ventas,
@@ -101,7 +101,7 @@ class CommissionRepository {
       sqlParams.push(params.employeeId);
     }
     const sql = `
-      SELECT 
+      SELECT
         c.id_comision AS id,
         c.monto AS total,
         CASE WHEN c.estado = 1 THEN 'por_pagar' WHEN c.estado = 2 THEN 'pagado' ELSE 'anulado' END AS status,
@@ -119,7 +119,7 @@ class CommissionRepository {
   static async getDetails(usuarioId) {
     return await queryMock(
       `
-      SELECT 
+      SELECT
         c.id_comision AS id,
         c.monto AS monto,
         CASE WHEN c.estado = 1 THEN 'Por pagar' WHEN c.estado = 2 THEN 'Pagado' ELSE 'Anulado' END AS estado
@@ -155,7 +155,7 @@ async function runTests() {
   console.log('--- INICIANDO PRUEBAS UNITARIAS: CommissionRepository ---');
   let connection;
   try {
-    connection = await mysql.createConnection({
+    connection = await postgres.createConnection({
       host: process.env.DB_HOST,
       user: process.env.DB_USER,
       password: process.env.DB_PASSWORD,
@@ -187,10 +187,10 @@ async function runTests() {
     console.log('\n[4] Probando ciclo de vida (create/update/delete)...');
     const testId = await CommissionRepository.create({
       venta_id: crypto.randomUUID(),
-      monto: 500.5
+      monto: 500
     });
     console.log(`Creada: ${testId}`);
-    await CommissionRepository.update(testId, { monto: 999.99 });
+    await CommissionRepository.update(testId, { monto: 999 });
     await CommissionRepository.delete(testId);
 
     const [check] = await connection.execute(

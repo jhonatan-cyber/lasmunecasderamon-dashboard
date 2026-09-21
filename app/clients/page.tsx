@@ -15,6 +15,8 @@ import Paginate from '@/components/shared/Paginate';
 import { PermissionGuard } from '@/components/auth/PermissionGuard';
 import { Skeleton as BoneyardSkeleton } from 'boneyard-js/react';
 import { type ClientFormValues } from '@/hooks/personal';
+import { DevolucionSolicitudesButton } from '@/components/clients/DevolucionSolicitudesModal';
+import { useAuth } from '@/contexts/AuthContext';
 
 export default function Clients() {
   const {
@@ -67,11 +69,25 @@ export default function Clients() {
     prepagoSubmitting,
     closePrepagoModal,
 
+    isDevolucionModalOpen,
+    setIsDevolucionModalOpen,
+    devolucionClient,
+    devolucionAmount,
+    setDevolucionAmount,
+    devolucionPaymentMethod,
+    setDevolucionPaymentMethod,
+    devolucionMotivo,
+    setDevolucionMotivo,
+    devolucionSubmitting,
+    closeDevolucionModal,
+
     openCreateModal,
     openEditModal,
     openDetailsModal,
     openPrepagoModal,
-    handlePrepagoSubmit
+    handlePrepagoSubmit,
+    openDevolucionModal,
+    handleDevolucionSubmit
   } = useClientModals();
 
   const handleClearFilters = useCallback(() => {
@@ -92,6 +108,9 @@ export default function Clients() {
     [deleteClient]
   );
 
+  const { user } = useAuth();
+  const isAdmin = user?.role?.toLowerCase() === 'administrador';
+
   useRefreshOnFocus(fetchClients);
 
   return (
@@ -99,6 +118,11 @@ export default function Clients() {
       <BoneyardSkeleton name="clients-main" loading={isLoading && allClients.length === 0}>
       <div className='p-4 sm:p-6 lg:p-10 space-y-4 sm:space-y-6 mt-4 sm:mt-6 lg:mt-10'>
         <ClientHeader allClients={allClients} onCreateClick={openCreateModal} />
+        {isAdmin && (
+          <div className='px-4 sm:px-8 flex justify-end'>
+            <DevolucionSolicitudesButton />
+          </div>
+        )}
 
         <div className='px-4 sm:px-8'>
           <ClientStatsCards clients={allClients || []} />
@@ -128,6 +152,7 @@ export default function Clients() {
               onDelete={handleDeleteClient}
               onViewDetails={openDetailsModal}
               onLoadPrepago={openPrepagoModal}
+              onDevolucion={openDevolucionModal}
               currentPage={page}
               pageSize={pageSize}
               isMutating={isMutating}
@@ -176,6 +201,17 @@ export default function Clients() {
           onPrepagoMixedPaymentsChange={setPrepagoMixedPayments}
           onPrepagoSubmit={e => handlePrepagoSubmit(e, updateClientSaldo)}
           isPrepagoSubmitting={prepagoSubmitting}
+          isDevolucionModalOpen={isDevolucionModalOpen}
+          onDevolucionModalChange={setIsDevolucionModalOpen}
+          devolucionClient={devolucionClient}
+          devolucionAmount={devolucionAmount}
+          onDevolucionAmountChange={setDevolucionAmount}
+          devolucionPaymentMethod={devolucionPaymentMethod}
+          onDevolucionPaymentMethodChange={setDevolucionPaymentMethod}
+          devolucionMotivo={devolucionMotivo}
+          onDevolucionMotivoChange={setDevolucionMotivo}
+          onDevolucionSubmit={e => handleDevolucionSubmit(e, updateClientSaldo)}
+          isDevolucionSubmitting={devolucionSubmitting}
         />
       </div>
       </BoneyardSkeleton>

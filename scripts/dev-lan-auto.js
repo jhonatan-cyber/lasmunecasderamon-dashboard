@@ -9,13 +9,12 @@ const publicHost = 'localhost';
 console.log(`[dev] Servidor: http://${publicHost}:${port}`);
 
 const command = `pnpm exec next dev --hostname ${host} --port ${String(port)}`;
-const child = spawn(command, [], { stdio: 'inherit', shell: true, windowsHide: false });
+const child = spawn(command, { stdio: 'inherit', shell: true, windowsHide: false });
 
 // Warmup automático: cuando el servidor esté listo, prefetch endpoints del dashboard
 const warmupScript = path.join(__dirname, 'warmup.mjs');
 const warmup = spawn('node', [warmupScript], {
   stdio: 'inherit',
-  shell: true,
   windowsHide: false,
   env: { ...process.env, BASE_URL: `http://${host}:${port}` }
 });

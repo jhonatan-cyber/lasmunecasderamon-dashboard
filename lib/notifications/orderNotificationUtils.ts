@@ -56,7 +56,7 @@ export async function buildOrderNotificationData({
 
   const anfitrionasResults = (await query(
     `
-      SELECT GROUP_CONCAT(u.nick SEPARATOR ', ') as anfitrionas
+      SELECT STRING_AGG(u.nick, ', ') as anfitrionas
       FROM pedidos_usuarios pu
       INNER JOIN usuarios u ON pu.usuario_id = u.id_usuario
       WHERE pu.pedido_id = ?

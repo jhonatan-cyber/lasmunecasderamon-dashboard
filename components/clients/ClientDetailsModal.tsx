@@ -25,7 +25,7 @@ interface ClientDetailsModalProps {
 
 interface HistoryItem {
   id: string;
-  category: 'SERVICIO' | 'CONSUMO' | 'CARGA';
+  category: 'SERVICIO' | 'CONSUMO' | 'CARGA' | 'DEVOLUCION';
   monto: number;
   metodo_pago: string;
   fecha_crea: string;
@@ -36,6 +36,8 @@ interface HistoryItem {
     tiempo?: number;
     anfitrionas?: string[];
     productos?: { nombre: string; cantidad: number }[];
+    motivo?: string;
+    metodo_devolucion?: string;
   };
 }
 
@@ -47,6 +49,8 @@ const getCategoryIcon = (category: string) => {
       return <ShoppingBag className='w-4 h-4 text-orange-500' />;
     case 'CARGA':
       return <ArrowUpCircle className='w-4 h-4 text-green-500' />;
+    case 'DEVOLUCION':
+      return <ArrowUpCircle className='w-4 h-4 text-red-500 rotate-180' />;
     default:
       return <CreditCard className='w-4 h-4 text-gray-500' />;
   }
@@ -191,8 +195,13 @@ function ClientDetails({ client, onClose }: { client: Client; onClose: () => voi
                       <TableCell>
                         <div className='text-xs space-y-1'>
                           {item.category === 'CARGA' && (
-                            <p className='text-green-600 font-medium italic'>
-                              Abono a saldo prepago
+                            <p className='text-green-600 font-medium italic'>Abono a saldo prepago</p>
+                          )}
+                          {item.category === 'DEVOLUCION' && (
+                            <p className='text-red-600 font-medium italic'>
+                              Devolucion de saldo
+                              {item.detalle?.motivo ? ` — ${item.detalle.motivo}` : ''}
+                              {item.detalle?.metodo_devolucion ? ` (${item.detalle.metodo_devolucion})` : ''}
                             </p>
                           )}
                           {item.detalle?.habitacion && (
@@ -253,7 +262,7 @@ function ClientDetails({ client, onClose }: { client: Client; onClose: () => voi
                         </div>
                       </TableCell>
                       <TableCell
-                        className={`text-right font-bold font-mono text-sm ${item.category === 'CARGA' ? 'text-green-600 dark:text-green-400' : 'text-gray-900 dark:text-gray-100'}`}
+                        className={`text-right font-bold font-mono text-sm ${item.category === 'CARGA' ? 'text-green-600 dark:text-green-400' : item.category === 'DEVOLUCION' ? 'text-red-600 dark:text-red-400' : 'text-gray-900 dark:text-gray-100'}`}
                       >
                         {item.category === 'CARGA' ? '+' : '-'}${item.monto.toLocaleString('es-CL')}
                       </TableCell>

@@ -34,17 +34,17 @@ export class EventQueries {
         INNER JOIN detalle_servicios DS ON DS.servicio_id = S.id_servicio
         LEFT JOIN comisiones C ON C.servicio_id = S.id_servicio
         LEFT JOIN detalle_comisiones DC ON DC.comision_id = C.id_comision AND DC.usuario_id = DS.usuario_id
-        WHERE DS.usuario_id = ? AND S.fecha_crea >= DATE_SUB(?, INTERVAL 7 DAY)
+        WHERE DS.usuario_id = ? AND S.fecha_crea >= (CAST(? AS timestamp) - make_interval(days => CAST(7 AS integer)))
         UNION ALL
         SELECT DC.fecha_crea as date, DC.comision as amount FROM detalle_comisiones DC
         INNER JOIN comisiones C ON C.id_comision = DC.comision_id
-        WHERE DC.usuario_id = ? AND C.venta_id IS NOT NULL AND DC.fecha_crea >= DATE_SUB(?, INTERVAL 7 DAY)
+        WHERE DC.usuario_id = ? AND C.venta_id IS NOT NULL AND DC.fecha_crea >= (CAST(? AS timestamp) - make_interval(days => CAST(7 AS integer)))
         UNION ALL
         SELECT DP.fecha_crea as date, DP.monto as amount FROM detalle_propinas DP
-        WHERE DP.usuario_id = ? AND DP.fecha_crea >= DATE_SUB(?, INTERVAL 7 DAY)
+        WHERE DP.usuario_id = ? AND DP.fecha_crea >= (CAST(? AS timestamp) - make_interval(days => CAST(7 AS integer)))
         UNION ALL
         SELECT G.fecha_crea as date, G.monto as amount FROM gratificaciones G
-        WHERE G.usuario_id = ? AND G.fecha_crea >= DATE_SUB(?, INTERVAL 7 DAY)
+        WHERE G.usuario_id = ? AND G.fecha_crea >= (CAST(? AS timestamp) - make_interval(days => CAST(7 AS integer)))
       ) as combined
       GROUP BY DATE(date)
       ORDER BY DATE(date) ASC
@@ -107,7 +107,7 @@ export class EventQueries {
       const tableChecks = await query<TableCheckRow[]>(
         `SELECT table_name
        FROM information_schema.tables
-       WHERE table_schema = DATABASE()
+       WHERE table_schema = current_schema()
           AND table_name IN ('gratificaciones', 'horas_extras')`
       );
 
@@ -119,12 +119,12 @@ export class EventQueries {
       UNION ALL
       SELECT
         'gratificacion' as type,
-        CAST(g.id AS CHAR) as id,
+        CAST(g.id AS text) as id,
         g.fecha_crea as date,
         g.monto as amount,
         COALESCE(g.descripcion, 'GRAT') as codigo,
         g.estado as estado,
-        NULL as subType
+        NULL AS "subType"
       FROM gratificaciones g
       WHERE g.usuario_id = ?
       `
@@ -134,13 +134,13 @@ export class EventQueries {
         ? `
       UNION ALL
       SELECT
-        CAST('hora_extra' AS CHAR) as type,
-        CAST(he.id_hora_extra AS CHAR) as id,
+        CAST('hora_extra' AS text) as type,
+        CAST(he.id_hora_extra AS text) as id,
         he.fecha_crea as date,
         he.total as amount,
-        CONCAT(COALESCE(he.hora, 0), ' HRS') as codigo,
+        (CAST(COALESCE(he.hora, 0) AS text) || CAST(' HRS' AS text)) as codigo,
         he.estado as estado,
-        NULL as subType
+        NULL AS "subType"
       FROM horas_extras he
       WHERE he.usuario_id = ?
       `
@@ -162,12 +162,12 @@ export class EventQueries {
       FROM (
         SELECT
           'servicio' as type,
-          CAST(s.id_servicio AS CHAR) as id,
+          CAST(s.id_servicio AS text) as id,
           s.fecha_crea as date,
           s.total as amount,
           s.codigo as codigo,
           s.estado as estado,
-          NULL as subType
+          NULL AS "subType"
         FROM servicios s
         INNER JOIN detalle_servicios ds ON s.id_servicio = ds.servicio_id
         WHERE ds.usuario_id = ?
@@ -176,16 +176,16 @@ export class EventQueries {
 
         SELECT
           'comision' as type,
-          CAST(dc.id_detalle_comision AS CHAR) as id,
+          CAST(dc.id_detalle_comision AS text) as id,
           dc.fecha_crea as date,
           dc.comision as amount,
           COALESCE(v.codigo, s.codigo, 'COMM') as codigo,
           dc.estado as estado,
           CASE
-            WHEN c.venta_id IS NOT NULL AND c.venta_id <> 0 THEN 'venta'
-            WHEN c.servicio_id IS NOT NULL AND c.servicio_id <> 0 THEN 'servicio'
+            WHEN c.venta_id IS NOT NULL AND c.venta_id IS NOT NULL THEN 'venta'
+            WHEN c.servicio_id IS NOT NULL AND c.servicio_id IS NOT NULL THEN 'servicio'
             ELSE NULL
-          END as subType
+          END AS "subType"
         FROM detalle_comisiones dc
         LEFT JOIN comisiones c ON c.id_comision = dc.comision_id
         LEFT JOIN ventas v ON v.id_venta = c.venta_id
@@ -196,12 +196,12 @@ export class EventQueries {
 
         SELECT
           'propina' as type,
-          CAST(dp.id_detalle_propina AS CHAR) as id,
+          CAST(dp.id_detalle_propina AS text) as id,
           p.fecha_crea as date,
           dp.monto as amount,
           COALESCE(v.codigo, 'TIPS') as codigo,
           p.estado as estado,
-          'venta' as subType
+          'venta' AS "subType"
         FROM detalle_propinas dp
         INNER JOIN propinas p ON p.id_propina = dp.propina_id
         LEFT JOIN ventas v ON v.id_venta = p.venta_id
@@ -211,12 +211,12 @@ export class EventQueries {
 
         SELECT
           'asistencia' as type,
-          CAST(a.id_asistencia AS CHAR) as id,
-          CONCAT(a.fecha, ' ', COALESCE(a.hora, '00:00:00')) as date,
+          CAST(a.id_asistencia AS text) as id,
+          (a.fecha + COALESCE(a.hora, TIME '00:00:00')) as date,
           (COALESCE(u.sueldo, 0) - COALESCE(u.aporte, 0)) as amount,
           'ASIS' as codigo,
           a.estado as estado,
-          NULL as subType
+          NULL AS "subType"
         FROM asistencias a
         INNER JOIN usuarios u ON u.id_usuario = a.usuario_id
         WHERE a.usuario_id = ?
@@ -225,12 +225,12 @@ export class EventQueries {
 
         SELECT
           'anticipo' as type,
-          CAST(a.id_anticipo AS CHAR) as id,
+          CAST(a.id_anticipo AS text) as id,
           a.fecha_crea as date,
           a.monto as amount,
           'ANT' as codigo,
           a.estado as estado,
-          NULL as subType
+          NULL AS "subType"
         FROM anticipos a
         WHERE a.usuario_id = ?
         ${horasExtrasSql}
@@ -280,7 +280,7 @@ export class EventQueries {
     try {
       const detalPropina = await query<PropinaDetailRow[]>(
         `
-      SELECT 
+      SELECT
         dp.id_detalle_propina,
         dp.monto,
         dp.estado,
@@ -413,7 +413,7 @@ export class EventQueries {
     try {
       const detalComision = await query<ComisionDetailRow[]>(
         `
-      SELECT 
+      SELECT
         dc.id_detalle_comision,
         dc.comision as comision,
         dc.estado,
@@ -526,7 +526,7 @@ export class EventQueries {
     try {
       const asistencia = await query<AsistenciaDetailRow[]>(
         `
-      SELECT 
+      SELECT
         a.id_asistencia,
         a.fecha,
         a.hora,
@@ -558,9 +558,9 @@ export class EventQueries {
 
       const semanasData = await query<Array<{ semanas: number | null }>>(
         `
-      SELECT COUNT(DISTINCT YEARWEEK(fecha, 1)) as semanas
+      SELECT COUNT(DISTINCT TO_CHAR(fecha, 'IYYY-IW')) as semanas
       FROM asistencias
-      WHERE usuario_id = ? AND fecha <= ? AND estado = 1 AND DAYOFWEEK(fecha) IN (3,4,5,6,7,1)
+      WHERE usuario_id = ? AND fecha <= ? AND estado = 1 AND (EXTRACT(DOW FROM fecha)::integer + 1) IN (3,4,5,6,7,1)
     `,
         [a.id_usuario, a.fecha]
       );
@@ -594,7 +594,7 @@ export class EventQueries {
     try {
       const anticipo = await query<AnticipoDetailRow[]>(
         `
-      SELECT 
+      SELECT
         a.id_anticipo,
         a.monto,
         a.estado,
@@ -655,7 +655,7 @@ export class EventQueries {
     try {
       const servicio = await query<ServicioDetailRow[]>(
         `
-      SELECT 
+      SELECT
         s.id_servicio,
         s.codigo,
         s.fecha_crea,
@@ -689,8 +689,8 @@ export class EventQueries {
 
       const comisiones = await query<ComisionServicioRow[]>(
         `
-      SELECT 
-        dc.monto as comision,
+      SELECT
+        dc.comision as comision,
         u.id_usuario,
         u.nick,
         u.nombre,
@@ -756,7 +756,7 @@ export class EventQueries {
     try {
       const venta = await query<VentaDetailRow[]>(
         `
-      SELECT 
+      SELECT
         v.id_venta,
         v.codigo,
         v.fecha_crea,
@@ -789,7 +789,7 @@ export class EventQueries {
 
       const productos = await query<DetalleVentaRow[]>(
         `
-      SELECT 
+      SELECT
         dv.cantidad,
         dv.sub_total,
         p.nombre as producto_nombre
@@ -802,8 +802,8 @@ export class EventQueries {
 
       const comisiones = await query<ComisionServicioRow[]>(
         `
-      SELECT 
-        dc.monto as comision,
+      SELECT
+        dc.comision as comision,
         u.id_usuario,
         u.nick,
         u.nombre,
@@ -818,7 +818,7 @@ export class EventQueries {
 
       const propinas = await query<PropinaDetalleRow[]>(
         `
-      SELECT 
+      SELECT
         dp.monto,
         u.id_usuario,
         u.nick,
@@ -846,7 +846,7 @@ export class EventQueries {
 
       const anfitrionas = await query<ComisionServicioRow[]>(
         `
-      SELECT u.id_usuario, u.nick, u.nombre, u.apellido, dc.monto as comision
+      SELECT u.id_usuario, u.nick, u.nombre, u.apellido, dc.comision as comision
       FROM detalle_comisiones dc
       INNER JOIN comisiones c ON c.id_comision = dc.comision_id
       INNER JOIN usuarios u ON u.id_usuario = dc.usuario_id
@@ -908,7 +908,7 @@ export class EventQueries {
     try {
       const gratificacion = await query<GratificacionDetailRow[]>(
         `
-      SELECT 
+      SELECT
         g.id,
         g.monto,
         g.descripcion,
@@ -951,7 +951,7 @@ export class EventQueries {
     try {
       const horaExtra = await query<HoraExtraDetailRow[]>(
         `
-      SELECT 
+      SELECT
         he.id_hora_extra,
         he.hora,
         he.total,

@@ -22,23 +22,23 @@ function buildDateRange(
 
   switch (period) {
     case 'today':
-      return { clause: `DATE(${column}) = CURDATE()`, params: [] };
+      return { clause: `DATE(${column}) = CURRENT_DATE`, params: [] };
     case 'yesterday':
-      return { clause: `DATE(${column}) = DATE_SUB(CURDATE(), INTERVAL 1 DAY)`, params: [] };
+      return { clause: `DATE(${column}) = (CAST(CURRENT_DATE AS timestamp) - make_interval(days => CAST(1 AS integer)))`, params: [] };
     case 'week':
-      return { clause: `DATE(${column}) >= DATE_SUB(CURDATE(), INTERVAL 6 DAY)`, params: [] };
+      return { clause: `DATE(${column}) >= (CAST(CURRENT_DATE AS timestamp) - make_interval(days => CAST(6 AS integer)))`, params: [] };
     case 'month':
     case 'current_month':
-      return { clause: `${column} >= DATE_FORMAT(CURDATE(), '%Y-%m-01')`, params: [] };
+      return { clause: `${column} >= date_trunc('month', CURRENT_DATE)`, params: [] };
     case 'last_month':
       return {
         clause:
-          `${column} >= DATE_FORMAT(DATE_SUB(CURDATE(), INTERVAL 1 MONTH), '%Y-%m-01') ` +
-          `AND ${column} < DATE_FORMAT(CURDATE(), '%Y-%m-01')`,
+          `${column} >= date_trunc('month', (CAST(CURRENT_DATE AS timestamp) - make_interval(months => CAST(1 AS integer)))) ` +
+          `AND ${column} < date_trunc('month', CURRENT_DATE)`,
         params: []
       };
     default:
-      return { clause: `DATE(${column}) = CURDATE()`, params: [] };
+      return { clause: `DATE(${column}) = CURRENT_DATE`, params: [] };
   }
 }
 
@@ -68,7 +68,7 @@ export async function getCashRegisterReport(
       c.iva,
       c.devolucion AS devoluciones,
       CASE
-        WHEN HOUR(c.fecha_apertura) BETWEEN 6 AND 17 THEN 'Dia'
+        WHEN EXTRACT(HOUR FROM c.fecha_apertura) BETWEEN 6 AND 17 THEN 'Dia'
         ELSE 'Noche'
       END AS turno,
       COALESCE(

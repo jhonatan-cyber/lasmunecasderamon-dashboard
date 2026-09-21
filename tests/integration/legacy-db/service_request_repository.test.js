@@ -1,11 +1,11 @@
 ﻿/* eslint-disable no-console */
 require('../../../scripts/guard-local-db')();
-const mysql = require('mysql2/promise');
+const postgres = require('../../../scripts/postgres-test-client.cjs');
 const crypto = require('crypto');
 require('dotenv').config();
 
 const queryMock = async (sql, params = []) => {
-  const connection = await mysql.createConnection({
+  const connection = await postgres.createConnection({
     host: process.env.DB_HOST,
     user: process.env.DB_USER,
     password: process.env.DB_PASSWORD,
@@ -24,7 +24,7 @@ const generateUUID = () => crypto.randomUUID();
 class ServiceRequestRepository {
   static async getAll(estado) {
     let sql = `
-      SELECT ss.*, CONCAT(u_sol.nombre, ' ', u_sol.apellido) as solicitado_por_nombre, u_sol.nick as solicitado_por_nick, 
+      SELECT ss.*, CONCAT(u_sol.nombre, ' ', u_sol.apellido) as solicitado_por_nombre, u_sol.nick as solicitado_por_nick,
              CONCAT(c.nombre, ' ', c.apellido) as cliente_nombre, h.nombre as habitacion_nombre
       FROM solicitudes_servicios ss
       LEFT JOIN usuarios u_sol ON ss.solicitado_por = u_sol.id_usuario
@@ -45,10 +45,10 @@ class ServiceRequestRepository {
     const id = generateUUID();
     await queryMock(
       `
-      INSERT INTO solicitudes_servicios 
-      (id_solicitud, cliente_id, habitacion_id, precio_servicio, precio_habitacion, comision_anfitriona, anfitrionas_ids, 
-       num_clientes, metodo_pago, tiempo, total, iva, solicitado_por, codigo, estado, fecha_solicitud) 
-      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 0, NOW())
+      INSERT INTO solicitudes_servicios
+      (id_solicitud, cliente_id, habitacion_id, precio_servicio, precio_habitacion, comision_anfitriona, anfitrionas_ids,
+       num_clientes, metodo_pago, tiempo, total, iva, solicitado_por, codigo, estado, fecha_solicitud)
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'pendiente', NOW())
     `,
       [
         id,
@@ -72,7 +72,7 @@ class ServiceRequestRepository {
 
   static async getPendingCount() {
     const res = await queryMock(
-      'SELECT COUNT(*) as count FROM solicitudes_servicios WHERE estado = 0'
+      "SELECT COUNT(*) as count FROM solicitudes_servicios WHERE estado = 'pendiente'"
     );
     return res[0]?.count || 0;
   }
@@ -113,7 +113,7 @@ async function runTests() {
     }
 
     console.log('\n[3] Probando getAll()...');
-    const all = await ServiceRequestRepository.getAll(0);
+    const all = await ServiceRequestRepository.getAll('pendiente');
     const found = all.find(s => s.id_solicitud === requestId);
     if (found) {
       console.log('✅ getAll() OK');

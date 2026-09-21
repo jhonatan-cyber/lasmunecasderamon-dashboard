@@ -110,16 +110,16 @@ export class StatsQueries {
     try {
       return await query<any[]>(
         `SELECT
-          COALESCE((SELECT SUM(v.total - COALESCE(v.cargo_tarjeta, 0)) FROM ventas v WHERE v.estado IN (1, 2) AND v.fecha_crea >= DATE(?) AND v.fecha_crea < DATE_ADD(DATE(?), INTERVAL 1 DAY)), 0) AS sales_today,
-          COALESCE((SELECT SUM(v.total - COALESCE(v.cargo_tarjeta, 0)) FROM ventas v WHERE v.estado IN (1, 2) AND v.fecha_crea >= DATE(?) AND v.fecha_crea < DATE_ADD(DATE(?), INTERVAL 1 DAY)), 0) AS sales_yesterday,
-          COALESCE((SELECT SUM(s.total) FROM servicios s WHERE s.estado IN (1, 2) AND s.fecha_crea >= DATE(?) AND s.fecha_crea < DATE_ADD(DATE(?), INTERVAL 1 DAY)), 0) AS services_today,
-          COALESCE((SELECT SUM(s.total) FROM servicios s WHERE s.estado IN (1, 2) AND s.fecha_crea >= DATE(?) AND s.fecha_crea < DATE_ADD(DATE(?), INTERVAL 1 DAY)), 0) AS services_yesterday,
-          COALESCE((SELECT COUNT(*) FROM ventas v WHERE v.estado IN (1, 2) AND YEARWEEK(v.fecha_crea, 1) = YEARWEEK(DATE(?), 1)), 0) AS sales_count_week,
-          COALESCE((SELECT COUNT(*) FROM ventas v WHERE v.estado IN (1, 2) AND YEARWEEK(v.fecha_crea, 1) = YEARWEEK(DATE_SUB(DATE(?), INTERVAL 7 DAY), 1)), 0) AS sales_count_previous_week,
-          COALESCE((SELECT SUM(v.total - COALESCE(v.cargo_tarjeta, 0)) FROM ventas v WHERE v.estado IN (1, 2) AND YEARWEEK(v.fecha_crea, 1) = YEARWEEK(DATE(?), 1)), 0) AS sales_total_week,
-          COALESCE((SELECT SUM(v.total - COALESCE(v.cargo_tarjeta, 0)) FROM ventas v WHERE v.estado IN (1, 2) AND YEARWEEK(v.fecha_crea, 1) = YEARWEEK(DATE_SUB(DATE(?), INTERVAL 7 DAY), 1)), 0) AS sales_total_previous_week,
-          COALESCE((SELECT SUM(v.total - COALESCE(v.cargo_tarjeta, 0)) FROM ventas v WHERE v.estado IN (1, 2) AND v.fecha_crea >= DATE(?) AND v.fecha_crea < DATE_ADD(DATE(?), INTERVAL 1 DAY) AND TIME(v.fecha_crea) <= TIME(?)), 0) AS sales_same_time_today,
-          COALESCE((SELECT SUM(v.total - COALESCE(v.cargo_tarjeta, 0)) FROM ventas v WHERE v.estado IN (1, 2) AND v.fecha_crea >= DATE(?) AND v.fecha_crea < DATE_ADD(DATE(?), INTERVAL 1 DAY) AND TIME(v.fecha_crea) <= TIME(?)), 0) AS sales_same_time_yesterday
+          COALESCE((SELECT SUM(v.total - COALESCE(v.cargo_tarjeta, 0)) FROM ventas v WHERE v.estado IN (1, 2) AND v.fecha_crea >= DATE(?) AND v.fecha_crea < (CAST(DATE(?) AS timestamp) + make_interval(days => CAST(1 AS integer)))), 0) AS sales_today,
+          COALESCE((SELECT SUM(v.total - COALESCE(v.cargo_tarjeta, 0)) FROM ventas v WHERE v.estado IN (1, 2) AND v.fecha_crea >= DATE(?) AND v.fecha_crea < (CAST(DATE(?) AS timestamp) + make_interval(days => CAST(1 AS integer)))), 0) AS sales_yesterday,
+          COALESCE((SELECT SUM(s.total) FROM servicios s WHERE s.estado IN (1, 2) AND s.fecha_crea >= DATE(?) AND s.fecha_crea < (CAST(DATE(?) AS timestamp) + make_interval(days => CAST(1 AS integer)))), 0) AS services_today,
+          COALESCE((SELECT SUM(s.total) FROM servicios s WHERE s.estado IN (1, 2) AND s.fecha_crea >= DATE(?) AND s.fecha_crea < (CAST(DATE(?) AS timestamp) + make_interval(days => CAST(1 AS integer)))), 0) AS services_yesterday,
+          COALESCE((SELECT COUNT(*) FROM ventas v WHERE v.estado IN (1, 2) AND TO_CHAR(v.fecha_crea, 'IYYY-IW') = TO_CHAR(DATE(?), 'IYYY-IW')), 0) AS sales_count_week,
+          COALESCE((SELECT COUNT(*) FROM ventas v WHERE v.estado IN (1, 2) AND TO_CHAR(v.fecha_crea, 'IYYY-IW') = TO_CHAR((CAST(DATE(?) AS timestamp) - make_interval(days => CAST(7 AS integer))), 'IYYY-IW')), 0) AS sales_count_previous_week,
+          COALESCE((SELECT SUM(v.total - COALESCE(v.cargo_tarjeta, 0)) FROM ventas v WHERE v.estado IN (1, 2) AND TO_CHAR(v.fecha_crea, 'IYYY-IW') = TO_CHAR(DATE(?), 'IYYY-IW')), 0) AS sales_total_week,
+          COALESCE((SELECT SUM(v.total - COALESCE(v.cargo_tarjeta, 0)) FROM ventas v WHERE v.estado IN (1, 2) AND TO_CHAR(v.fecha_crea, 'IYYY-IW') = TO_CHAR((CAST(DATE(?) AS timestamp) - make_interval(days => CAST(7 AS integer))), 'IYYY-IW')), 0) AS sales_total_previous_week,
+          COALESCE((SELECT SUM(v.total - COALESCE(v.cargo_tarjeta, 0)) FROM ventas v WHERE v.estado IN (1, 2) AND v.fecha_crea >= DATE(?) AND v.fecha_crea < (CAST(DATE(?) AS timestamp) + make_interval(days => CAST(1 AS integer))) AND CAST(v.fecha_crea AS time) <= CAST(? AS time)), 0) AS sales_same_time_today,
+          COALESCE((SELECT SUM(v.total - COALESCE(v.cargo_tarjeta, 0)) FROM ventas v WHERE v.estado IN (1, 2) AND v.fecha_crea >= DATE(?) AND v.fecha_crea < (CAST(DATE(?) AS timestamp) + make_interval(days => CAST(1 AS integer))) AND CAST(v.fecha_crea AS time) <= CAST(? AS time)), 0) AS sales_same_time_yesterday
         `,
         [
           now,
@@ -160,16 +160,16 @@ export class StatsQueries {
           FROM detalle_ventas dv
           INNER JOIN ventas v ON v.id_venta = dv.venta_id
           INNER JOIN productos p ON p.id_producto = dv.producto_id
-          WHERE v.estado IN (1, 2) AND v.fecha_crea >= DATE(?) AND v.fecha_crea < DATE_ADD(DATE(?), INTERVAL 1 DAY)
+          WHERE v.estado IN (1, 2) AND v.fecha_crea >= DATE(?) AND v.fecha_crea < (CAST(DATE(?) AS timestamp) + make_interval(days => CAST(1 AS integer)))
           GROUP BY p.id_producto, p.nombre
           UNION ALL
           SELECT 'room' AS ranking_type, room_activity.item_name, room_activity.operations_count AS primary_value, room_activity.total_generated AS secondary_value
           FROM (
             SELECT h.nombre AS item_name, COUNT(*) AS operations_count, SUM(activity.total) AS total_generated
             FROM (
-              SELECT habitacion_id, total FROM servicios WHERE estado IN (1, 2) AND fecha_crea >= DATE(?) AND fecha_crea < DATE_ADD(DATE(?), INTERVAL 1 DAY)
+              SELECT habitacion_id, total FROM servicios WHERE estado IN (1, 2) AND fecha_crea >= DATE(?) AND fecha_crea < (CAST(DATE(?) AS timestamp) + make_interval(days => CAST(1 AS integer)))
               UNION ALL
-              SELECT habitacion_id, total FROM ventas WHERE estado IN (1, 2) AND fecha_crea >= DATE(?) AND fecha_crea < DATE_ADD(DATE(?), INTERVAL 1 DAY)
+              SELECT habitacion_id, total FROM ventas WHERE estado IN (1, 2) AND fecha_crea >= DATE(?) AND fecha_crea < (CAST(DATE(?) AS timestamp) + make_interval(days => CAST(1 AS integer)))
             ) activity
             INNER JOIN habitaciones h ON h.id_habitacion = activity.habitacion_id
             GROUP BY h.id_habitacion, h.nombre
@@ -177,11 +177,11 @@ export class StatsQueries {
           UNION ALL
           SELECT 'staff' AS ranking_type, staff_activity.item_name, staff_activity.operations_count AS primary_value, staff_activity.total_generated AS secondary_value
           FROM (
-            SELECT CONCAT(u.nombre, ' ', u.apellido) AS item_name, COUNT(*) AS operations_count, SUM(staff_source.total) AS total_generated
+            SELECT (CAST(u.nombre AS text) || CAST(' ' AS text) || CAST(u.apellido AS text)) AS item_name, COUNT(*) AS operations_count, SUM(staff_source.total) AS total_generated
             FROM (
-              SELECT ds.usuario_id, s.total FROM detalle_servicios ds INNER JOIN servicios s ON s.id_servicio = ds.servicio_id WHERE s.estado IN (1, 2) AND s.fecha_crea >= DATE(?) AND s.fecha_crea < DATE_ADD(DATE(?), INTERVAL 1 DAY)
+              SELECT ds.usuario_id, s.total FROM detalle_servicios ds INNER JOIN servicios s ON s.id_servicio = ds.servicio_id WHERE s.estado IN (1, 2) AND s.fecha_crea >= DATE(?) AND s.fecha_crea < (CAST(DATE(?) AS timestamp) + make_interval(days => CAST(1 AS integer)))
               UNION ALL
-              SELECT vu.usuario_id, v.total FROM ventas_usuarios vu INNER JOIN ventas v ON v.id_venta = vu.venta_id WHERE v.estado IN (1, 2) AND v.fecha_crea >= DATE(?) AND v.fecha_crea < DATE_ADD(DATE(?), INTERVAL 1 DAY)
+              SELECT vu.usuario_id, v.total FROM ventas_usuarios vu INNER JOIN ventas v ON v.id_venta = vu.venta_id WHERE v.estado IN (1, 2) AND v.fecha_crea >= DATE(?) AND v.fecha_crea < (CAST(DATE(?) AS timestamp) + make_interval(days => CAST(1 AS integer)))
             ) staff_source
             INNER JOIN usuarios u ON u.id_usuario = staff_source.usuario_id
             GROUP BY u.id_usuario, u.nombre, u.apellido
@@ -340,7 +340,7 @@ export class StatsQueries {
     try {
       return await query<any[]>(
         `
-      SELECT 
+      SELECT
         COALESCE(SUM(s.precio_servicio), 0) as monto_servicio,
         COALESCE(SUM(s.precio_habitacion), 0) as monto_habitacion,
         COALESCE(SUM(s.iva), 0) as monto_iva,
@@ -368,8 +368,8 @@ export class StatsQueries {
       const cajaRows = await query<any[]>(
         `SELECT id_caja, fecha_apertura, usuario_id_apertura, monto_apertura, efectivo,
               tarjeta, transferencia, comision, anticipo, devolucion, iva,
-              TIMESTAMPDIFF(HOUR, fecha_apertura, ?) as horas_abierta,
-              TIMESTAMPDIFF(MINUTE, fecha_apertura, ?) % 60 as minutos_abierta
+              TRUNC(EXTRACT(EPOCH FROM (CAST(? AS timestamp) - CAST(fecha_apertura AS timestamp))) / 3600) as horas_abierta,
+              TRUNC(EXTRACT(EPOCH FROM (CAST(? AS timestamp) - CAST(fecha_apertura AS timestamp))) / 60) % 60 as minutos_abierta
        FROM cajas WHERE estado = 1 ORDER BY fecha_apertura DESC LIMIT 1`,
         [now, now]
       );
@@ -377,7 +377,7 @@ export class StatsQueries {
       if (cajaRows.length === 0) {
         const generalData = await query<any[]>(
           `
-        SELECT 
+        SELECT
           COUNT(CASE WHEN estado = 1 THEN 1 END) as cajas_abiertas,
           COUNT(CASE WHEN estado = 0 THEN 1 END) as cajas_cerradas,
           COUNT(*) as total_cajas
@@ -398,7 +398,7 @@ export class StatsQueries {
 
       const [cajaStatsRows, withdrawalsRows, serviciosRows] = await Promise.all([
         query<any[]>(
-          `SELECT 
+          `SELECT
           COALESCE(SUM(v.total), 0) as total_ventas,
           COALESCE(COUNT(*), 0) as cantidad_ventas,
           COALESCE(AVG(total), 0) as promedio_venta,
@@ -427,7 +427,7 @@ export class StatsQueries {
       const totalWithdrawals = Number(withdrawalsRows[0]?.total || 0);
 
       const balanceRow = await query<any[]>(
-        `SELECT 
+        `SELECT
         COALESCE(SUM(monto_apertura + efectivo + tarjeta + transferencia - COALESCE(anticipo, 0) - COALESCE(devolucion, 0)), 0) as balance_total
        FROM cajas WHERE id_caja = ?`,
         [cajaId]
@@ -522,13 +522,13 @@ export class StatsQueries {
     try {
       return await query<any[]>(
         `
-      SELECT 
-        DATE_FORMAT(fecha_crea, '%Y-%m') as mes,
+      SELECT
+        TO_CHAR(fecha_crea, 'YYYY-MM') as mes,
         COUNT(*) as cantidad_ventas,
         SUM(total) as total_ventas
       FROM ventas
       WHERE estado IN (1, 2)
-      GROUP BY DATE_FORMAT(fecha_crea, '%Y-%m')
+      GROUP BY TO_CHAR(fecha_crea, 'YYYY-MM')
       ORDER BY mes DESC
       LIMIT 12 OFFSET ?
     `,
@@ -543,15 +543,15 @@ export class StatsQueries {
   static async getSalesByWeek(offset: number = 0) {
     try {
       const queryStr = `
-      SELECT 
-        DATE_FORMAT(days.d, '%Y-%u') as semana,
-        DATE_FORMAT(days.d, '%W') as dia_semana,
+      SELECT
+        TO_CHAR(days.d, 'YYYY-IW') as semana,
+        TO_CHAR(days.d, 'FMDay') as dia_semana,
         MIN(days.d) as fecha_inicio,
-        WEEKDAY(days.d) as orden,
+        (EXTRACT(ISODOW FROM days.d)::integer - 1) as orden,
         COALESCE(SUM(v.total), 0) as total,
         COUNT(v.id_venta) as cantidad
       FROM (
-        SELECT DATE_SUB(DATE(?), INTERVAL (t.n + ? * 7) DAY) as d
+        SELECT (CAST(DATE(?) AS timestamp) - make_interval(days => CAST((t.n + ? * 7) AS integer))) as d
         FROM (
           SELECT a.N + b.N * 10 + c.N * 100 AS n
           FROM (SELECT 0 AS N UNION ALL SELECT 1 UNION ALL SELECT 2 UNION ALL SELECT 3 UNION ALL SELECT 4 UNION ALL SELECT 5 UNION ALL SELECT 6 UNION ALL SELECT 7 UNION ALL SELECT 8 UNION ALL SELECT 9) a
@@ -561,7 +561,7 @@ export class StatsQueries {
         WHERE t.n < 7
       ) days
       LEFT JOIN ventas v ON DATE(v.fecha_crea) = days.d AND v.estado IN (1, 2)
-      GROUP BY DATE_FORMAT(days.d, '%Y-%u'), DATE_FORMAT(days.d, '%W'), WEEKDAY(days.d)
+      GROUP BY TO_CHAR(days.d, 'YYYY-IW'), TO_CHAR(days.d, 'FMDay'), (EXTRACT(ISODOW FROM days.d)::integer - 1)
       ORDER BY semana DESC, orden ASC
     `;
       const now = getNowInBusinessTimezone();
@@ -605,8 +605,8 @@ export class StatsQueries {
       const cajaRows = await query<any[]>(
         `SELECT id_caja, fecha_apertura, usuario_id_apertura, monto_apertura, efectivo,
               tarjeta, transferencia, comision, anticipo, devolucion, iva,
-              TIMESTAMPDIFF(HOUR, fecha_apertura, ?) as horas_abierta,
-              TIMESTAMPDIFF(MINUTE, fecha_apertura, ?) % 60 as minutos_abierta
+              TRUNC(EXTRACT(EPOCH FROM (CAST(? AS timestamp) - CAST(fecha_apertura AS timestamp))) / 3600) as horas_abierta,
+              TRUNC(EXTRACT(EPOCH FROM (CAST(? AS timestamp) - CAST(fecha_apertura AS timestamp))) / 60) % 60 as minutos_abierta
        FROM cajas WHERE estado = 1 ORDER BY fecha_apertura DESC LIMIT 1`,
         [now, now]
       );
@@ -626,7 +626,7 @@ export class StatsQueries {
       ] = await Promise.all([
         cajaId
           ? query<any[]>(
-              `SELECT 
+              `SELECT
               COALESCE(SUM(v.total), 0) as total_ventas, COUNT(v.id_venta) as cantidad_ventas,
               COALESCE(AVG(v.total), 0) as promedio_venta,
               COALESCE(SUM(CASE WHEN v.metodo_pago = 'efectivo' THEN v.total ELSE 0 END), 0) as total_ventas_efectivo,
@@ -806,9 +806,9 @@ export class StatsQueries {
         query('SELECT * FROM anticipos WHERE usuario_id = ?', [userId]) as Promise<any[]>,
         query(
           `
-        SELECT P.id_propina, P.estado, DP.monto 
-        FROM propinas P 
-        INNER JOIN detalle_propinas DP ON DP.propina_id = P.id_propina 
+        SELECT P.id_propina, P.estado, DP.monto
+        FROM propinas P
+        INNER JOIN detalle_propinas DP ON DP.propina_id = P.id_propina
         WHERE DP.usuario_id = ?`,
           [userId]
         ) as Promise<any[]>,
@@ -828,9 +828,9 @@ export class StatsQueries {
         query('SELECT * FROM detalle_comisiones WHERE usuario_id = ?', [userId]) as Promise<any[]>,
         query(
           `
-        SELECT COUNT(DISTINCT YEARWEEK(fecha, 1)) as semanas 
-        FROM asistencias 
-        WHERE usuario_id = ? AND estado = 1 AND DAYOFWEEK(fecha) IN (3,4,5,6,7,1)`,
+        SELECT COUNT(DISTINCT TO_CHAR(fecha, 'IYYY-IW')) as semanas
+        FROM asistencias
+        WHERE usuario_id = ? AND estado = 1 AND (EXTRACT(DOW FROM fecha)::integer + 1) IN (3,4,5,6,7,1)`,
           [userId]
         ) as Promise<any[]>
       ]);

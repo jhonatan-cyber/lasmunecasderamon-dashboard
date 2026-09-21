@@ -14,6 +14,14 @@ type PrepagoInput = {
   metadatos?: Record<string, unknown>;
 };
 
+type DevolucionInput = {
+  cliente_id: string;
+  monto: number;
+  metodo_pago: string;
+  motivo?: string;
+  usuario_id?: string;
+};
+
 export class ClientService {
   static async createClient(body: ClientCreateInput) {
     const validated = ClientSchema.omit({ id: true }).parse(body);
@@ -35,6 +43,10 @@ export class ClientService {
 
   static async addPrepago(data: PrepagoInput) {
     return await ClientRepository.addPrepago(data);
+  }
+
+  static async devolverSaldo(data: DevolucionInput) {
+    return await ClientRepository.devolverSaldo(data);
   }
 
   static async getById(id: string | number) {

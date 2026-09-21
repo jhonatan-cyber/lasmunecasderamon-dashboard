@@ -5,6 +5,7 @@ import { useCategories, Category } from '@/hooks/productos/useCategories';
 import { PermissionGuard } from '@/components/auth/PermissionGuard';
 import { Skeleton as BoneyardSkeleton } from 'boneyard-js/react';
 import CategoryCard from '@/components/products/CategoryCard';
+import Link from 'next/link';
 
 export function ProductsPageClient() {
   const router = useRouter();
@@ -16,7 +17,8 @@ export function ProductsPageClient() {
       <BoneyardSkeleton name="products-main" loading={categoriesLoading}>
       <div className='p-4 sm:p-6 lg:p-10 space-y-4 sm:space-y-6 mt-4 sm:mt-6 lg:mt-10'>
         <div>
-          <h1 className='text-xl sm:text-2xl lg:text-3xl font-bold text-gray-900'>Productos</h1>
+          <h1 className='text-xl sm:text-2xl lg:text-3xl font-bold text-gray-900'>Catálogo de productos</h1>
+          <div className='my-3 flex gap-4 text-sm font-medium text-blue-700'><Link href='/inventory'>Administrar inventario</Link><Link href='/bar'>Ver existencias del bar</Link></div>
           <p className='text-sm sm:text-base text-gray-600'>
             Selecciona una categoría para ver sus productos
           </p>

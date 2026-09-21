@@ -29,14 +29,14 @@ function getEstadoTexto(estado: number) {
 
 export async function getAllGratificaciones(userId?: string) {
   try {
-    const tableCheck = await query<any[]>("SHOW TABLES LIKE 'gratificaciones'");
+    const tableCheck = await query<any[]>("SELECT table_name FROM information_schema.tables WHERE table_schema = current_schema() AND table_name = 'gratificaciones'");
   if (tableCheck.length === 0) return [];
 
   let sql = `
     SELECT G.*,
-           DATE_FORMAT(G.fecha_crea, "%Y-%m-%d %H:%i:%s") as fecha_crea_fmt,
-           DATE_FORMAT(G.fecha_mod, "%Y-%m-%d %H:%i:%s") as fecha_mod_fmt,
-           U.id_usuario, CONCAT(U.nombre, ' ', U.apellido) AS usuario, U.foto AS usuario_foto
+           TO_CHAR(G.fecha_crea, 'YYYY-MM-DD HH24:MI:SS') as fecha_crea_fmt,
+           TO_CHAR(G.fecha_mod, 'YYYY-MM-DD HH24:MI:SS') as fecha_mod_fmt,
+           U.id_usuario, (CAST(U.nombre AS text) || CAST(' ' AS text) || CAST(U.apellido AS text)) AS usuario, U.foto AS usuario_foto
     FROM gratificaciones G
     INNER JOIN usuarios U ON U.id_usuario = G.usuario_id
   `;
@@ -74,7 +74,7 @@ export async function createGratificacion(data: {
   descripcion?: string;
 }) {
   try {
-    const tableCheck = await query<any[]>("SHOW TABLES LIKE 'gratificaciones'");
+    const tableCheck = await query<any[]>("SELECT table_name FROM information_schema.tables WHERE table_schema = current_schema() AND table_name = 'gratificaciones'");
   const id = generateUUID();
   const now = getNowInBusinessTimezone();
   if (tableCheck.length === 0) return id;
@@ -102,7 +102,7 @@ export async function requestGratificacion(
   requestedByUserId: string
 ) {
   try {
-    const tableCheck = await query<any[]>("SHOW TABLES LIKE 'gratificaciones'");
+    const tableCheck = await query<any[]>("SELECT table_name FROM information_schema.tables WHERE table_schema = current_schema() AND table_name = 'gratificaciones'");
   if (tableCheck.length === 0) {
     throw new BusinessError(
       'La tabla de gratificaciones no existe',

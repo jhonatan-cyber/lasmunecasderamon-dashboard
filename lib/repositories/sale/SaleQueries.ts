@@ -203,7 +203,7 @@ export class SaleQueries {
                  AND UPPER(tipo) = 'CONSUMO'
                  AND (
                    venta_id = ?
-                   OR JSON_UNQUOTE(JSON_EXTRACT(metadatos, '$.venta_id')) = ?
+                   OR (metadatos::jsonb ->> 'venta_id') = ?
                  )`,
               [clienteId, ventaId, ventaId]
             )
@@ -402,7 +402,7 @@ export class SaleQueries {
         }
 
         const sql = `
-          SELECT 
+          SELECT
             SUM(total - COALESCE(cargo_tarjeta, 0)) as total_ventas,
             SUM(COALESCE(cargo_tarjeta, 0)) as cargo_tarjeta,
             SUM(CASE WHEN metodo_pago = 'efectivo' THEN total ELSE 0 END) as efectivo,
@@ -434,7 +434,7 @@ export class SaleQueries {
 
       const sql = `
         SELECT v.*,
-          CONCAT(c.nombre, ' ', c.apellido) as cliente_nombre,
+          (CAST(c.nombre AS text) || CAST(' ' AS text) || CAST(c.apellido AS text)) as cliente_nombre,
           u.nick as staff_nick,
           u.nombre as cajero_nombre,
           h.nombre as habitacion_numero,
@@ -444,7 +444,7 @@ export class SaleQueries {
             WHERE sav.venta_id = v.id_venta
           ) as has_anulacion_solicitada,
           (SELECT COUNT(*) FROM detalle_ventas dv WHERE dv.venta_id = v.id_venta) as item_count,
-          (SELECT GROUP_CONCAT(u2.nick SEPARATOR ',')
+          (SELECT STRING_AGG(u2.nick, ',')
            FROM ventas_usuarios vu
            JOIN usuarios u2 ON u2.id_usuario = vu.usuario_id
            WHERE vu.venta_id = v.id_venta) as anfitrionas_nicks
@@ -512,14 +512,14 @@ export class SaleQueries {
   static async getById(id: string): Promise<VentaGetByIdResponse | null> {
     try {
       const res = await query<VentaGetByIdRow[]>(
-        `SELECT v.*, CONCAT(c.nombre, ' ', c.apellido) as cliente_nombre, h.nombre as habitacion_numero,
+        `SELECT v.*, (CAST(c.nombre AS text) || CAST(' ' AS text) || CAST(c.apellido AS text)) as cliente_nombre, h.nombre as habitacion_numero,
                 u.nick as cajero_nick, u.nombre as cajero_nombre, u.apellido as cajero_apellido,
-                CONCAT(ug.nombre, ' ', ug.apellido) as garzon_nombre,
-                (SELECT GROUP_CONCAT(u2.nick SEPARATOR ',')
+                (CAST(ug.nombre AS text) || CAST(' ' AS text) || CAST(ug.apellido AS text)) as garzon_nombre,
+                (SELECT STRING_AGG(u2.nick, ',')
                  FROM ventas_usuarios vu
                  JOIN usuarios u2 ON u2.id_usuario = vu.usuario_id
                  WHERE vu.venta_id = v.id_venta) as anfitrionas_nicks,
-                GROUP_CONCAT(CONCAT(p.nombre, ' x', dv.cantidad) SEPARATOR ', ') as productos_detalle
+                STRING_AGG((CAST(p.nombre AS text) || CAST(' x' AS text) || CAST(dv.cantidad AS text)), ', ') as productos_detalle
          FROM ventas v
          LEFT JOIN clientes c ON c.id_cliente = v.cliente_id
          LEFT JOIN habitaciones h ON h.id_habitacion = v.habitacion_id
@@ -529,7 +529,7 @@ export class SaleQueries {
          LEFT JOIN detalle_ventas dv ON dv.venta_id = v.id_venta
          LEFT JOIN productos p ON p.id_producto = dv.producto_id
          WHERE v.id_venta = ?
-         GROUP BY v.id_venta`,
+         GROUP BY v.id_venta, c.id_cliente, h.id_habitacion, u.id_usuario, ug.id_usuario`,
         [id]
       );
 
@@ -654,7 +654,7 @@ export class SaleQueries {
                 `SELECT COALESCE(SUM(monto), 0) as total_prepago
                  FROM clientes_prepago_movimientos
                  WHERE cliente_id = ? AND UPPER(tipo) = 'CONSUMO'
-                   AND (venta_id = ? OR JSON_UNQUOTE(JSON_EXTRACT(metadatos, '$.venta_id')) = ?)`,
+                   AND (venta_id = ? OR (metadatos::jsonb ->> 'venta_id') = ?)`,
                 [clienteId, id, id]
               ))[0]?.total_prepago || 0)
             : 0;
@@ -699,8 +699,7 @@ export class SaleQueries {
           await addVentaLog(id, 'ANULADO', 'Venta anulada manualmente.', userId);
           await trx('UPDATE comisiones SET estado = 0 WHERE venta_id = ?', [id]);
           await trx(
-            `UPDATE detalle_comisiones dc INNER JOIN comisiones c ON c.id_comision = dc.comision_id
-             SET dc.estado = 0 WHERE c.venta_id = ?`, [id]
+            `UPDATE detalle_comisiones dc SET estado = 0 FROM comisiones c WHERE c.id_comision = dc.comision_id AND c.venta_id = ?`, [id]
           );
           await trx('DELETE FROM detalle_propinas WHERE propina_id IN (SELECT id_propina FROM propinas WHERE venta_id = ?)', [id]);
           await trx('DELETE FROM propinas WHERE venta_id = ?', [id]);

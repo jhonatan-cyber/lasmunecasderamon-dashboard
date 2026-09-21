@@ -16,6 +16,7 @@
 
 const path = require('path');
 const fs = require('fs');
+const crypto = require('crypto');
 
 const ROOT = path.resolve(__dirname, '..');
 const TEMPLATE_SRC = path.join(ROOT, 'public', 'sw-template.js');
@@ -56,9 +57,9 @@ async function generateSW() {
     }
   }
 
-  // Check if build output exists
+  // Check if build output exists (only warn in prod; dev chunks are ephemeral)
   const nextStaticDir = path.join(ROOT, '.next', 'static');
-  if (!fs.existsSync(nextStaticDir)) {
+  if (!IS_DEV && !fs.existsSync(nextStaticDir)) {
     console.warn('⚠️  No .next/static/ found. Build may not have run yet.');
     console.log('   Will still generate the SW (precache will be empty).');
   }
@@ -71,14 +72,14 @@ async function generateSW() {
 
     const precacheEntries = [];
 
-    // Add public assets
+    // Add public assets (hash-based revision, not mtime)
     for (const url of PUBLIC_PRECACHE) {
       const filePath = path.join(ROOT, 'public', url.replace(/^\//, ''));
       if (fs.existsSync(filePath)) {
-        const stats = fs.statSync(filePath);
+        const hash = crypto.createHash('sha256').update(fs.readFileSync(filePath)).digest('hex').slice(0, 8);
         precacheEntries.push({
           url,
-          revision: stats.mtimeMs.toString(36)
+          revision: hash
         });
       }
     }
@@ -95,11 +96,11 @@ async function generateSW() {
           if (entry.isDirectory()) {
             walkDir(fullPath, relativePath);
           } else if (/\.(js|css|json)$/i.test(entry.name) && !entry.name.endsWith('.map')) {
-            const stats = fs.statSync(fullPath);
+            const hash = crypto.createHash('sha256').update(fs.readFileSync(fullPath)).digest('hex').slice(0, 8);
             const url = `/_next/static/${relativePath.replace(/\\/g, '/')}`;
             precacheEntries.push({
               url,
-              revision: stats.mtimeMs.toString(36)
+              revision: hash
             });
           }
         }

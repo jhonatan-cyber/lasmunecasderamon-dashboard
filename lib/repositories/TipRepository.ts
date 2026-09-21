@@ -128,13 +128,13 @@ export class TipRepository {
 
     return await query(
       `
-      SELECT U.id_usuario, U.nick, CONCAT(U.nombre, ' ', U.apellido) AS nombre_completo,
+      SELECT U.id_usuario, U.nick, (CAST(U.nombre AS text) || CAST(' ' AS text) || CAST(U.apellido AS text)) AS nombre_completo,
              U.foto AS usuario_foto,
-             MAX(COALESCE(V.fecha_crea, P.fecha_crea)) AS fecha_crea, 
+             MAX(COALESCE(V.fecha_crea, P.fecha_crea)) AS fecha_crea,
              SUM(DP.monto) AS total_propinas,
              SUM(CASE WHEN DP.estado = 1 THEN DP.monto ELSE 0 END) AS propinas_pendientes,
              SUM(CASE WHEN DP.estado = 0 THEN DP.monto ELSE 0 END) AS propinas_cobradas
-      FROM propinas P 
+      FROM propinas P
       INNER JOIN detalle_propinas DP ON DP.propina_id = P.id_propina
       INNER JOIN usuarios U ON U.id_usuario = DP.usuario_id
       LEFT JOIN ventas V ON V.id_venta = P.venta_id
@@ -152,13 +152,13 @@ export class TipRepository {
     try {
       return await query(
       `
-      SELECT P.id_propina AS propina_id, DP.id_detalle_propina, P.fecha_crea AS fecha_hora, 
+      SELECT P.id_propina AS propina_id, DP.id_detalle_propina, P.fecha_crea AS fecha_hora,
              P.fecha_crea AS fecha_crea,
              V.fecha_crea AS fecha_venta,
              DP.fecha_mod AS propina_fecha_crea,
              V.codigo AS codigo_venta, DP.monto, V.id_venta AS venta_id,
              DP.estado, CASE WHEN DP.estado = 1 THEN 'Por pagar' ELSE 'Pagado' END AS estado_texto
-      FROM propinas P 
+      FROM propinas P
       INNER JOIN detalle_propinas DP ON DP.propina_id = P.id_propina
       LEFT JOIN ventas V ON V.id_venta = P.venta_id
       WHERE DP.usuario_id = ? ORDER BY P.fecha_crea DESC

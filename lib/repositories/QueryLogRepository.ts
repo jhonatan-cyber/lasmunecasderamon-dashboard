@@ -10,13 +10,13 @@ export type QueryLogEntry = {
 
 /**
  * Repository for slow query logs (query_logs table).
- * 
+ *
  * IMPORTANTE: Usa import() dinámico para evitar circular dependency
  * con db.ts (db.ts importa QueryLogRepository, y viceversa).
- * 
+ *
  * Las escrituras son fire-and-forget: se ejecutan sin await
  * para no afectar el rendimiento de la query original.
- * 
+ *
  * La tabla tiene un índice en created_at para permitir
  * limpieza periódica de registros antiguos (recomendado: TTL de 7 días).
  */
@@ -34,7 +34,7 @@ export class QueryLogRepository {
     import('@/lib/database/db').then(({ query }) => {
       query(
         `INSERT INTO ${this.TABLE}
-         (\`sql\`, params_count, duration_ms, query_type, query_count, avg_query_ms, total_query_time_ms, created_at)
+         ("sql", params_count, duration_ms, query_type, query_count, avg_query_ms, total_query_time_ms, created_at)
          VALUES (?, ?, ?, ?, ?, ?, ?, NOW())`,
         [
           sqlText,
@@ -74,7 +74,7 @@ export class QueryLogRepository {
     const { query } = await import('@/lib/database/db');
     const [data, countResult] = await Promise.all([
       query<any[]>(
-        `SELECT id, \`sql\`, params_count, duration_ms, query_type, query_count,
+        `SELECT id, "sql", params_count, duration_ms, query_type, query_count,
                 avg_query_ms, total_query_time_ms, created_at
          FROM ${this.TABLE}
          ORDER BY created_at DESC
@@ -135,11 +135,11 @@ export class QueryLogRepository {
    */
   static async purgeOlderThan(days = 7): Promise<number> {
     const { query } = await import('@/lib/database/db');
-    const [result] = await query<any[]>(
+    const rows = await query<any[]>(
       `DELETE FROM ${this.TABLE}
-       WHERE created_at < DATE_SUB(NOW(), INTERVAL ? DAY)`,
+       WHERE created_at < (CAST(NOW() AS timestamp) - make_interval(days => CAST(? AS integer))) RETURNING id`,
       [days]
     );
-    return result?.affectedRows || 0;
+    return rows.length;
   }
 }

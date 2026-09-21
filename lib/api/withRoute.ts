@@ -31,7 +31,7 @@ type RouteConfig = {
 function isDbError(error: unknown): boolean {
   return (
     error instanceof Error &&
-    /^(ETIMEDOUT|ECONNREFUSED|ECONNRESET|PROTOCOL_CONNECTION_LOST|ER_CON_COUNT_ERROR|POOL_CLOSED)$/.test(
+    /^(ETIMEDOUT|ECONNREFUSED|ECONNRESET|57P01|57P02|57P03|53300|08000|08003|08006)$/.test(
       (error as any).code ?? ''
     )
   );

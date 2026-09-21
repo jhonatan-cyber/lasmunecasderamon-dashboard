@@ -340,7 +340,7 @@ export class CuentaQueries {
       SELECT c.*,
              COALESCE(c.tiempo_actual, CASE WHEN c.estado = 1 THEN c.tiempo ELSE 0 END) as tiempo_activo,
              c.tiempo as tiempo_total,
-             CONCAT(cl.nombre, ' ', cl.apellido) as cliente_nombre, cl.saldo as cliente_saldo,
+             (CAST(cl.nombre AS text) || CAST(' ' AS text) || CAST(cl.apellido AS text)) as cliente_nombre, cl.saldo as cliente_saldo,
              h.nombre as habitacion_numero, u.nick as nombre_cajero,
              (SELECT COUNT(*) FROM detalle_cuentas dc WHERE dc.cuenta_id = c.id_cuenta) as total_detalles,
              (SELECT COUNT(*) FROM cuentas_usuarios cu WHERE cu.cuenta_id = c.id_cuenta) as total_usuarios
@@ -367,7 +367,7 @@ export class CuentaQueries {
         SELECT c.*,
                COALESCE(c.tiempo_actual, CASE WHEN c.estado = 1 THEN c.tiempo ELSE 0 END) as tiempo_activo,
                c.tiempo as tiempo_total,
-               CONCAT(cl.nombre, ' ', cl.apellido) as cliente_nombre, h.nombre as habitacion_numero,
+               (CAST(cl.nombre AS text) || CAST(' ' AS text) || CAST(cl.apellido AS text)) as cliente_nombre, h.nombre as habitacion_numero,
                u.nick as nombre_cajero, u.foto as foto_cajero, uc.nick as nombre_cobrador, uc.foto as foto_cobrador
         FROM ${this.TABLE} c
         LEFT JOIN clientes cl ON cl.id_cliente = c.cliente_id
@@ -385,7 +385,7 @@ export class CuentaQueries {
         `
         SELECT DC.*, H.nick as hostess_nick, H.foto as hostess_foto, U.nick as added_by, U.foto as added_by_foto,
                PR.nombre AS producto, C.nombre AS categoria
-        FROM detalle_cuentas DC 
+        FROM detalle_cuentas DC
         LEFT JOIN productos PR ON PR.id_producto = DC.producto_id
         LEFT JOIN categorias C ON C.id_categoria = PR.categoria_id
         LEFT JOIN usuarios H ON H.id_usuario = DC.hostess_id
@@ -416,9 +416,9 @@ export class CuentaQueries {
                req.nick as requested_by_nombre,
                app.nick as approved_by_nombre
         FROM solicitudes_anulacion_cuentas sac
-        LEFT JOIN usuarios req ON BINARY req.id_usuario = BINARY sac.requested_by
-        LEFT JOIN usuarios app ON BINARY app.id_usuario = BINARY sac.approved_by
-        WHERE BINARY sac.cuenta_id = BINARY ?
+        LEFT JOIN usuarios req ON req.id_usuario = sac.requested_by
+        LEFT JOIN usuarios app ON app.id_usuario = sac.approved_by
+        WHERE sac.cuenta_id = ?
         ORDER BY sac.fecha_crea DESC
       `,
         [id]
@@ -835,7 +835,7 @@ export class CuentaQueries {
 
   static async cobrar(id: string, body: CuentaCobrarBody, cobradoPor: string) {
     return await withTransaction(async trx => {
-      const cuenta = await trx<CuentaRow[]>('SELECT * FROM cuentas WHERE id_cuenta = ?', [id]);
+      const cuenta = await trx<CuentaRow[]>('SELECT * FROM cuentas WHERE id_cuenta = ? FOR UPDATE', [id]);
       if (!cuenta.length) throw new NotFoundError('Cuenta', id);
       if (![1, 4].includes(Number(cuenta[0].estado))) {
         throw new BusinessError('La cuenta ya fue procesada', 'CUENTA_YA_PROCESADA');

@@ -3,6 +3,7 @@ import { getNowInBusinessTimezone } from '@/lib/business/timezoneService';
 import { ProductSchema, type ProductType } from '@/lib/business/schemas';
 import { logger } from '@/lib/utils/logger';
 import { BaseRepository } from './BaseRepository';
+import { BusinessError } from '@/lib/errors/errors';
 
 export class ProductRepository {
   private static normalizeSearchText(value: string | null | undefined): string {
@@ -103,6 +104,8 @@ export class ProductRepository {
     data: Partial<ProductType>,
     foto?: string
   ): Promise<ProductType | null> {
+    const managed = await query<any[]>('SELECT id FROM inventario_presentaciones WHERE producto_bar_id = ?', [id]);
+    if (managed.length) throw new BusinessError('Este producto se administra desde Inventario. Define precio y comisión al traspasar al bar.');
     const updateData: any = {
       fecha_mod: getNowInBusinessTimezone()
     };

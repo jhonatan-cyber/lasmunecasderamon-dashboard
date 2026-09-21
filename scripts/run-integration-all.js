@@ -1,3 +1,4 @@
+require('dotenv').config({ quiet: true });
 /* eslint-disable no-console */
 /**
  * Ejecuta toda la suite de integración contra una BD local:
@@ -6,20 +7,21 @@
  *
  * Uso:  node scripts/run-integration-all.js     (o: npm run test:integration:all)
  *
- * Requiere una BD MySQL/MariaDB alcanzable (por defecto 127.0.0.1:3306).
+ * Requiere una BD PostgreSQL alcanzable (por defecto 127.0.0.1:5432).
  * Si no hay BD corriendo, corre `npm run db:dev` para levantarla.
  */
 const path = require('path');
 const { spawnSync } = require('child_process');
-const mysql = require('mysql2/promise');
+const postgres = require('./postgres-test-client.cjs');
 
 const ROOT = path.resolve(__dirname, '..');
 
 const DB_HOST = process.env.DB_HOST || '127.0.0.1';
-const DB_PORT = process.env.DB_PORT || '3306';
-const DB_USER = process.env.DB_USER || 'root';
+const DB_PORT = process.env.DB_PORT || '5432';
+const DB_USER = process.env.DB_USER || 'postgres';
 const DB_PASSWORD = process.env.DB_PASSWORD || '';
-const DB_NAME = process.env.DB_NAME || 'lasmunecasderamon';
+const DB_NAME = process.env.DB_NAME || 'lasmunecasderamon_test';
+if (!DB_NAME.endsWith('_test')) throw new Error('Tests require DB_NAME ending in _test');
 
 // Guarda de seguridad: aborta si DB_HOST no es loopback (nunca producción por
 // accidente). loadDotenv:false — el orquestador resuelve sus propios defaults
@@ -42,7 +44,7 @@ const flowTests = [
 ];
 
 async function checkDatabase() {
-  const connection = await mysql.createConnection({
+  const connection = await postgres.createConnection({
     host: DB_HOST,
     port: parseInt(DB_PORT, 10),
     user: DB_USER,

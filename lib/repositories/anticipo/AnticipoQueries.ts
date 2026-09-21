@@ -52,7 +52,7 @@ export async function getAllAnticipos(params?: {
         A.usuario_id,
         COALESCE(U.nombre, '') AS name,
         COALESCE(U.nombre, '') AS nombre,
-        COALESCE(U.apellido, '') AS lastName,
+        COALESCE(U.apellido, '') AS "lastName",
         COALESCE(U.apellido, '') AS apellido,
         COALESCE(U.nick, '') AS nick,
         U.foto,
@@ -89,13 +89,13 @@ export async function getAllAnticipos(params?: {
 export async function getAnticiposByUser(usuario_id: string, startDate?: string, endDate?: string) {
   try {
     let sql = `
-    SELECT 
-      A.*, 
-      COALESCE(U.nombre, '') AS name, 
-      COALESCE(U.nombre, '') AS nombre, 
-      COALESCE(U.apellido, '') AS lastName, 
-      COALESCE(U.apellido, '') AS apellido, 
-      COALESCE(U.nick, '') AS nick, 
+    SELECT
+      A.*,
+      COALESCE(U.nombre, '') AS name,
+      COALESCE(U.nombre, '') AS nombre,
+      COALESCE(U.apellido, '') AS "lastName",
+      COALESCE(U.apellido, '') AS apellido,
+      COALESCE(U.nick, '') AS nick,
       U.foto
     FROM ${TABLE} A
     LEFT JOIN usuarios U ON U.id_usuario = A.usuario_id
@@ -119,7 +119,7 @@ export async function getAnticiposByDates(usuario_id: string, dates: string[]) {
     if (dates.length === 0) return [];
   return await query(
     `
-    SELECT * FROM ${TABLE} 
+    SELECT * FROM ${TABLE}
     WHERE usuario_id = ? AND DATE(fecha_crea) IN (?)
     ORDER BY fecha_crea DESC
   `,

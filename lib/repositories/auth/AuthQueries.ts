@@ -126,9 +126,9 @@ export async function getUserPermissions(
 
   try {
     const perms = await query<Array<{ module: keyof UserPermissions; action: string }>>(
-      `SELECT p.module, p.action 
-       FROM permissions p 
-       INNER JOIN role_permissions rp ON p.id = rp.permission_id 
+      `SELECT p.module, p.action
+       FROM permissions p
+       INNER JOIN role_permissions rp ON p.id = rp.permission_id
        WHERE rp.role_id = ? AND p.deleted_at IS NULL`,
       [String(roleId)]
     );
@@ -440,7 +440,7 @@ export async function getAuthLogs(filters: {
   fecha_inicio?: string;
   fecha_fin?: string;
 }) {
-  let sql = `SELECT l.*, CONCAT(u.nombre, ' ', u.apellido) as usuario_nombre, u.nick as usuario_nick, r.nombre as usuario_rol
+  let sql = `SELECT l.*, (CAST(u.nombre AS text) || CAST(' ' AS text) || CAST(u.apellido AS text)) as usuario_nombre, u.nick as usuario_nick, r.nombre as usuario_rol
              FROM logins l INNER JOIN usuarios u ON l.usuario_id = u.id_usuario INNER JOIN roles r ON u.rol_id = r.id_rol WHERE 1=1`;
   const params: any[] = [];
   if (filters.estado) {

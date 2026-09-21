@@ -47,7 +47,7 @@ export class OrderRepository {
   static async getAll(limit: number = 200): Promise<OrderType[]> {
     try {
       const results = await query<any[]>(
-        `SELECT P.id_pedido, COALESCE(CONCAT(CL.nombre, ' ', CL.apellido), 'Sin cliente registrado') AS cliente, P.codigo, CONCAT(U.nombre, ' ', U.apellido) AS garzon, U.nick as garzon_nick, (SELECT GROUP_CONCAT(U2.nick SEPARATOR ', ') FROM pedidos_usuarios PU INNER JOIN usuarios U2 ON U2.id_usuario = PU.usuario_id WHERE PU.pedido_id = P.id_pedido) AS nicks, P.subtotal, (COALESCE(P.total, 0) + COALESCE(P.propina, 0)) AS total, P.propina, P.estado, P.fecha_crea FROM pedidos P LEFT JOIN clientes CL ON CL.id_cliente = P.cliente_id LEFT JOIN usuarios U ON U.id_usuario = P.mesero_id WHERE P.estado IN (1, 2) ORDER BY P.fecha_crea DESC LIMIT ?`,
+        `SELECT P.id_pedido, COALESCE((CAST(CL.nombre AS text) || CAST(' ' AS text) || CAST(CL.apellido AS text)), 'Sin cliente registrado') AS cliente, P.codigo, (CAST(U.nombre AS text) || CAST(' ' AS text) || CAST(U.apellido AS text)) AS garzon, U.nick as garzon_nick, (SELECT STRING_AGG(U2.nick, ', ') FROM pedidos_usuarios PU INNER JOIN usuarios U2 ON U2.id_usuario = PU.usuario_id WHERE PU.pedido_id = P.id_pedido) AS nicks, P.subtotal, (COALESCE(P.total, 0) + COALESCE(P.propina, 0)) AS total, P.propina, P.estado, P.fecha_crea FROM pedidos P LEFT JOIN clientes CL ON CL.id_cliente = P.cliente_id LEFT JOIN usuarios U ON U.id_usuario = P.mesero_id WHERE P.estado IN (1, 2) ORDER BY P.fecha_crea DESC LIMIT ?`,
         [limit]
       );
       return results.map(row => this.mapOrderFromDB(row));
@@ -61,15 +61,15 @@ export class OrderRepository {
     try {
       const results = await query<any[]>(
         `
-      SELECT 
-        P.id_pedido, 
-        COALESCE(CONCAT(CL.nombre, ' ', CL.apellido), 'Sin cliente registrado') AS cliente, 
-        P.codigo, 
-        CONCAT(U.nombre, ' ', U.apellido) AS garzon,
+      SELECT
+        P.id_pedido,
+        COALESCE((CAST(CL.nombre AS text) || CAST(' ' AS text) || CAST(CL.apellido AS text)), 'Sin cliente registrado') AS cliente,
+        P.codigo,
+        (CAST(U.nombre AS text) || CAST(' ' AS text) || CAST(U.apellido AS text)) AS garzon,
         U.nick as garzon_nick,
-        (SELECT GROUP_CONCAT(U2.nick SEPARATOR ', ') 
-         FROM pedidos_usuarios PU 
-         INNER JOIN usuarios U2 ON U2.id_usuario = PU.usuario_id 
+        (SELECT STRING_AGG(U2.nick, ', ')
+         FROM pedidos_usuarios PU
+         INNER JOIN usuarios U2 ON U2.id_usuario = PU.usuario_id
          WHERE PU.pedido_id = P.id_pedido) AS nicks,
         P.subtotal, (COALESCE(P.total, 0) + COALESCE(P.propina, 0)) AS total, P.propina, P.estado, P.fecha_crea
       FROM pedidos P
@@ -287,19 +287,19 @@ export class OrderRepository {
     try {
       return await query<any[]>(
         `
-      SELECT 
+      SELECT
         P.id_pedido, P.codigo, P.fecha_crea, P.subtotal, P.total, P.propina, P.total_comision,
-        COALESCE(CONCAT(CL.nombre, ' ', CL.apellido), 'Sin cliente registrado') AS cliente,
+        COALESCE((CAST(CL.nombre AS text) || CAST(' ' AS text) || CAST(CL.apellido AS text)), 'Sin cliente registrado') AS cliente,
         P.cliente_id,
-        CONCAT(U.nombre, ' ', U.apellido) AS garzon,
-        (SELECT GROUP_CONCAT(U2.nick SEPARATOR ', ') 
-           FROM pedidos_usuarios PU 
-           INNER JOIN usuarios U2 ON U2.id_usuario = PU.usuario_id 
+        (CAST(U.nombre AS text) || CAST(' ' AS text) || CAST(U.apellido AS text)) AS garzon,
+        (SELECT STRING_AGG(U2.nick, ', ')
+           FROM pedidos_usuarios PU
+           INNER JOIN usuarios U2 ON U2.id_usuario = PU.usuario_id
           WHERE PU.pedido_id = P.id_pedido) AS anfitriona,
-        (SELECT GROUP_CONCAT(U2.id_usuario SEPARATOR ',') 
-         FROM pedidos_usuarios PU 
-         INNER JOIN usuarios U2 ON U2.id_usuario = PU.usuario_id 
-         WHERE PU.pedido_id = P.id_pedido) AS anfitrionaIds,
+        (SELECT STRING_AGG(U2.id_usuario, ',')
+         FROM pedidos_usuarios PU
+         INNER JOIN usuarios U2 ON U2.id_usuario = PU.usuario_id
+         WHERE PU.pedido_id = P.id_pedido) AS "anfitrionaIds",
         DP.producto_id, DP.precio, DP.cantidad, DP.comision, DP.subtotal AS subtotal_detalle,
         DP.genera_comision, PROD.nombre AS producto_nombre, C.nombre AS categoria, DP.hostess_id, DP.habitacion_id
       FROM pedidos P
@@ -324,14 +324,14 @@ export class OrderRepository {
 
       const results = await query<any[]>(
         `
-      SELECT 
-        P.id_pedido, 
-        COALESCE(CONCAT(CL.nombre, ' ', CL.apellido), 'Sin cliente registrado') AS cliente, 
-        P.codigo, 
-        CONCAT(U.nombre, ' ', U.apellido) AS garzon,
-        (SELECT GROUP_CONCAT(U2.nick SEPARATOR ', ') 
-         FROM pedidos_usuarios PU 
-         INNER JOIN usuarios U2 ON U2.id_usuario = PU.usuario_id 
+      SELECT
+        P.id_pedido,
+        COALESCE((CAST(CL.nombre AS text) || CAST(' ' AS text) || CAST(CL.apellido AS text)), 'Sin cliente registrado') AS cliente,
+        P.codigo,
+        (CAST(U.nombre AS text) || CAST(' ' AS text) || CAST(U.apellido AS text)) AS garzon,
+        (SELECT STRING_AGG(U2.nick, ', ')
+         FROM pedidos_usuarios PU
+         INNER JOIN usuarios U2 ON U2.id_usuario = PU.usuario_id
          WHERE PU.pedido_id = P.id_pedido) AS nicks,
         P.subtotal, (COALESCE(P.total, 0) + COALESCE(P.propina, 0)) AS total, P.propina, P.estado, P.fecha_crea
       FROM pedidos P

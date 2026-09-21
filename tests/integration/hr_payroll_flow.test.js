@@ -1,13 +1,13 @@
 ﻿/* eslint-disable no-console */
 require('../../scripts/guard-local-db')();
-const mysql = require('mysql2/promise');
+const postgres = require('../../scripts/postgres-test-client.cjs');
 const crypto = require('crypto');
 require('dotenv').config();
 
 async function runHRIntegrationTest() {
   console.log('--- INICIANDO PRUEBA DE INTEGRACIÓN: Flujo RRHH y Planillas ---');
 
-  const connection = await mysql.createConnection({
+  const connection = await postgres.createConnection({
     host: process.env.DB_HOST,
     user: process.env.DB_USER,
     password: process.env.DB_PASSWORD,
@@ -45,7 +45,7 @@ async function runHRIntegrationTest() {
 
     const [payroll] = await connection.execute(
       `
-            SELECT 
+            SELECT
                 (SELECT COUNT(*) FROM asistencias WHERE usuario_id = ? AND estado = 1) as asistencias,
                 (SELECT SUM(total) FROM horas_extras WHERE usuario_id = ? AND estado = 1) as total_hx
             FROM usuarios WHERE id_usuario = ?

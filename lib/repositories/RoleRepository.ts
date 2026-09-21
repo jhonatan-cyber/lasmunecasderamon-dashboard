@@ -39,6 +39,6 @@ export class RoleRepository {
   }
 
   static async getAdminPermissions() {
-    return await query('SELECT * FROM permisos_roles pr INNER JOIN roles r ON r.id_rol = pr.rol_id');
+    return await query('SELECT * FROM role_permissions pr INNER JOIN roles r ON r.id_rol = pr.role_id');
   }
 }

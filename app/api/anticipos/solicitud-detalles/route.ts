@@ -12,7 +12,7 @@ export const GET = withPublicRoute(async (request: Request) => {
 
   const result = await query<any[]>(
     `SELECT A.id_anticipo, A.usuario_id, A.monto, A.motivo, A.estado, A.fecha_crea,
-            CONCAT(U.nombre, ' ', U.apellido) AS usuario, U.nick
+            (CAST(U.nombre AS text) || CAST(' ' AS text) || CAST(U.apellido AS text)) AS usuario, U.nick
      FROM anticipos A
      INNER JOIN usuarios U ON U.id_usuario = A.usuario_id
      WHERE A.id_anticipo = ?`,

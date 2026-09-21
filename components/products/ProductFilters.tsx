@@ -25,6 +25,7 @@ interface ProductFiltersProps {
   setPageSize: (value: number) => void;
   setPage: (value: number) => void;
   viewMode: 'table' | 'cards';
+  showStatusFilter?: boolean;
 }
 
 export function ProductFilters({
@@ -36,7 +37,8 @@ export function ProductFilters({
   pageSize,
   setPageSize,
   setPage,
-  viewMode
+  viewMode,
+  showStatusFilter = true
 }: ProductFiltersProps) {
   const tablePageSizes = [5, 10, 20, 40];
   const cardPageSizes = [8, 12, 24, 48];
@@ -69,29 +71,31 @@ export function ProductFilters({
 
           <div className='w-full lg:w-auto grid grid-cols-2 gap-4 lg:flex lg:gap-4 lg:items-end'>
             {}
-            <div className='min-w-[160px]'>
-              <Label
-                htmlFor='status'
-                className='mb-2 block text-xs font-bold uppercase tracking-wider text-gray-500 dark:text-gray-400 ml-1'
-              >
-                Estado
-              </Label>
-              <Select
-                value={filterStatus === null ? 'all' : String(filterStatus)}
-                onValueChange={(value: string) =>
-                  setFilterStatus(value === 'all' ? null : Number(value))
-                }
-              >
-                <SelectTrigger id='status'>
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value='all'>Todos los estados</SelectItem>
-                  <SelectItem value='1'>Activos</SelectItem>
-                  <SelectItem value='0'>Inactivos</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
+            {showStatusFilter && (
+              <div className='min-w-[160px]'>
+                <Label
+                  htmlFor='status'
+                  className='mb-2 block text-xs font-bold uppercase tracking-wider text-gray-500 dark:text-gray-400 ml-1'
+                >
+                  Estado
+                </Label>
+                <Select
+                  value={filterStatus === null ? 'all' : String(filterStatus)}
+                  onValueChange={(value: string) =>
+                    setFilterStatus(value === 'all' ? null : Number(value))
+                  }
+                >
+                  <SelectTrigger id='status'>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value='all'>Todos los estados</SelectItem>
+                    <SelectItem value='1'>Activos</SelectItem>
+                    <SelectItem value='0'>Inactivos</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+            )}
 
             {}
             <div className='flex items-end gap-2'>

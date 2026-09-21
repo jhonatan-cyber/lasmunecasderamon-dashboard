@@ -10,57 +10,57 @@ export class TimerRepository {
     const [activeServices, activeVentas, activeCuentas] = await Promise.all([
       query(
         `
-        SELECT s.id_servicio as id, s.codigo, s.id_servicio as servicioId, h.nombre as roomName, 
-               s.tiempo as duration, s.fecha_crea as startTime, s.estado, s.paused_at as pausedAt, 
-               s.habitacion_id as roomId, 'servicio' as tipoTransaccion,
+        SELECT s.id_servicio as id, s.codigo, s.id_servicio AS "servicioId", h.nombre AS "roomName",
+               s.tiempo as duration, s.fecha_crea AS "startTime", s.estado, s.paused_at AS "pausedAt",
+               s.habitacion_id AS "roomId", 'servicio' AS "tipoTransaccion",
                s.es_temporal, s.servicio_original_id,
                h.comision_anfitriona as habitacion_comision,
                s.precio_servicio, s.precio_habitacion, s.iva, s.cliente_id,
-               COALESCE(GROUP_CONCAT(DISTINCT CASE WHEN u.nick IS NOT NULL AND u.nick != '' THEN u.nick ELSE CONCAT(u.nombre, ' ', u.apellido) END SEPARATOR ', '), 'Sin asignar') as anfitrionas,
-               GROUP_CONCAT(DISTINCT ds.usuario_id SEPARATOR ',') as anfitrionas_ids,
-               COALESCE(CONCAT(c.nombre, ' ', c.apellido), 'Sin cliente registrado') as clienteNombre,
+               COALESCE(STRING_AGG(DISTINCT CASE WHEN u.nick IS NOT NULL AND u.nick != '' THEN u.nick ELSE (CAST(u.nombre AS text) || CAST(' ' AS text) || CAST(u.apellido AS text)) END, ', '), 'Sin asignar') as anfitrionas,
+               STRING_AGG(DISTINCT ds.usuario_id, ',') as anfitrionas_ids,
+               COALESCE((CAST(c.nombre AS text) || CAST(' ' AS text) || CAST(c.apellido AS text)), 'Sin cliente registrado') AS "clienteNombre",
                s.total, s.metodo_pago, creator.nick as waiter_name, creator.foto as waiter_foto
-        FROM servicios s 
+        FROM servicios s
         LEFT JOIN habitaciones h ON s.habitacion_id = h.id_habitacion
         LEFT JOIN detalle_servicios ds ON ds.servicio_id = s.id_servicio
         LEFT JOIN usuarios u ON u.id_usuario = ds.usuario_id
         LEFT JOIN clientes c ON c.id_cliente = s.cliente_id
         LEFT JOIN usuarios creator ON creator.id_usuario = s.created_by
-        WHERE s.tiempo > 0 
-          AND s.estado IN (1, 2, 3) 
-          AND (s.estado = 3 OR TIMESTAMPDIFF(SECOND, s.fecha_crea, ?) < (s.tiempo * 60))
-        GROUP BY s.id_servicio
+        WHERE s.tiempo > 0
+          AND s.estado IN (1, 2, 3)
+          AND (s.estado = 3 OR TRUNC(EXTRACT(EPOCH FROM (CAST(? AS timestamp) - CAST(s.fecha_crea AS timestamp))) / 1) < (s.tiempo * 60))
+        GROUP BY s.id_servicio, h.id_habitacion, c.id_cliente, creator.id_usuario
       `,
         [getNowInBusinessTimezone()]
       ),
       query(
         `
-        SELECT v.id_venta as id, v.codigo, v.id_venta as servicioId, h.nombre as roomName, 
-               v.tiempo as duration, v.fecha_crea as startTime, v.estado, v.paused_at as pausedAt, 
-               v.habitacion_id as roomId, 'venta' as tipoTransaccion,
-               COALESCE(GROUP_CONCAT(DISTINCT CASE WHEN u.nick IS NOT NULL AND u.nick != '' THEN u.nick ELSE CONCAT(u.nombre, ' ', u.apellido) END SEPARATOR ', '), 'Sin asignar') as anfitrionas,
-               GROUP_CONCAT(DISTINCT vu.usuario_id SEPARATOR ',') as anfitrionas_ids,
-               COALESCE(CONCAT(c.nombre, ' ', c.apellido), 'Sin cliente registrado') as clienteNombre,
+        SELECT v.id_venta as id, v.codigo, v.id_venta AS "servicioId", h.nombre AS "roomName",
+               v.tiempo as duration, v.fecha_crea AS "startTime", v.estado, v.paused_at AS "pausedAt",
+               v.habitacion_id AS "roomId", 'venta' AS "tipoTransaccion",
+               COALESCE(STRING_AGG(DISTINCT CASE WHEN u.nick IS NOT NULL AND u.nick != '' THEN u.nick ELSE (CAST(u.nombre AS text) || CAST(' ' AS text) || CAST(u.apellido AS text)) END, ', '), 'Sin asignar') as anfitrionas,
+               STRING_AGG(DISTINCT vu.usuario_id, ',') as anfitrionas_ids,
+               COALESCE((CAST(c.nombre AS text) || CAST(' ' AS text) || CAST(c.apellido AS text)), 'Sin cliente registrado') AS "clienteNombre",
                v.total, v.metodo_pago, creator.nick as waiter_name
-        FROM ventas v 
+        FROM ventas v
         LEFT JOIN habitaciones h ON v.habitacion_id = h.id_habitacion
         LEFT JOIN ventas_usuarios vu ON vu.venta_id = v.id_venta
         LEFT JOIN usuarios u ON u.id_usuario = vu.usuario_id
         LEFT JOIN clientes c ON c.id_cliente = v.cliente_id
         LEFT JOIN usuarios creator ON creator.id_usuario = v.created_by
-        WHERE v.tiempo > 0 
-          AND v.estado IN (1, 2, 3) 
-          AND (v.estado = 3 OR TIMESTAMPDIFF(SECOND, v.fecha_crea, ?) < (v.tiempo * 60))
-        GROUP BY v.id_venta
+        WHERE v.tiempo > 0
+          AND v.estado IN (1, 2, 3)
+          AND (v.estado = 3 OR TRUNC(EXTRACT(EPOCH FROM (CAST(? AS timestamp) - CAST(v.fecha_crea AS timestamp))) / 1) < (v.tiempo * 60))
+        GROUP BY v.id_venta, h.id_habitacion, c.id_cliente, creator.id_usuario
       `,
         [getNowInBusinessTimezone()]
       ),
       query(
         `
-        SELECT c.id_cuenta as id, c.codigo, c.id_cuenta as servicioId, COALESCE(h.nombre, 'Sin habitacion') as roomName,
-               COALESCE(c.tiempo_actual, c.tiempo) as duration, COALESCE(c.tiempo_inicio_actual, c.fecha_crea) as startTime, c.estado, NULL as pausedAt,
-               c.habitacion_id as roomId, 'cuenta' as tipoTransaccion,
-               COALESCE(CONCAT(cl.nombre, ' ', cl.apellido), 'Sin cliente registrado') as clienteNombre,
+        SELECT c.id_cuenta as id, c.codigo, c.id_cuenta AS "servicioId", COALESCE(h.nombre, 'Sin habitacion') AS "roomName",
+               COALESCE(c.tiempo_actual, c.tiempo) as duration, COALESCE(c.tiempo_inicio_actual, c.fecha_crea) AS "startTime", c.estado, NULL AS "pausedAt",
+               c.habitacion_id AS "roomId", 'cuenta' AS "tipoTransaccion",
+               COALESCE((CAST(cl.nombre AS text) || CAST(' ' AS text) || CAST(cl.apellido AS text)), 'Sin cliente registrado') AS "clienteNombre",
                c.total, creator.nick as waiter_name
         FROM cuentas c
         LEFT JOIN habitaciones h ON c.habitacion_id = h.id_habitacion
@@ -68,7 +68,7 @@ export class TimerRepository {
         LEFT JOIN usuarios creator ON creator.id_usuario = c.created_by
         WHERE c.estado = 1
           AND COALESCE(c.tiempo_actual, c.tiempo) > 0
-          AND TIMESTAMPDIFF(SECOND, COALESCE(c.tiempo_inicio_actual, c.fecha_crea), ?) < (COALESCE(c.tiempo_actual, c.tiempo) * 60)
+          AND TRUNC(EXTRACT(EPOCH FROM (CAST(? AS timestamp) - CAST(COALESCE(c.tiempo_inicio_actual, c.fecha_crea) AS timestamp))) / 1) < (COALESCE(c.tiempo_actual, c.tiempo) * 60)
       `,
         [getNowInBusinessTimezone()]
       )
@@ -110,7 +110,7 @@ export class TimerRepository {
     let changed = false;
 
     const expiredV = await query<any[]>(
-      'SELECT id_venta, habitacion_id FROM ventas WHERE habitacion_id IS NOT NULL AND tiempo > 0 AND estado = 2 AND paused_at IS NULL AND TIMESTAMPDIFF(SECOND, fecha_crea, ?) >= (tiempo * 60)',
+      "SELECT id_venta, habitacion_id FROM ventas WHERE habitacion_id IS NOT NULL AND tiempo > 0 AND estado = 2 AND paused_at IS NULL AND TRUNC(EXTRACT(EPOCH FROM (CAST(? AS timestamp) - CAST(fecha_crea AS timestamp))) / 1) >= (tiempo * 60)",
       [nowStr]
     );
     for (const v of expiredV) {
@@ -123,13 +123,13 @@ export class TimerRepository {
     }
 
     const expiredS = await query<any[]>(
-      'SELECT id_servicio, habitacion_id FROM servicios WHERE habitacion_id IS NOT NULL AND tiempo > 0 AND estado = 2 AND paused_at IS NULL AND TIMESTAMPDIFF(SECOND, fecha_crea, ?) >= (tiempo * 60)',
+      "SELECT id_servicio, habitacion_id FROM servicios WHERE habitacion_id IS NOT NULL AND tiempo > 0 AND estado = 2 AND paused_at IS NULL AND TRUNC(EXTRACT(EPOCH FROM (CAST(? AS timestamp) - CAST(fecha_crea AS timestamp))) / 1) >= (tiempo * 60)",
       [nowStr]
     );
     for (const s of expiredS) {
       await query('UPDATE servicios SET estado = 1 WHERE id_servicio = ?', [s.id_servicio]);
       await query(
-        'UPDATE usuarios u INNER JOIN detalle_servicios ds ON u.id_usuario = ds.usuario_id SET u.estado_servicio = 0 WHERE ds.servicio_id = ?',
+        'UPDATE usuarios u SET estado_servicio = 0 FROM detalle_servicios ds WHERE u.id_usuario = ds.usuario_id AND ds.servicio_id = ?',
         [s.id_servicio]
       );
       await this.handleRoomResume(s.habitacion_id, nowStr);
@@ -137,7 +137,7 @@ export class TimerRepository {
     }
 
     const expiredC = await query<any[]>(
-      'SELECT id_cuenta, habitacion_id FROM cuentas WHERE habitacion_id IS NOT NULL AND COALESCE(tiempo_actual, tiempo) > 0 AND estado = 1 AND TIMESTAMPDIFF(SECOND, COALESCE(tiempo_inicio_actual, fecha_crea), ?) >= (COALESCE(tiempo_actual, tiempo) * 60)',
+      "SELECT id_cuenta, habitacion_id FROM cuentas WHERE habitacion_id IS NOT NULL AND COALESCE(tiempo_actual, tiempo) > 0 AND estado = 1 AND TRUNC(EXTRACT(EPOCH FROM (CAST(? AS timestamp) - CAST(COALESCE(tiempo_inicio_actual, fecha_crea) AS timestamp))) / 1) >= (COALESCE(tiempo_actual, tiempo) * 60)",
       [nowStr]
     );
     for (const c of expiredC) {
@@ -170,12 +170,12 @@ export class TimerRepository {
       const resumeV = vP && (!sP || (vPDate?.getTime() || 0) >= (sPDate?.getTime() || 0));
       if (resumeV)
         await query(
-          'UPDATE ventas SET estado = 2, fecha_crea = DATE_ADD(fecha_crea, INTERVAL TIMESTAMPDIFF(SECOND, paused_at, ?) SECOND), paused_at = NULL WHERE id_venta = ?',
+          "UPDATE ventas SET estado = 2, fecha_crea = (CAST(fecha_crea AS timestamp) + make_interval(secs => CAST(TRUNC(EXTRACT(EPOCH FROM (CAST(? AS timestamp) - CAST(paused_at AS timestamp))) / 1) AS double precision))), paused_at = NULL WHERE id_venta = ?",
           [nowStr, vP.id_venta]
         );
       else
         await query(
-          'UPDATE servicios SET estado = 2, fecha_crea = DATE_ADD(fecha_crea, INTERVAL TIMESTAMPDIFF(SECOND, paused_at, ?) SECOND), paused_at = NULL WHERE id_servicio = ?',
+          "UPDATE servicios SET estado = 2, fecha_crea = (CAST(fecha_crea AS timestamp) + make_interval(secs => CAST(TRUNC(EXTRACT(EPOCH FROM (CAST(? AS timestamp) - CAST(paused_at AS timestamp))) / 1) AS double precision))), paused_at = NULL WHERE id_servicio = ?",
           [nowStr, sP.id_servicio]
         );
     } else {

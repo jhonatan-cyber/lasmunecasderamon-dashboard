@@ -34,7 +34,7 @@ export class CommissionRepository {
 
   static async summary(): Promise<any> {
     const summary = await query<any[]>(`
-      SELECT 
+      SELECT
         SUM(dc.comision) as total_comisiones,
         COUNT(DISTINCT dc.usuario_id) as cantidad_comisiones,
         SUM(CASE WHEN c.venta_id IS NOT NULL AND c.venta_id <> '' AND c.venta_id <> '0' THEN dc.comision ELSE 0 END) as comision_ventas,
@@ -80,24 +80,24 @@ export class CommissionRepository {
     }
 
     if (params.search) {
-      where += ' AND (u.nick LIKE ? OR CONCAT(u.nombre, " ", u.apellido) LIKE ?)';
+      where += ` AND (u.nick ILIKE ? OR (CAST(u.nombre AS text) || CAST(' ' AS text) || CAST(u.apellido AS text)) ILIKE ?)`;
       const searchTerm = `%${params.search}%`;
       sqlParams.push(searchTerm, searchTerm);
     }
 
     const sql = `
-      SELECT 
+      SELECT
         dc.usuario_id AS id,
-        dc.usuario_id AS employeeId,
+        dc.usuario_id AS "employeeId",
         u.nick AS nick,
-        CONCAT(u.nombre, ' ', u.apellido) AS employeeName,
+        (CAST(u.nombre AS text) || CAST(' ' AS text) || CAST(u.apellido AS text)) AS "employeeName",
         u.foto AS empleado_foto,
         SUM(CASE WHEN c.venta_id IS NOT NULL AND c.venta_id <> '' AND c.venta_id <> '0' THEN dc.comision ELSE 0 END) AS venta,
         SUM(CASE WHEN c.servicio_id IS NOT NULL AND c.servicio_id <> '' AND c.servicio_id <> '0' THEN dc.comision ELSE 0 END) AS servicio,
         SUM(dc.comision) AS total,
         MAX(c.estado) AS estado_int,
         MAX(c.fecha_crea) AS fecha_crea,
-        CASE 
+        CASE
           WHEN MAX(c.estado) = 1 THEN 'por_pagar'
           WHEN MAX(c.estado) = 2 THEN 'pagado'
           ELSE 'anulado'
@@ -126,14 +126,14 @@ export class CommissionRepository {
   static async getDetails(usuarioId: string) {
     return await query(
       `
-      SELECT 
+      SELECT
         c.id_comision AS id,
         c.fecha_crea AS fecha_hora,
         v.codigo AS codigo_venta,
         NULL AS codigo_servicio,
         'venta' AS tipo,
         c.monto AS monto,
-        CASE 
+        CASE
           WHEN c.estado = 1 THEN 'Por pagar'
           WHEN c.estado = 2 THEN 'Pagado'
           ELSE 'Anulado'
@@ -149,17 +149,17 @@ export class CommissionRepository {
       LEFT JOIN detalle_ventas dv ON (v.id_venta = dv.venta_id AND dc.usuario_id = dv.hostess_id AND (c.monto = dv.comision OR c.monto = (dv.comision * dv.cantidad)))
       LEFT JOIN productos p ON dv.producto_id = p.id_producto
       WHERE dc.usuario_id = ? AND c.venta_id IS NOT NULL AND c.venta_id <> '' AND c.venta_id <> '0'
-      
+
       UNION ALL
 
-      SELECT 
+      SELECT
         c.id_comision AS id,
         c.fecha_crea AS fecha_hora,
         NULL AS codigo_venta,
         s.codigo AS codigo_servicio,
         'servicio' AS tipo,
         c.monto AS monto,
-        CASE 
+        CASE
           WHEN c.estado = 1 THEN 'Por pagar'
           WHEN c.estado = 2 THEN 'Pagado'
           ELSE 'Anulado'
@@ -172,7 +172,7 @@ export class CommissionRepository {
       INNER JOIN usuarios u ON dc.usuario_id = u.id_usuario
       LEFT JOIN servicios s ON c.servicio_id = s.id_servicio
       WHERE dc.usuario_id = ? AND c.servicio_id IS NOT NULL AND c.servicio_id <> '' AND c.servicio_id <> '0'
-      
+
       ORDER BY fecha_hora DESC
     `,
       [usuarioId, usuarioId]

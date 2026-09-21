@@ -16,7 +16,7 @@ export const POST = withRoute({ auth: true, audit: true, module: 'sales', action
 
   const ventaInfo = await query<any[]>(
     `SELECT v.codigo, v.total,
-            COALESCE(CONCAT(c.nombre, ' ', c.apellido), 'Sin cliente registrado') as cliente_nombre
+            COALESCE((CAST(c.nombre AS text) || CAST(' ' AS text) || CAST(c.apellido AS text)), 'Sin cliente registrado') as cliente_nombre
      FROM ventas v
      LEFT JOIN clientes c ON v.cliente_id = c.id_cliente
      WHERE v.id_venta = ?

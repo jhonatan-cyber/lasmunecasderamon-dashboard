@@ -4,7 +4,7 @@ import { Client } from '@/types/client';
 import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';
 import React from 'react';
-import { Trash, Pencil, Eye, Phone, User, MoreVertical, Wallet } from 'lucide-react';
+import { Trash, Pencil, Eye, Phone, User, MoreVertical, Wallet, ArrowDownCircle } from 'lucide-react';
 import {
   Table,
   TableBody,
@@ -33,6 +33,7 @@ interface ClientTableProps {
   onDelete: (client: Client) => void;
   onViewDetails: (client: Client) => void;
   onLoadPrepago: (client: Client) => void;
+  onDevolucion?: (client: Client) => void;
   currentPage: number;
   pageSize: number;
   isMutating?: boolean;
@@ -49,6 +50,7 @@ interface MobileCardViewProps {
   onViewDetails: (client: Client) => void;
   onEdit: (client: Client) => void;
   onLoadPrepago: (client: Client) => void;
+  onDevolucion?: (client: Client) => void;
   handleDeleteClick: (client: Client) => void;
   renderRun: (run: string | undefined | null) => React.ReactNode;
   renderPhone: (phone: string | undefined | null | '0') => React.ReactNode;
@@ -67,6 +69,7 @@ const MobileCardView = React.memo(
     onViewDetails,
     onEdit,
     onLoadPrepago,
+    onDevolucion,
     handleDeleteClick,
     renderRun,
     renderPhone,
@@ -125,6 +128,7 @@ const MobileCardView = React.memo(
                       onViewDetails={onViewDetails}
                       onEdit={onEdit}
                       onLoadPrepago={onLoadPrepago}
+                      onDevolucion={onDevolucion}
                       handleDeleteClick={handleDeleteClick}
                     />
                   )}
@@ -157,6 +161,7 @@ interface ClientActionsDropdownProps {
   onViewDetails: (client: Client) => void;
   onEdit: (client: Client) => void;
   onLoadPrepago: (client: Client) => void;
+  onDevolucion?: (client: Client) => void;
   handleDeleteClick: (client: Client) => void;
 }
 
@@ -168,6 +173,7 @@ const ClientActionsDropdown = ({
   onViewDetails,
   onEdit,
   onLoadPrepago,
+  onDevolucion,
   handleDeleteClick,
 }: ClientActionsDropdownProps) => {
   return (
@@ -236,6 +242,18 @@ const ClientActionsDropdown = ({
               <p>Cargar saldo prepago</p>
             </TooltipContent>
           </Tooltip>
+          {onDevolucion && Number(client.saldo || 0) > 0 && (
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <DropdownMenuItem onClick={() => onDevolucion(client)}>
+                  <ArrowDownCircle className='mr-2 text-red-600' /> Devolver saldo
+                </DropdownMenuItem>
+              </TooltipTrigger>
+              <TooltipContent side='left'>
+                <p>Devolver saldo al cliente</p>
+              </TooltipContent>
+            </Tooltip>
+          )}
         </DropdownMenuContent>
       </DropdownMenu>
     </div>
@@ -253,6 +271,7 @@ interface DesktopTableViewProps {
   onViewDetails: (client: Client) => void;
   onEdit: (client: Client) => void;
   onLoadPrepago: (client: Client) => void;
+  onDevolucion?: (client: Client) => void;
   handleDeleteClick: (client: Client) => void;
   renderRun: (run: string | undefined | null) => React.ReactNode;
   renderPhone: (phone: string | undefined | null | '0') => React.ReactNode;
@@ -271,6 +290,7 @@ const DesktopTableView = React.memo(
     onViewDetails,
     onEdit,
     onLoadPrepago,
+    onDevolucion,
     handleDeleteClick,
     renderRun,
     renderPhone,
@@ -340,6 +360,7 @@ const DesktopTableView = React.memo(
                             onViewDetails={onViewDetails}
                             onEdit={onEdit}
                             onLoadPrepago={onLoadPrepago}
+                            onDevolucion={onDevolucion}
                             handleDeleteClick={handleDeleteClick}
                           />
                         )}
@@ -363,6 +384,7 @@ export function ClientTable({
   onDelete,
   onViewDetails,
   onLoadPrepago,
+  onDevolucion,
   currentPage,
   pageSize,
   isMutating = false
@@ -405,6 +427,7 @@ export function ClientTable({
         onViewDetails={onViewDetails}
         onEdit={onEdit}
         onLoadPrepago={onLoadPrepago}
+        onDevolucion={onDevolucion}
         handleDeleteClick={handleDeleteClick}
         renderRun={renderRun}
         renderPhone={renderPhone}
@@ -422,6 +445,7 @@ export function ClientTable({
         onViewDetails={onViewDetails}
         onEdit={onEdit}
         onLoadPrepago={onLoadPrepago}
+        onDevolucion={onDevolucion}
         handleDeleteClick={handleDeleteClick}
         renderRun={renderRun}
         renderPhone={renderPhone}

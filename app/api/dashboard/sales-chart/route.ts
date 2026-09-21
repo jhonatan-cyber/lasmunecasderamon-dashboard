@@ -10,7 +10,7 @@ export const GET = withRoute({ auth: true, audit: true }, async () => {
       const result = await query<any[]>(`
         SELECT DATE(fecha_crea) as date, SUM(total) as total, COUNT(*) as count
         FROM ventas
-        WHERE fecha_crea >= DATE_SUB(CURRENT_DATE, INTERVAL 30 DAY)
+        WHERE fecha_crea >= (CAST(CURRENT_DATE AS timestamp) - make_interval(days => CAST(30 AS integer)))
         GROUP BY DATE(fecha_crea)
         ORDER BY date
       `);

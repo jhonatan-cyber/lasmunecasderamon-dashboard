@@ -1,13 +1,13 @@
 ﻿/* eslint-disable no-console */
 require('../../scripts/guard-local-db')();
-const mysql = require('mysql2/promise');
+const postgres = require('../../scripts/postgres-test-client.cjs');
 require('dotenv').config();
 const crypto = require('crypto');
 
 async function runTest() {
   console.log('🚀 Iniciando Prueba de Integración: Ciclo Completo de Pedido (v3)');
 
-  const connection = await mysql.createConnection({
+  const connection = await postgres.createConnection({
     host: process.env.DB_HOST,
     user: process.env.DB_USER,
     password: process.env.DB_PASSWORD,
@@ -67,7 +67,7 @@ async function runTest() {
     const ventaId = crypto.randomUUID();
     const ventaCodigo = `V-${Math.floor(Math.random() * 10000)}`;
     await connection.execute(
-      'INSERT INTO ventas (id_venta, codigo, cliente_id, pedido_id, created_by, total, sub_total, propina, total_comision, metodo_pago, fecha_crea) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, "Efectivo", NOW())',
+      `INSERT INTO ventas (id_venta, codigo, cliente_id, pedido_id, created_by, total, sub_total, propina, total_comision, metodo_pago, fecha_crea) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, 'efectivo', NOW())`,
       [
         ventaId,
         ventaCodigo,

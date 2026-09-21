@@ -1,3 +1,4 @@
+// @ts-ignore - sharp 0.35 exports types via lib/index.d.ts, not dist/index.mjs
 import sharp from 'sharp';
 import path from 'path';
 import fs from 'fs/promises';

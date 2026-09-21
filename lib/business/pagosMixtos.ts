@@ -95,5 +95,14 @@ export async function procesarPrepago(
     ]
   );
 
+  // Auto-cierre de cuentas PREP-* si saldo llega a 0
+  const [saldoRow] = await trx<any[]>('SELECT saldo FROM clientes WHERE id_cliente = ?', [clienteId]);
+  if (Number(saldoRow?.saldo || 0) === 0) {
+    await trx(`UPDATE cuentas SET estado = 0, fecha_mod = ? WHERE cliente_id = ? AND codigo LIKE 'PREP-%' AND estado = 1`, [
+      now,
+      clienteId
+    ]);
+  }
+
   return prepagoMonto;
 }
