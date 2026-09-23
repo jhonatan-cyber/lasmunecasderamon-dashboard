@@ -16,6 +16,7 @@ import { SettingsPermissionsTab } from '@/components/settings/SettingsPermission
 import { SettingsMaintenanceTab } from '@/components/settings/SettingsMaintenanceTab';
 import { SettingsLogsTab } from '@/components/settings/SettingsLogsTab';
 import { SettingsAttendanceTab } from '@/components/settings/SettingsAttendanceTab';
+import { KioskDevices } from '@/components/settings/KioskDevices';
 import { SettingsChampagneCard } from '@/components/settings/SettingsChampagneCard';
 import { SettingsServiceLevelsCard } from '@/components/settings/SettingsServiceLevelsCard';
 
@@ -79,8 +80,9 @@ export default function Settings() {
           <SettingsLogsTab />
         </TabsContent>
 
-        <TabsContent value='asistencia'>
+        <TabsContent value='asistencia' className='flex flex-col gap-6'>
           <SettingsAttendanceTab />
+          <KioskDevices />
         </TabsContent>
       </Tabs>
     </div>

@@ -106,6 +106,13 @@ interface TimerContextType {
 
 const TimerContext = createContext<TimerContextType | undefined>(undefined);
 
+const formatTime = (seconds: number) => {
+  const absSecs = Math.max(0, Math.abs(seconds));
+  const m = Math.floor(absSecs / 60);
+  const s = absSecs % 60;
+  return `${seconds < 0 ? '-' : ''}${m}:${s.toString().padStart(2, '0')}`;
+};
+
 export const useTimer = () => {
   const context = useContext(TimerContext);
   if (!context) throw new Error('useTimer debe ser usado dentro de TimerProvider');
@@ -210,11 +217,18 @@ export const TimerProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     [timers, stopTimer]
   );
 
-  const getTimerByRoomId = (rid: string) => timers.find(t => t.roomId === rid);
-  const getTimerByServicioId = (sid: string) =>
-    timers.find(t => t.servicioId === sid && !t.isTemporary);
-  const getTemporaryTimerByServicioId = (sid: string) =>
-    timers.find(t => t.servicioId === sid && t.isTemporary);
+  const getTimerByRoomId = useCallback(
+    (rid: string) => timers.find(t => t.roomId === rid),
+    [timers]
+  );
+  const getTimerByServicioId = useCallback(
+    (sid: string) => timers.find(t => t.servicioId === sid && !t.isTemporary),
+    [timers]
+  );
+  const getTemporaryTimerByServicioId = useCallback(
+    (sid: string) => timers.find(t => t.servicioId === sid && t.isTemporary),
+    [timers]
+  );
   const getAccurateNow = useCallback(() => new Date(Date.now() + serverOffset), [serverOffset]);
 
   const updateTimerByServicioId = useCallback((sid: string, dur: number) => {
@@ -254,12 +268,7 @@ export const TimerProvider: React.FC<{ children: React.ReactNode }> = ({ childre
       getTimerByRoomId,
       getTimerByServicioId,
       getTemporaryTimerByServicioId,
-      formatTime: (seconds: number) => {
-        const absSecs = Math.max(0, Math.abs(seconds));
-        const m = Math.floor(absSecs / 60);
-        const s = absSecs % 60;
-        return `${seconds < 0 ? '-' : ''}${m}:${s.toString().padStart(2, '0')}`;
-      },
+      formatTime,
       serverOffset,
       getAccurateNow,
       setRefreshCallback,
@@ -276,8 +285,12 @@ export const TimerProvider: React.FC<{ children: React.ReactNode }> = ({ childre
       stopTimerByServicioId,
       pauseTimerByServicioId,
       resumeTimerByServicioId,
+      getTimerByRoomId,
+      getTimerByServicioId,
+      getTemporaryTimerByServicioId,
       serverOffset,
       getAccurateNow,
+      setRefreshCallback,
       updateTimerByServicioId,
       startTemporaryTimer,
       stopTemporaryTimer,

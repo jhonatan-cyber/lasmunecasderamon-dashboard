@@ -1,103 +1,81 @@
 // @vitest-environment node
-//
-// Entorno node a propósito: bajo jsdom, vitest resuelve jose a su build `webapi`, que
-// rechaza las claves simétricas del realm de node. Esta lógica es de servidor, así que
-// se prueba donde corre.
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-
-vi.hoisted(() => {
-  process.env.JWT_SECRET = 'test-secret-that-is-long-enough-for-validation';
-  process.env.KIOSK_DEVICE_SECRET = 'secreto-del-local-para-la-pantalla';
-});
-
-const cookieValue = { value: undefined as string | undefined };
-
-vi.mock('next/headers', () => ({
-  cookies: async () => ({
-    get: (name: string) =>
-      name === 'kiosk_token' && cookieValue.value ? { value: cookieValue.value } : undefined,
-    set: vi.fn(),
-    delete: vi.fn()
-  })
+import crypto from 'crypto';
+const harness = vi.hoisted(() => ({ query: vi.fn(), cookie: undefined as string | undefined }));
+vi.mock('@/lib/database/db', () => ({
+  query: harness.query,
+  withTransaction: async (callback: any) => callback(harness.query)
 }));
-
-vi.mock('@/lib/utils/logger', () => {
-  const mocks = { warn: vi.fn(), error: vi.fn(), info: vi.fn(), captureException: vi.fn() };
-  return { logger: mocks, default: mocks, auditLogger: {} };
-});
-
+vi.mock('next/headers', () => ({
+  cookies: async () => ({ get: () => (harness.cookie ? { value: harness.cookie } : undefined) })
+}));
+vi.mock('@/lib/utils/logger', () => ({ default: { warn: vi.fn() } }));
 import {
-  KIOSK_COOKIE,
-  createDeviceToken,
   getKioskDevice,
-  isKioskConfigured,
-  matchesDeviceSecret,
-  verifyDeviceToken
+  provisionDevice,
+  renewDevice,
+  verifyDeviceToken,
+  listDevices,
+  revokeDevice
 } from '@/lib/kiosk/deviceAuth';
-
-describe('credencial del kiosko', () => {
-  beforeEach(() => {
-    cookieValue.value = undefined;
+beforeEach(() => {
+  harness.cookie = undefined;
+  harness.query.mockReset().mockResolvedValue([]);
+});
+describe('credenciales automaticas de dispositivos', () => {
+  it('genera credenciales aleatorias y persiste solo su hash sin secreto de entorno', async () => {
+    const first = await provisionDevice('Entrada', 'admin-1');
+    const second = await provisionDevice('Bar', 'admin-1');
+    expect(first.token).toMatch(/^kiosk_[a-f0-9]{64}$/);
+    expect(first.token).not.toBe(second.token);
+    expect(harness.query).toHaveBeenCalledWith(
+      expect.stringContaining('INSERT INTO kiosk_devices'),
+      [
+        first.id,
+        'Entrada',
+        crypto.createHash('sha256').update(first.token).digest('hex'),
+        'admin-1'
+      ]
+    );
+    expect(JSON.stringify(harness.query.mock.calls)).not.toContain(first.token);
   });
-
-  it('la cookie tiene un nombre propio, distinto de la sesión de usuario', () => {
-    expect(KIOSK_COOKIE).toBe('kiosk_token');
+  it('rechaza cookies antiguas, de usuario, manipuladas y ausentes', async () => {
+    expect(await verifyDeviceToken('eyJhbGciOiJIUzI1NiJ9.user.signature')).toBeNull();
+    expect(await verifyDeviceToken(undefined)).toBeNull();
+    expect(harness.query).not.toHaveBeenCalled();
+    expect(await verifyDeviceToken(`kiosk_${'a'.repeat(64)}`)).toBeNull();
   });
-
-  it('está configurada cuando hay un secreto largo', () => {
-    expect(isKioskConfigured()).toBe(true);
+  it('verifica vigencia y revocacion en cada peticion', async () => {
+    harness.cookie = `kiosk_${'a'.repeat(64)}`;
+    harness.query.mockResolvedValueOnce([{ id: 'device-1' }]);
+    expect(await getKioskDevice()).toBe('device-1');
+    expect(harness.query).toHaveBeenCalledWith(
+      expect.stringContaining('revocado_en IS NULL AND expira_en > CURRENT_TIMESTAMP'),
+      expect.any(Array)
+    );
+    expect(await getKioskDevice()).toBeNull();
   });
-
-  describe('secreto del dispositivo', () => {
-    it('acepta el secreto configurado', () => {
-      expect(matchesDeviceSecret('secreto-del-local-para-la-pantalla')).toBe(true);
-    });
-
-    it('rechaza secretos parecidos, vacíos o de otro tipo', () => {
-      expect(matchesDeviceSecret('secreto-del-local-para-la-pantall')).toBe(false);
-      expect(matchesDeviceSecret('secreto-del-local-para-la-pantalla ')).toBe(false);
-      expect(matchesDeviceSecret('')).toBe(false);
-      expect(matchesDeviceSecret(null)).toBe(false);
-      expect(matchesDeviceSecret({ secret: 'secreto-del-local-para-la-pantalla' })).toBe(false);
-    });
+  it('renueva solo credenciales vigentes, sin reactivar revocadas ni vencidas', async () => {
+    const token = `kiosk_${'b'.repeat(64)}`;
+    harness.query.mockResolvedValueOnce([{ id: 'device-1' }]);
+    expect(await renewDevice(token)).toBe('device-1');
+    expect(harness.query).toHaveBeenCalledWith(
+      expect.stringContaining("interval '30 days'"),
+      expect.any(Array)
+    );
+    expect(await renewDevice(token)).toBeNull();
   });
-
-  describe('token de dispositivo', () => {
-    it('viaja con alcance kiosk y se verifica con el secreto del local', async () => {
-      const token = await createDeviceToken('device-1');
-      expect(await verifyDeviceToken(token)).toBe('device-1');
-    });
-
-    it('no acepta un token de sesión de usuario como credencial de pantalla', async () => {
-      // Un JWT firmado con JWT_SECRET (el de las sesiones) no sirve acá: se firma con el
-      // secreto del kiosko, así que un token de persona no puede hacerse pasar por pantalla.
-      const { SignJWT } = await import('jose');
-      const tokenDePersona = await new SignJWT({ id: 'u-1', role: 'administrador' })
-        .setProtectedHeader({ alg: 'HS256' })
-        .setExpirationTime('1h')
-        .sign(new TextEncoder().encode(process.env.JWT_SECRET));
-
-      expect(await verifyDeviceToken(tokenDePersona)).toBeNull();
-    });
-
-    it('rechaza un token manipulado o vacío', async () => {
-      const token = await createDeviceToken('device-1');
-      expect(await verifyDeviceToken(`${token}x`)).toBeNull();
-      expect(await verifyDeviceToken(undefined)).toBeNull();
-      expect(await verifyDeviceToken('')).toBeNull();
-    });
+  it('revoca la credencial anterior al volver a vincular un navegador', async () => {
+    await provisionDevice('Entrada', 'admin-1', `kiosk_${'c'.repeat(64)}`);
+    expect(harness.query.mock.calls[0][0]).toContain('SET revocado_en');
+    expect(harness.query.mock.calls[1][0]).toContain('INSERT INTO kiosk_devices');
   });
-
-  describe('lectura de la petición', () => {
-    it('devuelve el dispositivo cuando la cookie es válida', async () => {
-      cookieValue.value = await createDeviceToken('device-9');
-      expect(await getKioskDevice()).toBe('device-9');
-    });
-
-    it('devuelve null sin cookie o con una cookie que no verifica', async () => {
-      expect(await getKioskDevice()).toBeNull();
-      cookieValue.value = 'no-es-un-token';
-      expect(await getKioskDevice()).toBeNull();
-    });
+  it('no lista hashes y persiste la revocacion', async () => {
+    await listDevices();
+    expect(harness.query.mock.calls[0][0]).not.toContain('token_hash');
+    await revokeDevice('device-1');
+    expect(harness.query).toHaveBeenLastCalledWith(expect.stringContaining('SET revocado_en'), [
+      'device-1'
+    ]);
   });
 });

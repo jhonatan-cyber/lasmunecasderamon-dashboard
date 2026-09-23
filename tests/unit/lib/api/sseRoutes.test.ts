@@ -1,3 +1,4 @@
+// @vitest-environment node
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import fs from 'node:fs';
 import path from 'node:path';
@@ -13,7 +14,8 @@ vi.mock('@/lib/auth/auth-app', () => ({
 
 let mockDeviceId: string | null = null;
 vi.mock('@/lib/kiosk/deviceAuth', () => ({
-  getKioskDevice: vi.fn().mockImplementation(() => mockDeviceId)
+  getKioskDevice: vi.fn().mockImplementation(() => mockDeviceId),
+  isDeviceActive: vi.fn().mockImplementation(async () => Boolean(mockDeviceId))
 }));
 
 import { sendNotificationToAll, sseManager } from '@/lib/api/sseService';
@@ -119,6 +121,24 @@ describe('GET /api/notifications/kiosk', () => {
     expect(response.status).toBe(401);
     await expect(response.json()).resolves.toMatchObject({ code: 'KIOSK_NOT_LINKED' });
     expect(sseManager.clientCount).toBe(0);
+  });
+
+  it('desconecta una pantalla revocada y limpia sus temporizadores', async () => {
+    vi.useFakeTimers();
+    try {
+      mockDeviceId = 'device-1';
+      const stream = await openStream(
+        await sseKiosk(new Request('http://localhost/api/notifications/kiosk'))
+      );
+      await stream.pull();
+      expect(sseManager.clientCount).toBe(1);
+      mockDeviceId = null;
+      await vi.advanceTimersByTimeAsync(60_000);
+      expect(sseManager.clientCount).toBe(0);
+      expect(vi.getTimerCount()).toBe(0);
+    } finally {
+      vi.useRealTimers();
+    }
   });
 
   it('atiende a la pantalla provisionada, sin sesión de personal', async () => {

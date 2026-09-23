@@ -260,8 +260,15 @@ export async function migrate(
     for (const { filename, sql, checksum } of migrations) {
       const previousChecksum = applied.get(filename);
       if (previousChecksum !== undefined) {
-        if (previousChecksum !== checksum)
-          throw new Error(`Applied migration changed: ${filename}`);
+        if (previousChecksum !== checksum) {
+          // El ledger escrito por el runner anterior guardaba el hash del archivo
+          // crudo (con los CRLF de un checkout de Windows): mismo contenido, otra
+          // suma. Se re-chequea contra ese hash legacy antes de declarar la
+          // migración cambiada; un cambio real de contenido sigue fallando.
+          const legacyChecksum = createHash('sha256').update(sql).digest('hex');
+          if (previousChecksum !== legacyChecksum)
+            throw new Error(`Applied migration changed: ${filename}`);
+        }
         continue;
       }
 

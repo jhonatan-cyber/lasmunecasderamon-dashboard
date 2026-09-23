@@ -1,5 +1,6 @@
 'use client';
 
+import React from 'react';
 import {
   Table,
   TableBody,
@@ -62,6 +63,24 @@ interface CuentaTableProps {
   onOrderStatusChange?: () => void;
 }
 
+interface CuentaTableViewsProps {
+  rows: CuentaWithDetails[];
+  getEstadoBadge: (estado: number | string) => {
+    label: string;
+    variant: 'default' | 'secondary' | 'destructive' | 'success' | 'outline';
+  };
+  hasAnyAction: boolean;
+  canViewDetails: boolean;
+  canAddProducts: boolean;
+  canCobrar: boolean;
+  handleVerDetalles: (cuenta: CuentaWithDetails) => void;
+  handleFinalizarTemporizador: (cuenta: CuentaWithDetails) => void;
+  handleAgregarProductos: (cuenta: CuentaWithDetails) => void;
+  handleCobrarCuenta: (cuenta: CuentaWithDetails) => void;
+  handleSolicitarAnulacion: (cuenta: CuentaWithDetails) => void;
+  getTimerByServicioId: (sid: string) => any;
+}
+
 function CuentaTimerStatus({
   cuenta,
   compact = false
@@ -92,99 +111,21 @@ function CuentaTimerStatus({
   );
 }
 
-export default function CuentaTable({
-  loading,
+const MobileCardView = React.memo(function MobileCardView({
   rows,
-  onRefresh,
-  onOrderStatusChange
-}: CuentaTableProps) {
-  const { hasPermission } = useUserPermissions();
-  const { getTimerByServicioId } = useTimer();
-  const { modalState, showConfirm, closeModal } = useConfirmModal();
-  const {
-    selectedCuentaId,
-    detailModalOpen,
-    setDetailModalOpen,
-    agregarProductosOpen,
-    setAgregarProductosOpen,
-    cobrarCuentaOpen,
-    setCobrarCuentaOpen,
-    cuentaSeleccionada,
-    handleVerDetalles,
-    handleAgregarProductos,
-    handleCobrarCuenta,
-    handleProductosAgregados: hookHandleProductosAgregados,
-    handleCuentaCobrada: hookHandleCuentaCobrada,
-    getEstadoBadge
-  } = useCuentaTableLogic();
-
-  const {
-    anulacionDialogOpen,
-    setAnulacionDialogOpen,
-    cuentaParaAnular,
-    motivoAnulacion,
-    setMotivoAnulacion,
-    montoAnulacion,
-    setMontoAnulacion,
-    anulandoCuenta,
-    handleSolicitarAnulacion,
-    handleConfirmarSolicitudAnulacion,
-    closeAnulacionDialog,
-    handleFinalizarTemporizador,
-    formatMontoInput
-  } = useCuentaAnulacion({ onRefresh, onOrderStatusChange, showConfirm });
-
-  const canViewDetails = hasPermission('cuentas', 'ver_detalles');
-  const canAddProducts = hasPermission('cuentas', 'agregar_productos');
-  const canCobrar = hasPermission('cuentas', 'cobrar');
-
-  const hasAnyAction = canViewDetails || canAddProducts || canCobrar;
-
-  const selectedCuentaIdForAction = cuentaSeleccionada
-    ? String(cuentaSeleccionada.id_cuenta ?? cuentaSeleccionada.id ?? '')
-    : null;
-
-  const handleProductosAgregados = () => {
-    hookHandleProductosAgregados();
-    if (onRefresh) {
-      onRefresh();
-    }
-  };
-
-  const handleCuentaCobrada = () => {
-    hookHandleCuentaCobrada();
-    if (onRefresh) {
-      onRefresh();
-    }
-  };
-
-  if (loading) {
-    return (
-      <div className='bg-white dark:bg-slate-900/40 backdrop-blur-xs rounded-3xl border-none shadow-md overflow-hidden p-8'>
-        <div className='animate-pulse space-y-4'>
-          <div className='h-12 bg-gray-100 dark:bg-gray-800 rounded-xl' />
-          <div className='h-12 bg-gray-100 dark:bg-gray-800 rounded-xl' />
-          <div className='h-12 bg-gray-100 dark:bg-gray-800 rounded-xl' />
-        </div>
-      </div>
-    );
-  }
-
-  if (rows.length === 0) {
-    return (
-      <div className='bg-white dark:bg-slate-900/40 backdrop-blur-xs rounded-3xl border-none shadow-md overflow-hidden p-8'>
-        <div className='text-center py-12'>
-          <div className='w-16 h-16 bg-gray-100 dark:bg-gray-800 rounded-full flex items-center justify-center mx-auto mb-4'>
-            <Receipt className='w-8 h-8 text-gray-400' />
-          </div>
-          <h3 className='text-lg font-medium text-gray-900 dark:text-white mb-2'>No hay cuentas</h3>
-          <p className='text-sm text-gray-500'>No se encontraron cuentas para mostrar</p>
-        </div>
-      </div>
-    );
-  }
-
-  const MobileCardView = () => (
+  getEstadoBadge,
+  hasAnyAction,
+  canViewDetails,
+  canAddProducts,
+  canCobrar,
+  handleVerDetalles,
+  handleFinalizarTemporizador,
+  handleAgregarProductos,
+  handleCobrarCuenta,
+  handleSolicitarAnulacion,
+  getTimerByServicioId
+}: CuentaTableViewsProps) {
+  return (
     <div className='space-y-4 lg:hidden'>
       {rows.map(cuenta => (
         <Card key={cuenta.id_cuenta} className='shadow-xs hover:shadow-md transition-shadow'>
@@ -343,8 +284,23 @@ export default function CuentaTable({
       ))}
     </div>
   );
+});
 
-  const DesktopTableView = () => (
+const DesktopTableView = React.memo(function DesktopTableView({
+  rows,
+  getEstadoBadge,
+  hasAnyAction,
+  canViewDetails,
+  canAddProducts,
+  canCobrar,
+  handleVerDetalles,
+  handleFinalizarTemporizador,
+  handleAgregarProductos,
+  handleCobrarCuenta,
+  handleSolicitarAnulacion,
+  getTimerByServicioId
+}: CuentaTableViewsProps) {
+  return (
     <div className='hidden lg:block'>
       <div className='bg-white dark:bg-slate-900/40 backdrop-blur-xs rounded-3xl border-none shadow-md overflow-hidden'>
         <div className='overflow-x-auto'>
@@ -488,13 +444,119 @@ export default function CuentaTable({
       </div>
     </div>
   );
+});
+
+export default function CuentaTable({
+  loading,
+  rows,
+  onRefresh,
+  onOrderStatusChange
+}: CuentaTableProps) {
+  const { hasPermission } = useUserPermissions();
+  const { getTimerByServicioId } = useTimer();
+  const { modalState, showConfirm, closeModal } = useConfirmModal();
+  const {
+    selectedCuentaId,
+    detailModalOpen,
+    setDetailModalOpen,
+    agregarProductosOpen,
+    setAgregarProductosOpen,
+    cobrarCuentaOpen,
+    setCobrarCuentaOpen,
+    cuentaSeleccionada,
+    handleVerDetalles,
+    handleAgregarProductos,
+    handleCobrarCuenta,
+    handleProductosAgregados: hookHandleProductosAgregados,
+    handleCuentaCobrada: hookHandleCuentaCobrada,
+    getEstadoBadge
+  } = useCuentaTableLogic();
+
+  const {
+    anulacionDialogOpen,
+    setAnulacionDialogOpen,
+    cuentaParaAnular,
+    motivoAnulacion,
+    setMotivoAnulacion,
+    montoAnulacion,
+    setMontoAnulacion,
+    anulandoCuenta,
+    handleSolicitarAnulacion,
+    handleConfirmarSolicitudAnulacion,
+    closeAnulacionDialog,
+    handleFinalizarTemporizador,
+    formatMontoInput
+  } = useCuentaAnulacion({ onRefresh, onOrderStatusChange, showConfirm });
+
+  const canViewDetails = hasPermission('cuentas', 'ver_detalles');
+  const canAddProducts = hasPermission('cuentas', 'agregar_productos');
+  const canCobrar = hasPermission('cuentas', 'cobrar');
+
+  const hasAnyAction = canViewDetails || canAddProducts || canCobrar;
+
+  const selectedCuentaIdForAction = cuentaSeleccionada
+    ? String(cuentaSeleccionada.id_cuenta ?? cuentaSeleccionada.id ?? '')
+    : null;
+
+  const handleProductosAgregados = () => {
+    hookHandleProductosAgregados();
+    if (onRefresh) {
+      onRefresh();
+    }
+  };
+
+  const handleCuentaCobrada = () => {
+    hookHandleCuentaCobrada();
+    if (onRefresh) {
+      onRefresh();
+    }
+  };
+
+  if (loading) {
+    return (
+      <div className='bg-white dark:bg-slate-900/40 backdrop-blur-xs rounded-3xl border-none shadow-md overflow-hidden p-8'>
+        <div className='animate-pulse space-y-4'>
+          <div className='h-12 bg-gray-100 dark:bg-gray-800 rounded-xl' />
+          <div className='h-12 bg-gray-100 dark:bg-gray-800 rounded-xl' />
+          <div className='h-12 bg-gray-100 dark:bg-gray-800 rounded-xl' />
+        </div>
+      </div>
+    );
+  }
+
+  if (rows.length === 0) {
+    return (
+      <div className='bg-white dark:bg-slate-900/40 backdrop-blur-xs rounded-3xl border-none shadow-md overflow-hidden p-8'>
+        <div className='text-center py-12'>
+          <div className='w-16 h-16 bg-gray-100 dark:bg-gray-800 rounded-full flex items-center justify-center mx-auto mb-4'>
+            <Receipt className='w-8 h-8 text-gray-400' />
+          </div>
+          <h3 className='text-lg font-medium text-gray-900 dark:text-white mb-2'>No hay cuentas</h3>
+          <p className='text-sm text-gray-500'>No se encontraron cuentas para mostrar</p>
+        </div>
+      </div>
+    );
+  }
+
+  const viewProps: CuentaTableViewsProps = {
+    rows,
+    getEstadoBadge,
+    hasAnyAction,
+    canViewDetails,
+    canAddProducts,
+    canCobrar,
+    handleVerDetalles,
+    handleFinalizarTemporizador,
+    handleAgregarProductos,
+    handleCobrarCuenta,
+    handleSolicitarAnulacion,
+    getTimerByServicioId
+  };
 
   return (
     <>
-      {/* eslint-disable-next-line react-hooks/static-components */}
-      <MobileCardView />
-      {/* eslint-disable-next-line react-hooks/static-components */}
-      <DesktopTableView />
+      <MobileCardView {...viewProps} />
+      <DesktopTableView {...viewProps} />
 
       <CuentaDetailModal
         open={detailModalOpen}

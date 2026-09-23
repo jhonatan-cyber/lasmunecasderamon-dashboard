@@ -10,7 +10,11 @@ import type { SseSubscriberContext } from './sseEvents';
  *  - `/api/notifications/sse`  → `{ channel: 'staff' }`, detrás de una sesión válida.
  *  - `/api/notifications/kiosk` → `{ channel: 'kiosk' }`, proyección pública reducida.
  */
-export function createSseStream(request: Request, context: SseSubscriberContext): Response {
+export function createSseStream(
+  request: Request,
+  context: SseSubscriberContext,
+  onDisconnect?: () => void
+): Response {
   const encoder = new TextEncoder();
   let writerClosed = false;
   let writer: {
@@ -23,6 +27,7 @@ export function createSseStream(request: Request, context: SseSubscriberContext)
   const cleanup = () => {
     if (writerClosed) return;
     writerClosed = true;
+    onDisconnect?.();
     if (writer) {
       sseManager.unregisterClient(writer);
     }
@@ -57,7 +62,8 @@ export function createSseStream(request: Request, context: SseSubscriberContext)
         }
       };
       sseManager.registerClient(writer, context);
-      request.signal.addEventListener('abort', cleanup, { once: true });
+      request.signal.addEventListener('abort', () => writer?.close(), { once: true });
+      if (request.signal.aborted) writer.close();
     },
     cancel() {
       cleanup();

@@ -1,6 +1,6 @@
 ﻿'use client';
 
-import React, { createContext, useContext, useState, useEffect } from 'react';
+import React, { createContext, useContext, useState, useEffect, useCallback, useMemo } from 'react';
 
 interface SidebarContextType {
   isSidebarOpen: boolean;
@@ -40,41 +40,48 @@ export function SidebarProvider({ children }: { children: React.ReactNode }) {
     return () => window.removeEventListener('resize', handleResize);
   }, []);
 
-  const toggleSidebar = () => {
-    setIsSidebarOpen(!isSidebarOpen);
-  };
+  const toggleSidebar = useCallback(() => {
+    setIsSidebarOpen(prev => !prev);
+  }, []);
 
-  const closeSidebar = () => {
+  const closeSidebar = useCallback(() => {
     setIsSidebarOpen(false);
-  };
+  }, []);
 
-  const openSidebar = () => {
+  const openSidebar = useCallback(() => {
     setIsSidebarOpen(true);
-  };
+  }, []);
 
-  const toggleCollapse = () => {
-    setIsCollapsed(!isCollapsed);
-  };
+  const toggleCollapse = useCallback(() => {
+    setIsCollapsed(prev => !prev);
+  }, []);
 
-  const setCollapsed = (collapsed: boolean) => {
+  const setCollapsed = useCallback((collapsed: boolean) => {
     setIsCollapsed(collapsed);
-  };
+  }, []);
 
-  return (
-    <SidebarContext.Provider
-      value={{
-        isSidebarOpen,
-        isCollapsed,
-        toggleSidebar,
-        closeSidebar,
-        openSidebar,
-        toggleCollapse,
-        setCollapsed
-      }}
-    >
-      {children}
-    </SidebarContext.Provider>
+  const value = useMemo(
+    () => ({
+      isSidebarOpen,
+      isCollapsed,
+      toggleSidebar,
+      closeSidebar,
+      openSidebar,
+      toggleCollapse,
+      setCollapsed
+    }),
+    [
+      isSidebarOpen,
+      isCollapsed,
+      toggleSidebar,
+      closeSidebar,
+      openSidebar,
+      toggleCollapse,
+      setCollapsed
+    ]
   );
+
+  return <SidebarContext.Provider value={value}>{children}</SidebarContext.Provider>;
 }
 
 export function useSidebar() {

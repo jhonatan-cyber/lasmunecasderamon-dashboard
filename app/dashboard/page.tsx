@@ -14,13 +14,18 @@ import CriticalMetrics from '@/components/dashboard/CriticalMetrics';
 import LocalAndPending from '@/components/dashboard/LocalAndPending';
 import RecentActivityCompact from '@/components/dashboard/RecentActivityCompact';
 import CollapsibleSection from '@/components/dashboard/CollapsibleSection';
-import MiniSalesChart from '@/components/dashboard/MiniSalesChart';
 import TopPerformers from '@/components/dashboard/TopPerformers';
 import ForecastInsights from '@/components/dashboard/ForecastInsights';
 import LoggedUsersCards from '@/components/dashboard/LoggedUsersCards';
 
 const DashboardStatsCards = dynamic(() => import('@/components/dashboard/DashboardStatsCards'), {
   loading: () => <div className='h-32 bg-slate-100 dark:bg-slate-800 rounded-2xl animate-pulse' />
+});
+
+const MiniSalesChart = dynamic(() => import('@/components/dashboard/MiniSalesChart'), {
+  loading: () => (
+    <div className='h-[500px] bg-slate-100 dark:bg-slate-800 rounded-[3rem] animate-pulse' />
+  )
 });
 
 const BarmanDashboard = dynamic(() => import('@/components/bar/BarmanDashboard'));

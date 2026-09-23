@@ -1,5 +1,5 @@
 'use client';
-import { createContext, useContext, useRef, useCallback, ReactNode } from 'react';
+import { createContext, useContext, useRef, useMemo, ReactNode } from 'react';
 import { useAuthSession, CurrentUser } from './auth/useAuthSession';
 import { useAuthPermissions, UserPermission } from './auth/useAuthPermissions';
 
@@ -36,18 +36,32 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   // eslint-disable-next-line react-hooks/refs
   permissionsRefreshRef.current = permissionsResult.refreshPermissions;
 
-  const value: AuthContextType = {
-    user: sessionResult.user,
-    userLoading: sessionResult.userLoading,
-    userPermissions: permissionsResult.userPermissions,
-    permissionsLoading: permissionsResult.permissionsLoading,
-    permissionsLoaded: permissionsResult.permissionsLoaded,
-    hasPermission: permissionsResult.hasPermission,
-    hasAnyPermission: permissionsResult.hasAnyPermission,
-    hasAllPermissions: permissionsResult.hasAllPermissions,
-    refreshUser: sessionResult.refreshUser,
-    refreshPermissions: permissionsResult.refreshPermissions
-  };
+  const value: AuthContextType = useMemo(
+    () => ({
+      user: sessionResult.user,
+      userLoading: sessionResult.userLoading,
+      userPermissions: permissionsResult.userPermissions,
+      permissionsLoading: permissionsResult.permissionsLoading,
+      permissionsLoaded: permissionsResult.permissionsLoaded,
+      hasPermission: permissionsResult.hasPermission,
+      hasAnyPermission: permissionsResult.hasAnyPermission,
+      hasAllPermissions: permissionsResult.hasAllPermissions,
+      refreshUser: sessionResult.refreshUser,
+      refreshPermissions: permissionsResult.refreshPermissions
+    }),
+    [
+      sessionResult.user,
+      sessionResult.userLoading,
+      sessionResult.refreshUser,
+      permissionsResult.userPermissions,
+      permissionsResult.permissionsLoading,
+      permissionsResult.permissionsLoaded,
+      permissionsResult.hasPermission,
+      permissionsResult.hasAnyPermission,
+      permissionsResult.hasAllPermissions,
+      permissionsResult.refreshPermissions
+    ]
+  );
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 }

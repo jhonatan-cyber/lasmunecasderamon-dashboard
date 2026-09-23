@@ -1,7 +1,15 @@
 // @vitest-environment node
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
-const auth = vi.hoisted(() => ({ device: null as string | null, configured: true }));
+const auth = vi.hoisted(() => ({
+  device: null as string | null,
+  user: null as any,
+  token: 'kiosk_opaque',
+  provision: vi.fn(),
+  renew: vi.fn(),
+  list: vi.fn(),
+  revoke: vi.fn()
+}));
 const db = vi.hoisted(() => ({ queryMock: vi.fn() }));
 
 vi.mock('@/lib/database/db', () => ({
@@ -19,10 +27,20 @@ vi.mock('@/lib/kiosk/deviceAuth', () => ({
   KIOSK_SESSION_MAX_AGE: 2_592_000,
   kioskCookieOptions: (maxAge: number) => ({ httpOnly: true, sameSite: 'strict', maxAge }),
   getKioskDevice: async () => auth.device,
-  isKioskConfigured: () => auth.configured,
-  matchesDeviceSecret: (candidate: unknown) => candidate === 'secreto-valido-123456',
-  createDeviceToken: async (id: string) => `token-de-${id}`,
+  provisionDevice: auth.provision,
+  renewDevice: auth.renew,
+  revokeDevice: auth.revoke,
+  listDevices: auth.list,
   logKioskEvent: vi.fn()
+}));
+
+vi.mock('@/lib/auth/auth-app', () => ({ getAuth: async () => auth.user }));
+vi.mock('next/headers', () => ({ cookies: async () => ({ get: () => ({ value: auth.token }) }) }));
+vi.mock('@/lib/services/AuditService', () => ({
+  AuditService: { log: vi.fn().mockResolvedValue(undefined) }
+}));
+vi.mock('@/lib/services/ErrorLogService', () => ({
+  ErrorLogService: { log: vi.fn().mockResolvedValue(undefined) }
 }));
 
 vi.mock('@/lib/business/codigoService', () => ({
@@ -48,7 +66,13 @@ vi.mock('@/lib/kiosk/attendanceChallenges', async () => {
   };
 });
 
-import { GET as kioskSessionGet, POST as kioskSessionPost } from '@/app/api/kiosk/session/route';
+import {
+  GET as kioskSessionGet,
+  POST as kioskSessionPost,
+  PATCH as kioskSessionPatch
+} from '@/app/api/kiosk/session/route';
+import { GET as devicesGet } from '@/app/api/kiosk/devices/route';
+import { DELETE as deviceDelete } from '@/app/api/kiosk/devices/[id]/route';
 import { GET as kioskBoardGet } from '@/app/api/kiosk/board/route';
 import { POST as kioskChallengePost } from '@/app/api/kiosk/attendance/challenge/route';
 import { GET as publicUsersGet } from '@/app/api/public/users/route';
@@ -63,45 +87,60 @@ const postJson = (body: unknown) =>
 
 beforeEach(() => {
   auth.device = null;
-  auth.configured = true;
+  auth.user = null;
+  auth.provision.mockReset().mockResolvedValue({ id: 'device-1', token: 'kiosk_opaque' });
+  auth.renew.mockReset().mockResolvedValue(null);
   db.queryMock.mockReset();
   db.queryMock.mockResolvedValue([]);
 });
 
-describe('provision de la pantalla del local', () => {
-  it('informa si el servidor esta configurado y si esta pantalla ya esta vinculada', async () => {
-    const sinVincular = await (await kioskSessionGet()).json();
-    expect(sinVincular).toEqual({ success: true, configurado: true, vinculado: false });
-
-    auth.device = 'pantalla-1';
-    const vinculada = await (await kioskSessionGet()).json();
-    expect(vinculada.vinculado).toBe(true);
+describe('activacion automatica de pantallas', () => {
+  const context = { params: {} };
+  it('informa estado y si la sesion puede activar', async () => {
+    const result = await (
+      await kioskSessionGet(new Request('http://localhost/api/kiosk/session'), context)
+    ).json();
+    expect(result).toEqual({ success: true, vinculado: false, puedeActivar: false });
   });
-
-  it('rechaza un secreto que no es el del local, sin dejar credencial', async () => {
-    const respuesta = await kioskSessionPost(postJson({ secret: 'lo-que-sea-123456789' }));
-
-    expect(respuesta.status).toBe(401);
-    expect(respuesta.headers.get('set-cookie')).toBeNull();
+  it('rechaza visitantes aunque envien el antiguo secreto', async () => {
+    const response = await kioskSessionPost(postJson({ secret: 'secreto-valido-123456' }), context);
+    expect(response.status).toBe(401);
+    expect(auth.provision).not.toHaveBeenCalled();
   });
-
-  it('vincula la pantalla cuando el secreto es correcto', async () => {
-    const respuesta = await kioskSessionPost(postJson({ secret: 'secreto-valido-123456' }));
-
-    expect(respuesta.status).toBe(200);
-    expect((await respuesta.json()).deviceId).toBeTruthy();
-    const cookie = respuesta.headers.get('set-cookie') ?? '';
-    expect(cookie).toContain('kiosk_token=');
-    expect(cookie.toLowerCase()).toContain('httponly');
+  it('rechaza usuarios sin rol administrador', async () => {
+    auth.user = { id: 'u1', role: 'cajero', permissions: {} };
+    const response = await kioskSessionPost(postJson({ nombre: 'Entrada' }), context);
+    expect(response.status).toBe(403);
+    expect(auth.provision).not.toHaveBeenCalled();
   });
-
-  it('dice que no esta configurado en vez de aceptar cualquier secreto', async () => {
-    auth.configured = false;
-
-    const respuesta = await kioskSessionPost(postJson({ secret: 'secreto-valido-123456' }));
-
-    expect(respuesta.status).toBe(503);
-    expect((await respuesta.json()).code).toBe('KIOSK_NOT_CONFIGURED');
+  it('activa con administrador sin exponer token y cierra su sesion', async () => {
+    auth.user = { id: 'admin-1', role: 'administrador', permissions: {} };
+    const response = await kioskSessionPost(postJson({ nombre: 'Entrada' }), context);
+    expect(response.status).toBe(200);
+    expect(await response.json()).toEqual({ success: true, deviceId: 'device-1' });
+    expect(auth.provision).toHaveBeenCalledWith('Entrada', 'admin-1', 'kiosk_opaque');
+    const cookie = response.headers.get('set-cookie') || '';
+    expect(cookie).toContain('kiosk_token=kiosk_opaque');
+    expect(cookie).toContain('HttpOnly');
+    expect(cookie).toContain('refresh_token=;');
+    expect(cookie).toContain('token=;');
+  });
+  it('renueva la credencial sin sesion de administrador', async () => {
+    auth.renew.mockResolvedValue('device-1');
+    const response = await kioskSessionPatch(
+      new Request('http://localhost/api/kiosk/session', { method: 'PATCH' }),
+      context
+    );
+    expect(response.status).toBe(200);
+    expect(response.headers.get('set-cookie')).toContain('Max-Age=2592000');
+  });
+  it('no renueva credenciales revocadas y borra la cookie', async () => {
+    const response = await kioskSessionPatch(
+      new Request('http://localhost/api/kiosk/session', { method: 'PATCH' }),
+      context
+    );
+    expect(response.status).toBe(401);
+    expect(response.headers.get('set-cookie')).toContain('Max-Age=0');
   });
 });
 
@@ -212,5 +251,43 @@ describe('la politica del middleware coincide con las rutas', () => {
     for (const ruta of KIOSK_DEVICE_APIS) {
       expect(PUBLIC_PATHS).not.toContain(ruta);
     }
+  });
+});
+
+describe('administracion de pantallas', () => {
+  it('exige administrador para listar y revocar', async () => {
+    auth.user = { id: 'c1', role: 'cajero', permissions: {} };
+    expect(
+      (await devicesGet(new Request('http://localhost/api/kiosk/devices'), { params: {} })).status
+    ).toBe(403);
+    expect(
+      (
+        await deviceDelete(
+          new Request('http://localhost/api/kiosk/devices/x', { method: 'DELETE' }),
+          { params: { id: 'x' } }
+        )
+      ).status
+    ).toBe(403);
+  });
+  it('lista dispositivos y permite revocar al administrador', async () => {
+    auth.user = { id: 'a1', role: 'administrador', permissions: {} };
+    auth.list.mockResolvedValue([{ id: 'd1', nombre: 'Entrada', activo: true }]);
+    const response = await devicesGet(new Request('http://localhost/api/kiosk/devices'), {
+      params: {}
+    });
+    expect(await response.json()).toEqual({
+      success: true,
+      data: [{ id: 'd1', nombre: 'Entrada', activo: true }]
+    });
+    const id = 'b4b0752a-ff8d-4c8b-86a5-c4742378a685';
+    expect(
+      (
+        await deviceDelete(
+          new Request(`http://localhost/api/kiosk/devices/${id}`, { method: 'DELETE' }),
+          { params: { id } }
+        )
+      ).status
+    ).toBe(200);
+    expect(auth.revoke).toHaveBeenCalledWith(id);
   });
 });

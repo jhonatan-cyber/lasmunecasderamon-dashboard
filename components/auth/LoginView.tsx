@@ -76,6 +76,7 @@ export const LoginView = () => {
                 height={721}
                 className='w-[200px] h-auto'
                 sizes='200px'
+                loading='eager'
               />
             </div>
 

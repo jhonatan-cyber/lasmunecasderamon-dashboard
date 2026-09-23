@@ -14,6 +14,10 @@ export const PUBLIC_PATHS = [
   '/api/auth/reset-password',
   // '/api/login' y '/api/logout' retirados: rutas muertas (el front usa /api/auth/*).
   '/api/auth/register-first-user',
+  // Complemento del aprovisionamiento inicial: la pantalla de login consulta si ya
+  // existe algún usuario para decidir entre login y registro del primer administrador.
+  // Solo devuelve un booleano, sin datos de personal.
+  '/api/auth/check-users',
   '/api/test-auth',
   '/api/health',
   '/api/whatsapp/webhook',
@@ -60,7 +64,7 @@ export const PUBLIC_PATHS = [
 ];
 
 // Credencial de dispositivo: la pantalla del local se autentica con su propia cookie
-// (`kiosk_token`, firmada con KIOSK_DEVICE_SECRET), no con una sesión de persona. El
+// (`kiosk_token`, validada contra kiosk_devices), no con una sesión de persona. El
 // middleware deja pasar estas rutas y cada una verifica la credencial; no son públicas
 // y no aceptan una sesión de usuario como sustituto.
 export const KIOSK_DEVICE_APIS = ['/api/kiosk', '/api/notifications/kiosk'];

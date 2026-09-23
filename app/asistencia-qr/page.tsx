@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect, useCallback, useRef, useMemo } from 'react';
-import { Search, ArrowLeft, QrCode, ShieldCheck, KeyRound, RefreshCw } from 'lucide-react';
+import { Search, ArrowLeft, QrCode, ShieldCheck, RefreshCw } from 'lucide-react';
 import {
   Dialog,
   DialogContent,
@@ -16,6 +16,7 @@ import Image from 'next/image';
 import { useRouter } from 'next/navigation';
 import { useSharedSSE } from '@/hooks/shared';
 import { toast } from 'sonner';
+import { KioskActivation } from '@/components/settings/KioskDevices';
 import ThemeSwitcher from '@/components/shared/ThemeSwitcher';
 
 interface KioskUser {
@@ -40,24 +41,12 @@ interface Challenge {
   ttlSegundos: number;
 }
 
-type Estado = 'cargando' | 'sin-configurar' | 'provisionar' | 'activo';
+type Estado = 'cargando' | 'error' | 'provisionar' | 'activo';
 
-/**
- * Pantalla de asistencia de la entrada.
- *
- * Ya no es pública: se provisiona una vez con el secreto del local (`KIOSK_DEVICE_SECRET`)
- * y desde entonces es un dispositivo del local. Su razón de ser es emitir el desafío de
- * asistencia de la persona que se acerca — un token de un solo uso y 120 segundos, que el
- * servidor guarda hasheado — y mostrar el código del local vigente.
- *
- * Antes esta pantalla leía un endpoint público que devolvía el `qr_token` de todo el
- * personal: esa credencial estática, pública y reutilizable era la que permitía marcar
- * asistencia ajena desde cualquier lado.
- */
+/** Pantalla vinculada por un administrador, con renovacion automatica. */
 export default function AsistenciaQrPage() {
   const [estado, setEstado] = useState<Estado>('cargando');
-  const [secreto, setSecreto] = useState('');
-  const [provisionando, setProvisionando] = useState(false);
+  const [puedeActivar, setPuedeActivar] = useState(false);
 
   const [users, setUsers] = useState<KioskUser[]>([]);
   const [searchTerm, setSearchTerm] = useState('');
@@ -79,12 +68,32 @@ export default function AsistenciaQrPage() {
 
   const cargarTablero = useCallback(async (silencioso = false) => {
     try {
+      const renewal = await fetch('/api/kiosk/session', {
+        method: 'PATCH',
+        credentials: 'include'
+      });
+      if (renewal.status === 401) {
+        setUsers([]);
+        setCodigo(null);
+        setSelectedUser(null);
+        setChallenge(null);
+        setPuedeActivar(false);
+        setEstado('provisionar');
+        return;
+      }
+      if (!renewal.ok) throw new Error('No se pudo renovar la pantalla');
       const res = await fetch('/api/kiosk/board', { credentials: 'include' });
       if (res.status === 401) {
+        setUsers([]);
+        setCodigo(null);
+        setSelectedUser(null);
+        setChallenge(null);
+        setPuedeActivar(false);
         setEstado('provisionar');
         return;
       }
       const data = await res.json();
+      if (!res.ok || !data.success) throw new Error('No se pudo cargar el tablero');
       if (data.success) {
         setUsers(data.data.usuarios);
         setCodigo(data.data.codigo);
@@ -92,7 +101,10 @@ export default function AsistenciaQrPage() {
         setEstado('activo');
       }
     } catch {
-      if (!silencioso) toast.error('No se pudo cargar el tablero');
+      if (!silencioso) {
+        setEstado('error');
+        toast.error('No se pudo cargar el tablero');
+      }
     }
   }, []);
 
@@ -105,17 +117,15 @@ export default function AsistenciaQrPage() {
         const data = await res.json();
         if (cancelado) return;
 
-        if (!data.configurado) {
-          setEstado('sin-configurar');
-          return;
-        }
+        if (!res.ok || !data.success) throw new Error('No se pudo comprobar la pantalla');
+        setPuedeActivar(data.puedeActivar === true);
         if (!data.vinculado) {
           setEstado('provisionar');
           return;
         }
         await cargarTablero();
       } catch {
-        if (!cancelado) setEstado('sin-configurar');
+        if (!cancelado) setEstado('error');
       }
     };
 
@@ -173,31 +183,6 @@ export default function AsistenciaQrPage() {
     },
     [router]
   );
-
-  const handleProvisionar = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setProvisionando(true);
-    try {
-      const res = await fetch('/api/kiosk/session', {
-        method: 'POST',
-        credentials: 'include',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ secret: secreto.trim() })
-      });
-      const data = await res.json();
-      if (data.success) {
-        setSecreto('');
-        toast.success('Pantalla vinculada al local');
-        await cargarTablero();
-      } else {
-        toast.error(data.message || 'No se pudo vincular la pantalla');
-      }
-    } catch {
-      toast.error('Error de conexión al vincular la pantalla');
-    } finally {
-      setProvisionando(false);
-    }
-  };
 
   const handleUserClick = async (user: KioskUser) => {
     if (!isWithinTimeWindow()) {
@@ -271,7 +256,7 @@ export default function AsistenciaQrPage() {
     );
   }
 
-  if (estado === 'sin-configurar' || estado === 'provisionar') {
+  if (estado === 'error' || estado === 'provisionar') {
     return (
       <div className='min-h-screen bg-white dark:bg-neutral-950 text-neutral-900 dark:text-white flex items-center justify-center px-4'>
         <div className='w-full max-w-md space-y-6'>
@@ -282,46 +267,24 @@ export default function AsistenciaQrPage() {
             </h1>
           </div>
 
-          {estado === 'sin-configurar' ? (
-            <div className='rounded-3xl border border-amber-300 bg-amber-50 dark:bg-amber-900/20 dark:border-amber-800 p-6 space-y-2'>
-              <p className='font-bold text-sm'>El kiosko no está configurado en el servidor</p>
-              <p className='text-sm text-neutral-600 dark:text-neutral-400'>
-                Falta <code className='font-mono text-xs'>KIOSK_DEVICE_SECRET</code>. Definilo en el
-                servidor (mínimo 16 caracteres) y volvé a cargar esta pantalla.
-              </p>
+          {estado === 'error' ? (
+            <div role='alert' className='flex flex-col gap-3'>
+              <p>No se pudo conectar con el servidor.</p>
+              <Button onClick={() => window.location.reload()}>Reintentar</Button>
             </div>
+          ) : puedeActivar ? (
+            <KioskActivation />
           ) : (
-            <form onSubmit={handleProvisionar} className='space-y-4'>
-              <p className='text-sm text-neutral-600 dark:text-neutral-400'>
-                Esta pantalla es un dispositivo del local: se vincula una sola vez con el secreto
-                del kiosko. Desde entonces puede emitir los códigos de asistencia. No es una sesión
-                de personal y no da acceso a ninguna otra parte del sistema.
+            <div className='flex flex-col gap-3'>
+              <p>Esta pantalla necesita la autorización de un administrador.</p>
+              <p className='text-sm text-muted-foreground'>
+                Inicia sesión en este dispositivo y abre Ajustes → Asistencia → Activar pantalla de
+                asistencia. No necesitas claves ni códigos.
               </p>
-              <div className='space-y-2'>
-                <label
-                  htmlFor='kiosk-secret'
-                  className='text-xs font-bold uppercase tracking-widest text-slate-500'
-                >
-                  Secreto del dispositivo
-                </label>
-                <Input
-                  id='kiosk-secret'
-                  type='password'
-                  value={secreto}
-                  onChange={e => setSecreto(e.target.value)}
-                  autoComplete='off'
-                  className='h-12 font-mono'
-                />
-              </div>
-              <Button
-                type='submit'
-                disabled={provisionando || secreto.trim().length < 16}
-                className='w-full h-12 bg-black text-white dark:bg-white dark:text-black rounded-2xl font-bold'
-              >
-                <KeyRound className='h-4 w-4 mr-2' />
-                {provisionando ? 'Vinculando...' : 'Vincular esta pantalla'}
+              <Button onClick={() => router.push('/login')}>
+                Iniciar sesión como administrador
               </Button>
-            </form>
+            </div>
           )}
 
           <Button

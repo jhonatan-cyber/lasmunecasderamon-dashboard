@@ -77,6 +77,8 @@ const PUBLIC_API_POLICY: Record<string, string> = {
   '/api/auth/login': 'inicio de sesión',
   '/api/auth/reset-password': 'recuperación de contraseña por RUN',
   '/api/auth/register-first-user': 'primer administrador; el servicio rechaza si ya hay usuarios',
+  '/api/auth/check-users':
+    'pantalla de login: booleano hasUsers para ofrecer el registro del primer administrador',
   '/api/auth/change-password': 'cambio de contraseña desde el login',
   '/api/health': 'sondeo de infraestructura',
   '/api/test-auth': 'diagnóstico de sesión; solo devuelve lo que getAuth resuelva',
@@ -107,7 +109,7 @@ const TOLERATED_DEAD_ROUTES: Record<string, string> = {
 
 /** Rutas kiosko: la credencial es de dispositivo y la verifica cada handler. */
 const KIOSK_POLICY: Record<string, string> = {
-  '/api/kiosk/session': 'provisión de la pantalla con el secreto del local',
+  '/api/kiosk/session': 'activacion por administrador y renovacion con credencial de dispositivo',
   '/api/kiosk/board': 'tablero; exige cookie de dispositivo firmada',
   '/api/kiosk/attendance/challenge': 'emite el desafío; exige cookie de dispositivo firmada',
   '/api/notifications/kiosk': 'canal SSE público con proyección mínima'
@@ -115,9 +117,10 @@ const KIOSK_POLICY: Record<string, string> = {
 
 /** withPublicRoute legítimo fuera de PUBLIC_PATHS: sesión leída dentro del handler. */
 const SESSION_WRAPPED_POLICY: Record<string, string> = {
+  '/api/kiosk/session':
+    'GET informa estado; PATCH exige credencial de dispositivo vigente; POST y DELETE exigen administrador',
   '/api/attendance/register': 'exige sesión dentro del handler y valida el desafío de asistencia',
   '/api/auth/logout': 'cierre de sesión; con o sin token el resultado es el mismo',
-  '/api/auth/check-users': 'complemento del login: lista el personal activo para elegir',
   '/api/error-logs': 'POST ingesta de errores del cliente (logErrorToService, aún sin cablear)',
   '/api/reviews':
     'reseñas de clientes; arma un enlace de WhatsApp para el admin (sin escribir a la base)',
@@ -286,6 +289,17 @@ describe('matriz de autorización de la API', () => {
         PUBLIC_API_POLICY[rm.route],
         `${rm.route} no debe estar en la política pública`
       ).toBeUndefined();
+      if (
+        rm.route.startsWith('/api/kiosk/devices') ||
+        (rm.route === '/api/kiosk/session' && ['POST', 'DELETE'].includes(rm.method))
+      ) {
+        expect(rm.guard).toBe('withRoute:administrator');
+        continue;
+      }
+      if (rm.route === '/api/kiosk/session') {
+        expect(rm.guard).toBe('withPublicRoute');
+        continue;
+      }
       expect(
         ['bare', 'custom-wrapper'].includes(rm.guard),
         `${rm.route} (${rm.guard}): el kiosko verifica su credencial en el handler, no con auth de persona`

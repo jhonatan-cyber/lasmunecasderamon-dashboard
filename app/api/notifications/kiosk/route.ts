@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
 import { createSseStream } from '@/lib/api/sseStream';
-import { getKioskDevice } from '@/lib/kiosk/deviceAuth';
+import { getKioskDevice, isDeviceActive } from '@/lib/kiosk/deviceAuth';
 
 export const dynamic = 'force-dynamic';
 
@@ -25,5 +25,26 @@ export async function GET(request: Request) {
     );
   }
 
-  return createSseStream(request, { channel: 'kiosk' });
+  const controller = new AbortController();
+  const stop = () => controller.abort();
+  const interval = setInterval(() => {
+    void isDeviceActive(deviceId)
+      .then(active => {
+        if (!active) stop();
+      })
+      .catch(stop);
+  }, 60_000);
+  const cleanup = () => {
+    clearInterval(interval);
+    request.signal.removeEventListener('abort', stop);
+  };
+  controller.signal.addEventListener('abort', cleanup, { once: true });
+  request.signal.addEventListener('abort', stop, { once: true });
+  const response = createSseStream(
+    new Request(request, { signal: controller.signal }),
+    { channel: 'kiosk' },
+    cleanup
+  );
+  if (request.signal.aborted) stop();
+  return response;
 }

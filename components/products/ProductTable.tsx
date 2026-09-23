@@ -93,154 +93,157 @@ function productFoto(foto?: string | null): string {
   return `/api/images/products/${foto}`;
 }
 
-const SortableRow: React.FC<SortableRowProps> = ({
-  row,
-  onEdit,
-  onActivate,
-  onDeactivate,
-  handleDeleteClick,
-  onViewDetails,
-  isLastRow,
-  canEdit,
-  canDelete,
-  canActivate,
-  canDeactivate,
-  hasAnyAction
-}) => {
-  const { product, presentation } = row;
-  const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({
-    id: row.rowId
-  });
+const SortableRow: React.FC<SortableRowProps> = React.memo(
+  ({
+    row,
+    onEdit,
+    onActivate,
+    onDeactivate,
+    handleDeleteClick,
+    onViewDetails,
+    isLastRow,
+    canEdit,
+    canDelete,
+    canActivate,
+    canDeactivate,
+    hasAnyAction
+  }) => {
+    const { product, presentation } = row;
+    const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({
+      id: row.rowId
+    });
 
-  const style = {
-    transform: CSS.Transform.toString(transform),
-    transition,
-    opacity: isDragging ? 0.5 : 1
-  };
+    const style = {
+      transform: CSS.Transform.toString(transform),
+      transition,
+      opacity: isDragging ? 0.5 : 1
+    };
 
-  return (
-    <TableRow
-      ref={setNodeRef}
-      style={style}
-      className={`border-b bg-white group hover:bg-gray-50 dark:hover:bg-slate-800/30 transition-colors ${
-        isLastRow ? 'last:rounded-b-xl' : ''
-      }`}
-    >
-      <TableCell className='py-3 px-2 sm:px-4 text-center'>
-        <div
-          {...attributes}
-          {...listeners}
-          className='cursor-grab active:cursor-grabbing inline-flex items-center justify-center hover:bg-gray-100 rounded p-1'
-        >
-          <GripVertical className='w-4 h-4 text-gray-400' />
-        </div>
-      </TableCell>
-      <TableCell className='py-3 px-2 sm:px-4 text-center'>
-        <div className='relative mx-auto flex h-12 w-12 shrink-0 items-center justify-center overflow-hidden rounded-xl border border-gray-100 bg-white shadow-xs transition-all group-hover:shadow-sm'>
-          <Image
-            src={productFoto(presentation?.foto || product.foto)}
-            alt={presentation ? `${product.name} ${presentation.nombre}` : product.name}
-            width={48}
-            height={48}
-            sizes='48px'
-            className='h-12 w-12 object-cover transition-transform duration-300 group-hover:scale-110'
-          />
-        </div>
-      </TableCell>
-      <TableCell className='py-3 px-2 sm:px-4 text-center font-mono text-xs sm:text-sm'>
-        {presentation?.codigo_barras || product.code}
-      </TableCell>
-      <TableCell className='py-3 px-2 sm:px-4 text-center font-mono text-xs sm:text-sm'>
-        {product.name}
-      </TableCell>
-      <TableCell className='py-3 px-2 sm:px-4 text-center text-xs sm:text-sm'>
-        {presentation ? (
-          <span className='inline-flex items-center gap-1.5 rounded-full bg-gray-100 dark:bg-slate-800 px-2.5 py-0.5 font-medium text-gray-700 dark:text-gray-200 whitespace-nowrap'>
-            {presentation.nombre}
-          </span>
-        ) : (
-          <span className='text-gray-300'>—</span>
-        )}
-      </TableCell>
-      <TableCell className='py-3 px-2 sm:px-4 text-center font-mono text-xs sm:text-sm'>
-        {formatCurrencyCLP(presentation?.precio_compra ?? product.price)}
-      </TableCell>
-      <TableCell className='py-3 px-2 sm:px-4 text-center font-mono text-xs sm:text-sm'>
-        <Badge className='bg-blue-100 text-blue-700 rounded-full px-2 sm:px-3 py-1 text-xs sm:text-sm'>
-          {presentation ? (presentation.stock ?? 0) : (product.stock_almacen ?? 0)}
-        </Badge>
-      </TableCell>
-      <TableCell className='py-3 px-2 sm:px-4 text-center font-mono'>
-        {product.status === 1 ? (
-          <Badge className='bg-green-100 text-green-700 rounded-full px-2 sm:px-3 py-1 font-mono text-xs sm:text-sm'>
-            Activo
+    return (
+      <TableRow
+        ref={setNodeRef}
+        style={style}
+        className={`border-b bg-white group hover:bg-gray-50 dark:hover:bg-slate-800/30 transition-colors ${
+          isLastRow ? 'last:rounded-b-xl' : ''
+        }`}
+      >
+        <TableCell className='py-3 px-2 sm:px-4 text-center'>
+          <div
+            {...attributes}
+            {...listeners}
+            className='cursor-grab active:cursor-grabbing inline-flex items-center justify-center hover:bg-gray-100 rounded p-1'
+          >
+            <GripVertical className='w-4 h-4 text-gray-400' />
+          </div>
+        </TableCell>
+        <TableCell className='py-3 px-2 sm:px-4 text-center'>
+          <div className='relative mx-auto flex h-12 w-12 shrink-0 items-center justify-center overflow-hidden rounded-xl border border-gray-100 bg-white shadow-xs transition-all group-hover:shadow-sm'>
+            <Image
+              src={productFoto(presentation?.foto || product.foto)}
+              alt={presentation ? `${product.name} ${presentation.nombre}` : product.name}
+              width={48}
+              height={48}
+              sizes='48px'
+              className='h-12 w-12 object-cover transition-transform duration-300 group-hover:scale-110'
+            />
+          </div>
+        </TableCell>
+        <TableCell className='py-3 px-2 sm:px-4 text-center font-mono text-xs sm:text-sm'>
+          {presentation?.codigo_barras || product.code}
+        </TableCell>
+        <TableCell className='py-3 px-2 sm:px-4 text-center font-mono text-xs sm:text-sm'>
+          {product.name}
+        </TableCell>
+        <TableCell className='py-3 px-2 sm:px-4 text-center text-xs sm:text-sm'>
+          {presentation ? (
+            <span className='inline-flex items-center gap-1.5 rounded-full bg-gray-100 dark:bg-slate-800 px-2.5 py-0.5 font-medium text-gray-700 dark:text-gray-200 whitespace-nowrap'>
+              {presentation.nombre}
+            </span>
+          ) : (
+            <span className='text-gray-300'>—</span>
+          )}
+        </TableCell>
+        <TableCell className='py-3 px-2 sm:px-4 text-center font-mono text-xs sm:text-sm'>
+          {formatCurrencyCLP(presentation?.precio_compra ?? product.price)}
+        </TableCell>
+        <TableCell className='py-3 px-2 sm:px-4 text-center font-mono text-xs sm:text-sm'>
+          <Badge className='bg-blue-100 text-blue-700 rounded-full px-2 sm:px-3 py-1 text-xs sm:text-sm'>
+            {presentation ? (presentation.stock ?? 0) : (product.stock_almacen ?? 0)}
           </Badge>
-        ) : (
-          <Badge className='bg-red-200 text-red-600 rounded-full px-2 sm:px-3 py-1 font-mono text-xs sm:text-sm'>
-            Inactivo
-          </Badge>
-        )}
-      </TableCell>
-      <TableCell className='py-3 px-2 sm:px-4 text-center font-mono'>
-        <DropdownMenu>
-          <DropdownMenuTrigger asChild>
-            <Button
-              variant='ghost'
-              size='icon'
-              className='bg-white hover:bg-gray-200 rounded-full hover:scale-105 transition-all duration-200'
-            >
-              <MoreVertical className='w-3 h-3 sm:w-4 sm:h-4' />
-            </Button>
-          </DropdownMenuTrigger>
-          <DropdownMenuContent align='end'>
-            <DropdownMenuItem
-              onClick={() => onViewDetails(product, presentation)}
-              className='cursor-pointer group'
-            >
-              <Eye className='mr-2 text-blue-600 group-hover:text-blue-700 transition-colors' />
-              <span className='group-hover:text-blue-700 transition-colors'>Detalles</span>
-            </DropdownMenuItem>
-            {canEdit && (
+        </TableCell>
+        <TableCell className='py-3 px-2 sm:px-4 text-center font-mono'>
+          {product.status === 1 ? (
+            <Badge className='bg-green-100 text-green-700 rounded-full px-2 sm:px-3 py-1 font-mono text-xs sm:text-sm'>
+              Activo
+            </Badge>
+          ) : (
+            <Badge className='bg-red-200 text-red-600 rounded-full px-2 sm:px-3 py-1 font-mono text-xs sm:text-sm'>
+              Inactivo
+            </Badge>
+          )}
+        </TableCell>
+        <TableCell className='py-3 px-2 sm:px-4 text-center font-mono'>
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button
+                variant='ghost'
+                size='icon'
+                className='bg-white hover:bg-gray-200 rounded-full hover:scale-105 transition-all duration-200'
+              >
+                <MoreVertical className='w-3 h-3 sm:w-4 sm:h-4' />
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align='end'>
               <DropdownMenuItem
-                onClick={() => onEdit(product, presentation)}
+                onClick={() => onViewDetails(product, presentation)}
                 className='cursor-pointer group'
               >
-                <Pencil className='mr-2 text-purple-600 group-hover:text-purple-700 transition-colors' />
-                <span className='group-hover:text-purple-700 transition-colors'>Editar</span>
+                <Eye className='mr-2 text-blue-600 group-hover:text-blue-700 transition-colors' />
+                <span className='group-hover:text-blue-700 transition-colors'>Detalles</span>
               </DropdownMenuItem>
-            )}
-            {product.status === 1 && canDeactivate ? (
-              <DropdownMenuItem
-                onClick={() => onDeactivate(product)}
-                className='cursor-pointer group'
-              >
-                <Power className='mr-2 text-orange-600 group-hover:text-orange-700 transition-colors' />
-                <span className='group-hover:text-orange-700 transition-colors'>Desactivar</span>
-              </DropdownMenuItem>
-            ) : product.status === 0 && canActivate ? (
-              <DropdownMenuItem
-                onClick={() => onActivate(product)}
-                className='cursor-pointer group'
-              >
-                <Check className='mr-2 text-green-600 group-hover:text-green-700 transition-colors' />
-                <span className='group-hover:text-green-700 transition-colors'>Activar</span>
-              </DropdownMenuItem>
-            ) : null}
-            {canDelete && (
-              <DropdownMenuItem
-                onClick={() => handleDeleteClick(product)}
-                className='cursor-pointer group'
-              >
-                <Trash className='mr-2 text-red-600 group-hover:text-red-700 transition-colors' />
-                <span className='group-hover:text-red-700 transition-colors'>Eliminar</span>
-              </DropdownMenuItem>
-            )}
-          </DropdownMenuContent>
-        </DropdownMenu>
-      </TableCell>
-    </TableRow>
-  );
-};
+              {canEdit && (
+                <DropdownMenuItem
+                  onClick={() => onEdit(product, presentation)}
+                  className='cursor-pointer group'
+                >
+                  <Pencil className='mr-2 text-purple-600 group-hover:text-purple-700 transition-colors' />
+                  <span className='group-hover:text-purple-700 transition-colors'>Editar</span>
+                </DropdownMenuItem>
+              )}
+              {product.status === 1 && canDeactivate ? (
+                <DropdownMenuItem
+                  onClick={() => onDeactivate(product)}
+                  className='cursor-pointer group'
+                >
+                  <Power className='mr-2 text-orange-600 group-hover:text-orange-700 transition-colors' />
+                  <span className='group-hover:text-orange-700 transition-colors'>Desactivar</span>
+                </DropdownMenuItem>
+              ) : product.status === 0 && canActivate ? (
+                <DropdownMenuItem
+                  onClick={() => onActivate(product)}
+                  className='cursor-pointer group'
+                >
+                  <Check className='mr-2 text-green-600 group-hover:text-green-700 transition-colors' />
+                  <span className='group-hover:text-green-700 transition-colors'>Activar</span>
+                </DropdownMenuItem>
+              ) : null}
+              {canDelete && (
+                <DropdownMenuItem
+                  onClick={() => handleDeleteClick(product)}
+                  className='cursor-pointer group'
+                >
+                  <Trash className='mr-2 text-red-600 group-hover:text-red-700 transition-colors' />
+                  <span className='group-hover:text-red-700 transition-colors'>Eliminar</span>
+                </DropdownMenuItem>
+              )}
+            </DropdownMenuContent>
+          </DropdownMenu>
+        </TableCell>
+      </TableRow>
+    );
+  }
+);
+SortableRow.displayName = 'SortableRow';
 
 const ProductTable: React.FC<ProductTableProps> = ({
   products,
@@ -259,10 +262,10 @@ const ProductTable: React.FC<ProductTableProps> = ({
   const [productToDelete, setProductToDelete] = useState<Product | null>(null);
   const [detailsProduct, setDetailsProduct] = useState<Product | null>(null);
   const [detailsPresentation, setDetailsPresentation] = useState<Presentacion | null>(null);
-  const openDetails = (product: Product, presentation: Presentacion | null) => {
+  const openDetails = React.useCallback((product: Product, presentation: Presentacion | null) => {
     setDetailsProduct(product);
     setDetailsPresentation(presentation);
-  };
+  }, []);
   const [localProducts, setLocalProducts] = useState(products);
   const { hasPermission } = useUserPermissions();
 
@@ -339,17 +342,17 @@ const ProductTable: React.FC<ProductTableProps> = ({
     }
   };
 
-  const handleDeleteClick = (product: Product) => {
+  const handleDeleteClick = React.useCallback((product: Product) => {
     setProductToDelete(product);
     setDeleteModalOpen(true);
-  };
+  }, []);
 
-  const handleConfirmDelete = () => {
+  const handleConfirmDelete = React.useCallback(() => {
     if (productToDelete) {
       onDelete(productToDelete);
       setProductToDelete(null);
     }
-  };
+  }, [productToDelete, onDelete]);
 
   return (
     <TooltipProvider>
