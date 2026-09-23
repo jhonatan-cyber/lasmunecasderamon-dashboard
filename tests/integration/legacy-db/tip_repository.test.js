@@ -1,5 +1,4 @@
-﻿/* eslint-disable no-console */
-require('../../../scripts/guard-local-db')();
+﻿require('../../../scripts/guard-local-db')();
 const postgres = require('../../../scripts/postgres-test-client.cjs');
 const crypto = require('crypto');
 require('dotenv').config();
@@ -163,7 +162,9 @@ async function runTests() {
   console.log('--- INICIANDO PRUEBAS UNITARIAS: TIP REPOSITORY ---');
 
   try {
-    const users = await queryMock("SELECT u.id_usuario, u.nick FROM usuarios u JOIN roles r ON r.id_rol = u.rol_id WHERE u.estado = 1 AND LOWER(r.nombre) IN ('cajero', 'garzon') LIMIT 1");
+    const users = await queryMock(
+      "SELECT u.id_usuario, u.nick FROM usuarios u JOIN roles r ON r.id_rol = u.rol_id WHERE u.estado = 1 AND LOWER(r.nombre) IN ('cajero', 'garzon') LIMIT 1"
+    );
     if (users.length === 0) throw new Error('No hay usuarios activos para probar');
     const user = users[0];
     console.log(`OK: Usando usuario para pruebas: ${user.nick} (${user.id_usuario})`);

@@ -51,21 +51,18 @@ export const useLoginForm = () => {
 
   const redirectAfterLogin = useCallback(async () => {
     const target = getRedirectTarget();
-    console.log('[LOGIN] redirectAfterLogin target:', target);
     try {
-      const checkRes = await fetch('/api/auth/check', {
+      await fetch('/api/auth/check', {
         method: 'GET',
         credentials: 'include',
         cache: 'no-store'
       });
-      const checkData = await checkRes.json();
-      console.log('[LOGIN] check after login:', checkRes.status, checkData);
-    } catch (e) {
-      console.log('[LOGIN] check after login failed:', e);
+    } catch {
+      // ignore check failure; still navigate
     }
 
     router.replace(target);
-  }, [getRedirectTarget]);
+  }, [getRedirectTarget, router]);
 
   const applyTheme = (mode: string) => {
     if (typeof window === 'undefined') return;
@@ -156,7 +153,6 @@ export const useLoginForm = () => {
       }
 
       const body = JSON.stringify({ ...loginData, email: emailToSend, password: passwordValue });
-      console.log('[LOGIN] sending:', body);
       const res = await fetch('/api/auth/login', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -165,7 +161,6 @@ export const useLoginForm = () => {
       });
 
       const data = await res.json();
-      console.log('[LOGIN] response:', res.status, data);
 
       if (data.requiereCodigo === true) {
         setUserTmp(data.user);

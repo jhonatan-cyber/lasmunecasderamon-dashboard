@@ -1,5 +1,5 @@
 require('dotenv').config({ quiet: true });
-/* eslint-disable no-console */
+
 /**
  * Ejecuta toda la suite de integración contra una BD local:
  *   1. Los 33 tests legacy-db (tests/integration/legacy-db/*.test.js)

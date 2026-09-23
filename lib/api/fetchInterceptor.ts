@@ -61,12 +61,16 @@ export function setupFetchInterceptor() {
 
               setTimeout(() => {
                 const loginUrl = `/login?redirect=${encodeURIComponent(currentPath)}`;
+                // Full reload outside React tree; router not available here
+                // eslint-disable-next-line @next/next/no-location-assign-relative-destination
                 window.location.href = loginUrl;
               }, 500);
             }
           } catch {
             setTimeout(() => {
               const loginUrl = `/login?redirect=${encodeURIComponent(currentPath)}`;
+              // Full reload outside React tree; router not available here
+              // eslint-disable-next-line @next/next/no-location-assign-relative-destination
               window.location.href = loginUrl;
             }, 500);
           }

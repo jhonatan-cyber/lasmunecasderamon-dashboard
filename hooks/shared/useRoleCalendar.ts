@@ -11,12 +11,7 @@ import {
 export type RoleType = 'garzon' | 'cajero' | 'anfitriona';
 
 export type DataType =
-  | 'asistencias'
-  | 'anticipos'
-  | 'propinas'
-  | 'horasExtras'
-  | 'comisiones'
-  | 'servicios';
+  'asistencias' | 'anticipos' | 'propinas' | 'horasExtras' | 'comisiones' | 'servicios';
 
 export interface CalendarData {
   asistencias: any[];
@@ -312,7 +307,7 @@ export function useRoleCalendar({ role, userId }: UseRoleCalendarProps): UseRole
     } finally {
       setIsLoading(false);
     }
-  }, [currentDate, userId, role, isAnfitriona]);
+  }, [currentDate, userId, isAnfitriona]);
 
   useEffect(() => {
     fetchCalendarData();

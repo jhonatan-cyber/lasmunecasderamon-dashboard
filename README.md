@@ -19,7 +19,7 @@ types/            # Tipos TypeScript globales
 
 ## Requisitos
 
-- Node.js 22+
+- Node.js 24+
 - `corepack` habilitado
 - `pnpm`
 - PostgreSQL 18 y variables de entorno validas para flujos con DB real
@@ -46,7 +46,6 @@ corepack pnpm typecheck
 # Testing
 corepack pnpm test:unit
 corepack pnpm test:e2e
-corepack pnpm test:e2e:smoke
 corepack pnpm test:integration:legacy-db
 ```
 
@@ -56,7 +55,10 @@ corepack pnpm test:integration:legacy-db
 - `typecheck` en verde con verificacion estricta en `tsconfig.typecheck.json`
 - Tests heredados adaptados a PostgreSQL real separados en
   `tests/integration/legacy-db`
-- CI minima para web y movil en `.github/workflows/quality-checks.yml`
+- CI en `.github/workflows/ci.yml` (lint, typecheck, unit, audit, migrations,
+  integration, e2e)
+- Deploy en `.github/workflows/deploy.yml` solo corre si el CI de `main` termina
+  en verde
 
 ## Testing
 
@@ -74,8 +76,6 @@ Ubicacion: `tests/unit/`
 
 ```bash
 corepack pnpm test:e2e
-corepack pnpm test:e2e:smoke
-corepack pnpm test:e2e:headed
 ```
 
 Ubicacion: `tests/e2e/`
@@ -113,13 +113,13 @@ JWT_REFRESH_SECRET=
 
 El workflow de CI/Deploy requiere estos secrets en el repositorio:
 
-| Secret                              | Uso                                                                                   |
-| ----------------------------------- | ------------------------------------------------------------------------------------- |
-| `TEST_PASSWORD`                     | **Obligatorio** para el job e2e (login Playwright). Sin él, el job falla a propósito. |
-| `TEST_USER`                         | Opcional (default `admin`).                                                           |
-| `JWT_SECRET` / `JWT_REFRESH_SECRET` | Firma de tokens en CI/producción (≥64 chars).                                         |
-| `NEXT_PUBLIC_BASE_URL` / `BASE_URL` | URLs del entorno.                                                                     |
-| `SSH_PASSWORD`, `DB_*`, `TWILIO_*`  | Deploy al VPS (ver `deploy.yml`).                                                     |
+| Secret                              | Uso                                                                          |
+| ----------------------------------- | ---------------------------------------------------------------------------- |
+| `TEST_PASSWORD`                     | Opcional. Si no está definida, los tests e2e de login se omiten (no fallan). |
+| `TEST_USER`                         | Opcional (default `admin`).                                                  |
+| `JWT_SECRET` / `JWT_REFRESH_SECRET` | Firma de tokens en CI/producción (≥64 chars).                                |
+| `NEXT_PUBLIC_BASE_URL` / `BASE_URL` | URLs del entorno.                                                            |
+| `SSH_PASSWORD`, `DB_*`, `TWILIO_*`  | Deploy al VPS (ver `deploy.yml`).                                            |
 
 Nunca hardcodees passwords de test ni secretos en el repo; usa variables de
 entorno.
@@ -141,10 +141,8 @@ corepack pnpm test:integration:legacy-db
 
 ## Documentacion
 
-- [CONTRIBUTING.md](./CONTRIBUTING.md)
-- [AUTH_CONTRACT.md](./AUTH_CONTRACT.md)
-- [API_ROUTE_AUDIT.md](./API_ROUTE_AUDIT.md)
-- [PLAN_SEGUIMIENTO_CORRECCIONES.md](./PLAN_SEGUIMIENTO_CORRECCIONES.md)
+- [docs/POSTGRESQL.md](docs/POSTGRESQL.md)
+- [docs/INVENTARIO.md](docs/INVENTARIO.md)
 
 ## PostgreSQL
 

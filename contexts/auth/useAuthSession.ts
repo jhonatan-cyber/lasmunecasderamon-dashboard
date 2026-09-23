@@ -191,6 +191,8 @@ export function useAuthSession({
         duration: 3000
       });
       setTimeout(() => {
+        // Full reload clears cached permissions after role deletion
+        // eslint-disable-next-line @next/next/no-location-assign-relative-destination
         window.location.href = '/login';
       }, 3000);
       return;

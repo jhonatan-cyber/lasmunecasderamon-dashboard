@@ -23,8 +23,6 @@ corepack pnpm dev
 `db:setup` crea la base si falta. Solo importa
 `database/lasmunecasderamon.postgres.sql` si la base está vacía; conserva los
 datos de una base existente. Luego aplica las migraciones pendientes.
-`db:import` es un alias con el mismo comportamiento conservador; no reemplaza
-una base existente.
 
 ## Esquema y semilla
 
@@ -168,9 +166,9 @@ en NULL y comentada como retirada; el esquema y la API ya no la exponen.
 El flujo:
 
 1. Una superficie del local emite el desafío: la pantalla de la entrada
-   (`POST /api/kiosk/attendance/challenge`, provisionada con
-   `KIOSK_DEVICE_SECRET` mediante `/api/kiosk/session`) o la pantalla de
-   asistencia del personal con permiso de escritura (`POST /api/attendance/qr`).
+   (`POST /api/kiosk/attendance/challenge`, activada por un administrador
+   mediante `/api/kiosk/session`) o la pantalla de asistencia del personal con
+   permiso de escritura (`POST /api/attendance/qr`).
 2. El servidor genera un token aleatorio, guarda **solo su SHA-256**
    (`token_hash`, índice único) y devuelve el valor crudo una vez, para
    dibujarlo como QR. Vence a los 120 segundos.
@@ -188,9 +186,13 @@ quien tiene la sesión abierta y rota en cada uso.
 
 `lib/kiosk/attendanceChallenges.ts` contiene el ciclo de vida completo y
 `lib/kiosk/deviceAuth.ts` la credencial de la pantalla (cookie `kiosk_token`
-firmada con `KIOSK_DEVICE_SECRET`, alcance `kiosk`; no es una sesión de
-usuario). Las pruebas están en `tests/postgres/attendance-challenges.test.ts` y
-`tests/unit/lib/kiosk/`.
+aleatoria, guardada como SHA-256 en `kiosk_devices`). La migracion
+`026_kiosk_devices.sql` crea el registro de pantallas. En Ajustes > Asistencia,
+el administrador activa este navegador y se cierra su sesion personal. La
+credencial se renueva con la pantalla abierta y se puede revocar desde ajustes.
+Tras 30 dias sin uso o al borrar cookies, se requiere activar de nuevo. No
+requiere variables de entorno ni copiar codigos. Las pruebas están en
+`tests/postgres/attendance-challenges.test.ts` y `tests/unit/lib/kiosk/`.
 
 ## Respaldos y restauración
 

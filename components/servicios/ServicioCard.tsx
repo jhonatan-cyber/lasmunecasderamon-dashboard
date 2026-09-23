@@ -9,9 +9,7 @@ import { toast } from 'sonner';
 import { useServicioAnfitrionas } from '@/contexts/ServicioAnfitrionasContext';
 import { useCurrentUser } from '@/hooks/auth/useCurrentUser';
 import EditServiceModal from './EditServiceModal';
-import {
-  buildServicioCardDisplayData
-} from './servicioCardUtils';
+import { buildServicioCardDisplayData } from './servicioCardUtils';
 import {
   ServicioCardActions,
   ServicioCardFinancial,
@@ -78,8 +76,8 @@ export default function ServicioCard({
 
   const handleTemporaryTimerComplete = useCallback(
     (nuevasAnfitrionas: string) => {
-      if (servicio?.id_servicio) {
-        actualizarAnfitrionas(Number(servicio.id_servicio), nuevasAnfitrionas);
+      if (rawId != null) {
+        actualizarAnfitrionas(Number(rawId), nuevasAnfitrionas);
         if (onUpdate) {
           setTimeout(() => {
             onUpdate();
@@ -87,7 +85,7 @@ export default function ServicioCard({
         }
       }
     },
-    [servicio && servicio.id_servicio, actualizarAnfitrionas, onUpdate]
+    [rawId, actualizarAnfitrionas, onUpdate]
   );
 
   const mainFrozenRemainingTime = temporaryTimer?.datosTemporales?.tiempo_principal_congelado;

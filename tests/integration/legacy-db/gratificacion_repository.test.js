@@ -1,5 +1,4 @@
-﻿/* eslint-disable no-console */
-require('../../../scripts/guard-local-db')();
+﻿require('../../../scripts/guard-local-db')();
 const postgres = require('../../../scripts/postgres-test-client.cjs');
 const crypto = require('crypto');
 require('dotenv').config();
@@ -110,7 +109,9 @@ class GratificacionRepository {
 async function runTests() {
   console.log('--- INICIANDO PRUEBAS UNITARIAS: GratificacionRepository ---');
   try {
-    const tableCheck = await queryMock("SELECT table_name FROM information_schema.tables WHERE table_schema = current_schema() AND table_name = 'gratificaciones'");
+    const tableCheck = await queryMock(
+      "SELECT table_name FROM information_schema.tables WHERE table_schema = current_schema() AND table_name = 'gratificaciones'"
+    );
     if (tableCheck.length === 0) {
       console.log('âš ï¸ La tabla gratificaciones no existe. Saltando pruebas.');
       return;

@@ -1,5 +1,4 @@
-﻿/* eslint-disable no-console */
-require('../../../scripts/guard-local-db')();
+﻿require('../../../scripts/guard-local-db')();
 const postgres = require('../../../scripts/postgres-test-client.cjs');
 require('dotenv').config();
 
@@ -78,7 +77,7 @@ class PayrollRepository {
         [now, userId]
       );
       await trx(
-        "UPDATE ventas SET estado = 3, fecha_mod = ? WHERE estado = 1 AND id_venta IN (SELECT c.venta_id FROM comisiones c INNER JOIN detalle_comisiones dc ON dc.comision_id = c.id_comision WHERE dc.usuario_id = ? AND c.venta_id IS NOT NULL)",
+        'UPDATE ventas SET estado = 3, fecha_mod = ? WHERE estado = 1 AND id_venta IN (SELECT c.venta_id FROM comisiones c INNER JOIN detalle_comisiones dc ON dc.comision_id = c.id_comision WHERE dc.usuario_id = ? AND c.venta_id IS NOT NULL)',
         [now, userId]
       );
       await trx(

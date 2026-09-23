@@ -243,4 +243,5 @@ export const RATE_LIMIT_CONFIGS = {
   AUTH_STRICT: { windowMs: 60 * 1000, max: 3, prefix: 'auth-strict' }
 } as const;
 
-export default { checkRateLimit, withRedisRateLimit, RATE_LIMIT_CONFIGS };
+const redisRateLimit = { checkRateLimit, withRedisRateLimit, RATE_LIMIT_CONFIGS };
+export default redisRateLimit;

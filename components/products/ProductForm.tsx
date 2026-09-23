@@ -697,7 +697,8 @@ export function ProductForm({
                   />
                 ) : (
                   <div className='w-full h-full flex items-center justify-center text-gray-300'>
-                    <Image className='w-5 h-5' />
+                    {/* eslint-disable-next-line jsx-a11y/alt-text -- decorative lucide icon */}
+                    <Image className='w-5 h-5' aria-hidden='true' />
                   </div>
                 )}
                 <label

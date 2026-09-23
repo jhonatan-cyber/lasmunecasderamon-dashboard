@@ -1,5 +1,4 @@
-﻿/* eslint-disable no-console */
-require('../../../scripts/guard-local-db')();
+﻿require('../../../scripts/guard-local-db')();
 const postgres = require('../../../scripts/postgres-test-client.cjs');
 const crypto = require('crypto');
 require('dotenv').config();
@@ -101,7 +100,15 @@ class UserRepository {
     await BaseRepository.insert(null, 'usuarios', {
       ...data,
       id_usuario: id,
-      run: id.slice(0, 8), direccion: 'test', telefono: 'test', estado_civil: 'test', afp: 'test', sueldo: 0, aporte: 0, email: id + '@example.test', password: 'test-hash',
+      run: id.slice(0, 8),
+      direccion: 'test',
+      telefono: 'test',
+      estado_civil: 'test',
+      afp: 'test',
+      sueldo: 0,
+      aporte: 0,
+      email: id + '@example.test',
+      password: 'test-hash',
       fecha_crea: new Date()
     });
     return id;

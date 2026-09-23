@@ -63,7 +63,12 @@ export class ErrorBoundary extends Component<Props, State> {
                 Intentar de nuevo
               </Button>
 
-              <Button onClick={() => (window.location.href = '/dashboard')} variant='default'>
+              <Button
+                // Full reload intentionally clears all client state after an error
+                // eslint-disable-next-line @next/next/no-location-assign-relative-destination
+                onClick={() => (window.location.href = '/dashboard')}
+                variant='default'
+              >
                 Ir al Dashboard
               </Button>
             </div>

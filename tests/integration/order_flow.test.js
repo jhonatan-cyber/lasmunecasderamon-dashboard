@@ -1,4 +1,3 @@
-/* eslint-disable no-console */
 require('../../scripts/guard-local-db')();
 const crypto = require('crypto');
 function uuidv4() {
@@ -41,7 +40,9 @@ async function runIntegrationTest() {
     );
     console.log('✅ Pedido insertado.');
 
-    const [detailCols] = await connection.execute("SELECT column_name AS \"Field\" FROM information_schema.columns WHERE table_schema = current_schema() AND table_name = 'detalle_pedidos'");
+    const [detailCols] = await connection.execute(
+      'SELECT column_name AS "Field" FROM information_schema.columns WHERE table_schema = current_schema() AND table_name = \'detalle_pedidos\''
+    );
 
     const [prods] = await connection.execute('SELECT id_producto FROM productos LIMIT 1');
     const testProductId = prods.length > 0 ? prods[0].id_producto : 'test-prod-1';

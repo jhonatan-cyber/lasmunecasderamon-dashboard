@@ -16,7 +16,6 @@
     "lint:full": "eslint . --ext .js,.jsx,.ts,.tsx --ignore-pattern .next --ignore-pattern node_modules",
     "typecheck": "tsc --noEmit -p tsconfig.typecheck.json",
     "typecheck:strict": "tsc --noEmit -p tsconfig.typecheck.json --strict",
-    "typecheck:paths": "tsc --noEmit -p tsconfig.typecheck.json",
     "start": "cross-env TZ=UTC next start --hostname 0.0.0.0",
     "serve:mobile": "cross-env TZ=UTC next build && cross-env TZ=UTC next start --hostname 0.0.0.0 --port 3000",
     "start:warmup": "cross-env SKIP_BUILD=true node scripts/production-start.js",
@@ -30,7 +29,6 @@
     "db:migrate": "node scripts/run-migrations.mjs",
     "db:plan": "node scripts/run-migrations.mjs --plan",
     "db:dev": "node scripts/db-dev.js",
-    "db:import": "node scripts/ci-setup-db.js",
     "optimize:images": "node scripts/optimize-images.js",
     "audit:web:quality": "node ./.agents/skills/web-quality-audit/scripts/analyze.mjs --format=markdown",
     "audit:web:quality:json": "node ./.agents/skills/web-quality-audit/scripts/analyze.mjs --format=json",
@@ -40,7 +38,6 @@
     "test:unit:coverage": "vitest run --coverage",
     "test:integration": "node tests/integration/order_flow.test.js",
     "test:integration:settings": "node tests/integration/settings_clean.test.js",
-    "test:ci": "vitest run",
     "test:integration:legacy-db": "node scripts/run-legacy-db-tests.js",
     "test:integration:all": "node scripts/run-integration-all.js",
     "test:e2e": "playwright test --config playwright.config.ts",
@@ -122,7 +119,7 @@
     "react-resizable-panels": "^3.0.4",
     "recharts": "3.1.2",
     "server-only": "^0.0.1",
-    "sharp": "^0.35.0",
+    "sharp": "^0.35.4",
     "sonner": "^2.0.7",
     "swagger-ui-react": "^5.27.1",
     "tailwind-merge": "^3.6.0",
@@ -168,5 +165,8 @@
     "typescript": "^5",
     "vitest": "^3.2.6"
   },
-  "packageManager": "pnpm@10.30.3+sha512.c961d1e0a2d8e354ecaa5166b822516668b7f44cb5bd95122d590dd81922f606f5473b6d23ec4a5be05e7fcd18e8488d47d978bbe981872f1145d06e9a740017"
+  "packageManager": "pnpm@10.30.3+sha512.c961d1e0a2d8e354ecaa5166b822516668b7f44cb5bd95122d590dd81922f606f5473b6d23ec4a5be05e7fcd18e8488d47d978bbe981872f1145d06e9a740017",
+  "engines": {
+    "node": ">=24"
+  }
 }

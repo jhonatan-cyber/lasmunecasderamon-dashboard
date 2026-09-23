@@ -24,5 +24,19 @@ export default [
       '@typescript-eslint/no-require-imports': 'off',
       'react-hooks/set-state-in-effect': 'off'
     }
+  },
+  {
+    files: [
+      'scripts/**/*.{js,ts,mjs,cjs}',
+      'tests/**/*.{js,ts,tsx,mjs}',
+      '**/*.{spec,test}.{js,ts,tsx}',
+      'public/sw.js',
+      'public/sw-template.js',
+      'lib/utils/logger.ts',
+      '**/*.config.{js,ts,mjs}'
+    ],
+    rules: {
+      'no-console': 'off'
+    }
   }
 ];

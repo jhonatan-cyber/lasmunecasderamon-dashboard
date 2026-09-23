@@ -1,5 +1,4 @@
-﻿/* eslint-disable no-console */
-require('../../../scripts/guard-local-db')();
+﻿require('../../../scripts/guard-local-db')();
 const postgres = require('../../../scripts/postgres-test-client.cjs');
 const crypto = require('crypto');
 require('dotenv').config();
@@ -72,7 +71,8 @@ class ServiceRepository {
     const id = generateUUID();
     await BaseRepository.insert(null, 'servicios', {
       id_servicio: id,
-      codigo: id.slice(0, 8), sub_total: data.total || 0,
+      codigo: id.slice(0, 8),
+      sub_total: data.total || 0,
       cliente_id: data.cliente_id || null,
       habitacion_id: data.habitacion_id,
       precio_habitacion: data.precio_habitacion || 0,

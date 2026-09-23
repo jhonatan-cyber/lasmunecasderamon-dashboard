@@ -171,24 +171,27 @@ export default function ServiceOrderForm({ clientes }: ServiceOrderFormProps) {
     return formatNumberCL(numValue);
   };
 
-  const calculateIVA = (
-    precioServicio: number,
-    metodoPago: string,
-    numAnfitrionas: number,
-    precioHabitacion: number
-  ) => {
-    if (metodoPago === 'tarjeta') {
-      let nuevoSubTotal = precioServicio * numAnfitrionas;
-      let precioHabitacionTotal = precioHabitacion * numAnfitrionas;
-      let nuevoIVA = Math.floor(nuevoSubTotal * ivaRate);
-      let nuevoTotal = nuevoSubTotal + precioHabitacionTotal + nuevoIVA;
-      const totalRedondeado = Math.ceil(nuevoTotal / 5000) * 5000;
-      const excedente = totalRedondeado - nuevoTotal;
-      nuevoIVA = nuevoIVA + excedente;
-      return nuevoIVA;
-    }
-    return 0;
-  };
+  const calculateIVA = useCallback(
+    (
+      precioServicio: number,
+      metodoPago: string,
+      numAnfitrionas: number,
+      precioHabitacion: number
+    ) => {
+      if (metodoPago === 'tarjeta') {
+        let nuevoSubTotal = precioServicio * numAnfitrionas;
+        let precioHabitacionTotal = precioHabitacion * numAnfitrionas;
+        let nuevoIVA = Math.floor(nuevoSubTotal * ivaRate);
+        let nuevoTotal = nuevoSubTotal + precioHabitacionTotal + nuevoIVA;
+        const totalRedondeado = Math.ceil(nuevoTotal / 5000) * 5000;
+        const excedente = totalRedondeado - nuevoTotal;
+        nuevoIVA = nuevoIVA + excedente;
+        return nuevoIVA;
+      }
+      return 0;
+    },
+    [ivaRate]
+  );
 
   const handleCreateOrder = async () => {
     if (!tempForm.habitacion_id) {
@@ -289,10 +292,11 @@ export default function ServiceOrderForm({ clientes }: ServiceOrderFormProps) {
     tempForm.anfitrionas_ids.length,
     tempForm.clientes_ids.length,
     tempForm.tiempo,
-    tempForm.metodo_pago
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+    tempForm.metodo_pago,
+    calculateIVA
   ]);
 
+  // eslint-disable-next-line react-hooks/preserve-manual-memoization
   const ivaCalculado = useMemo(() => {
     const numAnfitrionas = tempForm.anfitrionas_ids.length;
     const multiplicador = tempForm.tiempo === 60 ? 2 : 1;
@@ -314,8 +318,8 @@ export default function ServiceOrderForm({ clientes }: ServiceOrderFormProps) {
     tempForm.comision_anfitriona,
     tempForm.anfitrionas_ids.length,
     tempForm.tiempo,
-    tempForm.metodo_pago
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+    tempForm.metodo_pago,
+    calculateIVA
   ]);
   return (
     <div className='space-y-6'>

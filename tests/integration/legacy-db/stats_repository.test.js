@@ -1,5 +1,4 @@
-﻿/* eslint-disable no-console */
-require('../../../scripts/guard-local-db')();
+﻿require('../../../scripts/guard-local-db')();
 const postgres = require('../../../scripts/postgres-test-client.cjs');
 require('dotenv').config();
 
@@ -20,7 +19,7 @@ const queryMock = async (sql, params = []) => {
 
 class StatsRepository {
   static async getGeneral() {
-    return await queryMock("SELECT COUNT(*) AS \"usersCount\" FROM usuarios");
+    return await queryMock('SELECT COUNT(*) AS "usersCount" FROM usuarios');
   }
   static async getMonthlySales() {
     return await queryMock(

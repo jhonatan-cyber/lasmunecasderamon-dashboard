@@ -1,4 +1,3 @@
-/* eslint-disable no-console */
 require('../../scripts/guard-local-db')();
 const postgres = require('../../scripts/postgres-test-client.cjs');
 const crypto = require('crypto');
