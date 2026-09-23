@@ -3,7 +3,6 @@ import { UserRepository } from '@/lib/repositories/UserRepository';
 import { ValidationError, NotFoundError } from '@/lib/errors/errors';
 import { PermissionsCache } from '@/lib/auth/permissions-cache';
 import * as argon2 from 'argon2';
-import crypto from 'crypto';
 import { EMAIL_DOMAIN } from '@/lib/constants/email';
 import fs from 'fs/promises';
 import path from 'path';
@@ -31,11 +30,15 @@ export class UserService {
       throw new ValidationError('El RUN ya está registrado');
     }
     const email = `${validated.nick}${EMAIL_DOMAIN}`;
-    // S7: Generar contraseña aleatoria segura en vez de usar el RUN
-    const tempPassword = crypto.randomBytes(12).toString('hex'); // 24 caracteres hex
+    // La contraseña inicial es el RUN (RUT) del trabajador, hasheada con argon2.
+    // Se exige cambio en el primer inicio de sesión (force_password_change).
+    const tempPassword = String(validated.run).trim();
     const password = await argon2.hash(tempPassword);
 
-    const user = await UserRepository.create({ ...validated, email, password }, fotoFilename);
+    const user = await UserRepository.create(
+      { ...validated, email, password, force_password_change: 1 },
+      fotoFilename
+    );
     return { user, tempPassword };
   }
 
@@ -79,8 +82,8 @@ export class UserService {
     }
     let newTempPassword: string | undefined;
     if (validated.run) {
-      // S7: Generar contraseña aleatoria segura en vez de usar el RUN
-      newTempPassword = crypto.randomBytes(12).toString('hex'); // 24 caracteres hex
+      // Al cambiar el RUN, la contraseña se reinicia al nuevo RUN (hasheado).
+      newTempPassword = String(validated.run).trim();
       updateData.password = await argon2.hash(newTempPassword);
       updateData.force_password_change = 1;
     }

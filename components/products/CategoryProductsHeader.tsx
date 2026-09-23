@@ -2,21 +2,16 @@
 
 import { Button } from '@/components/ui/button';
 import { PermissionGuard } from '@/components/auth/PermissionGuard';
-import { Table, Grid3X3, Plus, ArrowLeft } from 'lucide-react';
-import { cn } from '@/lib/utils/utils';
+import { Plus, ArrowLeft } from 'lucide-react';
 
 interface CategoryProductsHeaderProps {
   categoryName?: string;
-  showTableView: boolean;
-  onToggleView: () => void;
   onBack: () => void;
   onNewProduct: () => void;
 }
 
 export function CategoryProductsHeader({
   categoryName,
-  showTableView,
-  onToggleView,
   onBack,
   onNewProduct
 }: CategoryProductsHeaderProps) {
@@ -30,48 +25,23 @@ export function CategoryProductsHeader({
       </div>
 
       <div className='flex flex-col sm:flex-row gap-2 items-center w-full sm:w-auto'>
-        <div className='flex gap-2 items-center w-full sm:w-auto'>
+        <Button
+          variant='outline'
+          className='rounded-full px-6 dark:hover:bg-white dark:hover:text-black transition-all hover:scale-105 w-full sm:w-auto'
+          onClick={onBack}
+        >
+          <ArrowLeft className='w-4 h-4 mr-1' />
+          Atrás
+        </Button>
+        <PermissionGuard module='products' action='create' fallback={null}>
           <Button
-            variant='outline'
-            size='sm'
-            className={cn(
-              'flex items-center gap-2 rounded-full hover:scale-105 transition-all duration-200 text-xs sm:text-sm w-full sm:w-auto',
-              showTableView ? 'bg-blue-50 text-blue-700 border-blue-300' : ''
-            )}
-            onClick={onToggleView}
+            className='bg-black text-white rounded-full px-6 py-2 hover:bg-white hover:text-black hover:scale-105 transition-all duration-200 border-2 dark:bg-black dark:text-white dark:border-white dark:hover:bg-white dark:hover:text-black dark:hover:border-white w-full sm:w-auto'
+            onClick={onNewProduct}
           >
-            {showTableView ? (
-              <>
-                <Table className='w-4 h-4' />
-                Tabla
-              </>
-            ) : (
-              <>
-                <Grid3X3 className='w-4 h-4' />
-                Cards
-              </>
-            )}
+            <Plus className='w-4 h-4 mr-1' />
+            Nuevo producto
           </Button>
-        </div>
-        <div className='flex gap-2 items-center w-full sm:w-auto'>
-          <Button
-            variant='outline'
-            className='rounded-full px-6 dark:hover:bg-white dark:hover:text-black transition-all hover:scale-105 w-full sm:w-auto'
-            onClick={onBack}
-          >
-            <ArrowLeft className='w-4 h-4 mr-1' />
-            Atrás
-          </Button>
-          <PermissionGuard module='products' action='create' fallback={null}>
-            <Button
-              className='bg-black text-white rounded-full px-6 py-2 hover:bg-white hover:text-black hover:scale-105 transition-all duration-200 border-2 dark:bg-black dark:text-white dark:border-white dark:hover:bg-white dark:hover:text-black dark:hover:border-white w-full sm:w-auto'
-              onClick={onNewProduct}
-            >
-              <Plus className='w-4 h-4 mr-1' />
-              Nuevo producto
-            </Button>
-          </PermissionGuard>
-        </div>
+        </PermissionGuard>
       </div>
     </div>
   );

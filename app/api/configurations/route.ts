@@ -23,6 +23,9 @@ const VALID_CLAVES = new Set([
   'asistencia_hora_inicio',
   'asistencia_hora_fin',
   'threshold_producto_caro',
+  'umbral_simple_hasta',
+  'umbral_anfitriona_desde',
+  'umbral_habitacion_desde',
   'split_tarjeta_venta',
   'split_tarjeta_propina',
   'admin_whatsapp'
@@ -46,6 +49,9 @@ function validateConfig(clave: string, valor: string): string | null {
   }
   if (
     clave === 'threshold_producto_caro' ||
+    clave === 'umbral_simple_hasta' ||
+    clave === 'umbral_anfitriona_desde' ||
+    clave === 'umbral_habitacion_desde' ||
     clave === 'split_tarjeta_venta' ||
     clave === 'split_tarjeta_propina'
   ) {
@@ -69,7 +75,10 @@ async function updateConfig(clave: string, valor: string) {
   if (!existing) {
     const categoria = clave.startsWith('asistencia_')
       ? 'asistencia'
-      : clave === 'threshold_producto_caro'
+      : clave === 'threshold_producto_caro' ||
+          clave === 'umbral_simple_hasta' ||
+          clave === 'umbral_anfitriona_desde' ||
+          clave === 'umbral_habitacion_desde'
         ? 'comisiones'
         : clave.startsWith('split_tarjeta_')
           ? 'comisiones'
@@ -79,6 +88,9 @@ async function updateConfig(clave: string, valor: string) {
     const tipo =
       clave.startsWith('asistencia_') ||
       clave === 'threshold_producto_caro' ||
+      clave === 'umbral_simple_hasta' ||
+      clave === 'umbral_anfitriona_desde' ||
+      clave === 'umbral_habitacion_desde' ||
       clave.startsWith('split_tarjeta_')
         ? 'number'
         : 'text';
@@ -136,7 +148,17 @@ export const PUT = withRoute(
 
     // Batch mode: { configs: [{ clave, valor }] }
     if (body.configs && Array.isArray(body.configs)) {
+      // `threshold_producto_caro` deprecado: alias de `umbral_habitacion_desde`.
+      // Se sincronizan para no bifurcar el comportamiento.
+      const expanded = [...body.configs];
       for (const { clave, valor } of body.configs) {
+        if (clave === 'umbral_habitacion_desde') {
+          expanded.push({ clave: 'threshold_producto_caro', valor: String(valor) });
+        } else if (clave === 'threshold_producto_caro') {
+          expanded.push({ clave: 'umbral_habitacion_desde', valor: String(valor) });
+        }
+      }
+      for (const { clave, valor } of expanded) {
         if (!clave) continue;
         const error = validateConfig(clave, String(valor));
         if (error) {
@@ -168,6 +190,12 @@ export const PUT = withRoute(
     }
 
     await updateConfig(clave, String(valor));
+    // Mantener alias deprecado sincronizado también en modo single.
+    if (clave === 'umbral_habitacion_desde') {
+      await updateConfig('threshold_producto_caro', String(valor));
+    } else if (clave === 'threshold_producto_caro') {
+      await updateConfig('umbral_habitacion_desde', String(valor));
+    }
 
     if (clave === 'admin_whatsapp') clearAdminWhatsAppCache();
 

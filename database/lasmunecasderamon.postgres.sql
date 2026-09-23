@@ -143,6 +143,17 @@ CREATE TABLE comisiones (
   fecha_mod timestamp DEFAULT NULL
 );
 
+CREATE TABLE producto_champagne_tiers (
+  id varchar(36) PRIMARY KEY,
+  producto_id varchar(36) NOT NULL REFERENCES productos(id_producto) ON DELETE CASCADE,
+  anfitrionas integer NOT NULL,
+  precio integer NOT NULL DEFAULT 0,
+  comision integer NOT NULL DEFAULT 0,
+  UNIQUE (producto_id, anfitrionas)
+);
+CREATE INDEX idx_champagne_tiers_producto
+  ON producto_champagne_tiers (producto_id);
+
 CREATE TABLE configuraciones (
   id varchar(36) NOT NULL,
   clave varchar(100) NOT NULL,
@@ -277,6 +288,7 @@ CREATE TABLE detalle_ventas (
   id_detalle_venta varchar(36) NOT NULL,
   venta_id varchar(36) DEFAULT NULL,
   producto_id varchar(36) DEFAULT NULL,
+  presentacion_id varchar(36) DEFAULT NULL,
   precio integer NOT NULL,
   comision integer NOT NULL,
   hostess_id varchar(36) DEFAULT NULL,
@@ -419,8 +431,62 @@ CREATE TABLE productos (
   fecha_mod timestamp DEFAULT NULL,
   fecha_baja timestamp DEFAULT NULL,
   estado integer NOT NULL DEFAULT 1,
-  foto varchar(255) NOT NULL DEFAULT 'default.png'
+  foto varchar(255) NOT NULL DEFAULT 'default.png',
+  stock_almacen integer NOT NULL DEFAULT 0
 );
+
+CREATE TABLE inventario_presentaciones (
+  id varchar(36) PRIMARY KEY,
+  producto_id varchar(36) NOT NULL REFERENCES productos(id_producto) ON DELETE CASCADE,
+  nombre varchar(100) NOT NULL,
+  codigo_barras varchar(50) DEFAULT NULL,
+  precio_compra integer NOT NULL DEFAULT 0,
+  precio_venta integer NOT NULL DEFAULT 0,
+  comision integer NOT NULL DEFAULT 0,
+  opciones_venta text DEFAULT NULL,
+  foto varchar(255) DEFAULT NULL,
+  fecha_crea timestamp NOT NULL DEFAULT now()
+);
+CREATE UNIQUE INDEX uq_inventario_presentaciones_codigo_barras
+  ON inventario_presentaciones (codigo_barras);
+
+CREATE SEQUENCE inventario_sku_seq;
+
+CREATE TABLE inventario_unidades (
+  id varchar(36) PRIMARY KEY,
+  producto_id varchar(36) NOT NULL REFERENCES productos(id_producto) ON DELETE CASCADE,
+  presentacion_id varchar(36) DEFAULT NULL REFERENCES inventario_presentaciones(id) ON DELETE SET NULL,
+  codigo varchar(20) NOT NULL UNIQUE,
+  codigo_barras varchar(20) DEFAULT NULL UNIQUE,
+  ubicacion varchar(20) NOT NULL DEFAULT 'almacen',
+  transferencia_id varchar(36) DEFAULT NULL,
+  estado varchar(20) NOT NULL DEFAULT 'almacen',
+  fecha_crea timestamp NOT NULL DEFAULT now()
+);
+CREATE INDEX idx_inventario_unidades_producto
+  ON inventario_unidades (producto_id);
+
+CREATE TABLE inventario_movimientos (
+  id varchar(36) PRIMARY KEY,
+  tipo varchar(20) NOT NULL,
+  producto_id varchar(36) DEFAULT NULL,
+  presentacion_id varchar(36) DEFAULT NULL,
+  cantidad integer NOT NULL DEFAULT 0,
+  precio_venta integer DEFAULT NULL,
+  comision integer DEFAULT NULL,
+  usuario_id varchar(36) DEFAULT NULL,
+  solicitado_por varchar(36) DEFAULT NULL,
+  aprobado_por varchar(36) DEFAULT NULL,
+  estado varchar(20) NOT NULL DEFAULT 'pendiente',
+  opciones_venta text DEFAULT NULL,
+  aceptado_por varchar(36) DEFAULT NULL,
+  fecha_aceptacion timestamp DEFAULT NULL,
+  fecha_crea timestamp NOT NULL DEFAULT now()
+);
+CREATE INDEX idx_inventario_movimientos_producto
+  ON inventario_movimientos (producto_id);
+CREATE INDEX idx_inventario_movimientos_presentacion
+  ON inventario_movimientos (presentacion_id);
 
 CREATE TABLE propinas (
   id_propina varchar(36) NOT NULL,

@@ -4,6 +4,7 @@ import { Search, Shield, Plus, CheckCircle, Users as UsersIcon } from 'lucide-re
 import { StatsCard } from '@/components/roles/RoleStatsCard';
 import { RoleCard } from '@/components/roles/RoleCard';
 import { PermissionsPanel } from '@/components/roles/PermissionsPanel';
+import { RoleUsersList } from '@/components/roles/RoleUsersList';
 import { PermissionGuard } from '@/components/auth/PermissionGuard';
 import { FilterSelect } from '@/components/shared/selects';
 import { Tooltip, TooltipTrigger, TooltipContent } from '@/components/ui/tooltip';
@@ -177,8 +178,11 @@ export function RolesContent({
         </div>
 
         <div className='hidden lg:block'>
-          <div className='bg-white dark:bg-neutral-900 rounded-lg shadow-xs border border-gray-200 dark:border-neutral-800 p-4 sm:p-6 flex flex-col h-[600px]'>
-            <PermissionsPanel selectedRole={selectedRole} />
+          <div className='flex flex-col gap-4 sm:gap-6'>
+            <RoleUsersList role={selectedRole} />
+            <div className='bg-white dark:bg-neutral-900 rounded-lg shadow-xs border border-gray-200 dark:border-neutral-800 p-4 sm:p-6 flex flex-col h-[600px]'>
+              <PermissionsPanel selectedRole={selectedRole} />
+            </div>
           </div>
         </div>
       </div>

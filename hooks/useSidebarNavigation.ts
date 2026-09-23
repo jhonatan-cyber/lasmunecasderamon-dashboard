@@ -5,6 +5,7 @@ import { usePathname } from 'next/navigation';
 import type { LucideIcon } from 'lucide-react';
 import {
   Users,
+  ShoppingBag,
   ShoppingCart,
   Package,
   Settings,
@@ -23,6 +24,8 @@ import {
   Percent,
   DollarSign,
   RotateCcw,
+  Wine,
+  ArrowRightLeft,
   Calendar as CalendarIcon,
   Trophy
 } from 'lucide-react';
@@ -148,9 +151,32 @@ const SIDEBAR_SECTIONS: SidebarSection[] = [
         fallbackAction: 'view'
       },
       {
-        name: 'Catálogo de productos',
+        name: 'Almacén',
         href: '/products',
         icon: Package,
+        module: 'productos',
+        action: 'listar_categoria_productos',
+        fallbackModule: 'products',
+        fallbackAction: 'view'
+      },
+      {
+        name: 'Transferencia',
+        href: '/transfers',
+        icon: ArrowRightLeft,
+        module: 'products',
+        action: 'view'
+      },
+      {
+        name: 'Compras',
+        href: '/purchases',
+        icon: ShoppingBag,
+        module: 'products',
+        action: 'view'
+      },
+      {
+        name: 'Bar',
+        href: '/bar',
+        icon: Wine,
         module: 'productos',
         action: 'listar_categoria_productos',
         fallbackModule: 'products',
@@ -312,7 +338,9 @@ type UseSidebarNavigationReturn = {
   SIDEBAR_SECTIONS: SidebarSection[];
 };
 
-export function useSidebarNavigation(options?: UseSidebarNavigationOptions): UseSidebarNavigationReturn {
+export function useSidebarNavigation(
+  options?: UseSidebarNavigationOptions
+): UseSidebarNavigationReturn {
   const pathname = usePathname();
   const { user, loading: userLoading } = useCurrentUser();
   const {
@@ -322,12 +350,15 @@ export function useSidebarNavigation(options?: UseSidebarNavigationOptions): Use
   } = useUserPermissions();
 
   const isAdmin = user?.role?.toLowerCase() === 'administrador';
+  const isBarman = user?.role?.toLowerCase() === 'barman';
   const needsPermissions = Boolean(user) && !isAdmin;
   const permissionsReady = !needsPermissions || permissions.length > 0;
   const loading = userLoading || (needsPermissions && permissionsLoading && !permissionsReady);
 
   const hasModulePermission = useCallback(
     (item: SidebarItem) => {
+      if (isBarman && !['/dashboard', '/bar', '/sales', '/private-rooms'].includes(item.href))
+        return false;
       if (isAdmin) return true;
       if (!permissions.length) return false;
       return (
@@ -339,7 +370,7 @@ export function useSidebarNavigation(options?: UseSidebarNavigationOptions): Use
         )
       );
     },
-    [hasPermission, isAdmin, permissions.length]
+    [hasPermission, isAdmin, isBarman, permissions.length]
   );
 
   const normalizedSearch = (options?.searchTerm || '').toLowerCase().trim();
@@ -348,13 +379,21 @@ export function useSidebarNavigation(options?: UseSidebarNavigationOptions): Use
     () =>
       SIDEBAR_SECTIONS.map(section => ({
         ...section,
-        items: section.items.filter(
-          item =>
-            hasModulePermission(item) &&
-            (!normalizedSearch || item.name.toLowerCase().includes(normalizedSearch))
-        )
+        items: section.items
+          .map(item =>
+            isBarman && item.href === '/dashboard'
+              ? { ...item, name: 'Inicio de barra' }
+              : isBarman && item.href === '/private-rooms'
+                ? { ...item, name: 'Servicios / Privados' }
+                : item
+          )
+          .filter(
+            item =>
+              hasModulePermission(item) &&
+              (!normalizedSearch || item.name.toLowerCase().includes(normalizedSearch))
+          )
       })).filter(section => section.items.length > 0),
-    [hasModulePermission, normalizedSearch]
+    [hasModulePermission, normalizedSearch, isBarman]
   );
 
   return {

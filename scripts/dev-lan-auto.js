@@ -1,23 +1,50 @@
 #!/usr/bin/env node
 const { spawn } = require('child_process');
-const path = require('path');
+const net = require('net');
 
 const port = process.env.PORT || '3000';
 const host = '0.0.0.0';
 const publicHost = 'localhost';
 
-console.log(`[dev] Servidor: http://${publicHost}:${port}`);
+async function start() {
+  if (!/^\d+$/.test(port) || Number(port) < 1 || Number(port) > 65535) {
+    throw new Error('PORT debe ser un entero entre 1 y 65535.');
+  }
+  await new Promise((resolve, reject) => {
+    const probe = net.createServer();
+    probe.once('error', reject);
+    probe.listen({ host, port: Number(port), exclusive: true }, () => probe.close(resolve));
+  });
+  console.log(`[dev] Servidor: http://${publicHost}:${port}`);
 
-const command = `pnpm exec next dev --hostname ${host} --port ${String(port)}`;
-const child = spawn(command, { stdio: 'inherit', shell: true, windowsHide: false });
+  const child = spawn(
+    process.execPath,
+    [require.resolve('next/dist/bin/next'), 'dev', '--hostname', host, '--port', String(port)],
+    {
+      stdio: 'inherit',
+      windowsHide: true
+    }
+  );
 
-// Warmup automático: cuando el servidor esté listo, prefetch endpoints del dashboard
-const warmupScript = path.join(__dirname, 'warmup.mjs');
-const warmup = spawn('node', [warmupScript], {
-  stdio: 'inherit',
-  windowsHide: false,
-  env: { ...process.env, BASE_URL: `http://${host}:${port}` }
+  child.on('error', error => {
+    console.error(`[dev] ${error.message}`);
+    process.exitCode = 1;
+  });
+  child.on('exit', code => {
+    process.exitCode = code ?? 1;
+  });
+  for (const signal of ['SIGINT', 'SIGTERM']) {
+    process.on(signal, () => {
+      child.kill(signal);
+    });
+  }
+}
+
+start().catch(error => {
+  console.error(
+    error.code === 'EADDRINUSE'
+      ? `[dev] El puerto ${port} está ocupado. Detén el servidor anterior o configura PORT con otro puerto.`
+      : `[dev] ${error.message}`
+  );
+  process.exitCode = 1;
 });
-warmup.unref();
-
-child.on('exit', code => process.exit(code ?? 0));

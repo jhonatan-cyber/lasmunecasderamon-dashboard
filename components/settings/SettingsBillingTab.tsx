@@ -20,7 +20,9 @@ export function SettingsBillingTab() {
     propina_venta: '10',
     moneda: 'CLP',
     facturacion_activada: true,
-    resolucion_sii: ''
+    resolucion_sii: '',
+    split_tarjeta_venta: '51',
+    split_tarjeta_propina: '49'
   });
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -30,8 +32,22 @@ export function SettingsBillingTab() {
       setLoading(true);
       const response = await fetch('/api/configurations');
       const result = await response.json();
-      if (result.success && result.data?.facturacion) {
-        setConfig(prev => ({ ...prev, ...result.data.facturacion }));
+      if (result.success) {
+        setConfig(prev => ({
+          ...prev,
+          ...result.data?.facturacion,
+          // Split vive en categoría `comisiones`, se edita acá por ser regla de pagos.
+          ...(result.data?.comisiones
+            ? {
+                split_tarjeta_venta: String(
+                  result.data.comisiones.split_tarjeta_venta ?? prev.split_tarjeta_venta
+                ),
+                split_tarjeta_propina: String(
+                  result.data.comisiones.split_tarjeta_propina ?? prev.split_tarjeta_propina
+                )
+              }
+            : {})
+        }));
       }
     } catch (error) {
       logger.captureException(error, { context: 'SettingsBillingTab:fetch' });
@@ -45,6 +61,16 @@ export function SettingsBillingTab() {
   }, [fetchConfig]);
 
   const handleSave = async () => {
+    const v = Number(config.split_tarjeta_venta);
+    const p = Number(config.split_tarjeta_propina);
+    if (!Number.isInteger(v) || !Number.isInteger(p) || v < 0 || p < 0) {
+      toast.error('Split tarjeta: deben ser enteros >= 0');
+      return;
+    }
+    if (v + p !== 100) {
+      toast.error('Split tarjeta: venta + propina debe sumar 100');
+      return;
+    }
     try {
       setSaving(true);
       const configs = Object.entries(config).map(([clave, valor]) => ({
@@ -115,8 +141,8 @@ export function SettingsBillingTab() {
                   placeholder='10'
                 />
                 <p className='text-xs text-gray-500 mt-1'>
-                  Porcentaje de las ventas que se distribuye entre los cajeros y garzones activos
-                  del local.
+                  Porcentaje de las ventas que se distribuye entre cajeros, garzones y barman
+                  activos con sesi?n iniciada o presentes en el local del local.
                 </p>
               </div>
               <div>
@@ -163,6 +189,40 @@ export function SettingsBillingTab() {
                 <label htmlFor='facturacion_activada' className='text-sm font-medium'>
                   Activar facturación electrónica
                 </label>
+              </div>
+              <div className='p-4 border border-gray-200 rounded-3xl'>
+                <p className='text-sm font-medium'>Split pago con tarjeta</p>
+                <p className='text-xs text-gray-500 mt-0.5'>
+                  Cómo se divide un pago con tarjeta entre venta y propina. Debe sumar 100.
+                </p>
+                <div className='mt-3 grid grid-cols-2 gap-3'>
+                  <div>
+                    <label className='block text-xs font-medium mb-1'>Venta %</label>
+                    <input
+                      type='number'
+                      min='0'
+                      max='100'
+                      value={config.split_tarjeta_venta ?? '51'}
+                      onChange={e =>
+                        setConfig(prev => ({ ...prev, split_tarjeta_venta: e.target.value }))
+                      }
+                      className='w-full px-3 py-2 border border-gray-300 rounded-full focus:ring-2 focus:ring-black focus:border-transparent'
+                    />
+                  </div>
+                  <div>
+                    <label className='block text-xs font-medium mb-1'>Propina %</label>
+                    <input
+                      type='number'
+                      min='0'
+                      max='100'
+                      value={config.split_tarjeta_propina ?? '49'}
+                      onChange={e =>
+                        setConfig(prev => ({ ...prev, split_tarjeta_propina: e.target.value }))
+                      }
+                      className='w-full px-3 py-2 border border-gray-300 rounded-full focus:ring-2 focus:ring-black focus:border-transparent'
+                    />
+                  </div>
+                </div>
               </div>
             </div>
           </div>

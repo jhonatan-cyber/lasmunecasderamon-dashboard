@@ -1,6 +1,8 @@
 'use client';
 
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useRef, useEffect } from 'react';
+import { toast } from 'sonner';
+import { mapForSaleToCartItem } from '@/lib/sales/forSaleMapper';
 import { useNewSaleForm } from '@/hooks/ventas/useNewSaleForm';
 import { CajaStatusCheck } from '@/components/sales/CajaStatusCheck';
 import CategoryCardList from '@/components/shared/CategoryCardList';
@@ -43,6 +45,7 @@ export default function NewSale() {
     handleAddProducto,
     handleRemoveProducto,
     handleCantidadChangeTable,
+    getChampagneMax,
     totals,
     handleSubmit,
     requiresRoom,
@@ -55,6 +58,8 @@ export default function NewSale() {
   const [modalCategoria, setModalCategoria] = useState<any>(null);
   const [productosCategoria, setProductosCategoria] = useState<any[]>([]);
   const [loadingProductos, setLoadingProductos] = useState(false);
+  const categoryRequest = useRef<AbortController | null>(null);
+  useEffect(() => () => categoryRequest.current?.abort(), []);
 
   const {
     clients: clientes,
@@ -72,15 +77,29 @@ export default function NewSale() {
   );
 
   const handleOpenCategoria = async (cat: any) => {
+    categoryRequest.current?.abort();
+    const controller = new AbortController();
+    categoryRequest.current = controller;
     setModalCategoria(cat);
+    setProductosCategoria([]);
     setModalOpen(true);
     setLoadingProductos(true);
     try {
-      const res = await fetch(`/api/products?category_id=${cat.id_categoria || cat.id}`);
+      const res = await fetch(
+        `/api/products?for_sale=1&category_id=${encodeURIComponent(cat.id_categoria || cat.id)}`,
+        { cache: 'no-store', signal: controller.signal }
+      );
       const data = await res.json();
-      if (data.success) setProductosCategoria(data.data);
+      if (!res.ok || !data.success || !Array.isArray(data.data))
+        throw new Error(data.message || 'No se pudieron cargar los productos del bar');
+      if (!controller.signal.aborted) setProductosCategoria(data.data.map(mapForSaleToCartItem));
+    } catch (error) {
+      if (!controller.signal.aborted)
+        toast.error(
+          error instanceof Error ? error.message : 'No se pudieron cargar los productos del bar'
+        );
     } finally {
-      setLoadingProductos(false);
+      if (!controller.signal.aborted) setLoadingProductos(false);
     }
   };
 
@@ -101,15 +120,10 @@ export default function NewSale() {
           searchResults={searchResults}
           anfitrionas={anfitrionas}
           champagneHostessSelections={champagneHostessSelections}
-          handleChampagneHostessChange={(id, ids) => {
+          handleChampagneHostessChange={async (id, ids) => {
             const prod = searchResults.find(p => String(p.id_producto || p.id) === id);
             if (prod) {
-              const price = Number(prod.precio || prod.price || 0);
-              let max = 1;
-              if (price >= 240000) max = 5;
-              else if (price >= 200000) max = 4;
-              else if (price >= 140000) max = 3;
-              else if (price >= 120000) max = 2;
+              const max = await getChampagneMax(prod);
               if (ids.length <= max) {
                 setChampagneHostessSelections(prev => ({ ...prev, [id]: ids }));
               }
@@ -169,7 +183,10 @@ export default function NewSale() {
 
       <SaleProductModal
         open={modalOpen}
-        onClose={() => setModalOpen(false)}
+        onClose={() => {
+          categoryRequest.current?.abort();
+          setModalOpen(false);
+        }}
         loading={loadingProductos}
         productos={productosCategoria}
         cantidades={cantidades}
@@ -180,9 +197,13 @@ export default function NewSale() {
         categoria={modalCategoria}
         anfitrionas={anfitrionas}
         champagneHostessSelections={champagneHostessSelections}
-        onChampagneHostessChange={(id, ids) =>
-          setChampagneHostessSelections(prev => ({ ...prev, [id]: ids }))
-        }
+        onChampagneHostessChange={async (id, ids) => {
+          const prod = productosCategoria.find(p => String(p.id_producto || p.id) === id);
+          const max = prod ? await getChampagneMax(prod) : 5;
+          if (ids.length <= max) {
+            setChampagneHostessSelections(prev => ({ ...prev, [id]: ids }));
+          }
+        }}
         otherProductHostessSelections={otherProductHostessSelections}
         onOtherProductHostessChange={(id, ids) =>
           setOtherProductHostessSelections(prev => ({ ...prev, [id]: ids }))

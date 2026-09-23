@@ -59,6 +59,7 @@ export const SaleCreateSchema = z.object({
     .array(
       z.object({
         producto_id: z.string(),
+        presentacion_id: z.string().nullable().optional(),
         precio: z.number(),
         comision: z.number().optional().default(0),
         cantidad: z.number().min(1),

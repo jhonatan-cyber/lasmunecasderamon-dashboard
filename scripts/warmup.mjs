@@ -1,20 +1,24 @@
 /**
  * Warmup del Dashboard
- * 
+ *
  * Prefetch de endpoints del dashboard para compilar rutas y llenar caché
  * al iniciar el servidor, evitando el "cold start" en la primera request real.
- * 
+ *
  * Se ejecuta automáticamente desde dev-lan-auto.js.
  * También se puede ejecutar manualmente: node scripts/warmup.mjs
  */
+
+import dotenv from 'dotenv';
+
+dotenv.config({ quiet: true });
 
 const BASE_URL = process.env.BASE_URL || 'http://localhost:3000';
 const TIMEOUT_MS = 30_000;
 const MAX_WAIT_MS = 60_000;
 
 const CREDENTIALS = {
-  email: process.env.WARMUP_USER || process.env.TEST_USER || 'admin',
-  password: process.env.WARMUP_PASSWORD || process.env.TEST_PASSWORD || 'REMOVED_PASSWORD'
+  email: process.env.WARMUP_USER || process.env.TEST_USER,
+  password: process.env.WARMUP_PASSWORD || process.env.TEST_PASSWORD
 };
 
 const DASHBOARD_ENDPOINTS = [
@@ -33,7 +37,7 @@ const DASHBOARD_ENDPOINTS = [
   '/api/cashregister?resumen=1',
   '/api/users',
   '/api/debug/slow-queries',
-  '/api/monitoring/slow-queries',
+  '/api/monitoring/slow-queries'
 ];
 
 async function waitForServer() {
@@ -42,7 +46,9 @@ async function waitForServer() {
     try {
       const res = await fetch(`${BASE_URL}/api/health`, { signal: AbortSignal.timeout(5_000) });
       if (res.ok) return true;
-    } catch { /* server not ready yet */ }
+    } catch {
+      /* server not ready yet */
+    }
     await new Promise(r => setTimeout(r, 2_000));
   }
   return false;
@@ -56,9 +62,21 @@ async function login() {
       body: JSON.stringify(CREDENTIALS),
       signal: AbortSignal.timeout(15_000)
     });
+    if (!res.ok) {
+      console.warn(
+        `[warmup] Login rechazado (HTTP ${res.status}); se omiten las rutas protegidas.`
+      );
+      return null;
+    }
     const data = await res.json();
+    if (!data?.token) {
+      console.warn(
+        '[warmup] Login sin token; comprueba las credenciales y los requisitos de acceso de la cuenta.'
+      );
+    }
     return data?.token || null;
-  } catch {
+  } catch (error) {
+    console.warn(`[warmup] No se pudo completar el login: ${error.message}`);
     return null;
   }
 }
@@ -74,10 +92,17 @@ async function warmup() {
   }
   console.log(`[warmup] ✅ Server ready (${Date.now() - startTime}ms)`);
 
+  if (!CREDENTIALS.email || !CREDENTIALS.password) {
+    console.log(
+      '[warmup] Salud pública verificada. Para precargar el dashboard, configura WARMUP_USER y WARMUP_PASSWORD en .env.'
+    );
+    return;
+  }
+
   // Login para obtener token (necesario para endpoints protegidos)
   const token = await login();
   if (!token) {
-    console.log('[warmup] ⚠️ Login failed — warmup parcial (solo endpoints públicos)');
+    return;
   } else {
     console.log('[warmup] ✅ Token obtenido');
   }
@@ -107,7 +132,10 @@ async function warmup() {
       })
     );
     for (const r of batchResults) {
-      const result = r.status === 'fulfilled' ? r.value : { endpoint: 'unknown', status: 0, duration: 0, ok: false };
+      const result =
+        r.status === 'fulfilled'
+          ? r.value
+          : { endpoint: 'unknown', status: 0, duration: 0, ok: false };
       results.push(result);
       const icon = result.ok ? '✅' : result.status === 401 ? '⚠️' : '❌';
       const extra = result.error ? `: ${result.error}` : '';

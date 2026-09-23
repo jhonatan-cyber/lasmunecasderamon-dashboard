@@ -92,11 +92,16 @@ export function withRoute(
       // ─── Input validation (all routes, not just auth'd) ────────────
       if (['POST', 'PUT', 'PATCH'].includes(request.method)) {
         const contentType = request.headers.get('content-type') || '';
-        if (contentType && !contentType.includes('application/json')) {
+        // Se acepta JSON y multipart (este último es necesario para subir archivos).
+        if (
+          contentType &&
+          !contentType.includes('application/json') &&
+          !contentType.includes('multipart/form-data')
+        ) {
           return NextResponse.json(
             {
               success: false,
-              message: 'Content-Type debe ser application/json',
+              message: 'Content-Type debe ser application/json o multipart/form-data',
               code: 'INVALID_CONTENT_TYPE'
             },
             { status: 400 }

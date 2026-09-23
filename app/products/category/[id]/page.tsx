@@ -9,7 +9,7 @@ import { CategoryProductsHeader } from '@/components/products/CategoryProductsHe
 import { ProductFilters } from '@/components/products/ProductFilters';
 import ProductTable from '@/components/products/ProductTable';
 import { useRouter } from 'next/navigation';
-import { Product } from '@/types/product';
+import { Product, Presentacion } from '@/types/product';
 import Paginate from '@/components/shared/Paginate';
 import {
   DndContext,
@@ -61,6 +61,7 @@ const ProductCategoryPage = () => {
 
   const [openDialog, setOpenDialog] = useState(false);
   const [editProduct, setEditProduct] = useState<Product | null>(null);
+  const [editPresentation, setEditPresentation] = useState<Presentacion | null>(null);
   const [showTableView, setShowTableView] = useState(true);
   const [page, setPage] = useState(1);
   const [pageSize, setPageSize] = useState(tablePageSizes[0]);
@@ -143,6 +144,7 @@ const ProductCategoryPage = () => {
 
   const totalPages = Math.ceil(filteredProducts.length / pageSize);
   const totalPagesCards = Math.ceil(localProductsCards.length / pageSizeCards);
+  const isEmpty = !isLoading && filteredProducts.length === 0;
 
   const paginatedProducts = useMemo(() => {
     const start = (page - 1) * pageSize;
@@ -154,13 +156,68 @@ const ProductCategoryPage = () => {
     return localProductsCards.slice(start, start + pageSizeCards);
   }, [localProductsCards, pageCards, pageSizeCards]);
 
+  const [presentacionesMap, setPresentacionesMap] = useState<Record<string, Presentacion[]>>({});
+
+  // Clave estable: los memos de filtros generan arrays nuevos en cada render
+  // (searchFields es un literal), así que el efecto debe depender del contenido.
+  // Une tabla + cards para que ambas vistas tengan las presentaciones.
+  const paginatedIdsKey = [...paginatedProducts, ...paginatedProductsCards]
+    .map(p => String(p.id))
+    .filter((id, i, arr) => arr.indexOf(id) === i)
+    .join(',');
+
+  React.useEffect(() => {
+    if (paginatedIdsKey === '') {
+      setPresentacionesMap({});
+      return;
+    }
+    let cancelled = false;
+    fetch(`/api/products/presentations?producto_ids=${paginatedIdsKey}`)
+      .then(res => res.json().catch(() => ({})))
+      .then(data => {
+        if (cancelled) return;
+        if (data.success && data.data) setPresentacionesMap(data.data);
+        else console.warn('[products] No se pudieron cargar presentaciones:', data.message);
+      })
+      .catch(err => console.warn('[products] Error cargando presentaciones:', err));
+    return () => {
+      cancelled = true;
+    };
+  }, [paginatedIdsKey]);
+
+  const flatCards: { rowId: string; product: Product; presentation: Presentacion | null }[] =
+    useMemo(
+      () =>
+        paginatedProductsCards.flatMap(product => {
+          const pres = presentacionesMap[String(product.id)] ?? [];
+          if (pres.length === 0) {
+            return [{ rowId: String(product.id), product, presentation: null }] as {
+              rowId: string;
+              product: Product;
+              presentation: Presentacion | null;
+            }[];
+          }
+          return pres.map(p => ({
+            rowId: `${product.id}::${p.id}`,
+            product,
+            presentation: p as Presentacion | null
+          }));
+        }),
+
+      [paginatedProductsCards, presentacionesMap]
+    );
+
   const handleDragEndCards = useCallback(
     (event: DragEndEvent) => {
       const { active, over } = event;
 
       if (over && active.id !== over.id) {
-        const oldIndex = localProductsCards.findIndex(p => p.id === active.id);
-        const newIndex = localProductsCards.findIndex(p => p.id === over.id);
+        const activeProductId = String(active.id).split('::')[0];
+        const overProductId = String(over.id).split('::')[0];
+        if (activeProductId === overProductId) return;
+        const oldIndex = localProductsCards.findIndex(p => String(p.id) === activeProductId);
+        const newIndex = localProductsCards.findIndex(p => String(p.id) === overProductId);
+        if (oldIndex === -1 || newIndex === -1) return;
 
         const newProducts = arrayMove(localProductsCards, oldIndex, newIndex);
         setLocalProductsCards(newProducts);
@@ -185,8 +242,9 @@ const ProductCategoryPage = () => {
     [createProduct]
   );
 
-  const handleEdit = useCallback((product: Product) => {
+  const handleEdit = useCallback((product: Product, presentation: Presentacion | null = null) => {
     setEditProduct(product);
+    setEditPresentation(presentation);
     setOpenDialog(true);
   }, []);
 
@@ -194,6 +252,7 @@ const ProductCategoryPage = () => {
     async (form: FormData) => {
       await updateProduct(form);
       setEditProduct(null);
+      setEditPresentation(null);
       setOpenDialog(false);
     },
     [updateProduct]
@@ -226,12 +285,13 @@ const ProductCategoryPage = () => {
 
   const handleNewProduct = () => {
     setEditProduct(null);
+    setEditPresentation(null);
     setOpenDialog(true);
   };
 
   if (!category && categoriesLoading) {
     return (
-      <BoneyardSkeleton name="category-products-main" loading={true}>
+      <BoneyardSkeleton name='category-products-main' loading={true}>
         <div className='p-4 sm:p-6 lg:p-10 space-y-4 sm:space-y-6 mt-4 sm:mt-6 lg:mt-10'>
           <div className='text-center text-gray-500'>Cargando categorías...</div>
         </div>
@@ -264,8 +324,6 @@ const ProductCategoryPage = () => {
       <div className='p-4 sm:p-6 lg:p-10 space-y-4 sm:space-y-6 mt-4 sm:mt-6 lg:mt-10'>
         <CategoryProductsHeader
           categoryName={category?.name}
-          showTableView={showTableView}
-          onToggleView={() => setShowTableView(!showTableView)}
           onBack={handleBack}
           onNewProduct={handleNewProduct}
         />
@@ -280,72 +338,266 @@ const ProductCategoryPage = () => {
           setPageSize={showTableView ? setPageSize : setPageSizeCards}
           setPage={showTableView ? setPage : setPageCards}
           viewMode={showTableView ? 'table' : 'cards'}
+          showTableView={showTableView}
+          onToggleView={() => setShowTableView(!showTableView)}
         />
 
         {}
         <div className='hidden lg:block'>
-            {showTableView ? (
-              <>
-                <div className='overflow-x-auto'>
-                  <BoneyardSkeleton name="category-products-table" loading={isLoading}>
-                    <ProductTable
-                      products={paginatedProducts.length > 0 ? paginatedProducts : (isLoading ? [
-                        { id: 1, code: 'DUMMY-1', name: 'Nombre Producto Dummy Largo', price: 9990, commission: 1000, status: 1, foto: 'default.png' },
-                        { id: 2, code: 'DUMMY-2', name: 'Nombre Producto Dummy Largo', price: 9990, commission: 1000, status: 1, foto: 'default.png' },
-                        { id: 3, code: 'DUMMY-3', name: 'Nombre Producto Dummy Largo', price: 9990, commission: 1000, status: 1, foto: 'default.png' }
-                      ] as unknown as Product[] : [])}
-                      onEdit={handleEdit}
-                      onDelete={handleDelete}
-                      onActivate={handleActivate}
-                      onDeactivate={handleDeactivate}
-                      onReorder={reorderProducts}
-                      isLoading={isLoading}
-                      isMutating={isMutating}
-                      currentPage={page}
-                      pageSize={pageSize}
-                    />
-                  </BoneyardSkeleton>
+          {showTableView ? (
+            <>
+              {isEmpty ? (
+                <div className='text-center text-gray-500 text-sm sm:text-base py-8'>
+                  No hay productos en esta categoría.
                 </div>
-              {totalPages > 1 && (
-                <div className='flex justify-center mt-4 sm:mt-6'>
-                  <Paginate page={page} totalPages={totalPages} setPage={setPage} />
-                </div>
+              ) : (
+                <>
+                  <div className='overflow-x-auto'>
+                    <BoneyardSkeleton name='category-products-table' loading={isLoading}>
+                      <ProductTable
+                        products={
+                          paginatedProducts.length > 0
+                            ? paginatedProducts
+                            : isLoading
+                              ? ([
+                                  {
+                                    id: 1,
+                                    code: 'DUMMY-1',
+                                    name: 'Nombre Producto Dummy Largo',
+                                    price: 9990,
+                                    commission: 1000,
+                                    status: 1,
+                                    foto: 'default.png'
+                                  },
+                                  {
+                                    id: 2,
+                                    code: 'DUMMY-2',
+                                    name: 'Nombre Producto Dummy Largo',
+                                    price: 9990,
+                                    commission: 1000,
+                                    status: 1,
+                                    foto: 'default.png'
+                                  },
+                                  {
+                                    id: 3,
+                                    code: 'DUMMY-3',
+                                    name: 'Nombre Producto Dummy Largo',
+                                    price: 9990,
+                                    commission: 1000,
+                                    status: 1,
+                                    foto: 'default.png'
+                                  }
+                                ] as unknown as Product[])
+                              : []
+                        }
+                        onEdit={handleEdit}
+                        onDelete={handleDelete}
+                        onActivate={handleActivate}
+                        onDeactivate={handleDeactivate}
+                        onReorder={reorderProducts}
+                        isLoading={isLoading}
+                        isMutating={isMutating}
+                        currentPage={page}
+                        pageSize={pageSize}
+                        presentacionesPorProducto={presentacionesMap}
+                      />
+                    </BoneyardSkeleton>
+                  </div>
+                  {totalPages > 1 && (
+                    <div className='flex justify-center mt-4 sm:mt-6'>
+                      <Paginate page={page} totalPages={totalPages} setPage={setPage} />
+                    </div>
+                  )}
+                </>
               )}
             </>
-            ) : (
-              <>
-                <BoneyardSkeleton name="category-products-cards" loading={isLoading}>
-                  <DndContext
-                    sensors={sensors}
-                    collisionDetection={closestCenter}
-                    onDragEnd={handleDragEndCards}
-                  >
-                    <SortableContext
-                      items={paginatedProductsCards.map(p => p.id)}
-                      strategy={rectSortingStrategy}
+          ) : (
+            <>
+              {isEmpty ? (
+                <div className='text-center text-gray-500 text-sm sm:text-base py-8'>
+                  No hay productos en esta categoría.
+                </div>
+              ) : (
+                <>
+                  <BoneyardSkeleton name='category-products-cards' loading={isLoading}>
+                    <DndContext
+                      sensors={sensors}
+                      collisionDetection={closestCenter}
+                      onDragEnd={handleDragEndCards}
                     >
-                      <div className='grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 sm:gap-6'>
-                        {(paginatedProductsCards.length > 0 ? paginatedProductsCards : (isLoading ? [
-                          { id: 1, code: 'DUMMY-1', name: 'Nombre Producto Dummy', price: 9990, commission: 1000, status: 1, foto: 'default.png' },
-                          { id: 2, code: 'DUMMY-2', name: 'Nombre Producto Dummy', price: 9990, commission: 1000, status: 1, foto: 'default.png' },
-                          { id: 3, code: 'DUMMY-3', name: 'Nombre Producto Dummy', price: 9990, commission: 1000, status: 1, foto: 'default.png' },
-                          { id: 4, code: 'DUMMY-4', name: 'Nombre Producto Dummy', price: 9990, commission: 1000, status: 1, foto: 'default.png' }
-                        ] as unknown as Product[] : [])).map(product => (
-                          <ProductCard
-                            key={product.id}
-                            product={product}
-                            onEdit={handleEdit}
-                            onDelete={handleDelete}
-                            onActivate={handleActivate}
-                            onDeactivate={handleDeactivate}
-                            isDraggable={true}
-                            isLoading={isMutating}
-                          />
-                        ))}
-                      </div>
-                    </SortableContext>
-                  </DndContext>
-                </BoneyardSkeleton>
+                      <SortableContext
+                        items={flatCards.map(c => c.rowId)}
+                        strategy={rectSortingStrategy}
+                      >
+                        <div className='grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 sm:gap-6'>
+                          {(flatCards.length > 0
+                            ? flatCards
+                            : isLoading
+                              ? ([
+                                  {
+                                    rowId: 'dummy-1',
+                                    product: {
+                                      id: 1,
+                                      code: 'DUMMY-1',
+                                      name: 'Nombre Producto Dummy',
+                                      price: 9990,
+                                      commission: 1000,
+                                      status: 1,
+                                      foto: 'default.png'
+                                    },
+                                    presentation: null
+                                  },
+                                  {
+                                    rowId: 'dummy-2',
+                                    product: {
+                                      id: 2,
+                                      code: 'DUMMY-2',
+                                      name: 'Nombre Producto Dummy',
+                                      price: 9990,
+                                      commission: 1000,
+                                      status: 1,
+                                      foto: 'default.png'
+                                    },
+                                    presentation: null
+                                  },
+                                  {
+                                    rowId: 'dummy-3',
+                                    product: {
+                                      id: 3,
+                                      code: 'DUMMY-3',
+                                      name: 'Nombre Producto Dummy',
+                                      price: 9990,
+                                      commission: 1000,
+                                      status: 1,
+                                      foto: 'default.png'
+                                    },
+                                    presentation: null
+                                  },
+                                  {
+                                    rowId: 'dummy-4',
+                                    product: {
+                                      id: 4,
+                                      code: 'DUMMY-4',
+                                      name: 'Nombre Producto Dummy',
+                                      price: 9990,
+                                      commission: 1000,
+                                      status: 1,
+                                      foto: 'default.png'
+                                    },
+                                    presentation: null
+                                  }
+                                ] as unknown as {
+                                  rowId: string;
+                                  product: Product;
+                                  presentation: Presentacion | null;
+                                }[])
+                              : []
+                          ).map(card => (
+                            <ProductCard
+                              key={card.rowId}
+                              rowId={card.rowId}
+                              product={card.product}
+                              presentation={card.presentation}
+                              onEdit={handleEdit}
+                              onDelete={handleDelete}
+                              onActivate={handleActivate}
+                              onDeactivate={handleDeactivate}
+                              isDraggable={true}
+                              isLoading={isMutating}
+                            />
+                          ))}
+                        </div>
+                      </SortableContext>
+                    </DndContext>
+                  </BoneyardSkeleton>
+                  {totalPagesCards > 1 && (
+                    <div className='flex justify-center mt-4 sm:mt-6'>
+                      <Paginate
+                        page={pageCards}
+                        totalPages={totalPagesCards}
+                        setPage={setPageCards}
+                      />
+                    </div>
+                  )}
+                </>
+              )}
+            </>
+          )}
+        </div>
+
+        {}
+        <div className='lg:hidden'>
+          {isEmpty ? (
+            <div className='text-center text-gray-500 text-sm sm:text-base py-8'>
+              No hay productos en esta categoría.
+            </div>
+          ) : (
+            <>
+              <BoneyardSkeleton name='category-products-mobile' loading={isLoading}>
+                <DndContext
+                  sensors={sensors}
+                  collisionDetection={closestCenter}
+                  onDragEnd={handleDragEndCards}
+                >
+                  <SortableContext
+                    items={flatCards.map(c => c.rowId)}
+                    strategy={rectSortingStrategy}
+                  >
+                    <div className='grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6'>
+                      {(flatCards.length > 0
+                        ? flatCards
+                        : isLoading
+                          ? ([
+                              {
+                                rowId: 'dummy-1',
+                                product: {
+                                  id: 1,
+                                  code: 'DUMMY-1',
+                                  name: 'Nombre Producto Dummy',
+                                  price: 9990,
+                                  commission: 1000,
+                                  status: 1,
+                                  foto: 'default.png'
+                                },
+                                presentation: null
+                              },
+                              {
+                                rowId: 'dummy-2',
+                                product: {
+                                  id: 2,
+                                  code: 'DUMMY-2',
+                                  name: 'Nombre Producto Dummy',
+                                  price: 9990,
+                                  commission: 1000,
+                                  status: 1,
+                                  foto: 'default.png'
+                                },
+                                presentation: null
+                              }
+                            ] as unknown as {
+                              rowId: string;
+                              product: Product;
+                              presentation: Presentacion | null;
+                            }[])
+                          : []
+                      ).map(card => (
+                        <ProductCard
+                          key={card.rowId}
+                          rowId={card.rowId}
+                          product={card.product}
+                          presentation={card.presentation}
+                          onEdit={handleEdit}
+                          onDelete={handleDelete}
+                          onActivate={handleActivate}
+                          onDeactivate={handleDeactivate}
+                          isDraggable={true}
+                          isLoading={isMutating}
+                        />
+                      ))}
+                    </div>
+                  </SortableContext>
+                </DndContext>
+              </BoneyardSkeleton>
               {totalPagesCards > 1 && (
                 <div className='flex justify-center mt-4 sm:mt-6'>
                   <Paginate page={pageCards} totalPages={totalPagesCards} setPage={setPageCards} />
@@ -355,55 +607,19 @@ const ProductCategoryPage = () => {
           )}
         </div>
 
-        {}
-        <div className='lg:hidden'>
-          <BoneyardSkeleton name="category-products-mobile" loading={isLoading}>
-            <DndContext
-              sensors={sensors}
-              collisionDetection={closestCenter}
-              onDragEnd={handleDragEndCards}
-            >
-              <SortableContext
-                items={paginatedProductsCards.map(p => p.id)}
-                strategy={rectSortingStrategy}
-              >
-                <div className='grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6'>
-                  {(paginatedProductsCards.length > 0 ? paginatedProductsCards : (isLoading ? [
-                    { id: 1, code: 'DUMMY-1', name: 'Nombre Producto Dummy', price: 9990, commission: 1000, status: 1, foto: 'default.png' },
-                    { id: 2, code: 'DUMMY-2', name: 'Nombre Producto Dummy', price: 9990, commission: 1000, status: 1, foto: 'default.png' }
-                  ] as unknown as Product[] : [])).map(product => (
-                    <ProductCard
-                      key={product.id}
-                      product={product}
-                      onEdit={handleEdit}
-                      onDelete={handleDelete}
-                      onActivate={handleActivate}
-                      onDeactivate={handleDeactivate}
-                      isDraggable={true}
-                      isLoading={isMutating}
-                    />
-                  ))}
-                </div>
-              </SortableContext>
-            </DndContext>
-          </BoneyardSkeleton>
-          {totalPagesCards > 1 && (
-            <div className='flex justify-center mt-4 sm:mt-6'>
-              <Paginate page={pageCards} totalPages={totalPagesCards} setPage={setPageCards} />
-            </div>
-          )}
-        </div>
-
         <ProductFormModal
           open={openDialog}
           onOpenChange={v => {
             if (!v) {
               setOpenDialog(false);
               setEditProduct(null);
+              setEditPresentation(null);
             }
           }}
           initialValues={editProduct}
+          presentation={editPresentation}
           categoryId={categoryId}
+          categoryName={category?.name}
           isLoading={isLoading}
           isMutating={isMutating}
           onSubmit={editProduct ? handleUpdate : handleCreate}

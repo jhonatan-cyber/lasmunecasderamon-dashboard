@@ -20,6 +20,7 @@ import {
 } from '@/components/cuentas/tables/cuentaTableStyles';
 import { formatCurrencyNoDecimals } from '@/lib/utils/formatters';
 import { HostessMultiSelect, getHostessLimit, isExpensiveDrink } from '@/components/orders';
+import { hostessAllowedForPrice } from '@/components/orders/productModalRules';
 import { IndividualHostessSelect } from '@/components/shared/selects';
 
 interface NewSaleSearchProps {
@@ -131,6 +132,7 @@ export const NewSaleSearch = ({
                     const id = String(producto.id_producto || producto.id);
                     const isChampagne = isChampagneProduct(producto);
                     const hasComm = (producto.comision || producto.commission || 0) > 0;
+                    const puedeAnfitriona = hasComm || hostessAllowedForPrice(producto.precio);
                     const champagneHostessLimit = getHostessLimit(producto);
                     return (
                       <TableRow key={idx} className={CUENTA_TABLE_ROW_CLASS}>
@@ -145,7 +147,7 @@ export const NewSaleSearch = ({
                           {producto.categoria}
                         </TableCell>
                         <TableCell className={`${CUENTA_TABLE_CELL_CLASS} text-center`}>
-                          {hasComm ? (
+                          {puedeAnfitriona ? (
                             isChampagne ? (
                               <div className='space-y-2'>
                                 <HostessMultiSelect

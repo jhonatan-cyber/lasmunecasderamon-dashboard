@@ -23,7 +23,22 @@ const DashboardStatsCards = dynamic(() => import('@/components/dashboard/Dashboa
   loading: () => <div className='h-32 bg-slate-100 dark:bg-slate-800 rounded-2xl animate-pulse' />
 });
 
+const BarmanDashboard = dynamic(() => import('@/components/bar/BarmanDashboard'));
+
 export default function Dashboard() {
+  const { user, loading } = useCurrentUser();
+  if (loading || !user)
+    return (
+      <p role='status' className='p-6 text-muted-foreground'>
+        Cargando dashboard…
+      </p>
+    );
+  if (user.role?.toLowerCase() === 'barman')
+    return <BarmanDashboard name={user.name || 'Barman'} />;
+  return <GeneralDashboard />;
+}
+
+function GeneralDashboard() {
   const { user, loading, refetch } = useCurrentUser();
   const router = useRouter();
   const [codigoAsistencia, setCodigoAsistencia] = useState<string>('');
@@ -111,7 +126,7 @@ export default function Dashboard() {
         </div>
       </div>
 
-      <BoneyardSkeleton name="dashboard-main" loading={shouldShowSkeleton}>
+      <BoneyardSkeleton name='dashboard-main' loading={shouldShowSkeleton}>
         <div className='space-y-12 animate-in fade-in slide-in-from-bottom-4 duration-1000'>
           {}
           <section className='space-y-6'>

@@ -10,6 +10,8 @@ export interface CompanyConfig {
   empresa_instagram: string;
   empresa_whatsapp: string;
   empresa_tiktok?: string;
+  /** Notificaciones internas (anulaciones, anticipos). Categoría `sistema`. */
+  admin_whatsapp?: string;
 }
 
 export interface BillingConfig {
@@ -18,6 +20,9 @@ export interface BillingConfig {
   moneda: string;
   facturacion_activada: boolean;
   resolucion_sii: string;
+  /** Split pago con tarjeta. Deben sumar 100. Categoría `comisiones`. */
+  split_tarjeta_venta?: string;
+  split_tarjeta_propina?: string;
 }
 
 export interface BackupItem {

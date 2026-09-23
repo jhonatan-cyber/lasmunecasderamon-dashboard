@@ -2,7 +2,7 @@
 
 import Image from 'next/image';
 import React, { useState } from 'react';
-import { Product } from '@/types/product';
+import { Product, Presentacion } from '@/types/product';
 import {
   MoreVertical,
   Pencil,
@@ -10,6 +10,7 @@ import {
   Check,
   Power,
   GripVertical,
+  Eye,
   Image as ImageIcon
 } from 'lucide-react';
 import { Tooltip, TooltipProvider, TooltipTrigger, TooltipContent } from '@/components/ui/tooltip';
@@ -30,6 +31,7 @@ import {
   TableRow
 } from '@/components/ui/table';
 import { DeleteProductConfirmModal } from './DeleteProductConfirmModal';
+import { ProductDetailsModal } from './ProductDetailsModal';
 import {
   DndContext,
   closestCenter,
@@ -52,7 +54,7 @@ import { formatCurrencyCLP } from '@/lib/utils/formatters';
 
 interface ProductTableProps {
   products: Product[];
-  onEdit: (product: Product) => void;
+  onEdit: (product: Product, presentation: Presentacion | null) => void;
   onDelete: (product: Product) => void;
   onActivate: (product: Product) => void;
   onDeactivate: (product: Product) => void;
@@ -61,17 +63,22 @@ interface ProductTableProps {
   isMutating: boolean;
   currentPage: number;
   pageSize: number;
+  presentacionesPorProducto?: Record<string, Presentacion[]>;
+}
+
+interface FlatRow {
+  rowId: string;
+  product: Product;
+  presentation: Presentacion | null;
 }
 
 interface SortableRowProps {
-  product: Product;
-  idx: number;
-  currentPage: number;
-  pageSize: number;
-  onEdit: (product: Product) => void;
+  row: FlatRow;
+  onEdit: (product: Product, presentation: Presentacion | null) => void;
   onActivate: (product: Product) => void;
   onDeactivate: (product: Product) => void;
   handleDeleteClick: (product: Product) => void;
+  onViewDetails: (product: Product, presentation: Presentacion | null) => void;
   isLastRow: boolean;
   canEdit: boolean;
   canDelete: boolean;
@@ -80,15 +87,19 @@ interface SortableRowProps {
   hasAnyAction: boolean;
 }
 
+function productFoto(foto?: string | null): string {
+  if (!foto || foto === 'default.png' || foto === '') return '/api/images/products/default.png';
+  if (foto.startsWith('http')) return foto;
+  return `/api/images/products/${foto}`;
+}
+
 const SortableRow: React.FC<SortableRowProps> = ({
-  product,
-  idx,
-  currentPage,
-  pageSize,
+  row,
   onEdit,
   onActivate,
   onDeactivate,
   handleDeleteClick,
+  onViewDetails,
   isLastRow,
   canEdit,
   canDelete,
@@ -96,8 +107,9 @@ const SortableRow: React.FC<SortableRowProps> = ({
   canDeactivate,
   hasAnyAction
 }) => {
+  const { product, presentation } = row;
   const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({
-    id: product.id
+    id: row.rowId
   });
 
   const style = {
@@ -111,8 +123,8 @@ const SortableRow: React.FC<SortableRowProps> = ({
       ref={setNodeRef}
       style={style}
       className={`border-b bg-white group hover:bg-gray-50 dark:hover:bg-slate-800/30 transition-colors ${
-        idx === 0 ? 'first:rounded-t-xl' : ''
-      } ${isLastRow ? 'last:rounded-b-xl' : ''}`}
+        isLastRow ? 'last:rounded-b-xl' : ''
+      }`}
     >
       <TableCell className='py-3 px-2 sm:px-4 text-center'>
         <div
@@ -123,22 +135,11 @@ const SortableRow: React.FC<SortableRowProps> = ({
           <GripVertical className='w-4 h-4 text-gray-400' />
         </div>
       </TableCell>
-      <TableCell className='py-3 px-2 sm:px-4 text-center text-xs sm:text-sm text-gray-600 font-medium'>
-        <Badge className='bg-purple-100 text-purple-700 rounded-full px-2 sm:px-3 py-1 text-xs sm:text-sm'>
-          {(currentPage - 1) * pageSize + idx + 1}
-        </Badge>
-      </TableCell>
       <TableCell className='py-3 px-2 sm:px-4 text-center'>
-        <div className='relative mx-auto flex h-12 w-12 shrink-0 items-center justify-center overflow-hidden rounded-xl border border-gray-100 bg-gray-50 shadow-xs transition-all group-hover:shadow-sm'>
+        <div className='relative mx-auto flex h-12 w-12 shrink-0 items-center justify-center overflow-hidden rounded-xl border border-gray-100 bg-white shadow-xs transition-all group-hover:shadow-sm'>
           <Image
-            src={
-              !product.foto || product.foto === 'default.png' || product.foto === ''
-                ? '/api/images/products/default.png'
-                : product.foto.startsWith('http')
-                  ? product.foto
-                  : `/api/images/products/${product.foto}`
-            }
-            alt={product.name}
+            src={productFoto(presentation?.foto || product.foto)}
+            alt={presentation ? `${product.name} ${presentation.nombre}` : product.name}
             width={48}
             height={48}
             sizes='48px'
@@ -147,16 +148,27 @@ const SortableRow: React.FC<SortableRowProps> = ({
         </div>
       </TableCell>
       <TableCell className='py-3 px-2 sm:px-4 text-center font-mono text-xs sm:text-sm'>
-        {product.code}
+        {presentation?.codigo_barras || product.code}
       </TableCell>
       <TableCell className='py-3 px-2 sm:px-4 text-center font-mono text-xs sm:text-sm'>
         {product.name}
       </TableCell>
-      <TableCell className='py-3 px-2 sm:px-4 text-center font-mono text-xs sm:text-sm'>
-        {formatCurrencyCLP(product.price)}
+      <TableCell className='py-3 px-2 sm:px-4 text-center text-xs sm:text-sm'>
+        {presentation ? (
+          <span className='inline-flex items-center gap-1.5 rounded-full bg-gray-100 dark:bg-slate-800 px-2.5 py-0.5 font-medium text-gray-700 dark:text-gray-200 whitespace-nowrap'>
+            {presentation.nombre}
+          </span>
+        ) : (
+          <span className='text-gray-300'>—</span>
+        )}
       </TableCell>
       <TableCell className='py-3 px-2 sm:px-4 text-center font-mono text-xs sm:text-sm'>
-        {formatCurrencyCLP(product.commission)}
+        {formatCurrencyCLP(presentation?.precio_compra ?? product.price)}
+      </TableCell>
+      <TableCell className='py-3 px-2 sm:px-4 text-center font-mono text-xs sm:text-sm'>
+        <Badge className='bg-blue-100 text-blue-700 rounded-full px-2 sm:px-3 py-1 text-xs sm:text-sm'>
+          {presentation ? (presentation.stock ?? 0) : (product.stock_almacen ?? 0)}
+        </Badge>
       </TableCell>
       <TableCell className='py-3 px-2 sm:px-4 text-center font-mono'>
         {product.status === 1 ? (
@@ -170,53 +182,61 @@ const SortableRow: React.FC<SortableRowProps> = ({
         )}
       </TableCell>
       <TableCell className='py-3 px-2 sm:px-4 text-center font-mono'>
-        {hasAnyAction && (
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <Button
-                variant='ghost'
-                size='icon'
-                className='bg-white hover:bg-gray-200 rounded-full hover:scale-105 transition-all duration-200'
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <Button
+              variant='ghost'
+              size='icon'
+              className='bg-white hover:bg-gray-200 rounded-full hover:scale-105 transition-all duration-200'
+            >
+              <MoreVertical className='w-3 h-3 sm:w-4 sm:h-4' />
+            </Button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent align='end'>
+            <DropdownMenuItem
+              onClick={() => onViewDetails(product, presentation)}
+              className='cursor-pointer group'
+            >
+              <Eye className='mr-2 text-blue-600 group-hover:text-blue-700 transition-colors' />
+              <span className='group-hover:text-blue-700 transition-colors'>Detalles</span>
+            </DropdownMenuItem>
+            {canEdit && (
+              <DropdownMenuItem
+                onClick={() => onEdit(product, presentation)}
+                className='cursor-pointer group'
               >
-                <MoreVertical className='w-3 h-3 sm:w-4 sm:h-4' />
-              </Button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent align='end'>
-              {canEdit && (
-                <DropdownMenuItem onClick={() => onEdit(product)} className='cursor-pointer group'>
-                  <Pencil className='mr-2 text-purple-600 group-hover:text-purple-700 transition-colors' />
-                  <span className='group-hover:text-purple-700 transition-colors'>Editar</span>
-                </DropdownMenuItem>
-              )}
-              {product.status === 1 && canDeactivate ? (
-                <DropdownMenuItem
-                  onClick={() => onDeactivate(product)}
-                  className='cursor-pointer group'
-                >
-                  <Power className='mr-2 text-orange-600 group-hover:text-orange-700 transition-colors' />
-                  <span className='group-hover:text-orange-700 transition-colors'>Desactivar</span>
-                </DropdownMenuItem>
-              ) : product.status === 0 && canActivate ? (
-                <DropdownMenuItem
-                  onClick={() => onActivate(product)}
-                  className='cursor-pointer group'
-                >
-                  <Check className='mr-2 text-green-600 group-hover:text-green-700 transition-colors' />
-                  <span className='group-hover:text-green-700 transition-colors'>Activar</span>
-                </DropdownMenuItem>
-              ) : null}
-              {canDelete && (
-                <DropdownMenuItem
-                  onClick={() => handleDeleteClick(product)}
-                  className='cursor-pointer group'
-                >
-                  <Trash className='mr-2 text-red-600 group-hover:text-red-700 transition-colors' />
-                  <span className='group-hover:text-red-700 transition-colors'>Eliminar</span>
-                </DropdownMenuItem>
-              )}
-            </DropdownMenuContent>
-          </DropdownMenu>
-        )}
+                <Pencil className='mr-2 text-purple-600 group-hover:text-purple-700 transition-colors' />
+                <span className='group-hover:text-purple-700 transition-colors'>Editar</span>
+              </DropdownMenuItem>
+            )}
+            {product.status === 1 && canDeactivate ? (
+              <DropdownMenuItem
+                onClick={() => onDeactivate(product)}
+                className='cursor-pointer group'
+              >
+                <Power className='mr-2 text-orange-600 group-hover:text-orange-700 transition-colors' />
+                <span className='group-hover:text-orange-700 transition-colors'>Desactivar</span>
+              </DropdownMenuItem>
+            ) : product.status === 0 && canActivate ? (
+              <DropdownMenuItem
+                onClick={() => onActivate(product)}
+                className='cursor-pointer group'
+              >
+                <Check className='mr-2 text-green-600 group-hover:text-green-700 transition-colors' />
+                <span className='group-hover:text-green-700 transition-colors'>Activar</span>
+              </DropdownMenuItem>
+            ) : null}
+            {canDelete && (
+              <DropdownMenuItem
+                onClick={() => handleDeleteClick(product)}
+                className='cursor-pointer group'
+              >
+                <Trash className='mr-2 text-red-600 group-hover:text-red-700 transition-colors' />
+                <span className='group-hover:text-red-700 transition-colors'>Eliminar</span>
+              </DropdownMenuItem>
+            )}
+          </DropdownMenuContent>
+        </DropdownMenu>
       </TableCell>
     </TableRow>
   );
@@ -232,10 +252,17 @@ const ProductTable: React.FC<ProductTableProps> = ({
   isLoading,
   isMutating,
   currentPage,
-  pageSize
+  pageSize,
+  presentacionesPorProducto = {}
 }) => {
   const [deleteModalOpen, setDeleteModalOpen] = useState(false);
   const [productToDelete, setProductToDelete] = useState<Product | null>(null);
+  const [detailsProduct, setDetailsProduct] = useState<Product | null>(null);
+  const [detailsPresentation, setDetailsPresentation] = useState<Presentacion | null>(null);
+  const openDetails = (product: Product, presentation: Presentacion | null) => {
+    setDetailsProduct(product);
+    setDetailsPresentation(presentation);
+  };
   const [localProducts, setLocalProducts] = useState(products);
   const { hasPermission } = useUserPermissions();
 
@@ -265,12 +292,43 @@ const ProductTable: React.FC<ProductTableProps> = ({
     })
   );
 
+  const rowIdToProductId = (rowId: string | number) => String(rowId).split('::')[0];
+
+  const flatRows: FlatRow[] = React.useMemo(
+    () =>
+      localProducts.flatMap(product => {
+        const pres = presentacionesPorProducto[String(product.id)] ?? [];
+        if (pres.length === 0) {
+          return [
+            {
+              rowId: String(product.id),
+              product,
+              presentation: null
+            } as FlatRow
+          ];
+        }
+        return pres.map(
+          p =>
+            ({
+              rowId: `${product.id}::${p.id}`,
+              product,
+              presentation: p
+            }) as FlatRow
+        );
+      }),
+    [localProducts, presentacionesPorProducto]
+  );
+
   const handleDragEnd = (event: DragEndEvent) => {
     const { active, over } = event;
 
     if (over && active.id !== over.id) {
-      const oldIndex = localProducts.findIndex(p => p.id === active.id);
-      const newIndex = localProducts.findIndex(p => p.id === over.id);
+      const activeProductId = rowIdToProductId(active.id);
+      const overProductId = rowIdToProductId(over.id);
+      if (activeProductId === overProductId) return;
+      const oldIndex = localProducts.findIndex(p => String(p.id) === activeProductId);
+      const newIndex = localProducts.findIndex(p => String(p.id) === overProductId);
+      if (oldIndex === -1 || newIndex === -1) return;
 
       const newProducts = arrayMove(localProducts, oldIndex, newIndex);
       setLocalProducts(newProducts);
@@ -308,7 +366,6 @@ const ProductTable: React.FC<ProductTableProps> = ({
                   <TableHead className='py-4 px-5 text-xs uppercase text-gray-500 w-12'>
                     Orden
                   </TableHead>
-                  <TableHead className='py-4 px-5 text-xs uppercase text-gray-500'>#</TableHead>
                   <TableHead className='py-4 px-5 text-xs uppercase text-gray-500'>Foto</TableHead>
                   <TableHead className='py-4 px-5 text-xs uppercase text-gray-500'>
                     Código
@@ -317,11 +374,12 @@ const ProductTable: React.FC<ProductTableProps> = ({
                     Nombre
                   </TableHead>
                   <TableHead className='py-4 px-5 text-xs uppercase text-gray-500'>
-                    Precio
+                    Presentación
                   </TableHead>
                   <TableHead className='py-4 px-5 text-xs uppercase text-gray-500'>
-                    Comisión
+                    Precio compra
                   </TableHead>
+                  <TableHead className='py-4 px-5 text-xs uppercase text-gray-500'>Stock</TableHead>
                   <TableHead className='py-4 px-5 text-xs uppercase text-gray-500'>
                     Estado
                   </TableHead>
@@ -342,21 +400,19 @@ const ProductTable: React.FC<ProductTableProps> = ({
                   </TableRow>
                 )}
                 <SortableContext
-                  items={localProducts.map(p => p.id)}
+                  items={flatRows.map(r => r.rowId)}
                   strategy={verticalListSortingStrategy}
                 >
-                  {localProducts.map((product, idx) => (
+                  {flatRows.map((row, flatIdx) => (
                     <SortableRow
-                      key={product.id}
-                      product={product}
-                      idx={idx}
-                      currentPage={currentPage}
-                      pageSize={pageSize}
+                      key={row.rowId}
+                      row={row}
                       onEdit={onEdit}
                       onActivate={onActivate}
                       onDeactivate={onDeactivate}
                       handleDeleteClick={handleDeleteClick}
-                      isLastRow={idx === localProducts.length - 1}
+                      onViewDetails={openDetails}
+                      isLastRow={flatIdx === flatRows.length - 1}
                       canEdit={canEdit}
                       canDelete={canDelete}
                       canActivate={canActivate}
@@ -377,6 +433,18 @@ const ProductTable: React.FC<ProductTableProps> = ({
         onConfirm={handleConfirmDelete}
         productName={productToDelete?.name || ''}
         isLoading={isMutating}
+      />
+
+      <ProductDetailsModal
+        open={detailsProduct !== null}
+        onOpenChange={v => {
+          if (!v) {
+            setDetailsProduct(null);
+            setDetailsPresentation(null);
+          }
+        }}
+        product={detailsProduct}
+        presentation={detailsPresentation}
       />
     </TooltipProvider>
   );

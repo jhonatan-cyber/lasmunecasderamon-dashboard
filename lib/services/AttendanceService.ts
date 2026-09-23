@@ -30,6 +30,10 @@ export class AttendanceService {
     return await AttendanceRepository.selfRegister(user, ip);
   }
 
+  static async registerMasivoHoy(ip?: string) {
+    return await AttendanceRepository.registerMasivoHoy(ip);
+  }
+
   static async getSummary() {
     return await AttendanceRepository.getSummary();
   }

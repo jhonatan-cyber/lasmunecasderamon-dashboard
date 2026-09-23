@@ -4,8 +4,9 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Label } from '@/components/ui/label';
 import { Button } from '@/components/ui/button';
 import SearchInput from '@/components/shared/SearchInput';
-import { Trash2 } from 'lucide-react';
+import { Trash2, Table, Grid3X3 } from 'lucide-react';
 import SelectElements from '@/components/shared/SelectElements';
+import { cn } from '@/lib/utils/utils';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import {
   Select,
@@ -26,6 +27,8 @@ interface ProductFiltersProps {
   setPage: (value: number) => void;
   viewMode: 'table' | 'cards';
   showStatusFilter?: boolean;
+  showTableView: boolean;
+  onToggleView: () => void;
 }
 
 export function ProductFilters({
@@ -38,7 +41,9 @@ export function ProductFilters({
   setPageSize,
   setPage,
   viewMode,
-  showStatusFilter = true
+  showStatusFilter = true,
+  showTableView,
+  onToggleView
 }: ProductFiltersProps) {
   const tablePageSizes = [5, 10, 20, 40];
   const cardPageSizes = [8, 12, 24, 48];
@@ -70,6 +75,33 @@ export function ProductFilters({
           </div>
 
           <div className='w-full lg:w-auto grid grid-cols-2 gap-4 lg:flex lg:gap-4 lg:items-end'>
+            {}
+            <div>
+              <Label className='mb-2 block text-xs font-bold uppercase tracking-wider text-gray-500 dark:text-gray-400 ml-1'>
+                Vista
+              </Label>
+              <Button
+                variant='outline'
+                onClick={onToggleView}
+                className={cn(
+                  'flex h-10 items-center gap-2 rounded-full hover:scale-105 transition-all duration-200 text-xs sm:text-sm w-full sm:w-auto',
+                  showTableView ? 'bg-blue-50 text-blue-700 border-blue-300' : ''
+                )}
+              >
+                {showTableView ? (
+                  <>
+                    <Table className='w-4 h-4' />
+                    Tabla
+                  </>
+                ) : (
+                  <>
+                    <Grid3X3 className='w-4 h-4' />
+                    Cards
+                  </>
+                )}
+              </Button>
+            </div>
+
             {}
             {showStatusFilter && (
               <div className='min-w-[160px]'>

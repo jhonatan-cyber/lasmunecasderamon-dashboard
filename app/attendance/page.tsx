@@ -7,7 +7,8 @@ import { PermissionGuard } from '@/components/auth/PermissionGuard';
 import { Skeleton as BoneyardSkeleton } from 'boneyard-js/react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Button } from '@/components/ui/button';
-import { Plus } from 'lucide-react';
+import { Plus, Users, Loader2 } from 'lucide-react';
+import { toast } from 'sonner';
 import { PersonnelGrid } from '@/components/attendance/PersonnelGrid';
 import { QrCodeDialog } from '@/components/attendance/QrCodeDialog';
 
@@ -40,6 +41,31 @@ export default function AttendancePage() {
   const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('asc');
   const [selectedUserForQR, setSelectedUserForQR] = useState<any | null>(null);
   const [asistenciaFormOpen, setAsistenciaFormOpen] = useState(false);
+  const [masivoLoading, setMasivoLoading] = useState(false);
+
+  const handleRegistroMasivo = async () => {
+    if (masivoLoading) return;
+    if (
+      !window.confirm('¿Registrar asistencia de hoy a todas las anfitrionas y garzones activos?')
+    ) {
+      return;
+    }
+    setMasivoLoading(true);
+    try {
+      const res = await fetch('/api/attendance/masivo', { method: 'POST' });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok || !data.success) {
+        toast.error(data.message || 'No se pudo registrar');
+        return;
+      }
+      toast.success(data.message || 'Registro masivo completado');
+      fetchAsistencias();
+    } catch {
+      toast.error('Error de red en el registro masivo');
+    } finally {
+      setMasivoLoading(false);
+    }
+  };
 
   const filteredData = useMemo(() => {
     if (!data) return [];
@@ -94,90 +120,106 @@ export default function AttendancePage() {
 
   return (
     <PermissionGuard module='attendance' action='view'>
-      <BoneyardSkeleton name="attendance-main" loading={loading || statsLoading || usersLoading}>
-      <div className='p-4 sm:p-6 lg:p-10 space-y-4 sm:space-y-6 mt-4 sm:mt-6 lg:mt-10'>
-        <div className='flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 sm:gap-6 mb-6'>
-          <div>
-            <h1 className='text-3xl font-bold tracking-tight text-slate-900 dark:text-white'>
-              Asistencias
-            </h1>
-            <p className='text-gray-600 dark:text-neutral-300 mt-1'>
-              Administra la asistencia del personal
-            </p>
+      <BoneyardSkeleton name='attendance-main' loading={loading || statsLoading || usersLoading}>
+        <div className='p-4 sm:p-6 lg:p-10 space-y-4 sm:space-y-6 mt-4 sm:mt-6 lg:mt-10'>
+          <div className='flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 sm:gap-6 mb-6'>
+            <div>
+              <h1 className='text-3xl font-bold tracking-tight text-slate-900 dark:text-white'>
+                Asistencias
+              </h1>
+              <p className='text-gray-600 dark:text-neutral-300 mt-1'>
+                Administra la asistencia del personal
+              </p>
+            </div>
+            <div className='flex flex-col sm:flex-row gap-2 w-full sm:w-auto'>
+              <Button
+                onClick={handleRegistroMasivo}
+                disabled={masivoLoading}
+                size='sm'
+                variant='outline'
+                className='w-full sm:w-auto justify-center rounded-full px-4 sm:px-6 py-2 transition-all duration-200 text-sm sm:text-base'
+              >
+                {masivoLoading ? (
+                  <Loader2 className='w-3 h-3 sm:w-4 sm:h-4 mr-1 sm:mr-2 animate-spin' />
+                ) : (
+                  <Users className='w-3 h-3 sm:w-4 sm:h-4 mr-1 sm:mr-2' />
+                )}
+                Entrada masiva hoy
+              </Button>
+              <Button
+                onClick={() => setAsistenciaFormOpen(true)}
+                size='sm'
+                className='w-full sm:w-auto justify-center rounded-full px-4 sm:px-6 py-2 bg-black text-white hover:bg-white hover:text-black hover:scale-105 transition-all duration-200 text-sm sm:text-base border-2 dark:bg-black dark:text-white dark:border-white dark:hover:bg-white dark:hover:text-black dark:hover:border-white'
+              >
+                <Plus className='w-3 h-3 sm:w-4 sm:h-4 mr-1 sm:mr-2' />
+                Registrar Manual
+              </Button>
+            </div>
           </div>
-          <Button
-            onClick={() => setAsistenciaFormOpen(true)}
-            size='sm'
-            className='w-full sm:w-auto justify-center rounded-full px-4 sm:px-6 py-2 bg-black text-white hover:bg-white hover:text-black hover:scale-105 transition-all duration-200 text-sm sm:text-base border-2 dark:bg-black dark:text-white dark:border-white dark:hover:bg-white dark:hover:text-black dark:hover:border-white'
-          >
-            <Plus className='w-3 h-3 sm:w-4 sm:h-4 mr-1 sm:mr-2' />
-            Registrar Manual
-          </Button>
+
+          <AttendanceStatsCard stats={attendanceStats} isLoading={statsLoading} />
+
+          <AttendanceFilters
+            searchTerm={searchTerm}
+            setSearchTerm={setSearchTerm}
+            filterRole={filterRole}
+            setFilterRole={setFilterRole}
+            sortBy={sortBy}
+            setSortBy={setSortBy}
+            sortOrder={sortOrder}
+            setSortOrder={setSortOrder}
+            pageSize={pageSize}
+            setPageSize={setPageSize}
+            setPage={setPage}
+            onClearFilters={handleClearFilters}
+          />
+
+          <Tabs defaultValue='history' className='w-full'>
+            <TabsList className='grid w-full grid-cols-2 mb-6 p-1 rounded-full max-w-md mx-auto border border-gray-200 dark:border-slate-700 shadow-xs'>
+              <TabsTrigger
+                value='history'
+                className='rounded-full data-[state=active]:bg-black data-[state=active]:text-white dark:data-[state=active]:bg-white dark:data-[state=active]:text-black transition-all font-bold text-xs uppercase tracking-wider'
+              >
+                Historial de Asistencias
+              </TabsTrigger>
+              <TabsTrigger
+                value='personnel'
+                className='rounded-full data-[state=active]:bg-black data-[state=active]:text-white dark:data-[state=active]:bg-white dark:data-[state=active]:text-black transition-all font-bold text-xs uppercase tracking-wider'
+              >
+                Personal
+              </TabsTrigger>
+            </TabsList>
+
+            <TabsContent value='history'>
+              <div className='shadow-md border-none bg-white dark:bg-slate-900/40 backdrop-blur-xs rounded-3xl overflow-hidden'>
+                <div className='overflow-x-auto'>
+                  <AttendanceTable data={paginatedData} />
+                </div>
+              </div>
+            </TabsContent>
+
+            <TabsContent value='personnel'>
+              <PersonnelGrid personnel={activePersonnel} onSelect={setSelectedUserForQR} />
+            </TabsContent>
+          </Tabs>
+
+          {error && (
+            <div className='p-4 bg-red-50 dark:bg-red-950/30 rounded-2xl border border-red-200 dark:border-red-800'>
+              <p className='font-semibold text-red-700 dark:text-red-400 text-sm'>
+                Error al cargar datos
+              </p>
+              <p className='text-red-600 dark:text-red-300 text-xs mt-1'>{error}</p>
+            </div>
+          )}
         </div>
 
-        <AttendanceStatsCard stats={attendanceStats} isLoading={statsLoading} />
+        <QrCodeDialog selectedUser={selectedUserForQR} onClose={() => setSelectedUserForQR(null)} />
 
-        <AttendanceFilters
-          searchTerm={searchTerm}
-          setSearchTerm={setSearchTerm}
-          filterRole={filterRole}
-          setFilterRole={setFilterRole}
-          sortBy={sortBy}
-          setSortBy={setSortBy}
-          sortOrder={sortOrder}
-          setSortOrder={setSortOrder}
-          pageSize={pageSize}
-          setPageSize={setPageSize}
-          setPage={setPage}
-          onClearFilters={handleClearFilters}
+        <AsistenciaForm
+          isOpen={asistenciaFormOpen}
+          onOpenChange={setAsistenciaFormOpen}
+          onSuccess={fetchAsistencias}
         />
-
-        <Tabs defaultValue='history' className='w-full'>
-          <TabsList className='grid w-full grid-cols-2 mb-6 p-1 rounded-full max-w-md mx-auto border border-gray-200 dark:border-slate-700 shadow-xs'>
-            <TabsTrigger
-              value='history'
-              className='rounded-full data-[state=active]:bg-black data-[state=active]:text-white dark:data-[state=active]:bg-white dark:data-[state=active]:text-black transition-all font-bold text-xs uppercase tracking-wider'
-            >
-              Historial de Asistencias
-            </TabsTrigger>
-            <TabsTrigger
-              value='personnel'
-              className='rounded-full data-[state=active]:bg-black data-[state=active]:text-white dark:data-[state=active]:bg-white dark:data-[state=active]:text-black transition-all font-bold text-xs uppercase tracking-wider'
-            >
-              Personal
-            </TabsTrigger>
-          </TabsList>
-
-          <TabsContent value='history'>
-            <div className='shadow-md border-none bg-white dark:bg-slate-900/40 backdrop-blur-xs rounded-3xl overflow-hidden'>
-              <div className='overflow-x-auto'>
-                <AttendanceTable data={paginatedData} />
-              </div>
-            </div>
-          </TabsContent>
-
-          <TabsContent value='personnel'>
-            <PersonnelGrid personnel={activePersonnel} onSelect={setSelectedUserForQR} />
-          </TabsContent>
-        </Tabs>
-
-        {error && (
-          <div className='p-4 bg-red-50 dark:bg-red-950/30 rounded-2xl border border-red-200 dark:border-red-800'>
-            <p className='font-semibold text-red-700 dark:text-red-400 text-sm'>
-              Error al cargar datos
-            </p>
-            <p className='text-red-600 dark:text-red-300 text-xs mt-1'>{error}</p>
-          </div>
-        )}
-      </div>
-
-      <QrCodeDialog selectedUser={selectedUserForQR} onClose={() => setSelectedUserForQR(null)} />
-
-      <AsistenciaForm
-        isOpen={asistenciaFormOpen}
-        onOpenChange={setAsistenciaFormOpen}
-        onSuccess={fetchAsistencias}
-      />
       </BoneyardSkeleton>
     </PermissionGuard>
   );

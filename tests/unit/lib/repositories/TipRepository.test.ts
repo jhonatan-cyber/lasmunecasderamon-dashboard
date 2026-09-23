@@ -33,7 +33,7 @@ import { BaseRepository } from '@/lib/repositories/BaseRepository';
 const ACTIVE_LOCAL_STAFF = [
   { id_usuario: 'cajero-1' },
   { id_usuario: 'garzon-1' },
-  { id_usuario: 'garzon-2' }
+  { id_usuario: 'barman-1' }
 ];
 
 function mockStaff(rows: any[] = ACTIVE_LOCAL_STAFF) {
@@ -69,20 +69,20 @@ beforeEach(() => {
 });
 
 describe('TipRepository.register', () => {
-  it('reparte la propina entre todos los cajeros/garzones activos del local, sin importar quien realizo la venta', async () => {
+  it('reparte la propina entre todos los cajeros/garzones/barman activos del local, sin importar quien realizo la venta', async () => {
     mockStaff();
 
     const result = await TipRepository.register({ venta_id: 'venta-1', monto: 10000 });
 
-    // La consulta de distribucion apunta a logins activos y presentes en el local
+    // La consulta de distribucion apunta a usuarios activos con sesi?n iniciada o presentes en el local
     const distSql = repositoryHarness.queryMock.mock.calls.find(([sql]) =>
       String(sql).includes('FROM logins l')
     )?.[0] as string;
     expect(distSql).toBeDefined();
-    expect(distSql).toContain('l.estado = 1');
+    expect(distSql).toContain('(l.estado = 1 OR l.en_local = 1)');
     expect(distSql).toContain('l.en_local = 1');
     expect(distSql).toContain('u.estado = 1');
-    expect(distSql).toContain("'cajero', 'garzon'");
+    expect(distSql).toContain("'cajero', 'garzon', 'barman'");
     // Reparto global del local: no debe filtrar por usuarios
     expect(distSql).not.toContain('u.id_usuario IN');
 
@@ -103,7 +103,7 @@ describe('TipRepository.register', () => {
 
     // Batch insert: un detalle por cada cajero/garzon activo del local
     const batch = getDetalleBatch();
-    expect(batch.usuarioIds).toEqual(['cajero-1', 'garzon-1', 'garzon-2']);
+    expect(batch.usuarioIds).toEqual(['cajero-1', 'garzon-1', 'barman-1']);
     expect(batch.montos).toEqual([3334, 3333, 3333]);
     expect(batch.propinaIds).toEqual(['uuid-1', 'uuid-1', 'uuid-1']);
 
@@ -117,7 +117,7 @@ describe('TipRepository.register', () => {
 
   it('si se reciben usuario_ids explicitos, distribuye solo entre esos usuarios', async () => {
     repositoryHarness.queryMock.mockImplementation(async (sql: string, params: any[]) => {
-      if (sql.includes('FROM usuarios u') && sql.includes('u.id_usuario IN')) {
+      if (sql.includes('FROM logins l') && sql.includes('u.id_usuario IN')) {
         return (params as string[]).map(id => ({ id_usuario: id }));
       }
       return [];
@@ -133,8 +133,11 @@ describe('TipRepository.register', () => {
       String(sql).includes('u.id_usuario IN')
     )?.[0] as string;
     expect(distSql).toBeDefined();
-    expect(distSql).toContain('FROM usuarios u');
-    expect(distSql).not.toContain('FROM logins l');
+    expect(distSql).toContain('FROM logins l');
+    expect(distSql).toContain('u.estado = 1');
+    expect(distSql).toContain('(l.estado = 1 OR l.en_local = 1)');
+    expect(distSql).toContain("'cajero', 'garzon', 'barman'");
+    expect(distSql).toContain('SELECT DISTINCT u.id_usuario');
 
     const batch = getDetalleBatch();
     expect(batch.usuarioIds).toEqual(['cajero-1', 'garzon-1']);
@@ -147,14 +150,14 @@ describe('TipRepository.register', () => {
     });
   });
 
-  it('registra la propina sin distribuir cuando no hay cajeros/garzones activos en el local', async () => {
+  it('registra la propina sin distribuir cuando no hay cajeros/garzones/barman activos en el local', async () => {
     mockStaff([]);
 
     const result = await TipRepository.register({ venta_id: 'venta-2', monto: 5000 });
 
     const insertCalls = vi.mocked(BaseRepository.insert).mock.calls;
     expect(insertCalls.filter(c => c[1] === 'propinas')).toHaveLength(1);
-    expect(insertCalls.filter(c => c[1] === 'detalle_propinas')).toHaveLength(0);
+    expect(getDetalleBatch().usuarioIds).toHaveLength(0);
 
     expect(result).toEqual({
       id: 'uuid-1',

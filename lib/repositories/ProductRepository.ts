@@ -1,9 +1,18 @@
-import { query, generateUUID } from '@/lib/database/db';
+import { query, generateUUID, withTransaction } from '@/lib/database/db';
 import { getNowInBusinessTimezone } from '@/lib/business/timezoneService';
 import { ProductSchema, type ProductType } from '@/lib/business/schemas';
 import { logger } from '@/lib/utils/logger';
 import { BaseRepository } from './BaseRepository';
 import { BusinessError } from '@/lib/errors/errors';
+import { InventoryRepository } from './InventoryRepository';
+
+export interface NewPresentacion {
+  nombre: string;
+  codigo_barras?: string | null;
+  precio_compra?: number;
+  foto?: string | null;
+  cantidad?: number;
+}
 
 export class ProductRepository {
   private static normalizeSearchText(value: string | null | undefined): string {
@@ -31,6 +40,7 @@ export class ProductRepository {
         commission: row.comision,
         description: row.descripcion,
         status: row.estado,
+        stock_almacen: row.stock_almacen ?? 0,
         foto: row.foto,
         display_order: row.display_order,
         max_anfitrionas: row.max_anfitrionas ?? null,
@@ -80,32 +90,78 @@ export class ProductRepository {
     return results.length > 0 ? this.mapProductFromDB(results[0]) : null;
   }
 
-  static async create(data: Partial<ProductType>, foto: string): Promise<ProductType | null> {
+  static async create(
+    data: Partial<ProductType>,
+    foto: string,
+    opts?: { presentaciones?: NewPresentacion[] }
+  ): Promise<
+    (ProductType & { codigos_generados?: { codigo: string; codigo_barras: string }[] }) | null
+  > {
     const id = generateUUID();
     const now = getNowInBusinessTimezone();
-    await BaseRepository.insert(query, 'productos', {
-      id_producto: id,
-      codigo: data.code,
-      nombre: data.name,
-      categoria_id: data.category_id,
-      precio: data.price,
-      comision: data.commission,
-      descripcion: data.description || '',
-      estado: data.status,
-      foto,
-      fecha_crea: now
+    const presentaciones = opts?.presentaciones ?? [];
+    // Sin foto global: el catálogo usa la foto de la primera presentación con imagen.
+    const primeraFoto = presentaciones.find(p => p.foto)?.foto ?? null;
+    const fotoProducto = foto && foto !== 'default.png' ? foto : (primeraFoto ?? 'default.png');
+
+    const codigos: { codigo: string; codigo_barras: string }[] = [];
+    await withTransaction(async trx => {
+      await BaseRepository.insert(trx, 'productos', {
+        id_producto: id,
+        codigo: data.code,
+        nombre: data.name,
+        categoria_id: data.category_id,
+        precio: data.price ?? 0,
+        comision: data.commission ?? 0,
+        descripcion: data.description || '',
+        estado: data.status,
+        stock_almacen: 0,
+        foto: fotoProducto,
+        fecha_crea: now
+      });
+
+      for (const p of presentaciones) {
+        const creada = await InventoryRepository.createPresentation(trx, {
+          producto_id: id,
+          nombre: p.nombre,
+          codigo_barras: p.codigo_barras,
+          precio_compra: p.precio_compra,
+          foto: p.foto
+        });
+        const cantidad = Math.max(0, Math.floor(p.cantidad ?? 0));
+        if (cantidad > 0) {
+          const generados = await InventoryRepository.generateUnits(trx, id, cantidad, creada.id);
+          codigos.push(...generados);
+        }
+      }
+
+      await InventoryRepository.syncStockTotal(trx, id);
     });
 
-    return await this.getById(id);
+    const created = await this.getById(id);
+    return created ? { ...created, codigos_generados: codigos } : null;
   }
 
   static async update(
     id: string,
     data: Partial<ProductType>,
-    foto?: string
+    foto?: string,
+    opts?: { presentacionesNuevas?: NewPresentacion[] }
   ): Promise<ProductType | null> {
-    const managed = await query<any[]>('SELECT id FROM inventario_presentaciones WHERE producto_bar_id = ?', [id]);
-    if (managed.length) throw new BusinessError('Este producto se administra desde Inventario. Define precio y comisión al traspasar al bar.');
+    let managed: any[] = [];
+    try {
+      // Tabla del módulo de inventario/bar (no existe si el módulo no está instalado).
+      managed = await query<any[]>(
+        'SELECT id FROM inventario_presentaciones WHERE producto_bar_id = ?',
+        [id]
+      );
+    } catch {
+      managed = [];
+    }
+    if (managed.length)
+      throw new BusinessError(
+        'Este producto se administra desde Inventario. Define precio y comisión al traspasar al bar.'
+      );
     const updateData: any = {
       fecha_mod: getNowInBusinessTimezone()
     };
@@ -116,6 +172,7 @@ export class ProductRepository {
     if (data.price !== undefined) updateData.precio = data.price;
     if (data.commission !== undefined) updateData.comision = data.commission;
     if (data.max_anfitrionas !== undefined) updateData.max_anfitrionas = data.max_anfitrionas;
+    if (data.stock_almacen !== undefined) updateData.stock_almacen = data.stock_almacen;
     if (data.description !== undefined) updateData.descripcion = data.description;
     if (data.status !== undefined) updateData.estado = data.status;
     if (foto !== undefined) {
@@ -123,7 +180,31 @@ export class ProductRepository {
       updateData.foto = foto;
     }
 
-    await BaseRepository.update(query, 'productos', 'id_producto', id, updateData);
+    const presentacionesNuevas = opts?.presentacionesNuevas ?? [];
+    const primeraFotoNueva = presentacionesNuevas.find(p => p.foto)?.foto ?? null;
+    if (primeraFotoNueva && (foto === undefined || foto === 'default.png' || foto === '')) {
+      updateData.foto = primeraFotoNueva;
+    }
+
+    await withTransaction(async trx => {
+      await BaseRepository.update(trx, 'productos', 'id_producto', id, updateData);
+
+      for (const p of presentacionesNuevas) {
+        const creada = await InventoryRepository.createPresentation(trx, {
+          producto_id: id,
+          nombre: p.nombre,
+          codigo_barras: p.codigo_barras,
+          precio_compra: p.precio_compra,
+          foto: p.foto
+        });
+        const cantidad = Math.max(0, Math.floor(p.cantidad ?? 0));
+        if (cantidad > 0) {
+          await InventoryRepository.generateUnits(trx, id, cantidad, creada.id);
+        }
+      }
+
+      await InventoryRepository.syncStockTotal(trx, id);
+    });
     return await this.getById(id);
   }
 
@@ -180,5 +261,37 @@ export class ProductRepository {
 
   static async delete(id: string): Promise<void> {
     await BaseRepository.delete(query, 'productos', 'id_producto', id);
+  }
+
+  static async getChampagneTiers(
+    productoId: string
+  ): Promise<{ anfitrionas: number; precio: number; comision: number }[]> {
+    const rows = await query<any[]>(
+      'SELECT anfitrionas, precio, comision FROM producto_champagne_tiers WHERE producto_id = ? ORDER BY anfitrionas ASC',
+      [productoId]
+    );
+    return rows.map(r => ({
+      anfitrionas: Number(r.anfitrionas),
+      precio: Number(r.precio ?? 0),
+      comision: Number(r.comision ?? 0)
+    }));
+  }
+
+  static async saveChampagneTiers(
+    productoId: string,
+    tiers: { anfitrionas: number; precio: number; comision: number }[]
+  ): Promise<void> {
+    await withTransaction(async trx => {
+      await trx('DELETE FROM producto_champagne_tiers WHERE producto_id = ?', [productoId]);
+      for (const tier of tiers) {
+        await BaseRepository.insert(trx, 'producto_champagne_tiers', {
+          id: generateUUID(),
+          producto_id: productoId,
+          anfitrionas: tier.anfitrionas,
+          precio: tier.precio,
+          comision: tier.comision
+        });
+      }
+    });
   }
 }

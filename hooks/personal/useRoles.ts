@@ -37,7 +37,7 @@ export function useRoles() {
         created_at: role.fecha_crea || role.created_at || new Date().toISOString(),
         updated_at: role.fecha_mod || role.updated_at || null,
         deleted_at: role.fecha_baja || role.deleted_at || null,
-        userCount: role.userCount || 0,
+        userCount: Number(role.user_count ?? role.userCount ?? 0),
         color: 'bg-gray-500',
         permissions: []
       }));

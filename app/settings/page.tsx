@@ -16,7 +16,8 @@ import { SettingsPermissionsTab } from '@/components/settings/SettingsPermission
 import { SettingsMaintenanceTab } from '@/components/settings/SettingsMaintenanceTab';
 import { SettingsLogsTab } from '@/components/settings/SettingsLogsTab';
 import { SettingsAttendanceTab } from '@/components/settings/SettingsAttendanceTab';
-import { SettingsComisionesTab } from '@/components/settings/SettingsComisionesTab';
+import { SettingsChampagneCard } from '@/components/settings/SettingsChampagneCard';
+import { SettingsServiceLevelsCard } from '@/components/settings/SettingsServiceLevelsCard';
 
 export default function Settings() {
   return (
@@ -65,8 +66,9 @@ export default function Settings() {
           <SettingsPermissionsTab />
         </TabsContent>
 
-        <TabsContent value='comisiones'>
-          <SettingsComisionesTab />
+        <TabsContent value='comisiones' className='space-y-6'>
+          <SettingsServiceLevelsCard />
+          <SettingsChampagneCard />
         </TabsContent>
 
         <TabsContent value='mantenimiento'>

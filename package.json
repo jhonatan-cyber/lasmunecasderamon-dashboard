@@ -104,6 +104,7 @@
     "input-otp": "1.4.2",
     "ioredis": "^5.10.0",
     "jose": "^6.2.12",
+    "jsbarcode": "^3.12.3",
     "jspdf": "4.2.1",
     "jspdf-autotable": "^5.0.2",
     "lucide-react": "^0.539.0",

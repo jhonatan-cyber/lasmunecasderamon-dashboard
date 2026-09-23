@@ -21,7 +21,7 @@ import {
 } from '@/components/ui/table';
 import { HostessMultiSelect } from '@/components/orders';
 import { IndividualHostessSelect } from '@/components/shared/selects';
-import { isExpensiveDrink } from '@/components/orders/productModalRules';
+import { isExpensiveDrink, hostessAllowedForPrice } from '@/components/orders/productModalRules';
 import Paginate from '@/components/shared/Paginate';
 import {
   CUENTA_TABLE_CARD_CLASS,
@@ -96,7 +96,9 @@ export default function SaleProductModal({
       <DialogContent className='max-w-4xl max-h-[90vh] flex flex-col p-0'>
         <DialogHeader className='shrink-0 px-6 pt-6 pb-4 border-b'>
           <DialogTitle>
-            {categoria ? `Productos de ${categoria.nombre || categoria.name}` : 'Productos'}
+            {categoria
+              ? `Productos en bar · ${categoria.nombre || categoria.name}`
+              : 'Productos en bar'}
           </DialogTitle>
         </DialogHeader>
         <div className='flex-1 overflow-y-auto px-6 py-4'>
@@ -108,7 +110,7 @@ export default function SaleProductModal({
             <div className='w-full'>
               {!Array.isArray(productos) || productos.length === 0 ? (
                 <div className='text-center text-gray-400 py-8 w-full'>
-                  No hay productos en esta categoría.
+                  No hay productos con stock disponible en el bar para esta categoría.
                 </div>
               ) : (
                 <>
@@ -149,6 +151,9 @@ export default function SaleProductModal({
                               >
                                 <TableCell className={CUENTA_TABLE_CELL_CLASS}>
                                   <div className='font-medium'>{p.nombre || p.name}</div>
+                                  <p className='text-xs text-muted-foreground'>
+                                    Disponibles en bar: {p.stock_bar ?? 0}
+                                  </p>
                                 </TableCell>
                                 <TableCell className={`${CUENTA_TABLE_CELL_CLASS} text-center`}>
                                   {formatCurrencyNoDecimals(p.price || p.precio)}
@@ -183,6 +188,7 @@ export default function SaleProductModal({
                                         const currentCantidad = cantidades[id] || 1;
                                         handleCantidadChange(id, (currentCantidad + 1).toString());
                                       }}
+                                      disabled={(cantidades[id] || 1) >= (p.stock_bar ?? 0)}
                                       className='w-6 h-6 p-0 rounded-full hover:scale-105 transition-all duration-200'
                                     >
                                       <Plus className='w-3 h-3' />
@@ -190,7 +196,7 @@ export default function SaleProductModal({
                                   </div>
                                 </TableCell>
                                 <TableCell className={`${CUENTA_TABLE_CELL_CLASS} text-center`}>
-                                  {hasComm ? (
+                                  {hasComm || hostessAllowedForPrice(p.precio ?? p.price) ? (
                                     isChampagne ? (
                                       <div className='space-y-2'>
                                         <div className='w-full'>

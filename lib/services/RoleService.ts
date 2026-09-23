@@ -9,6 +9,10 @@ export class RoleService {
     return await RoleRepository.getById(id);
   }
 
+  static async getUsersByRole(id: string) {
+    return await RoleRepository.getUsersByRole(id);
+  }
+
   static async create(data: { nombre: string; descripcion?: string }) {
     return await RoleRepository.create(data);
   }

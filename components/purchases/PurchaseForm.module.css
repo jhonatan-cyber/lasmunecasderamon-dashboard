@@ -1,0 +1,20 @@
+.searchField {
+  border: 1px solid hsl(var(--input));
+  border-radius: 0.75rem;
+  background: hsl(var(--background));
+}
+
+.searchField:focus-within {
+  outline: 2px solid hsl(var(--ring));
+  outline-offset: 2px;
+}
+
+.searchField [cmdk-input-wrapper] {
+  border-bottom: 0;
+}
+
+/* Keep the focus indicator around the whole search field, including its icon. */
+.searchField input:focus-visible {
+  outline: none;
+  box-shadow: none;
+}

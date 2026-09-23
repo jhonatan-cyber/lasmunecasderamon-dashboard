@@ -20,6 +20,10 @@ interface LayoutUser {
   role?: string;
 }
 
+function canShowSidebar(user: LayoutUser | null) {
+  return ['administrador', 'cajero', 'barman'].includes(user?.role?.toLowerCase() ?? '');
+}
+
 function MainLayout({ children, user }: { children: React.ReactNode; user: LayoutUser | null }) {
   const pathname = usePathname();
 
@@ -39,17 +43,18 @@ function MainLayout({ children, user }: { children: React.ReactNode; user: Layou
 
   const isAdminOrCajero =
     user?.role?.toLowerCase() === 'administrador' || user?.role?.toLowerCase() === 'cajero';
+  const showSidebar = canShowSidebar(user);
 
   return (
-    <div className={cn('flex h-screen bg-background', !isAdminOrCajero && 'hide-sidebar')}>
-      {isAdminOrCajero ? <Sidebar /> : null}
+    <div className={cn('flex h-screen bg-background', !showSidebar && 'hide-sidebar')}>
+      {showSidebar ? <Sidebar /> : null}
       <div
         className={cn(
           'flex-1 flex flex-col overflow-hidden transition-all duration-300',
-          !isAdminOrCajero && 'lg:ml-0'
+          !showSidebar && 'lg:ml-0'
         )}
       >
-        <Header showSidebarControls={isAdminOrCajero} />
+        <Header showSidebarControls={showSidebar} />
         <main className='flex-1 overflow-x-auto overflow-y-auto bg-background pb-4 sm:pb-6'>
           <div className='min-h-full w-full'>{children}</div>
         </main>
@@ -64,12 +69,9 @@ function ProtectedLayoutContent({ children }: { children: React.ReactNode }) {
 
   useSessionCheck();
 
-  const isAdminOrCajero =
-    user?.role?.toLowerCase() === 'administrador' || user?.role?.toLowerCase() === 'cajero';
-
   return (
     <RouteGuard>
-      {isAdminOrCajero ? (
+      {canShowSidebar(user) ? (
         <SidebarProvider>
           <MainLayout user={user}>{children}</MainLayout>
         </SidebarProvider>
@@ -83,7 +85,9 @@ function ProtectedLayoutContent({ children }: { children: React.ReactNode }) {
 export default function LayoutContent({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
 
-  const isPublic = isPublicRoute(pathname || '/') || ['/', '/login', '/api-docs', '/asistencia-qr'].includes(pathname || '/');
+  const isPublic =
+    isPublicRoute(pathname || '/') ||
+    ['/', '/login', '/api-docs', '/asistencia-qr'].includes(pathname || '/');
 
   if (isPublic) {
     return <>{children}</>;

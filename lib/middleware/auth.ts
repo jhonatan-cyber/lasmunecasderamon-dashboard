@@ -17,6 +17,7 @@ export interface UserPermissions {
     read: boolean;
     write: boolean;
     delete: boolean;
+    accept_transfer?: boolean;
   };
   clients: {
     read: boolean;
@@ -207,6 +208,29 @@ const rolePermissions: Record<string, UserPermissions> = {
     returns: { read: false, write: false, delete: false },
     dashboard: { read: true },
     private_rooms: { read: false, write: false }
+  },
+  barman: {
+    users: { read: false, write: false, delete: false },
+    sales: { read: true, write: false, delete: false, anulate: false },
+    products: { read: true, write: false, delete: false, accept_transfer: true },
+    clients: { read: false, write: false, delete: false },
+    finances: { read: true, write: false, delete: false },
+    reports: { read: false, export: false },
+    settings: { read: false, write: false },
+    orders: { read: false, write: false, delete: false, process: false },
+    advances: { read: false, write: false, delete: false, process: false },
+    commissions: { read: false, write: false, delete: false },
+    payroll: { read: false, write: false },
+    rooms: { read: false, write: false, delete: false },
+    attendance: { read: false, write: false },
+    overtime: { read: false, write: false },
+    tips: { read: false, write: false },
+    gratificaciones: { read: false, write: false, delete: false },
+    accounts: { read: false, write: false, edit: false },
+    categories: { read: true, write: false },
+    returns: { read: false, write: false, delete: false },
+    dashboard: { read: true },
+    private_rooms: { read: false, write: false }
   }
 };
 
@@ -243,7 +267,7 @@ export async function getUserPermissionsFromDB(userId: string): Promise<UserPerm
     const userPerms: UserPermissions = {
       users: { read: false, write: false, delete: false },
       sales: { read: false, write: false, delete: false, anulate: false },
-      products: { read: false, write: false, delete: false },
+      products: { read: false, write: false, delete: false, accept_transfer: false },
       clients: { read: false, write: false, delete: false },
       finances: { read: false, write: false, delete: false },
       reports: { read: false, export: false },

@@ -77,6 +77,21 @@ describe('UserService.createUser', () => {
     expect(typeof (result as any).tempPassword).toBe('string');
   });
 
+  it('usa el RUN como contraseña inicial (hasheada)', async () => {
+    vi.mocked(UserRepository.getByRun).mockResolvedValue(null);
+    vi.mocked(UserRepository.create).mockResolvedValue({ id: 'new-user' } as any);
+    const argon2 = await import('argon2');
+
+    const result = await UserService.createUser(validBody);
+
+    expect(result).toHaveProperty('tempPassword', '12345678-9');
+    expect(vi.mocked(argon2.hash)).toHaveBeenCalledWith('12345678-9');
+    expect(UserRepository.create).toHaveBeenCalledWith(
+      expect.objectContaining({ force_password_change: 1 }),
+      'default.png'
+    );
+  });
+
   it('usa el fotoFilename proporcionado', async () => {
     vi.mocked(UserRepository.getByRun).mockResolvedValue(null);
     vi.mocked(UserRepository.create).mockResolvedValue({ id: 'new-user' } as any);
