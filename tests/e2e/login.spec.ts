@@ -1,8 +1,34 @@
-import { test, expect } from '@playwright/test';
+import { test, expect, type Page } from '@playwright/test';
 
 const BASE = 'http://localhost:3000';
 const TEST_USER = process.env.TEST_USER ?? 'admin';
-const TEST_PASSWORD = process.env.TEST_PASSWORD ?? 'REMOVED_PASSWORD';
+
+function requireTestPassword(): string {
+  const password = process.env.TEST_PASSWORD;
+  if (!password) {
+    throw new Error(
+      'TEST_PASSWORD no está definida. Configura el secret TEST_PASSWORD en GitHub Actions o exporta la variable de entorno antes de ejecutar los tests e2e.'
+    );
+  }
+  return password;
+}
+
+const TEST_PASSWORD = requireTestPassword();
+
+/**
+ * Abre /login y espera a que React esté hidratado: el fetch de montaje de la pantalla
+ * (`check-users`) solo corre en el cliente, así que su respuesta garantiza que el
+ * formulario ya responde a clics. Sin esta espera, en dev con compilación on-demand
+ * el clic se pierde y el login nunca ocurre.
+ */
+async function gotoLoginHydrated(page: Page) {
+  const usersLoaded = page.waitForResponse(
+    r => r.url().includes('/api/auth/check-users') && r.status() === 200,
+    { timeout: 30_000 }
+  );
+  await page.goto(`${BASE}/login`, { waitUntil: 'domcontentloaded' });
+  await usersLoaded;
+}
 
 test.describe('Login flow', () => {
   test('1. /login carga sin errores de Server Component', async ({ page }) => {
@@ -12,7 +38,7 @@ test.describe('Login flow', () => {
       if (res.status() === 500) serverErrors.push(`HTTP 500: ${res.url()}`);
     });
 
-    await page.goto(`${BASE}/login`, { waitUntil: 'domcontentloaded' });
+    await gotoLoginHydrated(page);
     await page.waitForTimeout(2000);
 
     const fatal = serverErrors.filter(
@@ -27,7 +53,7 @@ test.describe('Login flow', () => {
   });
 
   test('2. Formulario de login es visible', async ({ page }) => {
-    await page.goto(`${BASE}/login`, { waitUntil: 'domcontentloaded' });
+    await gotoLoginHydrated(page);
 
     // Wait for React hydration — in production builds JS loads async
     const userInput = page.locator('#nick');
@@ -42,7 +68,7 @@ test.describe('Login flow', () => {
   });
 
   test('3. Credenciales inválidas no redirigen al dashboard', async ({ page }) => {
-    await page.goto(`${BASE}/login`, { waitUntil: 'domcontentloaded' });
+    await gotoLoginHydrated(page);
 
     await expect(page.locator('#nick')).toBeVisible({ timeout: 15_000 });
     await page.locator('#nick').fill('usuario_invalido_xyz');
@@ -54,8 +80,8 @@ test.describe('Login flow', () => {
     console.log('✓ Login inválido permanece en /login:', page.url());
   });
 
-  test('4. Login exitoso con admin / REMOVED_PASSWORD', async ({ page }) => {
-    await page.goto(`${BASE}/login`, { waitUntil: 'domcontentloaded' });
+  test('4. Login exitoso con credenciales válidas', async ({ page }) => {
+    await gotoLoginHydrated(page);
 
     await expect(page.locator('#nick')).toBeVisible({ timeout: 15_000 });
     await page.locator('#nick').fill(TEST_USER);
@@ -122,7 +148,7 @@ test.describe('Session persistence', () => {
   test('6. Sesión persiste después de recargar la página', async ({ page }) => {
     test.setTimeout(60_000);
 
-    await page.goto(`${BASE}/login`, { waitUntil: 'domcontentloaded' });
+    await gotoLoginHydrated(page);
     await expect(page.locator('#nick')).toBeVisible({ timeout: 15_000 });
     await page.locator('#nick').fill(TEST_USER);
     await page.locator('#password').fill(TEST_PASSWORD);
@@ -154,7 +180,7 @@ test.describe('Session persistence', () => {
   test('7. Auto-refresh funciona cuando el access token expira', async ({ page, context }) => {
     test.setTimeout(60_000);
 
-    await page.goto(`${BASE}/login`, { waitUntil: 'domcontentloaded' });
+    await gotoLoginHydrated(page);
     await expect(page.locator('#nick')).toBeVisible({ timeout: 15_000 });
     await page.locator('#nick').fill(TEST_USER);
     await page.locator('#password').fill(TEST_PASSWORD);
@@ -191,7 +217,7 @@ test.describe('Session persistence', () => {
     test.setTimeout(60_000);
 
     // Login first
-    await page.goto(`${BASE}/login`, { waitUntil: 'domcontentloaded' });
+    await gotoLoginHydrated(page);
     await expect(page.locator('#nick')).toBeVisible({ timeout: 15_000 });
     await page.locator('#nick').fill(TEST_USER);
     await page.locator('#password').fill(TEST_PASSWORD);

@@ -4,22 +4,6 @@
   "wait": 400,
   "color": "#f3f4f6",
   "animate": "pulse",
-  "auth": {
-    "cookies": [
-      {
-        "name": "token",
-        "value": "REDACTED_JWT",
-        "domain": "localhost",
-        "path": "/",
-        "httpOnly": true,
-        "secure": false,
-        "sameSite": "Lax"
-      }
-    ],
-    "headers": {
-      "Authorization": "Bearer REDACTED_JWT"
-    }
-  },
   "routes": [
     "/accounts",
     "/accounts/new",

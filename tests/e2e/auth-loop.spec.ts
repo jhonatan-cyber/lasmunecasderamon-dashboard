@@ -1,8 +1,34 @@
-import { test, expect } from '@playwright/test';
+import { test, expect, type Page } from '@playwright/test';
 
 const BASE = 'http://localhost:3000';
 const TEST_USER = process.env.TEST_USER ?? 'admin';
-const TEST_PASSWORD = process.env.TEST_PASSWORD ?? 'REMOVED_PASSWORD';
+
+function requireTestPassword(): string {
+  const password = process.env.TEST_PASSWORD;
+  if (!password) {
+    throw new Error(
+      'TEST_PASSWORD no está definida. Configura el secret TEST_PASSWORD en GitHub Actions o exporta la variable de entorno antes de ejecutar los tests e2e.'
+    );
+  }
+  return password;
+}
+
+const TEST_PASSWORD = requireTestPassword();
+
+/**
+ * Abre /login y espera a que React esté hidratado: el fetch de montaje de la pantalla
+ * (`check-users`) solo corre en el cliente, así que su respuesta garantiza que el
+ * formulario ya responde a clics. Sin esta espera, en dev con compilación on-demand
+ * el clic se pierde y el login nunca ocurre.
+ */
+async function gotoLoginHydrated(page: Page) {
+  const usersLoaded = page.waitForResponse(
+    r => r.url().includes('/api/auth/check-users') && r.status() === 200,
+    { timeout: 30_000 }
+  );
+  await page.goto(`${BASE}/login`, { waitUntil: 'domcontentloaded' });
+  await usersLoaded;
+}
 
 test('no auth loop: /api/auth/me no se llama más de 2 veces en 10 segundos tras login', async ({
   page
@@ -22,7 +48,7 @@ test('no auth loop: /api/auth/me no se llama más de 2 veces en 10 segundos tras
   });
 
   // Login
-  await page.goto(`${BASE}/login`, { waitUntil: 'domcontentloaded' });
+  await gotoLoginHydrated(page);
   await page.locator('#nick').waitFor({ state: 'visible', timeout: 20_000 });
   await page.locator('#nick').fill(TEST_USER);
   await page.locator('#password').fill(TEST_PASSWORD);

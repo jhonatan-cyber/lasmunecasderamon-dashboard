@@ -54,7 +54,8 @@ corepack pnpm test:integration:legacy-db
 
 - `lint:full` en verde
 - `typecheck` en verde con verificacion estricta en `tsconfig.typecheck.json`
-- Tests heredados adaptados a PostgreSQL real separados en `tests/integration/legacy-db`
+- Tests heredados adaptados a PostgreSQL real separados en
+  `tests/integration/legacy-db`
 - CI minima para web y movil en `.github/workflows/quality-checks.yml`
 
 ## Testing
@@ -89,6 +90,12 @@ Ubicacion: `tests/integration/legacy-db/`
 
 ## Variables de entorno base
 
+Copia `.env.example` a `.env` y rellena los valores:
+
+```bash
+cp .env.example .env
+```
+
 ```env
 NEXT_PUBLIC_BASE_URL=
 NEXT_PUBLIC_API_URL=
@@ -99,7 +106,23 @@ DB_NAME=lasmunecasderamon
 DB_USER=postgres
 DB_PASSWORD=
 JWT_SECRET=
+JWT_REFRESH_SECRET=
 ```
+
+### Secrets de GitHub Actions
+
+El workflow de CI/Deploy requiere estos secrets en el repositorio:
+
+| Secret                              | Uso                                                                                   |
+| ----------------------------------- | ------------------------------------------------------------------------------------- |
+| `TEST_PASSWORD`                     | **Obligatorio** para el job e2e (login Playwright). Sin él, el job falla a propósito. |
+| `TEST_USER`                         | Opcional (default `admin`).                                                           |
+| `JWT_SECRET` / `JWT_REFRESH_SECRET` | Firma de tokens en CI/producción (≥64 chars).                                         |
+| `NEXT_PUBLIC_BASE_URL` / `BASE_URL` | URLs del entorno.                                                                     |
+| `SSH_PASSWORD`, `DB_*`, `TWILIO_*`  | Deploy al VPS (ver `deploy.yml`).                                                     |
+
+Nunca hardcodees passwords de test ni secretos en el repo; usa variables de
+entorno.
 
 ## Flujo recomendado
 
@@ -125,4 +148,5 @@ corepack pnpm test:integration:legacy-db
 
 ## PostgreSQL
 
-La aplicacion usa `pg`. Instalacion, migraciones, pruebas y recuperacion: [guia de PostgreSQL](docs/POSTGRESQL.md).
+La aplicacion usa `pg`. Instalacion, migraciones, pruebas y recuperacion:
+[guia de PostgreSQL](docs/POSTGRESQL.md).

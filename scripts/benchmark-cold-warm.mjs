@@ -39,10 +39,18 @@ const ENDPOINTS = [
 function pad(s, w) { return String(s).padEnd(w); }
 
 async function login() {
+  const user = process.env.TEST_USER || process.env.WARMUP_USER;
+  const password = process.env.TEST_PASSWORD || process.env.WARMUP_PASSWORD;
+  if (!user || !password) {
+    console.error(
+      'ERROR: Define TEST_USER y TEST_PASSWORD (o WARMUP_USER/WARMUP_PASSWORD) en el entorno antes de ejecutar el benchmark.'
+    );
+    process.exit(1);
+  }
   const res = await fetch(`${BASE_URL}/api/auth/login`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ email: 'admin', password: 'REMOVED_PASSWORD' }),
+    body: JSON.stringify({ email: user, password }),
     signal: AbortSignal.timeout(15_000)
   });
   const data = await res.json();

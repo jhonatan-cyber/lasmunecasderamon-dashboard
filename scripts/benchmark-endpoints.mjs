@@ -6,7 +6,16 @@
  */
 
 const BASE_URL = 'http://localhost:3000';
-const CREDENTIALS = { email: 'admin', password: 'REMOVED_PASSWORD' };
+
+const BENCH_USER = process.env.TEST_USER || process.env.WARMUP_USER;
+const BENCH_PASSWORD = process.env.TEST_PASSWORD || process.env.WARMUP_PASSWORD;
+if (!BENCH_USER || !BENCH_PASSWORD) {
+  console.error(
+    'ERROR: Define TEST_USER y TEST_PASSWORD (o WARMUP_USER/WARMUP_PASSWORD) en el entorno antes de ejecutar el benchmark.'
+  );
+  process.exit(1);
+}
+const CREDENTIALS = { email: BENCH_USER, password: BENCH_PASSWORD };
 const ITERATIONS = 3;
 
 const ENDPOINTS = [

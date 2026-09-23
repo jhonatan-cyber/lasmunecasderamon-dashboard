@@ -28,6 +28,7 @@ next-env.d.ts
 # Archivos de entorno
 .env
 .env.*
+!.env.example
 
 # Logs
 logs/
@@ -54,3 +55,6 @@ database/nul
 # MariaDB portable de desarrollo (scripts/db-dev.js)
 .dev/
 tests/integration/backups/
+
+# Backups de base de datos (nunca commitear dumps)
+/backups/
