@@ -106,7 +106,7 @@ async function updateConfig(clave: string, valor: string) {
   }
 }
 
-export const GET = withRoute({ auth: true, audit: true }, async () => {
+export const GET = withRoute({ auth: true, access: 'authenticated', audit: true }, async () => {
   const configs = (await query(`
     SELECT id, clave, valor, descripcion, categoria, tipo
     FROM configuraciones

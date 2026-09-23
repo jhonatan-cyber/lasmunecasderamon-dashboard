@@ -3,7 +3,7 @@ import { withRoute } from '@/lib/api/withRoute';
 import { UserService } from '@/lib/services/UserService';
 
 export const GET = withRoute(
-  { auth: true, audit: true },
+  { auth: true, access: 'authenticated', audit: true },
   async (_request: Request, { user }: { params: any; user: any }) => {
     const fullUser = await UserService.getById(user.id.toString());
     if (!fullUser)

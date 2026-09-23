@@ -321,6 +321,15 @@ export async function getUserPermissionsFromDB(userId: string): Promise<UserPerm
   }
 }
 
+/**
+ * El rol administrador tiene acceso implicito a todos los modulos y es el unico
+ * que puede consultar los endpoints de diagnostico y mantenimiento.
+ * Punto unico de verdad: las rutas y withRoute lo reutilizan.
+ */
+export function isAdministrator(user: Pick<AuthenticatedUser, 'role'> | null | undefined): boolean {
+  return user?.role?.toLowerCase() === 'administrador';
+}
+
 function getUserPermissions(role: string): UserPermissions {
   return rolePermissions[role] || rolePermissions.garzon;
 }

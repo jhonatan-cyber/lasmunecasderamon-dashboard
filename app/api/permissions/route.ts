@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import { withPublicRoute, withRoute } from '@/lib/api/withRoute';
 import { PermissionService } from '@/lib/services/PermissionService';
+import { sendNotificationToAll } from '@/lib/api/sseService';
 
 export const GET = withPublicRoute(async () => {
   const data = await PermissionService.getAll();
@@ -12,6 +13,8 @@ export const POST = withRoute(
   async (request: Request) => {
     const body = await request.json();
     const id = await PermissionService.create(body);
+    // Un permiso nuevo cambia lo que cada rol puede hacer: los clientes refrescan.
+    sendNotificationToAll('permissions-updated', { permissionId: id });
     return NextResponse.json({ success: true, id }, { status: 201 });
   }
 );

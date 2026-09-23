@@ -397,36 +397,6 @@ export default function ProfilePage() {
     }
   };
 
-  useEffect(() => {
-    if (!userData?.qr_token || isAdmin) return;
-
-    const checkQR = async () => {
-      try {
-        const res = await fetch(`/api/users/${userData.id}`);
-        const data = await res.json();
-        if (data.success && data.user && data.user.qr_token !== userData.qr_token) {
-          setUserData(data.user);
-        }
-      } catch (error) {
-        logger.captureException(error, { context: 'Profile:checkQR' });
-      }
-    };
-
-    const es = new EventSource('/api/notifications/sse');
-    es.onmessage = event => {
-      try {
-        const payload = JSON.parse(event.data);
-        if (payload.type === 'qr_token_updated' && payload.data?.userId == userData.id) {
-          checkQR();
-        }
-      } catch {}
-    };
-
-    return () => {
-      es.close();
-    };
-  }, [userData?.id, userData?.qr_token, isAdmin]);
-
   if (!userData) {
     return (
       <div className='container mx-auto p-6'>
@@ -451,61 +421,60 @@ export default function ProfilePage() {
   })();
 
   return (
-    <BoneyardSkeleton name="profile-main" loading={userLoading || loadingUserData || loadingRoles}>
-    <div className='flex flex-col gap-4 sm:gap-6 p-4 sm:p-6 lg:p-10 mt-4 sm:mt-6 lg:mt-10'>
-      <ProfileHeader
-        currentUser={currentUser}
-        isEditing={isEditing}
-        onEdit={() => setIsEditing(true)}
-        onCancel={handleCancel}
-        onSave={handleSave}
-      />
-
-      {isAdmin && (
-        <ProfileUserSelector
-          selectedUserId={selectedUserId}
-          loadingUsers={loadingUsers}
-          loadingUserData={loadingUserData}
-          usersList={usersList}
-          userData={userData}
-          onUserChange={handleUserChange}
-          onRefreshQr={() => loadUserData(userData.id.toString())}
-        />
-      )}
-
-      <div className='grid gap-6 md:grid-cols-2'>
-        <ProfilePersonalInfoCard
+    <BoneyardSkeleton name='profile-main' loading={userLoading || loadingUserData || loadingRoles}>
+      <div className='flex flex-col gap-4 sm:gap-6 p-4 sm:p-6 lg:p-10 mt-4 sm:mt-6 lg:mt-10'>
+        <ProfileHeader
           currentUser={currentUser}
-          userData={userData}
-          isAdmin={isAdmin}
           isEditing={isEditing}
-          loadingRoles={loadingRoles}
-          rolesList={rolesList}
-          newImagePreview={newImagePreview}
-          onUserDataChange={setUserData}
-          onNickChange={handleNickChange}
-          onAdminNickChange={handleAdminNickChange}
-          onImagePreviewChange={setNewImagePreview}
+          onEdit={() => setIsEditing(true)}
+          onCancel={handleCancel}
+          onSave={handleSave}
         />
 
-        <ProfileSecurityCard
-          userData={userData}
-          isChangingPassword={isChangingPassword}
-          confirmPassword={confirmPassword}
-          onChangePasswordMode={() => setIsChangingPassword(true)}
-          onCancelPasswordChange={() => {
-            setIsChangingPassword(false);
-            setUserData({ ...userData, password: '' });
-            setConfirmPassword('');
-          }}
-          onPasswordChange={password => setUserData({ ...userData, password })}
-          onConfirmPasswordChange={setConfirmPassword}
-          onSavePassword={handleSavePassword}
-          getLoginTimeLabel={() => loginTimeLabel}
-          formatDate={formatDate}
-        />
+        {isAdmin && (
+          <ProfileUserSelector
+            selectedUserId={selectedUserId}
+            loadingUsers={loadingUsers}
+            loadingUserData={loadingUserData}
+            usersList={usersList}
+            userData={userData}
+            onUserChange={handleUserChange}
+          />
+        )}
+
+        <div className='grid gap-6 md:grid-cols-2'>
+          <ProfilePersonalInfoCard
+            currentUser={currentUser}
+            userData={userData}
+            isAdmin={isAdmin}
+            isEditing={isEditing}
+            loadingRoles={loadingRoles}
+            rolesList={rolesList}
+            newImagePreview={newImagePreview}
+            onUserDataChange={setUserData}
+            onNickChange={handleNickChange}
+            onAdminNickChange={handleAdminNickChange}
+            onImagePreviewChange={setNewImagePreview}
+          />
+
+          <ProfileSecurityCard
+            userData={userData}
+            isChangingPassword={isChangingPassword}
+            confirmPassword={confirmPassword}
+            onChangePasswordMode={() => setIsChangingPassword(true)}
+            onCancelPasswordChange={() => {
+              setIsChangingPassword(false);
+              setUserData({ ...userData, password: '' });
+              setConfirmPassword('');
+            }}
+            onPasswordChange={password => setUserData({ ...userData, password })}
+            onConfirmPasswordChange={setConfirmPassword}
+            onSavePassword={handleSavePassword}
+            getLoginTimeLabel={() => loginTimeLabel}
+            formatDate={formatDate}
+          />
+        </div>
       </div>
-    </div>
     </BoneyardSkeleton>
   );
 }

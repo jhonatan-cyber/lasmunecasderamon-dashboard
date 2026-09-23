@@ -1,7 +1,6 @@
 'use client';
 
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
 import {
   Select,
@@ -10,7 +9,6 @@ import {
   SelectTrigger,
   SelectValue
 } from '@/components/ui/select';
-import { LazyQRCode } from '@/components/shared/LazyQRCode';
 import type { ProfileUserData, ProfileUserOption } from './profile-types';
 
 interface ProfileUserSelectorProps {
@@ -20,7 +18,6 @@ interface ProfileUserSelectorProps {
   usersList: ProfileUserOption[];
   userData: ProfileUserData | null;
   onUserChange: (userId: string) => void;
-  onRefreshQr: () => void;
 }
 
 export function ProfileUserSelector({
@@ -29,8 +26,7 @@ export function ProfileUserSelector({
   loadingUserData,
   usersList,
   userData,
-  onUserChange,
-  onRefreshQr
+  onUserChange
 }: ProfileUserSelectorProps) {
   return (
     <Card>
@@ -82,31 +78,6 @@ export function ProfileUserSelector({
             )
           )}
         </div>
-
-        {userData?.qr_token && (
-          <div className='mt-8 p-6 bg-slate-50 rounded-xl border-2 border-dashed border-slate-200 text-center'>
-            <h3 className='text-lg font-bold text-slate-900 mb-2'>Mi QR de Asistencia</h3>
-            <p className='text-sm text-slate-600 mb-6'>
-              Escaneá este código con tu aplicación móvil para registrar tu presencia.
-            </p>
-            <div className='inline-block p-4 bg-white rounded-2xl shadow-xs border border-slate-100'>
-              <LazyQRCode value={userData.qr_token} size={200} level='M' includeMargin={true} />
-            </div>
-            <div className='mt-4 flex flex-col items-center gap-2'>
-              <p className='text-[10px] font-mono text-slate-400 select-all'>
-                TOKEN: {userData.qr_token}
-              </p>
-              <Button
-                variant='ghost'
-                size='sm'
-                className='text-xs text-blue-600 h-8 rounded-full'
-                onClick={onRefreshQr}
-              >
-                Actualizar Código
-              </Button>
-            </div>
-          </div>
-        )}
       </CardContent>
     </Card>
   );

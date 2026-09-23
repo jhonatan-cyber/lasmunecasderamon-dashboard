@@ -28,6 +28,7 @@
     "format:check": "prettier --check .",
     "db:setup": "node scripts/ci-setup-db.js",
     "db:migrate": "node scripts/run-migrations.mjs",
+    "db:plan": "node scripts/run-migrations.mjs --plan",
     "db:dev": "node scripts/db-dev.js",
     "db:import": "node scripts/ci-setup-db.js",
     "optimize:images": "node scripts/optimize-images.js",
@@ -52,7 +53,10 @@
     "purge:logs": "node scripts/purge-query-logs.js",
     "purge:logs:dry": "node scripts/purge-query-logs.js --dry-run",
     "test:postgres": "vitest run --config vitest.postgres.config.ts",
-    "db:check": "node scripts/db_test.js"
+    "db:check": "node scripts/db_test.js",
+    "db:verify": "node scripts/verify-migrations.mjs",
+    "db:diff": "node scripts/compare-schema.mjs",
+    "db:parity": "node scripts/verify-schema-parity.mjs"
   },
   "dependencies": {
     "@dnd-kit/core": "^6.3.1",

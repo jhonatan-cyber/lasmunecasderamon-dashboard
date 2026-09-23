@@ -30,8 +30,7 @@ export class UserRepository {
       status: row.estado,
       estado_servicio: row.estado_servicio,
       created_at: row.fecha_crea,
-      updated_at: row.fecha_mod,
-      qr_token: row.qr_token
+      updated_at: row.fecha_mod
     };
 
     return UserSchema.parse(user);
@@ -83,7 +82,7 @@ export class UserRepository {
 
       const countSql = `SELECT COUNT(*) as total FROM usuarios u LEFT JOIN roles r ON u.rol_id = r.id_rol ${loginJoin} ${where}`;
 
-      const dataSql = `SELECT u.id_usuario, u.run, u.nick, u.nombre, u.apellido, u.foto, u.estado, u.estado_servicio, u.telefono, u.email, u.direccion, u.estado_civil, u.afp, u.sueldo, u.aporte, u.descuento, u.fecha_crea, u.fecha_mod, u.qr_token, r.nombre as rol_nombre, r.id_rol FROM usuarios u LEFT JOIN roles r ON u.rol_id = r.id_rol ${loginJoin} ${where} ORDER BY u.fecha_crea DESC${params?.limit !== undefined ? ' LIMIT ? OFFSET ?' : ''}`;
+      const dataSql = `SELECT u.id_usuario, u.run, u.nick, u.nombre, u.apellido, u.foto, u.estado, u.estado_servicio, u.telefono, u.email, u.direccion, u.estado_civil, u.afp, u.sueldo, u.aporte, u.descuento, u.fecha_crea, u.fecha_mod, r.nombre as rol_nombre, r.id_rol FROM usuarios u LEFT JOIN roles r ON u.rol_id = r.id_rol ${loginJoin} ${where} ORDER BY u.fecha_crea DESC${params?.limit !== undefined ? ' LIMIT ? OFFSET ?' : ''}`;
 
       const countRes = await query<any[]>(countSql, sqlParams);
       const total = countRes[0]?.total || 0;

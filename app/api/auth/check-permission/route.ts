@@ -1,4 +1,5 @@
 import { NextResponse } from 'next/server';
+import { withRoute } from '@/lib/api/withRoute';
 import { query } from '@/lib/database/db';
 import logger from '@/lib/utils/logger';
 
@@ -69,7 +70,15 @@ const moduleAliases: Record<string, string[]> = {
   settings: ['settings']
 };
 
-export async function POST(request: Request) {
+/**
+ * Consulta de permisos para render condicional.
+ *
+ * Antes no tenía guard: cualquiera podía preguntar si un userId arbitrario tenía un
+ * permiso, lo que permite sondear la estructura de roles del local. Hoy exige sesión
+ * (el middleware Edge no puede consultar la base, por eso existe este endpoint, pero
+ * eso no lo hace público).
+ */
+export const POST = withRoute({ auth: true, access: 'authenticated' }, async (request: Request) => {
   try {
     const { userId, module, action } = await request.json();
 
@@ -122,4 +131,4 @@ export async function POST(request: Request) {
     logger.captureException(error, { context: 'Route:checkPermission' });
     return NextResponse.json({ success: false, hasPermission: false }, { status: 500 });
   }
-}
+});

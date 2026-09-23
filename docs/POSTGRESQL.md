@@ -26,25 +26,50 @@ datos de una base existente. Luego aplica las migraciones pendientes.
 `db:import` es un alias con el mismo comportamiento conservador; no reemplaza
 una base existente.
 
-## Esquema y datos de origen
+## Esquema y semilla
 
-El archivo `database/lasmunecasderamon.sql` conserva el volcado de origen. Para
-regenerar su versión PostgreSQL:
+El volcado base (`database/lasmunecasderamon.postgres.sql`) contiene solo
+esquema más una semilla mínima de datos de referencia: roles, permisos y su
+matriz, configuraciones, habitaciones, categorías y productos. No contiene datos
+personales: el volcado histórico que viajaba con el personal real (nombres,
+teléfonos, correos, RUN y hashes de contraseña) fue retirado del repositorio,
+junto con el volcado MySQL de origen y su conversor.
+
+La importación crea las tablas y después carga la semilla, los índices y las
+relaciones. Valida las claves foráneas sin desactivar los controles
+referenciales ni exigir `session_replication_role` de superusuario.
+
+Tras importar hay exactamente un usuario: un admin semilla (`Admin`) con
+contraseña inicial `Cambio2026!` y cambio de contraseña obligatorio en la
+primera sesión (`force_password_change`). Elegir esa contraseña nueva es el
+primer paso de puesta en marcha. El código del local no viaja en el volcado: se
+acuña solo en el primer arranque.
+
+Para regenerar el volcado a partir de un dump fresco de la base de referencia
+(con datos de referencia actualizados y sin filas operacionales):
 
 ```powershell
-node scripts/mysql-to-postgres.mjs
+node scripts/make-schema-only-dump.mjs <dump-origen> database/lasmunecasderamon.postgres.sql
 ```
 
-La importación crea tablas, carga los datos y después crea índices y relaciones.
-Valida las claves foráneas sin desactivar los controles referenciales ni exigir
-`session_replication_role` de superusuario.
+## Esquema retirado
 
-Las tres fechas de creación `0000-00-00 00:00:00` del volcado se convierten a
-`1970-01-01 00:00:00`, el mismo marcador de fecha desconocida que ya tenía la
-base PostgreSQL local. El volcado original conserva los valores originales y el
-conversor informa la normalización. El conversor conserva los valores de los
-ENUM mediante restricciones CHECK y corrige los tipos de identificadores
-documentados en su código.
+`database/legacy/inventario-prerediseno.sql` conserva el DDL del primer módulo
+de inventario, anterior al rediseño de `84b61fd`. No forma parte de la
+instalación: es el registro histórico de un esquema que se retiró.
+
+Ese diseño usaba los mismos nombres que el actual para
+`inventario_presentaciones`, `inventario_unidades` e `inventario_movimientos`,
+con otra forma, y la aplicación nunca lo consultó: todo el código filtra por
+`current_schema()`, o sea `public`. La migración
+`023_eliminar_schema_legacy_inventario.sql` retiró el schema
+`legacy_inventario`, que se había creado a mano para poder aplicar `005`–`021`.
+Antes de eliminarlo cuenta las filas de sus tablas y aborta si encuentra alguna,
+así que no puede borrar datos en silencio; el retiro queda registrado en
+`_postgres_migrations`.
+
+Para recuperarlo, solo si alguna vez hiciera falta, hay que crear el schema y
+ejecutar el archivo ajustando antes los `CREATE INDEX`, que apuntan a `public`.
 
 ## Migraciones
 
@@ -58,9 +83,63 @@ transacción. Un error aborta con código distinto de cero. Una migración
 registrada no vuelve a ejecutarse, y modificar su contenido provoca un error:
 las modificaciones posteriores deben agregarse como un archivo nuevo.
 
+Antes de ejecutar, el ejecutor intenta **adoptar** la migración, para que
+renombrar o reordenar archivos no implique volver a ejecutar SQL:
+
+- mismo contenido ya registrado bajo otro nombre: es un renombre, se registra
+  sin ejecutar nada y se informa el nombre anterior;
+- todos los objetos que el archivo declara (tablas, columnas con su tipo,
+  índices, secuencias y restricciones) ya están en la base, y el archivo no
+  tiene sentencias cuyo efecto no se pueda comprobar: su trabajo ya está hecho,
+  se registra sin ejecutar nada.
+
+Cualquier otra combinación se aplica como siempre. Las migraciones de datos
+(`INSERT`, `UPDATE`, bloques `DO`) nunca se adoptan por esquema, porque el
+esquema no puede confirmar que su trabajo esté hecho.
+
+`db:plan` muestra qué haría cada archivo —aplicar o adoptar, y por qué— sin
+escribir nada en la base:
+
+```powershell
+corepack pnpm db:plan
+```
+
 Incluye índices, columnas pendientes, `push_tokens`, contenido JSON de
 respaldos, secuencias de identidad y reconstrucción idempotente del historial de
-anticipos. `_migrations` se conserva como historial de la base anterior.
+anticipos. La tabla `_migrations` conserva el historial del ejecutor anterior a
+PostgreSQL; las instalaciones nuevas la reciben vacía y el historial vigente
+vive en `_postgres_migrations`.
+
+## Verificación de esquema y paridad
+
+El esquema se define en dos lugares: el volcado base
+(`database/lasmunecasderamon.postgres.sql`) y la cadena de `migrations/`. Las
+dos rutas de instalación —una base nueva y un entorno que ya venía funcionando—
+pueden desviarse entre sí, así que hay tres comprobaciones que lo detectan.
+Requieren una base de referencia local:
+
+```powershell
+$env:DB_NAME = 'lasmunecasderamon_test'
+corepack pnpm db:setup
+corepack pnpm db:verify
+corepack pnpm db:diff lasmunecasderamon lasmunecasderamon_test
+corepack pnpm db:parity --reference lasmunecasderamon_test --base-ref HEAD
+```
+
+`db:verify` construye una base recién creada (importa el volcado y aplica todas
+las migraciones) y falla si alguna migración no llega al historial, si un
+archivo está vacío o fuera de la convención de nombre, o si el ejecutor no es
+idempotente. `db:diff` compara el esquema de dos bases: tablas, columnas, tipos,
+valores por defecto, índices y restricciones. `db:parity` instala desde cero por
+el camino de producción, reconstruye un entorno existente con el volcado de
+`--base-ref` y exige que las dos rutas coincidan con la base de referencia.
+
+Regla que impone ese gate: **si cambias el volcado base, necesitas una migración
+que lleve a los entornos existentes al mismo estado, y al revés**. Cambiar solo
+el volcado deja a los entornos ya desplegados con un esquema distinto; cambiar
+solo las migraciones deja a las instalaciones nuevas con otro. CI ejecuta
+`db:verify` en el job `migrations` y `db:parity` en el job `integration`, con
+historial completo para poder leer el volcado del commit base.
 
 ## Consultas y contratos de la API
 
@@ -76,6 +155,42 @@ conservan el comportamiento anterior ante NULL. Las transacciones mantienen una
 única conexión y revierten todas sus escrituras si fallan. Las escrituras no se
 reintentan automáticamente ante una desconexión que podría ocurrir después del
 commit.
+
+## Asistencia: desafíos de un solo uso
+
+La presencia se verifica en el servidor con la tabla `asistencia_desafios`
+(migración `024`). Reemplaza a `usuarios.qr_token`: esa credencial personal y
+estática viajaba en la respuesta de `/api/public/users` — sin autenticación — y
+era exactamente lo que aceptaba `POST /api/attendance/register`, de modo que
+cualquiera con acceso a internet podía marcar asistencia ajena. La columna quedó
+en NULL y comentada como retirada; el esquema y la API ya no la exponen.
+
+El flujo:
+
+1. Una superficie del local emite el desafío: la pantalla de la entrada
+   (`POST /api/kiosk/attendance/challenge`, provisionada con
+   `KIOSK_DEVICE_SECRET` mediante `/api/kiosk/session`) o la pantalla de
+   asistencia del personal con permiso de escritura (`POST /api/attendance/qr`).
+2. El servidor genera un token aleatorio, guarda **solo su SHA-256**
+   (`token_hash`, índice único) y devuelve el valor crudo una vez, para
+   dibujarlo como QR. Vence a los 120 segundos.
+3. El canje (`POST /api/attendance/register` con ese token como `qrData`) es una
+   sentencia atómica
+   `UPDATE ... WHERE usado_en IS NULL AND expira_en > now() AND (usuario_id = ? OR emisor_usuario_id = ?)`:
+   un token no se usa dos veces, no acredita a otra persona, y solo lo canjea su
+   dueño o quien lo emitió desde el mostrador. La columna `emitido_por` registra
+   la superficie emisora.
+
+Hay un solo desafío activo por persona: emitir uno nuevo invalida el anterior.
+Los desafíos vencidos se descartan al canjearlos o al emitir el siguiente. El
+código de 4 dígitos del local sigue funcionando como segunda vía: acredita a
+quien tiene la sesión abierta y rota en cada uso.
+
+`lib/kiosk/attendanceChallenges.ts` contiene el ciclo de vida completo y
+`lib/kiosk/deviceAuth.ts` la credencial de la pantalla (cookie `kiosk_token`
+firmada con `KIOSK_DEVICE_SECRET`, alcance `kiosk`; no es una sesión de
+usuario). Las pruebas están en `tests/postgres/attendance-challenges.test.ts` y
+`tests/unit/lib/kiosk/`.
 
 ## Respaldos y restauración
 

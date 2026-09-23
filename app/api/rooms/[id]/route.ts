@@ -12,22 +12,31 @@ export const GET = withPublicRoute(
   }
 );
 
-export const PUT = withRoute({ auth: true, audit: true }, async (request: Request, { params }: { params: Promise<{ id: string }> }) => {
-  const id = (await params).id;
-  const body = await request.json();
-  await RoomService.update(id, body);
-  return NextResponse.json({ success: true, message: 'Room updated' });
-});
+export const PUT = withRoute(
+  { auth: true, audit: true, module: 'rooms', action: 'write' },
+  async (request: Request, { params }: { params: Promise<{ id: string }> }) => {
+    const id = (await params).id;
+    const body = await request.json();
+    await RoomService.update(id, body);
+    return NextResponse.json({ success: true, message: 'Room updated' });
+  }
+);
 
-export const PATCH = withRoute({ auth: true, audit: true }, async (request: Request, { params }: { params: Promise<{ id: string }> }) => {
-  const id = (await params).id;
-  const { action } = await request.json();
-  await RoomService.updateStatus(id, action);
-  return NextResponse.json({ success: true, message: 'Status updated' });
-});
+export const PATCH = withRoute(
+  { auth: true, audit: true, module: 'rooms', action: 'write' },
+  async (request: Request, { params }: { params: Promise<{ id: string }> }) => {
+    const id = (await params).id;
+    const { action } = await request.json();
+    await RoomService.updateStatus(id, action);
+    return NextResponse.json({ success: true, message: 'Status updated' });
+  }
+);
 
-export const DELETE = withRoute({ auth: true, audit: true }, async (request: Request, { params }: { params: Promise<{ id: string }> }) => {
-  const id = (await params).id;
-  const result = await RoomService.delete(id);
-  return NextResponse.json(result);
-});
+export const DELETE = withRoute(
+  { auth: true, audit: true, module: 'rooms', action: 'delete' },
+  async (request: Request, { params }: { params: Promise<{ id: string }> }) => {
+    const id = (await params).id;
+    const result = await RoomService.delete(id);
+    return NextResponse.json(result);
+  }
+);

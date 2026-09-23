@@ -13,7 +13,6 @@ export function normalizeProfileUserData(rawUser: any): ProfileUserData {
     email: rawUser.email || '',
     foto: rawUser.foto ?? null,
     fecha_mod: rawUser.fecha_mod ?? rawUser.updated_at ?? null,
-    qr_token: rawUser.qr_token ?? null,
     password: rawUser.password ?? ''
   };
 }
@@ -51,6 +50,5 @@ export interface ProfileUserData {
   email: string;
   foto?: string | null;
   fecha_mod?: string | null;
-  qr_token?: string | null;
   password?: string;
 }

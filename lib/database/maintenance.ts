@@ -17,11 +17,18 @@ const protectedFromCleaning = new Set([
   'productos',
   'categorias',
   'codigos',
-  'inventario_productos',
   'inventario_presentaciones',
   'inventario_unidades',
   'inventario_movimientos',
-  'inventario_movimiento_unidades'
+  // `inventario_productos` e `inventario_movimiento_unidades` eran del diseno
+  // anterior a 84b61fd. Se retiraron en la migracion 023 y su DDL quedo en
+  // database/legacy/inventario-prerediseno.sql.
+  // Compras: inventario_unidades.compra_id apunta aqui, y las unidades se
+  // preservan, asi que las compras que las originaron tambien.
+  'compras',
+  'detalle_compras',
+  // Configuracion de precios por producto, no dato operativo.
+  'producto_champagne_tiers'
 ]);
 
 async function tables(trx: TransactionQuery): Promise<string[]> {
@@ -108,7 +115,7 @@ export async function restoreDatabase(data: unknown, backupId: string) {
     }
     if (entries.some(([table]) => table === 'inventario_unidades')) {
       await trx(`SELECT setval('inventario_sku_seq', GREATEST(
-        COALESCE((SELECT max(substring(sku FROM 4)::bigint) FROM inventario_unidades WHERE sku ~ '^LM-[0-9]+$'), 1),
+        COALESCE((SELECT max(substring(codigo FROM 4)::bigint) FROM inventario_unidades WHERE codigo ~ '^LM-[0-9]+$'), 1),
         COALESCE(pg_sequence_last_value('inventario_sku_seq'::regclass), 1)), true)`);
     }
     await trx('SET CONSTRAINTS ALL IMMEDIATE');

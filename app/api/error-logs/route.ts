@@ -1,8 +1,10 @@
 import { NextResponse } from 'next/server';
-import { withPublicRoute } from '@/lib/api/withRoute';
+import { withPublicRoute, withRoute } from '@/lib/api/withRoute';
 import { ErrorLogService } from '@/lib/services/ErrorLogService';
 
-export const GET = withPublicRoute(async () => {
+// Los registros incluyen stack traces y request bodies de toda la aplicacion,
+// por eso solo el administrador los puede consultar.
+export const GET = withRoute({ auth: true, access: 'administrator' }, async () => {
   const data = await ErrorLogService.getAll();
   return NextResponse.json({ success: true, data });
 });

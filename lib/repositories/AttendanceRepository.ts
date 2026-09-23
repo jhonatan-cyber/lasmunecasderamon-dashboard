@@ -6,7 +6,6 @@ import {
   getAttendanceHoy,
   getAttendanceByDates,
   registerAttendanceManual,
-  selfRegisterAttendance,
   registerMasivoHoy
 } from './attendance/AttendanceQueries';
 
@@ -18,6 +17,5 @@ export class AttendanceRepository {
   static getHoy = getAttendanceHoy;
   static getByDates = getAttendanceByDates;
   static registerManual = registerAttendanceManual;
-  static selfRegister = selfRegisterAttendance;
   static registerMasivoHoy = registerMasivoHoy;
 }

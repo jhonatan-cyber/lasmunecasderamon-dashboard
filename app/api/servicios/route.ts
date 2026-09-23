@@ -18,15 +18,18 @@ export const GET = withPublicRoute(async (request: Request) => {
   return NextResponse.json({ success: true, data });
 });
 
-export const POST = withRoute({ auth: true, audit: true }, async (request: Request, { user }) => {
-  const body = await request.json();
-  const validated = validateOrResponse(ServiceCreateSchema, body);
-  if (validated instanceof NextResponse) return validated;
-  const result = await ServiceService.createService(validated, user.id.toString());
-  sendNotificationToAll('service_changed', {
-    action: 'create',
-    id: result.id,
-    timestamp: new Date().toISOString()
-  });
-  return NextResponse.json({ success: true, ...result });
-});
+export const POST = withRoute(
+  { auth: true, access: 'authenticated', audit: true },
+  async (request: Request, { user }) => {
+    const body = await request.json();
+    const validated = validateOrResponse(ServiceCreateSchema, body);
+    if (validated instanceof NextResponse) return validated;
+    const result = await ServiceService.createService(validated, user.id.toString());
+    sendNotificationToAll('service_changed', {
+      action: 'create',
+      id: result.id,
+      timestamp: new Date().toISOString()
+    });
+    return NextResponse.json({ success: true, ...result });
+  }
+);

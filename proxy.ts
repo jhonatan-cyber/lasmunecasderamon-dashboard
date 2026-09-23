@@ -3,6 +3,7 @@ import type { NextRequest } from 'next/server';
 import { jwtVerify, SignJWT } from 'jose';
 import {
   PUBLIC_PATHS,
+  KIOSK_DEVICE_APIS,
   AUTHENTICATED_ONLY_APIS,
   routePermissions,
   apiRoutePermissions
@@ -384,6 +385,24 @@ export default async function proxy(request: NextRequest) {
       response.headers.set('Content-Security-Policy', cspHeader);
     }
     return response;
+  }
+
+  // ─── Pantalla del local: credencial de dispositivo, no sesión de persona ───────
+  // La ruta correspondiente verifica la cookie firmada (no puede hacerlo el middleware
+  // porque necesita el secreto del kiosko). Acá solo se deja pasar; si trae una sesión
+  // de usuario no cambia nada, porque estas rutas no la aceptan.
+  const isKioskDeviceApi = KIOSK_DEVICE_APIS.some((path: string) => {
+    return pathname === path || pathname.startsWith(path + '/');
+  });
+
+  if (isKioskDeviceApi) {
+    return addApiHeaders(
+      NextResponse.next({
+        request: {
+          headers: cspRequestHeaders
+        }
+      })
+    );
   }
 
   // ─── CSRF: validate Origin on state-changing API requests ───────

@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import { withPublicRoute, withRoute } from '@/lib/api/withRoute';
 import { query, withTransaction } from '@/lib/database/db';
+import { sendNotificationToAll } from '@/lib/api/sseService';
 
 export const GET = withPublicRoute(
   async (_request: Request, { params }: { params: Promise<{ id: string }> }) => {
@@ -29,7 +30,8 @@ export const GET = withPublicRoute(
   }
 );
 
-export const PUT = withRoute({ auth: true, audit: true, module: 'users', action: 'write' },
+export const PUT = withRoute(
+  { auth: true, audit: true, module: 'users', action: 'write' },
   async (request: Request, { params }: { params: Promise<{ id: string }> }) => {
     const roleId = (await params).id;
     const body = await request.json();
@@ -46,6 +48,10 @@ export const PUT = withRoute({ auth: true, audit: true, module: 'users', action:
         );
       }
     });
+
+    // Es el flujo principal de edición de permisos: quien tenga este rol debe
+    // refrescar su caché para operar con la matriz nueva.
+    sendNotificationToAll('permissions-updated', { roleId });
 
     return NextResponse.json({ success: true, message: 'Permisos del rol actualizados' });
   }

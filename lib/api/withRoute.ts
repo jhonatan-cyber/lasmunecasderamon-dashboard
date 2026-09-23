@@ -1,7 +1,7 @@
 import { ZodError } from 'zod';
 import { NextResponse } from 'next/server';
 import { getAuth } from '@/lib/auth/auth-app';
-import { AuthenticatedUser, UserPermissions } from '@/lib/middleware/auth';
+import { AuthenticatedUser, UserPermissions, isAdministrator } from '@/lib/middleware/auth';
 import { ErrorLogService } from '@/lib/services/ErrorLogService';
 import { AuditService } from '@/lib/services/AuditService';
 import { ApiResponse } from './api-response';
@@ -17,14 +17,58 @@ type AuthenticatedHandler = (
   context: { params: any; user: AuthenticatedUser }
 ) => Promise<Response>;
 
-type RoutePermissions = { module: keyof UserPermissions; action: string };
+type PermissionModule = keyof UserPermissions;
 
-type RouteConfig = {
-  auth?: boolean;
-  module?: keyof UserPermissions;
-  action?: string;
+type RoutePermissions = { module: PermissionModule; action: string };
+
+/**
+ * Configuración de una ruta. Es una union discriminada a propósito: el tipo
+ * obliga a declarar el nivel de acceso en lugar de dejar "cualquier sesion"
+ * como comportamiento implicito.
+ *
+ *  - Ruta con permiso: auth + module + action (el administrador siempre pasa).
+ *  - Ruta solo administrador: auth + access: 'administrator' (diagnostico,
+ *    mantenimiento, cache).
+ *  - Ruta de sesion: auth + access: 'authenticated'. Solo para endpoints que
+ *    devuelven datos propios del usuario (su perfil, su asistencia, sus
+ *    propinas). Es un opt-in explicito y greppable: nunca el valor por omision.
+ *  - Ruta publica: sin auth.
+ */
+type PermissionRouteConfig<M extends PermissionModule = PermissionModule> = {
+  auth: true;
+  module: M;
+  // La accion tiene que existir en ese modulo: 'rooms' + 'anulate' no compila.
+  action: keyof UserPermissions[M] & string;
+  access?: never;
   audit?: boolean;
 };
+
+type AdministratorRouteConfig = {
+  auth: true;
+  access: 'administrator';
+  module?: never;
+  action?: never;
+  audit?: boolean;
+};
+
+type SessionRouteConfig = {
+  auth: true;
+  access: 'authenticated';
+  module?: never;
+  action?: never;
+  audit?: boolean;
+};
+
+type PublicRouteConfig = {
+  auth?: false;
+  access?: never;
+  module?: never;
+  action?: never;
+  audit?: boolean;
+};
+
+type RouteConfig<M extends PermissionModule = PermissionModule> =
+  PermissionRouteConfig<M> | AdministratorRouteConfig | SessionRouteConfig | PublicRouteConfig;
 
 // ── Helpers ─────────────────────────────────────────────────────────────
 
@@ -42,7 +86,7 @@ function hasRequiredPermission(
   module: keyof UserPermissions,
   action: string
 ): boolean {
-  if (user.role?.toLowerCase() === 'administrador') return true;
+  if (isAdministrator(user)) return true;
   const userPermissions = (user.permissions as any)?.[module];
   return !!(userPermissions && (userPermissions as any)[action] === true);
 }
@@ -53,19 +97,20 @@ export function withRoute(
   handler: RouteHandler
 ): (request: Request, context: { params: any }) => Promise<Response>;
 
-export function withRoute(
-  config: RouteConfig,
+export function withRoute<M extends PermissionModule>(
+  config: RouteConfig<M>,
   handler: AuthenticatedHandler
 ): (request: Request, context: { params: any }) => Promise<Response>;
 
 // ── Implementation ──────────────────────────────────────────────────────
 
-export function withRoute(
-  configOrHandler: RouteConfig | RouteHandler,
+export function withRoute<M extends PermissionModule>(
+  configOrHandler: RouteConfig<M> | RouteHandler,
   maybeHandler?: AuthenticatedHandler
 ): (request: Request, context: { params: any }) => Promise<Response> {
-  // Normalise overloads
-  const config: RouteConfig = typeof configOrHandler === 'function' ? {} : configOrHandler;
+  // Normalise overloads. El cast es inevitable: el tipo del config es generico
+  // en el modulo, y aqui solo se consultan los campos comunes.
+  const config = (typeof configOrHandler === 'function' ? {} : configOrHandler) as RouteConfig;
 
   const handler = (
     typeof configOrHandler === 'function' ? configOrHandler : maybeHandler!
@@ -84,6 +129,13 @@ export function withRoute(
     }
     return value;
   }
+
+  // El compilador garantiza que module y action van juntos: si estan, la ruta
+  // se verifica contra los permisos del rol.
+  const requiredPermission: RoutePermissions | null =
+    'module' in config && config.module
+      ? { module: config.module, action: config.action as string }
+      : null;
 
   return async (request: Request, context: { params: any }): Promise<Response> => {
     try {
@@ -140,9 +192,14 @@ export function withRoute(
         }
         user = authUser;
 
+        // Rutas exclusivas del administrador (diagnostico y mantenimiento)
+        if (config.access === 'administrator' && !isAdministrator(user)) {
+          return ApiResponse.forbidden('Solo el administrador puede acceder a este recurso');
+        }
+
         // Permission check
-        if (config.module && config.action) {
-          if (!hasRequiredPermission(user, config.module, config.action)) {
+        if (requiredPermission) {
+          if (!hasRequiredPermission(user, requiredPermission.module, requiredPermission.action)) {
             return ApiResponse.forbidden('Permisos insuficientes');
           }
         }
@@ -188,7 +245,7 @@ export function withRoute(
         AuditService.log({
           user_id: user.id,
           action: `${request.method} ${url.pathname}`,
-          resource_type: (config.module as string) || 'system',
+          resource_type: requiredPermission?.module ?? 'system',
           ip_address: ip,
           details: { params: await context.params, body }
         }).catch((e: unknown) => logger.captureException(e, { context: 'withRoute:audit' }));
@@ -244,15 +301,15 @@ export function withPublicRoute(
   return withRoute({}, handler);
 }
 
-export function withAuthRoute(
+export function withAuthRoute<M extends PermissionModule>(
   handler: AuthenticatedHandler,
-  permissions?: RoutePermissions
+  permissions: { module: M; action: keyof UserPermissions[M] & string }
 ): (request: Request, context: { params: any }) => Promise<Response> {
   return withRoute(
     {
       auth: true,
-      module: permissions?.module,
-      action: permissions?.action,
+      module: permissions.module,
+      action: permissions.action,
       audit: true
     },
     handler

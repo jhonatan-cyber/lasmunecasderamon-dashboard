@@ -195,7 +195,10 @@ export function useAuthSession({
       }, 3000);
       return;
     }
-    if (payload.type === 'force_logout' && payload.data?.userId === user.id) {
+    if (
+      payload.type === 'force_logout' &&
+      (payload.data?.all === true || payload.data?.userId === user.id)
+    ) {
       doLogout(payload.data.message || 'Ingresa nuevamente para registrar tu asistencia.');
       return;
     }

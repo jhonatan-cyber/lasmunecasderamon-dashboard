@@ -1,4 +1,5 @@
 import { getNowInBusinessTimezone } from '@/lib/business/timezoneService';
+import { buildFrame, type SseEventType, type SseSubscriberContext } from './sseEvents';
 
 interface SSEWriter {
   write(chunk: string): void;
@@ -6,8 +7,15 @@ interface SSEWriter {
   onClose(callback: () => void): void;
 }
 
+/**
+ * Reparte los eventos entre los clientes conectados.
+ *
+ * Cada cliente se registra con su contexto (canal, usuario y rol), y en cada emisión se
+ * consulta `lib/api/sseEvents.ts` para saber si ese evento le corresponde y con qué payload.
+ * Un cliente nunca ve lo que su contexto no autoriza, aunque el evento se emita globalmente.
+ */
 class SSEManager {
-  private clients: Set<SSEWriter> = new Set();
+  private clients: Map<SSEWriter, SseSubscriberContext> = new Map();
   private heartbeatInterval: NodeJS.Timeout | null = null;
 
   constructor() {
@@ -16,12 +24,14 @@ class SSEManager {
     globalInstance.__sseManager = this;
   }
 
-  public registerClient(writer: SSEWriter) {
-    this.clients.add(writer);
+  public registerClient(writer: SSEWriter, context: SseSubscriberContext) {
+    this.clients.set(writer, context);
     this.startHeartbeat();
-    writer.write(
-      `data: ${JSON.stringify({ type: 'connected', timestamp: getNowInBusinessTimezone() })}\n\n`
-    );
+    this.write(writer, {
+      type: 'connected',
+      data: {},
+      timestamp: getNowInBusinessTimezone()
+    });
     writer.onClose(() => this.removeClient(writer));
   }
 
@@ -29,16 +39,26 @@ class SSEManager {
     this.removeClient(writer);
   }
 
-  public broadcast(type: string, data: any = {}) {
-    const message = { type, data, timestamp: getNowInBusinessTimezone() };
-    const payload = `data: ${JSON.stringify(message)}\n\n`;
-    this.clients.forEach(client => {
-      try {
-        client.write(payload);
-      } catch (err) {
-        this.removeClient(client);
-      }
-    });
+  /** Cantidad de clientes conectados (útil para diagnóstico y pruebas). */
+  public get clientCount(): number {
+    return this.clients.size;
+  }
+
+  public broadcast(type: SseEventType, data: any = {}) {
+    const timestamp = getNowInBusinessTimezone();
+    for (const [writer, context] of Array.from(this.clients.entries())) {
+      const frame = buildFrame({ type, data, subscriber: context }, timestamp);
+      if (!frame) continue;
+      this.write(writer, frame);
+    }
+  }
+
+  private write(writer: SSEWriter, payload: string | Record<string, unknown>) {
+    try {
+      writer.write(typeof payload === 'string' ? payload : `data: ${JSON.stringify(payload)}\n\n`);
+    } catch {
+      this.removeClient(writer);
+    }
   }
 
   private removeClient(writer: SSEWriter) {
@@ -57,10 +77,22 @@ class SSEManager {
         this.heartbeatInterval = null;
         return;
       }
-      this.broadcast('ping');
+      const frame = `data: ${JSON.stringify({
+        type: 'ping',
+        data: {},
+        timestamp: getNowInBusinessTimezone()
+      })}\n\n`;
+      for (const writer of Array.from(this.clients.keys())) {
+        this.write(writer, frame);
+      }
     }, 30000);
   }
 }
 
 export const sseManager = new SSEManager();
-export const sendNotificationToAll = (type: string, data: any) => sseManager.broadcast(type, data);
+
+/**
+ * Emite un evento al catálogo. La audiencia se resuelve por evento en `sseEvents.ts`.
+ */
+export const sendNotificationToAll = (type: SseEventType, data: any = {}) =>
+  sseManager.broadcast(type, data);

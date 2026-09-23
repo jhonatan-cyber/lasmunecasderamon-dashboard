@@ -46,6 +46,51 @@ jobs:
       - name: Build
         run: pnpm build
 
+  migrations:
+    name: Migrations (fresh database)
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:18
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres_ci
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd="pg_isready -U postgres"
+          --health-interval=5s
+          --health-timeout=5s
+          --health-retries=10
+    env:
+      DB_HOST: 127.0.0.1
+      DB_PORT: '5432'
+      DB_USER: postgres
+      DB_PASSWORD: postgres_ci
+      DB_NAME: lasmunecasderamon
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          run_install: false
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: pnpm
+
+      - name: Install dependencies
+        run: pnpm install --no-frozen-lockfile
+
+      - name: Migrations drill on a freshly created database
+        run: pnpm db:verify
+
   security:
     runs-on: ubuntu-latest
     steps:
@@ -137,6 +182,9 @@ jobs:
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
+        with:
+          # Historial completo: el gate de paridad lee el volcado del commit base.
+          fetch-depth: 0
 
       - name: Setup pnpm
         uses: pnpm/action-setup@v4
@@ -154,6 +202,15 @@ jobs:
 
       - name: Setup database
         run: node scripts/ci-setup-db.js
+
+      - name: Schema parity (fresh install and existing environment vs reference)
+        shell: bash
+        run: |
+          BASE_REF="${{ github.event.pull_request.base.sha }}"
+          if [ -z "$BASE_REF" ] || [ "$BASE_REF" = "0000000000000000000000000000000000000000" ]; then
+            BASE_REF="$(git rev-parse HEAD^ 2>/dev/null || git rev-parse HEAD)"
+          fi
+          pnpm db:parity --reference "$DB_NAME" --base-ref "$BASE_REF"
 
       - name: PostgreSQL repositories and maintenance
         run: pnpm test:postgres

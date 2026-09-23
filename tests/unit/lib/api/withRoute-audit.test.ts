@@ -63,7 +63,7 @@ describe('withRoute - audit logging', () => {
   });
 
   it('logs audit for POST mutations', async () => {
-    const wrapped = withRoute({ auth: true, audit: true }, okHandler);
+    const wrapped = withRoute({ auth: true, access: 'authenticated', audit: true }, okHandler);
     await wrapped(new Request('http://localhost/test', { method: 'POST' }), { params: {} });
     expect(AuditService.log).toHaveBeenCalledWith(
       expect.objectContaining({ user_id: 'user-1', action: 'POST /test' })
@@ -71,7 +71,7 @@ describe('withRoute - audit logging', () => {
   });
 
   it('skips audit for GET requests', async () => {
-    const wrapped = withRoute({ auth: true, audit: true }, okHandler);
+    const wrapped = withRoute({ auth: true, access: 'authenticated', audit: true }, okHandler);
     await wrapped(new Request('http://localhost/test'), { params: {} });
     expect(AuditService.log).not.toHaveBeenCalled();
   });

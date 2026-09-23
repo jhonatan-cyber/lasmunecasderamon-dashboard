@@ -125,7 +125,9 @@ export class OrderRepository {
       const propinaNormalizada = Number(propina || 0);
       const totalFinal = Number(total || 0);
       const totalBasePedido =
-        totalFinal > subtotalNormalizado + propinaNormalizada ? totalFinal - propinaNormalizada : subtotalNormalizado;
+        totalFinal > subtotalNormalizado + propinaNormalizada
+          ? totalFinal - propinaNormalizada
+          : subtotalNormalizado;
 
       const tieneProductosEspeciales = hasSpecialHostessProducts(detalles);
       let habitacionAutoSeleccionada: string | null = null;
@@ -207,8 +209,15 @@ export class OrderRepository {
 
         // Batch insert detalle_pedidos_anfitrionas (antes D×H queries)
         if (detalleAnfitrionaRows.length > 0) {
-          const columns = ['id_detalle_anfitriona', 'detalle_pedido_id', 'anfitriona_id', 'fecha_crea'];
-          const placeholders = detalleAnfitrionaRows.map(() => `(${columns.map(() => '?').join(', ')})`).join(', ');
+          const columns = [
+            'id_detalle_anfitriona',
+            'detalle_pedido_id',
+            'anfitriona_id',
+            'fecha_crea'
+          ];
+          const placeholders = detalleAnfitrionaRows
+            .map(() => `(${columns.map(() => '?').join(', ')})`)
+            .join(', ');
           const values = detalleAnfitrionaRows.flatMap(row => columns.map(col => row[col]));
           await trx(
             `INSERT INTO detalle_pedidos_anfitrionas (${columns.join(', ')}) VALUES ${placeholders}`,
@@ -226,10 +235,7 @@ export class OrderRepository {
           }));
           const ph = usuarioRows.map(() => `(${cols.map(() => '?').join(', ')})`).join(', ');
           const vals = usuarioRows.flatMap(row => cols.map(col => row[col as keyof typeof row]));
-          await trx(
-            `INSERT INTO pedidos_usuarios (${cols.join(', ')}) VALUES ${ph}`,
-            vals
-          );
+          await trx(`INSERT INTO pedidos_usuarios (${cols.join(', ')}) VALUES ${ph}`, vals);
         }
       });
 
@@ -342,7 +348,19 @@ export class OrderRepository {
         [id]
       );
 
-      return results.length > 0 ? this.mapOrderFromDB(results[0]) : null;
+      if (results.length > 0) {
+        const actualizado = this.mapOrderFromDB(results[0]);
+        // La comanda cambio de estado (servido, entregado...): los tableros y la cola
+        // de pedidos pendientes se refrescan sin esperar el proximo polling.
+        sendNotificationToAll('order_updated', {
+          orderId: id,
+          estado,
+          codigo: actualizado?.codigo ?? null
+        });
+        return actualizado;
+      }
+
+      return null;
     } catch (err) {
       logger.error('[OrderRepository] Error en updateStatus:', { id, err });
       throw new DatabaseError(`Error al actualizar estado del pedido ${id}`, err);

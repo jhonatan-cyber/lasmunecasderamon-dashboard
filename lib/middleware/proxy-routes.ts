@@ -12,12 +12,10 @@ export const PUBLIC_PATHS = [
   ROUTES.CONFIRMAR_GRATIFICACION,
   '/api/auth/login',
   '/api/auth/reset-password',
-  '/api/login',
-  '/api/logout',
+  // '/api/login' y '/api/logout' retirados: rutas muertas (el front usa /api/auth/*).
   '/api/auth/register-first-user',
   '/api/test-auth',
   '/api/health',
-  '/api/reviews/create',
   '/api/whatsapp/webhook',
   '/api/ventas/solicitud-anulacion',
   '/api/ventas/procesar-anulacion',
@@ -25,9 +23,12 @@ export const PUBLIC_PATHS = [
   '/api/servicios/procesar-anulacion',
   '/api/cuentas/solicitud-anulacion',
   '/api/cuentas/procesar-anulacion',
-  '/api/notifications/sse',
   '/api/timers/active',
   '/api/anticipos/solicitud-detalles',
+  // Confirmación de gratificación por enlace de un solo uso (página pública
+  // /confirmar-gratificacion, como sus hermanas de anticipo y anulación).
+  '/api/gratificaciones/solicitud-detalles',
+  '/api/gratificaciones/aprobar',
   // ⚠️ Endpoints protegidos removidos de PUBLIC_PATHS por seguridad
   // '/api/permissions/setup-cajero',
   // '/api/permissions/setup-roles',
@@ -58,12 +59,16 @@ export const PUBLIC_PATHS = [
   '/placeholder.svg'
 ];
 
+// Credencial de dispositivo: la pantalla del local se autentica con su propia cookie
+// (`kiosk_token`, firmada con KIOSK_DEVICE_SECRET), no con una sesión de persona. El
+// middleware deja pasar estas rutas y cada una verifica la credencial; no son públicas
+// y no aceptan una sesión de usuario como sustituto.
+export const KIOSK_DEVICE_APIS = ['/api/kiosk', '/api/notifications/kiosk'];
+
 export const AUTHENTICATED_ONLY_APIS = [
   '/api/codigo',
-  '/api/users/user',
   '/api/users',
   '/api/attendance',
-  '/api/attendance-stats',
   '/api/anticipos',
   '/api/tips',
   '/api/overtime',
@@ -78,7 +83,6 @@ export const AUTHENTICATED_ONLY_APIS = [
   '/api/stats/logged-users',
   '/api/anfitrionas',
   '/api/garzones',
-  '/api/habitaciones',
   '/api/products',
   '/api/categories',
   '/api/clients',

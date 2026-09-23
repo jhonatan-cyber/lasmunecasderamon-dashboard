@@ -75,7 +75,7 @@ describe('withRoute middleware', () => {
 
   describe('auth guard', () => {
     it('returns 401 when auth required but no user', async () => {
-      const wrapped = withRoute({ auth: true }, okHandler);
+      const wrapped = withRoute({ auth: true, access: 'authenticated' }, okHandler);
       await wrapped(new Request('http://localhost/test'), { params: {} });
       expect(ApiResponse.unauthorized).toHaveBeenCalled();
     });
@@ -83,7 +83,7 @@ describe('withRoute middleware', () => {
     it('passes user to handler when authenticated', async () => {
       mockAuthUser = { id: 'user-1', role: 'cajero', permissions: {} };
       const handler = vi.fn().mockResolvedValue(Response.json({ success: true }));
-      const wrapped = withRoute({ auth: true }, handler as any);
+      const wrapped = withRoute({ auth: true, access: 'authenticated' }, handler as any);
       await wrapped(new Request('http://localhost/test'), { params: {} });
       expect(handler).toHaveBeenCalledWith(
         expect.any(Request),
@@ -124,6 +124,33 @@ describe('withRoute middleware', () => {
       };
       const handler = vi.fn().mockResolvedValue(Response.json({ success: true }));
       const wrapped = withRoute({ auth: true, module: 'users', action: 'write' }, handler as any);
+      await wrapped(new Request('http://localhost/test'), { params: {} });
+      expect(handler).toHaveBeenCalled();
+    });
+  });
+
+  describe('admin-only guard', () => {
+    it('rechaza a un rol distinto de administrador', async () => {
+      mockAuthUser = { id: 'user-1', role: 'cajero', permissions: {} };
+      const handler = vi.fn().mockResolvedValue(Response.json({ success: true }));
+      const wrapped = withRoute({ auth: true, access: 'administrator' }, handler as any);
+      await wrapped(new Request('http://localhost/test'), { params: {} });
+      expect(ApiResponse.forbidden).toHaveBeenCalled();
+      expect(handler).not.toHaveBeenCalled();
+    });
+
+    it('permite al administrador', async () => {
+      mockAuthUser = { id: 'admin-1', role: 'administrador', permissions: {} };
+      const handler = vi.fn().mockResolvedValue(Response.json({ success: true }));
+      const wrapped = withRoute({ auth: true, access: 'administrator' }, handler as any);
+      await wrapped(new Request('http://localhost/test'), { params: {} });
+      expect(handler).toHaveBeenCalled();
+    });
+
+    it('deja pasar a cualquier rol en una ruta de sesion', async () => {
+      mockAuthUser = { id: 'user-1', role: 'anfitriona', permissions: {} };
+      const handler = vi.fn().mockResolvedValue(Response.json({ success: true }));
+      const wrapped = withRoute({ auth: true, access: 'authenticated' }, handler as any);
       await wrapped(new Request('http://localhost/test'), { params: {} });
       expect(handler).toHaveBeenCalled();
     });

@@ -6,22 +6,25 @@ import logger from '@/lib/utils/logger';
 
 export const dynamic = 'force-dynamic';
 
-export const GET = withRoute({ auth: true, audit: true }, async (request: Request) => {
-  const { searchParams } = new URL(request.url);
-  const params = {
-    anfitrionas: searchParams.get('anfitrionas') || undefined,
-    search: searchParams.get('search') || undefined,
-    status: searchParams.get('status') || undefined,
-    role: searchParams.get('role') || undefined,
-    loggedIn: searchParams.get('loggedIn') === '1' || searchParams.get('loggedIn') === 'true',
-    enLocal: searchParams.get('enLocal') === '1' || searchParams.get('enLocal') === 'true',
-    limit: searchParams.get('limit') ? parseInt(searchParams.get('limit')!) : undefined,
-    offset: searchParams.get('offset') ? parseInt(searchParams.get('offset')!) : undefined
-  };
+export const GET = withRoute(
+  { auth: true, access: 'authenticated', audit: true },
+  async (request: Request) => {
+    const { searchParams } = new URL(request.url);
+    const params = {
+      anfitrionas: searchParams.get('anfitrionas') || undefined,
+      search: searchParams.get('search') || undefined,
+      status: searchParams.get('status') || undefined,
+      role: searchParams.get('role') || undefined,
+      loggedIn: searchParams.get('loggedIn') === '1' || searchParams.get('loggedIn') === 'true',
+      enLocal: searchParams.get('enLocal') === '1' || searchParams.get('enLocal') === 'true',
+      limit: searchParams.get('limit') ? parseInt(searchParams.get('limit')!) : undefined,
+      offset: searchParams.get('offset') ? parseInt(searchParams.get('offset')!) : undefined
+    };
 
-  const { data, total } = await UserService.getAll(params);
-  return NextResponse.json({ success: true, data, total });
-});
+    const { data, total } = await UserService.getAll(params);
+    return NextResponse.json({ success: true, data, total });
+  }
+);
 
 export const POST = withRoute(
   { auth: true, audit: true, module: 'users', action: 'write' },
@@ -115,7 +118,7 @@ export const PATCH = withRoute(
 );
 
 export const PUT = withRoute(
-  { auth: true, audit: true },
+  { auth: true, access: 'authenticated', audit: true },
   async (request: Request, { user }: { params: any; user: any }) => {
     const contentType = request.headers.get('content-type') || '';
     let body: any;

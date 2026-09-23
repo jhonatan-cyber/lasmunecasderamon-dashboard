@@ -3,7 +3,6 @@ import { getNowInBusinessTimezone } from '@/lib/business/timezoneService';
 import { ProductSchema, type ProductType } from '@/lib/business/schemas';
 import { logger } from '@/lib/utils/logger';
 import { BaseRepository } from './BaseRepository';
-import { BusinessError } from '@/lib/errors/errors';
 import { InventoryRepository } from './InventoryRepository';
 
 export interface NewPresentacion {
@@ -148,20 +147,12 @@ export class ProductRepository {
     foto?: string,
     opts?: { presentacionesNuevas?: NewPresentacion[] }
   ): Promise<ProductType | null> {
-    let managed: any[] = [];
-    try {
-      // Tabla del módulo de inventario/bar (no existe si el módulo no está instalado).
-      managed = await query<any[]>(
-        'SELECT id FROM inventario_presentaciones WHERE producto_bar_id = ?',
-        [id]
-      );
-    } catch {
-      managed = [];
-    }
-    if (managed.length)
-      throw new BusinessError(
-        'Este producto se administra desde Inventario. Define precio y comisión al traspasar al bar.'
-      );
+    // El guard "este producto se administra desde Inventario" consultaba
+    // inventario_presentaciones.producto_bar_id, una columna del diseño viejo
+    // (inventario_productos) que ya no existe: el error lo tragaba el try/catch,
+    // asi que nunca bloqueaba nada. Ademas hoy las presentaciones SE editan
+    // desde el formulario de producto, con lo cual bloquear por tener
+    // presentaciones romperia ese mismo flujo.
     const updateData: any = {
       fecha_mod: getNowInBusinessTimezone()
     };

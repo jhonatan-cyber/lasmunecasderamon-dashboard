@@ -1,4 +1,5 @@
 import { NextResponse } from 'next/server';
+import { withRoute } from '@/lib/api/withRoute';
 import { query, generateUUID } from '@/lib/database/db';
 import logger from '@/lib/utils/logger';
 
@@ -50,7 +51,15 @@ const CAJERO_PERMISSIONS = [
   { module: 'gratificaciones', action: 'create', name: 'Crear gratificaciones' }
 ];
 
-export async function POST() {
+/**
+ * Seed de permisos del rol cajero. Crea permisos faltantes y los asigna.
+ *
+ * Antes no tenía guard: era un endpoint de arranque pensado para correr una vez a mano,
+ * pero cualquiera podía invocarlo y mutar la matriz de permisos del personal. La matriz
+ * ya vive en las migraciones, así que este endpoint es redundante; si se usa, solo el
+ * administrador.
+ */
+export const POST = withRoute({ auth: true, access: 'administrator', audit: true }, async () => {
   try {
     const roles = await query<any[]>(
       `SELECT id_rol FROM roles WHERE LOWER(nombre) = 'cajero' LIMIT 1`
@@ -122,4 +131,4 @@ export async function POST() {
       { status: 500 }
     );
   }
-}
+});

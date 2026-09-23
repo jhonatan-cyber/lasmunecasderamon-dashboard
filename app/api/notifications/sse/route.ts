@@ -1,66 +1,26 @@
-import { sseManager } from '@/lib/api/sseService';
+import { NextResponse } from 'next/server';
+import { getAuth } from '@/lib/auth/auth-app';
+import { createSseStream } from '@/lib/api/sseStream';
 
 export const dynamic = 'force-dynamic';
 
+/**
+ * Stream de eventos del personal. Exige sesión: el rol y el id del usuario se usan para
+ * decidir qué eventos le llegan (ver `lib/api/sseEvents.ts`).
+ */
 export async function GET(request: Request) {
-  const encoder = new TextEncoder();
-  let writerClosed = false;
-  let writer: {
-    write(chunk: string): void;
-    close(): void;
-    onClose(callback: () => void): void;
-  } | null = null;
-  let handleClose: (() => void) | null = null;
+  const user = await getAuth();
 
-  const cleanup = () => {
-    if (writerClosed) return;
-    writerClosed = true;
-    if (writer) {
-      sseManager.unregisterClient(writer);
-    }
-    if (handleClose) {
-      handleClose();
-      handleClose = null;
-    }
-    writer = null;
-  };
+  if (!user) {
+    return NextResponse.json(
+      { success: false, message: 'No autenticado', code: 'NO_TOKEN' },
+      { status: 401 }
+    );
+  }
 
-  const stream = new ReadableStream({
-    start(controller) {
-      writer = {
-        write(chunk: string) {
-          try {
-            controller.enqueue(encoder.encode(chunk));
-          } catch {
-            cleanup();
-          }
-        },
-        close() {
-          try {
-            controller.close();
-          } catch {
-          } finally {
-            cleanup();
-          }
-        },
-        onClose(callback: () => void) {
-          handleClose = callback;
-        }
-      };
-      sseManager.registerClient(writer);
-      request.signal.addEventListener('abort', cleanup, { once: true });
-    },
-    cancel() {
-      cleanup();
-    }
-  });
-
-  return new Response(stream, {
-    headers: {
-      'Content-Type': 'text/event-stream',
-      'Cache-Control': 'no-cache, no-transform',
-      Connection: 'keep-alive',
-      'X-Accel-Buffering': 'no'
-    }
+  return createSseStream(request, {
+    channel: 'staff',
+    userId: user.id,
+    role: user.role
   });
 }

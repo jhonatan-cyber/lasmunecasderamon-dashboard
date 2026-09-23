@@ -1,4 +1,5 @@
 import { query, generateUUID, withTransaction, type TransactionQuery } from '@/lib/database/db';
+import { sendNotificationToAll } from '@/lib/api/sseService';
 import { type SaleType } from '@/lib/business/schemas';
 import { getNowInBusinessTimezone } from '@/lib/business/timezoneService';
 import { RoomManager } from '@/lib/services/RoomManager';
@@ -153,7 +154,10 @@ export class SaleQueries {
         );
       }
     } catch (err) {
-      logger.error('[SaleQueries] Error al registrar devolución:', { ventaId: params.ventaId, err });
+      logger.error('[SaleQueries] Error al registrar devolución:', {
+        ventaId: params.ventaId,
+        err
+      });
       throw new DatabaseError(`Error al registrar devolución para venta ${params.ventaId}`, err);
     }
   }
@@ -212,9 +216,13 @@ export class SaleQueries {
         const currentPrepago = Math.max(0, Math.round(Number(prepagoRows[0]?.total_prepago || 0)));
         const newTotal = Math.max(0, currentTotal - approvedAmount);
         const newPropina =
-          currentTotal > 0 ? Math.max(0, Math.round((currentPropina * newTotal) / currentTotal)) : 0;
+          currentTotal > 0
+            ? Math.max(0, Math.round((currentPropina * newTotal) / currentTotal))
+            : 0;
         const newComision =
-          currentTotal > 0 ? Math.max(0, Math.round((currentComision * newTotal) / currentTotal)) : 0;
+          currentTotal > 0
+            ? Math.max(0, Math.round((currentComision * newTotal) / currentTotal))
+            : 0;
         const newSubTotal = Math.max(0, newTotal - newPropina);
 
         const prepagoAllocation = this.allocateProportionally(
@@ -258,14 +266,22 @@ export class SaleQueries {
 
         if (clienteId && prepagoRefund > 0) {
           await trx('UPDATE clientes SET saldo = saldo + ? WHERE id_cliente = ?', [
-            prepagoRefund, clienteId
+            prepagoRefund,
+            clienteId
           ]);
           await trx(
             `INSERT INTO clientes_prepago_movimientos
              (id_movimiento, cliente_id, tipo, monto, metodo_pago, venta_id, usuario_id, fecha_crea, metadatos)
              VALUES (?, ?, 'DEVOLUCION', ?, 'prepago', ?, ?, ?, ?)`,
-            [generateUUID(), clienteId, prepagoRefund, ventaId, approvedBy || null,
-             getNowInBusinessTimezone(), JSON.stringify({ concepto: `Anulacion parcial venta ${ventaId}` })]
+            [
+              generateUUID(),
+              clienteId,
+              prepagoRefund,
+              ventaId,
+              approvedBy || null,
+              getNowInBusinessTimezone(),
+              JSON.stringify({ concepto: `Anulacion parcial venta ${ventaId}` })
+            ]
           );
         }
 
@@ -284,11 +300,20 @@ export class SaleQueries {
 
         await trx(
           `UPDATE ventas SET total = ?, sub_total = ?, propina = ?, total_comision = ?, pagos_mixtos = ?, estado = ?, fecha_mod = ? WHERE id_venta = ?`,
-          [newTotal, newSubTotal, newPropina, newComision,
-           JSON.stringify(updatedMixedRows.filter(row => Number(row.nextAmount || 0) > 0)
-             .map(row => ({ metodo: row.metodo, monto: Number(row.nextAmount || 0) }))),
-           await this.getVentaStateAfterRequest(trx, ventaId),
-           getNowInBusinessTimezone(), ventaId]
+          [
+            newTotal,
+            newSubTotal,
+            newPropina,
+            newComision,
+            JSON.stringify(
+              updatedMixedRows
+                .filter(row => Number(row.nextAmount || 0) > 0)
+                .map(row => ({ metodo: row.metodo, monto: Number(row.nextAmount || 0) }))
+            ),
+            await this.getVentaStateAfterRequest(trx, ventaId),
+            getNowInBusinessTimezone(),
+            ventaId
+          ]
         );
 
         const detailRows = await trx<VentaRefundDetailRow[]>(
@@ -298,20 +323,37 @@ export class SaleQueries {
         );
 
         await this.registerVentaRefund(trx, {
-          ventaId, clienteId,
+          ventaId,
+          clienteId,
           refundTotal: approvedAmount,
           refundSubTotal: Math.max(0, currentSubTotal - newSubTotal),
           refundComision: Math.max(0, currentComision - newComision),
           detailRows
         });
 
-        const updatedDetailSubtotals = this.allocateProportionally(detailRows, row => row.sub_total, newSubTotal);
-        const updatedDetailComisiones = this.allocateProportionally(detailRows, row => row.comision, newComision);
-        const comisionByDetailId = new Map(updatedDetailComisiones.map(row => [row.id_detalle_venta, Number(row.nextAmount || 0)]));
+        const updatedDetailSubtotals = this.allocateProportionally(
+          detailRows,
+          row => row.sub_total,
+          newSubTotal
+        );
+        const updatedDetailComisiones = this.allocateProportionally(
+          detailRows,
+          row => row.comision,
+          newComision
+        );
+        const comisionByDetailId = new Map(
+          updatedDetailComisiones.map(row => [row.id_detalle_venta, Number(row.nextAmount || 0)])
+        );
 
         for (const row of updatedDetailSubtotals) {
-          await trx('UPDATE detalle_ventas SET sub_total = ?, comision = ? WHERE id_detalle_venta = ?',
-            [Number(row.nextAmount || 0), comisionByDetailId.get(row.id_detalle_venta) || 0, row.id_detalle_venta]);
+          await trx(
+            'UPDATE detalle_ventas SET sub_total = ?, comision = ? WHERE id_detalle_venta = ?',
+            [
+              Number(row.nextAmount || 0),
+              comisionByDetailId.get(row.id_detalle_venta) || 0,
+              row.id_detalle_venta
+            ]
+          );
         }
 
         const comisionRows = await trx<ComisionAnulacionRow[]>(
@@ -321,13 +363,21 @@ export class SaleQueries {
           [ventaId]
         );
 
-        const updatedComisiones = this.allocateProportionally(comisionRows, row => row.comision, newComision);
+        const updatedComisiones = this.allocateProportionally(
+          comisionRows,
+          row => row.comision,
+          newComision
+        );
 
         for (const row of updatedComisiones) {
-          await trx('UPDATE detalle_comisiones SET comision = ? WHERE id_detalle_comision = ?',
-            [Number(row.nextAmount || 0), row.id_detalle_comision]);
-          await trx('UPDATE comisiones SET monto = ? WHERE id_comision = ?',
-            [Number(row.nextAmount || 0), row.id_comision]);
+          await trx('UPDATE detalle_comisiones SET comision = ? WHERE id_detalle_comision = ?', [
+            Number(row.nextAmount || 0),
+            row.id_detalle_comision
+          ]);
+          await trx('UPDATE comisiones SET monto = ? WHERE id_comision = ?', [
+            Number(row.nextAmount || 0),
+            row.id_comision
+          ]);
         }
 
         const propinaHeaderRows = await trx<PropinaHeaderRow[]>(
@@ -341,19 +391,30 @@ export class SaleQueries {
           [ventaId]
         );
 
-        const updatedPropinas = this.allocateProportionally(propinaDetailRows, row => row.monto, newPropina);
+        const updatedPropinas = this.allocateProportionally(
+          propinaDetailRows,
+          row => row.monto,
+          newPropina
+        );
         const propinaByHeaderId = new Map<string, number>();
 
         for (const row of updatedPropinas) {
-          await trx('UPDATE detalle_propinas SET monto = ? WHERE id_detalle_propina = ?',
-            [Number(row.nextAmount || 0), row.id_detalle_propina]);
-          propinaByHeaderId.set(row.propina_id,
-            (propinaByHeaderId.get(row.propina_id) || 0) + Number(row.nextAmount || 0));
+          await trx('UPDATE detalle_propinas SET monto = ? WHERE id_detalle_propina = ?', [
+            Number(row.nextAmount || 0),
+            row.id_detalle_propina
+          ]);
+          propinaByHeaderId.set(
+            row.propina_id,
+            (propinaByHeaderId.get(row.propina_id) || 0) + Number(row.nextAmount || 0)
+          );
         }
 
         for (const header of propinaHeaderRows) {
-          await trx('UPDATE propinas SET propina = ?, fecha_mod = ? WHERE id_propina = ?',
-            [propinaByHeaderId.get(header.id_propina) || 0, getNowInBusinessTimezone(), header.id_propina]);
+          await trx('UPDATE propinas SET propina = ?, fecha_mod = ? WHERE id_propina = ?', [
+            propinaByHeaderId.get(header.id_propina) || 0,
+            getNowInBusinessTimezone(),
+            header.id_propina
+          ]);
         }
 
         if (pedidoId) {
@@ -361,8 +422,12 @@ export class SaleQueries {
         }
 
         const { addVentaLog } = await import('@/lib/utils/logUtils');
-        await addVentaLog(ventaId, 'ANULACION_PARCIAL',
-          `Venta ajustada por anulacion parcial de ${approvedAmount}.`, approvedBy);
+        await addVentaLog(
+          ventaId,
+          'ANULACION_PARCIAL',
+          `Venta ajustada por anulacion parcial de ${approvedAmount}.`,
+          approvedBy
+        );
       });
 
       return this.getById(ventaId);
@@ -470,7 +535,9 @@ export class SaleQueries {
               has_anulacion_solicitada: Boolean(Number(row.has_anulacion_solicitada || 0))
             };
           })
-          .filter((item): item is SaleType & { has_anulacion_solicitada: boolean } => item !== null),
+          .filter(
+            (item): item is SaleType & { has_anulacion_solicitada: boolean } => item !== null
+          ),
         total: count[0]?.count || 0
       };
     } catch (err) {
@@ -504,7 +571,11 @@ export class SaleQueries {
         [generateUUID(), ventaId, usuarioId]
       );
     } catch (err) {
-      logger.error('[SaleQueries] Error al insertar relación usuario-venta:', { ventaId, usuarioId, err });
+      logger.error('[SaleQueries] Error al insertar relación usuario-venta:', {
+        ventaId,
+        usuarioId,
+        err
+      });
       throw new DatabaseError(`Error al asociar usuario a venta ${ventaId}`, err);
     }
   }
@@ -545,13 +616,15 @@ export class SaleQueries {
            FROM detalle_ventas dv
            LEFT JOIN productos p ON p.id_producto = dv.producto_id
            WHERE dv.venta_id = ?
-           ORDER BY dv.id_detalle_venta ASC`, [id]
+           ORDER BY dv.id_detalle_venta ASC`,
+          [id]
         ),
         query<VentaUsuarioDetailRow[]>(
           `SELECT vu.usuario_id, u.nick, u.nombre as usuario_nombre
            FROM ventas_usuarios vu
            LEFT JOIN usuarios u ON u.id_usuario = vu.usuario_id
-           WHERE vu.venta_id = ?`, [id]
+           WHERE vu.venta_id = ?`,
+          [id]
         ),
         query<VentaComisionGroupRow[]>(
           `SELECT u.nick, u.foto, SUM(dv.comision) as monto
@@ -559,7 +632,8 @@ export class SaleQueries {
            JOIN ventas_usuarios vu ON vu.venta_id = dv.venta_id AND vu.usuario_id = dv.hostess_id
            JOIN usuarios u ON u.id_usuario = dv.hostess_id
            WHERE dv.venta_id = ? AND dv.comision > 0
-           GROUP BY dv.hostess_id, u.nick, u.foto`, [id]
+           GROUP BY dv.hostess_id, u.nick, u.foto`,
+          [id]
         ),
         query<VentaPropinaGroupRow[]>(
           `SELECT dp.usuario_id, u.nick, u.nombre, u.apellido, u.foto, SUM(dp.monto) as monto
@@ -568,7 +642,8 @@ export class SaleQueries {
            LEFT JOIN usuarios u ON u.id_usuario = dp.usuario_id
            WHERE p.venta_id = ?
            GROUP BY dp.usuario_id, u.nick, u.nombre, u.apellido, u.foto
-           ORDER BY monto DESC`, [id]
+           ORDER BY monto DESC`,
+          [id]
         )
       ]);
 
@@ -583,22 +658,34 @@ export class SaleQueries {
         habitacion_nombre: res[0].habitacion_nombre,
         total_comision: totalComision,
         comisiones_detalle: comisiones.map(c => ({
-          nick: c.nick, foto: c.foto, monto: Number(c.monto || 0)
+          nick: c.nick,
+          foto: c.foto,
+          monto: Number(c.monto || 0)
         })),
         propinas_detalle: propinas.map(p => ({
-          usuario_id: p.usuario_id, nick: p.nick, nombre: p.nombre,
-          apellido: p.apellido, foto: p.foto, monto: Number(p.monto || 0)
+          usuario_id: p.usuario_id,
+          nick: p.nick,
+          nombre: p.nombre,
+          apellido: p.apellido,
+          foto: p.foto,
+          monto: Number(p.monto || 0)
         })),
         detalles: detalles.map(d => ({
-          id: d.id, venta_id: d.venta_id, producto_id: d.producto_id,
-          precio: Number(d.precio || 0), comision: Number(d.comision || 0),
-          cantidad: Number(d.cantidad || 0), sub_total: Number(d.sub_total || 0),
+          id: d.id,
+          venta_id: d.venta_id,
+          producto_id: d.producto_id,
+          precio: Number(d.precio || 0),
+          comision: Number(d.comision || 0),
+          cantidad: Number(d.cantidad || 0),
+          sub_total: Number(d.sub_total || 0),
           producto_nombre: d.producto_nombre,
           producto_precio: d.producto_precio ? Number(d.producto_precio) : undefined
         })),
         usuarios: usuarios.map(u => ({
-          id: u.usuario_id, usuario_id: u.usuario_id,
-          nick: u.nick, usuario_nombre: u.usuario_nombre
+          id: u.usuario_id,
+          usuario_id: u.usuario_id,
+          nick: u.nick,
+          usuario_nombre: u.usuario_nombre
         }))
       };
     } catch (err) {
@@ -631,11 +718,17 @@ export class SaleQueries {
       const pagosMixtos = this.parseMixedPayments(prev[0].pagos_mixtos);
 
       await withTransaction(async trx => {
-        await BaseRepository.update(trx, this.TABLE, this.ID_COL, id, { estado, fecha_mod: getNowInBusinessTimezone() });
+        await BaseRepository.update(trx, this.TABLE, this.ID_COL, id, {
+          estado,
+          fecha_mod: getNowInBusinessTimezone()
+        });
 
         if (estado === 1 || estado === 0) {
           if (habitacionId) await RoomManager.resumeRoomLogic(trx, habitacionId, undefined, id);
-          const anfsResult = await trx<VentaAnfsRow[]>('SELECT usuario_id FROM ventas_usuarios WHERE venta_id = ?', [id]);
+          const anfsResult = await trx<VentaAnfsRow[]>(
+            'SELECT usuario_id FROM ventas_usuarios WHERE venta_id = ?',
+            [id]
+          );
           const hostessIds = anfsResult.map(a => a.usuario_id);
           await RoomManager.updateHostessServiceStatus(trx, hostessIds, undefined, id);
         }
@@ -646,32 +739,49 @@ export class SaleQueries {
         else if (estado === 0 && estadoAnterior !== 0) {
           const detailRows = await trx<VentaRefundDetailRow[]>(
             `SELECT id_detalle_venta, producto_id, cantidad, precio, sub_total, comision
-             FROM detalle_ventas WHERE venta_id = ? ORDER BY id_detalle_venta ASC`, [id]
+             FROM detalle_ventas WHERE venta_id = ? ORDER BY id_detalle_venta ASC`,
+            [id]
           );
 
           const prepagoMonto = clienteId
-            ? Number((await trx<PrepagoRow[]>(
-                `SELECT COALESCE(SUM(monto), 0) as total_prepago
+            ? Number(
+                (
+                  await trx<PrepagoRow[]>(
+                    `SELECT COALESCE(SUM(monto), 0) as total_prepago
                  FROM clientes_prepago_movimientos
                  WHERE cliente_id = ? AND UPPER(tipo) = 'CONSUMO'
                    AND (venta_id = ? OR (metadatos::jsonb ->> 'venta_id') = ?)`,
-                [clienteId, id, id]
-              ))[0]?.total_prepago || 0)
+                    [clienteId, id, id]
+                  )
+                )[0]?.total_prepago || 0
+              )
             : 0;
 
           if (clienteId && prepagoMonto > 0) {
-            await trx('UPDATE clientes SET saldo = saldo + ? WHERE id_cliente = ?', [prepagoMonto, clienteId]);
+            await trx('UPDATE clientes SET saldo = saldo + ? WHERE id_cliente = ?', [
+              prepagoMonto,
+              clienteId
+            ]);
             await trx(
               `INSERT INTO clientes_prepago_movimientos
                (id_movimiento, cliente_id, tipo, monto, metodo_pago, venta_id, usuario_id, fecha_crea, metadatos)
                VALUES (?, ?, 'DEVOLUCION', ?, 'prepago', ?, ?, ?, ?)`,
-              [generateUUID(), clienteId, prepagoMonto, id, userId || null,
-               getNowInBusinessTimezone(), JSON.stringify({ concepto: `Anulacion venta ${id}` })]
+              [
+                generateUUID(),
+                clienteId,
+                prepagoMonto,
+                id,
+                userId || null,
+                getNowInBusinessTimezone(),
+                JSON.stringify({ concepto: `Anulacion venta ${id}` })
+              ]
             );
           }
 
           if (cajaId) {
-            let efectivo = 0, tarjeta = 0, transferencia = 0;
+            let efectivo = 0,
+              tarjeta = 0,
+              transferencia = 0;
             if (metodoPago === 'mixto') {
               for (const pago of pagosMixtos) {
                 if (pago.metodo === 'efectivo') efectivo += pago.monto;
@@ -685,23 +795,50 @@ export class SaleQueries {
               if (metodoPago === 'transferencia') transferencia = montoMetodoPrincipal;
             }
             await CashRegisterRepository.updateBalances(trx, cajaId, {
-              venta: -(total - propina), efectivo: -efectivo, tarjeta: -tarjeta,
-              transferencia: -transferencia, prepago: -prepagoMonto,
-              propina: -propina, comision: -totalComision, devolucion: total
+              venta: -(total - propina),
+              efectivo: -efectivo,
+              tarjeta: -tarjeta,
+              transferencia: -transferencia,
+              prepago: -prepagoMonto,
+              propina: -propina,
+              comision: -totalComision,
+              devolucion: total
             });
           }
 
           await this.registerVentaRefund(trx, {
-            ventaId: id, clienteId, refundTotal: total,
-            refundSubTotal: subTotal, refundComision: totalComision, detailRows
+            ventaId: id,
+            clienteId,
+            refundTotal: total,
+            refundSubTotal: subTotal,
+            refundComision: totalComision,
+            detailRows
           });
 
           await addVentaLog(id, 'ANULADO', 'Venta anulada manualmente.', userId);
+          // Fuera de la transacción, para no extenderla con I/O de red: si el stream
+          // falla, la anulación ya está confirmada y el evento se pierde sin efecto.
+          // La caja refresca con el monto devuelto ya aplicado.
+          setTimeout(() => {
+            try {
+              sendNotificationToAll('sale_cancelled', {
+                ventaId: id,
+                total,
+                cajaId: cajaId ?? null
+              });
+            } catch (e) {
+              logger.warn('[SaleQueries] No se pudo emitir sale_cancelled', { ventaId: id, e });
+            }
+          }, 0);
           await trx('UPDATE comisiones SET estado = 0 WHERE venta_id = ?', [id]);
           await trx(
-            `UPDATE detalle_comisiones dc SET estado = 0 FROM comisiones c WHERE c.id_comision = dc.comision_id AND c.venta_id = ?`, [id]
+            `UPDATE detalle_comisiones dc SET estado = 0 FROM comisiones c WHERE c.id_comision = dc.comision_id AND c.venta_id = ?`,
+            [id]
           );
-          await trx('DELETE FROM detalle_propinas WHERE propina_id IN (SELECT id_propina FROM propinas WHERE venta_id = ?)', [id]);
+          await trx(
+            'DELETE FROM detalle_propinas WHERE propina_id IN (SELECT id_propina FROM propinas WHERE venta_id = ?)',
+            [id]
+          );
           await trx('DELETE FROM propinas WHERE venta_id = ?', [id]);
           if (pedidoId) await trx('UPDATE pedidos SET estado = 1 WHERE id_pedido = ?', [pedidoId]);
         }
@@ -752,19 +889,30 @@ export class SaleQueries {
       let ventaId: string | null = null;
 
       await withTransaction(async trx => {
-        await trx('UPDATE solicitudes_anulacion_ventas SET estado = ? WHERE id = ?', [nextStatus, requestId]);
+        await trx('UPDATE solicitudes_anulacion_ventas SET estado = ? WHERE id = ?', [
+          nextStatus,
+          requestId
+        ]);
         const req = await trx<SolicitudAnulacionVentaReqRow[]>(
-          'SELECT venta_id FROM solicitudes_anulacion_ventas WHERE id = ?', [requestId]
+          'SELECT venta_id FROM solicitudes_anulacion_ventas WHERE id = ?',
+          [requestId]
         );
         if (req.length > 0) {
           ventaId = req[0].venta_id;
           if (!shouldApprove) {
             const ventaRows = await trx<VentaStateRow[]>(
-              'SELECT habitacion_id, tiempo FROM ventas WHERE id_venta = ?', [ventaId]
+              'SELECT habitacion_id, tiempo FROM ventas WHERE id_venta = ?',
+              [ventaId]
             );
             const nextState =
-              ventaRows.length && ventaRows[0].habitacion_id && Number(ventaRows[0].tiempo || 0) > 0 ? 2 : 1;
-            await trx('UPDATE ventas SET estado = ?, fecha_mod = ? WHERE id_venta = ?', [nextState, now, ventaId]);
+              ventaRows.length && ventaRows[0].habitacion_id && Number(ventaRows[0].tiempo || 0) > 0
+                ? 2
+                : 1;
+            await trx('UPDATE ventas SET estado = ?, fecha_mod = ? WHERE id_venta = ?', [
+              nextState,
+              now,
+              ventaId
+            ]);
           }
         }
       });
@@ -775,7 +923,8 @@ export class SaleQueries {
       }
       if (shouldApprove) {
         const requestRows = await query<SolicitudAnulacionMontoRow[]>(
-          'SELECT monto FROM solicitudes_anulacion_ventas WHERE id = ? LIMIT 1', [requestId]
+          'SELECT monto FROM solicitudes_anulacion_ventas WHERE id = ? LIMIT 1',
+          [requestId]
         );
         const approvedAmount = Number(requestRows[0]?.monto || 0);
         await this.approveAnulacion(ventaId, approvedBy, approvedAmount);

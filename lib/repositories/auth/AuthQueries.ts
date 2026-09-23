@@ -2,7 +2,6 @@ import { query, generateUUID } from '@/lib/database/db';
 import * as argon2 from 'argon2';
 import { generateToken, registrarLogin } from '@/lib/auth/auth';
 import { getSystemTimezone, getNowInBusinessTimezone } from '@/lib/business/timezoneService';
-import crypto from 'crypto';
 import {
   ValidationError,
   NotFoundError,
@@ -210,7 +209,6 @@ async function mapAuthenticatedUser(user: any) {
     phone: user.telefono,
     address: user.direccion,
     estado_civil: user.estado_civil,
-    qr_token: user.qr_token,
     two_factor_enabled: Boolean(user.two_factor_enabled),
     permissions
   };
@@ -228,27 +226,22 @@ function getSystemDateTime() {
   };
 }
 
+/**
+ * Inicio de sesión.
+ *
+ * Solo acepta identificador y contraseña. Antes también aceptaba `qr_token`: una
+ * credencial estática y de vida larga, la misma que /api/public/users publicaba y que
+ * /api/attendance/register usaba para marcar asistencia. Ese token se retiró (024), así
+ * que no queda ningún camino de acceso por posesión de un token.
+ */
 export async function loginUser(
-  creds: { email?: string; password?: string; qr_token?: string; codigo?: string },
+  creds: { email?: string; password?: string; codigo?: string },
   ip?: string
 ) {
   try {
     let user: any = null;
 
-    if (creds.qr_token) {
-      const users = await query<any[]>(
-        `SELECT u.*, r.nombre as rol_nombre FROM usuarios u LEFT JOIN roles r ON u.rol_id = r.id_rol WHERE u.qr_token = ? AND u.estado = 1`,
-        [creds.qr_token]
-      );
-      if (users.length === 0) throw new ValidationError('Código QR no válido o expirado');
-      user = users[0];
-      const nextQR = crypto.randomBytes(16).toString('hex');
-      await query('UPDATE usuarios SET qr_token = ? WHERE id_usuario = ?', [
-        nextQR,
-        user.id_usuario
-      ]);
-      user.qr_token = nextQR;
-    } else if (creds.email && creds.password) {
+    if (creds.email && creds.password) {
       const normalizedIdentifier = String(creds.email).trim();
       const nickIdentifier = normalizedIdentifier.includes('@')
         ? normalizedIdentifier.split('@')[0]
@@ -277,7 +270,7 @@ export async function loginUser(
       if (!isMatch) {
         // 🔒 Alerta de seguridad: contraseña incorrecta
         const userIdentifier = user.email || user.nick || user.id_usuario;
-        if (ip && !creds.qr_token) {
+        if (ip) {
           const { blocked } = await SecurityAlertService.checkFailedLogin(userIdentifier, ip);
           if (blocked) {
             throw new ValidationError(
@@ -288,7 +281,7 @@ export async function loginUser(
         throw new ValidationError('Contraseña incorrecta');
       }
     } else {
-      throw new ValidationError('Proporcione QR o credenciales');
+      throw new ValidationError('Proporcione credenciales');
     }
 
     const { hora, totalMinutos, dateString, timeString } = getSystemDateTime();
@@ -304,7 +297,7 @@ export async function loginUser(
         )
       ).length > 0;
 
-    if (needsCode && !hasAsis && !creds.qr_token && !isCajeroRole) {
+    if (needsCode && !hasAsis && !isCajeroRole) {
       if (!creds.codigo)
         return {
           requiereCodigo: true,
@@ -329,8 +322,8 @@ export async function loginUser(
     // Optimización: registrarLogin fire-and-forget (no bloqueante, tiene try/catch)
     registrarLogin(user.id_usuario, user.rol_nombre).catch(() => {});
 
-    const usedQrOrCodigo = !!(creds.qr_token || creds.codigo);
-    const marksAsis = (isCajeroRole && needsCode) || (needsCode && usedQrOrCodigo);
+    const usoTicketDelLocal = !!creds.codigo;
+    const marksAsis = (isCajeroRole && needsCode) || (needsCode && usoTicketDelLocal);
     let asistenciaRegistrada = false;
     if (marksAsis && !hasAsis) {
       await query(
@@ -345,7 +338,7 @@ export async function loginUser(
         await regenerateAttendanceCode();
       }
       asistenciaRegistrada = true;
-    } else if (usedQrOrCodigo && !marksAsis) {
+    } else if (usoTicketDelLocal && !marksAsis) {
       await query('UPDATE logins SET en_local = 1 WHERE usuario_id = ? AND estado = 1', [
         user.id_usuario
       ]);

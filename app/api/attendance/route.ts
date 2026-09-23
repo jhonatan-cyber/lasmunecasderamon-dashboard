@@ -13,24 +13,27 @@ export const GET = withPublicRoute(async (request: Request) => {
   return NextResponse.json({ success: true, data: data || [] });
 });
 
-export const POST = withRoute({ auth: true, audit: true }, async (request: Request, { user }: { params: any; user: any }) => {
-  const body = await request.json();
-  const { usuario_id, fecha, hora, estado } = body;
+export const POST = withRoute(
+  { auth: true, audit: true, module: 'attendance', action: 'write' },
+  async (request: Request, { user }: { params: any; user: any }) => {
+    const body = await request.json();
+    const { usuario_id, fecha, hora, estado } = body;
 
-  if (!usuario_id) {
-    return NextResponse.json(
-      { success: false, message: 'usuario_id es requerido' },
-      { status: 400 }
-    );
-  }
+    if (!usuario_id) {
+      return NextResponse.json(
+        { success: false, message: 'usuario_id es requerido' },
+        { status: 400 }
+      );
+    }
 
-  try {
-    const result = await AttendanceService.registerManual(usuario_id, fecha, hora, estado, user);
-    return NextResponse.json(result);
-  } catch (error: any) {
-    return NextResponse.json(
-      { success: false, message: error.message || 'Error al registrar asistencia' },
-      { status: 500 }
-    );
+    try {
+      const result = await AttendanceService.registerManual(usuario_id, fecha, hora, estado, user);
+      return NextResponse.json(result);
+    } catch (error: any) {
+      return NextResponse.json(
+        { success: false, message: error.message || 'Error al registrar asistencia' },
+        { status: 500 }
+      );
+    }
   }
-});
+);

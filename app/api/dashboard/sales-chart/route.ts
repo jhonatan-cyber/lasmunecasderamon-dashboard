@@ -3,25 +3,28 @@ import { withRoute } from '@/lib/api/withRoute';
 import { query } from '@/lib/database/db';
 import { DashboardCache, DASHBOARD_CACHE_KEYS, DASHBOARD_TTL } from '@/lib/cache/dashboardCache';
 
-export const GET = withRoute({ auth: true, audit: true }, async () => {
-  const { data } = await DashboardCache.getOrFetch(
-    DASHBOARD_CACHE_KEYS.SALES_CHART,
-    async () => {
-      const result = await query<any[]>(`
+export const GET = withRoute(
+  { auth: true, audit: true, module: 'dashboard', action: 'read' },
+  async () => {
+    const { data } = await DashboardCache.getOrFetch(
+      DASHBOARD_CACHE_KEYS.SALES_CHART,
+      async () => {
+        const result = await query<any[]>(`
         SELECT DATE(fecha_crea) as date, SUM(total) as total, COUNT(*) as count
         FROM ventas
         WHERE fecha_crea >= (CAST(CURRENT_DATE AS timestamp) - make_interval(days => CAST(30 AS integer)))
         GROUP BY DATE(fecha_crea)
         ORDER BY date
       `);
-      return result.map((row: any) => ({
-        date: row.date,
-        total: Number(row.total || 0),
-        count: Number(row.count || 0)
-      }));
-    },
-    DASHBOARD_TTL.SALES_CHART
-  );
+        return result.map((row: any) => ({
+          date: row.date,
+          total: Number(row.total || 0),
+          count: Number(row.count || 0)
+        }));
+      },
+      DASHBOARD_TTL.SALES_CHART
+    );
 
-  return NextResponse.json({ success: true, data });
-});
+    return NextResponse.json({ success: true, data });
+  }
+);

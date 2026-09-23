@@ -26,10 +26,6 @@ export class AttendanceService {
     return await AttendanceRepository.getHoy();
   }
 
-  static async selfRegister(user: { id: string }, ip?: string) {
-    return await AttendanceRepository.selfRegister(user, ip);
-  }
-
   static async registerMasivoHoy(ip?: string) {
     return await AttendanceRepository.registerMasivoHoy(ip);
   }

@@ -16,7 +16,8 @@ export const GET = withPublicRoute(
   }
 );
 
-export const PUT = withRoute({ auth: true, audit: true },
+export const PUT = withRoute(
+  { auth: true, access: 'authenticated', audit: true },
   async (request: Request, { params }: { params: Promise<{ id: string }> }) => {
     const id = (await params).id;
     const body = await request.json();
@@ -30,7 +31,8 @@ export const PUT = withRoute({ auth: true, audit: true },
   }
 );
 
-export const PATCH = withRoute({ auth: true, audit: true },
+export const PATCH = withRoute(
+  { auth: true, access: 'authenticated', audit: true },
   async (request: Request, { params, user }: { params: Promise<{ id: string }>; user: any }) => {
     const id = (await params).id;
     const body = await request.json();
@@ -62,7 +64,7 @@ export const PATCH = withRoute({ auth: true, audit: true },
   }
 );
 
-export const DELETE = withRoute({ auth: true, audit: true }, async () => {
+export const DELETE = withRoute({ auth: true, access: 'authenticated', audit: true }, async () => {
   return NextResponse.json(
     {
       success: false,

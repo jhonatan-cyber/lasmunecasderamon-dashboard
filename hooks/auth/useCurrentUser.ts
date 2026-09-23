@@ -14,7 +14,6 @@ interface CurrentUser {
   phone?: string;
   address?: string;
   fecha_crea?: string;
-  qr_token?: string;
 }
 
 interface UseCurrentUserReturn {

@@ -1,0 +1,14 @@
+-- 025) elimina productos.precio_compra, el precio de compra universal -----------
+-- 007_stock_por_presentacion.sql ya lo habia eliminado: el stock y el costo
+-- viven por presentacion (inventario_presentaciones.precio_compra) y ningun
+-- codigo lee la columna del producto.
+--
+-- La columna sobrevivio en las bases existentes por un bug del ejecutor: el
+-- indice de esquema se memoizaba para toda la corrida, asi que 007 se adoptaba
+-- mirando la foto previa a 005 (que agrega la columna) y su DROP nunca se
+-- ejecutaba. El ejecutor ahora invalida el indice al aplicar cada migracion.
+--
+-- Sin riesgo de datos: NOT NULL DEFAULT 0, sin consumidores en el codigo.
+-- En las instalaciones nuevas esta migracion se adopta sin ejecutar: alla el
+-- DROP de 007 si se ejecuta y la columna ya no existe.
+ALTER TABLE productos DROP COLUMN IF EXISTS precio_compra;

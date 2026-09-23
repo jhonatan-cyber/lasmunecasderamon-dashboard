@@ -4,7 +4,7 @@ import { UserService } from '@/lib/services/UserService';
 import { sendNotificationToAll } from '@/lib/api/sseService';
 
 export const GET = withRoute(
-  { auth: true, audit: true },
+  { auth: true, access: 'authenticated', audit: true },
   async (request: Request, { params }: { params: Promise<{ id: string }> }) => {
     const id = (await params).id;
     const data = await UserService.getById(id);
@@ -18,7 +18,7 @@ export const GET = withRoute(
 );
 
 export const PUT = withRoute(
-  { auth: true, audit: true },
+  { auth: true, audit: true, module: 'users', action: 'write' },
   async (request: Request, { params }: { params: Promise<{ id: string }> }) => {
     const id = (await params).id;
     const body = await request.json();
@@ -29,7 +29,7 @@ export const PUT = withRoute(
 );
 
 export const DELETE = withRoute(
-  { auth: true, audit: true },
+  { auth: true, audit: true, module: 'users', action: 'delete' },
   async (request: Request, { params }: { params: Promise<{ id: string }> }) => {
     const id = (await params).id;
     await UserService.delete(id);

@@ -21,8 +21,9 @@ export const UserSchema = z.object({
   estado: z.coerce.number().optional(),
   estado_servicio: z.coerce.number().optional().default(0),
   created_at: z.string().nullable().optional(),
-  updated_at: z.string().nullable().optional(),
-  qr_token: z.string().nullable().optional(),
+  updated_at: z.string().nullable().optional()
+  // `qr_token` se retiro en la migracion 024: era la credencial personal estatica que
+  // publicaba /api/public/users. El esquema ya no la expone ni la acepta.
 });
 
 export const UserCreateSchema = UserSchema.omit({ id: true });

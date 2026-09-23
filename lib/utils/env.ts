@@ -162,7 +162,16 @@ const envSchema = z.object({
   DB_NAME: z.string().default('lasmunecasderamon'),
   DB_PORT: z.coerce.number().default(5432),
   JWT_SECRET: z.string().min(8, 'JWT_SECRET debe tener al menos 8 caracteres'),
-  JWT_REFRESH_SECRET: z.string().min(8, 'JWT_REFRESH_SECRET debe tener al menos 8 caracteres').default(process.env.JWT_SECRET || ''),
+  JWT_REFRESH_SECRET: z
+    .string()
+    .min(8, 'JWT_REFRESH_SECRET debe tener al menos 8 caracteres')
+    .default(process.env.JWT_SECRET || ''),
+  // Secreto del local para provisionar la pantalla del kiosko. Si falta, el kiosko
+  // responde que no esta configurado en vez de caer en un default inseguro.
+  KIOSK_DEVICE_SECRET: z
+    .string()
+    .min(16, 'KIOSK_DEVICE_SECRET debe tener al menos 16 caracteres')
+    .optional(),
   TWILIO_ACCOUNT_SID: z.string().optional(),
   TWILIO_AUTH_TOKEN: z.string().optional(),
   TWILIO_WHATSAPP_NUMBER: z.string().optional(),

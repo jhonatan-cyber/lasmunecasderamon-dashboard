@@ -13,7 +13,7 @@ export const GET = withPublicRoute(
 );
 
 export const PATCH = withRoute(
-  { auth: true, audit: true },
+  { auth: true, audit: true, module: 'sales', action: 'write' },
   async (request: Request, { params, user }: { params: Promise<{ id: string }>; user: any }) => {
     const id = (await params).id;
     const body = await request.json();

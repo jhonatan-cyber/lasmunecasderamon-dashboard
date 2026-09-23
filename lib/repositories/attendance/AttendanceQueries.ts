@@ -1,6 +1,7 @@
 import { query, generateUUID, withTransaction } from '@/lib/database/db';
 import { getNowInBusinessTimezone } from '@/lib/business/timezoneService';
 import { AttendanceRegisterSchema } from '@/lib/business/schemas';
+import { CHALLENGE_FAILURE_MESSAGES, redeemChallenge } from '@/lib/kiosk/attendanceChallenges';
 import { BaseRepository } from '../BaseRepository';
 import logger from '../../utils/logger';
 import { ValidationError, DatabaseError } from '@/lib/errors/errors';
@@ -89,7 +90,7 @@ export async function getAttendanceStats() {
   }
 }
 
-async function getAttendanceConfigHours(): Promise<{ startHour: number; endHour: number }> {
+export async function getAttendanceConfigHours(): Promise<{ startHour: number; endHour: number }> {
   try {
     const configRows = await query<any[]>(
       "SELECT clave, valor FROM configuraciones WHERE clave IN ('asistencia_hora_inicio', 'asistencia_hora_fin')"
@@ -113,6 +114,20 @@ async function getAttendanceConfigHours(): Promise<{ startHour: number; endHour:
   }
 }
 
+/**
+ * Registra una asistencia a partir de una prueba de presencia verificada en el servidor.
+ *
+ * El unico dato que llega del cliente es `qrData`, y solo hay dos cosas que puede ser:
+ *
+ *  1. Un desafio emitido por una superficie del local (kiosko o pantalla de personal).
+ *     Se canjea una vez, vence a los 120 s y acredita a la persona para la que se emitio.
+ *     Lo puede canjear su dueño, o quien lo emitio desde el mostrador.
+ *  2. El codigo de 4 digitos del local, que se muestra en la pantalla de la entrada y
+ *     rota en cada uso. Acredita a quien tiene la sesion abierta.
+ *
+ * El token personal (`usuarios.qr_token`) ya no se acepta: publicarlo en un endpoint
+ * publico era justamente lo que permitia marcar asistencia ajena desde cualquier lado.
+ */
 export async function registerAttendance(
   body: AttendanceRegisterInput,
   currentUser?: { id: string },
@@ -120,36 +135,43 @@ export async function registerAttendance(
 ) {
   try {
     const { qrData } = AttendanceRegisterSchema.parse(body);
+
+    if (!currentUser) {
+      throw new ValidationError('Necesitas una sesion activa para registrar tu asistencia');
+    }
+
+    const esCodigoDelLocal = /^\d{4}$/.test(qrData);
     let targetUser: any = null;
     let isSystemCode = false;
 
-    if (qrData.length <= 4) {
+    if (esCodigoDelLocal) {
       const codes = await query<any[]>(
         'SELECT codigo FROM codigos WHERE estado = 1 AND codigo = ? LIMIT 1',
         [qrData]
       );
       if (codes.length === 0) throw new ValidationError('Codigo invalido, expirado o ya utilizado');
-      if (!currentUser) throw new ValidationError('Codigo invalido, expirado o ya utilizado');
+
       const logged = await query<any[]>(
         'SELECT id_usuario, nombre, apellido FROM usuarios WHERE id_usuario = ? AND estado = 1',
         [currentUser.id]
       );
-      if (logged.length > 0) {
-        targetUser = logged[0];
-        isSystemCode = true;
-      } else {
+      if (logged.length === 0) {
         throw new ValidationError('Codigo invalido, expirado o ya utilizado');
       }
+      targetUser = logged[0];
+      isSystemCode = true;
     } else {
-      const users = await query<any[]>(
-        'SELECT id_usuario, nombre, apellido FROM usuarios WHERE qr_token = ? AND estado = 1',
-        [qrData]
+      const canje = await redeemChallenge(qrData, String(currentUser.id));
+      if (!canje.ok) throw new ValidationError(CHALLENGE_FAILURE_MESSAGES[canje.motivo]);
+
+      const dueño = await query<any[]>(
+        'SELECT id_usuario, nombre, apellido FROM usuarios WHERE id_usuario = ? AND estado = 1',
+        [canje.usuarioId]
       );
-      if (users.length > 0) {
-        targetUser = users[0];
-      } else {
-        throw new ValidationError('Codigo invalido, expirado o ya utilizado');
+      if (dueño.length === 0) {
+        throw new ValidationError('La persona del codigo ya no esta activa.');
       }
+      targetUser = dueño[0];
     }
 
     if (!targetUser) throw new ValidationError('Codigo invalido, expirado o ya utilizado');
@@ -201,20 +223,8 @@ export async function registerAttendance(
       ...(ipLimpia && { ip_address: ipLimpia })
     });
 
-    // Regenerar el qr_token del usuario para que sea de un solo uso
-    const newQrToken = generateUUID();
-    await query('UPDATE usuarios SET qr_token = ? WHERE id_usuario = ?', [
-      newQrToken,
-      targetUser.id_usuario
-    ]);
-
-    try {
-      const { sendNotificationToAll } = await import('@/lib/api/sseService');
-      sendNotificationToAll('qr_token_updated', { userId: targetUser.id_usuario });
-    } catch (e) {
-      logger.error('Error al notificar actualización de qr_token', e);
-    }
-
+    // El desafio ya quedo consumido por el canje. El codigo del local, en cambio, es
+    // compartido: rota en cada uso para que una foto del codigo no vuelva a servir.
     if (isSystemCode) {
       setTimeout(async () => {
         try {
@@ -395,79 +405,6 @@ export async function registerAttendanceManual(
       err
     });
     throw new DatabaseError(`Error al registrar asistencia manual para usuario ${usuarioId}`, err);
-  }
-}
-
-export async function selfRegisterAttendance(currentUser: { id: string }, ip?: string) {
-  try {
-    const nowStr = getNowInBusinessTimezone();
-    const hour = parseInt(nowStr.substring(11, 13), 10);
-    const fechaHoy = nowStr.substring(0, 10);
-    const ipLimpia = ip?.split(',')[0].trim() || null;
-
-    const existing = await query<any[]>(
-      'SELECT id_asistencia FROM asistencias WHERE usuario_id = ? AND fecha = ?',
-      [currentUser.id, fechaHoy]
-    );
-    const alreadyRegistered = existing.length > 0;
-
-    if (alreadyRegistered) {
-      await BaseRepository.update(query, 'logins', 'usuario_id', currentUser.id, {
-        en_local: 1,
-        ...(ipLimpia && { ip_address: ipLimpia })
-      });
-      return {
-        success: true,
-        alreadyRegistered: true,
-        message: 'Ya tienes asistencia registrada hoy. Ubicación actualizada en el local.'
-      };
-    }
-
-    const { startHour, endHour } = await getAttendanceConfigHours();
-    if (hour < startHour || hour >= endHour) {
-      await BaseRepository.update(query, 'logins', 'usuario_id', currentUser.id, {
-        en_local: 1,
-        ...(ipLimpia && { ip_address: ipLimpia })
-      });
-      return { success: true, tipo: 'login', message: 'Login registrado en el local.' };
-    }
-
-    const timeStr = nowStr.substring(11, 19);
-    const id = generateUUID();
-    await BaseRepository.insert(query, 'asistencias', {
-      id_asistencia: id,
-      usuario_id: currentUser.id,
-      fecha: fechaHoy,
-      hora: timeStr,
-      estado: 1
-    });
-
-    await BaseRepository.update(query, 'logins', 'usuario_id', currentUser.id, {
-      en_local: 1,
-      ...(ipLimpia && { ip_address: ipLimpia })
-    });
-
-    // Regenerar el qr_token del usuario para que sea de un solo uso
-    const newQrToken = generateUUID();
-    await query('UPDATE usuarios SET qr_token = ? WHERE id_usuario = ?', [
-      newQrToken,
-      currentUser.id
-    ]);
-
-    try {
-      const { sendNotificationToAll } = await import('@/lib/api/sseService');
-      sendNotificationToAll('qr_token_updated', { userId: currentUser.id });
-    } catch (e) {
-      logger.error('Error al notificar actualización de qr_token', e);
-    }
-
-    return { success: true, tipo: 'asistencia', message: 'Asistencia registrada correctamente.' };
-  } catch (err) {
-    logger.error('[AttendanceQueries] Error en selfRegisterAttendance:', {
-      userId: currentUser.id,
-      err
-    });
-    throw new DatabaseError('Error al registrar auto-asistencia', err);
   }
 }
 
