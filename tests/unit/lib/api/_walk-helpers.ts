@@ -72,8 +72,8 @@ export type GuardLevel =
 /**
  * Nivel de acceso declarado por el handler, leído del código fuente.
  *
- * `custom-wrapper` cubre composiciones de proyecto sobre withRoute/withPublicRoute
- * (p. ej. `loginLimiterApp`), que se verifican con la lista blanca de la política.
+ * `custom-wrapper` cubre composiciones de proyecto sobre withRoute/withPublicRoute,
+ * que se verifican con la lista blanca de la política.
  */
 export function classifyGuard(method: string, snippet: string): GuardLevel {
   const callMatch = new RegExp(

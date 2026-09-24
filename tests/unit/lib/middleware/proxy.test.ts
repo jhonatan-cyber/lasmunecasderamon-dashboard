@@ -320,6 +320,35 @@ describe('proxy — rutas de kiosko', () => {
 });
 
 describe('proxy — rate limit (producción)', () => {
+  it.each([
+    '/api/auth/login',
+    '/api/auth/refresh',
+    '/api/auth/reset-password',
+    '/api/auth/register-first-user'
+  ])('aplica el límite estricto de credenciales a %s', async pathname => {
+    vi.stubEnv('NODE_ENV', 'production');
+    vi.stubEnv('SKIP_RATE_LIMIT', 'false');
+    mockCheckRateLimit.mockResolvedValue({ allowed: true, limit: 5, remaining: 4, reset: 0 });
+
+    const proxy = await loadProxy();
+    await proxy(createRequest({ pathname, method: 'POST' }));
+
+    expect(mockCheckRateLimit).toHaveBeenCalledTimes(1);
+    expect(mockCheckRateLimit.mock.calls[0][1]).toMatchObject({ prefix: 'login' });
+  });
+
+  it('un POST de API que no es de credenciales usa el límite sensible', async () => {
+    vi.stubEnv('NODE_ENV', 'production');
+    vi.stubEnv('SKIP_RATE_LIMIT', 'false');
+    mockCheckRateLimit.mockResolvedValue({ allowed: true, limit: 30, remaining: 29, reset: 0 });
+
+    const proxy = await loadProxy();
+    await proxy(createRequest({ pathname: '/api/sales', method: 'POST' }));
+
+    expect(mockCheckRateLimit).toHaveBeenCalledTimes(1);
+    expect(mockCheckRateLimit.mock.calls[0][1]).toMatchObject({ prefix: 'sensitive' });
+  });
+
   it('devuelve 429 cuando checkRateLimit no permite', async () => {
     vi.stubEnv('NODE_ENV', 'production');
     vi.stubEnv('SKIP_RATE_LIMIT', 'false');
