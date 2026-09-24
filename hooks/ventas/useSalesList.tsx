@@ -18,7 +18,7 @@ export function useSalesList({ onAnularVenta }: UseSalesListParams) {
   const [anulacionModal, setAnulacionModal] = useState<AnulacionState>({
     open: false,
     ventaId: null,
-    ventaInfo: null,
+    ventaInfo: null
   });
 
   const { hasPermission } = useUserPermissions();
@@ -33,8 +33,8 @@ export function useSalesList({ onAnularVenta }: UseSalesListParams) {
       ventaInfo: {
         codigo: venta.codigo,
         total: venta.total,
-        cliente_nombre: venta.cliente_nombre,
-      },
+        cliente_nombre: venta.cliente_nombre
+      }
     });
   }, []);
 
@@ -55,6 +55,6 @@ export function useSalesList({ onAnularVenta }: UseSalesListParams) {
     canAnular,
     hasAnyAction,
     handleAnularClick,
-    handleConfirmarAnulacion,
+    handleConfirmarAnulacion
   };
 }

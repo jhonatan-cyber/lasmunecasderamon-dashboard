@@ -14,7 +14,7 @@ import Paginate from '@/components/shared/Paginate';
 import { ServicioDetailModal } from '@/components/servicios/ServicioDetailModal';
 import { anfitrionaColors, metodoPagoLabels } from '@/lib/business/salesUtils';
 import { DevolucionHeader } from '@/components/returns/services/DevolucionHeader';
-import { DevolucionFilters } from '@/components/returns/services/DevolucionFilters';
+import { DevolucionFilters } from '@/components/returns/DevolucionFilters';
 import { DevolucionTable } from '@/components/returns/services/DevolucionTable';
 import { AnulacionModal } from '@/components/returns/services/AnulacionModal';
 import logger from '@/lib/utils/logger';

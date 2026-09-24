@@ -77,6 +77,6 @@ export function useClientTable() {
     handleCloseDeleteModal,
     renderRun,
     renderPhone,
-    setDeleteModalOpen,
+    setDeleteModalOpen
   };
 }

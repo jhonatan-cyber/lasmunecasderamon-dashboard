@@ -2,7 +2,7 @@
 
 import { VentaWithDetails } from '@/types/venta';
 import { AnulacionModal } from './AnulacionModal';
-import { useSalesList } from '@/hooks/sales/useSalesList';
+import { useSalesList } from '@/hooks/ventas/useSalesList';
 import { SalesListItem } from './SalesListItem';
 import { SaleCardSkeleton, SalesListEmptyState } from './SalesListEmpty';
 
@@ -35,7 +35,7 @@ export function SalesList({
   anfitrionaColors,
   formatCurrency,
   onVerDetalles,
-  onAnularVenta,
+  onAnularVenta
 }: SalesListProps) {
   const hasFilters = !!(searchTerm || filterStatus !== 'all' || filterMetodoPago !== 'all');
   const {
@@ -45,39 +45,41 @@ export function SalesList({
     canAnular,
     hasAnyAction,
     handleAnularClick,
-    handleConfirmarAnulacion,
+    handleConfirmarAnulacion
   } = useSalesList({ onAnularVenta });
 
   return (
     <>
-      <div className='grid gap-4 grid-cols-1 md:grid-cols-2 xl:grid-cols-3'>              {loading
-          ? Array.from({ length: 6 }).map((_, i) => <SaleCardSkeleton key={i} />)
-          : paginatedVentas.length === 0
-            ? <SalesListEmptyState hasFilters={hasFilters} />
-            : paginatedVentas.map((venta, index) => (
-                <div key={venta.id || index}>
-                  <SalesListItem
-                    venta={venta}
-                    index={index}
-                    statusLabels={statusLabels}
-                    metodoPagoLabels={metodoPagoLabels}
-                    anfitrionaColors={anfitrionaColors}
-                    formatCurrency={formatCurrency}
-                    canViewDetails={canViewDetails}
-                    canAnular={canAnular}
-                    hasAnyAction={hasAnyAction}
-                    onVerDetalles={onVerDetalles}
-                    onAnularClick={handleAnularClick}
-                  />
-                </div>
-              ))}
+      <div className='grid gap-4 grid-cols-1 md:grid-cols-2 xl:grid-cols-3'>
+        {' '}
+        {loading ? (
+          Array.from({ length: 6 }).map((_, i) => <SaleCardSkeleton key={i} />)
+        ) : paginatedVentas.length === 0 ? (
+          <SalesListEmptyState hasFilters={hasFilters} />
+        ) : (
+          paginatedVentas.map((venta, index) => (
+            <div key={venta.id || index}>
+              <SalesListItem
+                venta={venta}
+                index={index}
+                statusLabels={statusLabels}
+                metodoPagoLabels={metodoPagoLabels}
+                anfitrionaColors={anfitrionaColors}
+                formatCurrency={formatCurrency}
+                canViewDetails={canViewDetails}
+                canAnular={canAnular}
+                hasAnyAction={hasAnyAction}
+                onVerDetalles={onVerDetalles}
+                onAnularClick={handleAnularClick}
+              />
+            </div>
+          ))
+        )}
       </div>
 
       <AnulacionModal
         open={anulacionModal.open}
-        onOpenChange={(open: boolean) =>
-          setAnulacionModal((prev: any) => ({ ...prev, open }))
-        }
+        onOpenChange={(open: boolean) => setAnulacionModal((prev: any) => ({ ...prev, open }))}
         onConfirm={handleConfirmarAnulacion}
         ventaInfo={anulacionModal.ventaInfo}
       />

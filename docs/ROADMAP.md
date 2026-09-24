@@ -7,7 +7,7 @@
 | 1. Contención seguridad | Rotar secretos, purgar JWT de boneyard.config.json, quitar password hardcoded, ignorar backups/, añadir .env.example                   | ✅ Hecho (commit `27613a7`) — **falta rotar secretos en prod**                                     |
 | 2. CI que protege       | lint:full real en CI (+ arreglar el error), Prettier check, deploy needs: ci, audit bloqueante, Node 22, unificar scripts/README       | ✅ Hecho (commit `aad425d`) — Node 24, 0 warnings                                                  |
 | 3. Performance UI       | Arreglar deps/memo de TimerContext, memoizar Auth/Sidebar, dynamic-import de recharts en dashboard, virtualizar tablas grandes         | ✅ Hecho — memo completo, recharts lazy, tablas con React.memo (virtualización omitida: paginadas) |
-| 4. Limpieza API/UI      | eliminar espejos dashboard/stats y rutas muertas, fix roles/setup, unificar DevolucionFilters/ConfirmModals, fusionar hooks duplicados | ⬜ Pendiente                                                                                       |
+| 4. Limpieza API/UI      | eliminar espejos dashboard/stats y rutas muertas, fix roles/setup, unificar DevolucionFilters/ConfirmModals, fusionar hooks duplicados | ✅ Hecho — 18 rutas borradas, roles/setup creado, UI unificada, hooks fusionados                   |
 | 5. Datos                | índices audit_logs/error_logs, batch en N+1 críticos, renombrar migraciones 011/014, schemas zod en updates                            | ⬜ Pendiente                                                                                       |
 | 6. A11y/SEO             | aria-live + aria-labels, dark mode, robots.ts/sitemap + noindex admin                                                                  | ⬜ Pendiente                                                                                       |
 | 7. Tests                | tests de proxy.ts, servicios críticos (AuthService, StatsService), e2e de flujo de venta/caja                                          | ⬜ Pendiente                                                                                       |
@@ -61,19 +61,21 @@
 
 ## 🟡 Código / deuda técnica
 
-- Duplicación API: 7 pares espejo `/api/dashboard/*` ↔ `/api/stats/*` (mismo
-  servicio); `/api/debug/slow-queries` ↔ `/api/monitoring/slow-queries`;
-  `/api/caja-stats` triplicado.
-- UI duplicada: `returns/{sales,services}/DevolucionFilters` 93% idénticos; 5
-  `Delete*ConfirmModal` vs `shared/ConfirmModal`; `anfitriona-*` reimplementa lo
-  que `cajero-*`/`garzon-*` resuelven con wrappers.
-- Hooks muertos (4) y ~40 de uso único; carpetas `hooks/clients|clientes` y
-  `hooks/sales|ventas` duplicadas.
+- ✅ Duplicación API: espejos `/api/dashboard/*` ↔ `/api/stats/*`,
+  `debug/slow-queries`, `caja-status` y rutas muertas eliminadas (Fase 4).
+- ✅ UI duplicada: `DevolucionFilters` unificado; 5 `Delete*ConfirmModal` →
+  `shared/DeleteConfirmModal` (Fase 4).
+- `anfitriona-*` reimplementa lo que `cajero-*`/`garzon-*` resuelven con
+  wrappers.
+- ✅ Hooks: carpetas `clients|clientes` y `sales|ventas` fusionadas; hooks
+  muertos de stats borrados (Fase 4).
 - Componentes gigantes: `ProductForm.tsx` (924 líneas), `CommissionsReport`
   (673), `CuentaTable` (588).
-- Endpoints rotos/sin consumidor: `POST /api/roles/setup` la UI la llama pero no
-  existe (`app/roles/page.tsx:41-55`); ~10 rutas API sin llamadores
-  (`cron/check-timers`, `events/*`, `auth/check-permission`…).
+- ✅ `POST /api/roles/setup` creado; rutas sin llamador (`events/*`,
+  `auth/check-permission`) borradas. `cron/check-timers` se mantuvo: es el único
+  emisor de
+  `timer_warning_5m`/`timer_ended_event`/`updateSales`/`check_attendance` (Fase
+  4).
 - Migraciones con prefijos duplicados `011_` y `014_` (orden lexicográfico
   ambiguo).
 - Validación incompleta: `change-password` sin zod;

@@ -4,7 +4,16 @@ import { Client } from '@/types/client';
 import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';
 import React from 'react';
-import { Trash, Pencil, Eye, Phone, User, MoreVertical, Wallet, ArrowDownCircle } from 'lucide-react';
+import {
+  Trash,
+  Pencil,
+  Eye,
+  Phone,
+  User,
+  MoreVertical,
+  Wallet,
+  ArrowDownCircle
+} from 'lucide-react';
 import {
   Table,
   TableBody,
@@ -22,9 +31,9 @@ import {
 } from '@/components/ui/dropdown-menu';
 
 import { Button } from '@/components/ui/button';
-import { DeleteClientConfirmModal } from './DeleteClientConfirmModal';
+import { DeleteConfirmModal } from '@/components/shared/DeleteConfirmModal';
 import { Card, CardContent } from '@/components/ui/card';
-import { useClientTable } from '@/hooks/clients/useClientTable';
+import { useClientTable } from '@/hooks/clientes/useClientTable';
 
 interface ClientTableProps {
   clients: Client[];
@@ -174,7 +183,7 @@ const ClientActionsDropdown = ({
   onEdit,
   onLoadPrepago,
   onDevolucion,
-  handleDeleteClick,
+  handleDeleteClick
 }: ClientActionsDropdownProps) => {
   return (
     <div className='flex justify-center'>
@@ -305,25 +314,49 @@ const DesktopTableView = React.memo(
                 <TableHead className='py-4 px-5 text-xs uppercase text-gray-500'>#</TableHead>
                 <TableHead className='py-4 px-5 text-xs uppercase text-gray-500'>RUN</TableHead>
                 <TableHead className='py-4 px-5 text-xs uppercase text-gray-500'>Nombre</TableHead>
-                <TableHead className='py-4 px-5 text-xs uppercase text-gray-500'>Apellido</TableHead>
-                <TableHead className='py-4 px-5 text-xs uppercase text-gray-500'>Teléfono</TableHead>
+                <TableHead className='py-4 px-5 text-xs uppercase text-gray-500'>
+                  Apellido
+                </TableHead>
+                <TableHead className='py-4 px-5 text-xs uppercase text-gray-500'>
+                  Teléfono
+                </TableHead>
                 <TableHead className='py-4 px-5 text-xs uppercase text-gray-500'>Estado</TableHead>
-                <TableHead className='py-4 px-5 text-xs uppercase text-gray-500'>Saldo Prepago</TableHead>
-                <TableHead className='py-4 px-5 text-xs uppercase text-gray-500'>Acciones</TableHead>
+                <TableHead className='py-4 px-5 text-xs uppercase text-gray-500'>
+                  Saldo Prepago
+                </TableHead>
+                <TableHead className='py-4 px-5 text-xs uppercase text-gray-500'>
+                  Acciones
+                </TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
               {loading
                 ? Array.from({ length: pageSize }).map((_, i) => (
                     <TableRow key={`loading-${i}`}>
-                      <TableCell><Skeleton className='h-4 w-8 mx-auto' /></TableCell>
-                      <TableCell><Skeleton className='h-4 w-16 mx-auto' /></TableCell>
-                      <TableCell><Skeleton className='h-4 w-20 mx-auto' /></TableCell>
-                      <TableCell><Skeleton className='h-4 w-20 mx-auto' /></TableCell>
-                      <TableCell><Skeleton className='h-4 w-24 mx-auto' /></TableCell>
-                      <TableCell><Skeleton className='h-4 w-16 mx-auto' /></TableCell>
-                      <TableCell><Skeleton className='h-4 w-14 mx-auto' /></TableCell>
-                      <TableCell><Skeleton className='h-4 w-16 mx-auto' /></TableCell>
+                      <TableCell>
+                        <Skeleton className='h-4 w-8 mx-auto' />
+                      </TableCell>
+                      <TableCell>
+                        <Skeleton className='h-4 w-16 mx-auto' />
+                      </TableCell>
+                      <TableCell>
+                        <Skeleton className='h-4 w-20 mx-auto' />
+                      </TableCell>
+                      <TableCell>
+                        <Skeleton className='h-4 w-20 mx-auto' />
+                      </TableCell>
+                      <TableCell>
+                        <Skeleton className='h-4 w-24 mx-auto' />
+                      </TableCell>
+                      <TableCell>
+                        <Skeleton className='h-4 w-16 mx-auto' />
+                      </TableCell>
+                      <TableCell>
+                        <Skeleton className='h-4 w-14 mx-auto' />
+                      </TableCell>
+                      <TableCell>
+                        <Skeleton className='h-4 w-16 mx-auto' />
+                      </TableCell>
                     </TableRow>
                   ))
                 : clients.map((client, idx) => (
@@ -336,15 +369,25 @@ const DesktopTableView = React.memo(
                           {(currentPage - 1) * pageSize + idx + 1}
                         </Badge>
                       </TableCell>
-                      <TableCell className='py-3 px-4 text-center'>{renderRun(client.run)}</TableCell>
-                      <TableCell className='py-3 px-4 text-center font-medium'>{client.name}</TableCell>
+                      <TableCell className='py-3 px-4 text-center'>
+                        {renderRun(client.run)}
+                      </TableCell>
+                      <TableCell className='py-3 px-4 text-center font-medium'>
+                        {client.name}
+                      </TableCell>
                       <TableCell className='py-3 px-4 text-center'>{client.lastName}</TableCell>
-                      <TableCell className='py-3 px-4 text-center'>{renderPhone(client.phone)}</TableCell>
+                      <TableCell className='py-3 px-4 text-center'>
+                        {renderPhone(client.phone)}
+                      </TableCell>
                       <TableCell className='py-3 px-4 text-center'>
                         {client.status === 1 ? (
-                          <Badge className='bg-green-100 text-green-700 rounded-full px-3 py-1'>Activo</Badge>
+                          <Badge className='bg-green-100 text-green-700 rounded-full px-3 py-1'>
+                            Activo
+                          </Badge>
                         ) : (
-                          <Badge className='bg-red-200 text-red-600 rounded-full px-3 py-1'>Inactivo</Badge>
+                          <Badge className='bg-red-200 text-red-600 rounded-full px-3 py-1'>
+                            Inactivo
+                          </Badge>
                         )}
                       </TableCell>
                       <TableCell className='py-3 px-4 text-center font-bold text-green-600'>
@@ -400,7 +443,7 @@ export function ClientTable({
     handleConfirmDelete,
     renderRun,
     renderPhone,
-    setDeleteModalOpen,
+    setDeleteModalOpen
   } = useClientTable();
 
   if (!loading && clients.length === 0) {
@@ -452,14 +495,16 @@ export function ClientTable({
         loading={loading || isMutating}
       />
 
-      <DeleteClientConfirmModal
+      <DeleteConfirmModal
         open={deleteModalOpen}
         onOpenChange={setDeleteModalOpen}
         onConfirm={() => {
           const client = handleConfirmDelete();
           if (client) onDelete(client);
         }}
-        clientName={clientToDelete ? `${clientToDelete.name} ${clientToDelete.lastName}` : '---'}
+        entityLabel='cliente'
+        entityValue={clientToDelete ? `${clientToDelete.name} ${clientToDelete.lastName}` : '---'}
+        fieldName='Cliente'
       />
     </div>
   );

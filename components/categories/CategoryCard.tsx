@@ -23,7 +23,7 @@ import {
 import { MoreHorizontal } from 'lucide-react';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { useState } from 'react';
-import { DeleteCategoryConfirmModal } from './DeleteCategoryConfirmModal';
+import { DeleteConfirmModal } from '@/components/shared/DeleteConfirmModal';
 import { CardContainer, CardBody } from '@/components/shared/3d-card';
 import { formatLongDateEs } from '@/lib/utils/calendarUtils';
 
@@ -255,11 +255,13 @@ export default function CategoryCard({
           </div>
         </div>
 
-        <DeleteCategoryConfirmModal
+        <DeleteConfirmModal
           open={showDeleteModal}
           onOpenChange={setShowDeleteModal}
           onConfirm={handleConfirmDelete}
-          categoryName={category.name}
+          entityLabel='categoría'
+          entityValue={category.name}
+          fieldName='Categoría'
           isLoading={isLoading}
         />
       </CardBody>

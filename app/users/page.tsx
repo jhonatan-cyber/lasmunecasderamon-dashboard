@@ -32,7 +32,7 @@ const UserFormModal = dynamic(
   { ssr: false }
 );
 const DeleteUserConfirmModal = dynamic(
-  () => import('@/components/users/DeleteUserConfirmModal').then(m => m.DeleteUserConfirmModal),
+  () => import('@/components/shared/DeleteConfirmModal').then(m => m.DeleteConfirmModal),
   { ssr: false }
 );
 
@@ -230,42 +230,42 @@ export default function Users() {
       </div>
 
       <PermissionGuard module='users' action='view'>
-        <BoneyardSkeleton name="users-main" loading={isLoading}>
-            <UserFilters
-              searchTerm={searchTerm}
-              setSearchTerm={setSearchTerm}
-              filterStatus={filterStatus}
-              setFilterStatus={setFilterStatus}
-              filterRole={filterRole}
-              setFilterRole={setFilterRole}
-              onClearFilters={handleClearFilters}
+        <BoneyardSkeleton name='users-main' loading={isLoading}>
+          <UserFilters
+            searchTerm={searchTerm}
+            setSearchTerm={setSearchTerm}
+            filterStatus={filterStatus}
+            setFilterStatus={setFilterStatus}
+            filterRole={filterRole}
+            setFilterRole={setFilterRole}
+            onClearFilters={handleClearFilters}
+            pageSize={pageSize}
+            setPageSize={setPageSize}
+            setPage={setPage}
+          />
+
+          <div className='mt-6 lg:overflow-x-auto'>
+            <UserTable
+              users={users}
+              onViewDetails={handleViewDetails}
+              onEdit={handleEditUser}
+              onActivate={handleActivateUser}
+              onDeactivate={handleDeactivateUser}
+              onDelete={handleDeleteUser}
+              formatCurrency={formatCurrency}
+              formatDate={formatDate}
+              getRoleBadgeColor={getRoleBadgeColor}
+              currentPage={page}
               pageSize={pageSize}
-              setPageSize={setPageSize}
-              setPage={setPage}
             />
+          </div>
 
-            <div className='mt-6 lg:overflow-x-auto'>
-              <UserTable
-                users={users}
-                onViewDetails={handleViewDetails}
-                onEdit={handleEditUser}
-                onActivate={handleActivateUser}
-                onDeactivate={handleDeactivateUser}
-                onDelete={handleDeleteUser}
-                formatCurrency={formatCurrency}
-                formatDate={formatDate}
-                getRoleBadgeColor={getRoleBadgeColor}
-                currentPage={page}
-                pageSize={pageSize}
-              />
+          {totalPages > 1 && (
+            <div className='flex justify-center mt-6'>
+              <Paginate page={page} totalPages={totalPages} setPage={setPage} />
             </div>
-
-            {totalPages > 1 && (
-              <div className='flex justify-center mt-6'>
-                <Paginate page={page} totalPages={totalPages} setPage={setPage} />
-              </div>
-            )}
-      </BoneyardSkeleton>
+          )}
+        </BoneyardSkeleton>
 
         <UserDetailsModal
           user={selectedUser}
@@ -286,7 +286,9 @@ export default function Users() {
           open={deleteModalOpen}
           onOpenChange={setDeleteModalOpen}
           onConfirm={handleConfirmDelete}
-          userName={userToDelete ? `${userToDelete.name} ${userToDelete.lastName}` : ''}
+          entityLabel='usuario'
+          entityValue={userToDelete ? `${userToDelete.name} ${userToDelete.lastName}` : ''}
+          fieldName='Usuario'
           isLoading={isMutating}
         />
       </PermissionGuard>

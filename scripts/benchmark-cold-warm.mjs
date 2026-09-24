@@ -19,13 +19,6 @@ const BASE_URL = 'http://localhost:3000';
 
 const ENDPOINTS = [
   { name: 'Dashboard Composite',    path: '/api/dashboard/composite' },
-  { name: 'Dashboard Insights',     path: '/api/dashboard/insights' },
-  { name: 'Dashboard Alerts',       path: '/api/dashboard/alerts' },
-  { name: 'Dashboard Pending Items',path: '/api/dashboard/pending-items' },
-  { name: 'Dashboard Sales Chart',  path: '/api/dashboard/sales-chart' },
-  { name: 'Dashboard Stats',        path: '/api/dashboard/stats' },
-  { name: 'Dashboard Recent Activity', path: '/api/dashboard/recent-activity' },
-  { name: 'Dashboard Logged Users', path: '/api/dashboard/logged-users' },
   { name: 'Anticipos List',         path: '/api/anticipos?limit=10' },
   { name: 'Sales List',             path: '/api/sales?limit=10' },
   { name: 'Servicios List',        path: '/api/servicios?limit=10' },

@@ -9,7 +9,7 @@ import {
 } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { RoleForm } from '@/components/roles/RoleForm';
-import { DeleteRoleConfirmModal } from '@/components/roles/DeleteRoleConfirmModal';
+import { DeleteConfirmModal } from '@/components/shared/DeleteConfirmModal';
 import { PermissionsPanel } from '@/components/roles/PermissionsPanel';
 import type { Role } from '@/hooks/personal';
 
@@ -114,11 +114,13 @@ export function RolesDialogs({
         </DialogContent>
       </Dialog>
 
-      <DeleteRoleConfirmModal
+      <DeleteConfirmModal
         open={isConfirmModalOpen}
         onOpenChange={setIsConfirmModalOpen}
         onConfirm={confirmAction}
-        roleName={roleToAction?.name || ''}
+        entityLabel='rol'
+        entityValue={roleToAction?.name || ''}
+        fieldName='Rol'
         action={modalAction}
       />
 

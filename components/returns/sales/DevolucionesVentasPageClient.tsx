@@ -10,7 +10,7 @@ import Paginate from '@/components/shared/Paginate';
 import { SalesDetailModal } from '@/components/sales';
 import { anfitrionaColors, metodoPagoLabels } from '@/lib/business/salesUtils';
 import { DevolucionHeader } from '@/components/returns/sales/DevolucionHeader';
-import { DevolucionFiltersComponent } from '@/components/returns/sales/DevolucionFilters';
+import { DevolucionFilters } from '@/components/returns/DevolucionFilters';
 import { DevolucionTable } from '@/components/returns/sales/DevolucionTable';
 import { DevolucionModal } from '@/components/returns/sales/DevolucionModal';
 import { formatCurrencyCLP } from '@/lib/utils/formatters';
@@ -231,7 +231,7 @@ export function DevolucionesVentasPageClient() {
       {}
       {activeTab === 'anuladas' && (
         <>
-          <DevolucionFiltersComponent
+          <DevolucionFilters
             filters={filters}
             updateFilter={updateFilter}
             clearFilters={clearFilters}

@@ -259,16 +259,13 @@ export function useClientModals() {
     ]
   );
 
-  const openDevolucionModal = useCallback(
-    (client: Client) => {
-      setDevolucionClient(client);
-      setDevolucionAmount('');
-      setDevolucionPaymentMethod('transferencia');
-      setDevolucionMotivo('');
-      setIsDevolucionModalOpen(true);
-    },
-    []
-  );
+  const openDevolucionModal = useCallback((client: Client) => {
+    setDevolucionClient(client);
+    setDevolucionAmount('');
+    setDevolucionPaymentMethod('transferencia');
+    setDevolucionMotivo('');
+    setIsDevolucionModalOpen(true);
+  }, []);
 
   const closeDevolucionModal = useCallback(() => {
     setIsDevolucionModalOpen(false);
@@ -294,8 +291,12 @@ export function useClientModals() {
         toast.error('Saldo insuficiente para la devolucion');
         return false;
       }
-      const isCajero = user?.role?.toLowerCase().includes('cajero') || user?.role?.toLowerCase().includes('cajera');
-      const endpoint = isCajero ? '/api/clients/devolucion/recordatorio' : '/api/clients/devolucion';
+      const isCajero =
+        user?.role?.toLowerCase().includes('cajero') ||
+        user?.role?.toLowerCase().includes('cajera');
+      const endpoint = isCajero
+        ? '/api/clients/devolucion/recordatorio'
+        : '/api/clients/devolucion';
       setDevolucionSubmitting(true);
       try {
         const response = await fetch(endpoint, {
@@ -384,4 +385,3 @@ export function useClientModals() {
     handleDevolucionSubmit
   };
 }
-

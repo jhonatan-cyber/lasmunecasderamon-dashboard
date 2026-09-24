@@ -138,8 +138,6 @@ const SESSION_WRAPPED_POLICY: Record<string, string> = {
   '/api/audit-logs': 'convención legacy: lectura operativa, sesión por middleware',
   '/api/bar/movements': 'convención legacy: lectura operativa, sesión por middleware',
   '/api/bar': 'convención legacy: lectura operativa, sesión por middleware',
-  '/api/caja-status': 'convención legacy: lectura operativa, sesión por middleware',
-  '/api/caja/habitaciones-stats': 'convención legacy: lectura operativa, sesión por middleware',
   '/api/caja/stats': 'convención legacy: lectura operativa, sesión por middleware',
   '/api/caja/ventas-barras': 'convención legacy: lectura operativa, sesión por middleware',
   '/api/caja/ventas-champagne': 'convención legacy: lectura operativa, sesión por middleware',
@@ -157,7 +155,6 @@ const SESSION_WRAPPED_POLICY: Record<string, string> = {
   '/api/cron/check-timers': 'convención legacy: cron interno, sesión por middleware',
   '/api/cuentas/[id]': 'convención legacy: lectura operativa, sesión por middleware',
   '/api/cuentas': 'convención legacy: lectura operativa, sesión por middleware',
-  '/api/events/detail/[id]': 'convención legacy: lectura operativa, sesión por middleware',
   '/api/garzones': 'convención legacy: lectura operativa, sesión por middleware',
   '/api/orders/detail': 'convención legacy: lectura operativa, sesión por middleware',
   '/api/orders': 'convención legacy: lectura operativa, sesión por middleware',
@@ -359,7 +356,7 @@ describe('matriz de autorización de la API', () => {
   });
 
   it('las rutas de administración sensible son access: administrator', () => {
-    for (const route of ['/api/error-logs', '/api/debug/slow-queries', '/api/auth/logs']) {
+    for (const route of ['/api/error-logs', '/api/monitoring/slow-queries', '/api/auth/logs']) {
       const metodos = routeIndex.get(route) ?? [];
       expect(metodos.length, `${route} debería existir`).toBeGreaterThan(0);
       for (const { guard, method } of metodos) {

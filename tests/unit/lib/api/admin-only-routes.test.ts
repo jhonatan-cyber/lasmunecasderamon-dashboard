@@ -44,7 +44,6 @@ vi.mock('@/lib/utils/logger', () => {
 });
 
 import { GET as errorLogsGET } from '@/app/api/error-logs/route';
-import { GET as debugSlowQueriesGET } from '@/app/api/debug/slow-queries/route';
 import { GET as monitoringSlowQueriesGET } from '@/app/api/monitoring/slow-queries/route';
 import { ErrorLogService } from '@/lib/services/ErrorLogService';
 import { QueryLogRepository } from '@/lib/repositories/QueryLogRepository';
@@ -86,20 +85,6 @@ describe('endpoints de diagnostico reservados al administrador', () => {
     const res = await call(errorLogsGET, 'http://localhost/api/error-logs');
     expect(res.status).toBe(200);
     expect(ErrorLogService.getAll).toHaveBeenCalled();
-  });
-
-  it('debug/slow-queries rechaza a un usuario no administrador', async () => {
-    mockAuthUser = cajero;
-    const res = await call(debugSlowQueriesGET, 'http://localhost/api/debug/slow-queries');
-    expect(res.status).toBe(403);
-    expect(QueryLogRepository.getRecent).not.toHaveBeenCalled();
-  });
-
-  it('debug/slow-queries responde al administrador', async () => {
-    mockAuthUser = administrador;
-    const res = await call(debugSlowQueriesGET, 'http://localhost/api/debug/slow-queries');
-    expect(res.status).toBe(200);
-    expect(QueryLogRepository.getRecent).toHaveBeenCalled();
   });
 
   it('monitoring/slow-queries rechaza a un usuario no administrador', async () => {

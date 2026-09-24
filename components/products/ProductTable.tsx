@@ -30,7 +30,7 @@ import {
   TableHeader,
   TableRow
 } from '@/components/ui/table';
-import { DeleteProductConfirmModal } from './DeleteProductConfirmModal';
+import { DeleteConfirmModal } from '@/components/shared/DeleteConfirmModal';
 import { ProductDetailsModal } from './ProductDetailsModal';
 import {
   DndContext,
@@ -430,11 +430,13 @@ const ProductTable: React.FC<ProductTableProps> = ({
         </div>
       </div>
 
-      <DeleteProductConfirmModal
+      <DeleteConfirmModal
         open={deleteModalOpen}
         onOpenChange={setDeleteModalOpen}
         onConfirm={handleConfirmDelete}
-        productName={productToDelete?.name || ''}
+        entityLabel='producto'
+        entityValue={productToDelete?.name || ''}
+        fieldName='Producto'
         isLoading={isMutating}
       />
 

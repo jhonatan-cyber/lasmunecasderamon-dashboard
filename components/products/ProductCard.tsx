@@ -25,7 +25,7 @@ import {
   DropdownMenuTrigger
 } from '@/components/ui/dropdown-menu';
 import { TooltipProvider, Tooltip, TooltipTrigger, TooltipContent } from '@/components/ui/tooltip';
-import { DeleteProductConfirmModal } from './DeleteProductConfirmModal';
+import { DeleteConfirmModal } from '@/components/shared/DeleteConfirmModal';
 import { ProductDetailsModal } from './ProductDetailsModal';
 import { useSortable } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
@@ -270,11 +270,13 @@ const ProductCard: React.FC<ProductCardProps> = ({
         </CardContent>
       </Card>
 
-      <DeleteProductConfirmModal
+      <DeleteConfirmModal
         open={deleteModalOpen}
         onOpenChange={setDeleteModalOpen}
         onConfirm={handleConfirmDelete}
-        productName={product.name}
+        entityLabel='producto'
+        entityValue={product.name}
+        fieldName='Producto'
         isLoading={isLoading}
       />
 

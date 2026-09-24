@@ -23,20 +23,12 @@ const CREDENTIALS = {
 
 const DASHBOARD_ENDPOINTS = [
   '/api/dashboard/composite',
-  '/api/dashboard/insights',
-  '/api/dashboard/alerts',
-  '/api/dashboard/pending-items',
-  '/api/dashboard/sales-chart',
-  '/api/dashboard/stats',
-  '/api/dashboard/recent-activity',
-  '/api/dashboard/logged-users',
   '/api/anticipos?limit=10',
   '/api/sales?limit=10',
   '/api/servicios?limit=10',
   '/api/orders',
   '/api/cashregister?resumen=1',
   '/api/users',
-  '/api/debug/slow-queries',
   '/api/monitoring/slow-queries'
 ];
 

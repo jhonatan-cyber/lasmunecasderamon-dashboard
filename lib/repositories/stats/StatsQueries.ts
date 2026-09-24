@@ -450,8 +450,7 @@ export class StatsQueries {
         minutosAbierta: Number(cajaRow.minutos_abierta || 0)
       };
 
-      // Shape plano: contrato real de /cashregister/status, /caja-status,
-      // /caja/stats, useDashboardBusinessStats y la app móvil (hasOpenCaja).
+      // /caja/stats y la app móvil (hasOpenCaja).
       // Antes el query devolvía solo `cajaActiva` anidado y los endpoints
       // leían campos inexistentes (caja_id, fecha_apertura_raw...), por lo que
       // hasOpenCaja era SIEMPRE false aunque hubiera caja abierta.
