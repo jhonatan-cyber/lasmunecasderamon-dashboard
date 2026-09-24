@@ -23,6 +23,17 @@ export interface PresentacionFormItem {
   fotoUrl: string;
 }
 
+export interface UnidadCodigoItem {
+  id: string;
+  codigo: string;
+  codigo_barras: string | null;
+  compra_folio?: string | null;
+  fecha_crea?: string | null;
+  fecha_impresion?: string | null;
+  presentacion_id?: string | null;
+  estado?: string;
+}
+
 const FOTOS_PERMITIDAS = ['image/jpeg', 'image/jpg', 'image/png', 'image/gif', 'image/webp'];
 const FOTO_MAX_BYTES = 5 * 1024 * 1024;
 

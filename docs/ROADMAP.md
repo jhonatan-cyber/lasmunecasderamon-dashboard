@@ -71,8 +71,9 @@
   `RoleDashboard`; `calendar` → `RoleCalendarPageClient`).
 - ✅ Hooks: carpetas `clients|clientes` y `sales|ventas` fusionadas; hooks
   muertos de stats borrados (Fase 4).
-- Componentes gigantes: `ProductForm.tsx` (924 líneas), `CommissionsReport`
-  (673), `CuentaTable` (588).
+- ✅ Componentes gigantes extraídos: `ProductForm` 985→347 (7 hijos +
+  `useChampagneTiers`), `CommissionsReport` 699→76 (5 hijos), `CuentaTable`
+  689→166 (vistas/modal a archivos).
 - ✅ `POST /api/roles/setup` creado; rutas sin llamador (`events/*`,
   `auth/check-permission`) borradas. `cron/check-timers` se mantuvo: es el único
   emisor de
@@ -102,10 +103,14 @@
 
 - ✅ Fase 7: `proxy.ts` (24 tests: públicas, auth, refresh, CORS, CSRF, kiosko,
   rate-limit, headers seguridad), `AuthService` (14), `StatsService` (16), e2e
-  `venta-caja.spec.ts` (12: UI + guards 401 + APIs). 589 unit tests total.
-- ~555→589 tests unit/pg/e2e, buena matriz de autorización estática… pero 5/399
-  componentes, 0/69 páginas, e2e solo login+venta/caja; 21 servicios sin unit
-  test; `proxy.ts` ahora con test directo ✅.
+  `venta-caja.spec.ts` (12: UI + guards 401 + APIs).
+- ✅ Deuda C: +5 servicios críticos con unit tests — `AccountService` (16),
+  `AttendanceService` (14), `ClientService` (20), `SecurityAlertService` (15),
+  `RoomManager` (18). Servicios cubiertos: 14→19/32. **672 unit tests total**
+  (67 archivos).
+- Resto: 13 servicios aún sin unit (mayormente wrappers finos); e2e solo
+  login+venta/caja (3 specs / 21 tests, smoke); 0 tests de componentes de UI
+  salvo los existentes.
 
 ---
 
