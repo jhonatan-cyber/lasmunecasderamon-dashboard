@@ -46,6 +46,45 @@ jobs:
       - name: Build
         run: pnpm build
 
+  redis:
+    name: Redis (limitador, caché y seguridad)
+    runs-on: ubuntu-latest
+    services:
+      redis:
+        image: redis:7-alpine
+        ports:
+          - 6379:6379
+        options: >-
+          --health-cmd="redis-cli ping"
+          --health-interval=5s
+          --health-timeout=5s
+          --health-retries=10
+    env:
+      JWT_SECRET: ${{ secrets.JWT_SECRET || 'test-secret' }}
+      JWT_REFRESH_SECRET: ${{ secrets.JWT_REFRESH_SECRET || 'test-refresh-secret' }}
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          run_install: false
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: pnpm
+
+      - name: Install dependencies
+        run: pnpm install --no-frozen-lockfile
+
+      # Cada test usa claves temporales con prefijo aleatorio y un relay TCP para
+      # simular cortes: no detienen ni vacían el Redis del servicio.
+      - name: Redis integration tests (limitador, caché, permisos, SSE y seguridad)
+        run: pnpm test:redis
+
   migrations:
     name: Migrations (fresh database)
     runs-on: ubuntu-latest
