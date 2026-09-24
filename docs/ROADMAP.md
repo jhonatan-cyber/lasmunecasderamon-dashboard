@@ -66,8 +66,9 @@
   `debug/slow-queries`, `caja-status` y rutas muertas eliminadas (Fase 4).
 - ✅ UI duplicada: `DevolucionFilters` unificado; 5 `Delete*ConfirmModal` →
   `shared/DeleteConfirmModal` (Fase 4).
-- `anfitriona-*` reimplementa lo que `cajero-*`/`garzon-*` resuelven con
-  wrappers.
+- ✅ `anfitriona-*` reimplementa lo que `cajero-*`/`garzon-*` resuelven con
+  wrappers (`anticipos`/`asistencias` → listas compartidas; `dashboard` →
+  `RoleDashboard`; `calendar` → `RoleCalendarPageClient`).
 - ✅ Hooks: carpetas `clients|clientes` y `sales|ventas` fusionadas; hooks
   muertos de stats borrados (Fase 4).
 - Componentes gigantes: `ProductForm.tsx` (924 líneas), `CommissionsReport`

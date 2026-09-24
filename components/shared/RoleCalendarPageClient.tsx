@@ -2,8 +2,14 @@
 
 import { useCurrentUser } from '@/hooks/auth/useCurrentUser';
 import RoleCalendar from '@/components/shared/RoleCalendar';
+import type { RoleType } from '@/hooks/shared/useRoleCalendar';
 
-export function CajeroCalendarPageClient() {
+interface RoleCalendarPageClientProps {
+  role: RoleType;
+  backLink: string;
+}
+
+export function RoleCalendarPageClient({ role, backLink }: RoleCalendarPageClientProps) {
   const { user, loading } = useCurrentUser();
 
   if (loading) {
@@ -17,7 +23,7 @@ export function CajeroCalendarPageClient() {
     );
   }
 
-  if (user?.role?.toLowerCase() !== 'cajero') {
+  if (user?.role?.toLowerCase() !== role) {
     return (
       <div className='p-6 flex items-center justify-center min-h-screen'>
         <div className='text-center'>
@@ -28,5 +34,5 @@ export function CajeroCalendarPageClient() {
     );
   }
 
-  return <RoleCalendar role='cajero' userId={user?.id} backLink='/' />;
+  return <RoleCalendar role={role} userId={user?.id} backLink={backLink} />;
 }

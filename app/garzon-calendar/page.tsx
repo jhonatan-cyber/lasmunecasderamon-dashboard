@@ -1,10 +1,10 @@
 import { Skeleton as BoneyardSkeleton } from 'boneyard-js/react';
-import { GarzonCalendarPageClient } from '@/components/garzon/GarzonCalendarPageClient';
+import { RoleCalendarPageClient } from '@/components/shared/RoleCalendarPageClient';
 
 export default function GarzonCalendarPage() {
   return (
-    <BoneyardSkeleton name="garzon-calendar-main" loading={false}>
-      <GarzonCalendarPageClient />
+    <BoneyardSkeleton name='garzon-calendar-main' loading={false}>
+      <RoleCalendarPageClient role='garzon' backLink='/garzon-dashboard' />
     </BoneyardSkeleton>
   );
 }

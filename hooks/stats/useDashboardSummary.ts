@@ -4,7 +4,7 @@ import { useQuery } from '@tanstack/react-query';
 import { queryKeys } from '@/lib/api/queryClient';
 import { useDashboardSSE } from './useDashboardSSE';
 
-interface DashboardSummary {
+export interface DashboardSummary {
   totalAsistencias: number;
   totalAnticipos: number;
   totalPropinas: number;

@@ -27,9 +27,10 @@ interface Asistencia {
 
 interface Props {
   allowedRole: string;
+  showHousingSummary?: boolean;
 }
 
-export function AttendanceEmployeeList({ allowedRole }: Props) {
+export function AttendanceEmployeeList({ allowedRole, showHousingSummary = false }: Props) {
   const { user, loading: userLoading } = useCurrentUser();
   const router = useRouter();
   const [asistencias, setAsistencias] = useState<Asistencia[]>([]);
@@ -41,6 +42,9 @@ export function AttendanceEmployeeList({ allowedRole }: Props) {
   const [currentPage, setCurrentPage] = useState(1);
   const [rowsPerPage, setRowsPerPage] = useState(10);
   const [asistenciaFormOpen, setAsistenciaFormOpen] = useState(false);
+  const [housingDiscountTotal, setHousingDiscountTotal] = useState<number>(0);
+  const [weeksWithDiscount, setWeeksWithDiscount] = useState<number>(0);
+  const [discountPerWeek, setDiscountPerWeek] = useState<number>(0);
 
   const fetchAsistencias = async () => {
     setLoading(true);
@@ -53,6 +57,42 @@ export function AttendanceEmployeeList({ allowedRole }: Props) {
       } else {
         logger.error('Error fetching asistencias:', data.message);
       }
+
+      if (showHousingSummary) {
+        try {
+          const resSummary = await fetch('/api/attendance/user');
+          const summary = await resSummary.json();
+          if (
+            resSummary.ok &&
+            summary.success &&
+            Array.isArray(summary.data) &&
+            summary.data.length > 0
+          ) {
+            const row = summary.data[0];
+            setHousingDiscountTotal(Number(row.descuento_total || 0));
+            setDiscountPerWeek(Number(row.descuento || 0));
+
+            const weeks =
+              row.semanas_con_descuento !== undefined && row.semanas_con_descuento !== null
+                ? Number(row.semanas_con_descuento)
+                : Number(row.descuento || 0) > 0
+                  ? Math.round(Number(row.descuento_total || 0) / Number(row.descuento || 0))
+                  : 0;
+            setWeeksWithDiscount(weeks);
+          } else {
+            setHousingDiscountTotal(0);
+            setDiscountPerWeek(0);
+            setWeeksWithDiscount(0);
+          }
+        } catch (error) {
+          logger.captureException(error, {
+            context: 'AttendanceEmployeeList:fetchHousingSummary'
+          });
+          setHousingDiscountTotal(0);
+          setDiscountPerWeek(0);
+          setWeeksWithDiscount(0);
+        }
+      }
     } catch (error) {
       logger.captureException(error, { context: 'AttendanceEmployeeList:fetchAsistencias' });
     } finally {
@@ -64,7 +104,8 @@ export function AttendanceEmployeeList({ allowedRole }: Props) {
     if (user && !userLoading) {
       fetchAsistencias();
     }
-  }, [user, userLoading]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [user, userLoading, showHousingSummary]);
 
   if (userLoading) {
     return (
@@ -132,7 +173,10 @@ export function AttendanceEmployeeList({ allowedRole }: Props) {
     (sum, asistencia) => sum + (asistencia.aporte || 0),
     0
   );
-  const totalToCollect = totalSalary - totalContribution;
+  const totalToCollectBase = totalSalary - totalContribution;
+  const totalToCollect = showHousingSummary
+    ? Math.max(0, totalToCollectBase - (housingDiscountTotal || 0))
+    : totalToCollectBase;
 
   const getStatusBadge = (estado: number) => {
     if (estado === 1) {
@@ -198,11 +242,38 @@ export function AttendanceEmployeeList({ allowedRole }: Props) {
       </div>
 
       {}
-      <div className='text-center'>
-        <p className='text-sm text-gray-500'>TOTAL A COBRAR</p>
-        <p className='text-2xl font-bold text-gray-900 dark:text-white'>
-          {formatCurrencyCLP(totalToCollect)}
-        </p>
+      <div className='text-center space-y-2'>
+        {showHousingSummary && (
+          <div className='flex justify-center gap-8 flex-wrap'>
+            <div>
+              <p className='text-sm text-gray-500'>Total Sueldo:</p>
+              <p className='text-xl font-bold text-gray-900 dark:text-white'>
+                {formatCurrencyCLP(totalSalary)}
+              </p>
+            </div>
+            <div>
+              <p className='text-sm text-gray-500'>Total Aporte:</p>
+              <p className='text-xl font-bold text-gray-900 dark:text-white'>
+                {formatCurrencyCLP(totalContribution)}
+              </p>
+            </div>
+            <div>
+              <p className='text-sm text-gray-500'>Descuento Habitación (semanal):</p>
+              <p className='text-sm text-gray-600 dark:text-gray-400'>
+                Semanas: {weeksWithDiscount} | Monto/semana: {formatCurrencyCLP(discountPerWeek)}
+              </p>
+              <p className='text-xl font-bold text-gray-900 dark:text-white'>
+                {formatCurrencyCLP(housingDiscountTotal)}
+              </p>
+            </div>
+          </div>
+        )}
+        <div>
+          <p className='text-sm text-gray-500'>TOTAL A COBRAR</p>
+          <p className='text-2xl font-bold text-gray-900 dark:text-white'>
+            {formatCurrencyCLP(totalToCollect)}
+          </p>
+        </div>
       </div>
 
       {}
