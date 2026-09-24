@@ -10,7 +10,6 @@ import { TipRepository } from '@/lib/repositories/TipRepository';
 import { RoomManager } from '@/lib/services/RoomManager';
 import { SecurityAlertService } from '@/lib/services/SecurityAlertService';
 import { sendNotificationToAll } from '@/lib/api/sseService';
-import { invalidateDashboardCache } from '@/lib/cache/dashboardCache';
 import { logger } from '@/lib/utils/logger';
 import { BusinessError } from '@/lib/errors/errors';
 import { NotFoundError } from '@/lib/errors/errors';
@@ -359,9 +358,6 @@ export class SaleService {
 
     // SSE notification (no bloquea — broadcast es síncrono en memoria)
     sendNotificationToAll('timers_updated', { timestamp: now });
-
-    // Invalidar caché del dashboard para que los datos frescos se reflejen
-    invalidateDashboardCache({ userId: createdBy });
 
     return result;
   }

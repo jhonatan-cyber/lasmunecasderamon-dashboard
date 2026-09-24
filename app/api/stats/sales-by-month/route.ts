@@ -7,7 +7,7 @@ export const GET = withPublicRoute(async (request: Request) => {
   const { searchParams } = new URL(request.url);
   const offset = parseInt(searchParams.get('offset') || '0');
 
-  const { data: resultData } = await DashboardCache.getOrFetch(
+  const { data: resultData, fromCache } = await DashboardCache.getOrFetch(
     DASHBOARD_CACHE_KEYS.SALES_BY_MONTH(offset),
     async () => {
       const rows: { mes: string; cantidad_ventas: number; total_ventas: number }[] =
@@ -29,5 +29,10 @@ export const GET = withPublicRoute(async (request: Request) => {
     DASHBOARD_TTL.SALES_BY_MONTH
   );
 
-  return NextResponse.json({ success: true, data: resultData });
+  return NextResponse.json(
+    { success: true, data: resultData },
+    {
+      headers: { 'Cache-Control': 'private, no-store', 'X-Cache': fromCache ? 'HIT' : 'MISS' }
+    }
+  );
 });

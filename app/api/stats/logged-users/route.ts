@@ -4,10 +4,15 @@ import { StatsService } from '@/lib/services/StatsService';
 import { DashboardCache, DASHBOARD_CACHE_KEYS, DASHBOARD_TTL } from '@/lib/cache/dashboardCache';
 
 export const GET = withPublicRoute(async () => {
-  const { data } = await DashboardCache.getOrFetch(
+  const { data, fromCache } = await DashboardCache.getOrFetch(
     DASHBOARD_CACHE_KEYS.LOGGED_USERS,
     () => StatsService.getLoggedUsers(),
     DASHBOARD_TTL.LOGGED_USERS
   );
-  return NextResponse.json({ success: true, data });
+  return NextResponse.json(
+    { success: true, data },
+    {
+      headers: { 'Cache-Control': 'private, no-store', 'X-Cache': fromCache ? 'HIT' : 'MISS' }
+    }
+  );
 });

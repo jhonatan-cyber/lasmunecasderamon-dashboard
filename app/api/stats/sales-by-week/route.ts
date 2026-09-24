@@ -17,7 +17,7 @@ export const GET = withPublicRoute(async (request: Request) => {
   const { searchParams } = new URL(request.url);
   const offset = parseInt(searchParams.get('offset') || '0');
 
-  const { data: resultData } = await DashboardCache.getOrFetch(
+  const { data: resultData, fromCache } = await DashboardCache.getOrFetch(
     DASHBOARD_CACHE_KEYS.SALES_BY_WEEK(offset),
     async () => {
       const rows: {
@@ -30,7 +30,12 @@ export const GET = withPublicRoute(async (request: Request) => {
       }[] = await StatsService.getSalesByWeek(offset);
 
       if (rows.length === 0) {
-        return { startDate: '', endDate: '', data: [], summary: { totalVentas: 0, promedioDiario: 0 } };
+        return {
+          startDate: '',
+          endDate: '',
+          data: [],
+          summary: { totalVentas: 0, promedioDiario: 0 }
+        };
       }
 
       const data = rows.map(r => ({
@@ -55,5 +60,10 @@ export const GET = withPublicRoute(async (request: Request) => {
     DASHBOARD_TTL.SALES_BY_WEEK
   );
 
-  return NextResponse.json({ success: true, data: resultData });
+  return NextResponse.json(
+    { success: true, data: resultData },
+    {
+      headers: { 'Cache-Control': 'private, no-store', 'X-Cache': fromCache ? 'HIT' : 'MISS' }
+    }
+  );
 });
