@@ -1,23 +1,18 @@
 'use client';
 
-import React, { useState, useMemo } from "react";
-import { Room } from "@/types/room";
-import { MoreVertical, Edit, Trash2, Check, Power, Bed, GripVertical } from "lucide-react";
-import {
-  TooltipProvider,
-  Tooltip,
-  TooltipTrigger,
-  TooltipContent,
-} from "@/components/ui/tooltip";
-import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
+import React, { useState, useMemo } from 'react';
+import { Room } from '@/types/room';
+import { MoreVertical, Edit, Trash2, Check, Power, Bed, GripVertical } from 'lucide-react';
+import { TooltipProvider, Tooltip, TooltipTrigger, TooltipContent } from '@/components/ui/tooltip';
+import { Button } from '@/components/ui/button';
+import { Badge } from '@/components/ui/badge';
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
-import ConfirmDeleteRoomDialog from "@/components/rooms/ConfirmDeleteRoomDialog";
+  DropdownMenuTrigger
+} from '@/components/ui/dropdown-menu';
+import ConfirmDeleteRoomDialog from '@/components/rooms/ConfirmDeleteRoomDialog';
 import {
   DndContext,
   closestCenter,
@@ -35,7 +30,7 @@ import {
   verticalListSortingStrategy
 } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
-import { formatCurrencyCLP } from "@/lib/utils/formatters";
+import { formatCurrencyCLP } from '@/lib/utils/formatters';
 import {
   Table,
   TableBody,
@@ -43,9 +38,9 @@ import {
   TableHead,
   TableHeader,
   TableRow
-} from "@/components/ui/table";
-import { Card, CardContent } from "@/components/ui/card";
-import { Skeleton } from "@/components/ui/skeleton";
+} from '@/components/ui/table';
+import { Card, CardContent } from '@/components/ui/card';
+import { Skeleton } from '@/components/ui/skeleton';
 
 interface RoomTableProps {
   rooms: Room[];
@@ -69,7 +64,9 @@ interface RoomTableProps {
 const getStatusBadge = (status: number) => {
   switch (status) {
     case 1:
-      return <Badge className='bg-green-100 text-green-700 rounded-full px-3 py-1'>Disponible</Badge>;
+      return (
+        <Badge className='bg-green-100 text-green-700 rounded-full px-3 py-1'>Disponible</Badge>
+      );
     case 2:
       return <Badge className='bg-red-100 text-red-700 rounded-full px-3 py-1'>Ocupada</Badge>;
     default:
@@ -110,19 +107,14 @@ const SortableRow: React.FC<SortableRowProps> = ({
   canOccupy = true,
   canLiberate = true
 }) => {
-  const {
-    attributes,
-    listeners,
-    setNodeRef,
-    transform,
-    transition,
-    isDragging
-  } = useSortable({ id: room.id });
+  const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({
+    id: room.id
+  });
 
   const style = {
     transform: CSS.Transform.toString(transform),
     transition,
-    opacity: isDragging ? 0.5 : 1,
+    opacity: isDragging ? 0.5 : 1
   };
 
   return (
@@ -135,9 +127,9 @@ const SortableRow: React.FC<SortableRowProps> = ({
         <div
           {...attributes}
           {...listeners}
-          className="cursor-grab active:cursor-grabbing inline-flex items-center justify-center hover:bg-gray-100 rounded p-1"
+          className='cursor-grab active:cursor-grabbing inline-flex items-center justify-center hover:bg-gray-100 rounded p-1'
         >
-          <GripVertical className="w-4 h-4 text-gray-400" />
+          <GripVertical className='w-4 h-4 text-gray-400' />
         </div>
       </TableCell>
       <TableCell className='py-3 px-4 text-center'>
@@ -145,27 +137,23 @@ const SortableRow: React.FC<SortableRowProps> = ({
           {absoluteIndex}
         </Badge>
       </TableCell>
-      <TableCell className='py-3 px-4 text-center font-medium'>
-        {room.name}
-      </TableCell>
+      <TableCell className='py-3 px-4 text-center font-medium'>{room.name}</TableCell>
       <TableCell className='py-3 px-4 text-center font-medium'>
         {formatCurrencyCLP(room.price)}
       </TableCell>
       <TableCell className='py-3 px-4 text-center'>
-        <span className="text-gray-600">{room.time} min</span>
+        <span className='text-gray-600'>{room.time} min</span>
       </TableCell>
       <TableCell className='py-3 px-4 text-center'>
         {room.comision_anfitriona ? (
-          <span className="text-gray-600">{formatCurrencyCLP(room.comision_anfitriona)}</span>
+          <span className='text-gray-600'>{formatCurrencyCLP(room.comision_anfitriona)}</span>
         ) : (
-          <span className="text-gray-400 italic text-sm">sin comisión</span>
+          <span className='text-gray-400 italic text-sm'>sin comisión</span>
         )}
       </TableCell>
+      <TableCell className='py-3 px-4 text-center'>{getStatusBadge(room.status)}</TableCell>
       <TableCell className='py-3 px-4 text-center'>
-        {getStatusBadge(room.status)}
-      </TableCell>
-      <TableCell className='py-3 px-4 text-center'>
-        {(canEdit || canDelete || canActivate || canDeactivate || canOccupy || canLiberate) ? (
+        {canEdit || canDelete || canActivate || canDeactivate || canOccupy || canLiberate ? (
           <DropdownMenu>
             <Tooltip>
               <TooltipTrigger asChild>
@@ -173,13 +161,16 @@ const SortableRow: React.FC<SortableRowProps> = ({
                   <Button
                     variant='ghost'
                     size='icon'
+                    aria-label='Más acciones'
                     className='bg-white hover:bg-gray-200 dark:bg-gray-800 dark:hover:bg-gray-700 rounded-full hover:scale-105 transition-all duration-200'
                   >
                     <MoreVertical className='h-4 w-4' />
                   </Button>
                 </DropdownMenuTrigger>
               </TooltipTrigger>
-              <TooltipContent><p>Acciones</p></TooltipContent>
+              <TooltipContent>
+                <p>Acciones</p>
+              </TooltipContent>
             </Tooltip>
             <DropdownMenuContent align='end'>
               {canEdit && (
@@ -189,7 +180,9 @@ const SortableRow: React.FC<SortableRowProps> = ({
                       <Edit className='mr-2 h-4 w-4 text-purple-600' /> Editar
                     </DropdownMenuItem>
                   </TooltipTrigger>
-                  <TooltipContent side='left'><p>Editar habitación</p></TooltipContent>
+                  <TooltipContent side='left'>
+                    <p>Editar habitación</p>
+                  </TooltipContent>
                 </Tooltip>
               )}
               {room.status === 0 && canActivate ? (
@@ -199,7 +192,9 @@ const SortableRow: React.FC<SortableRowProps> = ({
                       <Check className='mr-2 h-4 w-4 text-green-600' /> Activar
                     </DropdownMenuItem>
                   </TooltipTrigger>
-                  <TooltipContent side='left'><p>Activar habitación</p></TooltipContent>
+                  <TooltipContent side='left'>
+                    <p>Activar habitación</p>
+                  </TooltipContent>
                 </Tooltip>
               ) : room.status === 1 ? (
                 <>
@@ -210,7 +205,9 @@ const SortableRow: React.FC<SortableRowProps> = ({
                           <Bed className='mr-2 h-4 w-4 text-blue-600' /> Ocupar
                         </DropdownMenuItem>
                       </TooltipTrigger>
-                      <TooltipContent side='left'><p>Ocupar habitación</p></TooltipContent>
+                      <TooltipContent side='left'>
+                        <p>Ocupar habitación</p>
+                      </TooltipContent>
                     </Tooltip>
                   )}
                   {canDeactivate && (
@@ -220,7 +217,9 @@ const SortableRow: React.FC<SortableRowProps> = ({
                           <Power className='mr-2 h-4 w-4 text-orange-600' /> Desactivar
                         </DropdownMenuItem>
                       </TooltipTrigger>
-                      <TooltipContent side='left'><p>Desactivar habitación</p></TooltipContent>
+                      <TooltipContent side='left'>
+                        <p>Desactivar habitación</p>
+                      </TooltipContent>
                     </Tooltip>
                   )}
                 </>
@@ -231,7 +230,9 @@ const SortableRow: React.FC<SortableRowProps> = ({
                       <Check className='mr-2 h-4 w-4 text-green-600' /> Liberar
                     </DropdownMenuItem>
                   </TooltipTrigger>
-                  <TooltipContent side='left'><p>Liberar habitación</p></TooltipContent>
+                  <TooltipContent side='left'>
+                    <p>Liberar habitación</p>
+                  </TooltipContent>
                 </Tooltip>
               ) : null}
               {canDelete && (
@@ -247,7 +248,9 @@ const SortableRow: React.FC<SortableRowProps> = ({
                       <Trash2 className='mr-2 h-4 w-4' /> Eliminar
                     </DropdownMenuItem>
                   </TooltipTrigger>
-                  <TooltipContent side='left'><p>Eliminar habitación</p></TooltipContent>
+                  <TooltipContent side='left'>
+                    <p>Eliminar habitación</p>
+                  </TooltipContent>
                 </Tooltip>
               )}
             </DropdownMenuContent>
@@ -289,11 +292,11 @@ const RoomTable: React.FC<RoomTableProps> = ({
   const sensors = useSensors(
     useSensor(PointerSensor, {
       activationConstraint: {
-        distance: 8,
-      },
+        distance: 8
+      }
     }),
     useSensor(KeyboardSensor, {
-      coordinateGetter: sortableKeyboardCoordinates,
+      coordinateGetter: sortableKeyboardCoordinates
     })
   );
 
@@ -301,8 +304,8 @@ const RoomTable: React.FC<RoomTableProps> = ({
     const { active, over } = event;
 
     if (over && active.id !== over.id) {
-      const oldIndex = localRooms.findIndex((r) => r.id === active.id);
-      const newIndex = localRooms.findIndex((r) => r.id === over.id);
+      const oldIndex = localRooms.findIndex(r => r.id === active.id);
+      const newIndex = localRooms.findIndex(r => r.id === over.id);
 
       const newRooms = arrayMove(localRooms, oldIndex, newIndex);
       setLocalRooms(newRooms);
@@ -328,12 +331,24 @@ const RoomTable: React.FC<RoomTableProps> = ({
                   <TableRow className='hover:bg-transparent border-gray-100 dark:border-gray-800'>
                     <TableHead className='py-4 px-5 text-xs uppercase text-gray-500 w-12'></TableHead>
                     <TableHead className='py-4 px-5 text-xs uppercase text-gray-500'>#</TableHead>
-                    <TableHead className='py-4 px-5 text-xs uppercase text-gray-500'>Nombre</TableHead>
-                    <TableHead className='py-4 px-5 text-xs uppercase text-gray-500'>Precio</TableHead>
-                    <TableHead className='py-4 px-5 text-xs uppercase text-gray-500'>Tiempo</TableHead>
-                    <TableHead className='py-4 px-5 text-xs uppercase text-gray-500'>Comisión</TableHead>
-                    <TableHead className='py-4 px-5 text-xs uppercase text-gray-500'>Estado</TableHead>
-                    <TableHead className='py-4 px-5 text-xs uppercase text-gray-500'>Acciones</TableHead>
+                    <TableHead className='py-4 px-5 text-xs uppercase text-gray-500'>
+                      Nombre
+                    </TableHead>
+                    <TableHead className='py-4 px-5 text-xs uppercase text-gray-500'>
+                      Precio
+                    </TableHead>
+                    <TableHead className='py-4 px-5 text-xs uppercase text-gray-500'>
+                      Tiempo
+                    </TableHead>
+                    <TableHead className='py-4 px-5 text-xs uppercase text-gray-500'>
+                      Comisión
+                    </TableHead>
+                    <TableHead className='py-4 px-5 text-xs uppercase text-gray-500'>
+                      Estado
+                    </TableHead>
+                    <TableHead className='py-4 px-5 text-xs uppercase text-gray-500'>
+                      Acciones
+                    </TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
@@ -379,7 +394,7 @@ const RoomTable: React.FC<RoomTableProps> = ({
         open={confirmOpen}
         room={roomToDelete}
         onOpenChange={setConfirmOpen}
-        onConfirm={(room) => onDelete(room)}
+        onConfirm={room => onDelete(room)}
         isLoading={isMutating}
       />
     </TooltipProvider>

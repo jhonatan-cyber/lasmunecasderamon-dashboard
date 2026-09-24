@@ -150,13 +150,13 @@ export default function GarzonPedidosPage() {
         );
       case 3:
         return (
-          <span className='inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-800'>
+          <span className='inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-800 dark:bg-gray-800 dark:text-gray-100'>
             Cancelado
           </span>
         );
       default:
         return (
-          <span className='inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-800'>
+          <span className='inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-800 dark:bg-gray-800 dark:text-gray-100'>
             Desconocido
           </span>
         );
@@ -190,7 +190,9 @@ export default function GarzonPedidosPage() {
       {}
       <div className='flex items-center justify-between gap-2 flex-wrap'>
         <div>
-          <h1 className='text-xl sm:text-2xl font-bold text-gray-900'>Listado de Pedidos</h1>
+          <h1 className='text-xl sm:text-2xl font-bold text-gray-900 dark:text-white'>
+            Listado de Pedidos
+          </h1>
           <p className='text-gray-600'>
             Pedidos realizados por {user?.name} {user?.lastName}
           </p>
@@ -288,28 +290,32 @@ export default function GarzonPedidosPage() {
                         </div>
                       </td>
                       <td className='px-6 py-4 whitespace-nowrap'>
-                        <div className='text-sm font-medium text-gray-900'>
+                        <div className='text-sm font-medium text-gray-900 dark:text-gray-100'>
                           {order.codigo || 'N/A'}
                         </div>
                       </td>
                       <td className='px-6 py-4 whitespace-nowrap'>
-                        <div className='text-sm font-medium text-gray-900'>
+                        <div className='text-sm font-medium text-gray-900 dark:text-gray-100'>
                           {order.cliente_nombre || 'N/A'}
                         </div>
                       </td>
                       <td className='px-6 py-4 whitespace-nowrap'>
-                        <div className='text-sm text-gray-900'>{order.mesero_nombre || 'N/A'}</div>
+                        <div className='text-sm text-gray-900 dark:text-gray-100'>
+                          {order.mesero_nombre || 'N/A'}
+                        </div>
                       </td>
                       <td className='px-6 py-4 whitespace-nowrap'>
-                        <div className='text-sm text-gray-900'>{order.nicks || 'N/A'}</div>
+                        <div className='text-sm text-gray-900 dark:text-gray-100'>
+                          {order.nicks || 'N/A'}
+                        </div>
                       </td>
                       <td className='px-6 py-4 whitespace-nowrap'>
-                        <div className='text-sm font-medium text-gray-900'>
+                        <div className='text-sm font-medium text-gray-900 dark:text-gray-100'>
                           {formatCurrencyCLP(order.subtotal || 0)}
                         </div>
                       </td>
                       <td className='px-6 py-4 whitespace-nowrap'>
-                        <div className='text-sm font-medium text-gray-900'>
+                        <div className='text-sm font-medium text-gray-900 dark:text-gray-100'>
                           {formatCurrencyCLP(order.total || 0)}
                         </div>
                       </td>
@@ -329,7 +335,7 @@ export default function GarzonPedidosPage() {
       {filteredOrders.length > 0 && (
         <div className='flex flex-col sm:flex-row items-center justify-between gap-4'>
           <div className='flex items-center gap-2'>
-            <span className='text-sm text-gray-700'>Mostrar</span>
+            <span className='text-sm text-gray-700 dark:text-gray-200'>Mostrar</span>
             <SelectElements
               value={rowsPerPage}
               onChange={value => {
@@ -338,7 +344,7 @@ export default function GarzonPedidosPage() {
               }}
               options={[5, 10, 20, 50]}
             />
-            <span className='text-sm text-gray-700'>por página</span>
+            <span className='text-sm text-gray-700 dark:text-gray-200'>por página</span>
           </div>
 
           <div className='flex justify-center'>

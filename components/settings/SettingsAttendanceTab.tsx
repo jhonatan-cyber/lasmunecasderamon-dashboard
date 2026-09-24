@@ -100,11 +100,15 @@ export function SettingsAttendanceTab() {
           <div className='space-y-6 max-w-2xl'>
             <div className='grid grid-cols-1 md:grid-cols-2 gap-6'>
               <div className='space-y-2'>
-                <label className='block text-sm font-medium text-neutral-700 dark:text-neutral-300'>
+                <label
+                  htmlFor='attendance-hora-inicio'
+                  className='block text-sm font-medium text-neutral-700 dark:text-neutral-300'
+                >
                   Hora de Inicio (Entrada)
                 </label>
                 <div className='relative'>
                   <select
+                    id='attendance-hora-inicio'
                     value={config.asistencia_hora_inicio}
                     onChange={e =>
                       setConfig(prev => ({
@@ -131,11 +135,15 @@ export function SettingsAttendanceTab() {
               </div>
 
               <div className='space-y-2'>
-                <label className='block text-sm font-medium text-neutral-700 dark:text-neutral-300'>
+                <label
+                  htmlFor='attendance-hora-fin'
+                  className='block text-sm font-medium text-neutral-700 dark:text-neutral-300'
+                >
                   Hora de Fin (Salida/Corte)
                 </label>
                 <div className='relative'>
                   <select
+                    id='attendance-hora-fin'
                     value={config.asistencia_hora_fin}
                     onChange={e =>
                       setConfig(prev => ({ ...prev, asistencia_hora_fin: Number(e.target.value) }))

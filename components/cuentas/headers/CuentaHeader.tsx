@@ -30,7 +30,7 @@ export function CuentaHeader({}: CuentaHeaderProps = {}) {
           <TooltipProvider>
             <Tooltip>
               <TooltipTrigger asChild>
-                <span tabIndex={0}>
+                <span>
                   <Button
                     onClick={() => router.push('/accounts/new')}
                     disabled={disabled}

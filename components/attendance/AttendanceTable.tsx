@@ -95,7 +95,9 @@ export default function AttendanceTable({ data }: AttendanceTableProps) {
             <Calendar className='w-8 h-8 text-gray-400' />
           </div>
           <div>
-            <h3 className='text-lg font-medium text-gray-900 mb-2'>No hay asistencias</h3>
+            <h3 className='text-lg font-medium text-gray-900 dark:text-white mb-2'>
+              No hay asistencias
+            </h3>
             <p className='text-sm text-gray-500'>
               No se encontraron registros de asistencia para mostrar
             </p>

@@ -6,7 +6,14 @@ import { Checkbox } from '@/components/ui/checkbox';
 import { Label } from '@/components/ui/label';
 import { Input } from '@/components/ui/input';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
-import { ORDER_FIELD_LABEL_CLASS, ORDER_FIELD_POPOVER_CLASS, ORDER_FIELD_SEARCH_INPUT_CLASS, ORDER_FIELD_SEARCH_WRAPPER_CLASS, ORDER_MULTISELECT_TRIGGER_CLASS, ORDER_SELECTED_TAG_CLASS } from '@/components/orders/orderFieldStyles';
+import {
+  ORDER_FIELD_LABEL_CLASS,
+  ORDER_FIELD_POPOVER_CLASS,
+  ORDER_FIELD_SEARCH_INPUT_CLASS,
+  ORDER_FIELD_SEARCH_WRAPPER_CLASS,
+  ORDER_MULTISELECT_TRIGGER_CLASS,
+  ORDER_SELECTED_TAG_CLASS
+} from '@/components/orders/orderFieldStyles';
 
 type MultiEntitySelectItem = {
   id: string;
@@ -126,16 +133,19 @@ export const MultiEntitySelect: React.FC<MultiEntitySelectProps> = ({
           ) : (
             filteredItems.map(item => {
               const isSelected = value.includes(item.id);
-              const isDisabled = (!isSelected && value.length >= maxSelection) || Boolean(item.disabled);
+              const isDisabled =
+                (!isSelected && value.length >= maxSelection) || Boolean(item.disabled);
 
               return (
                 <label
                   key={item.id}
+                  htmlFor={`${uniqueId}-opt-${item.id}`}
                   className={`flex items-center gap-3 rounded-md px-3 py-2 text-left transition-colors hover:bg-gray-100 ${
                     isDisabled ? 'cursor-not-allowed opacity-50' : 'cursor-pointer'
                   }`}
                 >
                   <Checkbox
+                    id={`${uniqueId}-opt-${item.id}`}
                     checked={isSelected}
                     onCheckedChange={() => handleToggle(item.id)}
                     disabled={isDisabled}

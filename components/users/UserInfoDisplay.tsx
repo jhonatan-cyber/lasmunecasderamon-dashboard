@@ -32,7 +32,7 @@ function UserInfoDisplayComponent({
   const getMaritalStatusColor = (status: string) => {
     if (['Soltero', 'Soltera'].includes(status)) return 'bg-green-100 text-green-700';
     if (['Casado', 'Casada'].includes(status)) return 'bg-red-100 text-red-700';
-    return 'bg-gray-100 text-gray-700';
+    return 'bg-gray-100 text-gray-700 dark:bg-gray-800 dark:text-gray-100';
   };
 
   if (variant === 'table') {
@@ -71,7 +71,7 @@ function UserInfoDisplayComponent({
         </Avatar>
         <div className='text-left space-y-1'>
           <div className='flex items-center space-x-2'>
-            <p className='font-medium text-gray-900 text-xs sm:text-sm'>
+            <p className='font-medium text-gray-900 dark:text-white text-xs sm:text-sm'>
               {user.name} {user.lastName}
             </p>
             <Badge className={`text-xs ${getMaritalStatusColor(user.maritalStatus)}`}>
@@ -177,7 +177,9 @@ function UserInfoDisplayComponent({
 
       {}
       <div className='space-y-2'>
-        <div className='text-xs font-medium text-gray-700 mb-2'>Información Financiera</div>
+        <div className='text-xs font-medium text-gray-700 dark:text-gray-200 mb-2'>
+          Información Financiera
+        </div>
 
         <div className='flex items-center gap-2'>
           <DollarSign className='h-3 w-3 text-green-600' />

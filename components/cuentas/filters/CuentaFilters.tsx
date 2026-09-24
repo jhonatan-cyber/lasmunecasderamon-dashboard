@@ -96,6 +96,7 @@ export default function CuentaFilters({
                     <Button
                       onClick={onRefresh}
                       size='icon'
+                      aria-label='Limpiar / Actualizar'
                       className='w-10 h-10 flex items-center justify-center rounded-full border border-gray-300 dark:border-gray-700 shadow-xs bg-gray-100 dark:bg-slate-900/50 text-gray-900 dark:text-gray-100 transition-all duration-200 hover:scale-110 hover:bg-red-500! hover:text-white! hover:border-red-500!'
                       disabled={loading}
                     >

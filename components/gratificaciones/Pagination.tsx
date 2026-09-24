@@ -80,7 +80,7 @@ export function Pagination({
         )}
 
         {showTotalItems && (
-          <span className='text-sm text-muted-foreground'>
+          <span aria-live='polite' className='text-sm text-muted-foreground'>
             {totalItems} {totalItems === 1 ? 'elemento' : 'elementos'}
           </span>
         )}
@@ -144,7 +144,7 @@ export function Pagination({
         </Button>
       </div>
 
-      <div className='text-sm text-muted-foreground'>
+      <div aria-live='polite' className='text-sm text-muted-foreground'>
         Página {currentPage} de {totalPages}
       </div>
     </div>

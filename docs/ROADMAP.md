@@ -2,15 +2,15 @@
 
 ## Estado
 
-| Fase                    | Trabajo                                                                                                                                | Estado                                                                                             |
-| ----------------------- | -------------------------------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------- |
-| 1. Contención seguridad | Rotar secretos, purgar JWT de boneyard.config.json, quitar password hardcoded, ignorar backups/, añadir .env.example                   | ✅ Hecho (commit `27613a7`) — **falta rotar secretos en prod**                                     |
-| 2. CI que protege       | lint:full real en CI (+ arreglar el error), Prettier check, deploy needs: ci, audit bloqueante, Node 22, unificar scripts/README       | ✅ Hecho (commit `aad425d`) — Node 24, 0 warnings                                                  |
-| 3. Performance UI       | Arreglar deps/memo de TimerContext, memoizar Auth/Sidebar, dynamic-import de recharts en dashboard, virtualizar tablas grandes         | ✅ Hecho — memo completo, recharts lazy, tablas con React.memo (virtualización omitida: paginadas) |
-| 4. Limpieza API/UI      | eliminar espejos dashboard/stats y rutas muertas, fix roles/setup, unificar DevolucionFilters/ConfirmModals, fusionar hooks duplicados | ✅ Hecho — 18 rutas borradas, roles/setup creado, UI unificada, hooks fusionados                   |
-| 5. Datos                | índices audit_logs/error_logs, batch en N+1 críticos, renombrar migraciones 011/014, schemas zod en updates                            | ⬜ Pendiente                                                                                       |
-| 6. A11y/SEO             | aria-live + aria-labels, dark mode, robots.ts/sitemap + noindex admin                                                                  | ⬜ Pendiente                                                                                       |
-| 7. Tests                | tests de proxy.ts, servicios críticos (AuthService, StatsService), e2e de flujo de venta/caja                                          | ⬜ Pendiente                                                                                       |
+| Fase                    | Trabajo                                                                                                                                | Estado                                                                                                   |
+| ----------------------- | -------------------------------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------- |
+| 1. Contención seguridad | Rotar secretos, purgar JWT de boneyard.config.json, quitar password hardcoded, ignorar backups/, añadir .env.example                   | ✅ Hecho (commit `27613a7`) — **falta rotar secretos en prod**                                           |
+| 2. CI que protege       | lint:full real en CI (+ arreglar el error), Prettier check, deploy needs: ci, audit bloqueante, Node 22, unificar scripts/README       | ✅ Hecho (commit `aad425d`) — Node 24, 0 warnings                                                        |
+| 3. Performance UI       | Arreglar deps/memo de TimerContext, memoizar Auth/Sidebar, dynamic-import de recharts en dashboard, virtualizar tablas grandes         | ✅ Hecho — memo completo, recharts lazy, tablas con React.memo (virtualización omitida: paginadas)       |
+| 4. Limpieza API/UI      | eliminar espejos dashboard/stats y rutas muertas, fix roles/setup, unificar DevolucionFilters/ConfirmModals, fusionar hooks duplicados | ✅ Hecho — 18 rutas borradas, roles/setup creado, UI unificada, hooks fusionados                         |
+| 5. Datos                | índices audit_logs/error_logs, batch en N+1 críticos, renombrar migraciones 011/014, schemas zod en updates                            | ✅ Hecho — índices 029, N+1 batch (inventory/purchase/timers/rooms), migraciones 027/028, zod en updates |
+| 6. A11y/SEO             | aria-live + aria-labels, dark mode, robots.ts/sitemap + noindex admin                                                                  | ✅ Hecho — robots/sitemap, noindex global, ~70 aria-labels, ~45 label/htmlFor, 17 aria-live, dark: fixes |
+| 7. Tests                | tests de proxy.ts, servicios críticos (AuthService, StatsService), e2e de flujo de venta/caja                                          | ✅ Hecho — proxy 24, AuthService 14, StatsService 16, e2e venta-caja 12 (589 total)                      |
 
 ---
 
@@ -53,11 +53,12 @@
   inicial.
 - ✅ Tablas paginadas con `React.memo` en filas (ProductTable/CuentaTable) —
   virtualización no aplica.
-- N+1 en datos: `RoomManager`, `TimerRepository.runAutoCleanup`,
-  `InventoryRepository.generateUnits` (hasta 20 SELECTs/unidad),
-  `PurchaseService` INSERT por fila.
-- Falta índice en `audit_logs.created_at` y `error_logs.fecha_crea` (`ORDER BY`
-  sin índice).
+- ✅ N+1 en datos: `RoomManager`, `TimerRepository.runAutoCleanup`,
+  `InventoryRepository.generateUnits` (batch `generate_series` + multi-row
+  INSERT), `PurchaseService` (validación IN + sync por producto + INSERT batch)
+  (Fase 5).
+- ✅ Índices en `audit_logs.created_at` y `error_logs.fecha_crea`
+  (`migrations/029_audit_error_log_indexes.sql`, Fase 5).
 
 ## 🟡 Código / deuda técnica
 
@@ -76,36 +77,45 @@
   emisor de
   `timer_warning_5m`/`timer_ended_event`/`updateSales`/`check_attendance` (Fase
   4).
-- Migraciones con prefijos duplicados `011_` y `014_` (orden lexicográfico
-  ambiguo).
-- Validación incompleta: `change-password` sin zod;
-  Client/Commission/Overtime/User/Product `.update` con
-  `Record<string,unknown>`/`any`; `loginSchema` mínimo.
+- ✅ Migraciones con prefijos duplicados `011_` y `014_` renombradas a
+  `027_`/`028_` (checksum adoption, Fase 5).
+- ✅ Validación: `change-password` con `changePasswordSchema`;
+  Client/Commission/Overtime/User/Product `.update` con zod partial;
+  `loginSchema` con trim (Fase 5).
 
 ## 🔵 Accesibilidad / SEO
 
-- 64 botones solo-icono sin `aria-label`, 44 `<label>` sin `htmlFor>`, casi cero
-  `aria-live`, `tabIndex=0` en `<span>` no interactivos.
-- Dark mode roto en varios componentes (`text-gray-900` fijo sin `dark:`).
-- SEO: solo 3 metadatos en 69 páginas; `robots: index:true` global incluye el
-  panel admin; sin `sitemap.ts`/`robots.ts`.
+- ✅ ~70 botones solo-icono con `aria-label` (filtros, header, dropdowns, qty)
+  (Fase 6).
+- ✅ ~45 `<label>` con `htmlFor` + id en inputs (settings, forms, búsquedas)
+  (Fase 6).
+- ✅ 17 `aria-live`/`role=alert` en conteos, loading y errores;
+  CollapsibleSection con `aria-expanded` (Fase 6).
+- ✅ `tabIndex=0` removido de 7 `<span>` no interactivos (Fase 6).
+- ✅ Dark mode: ~61 `dark:` variants agregados en tablas/headings/badges (Fase
+  6).
+- ✅ SEO: `app/robots.ts` + `app/sitemap.ts`; `robots: index:false` global;
+  noindex en login/confirmar-*/asistencia-qr (Fase 6).
 
 ## ⚪ Tests
 
-- ~555 tests unit/pg/e2e, buena matriz de autorización estática… pero 5/399
-  componentes, 0/69 páginas, e2e solo login; 21 servicios sin unit test;
-  `proxy.ts` sin test directo.
+- ✅ Fase 7: `proxy.ts` (24 tests: públicas, auth, refresh, CORS, CSRF, kiosko,
+  rate-limit, headers seguridad), `AuthService` (14), `StatsService` (16), e2e
+  `venta-caja.spec.ts` (12: UI + guards 401 + APIs). 589 unit tests total.
+- ~555→589 tests unit/pg/e2e, buena matriz de autorización estática… pero 5/399
+  componentes, 0/69 páginas, e2e solo login+venta/caja; 21 servicios sin unit
+  test; `proxy.ts` ahora con test directo ✅.
 
 ---
 
 ## Plan por fases
 
-| Fase                    | Trabajo                                                                                                                                | Esfuerzo   |
-| ----------------------- | -------------------------------------------------------------------------------------------------------------------------------------- | ---------- |
-| 1. Contención seguridad | Rotar secretos, purgar JWT de boneyard.config.json, quitar password hardcoded, ignorar backups/, añadir .env.example                   | Bajo       |
-| 2. CI que protege       | lint:full real en CI (+ arreglar el error), Prettier check, deploy needs: ci, audit bloqueante, Node 22, unificar scripts/README       | Bajo-medio |
-| 3. Performance UI       | Arreglar deps/memo de TimerContext, memoizar Auth/Sidebar, dynamic-import de recharts en dashboard, virtualizar tablas grandes         | Medio      |
-| 4. Limpieza API/UI      | eliminar espejos dashboard/stats y rutas muertas, fix roles/setup, unificar DevolucionFilters/ConfirmModals, fusionar hooks duplicados | Medio-alto |
-| 5. Datos                | índices audit_logs/error_logs, batch en N+1 críticos, renombrar migraciones 011/014, schemas zod en updates                            | Medio      |
-| 6. A11y/SEO             | aria-live + aria-labels, dark mode, robots.ts/sitemap + noindex admin                                                                  | Medio      |
-| 7. Tests                | tests de proxy.ts, servicios críticos (AuthService, StatsService), e2e de flujo de venta/caja                                          | Medio      |
+| Fase                    | Trabajo                                                                                                                                | Esfuerzo              |
+| ----------------------- | -------------------------------------------------------------------------------------------------------------------------------------- | --------------------- |
+| 1. Contención seguridad | Rotar secretos, purgar JWT de boneyard.config.json, quitar password hardcoded, ignorar backups/, añadir .env.example                   | Bajo                  |
+| 2. CI que protege       | lint:full real en CI (+ arreglar el error), Prettier check, deploy needs: ci, audit bloqueante, Node 22, unificar scripts/README       | Bajo-medio            |
+| 3. Performance UI       | Arreglar deps/memo de TimerContext, memoizar Auth/Sidebar, dynamic-import de recharts en dashboard, virtualizar tablas grandes         | Medio                 |
+| 4. Limpieza API/UI      | eliminar espejos dashboard/stats y rutas muertas, fix roles/setup, unificar DevolucionFilters/ConfirmModals, fusionar hooks duplicados | Medio-alto            |
+| 5. Datos                | índices audit_logs/error_logs, batch en N+1 críticos, renombrar migraciones 011/014, schemas zod en updates                            | ✅ Hecho (ver Estado) | Medio |
+| 6. A11y/SEO             | aria-live + aria-labels, dark mode, robots.ts/sitemap + noindex admin                                                                  | ✅ Hecho (ver Estado) | Medio |
+| 7. Tests                | tests de proxy.ts, servicios críticos (AuthService, StatsService), e2e de flujo de venta/caja                                          | ✅ Hecho (ver Estado) | Medio |

@@ -1,9 +1,10 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { PurchaseService } from '@/lib/services/PurchaseService';
 import { ValidationError } from '@/lib/errors/errors';
+import { withTransaction } from '@/lib/database/db';
 
 vi.mock('@/lib/database/db', () => ({
-  withTransaction: vi.fn(async (cb: any) => cb(vi.fn())),
+  withTransaction: vi.fn(),
   query: vi.fn(),
   generateUUID: () => 'uuid-test'
 }));
@@ -19,19 +20,14 @@ vi.mock('@/lib/repositories/PurchaseRepository', () => ({
   }
 }));
 
-vi.mock('@/lib/repositories/ProductRepository', () => ({
-  ProductRepository: { getById: vi.fn() }
-}));
-
 vi.mock('@/lib/repositories/InventoryRepository', () => ({
   InventoryRepository: {
-    listPresentations: vi.fn(),
+    listPresentationsByProducts: vi.fn(),
     generateUnits: vi.fn().mockResolvedValue([]),
     syncStockTotal: vi.fn().mockResolvedValue(0)
   }
 }));
 
-import { ProductRepository } from '@/lib/repositories/ProductRepository';
 import { InventoryRepository } from '@/lib/repositories/InventoryRepository';
 import { PurchaseRepository } from '@/lib/repositories/PurchaseRepository';
 import { BaseRepository } from '@/lib/repositories/BaseRepository';
@@ -43,13 +39,18 @@ const detalle = {
   precio_compra: 5000
 };
 
+let trxMock: any;
+
 beforeEach(() => {
   vi.clearAllMocks();
-  vi.mocked(ProductRepository.getById).mockResolvedValue({ id: 'prod-1' } as any);
-  vi.mocked(InventoryRepository.listPresentations).mockResolvedValue([
-    { id: 'pres-1' },
-    { id: 'pres-2' }
-  ] as any);
+  trxMock = vi.fn(async (sql: string) => {
+    if (sql.includes('FROM productos')) return [{ id_producto: 'prod-1' }];
+    return [];
+  });
+  vi.mocked(InventoryRepository.listPresentationsByProducts).mockResolvedValue({
+    'prod-1': [{ id: 'pres-1' }, { id: 'pres-2' }]
+  } as any);
+  vi.mocked(withTransaction).mockImplementation(async (cb: any) => cb(trxMock));
 });
 
 describe('PurchaseService.registrarCompra', () => {
@@ -69,9 +70,17 @@ describe('PurchaseService.registrarCompra', () => {
   });
 
   it('rechaza presentación que no pertenece al producto', async () => {
-    vi.mocked(InventoryRepository.listPresentations).mockResolvedValue([]);
+    vi.mocked(InventoryRepository.listPresentationsByProducts).mockResolvedValue({} as any);
     await expect(PurchaseService.registrarCompra({ detalles: [detalle] }, 'u1')).rejects.toThrow(
       'no pertenece'
+    );
+  });
+
+  it('rechaza producto inexistente', async () => {
+    trxMock = vi.fn(async () => []);
+    vi.mocked(withTransaction).mockImplementation(async (cb: any) => cb(trxMock));
+    await expect(PurchaseService.registrarCompra({ detalles: [detalle] }, 'u1')).rejects.toThrow(
+      'Producto'
     );
   });
 
@@ -115,7 +124,8 @@ describe('PurchaseService.registrarCompra', () => {
       'pres-2',
       'comp-1'
     );
-    expect(InventoryRepository.syncStockTotal).toHaveBeenCalledTimes(2);
+    expect(InventoryRepository.syncStockTotal).toHaveBeenCalledTimes(1);
+    expect(InventoryRepository.syncStockTotal).toHaveBeenCalledWith(expect.anything(), 'prod-1');
     expect(BaseRepository.update).toHaveBeenCalledWith(
       expect.anything(),
       'inventario_presentaciones',

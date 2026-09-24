@@ -108,14 +108,19 @@ export function SettingsBillingTab() {
         {loading ? (
           <div className='text-center py-8'>
             <div className='animate-spin rounded-full h-8 w-8 border-b-2 border-black mx-auto'></div>
-            <p className='text-sm text-gray-600 mt-2'>Cargando configuración...</p>
+            <p aria-live='polite' className='text-sm text-gray-600 mt-2'>
+              Cargando configuración...
+            </p>
           </div>
         ) : (
           <div className='grid grid-cols-1 md:grid-cols-2 gap-6'>
             <div className='space-y-4'>
               <div>
-                <label className='block text-sm font-medium mb-1'>% IVA</label>
+                <label htmlFor='billing-iva' className='block text-sm font-medium mb-1'>
+                  % IVA
+                </label>
                 <input
+                  id='billing-iva'
                   type='number'
                   min='0'
                   max='100'
@@ -127,10 +132,11 @@ export function SettingsBillingTab() {
                 />
               </div>
               <div>
-                <label className='block text-sm font-medium mb-1'>
+                <label htmlFor='billing-propina' className='block text-sm font-medium mb-1'>
                   % Propina de venta (reparto)
                 </label>
                 <input
+                  id='billing-propina'
                   type='number'
                   min='0'
                   max='100'
@@ -146,12 +152,14 @@ export function SettingsBillingTab() {
                 </p>
               </div>
               <div>
-                <label className='block text-sm font-medium mb-1'>Moneda</label>
+                <label htmlFor='billing-moneda' className='block text-sm font-medium mb-1'>
+                  Moneda
+                </label>
                 <Select
                   value={config.moneda}
                   onValueChange={(value: string) => setConfig(prev => ({ ...prev, moneda: value }))}
                 >
-                  <SelectTrigger>
+                  <SelectTrigger id='billing-moneda'>
                     <SelectValue placeholder='Seleccionar moneda' />
                   </SelectTrigger>
                   <SelectContent>
@@ -164,8 +172,11 @@ export function SettingsBillingTab() {
             </div>
             <div className='space-y-4'>
               <div>
-                <label className='block text-sm font-medium mb-1'>Resolución SII</label>
+                <label htmlFor='billing-resolucion' className='block text-sm font-medium mb-1'>
+                  Resolución SII
+                </label>
                 <input
+                  id='billing-resolucion'
                   type='text'
                   value={config.resolucion_sii}
                   onChange={e => setConfig(prev => ({ ...prev, resolucion_sii: e.target.value }))}
@@ -197,8 +208,11 @@ export function SettingsBillingTab() {
                 </p>
                 <div className='mt-3 grid grid-cols-2 gap-3'>
                   <div>
-                    <label className='block text-xs font-medium mb-1'>Venta %</label>
+                    <label htmlFor='billing-split-venta' className='block text-xs font-medium mb-1'>
+                      Venta %
+                    </label>
                     <input
+                      id='billing-split-venta'
                       type='number'
                       min='0'
                       max='100'
@@ -210,8 +224,14 @@ export function SettingsBillingTab() {
                     />
                   </div>
                   <div>
-                    <label className='block text-xs font-medium mb-1'>Propina %</label>
+                    <label
+                      htmlFor='billing-split-propina'
+                      className='block text-xs font-medium mb-1'
+                    >
+                      Propina %
+                    </label>
                     <input
+                      id='billing-split-propina'
                       type='number'
                       min='0'
                       max='100'

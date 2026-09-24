@@ -18,7 +18,7 @@ export function CategoryProductsHeader({
   return (
     <div className='flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4'>
       <div className='flex flex-col'>
-        <h1 className='text-xl sm:text-2xl lg:text-3xl font-bold text-gray-900'>
+        <h1 className='text-xl sm:text-2xl lg:text-3xl font-bold text-gray-900 dark:text-white'>
           Productos: {categoryName}
         </h1>
         <p className='text-sm sm:text-base text-gray-600'>Gestión de productos de la categoría.</p>

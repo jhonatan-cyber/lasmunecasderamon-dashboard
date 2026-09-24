@@ -31,7 +31,13 @@ function SidebarControls() {
 
   return (
     <div className='flex items-center gap-2 sm:gap-4'>
-      <Button variant='ghost' size='icon' className='lg:hidden' onClick={toggleSidebar}>
+      <Button
+        variant='ghost'
+        size='icon'
+        className='lg:hidden'
+        onClick={toggleSidebar}
+        aria-label='Abrir menú de navegación'
+      >
         <Menu className='h-5 w-5' />
       </Button>
 
@@ -41,6 +47,7 @@ function SidebarControls() {
         className='hidden lg:flex'
         onClick={toggleCollapse}
         title={isCollapsed ? 'Expandir menú' : 'Colapsar menú'}
+        aria-label={isCollapsed ? 'Expandir menú' : 'Colapsar menú'}
       >
         {isCollapsed ? <ChevronRight className='h-5 w-5' /> : <ChevronLeft className='h-5 w-5' />}
       </Button>

@@ -84,8 +84,8 @@ export default function ChangePasswordPage() {
               Cambio de Contraseña Requerido
             </CardTitle>
             <CardDescription className='text-sm text-gray-500 dark:text-gray-400'>
-              Esta es tu primera sesión o tu contraseña fue restablecida.
-              Creá una nueva contraseña para continuar.
+              Esta es tu primera sesión o tu contraseña fue restablecida. Creá una nueva contraseña
+              para continuar.
             </CardDescription>
           </CardHeader>
           <CardContent>
@@ -108,6 +108,8 @@ export default function ChangePasswordPage() {
                     onClick={() => setShowPassword(!showPassword)}
                     className='absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600'
                     tabIndex={-1}
+                    aria-label={showPassword ? 'Ocultar contraseña' : 'Mostrar contraseña'}
+                    aria-hidden='true'
                   >
                     {showPassword ? <EyeOff className='h-4 w-4' /> : <Eye className='h-4 w-4' />}
                   </button>

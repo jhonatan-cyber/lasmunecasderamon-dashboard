@@ -55,7 +55,7 @@ export function HelpAccordion({ faqData }: HelpAccordionProps) {
         <CardContent>
           {filteredFAQ.length === 0 ? (
             <div className='text-center py-8'>
-              <p className='text-gray-500'>
+              <p aria-live='polite' className='text-gray-500'>
                 No se encontraron resultados para &ldquo;{searchTerm}&rdquo;
               </p>
             </div>

@@ -157,6 +157,7 @@ function ProductCartTableComponent({
                       <Button
                         size='sm'
                         variant='outline'
+                        aria-label='Disminuir'
                         onClick={() =>
                           onUpdateQuantity?.(index, Math.max(1, (producto.cantidad || 1) - 1))
                         }
@@ -168,6 +169,7 @@ function ProductCartTableComponent({
                       <Button
                         size='sm'
                         variant='outline'
+                        aria-label='Aumentar'
                         onClick={() => onUpdateQuantity?.(index, (producto.cantidad || 1) + 1)}
                         className='w-6 h-6 p-0 rounded-full hover:scale-105 transition-all duration-200'
                       >
@@ -192,6 +194,7 @@ function ProductCartTableComponent({
                     <Button
                       size='icon'
                       variant='outline'
+                      aria-label='Eliminar'
                       onClick={() => onRemove?.(index)}
                       className='rounded-full text-red-600 hover:text-red-700 hover:scale-105 transition-all duration-200'
                     >

@@ -266,7 +266,7 @@ export default function MiniSalesChart() {
           </div>
 
           {summary && (
-            <div className='flex items-center gap-10 mt-2'>
+            <div aria-live='polite' className='flex items-center gap-10 mt-2'>
               <div className='flex flex-col'>
                 <span className='text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] mb-1 opacity-60'>
                   Ingresos Brutos
@@ -304,6 +304,7 @@ export default function MiniSalesChart() {
           <button
             onClick={refreshData}
             disabled={isRefreshing}
+            aria-label='Actualizar datos del gráfico'
             className={cn(
               'p-3 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 text-slate-500 hover:text-emerald-500 hover:border-emerald-500/30 transition-all shadow-xs',
               isRefreshing && 'animate-spin text-emerald-500'
@@ -320,6 +321,7 @@ export default function MiniSalesChart() {
                   ? setYearOffset(prev => prev + 1)
                   : setWeekOffset(prev => prev + 1)
               }
+              aria-label={viewMode === 'month' ? 'Siguiente año' : 'Siguiente semana'}
               className='p-2 hover:bg-slate-50 dark:hover:bg-slate-800 rounded-xl text-slate-400 hover:text-slate-900 dark:hover:text-white transition-colors'
             >
               <ChevronLeft className='h-5 w-5' />
@@ -339,6 +341,7 @@ export default function MiniSalesChart() {
                   : setWeekOffset(prev => Math.max(0, prev - 1))
               }
               disabled={viewMode === 'month' ? yearOffset === 0 : weekOffset === 0}
+              aria-label={viewMode === 'month' ? 'Año anterior' : 'Semana anterior'}
               className='p-2 hover:bg-slate-50 dark:hover:bg-slate-800 rounded-xl text-slate-400 hover:text-slate-900 dark:hover:text-white transition-colors disabled:opacity-20'
             >
               <ChevronRight className='h-5 w-5' />

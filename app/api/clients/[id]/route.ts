@@ -27,7 +27,7 @@ export const PUT = withRoute(
     if (!name || !lastName)
       throw new ValidationError('name y lastName son requeridos', { name, lastName });
 
-    await ClientService.update(id, { run, name, lastName, phone });
+    await ClientService.updateClient(id, { run, name, lastName, phone });
     return NextResponse.json({ success: true, message: 'Cliente actualizado correctamente' });
   }
 );

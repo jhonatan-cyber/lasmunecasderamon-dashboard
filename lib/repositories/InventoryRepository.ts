@@ -767,22 +767,59 @@ export class InventoryRepository {
     return rows.length > 0 ? mapUnidad(rows[0]) : null;
   }
 
+  private static async nextCodigos(trx: Queryable, count: number): Promise<string[]> {
+    const rows = await trx<any[]>(
+      "SELECT nextval('inventario_sku_seq') AS seq FROM generate_series(1, ?)",
+      [count]
+    );
+    return rows.map(r => `LM-${String(Number(r?.seq ?? 0)).padStart(6, '0')}`);
+  }
+
+  private static async nextCodigo(trx: Queryable): Promise<string> {
+    const [codigo] = await this.nextCodigos(trx, 1);
+    return codigo;
+  }
+
+  private static async assignUniqueBarcodes(trx: Queryable, count: number): Promise<string[]> {
+    const result: string[] = [];
+    const used = new Set<string>();
+    let pending = count;
+    for (let intento = 0; intento < 20 && pending > 0; intento++) {
+      const candidates: string[] = [];
+      while (candidates.length < pending) {
+        const candidato = generarEan13Interno();
+        if (!used.has(candidato) && !candidates.includes(candidato)) candidates.push(candidato);
+      }
+      const placeholders = candidates.map(() => '?').join(',');
+      const rows = await trx<any[]>(
+        `SELECT codigo_barras FROM inventario_unidades WHERE codigo_barras IN (${placeholders})`,
+        candidates
+      );
+      const taken = new Set(rows.map(r => String(r.codigo_barras)));
+      for (const candidato of candidates) {
+        if (taken.has(candidato)) continue;
+        used.add(candidato);
+        result.push(candidato);
+      }
+      pending = count - result.length;
+    }
+    if (result.length < count) {
+      throw new BusinessError('No se pudo generar un código de barras único');
+    }
+    return result;
+  }
+
   private static async assignUniqueBarcode(
     trx: Queryable,
     unidadId: string | null
   ): Promise<string> {
-    for (let intento = 0; intento < 20; intento++) {
-      const candidato = generarEan13Interno();
-      const existente = await this.findByUnitBarcode(candidato, trx);
-      if (existente) continue;
-      if (unidadId) {
-        await BaseRepository.update(trx, 'inventario_unidades', 'id', unidadId, {
-          codigo_barras: candidato
-        });
-      }
-      return candidato;
+    const [codigo] = await this.assignUniqueBarcodes(trx, 1);
+    if (unidadId) {
+      await BaseRepository.update(trx, 'inventario_unidades', 'id', unidadId, {
+        codigo_barras: codigo
+      });
     }
-    throw new BusinessError('No se pudo generar un código de barras único');
+    return codigo;
   }
 
   static async countUnits(
@@ -891,12 +928,6 @@ export class InventoryRepository {
     });
   }
 
-  private static async nextCodigo(trx: Queryable): Promise<string> {
-    const rows = await trx<any[]>("SELECT nextval('inventario_sku_seq') AS seq", []);
-    const seq = Number(rows[0]?.seq ?? 0);
-    return `LM-${String(seq).padStart(6, '0')}`;
-  }
-
   static async generateUnits(
     trx: Queryable,
     productoId: string,
@@ -904,25 +935,35 @@ export class InventoryRepository {
     presentacionId?: string | null,
     compraId?: string | null
   ): Promise<{ codigo: string; codigo_barras: string }[]> {
-    const generadas: { codigo: string; codigo_barras: string }[] = [];
-    for (let i = 0; i < count; i++) {
-      const codigo = await this.nextCodigo(trx);
-      const unidadId = generateUUID();
-      const codigo_barras = await this.assignUniqueBarcode(trx, null);
-      await BaseRepository.insert(trx, 'inventario_unidades', {
-        id: unidadId,
-        producto_id: productoId,
-        presentacion_id: presentacionId ?? null,
-        codigo,
-        codigo_barras,
-        ...(compraId ? { compra_id: compraId } : {}),
-        ubicacion: 'almacen',
-        estado: 'almacen',
-        fecha_crea: getNowInBusinessTimezone()
-      });
-      generadas.push({ codigo, codigo_barras });
-    }
-    return generadas;
+    if (count <= 0) return [];
+    const [codigos, barcodes] = await Promise.all([
+      this.nextCodigos(trx, count),
+      this.assignUniqueBarcodes(trx, count)
+    ]);
+    const fechaCrea = getNowInBusinessTimezone();
+    const rows = codigos.map((codigo, i) => ({
+      id: generateUUID(),
+      producto_id: productoId,
+      presentacion_id: presentacionId ?? null,
+      codigo,
+      codigo_barras: barcodes[i],
+      ...(compraId ? { compra_id: compraId } : {}),
+      ubicacion: 'almacen',
+      estado: 'almacen',
+      fecha_crea: fechaCrea
+    }));
+    const columns = Object.keys(rows[0]).join(', ');
+    const placeholders = rows
+      .map(
+        () =>
+          `(${Object.keys(rows[0])
+            .map(() => '?')
+            .join(', ')})`
+      )
+      .join(', ');
+    const values = rows.flatMap(row => Object.values(row));
+    await trx(`INSERT INTO inventario_unidades (${columns}) VALUES ${placeholders}`, values);
+    return rows.map(r => ({ codigo: r.codigo, codigo_barras: r.codigo_barras }));
   }
 
   static async syncStockTotal(trx: Queryable, productoId: string): Promise<number> {

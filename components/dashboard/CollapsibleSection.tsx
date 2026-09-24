@@ -20,6 +20,8 @@ export default function CollapsibleSection({
   className
 }: CollapsibleSectionProps) {
   const [isOpen, setIsOpen] = React.useState(defaultOpen);
+  const contentId = React.useId();
+  const triggerId = React.useId();
 
   return (
     <div
@@ -29,8 +31,11 @@ export default function CollapsibleSection({
       )}
     >
       <button
+        id={triggerId}
         type='button'
         onClick={() => setIsOpen(!isOpen)}
+        aria-expanded={isOpen}
+        aria-controls={contentId}
         className='flex w-full items-center justify-between px-4 py-3 text-left transition-colors hover:bg-slate-50 dark:hover:bg-slate-900/30'
       >
         <div className='flex items-center gap-2'>
@@ -38,6 +43,7 @@ export default function CollapsibleSection({
           <span className='text-sm font-semibold text-slate-900 dark:text-slate-100'>{title}</span>
         </div>
         <ChevronDown
+          aria-hidden='true'
           className={cn(
             'h-4 w-4 text-slate-500 transition-transform duration-200',
             isOpen && 'rotate-180'
@@ -46,6 +52,9 @@ export default function CollapsibleSection({
       </button>
 
       <div
+        id={contentId}
+        role='region'
+        aria-labelledby={triggerId}
         className={cn(
           'overflow-hidden transition-all duration-200 ease-out',
           isOpen ? 'max-h-[2000px] opacity-100' : 'max-h-0 opacity-0'

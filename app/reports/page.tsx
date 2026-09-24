@@ -96,6 +96,7 @@ export default function ReportsPage() {
               <Button
                 variant='ghost'
                 size='icon'
+                aria-label='Actualizar'
                 onClick={handleRefresh}
                 className='h-9 w-9 text-gray-500 hover:text-blue-600 hover:bg-blue-50 transition-colors'
                 title='Refrescar datos'

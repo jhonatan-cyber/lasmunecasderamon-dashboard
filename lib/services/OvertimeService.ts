@@ -28,7 +28,15 @@ export class OvertimeService {
   }
 
   static async update(id: string, data: Partial<{ hora: number; monto: number; estado: number }>) {
-    return await OvertimeRepository.update(id, data);
+    const schema = z
+      .object({
+        hora: z.number().int().positive('La hora debe ser válida').optional(),
+        monto: z.number().min(0, 'El monto no puede ser negativo').optional(),
+        estado: z.number().int().optional()
+      })
+      .partial();
+    const validated = schema.parse(data);
+    return await OvertimeRepository.update(id, validated);
   }
 
   static async delete(id: string) {

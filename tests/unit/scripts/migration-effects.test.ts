@@ -127,7 +127,7 @@ describe('extractEffects sobre las migraciones del repo', () => {
     expect(soloInserts.effects).toEqual([]);
     expect(soloInserts.unverifiable.length).toBeGreaterThan(0);
 
-    const update = extractEffects(readMigration('014_transferencias_historicas.sql'));
+    const update = extractEffects(readMigration('028_transferencias_historicas.sql'));
     expect(update.unverifiable.join(' ')).toContain('update');
 
     const bloque = extractEffects(readMigration('022_alineacion_esquema.sql'));

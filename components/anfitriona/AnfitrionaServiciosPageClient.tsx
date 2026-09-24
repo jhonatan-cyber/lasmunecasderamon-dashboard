@@ -49,7 +49,7 @@ function getStatusBadge(estado: number) {
       );
     default:
       return (
-        <span className='inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-800'>
+        <span className='inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-800 dark:bg-gray-800 dark:text-gray-100'>
           Desconocido
         </span>
       );
@@ -116,7 +116,7 @@ export default function AnfitrionaServiciosPage() {
       <div className='flex justify-between items-center'>
         <div>
           <p className='text-sm text-gray-500'>LAS MUÑECAS DE RAMÓN</p>
-          <h1 className='text-2xl font-bold text-gray-900'>
+          <h1 className='text-2xl font-bold text-gray-900 dark:text-white'>
             Listado de Servicios {user?.name} {user?.lastName}
           </h1>
         </div>
@@ -134,7 +134,7 @@ export default function AnfitrionaServiciosPage() {
         <div className='flex justify-center gap-8 flex-wrap'>
           <div>
             <p className='text-sm text-gray-500'>Total Servicios:</p>
-            <p className='text-xl font-bold text-gray-900'>{totalServices}</p>
+            <p className='text-xl font-bold text-gray-900 dark:text-white'>{totalServices}</p>
           </div>
           <div>
             <p className='text-sm text-gray-500'>Finalizados:</p>
@@ -158,7 +158,9 @@ export default function AnfitrionaServiciosPage() {
           </div>
           <div>
             <p className='text-sm text-gray-500'>Total Ganado:</p>
-            <p className='text-xl font-bold text-gray-900'>{formatCurrencyCLP(totalEarnings)}</p>
+            <p className='text-xl font-bold text-gray-900 dark:text-white'>
+              {formatCurrencyCLP(totalEarnings)}
+            </p>
           </div>
         </div>
       </div>
@@ -276,7 +278,7 @@ export default function AnfitrionaServiciosPage() {
                           {(page - 1) * rowsPerPage + index + 1}
                         </div>
                       </td>
-                      <td className='px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900'>
+                      <td className='px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900 dark:text-gray-100'>
                         {service.codigo || 'N/A'}
                       </td>
                       <td className='px-6 py-4 whitespace-nowrap text-sm text-gray-500'>
@@ -288,12 +290,12 @@ export default function AnfitrionaServiciosPage() {
                       <td className='px-6 py-4 whitespace-nowrap text-sm text-gray-500'>
                         {service.habitacion || 'N/A'}
                       </td>
-                      <td className='px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900'>
+                      <td className='px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900 dark:text-gray-100'>
                         {formatCurrencyCLP(service.precio_servicio)}
                       </td>
                       <td className='px-6 py-4 whitespace-nowrap'>
                         <div>
-                          <div className='text-sm font-medium text-gray-900'>
+                          <div className='text-sm font-medium text-gray-900 dark:text-gray-100'>
                             {formatDateTimeDmyLabel(service.fecha_crea).date}
                           </div>
                           <div className='text-sm text-gray-500'>

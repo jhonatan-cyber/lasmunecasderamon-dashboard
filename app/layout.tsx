@@ -53,8 +53,8 @@ export const metadata: Metadata = {
     images: [siteConfig.ogImage]
   },
   robots: {
-    index: true,
-    follow: true
+    index: false,
+    follow: false
   },
   appleWebApp: {
     capable: true,

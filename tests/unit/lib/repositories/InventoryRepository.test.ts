@@ -247,10 +247,20 @@ describe('unidades de compras', () => {
     let sequence = 10;
     const inserted: Record<string, unknown>[] = [];
     const trx = vi.fn().mockImplementation(async (sql: string, values: unknown[] = []) => {
-      if (sql.includes('nextval')) return [{ seq: ++sequence }];
+      if (sql.includes('nextval')) {
+        const count = Number(values[0] ?? 1);
+        const rows = Array.from({ length: count }, (_, i) => ({ seq: sequence + 1 + i }));
+        sequence += count;
+        return rows;
+      }
+      if (sql.includes('codigo_barras IN')) return [];
       if (sql.startsWith('INSERT INTO inventario_unidades')) {
         const columns = sql.match(/\(([^)]+)\)/)![1].split(', ');
-        inserted.push(Object.fromEntries(columns.map((column, i) => [column, values[i]])));
+        const rowCount = (sql.match(/\),\s*\(/g) || []).length + 1;
+        for (let r = 0; r < rowCount; r++) {
+          const rowValues = values.slice(r * columns.length, (r + 1) * columns.length);
+          inserted.push(Object.fromEntries(columns.map((column, i) => [column, rowValues[i]])));
+        }
       }
       if (sql.includes('COUNT(*)')) return [{ total: 5 + inserted.length }];
       return [];
@@ -270,6 +280,7 @@ describe('unidades de compras', () => {
       });
       expect(row.codigo_barras).toMatch(/^29\d{11}$/);
     }
+    expect(new Set(inserted.map(r => r.codigo_barras)).size).toBe(2);
     expect(trx.mock.calls.some(([sql]) => sql.startsWith('UPDATE inventario_unidades'))).toBe(
       false
     );

@@ -1,7 +1,6 @@
 import { withTransaction } from '@/lib/database/db';
 import { BaseRepository } from '@/lib/repositories/BaseRepository';
 import { PurchaseRepository } from '@/lib/repositories/PurchaseRepository';
-import { ProductRepository } from '@/lib/repositories/ProductRepository';
 import { InventoryRepository } from '@/lib/repositories/InventoryRepository';
 import { ValidationError, NotFoundError } from '@/lib/errors/errors';
 import { z } from 'zod';
@@ -46,14 +45,24 @@ export class PurchaseService {
 
     let compra!: Awaited<ReturnType<typeof PurchaseRepository.create>>;
     await withTransaction(async trx => {
-      // Valida pertenencia antes de mover stock.
+      // Valida pertenencia antes de mover stock (consultas batch por IN).
       const productoIds = [...new Set(detalles.map(d => d.producto_id))];
-      for (const pid of productoIds) {
-        const producto = await ProductRepository.getById(pid);
-        if (!producto) throw new NotFoundError('Producto', pid);
-        const presentaciones = await InventoryRepository.listPresentations(pid, trx);
-        const validas = new Set(presentaciones.map(p => String(p.id)));
-        for (const d of detalles.filter(x => x.producto_id === pid)) {
+      if (productoIds.length > 0) {
+        const placeholders = productoIds.map(() => '?').join(',');
+        const productoRows = await trx<{ id_producto: string }[]>(
+          `SELECT id_producto FROM productos WHERE id_producto IN (${placeholders})`,
+          productoIds
+        );
+        const found = new Set(productoRows.map(r => String(r.id_producto)));
+        for (const pid of productoIds) {
+          if (!found.has(pid)) throw new NotFoundError('Producto', pid);
+        }
+        const presentacionesMap = await InventoryRepository.listPresentationsByProducts(
+          productoIds,
+          trx
+        );
+        for (const d of detalles) {
+          const validas = new Set((presentacionesMap[d.producto_id] ?? []).map(p => String(p.id)));
           if (!validas.has(String(d.presentacion_id))) {
             throw new ValidationError('La presentación no pertenece a este producto');
           }
@@ -80,11 +89,14 @@ export class PurchaseService {
           d.presentacion_id,
           compra.id
         );
-        await InventoryRepository.syncStockTotal(trx, d.producto_id);
         // Último costo conocido por presentación (misma transacción).
         await BaseRepository.update(trx, 'inventario_presentaciones', 'id', d.presentacion_id, {
           precio_compra: d.precio_compra
         });
+      }
+      // Un sync de stock por producto distinto (no por línea de detalle).
+      for (const pid of productoIds) {
+        await InventoryRepository.syncStockTotal(trx, pid);
       }
     });
 

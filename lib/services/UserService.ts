@@ -124,7 +124,12 @@ export class UserService {
   }
 
   static async update(id: string | number, body: Record<string, unknown>) {
-    return await UserRepository.update(id.toString(), body);
+    const validated = UserUpdateSchema.omit({ id: true }).parse(body);
+    const { email, ...rest } = validated;
+    return await UserRepository.update(id.toString(), {
+      ...rest,
+      ...(email != null ? { email } : {})
+    });
   }
 
   static async getAvailableAnfitrionas() {

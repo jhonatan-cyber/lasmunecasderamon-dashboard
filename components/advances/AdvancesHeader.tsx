@@ -23,7 +23,9 @@ export function AdvancesHeader({
     <div className='flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 sm:gap-6 pt-4 sm:pt-8 px-4 sm:px-8'>
       <div className='flex items-center gap-4'>
         <div>
-          <h1 className='text-xl sm:text-2xl lg:text-3xl font-bold text-gray-900'>Anticipos</h1>
+          <h1 className='text-xl sm:text-2xl lg:text-3xl font-bold text-gray-900 dark:text-white'>
+            Anticipos
+          </h1>
           <p className='text-sm sm:text-base text-gray-600 mt-2'>
             Gestiona los anticipos de sueldo del personal
           </p>
@@ -33,7 +35,7 @@ export function AdvancesHeader({
         <TooltipProvider>
           <Tooltip>
             <TooltipTrigger asChild>
-              <span className='w-full sm:w-auto' tabIndex={0}>
+              <span className='w-full sm:w-auto'>
                 <Button
                   onClick={onOpenDialog}
                   disabled={disabled}

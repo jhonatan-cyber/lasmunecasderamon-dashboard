@@ -5,9 +5,7 @@ import { ShoppingCart } from 'lucide-react';
 
 export function SaleCardSkeleton() {
   return (
-    <div
-      className='rounded-4xl border border-gray-100 dark:border-slate-800 bg-white dark:bg-slate-900 p-5 sm:p-6'
-    >
+    <div className='rounded-4xl border border-gray-100 dark:border-slate-800 bg-white dark:bg-slate-900 p-5 sm:p-6'>
       <div className='flex items-center justify-between mb-5'>
         <Skeleton className='h-12 w-12 rounded-2xl' />
         <Skeleton className='h-6 w-28 rounded-full' />
@@ -39,7 +37,7 @@ export function SalesListEmptyState({ hasFilters }: { hasFilters: boolean }) {
       <div className='w-24 h-24 rounded-4xl bg-gray-100 dark:bg-slate-800 flex items-center justify-center mb-5'>
         <ShoppingCart className='w-10 h-10 text-gray-300 dark:text-slate-600' />
       </div>
-      <h3 className='text-xl font-black text-gray-800 dark:text-slate-100 mb-2'>
+      <h3 aria-live='polite' className='text-xl font-black text-gray-800 dark:text-slate-100 mb-2'>
         {hasFilters ? 'Sin resultados' : 'Sin ventas aún'}
       </h3>
       <p className='text-sm text-gray-400 dark:text-slate-500 text-center max-w-sm leading-relaxed'>

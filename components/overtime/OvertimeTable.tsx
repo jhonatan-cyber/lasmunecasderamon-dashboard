@@ -253,6 +253,7 @@ export default function OvertimeTable({
                           <Button
                             variant='ghost'
                             size='icon'
+                            aria-label='Ver detalle'
                             onClick={() => onViewDetail(overtime)}
                             className='h-9 w-9 rounded-xl hover:bg-blue-50 dark:hover:bg-blue-900/30 text-blue-600'
                           >

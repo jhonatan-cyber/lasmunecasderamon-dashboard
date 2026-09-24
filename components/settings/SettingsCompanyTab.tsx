@@ -92,14 +92,19 @@ export function SettingsCompanyTab() {
         {loading ? (
           <div className='text-center py-8'>
             <div className='animate-spin rounded-full h-8 w-8 border-b-2 border-black mx-auto'></div>
-            <p className='text-sm text-gray-600 mt-2'>Cargando configuración...</p>
+            <p aria-live='polite' className='text-sm text-gray-600 mt-2'>
+              Cargando configuración...
+            </p>
           </div>
         ) : (
           <div className='grid grid-cols-1 md:grid-cols-2 gap-6'>
             <div className='space-y-4'>
               <div>
-                <label className='block text-sm font-medium mb-1'>Nombre de la Empresa</label>
+                <label htmlFor='company-name' className='block text-sm font-medium mb-1'>
+                  Nombre de la Empresa
+                </label>
                 <input
+                  id='company-name'
                   type='text'
                   value={config.empresa_nombre}
                   onChange={e => setConfig(prev => ({ ...prev, empresa_nombre: e.target.value }))}
@@ -108,8 +113,11 @@ export function SettingsCompanyTab() {
                 />
               </div>
               <div>
-                <label className='block text-sm font-medium mb-1'>RUT</label>
+                <label htmlFor='company-rut' className='block text-sm font-medium mb-1'>
+                  RUT
+                </label>
                 <input
+                  id='company-rut'
                   type='text'
                   value={config.empresa_rut}
                   onChange={e => setConfig(prev => ({ ...prev, empresa_rut: e.target.value }))}
@@ -118,8 +126,11 @@ export function SettingsCompanyTab() {
                 />
               </div>
               <div>
-                <label className='block text-sm font-medium mb-1'>Dirección</label>
+                <label htmlFor='company-address' className='block text-sm font-medium mb-1'>
+                  Dirección
+                </label>
                 <input
+                  id='company-address'
                   type='text'
                   value={config.empresa_direccion}
                   onChange={e =>
@@ -132,8 +143,11 @@ export function SettingsCompanyTab() {
             </div>
             <div className='space-y-4'>
               <div>
-                <label className='block text-sm font-medium mb-1'>Teléfono</label>
+                <label htmlFor='company-phone' className='block text-sm font-medium mb-1'>
+                  Teléfono
+                </label>
                 <input
+                  id='company-phone'
                   type='text'
                   value={config.empresa_telefono}
                   onChange={e => setConfig(prev => ({ ...prev, empresa_telefono: e.target.value }))}
@@ -142,8 +156,11 @@ export function SettingsCompanyTab() {
                 />
               </div>
               <div>
-                <label className='block text-sm font-medium mb-1'>Email</label>
+                <label htmlFor='company-email' className='block text-sm font-medium mb-1'>
+                  Email
+                </label>
                 <input
+                  id='company-email'
                   type='email'
                   value={config.empresa_email}
                   onChange={e => setConfig(prev => ({ ...prev, empresa_email: e.target.value }))}
@@ -153,8 +170,11 @@ export function SettingsCompanyTab() {
               </div>
               <div className='grid grid-cols-2 gap-4'>
                 <div>
-                  <label className='block text-sm font-medium mb-1'>WhatsApp público</label>
+                  <label htmlFor='company-whatsapp' className='block text-sm font-medium mb-1'>
+                    WhatsApp público
+                  </label>
                   <input
+                    id='company-whatsapp'
                     type='text'
                     value={config.empresa_whatsapp}
                     onChange={e =>
@@ -165,8 +185,14 @@ export function SettingsCompanyTab() {
                   />
                 </div>
                 <div>
-                  <label className='block text-sm font-medium mb-1'>WhatsApp administrador</label>
+                  <label
+                    htmlFor='company-admin-whatsapp'
+                    className='block text-sm font-medium mb-1'
+                  >
+                    WhatsApp administrador
+                  </label>
                   <input
+                    id='company-admin-whatsapp'
                     type='text'
                     value={config.admin_whatsapp || ''}
                     onChange={e => setConfig(prev => ({ ...prev, admin_whatsapp: e.target.value }))}
@@ -178,8 +204,11 @@ export function SettingsCompanyTab() {
                   </p>
                 </div>
                 <div>
-                  <label className='block text-sm font-medium mb-1'>Instagram</label>
+                  <label htmlFor='company-instagram' className='block text-sm font-medium mb-1'>
+                    Instagram
+                  </label>
                   <input
+                    id='company-instagram'
                     type='text'
                     value={config.empresa_instagram}
                     onChange={e =>
@@ -190,8 +219,11 @@ export function SettingsCompanyTab() {
                   />
                 </div>
                 <div>
-                  <label className='block text-sm font-medium mb-1'>Facebook</label>
+                  <label htmlFor='company-facebook' className='block text-sm font-medium mb-1'>
+                    Facebook
+                  </label>
                   <input
+                    id='company-facebook'
                     type='text'
                     value={config.empresa_facebook}
                     onChange={e =>
@@ -202,8 +234,11 @@ export function SettingsCompanyTab() {
                   />
                 </div>
                 <div>
-                  <label className='block text-sm font-medium mb-1'>TikTok</label>
+                  <label htmlFor='company-tiktok' className='block text-sm font-medium mb-1'>
+                    TikTok
+                  </label>
                   <input
+                    id='company-tiktok'
                     type='text'
                     value={config.empresa_tiktok || ''}
                     onChange={e => setConfig(prev => ({ ...prev, empresa_tiktok: e.target.value }))}

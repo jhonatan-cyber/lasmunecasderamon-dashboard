@@ -312,7 +312,9 @@ export function ProductForm({
               />
             </div>
             {errors.code && (
-              <p className='text-red-500 text-xs mt-1 ml-1 font-medium'>{errors.code}</p>
+              <p role='alert' className='text-red-500 text-xs mt-1 ml-1 font-medium'>
+                {errors.code}
+              </p>
             )}
           </div>
 
@@ -340,7 +342,9 @@ export function ProductForm({
               />
             </div>
             {errors.name && (
-              <p className='text-red-500 text-xs mt-1 ml-1 font-medium'>{errors.name}</p>
+              <p role='alert' className='text-red-500 text-xs mt-1 ml-1 font-medium'>
+                {errors.name}
+              </p>
             )}
           </div>
         </div>
@@ -394,10 +398,14 @@ export function ProductForm({
                   <div className='space-y-2'>
                     <div className='grid grid-cols-2 gap-2'>
                       <div className='col-span-2 space-y-1'>
-                        <label className='block text-[10px] font-bold uppercase tracking-wider text-gray-400 ml-1'>
+                        <label
+                          htmlFor='edit-pres-nombre'
+                          className='block text-[10px] font-bold uppercase tracking-wider text-gray-400 ml-1'
+                        >
                           Nombre
                         </label>
                         <Input
+                          id='edit-pres-nombre'
                           value={editPresDraft.nombre}
                           onChange={e => changeEditPresDraft('nombre', e.target.value)}
                           placeholder='Nombre (ej. 750 ml)'
@@ -406,10 +414,14 @@ export function ProductForm({
                         />
                       </div>
                       <div className='space-y-1'>
-                        <label className='block text-[10px] font-bold uppercase tracking-wider text-gray-400 ml-1'>
+                        <label
+                          htmlFor='edit-pres-codigo'
+                          className='block text-[10px] font-bold uppercase tracking-wider text-gray-400 ml-1'
+                        >
                           Código de barras
                         </label>
                         <Input
+                          id='edit-pres-codigo'
                           value={editPresDraft.codigo_barras}
                           onChange={e => changeEditPresDraft('codigo_barras', e.target.value)}
                           placeholder='Código de barras'
@@ -418,10 +430,14 @@ export function ProductForm({
                         />
                       </div>
                       <div className='space-y-1'>
-                        <label className='block text-[10px] font-bold uppercase tracking-wider text-gray-400 ml-1'>
+                        <label
+                          htmlFor='edit-pres-precio-compra'
+                          className='block text-[10px] font-bold uppercase tracking-wider text-gray-400 ml-1'
+                        >
                           Precio compra
                         </label>
                         <Input
+                          id='edit-pres-precio-compra'
                           value={editPresDraft.precio_compra}
                           onChange={e => changeEditPresDraft('precio_compra', e.target.value)}
                           placeholder='Precio compra'
@@ -431,10 +447,14 @@ export function ProductForm({
                         />
                       </div>
                       <div className='space-y-1'>
-                        <label className='block text-[10px] font-bold uppercase tracking-wider text-gray-400 ml-1'>
+                        <label
+                          htmlFor='edit-pres-precio-venta'
+                          className='block text-[10px] font-bold uppercase tracking-wider text-gray-400 ml-1'
+                        >
                           Precio venta
                         </label>
                         <Input
+                          id='edit-pres-precio-venta'
                           value={editPresDraft.precio_venta}
                           onChange={e => changeEditPresDraft('precio_venta', e.target.value)}
                           placeholder='Precio venta'
@@ -444,10 +464,14 @@ export function ProductForm({
                         />
                       </div>
                       <div className='space-y-1'>
-                        <label className='block text-[10px] font-bold uppercase tracking-wider text-gray-400 ml-1'>
+                        <label
+                          htmlFor='edit-pres-comision'
+                          className='block text-[10px] font-bold uppercase tracking-wider text-gray-400 ml-1'
+                        >
                           Comisión
                         </label>
                         <Input
+                          id='edit-pres-comision'
                           value={editPresDraft.comision}
                           onChange={e => changeEditPresDraft('comision', e.target.value)}
                           placeholder='Comisión (0 = sin comisión)'
@@ -458,10 +482,14 @@ export function ProductForm({
                       </div>
                     </div>
                     <div className='space-y-1'>
-                      <label className='block text-[10px] font-bold uppercase tracking-wider text-gray-400 ml-1'>
+                      <label
+                        htmlFor='edit-pres-stock'
+                        className='block text-[10px] font-bold uppercase tracking-wider text-gray-400 ml-1'
+                      >
                         Stock (actual: {p.stock ?? 0})
                       </label>
                       <Input
+                        id='edit-pres-stock'
                         value={editPresDraft.stock}
                         onChange={e => changeEditPresDraft('stock', e.target.value)}
                         placeholder='Stock'
@@ -495,6 +523,7 @@ export function ProductForm({
                               return (
                                 <label
                                   key={u.id}
+                                  htmlFor={`codigo-${u.id}`}
                                   className={`flex items-center gap-1.5 px-2 py-1 rounded-lg font-mono text-xs cursor-pointer border transition-colors ${
                                     checked
                                       ? 'bg-amber-200 dark:bg-amber-800/50 border-amber-400 text-amber-900 dark:text-amber-200'
@@ -502,6 +531,7 @@ export function ProductForm({
                                   }`}
                                 >
                                   <input
+                                    id={`codigo-${u.id}`}
                                     type='checkbox'
                                     checked={checked}
                                     onChange={() => toggleCodigoSeleccionado(u.id)}
@@ -574,10 +604,12 @@ export function ProductForm({
                         {p.stock ?? 0} un.
                       </span>
                       <label
+                        htmlFor={`pres-foto-${p.id}`}
                         title='Cambiar foto'
                         className='p-2 rounded-full text-gray-400 hover:text-purple-600 hover:bg-purple-50 dark:hover:bg-purple-900/20 transition-colors cursor-pointer shrink-0'
                       >
                         <input
+                          id={`pres-foto-${p.id}`}
                           type='file'
                           accept='image/*'
                           disabled={isLoading}
@@ -702,10 +734,12 @@ export function ProductForm({
                   </div>
                 )}
                 <label
+                  htmlFor={`pres-foto-new-${i}`}
                   className='absolute inset-0 cursor-pointer'
                   title='Arrastrar o elegir imagen'
                 >
                   <input
+                    id={`pres-foto-new-${i}`}
                     type='file'
                     accept='image/*'
                     disabled={isLoading}
@@ -811,7 +845,9 @@ export function ProductForm({
           </p>
         )}
         {presentacionesError && (
-          <p className='text-red-500 text-xs mt-1 ml-1 font-medium'>{presentacionesError}</p>
+          <p role='alert' className='text-red-500 text-xs mt-1 ml-1 font-medium'>
+            {presentacionesError}
+          </p>
         )}
 
         {isEdit && (

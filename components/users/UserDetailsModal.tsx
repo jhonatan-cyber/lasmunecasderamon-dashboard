@@ -45,7 +45,7 @@ const getRoleBadgeColor = (role: string) => {
     garzon: 'bg-blue-100 text-blue-900 hover:bg-blue-200',
     anfitriona: 'bg-red-100 text-red-900 hover:bg-red-200',
     cajero: 'bg-green-100 text-green-900 hover:bg-green-200',
-    default: 'bg-gray-100 text-gray-900 hover:bg-gray-200'
+    default: 'bg-gray-100 text-gray-900 hover:bg-gray-200 dark:bg-gray-800 dark:text-gray-100'
   };
 
   const normalizedRole = role?.toLowerCase().trim() || 'default';
@@ -123,7 +123,7 @@ export function UserDetailsModal({ user, isOpen, onClose }: UserDetailsModalProp
               <div className='grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6'>
                 {}
                 <div className='space-y-3 sm:space-y-4'>
-                  <h3 className='font-semibold text-gray-700 text-sm sm:text-base'>
+                  <h3 className='font-semibold text-gray-700 dark:text-gray-200 text-sm sm:text-base'>
                     Información Personal
                   </h3>
                   <div className='space-y-2 sm:space-y-3'>
@@ -187,7 +187,7 @@ export function UserDetailsModal({ user, isOpen, onClose }: UserDetailsModalProp
                               ? 'bg-green-100 text-green-700'
                               : ['Casado', 'Casada'].includes(user.maritalStatus || '')
                                 ? 'bg-red-100 text-red-700'
-                                : 'bg-gray-100 text-gray-700'
+                                : 'bg-gray-100 text-gray-700 dark:bg-gray-800 dark:text-gray-100'
                           }`}
                         >
                           {user.maritalStatus || 'Sin estado civil'}
@@ -209,7 +209,7 @@ export function UserDetailsModal({ user, isOpen, onClose }: UserDetailsModalProp
 
                 {}
                 <div className='space-y-3 sm:space-y-4'>
-                  <h3 className='font-semibold text-gray-700 text-sm sm:text-base'>
+                  <h3 className='font-semibold text-gray-700 dark:text-gray-200 text-sm sm:text-base'>
                     Información Financiera
                   </h3>
                   <div className='space-y-2 sm:space-y-3'>
@@ -248,7 +248,7 @@ export function UserDetailsModal({ user, isOpen, onClose }: UserDetailsModalProp
 
               {}
               <div className='space-y-4'>
-                <h3 className='font-semibold text-gray-700 text-md'>Registro</h3>
+                <h3 className='font-semibold text-gray-700 dark:text-gray-200 text-md'>Registro</h3>
                 <div className='grid grid-cols-1 md:grid-cols-3 gap-4'>
                   <div>
                     <p className='text-sm font-medium text-gray-500'>Fecha de Creación</p>

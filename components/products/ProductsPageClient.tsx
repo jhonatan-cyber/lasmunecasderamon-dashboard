@@ -16,7 +16,9 @@ export function ProductsPageClient() {
       <BoneyardSkeleton name='products-main' loading={categoriesLoading}>
         <div className='p-4 sm:p-6 lg:p-10 space-y-4 sm:space-y-6 mt-4 sm:mt-6 lg:mt-10'>
           <div>
-            <h1 className='text-xl sm:text-2xl lg:text-3xl font-bold text-gray-900'>Almacén</h1>
+            <h1 className='text-xl sm:text-2xl lg:text-3xl font-bold text-gray-900 dark:text-white'>
+              Almacén
+            </h1>
             <p className='text-sm sm:text-base text-gray-600'>
               Selecciona una categoría para ver sus productos
             </p>

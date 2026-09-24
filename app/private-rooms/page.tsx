@@ -110,7 +110,7 @@ export default function ServiciosPage() {
             <TooltipProvider>
               <Tooltip>
                 <TooltipTrigger asChild>
-                  <span tabIndex={0} className='w-full sm:w-auto block sm:inline'>
+                  <span className='w-full sm:w-auto block sm:inline'>
                     <Button
                       onClick={handleCreateServicio}
                       disabled={cajaLoading || !hasOpenCaja}

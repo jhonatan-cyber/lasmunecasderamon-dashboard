@@ -121,6 +121,7 @@ export default function CategoryCard({
                 <Button
                   variant='ghost'
                   size='icon'
+                  aria-label='Más acciones'
                   className='bg-white hover:bg-gray-200 dark:bg-gray-800 dark:hover:bg-gray-700 rounded-full hover:scale-105 transition-all duration-200 p-2'
                 >
                   <MoreVertical className='w-3 h-3 sm:w-4 sm:h-4' />

@@ -33,7 +33,7 @@ export function GratificacionesHeader({
         <TooltipProvider>
           <Tooltip>
             <TooltipTrigger asChild>
-              <span className='w-full sm:w-auto' tabIndex={0}>
+              <span className='w-full sm:w-auto'>
                 <Button
                   onClick={onOpenDialog}
                   disabled={disabled}

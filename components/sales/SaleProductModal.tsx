@@ -166,6 +166,7 @@ export default function SaleProductModal({
                                     <Button
                                       size='sm'
                                       variant='outline'
+                                      aria-label='Disminuir'
                                       onClick={() => {
                                         const currentCantidad = cantidades[id] || 1;
                                         if (currentCantidad > 1) {
@@ -184,6 +185,7 @@ export default function SaleProductModal({
                                     <Button
                                       size='sm'
                                       variant='outline'
+                                      aria-label='Aumentar'
                                       onClick={() => {
                                         const currentCantidad = cantidades[id] || 1;
                                         handleCantidadChange(id, (currentCantidad + 1).toString());
@@ -327,6 +329,7 @@ export default function SaleProductModal({
                                   <Button
                                     size='icon'
                                     variant='outline'
+                                    aria-label='Agregar producto'
                                     className='rounded-full bg-black text-white hover:scale-110 transition-all duration-200'
                                     onClick={() => {
                                       const productWithHostess = {

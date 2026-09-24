@@ -207,8 +207,11 @@ export function TipsEmployeeList({ allowedRole }: Props) {
       {}
       <div className='grid grid-cols-1 md:grid-cols-4 gap-4'>
         <div>
-          <label className='block text-sm font-medium text-gray-700 mb-1'>Buscar</label>
+          <label htmlFor='buscar-propinas' className='block text-sm font-medium text-gray-700 mb-1'>
+            Buscar
+          </label>
           <input
+            id='buscar-propinas'
             type='text'
             placeholder='Buscar por código o monto...'
             value={searchTerm}
@@ -256,13 +259,15 @@ export function TipsEmployeeList({ allowedRole }: Props) {
       {}
       <Card>
         <CardHeader>
-          <CardTitle>Propinas ({filteredTips.length})</CardTitle>
+          <CardTitle aria-live='polite'>Propinas ({filteredTips.length})</CardTitle>
         </CardHeader>
         <CardContent>
           {loading ? (
             <div className='text-center py-8'>
               <div className='animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto'></div>
-              <p className='mt-2 text-gray-600'>Cargando propinas...</p>
+              <p aria-live='polite' className='mt-2 text-gray-600'>
+                Cargando propinas...
+              </p>
             </div>
           ) : (
             <div className='overflow-x-auto'>

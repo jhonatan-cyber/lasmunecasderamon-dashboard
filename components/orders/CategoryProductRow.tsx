@@ -10,7 +10,7 @@ import {
   hasCommission,
   isChampagneProduct,
   getHostessLimit,
-  isExpensiveDrink,
+  isExpensiveDrink
 } from '@/components/orders/productModalRules';
 
 interface CategoryProductRowProps {
@@ -52,7 +52,7 @@ export function CategoryProductRow({
   availableHostesses,
   getAvailableHostessesForChampagne,
   getAvailableHostessesForOtherProducts,
-  requiresRoom,
+  requiresRoom
 }: CategoryProductRowProps) {
   const id = String(p.id_producto || p.id);
   const isChampagne = isChampagneProduct(p);
@@ -62,9 +62,7 @@ export function CategoryProductRow({
   return (
     <TableRow key={id}>
       <TableCell>{p.nombre || p.name}</TableCell>
-      <TableCell className='text-center'>
-        {formatCurrencyNoDecimals(p.price || p.precio)}
-      </TableCell>
+      <TableCell className='text-center'>{formatCurrencyNoDecimals(p.price || p.precio)}</TableCell>
       <TableCell className='text-center'>
         {formatCurrencyNoDecimals(p.commission || p.comision || 0)}
       </TableCell>
@@ -73,6 +71,7 @@ export function CategoryProductRow({
           <Button
             size='sm'
             variant='outline'
+            aria-label='Disminuir'
             onClick={() => {
               const currentCantidad = cantidades[id] || 1;
               if (currentCantidad > 1) {
@@ -88,6 +87,7 @@ export function CategoryProductRow({
           <Button
             size='sm'
             variant='outline'
+            aria-label='Aumentar'
             onClick={() => {
               const currentCantidad = cantidades[id] || 1;
               onCantidadChange(id, (currentCantidad + 1).toString());
@@ -134,9 +134,7 @@ export function CategoryProductRow({
                 setHostessSearchValues(prev => ({ ...prev, [id]: searchValue }));
               }}
               hostessLimit={getHostessLimit(
-                productosCategoria.find(
-                  p => String(p.id_producto || p.id) === id
-                ) || p
+                productosCategoria.find(p => String(p.id_producto || p.id) === id) || p
               )}
               availableHostesses={getAvailableHostessesForChampagne(id)}
             />
@@ -162,6 +160,7 @@ export function CategoryProductRow({
         <Button
           size='icon'
           variant='outline'
+          aria-label='Agregar producto'
           className='rounded-full bg-black text-white hover:scale-110 transition-all duration-200'
           onClick={() => {
             onAgregarProducto({
@@ -171,7 +170,7 @@ export function CategoryProductRow({
                 : otherProductHostessSelections[id] || [],
               isChampagne: isChampagne,
               selectedRoom: roomSelections[id] || null,
-              requiresRoom: needsRoom,
+              requiresRoom: needsRoom
             });
           }}
           disabled={
@@ -197,7 +196,7 @@ function ChampagneHostessSection({
   hostessLimit,
   searchValue,
   onSearchChange,
-  availableHostesses,
+  availableHostesses
 }: {
   id: string;
   selections: string[];
@@ -234,7 +233,7 @@ function OtherHostessSection({
   availableHostesses,
   hostessSearchValue,
   onHostessSearchChange,
-  product,
+  product
 }: {
   id: string;
   selections: string[];

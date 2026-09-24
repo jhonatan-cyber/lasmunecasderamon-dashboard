@@ -347,7 +347,7 @@ export default function NuevoServicioPage() {
     <>
       <div className='flex flex-col sm:flex-row items-start sm:items-center justify-between mt-4 sm:mt-6 lg:mt-10 p-4 sm:p-6 lg:p-8 gap-4 sm:gap-6'>
         <div>
-          <h2 className='text-xl sm:text-2xl lg:text-3xl font-bold text-gray-900'>
+          <h2 className='text-xl sm:text-2xl lg:text-3xl font-bold text-gray-900 dark:text-white'>
             Datos Servicio
           </h2>
           <div className='uppercase text-xs tracking-widest text-gray-400 font-semibold mb-1'>
@@ -547,7 +547,7 @@ export default function NuevoServicioPage() {
           <span className='uppercase text-xs sm:text-sm text-gray-400 tracking-widest font-semibold mb-1'>
             TOTAL
           </span>
-          <span className='text-lg sm:text-xl lg:text-2xl font-extrabold text-gray-900 mb-4'>
+          <span className='text-lg sm:text-xl lg:text-2xl font-extrabold text-gray-900 dark:text-white mb-4'>
             <span className='ml-1'>{formatCurrencyCLP(total)}</span>
           </span>
           <Button
@@ -567,7 +567,7 @@ export default function NuevoServicioPage() {
       {showConfirmModal && (
         <div className='fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4'>
           <div className='bg-white rounded-3xl p-6 sm:p-8 shadow-2xl max-w-md w-full animate-in zoom-in-95 duration-200'>
-            <h3 className='text-lg sm:text-xl font-black text-gray-900 mb-2 uppercase tracking-tight'>
+            <h3 className='text-lg sm:text-xl font-black text-gray-900 dark:text-white mb-2 uppercase tracking-tight'>
               Confirmar creación de servicio
             </h3>
             <p className='text-sm sm:text-base text-gray-500 mb-6 font-medium'>

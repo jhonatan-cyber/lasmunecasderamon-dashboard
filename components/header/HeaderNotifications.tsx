@@ -242,7 +242,16 @@ export function HeaderNotifications() {
     <>
       <DropdownMenu open={showDropdown} onOpenChange={setShowDropdown}>
         <DropdownMenuTrigger asChild>
-          <Button variant='ghost' size='icon' className='relative'>
+          <Button
+            variant='ghost'
+            size='icon'
+            className='relative'
+            aria-label={
+              totalNotifications > 0
+                ? `Notificaciones pendientes (${totalNotifications})`
+                : 'Notificaciones'
+            }
+          >
             <Bell className={`h-5 w-5 bell-icon ${totalNotifications > 0 ? 'bell-ring' : ''}`} />
             {totalNotifications > 0 && (
               <span className='absolute -top-1 -right-1 h-4 w-4 bg-red-500 rounded-full text-xs text-white flex items-center justify-center badge-blink'>

@@ -30,7 +30,7 @@ export function SalesHeader({ loading, onRefresh, cajaDisabled }: SalesHeaderPro
           <TooltipProvider>
             <Tooltip open={cajaDisabled ? undefined : false}>
               <TooltipTrigger asChild>
-                <span tabIndex={0}>
+                <span>
                   <Button
                     onClick={() => router.push('/sales/new')}
                     size='sm'

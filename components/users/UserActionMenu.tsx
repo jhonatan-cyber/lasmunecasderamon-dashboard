@@ -47,6 +47,7 @@ function UserActionMenuComponent({
         <Button
           variant='ghost'
           size='icon'
+          aria-label='Más acciones'
           className='bg-white hover:bg-gray-200 rounded-full hover:scale-105 transition-all duration-200'
         >
           <MoreVertical className='w-3 h-3 sm:w-4 sm:h-4' />
@@ -57,7 +58,10 @@ function UserActionMenuComponent({
           <TooltipProvider>
             <Tooltip>
               <TooltipTrigger asChild>
-                <DropdownMenuItem onClick={() => onViewDetails(user)} className='cursor-pointer group'>
+                <DropdownMenuItem
+                  onClick={() => onViewDetails(user)}
+                  className='cursor-pointer group'
+                >
                   <Eye className='mr-2 text-blue-600 group-hover:text-blue-700 transition-colors w-3 h-3 sm:w-4 sm:h-4' />
                   <span className='group-hover:text-blue-700 transition-colors text-xs sm:text-sm'>
                     Ver detalles
@@ -68,7 +72,7 @@ function UserActionMenuComponent({
             </Tooltip>
           </TooltipProvider>
         )}
-        
+
         {canEdit && (
           <TooltipProvider>
             <Tooltip>
@@ -84,12 +88,15 @@ function UserActionMenuComponent({
             </Tooltip>
           </TooltipProvider>
         )}
-        
+
         {user.status === 0 && canActivate ? (
           <TooltipProvider>
             <Tooltip>
               <TooltipTrigger asChild>
-                <DropdownMenuItem onClick={() => onActivate(user.id)} className='cursor-pointer group'>
+                <DropdownMenuItem
+                  onClick={() => onActivate(user.id)}
+                  className='cursor-pointer group'
+                >
                   <Check className='mr-2 text-green-600 group-hover:text-green-700 transition-colors w-3 h-3 sm:w-4 sm:h-4' />
                   <span className='group-hover:text-green-700 transition-colors text-xs sm:text-sm'>
                     Activar
@@ -103,7 +110,10 @@ function UserActionMenuComponent({
           <TooltipProvider>
             <Tooltip>
               <TooltipTrigger asChild>
-                <DropdownMenuItem onClick={() => onDeactivate(user.id)} className='cursor-pointer group'>
+                <DropdownMenuItem
+                  onClick={() => onDeactivate(user.id)}
+                  className='cursor-pointer group'
+                >
                   <Power className='mr-2 text-orange-600 group-hover:text-orange-700 transition-colors w-3 h-3 sm:w-4 sm:h-4' />
                   <span className='group-hover:text-orange-700 transition-colors text-xs sm:text-sm'>
                     Desactivar
@@ -114,12 +124,15 @@ function UserActionMenuComponent({
             </Tooltip>
           </TooltipProvider>
         ) : null}
-        
+
         {canDelete && (
           <TooltipProvider>
             <Tooltip>
               <TooltipTrigger asChild>
-                <DropdownMenuItem onClick={() => onDelete(user.id)} className='cursor-pointer group'>
+                <DropdownMenuItem
+                  onClick={() => onDelete(user.id)}
+                  className='cursor-pointer group'
+                >
                   <Trash2 className='mr-2 text-red-600 group-hover:text-red-700 transition-colors w-3 h-3 sm:w-4 sm:h-4' />
                   <span className='group-hover:text-red-700 transition-colors text-xs sm:text-sm'>
                     Eliminar

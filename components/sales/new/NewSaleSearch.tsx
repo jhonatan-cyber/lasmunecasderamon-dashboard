@@ -217,6 +217,7 @@ export const NewSaleSearch = ({
                         <TableCell className={`${CUENTA_TABLE_CELL_CLASS} text-center`}>
                           <Button
                             size='icon'
+                            aria-label='Agregar producto'
                             className='bg-black text-white rounded-full hover:scale-110 transition-all duration-200'
                             onClick={() =>
                               handleAddProducto({

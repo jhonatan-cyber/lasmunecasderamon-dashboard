@@ -40,16 +40,27 @@ export class PurchaseRepository {
       usuario_id: data.usuario_id ?? null,
       fecha_crea: getNowInBusinessTimezone()
     });
-    for (const d of detalles) {
-      await BaseRepository.insert(trx, 'detalle_compras', {
-        id: generateUUID(),
-        compra_id: id,
-        producto_id: d.producto_id,
-        presentacion_id: d.presentacion_id,
-        cantidad: d.cantidad,
-        precio_compra: d.precio_compra,
-        subtotal: d.subtotal
-      });
+    if (detalles.length > 0) {
+      const columns = [
+        'id',
+        'compra_id',
+        'producto_id',
+        'presentacion_id',
+        'cantidad',
+        'precio_compra',
+        'subtotal'
+      ];
+      const tuples = detalles.map(() => `(${columns.map(() => '?').join(', ')})`).join(', ');
+      const values = detalles.flatMap(d => [
+        generateUUID(),
+        id,
+        d.producto_id,
+        d.presentacion_id,
+        d.cantidad,
+        d.precio_compra,
+        d.subtotal
+      ]);
+      await trx(`INSERT INTO detalle_compras (${columns.join(', ')}) VALUES ${tuples}`, values);
     }
     const row = await BaseRepository.findOne<any>(trx, 'compras', 'id', id);
     return {

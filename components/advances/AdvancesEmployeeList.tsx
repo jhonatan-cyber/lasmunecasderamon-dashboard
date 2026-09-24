@@ -157,7 +157,9 @@ export function AdvancesEmployeeList({ allowedRole, title }: Props) {
       {}
       <div className='flex items-center justify-between'>
         <div>
-          <h1 className='text-2xl font-bold text-gray-900'>{title || 'Listado de Anticipos'}</h1>
+          <h1 className='text-2xl font-bold text-gray-900 dark:text-white'>
+            {title || 'Listado de Anticipos'}
+          </h1>
           <p className='text-gray-600'>
             Anticipos de {user?.name} {user?.lastName}
           </p>
@@ -175,14 +177,22 @@ export function AdvancesEmployeeList({ allowedRole, title }: Props) {
       {}
       <div className='text-center'>
         <p className='text-sm text-gray-500'>TOTAL A PAGAR</p>
-        <p className='text-2xl font-bold text-gray-900'>{formatCurrencyCLP(totalToPay)}</p>
+        <p className='text-2xl font-bold text-gray-900 dark:text-white'>
+          {formatCurrencyCLP(totalToPay)}
+        </p>
       </div>
 
       {}
       <div className='grid grid-cols-1 md:grid-cols-4 gap-4'>
         <div>
-          <label className='block text-sm font-medium text-gray-700 mb-1'>Buscar</label>
+          <label
+            htmlFor='buscar-anticipos'
+            className='block text-sm font-medium text-gray-700 dark:text-gray-200 mb-1'
+          >
+            Buscar
+          </label>
           <input
+            id='buscar-anticipos'
             type='text'
             placeholder='Buscar por monto...'
             value={searchTerm}
@@ -230,26 +240,36 @@ export function AdvancesEmployeeList({ allowedRole, title }: Props) {
       {}
       <Card>
         <CardHeader>
-          <CardTitle>Anticipos ({filteredAdvances.length})</CardTitle>
+          <CardTitle aria-live='polite'>Anticipos ({filteredAdvances.length})</CardTitle>
         </CardHeader>
         <CardContent>
           {loading ? (
             <div className='text-center py-8'>
               <div className='animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto'></div>
-              <p className='mt-2 text-gray-600'>Cargando anticipos...</p>
+              <p aria-live='polite' className='mt-2 text-gray-600'>
+                Cargando anticipos...
+              </p>
             </div>
           ) : (
             <div className='overflow-x-auto'>
               <table className='w-full'>
                 <thead>
                   <tr className='border-b border-gray-200'>
-                    <th className='text-left py-3 px-4 font-medium text-gray-900'>#</th>
-                    <th className='text-left py-3 px-4 font-medium text-gray-900'>
+                    <th className='text-left py-3 px-4 font-medium text-gray-900 dark:text-gray-100'>
+                      #
+                    </th>
+                    <th className='text-left py-3 px-4 font-medium text-gray-900 dark:text-gray-100'>
                       FECHA SOLICITUD
                     </th>
-                    <th className='text-left py-3 px-4 font-medium text-gray-900'>FECHA PAGO</th>
-                    <th className='text-left py-3 px-4 font-medium text-gray-900'>MONTO</th>
-                    <th className='text-left py-3 px-4 font-medium text-gray-900'>ESTADO</th>
+                    <th className='text-left py-3 px-4 font-medium text-gray-900 dark:text-gray-100'>
+                      FECHA PAGO
+                    </th>
+                    <th className='text-left py-3 px-4 font-medium text-gray-900 dark:text-gray-100'>
+                      MONTO
+                    </th>
+                    <th className='text-left py-3 px-4 font-medium text-gray-900 dark:text-gray-100'>
+                      ESTADO
+                    </th>
                   </tr>
                 </thead>
                 <tbody>
@@ -268,14 +288,18 @@ export function AdvancesEmployeeList({ allowedRole, title }: Props) {
                         </td>
                         <td className='py-3 px-4'>
                           <div>
-                            <div className='font-medium text-gray-900'>{solicitudDate.date}</div>
+                            <div className='font-medium text-gray-900 dark:text-gray-100'>
+                              {solicitudDate.date}
+                            </div>
                             <div className='text-sm text-gray-500'>{solicitudDate.time}</div>
                           </div>
                         </td>
                         <td className='py-3 px-4'>
                           {advance.fecha_mod ? (
                             <div>
-                              <div className='font-medium text-gray-900'>{pagoDate.date}</div>
+                              <div className='font-medium text-gray-900 dark:text-gray-100'>
+                                {pagoDate.date}
+                              </div>
                               <div className='text-sm text-gray-500'>{pagoDate.time}</div>
                             </div>
                           ) : (
@@ -284,7 +308,7 @@ export function AdvancesEmployeeList({ allowedRole, title }: Props) {
                             </span>
                           )}
                         </td>
-                        <td className='py-3 px-4 text-gray-900'>
+                        <td className='py-3 px-4 text-gray-900 dark:text-gray-100'>
                           {formatCurrencyCLP(advance.monto)}
                         </td>
                         <td className='py-3 px-4'>{getStatusBadge(advance.estado)}</td>

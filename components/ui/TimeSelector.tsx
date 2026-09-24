@@ -44,14 +44,13 @@ export function TimeSelector({
 
   return (
     <div className='flex flex-col gap-1.5'>
-      <Label className='text-xs font-medium text-gray-500 uppercase tracking-wide'>
-        {label}
-      </Label>
+      <Label className='text-xs font-medium text-gray-500 uppercase tracking-wide'>{label}</Label>
       <div className='flex items-center border border-gray-300 dark:border-gray-700 rounded-full overflow-hidden bg-gray-100 dark:bg-slate-900/50 h-11'>
         <Button
           type='button'
           variant='ghost'
           size='icon'
+          aria-label='Disminuir'
           onClick={handleDecrement}
           disabled={value - step < min}
           className='h-full w-12 rounded-none border-r border-gray-300 dark:border-gray-700 hover:bg-gray-200 dark:hover:bg-slate-800'
@@ -70,6 +69,7 @@ export function TimeSelector({
           type='button'
           variant='ghost'
           size='icon'
+          aria-label='Aumentar'
           onClick={handleIncrement}
           disabled={value + step > max}
           className='h-full w-12 rounded-none border-l border-gray-300 dark:border-gray-700 hover:bg-gray-200 dark:hover:bg-slate-800'

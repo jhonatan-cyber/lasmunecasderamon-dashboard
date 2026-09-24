@@ -194,6 +194,7 @@ const ClientActionsDropdown = ({
               <Button
                 variant='ghost'
                 size='icon'
+                aria-label='Más acciones'
                 className='bg-white hover:bg-gray-200 rounded-full hover:scale-105 transition-all duration-200'
               >
                 <MoreVertical />

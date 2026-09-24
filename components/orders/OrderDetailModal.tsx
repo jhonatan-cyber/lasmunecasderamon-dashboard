@@ -96,11 +96,15 @@ export default function OrderDetailModal({
 
         {isLoading ? (
           <div className='py-8 text-center text-gray-700 dark:text-zinc-300 sm:py-12'>
-            <div className='text-sm sm:text-base'>Cargando detalles...</div>
+            <div aria-live='polite' className='text-sm sm:text-base'>
+              Cargando detalles...
+            </div>
           </div>
         ) : error ? (
           <div className='py-8 text-center text-gray-700 dark:text-zinc-300 sm:py-12'>
-            <div className='text-red-500 text-sm sm:text-base'>{error}</div>
+            <div role='alert' className='text-red-500 text-sm sm:text-base'>
+              {error}
+            </div>
           </div>
         ) : detail && detail.length > 0 ? (
           <>

@@ -270,7 +270,7 @@ describe('findMalformedMigrations', () => {
     expect(
       findMalformedMigrations([
         '001_consolidated.sql',
-        '011_transferencias_aprobacion.sql',
+        '027_transferencias_aprobacion.sql',
         '021_unidades_impresion.sql'
       ])
     ).toEqual([]);

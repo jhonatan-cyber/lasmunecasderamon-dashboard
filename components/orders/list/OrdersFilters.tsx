@@ -94,6 +94,7 @@ export function AdminOrdersFilters({
               <Button
                 variant='outline'
                 size='icon'
+                aria-label={sortOrder === 'asc' ? 'Ordenar descendente' : 'Ordenar ascendente'}
                 onClick={() => setSortOrder(sortOrder === 'asc' ? 'desc' : 'asc')}
                 className='h-11 w-11 rounded-full border-gray-200 dark:border-gray-800 bg-gray-100 dark:bg-slate-900/50'
               >
@@ -127,6 +128,7 @@ export function AdminOrdersFilters({
                     onClick={onClearFilters}
                     variant='outline'
                     size='icon'
+                    aria-label='Limpiar filtros'
                     className='w-10 h-10 flex items-center justify-center rounded-2xl border-gray-200 dark:border-gray-800 hover:scale-110 transition-all duration-200 hover:bg-black hover:text-white dark:hover:bg-white dark:hover:text-black shadow-xs'
                   >
                     <Trash2 className='w-4 h-4' />

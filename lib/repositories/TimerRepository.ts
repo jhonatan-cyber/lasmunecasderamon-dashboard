@@ -108,47 +108,61 @@ export class TimerRepository {
   static async runAutoCleanup() {
     const nowStr = getNowInBusinessTimezone();
     let changed = false;
+    const roomsToResume = new Set<string>();
 
     const expiredV = await query<any[]>(
-      "SELECT id_venta, habitacion_id FROM ventas WHERE habitacion_id IS NOT NULL AND tiempo > 0 AND estado = 2 AND paused_at IS NULL AND TRUNC(EXTRACT(EPOCH FROM (CAST(? AS timestamp) - CAST(fecha_crea AS timestamp))) / 1) >= (tiempo * 60)",
+      'SELECT id_venta, habitacion_id FROM ventas WHERE habitacion_id IS NOT NULL AND tiempo > 0 AND estado = 2 AND paused_at IS NULL AND TRUNC(EXTRACT(EPOCH FROM (CAST(? AS timestamp) - CAST(fecha_crea AS timestamp))) / 1) >= (tiempo * 60)',
       [nowStr]
     );
-    for (const v of expiredV) {
-      await query('UPDATE ventas SET estado = 1, fecha_mod = ? WHERE id_venta = ?', [
-        nowStr,
-        v.id_venta
-      ]);
-      await this.handleRoomResume(v.habitacion_id, nowStr);
+    if (expiredV.length > 0) {
+      const ids = expiredV.map(v => v.id_venta);
+      const placeholders = ids.map(() => '?').join(',');
+      await query(
+        `UPDATE ventas SET estado = 1, fecha_mod = ? WHERE id_venta IN (${placeholders})`,
+        [nowStr, ...ids]
+      );
+      for (const v of expiredV) {
+        if (v.habitacion_id) roomsToResume.add(v.habitacion_id);
+      }
       changed = true;
     }
 
     const expiredS = await query<any[]>(
-      "SELECT id_servicio, habitacion_id FROM servicios WHERE habitacion_id IS NOT NULL AND tiempo > 0 AND estado = 2 AND paused_at IS NULL AND TRUNC(EXTRACT(EPOCH FROM (CAST(? AS timestamp) - CAST(fecha_crea AS timestamp))) / 1) >= (tiempo * 60)",
+      'SELECT id_servicio, habitacion_id FROM servicios WHERE habitacion_id IS NOT NULL AND tiempo > 0 AND estado = 2 AND paused_at IS NULL AND TRUNC(EXTRACT(EPOCH FROM (CAST(? AS timestamp) - CAST(fecha_crea AS timestamp))) / 1) >= (tiempo * 60)',
       [nowStr]
     );
-    for (const s of expiredS) {
-      await query('UPDATE servicios SET estado = 1 WHERE id_servicio = ?', [s.id_servicio]);
+    if (expiredS.length > 0) {
+      const ids = expiredS.map(s => s.id_servicio);
+      const placeholders = ids.map(() => '?').join(',');
+      await query(`UPDATE servicios SET estado = 1 WHERE id_servicio IN (${placeholders})`, ids);
       await query(
-        'UPDATE usuarios u SET estado_servicio = 0 FROM detalle_servicios ds WHERE u.id_usuario = ds.usuario_id AND ds.servicio_id = ?',
-        [s.id_servicio]
+        `UPDATE usuarios u SET estado_servicio = 0 FROM detalle_servicios ds WHERE u.id_usuario = ds.usuario_id AND ds.servicio_id IN (${placeholders})`,
+        ids
       );
-      await this.handleRoomResume(s.habitacion_id, nowStr);
+      for (const s of expiredS) {
+        if (s.habitacion_id) roomsToResume.add(s.habitacion_id);
+      }
       changed = true;
     }
 
     const expiredC = await query<any[]>(
-      "SELECT id_cuenta, habitacion_id FROM cuentas WHERE habitacion_id IS NOT NULL AND COALESCE(tiempo_actual, tiempo) > 0 AND estado = 1 AND TRUNC(EXTRACT(EPOCH FROM (CAST(? AS timestamp) - CAST(COALESCE(tiempo_inicio_actual, fecha_crea) AS timestamp))) / 1) >= (COALESCE(tiempo_actual, tiempo) * 60)",
+      'SELECT id_cuenta, habitacion_id FROM cuentas WHERE habitacion_id IS NOT NULL AND COALESCE(tiempo_actual, tiempo) > 0 AND estado = 1 AND TRUNC(EXTRACT(EPOCH FROM (CAST(? AS timestamp) - CAST(COALESCE(tiempo_inicio_actual, fecha_crea) AS timestamp))) / 1) >= (COALESCE(tiempo_actual, tiempo) * 60)',
       [nowStr]
     );
     for (const c of expiredC) {
       await CuentaRepository.finalizeRoomSession(c.id_cuenta, nowStr);
-      await this.handleRoomResume(c.habitacion_id, nowStr);
+      if (c.habitacion_id) roomsToResume.add(c.habitacion_id);
       sendNotificationToAll('timer_stopped', {
         servicioId: c.id_cuenta,
         status: 1,
         tipoTransaccion: 'cuenta'
       });
       changed = true;
+    }
+
+    // Una pasada de resume por habitación distinta (no por fila expirada).
+    for (const habitacionId of roomsToResume) {
+      await this.handleRoomResume(habitacionId, nowStr);
     }
 
     if (changed) sendNotificationToAll('timers_updated', { timestamp: nowStr });
@@ -170,12 +184,12 @@ export class TimerRepository {
       const resumeV = vP && (!sP || (vPDate?.getTime() || 0) >= (sPDate?.getTime() || 0));
       if (resumeV)
         await query(
-          "UPDATE ventas SET estado = 2, fecha_crea = (CAST(fecha_crea AS timestamp) + make_interval(secs => CAST(TRUNC(EXTRACT(EPOCH FROM (CAST(? AS timestamp) - CAST(paused_at AS timestamp))) / 1) AS double precision))), paused_at = NULL WHERE id_venta = ?",
+          'UPDATE ventas SET estado = 2, fecha_crea = (CAST(fecha_crea AS timestamp) + make_interval(secs => CAST(TRUNC(EXTRACT(EPOCH FROM (CAST(? AS timestamp) - CAST(paused_at AS timestamp))) / 1) AS double precision))), paused_at = NULL WHERE id_venta = ?',
           [nowStr, vP.id_venta]
         );
       else
         await query(
-          "UPDATE servicios SET estado = 2, fecha_crea = (CAST(fecha_crea AS timestamp) + make_interval(secs => CAST(TRUNC(EXTRACT(EPOCH FROM (CAST(? AS timestamp) - CAST(paused_at AS timestamp))) / 1) AS double precision))), paused_at = NULL WHERE id_servicio = ?",
+          'UPDATE servicios SET estado = 2, fecha_crea = (CAST(fecha_crea AS timestamp) + make_interval(secs => CAST(TRUNC(EXTRACT(EPOCH FROM (CAST(? AS timestamp) - CAST(paused_at AS timestamp))) / 1) AS double precision))), paused_at = NULL WHERE id_servicio = ?',
           [nowStr, sP.id_servicio]
         );
     } else {

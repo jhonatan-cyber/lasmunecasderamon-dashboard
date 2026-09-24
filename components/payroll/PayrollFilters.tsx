@@ -82,6 +82,7 @@ export default function PayrollFilters({
               <Button
                 variant='outline'
                 size='icon'
+                aria-label={sortOrder === 'asc' ? 'Ordenar descendente' : 'Ordenar ascendente'}
                 onClick={() => setSortOrder(sortOrder === 'asc' ? 'desc' : 'asc')}
                 className='h-10 w-10 shrink-0 rounded-full border border-gray-300 dark:border-gray-700 bg-gray-100 dark:bg-slate-900/50 text-gray-900 dark:text-gray-100 hover:bg-gray-200 dark:hover:bg-gray-700'
               >
@@ -119,6 +120,7 @@ export default function PayrollFilters({
                       onClick={onClear}
                       variant='outline'
                       size='icon'
+                      aria-label='Limpiar filtros'
                       className='w-10 h-10 shrink-0 rounded-full border border-gray-300 dark:border-gray-700 shadow-xs bg-gray-100 dark:bg-slate-900/50 text-gray-900 dark:text-gray-100 transition-all duration-200 hover:scale-110 hover:bg-red-500! hover:text-white! hover:border-red-500!'
                     >
                       <Trash2 className='w-4 h-4' />
@@ -175,6 +177,7 @@ export default function PayrollFilters({
             <Button
               variant='outline'
               size='icon'
+              aria-label={sortOrder === 'asc' ? 'Ordenar descendente' : 'Ordenar ascendente'}
               onClick={() => setSortOrder(sortOrder === 'asc' ? 'desc' : 'asc')}
               className='h-10 w-10 rounded-full border border-gray-300 dark:border-gray-700 bg-gray-100 dark:bg-slate-900/50 text-gray-900 dark:text-gray-100 hover:bg-gray-200 dark:hover:bg-gray-700'
             >
@@ -208,6 +211,7 @@ export default function PayrollFilters({
                   onClick={onClear}
                   variant='outline'
                   size='icon'
+                  aria-label='Limpiar filtros'
                   className='w-10 h-10 rounded-full border border-gray-300 dark:border-gray-700 shadow-xs bg-gray-100 dark:bg-slate-900/50 text-gray-900 dark:text-gray-100 transition-all duration-200 hover:scale-110 hover:bg-red-500! hover:text-white! hover:border-red-500!'
                 >
                   <Trash2 className='w-4 h-4' />

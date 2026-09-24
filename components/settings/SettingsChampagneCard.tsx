@@ -174,10 +174,14 @@ export function SettingsChampagneCard() {
           <div className='space-y-6'>
             <div className='flex flex-col sm:flex-row gap-4 sm:items-end'>
               <div className='flex-1 space-y-1'>
-                <label className='block text-xs font-bold uppercase tracking-wider text-neutral-500 ml-1'>
+                <label
+                  htmlFor='champagne-producto'
+                  className='block text-xs font-bold uppercase tracking-wider text-neutral-500 ml-1'
+                >
                   Producto champagne
                 </label>
                 <select
+                  id='champagne-producto'
                   value={selectedId}
                   onChange={e => setSelectedId(e.target.value)}
                   className='w-full px-4 py-2.5 bg-white dark:bg-neutral-950 border border-neutral-300 dark:border-neutral-800 rounded-full text-sm'
@@ -190,10 +194,14 @@ export function SettingsChampagneCard() {
                 </select>
               </div>
               <div className='space-y-1'>
-                <label className='block text-xs font-bold uppercase tracking-wider text-neutral-500 ml-1'>
+                <label
+                  htmlFor='champagne-max'
+                  className='block text-xs font-bold uppercase tracking-wider text-neutral-500 ml-1'
+                >
                   N° máx. anfitrionas
                 </label>
                 <input
+                  id='champagne-max'
                   type='number'
                   min={1}
                   max={10}

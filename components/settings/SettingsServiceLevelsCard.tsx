@@ -106,7 +106,10 @@ export function SettingsServiceLevelsCard() {
             <div className='flex items-center gap-3'>
               <ShoppingCart className='h-5 w-5 text-neutral-500 shrink-0' />
               <div className='flex-1'>
-                <label className='text-sm font-bold text-neutral-700 dark:text-neutral-300'>
+                <label
+                  htmlFor='service-simple'
+                  className='text-sm font-bold text-neutral-700 dark:text-neutral-300'
+                >
                   Venta simple hasta
                 </label>
                 <p className='text-xs text-neutral-500 dark:text-neutral-400 mt-0.5'>
@@ -116,6 +119,7 @@ export function SettingsServiceLevelsCard() {
               <div className='flex items-center gap-2 shrink-0'>
                 <span className='text-sm text-neutral-500'>$</span>
                 <input
+                  id='service-simple'
                   type='number'
                   min='0'
                   value={simpleValue}
@@ -130,7 +134,10 @@ export function SettingsServiceLevelsCard() {
             <div className='flex items-center gap-3'>
               <Users className='h-5 w-5 text-neutral-500 shrink-0' />
               <div className='flex-1'>
-                <label className='text-sm font-bold text-neutral-700 dark:text-neutral-300'>
+                <label
+                  htmlFor='service-hostess'
+                  className='text-sm font-bold text-neutral-700 dark:text-neutral-300'
+                >
                   Anfitriona desde
                 </label>
                 <p className='text-xs text-neutral-500 dark:text-neutral-400 mt-0.5'>
@@ -140,6 +147,7 @@ export function SettingsServiceLevelsCard() {
               <div className='flex items-center gap-2 shrink-0'>
                 <span className='text-sm text-neutral-500'>$</span>
                 <input
+                  id='service-hostess'
                   type='number'
                   min='0'
                   value={hostessValue}
@@ -154,7 +162,10 @@ export function SettingsServiceLevelsCard() {
             <div className='flex items-center gap-3'>
               <BedDouble className='h-5 w-5 text-neutral-500 shrink-0' />
               <div className='flex-1'>
-                <label className='text-sm font-bold text-neutral-700 dark:text-neutral-300'>
+                <label
+                  htmlFor='service-habitacion'
+                  className='text-sm font-bold text-neutral-700 dark:text-neutral-300'
+                >
                   Habitación desde
                 </label>
                 <p className='text-xs text-neutral-500 dark:text-neutral-400 mt-0.5'>
@@ -164,6 +175,7 @@ export function SettingsServiceLevelsCard() {
               <div className='flex items-center gap-2 shrink-0'>
                 <span className='text-sm text-neutral-500'>$</span>
                 <input
+                  id='service-habitacion'
                   type='number'
                   min='0'
                   value={habitacionValue}

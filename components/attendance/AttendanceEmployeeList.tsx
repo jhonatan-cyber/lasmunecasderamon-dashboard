@@ -159,7 +159,7 @@ export function AttendanceEmployeeList({ allowedRole }: Props) {
       );
     } else {
       const { date } = formatDateTimeDmyLabel(fechaPago);
-      return <div className='text-sm text-gray-900'>{date}</div>;
+      return <div className='text-sm text-gray-900 dark:text-gray-100'>{date}</div>;
     }
   };
 
@@ -168,7 +168,9 @@ export function AttendanceEmployeeList({ allowedRole }: Props) {
       {}
       <div className='flex items-center justify-between'>
         <div>
-          <h1 className='text-2xl font-bold text-gray-900'>Listado de Asistencias</h1>
+          <h1 className='text-2xl font-bold text-gray-900 dark:text-white'>
+            Listado de Asistencias
+          </h1>
           <p className='text-gray-600'>
             Asistencias de {user?.name} {user?.lastName}
           </p>
@@ -198,14 +200,22 @@ export function AttendanceEmployeeList({ allowedRole }: Props) {
       {}
       <div className='text-center'>
         <p className='text-sm text-gray-500'>TOTAL A COBRAR</p>
-        <p className='text-2xl font-bold text-gray-900'>{formatCurrencyCLP(totalToCollect)}</p>
+        <p className='text-2xl font-bold text-gray-900 dark:text-white'>
+          {formatCurrencyCLP(totalToCollect)}
+        </p>
       </div>
 
       {}
       <div className='grid grid-cols-1 md:grid-cols-4 gap-4 w-full'>
         <div className='w-full'>
-          <label className='block text-sm font-medium text-gray-700 mb-1'>Buscar</label>
+          <label
+            htmlFor='buscar-asistencias'
+            className='block text-sm font-medium text-gray-700 dark:text-gray-200 mb-1'
+          >
+            Buscar
+          </label>
           <input
+            id='buscar-asistencias'
             type='text'
             placeholder='Buscar por fecha u hora...'
             value={searchTerm}
@@ -270,26 +280,42 @@ export function AttendanceEmployeeList({ allowedRole }: Props) {
       {}
       <Card>
         <CardHeader>
-          <CardTitle>Asistencias ({filteredAsistencias.length})</CardTitle>
+          <CardTitle aria-live='polite'>Asistencias ({filteredAsistencias.length})</CardTitle>
         </CardHeader>
         <CardContent>
           {loading ? (
             <div className='text-center py-8'>
               <div className='animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto'></div>
-              <p className='mt-2 text-gray-600'>Cargando asistencias...</p>
+              <p aria-live='polite' className='mt-2 text-gray-600'>
+                Cargando asistencias...
+              </p>
             </div>
           ) : (
             <div className='overflow-x-auto'>
               <table className='w-full'>
                 <thead>
                   <tr className='border-b border-gray-200'>
-                    <th className='text-left py-3 px-4 font-medium text-gray-900'>#</th>
-                    <th className='text-left py-3 px-4 font-medium text-gray-900'>FECHA</th>
-                    <th className='text-left py-3 px-4 font-medium text-gray-900'>SUELDO</th>
-                    <th className='text-left py-3 px-4 font-medium text-gray-900'>APORTE</th>
-                    <th className='text-left py-3 px-4 font-medium text-gray-900'>TOTAL</th>
-                    <th className='text-left py-3 px-4 font-medium text-gray-900'>FECHA DE PAGO</th>
-                    <th className='text-left py-3 px-4 font-medium text-gray-900'>ESTADO</th>
+                    <th className='text-left py-3 px-4 font-medium text-gray-900 dark:text-gray-100'>
+                      #
+                    </th>
+                    <th className='text-left py-3 px-4 font-medium text-gray-900 dark:text-gray-100'>
+                      FECHA
+                    </th>
+                    <th className='text-left py-3 px-4 font-medium text-gray-900 dark:text-gray-100'>
+                      SUELDO
+                    </th>
+                    <th className='text-left py-3 px-4 font-medium text-gray-900 dark:text-gray-100'>
+                      APORTE
+                    </th>
+                    <th className='text-left py-3 px-4 font-medium text-gray-900 dark:text-gray-100'>
+                      TOTAL
+                    </th>
+                    <th className='text-left py-3 px-4 font-medium text-gray-900 dark:text-gray-100'>
+                      FECHA DE PAGO
+                    </th>
+                    <th className='text-left py-3 px-4 font-medium text-gray-900 dark:text-gray-100'>
+                      ESTADO
+                    </th>
                   </tr>
                 </thead>
                 <tbody>
@@ -308,17 +334,19 @@ export function AttendanceEmployeeList({ allowedRole }: Props) {
                         </td>
                         <td className='py-3 px-4'>
                           <div>
-                            <div className='font-medium text-gray-900'>{date}</div>
+                            <div className='font-medium text-gray-900 dark:text-gray-100'>
+                              {date}
+                            </div>
                             <div className='text-sm text-gray-500'>{hora || '—'}</div>
                           </div>
                         </td>
-                        <td className='py-3 px-4 text-gray-900'>
+                        <td className='py-3 px-4 text-gray-900 dark:text-gray-100'>
                           {formatCurrencyCLP(asistencia.sueldo)}
                         </td>
-                        <td className='py-3 px-4 text-gray-900'>
+                        <td className='py-3 px-4 text-gray-900 dark:text-gray-100'>
                           {formatCurrencyCLP(asistencia.aporte)}
                         </td>
-                        <td className='py-3 px-4 text-gray-900'>
+                        <td className='py-3 px-4 text-gray-900 dark:text-gray-100'>
                           {formatCurrencyCLP(asistencia.total)}
                         </td>
                         <td className='py-3 px-4'>

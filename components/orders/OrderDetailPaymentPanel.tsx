@@ -70,7 +70,9 @@ export function OrderDetailPaymentPanel({
           className={showMetodoPagoError && !metodoPago ? 'border-red-300' : ''}
         />
         {showMetodoPagoError && !metodoPago && (
-          <div className='text-xs text-red-500 mt-1'>âš ï¸ El método de pago es obligatorio</div>
+          <div role='alert' className='text-xs text-red-500 mt-1'>
+            âš ï¸ El método de pago es obligatorio
+          </div>
         )}
       </div>
 
@@ -96,12 +98,14 @@ export function OrderDetailPaymentPanel({
 
           {habitacionId && (
             <div>
-              <Label className={ORDER_FIELD_LABEL_CLASS}>Tiempo de uso (minutos)</Label>
+              <Label htmlFor='tiempo-habitacion' className={ORDER_FIELD_LABEL_CLASS}>
+                Tiempo de uso (minutos)
+              </Label>
               <Select
                 value={tiempoHabitacion.toString()}
                 onValueChange={(val: string) => setTiempoHabitacion(Number(val))}
               >
-                <SelectTrigger className={ORDER_FIELD_TRIGGER_CLASS}>
+                <SelectTrigger id='tiempo-habitacion' className={ORDER_FIELD_TRIGGER_CLASS}>
                   <SelectValue placeholder='Seleccionar tiempo' />
                 </SelectTrigger>
                 <SelectContent className={ORDER_FIELD_POPOVER_CLASS}>
@@ -122,11 +126,14 @@ export function OrderDetailPaymentPanel({
       )}
 
       <div>
-        <Label className={ORDER_FIELD_LABEL_CLASS}>Propina</Label>
+        <Label htmlFor='propina-display' className={ORDER_FIELD_LABEL_CLASS}>
+          Propina
+        </Label>
         <div className='flex items-center space-x-2'>
           <div className='relative flex-1'>
             <Coins className='absolute left-2 top-1/2 -translate-y-1/2 pointer-events-none h-3 w-3 sm:h-4 sm:w-4 text-muted-foreground' />
             <Input
+              id='propina-display'
               className={`${ORDER_FIELD_INPUT_CLASS} pl-8`}
               placeholder='Sin propina'
               type='text'
@@ -157,10 +164,13 @@ export function OrderDetailPaymentPanel({
       </div>
 
       <div>
-        <Label className={ORDER_FIELD_LABEL_CLASS}>Total Comisión</Label>
+        <Label htmlFor='order-total-comision' className={ORDER_FIELD_LABEL_CLASS}>
+          Total Comisión
+        </Label>
         <div className='relative'>
           <DollarSign className='absolute left-2 top-1/2 -translate-y-1/2 pointer-events-none h-3 w-3 sm:h-4 sm:w-4 text-muted-foreground' />
           <Input
+            id='order-total-comision'
             className={`${ORDER_FIELD_INPUT_WITH_ICON_CLASS} font-semibold`}
             value={formatCurrencyCLP(orderTotalCommission)}
             disabled

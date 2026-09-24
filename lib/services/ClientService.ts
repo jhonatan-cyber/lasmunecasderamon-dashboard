@@ -38,7 +38,8 @@ export class ClientService {
   }
 
   static async update(id: string | number, body: Record<string, unknown>) {
-    return await ClientRepository.update(id.toString(), body);
+    const validated = ClientSchema.partial().omit({ id: true }).parse(body);
+    return await ClientRepository.update(id.toString(), validated);
   }
 
   static async addPrepago(data: PrepagoInput) {

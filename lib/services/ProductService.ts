@@ -91,7 +91,8 @@ export class ProductService {
   }
 
   static async update(id: string | number, data: Record<string, unknown>) {
-    return await ProductRepository.update(id.toString(), data);
+    const validated = ProductSchema.partial().parse(data);
+    return await ProductRepository.update(id.toString(), validated as Record<string, unknown>);
   }
 
   static async delete(id: string | number) {

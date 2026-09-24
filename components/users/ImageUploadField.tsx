@@ -294,7 +294,10 @@ function ImageUploadFieldComponent({
             )}
 
             <div className='flex flex-col justify-center w-full'>
-              <label className='block text-xs font-medium text-gray-500 dark:text-gray-400 mb-2 ml-1'>
+              <label
+                htmlFor='image-url-input'
+                className='block text-xs font-medium text-gray-500 dark:text-gray-400 mb-2 ml-1'
+              >
                 URL de imagen
               </label>
               <div className='relative'>
@@ -302,6 +305,7 @@ function ImageUploadFieldComponent({
                   <LinkIcon className='w-4 h-4' />
                 </span>
                 <Input
+                  id='image-url-input'
                   placeholder='https://ejemplo.com/imagen.jpg'
                   value={urlValue}
                   onChange={e => handleUrlChange(e.target.value, onChange)}

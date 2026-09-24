@@ -114,6 +114,7 @@ const ProductCard: React.FC<ProductCardProps> = ({
               <Button
                 variant='ghost'
                 size='icon'
+                aria-label='Más acciones'
                 className='h-8 w-8 bg-white/80 dark:bg-slate-900/80 hover:bg-white dark:hover:bg-slate-800 rounded-full shadow-xs opacity-0 group-hover:opacity-100 transition-all duration-300'
               >
                 <MoreVertical className='h-4 w-4 text-gray-600 dark:text-gray-300' />

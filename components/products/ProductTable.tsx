@@ -188,6 +188,7 @@ const SortableRow: React.FC<SortableRowProps> = React.memo(
               <Button
                 variant='ghost'
                 size='icon'
+                aria-label='Más acciones'
                 className='bg-white hover:bg-gray-200 rounded-full hover:scale-105 transition-all duration-200'
               >
                 <MoreVertical className='w-3 h-3 sm:w-4 sm:h-4' />

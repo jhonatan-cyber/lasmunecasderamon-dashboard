@@ -85,7 +85,6 @@ export const NewSaleConfiguration = ({
         <Label className={fieldLabelClass}>Propina Sugerida ({propinaPct}%)</Label>
         <div
           role='button'
-          tabIndex={0}
           onClick={() => setEnableTip(!enableTip)}
           onKeyDown={event => {
             if (event.key === 'Enter' || event.key === ' ') {

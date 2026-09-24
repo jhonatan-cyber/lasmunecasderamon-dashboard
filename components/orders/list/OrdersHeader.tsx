@@ -27,7 +27,7 @@ export const OrdersHeader = ({ hasOpenCaja, cajaLoading, onCreateOrder }: Orders
           <TooltipProvider>
             <Tooltip open={disabled && !cajaLoading ? undefined : false}>
               <TooltipTrigger asChild>
-                <span tabIndex={0} className='block'>
+                <span className='block'>
                   <Button
                     onClick={onCreateOrder}
                     disabled={disabled}

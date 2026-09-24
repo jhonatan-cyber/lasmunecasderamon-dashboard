@@ -90,6 +90,7 @@ export function AttendanceCodeModal() {
           variant='ghost'
           size='icon'
           className='relative'
+          aria-label='Ingresar código de asistencia'
           title='Ingresar código de asistencia'
         >
           <QrCode className='h-5 w-5' />

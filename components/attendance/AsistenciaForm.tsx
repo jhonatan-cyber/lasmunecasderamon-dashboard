@@ -159,11 +159,19 @@ export default function AsistenciaForm({ isOpen, onOpenChange, onSuccess }: Asis
                     <FormItem>
                       <FormControl>
                         <div className='flex flex-col'>
-                          <label className='block text-xs font-medium text-gray-500 dark:text-gray-400 mb-1 uppercase tracking-wide'>
+                          <label
+                            htmlFor='asistencia-fecha'
+                            className='block text-xs font-medium text-gray-500 dark:text-gray-400 mb-1 uppercase tracking-wide'
+                          >
                             Fecha
                             <span className='ml-1 text-red-500'>*</span>
                           </label>
-                          <Input type='date' {...field} className={ORDER_FIELD_INPUT_CLASS} />
+                          <Input
+                            id='asistencia-fecha'
+                            type='date'
+                            {...field}
+                            className={ORDER_FIELD_INPUT_CLASS}
+                          />
                         </div>
                       </FormControl>
                       <FormMessage />
@@ -177,11 +185,19 @@ export default function AsistenciaForm({ isOpen, onOpenChange, onSuccess }: Asis
                     <FormItem>
                       <FormControl>
                         <div className='flex flex-col'>
-                          <label className='block text-xs font-medium text-gray-500 dark:text-gray-400 mb-1 uppercase tracking-wide'>
+                          <label
+                            htmlFor='asistencia-hora'
+                            className='block text-xs font-medium text-gray-500 dark:text-gray-400 mb-1 uppercase tracking-wide'
+                          >
                             Hora
                             <span className='ml-1 text-red-500'>*</span>
                           </label>
-                          <Input type='time' {...field} className={ORDER_FIELD_INPUT_CLASS} />
+                          <Input
+                            id='asistencia-hora'
+                            type='time'
+                            {...field}
+                            className={ORDER_FIELD_INPUT_CLASS}
+                          />
                         </div>
                       </FormControl>
                       <FormMessage />

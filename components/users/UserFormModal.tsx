@@ -168,12 +168,16 @@ export function UserFormModal({
                 <div className='flex flex-col gap-4 sm:gap-6'>
                   {}
                   <div>
-                    <label className='block text-sm sm:text-base font-medium text-gray-700 dark:text-gray-200 mb-1'>
+                    <label
+                      htmlFor='user-rut'
+                      className='block text-sm sm:text-base font-medium text-gray-700 dark:text-gray-200 mb-1'
+                    >
                       RUT
                     </label>
                     <div className='relative'>
                       <CreditCard className='absolute left-3 top-1/2 -translate-y-1/2 text-gray-500 dark:text-gray-400 w-3 h-3 sm:w-4 sm:h-4 pointer-events-none' />
                       <input
+                        id='user-rut'
                         type='text'
                         value={runFormatted}
                         onChange={handleRunChange}
@@ -182,7 +186,11 @@ export function UserFormModal({
                         className='flex h-10 w-full rounded-full border border-input bg-gray-100 pl-10 sm:pl-12 py-2 text-base ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 md:text-sm dark:bg-gray-800 dark:text-gray-100 dark:border-gray-700 dark:focus-visible:ring-gray-400'
                       />
                     </div>
-                    {runError && <p className='text-red-500 text-xs mt-1'>{runError}</p>}
+                    {runError && (
+                      <p role='alert' className='text-red-500 text-xs mt-1'>
+                        {runError}
+                      </p>
+                    )}
                   </div>
 
                   {}
@@ -207,8 +215,9 @@ export function UserFormModal({
               {}
               <div className='grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6'>
                 {}
-                <FormFieldWithIcon                    control={form.control as any}
-                    name='name'
+                <FormFieldWithIcon
+                  control={form.control as any}
+                  name='name'
                   label='Nombre'
                   placeholder='Nombre(s)'
                   icon={User}
@@ -216,8 +225,9 @@ export function UserFormModal({
                 />
 
                 {}
-                <FormFieldWithIcon                    control={form.control as any}
-                    name='lastName'
+                <FormFieldWithIcon
+                  control={form.control as any}
+                  name='lastName'
                   label='Apellido'
                   placeholder='Apellido(s)'
                   icon={FileSignature}
@@ -237,8 +247,9 @@ export function UserFormModal({
                 </div>
 
                 {}
-                <FormFieldWithIcon                    control={form.control as any}
-                    name='phone'
+                <FormFieldWithIcon
+                  control={form.control as any}
+                  name='phone'
                   label='Teléfono'
                   placeholder='Telefono'
                   icon={Phone}
@@ -251,8 +262,9 @@ export function UserFormModal({
                 <AfpInputField control={form.control as any} name='afp' />
 
                 {}
-                <RoleSelect                    control={form.control as any}
-                    name='rol_id'
+                <RoleSelect
+                  control={form.control as any}
+                  name='rol_id'
                   roles={roles}
                   isLoading={isLoadingRoles}
                   label='Rol'
@@ -260,8 +272,9 @@ export function UserFormModal({
                 />
 
                 {}
-                <NumberInputField                    control={form.control as any}
-                    name='salary'
+                <NumberInputField
+                  control={form.control as any}
+                  name='salary'
                   label='Monto en Sueldo'
                   icon={DollarSign}
                   formattedValue={sueldo.formattedValue}
@@ -269,8 +282,9 @@ export function UserFormModal({
                 />
 
                 {}
-                <NumberInputField                    control={form.control as any}
-                    name='contributions'
+                <NumberInputField
+                  control={form.control as any}
+                  name='contributions'
                   label='Monto en Aporte AFP'
                   icon={Coins}
                   formattedValue={aporte.formattedValue}
@@ -278,8 +292,9 @@ export function UserFormModal({
                 />
 
                 {}
-                <HousingDiscountField                    control={form.control as any}
-                    watch={form.watch}
+                <HousingDiscountField
+                  control={form.control as any}
+                  watch={form.watch}
                   discountName='discount'
                   formattedValue={descuento.formattedValue}
                   onValueChange={descuento.handleChange}

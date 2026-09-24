@@ -95,9 +95,11 @@ const HostessMultiSelect: React.FC<HostessMultiSelectProps> = ({
                 return (
                   <label
                     key={id}
+                    htmlFor={`hostess-${id}`}
                     className={`flex items-center gap-2 px-2 py-1 cursor-pointer hover:bg-gray-50 rounded ${!canSelect ? 'opacity-50 cursor-not-allowed' : ''}`}
                   >
                     <Checkbox
+                      id={`hostess-${id}`}
                       checked={isSelected}
                       disabled={!canSelect}
                       onCheckedChange={() => {

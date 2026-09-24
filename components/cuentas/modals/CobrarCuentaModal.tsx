@@ -195,7 +195,9 @@ export default function CobrarCuentaModal({
           {showLoading ? (
             <div className='flex items-center justify-center py-8'>
               <div className='animate-spin rounded-full h-8 w-8 border-b-2 border-gray-900' />
-              <span className='ml-2 text-black'>Cargando detalles...</span>
+              <span aria-live='polite' className='ml-2 text-black'>
+                Cargando detalles...
+              </span>
             </div>
           ) : (
             <div className='space-y-8 rounded-xl'>
@@ -247,13 +249,17 @@ export default function CobrarCuentaModal({
 
                 <div className='space-y-3 text-sm text-gray-700'>
                   <div>
-                    <Label className='block text-xs font-medium text-gray-500 mb-1'>
+                    <Label
+                      htmlFor='cobrar-metodo-pago'
+                      className='block text-xs font-medium text-gray-500 mb-1'
+                    >
                       Método de pago <span className='text-red-500'>*</span>
                     </Label>
                     <div className='relative'>
                       <CreditCard className='absolute left-2 top-1/2 -translate-y-1/2 pointer-events-none h-4 w-4' />
                       <Select value={metodoPago} onValueChange={setMetodoPago}>
                         <SelectTrigger
+                          id='cobrar-metodo-pago'
                           className={`w-full pl-8 border focus:ring-0 focus:border-black bg-transparent py-1 text-center text-sm text-gray-500 rounded-full ${
                             showMetodoPagoError && !metodoPago
                               ? 'border-red-300'
@@ -270,14 +276,17 @@ export default function CobrarCuentaModal({
                       </Select>
                     </div>
                     {showMetodoPagoError && !metodoPago && (
-                      <div className='text-xs text-red-500 mt-1'>
+                      <div role='alert' className='text-xs text-red-500 mt-1'>
                         ⚠️ El método de pago es obligatorio
                       </div>
                     )}
                   </div>
 
                   <div>
-                    <Label className='block text-xs font-medium text-gray-500 mb-1'>
+                    <Label
+                      htmlFor='propina-checkbox'
+                      className='block text-xs font-medium text-gray-500 mb-1'
+                    >
                       Propina ({propinaPct}%)
                     </Label>
                     <div className='flex items-center gap-3 py-2'>
@@ -305,12 +314,16 @@ export default function CobrarCuentaModal({
                   </div>
 
                   <div>
-                    <Label className='block text-xs font-medium text-gray-500 mb-1'>
+                    <Label
+                      htmlFor='cobrar-total-comision'
+                      className='block text-xs font-medium text-gray-500 mb-1'
+                    >
                       Total Comisión
                     </Label>
                     <div className='relative '>
                       <DollarSign className='absolute left-2 top-1/2 -translate-y-1/2 pointer-events-none h-4 w-4' />
                       <Input
+                        id='cobrar-total-comision'
                         className='w-full pl-8 border border-gray-300 focus:ring-0 focus:border-gray-300 bg-transparent py-1 font-semibold text-black'
                         value={formatCurrencyNoDecimals(totalComisionProductos)}
                         disabled
@@ -367,7 +380,7 @@ export default function CobrarCuentaModal({
               <div className='space-y-3'>
                 <div className='flex items-center justify-between'>
                   <h3 className='text-sm font-semibold text-gray-700'>Productos</h3>
-                  <span className='text-xs text-gray-500'>
+                  <span aria-live='polite' className='text-xs text-gray-500'>
                     {detalleResumen.uniqueProductCount} producto
                     {detalleResumen.uniqueProductCount !== 1 ? 's' : ''}
                   </span>

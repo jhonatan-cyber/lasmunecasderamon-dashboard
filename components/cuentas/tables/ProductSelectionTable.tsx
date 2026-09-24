@@ -42,7 +42,9 @@ export default function ProductTable({
               <th className='px-5 py-4 text-left text-xs uppercase font-bold text-gray-500'>
                 CANTIDAD
               </th>
-              <th className='px-5 py-4 text-left text-xs uppercase font-bold text-gray-500'>PRECIO</th>
+              <th className='px-5 py-4 text-left text-xs uppercase font-bold text-gray-500'>
+                PRECIO
+              </th>
               <th className='px-5 py-4 text-left text-xs uppercase font-bold text-gray-500'>
                 COMISIÓN
               </th>
@@ -57,8 +59,8 @@ export default function ProductTable({
           <tbody>
             {Array.isArray(productos) && productos.length > 0 ? (
               productos.map((producto, index) => (
-                <tr 
-                  key={index} 
+                <tr
+                  key={index}
                   className='border-b border-gray-100 dark:border-gray-800 hover:bg-gray-50 dark:hover:bg-slate-800/30 transition-colors'
                 >
                   <td className='px-5 py-4'>
@@ -76,8 +78,11 @@ export default function ProductTable({
                       <Button
                         variant='outline'
                         size='icon'
+                        aria-label='Disminuir'
                         className='h-7 w-7 rounded-full bg-gray-100 dark:bg-slate-800 border-gray-200 dark:border-gray-700 hover:bg-gray-200 dark:hover:bg-slate-700'
-                        onClick={() => onCantidadChange(index, Math.max(1, (producto.cantidad || 1) - 1))}
+                        onClick={() =>
+                          onCantidadChange(index, Math.max(1, (producto.cantidad || 1) - 1))
+                        }
                       >
                         <Minus className='h-3 w-3' />
                       </Button>
@@ -87,6 +92,7 @@ export default function ProductTable({
                       <Button
                         variant='outline'
                         size='icon'
+                        aria-label='Aumentar'
                         className='h-7 w-7 rounded-full bg-gray-100 dark:bg-slate-800 border-gray-200 dark:border-gray-700 hover:bg-gray-200 dark:hover:bg-slate-700'
                         onClick={() => onCantidadChange(index, (producto.cantidad || 1) + 1)}
                       >
@@ -107,6 +113,7 @@ export default function ProductTable({
                     <Button
                       variant='ghost'
                       size='sm'
+                      aria-label='Eliminar'
                       onClick={() => onRemoveProducto(index)}
                       className='h-8 w-8 p-0 hover:bg-red-100 dark:hover:bg-red-900/30 text-red-600 dark:text-red-400 transition-colors'
                     >
