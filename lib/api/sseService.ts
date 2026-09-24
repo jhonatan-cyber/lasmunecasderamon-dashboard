@@ -1,5 +1,6 @@
 import { getNowInBusinessTimezone } from '@/lib/business/timezoneService';
 import { buildFrame, type SseEventType, type SseSubscriberContext } from './sseEvents';
+import { publishSseEvent, startSseBus } from './sseBus';
 
 interface SSEWriter {
   write(chunk: string): void;
@@ -17,6 +18,7 @@ interface SSEWriter {
 class SSEManager {
   private clients: Map<SSEWriter, SseSubscriberContext> = new Map();
   private heartbeatInterval: NodeJS.Timeout | null = null;
+  private busStarted = false;
 
   constructor() {
     const globalInstance = global as any;
@@ -25,6 +27,11 @@ class SSEManager {
   }
 
   public registerClient(writer: SSEWriter, context: SseSubscriberContext) {
+    // Con clientes locales hay algo que repartir: se escucha el bus compartido una vez.
+    if (!this.busStarted) {
+      this.busStarted = true;
+      startSseBus((type, data, timestamp) => this.deliver(type, data, timestamp));
+    }
     this.clients.set(writer, context);
     this.startHeartbeat();
     this.write(writer, {
@@ -46,6 +53,12 @@ class SSEManager {
 
   public broadcast(type: SseEventType, data: any = {}) {
     const timestamp = getNowInBusinessTimezone();
+    // Entrega inmediata a los clientes de esta instancia; el bus lleva el evento al resto.
+    this.deliver(type, data, timestamp);
+    publishSseEvent(type, data, timestamp);
+  }
+
+  private deliver(type: SseEventType, data: any, timestamp: string) {
     for (const [writer, context] of Array.from(this.clients.entries())) {
       const frame = buildFrame({ type, data, subscriber: context }, timestamp);
       if (!frame) continue;
