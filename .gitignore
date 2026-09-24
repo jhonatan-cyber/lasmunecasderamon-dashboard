@@ -31,7 +31,7 @@ next-env.d.ts
 !.env.example
 
 # Logs
-logs/
+/logs/
 *.log
 
 # Audit reports
