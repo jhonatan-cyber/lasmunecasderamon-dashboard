@@ -1,7 +1,7 @@
-import { NextRequest, NextResponse } from 'next/server';
+import { NextResponse } from 'next/server';
 import { generateAccessToken, generateRefreshToken, verifyRefreshToken } from '@/lib/auth/auth';
 import { cookies } from 'next/headers';
-import { loginLimiterApp } from '@/lib/middleware/rateLimit';
+import { withPublicRoute } from '@/lib/api/withRoute';
 import { ApiResponse } from '@/lib/api/api-response';
 
 /**
@@ -15,7 +15,9 @@ import { ApiResponse } from '@/lib/api/api-response';
  * Implementa refresh token rotation: cada renovación genera un nuevo refresh token.
  * Cuando se usa header (no cookie), devuelve el nuevo refresh token en el body.
  */
-export const POST = loginLimiterApp(async (request: NextRequest) => {
+// El middleware valida el refresh token y el limitador estricto de credenciales vive en
+// proxy.ts (Redis + memoria); el handler rota el par access/refresh.
+export const POST = withPublicRoute(async (request: Request) => {
   try {
     const cookieStore = await cookies();
     // Precedencia: header > cookie

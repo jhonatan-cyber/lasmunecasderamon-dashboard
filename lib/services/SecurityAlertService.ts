@@ -7,6 +7,12 @@ import { getAdminWhatsApp } from '@/lib/business/whatsappConfig';
 import { AuditRepository } from '@/lib/repositories/AuditRepository';
 import { NotificationService } from './NotificationService';
 import { logger } from '@/lib/utils/logger';
+import { FAILED_LOGIN, FailedLoginStore } from '@/lib/auth/failed-login-store';
+import {
+  ANULATION_THRESHOLD,
+  ANULATION_WINDOW_MS,
+  AnulationCounter
+} from '@/lib/services/anulationCounter';
 
 // ─── Tipos ───────────────────────────────────────────────────────
 
@@ -31,87 +37,31 @@ export interface SecurityAlert {
   channels?: AlertChannel[];
 }
 
-// ─── In-memory state para detección de umbrales ──────────────────
-
-interface FailedLoginState {
-  count: number;
-  firstAttempt: number;
-  lastAttempt: number;
-  lockedUntil: number | null;
-}
-
-const failedLoginStore = new Map<string, FailedLoginState>();
-const FAILED_LOGIN_WINDOW = 15 * 60 * 1000; // 15 minutos
-const FAILED_LOGIN_THRESHOLD = 5; // 5 intentos fallidos
-const LOCKOUT_DURATION = 15 * 60 * 1000; // 15 min bloqueo
-const CLEANUP_INTERVAL = 5 * 60 * 1000; // Limpiar cada 5 min
-
-// Limpieza periódica de estado expirado
-setInterval(() => {
-  const now = Date.now();
-  for (const [key, state] of failedLoginStore.entries()) {
-    if (now - state.lastAttempt > FAILED_LOGIN_WINDOW && state.lockedUntil === null) {
-      failedLoginStore.delete(key);
-    }
-  }
-}, CLEANUP_INTERVAL).unref();
-
 // ─── Servicio ─────────────────────────────────────────────────────
 
 export class SecurityAlertService {
   /**
-   * Detecta y alerta sobre múltiples intentos de login fallidos.
-   * Retorna true si la cuenta está bloqueada.
+   * Registra un intento fallido de login, bloquea la cuenta al alcanzar el umbral y
+   * alerta. El conteo es compartido entre instancias (Redis) con respaldo en memoria.
    */
   static async checkFailedLogin(
     identifier: string,
     ip: string
   ): Promise<{ blocked: boolean; remainingAttempts: number }> {
-    const now = Date.now();
-    const key = `failed:${identifier}`;
-    let state = failedLoginStore.get(key);
+    const attempt = await FailedLoginStore.register(identifier);
 
-    // Si no hay estado o la ventana expiró, reiniciar
-    if (!state || now - state.lastAttempt > FAILED_LOGIN_WINDOW) {
-      state = { count: 1, firstAttempt: now, lastAttempt: now, lockedUntil: null };
-      failedLoginStore.set(key, state);
-      return { blocked: false, remainingAttempts: FAILED_LOGIN_THRESHOLD - 1 };
-    }
-
-    // Si está bloqueado, verificar si ya expiró el bloqueo
-    if (state.lockedUntil) {
-      if (now < state.lockedUntil) {
-        const remainingMs = state.lockedUntil - now;
-        return {
-          blocked: true,
-          remainingAttempts: 0
-        };
-      }
-      // Bloqueo expirado, reiniciar
-      state.count = 1;
-      state.firstAttempt = now;
-      state.lockedUntil = null;
-    } else {
-      state.count++;
-    }
-    state.lastAttempt = now;
-
-    const remaining = FAILED_LOGIN_THRESHOLD - state.count;
-
-    // ALERTA: Umbral de intentos fallidos alcanzado
-    if (state.count >= FAILED_LOGIN_THRESHOLD && !state.lockedUntil) {
-      state.lockedUntil = now + LOCKOUT_DURATION;
-
+    // ALERTA: umbral de intentos fallidos alcanzado. Se emite una sola vez por bloqueo.
+    if (attempt.justLocked) {
       await SecurityAlertService.trigger({
         type: 'failed_logins',
         severity: 'high',
-        message: `Cuenta bloqueada temporalmente: ${FAILED_LOGIN_THRESHOLD} intentos fallidos de login para "${identifier}"`,
+        message: `Cuenta bloqueada temporalmente: ${FAILED_LOGIN.threshold} intentos fallidos de login para "${identifier}"`,
         details: {
           identifier,
           ip,
-          attemptCount: state.count,
-          windowMinutes: FAILED_LOGIN_WINDOW / 60000,
-          lockoutMinutes: LOCKOUT_DURATION / 60000
+          attemptCount: attempt.count,
+          windowMinutes: FAILED_LOGIN.windowMs / 60000,
+          lockoutMinutes: FAILED_LOGIN.lockoutMs / 60000
         },
         ip,
         channels: ['sse', 'push', 'whatsapp', 'notification', 'audit']
@@ -121,24 +71,24 @@ export class SecurityAlertService {
     }
 
     // Alerta preventiva cuando se acerca al umbral
-    if (state.count >= Math.floor(FAILED_LOGIN_THRESHOLD / 2)) {
+    if (!attempt.blocked && attempt.count >= Math.floor(FAILED_LOGIN.threshold / 2)) {
       await SecurityAlertService.trigger({
         type: 'failed_logins',
-        severity: state.count >= FAILED_LOGIN_THRESHOLD - 1 ? 'high' : 'medium',
-        message: `Múltiples intentos fallidos de login (${state.count}/${FAILED_LOGIN_THRESHOLD}) para "${identifier}"`,
+        severity: attempt.count >= FAILED_LOGIN.threshold - 1 ? 'high' : 'medium',
+        message: `Múltiples intentos fallidos de login (${attempt.count}/${FAILED_LOGIN.threshold}) para "${identifier}"`,
         details: {
           identifier,
           ip,
-          attemptCount: state.count,
-          threshold: FAILED_LOGIN_THRESHOLD,
-          remaining
+          attemptCount: attempt.count,
+          threshold: FAILED_LOGIN.threshold,
+          remaining: attempt.remainingAttempts
         },
         ip,
         channels: ['audit']
       });
     }
 
-    return { blocked: false, remainingAttempts: Math.max(0, remaining) };
+    return { blocked: attempt.blocked, remainingAttempts: attempt.remainingAttempts };
   }
 
   /**
@@ -192,7 +142,9 @@ export class SecurityAlertService {
   }
 
   /**
-   * Alerta sobre operaciones masivas o sospechosas (anulaciones).
+   * Alerta sobre operaciones masivas o sospechosas (anulaciones). El conteo por usuario
+   * es compartido entre instancias (Redis) con respaldo en memoria, así que el umbral no
+   * depende del proceso que atendió cada anulación.
    */
   static async checkMassAnulation(params: {
     entityType: 'venta' | 'servicio' | 'cuenta';
@@ -203,65 +155,41 @@ export class SecurityAlertService {
     totalAmount: number;
   }) {
     const { entityType, entityCode, userId, userName, totalAmount } = params;
-    const now = Date.now();
-    const windowMs = 5 * 60 * 1000; // 5 minutos
-    const threshold = 3; // 3+ anulaciones = alerta
 
-    // Usar clave temporal para tracking de anulaciones por usuario
-    const anulationKey = `anulation:${userId}`;
-    const store = (globalThis as any).__anulationStore as
-      Map<string, { count: number; firstAt: number; entities: string[] }> | undefined;
-    if (!(globalThis as any).__anulationStore) {
-      (globalThis as any).__anulationStore = new Map();
-    }
-    const anulationStore = (globalThis as any).__anulationStore as Map<
-      string,
-      { count: number; firstAt: number; entities: string[] }
-    >;
+    const { count, items, triggered } = await AnulationCounter.register(String(userId), entityCode);
 
-    let entry = anulationStore.get(anulationKey);
-    if (!entry || now - entry.firstAt > windowMs) {
-      entry = { count: 1, firstAt: now, entities: [entityCode] };
-      anulationStore.set(anulationKey, entry);
-      return;
-    }
-
-    entry.count++;
-    entry.entities.push(entityCode);
-
-    if (entry.count >= threshold) {
-      // Limpiar para evitar alertas duplicadas
-      anulationStore.delete(anulationKey);
-
+    // ALERTA crítica: umbral alcanzado. El contador ya quedó limpio, así que la próxima
+    // anulación abre una ventana nueva en lugar de repetir la alerta.
+    if (triggered) {
       await SecurityAlertService.trigger({
         type: 'mass_anulation',
         severity: 'critical',
-        message: `⚠️ ANULACIONES MÚLTIPLES: ${entry.count} anulaciones de ${entityType} en menos de 5 minutos por ${userName || userId}`,
+        message: `⚠️ ANULACIONES MÚLTIPLES: ${count} anulaciones de ${entityType} en menos de ${ANULATION_WINDOW_MS / 60000} minutos por ${userName || userId}`,
         details: {
           entityType,
-          count: entry.count,
-          entities: entry.entities,
+          count,
+          entities: items,
           userId,
           userName,
           totalAmount,
-          windowMinutes: windowMs / 60000
+          windowMinutes: ANULATION_WINDOW_MS / 60000
         },
         userId,
         channels: ['sse', 'push', 'whatsapp', 'notification', 'audit']
       });
-    } else if (entry.count >= threshold - 1) {
+    } else if (count >= ANULATION_THRESHOLD - 1) {
       // Alerta preventiva
       await SecurityAlertService.trigger({
         type: 'mass_anulation',
         severity: 'high',
-        message: `Múltiples anulaciones (${entry.count}/${threshold}) de ${entityType} por ${userName || userId}`,
+        message: `Múltiples anulaciones (${count}/${ANULATION_THRESHOLD}) de ${entityType} por ${userName || userId}`,
         details: {
           entityType,
-          count: entry.count,
-          entities: entry.entities,
+          count,
+          entities: items,
           userId,
           userName,
-          windowMinutes: windowMs / 60000
+          windowMinutes: ANULATION_WINDOW_MS / 60000
         },
         userId,
         channels: ['sse', 'push', 'notification', 'audit']

@@ -6,7 +6,6 @@ import { CashRegisterRepository } from '@/lib/repositories/CashRegisterRepositor
 import { RoomManager } from '@/lib/services/RoomManager';
 import { SecurityAlertService } from '@/lib/services/SecurityAlertService';
 import { sendNotificationToAll } from '@/lib/api/sseService';
-import { invalidateDashboardCache } from '@/lib/cache/dashboardCache';
 import { BusinessError } from '@/lib/errors/errors';
 import { z } from 'zod';
 import {
@@ -225,9 +224,6 @@ export class ServiceService {
     });
 
     sendNotificationToAll('timers_updated', { timestamp: now });
-
-    // Invalidar caché del dashboard al crear un servicio
-    invalidateDashboardCache({ userId: createdBy });
 
     return result;
   }

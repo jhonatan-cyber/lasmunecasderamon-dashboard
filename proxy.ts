@@ -47,6 +47,16 @@ function getCorsOrigin(origin: string | null): string {
   return siteConfig.url;
 }
 
+// Endpoints de credenciales: login, refresh, recuperación de contraseña y alta del
+// primer administrador. Comparten el límite estricto por IP+ruta del limitador Redis
+// (con respaldo en memoria), antes aplicado con un limiter en memoria por ruta.
+const CREDENTIAL_RATE_LIMIT_PATHS = [
+  '/api/auth/login',
+  '/api/auth/refresh',
+  '/api/auth/reset-password',
+  '/api/auth/register-first-user'
+];
+
 const actionMap: Record<string, string[]> = {
   view: [
     'view',
@@ -265,15 +275,16 @@ export default async function proxy(request: NextRequest) {
   // ponytail: skip rate limiting in dev
   const isProd = process.env.NODE_ENV === 'production' && process.env.SKIP_RATE_LIMIT !== 'true';
   if (isProd) {
-    const isLoginPath =
+    const isCredentialPath =
       pathname === '/login' ||
       pathname.startsWith('/login/') ||
-      pathname === '/api/auth/login' ||
-      pathname.startsWith('/api/auth/login/');
+      CREDENTIAL_RATE_LIMIT_PATHS.some(
+        path => pathname === path || pathname.startsWith(path + '/')
+      );
     const isSsePath = pathname.includes('/sse');
 
     let rateLimitConfig: RateLimitConfig | null = null;
-    if (isLoginPath) {
+    if (isCredentialPath) {
       rateLimitConfig = RATE_LIMIT_CONFIGS.LOGIN;
     } else if (isSsePath) {
       rateLimitConfig = RATE_LIMIT_CONFIGS.SSE;

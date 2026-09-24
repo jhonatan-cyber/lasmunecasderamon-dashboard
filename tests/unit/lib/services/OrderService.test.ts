@@ -12,16 +12,11 @@ vi.mock('@/lib/repositories/OrderRepository', () => ({
   }
 }));
 
-vi.mock('@/lib/cache/dashboardCache', () => ({
-  invalidateDashboardCache: vi.fn()
-}));
-
 vi.mock('@/lib/utils/logger', () => ({
   logger: { debug: vi.fn(), info: vi.fn(), warn: vi.fn(), error: vi.fn() }
 }));
 
 import { OrderRepository } from '@/lib/repositories/OrderRepository';
-import { invalidateDashboardCache } from '@/lib/cache/dashboardCache';
 
 beforeEach(() => {
   vi.clearAllMocks();
@@ -57,12 +52,19 @@ describe('OrderService.getByUser', () => {
 });
 
 describe('OrderService.create', () => {
-  it('creates order and invalidates cache', async () => {
-    const input = { codigo: 'ORD-001', meseroId: 'user-1', subtotal: 10000, total: 10000, detalles: [{ productoId: 'prod-1', precio: 5000, cantidad: 2, subtotal: 10000 }] };
+  it('creates order through the repository', async () => {
+    const input = {
+      codigo: 'ORD-001',
+      meseroId: 'user-1',
+      subtotal: 10000,
+      total: 10000,
+      detalles: [{ productoId: 'prod-1', precio: 5000, cantidad: 2, subtotal: 10000 }]
+    };
     vi.mocked(OrderRepository.create).mockResolvedValue({ id: 'new-1' } as any);
     const result = await OrderService.create(input);
-    expect(OrderRepository.create).toHaveBeenCalledWith(expect.objectContaining({ codigo: 'ORD-001', meseroId: 'user-1' }));
-    expect(invalidateDashboardCache).toHaveBeenCalledOnce();
+    expect(OrderRepository.create).toHaveBeenCalledWith(
+      expect.objectContaining({ codigo: 'ORD-001', meseroId: 'user-1' })
+    );
     expect(result).toMatchObject({ id: 'new-1' });
   });
 });

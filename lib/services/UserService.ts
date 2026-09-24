@@ -91,7 +91,7 @@ export class UserService {
     const result = await UserRepository.update(id.toString(), updateData, fotoFilename);
 
     if (validated.rol_id !== undefined) {
-      PermissionsCache.invalidate(id.toString());
+      await PermissionsCache.invalidate(id.toString());
     }
 
     return { user: result, newTempPassword };
@@ -106,7 +106,7 @@ export class UserService {
     }
 
     if (action === 'deactivate') {
-      PermissionsCache.invalidate(id);
+      await PermissionsCache.invalidate(id);
     }
     return await UserRepository.updateStatus(id, action);
   }

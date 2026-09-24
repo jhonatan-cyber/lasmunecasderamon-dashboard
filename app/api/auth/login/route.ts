@@ -5,7 +5,6 @@ import { cookies } from 'next/headers';
 import { ApiResponse } from '@/lib/api/api-response';
 
 // ponytail: rate limiting handled in proxy.ts via redisRateLimit (Redis + memory fallback)
-// loginLimiterApp from '@/lib/middleware/rateLimit' removed — was duplicate in-memory only
 export const POST = async (request: Request) => {
   try {
     const body = await request.json();

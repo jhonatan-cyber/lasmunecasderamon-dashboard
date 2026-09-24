@@ -13,7 +13,8 @@ const defaultConfig = {
   idleTimeoutMillis: 30000,
   connectionTimeoutMillis: 10000,
   keepAlive: true,
-  options: '-c timezone=America/Santiago -c statement_timeout=8000 -c idle_in_transaction_session_timeout=30000'
+  options:
+    '-c timezone=America/Santiago -c statement_timeout=8000 -c idle_in_transaction_session_timeout=30000'
 };
 
 declare global {
@@ -29,9 +30,31 @@ function getPool(): Pool {
 }
 
 export type TransactionQuery = <R = any>(sql: string, params?: any[]) => Promise<R>;
+
+function changesData(command: string, sql: string): boolean {
+  // PostgreSQL reports SELECT for a writable CTE, so inspect that case too.
+  return (
+    /^(INSERT|UPDATE|DELETE|MERGE|TRUNCATE|ALTER|DROP|CREATE)$/.test(command) ||
+    (command === 'SELECT' &&
+      /^\s*WITH\b/i.test(sql) &&
+      /\b(INSERT\s+INTO|UPDATE|DELETE\s+FROM)\b/i.test(sql))
+  );
+}
+
+async function invalidateAfterCommit(): Promise<void> {
+  try {
+    const { invalidateDashboardCache } = await import('@/lib/cache/dashboardCache');
+    await invalidateDashboardCache();
+  } catch {
+    // A committed write must never be reported as failed because of the cache.
+    console.warn('[DashboardCache] No se pudo invalidar tras confirmar la escritura');
+  }
+}
+
 export async function query<T = any>(sql: string, params: any[] = []): Promise<T> {
   // Do not retry writes: a lost connection can occur after the server committed.
   const result = await getPool().query(prepareQuery(sql, params));
+  if (changesData(result.command, sql)) await invalidateAfterCommit();
   return result.rows as T;
 }
 
@@ -39,21 +62,25 @@ export async function withTransaction<T>(
   callback: (trx: TransactionQuery) => Promise<T>
 ): Promise<T> {
   const client = await getPool().connect();
+  let changed = false;
+  let value: T;
   try {
     await client.query('BEGIN');
     const trx: TransactionQuery = async <R>(sql: string, params: any[] = []) => {
       const result = await client.query(prepareQuery(sql, params));
+      changed ||= changesData(result.command, sql);
       return result.rows as R;
     };
-    const value = await callback(trx);
+    value = await callback(trx);
     await client.query('COMMIT');
-    return value;
   } catch (error) {
     await client.query('ROLLBACK').catch(() => {});
     throw error;
   } finally {
     client.release();
   }
+  if (changed) await invalidateAfterCommit();
+  return value;
 }
 
 // Lista blanca de tablas permitidas para rawQuery
@@ -123,6 +150,7 @@ export async function rawQuery(sql: string) {
     throw new Error('Seguridad: Tabla no permitida en rawQuery');
   }
   const result = await getPool().query(prepareQuery(sql));
+  if (changesData(result.command, sql)) await invalidateAfterCommit();
   return result.rows;
 }
 

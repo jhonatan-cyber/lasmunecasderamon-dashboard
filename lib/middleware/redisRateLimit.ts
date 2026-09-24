@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { logger } from '@/lib/utils/logger';
+import type RedisClient from 'ioredis';
 
 // ─── Tipos ─────────────────────────────────────────────────────────
 
@@ -45,41 +46,66 @@ function logRateLimitExceeded(ip: string, path: string, config: RateLimitConfig)
 
 // ─── Cliente Redis singleton (solo Node.js, no Edge) ───────────────
 
-let redisClient: any = null;
-let redisAvailable = false;
-let redisCheckDone = false;
+let redisClient: RedisClient | null = null;
+let connecting: Promise<RedisClient | null> | null = null;
+let retryAt = 0;
+const RETRY_DELAY_MS = 5000;
 
-async function getRedisClient(): Promise<any> {
-  if (redisCheckDone) return redisAvailable ? redisClient : null;
-  redisCheckDone = true;
-
-  try {
-    // ioredis usa TCP (net) — no funciona en Edge Runtime.
-    // En Node.js (API routes) funciona perfectamente.
-    const Redis = (await import('ioredis')).default;
-    redisClient = new Redis(process.env.REDIS_URL || 'redis://localhost:6379', {
-      maxRetriesPerRequest: 1,
-      lazyConnect: true,
-      enableOfflineQueue: false,
-      connectTimeout: 2000
-    });
-
-    // Probar conexión rápida
-    await redisClient.connect();
-    await redisClient.ping();
-    redisAvailable = true;
-    logger.info('[RateLimit] Redis conectado exitosamente');
-  } catch {
-    // Edge Runtime o Redis no disponible — usar fallback en memoria
-    redisAvailable = false;
-    redisClient = null;
-    if (process.env.NODE_ENV !== 'test') {
-      logger.info('[RateLimit] Redis no disponible, usando fallback en memoria');
-    }
-  }
-
-  return redisAvailable ? redisClient : null;
+function discardClient(client: RedisClient): void {
+  client.disconnect();
+  if (redisClient === client) redisClient = null;
+  retryAt = Date.now() + RETRY_DELAY_MS;
 }
+
+async function getRedisClient(): Promise<RedisClient | null> {
+  if (connecting) return connecting;
+  if (redisClient?.status === 'ready') return redisClient;
+  if (Date.now() < retryAt) return null;
+
+  connecting = (async () => {
+    let client: RedisClient | null = null;
+    try {
+      const Redis = (await import('ioredis')).default;
+      client = new Redis(process.env.REDIS_URL || 'redis://localhost:6379', {
+        lazyConnect: true,
+        enableOfflineQueue: false,
+        connectTimeout: 2000,
+        commandTimeout: 2000,
+        maxRetriesPerRequest: 0,
+        retryStrategy: () => null,
+        autoResendUnfulfilledCommands: false
+      });
+      // Los fallos se manejan en las promesas; evitar eventos error sin listener.
+      client.on('error', () => {});
+      redisClient = client;
+      await client.connect();
+      await client.ping();
+      logger.info('[RateLimit] Redis conectado exitosamente');
+      return client;
+    } catch {
+      if (client) discardClient(client);
+      else retryAt = Date.now() + RETRY_DELAY_MS;
+      logger.info('[RateLimit] Redis no disponible; usando memoria, se reintentará en 5s');
+      return null;
+    }
+  })();
+  try {
+    return await connecting;
+  } finally {
+    connecting = null;
+  }
+}
+
+// Incremento y expiración indivisibles, incluso con solicitudes concurrentes.
+const RATE_LIMIT_SCRIPT = `
+local count = redis.call('INCR', KEYS[1])
+local ttl = redis.call('TTL', KEYS[1])
+if ttl < 0 then
+  redis.call('EXPIRE', KEYS[1], ARGV[1])
+  ttl = tonumber(ARGV[1])
+end
+return {count, ttl}
+`;
 
 // ─── Verificación con Redis (INCR + EXPIRE) ────────────────────────
 
@@ -94,17 +120,18 @@ async function checkRedisRateLimit(
     const redisKey = `rl:${config.prefix}:${key}`;
     const windowSec = Math.ceil(config.windowMs / 1000);
 
-    // INCR + EXPIRE en pipeline para atomicidad
-    const results = await client
-      .pipeline()
-      .incr(redisKey)
-      .expire(redisKey, windowSec, 'NX')
-      .ttl(redisKey)
-      .exec();
-
-    // Resultados: [ [null, count], [null, expireSet], [null, ttl] ]
-    const count = results?.[0]?.[1] ?? 0;
-    const ttl = results?.[2]?.[1] ?? windowSec;
+    const result = await client.eval(RATE_LIMIT_SCRIPT, 1, redisKey, windowSec);
+    if (
+      !Array.isArray(result) ||
+      result.length !== 2 ||
+      !Number.isInteger(result[0]) ||
+      result[0] < 1 ||
+      !Number.isInteger(result[1]) ||
+      result[1] < 0
+    ) {
+      throw new Error('Respuesta inválida del limitador Redis');
+    }
+    const [count, ttl] = result as [number, number];
     const remaining = Math.max(0, config.max - Number(count));
     const reset = Math.floor(Date.now() / 1000) + Number(ttl);
 
@@ -116,6 +143,7 @@ async function checkRedisRateLimit(
       retryAfter: !(Number(count) <= config.max) ? Number(ttl) : undefined
     };
   } catch (err) {
+    discardClient(client);
     logger.error('[RateLimit] Error en Redis', {
       error: err instanceof Error ? err.message : String(err)
     });
@@ -127,11 +155,12 @@ async function checkRedisRateLimit(
 
 function checkMemoryRateLimit(key: string, config: RateLimitConfig): RateLimitResult {
   cleanupMemoryStore();
+  key = `${config.prefix}:${key}`;
 
   const now = Date.now();
   const entry = memoryStore.get(key);
 
-  if (!entry || now > entry.resetTime) {
+  if (!entry || now >= entry.resetTime) {
     // Nueva ventana
     memoryStore.set(key, { count: 1, resetTime: now + config.windowMs });
     return {
@@ -238,9 +267,7 @@ export const RATE_LIMIT_CONFIGS = {
   /** API sensibles (crear/editar/eliminar): 20 requests por 5 minutos */
   API_SENSITIVE: { windowMs: 5 * 60 * 1000, max: 20, prefix: 'sensitive' },
   /** SSE/WebSocket: 10 conexiones por minuto (evita flooding) */
-  SSE: { windowMs: 60 * 1000, max: 10, prefix: 'sse' },
-  /** Auth endpoints estricto: 3 requests por minuto */
-  AUTH_STRICT: { windowMs: 60 * 1000, max: 3, prefix: 'auth-strict' }
+  SSE: { windowMs: 60 * 1000, max: 10, prefix: 'sse' }
 } as const;
 
 const redisRateLimit = { checkRateLimit, withRedisRateLimit, RATE_LIMIT_CONFIGS };

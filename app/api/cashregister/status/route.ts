@@ -1,9 +1,14 @@
 import { NextResponse } from 'next/server';
 import { withPublicRoute } from '@/lib/api/withRoute';
 import { StatsService } from '@/lib/services/StatsService';
+import { DashboardCache, DASHBOARD_CACHE_KEYS, DASHBOARD_TTL } from '@/lib/cache/dashboardCache';
 
 export const GET = withPublicRoute(async () => {
-  const stats = await StatsService.getCajaGeneralStats();
+  const { data: stats, fromCache } = await DashboardCache.getOrFetch(
+    DASHBOARD_CACHE_KEYS.STATS,
+    () => StatsService.getCajaGeneralStats(),
+    DASHBOARD_TTL.STATS
+  );
 
   const hasOpenCaja = !!stats.caja_id;
   const data = {
@@ -18,5 +23,10 @@ export const GET = withPublicRoute(async () => {
       : null
   };
 
-  return NextResponse.json({ success: true, data });
+  return NextResponse.json(
+    { success: true, data },
+    {
+      headers: { 'Cache-Control': 'private, no-store', 'X-Cache': fromCache ? 'HIT' : 'MISS' }
+    }
+  );
 });

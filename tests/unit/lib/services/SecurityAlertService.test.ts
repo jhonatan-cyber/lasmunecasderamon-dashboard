@@ -57,16 +57,17 @@ import { enviarWhatsApp } from '@/lib/integrations/whatsappService';
 import { getAdminWhatsApp } from '@/lib/business/whatsappConfig';
 import { AuditRepository } from '@/lib/repositories/AuditRepository';
 import { NotificationService } from '@/lib/services/NotificationService';
+import { AnulationCounter } from '@/lib/services/anulationCounter';
 
 beforeEach(() => {
   vi.clearAllMocks();
-  (globalThis as any).__anulationStore = new Map();
+  AnulationCounter.clearMemory();
   vi.mocked(query).mockResolvedValue([] as any);
   vi.mocked(getAdminWhatsApp).mockResolvedValue('+56911111111');
 });
 
 afterEach(() => {
-  delete (globalThis as any).__anulationStore;
+  AnulationCounter.clearMemory();
 });
 
 describe('SecurityAlertService.checkFailedLogin', () => {

@@ -13,7 +13,7 @@ export const GET = withRoute(
     );
 
     const response = NextResponse.json({ success: true, data });
-    response.headers.set('Cache-Control', 'private, max-age=15, stale-while-revalidate=30');
+    response.headers.set('Cache-Control', 'private, no-store');
     response.headers.set('X-Cache', fromCache ? 'HIT' : 'MISS');
 
     return response;

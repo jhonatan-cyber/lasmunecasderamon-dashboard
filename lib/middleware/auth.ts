@@ -235,7 +235,8 @@ const rolePermissions: Record<string, UserPermissions> = {
 };
 
 export async function getUserPermissionsFromDB(userId: string): Promise<UserPermissions> {
-  const cached = PermissionsCache.get(userId);
+  // Redis primero (caché compartida entre procesos); cae a memoria si no responde.
+  const cached = await PermissionsCache.read(userId);
   if (cached) return cached;
 
   try {

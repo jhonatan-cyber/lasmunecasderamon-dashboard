@@ -59,10 +59,12 @@ function scanApiRoutes(): RouteMethod[] {
 
 // ─── La política escrita ────────────────────────────────────────────────────────
 
-/** Wrappers compuestos de proyecto considerados guard válido. */
-const KNOWN_COMPOUND_WRAPPERS = new Set([
-  'loginLimiterApp' // componen de rate limit de login sobre el handler
-]);
+/**
+ * Wrappers compuestos de proyecto considerados guard válido. Hoy está vacío: los
+ * handlers que componían rate limit en memoria se migraron a `withPublicRoute` +
+ * el limitador de proxy.ts.
+ */
+const KNOWN_COMPOUND_WRAPPERS = new Set<string>([]);
 
 /** Métodos que cambian estado: exigen guard con sesión o credencial propia. */
 const WRITE_METHODS = new Set(['POST', 'PUT', 'PATCH', 'DELETE']);
@@ -121,6 +123,8 @@ const SESSION_WRAPPED_POLICY: Record<string, string> = {
     'GET informa estado; PATCH exige credencial de dispositivo vigente; POST y DELETE exigen administrador',
   '/api/attendance/register': 'exige sesión dentro del handler y valida el desafío de asistencia',
   '/api/auth/logout': 'cierre de sesión; con o sin token el resultado es el mismo',
+  '/api/auth/refresh':
+    'renovación de sesión: el middleware valida el refresh token y el handler rota el par',
   '/api/error-logs': 'POST ingesta de errores del cliente (logErrorToService, aún sin cablear)',
   '/api/reviews':
     'reseñas de clientes; arma un enlace de WhatsApp para el admin (sin escribir a la base)',

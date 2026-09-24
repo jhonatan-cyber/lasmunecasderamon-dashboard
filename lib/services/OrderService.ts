@@ -1,6 +1,5 @@
 import { OrderCreateSchema } from '@/lib/business/schemas';
 import { OrderRepository } from '@/lib/repositories/OrderRepository';
-import { invalidateDashboardCache } from '@/lib/cache/dashboardCache';
 import { z } from 'zod';
 
 type OrderCreateInput = z.input<typeof OrderCreateSchema>;
@@ -17,8 +16,6 @@ export class OrderService {
   static async create(body: OrderCreateInput) {
     const validated = OrderCreateSchema.parse(body);
     const result = await OrderRepository.create(validated);
-    // Invalidar caché del dashboard al crear un pedido (afecta pending-items, alerts, etc.)
-    invalidateDashboardCache();
     return result;
   }
 

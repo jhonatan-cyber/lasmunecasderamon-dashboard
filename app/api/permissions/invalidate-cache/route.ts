@@ -4,7 +4,7 @@ import { PermissionsCache } from '@/lib/auth/permissions-cache';
 import { sendNotificationToAll } from '@/lib/api/sseService';
 
 export const POST = withRoute({ auth: true, access: 'administrator', audit: true }, async () => {
-  PermissionsCache.clear();
+  await PermissionsCache.clear();
   // Sin este evento los clientes seguirían operando con sus permisos viejos hasta
   // recargar la página; el hook los hace refrescar al instante.
   sendNotificationToAll('permissions-updated', { source: 'invalidate-cache' });
