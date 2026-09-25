@@ -125,8 +125,14 @@ describe('sseManager', () => {
       expect(kioskClient.frames[1].data).toEqual({
         user: { id: 'u-2', nombre: 'Ana', apellido: 'Perez' }
       });
-      // El personal ya no recibe este evento: su único consumidor es la pantalla.
-      expect(tipos(cajeroClient)).toEqual(['connected']);
+      // El personal también lo recibe (la pantalla de Cajero/Personal filtra por
+      // user.id para cerrar el modal de desafío); el kiosko solo la proyección.
+      expect(tipos(cajeroClient)).toContain('attendance_registered');
+      expect(cajeroClient.frames[1].data.user).toEqual({
+        id: 'u-2',
+        nombre: 'Ana',
+        apellido: 'Perez'
+      });
     });
 
     it('el cambio de código va al kiosko y al personal con el mismo payload', () => {

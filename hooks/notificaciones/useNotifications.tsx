@@ -198,10 +198,7 @@ export function useNotifications() {
       appEventBus.emit('updateServiceRequests');
     }
 
-    if (
-      payload?.type === 'service_request_approved' ||
-      payload?.type === 'service_request_rejected'
-    ) {
+    if (payload?.type === 'service_request_processed') {
       setPendingServiceRequestsCount(prev => Math.max(0, prev - 1));
       appEventBus.emit('updateServiceRequests');
     }

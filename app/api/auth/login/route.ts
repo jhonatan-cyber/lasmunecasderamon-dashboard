@@ -26,11 +26,13 @@ export const POST = async (request: Request) => {
         maxAge: 15 * 60
       });
 
-      // Refresh token (7 días) — cookie httpOnly separada
+      // Refresh token (7 días) — cookie httpOnly + body para clientes móviles
+      // (no pueden leer cookies httpOnly y sin él la sesión móvil duraría 15 min).
+      let refreshToken: string | null = null;
       const userData = (result as any).user as Record<string, unknown> | undefined;
       if (userData && userData.id) {
         try {
-          const refreshToken = await generateRefreshToken({
+          refreshToken = await generateRefreshToken({
             id: userData.id as string | number,
             username: String(userData.username || userData.name || ''),
             name: String(userData.name || ''),
@@ -48,10 +50,11 @@ export const POST = async (request: Request) => {
           });
         } catch {
           // Refresh token no crítico para el login inicial
+          refreshToken = null;
         }
       }
 
-      return NextResponse.json(result);
+      return NextResponse.json(refreshToken ? { ...result, refreshToken } : result);
     }
 
     if (result.requiereCodigo) {

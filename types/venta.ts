@@ -4,7 +4,7 @@ export interface Venta {
   cliente_id: string | number | null;
   pedido_id?: string | number | null;
   habitacion_id: string | number;
-  metodo_pago: 'efectivo' | 'tarjeta' | 'transferencia' | 'prepago';
+  metodo_pago: 'efectivo' | 'tarjeta' | 'transferencia' | 'prepago' | 'mixto';
   propina: number;
   sub_total: number;
   total: number;
@@ -54,7 +54,7 @@ export interface VentaCreate {
   cliente_id?: string | number | null;
   pedido_id?: string | number | null;
   habitacion_id?: string | number;
-  metodo_pago: 'efectivo' | 'tarjeta' | 'transferencia' | 'prepago';
+  metodo_pago: 'efectivo' | 'tarjeta' | 'transferencia' | 'prepago' | 'mixto';
   propina: number;
   sub_total: number;
   total: number;

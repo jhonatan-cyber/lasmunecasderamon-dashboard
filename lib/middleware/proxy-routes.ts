@@ -3,6 +3,10 @@ import { ROUTES } from '@/lib/constants/routes';
 export const PUBLIC_PATHS = [
   '/',
   '/login',
+  // Deep links universales (Android App Links / iOS Universal Links): el
+  // esquema de la app apunta a /app/* en este dominio. Son solo un redirect
+  // a '/' para cuando la app no está instalada; no requieren sesión.
+  '/app',
   '/asistencia-qr',
   '/api/public/users',
   ROUTES.CONFIRMAR_ANULACION,

@@ -49,6 +49,9 @@ const NON_ADMIN_STAFF: readonly SseAudience[] = [
   { channel: 'role', roles: ['cajero', 'garzon', 'anfitriona', 'barman'] }
 ];
 
+/** Quienes sirven el bar y quienes lo administran (avisos de botellas por agotarse). */
+const BAR_STAFF: readonly SseAudience[] = [{ channel: 'role', roles: ['barman', 'administrador'] }];
+
 export const SSE_EVENTS = {
   // ─── Operativos: los ve cualquier sesión válida ─────────────────────────────
   new_order: { audiences: STAFF_ONLY },
@@ -95,6 +98,11 @@ export const SSE_EVENTS = {
   gratificacion_processed: { audiences: ADMIN_ONLY },
   security_alert: { audiences: ADMIN_ONLY },
 
+  // ─── Bar: una botella abierta bajó del umbral de shots restantes ───────────
+  // Lo dispara la venta que cruza el umbral; lo ven quienes sirven y quienes
+  // administran (payload { alertas, mensaje }).
+  bar_shot_alert: { audiences: BAR_STAFF },
+
   // ─── Dirigidos: solo el usuario afectado (y la pantalla del local) ──────────
   // `qr_token_updated` desaparecio con la credencial personal: ya no hay token que
   // rotar. Quien necesite saber que su QR cambio, lo pide a la pantalla del local.
@@ -103,9 +111,12 @@ export const SSE_EVENTS = {
   },
 
   // ─── Pantalla pública de asistencia ─────────────────────────────────────────
-  // Sin destino `staff`: su único consumidor es la pantalla del kiosko.
+  // El kiosko recibe la proyección pública; el personal (pantalla Cajero/Personal)
+  // recibe el payload completo y filtra localmente por `user.id` para cerrar el
+  // modal de desafío cuando la persona confirmó su asistencia.
   attendance_registered: {
     audiences: [
+      { channel: 'staff' },
       {
         channel: 'kiosk',
         project: data => ({
