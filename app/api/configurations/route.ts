@@ -28,6 +28,7 @@ const VALID_CLAVES = new Set([
   'umbral_habitacion_desde',
   'split_tarjeta_venta',
   'split_tarjeta_propina',
+  'shot_ml',
   'admin_whatsapp'
 ]);
 
@@ -60,6 +61,12 @@ function validateConfig(clave: string, valor: string): string | null {
       return `${clave} debe ser un número entero positivo`;
     }
   }
+  if (clave === 'shot_ml') {
+    const num = Number(valor);
+    if (isNaN(num) || !Number.isInteger(num) || num < 1 || num > 1000) {
+      return 'shot_ml debe ser un número entero entre 1 y 1000 (ml por shot)';
+    }
+  }
   if (clave === 'admin_whatsapp') {
     if (valor && !/^\+?\d{7,15}$/.test(valor.replace('whatsapp:', ''))) {
       return 'admin_whatsapp debe ser un número válido (ej: 59172419112)';
@@ -82,16 +89,19 @@ async function updateConfig(clave: string, valor: string) {
         ? 'comisiones'
         : clave.startsWith('split_tarjeta_')
           ? 'comisiones'
-          : clave === 'admin_whatsapp'
-            ? 'sistema'
-            : 'empresa';
+          : clave === 'shot_ml'
+            ? 'bar'
+            : clave === 'admin_whatsapp'
+              ? 'sistema'
+              : 'empresa';
     const tipo =
       clave.startsWith('asistencia_') ||
       clave === 'threshold_producto_caro' ||
       clave === 'umbral_simple_hasta' ||
       clave === 'umbral_anfitriona_desde' ||
       clave === 'umbral_habitacion_desde' ||
-      clave.startsWith('split_tarjeta_')
+      clave.startsWith('split_tarjeta_') ||
+      clave === 'shot_ml'
         ? 'number'
         : 'text';
     await query(

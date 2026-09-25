@@ -236,7 +236,14 @@ const ProductCategoryPage = () => {
 
   const handleCreate = useCallback(
     async (form: FormData) => {
-      await createProduct(form);
+      try {
+        await createProduct(form);
+      } catch {
+        // El fallo ya se mostró como toast desde useGenericMutations. Se corta acá para
+        // que la promesa no quede sin manejar (Next la reporta como Runtime Error) y el
+        // diálogo permanece abierto con los datos cargados para corregirlos.
+        return;
+      }
       setOpenDialog(false);
     },
     [createProduct]
@@ -250,7 +257,12 @@ const ProductCategoryPage = () => {
 
   const handleUpdate = useCallback(
     async (form: FormData) => {
-      await updateProduct(form);
+      try {
+        await updateProduct(form);
+      } catch {
+        // Igual que handleCreate: toast ya emitido, diálogo y datos intactos.
+        return;
+      }
       setEditProduct(null);
       setEditPresentation(null);
       setOpenDialog(false);
@@ -260,7 +272,11 @@ const ProductCategoryPage = () => {
 
   const handleDelete = useCallback(
     async (product: Product) => {
-      await deleteProduct(product.id);
+      try {
+        await deleteProduct(product.id);
+      } catch {
+        // El toast lo emite useGenericMutations; el modal de confirmación ya cerró.
+      }
     },
     [deleteProduct]
   );

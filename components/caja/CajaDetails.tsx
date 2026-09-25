@@ -1,6 +1,6 @@
 'use client';
 
-import React from 'react';
+import React, { useState } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -9,7 +9,7 @@ import Image from 'next/image';
 import { Skeleton } from '@/components/ui/skeleton';
 import logger from '@/lib/utils/logger';
 
-import { X, Calendar, Printer, Download } from 'lucide-react';
+import { X, Calendar, Printer, Download, ChevronDown, BarChart3 } from 'lucide-react';
 import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
 import { useUserImage } from '@/contexts/UserImageContext';
 import { useCajaDetails } from './hooks/useCajaDetails';
@@ -20,7 +20,8 @@ import {
   CajaFinancialDetails,
   CajaVentasTable,
   CajaServiciosTable,
-  CajaRetirosList
+  CajaRetirosList,
+  ClientesSaldoList
 } from '@/components/caja/details';
 import { generatePrintContent, getPDFData, exportToPDF } from '@/components/caja/cajaExportUtils';
 import { formatCurrencyNoDecimals, formatFechaLarga, formatSoloHora } from '@/lib/utils/formatters';
@@ -63,13 +64,19 @@ interface CajaDetailsProps {
 export default function CajaDetails({ caja, open, onOpenChange }: CajaDetailsProps) {
   const { imageVersion } = useUserImage();
   const details = useCajaDetails({ caja, open });
+  const [statsOpen, setStatsOpen] = useState(true);
 
   if (!caja) return null;
+
+  const cajaActual = details.cajaInfo ?? caja;
 
   const {
     ventas,
     retiros,
     servicios,
+    cajaInfo,
+    clientesSaldo,
+    loadingClientesSaldo,
     loadingVentas,
     retirosLoading,
     loadingServicios,
@@ -120,9 +127,9 @@ export default function CajaDetails({ caja, open, onOpenChange }: CajaDetailsPro
   const efectivoTotal = Number(caja?.monto_apertura || 0) + Number(caja?.efectivo || 0);
   const tarjetaCaja = Number(caja?.tarjeta || 0);
   const transferenciaCaja = Number(caja?.transferencia || 0);
-  const prepagoCargado = Number(caja?.prepago_cargado || 0);
-  const prepagoConsumido = Number(caja?.prepago_consumido || 0);
-  const prepagoPendienteClientes = Number(caja?.prepago_pendiente_clientes || 0);
+  const prepagoCargado = Number(cajaActual?.prepago_cargado || 0);
+  const prepagoConsumido = Number(cajaActual?.prepago_consumido || 0);
+  const prepagoPendienteClientes = Number(cajaActual?.prepago_pendiente_clientes || 0);
   const totalEgresos =
     Number(caja?.devoluciones || 0) +
     Number(caja?.anticipo || 0) +
@@ -222,21 +229,63 @@ export default function CajaDetails({ caja, open, onOpenChange }: CajaDetailsPro
           </DialogHeader>
 
           <div className='sticky top-0 z-20 bg-white/95 dark:bg-slate-900/95 backdrop-blur-xs border-b border-gray-100 dark:border-gray-800 px-6 py-4 print:hidden'>
-            <div className='space-y-4'>
-              <CajaPaymentSummary
-                isLoading={isLoadingSummary}
-                efectivoNeto={efectivoNeto}
-                tarjetaCaja={tarjetaCaja}
-                transferenciaCaja={transferenciaCaja}
-              />
+            <div className='flex items-center justify-between gap-4'>
+              <button
+                type='button'
+                onClick={() => setStatsOpen(prev => !prev)}
+                className='flex items-center gap-2 text-xs font-black uppercase tracking-widest text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-slate-200 transition-colors'
+                aria-expanded={statsOpen}
+              >
+                <div className='p-1.5 bg-slate-100 dark:bg-white/10 rounded-lg'>
+                  <BarChart3 className='w-4 h-4' />
+                </div>
+                Estadísticas
+                <ChevronDown
+                  className={`w-4 h-4 transition-transform duration-200 ${statsOpen ? 'rotate-180' : ''}`}
+                />
+              </button>
 
-              <CajaSummaryMetrics
-                isLoading={isLoadingSummary}
-                totalMetodosPago={totalMetodosPago}
-                totalEgresos={totalEgresos}
-                totalReal={totalReal}
-              />
+              {!statsOpen && (
+                <div className='flex items-center gap-4 sm:gap-6 text-sm'>
+                  <div className='text-right'>
+                    <p className='text-[10px] font-bold text-slate-400 uppercase'>Efectivo</p>
+                    <p className='font-black tabular-nums text-slate-700 dark:text-slate-200'>
+                      {formatCurrencyNoDecimals(efectivoNeto)}
+                    </p>
+                  </div>
+                  <div className='text-right'>
+                    <p className='text-[10px] font-bold text-slate-400 uppercase'>Egresos</p>
+                    <p className='font-black tabular-nums text-rose-600'>
+                      {formatCurrencyNoDecimals(totalEgresos)}
+                    </p>
+                  </div>
+                  <div className='text-right'>
+                    <p className='text-[10px] font-bold text-slate-400 uppercase'>Total real</p>
+                    <p className='font-black tabular-nums text-emerald-600'>
+                      {formatCurrencyNoDecimals(totalReal)}
+                    </p>
+                  </div>
+                </div>
+              )}
             </div>
+
+            {statsOpen && (
+              <div className='space-y-4 mt-3'>
+                <CajaPaymentSummary
+                  isLoading={isLoadingSummary}
+                  efectivoNeto={efectivoNeto}
+                  tarjetaCaja={tarjetaCaja}
+                  transferenciaCaja={transferenciaCaja}
+                />
+
+                <CajaSummaryMetrics
+                  isLoading={isLoadingSummary}
+                  totalMetodosPago={totalMetodosPago}
+                  totalEgresos={totalEgresos}
+                  totalReal={totalReal}
+                />
+              </div>
+            )}
           </div>
 
           <div className='flex-1 flex flex-col min-h-0'>
@@ -387,6 +436,20 @@ export default function CajaDetails({ caja, open, onOpenChange }: CajaDetailsPro
                     totalReal={totalReal}
                     prepagoPendienteClientes={prepagoPendienteClientes}
                   />
+
+                  <div className='bg-gray-50 dark:bg-gray-800/50 rounded-2xl border border-gray-200 dark:border-gray-700 overflow-hidden'>
+                    <div className='p-4 border-b border-gray-200 dark:border-gray-700 flex items-center justify-between'>
+                      <h4 className='font-bold text-gray-900 dark:text-white'>
+                        Clientes con saldo prepago pendiente
+                      </h4>
+                      <span className='text-xs font-bold text-amber-600 dark:text-amber-400 uppercase tracking-wider'>
+                        {clientesSaldo.length} cliente{clientesSaldo.length !== 1 ? 's' : ''}
+                      </span>
+                    </div>
+                    <div className='p-4'>
+                      <ClientesSaldoList clientes={clientesSaldo} loading={loadingClientesSaldo} />
+                    </div>
+                  </div>
                 </div>
               )}
 

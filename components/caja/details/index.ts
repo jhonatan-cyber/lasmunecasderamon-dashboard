@@ -9,3 +9,4 @@ export { CajaFinancialDetails } from '../CajaFinancialDetails';
 export { CajaVentasTable } from '../CajaVentasTable';
 export { CajaServiciosTable } from '../CajaServiciosTable';
 export { CajaRetirosList } from '../CajaRetirosList';
+export { ClientesSaldoList } from '../ClientesSaldoList';

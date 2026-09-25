@@ -169,10 +169,13 @@ const mapUnidad = (row: any): UnidadRow => ({
 });
 
 // Nota: `estado` indica si la unidad está vigente ('almacen' = activa,
-// 'inactivo' = dada de baja) y `ubicacion` dónde está físicamente
-// ('almacen' | 'bar' | ...). El conteo de stock solo suma activas.
+// 'inactivo' = dada de baja, 'vendida' = salió del bar con una venta) y `ubicacion`
+// dónde está físicamente ('almacen' | 'bar' | ...). El conteo de stock solo suma activas.
 export const ESTADO_UNIDAD_ACTIVA = 'almacen';
 export const ESTADO_UNIDAD_INACTIVA = 'inactivo';
+export const ESTADO_UNIDAD_VENDIDA = 'vendida';
+// 'vendida' queda fuera a propósito: no se puede reactivar una botella vendida desde
+// el alta/baja manual de unidades.
 const ESTADOS_UNIDAD_VALIDOS = [ESTADO_UNIDAD_ACTIVA, ESTADO_UNIDAD_INACTIVA];
 
 export function esEstadoUnidadValido(estado: unknown): estado is string {
@@ -425,6 +428,83 @@ export class InventoryRepository {
       resultado = await this.traspasarAlBar(trx, input);
     });
     return resultado;
+  }
+
+  /**
+   * Descuenta del bar las botellas de una venta registrada.
+   *
+   * Se invoca dentro de la transacción de la venta: si algo falla después, el descuento
+   * se revierte junto con la venta, y si esto falla, la venta entera se revierte. Cada
+   * presentación se bloquea con `FOR UPDATE` para que dos ventas simultáneas no
+   * descuenten las mismas botellas (docs/INVENTARIO.md).
+   *
+   * Los detalles sin `presentacion_id` no se tocan: son del catálogo anterior, que no
+   * tiene inventario vinculado y conserva su comportamiento.
+   */
+  static async consume(
+    trx: Queryable,
+    detalles: { presentacion_id?: string | null; cantidad?: number | null }[],
+    contexto: { usuarioId: string | null; fecha: string }
+  ): Promise<void> {
+    const requerido = new Map<string, number>();
+    for (const detalle of detalles) {
+      const presentacionId = detalle.presentacion_id?.trim();
+      const botellas = Math.max(0, Math.floor(Number(detalle.cantidad ?? 0)));
+      if (!presentacionId || botellas === 0) continue;
+      requerido.set(presentacionId, (requerido.get(presentacionId) ?? 0) + botellas);
+    }
+
+    for (const [presentacionId, botellas] of requerido) {
+      const presentacion = await trx<any[]>(
+        `SELECT id, producto_id, nombre, precio_venta, comision
+         FROM inventario_presentaciones WHERE id = ? FOR UPDATE`,
+        [presentacionId]
+      );
+      // Presentación borrada: las unidades quedaron huérfanas, no hay nada que descontar.
+      if (presentacion.length === 0) continue;
+
+      const unidades = await trx<any[]>(
+        `SELECT id FROM inventario_unidades
+          WHERE presentacion_id = ? AND estado = '${ESTADO_UNIDAD_ACTIVA}' AND ubicacion = 'bar'
+          ORDER BY fecha_crea ASC, codigo ASC
+          LIMIT ?`,
+        [presentacionId, botellas]
+      );
+
+      if (unidades.length < botellas) {
+        throw new BusinessError(
+          `Quedan ${unidades.length} de ${botellas} botellas de "${presentacion[0].nombre}" en el bar`,
+          'INSUFFICIENT_BAR_STOCK',
+          {
+            presentacion_id: presentacionId,
+            disponibles: unidades.length,
+            requeridas: botellas
+          }
+        );
+      }
+
+      const ids = unidades.map(unidad => unidad.id);
+      const placeholders = ids.map(() => '?').join(',');
+      await trx(
+        `UPDATE inventario_unidades SET estado = '${ESTADO_UNIDAD_VENDIDA}' WHERE id IN (${placeholders})`,
+        ids
+      );
+
+      // Deja la venta en el historial de la presentación: es el tercer tipo de
+      // movimiento que promete el documento junto a ingresos y traspasos.
+      await BaseRepository.insert(trx, 'inventario_movimientos', {
+        id: generateUUID(),
+        tipo: 'venta',
+        estado: 'completada',
+        producto_id: presentacion[0].producto_id,
+        presentacion_id: presentacionId,
+        cantidad: botellas,
+        precio_venta: Math.floor(Number(presentacion[0].precio_venta ?? 0)),
+        comision: Math.floor(Number(presentacion[0].comision ?? 0)),
+        usuario_id: contexto.usuarioId,
+        fecha_crea: contexto.fecha
+      });
+    }
   }
 
   static async acceptTransfer(trx: Queryable, id: string, usuarioId: string): Promise<void> {

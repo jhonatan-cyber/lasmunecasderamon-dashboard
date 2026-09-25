@@ -2,10 +2,10 @@
 
 > Estado actual: implementado el **registro en almacén** (producto +
 > presentaciones con precio de compra, stock por presentación y códigos únicos
-> `LM-…` + barra EAN-13 por unidad) y el **bar** (`/bar`): traspaso FIFO
+> `LM-…` + barra EAN-13 por unidad), el **bar** (`/bar`): traspaso FIFO
 > almacén→bar con precio de venta y comisión por presentación, movimientos
-> registrados. Pendientes: Etiquetas/QR, Historial visible y descuento
-> automático en ventas.
+> registrados, **etiquetas/QR**, **historial** y **descuento automático al
+> vender o cobrar una cuenta**.
 
 El menú incluye **Inventario** (`/inventory`) y **Bar** (`/bar`). Ambos utilizan
 las categorías existentes y los permisos de productos: lectura para consultar y
@@ -66,7 +66,11 @@ requiere conteo físico, no se deduce de las ventas anteriores.
 Ejecuta `corepack pnpm db:migrate` para aplicar `003_inventory.sql`. No altera
 las existencias ni los registros históricos del catálogo anterior.
 
-Las pruebas `tests/postgres/inventory.test.ts` verifican códigos únicos,
-traspasos, concurrencia, ventas reales, cobro de cuentas, rollback, vinculación
-del catálogo y respaldo/restauración. Usa exclusivamente una base local con
-nombre terminado en `_test` al ejecutar `corepack pnpm test:postgres`.
+Las pruebas de unidad `tests/unit/lib/repositories/InventoryRepository.test.ts`
+cubren códigos únicos, traspasos, stock por ubicación y el descuento de venta:
+bloqueo de la presentación, marcado de unidades, movimiento histórico y rechazo
+por stock insuficiente sin modificar nada.
+`tests/unit/lib/services/SaleService.test.ts` comprueba que el descuento se
+dispara dentro de la transacción de la venta (y por lo tanto también en el cobro
+de cuenta) y que un rechazo revierte la venta entera. No existe hoy una prueba
+de Postgres que ejercite el flujo completo venta + inventario.

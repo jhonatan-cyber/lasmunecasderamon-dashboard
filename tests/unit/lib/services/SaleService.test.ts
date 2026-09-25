@@ -141,6 +141,7 @@ describe('SaleService — lógica de pagos mixtos', () => {
 import { SaleService } from '@/lib/services/SaleService';
 import { CashRegisterRepository } from '@/lib/repositories/CashRegisterRepository';
 import { SaleRepository } from '@/lib/repositories/SaleRepository';
+import { InventoryRepository } from '@/lib/repositories/InventoryRepository';
 import { TipRepository } from '@/lib/repositories/TipRepository';
 import { withTransaction } from '@/lib/database/db';
 
@@ -363,5 +364,55 @@ describe('SaleService.createSale', () => {
       monto: 1000
     });
     expect(result).toEqual(expect.objectContaining({ total: 11000, estado: 1 }));
+  });
+});
+
+describe('SaleService.createSale — inventario del bar', () => {
+  const detallesBar = [
+    { producto_id: 'prod-1', presentacion_id: 'pres-1', precio: 15000, cantidad: 2, comision: 0 }
+  ];
+
+  it('pasa los detalles a consume, que descuenta las botellas del bar', async () => {
+    vi.mocked(CashRegisterRepository.getCurrentCajaId).mockResolvedValue('caja-1');
+
+    await SaleService.createSale({ ...validSaleBody, detalles: detallesBar }, 'user-1');
+
+    expect(InventoryRepository.consume).toHaveBeenCalledWith(
+      expect.anything(),
+      [expect.objectContaining({ presentacion_id: 'pres-1', cantidad: 2 })],
+      { usuarioId: 'user-1', fecha: expect.any(String) }
+    );
+  });
+
+  it('aplica el mismo descuento al cobro de cuenta (origen cuenta)', async () => {
+    vi.mocked(CashRegisterRepository.getCurrentCajaId).mockResolvedValue('caja-1');
+
+    await SaleService.createSale(
+      {
+        ...validSaleBody,
+        detalles: detallesBar,
+        origen: 'cuenta',
+        skip_client_prepago: true
+      },
+      'user-1'
+    );
+
+    expect(InventoryRepository.consume).toHaveBeenCalledWith(expect.anything(), expect.any(Array), {
+      usuarioId: 'user-1',
+      fecha: expect.any(String)
+    });
+  });
+
+  it('propaga el rechazo cuando no alcanzan las botellas: la venta entera se revierte', async () => {
+    vi.mocked(CashRegisterRepository.getCurrentCajaId).mockResolvedValue('caja-1');
+    vi.mocked(InventoryRepository.consume).mockRejectedValueOnce(
+      new BusinessError('Quedan 1 de 2 botellas', 'INSUFFICIENT_BAR_STOCK')
+    );
+
+    await expect(
+      SaleService.createSale({ ...validSaleBody, detalles: detallesBar }, 'user-1')
+    ).rejects.toMatchObject({ code: 'INSUFFICIENT_BAR_STOCK' });
+
+    expect(CashRegisterRepository.updateBalances).not.toHaveBeenCalled();
   });
 });

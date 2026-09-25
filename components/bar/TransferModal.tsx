@@ -17,6 +17,7 @@ import {
 import { CHAMPAGNE_DEFAULT_TIERS, type ChampagneTier } from '@/lib/business/champagne';
 import { formatCurrencyCLP } from '@/lib/utils/formatters';
 import { isSimpleProduct } from '@/components/orders/productModalRules';
+import { useConfigValue } from '@/hooks/shared/useConfigValue';
 
 const esChampagne = (categoria?: string | null) =>
   /champan|champagne/.test(
@@ -98,6 +99,7 @@ export function TransferModal({
   endpoint = '/api/bar'
 }: TransferModalProps) {
   const [cantidad, setCantidad] = useState('');
+  const shotMl = useConfigValue<number>('bar', 'shot_ml', 50);
   const [precioVenta, setPrecioVenta] = useState('');
   const [comision, setComision] = useState('');
   const [tipos, setTipos] = useState<SaleType[]>(['botella']);
@@ -463,7 +465,7 @@ export function TransferModal({
                   {tipos.map(tipo => (
                     <fieldset key={tipo} className='rounded-xl border p-3'>
                       <legend className='px-1 text-sm font-semibold'>
-                        {tipo === 'botella' ? 'Botella' : 'Shot'}
+                        {tipo === 'botella' ? 'Botella' : `Shot · ${shotMl} ml`}
                       </legend>
                       <div className='grid grid-cols-2 gap-3'>
                         <div className='flex flex-col gap-2'>

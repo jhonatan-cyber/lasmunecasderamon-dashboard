@@ -20,7 +20,8 @@ import { getNowInBusinessTimezone } from '@/lib/business/timezoneService';
 import { useUsers } from '@/hooks/personal';
 import { useCurrentUser } from '@/hooks/auth/useCurrentUser';
 import { formatCurrencyCLP } from '@/lib/utils/formatters';
-import { Loader2 } from 'lucide-react';
+import { ClientesSaldoList } from '@/components/caja/ClientesSaldoList';
+import { Loader2, Users } from 'lucide-react';
 
 const getDiaSemana = (fecha: string): string => {
   const dias = ['Domingo', 'Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado'];
@@ -50,6 +51,8 @@ export const CerrarCajaDialog = ({
     monto_cierre: 0
   });
   const [errors, setErrors] = useState<Record<string, string>>({});
+  const [clientesSaldo, setClientesSaldo] = useState<any[]>([]);
+  const [loadingClientesSaldo, setLoadingClientesSaldo] = useState(false);
 
   const { users, isLoading: usersLoading } = useUsers();
   const { user: currentUser, loading: currentUserLoading } = useCurrentUser();
@@ -64,6 +67,29 @@ export const CerrarCajaDialog = ({
       });
     }
   }, [caja, currentUser]);
+
+  useEffect(() => {
+    if (!open) return;
+    let cancelled = false;
+    const fetchClientesSaldo = async () => {
+      setLoadingClientesSaldo(true);
+      try {
+        const resp = await fetch('/api/clients?con_saldo=1&limit=200');
+        const data = await resp.json();
+        if (!cancelled && data.success) setClientesSaldo(data.data || []);
+      } catch (error) {
+        if (!cancelled) {
+          logger.captureException(error, { context: 'CerrarCajaDialog:fetchClientesSaldo' });
+        }
+      } finally {
+        if (!cancelled) setLoadingClientesSaldo(false);
+      }
+    };
+    fetchClientesSaldo();
+    return () => {
+      cancelled = true;
+    };
+  }, [open]);
 
   const validateForm = (): boolean => {
     return true;
@@ -125,7 +151,7 @@ export const CerrarCajaDialog = ({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className='sm:max-w-md max-h-[90vh] flex flex-col p-0 border-none bg-white/95 dark:bg-slate-900/90 backdrop-blur-2xl rounded-[2.5rem] shadow-2xl overflow-hidden'>
+      <DialogContent className='sm:max-w-lg max-h-[90vh] flex flex-col p-0 border-none bg-white/95 dark:bg-slate-900/90 backdrop-blur-2xl rounded-[2.5rem] shadow-2xl overflow-hidden'>
         <DialogHeader className='shrink-0 px-8 pt-8 pb-4 border-b border-slate-100 dark:border-slate-800'>
           <DialogTitle className='text-2xl font-black tracking-tight text-slate-900 dark:text-white'>
             Cerrar Caja {getDiaSemana(caja.fecha_apertura)}
@@ -191,6 +217,17 @@ export const CerrarCajaDialog = ({
                   </span>
                 </div>
               </div>
+            </div>
+
+            {}
+            <div className='bg-amber-50 dark:bg-amber-900/10 border border-amber-200 dark:border-amber-800 rounded-lg p-3 space-y-2'>
+              <div className='flex items-center gap-2'>
+                <Users className='w-4 h-4 text-amber-600' />
+                <h4 className='font-medium text-sm text-amber-800 dark:text-amber-200'>
+                  Clientes con saldo prepago pendiente
+                </h4>
+              </div>
+              <ClientesSaldoList clientes={clientesSaldo} loading={loadingClientesSaldo} />
             </div>
           </div>
         </div>

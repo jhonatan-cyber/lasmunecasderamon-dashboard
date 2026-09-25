@@ -6,11 +6,7 @@ import { Eye, Lock, Wallet, ArrowDownCircle, User, Calendar, Hash } from 'lucide
 import { formatCurrencyCLP } from '@/lib/utils/formatters';
 import { formatLongDateEs } from '@/lib/utils/calendarUtils';
 
-const getDiaSemana = (fecha: string): string => {
-  const dias = ['Domingo', 'Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado'];
-  const fechaObj = new Date(fecha);
-  return dias[fechaObj.getDay()];
-};
+const capitalize = (text: string) => text.charAt(0).toUpperCase() + text.slice(1);
 
 interface CajaCardProps {
   caja: CajaWithUser;
@@ -76,7 +72,7 @@ export const CajaCard = ({
                 <Calendar className='w-4 h-4 text-slate-400' />
               </div>
               <CardTitle className='text-lg font-bold tracking-tight'>
-                {getDiaSemana(caja.fecha_apertura)}, {formatLongDateEs(caja.fecha_apertura)}
+                {capitalize(formatLongDateEs(caja.fecha_apertura))}
               </CardTitle>
             </div>
           </div>

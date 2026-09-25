@@ -26,6 +26,13 @@ afterEach(() => {
   vi.unstubAllGlobals();
 });
 
+// El modal también pide /api/configurations (ml por shot), así que se busca el POST
+// de la transferencia en vez de asumir que es la primera llamada.
+const postBody = (request: any) => {
+  const call = request.mock.calls.find((args: any[]) => args[1]?.method === 'POST');
+  return JSON.parse(call![1].body);
+};
+
 describe('tipos de venta al transferir', () => {
   it('reutiliza la configuración guardada sin pedir precio manual', async () => {
     const request = vi.fn().mockResolvedValue({ ok: true, json: async () => ({ success: true }) });
@@ -37,7 +44,7 @@ describe('tipos de venta al transferir', () => {
     fireEvent.change(screen.getByLabelText('Cantidad'), { target: { value: '2' } });
     fireEvent.click(screen.getByRole('button', { name: 'Traspasar' }));
     await waitFor(() => expect(onDone).toHaveBeenCalledOnce());
-    expect(JSON.parse(request.mock.calls[0][1].body)).toEqual({
+    expect(postBody(request)).toEqual({
       producto_id: 'prod-1',
       presentacion_id: 'pres-1',
       cantidad: 2,
@@ -56,7 +63,7 @@ describe('tipos de venta al transferir', () => {
     fireEvent.change(screen.getByLabelText('Cantidad'), { target: { value: '2' } });
     fireEvent.click(screen.getByRole('button', { name: 'Traspasar' }));
     await waitFor(() => expect(onDone).toHaveBeenCalledOnce());
-    expect(JSON.parse(request.mock.calls[0][1].body)).toEqual({
+    expect(postBody(request)).toEqual({
       producto_id: 'prod-1',
       presentacion_id: 'pres-1',
       cantidad: 2,

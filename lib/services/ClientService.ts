@@ -55,7 +55,12 @@ export class ClientService {
   }
 
   static async getAll(params?: Record<string, unknown>) {
-    return await ClientRepository.getAll(params);
+    return await ClientRepository.getAll({
+      search: params?.search as string | undefined,
+      limit: params?.limit as number | undefined,
+      offset: params?.offset as number | undefined,
+      conSaldo: params?.conSaldo as boolean | undefined
+    });
   }
 
   static async delete(id: string | number) {

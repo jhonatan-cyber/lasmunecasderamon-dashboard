@@ -305,3 +305,102 @@ describe('generarEan13Interno', () => {
     expect(generados.size).toBeGreaterThan(90);
   });
 });
+
+describe('descuento del bar al registrar una venta', () => {
+  const contexto = { usuarioId: 'user-1', fecha: '2026-09-24 10:00:00' };
+  const presentacion = {
+    id: 'pres-1',
+    producto_id: 'prod-1',
+    nombre: 'Whisky 750 ml',
+    precio_venta: 45000,
+    comision: 5000
+  };
+
+  function trxCon(disponibles: { id: string }[]) {
+    return vi.fn().mockImplementation(async (sql: string) => {
+      if (sql.includes('FROM inventario_presentaciones')) return [presentacion];
+      if (sql.includes('SELECT id FROM inventario_unidades')) return disponibles;
+      return [];
+    });
+  }
+
+  it('ignora los detalles sin presentación: el catálogo anterior no tiene inventario', async () => {
+    const trx = vi.fn();
+
+    await InventoryRepository.consume(
+      trx,
+      [{ presentacion_id: null, cantidad: 3 }, { cantidad: 1 }],
+      contexto
+    );
+
+    expect(trx).not.toHaveBeenCalled();
+  });
+
+  it('suma las cantidades de la misma presentación en un solo descuento', async () => {
+    const trx = trxCon([{ id: 'u1' }, { id: 'u2' }, { id: 'u3' }]);
+
+    await InventoryRepository.consume(
+      trx,
+      [
+        { presentacion_id: 'pres-1', cantidad: 2 },
+        { presentacion_id: 'pres-1', cantidad: 1 }
+      ],
+      contexto
+    );
+
+    const seleccion = trx.mock.calls.find(([sql]) =>
+      sql.includes('SELECT id FROM inventario_unidades')
+    );
+    expect(seleccion![0]).toContain('LIMIT ?');
+    expect(seleccion![1]).toEqual(['pres-1', 3]);
+  });
+
+  it('bloquea la presentación, marca las unidades como vendidas y registra el movimiento', async () => {
+    const trx = trxCon([{ id: 'u1' }, { id: 'u2' }]);
+
+    await InventoryRepository.consume(trx, [{ presentacion_id: 'pres-1', cantidad: 2 }], contexto);
+
+    expect(trx.mock.calls[0][0]).toContain('FOR UPDATE');
+    const descuento = trx.mock.calls.find(([sql]) => sql.includes('SET estado ='));
+    expect(descuento![0]).toContain("SET estado = 'vendida'");
+    expect(descuento![1]).toEqual(['u1', 'u2']);
+    const movimiento = trx.mock.calls.find(([sql]) =>
+      sql.includes('INSERT INTO inventario_movimientos')
+    );
+    expect(movimiento).toBeDefined();
+    expect(movimiento![1]).toEqual(
+      expect.arrayContaining(['venta', 'completada', 'prod-1', 'pres-1', 2, 'user-1'])
+    );
+  });
+
+  it('rechaza la venta sin modificar nada cuando no alcanzan las botellas', async () => {
+    const trx = trxCon([{ id: 'u1' }]);
+
+    await expect(
+      InventoryRepository.consume(trx, [{ presentacion_id: 'pres-1', cantidad: 2 }], contexto)
+    ).rejects.toMatchObject({
+      code: 'INSUFFICIENT_BAR_STOCK',
+      details: { presentacion_id: 'pres-1', disponibles: 1, requeridas: 2 }
+    });
+
+    expect(trx.mock.calls.every(([sql]) => sql.trim().startsWith('SELECT'))).toBe(true);
+  });
+
+  it('sin unidades en el bar también rechaza, en lugar de vender humo', async () => {
+    const trx = trxCon([]);
+
+    await expect(
+      InventoryRepository.consume(trx, [{ presentacion_id: 'pres-1', cantidad: 1 }], contexto)
+    ).rejects.toMatchObject({ code: 'INSUFFICIENT_BAR_STOCK' });
+    expect(trx).toHaveBeenCalledTimes(2);
+  });
+
+  it('no falla si la presentación ya no existe (unidades huérfanas)', async () => {
+    const trx = vi.fn().mockResolvedValue([]);
+
+    await expect(
+      InventoryRepository.consume(trx, [{ presentacion_id: 'pres-1', cantidad: 1 }], contexto)
+    ).resolves.toBeUndefined();
+    expect(trx).toHaveBeenCalledTimes(1);
+  });
+});

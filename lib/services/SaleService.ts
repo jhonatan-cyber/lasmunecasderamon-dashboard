@@ -3,6 +3,7 @@ import { getNowInBusinessTimezone } from '@/lib/business/timezoneService';
 import { SaleCreateSchema } from '@/lib/business/schemas';
 import { SaleRepository } from '@/lib/repositories/SaleRepository';
 import { CashRegisterRepository } from '@/lib/repositories/CashRegisterRepository';
+import { InventoryRepository } from '@/lib/repositories/InventoryRepository';
 import { ClientRepository } from '@/lib/repositories/ClientRepository';
 import { CommissionRepository } from '@/lib/repositories/CommissionRepository';
 import { AuditRepository } from '@/lib/repositories/AuditRepository';
@@ -277,6 +278,16 @@ export class SaleService {
       if (detailRows.length > 0) {
         await SaleService.batchInsertDetails(trx, detailRows);
       }
+
+      // === INVENTARIO DEL BAR ===
+      // Descuenta las botellas de las presentaciones vinculadas. Si no alcanzan,
+      // INSUFFICIENT_BAR_STOCK revierte la transacción entera: venta, caja, comisiones y
+      // detalles. Cubre también el cobro de cuenta, que entra por este mismo método con
+      // origen 'cuenta'. Los detalles sin presentación (catálogo anterior) no se tocan.
+      await InventoryRepository.consume(trx, validated.detalles, {
+        usuarioId: createdBy,
+        fecha: now
+      });
 
       // BATCH INSERT comisiones + detalle_comisiones
       if (commissionMainRows.length > 0) {

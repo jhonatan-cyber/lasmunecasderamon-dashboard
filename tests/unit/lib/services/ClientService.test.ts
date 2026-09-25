@@ -225,11 +225,16 @@ describe('ClientService.getAll', () => {
   it('delega al repositorio con params opcionales', async () => {
     const mockClients = [{ id: 'cli-1' }];
     vi.mocked(ClientRepository.getAll).mockResolvedValue(mockClients as any);
-    const params = { term: 'ana', status: 1 };
+    const params = { search: 'ana', limit: 10, conSaldo: true };
 
     const result = await ClientService.getAll(params);
 
-    expect(ClientRepository.getAll).toHaveBeenCalledWith(params);
+    expect(ClientRepository.getAll).toHaveBeenCalledWith({
+      search: 'ana',
+      limit: 10,
+      offset: undefined,
+      conSaldo: true
+    });
     expect(result).toEqual(mockClients);
   });
 
@@ -238,7 +243,12 @@ describe('ClientService.getAll', () => {
 
     await ClientService.getAll();
 
-    expect(ClientRepository.getAll).toHaveBeenCalledWith(undefined);
+    expect(ClientRepository.getAll).toHaveBeenCalledWith({
+      search: undefined,
+      limit: undefined,
+      offset: undefined,
+      conSaldo: undefined
+    });
   });
 });
 

@@ -14,6 +14,9 @@ export function useCajaDetails({ caja, open }: UseCajaDetailsParams) {
   const [ventas, setVentas] = useState<any[]>([]);
   const [retiros, setRetiros] = useState<any[]>([]);
   const [servicios, setServicios] = useState<any[]>([]);
+  const [cajaInfo, setCajaInfo] = useState<any>(null);
+  const [clientesSaldo, setClientesSaldo] = useState<any[]>([]);
+  const [loadingClientesSaldo, setLoadingClientesSaldo] = useState(false);
 
   const [loadingVentas, setLoadingVentas] = useState(false);
   const [retirosLoading, setRetirosLoading] = useState(false);
@@ -38,6 +41,30 @@ export function useCajaDetails({ caja, open }: UseCajaDetailsParams) {
   const itemsLimit = 10;
 
   const [activeTab, setActiveTab] = useState('resumen');
+
+  const fetchCajaInfo = async () => {
+    if (!cajaId) return;
+    try {
+      const resp = await fetch(`/api/cashregister/${cajaId}`);
+      const data = await resp.json();
+      if (data.success && data.data) setCajaInfo(data.data);
+    } catch (error) {
+      logger.captureException(error, { context: 'useCajaDetails:fetchCajaInfo' });
+    }
+  };
+
+  const fetchClientesSaldo = async () => {
+    setLoadingClientesSaldo(true);
+    try {
+      const resp = await fetch('/api/clients?con_saldo=1&limit=200');
+      const data = await resp.json();
+      if (data.success) setClientesSaldo(data.data || []);
+    } catch (error) {
+      logger.captureException(error, { context: 'useCajaDetails:fetchClientesSaldo' });
+    } finally {
+      setLoadingClientesSaldo(false);
+    }
+  };
 
   const fetchRetiros = async () => {
     if (!cajaId) return;
@@ -142,6 +169,8 @@ export function useCajaDetails({ caja, open }: UseCajaDetailsParams) {
 
   useEffect(() => {
     if (open && cajaId) {
+      fetchCajaInfo();
+      fetchClientesSaldo();
       fetchRetiros();
       fetchVentas();
       fetchServicios();
@@ -206,6 +235,10 @@ export function useCajaDetails({ caja, open }: UseCajaDetailsParams) {
     ventas,
     retiros,
     servicios,
+    cajaInfo,
+    clientesSaldo,
+    loadingClientesSaldo,
+    fetchClientesSaldo,
     loadingVentas,
     retirosLoading,
     loadingServicios,

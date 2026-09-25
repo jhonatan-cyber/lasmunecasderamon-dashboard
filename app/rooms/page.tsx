@@ -102,15 +102,25 @@ const RoomsPage = () => {
     return localRooms.slice(start, start + pageSize);
   }, [localRooms, page, pageSize]);
 
+  // Los handlers siguientes envuelven la llamada en try/catch por la misma razón que en
+  // el listado de productos: useGenericMutations y statusMutation rechazan la promesa,
+  // y ni RoomForm (onSubmit síncrono) ni los callbacks de la tabla/grilla la esperan. Sin
+  // el catch, un fallo se convierte en un evento de promesa sin manejar que Next pinta
+  // como Runtime Error y tapa la página entera. El toast lo emiten los propios hooks.
   const handleCreate = async (form: RoomFormValues) => {
-    await createRoom({
-      name: toTitleCase(form.name),
-      price: Number(form.price.replace(/\./g, '')),
-      time: Number(form.time),
-      comision_anfitriona: form.comision_anfitriona
-        ? Number(form.comision_anfitriona.replace(/\./g, ''))
-        : undefined
-    });
+    try {
+      await createRoom({
+        name: toTitleCase(form.name),
+        price: Number(form.price.replace(/\./g, '')),
+        time: Number(form.time),
+        comision_anfitriona: form.comision_anfitriona
+          ? Number(form.comision_anfitriona.replace(/\./g, ''))
+          : undefined
+      });
+    } catch {
+      // El diálogo queda abierto con los datos cargados para corregirlos.
+      return;
+    }
     setOpenDialog(false);
   };
 
@@ -121,21 +131,54 @@ const RoomsPage = () => {
 
   const handleUpdate = async (form: RoomFormValues) => {
     if (!editRoom) return;
-    await updateRoom(editRoom.id, {
-      name: toTitleCase(form.name),
-      price: Number(form.price.replace(/\./g, '')),
-      time: Number(form.time),
-      comision_anfitriona: form.comision_anfitriona
-        ? Number(form.comision_anfitriona.replace(/\./g, ''))
-        : undefined
-    });
+    try {
+      await updateRoom(editRoom.id, {
+        name: toTitleCase(form.name),
+        price: Number(form.price.replace(/\./g, '')),
+        time: Number(form.time),
+        comision_anfitriona: form.comision_anfitriona
+          ? Number(form.comision_anfitriona.replace(/\./g, ''))
+          : undefined
+      });
+    } catch {
+      // Se conserva editRoom para no perder la edición en curso.
+      return;
+    }
     setEditRoom(null);
     setOpenDialog(false);
   };
 
   const handleActivate = async (room: Room) => {
-    const isLiberate = room.status === 2;
-    await activateRoom(room.id, isLiberate ? 'liberate' : 'activate');
+    try {
+      const isLiberate = room.status === 2;
+      await activateRoom(room.id, isLiberate ? 'liberate' : 'activate');
+    } catch {
+      // statusMutation ya mostró el error en su onError.
+    }
+  };
+
+  const handleDeactivate = async (room: Room) => {
+    try {
+      await deactivateRoom(room.id);
+    } catch {
+      // statusMutation ya mostró el error en su onError.
+    }
+  };
+
+  const handleOccupy = async (room: Room) => {
+    try {
+      await occupyRoom(room.id);
+    } catch {
+      // statusMutation ya mostró el error en su onError.
+    }
+  };
+
+  const handleDelete = async (room: Room) => {
+    try {
+      await deleteRoom(room.id);
+    } catch {
+      // useGenericMutations ya mostró el error en su onError.
+    }
   };
 
   const handleDialogClose = () => {
@@ -153,89 +196,89 @@ const RoomsPage = () => {
 
   return (
     <PermissionGuard module='rooms' action='view'>
-      <BoneyardSkeleton name="rooms-main" loading={isLoading}>
-      <div className='flex flex-col gap-4 sm:gap-6 p-4 sm:p-6 lg:p-10 mt-4 sm:mt-6 lg:mt-10'>
-        <RoomsHeader
-          showTableView={showTableView}
-          setShowTableView={setShowTableView}
-          canCreate={permissions.canCreate}
-          onNew={() => {
-            setEditRoom(null);
-            setOpenDialog(true);
-          }}
-        />
+      <BoneyardSkeleton name='rooms-main' loading={isLoading}>
+        <div className='flex flex-col gap-4 sm:gap-6 p-4 sm:p-6 lg:p-10 mt-4 sm:mt-6 lg:mt-10'>
+          <RoomsHeader
+            showTableView={showTableView}
+            setShowTableView={setShowTableView}
+            canCreate={permissions.canCreate}
+            onNew={() => {
+              setEditRoom(null);
+              setOpenDialog(true);
+            }}
+          />
 
-        <RoomFilters
-          searchTerm={searchTerm}
-          setSearchTerm={setSearchTerm}
-          filterStatus={filterStatus}
-          setFilterStatus={setFilterStatus}
-          sortBy={sortBy}
-          setSortBy={setSortBy}
-          sortOrder={sortOrder}
-          setSortOrder={setSortOrder}
-          onClearFilters={handleClearFilters}
-          pageSize={pageSize}
-          setPageSize={setPageSize}
-          setPage={setPage}
-          showTableView={showTableView}
-        />
+          <RoomFilters
+            searchTerm={searchTerm}
+            setSearchTerm={setSearchTerm}
+            filterStatus={filterStatus}
+            setFilterStatus={setFilterStatus}
+            sortBy={sortBy}
+            setSortBy={setSortBy}
+            sortOrder={sortOrder}
+            setSortOrder={setSortOrder}
+            onClearFilters={handleClearFilters}
+            pageSize={pageSize}
+            setPageSize={setPageSize}
+            setPage={setPage}
+            showTableView={showTableView}
+          />
 
-        {showTableView ? (
-          <div className='mt-4 sm:mt-6'>
-            <RoomTable
-              rooms={paginatedRooms}
-              onEdit={handleEdit}
-              onDelete={room => deleteRoom(room.id)}
-              onActivate={handleActivate}
-              onDeactivate={room => deactivateRoom(room.id)}
-              onOccupy={room => occupyRoom(room.id)}
-              isMutating={isMutating}
-              {...permissions}
-              currentPage={page}
-              pageSize={pageSize}
-            />
-            {totalPages > 1 && (
-              <div className='flex justify-center mt-4 sm:mt-6'>
-                <Paginate page={page} totalPages={totalPages} setPage={setPage} />
-              </div>
-            )}
-          </div>
-        ) : (
-          <div className='mt-4 sm:mt-6'>
-            <RoomGridView
-              rooms={paginatedRooms}
-              localRooms={localRooms}
-              setLocalRooms={setLocalRooms}
-              reorderRooms={reorderRooms}
-              onEdit={handleEdit}
-              onDelete={room => deleteRoom(room.id)}
-              onActivate={handleActivate}
-              onDeactivate={room => deactivateRoom(room.id)}
-              onOccupy={room => occupyRoom(room.id)}
-              isMutating={isMutating}
-              {...permissions}
-              onNew={() => {
-                setEditRoom(null);
-                setOpenDialog(true);
-              }}
-            />
-            {totalPages > 1 && paginatedRooms.length > 0 && (
-              <div className='flex justify-center mt-4 sm:mt-6'>
-                <Paginate page={page} totalPages={totalPages} setPage={setPage} />
-              </div>
-            )}
-          </div>
-        )}
+          {showTableView ? (
+            <div className='mt-4 sm:mt-6'>
+              <RoomTable
+                rooms={paginatedRooms}
+                onEdit={handleEdit}
+                onDelete={handleDelete}
+                onActivate={handleActivate}
+                onDeactivate={handleDeactivate}
+                onOccupy={handleOccupy}
+                isMutating={isMutating}
+                {...permissions}
+                currentPage={page}
+                pageSize={pageSize}
+              />
+              {totalPages > 1 && (
+                <div className='flex justify-center mt-4 sm:mt-6'>
+                  <Paginate page={page} totalPages={totalPages} setPage={setPage} />
+                </div>
+              )}
+            </div>
+          ) : (
+            <div className='mt-4 sm:mt-6'>
+              <RoomGridView
+                rooms={paginatedRooms}
+                localRooms={localRooms}
+                setLocalRooms={setLocalRooms}
+                reorderRooms={reorderRooms}
+                onEdit={handleEdit}
+                onDelete={handleDelete}
+                onActivate={handleActivate}
+                onDeactivate={handleDeactivate}
+                onOccupy={handleOccupy}
+                isMutating={isMutating}
+                {...permissions}
+                onNew={() => {
+                  setEditRoom(null);
+                  setOpenDialog(true);
+                }}
+              />
+              {totalPages > 1 && paginatedRooms.length > 0 && (
+                <div className='flex justify-center mt-4 sm:mt-6'>
+                  <Paginate page={page} totalPages={totalPages} setPage={setPage} />
+                </div>
+              )}
+            </div>
+          )}
 
-        <RoomFormDialog
-          open={openDialog}
-          onClose={handleDialogClose}
-          onSubmit={editRoom ? handleUpdate : handleCreate}
-          room={editRoom}
-          isMutating={isMutating}
-        />
-      </div>
+          <RoomFormDialog
+            open={openDialog}
+            onClose={handleDialogClose}
+            onSubmit={editRoom ? handleUpdate : handleCreate}
+            room={editRoom}
+            isMutating={isMutating}
+          />
+        </div>
       </BoneyardSkeleton>
     </PermissionGuard>
   );

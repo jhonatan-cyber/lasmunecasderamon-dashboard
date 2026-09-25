@@ -1,5 +1,8 @@
+'use client';
+
 import type { SaleOption } from '@/types/sale-options';
 import { formatCurrencyCLP } from '@/lib/utils/formatters';
+import { useConfigValue } from '@/hooks/shared/useConfigValue';
 import { parseSavedOptions } from './TransferModal';
 
 export function SalePrices({
@@ -13,6 +16,7 @@ export function SalePrices({
   commission?: number | null;
   field?: 'precio' | 'comision';
 }) {
+  const shotMl = useConfigValue<number>('bar', 'shot_ml', 50);
   const parsed = typeof options === 'string' ? parseSavedOptions(options) : options;
   const values = parsed ?? [{ tipo: 'botella', precio: price ?? 0, comision: commission ?? 0 }];
   return (
@@ -20,7 +24,7 @@ export function SalePrices({
       {values.map(option => (
         <div key={option.tipo} className='flex flex-col gap-0.5'>
           <span className='text-xs font-medium text-muted-foreground'>
-            {option.tipo === 'botella' ? 'Botella' : 'Shot'}
+            {option.tipo === 'botella' ? 'Botella' : `Shot · ${shotMl} ml`}
           </span>
           {field !== 'comision' && (
             <span className='font-semibold tabular-nums'>{formatCurrencyCLP(option.precio)}</span>

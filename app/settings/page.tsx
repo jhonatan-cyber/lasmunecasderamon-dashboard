@@ -4,6 +4,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import {
   Building2,
   Database,
+  GlassWater,
   Key,
   Settings as SettingsIcon,
   ShieldAlert,
@@ -19,6 +20,7 @@ import { SettingsAttendanceTab } from '@/components/settings/SettingsAttendanceT
 import { KioskDevices } from '@/components/settings/KioskDevices';
 import { SettingsChampagneCard } from '@/components/settings/SettingsChampagneCard';
 import { SettingsServiceLevelsCard } from '@/components/settings/SettingsServiceLevelsCard';
+import { SettingsBarTab } from '@/components/settings/SettingsBarTab';
 
 export default function Settings() {
   return (
@@ -40,6 +42,10 @@ export default function Settings() {
           <TabsTrigger value='comisiones' className='flex items-center gap-2 rounded-full'>
             <Users className='h-4 w-4' />
             Comisiones
+          </TabsTrigger>
+          <TabsTrigger value='bar' className='flex items-center gap-2 rounded-full'>
+            <GlassWater className='h-4 w-4' />
+            Bar
           </TabsTrigger>
           <TabsTrigger value='mantenimiento' className='flex items-center gap-2 rounded-full'>
             <Database className='h-4 w-4' />
@@ -70,6 +76,10 @@ export default function Settings() {
         <TabsContent value='comisiones' className='space-y-6'>
           <SettingsServiceLevelsCard />
           <SettingsChampagneCard />
+        </TabsContent>
+
+        <TabsContent value='bar'>
+          <SettingsBarTab />
         </TabsContent>
 
         <TabsContent value='mantenimiento'>

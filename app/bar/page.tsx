@@ -490,20 +490,28 @@ export default function BarPage() {
                               {m.usuario_nombre || m.usuario_nick || '—'}
                             </TableCell>
                             <TableCell>
-                              {m.estado === 'aceptada'
-                                ? 'Aceptada'
-                                : m.estado === 'pendiente'
-                                  ? 'Pendiente'
-                                  : m.estado === 'rechazada'
-                                    ? 'Rechazada'
-                                    : 'Histórica'}
+                              {m.tipo === 'venta'
+                                ? 'Vendida'
+                                : m.estado === 'aceptada'
+                                  ? 'Aceptada'
+                                  : m.estado === 'pendiente'
+                                    ? 'Pendiente'
+                                    : m.estado === 'rechazada'
+                                      ? 'Rechazada'
+                                      : 'Histórica'}
                             </TableCell>
                             <TableCell>
-                              <span>{m.aceptado_nombre || 'Sin recepción registrada'}</span>
-                              {m.fecha_aceptacion && (
-                                <p className='text-xs text-muted-foreground'>
-                                  {m.fecha_aceptacion.replace('T', ' ').slice(0, 16)}
-                                </p>
+                              {m.tipo === 'venta' ? (
+                                <span className='text-muted-foreground'>—</span>
+                              ) : (
+                                <>
+                                  <span>{m.aceptado_nombre || 'Sin recepción registrada'}</span>
+                                  {m.fecha_aceptacion && (
+                                    <p className='text-xs text-muted-foreground'>
+                                      {m.fecha_aceptacion.replace('T', ' ').slice(0, 16)}
+                                    </p>
+                                  )}
+                                </>
                               )}
                             </TableCell>
                           </TableRow>

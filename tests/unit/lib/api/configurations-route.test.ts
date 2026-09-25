@@ -1,0 +1,155 @@
+// @vitest-environment node
+import { beforeEach, describe, expect, it, vi } from 'vitest';
+
+vi.hoisted(() => {
+  process.env.JWT_SECRET = 'test-secret-that-is-long-enough-for-validation';
+});
+
+const db = vi.hoisted(() => ({ query: vi.fn() }));
+
+vi.mock('next/server', () => ({
+  NextResponse: { json: (body: unknown, init?: ResponseInit) => Response.json(body, init) }
+}));
+
+vi.mock('@/lib/api/date-response', () => ({ normalizeJsonResponseDates: (r: any) => r }));
+
+vi.mock('@/lib/auth/auth-app', () => ({
+  getAuth: vi.fn().mockResolvedValue({ id: 'u-1', role: 'administrador', permissions: {} })
+}));
+
+vi.mock('@/lib/services/AuditService', () => ({
+  AuditService: { log: vi.fn().mockResolvedValue(undefined) }
+}));
+
+vi.mock('@/lib/services/ErrorLogService', () => ({
+  ErrorLogService: { log: vi.fn().mockResolvedValue(undefined) }
+}));
+
+vi.mock('@/lib/utils/logger', () => {
+  const mocks = {
+    error: vi.fn(),
+    captureException: vi.fn(),
+    info: vi.fn(),
+    warn: vi.fn(),
+    debug: vi.fn()
+  };
+  return { logger: mocks, default: mocks };
+});
+
+vi.mock('@/lib/database/db', () => ({ query: db.query }));
+
+import { GET, PUT } from '@/app/api/configurations/route';
+
+const call = (handler: any, url: string, init?: RequestInit) =>
+  handler(new Request(url, init), { params: {} });
+
+const putJson = (body: unknown) =>
+  call(PUT, 'http://localhost/api/configurations', {
+    method: 'PUT',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(body)
+  });
+
+beforeEach(() => {
+  vi.clearAllMocks();
+  db.query.mockResolvedValue([]);
+});
+
+describe('PUT /api/configurations · shot_ml', () => {
+  it('crea shot_ml en la categoría bar con tipo number cuando no existe', async () => {
+    db.query.mockResolvedValueOnce([]); // SELECT id → sin fila previa
+    const res = await putJson({ clave: 'shot_ml', valor: '45' });
+    const body = await res.json();
+
+    expect(res.status).toBe(200);
+    expect(body.success).toBe(true);
+
+    const insertCall = db.query.mock.calls.find(([sql]) => /INSERT INTO configuraciones/.test(sql));
+    expect(insertCall).toBeTruthy();
+    const params = insertCall![1] as unknown[];
+    expect(params.slice(1)).toEqual(['shot_ml', '45', 'bar', 'number']);
+  });
+
+  it('actualiza el valor cuando la clave ya existe', async () => {
+    db.query.mockResolvedValueOnce([{ id: 7 }]);
+    const res = await putJson({ clave: 'shot_ml', valor: '60' });
+
+    expect(res.status).toBe(200);
+    expect(db.query).toHaveBeenCalledWith(
+      expect.stringContaining('UPDATE configuraciones SET valor'),
+      ['60', 'shot_ml']
+    );
+    expect(db.query).not.toHaveBeenCalledWith(
+      expect.stringContaining('INSERT INTO configuraciones'),
+      expect.anything()
+    );
+  });
+
+  it('rechaza valores fuera de rango o no enteros sin tocar la base', async () => {
+    for (const valor of ['0', '1500', '45.5', 'abc', '', '-10']) {
+      const res = await putJson({ clave: 'shot_ml', valor });
+      const body = await res.json();
+
+      expect(res.status, `valor inválido: "${valor}"`).toBe(400);
+      expect(body.success).toBe(false);
+      expect(body.error).toContain('shot_ml');
+    }
+    expect(db.query).not.toHaveBeenCalled();
+  });
+
+  it('acepta el rango completo 1..1000', async () => {
+    for (const valor of ['1', '50', '1000']) {
+      db.query.mockResolvedValueOnce([]);
+      const res = await putJson({ clave: 'shot_ml', valor });
+      expect(res.status, `valor válido: "${valor}"`).toBe(200);
+    }
+  });
+
+  it('modo batch: guarda shot_ml y reporta las claves desconocidas', async () => {
+    db.query.mockResolvedValue([]);
+    const res = await putJson({
+      configs: [
+        { clave: 'shot_ml', valor: '55' },
+        { clave: 'no_existe', valor: '1' }
+      ]
+    });
+    const body = await res.json();
+
+    expect(body.success).toBe(false);
+    expect(body.errors).toEqual(['Clave desconocida: no_existe']);
+
+    const insertCall = db.query.mock.calls.find(([sql]) => /INSERT INTO configuraciones/.test(sql));
+    expect((insertCall![1] as unknown[]).slice(1)).toEqual(['shot_ml', '55', 'bar', 'number']);
+  });
+
+  it('sigue rechazando claves desconocidas en modo single', async () => {
+    const res = await putJson({ clave: 'ml_por_shot', valor: '50' });
+    const body = await res.json();
+
+    expect(res.status).toBe(400);
+    expect(body.error).toBe('Clave desconocida: ml_por_shot');
+    expect(db.query).not.toHaveBeenCalled();
+  });
+});
+
+describe('GET /api/configurations · shot_ml', () => {
+  it('agrupa shot_ml bajo la categoría bar y lo expone como número', async () => {
+    db.query.mockResolvedValue([
+      {
+        id: 1,
+        clave: 'shot_ml',
+        valor: '45',
+        descripcion: null,
+        categoria: 'bar',
+        tipo: 'number'
+      }
+    ]);
+
+    const res = await call(GET, 'http://localhost/api/configurations');
+    const body = await res.json();
+
+    expect(res.status).toBe(200);
+    expect(body.data.bar.shot_ml).toBe(45);
+    expect(typeof body.data.bar.shot_ml).toBe('number');
+  });
+});
