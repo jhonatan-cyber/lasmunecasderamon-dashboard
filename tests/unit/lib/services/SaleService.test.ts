@@ -149,6 +149,7 @@ import { InventoryRepository } from '@/lib/repositories/InventoryRepository';
 import { notifyBarShotAlerts } from '@/lib/business/shotAlerts';
 import { TipRepository } from '@/lib/repositories/TipRepository';
 import { withTransaction } from '@/lib/database/db';
+import { sendNotificationToAll } from '@/lib/api/sseService';
 
 beforeEach(() => {
   vi.clearAllMocks();
@@ -249,6 +250,27 @@ describe('SaleService.createSale', () => {
 
     expect(SaleRepository.rawInsert).toHaveBeenCalled();
     expect(CashRegisterRepository.updateBalances).not.toHaveBeenCalled();
+  });
+
+  it('emite updateSales por SSE al crear la venta (refetch en las apps)', async () => {
+    vi.mocked(CashRegisterRepository.getCurrentCajaId).mockResolvedValue('caja-1');
+
+    vi.mocked(withTransaction).mockImplementationOnce(async (fn: any) => {
+      const trx = vi.fn().mockResolvedValue([]);
+      return fn(trx);
+    });
+
+    await SaleService.createSale(
+      { ...validSaleBody, origen: 'cuenta', skip_client_prepago: true },
+      'user-1'
+    );
+
+    // Antes solo lo emitía el cron de timers: las apps no veían ventas nuevas
+    // hasta un refetch manual. Payload informativo, misma forma que el cron.
+    expect(sendNotificationToAll).toHaveBeenCalledWith('updateSales', {
+      id: 'mock-uuid',
+      type: 'venta'
+    });
   });
 
   it('guarda la venta con propina, separa los balances de caja y registra la propina para distribucion', async () => {

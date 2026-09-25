@@ -377,6 +377,13 @@ export class SaleService {
     // SSE notification (no bloquea — broadcast es síncrono en memoria)
     sendNotificationToAll('timers_updated', { timestamp: now });
 
+    // Al crear una venta se notifica al staff: antes solo lo hacía el cron de
+    // timers (y `sale_cancelled` al anular), así que las apps no veían ventas
+    // nuevas hasta el siguiente refetch manual. Los suscriptores (Expo
+    // SalesContext, Flutter refresh_bus 'sales') hacen refetch con este evento;
+    // payload informativo, misma forma `{ id, type }` que usa el cron.
+    sendNotificationToAll('updateSales', { id: result.id_venta, type: 'venta' });
+
     // Aviso al barman: una botella abierta bajó del umbral configurado de shots.
     await notifyBarShotAlerts(alertasShots);
 
