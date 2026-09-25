@@ -95,6 +95,48 @@ describe('useSaleValidation totals (propina / total)', () => {
     expect(result.current.formState.totals.total).toBe(21600); // 20000 + 1600
   });
 
+  it('marca tipo_venta shot solo en las líneas servidas por shot', async () => {
+    const { result } = renderSaleHook();
+    act(() => {
+      result.current.formState.setProductos([
+        {
+          id: 'p1',
+          producto_id: 'prod-1',
+          presentacion_id: 'pres-1',
+          nombre: 'Whisky 750 ml',
+          precio: 3000,
+          cantidad: 2,
+          subtotal: 6000,
+          tipo_venta: 'shot'
+        },
+        {
+          id: 'p2',
+          producto_id: 'prod-2',
+          presentacion_id: 'pres-2',
+          nombre: 'Cerveza',
+          precio: 20000,
+          cantidad: 1,
+          subtotal: 20000,
+          tipo_venta: 'botella'
+        }
+      ]);
+    });
+    setMetodoPago(result, 'efectivo');
+    createVentaMock.mockResolvedValue({ success: true, data: { id: 'v1' } });
+
+    await act(async () => {
+      await result.current.handleSubmit([], []);
+    });
+
+    const detalles = createVentaMock.mock.calls[0][0].detalles;
+    expect(detalles[0]).toMatchObject({
+      presentacion_id: 'pres-1',
+      cantidad: 2,
+      tipo_venta: 'shot'
+    });
+    expect(detalles[1].tipo_venta).toBeUndefined();
+  });
+
   it('el payload de la venta envía la propina (reparto) y el total sin cargo extra', async () => {
     const { result } = renderSaleHook();
     addProduct(result);

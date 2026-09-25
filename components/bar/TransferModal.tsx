@@ -73,6 +73,12 @@ export interface BarStockItem {
   foto: string | null;
   stock: number;
   stock_bar?: number;
+  /** Capacidad de la botella en ml (null = default de Configuraciones > Bar). */
+  ml_botella?: number | null;
+  /** ml que quedan en la botella abierta de esa presentación en el bar. */
+  ml_abierta?: number;
+  /** Acumulado de ml servidos por shots en las ventas de esa presentación. */
+  ml_servidos?: number;
   /** De Configuraciones > Comisiones. Null = default. */
   max_anfitrionas?: number | null;
   /** Base del producto, fallback si la presentación no tiene precio/comisión. */

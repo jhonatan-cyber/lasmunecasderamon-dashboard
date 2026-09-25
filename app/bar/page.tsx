@@ -1,10 +1,21 @@
 'use client';
 
-import React, { useCallback, useEffect, useMemo, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import Image from 'next/image';
 import { toast } from 'sonner';
-import { Wine, Search, Table as TableIcon, Grid3X3, History, Clock } from 'lucide-react';
+import {
+  Wine,
+  Search,
+  Table as TableIcon,
+  Grid3X3,
+  History,
+  Clock,
+  ScanLine,
+  PackageCheck,
+  AlertTriangle
+} from 'lucide-react';
 import { PermissionGuard } from '@/components/auth/PermissionGuard';
+import { useAuth } from '@/contexts/AuthContext';
 import { useCurrentUser } from '@/hooks/auth/useCurrentUser';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -25,6 +36,14 @@ import { BarCard } from '@/components/bar/BarCard';
 import { PendingApprovals } from '@/components/bar/PendingApprovals';
 import { SalePrices } from '@/components/bar/SalePrices';
 import { BarAnfitrionas, isTierPricedItem } from '@/components/bar/BarAnfitrionas';
+import { useConfigValue } from '@/hooks/shared/useConfigValue';
+import { useSharedSSE } from '@/hooks/shared';
+import type {
+  DevolucionEnvaseRegistro,
+  ShotsSummary
+} from '@/lib/repositories/InventoryRepository';
+import { useContainerScan, MOTIVO_ENVASE } from '@/hooks/productos/useContainerScan';
+import { EscaneoLote } from '@/components/products/EscaneoLote';
 
 const isTierPriced = (item: BarStockItem) => isTierPricedItem(item);
 import type { TransferRecord } from '@/types/transfer';
@@ -46,6 +65,8 @@ interface Movimiento {
   id: string;
   tipo: string;
   cantidad: number;
+  /** Ml servidos por shots en una venta (null = solo botellas). */
+  ml?: number | null;
   precio_venta: number | null;
   comision: number | null;
   fecha_crea: string;
@@ -62,6 +83,7 @@ export default function BarPage() {
   const [search, setSearch] = useState('');
   const [showTableView, setShowTableView] = useState(false);
   const [tab, setTab] = useState('productos');
+  const shotMl = useConfigValue<number>('bar', 'shot_ml', 50);
   useEffect(() => {
     if (new URLSearchParams(window.location.search).get('tab') === 'pendientes')
       setTab('pendientes');
@@ -69,10 +91,18 @@ export default function BarPage() {
   const [movimientos, setMovimientos] = useState<Movimiento[]>([]);
   const [loadingMovs, setLoadingMovs] = useState(false);
   const [pendientes, setPendientes] = useState<TransferRecord[]>([]);
+  const [resumen, setResumen] = useState<ShotsSummary | null>(null);
   const [loadingPend, setLoadingPend] = useState(false);
+  const [devoluciones, setDevoluciones] = useState<DevolucionEnvaseRegistro[]>([]);
+  const [loadingDevol, setLoadingDevol] = useState(false);
+  const [codigoEnvase, setCodigoEnvase] = useState('');
+  const inputEnvaseRef = useRef<HTMLInputElement>(null);
   const [resolvingId, setResolvingId] = useState<string | null>(null);
   const { user } = useCurrentUser();
+  const { hasPermission } = useAuth();
   const puedeAprobar = ['barman'].includes((user?.role || '').toLowerCase());
+  // Solo quien tiene products/return_container ve el tab de envases (admin pasa siempre).
+  const puedeDevolver = hasPermission('products', 'return_container');
 
   const fetchStock = useCallback(async () => {
     setIsLoading(true);
@@ -105,6 +135,69 @@ export default function BarPage() {
   useEffect(() => {
     if (tab === 'historial') fetchMovimientos();
   }, [tab, fetchMovimientos]);
+
+  const fetchResumen = useCallback(async () => {
+    try {
+      const res = await fetch('/api/bar/shots', { cache: 'no-store' });
+      const data = await res.json().catch(() => ({}));
+      if (data.success && data.data) setResumen(data.data);
+    } catch {
+      // el panel queda vacío y se reintenta al próximo refresco
+    }
+  }, []);
+
+  useEffect(() => {
+    fetchResumen();
+  }, [fetchResumen]);
+
+  // Un shot que cruza el umbral dispara el aviso en vivo: el panel se refresca al toque.
+  useSharedSSE('/api/notifications/sse', payload => {
+    if (payload?.type === 'bar_shot_alert') fetchResumen();
+  });
+
+  const fetchDevoluciones = useCallback(async () => {
+    setLoadingDevol(true);
+    try {
+      const res = await fetch('/api/bar/containers', { cache: 'no-store' });
+      const data = await res.json().catch(() => ({}));
+      if (data.success && Array.isArray(data.data)) setDevoluciones(data.data);
+    } catch {
+      // el historial queda vacío y se recarga al volver a entrar al tab
+    } finally {
+      setLoadingDevol(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    if (tab === 'envases') fetchDevoluciones();
+  }, [tab, fetchDevoluciones]);
+
+  // Escaneo continuo del lote: verifica (es nuestro + vacío + sin entregar),
+  // marca en un paso y lleva los contadores de la sesión con aviso sonoro.
+  const {
+    escanear: escanearEnvase,
+    escaneando: verificando,
+    resultado: resultadoEnvase,
+    sesion: sesionEnvases,
+    aceptados: entregadosSesion,
+    rechazados: rechazadosSesion,
+    enCola: envasesEnCola,
+    sincronizando: sincronizandoEnvases,
+    sincronizar: reintentarEnvases,
+    limpiar: limpiarSesionEnvases,
+    sonido: avisoSonoro,
+    alternarSonido: alternarAvisoSonoro
+  } = useContainerScan({ endpoint: '/api/bar/containers', onAceptado: fetchDevoluciones });
+
+  // Tras cada lectura se limpia el campo y se devuelve el foco: el lector de
+  // código de barras escribe donde esté el cursor, así que el lote no se corta.
+  const enviarEscaneo = useCallback(
+    async (valor: string) => {
+      if (await escanearEnvase(valor)) setCodigoEnvase('');
+      inputEnvaseRef.current?.focus();
+    },
+    [escanearEnvase]
+  );
 
   const fetchPendientes = useCallback(async () => {
     setLoadingPend(true);
@@ -143,14 +236,14 @@ export default function BarPage() {
           throw new Error(data.message || 'No se pudo resolver la solicitud.');
         }
         toast.success(accion === 'aprobar' ? 'Transferencia aprobada' : 'Transferencia rechazada');
-        await Promise.all([fetchPendientes(), fetchStock(), fetchMovimientos()]);
+        await Promise.all([fetchPendientes(), fetchStock(), fetchMovimientos(), fetchResumen()]);
       } catch (err) {
         toast.error(err instanceof Error ? err.message : 'Error al resolver la solicitud');
       } finally {
         setResolvingId(null);
       }
     },
-    [fetchPendientes, fetchStock, fetchMovimientos]
+    [fetchPendientes, fetchStock, fetchMovimientos, fetchResumen]
   );
 
   const filtered = useMemo(() => {
@@ -211,6 +304,56 @@ export default function BarPage() {
           </Button>
         </div>
 
+        {/* Resumen de shots del bar: servidos hoy, ml restantes y alertas. */}
+        <div className='grid grid-cols-1 sm:grid-cols-3 gap-3'>
+          <div className='p-4 rounded-2xl bg-white dark:bg-slate-900/40 shadow-md'>
+            <p className='text-[10px] font-black uppercase tracking-widest text-gray-500 dark:text-gray-400'>
+              Shots servidos hoy
+            </p>
+            <p className='mt-1 text-2xl font-bold text-gray-900 dark:text-white'>
+              {resumen ? resumen.shotsServidosHoy : '—'}
+            </p>
+            <p className='text-xs text-gray-500 dark:text-gray-400'>
+              {resumen ? `${resumen.mlServidosHoy} ml servidos` : 'Cargando resumen del bar...'}
+            </p>
+          </div>
+
+          <div className='p-4 rounded-2xl bg-white dark:bg-slate-900/40 shadow-md'>
+            <p className='text-[10px] font-black uppercase tracking-widest text-gray-500 dark:text-gray-400'>
+              Ml restantes en botellas abiertas
+            </p>
+            <p className='mt-1 text-2xl font-bold text-gray-900 dark:text-white'>
+              {resumen ? `${resumen.mlRestantesTotales} ml` : '—'}
+            </p>
+            <p className='text-xs text-gray-500 dark:text-gray-400'>
+              {resumen
+                ? `${resumen.botellasAbiertas} botella(s) abierta(s) en bar`
+                : 'Cargando resumen del bar...'}
+            </p>
+          </div>
+
+          <div className='p-4 rounded-2xl bg-white dark:bg-slate-900/40 shadow-md'>
+            <p className='text-[10px] font-black uppercase tracking-widest text-gray-500 dark:text-gray-400'>
+              Botellas por agotarse
+            </p>
+            <p
+              className={cn(
+                'mt-1 text-2xl font-bold',
+                (resumen?.botellasPorAgotarse ?? 0) > 0
+                  ? 'text-amber-600 dark:text-amber-400'
+                  : 'text-gray-900 dark:text-white'
+              )}
+            >
+              {resumen ? resumen.botellasPorAgotarse : '—'}
+            </p>
+            <p className='text-xs text-gray-500 dark:text-gray-400'>
+              {resumen
+                ? `Con ${resumen.shotsAlerta} shots o menos restantes`
+                : 'Cargando resumen del bar...'}
+            </p>
+          </div>
+        </div>
+
         <Tabs value={tab} onValueChange={setTab} className='w-full'>
           <TabsList className='rounded-full'>
             <TabsTrigger value='productos' className='rounded-full'>
@@ -224,6 +367,12 @@ export default function BarPage() {
               <History className='w-3.5 h-3.5' />
               Historial
             </TabsTrigger>
+            {puedeDevolver && (
+              <TabsTrigger value='envases' className='rounded-full flex items-center gap-1.5'>
+                <ScanLine className='w-3.5 h-3.5' />
+                Envases
+              </TabsTrigger>
+            )}
           </TabsList>
 
           <TabsContent value='productos' className='mt-4'>
@@ -333,6 +482,19 @@ export default function BarPage() {
                                 <Badge className='bg-green-100 text-green-700 rounded-full px-2 sm:px-3 py-1 text-xs sm:text-sm'>
                                   {item.stock_bar ?? 0}
                                 </Badge>
+                                {Number(item.ml_abierta ?? 0) > 0 && (
+                                  <p className='mt-1 text-[10px] font-bold uppercase text-amber-600 dark:text-amber-400'>
+                                    Abierta: {Number(item.ml_abierta)} ml
+                                    {shotMl > 0
+                                      ? ` · ≈${Math.floor(Number(item.ml_abierta) / shotMl)} shots`
+                                      : ''}
+                                  </p>
+                                )}
+                                {Number(item.ml_servidos ?? 0) > 0 && (
+                                  <p className='mt-1 text-[10px] font-bold uppercase text-amber-700 dark:text-amber-500'>
+                                    Servido: {Number(item.ml_servidos)} ml
+                                  </p>
+                                )}
                               </TableCell>
                               <TableCell className='py-3 px-2 sm:px-4 text-center'>
                                 <Badge className='bg-blue-100 text-blue-700 rounded-full px-2 sm:px-3 py-1 text-xs sm:text-sm'>
@@ -458,6 +620,11 @@ export default function BarPage() {
                             </TableCell>
                             <TableCell className='py-3 px-2 sm:px-4 text-center font-mono text-xs sm:text-sm'>
                               {m.cantidad}
+                              {Number(m.ml ?? 0) > 0 && (
+                                <p className='text-[10px] font-bold uppercase text-amber-600 dark:text-amber-400'>
+                                  {Number(m.ml)} ml
+                                </p>
+                              )}
                             </TableCell>
                             <TableCell className='py-3 px-2 sm:px-4 text-center font-mono text-xs sm:text-sm'>
                               {isTierPricedItem(m) ? (
@@ -522,6 +689,232 @@ export default function BarPage() {
                 </div>
               </div>
             </BoneyardSkeleton>
+          </TabsContent>
+
+          <TabsContent value='envases' className='mt-4'>
+            <PermissionGuard
+              module='products'
+              action='return_container'
+              fallback={
+                <div className='text-center text-gray-500 text-sm sm:text-base py-8'>
+                  No tienes permiso para verificar la entrega de envases.
+                </div>
+              }
+            >
+              <div className='space-y-4'>
+                <p className='text-sm sm:text-base text-gray-600'>
+                  Escanea el envase vacío (EAN-13 o SKU LM-…) antes de entregarlo al almacén: el
+                  sistema confirma que es nuestro, que está vacío y que no se entregó antes, y lo
+                  marca en el mismo paso. La recepción queda pendiente hasta que el almacén la
+                  confirme desde Almacén → Envases devueltos. Puedes escanear envases uno tras otro
+                  sin recargar: el contador y la lista de la sesión quedan abajo. Si no hay red, los
+                  escaneos se guardan localmente y se verifican solos al reconectar.
+                </p>
+
+                <form
+                  onSubmit={e => {
+                    e.preventDefault();
+                    enviarEscaneo(codigoEnvase);
+                  }}
+                  className='flex flex-col sm:flex-row gap-2'
+                >
+                  <Input
+                    autoFocus
+                    ref={inputEnvaseRef}
+                    value={codigoEnvase}
+                    onChange={e => setCodigoEnvase(e.target.value)}
+                    placeholder='Escanea o digita el código del envase'
+                    aria-label='Código del envase'
+                    className='rounded-full font-mono'
+                  />
+                  <Button
+                    type='submit'
+                    disabled={verificando || !codigoEnvase.trim()}
+                    className='rounded-full flex items-center gap-2'
+                  >
+                    <PackageCheck className='w-4 h-4' />
+                    {verificando ? 'Verificando...' : 'Verificar y marcar'}
+                  </Button>
+                </form>
+
+                {resultadoEnvase && (
+                  <div
+                    className={cn(
+                      'p-4 rounded-2xl border text-sm',
+                      resultadoEnvase.ok
+                        ? 'bg-green-50 border-green-200 text-green-800'
+                        : resultadoEnvase.motivo === 'ya_devuelto'
+                          ? 'bg-amber-50 border-amber-200 text-amber-800'
+                          : 'bg-red-50 border-red-200 text-red-800'
+                    )}
+                    role='status'
+                  >
+                    <p className='font-bold flex items-center gap-2'>
+                      {resultadoEnvase.ok ? (
+                        <>
+                          <PackageCheck className='w-4 h-4' />
+                          Envase entregado al almacén
+                        </>
+                      ) : (
+                        <>
+                          <AlertTriangle className='w-4 h-4' />
+                          {MOTIVO_ENVASE[resultadoEnvase.motivo] ?? 'No es nuestro'}
+                        </>
+                      )}
+                    </p>
+                    <p className='mt-1'>{resultadoEnvase.mensaje}</p>
+                    {resultadoEnvase.unidad && (
+                      <p className='text-xs mt-1 font-mono'>
+                        {resultadoEnvase.unidad.producto_nombre || '—'} ·{' '}
+                        {resultadoEnvase.unidad.presentacion_nombre || '—'} · SKU{' '}
+                        {resultadoEnvase.unidad.codigo}
+                      </p>
+                    )}
+                  </div>
+                )}
+
+                <EscaneoLote
+                  aceptados={entregadosSesion}
+                  rechazados={rechazadosSesion}
+                  enCola={envasesEnCola}
+                  sesion={sesionEnvases}
+                  sincronizando={sincronizandoEnvases}
+                  sonido={avisoSonoro}
+                  onAlternarSonido={alternarAvisoSonoro}
+                  onLimpiar={limpiarSesionEnvases}
+                  onReintentar={reintentarEnvases}
+                  etiquetaAceptado='Entregado'
+                  tituloAceptados='Entregados al almacén'
+                />
+
+                <div>
+                  <p className='text-[10px] font-black uppercase tracking-widest text-gray-500 dark:text-gray-400 mb-2'>
+                    Devoluciones registradas ({devoluciones.length})
+                  </p>
+                  <BoneyardSkeleton name='bar-containers' loading={loadingDevol}>
+                    <div className='bg-white dark:bg-slate-900/40 rounded-3xl shadow-md overflow-hidden'>
+                      <div className='overflow-x-auto'>
+                        <Table className='min-w-full text-base text-center'>
+                          <TableHeader className='bg-gray-100 dark:bg-slate-900/50'>
+                            <TableRow className='hover:bg-transparent border-gray-100 dark:border-gray-800'>
+                              <TableHead className='py-4 px-5 text-xs uppercase text-gray-500'>
+                                Fecha
+                              </TableHead>
+                              <TableHead className='py-4 px-5 text-xs uppercase text-gray-500'>
+                                SKU
+                              </TableHead>
+                              <TableHead className='py-4 px-5 text-xs uppercase text-gray-500'>
+                                Producto
+                              </TableHead>
+                              <TableHead className='py-4 px-5 text-xs uppercase text-gray-500'>
+                                Presentación
+                              </TableHead>
+                              <TableHead className='py-4 px-5 text-xs uppercase text-gray-500'>
+                                Compra
+                              </TableHead>
+                              <TableHead className='py-4 px-5 text-xs uppercase text-gray-500'>
+                                Entregado por
+                              </TableHead>
+                              <TableHead className='py-4 px-5 text-xs uppercase text-gray-500'>
+                                Recepción en almacén
+                              </TableHead>
+                            </TableRow>
+                          </TableHeader>
+                          <TableBody>
+                            {devoluciones.length === 0 ? (
+                              <TableRow key='empty'>
+                                <TableCell
+                                  colSpan={7}
+                                  className='text-center py-8 text-gray-400 text-sm sm:text-base bg-white'
+                                >
+                                  {loadingDevol ? 'Cargando...' : 'Sin envases entregados todavía.'}
+                                </TableCell>
+                              </TableRow>
+                            ) : (
+                              devoluciones.map(d => (
+                                <TableRow
+                                  key={d.id}
+                                  className='border-b bg-white hover:bg-gray-50 transition-colors dark:bg-slate-900/40'
+                                >
+                                  <TableCell className='py-3 px-2 sm:px-4 text-center text-xs sm:text-sm whitespace-nowrap'>
+                                    {d.fecha_devolucion
+                                      ? (() => {
+                                          const f = new Date(d.fecha_devolucion);
+                                          return (
+                                            <span>
+                                              {f.toLocaleDateString('es-CL', {
+                                                day: '2-digit',
+                                                month: '2-digit',
+                                                year: 'numeric'
+                                              })}
+                                              <br />
+                                              <span className='text-gray-400'>
+                                                {f.toLocaleTimeString('es-CL', {
+                                                  hour: '2-digit',
+                                                  minute: '2-digit'
+                                                })}
+                                              </span>
+                                            </span>
+                                          );
+                                        })()
+                                      : '—'}
+                                  </TableCell>
+                                  <TableCell className='py-3 px-2 sm:px-4 text-center font-mono text-xs sm:text-sm'>
+                                    {d.codigo}
+                                  </TableCell>
+                                  <TableCell className='py-3 px-2 sm:px-4 text-center text-xs sm:text-sm font-medium'>
+                                    {d.producto_nombre || '—'}
+                                  </TableCell>
+                                  <TableCell className='py-3 px-2 sm:px-4 text-center text-xs sm:text-sm'>
+                                    {d.presentacion_nombre || '—'}
+                                  </TableCell>
+                                  <TableCell className='py-3 px-2 sm:px-4 text-center font-mono text-xs sm:text-sm'>
+                                    {d.compra_folio || '—'}
+                                  </TableCell>
+                                  <TableCell className='py-3 px-2 sm:px-4 text-center text-xs sm:text-sm'>
+                                    {d.usuario_nombre || d.usuario_nick
+                                      ? `${d.usuario_nombre || ''} ${d.usuario_apellido || ''}`.trim() ||
+                                        d.usuario_nick
+                                      : '—'}
+                                  </TableCell>
+                                  <TableCell className='py-3 px-2 sm:px-4 text-center text-xs sm:text-sm'>
+                                    {d.pendiente_confirmacion ? (
+                                      <Badge className='bg-amber-100 text-amber-700 rounded-full px-2 sm:px-3 py-1 text-xs'>
+                                        Pendiente de almacén
+                                      </Badge>
+                                    ) : (
+                                      <>
+                                        <Badge className='bg-green-100 text-green-700 rounded-full px-2 sm:px-3 py-1 text-xs'>
+                                          Recibido
+                                        </Badge>
+                                        <p className='mt-1 text-[10px] text-gray-500'>
+                                          {d.confirmado_nombre || d.confirmado_nick || '—'}
+                                          {d.fecha_confirmacion
+                                            ? ` · ${new Date(d.fecha_confirmacion).toLocaleString(
+                                                'es-CL',
+                                                {
+                                                  day: '2-digit',
+                                                  month: '2-digit',
+                                                  hour: '2-digit',
+                                                  minute: '2-digit'
+                                                }
+                                              )}`
+                                            : ''}
+                                        </p>
+                                      </>
+                                    )}
+                                  </TableCell>
+                                </TableRow>
+                              ))
+                            )}
+                          </TableBody>
+                        </Table>
+                      </div>
+                    </div>
+                  </BoneyardSkeleton>
+                </div>
+              </div>
+            </PermissionGuard>
           </TabsContent>
         </Tabs>
       </div>

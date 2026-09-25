@@ -150,6 +150,29 @@ describe('listBarStock hereda precio/comisión', () => {
       { tipo: 'shot', precio: 3000, comision: 200 }
     ]);
   });
+  it('expone los ml de la botella abierta y los servidos históricos', async () => {
+    mockBar({
+      ...baseRow,
+      precio_venta: 20000,
+      comision: 5000,
+      ml_abierta: 650,
+      ml_servidos: 1250
+    });
+    const rows = await InventoryRepository.listBarStock();
+    expect(rows[0].ml_abierta).toBe(650);
+    expect(rows[0].ml_servidos).toBe(1250);
+    // El histórico sale de los movimientos de venta con ml, por presentación.
+    expect(query).toHaveBeenCalledWith(
+      expect.stringContaining('AS ml_servidos'),
+      expect.anything()
+    );
+  });
+
+  it('sin datos de shots los campos quedan en 0/ausentes sin romper el listado', async () => {
+    mockBar({ ...baseRow, precio_venta: 20000, comision: 5000 });
+    const rows = await InventoryRepository.listBarStock();
+    expect(rows[0].opciones_venta).toEqual([{ tipo: 'botella', precio: 20000, comision: 5000 }]);
+  });
 });
 
 describe('listTransfers historial', () => {
@@ -313,16 +336,24 @@ describe('descuento del bar al registrar una venta', () => {
     producto_id: 'prod-1',
     nombre: 'Whisky 750 ml',
     precio_venta: 45000,
-    comision: 5000
+    comision: 5000,
+    ml_botella: null
   };
 
-  function trxCon(disponibles: { id: string }[]) {
+  // Las unidades traen `ml_restante` (null = llena) para poder servir shots.
+  function trxCon(
+    disponibles: { id: string; ml_restante?: number | null }[],
+    pres: Record<string, unknown> = presentacion
+  ) {
     return vi.fn().mockImplementation(async (sql: string) => {
-      if (sql.includes('FROM inventario_presentaciones')) return [presentacion];
-      if (sql.includes('SELECT id FROM inventario_unidades')) return disponibles;
+      if (sql.includes('FROM inventario_presentaciones')) return [pres];
+      if (sql.includes('FROM inventario_unidades')) return disponibles;
       return [];
     });
   }
+
+  const movimiento = (trx: any) =>
+    trx.mock.calls.find(([sql]: string[]) => sql.includes('INSERT INTO inventario_movimientos'));
 
   it('ignora los detalles sin presentación: el catálogo anterior no tiene inventario', async () => {
     const trx = vi.fn();
@@ -348,11 +379,10 @@ describe('descuento del bar al registrar una venta', () => {
       contexto
     );
 
-    const seleccion = trx.mock.calls.find(([sql]) =>
-      sql.includes('SELECT id FROM inventario_unidades')
-    );
-    expect(seleccion![0]).toContain('LIMIT ?');
-    expect(seleccion![1]).toEqual(['pres-1', 3]);
+    const seleccion = trx.mock.calls.find(([sql]) => sql.includes('FROM inventario_unidades'));
+    expect(seleccion![0]).toContain('FOR UPDATE');
+    expect(seleccion![1]).toEqual(['pres-1']);
+    expect(movimiento(trx)![1]).toEqual(expect.arrayContaining([3]));
   });
 
   it('bloquea la presentación, marca las unidades como vendidas y registra el movimiento', async () => {
@@ -400,7 +430,512 @@ describe('descuento del bar al registrar una venta', () => {
 
     await expect(
       InventoryRepository.consume(trx, [{ presentacion_id: 'pres-1', cantidad: 1 }], contexto)
-    ).resolves.toBeUndefined();
+    ).resolves.toEqual([]);
     expect(trx).toHaveBeenCalledTimes(1);
+  });
+
+  it('un shot descuenta ml de la botella abierta sin gastar unidades', async () => {
+    const trx = trxCon([
+      { id: 'u1', ml_restante: 800 },
+      { id: 'u2', ml_restante: null }
+    ]);
+
+    await InventoryRepository.consume(
+      trx,
+      [{ presentacion_id: 'pres-1', cantidad: 2, tipo_venta: 'shot' }],
+      contexto
+    );
+
+    // 2 shots x 50 ml = 100 ml menos en la botella abierta.
+    const descuentoMl = trx.mock.calls.find(([sql]: string[]) =>
+      sql.includes('SET ml_restante = ?')
+    );
+    expect(descuentoMl![1]).toEqual([700, 'u1']);
+    expect(trx.mock.calls.some(([sql]: string[]) => sql.includes("SET estado = 'vendida'"))).toBe(
+      false
+    );
+    expect(movimiento(trx)![1]).toEqual(expect.arrayContaining([0, 100]));
+  });
+
+  it('abre una botella llena cuando no hay ninguna abierta', async () => {
+    const trx = trxCon([{ id: 'u1', ml_restante: null }]);
+
+    await InventoryRepository.consume(
+      trx,
+      [{ presentacion_id: 'pres-1', cantidad: 1, tipo_venta: 'shot' }],
+      contexto
+    );
+
+    // Botella por defecto de 750 ml menos un shot de 50.
+    const descuentoMl = trx.mock.calls.find(([sql]: string[]) =>
+      sql.includes('SET ml_restante = ?')
+    );
+    expect(descuentoMl![1]).toEqual([700, 'u1']);
+    expect(trx.mock.calls.some(([sql]: string[]) => sql.includes("SET estado = 'vendida'"))).toBe(
+      false
+    );
+  });
+
+  it('respeta los ml propios de la presentación', async () => {
+    const trx = trxCon([{ id: 'u1', ml_restante: null }], { ...presentacion, ml_botella: 1000 });
+
+    await InventoryRepository.consume(
+      trx,
+      [{ presentacion_id: 'pres-1', cantidad: 4, tipo_venta: 'shot' }],
+      contexto
+    );
+
+    const descuentoMl = trx.mock.calls.find(([sql]: string[]) =>
+      sql.includes('SET ml_restante = ?')
+    );
+    expect(descuentoMl![1]).toEqual([800, 'u1']);
+  });
+
+  it('vacía la botella abierta y sigue con la siguiente cuando no alcanza', async () => {
+    const trx = trxCon([
+      { id: 'u1', ml_restante: 40 },
+      { id: 'u2', ml_restante: null }
+    ]);
+
+    await InventoryRepository.consume(
+      trx,
+      [{ presentacion_id: 'pres-1', cantidad: 1, tipo_venta: 'shot' }],
+      contexto
+    );
+
+    const vendidas = trx.mock.calls.find(([sql]: string[]) =>
+      sql.includes("SET estado = 'vendida'")
+    );
+    expect(vendidas![1]).toEqual(['u1']);
+    const abierta = trx.mock.calls.find(([sql]: string[]) => sql.includes('SET ml_restante = ?'));
+    expect(abierta![1]).toEqual([740, 'u2']);
+  });
+
+  it('devuelve la alerta cuando la botella cruza el umbral de shots restantes', async () => {
+    // 160 ml > umbral (50 x 3 = 150) → al servir 2 shots quedan 60: toca avisar.
+    const trx = trxCon([{ id: 'u1', ml_restante: 160 }]);
+
+    const alertas = await InventoryRepository.consume(
+      trx,
+      [{ presentacion_id: 'pres-1', cantidad: 2, tipo_venta: 'shot' }],
+      contexto
+    );
+
+    expect(alertas).toEqual([
+      { presentacion_id: 'pres-1', nombre: 'Whisky 750 ml', ml_restante: 60, shots_restantes: 1 }
+    ]);
+  });
+
+  it('no avisa si la botella ya estaba en el umbral ni si sigue por encima', async () => {
+    // Ya estaba bajo el umbral: no vuelve a avisar por cada shot siguiente.
+    const yaAvisada = trxCon([{ id: 'u1', ml_restante: 100 }]);
+    expect(
+      await InventoryRepository.consume(
+        yaAvisada,
+        [{ presentacion_id: 'pres-1', cantidad: 1, tipo_venta: 'shot' }],
+        contexto
+      )
+    ).toEqual([]);
+
+    // Sigue por encima del umbral: tampoco hay aviso.
+    const holgada = trxCon([{ id: 'u1', ml_restante: 700 }]);
+    expect(
+      await InventoryRepository.consume(
+        holgada,
+        [{ presentacion_id: 'pres-1', cantidad: 1, tipo_venta: 'shot' }],
+        contexto
+      )
+    ).toEqual([]);
+
+    // Venta de botella completa: el umbral es de shots, no aplica.
+    const botella = trxCon([{ id: 'u1', ml_restante: null }]);
+    expect(
+      await InventoryRepository.consume(
+        botella,
+        [{ presentacion_id: 'pres-1', cantidad: 1 }],
+        contexto
+      )
+    ).toEqual([]);
+  });
+
+  it('rechaza el shot cuando no hay ml disponibles en el bar', async () => {
+    const trx = trxCon([]);
+
+    await expect(
+      InventoryRepository.consume(
+        trx,
+        [{ presentacion_id: 'pres-1', cantidad: 3, tipo_venta: 'shot' }],
+        contexto
+      )
+    ).rejects.toMatchObject({
+      code: 'INSUFFICIENT_BAR_STOCK',
+      details: {
+        presentacion_id: 'pres-1',
+        disponibles: 0,
+        requeridas: 3,
+        ml_requeridos: 150
+      }
+    });
+    expect(trx.mock.calls.every(([sql]: string[]) => sql.trim().startsWith('SELECT'))).toBe(true);
+  });
+
+  it('combina botellas completas y shots en la misma venta', async () => {
+    const trx = trxCon([
+      { id: 'u1', ml_restante: 500 },
+      { id: 'u2', ml_restante: null },
+      { id: 'u3', ml_restante: null }
+    ]);
+
+    await InventoryRepository.consume(
+      trx,
+      [
+        { presentacion_id: 'pres-1', cantidad: 1, tipo_venta: 'shot' },
+        { presentacion_id: 'pres-1', cantidad: 1, tipo_venta: 'botella' }
+      ],
+      contexto
+    );
+
+    const abierta = trx.mock.calls.find(([sql]: string[]) => sql.includes('SET ml_restante = ?'));
+    expect(abierta![1]).toEqual([450, 'u1']);
+    const vendidas = trx.mock.calls.find(([sql]: string[]) =>
+      sql.includes("SET estado = 'vendida'")
+    );
+    expect(vendidas![1]).toEqual(['u2']);
+    expect(movimiento(trx)![1]).toEqual(expect.arrayContaining([1, 50]));
+  });
+});
+
+describe('resumen de shots del bar', () => {
+  it('suma los ml servidos hoy, los restantes y las botellas por agotarse', async () => {
+    vi.mocked(query).mockClear();
+    (query as any).mockImplementation(async (sql: string) => {
+      if (sql.includes('FROM configuraciones'))
+        return [
+          { clave: 'shot_ml', valor: '50' },
+          { clave: 'shots_alerta', valor: '2' }
+        ];
+      if (sql.includes('FROM inventario_movimientos')) return [{ ml: 350 }];
+      if (sql.includes('FROM inventario_unidades'))
+        return [{ botellas: 3, ml: 400, por_agotarse: 2 }];
+      return [];
+    });
+
+    const resumen = await InventoryRepository.getShotsSummary();
+
+    expect(resumen).toEqual({
+      shotMl: 50,
+      shotsAlerta: 2,
+      mlServidosHoy: 350,
+      shotsServidosHoy: 7,
+      mlRestantesTotales: 400,
+      botellasAbiertas: 3,
+      botellasPorAgotarse: 2
+    });
+    // La alerta se compara en ml: shots_alerta x ml por shot.
+    expect(query).toHaveBeenCalledWith(expect.stringContaining('ml_restante <= ?'), [100]);
+    // "Hoy" se calcula desde el inicio del día en la zona horaria del negocio.
+    expect(query).toHaveBeenCalledWith(
+      expect.stringContaining('fecha_crea >= ?'),
+      expect.arrayContaining([expect.stringMatching(/^\d{4}-\d{2}-\d{2} 00:00:00$/)])
+    );
+  });
+
+  it('usa los defaults cuando Configuraciones no tiene las claves', async () => {
+    (query as any).mockImplementation(async (sql: string) => {
+      if (sql.includes('FROM configuraciones')) return [];
+      if (sql.includes('FROM inventario_movimientos')) return [{ ml: 0 }];
+      if (sql.includes('FROM inventario_unidades'))
+        return [{ botellas: 0, ml: 0, por_agotarse: 0 }];
+      return [];
+    });
+
+    const resumen = await InventoryRepository.getShotsSummary();
+    expect(resumen.shotMl).toBe(50);
+    expect(resumen.shotsAlerta).toBe(3);
+    expect(resumen.shotsServidosHoy).toBe(0);
+    expect(resumen.botellasPorAgotarse).toBe(0);
+  });
+});
+
+describe('control de devolución de envases', () => {
+  const envase = (extra: Record<string, unknown> = {}) => ({
+    id: 'unidad-1',
+    codigo: 'LM-000123',
+    codigo_barras: '2912345678901',
+    estado: 'vendida',
+    fecha_devolucion: null,
+    devuelto_por: null,
+    fecha_confirmacion: null,
+    confirmado_por: null,
+    producto_nombre: 'Paceña',
+    presentacion_nombre: '750 ml',
+    compra_folio: 'C-001',
+    ...extra
+  });
+
+  /** trx simulado: la búsqueda devuelve `busqueda` y la marca `marcado`. */
+  const trxCon = (busqueda: any[], marcado: any[] = [{ id: 'unidad-1' }]) =>
+    vi.fn().mockImplementation(async (sql: string) => {
+      if (sql.includes('SET fecha_devolucion = ?')) return marcado;
+      if (sql.includes('FROM inventario_unidades')) return busqueda;
+      return [];
+    });
+
+  const busqueda = (trx: any) =>
+    trx.mock.calls.find(([sql]: [string]) => sql.includes('FROM inventario_unidades'))!;
+  const marca = (trx: any) =>
+    trx.mock.calls.find(([sql]: [string]) => sql.includes('SET fecha_devolucion = ?'));
+
+  it('marca como devuelto un envase nuestro, vacío y pendiente', async () => {
+    const trx = trxCon([envase()]);
+
+    const resultado = await InventoryRepository.verificarYMarcarEnvase(
+      trx,
+      ' 2912345678901 ',
+      'user-1'
+    );
+
+    expect(resultado.ok).toBe(true);
+    if (resultado.ok) {
+      expect(resultado.unidad).toMatchObject({
+        id: 'unidad-1',
+        codigo: 'LM-000123',
+        producto_nombre: 'Paceña',
+        presentacion_nombre: '750 ml'
+      });
+      expect(resultado.unidad.fecha_devolucion).toEqual(expect.any(String));
+    }
+    // La lectura bloquea la fila hasta que termina la transacción.
+    expect(busqueda(trx)[0]).toContain('FOR UPDATE OF u');
+    // La marca lleva hora del negocio, quién verificó, y solo acepta
+    // unidades vacías que todavía no se devolvieron.
+    expect(marca(trx)![0]).toContain('fecha_devolucion IS NULL');
+    expect(marca(trx)![1]).toEqual([expect.any(String), 'user-1', 'unidad-1', 'vendida']);
+  });
+
+  it('rechaza un código que no está en nuestro inventario sin escribir nada', async () => {
+    const trx = trxCon([]);
+
+    const resultado = await InventoryRepository.verificarYMarcarEnvase(
+      trx,
+      '7899999999999',
+      'user-1'
+    );
+
+    expect(resultado).toMatchObject({ ok: false, motivo: 'no_es_nuestro', unidad: null });
+    expect(trx).toHaveBeenCalledTimes(1);
+  });
+
+  it('rechaza un envase nuestro que no está vacío', async () => {
+    const trx = trxCon([envase({ estado: 'almacen' })]);
+
+    const resultado = await InventoryRepository.verificarYMarcarEnvase(trx, 'LM-000123', 'user-1');
+
+    expect(resultado).toMatchObject({ ok: false, motivo: 'no_esta_vacia' });
+    expect(trx).toHaveBeenCalledTimes(1);
+  });
+
+  it('detecta el re-escaneo de un envase ya devuelto y trae la fecha anterior', async () => {
+    const trx = trxCon([envase({ fecha_devolucion: '2026-09-20 22:30:00' })]);
+
+    const resultado = await InventoryRepository.verificarYMarcarEnvase(trx, 'LM-000123', 'user-1');
+
+    expect(resultado).toMatchObject({ ok: false, motivo: 'ya_devuelto' });
+    if (!resultado.ok && resultado.unidad) {
+      expect(resultado.unidad.fecha_devolucion).toBe('2026-09-20 22:30:00');
+    }
+    expect(trx).toHaveBeenCalledTimes(1);
+  });
+
+  it('exige un código para verificar', async () => {
+    const trx = trxCon([]);
+
+    await expect(InventoryRepository.verificarYMarcarEnvase(trx, '   ', null)).rejects.toThrow(
+      'código del envase'
+    );
+    expect(trx).not.toHaveBeenCalled();
+  });
+
+  it('normaliza el escaneo (espacios y minúsculas) al buscar por barra o SKU', async () => {
+    const trx = trxCon([envase()]);
+
+    await InventoryRepository.verificarYMarcarEnvase(trx, '  lm-000123  ', 'user-1');
+
+    expect(trx.mock.calls[0][1]).toEqual(['LM-000123', 'LM-000123']);
+  });
+
+  it('el escaneo corre dentro de una transacción (wrapper público)', async () => {
+    const trx = trxCon([envase()]);
+    (withTransaction as any).mockImplementationOnce(async (cb: any) => await cb(trx));
+
+    const resultado = await InventoryRepository.verifyAndReturnContainer('2912345678901', 'user-1');
+
+    expect(vi.mocked(withTransaction)).toHaveBeenCalledTimes(1);
+    expect(resultado.ok).toBe(true);
+  });
+
+  it('lista el historial con entrega, recepción y estado de confirmación', async () => {
+    vi.mocked(query).mockClear();
+    (query as any).mockImplementation(async (sql: string) => {
+      if (sql.includes('FROM inventario_unidades'))
+        return [
+          {
+            ...envase({
+              fecha_devolucion: '2026-09-20 22:30:00',
+              devuelto_por: 'user-1',
+              fecha_confirmacion: '2026-09-21 08:05:00',
+              confirmado_por: 'user-2'
+            }),
+            usuario_nombre: 'Rosa',
+            usuario_apellido: 'Pérez',
+            usuario_nick: 'rosa',
+            confirmado_nombre: 'Julián',
+            confirmado_apellido: 'Soto',
+            confirmado_nick: 'julian'
+          },
+          {
+            ...envase({
+              id: 'unidad-2',
+              codigo: 'LM-000124',
+              fecha_devolucion: '2026-09-19 20:00:00',
+              devuelto_por: 'user-1'
+            }),
+            usuario_nick: 'rosa'
+          }
+        ];
+      return [];
+    });
+
+    const historial = await InventoryRepository.listContainerReturns();
+
+    expect(historial).toHaveLength(2);
+    expect(historial[0]).toMatchObject({
+      codigo: 'LM-000123',
+      producto_nombre: 'Paceña',
+      compra_folio: 'C-001',
+      usuario_nick: 'rosa',
+      confirmado_nick: 'julian',
+      pendiente_confirmacion: false
+    });
+    expect(historial[1]).toMatchObject({
+      codigo: 'LM-000124',
+      confirmado_por: null,
+      pendiente_confirmacion: true
+    });
+    const [sql, params] = (query as any).mock.calls.at(-1);
+    expect(sql).toContain('WHERE u.fecha_devolucion IS NOT NULL');
+    expect(sql).toContain('ORDER BY u.fecha_devolucion DESC');
+    expect(sql).toContain('u.fecha_confirmacion');
+    expect(params).toEqual([100]);
+  });
+
+  /** trx simulado del paso del almacén: búsqueda y marca de confirmación. */
+  const trxConfirm = (busqueda: any[], confirmada: any[] = [{ id: 'unidad-1' }]) =>
+    vi.fn().mockImplementation(async (sql: string) => {
+      if (sql.includes('SET fecha_confirmacion = ?')) return confirmada;
+      if (sql.includes('FROM inventario_unidades')) return busqueda;
+      return [];
+    });
+
+  const marcaConfirmacion = (trx: any) =>
+    trx.mock.calls.find(([sql]: [string]) => sql.includes('SET fecha_confirmacion = ?'));
+
+  it('confirma la recepción de un envase entregado por el bar', async () => {
+    const trx = trxConfirm([
+      envase({ fecha_devolucion: '2026-09-20 22:30:00', devuelto_por: 'user-1' })
+    ]);
+
+    const resultado = await InventoryRepository.confirmarRecepcionEnvase(
+      trx,
+      ' LM-000123 ',
+      'user-2'
+    );
+
+    expect(resultado.ok).toBe(true);
+    if (resultado.ok) {
+      expect(resultado.unidad).toMatchObject({ id: 'unidad-1', codigo: 'LM-000123' });
+      expect(resultado.unidad.fecha_confirmacion).toEqual(expect.any(String));
+    }
+    // La búsqueda bloquea la fila hasta el commit de la transacción.
+    expect(busqueda(trx)[0]).toContain('FOR UPDATE OF u');
+    // La confirmación solo aplica sobre entregas del bar sin confirmar antes.
+    expect(marcaConfirmacion(trx)![0]).toContain('fecha_devolucion IS NOT NULL');
+    expect(marcaConfirmacion(trx)![0]).toContain('fecha_confirmacion IS NULL');
+    expect(marcaConfirmacion(trx)![1]).toEqual([expect.any(String), 'user-2', 'unidad-1']);
+  });
+
+  it('rechaza la recepción de un envase que el bar todavía no entregó', async () => {
+    const trx = trxConfirm([envase()]);
+
+    const resultado = await InventoryRepository.confirmarRecepcionEnvase(
+      trx,
+      'LM-000123',
+      'user-2'
+    );
+
+    expect(resultado).toMatchObject({ ok: false, motivo: 'no_entregado' });
+    expect(marcaConfirmacion(trx)).toBeUndefined();
+    expect(trx).toHaveBeenCalledTimes(1);
+  });
+
+  it('detecta la doble confirmación y trae la fecha anterior', async () => {
+    const trx = trxConfirm([
+      envase({
+        fecha_devolucion: '2026-09-20 22:30:00',
+        fecha_confirmacion: '2026-09-21 08:05:00'
+      })
+    ]);
+
+    const resultado = await InventoryRepository.confirmarRecepcionEnvase(
+      trx,
+      'LM-000123',
+      'user-2'
+    );
+
+    expect(resultado).toMatchObject({ ok: false, motivo: 'ya_confirmado' });
+    if (!resultado.ok && resultado.unidad) {
+      expect(resultado.unidad.fecha_confirmacion).toBe('2026-09-21 08:05:00');
+    }
+    expect(marcaConfirmacion(trx)).toBeUndefined();
+  });
+
+  it('rechaza un código ajeno en la recepción sin escribir nada', async () => {
+    const trx = trxConfirm([]);
+
+    const resultado = await InventoryRepository.confirmarRecepcionEnvase(
+      trx,
+      '7800000000001',
+      'user-2'
+    );
+
+    expect(resultado).toMatchObject({ ok: false, motivo: 'no_es_nuestro', unidad: null });
+    expect(trx).toHaveBeenCalledTimes(1);
+  });
+
+  it('exige un código para confirmar la recepción', async () => {
+    const trx = trxConfirm([]);
+
+    await expect(InventoryRepository.confirmarRecepcionEnvase(trx, '  ', null)).rejects.toThrow(
+      'código del envase'
+    );
+    expect(trx).not.toHaveBeenCalled();
+  });
+
+  it('normaliza el escaneo de la recepción (espacios y minúsculas)', async () => {
+    const trx = trxConfirm([envase({ fecha_devolucion: '2026-09-20 22:30:00' })]);
+
+    await InventoryRepository.confirmarRecepcionEnvase(trx, '  lm-000123  ', 'user-2');
+
+    expect(trx.mock.calls[0][1]).toEqual(['LM-000123', 'LM-000123']);
+  });
+
+  it('la confirmación corre dentro de una transacción (wrapper público)', async () => {
+    const trx = trxConfirm([envase({ fecha_devolucion: '2026-09-20 22:30:00' })]);
+    (withTransaction as any).mockImplementationOnce(async (cb: any) => await cb(trx));
+
+    const resultado = await InventoryRepository.confirmContainerReturn('LM-000123', 'user-2');
+
+    expect(vi.mocked(withTransaction)).toHaveBeenCalledTimes(1);
+    expect(resultado.ok).toBe(true);
   });
 });

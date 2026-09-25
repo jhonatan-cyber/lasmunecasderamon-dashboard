@@ -3,7 +3,8 @@ import { getNowInBusinessTimezone } from '@/lib/business/timezoneService';
 import { SaleCreateSchema } from '@/lib/business/schemas';
 import { SaleRepository } from '@/lib/repositories/SaleRepository';
 import { CashRegisterRepository } from '@/lib/repositories/CashRegisterRepository';
-import { InventoryRepository } from '@/lib/repositories/InventoryRepository';
+import { InventoryRepository, type ShotAlert } from '@/lib/repositories/InventoryRepository';
+import { notifyBarShotAlerts } from '@/lib/business/shotAlerts';
 import { ClientRepository } from '@/lib/repositories/ClientRepository';
 import { CommissionRepository } from '@/lib/repositories/CommissionRepository';
 import { AuditRepository } from '@/lib/repositories/AuditRepository';
@@ -52,6 +53,10 @@ export class SaleService {
       Number(validated.total_comision || 0) > 0
         ? Number(validated.total_comision || 0)
         : totalComisionCalculada;
+
+    // Botellas que con esta venta cruzaron el umbral de shots: se avisa recién
+    // cuando la transacción confirma, para no notificar ventas que se revierten.
+    let alertasShots: ShotAlert[] = [];
 
     const result = await withTransaction(async trx => {
       let prepagoMonto = 0;
@@ -280,11 +285,13 @@ export class SaleService {
       }
 
       // === INVENTARIO DEL BAR ===
-      // Descuenta las botellas de las presentaciones vinculadas. Si no alcanzan,
+      // Descuenta las botellas de las presentaciones vinculadas. Los detalles con
+      // tipo_venta 'shot' descuentan ml de la botella abierta (y la abren si hace falta)
+      // en lugar de gastar una unidad completa. Si no alcanza,
       // INSUFFICIENT_BAR_STOCK revierte la transacción entera: venta, caja, comisiones y
       // detalles. Cubre también el cobro de cuenta, que entra por este mismo método con
       // origen 'cuenta'. Los detalles sin presentación (catálogo anterior) no se tocan.
-      await InventoryRepository.consume(trx, validated.detalles, {
+      alertasShots = await InventoryRepository.consume(trx, validated.detalles, {
         usuarioId: createdBy,
         fecha: now
       });
@@ -369,6 +376,9 @@ export class SaleService {
 
     // SSE notification (no bloquea — broadcast es síncrono en memoria)
     sendNotificationToAll('timers_updated', { timestamp: now });
+
+    // Aviso al barman: una botella abierta bajó del umbral configurado de shots.
+    await notifyBarShotAlerts(alertasShots);
 
     return result;
   }

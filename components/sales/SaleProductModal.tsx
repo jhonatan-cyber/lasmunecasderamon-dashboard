@@ -22,6 +22,8 @@ import {
 import { HostessMultiSelect } from '@/components/orders';
 import { IndividualHostessSelect } from '@/components/shared/selects';
 import { isExpensiveDrink, hostessAllowedForPrice } from '@/components/orders/productModalRules';
+import type { SaleOption, SaleType } from '@/types/sale-options';
+import { useConfigValue } from '@/hooks/shared/useConfigValue';
 import Paginate from '@/components/shared/Paginate';
 import {
   CUENTA_TABLE_CARD_CLASS,
@@ -74,6 +76,9 @@ export default function SaleProductModal({
 }: SaleProductModalProps) {
   const [currentPage, setCurrentPage] = useState(1);
   const [hostessSearchValues, setHostessSearchValues] = useState<{ [key: string]: string }>({});
+  // Tipo de venta elegido por presentación: botella entera o shot (descuenta ml).
+  const [tiposVenta, setTiposVenta] = useState<{ [key: string]: SaleType }>({});
+  const shotMl = useConfigValue<number>('bar', 'shot_ml', 50);
   const itemsPerPage = 5;
 
   useEffect(() => {
@@ -141,8 +146,31 @@ export default function SaleProductModal({
                           {currentProductos.map((p, index) => {
                             const id = String(p.id_producto || p.id);
                             const isChampagne = isChampagneProduct(p);
-                            const hasComm = hasCommission(p);
                             const champagneHostessLimit = getChampagneHostessLimit(p);
+
+                            const tipoVenta: SaleType =
+                              tiposVenta[id] === 'shot' ? 'shot' : 'botella';
+                            const opcionesVenta: SaleOption[] = Array.isArray(p.opciones_venta)
+                              ? p.opciones_venta
+                              : [];
+                            const opcionShot = opcionesVenta.find(o => o.tipo === 'shot');
+                            const opcionBotella = opcionesVenta.find(o => o.tipo === 'botella');
+                            // La comisión del shot también pide anfitriona al venderlo.
+                            const hasComm =
+                              hasCommission(p) || Number(opcionShot?.comision ?? 0) > 0;
+                            const tieneShot = Boolean(opcionShot && Number(opcionShot.precio) > 0);
+                            const precioVenta =
+                              tipoVenta === 'shot'
+                                ? Number(opcionShot?.precio ?? 0)
+                                : Number(opcionBotella?.precio ?? p.precio ?? p.price ?? 0);
+                            const comisionVenta =
+                              tipoVenta === 'shot'
+                                ? Number(opcionShot?.comision ?? 0)
+                                : Number(
+                                    opcionBotella?.comision ?? p.comision ?? p.commission ?? 0
+                                  );
+                            const maxCantidad =
+                              tipoVenta === 'shot' ? 99 : Number(p.stock_bar ?? 0);
 
                             return (
                               <TableRow
@@ -154,12 +182,40 @@ export default function SaleProductModal({
                                   <p className='text-xs text-muted-foreground'>
                                     Disponibles en bar: {p.stock_bar ?? 0}
                                   </p>
+                                  {Number(p.ml_abierta ?? 0) > 0 && (
+                                    <p className='text-xs text-amber-600 dark:text-amber-400 font-medium'>
+                                      Botella abierta: {Number(p.ml_abierta)} ml
+                                      {shotMl > 0
+                                        ? ` · ≈${Math.floor(Number(p.ml_abierta) / shotMl)} shots`
+                                        : ''}
+                                    </p>
+                                  )}
+                                  {tieneShot && (
+                                    <div className='mt-1.5 flex items-center gap-1.5'>
+                                      {(['botella', 'shot'] as SaleType[]).map(tipo => (
+                                        <button
+                                          key={tipo}
+                                          type='button'
+                                          onClick={() =>
+                                            setTiposVenta(prev => ({ ...prev, [id]: tipo }))
+                                          }
+                                          className={`px-2.5 py-1 rounded-full text-[11px] font-bold border transition-colors ${
+                                            tipoVenta === tipo
+                                              ? 'bg-black text-white border-black dark:bg-white dark:text-black dark:border-white'
+                                              : 'border-neutral-300 dark:border-neutral-700 text-neutral-500'
+                                          }`}
+                                        >
+                                          {tipo === 'botella' ? 'Botella' : `Shot · ${shotMl} ml`}
+                                        </button>
+                                      ))}
+                                    </div>
+                                  )}
                                 </TableCell>
                                 <TableCell className={`${CUENTA_TABLE_CELL_CLASS} text-center`}>
-                                  {formatCurrencyNoDecimals(p.price || p.precio)}
+                                  {formatCurrencyNoDecimals(precioVenta)}
                                 </TableCell>
                                 <TableCell className={`${CUENTA_TABLE_CELL_CLASS} text-center`}>
-                                  {formatCurrencyNoDecimals(p.commission || p.comision || 0)}
+                                  {formatCurrencyNoDecimals(comisionVenta)}
                                 </TableCell>
                                 <TableCell className={`${CUENTA_TABLE_CELL_CLASS} text-center`}>
                                   <div className='flex items-center justify-center gap-2'>
@@ -190,7 +246,7 @@ export default function SaleProductModal({
                                         const currentCantidad = cantidades[id] || 1;
                                         handleCantidadChange(id, (currentCantidad + 1).toString());
                                       }}
-                                      disabled={(cantidades[id] || 1) >= (p.stock_bar ?? 0)}
+                                      disabled={(cantidades[id] || 1) >= maxCantidad}
                                       className='w-6 h-6 p-0 rounded-full hover:scale-105 transition-all duration-200'
                                     >
                                       <Plus className='w-3 h-3' />
@@ -334,6 +390,9 @@ export default function SaleProductModal({
                                     onClick={() => {
                                       const productWithHostess = {
                                         ...p,
+                                        tipo_venta: tipoVenta,
+                                        precio: precioVenta,
+                                        comision: comisionVenta,
                                         selectedHostesses: isChampagne
                                           ? champagneHostessSelections[id] || []
                                           : otherProductHostessSelections[id] || [],

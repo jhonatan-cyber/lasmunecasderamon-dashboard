@@ -24,6 +24,7 @@ import {
   Percent,
   DollarSign,
   RotateCcw,
+  PackageCheck,
   Wine,
   ArrowRightLeft,
   Calendar as CalendarIcon,
@@ -158,6 +159,13 @@ const SIDEBAR_SECTIONS: SidebarSection[] = [
         action: 'listar_categoria_productos',
         fallbackModule: 'products',
         fallbackAction: 'view'
+      },
+      {
+        name: 'Envases devueltos',
+        href: '/products/containers',
+        icon: PackageCheck,
+        module: 'products',
+        action: 'confirm_container_return'
       },
       {
         name: 'Transferencia',

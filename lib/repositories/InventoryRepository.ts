@@ -2,7 +2,7 @@ import { query, generateUUID, withTransaction, type TransactionQuery } from '@/l
 import { randomInt } from 'crypto';
 import { getNowInBusinessTimezone } from '@/lib/business/timezoneService';
 import { BaseRepository } from './BaseRepository';
-import { BusinessError, NotFoundError } from '@/lib/errors/errors';
+import { BusinessError, NotFoundError, ValidationError } from '@/lib/errors/errors';
 import type { SaleOption } from '@/types/sale-options';
 
 type Queryable = TransactionQuery | typeof query;
@@ -19,6 +19,12 @@ export interface PresentacionRow {
   foto: string | null;
   stock: number;
   stock_bar?: number;
+  /** Capacidad de la botella en ml (null = usar el default de Configuraciones). */
+  ml_botella?: number | null;
+  /** ml que quedan en las botellas abiertas de esta presentación en el bar. */
+  ml_abierta?: number;
+  /** Acumulado de ml servidos por shots en las ventas de esta presentación. */
+  ml_servidos?: number;
   /** Config de Comisiones (tabla productos). Null = default según precio/categoría. */
   max_anfitrionas?: number | null;
   /** Base del producto (tabla productos), último fallback de visualización. */
@@ -29,6 +35,10 @@ export interface PresentacionRow {
 export interface UnidadRow {
   fecha_crea?: string | null;
   fecha_impresion?: string | null;
+  /** Marca de la devolución verificada al proveedor (null = todavía no se devuelve). */
+  fecha_devolucion?: string | null;
+  /** Usuario que verificó el escaneo del envase devuelto. */
+  devuelto_por?: string | null;
   compra_id?: string | null;
   compra_folio?: string | null;
   id: string;
@@ -71,6 +81,67 @@ export function parseOpcionesVenta(
     return undefined;
   }
   return undefined;
+}
+
+/** Defaults de servir shots cuando Configuraciones no tiene las claves. */
+export const DEFAULT_SHOT_ML = 50;
+export const DEFAULT_BOTTLE_ML = 750;
+/** Shots restantes con los que una botella abierta entra en "por agotarse". */
+export const DEFAULT_SHOTS_ALERTA = 3;
+
+/**
+ * Botella abierta que con esta venta quedó en el umbral de alerta (`shots_alerta`) y no
+ * estaba antes: el aviso se emite después de confirmar la transacción de la venta.
+ */
+export interface ShotAlert {
+  presentacion_id: string;
+  nombre: string;
+  ml_restante: number;
+  shots_restantes: number;
+}
+
+export interface ShotsSummary {
+  shotMl: number;
+  shotsAlerta: number;
+  /** ml servidos por shots desde el inicio del día (zona horaria del negocio). */
+  mlServidosHoy: number;
+  shotsServidosHoy: number;
+  /** ml que quedan en las botellas abiertas del bar. */
+  mlRestantesTotales: number;
+  botellasAbiertas: number;
+  botellasPorAgotarse: number;
+}
+
+/**
+ * Configuración de tragos (`shot_ml`, `botella_ml` y `shots_alerta`). Es tolerante a
+ * propósito: sin las claves guardadas se sirve con 50 ml por shot, se asume una botella de
+ * 750 ml y se avisa al llegar a 3 shots restantes.
+ */
+export async function getBarMlConfig(
+  trx: Queryable = query
+): Promise<{ shotMl: number; botellaMl: number; shotsAlerta: number }> {
+  try {
+    const rows = await trx<any[]>(
+      "SELECT clave, valor FROM configuraciones WHERE clave IN ('shot_ml', 'botella_ml', 'shots_alerta')",
+      []
+    );
+    const valores = new Map<string, number>();
+    for (const row of rows) {
+      const n = Number(row?.valor);
+      if (Number.isFinite(n) && n > 0) valores.set(String(row.clave), Math.floor(n));
+    }
+    return {
+      shotMl: valores.get('shot_ml') ?? DEFAULT_SHOT_ML,
+      botellaMl: valores.get('botella_ml') ?? DEFAULT_BOTTLE_ML,
+      shotsAlerta: valores.get('shots_alerta') ?? DEFAULT_SHOTS_ALERTA
+    };
+  } catch {
+    return {
+      shotMl: DEFAULT_SHOT_ML,
+      botellaMl: DEFAULT_BOTTLE_ML,
+      shotsAlerta: DEFAULT_SHOTS_ALERTA
+    };
+  }
 }
 
 /** Tope de venta simple (`umbral_simple_hasta`). Tolerante: 10000 si falta la clave. */
@@ -146,6 +217,10 @@ const mapPresentacion = (row: any, topeSimple = 10000): PresentacionRow => {
     foto: row.foto ?? null,
     stock: Number(row.stock ?? 0),
     stock_bar: row.stock_bar !== undefined ? Number(row.stock_bar) : undefined,
+    ml_botella:
+      row.ml_botella === null || row.ml_botella === undefined ? null : Number(row.ml_botella),
+    ml_abierta: row.ml_abierta === undefined ? undefined : Number(row.ml_abierta ?? 0),
+    ml_servidos: row.ml_servidos === undefined ? undefined : Number(row.ml_servidos ?? 0),
     max_anfitrionas:
       row.max_anfitrionas === null || row.max_anfitrionas === undefined
         ? null
@@ -158,6 +233,8 @@ const mapPresentacion = (row: any, topeSimple = 10000): PresentacionRow => {
 const mapUnidad = (row: any): UnidadRow => ({
   fecha_crea: row.fecha_crea ?? null,
   fecha_impresion: row.fecha_impresion ?? null,
+  fecha_devolucion: row.fecha_devolucion ?? null,
+  devuelto_por: row.devuelto_por ?? null,
   compra_id: row.compra_id ?? null,
   compra_folio: row.compra_folio ?? null,
   id: row.id,
@@ -167,6 +244,82 @@ const mapUnidad = (row: any): UnidadRow => ({
   codigo_barras: row.codigo_barras ?? null,
   estado: row.estado
 });
+
+/** Motivo por el que un escaneo de envase no quedó marcado. */
+export type DevolucionEnvaseMotivo =
+  | 'no_es_nuestro'
+  | 'no_esta_vacia'
+  | 'ya_devuelto'
+  /** El bar todavía no marcó la entrega, así que el almacén no puede confirmar. */
+  | 'no_entregado'
+  /** El almacén ya confirmó la recepción de este envase. */
+  | 'ya_confirmado';
+
+/** Envase verificado, con lo necesario para mostrarlo en el panel de envases. */
+export interface DevolucionEnvaseUnidad {
+  id: string;
+  codigo: string;
+  codigo_barras: string | null;
+  estado: string;
+  /** Date crudo de pg en la consulta; string al marcar (hora del negocio). */
+  fecha_devolucion: string | Date | null;
+  /** Confirmación de recepción del almacén (null = todavía no se confirma). */
+  fecha_confirmacion: string | Date | null;
+  producto_nombre: string | null;
+  presentacion_nombre: string | null;
+  compra_folio: string | null;
+}
+
+/** Fila cruda de la consulta de envase (trae los nombres con join). */
+type EnvaseFila = DevolucionEnvaseUnidad & {
+  devuelto_por?: string | null;
+  confirmado_por?: string | null;
+};
+
+/** Registro del historial: el envase + quién entregó y quién recibió. */
+export interface DevolucionEnvaseRegistro extends DevolucionEnvaseUnidad {
+  devuelto_por: string | null;
+  usuario_nombre: string | null;
+  usuario_apellido: string | null;
+  usuario_nick: string | null;
+  confirmado_por: string | null;
+  confirmado_nombre: string | null;
+  confirmado_apellido: string | null;
+  confirmado_nick: string | null;
+  /** true mientras el almacén no confirme la recepción. */
+  pendiente_confirmacion: boolean;
+}
+
+export type DevolucionEnvaseResultado =
+  | { ok: true; mensaje: string; unidad: DevolucionEnvaseUnidad }
+  | {
+      ok: false;
+      motivo: DevolucionEnvaseMotivo;
+      mensaje: string;
+      unidad: DevolucionEnvaseUnidad | null;
+    };
+
+const mapearEnvase = (fila: any): DevolucionEnvaseUnidad => ({
+  id: fila.id,
+  codigo: fila.codigo,
+  codigo_barras: fila.codigo_barras ?? null,
+  estado: fila.estado,
+  fecha_devolucion: fila.fecha_devolucion ?? null,
+  fecha_confirmacion: fila.fecha_confirmacion ?? null,
+  producto_nombre: fila.producto_nombre ?? null,
+  presentacion_nombre: fila.presentacion_nombre ?? null,
+  compra_folio: fila.compra_folio ?? null
+});
+
+/** `timestamp` llega como Date de pg; se muestra como fecha+hora local legible. */
+const fechaDevolucionLegible = (valor: string | Date): string => {
+  const fecha = valor instanceof Date ? valor : new Date(String(valor));
+  if (Number.isNaN(fecha.getTime())) return String(valor).slice(0, 16);
+  return `${fecha.toLocaleDateString('es-CL')} ${fecha.toLocaleTimeString('es-CL', {
+    hour: '2-digit',
+    minute: '2-digit'
+  })}`;
+};
 
 // Nota: `estado` indica si la unidad está vigente ('almacen' = activa,
 // 'inactivo' = dada de baja, 'vendida' = salió del bar con una venta) y `ubicacion`
@@ -243,6 +396,7 @@ export class InventoryRepository {
     const rows = await trx<any[]>(
       `SELECT p.*,
         (SELECT COUNT(*) FROM inventario_unidades u WHERE u.presentacion_id = p.id AND u.estado = '${ESTADO_UNIDAD_ACTIVA}' AND u.ubicacion = 'almacen') AS stock, (SELECT COUNT(*) FROM inventario_unidades u WHERE u.presentacion_id = p.id AND u.estado = '${ESTADO_UNIDAD_ACTIVA}' AND u.ubicacion = 'bar') AS stock_bar
+        (SELECT COALESCE(SUM(u.ml_restante), 0) FROM inventario_unidades u WHERE u.presentacion_id = p.id AND u.estado = '${ESTADO_UNIDAD_ACTIVA}' AND u.ubicacion = 'bar') AS ml_abierta
        FROM inventario_presentaciones p
        WHERE p.producto_id = ?
        ORDER BY p.fecha_crea ASC, p.id ASC`,
@@ -303,6 +457,7 @@ export class InventoryRepository {
       precio_compra?: number;
       precio_venta?: number;
       comision?: number;
+      ml_botella?: number | null;
     }
   ): Promise<void> {
     const data: Record<string, unknown> = {};
@@ -312,6 +467,7 @@ export class InventoryRepository {
     if (fields.precio_compra !== undefined) data.precio_compra = fields.precio_compra;
     if (fields.precio_venta !== undefined) data.precio_venta = fields.precio_venta;
     if (fields.comision !== undefined) data.comision = fields.comision;
+    if (fields.ml_botella !== undefined) data.ml_botella = fields.ml_botella;
     if (Object.keys(data).length === 0) return;
     await BaseRepository.update(query, 'inventario_presentaciones', 'id', id, data);
   }
@@ -440,71 +596,181 @@ export class InventoryRepository {
    *
    * Los detalles sin `presentacion_id` no se tocan: son del catálogo anterior, que no
    * tiene inventario vinculado y conserva su comportamiento.
+   *
+   * Un detalle con `tipo_venta: 'shot'` no gasta una botella entera: descuenta ml. Se sigue
+   * sirviendo de la botella que ya está abierta y, si no alcanza, se abre la siguiente
+   * (la unidad queda activa con `ml_restante`, visible en el inventario del bar). Cuando el
+   * contenido llega a 0 la botella pasa a 'vendida' como cualquier otra.
+   *
+   * Devuelve las botellas que con esta venta quedaron bajo el umbral de alerta
+   * (`shots_alerta` shots restantes) sin haber estado antes: el aviso para el barman se
+   * emite fuera de la transacción, para no notificar una venta que después se revierte.
    */
   static async consume(
     trx: Queryable,
-    detalles: { presentacion_id?: string | null; cantidad?: number | null }[],
+    detalles: {
+      presentacion_id?: string | null;
+      cantidad?: number | null;
+      tipo_venta?: string | null;
+    }[],
     contexto: { usuarioId: string | null; fecha: string }
-  ): Promise<void> {
-    const requerido = new Map<string, number>();
+  ): Promise<ShotAlert[]> {
+    const alertas: ShotAlert[] = [];
+    const requerido = new Map<string, { botellas: number; shots: number }>();
     for (const detalle of detalles) {
       const presentacionId = detalle.presentacion_id?.trim();
-      const botellas = Math.max(0, Math.floor(Number(detalle.cantidad ?? 0)));
-      if (!presentacionId || botellas === 0) continue;
-      requerido.set(presentacionId, (requerido.get(presentacionId) ?? 0) + botellas);
+      const unidades = Math.max(0, Math.floor(Number(detalle.cantidad ?? 0)));
+      if (!presentacionId || unidades === 0) continue;
+      const acumulado = requerido.get(presentacionId) ?? { botellas: 0, shots: 0 };
+      if (detalle.tipo_venta === 'shot') acumulado.shots += unidades;
+      else acumulado.botellas += unidades;
+      requerido.set(presentacionId, acumulado);
     }
+    if (requerido.size === 0) return alertas;
 
-    for (const [presentacionId, botellas] of requerido) {
+    const hayShots = [...requerido.values()].some(pedido => pedido.shots > 0);
+    const { shotMl, botellaMl, shotsAlerta } = hayShots
+      ? await getBarMlConfig(trx)
+      : {
+          shotMl: DEFAULT_SHOT_ML,
+          botellaMl: DEFAULT_BOTTLE_ML,
+          shotsAlerta: DEFAULT_SHOTS_ALERTA
+        };
+    const umbralAlerta = shotMl * shotsAlerta;
+
+    for (const [presentacionId, pedido] of requerido) {
       const presentacion = await trx<any[]>(
-        `SELECT id, producto_id, nombre, precio_venta, comision
+        `SELECT id, producto_id, nombre, precio_venta, comision, ml_botella
          FROM inventario_presentaciones WHERE id = ? FOR UPDATE`,
         [presentacionId]
       );
       // Presentación borrada: las unidades quedaron huérfanas, no hay nada que descontar.
       if (presentacion.length === 0) continue;
 
+      const capacidadMl =
+        Math.floor(Number(presentacion[0].ml_botella)) > 0
+          ? Math.floor(Number(presentacion[0].ml_botella))
+          : botellaMl;
+
+      // Botellas abiertas primero (se termina la que ya está servida), luego las llenas
+      // en FIFO. Se leen todas para poder rechazar la venta antes de escribir nada.
       const unidades = await trx<any[]>(
-        `SELECT id FROM inventario_unidades
+        `SELECT id, ml_restante FROM inventario_unidades
           WHERE presentacion_id = ? AND estado = '${ESTADO_UNIDAD_ACTIVA}' AND ubicacion = 'bar'
-          ORDER BY fecha_crea ASC, codigo ASC
-          LIMIT ?`,
-        [presentacionId, botellas]
+          ORDER BY CASE WHEN ml_restante > 0 THEN 0 ELSE 1 END, fecha_crea ASC, codigo ASC
+          FOR UPDATE`,
+        [presentacionId]
       );
 
-      if (unidades.length < botellas) {
-        throw new BusinessError(
-          `Quedan ${unidades.length} de ${botellas} botellas de "${presentacion[0].nombre}" en el bar`,
-          'INSUFFICIENT_BAR_STOCK',
-          {
-            presentacion_id: presentacionId,
-            disponibles: unidades.length,
-            requeridas: botellas
+      // Plan de consumo: ml pendientes de shots y botellas completas por separado.
+      const plan: { id: string; ml_restante: number }[] = [];
+      let mlPendiente = pedido.shots * shotMl;
+      let botellasPendientes = pedido.botellas;
+
+      for (const unidad of unidades) {
+        if (mlPendiente <= 0) break;
+        const restante = Math.floor(Number(unidad.ml_restante ?? 0));
+        if (restante <= 0) continue;
+        const consumido = Math.min(restante, mlPendiente);
+        mlPendiente -= consumido;
+        plan.push({ id: unidad.id, ml_restante: restante - consumido });
+      }
+
+      for (const unidad of unidades) {
+        if (Number(unidad.ml_restante ?? 0) > 0) continue;
+        if (mlPendiente > 0) {
+          const consumido = Math.min(capacidadMl, mlPendiente);
+          mlPendiente -= consumido;
+          plan.push({ id: unidad.id, ml_restante: capacidadMl - consumido });
+          continue;
+        }
+        if (botellasPendientes > 0) {
+          botellasPendientes -= 1;
+          plan.push({ id: unidad.id, ml_restante: 0 });
+          continue;
+        }
+        break;
+      }
+
+      if (mlPendiente > 0 || botellasPendientes > 0) {
+        const abiertas = unidades.filter(u => Number(u.ml_restante ?? 0) > 0).length;
+        const mensaje =
+          pedido.shots === 0
+            ? `Quedan ${unidades.length} de ${pedido.botellas} botellas de "${presentacion[0].nombre}" en el bar`
+            : `No alcanza el stock de "${presentacion[0].nombre}" en el bar: faltan ${
+                mlPendiente > 0 ? `${mlPendiente} ml` : `${botellasPendientes} botella(s)`
+              }`;
+        throw new BusinessError(mensaje, 'INSUFFICIENT_BAR_STOCK', {
+          presentacion_id: presentacionId,
+          disponibles: unidades.length,
+          requeridas: pedido.botellas + pedido.shots,
+          ml_requeridos: pedido.shots > 0 ? pedido.shots * shotMl : 0,
+          ml_disponibles: unidades.reduce(
+            (total, unidad) =>
+              total +
+              (Number(unidad.ml_restante ?? 0) > 0
+                ? Math.floor(Number(unidad.ml_restante))
+                : capacidadMl),
+            0
+          ),
+          botellas_abiertas: abiertas
+        });
+      }
+
+      const vendidas: string[] = [];
+      const mlAnterior = new Map(
+        unidades.map(unidad => [unidad.id, Math.floor(Number(unidad.ml_restante ?? 0))])
+      );
+      for (const item of plan) {
+        if (item.ml_restante > 0) {
+          await trx(`UPDATE inventario_unidades SET ml_restante = ? WHERE id = ?`, [
+            item.ml_restante,
+            item.id
+          ]);
+          // Le queda poco y **no** estaba en alerta: avisa sólo en el cruce (o al abrir
+          // una botella que ya arranca bajo el umbral), para no repetir por cada shot.
+          const antes = mlAnterior.get(item.id) ?? 0;
+          const estabaEnAlerta = antes > 0 && antes <= umbralAlerta;
+          if (!estabaEnAlerta && item.ml_restante <= umbralAlerta) {
+            alertas.push({
+              presentacion_id: presentacionId,
+              nombre: presentacion[0].nombre,
+              ml_restante: item.ml_restante,
+              shots_restantes: Math.floor(item.ml_restante / shotMl)
+            });
           }
+        } else {
+          vendidas.push(item.id);
+        }
+      }
+      if (vendidas.length > 0) {
+        const placeholders = vendidas.map(() => '?').join(',');
+        await trx(
+          `UPDATE inventario_unidades SET estado = '${ESTADO_UNIDAD_VENDIDA}', ml_restante = 0 WHERE id IN (${placeholders})`,
+          vendidas
         );
       }
 
-      const ids = unidades.map(unidad => unidad.id);
-      const placeholders = ids.map(() => '?').join(',');
-      await trx(
-        `UPDATE inventario_unidades SET estado = '${ESTADO_UNIDAD_VENDIDA}' WHERE id IN (${placeholders})`,
-        ids
-      );
-
       // Deja la venta en el historial de la presentación: es el tercer tipo de
-      // movimiento que promete el documento junto a ingresos y traspasos.
+      // movimiento que promete el documento junto a ingresos y traspasos. `cantidad`
+      // cuenta las botellas que salieron del bar (una botella abierta sigue en stock y
+      // su contenido queda en `ml`).
       await BaseRepository.insert(trx, 'inventario_movimientos', {
         id: generateUUID(),
         tipo: 'venta',
         estado: 'completada',
         producto_id: presentacion[0].producto_id,
         presentacion_id: presentacionId,
-        cantidad: botellas,
+        cantidad: vendidas.length,
+        ml: pedido.shots > 0 ? pedido.shots * shotMl : null,
         precio_venta: Math.floor(Number(presentacion[0].precio_venta ?? 0)),
         comision: Math.floor(Number(presentacion[0].comision ?? 0)),
         usuario_id: contexto.usuarioId,
         fecha_crea: contexto.fecha
       });
     }
+
+    return alertas;
   }
 
   static async acceptTransfer(trx: Queryable, id: string, usuarioId: string): Promise<void> {
@@ -634,6 +900,8 @@ export class InventoryRepository {
       `SELECT p.*,
         (SELECT COUNT(*) FROM inventario_unidades u WHERE u.presentacion_id = p.id AND u.estado = '${ESTADO_UNIDAD_ACTIVA}' AND u.ubicacion = 'almacen') AS stock,
         (SELECT COUNT(*) FROM inventario_unidades u WHERE u.presentacion_id = p.id AND u.estado = '${ESTADO_UNIDAD_ACTIVA}' AND u.ubicacion = 'bar') AS stock_bar,
+        (SELECT COALESCE(SUM(u.ml_restante), 0) FROM inventario_unidades u WHERE u.presentacion_id = p.id AND u.estado = '${ESTADO_UNIDAD_ACTIVA}' AND u.ubicacion = 'bar') AS ml_abierta,
+        (SELECT COALESCE(SUM(m.ml), 0) FROM inventario_movimientos m WHERE m.presentacion_id = p.id AND m.tipo = 'venta' AND m.ml > 0) AS ml_servidos,
         pr.nombre AS producto_nombre, pr.codigo AS producto_codigo, pr.foto AS producto_foto,
         pr.precio AS producto_precio, pr.comision AS producto_comision,
         c.nombre AS categoria_nombre
@@ -662,6 +930,40 @@ export class InventoryRepository {
     }));
   }
 
+  /**
+   * Resumen para el panel de shots del bar: lo servido hoy, los ml que quedan en las
+   * botellas abiertas y cuántas están por agotarse (≤ `shots_alerta` shots restantes).
+   */
+  static async getShotsSummary(): Promise<ShotsSummary> {
+    const { shotMl, shotsAlerta } = await getBarMlConfig();
+    const inicioDia = `${getNowInBusinessTimezone().slice(0, 10)} 00:00:00`;
+
+    const [hoy] = await query<any[]>(
+      `SELECT COALESCE(SUM(ml), 0) AS ml FROM inventario_movimientos
+        WHERE tipo = 'venta' AND ml > 0 AND fecha_crea >= ?`,
+      [inicioDia]
+    );
+    const [abiertas] = await query<any[]>(
+      `SELECT COUNT(*) AS botellas,
+              COALESCE(SUM(ml_restante), 0) AS ml,
+              COALESCE(SUM(CASE WHEN ml_restante <= ? THEN 1 ELSE 0 END), 0) AS por_agotarse
+         FROM inventario_unidades
+        WHERE estado = '${ESTADO_UNIDAD_ACTIVA}' AND ubicacion = 'bar' AND ml_restante > 0`,
+      [shotMl * shotsAlerta]
+    );
+
+    const mlServidosHoy = Number(hoy?.ml ?? 0);
+    return {
+      shotMl,
+      shotsAlerta,
+      mlServidosHoy,
+      shotsServidosHoy: shotMl > 0 ? Math.floor(mlServidosHoy / shotMl) : 0,
+      mlRestantesTotales: Number(abiertas?.ml ?? 0),
+      botellasAbiertas: Number(abiertas?.botellas ?? 0),
+      botellasPorAgotarse: Number(abiertas?.por_agotarse ?? 0)
+    };
+  }
+
   static async listForSale(filters?: { category_id?: string; term?: string }): Promise<any[]> {
     const params: any[] = [];
     let whereCategoria = '';
@@ -681,7 +983,9 @@ export class InventoryRepository {
       `SELECT p.id AS presentacion_id, p.nombre AS presentacion_nombre,
         p.codigo_barras, p.foto AS presentacion_foto,
         p.precio_venta, p.comision AS presentacion_comision,
+        p.opciones_venta, p.ml_botella,
         (SELECT COUNT(*) FROM inventario_unidades u WHERE u.presentacion_id = p.id AND u.estado = '${ESTADO_UNIDAD_ACTIVA}' AND u.ubicacion = 'bar') AS stock_bar,
+        (SELECT COALESCE(SUM(u.ml_restante), 0) FROM inventario_unidades u WHERE u.presentacion_id = p.id AND u.estado = '${ESTADO_UNIDAD_ACTIVA}' AND u.ubicacion = 'bar') AS ml_abierta,
         pr.id_producto AS producto_id, pr.codigo AS producto_codigo, pr.nombre AS producto_nombre,
         pr.foto AS producto_foto, pr.categoria_id, c.nombre AS categoria_nombre
        FROM inventario_presentaciones p
@@ -695,6 +999,7 @@ export class InventoryRepository {
        ORDER BY pr.nombre ASC, p.fecha_crea ASC, p.id ASC`,
       params
     );
+    const topeSimple = await getTopeSimple();
     return rows.map(row => ({
       presentacion_id: row.presentacion_id,
       presentacion_nombre: row.presentacion_nombre,
@@ -703,6 +1008,21 @@ export class InventoryRepository {
       precio_venta: Number(row.precio_venta ?? 0),
       comision: Number(row.presentacion_comision ?? 0),
       stock_bar: Number(row.stock_bar ?? 0),
+      ml_botella:
+        row.ml_botella === null || row.ml_botella === undefined ? null : Number(row.ml_botella),
+      ml_abierta: Number(row.ml_abierta ?? 0),
+      // Precio de shot guardado (si existe) para el selector Botella/Shot de la venta.
+      opciones_venta:
+        completarOpciones(
+          row.opciones_venta,
+          [
+            {
+              precio: Number(row.precio_venta ?? 0),
+              comision: Number(row.presentacion_comision ?? 0)
+            }
+          ],
+          topeSimple
+        ) ?? undefined,
       producto_id: row.producto_id,
       producto_codigo: row.producto_codigo,
       producto_nombre: row.producto_nombre,
@@ -845,6 +1165,238 @@ export class InventoryRepository {
       [codigoBarras]
     );
     return rows.length > 0 ? mapUnidad(rows[0]) : null;
+  }
+
+  /**
+   * Busca el envase escaneado por su EAN-13 interno o por su SKU `LM-…` y
+   * bloquea la fila hasta que termine la transacción (`FOR UPDATE OF u`), para
+   * que la lectura y la marca del control de envases sean atómicas.
+   */
+  private static async buscarEnvase(trx: Queryable, escaneo: string): Promise<EnvaseFila | null> {
+    const filas = await trx<any[]>(
+      `SELECT u.id, u.codigo, u.codigo_barras, u.estado, u.fecha_devolucion, u.devuelto_por,
+              u.fecha_confirmacion, u.confirmado_por,
+              p.nombre AS producto_nombre, pr.nombre AS presentacion_nombre, c.folio AS compra_folio
+         FROM inventario_unidades u
+         LEFT JOIN productos p ON p.id_producto = u.producto_id
+         LEFT JOIN inventario_presentaciones pr ON pr.id = u.presentacion_id
+         LEFT JOIN compras c ON c.id = u.compra_id
+        WHERE u.codigo_barras = ? OR u.codigo = ?
+        LIMIT 1
+        FOR UPDATE OF u`,
+      [escaneo, escaneo]
+    );
+    return filas[0] ?? null;
+  }
+
+  /**
+   * Verifica un código escaneado contra las unidades que nosotros registramos
+   * (EAN-13 interno `codigo_barras` o SKU `LM-…` en `codigo`) y, si el envase
+   * es nuestro, está vacío (`vendida`) y todavía no se entregó, lo marca con
+   * `fecha_devolucion` + `devuelto_por` en el mismo paso (migración 032). Esta
+   * es la mitad del bar del control bar → almacén; la recepción la confirma
+   * `confirmContainerReturn`.
+   *
+   * No crea movimientos de inventario: la botella ya salió con la venta; el
+   * control es solo la entrega física del envase vacío. La marca es además lo
+   * que permite detectar re-escaneos. Corre en una transacción para que el
+   * bloqueo `FOR UPDATE` cubra la lectura y la marca juntas: dos escaneos
+   * simultáneos del mismo envase no pueden marcarlo dos veces.
+   */
+  static async verifyAndReturnContainer(
+    codigoEscaneado: unknown,
+    usuarioId: string | null
+  ): Promise<DevolucionEnvaseResultado> {
+    return await withTransaction(trx =>
+      this.verificarYMarcarEnvase(trx, codigoEscaneado, usuarioId)
+    );
+  }
+
+  /** Núcleo transaccional de `verifyAndReturnContainer` (ver su doc). */
+  static async verificarYMarcarEnvase(
+    trx: Queryable,
+    codigoEscaneado: unknown,
+    usuarioId: string | null
+  ): Promise<DevolucionEnvaseResultado> {
+    const escaneo = String(codigoEscaneado ?? '')
+      .trim()
+      .toUpperCase();
+    if (!escaneo) throw new ValidationError('Escanea o digita el código del envase');
+
+    const clasificar = (fila: EnvaseFila): DevolucionEnvaseResultado | null => {
+      if (fila.fecha_devolucion) {
+        return {
+          ok: false,
+          motivo: 'ya_devuelto',
+          mensaje: `Este envase ya fue devuelto el ${fechaDevolucionLegible(fila.fecha_devolucion)}.`,
+          unidad: mapearEnvase(fila)
+        };
+      }
+      if (fila.estado !== ESTADO_UNIDAD_VENDIDA) {
+        return {
+          ok: false,
+          motivo: 'no_esta_vacia',
+          mensaje: `El envase es nuestro pero no está vacío (estado '${fila.estado}'); solo se devuelven botellas ya consumidas.`,
+          unidad: mapearEnvase(fila)
+        };
+      }
+      return null;
+    };
+
+    const fila = await this.buscarEnvase(trx, escaneo);
+    if (!fila) {
+      return {
+        ok: false,
+        motivo: 'no_es_nuestro',
+        mensaje: 'El código no corresponde a ningún envase de nuestro inventario.',
+        unidad: null
+      };
+    }
+
+    const rechazo = clasificar(fila);
+    if (rechazo) return rechazo;
+
+    const ahora = getNowInBusinessTimezone();
+    const marcadas = await trx<any[]>(
+      `UPDATE inventario_unidades
+          SET fecha_devolucion = ?, devuelto_por = ?
+        WHERE id = ? AND estado = ? AND fecha_devolucion IS NULL
+        RETURNING id`,
+      [ahora, usuarioId, fila.id, ESTADO_UNIDAD_VENDIDA]
+    );
+    if (marcadas.length === 0) {
+      // La fila estaba bloqueada con FOR UPDATE, así que esto no debería pasar:
+      // otro escaneo no pudo haberse colado entre la lectura y la marca.
+      throw new BusinessError('No se pudo marcar la devolución. Intenta de nuevo.');
+    }
+
+    return {
+      ok: true,
+      mensaje: 'Envase verificado: es nuestro, estaba vacío y quedó marcado como devuelto.',
+      unidad: { ...mapearEnvase(fila), fecha_devolucion: ahora }
+    };
+  }
+
+  /**
+   * Confirma la recepción en almacén de un envase que el bar ya entregó
+   * (`fecha_devolucion` marcada en 032) y que todavía no se confirmó (033).
+   *
+   * Es el segundo paso del control bar → almacén: el barman escanea el vacío al
+   * entregarlo y el almacén escanea al recibirlo. Quien entrega no puede
+   * confirmar porque el permiso es distinto (`confirm_container_return`), y el
+   * almacén no puede dar por recibido un envase que el bar nunca entregó.
+   *
+   * Como la entrega, no crea movimientos de inventario ni repone stock: solo
+   * deja la marca de recepción. Corre en una transacción con `FOR UPDATE` para
+   * que dos confirmaciones simultáneas no puedan colarse.
+   */
+  static async confirmContainerReturn(
+    codigoEscaneado: unknown,
+    usuarioId: string | null
+  ): Promise<DevolucionEnvaseResultado> {
+    return await withTransaction(trx =>
+      this.confirmarRecepcionEnvase(trx, codigoEscaneado, usuarioId)
+    );
+  }
+
+  /** Núcleo transaccional de `confirmContainerReturn` (ver su doc). */
+  static async confirmarRecepcionEnvase(
+    trx: Queryable,
+    codigoEscaneado: unknown,
+    usuarioId: string | null
+  ): Promise<DevolucionEnvaseResultado> {
+    const escaneo = String(codigoEscaneado ?? '')
+      .trim()
+      .toUpperCase();
+    if (!escaneo) throw new ValidationError('Escanea o digita el código del envase');
+
+    const fila = await this.buscarEnvase(trx, escaneo);
+    if (!fila) {
+      return {
+        ok: false,
+        motivo: 'no_es_nuestro',
+        mensaje: 'El código no corresponde a ningún envase de nuestro inventario.',
+        unidad: null
+      };
+    }
+    if (!fila.fecha_devolucion) {
+      return {
+        ok: false,
+        motivo: 'no_entregado',
+        mensaje: 'El bar todavía no entregó este envase: primero debe escanearlo en el bar.',
+        unidad: mapearEnvase(fila)
+      };
+    }
+    if (fila.fecha_confirmacion) {
+      return {
+        ok: false,
+        motivo: 'ya_confirmado',
+        mensaje: `Este envase ya fue recibido en almacén el ${fechaDevolucionLegible(
+          fila.fecha_confirmacion
+        )}.`,
+        unidad: mapearEnvase(fila)
+      };
+    }
+
+    const ahora = getNowInBusinessTimezone();
+    const confirmadas = await trx<any[]>(
+      `UPDATE inventario_unidades
+          SET fecha_confirmacion = ?, confirmado_por = ?
+        WHERE id = ? AND fecha_devolucion IS NOT NULL AND fecha_confirmacion IS NULL
+        RETURNING id`,
+      [ahora, usuarioId, fila.id]
+    );
+    if (confirmadas.length === 0) {
+      // La fila estaba bloqueada con FOR UPDATE, así que esto no debería pasar:
+      // otra confirmación no pudo haberse colado entre la lectura y la marca.
+      throw new BusinessError('No se pudo confirmar la recepción. Intenta de nuevo.');
+    }
+
+    return {
+      ok: true,
+      mensaje: 'Recepción confirmada: el envase entregado por el bar quedó recibido en almacén.',
+      unidad: { ...mapearEnvase(fila), fecha_confirmacion: ahora }
+    };
+  }
+
+  /**
+   * Historial de envases entregados por el bar, lo más reciente primero, con la
+   * entrega y la recepción en almacén de cada uno.
+   */
+  static async listContainerReturns(
+    limite: number = 100,
+    trx: Queryable = query
+  ): Promise<DevolucionEnvaseRegistro[]> {
+    const tope = Math.min(Math.max(Math.floor(Number(limite) || 100), 1), 500);
+    const rows = await trx<any[]>(
+      `SELECT u.id, u.codigo, u.codigo_barras, u.estado, u.fecha_devolucion, u.devuelto_por,
+              u.fecha_confirmacion, u.confirmado_por,
+              p.nombre AS producto_nombre, pr.nombre AS presentacion_nombre, c.folio AS compra_folio,
+              us.nombre AS usuario_nombre, us.apellido AS usuario_apellido, us.nick AS usuario_nick,
+              cf.nombre AS confirmado_nombre, cf.apellido AS confirmado_apellido, cf.nick AS confirmado_nick
+         FROM inventario_unidades u
+         LEFT JOIN productos p ON p.id_producto = u.producto_id
+         LEFT JOIN inventario_presentaciones pr ON pr.id = u.presentacion_id
+         LEFT JOIN compras c ON c.id = u.compra_id
+         LEFT JOIN usuarios us ON us.id_usuario = u.devuelto_por
+         LEFT JOIN usuarios cf ON cf.id_usuario = u.confirmado_por
+        WHERE u.fecha_devolucion IS NOT NULL
+        ORDER BY u.fecha_devolucion DESC, u.codigo ASC
+        LIMIT ?`,
+      [tope]
+    );
+    return rows.map(fila => ({
+      ...mapearEnvase(fila),
+      devuelto_por: fila.devuelto_por ?? null,
+      usuario_nombre: fila.usuario_nombre ?? null,
+      usuario_apellido: fila.usuario_apellido ?? null,
+      usuario_nick: fila.usuario_nick ?? null,
+      confirmado_por: fila.confirmado_por ?? null,
+      confirmado_nombre: fila.confirmado_nombre ?? null,
+      confirmado_apellido: fila.confirmado_apellido ?? null,
+      confirmado_nick: fila.confirmado_nick ?? null,
+      pendiente_confirmacion: !fila.fecha_confirmacion
+    }));
   }
 
   private static async nextCodigos(trx: Queryable, count: number): Promise<string[]> {

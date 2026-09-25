@@ -458,6 +458,7 @@ CREATE TABLE inventario_presentaciones (
   comision integer NOT NULL DEFAULT 0,
   opciones_venta text DEFAULT NULL,
   foto varchar(255) DEFAULT NULL,
+  ml_botella integer DEFAULT NULL,
   fecha_crea timestamp NOT NULL DEFAULT now()
 );
 CREATE UNIQUE INDEX uq_inventario_presentaciones_codigo_barras
@@ -474,6 +475,11 @@ CREATE TABLE inventario_unidades (
   ubicacion varchar(20) NOT NULL DEFAULT 'almacen',
   transferencia_id varchar(36) DEFAULT NULL,
   estado varchar(20) NOT NULL DEFAULT 'almacen',
+  ml_restante integer DEFAULT NULL,
+  fecha_devolucion timestamp DEFAULT NULL,
+  devuelto_por varchar(36) DEFAULT NULL,
+  fecha_confirmacion timestamp DEFAULT NULL,
+  confirmado_por varchar(36) DEFAULT NULL,
   fecha_crea timestamp NOT NULL DEFAULT now()
 );
 CREATE INDEX idx_inventario_unidades_producto
@@ -494,6 +500,7 @@ CREATE TABLE inventario_movimientos (
   opciones_venta text DEFAULT NULL,
   aceptado_por varchar(36) DEFAULT NULL,
   fecha_aceptacion timestamp DEFAULT NULL,
+  ml integer DEFAULT NULL,
   fecha_crea timestamp NOT NULL DEFAULT now()
 );
 CREATE INDEX idx_inventario_movimientos_producto

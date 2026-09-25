@@ -76,7 +76,14 @@ export const PATCH = withRoute(
       } else if (fotoUrl && (fotoUrl.startsWith('http') || fotoUrl.startsWith('data:'))) {
         fotoName = await processAndSaveImage(fotoUrl, 'presentacion');
       }
-      for (const key of ['nombre', 'codigo_barras', 'precio_compra', 'precio_venta', 'comision']) {
+      for (const key of [
+        'nombre',
+        'codigo_barras',
+        'precio_compra',
+        'precio_venta',
+        'comision',
+        'ml_botella'
+      ]) {
         const value = formData.get(key);
         if (value !== null && String(value) !== '') fields[key] = value;
       }
@@ -88,8 +95,15 @@ export const PATCH = withRoute(
           ? await processAndSaveImage(payload.foto, 'presentacion')
           : payload.foto;
       }
-      for (const key of ['nombre', 'codigo_barras', 'precio_compra', 'precio_venta', 'comision']) {
-        // Se pasa '' para limpiar el código de barras (el servicio lo vuelve null).
+      for (const key of [
+        'nombre',
+        'codigo_barras',
+        'precio_compra',
+        'precio_venta',
+        'comision',
+        'ml_botella'
+      ]) {
+        // Se pasa '' para limpiar el código de barras o los ml de la botella.
         if (payload[key] !== undefined) fields[key] = payload[key];
       }
     }

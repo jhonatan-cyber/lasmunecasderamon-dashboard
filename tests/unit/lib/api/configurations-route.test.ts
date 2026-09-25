@@ -132,6 +132,50 @@ describe('PUT /api/configurations · shot_ml', () => {
   });
 });
 
+describe('PUT /api/configurations · botella_ml', () => {
+  it('crea botella_ml en la categoría bar con tipo number', async () => {
+    db.query.mockResolvedValueOnce([]);
+    const res = await putJson({ clave: 'botella_ml', valor: '1000' });
+
+    expect(res.status).toBe(200);
+    const insertCall = db.query.mock.calls.find(([sql]) => /INSERT INTO configuraciones/.test(sql));
+    expect((insertCall![1] as unknown[]).slice(1)).toEqual(['botella_ml', '1000', 'bar', 'number']);
+  });
+
+  it('rechaza capacidades fuera de rango (0, 10001, 1.5)', async () => {
+    for (const valor of ['0', '10001', '1.5']) {
+      const res = await putJson({ clave: 'botella_ml', valor });
+      const body = await res.json();
+
+      expect(res.status, `valor inválido: "${valor}"`).toBe(400);
+      expect(body.error).toContain('botella_ml');
+    }
+    expect(db.query).not.toHaveBeenCalled();
+  });
+});
+
+describe('PUT /api/configurations · shots_alerta', () => {
+  it('crea shots_alerta en la categoría bar con tipo number', async () => {
+    db.query.mockResolvedValueOnce([]);
+    const res = await putJson({ clave: 'shots_alerta', valor: '3' });
+
+    expect(res.status).toBe(200);
+    const insertCall = db.query.mock.calls.find(([sql]) => /INSERT INTO configuraciones/.test(sql));
+    expect((insertCall![1] as unknown[]).slice(1)).toEqual(['shots_alerta', '3', 'bar', 'number']);
+  });
+
+  it('rechaza la alerta fuera de rango (0, 51, 2.5)', async () => {
+    for (const valor of ['0', '51', '2.5']) {
+      const res = await putJson({ clave: 'shots_alerta', valor });
+      const body = await res.json();
+
+      expect(res.status, `valor inválido: "${valor}"`).toBe(400);
+      expect(body.error).toContain('shots_alerta');
+    }
+    expect(db.query).not.toHaveBeenCalled();
+  });
+});
+
 describe('GET /api/configurations · shot_ml', () => {
   it('agrupa shot_ml bajo la categoría bar y lo expone como número', async () => {
     db.query.mockResolvedValue([
@@ -151,5 +195,31 @@ describe('GET /api/configurations · shot_ml', () => {
     expect(res.status).toBe(200);
     expect(body.data.bar.shot_ml).toBe(45);
     expect(typeof body.data.bar.shot_ml).toBe('number');
+  });
+
+  it('agrupa botella_ml junto a shot_ml bajo la categoría bar', async () => {
+    db.query.mockResolvedValue([
+      {
+        id: 1,
+        clave: 'shot_ml',
+        valor: '50',
+        descripcion: null,
+        categoria: 'bar',
+        tipo: 'number'
+      },
+      {
+        id: 2,
+        clave: 'botella_ml',
+        valor: '750',
+        descripcion: null,
+        categoria: 'bar',
+        tipo: 'number'
+      }
+    ]);
+
+    const res = await call(GET, 'http://localhost/api/configurations');
+    const body = await res.json();
+
+    expect(body.data.bar).toEqual({ shot_ml: 50, botella_ml: 750 });
   });
 });

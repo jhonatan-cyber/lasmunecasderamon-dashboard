@@ -30,6 +30,10 @@ export interface Presentacion {
   comision?: number;
   foto?: string | null;
   stock?: number;
+  /** Capacidad de la botella en ml para la venta por shot (null = default de Configuraciones). */
+  ml_botella?: number | null;
+  /** ml que quedan en las botellas abiertas de esta presentación en el bar. */
+  ml_abierta?: number;
 }
 
 export interface UnidadProducto {

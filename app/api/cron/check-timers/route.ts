@@ -5,12 +5,18 @@ import { sendPushNotification, sendPushByRole } from '@/lib/integrations/pushNot
 import { sendNotificationToAll } from '@/lib/api/sseService';
 import { getSystemTimezone, getNowInBusinessTimezone } from '@/lib/business/timezoneService';
 import { RoomManager } from '@/lib/services/RoomManager';
+import { checkWarehouseContainerAlerts } from '@/lib/business/containerAlerts';
 
 export const dynamic = 'force-dynamic';
 
 const globalForCron = globalThis as typeof globalThis & { __attendanceCheckDate?: string };
 
 export const GET = withPublicRoute(async () => {
+  // Control de envases: si cambió cuántos llevan más de 2 horas entregados sin
+  // recibir, avisa al almacén (SSE en vivo + campana + push) y si no, no hace
+  // ruido. Nunca lanza, así que no puede tumbar el resto del chequeo.
+  await checkWarehouseContainerAlerts();
+
   const bizNow = getNowInBusinessTimezone();
   const now = new Date(bizNow.replace(' ', 'T'));
   const tz = getSystemTimezone();

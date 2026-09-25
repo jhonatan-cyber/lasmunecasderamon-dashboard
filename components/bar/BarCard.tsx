@@ -7,6 +7,7 @@ import { Card, CardContent } from '@/components/ui/card';
 import type { BarStockItem } from './TransferModal';
 import { SalePrices } from './SalePrices';
 import { BarAnfitrionas, isTierPricedItem } from './BarAnfitrionas';
+import { useConfigValue } from '@/hooks/shared/useConfigValue';
 
 interface BarCardProps {
   item: BarStockItem;
@@ -19,6 +20,11 @@ function imageUrl(foto?: string | null): string {
 }
 
 export function BarCard({ item }: BarCardProps) {
+  const shotMl = useConfigValue<number>('bar', 'shot_ml', 50);
+  const mlAbierta = Number(item.ml_abierta ?? 0);
+  const mlServidos = Number(item.ml_servidos ?? 0);
+  const shotsRestantes = shotMl > 0 ? Math.floor(mlAbierta / shotMl) : 0;
+
   return (
     <Card className='group relative border-none bg-white dark:bg-slate-900/40 shadow-md hover:shadow-xl transition-all duration-300 rounded-4xl overflow-hidden'>
       {}
@@ -30,10 +36,15 @@ export function BarCard({ item }: BarCardProps) {
           sizes='(max-width: 768px) 100vw, 33vw'
           className='w-full h-full object-cover'
         />
-        <div className='absolute bottom-3 left-3 flex gap-2'>
+        <div className='absolute bottom-3 left-3 flex flex-wrap gap-2'>
           <div className='flex items-center gap-1.5 px-3 py-1 bg-green-500/90 text-white rounded-full text-[10px] font-bold uppercase tracking-wider shadow-lg'>
             Bar: {item.stock_bar ?? 0} un.
           </div>
+          {mlAbierta > 0 && (
+            <div className='flex items-center gap-1.5 px-3 py-1 bg-amber-500/90 text-white rounded-full text-[10px] font-bold uppercase tracking-wider shadow-lg'>
+              Abierta: {mlAbierta} ml{shotsRestantes > 0 ? ` · ≈${shotsRestantes} shots` : ''}
+            </div>
+          )}
         </div>
         <div className='absolute bottom-3 right-3'>
           <div className='flex items-center gap-1.5 px-3 py-1 bg-blue-500/90 text-white rounded-full text-[10px] font-bold uppercase tracking-wider shadow-lg'>
@@ -56,6 +67,11 @@ export function BarCard({ item }: BarCardProps) {
           <span className='inline-flex items-center rounded-full bg-gray-100 dark:bg-slate-800 px-2.5 py-0.5 text-xs font-medium text-gray-700 dark:text-gray-200 w-fit'>
             {item.nombre}
           </span>
+          {mlServidos > 0 && (
+            <p className='text-[11px] font-bold uppercase tracking-wide text-amber-600 dark:text-amber-400'>
+              Shots servidos: {mlServidos} ml
+            </p>
+          )}
         </div>
 
         {(() => {

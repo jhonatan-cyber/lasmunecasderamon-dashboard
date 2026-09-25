@@ -60,6 +60,8 @@ export const SaleCreateSchema = z.object({
       z.object({
         producto_id: z.string(),
         presentacion_id: z.string().nullable().optional(),
+        // 'shot' descuenta ml de la botella abierta en el bar; por defecto, botella entera.
+        tipo_venta: z.enum(['botella', 'shot']).optional(),
         precio: z.number(),
         comision: z.number().optional().default(0),
         cantidad: z.number().min(1),

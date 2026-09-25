@@ -141,6 +141,7 @@ const SESSION_WRAPPED_POLICY: Record<string, string> = {
   '/api/attendance/stats': 'convención legacy: lectura operativa, sesión por middleware',
   '/api/audit-logs': 'convención legacy: lectura operativa, sesión por middleware',
   '/api/bar/movements': 'convención legacy: lectura operativa, sesión por middleware',
+  '/api/bar/shots': 'convención legacy: lectura operativa, sesión por middleware',
   '/api/bar': 'convención legacy: lectura operativa, sesión por middleware',
   '/api/caja/stats': 'convención legacy: lectura operativa, sesión por middleware',
   '/api/caja/ventas-barras': 'convención legacy: lectura operativa, sesión por middleware',

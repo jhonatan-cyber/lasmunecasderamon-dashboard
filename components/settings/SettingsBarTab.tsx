@@ -1,15 +1,19 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { Save, GlassWater } from 'lucide-react';
+import { Save, GlassWater, Wine, AlertTriangle } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { toast } from 'sonner';
 import logger from '@/lib/utils/logger';
 
 const DEFAULT_SHOT_ML = 50;
+const DEFAULT_BOTTLE_ML = 750;
+const DEFAULT_SHOTS_ALERTA = 3;
 
 export function SettingsBarTab() {
   const [shotMl, setShotMl] = useState(String(DEFAULT_SHOT_ML));
+  const [botellaMl, setBotellaMl] = useState(String(DEFAULT_BOTTLE_ML));
+  const [shotsAlerta, setShotsAlerta] = useState(String(DEFAULT_SHOTS_ALERTA));
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
 
@@ -20,9 +24,25 @@ export function SettingsBarTab() {
         const response = await fetch('/api/configurations');
         const result = await response.json();
         if (!cancelled && result.success) {
-          const saved = result.data?.bar?.shot_ml;
-          if (saved !== undefined && saved !== null && String(saved).trim() !== '') {
-            setShotMl(String(saved));
+          const guardadoShot = result.data?.bar?.shot_ml;
+          const guardadoBotella = result.data?.bar?.botella_ml;
+          const guardadoAlerta = result.data?.bar?.shots_alerta;
+          if (guardadoShot !== undefined && guardadoShot !== null && String(guardadoShot).trim()) {
+            setShotMl(String(guardadoShot));
+          }
+          if (
+            guardadoBotella !== undefined &&
+            guardadoBotella !== null &&
+            String(guardadoBotella).trim()
+          ) {
+            setBotellaMl(String(guardadoBotella));
+          }
+          if (
+            guardadoAlerta !== undefined &&
+            guardadoAlerta !== null &&
+            String(guardadoAlerta).trim()
+          ) {
+            setShotsAlerta(String(guardadoAlerta));
           }
         }
       } catch (error) {
@@ -37,9 +57,23 @@ export function SettingsBarTab() {
   }, []);
 
   const handleSave = async () => {
-    const value = Number(String(shotMl).trim());
-    if (!Number.isInteger(value) || value < 1 || value > 1000) {
+    const shot = Number(String(shotMl).trim());
+    if (!Number.isInteger(shot) || shot < 1 || shot > 1000) {
       toast.error('Los ml por shot deben ser un número entero entre 1 y 1000');
+      return;
+    }
+    const botella = Number(String(botellaMl).trim());
+    if (!Number.isInteger(botella) || botella < 1 || botella > 10000) {
+      toast.error('Los ml de la botella deben ser un número entero entre 1 y 10000');
+      return;
+    }
+    if (shot > botella) {
+      toast.error('Los ml por shot no pueden superar los ml de la botella');
+      return;
+    }
+    const alerta = Number(String(shotsAlerta).trim());
+    if (!Number.isInteger(alerta) || alerta < 1 || alerta > 50) {
+      toast.error('La alerta debe ser un número entero entre 1 y 50 shots restantes');
       return;
     }
     try {
@@ -47,17 +81,25 @@ export function SettingsBarTab() {
       const response = await fetch('/api/configurations', {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ configs: [{ clave: 'shot_ml', valor: String(value) }] })
+        body: JSON.stringify({
+          configs: [
+            { clave: 'shot_ml', valor: String(shot) },
+            { clave: 'botella_ml', valor: String(botella) },
+            { clave: 'shots_alerta', valor: String(alerta) }
+          ]
+        })
       });
       const result = await response.json().catch(() => ({}));
       if (!response.ok || !result.success) {
         throw new Error(result.message || result.error || 'Error al guardar');
       }
-      setShotMl(String(value));
-      toast.success('Mililitros por shot actualizados');
+      setShotMl(String(shot));
+      setBotellaMl(String(botella));
+      setShotsAlerta(String(alerta));
+      toast.success('Tragos y shots actualizados');
     } catch (error) {
       logger.captureException(error, { context: 'SettingsBarTab:save' });
-      toast.error('Error al guardar los ml por shot');
+      toast.error('Error al guardar la configuración del bar');
     } finally {
       setSaving(false);
     }
@@ -71,37 +113,100 @@ export function SettingsBarTab() {
           Tragos y Shots
         </CardTitle>
         <CardDescription className='text-neutral-500 dark:text-neutral-400'>
-          Volumen que se sirve en cada shot de los tragos. Se muestra junto a las opciones de venta
-          del bar.
+          Cuánto se sirve en cada shot y cuánto trae la botella. La venta de un shot descuenta ml de
+          la botella abierta y el inventario del bar muestra lo que le queda; cuando se vacía, pasa
+          a vendida. Cada presentación puede definir sus propios ml en su formulario.
         </CardDescription>
       </CardHeader>
       <CardContent>
-        <div className='p-4 bg-neutral-50 dark:bg-neutral-800/30 rounded-2xl border border-neutral-200 dark:border-neutral-700 max-w-sm'>
-          <div className='flex items-center gap-3'>
-            <GlassWater className='h-5 w-5 text-neutral-500 shrink-0' />
-            <div className='flex-1'>
-              <label
-                htmlFor='bar-shot-ml'
-                className='text-sm font-bold text-neutral-700 dark:text-neutral-300'
-              >
-                Mililitros por shot
-              </label>
-              <p className='text-xs text-neutral-500 dark:text-neutral-400 mt-0.5'>
-                Volumen servido por shot (ej: 50).
-              </p>
+        <div className='grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4'>
+          <div className='p-4 bg-neutral-50 dark:bg-neutral-800/30 rounded-2xl border border-neutral-200 dark:border-neutral-700'>
+            <div className='flex items-center gap-3'>
+              <GlassWater className='h-5 w-5 text-neutral-500 shrink-0' />
+              <div className='flex-1'>
+                <label
+                  htmlFor='bar-shot-ml'
+                  className='text-sm font-bold text-neutral-700 dark:text-neutral-300'
+                >
+                  Mililitros por shot
+                </label>
+                <p className='text-xs text-neutral-500 dark:text-neutral-400 mt-0.5'>
+                  Volumen servido en cada shot (ej: 50).
+                </p>
+              </div>
+              <div className='flex items-center gap-2 shrink-0'>
+                <input
+                  id='bar-shot-ml'
+                  type='number'
+                  min='1'
+                  max='1000'
+                  disabled={loading}
+                  value={shotMl}
+                  onChange={event => setShotMl(event.target.value)}
+                  className='w-24 px-3 py-1.5 bg-white dark:bg-neutral-950 border border-neutral-300 dark:border-neutral-800 rounded-full focus:ring-2 focus:ring-black dark:focus:ring-white focus:border-transparent text-neutral-900 dark:text-white text-sm text-center'
+                />
+                <span className='text-sm text-neutral-500'>ml</span>
+              </div>
             </div>
-            <div className='flex items-center gap-2 shrink-0'>
-              <input
-                id='bar-shot-ml'
-                type='number'
-                min='1'
-                max='1000'
-                disabled={loading}
-                value={shotMl}
-                onChange={event => setShotMl(event.target.value)}
-                className='w-28 px-3 py-1.5 bg-white dark:bg-neutral-950 border border-neutral-300 dark:border-neutral-800 rounded-full focus:ring-2 focus:ring-black dark:focus:ring-white focus:border-transparent text-neutral-900 dark:text-white text-sm text-center'
-              />
-              <span className='text-sm text-neutral-500'>ml</span>
+          </div>
+
+          <div className='p-4 bg-neutral-50 dark:bg-neutral-800/30 rounded-2xl border border-neutral-200 dark:border-neutral-700'>
+            <div className='flex items-center gap-3'>
+              <Wine className='h-5 w-5 text-neutral-500 shrink-0' />
+              <div className='flex-1'>
+                <label
+                  htmlFor='bar-botella-ml'
+                  className='text-sm font-bold text-neutral-700 dark:text-neutral-300'
+                >
+                  Ml por botella (por defecto)
+                </label>
+                <p className='text-xs text-neutral-500 dark:text-neutral-400 mt-0.5'>
+                  Se usa cuando la presentación no define sus ml (ej: 750).
+                </p>
+              </div>
+              <div className='flex items-center gap-2 shrink-0'>
+                <input
+                  id='bar-botella-ml'
+                  type='number'
+                  min='1'
+                  max='10000'
+                  disabled={loading}
+                  value={botellaMl}
+                  onChange={event => setBotellaMl(event.target.value)}
+                  className='w-24 px-3 py-1.5 bg-white dark:bg-neutral-950 border border-neutral-300 dark:border-neutral-800 rounded-full focus:ring-2 focus:ring-black dark:focus:ring-white focus:border-transparent text-neutral-900 dark:text-white text-sm text-center'
+                />
+                <span className='text-sm text-neutral-500'>ml</span>
+              </div>
+            </div>
+          </div>
+
+          <div className='p-4 bg-neutral-50 dark:bg-neutral-800/30 rounded-2xl border border-neutral-200 dark:border-neutral-700'>
+            <div className='flex items-center gap-3'>
+              <AlertTriangle className='h-5 w-5 text-neutral-500 shrink-0' />
+              <div className='flex-1'>
+                <label
+                  htmlFor='bar-shots-alerta'
+                  className='text-sm font-bold text-neutral-700 dark:text-neutral-300'
+                >
+                  Alerta por botella agotándose
+                </label>
+                <p className='text-xs text-neutral-500 dark:text-neutral-400 mt-0.5'>
+                  Marca la botella abierta cuando le queden estos shots o menos.
+                </p>
+              </div>
+              <div className='flex items-center gap-2 shrink-0'>
+                <input
+                  id='bar-shots-alerta'
+                  type='number'
+                  min='1'
+                  max='50'
+                  disabled={loading}
+                  value={shotsAlerta}
+                  onChange={event => setShotsAlerta(event.target.value)}
+                  className='w-20 px-3 py-1.5 bg-white dark:bg-neutral-950 border border-neutral-300 dark:border-neutral-800 rounded-full focus:ring-2 focus:ring-black dark:focus:ring-white focus:border-transparent text-neutral-900 dark:text-white text-sm text-center'
+                />
+                <span className='text-sm text-neutral-500'>shots</span>
+              </div>
             </div>
           </div>
         </div>

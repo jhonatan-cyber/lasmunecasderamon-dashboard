@@ -22,10 +22,22 @@ it('creates an order, records its sale and posts the cash balance using the actu
   try {
     const [user] = await query('SELECT id_usuario FROM usuarios LIMIT 1');
     const [product] = await query('SELECT id_producto FROM productos LIMIT 1');
-    const [caja] = await query(
+    // El volcado base puede no traer caja abierta: el test la abre para poder postular
+    // los saldos (el snapshot la revierte al terminar).
+    let [caja] = await query(
       'SELECT id_caja, efectivo, venta FROM cajas WHERE estado = 1 ORDER BY fecha_apertura DESC LIMIT 1'
     );
-    expect(caja).toBeDefined();
+    if (!caja) {
+      const idCaja = crypto.randomUUID();
+      await query(
+        `INSERT INTO cajas (id_caja, fecha_apertura, usuario_id_apertura, monto_apertura,
+             monto_cierre, efectivo, tarjeta, transferencia, venta, cargo_tarjeta, iva, comision,
+             propina, anticipo, estado)
+           VALUES (?, now(), ?, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1)`,
+        [idCaja, user.id_usuario]
+      );
+      caja = { id_caja: idCaja, efectivo: 0, venta: 0 };
+    }
     const order = await OrderRepository.create({
       codigo: 'PGORDER',
       meseroId: user.id_usuario,

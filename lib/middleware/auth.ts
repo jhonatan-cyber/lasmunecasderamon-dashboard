@@ -18,6 +18,10 @@ export interface UserPermissions {
     write: boolean;
     delete: boolean;
     accept_transfer?: boolean;
+    /** Verificar y marcar la devolución de un envase vacío (migración 032). */
+    return_container?: boolean;
+    /** Confirmar que el almacén recibió el envase entregado por el bar (033). */
+    confirm_container_return?: boolean;
   };
   clients: {
     read: boolean;
@@ -212,7 +216,15 @@ const rolePermissions: Record<string, UserPermissions> = {
   barman: {
     users: { read: false, write: false, delete: false },
     sales: { read: true, write: false, delete: false, anulate: false },
-    products: { read: true, write: false, delete: false, accept_transfer: true },
+    products: {
+      read: true,
+      write: false,
+      delete: false,
+      accept_transfer: true,
+      return_container: true,
+      // La recepción la confirma el almacén, no quien entrega (migración 033).
+      confirm_container_return: false
+    },
     clients: { read: false, write: false, delete: false },
     finances: { read: true, write: false, delete: false },
     reports: { read: false, export: false },
@@ -270,7 +282,14 @@ export async function getUserPermissionsFromDB(userId: string): Promise<UserPerm
     const userPerms: UserPermissions = {
       users: { read: false, write: false, delete: false },
       sales: { read: false, write: false, delete: false, anulate: false },
-      products: { read: false, write: false, delete: false, accept_transfer: false },
+      products: {
+        read: false,
+        write: false,
+        delete: false,
+        accept_transfer: false,
+        return_container: false,
+        confirm_container_return: false
+      },
       clients: { read: false, write: false, delete: false },
       finances: { read: false, write: false, delete: false },
       reports: { read: false, export: false },

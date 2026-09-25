@@ -217,8 +217,12 @@ export function useSaleValidation({
       precio = tier.precio;
       comision = tier.comision;
     }
+    // Un shot no gasta una botella: se sirve de la botella abierta (ml), así que el
+    // tope de unidades en bar solo aplica a la venta de botella completa.
+    const tipoVenta = producto.tipo_venta === 'shot' ? 'shot' : 'botella';
     let cantidad = cantidades[id] || 1;
     if (
+      tipoVenta !== 'shot' &&
       producto.stock_bar !== undefined &&
       producto.stock_bar !== null &&
       cantidad > producto.stock_bar
@@ -241,12 +245,14 @@ export function useSaleValidation({
       comision,
       cantidad,
       subtotal: precio * cantidad,
+      tipo_venta: tipoVenta,
       selectedHostesses: hostessIds,
       isChampagne: producto.isChampagne || isChampagneProduct(producto)
     };
 
     const isMatch = (p: any) =>
       p.id === productoNormalizado.id &&
+      (p.tipo_venta === 'shot' ? 'shot' : 'botella') === tipoVenta &&
       (p.presentacion_id || null) === (productoNormalizado.presentacion_id || null) &&
       JSON.stringify([...(p.selectedHostesses || [])].sort()) ===
         JSON.stringify([...(productoNormalizado.selectedHostesses || [])].sort());
@@ -278,7 +284,7 @@ export function useSaleValidation({
     }
     setProductos(prev => {
       const actual = prev[index];
-      const tope = actual?.stock_bar;
+      const tope = actual?.tipo_venta === 'shot' ? 99 : actual?.stock_bar;
       let final = nuevaCantidad;
       if (tope !== undefined && tope !== null && nuevaCantidad > tope) {
         toast.warning(`Stock máximo en bar: ${tope}`);
@@ -342,6 +348,7 @@ export function useSaleValidation({
           const normalizedDetail = {
             producto_id: p.producto_id || p.id,
             presentacion_id: p.presentacion_id || null,
+            ...(p.tipo_venta === 'shot' ? { tipo_venta: 'shot' as const } : {}),
             precio: p.precio,
             comision: (p.comision || 0) * p.cantidad,
             cantidad: p.cantidad,

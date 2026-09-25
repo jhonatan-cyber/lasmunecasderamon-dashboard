@@ -185,6 +185,15 @@ export function useAuthSession({
       }
       return;
     }
+    // El servidor solo emite este evento a barman y administradores.
+    if (payload.type === 'bar_shot_alert') {
+      toast.warning('Botella por agotarse', {
+        description:
+          payload.data?.mensaje || 'Una botella abierta quedó con pocos shots restantes.',
+        duration: 8000
+      });
+      return;
+    }
     if (payload.type === 'role-deleted' && payload.roleId === user.roleId) {
       toast.error('Tu rol ha sido eliminado', {
         description: 'Seras redirigido al login',

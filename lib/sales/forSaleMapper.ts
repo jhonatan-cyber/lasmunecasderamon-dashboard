@@ -3,6 +3,7 @@
 // conserva para la FK de detalle_ventas y presentacion_id para trazabilidad.
 // Venta simple (ver Ajustes → Comisiones): sin comisión.
 import { isSimpleProduct } from '@/components/orders/productModalRules';
+import type { SaleOption } from '@/types/sale-options';
 export interface ForSaleItem {
   presentacion_id: string;
   presentacion_nombre: string;
@@ -11,6 +12,12 @@ export interface ForSaleItem {
   precio_venta: number;
   comision?: number | null;
   stock_bar?: number | null;
+  /** Precios de botella/shot guardados en el bar (shot habilitado para vender por shot). */
+  opciones_venta?: SaleOption[] | null;
+  /** Capacidad de la botella en ml (null = default de Configuraciones). */
+  ml_botella?: number | null;
+  /** ml que quedan en la botella abierta de esa presentación en el bar. */
+  ml_abierta?: number | null;
   producto_id: string;
   producto_codigo?: string | null;
   producto_nombre: string;
@@ -36,6 +43,11 @@ export interface CartSaleItem {
   foto: string;
   stock_bar: number;
   cantidad: number;
+  opciones_venta?: SaleOption[];
+  ml_botella?: number | null;
+  ml_abierta?: number;
+  /** 'shot' descuenta ml de la botella abierta; 'botella' gasta una unidad completa. */
+  tipo_venta?: 'botella' | 'shot';
 }
 
 export function mapForSaleToCartItem(item: ForSaleItem): CartSaleItem {
@@ -61,6 +73,11 @@ export function mapForSaleToCartItem(item: ForSaleItem): CartSaleItem {
     category_name: categoria,
     foto: item.foto || 'default.png',
     stock_bar: Number(item.stock_bar ?? 0),
-    cantidad: 1
+    cantidad: 1,
+    ...(Array.isArray(item.opciones_venta) ? { opciones_venta: item.opciones_venta } : {}),
+    ml_botella:
+      item.ml_botella === null || item.ml_botella === undefined ? null : Number(item.ml_botella),
+    ml_abierta: Number(item.ml_abierta ?? 0),
+    tipo_venta: 'botella' as const
   };
 }

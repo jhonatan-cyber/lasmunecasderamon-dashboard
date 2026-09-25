@@ -109,7 +109,15 @@ const DEFAULT_PERMISSIONS: Record<string, UserPermissions> = {
     ...ADMIN_PERMS,
     users: { read: false, write: false, delete: false },
     sales: { read: true, write: false, delete: false, anulate: false },
-    products: { read: true, write: false, delete: false, accept_transfer: true },
+    products: {
+      read: true,
+      write: false,
+      delete: false,
+      accept_transfer: true,
+      return_container: true,
+      // La recepción de envases la confirma el almacén (migración 033).
+      confirm_container_return: false
+    },
     clients: { read: false, write: false, delete: false },
     finances: { read: true, write: false, delete: false },
     reports: { read: false, export: false },
@@ -165,7 +173,13 @@ export async function getUserPermissions(
     const userPerms: UserPermissions = {
       users: { read: false, write: false, delete: false },
       sales: { read: false, write: false, delete: false, anulate: false },
-      products: { read: false, write: false, delete: false },
+      products: {
+        read: false,
+        write: false,
+        delete: false,
+        return_container: false,
+        confirm_container_return: false
+      },
       clients: { read: false, write: false, delete: false },
       finances: { read: false, write: false, delete: false },
       reports: { read: false, export: false },

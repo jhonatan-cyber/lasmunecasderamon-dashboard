@@ -17,7 +17,16 @@
  *     blanca: un campo nuevo en el payload no se filtra solo, hay que proyectarlo a mano.
  */
 
-export const STAFF_ROLES = ['administrador', 'cajero', 'garzon', 'anfitriona', 'barman'] as const;
+export const STAFF_ROLES = [
+  'administrador',
+  'cajero',
+  'garzon',
+  'anfitriona',
+  'barman',
+  // Quien recibe envases en el almacén: hoy suele entrar como administrador,
+  // pero el rol existe para el permiso products/confirm_container_return (033).
+  'almacen'
+] as const;
 
 export type StaffRole = (typeof STAFF_ROLES)[number];
 
@@ -51,6 +60,11 @@ const NON_ADMIN_STAFF: readonly SseAudience[] = [
 
 /** Quienes sirven el bar y quienes lo administran (avisos de botellas por agotarse). */
 const BAR_STAFF: readonly SseAudience[] = [{ channel: 'role', roles: ['barman', 'administrador'] }];
+
+/** Quienes reciben envases en el almacén y quienes administran (recepciones atrasadas). */
+const WAREHOUSE_STAFF: readonly SseAudience[] = [
+  { channel: 'role', roles: ['administrador', 'almacen'] }
+];
 
 export const SSE_EVENTS = {
   // ─── Operativos: los ve cualquier sesión válida ─────────────────────────────
@@ -102,6 +116,12 @@ export const SSE_EVENTS = {
   // Lo dispara la venta que cruza el umbral; lo ven quienes sirven y quienes
   // administran (payload { alertas, mensaje }).
   bar_shot_alert: { audiences: BAR_STAFF },
+
+  // ─── Almacén: un envase entregado lleva más de 2 horas sin recibir ─────────
+  // Lo dispara el chequeo periódico del control de envases (cron y contador del
+  // panel); lo ven quienes reciben envases y quienes administran (payload
+  // { pendientes, vencidos, umbral_horas, mensaje }).
+  warehouse_container_alert: { audiences: WAREHOUSE_STAFF },
 
   // ─── Dirigidos: solo el usuario afectado (y la pantalla del local) ──────────
   // `qr_token_updated` desaparecio con la credencial personal: ya no hay token que

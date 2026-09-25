@@ -14,6 +14,7 @@ interface EditPresDraft {
   precio_compra: string;
   precio_venta: string;
   comision: string;
+  ml_botella: string;
   stock: string;
 }
 
@@ -152,6 +153,23 @@ export function ExistingPresentacionCard({
                 className='h-10 bg-white dark:bg-slate-900'
               />
             </div>
+            <div className='space-y-1'>
+              <label
+                htmlFor='edit-pres-ml-botella'
+                className='block text-[10px] font-bold uppercase tracking-wider text-gray-400 ml-1'
+              >
+                Ml de la botella
+              </label>
+              <Input
+                id='edit-pres-ml-botella'
+                value={editPresDraft.ml_botella}
+                onChange={e => changeEditPresDraft('ml_botella', e.target.value)}
+                placeholder='Ej: 750 (se usa para los shots)'
+                disabled={isLoading || guardandoPres}
+                inputMode='numeric'
+                className='h-10 bg-white dark:bg-slate-900'
+              />
+            </div>
           </div>
           <div className='space-y-1'>
             <label
@@ -230,6 +248,20 @@ export function ExistingPresentacionCard({
                 )}
                 <span className='mx-1'>•</span>
                 <span>Compra: {formatCurrencyCLP(p.precio_compra ?? 0)}</span>
+                {p.ml_botella ? (
+                  <>
+                    <span className='mx-1'>•</span>
+                    <span>{p.ml_botella} ml</span>
+                  </>
+                ) : null}
+                {Number(p.ml_abierta ?? 0) > 0 ? (
+                  <>
+                    <span className='mx-1'>•</span>
+                    <span className='text-amber-600 dark:text-amber-400 font-medium'>
+                      Abierta: {Number(p.ml_abierta)} ml
+                    </span>
+                  </>
+                ) : null}
               </p>
             </div>
             <span className='px-2.5 py-1 rounded-full bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300 text-xs font-bold shrink-0'>

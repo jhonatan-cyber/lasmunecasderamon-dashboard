@@ -61,6 +61,11 @@ export const NewSaleCart = ({
                 <TableCell className={CUENTA_TABLE_CELL_CLASS}>
                   <div className='font-medium text-gray-800'>{p.nombre}</div>
                   <div className='text-[10px] text-gray-400 uppercase'>{p.categoria}</div>
+                  {p.tipo_venta === 'shot' && (
+                    <span className='mt-1 inline-flex items-center rounded-full bg-amber-100 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide text-amber-700 dark:bg-amber-900/30 dark:text-amber-300'>
+                      Shot · por ml
+                    </span>
+                  )}
                 </TableCell>
                 <TableCell className={CUENTA_TABLE_CELL_CLASS}>
                   <div className='flex items-center justify-center gap-3'>

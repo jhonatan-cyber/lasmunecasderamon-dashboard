@@ -15,6 +15,10 @@ vi.mock('@/lib/repositories/InventoryRepository', () => ({
   InventoryRepository: { consume: vi.fn().mockResolvedValue(undefined) }
 }));
 
+vi.mock('@/lib/business/shotAlerts', () => ({
+  notifyBarShotAlerts: vi.fn().mockResolvedValue(undefined)
+}));
+
 vi.mock('@/lib/repositories/CashRegisterRepository', () => ({
   CashRegisterRepository: { getCurrentCajaId: vi.fn(), updateBalances: vi.fn() }
 }));
@@ -142,6 +146,7 @@ import { SaleService } from '@/lib/services/SaleService';
 import { CashRegisterRepository } from '@/lib/repositories/CashRegisterRepository';
 import { SaleRepository } from '@/lib/repositories/SaleRepository';
 import { InventoryRepository } from '@/lib/repositories/InventoryRepository';
+import { notifyBarShotAlerts } from '@/lib/business/shotAlerts';
 import { TipRepository } from '@/lib/repositories/TipRepository';
 import { withTransaction } from '@/lib/database/db';
 
@@ -380,6 +385,54 @@ describe('SaleService.createSale — inventario del bar', () => {
     expect(InventoryRepository.consume).toHaveBeenCalledWith(
       expect.anything(),
       [expect.objectContaining({ presentacion_id: 'pres-1', cantidad: 2 })],
+      { usuarioId: 'user-1', fecha: expect.any(String) }
+    );
+  });
+
+  it('avisa al barman recién cuando la venta confirma y consume devuelve alertas', async () => {
+    vi.mocked(CashRegisterRepository.getCurrentCajaId).mockResolvedValue('caja-1');
+    const alertas = [
+      { presentacion_id: 'pres-1', nombre: 'Whisky 750 ml', ml_restante: 60, shots_restantes: 1 }
+    ];
+    vi.mocked(InventoryRepository.consume).mockResolvedValueOnce(alertas);
+
+    await SaleService.createSale({ ...validSaleBody, detalles: detallesBar }, 'user-1');
+
+    expect(notifyBarShotAlerts).toHaveBeenCalledWith(alertas);
+  });
+
+  it('sin alertas de shots no dispara el aviso al barman', async () => {
+    vi.mocked(CashRegisterRepository.getCurrentCajaId).mockResolvedValue('caja-1');
+    vi.mocked(InventoryRepository.consume).mockResolvedValueOnce([]);
+
+    await SaleService.createSale({ ...validSaleBody, detalles: detallesBar }, 'user-1');
+
+    expect(notifyBarShotAlerts).toHaveBeenCalledWith([]);
+  });
+
+  it('conserva el tipo_venta shot en los detalles que descuenta el inventario', async () => {
+    vi.mocked(CashRegisterRepository.getCurrentCajaId).mockResolvedValue('caja-1');
+
+    await SaleService.createSale(
+      {
+        ...validSaleBody,
+        detalles: [
+          {
+            producto_id: 'prod-1',
+            presentacion_id: 'pres-1',
+            precio: 3000,
+            cantidad: 2,
+            comision: 0,
+            tipo_venta: 'shot' as const
+          }
+        ]
+      },
+      'user-1'
+    );
+
+    expect(InventoryRepository.consume).toHaveBeenCalledWith(
+      expect.anything(),
+      [expect.objectContaining({ presentacion_id: 'pres-1', cantidad: 2, tipo_venta: 'shot' })],
       { usuarioId: 'user-1', fecha: expect.any(String) }
     );
   });

@@ -86,6 +86,7 @@ export function useProductForm({
     precio_compra: '',
     precio_venta: '',
     comision: '',
+    ml_botella: '',
     stock: ''
   });
   const [guardandoPres, setGuardandoPres] = useState<boolean>(false);
@@ -182,6 +183,11 @@ export function useProductForm({
           (autoEditPresentation as any).comision !== null
             ? formatNumber(String((autoEditPresentation as any).comision))
             : '',
+        ml_botella:
+          (autoEditPresentation as any).ml_botella !== undefined &&
+          (autoEditPresentation as any).ml_botella !== null
+            ? String((autoEditPresentation as any).ml_botella)
+            : '',
         stock:
           autoEditPresentation.stock !== undefined && autoEditPresentation.stock !== null
             ? formatNumber(String(autoEditPresentation.stock))
@@ -196,6 +202,7 @@ export function useProductForm({
         precio_compra: '',
         precio_venta: '',
         comision: '',
+        ml_botella: '',
         stock: ''
       });
       setCodigosSeleccionados([]);
@@ -452,6 +459,7 @@ export function useProductForm({
           : '',
       comision:
         p.comision !== undefined && p.comision !== null ? formatNumber(String(p.comision)) : '',
+      ml_botella: p.ml_botella !== undefined && p.ml_botella !== null ? String(p.ml_botella) : '',
       stock: p.stock !== undefined && p.stock !== null ? formatNumber(String(p.stock)) : ''
     });
   };
@@ -465,6 +473,7 @@ export function useProductForm({
       precio_compra: '',
       precio_venta: '',
       comision: '',
+      ml_botella: '',
       stock: ''
     });
   };
@@ -475,7 +484,9 @@ export function useProductForm({
       [field]:
         field === 'precio_compra' || field === 'precio_venta' || field === 'comision'
           ? value.replace(/\D/g, '').replace(/\B(?=(\d{3})+(?!\d))/g, '.')
-          : value
+          : field === 'ml_botella'
+            ? value.replace(/\D/g, '')
+            : value
     }));
 
   const toggleCodigoSeleccionado = (unidadId: string) =>
@@ -515,7 +526,9 @@ export function useProductForm({
           codigo_barras: editPresDraft.codigo_barras.trim(),
           precio_compra: getNumericValue(editPresDraft.precio_compra) || '0',
           precio_venta: getNumericValue(editPresDraft.precio_venta) || '0',
-          comision: getNumericValue(editPresDraft.comision) || '0'
+          comision: getNumericValue(editPresDraft.comision) || '0',
+          // Vacío borra la capacidad: la presentación vuelve al default de Configuraciones.
+          ml_botella: getNumericValue(editPresDraft.ml_botella)
         })
       });
       const result = await res.json().catch(() => ({}));

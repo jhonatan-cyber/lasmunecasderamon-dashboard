@@ -200,13 +200,26 @@ export class ProductService {
         comision: z.preprocess(
           v => (v === undefined || v === null || v === '' ? undefined : Number(v)),
           z.number().int().min(0, 'La comisión no puede ser negativa').optional()
+        ),
+        // Capacidad de la botella para las ventas por shot. '' la borra (se usa el
+        // default de Configuraciones > Bar).
+        ml_botella: z.preprocess(
+          v => (v === undefined ? undefined : v === null || v === '' ? null : Number(v)),
+          z
+            .number()
+            .int()
+            .min(1, 'Los ml de la botella deben ser mayores a 0')
+            .max(10000)
+            .nullable()
+            .optional()
         )
       })
       .safeParse(raw);
     if (!parsed.success) {
       throw new ValidationError('Presentación inválida', parsed.error.issues);
     }
-    const { nombre, codigo_barras, precio_compra, precio_venta, comision } = parsed.data;
+    const { nombre, codigo_barras, precio_compra, precio_venta, comision, ml_botella } =
+      parsed.data;
     const rawObj = (typeof raw === 'object' && raw !== null ? raw : {}) as Record<string, unknown>;
     const has = (k: string) => rawObj[k] !== undefined;
     if (
@@ -214,7 +227,8 @@ export class ProductService {
       !has('codigo_barras') &&
       !has('precio_compra') &&
       !has('precio_venta') &&
-      !has('comision')
+      !has('comision') &&
+      !has('ml_botella')
     ) {
       throw new ValidationError('Nada que actualizar');
     }
@@ -229,7 +243,8 @@ export class ProductService {
       ...(has('codigo_barras') ? { codigo_barras: codigo_barras ?? null } : {}),
       ...(has('precio_compra') && precio_compra !== undefined ? { precio_compra } : {}),
       ...(has('precio_venta') && precio_venta !== undefined ? { precio_venta } : {}),
-      ...(has('comision') && comision !== undefined ? { comision } : {})
+      ...(has('comision') && comision !== undefined ? { comision } : {}),
+      ...(has('ml_botella') ? { ml_botella: ml_botella ?? null } : {})
     });
   }
 
@@ -387,6 +402,33 @@ export class ProductService {
     return await InventoryRepository.listMovimientosRecientes(
       Number.isFinite(n) && n > 0 ? Math.min(n, 500) : 100
     );
+  }
+
+  /** Resumen del panel de shots del bar (servidos hoy, restantes, por agotarse). */
+  static async getShotsSummary() {
+    return await InventoryRepository.getShotsSummary();
+  }
+
+  /**
+   * Verifica un código escaneado contra nuestro inventario y, si el envase es
+   * nuestro, está vacío y todavía no se entregó, lo marca como entregado al
+   * almacén en el mismo paso (control bar → almacén, migración 032).
+   */
+  static async verifyAndReturnContainer(codigo: unknown, usuarioId: string | null) {
+    return await InventoryRepository.verifyAndReturnContainer(codigo, usuarioId);
+  }
+
+  /**
+   * Confirma la recepción en almacén de un envase que el bar ya marcó como
+   * entregado (segundo paso del control, migración 033).
+   */
+  static async confirmContainerReturn(codigo: unknown, usuarioId: string | null) {
+    return await InventoryRepository.confirmContainerReturn(codigo, usuarioId);
+  }
+
+  /** Historial de envases entregados por el bar, lo más reciente primero. */
+  static async listContainerReturns(limite?: number) {
+    return await InventoryRepository.listContainerReturns(limite);
   }
 
   static async getChampagneTiers(productoId: string) {
