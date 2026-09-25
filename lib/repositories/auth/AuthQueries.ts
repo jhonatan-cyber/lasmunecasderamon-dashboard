@@ -104,6 +104,30 @@ const DEFAULT_PERMISSIONS: Record<string, UserPermissions> = {
     categories: { read: false, write: false },
     returns: { read: false, write: false, delete: false },
     private_rooms: { read: false, write: false }
+  },
+  barman: {
+    ...ADMIN_PERMS,
+    users: { read: false, write: false, delete: false },
+    sales: { read: true, write: false, delete: false, anulate: false },
+    products: { read: true, write: false, delete: false, accept_transfer: true },
+    clients: { read: false, write: false, delete: false },
+    finances: { read: true, write: false, delete: false },
+    reports: { read: false, export: false },
+    settings: { read: false, write: false },
+    orders: { read: false, write: false, delete: false, process: false },
+    advances: { read: true, write: true, delete: false, process: false },
+    commissions: { read: false, write: false, delete: false },
+    payroll: { read: false, write: false },
+    rooms: { read: false, write: false, delete: false },
+    attendance: { read: true, write: true },
+    overtime: { read: true, write: true },
+    tips: { read: true, write: false },
+    gratificaciones: { read: false, write: false, delete: false },
+    accounts: { read: false, write: false, edit: false },
+    categories: { read: true, write: false },
+    returns: { read: false, write: false, delete: false },
+    dashboard: { read: true },
+    private_rooms: { read: false, write: false }
   }
 };
 
