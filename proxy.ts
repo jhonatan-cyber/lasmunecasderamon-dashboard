@@ -395,7 +395,12 @@ export default async function proxy(request: NextRequest) {
     if (cspHeader) {
       response.headers.set('Content-Security-Policy', cspHeader);
     }
-    return response;
+    // Las APIs públicas (login, check-users, webhooks…) también responden a un
+    // origen permitido: sin `Access-Control-Allow-Origin` el preflight (OPTIONS)
+    // pasaba pero el navegador bloqueaba la respuesta real y el login web desde
+    // Expo dev (:8081) fallaba con net::ERR_FAILED. `addApiHeaders` solo añade
+    // CORS cuando `isApi`, así que el resto de rutas públicas no cambia.
+    return addApiHeaders(response);
   }
 
   // ─── Pantalla del local: credencial de dispositivo, no sesión de persona ───────
