@@ -97,6 +97,7 @@ export function CommissionsList({
                   <Avatar className='h-8 w-8'>
                     {commission.empleado_foto && commission.empleado_foto !== '' ? (
                       <Image
+                        data-themed-photo
                         src={`/img/users/${commission.empleado_foto}?v=${commission.image_version || ''}`}
                         alt={commission.employeeName || 'Usuario'}
                         width={32}
@@ -223,6 +224,7 @@ export function CommissionsList({
                         <Avatar className='h-8 w-8'>
                           {commission.empleado_foto && commission.empleado_foto !== '' ? (
                             <Image
+                              data-themed-photo
                               src={`/img/users/${commission.empleado_foto}`}
                               alt={commission.employeeName || 'Usuario'}
                               width={32}

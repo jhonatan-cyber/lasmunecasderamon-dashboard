@@ -3,6 +3,7 @@
 import { useEffect, useMemo } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 
+import { CajaStatusBanner } from '@/components/sales/CajaStatusBanner';
 import { Button } from '@/components/ui/button';
 import {
   Select,
@@ -89,6 +90,8 @@ export default function CobrarCuentaModal({
     habitacionesFiltradas,
     handleCobrarCuenta: cobrosHandleCobrar,
     resetStates,
+    hasOpenCaja,
+    refreshCajaStatus: refrescaCaja,
     isChampagneProduct
   } = useCuentaCobro();
 
@@ -155,6 +158,14 @@ export default function CobrarCuentaModal({
     }
   }, [open, resetStates]);
 
+  // Revalida el estado de caja cada vez que se abre el modal (el cobro
+  // escribe en caja): refleja aperturas/cierres hechos en otra pantalla.
+  useEffect(() => {
+    if (open) {
+      refrescaCaja();
+    }
+  }, [open, refrescaCaja]);
+
   const handleCobrarCuenta = async () => {
     await cobrosHandleCobrar(
       cuentaActual,
@@ -201,6 +212,7 @@ export default function CobrarCuentaModal({
             </div>
           ) : (
             <div className='space-y-8 rounded-xl'>
+              {hasOpenCaja === false && <CajaStatusBanner entityName='ventas' />}
               <div className='grid grid-cols-1 md:grid-cols-2 gap-12 border-b pb-6 rounded-xl'>
                 <div className='space-y-2 text-sm text-gray-700'>
                   <div>
@@ -432,7 +444,7 @@ export default function CobrarCuentaModal({
               variant='outline'
               className='bg-black text-white dark:bg-black dark:text-white dark:hover:bg-white! dark:hover:text-black! rounded-full px-8 hover:bg-white! hover:text-black! transition-all hover:scale-105 border-2'
               onClick={handleCobrarCuenta}
-              disabled={isCobrando}
+              disabled={isCobrando || hasOpenCaja === false}
             >
               {isCobrando ? (
                 <div className='flex items-center gap-2'>

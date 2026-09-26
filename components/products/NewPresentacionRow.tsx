@@ -51,6 +51,7 @@ export function NewPresentacionRow({
           {p.fotoPreview ? (
             // eslint-disable-next-line @next/next/no-img-element -- preview local temporal
             <img
+              data-themed-photo
               src={p.fotoPreview}
               alt={`Presentación ${i + 1}`}
               className='w-full h-full object-cover'

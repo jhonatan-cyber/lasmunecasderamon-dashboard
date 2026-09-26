@@ -122,7 +122,8 @@ export function ProfilePersonalInfoCard({
                   placeholder='usuario123'
                 />
                 <p className='mt-1 text-xs text-muted-foreground'>
-                    El email se actualizará automáticamente: {userData.nick}{EMAIL_DOMAIN}
+                  El email se actualizará automáticamente: {userData.nick}
+                  {EMAIL_DOMAIN}
                   {isSpecialRole && (
                     <span className='font-medium text-orange-600'>
                       {' '}
@@ -346,6 +347,7 @@ export function ProfilePersonalInfoCard({
                 <p className='mb-2 text-sm text-muted-foreground'>Nueva imagen seleccionada:</p>
                 <div className='flex items-center space-x-3'>
                   <Image
+                    data-themed-photo
                     src={newImagePreview}
                     alt='Nueva imagen'
                     width={64}

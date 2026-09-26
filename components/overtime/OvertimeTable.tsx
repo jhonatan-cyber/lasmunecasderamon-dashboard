@@ -85,6 +85,7 @@ export default function OvertimeTable({
                         <Avatar className='h-6 w-6'>
                           {overtime.usuario_foto && overtime.usuario_foto !== '' ? (
                             <Image
+                              data-themed-photo
                               src={`/img/users/${overtime.usuario_foto}`}
                               alt={overtime.usuario || 'Usuario'}
                               width={24}
@@ -208,6 +209,7 @@ export default function OvertimeTable({
                             <Avatar className='h-8 w-8'>
                               {overtime.usuario_foto && overtime.usuario_foto !== '' ? (
                                 <Image
+                                  data-themed-photo
                                   src={`/img/users/${overtime.usuario_foto}`}
                                   alt={overtime.usuario || 'Usuario'}
                                   width={32}

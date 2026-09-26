@@ -6,6 +6,7 @@ import { toast } from 'sonner';
 import { usePrepagoForm } from '@/hooks/personal';
 import { formatNumberInput } from '@/lib/utils/formatters';
 import { useAuth } from '@/contexts/AuthContext';
+import { useCashRegister } from '@/hooks/caja/useCashRegister';
 
 const CLIENT_EMPTY = { run: '', name: '', lastName: '', phone: '' };
 
@@ -17,6 +18,10 @@ type PrepagoMixedPayment = {
 
 export function useClientModals() {
   const { user } = useAuth();
+  // El prepago descuenta de caja en el backend (`deductFromCaja`): se expone
+  // el estado de caja para bloquear la carga si está cerrada (paridad con
+  // las apps). `hasOpenCaja === null` = desconocido => no bloquea.
+  const { hasOpenCaja, checkCajaStatus } = useCashRegister();
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isDetailsOpen, setIsDetailsOpen] = useState(false);
   const [isEditMode, setIsEditMode] = useState(false);
@@ -194,6 +199,12 @@ export function useClientModals() {
       e.preventDefault();
       if (!prepagoClient || !prepagoAmount) return false;
 
+      // Guard de caja cerrada: la carga de saldo mueve dinero en caja.
+      if (hasOpenCaja === false) {
+        toast.error('No hay caja abierta. No se pueden realizar ventas sin una caja abierta.');
+        return false;
+      }
+
       if (prepagoPaymentMethod === 'mixto') {
         const pagosValidos = prepagoMixedPayments.filter(pago => pago.monto > 0);
         if (pagosValidos.length < 2) {
@@ -251,6 +262,7 @@ export function useClientModals() {
     },
     [
       closePrepagoModal,
+      hasOpenCaja,
       numericAmount,
       prepagoAmount,
       prepagoClient,
@@ -381,6 +393,8 @@ export function useClientModals() {
     openDetailsModal,
     openPrepagoModal,
     handlePrepagoSubmit,
+    prepagoCajaCerrada: hasOpenCaja === false,
+    refreshCajaStatus: checkCajaStatus,
     openDevolucionModal,
     handleDevolucionSubmit
   };

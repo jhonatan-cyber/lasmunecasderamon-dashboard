@@ -58,7 +58,8 @@ describe('tipos de venta al transferir', () => {
     const onDone = vi.fn();
     render(<TransferModal open item={item} onOpenChange={vi.fn()} onDone={onDone} />);
     fireEvent.click(screen.getByRole('button', { name: 'Modificar precios' }));
-    fireEvent.click(screen.getByRole('button', { name: 'Shot' }));
+    // El toggle muestra los ml por shot efectivos (producto o global).
+    fireEvent.click(screen.getByRole('button', { name: 'Shot · 50 ml' }));
     fireEvent.change(screen.getByLabelText('Precio por shot'), { target: { value: '3000' } });
     fireEvent.change(screen.getByLabelText('Cantidad'), { target: { value: '2' } });
     fireEvent.click(screen.getByRole('button', { name: 'Traspasar' }));
@@ -71,6 +72,30 @@ describe('tipos de venta al transferir', () => {
         { tipo: 'botella', precio: 20000, comision: 0 },
         { tipo: 'shot', precio: 3000, comision: 0 }
       ]
+    });
+  });
+
+  it('edita los ml por shot del producto al traspasar', async () => {
+    const request = vi.fn().mockResolvedValue({ ok: true, json: async () => ({ success: true }) });
+    vi.stubGlobal('fetch', request);
+    const onDone = vi.fn();
+    render(<TransferModal open item={item} onOpenChange={vi.fn()} onDone={onDone} />);
+    expect(screen.getByLabelText('Ml por shot')).toHaveValue('');
+    fireEvent.click(screen.getByRole('button', { name: 'Modificar precios' }));
+    fireEvent.change(screen.getByLabelText('Ml por shot'), { target: { value: '75' } });
+    // El label del tipo de venta refleja el valor editado al instante.
+    expect(screen.getByRole('button', { name: 'Shot · 75 ml' })).toBeInTheDocument();
+    fireEvent.change(screen.getByLabelText('Cantidad'), { target: { value: '2' } });
+    fireEvent.click(screen.getByRole('button', { name: 'Traspasar' }));
+    await waitFor(() => expect(onDone).toHaveBeenCalledOnce());
+    const putCall = request.mock.calls.find((args: any[]) => args[1]?.method === 'PUT');
+    expect(putCall![0]).toBe('/api/products/prod-1');
+    expect(JSON.parse(putCall![1].body)).toEqual({ ml_shot: 75 });
+    expect(postBody(request)).toEqual({
+      producto_id: 'prod-1',
+      presentacion_id: 'pres-1',
+      cantidad: 2,
+      opciones_venta: [{ tipo: 'botella', precio: 20000, comision: 0 }]
     });
   });
 

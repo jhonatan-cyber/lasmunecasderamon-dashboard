@@ -115,7 +115,8 @@ export function SettingsBarTab() {
         <CardDescription className='text-neutral-500 dark:text-neutral-400'>
           Cuánto se sirve en cada shot y cuánto trae la botella. La venta de un shot descuenta ml de
           la botella abierta y el inventario del bar muestra lo que le queda; cuando se vacía, pasa
-          a vendida. Cada presentación puede definir sus propios ml en su formulario.
+          a vendida. Es el valor global: cada producto puede definir sus propios ml por shot en su
+          ficha (si lo tiene, manda sobre este).
         </CardDescription>
       </CardHeader>
       <CardContent>

@@ -41,6 +41,7 @@ interface ClientModalsProps {
   ) => void;
   onPrepagoSubmit: (e: React.FormEvent) => Promise<boolean>;
   isPrepagoSubmitting: boolean;
+  prepagoCajaCerrada?: boolean;
 
   isDevolucionModalOpen: boolean;
   onDevolucionModalChange: (open: boolean) => void;
@@ -79,6 +80,7 @@ export function ClientModals({
   onPrepagoMixedPaymentsChange,
   onPrepagoSubmit,
   isPrepagoSubmitting,
+  prepagoCajaCerrada,
 
   isDevolucionModalOpen,
   onDevolucionModalChange,
@@ -122,6 +124,7 @@ export function ClientModals({
         onMixedPaymentsChange={onPrepagoMixedPaymentsChange}
         onSubmit={onPrepagoSubmit}
         isSubmitting={isPrepagoSubmitting}
+        cajaCerrada={prepagoCajaCerrada}
       />
 
       <DevolucionModal
@@ -140,4 +143,3 @@ export function ClientModals({
     </>
   );
 }
-

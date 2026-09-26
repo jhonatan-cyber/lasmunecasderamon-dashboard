@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { toast } from 'sonner';
 import logger from '@/lib/utils/logger';
 import { isChampagneProduct } from '@/components/orders/productModalRules';
@@ -14,6 +14,23 @@ export function useCuentaCobro() {
   const [propinaActiva, setPropinaActiva] = useState(false);
   const [habitacionId, setHabitacionId] = useState<string | null>(null);
   const [showError, setShowError] = useState(false);
+
+  // Estado de caja para el cobro (paridad con las apps: el cobro registra una
+  // venta y escribe en caja). `null` = desconocido => no bloquea.
+  const [hasOpenCaja, setHasOpenCaja] = useState<boolean | null>(null);
+
+  const refreshCajaStatus = useCallback(async () => {
+    try {
+      const res = await fetch('/api/cashregister/status');
+      const data = await res.json();
+      if (data.success && typeof data.data?.hasOpenCaja === 'boolean') {
+        setHasOpenCaja(data.data.hasOpenCaja);
+      }
+    } catch (error) {
+      logger.captureException(error, { context: 'CuentaCobro:refreshCajaStatus' });
+      // Silencioso: estado desconocido no bloquea.
+    }
+  }, []);
 
   useEffect(() => {
     const fetchRooms = async () => {
@@ -29,7 +46,8 @@ export function useCuentaCobro() {
       }
     };
     fetchRooms();
-  }, []);
+    refreshCajaStatus();
+  }, [refreshCajaStatus]);
 
   const habitacionesActivas = rooms.filter(r => r.status === 1 || r.estado === 1);
 
@@ -64,6 +82,12 @@ export function useCuentaCobro() {
     if (!cuenta || !cuentaId || !metodoPagoSeleccionado) {
       setShowError(true);
       toast.error('Método de pago requerido');
+      return;
+    }
+
+    // Guard de caja cerrada (paridad con las apps y nueva venta).
+    if (hasOpenCaja === false) {
+      toast.error('No hay caja abierta. No se pueden realizar ventas sin una caja abierta.');
       return;
     }
 
@@ -161,6 +185,8 @@ export function useCuentaCobro() {
     propinaActiva,
     habitacionId,
     showError,
+    hasOpenCaja,
+    refreshCajaStatus,
 
     setSearchRoom,
     setMetodoPago,

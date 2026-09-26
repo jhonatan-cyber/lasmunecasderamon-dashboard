@@ -24,7 +24,7 @@ export function AdvancesTableRow({
   total,
   isAdmin,
   onAction,
-  statusBadge,
+  statusBadge
 }: AdvancesTableRowProps) {
   const creacion = formatDateTimeDmyLabel(a.fecha_crea);
 
@@ -39,6 +39,7 @@ export function AdvancesTableRow({
           <div className='h-10 w-10 rounded-full bg-indigo-100 flex items-center justify-center text-indigo-700 font-bold overflow-hidden border-2 border-white dark:border-slate-800 shadow-xs relative group-hover:scale-110 transition-transform duration-200'>
             {a.foto ? (
               <Image
+                data-themed-photo
                 src={a.foto.startsWith('http') ? a.foto : `/img/users/${a.foto}`}
                 alt={a.nick}
                 fill

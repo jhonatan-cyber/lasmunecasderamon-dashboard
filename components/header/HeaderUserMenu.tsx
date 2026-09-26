@@ -50,6 +50,7 @@ export function HeaderUserMenu() {
           <Avatar className='h-8 w-8'>
             {user?.foto && user.foto !== '' ? (
               <Image
+                data-themed-photo
                 src={`/img/users/${user.foto}?v=${imageVersion}`}
                 alt={user ? `${user.name} ${user.lastName}` : 'Usuario'}
                 width={32}

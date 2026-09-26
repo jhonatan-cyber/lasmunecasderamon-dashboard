@@ -19,7 +19,7 @@ export function AdvancesMobileCard({
   anticipo: a,
   isAdmin,
   onAction,
-  statusBadge,
+  statusBadge
 }: AdvancesMobileCardProps) {
   return (
     <Card className='rounded-3xl border-none shadow-md bg-white dark:bg-slate-900/40 overflow-hidden group hover:shadow-lg hover:-translate-y-0.5 transition-transform duration-200'>
@@ -29,6 +29,7 @@ export function AdvancesMobileCard({
             <div className='h-10 w-10 rounded-full bg-indigo-100 flex items-center justify-center text-indigo-700 font-bold overflow-hidden border-2 border-white dark:border-slate-800 shadow-xs relative'>
               {a.foto ? (
                 <Image
+                  data-themed-photo
                   src={a.foto.startsWith('http') ? a.foto : `/img/users/${a.foto}`}
                   alt={a.nick}
                   fill
@@ -59,9 +60,7 @@ export function AdvancesMobileCard({
             <Calendar className='h-3 w-3' />
             {formatDateTimeDmyLabel(a.fecha_crea).date}
           </div>
-          <div className='text-lg font-black text-emerald-600'>
-            {formatCurrencyCLP(a.monto)}
-          </div>
+          <div className='text-lg font-black text-emerald-600'>{formatCurrencyCLP(a.monto)}</div>
         </div>
 
         {isAdmin && Number(a.estado) === 2 && onAction && (

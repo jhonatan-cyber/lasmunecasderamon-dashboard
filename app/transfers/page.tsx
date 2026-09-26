@@ -11,7 +11,6 @@ import { BarAnfitrionas, isTierPricedItem } from '@/components/bar/BarAnfitriona
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import SelectElements from '@/components/shared/SelectElements';
-import Paginate from '@/components/shared/Paginate';
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
 import {
@@ -31,6 +30,15 @@ import {
   TableHeader,
   TableRow
 } from '@/components/ui/table';
+import {
+  Pagination,
+  PaginationContent,
+  PaginationEllipsis,
+  PaginationItem,
+  PaginationLink,
+  PaginationNext,
+  PaginationPrevious
+} from '@/components/ui/pagination';
 import type { TransferRecord } from '@/types/transfer';
 
 function TransferPhoto({ item }: { item: BarStockItem }) {
@@ -46,18 +54,121 @@ function TransferPhoto({ item }: { item: BarStockItem }) {
     : '/img/products/default.png';
 
   return (
-    <div className='relative h-28 overflow-hidden rounded-lg bg-muted/30 sm:h-32'>
+    <div
+      data-photo-surface
+      className='relative aspect-square w-full shrink-0 overflow-hidden rounded-xl sm:aspect-4/3'
+    >
       <Image
+        data-themed-photo
         src={src}
         alt={`${item.producto_nombre} — ${item.nombre}`}
         fill
-        sizes='(max-width: 639px) 50vw, (max-width: 1279px) 33vw, 25vw'
-        className='object-contain p-2'
+        sizes='(max-width: 639px) 50vw, (max-width: 1279px) 33vw, 280px'
+        className='object-contain p-3'
         unoptimized={src.startsWith('http')}
         onError={() => {
           if (photo) setFailed(previous => [...previous, photo]);
         }}
       />
+    </div>
+  );
+}
+
+const PAGE_SIZE_OPTIONS = [12, 24, 36, 48];
+const PAGE_SIZE_LABEL = 'POR PÁGINA';
+
+function buildPageItems(current: number, total: number): Array<number | 'left' | 'right'> {
+  const items: Array<number | 'left' | 'right'> = [];
+  if (total <= 7) {
+    for (let index = 1; index <= total; index += 1) items.push(index);
+    return items;
+  }
+  items.push(1);
+  if (current > 3) items.push('left');
+  for (
+    let index = Math.max(2, current - 1);
+    index <= Math.min(total - 1, current + 1);
+    index += 1
+  ) {
+    items.push(index);
+  }
+  if (current < total - 2) items.push('right');
+  items.push(total);
+  return items;
+}
+
+interface TransferPaginationProps {
+  page: number;
+  totalPages: number;
+  totalItems: number;
+  pageSize: number;
+  onPageChange: (page: number) => void;
+  label: string;
+}
+
+function TransferPagination({
+  page,
+  totalPages,
+  totalItems,
+  pageSize,
+  onPageChange,
+  label
+}: TransferPaginationProps) {
+  const currentPage = Math.min(page, totalPages);
+  const start = (currentPage - 1) * pageSize;
+  const pageItems = buildPageItems(currentPage, totalPages);
+
+  return (
+    <div className='mt-2 flex flex-col items-center gap-3'>
+      <p aria-live='polite' className='text-xs text-muted-foreground'>
+        Mostrando {start + 1}–{Math.min(start + pageSize, totalItems)} de {totalItems}
+      </p>
+      <Pagination aria-label={label}>
+        <PaginationContent>
+          <PaginationItem>
+            <PaginationPrevious
+              href='#'
+              aria-disabled={currentPage === 1}
+              className={currentPage === 1 ? 'pointer-events-none opacity-50' : undefined}
+              onClick={event => {
+                event.preventDefault();
+                if (currentPage > 1) onPageChange(currentPage - 1);
+              }}
+            />
+          </PaginationItem>
+          {pageItems.map(item =>
+            typeof item === 'number' ? (
+              <PaginationItem key={`page-${item}`}>
+                <PaginationLink
+                  href='#'
+                  isActive={item === currentPage}
+                  onClick={event => {
+                    event.preventDefault();
+                    onPageChange(item);
+                  }}
+                >
+                  {item}
+                </PaginationLink>
+              </PaginationItem>
+            ) : (
+              <PaginationItem key={item}>
+                <PaginationEllipsis />
+              </PaginationItem>
+            )
+          )}
+          <PaginationItem>
+            <PaginationNext
+              href='#'
+              aria-disabled={currentPage === totalPages}
+              className={currentPage === totalPages ? 'pointer-events-none opacity-50' : undefined}
+              onClick={event => {
+                event.preventDefault();
+                if (currentPage < totalPages) onPageChange(currentPage + 1);
+              }}
+            />
+          </PaginationItem>
+        </PaginationContent>
+      </Pagination>
     </div>
   );
 }
@@ -77,6 +188,10 @@ function TransfersContent() {
   const [tab, setTab] = useState('products');
   const [pageSize, setPageSize] = useState(12);
   const [page, setPage] = useState(1);
+  const [pendingPageSize, setPendingPageSize] = useState(12);
+  const [pendingPage, setPendingPage] = useState(1);
+  const [historyPageSize, setHistoryPageSize] = useState(12);
+  const [historyPage, setHistoryPage] = useState(1);
   const [selected, setSelected] = useState<BarStockItem | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
@@ -145,6 +260,16 @@ function TransfersContent() {
   const pageStart = (currentPage - 1) * pageSize;
   const visibleItems = filtered.slice(pageStart, pageStart + pageSize);
 
+  const pendingTotalPages = Math.max(1, Math.ceil(pendientes.length / pendingPageSize));
+  const pendingCurrentPage = Math.min(pendingPage, pendingTotalPages);
+  const pendingStart = (pendingCurrentPage - 1) * pendingPageSize;
+  const visiblePendientes = pendientes.slice(pendingStart, pendingStart + pendingPageSize);
+
+  const historyTotalPages = Math.max(1, Math.ceil(historial.length / historyPageSize));
+  const historyCurrentPage = Math.min(historyPage, historyTotalPages);
+  const historyStart = (historyCurrentPage - 1) * historyPageSize;
+  const visibleHistory = historial.slice(historyStart, historyStart + historyPageSize);
+
   return (
     <main className='mx-auto flex max-w-7xl flex-col gap-6 p-4 sm:p-6 lg:p-10'>
       <header className='flex flex-wrap items-start justify-between gap-4'>
@@ -164,58 +289,59 @@ function TransfersContent() {
       )}
 
       <Tabs value={tab} onValueChange={setTab} className='flex flex-col gap-4'>
-        <div className='flex flex-col gap-3 lg:flex-row lg:items-end lg:justify-between'>
-          <TabsList
-            aria-label='Listados de transferencias'
-            className='grid h-auto w-full shrink-0 grid-cols-3 rounded-full sm:w-fit'
-          >
-            <TabsTrigger value='products' className='rounded-full'>
-              Productos
-            </TabsTrigger>
-            <TabsTrigger value='pending' className='rounded-full whitespace-normal text-center'>
-              Pendientes{pendientes.length > 0 ? ` (${pendientes.length})` : ''}
-            </TabsTrigger>
-            <TabsTrigger value='history' className='rounded-full whitespace-normal text-center'>
-              Historial de transferencias
-            </TabsTrigger>
-          </TabsList>
-          {tab === 'products' && (
-            <div className='flex min-w-0 items-end gap-3 lg:flex-1 lg:justify-end'>
-              <Input
-                aria-label='Buscar producto, presentación o código'
-                placeholder='Buscar producto, presentación o código'
-                value={search}
-                onChange={event => {
-                  setSearch(event.target.value);
-                  setPage(1);
-                }}
-                className='h-10 min-w-0 flex-1 rounded-full lg:max-w-80'
-              />
-              <div className='shrink-0'>
-                <SelectElements
-                  value={pageSize}
-                  onChange={setPageSize}
-                  setPage={setPage}
-                  options={[12, 24, 36, 48]}
-                  label='LISTAR'
-                />
-              </div>
-            </div>
-          )}
-        </div>
+        <TabsList
+          aria-label='Listados de transferencias'
+          className='mx-auto grid h-auto w-full shrink-0 grid-cols-3 rounded-full sm:w-fit'
+        >
+          <TabsTrigger value='products' className='rounded-full'>
+            Productos
+          </TabsTrigger>
+          <TabsTrigger value='pending' className='rounded-full whitespace-normal text-center'>
+            Pendientes{pendientes.length > 0 ? ` (${pendientes.length})` : ''}
+          </TabsTrigger>
+          <TabsTrigger value='history' className='rounded-full whitespace-normal text-center'>
+            Historial de transferencias
+          </TabsTrigger>
+        </TabsList>
         <TabsContent value='products'>
           <section aria-labelledby='presentations-title' className='flex flex-col gap-4'>
-            <div className='flex flex-wrap items-center justify-between gap-3'>
-              <h2 id='presentations-title' className='text-lg font-semibold'>
-                Presentaciones disponibles
-              </h2>
+            <div className='flex flex-wrap items-end justify-between gap-3'>
+              <div className='flex flex-col gap-1'>
+                <h2 id='presentations-title' className='text-lg font-semibold'>
+                  Presentaciones disponibles
+                </h2>
+                <p className='text-sm text-muted-foreground'>
+                  Consulta el stock en almacén y en bar antes de transferir.
+                </p>
+              </div>
+              <div className='flex min-w-0 flex-1 flex-wrap items-end gap-3 sm:flex-none sm:justify-end'>
+                <Input
+                  aria-label='Buscar producto, presentación o código'
+                  placeholder='Buscar producto, presentación o código'
+                  value={search}
+                  onChange={event => {
+                    setSearch(event.target.value);
+                    setPage(1);
+                  }}
+                  className='h-10 min-w-0 flex-1 rounded-full sm:w-64 sm:flex-none'
+                />
+                <div className='shrink-0'>
+                  <SelectElements
+                    value={pageSize}
+                    onChange={setPageSize}
+                    setPage={setPage}
+                    options={PAGE_SIZE_OPTIONS}
+                    label={PAGE_SIZE_LABEL}
+                  />
+                </div>
+              </div>
             </div>
             {loading ? (
               <p role='status' className='py-10 text-center text-muted-foreground'>
                 Cargando existencias…
               </p>
             ) : (
-              <div className='grid grid-cols-2 gap-3 sm:grid-cols-3 xl:grid-cols-4'>
+              <div className='grid grid-cols-2 gap-4 sm:grid-cols-3 xl:grid-cols-4'>
                 {filtered.length === 0 ? (
                   <p className='col-span-full rounded-2xl border border-dashed py-12 text-center text-muted-foreground'>
                     {search
@@ -240,6 +366,9 @@ function TransfersContent() {
                         </Badge>
                       </CardHeader>
                       <CardContent className='flex flex-1 flex-col gap-2 px-3 pb-3'>
+                        <CardDescription className='text-xs break-words'>
+                          Categoría: {item.categoria_nombre?.trim() || 'Sin categoría'}
+                        </CardDescription>
                         <TransferPhoto item={item} />
                         <CardDescription
                           className='truncate text-center text-xs'
@@ -286,29 +415,38 @@ function TransfersContent() {
               </div>
             )}
             {!loading && filtered.length > 0 && (
-              <nav
-                aria-label='Paginación de productos'
-                className='flex flex-col items-center gap-2 pt-2'
-              >
-                <p aria-live='polite' className='text-xs text-muted-foreground'>
-                  Mostrando {pageStart + 1}–{Math.min(pageStart + pageSize, filtered.length)} de{' '}
-                  {filtered.length}
-                </p>
-                <Paginate page={currentPage} totalPages={totalPages} setPage={setPage} />
-              </nav>
+              <TransferPagination
+                page={currentPage}
+                totalPages={totalPages}
+                totalItems={filtered.length}
+                pageSize={pageSize}
+                onPageChange={setPage}
+                label='Paginación de productos'
+              />
             )}
           </section>
         </TabsContent>
         <TabsContent value='pending'>
-          <section aria-labelledby='pending-title' className='flex flex-col gap-3'>
-            <div>
-              <h2 id='pending-title' className='text-lg font-semibold'>
-                Pendientes de aprobación
-              </h2>
-              <p className='text-sm text-muted-foreground'>
-                El encargado del bar (Barman) aprueba o rechaza. Al aprobar, las unidades quedan
-                disponibles en el bar.
-              </p>
+          <section aria-labelledby='pending-title' className='flex flex-col gap-4'>
+            <div className='flex flex-wrap items-end justify-between gap-3'>
+              <div className='flex flex-col gap-1'>
+                <h2 id='pending-title' className='text-lg font-semibold'>
+                  Pendientes de aprobación
+                </h2>
+                <p className='text-sm text-muted-foreground'>
+                  El encargado del bar (Barman) aprueba o rechaza. Al aprobar, las unidades quedan
+                  disponibles en el bar.
+                </p>
+              </div>
+              <div className='shrink-0'>
+                <SelectElements
+                  value={pendingPageSize}
+                  onChange={setPendingPageSize}
+                  setPage={setPendingPage}
+                  options={PAGE_SIZE_OPTIONS}
+                  label={PAGE_SIZE_LABEL}
+                />
+              </div>
             </div>
             {pendientes.length === 0 ? (
               <p className='rounded-2xl border border-dashed py-12 text-center text-muted-foreground'>
@@ -316,7 +454,7 @@ function TransfersContent() {
               </p>
             ) : (
               <div className='grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-3'>
-                {pendientes.map(record => (
+                {visiblePendientes.map(record => (
                   <Card key={record.id} className='flex h-full min-w-0 flex-col rounded-2xl'>
                     <CardHeader className='gap-2'>
                       <Badge variant='secondary' className='w-fit'>
@@ -363,17 +501,38 @@ function TransfersContent() {
                 ))}
               </div>
             )}
+            {pendientes.length > 0 && (
+              <TransferPagination
+                page={pendingCurrentPage}
+                totalPages={pendingTotalPages}
+                totalItems={pendientes.length}
+                pageSize={pendingPageSize}
+                onPageChange={setPendingPage}
+                label='Paginación de pendientes'
+              />
+            )}
           </section>
         </TabsContent>
         <TabsContent value='history'>
-          <section aria-labelledby='history-title' className='flex flex-col gap-3'>
-            <div>
-              <h2 id='history-title' className='text-lg font-semibold'>
-                Historial de transferencias
-              </h2>
-              <p className='text-sm text-muted-foreground'>
-                Últimos 100 movimientos de almacén a bar.
-              </p>
+          <section aria-labelledby='history-title' className='flex flex-col gap-4'>
+            <div className='flex flex-wrap items-end justify-between gap-3'>
+              <div className='flex flex-col gap-1'>
+                <h2 id='history-title' className='text-lg font-semibold'>
+                  Historial de transferencias
+                </h2>
+                <p className='text-sm text-muted-foreground'>
+                  Últimos 100 movimientos de almacén a bar.
+                </p>
+              </div>
+              <div className='shrink-0'>
+                <SelectElements
+                  value={historyPageSize}
+                  onChange={setHistoryPageSize}
+                  setPage={setHistoryPage}
+                  options={PAGE_SIZE_OPTIONS}
+                  label={PAGE_SIZE_LABEL}
+                />
+              </div>
             </div>
             <div className='overflow-hidden rounded-2xl border bg-card'>
               <Table>
@@ -399,7 +558,7 @@ function TransfersContent() {
                       </TableCell>
                     </TableRow>
                   ) : (
-                    historial.map(record => (
+                    visibleHistory.map(record => (
                       <TableRow key={record.id}>
                         <TableCell className='whitespace-nowrap'>
                           {record.fecha_crea.replace('T', ' ').slice(0, 16)}
@@ -423,6 +582,7 @@ function TransfersContent() {
                               options={record.opciones_venta}
                               price={record.precio_venta}
                               commission={record.comision}
+                              mlShot={record.ml_shot}
                             />
                           )}
                         </TableCell>
@@ -454,6 +614,16 @@ function TransfersContent() {
                 </TableBody>
               </Table>
             </div>
+            {!loading && historial.length > 0 && (
+              <TransferPagination
+                page={historyCurrentPage}
+                totalPages={historyTotalPages}
+                totalItems={historial.length}
+                pageSize={historyPageSize}
+                onPageChange={setHistoryPage}
+                label='Paginación del historial'
+              />
+            )}
           </section>
         </TabsContent>
       </Tabs>

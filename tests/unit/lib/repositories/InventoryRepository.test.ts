@@ -614,7 +614,7 @@ describe('resumen de shots del bar', () => {
           { clave: 'shot_ml', valor: '50' },
           { clave: 'shots_alerta', valor: '2' }
         ];
-      if (sql.includes('FROM inventario_movimientos')) return [{ ml: 350 }];
+      if (sql.includes('FROM inventario_movimientos')) return [{ ml: 350, shots: 7 }];
       if (sql.includes('FROM inventario_unidades'))
         return [{ botellas: 3, ml: 400, por_agotarse: 2 }];
       return [];
@@ -631,8 +631,16 @@ describe('resumen de shots del bar', () => {
       botellasAbiertas: 3,
       botellasPorAgotarse: 2
     });
-    // La alerta se compara en ml: shots_alerta x ml por shot.
-    expect(query).toHaveBeenCalledWith(expect.stringContaining('ml_restante <= ?'), [100]);
+    // La alerta se compara en ml: shots_alerta x ml por shot (por producto o global).
+    expect(query).toHaveBeenCalledWith(
+      expect.stringContaining('ml_restante <= (COALESCE(NULLIF(pr.ml_shot, 0), ?) * ?)'),
+      [50, 2]
+    );
+    // Los shots se dividen con el ml por shot de cada producto (fallback al global).
+    expect(query).toHaveBeenCalledWith(
+      expect.stringContaining('NULLIF(pr.ml_shot, 0)'),
+      expect.anything()
+    );
     // "Hoy" se calcula desde el inicio del día en la zona horaria del negocio.
     expect(query).toHaveBeenCalledWith(
       expect.stringContaining('fecha_crea >= ?'),

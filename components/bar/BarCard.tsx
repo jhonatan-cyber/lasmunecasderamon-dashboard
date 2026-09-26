@@ -8,6 +8,7 @@ import type { BarStockItem } from './TransferModal';
 import { SalePrices } from './SalePrices';
 import { BarAnfitrionas, isTierPricedItem } from './BarAnfitrionas';
 import { useConfigValue } from '@/hooks/shared/useConfigValue';
+import { resolveShotMl } from '@/lib/business/shotMl';
 
 interface BarCardProps {
   item: BarStockItem;
@@ -20,7 +21,9 @@ function imageUrl(foto?: string | null): string {
 }
 
 export function BarCard({ item }: BarCardProps) {
-  const shotMl = useConfigValue<number>('bar', 'shot_ml', 50);
+  const shotMlGlobal = useConfigValue<number>('bar', 'shot_ml', 50);
+  // Ml por shot del producto; sin valor propio se usa el global.
+  const shotMl = resolveShotMl(item.ml_shot, shotMlGlobal);
   const mlAbierta = Number(item.ml_abierta ?? 0);
   const mlServidos = Number(item.ml_servidos ?? 0);
   const shotsRestantes = shotMl > 0 ? Math.floor(mlAbierta / shotMl) : 0;
@@ -28,8 +31,12 @@ export function BarCard({ item }: BarCardProps) {
   return (
     <Card className='group relative border-none bg-white dark:bg-slate-900/40 shadow-md hover:shadow-xl transition-all duration-300 rounded-4xl overflow-hidden'>
       {}
-      <div className='relative w-full aspect-4/3 overflow-hidden bg-white group-hover:scale-105 transition-transform duration-500'>
+      <div
+        data-photo-surface
+        className='relative w-full aspect-4/3 overflow-hidden group-hover:scale-105 transition-transform duration-500'
+      >
         <Image
+          data-themed-photo
           src={imageUrl(item.foto || item.producto_foto)}
           alt={`${item.producto_nombre} ${item.nombre}`}
           fill
@@ -89,6 +96,7 @@ export function BarCard({ item }: BarCardProps) {
               options={item.opciones_venta}
               price={item.precio_venta}
               commission={item.comision}
+              mlShot={item.ml_shot}
             />
           );
         })()}

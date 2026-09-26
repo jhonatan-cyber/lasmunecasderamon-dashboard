@@ -15,4 +15,6 @@ export interface TransferRecord {
   producto_nombre: string;
   presentacion_nombre: string;
   usuario_nombre: string;
+  /** Ml por shot del producto; null/undefined = valor global de Configuraciones. */
+  ml_shot?: number | null;
 }

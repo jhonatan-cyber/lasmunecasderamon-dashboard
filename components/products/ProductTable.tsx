@@ -137,8 +137,12 @@ const SortableRow: React.FC<SortableRowProps> = React.memo(
           </div>
         </TableCell>
         <TableCell className='py-3 px-2 sm:px-4 text-center'>
-          <div className='relative mx-auto flex h-12 w-12 shrink-0 items-center justify-center overflow-hidden rounded-xl border border-gray-100 bg-white shadow-xs transition-all group-hover:shadow-sm'>
+          <div
+            data-photo-surface
+            className='relative mx-auto flex h-12 w-12 shrink-0 items-center justify-center overflow-hidden rounded-xl border border-gray-100 shadow-xs transition-all group-hover:shadow-sm'
+          >
             <Image
+              data-themed-photo
               src={productFoto(presentation?.foto || product.foto)}
               alt={presentation ? `${product.name} ${presentation.nombre}` : product.name}
               width={48}

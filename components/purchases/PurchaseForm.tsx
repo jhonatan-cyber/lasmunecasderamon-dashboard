@@ -2,7 +2,7 @@
 
 import { useId, useMemo, useState } from 'react';
 import { toast } from 'sonner';
-import { Check, ChevronsUpDown, Loader2, Plus, Trash2 } from 'lucide-react';
+import { Check, ChevronsUpDown, Loader2, Minus, Plus, Trash2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -86,6 +86,21 @@ export function PurchaseForm({ open, onOpenChange, catalog, onDone }: Props) {
     setComboOpen(false);
   };
 
+  const adjustQuantity = (presentacionId: string, delta: number) => {
+    setLines(prev =>
+      prev.map(line =>
+        line.presentacion_id === presentacionId
+          ? {
+              ...line,
+              cantidad: formatMiles(
+                String(Math.min(1000, Math.max(1, toNumber(line.cantidad) + delta)))
+              )
+            }
+          : line
+      )
+    );
+  };
+
   const reset = () => {
     setLines([]);
     setProveedor('');
@@ -159,7 +174,8 @@ export function PurchaseForm({ open, onOpenChange, catalog, onDone }: Props) {
         <form onSubmit={handleSubmit} className='space-y-4 py-2'>
           <div className='flex flex-col gap-2'>
             <Label htmlFor={`${formId}-producto`}>Producto / presentación</Label>
-            <Popover open={comboOpen} onOpenChange={setComboOpen}>
+            {/* El modo modal permite desplazar el listado portaleado dentro del Dialog. */}
+            <Popover modal open={comboOpen} onOpenChange={setComboOpen}>
               <PopoverTrigger asChild>
                 <Button
                   type='button'
@@ -247,9 +263,9 @@ export function PurchaseForm({ open, onOpenChange, catalog, onDone }: Props) {
               {lines.map(l => (
                 <div
                   key={l.presentacion_id}
-                  className='grid grid-cols-[1fr_5rem_7rem_auto] items-end gap-2 rounded-2xl border border-gray-200 p-3'
+                  className='grid grid-cols-[minmax(0,1fr)_auto] items-end gap-2 rounded-2xl border border-gray-200 p-3 sm:grid-cols-[minmax(0,1fr)_10rem_7rem_auto]'
                 >
-                  <div className='min-w-0'>
+                  <div className='col-span-2 min-w-0 sm:col-span-1'>
                     <p className='text-sm font-semibold truncate'>
                       {l.producto_nombre} — {l.presentacion_nombre}
                     </p>
@@ -258,24 +274,48 @@ export function PurchaseForm({ open, onOpenChange, catalog, onDone }: Props) {
                       {formatCurrencyCLP(toNumber(l.cantidad) * toNumber(l.precio_compra))}
                     </p>
                   </div>
-                  <div className='flex flex-col gap-2'>
+                  <div className='col-span-2 flex flex-col gap-2 sm:col-span-1'>
                     <Label htmlFor={`${formId}-cantidad-${l.presentacion_id}`}>Cantidad</Label>
-                    <Input
-                      id={`${formId}-cantidad-${l.presentacion_id}`}
-                      inputMode='numeric'
-                      value={l.cantidad}
-                      onChange={e =>
-                        setLines(prev =>
-                          prev.map(x =>
-                            x.presentacion_id === l.presentacion_id
-                              ? { ...x, cantidad: formatMiles(e.target.value) }
-                              : x
+                    <div className='flex items-center gap-1'>
+                      <Button
+                        type='button'
+                        variant='outline'
+                        size='icon'
+                        className='shrink-0 rounded-full'
+                        aria-label={`Disminuir cantidad de ${l.producto_nombre}, ${l.presentacion_nombre}`}
+                        disabled={saving || toNumber(l.cantidad) <= 1}
+                        onClick={() => adjustQuantity(l.presentacion_id, -1)}
+                      >
+                        <Minus aria-hidden='true' />
+                      </Button>
+                      <Input
+                        id={`${formId}-cantidad-${l.presentacion_id}`}
+                        inputMode='numeric'
+                        value={l.cantidad}
+                        onChange={e =>
+                          setLines(prev =>
+                            prev.map(x =>
+                              x.presentacion_id === l.presentacion_id
+                                ? { ...x, cantidad: formatMiles(e.target.value) }
+                                : x
+                            )
                           )
-                        )
-                      }
-                      disabled={saving}
-                      className='h-10 text-center'
-                    />
+                        }
+                        disabled={saving}
+                        className='h-10 min-w-0 flex-1 text-center'
+                      />
+                      <Button
+                        type='button'
+                        variant='outline'
+                        size='icon'
+                        className='shrink-0 rounded-full'
+                        aria-label={`Aumentar cantidad de ${l.producto_nombre}, ${l.presentacion_nombre}`}
+                        disabled={saving || toNumber(l.cantidad) >= 1000}
+                        onClick={() => adjustQuantity(l.presentacion_id, 1)}
+                      >
+                        <Plus aria-hidden='true' />
+                      </Button>
+                    </div>
                   </div>
                   <div className='flex flex-col gap-2'>
                     <Label htmlFor={`${formId}-precio_compra-${l.presentacion_id}`}>
@@ -322,7 +362,15 @@ export function PurchaseForm({ open, onOpenChange, catalog, onDone }: Props) {
               <Input
                 id={`${formId}-proveedor`}
                 value={proveedor}
-                onChange={e => setProveedor(e.target.value)}
+                onChange={e =>
+                  setProveedor(
+                    e.target.value.replace(
+                      /(^|\s)(\p{L})/gu,
+                      (_, space, letter) => space + letter.toLocaleUpperCase('es')
+                    )
+                  )
+                }
+                autoCapitalize='words'
                 placeholder='Proveedor (opcional)'
                 maxLength={120}
                 className='rounded-full'
@@ -347,7 +395,12 @@ export function PurchaseForm({ open, onOpenChange, catalog, onDone }: Props) {
             <Input
               id={`${formId}-observaciones`}
               value={observaciones}
-              onChange={e => setObservaciones(e.target.value)}
+              onChange={e =>
+                setObservaciones(
+                  e.target.value.replace(/\p{L}/u, letter => letter.toLocaleUpperCase('es'))
+                )
+              }
+              autoCapitalize='off'
               placeholder='Observaciones (opcional: factura...)'
               className='rounded-full'
               disabled={saving}

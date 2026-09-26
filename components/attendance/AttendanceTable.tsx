@@ -143,6 +143,7 @@ export default function AttendanceTable({ data }: AttendanceTableProps) {
                     <Avatar className='h-8 w-8'>
                       {item.usuario_foto && item.usuario_foto !== '' ? (
                         <Image
+                          data-themed-photo
                           src={`/img/users/${item.usuario_foto}?v=${imageVersion}`}
                           alt={item.nombre_completo}
                           width={32}
@@ -216,6 +217,7 @@ export default function AttendanceTable({ data }: AttendanceTableProps) {
               <Avatar className='h-10 w-10'>
                 {item.usuario_foto && item.usuario_foto !== '' ? (
                   <Image
+                    data-themed-photo
                     src={`/img/users/${item.usuario_foto}?v=${imageVersion}`}
                     alt={item.nombre_completo}
                     width={40}

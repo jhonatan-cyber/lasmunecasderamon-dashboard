@@ -199,6 +199,7 @@ function ImageUploadFieldComponent({
           >
             {previewUrl ? (
               <div
+                data-themed-photo
                 className='absolute inset-0 bg-cover'
                 style={{
                   backgroundImage: `url(${previewUrl})`,

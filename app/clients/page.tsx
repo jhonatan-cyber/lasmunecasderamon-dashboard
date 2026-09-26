@@ -67,6 +67,7 @@ export default function Clients() {
     prepagoMixedPayments,
     setPrepagoMixedPayments,
     prepagoSubmitting,
+    prepagoCajaCerrada,
     closePrepagoModal,
 
     isDevolucionModalOpen,
@@ -201,6 +202,7 @@ export default function Clients() {
             onPrepagoMixedPaymentsChange={setPrepagoMixedPayments}
             onPrepagoSubmit={e => handlePrepagoSubmit(e, updateClientSaldo)}
             isPrepagoSubmitting={prepagoSubmitting}
+            prepagoCajaCerrada={prepagoCajaCerrada}
             isDevolucionModalOpen={isDevolucionModalOpen}
             onDevolucionModalChange={setIsDevolucionModalOpen}
             devolucionClient={devolucionClient}

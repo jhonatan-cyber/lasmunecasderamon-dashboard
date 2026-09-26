@@ -2,6 +2,7 @@
 
 import { useState } from 'react';
 import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
 import { Product, Presentacion } from '@/types/product';
 import { FileText, Loader2, Plus } from 'lucide-react';
 import { useProductForm } from '@/hooks/personal';
@@ -363,6 +364,31 @@ export function ProductForm({
               className='w-full min-h-[100px] pl-12 pr-4 py-3 rounded-2xl'
             />
           </div>
+        </div>
+      )}
+
+      {!scoped && (
+        <div className='space-y-2'>
+          <label
+            htmlFor='prod-ml-shot'
+            className='block text-xs font-bold uppercase tracking-wider text-gray-500 dark:text-gray-400 ml-1'
+          >
+            Ml por shot
+          </label>
+          <Input
+            id='prod-ml-shot'
+            name='ml_shot'
+            value={form.ml_shot}
+            onChange={handleChange}
+            placeholder='Ej: 50'
+            disabled={isLoading}
+            inputMode='numeric'
+            className='h-12 rounded-2xl'
+          />
+          <p className='text-[11px] text-gray-400 dark:text-gray-500 ml-1'>
+            Ml que se sirve en cada shot de este producto. En vacío usa el valor global de Ajustes →
+            Bar.
+          </p>
         </div>
       )}
     </form>

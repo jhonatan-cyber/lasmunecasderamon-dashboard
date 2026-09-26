@@ -3,6 +3,8 @@ export interface Product {
   created_at?: string | null;
   updated_at?: string | null;
   max_anfitrionas?: number | null;
+  /** Ml servidos en cada shot de este producto (null = default de Configuraciones). */
+  ml_shot?: number | null;
   id: string;
   code: string;
   name: string;

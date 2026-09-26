@@ -32,10 +32,12 @@ interface Tier {
 
 function PresentationPrices({
   presentation,
-  field
+  field,
+  mlShot
 }: {
   presentation: Presentacion;
   field: 'precio' | 'comision';
+  mlShot?: number | null;
 }) {
   if (isTierPricedItem(presentation)) return <span>Según número de anfitrionas</span>;
   return (
@@ -44,6 +46,7 @@ function PresentationPrices({
       price={presentation.precio_venta}
       commission={presentation.comision}
       field={field}
+      mlShot={mlShot}
     />
   );
 }
@@ -153,8 +156,12 @@ export function ProductDetailsModal({
         {item && (
           <div className='flex min-h-0 flex-1 flex-col gap-6 overflow-y-auto p-4 sm:p-6'>
             <div className='flex flex-col gap-4 sm:flex-row'>
-              <div className='relative size-32 shrink-0 overflow-hidden rounded-xl border bg-muted'>
+              <div
+                data-photo-surface
+                className='relative size-32 shrink-0 overflow-hidden rounded-xl border'
+              >
                 <Image
+                  data-themed-photo
                   src={imageUrl(displayPresentation?.foto || item.foto)}
                   alt={`${item.name} ${displayPresentation?.nombre ?? ''}`}
                   fill
@@ -206,13 +213,26 @@ export function ProductDetailsModal({
                   <h3 className='font-semibold'>Información general</h3>
                   <dl className='grid grid-cols-2 gap-4 rounded-xl border p-4 sm:grid-cols-3'>
                     <Info label='Precio de venta en bar'>
-                      <PresentationPrices presentation={selectedPrices} field='precio' />
+                      <PresentationPrices
+                        presentation={selectedPrices}
+                        field='precio'
+                        mlShot={item.ml_shot}
+                      />
                     </Info>
                     <Info label='Comisión en bar'>
-                      <PresentationPrices presentation={selectedPrices} field='comision' />
+                      <PresentationPrices
+                        presentation={selectedPrices}
+                        field='comision'
+                        mlShot={item.ml_shot}
+                      />
                     </Info>
                     <Info label='Máximo de anfitrionas'>
                       {item.max_anfitrionas ?? 'Según configuración general'}
+                    </Info>
+                    <Info label='Ml por shot'>
+                      {item.ml_shot != null && Number(item.ml_shot) > 0
+                        ? `${Number(item.ml_shot)} ml`
+                        : 'Configuración global'}
                     </Info>
                     <Info label='Precio de compra'>
                       {formatCurrencyCLP(selectedPrices.precio_compra ?? 0)}

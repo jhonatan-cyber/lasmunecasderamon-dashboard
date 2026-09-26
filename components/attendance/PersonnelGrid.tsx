@@ -38,6 +38,7 @@ export function PersonnelGrid({ personnel, onSelect }: PersonnelGridProps) {
         >
           <div className='absolute inset-0'>
             <Image
+              data-themed-photo
               src={person.foto ? `/img/users/${person.foto}` : '/placeholder-user.jpg'}
               alt={`${person.name} ${person.lastName}`}
               fill

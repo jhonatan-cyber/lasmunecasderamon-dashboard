@@ -11,6 +11,8 @@ export interface ProductFormValues {
   code: string;
   name: string;
   description: string;
+  /** Ml por shot del producto (vacío = usar el global de Configuraciones). */
+  ml_shot: string;
 }
 
 export interface PresentacionFormItem {
@@ -54,7 +56,8 @@ const getNumericValue = (v: string) => v.replace(/\./g, '');
 const initialFormState: ProductFormValues = {
   code: '',
   name: '',
-  description: ''
+  description: '',
+  ml_shot: ''
 };
 
 interface UseProductFormProps {
@@ -149,7 +152,11 @@ export function useProductForm({
       setForm({
         code: initialValues.code || '',
         name: initialValues.name || '',
-        description: initialValues.description || ''
+        description: initialValues.description || '',
+        ml_shot:
+          initialValues.ml_shot !== undefined && initialValues.ml_shot !== null
+            ? String(initialValues.ml_shot)
+            : ''
       });
     } else if (open) {
       setForm({ ...initialFormState, code: generateRandomCode() });
@@ -274,6 +281,8 @@ export function useProductForm({
         ...prev,
         description: value ? value.charAt(0).toUpperCase() + value.slice(1) : value
       }));
+    } else if (name === 'ml_shot') {
+      setForm(prev => ({ ...prev, ml_shot: String(value).replace(/\D/g, '') }));
     } else {
       setForm(prev => ({ ...prev, [name]: value }));
     }
@@ -602,6 +611,8 @@ export function useProductForm({
 
     data.append('description', form.description);
     data.append('status', '1');
+    // Vacío = borrar: el producto vuelve al `shot_ml` global de Configuraciones.
+    data.append('ml_shot', form.ml_shot);
     if (presentaciones.length > 0) {
       data.append(
         'presentaciones',

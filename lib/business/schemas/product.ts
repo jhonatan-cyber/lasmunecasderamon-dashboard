@@ -17,6 +17,18 @@ export const ProductSchema = z.object({
     z.number().optional()
   ),
   max_anfitrionas: z.number().nullable().optional(),
+  // Ml servidos por shot de este producto. '' lo borra (se usa el `shot_ml` global
+  // de Configuraciones > Bar).
+  ml_shot: z.preprocess(
+    v => (v === undefined ? undefined : v === null || v === '' ? null : Number(v)),
+    z
+      .number()
+      .int()
+      .min(1, 'Los ml por shot deben ser mayores a 0')
+      .max(10000)
+      .nullable()
+      .optional()
+  ),
   description: z.string().optional(),
   status: z.preprocess(v => Number(v), z.number()),
   stock_almacen: z.preprocess(

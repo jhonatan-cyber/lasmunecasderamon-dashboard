@@ -21,6 +21,11 @@ export interface PresentacionRow {
   stock_bar?: number;
   /** Capacidad de la botella en ml (null = usar el default de Configuraciones). */
   ml_botella?: number | null;
+  /**
+   * Ml por shot del producto al que pertenece (columna `productos.ml_shot`; null = el
+   * default de Configuraciones). Sólo viene cuando la query trae el join con productos.
+   */
+  ml_shot?: number | null;
   /** ml que quedan en las botellas abiertas de esta presentación en el bar. */
   ml_abierta?: number;
   /** Acumulado de ml servidos por shots en las ventas de esta presentación. */
@@ -219,6 +224,7 @@ const mapPresentacion = (row: any, topeSimple = 10000): PresentacionRow => {
     stock_bar: row.stock_bar !== undefined ? Number(row.stock_bar) : undefined,
     ml_botella:
       row.ml_botella === null || row.ml_botella === undefined ? null : Number(row.ml_botella),
+    ml_shot: row.ml_shot === null || row.ml_shot === undefined ? null : Number(row.ml_shot),
     ml_abierta: row.ml_abierta === undefined ? undefined : Number(row.ml_abierta ?? 0),
     ml_servidos: row.ml_servidos === undefined ? undefined : Number(row.ml_servidos ?? 0),
     max_anfitrionas:
@@ -395,7 +401,7 @@ export class InventoryRepository {
   ): Promise<PresentacionRow[]> {
     const rows = await trx<any[]>(
       `SELECT p.*,
-        (SELECT COUNT(*) FROM inventario_unidades u WHERE u.presentacion_id = p.id AND u.estado = '${ESTADO_UNIDAD_ACTIVA}' AND u.ubicacion = 'almacen') AS stock, (SELECT COUNT(*) FROM inventario_unidades u WHERE u.presentacion_id = p.id AND u.estado = '${ESTADO_UNIDAD_ACTIVA}' AND u.ubicacion = 'bar') AS stock_bar
+        (SELECT COUNT(*) FROM inventario_unidades u WHERE u.presentacion_id = p.id AND u.estado = '${ESTADO_UNIDAD_ACTIVA}' AND u.ubicacion = 'almacen') AS stock, (SELECT COUNT(*) FROM inventario_unidades u WHERE u.presentacion_id = p.id AND u.estado = '${ESTADO_UNIDAD_ACTIVA}' AND u.ubicacion = 'bar') AS stock_bar,
         (SELECT COALESCE(SUM(u.ml_restante), 0) FROM inventario_unidades u WHERE u.presentacion_id = p.id AND u.estado = '${ESTADO_UNIDAD_ACTIVA}' AND u.ubicacion = 'bar') AS ml_abierta
        FROM inventario_presentaciones p
        WHERE p.producto_id = ?
@@ -636,12 +642,13 @@ export class InventoryRepository {
           botellaMl: DEFAULT_BOTTLE_ML,
           shotsAlerta: DEFAULT_SHOTS_ALERTA
         };
-    const umbralAlerta = shotMl * shotsAlerta;
 
     for (const [presentacionId, pedido] of requerido) {
       const presentacion = await trx<any[]>(
-        `SELECT id, producto_id, nombre, precio_venta, comision, ml_botella
-         FROM inventario_presentaciones WHERE id = ? FOR UPDATE`,
+        `SELECT p.id, p.producto_id, p.nombre, p.precio_venta, p.comision, p.ml_botella, pr.ml_shot
+         FROM inventario_presentaciones p
+         INNER JOIN productos pr ON pr.id_producto = p.producto_id
+         WHERE p.id = ? FOR UPDATE OF p`,
         [presentacionId]
       );
       // Presentación borrada: las unidades quedaron huérfanas, no hay nada que descontar.
@@ -651,6 +658,12 @@ export class InventoryRepository {
         Math.floor(Number(presentacion[0].ml_botella)) > 0
           ? Math.floor(Number(presentacion[0].ml_botella))
           : botellaMl;
+      // Ml por shot del producto (null o 0 = el global de Configuraciones).
+      const shotMlPresentacion =
+        Math.floor(Number(presentacion[0].ml_shot)) > 0
+          ? Math.floor(Number(presentacion[0].ml_shot))
+          : shotMl;
+      const umbralAlertaPresentacion = shotMlPresentacion * shotsAlerta;
 
       // Botellas abiertas primero (se termina la que ya está servida), luego las llenas
       // en FIFO. Se leen todas para poder rechazar la venta antes de escribir nada.
@@ -664,7 +677,7 @@ export class InventoryRepository {
 
       // Plan de consumo: ml pendientes de shots y botellas completas por separado.
       const plan: { id: string; ml_restante: number }[] = [];
-      let mlPendiente = pedido.shots * shotMl;
+      let mlPendiente = pedido.shots * shotMlPresentacion;
       let botellasPendientes = pedido.botellas;
 
       for (const unidad of unidades) {
@@ -704,7 +717,7 @@ export class InventoryRepository {
           presentacion_id: presentacionId,
           disponibles: unidades.length,
           requeridas: pedido.botellas + pedido.shots,
-          ml_requeridos: pedido.shots > 0 ? pedido.shots * shotMl : 0,
+          ml_requeridos: pedido.shots > 0 ? pedido.shots * shotMlPresentacion : 0,
           ml_disponibles: unidades.reduce(
             (total, unidad) =>
               total +
@@ -730,13 +743,13 @@ export class InventoryRepository {
           // Le queda poco y **no** estaba en alerta: avisa sólo en el cruce (o al abrir
           // una botella que ya arranca bajo el umbral), para no repetir por cada shot.
           const antes = mlAnterior.get(item.id) ?? 0;
-          const estabaEnAlerta = antes > 0 && antes <= umbralAlerta;
-          if (!estabaEnAlerta && item.ml_restante <= umbralAlerta) {
+          const estabaEnAlerta = antes > 0 && antes <= umbralAlertaPresentacion;
+          if (!estabaEnAlerta && item.ml_restante <= umbralAlertaPresentacion) {
             alertas.push({
               presentacion_id: presentacionId,
               nombre: presentacion[0].nombre,
               ml_restante: item.ml_restante,
-              shots_restantes: Math.floor(item.ml_restante / shotMl)
+              shots_restantes: Math.floor(item.ml_restante / shotMlPresentacion)
             });
           }
         } else {
@@ -762,7 +775,7 @@ export class InventoryRepository {
         producto_id: presentacion[0].producto_id,
         presentacion_id: presentacionId,
         cantidad: vendidas.length,
-        ml: pedido.shots > 0 ? pedido.shots * shotMl : null,
+        ml: pedido.shots > 0 ? pedido.shots * shotMlPresentacion : null,
         precio_venta: Math.floor(Number(presentacion[0].precio_venta ?? 0)),
         comision: Math.floor(Number(presentacion[0].comision ?? 0)),
         usuario_id: contexto.usuarioId,
@@ -903,7 +916,7 @@ export class InventoryRepository {
         (SELECT COALESCE(SUM(u.ml_restante), 0) FROM inventario_unidades u WHERE u.presentacion_id = p.id AND u.estado = '${ESTADO_UNIDAD_ACTIVA}' AND u.ubicacion = 'bar') AS ml_abierta,
         (SELECT COALESCE(SUM(m.ml), 0) FROM inventario_movimientos m WHERE m.presentacion_id = p.id AND m.tipo = 'venta' AND m.ml > 0) AS ml_servidos,
         pr.nombre AS producto_nombre, pr.codigo AS producto_codigo, pr.foto AS producto_foto,
-        pr.precio AS producto_precio, pr.comision AS producto_comision,
+        pr.precio AS producto_precio, pr.comision AS producto_comision, pr.ml_shot,
         c.nombre AS categoria_nombre
        FROM inventario_presentaciones p
        INNER JOIN productos pr ON pr.id_producto = p.producto_id
@@ -933,23 +946,32 @@ export class InventoryRepository {
   /**
    * Resumen para el panel de shots del bar: lo servido hoy, los ml que quedan en las
    * botellas abiertas y cuántas están por agotarse (≤ `shots_alerta` shots restantes).
+   *
+   * Los ml por shot pueden variar por producto (`productos.ml_shot`): los conteos se
+   * calculan producto por producto y sólo se recurre al `shot_ml` global cuando el
+   * producto no define los suyos.
    */
   static async getShotsSummary(): Promise<ShotsSummary> {
     const { shotMl, shotsAlerta } = await getBarMlConfig();
     const inicioDia = `${getNowInBusinessTimezone().slice(0, 10)} 00:00:00`;
 
     const [hoy] = await query<any[]>(
-      `SELECT COALESCE(SUM(ml), 0) AS ml FROM inventario_movimientos
-        WHERE tipo = 'venta' AND ml > 0 AND fecha_crea >= ?`,
-      [inicioDia]
+      `SELECT COALESCE(SUM(m.ml), 0) AS ml,
+              COALESCE(SUM(m.ml / COALESCE(NULLIF(pr.ml_shot, 0), ?)), 0) AS shots
+         FROM inventario_movimientos m
+         LEFT JOIN productos pr ON pr.id_producto = m.producto_id
+        WHERE m.tipo = 'venta' AND m.ml > 0 AND m.fecha_crea >= ?`,
+      [shotMl, inicioDia]
     );
     const [abiertas] = await query<any[]>(
       `SELECT COUNT(*) AS botellas,
-              COALESCE(SUM(ml_restante), 0) AS ml,
-              COALESCE(SUM(CASE WHEN ml_restante <= ? THEN 1 ELSE 0 END), 0) AS por_agotarse
-         FROM inventario_unidades
-        WHERE estado = '${ESTADO_UNIDAD_ACTIVA}' AND ubicacion = 'bar' AND ml_restante > 0`,
-      [shotMl * shotsAlerta]
+              COALESCE(SUM(u.ml_restante), 0) AS ml,
+              COALESCE(SUM(CASE WHEN u.ml_restante <= (COALESCE(NULLIF(pr.ml_shot, 0), ?) * ?)
+                               THEN 1 ELSE 0 END), 0) AS por_agotarse
+         FROM inventario_unidades u
+         LEFT JOIN productos pr ON pr.id_producto = u.producto_id
+        WHERE u.estado = '${ESTADO_UNIDAD_ACTIVA}' AND u.ubicacion = 'bar' AND u.ml_restante > 0`,
+      [shotMl, shotsAlerta]
     );
 
     const mlServidosHoy = Number(hoy?.ml ?? 0);
@@ -957,7 +979,7 @@ export class InventoryRepository {
       shotMl,
       shotsAlerta,
       mlServidosHoy,
-      shotsServidosHoy: shotMl > 0 ? Math.floor(mlServidosHoy / shotMl) : 0,
+      shotsServidosHoy: Number(hoy?.shots ?? 0),
       mlRestantesTotales: Number(abiertas?.ml ?? 0),
       botellasAbiertas: Number(abiertas?.botellas ?? 0),
       botellasPorAgotarse: Number(abiertas?.por_agotarse ?? 0)
@@ -987,7 +1009,7 @@ export class InventoryRepository {
         (SELECT COUNT(*) FROM inventario_unidades u WHERE u.presentacion_id = p.id AND u.estado = '${ESTADO_UNIDAD_ACTIVA}' AND u.ubicacion = 'bar') AS stock_bar,
         (SELECT COALESCE(SUM(u.ml_restante), 0) FROM inventario_unidades u WHERE u.presentacion_id = p.id AND u.estado = '${ESTADO_UNIDAD_ACTIVA}' AND u.ubicacion = 'bar') AS ml_abierta,
         pr.id_producto AS producto_id, pr.codigo AS producto_codigo, pr.nombre AS producto_nombre,
-        pr.foto AS producto_foto, pr.categoria_id, c.nombre AS categoria_nombre
+        pr.foto AS producto_foto, pr.categoria_id, c.nombre AS categoria_nombre, pr.ml_shot
        FROM inventario_presentaciones p
        INNER JOIN productos pr ON pr.id_producto = p.producto_id AND pr.estado = 1
        LEFT JOIN categorias c ON c.id_categoria = pr.categoria_id
@@ -1010,6 +1032,7 @@ export class InventoryRepository {
       stock_bar: Number(row.stock_bar ?? 0),
       ml_botella:
         row.ml_botella === null || row.ml_botella === undefined ? null : Number(row.ml_botella),
+      ml_shot: row.ml_shot === null || row.ml_shot === undefined ? null : Number(row.ml_shot),
       ml_abierta: Number(row.ml_abierta ?? 0),
       // Precio de shot guardado (si existe) para el selector Botella/Shot de la venta.
       opciones_venta:
@@ -1046,7 +1069,7 @@ export class InventoryRepository {
           r.nick AS aceptado_nombre,
           c.nombre AS categoria_nombre,
           p.precio_venta AS pres_precio, p.comision AS pres_comision,
-          pr.precio AS producto_precio, pr.comision AS producto_comision
+          pr.precio AS producto_precio, pr.comision AS producto_comision, pr.ml_shot
          FROM inventario_movimientos m
          LEFT JOIN productos pr ON pr.id_producto = m.producto_id
          LEFT JOIN inventario_presentaciones p ON p.id = m.presentacion_id
@@ -1101,7 +1124,7 @@ export class InventoryRepository {
         receptor.nick AS aceptado_nombre,
         c.nombre AS categoria_nombre,
         pr.precio_venta AS pres_precio, pr.comision AS pres_comision,
-        p.precio AS producto_precio, p.comision AS producto_comision
+        p.precio AS producto_precio, p.comision AS producto_comision, p.ml_shot
        FROM inventario_movimientos m
        LEFT JOIN productos p ON p.id_producto = m.producto_id
        LEFT JOIN inventario_presentaciones pr ON pr.id = m.presentacion_id

@@ -224,6 +224,7 @@ export function ExistingPresentacionCard({
           <div className='flex items-center gap-2'>
             {/* eslint-disable-next-line @next/next/no-img-element -- preview local/blob o ruta interna */}
             <img
+              data-themed-photo
               src={
                 p.foto && p.foto !== 'default.png'
                   ? p.foto.startsWith('http') || p.foto.startsWith('blob:')
@@ -236,7 +237,7 @@ export function ExistingPresentacionCard({
                     : '/api/images/products/default.png'
               }
               alt={p.nombre}
-              className='w-11 h-11 rounded-xl object-cover border border-gray-200 dark:border-slate-700 shrink-0 bg-white'
+              className='w-11 h-11 rounded-xl object-cover border border-gray-200 dark:border-slate-700 shrink-0'
             />
             <div className='flex-1 min-w-0'>
               <p className='text-sm font-semibold truncate'>{p.nombre}</p>

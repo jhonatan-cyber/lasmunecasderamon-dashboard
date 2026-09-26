@@ -115,6 +115,7 @@ export default function TipsTable({ loading, rows, rowsPerPage, onVerDetalle }: 
                         <div className='h-10 w-10 rounded-full bg-gray-200 dark:bg-slate-700 overflow-hidden flex items-center justify-center'>
                           {propina.usuario_foto && propina.usuario_foto !== '' ? (
                             <Image
+                              data-themed-photo
                               src={`/img/users/${propina.usuario_foto}`}
                               alt={propina.nombre_completo || 'Usuario'}
                               width={40}

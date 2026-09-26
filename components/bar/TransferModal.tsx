@@ -2,7 +2,7 @@
 
 import { useEffect, useRef, useState } from 'react';
 import { toast } from 'sonner';
-import { Loader2 } from 'lucide-react';
+import { Check, Loader2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { ToggleGroup, ToggleGroupItem } from '@/components/ui/toggle-group';
@@ -15,6 +15,7 @@ import {
   DialogDescription
 } from '@/components/ui/dialog';
 import { CHAMPAGNE_DEFAULT_TIERS, type ChampagneTier } from '@/lib/business/champagne';
+import { resolveShotMl } from '@/lib/business/shotMl';
 import { formatCurrencyCLP } from '@/lib/utils/formatters';
 import { isSimpleProduct } from '@/components/orders/productModalRules';
 import { useConfigValue } from '@/hooks/shared/useConfigValue';
@@ -75,6 +76,8 @@ export interface BarStockItem {
   stock_bar?: number;
   /** Capacidad de la botella en ml (null = default de Configuraciones > Bar). */
   ml_botella?: number | null;
+  /** Ml servidos por shot de ese producto (null = default de Configuraciones > Bar). */
+  ml_shot?: number | null;
   /** ml que quedan en la botella abierta de esa presentación en el bar. */
   ml_abierta?: number;
   /** Acumulado de ml servidos por shots en las ventas de esa presentación. */
@@ -111,6 +114,10 @@ export function TransferModal({
   const [tipos, setTipos] = useState<SaleType[]>(['botella']);
   const [precioShot, setPrecioShot] = useState('');
   const [comisionShot, setComisionShot] = useState('');
+  // Ml por shot del producto: editable al traspasar (vacío = valor global).
+  const [mlShotEdit, setMlShotEdit] = useState('');
+  // Lo que se muestra en los labels: lo que se está editando o el valor vigente.
+  const mlPorShot = mlShotEdit !== '' ? Number(mlShotEdit) : resolveShotMl(item?.ml_shot, shotMl);
   const [tiers, setTiers] = useState<{ anfitrionas: number; precio: string; comision: string }[]>(
     []
   );
@@ -147,6 +154,11 @@ export function TransferModal({
       setComision(bottleComision ? formatNumber(String(bottleComision)) : '');
       setPrecioShot(shot && Number(shot.precio) > 0 ? formatNumber(String(shot.precio)) : '');
       setComisionShot(shot?.comision ? formatNumber(String(shot.comision)) : '');
+      setMlShotEdit(
+        item.ml_shot !== null && item.ml_shot !== undefined && Number(item.ml_shot) > 0
+          ? String(item.ml_shot)
+          : ''
+      );
       // Con configuración existente se usa directo; solo la primera vez se pide manual.
       setEditarPrecios(!options.some(option => Number(option.precio ?? 0) > 0));
       setTiers([]);
@@ -185,6 +197,7 @@ export function TransferModal({
     setComision('');
     setPrecioShot('');
     setComisionShot('');
+    setMlShotEdit('');
     setTipos(['botella']);
     setTiers([]);
     setEditarPrecios(false);
@@ -249,6 +262,28 @@ export function TransferModal({
     submitting.current = true;
     setSaving(true);
     try {
+      // Ml por shot: se guarda en el producto si cambió (vacío = volver al global).
+      const mlNuevo = mlShotEdit.replace(/\D/g, '');
+      if (mlNuevo !== '' && (Number(mlNuevo) < 1 || Number(mlNuevo) > 10000)) {
+        toast.error('Los ml por shot deben estar entre 1 y 10000');
+        return;
+      }
+      const mlActual =
+        item.ml_shot !== null && item.ml_shot !== undefined && Number(item.ml_shot) > 0
+          ? String(item.ml_shot)
+          : '';
+      if (mlNuevo !== mlActual) {
+        const mlRes = await fetch(`/api/products/${item.producto_id}`, {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ ml_shot: mlNuevo === '' ? null : Number(mlNuevo) })
+        });
+        const mlData = await mlRes.json().catch(() => ({}));
+        if (!mlRes.ok || !mlData.success) {
+          toast.error(mlData.message || 'No se pudieron guardar los ml por shot');
+          return;
+        }
+      }
       // Solo se reescribe la tabla de anfitrionas si el usuario editó precios manualmente.
       if (esChampagneItem && tiers.length > 0 && !usarConfigGuardada) {
         const tiersRes = await fetch(`/api/products/${item.producto_id}/tiers`, {
@@ -309,6 +344,7 @@ export function TransferModal({
             <div className='flex items-center gap-3'>
               {/* eslint-disable-next-line @next/next/no-img-element -- ruta interna controlada */}
               <img
+                data-themed-photo
                 src={
                   item.foto && item.foto !== 'default.png'
                     ? item.foto.startsWith('http')
@@ -321,7 +357,7 @@ export function TransferModal({
                       : '/api/images/products/default.png'
                 }
                 alt={`${item.producto_nombre} ${item.nombre}`}
-                className='w-16 h-16 rounded-2xl object-cover border border-gray-200 dark:border-slate-700 shrink-0 bg-white'
+                className='w-16 h-16 rounded-2xl object-cover border border-gray-200 dark:border-slate-700 shrink-0'
               />
               <p className='text-sm text-gray-600 dark:text-gray-400 min-w-0'>
                 <span className='font-semibold text-gray-900 dark:text-neutral-100 block truncate'>
@@ -366,6 +402,27 @@ export function TransferModal({
               />
             </div>
 
+            <div className='space-y-2'>
+              <label
+                htmlFor='transfer-ml-shot'
+                className='block text-xs font-bold uppercase tracking-wider text-gray-500 dark:text-gray-400 ml-1'
+              >
+                Ml por shot
+              </label>
+              <Input
+                id='transfer-ml-shot'
+                value={mlShotEdit}
+                onChange={e => setMlShotEdit(e.target.value.replace(/\D/g, ''))}
+                placeholder={`${shotMl} (global)`}
+                inputMode='numeric'
+                disabled={saving}
+                className='h-12 w-32'
+              />
+              <p className='text-[11px] text-gray-400 dark:text-gray-500 ml-1'>
+                Se guarda en el producto al traspasar. En vacío usa el valor global ({shotMl} ml).
+              </p>
+            </div>
+
             {usarConfigGuardada ? (
               <div className='space-y-2 rounded-xl border border-emerald-200 bg-emerald-50/60 p-3 dark:border-emerald-900 dark:bg-emerald-950/20'>
                 <p className='text-sm font-semibold'>Configuración guardada</p>
@@ -380,7 +437,7 @@ export function TransferModal({
                       className='flex items-center justify-between rounded-lg bg-white/70 px-3 py-2 text-sm dark:bg-black/20'
                     >
                       <dt className='font-medium capitalize'>
-                        {option.tipo === 'botella' ? 'Botella' : 'Shot'}
+                        {option.tipo === 'botella' ? 'Botella' : `Shot · ${mlPorShot} ml`}
                       </dt>
                       <dd className='text-right tabular-nums'>
                         <span className='font-semibold'>{formatCurrencyCLP(option.precio)}</span>{' '}
@@ -450,7 +507,7 @@ export function TransferModal({
                   <legend className='mb-2 text-sm font-semibold'>Tipo de venta</legend>
                   <ToggleGroup
                     type='multiple'
-                    variant='outline'
+                    variant='selection'
                     value={tipos}
                     onValueChange={value => setTipos(value as SaleType[])}
                     disabled={saving}
@@ -458,10 +515,12 @@ export function TransferModal({
                     className='justify-start'
                   >
                     <ToggleGroupItem value='botella' className='flex-1 rounded-full'>
+                      {tipos.includes('botella') && <Check aria-hidden='true' />}
                       Botella
                     </ToggleGroupItem>
                     <ToggleGroupItem value='shot' className='flex-1 rounded-full'>
-                      Shot
+                      {tipos.includes('shot') && <Check aria-hidden='true' />}
+                      Shot · {mlPorShot} ml
                     </ToggleGroupItem>
                   </ToggleGroup>
                   <p className='text-xs text-muted-foreground'>
@@ -471,7 +530,7 @@ export function TransferModal({
                   {tipos.map(tipo => (
                     <fieldset key={tipo} className='rounded-xl border p-3'>
                       <legend className='px-1 text-sm font-semibold'>
-                        {tipo === 'botella' ? 'Botella' : `Shot · ${shotMl} ml`}
+                        {tipo === 'botella' ? 'Botella' : `Shot · ${mlPorShot} ml`}
                       </legend>
                       <div className='grid grid-cols-2 gap-3'>
                         <div className='flex flex-col gap-2'>

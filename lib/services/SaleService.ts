@@ -45,6 +45,14 @@ export class SaleService {
     const pagosMixtos: MixedPayment[] = parsePagosMixtos(validated.pagos_mixtos);
 
     const cajaId = await CashRegisterRepository.getCurrentCajaId();
+    // Validación server-side de caja abierta (paridad con el bloqueo de UI en
+    // las 3 apps): sin caja la venta se registraba con `caja_id` null,
+    // descontaba inventario y no dejaba rastro en caja. Los cobros con
+    // `origen: 'cuenta'` no postulan saldos a caja (skipCashRegisterPosting),
+    // así que sí se permiten sin caja.
+    if (!cajaId && !skipCashRegisterPosting) {
+      throw new BusinessError('No hay una caja abierta para registrar la venta', 'NO_CAJA_ABIERTA');
+    }
     const totalComisionCalculada = validated.detalles.reduce(
       (sum, detalle) => sum + Number(detalle.comision || 0),
       0

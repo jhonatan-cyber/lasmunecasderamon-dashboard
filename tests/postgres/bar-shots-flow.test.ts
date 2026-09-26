@@ -107,9 +107,25 @@ async function unidadesDe(presentacionId: string) {
   );
 }
 
+/** El volcado base puede no traer caja abierta: `createSale` exige una (NO_CAJA_ABIERTA). */
+async function abrirCajaSiHaceFalta(): Promise<void> {
+  const [user] = await query('SELECT id_usuario FROM usuarios LIMIT 1');
+  let [caja] = await query('SELECT id_caja FROM cajas WHERE estado = 1 LIMIT 1');
+  if (!caja) {
+    await query(
+      `INSERT INTO cajas (id_caja, fecha_apertura, usuario_id_apertura, monto_apertura,
+           monto_cierre, efectivo, tarjeta, transferencia, venta, cargo_tarjeta, iva, comision,
+           propina, anticipo, estado)
+         VALUES (?, now(), ?, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1)`,
+      [crypto.randomUUID(), user.id_usuario]
+    );
+  }
+}
+
 it('el shot descuenta ml de la botella y la deja abierta con su contenido en el bar', async () => {
   const snapshot = await snapshotDatabase();
   try {
+    await abrirCajaSiHaceFalta();
     await fijarShotMl(50);
     const fixture = await crearBar(750, 1);
 
@@ -155,6 +171,7 @@ it('el shot descuenta ml de la botella y la deja abierta con su contenido en el 
 it('al agotar los ml la botella abierta pasa a vendida', async () => {
   const snapshot = await snapshotDatabase();
   try {
+    await abrirCajaSiHaceFalta();
     await fijarShotMl(50);
     const fixture = await crearBar(100, 1);
 
@@ -179,6 +196,7 @@ it('al agotar los ml la botella abierta pasa a vendida', async () => {
 it('la botella completa sigue descontando unidades completas junto a los shots', async () => {
   const snapshot = await snapshotDatabase();
   try {
+    await abrirCajaSiHaceFalta();
     await fijarShotMl(50);
     const fixture = await crearBar(750, 2);
 
@@ -227,6 +245,7 @@ it('la botella completa sigue descontando unidades completas junto a los shots',
 it('avisa al barman cuando una botella abierta queda bajo el umbral de shots', async () => {
   const snapshot = await snapshotDatabase();
   try {
+    await abrirCajaSiHaceFalta();
     await fijarShotMl(50);
     // Umbral por defecto 3 shots = 150 ml: una botella de 100 ml abre ya bajo el umbral.
     const fixture = await crearBar(100, 1);
@@ -248,6 +267,7 @@ it('avisa al barman cuando una botella abierta queda bajo el umbral de shots', a
 it('rechaza la venta por shot sin botellas en el bar y no registra la venta', async () => {
   const snapshot = await snapshotDatabase();
   try {
+    await abrirCajaSiHaceFalta();
     await fijarShotMl(50);
     const fixture = await crearBar(750, 0);
 

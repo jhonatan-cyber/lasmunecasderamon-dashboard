@@ -835,10 +835,24 @@ export class CuentaQueries {
 
   static async cobrar(id: string, body: CuentaCobrarBody, cobradoPor: string) {
     return await withTransaction(async trx => {
-      const cuenta = await trx<CuentaRow[]>('SELECT * FROM cuentas WHERE id_cuenta = ? FOR UPDATE', [id]);
+      const cuenta = await trx<CuentaRow[]>(
+        'SELECT * FROM cuentas WHERE id_cuenta = ? FOR UPDATE',
+        [id]
+      );
       if (!cuenta.length) throw new NotFoundError('Cuenta', id);
       if (![1, 4].includes(Number(cuenta[0].estado))) {
         throw new BusinessError('La cuenta ya fue procesada', 'CUENTA_YA_PROCESADA');
+      }
+
+      // Validación server-side de caja abierta (paridad con el bloqueo de UI):
+      // el cobro postula el monto a la caja activa; sin caja se perdía el
+      // registro de caja aunque la cuenta quedara cobrada.
+      const idCajaCobro = await CashRegisterRepository.getCurrentCajaId(trx);
+      if (!idCajaCobro) {
+        throw new BusinessError(
+          'No hay una caja abierta para registrar el cobro de la cuenta',
+          'NO_CAJA_ABIERTA'
+        );
       }
 
       const now = getNowInBusinessTimezone();
@@ -888,9 +902,10 @@ export class CuentaQueries {
         ]);
       }
 
-      const idCaja = await CashRegisterRepository.getCurrentCajaId(trx);
-      if (idCaja) {
-        await CashRegisterRepository.updateBalances(trx, idCaja, {
+      // `idCajaCobro` se resolvió al inicio de la transacción (con validación
+      // de existencia): aquí ya se sabe que existe.
+      if (idCajaCobro) {
+        await CashRegisterRepository.updateBalances(trx, idCajaCobro, {
           venta: montoFinal,
           propina: propinaFinal,
           efectivo: tipoPago === 'efectivo' ? montoCobrar : 0,

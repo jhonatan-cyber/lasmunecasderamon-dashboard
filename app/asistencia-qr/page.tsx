@@ -374,6 +374,7 @@ export default function AsistenciaQrPage() {
               >
                 {user.foto && user.foto !== 'default.png' ? (
                   <Image
+                    data-themed-photo
                     src={`/img/users/${user.foto}`}
                     alt={user.nombre}
                     width={80}

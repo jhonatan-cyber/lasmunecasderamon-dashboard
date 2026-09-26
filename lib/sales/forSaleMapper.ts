@@ -16,6 +16,8 @@ export interface ForSaleItem {
   opciones_venta?: SaleOption[] | null;
   /** Capacidad de la botella en ml (null = default de Configuraciones). */
   ml_botella?: number | null;
+  /** Ml servidos por shot de ese producto (null = default de Configuraciones). */
+  ml_shot?: number | null;
   /** ml que quedan en la botella abierta de esa presentación en el bar. */
   ml_abierta?: number | null;
   producto_id: string;
@@ -45,6 +47,7 @@ export interface CartSaleItem {
   cantidad: number;
   opciones_venta?: SaleOption[];
   ml_botella?: number | null;
+  ml_shot?: number | null;
   ml_abierta?: number;
   /** 'shot' descuenta ml de la botella abierta; 'botella' gasta una unidad completa. */
   tipo_venta?: 'botella' | 'shot';
@@ -77,6 +80,7 @@ export function mapForSaleToCartItem(item: ForSaleItem): CartSaleItem {
     ...(Array.isArray(item.opciones_venta) ? { opciones_venta: item.opciones_venta } : {}),
     ml_botella:
       item.ml_botella === null || item.ml_botella === undefined ? null : Number(item.ml_botella),
+    ml_shot: item.ml_shot === null || item.ml_shot === undefined ? null : Number(item.ml_shot),
     ml_abierta: Number(item.ml_abierta ?? 0),
     tipo_venta: 'botella' as const
   };

@@ -3,6 +3,7 @@
 import { useMemo } from 'react';
 import { Wallet, Loader2, User, CreditCard, DollarSign, Split, Trash2, Plus } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { CajaStatusBanner } from '@/components/sales/CajaStatusBanner';
 import {
   Dialog,
   DialogContent,
@@ -292,6 +293,7 @@ interface PrepagoModalProps {
   onMixedPaymentsChange: (payments: MixedPayment[]) => void;
   onSubmit: (e: React.FormEvent) => Promise<boolean>;
   isSubmitting: boolean;
+  cajaCerrada?: boolean;
 }
 
 export function PrepagoModal({
@@ -305,7 +307,8 @@ export function PrepagoModal({
   onPaymentMethodChange,
   onMixedPaymentsChange,
   onSubmit,
-  isSubmitting
+  isSubmitting,
+  cajaCerrada = false
 }: PrepagoModalProps) {
   const handleCancel = () => {
     onOpenChange(false);
@@ -332,6 +335,9 @@ export function PrepagoModal({
         </DialogHeader>
 
         <div className='flex-1 overflow-y-auto p-6'>
+          {/* La carga de saldo mueve dinero en caja: con caja cerrada se avisa
+              y se deshabilita el guardado (paridad con las apps). */}
+          {cajaCerrada && <CajaStatusBanner entityName='ventas' />}
           <PrepagoForm
             client={client}
             amount={amount}
@@ -360,7 +366,7 @@ export function PrepagoModal({
             type='submit'
             form='prepago-form'
             className='bg-black text-white dark:bg-white dark:text-black dark:hover:bg-gray-200 rounded-full px-8 hover:bg-gray-800 transition-all hover:scale-105'
-            disabled={isSubmitting || !amount}
+            disabled={isSubmitting || !amount || cajaCerrada}
           >
             {isSubmitting ? (
               <div className='flex items-center gap-2'>

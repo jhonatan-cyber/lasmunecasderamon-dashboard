@@ -181,8 +181,12 @@ const ProductCard: React.FC<ProductCardProps> = ({
         </div>
 
         {}
-        <div className='relative w-full aspect-4/3 overflow-hidden bg-white group-hover:scale-105 transition-transform duration-500'>
+        <div
+          data-photo-surface
+          className='relative w-full aspect-4/3 overflow-hidden group-hover:scale-105 transition-transform duration-500'
+        >
           <Image
+            data-themed-photo
             src={
               !presentation?.foto || presentation.foto === 'default.png' || presentation.foto === ''
                 ? !product.foto || product.foto === 'default.png' || product.foto === ''

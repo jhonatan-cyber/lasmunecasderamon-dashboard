@@ -345,6 +345,7 @@ export default function CajaDetails({ caja, open, onOpenChange }: CajaDetailsPro
                           <Avatar className='h-8 w-8'>
                             {caja.cajero_foto && caja.cajero_foto !== '' ? (
                               <Image
+                                data-themed-photo
                                 src={`/img/users/${caja.cajero_foto}?v=${imageVersion}`}
                                 alt={caja.cajero_nombre || 'Usuario'}
                                 width={32}
@@ -381,6 +382,7 @@ export default function CajaDetails({ caja, open, onOpenChange }: CajaDetailsPro
                             <Avatar className='h-8 w-8'>
                               {caja.cajero_cierre_foto && caja.cajero_cierre_foto !== '' ? (
                                 <Image
+                                  data-themed-photo
                                   src={`/img/users/${caja.cajero_cierre_foto}?v=${imageVersion}`}
                                   alt={caja.cajero_cierre_nombre || 'Usuario'}
                                   width={32}

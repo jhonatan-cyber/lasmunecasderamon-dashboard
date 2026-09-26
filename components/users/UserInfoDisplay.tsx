@@ -51,6 +51,7 @@ function UserInfoDisplayComponent({
             asChild
           >
             <Image
+              data-themed-photo
               src={
                 user.foto
                   ? user.foto.startsWith('http')
@@ -107,6 +108,7 @@ function UserInfoDisplayComponent({
               asChild
             >
               <Image
+                data-themed-photo
                 src={
                   user.foto
                     ? user.foto.startsWith('http')

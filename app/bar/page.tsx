@@ -37,6 +37,7 @@ import { PendingApprovals } from '@/components/bar/PendingApprovals';
 import { SalePrices } from '@/components/bar/SalePrices';
 import { BarAnfitrionas, isTierPricedItem } from '@/components/bar/BarAnfitrionas';
 import { useConfigValue } from '@/hooks/shared/useConfigValue';
+import { resolveShotMl } from '@/lib/business/shotMl';
 import { useSharedSSE } from '@/hooks/shared';
 import type {
   DevolucionEnvaseRegistro,
@@ -67,6 +68,8 @@ interface Movimiento {
   cantidad: number;
   /** Ml servidos por shots en una venta (null = solo botellas). */
   ml?: number | null;
+  /** Ml por shot del producto; null/undefined = valor global de Configuraciones. */
+  ml_shot?: number | null;
   precio_venta: number | null;
   comision: number | null;
   fecha_crea: string;
@@ -420,89 +423,98 @@ export default function BarPage() {
                             </TableCell>
                           </TableRow>
                         ) : (
-                          filtered.map(item => (
-                            <TableRow
-                              key={item.id}
-                              className='border-b bg-white hover:bg-gray-50 transition-colors'
-                            >
-                              <TableCell className='py-3 px-2 sm:px-4 text-center'>
-                                <div className='relative mx-auto flex h-12 w-12 items-center justify-center overflow-hidden rounded-xl border border-gray-100 bg-white'>
-                                  <Image
-                                    src={imageUrl(item.foto || item.producto_foto)}
-                                    alt={`${item.producto_nombre} ${item.nombre}`}
-                                    width={48}
-                                    height={48}
-                                    sizes='48px'
-                                    className='h-12 w-12 object-cover'
+                          filtered.map(item => {
+                            const mlPorShot = resolveShotMl(item.ml_shot, shotMl);
+                            return (
+                              <TableRow
+                                key={item.id}
+                                className='border-b bg-white hover:bg-gray-50 transition-colors'
+                              >
+                                <TableCell className='py-3 px-2 sm:px-4 text-center'>
+                                  <div
+                                    data-photo-surface
+                                    className='relative mx-auto flex h-12 w-12 items-center justify-center overflow-hidden rounded-xl border border-gray-100'
+                                  >
+                                    <Image
+                                      data-themed-photo
+                                      src={imageUrl(item.foto || item.producto_foto)}
+                                      alt={`${item.producto_nombre} ${item.nombre}`}
+                                      width={48}
+                                      height={48}
+                                      sizes='48px'
+                                      className='h-12 w-12 object-cover'
+                                    />
+                                  </div>
+                                </TableCell>
+                                <TableCell className='py-3 px-2 sm:px-4 text-center text-xs sm:text-sm font-medium'>
+                                  {item.producto_nombre}
+                                </TableCell>
+                                <TableCell className='py-3 px-2 sm:px-4 text-center text-xs sm:text-sm'>
+                                  <span className='inline-flex rounded-full bg-gray-100 dark:bg-slate-800 px-2.5 py-0.5 font-medium whitespace-nowrap'>
+                                    {item.nombre}
+                                  </span>
+                                </TableCell>
+                                <TableCell className='py-3 px-2 sm:px-4 text-center font-mono text-xs sm:text-sm'>
+                                  {isTierPriced(item) ? (
+                                    <span className='text-muted-foreground'>Según N° anf.</span>
+                                  ) : (
+                                    <SalePrices
+                                      options={item.opciones_venta}
+                                      price={item.precio_venta}
+                                      commission={item.comision}
+                                      field='precio'
+                                      mlShot={item.ml_shot}
+                                    />
+                                  )}
+                                </TableCell>
+                                <TableCell className='py-3 px-2 sm:px-4 text-center font-mono text-xs sm:text-sm'>
+                                  {isTierPriced(item) ? (
+                                    <span className='text-muted-foreground'>Según N° anf.</span>
+                                  ) : (
+                                    <SalePrices
+                                      options={item.opciones_venta}
+                                      price={item.precio_venta}
+                                      commission={item.comision}
+                                      field='comision'
+                                      mlShot={item.ml_shot}
+                                    />
+                                  )}
+                                </TableCell>
+                                <TableCell className='py-3 px-2 sm:px-4 text-center'>
+                                  <BarAnfitrionas
+                                    productoId={item.producto_id}
+                                    categoriaNombre={item.categoria_nombre}
+                                    maxAnfitrionas={item.max_anfitrionas}
+                                    precio={item.precio_venta}
+                                    compact
                                   />
-                                </div>
-                              </TableCell>
-                              <TableCell className='py-3 px-2 sm:px-4 text-center text-xs sm:text-sm font-medium'>
-                                {item.producto_nombre}
-                              </TableCell>
-                              <TableCell className='py-3 px-2 sm:px-4 text-center text-xs sm:text-sm'>
-                                <span className='inline-flex rounded-full bg-gray-100 dark:bg-slate-800 px-2.5 py-0.5 font-medium whitespace-nowrap'>
-                                  {item.nombre}
-                                </span>
-                              </TableCell>
-                              <TableCell className='py-3 px-2 sm:px-4 text-center font-mono text-xs sm:text-sm'>
-                                {isTierPriced(item) ? (
-                                  <span className='text-muted-foreground'>Según N° anf.</span>
-                                ) : (
-                                  <SalePrices
-                                    options={item.opciones_venta}
-                                    price={item.precio_venta}
-                                    commission={item.comision}
-                                    field='precio'
-                                  />
-                                )}
-                              </TableCell>
-                              <TableCell className='py-3 px-2 sm:px-4 text-center font-mono text-xs sm:text-sm'>
-                                {isTierPriced(item) ? (
-                                  <span className='text-muted-foreground'>Según N° anf.</span>
-                                ) : (
-                                  <SalePrices
-                                    options={item.opciones_venta}
-                                    price={item.precio_venta}
-                                    commission={item.comision}
-                                    field='comision'
-                                  />
-                                )}
-                              </TableCell>
-                              <TableCell className='py-3 px-2 sm:px-4 text-center'>
-                                <BarAnfitrionas
-                                  productoId={item.producto_id}
-                                  categoriaNombre={item.categoria_nombre}
-                                  maxAnfitrionas={item.max_anfitrionas}
-                                  precio={item.precio_venta}
-                                  compact
-                                />
-                              </TableCell>
-                              <TableCell className='py-3 px-2 sm:px-4 text-center'>
-                                <Badge className='bg-green-100 text-green-700 rounded-full px-2 sm:px-3 py-1 text-xs sm:text-sm'>
-                                  {item.stock_bar ?? 0}
-                                </Badge>
-                                {Number(item.ml_abierta ?? 0) > 0 && (
-                                  <p className='mt-1 text-[10px] font-bold uppercase text-amber-600 dark:text-amber-400'>
-                                    Abierta: {Number(item.ml_abierta)} ml
-                                    {shotMl > 0
-                                      ? ` · ≈${Math.floor(Number(item.ml_abierta) / shotMl)} shots`
-                                      : ''}
-                                  </p>
-                                )}
-                                {Number(item.ml_servidos ?? 0) > 0 && (
-                                  <p className='mt-1 text-[10px] font-bold uppercase text-amber-700 dark:text-amber-500'>
-                                    Servido: {Number(item.ml_servidos)} ml
-                                  </p>
-                                )}
-                              </TableCell>
-                              <TableCell className='py-3 px-2 sm:px-4 text-center'>
-                                <Badge className='bg-blue-100 text-blue-700 rounded-full px-2 sm:px-3 py-1 text-xs sm:text-sm'>
-                                  {item.stock ?? 0}
-                                </Badge>
-                              </TableCell>
-                            </TableRow>
-                          ))
+                                </TableCell>
+                                <TableCell className='py-3 px-2 sm:px-4 text-center'>
+                                  <Badge className='bg-green-100 text-green-700 rounded-full px-2 sm:px-3 py-1 text-xs sm:text-sm'>
+                                    {item.stock_bar ?? 0}
+                                  </Badge>
+                                  {Number(item.ml_abierta ?? 0) > 0 && (
+                                    <p className='mt-1 text-[10px] font-bold uppercase text-amber-600 dark:text-amber-400'>
+                                      Abierta: {Number(item.ml_abierta)} ml
+                                      {mlPorShot > 0
+                                        ? ` · ≈${Math.floor(Number(item.ml_abierta) / mlPorShot)} shots`
+                                        : ''}
+                                    </p>
+                                  )}
+                                  {Number(item.ml_servidos ?? 0) > 0 && (
+                                    <p className='mt-1 text-[10px] font-bold uppercase text-amber-700 dark:text-amber-500'>
+                                      Servido: {Number(item.ml_servidos)} ml
+                                    </p>
+                                  )}
+                                </TableCell>
+                                <TableCell className='py-3 px-2 sm:px-4 text-center'>
+                                  <Badge className='bg-blue-100 text-blue-700 rounded-full px-2 sm:px-3 py-1 text-xs sm:text-sm'>
+                                    {item.stock ?? 0}
+                                  </Badge>
+                                </TableCell>
+                              </TableRow>
+                            );
+                          })
                         )}
                       </TableBody>
                     </Table>
@@ -635,7 +647,11 @@ export default function BarPage() {
                                   compact
                                 />
                               ) : m.opciones_venta ? (
-                                <SalePrices options={m.opciones_venta} field='precio' />
+                                <SalePrices
+                                  options={m.opciones_venta}
+                                  field='precio'
+                                  mlShot={m.ml_shot}
+                                />
                               ) : m.precio_venta !== null && m.precio_venta !== undefined ? (
                                 formatCurrencyCLP(Number(m.precio_venta))
                               ) : (
@@ -646,7 +662,11 @@ export default function BarPage() {
                               {isTierPricedItem(m) ? (
                                 <span className='text-muted-foreground'>Según tabla</span>
                               ) : m.opciones_venta ? (
-                                <SalePrices options={m.opciones_venta} field='comision' />
+                                <SalePrices
+                                  options={m.opciones_venta}
+                                  field='comision'
+                                  mlShot={m.ml_shot}
+                                />
                               ) : m.comision !== null && m.comision !== undefined ? (
                                 formatCurrencyCLP(Number(m.comision))
                               ) : (

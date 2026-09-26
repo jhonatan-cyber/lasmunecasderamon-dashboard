@@ -43,6 +43,7 @@ export class ProductRepository {
         foto: row.foto,
         display_order: row.display_order,
         max_anfitrionas: row.max_anfitrionas ?? null,
+        ml_shot: row.ml_shot ?? null,
         created_at: row.fecha_crea,
         updated_at: row.fecha_mod
       }),
@@ -115,6 +116,7 @@ export class ProductRepository {
         descripcion: data.description || '',
         estado: data.status,
         stock_almacen: 0,
+        ml_shot: data.ml_shot ?? null,
         foto: fotoProducto,
         fecha_crea: now
       });
@@ -163,6 +165,7 @@ export class ProductRepository {
     if (data.price !== undefined) updateData.precio = data.price;
     if (data.commission !== undefined) updateData.comision = data.commission;
     if (data.max_anfitrionas !== undefined) updateData.max_anfitrionas = data.max_anfitrionas;
+    if (data.ml_shot !== undefined) updateData.ml_shot = data.ml_shot;
     if (data.stock_almacen !== undefined) updateData.stock_almacen = data.stock_almacen;
     if (data.description !== undefined) updateData.descripcion = data.description;
     if (data.status !== undefined) updateData.estado = data.status;
