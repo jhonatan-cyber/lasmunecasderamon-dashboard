@@ -80,7 +80,8 @@ const reads: [string, () => Promise<unknown>][] = [
   ['anticipos', () => anticipos.getAllAnticipos({})],
   ['anticipo dates', () => anticipos.getAnticiposByDates(userId, ['2026-09-19'])],
   ['anticipo balance', () => getAnticipoBalances(userId)],
-  ['gratificaciones', () => getAllGratificaciones(userId)]
+  ['gratificaciones', () => getAllGratificaciones(userId)],
+  ['gratificaciones (unión solicitante)', () => getAllGratificaciones(userId, userId)]
 ];
 describe('Actual repositories on PostgreSQL', () => {
   for (const [name, read] of reads)

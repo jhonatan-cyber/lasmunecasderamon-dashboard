@@ -23,11 +23,14 @@ describe('seleccion de etiquetas', () => {
     expect(screen.getByRole('button', { name: 'Imprimir (0)' })).toBeDisabled();
     fireEvent.click(screen.getByRole('checkbox', { name: 'Seleccionar código 5901234123457' }));
     fireEvent.click(screen.getByRole('button', { name: 'Imprimir (1)' }));
-    expect(printUnitLabels).toHaveBeenLastCalledWith(['5901234123457']);
+    expect(printUnitLabels).toHaveBeenLastCalledWith([{ code: '5901234123457' }]);
     fireEvent.click(screen.getByRole('button', { name: 'No se imprimieron' }));
     fireEvent.click(screen.getByRole('button', { name: 'Seleccionar todos' }));
     fireEvent.click(screen.getByRole('button', { name: 'Imprimir (2)' }));
-    expect(printUnitLabels).toHaveBeenLastCalledWith(['5901234123457', '4006381333931']);
+    expect(printUnitLabels).toHaveBeenLastCalledWith([
+      { code: '5901234123457' },
+      { code: '4006381333931' }
+    ]);
     fireEvent.click(screen.getByRole('button', { name: 'Limpiar selección' }));
     expect(screen.getByRole('button', { name: 'Imprimir (0)' })).toBeDisabled();
   });
@@ -66,9 +69,36 @@ describe('seleccion de etiquetas', () => {
       '/api/products/units/printed',
       expect.objectContaining({ body: JSON.stringify({ ids: ['1'] }) })
     );
-    fireEvent.change(screen.getByLabelText('Estado de impresión'), {
-      target: { value: 'pending' }
-    });
+    // El filtro es un Select shadcn (Radix): se abre el trigger y se elige la opción.
+    fireEvent.click(screen.getByLabelText('Estado de impresión'));
+    fireEvent.click(await screen.findByRole('option', { name: 'Pendientes' }));
     expect(screen.getByText('No hay códigos con este estado.')).toBeInTheDocument();
+  });
+
+  it('adjunta el producto y la presentación a cada etiqueta impresa', () => {
+    render(
+      <UnitLabelSelector
+        units={[
+          {
+            id: '1',
+            codigo: 'LM-1',
+            codigo_barras: '2900000000001',
+            producto_nombre: 'Ron Habana',
+            presentacion_nombre: 'Botella 750ml'
+          }
+        ]}
+      />
+    );
+
+    fireEvent.click(screen.getByRole('checkbox', { name: 'Seleccionar código 2900000000001' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Imprimir (1)' }));
+
+    expect(printUnitLabels).toHaveBeenLastCalledWith([
+      {
+        code: '2900000000001',
+        producto_nombre: 'Ron Habana',
+        presentacion_nombre: 'Botella 750ml'
+      }
+    ]);
   });
 });

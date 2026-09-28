@@ -231,12 +231,29 @@ const generateRetirosTableHTML = (ctx: CajaExportContext) => {
   `;
 };
 
+// Los shots van como sub-línea informativa: su monto ya está dentro de las ventas
+// (una botella del bar, un trago de chica o una champaña), así que no se suman al total.
+const shotsDeCaja = (ctx: CajaExportContext) =>
+  ctx.ventasBarras?.shots_cliente || ctx.ventasBarras?.shots_anfitriona
+    ? [
+        {
+          label: 'Shots a clientes (ya en ventas)',
+          value: Number(ctx.ventasBarras?.shots_cliente?.monto || 0)
+        },
+        {
+          label: 'Shots a anfitrionas (ya en ventas)',
+          value: Number(ctx.ventasBarras?.shots_anfitriona?.monto || 0)
+        }
+      ]
+    : [];
+
 const generateResumenHTML = (ctx: CajaExportContext) => {
   const tableData = [
     { label: 'Monto Apertura', value: ctx.caja.monto_apertura },
     { label: 'Ventas Tragos', value: ctx.ventasTragosChicas?.total_venta || 0 },
     { label: 'Ventas Champaña', value: ctx.ventasChampagne?.total_venta || 0 },
     { label: 'Ventas Barras', value: ctx.ventasBarras?.total_venta || 0 },
+    ...shotsDeCaja(ctx),
     ...(ctx.totalCargoTarjeta ? [{ label: 'Cargo tarjeta', value: ctx.totalCargoTarjeta }] : []),
     { label: 'Servicios', value: ctx.caja.servicios || 0 },
     { label: 'Prepago Cargado', value: ctx.prepagoCargado },
@@ -399,28 +416,32 @@ export const getPDFData = (ctx: CajaExportContext) => {
           r.monto
         ])
       };
-    default:
+    default: {
+      const resumenRows: Array<[string, number]> = [
+        ['Monto Apertura', ctx.caja.monto_apertura],
+        ['Ventas Tragos', ctx.ventasTragosChicas?.total_venta || 0],
+        ['Ventas Champaña', ctx.ventasChampagne?.total_venta || 0],
+        ['Ventas Barras', ctx.ventasBarras?.total_venta || 0],
+        ...shotsDeCaja(ctx).map(row => [row.label, row.value] as [string, number]),
+        ['Servicios', ctx.caja.servicios || 0],
+        ['Prepago Cargado', ctx.prepagoCargado],
+        ['Prepago Consumido', ctx.prepagoConsumido],
+        ['Ingreso Real a Caja', ctx.ingresosReales],
+        ['Efectivo neto', ctx.efectivoNeto],
+        ['Tarjeta', ctx.tarjetaCaja],
+        ['Transferencia', ctx.transferenciaCaja],
+        ['Subtotal antes de egresos', ctx.totalMetodosPago],
+        ['Devoluciones', -(ctx.caja.devoluciones || 0)],
+        ['Anticipos', -(ctx.caja.anticipo || 0)],
+        ['Retiros', -ctx.retiros.reduce((sum, r) => sum + r.monto, 0)],
+        ['Total real', ctx.totalReal]
+      ];
+
       return {
         headers: ['#', 'Concepto', 'Monto'],
-        body: [
-          ['1', 'Monto Apertura', ctx.caja.monto_apertura],
-          ['2', 'Ventas Tragos', ctx.ventasTragosChicas?.total_venta || 0],
-          ['3', 'Ventas Champaña', ctx.ventasChampagne?.total_venta || 0],
-          ['4', 'Ventas Barras', ctx.ventasBarras?.total_venta || 0],
-          ['5', 'Servicios', ctx.caja.servicios || 0],
-          ['6', 'Prepago Cargado', ctx.prepagoCargado],
-          ['7', 'Prepago Consumido', ctx.prepagoConsumido],
-          ['8', 'Ingreso Real a Caja', ctx.ingresosReales],
-          ['9', 'Efectivo neto', ctx.efectivoNeto],
-          ['10', 'Tarjeta', ctx.tarjetaCaja],
-          ['11', 'Transferencia', ctx.transferenciaCaja],
-          ['12', 'Subtotal antes de egresos', ctx.totalMetodosPago],
-          ['13', 'Devoluciones', -(ctx.caja.devoluciones || 0)],
-          ['14', 'Anticipos', -(ctx.caja.anticipo || 0)],
-          ['15', 'Retiros', -ctx.retiros.reduce((sum, r) => sum + r.monto, 0)],
-          ['16', 'Total real', ctx.totalReal]
-        ]
+        body: resumenRows.map((row, index) => [String(index + 1), row[0], row[1]])
       };
+    }
   }
 };
 
@@ -468,32 +489,31 @@ export const exportToPDF = async (exportContext: CajaExportContext) => {
     );
     doc.text(`Estado: ${exportContext.estadoInfo.label}`, 120, 46);
 
+    let chartsBottomY = 54;
     if (exportContext.activeTab === 'resumen') {
-      const chartBarsElement = document.getElementById('chart-bars');
-      const chartPieElement = document.getElementById('chart-pie');
+      const chartSlots: Array<{ id: string; x: number }> = [
+        { id: 'chart-pie', x: 14 },
+        { id: 'chart-products', x: 108 }
+      ];
 
-      if (chartBarsElement) {
-        const barsCanvas = await html2canvas(chartBarsElement, {
+      for (const slot of chartSlots) {
+        const element = document.getElementById(slot.id);
+        if (!element) continue;
+        const canvas = await html2canvas(element, {
           scale: 2,
           backgroundColor: '#ffffff',
           logging: false
         });
-        const barsImg = barsCanvas.toDataURL('image/png');
-        doc.addImage(barsImg, 'PNG', 14, 54, 90, 50);
-      }
-
-      if (chartPieElement) {
-        const pieCanvas = await html2canvas(chartPieElement, {
-          scale: 2,
-          backgroundColor: '#ffffff',
-          logging: false
-        });
-        const pieImg = pieCanvas.toDataURL('image/png');
-        doc.addImage(pieImg, 'PNG', 108, 54, 90, 50);
+        // Contain-fit dentro de una caja de 90x70 para no distorsionar el gráfico.
+        const scale = Math.min(90 / canvas.width, 70 / canvas.height);
+        const w = canvas.width * scale;
+        const h = canvas.height * scale;
+        doc.addImage(canvas.toDataURL('image/png'), 'PNG', slot.x + (90 - w) / 2, 54, w, h);
+        chartsBottomY = Math.max(chartsBottomY, 54 + h);
       }
     }
 
-    const startY = exportContext.activeTab === 'resumen' ? 110 : 62;
+    const startY = exportContext.activeTab === 'resumen' ? chartsBottomY + 6 : 62;
     let mainTableStartY = startY;
 
     if (exportContext.activeTab === 'resumen') {

@@ -1,6 +1,6 @@
 'use client';
 
-import { Users } from 'lucide-react';
+import { Users, ChevronDown } from 'lucide-react';
 import { Popover, PopoverTrigger, PopoverContent } from '@/components/ui/popover';
 import { Checkbox } from '@/components/ui/checkbox';
 import SearchInput from '@/components/shared/SearchInput';
@@ -32,6 +32,16 @@ const HostessMultiSelect: React.FC<HostessMultiSelectProps> = ({
   const triggerRef = useRef<HTMLButtonElement>(null);
 
   const hasReachedLimit = maxSelection ? value.length >= maxSelection : false;
+
+  const searchQuery = searchValue.trim().toLowerCase();
+  const visibles = searchQuery
+    ? anfitrionas.filter(a =>
+        `${a.nick || ''} ${a.nombre || a.name || ''} ${a.apellido || a.lastName || ''}`
+          .toLowerCase()
+          .includes(searchQuery)
+      )
+    : anfitrionas;
+
   return (
     <div className='flex-1 min-w-[200px]'>
       <div className='relative'>
@@ -41,17 +51,17 @@ const HostessMultiSelect: React.FC<HostessMultiSelectProps> = ({
             <button
               ref={triggerRef}
               type='button'
-              className={`${ORDER_MULTISELECT_TRIGGER_CLASS} pl-8 pr-10`}
+              className={`${ORDER_MULTISELECT_TRIGGER_CLASS} flex items-center gap-2 pl-8 pr-3 text-left`}
               onClick={() => setOpen(v => !v)}
             >
               {value.length === 0 ? (
-                <span className='text-gray-400'>
-                  {maxSelection
-                    ? `Seleccione anfitriona(s) (máx. ${maxSelection})`
-                    : 'Seleccione anfitriona(s)'}
+                <span className='min-w-0 flex-1 truncate text-sm text-gray-400'>
+                  {maxSelection && maxSelection > 1
+                    ? `Elegir (máx. ${maxSelection})`
+                    : 'Elegir anfitriona'}
                 </span>
               ) : (
-                <span className='flex flex-wrap gap-1'>
+                <span className='flex min-w-0 flex-1 flex-wrap items-center gap-1'>
                   {anfitrionas
                     .filter(a => value.includes(String(a.id_usuario || a.id)))
                     .map(a => (
@@ -66,11 +76,13 @@ const HostessMultiSelect: React.FC<HostessMultiSelectProps> = ({
                   )}
                 </span>
               )}
-              <span className='ml-auto pl-2 text-gray-400'>▼</span>
+              <span className='shrink-0 text-gray-400'>
+                <ChevronDown className='h-4 w-4' aria-hidden='true' />
+              </span>
             </button>
           </PopoverTrigger>
           <PopoverContent align='start' className={ORDER_FIELD_POPOVER_CLASS}>
-            <div className='px-2 py-1 sticky top-0 z-10 bg-white'>
+            <div className='px-2 py-1 sticky top-0 z-10 bg-white dark:bg-zinc-950'>
               <SearchInput
                 value={searchValue}
                 onChange={onSearchChange}
@@ -79,15 +91,17 @@ const HostessMultiSelect: React.FC<HostessMultiSelectProps> = ({
               />
             </div>
             <div style={{ maxHeight: 220, overflowY: 'auto' }}>
-              {anfitrionas.length === 0 && (
-                <div className='text-xs text-gray-400 px-2 py-2'>No hay anfitrionas</div>
+              {visibles.length === 0 && (
+                <div className='text-xs text-gray-400 dark:text-zinc-500 px-2 py-2'>
+                  {searchQuery ? 'Sin resultados para esa búsqueda' : 'No hay anfitrionas'}
+                </div>
               )}
               {hasReachedLimit && (
-                <div className='text-xs text-orange-600 px-2 py-2 bg-orange-50 border-b'>
+                <div className='text-xs text-orange-600 dark:text-orange-300 px-2 py-2 bg-orange-50 dark:bg-orange-950/40 border-b dark:border-orange-900/40'>
                   Límite alcanzado: {value.length} de {maxSelection} seleccionadas
                 </div>
               )}
-              {anfitrionas.map(a => {
+              {visibles.map(a => {
                 const id = String(a.id_usuario || a.id);
                 const isSelected = value.includes(id);
                 const canSelect = isSelected || !hasReachedLimit;
@@ -96,7 +110,7 @@ const HostessMultiSelect: React.FC<HostessMultiSelectProps> = ({
                   <label
                     key={id}
                     htmlFor={`hostess-${id}`}
-                    className={`flex items-center gap-2 px-2 py-1 cursor-pointer hover:bg-gray-50 rounded ${!canSelect ? 'opacity-50 cursor-not-allowed' : ''}`}
+                    className={`flex items-center gap-2 px-2 py-1.5 cursor-pointer rounded-md text-sm text-gray-700 transition-colors hover:bg-gray-100 dark:text-zinc-100 dark:hover:bg-white/10 ${!canSelect ? 'opacity-50 cursor-not-allowed' : ''}`}
                   >
                     <Checkbox
                       id={`hostess-${id}`}
@@ -110,7 +124,7 @@ const HostessMultiSelect: React.FC<HostessMultiSelectProps> = ({
                         }
                       }}
                     />
-                    <span className='text-sm'>{a.nick || a.nombre}</span>
+                    <span className='text-sm font-medium'>{a.nick || a.nombre}</span>
                   </label>
                 );
               })}

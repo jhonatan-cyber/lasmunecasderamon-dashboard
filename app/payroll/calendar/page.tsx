@@ -32,7 +32,7 @@ const weekdays = ['Dom', 'Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb'];
 
 export default function PayrollCalendarPage() {
   const { hasPermission } = useUserPermissions();
-  const canViewDetails = hasPermission('detalle_planilla', 'ver_detalles');
+  const canViewDetails = hasPermission('payroll', 'view_details');
 
   const [currentDate, setCurrentDate] = useState(new Date());
   const [selectedDates, setSelectedDates] = useState<Date[]>([]);
@@ -310,7 +310,7 @@ export default function PayrollCalendarPage() {
   };
 
   return (
-    <PermissionGuard module='payroll_details' action='view'>
+    <PermissionGuard module='payroll' action='view'>
       <div className='min-h-screen p-4 sm:p-6 lg:p-10 flex flex-col bg-gray-50 dark:bg-gray-900'>
         <div className='flex items-center justify-between mb-6'>
           <h1 className='text-2xl sm:text-3xl font-bold text-gray-900 dark:text-white'>

@@ -10,6 +10,11 @@ export interface SalesData {
   cantidadVentas: number;
   promedioVenta: number;
   totalPropinas: number;
+  /** Shots vendidos, separados por a quién se le cobraron (migración 039). */
+  shots?: {
+    cliente: { monto: number; cantidad: number };
+    anfitriona: { monto: number; cantidad: number };
+  };
   ventasPorMetodo: {
     efectivo: number;
     tarjeta: number;

@@ -14,6 +14,7 @@ import { Trash2, SortAsc, SortDesc } from 'lucide-react';
 import SearchInput from '@/components/shared/SearchInput';
 import SelectElements from '@/components/shared/SelectElements';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
+import { DevolucionSolicitudesButton } from '@/components/clients/DevolucionSolicitudesModal';
 
 interface ClientFiltersProps {
   searchTerm: string;
@@ -28,6 +29,7 @@ interface ClientFiltersProps {
   pageSize: number;
   setPageSize: (size: number) => void;
   setPage: (page: number) => void;
+  showSolicitudes?: boolean;
 }
 
 export function ClientFilters({
@@ -42,7 +44,8 @@ export function ClientFilters({
   onClearFilters,
   pageSize,
   setPageSize,
-  setPage
+  setPage,
+  showSolicitudes = false
 }: ClientFiltersProps) {
   const handlePageSizeChange = (value: number) => {
     setPageSize(value);
@@ -72,7 +75,13 @@ export function ClientFilters({
 
           <div className='flex flex-wrap sm:flex-nowrap gap-4 w-full lg:w-auto items-end'>
             {}
-            <div className='w-full sm:w-auto min-w-[160px]'>
+            {showSolicitudes && (
+              <div className='w-full sm:w-auto'>
+                <DevolucionSolicitudesButton />
+              </div>
+            )}
+
+            <div className='w-full sm:w-auto min-w-40'>
               <Label
                 htmlFor='status'
                 className='mb-2 block text-xs font-bold uppercase tracking-wider text-gray-500 dark:text-gray-400 ml-1'
@@ -98,13 +107,16 @@ export function ClientFilters({
 
             {}
             <div className='w-full sm:w-auto grid grid-cols-2 gap-4 sm:flex sm:gap-4 sm:items-end'>
-              <div>
+              <div className='w-full sm:w-auto min-w-40'>
                 <Label className='mb-2 block text-xs font-bold uppercase tracking-wider text-gray-500 dark:text-gray-400 ml-1'>
                   Ordenar por
                 </Label>
-                <div className='flex gap-1'>
+                <div className='flex h-11 w-full items-stretch overflow-hidden rounded-full border border-gray-300 bg-gray-100 dark:border-gray-700 dark:bg-slate-900/50'>
                   <Select value={sortBy} onValueChange={setSortBy}>
-                    <SelectTrigger className='rounded-r-none'>
+                    <SelectTrigger
+                      id='sort-by'
+                      className='h-11 w-auto flex-1 rounded-none border-0 bg-transparent px-4 hover:border-0 focus:border-0 dark:bg-transparent'
+                    >
                       <SelectValue />
                     </SelectTrigger>
                     <SelectContent>
@@ -117,11 +129,12 @@ export function ClientFilters({
                     </SelectContent>
                   </Select>
                   <Button
-                    variant='outline'
+                    type='button'
+                    variant='ghost'
                     size='icon'
                     aria-label={sortOrder === 'asc' ? 'Ordenar descendente' : 'Ordenar ascendente'}
                     onClick={() => setSortOrder(sortOrder === 'asc' ? 'desc' : 'asc')}
-                    className='h-10 w-10 rounded-full border border-gray-300 dark:border-gray-700 bg-gray-100 dark:bg-slate-900/50 text-gray-900 dark:text-gray-100 hover:bg-gray-200 dark:hover:bg-gray-700'
+                    className='h-11 w-11 shrink-0 rounded-none border-l border-gray-300 bg-transparent text-gray-500 hover:bg-gray-200 dark:border-gray-700 dark:text-gray-400 dark:hover:bg-gray-700'
                   >
                     {sortOrder === 'asc' ? (
                       <SortAsc className='h-4 w-4' />

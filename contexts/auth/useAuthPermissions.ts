@@ -12,63 +12,18 @@ export interface UserPermission {
   action: string;
 }
 
-const moduleMap: Record<string, string[]> = {
-  users: ['usuarios', 'users'],
-  clients: ['clientes', 'clients'],
-  products: ['productos', 'products'],
-  categories: ['categorias', 'categories'],
-  orders: ['pedidos', 'orders'],
-  reports: ['reportes', 'reports'],
-  sales: ['ventas', 'sales'],
-  attendance: ['asistencias', 'attendance'],
-  overtime: ['horas_extras', 'overtime'],
-  gratificaciones: ['gratificaciones', 'gratificaciones'],
-  cash_register: ['caja', 'cash_register'],
-  accounts: ['cuentas', 'accounts'],
-  tips: ['propinas', 'tips'],
-  commissions: ['comisiones', 'commissions'],
-  payroll: ['pagos_trabajadores', 'payroll'],
-  payroll_details: ['payroll_details'],
-  advances: ['anticipos', 'advances'],
-  returns: ['devoluciones', 'returns'],
-  roles: ['roles'],
-  rooms: ['rooms'],
-  private_rooms: ['private_rooms']
-};
-
-const actionMap: Record<string, string[]> = {
-  view: [
-    'view',
-    'listar_usuarios',
-    'listar_clientes',
-    'listar_categoria_productos',
-    'listar_productos_categoria',
-    'listar_categorias',
-    'listar_pedidos',
-    'listar_reportes',
-    'listar_ventas',
-    'listar_roles',
-    'listar_asistencias',
-    'listar_horas_extras',
-    'listar_gratificaciones',
-    'listar_caja',
-    'listar_cuentas',
-    'listar_propinas',
-    'listar_comisiones',
-    'listar_pagos',
-    'listar_detalles',
-    'listar_anticipos',
-    'listar_devoluciones',
-    'listar_habitaciones',
-    'listar_privados',
-    'ver_detalles',
-    'ver_dashboard'
-  ],
-  create: ['create', 'crear', 'agregar_productos'],
-  process: ['process', 'registar_venta', 'registar_cuenta'],
-  edit: ['edit', 'editar', 'registar_venta', 'registar_cuenta', 'process'],
-  delete: ['delete', 'eliminar', 'anular']
-};
+/*
+ * Los pares módulo/acción se comparan contra el catálogo (`permissions`) tal cual.
+ *
+ * Antes había acá dos mapas de alias (módulos y acciones en español: 'productos',
+ * 'eliminar', 'ver_detalles'…) que ya no podían coincidir con nada, porque el
+ * catálogo hace tiempo que es todo en inglés. Un `hasPermission('productos',
+ * 'eliminar')` quedaba insatisfacible para siempre: ningún rol podía concederlo y
+ * el control desaparecía para todos los no-administradores. Los llamados se
+ * corrigieron para pedir el par del catálogo y acá queda la comparación directa.
+ * El test `permission-catalog-alignment` recorre la UI y falla si reaparece un par
+ * que el catálogo no tenga.
+ */
 
 interface UseAuthPermissionsParams {
   /** Getter to read the current user without creating a circular dependency */
@@ -177,16 +132,7 @@ export function useAuthPermissions({
         return false;
       }
 
-      let match = userPermissions.some(p => p.module === module && p.action === action);
-      if (match) {
-        return true;
-      }
-
-      const allowedModules = moduleMap[module] || [module];
-      const allowedActions = actionMap[action] || [action];
-      return userPermissions.some(
-        p => allowedModules.includes(p.module) && allowedActions.includes(p.action)
-      );
+      return userPermissions.some(p => p.module === module && p.action === action);
     },
     [userPermissions, getUser]
   );
@@ -197,8 +143,7 @@ export function useAuthPermissions({
       if (module === 'dashboard' || module === 'Dashboard') return true;
       if (user?.role?.toLowerCase() === 'administrador') return true;
       if (!userPermissions || userPermissions.length === 0) return false;
-      const allowedModules = moduleMap[module] || [module];
-      return userPermissions.some(p => allowedModules.includes(p.module));
+      return userPermissions.some(p => p.module === module);
     },
     [userPermissions, getUser]
   );
@@ -209,13 +154,9 @@ export function useAuthPermissions({
       if (module === 'dashboard' || module === 'Dashboard') return true;
       if (user?.role?.toLowerCase() === 'administrador') return true;
       if (!userPermissions || userPermissions.length === 0) return false;
-      const allowedModules = moduleMap[module] || [module];
-      return actions.every(action => {
-        const allowedActions = actionMap[action] || [action];
-        return userPermissions.some(
-          p => allowedModules.includes(p.module) && allowedActions.includes(p.action)
-        );
-      });
+      return actions.every(action =>
+        userPermissions.some(p => p.module === module && p.action === action)
+      );
     },
     [userPermissions, getUser]
   );

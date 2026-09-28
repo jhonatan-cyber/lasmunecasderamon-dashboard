@@ -83,6 +83,7 @@ export default function CajaDetails({ caja, open, onOpenChange }: CajaDetailsPro
     ventasTragosChicas,
     ventasChampagne,
     ventasBarras,
+    ventasPorProducto,
     searchVentas,
     setSearchVentas,
     searchServicios,
@@ -420,22 +421,19 @@ export default function CajaDetails({ caja, open, onOpenChange }: CajaDetailsPro
                     ventasChampagne={ventasChampagne?.total_venta || 0}
                     ventasBarras={ventasBarras?.total_venta || 0}
                     servicios={caja?.servicios || 0}
+                    ventasPorProducto={ventasPorProducto}
+                    shotsCliente={ventasBarras?.shots_cliente}
+                    shotsAnfitriona={ventasBarras?.shots_anfitriona}
                   />
 
                   <CajaFinancialDetails
                     isLoading={isLoadingSummary}
-                    efectivoNeto={efectivoNeto}
-                    ventasTragos={ventasTragosChicas?.total_venta || 0}
-                    ventasChampagne={ventasChampagne?.total_venta || 0}
-                    ventasBarras={ventasBarras?.total_venta || 0}
-                    servicios={caja?.servicios || 0}
                     prepagoCargado={prepagoCargado}
                     prepagoConsumido={prepagoConsumido}
                     ingresosReales={ingresosReales}
                     devoluciones={Number(caja?.devoluciones || 0)}
                     anticipos={Number(caja?.anticipo || 0)}
                     retirosTotal={retiros.reduce((sum, r) => sum + Number(r.monto || 0), 0)}
-                    totalReal={totalReal}
                     prepagoPendienteClientes={prepagoPendienteClientes}
                   />
 

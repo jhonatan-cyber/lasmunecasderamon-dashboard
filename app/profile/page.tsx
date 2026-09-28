@@ -74,6 +74,12 @@ export default function ProfilePage() {
   }, [isAdmin]);
 
   const loadRolesList = useCallback(async () => {
+    // GET /api/roles está gateado con roles.view en el middleware, así que solo el
+    // administrador puede leerlo (los demás recibían 403 + toast de error). La lista
+    // solo se usa en el selector de rol del branch admin de ProfilePersonalInfoCard,
+    // así que el resto de los perfiles no la necesita.
+    if (!isAdmin) return;
+
     try {
       setLoadingRoles(true);
       const token = localStorage.getItem('token');
@@ -99,7 +105,7 @@ export default function ProfilePage() {
     } finally {
       setLoadingRoles(false);
     }
-  }, []);
+  }, [isAdmin]);
 
   const loadUserData = useCallback(async (userId: string) => {
     try {

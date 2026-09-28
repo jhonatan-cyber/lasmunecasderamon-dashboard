@@ -5,11 +5,16 @@ import {
   InventoryRepository
 } from '@/lib/repositories/InventoryRepository';
 import { query, withTransaction } from '@/lib/database/db';
+import { sendNotificationToAll } from '@/lib/api/sseService';
 
 vi.mock('@/lib/database/db', () => ({
   query: vi.fn(),
   generateUUID: () => 'uuid-test',
   withTransaction: vi.fn()
+}));
+
+vi.mock('@/lib/api/sseService', () => ({
+  sendNotificationToAll: vi.fn()
 }));
 
 describe('transferencias de almacén al bar', () => {
@@ -68,6 +73,66 @@ describe('transferencias de almacén al bar', () => {
       false
     );
     expect(result).toEqual({ trasladadas: 2, stock_bar: 3 });
+  });
+
+  it('emite transfers_updated al crear, aprobar y rechazar (refresco en vivo)', async () => {
+    vi.mocked(sendNotificationToAll).mockClear();
+
+    const trx = vi.fn().mockImplementation(async (sql: string) => {
+      if (sql.includes('SELECT id FROM inventario_unidades'))
+        return [{ id: 'unit-1' }, { id: 'unit-2' }];
+      if (sql.includes('COUNT(*)')) return [{ total: 3 }];
+      return [];
+    });
+    vi.mocked(withTransaction).mockImplementationOnce(async callback => callback(trx));
+    await InventoryRepository.traspasarAlBarStandalone(input);
+    expect(sendNotificationToAll).toHaveBeenCalledWith('transfers_updated', {
+      action: 'created',
+      producto_id: 'prod-1',
+      presentacion_id: 'pres-1'
+    });
+
+    // Aprobación del Barman: el listado del módulo Transferencias se repinta en todas las sesiones.
+    const movimiento = {
+      id: 'mov-1',
+      estado: 'pendiente',
+      usuario_id: 'user-1',
+      producto_id: 'prod-1',
+      presentacion_id: 'pres-1',
+      cantidad: 2,
+      opciones_venta: [{ tipo: 'botella', precio: 1500, comision: 100 }],
+      precio_venta: 1500,
+      comision: 100
+    };
+    const trxAprobar = vi.fn().mockImplementation(async (sql: string) => {
+      if (sql.includes('FROM usuarios')) return [{ id_usuario: 'barman-1' }];
+      if (sql.includes('SELECT producto_id FROM inventario_movimientos'))
+        return [{ producto_id: 'prod-1' }];
+      if (sql.includes('SELECT * FROM inventario_movimientos')) return [movimiento];
+      if (sql.includes('FROM inventario_unidades')) return [{ id: 'unit-1' }, { id: 'unit-2' }];
+      return [];
+    });
+    vi.mocked(withTransaction).mockImplementationOnce(async callback => callback(trxAprobar));
+    await InventoryRepository.acceptTransferStandalone('mov-1', 'barman-1');
+    expect(sendNotificationToAll).toHaveBeenCalledWith('transfers_updated', {
+      action: 'accepted',
+      id: 'mov-1'
+    });
+
+    // Rechazo: mismavía de aviso, el historial y los pendientes cambian para todos.
+    const trxRechazar = vi.fn().mockImplementation(async (sql: string) => {
+      if (sql.includes('FROM usuarios')) return [{ id_usuario: 'barman-1' }];
+      if (sql.includes('SELECT producto_id FROM inventario_movimientos'))
+        return [{ producto_id: 'prod-1' }];
+      if (sql.includes('SELECT * FROM inventario_movimientos')) return [movimiento];
+      return [];
+    });
+    vi.mocked(withTransaction).mockImplementationOnce(async callback => callback(trxRechazar));
+    await InventoryRepository.rejectTransferStandalone('mov-1', 'barman-1');
+    expect(sendNotificationToAll).toHaveBeenCalledWith('transfers_updated', {
+      action: 'rejected',
+      id: 'mov-1'
+    });
   });
 });
 
@@ -150,6 +215,32 @@ describe('listBarStock hereda precio/comisión', () => {
       { tipo: 'shot', precio: 3000, comision: 200 }
     ]);
   });
+  it('conserva el precio del shot para anfitrionas al listar el bar', async () => {
+    mockBar({
+      ...baseRow,
+      precio_venta: 8000,
+      comision: 0,
+      opciones_venta: [
+        { tipo: 'botella', precio: 8000, comision: 0 },
+        { tipo: 'shot', precio: 3000, comision: 200, precio_anfitriona: 2000 }
+      ]
+    });
+    const rows = await InventoryRepository.listBarStock();
+    expect(rows[0].opciones_venta).toEqual([
+      { tipo: 'botella', precio: 8000, comision: 0 },
+      { tipo: 'shot', precio: 3000, comision: 200, precio_anfitriona: 2000 }
+    ]);
+  });
+
+  it('descarta un precio de anfitriona en 0 (mismo precio que el cliente)', async () => {
+    mockBar({
+      ...baseRow,
+      opciones_venta: [{ tipo: 'shot', precio: 3000, comision: 0, precio_anfitriona: 0 }]
+    });
+    const rows = await InventoryRepository.listBarStock();
+    expect(rows[0].opciones_venta).toEqual([{ tipo: 'shot', precio: 3000, comision: 0 }]);
+  });
+
   it('expone los ml de la botella abierta y los servidos históricos', async () => {
     mockBar({
       ...baseRow,
@@ -602,6 +693,49 @@ describe('descuento del bar al registrar una venta', () => {
     );
     expect(vendidas![1]).toEqual(['u2']);
     expect(movimiento(trx)![1]).toEqual(expect.arrayContaining([1, 50]));
+  });
+
+  it('descuenta ml distintos para shots de cliente y de anfitriona', async () => {
+    const trx = trxCon([{ id: 'u1', ml_restante: 800 }], {
+      ...presentacion,
+      ml_shot: 50,
+      ml_shot_anfitriona: 30
+    });
+
+    await InventoryRepository.consume(
+      trx,
+      [
+        { presentacion_id: 'pres-1', cantidad: 1, tipo_venta: 'shot' },
+        { presentacion_id: 'pres-1', cantidad: 1, tipo_venta: 'shot', shot_anfitriona: true }
+      ],
+      contexto
+    );
+
+    // 1 x 50 ml (cliente) + 1 x 30 ml (anfitriona) = 80 ml menos.
+    const descuentoMl = trx.mock.calls.find(([sql]: string[]) =>
+      sql.includes('SET ml_restante = ?')
+    );
+    expect(descuentoMl![1]).toEqual([720, 'u1']);
+    expect(movimiento(trx)![1]).toEqual(expect.arrayContaining([0, 80]));
+  });
+
+  it('el shot de anfitriona usa el ml de cliente cuando no tiene propio', async () => {
+    const trx = trxCon([{ id: 'u1', ml_restante: 800 }], { ...presentacion, ml_shot: 60 });
+
+    await InventoryRepository.consume(
+      trx,
+      [
+        { presentacion_id: 'pres-1', cantidad: 1, tipo_venta: 'shot' },
+        { presentacion_id: 'pres-1', cantidad: 2, tipo_venta: 'shot', shot_anfitriona: true }
+      ],
+      contexto
+    );
+
+    // 3 x 60 ml = 180 ml menos.
+    const descuentoMl = trx.mock.calls.find(([sql]: string[]) =>
+      sql.includes('SET ml_restante = ?')
+    );
+    expect(descuentoMl![1]).toEqual([620, 'u1']);
   });
 });
 

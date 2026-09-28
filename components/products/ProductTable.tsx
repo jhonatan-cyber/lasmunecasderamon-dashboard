@@ -1,8 +1,8 @@
 'use client';
 
-import Image from 'next/image';
 import React, { useState } from 'react';
 import { Product, Presentacion } from '@/types/product';
+import { ProductPhoto } from '@/components/shared/ProductPhoto';
 import {
   MoreVertical,
   Pencil,
@@ -139,15 +139,13 @@ const SortableRow: React.FC<SortableRowProps> = React.memo(
         <TableCell className='py-3 px-2 sm:px-4 text-center'>
           <div
             data-photo-surface
-            className='relative mx-auto flex h-12 w-12 shrink-0 items-center justify-center overflow-hidden rounded-xl border border-gray-100 shadow-xs transition-all group-hover:shadow-sm'
+            className='relative mx-auto flex h-12 w-12 shrink-0 items-center justify-center overflow-hidden rounded-xl border border-gray-100 dark:border-slate-800 bg-gray-50 dark:bg-slate-800/40 shadow-xs transition-all group-hover:shadow-sm'
           >
-            <Image
-              data-themed-photo
+            <ProductPhoto
               src={productFoto(presentation?.foto || product.foto)}
               alt={presentation ? `${product.name} ${presentation.nombre}` : product.name}
               width={48}
               height={48}
-              sizes='48px'
               className='h-12 w-12 object-cover transition-transform duration-300 group-hover:scale-110'
             />
           </div>
@@ -274,10 +272,10 @@ const ProductTable: React.FC<ProductTableProps> = ({
   const [localProducts, setLocalProducts] = useState(products);
   const { hasPermission } = useUserPermissions();
 
-  const canEdit = hasPermission('productos', 'editar_categoria');
-  const canDelete = hasPermission('productos', 'eliminar');
-  const canActivate = hasPermission('productos', 'activar');
-  const canDeactivate = hasPermission('productos', 'desactivar');
+  const canEdit = hasPermission('products', 'edit');
+  const canDelete = hasPermission('products', 'delete');
+  const canActivate = hasPermission('products', 'activate');
+  const canDeactivate = hasPermission('products', 'deactivate');
 
   const hasAnyAction = canEdit || canDelete || canActivate || canDeactivate;
 
@@ -371,27 +369,31 @@ const ProductTable: React.FC<ProductTableProps> = ({
             <Table className='min-w-full text-base text-center'>
               <TableHeader className='bg-gray-100 dark:bg-slate-900/50'>
                 <TableRow className='hover:bg-transparent border-gray-100 dark:border-gray-800'>
-                  <TableHead className='py-4 px-5 text-xs uppercase text-gray-500 w-12'>
+                  <TableHead className='py-4 px-5 text-xs uppercase text-gray-500 text-center w-12'>
                     Orden
                   </TableHead>
-                  <TableHead className='py-4 px-5 text-xs uppercase text-gray-500'>Foto</TableHead>
-                  <TableHead className='py-4 px-5 text-xs uppercase text-gray-500'>
+                  <TableHead className='py-4 px-5 text-xs uppercase text-gray-500 text-center'>
+                    Foto
+                  </TableHead>
+                  <TableHead className='py-4 px-5 text-xs uppercase text-gray-500 text-center'>
                     Código
                   </TableHead>
-                  <TableHead className='py-4 px-5 text-xs uppercase text-gray-500'>
+                  <TableHead className='py-4 px-5 text-xs uppercase text-gray-500 text-center'>
                     Nombre
                   </TableHead>
-                  <TableHead className='py-4 px-5 text-xs uppercase text-gray-500'>
+                  <TableHead className='py-4 px-5 text-xs uppercase text-gray-500 text-center'>
                     Presentación
                   </TableHead>
-                  <TableHead className='py-4 px-5 text-xs uppercase text-gray-500'>
+                  <TableHead className='py-4 px-5 text-xs uppercase text-gray-500 text-center'>
                     Precio compra
                   </TableHead>
-                  <TableHead className='py-4 px-5 text-xs uppercase text-gray-500'>Stock</TableHead>
-                  <TableHead className='py-4 px-5 text-xs uppercase text-gray-500'>
+                  <TableHead className='py-4 px-5 text-xs uppercase text-gray-500 text-center'>
+                    Stock
+                  </TableHead>
+                  <TableHead className='py-4 px-5 text-xs uppercase text-gray-500 text-center'>
                     Estado
                   </TableHead>
-                  <TableHead className='py-4 px-5 text-xs uppercase text-gray-500'>
+                  <TableHead className='py-4 px-5 text-xs uppercase text-gray-500 text-center'>
                     Acciones
                   </TableHead>
                 </TableRow>

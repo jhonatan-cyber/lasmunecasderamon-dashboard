@@ -10,7 +10,8 @@ const stats = vi.hoisted(() => ({ getCajaGeneralStats: vi.fn(), getSalesByMonth:
 const ventas = vi.hoisted(() => ({
   getVentasBarras: vi.fn(),
   getVentasChampagne: vi.fn(),
-  getVentasTragosChicas: vi.fn()
+  getVentasTragosChicas: vi.fn(),
+  getVentasPorProducto: vi.fn()
 }));
 
 vi.mock('next/server', () => ({
@@ -55,6 +56,7 @@ import { GET as salesStatsGET } from '@/app/api/sales/stats/route';
 import { GET as ventasBarrasGET } from '@/app/api/caja/ventas-barras/route';
 import { GET as ventasChampagneGET } from '@/app/api/caja/ventas-champagne/route';
 import { GET as ventasTragosGET } from '@/app/api/caja/ventas-tragos-chicas/route';
+import { GET as ventasPorProductoGET } from '@/app/api/caja/ventas-por-producto/route';
 
 const call = (handler: any, url: string) => handler(new Request(url), { params: {} });
 
@@ -97,6 +99,9 @@ beforeEach(() => {
     comisiones: 0,
     propinas: 3
   });
+  ventas.getVentasPorProducto.mockResolvedValue([
+    { producto: 'Absolut', unidades: 4, monto: 80000 }
+  ]);
 });
 
 describe('caché de stats en caja, cashregister, sales y ventas por categoría', () => {
@@ -168,6 +173,22 @@ describe('caché de stats en caja, cashregister, sales y ventas por categoría',
       DASHBOARD_TTL.SALES_CHART_BY_CAJA
     );
     await expect(res.json()).resolves.toMatchObject({ success: true, total_venta: 3 });
+  });
+
+  it('ventas por producto usa la clave productos de la caja', async () => {
+    const res = await call(
+      ventasPorProductoGET,
+      'http://localhost/api/caja/ventas-por-producto?caja_id=caja-7'
+    );
+    expect(cache.getOrFetch).toHaveBeenLastCalledWith(
+      DASHBOARD_CACHE_KEYS.SALES_CHART_BY_CAJA('caja-7', 'productos'),
+      expect.any(Function),
+      DASHBOARD_TTL.SALES_CHART_BY_CAJA
+    );
+    await expect(res.json()).resolves.toEqual({
+      success: true,
+      data: [{ producto: 'Absolut', unidades: 4, monto: 80000 }]
+    });
   });
 
   it('ventas-champagne sin caja_id responde 400 sin consultar la caché', async () => {

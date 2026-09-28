@@ -5,6 +5,8 @@ export interface Product {
   max_anfitrionas?: number | null;
   /** Ml servidos en cada shot de este producto (null = default de Configuraciones). */
   ml_shot?: number | null;
+  /** Ml servidos en cada shot a anfitriona (null = igual que a cliente). */
+  ml_shot_anfitriona?: number | null;
   id: string;
   code: string;
   name: string;

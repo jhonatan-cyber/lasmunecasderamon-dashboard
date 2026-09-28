@@ -6,7 +6,9 @@ export const SaleOptionsSchema = z
     z.object({
       tipo: z.enum(['botella', 'shot']),
       precio: amount,
-      comision: amount.optional().default(0)
+      comision: amount.optional().default(0),
+      // Precio del shot para anfitrionas; ausente = mismo precio que a un cliente.
+      precio_anfitriona: amount.optional()
     })
   )
   .min(1, 'Selecciona al menos un tipo de venta')

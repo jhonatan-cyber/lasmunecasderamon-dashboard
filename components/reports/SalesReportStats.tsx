@@ -2,15 +2,17 @@
 
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { formatCurrencyNoDecimals } from '@/lib/utils/formatters';
-import { TrendingUp, DollarSign, ShoppingCart, Users, CreditCard, LucideIcon } from 'lucide-react';
-
-interface SalesData {
-  totalVentas: number;
-  cantidadVentas: number;
-  promedioVenta: number;
-  totalPropinas: number;
-  cargoTarjeta: number;
-}
+import {
+  TrendingUp,
+  DollarSign,
+  ShoppingCart,
+  Users,
+  CreditCard,
+  Martini,
+  Wine,
+  LucideIcon
+} from 'lucide-react';
+import type { SalesData } from './hooks/useSalesReport';
 
 interface PaymentItem {
   label: string;
@@ -61,7 +63,17 @@ function StatCard({
   );
 }
 
-export function SalesReportStats({ salesData, paymentItems, paymentTotal, cargoTarjeta = 0 }: SalesReportStatsProps) {
+export function SalesReportStats({
+  salesData,
+  paymentItems,
+  paymentTotal,
+  cargoTarjeta = 0
+}: SalesReportStatsProps) {
+  // Un shot cobrado a anfitriona vale distinto que uno a cliente: se muestran aparte.
+  const shotsCliente = Number(salesData?.shots?.cliente.monto || 0);
+  const shotsClienteCantidad = Number(salesData?.shots?.cliente.cantidad || 0);
+  const shotsAnfitriona = Number(salesData?.shots?.anfitriona.monto || 0);
+  const shotsAnfitrionaCantidad = Number(salesData?.shots?.anfitriona.cantidad || 0);
   return (
     <>
       {/* KPI Cards */}
@@ -98,6 +110,26 @@ export function SalesReportStats({ salesData, paymentItems, paymentTotal, cargoT
           grad='from-amber-50 to-orange-50 dark:from-amber-950/20 dark:to-orange-950/20'
           iconColor='text-amber-600 dark:text-amber-400'
         />
+        {shotsCliente > 0 && (
+          <StatCard
+            title='Shots Cliente'
+            value={formatCurrencyNoDecimals(shotsCliente)}
+            sub={`${shotsClienteCantidad} shots a precio de cliente`}
+            Icon={Martini}
+            grad='from-lime-50 to-emerald-50 dark:from-lime-950/20 dark:to-emerald-950/20'
+            iconColor='text-lime-600 dark:text-lime-400'
+          />
+        )}
+        {shotsAnfitriona > 0 && (
+          <StatCard
+            title='Shots Anfitriona'
+            value={formatCurrencyNoDecimals(shotsAnfitriona)}
+            sub={`${shotsAnfitrionaCantidad} shots a precio de anfitriona`}
+            Icon={Wine}
+            grad='from-fuchsia-50 to-pink-50 dark:from-fuchsia-950/20 dark:to-pink-950/20'
+            iconColor='text-fuchsia-600 dark:text-fuchsia-400'
+          />
+        )}
         {cargoTarjeta > 0 && (
           <StatCard
             title='Cargo tarjeta'

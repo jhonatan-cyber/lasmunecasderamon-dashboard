@@ -224,7 +224,6 @@ export function ExistingPresentacionCard({
           <div className='flex items-center gap-2'>
             {/* eslint-disable-next-line @next/next/no-img-element -- preview local/blob o ruta interna */}
             <img
-              data-themed-photo
               src={
                 p.foto && p.foto !== 'default.png'
                   ? p.foto.startsWith('http') || p.foto.startsWith('blob:')

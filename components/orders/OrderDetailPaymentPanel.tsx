@@ -96,32 +96,36 @@ export function OrderDetailPaymentPanel({
             }
           />
 
-          {habitacionId && (
-            <div>
-              <Label htmlFor='tiempo-habitacion' className={ORDER_FIELD_LABEL_CLASS}>
-                Tiempo de uso (minutos)
-              </Label>
-              <Select
-                value={tiempoHabitacion.toString()}
-                onValueChange={(val: string) => setTiempoHabitacion(Number(val))}
-              >
-                <SelectTrigger id='tiempo-habitacion' className={ORDER_FIELD_TRIGGER_CLASS}>
-                  <SelectValue placeholder='Seleccionar tiempo' />
-                </SelectTrigger>
-                <SelectContent className={ORDER_FIELD_POPOVER_CLASS}>
-                  {['5', '10', '15', '20', '25', '30'].map(minutes => (
-                    <SelectItem
-                      key={minutes}
-                      value={minutes}
-                      className='text-gray-900 dark:text-white hover:bg-gray-100 dark:hover:bg-gray-700'
-                    >
-                      {minutes} minutos
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-          )}
+          <div>
+            <Label htmlFor='tiempo-habitacion' className={ORDER_FIELD_LABEL_CLASS}>
+              Tiempo de uso (minutos)
+            </Label>
+            <Select
+              value={tiempoHabitacion.toString()}
+              onValueChange={(val: string) => setTiempoHabitacion(Number(val))}
+              disabled={!habitacionId}
+            >
+              <SelectTrigger id='tiempo-habitacion' className={ORDER_FIELD_TRIGGER_CLASS}>
+                <SelectValue placeholder='Seleccionar tiempo' />
+              </SelectTrigger>
+              <SelectContent className={ORDER_FIELD_POPOVER_CLASS}>
+                {['5', '10', '15', '20', '25', '30'].map(minutes => (
+                  <SelectItem
+                    key={minutes}
+                    value={minutes}
+                    className='text-gray-900 dark:text-white hover:bg-gray-100 dark:hover:bg-gray-700'
+                  >
+                    {minutes} minutos
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+            {!habitacionId && (
+              <p className='mt-1 text-xs text-muted-foreground'>
+                Seleccione una habitación para habilitar el tiempo de uso.
+              </p>
+            )}
+          </div>
         </>
       )}
 

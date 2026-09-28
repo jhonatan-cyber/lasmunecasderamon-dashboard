@@ -92,21 +92,21 @@ function ClientDetails({ client, onClose }: { client: Client; onClose: () => voi
             </h3>
             <div className='grid grid-cols-1 sm:grid-cols-2 gap-4'>
               <div>
-                <p className='text-xs text-gray-500 mb-1'>RUN</p>
+                <p className='text-xs text-gray-500 mb-1'>RUT</p>
                 <p className='font-medium text-sm'>{client.run || 'No especificado'}</p>
               </div>
               <div>
-                <p className='text-xs text-gray-500 mb-1'>Teléfono</p>
+                <p className='text-xs text-gray-500 mb-1'>TELÉFONO</p>
                 <p className='font-medium text-sm'>{client.phone || 'No especificado'}</p>
               </div>
               <div>
-                <p className='text-xs text-gray-500 mb-1'>Saldo Prepago</p>
+                <p className='text-xs text-gray-500 mb-1'>SALDO</p>
                 <p className='font-bold text-lg text-green-600 font-mono'>
                   ${Number(client.saldo || 0).toLocaleString('es-CL')}
                 </p>
               </div>
               <div>
-                <p className='text-xs text-gray-500 dark:text-gray-400 mb-1'>Estado</p>
+                <p className='text-xs text-gray-500 dark:text-gray-400 mb-1'>ESTADO</p>
                 <Badge
                   className={
                     client.status === 1
@@ -124,7 +124,6 @@ function ClientDetails({ client, onClose }: { client: Client; onClose: () => voi
             <h3 className='font-semibold text-gray-700 dark:text-gray-200 text-md'>Registro</h3>
             <div className='grid grid-cols-1 gap-4'>
               <div>
-                <p className='text-xs text-gray-500 mb-1'>Creado el</p>
                 <p className='font-medium text-sm'>{formatDate(client.created_at)}</p>
               </div>
             </div>
@@ -155,20 +154,20 @@ function ClientDetails({ client, onClose }: { client: Client; onClose: () => voi
               <Table>
                 <TableHeader className='bg-gray-50 dark:bg-gray-900/50'>
                   <TableRow>
-                    <TableHead className='w-[140px] text-xs uppercase font-bold text-gray-500 dark:text-gray-400'>
-                      Fecha
+                    <TableHead className='w-35 text-xs uppercase font-bold text-gray-500 dark:text-gray-400'>
+                      FECHA
                     </TableHead>
-                    <TableHead className='w-[100px] text-xs uppercase font-bold text-gray-500 dark:text-gray-400'>
-                      Tipo
-                    </TableHead>
-                    <TableHead className='text-xs uppercase font-bold text-gray-500 dark:text-gray-400'>
-                      Detalles
+                    <TableHead className='w-25 text-xs uppercase font-bold text-gray-500 dark:text-gray-400'>
+                      TIPO
                     </TableHead>
                     <TableHead className='text-xs uppercase font-bold text-gray-500 dark:text-gray-400'>
-                      Personal
+                      DETALLES
+                    </TableHead>
+                    <TableHead className='text-xs uppercase font-bold text-gray-500 dark:text-gray-400'>
+                      PERSONAL
                     </TableHead>
                     <TableHead className='text-right text-xs uppercase font-bold text-gray-500 dark:text-gray-400'>
-                      Monto
+                      MONTO
                     </TableHead>
                   </TableRow>
                 </TableHeader>
@@ -188,26 +187,30 @@ function ClientDetails({ client, onClose }: { client: Client; onClose: () => voi
                             {item.category}
                           </span>
                         </div>
-                        <p className='text-[10px] text-gray-400 dark:text-gray-500 capitalize'>
+                        <p className='text-[13px] text-gray-400 dark:text-gray-500 capitalize'>
                           {item.metodo_pago}
                         </p>
                       </TableCell>
                       <TableCell>
                         <div className='text-xs space-y-1'>
                           {item.category === 'CARGA' && (
-                            <p className='text-green-600 font-medium italic'>Abono a saldo prepago</p>
+                            <p className='text-green-600 font-medium italic'>
+                              Abono a saldo prepago
+                            </p>
                           )}
                           {item.category === 'DEVOLUCION' && (
                             <p className='text-red-600 font-medium italic'>
                               Devolucion de saldo
                               {item.detalle?.motivo ? ` — ${item.detalle.motivo}` : ''}
-                              {item.detalle?.metodo_devolucion ? ` (${item.detalle.metodo_devolucion})` : ''}
+                              {item.detalle?.metodo_devolucion
+                                ? ` (${item.detalle.metodo_devolucion})`
+                                : ''}
                             </p>
                           )}
                           {item.detalle?.habitacion && (
                             <Badge
                               variant='outline'
-                              className='text-[10px] bg-blue-50/50 border-blue-100 text-blue-700 dark:bg-blue-900/20 dark:border-blue-800 dark:text-blue-300'
+                              className='text-[13px] bg-blue-50/50 border-blue-100 text-blue-700 dark:bg-blue-900/20 dark:border-blue-800 dark:text-blue-300'
                             >
                               Hab: {item.detalle.habitacion}
                               {item.detalle.tiempo ? ` (${item.detalle.tiempo} min)` : ''}
@@ -227,7 +230,7 @@ function ClientDetails({ client, onClose }: { client: Client; onClose: () => voi
                           )}
                           {item.detalle?.anfitrionas && item.detalle.anfitrionas.length > 0 && (
                             <div className='flex flex-wrap gap-1 mt-1 items-center'>
-                              <span className='text-[10px] text-gray-400 dark:text-gray-500'>
+                              <span className='text-[13px] text-gray-400 dark:text-gray-500'>
                                 Anfitrionas:
                               </span>
                               {item.detalle.anfitrionas.map((nick, idx) => (
@@ -244,9 +247,9 @@ function ClientDetails({ client, onClose }: { client: Client; onClose: () => voi
                         </div>
                       </TableCell>
                       <TableCell>
-                        <div className='text-[10px] space-y-0.5 text-gray-500 dark:text-gray-400'>
+                        <div className='text-[13px] space-y-0.5 text-gray-500 dark:text-gray-400'>
                           <p>
-                            <span className='font-semibold text-gray-700 dark:text-gray-300'>
+                            <span className='font-semibold text-gray-700 dark:text-gray-30'>
                               Procesó:
                             </span>{' '}
                             {item.atendido_por}

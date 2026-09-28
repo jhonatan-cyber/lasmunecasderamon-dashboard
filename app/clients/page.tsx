@@ -15,7 +15,6 @@ import Paginate from '@/components/shared/Paginate';
 import { PermissionGuard } from '@/components/auth/PermissionGuard';
 import { Skeleton as BoneyardSkeleton } from 'boneyard-js/react';
 import { type ClientFormValues } from '@/hooks/personal';
-import { DevolucionSolicitudesButton } from '@/components/clients/DevolucionSolicitudesModal';
 import { useAuth } from '@/contexts/AuthContext';
 
 export default function Clients() {
@@ -119,11 +118,6 @@ export default function Clients() {
       <BoneyardSkeleton name='clients-main' loading={isLoading && allClients.length === 0}>
         <div className='p-4 sm:p-6 lg:p-10 space-y-4 sm:space-y-6 mt-4 sm:mt-6 lg:mt-10'>
           <ClientHeader allClients={allClients} onCreateClick={openCreateModal} />
-          {isAdmin && (
-            <div className='px-4 sm:px-8 flex justify-end'>
-              <DevolucionSolicitudesButton />
-            </div>
-          )}
 
           <div className='px-4 sm:px-8'>
             <ClientStatsCards clients={allClients || []} />
@@ -142,6 +136,7 @@ export default function Clients() {
             pageSize={pageSize}
             setPageSize={setPageSize}
             setPage={setPage}
+            showSolicitudes={isAdmin}
           />
 
           <div className='mt-4 sm:mt-6'>

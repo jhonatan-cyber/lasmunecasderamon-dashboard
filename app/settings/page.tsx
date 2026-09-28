@@ -18,7 +18,7 @@ import { SettingsMaintenanceTab } from '@/components/settings/SettingsMaintenanc
 import { SettingsLogsTab } from '@/components/settings/SettingsLogsTab';
 import { SettingsAttendanceTab } from '@/components/settings/SettingsAttendanceTab';
 import { KioskDevices } from '@/components/settings/KioskDevices';
-import { SettingsChampagneCard } from '@/components/settings/SettingsChampagneCard';
+import { SettingsBottleHostessCard } from '@/components/settings/SettingsBottleHostessCard';
 import { SettingsServiceLevelsCard } from '@/components/settings/SettingsServiceLevelsCard';
 import { SettingsBarTab } from '@/components/settings/SettingsBarTab';
 
@@ -75,9 +75,8 @@ export default function Settings() {
 
         <TabsContent value='comisiones' className='space-y-6'>
           <SettingsServiceLevelsCard />
-          <SettingsChampagneCard />
+          <SettingsBottleHostessCard />
         </TabsContent>
-
         <TabsContent value='bar'>
           <SettingsBarTab />
         </TabsContent>

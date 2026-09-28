@@ -1,6 +1,22 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { AccountService } from '@/lib/services/AccountService';
 
+// El módulo de env valida al importarse y vitest no carga .env: se mockea para
+// que el test no dependa del orden de ejecución en el worker.
+vi.mock('@/lib/utils/env', () => ({
+  validateJwtSecret: () => ({ valid: true, score: 100, reasons: [] }),
+  env: {
+    NODE_ENV: 'test',
+    DB_HOST: '127.0.0.1',
+    DB_USER: 'postgres',
+    DB_PASSWORD: '',
+    DB_NAME: 'lasmunecasderamon_test',
+    DB_PORT: 5432,
+    JWT_SECRET: 'test-secret-that-is-long-enough-for-validation',
+    JWT_REFRESH_SECRET: 'test-refresh-that-is-long-enough-for-validation'
+  }
+}));
+
 vi.mock('@/lib/repositories/CuentaRepository', () => ({
   CuentaRepository: {
     create: vi.fn(),

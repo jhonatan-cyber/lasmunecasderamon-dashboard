@@ -5,6 +5,10 @@ export interface Gratificacion {
   id_usuario?: string | number;
   usuario: string;
   usuario_foto?: string | null;
+  /** Quién creó la fila (migración 037); null en las filas antiguas. */
+  solicitante_id?: string | null;
+  /** Nombre resuelto de quien la solicitó (LEFT JOIN en el GET); null si es legacy o autofirmada. */
+  solicitante?: string | null;
   monto: number;
   descripcion: string;
   fecha_crea: string;

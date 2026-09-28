@@ -4,7 +4,7 @@ import {
   AUTHENTICATED_ONLY_APIS,
   KIOSK_DEVICE_APIS,
   PUBLIC_PATHS
-} from '@/lib/middleware/proxy-routes';
+} from '@/lib/constants/route-permissions';
 import {
   classifyGuard,
   exportedMethods,
@@ -146,6 +146,7 @@ const SESSION_WRAPPED_POLICY: Record<string, string> = {
   '/api/caja/stats': 'convención legacy: lectura operativa, sesión por middleware',
   '/api/caja/ventas-barras': 'convención legacy: lectura operativa, sesión por middleware',
   '/api/caja/ventas-champagne': 'convención legacy: lectura operativa, sesión por middleware',
+  '/api/caja/ventas-por-producto': 'convención legacy: lectura operativa, sesión por middleware',
   '/api/caja/ventas-tragos-chicas': 'convención legacy: lectura operativa, sesión por middleware',
   '/api/calendar/data': 'convención legacy: lectura operativa, sesión por middleware',
   '/api/calendar': 'convención legacy: lectura operativa, sesión por middleware',
@@ -163,21 +164,26 @@ const SESSION_WRAPPED_POLICY: Record<string, string> = {
   '/api/garzones': 'convención legacy: lectura operativa, sesión por middleware',
   '/api/orders/detail': 'convención legacy: lectura operativa, sesión por middleware',
   '/api/orders': 'convención legacy: lectura operativa, sesión por middleware',
-  '/api/payroll': 'convención legacy: lectura operativa, sesión por middleware',
+  '/api/payroll': 'GET con payroll.view en el middleware; el POST usa withRoute payroll.write',
   '/api/permissions': 'convención legacy: lectura operativa, sesión por middleware',
   '/api/products/[id]/tiers': 'convención legacy: lectura operativa, sesión por middleware',
   '/api/products/for-sale': 'convención legacy: lectura operativa, sesión por middleware',
   '/api/products/presentations': 'convención legacy: lectura operativa, sesión por middleware',
   '/api/products': 'convención legacy: lectura operativa, sesión por middleware',
   '/api/products/units': 'convención legacy: lectura operativa, sesión por middleware',
-  '/api/reports/cash-register': 'convención legacy: lectura operativa, sesión por middleware',
-  '/api/reports/commissions': 'convención legacy: lectura operativa, sesión por middleware',
-  '/api/reports/sales': 'convención legacy: lectura operativa, sesión por middleware',
-  '/api/roles/[id]/permissions': 'convención legacy: lectura operativa, sesión por middleware',
-  '/api/roles/[id]': 'convención legacy: lectura operativa, sesión por middleware',
-  '/api/roles/[id]/users': 'convención legacy: lectura operativa, sesión por middleware',
-  '/api/roles/admin/permissions': 'convención legacy: lectura operativa, sesión por middleware',
-  '/api/roles': 'convención legacy: lectura operativa, sesión por middleware',
+  '/api/reports/cash-register':
+    'GET con reports.view en el middleware (handler solo arma la respuesta)',
+  '/api/reports/commissions':
+    'GET con reports.view en el middleware (handler solo arma la respuesta)',
+  '/api/reports/sales': 'GET con reports.view en el middleware (handler solo arma la respuesta)',
+  '/api/roles/[id]/permissions':
+    'GET con roles.view en el middleware; el PUT usa withRoute roles.write',
+  '/api/roles/[id]':
+    'GET con roles.view en el middleware; PUT/DELETE con withRoute roles.write/delete',
+  '/api/roles/[id]/users': 'GET con roles.view en el middleware (handler solo arma la respuesta)',
+  '/api/roles/admin/permissions':
+    'GET con roles.view en el middleware (handler solo arma la respuesta)',
+  '/api/roles': 'GET con roles.view en el middleware; el POST usa withRoute roles.write',
   '/api/rooms/[id]': 'convención legacy: lectura operativa, sesión por middleware',
   '/api/rooms': 'convención legacy: lectura operativa, sesión por middleware',
   '/api/sales/[id]': 'convención legacy: lectura operativa, sesión por middleware',

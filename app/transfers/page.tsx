@@ -1,10 +1,11 @@
 'use client';
 
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import Image from 'next/image';
+import { ProductPhoto } from '@/components/shared/ProductPhoto';
 import { ArrowRight, ArrowRightLeft, Check, Clock, Loader2, RefreshCw, X } from 'lucide-react';
 import { PermissionGuard } from '@/components/auth/PermissionGuard';
 import { useCurrentUser } from '@/hooks/auth/useCurrentUser';
+import { useRefreshOnFocus, useSharedSSE } from '@/hooks/shared';
 import { TransferModal, type BarStockItem } from '@/components/bar/TransferModal';
 import { SalePrices } from '@/components/bar/SalePrices';
 import { BarAnfitrionas, isTierPricedItem } from '@/components/bar/BarAnfitrionas';
@@ -58,14 +59,11 @@ function TransferPhoto({ item }: { item: BarStockItem }) {
       data-photo-surface
       className='relative aspect-square w-full shrink-0 overflow-hidden rounded-xl sm:aspect-4/3'
     >
-      <Image
-        data-themed-photo
+      <ProductPhoto
         src={src}
         alt={`${item.producto_nombre} — ${item.nombre}`}
         fill
-        sizes='(max-width: 639px) 50vw, (max-width: 1279px) 33vw, 280px'
         className='object-contain p-3'
-        unoptimized={src.startsWith('http')}
         onError={() => {
           if (photo) setFailed(previous => [...previous, photo]);
         }}
@@ -199,8 +197,9 @@ function TransfersContent() {
   const { user } = useCurrentUser();
   const puedeAprobar = ['barman'].includes((user?.role || '').toLowerCase());
 
-  const refresh = useCallback(async () => {
-    setLoading(true);
+  const refresh = useCallback(async (options?: { silent?: boolean }) => {
+    // En silencio (SSE o foco de la pestaña) no se oculta la lista: solo se repintan los datos.
+    if (!options?.silent) setLoading(true);
     setError('');
     try {
       const response = await fetch('/api/transfers', { cache: 'no-store' });
@@ -219,6 +218,14 @@ function TransfersContent() {
   useEffect(() => {
     void refresh();
   }, [refresh]);
+
+  // En vivo: cuando otra sesión crea una transferencia o el Barman la aprueba/rechaza,
+  // el listado se actualiza sin recargar. El foco de la pestaña cubre eventos perdidos.
+  const refreshSilencioso = useCallback(() => void refresh({ silent: true }), [refresh]);
+  useSharedSSE('/api/notifications/sse', payload => {
+    if (payload?.type === 'transfers_updated') refreshSilencioso();
+  });
+  useRefreshOnFocus(refreshSilencioso, { immediate: false });
 
   const filtered = useMemo(() => {
     const term = search.trim().toLocaleLowerCase('es');
@@ -271,7 +278,7 @@ function TransfersContent() {
   const visibleHistory = historial.slice(historyStart, historyStart + historyPageSize);
 
   return (
-    <main className='mx-auto flex max-w-7xl flex-col gap-6 p-4 sm:p-6 lg:p-10'>
+    <main className='flex flex-col gap-6 p-4 sm:p-6 lg:p-10 mt-4 sm:mt-6 lg:mt-10'>
       <header className='flex flex-wrap items-start justify-between gap-4'>
         <div className='flex flex-col gap-2'>
           <h1 className='text-3xl font-bold tracking-tight'>Transferencia</h1>
@@ -341,7 +348,7 @@ function TransfersContent() {
                 Cargando existencias…
               </p>
             ) : (
-              <div className='grid grid-cols-2 gap-4 sm:grid-cols-3 xl:grid-cols-4'>
+              <div className='grid grid-cols-2 gap-4 sm:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5'>
                 {filtered.length === 0 ? (
                   <p className='col-span-full rounded-2xl border border-dashed py-12 text-center text-muted-foreground'>
                     {search
@@ -392,7 +399,7 @@ function TransfersContent() {
                       <CardFooter className='px-3 pb-3'>
                         <PermissionGuard
                           module='products'
-                          action='write'
+                          action='accept_transfer'
                           fallback={
                             <span className='text-sm text-muted-foreground'>Solo consulta</span>
                           }
@@ -453,7 +460,7 @@ function TransfersContent() {
                 {loading ? 'Cargando…' : 'No hay solicitudes pendientes.'}
               </p>
             ) : (
-              <div className='grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-3'>
+              <div className='grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4'>
                 {visiblePendientes.map(record => (
                   <Card key={record.id} className='flex h-full min-w-0 flex-col rounded-2xl'>
                     <CardHeader className='gap-2'>
@@ -583,6 +590,7 @@ function TransfersContent() {
                               price={record.precio_venta}
                               commission={record.comision}
                               mlShot={record.ml_shot}
+                              mlShotAnfitriona={record.ml_shot_anfitriona}
                             />
                           )}
                         </TableCell>

@@ -612,6 +612,7 @@ export class SaleQueries {
       const [detalles, usuarios, comisiones, propinas] = await Promise.all([
         query<DetalleVentaWithProductRow[]>(
           `SELECT dv.id_detalle_venta as id, dv.venta_id, dv.producto_id, dv.precio, dv.comision, dv.cantidad, dv.sub_total,
+                  dv.tipo_venta, dv.shot_anfitriona,
                   p.nombre as producto_nombre, p.precio as producto_precio
            FROM detalle_ventas dv
            LEFT JOIN productos p ON p.id_producto = dv.producto_id

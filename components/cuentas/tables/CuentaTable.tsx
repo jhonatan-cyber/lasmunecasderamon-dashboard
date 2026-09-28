@@ -66,9 +66,9 @@ export default function CuentaTable({
     formatMontoInput
   } = useCuentaAnulacion({ onRefresh, onOrderStatusChange, showConfirm });
 
-  const canViewDetails = hasPermission('cuentas', 'ver_detalles');
-  const canAddProducts = hasPermission('cuentas', 'agregar_productos');
-  const canCobrar = hasPermission('cuentas', 'cobrar');
+  const canViewDetails = hasPermission('accounts', 'view');
+  const canAddProducts = hasPermission('accounts', 'edit');
+  const canCobrar = hasPermission('accounts', 'collect');
 
   const hasAnyAction = canViewDetails || canAddProducts || canCobrar;
 

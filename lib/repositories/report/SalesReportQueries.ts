@@ -24,9 +24,15 @@ function buildDateRange(
     case 'today':
       return { clause: `DATE(${column}) = CURRENT_DATE`, params: [] };
     case 'yesterday':
-      return { clause: `DATE(${column}) = (CAST(CURRENT_DATE AS timestamp) - make_interval(days => CAST(1 AS integer)))`, params: [] };
+      return {
+        clause: `DATE(${column}) = (CAST(CURRENT_DATE AS timestamp) - make_interval(days => CAST(1 AS integer)))`,
+        params: []
+      };
     case 'week':
-      return { clause: `DATE(${column}) >= (CAST(CURRENT_DATE AS timestamp) - make_interval(days => CAST(6 AS integer)))`, params: [] };
+      return {
+        clause: `DATE(${column}) >= (CAST(CURRENT_DATE AS timestamp) - make_interval(days => CAST(6 AS integer)))`,
+        params: []
+      };
     case 'month':
     case 'current_month':
       return {
@@ -64,7 +70,7 @@ export async function getSalesReport(
 ) {
   const range = buildDateRange('v.fecha_crea', period, startDate, endDate);
 
-  const [summaryRows, dailyRows] = await Promise.all([
+  const [summaryRows, dailyRows, shotRows] = await Promise.all([
     query<any[]>(
       `
       SELECT
@@ -97,10 +103,29 @@ export async function getSalesReport(
       ORDER BY DATE(v.fecha_crea) ASC
     `,
       range.params
+    ),
+    // Shots separados por a quién se le cobró: el precio de anfitriona es distinto
+    // (Bar → Transferencia → "Precio shot anfitriona") y hasta la migración 039 esta
+    // elección se descartaba. Los detalles que no son shots no entran al agregado.
+    query<any[]>(
+      `
+      SELECT
+        COALESCE(SUM(CASE WHEN NOT dv.shot_anfitriona THEN dv.sub_total ELSE 0 END), 0) AS "montoCliente",
+        COALESCE(SUM(CASE WHEN NOT dv.shot_anfitriona THEN dv.cantidad ELSE 0 END), 0) AS "cantidadCliente",
+        COALESCE(SUM(CASE WHEN dv.shot_anfitriona THEN dv.sub_total ELSE 0 END), 0) AS "montoAnfitriona",
+        COALESCE(SUM(CASE WHEN dv.shot_anfitriona THEN dv.cantidad ELSE 0 END), 0) AS "cantidadAnfitriona"
+      FROM detalle_ventas dv
+      INNER JOIN ventas v ON v.id_venta = dv.venta_id
+      WHERE v.estado IN (1, 2)
+        AND dv.tipo_venta = 'shot'
+        AND ${range.clause}
+    `,
+      range.params
     )
   ]);
 
   const summary = summaryRows[0] || {};
+  const shots = shotRows[0] || {};
 
   return {
     totalVentas: Number(summary.totalVentas || 0),
@@ -112,6 +137,16 @@ export async function getSalesReport(
       efectivo: Number(summary.efectivo || 0),
       tarjeta: Number(summary.tarjeta || 0),
       transferencia: Number(summary.transferencia || 0)
+    },
+    shots: {
+      cliente: {
+        monto: Number(shots.montoCliente || 0),
+        cantidad: Number(shots.cantidadCliente || 0)
+      },
+      anfitriona: {
+        monto: Number(shots.montoAnfitriona || 0),
+        cantidad: Number(shots.cantidadAnfitriona || 0)
+      }
     },
     ventasPorDia: dailyRows.map(row => ({
       fecha: row.fecha,

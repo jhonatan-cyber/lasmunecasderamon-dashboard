@@ -10,11 +10,16 @@ import {
 import type { GratificacionAction } from './gratificacion/GratificacionQueries';
 
 export class GratificacionRepository {
-  static async getAll(userId?: string) {
-    return getAllGratificaciones(userId);
+  static async getAll(userId?: string, solicitanteId?: string) {
+    return getAllGratificaciones(userId, solicitanteId);
   }
 
-  static async create(data: { usuario_id: string; monto: number; descripcion?: string }) {
+  static async create(data: {
+    usuario_id: string;
+    monto: number;
+    descripcion?: string;
+    solicitante_id?: string | null;
+  }) {
     return createGratificacion(data);
   }
 

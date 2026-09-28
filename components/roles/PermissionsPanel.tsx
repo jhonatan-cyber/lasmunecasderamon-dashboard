@@ -31,7 +31,7 @@ export function PermissionsPanel({ selectedRole }: PermissionsPanelProps) {
   const [isSaving, setIsSaving] = useState(false);
   const [expandedModules, setExpandedModules] = useState<Set<string>>(new Set());
 
-  const canAssignPermissions = hasPermission('roles', 'asignar_permisos');
+  const canAssignPermissions = hasPermission('roles', 'permissions');
 
   useEffect(() => {
     if (selectedRole) {
@@ -133,8 +133,13 @@ export function PermissionsPanel({ selectedRole }: PermissionsPanelProps) {
       cash_register: 'Caja',
       categories: 'Categorías',
       commissions: 'Comisiones',
+      clients: 'Clientes',
+      dashboard: 'Dashboard',
+      gratificaciones: 'Gratificaciones',
       overtime: 'Horas Extras',
       orders: 'Pedidos',
+      private_rooms: 'Privados',
+      rooms: 'Habitaciones',
       payroll: 'Pagos Trabajadores',
       products: 'Productos',
       reports: 'Reportes',

@@ -25,6 +25,10 @@ export interface VentaDetalle {
   sub_total: number;
   producto_nombre?: string;
   producto_precio?: number;
+  /** 'botella' | 'shot'. Ausente en ventas anteriores a la migración 039. */
+  tipo_venta?: 'botella' | 'shot' | null;
+  /** Shot cobrado a precio de anfitriona. */
+  shot_anfitriona?: boolean | null;
 }
 
 export interface VentaUsuario {
@@ -65,6 +69,7 @@ export interface VentaCreate {
 
 export interface VentaDetalleCreate {
   producto_id: string | number;
+  presentacion_id?: string | null;
   precio: number;
   comision: number;
   cantidad: number;
@@ -72,6 +77,10 @@ export interface VentaDetalleCreate {
   hostess_id?: string | number | null;
   hostesses?: number[];
   isChampagne?: boolean;
+  /** 'shot' descuenta ml de la botella abierta; sin valor, botella entera. */
+  tipo_venta?: 'botella' | 'shot';
+  /** El shot se cobró al precio de anfitriona (solo con tipo_venta 'shot'). */
+  shot_anfitriona?: boolean;
 }
 
 export interface VentaUpdate {

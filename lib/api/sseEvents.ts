@@ -75,6 +75,11 @@ export const SSE_EVENTS = {
   service_request_processed: { audiences: STAFF_ONLY },
   service_request_deleted: { audiences: STAFF_ONLY },
   service_changed: { audiences: STAFF_ONLY },
+  // ─── Transferencias almacén → bar ────────────────────────────────────────────
+  // Se emite al crear una solicitud y al aprobarla/rechazarla el Barman: el
+  // módulo Transferencias se refresca en vivo en todas las sesiones
+  // (payload { action: 'created' | 'accepted' | 'rejected', ... }).
+  transfers_updated: { audiences: STAFF_ONLY },
   categories_updated: { audiences: STAFF_ONLY },
   timers_updated: { audiences: STAFF_ONLY },
   timer_started: { audiences: STAFF_ONLY },

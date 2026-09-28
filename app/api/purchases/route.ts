@@ -23,7 +23,7 @@ export const POST = withRoute(
     return NextResponse.json(
       {
         success: true,
-        message: `Compra ${data.folio} registrada: stock ingresado al almacén.`,
+        message: `Compra ${data.folio} registrada: ${data.codigos_generados.length} códigos generados para imprimir.`,
         data
       },
       { status: 201 }

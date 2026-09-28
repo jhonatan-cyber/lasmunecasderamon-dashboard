@@ -1,10 +1,22 @@
 import { query } from '@/lib/database/db';
 
+export interface ShotsVendidos {
+  monto: number;
+  cantidad: number;
+}
+
 export interface VentasBarrasResult {
   total_venta: number;
   cargo_tarjeta: number;
   monto_productos: number;
   propinas: number;
+  /**
+   * Shots servidos en la caja, separados por a quién se le cobró (migración 039). Es un
+   * corte transversal: su monto ya está dentro de alguna de las bolsas de arriba
+   * (barras, tragos chicas o champañas), así que NO se suma a los totales.
+   */
+  shots_cliente: ShotsVendidos;
+  shots_anfitriona: ShotsVendidos;
 }
 
 export interface VentasChampagneResult {
@@ -23,7 +35,51 @@ export interface VentasTragosChicasResult {
   propinas: number;
 }
 
+export interface VentaProductoRow {
+  producto: string;
+  unidades: number;
+  monto: number;
+}
+
 export class VentasStatsRepository {
+  /**
+   * Shots de la caja partidos por precio (cliente / anfitriona). Corte transversal a
+   * propósito: un shot puede caer en cualquier bolsa (una botella vendida en el bar, un
+   * trago de chica con comisión, una champaña), y lo que interesa es cuánto entró por
+   * shots, no a qué bolsa pertenece cada uno.
+   */
+  static async getShotsVendidos(caja_id: string): Promise<{
+    cliente: ShotsVendidos;
+    anfitriona: ShotsVendidos;
+  }> {
+    const results = await query<any[]>(
+      `
+      SELECT
+        COALESCE(SUM(CASE WHEN NOT dv.shot_anfitriona THEN dv.sub_total ELSE 0 END), 0) AS cliente_monto,
+        COALESCE(SUM(CASE WHEN NOT dv.shot_anfitriona THEN dv.cantidad ELSE 0 END), 0) AS cliente_cantidad,
+        COALESCE(SUM(CASE WHEN dv.shot_anfitriona THEN dv.sub_total ELSE 0 END), 0) AS anfitriona_monto,
+        COALESCE(SUM(CASE WHEN dv.shot_anfitriona THEN dv.cantidad ELSE 0 END), 0) AS anfitriona_cantidad
+      FROM detalle_ventas dv
+      INNER JOIN ventas v ON v.id_venta = dv.venta_id
+      WHERE v.caja_id = ?
+        AND dv.tipo_venta = 'shot'
+    `,
+      [caja_id]
+    );
+
+    const row = results[0] || {};
+    return {
+      cliente: {
+        monto: Number(row.cliente_monto || 0),
+        cantidad: Number(row.cliente_cantidad || 0)
+      },
+      anfitriona: {
+        monto: Number(row.anfitriona_monto || 0),
+        cantidad: Number(row.anfitriona_cantidad || 0)
+      }
+    };
+  }
+
   static async getVentasBarras(caja_id: string): Promise<VentasBarrasResult> {
     const results = await query<any[]>(
       `
@@ -52,11 +108,14 @@ export class VentasStatsRepository {
     );
 
     const row = results[0] || { total_venta: 0, cargo_tarjeta: 0, propinas: 0, monto_productos: 0 };
+    const shots = await VentasStatsRepository.getShotsVendidos(caja_id);
     return {
       total_venta: Number(row.total_venta),
       cargo_tarjeta: Number(row.cargo_tarjeta || 0),
       monto_productos: Number(row.monto_productos),
-      propinas: Number(row.propinas)
+      propinas: Number(row.propinas),
+      shots_cliente: shots.cliente,
+      shots_anfitriona: shots.anfitriona
     };
   }
 
@@ -159,5 +218,31 @@ export class VentasStatsRepository {
     );
 
     return stats;
+  }
+
+  static async getVentasPorProducto(caja_id: string, limit = 10): Promise<VentaProductoRow[]> {
+    const results = await query<any[]>(
+      `
+      SELECT
+        p.nombre as producto,
+        COALESCE(SUM(dv.cantidad), 0) as unidades,
+        COALESCE(SUM(dv.sub_total), 0) as monto
+      FROM detalle_ventas dv
+      INNER JOIN ventas v ON v.id_venta = dv.venta_id
+      INNER JOIN productos p ON p.id_producto = dv.producto_id
+      WHERE v.caja_id = ?
+        AND v.estado IN (1, 2)
+      GROUP BY p.id_producto, p.nombre
+      ORDER BY monto DESC
+      LIMIT ?
+    `,
+      [caja_id, limit]
+    );
+
+    return results.map(row => ({
+      producto: String(row.producto),
+      unidades: Number(row.unidades || 0),
+      monto: Number(row.monto || 0)
+    }));
   }
 }

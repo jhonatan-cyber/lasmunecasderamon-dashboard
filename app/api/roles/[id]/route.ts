@@ -14,7 +14,7 @@ export const GET = withPublicRoute(
 );
 
 export const PUT = withRoute(
-  { auth: true, audit: true, module: 'users', action: 'write' },
+  { auth: true, audit: true, module: 'roles', action: 'write' },
   async (request: Request, { params }: { params: Promise<{ id: string }> }) => {
     const id = (await params).id;
     const body = await request.json();
@@ -26,7 +26,7 @@ export const PUT = withRoute(
 );
 
 export const DELETE = withRoute(
-  { auth: true, audit: true, module: 'users', action: 'delete' },
+  { auth: true, audit: true, module: 'roles', action: 'delete' },
   async (request: Request, { params }: { params: Promise<{ id: string }> }) => {
     const id = (await params).id;
     await RoleService.delete(id);

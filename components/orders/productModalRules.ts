@@ -157,6 +157,16 @@ export const getHostessLimit = (producto: ProductLike) => {
 /** @deprecated Usá `getHostessLimit` en su lugar */
 export const getChampagneHostessLimit = getHostessLimit;
 
+/**
+ * Máximo explícito de anfitrionas por producto (Configuraciones > Comisiones).
+ * Null = sin valor configurado: rige la regla por defecto (tiers champagne,
+ * cantidad en bebidas caras, 1 en el resto).
+ */
+export const getExplicitMaxAnfitrionas = (producto: ProductLike): number | null => {
+  const max = producto?.max_anfitrionas;
+  return max !== null && max !== undefined && Number(max) > 0 ? Math.floor(Number(max)) : null;
+};
+
 export const getActiveHostesses = <T extends HostessLike>(hostesses: T[]) =>
   hostesses.filter(h => {
     const estado = h.estado || h.status;

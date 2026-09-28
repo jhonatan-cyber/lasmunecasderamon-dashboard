@@ -32,15 +32,19 @@ import {
 } from 'lucide-react';
 import { useCurrentUser } from '@/hooks/auth/useCurrentUser';
 import { useUserPermissions } from '@/hooks/auth/useUserPermissions';
+import { BARMAN_ROUTE_ALLOWLIST, findSidebarPermission } from '@/lib/constants/route-permissions';
 
+/**
+ * Cada ítem es solo presentación: nombre, destino e ícono. El permiso que lo habilita no
+ * se declara acá sino en la tabla compartida (`lib/constants/route-permissions`), la misma
+ * que usan el middleware y `RouteGuard`, y se resuelve por `href`. Antes cada ítem repetía
+ * su par módulo/acción —alguna vez escrito en español, imposible de satisfacer— y el menú
+ * podía contradecir a la guarda de la página: el ítem se ocultaba y la página se abría.
+ */
 type SidebarItem = {
   name: string;
   href: string;
   icon: LucideIcon;
-  module: string;
-  action: string;
-  fallbackModule?: string;
-  fallbackAction?: string;
 };
 
 type SidebarSection = {
@@ -59,20 +63,12 @@ const SIDEBAR_SECTIONS: SidebarSection[] = [
       {
         name: 'Dashboard',
         href: '/dashboard',
-        icon: Home,
-        module: 'dashboard',
-        action: 'ver_dashboard',
-        fallbackModule: 'dashboard',
-        fallbackAction: 'view'
+        icon: Home
       },
       {
         name: 'Reportes',
         href: '/reports',
-        icon: FileText,
-        module: 'reportes',
-        action: 'listar_reportes',
-        fallbackModule: 'reports',
-        fallbackAction: 'view'
+        icon: FileText
       }
     ]
   },
@@ -84,56 +80,32 @@ const SIDEBAR_SECTIONS: SidebarSection[] = [
       {
         name: 'Pedidos',
         href: '/orders',
-        icon: ShoppingCart,
-        module: 'pedidos',
-        action: 'listar_pedidos',
-        fallbackModule: 'orders',
-        fallbackAction: 'view'
+        icon: ShoppingCart
       },
       {
         name: 'Ventas',
         href: '/sales',
-        icon: TrendingUp,
-        module: 'ventas',
-        action: 'listar_ventas',
-        fallbackModule: 'sales',
-        fallbackAction: 'view'
+        icon: TrendingUp
       },
       {
         name: 'Cajas',
         href: '/cash-register',
-        icon: CreditCard,
-        module: 'caja',
-        action: 'listar_caja',
-        fallbackModule: 'cash_register',
-        fallbackAction: 'view'
+        icon: CreditCard
       },
       {
         name: 'Cuentas',
         href: '/accounts',
-        icon: Calculator,
-        module: 'cuentas',
-        action: 'listar_cuentas',
-        fallbackModule: 'accounts',
-        fallbackAction: 'view'
+        icon: Calculator
       },
       {
         name: 'Crear Privado',
         href: '/rooms',
-        icon: Bed,
-        module: 'rooms',
-        action: 'crear',
-        fallbackModule: 'rooms',
-        fallbackAction: 'create'
+        icon: Bed
       },
       {
         name: 'Vender Privado',
         href: '/private-rooms',
-        icon: Lock,
-        module: 'private_rooms',
-        action: 'listar_privados',
-        fallbackModule: 'private_rooms',
-        fallbackAction: 'view'
+        icon: Lock
       }
     ]
   },
@@ -145,59 +117,37 @@ const SIDEBAR_SECTIONS: SidebarSection[] = [
       {
         name: 'Clientes',
         href: '/clients',
-        icon: UserCheck,
-        module: 'clientes',
-        action: 'listar_clientes',
-        fallbackModule: 'clients',
-        fallbackAction: 'view'
+        icon: UserCheck
       },
       {
         name: 'Almacén',
         href: '/products',
-        icon: Package,
-        module: 'productos',
-        action: 'listar_categoria_productos',
-        fallbackModule: 'products',
-        fallbackAction: 'view'
+        icon: Package
       },
       {
         name: 'Envases devueltos',
         href: '/products/containers',
-        icon: PackageCheck,
-        module: 'products',
-        action: 'confirm_container_return'
+        icon: PackageCheck
       },
       {
         name: 'Transferencia',
         href: '/transfers',
-        icon: ArrowRightLeft,
-        module: 'products',
-        action: 'view'
+        icon: ArrowRightLeft
       },
       {
         name: 'Compras',
         href: '/purchases',
-        icon: ShoppingBag,
-        module: 'products',
-        action: 'view'
+        icon: ShoppingBag
       },
       {
         name: 'Bar',
         href: '/bar',
-        icon: Wine,
-        module: 'productos',
-        action: 'listar_categoria_productos',
-        fallbackModule: 'products',
-        fallbackAction: 'view'
+        icon: Wine
       },
       {
         name: 'Categorías',
         href: '/categories',
-        icon: Tag,
-        module: 'categorias',
-        action: 'listar_categorias',
-        fallbackModule: 'categories',
-        fallbackAction: 'view'
+        icon: Tag
       }
     ]
   },
@@ -209,65 +159,37 @@ const SIDEBAR_SECTIONS: SidebarSection[] = [
       {
         name: 'Propinas',
         href: '/tips',
-        icon: Gift,
-        module: 'propinas',
-        action: 'listar_propinas',
-        fallbackModule: 'tips',
-        fallbackAction: 'view'
+        icon: Gift
       },
       {
         name: 'Comisiones',
         href: '/commissions',
-        icon: Percent,
-        module: 'comisiones',
-        action: 'listar_comisiones',
-        fallbackModule: 'commissions',
-        fallbackAction: 'view'
+        icon: Percent
       },
       {
         name: 'Pagos a Trabajadores',
         href: '/payroll',
-        icon: DollarSign,
-        module: 'pagos_trabajadores',
-        action: 'listar_pagos',
-        fallbackModule: 'payroll',
-        fallbackAction: 'view'
+        icon: DollarSign
       },
       {
         name: 'Detalle Planillas',
         href: '/payroll/calendar',
-        icon: CalendarIcon,
-        module: 'payroll_details',
-        action: 'listar_detalles',
-        fallbackModule: 'payroll_details',
-        fallbackAction: 'view'
+        icon: CalendarIcon
       },
       {
         name: 'Anticipos',
         href: '/advances',
-        icon: DollarSign,
-        module: 'anticipos',
-        action: 'listar_anticipos',
-        fallbackModule: 'advances',
-        fallbackAction: 'view'
+        icon: DollarSign
       },
       {
         name: 'Gratificaciones',
         href: '/gratificaciones',
-        icon: Trophy,
-        module: 'gratificaciones',
-        action: 'listar_gratificaciones',
-        fallbackModule: 'gratificaciones',
-        fallbackAction: 'view'
+        icon: Trophy
       },
       {
         name: 'Devoluciones',
         href: '/returns',
-        icon: RotateCcw,
-        module: 'devoluciones',
-        action: 'listar_devoluciones',
-        fallbackModule: 'returns',
-        fallbackAction: 'view'
+        icon: RotateCcw
       }
     ]
   },
@@ -279,38 +201,22 @@ const SIDEBAR_SECTIONS: SidebarSection[] = [
       {
         name: 'Usuarios',
         href: '/users',
-        icon: Users,
-        module: 'usuarios',
-        action: 'listar_usuarios',
-        fallbackModule: 'users',
-        fallbackAction: 'view'
+        icon: Users
       },
       {
         name: 'Roles',
         href: '/roles',
-        icon: Shield,
-        module: 'roles',
-        action: 'listar_roles',
-        fallbackModule: 'roles',
-        fallbackAction: 'view'
+        icon: Shield
       },
       {
         name: 'Asistencias',
         href: '/attendance',
-        icon: Clock,
-        module: 'asistencias',
-        action: 'listar_asistencias',
-        fallbackModule: 'attendance',
-        fallbackAction: 'view'
+        icon: Clock
       },
       {
         name: 'Horas Extras',
         href: '/overtime',
-        icon: Clock,
-        module: 'horas_extras',
-        action: 'listar_horas_extras',
-        fallbackModule: 'overtime',
-        fallbackAction: 'view'
+        icon: Clock
       }
     ]
   },
@@ -322,9 +228,7 @@ const SIDEBAR_SECTIONS: SidebarSection[] = [
       {
         name: 'Configuración',
         href: '/settings',
-        icon: Settings,
-        module: 'settings',
-        action: 'view'
+        icon: Settings
       }
     ]
   }
@@ -365,18 +269,17 @@ export function useSidebarNavigation(
 
   const hasModulePermission = useCallback(
     (item: SidebarItem) => {
-      if (isBarman && !['/dashboard', '/bar', '/sales', '/private-rooms'].includes(item.href))
-        return false;
+      if (isBarman && !BARMAN_ROUTE_ALLOWLIST.includes(item.href)) return false;
       if (isAdmin) return true;
       if (!permissions.length) return false;
-      return (
-        hasPermission(item.module, item.action) ||
-        Boolean(
-          item.fallbackModule &&
-          item.fallbackAction &&
-          hasPermission(item.fallbackModule, item.fallbackAction)
-        )
-      );
+
+      // El par sale de la tabla compartida con el middleware y `RouteGuard`, así el
+      // menú no puede ofrecer un destino que la guarda de esa página rechace.
+      const permission = findSidebarPermission(item.href);
+      // Sin par no hay forma de concederlo desde el panel de Roles: el ítem queda
+      // oculto para los no-administradores en lugar de mostrarse a ciegas.
+      if (!permission) return false;
+      return hasPermission(permission.module, permission.action);
     },
     [hasPermission, isAdmin, isBarman, permissions.length]
   );

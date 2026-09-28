@@ -1,7 +1,6 @@
 'use client';
 
 import React, { useEffect, useState } from 'react';
-import Image from 'next/image';
 import {
   Dialog,
   DialogContent,
@@ -17,6 +16,7 @@ import { isTierPricedItem } from '@/components/bar/BarAnfitrionas';
 import { Product, Presentacion, UnidadProducto } from '@/types/product';
 import { formatCurrencyCLP } from '@/lib/utils/formatters';
 import { Loader2 } from 'lucide-react';
+import { ProductPhoto } from '@/components/shared/ProductPhoto';
 
 interface ProductDetailsModalProps {
   open: boolean;
@@ -33,11 +33,13 @@ interface Tier {
 function PresentationPrices({
   presentation,
   field,
-  mlShot
+  mlShot,
+  mlShotAnfitriona
 }: {
   presentation: Presentacion;
   field: 'precio' | 'comision';
   mlShot?: number | null;
+  mlShotAnfitriona?: number | null;
 }) {
   if (isTierPricedItem(presentation)) return <span>Según número de anfitrionas</span>;
   return (
@@ -47,6 +49,7 @@ function PresentationPrices({
       commission={presentation.comision}
       field={field}
       mlShot={mlShot}
+      mlShotAnfitriona={mlShotAnfitriona}
     />
   );
 }
@@ -143,6 +146,12 @@ export function ProductDetailsModal({
     ? unidades.filter(u => u.presentacion_id === selectedPrices.id)
     : [];
   const displayPresentation = selectedPrices ?? presentation;
+  // Las etiquetas de este modal llevan producto y presentación.
+  const unidadesConEtiqueta = visibleUnits.map(unit => ({
+    ...unit,
+    producto_nombre: item?.name ?? null,
+    presentacion_nombre: displayPresentation?.nombre ?? null
+  }));
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -158,14 +167,12 @@ export function ProductDetailsModal({
             <div className='flex flex-col gap-4 sm:flex-row'>
               <div
                 data-photo-surface
-                className='relative size-32 shrink-0 overflow-hidden rounded-xl border'
+                className='relative size-32 shrink-0 overflow-hidden rounded-xl border border-gray-200 dark:border-slate-800 bg-gray-100 dark:bg-slate-800/40'
               >
-                <Image
-                  data-themed-photo
+                <ProductPhoto
                   src={imageUrl(displayPresentation?.foto || item.foto)}
                   alt={`${item.name} ${displayPresentation?.nombre ?? ''}`}
                   fill
-                  sizes='128px'
                   className='object-contain'
                 />
               </div>
@@ -203,7 +210,11 @@ export function ProductDetailsModal({
             ) : error || !selectedPrices ? (
               <div role='alert' className='flex flex-col items-start gap-3 rounded-xl border p-4'>
                 <p>{error || 'No se encontró la presentación seleccionada.'}</p>
-                <Button variant='outline' onClick={() => setAttempt(v => v + 1)}>
+                <Button
+                  variant='outline'
+                  className='rounded-full'
+                  onClick={() => setAttempt(v => v + 1)}
+                >
                   Reintentar
                 </Button>
               </div>
@@ -217,6 +228,7 @@ export function ProductDetailsModal({
                         presentation={selectedPrices}
                         field='precio'
                         mlShot={item.ml_shot}
+                        mlShotAnfitriona={item.ml_shot_anfitriona}
                       />
                     </Info>
                     <Info label='Comisión en bar'>
@@ -224,6 +236,7 @@ export function ProductDetailsModal({
                         presentation={selectedPrices}
                         field='comision'
                         mlShot={item.ml_shot}
+                        mlShotAnfitriona={item.ml_shot_anfitriona}
                       />
                     </Info>
                     <Info label='Máximo de anfitrionas'>
@@ -233,6 +246,9 @@ export function ProductDetailsModal({
                       {item.ml_shot != null && Number(item.ml_shot) > 0
                         ? `${Number(item.ml_shot)} ml`
                         : 'Configuración global'}
+                      {item.ml_shot_anfitriona != null && Number(item.ml_shot_anfitriona) > 0
+                        ? ` · Anf ${Number(item.ml_shot_anfitriona)} ml`
+                        : ''}
                     </Info>
                     <Info label='Precio de compra'>
                       {formatCurrencyCLP(selectedPrices.precio_compra ?? 0)}
@@ -281,7 +297,7 @@ export function ProductDetailsModal({
                     inactivos.
                   </p>
                   {visibleUnits.length ? (
-                    <UnitLabelSelector key={selectedPrices.id} units={visibleUnits} />
+                    <UnitLabelSelector key={selectedPrices.id} units={unidadesConEtiqueta} />
                   ) : (
                     <p className='text-sm text-muted-foreground'>Sin códigos generados.</p>
                   )}

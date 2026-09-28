@@ -1,5 +1,4 @@
 'use client';
-import { useMemo } from 'react';
 import {
   Table,
   TableBody,
@@ -21,7 +20,6 @@ import { ConfirmModal } from '@/components/shared/ConfirmModal';
 import { showSuccessToast, showErrorToast } from '@/lib/utils/toastUtils';
 import { useUserPermissions } from '@/hooks/auth/useUserPermissions';
 import { Wallet } from 'lucide-react';
-import { useCurrentUser } from '@/hooks/auth/useCurrentUser';
 
 interface PayrollTableProps {
   title?: string;
@@ -44,18 +42,12 @@ export default function PayrollTable({
   onRefetch
 }: PayrollTableProps) {
   const { modalState, showConfirm, closeModal } = useConfirmModal();
-  const { userPermissions } = useUserPermissions();
-  const { user } = useCurrentUser();
-  const canPay = useMemo(() => {
-    const isAdmin = user?.role?.toLowerCase() === 'administrador';
-    if (isAdmin) {
-      return true;
-    }
-    return userPermissions.some(
-      p =>
-        p.module === 'pagos_trabajadores' && (p.action === 'pagar' || p.action === 'listar_pagos')
-    );
-  }, [userPermissions, user?.role]);
+  const { hasPermission } = useUserPermissions();
+  // El botón exige el mismo par que el middleware para POST /api/payroll
+  // (payroll.create); el handler es más laxo (write ← create|edit) y el
+  // administrador pasa siempre. Antes se pedía `pagos_trabajadores.*`, un módulo
+  // que el catálogo no tiene: solo el admin veía el botón (por su fallback).
+  const canPay = hasPermission('payroll', 'create');
 
   const handlePay = async (row: PayrollRow) => {
     const confirmed = await showConfirm({

@@ -9,7 +9,8 @@ import {
   ConflictError,
   DatabaseError
 } from '@/lib/errors/errors';
-import type { UserPermissions } from '@/lib/middleware/auth';
+import { createEmptyPermissions, type UserPermissions } from '@/lib/middleware/auth';
+import { matrixFlagsFor, toMatrixModule } from '@/lib/constants/route-permissions';
 import { SecurityAlertService } from '@/lib/services/SecurityAlertService';
 import logger from '@/lib/utils/logger';
 
@@ -18,6 +19,7 @@ const SHIFT_START = 21 * 60;
 const SHIFT_END = 23 * 60;
 
 const ADMIN_PERMS: UserPermissions = {
+  roles: { read: true, write: true, delete: true },
   users: { read: true, write: true, delete: true },
   sales: { read: true, write: true, delete: true, anulate: true },
   products: { read: true, write: true, delete: true },
@@ -33,110 +35,12 @@ const ADMIN_PERMS: UserPermissions = {
   attendance: { read: true, write: true },
   overtime: { read: true, write: true },
   tips: { read: true, write: true },
-  gratificaciones: { read: true, write: true, delete: true },
+  gratificaciones: { read: true, write: true, edit: true, delete: true },
   accounts: { read: true, write: true, edit: true },
-  categories: { read: true, write: true },
+  categories: { read: true, write: true, delete: true },
   returns: { read: true, write: true, delete: true },
   dashboard: { read: true },
   private_rooms: { read: true, write: true }
-};
-
-const DEFAULT_PERMISSIONS: Record<string, UserPermissions> = {
-  administrador: ADMIN_PERMS,
-  cajero: {
-    ...ADMIN_PERMS,
-    users: { read: true, write: true, delete: true },
-    sales: { read: true, write: true, delete: false, anulate: false },
-    products: { read: true, write: false, delete: false },
-    clients: { read: true, write: true, delete: false },
-    finances: { read: true, write: true, delete: false },
-    reports: { read: false, export: false },
-    settings: { read: false, write: false },
-    orders: { read: true, write: true, delete: false, process: true },
-    advances: { read: true, write: true, delete: false, process: true },
-    commissions: { read: true, write: true, delete: false },
-    gratificaciones: { read: true, write: true, delete: false },
-    returns: { read: true, write: true, delete: false },
-    private_rooms: { read: true, write: true }
-  },
-  garzon: {
-    ...ADMIN_PERMS,
-    users: { read: false, write: false, delete: false },
-    sales: { read: false, write: false, delete: false, anulate: false },
-    products: { read: false, write: false, delete: false },
-    clients: { read: false, write: false, delete: false },
-    finances: { read: false, write: false, delete: false },
-    reports: { read: false, export: false },
-    settings: { read: false, write: false },
-    orders: { read: true, write: true, delete: false, process: true },
-    advances: { read: true, write: true, delete: false, process: false },
-    commissions: { read: false, write: false, delete: false },
-    payroll: { read: false, write: false },
-    rooms: { read: false, write: false, delete: false },
-    attendance: { read: false, write: false },
-    overtime: { read: false, write: false },
-    tips: { read: false, write: false },
-    gratificaciones: { read: false, write: false, delete: false },
-    accounts: { read: false, write: false, edit: false },
-    categories: { read: false, write: false },
-    returns: { read: false, write: false, delete: false },
-    private_rooms: { read: false, write: false }
-  },
-  anfitriona: {
-    ...ADMIN_PERMS,
-    users: { read: false, write: false, delete: false },
-    sales: { read: false, write: false, delete: false, anulate: false },
-    products: { read: false, write: false, delete: false },
-    clients: { read: false, write: false, delete: false },
-    finances: { read: false, write: false, delete: false },
-    reports: { read: false, export: false },
-    settings: { read: false, write: false },
-    orders: { read: false, write: false, delete: false, process: false },
-    advances: { read: true, write: false, delete: false, process: false },
-    commissions: { read: false, write: false, delete: false },
-    payroll: { read: false, write: false },
-    rooms: { read: false, write: false, delete: false },
-    attendance: { read: false, write: false },
-    overtime: { read: false, write: false },
-    tips: { read: false, write: false },
-    gratificaciones: { read: false, write: false, delete: false },
-    accounts: { read: false, write: false, edit: false },
-    categories: { read: false, write: false },
-    returns: { read: false, write: false, delete: false },
-    private_rooms: { read: false, write: false }
-  },
-  barman: {
-    ...ADMIN_PERMS,
-    users: { read: false, write: false, delete: false },
-    sales: { read: true, write: false, delete: false, anulate: false },
-    products: {
-      read: true,
-      write: false,
-      delete: false,
-      accept_transfer: true,
-      return_container: true,
-      // La recepción de envases la confirma el almacén (migración 033).
-      confirm_container_return: false
-    },
-    clients: { read: false, write: false, delete: false },
-    finances: { read: true, write: false, delete: false },
-    reports: { read: false, export: false },
-    settings: { read: false, write: false },
-    orders: { read: false, write: false, delete: false, process: false },
-    advances: { read: true, write: true, delete: false, process: false },
-    commissions: { read: false, write: false, delete: false },
-    payroll: { read: false, write: false },
-    rooms: { read: false, write: false, delete: false },
-    attendance: { read: true, write: true },
-    overtime: { read: true, write: true },
-    tips: { read: true, write: false },
-    gratificaciones: { read: false, write: false, delete: false },
-    accounts: { read: false, write: false, edit: false },
-    categories: { read: true, write: false },
-    returns: { read: false, write: false, delete: false },
-    dashboard: { read: true },
-    private_rooms: { read: false, write: false }
-  }
 };
 
 export async function getUserPermissions(
@@ -144,15 +48,16 @@ export async function getUserPermissions(
   roleId: string | number,
   roleName?: string
 ): Promise<UserPermissions> {
-  const roleKey = (roleName?.toLowerCase() || 'administrador') as string;
+  const roleKey = (roleName?.toLowerCase() || '') as string;
 
   // Optimización: admin retorna defaults sin consultar DB
   if (roleKey === 'administrador') {
-    return DEFAULT_PERMISSIONS.administrador;
+    return ADMIN_PERMS;
   }
 
+  // Sin rol asignado no hay permisos que resolver: se deniega todo.
   if (!roleId) {
-    return DEFAULT_PERMISSIONS[roleKey] || DEFAULT_PERMISSIONS.administrador;
+    return createEmptyPermissions();
   }
 
   try {
@@ -164,72 +69,31 @@ export async function getUserPermissions(
       [String(roleId)]
     );
 
+    // Un rol sin filas asignadas no concede nada.
     if (!perms || perms.length === 0) {
-      const roleKey = (roleName?.toLowerCase() || 'administrador') as string;
-      logger.info('[Auth] No hay permisos en DB para rol', { roleKey });
-      return DEFAULT_PERMISSIONS[roleKey] || DEFAULT_PERMISSIONS.administrador;
+      logger.info('[Auth] El rol no tiene permisos asignados; se deniegan todos', { roleId });
+      return createEmptyPermissions();
     }
 
-    const userPerms: UserPermissions = {
-      users: { read: false, write: false, delete: false },
-      sales: { read: false, write: false, delete: false, anulate: false },
-      products: {
-        read: false,
-        write: false,
-        delete: false,
-        return_container: false,
-        confirm_container_return: false
-      },
-      clients: { read: false, write: false, delete: false },
-      finances: { read: false, write: false, delete: false },
-      reports: { read: false, export: false },
-      settings: { read: false, write: false },
-      orders: { read: false, write: false, delete: false, process: false },
-      advances: { read: false, write: false, delete: false, process: false },
-      commissions: { read: false, write: false, delete: false },
-      payroll: { read: false, write: false },
-      rooms: { read: false, write: false, delete: false },
-      attendance: { read: false, write: false },
-      overtime: { read: false, write: false },
-      tips: { read: false, write: false },
-      gratificaciones: { read: false, write: false, delete: false },
-      accounts: { read: false, write: false, edit: false },
-      categories: { read: false, write: false },
-      returns: { read: false, write: false, delete: false },
-      dashboard: { read: false },
-      private_rooms: { read: false, write: false }
-    };
+    const userPerms = createEmptyPermissions();
 
-    const actionMap: Record<string, string> = {
-      view: 'read',
-      view_details: 'read',
-      create: 'write',
-      edit: 'write',
-      open: 'write',
-      close: 'write',
-      withdraw: 'write',
-      delete: 'delete',
-      export: 'export',
-      anulate: 'anulate',
-      process: 'process'
-    };
-
+    // La traducción catálogo → matriz es la compartida (`lib/constants/route-permissions`):
+    // la misma que usa `lib/middleware/auth` para poblar la matriz que consumen las rutas.
     perms.forEach(perm => {
-      const mappedAction = actionMap[perm.action] || perm.action;
-      let moduleName = perm.module as string;
-      if (moduleName === 'cash_register' || moduleName === 'cashregister') moduleName = 'finances';
-      if (moduleName === 'habitaciones') moduleName = 'rooms';
+      const moduleName = toMatrixModule(perm.module as string);
+      const modulePerms = (userPerms as any)[moduleName];
+      if (!modulePerms) return;
 
-      if (userPerms[moduleName as keyof typeof userPerms]) {
-        (userPerms as any)[moduleName][mappedAction] = true;
+      for (const flag of matrixFlagsFor(modulePerms, perm.action)) {
+        modulePerms[flag] = true;
       }
     });
 
     return userPerms;
   } catch (err) {
     logger.captureException(err, { context: 'AuthQueries:fetchPermissions' });
-    const roleKey = (roleName?.toLowerCase() || 'administrador') as string;
-    return DEFAULT_PERMISSIONS[roleKey] || DEFAULT_PERMISSIONS.administrador;
+    // Ante un error de base tampoco se conceden permisos implícitos.
+    return createEmptyPermissions();
   }
 }
 

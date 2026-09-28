@@ -23,6 +23,8 @@ import {
   DialogDescription
 } from '@/components/ui/dialog';
 import { formatCurrencyCLP } from '@/lib/utils/formatters';
+import { PurchaseCodesPanel } from './PurchaseCodesPanel';
+import type { PurchaseRegistered } from '@/types/purchase';
 import styles from './PurchaseForm.module.css';
 
 export interface PurchaseCatalogItem {
@@ -61,6 +63,8 @@ export function PurchaseForm({ open, onOpenChange, catalog, onDone }: Props) {
   const [telefono, setTelefono] = useState('');
   const [observaciones, setObservaciones] = useState('');
   const [saving, setSaving] = useState(false);
+  // Compra registrada: el modal cambia a los códigos generados para imprimir.
+  const [result, setResult] = useState<PurchaseRegistered | null>(null);
 
   const total = useMemo(
     () => lines.reduce((acc, l) => acc + toNumber(l.cantidad) * toNumber(l.precio_compra), 0),
@@ -153,8 +157,8 @@ export function PurchaseForm({ open, onOpenChange, catalog, onDone }: Props) {
       }
       toast.success(data.message || 'Compra registrada');
       reset();
-      onOpenChange(false);
       onDone();
+      setResult(data.data as PurchaseRegistered);
     } catch {
       toast.error('Error de red al registrar');
     } finally {
@@ -162,8 +166,35 @@ export function PurchaseForm({ open, onOpenChange, catalog, onDone }: Props) {
     }
   };
 
+  // Al cerrar se descarta el resultado: reimprimir vive en el módulo Productos.
+  const handleOpenChange = (next: boolean) => {
+    if (!next) setResult(null);
+    onOpenChange(next);
+  };
+
+  if (result) {
+    return (
+      <Dialog open={open} onOpenChange={handleOpenChange}>
+        <DialogContent className='max-h-[90dvh] overflow-y-auto max-w-2xl rounded-2xl'>
+          <DialogHeader>
+            <DialogTitle className='text-lg font-bold'>Compra registrada</DialogTitle>
+            <DialogDescription>
+              Códigos generados por unidad ingresada, agrupados por producto.
+            </DialogDescription>
+          </DialogHeader>
+          <PurchaseCodesPanel
+            folio={result.folio}
+            codigos={result.codigos_generados ?? []}
+            fechaCrea={result.fecha_crea}
+            onClose={() => handleOpenChange(false)}
+          />
+        </DialogContent>
+      </Dialog>
+    );
+  }
+
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
+    <Dialog open={open} onOpenChange={handleOpenChange}>
       <DialogContent className='max-h-[90dvh] overflow-y-auto max-w-2xl rounded-2xl'>
         <DialogHeader>
           <DialogTitle className='text-lg font-bold'>Nueva compra</DialogTitle>

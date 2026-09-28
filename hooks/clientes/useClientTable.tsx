@@ -43,7 +43,7 @@ export function useClientTable() {
           className='text-purple-600 border-purple-300 bg-purple-50 dark:bg-purple-900/20 dark:border-purple-800 text-xs sm:text-sm'
         >
           <User className='h-3 w-3 mr-1' />
-          Sin RUN
+          Sin RUT
         </Badge>
       );
     }

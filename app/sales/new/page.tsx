@@ -103,6 +103,11 @@ export default function NewSale() {
     }
   };
 
+  // Misma cantidad compartida por el buscador rápido y el modal de categoría: al agregar,
+  // el carro recibe las unidades pedidas para esa presentación.
+  const handleCantidadChange = (id: string, val: string) =>
+    setCantidades(prev => ({ ...prev, [id]: parseInt(val) || 1 }));
+
   const handleHandleSubmit = () => handleSubmit(clientes, anfitrionas);
 
   return (
@@ -137,6 +142,8 @@ export default function NewSale() {
           }
           handleAddProducto={handleAddProducto}
           isChampagneProduct={isChampagneProduct}
+          cantidades={cantidades}
+          handleCantidadChange={handleCantidadChange}
         />
 
         <CategoryCardList
@@ -190,9 +197,7 @@ export default function NewSale() {
         loading={loadingProductos}
         productos={productosCategoria}
         cantidades={cantidades}
-        handleCantidadChange={(id, val) =>
-          setCantidades(prev => ({ ...prev, [id]: parseInt(val) || 1 }))
-        }
+        handleCantidadChange={handleCantidadChange}
         handleAgregarProducto={handleAddProducto}
         categoria={modalCategoria}
         anfitrionas={anfitrionas}

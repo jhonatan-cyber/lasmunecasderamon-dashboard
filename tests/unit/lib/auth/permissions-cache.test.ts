@@ -3,6 +3,7 @@ import { PermissionsCache } from '@/lib/auth/permissions-cache';
 import type { UserPermissions } from '@/lib/middleware/auth';
 
 const mockPerms: UserPermissions = {
+  roles: { read: false, write: false, delete: false },
   users: { read: true, write: false, delete: false },
   sales: { read: true, write: true, delete: false, anulate: false },
   products: { read: true, write: false, delete: false },
@@ -18,9 +19,9 @@ const mockPerms: UserPermissions = {
   attendance: { read: false, write: false },
   overtime: { read: false, write: false },
   tips: { read: false, write: false },
-  gratificaciones: { read: false, write: false, delete: false },
+  gratificaciones: { read: false, write: false, edit: false, delete: false },
   accounts: { read: false, write: false, edit: false },
-  categories: { read: false, write: false },
+  categories: { read: false, write: false, delete: false },
   returns: { read: false, write: false, delete: false },
   dashboard: { read: false },
   private_rooms: { read: false, write: false }

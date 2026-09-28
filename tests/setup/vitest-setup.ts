@@ -109,11 +109,21 @@ global.ResizeObserver = vi.fn().mockImplementation(() => ({
   disconnect: vi.fn()
 }));
 
-if (typeof window !== 'undefined') {
+if (typeof window !== 'undefined' && typeof window.HTMLElement !== 'undefined') {
   (window as any).Notification = {
     permission: 'default',
     requestPermission: vi.fn().mockResolvedValue('granted')
   };
+
+  // jsdom no implementa pointer capture ni scrollIntoView: los necesita Radix (Select, ecc.).
+  // La guarda por `window.HTMLElement` importa: los archivos con
+  // `// @vitest-environment node` corren con el shim de `window` de más arriba, que
+  // no tiene HTMLElement, y sin ella reventaban todos al cargar.
+  const proto = window.HTMLElement.prototype as any;
+  proto.hasPointerCapture = proto.hasPointerCapture || vi.fn(() => false);
+  proto.setPointerCapture = proto.setPointerCapture || vi.fn();
+  proto.releasePointerCapture = proto.releasePointerCapture || vi.fn();
+  proto.scrollIntoView = proto.scrollIntoView || vi.fn();
 }
 
 Object.defineProperty(navigator, 'onLine', {

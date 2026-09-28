@@ -1,9 +1,11 @@
 import { query, generateUUID, withTransaction, type TransactionQuery } from '@/lib/database/db';
 import { randomInt } from 'crypto';
 import { getNowInBusinessTimezone } from '@/lib/business/timezoneService';
+import { sendNotificationToAll } from '@/lib/api/sseService';
 import { BaseRepository } from './BaseRepository';
 import { BusinessError, NotFoundError, ValidationError } from '@/lib/errors/errors';
 import type { SaleOption } from '@/types/sale-options';
+import { resolveShotMl, resolveShotMlAnfitriona } from '@/lib/business/shotMl';
 
 type Queryable = TransactionQuery | typeof query;
 
@@ -26,6 +28,11 @@ export interface PresentacionRow {
    * default de Configuraciones). Sólo viene cuando la query trae el join con productos.
    */
   ml_shot?: number | null;
+  /**
+   * Ml por shot cuando lo pide una anfitriona (columna `productos.ml_shot_anfitriona`;
+   * null = igual que el shot de cliente).
+   */
+  ml_shot_anfitriona?: number | null;
   /** ml que quedan en las botellas abiertas de esta presentación en el bar. */
   ml_abierta?: number;
   /** Acumulado de ml servidos por shots en las ventas de esta presentación. */
@@ -71,12 +78,20 @@ export function parseOpcionesVenta(
   if (Array.isArray(value)) {
     const options = (value as any[])
       .filter(o => o && typeof o.tipo === 'string')
-      .map(o => ({
-        tipo: o.tipo as SaleOption['tipo'],
-        precio: Number(o.precio ?? 0),
-        comision: Number(o.comision ?? 0)
-      }));
-    return options.length > 0 ? (options as SaleOption[]) : undefined;
+      .map(o => {
+        const option: SaleOption = {
+          tipo: o.tipo as SaleOption['tipo'],
+          precio: Number(o.precio ?? 0),
+          comision: Number(o.comision ?? 0)
+        };
+        // Precio del shot para anfitrionas: 0 o ausente = igual que a un cliente.
+        const anfitriona = Number(o.precio_anfitriona ?? 0);
+        if (o.tipo === 'shot' && Number.isFinite(anfitriona) && anfitriona > 0) {
+          option.precio_anfitriona = anfitriona;
+        }
+        return option;
+      });
+    return options.length > 0 ? options : undefined;
   }
   if (value === null || value === undefined) return undefined;
   if (typeof value === 'object') {
@@ -225,6 +240,10 @@ const mapPresentacion = (row: any, topeSimple = 10000): PresentacionRow => {
     ml_botella:
       row.ml_botella === null || row.ml_botella === undefined ? null : Number(row.ml_botella),
     ml_shot: row.ml_shot === null || row.ml_shot === undefined ? null : Number(row.ml_shot),
+    ml_shot_anfitriona:
+      row.ml_shot_anfitriona === null || row.ml_shot_anfitriona === undefined
+        ? null
+        : Number(row.ml_shot_anfitriona),
     ml_abierta: row.ml_abierta === undefined ? undefined : Number(row.ml_abierta ?? 0),
     ml_servidos: row.ml_servidos === undefined ? undefined : Number(row.ml_servidos ?? 0),
     max_anfitrionas:
@@ -589,6 +608,12 @@ export class InventoryRepository {
     await withTransaction(async trx => {
       resultado = await this.traspasarAlBar(trx, input);
     });
+    // Solo después de confirmar la transacción: el módulo Transferencias se refresca en vivo.
+    sendNotificationToAll('transfers_updated', {
+      action: 'created',
+      producto_id: input.producto_id,
+      presentacion_id: input.presentacion_id
+    });
     return resultado;
   }
 
@@ -618,23 +643,35 @@ export class InventoryRepository {
       presentacion_id?: string | null;
       cantidad?: number | null;
       tipo_venta?: string | null;
+      shot_anfitriona?: boolean | null;
     }[],
     contexto: { usuarioId: string | null; fecha: string }
   ): Promise<ShotAlert[]> {
     const alertas: ShotAlert[] = [];
-    const requerido = new Map<string, { botellas: number; shots: number }>();
+    const requerido = new Map<
+      string,
+      { botellas: number; shotsCliente: number; shotsAnfitriona: number }
+    >();
     for (const detalle of detalles) {
       const presentacionId = detalle.presentacion_id?.trim();
       const unidades = Math.max(0, Math.floor(Number(detalle.cantidad ?? 0)));
       if (!presentacionId || unidades === 0) continue;
-      const acumulado = requerido.get(presentacionId) ?? { botellas: 0, shots: 0 };
-      if (detalle.tipo_venta === 'shot') acumulado.shots += unidades;
-      else acumulado.botellas += unidades;
+      const acumulado = requerido.get(presentacionId) ?? {
+        botellas: 0,
+        shotsCliente: 0,
+        shotsAnfitriona: 0
+      };
+      if (detalle.tipo_venta === 'shot') {
+        if (detalle.shot_anfitriona) acumulado.shotsAnfitriona += unidades;
+        else acumulado.shotsCliente += unidades;
+      } else acumulado.botellas += unidades;
       requerido.set(presentacionId, acumulado);
     }
     if (requerido.size === 0) return alertas;
 
-    const hayShots = [...requerido.values()].some(pedido => pedido.shots > 0);
+    const hayShots = [...requerido.values()].some(
+      pedido => pedido.shotsCliente > 0 || pedido.shotsAnfitriona > 0
+    );
     const { shotMl, botellaMl, shotsAlerta } = hayShots
       ? await getBarMlConfig(trx)
       : {
@@ -645,7 +682,8 @@ export class InventoryRepository {
 
     for (const [presentacionId, pedido] of requerido) {
       const presentacion = await trx<any[]>(
-        `SELECT p.id, p.producto_id, p.nombre, p.precio_venta, p.comision, p.ml_botella, pr.ml_shot
+        `SELECT p.id, p.producto_id, p.nombre, p.precio_venta, p.comision, p.ml_botella, pr.ml_shot,
+          pr.ml_shot_anfitriona
          FROM inventario_presentaciones p
          INNER JOIN productos pr ON pr.id_producto = p.producto_id
          WHERE p.id = ? FOR UPDATE OF p`,
@@ -658,11 +696,13 @@ export class InventoryRepository {
         Math.floor(Number(presentacion[0].ml_botella)) > 0
           ? Math.floor(Number(presentacion[0].ml_botella))
           : botellaMl;
-      // Ml por shot del producto (null o 0 = el global de Configuraciones).
-      const shotMlPresentacion =
-        Math.floor(Number(presentacion[0].ml_shot)) > 0
-          ? Math.floor(Number(presentacion[0].ml_shot))
-          : shotMl;
+      // Ml por shot del producto (null o 0 = el global de Configuraciones) y ml del
+      // shot de anfitriona (null o 0 = igual que el de cliente).
+      const shotMlPresentacion = resolveShotMl(presentacion[0].ml_shot, shotMl);
+      const shotMlAnfitriona = resolveShotMlAnfitriona(
+        presentacion[0].ml_shot_anfitriona,
+        shotMlPresentacion
+      );
       const umbralAlertaPresentacion = shotMlPresentacion * shotsAlerta;
 
       // Botellas abiertas primero (se termina la que ya está servida), luego las llenas
@@ -675,9 +715,11 @@ export class InventoryRepository {
         [presentacionId]
       );
 
-      // Plan de consumo: ml pendientes de shots y botellas completas por separado.
+      // Plan de consumo: ml pendientes de shots (cliente y anfitriona por separado)
+      // y botellas completas por separado.
       const plan: { id: string; ml_restante: number }[] = [];
-      let mlPendiente = pedido.shots * shotMlPresentacion;
+      let mlPendiente =
+        pedido.shotsCliente * shotMlPresentacion + pedido.shotsAnfitriona * shotMlAnfitriona;
       let botellasPendientes = pedido.botellas;
 
       for (const unidad of unidades) {
@@ -707,8 +749,11 @@ export class InventoryRepository {
 
       if (mlPendiente > 0 || botellasPendientes > 0) {
         const abiertas = unidades.filter(u => Number(u.ml_restante ?? 0) > 0).length;
+        const totalShots = pedido.shotsCliente + pedido.shotsAnfitriona;
+        const mlRequeridos =
+          pedido.shotsCliente * shotMlPresentacion + pedido.shotsAnfitriona * shotMlAnfitriona;
         const mensaje =
-          pedido.shots === 0
+          totalShots === 0
             ? `Quedan ${unidades.length} de ${pedido.botellas} botellas de "${presentacion[0].nombre}" en el bar`
             : `No alcanza el stock de "${presentacion[0].nombre}" en el bar: faltan ${
                 mlPendiente > 0 ? `${mlPendiente} ml` : `${botellasPendientes} botella(s)`
@@ -716,8 +761,8 @@ export class InventoryRepository {
         throw new BusinessError(mensaje, 'INSUFFICIENT_BAR_STOCK', {
           presentacion_id: presentacionId,
           disponibles: unidades.length,
-          requeridas: pedido.botellas + pedido.shots,
-          ml_requeridos: pedido.shots > 0 ? pedido.shots * shotMlPresentacion : 0,
+          requeridas: pedido.botellas + totalShots,
+          ml_requeridos: totalShots > 0 ? mlRequeridos : 0,
           ml_disponibles: unidades.reduce(
             (total, unidad) =>
               total +
@@ -775,7 +820,10 @@ export class InventoryRepository {
         producto_id: presentacion[0].producto_id,
         presentacion_id: presentacionId,
         cantidad: vendidas.length,
-        ml: pedido.shots > 0 ? pedido.shots * shotMlPresentacion : null,
+        ml:
+          pedido.shotsCliente + pedido.shotsAnfitriona > 0
+            ? pedido.shotsCliente * shotMlPresentacion + pedido.shotsAnfitriona * shotMlAnfitriona
+            : null,
         precio_venta: Math.floor(Number(presentacion[0].precio_venta ?? 0)),
         comision: Math.floor(Number(presentacion[0].comision ?? 0)),
         usuario_id: contexto.usuarioId,
@@ -836,6 +884,7 @@ export class InventoryRepository {
 
   static async acceptTransferStandalone(id: string, usuarioId: string): Promise<void> {
     await withTransaction(trx => this.acceptTransfer(trx, id, usuarioId));
+    sendNotificationToAll('transfers_updated', { action: 'accepted', id });
   }
 
   static async rejectTransfer(trx: Queryable, id: string, usuarioId: string): Promise<void> {
@@ -876,6 +925,7 @@ export class InventoryRepository {
 
   static async rejectTransferStandalone(id: string, usuarioId: string): Promise<void> {
     await withTransaction(trx => this.rejectTransfer(trx, id, usuarioId));
+    sendNotificationToAll('transfers_updated', { action: 'rejected', id });
   }
 
   /** Mapa producto_id → max_anfitrionas. Vacío si la columna aún no existe (migración 017 pendiente). */
@@ -917,6 +967,7 @@ export class InventoryRepository {
         (SELECT COALESCE(SUM(m.ml), 0) FROM inventario_movimientos m WHERE m.presentacion_id = p.id AND m.tipo = 'venta' AND m.ml > 0) AS ml_servidos,
         pr.nombre AS producto_nombre, pr.codigo AS producto_codigo, pr.foto AS producto_foto,
         pr.precio AS producto_precio, pr.comision AS producto_comision, pr.ml_shot,
+        pr.ml_shot_anfitriona,
         c.nombre AS categoria_nombre
        FROM inventario_presentaciones p
        INNER JOIN productos pr ON pr.id_producto = p.producto_id
@@ -1009,7 +1060,8 @@ export class InventoryRepository {
         (SELECT COUNT(*) FROM inventario_unidades u WHERE u.presentacion_id = p.id AND u.estado = '${ESTADO_UNIDAD_ACTIVA}' AND u.ubicacion = 'bar') AS stock_bar,
         (SELECT COALESCE(SUM(u.ml_restante), 0) FROM inventario_unidades u WHERE u.presentacion_id = p.id AND u.estado = '${ESTADO_UNIDAD_ACTIVA}' AND u.ubicacion = 'bar') AS ml_abierta,
         pr.id_producto AS producto_id, pr.codigo AS producto_codigo, pr.nombre AS producto_nombre,
-        pr.foto AS producto_foto, pr.categoria_id, c.nombre AS categoria_nombre, pr.ml_shot
+        pr.foto AS producto_foto, pr.categoria_id, c.nombre AS categoria_nombre, pr.ml_shot,
+        pr.ml_shot_anfitriona, pr.max_anfitrionas
        FROM inventario_presentaciones p
        INNER JOIN productos pr ON pr.id_producto = p.producto_id AND pr.estado = 1
        LEFT JOIN categorias c ON c.id_categoria = pr.categoria_id
@@ -1033,6 +1085,14 @@ export class InventoryRepository {
       ml_botella:
         row.ml_botella === null || row.ml_botella === undefined ? null : Number(row.ml_botella),
       ml_shot: row.ml_shot === null || row.ml_shot === undefined ? null : Number(row.ml_shot),
+      ml_shot_anfitriona:
+        row.ml_shot_anfitriona === null || row.ml_shot_anfitriona === undefined
+          ? null
+          : Number(row.ml_shot_anfitriona),
+      max_anfitrionas:
+        row.max_anfitrionas === null || row.max_anfitrionas === undefined
+          ? null
+          : Number(row.max_anfitrionas),
       ml_abierta: Number(row.ml_abierta ?? 0),
       // Precio de shot guardado (si existe) para el selector Botella/Shot de la venta.
       opciones_venta:
@@ -1069,7 +1129,8 @@ export class InventoryRepository {
           r.nick AS aceptado_nombre,
           c.nombre AS categoria_nombre,
           p.precio_venta AS pres_precio, p.comision AS pres_comision,
-          pr.precio AS producto_precio, pr.comision AS producto_comision, pr.ml_shot
+          pr.precio AS producto_precio, pr.comision AS producto_comision, pr.ml_shot,
+          pr.ml_shot_anfitriona
          FROM inventario_movimientos m
          LEFT JOIN productos pr ON pr.id_producto = m.producto_id
          LEFT JOIN inventario_presentaciones p ON p.id = m.presentacion_id
@@ -1124,7 +1185,8 @@ export class InventoryRepository {
         receptor.nick AS aceptado_nombre,
         c.nombre AS categoria_nombre,
         pr.precio_venta AS pres_precio, pr.comision AS pres_comision,
-        p.precio AS producto_precio, p.comision AS producto_comision, p.ml_shot
+        p.precio AS producto_precio, p.comision AS producto_comision, p.ml_shot,
+        p.ml_shot_anfitriona
        FROM inventario_movimientos m
        LEFT JOIN productos p ON p.id_producto = m.producto_id
        LEFT JOIN inventario_presentaciones pr ON pr.id = m.presentacion_id
@@ -1589,7 +1651,7 @@ export class InventoryRepository {
     count: number,
     presentacionId?: string | null,
     compraId?: string | null
-  ): Promise<{ codigo: string; codigo_barras: string }[]> {
+  ): Promise<{ id: string; codigo: string; codigo_barras: string }[]> {
     if (count <= 0) return [];
     const [codigos, barcodes] = await Promise.all([
       this.nextCodigos(trx, count),
@@ -1618,7 +1680,7 @@ export class InventoryRepository {
       .join(', ');
     const values = rows.flatMap(row => Object.values(row));
     await trx(`INSERT INTO inventario_unidades (${columns}) VALUES ${placeholders}`, values);
-    return rows.map(r => ({ codigo: r.codigo, codigo_barras: r.codigo_barras }));
+    return rows.map(r => ({ id: r.id, codigo: r.codigo, codigo_barras: r.codigo_barras }));
   }
 
   static async syncStockTotal(trx: Queryable, productoId: string): Promise<number> {
@@ -1634,8 +1696,8 @@ export class InventoryRepository {
     productoId: string,
     count: number,
     presentacionId?: string | null
-  ): Promise<{ codigo: string; codigo_barras: string }[]> {
-    let generadas: { codigo: string; codigo_barras: string }[] = [];
+  ): Promise<{ id: string; codigo: string; codigo_barras: string }[]> {
+    let generadas: { id: string; codigo: string; codigo_barras: string }[] = [];
     await withTransaction(async trx => {
       generadas = await this.generateUnits(trx, productoId, count, presentacionId);
       await this.syncStockTotal(trx, productoId);

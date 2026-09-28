@@ -63,6 +63,8 @@ function PrepagoForm({
 
   const availableMethods = ['efectivo', 'tarjeta', 'transferencia'] as const;
 
+  const isMixedPayment = paymentMethod === 'mixto';
+
   return (
     <form id='prepago-form' onSubmit={onSubmit} className='space-y-6'>
       {}
@@ -111,7 +113,7 @@ function PrepagoForm({
         showMixto={true}
       />
 
-      {paymentMethod === 'mixto' && (
+      {isMixedPayment && (
         <div className='rounded-2xl border border-slate-200 bg-slate-50 p-4 dark:border-slate-800 dark:bg-slate-950/60'>
           <div className='mb-3 flex items-center gap-2'>
             <Split className='h-4 w-4 text-slate-700 dark:text-slate-200' />

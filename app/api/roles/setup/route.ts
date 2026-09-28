@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import { withRoute } from '@/lib/api/withRoute';
-import { query, generateUUID } from '@/lib/database/db';
+import { query } from '@/lib/database/db';
+import { RoleService } from '@/lib/services/RoleService';
 import logger from '@/lib/utils/logger';
 
 const DEFAULT_ROLES = [
@@ -28,14 +29,11 @@ export const POST = withRoute({ auth: true, access: 'administrator', audit: true
     }
 
     let creados = 0;
-    const now = new Date().toISOString().slice(0, 19).replace('T', ' ');
 
     for (const role of DEFAULT_ROLES) {
-      await query(
-        `INSERT INTO roles (id_rol, nombre, descripcion, estado, fecha_crea, fecha_mod, fecha_baja)
-         VALUES (?, ?, ?, 1, ?, NULL, NULL)`,
-        [generateUUID(), role.nombre, role.descripcion, now]
-      );
+      // Vía servicio/repositorio para que el rol nazca con su matriz inicial
+      // sembrada (antes se insertaba a mano y quedaba sin permisos asignados).
+      await RoleService.create(role);
       creados++;
     }
 

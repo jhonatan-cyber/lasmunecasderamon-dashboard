@@ -1,6 +1,5 @@
 'use client';
 
-import Image from 'next/image';
 import React, { useState } from 'react';
 import { Product, Presentacion } from '@/types/product';
 import {
@@ -31,6 +30,7 @@ import { useSortable } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
 import { useUserPermissions } from '@/hooks/auth/useUserPermissions';
 import { formatCurrencyCLP } from '@/lib/utils/formatters';
+import { ProductPhoto } from '@/components/shared/ProductPhoto';
 
 interface ProductCardProps {
   product: Product;
@@ -59,10 +59,10 @@ const ProductCard: React.FC<ProductCardProps> = ({
   const [detailsOpen, setDetailsOpen] = useState(false);
   const { hasPermission } = useUserPermissions();
 
-  const canEdit = hasPermission('productos', 'editar_categoria');
-  const canDelete = hasPermission('productos', 'eliminar');
-  const canActivate = hasPermission('productos', 'activar');
-  const canDeactivate = hasPermission('productos', 'desactivar');
+  const canEdit = hasPermission('products', 'edit');
+  const canDelete = hasPermission('products', 'delete');
+  const canActivate = hasPermission('products', 'activate');
+  const canDeactivate = hasPermission('products', 'deactivate');
 
   const hasAnyAction = canEdit || canDelete || canActivate || canDeactivate;
 
@@ -92,7 +92,7 @@ const ProductCard: React.FC<ProductCardProps> = ({
   return (
     <>
       <Card
-        className='group relative border-none bg-white dark:bg-slate-900/40 backdrop-blur-xs shadow-md hover:shadow-xl transition-all duration-300 rounded-4xl overflow-hidden'
+        className='group relative border-none bg-white dark:bg-slate-900 backdrop-blur-xs shadow-md hover:shadow-xl transition-all duration-300 rounded-4xl overflow-hidden'
         ref={isDraggable ? setNodeRef : undefined}
         style={style}
       >
@@ -180,13 +180,12 @@ const ProductCard: React.FC<ProductCardProps> = ({
           </DropdownMenu>
         </div>
 
-        {}
+        {/* Imagen del producto */}
         <div
           data-photo-surface
-          className='relative w-full aspect-4/3 overflow-hidden group-hover:scale-105 transition-transform duration-500'
+          className='relative w-full aspect-4/3 overflow-hidden group-hover:scale-105 transition-transform duration-500 bg-gray-100 dark:bg-slate-800'
         >
-          <Image
-            data-themed-photo
+          <ProductPhoto
             src={
               !presentation?.foto || presentation.foto === 'default.png' || presentation.foto === ''
                 ? !product.foto || product.foto === 'default.png' || product.foto === ''
@@ -200,8 +199,7 @@ const ProductCard: React.FC<ProductCardProps> = ({
             }
             alt={presentation ? `${product.name} ${presentation.nombre}` : product.name}
             fill
-            sizes='(max-width: 768px) 100vw, 33vw'
-            className='w-full h-full object-cover'
+            className='object-contain p-4'
           />
           {}
           <div className='absolute bottom-3 left-3 flex gap-2'>

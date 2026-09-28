@@ -76,7 +76,7 @@ import { DELETE as deviceDelete } from '@/app/api/kiosk/devices/[id]/route';
 import { GET as kioskBoardGet } from '@/app/api/kiosk/board/route';
 import { POST as kioskChallengePost } from '@/app/api/kiosk/attendance/challenge/route';
 import { GET as publicUsersGet } from '@/app/api/public/users/route';
-import { KIOSK_DEVICE_APIS, PUBLIC_PATHS } from '@/lib/middleware/proxy-routes';
+import { KIOSK_DEVICE_APIS, PUBLIC_PATHS } from '@/lib/constants/route-permissions';
 
 const postJson = (body: unknown) =>
   new Request('http://localhost/api/kiosk/session', {

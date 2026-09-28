@@ -137,6 +137,71 @@ describe('useSaleValidation totals (propina / total)', () => {
     expect(detalles[1].tipo_venta).toBeUndefined();
   });
 
+  it('distingue el shot de anfitriona en el payload (se separa en reportes y caja)', async () => {
+    const { result } = renderSaleHook();
+    act(() => {
+      result.current.formState.setProductos([
+        {
+          id: 'p1',
+          producto_id: 'prod-1',
+          presentacion_id: 'pres-1',
+          nombre: 'Whisky 750 ml',
+          precio: 3000,
+          cantidad: 2,
+          subtotal: 6000,
+          tipo_venta: 'shot',
+          shot_anfitriona: true
+        }
+      ]);
+    });
+    setMetodoPago(result, 'efectivo');
+    createVentaMock.mockResolvedValue({ success: true, data: { id: 'v1' } });
+
+    await act(async () => {
+      await result.current.handleSubmit([], []);
+    });
+
+    expect(createVentaMock.mock.calls[0][0].detalles[0]).toMatchObject({
+      presentacion_id: 'pres-1',
+      cantidad: 2,
+      tipo_venta: 'shot',
+      shot_anfitriona: true
+    });
+  });
+
+  it('no mezcla el shot de cliente con el de anfitriona en una sola línea del carro', async () => {
+    const { result } = renderSaleHook();
+    const base = {
+      id: 'pres-1',
+      producto_id: 'prod-1',
+      presentacion_id: 'pres-1',
+      nombre: 'Whisky 750 ml',
+      comision: 0,
+      stock_bar: 2,
+      opciones_venta: []
+    };
+
+    await act(async () => {
+      await result.current.handleAddProducto({
+        ...base,
+        tipo_venta: 'shot',
+        shot_anfitriona: false,
+        precio: 5000
+      });
+      await result.current.handleAddProducto({
+        ...base,
+        tipo_venta: 'shot',
+        shot_anfitriona: true,
+        precio: 3000
+      });
+    });
+
+    const productos = result.current.formState.productos;
+    expect(productos).toHaveLength(2);
+    expect(productos.map((p: any) => p.shot_anfitriona)).toEqual([false, true]);
+    expect(productos.map((p: any) => p.precio)).toEqual([5000, 3000]);
+  });
+
   it('el payload de la venta envía la propina (reparto) y el total sin cargo extra', async () => {
     const { result } = renderSaleHook();
     addProduct(result);

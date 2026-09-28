@@ -15,8 +15,9 @@ import {
   DialogDescription
 } from '@/components/ui/dialog';
 import { CHAMPAGNE_DEFAULT_TIERS, type ChampagneTier } from '@/lib/business/champagne';
-import { resolveShotMl } from '@/lib/business/shotMl';
+import { resolveShotMl, resolveShotMlAnfitriona } from '@/lib/business/shotMl';
 import { formatCurrencyCLP } from '@/lib/utils/formatters';
+import { ProductPhoto } from '@/components/shared/ProductPhoto';
 import { isSimpleProduct } from '@/components/orders/productModalRules';
 import { useConfigValue } from '@/hooks/shared/useConfigValue';
 
@@ -48,12 +49,20 @@ export function parseSavedOptions(raw: unknown): SaleOption[] | undefined {
   if (Array.isArray(raw)) {
     const options = (raw as any[])
       .filter(o => o && typeof o.tipo === 'string')
-      .map(o => ({
-        tipo: o.tipo as SaleType,
-        precio: Number(o.precio ?? 0),
-        comision: Number(o.comision ?? 0)
-      }));
-    return options.length > 0 ? (options as SaleOption[]) : undefined;
+      .map(o => {
+        const option: SaleOption = {
+          tipo: o.tipo as SaleType,
+          precio: Number(o.precio ?? 0),
+          comision: Number(o.comision ?? 0)
+        };
+        // Precio del shot para anfitrionas; 0 o ausente = igual que a un cliente.
+        const anfitriona = Number(o.precio_anfitriona ?? 0);
+        if (option.tipo === 'shot' && Number.isFinite(anfitriona) && anfitriona > 0) {
+          option.precio_anfitriona = anfitriona;
+        }
+        return option;
+      });
+    return options.length > 0 ? options : undefined;
   }
   return undefined;
 }
@@ -78,6 +87,8 @@ export interface BarStockItem {
   ml_botella?: number | null;
   /** Ml servidos por shot de ese producto (null = default de Configuraciones > Bar). */
   ml_shot?: number | null;
+  /** Ml servidos por shot a anfitriona (null = igual que a cliente). */
+  ml_shot_anfitriona?: number | null;
   /** ml que quedan en la botella abierta de esa presentación en el bar. */
   ml_abierta?: number;
   /** Acumulado de ml servidos por shots en las ventas de esa presentación. */
@@ -114,10 +125,20 @@ export function TransferModal({
   const [tipos, setTipos] = useState<SaleType[]>(['botella']);
   const [precioShot, setPrecioShot] = useState('');
   const [comisionShot, setComisionShot] = useState('');
-  // Ml por shot del producto: editable al traspasar (vacío = valor global).
-  const [mlShotEdit, setMlShotEdit] = useState('');
+  // Ml por shot para cada audiencia (anfitriona vacío = igual que cliente).
+  const [mlShotCliente, setMlShotCliente] = useState('');
+  const [mlShotAnfitriona, setMlShotAnfitriona] = useState('');
   // Lo que se muestra en los labels: lo que se está editando o el valor vigente.
-  const mlPorShot = mlShotEdit !== '' ? Number(mlShotEdit) : resolveShotMl(item?.ml_shot, shotMl);
+  const mlPorShot =
+    mlShotCliente !== '' ? Number(mlShotCliente) : resolveShotMl(item?.ml_shot, shotMl);
+  const mlPorShotAnfitriona =
+    mlShotAnfitriona !== ''
+      ? Number(mlShotAnfitriona)
+      : resolveShotMlAnfitriona(item?.ml_shot_anfitriona, mlPorShot);
+  const etiquetaShot =
+    mlPorShotAnfitriona !== mlPorShot
+      ? `Shot · ${mlPorShot} ml · Anf ${mlPorShotAnfitriona} ml`
+      : `Shot · ${mlPorShot} ml`;
   const [tiers, setTiers] = useState<{ anfitrionas: number; precio: string; comision: string }[]>(
     []
   );
@@ -154,9 +175,16 @@ export function TransferModal({
       setComision(bottleComision ? formatNumber(String(bottleComision)) : '');
       setPrecioShot(shot && Number(shot.precio) > 0 ? formatNumber(String(shot.precio)) : '');
       setComisionShot(shot?.comision ? formatNumber(String(shot.comision)) : '');
-      setMlShotEdit(
+      setMlShotCliente(
         item.ml_shot !== null && item.ml_shot !== undefined && Number(item.ml_shot) > 0
           ? String(item.ml_shot)
+          : ''
+      );
+      setMlShotAnfitriona(
+        item.ml_shot_anfitriona !== null &&
+          item.ml_shot_anfitriona !== undefined &&
+          Number(item.ml_shot_anfitriona) > 0
+          ? String(item.ml_shot_anfitriona)
           : ''
       );
       // Con configuración existente se usa directo; solo la primera vez se pide manual.
@@ -197,7 +225,8 @@ export function TransferModal({
     setComision('');
     setPrecioShot('');
     setComisionShot('');
-    setMlShotEdit('');
+    setMlShotCliente('');
+    setMlShotAnfitriona('');
     setTipos(['botella']);
     setTiers([]);
     setEditarPrecios(false);
@@ -213,6 +242,11 @@ export function TransferModal({
 
   const usarConfigGuardada = tieneConfig && !editarPrecios;
 
+  // El input de ml solo existe cuando el tipo de venta shot está activo.
+  const shotActivo = usarConfigGuardada
+    ? opcionesGuardadas.some(option => option.tipo === 'shot')
+    : tipos.includes('shot');
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!item || submitting.current) return;
@@ -222,21 +256,38 @@ export function TransferModal({
       return;
     }
     // Con configuración existente se reutiliza precio, comisión y anfitrionas sin pedirlos.
-    let options: { tipo: SaleType; precio: number; comision: number }[];
+    let options: SaleOption[];
     if (usarConfigGuardada) {
-      options = opcionesGuardadas.map(option => ({
-        tipo: option.tipo,
-        precio: Number(option.precio ?? 0),
-        comision: Number(option.comision ?? 0)
-      }));
+      options = opcionesGuardadas.map(option => {
+        const reutilizada: SaleOption = {
+          tipo: option.tipo,
+          precio: Number(option.precio ?? 0),
+          comision: Number(option.comision ?? 0)
+        };
+        const anfitriona = Number(option.precio_anfitriona ?? 0);
+        if (option.tipo === 'shot' && Number.isInteger(anfitriona) && anfitriona > 0) {
+          reutilizada.precio_anfitriona = anfitriona;
+        }
+        return reutilizada;
+      });
     } else {
       const pv = Number(precioVenta.replace(/\./g, ''));
       const com = comision.trim() === '' ? 0 : Number(comision.replace(/\./g, ''));
-      options = tipos.map(tipo => ({
-        tipo,
-        precio: tipo === 'botella' ? pv : Number(precioShot.replace(/\./g, '')),
-        comision: tipo === 'botella' ? com : Number(comisionShot.replace(/\./g, ''))
-      }));
+      // Precio único del shot: rige para cliente y anfitriona (se guarda en ambos
+      // campos para que la venta siga ofreciendo el "shot anfitriona" con comisión).
+      const pvShot = Number(precioShot.replace(/\./g, ''));
+      options = tipos.map(tipo => {
+        if (tipo === 'botella') return { tipo, precio: pv, comision: com };
+        const option: SaleOption = {
+          tipo,
+          precio: pvShot,
+          comision: Number(comisionShot.replace(/\./g, ''))
+        };
+        if (Number.isInteger(pvShot) && pvShot > 0) {
+          option.precio_anfitriona = pvShot;
+        }
+        return option;
+      });
       if (
         !options.length ||
         options.some(
@@ -262,26 +313,43 @@ export function TransferModal({
     submitting.current = true;
     setSaving(true);
     try {
-      // Ml por shot: se guarda en el producto si cambió (vacío = volver al global).
-      const mlNuevo = mlShotEdit.replace(/\D/g, '');
-      if (mlNuevo !== '' && (Number(mlNuevo) < 1 || Number(mlNuevo) > 10000)) {
-        toast.error('Los ml por shot deben estar entre 1 y 10000');
-        return;
-      }
+      // Ml por shot: se guardan en el producto si cambiaron, solo con el shot activo
+      // (vacío anfitriona = igual que cliente; vacío cliente = valor global).
+      const mlNuevo = mlShotCliente.replace(/\D/g, '');
+      const mlAnfNuevo = mlShotAnfitriona.replace(/\D/g, '');
       const mlActual =
         item.ml_shot !== null && item.ml_shot !== undefined && Number(item.ml_shot) > 0
           ? String(item.ml_shot)
           : '';
-      if (mlNuevo !== mlActual) {
-        const mlRes = await fetch(`/api/products/${item.producto_id}`, {
-          method: 'PUT',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ ml_shot: mlNuevo === '' ? null : Number(mlNuevo) })
-        });
-        const mlData = await mlRes.json().catch(() => ({}));
-        if (!mlRes.ok || !mlData.success) {
-          toast.error(mlData.message || 'No se pudieron guardar los ml por shot');
+      const mlAnfActual =
+        item.ml_shot_anfitriona !== null &&
+        item.ml_shot_anfitriona !== undefined &&
+        Number(item.ml_shot_anfitriona) > 0
+          ? String(item.ml_shot_anfitriona)
+          : '';
+      if (shotActivo) {
+        if (mlNuevo !== '' && (Number(mlNuevo) < 1 || Number(mlNuevo) > 10000)) {
+          toast.error('Los ml por shot deben estar entre 1 y 10000');
           return;
+        }
+        if (mlAnfNuevo !== '' && (Number(mlAnfNuevo) < 1 || Number(mlAnfNuevo) > 10000)) {
+          toast.error('Los ml del shot de anfitriona deben estar entre 1 y 10000');
+          return;
+        }
+        if (mlNuevo !== mlActual || mlAnfNuevo !== mlAnfActual) {
+          const mlRes = await fetch(`/api/products/${item.producto_id}`, {
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              ml_shot: mlNuevo === '' ? null : Number(mlNuevo),
+              ml_shot_anfitriona: mlAnfNuevo === '' ? null : Number(mlAnfNuevo)
+            })
+          });
+          const mlData = await mlRes.json().catch(() => ({}));
+          if (!mlRes.ok || !mlData.success) {
+            toast.error(mlData.message || 'No se pudieron guardar los ml por shot');
+            return;
+          }
         }
       }
       // Solo se reescribe la tabla de anfitrionas si el usuario editó precios manualmente.
@@ -332,7 +400,7 @@ export function TransferModal({
 
   return (
     <Dialog open={open} onOpenChange={handleOpenChange}>
-      <DialogContent className='max-h-[90dvh] overflow-y-auto max-w-md rounded-2xl'>
+      <DialogContent className='max-h-[90dvh] max-w-lg overflow-y-auto rounded-2xl'>
         <DialogHeader>
           <DialogTitle className='text-lg font-bold'>Traspasar al bar</DialogTitle>
           <DialogDescription>
@@ -340,25 +408,29 @@ export function TransferModal({
           </DialogDescription>
         </DialogHeader>
         {!item ? null : (
-          <form onSubmit={handleSubmit} className='space-y-4 py-2'>
-            <div className='flex items-center gap-3'>
-              {/* eslint-disable-next-line @next/next/no-img-element -- ruta interna controlada */}
-              <img
-                data-themed-photo
-                src={
-                  item.foto && item.foto !== 'default.png'
-                    ? item.foto.startsWith('http')
-                      ? item.foto
-                      : `/api/images/products/${item.foto}`
-                    : item.producto_foto && item.producto_foto !== 'default.png'
-                      ? item.producto_foto.startsWith('http')
-                        ? item.producto_foto
-                        : `/api/images/products/${item.producto_foto}`
-                      : '/api/images/products/default.png'
-                }
-                alt={`${item.producto_nombre} ${item.nombre}`}
-                className='w-16 h-16 rounded-2xl object-cover border border-gray-200 dark:border-slate-700 shrink-0'
-              />
+          <form onSubmit={handleSubmit} className='space-y-5 py-2'>
+            <div className='flex items-center gap-3 rounded-2xl border border-gray-200/70 bg-gray-50/60 p-3 dark:border-white/10 dark:bg-white/[0.03]'>
+              <div
+                data-photo-surface
+                className='relative h-16 w-16 shrink-0 overflow-hidden rounded-xl bg-white dark:bg-white/[0.04]'
+              >
+                <ProductPhoto
+                  src={
+                    item.foto && item.foto !== 'default.png'
+                      ? item.foto.startsWith('http')
+                        ? item.foto
+                        : `/api/images/products/${item.foto}`
+                      : item.producto_foto && item.producto_foto !== 'default.png'
+                        ? item.producto_foto.startsWith('http')
+                          ? item.producto_foto
+                          : `/api/images/products/${item.producto_foto}`
+                        : '/api/images/products/default.png'
+                  }
+                  alt={`${item.producto_nombre} ${item.nombre}`}
+                  fill
+                  className='object-contain p-1.5'
+                />
+              </div>
               <p className='text-sm text-gray-600 dark:text-gray-400 min-w-0'>
                 <span className='font-semibold text-gray-900 dark:text-neutral-100 block truncate'>
                   {item.producto_nombre} — {item.nombre}
@@ -402,27 +474,6 @@ export function TransferModal({
               />
             </div>
 
-            <div className='space-y-2'>
-              <label
-                htmlFor='transfer-ml-shot'
-                className='block text-xs font-bold uppercase tracking-wider text-gray-500 dark:text-gray-400 ml-1'
-              >
-                Ml por shot
-              </label>
-              <Input
-                id='transfer-ml-shot'
-                value={mlShotEdit}
-                onChange={e => setMlShotEdit(e.target.value.replace(/\D/g, ''))}
-                placeholder={`${shotMl} (global)`}
-                inputMode='numeric'
-                disabled={saving}
-                className='h-12 w-32'
-              />
-              <p className='text-[11px] text-gray-400 dark:text-gray-500 ml-1'>
-                Se guarda en el producto al traspasar. En vacío usa el valor global ({shotMl} ml).
-              </p>
-            </div>
-
             {usarConfigGuardada ? (
               <div className='space-y-2 rounded-xl border border-emerald-200 bg-emerald-50/60 p-3 dark:border-emerald-900 dark:bg-emerald-950/20'>
                 <p className='text-sm font-semibold'>Configuración guardada</p>
@@ -437,10 +488,54 @@ export function TransferModal({
                       className='flex items-center justify-between rounded-lg bg-white/70 px-3 py-2 text-sm dark:bg-black/20'
                     >
                       <dt className='font-medium capitalize'>
-                        {option.tipo === 'botella' ? 'Botella' : `Shot · ${mlPorShot} ml`}
+                        {option.tipo === 'botella' ? 'Botella' : 'Shot'}
                       </dt>
-                      <dd className='text-right tabular-nums'>
-                        <span className='font-semibold'>{formatCurrencyCLP(option.precio)}</span>{' '}
+                      <dd className='flex flex-wrap items-center justify-end gap-x-2 gap-y-1 text-right tabular-nums'>
+                        {option.tipo === 'shot' && (
+                          <span className='flex flex-wrap items-center gap-x-1.5 gap-y-1'>
+                            <span className='text-xs text-muted-foreground'>Cli.</span>
+                            <Input
+                              id='transfer-ml-shot'
+                              aria-label='Ml por shot a cliente'
+                              value={mlShotCliente}
+                              onChange={event =>
+                                setMlShotCliente(event.target.value.replace(/\D/g, ''))
+                              }
+                              placeholder={String(shotMl)}
+                              inputMode='numeric'
+                              disabled={saving}
+                              className='h-8 w-16 text-center'
+                            />
+                            <span className='text-xs text-muted-foreground'>ml · Anf.</span>
+                            <Input
+                              id='transfer-ml-shot-anfitriona'
+                              aria-label='Ml por shot a anfitriona'
+                              value={mlShotAnfitriona}
+                              onChange={event =>
+                                setMlShotAnfitriona(event.target.value.replace(/\D/g, ''))
+                              }
+                              placeholder='= cli.'
+                              inputMode='numeric'
+                              disabled={saving}
+                              className='h-8 w-16 text-center'
+                            />
+                            <span className='text-xs text-muted-foreground'>ml</span>
+                          </span>
+                        )}
+                        {option.tipo === 'shot' &&
+                        Number(option.precio_anfitriona ?? 0) > 0 &&
+                        Number(option.precio_anfitriona) !== Number(option.precio) ? (
+                          <span className='flex flex-col text-right'>
+                            <span className='font-semibold'>
+                              Cliente {formatCurrencyCLP(option.precio)}
+                            </span>
+                            <span className='font-semibold text-muted-foreground'>
+                              Anfitriona {formatCurrencyCLP(Number(option.precio_anfitriona))}
+                            </span>
+                          </span>
+                        ) : (
+                          <span className='font-semibold'>{formatCurrencyCLP(option.precio)}</span>
+                        )}{' '}
                         <span className='text-xs text-muted-foreground'>
                           {Number(option.comision) > 0
                             ? `· Comisión ${formatCurrencyCLP(Number(option.comision))}`
@@ -520,7 +615,7 @@ export function TransferModal({
                     </ToggleGroupItem>
                     <ToggleGroupItem value='shot' className='flex-1 rounded-full'>
                       {tipos.includes('shot') && <Check aria-hidden='true' />}
-                      Shot · {mlPorShot} ml
+                      {etiquetaShot}
                     </ToggleGroupItem>
                   </ToggleGroup>
                   <p className='text-xs text-muted-foreground'>
@@ -530,12 +625,12 @@ export function TransferModal({
                   {tipos.map(tipo => (
                     <fieldset key={tipo} className='rounded-xl border p-3'>
                       <legend className='px-1 text-sm font-semibold'>
-                        {tipo === 'botella' ? 'Botella' : `Shot · ${mlPorShot} ml`}
+                        {tipo === 'botella' ? 'Botella' : etiquetaShot}
                       </legend>
-                      <div className='grid grid-cols-2 gap-3'>
+                      <div className='grid grid-cols-2 items-end gap-3'>
                         <div className='flex flex-col gap-2'>
                           <label htmlFor={'price-' + tipo} className='text-sm'>
-                            Precio por {tipo}
+                            {tipo === 'botella' ? 'Precio por botella' : 'Precio shot'}
                           </label>
                           <Input
                             id={'price-' + tipo}
@@ -568,7 +663,48 @@ export function TransferModal({
                             }
                           />
                         </div>
+                        {tipo === 'shot' && (
+                          <div className='flex flex-col gap-2'>
+                            <label htmlFor='transfer-ml-shot-cliente' className='text-sm'>
+                              Ml shot cliente
+                            </label>
+                            <Input
+                              id='transfer-ml-shot-cliente'
+                              value={mlShotCliente}
+                              onChange={event =>
+                                setMlShotCliente(event.target.value.replace(/\D/g, ''))
+                              }
+                              placeholder={String(shotMl)}
+                              inputMode='numeric'
+                              disabled={saving}
+                            />
+                          </div>
+                        )}
+                        {tipo === 'shot' && (
+                          <div className='flex flex-col gap-2'>
+                            <label htmlFor='transfer-ml-shot-anfitriona' className='text-sm'>
+                              Ml shot anfitriona
+                            </label>
+                            <Input
+                              id='transfer-ml-shot-anfitriona'
+                              value={mlShotAnfitriona}
+                              onChange={event =>
+                                setMlShotAnfitriona(event.target.value.replace(/\D/g, ''))
+                              }
+                              placeholder='Igual que cliente'
+                              inputMode='numeric'
+                              disabled={saving}
+                            />
+                          </div>
+                        )}
                       </div>
+                      {tipo === 'shot' && (
+                        <p className='mt-2 ml-1 text-[11px] text-gray-400 dark:text-gray-500'>
+                          El precio del shot es único para cliente y anfitriona. Los ml se guardan
+                          en el producto al traspasar: en vacío, cliente usa el valor global (
+                          {shotMl} ml) y anfitriona usa el de cliente.
+                        </p>
+                      )}
                     </fieldset>
                   ))}
                 </fieldset>
@@ -633,20 +769,20 @@ export function TransferModal({
               </>
             )}
 
-            <div className='flex justify-end gap-2'>
+            <div className='grid grid-cols-2 gap-2'>
               <Button
                 type='button'
                 variant='outline'
                 onClick={() => handleOpenChange(false)}
                 disabled={saving}
-                className='rounded-full px-6'
+                className='h-11 rounded-full px-6'
               >
                 Cancelar
               </Button>
               <Button
                 type='submit'
                 disabled={saving || disponible === 0 || (!usarConfigGuardada && tipos.length === 0)}
-                className='rounded-full px-6 bg-black text-white hover:bg-white hover:text-black border-2'
+                className='h-11 rounded-full px-6 bg-black text-white hover:bg-white hover:text-black border-2'
               >
                 {saving ? (
                   <span className='flex items-center gap-2'>

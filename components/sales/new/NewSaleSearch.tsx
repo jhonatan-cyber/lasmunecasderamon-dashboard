@@ -1,4 +1,6 @@
-﻿import { Search, X, Plus } from 'lucide-react';
+﻿'use client';
+
+import { Search, X, Plus } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import {
@@ -18,10 +20,21 @@ import {
   CUENTA_TABLE_HEADER_ROW_CLASS,
   CUENTA_TABLE_ROW_CLASS
 } from '@/components/cuentas/tables/cuentaTableStyles';
+import { useState } from 'react';
 import { formatCurrencyNoDecimals } from '@/lib/utils/formatters';
-import { HostessMultiSelect, getHostessLimit, isExpensiveDrink } from '@/components/orders';
+import {
+  HostessMultiSelect,
+  getExplicitMaxAnfitrionas,
+  getHostessLimit,
+  hasCommission,
+  isExpensiveDrink
+} from '@/components/orders';
 import { hostessAllowedForPrice } from '@/components/orders/productModalRules';
 import { IndividualHostessSelect } from '@/components/shared/selects';
+import { resolverVentaProducto, type SaleChoice } from '@/lib/sales/saleChoice';
+import { QuantityStepper } from '@/components/shared/QuantityStepper';
+import { useConfigValue } from '@/hooks/shared/useConfigValue';
+import { resolveShotMl } from '@/lib/business/shotMl';
 
 interface NewSaleSearchProps {
   searchProducto: string;
@@ -38,6 +51,8 @@ interface NewSaleSearchProps {
   handleOtherProductHostessChange: (id: string, val: string[]) => void;
   handleAddProducto: (p: any) => void;
   isChampagneProduct: (p: any) => boolean;
+  cantidades: { [key: string]: number };
+  handleCantidadChange: (id: string, val: string) => void;
 }
 
 export const NewSaleSearch = ({
@@ -54,8 +69,16 @@ export const NewSaleSearch = ({
   otherProductHostessSelections,
   handleOtherProductHostessChange,
   handleAddProducto,
-  isChampagneProduct
+  isChampagneProduct,
+  cantidades,
+  handleCantidadChange
 }: NewSaleSearchProps) => {
+  // Forma de venta elegida por presentación: botella entera o shot, a precio de cliente
+  // o de anfitriona. El buscador ofrece lo mismo que el modal de categoría.
+  const [tiposVenta, setTiposVenta] = useState<{ [key: string]: SaleChoice }>({});
+  // Ml por shot global de Configuraciones: sirve para estimar los shots que quedan
+  // en la botella abierta. Cada presentación puede traer su propio ml_shot.
+  const shotMl = useConfigValue<number>('bar', 'shot_ml', 50);
   return (
     <div className='space-y-4'>
       <div className='flex flex-col sm:flex-row items-center justify-center gap-2 mb-4'>
@@ -97,6 +120,9 @@ export const NewSaleSearch = ({
                   <TableHead className={`${CUENTA_TABLE_HEAD_CLASS} text-center`}>
                     COMISIÓN
                   </TableHead>
+                  <TableHead className={`${CUENTA_TABLE_HEAD_CLASS} text-center`}>
+                    CANTIDAD
+                  </TableHead>
                   <TableHead className={`${CUENTA_TABLE_HEAD_CLASS} text-center text-xs`}>
                     CATEGORÍA
                   </TableHead>
@@ -112,7 +138,7 @@ export const NewSaleSearch = ({
                 {searchLoading ? (
                   <TableRow>
                     <TableCell
-                      colSpan={6}
+                      colSpan={7}
                       className={`${CUENTA_TABLE_CELL_CLASS} text-center py-4`}
                     >
                       Buscando...
@@ -121,7 +147,7 @@ export const NewSaleSearch = ({
                 ) : searchResults.length === 0 ? (
                   <TableRow>
                     <TableCell
-                      colSpan={6}
+                      colSpan={7}
                       className={`${CUENTA_TABLE_CELL_CLASS} text-center py-4 text-gray-400`}
                     >
                       No hay resultados
@@ -131,23 +157,78 @@ export const NewSaleSearch = ({
                   searchResults.map((producto, idx) => {
                     const id = String(producto.id_producto || producto.id);
                     const isChampagne = isChampagneProduct(producto);
-                    const hasComm = (producto.comision || producto.commission || 0) > 0;
-                    const puedeAnfitriona = hasComm || hostessAllowedForPrice(producto.precio);
                     const champagneHostessLimit = getHostessLimit(producto);
+                    const venta = resolverVentaProducto(producto, tiposVenta[id]);
+                    const mlPorShot = resolveShotMl(producto.ml_shot, shotMl);
+                    const mlAbierta = Number(producto.ml_abierta ?? 0);
+                    // Cantidad pedida para esta presentación: es la que el carro recibe al
+                    // agregar, y la que limita cuántas anfitrionas pide una bebida cara.
+                    const cantidad = cantidades[id] || 1;
+                    // Sin comisión no se pide anfitriona; la regla por precio (bebida cara)
+                    // es de la botella, el shot no la hereda.
+                    const pideAnfitriona = venta.esShot
+                      ? venta.comision > 0
+                      : hasCommission(producto) || venta.comisionBotella > 0;
+                    const muestraAnfitriona =
+                      pideAnfitriona ||
+                      (!venta.esShot && hostessAllowedForPrice(venta.precioBotella));
                     return (
                       <TableRow key={idx} className={CUENTA_TABLE_ROW_CLASS}>
-                        <TableCell className={CUENTA_TABLE_CELL_CLASS}>{producto.nombre}</TableCell>
-                        <TableCell className={`${CUENTA_TABLE_CELL_CLASS} text-center`}>
-                          {formatCurrencyNoDecimals(producto.precio)}
+                        <TableCell className={CUENTA_TABLE_CELL_CLASS}>
+                          <div>{producto.nombre}</div>
+                          {mlAbierta > 0 && (
+                            <p className='text-xs text-amber-600 dark:text-amber-400 font-medium'>
+                              Botella abierta: {mlAbierta} ml
+                              {mlPorShot > 0
+                                ? ` · ≈${Math.floor(mlAbierta / mlPorShot)} shots`
+                                : ''}
+                            </p>
+                          )}
+                          {venta.tieneShot && (
+                            <div className='mt-1.5 flex flex-wrap items-center gap-1.5'>
+                              {venta.opciones.map(opcion => (
+                                <button
+                                  key={opcion.value}
+                                  type='button'
+                                  onClick={() =>
+                                    setTiposVenta(prev => ({ ...prev, [id]: opcion.value }))
+                                  }
+                                  className={`px-2 py-0.5 rounded-full text-[10px] font-bold border transition-colors ${
+                                    venta.tipoVenta === opcion.value
+                                      ? 'bg-black text-white border-black dark:bg-white dark:text-black dark:border-white'
+                                      : 'border-neutral-300 dark:border-neutral-700 text-neutral-500'
+                                  }`}
+                                >
+                                  {opcion.nombre} · {formatCurrencyNoDecimals(opcion.precio)}
+                                </button>
+                              ))}
+                            </div>
+                          )}
                         </TableCell>
                         <TableCell className={`${CUENTA_TABLE_CELL_CLASS} text-center`}>
-                          {formatCurrencyNoDecimals(producto.comision || 0)}
+                          {formatCurrencyNoDecimals(venta.precio)}
+                        </TableCell>
+                        <TableCell className={`${CUENTA_TABLE_CELL_CLASS} text-center`}>
+                          {formatCurrencyNoDecimals(venta.comision)}
+                        </TableCell>
+                        <TableCell className={`${CUENTA_TABLE_CELL_CLASS} text-center`}>
+                          <QuantityStepper
+                            value={cantidad}
+                            max={venta.maxCantidad}
+                            onChange={siguiente => handleCantidadChange(id, siguiente.toString())}
+                          >
+                            {/* Cuánto hay en el bar, como el modal de categoría: es el tope
+                                que aplica el botón de aumentar al vender botella entera. */}
+                            <p className='text-[10px] whitespace-nowrap text-muted-foreground'>
+                              Disponibles en bar: {producto.stock_bar ?? 0}
+                            </p>
+                          </QuantityStepper>
                         </TableCell>
                         <TableCell className={`${CUENTA_TABLE_CELL_CLASS} text-center text-xs`}>
                           {producto.categoria}
                         </TableCell>
                         <TableCell className={`${CUENTA_TABLE_CELL_CLASS} text-center`}>
-                          {puedeAnfitriona ? (
+                          {muestraAnfitriona ? (
                             isChampagne ? (
                               <div className='space-y-2'>
                                 <HostessMultiSelect
@@ -169,9 +250,13 @@ export const NewSaleSearch = ({
                               </div>
                             ) : (
                               (() => {
-                                const cantidad = 1;
-
                                 if (isExpensiveDrink(producto)) {
+                                  // Botella cara: tantas anfitrionas como unidades, salvo máximo
+                                  // explícito por producto (Configuraciones > Comisiones).
+                                  const maxExplicito = getExplicitMaxAnfitrionas(producto ?? {});
+                                  const limiteAnfitrionas = maxExplicito
+                                    ? Math.min(cantidad, maxExplicito)
+                                    : cantidad;
                                   return (
                                     <div className='space-y-2'>
                                       <HostessMultiSelect
@@ -187,11 +272,11 @@ export const NewSaleSearch = ({
                                             [id]: val
                                           }))
                                         }
-                                        maxSelection={cantidad}
+                                        maxSelection={limiteAnfitrionas}
                                       />
                                       <div className='text-xs text-gray-500'>
                                         {(otherProductHostessSelections[id] || []).length} de{' '}
-                                        {cantidad} seleccionadas
+                                        {limiteAnfitrionas} seleccionadas
                                       </div>
                                     </div>
                                   );
@@ -222,13 +307,20 @@ export const NewSaleSearch = ({
                             onClick={() =>
                               handleAddProducto({
                                 ...producto,
+                                // El shot se sirve por ml y puede cobrarse a precio de
+                                // anfitriona: viaja marcado para separarlo en reportes y caja.
+                                tipo_venta: venta.esShot ? 'shot' : 'botella',
+                                shot_anfitriona: venta.tipoVenta === 'shot_anfitriona',
+                                ...(venta.esShot
+                                  ? { precio: venta.precio, comision: venta.comision }
+                                  : {}),
                                 selectedHostesses: isChampagne
                                   ? champagneHostessSelections[id] || []
                                   : otherProductHostessSelections[id] || []
                               })
                             }
                             disabled={
-                              hasComm &&
+                              pideAnfitriona &&
                               ((isChampagne && !champagneHostessSelections[id]?.length) ||
                                 (!isChampagne && !otherProductHostessSelections[id]?.length))
                             }

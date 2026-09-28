@@ -565,6 +565,10 @@ export interface DetalleVentaWithProductRow {
   sub_total: number;
   producto_nombre: string | null;
   producto_precio: number | null;
+  /** 'botella' | 'shot' (migración 039); NULL en filas anteriores a esa migración. */
+  tipo_venta?: string | null;
+  /** Shot cobrado a precio de anfitriona. */
+  shot_anfitriona?: boolean | null;
 }
 
 /** Row for ventas_usuarios join usuarios */

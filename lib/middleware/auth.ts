@@ -1,7 +1,19 @@
-import type { NextApiRequest } from 'next';
 import { PermissionsCache } from '@/lib/auth/permissions-cache';
+import { matrixFlagsFor, toMatrixModule } from '@/lib/constants/route-permissions';
 
 export interface UserPermissions {
+  /**
+   * Ciclo de roles (`roles.*` del catálogo): lo que verifican los handlers de
+   * `/api/roles*`, que antes pedían `users.*` mientras el middleware gateaba con
+   * `roles.*` — dos vocabularios para la misma autorización. `roles.permissions` no
+   * tiene flag propio: la UI lo consulta sobre los pares crudos del catálogo
+   * (`hasPermission`), no sobre esta matriz.
+   */
+  roles: {
+    read: boolean;
+    write: boolean;
+    delete: boolean;
+  };
   users: {
     read: boolean;
     write: boolean;
@@ -82,6 +94,13 @@ export interface UserPermissions {
   gratificaciones: {
     read: boolean;
     write: boolean;
+    /**
+     * Par `gratificaciones.edit` del catálogo. Existe separado de `write` a
+     * propósito: `create` también colapsa a `write`, así que sin este flag el
+     * PUT de /api/gratificaciones/[id] le sería accesible a cualquiera que
+     * pueda solo solicitar (el cajero).
+     */
+    edit: boolean;
     delete: boolean;
   };
   accounts: {
@@ -92,6 +111,8 @@ export interface UserPermissions {
   categories: {
     read: boolean;
     write: boolean;
+    /** Borrar una categoría (el catálogo ya lo modelaba como `categories.delete`). */
+    delete: boolean;
   };
   returns: {
     read: boolean;
@@ -120,227 +141,98 @@ export interface AuthenticatedUser {
   exp: number;
 }
 
-const rolePermissions: Record<string, UserPermissions> = {
-  administrador: {
-    users: { read: true, write: true, delete: true },
-    sales: { read: true, write: true, delete: true, anulate: true },
-    products: { read: true, write: true, delete: true },
-    clients: { read: true, write: true, delete: true },
-    finances: { read: true, write: true, delete: true },
-    reports: { read: true, export: true },
-    settings: { read: true, write: true },
-    orders: { read: true, write: true, delete: true, process: true },
-    advances: { read: true, write: true, delete: true, process: true },
-    commissions: { read: true, write: true, delete: true },
-    payroll: { read: true, write: true },
-    rooms: { read: true, write: true, delete: true },
-    attendance: { read: true, write: true },
-    overtime: { read: true, write: true },
-    tips: { read: true, write: true },
-    gratificaciones: { read: true, write: true, delete: true },
-    accounts: { read: true, write: true, edit: true },
-    categories: { read: true, write: true },
-    returns: { read: true, write: true, delete: true },
-    dashboard: { read: true },
-    private_rooms: { read: true, write: true }
-  },
-  cajero: {
-    users: { read: true, write: true, delete: true },
-    sales: { read: true, write: true, delete: false, anulate: false },
-    products: { read: true, write: false, delete: false },
-    clients: { read: true, write: true, delete: false },
-    finances: { read: true, write: true, delete: false },
-    reports: { read: false, export: false },
-    settings: { read: false, write: false },
-    orders: { read: true, write: true, delete: false, process: true },
-    advances: { read: true, write: true, delete: false, process: true },
-    commissions: { read: true, write: true, delete: false },
-    payroll: { read: true, write: true },
-    rooms: { read: true, write: true, delete: false },
-    attendance: { read: true, write: true },
-    overtime: { read: true, write: true },
-    tips: { read: true, write: true },
-    gratificaciones: { read: true, write: true, delete: false },
-    accounts: { read: true, write: true, edit: true },
-    categories: { read: true, write: false },
-    returns: { read: true, write: true, delete: false },
-    dashboard: { read: true },
-    private_rooms: { read: true, write: true }
-  },
-  garzon: {
+/*
+ * La traducción catálogo → matriz (`actionMap`/`moduleAliases` de antes) vive en
+ * `lib/constants/route-permissions` (`toMatrixAction`/`toMatrixModule`). Es la única
+ * copia del vocabulario: el test de `withRoute` la usa en la dirección contraria para
+ * comprobar que los handlers de `app/api` y las tablas de rutas del middleware no
+ * divergen. Lo que el catálogo no traduzca acá no puede conceder nada en la matriz.
+ */
+
+/**
+ * Matriz sin ningún permiso concedido.
+ *
+ * Es la respuesta por defecto cuando el usuario no tiene rol o su rol no tiene
+ * filas en `role_permissions`. Antes se caía a una matriz hardcodeada por nombre
+ * de rol: vaciar los permisos de un rol (o crear uno nuevo) "revivía" permisos que
+ * nadie había asignado. La ausencia de datos ahora se traduce en ausencia de acceso.
+ */
+export function createEmptyPermissions(): UserPermissions {
+  return {
+    roles: { read: false, write: false, delete: false },
     users: { read: false, write: false, delete: false },
-    sales: { read: true, write: false, delete: false, anulate: false },
-    products: { read: true, write: false, delete: false },
-    clients: { read: true, write: false, delete: false },
-    finances: { read: false, write: false, delete: false },
-    reports: { read: false, export: false },
-    settings: { read: false, write: false },
-    orders: { read: false, write: false, delete: false, process: false },
-    advances: { read: true, write: false, delete: false, process: false },
-    commissions: { read: false, write: false, delete: false },
-    payroll: { read: false, write: false },
-    rooms: { read: false, write: false, delete: false },
-    attendance: { read: false, write: false },
-    overtime: { read: false, write: false },
-    tips: { read: false, write: false },
-    gratificaciones: { read: false, write: false, delete: false },
-    accounts: { read: false, write: false, edit: false },
-    categories: { read: false, write: false },
-    returns: { read: false, write: false, delete: false },
-    dashboard: { read: true },
-    private_rooms: { read: false, write: false }
-  },
-  anfitriona: {
-    users: { read: false, write: false, delete: false },
-    sales: { read: true, write: false, delete: false, anulate: false },
-    products: { read: true, write: false, delete: false },
-    clients: { read: true, write: false, delete: false },
-    finances: { read: false, write: false, delete: false },
-    reports: { read: false, export: false },
-    settings: { read: false, write: false },
-    orders: { read: false, write: false, delete: false, process: false },
-    advances: { read: true, write: false, delete: false, process: false },
-    commissions: { read: false, write: false, delete: false },
-    payroll: { read: false, write: false },
-    rooms: { read: false, write: false, delete: false },
-    attendance: { read: false, write: false },
-    overtime: { read: false, write: false },
-    tips: { read: false, write: false },
-    gratificaciones: { read: false, write: false, delete: false },
-    accounts: { read: false, write: false, edit: false },
-    categories: { read: false, write: false },
-    returns: { read: false, write: false, delete: false },
-    dashboard: { read: true },
-    private_rooms: { read: false, write: false }
-  },
-  barman: {
-    users: { read: false, write: false, delete: false },
-    sales: { read: true, write: false, delete: false, anulate: false },
+    sales: { read: false, write: false, delete: false, anulate: false },
     products: {
-      read: true,
+      read: false,
       write: false,
       delete: false,
-      accept_transfer: true,
-      return_container: true,
-      // La recepción la confirma el almacén, no quien entrega (migración 033).
+      accept_transfer: false,
+      return_container: false,
       confirm_container_return: false
     },
     clients: { read: false, write: false, delete: false },
-    finances: { read: true, write: false, delete: false },
+    finances: { read: false, write: false, delete: false },
     reports: { read: false, export: false },
     settings: { read: false, write: false },
     orders: { read: false, write: false, delete: false, process: false },
-    // Personal del barman (app Expo): sus tabs de anticipos, asistencia,
-    // horas extras y propinas; ver migración 031.
-    advances: { read: true, write: true, delete: false, process: false },
+    advances: { read: false, write: false, delete: false, process: false },
     commissions: { read: false, write: false, delete: false },
     payroll: { read: false, write: false },
     rooms: { read: false, write: false, delete: false },
-    attendance: { read: true, write: true },
-    overtime: { read: true, write: true },
-    tips: { read: true, write: false },
-    gratificaciones: { read: false, write: false, delete: false },
+    attendance: { read: false, write: false },
+    overtime: { read: false, write: false },
+    tips: { read: false, write: false },
+    gratificaciones: { read: false, write: false, edit: false, delete: false },
     accounts: { read: false, write: false, edit: false },
-    categories: { read: true, write: false },
+    categories: { read: false, write: false, delete: false },
     returns: { read: false, write: false, delete: false },
-    dashboard: { read: true },
+    dashboard: { read: false },
     private_rooms: { read: false, write: false }
-  }
-};
+  };
+}
 
 export async function getUserPermissionsFromDB(userId: string): Promise<UserPermissions> {
   // Redis primero (caché compartida entre procesos); cae a memoria si no responde.
   const cached = await PermissionsCache.read(userId);
   if (cached) return cached;
 
+  const userPerms = createEmptyPermissions();
+
   try {
     const { query } = await import('@/lib/database/db');
 
-    const userResult = (await query(
-      `SELECT u.rol_id, r.nombre as rol_nombre FROM usuarios u LEFT JOIN roles r ON u.rol_id = r.id_rol WHERE u.id_usuario = ?`,
-      [userId]
-    )) as Array<{ rol_id: string | number | null; rol_nombre: string | null }>;
+    const userResult = (await query(`SELECT rol_id FROM usuarios WHERE id_usuario = ?`, [
+      userId
+    ])) as Array<{ rol_id: string | number | null }>;
 
-    const roleKey = (userResult?.[0]?.rol_nombre?.toLowerCase() ||
-      'garzon') as keyof typeof rolePermissions;
+    const roleId = userResult?.[0]?.rol_id;
 
-    if (!userResult || userResult.length === 0 || !userResult[0].rol_id) {
-      return rolePermissions[roleKey] || rolePermissions.garzon;
+    // Sin usuario o sin rol no hay nada que conceder.
+    if (roleId) {
+      const permissions = (await query(
+        `SELECT p.module, p.action FROM permissions p INNER JOIN role_permissions rp ON p.id = rp.permission_id WHERE rp.role_id = ? AND p.deleted_at IS NULL`,
+        [String(roleId)]
+      )) as Array<{ module: string; action: string }>;
+
+      permissions?.forEach(perm => {
+        const moduleName = toMatrixModule(perm.module) as keyof UserPermissions;
+        const modulePerms = userPerms[moduleName];
+        if (!modulePerms) return;
+
+        // La regla de flags (traducido + homónimo) vive en matrixFlagsFor.
+        for (const flag of matrixFlagsFor(modulePerms as Record<string, boolean>, perm.action)) {
+          (modulePerms as any)[flag] = true;
+        }
+      });
     }
-
-    const roleId = userResult[0].rol_id;
-
-    const permissions = (await query(
-      `SELECT p.module, p.action FROM permissions p INNER JOIN role_permissions rp ON p.id = rp.permission_id WHERE rp.role_id = ? AND p.deleted_at IS NULL`,
-      [String(roleId)]
-    )) as Array<{ module: string; action: string }>;
-
-    if (!permissions || permissions.length === 0) {
-      return rolePermissions[roleKey] || rolePermissions.garzon;
-    }
-
-    const userPerms: UserPermissions = {
-      users: { read: false, write: false, delete: false },
-      sales: { read: false, write: false, delete: false, anulate: false },
-      products: {
-        read: false,
-        write: false,
-        delete: false,
-        accept_transfer: false,
-        return_container: false,
-        confirm_container_return: false
-      },
-      clients: { read: false, write: false, delete: false },
-      finances: { read: false, write: false, delete: false },
-      reports: { read: false, export: false },
-      settings: { read: false, write: false },
-      orders: { read: false, write: false, delete: false, process: false },
-      advances: { read: false, write: false, delete: false, process: false },
-      commissions: { read: false, write: false, delete: false },
-      payroll: { read: false, write: false },
-      rooms: { read: false, write: false, delete: false },
-      attendance: { read: false, write: false },
-      overtime: { read: false, write: false },
-      tips: { read: false, write: false },
-      gratificaciones: { read: false, write: false, delete: false },
-      accounts: { read: false, write: false, edit: false },
-      categories: { read: false, write: false },
-      returns: { read: false, write: false, delete: false },
-      dashboard: { read: false },
-      private_rooms: { read: false, write: false }
-    };
-
-    const actionMap: Record<string, string> = {
-      view: 'read',
-      view_details: 'read',
-      create: 'write',
-      edit: 'write',
-      open: 'write',
-      close: 'write',
-      withdraw: 'write',
-      delete: 'delete',
-      export: 'export',
-      anulate: 'anulate',
-      process: 'process'
-    };
-
-    permissions.forEach(perm => {
-      const mappedAction = actionMap[perm.action] || perm.action;
-      let moduleName = perm.module;
-      if (moduleName === 'cash_register' || moduleName === 'cashregister') {
-        moduleName = 'finances';
-      }
-      const modulePerms = userPerms[moduleName as keyof UserPermissions];
-      if (modulePerms && mappedAction in modulePerms) {
-        (modulePerms as any)[mappedAction] = true;
-      }
-    });
-
-    PermissionsCache.set(userId, userPerms);
-    return userPerms;
   } catch {
-    return rolePermissions.garzon;
+    // Error de BD: permisos vacíos y sin cachear, para que el próximo request
+    // vuelva a resolverlos en lugar de fijar una denegación por error.
+    return userPerms;
   }
+
+  PermissionsCache.set(userId, userPerms);
+  return userPerms;
 }
 
 /**
@@ -351,22 +243,3 @@ export async function getUserPermissionsFromDB(userId: string): Promise<UserPerm
 export function isAdministrator(user: Pick<AuthenticatedUser, 'role'> | null | undefined): boolean {
   return user?.role?.toLowerCase() === 'administrador';
 }
-
-function getUserPermissions(role: string): UserPermissions {
-  return rolePermissions[role] || rolePermissions.garzon;
-}
-export function checkPermission(
-  user: AuthenticatedUser,
-  permission: keyof UserPermissions,
-  action: string
-): boolean {
-  const userPermissions = user.permissions[permission];
-  return userPermissions && userPermissions[action as keyof typeof userPermissions] === true;
-}
-
-const authMiddleware = {
-  checkPermission,
-  getUserPermissions
-};
-
-export default authMiddleware;

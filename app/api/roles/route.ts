@@ -7,8 +7,11 @@ export const GET = withPublicRoute(async () => {
   return NextResponse.json({ success: true, data });
 });
 
-export const POST = withRoute({ auth: true, audit: true, module: 'users', action: 'write' }, async (request: Request) => {
-  const body = await request.json();
-  const id = await RoleService.create(body);
-  return NextResponse.json({ success: true, message: 'Role created', id }, { status: 201 });
-});
+export const POST = withRoute(
+  { auth: true, audit: true, module: 'roles', action: 'write' },
+  async (request: Request) => {
+    const body = await request.json();
+    const id = await RoleService.create(body);
+    return NextResponse.json({ success: true, message: 'Role created', id }, { status: 201 });
+  }
+);

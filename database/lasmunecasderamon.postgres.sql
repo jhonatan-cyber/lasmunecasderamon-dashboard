@@ -106,7 +106,7 @@ CREATE TABLE cajas (
 CREATE TABLE categorias (
   id_categoria varchar(36) NOT NULL,
   nombre varchar(255) NOT NULL,
-  descripcion varchar(255) NOT NULL DEFAULT 'Sin descripción',
+  descripcion text NOT NULL DEFAULT 'Sin descripción',
   estado integer NOT NULL DEFAULT 1,
   fecha_crea timestamp NOT NULL,
   fecha_mod timestamp DEFAULT NULL,
@@ -346,6 +346,7 @@ CREATE TABLE error_logs (
 CREATE TABLE gratificaciones (
   id varchar(36) NOT NULL,
   usuario_id varchar(36) DEFAULT NULL,
+  solicitante_id varchar(36) DEFAULT NULL,
   monto integer NOT NULL,
   descripcion text,
   estado integer NOT NULL DEFAULT 1,
@@ -445,7 +446,8 @@ CREATE TABLE productos (
   fecha_baja timestamp DEFAULT NULL,
   estado integer NOT NULL DEFAULT 1,
   foto varchar(255) NOT NULL DEFAULT 'default.png',
-  stock_almacen integer NOT NULL DEFAULT 0
+  stock_almacen integer NOT NULL DEFAULT 0,
+  ml_shot_anfitriona integer DEFAULT NULL
 );
 
 CREATE TABLE inventario_presentaciones (
@@ -1239,6 +1241,7 @@ ALTER TABLE devoluciones_servicios ADD CONSTRAINT fk_devoluciones_servicios_clie
 ALTER TABLE devoluciones_servicios ADD CONSTRAINT fk_devoluciones_servicios_pieza_id FOREIGN KEY (pieza_id) REFERENCES habitaciones (id_habitacion) ON DELETE CASCADE ON UPDATE CASCADE;
 ALTER TABLE devoluciones_ventas ADD CONSTRAINT fk_devoluciones_ventas_cliente_id FOREIGN KEY (cliente_id) REFERENCES clientes (id_cliente) ON DELETE CASCADE ON UPDATE CASCADE;
 ALTER TABLE devoluciones_ventas_usuarios ADD CONSTRAINT fk_devoluciones_ventas_usuarios_detalle_devolucion_venta_id FOREIGN KEY (detalle_devolucion_venta_id) REFERENCES detalle_devoluciones_ventas (id_detalle_devolucion) ON DELETE CASCADE ON UPDATE CASCADE;
+ALTER TABLE gratificaciones ADD CONSTRAINT fk_gratificaciones_solicitante FOREIGN KEY (solicitante_id) REFERENCES usuarios (id_usuario) ON DELETE SET NULL ON UPDATE CASCADE;
 ALTER TABLE logins ADD CONSTRAINT fk_login_usuarios FOREIGN KEY (usuario_id) REFERENCES usuarios (id_usuario);
 ALTER TABLE pedidos ADD CONSTRAINT fk_pedidos_cliente_id FOREIGN KEY (cliente_id) REFERENCES clientes (id_cliente) ON DELETE CASCADE ON UPDATE CASCADE;
 ALTER TABLE pedidos_usuarios ADD CONSTRAINT fk_pedidos_usuarios_pedido_id FOREIGN KEY (pedido_id) REFERENCES pedidos (id_pedido) ON DELETE CASCADE ON UPDATE CASCADE;

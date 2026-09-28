@@ -16,6 +16,9 @@ import { ConfirmModal } from '@/components/shared/ConfirmModal';
 import { useGratificaciones } from '@/hooks/personal';
 import { useCashRegisterStatus } from '@/hooks/caja/useCashRegisterStatus';
 import { useUserPermissions } from '@/hooks/auth/useUserPermissions';
+import { useCurrentUser } from '@/hooks/auth/useCurrentUser';
+import MisSolicitudesSection from '@/components/gratificaciones/MisSolicitudesSection';
+import { partitionGratificaciones } from '@/lib/utils/gratificaciones';
 import { formatCurrencyNoDecimals } from '@/lib/utils/formatters';
 import { Gratificacion } from '@/types/gratificacion';
 
@@ -34,6 +37,19 @@ export default function GratificacionesPage() {
 
   const { hasOpenCaja, loading: cajaLoading } = useCashRegisterStatus();
   const { hasPermission } = useUserPermissions();
+  const { user } = useCurrentUser();
+
+  // El cajero solicita a nombre de otros (migración 037) y el GET le entrega
+  // "lo suyo + lo que él solicitó". La partición separa ambas mitades para el toggle;
+  // para admin y usuarios comunes se mantiene el listado completo de siempre.
+  const isRequesterFlow = user?.role?.toLowerCase() === 'cajero';
+  const { myGratificaciones, myRequests } = useMemo(
+    () =>
+      isRequesterFlow
+        ? partitionGratificaciones(gratificaciones, user?.id)
+        : { myGratificaciones: gratificaciones, myRequests: [] },
+    [gratificaciones, user?.id, isRequesterFlow]
+  );
 
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState('all');
@@ -42,6 +58,7 @@ export default function GratificacionesPage() {
   const [currentPage, setCurrentPage] = useState(1);
   const [rowsPerPage, setRowsPerPage] = useState(10);
   const [activeTab, setActiveTab] = useState<TabType>('pending');
+  const [viewMode, setViewMode] = useState<'mine' | 'requests'>('mine');
 
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [gratificacionToEdit, setGratificacionToEdit] = useState<Gratificacion | null>(null);
@@ -52,7 +69,7 @@ export default function GratificacionesPage() {
   const [isSubmitLoading, setIsSubmitLoading] = useState(false);
 
   const filteredData = useMemo(() => {
-    let result = [...gratificaciones];
+    let result = [...myGratificaciones];
 
     if (activeTab === 'pending') {
       result = result.filter(g => g.estado === 1);
@@ -97,10 +114,10 @@ export default function GratificacionesPage() {
     });
 
     return result;
-  }, [gratificaciones, searchTerm, sortBy, sortOrder, activeTab]);
+  }, [myGratificaciones, searchTerm, sortBy, sortOrder, activeTab]);
 
-  const pendingCount = gratificaciones.filter(g => g.estado === 1).length;
-  const paidCount = gratificaciones.filter(g => g.estado === 0).length;
+  const pendingCount = myGratificaciones.filter(g => g.estado === 1).length;
+  const paidCount = myGratificaciones.filter(g => g.estado === 0).length;
 
   const totalPages = Math.ceil(filteredData.length / rowsPerPage);
   const paginatedData = filteredData.slice(
@@ -186,99 +203,154 @@ export default function GratificacionesPage() {
       />
 
       <GratificacionesStatsCards
-        gratificaciones={gratificaciones}
+        gratificaciones={myGratificaciones}
         formatCurrency={formatCurrency}
       />
 
-      {}
+      {/* Toggle Mis gratificaciones / Mis solicitudes (solo lectura) */}
       <div className='flex justify-center gap-3 border-b pb-1'>
         <button
+          type='button'
           onClick={() => {
-            setActiveTab('pending');
+            setViewMode('mine');
             setCurrentPage(1);
           }}
           className={`flex items-center gap-1.5 px-5 py-2 text-sm font-semibold transition-all ${
-            activeTab === 'pending'
-              ? 'bg-amber-100 text-amber-700 rounded-full shadow-xs'
+            viewMode === 'mine'
+              ? 'bg-zinc-900 text-white rounded-full shadow-xs'
               : 'text-gray-500 hover:bg-gray-100 rounded-full'
           }`}
         >
-          Por Pagar
-          <span
-            className={`ml-1.5 px-2.5 py-0.5 rounded-full text-xs font-bold ${
-              activeTab === 'pending' ? 'bg-amber-600 text-white' : 'bg-amber-100 text-amber-800'
-            }`}
-          >
-            {pendingCount}
-          </span>
+          Mis gratificaciones
         </button>
         <button
+          type='button'
           onClick={() => {
-            setActiveTab('paid');
+            setViewMode('requests');
             setCurrentPage(1);
           }}
           className={`flex items-center gap-1.5 px-5 py-2 text-sm font-semibold transition-all ${
-            activeTab === 'paid'
-              ? 'bg-green-100 text-green-700 rounded-full shadow-xs'
+            viewMode === 'requests'
+              ? 'bg-amber-600 text-white rounded-full shadow-xs'
               : 'text-gray-500 hover:bg-gray-100 rounded-full'
           }`}
         >
-          Pagadas
+          Mis solicitudes
           <span
             className={`ml-1.5 px-2.5 py-0.5 rounded-full text-xs font-bold ${
-              activeTab === 'paid' ? 'bg-green-600 text-white' : 'bg-green-100 text-green-800'
+              viewMode === 'requests' ? 'bg-white text-amber-700' : 'bg-amber-100 text-amber-800'
             }`}
           >
-            {paidCount}
+            {myRequests.length}
           </span>
         </button>
       </div>
 
+      {/* Tabs Por Pagar / Pagadas (solo en Mis gratificaciones) */}
+      {viewMode === 'mine' && (
+        <div className='flex justify-center gap-3 border-b pb-1'>
+          <button
+            onClick={() => {
+              setActiveTab('pending');
+              setCurrentPage(1);
+            }}
+            className={`flex items-center gap-1.5 px-5 py-2 text-sm font-semibold transition-all ${
+              activeTab === 'pending'
+                ? 'bg-amber-100 text-amber-700 rounded-full shadow-xs'
+                : 'text-gray-500 hover:bg-gray-100 rounded-full'
+            }`}
+          >
+            Por Pagar
+            <span
+              className={`ml-1.5 px-2.5 py-0.5 rounded-full text-xs font-bold ${
+                activeTab === 'pending' ? 'bg-amber-600 text-white' : 'bg-amber-100 text-amber-800'
+              }`}
+            >
+              {pendingCount}
+            </span>
+          </button>
+          <button
+            onClick={() => {
+              setViewMode('mine');
+              setActiveTab('paid');
+              setCurrentPage(1);
+            }}
+            className={`flex items-center gap-1.5 px-5 py-2 text-sm font-semibold transition-all ${
+              activeTab === 'paid'
+                ? 'bg-green-100 text-green-700 rounded-full shadow-xs'
+                : 'text-gray-500 hover:bg-gray-100 rounded-full'
+            }`}
+          >
+            Pagadas
+            <span
+              className={`ml-1.5 px-2.5 py-0.5 rounded-full text-xs font-bold ${
+                activeTab === 'paid' ? 'bg-green-600 text-white' : 'bg-green-100 text-green-800'
+              }`}
+            >
+              {paidCount}
+            </span>
+          </button>
+        </div>
+      )}
+
       {}
-      <GratificacionesFilters
-        searchTerm={searchTerm}
-        setSearchTerm={setSearchTerm}
-        filterStatus={statusFilter}
-        setFilterStatus={setStatusFilter}
-        sortBy={sortBy}
-        setSortBy={setSortBy}
-        sortOrder={sortOrder}
-        setSortOrder={setSortOrder}
-        onClearFilters={() => {
-          setSearchTerm('');
-          setStatusFilter('all');
-          setSortBy('fecha_crea');
-          setSortOrder('desc');
-          setRowsPerPage(10);
-          setCurrentPage(1);
-        }}
-        rowsPerPage={rowsPerPage}
-        setRowsPerPage={setRowsPerPage}
-        setPage={setCurrentPage}
-      />
-
-      <GratificacionesTable
-        loading={loading}
-        rows={paginatedData}
-        rowsPerPage={rowsPerPage}
-        onViewDetail={handleViewDetail}
-        onEdit={handleEdit}
-        onDelete={handleDeleteClick}
-      />
-
-      <div className='mt-8 flex justify-center'>
-        <Pagination
-          currentPage={currentPage}
-          totalPages={totalPages}
-          totalItems={filteredData.length}
-          itemsPerPage={rowsPerPage}
-          onPageChange={setCurrentPage}
-          onItemsPerPageChange={val => {
-            setRowsPerPage(val);
+      {viewMode === 'mine' && (
+        <GratificacionesFilters
+          searchTerm={searchTerm}
+          setSearchTerm={setSearchTerm}
+          filterStatus={statusFilter}
+          setFilterStatus={setStatusFilter}
+          sortBy={sortBy}
+          setSortBy={setSortBy}
+          sortOrder={sortOrder}
+          setSortOrder={setSortOrder}
+          onClearFilters={() => {
+            setSearchTerm('');
+            setStatusFilter('all');
+            setSortBy('fecha_crea');
+            setSortOrder('desc');
+            setRowsPerPage(10);
             setCurrentPage(1);
           }}
+          rowsPerPage={rowsPerPage}
+          setRowsPerPage={setRowsPerPage}
+          setPage={setCurrentPage}
         />
-      </div>
+      )}
+
+      {viewMode === 'mine' ? (
+        <GratificacionesTable
+          loading={loading}
+          rows={paginatedData}
+          rowsPerPage={rowsPerPage}
+          onViewDetail={handleViewDetail}
+          onEdit={handleEdit}
+          onDelete={handleDeleteClick}
+        />
+      ) : (
+        <MisSolicitudesSection
+          loading={loading}
+          rows={myRequests}
+          rowsPerPage={rowsPerPage}
+          onViewDetail={handleViewDetail}
+        />
+      )}
+
+      {viewMode === 'mine' && (
+        <div className='mt-8 flex justify-center'>
+          <Pagination
+            currentPage={currentPage}
+            totalPages={totalPages}
+            totalItems={filteredData.length}
+            itemsPerPage={rowsPerPage}
+            onPageChange={setCurrentPage}
+            onItemsPerPageChange={val => {
+              setRowsPerPage(val);
+              setCurrentPage(1);
+            }}
+          />
+        </div>
+      )}
 
       {}
       <GratificacionDialog

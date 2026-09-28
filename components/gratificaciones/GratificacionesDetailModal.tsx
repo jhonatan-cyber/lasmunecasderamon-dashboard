@@ -19,7 +19,8 @@ import {
   Clock,
   CheckCircle,
   XCircle,
-  History
+  History,
+  Send
 } from 'lucide-react';
 import { Gratificacion } from '@/types/gratificacion';
 
@@ -155,6 +156,7 @@ export default function GratificacionesDetailModal({
                   Registro y Auditoría
                 </h3>
                 <div className='space-y-4 p-4 bg-zinc-50 dark:bg-neutral-900/50 rounded-2xl border border-zinc-100 dark:border-neutral-800'>
+                  {' '}
                   <div className='flex items-start gap-2'>
                     <Clock className='h-3 w-3 text-zinc-400 mt-0.5' />
                     <div>
@@ -164,6 +166,20 @@ export default function GratificacionesDetailModal({
                       </p>
                     </div>
                   </div>
+                  {gratificacion.solicitante && (
+                    <div className='flex items-start gap-2'>
+                      <Send className='h-3 w-3 text-zinc-400 mt-0.5' />
+                      <div>
+                        <p className='text-[10px] text-zinc-500 uppercase'>Solicitada por</p>
+                        <p className='text-xs font-medium'>
+                          {gratificacion.solicitante}
+                          {gratificacion.solicitante_id === gratificacion.usuario_id
+                            ? ' (autofirmada)'
+                            : ''}
+                        </p>
+                      </div>
+                    </div>
+                  )}
                   {gratificacion.fecha_mod && (
                     <div className='flex items-start gap-2'>
                       <History className='h-3 w-3 text-zinc-400 mt-0.5' />

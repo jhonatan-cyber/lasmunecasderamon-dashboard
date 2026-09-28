@@ -4,7 +4,7 @@ import { PurchaseRepository } from '@/lib/repositories/PurchaseRepository';
 import { InventoryRepository } from '@/lib/repositories/InventoryRepository';
 import { ValidationError, NotFoundError } from '@/lib/errors/errors';
 import { z } from 'zod';
-import type { PurchaseCreate } from '@/types/purchase';
+import type { PurchaseCreate, PurchaseGeneratedCode } from '@/types/purchase';
 
 const DetalleSchema = z.object({
   producto_id: z.string().min(1, 'producto_id es requerido'),
@@ -44,23 +44,27 @@ export class PurchaseService {
     const total = detalles.reduce((acc, d) => acc + d.subtotal, 0);
 
     let compra!: Awaited<ReturnType<typeof PurchaseRepository.create>>;
+    // Códigos generados en esta compra, listos para imprimir (agrupables por producto).
+    const codigosGenerados: PurchaseGeneratedCode[] = [];
     await withTransaction(async trx => {
       // Valida pertenencia antes de mover stock (consultas batch por IN).
       const productoIds = [...new Set(detalles.map(d => d.producto_id))];
+      const nombresProducto = new Map<string, string>();
+      let presentacionesMap: Record<string, { id: string; nombre: string }[]> = {};
       if (productoIds.length > 0) {
         const placeholders = productoIds.map(() => '?').join(',');
-        const productoRows = await trx<{ id_producto: string }[]>(
-          `SELECT id_producto FROM productos WHERE id_producto IN (${placeholders})`,
+        const productoRows = await trx<{ id_producto: string; nombre: string }[]>(
+          `SELECT id_producto, nombre FROM productos WHERE id_producto IN (${placeholders})`,
           productoIds
         );
         const found = new Set(productoRows.map(r => String(r.id_producto)));
         for (const pid of productoIds) {
           if (!found.has(pid)) throw new NotFoundError('Producto', pid);
         }
-        const presentacionesMap = await InventoryRepository.listPresentationsByProducts(
-          productoIds,
-          trx
-        );
+        for (const row of productoRows) {
+          nombresProducto.set(String(row.id_producto), String(row.nombre ?? ''));
+        }
+        presentacionesMap = await InventoryRepository.listPresentationsByProducts(productoIds, trx);
         for (const d of detalles) {
           const validas = new Set((presentacionesMap[d.producto_id] ?? []).map(p => String(p.id)));
           if (!validas.has(String(d.presentacion_id))) {
@@ -82,13 +86,28 @@ export class PurchaseService {
       );
 
       for (const d of detalles) {
-        await InventoryRepository.generateUnits(
+        const generadas = await InventoryRepository.generateUnits(
           trx,
           d.producto_id,
           d.cantidad,
           d.presentacion_id,
           compra.id
         );
+        const presentacion = (presentacionesMap[d.producto_id] ?? []).find(
+          p => String(p.id) === String(d.presentacion_id)
+        );
+        for (const unidad of generadas) {
+          codigosGenerados.push({
+            id: unidad.id,
+            codigo: unidad.codigo,
+            codigo_barras: unidad.codigo_barras,
+            producto_id: d.producto_id,
+            producto_nombre: nombresProducto.get(d.producto_id) || 'Producto',
+            presentacion_id: d.presentacion_id,
+            presentacion_nombre: presentacion?.nombre || 'Presentación',
+            compra_folio: compra.folio
+          });
+        }
         // Último costo conocido por presentación (misma transacción).
         await BaseRepository.update(trx, 'inventario_presentaciones', 'id', d.presentacion_id, {
           precio_compra: d.precio_compra
@@ -100,7 +119,7 @@ export class PurchaseService {
       }
     });
 
-    return compra;
+    return { ...compra, codigos_generados: codigosGenerados };
   }
 
   static async listar(limit?: unknown) {

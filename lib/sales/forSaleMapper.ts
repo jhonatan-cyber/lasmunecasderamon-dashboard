@@ -18,6 +18,10 @@ export interface ForSaleItem {
   ml_botella?: number | null;
   /** Ml servidos por shot de ese producto (null = default de Configuraciones). */
   ml_shot?: number | null;
+  /** Ml servidos por shot a anfitriona (null = igual que a cliente). */
+  ml_shot_anfitriona?: number | null;
+  /** Máximo de anfitrionas por producto (null = regla por defecto). */
+  max_anfitrionas?: number | null;
   /** ml que quedan en la botella abierta de esa presentación en el bar. */
   ml_abierta?: number | null;
   producto_id: string;
@@ -48,9 +52,14 @@ export interface CartSaleItem {
   opciones_venta?: SaleOption[];
   ml_botella?: number | null;
   ml_shot?: number | null;
+  ml_shot_anfitriona?: number | null;
+  /** Máximo de anfitrionas por producto (null = regla por defecto). */
+  max_anfitrionas?: number | null;
   ml_abierta?: number;
   /** 'shot' descuenta ml de la botella abierta; 'botella' gasta una unidad completa. */
   tipo_venta?: 'botella' | 'shot';
+  /** Shot cobrado al precio de anfitriona (lo elige quien vende en el modal). */
+  shot_anfitriona?: boolean;
 }
 
 export function mapForSaleToCartItem(item: ForSaleItem): CartSaleItem {
@@ -81,6 +90,14 @@ export function mapForSaleToCartItem(item: ForSaleItem): CartSaleItem {
     ml_botella:
       item.ml_botella === null || item.ml_botella === undefined ? null : Number(item.ml_botella),
     ml_shot: item.ml_shot === null || item.ml_shot === undefined ? null : Number(item.ml_shot),
+    ml_shot_anfitriona:
+      item.ml_shot_anfitriona === null || item.ml_shot_anfitriona === undefined
+        ? null
+        : Number(item.ml_shot_anfitriona),
+    max_anfitrionas:
+      item.max_anfitrionas === null || item.max_anfitrionas === undefined
+        ? null
+        : Number(item.max_anfitrionas),
     ml_abierta: Number(item.ml_abierta ?? 0),
     tipo_venta: 'botella' as const
   };

@@ -203,9 +203,19 @@ export function ProductForm({
   const existentesVisibles = scoped
     ? existentes.filter(p => p.id === (presentation as Presentacion).id)
     : existentes;
-  const codigosVisibles = scoped
-    ? unidadesCodigos.filter(u => u.presentacion_id === (presentation as Presentacion).id)
-    : unidadesCodigos;
+  const nombrePresentaciones = new Map(existentes.map(p => [p.id, p.nombre]));
+  // Cada etiqueta impresa lleva el nombre del producto y su presentación.
+  const codigosVisibles = (
+    scoped
+      ? unidadesCodigos.filter(u => u.presentacion_id === (presentation as Presentacion).id)
+      : unidadesCodigos
+  ).map(u => ({
+    ...u,
+    producto_nombre: initialValues?.name || form.name || null,
+    presentacion_nombre: u.presentacion_id
+      ? (nombrePresentaciones.get(u.presentacion_id) ?? null)
+      : null
+  }));
 
   return (
     <form id='product-form' onSubmit={handleSubmit} className='space-y-6 py-2'>
@@ -375,19 +385,31 @@ export function ProductForm({
           >
             Ml por shot
           </label>
-          <Input
-            id='prod-ml-shot'
-            name='ml_shot'
-            value={form.ml_shot}
-            onChange={handleChange}
-            placeholder='Ej: 50'
-            disabled={isLoading}
-            inputMode='numeric'
-            className='h-12 rounded-2xl'
-          />
+          <div className='grid grid-cols-1 sm:grid-cols-2 gap-2'>
+            <Input
+              id='prod-ml-shot'
+              name='ml_shot'
+              value={form.ml_shot}
+              onChange={handleChange}
+              placeholder='Cliente · Ej: 50'
+              disabled={isLoading}
+              inputMode='numeric'
+              className='h-12 rounded-2xl'
+            />
+            <Input
+              id='prod-ml-shot-anfitriona'
+              name='ml_shot_anfitriona'
+              value={form.ml_shot_anfitriona}
+              onChange={handleChange}
+              placeholder='Anfitriona · igual que cliente'
+              disabled={isLoading}
+              inputMode='numeric'
+              className='h-12 rounded-2xl'
+            />
+          </div>
           <p className='text-[11px] text-gray-400 dark:text-gray-500 ml-1'>
-            Ml que se sirve en cada shot de este producto. En vacío usa el valor global de Ajustes →
-            Bar.
+            Ml que se sirve en cada shot de este producto. En vacío, cliente usa el valor global de
+            Ajustes → Bar y anfitriona usa el de cliente.
           </p>
         </div>
       )}

@@ -31,6 +31,9 @@ export function useCajaDetails({ caja, open }: UseCajaDetailsParams) {
   const [loadingTragosChicas, setLoadingTragosChicas] = useState(false);
   const [loadingChampagne, setLoadingChampagne] = useState(false);
   const [loadingBarras, setLoadingBarras] = useState(false);
+  const [loadingProductos, setLoadingProductos] = useState(false);
+
+  const [ventasPorProducto, setVentasPorProducto] = useState<any[]>([]);
 
   const [searchVentas, setSearchVentas] = useState('');
   const [searchServicios, setSearchServicios] = useState('');
@@ -106,6 +109,21 @@ export function useCajaDetails({ caja, open }: UseCajaDetailsParams) {
     }
   };
 
+  const fetchVentasPorProducto = async () => {
+    if (!cajaId) return;
+    setLoadingProductos(true);
+    try {
+      const resp = await fetch(`/api/caja/ventas-por-producto?caja_id=${cajaId}`);
+      const data = await resp.json();
+      setVentasPorProducto(Array.isArray(data?.data) ? data.data : []);
+    } catch (error) {
+      logger.captureException(error, { context: 'useCajaDetails:fetchVentasPorProducto' });
+      setVentasPorProducto([]);
+    } finally {
+      setLoadingProductos(false);
+    }
+  };
+
   const fetchVentas = async () => {
     if (!cajaId) return;
     setLoadingVentas(true);
@@ -175,6 +193,7 @@ export function useCajaDetails({ caja, open }: UseCajaDetailsParams) {
       fetchVentas();
       fetchServicios();
       fetchResumenFinanciero();
+      fetchVentasPorProducto();
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [open, cajaId]);
@@ -224,7 +243,8 @@ export function useCajaDetails({ caja, open }: UseCajaDetailsParams) {
     return isPrinting() ? retiros : getPaginatedItems(retiros, retirosPage);
   };
 
-  const isLoadingSummary = loadingTragosChicas || loadingChampagne || loadingBarras;
+  const isLoadingSummary =
+    loadingTragosChicas || loadingChampagne || loadingBarras || loadingProductos;
 
   const totalPages = (items: any[]) => {
     const safeItems = Array.isArray(items) ? items : [];
@@ -245,9 +265,11 @@ export function useCajaDetails({ caja, open }: UseCajaDetailsParams) {
     ventasTragosChicas,
     ventasChampagne,
     ventasBarras,
+    ventasPorProducto,
     loadingTragosChicas,
     loadingChampagne,
     loadingBarras,
+    loadingProductos,
     searchVentas,
     setSearchVentas,
     searchServicios,

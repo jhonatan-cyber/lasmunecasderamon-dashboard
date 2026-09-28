@@ -3,44 +3,30 @@
 import { useEffect, useState, useRef, ReactNode } from 'react';
 import { useRouter, usePathname } from 'next/navigation';
 import { useAuth } from '@/contexts/AuthContext';
+import {
+  PUBLIC_ROUTE_PATHS,
+  accessDeniedPath,
+  findRoutePermission,
+  isAnySessionRoute,
+  matchesRoutePath
+} from '@/lib/constants/route-permissions';
 import { Loader2 } from 'lucide-react';
 
 interface RouteGuardProps {
   children: ReactNode;
 }
 
-const routePermissions: Record<string, { module: string; action: string }> = {
-  '/dashboard': { module: 'dashboard', action: 'view' },
-  '/users': { module: 'users', action: 'view' },
-  '/clients': { module: 'clients', action: 'view' },
-  '/products': { module: 'products', action: 'view' },
-  '/categories': { module: 'categories', action: 'view' },
-  '/orders': { module: 'orders', action: 'view' },
-  '/sales': { module: 'sales', action: 'view' },
-  '/reports': { module: 'reports', action: 'view' },
-  '/roles': { module: 'roles', action: 'view' },
-  '/attendance': { module: 'attendance', action: 'view' },
-  '/overtime': { module: 'overtime', action: 'view' },
-  '/gratificaciones': { module: 'gratificaciones', action: 'view' },
-  '/cash-register': { module: 'cash_register', action: 'view' },
-  '/accounts': { module: 'accounts', action: 'view' },
-  '/tips': { module: 'tips', action: 'view' },
-  '/commissions': { module: 'commissions', action: 'view' },
-  '/payroll': { module: 'payroll', action: 'view' },
-  '/payroll/calendar': { module: 'payroll_details', action: 'view' },
-  '/advances': { module: 'advances', action: 'view' },
-  '/returns': { module: 'returns', action: 'view' },
-  '/rooms': { module: 'rooms', action: 'view' },
-  '/private-rooms': { module: 'private_rooms', action: 'view' },
-  '/settings': { module: 'settings', action: 'view' }
-};
-
-const publicRoutes = ['/', '/login', '/access-denied'];
-
 export function RouteGuard({ children }: RouteGuardProps) {
   const router = useRouter();
   const pathname = usePathname();
-  const { user, userLoading, hasPermission, permissionsLoading, permissionsLoaded } = useAuth();
+  const {
+    user,
+    userLoading,
+    hasPermission,
+    permissionsLoading,
+    permissionsLoaded,
+    refreshPermissions
+  } = useAuth();
   const [authorized, setAuthorized] = useState(false);
   const [checking, setChecking] = useState(true);
   const routerRef = useRef(router);
@@ -57,11 +43,7 @@ export function RouteGuard({ children }: RouteGuardProps) {
 
       if (
         currentPathname &&
-        publicRoutes.some(route =>
-          route === '/'
-            ? currentPathname === route
-            : currentPathname === route || currentPathname.startsWith(route + '/')
-        )
+        PUBLIC_ROUTE_PATHS.some(route => matchesRoutePath(currentPathname, route))
       ) {
         setAuthorized(true);
         setChecking(false);
@@ -84,30 +66,42 @@ export function RouteGuard({ children }: RouteGuardProps) {
         return;
       }
 
-      if (permissionsLoading) {
-        return;
-      }
+      /*
+       * La tabla de rutas es la misma que usa el middleware (`ROUTE_PERMISSIONS`, en
+       * `lib/constants/route-permissions`): una sola lista de pares módulo/acción y un
+       * solo criterio de coincidencia, así el cliente y el servidor no pueden decidir
+       * distinto sobre la misma URL. Antes cada capa tenía su copia y se desincronizaron.
+       */
+      const requiredPermission = currentPathname ? findRoutePermission(currentPathname) : null;
 
-      const sortedRoutes = Object.entries(routePermissions).sort(
-        (a, b) => b[0].length - a[0].length
-      );
-
-      const requiredPermission = sortedRoutes.find(
-        ([route]) =>
-          currentPathname && (currentPathname === route || currentPathname.startsWith(route + '/'))
-      );
-
-      if (!requiredPermission) {
+      // Sin entrada en la tabla la página solo exige sesión; las rutas de rol
+      // (`/garzon-*`, `/anfitriona-*`, `/cajero-*`) también pasan y filtran adentro.
+      if (!requiredPermission || isAnySessionRoute(requiredPermission)) {
         setAuthorized(true);
         setChecking(false);
         return;
       }
 
-      const [, { module, action }] = requiredPermission;
+      const { module, action } = requiredPermission;
 
-      if (module === 'dashboard') {
-        setAuthorized(true);
-        setChecking(false);
+      /*
+       * Esperar a que la lista de permisos haya terminado de cargar antes de decidir.
+       *
+       * En una recarga completa (F5 o link directo) el usuario de la sesión llega antes
+       * que sus permisos, y `permissionsLoading` todavía vale `false` porque es el estado
+       * inicial del hook: el fetch aún no arrancó. Evaluar `hasPermission` en ese momento
+       * daba `false` contra una lista vacía y mandaba a /access-denied a cuentas que sí
+       * tenían el permiso, aunque el middleware las hubiera dejado pasar.
+       *
+       * `permissionsLoaded` es la señal real de "ya tengo la lista": la pone el `finally`
+       * del fetch, así que también se cumple cuando la petición falla (401 o error de red),
+       * sin dejar la pantalla colgada en "Verificando permisos...". Si nadie disparó la
+       * carga todavía, la disparamos acá.
+       */
+      if (!permissionsLoaded) {
+        if (!permissionsLoading) {
+          void refreshPermissions();
+        }
         return;
       }
 
@@ -115,7 +109,7 @@ export function RouteGuard({ children }: RouteGuardProps) {
 
       if (!hasAccess) {
         setChecking(false);
-        routerRef.current.push(`/access-denied?module=${module}&action=${action}`);
+        routerRef.current.push(accessDeniedPath(module, action));
         return;
       }
 
@@ -124,7 +118,7 @@ export function RouteGuard({ children }: RouteGuardProps) {
     };
 
     checkAuth();
-  }, [user, userLoading, hasPermission, permissionsLoading, permissionsLoaded]);
+  }, [user, userLoading, hasPermission, permissionsLoading, permissionsLoaded, refreshPermissions]);
 
   if (checking || userLoading) {
     return (

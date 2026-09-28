@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import Image from 'next/image';
+import { ProductPhoto } from '@/components/shared/ProductPhoto';
 import { toast } from 'sonner';
 import {
   Wine,
@@ -70,6 +70,8 @@ interface Movimiento {
   ml?: number | null;
   /** Ml por shot del producto; null/undefined = valor global de Configuraciones. */
   ml_shot?: number | null;
+  /** Ml por shot a anfitriona; null/undefined = igual que a cliente. */
+  ml_shot_anfitriona?: number | null;
   precio_venta: number | null;
   comision: number | null;
   fecha_crea: string;
@@ -435,14 +437,12 @@ export default function BarPage() {
                                     data-photo-surface
                                     className='relative mx-auto flex h-12 w-12 items-center justify-center overflow-hidden rounded-xl border border-gray-100'
                                   >
-                                    <Image
-                                      data-themed-photo
+                                    <ProductPhoto
                                       src={imageUrl(item.foto || item.producto_foto)}
                                       alt={`${item.producto_nombre} ${item.nombre}`}
                                       width={48}
                                       height={48}
-                                      sizes='48px'
-                                      className='h-12 w-12 object-cover'
+                                      className='h-12 w-12 object-contain p-0.5'
                                     />
                                   </div>
                                 </TableCell>
@@ -464,6 +464,7 @@ export default function BarPage() {
                                       commission={item.comision}
                                       field='precio'
                                       mlShot={item.ml_shot}
+                                      mlShotAnfitriona={item.ml_shot_anfitriona}
                                     />
                                   )}
                                 </TableCell>
@@ -477,6 +478,7 @@ export default function BarPage() {
                                       commission={item.comision}
                                       field='comision'
                                       mlShot={item.ml_shot}
+                                      mlShotAnfitriona={item.ml_shot_anfitriona}
                                     />
                                   )}
                                 </TableCell>
@@ -651,6 +653,7 @@ export default function BarPage() {
                                   options={m.opciones_venta}
                                   field='precio'
                                   mlShot={m.ml_shot}
+                                  mlShotAnfitriona={m.ml_shot_anfitriona}
                                 />
                               ) : m.precio_venta !== null && m.precio_venta !== undefined ? (
                                 formatCurrencyCLP(Number(m.precio_venta))
@@ -666,6 +669,7 @@ export default function BarPage() {
                                   options={m.opciones_venta}
                                   field='comision'
                                   mlShot={m.ml_shot}
+                                  mlShotAnfitriona={m.ml_shot_anfitriona}
                                 />
                               ) : m.comision !== null && m.comision !== undefined ? (
                                 formatCurrencyCLP(Number(m.comision))

@@ -81,7 +81,7 @@ export default function OrdersPage() {
   const [isDeletingServicio, setIsDeletingServicio] = useState(false);
 
   const canDelete = hasPermission('orders', 'delete');
-  const canProcess = hasPermission('orders', 'process') || hasPermission('pedidos', 'ventas');
+  const canProcess = hasPermission('orders', 'process');
 
   const handleOrderClick = (id: string, code: string) => {
     if (!canProcess) {

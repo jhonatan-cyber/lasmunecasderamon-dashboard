@@ -48,7 +48,7 @@ export default function AdvancesPage() {
   const [advanceSaving, setAdvanceSaving] = useState(false);
   const [activeTab, setActiveTab] = useState<TabType>('pending');
 
-  const canCreate = hasPermission('anticipos', 'crear');
+  const canCreate = hasPermission('advances', 'create');
 
   const pendingCount = (allAnticipos || []).filter(
     a => Number(a.estado) === 1 && !a.fecha_cobro

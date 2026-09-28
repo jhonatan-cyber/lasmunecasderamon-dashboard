@@ -23,7 +23,7 @@ export function useSalesList({ onAnularVenta }: UseSalesListParams) {
 
   const { hasPermission } = useUserPermissions();
   const canViewDetails = hasPermission('sales', 'view_details');
-  const canAnular = hasPermission('sales', 'cancel');
+  const canAnular = hasPermission('sales', 'delete');
   const hasAnyAction = canViewDetails || canAnular;
 
   const handleAnularClick = useCallback((venta: VentaWithDetails) => {

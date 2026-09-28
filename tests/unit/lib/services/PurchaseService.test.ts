@@ -44,12 +44,29 @@ let trxMock: any;
 beforeEach(() => {
   vi.clearAllMocks();
   trxMock = vi.fn(async (sql: string) => {
-    if (sql.includes('FROM productos')) return [{ id_producto: 'prod-1' }];
+    if (sql.includes('FROM productos')) return [{ id_producto: 'prod-1', nombre: 'Ron Habana' }];
     return [];
   });
   vi.mocked(InventoryRepository.listPresentationsByProducts).mockResolvedValue({
-    'prod-1': [{ id: 'pres-1' }, { id: 'pres-2' }]
+    'prod-1': [
+      { id: 'pres-1', nombre: 'Botella 750ml' },
+      { id: 'pres-2', nombre: 'Six pack' }
+    ]
   } as any);
+  // Un código por unidad pedida, con id para poder marcarlo como impreso.
+  vi.mocked(InventoryRepository.generateUnits).mockImplementation(
+    async (
+      _trx: unknown,
+      _productoId: string,
+      count: number,
+      presentacionId: string | null = null
+    ) =>
+      Array.from({ length: count }, (_, i) => ({
+        id: `${presentacionId}-u${i + 1}`,
+        codigo: `LM-${presentacionId}-${i + 1}`,
+        codigo_barras: `29${String(i + 1).padStart(11, '0')}`
+      }))
+  );
   vi.mocked(withTransaction).mockImplementation(async (cb: any) => cb(trxMock));
 });
 
@@ -133,5 +150,40 @@ describe('PurchaseService.registrarCompra', () => {
       'pres-1',
       { precio_compra: 5000 }
     );
+  });
+
+  it('devuelve los códigos generados con producto, presentación y folio', async () => {
+    const compra = await PurchaseService.registrarCompra(
+      {
+        detalles: [
+          detalle,
+          { ...detalle, presentacion_id: 'pres-2', cantidad: 2, precio_compra: 8000 }
+        ]
+      },
+      'u1'
+    );
+
+    expect(compra.codigos_generados).toHaveLength(5);
+    expect(compra.codigos_generados[0]).toEqual({
+      id: 'pres-1-u1',
+      codigo: 'LM-pres-1-1',
+      codigo_barras: '2900000000001',
+      producto_id: 'prod-1',
+      producto_nombre: 'Ron Habana',
+      presentacion_id: 'pres-1',
+      presentacion_nombre: 'Botella 750ml',
+      compra_folio: 'C-0001'
+    });
+    // Los dos últimos son el six pack, con su propia presentación.
+    expect(compra.codigos_generados.slice(3)).toEqual([
+      expect.objectContaining({ id: 'pres-2-u1', presentacion_nombre: 'Six pack' }),
+      expect.objectContaining({ id: 'pres-2-u2', presentacion_nombre: 'Six pack' })
+    ]);
+  });
+
+  it('no inventa códigos cuando la compra no genera unidades', async () => {
+    vi.mocked(InventoryRepository.generateUnits).mockResolvedValue([]);
+    const compra = await PurchaseService.registrarCompra({ detalles: [detalle] }, 'u1');
+    expect(compra.codigos_generados).toEqual([]);
   });
 });

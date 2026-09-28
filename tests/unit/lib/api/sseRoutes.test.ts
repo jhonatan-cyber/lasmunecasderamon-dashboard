@@ -186,7 +186,7 @@ describe('declaración de exposición en el middleware', () => {
     return [...cuerpo.matchAll(/'([^']+)'/g)].map(match => match[1]);
   }
 
-  const routesSource = fs.readFileSync(path.resolve('lib/middleware/proxy-routes.ts'), 'utf8');
+  const routesSource = fs.readFileSync(path.resolve('lib/constants/route-permissions.ts'), 'utf8');
   const publicPaths = parsePathList(routesSource, 'PUBLIC_PATHS', 'KIOSK_DEVICE_APIS');
   const kioskDeviceApis = parsePathList(
     routesSource,

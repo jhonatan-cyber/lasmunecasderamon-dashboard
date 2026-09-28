@@ -60,6 +60,8 @@ export type CuentaCobrarBody = {
   metodoPago?: string;
   metodo_pago?: string;
   habitacion_id?: string | null;
+  /** Hora en que el cajero hizo el cobro (viene del dispositivo cuando se encola). */
+  device_date?: string;
 };
 
 export type CuentaRoomHistoryItem = {
@@ -834,103 +836,130 @@ export class CuentaQueries {
   }
 
   static async cobrar(id: string, body: CuentaCobrarBody, cobradoPor: string) {
-    return await withTransaction(async trx => {
-      const cuenta = await trx<CuentaRow[]>(
-        'SELECT * FROM cuentas WHERE id_cuenta = ? FOR UPDATE',
-        [id]
+    const notificaciones: Array<() => void | Promise<void>> = [];
+    await withTransaction(trx =>
+      this.cobrarEnTransaccion(trx, id, body, cobradoPor, tarea => notificaciones.push(tarea))
+    );
+    // Recién con el COMMIT en firme: anunciar antes un cobro que terminó en
+    // rollback dejaría la habitación liberada y el temporizador detenido en las
+    // demás apps.
+    for (const tarea of notificaciones) await tarea();
+    return await this.getById(id);
+  }
+
+  /**
+   * Aplica el cobro dentro de una transacción existente.
+   *
+   * Es lo que usa el cobro con venta: cerrar la cuenta y registrar la venta
+   * tienen que confirmar juntos o revertir juntos, así que los dos pasos
+   * comparten el mismo `trx` en lugar de abrir uno cada uno.
+   *
+   * `onAfterCommit` recibe las notificaciones SSE que este paso genera: quien
+   * compone varias operaciones en una transacción las guarda y las emite recién
+   * cuando la transacción confirma.
+   */
+  static async cobrarEnTransaccion(
+    trx: TransactionQuery,
+    id: string,
+    body: CuentaCobrarBody,
+    cobradoPor: string,
+    onAfterCommit?: (task: () => void | Promise<void>) => void
+  ): Promise<void> {
+    const emitir = onAfterCommit ?? ((tarea: () => void) => tarea());
+    const cuenta = await trx<CuentaRow[]>('SELECT * FROM cuentas WHERE id_cuenta = ? FOR UPDATE', [
+      id
+    ]);
+    if (!cuenta.length) throw new NotFoundError('Cuenta', id);
+    if (![1, 4].includes(Number(cuenta[0].estado))) {
+      throw new BusinessError('La cuenta ya fue procesada', 'CUENTA_YA_PROCESADA');
+    }
+
+    // Validación server-side de caja abierta (paridad con el bloqueo de UI):
+    // el cobro postula el monto a la caja activa; sin caja se perdía el
+    // registro de caja aunque la cuenta quedara cobrada.
+    const idCajaCobro = await CashRegisterRepository.getCurrentCajaId(trx);
+    if (!idCajaCobro) {
+      throw new BusinessError(
+        'No hay una caja abierta para registrar el cobro de la cuenta',
+        'NO_CAJA_ABIERTA'
       );
-      if (!cuenta.length) throw new NotFoundError('Cuenta', id);
-      if (![1, 4].includes(Number(cuenta[0].estado))) {
-        throw new BusinessError('La cuenta ya fue procesada', 'CUENTA_YA_PROCESADA');
-      }
+    }
 
-      // Validación server-side de caja abierta (paridad con el bloqueo de UI):
-      // el cobro postula el monto a la caja activa; sin caja se perdía el
-      // registro de caja aunque la cuenta quedara cobrada.
-      const idCajaCobro = await CashRegisterRepository.getCurrentCajaId(trx);
-      if (!idCajaCobro) {
-        throw new BusinessError(
-          'No hay una caja abierta para registrar el cobro de la cuenta',
-          'NO_CAJA_ABIERTA'
-        );
-      }
-
-      const now = getNowInBusinessTimezone();
-      const montoFinal = Number(body.montoFinal ?? body.total_cobrado ?? cuenta[0].total ?? 0);
-      const propinaFinal = Number(body.propinaFinal ?? body.propina ?? 0);
-      // El cliente paga el total de la cuenta + la propina; la venta registrada
-      // es el total de la cuenta y la propina va a su bucket (se reparte).
-      const montoCobrar = montoFinal + propinaFinal;
-      const tipoPago = body.tipoPago ?? body.metodoPago ?? body.metodo_pago ?? 'efectivo';
-      const metodoPago = body.metodoPago ?? body.metodo_pago ?? tipoPago;
-      const timing = this.getRemainingMinutes(cuenta[0], parseBusinessDate(now));
-      let history = this.parseRoomHistory(cuenta[0].habitaciones_historial);
-      if (cuenta[0].habitacion_id) {
-        const room = await trx<HabitacionRow[]>(
-          'SELECT nombre FROM habitaciones WHERE id_habitacion = ?',
-          [cuenta[0].habitacion_id]
-        );
-        history = this.ensureOpenHistorySegment(
-          history,
-          cuenta[0],
-          room[0]?.nombre || 'Sin habitacion'
-        );
-        history = this.closeOpenHistorySegment(
-          history,
-          now,
-          timing.elapsedMinutes,
-          !timing.isActive,
-          'charged'
-        );
-      }
-
-      await trx(
-        'UPDATE cuentas SET estado = 0, metodo_pago = ?, cobrado_por = ?, tiempo_actual = 0, tiempo_inicio_actual = NULL, habitaciones_historial = ?, fecha_mod = ? WHERE id_cuenta = ?',
-        [metodoPago, cobradoPor, this.stringifyRoomHistory(history), now, id]
+    const now = getNowInBusinessTimezone();
+    const montoFinal = Number(body.montoFinal ?? body.total_cobrado ?? cuenta[0].total ?? 0);
+    const propinaFinal = Number(body.propinaFinal ?? body.propina ?? 0);
+    // El cliente paga el total de la cuenta + la propina; la venta registrada
+    // es el total de la cuenta y la propina va a su bucket (se reparte).
+    const montoCobrar = montoFinal + propinaFinal;
+    const tipoPago = body.tipoPago ?? body.metodoPago ?? body.metodo_pago ?? 'efectivo';
+    const metodoPago = body.metodoPago ?? body.metodo_pago ?? tipoPago;
+    const timing = this.getRemainingMinutes(cuenta[0], parseBusinessDate(now));
+    let history = this.parseRoomHistory(cuenta[0].habitaciones_historial);
+    if (cuenta[0].habitacion_id) {
+      const room = await trx<HabitacionRow[]>(
+        'SELECT nombre FROM habitaciones WHERE id_habitacion = ?',
+        [cuenta[0].habitacion_id]
       );
+      history = this.ensureOpenHistorySegment(
+        history,
+        cuenta[0],
+        room[0]?.nombre || 'Sin habitacion'
+      );
+      history = this.closeOpenHistorySegment(
+        history,
+        now,
+        timing.elapsedMinutes,
+        !timing.isActive,
+        'charged'
+      );
+    }
 
-      if (tipoPago === 'prepago') {
-        const client = await trx<ClienteRow[]>(
-          'SELECT saldo FROM clientes WHERE id_cliente = ? FOR UPDATE',
-          [cuenta[0].cliente_id]
-        );
-        if (!client.length || (client[0].saldo ?? 0) < montoCobrar)
-          throw new BusinessError('Saldo insuficiente', 'SALDO_INSUFICIENTE');
-        await trx('UPDATE clientes SET saldo = saldo - ? WHERE id_cliente = ?', [
-          montoCobrar,
-          cuenta[0].cliente_id
-        ]);
-      }
+    await trx(
+      'UPDATE cuentas SET estado = 0, metodo_pago = ?, cobrado_por = ?, tiempo_actual = 0, tiempo_inicio_actual = NULL, habitaciones_historial = ?, fecha_mod = ? WHERE id_cuenta = ?',
+      [metodoPago, cobradoPor, this.stringifyRoomHistory(history), now, id]
+    );
 
-      // `idCajaCobro` se resolvió al inicio de la transacción (con validación
-      // de existencia): aquí ya se sabe que existe.
-      if (idCajaCobro) {
-        await CashRegisterRepository.updateBalances(trx, idCajaCobro, {
-          venta: montoFinal,
-          propina: propinaFinal,
-          efectivo: tipoPago === 'efectivo' ? montoCobrar : 0,
-          tarjeta: tipoPago === 'tarjeta' ? montoCobrar : 0,
-          transferencia: tipoPago === 'transferencia' ? montoCobrar : 0,
-          prepago: tipoPago === 'prepago' ? montoCobrar : 0
-        });
-      }
+    if (tipoPago === 'prepago') {
+      const client = await trx<ClienteRow[]>(
+        'SELECT saldo FROM clientes WHERE id_cliente = ? FOR UPDATE',
+        [cuenta[0].cliente_id]
+      );
+      if (!client.length || (client[0].saldo ?? 0) < montoCobrar)
+        throw new BusinessError('Saldo insuficiente', 'SALDO_INSUFICIENTE');
+      await trx('UPDATE clientes SET saldo = saldo - ? WHERE id_cliente = ?', [
+        montoCobrar,
+        cuenta[0].cliente_id
+      ]);
+    }
 
-      if (cuenta[0].habitacion_id) {
-        await trx('UPDATE habitaciones SET estado = 1 WHERE id_habitacion = ?', [
-          cuenta[0].habitacion_id
-        ]);
-        sendNotificationToAll('room_available', { roomId: cuenta[0].habitacion_id });
-      }
+    // `idCajaCobro` se resolvió al inicio de la transacción (con validación
+    // de existencia): aquí ya se sabe que existe.
+    if (idCajaCobro) {
+      await CashRegisterRepository.updateBalances(trx, idCajaCobro, {
+        venta: montoFinal,
+        propina: propinaFinal,
+        efectivo: tipoPago === 'efectivo' ? montoCobrar : 0,
+        tarjeta: tipoPago === 'tarjeta' ? montoCobrar : 0,
+        transferencia: tipoPago === 'transferencia' ? montoCobrar : 0,
+        prepago: tipoPago === 'prepago' ? montoCobrar : 0
+      });
+    }
 
+    if (cuenta[0].habitacion_id) {
+      await trx('UPDATE habitaciones SET estado = 1 WHERE id_habitacion = ?', [
+        cuenta[0].habitacion_id
+      ]);
+      emitir(() => sendNotificationToAll('room_available', { roomId: cuenta[0].habitacion_id }));
+    }
+
+    emitir(() =>
       sendNotificationToAll('timer_stopped', {
         servicioId: id,
         status: 0,
         tipoTransaccion: 'cuenta'
-      });
-      sendNotificationToAll('timers_updated', { timestamp: now });
-    });
-
-    return await this.getById(id);
+      })
+    );
+    emitir(() => sendNotificationToAll('timers_updated', { timestamp: now }));
   }
 
   static async stopTimer(id: string, userId: string) {

@@ -19,18 +19,17 @@ Select.displayName = 'Select';
 const SelectGroup = SelectPrimitive.Group;
 const SelectValue = SelectPrimitive.Value;
 
-const SelectTrigger = React.forwardRef((props: any, ref: any) => (
-  <SelectPrimitive.Trigger
-    ref={ref}
-    className={cn(SELECT_TRIGGER_CLASS, props.className)}
-    {...props}
-  >
-    {props.children}
-    <SelectPrimitive.Icon asChild>
-      <ChevronDown className='h-4 w-4 shrink-0 text-gray-400' />
-    </SelectPrimitive.Icon>
-  </SelectPrimitive.Trigger>
-));
+const SelectTrigger = React.forwardRef((props: any, ref: any) => {
+  const { className, children, ...rest } = props;
+  return (
+    <SelectPrimitive.Trigger ref={ref} className={cn(SELECT_TRIGGER_CLASS, className)} {...rest}>
+      {children}
+      <SelectPrimitive.Icon asChild>
+        <ChevronDown className='h-4 w-4 shrink-0 text-gray-400' />
+      </SelectPrimitive.Icon>
+    </SelectPrimitive.Trigger>
+  );
+});
 SelectTrigger.displayName = SelectPrimitive.Trigger.displayName;
 
 const SelectScrollUpButton = (props: any) => (

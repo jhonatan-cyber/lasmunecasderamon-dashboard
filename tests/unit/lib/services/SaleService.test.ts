@@ -459,6 +459,57 @@ describe('SaleService.createSale — inventario del bar', () => {
     );
   });
 
+  it('guarda en detalle_ventas si fue shot y si se cobró a una anfitriona', async () => {
+    vi.mocked(CashRegisterRepository.getCurrentCajaId).mockResolvedValue('caja-1');
+    const trx = vi.fn().mockResolvedValue([]);
+    vi.mocked(withTransaction).mockImplementationOnce(async (fn: any) => fn(trx));
+
+    await SaleService.createSale(
+      {
+        ...validSaleBody,
+        detalles: [
+          {
+            producto_id: 'prod-1',
+            presentacion_id: 'pres-1',
+            precio: 3000,
+            cantidad: 2,
+            comision: 0,
+            tipo_venta: 'shot' as const,
+            shot_anfitriona: true
+          },
+          {
+            producto_id: 'prod-2',
+            presentacion_id: 'pres-2',
+            precio: 180000,
+            cantidad: 1,
+            comision: 0
+          }
+        ]
+      },
+      'user-1'
+    );
+
+    const insert = trx.mock.calls.find(([sql]) =>
+      String(sql).includes('INSERT INTO detalle_ventas')
+    );
+    expect(insert).toBeTruthy();
+    const [sql, values] = insert as [string, unknown[]];
+    const columnas = String(sql)
+      .slice(String(sql).indexOf('(') + 1, String(sql).indexOf(')'))
+      .split(',')
+      .map(columna => columna.trim());
+    const fila = (indice: number) =>
+      Object.fromEntries(
+        columnas.map((columna, i) => [columna, values[indice * columnas.length + i]])
+      );
+
+    // El shot a anfitriona se guarda como shot + bandera; el precio queda en `precio`
+    // (por eso el reporte puede sumar los dos precios por separado).
+    expect(fila(0)).toMatchObject({ tipo_venta: 'shot', shot_anfitriona: true, cantidad: 2 });
+    // Lo que no se marca es botella, igual que el default de la migración 039.
+    expect(fila(1)).toMatchObject({ tipo_venta: 'botella', shot_anfitriona: false, cantidad: 1 });
+  });
+
   it('aplica el mismo descuento al cobro de cuenta (origen cuenta)', async () => {
     vi.mocked(CashRegisterRepository.getCurrentCajaId).mockResolvedValue('caja-1');
 

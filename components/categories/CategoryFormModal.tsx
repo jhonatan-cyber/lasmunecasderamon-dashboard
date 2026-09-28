@@ -59,7 +59,12 @@ export function CategoryFormModal({
         <div className='flex-1 overflow-y-auto p-6'>
           <form id='category-form' onSubmit={onFormSubmit} className='space-y-4 sm:space-y-6'>
             <div>
-              <Label htmlFor='categoryName' className='text-sm sm:text-base font-medium text-gray-700 dark:text-gray-300'>Nombre</Label>
+              <Label
+                htmlFor='categoryName'
+                className='text-sm sm:text-base font-medium text-gray-700 dark:text-gray-300'
+              >
+                Nombre
+              </Label>
               <div className='relative mt-1'>
                 <span className='absolute left-3 top-1/2 -translate-y-1/2 text-gray-400'>
                   <Tag className='w-4 h-4' />
@@ -71,10 +76,17 @@ export function CategoryFormModal({
                   className={`pl-10 ${errors.name ? 'border-red-500' : ''}`}
                 />
               </div>
-              {errors.name && <span className='text-red-500 text-xs sm:text-sm mt-1'>{errors.name.message}</span>}
+              {errors.name && (
+                <span className='text-red-500 text-xs sm:text-sm mt-1'>{errors.name.message}</span>
+              )}
             </div>
             <div>
-              <Label htmlFor='categoryDescription' className='text-sm sm:text-base font-medium text-gray-700 dark:text-gray-300'>Descripción</Label>
+              <Label
+                htmlFor='categoryDescription'
+                className='text-sm sm:text-base font-medium text-gray-700 dark:text-gray-300'
+              >
+                Descripción
+              </Label>
               <div className='relative mt-1'>
                 <span className='absolute left-3 top-3 text-gray-400'>
                   <FileText className='w-4 h-4' />
@@ -84,9 +96,14 @@ export function CategoryFormModal({
                   {...register('description')}
                   placeholder='Ingresa una descripción para la categoría...'
                   rows={3}
-                  className='text-sm sm:text-base pl-10'
+                  className={`text-sm sm:text-base pl-10 ${errors.description ? 'border-red-500' : ''}`}
                 />
               </div>
+              {errors.description && (
+                <span className='text-red-500 text-xs sm:text-sm mt-1'>
+                  {errors.description.message}
+                </span>
+              )}
             </div>
           </form>
         </div>
@@ -103,7 +120,7 @@ export function CategoryFormModal({
           <Button
             type='submit'
             form='category-form'
-          className='bg-black text-white dark:bg-black dark:text-white  dark:hover:bg-white! dark:hover:text-black! rounded-full px-8 hover:bg-white! hover:text-black! transition-all hover:scale-105 border-2'
+            className='bg-black text-white dark:bg-black dark:text-white  dark:hover:bg-white! dark:hover:text-black! rounded-full px-8 hover:bg-white! hover:text-black! transition-all hover:scale-105 border-2'
             disabled={isMutating}
           >
             {isMutating ? (
@@ -120,4 +137,3 @@ export function CategoryFormModal({
     </Dialog>
   );
 }
-

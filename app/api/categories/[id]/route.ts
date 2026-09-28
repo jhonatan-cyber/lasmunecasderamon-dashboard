@@ -3,7 +3,10 @@ import { withRoute } from '@/lib/api/withRoute';
 import { CategoryService } from '@/lib/services/CategoryService';
 import { ValidationError } from '@/lib/errors/errors';
 
-export const PUT = withRoute({ auth: true, audit: true, module: 'products', action: 'write' }, 
+// Guard del módulo `categories` (no `products`): la categoría tiene sus propios
+// permisos y con `products.write` la UI y la API no coincidían.
+export const PUT = withRoute(
+  { auth: true, audit: true, module: 'categories', action: 'write' },
   async (request: Request, { params }: { params: Promise<{ id: string }> }) => {
     const id = (await params).id;
     const { name, description } = await request.json();
@@ -14,7 +17,8 @@ export const PUT = withRoute({ auth: true, audit: true, module: 'products', acti
   }
 );
 
-export const PATCH = withRoute({ auth: true, audit: true, module: 'products', action: 'write' },
+export const PATCH = withRoute(
+  { auth: true, audit: true, module: 'categories', action: 'write' },
   async (request: Request, { params }: { params: Promise<{ id: string }> }) => {
     const id = (await params).id;
     const { searchParams } = new URL(request.url);
@@ -31,7 +35,8 @@ export const PATCH = withRoute({ auth: true, audit: true, module: 'products', ac
   }
 );
 
-export const DELETE = withRoute({ auth: true, audit: true, module: 'products', action: 'delete' },
+export const DELETE = withRoute(
+  { auth: true, audit: true, module: 'categories', action: 'delete' },
   async (_request: Request, { params }: { params: Promise<{ id: string }> }) => {
     const id = (await params).id;
     await CategoryService.delete(id);

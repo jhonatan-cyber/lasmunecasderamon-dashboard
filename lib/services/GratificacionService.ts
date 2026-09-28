@@ -6,18 +6,33 @@ export class GratificacionService {
     usuario_id: string,
     monto: number,
     descripcion?: string,
-    device_date?: string
+    /** Quién solicita (id de sesión). Se persiste como `solicitante_id` (037). */
+    solicitanteId?: string
   ) {
     if (!usuario_id) throw new Error('Usuario es requerido');
     if (!monto || monto <= 0) throw new Error('Monto debe ser positivo');
-    return await GratificacionRepository.create({ usuario_id, monto, descripcion });
+    return await GratificacionRepository.create({
+      usuario_id,
+      monto,
+      descripcion,
+      solicitante_id: solicitanteId || null
+    });
   }
 
-  static async getAll(userId?: string) {
-    return await GratificacionRepository.getAll(userId);
+  /**
+   * `userId` limita por beneficiario; `solicitanteId` agrega la unión de lo que
+   * esa persona solicitó (la combinación es el filtro del cajero en el GET).
+   */
+  static async getAll(userId?: string, solicitanteId?: string) {
+    return await GratificacionRepository.getAll(userId, solicitanteId);
   }
 
-  static async create(data: { usuario_id: string; monto: number; descripcion?: string }) {
+  static async create(data: {
+    usuario_id: string;
+    monto: number;
+    descripcion?: string;
+    solicitante_id?: string | null;
+  }) {
     if (!data.usuario_id) throw new Error('Usuario es requerido');
     if (!data.monto || data.monto <= 0) throw new Error('Monto debe ser positivo');
     return await GratificacionRepository.create(data);

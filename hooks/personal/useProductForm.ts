@@ -13,6 +13,8 @@ export interface ProductFormValues {
   description: string;
   /** Ml por shot del producto (vacío = usar el global de Configuraciones). */
   ml_shot: string;
+  /** Ml por shot a anfitriona (vacío = igual que a cliente). */
+  ml_shot_anfitriona: string;
 }
 
 export interface PresentacionFormItem {
@@ -57,7 +59,8 @@ const initialFormState: ProductFormValues = {
   code: '',
   name: '',
   description: '',
-  ml_shot: ''
+  ml_shot: '',
+  ml_shot_anfitriona: ''
 };
 
 interface UseProductFormProps {
@@ -156,6 +159,11 @@ export function useProductForm({
         ml_shot:
           initialValues.ml_shot !== undefined && initialValues.ml_shot !== null
             ? String(initialValues.ml_shot)
+            : '',
+        ml_shot_anfitriona:
+          initialValues.ml_shot_anfitriona !== undefined &&
+          initialValues.ml_shot_anfitriona !== null
+            ? String(initialValues.ml_shot_anfitriona)
             : ''
       });
     } else if (open) {
@@ -281,8 +289,8 @@ export function useProductForm({
         ...prev,
         description: value ? value.charAt(0).toUpperCase() + value.slice(1) : value
       }));
-    } else if (name === 'ml_shot') {
-      setForm(prev => ({ ...prev, ml_shot: String(value).replace(/\D/g, '') }));
+    } else if (name === 'ml_shot' || name === 'ml_shot_anfitriona') {
+      setForm(prev => ({ ...prev, [name]: String(value).replace(/\D/g, '') }));
     } else {
       setForm(prev => ({ ...prev, [name]: value }));
     }
@@ -613,6 +621,8 @@ export function useProductForm({
     data.append('status', '1');
     // Vacío = borrar: el producto vuelve al `shot_ml` global de Configuraciones.
     data.append('ml_shot', form.ml_shot);
+    // Vacío = borrar: el shot de anfitriona vuelve a servirse igual que el de cliente.
+    data.append('ml_shot_anfitriona', form.ml_shot_anfitriona);
     if (presentaciones.length > 0) {
       data.append(
         'presentaciones',

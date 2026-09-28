@@ -40,31 +40,35 @@ export function GratificacionesForm({
 
   return (
     <form id='gratificaciones-form' onSubmit={onFormSubmit} className='space-y-4 sm:space-y-6'>
-      {!isEditMode && (
-        <div>
-          <Controller
-            name='usuario_id'
-            control={control}
-            rules={{ required: true }}
-            render={({ field }) => (
-              <UserSelect
-                users={eligibleEmployees}
-                value={field.value}
-                onChange={field.onChange}
-                label='Empleado'
-                placeholder='Selecciona un empleado'
-                searchPlaceholder='Buscar empleado...'
-                disabled={isLoading}
-                onlyActive={true}
-                required={true}
-              />
-            )}
-          />
-          {errors.usuario_id && (
-            <p className='text-red-600 text-xs mt-1'>Seleccionar un empleado es obligatorio</p>
+      <div>
+        <Controller
+          name='usuario_id'
+          control={control}
+          rules={{ required: true }}
+          render={({ field }) => (
+            <UserSelect
+              users={eligibleEmployees}
+              value={field.value}
+              onChange={field.onChange}
+              label='Empleado'
+              placeholder='Selecciona un empleado'
+              searchPlaceholder='Buscar empleado...'
+              disabled={isLoading || isEditMode}
+              onlyActive={true}
+              required={true}
+            />
           )}
-        </div>
-      )}
+        />
+        {isEditMode ? (
+          <p className='text-xs text-muted-foreground mt-1'>
+            El empleado no se puede modificar al editar una gratificación.
+          </p>
+        ) : (
+          errors.usuario_id && (
+            <p className='text-red-600 text-xs mt-1'>Seleccionar un empleado es obligatorio</p>
+          )
+        )}
+      </div>
 
       <div>
         <Label htmlFor='monto' className='mb-2 text-sm font-semibold'>

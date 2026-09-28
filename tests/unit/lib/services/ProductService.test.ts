@@ -292,16 +292,16 @@ describe('ProductService.addUnits', () => {
       }
     ]);
     vi.mocked(InventoryRepository.generateUnitsStandalone).mockResolvedValue([
-      { codigo: 'LM-000003', codigo_barras: '2900000000034' },
-      { codigo: 'LM-000004', codigo_barras: '2900000000041' }
+      { id: 'u3', codigo: 'LM-000003', codigo_barras: '2900000000034' },
+      { id: 'u4', codigo: 'LM-000004', codigo_barras: '2900000000041' }
     ]);
 
     const result = await ProductService.addUnits('prod-1', 'pres-1', 2);
 
     expect(InventoryRepository.generateUnitsStandalone).toHaveBeenCalledWith('prod-1', 2, 'pres-1');
     expect(result).toEqual([
-      { codigo: 'LM-000003', codigo_barras: '2900000000034' },
-      { codigo: 'LM-000004', codigo_barras: '2900000000041' }
+      { id: 'u3', codigo: 'LM-000003', codigo_barras: '2900000000034' },
+      { id: 'u4', codigo: 'LM-000004', codigo_barras: '2900000000041' }
     ]);
   });
 

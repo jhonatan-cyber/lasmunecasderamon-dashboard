@@ -144,12 +144,16 @@ const MobileCardView = React.memo(
                 </div>
 
                 <div className='grid grid-cols-2 gap-3'>
-                  <div className='text-xs text-gray-400 uppercase font-bold'>RUN</div>
-                  <div className='text-xs text-gray-500'>{renderRun(client.run)}</div>
-                  <div className='text-xs text-gray-400 uppercase font-bold'>Teléfono</div>
-                  <div className='text-xs text-gray-500'>{renderPhone(client.phone)}</div>
-                  <div className='text-xs text-gray-400 uppercase font-bold'>Saldo</div>
-                  <div className='text-xs font-bold text-green-600'>
+                  <div className='text-xs text-gray-400 uppercase font-bold text-center'>RUT</div>
+                  <div className='text-xs text-gray-500 text-center'>{renderRun(client.run)}</div>
+                  <div className='text-xs text-gray-400 uppercase font-bold text-center'>
+                    TELÉFONO
+                  </div>
+                  <div className='text-xs text-gray-500 text-center'>
+                    {renderPhone(client.phone)}
+                  </div>
+                  <div className='text-xs text-gray-400 uppercase font-bold text-center'>SALDO</div>
+                  <div className='text-xs font-bold text-green-600 text-center'>
                     ${(client.saldo || 0).toLocaleString('es-CL')}
                   </div>
                 </div>
@@ -312,20 +316,28 @@ const DesktopTableView = React.memo(
           <Table>
             <TableHeader className='bg-gray-100 dark:bg-slate-900/50'>
               <TableRow className='hover:bg-transparent border-gray-100 dark:border-gray-800'>
-                <TableHead className='py-4 px-5 text-xs uppercase text-gray-500'>#</TableHead>
-                <TableHead className='py-4 px-5 text-xs uppercase text-gray-500'>RUN</TableHead>
-                <TableHead className='py-4 px-5 text-xs uppercase text-gray-500'>Nombre</TableHead>
-                <TableHead className='py-4 px-5 text-xs uppercase text-gray-500'>
+                <TableHead className='py-4 px-5 text-xs uppercase font-bold text-gray-500 dark:text-gray-400 text-center'>
+                  #
+                </TableHead>
+                <TableHead className='py-4 px-5 text-xs uppercase font-bold text-gray-500 dark:text-gray-400 text-center'>
+                  RUT
+                </TableHead>
+                <TableHead className='py-4 px-5 text-xs uppercase font-bold text-gray-500 dark:text-gray-400 text-center'>
+                  Nombre
+                </TableHead>
+                <TableHead className='py-4 px-5 text-xs uppercase font-bold text-gray-500 dark:text-gray-400 text-center'>
                   Apellido
                 </TableHead>
-                <TableHead className='py-4 px-5 text-xs uppercase text-gray-500'>
+                <TableHead className='py-4 px-5 text-xs uppercase font-bold text-gray-500 dark:text-gray-400 text-center'>
                   Teléfono
                 </TableHead>
-                <TableHead className='py-4 px-5 text-xs uppercase text-gray-500'>Estado</TableHead>
-                <TableHead className='py-4 px-5 text-xs uppercase text-gray-500'>
+                <TableHead className='py-4 px-5 text-xs uppercase font-bold text-gray-500 dark:text-gray-400 text-center'>
+                  Estado
+                </TableHead>
+                <TableHead className='py-4 px-5 text-xs uppercase font-bold text-gray-500 dark:text-gray-400 text-center'>
                   Saldo Prepago
                 </TableHead>
-                <TableHead className='py-4 px-5 text-xs uppercase text-gray-500'>
+                <TableHead className='py-4 px-5 text-xs uppercase font-bold text-gray-500 dark:text-gray-400 text-center'>
                   Acciones
                 </TableHead>
               </TableRow>
@@ -334,28 +346,28 @@ const DesktopTableView = React.memo(
               {loading
                 ? Array.from({ length: pageSize }).map((_, i) => (
                     <TableRow key={`loading-${i}`}>
-                      <TableCell>
+                      <TableCell className='text-center'>
                         <Skeleton className='h-4 w-8 mx-auto' />
                       </TableCell>
-                      <TableCell>
+                      <TableCell className='text-center'>
                         <Skeleton className='h-4 w-16 mx-auto' />
                       </TableCell>
-                      <TableCell>
+                      <TableCell className='text-center'>
                         <Skeleton className='h-4 w-20 mx-auto' />
                       </TableCell>
-                      <TableCell>
+                      <TableCell className='text-center'>
                         <Skeleton className='h-4 w-20 mx-auto' />
                       </TableCell>
-                      <TableCell>
+                      <TableCell className='text-center'>
                         <Skeleton className='h-4 w-24 mx-auto' />
                       </TableCell>
-                      <TableCell>
+                      <TableCell className='text-center'>
                         <Skeleton className='h-4 w-16 mx-auto' />
                       </TableCell>
-                      <TableCell>
+                      <TableCell className='text-center'>
                         <Skeleton className='h-4 w-14 mx-auto' />
                       </TableCell>
-                      <TableCell>
+                      <TableCell className='text-center'>
                         <Skeleton className='h-4 w-16 mx-auto' />
                       </TableCell>
                     </TableRow>

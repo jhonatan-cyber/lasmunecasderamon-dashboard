@@ -220,6 +220,9 @@ export function useSaleValidation({
     // Un shot no gasta una botella: se sirve de la botella abierta (ml), así que el
     // tope de unidades en bar solo aplica a la venta de botella completa.
     const tipoVenta = producto.tipo_venta === 'shot' ? 'shot' : 'botella';
+    // Un shot cobrado a precio de anfitriona es un shot más: cambia el precio, no el
+    // descuento de ml. Se marca para que reportes y caja lo separen.
+    const shotAnfitriona = tipoVenta === 'shot' && Boolean(producto.shot_anfitriona);
     let cantidad = cantidades[id] || 1;
     if (
       tipoVenta !== 'shot' &&
@@ -246,6 +249,7 @@ export function useSaleValidation({
       cantidad,
       subtotal: precio * cantidad,
       tipo_venta: tipoVenta,
+      shot_anfitriona: shotAnfitriona,
       selectedHostesses: hostessIds,
       isChampagne: producto.isChampagne || isChampagneProduct(producto)
     };
@@ -253,6 +257,8 @@ export function useSaleValidation({
     const isMatch = (p: any) =>
       p.id === productoNormalizado.id &&
       (p.tipo_venta === 'shot' ? 'shot' : 'botella') === tipoVenta &&
+      // Shot de cliente y shot de anfitriona son líneas distintas: no se suman.
+      Boolean(p.shot_anfitriona) === shotAnfitriona &&
       (p.presentacion_id || null) === (productoNormalizado.presentacion_id || null) &&
       JSON.stringify([...(p.selectedHostesses || [])].sort()) ===
         JSON.stringify([...(productoNormalizado.selectedHostesses || [])].sort());
@@ -348,7 +354,9 @@ export function useSaleValidation({
           const normalizedDetail = {
             producto_id: p.producto_id || p.id,
             presentacion_id: p.presentacion_id || null,
-            ...(p.tipo_venta === 'shot' ? { tipo_venta: 'shot' as const } : {}),
+            ...(p.tipo_venta === 'shot'
+              ? { tipo_venta: 'shot' as const, shot_anfitriona: Boolean(p.shot_anfitriona) }
+              : {}),
             precio: p.precio,
             comision: (p.comision || 0) * p.cantidad,
             cantidad: p.cantidad,

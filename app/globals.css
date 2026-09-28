@@ -7,22 +7,9 @@
 
 /* Shared photo treatment. Opt in photos only; logos and QR codes retain their colors. */
 [data-photo-surface] {
-  background-color: #fff;
   isolation: isolate;
 }
 
-[data-themed-photo] {
-  background-color: #fff;
-}
-
-.dark [data-photo-surface] {
-  background-color: #a3a3a3;
-}
-
-.dark [data-themed-photo] {
-  /* Equivalent to multiplying by #a3a3a3, also works without a photo wrapper. */
-  filter: brightness(0.6392156863);
-}
 
 @theme {
   --font-*: initial;

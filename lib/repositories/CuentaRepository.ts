@@ -1,3 +1,4 @@
+import type { TransactionQuery } from '@/lib/database/db';
 import {
   CuentaQueries,
   type CuentaDetalle,
@@ -39,6 +40,17 @@ export class CuentaRepository {
 
   static async cobrar(id: string, body: CuentaCobrarBody, cobradoPor: string) {
     return await CuentaQueries.cobrar(id, body, cobradoPor);
+  }
+
+  /** Cobro dentro de una transacción existente (ver `AccountService.cobrarConVenta`). */
+  static async cobrarEnTransaccion(
+    trx: TransactionQuery,
+    id: string,
+    body: CuentaCobrarBody,
+    cobradoPor: string,
+    onAfterCommit?: (task: () => void | Promise<void>) => void
+  ) {
+    return await CuentaQueries.cobrarEnTransaccion(trx, id, body, cobradoPor, onAfterCommit);
   }
 
   static async stopTimer(id: string, userId: string) {

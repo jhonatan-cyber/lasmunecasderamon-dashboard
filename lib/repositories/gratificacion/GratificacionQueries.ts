@@ -27,43 +27,63 @@ function getEstadoTexto(estado: number) {
   }
 }
 
-export async function getAllGratificaciones(userId?: string) {
+export async function getAllGratificaciones(userId?: string, solicitanteId?: string) {
   try {
-    const tableCheck = await query<any[]>("SELECT table_name FROM information_schema.tables WHERE table_schema = current_schema() AND table_name = 'gratificaciones'");
-  if (tableCheck.length === 0) return [];
+    const tableCheck = await query<any[]>(
+      "SELECT table_name FROM information_schema.tables WHERE table_schema = current_schema() AND table_name = 'gratificaciones'"
+    );
+    if (tableCheck.length === 0) return [];
 
-  let sql = `
+    let sql = `
     SELECT G.*,
            TO_CHAR(G.fecha_crea, 'YYYY-MM-DD HH24:MI:SS') as fecha_crea_fmt,
            TO_CHAR(G.fecha_mod, 'YYYY-MM-DD HH24:MI:SS') as fecha_mod_fmt,
-           U.id_usuario, (CAST(U.nombre AS text) || CAST(' ' AS text) || CAST(U.apellido AS text)) AS usuario, U.foto AS usuario_foto
+           U.id_usuario, (CAST(U.nombre AS text) || CAST(' ' AS text) || CAST(U.apellido AS text)) AS usuario, U.foto AS usuario_foto,
+           (CAST(S.nombre AS text) || CAST(' ' AS text) || CAST(S.apellido AS text)) AS solicitante
     FROM gratificaciones G
     INNER JOIN usuarios U ON U.id_usuario = G.usuario_id
+    LEFT JOIN usuarios S ON S.id_usuario = G.solicitante_id
   `;
-  const params: any[] = [];
-  if (userId) {
-    sql += ' WHERE G.usuario_id = ?';
-    params.push(userId);
-  }
-  sql += ' ORDER BY G.fecha_crea DESC';
+    const params: any[] = [];
+    if (userId && solicitanteId) {
+      // Unión: lo que recibió (usuario_id) y lo que él mismo solicitó
+      // (solicitante_id, migración 037). Es el filtro del cajero en el GET; para
+      // el resto de los roles equivale a "lo suyo" porque nunca solicitan a nombre
+      // de otro.
+      sql += ' WHERE (G.usuario_id = ? OR G.solicitante_id = ?)';
+      params.push(userId, solicitanteId);
+    } else if (userId) {
+      sql += ' WHERE G.usuario_id = ?';
+      params.push(userId);
+    } else if (solicitanteId) {
+      sql += ' WHERE G.solicitante_id = ?';
+      params.push(solicitanteId);
+    }
+    sql += ' ORDER BY G.fecha_crea DESC';
 
-  const rows = await query<any[]>(sql, params);
-  return rows.map(row => ({
-    id: String(row.id),
-    fecha_hora: row.fecha_crea_fmt,
-    usuario_id: String(row.usuario_id),
-    id_usuario: String(row.id_usuario),
-    usuario: String(row.usuario),
-    usuario_foto: row.usuario_foto || null,
-    monto: Number(row.monto),
-    descripcion: String(row.descripcion || ''),
-    fecha_crea: row.fecha_crea_fmt,
-    fecha_mod: row.fecha_mod_fmt || null,
-    estado: Number(row.estado),
-    estado_texto: getEstadoTexto(Number(row.estado))
-  }));
+    const rows = await query<any[]>(sql, params);
+    return rows.map(row => ({
+      id: String(row.id),
+      fecha_hora: row.fecha_crea_fmt,
+      usuario_id: String(row.usuario_id),
+      solicitante_id: row.solicitante_id ? String(row.solicitante_id) : null,
+      id_usuario: String(row.id_usuario),
+      usuario: String(row.usuario),
+      usuario_foto: row.usuario_foto || null,
+      solicitante: row.solicitante ? String(row.solicitante).trim() || null : null,
+      monto: Number(row.monto),
+      descripcion: String(row.descripcion || ''),
+      fecha_crea: row.fecha_crea_fmt,
+      fecha_mod: row.fecha_mod_fmt || null,
+      estado: Number(row.estado),
+      estado_texto: getEstadoTexto(Number(row.estado))
+    }));
   } catch (err) {
-    logger.error('[GratificacionQueries] Error en getAllGratificaciones:', { userId, err });
+    logger.error('[GratificacionQueries] Error en getAllGratificaciones:', {
+      userId,
+      solicitanteId,
+      err
+    });
     throw new DatabaseError('Error al obtener lista de gratificaciones', err);
   }
 }
@@ -72,23 +92,28 @@ export async function createGratificacion(data: {
   usuario_id: string;
   monto: number;
   descripcion?: string;
+  /** Quien crea la fila (migración 037): el filtro «lo suyo y lo que solicitó». */
+  solicitante_id?: string | null;
 }) {
   try {
-    const tableCheck = await query<any[]>("SELECT table_name FROM information_schema.tables WHERE table_schema = current_schema() AND table_name = 'gratificaciones'");
-  const id = generateUUID();
-  const now = getNowInBusinessTimezone();
-  if (tableCheck.length === 0) return id;
+    const tableCheck = await query<any[]>(
+      "SELECT table_name FROM information_schema.tables WHERE table_schema = current_schema() AND table_name = 'gratificaciones'"
+    );
+    const id = generateUUID();
+    const now = getNowInBusinessTimezone();
+    if (tableCheck.length === 0) return id;
 
-  await BaseRepository.insert(query, 'gratificaciones', {
-    id,
-    usuario_id: data.usuario_id,
-    monto: data.monto,
-    descripcion: data.descripcion || '',
-    estado: 1,
-    fecha_crea: now
-  });
-  const res = await query<any[]>('SELECT * FROM gratificaciones WHERE id = ?', [id]);
-  return res.length > 0 ? res[0] : null;
+    await BaseRepository.insert(query, 'gratificaciones', {
+      id,
+      usuario_id: data.usuario_id,
+      solicitante_id: data.solicitante_id || null,
+      monto: data.monto,
+      descripcion: data.descripcion || '',
+      estado: 1,
+      fecha_crea: now
+    });
+    const res = await query<any[]>('SELECT * FROM gratificaciones WHERE id = ?', [id]);
+    return res.length > 0 ? res[0] : null;
   } catch (err) {
     logger.error('[GratificacionQueries] Error en createGratificacion:', { err });
     throw new DatabaseError('Error al crear gratificación', err);
@@ -102,75 +127,79 @@ export async function requestGratificacion(
   requestedByUserId: string
 ) {
   try {
-    const tableCheck = await query<any[]>("SELECT table_name FROM information_schema.tables WHERE table_schema = current_schema() AND table_name = 'gratificaciones'");
-  if (tableCheck.length === 0) {
-    throw new BusinessError(
-      'La tabla de gratificaciones no existe',
-      'GRATIFICACIONES_TABLE_MISSING'
+    const tableCheck = await query<any[]>(
+      "SELECT table_name FROM information_schema.tables WHERE table_schema = current_schema() AND table_name = 'gratificaciones'"
     );
-  }
+    if (tableCheck.length === 0) {
+      throw new BusinessError(
+        'La tabla de gratificaciones no existe',
+        'GRATIFICACIONES_TABLE_MISSING'
+      );
+    }
 
-  const [targetRows, requesterRows, pendingRows] = await Promise.all([
-    query<any[]>(
-      `SELECT u.id_usuario, u.nombre, u.apellido, u.nick, u.telefono FROM usuarios u WHERE u.id_usuario = ?`,
-      [targetUserId]
-    ),
-    query<any[]>(
-      `SELECT u.id_usuario, u.nombre, u.apellido, u.nick FROM usuarios u WHERE u.id_usuario = ?`,
-      [requestedByUserId]
-    ),
-    query<any[]>(
-      `SELECT COUNT(*) as count FROM gratificaciones WHERE usuario_id = ? AND estado = 2`,
-      [targetUserId]
-    )
-  ]);
+    const [targetRows, requesterRows, pendingRows] = await Promise.all([
+      query<any[]>(
+        `SELECT u.id_usuario, u.nombre, u.apellido, u.nick, u.telefono FROM usuarios u WHERE u.id_usuario = ?`,
+        [targetUserId]
+      ),
+      query<any[]>(
+        `SELECT u.id_usuario, u.nombre, u.apellido, u.nick FROM usuarios u WHERE u.id_usuario = ?`,
+        [requestedByUserId]
+      ),
+      query<any[]>(
+        `SELECT COUNT(*) as count FROM gratificaciones WHERE usuario_id = ? AND estado = 2`,
+        [targetUserId]
+      )
+    ]);
 
-  if (targetRows.length === 0) throw new NotFoundError('Usuario', targetUserId);
-  if (requesterRows.length === 0) throw new NotFoundError('Usuario solicitante', requestedByUserId);
-  if (Number(pendingRows[0]?.count || 0) > 0) {
-    throw new BusinessError(
-      'Ya existe una gratificación pendiente para este empleado',
-      'GRATIFICACION_PENDIENTE'
-    );
-  }
+    if (targetRows.length === 0) throw new NotFoundError('Usuario', targetUserId);
+    if (requesterRows.length === 0)
+      throw new NotFoundError('Usuario solicitante', requestedByUserId);
+    if (Number(pendingRows[0]?.count || 0) > 0) {
+      throw new BusinessError(
+        'Ya existe una gratificación pendiente para este empleado',
+        'GRATIFICACION_PENDIENTE'
+      );
+    }
 
-  const target = targetRows[0];
-  const requester = requesterRows[0];
-  const id = generateUUID();
-  const now = getNowInBusinessTimezone();
+    const target = targetRows[0];
+    const requester = requesterRows[0];
+    const id = generateUUID();
+    const now = getNowInBusinessTimezone();
 
-  await BaseRepository.insert(query, 'gratificaciones', {
-    id,
-    usuario_id: targetUserId,
-    monto,
-    descripcion: descripcion || '',
-    estado: 2,
-    fecha_crea: now
-  });
+    await BaseRepository.insert(query, 'gratificaciones', {
+      id,
+      usuario_id: targetUserId,
+      solicitante_id: requestedByUserId,
+      monto,
+      descripcion: descripcion || '',
+      estado: 2,
+      fecha_crea: now
+    });
 
-  await BaseRepository.insert(query, 'anticipos', {
-    id_anticipo: id,
-    usuario_id: targetUserId,
-    monto,
-    motivo: `Gratificación: ${descripcion || 'Sin descripción'}`,
-    estado: 2,
-    fecha_crea: now
-  });
+    await BaseRepository.insert(query, 'anticipos', {
+      id_anticipo: id,
+      usuario_id: targetUserId,
+      monto,
+      motivo: `Gratificación: ${descripcion || 'Sin descripción'}`,
+      estado: 2,
+      fecha_crea: now
+    });
 
-  await BaseRepository.insert(query, 'anticipo_historial', {
-    anticipo_id: id,
-    accion: 'solicitud',
-    usuario_id: targetUserId,
-    fecha_crea: now
-  });
+    await BaseRepository.insert(query, 'anticipo_historial', {
+      anticipo_id: id,
+      accion: 'solicitud',
+      usuario_id: targetUserId,
+      fecha_crea: now
+    });
 
-  const adminWhatsApp = await getAdminWhatsApp();
-  const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || '';
-  const confirmUrl = baseUrl
-    ? `${baseUrl}${ROUTES.CONFIRMAR_GRATIFICACION}?token=${encodeURIComponent(id)}`
-    : null;
+    const adminWhatsApp = await getAdminWhatsApp();
+    const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || '';
+    const confirmUrl = baseUrl
+      ? `${baseUrl}${ROUTES.CONFIRMAR_GRATIFICACION}?token=${encodeURIComponent(id)}`
+      : null;
 
-  const message = `*NUEVA SOLICITUD DE GRATIFICACIÓN*
+    const message = `*NUEVA SOLICITUD DE GRATIFICACIÓN*
 
 *Empleado:* ${target.nombre} ${target.apellido}
 *Nick:* ${target.nick || 'Sin nick'}
@@ -184,53 +213,57 @@ ${
     : `*Para aprobar:* responde "APROBAR GRATIFICACION ${id}"\n*Para rechazar:* responde "RECHAZAR GRATIFICACION ${id}"`
 }`;
 
-  try {
-    await enviarWhatsApp(adminWhatsApp, message);
-  } catch (err) {
-    logger.error('[GratificacionQueries] Error enviando WhatsApp al admin:', { err });
-  }
-
-  sendNotificationToAll('new_gratificacion_request', {
-    id,
-    usuario_id: targetUserId,
-    solicitado_por: requestedByUserId,
-    monto,
-    descripcion: descripcion || '',
-    empleado: `${target.nombre} ${target.apellido}`,
-    nick: target.nick || null,
-    fecha_crea: now
-  });
-
-  sendNotificationToAll('new_anticipo_request', {
-    id,
-    usuario_id: targetUserId,
-    monto,
-    motivo: `Gratificación: ${descripcion || 'Sin descripción'}`,
-    empleado: `${target.nombre} ${target.apellido}`,
-    nick: target.nick || null,
-    fecha_crea: now
-  });
-
-  await sendPushByRole(
-    'administrador',
-    'Nueva solicitud de gratificación',
-    `${requester.nick || requester.nombre} solicitó ${formatCurrencyCLP(monto)} para ${target.nick || target.nombre}`,
-    { id_gratificacion: id, type: 'gratificacion', action: 'requested' }
-  ).catch(() => undefined);
-
-  const created = await query<any[]>('SELECT * FROM gratificaciones WHERE id = ?', [id]);
-  return created.length > 0 ? created[0] : null;
+    try {
+      await enviarWhatsApp(adminWhatsApp, message);
     } catch (err) {
-      logger.error('[GratificacionQueries] Error en requestGratificacion:', { targetUserId, monto, err });
-      if (err instanceof NotFoundError || err instanceof BusinessError) throw err;
-      throw new DatabaseError(`Error al solicitar gratificación para usuario ${targetUserId}`, err);
+      logger.error('[GratificacionQueries] Error enviando WhatsApp al admin:', { err });
     }
+
+    sendNotificationToAll('new_gratificacion_request', {
+      id,
+      usuario_id: targetUserId,
+      solicitado_por: requestedByUserId,
+      monto,
+      descripcion: descripcion || '',
+      empleado: `${target.nombre} ${target.apellido}`,
+      nick: target.nick || null,
+      fecha_crea: now
+    });
+
+    sendNotificationToAll('new_anticipo_request', {
+      id,
+      usuario_id: targetUserId,
+      monto,
+      motivo: `Gratificación: ${descripcion || 'Sin descripción'}`,
+      empleado: `${target.nombre} ${target.apellido}`,
+      nick: target.nick || null,
+      fecha_crea: now
+    });
+
+    await sendPushByRole(
+      'administrador',
+      'Nueva solicitud de gratificación',
+      `${requester.nick || requester.nombre} solicitó ${formatCurrencyCLP(monto)} para ${target.nick || target.nombre}`,
+      { id_gratificacion: id, type: 'gratificacion', action: 'requested' }
+    ).catch(() => undefined);
+
+    const created = await query<any[]>('SELECT * FROM gratificaciones WHERE id = ?', [id]);
+    return created.length > 0 ? created[0] : null;
+  } catch (err) {
+    logger.error('[GratificacionQueries] Error en requestGratificacion:', {
+      targetUserId,
+      monto,
+      err
+    });
+    if (err instanceof NotFoundError || err instanceof BusinessError) throw err;
+    throw new DatabaseError(`Error al solicitar gratificación para usuario ${targetUserId}`, err);
+  }
 }
 
 export async function getGratificacionSolicitudDetalle(id: string) {
   try {
-  const rows = await query<any[]>(
-    `
+    const rows = await query<any[]>(
+      `
     SELECT
       g.id, g.monto, g.descripcion, g.estado, g.fecha_crea,
       u.nombre, u.apellido, u.nick
@@ -239,32 +272,32 @@ export async function getGratificacionSolicitudDetalle(id: string) {
     WHERE g.id = ?
     LIMIT 1
   `,
-    [id]
-  );
-
-  if (rows.length === 0) throw new NotFoundError('Solicitud de gratificación', id);
-
-  const row = rows[0];
-  if (Number(row.estado) !== 2) {
-    throw new BusinessError(
-      'La solicitud ya fue procesada anteriormente',
-      'GRATIFICACION_YA_PROCESADA'
+      [id]
     );
-  }
 
-  return {
-    id: row.id,
-    usuario: `${row.nombre} ${row.apellido}`.trim(),
-    nick: row.nick || '',
-    monto: Number(row.monto || 0),
-    descripcion: row.descripcion || '',
-    fecha: row.fecha_crea
-  };
-    } catch (err) {
-      logger.error('[GratificacionQueries] Error en getGratificacionSolicitudDetalle:', { id, err });
-      if (err instanceof NotFoundError || err instanceof BusinessError) throw err;
-      throw new DatabaseError(`Error al obtener detalle de solicitud de gratificación ${id}`, err);
+    if (rows.length === 0) throw new NotFoundError('Solicitud de gratificación', id);
+
+    const row = rows[0];
+    if (Number(row.estado) !== 2) {
+      throw new BusinessError(
+        'La solicitud ya fue procesada anteriormente',
+        'GRATIFICACION_YA_PROCESADA'
+      );
     }
+
+    return {
+      id: row.id,
+      usuario: `${row.nombre} ${row.apellido}`.trim(),
+      nick: row.nick || '',
+      monto: Number(row.monto || 0),
+      descripcion: row.descripcion || '',
+      fecha: row.fecha_crea
+    };
+  } catch (err) {
+    logger.error('[GratificacionQueries] Error en getGratificacionSolicitudDetalle:', { id, err });
+    if (err instanceof NotFoundError || err instanceof BusinessError) throw err;
+    throw new DatabaseError(`Error al obtener detalle de solicitud de gratificación ${id}`, err);
+  }
 }
 
 export async function processGratificacionSolicitud(
@@ -274,8 +307,8 @@ export async function processGratificacionSolicitud(
 ) {
   try {
     return await withTransaction(async trx => {
-    const rows = await trx<any[]>(
-      `
+      const rows = await trx<any[]>(
+        `
       SELECT
         g.id, g.usuario_id, g.monto, g.descripcion, g.estado,
         u.nombre, u.apellido, u.nick, u.telefono
@@ -284,89 +317,93 @@ export async function processGratificacionSolicitud(
       WHERE g.id = ?
       LIMIT 1
     `,
-      [id]
-    );
-
-    if (rows.length === 0) throw new NotFoundError('Solicitud de gratificación', id);
-
-    const solicitud = rows[0];
-    if (Number(solicitud.estado) !== 2) {
-      throw new BusinessError(
-        'La solicitud ya fue procesada anteriormente',
-        'GRATIFICACION_YA_PROCESADA'
+        [id]
       );
-    }
 
-    const now = getNowInBusinessTimezone();
-    const nextState = action === 'approve' ? 1 : 3;
+      if (rows.length === 0) throw new NotFoundError('Solicitud de gratificación', id);
 
-    await BaseRepository.update(trx, 'gratificaciones', 'id', id, {
-      estado: nextState,
-      fecha_mod: now
-    });
+      const solicitud = rows[0];
+      if (Number(solicitud.estado) !== 2) {
+        throw new BusinessError(
+          'La solicitud ya fue procesada anteriormente',
+          'GRATIFICACION_YA_PROCESADA'
+        );
+      }
 
-    const antCheck = await trx<any[]>('SELECT estado FROM anticipos WHERE id_anticipo = ?', [id]);
-    if (antCheck.length > 0 && Number(antCheck[0].estado) === 2) {
-      await BaseRepository.update(trx, 'anticipos', 'id_anticipo', id, {
+      const now = getNowInBusinessTimezone();
+      const nextState = action === 'approve' ? 1 : 3;
+
+      await BaseRepository.update(trx, 'gratificaciones', 'id', id, {
         estado: nextState,
-        fecha_mod: now,
-        ...(action === 'approve' ? { fecha_aprobacion: now } : {})
+        fecha_mod: now
       });
-      await BaseRepository.insert(trx, 'anticipo_historial', {
-        anticipo_id: id,
-        accion: action === 'approve' ? 'aprobado' : 'rechazado',
-        usuario_id: adminId || null,
-        fecha_crea: now
+
+      const antCheck = await trx<any[]>('SELECT estado FROM anticipos WHERE id_anticipo = ?', [id]);
+      if (antCheck.length > 0 && Number(antCheck[0].estado) === 2) {
+        await BaseRepository.update(trx, 'anticipos', 'id_anticipo', id, {
+          estado: nextState,
+          fecha_mod: now,
+          ...(action === 'approve' ? { fecha_aprobacion: now } : {})
+        });
+        await BaseRepository.insert(trx, 'anticipo_historial', {
+          anticipo_id: id,
+          accion: action === 'approve' ? 'aprobado' : 'rechazado',
+          usuario_id: adminId || null,
+          fecha_crea: now
+        });
+      }
+
+      const approved = action === 'approve';
+      const title = approved ? 'Gratificación aprobada' : 'Gratificación rechazada';
+      const employeeName = `${solicitud.nombre} ${solicitud.apellido}`.trim();
+      const amountText = formatCurrencyCLP(Number(solicitud.monto || 0));
+      const adminWhatsApp = await getAdminWhatsApp();
+
+      await Promise.allSettled([
+        solicitud.telefono
+          ? enviarWhatsApp(
+              solicitud.telefono,
+              `*${title.toUpperCase()}*\n\nHola ${employeeName}, tu gratificación por *${amountText}* ha sido *${approved ? 'aprobada' : 'rechazada'}*.`
+            )
+          : Promise.resolve(true),
+        enviarWhatsApp(
+          adminWhatsApp,
+          `*${title.toUpperCase()}*\n\n*Empleado:* ${employeeName}\n*Monto:* ${amountText}\n*Solicitud:* ${id}`
+        ),
+        sendPushByRole('cajero', title, `${employeeName} → ${amountText}`, {
+          id_gratificacion: id,
+          type: 'gratificacion',
+          action
+        }),
+        sendPushNotification(solicitud.usuario_id, title, amountText, {
+          id_gratificacion: id,
+          type: 'gratificacion',
+          action
+        })
+      ]);
+
+      sendNotificationToAll('gratificacion_processed', {
+        id,
+        usuario_id: solicitud.usuario_id,
+        monto: Number(solicitud.monto || 0),
+        estado: nextState,
+        accion: action,
+        empleado: employeeName,
+        nick: solicitud.nick || null,
+        fecha_mod: now
       });
-    }
 
-    const approved = action === 'approve';
-    const title = approved ? 'Gratificación aprobada' : 'Gratificación rechazada';
-    const employeeName = `${solicitud.nombre} ${solicitud.apellido}`.trim();
-    const amountText = formatCurrencyCLP(Number(solicitud.monto || 0));
-    const adminWhatsApp = await getAdminWhatsApp();
-
-    await Promise.allSettled([
-      solicitud.telefono
-        ? enviarWhatsApp(
-            solicitud.telefono,
-            `*${title.toUpperCase()}*\n\nHola ${employeeName}, tu gratificación por *${amountText}* ha sido *${approved ? 'aprobada' : 'rechazada'}*.`
-          )
-        : Promise.resolve(true),
-      enviarWhatsApp(
-        adminWhatsApp,
-        `*${title.toUpperCase()}*\n\n*Empleado:* ${employeeName}\n*Monto:* ${amountText}\n*Solicitud:* ${id}`
-      ),
-      sendPushByRole('cajero', title, `${employeeName} → ${amountText}`, {
-        id_gratificacion: id,
-        type: 'gratificacion',
-        action
-      }),
-      sendPushNotification(solicitud.usuario_id, title, amountText, {
-        id_gratificacion: id,
-        type: 'gratificacion',
-        action
-      })
-    ]);
-
-    sendNotificationToAll('gratificacion_processed', {
-      id,
-      usuario_id: solicitud.usuario_id,
-      monto: Number(solicitud.monto || 0),
-      estado: nextState,
-      accion: action,
-      empleado: employeeName,
-      nick: solicitud.nick || null,
-      fecha_mod: now
+      return { ok: true, id, estado: nextState };
     });
-
-    return { ok: true, id, estado: nextState };
-  });
-    } catch (err) {
-      logger.error('[GratificacionQueries] Error en processGratificacionSolicitud:', { id, action, err });
-      if (err instanceof NotFoundError || err instanceof BusinessError) throw err;
-      throw new DatabaseError(`Error al procesar solicitud de gratificación ${id}`, err);
-    }
+  } catch (err) {
+    logger.error('[GratificacionQueries] Error en processGratificacionSolicitud:', {
+      id,
+      action,
+      err
+    });
+    if (err instanceof NotFoundError || err instanceof BusinessError) throw err;
+    throw new DatabaseError(`Error al procesar solicitud de gratificación ${id}`, err);
+  }
 }
 
 export async function updateGratificacion(
@@ -375,9 +412,9 @@ export async function updateGratificacion(
 ) {
   try {
     const now = getNowInBusinessTimezone();
-  await BaseRepository.update(query, 'gratificaciones', 'id', id, { ...data, fecha_mod: now });
-  const res = await query<any[]>('SELECT * FROM gratificaciones WHERE id = ?', [id]);
-  return res.length > 0 ? res[0] : null;
+    await BaseRepository.update(query, 'gratificaciones', 'id', id, { ...data, fecha_mod: now });
+    const res = await query<any[]>('SELECT * FROM gratificaciones WHERE id = ?', [id]);
+    return res.length > 0 ? res[0] : null;
   } catch (err) {
     logger.error('[GratificacionQueries] Error en updateGratificacion:', { id, err });
     throw new DatabaseError(`Error al actualizar gratificación ${id}`, err);

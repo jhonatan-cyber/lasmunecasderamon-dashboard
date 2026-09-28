@@ -44,6 +44,7 @@ export class ProductRepository {
         display_order: row.display_order,
         max_anfitrionas: row.max_anfitrionas ?? null,
         ml_shot: row.ml_shot ?? null,
+        ml_shot_anfitriona: row.ml_shot_anfitriona ?? null,
         created_at: row.fecha_crea,
         updated_at: row.fecha_mod
       }),
@@ -95,7 +96,10 @@ export class ProductRepository {
     foto: string,
     opts?: { presentaciones?: NewPresentacion[] }
   ): Promise<
-    (ProductType & { codigos_generados?: { codigo: string; codigo_barras: string }[] }) | null
+    | (ProductType & {
+        codigos_generados?: { id: string; codigo: string; codigo_barras: string }[];
+      })
+    | null
   > {
     const id = generateUUID();
     const now = getNowInBusinessTimezone();
@@ -104,7 +108,7 @@ export class ProductRepository {
     const primeraFoto = presentaciones.find(p => p.foto)?.foto ?? null;
     const fotoProducto = foto && foto !== 'default.png' ? foto : (primeraFoto ?? 'default.png');
 
-    const codigos: { codigo: string; codigo_barras: string }[] = [];
+    const codigos: { id: string; codigo: string; codigo_barras: string }[] = [];
     await withTransaction(async trx => {
       await BaseRepository.insert(trx, 'productos', {
         id_producto: id,
@@ -117,6 +121,7 @@ export class ProductRepository {
         estado: data.status,
         stock_almacen: 0,
         ml_shot: data.ml_shot ?? null,
+        ml_shot_anfitriona: data.ml_shot_anfitriona ?? null,
         foto: fotoProducto,
         fecha_crea: now
       });
@@ -166,6 +171,8 @@ export class ProductRepository {
     if (data.commission !== undefined) updateData.comision = data.commission;
     if (data.max_anfitrionas !== undefined) updateData.max_anfitrionas = data.max_anfitrionas;
     if (data.ml_shot !== undefined) updateData.ml_shot = data.ml_shot;
+    if (data.ml_shot_anfitriona !== undefined)
+      updateData.ml_shot_anfitriona = data.ml_shot_anfitriona;
     if (data.stock_almacen !== undefined) updateData.stock_almacen = data.stock_almacen;
     if (data.description !== undefined) updateData.descripcion = data.description;
     if (data.status !== undefined) updateData.estado = data.status;

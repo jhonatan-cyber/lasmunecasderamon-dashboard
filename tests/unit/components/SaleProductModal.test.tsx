@@ -35,33 +35,34 @@ const product = {
   ]
 };
 
+function Harness({ productos, onAdd }: { productos: any[]; onAdd: (p: any) => void }) {
+  const [quantities, setQuantities] = useState<Record<string, number>>({});
+  return (
+    <SaleProductModal
+      open
+      onClose={vi.fn()}
+      loading={false}
+      productos={productos}
+      cantidades={quantities}
+      handleCantidadChange={(id, value) =>
+        setQuantities(prev => ({ ...prev, [id]: Number(value) }))
+      }
+      handleAgregarProducto={onAdd}
+      categoria={{ nombre: 'Bebidas' }}
+      anfitrionas={[]}
+      champagneHostessSelections={{}}
+      onChampagneHostessChange={vi.fn()}
+      otherProductHostessSelections={{}}
+      onOtherProductHostessChange={vi.fn()}
+      productosEnCarrito={[]}
+    />
+  );
+}
+
 describe('vistas de productos en nueva venta', () => {
   it('conserva cantidad y tipo de venta al alternar tabla y tarjetas y permite agregar', () => {
     const add = vi.fn();
-    function Harness() {
-      const [quantities, setQuantities] = useState<Record<string, number>>({});
-      return (
-        <SaleProductModal
-          open
-          onClose={vi.fn()}
-          loading={false}
-          productos={[product]}
-          cantidades={quantities}
-          handleCantidadChange={(id, value) =>
-            setQuantities(prev => ({ ...prev, [id]: Number(value) }))
-          }
-          handleAgregarProducto={add}
-          categoria={{ nombre: 'Bebidas' }}
-          anfitrionas={[]}
-          champagneHostessSelections={{}}
-          onChampagneHostessChange={vi.fn()}
-          otherProductHostessSelections={{}}
-          onOtherProductHostessChange={vi.fn()}
-          productosEnCarrito={[]}
-        />
-      );
-    }
-    render(<Harness />);
+    render(<Harness productos={[product]} onAdd={add} />);
     expect(screen.getByRole('table')).toBeInTheDocument();
     const photo = screen.getByRole('img', { name: product.nombre });
     expect(photo).toHaveAttribute('src', '/api/images/products/producto.webp');
@@ -75,7 +76,12 @@ describe('vistas de productos en nueva venta', () => {
     expect(screen.getByRole('img', { name: product.nombre })).toBeInTheDocument();
     fireEvent.click(screen.getByRole('button', { name: 'Agregar producto' }));
     expect(add).toHaveBeenLastCalledWith(
-      expect.objectContaining({ id: product.id, tipo_venta: 'shot', precio: 1000 })
+      expect.objectContaining({
+        id: product.id,
+        tipo_venta: 'shot',
+        shot_anfitriona: false,
+        precio: 1000
+      })
     );
     fireEvent.click(screen.getByRole('radio', { name: 'Ver como tabla' }));
     expect(screen.getByRole('table')).toBeInTheDocument();
@@ -84,5 +90,76 @@ describe('vistas de productos en nueva venta', () => {
     expect(add).toHaveBeenLastCalledWith(
       expect.objectContaining({ tipo_venta: 'shot', precio: 1000 })
     );
+  });
+
+  it('ofrece el shot al precio de anfitriona cuando está configurado', () => {
+    const add = vi.fn();
+    const conAnfitriona = {
+      ...product,
+      opciones_venta: [
+        { tipo: 'botella', precio: 4000, comision: 0 },
+        { tipo: 'shot', precio: 1000, comision: 0, precio_anfitriona: 800 }
+      ]
+    };
+    render(<Harness productos={[conAnfitriona]} onAdd={add} />);
+
+    // Con precio de anfitriona el shot se parte en dos opciones, cada una con su precio.
+    expect(
+      screen.getByRole('button', { name: /^Shot cliente · 50 ml · \$1\.000$/ })
+    ).toBeInTheDocument();
+    expect(
+      screen.getByRole('button', { name: /^Shot anfitriona · 50 ml · \$800$/ })
+    ).toBeInTheDocument();
+    fireEvent.click(screen.getByRole('button', { name: /^Shot anfitriona/ }));
+    fireEvent.click(screen.getByRole('button', { name: 'Agregar producto' }));
+
+    // Sigue siendo un shot por ml, solo cambia el precio que se cobra: la marca viaja
+    // al detalle de la venta para poder separarlo en reportes y cierre de caja.
+    expect(add).toHaveBeenLastCalledWith(
+      expect.objectContaining({ tipo_venta: 'shot', shot_anfitriona: true, precio: 800 })
+    );
+  });
+
+  it('mantiene una sola opción de shot cuando no hay precio de anfitriona', () => {
+    render(<Harness productos={[product]} onAdd={vi.fn()} />);
+    expect(screen.getByRole('button', { name: /^Shot · 50 ml · \$1\.000$/ })).toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: /Shot anfitriona/ })).not.toBeInTheDocument();
+  });
+
+  const conComisiones = {
+    ...product,
+    opciones_venta: [
+      { tipo: 'botella', precio: 4000, comision: 1000 },
+      { tipo: 'shot', precio: 1000, comision: 0 }
+    ]
+  };
+
+  it('oculta el select de anfitrionas cuando el shot no tiene comisión', () => {
+    render(<Harness productos={[conComisiones]} onAdd={vi.fn()} />);
+    // La botella sí genera comisión: con botella se pide anfitriona.
+    expect(screen.queryByText('Sin comisión')).not.toBeInTheDocument();
+    fireEvent.click(screen.getByRole('button', { name: /^Shot · 50 ml/ }));
+    // El shot no cobra comisión, así que no se pide anfitriona y se puede agregar.
+    expect(screen.getByText('Sin comisión')).toBeInTheDocument();
+    expect(screen.queryByText(/anfitrionas est/)).not.toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Agregar producto' })).not.toBeDisabled();
+  });
+
+  it('pide anfitriona al vender el shot cuando el shot sí tiene comisión', () => {
+    const shotConComision = {
+      ...product,
+      opciones_venta: [
+        { tipo: 'botella', precio: 4000, comision: 0 },
+        { tipo: 'shot', precio: 1000, comision: 500 }
+      ]
+    };
+    render(<Harness productos={[shotConComision]} onAdd={vi.fn()} />);
+    // La botella no cobra comisión: sin anfitriona y se puede agregar.
+    expect(screen.getByText('Sin comisión')).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Agregar producto' })).not.toBeDisabled();
+    fireEvent.click(screen.getByRole('button', { name: /^Shot · 50 ml/ }));
+    // El shot sí: se pide anfitriona antes de agregar.
+    expect(screen.queryByText('Sin comisión')).not.toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Agregar producto' })).toBeDisabled();
   });
 });

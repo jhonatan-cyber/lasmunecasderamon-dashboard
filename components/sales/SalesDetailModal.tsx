@@ -12,6 +12,7 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { VentaWithDetails } from '@/types/venta';
 import { formatCurrency, statusColors, statusLabels } from '@/lib/business/salesUtils';
+import { esShot, etiquetaVentaDetalle } from '@/lib/sales/ventaDetalle';
 import { useConfigValue } from '@/hooks/shared/useConfigValue';
 import {
   ShoppingBag,
@@ -280,9 +281,19 @@ export function SalesDetailModal({
                       className='flex items-center justify-between px-5 py-3.5 hover:bg-gray-50/50 dark:hover:bg-slate-800/50 transition-colors'
                     >
                       <div className='flex-1 min-w-0'>
-                        <span className='text-sm font-semibold text-gray-900 dark:text-white truncate block'>
-                          {det.producto_nombre || 'Producto'}
-                        </span>
+                        <div className='flex items-center gap-2'>
+                          <span className='text-sm font-semibold text-gray-900 dark:text-white truncate'>
+                            {det.producto_nombre || 'Producto'}
+                          </span>
+                          {esShot(det) && (
+                            <Badge
+                              variant='secondary'
+                              className='rounded-full text-[10px] font-bold whitespace-nowrap'
+                            >
+                              {etiquetaVentaDetalle(det)}
+                            </Badge>
+                          )}
+                        </div>
                         <span className='text-[10px] text-gray-400 font-medium'>
                           ${formatCurrency(det.precio)} c/u · Comisión: $
                           {formatCurrency(det.comision)}

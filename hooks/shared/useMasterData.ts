@@ -130,8 +130,10 @@ export function useMasterData() {
     transform: result => asArray(result).map(normalizeRoom)
   });
 
+  // Todas las anfitrionas activas: la presencia (login/en local) no puede
+  // dejar la venta sin opciones para asignar comisión.
   const anfitrionasQuery = useGenericFetch<NormalizedAnfitriona>(
-    '/api/users?anfitrionas=1&status=active&loggedIn=1&enLocal=1',
+    '/api/users?anfitrionas=1&status=active',
     {
       queryKey: queryKeys.anfitrionas.all,
       transform: result => asArray(result).map(normalizeAnfitriona)
@@ -162,7 +164,8 @@ export function useMasterData() {
       roomsQuery.isLoading ||
       anfitrionasQuery.isLoading ||
       categoriesQuery.isLoading,
-    error: clientsQuery.error || roomsQuery.error || anfitrionasQuery.error || categoriesQuery.error,
+    error:
+      clientsQuery.error || roomsQuery.error || anfitrionasQuery.error || categoriesQuery.error,
     refreshAll,
     refetchClients: clientsQuery.refetch,
     refetchRooms: roomsQuery.refetch,

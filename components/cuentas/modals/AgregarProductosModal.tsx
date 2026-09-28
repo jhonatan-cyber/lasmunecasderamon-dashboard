@@ -348,24 +348,29 @@ export default function AgregarProductosModal({
                 filter={c => c.estado === 1 && (c.productCount || 0) > 0}
               />
 
-              {requiresRoomTimeSelection && (
-                <div className='grid grid-cols-2 gap-4'>
-                  <RoomSelect
-                    habitaciones={habitaciones}
-                    value={habitacionId}
-                    onChange={setHabitacionId}
-                    label='Habitacion'
-                    placeholder='Seleccionar habitacion'
-                    filterByStatus={1}
-                  />
-                  <TimeSelect
-                    value={tiempo}
-                    onChange={setTiempo}
-                    label='Tiempo'
-                    placeholder='Seleccionar tiempo'
-                    timeOptions={Array.from({ length: 13 }, (_, i) => i * 5)}
-                  />
-                </div>
+              <div className='grid grid-cols-2 gap-4'>
+                <RoomSelect
+                  habitaciones={habitaciones}
+                  value={habitacionId}
+                  onChange={setHabitacionId}
+                  label='Habitacion'
+                  placeholder='Seleccionar habitacion'
+                  filterByStatus={1}
+                  disabled={!requiresRoomTimeSelection}
+                />
+                <TimeSelect
+                  value={tiempo}
+                  onChange={setTiempo}
+                  label='Tiempo'
+                  placeholder='Seleccionar tiempo'
+                  timeOptions={Array.from({ length: 13 }, (_, i) => i * 5)}
+                  disabled={!requiresRoomTimeSelection}
+                />
+              </div>
+              {!requiresRoomTimeSelection && (
+                <p className='text-xs text-muted-foreground'>
+                  Se habilitan al agregar un producto con precio mayor a $30.000.
+                </p>
               )}
 
               <CartSummary

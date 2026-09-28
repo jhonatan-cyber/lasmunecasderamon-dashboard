@@ -205,6 +205,9 @@ export default function GratificacionesTable({
                 USUARIO
               </TableHead>
               <TableHead className='font-bold text-xs text-zinc-500 uppercase tracking-wider text-center py-4'>
+                SOLICITADO POR
+              </TableHead>
+              <TableHead className='font-bold text-xs text-zinc-500 uppercase tracking-wider text-center py-4'>
                 FECHA HORA
               </TableHead>
               <TableHead className='font-bold text-xs text-zinc-500 uppercase tracking-wider text-center py-4'>
@@ -267,6 +270,9 @@ export default function GratificacionesTable({
                         </Avatar>
                         <span className='text-left'>{gratificacion.usuario}</span>
                       </div>
+                    </TableCell>
+                    <TableCell className='text-center text-sm text-zinc-600 dark:text-zinc-400'>
+                      {gratificacion.solicitante || '—'}
                     </TableCell>
                     <TableCell className='text-center text-sm text-zinc-600 dark:text-zinc-400'>
                       {formatDateTime(gratificacion.fecha_crea)}

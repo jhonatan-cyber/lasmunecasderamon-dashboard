@@ -25,8 +25,10 @@ export const DASHBOARD_CACHE_KEYS = {
   USER_SUMMARY: (userId: string, role: string) =>
     `dashboard:user-summary:${encodeURIComponent(userId)}:${encodeURIComponent(role)}`,
   // Ventas por categoría dentro de una caja (/api/caja/ventas-*).
-  SALES_CHART_BY_CAJA: (cajaId: string, tipo: 'barras' | 'champagne' | 'tragos-chicas') =>
-    `dashboard:sales-chart:${tipo}:${encodeURIComponent(cajaId)}`
+  SALES_CHART_BY_CAJA: (
+    cajaId: string,
+    tipo: 'barras' | 'champagne' | 'tragos-chicas' | 'productos'
+  ) => `dashboard:sales-chart:${tipo}:${encodeURIComponent(cajaId)}`
 } as const;
 
 // TTLs por endpoint (en ms)

@@ -4,13 +4,37 @@ import { useId, useState } from 'react';
 import { Printer } from 'lucide-react';
 import { toast } from 'sonner';
 import { Button } from '@/components/ui/button';
+import { Label } from '@/components/ui/label';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue
+} from '@/components/ui/select';
 import { printUnitLabels } from '@/lib/utils/printUnitLabels';
-import { groupLabelUnits, labelDate, type LabelUnit } from '@/lib/utils/unitLabelGroups';
+import {
+  groupLabelUnits,
+  labelDate,
+  type LabelGroupBy,
+  type LabelUnit
+} from '@/lib/utils/unitLabelGroups';
 
-export function UnitLabelSelector({ units }: { units: LabelUnit[] }) {
+/** Etiqueta de los filtros, igual que en los demás módulos. */
+const FILTER_LABEL_CLASS =
+  'mb-2 block text-xs font-bold uppercase tracking-wider text-gray-500 dark:text-gray-400 ml-1';
+
+export function UnitLabelSelector({
+  units,
+  defaultGroupBy = 'purchase'
+}: {
+  units: LabelUnit[];
+  /** Agrupación inicial; "product" sirve al ingresar stock de varios productos. */
+  defaultGroupBy?: LabelGroupBy;
+}) {
   const id = useId();
   const [selected, setSelected] = useState<Set<string>>(new Set());
-  const [groupBy, setGroupBy] = useState<'purchase' | 'date'>('purchase');
+  const [groupBy, setGroupBy] = useState<LabelGroupBy>(defaultGroupBy);
   const [status, setStatus] = useState('all');
   const [confirmed, setConfirmed] = useState<Record<string, string>>({});
   const [pending, setPending] = useState<string[]>([]);
@@ -28,7 +52,14 @@ export function UnitLabelSelector({ units }: { units: LabelUnit[] }) {
 
   function print() {
     try {
-      printUnitLabels(printable.map(unit => unit.codigo_barras || unit.codigo));
+      // La etiqueta lleva el nombre del producto y la presentación cuando se conocen.
+      printUnitLabels(
+        printable.map(unit => ({
+          code: unit.codigo_barras || unit.codigo,
+          producto_nombre: unit.producto_nombre,
+          presentacion_nombre: unit.presentacion_nombre
+        }))
+      );
       setPending(printable.map(unit => unit.id));
     } catch (error) {
       toast.error(
@@ -68,80 +99,97 @@ export function UnitLabelSelector({ units }: { units: LabelUnit[] }) {
   }
 
   return (
-    <div className='flex flex-col gap-3'>
-      <div className='flex flex-wrap gap-3'>
-        <label htmlFor={`${id}-group`} className='flex flex-col gap-1 text-xs'>
-          Agrupar por
-          <select
-            id={`${id}-group`}
+    <div className='flex flex-col gap-4'>
+      <div className='flex flex-wrap items-end gap-3'>
+        <div className='min-w-[180px] flex-1 sm:flex-none'>
+          <Label htmlFor={`${id}-group`} className={FILTER_LABEL_CLASS}>
+            Agrupar por
+          </Label>
+          <Select
             value={groupBy}
-            onChange={e => setGroupBy(e.target.value as 'purchase' | 'date')}
-            className='rounded-md border bg-background p-2'
+            onValueChange={(value: string) => setGroupBy(value as LabelGroupBy)}
           >
-            <option value='purchase'>Compra</option>
-            <option value='date'>Fecha de ingreso</option>
-          </select>
-        </label>
-        <label htmlFor={`${id}-status`} className='flex flex-col gap-1 text-xs'>
-          Estado de impresión
-          <select
-            id={`${id}-status`}
-            value={status}
-            onChange={e => setStatus(e.target.value)}
-            className='rounded-md border bg-background p-2'
-          >
-            <option value='all'>Todos</option>
-            <option value='pending'>Pendientes</option>
-            <option value='printed'>Impresos</option>
-          </select>
-        </label>
+            <SelectTrigger id={`${id}-group`} className='w-full sm:w-52'>
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value='product'>Producto</SelectItem>
+              <SelectItem value='purchase'>Compra</SelectItem>
+              <SelectItem value='date'>Fecha de ingreso</SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
+        <div className='min-w-[180px] flex-1 sm:flex-none'>
+          <Label htmlFor={`${id}-status`} className={FILTER_LABEL_CLASS}>
+            Estado de impresión
+          </Label>
+          <Select value={status} onValueChange={setStatus}>
+            <SelectTrigger id={`${id}-status`} className='w-full sm:w-52'>
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value='all'>Todos</SelectItem>
+              <SelectItem value='pending'>Pendientes</SelectItem>
+              <SelectItem value='printed'>Impresos</SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
       </div>
-      <div className='flex flex-wrap items-center gap-2'>
-        <Button
-          type='button'
-          variant='outline'
-          size='sm'
-          onClick={() => setSelected(new Set(visible.map(u => u.id)))}
-        >
-          Seleccionar todos
-        </Button>
-        <Button
-          type='button'
-          variant='outline'
-          size='sm'
-          onClick={() =>
-            setSelected(new Set(visible.filter(u => !u.fecha_impresion).map(u => u.id)))
-          }
-        >
-          Seleccionar pendientes
-        </Button>
-        <Button
-          type='button'
-          variant='ghost'
-          size='sm'
-          onClick={() => setSelected(new Set())}
-          disabled={!selected.size}
-        >
-          Limpiar selección
-        </Button>
-        <Button
-          type='button'
-          size='sm'
-          onClick={print}
-          disabled={!printable.length || !!pending.length}
-        >
-          <Printer data-icon='inline-start' />
-          Imprimir ({printable.length})
-        </Button>
-        <Button
-          type='button'
-          size='sm'
-          variant='outline'
-          onClick={() => setPending(printable.map(u => u.id))}
-          disabled={!printable.length || !!pending.length}
-        >
-          Marcar como impresos
-        </Button>
+      <div className='flex flex-wrap items-center justify-between gap-3'>
+        <div className='flex flex-wrap items-center gap-2'>
+          <Button
+            type='button'
+            variant='outline'
+            size='sm'
+            className='rounded-full'
+            onClick={() => setSelected(new Set(visible.map(u => u.id)))}
+          >
+            Seleccionar todos
+          </Button>
+          <Button
+            type='button'
+            variant='outline'
+            size='sm'
+            className='rounded-full'
+            onClick={() =>
+              setSelected(new Set(visible.filter(u => !u.fecha_impresion).map(u => u.id)))
+            }
+          >
+            Seleccionar pendientes
+          </Button>
+          <Button
+            type='button'
+            variant='ghost'
+            size='sm'
+            className='rounded-full'
+            onClick={() => setSelected(new Set())}
+            disabled={!selected.size}
+          >
+            Limpiar selección
+          </Button>
+        </div>
+        <div className='flex flex-wrap items-center gap-2'>
+          <Button
+            type='button'
+            size='sm'
+            className='rounded-full'
+            onClick={print}
+            disabled={!printable.length || !!pending.length}
+          >
+            <Printer data-icon='inline-start' />
+            Imprimir ({printable.length})
+          </Button>
+          <Button
+            type='button'
+            size='sm'
+            variant='outline'
+            className='rounded-full'
+            onClick={() => setPending(printable.map(u => u.id))}
+            disabled={!printable.length || !!pending.length}
+          >
+            Marcar como impresos
+          </Button>
+        </div>
       </div>
       {!!pending.length && (
         <div role='status' className='flex flex-col gap-2 rounded-lg border p-3'>
@@ -149,13 +197,20 @@ export function UnitLabelSelector({ units }: { units: LabelUnit[] }) {
             Confirma si las {pending.length} etiquetas se imprimieron correctamente.
           </p>
           <div className='flex flex-wrap gap-2'>
-            <Button type='button' size='sm' onClick={confirmPrint} disabled={saving}>
+            <Button
+              type='button'
+              size='sm'
+              className='rounded-full'
+              onClick={confirmPrint}
+              disabled={saving}
+            >
               {saving ? 'Guardando...' : 'Se imprimieron'}
             </Button>
             <Button
               type='button'
               size='sm'
               variant='outline'
+              className='rounded-full'
               onClick={() => setPending([])}
               disabled={saving}
             >
@@ -185,6 +240,7 @@ export function UnitLabelSelector({ units }: { units: LabelUnit[] }) {
                 type='button'
                 variant='outline'
                 size='sm'
+                className='rounded-full'
                 onClick={() =>
                   setSelected(previous => new Set([...previous, ...group.units.map(u => u.id)]))
                 }
@@ -219,6 +275,11 @@ export function UnitLabelSelector({ units }: { units: LabelUnit[] }) {
                         ? `Impreso · ${labelDate(unit.fecha_impresion)}`
                         : 'Pendiente de impresión'}
                     </span>
+                    {unit.presentacion_nombre && (
+                      <span className='text-xs text-muted-foreground'>
+                        {unit.presentacion_nombre}
+                      </span>
+                    )}
                     <span className='text-xs text-muted-foreground'>
                       {unit.compra_folio ? `Compra ${unit.compra_folio}` : 'Sin compra asociada'}
                       {unit.estado && unit.estado !== 'almacen' ? ' · Inactivo' : ''}

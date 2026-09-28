@@ -30,8 +30,28 @@ type SaleCreateInput = z.input<typeof SaleCreateSchema> & {
   id_pedido?: string;
 };
 
+export interface CreateSaleOptions {
+  /**
+   * Transacción existente: la venta se aplica en la misma transacción que la
+   * llama (es lo que usa el cobro de cuenta, donde cerrar la cuenta y facturar
+   * tienen que confirmar juntos o revertir juntos).
+   */
+  trx?: TransactionQuery;
+  /**
+   * Aplaza las notificaciones para que salgan recién al confirmar la
+   * transacción externa. Sin esto, un `updateSales` anticipado anunciaría una
+   * venta que todavía puede revertirse. Si no se pasa, se emiten igual que
+   * siempre: justo después del COMMIT propio.
+   */
+  onAfterCommit?: (task: () => void | Promise<void>) => void;
+}
+
 export class SaleService {
-  static async createSale(body: SaleCreateInput, createdBy: string) {
+  static async createSale(
+    body: SaleCreateInput,
+    createdBy: string,
+    options: CreateSaleOptions = {}
+  ) {
     const validated = SaleCreateSchema.parse(body);
     const skipClientPrepago = Boolean(body?.skip_client_prepago || body?.origen === 'cuenta');
     const skipCashRegisterPosting = body?.origen === 'cuenta';
@@ -66,7 +86,7 @@ export class SaleService {
     // cuando la transacción confirma, para no notificar ventas que se revierten.
     let alertasShots: ShotAlert[] = [];
 
-    const result = await withTransaction(async trx => {
+    const ejecutar = async (trx: TransactionQuery) => {
       let prepagoMonto = 0;
       const esMixto = validated.metodo_pago === 'mixto';
       const prepagoSolicitado = esMixto
@@ -252,11 +272,16 @@ export class SaleService {
           const subPart = subtotalByIndex[i];
 
           const detailId = generateUUID();
+          // Cómo se vendió queda en el detalle: un shot puede ser a precio de cliente o
+          // de anfitriona y eso no se deduce después (el precio solo no basta).
+          const tipoVenta = d.tipo_venta === 'shot' ? 'shot' : 'botella';
           detailRows.push({
             id_detalle_venta: detailId,
             venta_id: ventaId,
             producto_id: d.producto_id,
             presentacion_id: (d as any).presentacion_id ?? null,
+            tipo_venta: tipoVenta,
+            shot_anfitriona: tipoVenta === 'shot' && Boolean(d.shot_anfitriona),
             precio: d.precio,
             comision: commPart,
             cantidad: qtyPart,
@@ -380,20 +405,27 @@ export class SaleService {
         estado,
         fecha_crea: now
       };
-    });
+    };
 
-    // SSE notification (no bloquea — broadcast es síncrono en memoria)
-    sendNotificationToAll('timers_updated', { timestamp: now });
+    const result = options.trx ? await ejecutar(options.trx) : await withTransaction(ejecutar);
 
-    // Al crear una venta se notifica al staff: antes solo lo hacía el cron de
-    // timers (y `sale_cancelled` al anular), así que las apps no veían ventas
-    // nuevas hasta el siguiente refetch manual. Los suscriptores (Expo
-    // SalesContext, Flutter refresh_bus 'sales') hacen refetch con este evento;
-    // payload informativo, misma forma `{ id, type }` que usa el cron.
-    sendNotificationToAll('updateSales', { id: result.id_venta, type: 'venta' });
+    const notificar = async () => {
+      // SSE notification (no bloquea — broadcast es síncrono en memoria)
+      sendNotificationToAll('timers_updated', { timestamp: now });
 
-    // Aviso al barman: una botella abierta bajó del umbral configurado de shots.
-    await notifyBarShotAlerts(alertasShots);
+      // Al crear una venta se notifica al staff: antes solo lo hacía el cron de
+      // timers (y `sale_cancelled` al anular), así que las apps no veían ventas
+      // nuevas hasta el siguiente refetch manual. Los suscriptores (Expo
+      // SalesContext, Flutter refresh_bus 'sales') hacen refetch con este evento;
+      // payload informativo, misma forma `{ id, type }` que usa el cron.
+      sendNotificationToAll('updateSales', { id: result.id_venta, type: 'venta' });
+
+      // Aviso al barman: una botella abierta bajó del umbral configurado de shots.
+      await notifyBarShotAlerts(alertasShots);
+    };
+
+    if (options.onAfterCommit) options.onAfterCommit(notificar);
+    else await notificar();
 
     return result;
   }
@@ -415,6 +447,8 @@ export class SaleService {
       'venta_id',
       'producto_id',
       'presentacion_id',
+      'tipo_venta',
+      'shot_anfitriona',
       'precio',
       'comision',
       'cantidad',

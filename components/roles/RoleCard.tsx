@@ -39,10 +39,10 @@ export function RoleCard({
 }) {
   const { hasPermission } = useUserPermissions();
 
-  const canEdit = hasPermission('roles', 'editar');
-  const canActivate = hasPermission('roles', 'activar');
-  const canDeactivate = hasPermission('roles', 'desactivar');
-  const canDelete = hasPermission('roles', 'eliminar');
+  const canEdit = hasPermission('roles', 'edit');
+  const canActivate = hasPermission('roles', 'activate');
+  const canDeactivate = hasPermission('roles', 'deactivate');
+  const canDelete = hasPermission('roles', 'delete');
 
   return (
     <div

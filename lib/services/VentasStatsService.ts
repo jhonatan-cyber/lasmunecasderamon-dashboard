@@ -12,4 +12,8 @@ export class VentasStatsService {
   static async getVentasTragosChicas(caja_id: string) {
     return await VentasStatsRepository.getVentasTragosChicas(caja_id);
   }
+
+  static async getVentasPorProducto(caja_id: string) {
+    return await VentasStatsRepository.getVentasPorProducto(caja_id);
+  }
 }
