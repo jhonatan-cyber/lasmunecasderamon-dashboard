@@ -13,8 +13,9 @@ import { NotFoundError, ValidationError } from '@/lib/errors/errors';
  *
  * PUT  → sincronizar: baja del equipo lo que la persona acaba de capturar
  *        (cara/huella) y lo guarda como plantilla maestra en nuestra DB.
- * POST → restaurar: re-escribe en el equipo lo que hay en la DB (útil al
- *        reemplazar el terminal o tras un formateo).
+ * POST → dar de alta / restaurar: crea la PERSONA y le carga la cara en el
+ *        equipo desde la plantilla maestra por NetSDK (funciona en los ASI,
+ *        donde el alta por CGI responde Bad Request), sin usar su menú.
  * DELETE → quitar a la persona del equipo (mantiene el maestro en la DB).
  *
  * El `deviceId` identifica el equipo contra el que sincronizar.

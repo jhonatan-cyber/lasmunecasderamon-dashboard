@@ -26,3 +26,20 @@ export const PUT = withRoute(
     return NextResponse.json({ success: true, message: 'Enrolamiento guardado', data });
   }
 );
+
+/**
+ * Genera el código numérico de la persona (User ID que el lector reporta) solo
+ * si todavía no tiene uno: primera vez que se enrola, no hace falta escribirlo.
+ */
+export const POST = withRoute(
+  { auth: true, audit: true, module: 'users', action: 'write' },
+  async (_request: Request, { params }: { params: Promise<{ id: string }> }) => {
+    const id = (await params).id;
+    const data = await UserService.asignarCodigoBiometrico(id);
+    return NextResponse.json({
+      success: true,
+      message: data.generado ? `Código ${data.codigo} generado` : 'La persona ya tenía código',
+      data
+    });
+  }
+);

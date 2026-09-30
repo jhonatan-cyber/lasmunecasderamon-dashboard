@@ -280,6 +280,40 @@ export class UserRepository {
     }
   }
 
+  /**
+   * Plantillas maestras guardadas en la DB (lo que el lector capturó). La cara
+   * se devuelve en base64 para poder mostrarla en el diálogo de enrolamiento.
+   */
+  static async getPlantillasBiometricas(id: string): Promise<{ tipo: string; datos: string }[]> {
+    try {
+      const rows = await query<any[]>(
+        `SELECT tipo, datos FROM biometric_plantillas
+          WHERE usuario_id = ? ORDER BY fecha_sincronizacion DESC NULLS LAST`,
+        [id]
+      );
+      return Array.isArray(rows) ? rows : [];
+    } catch (err) {
+      logger.error('[UserRepository] Error en getPlantillasBiometricas:', { id, err });
+      return [];
+    }
+  }
+
+  /** Codigos ya usados por otras personas, para generar el siguiente libre. */
+  static async getCodigosBiometricos(): Promise<string[]> {
+    try {
+      const rows = await query<any[]>(
+        `SELECT biometrico_codigo FROM usuarios
+          WHERE biometrico_codigo IS NOT NULL AND TRIM(biometrico_codigo) <> ''`,
+        []
+      );
+      if (!Array.isArray(rows)) return [];
+      return rows.map(row => String(row.biometrico_codigo ?? '').trim()).filter(Boolean);
+    } catch (err) {
+      logger.error('[UserRepository] Error en getCodigosBiometricos:', { err });
+      return [];
+    }
+  }
+
   /** Ultima verificacion que el equipo mando por este usuario, para saber si el codigo funciona. */
   static async getLastBiometricEvent(
     id: string

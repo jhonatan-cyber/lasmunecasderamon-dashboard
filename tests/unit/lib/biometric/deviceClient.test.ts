@@ -1,6 +1,34 @@
 // @vitest-environment node
-import { describe, expect, it } from 'vitest';
-import { construirAuthorizationDigest, parsearTablaCGI } from '@/lib/biometric/deviceClient';
+import { afterEach, describe, expect, it, vi } from 'vitest';
+import {
+  capturarFotoDelEquipo,
+  construirAuthorizationDigest,
+  contarCarasEnEquipo,
+  leerCara,
+  parsearTablaCGI
+} from '@/lib/biometric/deviceClient';
+
+/**
+ * Los CGI de caras del ASI3213A-W responden JSON en PascalCase
+ * (`{ "Token": N, "Total": M }`), no `clave=valor`. El token puede ser 0 y ser
+ * válido, así que estos tests fijan ese formato real contra un fetch simulado.
+ */
+function simularEquipo(respuesta: (url: string) => string) {
+  const llamadas: string[] = [];
+  vi.stubGlobal('fetch', async (url: unknown, init?: { headers?: Record<string, string> }) => {
+    const texto = String(url);
+    llamadas.push(texto);
+    // Sin Authorization responde el challenge Digest (como el equipo real).
+    if (!init?.headers || !(init.headers as Record<string, string>)['Authorization']) {
+      return new Response('', {
+        status: 401,
+        headers: { 'www-authenticate': 'Digest realm="Login", qop="auth", nonce="abc"' }
+      });
+    }
+    return new Response(respuesta(texto), { status: 200 });
+  });
+  return llamadas;
+}
 
 /**
  * Tests del Digest (RFC 2617, MD5 + qop=auth): el challenge es fijo y se compara
@@ -97,5 +125,95 @@ describe('parsearTablaCGI', () => {
   it('valores con = embebido no se cortan', () => {
     const tabla = parsearTablaCGI('a=b=c');
     expect(tabla['a']).toBe('b=c');
+  });
+});
+
+describe('leerCara', () => {
+  afterEach(() => vi.unstubAllGlobals());
+
+  const cred = { ip: '192.168.1.50', usuario: 'admin', clave: 'secreta' };
+
+  it('sin caras en el equipo (Total 0) devuelve null y no busca', async () => {
+    const llamadas = simularEquipo(() => '{ "Token" : 2, "Total" : 0 }');
+
+    const r = await leerCara(cred, '1001');
+
+    expect(r).toBeNull();
+    expect(llamadas.some(u => u.includes('action=startFind'))).toBe(true);
+    expect(llamadas.some(u => u.includes('action=doFind'))).toBe(false);
+    // La búsqueda se cierra para no dejar tokens abiertos en el equipo.
+    expect(llamadas.some(u => u.includes('action=stopFind'))).toBe(true);
+  });
+
+  it('encuentra la foto del UserID pedido en la respuesta de doFind', async () => {
+    simularEquipo(url => {
+      if (url.includes('action=startFind')) return '{ "Token" : 7, "Total" : 2 }';
+      if (url.includes('action=doFind'))
+        return JSON.stringify([
+          { UserID: '2002', Info: { PhotoData: ['OTRA-FOTO'] } },
+          { UserID: '1001', Info: { PhotoData: ['FOTO-B64'] } }
+        ]);
+      return 'OK';
+    });
+
+    const r = await leerCara(cred, '1001');
+
+    expect(r).toEqual({ fotoBase64: 'FOTO-B64' });
+  });
+
+  it('con caras guardadas pero ninguna del código pedido devuelve null', async () => {
+    simularEquipo(url => {
+      if (url.includes('action=startFind')) return '{ "Token" : 3, "Total" : 1 }';
+      if (url.includes('action=doFind'))
+        return JSON.stringify([{ UserID: '2002', Info: { PhotoData: ['OTRA-FOTO'] } }]);
+      return 'OK';
+    });
+
+    const r = await leerCara(cred, '1001');
+    expect(r).toBeNull();
+  });
+
+  it('contarCarasEnEquipo lee el Total del equipo', async () => {
+    simularEquipo(() => '{ "Token" : 4, "Total" : 12 }');
+    await expect(contarCarasEnEquipo(cred)).resolves.toBe(12);
+  });
+});
+
+describe('capturarFotoDelEquipo', () => {
+  afterEach(() => vi.unstubAllGlobals());
+
+  const cred = { ip: '192.168.1.50', usuario: 'admin', clave: 'secreta' };
+
+  it('devuelve el JPEG de snapshot.cgi en base64', async () => {
+    const bytes = [0xff, 0xd8, 0xff, 0xe0, 0x10, 0x20, 0x30];
+    const urls: string[] = [];
+    vi.stubGlobal('fetch', async (url: unknown, init?: { headers?: Record<string, string> }) => {
+      urls.push(String(url));
+      if (!init?.headers?.['Authorization']) {
+        return new Response('', {
+          status: 401,
+          headers: { 'www-authenticate': 'Digest realm="Login", qop="auth", nonce="abc"' }
+        });
+      }
+      return new Response(new Uint8Array(bytes), {
+        status: 200,
+        headers: { 'content-type': 'image/jpeg' }
+      });
+    });
+
+    const foto = await capturarFotoDelEquipo(cred);
+
+    expect(foto.contentType).toBe('image/jpeg');
+    expect(Buffer.from(foto.base64, 'base64').equals(Buffer.from(bytes))).toBe(true);
+    expect(urls.some(u => u.includes('/cgi-bin/snapshot.cgi?channel=1'))).toBe(true);
+  });
+
+  it('una imagen vacía es un error explícito', async () => {
+    vi.stubGlobal(
+      'fetch',
+      async () =>
+        new Response(new Uint8Array([]), { status: 200, headers: { 'content-type': 'image/jpeg' } })
+    );
+    await expect(capturarFotoDelEquipo(cred)).rejects.toThrow(/imagen vacía/i);
   });
 });

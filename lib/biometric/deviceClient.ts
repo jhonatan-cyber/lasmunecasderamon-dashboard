@@ -1,14 +1,25 @@
 import crypto from 'crypto';
 import { descifrarSecreto } from '@/lib/biometric/credencialesCrypto';
+import { normalizarMac } from '@/lib/biometric/discovery';
 
 /**
  * Cliente Dahua por IP — CGI oficial de los terminales ASI/ASA.
  *
  * A diferencia del push (`/dahua/push`), acá el SERVIDOR inicia la conexión:
  *   - Autenticación: HTTP Digest con el usuario/clave CGI del equipo.
- *   - Cara:   POST /cgi-bin/FaceInfoManager.cgi?action=add  (JSON: PhotoData base64)
- *             GET  /cgi-bin/FaceInfoManager.cgi?action=startFind + doFind (lectura)
- *   - Huella: /cgi-bin/FingerPrintManager.cgi?action=add|get (plantilla en hex)
+ *   - Cara: GET /cgi-bin/FaceInfoManager.cgi?action=startFind + doFind (lectura,
+ *           JSON PascalCase: `{ "Token": N, "Total": M }`).
+ *   - Huella: /cgi-bin/FingerPrintManager.cgi (plantilla en hex), si el modelo lo expone.
+ *
+ * LIMITACIÓN CONFIRMADA contra un DHI-ASI3213A-W: los CGI de ESCRITURA de
+ * personas no están implementados en ese firmware. `FaceInfoManager.cgi?action=add`
+ * y `recordUpdater.cgi?action=insert&name=AccessControlCard` responden
+ * `Error Bad Request!` con cualquier payload documentado, y
+ * `FingerPrintManager.cgi` responde `Not Implemented!`. La web del propio equipo
+ * usa otro transporte (`POST /RPC2`, JSON-RPC con sesión y cifrado propio del
+ * firmware) para `AccessUser.insertMulti`. Por eso el enrolamiento real es
+ * "la persona se captura EN el equipo y nosotros la leemos"; las funciones de
+ * subida quedan para los modelos que sí las soportan.
  *
  * La plantilla/foto se traslada TAL CUAL: el sistema nunca re-codifica lo que
  * el equipo produce, porque el algoritmo de cotejo es propietario de Dahua.
@@ -92,12 +103,16 @@ export function construirAuthorizationDigest(
 
 type Metodo = 'GET' | 'POST';
 
+/**
+ * Pedido CGI con autenticación Digest resuelta (handler compartido por texto y
+ * binario). Los equipos solo ofrecen HTTP plano en la red local.
+ */
 async function cgi(
   credenciales: CredencialesEquipo,
   metodo: Metodo,
   path: string,
   opciones: { body?: string; contentType?: string } = {}
-): Promise<string> {
+): Promise<Response> {
   const base = `http://${credenciales.ip}`;
   const url = new URL(path, base);
   const pathConQuery = `${url.pathname}${url.search}`;
@@ -143,17 +158,26 @@ async function cgi(
   if (response.status === 401) {
     throw new DeviceConnectionError('Usuario o clave del equipo incorrectos');
   }
-  const texto = await response.text();
   if (!response.ok) {
+    const texto = await response.text();
     throw new DeviceConnectionError(
       `El equipo respondió ${response.status}: ${texto.substring(0, 200)}`
     );
   }
-  return texto;
+  return response;
+}
+
+async function cgiTexto(
+  credenciales: CredencialesEquipo,
+  metodo: Metodo,
+  path: string,
+  opciones: { body?: string; contentType?: string } = {}
+): Promise<string> {
+  return (await cgi(credenciales, metodo, path, opciones)).text();
 }
 
 async function cgiGet(credenciales: CredencialesEquipo, path: string): Promise<string> {
-  return cgi(credenciales, 'GET', path);
+  return cgiTexto(credenciales, 'GET', path);
 }
 
 async function cgiPostJson(
@@ -161,10 +185,29 @@ async function cgiPostJson(
   path: string,
   body: unknown
 ): Promise<string> {
-  return cgi(credenciales, 'POST', path, {
+  return cgiTexto(credenciales, 'POST', path, {
     body: JSON.stringify(body),
     contentType: 'application/json'
   });
+}
+
+/**
+ * Foto actual de la cámara del lector: `snapshot.cgi?channel=1` devuelve un JPEG
+ * (640x360 en el ASI3213A-W). Es lo único que el equipo entrega de su cámara:
+ * NO existe CGI para disparar una captura de enrolamiento ni para subir caras.
+ */
+export async function capturarFotoDelEquipo(
+  credenciales: CredencialesEquipo
+): Promise<{ base64: string; contentType: string }> {
+  const response = await cgi(credenciales, 'GET', '/cgi-bin/snapshot.cgi?channel=1');
+  const buffer = Buffer.from(await response.arrayBuffer());
+  if (buffer.length === 0) {
+    throw new DeviceConnectionError('El equipo devolvió una imagen vacía');
+  }
+  return {
+    base64: buffer.toString('base64'),
+    contentType: response.headers.get('content-type') || 'image/jpeg'
+  };
 }
 
 /** Respuesta estilo `tabla=CGLLog\nresult=OK\n...` de los CGI clásicos. */
@@ -195,20 +238,53 @@ export interface InfoEquipo {
   version: string;
 }
 
+/** Busca una clave en la tabla CGI sin importar mayúsculas/minúsculas. */
+function campoCI(tabla: Record<string, string>, ...nombres: string[]): string {
+  const entradas = Object.entries(tabla);
+  for (const nombre of nombres) {
+    const hit = entradas.find(([k]) => k.toLowerCase() === nombre.toLowerCase());
+    if (hit && hit[1]) return hit[1];
+  }
+  return '';
+}
+
 /** Ping + identidad: `magicBox.cgi?action=getSystemInfo`. Falla si no hay red/credenciales. */
 export async function verificarConexion(credenciales: CredencialesEquipo): Promise<InfoEquipo> {
   const texto = await cgiGet(credenciales, '/cgi-bin/magicBox.cgi?action=getSystemInfo');
   const tabla = parsearTablaCGI(texto);
-  const serial =
-    tabla['serial'] || tabla['SerialNumber'] || tabla['deviceID'] || tabla['DeviceID'] || '';
+  const serial = campoCI(tabla, 'serial', 'serialNumber', 'deviceID');
   if (!serial) {
     throw new DeviceConnectionError('El equipo no devolvió su serial (¿modelo no soportado?)');
   }
   return {
-    modelo: tabla['deviceType'] || tabla['DeviceType'] || 'desconocido',
+    modelo: campoCI(tabla, 'deviceType') || 'desconocido',
     serial,
-    version: tabla['softwareVersion'] || tabla['SoftwareVersion'] || ''
+    version: campoCI(tabla, 'softwareVersion', 'firmwareVersion')
   };
+}
+
+/**
+ * MAC del equipo por su propia configuración de red:
+ * `configManager.cgi?action=getConfig&name=Network` (todas las tarjetas).
+ *
+ * Se usa como respaldo de la tabla ARP local, que es la que manda (funciona con
+ * cualquier marca, no solo con Dahua). Lanza si el equipo no responde.
+ */
+export async function leerMacsDelEquipo(credenciales: CredencialesEquipo): Promise<string[]> {
+  const texto = await cgiGet(
+    credenciales,
+    '/cgi-bin/configManager.cgi?action=getConfig&name=Network'
+  );
+  const macs = new Set<string>();
+  for (const linea of texto.split(/\r?\n/)) {
+    const idx = linea.indexOf('=');
+    if (idx <= 0) continue;
+    const clave = linea.slice(0, idx).trim().toLowerCase();
+    if (!clave.endsWith('physicaladdress')) continue;
+    const mac = normalizarMac(linea.slice(idx + 1));
+    if (mac) macs.add(mac);
+  }
+  return [...macs];
 }
 
 /**
@@ -229,11 +305,18 @@ export async function subirCara(
       PhotoData: [fotoJpegBase64]
     }
   };
-  const respuesta = await cgiPostJson(
-    credenciales,
-    '/cgi-bin/FaceInfoManager.cgi?action=add',
-    body
-  );
+  let respuesta: string;
+  try {
+    respuesta = await cgiPostJson(credenciales, '/cgi-bin/FaceInfoManager.cgi?action=add', body);
+  } catch (error) {
+    // El ASI3213A-W responde Bad Request a cualquier alta de cara por CGI.
+    if (error instanceof DeviceConnectionError && /\b400\b|bad request/i.test(error.message)) {
+      throw new DeviceConnectionError(
+        'Este modelo no acepta cargar caras por red: cargá la cara en el equipo y usá "Capturar desde el lector".'
+      );
+    }
+    throw error;
+  }
   const r = jsonOTexto(respuesta);
   if (typeof r === 'string' && !r.includes('OK') && r !== '') {
     throw new DeviceConnectionError(`El equipo rechazó la cara: ${r.substring(0, 200)}`);
@@ -244,31 +327,138 @@ export interface CaraLeida {
   fotoBase64: string;
 }
 
-/** Lee la cara de vuelta: startFind → doFind con condición UserID. */
+/**
+ * Los CGI de caras de los ASI responden JSON en PascalCase, no `clave=valor`:
+ *   startFind → { "Token": 2, "Total": 0 }
+ *   doFind    → lista de caras con UserID + Info.PhotoData
+ * El token puede ser 0 y ser válido, así que nunca se usa como booleano.
+ */
+function campoDe(objeto: Record<string, unknown>, ...nombres: string[]): unknown {
+  const entradas = Object.entries(objeto);
+  for (const nombre of nombres) {
+    const hit = entradas.find(([clave]) => clave.toLowerCase() === nombre.toLowerCase());
+    if (hit && hit[1] !== undefined && hit[1] !== null) return hit[1];
+  }
+  return undefined;
+}
+
+function objetoJson(texto: string): Record<string, unknown> | null {
+  const r = jsonOTexto(texto);
+  if (!r || typeof r !== 'object' || Array.isArray(r)) return null;
+  return r as Record<string, unknown>;
+}
+
+/** Primera foto (PhotoData en base64) dentro de un subárbol del JSON del equipo. */
+function primeraFoto(nodo: unknown): string | null {
+  if (!nodo || typeof nodo !== 'object') return null;
+  if (Array.isArray(nodo)) {
+    for (const item of nodo) {
+      const foto = primeraFoto(item);
+      if (foto) return foto;
+    }
+    return null;
+  }
+  const obj = nodo as Record<string, unknown>;
+  const fotos = campoDe(obj, 'PhotoData');
+  if (Array.isArray(fotos)) {
+    const foto = fotos.find(f => typeof f === 'string' && f);
+    if (typeof foto === 'string') return foto;
+  }
+  for (const valor of Object.values(obj)) {
+    const foto = primeraFoto(valor);
+    if (foto) return foto;
+  }
+  return null;
+}
+
+/**
+ * Busca en el JSON de doFind la cara del UserID pedido. En el firmware la foto
+ * va anidada (`{ UserID, Info: { PhotoData: [...] } }`), pero se acepta también
+ * PhotoData al mismo nivel por si otro modelo lo aplana.
+ */
+function buscarFotoDeUsuario(nodo: unknown, userId: string): string | null {
+  if (!nodo || typeof nodo !== 'object') return null;
+  if (Array.isArray(nodo)) {
+    for (const item of nodo) {
+      const foto = buscarFotoDeUsuario(item, userId);
+      if (foto) return foto;
+    }
+    return null;
+  }
+  const obj = nodo as Record<string, unknown>;
+  const user = campoDe(obj, 'UserID', 'UserId');
+  if (user !== undefined && String(user) === userId) {
+    const foto = primeraFoto(obj);
+    if (foto) return foto;
+  }
+  for (const valor of Object.values(obj)) {
+    const foto = buscarFotoDeUsuario(valor, userId);
+    if (foto) return foto;
+  }
+  return null;
+}
+
+/** Cuántas caras tiene guardadas el equipo (startFind → Total). */
+export async function contarCarasEnEquipo(credenciales: CredencialesEquipo): Promise<number> {
+  const inicio = objetoJson(
+    await cgiGet(credenciales, '/cgi-bin/FaceInfoManager.cgi?action=startFind')
+  );
+  if (!inicio) return 0;
+  const token = campoDe(inicio, 'Token');
+  if (token !== undefined) {
+    // Liberar la búsqueda: si no, el equipo acumula tokens abiertos.
+    await cgiGet(
+      credenciales,
+      `/cgi-bin/FaceInfoManager.cgi?action=stopFind&token=${encodeURIComponent(String(token))}`
+    ).catch(() => undefined);
+  }
+  const total = Number(campoDe(inicio, 'Total') ?? 0);
+  return Number.isFinite(total) ? total : 0;
+}
+
+/**
+ * Lee la cara de vuelta: `startFind` → `doFind` con condición UserID.
+ *
+ * Ojo con el modelo ASI3213A-W: `action=add` (empujar una cara al equipo) NO
+ * está implementado por CGI — responde Bad Request con cualquier payload —, así
+ * que la cara solo puede ENTRAR por el equipo (su menú o su web) y nosotros la
+ * leemos. Este es el camino soportado.
+ */
 export async function leerCara(
   credenciales: CredencialesEquipo,
   userId: string
 ): Promise<CaraLeida | null> {
-  const inicio = parsearTablaCGI(
+  const inicio = objetoJson(
     await cgiGet(credenciales, '/cgi-bin/FaceInfoManager.cgi?action=startFind')
   );
-  const token = inicio['token'] || inicio['Token'];
-  if (!token) throw new DeviceConnectionError('El equipo no devolvió token de búsqueda de caras');
-
-  const condicion = encodeURIComponent(`{"UserInfo":{"UserID":"${userId}"}}`);
-  const fin = await cgiGet(
-    credenciales,
-    `/cgi-bin/FaceInfoManager.cgi?action=doFind&token=${encodeURIComponent(token)}&condition=${condicion}`
-  );
-  const r = jsonOTexto(fin);
-  if (!r || typeof r === 'string') return null;
-  const obj = r as Record<string, unknown>;
-  const info = (obj['Info'] ?? obj) as Record<string, unknown>;
-  const fotos = info['PhotoData'] as unknown;
-  if (Array.isArray(fotos) && typeof fotos[0] === 'string' && fotos[0]) {
-    return { fotoBase64: fotos[0] };
+  if (!inicio) {
+    throw new DeviceConnectionError('El equipo no devolvió una búsqueda de caras válida');
   }
-  return null;
+  const token = campoDe(inicio, 'Token');
+  if (token === undefined) {
+    throw new DeviceConnectionError('El equipo no devolvió token de búsqueda de caras');
+  }
+  const total = Number(campoDe(inicio, 'Total') ?? 0);
+
+  try {
+    // Sin ninguna cara guardada no hay nada que buscar (y no es un error).
+    if (total === 0) return null;
+
+    const condicion = encodeURIComponent(JSON.stringify({ UserID: userId }));
+    const fin = await cgiGet(
+      credenciales,
+      `/cgi-bin/FaceInfoManager.cgi?action=doFind&token=${encodeURIComponent(
+        String(token)
+      )}&condition=${condicion}`
+    );
+    const foto = buscarFotoDeUsuario(jsonOTexto(fin), userId);
+    return foto ? { fotoBase64: foto } : null;
+  } finally {
+    await cgiGet(
+      credenciales,
+      `/cgi-bin/FaceInfoManager.cgi?action=stopFind&token=${encodeURIComponent(String(token))}`
+    ).catch(() => undefined);
+  }
 }
 
 export interface HuellaLeida {

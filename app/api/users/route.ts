@@ -1,10 +1,92 @@
 import { NextResponse } from 'next/server';
 import { withRoute } from '@/lib/api/withRoute';
 import { UserService } from '@/lib/services/UserService';
-import { processAndSaveImage } from '@/lib/utils/image-utils';
+import { imagenGuardadaABase64Jpeg, processAndSaveImage } from '@/lib/utils/image-utils';
+import { darDeAltaConFoto } from '@/lib/biometric/enrollmentService';
 import logger from '@/lib/utils/logger';
 
 export const dynamic = 'force-dynamic';
+
+/** Resultado del alta en el lector que se pidió al crear el usuario. */
+interface AltaEquipoCreacion {
+  ok: boolean;
+  mensaje: string;
+  motivo?: string;
+  codigo?: string;
+  carasEnEquipo?: number | null;
+}
+
+/**
+ * Da de alta al usuario recién creado en el lector, si el formulario lo pidió
+ * (`alta_equipo=1` + `dispositivo_alta=<id>`).
+ *
+ * El flujo es el mismo que «Dar de alta en el equipo» de la ficha: se (re)asigna
+ * el código biométrico, la foto que se le subió se convierte a JPEG y queda como
+ * plantilla maestra, y NetSDK crea la persona con su cara en el equipo.
+ *
+ * Devuelve null cuando no se pidió alta, y nunca lanza: el usuario ya existe, así
+ * que un equipo apagado o sin credenciales solo se informa (`ok: false`) sin
+ * romper la creación. El frontend muestra el resultado en un toast.
+ */
+async function altaEnEquipoAlCrear(
+  body: any,
+  user: { id?: string | number; name?: string; lastName?: string } | null | undefined,
+  fotoFilename: string
+): Promise<AltaEquipoCreacion | null> {
+  const dispositivoId = String(body?.dispositivo_alta ?? '').trim();
+  if (String(body?.alta_equipo ?? '') !== '1' || !dispositivoId) return null;
+
+  if (!user?.id) {
+    return {
+      ok: false,
+      mensaje: 'No se pudo identificar al usuario para darlo de alta en el lector.'
+    };
+  }
+
+  try {
+    const estado = await UserService.asignarCodigoBiometrico(user.id);
+    const codigo = String(estado.codigo ?? '').trim();
+    if (!codigo) {
+      return { ok: false, mensaje: 'No se pudo generar un código biométrico para la persona.' };
+    }
+
+    const fotoBase64 = await imagenGuardadaABase64Jpeg(fotoFilename);
+    if (!fotoBase64) {
+      return {
+        ok: false,
+        motivo: 'sin_foto',
+        codigo,
+        mensaje: `${user.name || 'El usuario'} quedó creado, pero no tiene foto propia para cargar en el lector: subile una foto y volvé a intentar desde «Enrolar» en su ficha.`
+      };
+    }
+
+    const nombre = `${user.name ?? ''} ${user.lastName ?? ''}`.trim();
+    const resultado = await darDeAltaConFoto(
+      dispositivoId,
+      { usuarioId: String(user.id), nombre, codigo },
+      fotoBase64
+    );
+
+    // La cara quedó en el equipo: la ficha puede marcar la modalidad como lista.
+    if (resultado.ok && resultado.detalles.cara === 'sincronizada') {
+      await UserService.updateBiometric(user.id, { facial: 1 }).catch(() => {});
+    }
+
+    return {
+      ok: resultado.ok,
+      mensaje: resultado.mensaje,
+      motivo: resultado.motivo,
+      codigo,
+      carasEnEquipo: resultado.carasEnEquipo
+    };
+  } catch (error) {
+    logger.error('[USER API POST] Alta en el lector fallida', { error });
+    return {
+      ok: false,
+      mensaje: error instanceof Error ? error.message : 'No se pudo dar de alta en el lector.'
+    };
+  }
+}
 
 export const GET = withRoute(
   { auth: true, access: 'authenticated', audit: true },
@@ -78,17 +160,23 @@ export const POST = withRoute(
       body: { ...body, password: '***' }
     });
     const result = await UserService.createUser(body, fotoFilename);
+
+    // Si el formulario lo pidió, la persona se da de alta en el lector ahora
+    // mismo (código + foto + cara por NetSDK). Nunca falla la creación: el
+    // resultado viaja en `altaEquipo` para que la UI lo muestre.
+    const altaEquipo = await altaEnEquipoAlCrear(body, result.user, fotoFilename);
+
     // La contraseña temporal se devuelve en los encabezados para evitar
     // que quede expuesta en logs/respuestas JSON del frontend.
     // El usuario debe cambiar la contraseña en el primer inicio de sesión.
-    const response = NextResponse.json(
-      {
-        success: true,
-        message: 'Usuario creado. Comparte la contraseña temporal de forma segura con el usuario.',
-        data: result.user
-      },
-      { status: 201 }
-    );
+    const responseBody: Record<string, unknown> = {
+      success: true,
+      message: 'Usuario creado. Comparte la contraseña temporal de forma segura con el usuario.',
+      data: result.user
+    };
+    if (altaEquipo) responseBody.altaEquipo = altaEquipo;
+
+    const response = NextResponse.json(responseBody, { status: 201 });
     response.headers.set('X-Temp-Password', result.tempPassword);
     return response;
   }

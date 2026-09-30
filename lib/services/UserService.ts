@@ -1,6 +1,6 @@
 import { UserCreateSchema, UserUpdateSchema, type UserType } from '@/lib/business/schemas';
 import { UserRepository } from '@/lib/repositories/UserRepository';
-import { ValidationError, NotFoundError } from '@/lib/errors/errors';
+import { ValidationError, NotFoundError, ConflictError } from '@/lib/errors/errors';
 import { PermissionsCache } from '@/lib/auth/permissions-cache';
 import * as argon2 from 'argon2';
 import { EMAIL_DOMAIN } from '@/lib/constants/email';
@@ -166,12 +166,18 @@ export class UserService {
     const user = await UserRepository.getById(usuarioId);
     if (!user) throw new NotFoundError('Usuario', usuarioId);
     const evento = await UserRepository.getLastBiometricEvent(usuarioId);
+    // Ultima captura quedada en la DB: la cara como foto y la huella como
+    // plantilla, para poder mostrarlas en el diálogo de enrolamiento.
+    const plantillas = await UserRepository.getPlantillasBiometricas(usuarioId);
+    const de = (tipo: string) => plantillas.find(p => p.tipo === tipo)?.datos ?? null;
     return {
       codigo: user.biometrico_codigo ?? null,
       huella: Number(user.biometrico_huella || 0),
       facial: Number(user.biometrico_facial || 0),
       ultima_verificacion: evento?.fecha_recepcion ?? null,
-      ultimo_resultado: evento?.resultado ?? null
+      ultimo_resultado: evento?.resultado ?? null,
+      cara_base64: de('cara'),
+      huella_hex: de('huella')
     };
   }
 
@@ -189,5 +195,46 @@ export class UserService {
       ...(parsed.facial !== undefined ? { biometrico_facial: parsed.facial ? 1 : 0 } : {})
     });
     return await this.getBiometricStatus(usuarioId);
+  }
+
+  /**
+   * Genera y guarda el siguiente código numérico libre para una persona sin
+   * código (primera vez que se enrola). Si ya tiene uno, lo devuelve tal cual.
+   *
+   * Ese código es el User ID que el lector va a reportar: se toma el máximo de
+   * los numéricos ya usados (+1, arrancando en 1001) para que nunca se repita.
+   * Ante un empate (dos personas generando a la vez) reintenta con el siguiente.
+   */
+  static async asignarCodigoBiometrico(id: string | number) {
+    const usuarioId = id.toString();
+    const user = await UserRepository.getById(usuarioId);
+    if (!user) throw new NotFoundError('Usuario', usuarioId);
+
+    const actual = (user.biometrico_codigo || '').trim();
+    if (actual) {
+      return { ...(await this.getBiometricStatus(usuarioId)), generado: false };
+    }
+
+    const usados = (await UserRepository.getCodigosBiometricos())
+      .map(codigo => (/^\d+$/.test(codigo) ? Number(codigo) : NaN))
+      .filter(n => Number.isFinite(n));
+    let siguiente = Math.max(1000, ...usados) + 1;
+    let errorEmpate: ConflictError | null = null;
+
+    for (let intento = 0; intento < 3; intento++) {
+      try {
+        await UserRepository.updateBiometric(usuarioId, {
+          biometrico_codigo: String(siguiente)
+        });
+        return { ...(await this.getBiometricStatus(usuarioId)), generado: true };
+      } catch (err) {
+        // Otra persona se lo ganó: probamos con el siguiente número.
+        if (!(err instanceof ConflictError)) throw err;
+        errorEmpate = err;
+        siguiente += 1;
+      }
+    }
+
+    throw errorEmpate ?? new ConflictError('No se pudo generar un código libre.');
   }
 }

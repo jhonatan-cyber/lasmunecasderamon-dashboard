@@ -10,10 +10,21 @@ interface ApiResponse<T> {
   data?: T;
   total?: number;
   message: string;
+  /** Alta en el lector pedida al crear: resultado del intento (nunca bloquea). */
+  altaEquipo?: AltaEquipoInfo;
   errors?: Array<{
     field: string;
     message: string;
   }>;
+}
+
+/** Lo que `POST /api/users` devuelve sobre la alta automática en el lector. */
+export interface AltaEquipoInfo {
+  ok: boolean;
+  mensaje: string;
+  motivo?: string;
+  codigo?: string;
+  carasEnEquipo?: number | null;
 }
 
 interface UseUsersReturn {
@@ -32,9 +43,13 @@ interface UseUsersReturn {
   pageSize: number;
   setPageSize: (size: number) => void;
   totalPages: number;
-  createUser: (
-    formData: FormData
-  ) => Promise<{ success: boolean; message: string; errors?: string[]; id?: string }>;
+  createUser: (formData: FormData) => Promise<{
+    success: boolean;
+    message: string;
+    errors?: string[];
+    id?: string;
+    altaEquipo?: AltaEquipoInfo;
+  }>;
   updateUser: (
     id: string | number,
     userData: FormData | Partial<User>
@@ -137,7 +152,8 @@ export function useUsers(): UseUsersReturn {
       success: result.success,
       message: result.message,
       errors: result.errors?.map(e => `${e.field}: ${e.message}`),
-      id: result.data?.id != null ? String(result.data.id) : undefined
+      id: result.data?.id != null ? String(result.data.id) : undefined,
+      altaEquipo: result.altaEquipo
     };
   };
 

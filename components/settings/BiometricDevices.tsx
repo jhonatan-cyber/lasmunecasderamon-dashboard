@@ -18,6 +18,9 @@ interface BiometricDevice {
   serial: string;
   ip: string | null;
   usuario_equipo?: string | null;
+  /** Huella MAC del equipo: con eso se re-encuentra aunque el DHCP le cambie la IP. */
+  mac?: string | null;
+  recoger_registros?: number;
   fecha_crea: string;
   ultimo_uso: string | null;
   revocado_en: string | null;
@@ -85,6 +88,8 @@ export function BiometricDevices() {
   const [recoger, setRecoger] = useState<Record<string, boolean>>({});
   const [pollAccion, setPollAccion] = useState<Record<string, 'toggling' | 'polling' | null>>({});
   const [pollMensaje, setPollMensaje] = useState<Record<string, string>>({});
+  // Búsqueda del equipo por MAC cuando el DHCP le cambió la IP.
+  const [descPorEquipo, setDescPorEquipo] = useState<Record<string, EstadoConexion>>({});
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -175,6 +180,38 @@ export function BiometricDevices() {
       }
     } catch (err) {
       setConexionPorEquipo(prev => ({ ...prev, [device.id]: { probando: false } }));
+      toast.error(err instanceof Error ? err.message : 'Error de conexión.');
+    }
+  }
+
+  /**
+   * El lector está en DHCP: su IP puede cambiar sola. Esto barre la red buscando
+   * la MAC del equipo y, si lo encuentra, guarda la IP nueva (el serial confirma
+   * que es él y no otro equipo que se haya quedado con la IP vieja).
+   */
+  async function buscarPorMac(device: BiometricDevice) {
+    setDescPorEquipo(prev => ({ ...prev, [device.id]: { probando: true } }));
+    try {
+      const res = await fetch(`/api/biometric/devices/${encodeURIComponent(device.id)}/discover`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ forzar: true })
+      });
+      const result = await res.json();
+      setDescPorEquipo(prev => ({
+        ...prev,
+        [device.id]: { probando: false, ok: Boolean(result.success), mensaje: result.message }
+      }));
+      if (result.success) {
+        toast.success(result.message || 'Equipo encontrado.');
+        // La IP nueva vino de la BD: limpia lo tipeado para no pisarla.
+        setCredPorEquipo(prev => ({ ...prev, [device.id]: { ip: '', usuario: '', clave: '' } }));
+        await load();
+      } else {
+        toast.error(result.message || 'No se encontró el equipo en la red.');
+      }
+    } catch (err) {
+      setDescPorEquipo(prev => ({ ...prev, [device.id]: { probando: false } }));
       toast.error(err instanceof Error ? err.message : 'Error de conexión.');
     }
   }
@@ -354,6 +391,9 @@ export function BiometricDevices() {
                       </p>
                       <p className='text-xs text-muted-foreground'>Serial: {device.serial}</p>
                       <p className='text-xs text-muted-foreground'>
+                        MAC: {device.mac || 'sin capturar'}
+                      </p>
+                      <p className='text-xs text-muted-foreground'>
                         Último evento:{' '}
                         {device.ultimo_uso ? formatFechaConHora(device.ultimo_uso) : 'nunca'}
                       </p>
@@ -393,17 +433,37 @@ export function BiometricDevices() {
                             IP y credenciales CGI para enrolar desde acá (se guardan cifradas).
                           </p>
                         </div>
-                        <Button
-                          type='button'
-                          variant='outline'
-                          size='sm'
-                          onClick={() => probarConexion(device)}
-                          disabled={conexionPorEquipo[device.id]?.probando}
-                        >
-                          {conexionPorEquipo[device.id]?.probando
-                            ? 'Probando...'
-                            : 'Probar conexión'}
-                        </Button>
+                        <div className='flex flex-wrap gap-2'>
+                          <Button
+                            type='button'
+                            variant='outline'
+                            size='sm'
+                            onClick={() => probarConexion(device)}
+                            disabled={
+                              conexionPorEquipo[device.id]?.probando ||
+                              descPorEquipo[device.id]?.probando
+                            }
+                          >
+                            {conexionPorEquipo[device.id]?.probando
+                              ? 'Probando...'
+                              : 'Probar conexión'}
+                          </Button>
+                          <Button
+                            type='button'
+                            variant='outline'
+                            size='sm'
+                            onClick={() => buscarPorMac(device)}
+                            disabled={
+                              descPorEquipo[device.id]?.probando ||
+                              conexionPorEquipo[device.id]?.probando
+                            }
+                            title='Barre la red buscando la MAC del equipo por si el DHCP le cambió la IP'
+                          >
+                            {descPorEquipo[device.id]?.probando
+                              ? 'Buscando en la red...'
+                              : 'Buscar por MAC'}
+                          </Button>
+                        </div>
                       </div>
                       <div className='grid grid-cols-1 sm:grid-cols-3 gap-2'>
                         <Input
@@ -482,6 +542,18 @@ export function BiometricDevices() {
                           }
                         >
                           {conexionPorEquipo[device.id]?.mensaje}
+                        </p>
+                      )}
+                      {descPorEquipo[device.id]?.mensaje && (
+                        <p
+                          role='status'
+                          className={
+                            descPorEquipo[device.id]?.ok
+                              ? 'text-xs text-green-700 dark:text-green-400'
+                              : 'text-xs text-amber-700 dark:text-amber-400'
+                          }
+                        >
+                          {descPorEquipo[device.id]?.mensaje}
                         </p>
                       )}
                       <div className='flex flex-wrap items-center justify-between gap-2 border-t border-dashed border-gray-300 dark:border-gray-700 pt-2'>

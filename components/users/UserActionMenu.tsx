@@ -1,7 +1,7 @@
 import { memo } from 'react';
 import { User as UserType } from '@/types/user';
 import { Button } from '@/components/ui/button';
-import { Eye, Pencil, Trash2, Power, Check, MoreVertical } from 'lucide-react';
+import { Eye, Pencil, Trash2, Power, Check, MoreVertical, Fingerprint } from 'lucide-react';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -14,11 +14,13 @@ interface UserActionMenuProps {
   user: UserType;
   onViewDetails: (user: UserType) => void;
   onEdit: (user: UserType) => void;
+  onEnroll: (user: UserType) => void;
   onActivate: (userId: string | number) => void;
   onDeactivate: (userId: string | number) => void;
   onDelete: (userId: string | number) => void;
   canViewDetails: boolean;
   canEdit: boolean;
+  canEnroll: boolean;
   canActivate: boolean;
   canDeactivate: boolean;
   canDelete: boolean;
@@ -29,11 +31,13 @@ function UserActionMenuComponent({
   user,
   onViewDetails,
   onEdit,
+  onEnroll,
   onActivate,
   onDeactivate,
   onDelete,
   canViewDetails,
   canEdit,
+  canEnroll,
   canActivate,
   canDeactivate,
   canDelete,
@@ -85,6 +89,22 @@ function UserActionMenuComponent({
                 </DropdownMenuItem>
               </TooltipTrigger>
               <TooltipContent>Editar usuario</TooltipContent>
+            </Tooltip>
+          </TooltipProvider>
+        )}
+
+        {canEnroll && (
+          <TooltipProvider>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <DropdownMenuItem onClick={() => onEnroll(user)} className='cursor-pointer group'>
+                  <Fingerprint className='mr-2 text-gray-600 group-hover:text-gray-900 transition-colors w-3 h-3 sm:w-4 sm:h-4' />
+                  <span className='group-hover:text-gray-900 transition-colors text-xs sm:text-sm'>
+                    Enrolar
+                  </span>
+                </DropdownMenuItem>
+              </TooltipTrigger>
+              <TooltipContent>Enrolar en el lector de la puerta</TooltipContent>
             </Tooltip>
           </TooltipProvider>
         )}

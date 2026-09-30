@@ -2,7 +2,7 @@
 import CompressionPlugin from 'compression-webpack-plugin';
 
 const nextConfig = {
-  serverExternalPackages: ['pg'],
+  serverExternalPackages: ['pg', 'koffi'],
   allowedDevOrigins: ['127.0.0.1', 'dashboard.xn--lasmuecasderamon-bub.com'],
   images: {
     formats: ['image/avif', 'image/webp'],

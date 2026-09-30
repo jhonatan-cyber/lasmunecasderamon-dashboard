@@ -12,6 +12,9 @@ const sharpMock = vi.hoisted(() => {
   chain.resize = vi.fn(() => chain);
   chain.webp = vi.fn(() => chain);
   chain.toFile = vi.fn(async () => undefined);
+  // Camino de lectura (imagen guardada → JPEG): no escribe en disco.
+  chain.jpeg = vi.fn(() => chain);
+  chain.toBuffer = vi.fn(async () => Buffer.from('JPEG-RESULT'));
   return chain;
 });
 
@@ -22,11 +25,15 @@ vi.mock('sharp', () => ({
   })
 }));
 
+import fs from 'fs/promises';
+import os from 'os';
+import path from 'path';
 import logger from '@/lib/utils/logger';
 import { BusinessError } from '@/lib/errors/errors';
 import {
   IMAGE_FETCH_TIMEOUT_MS,
   MAX_IMAGE_BYTES,
+  imagenGuardadaABase64Jpeg,
   processAndSaveImage
 } from '@/lib/utils/image-utils';
 
@@ -217,5 +224,79 @@ describe('processAndSaveImage — descarga de imágenes por URL', () => {
     expect(result).toBe('/img/products/default.png');
     expect(fetchMock).not.toHaveBeenCalled();
     expect(sharpMock.toFile).not.toHaveBeenCalled();
+  });
+});
+
+describe('processAndSaveImage — carpeta de destino por tipo', () => {
+  beforeEach(() => {
+    sharpMock.toFile.mockClear();
+  });
+
+  it('las fotos de usuarios se guardan en public/img/users (la que lee la UI)', async () => {
+    const file = await processAndSaveImage(Buffer.from('png'), 'user', {
+      width: 500,
+      height: 500,
+      fit: 'cover'
+    });
+
+    expect(file).toMatch(/^user_\d+\.webp$/);
+    const destino = String(sharpMock.toFile.mock.calls[0][0]);
+    expect(destino).toContain(path.join('public', 'img', 'users'));
+    expect(destino.endsWith(file)).toBe(true);
+  });
+
+  it('los productos siguen yendo a public/img/products', async () => {
+    await processAndSaveImage(Buffer.from('png'), 'product_42');
+
+    const destino = String(sharpMock.toFile.mock.calls[0][0]);
+    expect(destino).toContain(path.join('public', 'img', 'products'));
+  });
+});
+
+describe('imagenGuardadaABase64Jpeg (foto guardada → JPEG para el lector)', () => {
+  const JPEG_RESULTADO = Buffer.from('JPEG-RESULT').toString('base64');
+
+  beforeEach(() => {
+    sharpMock.jpeg.mockClear();
+    sharpMock.input = null;
+  });
+
+  it('sin foto propia (default o vacía) devuelve null sin tocar nada', async () => {
+    expect(await imagenGuardadaABase64Jpeg('default.png')).toBeNull();
+    expect(await imagenGuardadaABase64Jpeg('')).toBeNull();
+    expect(fetchMock).not.toHaveBeenCalled();
+    expect(sharpMock.jpeg).not.toHaveBeenCalled();
+  });
+
+  it('convierte la foto guardada (WebP) a JPEG base64', async () => {
+    const dir = await fs.mkdtemp(path.join(os.tmpdir(), 'img-utils-test-'));
+    await fs.writeFile(path.join(dir, 'user_1.webp'), Buffer.from('bytes-webp'));
+    try {
+      const b64 = await imagenGuardadaABase64Jpeg('user_1.webp', dir);
+
+      expect(b64).toBe(JPEG_RESULTADO);
+      expect(sharpMock.jpeg).toHaveBeenCalledWith({ quality: 85 });
+      expect(Buffer.from(sharpMock.input).toString()).toBe('bytes-webp');
+    } finally {
+      await fs.rm(dir, { recursive: true, force: true });
+    }
+  });
+
+  it('archivo inexistente: devuelve null y lo registra, sin lanzar', async () => {
+    expect(await imagenGuardadaABase64Jpeg('user_999.webp')).toBeNull();
+    expect(logger.warn).toHaveBeenCalledWith(
+      '[ImageUtils] No se pudo convertir la imagen guardada a JPEG',
+      expect.objectContaining({ filename: 'user_999.webp' })
+    );
+  });
+
+  it('si la foto está por URL, la descarga y la convierte igual', async () => {
+    const { response } = fakeResponse({ chunks: [Buffer.from('descargada')] });
+    fetchMock.mockResolvedValue(response);
+
+    const b64 = await imagenGuardadaABase64Jpeg('https://cdn.test/ana.jpg');
+
+    expect(b64).toBe(JPEG_RESULTADO);
+    expect(Buffer.from(sharpMock.input).toString()).toBe('descargada');
   });
 });

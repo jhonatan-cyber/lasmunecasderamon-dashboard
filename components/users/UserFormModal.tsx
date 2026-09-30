@@ -22,8 +22,8 @@ import {
   MapPin,
   DollarSign,
   Coins,
-  Fingerprint,
-  Info
+  Info,
+  ScanFace
 } from 'lucide-react';
 import { FormFieldWithIcon } from './FormFieldWithIcon';
 import { ImageUploadField } from './ImageUploadField';
@@ -81,6 +81,15 @@ interface UserFormModalProps {
   onCancel: () => void;
 }
 
+/** Equipos que pueden recibir el alta: se muestran solo los operativos. */
+interface DispositivoItem {
+  id: string;
+  nombre: string;
+  ip: string | null;
+  usuario_equipo: string | null;
+  revocado_en: string | null;
+}
+
 export function UserFormModal({
   user,
   isOpen,
@@ -103,6 +112,42 @@ export function UserFormModal({
 
   const [runFormatted, setRunFormatted] = useState(user?.run || '');
   const [runError, setRunError] = useState('');
+
+  // ── Alta en el lector al crear ──────────────────────────────────────────
+  // Los equipos operativos (con IP y credenciales) se ofrecen en el formulario:
+  // al guardar, además de crear el usuario, el servidor lo da de alta en el
+  // equipo elegido. Si no hay ninguno, la opción no se muestra y no se pide alta.
+  const [dispositivos, setDispositivos] = useState<DispositivoItem[]>([]);
+  const altaEquipo = form.watch('alta_equipo');
+  const dispositivoAlta = form.watch('dispositivo_alta');
+
+  useEffect(() => {
+    if (!isOpen || isEditing) return;
+    let cancelado = false;
+    (async () => {
+      try {
+        const res = await fetch('/api/biometric/devices', { cache: 'no-store' });
+        const result = await res.json();
+        if (cancelado) return;
+        const activos: DispositivoItem[] = (res.ok && result.success ? result.data : []).filter(
+          (d: DispositivoItem) => !d.revocado_en && d.ip && d.usuario_equipo
+        );
+        setDispositivos(activos);
+        if (!activos.some(d => d.id === form.getValues('dispositivo_alta'))) {
+          form.setValue('dispositivo_alta', activos[0]?.id ?? '');
+        }
+        if (activos.length === 0) form.setValue('alta_equipo', false);
+      } catch {
+        if (!cancelado) {
+          setDispositivos([]);
+          form.setValue('alta_equipo', false);
+        }
+      }
+    })();
+    return () => {
+      cancelado = true;
+    };
+  }, [isOpen, isEditing, form]);
 
   useEffect(() => {
     if (user?.run) {
@@ -302,47 +347,52 @@ export function UserFormModal({
                 />
               </div>
 
-              <div className='rounded-2xl border border-gray-200 dark:border-gray-700 p-4 space-y-4'>
-                <div className='flex items-center gap-2'>
-                  <Fingerprint className='h-4 w-4 text-gray-600 dark:text-gray-300' />
-                  <p className='text-sm font-semibold'>
-                    Asistencia biométrica (lector de la puerta)
-                  </p>
-                </div>
-                <p className='text-xs text-muted-foreground'>
-                  La huella y la cara se cargan en el menú del equipo, no acá. Este código es el que
-                  el lector reporta al verificar y con él se registra la asistencia. Todo es
-                  opcional: al guardar, si hay código, te vamos a pedir enrolar a la persona en el
-                  equipo.
-                </p>
-
-                <FormFieldWithIcon
-                  control={form.control as any}
-                  name='biometrico_codigo'
-                  label='Código en el equipo'
-                  placeholder='Ej: 1001'
-                  icon={Fingerprint}
-                />
-
-                <div className='flex flex-wrap gap-6'>
-                  <label className='flex items-center gap-2 text-sm text-gray-700 dark:text-gray-200'>
+              {!isEditing && dispositivos.length > 0 && (
+                <div className='rounded-2xl border border-emerald-200 dark:border-emerald-900/50 bg-emerald-50/60 dark:bg-emerald-900/10 p-4 space-y-3'>
+                  <label className='flex items-center gap-2 text-sm font-medium text-emerald-900 dark:text-emerald-200 cursor-pointer'>
                     <input
                       type='checkbox'
                       className='h-4 w-4 rounded border-input'
-                      {...form.register('biometrico_huella')}
+                      checked={altaEquipo}
+                      onChange={e =>
+                        form.setValue('alta_equipo', e.target.checked, { shouldValidate: true })
+                      }
                     />
-                    Huella cargada en el equipo
+                    <ScanFace className='w-4 h-4' />
+                    Dar de alta en el lector de asistencia al crear
                   </label>
-                  <label className='flex items-center gap-2 text-sm text-gray-700 dark:text-gray-200'>
-                    <input
-                      type='checkbox'
-                      className='h-4 w-4 rounded border-input'
-                      {...form.register('biometrico_facial')}
-                    />
-                    Cara cargada en el equipo
-                  </label>
+                  {altaEquipo && (
+                    <>
+                      <div className='space-y-1'>
+                        <label
+                          htmlFor='alta-dispositivo'
+                          className='block text-xs font-medium text-emerald-900 dark:text-emerald-200'
+                        >
+                          Equipo
+                        </label>
+                        <select
+                          id='alta-dispositivo'
+                          value={dispositivoAlta}
+                          onChange={e => form.setValue('dispositivo_alta', e.target.value)}
+                          className='flex h-9 w-full rounded-lg border border-input bg-gray-100 px-3 text-sm dark:bg-gray-800 dark:text-gray-100 dark:border-gray-700'
+                        >
+                          {dispositivos.map(d => (
+                            <option key={d.id} value={d.id}>
+                              {d.nombre} · {d.ip}
+                            </option>
+                          ))}
+                        </select>
+                      </div>
+                      <p className='text-xs text-muted-foreground'>
+                        Al guardar se genera su código biométrico, su foto queda como plantilla
+                        maestra y se crea la persona con su cara en el lector por red (NetSDK), sin
+                        usar el menú del equipo. Si el equipo no responde, el usuario se crea igual
+                        y podés reintentar desde «Enrolar» en su ficha.
+                      </p>
+                    </>
+                  )}
                 </div>
-              </div>
+              )}
             </form>
           </FormProvider>
         </div>

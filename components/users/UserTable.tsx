@@ -24,6 +24,7 @@ interface UserTableProps {
   users: UserType[];
   onViewDetails: (user: UserType) => void;
   onEdit: (user: UserType) => void;
+  onEnroll: (user: UserType) => void;
   onActivate: (userId: string | number) => void;
   onDeactivate: (userId: string | number) => void;
   onDelete: (userId: string | number) => void;
@@ -41,6 +42,7 @@ export function UserTable({
   users,
   onViewDetails,
   onEdit,
+  onEnroll,
   onActivate,
   onDeactivate,
   onDelete,
@@ -55,6 +57,8 @@ export function UserTable({
     () => ({
       canViewDetails: hasPermission('users', 'view_details'),
       canEdit: hasPermission('users', 'edit'),
+      // Enrolar escribe en la ficha biométrica: mismo par que editar.
+      canEnroll: hasPermission('users', 'edit'),
       canActivate: hasPermission('users', 'activate'),
       canDeactivate: hasPermission('users', 'deactivate'),
       canDelete: hasPermission('users', 'delete')
@@ -99,6 +103,7 @@ export function UserTable({
                     user={user}
                     onViewDetails={onViewDetails}
                     onEdit={onEdit}
+                    onEnroll={onEnroll}
                     onActivate={onActivate}
                     onDeactivate={onDeactivate}
                     onDelete={onDelete}
@@ -204,6 +209,7 @@ export function UserTable({
                     user={user}
                     onViewDetails={onViewDetails}
                     onEdit={onEdit}
+                    onEnroll={onEnroll}
                     onActivate={onActivate}
                     onDeactivate={onDeactivate}
                     onDelete={onDelete}

@@ -102,6 +102,97 @@ describe('guardado del enrolamiento', () => {
   });
 });
 
+describe('generación automática del código', () => {
+  it('un usuario inexistente también se rechaza', async () => {
+    db.queryMock.mockImplementation(async (sql: string) => {
+      if (sql.includes('FROM usuarios')) return [];
+      return [];
+    });
+
+    await expect(UserService.asignarCodigoBiometrico('nadie')).rejects.toBeInstanceOf(
+      NotFoundError
+    );
+  });
+
+  it('la primera vez genera el siguiente numérico libre y lo guarda', async () => {
+    let guardado: string | null = null;
+    db.queryMock.mockImplementation(async (sql: string, params?: any[]) => {
+      if (sql.includes('WHERE biometrico_codigo IS NOT NULL'))
+        return [
+          { biometrico_codigo: '1001' },
+          { biometrico_codigo: '1003' },
+          { biometrico_codigo: 'ANA' } // no numérico: se ignora
+        ];
+      if (sql.includes('UPDATE usuarios SET')) {
+        guardado = String(params?.[0]);
+        return [];
+      }
+      if (sql.includes('FROM usuarios')) return [{ ...usuario, biometrico_codigo: guardado }];
+      if (sql.includes('FROM biometric_events')) return [];
+      return [];
+    });
+
+    const r = await UserService.asignarCodigoBiometrico('u-1');
+
+    expect(r.generado).toBe(true);
+    expect(r.codigo).toBe('1004');
+    expect(guardado).toBe('1004');
+  });
+
+  it('sin ningún código usado arranca en 1001', async () => {
+    let guardado: string | null = null;
+    db.queryMock.mockImplementation(async (sql: string, params?: any[]) => {
+      if (sql.includes('WHERE biometrico_codigo IS NOT NULL')) return [];
+      if (sql.includes('UPDATE usuarios SET')) {
+        guardado = String(params?.[0]);
+        return [];
+      }
+      if (sql.includes('FROM usuarios')) return [{ ...usuario, biometrico_codigo: guardado }];
+      if (sql.includes('FROM biometric_events')) return [];
+      return [];
+    });
+
+    const r = await UserService.asignarCodigoBiometrico('u-1');
+    expect(r.codigo).toBe('1001');
+  });
+
+  it('si ya tiene código no genera otro ni toca la base', async () => {
+    db.queryMock.mockImplementation(async (sql: string) => {
+      if (sql.includes('FROM usuarios')) return [{ ...usuario, biometrico_codigo: '1007' }];
+      return [];
+    });
+
+    const r = await UserService.asignarCodigoBiometrico('u-1');
+
+    expect(r.generado).toBe(false);
+    expect(r.codigo).toBe('1007');
+    expect(updates()).toHaveLength(0);
+  });
+
+  it('ante un código recién tomado por otro reintenta con el siguiente', async () => {
+    let intentos = 0;
+    let guardado: string | null = null;
+    db.queryMock.mockImplementation(async (sql: string, params?: any[]) => {
+      if (sql.includes('WHERE biometrico_codigo IS NOT NULL')) return [];
+      if (sql.includes('UPDATE usuarios SET')) {
+        intentos += 1;
+        if (intentos === 1) throw Object.assign(new Error('duplicate'), { code: '23505' });
+        guardado = String(params?.[0]);
+        return [];
+      }
+      if (sql.includes('FROM usuarios')) return [{ ...usuario, biometrico_codigo: guardado }];
+      if (sql.includes('FROM biometric_events')) return [];
+      return [];
+    });
+
+    const r = await UserService.asignarCodigoBiometrico('u-1');
+
+    expect(intentos).toBe(2);
+    expect(r.generado).toBe(true);
+    expect(r.codigo).toBe('1002');
+  });
+});
+
 describe('estado del enrolamiento', () => {
   it('devuelve estados y la ultima verificacion que mando el lector', async () => {
     db.queryMock.mockImplementation(async (sql: string) => {
@@ -122,8 +213,27 @@ describe('estado del enrolamiento', () => {
       huella: 1,
       facial: 1,
       ultima_verificacion: '2026-09-29T12:00:00Z',
-      ultimo_resultado: 'registrado'
+      ultimo_resultado: 'registrado',
+      cara_base64: null,
+      huella_hex: null
     });
+  });
+
+  it('devuelve la captura guardada (cara y huella) para mostrarla en el diálogo', async () => {
+    db.queryMock.mockImplementation(async (sql: string) => {
+      if (sql.includes('FROM usuarios')) return [usuario];
+      if (sql.includes('FROM biometric_events')) return [];
+      if (sql.includes('FROM biometric_plantillas'))
+        return [
+          { tipo: 'huella', datos: 'HEX-1' },
+          { tipo: 'cara', datos: 'FOTO-B64' }
+        ];
+      return [];
+    });
+
+    const estado = await UserService.getBiometricStatus('u-1');
+    expect(estado.cara_base64).toBe('FOTO-B64');
+    expect(estado.huella_hex).toBe('HEX-1');
   });
 
   it('sin eventos todavia, lo dice sin romper', async () => {

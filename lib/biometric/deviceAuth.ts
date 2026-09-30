@@ -74,13 +74,16 @@ export async function listBiometricDevices() {
       serial: string;
       ip: string | null;
       usuario_equipo: string | null;
+      mac: string | null;
+      recoger_registros: number;
       fecha_crea: string;
       ultimo_uso: string | null;
       revocado_en: string | null;
       activo: boolean;
     }[]
   >(
-    `SELECT id, nombre, marca, modelo, serial, ip, usuario_equipo, fecha_crea, ultimo_uso, revocado_en,
+    `SELECT id, nombre, marca, modelo, serial, ip, usuario_equipo, mac, recoger_registros,
+            fecha_crea, ultimo_uso, revocado_en,
             (revocado_en IS NULL) AS activo
        FROM biometric_devices ORDER BY fecha_crea DESC`
   );

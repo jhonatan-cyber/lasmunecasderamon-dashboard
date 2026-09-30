@@ -87,17 +87,6 @@ export default function Users() {
 
   const handleFormSubmit = useCallback(
     async (values: UserFormValues, file?: File) => {
-      // Guardado con código: el equipo va a reportar ese código, así que hay que
-      // pedir que se cargue la cara/huella en el lector.
-      const pedirEnrolamiento = (id?: string) => {
-        const codigo = (values.biometrico_codigo || '').trim();
-        if (!codigo || !id) return;
-        setEnrollTarget({
-          id,
-          nombre: `${values.name || ''} ${values.lastName || ''}`.trim(),
-          codigo
-        });
-      };
       try {
         const formData = new FormData();
         Object.entries(values).forEach(([key, value]) => {
@@ -128,7 +117,6 @@ export default function Users() {
             setIsFormOpen(false);
             setIsEditing(false);
             setSelectedUser(null);
-            pedirEnrolamiento(String(selectedUser.id));
             if (currentUser && selectedUser.id === currentUser.id) {
               updateImage();
               await refetchCurrentUser();
@@ -140,8 +128,13 @@ export default function Users() {
           const result = await createUser(formData);
           if (result.success) {
             toast.success(result.message || 'Usuario creado');
+            // Alta en el lector pedida al crear: se informa aparte porque el
+            // usuario ya existe aunque el equipo no haya respondido.
+            if (result.altaEquipo) {
+              if (result.altaEquipo.ok) toast.success(result.altaEquipo.mensaje);
+              else toast.warning(result.altaEquipo.mensaje);
+            }
             setIsFormOpen(false);
-            pedirEnrolamiento(result.id);
           } else {
             toast.error(result.message || 'Error al crear');
           }
@@ -168,6 +161,15 @@ export default function Users() {
     setSelectedUser(user);
     setIsEditing(true);
     setIsFormOpen(true);
+  }, []);
+
+  // Enrolamiento en el lector: abre el diálogo que baja la cara/huella del equipo.
+  const handleEnrollUser = useCallback((user: User) => {
+    setEnrollTarget({
+      id: String(user.id),
+      nombre: `${user.name || ''} ${user.lastName || ''}`.trim(),
+      codigo: user.biometrico_codigo || ''
+    });
   }, []);
 
   const handleActivateUser = useCallback(
@@ -271,6 +273,7 @@ export default function Users() {
               users={users}
               onViewDetails={handleViewDetails}
               onEdit={handleEditUser}
+              onEnroll={handleEnrollUser}
               onActivate={handleActivateUser}
               onDeactivate={handleDeactivateUser}
               onDelete={handleDeleteUser}

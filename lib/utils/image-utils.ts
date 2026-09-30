@@ -13,13 +13,16 @@ type ImageProcessingOptions = {
   fit?: 'cover' | 'inside' | 'outside' | 'fill' | 'contain';
   position?: string;
   quality?: number;
-  /** Override upload directory. Default depends on baseName prefix: 'user_' → users dir, else products dir. */
+  /** Override upload directory. Default depends on baseName: 'user' → users dir, else products dir. */
   uploadDir?: string;
 };
 
 function resolveUploadDir(baseName: string, options?: ImageProcessingOptions): string {
   if (options?.uploadDir) return options.uploadDir;
-  return baseName.startsWith('user_') ? USER_UPLOAD_DIR : PRODUCT_UPLOAD_DIR;
+  // La ruta de usuarios guarda con baseName 'user' (no 'user_'): si se pide el
+  // prefijo exacto 'user_', las fotos de las personas caían en products/ y la
+  // UI (que lee /img/users/) las rompía — y también el alta en el lector.
+  return baseName.startsWith('user') ? USER_UPLOAD_DIR : PRODUCT_UPLOAD_DIR;
 }
 
 // Exportadas para que los tests puedan calcular los límites sin duplicarlos.
@@ -134,6 +137,36 @@ async function fetchImageFromUrl(url: string): Promise<Buffer> {
     );
   }
   return Buffer.from(arrayBuffer);
+}
+
+/**
+ * Lee una imagen ya guardada por `processAndSaveImage` y la devuelve en JPEG base64.
+ *
+ * El motor facial del lector extrae su vector de una foto JPEG, mientras que el
+ * sistema guarda en WebP: acá se convierte para poder usar la foto como plantilla
+ * maestra de enrolamiento. Acepta también una URL (se descarga igual que al subir).
+ *
+ * Devuelve null cuando no hay una foto propia que convertir (imagen por defecto,
+ * archivo inexistente o descarga fallida): el llamador decide cómo informarlo.
+ */
+export async function imagenGuardadaABase64Jpeg(
+  filename: string,
+  dir: string = USER_UPLOAD_DIR
+): Promise<string | null> {
+  if (!filename || filename === 'default.png') return null;
+  try {
+    const buffer = filename.startsWith('http')
+      ? await fetchImageFromUrl(filename)
+      : await fs.readFile(path.join(dir, filename));
+    const jpeg = await sharp(buffer).jpeg({ quality: 85 }).toBuffer();
+    return jpeg.toString('base64');
+  } catch (error) {
+    logger.warn('[ImageUtils] No se pudo convertir la imagen guardada a JPEG', {
+      filename: filename.startsWith('http') ? loggableUrl(filename) : filename,
+      error
+    });
+    return null;
+  }
 }
 
 export async function processAndSaveImage(
