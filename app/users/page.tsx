@@ -35,6 +35,10 @@ const DeleteUserConfirmModal = dynamic(
   () => import('@/components/shared/DeleteConfirmModal').then(m => m.DeleteConfirmModal),
   { ssr: false }
 );
+const EnrollBiometricDialog = dynamic(
+  () => import('@/components/users/EnrollBiometricDialog').then(m => m.EnrollBiometricDialog),
+  { ssr: false }
+);
 
 export default function Users() {
   const [selectedUser, setSelectedUser] = useState<User | null>(null);
@@ -43,6 +47,11 @@ export default function Users() {
   const [isEditing, setIsEditing] = useState(false);
   const [deleteModalOpen, setDeleteModalOpen] = useState(false);
   const [userToDelete, setUserToDelete] = useState<User | null>(null);
+  const [enrollTarget, setEnrollTarget] = useState<{
+    id: string;
+    nombre: string;
+    codigo: string;
+  } | null>(null);
   const { user: currentUser, refetch: refetchCurrentUser } = useCurrentUser();
   const { updateImage } = useUserImage();
 
@@ -78,11 +87,22 @@ export default function Users() {
 
   const handleFormSubmit = useCallback(
     async (values: UserFormValues, file?: File) => {
+      // Guardado con código: el equipo va a reportar ese código, así que hay que
+      // pedir que se cargue la cara/huella en el lector.
+      const pedirEnrolamiento = (id?: string) => {
+        const codigo = (values.biometrico_codigo || '').trim();
+        if (!codigo || !id) return;
+        setEnrollTarget({
+          id,
+          nombre: `${values.name || ''} ${values.lastName || ''}`.trim(),
+          codigo
+        });
+      };
       try {
         const formData = new FormData();
         Object.entries(values).forEach(([key, value]) => {
           if (value !== undefined && value !== null && key !== 'foto') {
-            formData.append(key, String(value));
+            formData.append(key, typeof value === 'boolean' ? (value ? '1' : '0') : String(value));
           }
         });
         if (file) {
@@ -108,6 +128,7 @@ export default function Users() {
             setIsFormOpen(false);
             setIsEditing(false);
             setSelectedUser(null);
+            pedirEnrolamiento(String(selectedUser.id));
             if (currentUser && selectedUser.id === currentUser.id) {
               updateImage();
               await refetchCurrentUser();
@@ -120,6 +141,7 @@ export default function Users() {
           if (result.success) {
             toast.success(result.message || 'Usuario creado');
             setIsFormOpen(false);
+            pedirEnrolamiento(result.id);
           } else {
             toast.error(result.message || 'Error al crear');
           }
@@ -291,6 +313,18 @@ export default function Users() {
           fieldName='Usuario'
           isLoading={isMutating}
         />
+
+        {enrollTarget && (
+          <EnrollBiometricDialog
+            open
+            onOpenChange={open => {
+              if (!open) setEnrollTarget(null);
+            }}
+            userId={enrollTarget.id}
+            nombre={enrollTarget.nombre}
+            codigo={enrollTarget.codigo}
+          />
+        )}
       </PermissionGuard>
     </div>
   );

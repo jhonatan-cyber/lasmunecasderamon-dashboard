@@ -2,7 +2,7 @@ import { query, generateUUID } from '@/lib/database/db';
 import { getNowInBusinessTimezone } from '@/lib/business/timezoneService';
 import { UserSchema, type UserType } from '@/lib/business/schemas';
 import { BaseRepository } from './BaseRepository';
-import { NotFoundError, DatabaseError } from '@/lib/errors/errors';
+import { NotFoundError, DatabaseError, ConflictError } from '@/lib/errors/errors';
 import { logger } from '@/lib/utils/logger';
 
 export class UserRepository {
@@ -29,6 +29,9 @@ export class UserRepository {
       foto: row.foto,
       status: row.estado,
       estado_servicio: row.estado_servicio,
+      biometrico_codigo: row.biometrico_codigo ?? null,
+      biometrico_huella: Number(row.biometrico_huella || 0),
+      biometrico_facial: Number(row.biometrico_facial || 0),
       created_at: row.fecha_crea,
       updated_at: row.fecha_mod
     };
@@ -82,7 +85,7 @@ export class UserRepository {
 
       const countSql = `SELECT COUNT(*) as total FROM usuarios u LEFT JOIN roles r ON u.rol_id = r.id_rol ${loginJoin} ${where}`;
 
-      const dataSql = `SELECT u.id_usuario, u.run, u.nick, u.nombre, u.apellido, u.foto, u.estado, u.estado_servicio, u.telefono, u.email, u.direccion, u.estado_civil, u.afp, u.sueldo, u.aporte, u.descuento, u.fecha_crea, u.fecha_mod, r.nombre as rol_nombre, r.id_rol FROM usuarios u LEFT JOIN roles r ON u.rol_id = r.id_rol ${loginJoin} ${where} ORDER BY u.fecha_crea DESC${params?.limit !== undefined ? ' LIMIT ? OFFSET ?' : ''}`;
+      const dataSql = `SELECT u.id_usuario, u.run, u.nick, u.nombre, u.apellido, u.foto, u.estado, u.estado_servicio, u.telefono, u.email, u.direccion, u.estado_civil, u.afp, u.sueldo, u.aporte, u.descuento, u.biometrico_codigo, u.biometrico_huella, u.biometrico_facial, u.fecha_crea, u.fecha_mod, r.nombre as rol_nombre, r.id_rol FROM usuarios u LEFT JOIN roles r ON u.rol_id = r.id_rol ${loginJoin} ${where} ORDER BY u.fecha_crea DESC${params?.limit !== undefined ? ' LIMIT ? OFFSET ?' : ''}`;
 
       const countRes = await query<any[]>(countSql, sqlParams);
       const total = countRes[0]?.total || 0;
@@ -166,6 +169,9 @@ export class UserRepository {
         email: data.email,
         password: data.password,
         force_password_change: data.force_password_change ?? 1,
+        biometrico_codigo: data.biometrico_codigo ?? null,
+        biometrico_huella: data.biometrico_huella ?? 0,
+        biometrico_facial: data.biometrico_facial ?? 0,
         estado: 1,
         estado_servicio: 0,
         fecha_crea: getNowInBusinessTimezone()
@@ -199,6 +205,9 @@ export class UserRepository {
         foto: fotoFilename ?? data.foto,
         email: data.email,
         password: data.password,
+        biometrico_codigo: data.biometrico_codigo,
+        biometrico_huella: data.biometrico_huella,
+        biometrico_facial: data.biometrico_facial,
         fecha_mod: getNowInBusinessTimezone()
       };
 
@@ -241,6 +250,50 @@ export class UserRepository {
     } catch (err) {
       logger.error('[UserRepository] Error en delete:', { id, err });
       throw new DatabaseError(`Error al eliminar usuario ${id}`, err);
+    }
+  }
+
+  /**
+   * Enrolamiento en el lector: solo se guardan el codigo que el equipo reporta y
+   * los estados de cara/huella. El cotejo con la persona es del equipo, no nuestro.
+   */
+  static async updateBiometric(
+    id: string,
+    data: {
+      biometrico_codigo?: string | null;
+      biometrico_huella?: number;
+      biometrico_facial?: number;
+    }
+  ): Promise<void> {
+    try {
+      await BaseRepository.update(query, this.TABLE, this.ID_COL, id, {
+        biometrico_codigo: data.biometrico_codigo,
+        biometrico_huella: data.biometrico_huella,
+        biometrico_facial: data.biometrico_facial,
+        fecha_mod: getNowInBusinessTimezone()
+      });
+    } catch (err: any) {
+      // Dos personas no pueden compartir el codigo en el equipo.
+      if (err?.code === '23505') throw new ConflictError('Ese codigo ya lo usa otra persona.');
+      logger.error('[UserRepository] Error en updateBiometric:', { id, err });
+      throw new DatabaseError(`Error al guardar el enrolamiento de ${id}`, err);
+    }
+  }
+
+  /** Ultima verificacion que el equipo mando por este usuario, para saber si el codigo funciona. */
+  static async getLastBiometricEvent(
+    id: string
+  ): Promise<{ fecha_recepcion: string; resultado: string; metodo: string | null } | null> {
+    try {
+      const rows = await query<any[]>(
+        `SELECT fecha_recepcion, resultado, metodo FROM biometric_events
+          WHERE usuario_id = ? ORDER BY fecha_recepcion DESC LIMIT 1`,
+        [id]
+      );
+      return rows.length > 0 ? rows[0] : null;
+    } catch (err) {
+      logger.error('[UserRepository] Error en getLastBiometricEvent:', { id, err });
+      return null;
     }
   }
 

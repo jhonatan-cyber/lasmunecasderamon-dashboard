@@ -17,8 +17,7 @@ export function SettingsCompanyTab() {
     empresa_facebook: '',
     empresa_instagram: '',
     empresa_whatsapp: '',
-    empresa_tiktok: '',
-    admin_whatsapp: ''
+    empresa_tiktok: ''
   });
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -31,11 +30,7 @@ export function SettingsCompanyTab() {
       if (result.success) {
         setConfig(prev => ({
           ...prev,
-          ...result.data?.empresa,
-          // Vive en categoría `sistema`, se edita acá para distinguirlo del WhatsApp público.
-          ...(result.data?.sistema?.admin_whatsapp !== undefined
-            ? { admin_whatsapp: String(result.data.sistema.admin_whatsapp) }
-            : {})
+          ...result.data?.empresa
         }));
       }
     } catch (error) {
@@ -50,11 +45,6 @@ export function SettingsCompanyTab() {
   }, [fetchConfig]);
 
   const handleSave = async () => {
-    const admin = (config.admin_whatsapp || '').trim();
-    if (admin && !/^\+?\d{7,15}$/.test(admin.replace('whatsapp:', ''))) {
-      toast.error('WhatsApp administrador: número inválido (ej: 59172419112)');
-      return;
-    }
     try {
       setSaving(true);
       const configs = Object.entries(config).map(([clave, valor]) => ({
@@ -183,25 +173,6 @@ export function SettingsCompanyTab() {
                     className='w-full px-3 py-2 border border-gray-300 rounded-full focus:ring-2 focus:ring-black focus:border-transparent'
                     placeholder='+56 9 1234 5678'
                   />
-                </div>
-                <div>
-                  <label
-                    htmlFor='company-admin-whatsapp'
-                    className='block text-sm font-medium mb-1'
-                  >
-                    WhatsApp administrador
-                  </label>
-                  <input
-                    id='company-admin-whatsapp'
-                    type='text'
-                    value={config.admin_whatsapp || ''}
-                    onChange={e => setConfig(prev => ({ ...prev, admin_whatsapp: e.target.value }))}
-                    className='w-full px-3 py-2 border border-gray-300 rounded-full focus:ring-2 focus:ring-black focus:border-transparent'
-                    placeholder='ej: 59172419112'
-                  />
-                  <p className='text-xs text-gray-500 mt-1'>
-                    Solo notificaciones internas (anulaciones, anticipos). Distinto del público.
-                  </p>
                 </div>
                 <div>
                   <label htmlFor='company-instagram' className='block text-sm font-medium mb-1'>

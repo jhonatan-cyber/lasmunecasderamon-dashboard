@@ -542,6 +542,8 @@ describe('descuento del bar al registrar una venta', () => {
       sql.includes('SET ml_restante = ?')
     );
     expect(descuentoMl![1]).toEqual([700, 'u1']);
+    // La botella queda marcada como abierta por shots: es la que vuelve como envase.
+    expect(descuentoMl![0]).toContain('abierta_por_shots = true');
     expect(trx.mock.calls.some(([sql]: string[]) => sql.includes("SET estado = 'vendida'"))).toBe(
       false
     );
@@ -805,6 +807,7 @@ describe('control de devolución de envases', () => {
     codigo: 'LM-000123',
     codigo_barras: '2912345678901',
     estado: 'vendida',
+    abierta_por_shots: true,
     fecha_devolucion: null,
     devuelto_por: null,
     fecha_confirmacion: null,
@@ -886,6 +889,15 @@ describe('control de devolución de envases', () => {
     if (!resultado.ok && resultado.unidad) {
       expect(resultado.unidad.fecha_devolucion).toBe('2026-09-20 22:30:00');
     }
+    expect(trx).toHaveBeenCalledTimes(1);
+  });
+
+  it('rechaza la botella que se vendió entera: su envase no vuelve al bar', async () => {
+    const trx = trxCon([envase({ abierta_por_shots: false })]);
+
+    const resultado = await InventoryRepository.verificarYMarcarEnvase(trx, 'LM-000123', 'user-1');
+
+    expect(resultado).toMatchObject({ ok: false, motivo: 'venta_entera' });
     expect(trx).toHaveBeenCalledTimes(1);
   });
 

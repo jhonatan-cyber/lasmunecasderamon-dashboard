@@ -35,7 +35,15 @@ const product = {
   ]
 };
 
-function Harness({ productos, onAdd }: { productos: any[]; onAdd: (p: any) => void }) {
+function Harness({
+  productos,
+  onAdd,
+  productosEnCarrito = []
+}: {
+  productos: any[];
+  onAdd: (p: any) => void;
+  productosEnCarrito?: any[];
+}) {
   const [quantities, setQuantities] = useState<Record<string, number>>({});
   return (
     <SaleProductModal
@@ -54,7 +62,7 @@ function Harness({ productos, onAdd }: { productos: any[]; onAdd: (p: any) => vo
       onChampagneHostessChange={vi.fn()}
       otherProductHostessSelections={{}}
       onOtherProductHostessChange={vi.fn()}
-      productosEnCarrito={[]}
+      productosEnCarrito={productosEnCarrito}
     />
   );
 }
@@ -161,5 +169,35 @@ describe('vistas de productos en nueva venta', () => {
     // El shot sí: se pide anfitriona antes de agregar.
     expect(screen.queryByText('Sin comisión')).not.toBeInTheDocument();
     expect(screen.getByRole('button', { name: 'Agregar producto' })).toBeDisabled();
+  });
+
+  it('el contador «En carrito» separa el shot de cliente del de anfitriona', () => {
+    const conAnfitriona = {
+      ...product,
+      opciones_venta: [
+        { tipo: 'botella', precio: 4000, comision: 0 },
+        { tipo: 'shot', precio: 1000, comision: 0, precio_anfitriona: 800 }
+      ]
+    };
+    render(
+      <Harness
+        productos={[conAnfitriona]}
+        onAdd={vi.fn()}
+        // En el carrito hay shots servidos a precio de anfitriona.
+        productosEnCarrito={[
+          { id: 'presentation-1', tipo_venta: 'shot', shot_anfitriona: true, cantidad: 2 }
+        ]}
+      />
+    );
+
+    // Viniendo de botella esas unidades no cuentan.
+    expect(screen.queryByText(/En carrito/)).not.toBeInTheDocument();
+
+    fireEvent.click(screen.getByRole('button', { name: /^Shot anfitriona/ }));
+    expect(screen.getByText('En carrito · 2')).toBeInTheDocument();
+
+    // El shot de cliente es otra forma de venta: no hereda el contador.
+    fireEvent.click(screen.getByRole('button', { name: /^Shot cliente/ }));
+    expect(screen.queryByText(/En carrito/)).not.toBeInTheDocument();
   });
 });

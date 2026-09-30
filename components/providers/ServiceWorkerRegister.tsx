@@ -43,10 +43,19 @@ export function useServiceWorker() {
           updateViaCache: 'none'
         });
 
-        if (!isMounted) {
-          await swRegistration.unregister();
-          return;
-        }
+        /*
+         * Si el efecto ya se limpió, no se toca la registración: es un recurso
+         * del **origen**, no del componente, y desregistrarla desde acá es lo
+         * que rompía el SW en dev.
+         *
+         * Con `reactStrictMode: true` el efecto corre, se limpia y vuelve a
+         * correr. El `register()` del primer efecto resolvía con `isMounted` en
+         * false y llamaba a `unregister()`, borrando la registración que el
+         * segundo efecto acababa de crear. Resultado: la página perdía el
+         * control del SW en la navegación siguiente y quedaba sin
+         * `lmr-navigation-v1` ni `lmr-api-v1`, es decir sin offline.
+         */
+        if (!isMounted) return;
 
         setRegistration(swRegistration);
         setSwReady(true);
@@ -82,14 +91,18 @@ export function useServiceWorker() {
       window.addEventListener('load', register);
     }
 
-    // Listen for controller changes (SW activated)
-    navigator.serviceWorker.addEventListener('controllerchange', () => {
+    // Listen for controller changes (SW activated). El handler se guarda para
+    // poder quitarlo: sin esto, el doble montaje de StrictMode dejaba un
+    // listener extra por cada pasada del efecto.
+    const onControllerChange = () => {
       logger.info('[SW] Controller changed — new version active');
-    });
+    };
+    navigator.serviceWorker.addEventListener('controllerchange', onControllerChange);
 
     return () => {
       isMounted = false;
       window.removeEventListener('load', register);
+      navigator.serviceWorker.removeEventListener('controllerchange', onControllerChange);
     };
   }, []);
 

@@ -13,6 +13,22 @@ import {
 import { toast } from 'sonner';
 import { useGenericFetch } from '../shared/useGenericFetch';
 
+/**
+ * Resultado de pedir el cierre.
+ *
+ * `pendiente` no es un error: el cajero no cierra la caja, pide autorización y la
+ * caja queda abierta hasta que el administrador responda el link del WhatsApp.
+ * `null` sí es un fracaso (ya avisado por toast).
+ */
+export interface CierreCajaResultado {
+  estado: 'cerrada' | 'pendiente';
+  caja: CajaWithUser | null;
+  mensaje: string;
+  /** Saldos de clientes que se descuentan del efectivo al cerrar. */
+  saldoClientesDescontado: number;
+  montoCierre: number;
+}
+
 interface UseCashRegisterReturn {
   cajas: CajaWithUser[];
   cajaActual: CajaWithUser | null;
@@ -28,7 +44,7 @@ interface UseCashRegisterReturn {
   checkCajaStatus: () => Promise<void>;
   createCaja: (data: CajaCreate) => Promise<CajaWithUser | null>;
   updateCaja: (id: number, data: CajaUpdate) => Promise<CajaWithUser | null>;
-  cerrarCaja: (data: CajaCierre) => Promise<CajaWithUser | null>;
+  cerrarCaja: (data: CajaCierre & { motivo?: string }) => Promise<CierreCajaResultado | null>;
   retirarDinero: (data: CajaRetiro) => Promise<boolean>;
   deleteCaja: (id: number) => Promise<boolean>;
 }
@@ -209,31 +225,51 @@ export const useCashRegister = (): UseCashRegisterReturn => {
   );
 
   const cerrarCaja = useCallback(
-    async (data: CajaCierre): Promise<CajaWithUser | null> => {
+    async (data: CajaCierre & { motivo?: string }): Promise<CierreCajaResultado | null> => {
       setMutationLoading(true);
       setMutationError(null);
       try {
-        const response = await fetch('/api/cashregister', {
-          method: 'PATCH',
+        // Nunca cierra directo: el endpoint decide. El administrador cierra en el
+        // acto; cualquier otro rol genera la solicitud y avisa por WhatsApp.
+        const response = await fetch('/api/cashregister/cierre', {
+          method: 'POST',
           headers: {
             'Content-Type': 'application/json'
           },
-          body: JSON.stringify(data)
+          body: JSON.stringify({ id_caja: data.id_caja, motivo: data.motivo })
         });
 
-        const result = await response.json();
+        const result = await response.json().catch(() => ({}));
 
-        if (!result.success) {
+        // 202: la solicitud quedó creada pero el WhatsApp no salió. Sigue pendiente
+        // de autorización igual, así que no se trata como error.
+        if (!response.ok && response.status !== 202) {
           throw new Error(result.message || 'Error al cerrar caja');
         }
 
-        toast.success('Caja cerrada exitosamente');
+        const payload = result.data ?? {};
+        const pendiente = payload.estado === 'pendiente';
+
+        toast.success(
+          result.message ||
+            (pendiente
+              ? 'Solicitud de cierre enviada al administrador'
+              : 'Caja cerrada exitosamente')
+        );
         await getCajas();
         await checkCajaStatus();
 
-        window.dispatchEvent(new CustomEvent('cajaClosed', { detail: result.data }));
+        if (!pendiente) {
+          window.dispatchEvent(new CustomEvent('cajaClosed', { detail: payload.caja }));
+        }
 
-        return result.data;
+        return {
+          estado: pendiente ? 'pendiente' : 'cerrada',
+          caja: payload.caja ?? null,
+          mensaje: result.message || '',
+          saldoClientesDescontado: Number(payload.saldo_clientes_descontado || 0),
+          montoCierre: Number(payload.monto_cierre_calculado ?? payload.caja?.monto_cierre ?? 0)
+        };
       } catch (error) {
         handleError(error, 'Error al cerrar caja');
         return null;

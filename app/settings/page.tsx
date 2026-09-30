@@ -6,6 +6,7 @@ import {
   Database,
   GlassWater,
   Key,
+  MessageCircle,
   Settings as SettingsIcon,
   ShieldAlert,
   Clock,
@@ -18,45 +19,79 @@ import { SettingsMaintenanceTab } from '@/components/settings/SettingsMaintenanc
 import { SettingsLogsTab } from '@/components/settings/SettingsLogsTab';
 import { SettingsAttendanceTab } from '@/components/settings/SettingsAttendanceTab';
 import { KioskDevices } from '@/components/settings/KioskDevices';
+import { BiometricDevices } from '@/components/settings/BiometricDevices';
+import { BiometricStatus } from '@/components/settings/BiometricStatus';
 import { SettingsBottleHostessCard } from '@/components/settings/SettingsBottleHostessCard';
 import { SettingsServiceLevelsCard } from '@/components/settings/SettingsServiceLevelsCard';
 import { SettingsBarTab } from '@/components/settings/SettingsBarTab';
+import { SettingsWhatsAppTab } from '@/components/settings/SettingsWhatsAppTab';
 
 export default function Settings() {
   return (
     <div className='w-full max-w-none p-4 sm:p-6 lg:p-8'>
       <Tabs defaultValue='empresa' className='w-full space-y-6'>
-        <TabsList className='flex w-full flex-wrap justify-start gap-2 bg-gray-100 dark:bg-gray-800 p-1 rounded-full'>
-          <TabsTrigger value='empresa' className='flex items-center gap-2 rounded-full'>
-            <Building2 className='h-4 w-4' />
+        <TabsList className='@container flex w-full flex-nowrap justify-start gap-1 sm:gap-2 bg-gray-100 dark:bg-gray-800 p-1 rounded-full overflow-x-auto [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden'>
+          <TabsTrigger
+            value='empresa'
+            className='flex shrink-0 items-center gap-2 rounded-full px-2.5 sm:px-3'
+          >
+            <Building2 className='h-4 w-4 hidden @min-[1100px]:block' />
             Empresa
           </TabsTrigger>
-          <TabsTrigger value='facturacion' className='flex items-center gap-2 rounded-full'>
-            <SettingsIcon className='h-4 w-4' />
+          <TabsTrigger
+            value='facturacion'
+            className='flex shrink-0 items-center gap-2 rounded-full px-2.5 sm:px-3'
+          >
+            <SettingsIcon className='h-4 w-4 hidden @min-[1100px]:block' />
             Facturación
           </TabsTrigger>
-          <TabsTrigger value='permisos' className='flex items-center gap-2 rounded-full'>
-            <Key className='h-4 w-4' />
+          <TabsTrigger
+            value='permisos'
+            className='flex shrink-0 items-center gap-2 rounded-full px-2.5 sm:px-3'
+          >
+            <Key className='h-4 w-4 hidden @min-[1100px]:block' />
             Permisos
           </TabsTrigger>
-          <TabsTrigger value='comisiones' className='flex items-center gap-2 rounded-full'>
-            <Users className='h-4 w-4' />
+          <TabsTrigger
+            value='comisiones'
+            className='flex shrink-0 items-center gap-2 rounded-full px-2.5 sm:px-3'
+          >
+            <Users className='h-4 w-4 hidden @min-[1100px]:block' />
             Comisiones
           </TabsTrigger>
-          <TabsTrigger value='bar' className='flex items-center gap-2 rounded-full'>
-            <GlassWater className='h-4 w-4' />
+          <TabsTrigger
+            value='bar'
+            className='flex shrink-0 items-center gap-2 rounded-full px-2.5 sm:px-3'
+          >
+            <GlassWater className='h-4 w-4 hidden @min-[1100px]:block' />
             Bar
           </TabsTrigger>
-          <TabsTrigger value='mantenimiento' className='flex items-center gap-2 rounded-full'>
-            <Database className='h-4 w-4' />
+          <TabsTrigger
+            value='whatsapp'
+            className='flex shrink-0 items-center gap-2 rounded-full px-2.5 sm:px-3'
+          >
+            <MessageCircle className='h-4 w-4 hidden @min-[1100px]:block' />
+            WhatsApp
+          </TabsTrigger>
+          <TabsTrigger
+            value='mantenimiento'
+            className='flex shrink-0 items-center gap-2 rounded-full px-2.5 sm:px-3'
+          >
+            <Database className='h-4 w-4 hidden @min-[1100px]:block' />
             Mantenimiento
           </TabsTrigger>
-          <TabsTrigger value='logs' className='flex items-center gap-2 rounded-full'>
-            <ShieldAlert className='h-4 w-4' />
+          <TabsTrigger
+            value='logs'
+            className='flex shrink-0 items-center gap-2 rounded-full px-2.5 sm:px-3'
+          >
+            <ShieldAlert className='h-4 w-4 hidden @min-[1100px]:block' />
             Logs
           </TabsTrigger>
-          <TabsTrigger value='asistencia' className='flex items-center gap-2 rounded-full'>
-            <Clock className='h-4 w-4' />
+          <TabsTrigger
+            value='asistencia'
+            className='flex shrink-0 items-center gap-2 rounded-full px-2.5 sm:px-3'
+          >
+            <Clock className='h-4 w-4 hidden @min-[1100px]:block' />
             Asistencia
           </TabsTrigger>
         </TabsList>
@@ -81,6 +116,10 @@ export default function Settings() {
           <SettingsBarTab />
         </TabsContent>
 
+        <TabsContent value='whatsapp'>
+          <SettingsWhatsAppTab />
+        </TabsContent>
+
         <TabsContent value='mantenimiento'>
           <SettingsMaintenanceTab />
         </TabsContent>
@@ -91,6 +130,8 @@ export default function Settings() {
 
         <TabsContent value='asistencia' className='flex flex-col gap-6'>
           <SettingsAttendanceTab />
+          <BiometricStatus />
+          <BiometricDevices />
           <KioskDevices />
         </TabsContent>
       </Tabs>

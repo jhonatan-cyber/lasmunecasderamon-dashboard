@@ -1,22 +1,77 @@
 import twilio from 'twilio';
+import dotenv from 'dotenv';
+import path from 'path';
+import { Client } from 'pg';
 
-const accountSid = process.env.TWILIO_ACCOUNT_SID;
-const authToken = process.env.TWILIO_AUTH_TOKEN;
-const whatsappNumber =
-  process.env.TWILIO_WHATSAPP_NUMBER?.replace('whatsapp:', '') || '+14155238886';
-const adminWhatsApp = process.env.ADMIN_WHATSAPP_NUMBER?.replace('whatsapp:', '') || '+56987904824';
+dotenv.config({ path: path.join(__dirname, '..', '.env') });
 
-if (!accountSid || !authToken) {
-  console.error('❌ Faltan TWILIO_ACCOUNT_SID o TWILIO_AUTH_TOKEN en .env');
-  process.exit(1);
+const CLAVES = [
+  'twilio_account_sid',
+  'twilio_auth_token',
+  'twilio_whatsapp_number',
+  'admin_whatsapp'
+] as const;
+
+const limpiar = (valor: string | undefined | null) => (valor || '').trim();
+
+/**
+ * Misma regla que en runtime (lib/business/twilioConfig.ts): la base manda y el
+ * `.env` entra cuando el campo está vacío o la base no responde.
+ */
+async function leerConfig() {
+  let db: Record<string, string> = {};
+  try {
+    const client = new Client({
+      host: process.env.DB_HOST,
+      port: Number(process.env.DB_PORT || 5432),
+      database: process.env.DB_NAME,
+      user: process.env.DB_USER,
+      password: process.env.DB_PASSWORD
+    });
+    await client.connect();
+    try {
+      const { rows } = await client.query(
+        'SELECT clave, valor FROM configuraciones WHERE clave = ANY($1)',
+        [[...CLAVES]]
+      );
+      db = Object.fromEntries(rows.map(row => [row.clave as string, limpiar(row.valor as string)]));
+    } finally {
+      await client.end();
+    }
+  } catch (error) {
+    console.warn(
+      `⚠️  No se pudo leer configuraciones de la base (${error instanceof Error ? error.message : error}); usando .env.`
+    );
+  }
+
+  const accountSid = db.twilio_account_sid || limpiar(process.env.TWILIO_ACCOUNT_SID);
+  const authToken = db.twilio_auth_token || limpiar(process.env.TWILIO_AUTH_TOKEN);
+  const whatsappNumber = (
+    db.twilio_whatsapp_number ||
+    limpiar(process.env.TWILIO_WHATSAPP_NUMBER) ||
+    '+14155238886'
+  ).replace('whatsapp:', '');
+  const adminWhatsApp = (db.admin_whatsapp || limpiar(process.env.ADMIN_WHATSAPP_NUMBER)).replace(
+    'whatsapp:',
+    ''
+  );
+
+  return { accountSid, authToken, whatsappNumber, adminWhatsApp };
 }
 
-const client = twilio(accountSid, authToken);
-
 async function testWhatsApp() {
+  const { accountSid, authToken, whatsappNumber, adminWhatsApp } = await leerConfig();
+
   console.log('📱 Probando envío de WhatsApp...');
   console.log(`   Desde: ${whatsappNumber}`);
   console.log(`   Hacia: ${adminWhatsApp}`);
+
+  if (!accountSid || !authToken) {
+    console.error('❌ Faltan TWILIO_ACCOUNT_SID o TWILIO_AUTH_TOKEN (base de datos o .env)');
+    process.exit(1);
+  }
+
+  const client = twilio(accountSid, authToken);
 
   try {
     const message = await client.messages.create({

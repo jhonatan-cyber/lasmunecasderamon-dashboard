@@ -19,9 +19,11 @@ import { CajaWithUser, CajaCierre } from '@/types/caja';
 import { getNowInBusinessTimezone } from '@/lib/business/timezoneService';
 import { useUsers } from '@/hooks/personal';
 import { useCurrentUser } from '@/hooks/auth/useCurrentUser';
+import type { CierreCajaResultado } from '@/hooks/caja/useCashRegister';
 import { formatCurrencyCLP } from '@/lib/utils/formatters';
 import { ClientesSaldoList } from '@/components/caja/ClientesSaldoList';
-import { Loader2, Users } from 'lucide-react';
+import { montoCierreCaja } from '@/lib/business/cajaEfectivo';
+import { Loader2, Users, Clock } from 'lucide-react';
 
 const getDiaSemana = (fecha: string): string => {
   const dias = ['Domingo', 'Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado'];
@@ -33,7 +35,11 @@ interface CerrarCajaDialogProps {
   caja: CajaWithUser | null;
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  onCerrarCaja: (data: CajaCierre) => Promise<void>;
+  /**
+   * El cajero no cierra la caja: pide el cierre. El endpoint decide si se cierra
+   * en el acto (administrador) o si queda pendiente de autorización por WhatsApp.
+   */
+  onCerrarCaja: (data: CajaCierre) => Promise<CierreCajaResultado | null>;
   loading?: boolean;
 }
 
@@ -53,6 +59,7 @@ export const CerrarCajaDialog = ({
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [clientesSaldo, setClientesSaldo] = useState<any[]>([]);
   const [loadingClientesSaldo, setLoadingClientesSaldo] = useState(false);
+  const [pendiente, setPendiente] = useState<CierreCajaResultado | null>(null);
 
   const { users, isLoading: usersLoading } = useUsers();
   const { user: currentUser, loading: currentUserLoading } = useCurrentUser();
@@ -91,9 +98,30 @@ export const CerrarCajaDialog = ({
     };
   }, [open]);
 
+  useEffect(() => {
+    if (!open) setPendiente(null);
+  }, [open]);
+
+  /** El administrador cierra en el acto; el resto pide autorización por WhatsApp. */
+  const esAdmin = (currentUser?.role || '').toLowerCase() === 'administrador';
+
   const validateForm = (): boolean => {
     return true;
   };
+
+  /**
+   * Saldos prepago que los clientes todavía tienen cargados. No están en el cajón
+   * (se cobraron en un turno anterior), así que el cierre los descuenta del
+   * efectivo: sin restarlos, el arqueo da faltante por plata que nunca estuvo ahí.
+   */
+  const saldoClientesPendiente = (clientesSaldo || []).reduce(
+    (sum, cliente) => sum + Number(cliente?.saldo || 0),
+    0
+  );
+
+  // Misma resta que tarjeta, detalle y monto de cierre del repositorio: la fórmula
+  // vive en `lib/business/cajaEfectivo`, acá solo se aportan los saldos leídos de clientes.
+  const montoCierrePrevisto = montoCierreCaja(caja, saldoClientesPendiente);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -108,29 +136,24 @@ export const CerrarCajaDialog = ({
     }
 
     try {
-      const devoluciones = (caja.devoluciones as number) || 0;
-      const montoCierreCalculado =
-        (caja.monto_apertura || 0) +
-        (caja.efectivo || 0) +
-        (caja.tarjeta || 0) +
-        (caja.transferencia || 0) -
-        devoluciones;
-
       const dataToSend = {
         ...formData,
-        monto_cierre: Number(montoCierreCalculado) || 0,
+        monto_cierre: Number(montoCierrePrevisto) || 0,
         fecha_cierre: getNowInBusinessTimezone()
       } as CajaCierre & { monto_cierre: number };
 
-      await onCerrarCaja(dataToSend);
-      onOpenChange(false);
-      setFormData({
-        id_caja: 0,
-        usuario_id_cierre: 0,
-        fecha_cierre: getNowInBusinessTimezone(),
-        monto_cierre: 0
-      });
-      setErrors({});
+      const resultado = await onCerrarCaja(dataToSend);
+
+      // Sin autorización la caja sigue abierta: el modal no se cierra en silencio,
+      // muestra que quedó esperando al administrador.
+      if (resultado?.estado === 'pendiente') {
+        setPendiente(resultado);
+        return;
+      }
+
+      if (resultado?.estado === 'cerrada') {
+        handleClose();
+      }
     } catch (error) {
       logger.captureException(error, { context: 'CerrarCajaDialog:cerrarCaja' });
     }
@@ -138,6 +161,7 @@ export const CerrarCajaDialog = ({
 
   const handleClose = () => {
     onOpenChange(false);
+    setPendiente(null);
     setFormData({
       id_caja: 0,
       usuario_id_cierre: 0,
@@ -159,77 +183,121 @@ export const CerrarCajaDialog = ({
         </DialogHeader>
 
         <div className='flex-1 overflow-y-auto px-6 py-4'>
-          <div className='space-y-4'>
-            {}
-            <div className='bg-gray-50 p-1 px-2  rounded-lg space-y-2'>
-              <h4 className='font-medium text-sm'>Resumen de la caja:</h4>
-              <div className='grid grid-cols-2 gap-2 text-sm'>
-                <div>
-                  <span className='text-gray-500'>Apertura:</span>
-                  <span className='ml-2 mr-2 font-medium'>
-                    {formatCurrencyCLP(caja.monto_apertura)}
-                  </span>
+          {pendiente ? (
+            <div className='space-y-4'>
+              <div className='bg-amber-50 dark:bg-amber-900/10 border border-amber-200 dark:border-amber-800 rounded-2xl p-5 space-y-3'>
+                <div className='flex items-center gap-2'>
+                  <Clock className='w-5 h-5 text-amber-600' />
+                  <h4 className='font-bold text-amber-800 dark:text-amber-200'>
+                    Cierre pendiente de autorización
+                  </h4>
                 </div>
-                <div>
-                  <span className='text-gray-500'>Ventas:</span>
-                  <span className='ml-2 mr-2 font-medium text-green-600'>
-                    {formatCurrencyCLP(caja.ventas)}
-                  </span>
-                </div>
-                <div>
-                  <span className='text-gray-500'>Efectivo:</span>
-                  <span className='ml-2 mr-2 font-medium'>{formatCurrencyCLP(caja.efectivo)}</span>
-                </div>
-                <div>
-                  <span className='text-gray-500'>Tarjeta:</span>
-                  <span className='ml-2 mr-2 font-medium'>{formatCurrencyCLP(caja.tarjeta)}</span>
-                </div>
-                <div>
-                  <span className='text-gray-500'>Transferencia:</span>
-                  <span className='ml-2 mr-2 font-medium text-sm'>
-                    {formatCurrencyCLP(caja.transferencia)}
-                  </span>
-                </div>
-                <div>
-                  <span className='text-gray-500'>Servicios:</span>
-                  <span className='ml-2 mr-2 font-medium'>{formatCurrencyCLP(caja.servicios)}</span>
-                </div>
-                {caja.devoluciones > 0 && (
-                  <div>
-                    <span className='text-gray-500'>Devoluciones:</span>
-                    <span className='ml-2 mr-2 font-medium text-red-600'>
-                      -{formatCurrencyCLP(caja.devoluciones)}
+                <p className='text-sm text-amber-800/90 dark:text-amber-200/90'>
+                  La caja sigue <strong>abierta</strong>. Se envió el pedido por WhatsApp al
+                  administrador con el link para autorizar; en cuanto responda, la caja se cierra
+                  automáticamente.
+                </p>
+                <div className='rounded-xl bg-white/70 dark:bg-slate-900/40 p-3 space-y-1 text-sm'>
+                  <div className='flex justify-between'>
+                    <span className='text-slate-500'>Saldos de clientes a descontar:</span>
+                    <span className='font-bold'>
+                      {formatCurrencyCLP(pendiente.saldoClientesDescontado)}
                     </span>
                   </div>
-                )}
-                <div className='col-span-2 border-t pt-2 mt-1'>
-                  <span className='text-gray-900 font-bold uppercase text-[10px] tracking-wider'>
-                    Total a Cerrar:
-                  </span>
-                  <span className='ml-2 font-black text-lg text-red-600'>
-                    {formatCurrencyCLP(
-                      (caja.monto_apertura || 0) +
-                        (caja.efectivo || 0) +
-                        (caja.tarjeta || 0) +
-                        (caja.transferencia || 0) -
-                        (caja.devoluciones || 0)
-                    )}
-                  </span>
+                  <div className='flex justify-between'>
+                    <span className='text-slate-500'>Monto de cierre previsto:</span>
+                    <span className='font-bold'>{formatCurrencyCLP(pendiente.montoCierre)}</span>
+                  </div>
+                </div>
+                <p className='text-xs text-amber-700 dark:text-amber-300'>
+                  El monto se recalcula al autorizar, con los saldos que los clientes tengan
+                  cargados en ese momento.
+                </p>
+                <p className='text-xs text-amber-700/90 dark:text-amber-300/90'>
+                  ¿No responde? Si nadie contesta, el sistema vuelve a avisar solo cada pocos
+                  minutos; «Reenviar aviso», en la tarjeta de la caja, lo manda en el momento. Y si
+                  sigue sin respuesta, ahí mismo aparece «Pedir cierre de nuevo» para reabrir el
+                  pedido desde cero.
+                </p>
+              </div>
+            </div>
+          ) : (
+            <div className='space-y-4'>
+              {}
+              <div className='bg-gray-50 p-1 px-2  rounded-lg space-y-2'>
+                <h4 className='font-medium text-sm'>Resumen de la caja:</h4>
+                <div className='grid grid-cols-2 gap-2 text-sm'>
+                  <div>
+                    <span className='text-gray-500'>Apertura:</span>
+                    <span className='ml-2 mr-2 font-medium'>
+                      {formatCurrencyCLP(caja.monto_apertura)}
+                    </span>
+                  </div>
+                  <div>
+                    <span className='text-gray-500'>Ventas:</span>
+                    <span className='ml-2 mr-2 font-medium text-green-600'>
+                      {formatCurrencyCLP(caja.ventas)}
+                    </span>
+                  </div>
+                  <div>
+                    <span className='text-gray-500'>Efectivo:</span>
+                    <span className='ml-2 mr-2 font-medium'>
+                      {formatCurrencyCLP(caja.efectivo)}
+                    </span>
+                  </div>
+                  <div>
+                    <span className='text-gray-500'>Tarjeta:</span>
+                    <span className='ml-2 mr-2 font-medium'>{formatCurrencyCLP(caja.tarjeta)}</span>
+                  </div>
+                  <div>
+                    <span className='text-gray-500'>Transferencia:</span>
+                    <span className='ml-2 mr-2 font-medium text-sm'>
+                      {formatCurrencyCLP(caja.transferencia)}
+                    </span>
+                  </div>
+                  <div>
+                    <span className='text-gray-500'>Servicios:</span>
+                    <span className='ml-2 mr-2 font-medium'>
+                      {formatCurrencyCLP(caja.servicios)}
+                    </span>
+                  </div>
+                  {caja.devoluciones > 0 && (
+                    <div>
+                      <span className='text-gray-500'>Devoluciones:</span>
+                      <span className='ml-2 mr-2 font-medium text-red-600'>
+                        -{formatCurrencyCLP(caja.devoluciones)}
+                      </span>
+                    </div>
+                  )}
+                  <div>
+                    <span className='text-gray-500'>Saldos clientes:</span>
+                    <span className='ml-2 mr-2 font-medium text-red-600'>
+                      -{formatCurrencyCLP(saldoClientesPendiente)}
+                    </span>
+                  </div>
+                  <div className='col-span-2 border-t pt-2 mt-1'>
+                    <span className='text-gray-900 font-bold uppercase text-[10px] tracking-wider'>
+                      Total a Cerrar:
+                    </span>
+                    <span className='ml-2 font-black text-lg text-red-600'>
+                      {formatCurrencyCLP(montoCierrePrevisto)}
+                    </span>
+                  </div>
                 </div>
               </div>
-            </div>
 
-            {}
-            <div className='bg-amber-50 dark:bg-amber-900/10 border border-amber-200 dark:border-amber-800 rounded-lg p-3 space-y-2'>
-              <div className='flex items-center gap-2'>
-                <Users className='w-4 h-4 text-amber-600' />
-                <h4 className='font-medium text-sm text-amber-800 dark:text-amber-200'>
-                  Clientes con saldo prepago pendiente
-                </h4>
+              {}
+              <div className='bg-amber-50 dark:bg-amber-900/10 border border-amber-200 dark:border-amber-800 rounded-lg p-3 space-y-2'>
+                <div className='flex items-center gap-2'>
+                  <Users className='w-4 h-4 text-amber-600' />
+                  <h4 className='font-medium text-sm text-amber-800 dark:text-amber-200'>
+                    Clientes con saldo prepago pendiente
+                  </h4>
+                </div>
+                <ClientesSaldoList clientes={clientesSaldo} loading={loadingClientesSaldo} />
               </div>
-              <ClientesSaldoList clientes={clientesSaldo} loading={loadingClientesSaldo} />
             </div>
-          </div>
+          )}
         </div>
 
         <div className='shrink-0 border-t px-6 py-4'>
@@ -243,19 +311,27 @@ export const CerrarCajaDialog = ({
                 onClick={handleClose}
                 disabled={loading}
               >
-                Cancelar
+                {pendiente ? 'Entendido' : 'Cancelar'}
               </Button>
               <Button
                 type='submit'
-                disabled={loading || usersLoading}
+                disabled={loading || usersLoading || !!pendiente}
                 size='sm'
                 variant='default'
-                className='rounded-full px-8 bg-red-600 text-white hover:bg-red-700 transition-all hover:scale-105'
+                className={`rounded-full px-8 bg-red-600 text-white hover:bg-red-700 transition-all hover:scale-105 ${
+                  pendiente ? 'hidden' : ''
+                }`}
               >
                 {loading && <Loader2 className='h-4 w-4 mr-2 animate-spin' />}
-                Cerrar Caja
+                {esAdmin ? 'Cerrar Caja' : 'Pedir Cierre'}
               </Button>
             </div>
+            {!esAdmin && !pendiente && (
+              <p className='text-[11px] text-center text-slate-500 dark:text-slate-400 mt-3'>
+                Se enviará el pedido por WhatsApp al administrador. La caja sigue abierta hasta que
+                autorice.
+              </p>
+            )}
           </form>
         </div>
       </DialogContent>

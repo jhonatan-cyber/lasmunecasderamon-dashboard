@@ -1,0 +1,28 @@
+import { NextResponse } from 'next/server';
+import { withRoute } from '@/lib/api/withRoute';
+import { UserService } from '@/lib/services/UserService';
+
+/**
+ * Enrolamiento del lector de la puerta para una persona.
+ *
+ * La cara y la huella se cargan en el menú del equipo; acá se guarda el codigo
+ * que el equipo va a reportar y que modalidades quedaron listas. El GET tambien
+ * devuelve la ultima verificacion recibida, para confirmar que el codigo funciona.
+ */
+export const GET = withRoute(
+  { auth: true, module: 'users', action: 'read' },
+  async (_request: Request, { params }: { params: Promise<{ id: string }> }) => {
+    const id = (await params).id;
+    return NextResponse.json({ success: true, data: await UserService.getBiometricStatus(id) });
+  }
+);
+
+export const PUT = withRoute(
+  { auth: true, audit: true, module: 'users', action: 'write' },
+  async (request: Request, { params }: { params: Promise<{ id: string }> }) => {
+    const id = (await params).id;
+    const body = await request.json();
+    const data = await UserService.updateBiometric(id, body);
+    return NextResponse.json({ success: true, message: 'Enrolamiento guardado', data });
+  }
+);

@@ -106,8 +106,19 @@ export function useAuthSession({
         const controller = new AbortController();
         const timeoutId = setTimeout(() => controller.abort(), 15000);
 
-        const timestamp = new Date().getTime();
-        const response = await fetch(`/api/auth/me?t=${timestamp}`, {
+        /*
+         * Sin cache-buster `?t=`.
+         *
+         * El service worker cachea por URL completa y es **network first**: en
+         * línea siempre trae el dato fresco del servidor, y sin red sirve la
+         * última respuesta buena. Con el `?t=` cada petición tenía una clave
+         * distinta, así que el cache nunca acertaba y sin conexión la sesión
+         * no se resolvía: el guard quedaba para siempre en «Verificando
+         * permisos...». El `?t=` no aporta nada igual: `/api/*` responde con
+         * `Cache-Control: no-store` y acá el fetch va con `cache: 'no-store'`,
+         * así que la caché HTTP no puede servir una respuesta vieja.
+         */
+        const response = await fetch('/api/auth/me', {
           method: 'GET',
           headers: {
             'Content-Type': 'application/json',

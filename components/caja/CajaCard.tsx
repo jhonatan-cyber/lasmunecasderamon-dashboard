@@ -2,9 +2,21 @@
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { CajaWithUser } from '@/types/caja';
-import { Eye, Lock, Wallet, ArrowDownCircle, User, Calendar, Hash } from 'lucide-react';
+import {
+  Eye,
+  Lock,
+  Wallet,
+  ArrowDownCircle,
+  User,
+  Calendar,
+  Clock,
+  Send,
+  Loader2,
+  RotateCcw
+} from 'lucide-react';
 import { formatCurrencyCLP } from '@/lib/utils/formatters';
-import { formatLongDateEs } from '@/lib/utils/calendarUtils';
+import { formatDateTimeLabel, formatLongDateEs } from '@/lib/utils/calendarUtils';
+import { totalCaja } from '@/lib/business/cajaEfectivo';
 
 const capitalize = (text: string) => text.charAt(0).toUpperCase() + text.slice(1);
 
@@ -13,6 +25,14 @@ interface CajaCardProps {
   onViewDetails: (caja: CajaWithUser) => void;
   onCloseCaja: (caja: CajaWithUser) => void;
   onRetirar?: (caja: CajaWithUser) => void;
+  /** Vuelve a mandar al administrador el aviso del cierre pendiente. */
+  onResendAviso?: (caja: CajaWithUser) => void;
+  /** El reenvío de **esta** caja está en vuelo. */
+  reenviandoAviso?: boolean;
+  /** Pide el cierre de nuevo: el administrador no respondió al pedido anterior. */
+  onReabrirCierre?: (caja: CajaWithUser) => void;
+  /** El segundo pedido de **esta** caja está en vuelo. */
+  reabriendoCierre?: boolean;
   canCloseCaja?: boolean;
   canRetirar?: boolean;
   canViewDetails?: boolean;
@@ -49,6 +69,10 @@ export const CajaCard = ({
   onViewDetails,
   onCloseCaja,
   onRetirar,
+  onResendAviso,
+  reenviandoAviso = false,
+  onReabrirCierre,
+  reabriendoCierre = false,
   canCloseCaja = true,
   canRetirar = true,
   canViewDetails = true
@@ -56,11 +80,25 @@ export const CajaCard = ({
   const estadoInfo = getEstadoInfo(caja.estado);
   const Icon = estadoInfo.icon;
 
-  const efectivoBase = Number(caja.monto_apertura || 0) + Number(caja.efectivo || 0);
-  const totalEgresos =
-    Number(caja.devoluciones || 0) + Number(caja.anticipo || 0) + Number(caja.retiro_total || 0);
-  const efectivoNeto = efectivoBase - totalEgresos;
-  const balanceActual = efectivoNeto + Number(caja.tarjeta || 0) + Number(caja.transferencia || 0);
+  // Cierre pedido y esperando al administrador: la caja sigue abierta, así que sin
+  // este aviso la tarjeta se ve igual que un turno que nadie pidió cerrar.
+  const cierrePendiente = caja.cierre_pendiente === true;
+  const { time: horaSolicitud, date: fechaSolicitud } = caja.cierre_solicitado_en
+    ? formatDateTimeLabel(caja.cierre_solicitado_en)
+    : { time: '', date: '' };
+
+  // El último aviso se sella al pedir el cierre y en cada reenvío. Si es distinto del
+  // momento en que se pidió, hubo reenvíos: decirlo evita que el cajero insista a ciegas.
+  const huboReenvio =
+    !!caja.cierre_ultimo_aviso_en &&
+    !!caja.cierre_solicitado_en &&
+    caja.cierre_ultimo_aviso_en !== caja.cierre_solicitado_en;
+  const horaUltimoAviso = huboReenvio
+    ? formatDateTimeLabel(caja.cierre_ultimo_aviso_en as string).time
+    : '';
+
+  // Un solo cálculo del cajón, compartido con el detalle y con el diálogo de retiro.
+  const balanceActual = totalCaja(caja);
 
   return (
     <Card className='group border border-slate-100 dark:border-white/10 shadow-xs hover:shadow-xl transition-all duration-300 bg-white dark:bg-slate-900/40 backdrop-blur-xs rounded-4xl overflow-hidden'>
@@ -84,6 +122,67 @@ export const CajaCard = ({
             {estadoInfo.label}
           </Badge>
         </div>
+
+        {cierrePendiente && (
+          <div className='mt-4 flex items-start gap-2 rounded-2xl border border-amber-200 bg-amber-50 px-3 py-2.5 dark:border-amber-500/30 dark:bg-amber-500/10'>
+            <Clock className='w-4 h-4 mt-0.5 shrink-0 text-amber-600 dark:text-amber-400' />
+            <div className='space-y-0.5'>
+              <p className='text-[10px] font-black uppercase tracking-wider text-amber-700 dark:text-amber-400'>
+                Cierre pendiente
+              </p>
+              <p className='text-[11px] font-medium leading-tight text-amber-800 dark:text-amber-300'>
+                Pedido por {caja.cierre_solicitado_por || 'el cajero'}
+                {horaSolicitud ? ` a las ${horaSolicitud} (${fechaSolicitud})` : ''}. La caja sigue
+                abierta hasta que el administrador autorice.
+              </p>
+              {huboReenvio && (
+                <p className='text-[10px] font-semibold uppercase tracking-wider text-amber-700/80 dark:text-amber-400/80'>
+                  Último aviso reenviado: {horaUltimoAviso}
+                </p>
+              )}
+              {onResendAviso && (
+                <Button
+                  type='button'
+                  size='sm'
+                  variant='outline'
+                  onClick={() => onResendAviso(caja)}
+                  disabled={reenviandoAviso}
+                  className='mt-1 h-7 rounded-full border-amber-300 bg-white/70 px-3 text-[11px] font-bold text-amber-800 hover:bg-amber-100 hover:text-amber-900 dark:border-amber-500/40 dark:bg-transparent dark:text-amber-300 dark:hover:bg-amber-500/20'
+                >
+                  {reenviandoAviso ? (
+                    <Loader2 className='w-3 h-3 mr-1.5 animate-spin' />
+                  ) : (
+                    <Send className='w-3 h-3 mr-1.5' />
+                  )}
+                  {reenviandoAviso ? 'Reenviando…' : 'Reenviar aviso'}
+                </Button>
+              )}
+              {caja.cierre_estancado && onReabrirCierre && (
+                <div className='mt-2 space-y-1 border-t border-amber-200/70 pt-2 dark:border-amber-500/20'>
+                  <p className='text-[11px] font-medium leading-tight text-amber-800 dark:text-amber-300'>
+                    Nadie contestó el cierre: puedes pedirlo de nuevo y el aviso al administrador
+                    vuelve a salir.
+                  </p>
+                  <Button
+                    type='button'
+                    size='sm'
+                    variant='outline'
+                    onClick={() => onReabrirCierre(caja)}
+                    disabled={reabriendoCierre}
+                    className='mt-1 h-7 rounded-full border-amber-300 bg-white/70 px-3 text-[11px] font-bold text-amber-800 hover:bg-amber-100 hover:text-amber-900 dark:border-amber-500/40 dark:bg-transparent dark:text-amber-300 dark:hover:bg-amber-500/20'
+                  >
+                    {reabriendoCierre ? (
+                      <Loader2 className='w-3 h-3 mr-1.5 animate-spin' />
+                    ) : (
+                      <RotateCcw className='w-3 h-3 mr-1.5' />
+                    )}
+                    {reabriendoCierre ? 'Pidiendo…' : 'Pedir cierre de nuevo'}
+                  </Button>
+                </div>
+              )}
+            </div>
+          </div>
+        )}
       </CardHeader>
 
       <CardContent className='space-y-6 px-6 pb-8'>
@@ -182,7 +281,7 @@ export const CajaCard = ({
                   className='rounded-2xl h-11 border-slate-200 dark:border-white/10 hover:bg-rose-50 dark:hover:bg-rose-500/10 hover:text-rose-700 dark:hover:text-rose-400 transition-all hover:scale-[1.02] active:scale-95 font-bold'
                 >
                   <Lock className='w-4 h-4 mr-2' />
-                  Cerrar
+                  {cierrePendiente ? 'Cierre pedido' : 'Cerrar'}
                 </Button>
               )}
             </div>

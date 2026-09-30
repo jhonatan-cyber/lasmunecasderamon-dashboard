@@ -22,6 +22,7 @@ import {
   MapPin,
   DollarSign,
   Coins,
+  Fingerprint,
   Info
 } from 'lucide-react';
 import { FormFieldWithIcon } from './FormFieldWithIcon';
@@ -299,6 +300,48 @@ export function UserFormModal({
                   formattedValue={descuento.formattedValue}
                   onValueChange={descuento.handleChange}
                 />
+              </div>
+
+              <div className='rounded-2xl border border-gray-200 dark:border-gray-700 p-4 space-y-4'>
+                <div className='flex items-center gap-2'>
+                  <Fingerprint className='h-4 w-4 text-gray-600 dark:text-gray-300' />
+                  <p className='text-sm font-semibold'>
+                    Asistencia biométrica (lector de la puerta)
+                  </p>
+                </div>
+                <p className='text-xs text-muted-foreground'>
+                  La huella y la cara se cargan en el menú del equipo, no acá. Este código es el que
+                  el lector reporta al verificar y con él se registra la asistencia. Todo es
+                  opcional: al guardar, si hay código, te vamos a pedir enrolar a la persona en el
+                  equipo.
+                </p>
+
+                <FormFieldWithIcon
+                  control={form.control as any}
+                  name='biometrico_codigo'
+                  label='Código en el equipo'
+                  placeholder='Ej: 1001'
+                  icon={Fingerprint}
+                />
+
+                <div className='flex flex-wrap gap-6'>
+                  <label className='flex items-center gap-2 text-sm text-gray-700 dark:text-gray-200'>
+                    <input
+                      type='checkbox'
+                      className='h-4 w-4 rounded border-input'
+                      {...form.register('biometrico_huella')}
+                    />
+                    Huella cargada en el equipo
+                  </label>
+                  <label className='flex items-center gap-2 text-sm text-gray-700 dark:text-gray-200'>
+                    <input
+                      type='checkbox'
+                      className='h-4 w-4 rounded border-input'
+                      {...form.register('biometrico_facial')}
+                    />
+                    Cara cargada en el equipo
+                  </label>
+                </div>
               </div>
             </form>
           </FormProvider>

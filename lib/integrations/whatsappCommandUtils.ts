@@ -1,11 +1,5 @@
 export type WhatsAppSolicitudAction =
-  | 'si'
-  | 'no'
-  | 'confirmar'
-  | 'rechazar'
-  | 'confirmo'
-  | 'rechazo'
-  | 'aprobar';
+  'si' | 'no' | 'confirmar' | 'rechazar' | 'confirmo' | 'rechazo' | 'aprobar';
 
 export function normalizeWhatsAppMessage(body: string) {
   return body.toLowerCase().trim();
@@ -39,6 +33,22 @@ export function parseGratificacionCommand(message: string) {
     action: match[1].toLowerCase() as 'aprobar' | 'rechazar',
     gratificacionId: match[2]
   };
+}
+
+/**
+ * `cierre si` / `cierre no`: autoriza o rechaza el cierre de caja pendiente.
+ *
+ * Lleva palabra propia porque un "SI" suelto ya significa otra cosa cuando hay
+ * anulaciones esperando: ahí responde a la lista numerada de solicitudes.
+ */
+export function parseCierreCajaCommand(
+  message: string
+): { action: 'autorizar' | 'rechazar' } | null {
+  const match = message.match(/^cierre\s+(si|no|confirmar|rechazar|aprobar)$/i);
+  if (!match) return null;
+
+  const accion = match[1].toLowerCase();
+  return { action: accion === 'no' || accion === 'rechazar' ? 'rechazar' : 'autorizar' };
 }
 
 export function isApprovalAction(action: WhatsAppSolicitudAction) {

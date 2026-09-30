@@ -49,6 +49,11 @@ export const PUBLIC_PATHS: string[] = [
   ROUTES.CONFIRMAR_ANULACION_CUENTA,
   ROUTES.CONFIRMAR_ANTICIPO,
   ROUTES.CONFIRMAR_GRATIFICACION,
+  // Cierre de caja: el administrador autoriza desde el link del WhatsApp. La
+  // creacion de la solicitud (POST /api/cashregister/cierre) NO es publica.
+  ROUTES.CONFIRMAR_CIERRE_CAJA,
+  '/api/cashregister/solicitud-cierre',
+  '/api/cashregister/procesar-cierre',
   '/api/auth/login',
   '/api/auth/reset-password',
   // '/api/login' y '/api/logout' retirados: rutas muertas (el front usa /api/auth/*).
@@ -93,6 +98,12 @@ export const PUBLIC_PATHS: string[] = [
   '/offline',
   '/change-password',
   '/api/auth/change-password',
+  // Lector biométrico de la puerta (ZKTeco ADMS y Dahua push): su credencial es
+  // el serial de alta en `biometric_devices`, que se comprueba dentro del handler.
+  // Van acá y no en KIOSK_DEVICE_APIS porque los equipos hablan HTTP plano, sin
+  // cookie ni sesión, y el handshake de ZKTeco repite cada pocos segundos.
+  '/iclock',
+  '/dahua',
   '/swagger.json',
   '/notification.mp3',
   '/placeholder-logo.png',

@@ -72,3 +72,45 @@ describe('cajaExportUtils · shots del cierre', () => {
     );
   });
 });
+
+/**
+ * El cierre lista lo que salió del negocio, pero `efectivo` ya viene neto de retiros y
+ * anticipos: si el listado los dejara como egresos por descontar, quien lea el PDF creería
+ * que el total real los resta dos veces.
+ */
+describe('cajaExportUtils · egresos ya descontados', () => {
+  const conEgresos = baseContext({
+    caja: {
+      id_caja: 'caja-1',
+      monto_apertura: 10000,
+      servicios: 0,
+      devoluciones: 5000,
+      anticipo: 60000,
+      fecha_apertura: '2026-09-28 10:00:00',
+      saldo_clientes_descontado: 12000
+    },
+    retiros: [{ monto: 40000 }]
+  });
+
+  it('marca anticipos y retiros como ya salidos del efectivo', () => {
+    const html = generatePrintContent(conEgresos);
+
+    expect(html).toContain('Anticipos (ya descontados del efectivo)');
+    expect(html).toContain('Retiros (ya descontados del efectivo)');
+
+    const conceptos = getPDFData(conEgresos).body.map((fila: unknown[]) => fila[1]);
+    expect(conceptos).toContain('Anticipos (ya descontados del efectivo)');
+    expect(conceptos).toContain('Retiros (ya descontados del efectivo)');
+  });
+
+  it('lista los saldos de clientes, que sí siguen por descontar', () => {
+    const conceptos = getPDFData(conEgresos).body.map((fila: unknown[]) => fila[1]);
+
+    expect(conceptos).toContain('Saldos de clientes descontados');
+    // Sin saldos no aparece la fila: no hay nada que descontar.
+    const sinSaldos = baseContext({ retiros: [{ monto: 40000 }] });
+    expect(getPDFData(sinSaldos).body.map((fila: unknown[]) => fila[1])).not.toContain(
+      'Saldos de clientes descontados'
+    );
+  });
+});

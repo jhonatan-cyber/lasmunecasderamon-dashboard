@@ -1,34 +1,22 @@
-const twilio = require('twilio');
-const dotenv = require('dotenv');
-const path = require('path');
-
-dotenv.config({ path: path.join(__dirname, '..', '.env') });
-
-const accountSid = process.env.TWILIO_ACCOUNT_SID;
-const authToken = process.env.TWILIO_AUTH_TOKEN;
-const whatsappNumber = (process.env.TWILIO_WHATSAPP_NUMBER || '+14155238886').replace(
-  'whatsapp:',
-  ''
-);
-const adminWhatsApp = (process.env.ADMIN_WHATSAPP_NUMBER || '+56987904824').replace(
-  'whatsapp:',
-  ''
-);
-
-if (!accountSid || !authToken) {
-  console.error('❌ Faltan TWILIO_ACCOUNT_SID o TWILIO_AUTH_TOKEN en .env');
-  process.exit(1);
-}
-
-const client = twilio(accountSid, authToken);
+const { loadTwilioConfig } = require('./lib/twilio-config');
 
 async function testAnulacionFlow() {
-  console.log('📱 Probando flujo de anulación de venta...');
-  console.log(`   Desde: ${whatsappNumber}`);
-  console.log(`   Hacia (raw): ${adminWhatsApp}`);
+  const { client, whatsappNumber, adminWhatsApp, origen } = await loadTwilioConfig();
 
-  const numeroAdmin = adminWhatsApp;
-  const numeroFormateado = `+${numeroAdmin.replace(/^\+/, '')}`;
+  console.log('📱 Probando flujo de anulación de venta...');
+  console.log(`   Desde: ${whatsappNumber} (${origen.twilio_whatsapp_number})`);
+  console.log(`   Hacia: ${adminWhatsApp} (${origen.admin_whatsapp})`);
+
+  if (!client) {
+    console.error('❌ Faltan TWILIO_ACCOUNT_SID o TWILIO_AUTH_TOKEN (base de datos o .env)');
+    process.exit(1);
+  }
+  if (!adminWhatsApp) {
+    console.error('❌ Falta el WhatsApp del administrador (base de datos o .env)');
+    process.exit(1);
+  }
+
+  const numeroFormateado = `+${adminWhatsApp.replace(/^\+/, '')}`;
   console.log(`   Hacia (formatted): ${numeroFormateado}`);
 
   const mensaje = `*SOLICITUD DE ANULACION DE VENTA*

@@ -80,7 +80,7 @@ export function CajaPaymentSummary({
             value={efectivoNeto}
             accentClass='bg-green-500/10'
             icon={<Wallet className='w-5 h-5 text-green-600 dark:text-green-400' />}
-            note='Apertura + efectivo - egresos'
+            note='Apertura + efectivo - devoluciones y saldos'
           />
           <PaymentSummaryCard
             label='Tarjeta'

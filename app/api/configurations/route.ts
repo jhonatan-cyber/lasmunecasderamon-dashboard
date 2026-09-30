@@ -2,6 +2,10 @@ import { NextResponse } from 'next/server';
 import { withRoute } from '@/lib/api/withRoute';
 import { query } from '@/lib/database/db';
 import { clearAdminWhatsAppCache } from '@/lib/business/whatsappConfig';
+import { clearTwilioConfigCache, TWILIO_CLAVES } from '@/lib/business/twilioConfig';
+
+/** Lo que el GET devuelve en vez del Auth Token real: es un secreto. */
+const AUTH_TOKEN_MASK = '••••••••••••';
 
 const VALID_CLAVES = new Set([
   'empresa_nombre',
@@ -31,8 +35,11 @@ const VALID_CLAVES = new Set([
   'shot_ml',
   'botella_ml',
   'shots_alerta',
-  'admin_whatsapp'
+  'admin_whatsapp',
+  ...TWILIO_CLAVES
 ]);
+
+const esClaveTwilio = (clave: string) => (TWILIO_CLAVES as readonly string[]).includes(clave);
 
 function validateConfig(clave: string, valor: string): string | null {
   if (!VALID_CLAVES.has(clave)) {
@@ -86,6 +93,22 @@ function validateConfig(clave: string, valor: string): string | null {
       return 'admin_whatsapp debe ser un número válido (ej: 59172419112)';
     }
   }
+  // Credenciales de Twilio: vacío = seguir usando la variable de entorno.
+  if (clave === 'twilio_account_sid' && valor) {
+    if (!/^AC[0-9a-f]{32}$/i.test(valor.trim())) {
+      return 'twilio_account_sid debe ser un Account SID de Twilio (empieza con AC y tiene 32 caracteres)';
+    }
+  }
+  if (clave === 'twilio_auth_token' && valor) {
+    if (!/^[A-Za-z0-9_\-]{16,128}$/.test(valor.trim())) {
+      return 'twilio_auth_token debe ser un Auth Token válido de Twilio (mínimo 16 caracteres)';
+    }
+  }
+  if (clave === 'twilio_whatsapp_number' && valor) {
+    if (!/^\+?\d{7,15}$/.test(valor.replace('whatsapp:', '').trim())) {
+      return 'twilio_whatsapp_number debe ser un número válido (ej: whatsapp:+14155238886)';
+    }
+  }
   return null;
 }
 
@@ -94,20 +117,22 @@ async function updateConfig(clave: string, valor: string) {
     clave
   ])) as any[];
   if (!existing) {
-    const categoria = clave.startsWith('asistencia_')
-      ? 'asistencia'
-      : clave === 'threshold_producto_caro' ||
-          clave === 'umbral_simple_hasta' ||
-          clave === 'umbral_anfitriona_desde' ||
-          clave === 'umbral_habitacion_desde'
-        ? 'comisiones'
-        : clave.startsWith('split_tarjeta_')
+    const categoria = esClaveTwilio(clave)
+      ? 'integraciones'
+      : clave.startsWith('asistencia_')
+        ? 'asistencia'
+        : clave === 'threshold_producto_caro' ||
+            clave === 'umbral_simple_hasta' ||
+            clave === 'umbral_anfitriona_desde' ||
+            clave === 'umbral_habitacion_desde'
           ? 'comisiones'
-          : clave === 'shot_ml' || clave === 'botella_ml' || clave === 'shots_alerta'
-            ? 'bar'
-            : clave === 'admin_whatsapp'
-              ? 'sistema'
-              : 'empresa';
+          : clave.startsWith('split_tarjeta_')
+            ? 'comisiones'
+            : clave === 'shot_ml' || clave === 'botella_ml' || clave === 'shots_alerta'
+              ? 'bar'
+              : clave === 'admin_whatsapp'
+                ? 'sistema'
+                : 'empresa';
     const tipo =
       clave.startsWith('asistencia_') ||
       clave === 'threshold_producto_caro' ||
@@ -160,6 +185,12 @@ export const GET = withRoute({ auth: true, access: 'authenticated', audit: true 
       value = config.valor === 'true' || config.valor === '1' || config.valor === 'yes';
     }
 
+    // El Auth Token nunca sale en claro: se devuelve enmascarado y el PUT
+    // lo ignora si llega igual (o vacío), así guardar no lo pisa.
+    if (config.clave === 'twilio_auth_token' && typeof value === 'string' && value) {
+      value = AUTH_TOKEN_MASK;
+    }
+
     grouped[config.categoria][config.clave] = value;
   }
 
@@ -186,6 +217,13 @@ export const PUT = withRoute(
       }
       for (const { clave, valor } of expanded) {
         if (!clave) continue;
+        // El Auth Token llega enmascarado (o vacío) cuando no se tocó: no pisar el guardado.
+        if (
+          clave === 'twilio_auth_token' &&
+          (!String(valor).trim() || String(valor) === AUTH_TOKEN_MASK)
+        ) {
+          continue;
+        }
         const error = validateConfig(clave, String(valor));
         if (error) {
           errors.push(error);
@@ -194,6 +232,7 @@ export const PUT = withRoute(
         await updateConfig(clave, String(valor));
       }
       if (body.configs.some((c: any) => c.clave === 'admin_whatsapp')) clearAdminWhatsAppCache();
+      if (body.configs.some((c: any) => esClaveTwilio(c.clave))) clearTwilioConfigCache();
       return NextResponse.json({
         success: errors.length === 0,
         message:
@@ -210,6 +249,14 @@ export const PUT = withRoute(
       return NextResponse.json({ success: false, error: 'Clave es requerida' }, { status: 400 });
     }
 
+    // Auth Token sin cambios (enmascarado o vacío): no hay nada que guardar.
+    if (
+      clave === 'twilio_auth_token' &&
+      (!String(valor ?? '').trim() || String(valor) === AUTH_TOKEN_MASK)
+    ) {
+      return NextResponse.json({ success: true, message: 'Configuración sin cambios' });
+    }
+
     const error = validateConfig(clave, String(valor));
     if (error) {
       return NextResponse.json({ success: false, error }, { status: 400 });
@@ -224,6 +271,7 @@ export const PUT = withRoute(
     }
 
     if (clave === 'admin_whatsapp') clearAdminWhatsAppCache();
+    if (esClaveTwilio(clave)) clearTwilioConfigCache();
 
     return NextResponse.json({ success: true, message: 'Configuración actualizada' });
   }

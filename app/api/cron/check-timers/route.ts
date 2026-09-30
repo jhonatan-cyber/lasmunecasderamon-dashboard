@@ -6,6 +6,7 @@ import { sendNotificationToAll } from '@/lib/api/sseService';
 import { getSystemTimezone, getNowInBusinessTimezone } from '@/lib/business/timezoneService';
 import { RoomManager } from '@/lib/services/RoomManager';
 import { checkWarehouseContainerAlerts } from '@/lib/business/containerAlerts';
+import { reavisarCierresPendientes } from '@/lib/business/cierreCajaRecordatorios';
 
 export const dynamic = 'force-dynamic';
 
@@ -16,6 +17,11 @@ export const GET = withPublicRoute(async () => {
   // recibir, avisa al almacén (SSE en vivo + campana + push) y si no, no hace
   // ruido. Nunca lanza, así que no puede tumbar el resto del chequeo.
   await checkWarehouseContainerAlerts();
+
+  // Cierres de caja sin respuesta: vuelve a avisar al administrador por WhatsApp de los
+  // que ya vencieron su último aviso y siguen dentro de la ventana de recordatorios, así
+  // un cierre no queda en el olvido si el cajero se fue sin insistir. Nunca lanza.
+  await reavisarCierresPendientes();
 
   const bizNow = getNowInBusinessTimezone();
   const now = new Date(bizNow.replace(' ', 'T'));

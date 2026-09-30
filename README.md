@@ -121,6 +121,11 @@ El workflow de CI/Deploy requiere estos secrets en el repositorio:
 | `NEXT_PUBLIC_BASE_URL` / `BASE_URL` | URLs del entorno.                                                            |
 | `SSH_PASSWORD`, `DB_*`, `TWILIO_*`  | Deploy al VPS (ver `deploy.yml`).                                            |
 
+`TWILIO_ACCOUNT_SID`, `TWILIO_AUTH_TOKEN`, `TWILIO_WHATSAPP_NUMBER` y
+`ADMIN_WHATSAPP_NUMBER` se pueden editar en **Configuraciones → WhatsApp**: lo
+guardado en la base manda y el `.env` queda como valor por defecto (campo vacío
+= se usa la variable de entorno).
+
 Nunca hardcodees passwords de test ni secretos en el repo; usa variables de
 entorno.
 

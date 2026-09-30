@@ -92,6 +92,9 @@ const PUBLIC_API_POLICY: Record<string, string> = {
   '/api/servicios/procesar-anulacion': 'confirmación de anulación por token de un solo uso',
   '/api/cuentas/solicitud-anulacion': 'confirmación de anulación por token de un solo uso',
   '/api/cuentas/procesar-anulacion': 'confirmación de anulación por token de un solo uso',
+  '/api/cashregister/solicitud-cierre': 'confirmación de cierre de caja por token de un solo uso',
+  '/api/cashregister/procesar-cierre':
+    'confirmación de cierre de caja por token de un solo uso (el administrador abre el link sin sesión)',
   '/api/anticipos/solicitud-detalles': 'confirmación de anticipo por token de un solo uso',
   '/api/gratificaciones/solicitud-detalles': 'confirmación de gratificación por token',
   '/api/gratificaciones/aprobar': 'confirmación de gratificación por token',

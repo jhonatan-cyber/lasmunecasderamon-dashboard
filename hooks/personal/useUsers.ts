@@ -32,8 +32,13 @@ interface UseUsersReturn {
   pageSize: number;
   setPageSize: (size: number) => void;
   totalPages: number;
-  createUser: (formData: FormData) => Promise<{ success: boolean; message: string; errors?: string[] }>;
-  updateUser: (id: string | number, userData: FormData | Partial<User>) => Promise<{ success: boolean; message: string; errors?: string[] }>;
+  createUser: (
+    formData: FormData
+  ) => Promise<{ success: boolean; message: string; errors?: string[]; id?: string }>;
+  updateUser: (
+    id: string | number,
+    userData: FormData | Partial<User>
+  ) => Promise<{ success: boolean; message: string; errors?: string[] }>;
   activateUser: (id: string | number) => Promise<{ success: boolean; message: string }>;
   deactivateUser: (id: string | number) => Promise<{ success: boolean; message: string }>;
   deleteUser: (id: string | number) => Promise<{ success: boolean; message: string }>;
@@ -54,7 +59,11 @@ export function useUsers(): UseUsersReturn {
     setPage(1);
   }, [debouncedSearchTerm, filterStatus, filterRole]);
 
-  const { data, isLoading, error: queryError } = useQuery({
+  const {
+    data,
+    isLoading,
+    error: queryError
+  } = useQuery({
     queryKey: ['users', debouncedSearchTerm, filterStatus, filterRole, page, pageSize],
     queryFn: async () => {
       const params = new URLSearchParams({
@@ -62,14 +71,14 @@ export function useUsers(): UseUsersReturn {
         status: filterStatus === 'active' ? '1' : filterStatus === 'inactive' ? '0' : 'all',
         role: filterRole,
         limit: pageSize.toString(),
-        offset: ((page - 1) * pageSize).toString(),
+        offset: ((page - 1) * pageSize).toString()
       });
 
       const res = await fetch(`/api/users?${params.toString()}`);
       if (!res.ok) throw new Error('Error al obtener usuarios');
       return res.json() as Promise<ApiResponse<User[]>>;
     },
-    placeholderData: (previousData) => previousData,
+    placeholderData: previousData => previousData
   });
 
   const users = data?.data || [];
@@ -79,13 +88,19 @@ export function useUsers(): UseUsersReturn {
   const createMutation = useMutation({
     mutationFn: async (formData: FormData) => {
       const res = await fetch('/api/users', { method: 'POST', body: formData });
-      return res.json() as Promise<ApiResponse<null>>;
+      return res.json() as Promise<ApiResponse<{ id?: string | number } | null>>;
     },
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['users'] }),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['users'] })
   });
 
   const updateMutation = useMutation({
-    mutationFn: async ({ id, userData }: { id: string | number; userData: FormData | Partial<User> }) => {
+    mutationFn: async ({
+      id,
+      userData
+    }: {
+      id: string | number;
+      userData: FormData | Partial<User>;
+    }) => {
       const isFormData = userData instanceof FormData;
       let body;
 
@@ -99,11 +114,11 @@ export function useUsers(): UseUsersReturn {
       const res = await fetch('/api/users', {
         method: 'PUT',
         headers: isFormData ? {} : { 'Content-Type': 'application/json' },
-        body,
+        body
       });
       return res.json() as Promise<ApiResponse<null>>;
     },
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['users'] }),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['users'] })
   });
 
   const deleteMutation = useMutation({
@@ -113,7 +128,7 @@ export function useUsers(): UseUsersReturn {
       const res = await fetch(url, { method });
       return res.json() as Promise<ApiResponse<null>>;
     },
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['users'] }),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['users'] })
   });
 
   const createUser = async (formData: FormData) => {
@@ -121,7 +136,8 @@ export function useUsers(): UseUsersReturn {
     return {
       success: result.success,
       message: result.message,
-      errors: result.errors?.map(e => `${e.field}: ${e.message}`)
+      errors: result.errors?.map(e => `${e.field}: ${e.message}`),
+      id: result.data?.id != null ? String(result.data.id) : undefined
     };
   };
 

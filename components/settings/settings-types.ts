@@ -10,8 +10,6 @@ export interface CompanyConfig {
   empresa_instagram: string;
   empresa_whatsapp: string;
   empresa_tiktok?: string;
-  /** Notificaciones internas (anulaciones, anticipos). Categoría `sistema`. */
-  admin_whatsapp?: string;
 }
 
 export interface BillingConfig {

@@ -10,3 +10,8 @@ export { CajaVentasTable } from '../CajaVentasTable';
 export { CajaServiciosTable } from '../CajaServiciosTable';
 export { CajaRetirosList } from '../CajaRetirosList';
 export { ClientesSaldoList } from '../ClientesSaldoList';
+export { CajaDetailsHeader } from './CajaDetailsHeader';
+export { CajaDetailsStatsBar } from './CajaDetailsStatsBar';
+export { CajaDetailsTabs } from './CajaDetailsTabs';
+export { CajaDetailsUserCards } from './CajaDetailsUserCards';
+export { CajaDetailsResumenTab } from './CajaDetailsResumenTab';

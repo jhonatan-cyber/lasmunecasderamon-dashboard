@@ -36,7 +36,7 @@ interface FixtureEnvase {
 }
 
 /** Crea un producto con una presentación y una unidad en el bar en el estado dado. */
-async function crearEnvase(estado: string): Promise<FixtureEnvase> {
+async function crearEnvase(estado: string, abiertaPorShots = true): Promise<FixtureEnvase> {
   const [usuario] = await query('SELECT id_usuario FROM usuarios LIMIT 1');
   const productoId = crypto.randomUUID();
   const presentacionId = crypto.randomUUID();
@@ -59,9 +59,10 @@ async function crearEnvase(estado: string): Promise<FixtureEnvase> {
   );
   await query(
     `INSERT INTO inventario_unidades
-       (id, producto_id, presentacion_id, codigo, codigo_barras, ubicacion, estado, fecha_crea)
-     VALUES (?, ?, ?, ?, ?, 'bar', ?, now())`,
-    [unidadId, productoId, presentacionId, codigo, codigoBarras, estado]
+       (id, producto_id, presentacion_id, codigo, codigo_barras, ubicacion, estado,
+        abierta_por_shots, fecha_crea)
+     VALUES (?, ?, ?, ?, ?, 'bar', ?, ?, now())`,
+    [unidadId, productoId, presentacionId, codigo, codigoBarras, estado, abiertaPorShots]
   );
 
   return {
@@ -109,6 +110,20 @@ it('el bar entrega y el almacén confirma; los rechazos de cada paso no escriben
       llena.usuarioId
     );
     expect(llenaRes).toMatchObject({ ok: false, motivo: 'no_esta_vacia' });
+
+    // La botella vendida entera (sin shots) no entra al control: su envase se
+    // lo llevó el cliente (migración 042).
+    const entera = await crearEnvase(ESTADO_UNIDAD_VENDIDA, false);
+    const enteraRes = await InventoryRepository.verifyAndReturnContainer(
+      entera.codigoBarras,
+      entera.usuarioId
+    );
+    expect(enteraRes).toMatchObject({ ok: false, motivo: 'venta_entera' });
+    const [filaEntera] = await query(
+      'SELECT fecha_devolucion FROM inventario_unidades WHERE id = ?',
+      [entera.unidadId]
+    );
+    expect(filaEntera.fecha_devolucion).toBeNull();
 
     // Un código que no registramos nosotros no es nuestro.
     const ajeno = await InventoryRepository.verifyAndReturnContainer(
@@ -237,6 +252,13 @@ it('las migraciones 032 y 033 dejan las columnas y los permisos en los roles cor
   expect(conRecepcion.map(r => r.rol)).toContain('administrador');
   // Quien entrega no confirma su propia entrega.
   expect(conRecepcion.map(r => r.rol)).not.toContain('barman');
+
+  // 042: la traza de botella abierta por shots (solo esas devuelven envase).
+  const [columnaShots] = await query(
+    `SELECT 1 AS ok FROM information_schema.columns
+      WHERE table_name = 'inventario_unidades' AND column_name = 'abierta_por_shots'`
+  );
+  expect(columnaShots).toBeDefined();
 });
 
 it('el resumen cuenta entregados, atrasados y confirmados, y el chequeo avisa al almacén', async () => {

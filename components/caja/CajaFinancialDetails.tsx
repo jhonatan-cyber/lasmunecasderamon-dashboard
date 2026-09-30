@@ -12,6 +12,10 @@ interface CajaFinancialDetailsProps {
   anticipos: number;
   retirosTotal: number;
   prepagoPendienteClientes: number;
+  /** Saldos de clientes descontados del efectivo al cerrar la caja. */
+  saldoClientesDescontado?: number;
+  /** Monto con que quedó cerrada la caja (0 si sigue abierta). */
+  montoCierre?: number;
 }
 
 function FinancialSkeleton() {
@@ -50,7 +54,9 @@ export function CajaFinancialDetails({
   devoluciones,
   anticipos,
   retirosTotal,
-  prepagoPendienteClientes
+  prepagoPendienteClientes,
+  saldoClientesDescontado = 0,
+  montoCierre = 0
 }: CajaFinancialDetailsProps) {
   return (
     <div className='bg-gray-50 dark:bg-gray-800/50 rounded-2xl border border-gray-200 dark:border-gray-700 overflow-hidden'>
@@ -86,13 +92,23 @@ export function CajaFinancialDetails({
 
               <div>
                 <p className='text-xs font-black uppercase tracking-widest text-rose-600 dark:text-rose-400 mb-1 mt-4 md:mt-0'>
-                  Egresos
+                  Egresos por descontar
                 </p>
                 <Row
                   label='Devoluciones'
                   value={`-${formatCurrencyNoDecimals(devoluciones)}`}
                   valueClassName='font-bold text-rose-600'
                 />
+                {saldoClientesDescontado > 0 && (
+                  <Row
+                    label='Saldos de clientes descontados'
+                    value={`-${formatCurrencyNoDecimals(saldoClientesDescontado)}`}
+                    valueClassName='font-bold text-rose-600'
+                  />
+                )}
+                <p className='text-[11px] font-semibold text-slate-500 dark:text-slate-400 mt-3 mb-1'>
+                  Ya salieron del efectivo (no se descuentan dos veces):
+                </p>
                 <Row
                   label='Anticipos'
                   value={`-${formatCurrencyNoDecimals(anticipos)}`}
@@ -113,7 +129,26 @@ export function CajaFinancialDetails({
                   {formatCurrencyNoDecimals(prepagoPendienteClientes)}
                 </span>
               </div>
+              {saldoClientesDescontado > 0 && (
+                <div className='flex justify-between gap-4 mt-1'>
+                  <span>De ese saldo, descontado en este cierre</span>
+                  <span className='font-bold text-rose-600'>
+                    {formatCurrencyNoDecimals(saldoClientesDescontado)}
+                  </span>
+                </div>
+              )}
             </div>
+
+            {montoCierre > 0 && (
+              <div className='flex justify-between items-center rounded-xl bg-emerald-50 px-4 py-3 mt-4 border border-emerald-200 dark:border-emerald-800 dark:bg-emerald-950/30'>
+                <span className='text-sm font-bold text-emerald-900 dark:text-emerald-300'>
+                  Monto de cierre
+                </span>
+                <span className='text-lg font-black tabular-nums text-emerald-700 dark:text-emerald-400'>
+                  {formatCurrencyNoDecimals(montoCierre)}
+                </span>
+              </div>
+            )}
           </>
         )}
       </div>

@@ -18,6 +18,24 @@ export interface Caja {
   usuario_id_cierre: string | number | null;
   fecha_cierre: string | null;
   estado: number;
+  /** Saldos de clientes que se descontaron del efectivo en este cierre. */
+  saldo_clientes_descontado?: number;
+  /** Hay una solicitud de cierre esperando autorización del administrador. */
+  cierre_pendiente?: boolean;
+  /** Cuándo se pidió el cierre (la caja sigue abierta hasta que la autoricen). */
+  cierre_solicitado_en?: string | null;
+  /** Quién pidió el cierre, si hay una solicitud pendiente. */
+  cierre_solicitado_por?: string | null;
+  /**
+   * Cuándo salió el último aviso al administrador: al pedir el cierre y en cada
+   * reenvío. Si difiere de `cierre_solicitado_en`, hubo reenvíos.
+   */
+  cierre_ultimo_aviso_en?: string | null;
+  /**
+   * El cierre pendiente quedó sin respuesta (pasó la ventana de recordatorios): ya se puede
+   * pedir el cierre de nuevo.
+   */
+  cierre_estancado?: boolean;
 }
 
 export interface CajaWithUser extends Caja {

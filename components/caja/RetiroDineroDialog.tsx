@@ -10,6 +10,7 @@ import { CajaWithUser, CajaRetiro } from '@/types/caja';
 import { useCurrentUser } from '@/hooks/auth/useCurrentUser';
 import { Loader2, Wallet, Info } from 'lucide-react';
 import { formatCurrencyCLP } from '@/lib/utils/formatters';
+import { disponibleParaRetiro } from '@/lib/business/cajaEfectivo';
 
 const getDiaSemana = (fecha: string): string => {
   const dias = ['Domingo', 'Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado'];
@@ -56,11 +57,9 @@ export function RetiroDineroDialog({
     const numericValue = getNumericValue(formatted);
 
     if (caja && numericValue > 0) {
-      const disponible =
-        caja.monto_apertura +
-        (caja.efectivo || 0) -
-        (caja.devoluciones || 0) -
-        (caja.anticipo || 0);
+      // `efectivo` ya viene neto de anticipos y retiros: restarlos acá descontaría
+      // dos veces lo mismo y bloquearía retiros que sí caben.
+      const disponible = disponibleParaRetiro(caja);
       if (numericValue > disponible) return;
     }
 
@@ -88,8 +87,7 @@ export function RetiroDineroDialog({
       return;
     }
 
-    const montoDisponible =
-      caja.monto_apertura + (caja.efectivo || 0) - (caja.devoluciones || 0) - (caja.anticipo || 0);
+    const montoDisponible = disponibleParaRetiro(caja);
     if (montoNum > montoDisponible) {
       setErrors({
         monto: `El monto no puede ser mayor al disponible (${formatCurrencyCLP(montoDisponible)})`
@@ -120,8 +118,7 @@ export function RetiroDineroDialog({
 
   if (!caja) return null;
 
-  const montoDisponible =
-    caja.monto_apertura + (caja.efectivo || 0) - (caja.devoluciones || 0) - (caja.anticipo || 0);
+  const montoDisponible = disponibleParaRetiro(caja);
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>

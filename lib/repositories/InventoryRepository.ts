@@ -275,6 +275,8 @@ export type DevolucionEnvaseMotivo =
   | 'no_es_nuestro'
   | 'no_esta_vacia'
   | 'ya_devuelto'
+  /** La botella se vendió entera: su envase se lo llevó el cliente, no vuelve al bar. */
+  | 'venta_entera'
   /** El bar todavía no marcó la entrega, así que el almacén no puede confirmar. */
   | 'no_entregado'
   /** El almacén ya confirmó la recepción de este envase. */
@@ -286,6 +288,8 @@ export interface DevolucionEnvaseUnidad {
   codigo: string;
   codigo_barras: string | null;
   estado: string;
+  /** true si esta botella se sirvió alguna vez por shots: es la que vuelve a almacén. */
+  abierta_por_shots: boolean;
   /** Date crudo de pg en la consulta; string al marcar (hora del negocio). */
   fecha_devolucion: string | Date | null;
   /** Confirmación de recepción del almacén (null = todavía no se confirma). */
@@ -329,6 +333,7 @@ const mapearEnvase = (fila: any): DevolucionEnvaseUnidad => ({
   codigo: fila.codigo,
   codigo_barras: fila.codigo_barras ?? null,
   estado: fila.estado,
+  abierta_por_shots: fila.abierta_por_shots === true,
   fecha_devolucion: fila.fecha_devolucion ?? null,
   fecha_confirmacion: fila.fecha_confirmacion ?? null,
   producto_nombre: fila.producto_nombre ?? null,
@@ -650,7 +655,7 @@ export class InventoryRepository {
     const alertas: ShotAlert[] = [];
     const requerido = new Map<
       string,
-      { botellas: number; shotsCliente: number; shotsAnfitriona: number }
+      { botellas: number; shotsCliente: number; shotsAnfitriona: number; tieneShots: boolean }
     >();
     for (const detalle of detalles) {
       const presentacionId = detalle.presentacion_id?.trim();
@@ -659,11 +664,13 @@ export class InventoryRepository {
       const acumulado = requerido.get(presentacionId) ?? {
         botellas: 0,
         shotsCliente: 0,
-        shotsAnfitriona: 0
+        shotsAnfitriona: 0,
+        tieneShots: false
       };
       if (detalle.tipo_venta === 'shot') {
         if (detalle.shot_anfitriona) acumulado.shotsAnfitriona += unidades;
         else acumulado.shotsCliente += unidades;
+        acumulado.tieneShots = true;
       } else acumulado.botellas += unidades;
       requerido.set(presentacionId, acumulado);
     }
@@ -776,15 +783,18 @@ export class InventoryRepository {
       }
 
       const vendidas: string[] = [];
+      // Botellas que este pedido dejó vacías **por shots**: son las únicas cuyo
+      // envase vuelve a almacén (la venta entera se lleva el envase cerrado).
+      const vaciadasPorShots: string[] = [];
       const mlAnterior = new Map(
         unidades.map(unidad => [unidad.id, Math.floor(Number(unidad.ml_restante ?? 0))])
       );
       for (const item of plan) {
         if (item.ml_restante > 0) {
-          await trx(`UPDATE inventario_unidades SET ml_restante = ? WHERE id = ?`, [
-            item.ml_restante,
-            item.id
-          ]);
+          await trx(
+            `UPDATE inventario_unidades SET ml_restante = ?, abierta_por_shots = true WHERE id = ?`,
+            [item.ml_restante, item.id]
+          );
           // Le queda poco y **no** estaba en alerta: avisa sólo en el cruce (o al abrir
           // una botella que ya arranca bajo el umbral), para no repetir por cada shot.
           const antes = mlAnterior.get(item.id) ?? 0;
@@ -797,6 +807,11 @@ export class InventoryRepository {
               shots_restantes: Math.floor(item.ml_restante / shotMlPresentacion)
             });
           }
+        } else if (pedido.tieneShots) {
+          // Llegó a 0 ml dentro de este mismo pedido: su contenido se sirvió por
+          // shots, así que su envase es de los que vuelven.
+          vaciadasPorShots.push(item.id);
+          vendidas.push(item.id);
         } else {
           vendidas.push(item.id);
         }
@@ -806,6 +821,13 @@ export class InventoryRepository {
         await trx(
           `UPDATE inventario_unidades SET estado = '${ESTADO_UNIDAD_VENDIDA}', ml_restante = 0 WHERE id IN (${placeholders})`,
           vendidas
+        );
+      }
+      if (vaciadasPorShots.length > 0) {
+        const placeholdersShots = vaciadasPorShots.map(() => '?').join(',');
+        await trx(
+          `UPDATE inventario_unidades SET abierta_por_shots = true WHERE id IN (${placeholdersShots})`,
+          vaciadasPorShots
         );
       }
 
@@ -1260,7 +1282,7 @@ export class InventoryRepository {
   private static async buscarEnvase(trx: Queryable, escaneo: string): Promise<EnvaseFila | null> {
     const filas = await trx<any[]>(
       `SELECT u.id, u.codigo, u.codigo_barras, u.estado, u.fecha_devolucion, u.devuelto_por,
-              u.fecha_confirmacion, u.confirmado_por,
+              u.fecha_confirmacion, u.confirmado_por, u.abierta_por_shots,
               p.nombre AS producto_nombre, pr.nombre AS presentacion_nombre, c.folio AS compra_folio
          FROM inventario_unidades u
          LEFT JOIN productos p ON p.id_producto = u.producto_id
@@ -1322,6 +1344,17 @@ export class InventoryRepository {
           ok: false,
           motivo: 'no_esta_vacia',
           mensaje: `El envase es nuestro pero no está vacío (estado '${fila.estado}'); solo se devuelven botellas ya consumidas.`,
+          unidad: mapearEnvase(fila)
+        };
+      }
+      // Solo vuelven los envases de botellas que el bar sirvió por shots: la
+      // venta entera se llevó el envase cerrado el cliente (migración 042).
+      if (!fila.abierta_por_shots) {
+        return {
+          ok: false,
+          motivo: 'venta_entera',
+          mensaje:
+            'Esta botella se vendió entera: su envase se lo llevó el cliente y no entra al control de envases del bar.',
           unidad: mapearEnvase(fila)
         };
       }

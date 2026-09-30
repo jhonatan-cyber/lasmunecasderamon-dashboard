@@ -2,6 +2,7 @@
 // una. Lo comparten el modal de productos (venta por categoría) y el buscador rápido: antes
 // cada uno resolvía la regla por su cuenta, y el buscador se quedaba solo con la botella.
 import type { SaleOption, SaleType } from '@/types/sale-options';
+import { parseSavedOptions } from '@/components/bar/transfer/transferOptions';
 
 /** Forma de venta elegida: botella entera o shot, a precio de cliente o de anfitriona. */
 export type SaleChoice = SaleType | 'shot_anfitriona';
@@ -39,9 +40,9 @@ export interface VentaProductoResuelta {
  * más parecida en vez de romper.
  */
 export function resolverVentaProducto(producto: any, eleccion?: SaleChoice): VentaProductoResuelta {
-  const opcionesVenta: SaleOption[] = Array.isArray(producto?.opciones_venta)
-    ? producto.opciones_venta
-    : [];
+  // `opciones_venta` puede venir como array o como el JSON que guarda
+  // Configuraciones; sin parsear, el selector desaparecería del todo.
+  const opcionesVenta: SaleOption[] = parseSavedOptions(producto?.opciones_venta) ?? [];
   const opcionShot = opcionesVenta.find(opcion => opcion.tipo === 'shot');
   const opcionBotella = opcionesVenta.find(opcion => opcion.tipo === 'botella');
 

@@ -256,6 +256,7 @@ export function useCajaDetails({ caja, open }: UseCajaDetailsParams) {
     retiros,
     servicios,
     cajaInfo,
+    fetchCajaInfo,
     clientesSaldo,
     loadingClientesSaldo,
     fetchClientesSaldo,

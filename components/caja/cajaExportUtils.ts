@@ -264,8 +264,19 @@ const generateResumenHTML = (ctx: CajaExportContext) => {
     { label: 'Transferencia', value: ctx.transferenciaCaja },
     { label: 'Subtotal antes de egresos', value: ctx.totalMetodosPago },
     { label: 'Devoluciones', value: -(ctx.caja.devoluciones || 0) },
-    { label: 'Anticipos', value: -(ctx.caja.anticipo || 0) },
-    { label: 'Retiros', value: -ctx.retiros.reduce((sum, r) => sum + (r.monto || 0), 0) },
+    ...(ctx.caja.saldo_clientes_descontado
+      ? [
+          {
+            label: 'Saldos de clientes descontados',
+            value: -(ctx.caja.saldo_clientes_descontado || 0)
+          }
+        ]
+      : []),
+    { label: 'Anticipos (ya descontados del efectivo)', value: -(ctx.caja.anticipo || 0) },
+    {
+      label: 'Retiros (ya descontados del efectivo)',
+      value: -ctx.retiros.reduce((sum, r) => sum + (r.monto || 0), 0)
+    },
     { label: 'Total real', value: ctx.totalReal }
   ];
 
@@ -432,8 +443,19 @@ export const getPDFData = (ctx: CajaExportContext) => {
         ['Transferencia', ctx.transferenciaCaja],
         ['Subtotal antes de egresos', ctx.totalMetodosPago],
         ['Devoluciones', -(ctx.caja.devoluciones || 0)],
-        ['Anticipos', -(ctx.caja.anticipo || 0)],
-        ['Retiros', -ctx.retiros.reduce((sum, r) => sum + r.monto, 0)],
+        ...(ctx.caja.saldo_clientes_descontado
+          ? [
+              ['Saldos de clientes descontados', -(ctx.caja.saldo_clientes_descontado || 0)] as [
+                string,
+                number
+              ]
+            ]
+          : []),
+        ['Anticipos (ya descontados del efectivo)', -(ctx.caja.anticipo || 0)],
+        [
+          'Retiros (ya descontados del efectivo)',
+          -ctx.retiros.reduce((sum, r) => sum + r.monto, 0)
+        ],
         ['Total real', ctx.totalReal]
       ];
 

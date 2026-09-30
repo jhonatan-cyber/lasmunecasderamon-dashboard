@@ -79,6 +79,21 @@ describe('resolverVentaProducto', () => {
     expect(venta.maxCantidad).toBe(99);
   });
 
+  it('acepta las opciones guardadas como JSON string (Configuraciones)', () => {
+    const venta = resolverVentaProducto({
+      ...conShotAnfitriona,
+      opciones_venta: JSON.stringify(conShotAnfitriona.opciones_venta)
+    });
+
+    expect(venta.tieneShot).toBe(true);
+    expect(venta.tieneShotAnfitriona).toBe(true);
+    expect(venta.opciones.map(opcion => opcion.value)).toEqual([
+      'botella',
+      'shot',
+      'shot_anfitriona'
+    ]);
+  });
+
   it('cae a la opción más parecida cuando se elige algo que el producto no ofrece', () => {
     // Un producto sin precio de anfitriona no puede cobrar el shot como anfitriona.
     expect(resolverVentaProducto(conShot, 'shot_anfitriona').tipoVenta).toBe('shot');

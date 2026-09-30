@@ -12,6 +12,19 @@ import { z } from 'zod';
 type UserCreateInput = z.input<typeof UserCreateSchema> & { foto?: unknown };
 type UserUpdateInput = z.input<typeof UserUpdateSchema> & { foto?: unknown };
 
+/** Lo que manda el formulario de enrolamiento (checkbox o 0/1 según venga). */
+const UserBiometricSchema = z.object({
+  codigo: z
+    .string()
+    .trim()
+    .max(20, 'Maximo 20 caracteres')
+    .regex(/^[a-zA-Z0-9._:-]*$/, 'Solo letras, numeros y . _ : -')
+    .nullable()
+    .optional(),
+  huella: z.union([z.boolean(), z.number().int().min(0).max(1)]).optional(),
+  facial: z.union([z.boolean(), z.number().int().min(0).max(1)]).optional()
+});
+
 export class UserService {
   static async createUser(body: UserCreateInput, fotoFilename: string = 'default.png') {
     const bodyToValidate = { ...body };
@@ -142,5 +155,39 @@ export class UserService {
 
   static async getStaff() {
     return await UserRepository.getStaff();
+  }
+
+  /**
+   * Enrolamiento en el lector: la cara/huella se cargan en el equipo, acá solo
+   * queda el codigo que reporta y que modalidades quedaron listas.
+   */
+  static async getBiometricStatus(id: string | number) {
+    const usuarioId = id.toString();
+    const user = await UserRepository.getById(usuarioId);
+    if (!user) throw new NotFoundError('Usuario', usuarioId);
+    const evento = await UserRepository.getLastBiometricEvent(usuarioId);
+    return {
+      codigo: user.biometrico_codigo ?? null,
+      huella: Number(user.biometrico_huella || 0),
+      facial: Number(user.biometrico_facial || 0),
+      ultima_verificacion: evento?.fecha_recepcion ?? null,
+      ultimo_resultado: evento?.resultado ?? null
+    };
+  }
+
+  static async updateBiometric(id: string | number, body: unknown) {
+    const usuarioId = id.toString();
+    const parsed = UserBiometricSchema.parse(body ?? {});
+    const user = await UserRepository.getById(usuarioId);
+    if (!user) throw new NotFoundError('Usuario', usuarioId);
+
+    await UserRepository.updateBiometric(usuarioId, {
+      ...(parsed.codigo !== undefined
+        ? { biometrico_codigo: parsed.codigo?.trim() ? parsed.codigo.trim() : null }
+        : {}),
+      ...(parsed.huella !== undefined ? { biometrico_huella: parsed.huella ? 1 : 0 } : {}),
+      ...(parsed.facial !== undefined ? { biometrico_facial: parsed.facial ? 1 : 0 } : {})
+    });
+    return await this.getBiometricStatus(usuarioId);
   }
 }

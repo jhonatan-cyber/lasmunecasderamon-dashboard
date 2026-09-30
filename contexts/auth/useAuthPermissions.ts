@@ -83,8 +83,16 @@ export function useAuthPermissions({
         const controller = new AbortController();
         const timeoutId = setTimeout(() => controller.abort(), 15000);
 
-        const timestamp = new Date().getTime();
-        const response = await fetch(`/api/users/${user.id}/permissions?t=${timestamp}`, {
+        /*
+         * Sin cache-buster `?t=` (misma razón que en `useAuthSession`).
+         *
+         * El service worker es network first, así que en línea la lista se
+         * refresca igual desde el servidor; sin red sirve la última conocida y
+         * el guard puede decidir con los permisos que el usuario ya tenía en
+         * lugar de quedarse girando en «Verificando permisos...» o mandarlo a
+         * `/access-denied` con la lista vacía.
+         */
+        const response = await fetch(`/api/users/${user.id}/permissions`, {
           method: 'GET',
           headers: {
             'Content-Type': 'application/json',

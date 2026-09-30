@@ -39,7 +39,15 @@ export const userFormSchema = z.object({
   correo: z.string().optional(),
   password: z.string().optional(),
   foto: z.string().optional(),
-  foto_anterior: z.string().optional()
+  foto_anterior: z.string().optional(),
+  // Asistencia biométrica: el código que reporta el lector de la puerta y el
+  // estado de cada modalidad (la plantilla se carga en el equipo, no acá).
+  biometrico_codigo: z
+    .string()
+    .max(20, 'Máximo 20 caracteres')
+    .regex(/^[a-zA-Z0-9._:-]*$/, 'Solo letras, números y . _ : -'),
+  biometrico_huella: z.boolean(),
+  biometrico_facial: z.boolean()
 });
 
 export type UserFormValues = z.infer<typeof userFormSchema>;
@@ -108,7 +116,10 @@ export function useUserForm({ user, onSubmit, isEditMode }: UseUserFormProps) {
         correo: '',
         password: '',
         foto: user?.foto || '',
-        housing_discount: (user?.discount && user.discount > 0) || false
+        housing_discount: (user?.discount && user.discount > 0) || false,
+        biometrico_codigo: user?.biometrico_codigo || '',
+        biometrico_huella: !!user?.biometrico_huella,
+        biometrico_facial: !!user?.biometrico_facial
       }),
       [user, mapEstadoCivilToSelect]
     )
@@ -173,7 +184,10 @@ export function useUserForm({ user, onSubmit, isEditMode }: UseUserFormProps) {
         correo: '',
         password: '',
         foto: user.foto || '',
-        housing_discount: (user.discount && user.discount > 0) || false
+        housing_discount: (user.discount && user.discount > 0) || false,
+        biometrico_codigo: user.biometrico_codigo || '',
+        biometrico_huella: !!user.biometrico_huella,
+        biometrico_facial: !!user.biometrico_facial
       });
       sueldo.setFormattedValue(user.salary ? sueldo.formatNumber(user.salary) : '');
       aporte.setFormattedValue(user.contributions ? aporte.formatNumber(user.contributions) : '');
@@ -222,6 +236,7 @@ export function useUserForm({ user, onSubmit, isEditMode }: UseUserFormProps) {
       processedValues.contributions = Number(aporte.getNumericValue(aporte.formattedValue)) || 0;
       processedValues.discount = Number(descuento.getNumericValue(descuento.formattedValue)) || 0;
       processedValues.maritalStatus = mapSelectToEstadoCivil(processedValues.maritalStatus);
+      processedValues.biometrico_codigo = (values.biometrico_codigo || '').trim();
 
       processedValues.run = cleanRUT(processedValues.run);
 

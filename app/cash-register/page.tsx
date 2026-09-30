@@ -6,6 +6,8 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Skeleton as BoneyardSkeleton } from 'boneyard-js/react';
 import { Button } from '@/components/ui/button';
 import { useCashRegister } from '@/hooks/caja/useCashRegister';
+import { useReenviarAvisoCierre } from '@/hooks/caja/useReenviarAvisoCierre';
+import { useReabrirCierre } from '@/hooks/caja/useReabrirCierre';
 import { useCurrentUser } from '@/hooks/auth/useCurrentUser';
 import { useUserPermissions } from '@/hooks/auth/useUserPermissions';
 import dynamic from 'next/dynamic';
@@ -38,6 +40,8 @@ export default function CashRegister() {
     retirarDinero,
     mutationError
   } = useCashRegister();
+  const { reenviarAvisoCierre, reenviandoId } = useReenviarAvisoCierre();
+  const { reabrirCierre, reabriendoId } = useReabrirCierre();
   const { user } = useCurrentUser();
   const { hasPermission } = useUserPermissions();
 
@@ -77,9 +81,10 @@ export default function CashRegister() {
 
   const handleCerrarCaja = async (data: CajaCierre) => {
     try {
-      await cerrarCaja(data);
+      return await cerrarCaja(data);
     } catch (error) {
       logger.captureException(error, { context: 'CashRegister:handleCreateCaja' });
+      return null;
     }
   };
 
@@ -92,6 +97,28 @@ export default function CashRegister() {
     if (!canCloseCaja) return;
     setSelectedCaja(caja);
     setShowCerrarDialog(true);
+  };
+
+  /**
+   * Un cierre pedido puede quedarse esperando: el WhatsApp no llegó o nadie lo vio. Quien
+   * puede pedir el cierre puede volver a avisar, sin abrir el modal ni crear otra solicitud.
+   */
+  const handleResendAviso = async (caja: CajaWithUser) => {
+    if (!canCloseCaja) return;
+    await reenviarAvisoCierre(caja.id_caja);
+  };
+
+  /**
+   * Nadie contestó el cierre (pasó la ventana de recordatorios): pedirlo de nuevo expira la
+   * solicitud vieja y crea una nueva, así que el aviso al administrador vuelve a salir.
+   */
+  const handleReabrirCierre = async (caja: CajaWithUser) => {
+    if (!canCloseCaja) return;
+    const res = await reabrirCierre(caja.id_caja);
+    if (res?.reabierto) {
+      getCajas();
+      getResumen();
+    }
   };
 
   const handleRetirar = (caja: CajaWithUser) => {
@@ -259,6 +286,10 @@ export default function CashRegister() {
                       onViewDetails={handleViewDetails}
                       onCloseCaja={handleCloseCaja}
                       onRetirar={handleRetirar}
+                      onResendAviso={canCloseCaja ? handleResendAviso : undefined}
+                      reenviandoAviso={reenviandoId === caja.id_caja}
+                      onReabrirCierre={canCloseCaja ? handleReabrirCierre : undefined}
+                      reabriendoCierre={reabriendoId === caja.id_caja}
                       canCloseCaja={canCloseCaja}
                       canRetirar={canWithdrawMoney}
                       canViewDetails={canViewDetails}

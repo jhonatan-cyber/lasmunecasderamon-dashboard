@@ -10,6 +10,7 @@ export const MOTIVO_ENVASE: Record<string, string> = {
   no_es_nuestro: 'No es nuestro',
   no_esta_vacia: 'No está vacío',
   ya_devuelto: 'Ya entregado',
+  venta_entera: 'Se vendió entera',
   no_entregado: 'El bar no lo entregó',
   ya_confirmado: 'Ya confirmado'
 };
