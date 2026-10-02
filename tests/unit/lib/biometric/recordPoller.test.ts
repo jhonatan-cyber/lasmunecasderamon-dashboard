@@ -35,6 +35,26 @@ vi.mock('@/lib/biometric/processBiometricEvent', () => ({
   procesarEventoBiometrico: procesar.fn
 }));
 
+// El mantenimiento de reloj no debe tocar el SDK real en los tests.
+vi.mock('@/lib/biometric/clockSync', () => ({
+  quizasSincronizarReloj: vi.fn().mockResolvedValue(false)
+}));
+
+// La cola de fotos descarga por NetSDK: jamás en los tests (DLL + red reales).
+const fotos = vi.hoisted(() => ({
+  descargarFoto: vi.fn(),
+  encolarFotoDeRecord: vi.fn(),
+  recuperarFotosPendientes: vi.fn()
+}));
+vi.mock('@/lib/biometric/recordPhotos', () => fotos);
+
+// Ídem para el 1:N del servidor (extrae vectores con el motor del equipo).
+const ident = vi.hoisted(() => ({
+  encolarIdentificacionDeRecord: vi.fn(),
+  recuperarIdentificacionesPendientes: vi.fn()
+}));
+vi.mock('@/lib/biometric/identificacionFacial', () => ident);
+
 vi.mock('@/lib/biometric/deviceClient', async importOriginal => {
   const actual = await importOriginal<typeof import('@/lib/biometric/deviceClient')>();
   return { ...actual, ...cliente };
@@ -66,8 +86,10 @@ const record = (
     recNo: number;
     createTime: number;
     userId: string;
+    tipo: string | null;
     metodo: number;
     status: number;
+    url: string | null;
   }> = {}
 ) => ({
   recNo: 101,
@@ -76,6 +98,7 @@ const record = (
   tipo: 'Entry',
   status: 1,
   metodo: 15,
+  url: null,
   ...overrides
 });
 
@@ -96,9 +119,51 @@ beforeEach(() => {
   cliente.credencialesDeFila.mockReset();
   procesar.fn.mockReset();
   procesar.fn.mockResolvedValue({ resultado: 'registrado', usuario: { id: 'u-1' } });
+  fotos.encolarFotoDeRecord.mockClear();
+  fotos.recuperarFotosPendientes.mockReset().mockResolvedValue(0);
+  ident.encolarIdentificacionDeRecord.mockClear();
+  ident.recuperarIdentificacionesPendientes.mockReset().mockResolvedValue(0);
 });
 
 describe('pollEquipo', () => {
+  it('una SALIDA (Type=Exit) no acredita asistencia ni dispara ningún sonido', async () => {
+    instalarBasico();
+    cliente.leerRegistrosAcceso.mockResolvedValue([record({ tipo: 'Exit' })]);
+
+    const r = await pollEquipo('dev-1');
+
+    expect(r.salidas).toBe(1);
+    expect(r.nuevos).toBe(1); // se bajó y marcó como visto, pero…
+    expect(r.registrados).toBe(0);
+    expect(procesar.fn).not.toHaveBeenCalled(); // …no procesa asistencia
+    expect(
+      db.queryMock.mock.calls.some(call => String(call[0]).includes('INSERT INTO asistencias'))
+    ).toBe(false);
+  });
+
+  it('un record sin tipo se procesa como entrada (el ASI a veces no manda Type)', async () => {
+    instalarBasico();
+    cliente.leerRegistrosAcceso.mockResolvedValue([record({ tipo: null })]);
+
+    const r = await pollEquipo('dev-1');
+
+    expect(r.registrados).toBe(1);
+    expect(r.salidas).toBe(0);
+    expect(procesar.fn).toHaveBeenCalledTimes(1);
+  });
+
+  it('entrada y salida juntas: solo la entrada procesa, la salida cuenta aparte', async () => {
+    instalarBasico();
+    cliente.leerRegistrosAcceso.mockResolvedValue([record(), record({ recNo: 102, tipo: 'Exit' })]);
+
+    const r = await pollEquipo('dev-1');
+
+    expect(r.nuevos).toBe(2);
+    expect(r.registrados).toBe(1);
+    expect(r.salidas).toBe(1);
+    expect(procesar.fn).toHaveBeenCalledTimes(1);
+  });
+
   it('convierte records nuevos en asistencia vía procesarEventoBiometrico', async () => {
     instalarBasico();
     cliente.leerRegistrosAcceso.mockResolvedValue([record()]);
@@ -119,6 +184,118 @@ describe('pollEquipo', () => {
       String(call[0]).includes('INSERT INTO biometric_device_records')
     );
     expect(inserts.length).toBe(1);
+  });
+
+  it('ignora los registros anteriores a historico_limpiado_en (no resucita el histórico)', async () => {
+    instalarBasico();
+    db.queryMock.mockImplementation(async (sql: string) => {
+      if (sql.includes('FROM biometric_devices'))
+        return [{ ...equipo, historico_limpiado_en: new Date('2026-09-30T00:00:00Z') }];
+      if (sql.includes('FROM biometric_device_records')) return [];
+      return [];
+    });
+    cliente.leerRegistrosAcceso.mockResolvedValue([
+      record({ recNo: 90, userId: '1001', createTime: 1790715000 }), // anterior al corte
+      record({ recNo: 101, userId: '1002', createTime: 1791000000 }) // posterior al corte
+    ]);
+
+    const r = await pollEquipo('dev-1');
+
+    expect(r.leidos).toBe(2);
+    expect(r.ignorados).toBe(1);
+    expect(r.nuevos).toBe(1);
+    expect(procesar.fn).toHaveBeenCalledTimes(1);
+    expect(procesar.fn.mock.calls[0][0].codigo).toBe('1002');
+    const inserts = db.queryMock.mock.calls.filter(call =>
+      String(call[0]).includes('INSERT INTO biometric_device_records')
+    );
+    expect(inserts.length).toBe(1);
+  });
+
+  it('guarda la URL de la foto, la manda a la cola y la pasa al procesador', async () => {
+    instalarBasico();
+    cliente.leerRegistrosAcceso.mockResolvedValue([
+      record({ url: '/SnapShotFilePath/2026-10-02/09/00/1001_99_100.jpg' })
+    ]);
+
+    const r = await pollEquipo('dev-1');
+
+    expect(r.nuevos).toBe(1);
+    const insert = db.queryMock.mock.calls.find(call =>
+      String(call[0]).includes('INSERT INTO biometric_device_records')
+    );
+    expect(insert?.[1]).toEqual([
+      'uuid-test',
+      'dev-1',
+      'SERIAL1',
+      101,
+      '1001',
+      '2026-09-29 21:30:00',
+      'cara',
+      1,
+      '/SnapShotFilePath/2026-10-02/09/00/1001_99_100.jpg'
+    ]);
+    // La descarga va en segundo plano, nunca dentro del ciclo.
+    expect(fotos.encolarFotoDeRecord).toHaveBeenCalledTimes(1);
+    expect(fotos.encolarFotoDeRecord).toHaveBeenCalledWith({
+      recordId: 'uuid-test',
+      dispositivoId: 'dev-1',
+      ruta: '/SnapShotFilePath/2026-10-02/09/00/1001_99_100.jpg'
+    });
+    // Y con ese mismo id queda enlazada la asistencia (la foto de la marcación).
+    expect(procesar.fn.mock.calls[0][0].recordId).toBe('uuid-test');
+    // Cada ciclo reanuda las fotos que quedaron a medias.
+    expect(fotos.recuperarFotosPendientes).toHaveBeenCalledTimes(1);
+    // Y también las identificaciones 1:N pendientes.
+    expect(ident.recuperarIdentificacionesPendientes).toHaveBeenCalledTimes(1);
+  });
+
+  it('un record sin foto no encola descarga (foto_url queda null)', async () => {
+    instalarBasico();
+    cliente.leerRegistrosAcceso.mockResolvedValue([record()]);
+
+    await pollEquipo('dev-1');
+
+    const insert = db.queryMock.mock.calls.find(call =>
+      String(call[0]).includes('INSERT INTO biometric_device_records')
+    );
+    expect(insert?.[1]).toEqual([
+      'uuid-test',
+      'dev-1',
+      'SERIAL1',
+      101,
+      '1001',
+      '2026-09-29 21:30:00',
+      'cara',
+      1,
+      null
+    ]);
+    expect(fotos.encolarFotoDeRecord).not.toHaveBeenCalled();
+  });
+
+  it('baja desde el RecNo máximo ya guardado (si no, solo llegan los más viejos)', async () => {
+    db.queryMock.mockImplementation(async (sql: string) => {
+      if (sql.includes('MAX(rec_no)')) return [{ max: 125 }];
+      if (sql.includes('FROM biometric_devices') && sql.includes('recoger_registros = 1'))
+        return [equipo];
+      if (sql.includes('FROM biometric_devices')) return [equipo];
+      return [];
+    });
+    cliente.credencialesDeFila.mockReturnValue(cred);
+    cliente.leerRegistrosAcceso.mockResolvedValue([]);
+
+    await pollEquipo('dev-1');
+
+    expect(cliente.leerRegistrosAcceso).toHaveBeenCalledWith(cred, { count: 200, desde: 125 });
+  });
+
+  it('con la tabla vacía empieza desde el principio', async () => {
+    instalarBasico();
+    cliente.leerRegistrosAcceso.mockResolvedValue([]);
+
+    await pollEquipo('dev-1');
+
+    expect(cliente.leerRegistrosAcceso).toHaveBeenCalledWith(cred, { count: 200, desde: 0 });
   });
 
   it('salta records ya procesados (mismo RecNo)', async () => {
@@ -184,15 +361,30 @@ describe('pollEquipo', () => {
     expect(procesar.fn).not.toHaveBeenCalled();
   });
 
-  it('verificación fallida (status≠1) no genera asistencia', async () => {
+  it('Status=0 con persona identificada sí genera asistencia (ASI3213A-W)', async () => {
     instalarBasico();
+    // El equipo real manda Status=0 incluso cuando reconoció a la persona.
     cliente.leerRegistrosAcceso.mockResolvedValue([record({ status: 0 })]);
 
     const r = await pollEquipo('dev-1');
 
     expect(r.nuevos).toBe(1);
-    expect(r.errores).toBe(1);
-    expect(procesar.fn).not.toHaveBeenCalled();
+    expect(r.registrados).toBe(1);
+    expect(procesar.fn).toHaveBeenCalledTimes(1);
+  });
+
+  it('sin UserID no inventa asistencia: va a la auditoría como sin_usuario', async () => {
+    instalarBasico();
+    cliente.leerRegistrosAcceso.mockResolvedValue([record({ userId: '' })]);
+    procesar.fn.mockResolvedValue({ resultado: 'sin_usuario' });
+
+    const r = await pollEquipo('dev-1');
+
+    expect(r.nuevos).toBe(1);
+    expect(r.registrados).toBe(0);
+    expect(r.sinUsuario).toBe(1);
+    // El código llega vacío: es el propio procesador el que lo deja sin usuario.
+    expect(procesar.fn.mock.calls[0][0].codigo).toBe('');
   });
 
   it('mapea Method del CGI al método del dominio', async () => {

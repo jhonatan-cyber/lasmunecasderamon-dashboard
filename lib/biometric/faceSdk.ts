@@ -1,53 +1,19 @@
-/**
- * Puente NetSDK (Dahua `dhnetsdk.dll`) para el motor facial del lector.
- *
- * El equipo NO expone comparación de caras ni por CGI (`FaceInfoManager.cgi`
- * `compare/verify` → Not Implemented) ni por `CLIENT_MatchTwoFaceImage` (esa
- * API es de face recognition servers / IVSS: el ASI3213A responde "no
- * soportado"). Lo que SÍ expone es `CLIENT_FaceInfoOpreate` con la operación
- * `EM_FACEINFO_OPREATE_GETFACEEIGEN`: el propio motor del equipo extrae el
- * vector facial (256 floats normalizados) de una foto JPEG. Con los vectores de
- * la foto guardada y de la captura en vivo se calcula la similitud coseno y se
- * decide si la persona frente al lector es la misma.
- *
- * Además, el mismo SDK permite ESCRIBIR en el equipo sin pasar por su menú
- * (los CGI de alta del ASI3213A-W responden Bad Request):
- * `CLIENT_OperateAccessUserService` crea/consulta/borra la PERSONA y
- * `CLIENT_OperateAccessFaceService` inserta/actualiza/borra su CARA. La cara se
- * carga como VECTOR (1024 bytes), no como foto: el vector lo produce
- * `extraerVectorFacial`, o sea el propio motor del equipo. Verificado contra el
- * ASI3213A-W real: persona GET/INSERT/REMOVE y cara INSERT/UPDATE/REMOVE/re-INSERT.
- *
- * Requisitos: Windows con `dhnetsdk.dll` (viene con SmartPSS Lite) y el puente
- * FFI `koffi`. La carpeta se configura con `DAHUA_SDK_DIR` (default:
- * `C:\Program Files\SmartPSSLite`). El umbral de decisión es
- * `BIOMETRIC_FACE_MATCH_THRESHOLD` (default 0.7; medido en el ASI3213A-W:
- * personas distintas ≈ -0.15..0.17, misma persona ≈ 0.9).
- */
 import fs from 'fs';
 import path from 'path';
+import { completarPerfilAsistencia } from './attendanceUserProfile';
 import type { CredencialesEquipo } from '@/lib/biometric/deviceClient';
 
-/** Puerto del protocolo NetSDK (el HTTP/CGI del equipo va por el 80). */
 const PUERTO_NETSDK = 37777;
-/** `EM_FACEINFO_OPREATE_GETFACEEIGEN` de `CLIENT_FaceInfoOpreate`. */
 const GETFACEEIGEN = 5;
-/** Tamaño de `NET_IN_GETFACEEIGEN_INFO` / `NET_OUT_GETFACEEIGEN_INFO` en x64. */
 const TAMANO_IN_EIGEN = 16;
 const TAMANO_OUT_EIGEN = 24;
-/** El equipo acepta fotos de hasta ~200 KB para extraer el vector. */
 const MAXIMO_BYTES_FOTO = 200_000;
-
-/** Operaciones de `CLIENT_OperateAccessUserService`. */
 const USER_SERVICE_INSERT = 0;
 const USER_SERVICE_GET = 1;
 const USER_SERVICE_REMOVE = 2;
-/** Operaciones de `CLIENT_OperateAccessFaceService`. */
 const FACE_SERVICE_INSERT = 0;
 const FACE_SERVICE_UPDATE = 2;
 const FACE_SERVICE_REMOVE = 3;
-
-/** Códigos de `NET_EM_FAILCODE` que devuelven las operaciones de registros. */
 const FALLO_NOERROR = 0;
 const FALLO_INVALID_PARAM = 2;
 const FALLO_INVALID_FACE = 5;
@@ -57,23 +23,7 @@ const FALLO_MAX_INSERT_RATE = 12;
 const FALLO_NO_RECORD = 16;
 const FALLO_NOMORE_RECORD = 17;
 const FALLO_RECORD_ALREADY_EXISTS = 18;
-/**
- * El ASI3213A-W devuelve 24 al repetir el INSERT de una cara que ya existe
- * (fuera del enum documentado, donde el duplicado es 18). Se tratan igual.
- */
 const FALLO_RECORD_ALREADY_EXISTS_ASI = 24;
-
-/**
- * Layouts x64 de los structs de alta, extraídos del mapa de referencia y
- * verificados contra el equipo real.
- *   NET_ACCESS_FACE_INFO (43288): szUserID[32]@0, nFaceData@32, FACEDATA[20]@36,
- *     nFaceDataLen[20]@40996, nFacePhoto@41076, fotos…@41080..41120, pFacePhotos@41120.
- *   NET_ACCESS_USER_INFO: szUserID[32]@0, szName[32]@32 (resto de campos, no usados).
- *   NET_IN_ACCESS_{USER,FACE}_SERVICE_INSERT (16): dwSize@0, nNum@4, pInfo@8.
- *   NET_IN_ACCESS_{USER,FACE}_SERVICE_GET/REMOVE (3208): dwSize@0, nUserNum@4, USERID[100]@8.
- *   NET_OUT_..._INSERT/REMOVE (16): dwSize@0, nMaxRetNum@4, pFailCode@8.
- *   NET_OUT_..._GET (24): dwSize@0, nMaxRetNum@4, pInfo@8, pFailCode@16.
- */
 const TAMANO_FACE_INFO = 43288;
 const FACE_N_FACEDATA = 32;
 const FACE_FACEDATA = 36;
@@ -85,12 +35,11 @@ const TAMANO_SALIDA_GET = 24;
 const ESPERA_MS_REGISTRO = 15_000;
 const NET_MAX_USERID_LEN = 32;
 const NET_MAX_USER_NAME_LEN = 32;
-export const UMBRAL_COINCIDENCIA_DEFECTO = 0.7;
 
-/** Códigos de error del NetSDK usados por la extracción de vectores. */
-export const ERROR_NO_SOPORTADO = 0x8000004f; // _EC(79): el equipo no soporta la operación
-export const ERROR_PARAMETRO_ILEGAL = 0x80000007; // _EC(7): foto inválida o demasiado grande
-export const ERROR_SIN_CARA = 0x80000514; // no hay cara detectable en la imagen
+export const UMBRAL_COINCIDENCIA_DEFECTO = 0.7;
+export const ERROR_NO_SOPORTADO = 0x8000004f;
+export const ERROR_PARAMETRO_ILEGAL = 0x80000007;
+export const ERROR_SIN_CARA = 0x80000514;
 
 export type MotivoFalloFacial =
   | 'sdk_no_disponible'
@@ -112,7 +61,6 @@ export class ErrorFacial extends Error {
   }
 }
 
-/** Convierte los 1024 bytes little-endian del equipo en 256 floats. */
 export function vectorDesdeEigen(datos: Uint8Array): Float32Array {
   const vista = Buffer.from(datos.buffer, datos.byteOffset, datos.byteLength);
   const vector = new Float32Array(Math.floor(vista.length / 4));
@@ -120,7 +68,6 @@ export function vectorDesdeEigen(datos: Uint8Array): Float32Array {
   return vector;
 }
 
-/** Similitud coseno de dos vectores; 0 si no se pueden comparar. */
 export function similitudCoseno(a: Float32Array, b: Float32Array): number {
   if (a.length === 0 || b.length === 0 || a.length !== b.length) return 0;
   let punto = 0;
@@ -135,7 +82,6 @@ export function similitudCoseno(a: Float32Array, b: Float32Array): number {
   return punto / (Math.sqrt(normaA) * Math.sqrt(normaB));
 }
 
-/** Umbral de decisión (0..1) configurable por entorno. */
 export function umbralCoincidenciaFacial(
   entorno: Record<string, string | undefined> = process.env
 ): number {
@@ -151,7 +97,6 @@ export function decidirCoincidencia(
   return similitud >= umbral;
 }
 
-/** Traduce un código de error del NetSDK a motivo + mensaje para la UI. */
 export function mensajeDeCodigoFacial(codigo: number): {
   motivo: MotivoFalloFacial;
   mensaje: string;
@@ -196,24 +141,15 @@ interface KoffiModulo {
 interface SdkFacial {
   lib: KoffiBiblioteca;
   direccion: (buffer: Buffer) => number;
-  /** Mantiene vivo el callback de CLIENT_Init (si se recolecta, el SDK crashea). */
   callback: unknown;
 }
 
-/**
- * El cache del SDK vive en `globalThis`, no en el módulo: en dev, el HMR de
- * Turbopack re-evalúa este archivo y un cache local volvería a ejecutar
- * `koffi.proto`/`CLIENT_Init` con el SDK ya cargado, dejando el puente facial
- * inservible hasta reiniciar el servidor (lo vimos en vivo: altas que de repente
- * fallan con `sdk_no_disponible` tras editar un archivo).
- */
 const cacheSdk = globalThis as typeof globalThis & { __dahuaSdkFacial?: SdkFacial | null };
 
 function mensajeDeError(error: unknown): string {
   return error instanceof Error ? error.message : String(error);
 }
 
-/** Carga e inicializa el NetSDK una sola vez por proceso. */
 async function cargarSdk(): Promise<SdkFacial> {
   if (cacheSdk.__dahuaSdkFacial) return cacheSdk.__dahuaSdkFacial;
 
@@ -237,8 +173,6 @@ async function cargarSdk(): Promise<SdkFacial> {
     );
   }
 
-  // dhnetsdk.dll depende de otras DLLs de la misma carpeta (Infra, Common…):
-  // agregarla al PATH hace que Windows las resuelva al cargarla.
   process.env.PATH = `${process.env.PATH || ''};${carpetaSdk}`;
 
   let lib: KoffiBiblioteca;
@@ -273,7 +207,6 @@ async function cargarSdk(): Promise<SdkFacial> {
   return cacheSdk.__dahuaSdkFacial;
 }
 
-/** Copia texto a un buffer UTF-8 sin partir a la mitad un carácter multibyte. */
 export function escribirTextoUtf8(
   buffer: Buffer,
   offset: number,
@@ -283,7 +216,7 @@ export function escribirTextoUtf8(
   let usados = 0;
   for (const caracter of texto) {
     const bytes = Buffer.byteLength(caracter, 'utf8');
-    if (usados + bytes >= maxBytes) break; // deja lugar para el \0 final
+    if (usados + bytes >= maxBytes) break;
     buffer.write(caracter, offset + usados, 'utf8');
     usados += bytes;
   }
@@ -297,7 +230,6 @@ function esYaExiste(codigo: number): boolean {
   return codigo === FALLO_RECORD_ALREADY_EXISTS || codigo === FALLO_RECORD_ALREADY_EXISTS_ASI;
 }
 
-/** Traduce un `FAIL_CODE` de las operaciones de registros a un `ErrorFacial`. */
 function errorDeRegistro(codigo: number, accion: string): ErrorFacial {
   switch (codigo) {
     case FALLO_INVALID_PARAM:
@@ -330,15 +262,14 @@ function errorDeRegistro(codigo: number, accion: string): ErrorFacial {
   }
 }
 
-/** NET_ACCESS_USER_INFO con szUserID@0 y szName@32. */
 function bufferPersona(codigo: string, nombre: string): Buffer {
   const buffer = Buffer.alloc(TAMANO_USER_INFO);
   escribirTextoUtf8(buffer, 0, NET_MAX_USERID_LEN, codigo);
   escribirTextoUtf8(buffer, NET_MAX_USERID_LEN, NET_MAX_USER_NAME_LEN, nombre);
+  completarPerfilAsistencia(buffer);
   return buffer;
 }
 
-/** NET_ACCESS_FACE_INFO con el vector (szFaceDatas[0]) ya cargado. */
 function bufferCara(codigo: string, eigen: Buffer): Buffer {
   const buffer = Buffer.alloc(TAMANO_FACE_INFO);
   escribirTextoUtf8(buffer, 0, NET_MAX_USERID_LEN, codigo);
@@ -348,7 +279,6 @@ function bufferCara(codigo: string, eigen: Buffer): Buffer {
   return buffer;
 }
 
-/** NET_IN_ACCESS_{USER,FACE}_SERVICE_GET/REMOVE con el código en USERID[0]. */
 function bufferListaUsuario(codigo: string): Buffer {
   const buffer = Buffer.alloc(TAMANO_LISTA_IN);
   buffer.writeUInt32LE(TAMANO_LISTA_IN, 0);
@@ -357,11 +287,6 @@ function bufferListaUsuario(codigo: string): Buffer {
   return buffer;
 }
 
-/**
- * Struct de 16 bytes con un solo puntero: lo comparten
- * NET_IN_ACCESS_{USER,FACE}_SERVICE_INSERT (pInfo@8) y
- * NET_OUT_..._INSERT/REMOVE (pFailCode@8).
- */
 function bufferPunteroUnico(direccion: bigint): Buffer {
   const buffer = Buffer.alloc(TAMANO_SALIDA_INSERT);
   buffer.writeUInt32LE(TAMANO_SALIDA_INSERT, 0);
@@ -372,11 +297,6 @@ function bufferPunteroUnico(direccion: bigint): Buffer {
 
 type AccionConSesion<T> = (sesion: unknown, sdk: SdkFacial) => T | Promise<T>;
 
-/**
- * Abre UNA sesión NetSDK y ejecuta la acción, con logout garantizado. Las
- * altas encadenan varias llamadas seguidas: acá se comparte el login y se
- * lanza `ErrorFacial('login_fallido')` si el equipo lo rechaza.
- */
 async function conSesionFacial<T>(
   credenciales: CredencialesEquipo,
   accion: AccionConSesion<T>
@@ -413,15 +333,6 @@ async function conSesionFacial<T>(
   }
 }
 
-/**
- * Pide al equipo el vector facial de una foto. Lanza `ErrorFacial` con el
- * motivo cuando no se puede (sin cara, foto inválida, SDK ausente, etc.).
- *
- * Ante un error INDETERMINADO (p. ej. 0x80000002 en el ASI cuando el equipo
- * está ocupado — vimos fallar la primera extracción con el recolector de
- * asistencia corriendo) se reintenta una vez a los 500 ms. Los fallos
- * deterministas (sin cara, foto inválida, no soportado) no se repiten.
- */
 export async function extraerVectorFacial(
   credenciales: CredencialesEquipo,
   foto: Buffer
@@ -444,14 +355,10 @@ export async function extraerVectorFacial(
       );
 
       const vector = Buffer.alloc(8192);
-
-      // NET_IN_GETFACEEIGEN_INFO (x64): dwSize@0, nPhotoDataLen@4, pszPhotoData@8
       const inParam = Buffer.alloc(TAMANO_IN_EIGEN);
       inParam.writeUInt32LE(TAMANO_IN_EIGEN, 0);
       inParam.writeUInt32LE(foto.length, 4);
       inParam.writeBigUInt64LE(BigInt(sdk.direccion(foto)), 8);
-
-      // NET_OUT_GETFACEEIGEN_INFO (x64): dwSize@0, nIn@4, nOut@8, pszFaceEigen@16
       const outParam = Buffer.alloc(TAMANO_OUT_EIGEN);
       outParam.writeUInt32LE(TAMANO_OUT_EIGEN, 0);
       outParam.writeUInt32LE(vector.length, 4);
@@ -480,13 +387,49 @@ export async function extraerVectorFacial(
   }
 }
 
-/**
- * Crea la PERSONA en el equipo si todavía no existe (`USER_SERVICE_INSERT`).
- *
- * Primero consulta con `USER_SERVICE_GET`: el ASI responde `fail=16` (NO_RECORD)
- * cuando no está. Si el INSERT choca con un duplicado (18, o 24 que es el que
- * devuelve este firmware) se considera que ya estaba: el alta es idempotente.
- */
+export async function personaEnEquipo(
+  credenciales: CredencialesEquipo,
+  codigo: string
+): Promise<boolean> {
+  return conSesionFacial(credenciales, (sesion, sdk) => {
+    return consultaPersona(sesion, sdk, codigo) === 'existe';
+  });
+}
+
+function consultaPersona(
+  sesion: unknown,
+  sdk: SdkFacial,
+  codigo: string,
+  destino?: Buffer
+): 'existe' | 'no_existe' {
+  const operar = sdk.lib.func(
+    'bool CLIENT_OperateAccessUserService(int64 lLoginID, int emType, void *pInParam, void *pOutParam, int nWaitTime)'
+  );
+
+  const infoGet = destino ?? Buffer.alloc(TAMANO_USER_INFO);
+  const falloGet = Buffer.alloc(4);
+  const outGet = Buffer.alloc(TAMANO_SALIDA_GET);
+  outGet.writeUInt32LE(TAMANO_SALIDA_GET, 0);
+  outGet.writeInt32LE(1, 4);
+  outGet.writeBigUInt64LE(BigInt(sdk.direccion(infoGet)), 8);
+  outGet.writeBigUInt64LE(BigInt(sdk.direccion(falloGet)), 16);
+  const ok = operar(
+    sesion,
+    USER_SERVICE_GET,
+    bufferListaUsuario(codigo),
+    outGet,
+    ESPERA_MS_REGISTRO
+  );
+  if (!ok) {
+    throw new ErrorFacial('error_desconocido', 'No se pudo consultar la persona en el lector.');
+  }
+
+  const falloConsulta = falloGet.readInt32LE(0);
+  if (falloConsulta === FALLO_NOERROR) return 'existe';
+  if (esSinRegistro(falloConsulta)) return 'no_existe';
+  throw errorDeRegistro(falloConsulta, 'consultar a la persona');
+}
+
 export async function guardarPersonaEnEquipo(
   credenciales: CredencialesEquipo,
   persona: { codigo: string; nombre: string }
@@ -496,32 +439,13 @@ export async function guardarPersonaEnEquipo(
       'bool CLIENT_OperateAccessUserService(int64 lLoginID, int emType, void *pInParam, void *pOutParam, int nWaitTime)'
     );
 
-    // ¿Ya está? GET con la info en un buffer holgado y el FAIL_CODE aparte.
-    const infoGet = Buffer.alloc(TAMANO_USER_INFO);
-    const falloGet = Buffer.alloc(4);
-    const outGet = Buffer.alloc(TAMANO_SALIDA_GET);
-    outGet.writeUInt32LE(TAMANO_SALIDA_GET, 0);
-    outGet.writeInt32LE(1, 4);
-    outGet.writeBigUInt64LE(BigInt(sdk.direccion(infoGet)), 8);
-    outGet.writeBigUInt64LE(BigInt(sdk.direccion(falloGet)), 16);
-    operar(
-      sesion,
-      USER_SERVICE_GET,
-      bufferListaUsuario(persona.codigo),
-      outGet,
-      ESPERA_MS_REGISTRO
-    );
+    const existente = Buffer.alloc(TAMANO_USER_INFO);
+    const consulta = consultaPersona(sesion, sdk, persona.codigo, existente);
+    if (consulta === 'existe' && !completarPerfilAsistencia(existente)) return 'ya_existia';
 
-    const falloConsulta = falloGet.readInt32LE(0);
-    if (falloConsulta === FALLO_NOERROR) return 'ya_existia';
-    if (!esSinRegistro(falloConsulta)) {
-      throw errorDeRegistro(falloConsulta, 'consultar a la persona');
-    }
-
-    // INSERT de la persona (szUserID + szName): acá nace el código del lector.
-    const info = bufferPersona(persona.codigo, persona.nombre);
+    const info = consulta === 'existe' ? existente : bufferPersona(persona.codigo, persona.nombre);
     const falloInsert = Buffer.alloc(4);
-    operar(
+    const ok = operar(
       sesion,
       USER_SERVICE_INSERT,
       bufferPunteroUnico(BigInt(sdk.direccion(info))),
@@ -529,19 +453,15 @@ export async function guardarPersonaEnEquipo(
       ESPERA_MS_REGISTRO
     );
 
+    if (!ok)
+      throw new ErrorFacial('error_desconocido', 'No se pudo guardar la persona en el lector.');
     const falloCarga = falloInsert.readInt32LE(0);
-    if (falloCarga === FALLO_NOERROR) return 'creada';
-    if (esYaExiste(falloCarga)) return 'ya_existia'; // la creó otro operador en el medio
+    if (falloCarga === FALLO_NOERROR) return consulta === 'existe' ? 'ya_existia' : 'creada';
+    if (esYaExiste(falloCarga)) return 'ya_existia';
     throw errorDeRegistro(falloCarga, 'crear a la persona');
   });
 }
 
-/**
- * Carga la cara en el equipo desde el VECTOR facial (los 1024 bytes que
- * devuelve `extraerVectorFacial`). Si la persona ya tiene cara, la actualiza
- * (`FACE_SERVICE_UPDATE`); si no, la inserta (`FACE_SERVICE_INSERT`). La foto
- * sola NO sirve: el ASI rechaza el INSERT sin `szFaceDatas` (verificado).
- */
 export async function guardarCaraEnEquipo(
   credenciales: CredencialesEquipo,
   codigo: string,
@@ -581,12 +501,6 @@ export async function guardarCaraEnEquipo(
   });
 }
 
-/**
- * Borra la PERSONA del equipo (`USER_SERVICE_REMOVE`). Devuelve `true` si el
- * equipo confirma que ya no está y `false` solo si responde NO_RECORD (el ASI
- * devuelve OK aunque el registro ya no exista: el borrado es idempotente). Se
- * lleva también su cara y sus credenciales.
- */
 export async function eliminarPersonaEnEquipo(
   credenciales: CredencialesEquipo,
   codigo: string
@@ -610,7 +524,6 @@ export async function eliminarPersonaEnEquipo(
   });
 }
 
-/** Borra SOLO la cara de la persona (deja la persona). Idempotente, igual que la anterior. */
 export async function eliminarCaraEnEquipo(
   credenciales: CredencialesEquipo,
   codigo: string

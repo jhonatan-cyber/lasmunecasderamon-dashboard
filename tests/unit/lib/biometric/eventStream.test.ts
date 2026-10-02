@@ -1,5 +1,8 @@
 // @vitest-environment node
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+vi.mock('@/lib/biometric/eventSdkClient', () => ({
+  abrirAvisosSdk: vi.fn().mockRejectedValue(new Error('SDK unavailable in test'))
+}));
 
 /**
  * Tests de la vía TIEMPO REAL:

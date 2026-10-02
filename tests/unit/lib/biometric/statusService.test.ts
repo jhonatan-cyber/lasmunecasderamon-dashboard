@@ -13,6 +13,9 @@ const db = vi.hoisted(() => ({ queryMock: vi.fn() }));
 const sse = vi.hoisted(() => ({ enviar: vi.fn() }));
 const live = vi.hoisted(() => ({ activos: vi.fn(() => []), conectados: vi.fn(() => []) }));
 const poller = vi.hoisted(() => ({ corriendo: vi.fn(() => false) }));
+// El flujo real dispara el aviso sonoro (Talk): acá se mockea para que el test
+// no intente abrir sesión contra ningún equipo.
+const avisos = vi.hoisted(() => ({ resultado: vi.fn(), enrolamiento: vi.fn() }));
 
 vi.mock('@/lib/database/db', () => ({
   query: db.queryMock,
@@ -39,10 +42,17 @@ vi.mock('@/lib/biometric/recordPoller', () => ({
   estaCorriendo: poller.corriendo
 }));
 
+vi.mock('@/lib/biometric/avisosAudio', () => ({
+  avisarResultadoEnEquipo: avisos.resultado,
+  avisarEnrolamientoEnEquipo: avisos.enrolamiento
+}));
+
 import { obtenerEstadoBiometrico } from '@/lib/biometric/statusService';
 import { procesarEventoBiometrico } from '@/lib/biometric/processBiometricEvent';
 
-function instalarEstado() {
+function instalarEstado(
+  desfaseRows: { serial: string; desfase_promedio: number; muestras: number }[] = []
+) {
   db.queryMock.mockImplementation(async (sql: string) => {
     if (sql.includes("origen = 'biometrico'")) {
       return [
@@ -57,6 +67,7 @@ function instalarEstado() {
         { clave: 'asistencia_hora_fin', valor: '23' }
       ];
     }
+    if (sql.includes('fecha_recepcion - fecha_dispositivo')) return desfaseRows;
     if (sql.includes('FROM biometric_devices')) {
       return [
         {
@@ -130,6 +141,31 @@ describe('obtenerEstadoBiometrico', () => {
     const estado = await obtenerEstadoBiometrico();
 
     expect(estado.pollerActivo).toBe(true);
+  });
+
+  it('expone el desfase del reloj del lector desde la auditoría (24 h)', async () => {
+    // El serial S1 manda eventos con 95 s promedio de atraso; el S2 no manda.
+    instalarEstado([{ serial: 'S1', desfase_promedio: 95.4, muestras: 12 }]);
+
+    const estado = await obtenerEstadoBiometrico();
+
+    const lector = estado.lectores.find(l => l.id === 'dev-1');
+    expect(lector?.desfase).toEqual({ segundos: 95, muestras: 12 });
+    // El lector sin eventos en 24 h no trae desfase (null = sin datos).
+    const sinDatos = estado.lectores.find(l => l.id === 'dev-2');
+    expect(sinDatos?.desfase).toBeNull();
+  });
+
+  it('la consulta del desfase acota a 24 h y agrupa por serial', async () => {
+    instalarEstado();
+
+    await obtenerEstadoBiometrico();
+
+    const consulta = db.queryMock.mock.calls.find(call =>
+      String(call[0]).includes('fecha_recepcion - fecha_dispositivo')
+    );
+    expect(String(consulta?.[0])).toContain("interval '24 hours'");
+    expect(String(consulta?.[0])).toContain('GROUP BY serial');
   });
 });
 

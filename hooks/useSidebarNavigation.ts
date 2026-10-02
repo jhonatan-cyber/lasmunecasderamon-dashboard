@@ -34,13 +34,6 @@ import { useCurrentUser } from '@/hooks/auth/useCurrentUser';
 import { useUserPermissions } from '@/hooks/auth/useUserPermissions';
 import { BARMAN_ROUTE_ALLOWLIST, findSidebarPermission } from '@/lib/constants/route-permissions';
 
-/**
- * Cada ítem es solo presentación: nombre, destino e ícono. El permiso que lo habilita no
- * se declara acá sino en la tabla compartida (`lib/constants/route-permissions`), la misma
- * que usan el middleware y `RouteGuard`, y se resuelve por `href`. Antes cada ítem repetía
- * su par módulo/acción —alguna vez escrito en español, imposible de satisfacer— y el menú
- * podía contradecir a la guarda de la página: el ítem se ocultaba y la página se abría.
- */
 type SidebarItem = {
   name: string;
   href: string;
@@ -272,12 +265,7 @@ export function useSidebarNavigation(
       if (isBarman && !BARMAN_ROUTE_ALLOWLIST.includes(item.href)) return false;
       if (isAdmin) return true;
       if (!permissions.length) return false;
-
-      // El par sale de la tabla compartida con el middleware y `RouteGuard`, así el
-      // menú no puede ofrecer un destino que la guarda de esa página rechace.
       const permission = findSidebarPermission(item.href);
-      // Sin par no hay forma de concederlo desde el panel de Roles: el ítem queda
-      // oculto para los no-administradores en lugar de mostrarse a ciegas.
       if (!permission) return false;
       return hasPermission(permission.module, permission.action);
     },

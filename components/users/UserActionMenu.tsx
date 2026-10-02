@@ -1,10 +1,20 @@
 import { memo } from 'react';
 import { User as UserType } from '@/types/user';
 import { Button } from '@/components/ui/button';
-import { Eye, Pencil, Trash2, Power, Check, MoreVertical, Fingerprint } from 'lucide-react';
+import {
+  Eye,
+  Pencil,
+  Trash2,
+  Power,
+  Check,
+  MoreVertical,
+  Fingerprint,
+  UserMinus
+} from 'lucide-react';
 import {
   DropdownMenu,
   DropdownMenuContent,
+  DropdownMenuGroup,
   DropdownMenuItem,
   DropdownMenuTrigger
 } from '@/components/ui/dropdown-menu';
@@ -15,6 +25,7 @@ interface UserActionMenuProps {
   onViewDetails: (user: UserType) => void;
   onEdit: (user: UserType) => void;
   onEnroll: (user: UserType) => void;
+  onUnenroll: (user: UserType) => void;
   onActivate: (userId: string | number) => void;
   onDeactivate: (userId: string | number) => void;
   onDelete: (userId: string | number) => void;
@@ -32,6 +43,7 @@ function UserActionMenuComponent({
   onViewDetails,
   onEdit,
   onEnroll,
+  onUnenroll,
   onActivate,
   onDeactivate,
   onDelete,
@@ -44,6 +56,7 @@ function UserActionMenuComponent({
   hasAnyAction
 }: UserActionMenuProps) {
   if (!hasAnyAction) return null;
+  const isEnrolled = Number(user.biometrico_facial) === 1 || Number(user.biometrico_huella) === 1;
 
   return (
     <DropdownMenu>
@@ -93,7 +106,7 @@ function UserActionMenuComponent({
           </TooltipProvider>
         )}
 
-        {canEnroll && (
+        {canEnroll && !isEnrolled && (
           <TooltipProvider>
             <Tooltip>
               <TooltipTrigger asChild>
@@ -104,9 +117,18 @@ function UserActionMenuComponent({
                   </span>
                 </DropdownMenuItem>
               </TooltipTrigger>
-              <TooltipContent>Enrolar en el lector de la puerta</TooltipContent>
+              <TooltipContent>Guardar referencia facial en el sistema</TooltipContent>
             </Tooltip>
           </TooltipProvider>
+        )}
+
+        {canEnroll && isEnrolled && (
+          <DropdownMenuGroup>
+            <DropdownMenuItem onSelect={() => onUnenroll(user)}>
+              <UserMinus className='mr-2 size-4' />
+              Desenrolar
+            </DropdownMenuItem>
+          </DropdownMenuGroup>
         )}
 
         {user.status === 0 && canActivate ? (

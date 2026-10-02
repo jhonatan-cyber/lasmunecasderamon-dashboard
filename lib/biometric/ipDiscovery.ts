@@ -8,22 +8,6 @@ import {
 import { buscarEquipoPorMac, macDeTabla, macsDe, sondearPuerto } from '@/lib/biometric/discovery';
 import { apagarListener, encenderListener } from '@/lib/biometric/eventListener';
 import logger from '@/lib/utils/logger';
-
-/**
- * La IP del lector no es un dato estable: el terminal está en DHCP, así que una
- * renovación de concesión, un reinicio del router o un cambio de WiFi la deja
- * apuntando a la nada (y se caen stream, poller, snapshot y enrolamiento).
- *
- * Acá se resuelve con lo único estable que hay: la identidad.
- *   - `capturarMacs` arma la huella del equipo (tabla ARP + config de red del
- *     propio terminal) y se guarda en `biometric_devices.mac`.
- *   - `descubrirIpDispositivo` re-encuentra el equipo por MAC y, antes de
- *     escribir la IP nueva, confirma con el SERIAL: nunca apunta a otro equipo.
- *
- * Lo usan el botón "Buscar por MAC" de la UI, `probarConexion` (captura sola de
- * MAC) y el vigilante de IP de `ipWatcher`.
- */
-
 interface FilaEquipo {
   id: string;
   nombre: string;
@@ -44,15 +28,6 @@ async function cargarEquipo(dispositivoId: string): Promise<FilaEquipo | null> {
   return rows?.[0] ?? null;
 }
 
-/**
- * Huella MAC del equipo tal como está AHORA en la red.
- *
- * 1) Tabla ARP: basta con que el equipo haya respondido un pedido HTTP hace un
- *    momento (lo que acaba de pasar en la prueba de conexión) y su MAC está ahí.
- * 2) CGI de red del equipo: respaldo para cuando la ARP está limpia.
- *
- * Nunca lanza: si no se pudo leer, no hay huella y listo.
- */
 export async function capturarMacs(credenciales: CredencialesEquipo): Promise<string[]> {
   const encontradas = new Set<string>();
 
@@ -61,14 +36,11 @@ export async function capturarMacs(credenciales: CredencialesEquipo): Promise<st
 
   try {
     for (const mac of await leerMacsDelEquipo(credenciales)) encontradas.add(mac);
-  } catch {
-    /* equipo sin CGI de red: nos quedamos con la ARP */
-  }
+  } catch {}
 
   return [...encontradas];
 }
 
-/** Guarda la huella MAC (unión con la que ya había: el equipo puede tener dos NICs). */
 export async function guardarMac(dispositivoId: string, macs: string[]): Promise<boolean> {
   const llegadas = macsDe(macs.join(','));
   if (llegadas.length === 0) return false;
@@ -89,28 +61,20 @@ export async function guardarMac(dispositivoId: string, macs: string[]): Promise
 export interface ResultadoDescubrimiento {
   ok: boolean;
   mensaje: string;
-  /** Hubo que mover la IP (es lo que hace falta cuando el DHCP cambió). */
   cambio: boolean;
   ipAnterior?: string | null;
   ipNueva?: string;
-  /** La IP candidata se confirmó con el serial del equipo. */
   verificada?: boolean;
   mac?: string | null;
-  /** Categoría del fallo para que la ruta HTTP elija el status y la UI el texto. */
   codigo?: 'NO_ENCONTRADO' | 'SIN_CREDENCIALES' | 'SIN_MAC' | 'FUERA_DE_RED';
 }
 
-/**
- * Resuelve dónde está el equipo.
- *
- *  - `forzar: false` (por omisión): si responde en su IP actual, la deja como
- *    está y solo refresca la MAC. Sirve para chequeos periódicos.
- *  - `forzar: true`: barre la subred igual que el DHCP lo hizo, buscando la
- *    MAC registrada y confirmando por serial.
- */
 export async function descubrirIpDispositivo(
   dispositivoId: string,
-  opciones: { forzar?: boolean } = {}
+  opciones: {
+    forzar?: boolean;
+    credenciales?: { ip?: string; usuario: string; clave: string };
+  } = {}
 ): Promise<ResultadoDescubrimiento> {
   const fila = await cargarEquipo(dispositivoId);
   if (!fila) {
@@ -122,7 +86,15 @@ export async function descubrirIpDispositivo(
     };
   }
 
-  const credenciales = credencialesDeFila(fila);
+  const guardadas = credencialesDeFila(fila);
+  const nuevas = opciones.credenciales;
+  const credenciales: CredencialesEquipo | null = nuevas
+    ? {
+        ip: (nuevas.ip ?? '').trim() || guardadas?.ip || '',
+        usuario: nuevas.usuario,
+        clave: nuevas.clave
+      }
+    : guardadas;
   if (!credenciales) {
     return {
       ok: false,
@@ -141,7 +113,6 @@ export async function descubrirIpDispositivo(
     }
   };
 
-  // 1) Sigue viva en su IP: nada que mover (salvo que nos pidan re-buscar).
   if (!opciones.forzar) {
     const enSuIp = await verificarEn(credenciales.ip);
     if (enSuIp) {
@@ -207,7 +178,6 @@ export async function descubrirIpDispositivo(
     verificada: hallado.verificada
   });
 
-  // El listener viejo apuntaba a la IP anterior: se reinicia contra la nueva.
   apagarListener(dispositivoId);
   if (fila.recoger_registros === 1) {
     await encenderListener(dispositivoId).catch(error => {
@@ -229,7 +199,6 @@ export async function descubrirIpDispositivo(
   };
 }
 
-/** ¿Responde ese puerto en esa IP? Chequeo barato para el vigilante de IP. */
 export async function equipoResponde(ip: string, puerto = 80, timeoutMs = 1500): Promise<boolean> {
   return sondearPuerto(ip, puerto, timeoutMs);
 }

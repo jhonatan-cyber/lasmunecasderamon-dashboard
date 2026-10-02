@@ -1,14 +1,5 @@
 import crypto from 'crypto';
 
-/**
- * Cifrado de credenciales del equipo (clave CGI del lector).
- *
- * AES-256-GCM con la variable `BIOMETRIC_ENCRYPTION_KEY` (32 bytes en base64).
- * Formato guardado: `base64(iv).base64(tag).base64(datos)`, todo en una columna
- * text. La clave vive fuera de la base a propósito: filtrar la DB no debe
- * entregar las credenciales de los equipos.
- */
-
 const ALGORITMO = 'aes-256-gcm';
 const IV_BYTES = 12;
 
@@ -28,7 +19,6 @@ function resolverClave(): Buffer {
   return clave;
 }
 
-/** Genera una clave nueva lista para pegar en `BIOMETRIC_ENCRYPTION_KEY`. */
 export function generarClaveCifrado(): string {
   return crypto.randomBytes(32).toString('base64');
 }

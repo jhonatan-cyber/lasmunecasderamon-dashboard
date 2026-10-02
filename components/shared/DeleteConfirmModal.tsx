@@ -1,6 +1,6 @@
 'use client';
 
-import { AlertTriangle, Loader2 } from 'lucide-react';
+import { AlertTriangle, Fingerprint, Loader2 } from 'lucide-react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 
@@ -63,6 +63,15 @@ export function DeleteConfirmModal({
                 </p>
               </div>
             </div>
+            {isDeactivate && (
+              <div className='mt-4 flex items-start gap-2.5 rounded-xl border border-amber-300 dark:border-amber-900/50 bg-amber-50 dark:bg-amber-900/10 p-3'>
+                <Fingerprint className='h-4 w-4 mt-0.5 shrink-0 text-amber-600 dark:text-amber-400' />
+                <p className='text-xs text-amber-800 dark:text-amber-300 text-left'>
+                  El sistema dejará de identificar a esta persona mientras esté inactiva. Sus
+                  plantillas biométricas se conservarán para cuando se active nuevamente.
+                </p>
+              </div>
+            )}
             <p className='mt-4 text-xs text-red-500 dark:text-red-400 font-medium text-center uppercase tracking-wider'>
               {isDeactivate
                 ? 'El registro será desactivado y no podrá ser utilizado'

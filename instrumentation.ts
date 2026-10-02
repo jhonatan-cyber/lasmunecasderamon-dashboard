@@ -19,6 +19,7 @@ export async function register() {
     await encenderTodos();
     const { arrancarVigilanteIp } = await import('@/lib/biometric/ipWatcher');
     arrancarVigilanteIp();
+    console.log('[instrumentation] Recepción biométrica encendida (poller + listeners + IP watch)');
   } catch (error) {
     console.error('[instrumentation] No se pudo arrancar la recepción biométrica', error);
   }

@@ -1,8 +1,9 @@
-import { query, generateUUID } from '@/lib/database/db';
+import { query, generateUUID, withTransaction } from '@/lib/database/db';
 import { BaseRepository } from '@/lib/repositories/BaseRepository';
 import { getNowInBusinessTimezone } from '@/lib/business/timezoneService';
 import logger from '@/lib/utils/logger';
 import {
+  DeviceAuthError,
   DeviceConnectionError,
   capturarFotoDelEquipo,
   capturarHuellaEnEquipo,
@@ -16,37 +17,22 @@ import {
   verificarConexion,
   type CredencialesEquipo
 } from '@/lib/biometric/deviceClient';
+import { avisarEnrolamientoEnEquipo } from '@/lib/biometric/avisosAudio';
 import { cifrarSecreto } from '@/lib/biometric/credencialesCrypto';
-import { capturarMacs, guardarMac } from '@/lib/biometric/ipDiscovery';
+import { capturarMacs, descubrirIpDispositivo, guardarMac } from '@/lib/biometric/ipDiscovery';
+import { sondearPuerto } from '@/lib/biometric/discovery';
+import { imagenGuardadaABase64Jpeg, processAndSaveImage } from '@/lib/utils/image-utils';
 import {
   ErrorFacial,
   eliminarPersonaEnEquipo,
   extraerVectorFacial,
   guardarCaraEnEquipo,
   guardarPersonaEnEquipo,
+  personaEnEquipo,
   similitudCoseno,
   umbralCoincidenciaFacial,
   type MotivoFalloFacial
 } from '@/lib/biometric/faceSdk';
-
-/**
- * Enrolamiento gestionado desde el sistema.
- *
- * Flujo pedido: al crear/editar una persona, desde su ficha se enrola cara
- * y/o huella. La captura es la persona frente al lector; el SERVIDOR es quien
- * se conecta al equipo por IP (CGI Dahua, Digest) y:
- *
- *   1. le pide al equipo la plantilla recién capturada (equipo → DB),
- *   2. la guarda como MAESTRA en `biometric_plantillas` (nuestra DB),
- *   3. se asegura de que la copia en el equipo esté actualizada (DB → equipo).
- *
- * La verificación en la puerta la hace el equipo con su copia local: si la red
- * se cae, la puerta sigue funcionando. La DB maestra permite restaurar el
- * equipo, migrar a otro y auditar qué tenía cargada cada persona.
- *
- * Nota de seguridad: el usuario/clave CGI del equipo se guardan cifrados
- * (AES-256-GCM, `BIOMETRIC_ENCRYPTION_KEY`).
- */
 
 export interface EquipoEnrolable {
   id: string;
@@ -56,7 +42,6 @@ export interface EquipoEnrolable {
   ip: string | null;
   usuario_equipo: string | null;
   clave_cifrada: string | null;
-  /** Huella MAC del equipo (para re-encontrarlo si el DHCP le cambia la IP). */
   mac: string | null;
 }
 
@@ -67,21 +52,12 @@ export interface ResultadoSincronizacion {
     cara: 'sincronizada' | 'no_soportada' | 'sin_datos' | 'error';
     huella: 'sincronizada' | 'no_soportada' | 'sin_datos' | 'error';
   };
-  /** Lo que el equipo devolvió en ESTA sincronización (para mostrarlo en la UI). */
   capturas: {
-    cara: string | null; // foto JPEG en base64
-    huella: string | null; // plantilla en hex
+    cara: string | null;
+    huella: string | null;
   };
-  /**
-   * Cuántas caras tiene guardadas el equipo (null si no se pudo consultar).
-   * Sirve para distinguir "el equipo está vacío" de "este código no existe
-   * todavía acá".
-   */
+
   carasEnEquipo: number | null;
-  /**
-   * Por qué no se pudo completar (SDK ausente, sin foto de referencia, equipo
-   * que no acepta cargas). La UI lo usa para decidir si muestra la guía manual.
-   */
   motivo?: MotivoFalloFacial | 'sin_plantilla';
 }
 
@@ -94,11 +70,6 @@ async function obtenerEquipo(dispositivoId: string): Promise<EquipoEnrolable | n
   return rows[0] ?? null;
 }
 
-/**
- * Winston serializa los `Error` sin su `message` (propiedad no enumerable) y en
- * los ErrorFacial tampoco queda el motivo… sacamos los dos a mano para que el
- * log diga QUÉ falló (p. ej. "CLIENT_Init devolvió false" vs "0x8000004f").
- */
 function datosDeError(error: unknown): Record<string, unknown> {
   if (error instanceof ErrorFacial) return { mensaje: error.message, motivo: error.motivo };
   if (error instanceof Error) return { mensaje: error.message };
@@ -108,14 +79,20 @@ function datosDeError(error: unknown): Record<string, unknown> {
 export interface PruebaConexion {
   ok: boolean;
   mensaje: string;
+  codigo?:
+    | 'CREDENCIALES'
+    | 'CONECTIVIDAD'
+    | 'SIN_CREDENCIALES'
+    | 'SERIAL_AJENO'
+    | 'NO_ENCONTRADO'
+    | 'SIN_MAC'
+    | 'FUERA_DE_RED';
   modelo?: string;
   serial?: string;
   version?: string;
-  /** MAC(s) capturadas al conectar: se guardan para poder re-encontrar el equipo. */
   macs?: string[];
 }
 
-/** Prueba la conexión por IP y devuelve la identidad del equipo. */
 export async function probarConexion(
   dispositivoId: string,
   credencialesNuevas?: { ip: string; usuario: string; clave: string }
@@ -132,12 +109,11 @@ export async function probarConexion(
     if (!credenciales) {
       return {
         ok: false,
-        mensaje: 'El equipo no tiene IP/credenciales cargadas: cargalas para poder enrolar.'
+        mensaje: 'El equipo no tiene IP/credenciales cargadas: cargalas para poder enrolar.',
+        codigo: 'SIN_CREDENCIALES'
       };
     }
     const info = await verificarConexion(credenciales);
-    // Huella MAC del equipo: queda guardada para poder re-encontrarlo si el
-    // DHCP le cambia la IP (el vigilante de IP usa exactamente esto).
     const macs = await capturarMacs(credenciales);
     if (macs.length > 0) {
       await guardarMac(dispositivoId, macs).catch(error => {
@@ -164,57 +140,118 @@ export async function probarConexion(
     return {
       ok: false,
       mensaje:
-        error instanceof DeviceConnectionError ? error.message : 'No se pudo conectar al equipo'
+        error instanceof DeviceConnectionError ? error.message : 'No se pudo conectar al equipo',
+      codigo: error instanceof DeviceAuthError ? 'CREDENCIALES' : 'CONECTIVIDAD'
     };
   }
 }
 
-/**
- * Guarda (y cifra) las credenciales de red de un equipo. El serial se valida
- * contra lo que reporta el propio equipo para evitar cargar la IP de otro
- * terminal: si difiere del serial vinculado, se rechaza.
- */
 export async function guardarCredenciales(
   dispositivoId: string,
-  credenciales: { ip: string; usuario: string; clave: string }
+  credenciales: { ip?: string; usuario: string; clave: string }
 ): Promise<PruebaConexion> {
   const equipo = await obtenerEquipo(dispositivoId);
   if (!equipo) throw new DeviceConnectionError('Equipo no encontrado o revocado');
 
-  const prueba = await probarConexion(dispositivoId, credenciales);
-  if (!prueba.ok) return prueba;
-  if (prueba.serial && prueba.serial.toUpperCase() !== equipo.serial.toUpperCase()) {
+  const usuario = credenciales.usuario.trim();
+  const clave = credenciales.clave;
+  const ip = (credenciales.ip ?? '').trim() || (equipo.ip ?? '').trim();
+  const avisos: string[] = [];
+  let falloPrevio: PruebaConexion | null = null;
+
+  const probarEn = async (ipObjetivo: string) => {
+    const prueba = await probarConexion(dispositivoId, { ip: ipObjetivo, usuario, clave });
+    const serialOk = Boolean(
+      prueba.ok && (!prueba.serial || prueba.serial.toUpperCase() === equipo.serial.toUpperCase())
+    );
+    return { prueba, serialOk };
+  };
+
+  if (ip && (await sondearPuerto(ip, 80, 800))) {
+    const intento = await probarEn(ip);
+    if (intento.serialOk) {
+      await guardarIpYCredenciales(dispositivoId, ip, usuario, clave);
+      return intento.prueba;
+    }
+    if (intento.prueba.codigo === 'CREDENCIALES') {
+      return intento.prueba;
+    }
+    if (intento.prueba.ok) {
+      avisos.push(
+        `El equipo en ${ip} reporta el serial ${intento.prueba.serial}, no ${equipo.serial}.`
+      );
+    } else {
+      falloPrevio = intento.prueba;
+    }
+  }
+
+  const antes = ip || 'sin cargar';
+  const desc = await descubrirIpDispositivo(dispositivoId, {
+    forzar: true,
+    credenciales: { ip, usuario, clave }
+  });
+  if (!desc.ok) {
+    const detalle =
+      desc.codigo === 'FUERA_DE_RED'
+        ? `${desc.mensaje} Sin usuario y clave correctos el sistema no puede confirmar el serial.`
+        : desc.mensaje;
     return {
       ok: false,
-      mensaje: `El equipo en esa IP reporta el serial ${prueba.serial}, no ${equipo.serial}. Verificá la IP.`
+      mensaje: [...avisos, falloPrevio?.mensaje, detalle].filter(Boolean).join(' '),
+      codigo: desc.codigo
     };
   }
 
+  let ipObjetivo = (desc.ipNueva ?? '').trim() || ip;
+  if (ipObjetivo && ipObjetivo !== ip) {
+    avisos.push(`IP actualizada de ${antes} a ${ipObjetivo}.`);
+  }
+
+  const reintentado = await probarEn(ipObjetivo);
+  if (!reintentado.prueba.ok) {
+    return {
+      ...reintentado.prueba,
+      mensaje: [...avisos, reintentado.prueba.mensaje].join(' ')
+    };
+  }
+  if (!reintentado.serialOk) {
+    return {
+      ok: false,
+      mensaje: [
+        ...avisos,
+        `El equipo en ${ipObjetivo} reporta el serial ${reintentado.prueba.serial}, no ${equipo.serial}.`
+      ].join(' '),
+      codigo: 'SERIAL_AJENO'
+    };
+  }
+
+  await guardarIpYCredenciales(dispositivoId, ipObjetivo, usuario, clave);
+  return {
+    ...reintentado.prueba,
+    mensaje: [...avisos, reintentado.prueba.mensaje || 'Conexión OK'].join(' ')
+  };
+}
+
+async function guardarIpYCredenciales(
+  dispositivoId: string,
+  ip: string,
+  usuario: string,
+  clave: string
+): Promise<void> {
   await query(
     `UPDATE biometric_devices
         SET ip = ?, usuario_equipo = ?, clave_cifrada = ?
       WHERE id = ?`,
-    [credenciales.ip, credenciales.usuario, cifrarSecreto(credenciales.clave), dispositivoId]
+    [ip, usuario, cifrarSecreto(clave), dispositivoId]
   );
-  return prueba;
 }
 
 export interface DatosPersona {
   usuarioId: string;
   nombre: string;
-  /** Código que el equipo reporta (usuarios.biometrico_codigo). */
   codigo: string;
 }
 
-/**
- * Foto en vivo de la cámara del lector (`snapshot.cgi`).
- *
- * Es lo ÚNICO que el equipo entrega de su cámara: no hay CGI para disparar una
- * captura de enrolamiento (`FaceInfoManager?action=capture` → Not Implemented)
- * ni para subir caras (`action=add` → Bad Request incluso con una cara real).
- * Sirve para que el operador vea y guarde desde el sistema quién está frente a
- * la puerta, sin tocar el equipo.
- */
 export async function fotoEnVivoDelEquipo(
   dispositivoId: string
 ): Promise<{ base64: string; contentType: string }> {
@@ -223,12 +260,6 @@ export async function fotoEnVivoDelEquipo(
   return capturarFotoDelEquipo(credencialesDe(equipo));
 }
 
-/**
- * Guarda como imagen MAESTRA de la persona la foto que capturó la cámara del
- * lector. En los modelos que aceptan alta remota, `restaurarEnEquipo` empuja esa
- * foto y el equipo extrae su plantilla; en los que no (ASI3213A-W), queda como
- * la imagen de referencia de la persona para la ficha y el enrolamiento.
- */
 export async function guardarFotoCapturada(
   dispositivoId: string,
   persona: DatosPersona,
@@ -237,27 +268,56 @@ export async function guardarFotoCapturada(
   const equipo = await obtenerEquipo(dispositivoId);
   if (!equipo) throw new DeviceConnectionError('Equipo no encontrado o revocado');
 
-  // El equipo todavía no tiene esta foto: queda pendiente de sincronizar.
-  await guardarPlantilla(persona.usuarioId, dispositivoId, 'cara', fotoBase64, {
-    sincronizada: false
+  await withTransaction(async trx => {
+    await guardarPlantilla(persona.usuarioId, dispositivoId, 'cara', fotoBase64, {
+      sincronizada: false,
+      queryFn: trx
+    });
+    await trx('UPDATE usuarios SET biometrico_facial = 1 WHERE id_usuario = ?', [
+      persona.usuarioId
+    ]);
   });
-  const credenciales = credencialesDeFila(equipo);
-  let carasEnEquipo: number | null = null;
-  if (credenciales) {
-    try {
-      carasEnEquipo = await contarCarasEnEquipo(credenciales);
-    } catch {
-      carasEnEquipo = null;
-    }
-  }
-
   return {
     ok: true,
-    mensaje: `Foto del lector guardada como imagen de ${persona.nombre}.`,
+    mensaje: `Foto de ${persona.nombre} guardada en la base de datos del sistema.`,
     detalles: { cara: 'sincronizada', huella: 'sin_datos' },
     capturas: { cara: fotoBase64, huella: null },
-    carasEnEquipo
+    carasEnEquipo: null
   };
+}
+
+export async function usarFotoDelLectorComoPerfil(
+  usuarioId: string,
+  fotoBase64: string
+): Promise<string | null> {
+  try {
+    const filas = await query<{ foto: string | null }[]>(
+      'SELECT foto FROM usuarios WHERE id_usuario = ?',
+      [usuarioId]
+    );
+    const actual = (filas[0]?.foto || '').trim();
+    if (actual && actual !== 'default.png') return null;
+
+    const nombre = await processAndSaveImage(bufferDesdeBase64(fotoBase64), 'user', {
+      width: 500,
+      height: 500,
+      fit: 'cover',
+      position: 'center',
+      quality: 80
+    });
+    await query('UPDATE usuarios SET foto = ? WHERE id_usuario = ?', [nombre, usuarioId]);
+    logger.info('[biometric-enrol] Foto del lector usada como foto de perfil', {
+      usuarioId,
+      foto: nombre
+    });
+    return nombre;
+  } catch (error) {
+    logger.warn('[biometric-enrol] No se pudo usar la foto del lector como foto de perfil', {
+      usuarioId,
+      error: datosDeError(error)
+    });
+    return null;
+  }
 }
 
 function credencialesDe(equipo: EquipoEnrolable): CredencialesEquipo {
@@ -270,13 +330,6 @@ function credencialesDe(equipo: EquipoEnrolable): CredencialesEquipo {
   return c;
 }
 
-/**
- * Sincroniza UNA persona con UN equipo.
- *
- * `huellaCapturadaEnEquipo`: dispara la captura de huella en el terminal y trae
- * la plantilla (si el firmware lo soporta). Si no, se espera que la plantilla ya
- * esté en el equipo (cargada en su menú) y el pull la trae igual.
- */
 export async function sincronizarPersona(
   dispositivoId: string,
   persona: DatosPersona,
@@ -290,17 +343,18 @@ export async function sincronizarPersona(
   const capturas: ResultadoSincronizacion['capturas'] = { cara: null, huella: null };
   const partes: string[] = [];
   let carasEnEquipo: number | null = null;
+  let presenteEnEquipo: boolean | null = null;
   try {
     carasEnEquipo = await contarCarasEnEquipo(credenciales);
   } catch {
     carasEnEquipo = null;
   }
 
-  // ── Cara: pull desde el equipo (la persona se puso frente al lector) ──
   try {
     const cara = await leerCara(credenciales, persona.codigo);
     if (cara) {
       await guardarPlantilla(persona.usuarioId, dispositivoId, 'cara', cara.fotoBase64);
+      await usarFotoDelLectorComoPerfil(persona.usuarioId, cara.fotoBase64);
       capturas.cara = cara.fotoBase64;
       detalles.cara = 'sincronizada';
       partes.push('cara sincronizada');
@@ -310,6 +364,11 @@ export async function sincronizarPersona(
   } catch (error) {
     if (esNoSoportado(error)) {
       detalles.cara = 'no_soportada';
+      try {
+        presenteEnEquipo = await personaEnEquipo(credenciales, persona.codigo);
+      } catch {
+        presenteEnEquipo = null;
+      }
     } else {
       logger.error('[biometric-enrol] Error sincronizando cara', {
         dispositivoId,
@@ -320,7 +379,6 @@ export async function sincronizarPersona(
     }
   }
 
-  // ── Huella: captura en equipo (si se pidió) y pull de la plantilla ──
   try {
     if (opciones.capturarHuella) {
       await capturarHuellaEnEquipo(credenciales, persona.codigo);
@@ -347,19 +405,31 @@ export async function sincronizarPersona(
     }
   }
 
+  const caraConfirmada = detalles.cara === 'sincronizada' || presenteEnEquipo === true;
   const ok =
     detalles.cara !== 'error' &&
     detalles.huella !== 'error' &&
-    (detalles.cara === 'sincronizada' || detalles.huella === 'sincronizada');
+    (caraConfirmada || detalles.huella === 'sincronizada');
 
   let mensaje: string;
-  if (ok) {
+  if (ok && detalles.cara === 'no_soportada' && presenteEnEquipo) {
+    mensaje =
+      `${persona.nombre} ya está en el equipo con su cara cargada. Este firmware no deja leerla ` +
+      `por CGI, así que la foto se conserva en el sistema.`;
+  } else if (ok) {
     mensaje = `Enrolamiento guardado: ${partes.join(' y ')}.`;
   } else if (partes.length > 0) {
     mensaje = `Se detectaron problemas: ${partes.join('; ')}.`;
+  } else if (detalles.cara === 'no_soportada' && presenteEnEquipo === false) {
+    mensaje =
+      `${persona.nombre} todavía no está en el equipo. Este firmware no deja leer la cara por ` +
+      `CGI, así que usá «Dar de alta en el equipo» para crearla con su foto (es idempotente).`;
+  } else if (detalles.cara === 'no_soportada') {
+    mensaje =
+      `No se pudo confirmar si ${persona.nombre} está en el equipo: este firmware no deja leer ` +
+      `la cara por CGI y la consulta por NetSDK tampoco respondió. «Dar de alta en el equipo» ` +
+      `se puede reintentar sin riesgo (el alta es idempotente).`;
   } else {
-    // La persona todavía no está en el equipo: el alta se hace desde acá mismo
-    // (NetSDK), así que el mensaje apunta a esa acción en vez del menú del equipo.
     const codigoEnEquipo =
       carasEnEquipo === 0 ? 'El equipo todavía no tiene ninguna cara guardada. ' : '';
     mensaje =
@@ -367,6 +437,7 @@ export async function sincronizarPersona(
       `No encontramos a nadie con el código ${persona.codigo} en el equipo. Usá «Dar de alta en el equipo» ` +
       `para crear a ${persona.nombre} y cargarle la cara por red, sin tocar el menú del equipo.`;
   }
+  if (ok) void avisarEnrolamientoEnEquipo(dispositivoId, { credenciales });
 
   return { ok, mensaje, detalles, capturas, carasEnEquipo };
 }
@@ -376,12 +447,6 @@ interface EstadoAltaCara {
   cara: 'cargada' | 'actualizada';
 }
 
-/**
- * Plantillas a empujar al equipo: las propias de ESTE equipo y, si no hay cara
- * para este equipo, la última foto maestra de la persona (la cara es de la
- * persona, no del lector). La huella no se copia entre equipos: depende del
- * sensor que la capturó.
- */
 async function leerPlantillasParaAlta(
   usuarioId: string,
   dispositivoId: string
@@ -400,21 +465,24 @@ async function leerPlantillasParaAlta(
       LIMIT 1`,
     [usuarioId]
   );
-  return [...propias, ...maestra];
+  if (maestra.length > 0) return [...propias, ...maestra];
+  const ficha = await query<{ foto: string | null }[]>(
+    'SELECT foto FROM usuarios WHERE id_usuario = ?',
+    [usuarioId]
+  );
+  const foto = (ficha[0]?.foto || '').trim();
+  if (!foto) return propias;
+  const datos = await imagenGuardadaABase64Jpeg(foto).catch(() => null);
+  if (!datos) return propias;
+  return [...propias, { tipo: 'cara', datos }];
 }
 
-/** Motivos por los que conviene reintentar el alta por el CGI histórico. */
 const REINTENTAR_POR_CGI = new Set<MotivoFalloFacial>([
   'sdk_no_disponible',
   'login_fallido',
   'no_soportado'
 ]);
 
-/**
- * DB → equipo de UNA cara: el motor del equipo extrae el vector de la foto
- * maestra (`extraerVectorFacial`), se crea la persona y se carga/actualiza la
- * cara. Si el puente NetSDK no está disponible se cae al CGI histórico.
- */
 async function empujarCaraAlEquipo(
   credenciales: CredencialesEquipo,
   persona: DatosPersona,
@@ -438,18 +506,10 @@ async function empujarCaraAlEquipo(
   }
 }
 
-/**
- * Restaura/da de alta en el equipo lo que hay en la DB (DB → equipo).
- *
- * La cara va por NetSDK (`CLIENT_OperateAccessUserService` +
- * `CLIENT_OperateAccessFaceService`), que es lo único que funciona en el
- * ASI3213A-W: sus CGI de alta responden Bad Request. La huella se intenta por
- * CGI porque no todos los modelos exponen FingerPrintManager. Con esto se da
- * de alta a la persona y su cara sin tocar el menú del equipo.
- */
 export async function restaurarEnEquipo(
   dispositivoId: string,
-  persona: DatosPersona
+  persona: DatosPersona,
+  opciones: { avisar?: boolean } = {}
 ): Promise<ResultadoSincronizacion> {
   const equipo = await obtenerEquipo(dispositivoId);
   if (!equipo) throw new DeviceConnectionError('Equipo no encontrado o revocado');
@@ -470,8 +530,7 @@ export async function restaurarEnEquipo(
       } else {
         await subirHuella(credenciales, persona.codigo, plantilla.datos);
       }
-      // La copia del equipo ya tiene esta versión: queda registrada para la
-      // ficha y para que la próxima restauración la encuentre por equipo.
+
       await guardarPlantilla(persona.usuarioId, dispositivoId, tipo, plantilla.datos, {
         sincronizada: true
       });
@@ -523,19 +582,95 @@ export async function restaurarEnEquipo(
     carasEnEquipo = null;
   }
 
+  if (ok && opciones.avisar !== false) {
+    void avisarEnrolamientoEnEquipo(dispositivoId, { credenciales });
+  }
+
   return { ok, mensaje, motivo, detalles, capturas: { cara: null, huella: null }, carasEnEquipo };
 }
 
-/**
- * Alta al equipo de una persona recién creada en el sistema (crear usuario →
- * registrado en el lector).
- *
- * Usa la foto que se le subió al crearla como plantilla maestra de la persona
- * (quedó pendiente de sincronizar) y después da de alta DB → equipo con
- * `restaurarEnEquipo`: NetSDK crea la persona con su código y le carga la cara.
- * El error de red/SDK se devuelve en el resultado, nunca lanza, para no atar el
- * alta en el lector a que el equipo responda.
- */
+export interface ResumenResincronizacion {
+  restauradas: string[];
+  fallidas: { nombre: string; motivo: string }[];
+  inactivosOmitidos: number;
+  sinDatos: number;
+}
+
+export async function resincronizarPendientesEnEquipo(
+  dispositivoId: string
+): Promise<ResumenResincronizacion> {
+  const equipo = await obtenerEquipo(dispositivoId);
+  if (!equipo) throw new DeviceConnectionError('Equipo no encontrado o revocado');
+  const credenciales = credencialesDe(equipo);
+  const pendientes = await query<
+    { usuario_id: string; nombre: string | null; apellido: string | null; estado: number | null }[]
+  >(
+    `SELECT DISTINCT ON (bp.usuario_id)
+           bp.usuario_id, u.nombre, u.apellido, u.estado
+       FROM biometric_plantillas bp
+       LEFT JOIN usuarios u ON u.id_usuario = bp.usuario_id
+      WHERE bp.dispositivo_id = ? AND bp.sincronizada = 0
+      ORDER BY bp.usuario_id, bp.fecha_captura ASC`,
+    [dispositivoId]
+  );
+
+  const resumen: ResumenResincronizacion = {
+    restauradas: [],
+    fallidas: [],
+    inactivosOmitidos: 0,
+    sinDatos: 0
+  };
+
+  for (const fila of pendientes) {
+    const usuarioId = String(fila.usuario_id);
+    const nombre = [fila.nombre, fila.apellido].filter(Boolean).join(' ').trim() || usuarioId;
+    if (fila.estado === null || Number(fila.estado) !== 1) {
+      resumen.inactivosOmitidos += 1;
+      continue;
+    }
+
+    try {
+      const resultado = await restaurarEnEquipo(
+        dispositivoId,
+        {
+          usuarioId,
+          nombre,
+          codigo: await codigoDePersona(usuarioId)
+        },
+        { avisar: false }
+      );
+      if (resultado.ok) {
+        resumen.restauradas.push(nombre);
+      } else {
+        resumen.fallidas.push({ nombre, motivo: resultado.motivo || 'error' });
+      }
+    } catch (error) {
+      logger.error('[biometric-enrol] Error re-sincronizando a una persona', {
+        dispositivoId,
+        usuarioId,
+        error: datosDeError(error)
+      });
+      resumen.fallidas.push({
+        nombre,
+        motivo: error instanceof Error ? error.message : 'error desconocido'
+      });
+    }
+  }
+  if (resumen.restauradas.length > 0) {
+    void avisarEnrolamientoEnEquipo(dispositivoId, { credenciales });
+  }
+
+  return resumen;
+}
+
+async function codigoDePersona(usuarioId: string): Promise<string> {
+  const filas = await query<{ biometrico_codigo: string | null }[]>(
+    'SELECT biometrico_codigo FROM usuarios WHERE id_usuario = ?',
+    [usuarioId]
+  );
+  return String(filas[0]?.biometrico_codigo || '').trim();
+}
+
 export async function darDeAltaConFoto(
   dispositivoId: string,
   persona: DatosPersona,
@@ -547,13 +682,60 @@ export async function darDeAltaConFoto(
   return restaurarEnEquipo(dispositivoId, persona);
 }
 
-/**
- * Quita a la persona del equipo y marca sus plantillas como fuera de sincronía.
- *
- * El borrado principal va por NetSDK: el ASI3213A-W no borra personas por CGI
- * (y su cara se va con la persona). El CGI histórico se llama igual, como
- * complemento para tarjetas/huellas y para los modelos que sí lo soportan.
- */
+export interface PresenciaEnEquipo {
+  dispositivoId: string;
+  nombre: string;
+  ip: string | null;
+  presente: boolean | null;
+  motivo?: 'sdk_no_disponible' | 'error' | 'sin_credenciales';
+}
+
+export async function estadoEnEquipos(persona: DatosPersona): Promise<PresenciaEnEquipo[]> {
+  const equipos = await query<EquipoEnrolable[]>(
+    `SELECT id, nombre, marca, serial, ip, usuario_equipo, clave_cifrada, mac
+       FROM biometric_devices WHERE revocado_en IS NULL ORDER BY fecha_crea ASC`,
+    []
+  );
+
+  const resultados: PresenciaEnEquipo[] = [];
+  for (const equipo of equipos) {
+    const credenciales = credencialesDeFila(equipo);
+    if (!credenciales) {
+      resultados.push({
+        dispositivoId: equipo.id,
+        nombre: equipo.nombre,
+        ip: equipo.ip,
+        presente: null,
+        motivo: 'sin_credenciales'
+      });
+      continue;
+    }
+    try {
+      const presente = await personaEnEquipo(credenciales, persona.codigo);
+      resultados.push({
+        dispositivoId: equipo.id,
+        nombre: equipo.nombre,
+        ip: equipo.ip,
+        presente
+      });
+    } catch (error) {
+      const sdkNoDisponible = error instanceof ErrorFacial && error.motivo === 'sdk_no_disponible';
+      logger.warn('[biometric-enrol] No se pudo consultar la presencia de la persona', {
+        dispositivoId: equipo.id,
+        error: datosDeError(error)
+      });
+      resultados.push({
+        dispositivoId: equipo.id,
+        nombre: equipo.nombre,
+        ip: equipo.ip,
+        presente: null,
+        motivo: sdkNoDisponible ? 'sdk_no_disponible' : 'error'
+      });
+    }
+  }
+  return resultados;
+}
+
 export async function quitarDelEquipo(dispositivoId: string, persona: DatosPersona): Promise<void> {
   const equipo = await obtenerEquipo(dispositivoId);
   if (!equipo) return;
@@ -586,26 +768,21 @@ function esNoSoportado(error: unknown): boolean {
     texto.includes('no soportada') ||
     texto.includes('no soportado') ||
     texto.includes('no acepta') ||
-    texto.includes('no implementado')
+    texto.includes('no implementado') ||
+    texto.includes('no implementada')
   );
 }
 
-/**
- * Guarda la plantilla maestra de una persona.
- *
- * `sincronizada` dice si el equipo YA la tiene: en el pull equipo→DB es true
- * (la copia del equipo es el origen); en una foto capturada desde el sistema es
- * false, porque todavía hay que empujarla con `restaurarEnEquipo`.
- */
 async function guardarPlantilla(
   usuarioId: string,
   dispositivoId: string,
   tipo: 'huella' | 'cara',
   datos: string,
-  opciones: { sincronizada?: boolean } = {}
+  opciones: { sincronizada?: boolean; queryFn?: typeof query } = {}
 ): Promise<void> {
+  const queryFn = opciones.queryFn ?? query;
   const sincronizada = opciones.sincronizada ?? true;
-  const existente = await query<{ id: string; datos: string }[]>(
+  const existente = await queryFn<{ id: string; datos: string }[]>(
     `SELECT id, datos FROM biometric_plantillas
       WHERE usuario_id = ? AND dispositivo_id = ? AND tipo = ?`,
     [usuarioId, dispositivoId, tipo]
@@ -614,8 +791,7 @@ async function guardarPlantilla(
   const ahora = getNowInBusinessTimezone();
   const marcaSync = sincronizada ? ahora : null;
   if (existente.length > 0 && existente[0].datos === datos) {
-    // Sin cambios: solo refrescamos la marca de sincronía (si el equipo la tiene).
-    await query(
+    await queryFn(
       `UPDATE biometric_plantillas
           SET fecha_sincronizacion = ?, sincronizada = ?
         WHERE id = ?`,
@@ -625,12 +801,12 @@ async function guardarPlantilla(
   }
 
   if (existente.length > 0) {
-    await query(
-      'UPDATE biometric_plantillas SET datos = ?, fecha_captura = ?, sincronizada = ?, fecha_sincronizacion = ? WHERE id = ?',
+    await queryFn(
+      'UPDATE biometric_plantillas SET datos = ?, fecha_captura = ?, sincronizada = ?, fecha_sincronizacion = ?, vector = NULL, vector_actualizado_en = NULL WHERE id = ?',
       [datos, ahora, sincronizada ? 1 : 0, marcaSync, existente[0].id]
     );
   } else {
-    await BaseRepository.insert(query, 'biometric_plantillas', {
+    await BaseRepository.insert(queryFn, 'biometric_plantillas', {
       id: generateUUID(),
       usuario_id: usuarioId,
       dispositivo_id: dispositivoId,
@@ -640,36 +816,19 @@ async function guardarPlantilla(
       fecha_sincronizacion: marcaSync
     });
   }
-  // La copia del equipo es la fuente de este pull y queda como está; la
-  // restauración DB → equipo es responsabilidad de `restaurarEnEquipo`.
 }
 
 export interface ResultadoVerificacionFacial {
-  /** El proceso corrió (no dice si coincidió). */
   ok: boolean;
   mensaje: string;
   motivo?: MotivoFalloFacial | 'sin_plantilla';
   coincide?: boolean;
-  /** Similitud coseno 0..1 entre la foto guardada y la captura en vivo. */
   similitud?: number;
   umbral?: number;
-  /** Foto en vivo que se usó para comparar (JPEG base64). */
   captura?: string | null;
-  /** Foto de referencia guardada (JPEG base64). */
   plantilla?: string | null;
 }
 
-/**
- * Verifica que la cara que el lector ve AHORA sea la de la persona enrolada.
- *
- * Compara la captura en vivo (`snapshot.cgi`) contra la última foto guardada de
- * la persona en `biometric_plantillas` usando el motor facial del propio equipo
- * (`CLIENT_FaceInfoOpreate` → vector de 256 floats) y similitud coseno.
- *
- * Distinto de la verificación en la puerta: esto es una ayuda del operador al
- * enrolar (avisar si quien está frente al lector no parece ser esa persona),
- * no bloquea el acceso ni escribe nada en el equipo.
- */
 export async function verificarCoincidenciaFacial(
   dispositivoId: string,
   persona: DatosPersona

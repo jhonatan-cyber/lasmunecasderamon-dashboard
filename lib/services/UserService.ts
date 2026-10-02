@@ -8,6 +8,7 @@ import fs from 'fs/promises';
 import path from 'path';
 import { existsSync } from 'fs';
 import { z } from 'zod';
+import { logger } from '@/lib/utils/logger';
 
 type UserCreateInput = z.input<typeof UserCreateSchema> & { foto?: unknown };
 type UserUpdateInput = z.input<typeof UserUpdateSchema> & { foto?: unknown };
@@ -110,6 +111,7 @@ export class UserService {
     return { user: result, newTempPassword };
   }
 
+  /** Cambia el estado local; no registra ni modifica personas en el lector. */
   static async toggleUserStatus(id: string, action: string) {
     if (!['activate', 'deactivate'].includes(action)) {
       throw new ValidationError('Acción de estado inválida', {
@@ -118,10 +120,20 @@ export class UserService {
       });
     }
 
+    const usuarioId = id.toString();
+    const usuario = await UserRepository.getById(usuarioId);
+    if (!usuario) throw new NotFoundError('Usuario', usuarioId);
+
     if (action === 'deactivate') {
-      await PermissionsCache.invalidate(id);
+      await PermissionsCache.invalidate(usuarioId);
     }
-    return await UserRepository.updateStatus(id, action);
+
+    const resultado = await UserRepository.updateStatus(usuarioId, action);
+
+    return {
+      ...resultado,
+      lector: { intentado: false, equiposOk: [] as string[], equiposFallo: [] as string[] }
+    };
   }
 
   static async getAll(params?: Record<string, unknown>) {
@@ -132,8 +144,14 @@ export class UserService {
     return await UserRepository.getById(id.toString());
   }
 
+  /** Elimina la cuenta y sus plantillas locales. */
   static async delete(id: string | number) {
-    return await UserRepository.delete(id.toString());
+    const usuarioId = id.toString();
+    const usuario = await UserRepository.getById(usuarioId);
+
+    if (usuario) await UserRepository.deletePlantillasBiometricas(usuarioId);
+
+    return await UserRepository.delete(usuarioId);
   }
 
   static async update(id: string | number, body: Record<string, unknown>) {

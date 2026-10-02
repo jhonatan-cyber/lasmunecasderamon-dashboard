@@ -1,240 +1,194 @@
-import { credencialesDeFila, type CredencialesEquipo } from '@/lib/biometric/deviceClient';
-
-/**
- * Flujo en vivo del equipo: `eventManager.cgi?action=attach`.
- *
- * Esta es la vía TIEMPO REAL: el servidor abre UNA conexión HTTP persistente
- * hacia el equipo y el lector escribe cada verificación en el momento en que
- * ocurre (multipart con bloques `Events[i].Code=AccessControl`). La verificación
- * en la puerta es local del equipo; esta conexión solo TRASLADA el evento.
- *
- * Diferencias con las otras dos vías:
- *   - push a /dahua/push: el equipo llama al servidor (requiere URL pública).
- *   - poller (recordPoller): el servidor pregunta cada minuto (no es instantáneo).
- *   - ESTE listener: conexión viva, latencia sub-segundo, sin abrir nada al mundo.
- *
- * Nota: algunos firmwares también exponen `snapManager.cgi` para adjuntar
- * snapshots; el canal `AccessControl` de `eventManager.cgi` es el estándar de
- * los ASI y contiene todo lo que necesitamos (UserID, Method, Status, UTC).
- */
-
-const LECTURA_TIMEOUT_MS = 90_000; // entre bloques hay heartbeat silencioso
+import {
+  construirAuthorizationDigest,
+  type CredencialesEquipo
+} from '@/lib/biometric/deviceClient';
+import { EventMultipartDecoder } from './eventMultipart';
 
 export interface EventoDelEquipo {
-  /** Epoch UTC en segundos del instante del evento. */
   createTime: number;
   userId: string;
-  tipo: string | null; // Entry / Exit
-  status: number | null; // 1 = verificación exitosa
-  metodo: number | null; // 6 = huella, 15 = cara, 1 = tarjeta, 0 = clave
-  code: string; // AccessControl, Heartbeat, etc.
+  tipo: string | null;
+  status: number | null;
+  metodo: number | null;
+  code: string;
   raw: string;
 }
 
-/**
- * Parsea un bloque del stream agrupando los parámetros `Events[i].Clave=Valor`
- * por índice de evento (el cuerpo multipart del attach los trae prefijados).
- */
-export function parsearBloqueEvento(bloque: string): EventoDelEquipo | null {
-  const eventos: EventoDelEquipo[] = [];
-  const grupos = new Map<number, Record<string, string>>();
-  for (const linea of bloque.split(/\r?\n/)) {
-    const idx = linea.indexOf('=');
-    if (idx <= 0) continue;
-    const clave = linea.slice(0, idx).trim();
-    const valor = linea.slice(idx + 1).trim();
-    const m = clave.match(/^(?:Events\[(\d+)\]\.)?(\w+)$/);
-    if (!m) continue;
-    const indice = m[1] ? Number(m[1]) : 0;
-    const campo = m[2];
-    const grupo = grupos.get(indice) ?? {};
-    grupo[campo] = valor;
-    grupos.set(indice, grupo);
-  }
-
-  for (const campos of grupos.values()) {
-    const code = campos['Code'] || campos['code'] || '';
-    const createTime = Number(campos['CreateTime'] ?? campos['UTC'] ?? NaN);
-    const userId = (campos['UserID'] ?? campos['CardNo'] ?? campos['User'] ?? '').trim();
-    // Heartbeats y bloques sin persona no son eventos de verificación.
-    if (code !== 'AccessControl' || !userId || !Number.isFinite(createTime)) continue;
-    eventos.push({
-      code,
-      createTime,
-      userId,
-      tipo: campos['Type'] ?? null,
-      status: campos['Status'] != null ? Number(campos['Status']) : null,
-      metodo: campos['Method'] != null ? Number(campos['Method']) : null,
-      raw: bloque.substring(0, 2000)
-    });
-  }
-
-  return eventos[0] ?? null;
+function normalizar(campos: Record<string, unknown>, raw: string): EventoDelEquipo | null {
+  const nested = campos.Data ?? campos.data;
+  const data = nested && typeof nested === 'object' ? (nested as Record<string, unknown>) : {};
+  const c = { ...campos, ...data };
+  const code = String(campos.Code ?? campos.code ?? '');
+  const userId = String(c.UserID ?? c.UserId ?? c.CardNo ?? c.User ?? '').trim();
+  let createTime = Number(c.CreateTime ?? c.UTC ?? NaN);
+  if (createTime > 1e12) createTime = Math.floor(createTime / 1000);
+  if (code !== 'AccessControl' || !userId || !Number.isFinite(createTime) || createTime <= 0)
+    return null;
+  const number = (value: unknown) =>
+    value != null && Number.isFinite(Number(value)) ? Number(value) : null;
+  return {
+    code,
+    userId,
+    createTime,
+    tipo: c.Type == null ? null : String(c.Type),
+    status: number(c.Status),
+    metodo: number(c.Method),
+    raw: raw.substring(0, 2000)
+  };
 }
 
-/**
- * Extrae TODOS los eventos de un chunk del stream multipart. Los grupos
- * `Events[i]` con varias verificaciones en un mismo bloque quedan todos.
- */
 export function extraerEventosDeChunk(chunk: string): EventoDelEquipo[] {
-  const eventos: EventoDelEquipo[] = [];
-  const partes = chunk.split(/^--.*$/m);
-  for (const parte of partes) {
-    const cuerpo = parte.replace(/Content-[Tt]ype:[^\r\n]*\r?\n/, '').trim();
-    if (!cuerpo) continue;
-    // parsearBloqueEvento devuelve el primero del bloque; para múltiples
-    // eventos reusamos el agrupado directo por índice.
-    const grupos = new Map<number, Record<string, string>>();
-    for (const linea of cuerpo.split(/\r?\n/)) {
-      const idx = linea.indexOf('=');
-      if (idx <= 0) continue;
-      const clave = linea.slice(0, idx).trim();
-      const valor = linea.slice(idx + 1).trim();
-      const m = clave.match(/^(?:Events\[(\d+)\]\.)?(\w+)$/);
-      if (!m) continue;
-      const indice = m[1] ? Number(m[1]) : 0;
-      const grupo = grupos.get(indice) ?? {};
-      grupo[m[2]] = valor;
-      grupos.set(indice, grupo);
+  const result: EventoDelEquipo[] = [];
+  for (const part of chunk.split(/^--[^\r\n]*$/m)) {
+    const body = part.replace(/^Content-[^\r\n]*$/gim, '').trim();
+    if (!body) continue;
+    if (body.startsWith('{')) {
+      try {
+        const object = JSON.parse(body);
+        const events = Array.isArray(object.Events) ? object.Events : [object];
+        for (const item of events) {
+          const event = normalizar(item, body);
+          if (event) result.push(event);
+        }
+      } catch {}
+      continue;
     }
-    for (const campos of grupos.values()) {
-      const code = campos['Code'] || campos['code'] || '';
-      const createTime = Number(campos['CreateTime'] ?? campos['UTC'] ?? NaN);
-      const userId = (campos['UserID'] ?? campos['CardNo'] ?? campos['User'] ?? '').trim();
-      if (code !== 'AccessControl' || !userId || !Number.isFinite(createTime)) continue;
-      eventos.push({
-        code,
-        createTime,
-        userId,
-        tipo: campos['Type'] ?? null,
-        status: campos['Status'] != null ? Number(campos['Status']) : null,
-        metodo: campos['Method'] != null ? Number(campos['Method']) : null,
-        raw: cuerpo.substring(0, 2000)
-      });
+    const groups = new Map<string, Record<string, unknown>>();
+    for (const line of body.split(/\r?\n/)) {
+      if (/^Code=[^;]+;/.test(line)) {
+        const jsonStart = line.indexOf(';data=');
+        const prefix = jsonStart < 0 ? line : line.slice(0, jsonStart);
+        const fields: Record<string, unknown> = {};
+        for (const pair of prefix.split(';')) {
+          const at = pair.indexOf('=');
+          if (at > 0) fields[pair.slice(0, at)] = pair.slice(at + 1);
+        }
+        if (jsonStart >= 0) {
+          try {
+            fields.data = JSON.parse(line.slice(jsonStart + 6));
+          } catch {
+            continue;
+          }
+        }
+        const event = normalizar(fields, line);
+        if (event) result.push(event);
+        continue;
+      }
+      const match = /^(?:Events\[(\d+)\]\.)?(?:Data\.)?(\w+)=(.*)$/.exec(line.trim());
+      if (!match) continue;
+      const key = match[1] ?? '0';
+      const group = groups.get(key) ?? {};
+      group[match[2]] = match[3];
+      groups.set(key, group);
+    }
+    for (const group of groups.values()) {
+      const event = normalizar(group, body);
+      if (event) result.push(event);
     }
   }
-  return eventos;
+  return result;
+}
+
+export function parsearBloqueEvento(bloque: string): EventoDelEquipo | null {
+  return extraerEventosDeChunk(bloque)[0] ?? null;
 }
 
 export interface OpcionesListener {
   onEvento: (evento: EventoDelEquipo) => void | Promise<void>;
+  onChunk?: (texto: string) => void;
   onError?: (error: unknown) => void;
   signal: AbortSignal;
 }
 
-/** Cuando el equipo NO soporta eventManager (404), el error lo marca. */
 export class EventManagerNoSoportadoError extends Error {
   constructor() {
-    super('El equipo no soporta eventManager.cgi (stream en vivo)');
+    super('El equipo no soporta las suscripciones CGI de eventos');
     this.name = 'EventManagerNoSoportadoError';
   }
 }
 
-function construirAuthHeader(
-  method: string,
-  uri: string,
-  credenciales: CredencialesEquipo,
-  challenge: Record<string, string>
-): string {
-  // Reusa la construcción Digest del cliente (misma normativa RFC 2617).
-  // Se importa acá para no duplicar la lógica de firma.
+const PATHS = [
+  '/cgi-bin/snapManager.cgi?action=attachFileProc&Flags[0]=Event&Events=[AccessControl]&heartbeat=5',
+  '/cgi-bin/eventManager.cgi?action=attach&codes=[AccessControl]&heartbeat=5'
+];
 
-  const { construirAuthorizationDigest } =
-    require('@/lib/biometric/deviceClient') as typeof import('@/lib/biometric/deviceClient');
-  return construirAuthorizationDigest(method, uri, credenciales, challenge);
-}
-
-/**
- * Abre la conexión viva y consume el stream hasta que la aborten.
- * Resuelve cuando la conexión se estableció; los eventos llegan por `onEvento`.
- */
 export async function abrirFlujoEventos(
   credenciales: CredencialesEquipo,
   opciones: OpcionesListener
 ): Promise<void> {
-  const base = `http://${credenciales.ip}`;
-  const path = '/cgi-bin/eventManager.cgi?action=attach&codes=[AccessControl]';
-  const url = new URL(path, base);
-  const uri = url.pathname + url.search;
-
-  const headers: Record<string, string> = { 'User-Agent': 'LasMunecasDeRamon/1.0' };
-
-  const hacerPedido = async (authHeader?: string): Promise<Response> => {
-    const init: RequestInit = { method: 'GET', headers, signal: opciones.signal };
-    if (authHeader) (init.headers as Record<string, string>)['Authorization'] = authHeader;
-    return fetch(url, init);
-  };
-
-  let response = await hacerPedido().catch(error => {
-    throw new Error(`No se pudo conectar al equipo en ${credenciales.ip}: ${String(error)}`);
-  });
-
-  if (response.status === 401) {
-    const header = response.headers.get('www-authenticate');
-    if (!header || !header.toLowerCase().startsWith('digest')) {
-      throw new Error('El equipo no acepta autenticación Digest');
-    }
-    const params: Record<string, string> = {};
-    const re = /(\w+)=(?:"([^"]*)"|([^,]*))/g;
-    let m: RegExpExecArray | null;
-    while ((m = re.exec(header)) !== null) {
-      params[m[1].toLowerCase()] = m[2] ?? m[3] ?? '';
-    }
-    headers['Authorization'] = construirAuthHeader('GET', uri, credenciales, params);
-    response = await hacerPedido();
-  }
-
-  if (response.status === 401) throw new Error('Usuario o clave del equipo incorrectos');
-  if (response.status === 404 || response.status === 501) {
-    throw new EventManagerNoSoportadoError();
-  }
-  if (!response.ok || !response.body) {
-    throw new Error(`El equipo respondió ${response.status} al abrir el stream`);
-  }
-
-  const reader = response.body.getReader();
-  const decoder = new TextDecoder();
-  let buffer = '';
-
-  // El "resolve" ocurre al establecerse la conexión; la lectura continúa en
-  // background hasta abort. Los errores de red suben para que el supervisor
-  // reconecte con backoff.
-  void (async () => {
+  let lastError: unknown = new EventManagerNoSoportadoError();
+  for (const path of PATHS) {
+    if (opciones.signal.aborted) throw new Error('Event subscription aborted');
+    const abort = new AbortController();
+    const stop = () => abort.abort();
+    opciones.signal.addEventListener('abort', stop, { once: true });
+    const timeout = setTimeout(stop, 10000);
     try {
-      for (;;) {
-        const { done, value } = await Promise.race([
-          reader.read(),
-          new Promise<never>((_, reject) =>
-            setTimeout(() => reject(new Error('stream inactivo')), LECTURA_TIMEOUT_MS)
-          )
-        ]);
-        if (done) throw new Error('El equipo cerró el stream');
-        buffer += decoder.decode(value, { stream: true });
-        // Los bloques terminan en \r\n\r\n (o \n\n); procesamos lo completo.
-        let corte: number;
-        while ((corte = buscarCorte(buffer)) !== -1) {
-          const bloque = buffer.slice(0, corte);
-          buffer = buffer.slice(corte).replace(/^\r?\n\r?\n/, '');
-          for (const evento of extraerEventosDeChunk(bloque)) {
-            await opciones.onEvento(evento);
+      const url = new URL(path, `http://${credenciales.ip}`);
+      const headers: Record<string, string> = { 'User-Agent': 'LasMunecasDeRamon/1.0' };
+      let response = await fetch(url, { headers, signal: abort.signal });
+      if (response.status === 401) {
+        const challenge: Record<string, string> = {};
+        const header = response.headers.get('www-authenticate') || '';
+        await response.body?.cancel();
+        if (!/^Digest /i.test(header)) throw new Error('Unsupported event authentication');
+        for (const match of header.matchAll(/(\w+)=(?:"([^"]*)"|([^,]*))/g))
+          challenge[match[1].toLowerCase()] = match[2] ?? match[3];
+        headers.Authorization = construirAuthorizationDigest(
+          'GET',
+          url.pathname + url.search,
+          credenciales,
+          challenge
+        );
+        response = await fetch(url, { headers, signal: abort.signal });
+      }
+      if (!response.ok || !response.body) {
+        await response.body?.cancel();
+        if ([400, 404, 501].includes(response.status)) throw new EventManagerNoSoportadoError();
+        throw new Error(`Event subscription HTTP ${response.status}`);
+      }
+      const contentType = response.headers.get('content-type') || '';
+      const boundary = /boundary="?([^";\s]+)/i.exec(contentType)?.[1];
+      if (!boundary) {
+        await response.body.cancel();
+        throw new Error('Event response is not multipart');
+      }
+      clearTimeout(timeout);
+      const decoder = new EventMultipartDecoder(boundary);
+      const reader = response.body.getReader();
+      void (async () => {
+        let idle: ReturnType<typeof setTimeout> | undefined;
+        try {
+          while (!abort.signal.aborted) {
+            idle = setTimeout(stop, 20000);
+            const { done, value } = await reader.read();
+            clearTimeout(idle);
+            if (done) throw new Error('Event connection closed');
+            for (const text of decoder.push(value)) {
+              try {
+                opciones.onChunk?.(text);
+              } catch {}
+              for (const event of extraerEventosDeChunk(text)) await opciones.onEvento(event);
+            }
           }
+        } catch (error) {
+          if (!opciones.signal.aborted) opciones.onError?.(error);
+        } finally {
+          clearTimeout(idle);
+          abort.abort();
+          await reader.cancel().catch(() => {});
+          reader.releaseLock();
+          opciones.signal.removeEventListener('abort', stop);
         }
-      }
+      })();
+      return;
     } catch (error) {
-      if (!opciones.signal.aborted) opciones.onError?.(error);
-      try {
-        await reader.cancel();
-      } catch {
-        /* ya estaba cerrado */
-      }
+      lastError = error;
+      abort.abort();
+      opciones.signal.removeEventListener('abort', stop);
+    } finally {
+      clearTimeout(timeout);
     }
-  })();
-}
-
-function buscarCorte(buffer: string): number {
-  const c1 = buffer.indexOf('\r\n\r\n');
-  const c2 = buffer.indexOf('\n\n');
-  if (c1 === -1) return c2;
-  if (c2 === -1) return c1;
-  return Math.min(c1, c2);
+  }
+  throw lastError;
 }

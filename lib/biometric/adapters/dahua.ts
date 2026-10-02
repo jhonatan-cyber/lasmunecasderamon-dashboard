@@ -1,18 +1,4 @@
 import type { BiometricEvent, BiometricMetodo } from '@/lib/biometric/types';
-
-/**
- * Adapter Dahua — push HTTP en JSON.
- *
- * Los terminales Dahua (ASI/ASA…) se apuntan a un Host IP/Puerto y empujan sus
- * eventos como JSON. A diferencia del ADMS de ZKTeco, el campo exacto de cada
- * evento depende del modelo/firmware, así que el parser es deliberadamente
- * tolerante: busca el código, la hora y la modalidad entre los nombres habituales
- * y descarta lo que no reconoce en lugar de inventar un registro.
- *
- * El serial se puede traer en la query (`?serial=...`, que es la URL que mostramos
- * al vincular el equipo) o dentro del JSON.
- */
-
 const CLAVES_SERIAL = [
   'SerialNo',
   'serialNo',
@@ -77,7 +63,6 @@ function primerValor(objeto: Record<string, unknown>, claves: string[]): string 
   return null;
 }
 
-/** `2026-09-29T21:30:00.000Z` → `2026-09-29 21:30:00` (la hora se toma tal cual, sin convertir: el equipo guarda hora local). */
 function normalizarFecha(valor: string): string | null {
   const limpio = valor.trim().replace(/[Zz]$|[+-]\d{2}:?\d{2}$/, '');
   const match = limpio.match(/^(\d{4}-\d{2}-\d{2})[T ](\d{2}:\d{2}(?::\d{2})?)/);
@@ -118,7 +103,6 @@ function comoObjetos(valor: unknown): Record<string, unknown>[] {
   return [];
 }
 
-/** Reconoce la lista de eventos entre los envoltorios habituales del push. */
 function extraerEventos(cuerpo: Record<string, unknown>): Record<string, unknown>[] {
   for (const clave of ['events', 'Events', 'data', 'Data', 'records', 'Records', 'list', 'List']) {
     const valor = cuerpo[clave];

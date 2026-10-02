@@ -30,16 +30,29 @@ export const POST = withRoute(
     const ip = String(body?.ip || '').trim();
     const usuario = String(body?.usuario || '').trim();
     const clave = String(body?.clave || '');
-    if (!ip || !usuario || !clave) {
+    // La IP es opcional: si se deja vacía (o si no responde), el servicio la
+    // re-busca por MAC y recién ahí valida usuario/clave contra el serial.
+    if (!usuario || !clave) {
       return NextResponse.json(
-        { success: false, message: 'IP, usuario y clave son requeridos', code: 'VALIDATION' },
+        {
+          success: false,
+          message: 'Usuario y clave son requeridos (la IP se detecta sola por MAC)',
+          code: 'VALIDATION'
+        },
         { status: 400 }
       );
     }
     const resultado = await guardarCredenciales(id, { ip, usuario, clave });
+    const status = resultado.ok
+      ? 200
+      : resultado.codigo === 'CREDENCIALES'
+        ? 401
+        : resultado.codigo && ['CONECTIVIDAD', 'SIN_MAC', 'FUERA_DE_RED'].includes(resultado.codigo)
+          ? 502
+          : 400;
     return NextResponse.json(
       { success: resultado.ok, message: resultado.mensaje, data: resultado },
-      { status: resultado.ok ? 200 : 400 }
+      { status }
     );
   }
 );

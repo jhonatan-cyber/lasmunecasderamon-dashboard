@@ -12,10 +12,22 @@ interface ApiResponse<T> {
   message: string;
   /** Alta en el lector pedida al crear: resultado del intento (nunca bloquea). */
   altaEquipo?: AltaEquipoInfo;
+  /** Sincronía con el lector al activar/desactivar (qué se quitó/restauró). */
+  lector?: LectorSyncInfo;
   errors?: Array<{
     field: string;
     message: string;
   }>;
+}
+
+/** Lo que PATCH /api/users?action=… devuelve sobre el lector de la puerta. */
+export interface LectorSyncInfo {
+  /** Hubo algo que sincronizar (la persona tenía código y plantillas). */
+  intentado: boolean;
+  /** Equipos donde la persona quedó quitada/restaurada. */
+  equiposOk: string[];
+  /** Equipos que no respondieron o rechazaron: quedan pendientes. */
+  equiposFallo: string[];
 }
 
 /** Lo que `POST /api/users` devuelve sobre la alta automática en el lector. */
@@ -54,8 +66,12 @@ interface UseUsersReturn {
     id: string | number,
     userData: FormData | Partial<User>
   ) => Promise<{ success: boolean; message: string; errors?: string[] }>;
-  activateUser: (id: string | number) => Promise<{ success: boolean; message: string }>;
-  deactivateUser: (id: string | number) => Promise<{ success: boolean; message: string }>;
+  activateUser: (
+    id: string | number
+  ) => Promise<{ success: boolean; message: string; lector?: LectorSyncInfo }>;
+  deactivateUser: (
+    id: string | number
+  ) => Promise<{ success: boolean; message: string; lector?: LectorSyncInfo }>;
   deleteUser: (id: string | number) => Promise<{ success: boolean; message: string }>;
   getUserById: (id: string | number) => Promise<User | null>;
 }
@@ -168,12 +184,12 @@ export function useUsers(): UseUsersReturn {
 
   const activateUser = async (id: string | number) => {
     const result = await deleteMutation.mutateAsync({ id, action: 'activate' });
-    return { success: result.success, message: result.message };
+    return { success: result.success, message: result.message, lector: result.lector };
   };
 
   const deactivateUser = async (id: string | number) => {
     const result = await deleteMutation.mutateAsync({ id, action: 'deactivate' });
-    return { success: result.success, message: result.message };
+    return { success: result.success, message: result.message, lector: result.lector };
   };
 
   const deleteUser = async (id: string | number) => {

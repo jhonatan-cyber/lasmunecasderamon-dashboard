@@ -1,6 +1,18 @@
 import { NextResponse } from 'next/server';
 import { withRoute } from '@/lib/api/withRoute';
 import { UserService } from '@/lib/services/UserService';
+import { desenrolarUsuario } from '@/lib/biometric/unenrollmentService';
+
+export const DELETE = withRoute(
+  { auth: true, audit: true, module: 'users', action: 'write' },
+  async (_request: Request, { params }: { params: Promise<{ id: string }> }) => {
+    const resultado = await desenrolarUsuario((await params).id);
+    return NextResponse.json(
+      { success: resultado.ok, message: resultado.mensaje, data: resultado },
+      { status: resultado.ok ? 200 : 422 }
+    );
+  }
+);
 
 /**
  * Enrolamiento del lector de la puerta para una persona.

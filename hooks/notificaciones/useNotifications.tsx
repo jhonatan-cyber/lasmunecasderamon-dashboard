@@ -22,6 +22,12 @@ interface NotificationData {
   createdBy?: number;
 }
 
+/** `nombre + apellido` de un payload de asistencia, o undefined si no viene. */
+function nombreDe(user?: { nombre?: string; apellido?: string } | null): string | undefined {
+  const nombre = [user?.nombre, user?.apellido].filter(Boolean).join(' ').trim();
+  return nombre || undefined;
+}
+
 export function useNotifications() {
   const [lastNotification, setLastNotification] = useState<any>(null);
   const [pendingOrdersCount, setPendingOrdersCount] = useState(0);
@@ -178,6 +184,34 @@ export function useNotifications() {
   const { reconnect } = useSharedSSE(sseUrl, payload => {
     const userRole =
       (user?.role as any)?.name?.toLowerCase() || (user?.role as string)?.toLowerCase();
+
+    // Asistencia biométrica: el lector cotejó y el sistema registró (o ya
+    // estaba registrada, que es la regla de una por día). Solo el lector: el
+    // registro manual ya avisa con su propio toast. El `id` fijo hace que un
+    // escaneo largo no apile toasts: se reemplaza en lugar de acumular.
+    if (
+      payload?.type === 'attendance_registered' &&
+      payload?.data?.origen === 'biometrico' &&
+      payload?.data
+    ) {
+      toast.success('Asistencia registrada', {
+        id: 'asistencia-biometrica',
+        description: nombreDe(payload.data.user),
+        duration: 4000
+      });
+    }
+
+    if (
+      payload?.type === 'attendance_duplicate' &&
+      payload?.data?.origen === 'biometrico' &&
+      payload?.data
+    ) {
+      toast.info('El usuario ya tiene asistencia registrada', {
+        id: 'asistencia-biometrica',
+        description: nombreDe(payload.data.user),
+        duration: 4000
+      });
+    }
 
     if (payload?.type === 'new_order' && payload?.data) {
       showNotification(payload.data as NotificationData);

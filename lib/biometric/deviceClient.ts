@@ -1,34 +1,10 @@
 import crypto from 'crypto';
 import { descifrarSecreto } from '@/lib/biometric/credencialesCrypto';
 import { normalizarMac } from '@/lib/biometric/discovery';
-
-/**
- * Cliente Dahua por IP — CGI oficial de los terminales ASI/ASA.
- *
- * A diferencia del push (`/dahua/push`), acá el SERVIDOR inicia la conexión:
- *   - Autenticación: HTTP Digest con el usuario/clave CGI del equipo.
- *   - Cara: GET /cgi-bin/FaceInfoManager.cgi?action=startFind + doFind (lectura,
- *           JSON PascalCase: `{ "Token": N, "Total": M }`).
- *   - Huella: /cgi-bin/FingerPrintManager.cgi (plantilla en hex), si el modelo lo expone.
- *
- * LIMITACIÓN CONFIRMADA contra un DHI-ASI3213A-W: los CGI de ESCRITURA de
- * personas no están implementados en ese firmware. `FaceInfoManager.cgi?action=add`
- * y `recordUpdater.cgi?action=insert&name=AccessControlCard` responden
- * `Error Bad Request!` con cualquier payload documentado, y
- * `FingerPrintManager.cgi` responde `Not Implemented!`. La web del propio equipo
- * usa otro transporte (`POST /RPC2`, JSON-RPC con sesión y cifrado propio del
- * firmware) para `AccessUser.insertMulti`. Por eso el enrolamiento real es
- * "la persona se captura EN el equipo y nosotros la leemos"; las funciones de
- * subida quedan para los modelos que sí las soportan.
- *
- * La plantilla/foto se traslada TAL CUAL: el sistema nunca re-codifica lo que
- * el equipo produce, porque el algoritmo de cotejo es propietario de Dahua.
- */
-
 export interface CredencialesEquipo {
   ip: string;
   usuario: string;
-  clave: string; // ya descifrada
+  clave: string;
 }
 
 const CGI_TIMEOUT_MS = 8000;
@@ -39,6 +15,13 @@ export class DeviceConnectionError extends Error {
     super(mensaje);
     this.name = 'DeviceConnectionError';
     this.causa = causa;
+  }
+}
+
+export class DeviceAuthError extends DeviceConnectionError {
+  constructor(mensaje: string, causa?: unknown) {
+    super(mensaje, causa);
+    this.name = 'DeviceAuthError';
   }
 }
 
@@ -56,11 +39,6 @@ function md5Hex(valor: string): string {
   return crypto.createHash('md5').update(valor).digest('hex');
 }
 
-/**
- * Construye el header `Authorization: Digest ...` exactamente como lo espera
- * RFC 2617 con MD5 + qop=auth (lo que usan los CGI de Dahua). Se calcula sobre
- * la MISMA uri y method del pedido original (el nonce/cnonce van del challenge).
- */
 export function construirAuthorizationDigest(
   method: string,
   uri: string,
@@ -103,10 +81,6 @@ export function construirAuthorizationDigest(
 
 type Metodo = 'GET' | 'POST';
 
-/**
- * Pedido CGI con autenticación Digest resuelta (handler compartido por texto y
- * binario). Los equipos solo ofrecen HTTP plano en la red local.
- */
 async function cgi(
   credenciales: CredencialesEquipo,
   metodo: Metodo,
@@ -118,7 +92,6 @@ async function cgi(
   const pathConQuery = `${url.pathname}${url.search}`;
 
   const headers: Record<string, string> = {
-    // Algunos firmware rechazan pedidos sin User-Agent reconocible.
     'User-Agent': 'LasMunecasDeRamon/1.0'
   };
   if (opciones.body !== undefined)
@@ -132,7 +105,6 @@ async function cgi(
     return fetch(url, init);
   };
 
-  // 1) pedido sin auth → 401 con WWW-Authenticate (challenge Digest)
   let response: Response;
   try {
     response = await pedido();
@@ -140,7 +112,6 @@ async function cgi(
     throw new DeviceConnectionError(`No se pudo conectar al equipo en ${credenciales.ip}`, error);
   }
 
-  // 2) pedido con Authorization calculado del challenge
   if (response.status === 401) {
     const header = response.headers.get('www-authenticate');
     if (!header || !header.toLowerCase().startsWith('digest')) {
@@ -156,7 +127,7 @@ async function cgi(
   }
 
   if (response.status === 401) {
-    throw new DeviceConnectionError('Usuario o clave del equipo incorrectos');
+    throw new DeviceAuthError('Usuario o clave del equipo incorrectos');
   }
   if (!response.ok) {
     const texto = await response.text();
@@ -165,6 +136,15 @@ async function cgi(
     );
   }
   return response;
+}
+
+function esNoImplementada(error: unknown): boolean {
+  const texto = (error instanceof Error ? error.message : '').toLowerCase();
+  return (
+    /respondi[oó] (400|501)/.test(texto) ||
+    texto.includes('bad request') ||
+    texto.includes('not implemented')
+  );
 }
 
 async function cgiTexto(
@@ -191,11 +171,6 @@ async function cgiPostJson(
   });
 }
 
-/**
- * Foto actual de la cámara del lector: `snapshot.cgi?channel=1` devuelve un JPEG
- * (640x360 en el ASI3213A-W). Es lo único que el equipo entrega de su cámara:
- * NO existe CGI para disparar una captura de enrolamiento ni para subir caras.
- */
 export async function capturarFotoDelEquipo(
   credenciales: CredencialesEquipo
 ): Promise<{ base64: string; contentType: string }> {
@@ -210,7 +185,6 @@ export async function capturarFotoDelEquipo(
   };
 }
 
-/** Respuesta estilo `tabla=CGLLog\nresult=OK\n...` de los CGI clásicos. */
 export function parsearTablaCGI(texto: string): Record<string, string> {
   const out: Record<string, string> = {};
   for (const linea of texto.split(/\r?\n/)) {
@@ -225,9 +199,7 @@ function jsonOTexto(texto: string): unknown {
   if (limpio.startsWith('{') || limpio.startsWith('[')) {
     try {
       return JSON.parse(limpio);
-    } catch {
-      /* cae a texto */
-    }
+    } catch {}
   }
   return texto;
 }
@@ -238,7 +210,6 @@ export interface InfoEquipo {
   version: string;
 }
 
-/** Busca una clave en la tabla CGI sin importar mayúsculas/minúsculas. */
 function campoCI(tabla: Record<string, string>, ...nombres: string[]): string {
   const entradas = Object.entries(tabla);
   for (const nombre of nombres) {
@@ -248,7 +219,6 @@ function campoCI(tabla: Record<string, string>, ...nombres: string[]): string {
   return '';
 }
 
-/** Ping + identidad: `magicBox.cgi?action=getSystemInfo`. Falla si no hay red/credenciales. */
 export async function verificarConexion(credenciales: CredencialesEquipo): Promise<InfoEquipo> {
   const texto = await cgiGet(credenciales, '/cgi-bin/magicBox.cgi?action=getSystemInfo');
   const tabla = parsearTablaCGI(texto);
@@ -263,13 +233,6 @@ export async function verificarConexion(credenciales: CredencialesEquipo): Promi
   };
 }
 
-/**
- * MAC del equipo por su propia configuración de red:
- * `configManager.cgi?action=getConfig&name=Network` (todas las tarjetas).
- *
- * Se usa como respaldo de la tabla ARP local, que es la que manda (funciona con
- * cualquier marca, no solo con Dahua). Lanza si el equipo no responde.
- */
 export async function leerMacsDelEquipo(credenciales: CredencialesEquipo): Promise<string[]> {
   const texto = await cgiGet(
     credenciales,
@@ -287,11 +250,6 @@ export async function leerMacsDelEquipo(credenciales: CredencialesEquipo): Promi
   return [...macs];
 }
 
-/**
- * Cara por foto: `FaceInfoManager.cgi?action=add` con PhotoData base64 (JSON).
- * El firmware extrae la plantilla de la imagen; después se puede leer de vuelta
- * con leerCara para confirmar que quedó cargada.
- */
 export async function subirCara(
   credenciales: CredencialesEquipo,
   userId: string,
@@ -309,7 +267,6 @@ export async function subirCara(
   try {
     respuesta = await cgiPostJson(credenciales, '/cgi-bin/FaceInfoManager.cgi?action=add', body);
   } catch (error) {
-    // El ASI3213A-W responde Bad Request a cualquier alta de cara por CGI.
     if (error instanceof DeviceConnectionError && /\b400\b|bad request/i.test(error.message)) {
       throw new DeviceConnectionError(
         'Este modelo no acepta cargar caras por red: cargá la cara en el equipo y usá "Capturar desde el lector".'
@@ -327,12 +284,6 @@ export interface CaraLeida {
   fotoBase64: string;
 }
 
-/**
- * Los CGI de caras de los ASI responden JSON en PascalCase, no `clave=valor`:
- *   startFind → { "Token": 2, "Total": 0 }
- *   doFind    → lista de caras con UserID + Info.PhotoData
- * El token puede ser 0 y ser válido, así que nunca se usa como booleano.
- */
 function campoDe(objeto: Record<string, unknown>, ...nombres: string[]): unknown {
   const entradas = Object.entries(objeto);
   for (const nombre of nombres) {
@@ -348,7 +299,6 @@ function objetoJson(texto: string): Record<string, unknown> | null {
   return r as Record<string, unknown>;
 }
 
-/** Primera foto (PhotoData en base64) dentro de un subárbol del JSON del equipo. */
 function primeraFoto(nodo: unknown): string | null {
   if (!nodo || typeof nodo !== 'object') return null;
   if (Array.isArray(nodo)) {
@@ -371,11 +321,6 @@ function primeraFoto(nodo: unknown): string | null {
   return null;
 }
 
-/**
- * Busca en el JSON de doFind la cara del UserID pedido. En el firmware la foto
- * va anidada (`{ UserID, Info: { PhotoData: [...] } }`), pero se acepta también
- * PhotoData al mismo nivel por si otro modelo lo aplana.
- */
 function buscarFotoDeUsuario(nodo: unknown, userId: string): string | null {
   if (!nodo || typeof nodo !== 'object') return null;
   if (Array.isArray(nodo)) {
@@ -398,7 +343,6 @@ function buscarFotoDeUsuario(nodo: unknown, userId: string): string | null {
   return null;
 }
 
-/** Cuántas caras tiene guardadas el equipo (startFind → Total). */
 export async function contarCarasEnEquipo(credenciales: CredencialesEquipo): Promise<number> {
   const inicio = objetoJson(
     await cgiGet(credenciales, '/cgi-bin/FaceInfoManager.cgi?action=startFind')
@@ -406,7 +350,6 @@ export async function contarCarasEnEquipo(credenciales: CredencialesEquipo): Pro
   if (!inicio) return 0;
   const token = campoDe(inicio, 'Token');
   if (token !== undefined) {
-    // Liberar la búsqueda: si no, el equipo acumula tokens abiertos.
     await cgiGet(
       credenciales,
       `/cgi-bin/FaceInfoManager.cgi?action=stopFind&token=${encodeURIComponent(String(token))}`
@@ -416,14 +359,6 @@ export async function contarCarasEnEquipo(credenciales: CredencialesEquipo): Pro
   return Number.isFinite(total) ? total : 0;
 }
 
-/**
- * Lee la cara de vuelta: `startFind` → `doFind` con condición UserID.
- *
- * Ojo con el modelo ASI3213A-W: `action=add` (empujar una cara al equipo) NO
- * está implementado por CGI — responde Bad Request con cualquier payload —, así
- * que la cara solo puede ENTRAR por el equipo (su menú o su web) y nosotros la
- * leemos. Este es el camino soportado.
- */
 export async function leerCara(
   credenciales: CredencialesEquipo,
   userId: string
@@ -441,16 +376,25 @@ export async function leerCara(
   const total = Number(campoDe(inicio, 'Total') ?? 0);
 
   try {
-    // Sin ninguna cara guardada no hay nada que buscar (y no es un error).
     if (total === 0) return null;
 
     const condicion = encodeURIComponent(JSON.stringify({ UserID: userId }));
-    const fin = await cgiGet(
-      credenciales,
-      `/cgi-bin/FaceInfoManager.cgi?action=doFind&token=${encodeURIComponent(
-        String(token)
-      )}&condition=${condicion}`
-    );
+    let fin: string;
+    try {
+      fin = await cgiGet(
+        credenciales,
+        `/cgi-bin/FaceInfoManager.cgi?action=doFind&token=${encodeURIComponent(
+          String(token)
+        )}&condition=${condicion}`
+      );
+    } catch (error) {
+      if (esNoImplementada(error)) {
+        throw new DeviceConnectionError(
+          'Lectura de caras no implementada en este firmware: doFind respondió Bad Request'
+        );
+      }
+      throw error;
+    }
     const foto = buscarFotoDeUsuario(jsonOTexto(fin), userId);
     return foto ? { fotoBase64: foto } : null;
   } finally {
@@ -465,12 +409,6 @@ export interface HuellaLeida {
   plantillaHex: string;
 }
 
-/**
- * Huella: `FingerPrintManager.cgi?action=add` (plantilla hex que devuelve el
- * propio equipo al enrolar) y `action=get` para leerla de vuelta. Si el modelo
- * no expone FingerPrintManager, el error sube y la UI lo muestra como
- * "huella no soportada por este equipo" en vez de fingir éxito.
- */
 export async function subirHuella(
   credenciales: CredencialesEquipo,
   userId: string,
@@ -507,10 +445,6 @@ export async function leerHuella(
   return null;
 }
 
-/**
- * Baja un usuario del equipo (usuario + cara + huella). Se usa cuando la
- * persona se elimina o se revoca su enrolamiento.
- */
 export async function eliminarUsuarioDelEquipo(
   credenciales: CredencialesEquipo,
   userId: string
@@ -518,7 +452,7 @@ export async function eliminarUsuarioDelEquipo(
   await cgiGet(
     credenciales,
     `/cgi-bin/recordUpdater.cgi?action=remove&name=AccessControlCard&UserID=${encodeURIComponent(userId)}`
-  ).catch(() => undefined); // si no existe, no es error
+  ).catch(() => undefined);
   await cgiPostJson(credenciales, '/cgi-bin/FaceInfoManager.cgi?action=delete', {
     UserID: userId
   }).catch(() => undefined);
@@ -527,18 +461,10 @@ export async function eliminarUsuarioDelEquipo(
   }).catch(() => undefined);
 }
 
-/**
- * Enrolamiento EN EL EQUIPO de huella: algunos firmware aceptan disparar la
- * captura remota y devolver la plantilla por HTTP. Si el modelo lo soporta,
- * subirHuellaDirecto reemplaza el flujo del menú del equipo. Los que no,
- * responden error y el flujo cae al enrolamiento en el menú del equipo.
- */
 export async function capturarHuellaEnEquipo(
   credenciales: CredencialesEquipo,
   userId: string
 ): Promise<HuellaLeida | null> {
-  // FingerPrintManager.cgi?action=add sin FingerPrintData pide al equipo
-  // iniciar la captura con el lector del propio terminal.
   const respuesta = await cgiGet(
     credenciales,
     `/cgi-bin/FingerPrintManager.cgi?action=add&UserID=${encodeURIComponent(userId)}`
@@ -554,7 +480,6 @@ export async function capturarHuellaEnEquipo(
   return null;
 }
 
-/** Descifra las credenciales guardadas en la fila del dispositivo. */
 export function credencialesDeFila(fila: {
   ip: string | null;
   usuario_equipo: string | null;
@@ -570,50 +495,75 @@ export function credencialesDeFila(fila: {
 
 export interface RecordAcceso {
   recNo: number;
-  /** Epoch UTC en segundos que reporta el equipo. */
   createTime: number;
   userId: string;
-  tipo: string | null; // Entry / Exit
-  status: number | null; // 1 = verificación exitosa
-  metodo: number | null; // 6 = huella, 15 = cara, 1 = tarjeta, 0 = clave
+  tipo: string | null;
+  status: number | null;
+  metodo: number | null;
+  url: string | null;
 }
 
-/**
- * Baja los registros acumulados del equipo: `recordFinder.cgi` sobre
- * `AccessControlCardRec` (documentado en la Integration Instruction oficial).
- * Devuelve solo los `count` más recientes; el poller deduplica por RecNo, así
- * que releer los últimos registros es barato e inocuo.
- */
 export async function leerRegistrosAcceso(
   credenciales: CredencialesEquipo,
-  count = 200
+  opciones: { count?: number; desde?: number } = {}
 ): Promise<RecordAcceso[]> {
-  const texto = await cgiGet(
-    credenciales,
-    `/cgi-bin/recordFinder.cgi?action=find&name=AccessControlCardRec&count=${count}`
-  );
+  const count = Math.max(1, Math.trunc(opciones.count ?? 200));
+  const desde = Math.max(0, Math.trunc(opciones.desde ?? 0));
+  const base = '/cgi-bin/recordFinder.cgi?action=find&name=AccessControlCardRec';
+
+  const pedir = async (offset: number, limite: number) =>
+    cgiGet(credenciales, `${base}&count=${limite}&offset=${offset}`);
+
+  const registros = parsearRecordsAcceso(await pedir(desde, count));
+  if (registros.length > 0 || desde === 0) return registros;
+
+  const cola = parsearRecordsAcceso(await pedir(desde - 1, 1));
+  return cola.length > 0 ? [] : parsearRecordsAcceso(await pedir(0, count));
+}
+
+export function parsearRecordsAcceso(texto: string): RecordAcceso[] {
   const r = jsonOTexto(texto);
-  if (!r || typeof r === 'string') return [];
-  const obj = r as Record<string, unknown>;
-  const records = obj['records'] as unknown;
-  if (!Array.isArray(records)) return [];
+  let items: unknown[] = [];
+  if (Array.isArray(r)) {
+    items = r;
+  } else if (r && typeof r === 'object') {
+    const records = (r as Record<string, unknown>)['records'];
+    if (Array.isArray(records)) items = records;
+  } else if (typeof r === 'string') {
+    items = filasDesdeTablaCgi(r);
+  }
 
   const out: RecordAcceso[] = [];
-  for (const item of records) {
+  for (const item of items) {
     if (!item || typeof item !== 'object') continue;
     const rec = item as Record<string, unknown>;
     const recNo = Number(rec['RecNo'] ?? rec['recNo'] ?? NaN);
     const createTime = Number(rec['CreateTime'] ?? rec['createTime'] ?? NaN);
     const userId = String(rec['UserID'] ?? rec['userId'] ?? '').trim();
-    if (!Number.isFinite(recNo) || !Number.isFinite(createTime) || !userId) continue;
+    if (!Number.isFinite(recNo) || !Number.isFinite(createTime)) continue;
+    const urlCruda = String(rec['URL'] ?? rec['url'] ?? '').trim();
     out.push({
       recNo,
       createTime,
       userId,
       tipo: rec['Type'] != null ? String(rec['Type']) : null,
       status: rec['Status'] != null ? Number(rec['Status']) : null,
-      metodo: rec['Method'] != null ? Number(rec['Method']) : null
+      metodo: rec['Method'] != null ? Number(rec['Method']) : null,
+      url: urlCruda.length > 0 ? urlCruda : null
     });
   }
   return out;
+}
+
+function filasDesdeTablaCgi(texto: string): Record<string, unknown>[] {
+  const tabla = parsearTablaCGI(texto);
+  const filas = new Map<string, Record<string, unknown>>();
+  for (const [clave, valor] of Object.entries(tabla)) {
+    const coincide = /^records\[(\d+)]\.([A-Za-z0-9_]+)$/.exec(clave);
+    if (!coincide) continue;
+    const fila = filas.get(coincide[1]) ?? {};
+    fila[coincide[2]] = valor;
+    filas.set(coincide[1], fila);
+  }
+  return [...filas.values()];
 }

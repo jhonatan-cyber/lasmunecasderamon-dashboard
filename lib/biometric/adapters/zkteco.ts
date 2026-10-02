@@ -1,22 +1,5 @@
 import type { BiometricEvent, BiometricMetodo } from '@/lib/biometric/types';
 
-/**
- * Adapter ZKTeco — protocolo ADMS / iClock push.
- *
- * El equipo inicia toda la conexión (el servidor nunca lo llama):
- *
- *   GET  /iclock/cdata?SN=...&options=all   → handshake: respondemos las opciones
- *                                              (TransInterval, TransFlag…) y el
- *                                              equipo se encarga de conectarse solo.
- *   POST /iclock/cdata?SN=...&table=ATTLOG  → filas TSV:
- *                                              PIN \t fecha \t verify \t inOut \t …
- *   GET  /iclock/getrequest                 → cola de comandos (hoy vacía).
- *
- * El serial del equipo es la única credencial: hay que darlo de alta en
- * Configuraciones → Asistencia antes de que sus eventos se acepten.
- */
-
-/** Tabla de opciones que el equipo pide en el handshake. El cuerpo termina en `0`. */
 export function buildAdmsOptions(serial: string): string {
   return [
     `GET OPTION FROM: ${serial}`,
@@ -27,7 +10,6 @@ export function buildAdmsOptions(serial: string): string {
     'ErrorDelay=30',
     'Delay=10',
     'TransTimes=00:00;23:59',
-    // Cada minuto y además en tiempo real cuando ocurre la verificación.
     'TransInterval=1',
     'TransFlag=TransData AttLog OpLog EnrollUser ChgUser EnrollFP ChgFP FPImag',
     'TimeZone=-4',
@@ -47,11 +29,6 @@ export function tableFromParams(params: URLSearchParams): string {
   return (params.get('table') || '').trim().toUpperCase();
 }
 
-/**
- * Significados observados del campo verify en ADMS push: 15 = cara, 1 = huella,
- * 4/2 = tarjeta, 0 = clave. Lo que no está mapeado queda como `otro` para no
- * inventar una modalidad que el equipo no reportó.
- */
 const METODOS_POR_VERIFY: Record<string, BiometricMetodo> = {
   '0': 'clave',
   '1': 'huella',
@@ -67,7 +44,6 @@ function normalizarFecha(valor: string): string | null {
   return `${match[1]} ${hora}`;
 }
 
-/** Parsea el cuerpo de un `POST table=ATTLOG`. Líneas corruptas se descartan. */
 export function parseAttlog(body: string): BiometricEvent[] {
   const eventos: BiometricEvent[] = [];
   for (const linea of body.split(/\r?\n/)) {

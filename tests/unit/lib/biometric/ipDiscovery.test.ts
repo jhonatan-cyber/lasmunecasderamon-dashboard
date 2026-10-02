@@ -128,6 +128,41 @@ describe('descubrirIpDispositivo', () => {
     expect(red.buscarMock).not.toHaveBeenCalled();
   });
 
+  it('con credenciales recién tipeadas busca aunque no haya guardadas', async () => {
+    instalarFila({
+      ip: null,
+      usuario_equipo: null,
+      clave_cifrada: null,
+      mac: 'e0:2e:fe:dc:e1:0a'
+    });
+    equipo.verificarMock.mockResolvedValue({
+      modelo: 'ASI3213A-W',
+      serial: 'BF013C7PAJB4D74',
+      version: '1.0'
+    });
+    red.buscarMock.mockImplementation(
+      async ({ ops }: { ops: { serial: (ip: string) => Promise<string | null> } }) => {
+        const serial = await ops.serial('192.168.0.77');
+        return serial ? { ip: '192.168.0.77', verificada: true } : null;
+      }
+    );
+
+    const resultado = await descubrirIpDispositivo('eq-1', {
+      forzar: true,
+      credenciales: { usuario: 'admin', clave: 'nueva' }
+    });
+
+    expect(resultado.ok).toBe(true);
+    expect(resultado.ipNueva).toBe('192.168.0.77');
+    // El serial se confirmó con el usuario/clave recién tipeados.
+    expect(equipo.verificarMock).toHaveBeenCalledWith({
+      ip: '192.168.0.77',
+      usuario: 'admin',
+      clave: 'nueva'
+    });
+    expect(escrituras('SET ip = ?')).toHaveLength(1);
+  });
+
   it('si responde en su IP actual no mueve nada y refresca la MAC', async () => {
     equipo.verificarMock.mockResolvedValue({
       modelo: 'ASI3213A-W',

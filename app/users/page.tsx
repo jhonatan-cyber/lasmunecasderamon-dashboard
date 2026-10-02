@@ -1,8 +1,18 @@
 'use client';
 
 import { useState, useCallback } from 'react';
-import { Plus } from 'lucide-react';
+import { Plus, Loader2 } from 'lucide-react';
 import { toast } from 'sonner';
+import { useQueryClient } from '@tanstack/react-query';
+import {
+  AlertDialog,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle
+} from '@/components/ui/alert-dialog';
 
 import { Button } from '@/components/ui/button';
 import Paginate from '@/components/shared/Paginate';
@@ -41,6 +51,10 @@ const EnrollBiometricDialog = dynamic(
 );
 
 export default function Users() {
+  const queryClient = useQueryClient();
+  const [unenrollTarget, setUnenrollTarget] = useState<User | null>(null);
+  const [unenrolling, setUnenrolling] = useState(false);
+  const [unenrollError, setUnenrollError] = useState<string | null>(null);
   const [selectedUser, setSelectedUser] = useState<User | null>(null);
   const [isDetailsOpen, setIsDetailsOpen] = useState(false);
   const [isFormOpen, setIsFormOpen] = useState(false);
@@ -128,12 +142,6 @@ export default function Users() {
           const result = await createUser(formData);
           if (result.success) {
             toast.success(result.message || 'Usuario creado');
-            // Alta en el lector pedida al crear: se informa aparte porque el
-            // usuario ya existe aunque el equipo no haya respondido.
-            if (result.altaEquipo) {
-              if (result.altaEquipo.ok) toast.success(result.altaEquipo.mensaje);
-              else toast.warning(result.altaEquipo.mensaje);
-            }
             setIsFormOpen(false);
           } else {
             toast.error(result.message || 'Error al crear');
@@ -172,11 +180,42 @@ export default function Users() {
     });
   }, []);
 
+  const handleUnenrollUser = useCallback((user: User) => {
+    setUnenrollError(null);
+    setUnenrollTarget(user);
+  }, []);
+
+  async function confirmUnenroll() {
+    if (!unenrollTarget || unenrolling) return;
+    setUnenrolling(true);
+    setUnenrollError(null);
+    try {
+      const response = await fetch(
+        `/api/users/${encodeURIComponent(unenrollTarget.id)}/biometric`,
+        {
+          method: 'DELETE'
+        }
+      );
+      const result = await response.json();
+      if (!response.ok || !result.success) {
+        throw new Error(result.message || 'No se pudo desenrolar al usuario.');
+      }
+      toast.success(result.message);
+      setUnenrollTarget(null);
+    } catch (error) {
+      setUnenrollError(error instanceof Error ? error.message : 'Error de conexión. Reintentá.');
+    } finally {
+      setUnenrolling(false);
+      void queryClient.invalidateQueries({ queryKey: ['users'] });
+    }
+  }
+
   const handleActivateUser = useCallback(
     async (userId: string | number) => {
       const r = await activateUser(String(userId));
-      if (r.success) toast.success('Activado');
-      else toast.error(r.message || 'Error');
+      if (r.success) {
+        toast.success(r.message || 'Activado');
+      } else toast.error(r.message || 'Error');
     },
     [activateUser]
   );
@@ -184,8 +223,9 @@ export default function Users() {
   const handleDeactivateUser = useCallback(
     async (userId: string | number) => {
       const r = await deactivateUser(String(userId));
-      if (r.success) toast.success('Desactivado');
-      else toast.error(r.message || 'Error');
+      if (r.success) {
+        toast.success(r.message || 'Desactivado');
+      } else toast.error(r.message || 'Error');
     },
     [deactivateUser]
   );
@@ -274,6 +314,7 @@ export default function Users() {
               onViewDetails={handleViewDetails}
               onEdit={handleEditUser}
               onEnroll={handleEnrollUser}
+              onUnenroll={handleUnenrollUser}
               onActivate={handleActivateUser}
               onDeactivate={handleDeactivateUser}
               onDelete={handleDeleteUser}
@@ -317,6 +358,37 @@ export default function Users() {
           isLoading={isMutating}
         />
 
+        <AlertDialog
+          open={Boolean(unenrollTarget)}
+          onOpenChange={open => {
+            if (!open && !unenrolling) setUnenrollTarget(null);
+          }}
+        >
+          <AlertDialogContent aria-busy={unenrolling}>
+            <AlertDialogHeader>
+              <AlertDialogTitle>Desenrolar usuario</AlertDialogTitle>
+              <AlertDialogDescription>
+                Se eliminarán las plantillas de cara y huella de {unenrollTarget?.name}{' '}
+                {unenrollTarget?.lastName} de la base de datos del sistema. Su cuenta, foto de
+                perfil e historial se conservarán. Para el reconocimiento facial deberá enrolarse
+                nuevamente.
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+            {unenrollError && (
+              <p role='alert' className='text-sm text-destructive'>
+                {unenrollError}
+              </p>
+            )}
+            <AlertDialogFooter>
+              <AlertDialogCancel disabled={unenrolling}>Cancelar</AlertDialogCancel>
+              <Button variant='destructive' disabled={unenrolling} onClick={confirmUnenroll}>
+                {unenrolling && <Loader2 className='size-4 animate-spin' />}
+                {unenrolling ? 'Desenrolando…' : unenrollError ? 'Reintentar' : 'Desenrolar'}
+              </Button>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
+
         {enrollTarget && (
           <EnrollBiometricDialog
             open
@@ -326,6 +398,9 @@ export default function Users() {
             userId={enrollTarget.id}
             nombre={enrollTarget.nombre}
             codigo={enrollTarget.codigo}
+            onSaved={() => {
+              void queryClient.invalidateQueries({ queryKey: ['users'] });
+            }}
           />
         )}
       </PermissionGuard>

@@ -25,6 +25,7 @@ interface UserTableProps {
   onViewDetails: (user: UserType) => void;
   onEdit: (user: UserType) => void;
   onEnroll: (user: UserType) => void;
+  onUnenroll: (user: UserType) => void;
   onActivate: (userId: string | number) => void;
   onDeactivate: (userId: string | number) => void;
   onDelete: (userId: string | number) => void;
@@ -43,6 +44,7 @@ export function UserTable({
   onViewDetails,
   onEdit,
   onEnroll,
+  onUnenroll,
   onActivate,
   onDeactivate,
   onDelete,
@@ -104,6 +106,7 @@ export function UserTable({
                     onViewDetails={onViewDetails}
                     onEdit={onEdit}
                     onEnroll={onEnroll}
+                    onUnenroll={onUnenroll}
                     onActivate={onActivate}
                     onDeactivate={onDeactivate}
                     onDelete={onDelete}
@@ -210,6 +213,7 @@ export function UserTable({
                     onViewDetails={onViewDetails}
                     onEdit={onEdit}
                     onEnroll={onEnroll}
+                    onUnenroll={onUnenroll}
                     onActivate={onActivate}
                     onDeactivate={onDeactivate}
                     onDelete={onDelete}

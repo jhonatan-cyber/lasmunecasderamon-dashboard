@@ -4,15 +4,7 @@ import { UserService } from '@/lib/services/UserService';
 import { fotoEnVivoDelEquipo, guardarFotoCapturada } from '@/lib/biometric/enrollmentService';
 import { NotFoundError, ValidationError } from '@/lib/errors/errors';
 
-/**
- * Captura desde el sistema: toma la foto actual de la cámara del lector y la
- * guarda como imagen de la persona.
- *
- * Es el flujo "sin tocar el equipo": el operador ve en vivo a quien está frente
- * a la puerta, aprieta capturar y la foto queda en la ficha. El alta de la
- * plantilla dentro del lector sigue siendo del equipo en los modelos que no
- * aceptan escritura por red.
- */
+/** Captura la imagen del lector y la guarda solamente en la DB del sistema. */
 export const POST = withRoute(
   { auth: true, module: 'users', action: 'write', audit: true },
   async (request: Request, { params }: { params: Promise<{ id: string }> }) => {

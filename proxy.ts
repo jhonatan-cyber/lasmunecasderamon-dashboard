@@ -20,11 +20,11 @@ import {
 
 // Orígenes permitidos para CORS
 const ALLOWED_ORIGINS = [
-  siteConfig.url, // https://xn--lasmuecasderamon-bub.com
+  siteConfig.url,
   'http://localhost:3000',
-  'http://localhost:8081', // Expo dev
+  'http://localhost:8081',
   'https://dashboard.xn--lasmuecasderamon-bub.com',
-  // DEV_ALLOWED_ORIGINS: variables de entorno separadas por comas (ej: http://192.168.1.42:3000,http://192.168.1.42:8081)
+
   ...(process.env.DEV_ALLOWED_ORIGINS
     ? process.env.DEV_ALLOWED_ORIGINS.split(',')
         .map(s => s.trim())
@@ -32,7 +32,6 @@ const ALLOWED_ORIGINS = [
     : [])
 ];
 
-// Warning en desarrollo si no se configuró DEV_ALLOWED_ORIGINS
 if (process.env.NODE_ENV === 'development' && !process.env.DEV_ALLOWED_ORIGINS) {
   console.warn(
     '[CORS] ⚠️  DEV_ALLOWED_ORIGINS no definida. Las IPs de red local no podrán conectar al dashboard.\n' +
@@ -50,9 +49,6 @@ function getCorsOrigin(origin: string | null): string {
   return siteConfig.url;
 }
 
-// Endpoints de credenciales: login, refresh, recuperación de contraseña y alta del
-// primer administrador. Comparten el límite estricto por IP+ruta del limitador Redis
-// (con respaldo en memoria), antes aplicado con un limiter en memoria por ruta.
 const CREDENTIAL_RATE_LIMIT_PATHS = [
   '/api/auth/login',
   '/api/auth/refresh',
@@ -141,7 +137,6 @@ async function localCheckUserPermission(
   module: string,
   action: string
 ): Promise<boolean> {
-  // ponytail: dynamic import — Edge Runtime can't load pg/node modules statically
   try {
     const { query } = await import('@/lib/database/db');
 
@@ -178,7 +173,6 @@ async function localCheckUserPermission(
 
     return perms.length > 0;
   } catch {
-    // Edge Runtime: can't load pg — deny by default, API routes will re-check
     return false;
   }
 }
@@ -191,7 +185,6 @@ export default async function proxy(request: NextRequest) {
 
   const origin = request.headers.get('origin');
 
-  // CSP nonce solo es necesario para páginas HTML, no para APIs JSON
   let cspHeader = '';
   let cspRequestHeaders: Headers;
   if (!isApi) {
@@ -202,7 +195,6 @@ export default async function proxy(request: NextRequest) {
     cspRequestHeaders = request.headers;
   }
 
-  // ponytail: skip rate limiting in dev
   const isProd = process.env.NODE_ENV === 'production' && process.env.SKIP_RATE_LIMIT !== 'true';
   if (isProd) {
     const isCredentialPath =
@@ -263,10 +255,8 @@ export default async function proxy(request: NextRequest) {
     return response;
   }
 
-  // Extract tokens early so addApiHeaders closure can reference them
   const tokenFromCookie = request.cookies.get('token')?.value;
   const tokenFromHeader = request.headers.get('authorization')?.replace('Bearer ', '');
-  // Variable para almacenar un nuevo access token generado desde refresh token
   let newAccessToken: string | null = null;
 
   const addApiHeaders = (res: NextResponse, includeCsp = true) => {
@@ -284,8 +274,6 @@ export default async function proxy(request: NextRequest) {
     if (includeCsp && cspHeader) {
       res.headers.set('Content-Security-Policy', cspHeader);
     }
-    // If token came from Authorization header (not cookie), sync it as a cookie
-    // so client-side fetch() calls (which only send cookies, not headers) can authenticate
     if (tokenFromHeader && !tokenFromCookie) {
       res.cookies.set('token', tokenFromHeader, {
         httpOnly: true,
@@ -295,14 +283,13 @@ export default async function proxy(request: NextRequest) {
         maxAge: 15 * 60
       });
     }
-    // Si se renovó el token vía refresh token, setear la nueva cookie
     if (newAccessToken) {
       res.cookies.set('token', newAccessToken, {
         httpOnly: true,
         secure: process.env.NODE_ENV === 'production',
         sameSite: 'strict',
         path: '/',
-        maxAge: 15 * 60 // 15 minutos
+        maxAge: 15 * 60
       });
     }
     return res;
@@ -317,18 +304,9 @@ export default async function proxy(request: NextRequest) {
     if (cspHeader) {
       response.headers.set('Content-Security-Policy', cspHeader);
     }
-    // Las APIs públicas (login, check-users, webhooks…) también responden a un
-    // origen permitido: sin `Access-Control-Allow-Origin` el preflight (OPTIONS)
-    // pasaba pero el navegador bloqueaba la respuesta real y el login web desde
-    // Expo dev (:8081) fallaba con net::ERR_FAILED. `addApiHeaders` solo añade
-    // CORS cuando `isApi`, así que el resto de rutas públicas no cambia.
     return addApiHeaders(response);
   }
 
-  // ─── Pantalla del local: credencial de dispositivo, no sesión de persona ───────
-  // La ruta correspondiente verifica la cookie firmada (no puede hacerlo el middleware
-  // porque necesita el secreto del kiosko). Acá solo se deja pasar; si trae una sesión
-  // de usuario no cambia nada, porque estas rutas no la aceptan.
   const isKioskDeviceApi = KIOSK_DEVICE_APIS.some((path: string) => {
     return pathname === path || pathname.startsWith(path + '/');
   });
@@ -343,10 +321,6 @@ export default async function proxy(request: NextRequest) {
     );
   }
 
-  // ─── CSRF: validate Origin on state-changing API requests ───────
-  // If browser sent Origin and it's not allowed, reject.
-  // curl/Postman don't send Origin, so they pass through.
-  // Public paths (WhatsApp webhooks, etc.) already returned above.
   if (isApi && ['POST', 'PUT', 'DELETE', 'PATCH'].includes(request.method)) {
     const requestOrigin = request.headers.get('origin');
     if (requestOrigin && !isOriginAllowed(requestOrigin)) {
@@ -366,23 +340,15 @@ export default async function proxy(request: NextRequest) {
     payload = await verifyToken(token);
   }
 
-  // ─── Refresh token rotation ─────────────────────────────────
-  // Si el access token expiró, intentar renovar silenciosamente
-  // usando el refresh token (cookie httpOnly separada).
   if (!payload) {
     const refreshToken = request.cookies.get('refresh_token')?.value;
     if (refreshToken) {
       const refreshPayload = await verifyRefreshToken(refreshToken);
       if (refreshPayload) {
-        // Generar nuevo access token desde el refresh payload
         const newToken = await generateAccessTokenFromPayload(refreshPayload);
         newAccessToken = newToken;
         token = newToken;
         payload = refreshPayload;
-
-        // ♻️ Sync refreshed token into request headers so API route handlers
-        // (which read cookies from the incoming request) see the valid token
-        // instead of the expired one — prevents 401 on /api/auth/me after refresh.
         const newCookieValue = `token=${newAccessToken}`;
         const cookieHeaders = new Headers(cspRequestHeaders);
         const existingCookieStr = cookieHeaders.get('cookie') || '';
@@ -491,6 +457,5 @@ export default async function proxy(request: NextRequest) {
 }
 
 export const config = {
-  // ponytail: _next/webpack-hmr excluded so HMR WebSocket is not intercepted
   matcher: ['/((?!_next/static|_next/image|_next/webpack-hmr|favicon.ico|public).*)']
 };

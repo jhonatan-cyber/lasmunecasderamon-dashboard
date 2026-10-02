@@ -7,33 +7,19 @@ import {
   leerRegistrosAcceso,
   type CredencialesEquipo
 } from '@/lib/biometric/deviceClient';
+import { encolarFotoDeRecord, recuperarFotosPendientes } from '@/lib/biometric/recordPhotos';
+import { recuperarIdentificacionesPendientes } from '@/lib/biometric/identificacionFacial';
 import type { BiometricMetodo } from '@/lib/biometric/types';
 import logger from '@/lib/utils/logger';
-
-/**
- * Poller de registros del equipo (AccessControlCardRec).
- *
- * El lector es quien coteja en la puerta (con la copia de las plantillas, fase
- * 1) y va acumulando cada verificación en su memoria. El push en tiempo real es
- * opcional y frágil; este poller es la vía confiable: cada minuto baja del
- * equipo los registros nuevos, los deduplica en `biometric_device_records` y
- * convierte en asistencia EXACTAMENTE con las mismas reglas que las demás vías
- * (mismo `procesarEventoBiometrico` que usa el push: usuario activo, una por
- * día, ventana horaria, auditoría y SSE).
- *
- * Idempotencia: cada record del equipo se identifica por (serial, RecNo) y por
- * su timestamp+código; si el equipo se reinicia y re-enumera, la combinación
- * timestamp+código+metodo sigue siendo la misma y no se re-procesa.
- */
-
+import { quizasSincronizarReloj } from '@/lib/biometric/clockSync';
 export interface RecordDelEquipo {
   recNo: number;
-  /** Epoch UTC en segundos que reporta el equipo. */
   createTime: number;
   userId: string;
-  tipo: string | null; // Entry / Exit
-  status: number | null; // 1 = verificación exitosa
-  metodo: number | null; // 6 = huella, 15 = cara, 1 = tarjeta, 0 = clave
+  tipo: string | null;
+  status: number | null;
+  metodo: number | null;
+  url: string | null;
 }
 
 export interface ResumenPoll {
@@ -41,17 +27,17 @@ export interface ResumenPoll {
   serial: string;
   leidos: number;
   nuevos: number;
+  ignorados: number;
   registrados: number;
   duplicados: number;
   fueraVentana: number;
+  salidas: number;
   sinUsuario: number;
   usuarioInactivo: number;
   errores: number;
-  /** Hasta qué epoch se procesó (para logs). */
   hasta: number | null;
 }
 
-/** Mapa Method (CGI) → método del dominio. Lo mismo que hace el adapter de push. */
 function metodoDesdeRecords(method: number | null): BiometricMetodo {
   switch (method) {
     case 0:
@@ -67,18 +53,29 @@ function metodoDesdeRecords(method: number | null): BiometricMetodo {
   }
 }
 
-/** `123456789` (epoch s UTC) → `2026-09-29 21:30:00` en hora del negocio. */
 function epochAHoraNegocio(epochSegundos: number): string {
   return getNowInBusinessTimezone(new Date(epochSegundos * 1000));
+}
+
+function esSalida(tipo: string | null): boolean {
+  return (tipo || '').trim().toLowerCase() === 'exit';
 }
 
 async function equipoHabilitado(dispositivoId: string): Promise<{
   id: string;
   serial: string;
   recoger_registros: number;
+  historico_limpiado_en: Date | string | null;
 } | null> {
-  const rows = await query<{ id: string; serial: string; recoger_registros: number }[]>(
-    `SELECT id, serial, recoger_registros FROM biometric_devices
+  const rows = await query<
+    {
+      id: string;
+      serial: string;
+      recoger_registros: number;
+      historico_limpiado_en: Date | string | null;
+    }[]
+  >(
+    `SELECT id, serial, recoger_registros, historico_limpiado_en FROM biometric_devices
       WHERE id = ? AND revocado_en IS NULL`,
     [dispositivoId]
   );
@@ -95,7 +92,6 @@ export interface EquipoParaPoller {
   recoger_registros: number;
 }
 
-/** Equipos activos con el recolector encendido y credenciales completas. */
 export async function equiposParaPoller(): Promise<EquipoParaPoller[]> {
   return query<EquipoParaPoller[]>(
     `SELECT id, nombre, serial, ip, usuario_equipo, clave_cifrada, recoger_registros
@@ -105,39 +101,49 @@ export async function equiposParaPoller(): Promise<EquipoParaPoller[]> {
   );
 }
 
-/** Marca (serial, RecNo) como ya procesado, ignorando la carrera del mismo tick. */
 async function marcarProcesado(
   serial: string,
   record: RecordDelEquipo,
   fechaHora: string,
   dispositivoId: string,
   metodo: BiometricMetodo
-): Promise<boolean> {
+): Promise<string | null> {
+  const id = generateUUID();
   try {
     await BaseRepository.insert(query, 'biometric_device_records', {
-      id: generateUUID(),
+      id,
       dispositivo_id: dispositivoId,
       serial,
       rec_no: record.recNo,
       codigo_persona: record.userId.substring(0, 64),
       fecha_dispositivo: fechaHora,
       metodo,
-      status: record.status ?? null
+      status: record.status ?? null,
+      foto_url: record.url
     });
-    return true;
+    return id;
   } catch (error: any) {
-    // 23505 = unique violation: ya lo procesó otro tick en paralelo.
-    if (error?.code === '23505') return false;
+    if (error?.code === '23505') return null;
     throw error;
   }
 }
 
-/**
- * Baja los registros del equipo y los convierte en asistencia.
- * Es seguro llamarlo concurrentemente: la dedupe por (serial, RecNo) y por
- * (timestamp+código+metodo) evita dobles asistencias.
- */
-export async function pollEquipo(
+const lecturasEnCurso = new Map<string, Promise<ResumenPoll>>();
+
+export function pollEquipo(
+  dispositivoId: string,
+  opciones: { limite?: number } = {}
+): Promise<ResumenPoll> {
+  const actual = lecturasEnCurso.get(dispositivoId);
+  if (actual) return actual;
+  const lectura = leerEquipo(dispositivoId, opciones).finally(() => {
+    if (lecturasEnCurso.get(dispositivoId) === lectura) lecturasEnCurso.delete(dispositivoId);
+  });
+  lecturasEnCurso.set(dispositivoId, lectura);
+  return lectura;
+}
+
+async function leerEquipo(
   dispositivoId: string,
   opciones: { limite?: number } = {}
 ): Promise<ResumenPoll> {
@@ -146,9 +152,11 @@ export async function pollEquipo(
     serial: '',
     leidos: 0,
     nuevos: 0,
+    ignorados: 0,
     registrados: 0,
     duplicados: 0,
     fueraVentana: 0,
+    salidas: 0,
     sinUsuario: 0,
     usuarioInactivo: 0,
     errores: 0,
@@ -174,23 +182,43 @@ export async function pollEquipo(
   const credenciales: CredencialesEquipo | null = fila ? credencialesDeFila(fila) : null;
   if (!credenciales) throw new Error(`Equipo ${dispositivoId} sin IP/credenciales`);
 
-  const records = await leerRegistrosAcceso(credenciales, opciones.limite ?? 200);
+  const maximo = await query<{ max: number | null }[]>(
+    'SELECT MAX(rec_no) AS max FROM biometric_device_records WHERE serial = ?',
+    [equipo.serial]
+  );
+  const desde = Number(maximo[0]?.max ?? 0);
+
+  const records = await leerRegistrosAcceso(credenciales, {
+    count: opciones.limite ?? 200,
+    desde
+  });
   resumen.leidos = records.length;
 
+  // Corte de histórico: tras un reset biométrico la tabla vacía hace que
+  // MAX(rec_no) vuelva a 0, así que este filtro es lo único que impide que
+  // el lector "resucite" todo su historial viejo.
+  const corteMs = equipo.historico_limpiado_en
+    ? new Date(equipo.historico_limpiado_en).getTime()
+    : null;
+
   for (const record of records) {
+    if (
+      corteMs !== null &&
+      Number.isFinite(record.createTime) &&
+      record.createTime * 1000 < corteMs
+    ) {
+      resumen.ignorados += 1;
+      continue;
+    }
     resumen.hasta = Math.max(resumen.hasta ?? 0, record.createTime);
 
     const fechaHora = epochAHoraNegocio(record.createTime);
     const metodo = metodoDesdeRecords(record.metodo);
-
-    // Dedupe 1: mismo RecNo del mismo equipo (caso normal).
     const yaPorRecNo = await query<{ id: string }[]>(
       'SELECT id FROM biometric_device_records WHERE serial = ? AND rec_no = ? LIMIT 1',
       [equipo.serial, record.recNo]
     );
     if (yaPorRecNo.length > 0) continue;
-
-    // Dedupe 2: mismo instante+persona+método (re-enumeración tras reinicio).
     const yaPorContenido = await query<{ id: string }[]>(
       `SELECT id FROM biometric_device_records
         WHERE serial = ? AND codigo_persona = ? AND fecha_dispositivo = ? AND metodo = ? LIMIT 1`,
@@ -198,13 +226,24 @@ export async function pollEquipo(
     );
     if (yaPorContenido.length > 0) continue;
 
-    if (!(await marcarProcesado(equipo.serial, record, fechaHora, dispositivoId, metodo))) continue;
+    const recordId = await marcarProcesado(equipo.serial, record, fechaHora, dispositivoId, metodo);
+    if (!recordId) continue;
     resumen.nuevos += 1;
 
-    if (record.status !== null && record.status !== 1) {
-      // Verificación fallida (no coincidió con nadie): igual queda marcada como
-      // procesada para no reintentarla eternamente, pero no genera asistencia.
-      resumen.errores += 1;
+    if (record.url) {
+      encolarFotoDeRecord({ recordId, dispositivoId, ruta: record.url });
+    }
+
+    if (record.userId) {
+      void quizasSincronizarReloj(
+        dispositivoId,
+        equipo.serial,
+        Date.now() / 1000 - record.createTime
+      );
+    }
+
+    if (esSalida(record.tipo)) {
+      resumen.salidas += 1;
       continue;
     }
 
@@ -214,7 +253,8 @@ export async function pollEquipo(
           codigo: record.userId,
           fechaDispositivo: fechaHora,
           metodo,
-          raw: JSON.stringify(record).substring(0, 2000)
+          raw: JSON.stringify(record).substring(0, 2000),
+          recordId
         },
         { id: dispositivoId, serial: equipo.serial }
       );
@@ -245,10 +285,44 @@ export async function pollEquipo(
     }
   }
 
+  try {
+    await recuperarFotosPendientes();
+  } catch (error) {
+    logger.warn('[biometric-poll] No se pudieron reanudar fotos pendientes', { error });
+  }
+
+  try {
+    await recuperarIdentificacionesPendientes();
+  } catch (error) {
+    logger.warn('[biometric-poll] No se pudieron reanudar identificaciones pendientes', {
+      error
+    });
+  }
+
+  if (resumen.nuevos > 0) {
+    logger.info('[biometric-poll] Registros nuevos bajados del equipo', {
+      serial: equipo.serial,
+      leidos: resumen.leidos,
+      nuevos: resumen.nuevos,
+      ignorados: resumen.ignorados,
+      registrados: resumen.registrados,
+      duplicados: resumen.duplicados,
+      fueraVentana: resumen.fueraVentana,
+      salidas: resumen.salidas,
+      sinUsuario: resumen.sinUsuario,
+      usuarioInactivo: resumen.usuarioInactivo
+    });
+  } else if (resumen.ignorados > 0) {
+    logger.info('[biometric-poll] Registros anteriores al corte; ignorados', {
+      serial: equipo.serial,
+      leidos: resumen.leidos,
+      ignorados: resumen.ignorados
+    });
+  }
+
   return resumen;
 }
 
-/** Procesa todos los equipos habilitados; un equipo caído no tumba a los demás. */
 export async function pollTodos(): Promise<ResumenPoll[]> {
   const equipos = await equiposParaPoller();
   const resumenes: ResumenPoll[] = [];
@@ -262,36 +336,40 @@ export async function pollTodos(): Promise<ResumenPoll[]> {
   return resumenes;
 }
 
-/* ───────────────────────── Ciclo de fondo ───────────────────────── */
+const INTERVALO_MS = 15_000;
 
-const INTERVALO_MS = 60_000;
-let timer: ReturnType<typeof setInterval> | null = null;
-let enVuelo = false;
-
-export function estaCorriendo(): boolean {
-  return timer !== null;
+interface EstadoPoller {
+  timer: ReturnType<typeof setInterval> | null;
+  enVuelo: boolean;
 }
 
-/** Enciende el ciclo de fondo (idempotente). Lo llama instrumentation.register(). */
+const estado = ((globalThis as Record<string, unknown>).__biometricPoller ??= {
+  timer: null,
+  enVuelo: false
+}) as EstadoPoller;
+
+export function estaCorriendo(): boolean {
+  return estado.timer !== null;
+}
+
 export function arrancarPoller(): void {
-  if (timer) return;
-  timer = setInterval(() => {
-    if (enVuelo) return; // un ciclo lento no se pisa con el siguiente
-    enVuelo = true;
+  if (estado.timer) return;
+  estado.timer = setInterval(() => {
+    if (estado.enVuelo) return;
+    estado.enVuelo = true;
     pollTodos()
       .catch(error => logger.error('[biometric-poll] Ciclo falló', { error }))
       .finally(() => {
-        enVuelo = false;
+        estado.enVuelo = false;
       });
   }, INTERVALO_MS);
-  // En dev (hot reload) no conviene retener el proceso solo por el poller.
-  timer.unref?.();
+  estado.timer.unref?.();
   logger.info('[biometric-poll] Ciclo de registros iniciado', { intervaloMs: INTERVALO_MS });
 }
 
 export function detenerPoller(): void {
-  if (timer) {
-    clearInterval(timer);
-    timer = null;
+  if (estado.timer) {
+    clearInterval(estado.timer);
+    estado.timer = null;
   }
 }

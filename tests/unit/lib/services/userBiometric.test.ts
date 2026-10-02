@@ -85,6 +85,11 @@ describe('guardado del enrolamiento', () => {
       return [];
     });
 
+    // El mensaje nombra el codigo en conflicto: el operador sabe cuál cambiar sin
+    // abrir la base ni adivinar. Ese texto es el que muestra el diálogo de enrolamiento.
+    await expect(UserService.updateBiometric('u-1', { codigo: '1001' })).rejects.toThrow(
+      'El código "1001" ya lo usa otra persona'
+    );
     await expect(UserService.updateBiometric('u-1', { codigo: '1001' })).rejects.toBeInstanceOf(
       ConflictError
     );

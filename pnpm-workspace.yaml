@@ -1,6 +1,9 @@
 packages:
   - '.'
 
+onlyBuiltDependencies:
+  - 'ffmpeg-static'
+
 overrides:
   axios: '1.18.0'
   jspdf: '4.2.1'

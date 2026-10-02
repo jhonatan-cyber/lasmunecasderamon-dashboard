@@ -21,7 +21,11 @@ export class ApiResponse {
     const formatted = formatErrorResponse(error);
     const statusCode = error instanceof AppError ? error.statusCode : 500;
 
-    return NextResponse.json(formatted, { status: statusCode });
+    // `code` en el tope: los diálogos deciden su UI (p. ej. CONFLICT → aviso
+    // inline con acción) sin analizar el objeto anidado `error`.
+    const code = error instanceof AppError ? error.code : undefined;
+
+    return NextResponse.json(code ? { ...formatted, code } : formatted, { status: statusCode });
   }
 
   static validationError(message: string, details?: any) {

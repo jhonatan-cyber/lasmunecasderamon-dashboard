@@ -154,6 +154,10 @@ export const SSE_EVENTS = {
       }
     ]
   },
+  // El lector volvió a cotejar a alguien que ya marcó hoy (una asistencia por
+  // día). Solo al personal: la pantalla del local no cambia con esto, solo el
+  // toast "el usuario ya tiene asistencia registrada".
+  attendance_duplicate: { audiences: STAFF_ONLY },
   code_changed: {
     audiences: [
       { channel: 'staff' },

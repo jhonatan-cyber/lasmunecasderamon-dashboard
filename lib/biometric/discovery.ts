@@ -2,31 +2,11 @@ import { execFile } from 'node:child_process';
 import net from 'node:net';
 import os from 'node:os';
 
-/**
- * Re-encontrar el lector cuando el DHCP le cambia la IP.
- *
- * El terminal está en DHCP: una renovación de concesión o un cambio de red WiFi
- * y la IP guardada en `biometric_devices.ip` ya no es la del equipo. La
- * identidad no cambia (es el serial), solo "dónde está", así que acá se resuelve
- * eso con lo único estable que tenemos: la MAC.
- *
- * El método es local y no requiere privilegios:
- *   1) barrer la subred con un TCP connect al puerto 80 (eso además puebla la
- *      tabla de vecinos/ARP con la MAC de cada host vivo),
- *   2) leer `arp -a` (Windows) o `ip neigh` (Linux) y quedarse con las IPs
- *      cuya MAC coincida con la registrada,
- *   3) confirmar cada candidata con el serial del equipo antes de aceptarla:
- *      un tercero que se quede con la IP vieja NUNCA pasa esa prueba.
- *
- * Ninguna función de red corre al importar el módulo: todo es bajo demanda.
- */
-
 export interface Vecino {
   ip: string;
   mac: string;
 }
 
-/** `E0-2E-FE-DC-E1-0B` / `e0.2e.fe.dc.e1.0b` → `e0:2e:fe:dc:e1:0b`. */
 export function normalizarMac(valor?: string | null): string | null {
   if (!valor) return null;
   const limpio = valor
@@ -37,7 +17,6 @@ export function normalizarMac(valor?: string | null): string | null {
   return (limpio.match(/.{2}/g) ?? []).join(':');
 }
 
-/** Campo `mac` de la fila (separado por comas) → lista normalizada. */
 export function macsDe(campo?: string | null): string[] {
   if (!campo) return [];
   return campo
@@ -55,18 +34,12 @@ export function coincideMac(
   return macsDe(campo).includes(objetivo);
 }
 
-/** Unicast local: descarta broadcast (ff:…), multicast (primer octeto impar) y vacías. */
 function macUtil(mac: string | null): mac is string {
   if (!mac) return false;
   if (mac === 'ff:ff:ff:ff:ff:ff') return false;
   return parseInt(mac.slice(0, 2), 16) % 2 === 0;
 }
 
-/**
- * `arp -a` de Windows (separador de MAC con guiones, salida localizada):
- *   Interfaz: 192.168.0.2 --- 0x8
- *     192.168.0.33     e0-2e-fe-dc-e1-0b     dinámico
- */
 export function parsearVecinosWindows(salida: string): Vecino[] {
   const out: Vecino[] = [];
   for (const linea of salida.split(/\r?\n/)) {
@@ -79,7 +52,6 @@ export function parsearVecinosWindows(salida: string): Vecino[] {
   return out;
 }
 
-/** `ip -o neigh`: `192.168.0.33 dev wlan0 lladdr e0:2e:fe:dc:e1:0b REACHABLE`. */
 export function parsearVecinosLinux(salida: string): Vecino[] {
   const out: Vecino[] = [];
   for (const linea of salida.split(/\r?\n/)) {
@@ -95,7 +67,6 @@ export function parsearVecinosLinux(salida: string): Vecino[] {
   return out;
 }
 
-/** Tabla de vecinos (ARP) del sistema. Nunca lanza: sin tabla no hay descubrimiento. */
 export async function leerVecinos(): Promise<Vecino[]> {
   const esWindows = process.platform === 'win32';
   const comando = esWindows ? 'arp' : 'ip';
@@ -111,7 +82,6 @@ export async function leerVecinos(): Promise<Vecino[]> {
   return esWindows ? parsearVecinosWindows(salida) : parsearVecinosLinux(salida);
 }
 
-/** MAC de una IP en la tabla ARP local (null si no está). */
 export async function macDeTabla(ip: string): Promise<string | null> {
   const vecinos = await leerVecinos().catch(() => [] as Vecino[]);
   return vecinos.find(vecino => vecino.ip === ip)?.mac ?? null;
@@ -144,14 +114,9 @@ export interface Red {
 export interface RangoIp {
   base: string;
   ips: string[];
-  /** Tamaño real de la red (2^(32-máscara)), aunque `ips` venga recortado. */
   tamano: number;
 }
 
-/**
- * Hosts de cada red local (sin broadcast ni red). Las redes demasiado grandes
- * se recortan a `limite` hosts: en una oficina un /16 no se barre entero.
- */
 export function rangosDeRed(redes: Red[], limite = 1024): RangoIp[] {
   const rangos: RangoIp[] = [];
   const vistas = new Set<string>();
@@ -162,7 +127,7 @@ export function rangosDeRed(redes: Red[], limite = 1024): RangoIp[] {
     if (ip === null || mascara === null) continue;
 
     const tamano = (~mascara >>> 0) + 1;
-    if (tamano < 4) continue; // /31 y /32 no tienen hosts que barrer
+    if (tamano < 4) continue;
     const inicio = (ip & mascara) >>> 0;
     const clave = `${inicio}-${tamano}`;
     if (vistas.has(clave)) continue;
@@ -178,12 +143,10 @@ export function rangosDeRed(redes: Red[], limite = 1024): RangoIp[] {
   return rangos;
 }
 
-/** Redes IPv4 no internas de esta máquina (todas las tarjetas activas). */
 export function redesActuales(limite = 1024): RangoIp[] {
   const interfaces: Red[] = [];
   for (const [nombre, direcciones] of Object.entries(os.networkInterfaces())) {
     for (const direccion of direcciones ?? []) {
-      // family es 'IPv4'/'IPv6' en los typings actuales y 4/6 en los viejos.
       const familia = String(direccion.family);
       if ((familia === 'IPv4' || familia === '4') && !direccion.internal) {
         interfaces.push({ nombre, ipv4: direccion.address, netmask: direccion.netmask });
@@ -199,11 +162,6 @@ export function redesActuales(limite = 1024): RangoIp[] {
   return [...porBase.values()];
 }
 
-/**
- * IPs a probar: si tenemos la IP anterior (aunque sea vieja) y cae dentro de
- * alguna de nuestras redes, se barre SOLO esa; si ya no pertenece a ninguna
- * (cambiamos de red) se barren todas.
- */
 export function ipsCandidatas(
   opciones: { cercaDe?: string | null; limite?: number } = {}
 ): string[] {
@@ -219,7 +177,6 @@ export function ipsCandidatas(
   return redes.flatMap(red => red.ips);
 }
 
-/** TCP connect corto al puerto HTTP del lector: barato y además puebla el ARP. */
 export function sondearPuerto(host: string, puerto = 80, timeoutMs = 400): Promise<boolean> {
   return new Promise(resolve => {
     if (!net.isIP(host)) return resolve(false);
@@ -237,7 +194,6 @@ export function sondearPuerto(host: string, puerto = 80, timeoutMs = 400): Promi
   });
 }
 
-/** Barrido en paralelo: devuelve las IPs que responden. */
 export async function barrerPuerto(
   ips: string[],
   opciones: { puerto?: number; timeoutMs?: number; concurrencia?: number } = {}
@@ -256,7 +212,6 @@ export async function barrerPuerto(
   return vivas;
 }
 
-/** IPs vivas cuya MAC está en la lista registrada (con respaldo: si el sondeo no la vio, la ARP igual sirve). */
 export function candidatosPorMac(parametros: {
   vecinos: Vecino[];
   vivas: string[];
@@ -276,21 +231,11 @@ export function candidatosPorMac(parametros: {
 export interface OperacionesDescubrimiento {
   sondear?: (ip: string) => Promise<boolean>;
   vecinos?: () => Promise<Vecino[]>;
-  /** IPs a barrer (por omisión: las redes locales de esta máquina). */
   candidatas?: () => string[];
-  /** Barrido completo (por omisión: TCP a cada IP candidata). */
   barrido?: (ips: string[]) => Promise<string[]>;
-  /** Devuelve el serial del equipo que responde en esa IP, o null si no es él. */
   serial?: (ip: string) => Promise<string | null>;
 }
 
-/**
- * Busca en la red el equipo con esas MACs y devuelve su IP NUEVA.
- *
- * El serial es la última palabra: sin eso, actualizar la IP podría apuntar al
- * equipo equivocado. `limiteSerial` acota cuántas IPs se confirman una por una
- * para que un barrido grande no se dispare en tiempo.
- */
 export async function buscarEquipoPorMac(opciones: {
   macs: string[];
   ipActual?: string | null;
@@ -311,8 +256,6 @@ export async function buscarEquipoPorMac(opciones: {
 
   let objetivos = candidatosPorMac({ vecinos: tabla, vivas, macs });
   if (objetivos.length === 0) {
-    // Sin MAC registrada (fila vieja) o no aparece en la tabla: confirmamos por
-    // serial sobre lo poco que responde, que en la red de un local es corto.
     objetivos = vivas.slice(0, limiteSerial);
   }
   if (ipActual && !objetivos.includes(ipActual) && (await sondear(ipActual).catch(() => false))) {

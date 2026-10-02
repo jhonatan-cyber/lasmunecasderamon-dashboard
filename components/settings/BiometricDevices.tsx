@@ -90,7 +90,6 @@ export function BiometricDevices() {
   const [pollMensaje, setPollMensaje] = useState<Record<string, string>>({});
   // Búsqueda del equipo por MAC cuando el DHCP le cambió la IP.
   const [descPorEquipo, setDescPorEquipo] = useState<Record<string, EstadoConexion>>({});
-
   const load = useCallback(async () => {
     setLoading(true);
     setError('');
@@ -430,7 +429,8 @@ export function BiometricDevices() {
                         <div>
                           <p className='text-sm font-medium'>Conexión del sistema al equipo</p>
                           <p className='text-xs text-muted-foreground'>
-                            IP y credenciales CGI para enrolar desde acá (se guardan cifradas).
+                            Usuario y clave CGI (se guardan cifradas). La IP se detecta sola por
+                            MAC: dejala vacía o usá la que ya tenés cargada.
                           </p>
                         </div>
                         <div className='flex flex-wrap gap-2'>
@@ -468,7 +468,7 @@ export function BiometricDevices() {
                       <div className='grid grid-cols-1 sm:grid-cols-3 gap-2'>
                         <Input
                           aria-label='IP del equipo'
-                          placeholder='IP, ej: 192.168.1.50'
+                          placeholder='IP (opcional: se busca por MAC)'
                           value={credPorEquipo[device.id]?.ip ?? device.ip ?? ''}
                           onChange={e =>
                             setCredPorEquipo(prev => ({
@@ -567,15 +567,19 @@ export function BiometricDevices() {
                           />
                           Recoger registros para asistencia (cada minuto)
                         </label>
-                        <Button
-                          type='button'
-                          variant='outline'
-                          size='sm'
-                          onClick={() => recogerAhora(device)}
-                          disabled={pollAccion[device.id] !== null}
-                        >
-                          {pollAccion[device.id] === 'polling' ? 'Recogiendo...' : 'Recoger ahora'}
-                        </Button>
+                        <div className='flex flex-wrap gap-2'>
+                          <Button
+                            type='button'
+                            variant='outline'
+                            size='sm'
+                            onClick={() => recogerAhora(device)}
+                            disabled={pollAccion[device.id] !== null}
+                          >
+                            {pollAccion[device.id] === 'polling'
+                              ? 'Recogiendo...'
+                              : 'Recoger ahora'}
+                          </Button>
+                        </div>
                       </div>
                       {pollMensaje[device.id] && (
                         <p role='status' className='text-xs text-muted-foreground'>
@@ -600,8 +604,8 @@ export function BiometricDevices() {
             del equipo debe estar en la zona horaria del negocio.
           </p>
           <p>
-            El enrolamiento de huella y cara se hace en el menú del equipo; el código de cada
-            persona se registra en su ficha (Personal → Editar).
+            El enrolamiento facial se realiza en Usuarios → Enrolar. La cámara del lector captura la
+            imagen y el sistema la guarda en su base de datos.
           </p>
         </div>
       </CardContent>

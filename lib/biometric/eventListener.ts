@@ -10,27 +10,13 @@ import {
 } from '@/lib/biometric/eventStreamClient';
 import type { BiometricMetodo } from '@/lib/biometric/types';
 import logger from '@/lib/utils/logger';
+import { abrirAvisosSdk } from './eventSdkClient';
+import { crearLecturaPorAviso } from './eventRecordWakeup';
+import { pollEquipo } from './recordPoller';
 
-/**
- * Listeners EN VIVO por equipo.
- *
- * Supervisor que mantiene una conexión `eventManager.cgi?action=attach` abierta
- * con cada equipo habilitado. Cuando la persona se pone frente al lector, el
- * equipo escribe el evento en el stream y acá:
- *
- *   1. se marca como visto (dedupe técnico en `biometric_device_records`),
- *   2. se procesa con `procesarEventoBiometrico` (misma regla que las demás
- *      vías: usuario activo, una asistencia por día, ventana horaria, SSE).
- *
- * La latencia es sub-segundo: la pantalla del local refresca al instante.
- *
- * Robustez:
- *   - Reconexión con backoff exponencial (5s → 60s) si el equipo se cae.
- *   - Si el firmware no soporta el stream (EventManagerNoSoportadoError), se
- *     desiste de este equipo: su asistencia seguirá por el poller de 1 minuto.
- *   - Dedupe por (serial, persona, fecha, metodo): si el stream y el poller
- *     solapan un instante, la asistencia no se duplica.
- */
+function esSalida(tipo: string | null): boolean {
+  return (tipo || '').trim().toLowerCase() === 'exit';
+}
 
 const BACKOFF_INICIAL_MS = 5_000;
 const BACKOFF_MAX_MS = 60_000;
@@ -39,19 +25,16 @@ interface Listener {
   dispositivoId: string;
   serial: string;
   abort: AbortController;
-  /** Limpia el backoff pendiente al detener manualmente. */
   reintentar?: ReturnType<typeof setTimeout>;
 }
 
 const listeners = new Map<string, Listener>();
-/** Equipos con el stream establecido AHORA (para la métrica de estado). */
 const conectados = new Set<string>();
 
 export function listenersActivos(): string[] {
   return [...listeners.keys()];
 }
 
-/** Serial-less: IDs de equipos con conexión viva en este proceso. */
 export function conectadosEnVivo(): string[] {
   return [...conectados];
 }
@@ -84,7 +67,6 @@ async function equipoCargado(dispositivoId: string): Promise<{
   return rows[0] ?? null;
 }
 
-/** Marca el evento como visto; false si otro canal ya lo procesó. */
 async function marcarVisto(
   serial: string,
   dispositivoId: string,
@@ -103,7 +85,7 @@ async function marcarVisto(
       id: generateUUID(),
       dispositivo_id: dispositivoId,
       serial,
-      rec_no: evento.createTime, // el stream no trae RecNo: usamos el epoch como idempotencia
+      rec_no: evento.createTime,
       codigo_persona: evento.userId.substring(0, 64),
       fecha_dispositivo: fechaHora,
       metodo,
@@ -111,22 +93,40 @@ async function marcarVisto(
     });
     return true;
   } catch (error: any) {
-    if (error?.code === '23505') return false; // lo marcó el poller en paralelo
+    if (error?.code === '23505') return false;
     throw error;
   }
 }
 
 async function manejarEvento(
-  listener: { dispositivoId: string; serial: string },
+  listener: { dispositivoId: string; serial: string; corteMs: number | null },
   evento: EventoDelEquipo
 ): Promise<void> {
-  if (evento.status !== null && evento.status !== 1) return; // verificación fallida
+  if (
+    listener.corteMs !== null &&
+    Number.isFinite(evento.createTime) &&
+    evento.createTime * 1000 < listener.corteMs
+  ) {
+    logger.debug('[biometric-live] Evento anterior al corte de histórico; ignorado', {
+      serial: listener.serial,
+      userId: evento.userId
+    });
+    return;
+  }
 
   const fechaHora = getNowInBusinessTimezone(new Date(evento.createTime * 1000));
   const metodo = metodoDesdeEvento(evento.metodo);
 
+  if (esSalida(evento.tipo)) {
+    logger.info('[biometric-live] Salida del lector: no acredita asistencia', {
+      serial: listener.serial,
+      userId: evento.userId
+    });
+    return;
+  }
+
   if (!(await marcarVisto(listener.serial, listener.dispositivoId, evento, fechaHora, metodo))) {
-    return; // ya lo llevó el poller (o un evento repetido del stream)
+    return;
   }
 
   try {
@@ -153,11 +153,19 @@ async function manejarEvento(
   }
 }
 
-/** Abre el stream del equipo y lo reconecta con backoff hasta que lo detengan. */
 async function mantenerListener(dispositivoId: string, serial: string, abort: AbortController) {
   let backoff = BACKOFF_INICIAL_MS;
+  const alAviso = crearLecturaPorAviso(
+    abort.signal,
+    () => pollEquipo(dispositivoId),
+    error => {
+      logger.warn('[biometric-live] No se pudieron recuperar los registros del aviso', {
+        serial,
+        error
+      });
+    }
+  );
   while (!abort.signal.aborted) {
-    // Credenciales frescas en cada intento: reflejan ediciones sin reiniciar.
     const filas = await query<
       {
         id: string;
@@ -166,9 +174,10 @@ async function mantenerListener(dispositivoId: string, serial: string, abort: Ab
         usuario_equipo: string | null;
         clave_cifrada: string | null;
         recoger_registros: number;
+        historico_limpiado_en: Date | string | null;
       }[]
     >(
-      `SELECT id, serial, ip, usuario_equipo, clave_cifrada, recoger_registros
+      `SELECT id, serial, ip, usuario_equipo, clave_cifrada, recoger_registros, historico_limpiado_en
          FROM biometric_devices WHERE id = ? AND revocado_en IS NULL`,
       [dispositivoId]
     );
@@ -179,6 +188,9 @@ async function mantenerListener(dispositivoId: string, serial: string, abort: Ab
       listeners.delete(dispositivoId);
       return;
     }
+    const corteMs = fila.historico_limpiado_en
+      ? new Date(fila.historico_limpiado_en).getTime()
+      : null;
 
     let despertar: () => void = () => {};
     const apagadoOcaida = new Promise<void>(resolver => {
@@ -189,18 +201,49 @@ async function mantenerListener(dispositivoId: string, serial: string, abort: Ab
     let falloStream: unknown = null;
 
     try {
-      await abrirFlujoEventos(credenciales, {
-        signal: abort.signal,
-        onEvento: evento => manejarEvento({ dispositivoId, serial }, evento),
-        onError: error => {
-          falloStream = error;
-          despertar(); // el stream cayó: reconectar con backoff
-        }
-      });
-      // abrirFlujoEventos resuelve con la conexión establecida.
+      let transporte = 'NetSDK';
+      try {
+        await abrirAvisosSdk(credenciales, {
+          signal: abort.signal,
+          onAviso: () => {
+            logger.debug('[biometric-live] Aviso NetSDK recibido; consultando registros', {
+              serial
+            });
+            alAviso();
+          },
+          onError: error => {
+            falloStream = error;
+            despertar();
+          }
+        });
+      } catch (error) {
+        if (abort.signal.aborted) return;
+        transporte = 'CGI';
+        logger.info('[biometric-live] NetSDK no disponible; probando suscripciones CGI', {
+          serial
+        });
+        await abrirFlujoEventos(credenciales, {
+          signal: abort.signal,
+          onEvento: evento => manejarEvento({ dispositivoId, serial, corteMs }, evento),
+          onChunk: texto => {
+            if (!texto.includes('=')) return;
+            logger.info('[biometric-live] Bloque recibido del equipo', {
+              serial,
+              bytes: texto.length
+            });
+          },
+          onError: error => {
+            falloStream = error;
+            despertar();
+          }
+        });
+      }
       conectados.add(dispositivoId);
       backoff = BACKOFF_INICIAL_MS;
-      logger.info('[biometric-live] Stream en vivo conectado', { serial });
+      logger.info('[biometric-live] Suscripción conectada (pendiente de eventos)', {
+        serial,
+        transporte
+      });
     } catch (error) {
       conectados.delete(dispositivoId);
       abort.signal.removeEventListener('abort', alAbortar);
@@ -220,7 +263,6 @@ async function mantenerListener(dispositivoId: string, serial: string, abort: Ab
       continue;
     }
 
-    // Conexión establecida: esperar una caída del stream o el apagado manual.
     await apagadoOcaida;
     abort.signal.removeEventListener('abort', alAbortar);
     conectados.delete(dispositivoId);
@@ -244,7 +286,6 @@ export async function encenderListener(dispositivoId: string): Promise<boolean> 
   const abort = new AbortController();
   const listener: Listener = { dispositivoId, serial: equipo.serial, abort };
   listeners.set(dispositivoId, listener);
-  // No await: el supervisor vive por su cuenta.
   void mantenerListener(dispositivoId, equipo.serial, abort);
   return true;
 }
@@ -257,7 +298,6 @@ export function apagarListener(dispositivoId: string): void {
   listeners.delete(dispositivoId);
 }
 
-/** Enciende listeners para todos los equipos habilitados (llamado al boot). */
 export async function encenderTodos(): Promise<void> {
   const equipos = await query<{ id: string }[]>(
     `SELECT id FROM biometric_devices

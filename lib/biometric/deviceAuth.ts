@@ -3,13 +3,6 @@ import { query } from '@/lib/database/db';
 import { ValidationError } from '@/lib/errors/errors';
 import type { BiometricMarca } from '@/lib/biometric/types';
 
-/**
- * Credencial del equipo: su serial. A diferencia del kiosko no hay cookie ni
- * secreto compartido —el protocolo ADMS solo lleva el SN en la query—, así que
- * un evento solo se acepta si el serial está dado de alta y no está revocado.
- * El alta la hace un administrador en Configuraciones → Asistencia.
- */
-
 const SERIAL_RE = /^[a-zA-Z0-9._:-]{3,64}$/;
 
 export async function findActiveDevice(serial: string) {
@@ -43,7 +36,6 @@ export async function createBiometricDevice(
     throw new ValidationError('Ese serial ya está vinculado a un equipo activo');
   }
   if (existente.length > 0) {
-    // Un serial revocado vuelve a entrar: se limpia la fila vieja y se crea nueva.
     await query('DELETE FROM biometric_devices WHERE id = ?', [existente[0].id]);
   }
 

@@ -273,8 +273,12 @@ export class UserRepository {
         fecha_mod: getNowInBusinessTimezone()
       });
     } catch (err: any) {
-      // Dos personas no pueden compartir el codigo en el equipo.
-      if (err?.code === '23505') throw new ConflictError('Ese codigo ya lo usa otra persona.');
+      // Dos personas no pueden compartir el codigo en el equipo. El mensaje
+      // nombra el codigo para que el operador sepa cuál cambiar sin adivinar.
+      if (err?.code === '23505')
+        throw new ConflictError(
+          `El código "${data.biometrico_codigo ?? ''}" ya lo usa otra persona. Cámbialo o generá uno nuevo.`
+        );
       logger.error('[UserRepository] Error en updateBiometric:', { id, err });
       throw new DatabaseError(`Error al guardar el enrolamiento de ${id}`, err);
     }
@@ -288,13 +292,56 @@ export class UserRepository {
     try {
       const rows = await query<any[]>(
         `SELECT tipo, datos FROM biometric_plantillas
-          WHERE usuario_id = ? ORDER BY fecha_sincronizacion DESC NULLS LAST`,
+          WHERE usuario_id = ? ORDER BY fecha_captura DESC NULLS LAST`,
         [id]
       );
       return Array.isArray(rows) ? rows : [];
     } catch (err) {
       logger.error('[UserRepository] Error en getPlantillasBiometricas:', { id, err });
       return [];
+    }
+  }
+
+  /**
+   * Equipos donde la persona tiene plantillas: son los que hay que sincronizar
+   * al desactivar/eliminar. Devuelve el nombre para los mensajes de la UI.
+   */
+  static async getDispositivosConPlantillas(
+    id: string
+  ): Promise<{ id: string; nombre: string | null }[]> {
+    try {
+      const rows = await query<{ dispositivo_id: string; nombre: string | null }[]>(
+        `SELECT bp.dispositivo_id, d.nombre
+           FROM biometric_plantillas bp
+           LEFT JOIN biometric_devices d ON d.id = bp.dispositivo_id
+          WHERE bp.usuario_id = ?`,
+        [id]
+      );
+      if (!Array.isArray(rows)) return [];
+      const vistos = new Set<string>();
+      const lista: { id: string; nombre: string | null }[] = [];
+      for (const row of rows) {
+        const idEquipo = String(row.dispositivo_id);
+        if (!idEquipo || vistos.has(idEquipo)) continue;
+        vistos.add(idEquipo);
+        lista.push({ id: idEquipo, nombre: row.nombre ? String(row.nombre) : null });
+      }
+      return lista;
+    } catch (err) {
+      // Sin la lista igual se borra/desactiva el usuario: las plantillas quedarian
+      // pendientes pero nunca bloqueamos por un problema del lector.
+      logger.error('[UserRepository] Error en getDispositivosConPlantillas:', { id, err });
+      return [];
+    }
+  }
+
+  /** Plantillas maestras de la persona: se borran al eliminarla del sistema. */
+  static async deletePlantillasBiometricas(id: string): Promise<void> {
+    try {
+      await query('DELETE FROM biometric_plantillas WHERE usuario_id = ?', [id]);
+    } catch (err) {
+      // Igual que arriba: no bloquea el borrado del usuario.
+      logger.error('[UserRepository] Error en deletePlantillasBiometricas:', { id, err });
     }
   }
 

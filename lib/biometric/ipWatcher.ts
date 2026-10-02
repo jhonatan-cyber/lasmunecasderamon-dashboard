@@ -8,20 +8,6 @@ import {
 } from '@/lib/biometric/ipDiscovery';
 import logger from '@/lib/utils/logger';
 
-/**
- * Vigilante de IP: mantiene viva la dirección del lector aunque el DHCP la
- * cambie.
- *
- * Cada ciclo (5 min por omisión, `BIOMETRIC_IP_WATCH_MS`):
- *   1. chequea el puerto 80 de la IP guardada,
- *   2. si responde, confirma con el SERIAL que sigue siendo nuestro equipo (así
- *      detectamos que un tercero se quedó con la IP vieja) y refresca la MAC,
- *   3. si no responde o el serial no coincide, re-busca el equipo por MAC y
- *      actualiza la IP (reiniciando el listener en vivo contra la nueva).
- *
- * Desactivable con `BIOMETRIC_IP_WATCH=off` (útil en tests/CI).
- */
-
 const INTERVALO_DEFECTO_MS = 5 * 60_000;
 
 let timer: NodeJS.Timeout | null = null;
@@ -37,10 +23,6 @@ export function intervaloVigilanciaIp(): number {
   return Number.isFinite(crudo) && crudo >= 30_000 ? crudo : INTERVALO_DEFECTO_MS;
 }
 
-/**
- * Un ciclo completo. Exportado para tests y para poder forzar un chequeo desde
- * el endpoint de descubrimiento sin esperar al timer.
- */
 export async function vigilarUnaVez(): Promise<void> {
   const equipos = await query<
     { id: string; serial: string; ip: string; usuario_equipo: string; clave_cifrada: string }[]
@@ -102,7 +84,6 @@ export async function vigilarUnaVez(): Promise<void> {
   }
 }
 
-/** Arranca el ciclo periódico (idempotente; llamado desde instrumentation). */
 export function arrancarVigilanteIp(): void {
   if (timer || !habilitado()) return;
   const arrancar = () => {

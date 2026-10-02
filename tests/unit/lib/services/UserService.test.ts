@@ -8,7 +8,10 @@ vi.mock('@/lib/repositories/UserRepository', () => ({
     getById: vi.fn(),
     create: vi.fn(),
     update: vi.fn(),
-    updateStatus: vi.fn()
+    updateStatus: vi.fn(),
+    getDispositivosConPlantillas: vi.fn().mockResolvedValue([]),
+    deletePlantillasBiometricas: vi.fn().mockResolvedValue(undefined),
+    delete: vi.fn().mockResolvedValue(undefined)
   }
 }));
 
