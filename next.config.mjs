@@ -128,20 +128,13 @@ const nextConfig = {
     ];
   },
 
-  modularizeImports: {
-    '@radix-ui/react-icons': {
-      transform: '@radix-ui/react-icons/dist/{{member}}'
-    }
-  },
-
   experimental: {
     optimizePackageImports: [
       'recharts',
       '@radix-ui/react-dialog',
       '@radix-ui/react-dropdown-menu',
       '@radix-ui/react-select',
-      '@radix-ui/react-tabs',
-      '@radix-ui/react-toast'
+      '@radix-ui/react-tabs'
     ]
   },
 

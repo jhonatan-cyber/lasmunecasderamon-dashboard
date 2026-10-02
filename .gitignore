@@ -58,3 +58,7 @@ tests/integration/backups/
 
 # Backups de base de datos (nunca commitear dumps)
 /backups/
+
+# Sondas y utilidades de diagnostico locales (no forman parte del proyecto)
+/_tmp_real/
+.freebuff/

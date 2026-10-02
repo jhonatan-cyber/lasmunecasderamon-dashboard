@@ -10,7 +10,8 @@ export default [
       '.next/**',
       'node_modules/**',
       'playwright-report/**',
-      'coverage/**'
+      'coverage/**',
+      '_tmp_real/**'
     ]
   },
   {
