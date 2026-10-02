@@ -28,12 +28,20 @@ async function stop() {
 }
 
 async function start(credentials) {
-  if (process.platform !== 'win32' || process.arch !== 'x64')
+  // Mirrors lib/biometric/netSdk.ts: this process cannot import TypeScript.
+  const windows = process.platform === 'win32';
+  if ((!windows && process.platform !== 'linux') || process.arch !== 'x64')
     throw new Error('Unsupported SDK platform');
   const koffi = require('koffi');
-  const directory = process.env.DAHUA_SDK_DIR || 'C:\\Program Files\\SmartPSSLite';
-  process.env.PATH = `${process.env.PATH || ''};${directory}`;
-  sdk = koffi.load(path.join(directory, 'dhnetsdk.dll'));
+  const separator = windows ? ';' : ':';
+  const library = windows ? 'dhnetsdk.dll' : 'libdhnetsdk.so';
+  const fallback = windows ? 'C:\\Program Files\\SmartPSSLite' : '/opt/SmartPSSLite';
+  const directory = (process.env.DAHUA_SDK_DIR || '').trim() || fallback;
+  process.env.PATH = `${process.env.PATH || ''}${separator}${directory}`;
+  if (!windows) {
+    process.env.LD_LIBRARY_PATH = `${process.env.LD_LIBRARY_PATH || ''}${separator}${directory}`;
+  }
+  sdk = koffi.load(path.join(directory, library));
   const disconnectType = koffi.proto(
     'void DisconnectEvent(int64 handle, const char *ip, int port, uintptr_t user)'
   );

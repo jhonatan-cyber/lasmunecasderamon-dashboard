@@ -1,5 +1,6 @@
 import { query } from '@/lib/database/db';
 import { libreriaNet, type LibreriaNet } from './audioSdk';
+import { direccionDe } from './netSdk';
 import { credencialesDeFila, type CredencialesEquipo } from './deviceClient';
 import { encolarIdentificacionDeRecord } from './identificacionFacial';
 import logger from '@/lib/utils/logger';
@@ -22,7 +23,6 @@ type FnLogin = (
   nError: Buffer
 ) => number;
 type FnLogout = (h: number) => void;
-type Koffi = { address(buffer: Buffer): number };
 
 function intentarFunc<T>(lib: LibreriaNet, prototipo: string): T | null {
   try {
@@ -30,15 +30,6 @@ function intentarFunc<T>(lib: LibreriaNet, prototipo: string): T | null {
   } catch {
     return null;
   }
-}
-
-let koffiModulo: Koffi | null = null;
-async function direccionDe(buffer: Buffer): Promise<bigint> {
-  if (!koffiModulo) {
-    const modulo = (await import('koffi')) as unknown as { default?: Koffi } & Koffi;
-    koffiModulo = modulo.default ?? modulo;
-  }
-  return BigInt(koffiModulo.address(buffer));
 }
 
 export async function descargarFoto(
@@ -63,7 +54,7 @@ export async function descargarFoto(
   );
   const logout = intentarFunc<FnLogout>(lib, 'void CLIENT_Logout(int64 h)');
   if (!descargar || !login || !logout) {
-    logger.warn('[biometric-fotos] La dhnetsdk.dll no expone CLIENT_DownloadRemoteFile', {
+    logger.warn('[biometric-fotos] La librería NetSDK no expone CLIENT_DownloadRemoteFile', {
       ip: credenciales.ip
     });
     return null;

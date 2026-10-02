@@ -3,9 +3,6 @@ import CompressionPlugin from 'compression-webpack-plugin';
 
 const nextConfig = {
   serverExternalPackages: ['pg', 'koffi', 'ffmpeg-static'],
-  outputFileTracingIncludes: {
-    '/*': ['./scripts/biometric-events-sdk.cjs']
-  },
   allowedDevOrigins: ['127.0.0.1', 'dashboard.xn--lasmuecasderamon-bub.com'],
   images: {
     formats: ['image/avif', 'image/webp'],
@@ -155,10 +152,7 @@ const nextConfig = {
 
     // EXTERNALS: Exclude node modules that should NOT be bundled in client
     if (!isServer) {
-      config.externals = [
-        ...(config.externals || []),
-        { pg: 'pg' }
-      ];
+      config.externals = [...(config.externals || []), { pg: 'pg' }];
     }
 
     if (!isServer && !dev) {
@@ -327,8 +321,9 @@ const nextConfig = {
 };
 
 // Bundle analyzer (ANALYZE=true pnpm build:analyze)
-const withBundleAnalyzer = process.env.ANALYZE === 'true'
-  ? (await import('@next/bundle-analyzer')).default({ enabled: true })
-  : (config) => config;
+const withBundleAnalyzer =
+  process.env.ANALYZE === 'true'
+    ? (await import('@next/bundle-analyzer')).default({ enabled: true })
+    : config => config;
 
 export default withBundleAnalyzer(nextConfig);

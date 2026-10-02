@@ -5,10 +5,11 @@ heartbeats no confirma que emita eventos de acceso.
 
 ## Recepción
 
-1. En Windows x64, el supervisor intenta NetSDK mediante
+1. En Windows x64 y Linux x64, el supervisor intenta NetSDK mediante
    `CLIENT_RealLoadPictureEx` (canal 0, `EVENT_IVS_ALL`, sin imágenes). Se
-   utiliza `koffi` y la DLL instalada con SmartPSS Lite, en un proceso separado
-   del SDK de enrolamiento. `DAHUA_SDK_DIR` permite cambiar la carpeta.
+   utiliza `koffi` y la librería instalada con SmartPSS Lite (`dhnetsdk.dll` o
+   `libdhnetsdk.so`), en un proceso separado del SDK de enrolamiento.
+   `DAHUA_SDK_DIR` permite cambiar la carpeta.
 2. Cada aviso nativo solicita los registros de acceso tras 100 ms y nuevamente
    un segundo después, para dar tiempo al equipo a persistirlos. Las ráfagas se
    agrupan; son los registros del lector los que identifican persona y hora. Un
@@ -23,8 +24,8 @@ heartbeats no confirma que emita eventos de acceso.
 Las credenciales del SDK se pasan por stdin, nunca por argumentos ni logs. El
 supervisor reconecta tras una caída. Al apagar el recolector se cierra la
 suscripción y el proceso auxiliar. `BIOMETRIC_EVENTS_SDK=false` fuerza CGI. El
-despliegue debe incluir `scripts/biometric-events-sdk.cjs`, `koffi` y las DLL
-del SDK. El script está incluido en el tracing de Next.js.
+despliegue debe incluir `scripts/biometric-events-sdk.cjs` (lo copia
+`deploy.yml`), `koffi` y la librería nativa del SDK en `DAHUA_SDK_DIR`.
 
 ## Validación física
 

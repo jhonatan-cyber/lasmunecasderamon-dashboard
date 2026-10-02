@@ -209,15 +209,16 @@ import {
   umbralCoincidenciaFacial,
   vectorDesdeEigen
 } from '@/lib/biometric/faceSdk';
+import { NOMBRE_LIBRERIA } from '@/lib/biometric/netSdk';
 
 const cred = { ip: '192.168.1.50', usuario: 'admin', clave: 'secreta' };
 
-/** Carpeta temporal con un dhnetsdk.dll de mentira para que cargarSdk avance. */
+/** Carpeta temporal con una librería NatSDK de mentira para que cargarSdk avance. */
 let carpetaSdk = '';
 
 beforeAll(() => {
   carpetaSdk = fs.mkdtempSync(path.join(os.tmpdir(), 'dhnetsdk-falso-'));
-  fs.writeFileSync(path.join(carpetaSdk, 'dhnetsdk.dll'), '');
+  fs.writeFileSync(path.join(carpetaSdk, NOMBRE_LIBRERIA), '');
 });
 
 afterAll(() => {
@@ -336,7 +337,7 @@ describe('cargarSdk (arranque del NetSDK)', () => {
     await expect(personaEnEquipo(cred, '1001')).rejects.toMatchObject({
       name: 'ErrorFacial',
       motivo: 'sdk_no_disponible',
-      message: expect.stringMatching(/dhnetsdk\.dll[\s\S]*DAHUA_SDK_DIR/)
+      message: expect.stringMatching(/dhnetsdk[\s\S]*DAHUA_SDK_DIR/)
     });
     expect(sdk.registros.logins).toBe(0);
   });
@@ -346,7 +347,7 @@ describe('cargarSdk (arranque del NetSDK)', () => {
 
     await expect(personaEnEquipo(cred, '1001')).rejects.toMatchObject({
       motivo: 'sdk_no_disponible',
-      message: expect.stringContaining('No se pudo cargar dhnetsdk.dll')
+      message: expect.stringContaining(`No se pudo cargar ${NOMBRE_LIBRERIA}`)
     });
   });
 
@@ -422,7 +423,7 @@ describe('cargarSdk (arranque del NetSDK)', () => {
 
     await expect(personaEnEquipo(cred, '1001')).rejects.toMatchObject({
       motivo: 'sdk_no_disponible',
-      message: expect.stringContaining('No se pudo cargar dhnetsdk.dll: fallo plano')
+      message: expect.stringContaining(`No se pudo cargar ${NOMBRE_LIBRERIA}: fallo plano`)
     });
   });
 
@@ -431,7 +432,7 @@ describe('cargarSdk (arranque del NetSDK)', () => {
     delete process.env.PATH;
     try {
       expect(await personaEnEquipo(cred, '1001')).toBe(true);
-      expect(process.env.PATH).toBe(`;${carpetaSdk}`);
+      expect(process.env.PATH).toBe(`${path.delimiter}${carpetaSdk}`);
     } finally {
       process.env.PATH = pathOriginal;
     }

@@ -8,11 +8,14 @@ interface OpcionesSdk {
   onError: (error: Error) => void;
 }
 
+/** Dahua publica el NetSDK sólo para Windows (dhnetsdk.dll) y Linux (libdhnetsdk.so). */
+const PLATAFORMAS_NETSDK = new Set(['win32', 'linux']);
+
 export function abrirAvisosSdk(
   credenciales: CredencialesEquipo,
   opciones: OpcionesSdk
 ): Promise<void> {
-  if (process.platform !== 'win32' || process.env.BIOMETRIC_EVENTS_SDK === 'false') {
+  if (!PLATAFORMAS_NETSDK.has(process.platform) || process.env.BIOMETRIC_EVENTS_SDK === 'false') {
     return Promise.reject(new Error('NetSDK de eventos no disponible en este servidor'));
   }
   if (opciones.signal.aborted) return Promise.reject(new Error('Suscripción cancelada'));

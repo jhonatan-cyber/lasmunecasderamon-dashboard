@@ -75,10 +75,10 @@ async function conSesion<T>(
     lib,
     'int64 CLIENT_LoginEx2(const char *ip, uint16_t puerto, const char *usuario, const char *clave, int emSpecCap, void *capParam, void *deviceInfo, void *nError)'
   );
-  if (!login) throw new Error('La dhnetsdk.dll instalada no expone CLIENT_LoginEx2');
+  if (!login) throw new Error('La librería NetSDK instalada no expone CLIENT_LoginEx2');
 
   const logout = intentarFunc<FnLogout>(lib, 'void CLIENT_Logout(int64 h)');
-  if (!logout) throw new Error('La dhnetsdk.dll instalada no expone CLIENT_Logout');
+  if (!logout) throw new Error('La librería NetSDK instalada no expone CLIENT_Logout');
 
   const h = login(
     credenciales.ip,
@@ -108,7 +108,7 @@ export async function sincronizarRelojEquipo(credenciales: CredencialesEquipo): 
   );
   if (!setup && !control) {
     throw new Error(
-      'La dhnetsdk.dll instalada no expone CLIENT_SetupDeviceTime ni CLIENT_ControlDevice'
+      'La librería NetSDK instalada no expone CLIENT_SetupDeviceTime ni CLIENT_ControlDevice'
     );
   }
 
@@ -131,7 +131,7 @@ export async function leerHoraEquipo(credenciales: CredencialesEquipo): Promise<
     lib,
     'bool CLIENT_QueryDeviceTime(int64 h, void *pTime, int nWaitTime)'
   );
-  if (!queryTime) throw new Error('La dhnetsdk.dll instalada no expone CLIENT_QueryDeviceTime');
+  if (!queryTime) throw new Error('La librería NetSDK instalada no expone CLIENT_QueryDeviceTime');
 
   return conSesion(lib, credenciales, h => {
     const buf = Buffer.alloc(24);

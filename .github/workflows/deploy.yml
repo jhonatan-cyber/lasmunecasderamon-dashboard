@@ -57,7 +57,7 @@ jobs:
           username: ${{ secrets.SSH_USERNAME }}
           password: ${{ secrets.SSH_PASSWORD }}
           port: 22
-          source: '.next/,public/,package.json,pnpm-lock.yaml,next.config.mjs,migrations/,scripts/run-migrations.mjs'
+          source: '.next/,public/,package.json,pnpm-lock.yaml,next.config.mjs,migrations/,scripts/run-migrations.mjs,scripts/biometric-events-sdk.cjs'
           target: '${{ env.DEPLOY_DIR }}'
           rm: false
           strip_components: 0

@@ -1,7 +1,6 @@
-import fs from 'fs';
-import path from 'path';
 import { completarPerfilAsistencia } from './attendanceUserProfile';
 import type { CredencialesEquipo } from '@/lib/biometric/deviceClient';
+import { cargarSdkNet, type SdkNet } from './netSdk';
 
 const PUERTO_NETSDK = 37777;
 const GETFACEEIGEN = 5;
@@ -122,89 +121,16 @@ export function mensajeDeCodigoFacial(codigo: number): {
   }
 }
 
-interface KoffiFuncion {
-  (...args: unknown[]): unknown;
-}
-
-interface KoffiBiblioteca {
-  func(prototipo: string): KoffiFuncion;
-}
-
-interface KoffiModulo {
-  load(ruta: string): KoffiBiblioteca;
-  proto(nombre: string, retorno: string, parametros: string[]): unknown;
-  pointer(tipo: unknown): unknown;
-  register(fn: (...args: unknown[]) => void, tipo: unknown): unknown;
-  address(buffer: Buffer): number;
-}
-
-interface SdkFacial {
-  lib: KoffiBiblioteca;
-  direccion: (buffer: Buffer) => number;
-  callback: unknown;
-}
-
-const cacheSdk = globalThis as typeof globalThis & { __dahuaSdkFacial?: SdkFacial | null };
-
 function mensajeDeError(error: unknown): string {
   return error instanceof Error ? error.message : String(error);
 }
 
-async function cargarSdk(): Promise<SdkFacial> {
-  if (cacheSdk.__dahuaSdkFacial) return cacheSdk.__dahuaSdkFacial;
-
-  const carpetaSdk = (process.env.DAHUA_SDK_DIR || 'C:\\Program Files\\SmartPSSLite').trim();
-  const rutaDll = path.join(carpetaSdk, 'dhnetsdk.dll');
-  if (!fs.existsSync(rutaDll)) {
-    throw new ErrorFacial(
-      'sdk_no_disponible',
-      `No se encontró dhnetsdk.dll en "${carpetaSdk}". Instalá SmartPSS Lite o configurá DAHUA_SDK_DIR con la carpeta que tenga el SDK.`
-    );
-  }
-
-  let koffi: KoffiModulo;
+async function cargarSdk(): Promise<SdkNet> {
   try {
-    const modulo = (await import('koffi')) as unknown as { default?: KoffiModulo } & KoffiModulo;
-    koffi = (modulo.default ?? modulo) as KoffiModulo;
+    return await cargarSdkNet();
   } catch (error) {
-    throw new ErrorFacial(
-      'sdk_no_disponible',
-      `El puente FFI koffi no está disponible en el servidor (${mensajeDeError(error)}).`
-    );
+    throw new ErrorFacial('sdk_no_disponible', mensajeDeError(error));
   }
-
-  process.env.PATH = `${process.env.PATH || ''};${carpetaSdk}`;
-
-  let lib: KoffiBiblioteca;
-  try {
-    lib = koffi.load(rutaDll);
-  } catch (error) {
-    throw new ErrorFacial(
-      'sdk_no_disponible',
-      `No se pudo cargar dhnetsdk.dll: ${mensajeDeError(error)}`
-    );
-  }
-
-  try {
-    const proto = koffi.proto('DisconnectCbFacial', 'void', [
-      'int64_t',
-      'const char *',
-      'uint16_t',
-      'uint64_t'
-    ]);
-    const callback = koffi.register(() => {}, koffi.pointer(proto));
-    const init = lib.func('bool CLIENT_Init(void *cbDisconnect, uint64_t dwUser)');
-    if (!init(callback, 0)) throw new Error('CLIENT_Init devolvió false');
-    cacheSdk.__dahuaSdkFacial = {
-      lib,
-      direccion: (buffer: Buffer) => koffi.address(buffer),
-      callback
-    };
-  } catch (error) {
-    throw new ErrorFacial('sdk_no_disponible', `CLIENT_Init falló: ${mensajeDeError(error)}`);
-  }
-
-  return cacheSdk.__dahuaSdkFacial;
 }
 
 export function escribirTextoUtf8(
@@ -295,7 +221,7 @@ function bufferPunteroUnico(direccion: bigint): Buffer {
   return buffer;
 }
 
-type AccionConSesion<T> = (sesion: unknown, sdk: SdkFacial) => T | Promise<T>;
+type AccionConSesion<T> = (sesion: unknown, sdk: SdkNet) => T | Promise<T>;
 
 async function conSesionFacial<T>(
   credenciales: CredencialesEquipo,
@@ -398,7 +324,7 @@ export async function personaEnEquipo(
 
 function consultaPersona(
   sesion: unknown,
-  sdk: SdkFacial,
+  sdk: SdkNet,
   codigo: string,
   destino?: Buffer
 ): 'existe' | 'no_existe' {
