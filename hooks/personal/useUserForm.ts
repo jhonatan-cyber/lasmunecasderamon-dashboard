@@ -41,13 +41,18 @@ export const userFormSchema = z.object({
   foto: z.string().optional(),
   foto_anterior: z.string().optional(),
   // Asistencia biométrica: el código que reporta el lector de la puerta y el
-  // estado de cada modalidad guardada en el sistema.
+  // estado de cada modalidad (la plantilla se carga en el equipo, no acá).
   biometrico_codigo: z
     .string()
     .max(20, 'Máximo 20 caracteres')
     .regex(/^[a-zA-Z0-9._:-]*$/, 'Solo letras, números y . _ : -'),
   biometrico_huella: z.boolean(),
-  biometrico_facial: z.boolean()
+  biometrico_facial: z.boolean(),
+  // Alta en el lector al CREAR: el backend genera el código, guarda la foto
+  // como plantilla maestra y crea la persona con su cara en el equipo elegido.
+  // El resultado vuelve en `altaEquipo` de la respuesta (nunca rompe la creación).
+  alta_equipo: z.boolean(),
+  dispositivo_alta: z.string()
 });
 
 export type UserFormValues = z.infer<typeof userFormSchema>;
@@ -119,9 +124,11 @@ export function useUserForm({ user, onSubmit, isEditMode }: UseUserFormProps) {
         housing_discount: (user?.discount && user.discount > 0) || false,
         biometrico_codigo: user?.biometrico_codigo || '',
         biometrico_huella: !!user?.biometrico_huella,
-        biometrico_facial: !!user?.biometrico_facial
+        biometrico_facial: !!user?.biometrico_facial,
         // Al crear se propone dar de alta en el lector; al editar no aplica
         // (para eso está el diálogo de enrolamiento de la ficha).
+        alta_equipo: !user,
+        dispositivo_alta: ''
       }),
       [user, mapEstadoCivilToSelect]
     )
@@ -189,7 +196,9 @@ export function useUserForm({ user, onSubmit, isEditMode }: UseUserFormProps) {
         housing_discount: (user.discount && user.discount > 0) || false,
         biometrico_codigo: user.biometrico_codigo || '',
         biometrico_huella: !!user.biometrico_huella,
-        biometrico_facial: !!user.biometrico_facial
+        biometrico_facial: !!user.biometrico_facial,
+        alta_equipo: false,
+        dispositivo_alta: ''
       });
       sueldo.setFormattedValue(user.salary ? sueldo.formatNumber(user.salary) : '');
       aporte.setFormattedValue(user.contributions ? aporte.formatNumber(user.contributions) : '');

@@ -142,6 +142,12 @@ export default function Users() {
           const result = await createUser(formData);
           if (result.success) {
             toast.success(result.message || 'Usuario creado');
+            // Alta en el lector pedida al crear: se informa aparte porque el
+            // usuario ya existe aunque el equipo no haya respondido.
+            if (result.altaEquipo) {
+              if (result.altaEquipo.ok) toast.success(result.altaEquipo.mensaje);
+              else toast.warning(result.altaEquipo.mensaje);
+            }
             setIsFormOpen(false);
           } else {
             toast.error(result.message || 'Error al crear');
