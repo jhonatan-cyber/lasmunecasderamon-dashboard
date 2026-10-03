@@ -49,8 +49,11 @@ requiere conteo físico, no se deduce de las ventas anteriores.
   abierta: se termina la botella que ya está servida y, si no alcanza, se abre
   la siguiente. Cuando el contenido llega a 0, la botella pasa a vendida.
 - Los ml por shot y los ml por botella se configuran en **Configuraciones →
-  Bar**. Cada presentación puede definir su propia capacidad en ml desde su
-  formulario; si no lo hace, se usa la de Configuraciones (750 por defecto).
+  Bar**. La capacidad de la botella se resuelve en este orden: la que define la
+  presentación («Ml de la botella» en su formulario), la que declara su nombre
+  (`1000 ml`, `1 litro`) y, si el nombre tampoco dice un volumen, la de
+  Configuraciones (750 por defecto). El nombre importa: una presentación llamada
+  «1000 ml» nunca se abre como una botella de 750.
 - Las botellas abiertas siguen contando como una unidad en bar y muestran su
   contenido restante (`Abierta: N ml`) en las tarjetas del bar y en el detalle
   del producto.

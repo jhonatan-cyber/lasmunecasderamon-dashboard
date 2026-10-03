@@ -164,7 +164,7 @@ export function ExistingPresentacionCard({
                 id='edit-pres-ml-botella'
                 value={editPresDraft.ml_botella}
                 onChange={e => changeEditPresDraft('ml_botella', e.target.value)}
-                placeholder='Ej: 750 (se usa para los shots)'
+                placeholder='Ej: 750 (vacío = el que dice el nombre)'
                 disabled={isLoading || guardandoPres}
                 inputMode='numeric'
                 className='h-10 bg-white dark:bg-slate-900'

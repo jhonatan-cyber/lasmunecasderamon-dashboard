@@ -40,7 +40,11 @@ async function fijarShotMl(valor: number): Promise<void> {
   }
 }
 
-async function crearBar(mlBotella: number | null, unidades: number): Promise<FixtureBar> {
+async function crearBar(
+  mlBotella: number | null,
+  unidades: number,
+  nombrePresentacion = '750 ml'
+): Promise<FixtureBar> {
   const [usuario] = await query('SELECT id_usuario FROM usuarios LIMIT 1');
   const productoId = crypto.randomUUID();
   const presentacionId = crypto.randomUUID();
@@ -55,7 +59,7 @@ async function crearBar(mlBotella: number | null, unidades: number): Promise<Fix
     `INSERT INTO inventario_presentaciones
        (id, producto_id, nombre, precio_venta, comision, ml_botella, fecha_crea)
      VALUES (?, ?, ?, ?, ?, ?, now())`,
-    [presentacionId, productoId, '750 ml', 45000, 0, mlBotella]
+    [presentacionId, productoId, nombrePresentacion, 45000, 0, mlBotella]
   );
   for (let i = 0; i < unidades; i++) {
     await query(
@@ -163,6 +167,31 @@ it('el shot descuenta ml de la botella y la deja abierta con su contenido en el 
     expect(resumen.mlRestantesTotales).toBe(600);
     expect(resumen.botellasAbiertas).toBe(1);
     expect(resumen.botellasPorAgotarse).toBe(0);
+  } finally {
+    await restoreDatabase(snapshot, 'test-only');
+  }
+});
+
+it('abre la botella con la capacidad que dice el nombre cuando la presentación no la tiene', async () => {
+  const snapshot = await snapshotDatabase();
+  try {
+    await abrirCajaSiHaceFalta();
+    await fijarShotMl(50);
+    // Ninguna presentación del bar guardaba `ml_botella`: el nombre es lo único que dice
+    // el formato. Con el default de 750 ml, un shot de 50 dejaba 700 ml de una botella
+    // de 1000 ml.
+    const fixture = await crearBar(null, 1, '1000 ml');
+
+    await venderShots(fixture, 1, 'PGSHOT-CAPACIDAD');
+
+    const [unidad] = await unidadesDe(fixture.presentacionId);
+    expect(unidad.estado).toBe(ESTADO_UNIDAD_ACTIVA);
+    expect(Number(unidad.ml_restante)).toBe(950);
+
+    // Y el bar publica lo mismo que el movimiento de venta: 1000 - 50.
+    const [enBar] = await InventoryRepository.listBarStock(fixture.productoId);
+    expect(enBar.ml_abierta).toBe(950);
+    expect(enBar.ml_servidos).toBe(50);
   } finally {
     await restoreDatabase(snapshot, 'test-only');
   }
