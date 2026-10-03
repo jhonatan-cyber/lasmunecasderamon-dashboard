@@ -584,6 +584,46 @@ describe('descuento del bar al registrar una venta', () => {
     expect(descuentoMl![1]).toEqual([800, 'u1']);
   });
 
+  it('abre la botella con la capacidad que declara el nombre de la presentación', async () => {
+    // Regreso del bar: "1000 ml" sin `ml_botella` guardada se abría con el default de 750
+    // y un shot de 50 ml dejaba 700 ml. Con el nombre mandando, quedan 950 ml.
+    const trx = trxCon([{ id: 'u1', ml_restante: null }], {
+      ...presentacion,
+      nombre: '1000 ml',
+      ml_botella: null
+    });
+
+    await InventoryRepository.consume(
+      trx,
+      [{ presentacion_id: 'pres-1', cantidad: 1, tipo_venta: 'shot' }],
+      contexto
+    );
+
+    const descuentoMl = trx.mock.calls.find(([sql]: string[]) =>
+      sql.includes('SET ml_restante = ?')
+    );
+    expect(descuentoMl![1]).toEqual([950, 'u1']);
+  });
+
+  it('la capacidad guardada manda sobre la del nombre', async () => {
+    const trx = trxCon([{ id: 'u1', ml_restante: null }], {
+      ...presentacion,
+      nombre: '1000 ml',
+      ml_botella: 375
+    });
+
+    await InventoryRepository.consume(
+      trx,
+      [{ presentacion_id: 'pres-1', cantidad: 1, tipo_venta: 'shot' }],
+      contexto
+    );
+
+    const descuentoMl = trx.mock.calls.find(([sql]: string[]) =>
+      sql.includes('SET ml_restante = ?')
+    );
+    expect(descuentoMl![1]).toEqual([325, 'u1']);
+  });
+
   it('vacía la botella abierta y sigue con la siguiente cuando no alcanza', async () => {
     const trx = trxCon([
       { id: 'u1', ml_restante: 40 },
