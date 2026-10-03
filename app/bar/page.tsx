@@ -12,6 +12,7 @@ import {
   Clock,
   ScanLine,
   PackageCheck,
+  X,
   AlertTriangle
 } from 'lucide-react';
 import { PermissionGuard } from '@/components/auth/PermissionGuard';
@@ -33,11 +34,12 @@ import {
 import { Skeleton as BoneyardSkeleton } from 'boneyard-js/react';
 import { type BarStockItem } from '@/components/bar/TransferModal';
 import { BarCard } from '@/components/bar/BarCard';
+import { BarStatsCards } from '@/components/bar/BarStatsCards';
 import { PendingApprovals } from '@/components/bar/PendingApprovals';
 import { SalePrices } from '@/components/bar/SalePrices';
 import { BarAnfitrionas, isTierPricedItem } from '@/components/bar/BarAnfitrionas';
-import { useConfigValue } from '@/hooks/shared/useConfigValue';
-import { resolveShotMl } from '@/lib/business/shotMl';
+import { useConfig } from '@/hooks/shared/useConfigValue';
+import { resolveBotellaMl, resolveShotMl } from '@/lib/business/shotMl';
 import { useSharedSSE } from '@/hooks/shared';
 import type {
   DevolucionEnvaseRegistro,
@@ -86,9 +88,11 @@ export default function BarPage() {
   const [items, setItems] = useState<BarStockItem[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [search, setSearch] = useState('');
+  const [stockFilter, setStockFilter] = useState('todos');
   const [showTableView, setShowTableView] = useState(false);
   const [tab, setTab] = useState('productos');
-  const shotMl = useConfigValue<number>('bar', 'shot_ml', 50);
+  const shotMl = useConfig<number>('shot_ml');
+  const botellaMl = useConfig<number>('botella_ml');
   useEffect(() => {
     if (new URLSearchParams(window.location.search).get('tab') === 'pendientes')
       setTab('pendientes');
@@ -254,136 +258,129 @@ export default function BarPage() {
   const filtered = useMemo(() => {
     const enBar = items.filter(i => (i.stock_bar ?? 0) > 0);
     const term = search.trim().toLowerCase();
-    if (!term) return enBar;
     return enBar.filter(
       i =>
-        i.producto_nombre.toLowerCase().includes(term) ||
-        i.nombre.toLowerCase().includes(term) ||
-        (i.codigo_barras || '').toLowerCase().includes(term)
+        (stockFilter !== 'abiertas' || Number(i.ml_abierta ?? 0) > 0) &&
+        (!term ||
+          i.producto_nombre.toLowerCase().includes(term) ||
+          i.nombre.toLowerCase().includes(term) ||
+          (i.codigo_barras || '').toLowerCase().includes(term) ||
+          (i.producto_codigo || '').toLowerCase().includes(term))
     );
-  }, [items, search]);
+  }, [items, search, stockFilter]);
 
   const totalBar = useMemo(() => items.reduce((acc, i) => acc + (i.stock_bar ?? 0), 0), [items]);
 
   return (
     <PermissionGuard module='products' action='view'>
-      <div className='p-4 sm:p-6 lg:p-10 space-y-4 sm:space-y-6 mt-4 sm:mt-6 lg:mt-10'>
+      <div className='mx-auto flex w-full max-w-[1600px] min-w-0 flex-col gap-6 p-4 sm:p-6 lg:p-10'>
         <div className='flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4'>
           <div>
-            <h1 className='text-xl sm:text-2xl lg:text-3xl font-bold text-gray-900 flex items-center gap-2'>
-              <Wine className='w-6 h-6' />
+            <h1 className='flex items-center gap-3 text-2xl font-bold tracking-tight text-foreground sm:text-3xl'>
+              <Wine className='size-7 text-primary' aria-hidden='true' />
               Bar
             </h1>
-            <p className='text-sm sm:text-base text-gray-600'>
-              Existencias del bar por presentación ({totalBar} un.)
+            <p className='mt-2 text-sm text-muted-foreground'>
+              Stock, botellas abiertas y movimientos del bar.
             </p>
           </div>
-          <div className='relative w-full sm:w-72'>
-            <Search className='absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400 pointer-events-none' />
-            <Input
-              value={search}
-              onChange={e => setSearch(e.target.value)}
-              placeholder='Buscar producto, presentación...'
-              className='pl-9 rounded-full'
-            />
-          </div>
-          <Button
-            variant='outline'
-            onClick={() => setShowTableView(v => !v)}
-            className={cn(
-              'flex items-center gap-2 rounded-full hover:scale-105 transition-all duration-200 text-xs sm:text-sm w-full sm:w-auto',
-              showTableView ? 'bg-blue-50 text-blue-700 border-blue-300' : ''
-            )}
-          >
-            {showTableView ? (
-              <>
-                <TableIcon className='w-4 h-4' />
-                Tabla
-              </>
-            ) : (
-              <>
-                <Grid3X3 className='w-4 h-4' />
-                Cards
-              </>
-            )}
-          </Button>
+          <Badge variant='secondary' className='w-fit px-3 py-1.5'>
+            {isLoading ? 'Cargando stock…' : `${totalBar} unidades en bar`}
+          </Badge>
         </div>
 
-        {/* Resumen de shots del bar: servidos hoy, ml restantes y alertas. */}
-        <div className='grid grid-cols-1 sm:grid-cols-3 gap-3'>
-          <div className='p-4 rounded-2xl bg-white dark:bg-slate-900/40 shadow-md'>
-            <p className='text-[10px] font-black uppercase tracking-widest text-gray-500 dark:text-gray-400'>
-              Shots servidos hoy
-            </p>
-            <p className='mt-1 text-2xl font-bold text-gray-900 dark:text-white'>
-              {resumen ? resumen.shotsServidosHoy : '—'}
-            </p>
-            <p className='text-xs text-gray-500 dark:text-gray-400'>
-              {resumen ? `${resumen.mlServidosHoy} ml servidos` : 'Cargando resumen del bar...'}
-            </p>
-          </div>
-
-          <div className='p-4 rounded-2xl bg-white dark:bg-slate-900/40 shadow-md'>
-            <p className='text-[10px] font-black uppercase tracking-widest text-gray-500 dark:text-gray-400'>
-              Ml restantes en botellas abiertas
-            </p>
-            <p className='mt-1 text-2xl font-bold text-gray-900 dark:text-white'>
-              {resumen ? `${resumen.mlRestantesTotales} ml` : '—'}
-            </p>
-            <p className='text-xs text-gray-500 dark:text-gray-400'>
-              {resumen
-                ? `${resumen.botellasAbiertas} botella(s) abierta(s) en bar`
-                : 'Cargando resumen del bar...'}
-            </p>
-          </div>
-
-          <div className='p-4 rounded-2xl bg-white dark:bg-slate-900/40 shadow-md'>
-            <p className='text-[10px] font-black uppercase tracking-widest text-gray-500 dark:text-gray-400'>
-              Botellas por agotarse
-            </p>
-            <p
-              className={cn(
-                'mt-1 text-2xl font-bold',
-                (resumen?.botellasPorAgotarse ?? 0) > 0
-                  ? 'text-amber-600 dark:text-amber-400'
-                  : 'text-gray-900 dark:text-white'
-              )}
-            >
-              {resumen ? resumen.botellasPorAgotarse : '—'}
-            </p>
-            <p className='text-xs text-gray-500 dark:text-gray-400'>
-              {resumen
-                ? `Con ${resumen.shotsAlerta} shots o menos restantes`
-                : 'Cargando resumen del bar...'}
-            </p>
-          </div>
-        </div>
+        <BarStatsCards resumen={resumen} />
 
         <Tabs value={tab} onValueChange={setTab} className='w-full'>
-          <TabsList className='rounded-full'>
-            <TabsTrigger value='productos' className='rounded-full'>
-              Productos
-            </TabsTrigger>
-            <TabsTrigger value='pendientes' className='rounded-full flex items-center gap-1.5'>
-              <Clock className='w-3.5 h-3.5' />
-              Pendientes{pendientes.length > 0 ? ` (${pendientes.length})` : ''}
-            </TabsTrigger>
-            <TabsTrigger value='historial' className='rounded-full flex items-center gap-1.5'>
-              <History className='w-3.5 h-3.5' />
-              Historial
-            </TabsTrigger>
-            {puedeDevolver && (
-              <TabsTrigger value='envases' className='rounded-full flex items-center gap-1.5'>
-                <ScanLine className='w-3.5 h-3.5' />
-                Envases
-              </TabsTrigger>
+          <div className='flex min-w-0 flex-wrap items-center gap-3'>
+            <div className='max-w-full shrink-0 overflow-x-auto pb-1 lg:pb-0'>
+              <TabsList className='h-auto w-max min-w-full justify-start gap-1 rounded-full p-1 sm:min-w-0'>
+                <TabsTrigger value='productos' className='rounded-full'>
+                  Productos
+                </TabsTrigger>
+                <TabsTrigger value='pendientes' className='rounded-full flex items-center gap-1.5'>
+                  <Clock className='w-3.5 h-3.5' />
+                  Pendientes{pendientes.length > 0 ? ` (${pendientes.length})` : ''}
+                </TabsTrigger>
+                <TabsTrigger value='historial' className='rounded-full flex items-center gap-1.5'>
+                  <History className='w-3.5 h-3.5' />
+                  Historial
+                </TabsTrigger>
+                {puedeDevolver && (
+                  <TabsTrigger value='envases' className='rounded-full flex items-center gap-1.5'>
+                    <ScanLine className='w-3.5 h-3.5' />
+                    Envases
+                  </TabsTrigger>
+                )}
+              </TabsList>
+            </div>
+
+            {tab === 'productos' && (
+              <div className='flex min-w-0 flex-[1_1_520px] flex-wrap items-center gap-2'>
+                <div className='relative min-w-0 flex-[1_1_220px]'>
+                  <Search
+                    className='pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground'
+                    aria-hidden='true'
+                  />
+                  <Input
+                    value={search}
+                    onChange={e => setSearch(e.target.value)}
+                    placeholder='Buscar producto, presentación o código'
+                    aria-label='Buscar productos del bar'
+                    className='h-11 rounded-full pl-9 pr-11'
+                  />
+                  {search && (
+                    <Button
+                      variant='ghost'
+                      size='icon'
+                      className='absolute right-0 top-0 size-11 rounded-full'
+                      aria-label='Limpiar búsqueda'
+                      onClick={() => setSearch('')}
+                    >
+                      <X />
+                    </Button>
+                  )}
+                </div>
+                <Button
+                  variant={stockFilter === 'abiertas' ? 'secondary' : 'outline'}
+                  className='h-11 shrink-0 gap-2 rounded-full'
+                  onClick={() =>
+                    setStockFilter(value => (value === 'todos' ? 'abiertas' : 'todos'))
+                  }
+                  aria-label='Filtrar solo botellas abiertas'
+                  aria-pressed={stockFilter === 'abiertas'}
+                  title={
+                    stockFilter === 'abiertas' ? 'Mostrar todos' : 'Mostrar solo botellas abiertas'
+                  }
+                >
+                  <Wine />
+                  {stockFilter === 'abiertas' ? 'Botellas abiertas' : 'Todos'}
+                </Button>
+                <Button
+                  variant='outline'
+                  className='h-11 shrink-0 gap-2 rounded-full'
+                  onClick={() => setShowTableView(value => !value)}
+                  aria-label={showTableView ? 'Cambiar a tarjetas' : 'Cambiar a tabla'}
+                  title={showTableView ? 'Cambiar a tarjetas' : 'Cambiar a tabla'}
+                >
+                  {showTableView ? <Grid3X3 /> : <TableIcon />}
+                  {showTableView ? 'Tarjetas' : 'Tabla'}
+                </Button>
+              </div>
             )}
-          </TabsList>
+          </div>
 
           <TabsContent value='productos' className='mt-4'>
+            <div className='mb-4'>
+              <p className='text-xs text-muted-foreground' role='status'>
+                {isLoading
+                  ? 'Cargando productos…'
+                  : `${filtered.length} ${filtered.length === 1 ? 'presentación' : 'presentaciones'}`}
+              </p>
+            </div>
             <BoneyardSkeleton name='bar-table' loading={isLoading}>
               {showTableView ? (
-                <div className='bg-white dark:bg-slate-900/40 rounded-3xl shadow-md overflow-hidden'>
+                <div className='overflow-hidden rounded-2xl border bg-card'>
                   <div className='overflow-x-auto'>
                     <Table className='min-w-full text-base text-center'>
                       <TableHeader className='bg-gray-100 dark:bg-slate-900/50'>
@@ -419,18 +416,40 @@ export default function BarPage() {
                           <TableRow key='empty'>
                             <TableCell
                               colSpan={8}
-                              className='text-center py-8 text-gray-400 text-sm sm:text-base bg-white'
+                              className='py-10 text-center text-sm text-muted-foreground'
                             >
-                              {isLoading ? 'Cargando...' : 'Sin productos en el bar.'}
+                              {isLoading
+                                ? 'Cargando...'
+                                : search || stockFilter !== 'todos'
+                                  ? 'No hay productos que coincidan con los filtros.'
+                                  : 'Sin productos en el bar.'}
+                              {(search || stockFilter !== 'todos') && (
+                                <Button
+                                  variant='link'
+                                  onClick={() => {
+                                    setSearch('');
+                                    setStockFilter('todos');
+                                  }}
+                                >
+                                  Limpiar filtros
+                                </Button>
+                              )}
                             </TableCell>
                           </TableRow>
                         ) : (
                           filtered.map(item => {
                             const mlPorShot = resolveShotMl(item.ml_shot, shotMl);
+                            // Misma resolución de capacidad que usa el descuento de la
+                            // venta, para comparar lo que queda con lo que trae la botella.
+                            const capacidadBotella = resolveBotellaMl(
+                              item.ml_botella,
+                              item.nombre,
+                              botellaMl
+                            );
                             return (
                               <TableRow
                                 key={item.id}
-                                className='border-b bg-white hover:bg-gray-50 transition-colors'
+                                className='border-b transition-colors hover:bg-muted/50'
                               >
                                 <TableCell className='py-3 px-2 sm:px-4 text-center'>
                                   <div
@@ -497,7 +516,7 @@ export default function BarPage() {
                                   </Badge>
                                   {Number(item.ml_abierta ?? 0) > 0 && (
                                     <p className='mt-1 text-[10px] font-bold uppercase text-amber-600 dark:text-amber-400'>
-                                      Abierta: {Number(item.ml_abierta)} ml
+                                      Abierta: {Number(item.ml_abierta)} de {capacidadBotella} ml
                                       {mlPorShot > 0
                                         ? ` · ≈${Math.floor(Number(item.ml_abierta) / mlPorShot)} shots`
                                         : ''}
@@ -525,11 +544,34 @@ export default function BarPage() {
               ) : (
                 <>
                   {filtered.length === 0 ? (
-                    <div className='text-center text-gray-500 text-sm sm:text-base py-8'>
-                      {isLoading ? 'Cargando...' : 'Sin productos en el bar.'}
+                    <div className='flex flex-col items-center gap-3 rounded-2xl border border-dashed bg-card px-6 py-12 text-center'>
+                      <Search className='size-8 text-muted-foreground' aria-hidden='true' />
+                      <p className='font-medium'>
+                        {isLoading
+                          ? 'Cargando...'
+                          : search || stockFilter !== 'todos'
+                            ? 'No encontramos coincidencias'
+                            : 'Sin productos en el bar'}
+                      </p>
+                      <p className='max-w-sm text-sm text-muted-foreground'>
+                        {search || stockFilter !== 'todos'
+                          ? 'Prueba con otro nombre o código, o limpia los filtros para ver todas las presentaciones.'
+                          : 'Los productos aparecerán aquí cuando tengan existencias en el bar.'}
+                      </p>
+                      {(search || stockFilter !== 'todos') && (
+                        <Button
+                          variant='outline'
+                          onClick={() => {
+                            setSearch('');
+                            setStockFilter('todos');
+                          }}
+                        >
+                          Limpiar filtros
+                        </Button>
+                      )}
                     </div>
                   ) : (
-                    <div className='grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 sm:gap-6'>
+                    <div className='grid grid-cols-[repeat(auto-fill,minmax(min(100%,250px),1fr))] gap-4 sm:gap-5'>
                       {filtered.map(item => (
                         <BarCard key={item.id} item={item} />
                       ))}
@@ -542,7 +584,7 @@ export default function BarPage() {
 
           <TabsContent value='pendientes' className='mt-4'>
             <div className='space-y-2 mb-4'>
-              <p className='text-sm sm:text-base text-gray-600'>
+              <p className='text-sm text-muted-foreground'>
                 Solicitudes pendientes de aprobación del bar.
               </p>
             </div>
@@ -557,7 +599,7 @@ export default function BarPage() {
 
           <TabsContent value='historial' className='mt-4'>
             <BoneyardSkeleton name='bar-history' loading={loadingMovs}>
-              <div className='bg-white dark:bg-slate-900/40 rounded-3xl shadow-md overflow-hidden'>
+              <div className='overflow-hidden rounded-2xl border bg-card'>
                 <div className='overflow-x-auto'>
                   <Table className='min-w-full text-base text-center'>
                     <TableHeader className='bg-gray-100 dark:bg-slate-900/50'>
@@ -592,7 +634,7 @@ export default function BarPage() {
                         <TableRow key='empty'>
                           <TableCell
                             colSpan={10}
-                            className='text-center py-8 text-gray-400 text-sm sm:text-base bg-white'
+                            className='py-10 text-center text-sm text-muted-foreground'
                           >
                             {loadingMovs ? 'Cargando...' : 'Sin movimientos registrados.'}
                           </TableCell>
@@ -601,7 +643,7 @@ export default function BarPage() {
                         movimientos.map(m => (
                           <TableRow
                             key={m.id}
-                            className='border-b bg-white hover:bg-gray-50 transition-colors'
+                            className='border-b transition-colors hover:bg-muted/50'
                           >
                             <TableCell className='py-3 px-2 sm:px-4 text-center text-xs sm:text-sm whitespace-nowrap'>
                               {m.fecha_crea
@@ -726,7 +768,7 @@ export default function BarPage() {
               }
             >
               <div className='space-y-4'>
-                <p className='text-sm sm:text-base text-gray-600'>
+                <p className='text-sm text-muted-foreground'>
                   Escanea el envase vacío (EAN-13 o SKU LM-…) antes de entregarlo al almacén: el
                   sistema confirma que es nuestro, que está vacío y que no se entregó antes, y lo
                   marca en el mismo paso. La recepción queda pendiente hasta que el almacén la
@@ -812,11 +854,11 @@ export default function BarPage() {
                 />
 
                 <div>
-                  <p className='text-[10px] font-black uppercase tracking-widest text-gray-500 dark:text-gray-400 mb-2'>
+                  <p className='text-xs font-medium text-muted-foreground mb-2'>
                     Devoluciones registradas ({devoluciones.length})
                   </p>
                   <BoneyardSkeleton name='bar-containers' loading={loadingDevol}>
-                    <div className='bg-white dark:bg-slate-900/40 rounded-3xl shadow-md overflow-hidden'>
+                    <div className='overflow-hidden rounded-2xl border bg-card'>
                       <div className='overflow-x-auto'>
                         <Table className='min-w-full text-base text-center'>
                           <TableHeader className='bg-gray-100 dark:bg-slate-900/50'>
@@ -849,7 +891,7 @@ export default function BarPage() {
                               <TableRow key='empty'>
                                 <TableCell
                                   colSpan={7}
-                                  className='text-center py-8 text-gray-400 text-sm sm:text-base bg-white'
+                                  className='py-10 text-center text-sm text-muted-foreground'
                                 >
                                   {loadingDevol ? 'Cargando...' : 'Sin envases entregados todavía.'}
                                 </TableCell>
@@ -858,7 +900,7 @@ export default function BarPage() {
                               devoluciones.map(d => (
                                 <TableRow
                                   key={d.id}
-                                  className='border-b bg-white hover:bg-gray-50 transition-colors dark:bg-slate-900/40'
+                                  className='border-b transition-colors hover:bg-muted/50'
                                 >
                                   <TableCell className='py-3 px-2 sm:px-4 text-center text-xs sm:text-sm whitespace-nowrap'>
                                     {d.fecha_devolucion
