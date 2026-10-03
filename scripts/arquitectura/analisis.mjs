@@ -492,13 +492,27 @@ const informe = {
   ciclos,
   matriz,
   ordenCapas: ORDEN
-};
-
-mkdirSync(join(RAIZ, 'docs', 'arquitectura'), { recursive: true });
-writeFileSync(
-  join(RAIZ, 'docs', 'arquitectura', 'analisis.json'),
-  JSON.stringify(informe, null, 2)
-);
+}; /**
+ * El JSON se escribe ya formateado como lo haría prettier.
+ *
+ * Sin esto el artefacto no es reproducible: el hook de pre-commit corre
+ * `prettier --write` sobre los archivos staged, así que la primera vez que se
+ * commiteó reescribió el JSON y regenerarlo después producía un diff de 247
+ * líneas sobre un diagnóstico que en realidad no había cambiado. Emitirlo con el
+ * formato de prettier hace que regenerar sea siempre un no-op.
+ */
+async function jsonComoPrettier(datos, ruta) {
+  mkdirSync(dirname(ruta), { recursive: true });
+  const crudo = JSON.stringify(datos, null, 2);
+  try {
+    const prettier = await import('prettier');
+    const opciones = await prettier.resolveConfig(ruta);
+    writeFileSync(ruta, await prettier.format(crudo, { ...opciones, filepath: ruta }));
+  } catch {
+    // prettier no disponible: se escribe el JSON plano y el diagnóstico sigue siendo válido.
+    writeFileSync(ruta, `${crudo}\n`);
+  }
+}
 
 /* ───────────────────── Informe legible ───────────────────── */
 
@@ -599,11 +613,12 @@ function md() {
   s += tabla(filas, ['origen ↓ / destino →', ...ORDEN]);
   return s;
 }
-
 if (!SOLO_JSON) {
   const salida = md();
   writeFileSync(join(RAIZ, 'docs', 'arquitectura', 'FASE0_DIAGNOSTICO.md'), salida);
 }
+
+await jsonComoPrettier(informe, join(RAIZ, 'docs', 'arquitectura', 'analisis.json'));
 
 if (CORTO) {
   console.log(JSON.stringify(resumen, null, 2));

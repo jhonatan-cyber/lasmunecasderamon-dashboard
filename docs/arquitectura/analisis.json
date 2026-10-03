@@ -1,7 +1,7 @@
 {
   "resumen": {
-    "commit": "532a780a3cba7ac75d3908e3eeecf8d4172f9562",
-    "generado": "2026-10-03T14:44:43.439Z",
+    "commit": "be2fe6f57923b4b390a90487c99d7c69fdf63514",
+    "generado": "2026-10-03T14:49:56.311Z",
     "archivos": 1499,
     "rutas": 204,
     "sqlFueraDeRepositorio": 90,
@@ -2789,11 +2789,6 @@
   ],
   "caches": [
     {
-      "archivo": "scripts/arquitectura/analisis.mjs",
-      "linea": 317,
-      "texto": "/\\bnew (Redis|RedisClient|ioredis)\\b/.test(linea) ||"
-    },
-    {
       "archivo": "lib/api/sseBus.ts",
       "linea": 112,
       "texto": "publisher = new Redis(process.env.REDIS_URL!, options);"
@@ -2834,14 +2829,14 @@
       "texto": "throw new Error('Respuesta inválida del limitador Redis');"
     },
     {
+      "archivo": "scripts/arquitectura/analisis.mjs",
+      "linea": 317,
+      "texto": "/\\bnew (Redis|RedisClient|ioredis)\\b/.test(linea) ||"
+    },
+    {
       "archivo": "scripts/redis-dev.js",
       "linea": 6,
       "texto": "const client = new Redis(url, {"
-    },
-    {
-      "archivo": "scripts/arquitectura/analisis.mjs",
-      "linea": 0,
-      "texto": "caché compartida en globalThis"
     },
     {
       "archivo": "components/shared/ProductPhoto.tsx",
@@ -2880,6 +2875,11 @@
     },
     {
       "archivo": "lib/database/db.ts",
+      "linea": 0,
+      "texto": "caché compartida en globalThis"
+    },
+    {
+      "archivo": "scripts/arquitectura/analisis.mjs",
       "linea": 0,
       "texto": "caché compartida en globalThis"
     }

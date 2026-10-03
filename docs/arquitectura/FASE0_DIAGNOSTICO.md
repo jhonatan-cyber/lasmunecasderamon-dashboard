@@ -224,7 +224,6 @@ Deben pasar a tener un ciclo de vida explícito al migrar Asistencia (fase 3).
 
 | Archivo                            | Línea | Tipo                                                                      |
 | ---------------------------------- | ----- | ------------------------------------------------------------------------- |
-| scripts/arquitectura/analisis.mjs  | 317   | /\bnew (Redis\|RedisClient\|ioredis)\b/.test(linea) \|\|                  |
 | lib/api/sseBus.ts                  | 112   | publisher = new Redis(process.env.REDIS_URL!, options);                   |
 | lib/api/sseBus.ts                  | 113   | subscriber = new Redis(process.env.REDIS_URL!, options);                  |
 | lib/auth/failed-login-store.ts     | 111   | client = new Redis(this.url!, {                                           |
@@ -233,8 +232,8 @@ Deben pasar a tener un ciclo de vida explícito al migrar Asistencia (fase 3).
 | lib/cache/redisWindowCounter.ts    | 99    | client = new Redis(this.url!, {                                           |
 | lib/middleware/redisRateLimit.ts   | 69    | client = new Redis(process.env.REDIS_URL \|\| 'redis://localhost:6379', { |
 | lib/middleware/redisRateLimit.ts   | 132   | throw new Error('Respuesta inválida del limitador Redis');                |
+| scripts/arquitectura/analisis.mjs  | 317   | /\bnew (Redis\|RedisClient\|ioredis)\b/.test(linea) \|\|                  |
 | scripts/redis-dev.js               | 6     | const client = new Redis(url, {                                           |
-| scripts/arquitectura/analisis.mjs  | —     | caché compartida en globalThis                                            |
 | components/shared/ProductPhoto.tsx | —     | caché en memoria (new Map + cache)                                        |
 | hooks/shared/useConfigValue.ts     | —     | caché compartida en globalThis                                            |
 | lib/api/sseBus.ts                  | —     | caché compartida en globalThis                                            |
@@ -243,6 +242,7 @@ Deben pasar a tener un ciclo de vida explícito al migrar Asistencia (fase 3).
 | lib/biometric/netSdk.ts            | —     | caché compartida en globalThis                                            |
 | lib/biometric/videoStream.ts       | —     | caché en memoria (new Map + cache)                                        |
 | lib/database/db.ts                 | —     | caché compartida en globalThis                                            |
+| scripts/arquitectura/analisis.mjs  | —     | caché compartida en globalThis                                            |
 
 ## 7. Contratos HTTP
 
