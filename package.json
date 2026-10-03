@@ -57,7 +57,9 @@
     "db:verify": "node scripts/verify-migrations.mjs",
     "db:diff": "node scripts/compare-schema.mjs",
     "db:parity": "node scripts/verify-schema-parity.mjs",
-    "db:reconcile": "node scripts/reconcile-migration-checksum.mjs"
+    "db:reconcile": "node scripts/reconcile-migration-checksum.mjs",
+    "arquitectura": "node scripts/arquitectura/analisis.mjs",
+    "arquitectura:json": "node scripts/arquitectura/analisis.mjs --json"
   },
   "dependencies": {
     "@dnd-kit/core": "^6.3.1",
