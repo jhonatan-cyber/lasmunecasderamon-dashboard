@@ -26,6 +26,13 @@ vi.mock('@/lib/integrations/pushNotifications', () => ({
 vi.mock('@/lib/services/SecurityAlertService', () => ({
   SecurityAlertService: { checkMassAnulation: vi.fn().mockResolvedValue(undefined) }
 }));
+// `procesarEventoBiometrico` dispara el aviso de audio con `void` (no espera): su
+// consulta al equipo volaría después de tomar la instantánea y se mediría en el flujo
+// equivocado, o en el siguiente. Mockeado para que el número sea reproducible.
+vi.mock('@/lib/biometric/avisosAudio', () => ({
+  avisarResultadoEnEquipo: vi.fn().mockResolvedValue(undefined),
+  avisarEnrolamientoEnEquipo: vi.fn().mockResolvedValue(undefined)
+}));
 
 import { writeFileSync, mkdirSync } from 'node:fs';
 import { resolve } from 'node:path';
@@ -35,6 +42,11 @@ import { instantaneaPerfil, perfilActivo, reiniciarPerfil } from '@/lib/database
 import { AccountService } from '@/lib/services/AccountService';
 import { OvertimeService } from '@/lib/services/OvertimeService';
 import { InventoryRepository } from '@/lib/repositories/InventoryRepository';
+import { OrderRepository } from '@/lib/repositories/OrderRepository';
+import { SaleService } from '@/lib/services/SaleService';
+import { CommissionRepository } from '@/lib/repositories/CommissionRepository';
+import { procesarEventoBiometrico } from '@/lib/biometric/processBiometricEvent';
+import { getNowInBusinessTimezone } from '@/lib/business/timezoneService';
 
 const RAIZ = resolve(__dirname, '..', '..');
 
@@ -66,7 +78,11 @@ const TECHOS: Record<string, number> = Object.freeze({
   'horas extras: listar': 4,
   'horas extras: crear': 5,
   'cobro de cuenta con venta': 25,
-  'inventario: consumo sin existencias': 5
+  'inventario: consumo sin existencias': 5,
+  'anulación: solicitar': 5,
+  'anulación: aprobar parcial': 50,
+  'biometría: evento que registra': 11,
+  'biometría: evento duplicado': 8
 });
 
 let muestras: Muestra[] = [];
@@ -97,6 +113,30 @@ afterAll(async () => {
 async function calentarPool(): Promise<void> {
   await query('SELECT 1');
   await query('SELECT 1');
+}
+
+/**
+ * Devuelve una caja abierta, creándola si el volcado base no trae ninguna.
+ *
+ * Registrar una venta sin caja abierta está prohibido por regla de negocio
+ * (`NO_CAJA_ABIERTA`), y la anulación parcial sólo revierte saldos si la venta
+ * teve caja. Es la misma preparación en los dos flujos; vive aquí una vez.
+ */
+async function asegurarCajaAbierta(usuarioId: string): Promise<string> {
+  const [caja] = await query<{ id_caja: string }[]>(
+    'SELECT id_caja FROM cajas WHERE estado = 1 ORDER BY fecha_apertura DESC LIMIT 1'
+  );
+  if (caja) return caja.id_caja;
+
+  const idCaja = crypto.randomUUID();
+  await query(
+    `INSERT INTO cajas (id_caja, fecha_apertura, usuario_id_apertura, monto_apertura,
+         monto_cierre, efectivo, tarjeta, transferencia, venta, cargo_tarjeta, iva,
+         comision, propina, anticipo, estado)
+       VALUES (?, now(), ?, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1)`,
+    [idCaja, usuarioId]
+  );
+  return idCaja;
 }
 
 /** Mide un flujo y comprueba su techo. Así todos los flujos quedan guardados. */
@@ -134,13 +174,19 @@ function escribirInforme(): void {
         `| ${m.flujo} | ${m.n} | ${m.distintas} | ${m.ms} | ${m.maxMs} | ${TECHOS[m.flujo] ?? '—'} |`
     )
     .join('\n');
-  const detalleCobro = muestras
-    .filter(m => m.flujo.includes('cobro'))
-    .flatMap(m => m.detalle)
+  const detallePorFlujo = muestras
     .map(
-      d => `| ${d.n}× | ${d.ms} | ${d.maxMs} | \`${d.sql.replace(/\|/g, '\\|').slice(0, 200)}\` |`
+      m =>
+        `### ${m.flujo}\n\n` +
+        '| Veces | ms (suma) | ms (peor) | SQL |\n|---|---|---|---|\n' +
+        m.detalle
+          .map(
+            d =>
+              `| ${d.n}× | ${d.ms} | ${d.maxMs} | \`${d.sql.replace(/\|/g, '\\|').slice(0, 200)}\` |`
+          )
+          .join('\n')
     )
-    .join('\n');
+    .join('\n\n');
   const totalConsultas = muestras.reduce((s, m) => s + m.n, 0);
   const totalMs = muestras.reduce((s, m) => s + m.ms, 0);
 
@@ -162,14 +208,12 @@ la medición es reproducible y no deja residuos.
 ${filas}
 | **Total** | **${totalConsultas}** | | **${totalMs}** | | |
 
-## Consultas del cobro de cuenta, de la más lenta a la más rápida
+## Consultas por flujo, de la más lenta a la más rápida
 
 Una corrida, con el SQL tal cual lo ve la aplicación. Sirve para investigar sin
 tener que instrumentar otra vez:
 
-| Veces | ms (suma) | ms (peor) | SQL |
-|---|---|---|---|
-${detalleCobro}
+${detallePorFlujo}
 
 ## Cómo se usa
 
@@ -221,18 +265,7 @@ describe('línea base de consultas por flujo', () => {
       );
       const usuarioId = user.id_usuario;
 
-      const [caja] = await query<{ id_caja: string }[]>(
-        'SELECT id_caja FROM cajas WHERE estado = 1 ORDER BY fecha_apertura DESC LIMIT 1'
-      );
-      if (!caja) {
-        await query(
-          `INSERT INTO cajas (id_caja, fecha_apertura, usuario_id_apertura, monto_apertura,
-               monto_cierre, efectivo, tarjeta, transferencia, venta, cargo_tarjeta, iva,
-               comision, propina, anticipo, estado)
-           VALUES (?, now(), ?, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1)`,
-          [crypto.randomUUID(), usuarioId]
-        );
-      }
+      await asegurarCajaAbierta(usuarioId);
 
       const codigo = 'PGLINEABASE';
       const idCuenta = crypto.randomUUID();
@@ -302,6 +335,182 @@ describe('línea base de consultas por flujo', () => {
 
       expect(muestra.n).toBeGreaterThan(0);
     } finally {
+      await restoreDatabase(snapshot, 'test-only');
+    }
+  });
+
+  it('anulación de venta: solicitar y aprobar una devolución parcial', async () => {
+    const snapshot = await snapshotDatabase();
+    try {
+      const [user] = await query<{ id_usuario: string }[]>(
+        'SELECT id_usuario FROM usuarios LIMIT 1'
+      );
+      const [product] = await query<{ id_producto: string }[]>(
+        'SELECT id_producto FROM productos LIMIT 1'
+      );
+      const usuarioId = user.id_usuario;
+      await asegurarCajaAbierta(usuarioId);
+
+      // Venta real (pedido + cabecera + detalle) con propina y comisión, que son
+      // justamente las dos cosas que la anulación parcial tiene que reponer de forma
+      // proporcional. Medir una venta sin ellas dejaría fuera la mitad del trabajo.
+      const order = await OrderRepository.create({
+        codigo: 'PGLBANUL',
+        meseroId: usuarioId,
+        subtotal: 12000,
+        total: 12000,
+        detalles: [
+          {
+            productoId: product.id_producto,
+            precio: 6000,
+            cantidad: 2,
+            subtotal: 12000,
+            generaComision: 0
+          }
+        ]
+      });
+      const venta = await SaleService.createSale(
+        {
+          codigo: 'PGLBANUL',
+          pedido_id: order.id,
+          total: 12000,
+          sub_total: 10000,
+          propina: 2000,
+          metodo_pago: 'efectivo',
+          detalles: [
+            { producto_id: product.id_producto, precio: 6000, cantidad: 2, sub_total: 10000 }
+          ]
+        } as any,
+        usuarioId
+      );
+
+      await withTransaction(trx =>
+        CommissionRepository.createWithDetail(trx, {
+          venta_id: venta.id,
+          usuario_id: usuarioId,
+          monto: 1500
+        })
+      );
+      const propinaId = crypto.randomUUID();
+      await query(
+        `INSERT INTO propinas (id_propina, venta_id, propina, estado, fecha_crea)
+         VALUES (?, ?, 2000, 1, now())`,
+        [propinaId, venta.id]
+      );
+      await query(
+        `INSERT INTO detalle_propinas
+           (id_detalle_propina, propina_id, usuario_id, monto, estado, fecha_crea)
+         VALUES (?, ?, ?, 2000, 1, now())`,
+        [crypto.randomUUID(), propinaId, usuarioId]
+      );
+
+      // La solicitud es barata: un INSERT y un UPDATE en la misma transacción. Se
+      // mide aparte para que un fallo en la aprobación no se esconda dentro de él.
+      const solicitud = await medir('anulación: solicitar', () =>
+        SaleService.requestAnulacion(venta.id, 'Producto devuelto', usuarioId, 4000)
+      );
+      expect(solicitud.n).toBeGreaterThan(0);
+
+      // El token es lo que viaja por WhatsApp; el id es lo que consume el admin.
+      const [pendiente] = await query<{ id: string }[]>(
+        'SELECT id FROM solicitudes_anulacion_ventas WHERE venta_id = ? LIMIT 1',
+        [venta.id]
+      );
+
+      const muestra = await medir('anulación: aprobar parcial', () =>
+        SaleService.processAnulacion(pendiente.id, usuarioId, 'confirmada')
+      );
+
+      // La garantía que el plan le pide a este flujo: stock, caja, comisiones y
+      // propinas coherentes. El total pasa de 12.000 a 8.000.
+      const [despues] = await query<{ total: number; propina: number }[]>(
+        'SELECT total, propina FROM ventas WHERE id_venta = ?',
+        [venta.id]
+      );
+      expect(Number(despues.total)).toBe(8000);
+      expect(Number(despues.propina)).toBe(1333);
+      expect(muestra.n).toBeGreaterThan(0);
+    } finally {
+      await restoreDatabase(snapshot, 'test-only');
+    }
+  });
+
+  it('biometría: un evento registra la asistencia y el repetido no la duplica', async () => {
+    const snapshot = await snapshotDatabase();
+    // `usuarios` y `configuraciones` están fuera del snapshot (excluidas a
+    // propósito), así que este test limpia lo suyo a mano.
+    const USUARIO = 'lb-biometrico';
+    const CODIGO = '7755';
+    const EQUIPO = 'lb-biometrico-equipo';
+    const VENTANA = ['asistencia_hora_inicio', 'asistencia_hora_fin'];
+    const ventanaOriginal = await query<{ id: string; clave: string; valor: string }[]>(
+      'SELECT id, clave, valor FROM configuraciones WHERE clave IN (?)',
+      [VENTANA]
+    );
+
+    try {
+      // La ventana de asistencia es configuración del local (21-23 por defecto).
+      // Se abre entera para que el resultado no dependa de la hora de la corrida.
+      await query('DELETE FROM configuraciones WHERE clave IN (?)', [VENTANA]);
+      await query(
+        "INSERT INTO configuraciones (id, clave, valor) VALUES ('lb-horario-inicio','asistencia_hora_inicio','0'), ('lb-horario-fin','asistencia_hora_fin','24')"
+      );
+
+      await query('DELETE FROM asistencias WHERE usuario_id = ?', [USUARIO]);
+      await query('DELETE FROM biometric_events WHERE usuario_id = ?', [USUARIO]);
+      await query('DELETE FROM usuarios WHERE id_usuario = ?', [USUARIO]);
+      await query(
+        `INSERT INTO usuarios
+           (id_usuario, run, nick, nombre, apellido, direccion, telefono, estado_civil, afp,
+            aporte, sueldo, descuento, password, rol_id, estado, estado_servicio, fecha_crea,
+            biometrico_codigo)
+         SELECT ?, 'run-lb-bio', ?, 'Linea', 'Base', 'x', '0', 'Soltero', 'n',
+            0, 0, 0, 'x', (SELECT id_rol FROM roles LIMIT 1), 1, 1, now(), ?
+         WHERE NOT EXISTS (SELECT 1 FROM usuarios WHERE biometrico_codigo = ?)`,
+        [USUARIO, USUARIO, CODIGO, CODIGO]
+      );
+
+      const evento = {
+        codigo: CODIGO,
+        fechaDispositivo: getNowInBusinessTimezone(),
+        metodo: 'huella' as const,
+        raw: '{"LineaBase":true}'
+      };
+      const equipo = { id: EQUIPO, serial: `SERIAL-${EQUIPO}` };
+
+      const primera = await medir('biometría: evento que registra', () =>
+        procesarEventoBiometrico(evento, equipo)
+      );
+      const salida = await query<{ resultado: string }[]>(
+        "SELECT resultado FROM biometric_events WHERE usuario_id = ? AND resultado = 'registrado'",
+        [USUARIO]
+      );
+      expect(salida.length).toBe(1);
+      expect(primera.n).toBeGreaterThan(0);
+
+      // El mismo código otra vez: la asistencia ya existe y el evento se audita
+      // como duplicado. Es la mitad de la garantía del plan sobre kioskos.
+      const segunda = await medir('biometría: evento duplicado', () =>
+        procesarEventoBiometrico(evento, equipo)
+      );
+      const filas = await query<{ id_asistencia: string }[]>(
+        'SELECT id_asistencia FROM asistencias WHERE usuario_id = ? AND fecha = ?',
+        [USUARIO, getNowInBusinessTimezone().substring(0, 10)]
+      );
+      expect(filas).toHaveLength(1);
+      expect(segunda.n).toBeGreaterThan(0);
+    } finally {
+      await query('DELETE FROM asistencias WHERE usuario_id = ?', [USUARIO]);
+      await query('DELETE FROM biometric_events WHERE usuario_id = ?', [USUARIO]);
+      await query('DELETE FROM usuarios WHERE id_usuario = ?', [USUARIO]);
+      await query('DELETE FROM configuraciones WHERE clave IN (?)', [VENTANA]);
+      for (const fila of ventanaOriginal) {
+        await query('INSERT INTO configuraciones (id, clave, valor) VALUES (?, ?, ?)', [
+          fila.id,
+          fila.clave,
+          fila.valor
+        ]);
+      }
       await restoreDatabase(snapshot, 'test-only');
     }
   });

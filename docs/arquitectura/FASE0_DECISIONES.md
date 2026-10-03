@@ -122,6 +122,10 @@ siembra sus propios datos y los restaura al terminar.
 | horas extras: crear                 | 2         | 2             | 6                  | 5     |
 | **cobro de cuenta con venta**       | **15**    | 14            | ~50                | 25    |
 | inventario: consumo sin existencias | 2         | 2             | 2                  | 5     |
+| anulación: solicitar                | 2         | 2             | 2                  | 5     |
+| **anulación: aprobar parcial**      | **32**    | 26            | ~69                | 50    |
+| biometría: evento que registra      | 6         | 6             | 2                  | 11    |
+| biometría: evento duplicado         | 4         | 4             | 2                  | 8     |
 
 La columna de milisegundos se retiró a propósito. La primera versión de esta
 tabla publicaba 185 ms para el cobro, con 160 ms en una sola consulta, y era un
@@ -152,6 +156,24 @@ Dos cosas que conviene leer aquí:
 - **Horas extras cuesta 1 consulta al listar y 2 al crear.** Es el módulo piloto
   del §7 y, con diferencia, el más barato de mover: el patrón se puede replicar
   sin tanto riesgo.
+- **La anulación parcial es, con 32 consultas, el flujo más caro con diferencia
+  —el doble que el cobro de cuenta.** No es un error de diseño: es la
+  consecuencia directa de la garantía que el §8 del plan le pide. Repone
+  proporcionalmente el total, la propina, la comisión y el sub-total de la
+  venta, ajusta los detalles de venta, comisiones, propinas y el pedido, y
+  devuelve el saldo a caja. Cada una de esas tablas es un escritor distinto y el
+  flujo no se puede partir sin decidir quién es el dueño de cada una. Medirlo
+  era justo lo que faltaba: sin este número, cualquiera que tocara la anulación
+  discovería el costo en producción.
+- **La biometría cuesta 6 consultas al registrar y 4 al repetir.** La diferencia
+  entre ambas es el camino corto del duplicado: no inserta asistencia. Es la
+  garantía de que un evento repetido no duplica marcas, y ahora su costo está
+  medido y acotado, no supuesto.
+
+El techo es un 50% sobre lo medido más dos consultas de margen: bastante para
+detectar una degradación estructural —el fallo que importa al partir un flujo—
+sin fallar por un milisegundo. Lo que decide es siempre la comparación antes y
+después de una misma migración, no el número absoluto.
 
 El techo es un 50% sobre lo medido más dos consultas de margen: bastante para
 detectar una degradación estructural —el fallo que importa al partir un flujo—
