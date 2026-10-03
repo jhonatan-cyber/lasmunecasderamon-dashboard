@@ -2,22 +2,45 @@ import { Pool } from 'pg';
 import { randomUUID } from 'crypto';
 import { env } from '@/lib/utils/env';
 import { prepareQuery } from './postgres.cjs';
-import { perfilActivo, registrarConsulta } from './perfilConsultas';
+import { perfilActivo, registrarConexion, registrarConsulta } from './perfilConsultas';
 
 /**
  * Ejecuta una consulta y, en desarrollo, la anota en el perfil de rendimiento
  * (`lib/database/perfilConsultas.ts`). En producción `perfilActivo()` es `false` y lo único
  * que se paga es la llamada.
+ *
+ * Cuando el pool está frío se toma el cliente explícitamente para medir por
+ * separado el establecimiento de la conexión. Sin esa separación, la primera
+ * consulta de cada proceso se llevaba dentro del tiempo de PostgreSQL el costo
+ * del handshake TCP —unos 65 ms medidos frente a 0,05 ms de ejecución— y
+ * aparecía como la consulta lenta del flujo. No es un problema de índice: es
+ * contabilidad mal atribuida.
  */
 async function ejecutar<T>(sql: string, params: any[] = []): Promise<{ rows: T; command: string }> {
+  const pool = getPool();
   if (!perfilActivo()) {
-    const result = await getPool().query(prepareQuery(sql, params));
+    const result = await pool.query(prepareQuery(sql, params));
     return { rows: result.rows as T, command: result.command };
   }
-  const inicio = Date.now();
-  const result = await getPool().query(prepareQuery(sql, params));
-  registrarConsulta(sql, Date.now() - inicio);
-  return { rows: result.rows as T, command: result.command };
+  const frio = pool.totalCount === 0;
+  if (!frio) {
+    const inicio = Date.now();
+    const result = await pool.query(prepareQuery(sql, params));
+    registrarConsulta(sql, Date.now() - inicio);
+    return { rows: result.rows as T, command: result.command };
+  }
+
+  const inicioConexion = Date.now();
+  const cliente = await pool.connect();
+  registrarConexion(Date.now() - inicioConexion);
+  try {
+    const inicio = Date.now();
+    const result = await cliente.query(prepareQuery(sql, params));
+    registrarConsulta(sql, Date.now() - inicio);
+    return { rows: result.rows as T, command: result.command };
+  } finally {
+    cliente.release();
+  }
 }
 
 const defaultConfig = {

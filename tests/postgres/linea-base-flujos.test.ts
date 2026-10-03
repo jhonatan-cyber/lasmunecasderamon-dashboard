@@ -44,6 +44,10 @@ interface Muestra {
   ms: number;
   distintas: number;
   maxMs: number;
+  /** SQL de la consulta más lenta del flujo, para poder investigarla. */
+  sqlLenta: string;
+  /** Todas las consultas del flujo, de la más lenta a la más rápida. */
+  detalle: Array<{ sql: string; n: number; ms: number; maxMs: number }>;
 }
 
 /**
@@ -79,12 +83,29 @@ afterAll(async () => {
   globalThis.__lasMunecasPgPool = undefined;
 });
 
+/**
+ * Deja el pool caliente antes de medir.
+ *
+ * La primera conexión de un proceso contra PostgreSQL cuesta ~157 ms (el
+ * handshake TCP y la autenticación), y la siguiente ya 0,0–0,4 ms. Sin este
+ * calentamiento esa conexión se le atribuía a la primera consulta del flujo y un
+ * `SELECT` sobre una tabla de 0 filas aparecía como la consulta lenta —47, 154 y
+ * 50 ms en corridas distintas—. Una línea base tiene que medir el estado
+ * estable, que es lo que se compara entre migraciones; el costo de arranque se
+ * mide una vez, por proceso.
+ */
+async function calentarPool(): Promise<void> {
+  await query('SELECT 1');
+  await query('SELECT 1');
+}
+
 /** Mide un flujo y comprueba su techo. Así todos los flujos quedan guardados. */
 async function medir(flujo: string, ejecutar: () => Promise<unknown>): Promise<Muestra> {
   const techo = TECHOS[flujo];
   // Un flujo sin techo no está vigilado: es preferible que se note aquí.
   expect(techo, `falta el techo para el flujo "${flujo}"`).toBeDefined();
 
+  await calentarPool();
   reiniciarPerfil();
   await ejecutar();
   const resumen = instantaneaPerfil(true);
@@ -93,7 +114,9 @@ async function medir(flujo: string, ejecutar: () => Promise<unknown>): Promise<M
     n: resumen.n,
     ms: resumen.ms,
     distintas: resumen.distintas,
-    maxMs: resumen.detalle[0]?.maxMs ?? 0
+    maxMs: resumen.detalle[0]?.maxMs ?? 0,
+    sqlLenta: resumen.detalle[0]?.sql ?? '',
+    detalle: resumen.detalle.map(d => ({ sql: d.sql, n: d.n, ms: d.ms, maxMs: d.maxMs }))
   };
   expect(
     muestra.n,
@@ -109,6 +132,13 @@ function escribirInforme(): void {
     .map(
       m =>
         `| ${m.flujo} | ${m.n} | ${m.distintas} | ${m.ms} | ${m.maxMs} | ${TECHOS[m.flujo] ?? '—'} |`
+    )
+    .join('\n');
+  const detalleCobro = muestras
+    .filter(m => m.flujo.includes('cobro'))
+    .flatMap(m => m.detalle)
+    .map(
+      d => `| ${d.n}× | ${d.ms} | ${d.maxMs} | \`${d.sql.replace(/\|/g, '\\|').slice(0, 200)}\` |`
     )
     .join('\n');
   const totalConsultas = muestras.reduce((s, m) => s + m.n, 0);
@@ -131,6 +161,15 @@ la medición es reproducible y no deja residuos.
 |---|---|---|---|---|---|
 ${filas}
 | **Total** | **${totalConsultas}** | | **${totalMs}** | | |
+
+## Consultas del cobro de cuenta, de la más lenta a la más rápida
+
+Una corrida, con el SQL tal cual lo ve la aplicación. Sirve para investigar sin
+tener que instrumentar otra vez:
+
+| Veces | ms (suma) | ms (peor) | SQL |
+|---|---|---|---|
+${detalleCobro}
 
 ## Cómo se usa
 

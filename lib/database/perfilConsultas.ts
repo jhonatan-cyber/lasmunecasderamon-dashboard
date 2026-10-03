@@ -28,14 +28,29 @@ export interface MuestraConsulta {
 export interface ResumenConsultas {
   /** Total de consultas. */
   n: number;
-  /** Milisegundos acumulados dentro de PostgreSQL. */
+  /** Milisegundos acumulados dentro de PostgreSQL, sin el establecimiento de conexión. */
   ms: number;
+  /**
+   * Milisegundos que se tardó en abrir conexiones nuevas contra el servidor.
+   * Van aparte a propósito: en la primera consulta tras arrancar el proceso
+   * PostgreSQL mide ~0,05 ms y la conexión unos 65 ms, y atribuirlos a la misma
+   * bolsa hacía que un `SELECT` trivial apareciera como la consulta lenta del
+   * flujo.
+   */
+  conexionMs: number;
   /** Consultas distintas. */
   distintas: number;
   detalle: MuestraConsulta[];
 }
 
 const porSql = new Map<string, MuestraConsulta>();
+let conexionMs = 0;
+
+/** Suma el costo de abrir una conexión, que no es trabajo de PostgreSQL. */
+export function registrarConexion(ms: number): void {
+  if (!ACTIVO) return;
+  conexionMs += ms;
+}
 
 /** Sustituye literales y listas `IN (…)` por `?` para que el mismo SQL sea una sola huella. */
 function huella(sql: string): string {
@@ -73,6 +88,7 @@ export function instantaneaPerfil(detalle = false): ResumenConsultas {
   return {
     n,
     ms: Math.round(ms),
+    conexionMs: Math.round(conexionMs),
     distintas: muestras.length,
     detalle: detalle
       ? muestras.slice(0, 15).map(m => ({ ...m, ms: Math.round(m.ms), maxMs: Math.round(m.maxMs) }))
@@ -82,4 +98,5 @@ export function instantaneaPerfil(detalle = false): ResumenConsultas {
 
 export function reiniciarPerfil(): void {
   porSql.clear();
+  conexionMs = 0;
 }
