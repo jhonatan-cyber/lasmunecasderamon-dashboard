@@ -2,22 +2,23 @@
 import React from 'react';
 import { cleanup, render, waitFor } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import ServiceWorkerRegister from '@/components/providers/ServiceWorkerRegister';
+import ServiceWorkerRegister, {
+  debeRegistrarServiceWorker
+} from '@/components/providers/ServiceWorkerRegister';
 
 /**
  * Registro del service worker del dashboard.
  *
- * Este test cubre el bug que dejaba al dashboard sin SW —y por lo tanto sin
- * ninguna capa offline— en desarrollo: el cleanup del efecto llamaba a
- * `unregister()` cuando la promesa de `register()` resolvía con el efecto ya
- * limpiado.
+ * El SW sólo se registra en producción: en desarrollo servía el bundle de la carga
+ * anterior y la pantalla mostraba una versión vieja del código sin dar ningún error. En vez
+ * de no registrar, hay que además soltar el SW que ya estuviera instalado, porque sigue
+ * controlando la página aunque nadie lo vuelva a registrar.
  *
- * Con `reactStrictMode: true` ese es el orden real: el efecto corre, se limpia
- * y vuelve a correr. El `register()` del primer efecto resolvía con
- * `isMounted === false` y desregistraba el SW, borrando la registración que el
- * segundo efecto acababa de crear (la registración es única por origen).
- *
- * La registración es un recurso del **origen**, no del componente: limpiar el
+ * Este archivo también cubre el bug que dejaba al dashboard sin SW —y por lo tanto sin
+ * ninguna capa offline— en producción: el cleanup del efecto llamaba a `unregister()`
+ * cuando la promesa de `register()` resolvía con el efecto ya limpiado. Con
+ * `reactStrictMode: true` ese es el orden real: el efecto corre, se limpia y vuelve a
+ * correr, y la registración es un recurso del **origen**, no del componente: limpiar el
  * efecto nunca debe desregistrar el service worker.
  */
 
@@ -30,21 +31,43 @@ const createRegistration = () => ({
   active: null
 });
 
+describe('debeRegistrarServiceWorker', () => {
+  it('registra sólo en producción', () => {
+    expect(debeRegistrarServiceWorker('', true)).toBe(true);
+    expect(debeRegistrarServiceWorker('', false)).toBe(false);
+  });
+
+  it('deja forzar el registro en local y apagarlo en producción', () => {
+    // `?sw=1` sirve para probar el SW en local; `?sw=0` para salir de él en producción.
+    expect(debeRegistrarServiceWorker('?sw=1', false)).toBe(true);
+    expect(debeRegistrarServiceWorker('?sw=0', true)).toBe(false);
+    // Cualquier otro parámetro no decide nada.
+    expect(debeRegistrarServiceWorker('?tab=bar', false)).toBe(false);
+    expect(debeRegistrarServiceWorker('?tab=bar', true)).toBe(true);
+  });
+});
+
 describe('ServiceWorkerRegister', () => {
   let registration: ReturnType<typeof createRegistration>;
   let register: ReturnType<typeof vi.fn>;
+  let getRegistrations: ReturnType<typeof vi.fn>;
   let serviceWorker: {
     register: ReturnType<typeof vi.fn>;
+    getRegistrations: ReturnType<typeof vi.fn>;
     addEventListener: ReturnType<typeof vi.fn>;
     removeEventListener: ReturnType<typeof vi.fn>;
     controller: null;
   };
+  let cacheKeys: string[];
+  let deleteCache: ReturnType<typeof vi.fn>;
 
   beforeEach(() => {
     registration = createRegistration();
     register = vi.fn(() => Promise.resolve(registration));
+    getRegistrations = vi.fn(() => Promise.resolve([]));
     serviceWorker = {
       register,
+      getRegistrations,
       addEventListener: vi.fn(),
       removeEventListener: vi.fn(),
       controller: null
@@ -59,11 +82,23 @@ describe('ServiceWorkerRegister', () => {
       configurable: true,
       get: () => 'complete'
     });
+
+    cacheKeys = [];
+    deleteCache = vi.fn(() => Promise.resolve(true));
+    vi.stubGlobal('caches', {
+      keys: vi.fn(() => Promise.resolve(cacheKeys)),
+      delete: deleteCache
+    });
+    vi.stubEnv('NODE_ENV', 'production');
   });
 
-  afterEach(cleanup);
+  afterEach(() => {
+    cleanup();
+    vi.unstubAllGlobals();
+    vi.unstubAllEnvs();
+  });
 
-  it('registra /sw.js al montar', async () => {
+  it('registra /sw.js al montar en producción', async () => {
     render(<ServiceWorkerRegister />);
 
     await waitFor(() => expect(register).toHaveBeenCalledTimes(1));
@@ -100,5 +135,42 @@ describe('ServiceWorkerRegister', () => {
       'controllerchange',
       expect.any(Function)
     );
+  });
+
+  describe('en desarrollo', () => {
+    beforeEach(() => {
+      vi.stubEnv('NODE_ENV', 'development');
+    });
+
+    it('no registra nada', async () => {
+      render(<ServiceWorkerRegister />);
+
+      await waitFor(() => expect(getRegistrations).toHaveBeenCalled());
+      expect(register).not.toHaveBeenCalled();
+    });
+
+    it('libera el SW que quedó instalado y sus cachés', async () => {
+      // Sin esto, el SW de una carga anterior sigue controlando la página y sirviendo el
+      // bundle viejo: «no registrar» no basta para dejar de ver la versión anterior.
+      const heredado = createRegistration();
+      getRegistrations.mockResolvedValue([heredado]);
+      cacheKeys = ['lmr-precache-v1', 'lmr-navigation-v1', 'otra-app-cache'];
+
+      render(<ServiceWorkerRegister />);
+
+      await waitFor(() => expect(heredado.unregister).toHaveBeenCalled());
+      // Sólo las cachés del dashboard: la de otra app del mismo origen se respeta.
+      expect(deleteCache.mock.calls.flat()).toEqual(['lmr-precache-v1', 'lmr-navigation-v1']);
+    });
+
+    it('sigue registrando con ?sw=1 para ensayar el SW en local', async () => {
+      window.history.replaceState({}, '', '/settings?sw=1');
+
+      render(<ServiceWorkerRegister />);
+
+      await waitFor(() => expect(register).toHaveBeenCalledTimes(1));
+      expect(getRegistrations).not.toHaveBeenCalled();
+      window.history.replaceState({}, '', '/');
+    });
   });
 });

@@ -7,6 +7,55 @@ import { logger } from '@/lib/utils/logger';
 const RELOAD_DELAY = 3_000;
 
 /**
+ * Prefijo de las cachés que crea `/sw.js` (ver `public/sw-template.js`): `lmr-precache-v1`,
+ * `lmr-static-v1`, etc. Sólo se borran las que empiezan así, para no tocar la caché de
+ * otra aplicación del mismo origen.
+ */
+const PREFIJO_CACHE_SW = 'lmr-';
+
+/**
+ * ¿Toca registrar el service worker en este entorno?
+ *
+ * Sólo en producción. En desarrollo el SW responde con el bundle que cacheó en la carga
+ * anterior: la pantalla llega a mostrar campos o precios que el código ya no tiene, sin
+ * error de consola, porque el HTML y los chunks sí cargan — sólo que viejos. Es la
+ * diferencia entre «edité el código y no cambió nada» y «edité el código y hay que vaciar
+ * cachés a mano».
+ *
+ * `?sw=1` fuerza el registro para ensayar el SW en local y `?sw=0` lo apaga también en
+ * producción, que es lo que hace falta cuando el SW está sirviendo algo raro.
+ */
+export function debeRegistrarServiceWorker(search: string, esProduccion: boolean): boolean {
+  const forzado = new URLSearchParams(search).get('sw');
+  if (forzado === '1') return true;
+  if (forzado === '0') return false;
+  return esProduccion;
+}
+
+/**
+ * Suelta el service worker y sus cachés.
+ *
+ * Hace falta además de «no registrar»: el SW que quedó instalado en una carga anterior
+ * sigue controlando la página y sirviendo bundles viejos aunque nadie lo vuelva a
+ * registrar. Sólo se llama al montar, nunca desde el cleanup del efecto —la registración
+ * es un recurso del origen, no del componente— y sólo en entornos donde el SW no debe
+ * estar.
+ */
+async function soltarServiceWorker(): Promise<boolean> {
+  const registros = await navigator.serviceWorker.getRegistrations();
+  await Promise.all(registros.map(registro => registro.unregister()));
+  let borradas = 0;
+  if (typeof caches !== 'undefined') {
+    const claves = await caches.keys();
+    const propias = claves.filter(clave => clave.startsWith(PREFIJO_CACHE_SW));
+    borradas = await Promise.all(propias.map(clave => caches.delete(clave))).then(
+      resultados => resultados.filter(Boolean).length
+    );
+  }
+  return registros.length > 0 || borradas > 0;
+}
+
+/**
  * Hook to register and manage the Workbox-powered service worker.
  *
  * Provides:
@@ -31,6 +80,20 @@ export function useServiceWorker() {
 
     let isMounted = true;
     let swRegistration: ServiceWorkerRegistration | null = null;
+
+    // En desarrollo no se registra y además se suelta lo que haya quedado de antes: sin
+    // esto, el SW heredado sigue mandando sobre la página y sirviendo el bundle viejo.
+    if (
+      !debeRegistrarServiceWorker(window.location.search, process.env.NODE_ENV === 'production')
+    ) {
+      soltarServiceWorker()
+        .then(liberado => {
+          if (liberado) logger.info('[SW] Entorno sin SW: se liberó el que estaba instalado');
+          else logger.info('[SW] Entorno sin SW y sin SW heredado');
+        })
+        .catch(err => logger.warn('[SW] No se pudo liberar el SW heredado:', err));
+      return;
+    }
 
     async function register() {
       try {
