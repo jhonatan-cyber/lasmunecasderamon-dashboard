@@ -3,113 +3,26 @@ import { withRoute } from '@/lib/api/withRoute';
 import { query } from '@/lib/database/db';
 import { clearAdminWhatsAppCache } from '@/lib/business/whatsappConfig';
 import { clearTwilioConfigCache, TWILIO_CLAVES } from '@/lib/business/twilioConfig';
+import {
+  CLAVES_CON_CACHE,
+  aliasDeClave,
+  categoriaDeClave,
+  definicionDe,
+  validarConfig as validarClaveDeRegistro
+} from '@/lib/configuraciones/registroClaves';
 
 /** Lo que el GET devuelve en vez del Auth Token real: es un secreto. */
 const AUTH_TOKEN_MASK = '••••••••••••';
 
-const VALID_CLAVES = new Set([
-  'empresa_nombre',
-  'empresa_rut',
-  'empresa_direccion',
-  'empresa_telefono',
-  'empresa_email',
-  'empresa_facebook',
-  'empresa_instagram',
-  'empresa_whatsapp',
-  'empresa_tiktok',
-  'impuesto_iva',
-  'propina_venta',
-  'moneda',
-  'facturacion_activada',
-  'resolucion_sii',
-  'ambiente',
-  'timezone',
-  'asistencia_hora_inicio',
-  'asistencia_hora_fin',
-  'threshold_producto_caro',
-  'umbral_simple_hasta',
-  'umbral_anfitriona_desde',
-  'umbral_habitacion_desde',
-  'split_tarjeta_venta',
-  'split_tarjeta_propina',
-  'shot_ml',
-  'botella_ml',
-  'shots_alerta',
-  'admin_whatsapp',
-  ...TWILIO_CLAVES
-]);
-
 const esClaveTwilio = (clave: string) => (TWILIO_CLAVES as readonly string[]).includes(clave);
 
+/**
+ * La regla de cada clave vive en `lib/configuraciones/registroClaves.ts`; acá sólo se
+ * traduce al mensaje que devolvía el endpoint (los mensajes son parte del contrato con los
+ * formularios, que los muestran tal cual).
+ */
 function validateConfig(clave: string, valor: string): string | null {
-  if (!VALID_CLAVES.has(clave)) {
-    return `Clave desconocida: ${clave}`;
-  }
-  if (clave === 'impuesto_iva' || clave === 'propina_venta') {
-    const num = Number(valor);
-    if (isNaN(num) || num < 0 || num > 100) {
-      return `${clave} debe estar entre 0 y 100`;
-    }
-  }
-  if (clave === 'asistencia_hora_inicio' || clave === 'asistencia_hora_fin') {
-    const num = Number(valor);
-    if (isNaN(num) || num < 0 || num > 23 || !Number.isInteger(num)) {
-      return `${clave} debe ser una hora válida entre 0 y 23`;
-    }
-  }
-  if (
-    clave === 'threshold_producto_caro' ||
-    clave === 'umbral_simple_hasta' ||
-    clave === 'umbral_anfitriona_desde' ||
-    clave === 'umbral_habitacion_desde' ||
-    clave === 'split_tarjeta_venta' ||
-    clave === 'split_tarjeta_propina'
-  ) {
-    const num = Number(valor);
-    if (isNaN(num) || num < 0 || !Number.isInteger(num)) {
-      return `${clave} debe ser un número entero positivo`;
-    }
-  }
-  if (clave === 'shot_ml') {
-    const num = Number(valor);
-    if (isNaN(num) || !Number.isInteger(num) || num < 1 || num > 1000) {
-      return 'shot_ml debe ser un número entero entre 1 y 1000 (ml por shot)';
-    }
-  }
-  if (clave === 'botella_ml') {
-    const num = Number(valor);
-    if (isNaN(num) || !Number.isInteger(num) || num < 1 || num > 10000) {
-      return 'botella_ml debe ser un número entero entre 1 y 10000 (ml por botella)';
-    }
-  }
-  if (clave === 'shots_alerta') {
-    const num = Number(valor);
-    if (isNaN(num) || !Number.isInteger(num) || num < 1 || num > 50) {
-      return 'shots_alerta debe ser un número entero entre 1 y 50 (shots restantes)';
-    }
-  }
-  if (clave === 'admin_whatsapp') {
-    if (valor && !/^\+?\d{7,15}$/.test(valor.replace('whatsapp:', ''))) {
-      return 'admin_whatsapp debe ser un número válido (ej: 59172419112)';
-    }
-  }
-  // Credenciales de Twilio: vacío = seguir usando la variable de entorno.
-  if (clave === 'twilio_account_sid' && valor) {
-    if (!/^AC[0-9a-f]{32}$/i.test(valor.trim())) {
-      return 'twilio_account_sid debe ser un Account SID de Twilio (empieza con AC y tiene 32 caracteres)';
-    }
-  }
-  if (clave === 'twilio_auth_token' && valor) {
-    if (!/^[A-Za-z0-9_\-]{16,128}$/.test(valor.trim())) {
-      return 'twilio_auth_token debe ser un Auth Token válido de Twilio (mínimo 16 caracteres)';
-    }
-  }
-  if (clave === 'twilio_whatsapp_number' && valor) {
-    if (!/^\+?\d{7,15}$/.test(valor.replace('whatsapp:', '').trim())) {
-      return 'twilio_whatsapp_number debe ser un número válido (ej: whatsapp:+14155238886)';
-    }
-  }
-  return null;
+  return validarClaveDeRegistro(clave, valor);
 }
 
 async function updateConfig(clave: string, valor: string) {
@@ -117,37 +30,20 @@ async function updateConfig(clave: string, valor: string) {
     clave
   ])) as any[];
   if (!existing) {
-    const categoria = esClaveTwilio(clave)
-      ? 'integraciones'
-      : clave.startsWith('asistencia_')
-        ? 'asistencia'
-        : clave === 'threshold_producto_caro' ||
-            clave === 'umbral_simple_hasta' ||
-            clave === 'umbral_anfitriona_desde' ||
-            clave === 'umbral_habitacion_desde'
-          ? 'comisiones'
-          : clave.startsWith('split_tarjeta_')
-            ? 'comisiones'
-            : clave === 'shot_ml' || clave === 'botella_ml' || clave === 'shots_alerta'
-              ? 'bar'
-              : clave === 'admin_whatsapp'
-                ? 'sistema'
-                : 'empresa';
-    const tipo =
-      clave.startsWith('asistencia_') ||
-      clave === 'threshold_producto_caro' ||
-      clave === 'umbral_simple_hasta' ||
-      clave === 'umbral_anfitriona_desde' ||
-      clave === 'umbral_habitacion_desde' ||
-      clave.startsWith('split_tarjeta_') ||
-      clave === 'shot_ml' ||
-      clave === 'botella_ml' ||
-      clave === 'shots_alerta'
-        ? 'number'
-        : 'text';
+    // Categoría y tipo salen del registro: la categoría es una propiedad de la clave, no
+    // de la fila que la creó. Antes salían de ternarios anidados y `impuesto_iva`,
+    // `moneda`, `ambiente` y `timezone` se guardaban bajo `empresa` aunque el volcado base
+    // las deja en `facturacion` y `sistema`: el GET las devolvía donde nadie las leía.
+    const definicion = definicionDe(clave);
     await query(
       'INSERT INTO configuraciones (id, clave, valor, categoria, tipo, fecha_crea, fecha_mod) VALUES (?, ?, ?, ?, ?, NOW(), NOW())',
-      [crypto.randomUUID(), clave, String(valor), categoria, tipo]
+      [
+        crypto.randomUUID(),
+        clave,
+        String(valor),
+        definicion?.categoria ?? 'sistema',
+        definicion?.tipo ?? 'text'
+      ]
     );
   } else {
     await query('UPDATE configuraciones SET valor = ?, fecha_mod = NOW() WHERE clave = ?', [
@@ -174,8 +70,13 @@ export const GET = withRoute({ auth: true, access: 'authenticated', audit: true 
   const grouped: Record<string, Record<string, string | number | boolean>> = {};
 
   for (const config of configs) {
-    if (!grouped[config.categoria]) {
-      grouped[config.categoria] = {};
+    // La categoría es de la clave (registro), no de la fila: una fila guardada antes de
+    // que existiera el registro bajo otra categoría aparece igual donde la buscan las
+    // pantallas. Las claves que no están en el registro (p. ej. el `impuesto_propina`
+    // histórico del volcado) conservan la que tengan guardada.
+    const categoria = categoriaDeClave(config.clave) ?? config.categoria;
+    if (!grouped[categoria]) {
+      grouped[categoria] = {};
     }
 
     let value: string | number | boolean = config.valor;
@@ -191,7 +92,7 @@ export const GET = withRoute({ auth: true, access: 'authenticated', audit: true 
       value = AUTH_TOKEN_MASK;
     }
 
-    grouped[config.categoria][config.clave] = value;
+    grouped[categoria][config.clave] = value;
   }
 
   return NextResponse.json({ success: true, data: grouped });
@@ -205,15 +106,12 @@ export const PUT = withRoute(
 
     // Batch mode: { configs: [{ clave, valor }] }
     if (body.configs && Array.isArray(body.configs)) {
-      // `threshold_producto_caro` deprecado: alias de `umbral_habitacion_desde`.
-      // Se sincronizan para no bifurcar el comportamiento.
+      // Alias deprecados (`threshold_producto_caro` ⇄ `umbral_habitacion_desde`): según
+      // el registro, guardar una escribe la otra con el mismo valor.
       const expanded = [...body.configs];
       for (const { clave, valor } of body.configs) {
-        if (clave === 'umbral_habitacion_desde') {
-          expanded.push({ clave: 'threshold_producto_caro', valor: String(valor) });
-        } else if (clave === 'threshold_producto_caro') {
-          expanded.push({ clave: 'umbral_habitacion_desde', valor: String(valor) });
-        }
+        const alias = aliasDeClave(clave);
+        if (alias) expanded.push({ clave: alias, valor: String(valor) });
       }
       for (const { clave, valor } of expanded) {
         if (!clave) continue;
@@ -231,7 +129,7 @@ export const PUT = withRoute(
         }
         await updateConfig(clave, String(valor));
       }
-      if (body.configs.some((c: any) => c.clave === 'admin_whatsapp')) clearAdminWhatsAppCache();
+      if (body.configs.some((c: any) => CLAVES_CON_CACHE.has(c.clave))) clearAdminWhatsAppCache();
       if (body.configs.some((c: any) => esClaveTwilio(c.clave))) clearTwilioConfigCache();
       return NextResponse.json({
         success: errors.length === 0,
@@ -263,14 +161,11 @@ export const PUT = withRoute(
     }
 
     await updateConfig(clave, String(valor));
-    // Mantener alias deprecado sincronizado también en modo single.
-    if (clave === 'umbral_habitacion_desde') {
-      await updateConfig('threshold_producto_caro', String(valor));
-    } else if (clave === 'threshold_producto_caro') {
-      await updateConfig('umbral_habitacion_desde', String(valor));
-    }
+    // Mantener el alias deprecado sincronizado también en modo single.
+    const alias = aliasDeClave(clave);
+    if (alias) await updateConfig(alias, String(valor));
 
-    if (clave === 'admin_whatsapp') clearAdminWhatsAppCache();
+    if (CLAVES_CON_CACHE.has(clave)) clearAdminWhatsAppCache();
     if (esClaveTwilio(clave)) clearTwilioConfigCache();
 
     return NextResponse.json({ success: true, message: 'Configuración actualizada' });
