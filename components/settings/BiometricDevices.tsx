@@ -2,10 +2,14 @@
 
 import { useCallback, useEffect, useId, useState } from 'react';
 import { toast } from 'sonner';
+import { ChevronDown, Plus } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { Checkbox } from '@/components/ui/checkbox';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Skeleton } from '@/components/ui/skeleton';
+import { DeleteConfirmModal } from '@/components/shared/DeleteConfirmModal';
 import { formatFechaConHora } from '@/lib/utils/formatters';
 
 type Marca = 'zkteco' | 'dahua';
@@ -54,22 +58,12 @@ const RESUMEN_POLL = (r: ResumenPoll): string =>
   (r.usuarioInactivo ? ` · ${r.usuarioInactivo} inactivo(s)` : '') +
   (r.errores ? ` · ${r.errores} error(es)` : '');
 
-/**
- * URL que hay que poner en el equipo para que empuje sus eventos:
- *  - ZKTeco (ADMS): el protocolo ya trae el serial en la query, basta con la raíz.
- *  - Dahua: el serial va explícito en la query porque el payload puede no traerlo.
- */
-function urlConfiguracion(marca: Marca, serial: string, origin: string): string {
-  return marca === 'dahua' ? `${origin}/dahua/push?serial=${serial}` : `${origin}/iclock/cdata`;
-}
-
 export function BiometricDevices() {
   const id = useId();
   const [devices, setDevices] = useState<BiometricDevice[]>([]);
   const [loading, setLoading] = useState(true);
   const [allowed, setAllowed] = useState(true);
   const [error, setError] = useState('');
-  const [origin, setOrigin] = useState('');
   const [revoking, setRevoking] = useState<string | null>(null);
 
   const [nombre, setNombre] = useState('Puerta principal');
@@ -78,6 +72,10 @@ export function BiometricDevices() {
   const [serial, setSerial] = useState('');
   const [ip, setIp] = useState('');
   const [saving, setSaving] = useState(false);
+  // El formulario de alta solo se abre a demanda: si ya hay equipos, ocupa lugar.
+  const [altaAbierta, setAltaAbierta] = useState(false);
+  const [notasAbiertas, setNotasAbiertas] = useState(false);
+  const [revokeTarget, setRevokeTarget] = useState<BiometricDevice | null>(null);
 
   // Credenciales CGI por equipo (lo que usa el SERVIDOR para conectarse al lector).
   const [credPorEquipo, setCredPorEquipo] = useState<
@@ -118,7 +116,6 @@ export function BiometricDevices() {
   }, []);
 
   useEffect(() => {
-    setOrigin(window.location.origin);
     void load();
   }, [load]);
 
@@ -140,10 +137,11 @@ export function BiometricDevices() {
       const result = await response.json();
       if (!response.ok || !result.success)
         throw new Error(result.message || 'No se pudo vincular el equipo.');
-      toast.success('Equipo vinculado. Configura la URL en el lector.');
+      toast.success('Equipo vinculado. Configuralo en su menú para que apunte a este sitio.');
       setSerial('');
       setModelo('');
       setIp('');
+      setAltaAbierta(false);
       await load();
     } catch (err) {
       toast.error(err instanceof Error ? err.message : 'No se pudo vincular el equipo.');
@@ -274,16 +272,9 @@ export function BiometricDevices() {
     }
   }
 
-  async function copy(text: string) {
-    try {
-      await navigator.clipboard.writeText(text);
-      toast.success('URL copiada.');
-    } catch {
-      toast.error('No se pudo copiar. Copia el texto a mano.');
-    }
-  }
-
   if (!allowed) return null;
+
+  const mostrarAlta = altaAbierta || (!loading && devices.length === 0);
 
   return (
     <Card>
@@ -295,88 +286,123 @@ export function BiometricDevices() {
         </CardDescription>
       </CardHeader>
       <CardContent className='flex flex-col gap-6'>
-        <form onSubmit={create} className='grid grid-cols-1 sm:grid-cols-2 gap-3'>
-          <div className='flex flex-col gap-1.5'>
-            <Label htmlFor={`${id}-nombre`}>Nombre</Label>
-            <Input
-              id={`${id}-nombre`}
-              value={nombre}
-              onChange={e => setNombre(e.target.value)}
-              maxLength={100}
-              required
-              disabled={saving}
-            />
-          </div>
-          <div className='flex flex-col gap-1.5'>
-            <Label htmlFor={`${id}-marca`}>Marca</Label>
-            <select
-              id={`${id}-marca`}
-              value={marca}
-              onChange={e => setMarca(e.target.value as Marca)}
-              disabled={saving}
-              className='flex h-10 w-full rounded-full border border-input bg-gray-100 px-4 py-2 text-base ring-offset-background focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 md:text-sm dark:bg-gray-800 dark:text-gray-100 dark:border-gray-700'
+        {!loading && devices.length > 0 && (
+          <div className='flex justify-end'>
+            <Button
+              className='rounded-full'
+              type='button'
+              variant='outline'
+              size='sm'
+              onClick={() => setAltaAbierta(v => !v)}
+              aria-expanded={mostrarAlta}
             >
-              <option value='zkteco'>ZKTeco (ADMS / iClock)</option>
-              <option value='dahua'>Dahua (push HTTP)</option>
-            </select>
-          </div>
-          <div className='flex flex-col gap-1.5'>
-            <Label htmlFor={`${id}-serial`}>Serial del equipo</Label>
-            <Input
-              id={`${id}-serial`}
-              value={serial}
-              onChange={e => setSerial(e.target.value)}
-              placeholder='Ej: QJT3253600356'
-              maxLength={64}
-              required
-              disabled={saving}
-            />
-          </div>
-          <div className='flex flex-col gap-1.5'>
-            <Label htmlFor={`${id}-modelo`}>Modelo (opcional)</Label>
-            <Input
-              id={`${id}-modelo`}
-              value={modelo}
-              onChange={e => setModelo(e.target.value)}
-              placeholder='Ej: SpeedFace-V5L, ASI3204E'
-              maxLength={80}
-              disabled={saving}
-            />
-          </div>
-          <div className='flex flex-col gap-1.5 sm:col-span-2'>
-            <Label htmlFor={`${id}-ip`}>IP del equipo (opcional, solo informativa)</Label>
-            <Input
-              id={`${id}-ip`}
-              value={ip}
-              onChange={e => setIp(e.target.value)}
-              placeholder='Ej: 192.168.1.50'
-              maxLength={45}
-              disabled={saving}
-            />
-          </div>
-          <div className='sm:col-span-2'>
-            <Button type='submit' disabled={saving || !nombre.trim() || !serial.trim()}>
-              {saving ? 'Vinculando...' : 'Vincular equipo'}
+              <Plus className='h-4 w-4' />
+              {mostrarAlta ? 'Ocultar formulario' : 'Vincular otro equipo'}
             </Button>
           </div>
-        </form>
+        )}
+
+        {mostrarAlta && (
+          <form onSubmit={create} className='grid grid-cols-1 sm:grid-cols-2 gap-3'>
+            <div className='flex flex-col gap-1.5'>
+              <Label htmlFor={`${id}-nombre`}>Nombre</Label>
+              <Input
+                id={`${id}-nombre`}
+                value={nombre}
+                onChange={e => setNombre(e.target.value)}
+                maxLength={100}
+                required
+                disabled={saving}
+              />
+            </div>
+            <div className='flex flex-col gap-1.5'>
+              <Label htmlFor={`${id}-marca`}>Marca</Label>
+              <select
+                id={`${id}-marca`}
+                value={marca}
+                onChange={e => setMarca(e.target.value as Marca)}
+                disabled={saving}
+                className='flex h-10 w-full rounded-full border border-input bg-gray-100 px-4 py-2 text-base ring-offset-background focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 md:text-sm dark:bg-gray-800 dark:text-gray-100 dark:border-gray-700'
+              >
+                <option value='zkteco'>ZKTeco (ADMS / iClock)</option>
+                <option value='dahua'>Dahua (push HTTP)</option>
+              </select>
+            </div>
+            <div className='flex flex-col gap-1.5'>
+              <Label htmlFor={`${id}-serial`}>Serial del equipo</Label>
+              <Input
+                id={`${id}-serial`}
+                value={serial}
+                onChange={e => setSerial(e.target.value)}
+                placeholder='Ej: QJT3253600356'
+                maxLength={64}
+                required
+                disabled={saving}
+              />
+            </div>
+            <div className='flex flex-col gap-1.5'>
+              <Label htmlFor={`${id}-modelo`}>Modelo (opcional)</Label>
+              <Input
+                id={`${id}-modelo`}
+                value={modelo}
+                onChange={e => setModelo(e.target.value)}
+                placeholder='Ej: SpeedFace-V5L, ASI3204E'
+                maxLength={80}
+                disabled={saving}
+              />
+            </div>
+            <div className='flex flex-col gap-1.5 sm:col-span-2'>
+              <Label htmlFor={`${id}-ip`}>IP del equipo (opcional, solo informativa)</Label>
+              <Input
+                id={`${id}-ip`}
+                value={ip}
+                onChange={e => setIp(e.target.value)}
+                placeholder='Ej: 192.168.1.50'
+                maxLength={45}
+                disabled={saving}
+              />
+            </div>
+            <div className='sm:col-span-2'>
+              <Button
+                className='rounded-full'
+                type='submit'
+                disabled={saving || !nombre.trim() || !serial.trim()}
+              >
+                {saving ? 'Vinculando...' : 'Vincular equipo'}
+              </Button>
+            </div>
+          </form>
+        )}
 
         <div className='flex flex-col gap-3'>
-          <h3 className='font-medium'>Equipos vinculados</h3>
+          <h3 className='font-medium'>
+            Equipos vinculados
+            {!loading && !error && devices.length > 0 && (
+              <span className='ml-2 text-xs font-normal text-muted-foreground'>
+                {devices.filter(d => !d.revocado_en).length} activo(s)
+              </span>
+            )}
+          </h3>
           {loading ? (
-            <p role='status'>Cargando equipos...</p>
+            <div className='flex flex-col gap-2' role='status'>
+              <Skeleton className='h-20 w-full' />
+              <Skeleton className='h-20 w-full' />
+              <span className='sr-only'>Cargando equipos...</span>
+            </div>
           ) : error ? (
             <div role='alert'>
               <p>{error}</p>
-              <Button type='button' variant='outline' onClick={load}>
+              <Button className='rounded-full' type='button' variant='outline' onClick={load}>
                 Reintentar
               </Button>
             </div>
           ) : !devices.length ? (
-            <p className='text-sm text-muted-foreground'>Todavía no hay equipos vinculados.</p>
+            <p className='rounded-2xl border border-dashed p-4 text-sm text-muted-foreground'>
+              Todavía no hay equipos vinculados. Cargá el serial del lector arriba para que el sitio
+              empiece a aceptar sus eventos.
+            </p>
           ) : (
             devices.map(device => {
-              const url = urlConfiguracion(device.marca, device.serial, origin);
               return (
                 <div key={device.id} className='flex flex-col gap-3 rounded-lg border p-3'>
                   <div className='flex flex-wrap items-start justify-between gap-3'>
@@ -406,22 +432,15 @@ export function BiometricDevices() {
                     </div>
                     {!device.revocado_en && (
                       <Button
+                        className='rounded-full'
                         type='button'
                         variant='outline'
-                        onClick={() => revoke(device.id)}
+                        onClick={() => setRevokeTarget(device)}
                         disabled={revoking !== null}
                       >
-                        {revoking === device.id ? 'Desvinculando...' : 'Desvincular'}
+                        Desvincular
                       </Button>
                     )}
-                  </div>
-                  <div className='flex flex-wrap items-center gap-2'>
-                    <code className='flex-1 min-w-0 truncate rounded bg-gray-100 dark:bg-gray-800 px-2 py-1 text-xs'>
-                      {url}
-                    </code>
-                    <Button type='button' variant='outline' size='sm' onClick={() => copy(url)}>
-                      Copiar URL
-                    </Button>
                   </div>
                   {device.marca === 'dahua' && (
                     <div className='flex flex-col gap-2 rounded-lg border border-dashed border-gray-300 dark:border-gray-700 p-3'>
@@ -435,6 +454,7 @@ export function BiometricDevices() {
                         </div>
                         <div className='flex flex-wrap gap-2'>
                           <Button
+                            className='rounded-full'
                             type='button'
                             variant='outline'
                             size='sm'
@@ -449,6 +469,7 @@ export function BiometricDevices() {
                               : 'Probar conexión'}
                           </Button>
                           <Button
+                            className='rounded-full'
                             type='button'
                             variant='outline'
                             size='sm'
@@ -465,71 +486,96 @@ export function BiometricDevices() {
                           </Button>
                         </div>
                       </div>
-                      <div className='grid grid-cols-1 sm:grid-cols-3 gap-2'>
-                        <Input
-                          aria-label='IP del equipo'
-                          placeholder='IP (opcional: se busca por MAC)'
-                          value={credPorEquipo[device.id]?.ip ?? device.ip ?? ''}
-                          onChange={e =>
-                            setCredPorEquipo(prev => ({
-                              ...prev,
-                              [device.id]: {
-                                ip: e.target.value,
-                                usuario:
-                                  credPorEquipo[device.id]?.usuario ?? device.usuario_equipo ?? '',
-                                clave: credPorEquipo[device.id]?.clave ?? ''
-                              }
-                            }))
-                          }
-                          maxLength={45}
-                        />
-                        <Input
-                          aria-label='Usuario CGI'
-                          placeholder='Usuario CGI (admin)'
-                          value={credPorEquipo[device.id]?.usuario ?? device.usuario_equipo ?? ''}
-                          onChange={e =>
-                            setCredPorEquipo(prev => ({
-                              ...prev,
-                              [device.id]: {
-                                ip: credPorEquipo[device.id]?.ip ?? device.ip ?? '',
-                                usuario: e.target.value,
-                                clave: credPorEquipo[device.id]?.clave ?? ''
-                              }
-                            }))
-                          }
-                          maxLength={64}
-                        />
-                        <div className='flex gap-1'>
+                      <div className='grid grid-cols-1 gap-3 sm:grid-cols-3'>
+                        <div className='flex flex-col gap-1.5'>
+                          <Label htmlFor={`${id}-ip-${device.id}`} className='text-xs'>
+                            IP del equipo
+                          </Label>
                           <Input
-                            aria-label='Clave CGI'
-                            type={credVisible[device.id] ? 'text' : 'password'}
-                            placeholder='Clave CGI'
-                            value={credPorEquipo[device.id]?.clave ?? ''}
+                            id={`${id}-ip-${device.id}`}
+                            placeholder='Opcional: se busca por MAC'
+                            value={credPorEquipo[device.id]?.ip ?? device.ip ?? ''}
+                            onChange={e =>
+                              setCredPorEquipo(prev => ({
+                                ...prev,
+                                [device.id]: {
+                                  ip: e.target.value,
+                                  usuario:
+                                    credPorEquipo[device.id]?.usuario ??
+                                    device.usuario_equipo ??
+                                    '',
+                                  clave: credPorEquipo[device.id]?.clave ?? ''
+                                }
+                              }))
+                            }
+                            maxLength={45}
+                          />
+                        </div>
+                        <div className='flex flex-col gap-1.5'>
+                          <Label htmlFor={`${id}-cgi-user-${device.id}`} className='text-xs'>
+                            Usuario CGI
+                          </Label>
+                          <Input
+                            id={`${id}-cgi-user-${device.id}`}
+                            placeholder='admin'
+                            value={credPorEquipo[device.id]?.usuario ?? device.usuario_equipo ?? ''}
                             onChange={e =>
                               setCredPorEquipo(prev => ({
                                 ...prev,
                                 [device.id]: {
                                   ip: credPorEquipo[device.id]?.ip ?? device.ip ?? '',
-                                  usuario:
-                                    credPorEquipo[device.id]?.usuario ??
-                                    device.usuario_equipo ??
-                                    '',
-                                  clave: e.target.value
+                                  usuario: e.target.value,
+                                  clave: credPorEquipo[device.id]?.clave ?? ''
                                 }
                               }))
                             }
-                            maxLength={100}
+                            maxLength={64}
                           />
-                          <Button
-                            type='button'
-                            variant='outline'
-                            size='sm'
-                            onClick={() =>
-                              setCredVisible(prev => ({ ...prev, [device.id]: !prev[device.id] }))
-                            }
-                          >
-                            {credVisible[device.id] ? 'Ocultar' : 'Ver'}
-                          </Button>
+                        </div>
+                        <div className='flex flex-col gap-1.5'>
+                          <Label htmlFor={`${id}-cgi-pass-${device.id}`} className='text-xs'>
+                            Clave CGI
+                          </Label>
+                          <div className='flex gap-1'>
+                            <Input
+                              id={`${id}-cgi-pass-${device.id}`}
+                              className='flex-1'
+                              type={credVisible[device.id] ? 'text' : 'password'}
+                              placeholder='Clave'
+                              value={credPorEquipo[device.id]?.clave ?? ''}
+                              onChange={e =>
+                                setCredPorEquipo(prev => ({
+                                  ...prev,
+                                  [device.id]: {
+                                    ip: credPorEquipo[device.id]?.ip ?? device.ip ?? '',
+                                    usuario:
+                                      credPorEquipo[device.id]?.usuario ??
+                                      device.usuario_equipo ??
+                                      '',
+                                    clave: e.target.value
+                                  }
+                                }))
+                              }
+                              maxLength={100}
+                            />
+                            <Button
+                              className='rounded-full'
+                              type='button'
+                              variant='outline'
+                              size='sm'
+                              aria-label={
+                                credVisible[device.id] ? 'Ocultar la clave CGI' : 'Ver la clave CGI'
+                              }
+                              onClick={() =>
+                                setCredVisible(prev => ({
+                                  ...prev,
+                                  [device.id]: !prev[device.id]
+                                }))
+                              }
+                            >
+                              {credVisible[device.id] ? 'Ocultar' : 'Ver'}
+                            </Button>
+                          </div>
                         </div>
                       </div>
                       {conexionPorEquipo[device.id]?.mensaje && (
@@ -557,18 +603,17 @@ export function BiometricDevices() {
                         </p>
                       )}
                       <div className='flex flex-wrap items-center justify-between gap-2 border-t border-dashed border-gray-300 dark:border-gray-700 pt-2'>
-                        <label className='flex items-center gap-2 text-sm'>
-                          <input
-                            type='checkbox'
-                            className='h-4 w-4 rounded border-input'
+                        <label className='flex cursor-pointer items-center gap-2 text-sm'>
+                          <Checkbox
                             checked={recoger[device.id] ?? false}
                             disabled={pollAccion[device.id] === 'toggling'}
-                            onChange={e => toggleRecoger(device, e.target.checked)}
+                            onCheckedChange={valor => toggleRecoger(device, valor === true)}
                           />
                           Recoger registros para asistencia (cada minuto)
                         </label>
                         <div className='flex flex-wrap gap-2'>
                           <Button
+                            className='rounded-full'
                             type='button'
                             variant='outline'
                             size='sm'
@@ -594,21 +639,51 @@ export function BiometricDevices() {
           )}
         </div>
 
-        <div className='text-xs text-muted-foreground space-y-1'>
-          <p>
-            <strong>ZKTeco:</strong> en el equipo, Comm → Server Mode = ADMS y pon el dominio del
-            sitio como servidor (HTTPS en el puerto 443). El equipo empieza a conectarse solo.
-          </p>
-          <p>
-            <strong>Dahua:</strong> en el terminal, configura el push hacia la URL mostrada. La hora
-            del equipo debe estar en la zona horaria del negocio.
-          </p>
-          <p>
-            El enrolamiento facial se realiza en Usuarios → Enrolar. La cámara del lector captura la
-            imagen y el sistema la guarda en su base de datos.
-          </p>
+        <div className='rounded-2xl border border-neutral-200 dark:border-neutral-800'>
+          <button
+            type='button'
+            onClick={() => setNotasAbiertas(v => !v)}
+            aria-expanded={notasAbiertas}
+            className='flex w-full cursor-pointer items-center justify-between gap-2 px-4 py-3 text-left text-sm font-medium transition-colors hover:bg-neutral-50 dark:hover:bg-neutral-900/60 rounded-full'
+          >
+            Cómo configurar cada equipo y enrolar caras
+            <ChevronDown
+              className={`h-4 w-4 shrink-0 text-muted-foreground transition-transform duration-200 ${notasAbiertas ? 'rotate-180' : ''}`}
+            />
+          </button>
+          {notasAbiertas && (
+            <div className='space-y-2 border-t border-neutral-200 px-4 py-3 text-xs text-muted-foreground dark:border-neutral-800'>
+              <p>
+                <strong>ZKTeco:</strong> en el equipo, Comm → Server Mode = ADMS y pon el dominio
+                del sitio como servidor (HTTPS en el puerto 443). El equipo empieza a conectarse
+                solo.
+              </p>
+              <p>
+                <strong>Dahua:</strong> en el terminal, configura el push hacia la dirección de este
+                sitio. La hora del equipo debe estar en la zona horaria del negocio.
+              </p>
+              <p>
+                El enrolamiento facial se realiza en Usuarios → Enrolar. La cámara del lector
+                captura la imagen y el sistema la guarda en su base de datos.
+              </p>
+            </div>
+          )}
         </div>
       </CardContent>
+
+      <DeleteConfirmModal
+        open={revokeTarget !== null}
+        onOpenChange={open => {
+          if (!open) setRevokeTarget(null);
+        }}
+        onConfirm={() => {
+          if (revokeTarget) void revoke(revokeTarget.id);
+        }}
+        entityLabel='vínculo con el lector'
+        entityValue={revokeTarget ? `${revokeTarget.nombre} · ${revokeTarget.serial}` : '---'}
+        fieldName='Equipo'
+        isLoading={revokeTarget !== null && revoking === revokeTarget.id}
+      />
     </Card>
   );
 }
