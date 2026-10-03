@@ -4,7 +4,7 @@ Generado por `scripts/arquitectura/analisis.mjs`. No modificar a mano.
 
 | Métrica                                    | Valor  |
 | ------------------------------------------ | ------ |
-| Archivos analizados                        | 1499   |
+| Archivos analizados                        | 1500   |
 | Rutas HTTP                                 | 204    |
 | **Rutas con SQL directo**                  | **36** |
 | **Archivos con SQL fuera de repositorios** | **90** |

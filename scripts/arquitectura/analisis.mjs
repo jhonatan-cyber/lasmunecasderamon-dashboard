@@ -493,24 +493,25 @@ const informe = {
   matriz,
   ordenCapas: ORDEN
 }; /**
- * El JSON se escribe ya formateado como lo haría prettier.
+ * Escribe un artefacto ya formateado como lo haría prettier.
  *
- * Sin esto el artefacto no es reproducible: el hook de pre-commit corre
- * `prettier --write` sobre los archivos staged, así que la primera vez que se
- * commiteó reescribió el JSON y regenerarlo después producía un diff de 247
- * líneas sobre un diagnóstico que en realidad no había cambiado. Emitirlo con el
- * formato de prettier hace que regenerar sea siempre un no-op.
+ * Sin esto los artefactos no son reproducibles: el hook de pre-commit corre
+ * `prettier --write` sobre lo staged, así que commiteó el JSON reescrito y el
+ * markdown con las tablas alineadas, mientras la herramienta seguía emitiendo su
+ * propio formato. Regenerar después producía un diff de 247 líneas en el JSON y
+ * de ~800 en el markdown sobre un diagnóstico que no había cambiado.
+ *
+ * Con esto, regenerar sólo mueve `generado` y `commit`.
  */
-async function jsonComoPrettier(datos, ruta) {
+async function escribirComoPrettier(contenido, ruta) {
   mkdirSync(dirname(ruta), { recursive: true });
-  const crudo = JSON.stringify(datos, null, 2);
   try {
     const prettier = await import('prettier');
     const opciones = await prettier.resolveConfig(ruta);
-    writeFileSync(ruta, await prettier.format(crudo, { ...opciones, filepath: ruta }));
+    writeFileSync(ruta, await prettier.format(contenido, { ...opciones, filepath: ruta }));
   } catch {
-    // prettier no disponible: se escribe el JSON plano y el diagnóstico sigue siendo válido.
-    writeFileSync(ruta, `${crudo}\n`);
+    // prettier no disponible: se escribe sin formatear y el diagnóstico sigue siendo válido.
+    writeFileSync(ruta, contenido.endsWith('\n') ? contenido : `${contenido}\n`);
   }
 }
 
@@ -613,12 +614,14 @@ function md() {
   s += tabla(filas, ['origen ↓ / destino →', ...ORDEN]);
   return s;
 }
-if (!SOLO_JSON) {
-  const salida = md();
-  writeFileSync(join(RAIZ, 'docs', 'arquitectura', 'FASE0_DIAGNOSTICO.md'), salida);
-}
+await escribirComoPrettier(
+  JSON.stringify(informe, null, 2),
+  join(RAIZ, 'docs', 'arquitectura', 'analisis.json')
+);
 
-await jsonComoPrettier(informe, join(RAIZ, 'docs', 'arquitectura', 'analisis.json'));
+if (!SOLO_JSON) {
+  await escribirComoPrettier(md(), join(RAIZ, 'docs', 'arquitectura', 'FASE0_DIAGNOSTICO.md'));
+}
 
 if (CORTO) {
   console.log(JSON.stringify(resumen, null, 2));
