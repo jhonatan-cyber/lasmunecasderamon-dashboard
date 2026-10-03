@@ -37,6 +37,9 @@ jobs:
       - name: Lint
         run: pnpm lint:full
 
+      - name: Architecture boundaries
+        run: pnpm arquitectura:limites
+
       - name: Typecheck
         run: pnpm typecheck
 

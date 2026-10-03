@@ -1,0 +1,236 @@
+{
+  "ui-no-infraestructura|app/bar/page.tsx|lib/repositories/InventoryRepository.ts": {
+    "regla": "ui-no-infraestructura",
+    "plan": "§5 — la UI y los hooks consumen HTTP y contratos de cliente",
+    "desde": "app/bar/page.tsx",
+    "hacia": "lib/repositories/InventoryRepository.ts",
+    "motivo": "La UI importa tipos y constantes de InventoryRepository porque Bar y el escaner de envases comparten el catalogo con el servidor. El plan (Fase 4) exige separar los contratos de Bar de los tipos de repositorio.",
+    "responsable": "Fase 4 - Catalogo e inventario",
+    "condicion": "Cuando exista modules/inventario/contracts.ts con los DTO que necesita la UI, esta importacion pasa a apuntar ahi y la excepcion se elimina."
+  },
+  "ui-no-infraestructura|components/bar/BarStatsCards.tsx|lib/repositories/InventoryRepository.ts": {
+    "regla": "ui-no-infraestructura",
+    "plan": "§5 — la UI y los hooks consumen HTTP y contratos de cliente",
+    "desde": "components/bar/BarStatsCards.tsx",
+    "hacia": "lib/repositories/InventoryRepository.ts",
+    "motivo": "La UI importa tipos y constantes de InventoryRepository porque Bar y el escaner de envases comparten el catalogo con el servidor. El plan (Fase 4) exige separar los contratos de Bar de los tipos de repositorio.",
+    "responsable": "Fase 4 - Catalogo e inventario",
+    "condicion": "Cuando exista modules/inventario/contracts.ts con los DTO que necesita la UI, esta importacion pasa a apuntar ahi y la excepcion se elimina."
+  },
+  "ui-no-infraestructura|components/products/ContainerReturnsPanel.tsx|lib/repositories/InventoryRepository.ts": {
+    "regla": "ui-no-infraestructura",
+    "plan": "§5 — la UI y los hooks consumen HTTP y contratos de cliente",
+    "desde": "components/products/ContainerReturnsPanel.tsx",
+    "hacia": "lib/repositories/InventoryRepository.ts",
+    "motivo": "La UI importa tipos y constantes de InventoryRepository porque Bar y el escaner de envases comparten el catalogo con el servidor. El plan (Fase 4) exige separar los contratos de Bar de los tipos de repositorio.",
+    "responsable": "Fase 4 - Catalogo e inventario",
+    "condicion": "Cuando exista modules/inventario/contracts.ts con los DTO que necesita la UI, esta importacion pasa a apuntar ahi y la excepcion se elimina."
+  },
+  "ui-no-infraestructura|hooks/productos/useContainerScan.ts|lib/repositories/InventoryRepository.ts": {
+    "regla": "ui-no-infraestructura",
+    "plan": "§5 — la UI y los hooks consumen HTTP y contratos de cliente",
+    "desde": "hooks/productos/useContainerScan.ts",
+    "hacia": "lib/repositories/InventoryRepository.ts",
+    "motivo": "La UI importa tipos y constantes de InventoryRepository porque Bar y el escaner de envases comparten el catalogo con el servidor. El plan (Fase 4) exige separar los contratos de Bar de los tipos de repositorio.",
+    "responsable": "Fase 4 - Catalogo e inventario",
+    "condicion": "Cuando exista modules/inventario/contracts.ts con los DTO que necesita la UI, esta importacion pasa a apuntar ahi y la excepcion se elimina."
+  },
+  "sin-ciclos|asistencia (dominio)|asistencia → identidad → asistencia": {
+    "regla": "sin-ciclos",
+    "plan": "§5 — las dependencias entre módulos forman un grafo sin ciclos",
+    "desde": "asistencia (dominio)",
+    "hacia": "asistencia → identidad → asistencia",
+    "motivo": "Ciclos heredados entre dominios: asistencia e identidad se necesitan mutuamente para autorizar marcas; ventas origina comisiones que pertenecen a Personal. El plan (principio 2) prohibe que un modulo escriba tablas de otro, no que se consulten.",
+    "responsable": "Fases 3 y 5 - Asistencia, Ventas y Personal",
+    "condicion": "Cuando cada ciclo se rompa subiendolo a workflows/ o declarandolo como lectura publica cruzada, la arista desaparece y la excepcion se elimina."
+  },
+  "sin-ciclos|identidad (dominio)|asistencia → identidad → asistencia": {
+    "regla": "sin-ciclos",
+    "plan": "§5 — las dependencias entre módulos forman un grafo sin ciclos",
+    "desde": "identidad (dominio)",
+    "hacia": "asistencia → identidad → asistencia",
+    "motivo": "Ciclos heredados entre dominios: asistencia e identidad se necesitan mutuamente para autorizar marcas; ventas origina comisiones que pertenecen a Personal. El plan (principio 2) prohibe que un modulo escriba tablas de otro, no que se consulten.",
+    "responsable": "Fases 3 y 5 - Asistencia, Ventas y Personal",
+    "condicion": "Cuando cada ciclo se rompa subiendolo a workflows/ o declarandolo como lectura publica cruzada, la arista desaparece y la excepcion se elimina."
+  },
+  "sin-ciclos|identidad (dominio)|identidad → personal → identidad": {
+    "regla": "sin-ciclos",
+    "plan": "§5 — las dependencias entre módulos forman un grafo sin ciclos",
+    "desde": "identidad (dominio)",
+    "hacia": "identidad → personal → identidad",
+    "motivo": "Ciclos heredados entre dominios: asistencia e identidad se necesitan mutuamente para autorizar marcas; ventas origina comisiones que pertenecen a Personal. El plan (principio 2) prohibe que un modulo escriba tablas de otro, no que se consulten.",
+    "responsable": "Fases 3 y 5 - Asistencia, Ventas y Personal",
+    "condicion": "Cuando cada ciclo se rompa subiendolo a workflows/ o declarandolo como lectura publica cruzada, la arista desaparece y la excepcion se elimina."
+  },
+  "sin-ciclos|personal (dominio)|identidad → personal → identidad": {
+    "regla": "sin-ciclos",
+    "plan": "§5 — las dependencias entre módulos forman un grafo sin ciclos",
+    "desde": "personal (dominio)",
+    "hacia": "identidad → personal → identidad",
+    "motivo": "Ciclos heredados entre dominios: asistencia e identidad se necesitan mutuamente para autorizar marcas; ventas origina comisiones que pertenecen a Personal. El plan (principio 2) prohibe que un modulo escriba tablas de otro, no que se consulten.",
+    "responsable": "Fases 3 y 5 - Asistencia, Ventas y Personal",
+    "condicion": "Cuando cada ciclo se rompa subiendolo a workflows/ o declarandolo como lectura publica cruzada, la arista desaparece y la excepcion se elimina."
+  },
+  "sin-ciclos|identidad (dominio)|identidad → personal → comunicaciones → identidad": {
+    "regla": "sin-ciclos",
+    "plan": "§5 — las dependencias entre módulos forman un grafo sin ciclos",
+    "desde": "identidad (dominio)",
+    "hacia": "identidad → personal → comunicaciones → identidad",
+    "motivo": "Ciclos heredados entre dominios: asistencia e identidad se necesitan mutuamente para autorizar marcas; ventas origina comisiones que pertenecen a Personal. El plan (principio 2) prohibe que un modulo escriba tablas de otro, no que se consulten.",
+    "responsable": "Fases 3 y 5 - Asistencia, Ventas y Personal",
+    "condicion": "Cuando cada ciclo se rompa subiendolo a workflows/ o declarandolo como lectura publica cruzada, la arista desaparece y la excepcion se elimina."
+  },
+  "sin-ciclos|personal (dominio)|identidad → personal → comunicaciones → identidad": {
+    "regla": "sin-ciclos",
+    "plan": "§5 — las dependencias entre módulos forman un grafo sin ciclos",
+    "desde": "personal (dominio)",
+    "hacia": "identidad → personal → comunicaciones → identidad",
+    "motivo": "Ciclos heredados entre dominios: asistencia e identidad se necesitan mutuamente para autorizar marcas; ventas origina comisiones que pertenecen a Personal. El plan (principio 2) prohibe que un modulo escriba tablas de otro, no que se consulten.",
+    "responsable": "Fases 3 y 5 - Asistencia, Ventas y Personal",
+    "condicion": "Cuando cada ciclo se rompa subiendolo a workflows/ o declarandolo como lectura publica cruzada, la arista desaparece y la excepcion se elimina."
+  },
+  "sin-ciclos|comunicaciones (dominio)|identidad → personal → comunicaciones → identidad": {
+    "regla": "sin-ciclos",
+    "plan": "§5 — las dependencias entre módulos forman un grafo sin ciclos",
+    "desde": "comunicaciones (dominio)",
+    "hacia": "identidad → personal → comunicaciones → identidad",
+    "motivo": "Ciclos heredados entre dominios: asistencia e identidad se necesitan mutuamente para autorizar marcas; ventas origina comisiones que pertenecen a Personal. El plan (principio 2) prohibe que un modulo escriba tablas de otro, no que se consulten.",
+    "responsable": "Fases 3 y 5 - Asistencia, Ventas y Personal",
+    "condicion": "Cuando cada ciclo se rompa subiendolo a workflows/ o declarandolo como lectura publica cruzada, la arista desaparece y la excepcion se elimina."
+  },
+  "sin-ciclos|comunicaciones (dominio)|comunicaciones → ventas → reportes → operacion → comunicaciones": {
+    "regla": "sin-ciclos",
+    "plan": "§5 — las dependencias entre módulos forman un grafo sin ciclos",
+    "desde": "comunicaciones (dominio)",
+    "hacia": "comunicaciones → ventas → reportes → operacion → comunicaciones",
+    "motivo": "Ciclos heredados entre dominios: asistencia e identidad se necesitan mutuamente para autorizar marcas; ventas origina comisiones que pertenecen a Personal. El plan (principio 2) prohibe que un modulo escriba tablas de otro, no que se consulten.",
+    "responsable": "Fases 3 y 5 - Asistencia, Ventas y Personal",
+    "condicion": "Cuando cada ciclo se rompa subiendolo a workflows/ o declarandolo como lectura publica cruzada, la arista desaparece y la excepcion se elimina."
+  },
+  "sin-ciclos|ventas (dominio)|comunicaciones → ventas → reportes → operacion → comunicaciones": {
+    "regla": "sin-ciclos",
+    "plan": "§5 — las dependencias entre módulos forman un grafo sin ciclos",
+    "desde": "ventas (dominio)",
+    "hacia": "comunicaciones → ventas → reportes → operacion → comunicaciones",
+    "motivo": "Ciclos heredados entre dominios: asistencia e identidad se necesitan mutuamente para autorizar marcas; ventas origina comisiones que pertenecen a Personal. El plan (principio 2) prohibe que un modulo escriba tablas de otro, no que se consulten.",
+    "responsable": "Fases 3 y 5 - Asistencia, Ventas y Personal",
+    "condicion": "Cuando cada ciclo se rompa subiendolo a workflows/ o declarandolo como lectura publica cruzada, la arista desaparece y la excepcion se elimina."
+  },
+  "sin-ciclos|reportes (dominio)|comunicaciones → ventas → reportes → operacion → comunicaciones": {
+    "regla": "sin-ciclos",
+    "plan": "§5 — las dependencias entre módulos forman un grafo sin ciclos",
+    "desde": "reportes (dominio)",
+    "hacia": "comunicaciones → ventas → reportes → operacion → comunicaciones",
+    "motivo": "Ciclos heredados entre dominios: asistencia e identidad se necesitan mutuamente para autorizar marcas; ventas origina comisiones que pertenecen a Personal. El plan (principio 2) prohibe que un modulo escriba tablas de otro, no que se consulten.",
+    "responsable": "Fases 3 y 5 - Asistencia, Ventas y Personal",
+    "condicion": "Cuando cada ciclo se rompa subiendolo a workflows/ o declarandolo como lectura publica cruzada, la arista desaparece y la excepcion se elimina."
+  },
+  "sin-ciclos|operacion (dominio)|comunicaciones → ventas → reportes → operacion → comunicaciones": {
+    "regla": "sin-ciclos",
+    "plan": "§5 — las dependencias entre módulos forman un grafo sin ciclos",
+    "desde": "operacion (dominio)",
+    "hacia": "comunicaciones → ventas → reportes → operacion → comunicaciones",
+    "motivo": "Ciclos heredados entre dominios: asistencia e identidad se necesitan mutuamente para autorizar marcas; ventas origina comisiones que pertenecen a Personal. El plan (principio 2) prohibe que un modulo escriba tablas de otro, no que se consulten.",
+    "responsable": "Fases 3 y 5 - Asistencia, Ventas y Personal",
+    "condicion": "Cuando cada ciclo se rompa subiendolo a workflows/ o declarandolo como lectura publica cruzada, la arista desaparece y la excepcion se elimina."
+  },
+  "sin-ciclos|identidad (dominio)|identidad → personal → comunicaciones → ventas → reportes → operacion → identidad": {
+    "regla": "sin-ciclos",
+    "plan": "§5 — las dependencias entre módulos forman un grafo sin ciclos",
+    "desde": "identidad (dominio)",
+    "hacia": "identidad → personal → comunicaciones → ventas → reportes → operacion → identidad",
+    "motivo": "Ciclos heredados entre dominios: asistencia e identidad se necesitan mutuamente para autorizar marcas; ventas origina comisiones que pertenecen a Personal. El plan (principio 2) prohibe que un modulo escriba tablas de otro, no que se consulten.",
+    "responsable": "Fases 3 y 5 - Asistencia, Ventas y Personal",
+    "condicion": "Cuando cada ciclo se rompa subiendolo a workflows/ o declarandolo como lectura publica cruzada, la arista desaparece y la excepcion se elimina."
+  },
+  "sin-ciclos|personal (dominio)|identidad → personal → comunicaciones → ventas → reportes → operacion → identidad": {
+    "regla": "sin-ciclos",
+    "plan": "§5 — las dependencias entre módulos forman un grafo sin ciclos",
+    "desde": "personal (dominio)",
+    "hacia": "identidad → personal → comunicaciones → ventas → reportes → operacion → identidad",
+    "motivo": "Ciclos heredados entre dominios: asistencia e identidad se necesitan mutuamente para autorizar marcas; ventas origina comisiones que pertenecen a Personal. El plan (principio 2) prohibe que un modulo escriba tablas de otro, no que se consulten.",
+    "responsable": "Fases 3 y 5 - Asistencia, Ventas y Personal",
+    "condicion": "Cuando cada ciclo se rompa subiendolo a workflows/ o declarandolo como lectura publica cruzada, la arista desaparece y la excepcion se elimina."
+  },
+  "sin-ciclos|comunicaciones (dominio)|identidad → personal → comunicaciones → ventas → reportes → operacion → identidad": {
+    "regla": "sin-ciclos",
+    "plan": "§5 — las dependencias entre módulos forman un grafo sin ciclos",
+    "desde": "comunicaciones (dominio)",
+    "hacia": "identidad → personal → comunicaciones → ventas → reportes → operacion → identidad",
+    "motivo": "Ciclos heredados entre dominios: asistencia e identidad se necesitan mutuamente para autorizar marcas; ventas origina comisiones que pertenecen a Personal. El plan (principio 2) prohibe que un modulo escriba tablas de otro, no que se consulten.",
+    "responsable": "Fases 3 y 5 - Asistencia, Ventas y Personal",
+    "condicion": "Cuando cada ciclo se rompa subiendolo a workflows/ o declarandolo como lectura publica cruzada, la arista desaparece y la excepcion se elimina."
+  },
+  "sin-ciclos|ventas (dominio)|identidad → personal → comunicaciones → ventas → reportes → operacion → identidad": {
+    "regla": "sin-ciclos",
+    "plan": "§5 — las dependencias entre módulos forman un grafo sin ciclos",
+    "desde": "ventas (dominio)",
+    "hacia": "identidad → personal → comunicaciones → ventas → reportes → operacion → identidad",
+    "motivo": "Ciclos heredados entre dominios: asistencia e identidad se necesitan mutuamente para autorizar marcas; ventas origina comisiones que pertenecen a Personal. El plan (principio 2) prohibe que un modulo escriba tablas de otro, no que se consulten.",
+    "responsable": "Fases 3 y 5 - Asistencia, Ventas y Personal",
+    "condicion": "Cuando cada ciclo se rompa subiendolo a workflows/ o declarandolo como lectura publica cruzada, la arista desaparece y la excepcion se elimina."
+  },
+  "sin-ciclos|reportes (dominio)|identidad → personal → comunicaciones → ventas → reportes → operacion → identidad": {
+    "regla": "sin-ciclos",
+    "plan": "§5 — las dependencias entre módulos forman un grafo sin ciclos",
+    "desde": "reportes (dominio)",
+    "hacia": "identidad → personal → comunicaciones → ventas → reportes → operacion → identidad",
+    "motivo": "Ciclos heredados entre dominios: asistencia e identidad se necesitan mutuamente para autorizar marcas; ventas origina comisiones que pertenecen a Personal. El plan (principio 2) prohibe que un modulo escriba tablas de otro, no que se consulten.",
+    "responsable": "Fases 3 y 5 - Asistencia, Ventas y Personal",
+    "condicion": "Cuando cada ciclo se rompa subiendolo a workflows/ o declarandolo como lectura publica cruzada, la arista desaparece y la excepcion se elimina."
+  },
+  "sin-ciclos|operacion (dominio)|identidad → personal → comunicaciones → ventas → reportes → operacion → identidad": {
+    "regla": "sin-ciclos",
+    "plan": "§5 — las dependencias entre módulos forman un grafo sin ciclos",
+    "desde": "operacion (dominio)",
+    "hacia": "identidad → personal → comunicaciones → ventas → reportes → operacion → identidad",
+    "motivo": "Ciclos heredados entre dominios: asistencia e identidad se necesitan mutuamente para autorizar marcas; ventas origina comisiones que pertenecen a Personal. El plan (principio 2) prohibe que un modulo escriba tablas de otro, no que se consulten.",
+    "responsable": "Fases 3 y 5 - Asistencia, Ventas y Personal",
+    "condicion": "Cuando cada ciclo se rompa subiendolo a workflows/ o declarandolo como lectura publica cruzada, la arista desaparece y la excepcion se elimina."
+  },
+  "sin-ciclos|ventas (dominio)|ventas → reportes → operacion → ventas": {
+    "regla": "sin-ciclos",
+    "plan": "§5 — las dependencias entre módulos forman un grafo sin ciclos",
+    "desde": "ventas (dominio)",
+    "hacia": "ventas → reportes → operacion → ventas",
+    "motivo": "Ciclos heredados entre dominios: asistencia e identidad se necesitan mutuamente para autorizar marcas; ventas origina comisiones que pertenecen a Personal. El plan (principio 2) prohibe que un modulo escriba tablas de otro, no que se consulten.",
+    "responsable": "Fases 3 y 5 - Asistencia, Ventas y Personal",
+    "condicion": "Cuando cada ciclo se rompa subiendolo a workflows/ o declarandolo como lectura publica cruzada, la arista desaparece y la excepcion se elimina."
+  },
+  "sin-ciclos|reportes (dominio)|ventas → reportes → operacion → ventas": {
+    "regla": "sin-ciclos",
+    "plan": "§5 — las dependencias entre módulos forman un grafo sin ciclos",
+    "desde": "reportes (dominio)",
+    "hacia": "ventas → reportes → operacion → ventas",
+    "motivo": "Ciclos heredados entre dominios: asistencia e identidad se necesitan mutuamente para autorizar marcas; ventas origina comisiones que pertenecen a Personal. El plan (principio 2) prohibe que un modulo escriba tablas de otro, no que se consulten.",
+    "responsable": "Fases 3 y 5 - Asistencia, Ventas y Personal",
+    "condicion": "Cuando cada ciclo se rompa subiendolo a workflows/ o declarandolo como lectura publica cruzada, la arista desaparece y la excepcion se elimina."
+  },
+  "sin-ciclos|operacion (dominio)|ventas → reportes → operacion → ventas": {
+    "regla": "sin-ciclos",
+    "plan": "§5 — las dependencias entre módulos forman un grafo sin ciclos",
+    "desde": "operacion (dominio)",
+    "hacia": "ventas → reportes → operacion → ventas",
+    "motivo": "Ciclos heredados entre dominios: asistencia e identidad se necesitan mutuamente para autorizar marcas; ventas origina comisiones que pertenecen a Personal. El plan (principio 2) prohibe que un modulo escriba tablas de otro, no que se consulten.",
+    "responsable": "Fases 3 y 5 - Asistencia, Ventas y Personal",
+    "condicion": "Cuando cada ciclo se rompa subiendolo a workflows/ o declarandolo como lectura publica cruzada, la arista desaparece y la excepcion se elimina."
+  },
+  "sin-ciclos|comunicaciones (dominio)|comunicaciones → ventas → comunicaciones": {
+    "regla": "sin-ciclos",
+    "plan": "§5 — las dependencias entre módulos forman un grafo sin ciclos",
+    "desde": "comunicaciones (dominio)",
+    "hacia": "comunicaciones → ventas → comunicaciones",
+    "motivo": "Ciclos heredados entre dominios: asistencia e identidad se necesitan mutuamente para autorizar marcas; ventas origina comisiones que pertenecen a Personal. El plan (principio 2) prohibe que un modulo escriba tablas de otro, no que se consulten.",
+    "responsable": "Fases 3 y 5 - Asistencia, Ventas y Personal",
+    "condicion": "Cuando cada ciclo se rompa subiendolo a workflows/ o declarandolo como lectura publica cruzada, la arista desaparece y la excepcion se elimina."
+  },
+  "sin-ciclos|ventas (dominio)|comunicaciones → ventas → comunicaciones": {
+    "regla": "sin-ciclos",
+    "plan": "§5 — las dependencias entre módulos forman un grafo sin ciclos",
+    "desde": "ventas (dominio)",
+    "hacia": "comunicaciones → ventas → comunicaciones",
+    "motivo": "Ciclos heredados entre dominios: asistencia e identidad se necesitan mutuamente para autorizar marcas; ventas origina comisiones que pertenecen a Personal. El plan (principio 2) prohibe que un modulo escriba tablas de otro, no que se consulten.",
+    "responsable": "Fases 3 y 5 - Asistencia, Ventas y Personal",
+    "condicion": "Cuando cada ciclo se rompa subiendolo a workflows/ o declarandolo como lectura publica cruzada, la arista desaparece y la excepcion se elimina."
+  }
+}
