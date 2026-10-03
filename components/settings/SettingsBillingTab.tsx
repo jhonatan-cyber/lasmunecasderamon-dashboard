@@ -13,16 +13,22 @@ import {
 import { toast } from 'sonner';
 import type { BillingConfig } from './settings-types';
 import logger from '@/lib/utils/logger';
+import { categoriaDeClave, defaultDeClave } from '@/lib/configuraciones/registroClaves';
+import { refrescarConfiguraciones } from '@/hooks/shared/useConfigValue';
+
+// Defaults y categorías salen del registro de claves: el mismo que valida el endpoint, así
+// el formulario no abre con un número distinto del que el servidor usaría.
+const CATEGORIA_FACTURACION = categoriaDeClave('impuesto_iva');
+const CATEGORIA_COMISIONES = categoriaDeClave('split_tarjeta_venta');
+const defaultDe = (clave: string) => String(defaultDeClave(clave));
 
 export function SettingsBillingTab() {
   const [config, setConfig] = useState<BillingConfig>({
-    impuesto_iva: '19',
-    propina_venta: '10',
-    moneda: 'CLP',
-    facturacion_activada: true,
-    resolucion_sii: '',
-    split_tarjeta_venta: '51',
-    split_tarjeta_propina: '49'
+    impuesto_iva: defaultDe('impuesto_iva'),
+    propina_venta: defaultDe('propina_venta'),
+    moneda: defaultDe('moneda'),
+    split_tarjeta_venta: defaultDe('split_tarjeta_venta'),
+    split_tarjeta_propina: defaultDe('split_tarjeta_propina')
   });
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -33,20 +39,21 @@ export function SettingsBillingTab() {
       const response = await fetch('/api/configurations');
       const result = await response.json();
       if (result.success) {
+        // Sólo se toman las claves que este tab todavía edita. Las que quedaron guardadas
+        // y ya no tienen campo (por ejemplo `facturacion_activada`) no se reenvían al
+        // guardar: si volvieran al estado por el spread, cada guardado reescribiría con
+        // el valor por defecto de un campo que nadie ve.
+        const facturacion = result.data?.[CATEGORIA_FACTURACION ?? 'facturacion'] ?? {};
+        const comisiones = result.data?.[CATEGORIA_COMISIONES ?? 'comisiones'];
         setConfig(prev => ({
-          ...prev,
-          ...result.data?.facturacion,
-          // Split vive en categoría `comisiones`, se edita acá por ser regla de pagos.
-          ...(result.data?.comisiones
-            ? {
-                split_tarjeta_venta: String(
-                  result.data.comisiones.split_tarjeta_venta ?? prev.split_tarjeta_venta
-                ),
-                split_tarjeta_propina: String(
-                  result.data.comisiones.split_tarjeta_propina ?? prev.split_tarjeta_propina
-                )
-              }
-            : {})
+          impuesto_iva: String(facturacion.impuesto_iva ?? prev.impuesto_iva),
+          propina_venta: String(facturacion.propina_venta ?? prev.propina_venta),
+          moneda: String(facturacion.moneda ?? prev.moneda),
+          // El split vive en la categoría `comisiones`, se edita acá por ser regla de pagos.
+          split_tarjeta_venta: String(comisiones?.split_tarjeta_venta ?? prev.split_tarjeta_venta),
+          split_tarjeta_propina: String(
+            comisiones?.split_tarjeta_propina ?? prev.split_tarjeta_propina
+          )
         }));
       }
     } catch (error) {
@@ -84,6 +91,9 @@ export function SettingsBillingTab() {
       });
       const result = await response.json();
       if (result.success) {
+        // El IVA y la propina los leen otras pantallas de la caché compartida: sin refrescarla
+        // seguirían mostrando el valor anterior hasta recargar la página.
+        await refrescarConfiguraciones();
         toast.success('Configuración de facturación guardada');
       } else {
         throw new Error(result.error || 'Error al guardar');
@@ -171,36 +181,6 @@ export function SettingsBillingTab() {
               </div>
             </div>
             <div className='space-y-4'>
-              <div>
-                <label htmlFor='billing-resolucion' className='block text-sm font-medium mb-1'>
-                  Resolución SII
-                </label>
-                <input
-                  id='billing-resolucion'
-                  type='text'
-                  value={config.resolucion_sii}
-                  onChange={e => setConfig(prev => ({ ...prev, resolucion_sii: e.target.value }))}
-                  className='w-full px-3 py-2 border border-gray-300 rounded-full focus:ring-2 focus:ring-black focus:border-transparent'
-                  placeholder='Resolución SII'
-                />
-              </div>
-              <div className='flex items-center gap-3 p-4 border border-gray-200 rounded-full'>
-                <input
-                  type='checkbox'
-                  id='facturacion_activada'
-                  checked={config.facturacion_activada}
-                  onChange={e =>
-                    setConfig(prev => ({
-                      ...prev,
-                      facturacion_activada: e.target.checked
-                    }))
-                  }
-                  className='w-5 h-5 rounded border-gray-300 text-black focus:ring-black'
-                />
-                <label htmlFor='facturacion_activada' className='text-sm font-medium'>
-                  Activar facturación electrónica
-                </label>
-              </div>
               <div className='p-4 border border-gray-200 rounded-3xl'>
                 <p className='text-sm font-medium'>Split pago con tarjeta</p>
                 <p className='text-xs text-gray-500 mt-0.5'>

@@ -16,8 +16,6 @@ export interface BillingConfig {
   impuesto_iva: string;
   propina_venta: string;
   moneda: string;
-  facturacion_activada: boolean;
-  resolucion_sii: string;
   /** Split pago con tarjeta. Deben sumar 100. Categoría `comisiones`. */
   split_tarjeta_venta?: string;
   split_tarjeta_propina?: string;
