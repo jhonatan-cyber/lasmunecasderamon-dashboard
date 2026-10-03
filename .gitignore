@@ -62,3 +62,9 @@ tests/integration/backups/
 # Sondas y utilidades de diagnostico locales (no forman parte del proyecto)
 /_tmp_real/
 .freebuff/
+
+# Reportes que se regeneran al correr la suite: los milisegundos cambian en cada
+# corrida y ensuciarian el arbol sin que nada haya cambiado. El numero que
+# importa vive como techo en tests/postgres/linea-base-flujos.test.ts y como
+# tabla estable en docs/arquitectura/FASE0_DECISIONES.md.
+/docs/arquitectura/LINEA_BASE_FLUJOS.md

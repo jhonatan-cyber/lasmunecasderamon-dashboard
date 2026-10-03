@@ -108,13 +108,40 @@ migración tiene que preservar: si al mover esas rutas se aplica `withRoute` por
 costumbre, se rompe el flujo de aprobación. Queda registrado como contrato, no
 como incidencia.
 
-## 6. Lo que falta para dar Fase 0 por cerrada
+## 6. Línea base de consultas por flujo (§7, Fase 0)
 
-El plan pide medir consultas y tiempos de flujos representativos con datos
-reproducibles (§7, Fase 0). La infraestructura está: `perfilConsultas` expone
-`x-lmr-consultas` y `?perfil=1` reinicia la cuenta. **Falta la medición en sí**,
-que necesita `lasmunecas_test` con las migraciones al día. Depende de arreglar
-la base de pruebas.
+Medido con el instrumentado que usa la aplicación
+(`lib/database/perfilConsultas`), que es el mismo que responde en
+`x-lmr-consultas`, no una métrica paralela. Corre en
+`tests/postgres/linea-base-flujos.test.ts` sobre `lasmunecasderamon_test`,
+siembra sus propios datos y los restaura al terminar.
+
+| Flujo                               | Consultas | SQL distintos | ms en PostgreSQL | Consulta más lenta | Techo |
+| ----------------------------------- | --------- | ------------- | ---------------- | ------------------ | ----- |
+| horas extras: listar                | 1         | 1             | 7                | 7                  | 4     |
+| horas extras: crear                 | 2         | 2             | 8                | 6                  | 5     |
+| **cobro de cuenta con venta**       | **15**    | 14            | 185              | **160**            | 25    |
+| inventario: consumo sin existencias | 2         | 2             | 3                | 2                  | 5     |
+
+Dos cosas que conviene leer aquí:
+
+- **El cobro de cuenta cuesta 15 consultas**, y 160 de los 185 ms se van en una
+  sola consulta. Es el flujo que el §6 del plan declara atómico y el que la Fase
+  5 partirá en varios módulos: si al encapsularlo las consultas se multiplican,
+  el techo de 25 lo detecta.
+- **Horas extras cuesta 1 consulta al listar y 2 al crear.** Es el módulo piloto
+  del §7 y, con diferencia, el más barato de mover: el patrón se puede replicar
+  sin tanto riesgo.
+
+El techo es un 50% sobre lo medido más dos consultas de margen: bastante para
+detectar una degradación estructural —el fallo que importa al partir un flujo—
+sin fallar por un milisegundo. Lo que decide es siempre la comparación antes y
+después de una misma migración, no el número absoluto.
+
+El informe detallado se regenera en cada corrida de la suite. Como los
+milisegundos cambian siempre, ese archivo está ignorado a propósito
+(`.gitignore`) y lo que se versiona es esta tabla y los techos, que viven en el
+test.
 
 ## 7. Siguiente paso
 
