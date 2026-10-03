@@ -116,19 +116,39 @@ Medido con el instrumentado que usa la aplicación
 `tests/postgres/linea-base-flujos.test.ts` sobre `lasmunecasderamon_test`,
 siembra sus propios datos y los restaura al terminar.
 
-| Flujo                               | Consultas | SQL distintos | ms en PostgreSQL | Consulta más lenta | Techo |
-| ----------------------------------- | --------- | ------------- | ---------------- | ------------------ | ----- |
-| horas extras: listar                | 1         | 1             | 7                | 7                  | 4     |
-| horas extras: crear                 | 2         | 2             | 8                | 6                  | 5     |
-| **cobro de cuenta con venta**       | **15**    | 14            | 185              | **160**            | 25    |
-| inventario: consumo sin existencias | 2         | 2             | 3                | 2                  | 5     |
+| Flujo                               | Consultas | SQL distintos | Consulta más lenta | Techo |
+| ----------------------------------- | --------- | ------------- | ------------------ | ----- |
+| horas extras: listar                | 1         | 1             | 7                  | 4     |
+| horas extras: crear                 | 2         | 2             | 6                  | 5     |
+| **cobro de cuenta con venta**       | **15**    | 14            | ~50                | 25    |
+| inventario: consumo sin existencias | 2         | 2             | 2                  | 5     |
+
+La columna de milisegundos se retiró a propósito. La primera versión de esta
+tabla publicaba 185 ms para el cobro, con 160 ms en una sola consulta, y era un
+error de contabilidad: el perfil cronometraba `pool.query()`, que empaqueta
+abrir conexión y ejecutar, así que el establecimiento de la primera conexión
+contra PostgreSQL —50 a 157 ms medidos— se le endosaba a la consulta que
+casualmente iba primera.
+
+Lo que se comprobó fue que **no faltaba ningún índice**: `cajas` tiene 0 filas,
+`EXPLAIN (ANALYZE)` la resuelve en **0,049 ms** y ya existe `idx_cajas_estado`
+sobre la columna del `WHERE`. Un plan de 0,05 ms no pide índices. Los
+milisegundos además no eran reproducibles —47, 154 y 50 ms en corridas
+distintas—, cosa que un índice faltante nunca sería.
+
+Ahora `conexionMs` viaja separado en `x-lmr-consultas` y la línea base calienta
+el pool antes de medir, porque una línea base debe reflejar el estado estable y
+no el arranque. Queda un residuo sin explicar: en el contexto del test esa única
+ejecución sigue midiendo ~50 ms y no se reproduce aislada (aislada da 1,0–1,3
+ms).
 
 Dos cosas que conviene leer aquí:
 
-- **El cobro de cuenta cuesta 15 consultas**, y 160 de los 185 ms se van en una
-  sola consulta. Es el flujo que el §6 del plan declara atómico y el que la Fase
-  5 partirá en varios módulos: si al encapsularlo las consultas se multiplican,
-  el techo de 25 lo detecta.
+- **El cobro de cuenta cuesta 15 consultas.** Ese número sí es sólido, y es el
+  flujo que el §6 del plan declara atómico y que la Fase 5 partirá en varios
+  módulos: si al encapsularlo las consultas se multiplican, el techo de 25 lo
+  detecta. El techo va sobre el conteo, no sobre el tiempo, precisamente porque
+  el conteo no se ve afectado por el ruido de arranque.
 - **Horas extras cuesta 1 consulta al listar y 2 al crear.** Es el módulo piloto
   del §7 y, con diferencia, el más barato de mover: el patrón se puede replicar
   sin tanto riesgo.
