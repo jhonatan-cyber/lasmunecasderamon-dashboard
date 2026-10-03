@@ -2,6 +2,23 @@ import { Pool } from 'pg';
 import { randomUUID } from 'crypto';
 import { env } from '@/lib/utils/env';
 import { prepareQuery } from './postgres.cjs';
+import { perfilActivo, registrarConsulta } from './perfilConsultas';
+
+/**
+ * Ejecuta una consulta y, en desarrollo, la anota en el perfil de rendimiento
+ * (`lib/database/perfilConsultas.ts`). En producción `perfilActivo()` es `false` y lo único
+ * que se paga es la llamada.
+ */
+async function ejecutar<T>(sql: string, params: any[] = []): Promise<{ rows: T; command: string }> {
+  if (!perfilActivo()) {
+    const result = await getPool().query(prepareQuery(sql, params));
+    return { rows: result.rows as T, command: result.command };
+  }
+  const inicio = Date.now();
+  const result = await getPool().query(prepareQuery(sql, params));
+  registrarConsulta(sql, Date.now() - inicio);
+  return { rows: result.rows as T, command: result.command };
+}
 
 const defaultConfig = {
   host: env.DB_HOST,
@@ -53,9 +70,9 @@ async function invalidateAfterCommit(): Promise<void> {
 
 export async function query<T = any>(sql: string, params: any[] = []): Promise<T> {
   // Do not retry writes: a lost connection can occur after the server committed.
-  const result = await getPool().query(prepareQuery(sql, params));
-  if (changesData(result.command, sql)) await invalidateAfterCommit();
-  return result.rows as T;
+  const { rows, command } = await ejecutar<T>(sql, params);
+  if (changesData(command, sql)) await invalidateAfterCommit();
+  return rows;
 }
 
 export async function withTransaction<T>(
@@ -67,6 +84,13 @@ export async function withTransaction<T>(
   try {
     await client.query('BEGIN');
     const trx: TransactionQuery = async <R>(sql: string, params: any[] = []) => {
+      if (perfilActivo()) {
+        const inicio = Date.now();
+        const result = await client.query(prepareQuery(sql, params));
+        registrarConsulta(sql, Date.now() - inicio);
+        changed ||= changesData(result.command, sql);
+        return result.rows as R;
+      }
       const result = await client.query(prepareQuery(sql, params));
       changed ||= changesData(result.command, sql);
       return result.rows as R;
@@ -149,9 +173,9 @@ export async function rawQuery(sql: string) {
   if (!validateTableNames(sql)) {
     throw new Error('Seguridad: Tabla no permitida en rawQuery');
   }
-  const result = await getPool().query(prepareQuery(sql));
-  if (changesData(result.command, sql)) await invalidateAfterCommit();
-  return result.rows;
+  const { rows, command } = await ejecutar<any>(sql);
+  if (changesData(command, sql)) await invalidateAfterCommit();
+  return rows;
 }
 
 export async function testConnection() {

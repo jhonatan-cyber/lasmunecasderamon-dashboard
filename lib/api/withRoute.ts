@@ -6,6 +6,7 @@ import { ErrorLogService } from '@/lib/services/ErrorLogService';
 import { AuditService } from '@/lib/services/AuditService';
 import { ApiResponse } from './api-response';
 import { normalizeJsonResponseDates } from './date-response';
+import { instantaneaPerfil, perfilActivo, reiniciarPerfil } from '@/lib/database/perfilConsultas';
 import logger from '@/lib/utils/logger';
 
 // ── Types ──────────────────────────────────────────────────────────────
@@ -257,8 +258,22 @@ export function withRoute<M extends PermissionModule>(
         ? { ...context, params, user: user! }
         : { ...context, params };
 
+      // `?perfil=1` reinicia la cuenta antes de ejecutar el handler, así que la cabecera
+      // `x-lmr-consultas` que vuelve describe exactamente esta petición (y no el
+      // acumulado del proceso). Sin `perfil=1` devuelve los acumulados, que es lo que
+      // permite sacar deltas entre dos llamadas consecutivas.
+      const pedirPerfil = perfilActivo() && new URL(request.url).searchParams.get('perfil') === '1';
+      if (pedirPerfil) reiniciarPerfil();
+
       const response = await (handler as any)(request, handlerContext);
-      return await normalizeJsonResponseDates(response);
+      const normalizada = await normalizeJsonResponseDates(response);
+      // En desarrollo la respuesta dice cuántas consultas y cuántos ms de PostgreSQL lleva
+      // acumulados: es lo que permite auditar un endpoint sin `pg_stat_statements`, que no
+      // está disponible en esta instancia. En producción no se toca la respuesta.
+      if (perfilActivo()) {
+        normalizada.headers.set('x-lmr-consultas', JSON.stringify(instantaneaPerfil(pedirPerfil)));
+      }
+      return normalizada;
     } catch (error: unknown) {
       const url = new URL(request.url);
       const method = request.method;
