@@ -2,7 +2,7 @@
 
 import type { SaleOption } from '@/types/sale-options';
 import { formatCurrencyCLP } from '@/lib/utils/formatters';
-import { useConfigValue } from '@/hooks/shared/useConfigValue';
+import { useConfig } from '@/hooks/shared/useConfigValue';
 import { resolveShotMl, resolveShotMlAnfitriona } from '@/lib/business/shotMl';
 import { parseSavedOptions } from './TransferModal';
 
@@ -23,7 +23,7 @@ export function SalePrices({
   /** Ml por shot a anfitriona; sin valor propio se usa el de cliente. */
   mlShotAnfitriona?: number | null;
 }) {
-  const shotMlGlobal = useConfigValue<number>('bar', 'shot_ml', 50);
+  const shotMlGlobal = useConfig<number>('shot_ml');
   const shotMl = resolveShotMl(mlShot, shotMlGlobal);
   const shotMlAnf = resolveShotMlAnfitriona(mlShotAnfitriona, shotMl);
   const parsed = typeof options === 'string' ? parseSavedOptions(options) : options;

@@ -5,15 +5,18 @@ import { Save, GlassWater, Wine, AlertTriangle } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { toast } from 'sonner';
 import logger from '@/lib/utils/logger';
+import { categoriaDeClave, defaultDeClave } from '@/lib/configuraciones/registroClaves';
+import { refrescarConfiguraciones } from '@/hooks/shared/useConfigValue';
 
-const DEFAULT_SHOT_ML = 50;
-const DEFAULT_BOTTLE_ML = 750;
-const DEFAULT_SHOTS_ALERTA = 3;
+// Defaults y categoría salen del registro de claves: la misma lista que valida el endpoint,
+// así el formulario y el servidor no pueden discrepar sobre 50/750/3.
+const CATEGORIA_BAR = categoriaDeClave('shot_ml');
+const defaultDe = (clave: string) => String(defaultDeClave(clave));
 
 export function SettingsBarTab() {
-  const [shotMl, setShotMl] = useState(String(DEFAULT_SHOT_ML));
-  const [botellaMl, setBotellaMl] = useState(String(DEFAULT_BOTTLE_ML));
-  const [shotsAlerta, setShotsAlerta] = useState(String(DEFAULT_SHOTS_ALERTA));
+  const [shotMl, setShotMl] = useState(() => defaultDe('shot_ml'));
+  const [botellaMl, setBotellaMl] = useState(() => defaultDe('botella_ml'));
+  const [shotsAlerta, setShotsAlerta] = useState(() => defaultDe('shots_alerta'));
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
 
@@ -24,9 +27,10 @@ export function SettingsBarTab() {
         const response = await fetch('/api/configurations');
         const result = await response.json();
         if (!cancelled && result.success) {
-          const guardadoShot = result.data?.bar?.shot_ml;
-          const guardadoBotella = result.data?.bar?.botella_ml;
-          const guardadoAlerta = result.data?.bar?.shots_alerta;
+          const bar = result.data?.[CATEGORIA_BAR ?? 'bar'] ?? {};
+          const guardadoShot = bar.shot_ml;
+          const guardadoBotella = bar.botella_ml;
+          const guardadoAlerta = bar.shots_alerta;
           if (guardadoShot !== undefined && guardadoShot !== null && String(guardadoShot).trim()) {
             setShotMl(String(guardadoShot));
           }
@@ -96,6 +100,9 @@ export function SettingsBarTab() {
       setShotMl(String(shot));
       setBotellaMl(String(botella));
       setShotsAlerta(String(alerta));
+      // El resto de la pestaña lee la configuración de la caché compartida: sin esto, el bar
+      // y los formularios seguirían mostrando el valor viejo hasta recargar.
+      await refrescarConfiguraciones();
       toast.success('Tragos y shots actualizados');
     } catch (error) {
       logger.captureException(error, { context: 'SettingsBarTab:save' });
