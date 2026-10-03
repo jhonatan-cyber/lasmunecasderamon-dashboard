@@ -1,0 +1,38 @@
+# Fin de línea del repositorio: LF en todo el árbol.
+#
+# Por qué hace falta aquí y no en el `.gitignore`: el Git de esta máquina trae
+# `core.autocrlf=true` desde `C:/Program Files/Git/etc/gitconfig`, o sea desde la instalación
+# y no desde este repositorio. Con eso, cada `checkout` reescribía los archivos de texto con
+# CRLF aunque el índice los guardara en LF: 930 de los 1783 archivos rastreados quedaban con
+# CRLF en el working tree, y `prettier --check` los marcaba uno por uno sin que nadie hubiera
+# tocado nada. `eol=lf` pisa ese ajuste **para este repositorio**, así que el LF queda en el
+# disco y prettier deja de señalar diferencias que no existen.
+#
+# `text=auto` deja que Git decida archivo por archivo: sólo toca los de texto y respeta los
+# binarios. Las reglas explícitas de abajo son para que ningún binario dependa de esa heurística.
+* text=auto eol=lf
+
+# Binarios: sus bytes no se tocan nunca.
+*.png  binary
+*.jpg  binary
+*.jpeg binary
+*.gif  binary
+*.webp binary
+*.ico  binary
+*.mp3  binary
+*.mp4  binary
+*.pdf  binary
+*.zip  binary
+*.woff  binary
+*.woff2 binary
+*.ttf  binary
+*.otf  binary
+*.eot  binary
+
+# PowerShell: Windows lo ejecuta y CRLF es lo que espera.
+*.ps1 text eol=crlf
+*.psm1 text eol=crlf
+
+# Archivos que no son código fuente y no deben generar ruido en los diffs de lenguaje.
+pnpm-lock.yaml linguist-generated=true
+public/sw.js linguist-generated=true
