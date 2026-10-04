@@ -81,7 +81,7 @@ violación de propiedad entre dominios.
 `sale/SaleQueries` (ventas) y `PayrollRepository`/`TipRepository` (personal). El
 plan exige un único propietario de comisiones y propinas aunque ventas origine
 los movimientos. Esta es la primera contradicción real entre módulos que hay que
-resolver.
+resolver. **Resuelta el 2026-10-04 — ver §8: el dueño será Personal.**
 
 ## 4. Riesgos
 
@@ -164,16 +164,11 @@ Dos cosas que conviene leer aquí:
   devuelve el saldo a caja. Cada una de esas tablas es un escritor distinto y el
   flujo no se puede partir sin decidir quién es el dueño de cada una. Medirlo
   era justo lo que faltaba: sin este número, cualquiera que tocara la anulación
-  discovería el costo en producción.
+  descubriría el costo en producción.
 - **La biometría cuesta 6 consultas al registrar y 4 al repetir.** La diferencia
   entre ambas es el camino corto del duplicado: no inserta asistencia. Es la
   garantía de que un evento repetido no duplica marcas, y ahora su costo está
   medido y acotado, no supuesto.
-
-El techo es un 50% sobre lo medido más dos consultas de margen: bastante para
-detectar una degradación estructural —el fallo que importa al partir un flujo—
-sin fallar por un milisegundo. Lo que decide es siempre la comparación antes y
-después de una misma migración, no el número absoluto.
 
 El techo es un 50% sobre lo medido más dos consultas de margen: bastante para
 detectar una degradación estructural —el fallo que importa al partir un flujo—
@@ -191,3 +186,102 @@ Fase 1 — contratos y restricciones. Los límites propuestos están validados p
 el diagnóstico; falta crear la estructura mínima de módulos, el contrato
 transaccional y el control automático de dependencias. El piloto de Horas extras
 (fase 2) espera a que ese control esté en pie.
+
+## 8. D5 resuelta: dueño único de comisiones y propinas
+
+Fecha: 2026-10-04. Resuelve la contradicción de D5 antes de la Fase 5, que es
+donde se necesita: el cobro crea comisiones y propinas y la anulación las repone
+proporcionalmente, ambos dentro de transacciones que ya no se pueden partir sin
+decidir quién escribe cada tabla.
+
+**Decisión: `comisiones`, `detalle_comisiones`, `propinas` y `detalle_propinas`
+tendrán un único propietario — el módulo Personal.** Ventas y Operación, que hoy
+originan la mayoría de los movimientos, dejarán de ejecutar SQL sobre esas
+cuatro tablas en la Fase 5 y las crearán, ajustarán y revertirán mediante la API
+pública de Personal, dentro de la misma unidad transaccional (§6 del plan).
+
+### El censo que respalda la decisión
+
+La herramienta del diagnóstico contaba 2 escritores para `detalle_comisiones`
+porque sólo mira `lib/repositories/`; los servicios escriben directo. Censo
+manual completo sobre el código de producción:
+
+`detalle_comisiones` — 6 archivos escritores, 3 dominios:
+
+| Archivo                                      | Dominio   | Qué escribe                                                 |
+| -------------------------------------------- | --------- | ----------------------------------------------------------- |
+| `lib/services/SaleService.ts`                | ventas    | INSERT batch al cobrar (`batchInsertCommissions`)           |
+| `lib/repositories/sale/SaleQueries.ts`       | ventas    | UPDATE monto proporcional y estado = 0 en anulaciones       |
+| `lib/services/ServiceService.ts`             | operación | INSERT al registrar servicio                                |
+| `lib/repositories/service/ServiceQueries.ts` | operación | UPDATE estado = 0 al anular servicio                        |
+| `lib/repositories/CommissionRepository.ts`   | personal  | INSERT (`createWithDetail`; sin llamador de producción hoy) |
+| `lib/repositories/PayrollRepository.ts`      | personal  | UPDATE estado = 0 al liquidar nómina                        |
+
+`detalle_propinas` — 3 archivos escritores, 2 dominios:
+
+| Archivo                                 | Dominio  | Qué escribe                                                                            |
+| --------------------------------------- | -------- | -------------------------------------------------------------------------------------- |
+| `lib/repositories/TipRepository.ts`     | personal | INSERT de la distribución — llamado por `TipService` **y por `SaleService` al cobrar** |
+| `lib/repositories/sale/SaleQueries.ts`  | ventas   | UPDATE monto proporcional (parcial) y DELETE (total) en anulaciones                    |
+| `lib/repositories/PayrollRepository.ts` | personal | UPDATE estado = 0 al liquidar nómina                                                   |
+
+Las cabeceras `comisiones` y `propinas` las mueven las mismas manos, en las
+mismas direcciones: se registran al originarse, se ajustan en la anulación y se
+cierran al liquidar.
+
+Lectores: nómina (`PayrollRepository`), reportes (`StatsQueries`,
+`VentasStatsRepository`, `CommissionReportQueries`), agenda (`EventQueries`,
+`CalendarRepository`), anticipos (`lib/business/anticiposUtils.ts`, SQL dentro
+de business — deuda que migra en la Fase 6) y los propios ajustes de
+ventas/servicios.
+
+### Por qué Personal
+
+1. **El §4 del plan ya lo asigna**: «Personal y liquidaciones — horas extras,
+   anticipos, comisiones, propinas, gratificaciones y nómina». La decisión
+   formaliza el mapa; no lo inventa.
+2. **El ciclo de vida es de liquidación, no de venta**: el concepto nace cuando
+   una venta o servicio lo origina, se ajusta cuando el negocio corrige, se
+   liquida en nómina y alimenta los saldos que Personal reporta. El evento
+   disparador es de ventas; el concepto pertenece al empleado.
+3. **Ventas ya delega el alta de propinas a Personal**: `SaleService` llama a
+   `TipRepository.register` (repositorio de Personal) cuando la venta trae
+   propina. La incoherencia real son las comisiones, que sí se insertan con SQL
+   directo; la decisión alinea a comisiones con lo que propinas ya hace.
+4. **La liquidación concentra las invariantes más duras**: `PayrollRepository`
+   cierra detalle y cabecera en cascada con `NOT EXISTS` — reglas de negocio de
+   Personal que no deberían tener un segundo dueño.
+5. **No abre ciclos**: `ventas → personal` y `operación → personal` son aristas
+   nuevas acíclicas; Personal no importa a ninguno de los dos.
+
+Y lo que no es el dueño:
+
+- **Ventas**: obligaría a nómina, reportes y agenda a pedir a ventas los saldos
+  de sus propios empleados — invierte la dependencia natural (Personal ya agrega
+  por `venta_id`, no al revés) y partiría el ciclo de vida en dos módulos.
+- **Caja**: mueve efectivo, no conceptos de liquidación; duplicaría con las
+  propinas el debate que tiene el prepago.
+- **Un módulo nuevo de liquidaciones**: el §4 lo agrupa en Personal; partirla
+  por tablas en vez de por dominio multiplica APIs sin ganancia.
+
+### Qué implica para la Fase 5
+
+- `SaleService`, `SaleQueries`, `ServiceService` y `ServiceQueries` pierden el
+  SQL sobre las cuatro tablas y llaman la API pública de Personal recibiendo un
+  `ContextoOperacion` — el patrón del piloto de horas extras, ya probado con
+  commit y rollback reales.
+- La reposición proporcional de la anulación pasa a ser una operación de negocio
+  de Personal invocada por el workflow de anulación; el techo de 32 consultas
+  (50) de la línea base vigila que la delegación no multiplique consultas.
+- Las lecturas de reportes y agenda quedan como lecturas cruzadas declaradas de
+  sólo lectura (§6 las admite) o migran a consultas públicas cuando no produzcan
+  N+1.
+- `lib/business/anticiposUtils.ts` se reubica cuando migre anticipos (Fase 6).
+- Se registra la propiedad en `docs/MODULOS_Y_DATOS.md`.
+
+### Cuándo se reabre
+
+Sólo si aparece un consumidor cuyo dominio deba escribir estas tablas y cuya
+dependencia con Personal genere ciclo. En ese caso la coordinación sube a
+`workflows/` (§5) y la propiedad no cambia: se cambia quién coordina, no quién
+es dueño.

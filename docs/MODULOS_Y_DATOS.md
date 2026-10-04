@@ -72,6 +72,13 @@ Nota sobre `inventario_unidades`: cuatro escritores, pero los cuatro están
 dentro del mismo módulo. No es un problema de propiedad entre dominios; es una
 decisión interna del módulo inventario y **no bloquea** la fase 4.
 
+Nota sobre `detalle_propinas`, `detalle_comisiones` y sus cabeceras: la
+propiedad quedó decidida (D5 resuelta — §8 de
+[FASE0_DECISIONES](arquitectura/FASE0_DECISIONES.md)): dueño único **Personal**,
+y ventas y operación escribirán vía la API pública de Personal dentro de la
+misma transacción en la fase 5. El estado «escritura partida» de estas filas
+describe el código de hoy, no el objetivo.
+
 ## 4. Escrituras fuera de repositorios
 
 90 archivos escriben tablas sin pasar por `lib/repositories/`. Los que mandan
