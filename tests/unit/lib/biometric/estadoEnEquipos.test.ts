@@ -22,13 +22,14 @@ vi.mock('@/lib/utils/logger', () => {
   return { logger: mocks, default: mocks };
 });
 
-vi.mock('@/lib/biometric/deviceClient', async importOriginal => {
-  const actual = await importOriginal<typeof import('@/lib/biometric/deviceClient')>();
+vi.mock('@/modules/asistencia/biometrico/deviceClient', async importOriginal => {
+  const actual =
+    await importOriginal<typeof import('@/modules/asistencia/biometrico/deviceClient')>();
   return { ...actual, ...cliente };
 });
 
-vi.mock('@/lib/biometric/faceSdk', async importOriginal => {
-  const actual = await importOriginal<typeof import('@/lib/biometric/faceSdk')>();
+vi.mock('@/modules/asistencia/biometrico/faceSdk', async importOriginal => {
+  const actual = await importOriginal<typeof import('@/modules/asistencia/biometrico/faceSdk')>();
   return { ...actual, ...facial };
 });
 
@@ -36,8 +37,8 @@ vi.mock('@/lib/business/timezoneService', () => ({
   getNowInBusinessTimezone: () => '2026-09-30 12:00:00'
 }));
 
-import { estadoEnEquipos } from '@/lib/biometric/enrollmentService';
-import { ErrorFacial } from '@/lib/biometric/faceSdk';
+import { estadoEnEquipos } from '@/modules/asistencia/biometrico/enrollmentService';
+import { ErrorFacial } from '@/modules/asistencia/biometrico/faceSdk';
 
 const cred = { ip: '192.168.1.50', usuario: 'admin', clave: 'secreta' };
 const persona = { usuarioId: 'u-1', nombre: 'Ana', codigo: '1001' };

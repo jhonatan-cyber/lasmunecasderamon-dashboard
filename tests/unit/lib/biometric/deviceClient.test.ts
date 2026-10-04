@@ -7,7 +7,7 @@ import {
   leerCara,
   leerRegistrosAcceso,
   parsearTablaCGI
-} from '@/lib/biometric/deviceClient';
+} from '@/modules/asistencia/biometrico/deviceClient';
 
 /**
  * Los CGI de caras del ASI3213A-W responden JSON en PascalCase

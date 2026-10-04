@@ -17,7 +17,7 @@ import {
   verifyDeviceToken,
   listDevices,
   revokeDevice
-} from '@/lib/kiosk/deviceAuth';
+} from '@/modules/asistencia/kioskos/deviceAuth';
 beforeEach(() => {
   harness.cookie = undefined;
   harness.query.mockReset().mockResolvedValue([]);

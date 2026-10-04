@@ -10,7 +10,7 @@ vi.mock('@/lib/database/db', () => ({
   withTransaction: vi.fn()
 }));
 
-vi.mock('@/lib/biometric/processBiometricEvent', () => ({
+vi.mock('@/modules/asistencia/biometrico/processBiometricEvent', () => ({
   procesarEventoBiometrico: procesar.fn
 }));
 

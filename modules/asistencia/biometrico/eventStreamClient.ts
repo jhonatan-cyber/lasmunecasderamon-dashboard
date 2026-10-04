@@ -1,7 +1,7 @@
 import {
   construirAuthorizationDigest,
   type CredencialesEquipo
-} from '@/lib/biometric/deviceClient';
+} from '@/modules/asistencia/biometrico/deviceClient';
 import { EventMultipartDecoder } from './eventMultipart';
 
 export interface EventoDelEquipo {

@@ -22,7 +22,7 @@ import {
   listBiometricDevices,
   revokeBiometricDevice,
   touchDevice
-} from '@/lib/biometric/deviceAuth';
+} from '@/modules/asistencia/biometrico/deviceAuth';
 
 beforeEach(() => {
   db.queryMock.mockReset();

@@ -1,5 +1,5 @@
 import { withRoute } from '@/lib/api/withRoute';
-import { fotoEnVivoDelEquipo } from '@/lib/biometric/enrollmentService';
+import { fotoEnVivoDelEquipo } from '@/modules/asistencia';
 
 /**
  * Foto en vivo de la cámara del lector, para mostrarla en el diálogo de

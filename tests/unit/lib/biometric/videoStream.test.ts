@@ -3,9 +3,11 @@ import { EventEmitter } from 'node:events';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 const mocks = vi.hoisted(() => ({ query: vi.fn(), spawn: vi.fn() }));
 vi.mock('@/lib/database/db', () => ({ query: mocks.query }));
-vi.mock('@/lib/biometric/credencialesCrypto', () => ({ descifrarSecreto: () => 'secret' }));
+vi.mock('@/modules/asistencia/biometrico/credencialesCrypto', () => ({
+  descifrarSecreto: () => 'secret'
+}));
 vi.mock('node:child_process', () => ({ spawn: mocks.spawn, default: { spawn: mocks.spawn } }));
-import { openVideoStream } from '@/lib/biometric/videoStream';
+import { openVideoStream } from '@/modules/asistencia/biometrico/videoStream';
 
 afterEach(() => vi.useRealTimers());
 describe('video stream lifecycle', () => {

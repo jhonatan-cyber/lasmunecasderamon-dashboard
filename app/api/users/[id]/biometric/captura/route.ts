@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server';
 import { withRoute } from '@/lib/api/withRoute';
 import { UserService } from '@/lib/services/UserService';
-import { fotoEnVivoDelEquipo, guardarFotoCapturada } from '@/lib/biometric/enrollmentService';
+import { fotoEnVivoDelEquipo, guardarFotoCapturada } from '@/modules/asistencia';
 import { NotFoundError, ValidationError } from '@/lib/errors/errors';
 
 /** Captura la imagen del lector y la guarda solamente en la DB del sistema. */

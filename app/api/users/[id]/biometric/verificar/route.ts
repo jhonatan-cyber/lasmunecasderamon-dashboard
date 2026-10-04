@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server';
 import { withRoute } from '@/lib/api/withRoute';
 import { UserService } from '@/lib/services/UserService';
-import { verificarCoincidenciaFacial } from '@/lib/biometric/enrollmentService';
+import { verificarCoincidenciaFacial } from '@/modules/asistencia';
 import { NotFoundError } from '@/lib/errors/errors';
 
 /**

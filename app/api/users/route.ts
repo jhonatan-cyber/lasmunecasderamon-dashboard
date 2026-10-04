@@ -2,7 +2,7 @@ import { NextResponse } from 'next/server';
 import { withRoute } from '@/lib/api/withRoute';
 import { UserService } from '@/lib/services/UserService';
 import { imagenGuardadaABase64Jpeg, processAndSaveImage } from '@/lib/utils/image-utils';
-import { darDeAltaConFoto } from '@/lib/biometric/enrollmentService';
+import { darDeAltaConFoto } from '@/modules/asistencia';
 import logger from '@/lib/utils/logger';
 
 export const dynamic = 'force-dynamic';

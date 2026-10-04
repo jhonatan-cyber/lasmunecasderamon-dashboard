@@ -13,7 +13,7 @@ vi.mock('@/lib/auth/auth-app', () => ({
 }));
 
 let mockDeviceId: string | null = null;
-vi.mock('@/lib/kiosk/deviceAuth', () => ({
+vi.mock('@/modules/asistencia', () => ({
   getKioskDevice: vi.fn().mockImplementation(() => mockDeviceId),
   isDeviceActive: vi.fn().mockImplementation(async () => Boolean(mockDeviceId))
 }));

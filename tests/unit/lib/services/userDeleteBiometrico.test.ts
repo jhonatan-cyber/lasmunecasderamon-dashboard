@@ -20,7 +20,7 @@ vi.mock('@/lib/business/timezoneService', () => ({
   getNowInBusinessTimezone: () => '2026-09-30 12:00:00'
 }));
 
-vi.mock('@/lib/biometric/enrollmentService', () => enrollment);
+vi.mock('@/modules/asistencia/biometrico/enrollmentService', () => enrollment);
 
 import { UserService } from '@/lib/services/UserService';
 

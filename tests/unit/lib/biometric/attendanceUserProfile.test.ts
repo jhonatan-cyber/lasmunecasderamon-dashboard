@@ -1,6 +1,6 @@
 // @vitest-environment node
 import { describe, expect, it } from 'vitest';
-import { completarPerfilAsistencia } from '@/lib/biometric/attendanceUserProfile';
+import { completarPerfilAsistencia } from '@/modules/asistencia/biometrico/attendanceUserProfile';
 
 describe('perfil de asistencia del lector', () => {
   it('conserva permisos restringidos y vigencia existente incluso si venció', () => {

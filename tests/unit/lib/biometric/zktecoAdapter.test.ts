@@ -5,7 +5,7 @@ import {
   parseAttlog,
   serialFromParams,
   tableFromParams
-} from '@/lib/biometric/adapters/zkteco';
+} from '@/modules/asistencia/biometrico/adapters/zkteco';
 
 describe('handshake ADMS', () => {
   it('responde las opciones que el equipo pide para empezar a conectarse', () => {

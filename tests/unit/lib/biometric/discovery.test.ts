@@ -11,7 +11,7 @@ import {
   parsearVecinosLinux,
   parsearVecinosWindows,
   rangosDeRed
-} from '@/lib/biometric/discovery';
+} from '@/modules/asistencia/biometrico/discovery';
 
 /**
  * Descubrimiento del lector por MAC.

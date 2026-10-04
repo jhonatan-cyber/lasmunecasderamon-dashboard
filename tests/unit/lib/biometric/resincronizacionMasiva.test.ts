@@ -39,17 +39,18 @@ vi.mock('@/lib/utils/logger', () => {
   return { logger: mocks, default: mocks };
 });
 
-vi.mock('@/lib/biometric/avisosAudio', () => ({
+vi.mock('@/modules/asistencia/biometrico/avisosAudio', () => ({
   avisarEnrolamientoEnEquipo: audio.avisarEnrolamiento
 }));
 
-vi.mock('@/lib/biometric/deviceClient', async importOriginal => {
-  const actual = await importOriginal<typeof import('@/lib/biometric/deviceClient')>();
+vi.mock('@/modules/asistencia/biometrico/deviceClient', async importOriginal => {
+  const actual =
+    await importOriginal<typeof import('@/modules/asistencia/biometrico/deviceClient')>();
   return { ...actual, ...cliente };
 });
 
-vi.mock('@/lib/biometric/faceSdk', async importOriginal => {
-  const actual = await importOriginal<typeof import('@/lib/biometric/faceSdk')>();
+vi.mock('@/modules/asistencia/biometrico/faceSdk', async importOriginal => {
+  const actual = await importOriginal<typeof import('@/modules/asistencia/biometrico/faceSdk')>();
   return { ...actual, ...facial };
 });
 
@@ -61,7 +62,7 @@ vi.mock('@/lib/utils/image-utils', () => ({
   imagenGuardadaABase64Jpeg: vi.fn().mockResolvedValue(null)
 }));
 
-import { resincronizarPendientesEnEquipo } from '@/lib/biometric/enrollmentService';
+import { resincronizarPendientesEnEquipo } from '@/modules/asistencia/biometrico/enrollmentService';
 
 const cred = { ip: '192.168.1.50', usuario: 'admin', clave: 'secreta' };
 const equipo = {

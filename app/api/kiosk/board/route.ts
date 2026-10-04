@@ -2,8 +2,8 @@ import { NextResponse } from 'next/server';
 import { query } from '@/lib/database/db';
 import { getNowInBusinessTimezone } from '@/lib/business/timezoneService';
 import { getOrCreateAttendanceCode } from '@/lib/business/codigoService';
-import { getAttendanceConfigHours } from '@/lib/repositories/attendance/AttendanceQueries';
-import { getKioskDevice } from '@/lib/kiosk/deviceAuth';
+import { consultarVentana } from '@/modules/asistencia';
+import { getKioskDevice } from '@/modules/asistencia';
 
 export const dynamic = 'force-dynamic';
 
@@ -40,7 +40,7 @@ export async function GET() {
   );
   const marcaron = new Map(asistencias.map(row => [String(row.usuario_id), String(row.hora)]));
 
-  const { startHour, endHour } = await getAttendanceConfigHours();
+  const { startHour, endHour } = await consultarVentana();
   const configuracion = await query<any[]>(
     "SELECT clave, valor FROM configuraciones WHERE clave = 'timezone'"
   );

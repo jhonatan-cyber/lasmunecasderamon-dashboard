@@ -1,9 +1,12 @@
 import { afterAll, beforeAll, describe, expect, it, vi } from 'vitest';
 import db, { query } from '@/lib/database/db';
 import { UserService } from '@/lib/services/UserService';
-import { guardarFotoCapturada } from '@/lib/biometric/enrollmentService';
-import { desenrolarUsuario } from '@/lib/biometric/unenrollmentService';
-import { guardarPersonaEnEquipo, guardarCaraEnEquipo } from '@/lib/biometric/faceSdk';
+import { guardarFotoCapturada } from '@/modules/asistencia/biometrico/enrollmentService';
+import { desenrolarUsuario } from '@/modules/asistencia/biometrico/unenrollmentService';
+import {
+  guardarPersonaEnEquipo,
+  guardarCaraEnEquipo
+} from '@/modules/asistencia/biometrico/faceSdk';
 
 // Ciclo local contra PostgreSQL real. La red al lector esta mockeada.
 
@@ -20,13 +23,14 @@ const cliente = vi.hoisted(() => ({
   capturarFotoDelEquipo: vi.fn()
 }));
 
-vi.mock('@/lib/biometric/deviceClient', async importOriginal => {
-  const actual = await importOriginal<typeof import('@/lib/biometric/deviceClient')>();
+vi.mock('@/modules/asistencia/biometrico/deviceClient', async importOriginal => {
+  const actual =
+    await importOriginal<typeof import('@/modules/asistencia/biometrico/deviceClient')>();
   return { ...actual, ...cliente };
 });
 
-vi.mock('@/lib/biometric/faceSdk', async importOriginal => {
-  const actual = await importOriginal<typeof import('@/lib/biometric/faceSdk')>();
+vi.mock('@/modules/asistencia/biometrico/faceSdk', async importOriginal => {
+  const actual = await importOriginal<typeof import('@/modules/asistencia/biometrico/faceSdk')>();
   return {
     ...actual,
     extraerVectorFacial: vi.fn().mockResolvedValue(new Float32Array([0.1, 0.2, 0.3])),

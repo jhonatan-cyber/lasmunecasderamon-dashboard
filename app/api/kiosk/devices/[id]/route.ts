@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server';
 import { z } from 'zod';
 import { withRoute } from '@/lib/api/withRoute';
-import { revokeDevice } from '@/lib/kiosk/deviceAuth';
+import { revokeDevice } from '@/modules/asistencia';
 
 export const DELETE = withRoute(
   { auth: true, access: 'administrator', audit: true },

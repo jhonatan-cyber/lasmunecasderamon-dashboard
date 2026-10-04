@@ -19,7 +19,7 @@ import {
   direccionDe,
   prepararEntornoNativo,
   rutaLibreria
-} from '@/lib/biometric/netSdk';
+} from '@/modules/asistencia/biometrico/netSdk';
 
 const ES_WINDOWS = process.platform === 'win32';
 

@@ -1,6 +1,6 @@
 // @vitest-environment node
 import { describe, expect, it } from 'vitest';
-import { parseDahuaPush } from '@/lib/biometric/adapters/dahua';
+import { parseDahuaPush } from '@/modules/asistencia/biometrico/adapters/dahua';
 
 describe('push Dahua', () => {
   it('acepta un evento suelto con los campos habituales', () => {

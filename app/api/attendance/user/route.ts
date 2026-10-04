@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
 import { withRoute } from '@/lib/api/withRoute';
-import { AttendanceService } from '@/lib/services/AttendanceService';
+import { listarAsistenciasDeUsuario } from '@/modules/asistencia';
 
 export const GET = withRoute(
   { auth: true, access: 'authenticated', audit: true },
@@ -10,7 +10,7 @@ export const GET = withRoute(
     const startDate = searchParams.get('startDate') || undefined;
     const endDate = searchParams.get('endDate') || undefined;
 
-    const data = await AttendanceService.getByUser(user.id.toString(), tipo, startDate, endDate);
+    const data = await listarAsistenciasDeUsuario(user.id.toString(), tipo, startDate, endDate);
     return NextResponse.json({ success: true, data });
   }
 );

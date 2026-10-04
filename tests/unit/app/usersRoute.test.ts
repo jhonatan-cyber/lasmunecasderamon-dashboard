@@ -49,7 +49,7 @@ vi.mock('@/lib/utils/image-utils', () => ({
   imagenGuardadaABase64Jpeg: imagenes.imagenGuardadaABase64Jpeg
 }));
 
-vi.mock('@/lib/biometric/enrollmentService', () => ({
+vi.mock('@/modules/asistencia', () => ({
   darDeAltaConFoto: lector.darDeAltaConFoto
 }));
 

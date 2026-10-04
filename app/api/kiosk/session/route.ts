@@ -12,7 +12,7 @@ import {
   provisionDevice,
   renewDevice,
   revokeDevice
-} from '@/lib/kiosk/deviceAuth';
+} from '@/modules/asistencia';
 
 export const dynamic = 'force-dynamic';
 const activation = z.object({

@@ -18,7 +18,7 @@ vi.mock('@/lib/database/db', () => ({
   generateUUID: () => 'uuid-test'
 }));
 
-vi.mock('@/lib/biometric/audioSdk', () => ({ libreriaNet: sdk.libreriaNet }));
+vi.mock('@/modules/asistencia/biometrico/audioSdk', () => ({ libreriaNet: sdk.libreriaNet }));
 
 vi.mock('koffi', () => ({
   default: {
@@ -29,8 +29,9 @@ vi.mock('koffi', () => ({
   }
 }));
 
-vi.mock('@/lib/biometric/deviceClient', async importOriginal => {
-  const actual = await importOriginal<typeof import('@/lib/biometric/deviceClient')>();
+vi.mock('@/modules/asistencia/biometrico/deviceClient', async importOriginal => {
+  const actual =
+    await importOriginal<typeof import('@/modules/asistencia/biometrico/deviceClient')>();
   return {
     ...actual,
     credencialesDeFila: vi.fn(() => ({ ip: '192.168.0.5', usuario: 'admin', clave: 'secreta' }))
@@ -47,13 +48,13 @@ const ident = vi.hoisted(() => ({
   encolarIdentificacionDeRecord: vi.fn(),
   recuperarIdentificacionesPendientes: vi.fn()
 }));
-vi.mock('@/lib/biometric/identificacionFacial', () => ident);
+vi.mock('@/modules/asistencia/biometrico/identificacionFacial', () => ident);
 
 import {
   descargarFoto,
   encolarFotoDeRecord,
   recuperarFotosPendientes
-} from '@/lib/biometric/recordPhotos';
+} from '@/modules/asistencia/biometrico/recordPhotos';
 
 const cred = { ip: '192.168.0.5', usuario: 'admin', clave: 'secreta' };
 const RUTA = '/SnapShotFilePath/2026-10-02/09/00/1001_99_100.jpg';

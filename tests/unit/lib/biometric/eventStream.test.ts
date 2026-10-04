@@ -1,6 +1,6 @@
 // @vitest-environment node
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-vi.mock('@/lib/biometric/eventSdkClient', () => ({
+vi.mock('@/modules/asistencia/biometrico/eventSdkClient', () => ({
   abrirAvisosSdk: vi.fn().mockRejectedValue(new Error('SDK unavailable in test'))
 }));
 
@@ -25,28 +25,32 @@ vi.mock('@/lib/business/timezoneService', () => ({
   getNowInBusinessTimezone: () => '2026-09-29 21:30:00'
 }));
 
-vi.mock('@/lib/repositories/attendance/AttendanceQueries', () => ({
+vi.mock('@/modules/asistencia/marcas/repositorio', () => ({
   getAttendanceConfigHours: async () => ({ startHour: 21, endHour: 23 })
 }));
 
 vi.mock('@/lib/api/sseService', () => ({ sendNotificationToAll: vi.fn() }));
 
-vi.mock('@/lib/biometric/processBiometricEvent', () => ({
+vi.mock('@/modules/asistencia/biometrico/processBiometricEvent', () => ({
   procesarEventoBiometrico: procesar.fn
 }));
 
-vi.mock('@/lib/biometric/deviceClient', async importOriginal => {
-  const actual = await importOriginal<typeof import('@/lib/biometric/deviceClient')>();
+vi.mock('@/modules/asistencia/biometrico/deviceClient', async importOriginal => {
+  const actual =
+    await importOriginal<typeof import('@/modules/asistencia/biometrico/deviceClient')>();
   return { ...actual, ...cliente };
 });
 
-import { extraerEventosDeChunk, parsearBloqueEvento } from '@/lib/biometric/eventStreamClient';
+import {
+  extraerEventosDeChunk,
+  parsearBloqueEvento
+} from '@/modules/asistencia/biometrico/eventStreamClient';
 import {
   apagarListener,
   encenderListener,
   encenderTodos,
   listenersActivos
-} from '@/lib/biometric/eventListener';
+} from '@/modules/asistencia/biometrico/eventListener';
 
 const BLOQUE_ACCESS_CONTROL = [
   '--boundary',

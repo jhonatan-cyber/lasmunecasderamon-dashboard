@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
 import { withRoute } from '@/lib/api/withRoute';
-import { descubrirIpDispositivo } from '@/lib/biometric/ipDiscovery';
+import { descubrirIpDispositivo } from '@/modules/asistencia';
 
 /**
  * Re-encontrar el equipo por su MAC cuando el DHCP le cambió la IP.

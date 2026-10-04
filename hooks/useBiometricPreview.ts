@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useRef, useState } from 'react';
-import { mjpegFrames } from '@/lib/biometric/mjpegFrames';
+import { mjpegFrames } from '@/lib/utils/mjpegFrames';
 
 export function useBiometricPreview(deviceId: string, open: boolean, live: boolean) {
   const [frame, setFrame] = useState<{ deviceId: string; url: string } | null>(null);

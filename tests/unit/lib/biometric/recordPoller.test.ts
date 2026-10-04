@@ -25,18 +25,18 @@ vi.mock('@/lib/business/timezoneService', () => ({
     input instanceof Date ? '2026-09-29 21:30:00' : '2026-09-29 22:00:00'
 }));
 
-vi.mock('@/lib/repositories/attendance/AttendanceQueries', () => ({
+vi.mock('@/modules/asistencia/marcas/repositorio', () => ({
   getAttendanceConfigHours: async () => ({ startHour: 21, endHour: 23 })
 }));
 
 vi.mock('@/lib/api/sseService', () => ({ sendNotificationToAll: vi.fn() }));
 
-vi.mock('@/lib/biometric/processBiometricEvent', () => ({
+vi.mock('@/modules/asistencia/biometrico/processBiometricEvent', () => ({
   procesarEventoBiometrico: procesar.fn
 }));
 
 // El mantenimiento de reloj no debe tocar el SDK real en los tests.
-vi.mock('@/lib/biometric/clockSync', () => ({
+vi.mock('@/modules/asistencia/biometrico/clockSync', () => ({
   quizasSincronizarReloj: vi.fn().mockResolvedValue(false)
 }));
 
@@ -46,17 +46,18 @@ const fotos = vi.hoisted(() => ({
   encolarFotoDeRecord: vi.fn(),
   recuperarFotosPendientes: vi.fn()
 }));
-vi.mock('@/lib/biometric/recordPhotos', () => fotos);
+vi.mock('@/modules/asistencia/biometrico/recordPhotos', () => fotos);
 
 // Ídem para el 1:N del servidor (extrae vectores con el motor del equipo).
 const ident = vi.hoisted(() => ({
   encolarIdentificacionDeRecord: vi.fn(),
   recuperarIdentificacionesPendientes: vi.fn()
 }));
-vi.mock('@/lib/biometric/identificacionFacial', () => ident);
+vi.mock('@/modules/asistencia/biometrico/identificacionFacial', () => ident);
 
-vi.mock('@/lib/biometric/deviceClient', async importOriginal => {
-  const actual = await importOriginal<typeof import('@/lib/biometric/deviceClient')>();
+vi.mock('@/modules/asistencia/biometrico/deviceClient', async importOriginal => {
+  const actual =
+    await importOriginal<typeof import('@/modules/asistencia/biometrico/deviceClient')>();
   return { ...actual, ...cliente };
 });
 
@@ -66,7 +67,7 @@ import {
   estaCorriendo,
   pollEquipo,
   pollTodos
-} from '@/lib/biometric/recordPoller';
+} from '@/modules/asistencia/biometrico/recordPoller';
 
 const equipo = {
   id: 'dev-1',

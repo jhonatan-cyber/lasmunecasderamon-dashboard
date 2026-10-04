@@ -1,6 +1,6 @@
 ﻿import { query } from '@/lib/database/db';
 import logger from '@/lib/utils/logger';
-import { atribuirAsistenciaIdentificada } from '@/lib/biometric/processBiometricEvent';
+import { atribuirAsistenciaIdentificada } from '@/modules/asistencia/biometrico/processBiometricEvent';
 import { credencialesDeFila, type CredencialesEquipo } from './deviceClient';
 import {
   ErrorFacial,

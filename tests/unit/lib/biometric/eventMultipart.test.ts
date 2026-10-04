@@ -1,7 +1,7 @@
 // @vitest-environment node
 import { describe, expect, it } from 'vitest';
-import { EventMultipartDecoder } from '@/lib/biometric/eventMultipart';
-import { extraerEventosDeChunk } from '@/lib/biometric/eventStreamClient';
+import { EventMultipartDecoder } from '@/modules/asistencia/biometrico/eventMultipart';
+import { extraerEventosDeChunk } from '@/modules/asistencia/biometrico/eventStreamClient';
 
 const payload =
   'Events[0].Code=AccessControl\r\nEvents[0].Data.UserID=1001\r\nEvents[0].Data.UTC=1790715000\r\nEvents[0].Data.Method=15\r\nEvents[0].Data.Status=0';

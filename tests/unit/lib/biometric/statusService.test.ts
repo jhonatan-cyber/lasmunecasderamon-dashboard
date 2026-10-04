@@ -27,28 +27,28 @@ vi.mock('@/lib/business/timezoneService', () => ({
   getNowInBusinessTimezone: () => '2026-09-29 22:15:00'
 }));
 
-vi.mock('@/lib/repositories/attendance/AttendanceQueries', () => ({
+vi.mock('@/modules/asistencia/marcas/repositorio', () => ({
   getAttendanceConfigHours: async () => ({ startHour: 21, endHour: 23 })
 }));
 
 vi.mock('@/lib/api/sseService', () => ({ sendNotificationToAll: sse.enviar }));
 
-vi.mock('@/lib/biometric/eventListener', () => ({
+vi.mock('@/modules/asistencia/biometrico/eventListener', () => ({
   listenersActivos: live.activos,
   conectadosEnVivo: live.conectados
 }));
 
-vi.mock('@/lib/biometric/recordPoller', () => ({
+vi.mock('@/modules/asistencia/biometrico/recordPoller', () => ({
   estaCorriendo: poller.corriendo
 }));
 
-vi.mock('@/lib/biometric/avisosAudio', () => ({
+vi.mock('@/modules/asistencia/biometrico/avisosAudio', () => ({
   avisarResultadoEnEquipo: avisos.resultado,
   avisarEnrolamientoEnEquipo: avisos.enrolamiento
 }));
 
-import { obtenerEstadoBiometrico } from '@/lib/biometric/statusService';
-import { procesarEventoBiometrico } from '@/lib/biometric/processBiometricEvent';
+import { obtenerEstadoBiometrico } from '@/modules/asistencia/biometrico/statusService';
+import { procesarEventoBiometrico } from '@/modules/asistencia/biometrico/processBiometricEvent';
 
 function instalarEstado(
   desfaseRows: { serial: string; desfase_promedio: number; muestras: number }[] = []

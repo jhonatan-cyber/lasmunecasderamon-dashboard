@@ -15,13 +15,13 @@ vi.mock('@/lib/database/db', () => ({
   withTransaction: vi.fn()
 }));
 
-vi.mock('@/lib/repositories/attendance/AttendanceQueries', () => ({
+vi.mock('@/modules/asistencia/marcas/repositorio', () => ({
   getAttendanceConfigHours: horas.fn
 }));
 
 // El audio real (Talk/FFmpeg) se prueba aparte; acá solo importa QUÉ resultado
 // dispara QUÉ aviso, sin abrir sesión contra ningún equipo.
-vi.mock('@/lib/biometric/avisosAudio', () => ({
+vi.mock('@/modules/asistencia/biometrico/avisosAudio', () => ({
   avisarResultadoEnEquipo: avisos.resultado,
   avisarEnrolamientoEnEquipo: avisos.enrolamiento
 }));
@@ -40,8 +40,8 @@ vi.mock('@/lib/utils/logger', () => {
 import {
   atribuirAsistenciaIdentificada,
   procesarEventoBiometrico
-} from '@/lib/biometric/processBiometricEvent';
-import type { BiometricEvent } from '@/lib/biometric/types';
+} from '@/modules/asistencia/biometrico/processBiometricEvent';
+import type { BiometricEvent } from '@/modules/asistencia/biometrico/types';
 
 const device = { id: 'dev-1', serial: 'SERIE1' };
 

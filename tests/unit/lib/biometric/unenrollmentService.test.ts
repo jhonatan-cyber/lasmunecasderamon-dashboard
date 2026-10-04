@@ -13,16 +13,16 @@ const mocks = vi.hoisted(() => ({
 }));
 vi.mock('@/lib/database/db', () => ({ query: mocks.query, withTransaction: mocks.transaction }));
 vi.mock('@/lib/repositories/UserRepository', () => ({ UserRepository: { getById: mocks.user } }));
-vi.mock('@/lib/biometric/deviceClient', () => ({
+vi.mock('@/modules/asistencia/biometrico/deviceClient', () => ({
   credencialesDeFila: mocks.credentials,
   eliminarUsuarioDelEquipo: mocks.cgi
 }));
-vi.mock('@/lib/biometric/faceSdk', () => ({
+vi.mock('@/modules/asistencia/biometrico/faceSdk', () => ({
   personaEnEquipo: mocks.present,
   eliminarPersonaEnEquipo: mocks.remove
 }));
 
-import { desenrolarUsuario } from '@/lib/biometric/unenrollmentService';
+import { desenrolarUsuario } from '@/modules/asistencia/biometrico/unenrollmentService';
 
 beforeEach(() => {
   vi.resetAllMocks();

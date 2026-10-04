@@ -3,10 +3,10 @@ import 'dotenv/config';
 import pg from 'pg';
 import { describe, expect, it } from 'vitest';
 
-import { descifrarSecreto } from '@/lib/biometric/credencialesCrypto';
-import { leerHoraEquipo, sincronizarRelojEquipo } from '@/lib/biometric/clockSync';
+import { descifrarSecreto } from '@/modules/asistencia/biometrico/credencialesCrypto';
+import { leerHoraEquipo, sincronizarRelojEquipo } from '@/modules/asistencia/biometrico/clockSync';
 import { getNowInBusinessTimezone } from '@/lib/business/timezoneService';
-import type { CredencialesEquipo } from '@/lib/biometric/deviceClient';
+import type { CredencialesEquipo } from '@/modules/asistencia/biometrico/deviceClient';
 
 /**
  * Prueba REAL de la sincronización del reloj contra el lector (mismo patrón

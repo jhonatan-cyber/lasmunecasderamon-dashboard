@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server';
 import { withRoute } from '@/lib/api/withRoute';
-import { createBiometricDevice, listBiometricDevices } from '@/lib/biometric/deviceAuth';
-import type { BiometricMarca } from '@/lib/biometric/types';
+import { createBiometricDevice, listBiometricDevices } from '@/modules/asistencia';
+import type { BiometricMarca } from '@/modules/asistencia';
 
 export const dynamic = 'force-dynamic';
 

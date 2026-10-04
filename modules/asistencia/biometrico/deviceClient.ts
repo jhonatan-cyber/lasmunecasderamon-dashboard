@@ -1,6 +1,6 @@
 import crypto from 'crypto';
-import { descifrarSecreto } from '@/lib/biometric/credencialesCrypto';
-import { normalizarMac } from '@/lib/biometric/discovery';
+import { descifrarSecreto } from '@/modules/asistencia/biometrico/credencialesCrypto';
+import { normalizarMac } from '@/modules/asistencia/biometrico/discovery';
 export interface CredencialesEquipo {
   ip: string;
   usuario: string;

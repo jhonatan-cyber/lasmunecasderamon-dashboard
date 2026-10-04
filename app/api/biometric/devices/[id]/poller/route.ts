@@ -1,8 +1,8 @@
 import { NextResponse } from 'next/server';
 import { withRoute } from '@/lib/api/withRoute';
 import { query } from '@/lib/database/db';
-import { credencialesDeFila, verificarConexion } from '@/lib/biometric/deviceClient';
-import { apagarListener, encenderListener } from '@/lib/biometric/eventListener';
+import { credencialesDeFila, verificarConexion } from '@/modules/asistencia';
+import { apagarListener, encenderListener } from '@/modules/asistencia';
 
 /**
  * Interruptor del recolector de registros de un equipo.

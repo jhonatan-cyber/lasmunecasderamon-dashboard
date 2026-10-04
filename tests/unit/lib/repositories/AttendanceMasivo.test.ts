@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { registerMasivoHoy } from '@/lib/repositories/attendance/AttendanceQueries';
+import { registerMasivoHoy } from '@/modules/asistencia/marcas/repositorio';
 
 vi.mock('@/lib/database/db', () => ({
   query: vi.fn(),

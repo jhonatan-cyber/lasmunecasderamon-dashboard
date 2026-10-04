@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server';
-import { parseDahuaPush } from '@/lib/biometric/adapters/dahua';
-import { findActiveDevice, touchDevice } from '@/lib/biometric/deviceAuth';
-import { procesarEventoBiometrico } from '@/lib/biometric/processBiometricEvent';
+import { parseDahuaPush } from '@/modules/asistencia';
+import { findActiveDevice, touchDevice } from '@/modules/asistencia';
+import { procesarEventoBiometrico } from '@/modules/asistencia';
 import logger from '@/lib/utils/logger';
 
 export const dynamic = 'force-dynamic';

@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
 import { withRoute } from '@/lib/api/withRoute';
-import { guardarCredenciales, probarConexion } from '@/lib/biometric/enrollmentService';
+import { guardarCredenciales, probarConexion } from '@/modules/asistencia';
 
 /**
  * Credenciales CGI del equipo (usuario/clave del lector + su IP).

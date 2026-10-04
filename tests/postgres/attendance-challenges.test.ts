@@ -1,13 +1,13 @@
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import db, { query } from '@/lib/database/db';
 import { getNowInBusinessTimezone } from '@/lib/business/timezoneService';
-import { registerAttendance } from '@/lib/repositories/attendance/AttendanceQueries';
+import { registerAttendance } from '@/modules/asistencia/marcas/repositorio';
 import {
   CHALLENGE_TTL_SECONDS,
   hashChallengeToken,
   issueChallenge,
   redeemChallenge
-} from '@/lib/kiosk/attendanceChallenges';
+} from '@/modules/asistencia/kioskos/attendanceChallenges';
 
 /**
  * La migracion 024 reemplaza la credencial personal (`usuarios.qr_token`, publicada en

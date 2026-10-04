@@ -1,11 +1,14 @@
 import { query } from '@/lib/database/db';
-import { credencialesDeFila, verificarConexion } from '@/lib/biometric/deviceClient';
+import {
+  credencialesDeFila,
+  verificarConexion
+} from '@/modules/asistencia/biometrico/deviceClient';
 import {
   capturarMacs,
   descubrirIpDispositivo,
   equipoResponde,
   guardarMac
-} from '@/lib/biometric/ipDiscovery';
+} from '@/modules/asistencia/biometrico/ipDiscovery';
 import logger from '@/lib/utils/logger';
 
 const INTERVALO_DEFECTO_MS = 5 * 60_000;

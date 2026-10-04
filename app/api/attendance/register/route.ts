@@ -1,8 +1,8 @@
 import { NextResponse } from 'next/server';
 import { withPublicRoute } from '@/lib/api/withRoute';
-import { AttendanceService } from '@/lib/services/AttendanceService';
 import { getAuth } from '@/lib/auth/auth-app';
 import { sendNotificationToAll } from '@/lib/api/sseService';
+import { registrarAsistencia } from '@/modules/asistencia';
 
 export const POST = withPublicRoute(async (request: Request) => {
   const user = await getAuth();
@@ -13,7 +13,7 @@ export const POST = withPublicRoute(async (request: Request) => {
   const forwarded = request.headers.get('x-forwarded-for');
   const ip = forwarded ? forwarded.split(',')[0] : 'unknown';
 
-  const result = await AttendanceService.registerAttendance(body, user || undefined, ip);
+  const result = await registrarAsistencia(body, user || undefined, ip);
 
   if (result.success) {
     // El qrToken no se difunde: es la credencial que acepta este mismo endpoint.

@@ -4,7 +4,7 @@ import { PassThrough } from 'node:stream';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 const mocks = vi.hoisted(() => ({ spawn: vi.fn() }));
 vi.mock('node:child_process', () => ({ spawn: mocks.spawn }));
-import { abrirAvisosSdk } from '@/lib/biometric/eventSdkClient';
+import { abrirAvisosSdk } from '@/modules/asistencia/biometrico/eventSdkClient';
 
 beforeEach(() => {
   vi.useFakeTimers();

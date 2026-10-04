@@ -1,6 +1,9 @@
 // @vitest-environment node
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import { abrirFlujoEventos, EventManagerNoSoportadoError } from '@/lib/biometric/eventStreamClient';
+import {
+  abrirFlujoEventos,
+  EventManagerNoSoportadoError
+} from '@/modules/asistencia/biometrico/eventStreamClient';
 const credentials = { ip: '192.168.0.33', usuario: 'admin', clave: 'secret' };
 afterEach(() => {
   vi.unstubAllGlobals();

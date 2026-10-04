@@ -1,7 +1,7 @@
 import { query } from '@/lib/database/db';
 import { getNowInBusinessTimezone } from '@/lib/business/timezoneService';
-import { conectadosEnVivo, listenersActivos } from '@/lib/biometric/eventListener';
-import { estaCorriendo } from '@/lib/biometric/recordPoller';
+import { conectadosEnVivo, listenersActivos } from '@/modules/asistencia/biometrico/eventListener';
+import { estaCorriendo } from '@/modules/asistencia/biometrico/recordPoller';
 export interface DesfaseReloj {
   segundos: number;
   muestras: number;

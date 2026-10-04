@@ -1,5 +1,5 @@
 import { completarPerfilAsistencia } from './attendanceUserProfile';
-import type { CredencialesEquipo } from '@/lib/biometric/deviceClient';
+import type { CredencialesEquipo } from '@/modules/asistencia/biometrico/deviceClient';
 import { cargarSdkNet, type SdkNet } from './netSdk';
 
 const PUERTO_NETSDK = 37777;

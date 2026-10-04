@@ -20,7 +20,7 @@ import {
   hashChallengeToken,
   issueChallenge,
   redeemChallenge
-} from '@/lib/kiosk/attendanceChallenges';
+} from '@/modules/asistencia/kioskos/attendanceChallenges';
 
 interface Call {
   sql: string;

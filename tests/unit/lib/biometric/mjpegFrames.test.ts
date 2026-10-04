@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { mjpegFrames } from '@/lib/biometric/mjpegFrames';
+import { mjpegFrames } from '@/lib/utils/mjpegFrames';
 
 describe('mjpegFrames', () => {
   it('handles every possible split across headers, payloads and consecutive frames', async () => {

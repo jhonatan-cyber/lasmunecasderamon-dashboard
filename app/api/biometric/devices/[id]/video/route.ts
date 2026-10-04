@@ -1,5 +1,5 @@
 import { withRoute } from '@/lib/api/withRoute';
-import { openVideoStream } from '@/lib/biometric/videoStream';
+import { openVideoStream } from '@/modules/asistencia';
 
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';

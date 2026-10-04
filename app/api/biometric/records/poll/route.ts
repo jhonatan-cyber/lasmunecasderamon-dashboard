@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
 import { withRoute } from '@/lib/api/withRoute';
-import { pollEquipo, pollTodos, estaCorriendo } from '@/lib/biometric/recordPoller';
+import { pollEquipo, pollTodos, estaCorriendo } from '@/modules/asistencia';
 
 /**
  * Recolección manual de registros (Configuraciones → Asistencia).

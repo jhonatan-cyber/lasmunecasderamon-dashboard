@@ -1,6 +1,6 @@
 // @vitest-environment node
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import { crearLecturaPorAviso } from '@/lib/biometric/eventRecordWakeup';
+import { crearLecturaPorAviso } from '@/modules/asistencia/biometrico/eventRecordWakeup';
 afterEach(() => vi.useRealTimers());
 describe('SDK record wakeup', () => {
   it('coalesces bursts, retries once after persistence and stops on abort', async () => {

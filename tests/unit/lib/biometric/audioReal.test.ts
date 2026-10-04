@@ -3,9 +3,12 @@ import 'dotenv/config';
 import pg from 'pg';
 import { describe, expect, it } from 'vitest';
 
-import { descifrarSecreto } from '@/lib/biometric/credencialesCrypto';
-import { AUDIO_ENROLAMIENTO, reproducirAudioEquipo } from '@/lib/biometric/audioService';
-import type { CredencialesEquipo } from '@/lib/biometric/deviceClient';
+import { descifrarSecreto } from '@/modules/asistencia/biometrico/credencialesCrypto';
+import {
+  AUDIO_ENROLAMIENTO,
+  reproducirAudioEquipo
+} from '@/modules/asistencia/biometrico/audioService';
+import type { CredencialesEquipo } from '@/modules/asistencia/biometrico/deviceClient';
 
 /**
  * Prueba REAL del envío de audio al lector: **suena en la puerta**. Toma las

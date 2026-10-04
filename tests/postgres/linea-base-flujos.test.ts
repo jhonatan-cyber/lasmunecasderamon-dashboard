@@ -33,7 +33,7 @@ vi.mock('@/lib/services/SecurityAlertService', () => ({
 // `procesarEventoBiometrico` dispara el aviso de audio con `void` (no espera): su
 // consulta al equipo volaría después de tomar la instantánea y se mediría en el flujo
 // equivocado, o en el siguiente. Mockeado para que el número sea reproducible.
-vi.mock('@/lib/biometric/avisosAudio', () => ({
+vi.mock('@/modules/asistencia/biometrico/avisosAudio', () => ({
   avisarResultadoEnEquipo: vi.fn().mockResolvedValue(undefined),
   avisarEnrolamientoEnEquipo: vi.fn().mockResolvedValue(undefined)
 }));
@@ -57,7 +57,7 @@ import { InventoryRepository } from '@/lib/repositories/InventoryRepository';
 import { OrderRepository } from '@/lib/repositories/OrderRepository';
 import { SaleService } from '@/lib/services/SaleService';
 import { CommissionRepository } from '@/lib/repositories/CommissionRepository';
-import { procesarEventoBiometrico } from '@/lib/biometric/processBiometricEvent';
+import { procesarEventoBiometrico } from '@/modules/asistencia/biometrico/processBiometricEvent';
 import { getNowInBusinessTimezone } from '@/lib/business/timezoneService';
 
 const RAIZ = resolve(__dirname, '..', '..');
@@ -66,6 +66,10 @@ interface Muestra {
   flujo: string;
   n: number;
   ms: number;
+  duracionMs: number;
+  conexionMs: number;
+  conexionesAntes: number;
+  conexionesDespues: number;
   distintas: number;
   maxMs: number;
   /** SQL de la consulta más lenta del flujo, para poder investigarla. */
@@ -125,8 +129,21 @@ afterAll(async () => {
  * mide una vez, por proceso.
  */
 async function calentarPool(): Promise<void> {
-  await query('SELECT 1');
-  await query('SELECT 1');
+  // Retener los clientes garantiza conexiones distintas: el cobro necesita dos
+  // y la anulación llega a cuatro por sus lecturas paralelas. Dos SELECT
+  // secuenciales calentaban una sola conexión y ocultaban los otros handshakes.
+  const cantidad = Number(process.env.BASELINE_POOL_WARM ?? 4);
+  const maximo = Number(process.env.DB_POOL_MAX || 10);
+  if (!Number.isInteger(cantidad) || cantidad < 1 || cantidad > maximo) {
+    throw new Error('BASELINE_POOL_WARM debe estar entre 1 y DB_POOL_MAX (10 por defecto)');
+  }
+  const clientes = [];
+  try {
+    for (let i = 0; i < cantidad; i++) clientes.push(await db.pool.connect());
+    await Promise.all(clientes.map(cliente => cliente.query('SELECT 1')));
+  } finally {
+    for (const cliente of clientes) cliente.release();
+  }
 }
 
 /**
@@ -161,12 +178,19 @@ async function medir(flujo: string, ejecutar: () => Promise<unknown>): Promise<M
 
   await calentarPool();
   reiniciarPerfil();
+  const conexionesAntes = db.pool.totalCount;
+  const inicio = performance.now();
   await ejecutar();
+  const duracionMs = performance.now() - inicio;
   const resumen = instantaneaPerfil(true);
   const muestra: Muestra = {
     flujo,
     n: resumen.n,
     ms: resumen.ms,
+    duracionMs,
+    conexionMs: resumen.conexionMs,
+    conexionesAntes,
+    conexionesDespues: db.pool.totalCount,
     distintas: resumen.distintas,
     maxMs: resumen.detalle[0]?.maxMs ?? 0,
     sqlLenta: resumen.detalle[0]?.sql ?? '',
@@ -182,6 +206,11 @@ async function medir(flujo: string, ejecutar: () => Promise<unknown>): Promise<M
 }
 
 function escribirInforme(): void {
+  // Salida opcional para corridas repetidas; conserva las muestras sin redondear
+  // la duración del caso de uso. No incluye credenciales ni parámetros SQL.
+  if (process.env.BASELINE_OUTPUT) {
+    writeFileSync(process.env.BASELINE_OUTPUT, JSON.stringify(muestras, null, 2));
+  }
   const filas = muestras
     .map(
       m =>

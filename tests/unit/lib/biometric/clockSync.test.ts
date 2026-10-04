@@ -25,12 +25,12 @@ vi.mock('@/lib/business/timezoneService', () => ({
   getNowInBusinessTimezone: tz.ahora
 }));
 
-vi.mock('@/lib/biometric/audioSdk', () => ({
+vi.mock('@/modules/asistencia/biometrico/audioSdk', () => ({
   // `libreriaNet` devuelve la LIBRERÍA koffi: un objeto con `.func(prototipo)`.
   libreriaNet: sdk.libreria
 }));
 
-vi.mock('@/lib/biometric/deviceClient', () => ({
+vi.mock('@/modules/asistencia/biometrico/deviceClient', () => ({
   credencialesDeFila: cliente.credencialesDeFila
 }));
 
@@ -45,7 +45,7 @@ import {
   quizasSincronizarReloj,
   reiniciarCooldowns,
   sincronizarRelojEquipo
-} from '@/lib/biometric/clockSync';
+} from '@/modules/asistencia/biometrico/clockSync';
 
 const cred = { ip: '192.168.1.50', usuario: 'admin', clave: 'secreta' };
 

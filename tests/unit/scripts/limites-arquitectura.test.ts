@@ -216,6 +216,32 @@ describe('control de límites entre módulos', () => {
     rmSync(join(raiz, 'components', 'Contratos.tsx'));
   });
 
+  it('un route handler fuera de app/api consume el módulo; una página no', () => {
+    // iclock/dahua quedan fuera de /api a propósito (hablan HTTP plano sin
+    // middleware): son adaptadores de servidor como cualquier route.ts.
+    mkdirSync(join(raiz, 'app', 'iclock', 'cdata'), { recursive: true });
+    writeFileSync(
+      join(raiz, 'app', 'iclock', 'cdata', 'route.ts'),
+      "import { x } from '@/modules/personal';\nexport const y = x;\n"
+    );
+    expect(
+      listar(raiz).hallazgos.filter((h: any) => h.regla === 'ui-consume-modulos-por-http')
+    ).toHaveLength(0);
+    rmSync(join(raiz, 'app', 'iclock', 'cdata', 'route.ts'));
+
+    // Una página sigue siendo UI: sólo contracts.ts.
+    mkdirSync(join(raiz, 'app', 'pagina'), { recursive: true });
+    writeFileSync(
+      join(raiz, 'app', 'pagina', 'page.tsx'),
+      "import { x } from '@/modules/personal';\nexport default function P() { return x; }\n"
+    );
+    const malos = listar(raiz).hallazgos.filter(
+      (h: any) => h.regla === 'ui-consume-modulos-por-http'
+    );
+    expect(malos.some((h: any) => h.desde === 'app/pagina/page.tsx')).toBe(true);
+    rmSync(join(raiz, 'app', 'pagina'), { recursive: true });
+  });
+
   it('sólo la infraestructura de los módulos resuelve el contexto transaccional', () => {
     mkdirSync(join(raiz, 'lib', 'transaccion'), { recursive: true });
     mkdirSync(join(raiz, 'lib', 'services'), { recursive: true });

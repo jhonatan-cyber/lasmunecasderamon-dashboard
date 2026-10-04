@@ -57,13 +57,14 @@ vi.mock('@/lib/business/timezoneService', () => ({
   getNowInBusinessTimezone: () => '2026-09-29 22:15:00'
 }));
 
-vi.mock('@/lib/biometric/deviceClient', async importOriginal => {
-  const actual = await importOriginal<typeof import('@/lib/biometric/deviceClient')>();
+vi.mock('@/modules/asistencia/biometrico/deviceClient', async importOriginal => {
+  const actual =
+    await importOriginal<typeof import('@/modules/asistencia/biometrico/deviceClient')>();
   return { ...actual, ...cliente };
 });
 
-vi.mock('@/lib/biometric/faceSdk', async importOriginal => {
-  const actual = await importOriginal<typeof import('@/lib/biometric/faceSdk')>();
+vi.mock('@/modules/asistencia/biometrico/faceSdk', async importOriginal => {
+  const actual = await importOriginal<typeof import('@/modules/asistencia/biometrico/faceSdk')>();
   return { ...actual, ...facial };
 });
 
@@ -72,18 +73,19 @@ vi.mock('@/lib/utils/image-utils', async importOriginal => {
   return { ...actual, ...imagenes };
 });
 
-vi.mock('@/lib/biometric/avisosAudio', () => ({
+vi.mock('@/modules/asistencia/biometrico/avisosAudio', () => ({
   avisarEnrolamientoEnEquipo: audio.avisarEnrolamiento,
   avisarResultadoEnEquipo: audio.avisarResultado
 }));
 
-vi.mock('@/lib/biometric/discovery', async importOriginal => {
-  const actual = await importOriginal<typeof import('@/lib/biometric/discovery')>();
+vi.mock('@/modules/asistencia/biometrico/discovery', async importOriginal => {
+  const actual = await importOriginal<typeof import('@/modules/asistencia/biometrico/discovery')>();
   return { ...actual, ...red };
 });
 
-vi.mock('@/lib/biometric/ipDiscovery', async importOriginal => {
-  const actual = await importOriginal<typeof import('@/lib/biometric/ipDiscovery')>();
+vi.mock('@/modules/asistencia/biometrico/ipDiscovery', async importOriginal => {
+  const actual =
+    await importOriginal<typeof import('@/modules/asistencia/biometrico/ipDiscovery')>();
   return { ...actual, ...red };
 });
 
@@ -97,9 +99,12 @@ import {
   restaurarEnEquipo,
   sincronizarPersona,
   usarFotoDelLectorComoPerfil
-} from '@/lib/biometric/enrollmentService';
-import { DeviceAuthError, DeviceConnectionError } from '@/lib/biometric/deviceClient';
-import { ErrorFacial } from '@/lib/biometric/faceSdk';
+} from '@/modules/asistencia/biometrico/enrollmentService';
+import {
+  DeviceAuthError,
+  DeviceConnectionError
+} from '@/modules/asistencia/biometrico/deviceClient';
+import { ErrorFacial } from '@/modules/asistencia/biometrico/faceSdk';
 
 /** Foto de prueba en base64 estándar (el código limpia y decodifica el base64). */
 const FOTO_B64 = Buffer.from('foto-jpeg-de-prueba').toString('base64');
@@ -222,7 +227,7 @@ describe('guardarCredenciales', () => {
   });
 
   it('serial coincidente: guarda la clave CIFRADA', async () => {
-    const crypto = await import('@/lib/biometric/credencialesCrypto');
+    const crypto = await import('@/modules/asistencia/biometrico/credencialesCrypto');
     vi.spyOn(crypto, 'cifrarSecreto').mockReturnValue('cifrado-fake');
 
     db.queryMock.mockImplementation(async (sql: string) => {
@@ -252,7 +257,7 @@ describe('guardarCredenciales', () => {
   });
 
   it('sin IP cargada: la re-busca por MAC y guarda la que encuentre', async () => {
-    const crypto = await import('@/lib/biometric/credencialesCrypto');
+    const crypto = await import('@/modules/asistencia/biometrico/credencialesCrypto');
     vi.spyOn(crypto, 'cifrarSecreto').mockReturnValue('cifrado-fake');
 
     db.queryMock.mockImplementation(async (sql: string) => {
@@ -294,7 +299,7 @@ describe('guardarCredenciales', () => {
   });
 
   it('la IP que dejó de responder se re-busca por MAC y se reintenta ahí', async () => {
-    const crypto = await import('@/lib/biometric/credencialesCrypto');
+    const crypto = await import('@/modules/asistencia/biometrico/credencialesCrypto');
     vi.spyOn(crypto, 'cifrarSecreto').mockReturnValue('cifrado-fake');
 
     db.queryMock.mockImplementation(async (sql: string) => {

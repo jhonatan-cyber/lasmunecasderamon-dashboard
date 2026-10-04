@@ -1,4 +1,4 @@
-import type { BiometricEvent, BiometricMetodo } from '@/lib/biometric/types';
+import type { BiometricEvent, BiometricMetodo } from '@/modules/asistencia/biometrico/types';
 
 export function buildAdmsOptions(serial: string): string {
   return [

@@ -1,7 +1,10 @@
 // @vitest-environment node
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import { abrirPuerta } from '@/lib/biometric/puertaClient';
-import { DeviceAuthError, DeviceConnectionError } from '@/lib/biometric/deviceClient';
+import { abrirPuerta } from '@/modules/asistencia/biometrico/puertaClient';
+import {
+  DeviceAuthError,
+  DeviceConnectionError
+} from '@/modules/asistencia/biometrico/deviceClient';
 
 const CREDS = { ip: '10.62.213.212', usuario: 'admin', clave: 'Admin123' };
 

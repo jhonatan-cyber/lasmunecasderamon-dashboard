@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server';
 import { withPublicRoute, withRoute } from '@/lib/api/withRoute';
-import { AttendanceService } from '@/lib/services/AttendanceService';
 import { getAuth } from '@/lib/auth/auth-app';
+import { listarResumenAsistencias, registrarAsistenciaManual } from '@/modules/asistencia';
 
 export const GET = withPublicRoute(async (request: Request) => {
   const { searchParams } = new URL(request.url);
@@ -9,7 +9,7 @@ export const GET = withPublicRoute(async (request: Request) => {
   const month = searchParams.get('month');
   const year = searchParams.get('year');
 
-  const data = await AttendanceService.getSummary();
+  const data = await listarResumenAsistencias();
   return NextResponse.json({ success: true, data: data || [] });
 });
 
@@ -27,7 +27,7 @@ export const POST = withRoute(
     }
 
     try {
-      const result = await AttendanceService.registerManual(usuario_id, fecha, hora, estado, user);
+      const result = await registrarAsistenciaManual(usuario_id, fecha, hora, estado, user);
       return NextResponse.json(result);
     } catch (error: any) {
       return NextResponse.json(

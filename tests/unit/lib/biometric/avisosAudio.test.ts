@@ -25,20 +25,24 @@ vi.mock('@/lib/database/db', () => ({
   withTransaction: vi.fn()
 }));
 
-vi.mock('@/lib/biometric/deviceClient', async importOriginal => {
-  const actual = await importOriginal<typeof import('@/lib/biometric/deviceClient')>();
+vi.mock('@/modules/asistencia/biometrico/deviceClient', async importOriginal => {
+  const actual =
+    await importOriginal<typeof import('@/modules/asistencia/biometrico/deviceClient')>();
   return { ...actual, ...cliente };
 });
 
-vi.mock('@/lib/biometric/audioService', () => audio);
+vi.mock('@/modules/asistencia/biometrico/audioService', () => audio);
 
 vi.mock('@/lib/utils/logger', () => {
   const mocks = { warn: vi.fn(), error: vi.fn(), info: vi.fn(), debug: vi.fn() };
   return { logger: mocks, default: mocks };
 });
 
-import { avisarEnrolamientoEnEquipo, avisarResultadoEnEquipo } from '@/lib/biometric/avisosAudio';
-import type { CredencialesEquipo } from '@/lib/biometric/deviceClient';
+import {
+  avisarEnrolamientoEnEquipo,
+  avisarResultadoEnEquipo
+} from '@/modules/asistencia/biometrico/avisosAudio';
+import type { CredencialesEquipo } from '@/modules/asistencia/biometrico/deviceClient';
 
 const cred: CredencialesEquipo = { ip: '192.168.0.5', usuario: 'admin', clave: 'secreta' };
 const fila = { ip: '192.168.0.5', usuario_equipo: 'admin', clave_cifrada: 'a.b.c' };

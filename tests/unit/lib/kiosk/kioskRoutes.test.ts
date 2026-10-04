@@ -22,7 +22,7 @@ vi.mock('@/lib/utils/logger', () => {
   return { logger: mocks, default: mocks };
 });
 
-vi.mock('@/lib/kiosk/deviceAuth', () => ({
+vi.mock('@/modules/asistencia/kioskos/deviceAuth', () => ({
   KIOSK_COOKIE: 'kiosk_token',
   KIOSK_SESSION_MAX_AGE: 2_592_000,
   kioskCookieOptions: (maxAge: number) => ({ httpOnly: true, sameSite: 'strict', maxAge }),
@@ -52,10 +52,10 @@ vi.mock('@/lib/business/timezoneService', () => ({
   getNowInBusinessTimezone: () => '2026-04-11 22:15:00'
 }));
 
-vi.mock('@/lib/kiosk/attendanceChallenges', async () => {
-  const actual = await vi.importActual<typeof import('@/lib/kiosk/attendanceChallenges')>(
-    '@/lib/kiosk/attendanceChallenges'
-  );
+vi.mock('@/modules/asistencia/kioskos/attendanceChallenges', async () => {
+  const actual = await vi.importActual<
+    typeof import('@/modules/asistencia/kioskos/attendanceChallenges')
+  >('@/modules/asistencia/kioskos/attendanceChallenges');
   return {
     ...actual,
     issueChallenge: vi.fn(async () => ({

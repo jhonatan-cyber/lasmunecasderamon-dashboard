@@ -12,7 +12,7 @@ import {
   salidaEnvioTalk,
   type ConexionNet,
   type NetSdk
-} from '@/lib/biometric/audioLib';
+} from '@/modules/asistencia/biometrico/audioLib';
 
 /**
  * Tests del núcleo de audio por streaming Talk: los structs binarios que come

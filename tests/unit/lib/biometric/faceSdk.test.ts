@@ -208,8 +208,8 @@ import {
   UMBRAL_COINCIDENCIA_DEFECTO,
   umbralCoincidenciaFacial,
   vectorDesdeEigen
-} from '@/lib/biometric/faceSdk';
-import { NOMBRE_LIBRERIA } from '@/lib/biometric/netSdk';
+} from '@/modules/asistencia/biometrico/faceSdk';
+import { NOMBRE_LIBRERIA } from '@/modules/asistencia/biometrico/netSdk';
 
 const cred = { ip: '192.168.1.50', usuario: 'admin', clave: 'secreta' };
 

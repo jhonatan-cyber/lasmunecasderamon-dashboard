@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server';
 import { withRoute } from '@/lib/api/withRoute';
 import { UserService } from '@/lib/services/UserService';
-import { desenrolarUsuario } from '@/lib/biometric/unenrollmentService';
+import { desenrolarUsuario } from '@/modules/asistencia';
 
 export const DELETE = withRoute(
   { auth: true, audit: true, module: 'users', action: 'write' },

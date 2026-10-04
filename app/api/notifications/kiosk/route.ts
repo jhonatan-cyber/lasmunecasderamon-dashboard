@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
 import { createSseStream } from '@/lib/api/sseStream';
-import { getKioskDevice, isDeviceActive } from '@/lib/kiosk/deviceAuth';
+import { getKioskDevice, isDeviceActive } from '@/modules/asistencia';
 
 export const dynamic = 'force-dynamic';
 

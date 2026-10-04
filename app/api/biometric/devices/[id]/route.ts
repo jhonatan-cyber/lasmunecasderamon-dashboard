@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
 import { withRoute } from '@/lib/api/withRoute';
-import { revokeBiometricDevice } from '@/lib/biometric/deviceAuth';
+import { revokeBiometricDevice } from '@/modules/asistencia';
 
 export const dynamic = 'force-dynamic';
 

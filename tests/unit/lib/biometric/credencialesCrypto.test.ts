@@ -4,7 +4,7 @@ import {
   cifrarSecreto,
   descifrarSecreto,
   generarClaveCifrado
-} from '@/lib/biometric/credencialesCrypto';
+} from '@/modules/asistencia/biometrico/credencialesCrypto';
 
 /**
  * Tests del cifrado de credenciales con la clave real generada en el test
@@ -49,14 +49,14 @@ describe('credencialesCrypto', () => {
   it('sin BIOMETRIC_ENCRYPTION_KEY el módulo reimportado falla claro', async () => {
     delete process.env.BIOMETRIC_ENCRYPTION_KEY;
     vi.resetModules();
-    const mod = await import('@/lib/biometric/credencialesCrypto');
+    const mod = await import('@/modules/asistencia/biometrico/credencialesCrypto');
     expect(() => mod.cifrarSecreto('x')).toThrow('BIOMETRIC_ENCRYPTION_KEY');
   });
 
   it('clave con tamaño incorrecto falla', async () => {
     process.env.BIOMETRIC_ENCRYPTION_KEY = Buffer.from('corta').toString('base64');
     vi.resetModules();
-    const mod = await import('@/lib/biometric/credencialesCrypto');
+    const mod = await import('@/modules/asistencia/biometrico/credencialesCrypto');
     expect(() => mod.cifrarSecreto('x')).toThrow('32 bytes');
   });
 

@@ -1,12 +1,15 @@
 import { query } from '@/lib/database/db';
-import { credencialesDeFila, type CredencialesEquipo } from '@/lib/biometric/deviceClient';
+import {
+  credencialesDeFila,
+  type CredencialesEquipo
+} from '@/modules/asistencia/biometrico/deviceClient';
 import {
   audioDeResultado,
   reproducirAudioDeResultado,
   reproducirAvisoEnrolamiento,
   AUDIO_ENROLAMIENTO,
   type ResultadoAudio
-} from '@/lib/biometric/audioService';
+} from '@/modules/asistencia/biometrico/audioService';
 import logger from '@/lib/utils/logger';
 
 const colas = new Map<string, Promise<void>>();

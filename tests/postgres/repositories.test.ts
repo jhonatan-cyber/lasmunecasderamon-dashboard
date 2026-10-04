@@ -17,7 +17,7 @@ import { CommissionRepository } from '@/lib/repositories/CommissionRepository';
 import { QueryLogRepository } from '@/lib/repositories/QueryLogRepository';
 import { VentasStatsRepository } from '@/lib/repositories/VentasStatsRepository';
 import * as services from '@/lib/repositories/service/ServiceQueries';
-import * as attendance from '@/lib/repositories/attendance/AttendanceQueries';
+import * as attendance from '@/modules/asistencia/marcas/repositorio';
 import * as anticipos from '@/modules/personal/anticipos/repositorio';
 import { getAllGratificaciones } from '@/lib/repositories/gratificacion/GratificacionQueries';
 import { getAnticipoBalances } from '@/lib/business/anticiposUtils';

@@ -24,14 +24,14 @@ vi.mock('@/lib/database/db', () => ({
   withTransaction: vi.fn()
 }));
 
-vi.mock('@/lib/biometric/ipDiscovery', () => ({
+vi.mock('@/modules/asistencia/biometrico/ipDiscovery', () => ({
   equipoResponde: desc.responde,
   capturarMacs: desc.capturar,
   guardarMac: desc.guardar,
   descubrirIpDispositivo: desc.descubrir
 }));
 
-vi.mock('@/lib/biometric/deviceClient', () => ({
+vi.mock('@/modules/asistencia/biometrico/deviceClient', () => ({
   verificarConexion: cli.verificar,
   credencialesDeFila: cli.credenciales
 }));
@@ -41,7 +41,7 @@ import {
   detenerVigilanteIp,
   vigilarUnaVez,
   vigilanteCorriendo
-} from '@/lib/biometric/ipWatcher';
+} from '@/modules/asistencia/biometrico/ipWatcher';
 
 const EQUIPOS = [
   {

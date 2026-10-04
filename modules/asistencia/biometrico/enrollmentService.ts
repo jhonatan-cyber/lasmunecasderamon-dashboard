@@ -16,11 +16,15 @@ import {
   subirHuella,
   verificarConexion,
   type CredencialesEquipo
-} from '@/lib/biometric/deviceClient';
-import { avisarEnrolamientoEnEquipo } from '@/lib/biometric/avisosAudio';
-import { cifrarSecreto } from '@/lib/biometric/credencialesCrypto';
-import { capturarMacs, descubrirIpDispositivo, guardarMac } from '@/lib/biometric/ipDiscovery';
-import { sondearPuerto } from '@/lib/biometric/discovery';
+} from '@/modules/asistencia/biometrico/deviceClient';
+import { avisarEnrolamientoEnEquipo } from '@/modules/asistencia/biometrico/avisosAudio';
+import { cifrarSecreto } from '@/modules/asistencia/biometrico/credencialesCrypto';
+import {
+  capturarMacs,
+  descubrirIpDispositivo,
+  guardarMac
+} from '@/modules/asistencia/biometrico/ipDiscovery';
+import { sondearPuerto } from '@/modules/asistencia/biometrico/discovery';
 import { imagenGuardadaABase64Jpeg, processAndSaveImage } from '@/lib/utils/image-utils';
 import {
   ErrorFacial,
@@ -32,7 +36,7 @@ import {
   similitudCoseno,
   umbralCoincidenciaFacial,
   type MotivoFalloFacial
-} from '@/lib/biometric/faceSdk';
+} from '@/modules/asistencia/biometrico/faceSdk';
 
 export interface EquipoEnrolable {
   id: string;

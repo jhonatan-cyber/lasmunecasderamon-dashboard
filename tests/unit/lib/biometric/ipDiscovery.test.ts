@@ -33,7 +33,7 @@ vi.mock('@/lib/database/db', () => ({
   withTransaction: vi.fn()
 }));
 
-vi.mock('@/lib/biometric/deviceClient', () => ({
+vi.mock('@/modules/asistencia/biometrico/deviceClient', () => ({
   credencialesDeFila: (fila: {
     ip: string | null;
     usuario_equipo: string | null;
@@ -46,8 +46,9 @@ vi.mock('@/lib/biometric/deviceClient', () => ({
   leerMacsDelEquipo: equipo.macsCgiMock
 }));
 
-vi.mock('@/lib/biometric/discovery', async importOriginal => {
-  const original = await importOriginal<typeof import('@/lib/biometric/discovery')>();
+vi.mock('@/modules/asistencia/biometrico/discovery', async importOriginal => {
+  const original =
+    await importOriginal<typeof import('@/modules/asistencia/biometrico/discovery')>();
   return {
     ...original,
     buscarEquipoPorMac: red.buscarMock,
@@ -56,12 +57,12 @@ vi.mock('@/lib/biometric/discovery', async importOriginal => {
   };
 });
 
-vi.mock('@/lib/biometric/eventListener', () => ({
+vi.mock('@/modules/asistencia/biometrico/eventListener', () => ({
   apagarListener: live.apagar,
   encenderListener: live.encender
 }));
 
-import { descubrirIpDispositivo, guardarMac } from '@/lib/biometric/ipDiscovery';
+import { descubrirIpDispositivo, guardarMac } from '@/modules/asistencia/biometrico/ipDiscovery';
 
 interface FilaTest {
   id: string;

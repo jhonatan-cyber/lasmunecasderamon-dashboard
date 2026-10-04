@@ -4,9 +4,14 @@ import {
   leerMacsDelEquipo,
   verificarConexion,
   type CredencialesEquipo
-} from '@/lib/biometric/deviceClient';
-import { buscarEquipoPorMac, macDeTabla, macsDe, sondearPuerto } from '@/lib/biometric/discovery';
-import { apagarListener, encenderListener } from '@/lib/biometric/eventListener';
+} from '@/modules/asistencia/biometrico/deviceClient';
+import {
+  buscarEquipoPorMac,
+  macDeTabla,
+  macsDe,
+  sondearPuerto
+} from '@/modules/asistencia/biometrico/discovery';
+import { apagarListener, encenderListener } from '@/modules/asistencia/biometrico/eventListener';
 import logger from '@/lib/utils/logger';
 interface FilaEquipo {
   id: string;

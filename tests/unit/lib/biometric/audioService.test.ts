@@ -18,9 +18,9 @@ import {
   reproducirAudioDeResultado,
   reproducirAudioEquipo,
   reproducirAvisoEnrolamiento
-} from '@/lib/biometric/audioService';
-import type { NetSdk } from '@/lib/biometric/audioLib';
-import type { CredencialesEquipo } from '@/lib/biometric/deviceClient';
+} from '@/modules/asistencia/biometrico/audioService';
+import type { NetSdk } from '@/modules/asistencia/biometrico/audioLib';
+import type { CredencialesEquipo } from '@/modules/asistencia/biometrico/deviceClient';
 
 /**
  * Tests del servicio de audio: el catálogo de MP3 de `public/audio`, el nombre

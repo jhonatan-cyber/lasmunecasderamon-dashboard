@@ -3,7 +3,7 @@ import { z } from 'zod';
 import { withRoute } from '@/lib/api/withRoute';
 import { query } from '@/lib/database/db';
 import { ValidationError } from '@/lib/errors/errors';
-import { issueChallenge } from '@/lib/kiosk/attendanceChallenges';
+import { issueChallenge } from '@/modules/asistencia';
 
 export const dynamic = 'force-dynamic';
 

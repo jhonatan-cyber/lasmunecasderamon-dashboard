@@ -4,9 +4,9 @@ import {
   parseAttlog,
   serialFromParams,
   tableFromParams
-} from '@/lib/biometric/adapters/zkteco';
-import { findActiveDevice, touchDevice } from '@/lib/biometric/deviceAuth';
-import { procesarEventoBiometrico } from '@/lib/biometric/processBiometricEvent';
+} from '@/modules/asistencia';
+import { findActiveDevice, touchDevice } from '@/modules/asistencia';
+import { procesarEventoBiometrico } from '@/modules/asistencia';
 import logger from '@/lib/utils/logger';
 
 export const dynamic = 'force-dynamic';

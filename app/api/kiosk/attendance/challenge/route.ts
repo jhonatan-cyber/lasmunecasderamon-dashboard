@@ -2,8 +2,8 @@ import { NextResponse } from 'next/server';
 import { z } from 'zod';
 import { query } from '@/lib/database/db';
 import { ValidationError } from '@/lib/errors/errors';
-import { issueChallenge } from '@/lib/kiosk/attendanceChallenges';
-import { getKioskDevice } from '@/lib/kiosk/deviceAuth';
+import { issueChallenge } from '@/modules/asistencia';
+import { getKioskDevice } from '@/modules/asistencia';
 
 export const dynamic = 'force-dynamic';
 

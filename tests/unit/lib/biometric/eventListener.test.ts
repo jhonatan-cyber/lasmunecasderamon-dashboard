@@ -1,11 +1,13 @@
 // @vitest-environment node
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-vi.mock('@/lib/biometric/eventSdkClient', () => ({
+vi.mock('@/modules/asistencia/biometrico/eventSdkClient', () => ({
   abrirAvisosSdk: vi.fn().mockRejectedValue(new Error('SDK unavailable in test'))
 }));
-vi.mock('@/lib/biometric/recordPoller', () => ({ pollEquipo: vi.fn().mockResolvedValue({}) }));
-import { abrirAvisosSdk } from '@/lib/biometric/eventSdkClient';
-import { pollEquipo } from '@/lib/biometric/recordPoller';
+vi.mock('@/modules/asistencia/biometrico/recordPoller', () => ({
+  pollEquipo: vi.fn().mockResolvedValue({})
+}));
+import { abrirAvisosSdk } from '@/modules/asistencia/biometrico/eventSdkClient';
+import { pollEquipo } from '@/modules/asistencia/biometrico/recordPoller';
 
 /**
  * Tests del listener EN VIVO por equipo (eventManager.cgi?action=attach):
@@ -55,17 +57,19 @@ vi.mock('@/lib/database/db', () => ({
 
 vi.mock('@/lib/business/timezoneService', () => ({ getNowInBusinessTimezone: tz.fn }));
 
-vi.mock('@/lib/biometric/processBiometricEvent', () => ({
+vi.mock('@/modules/asistencia/biometrico/processBiometricEvent', () => ({
   procesarEventoBiometrico: procesar.fn
 }));
 
-vi.mock('@/lib/biometric/deviceClient', async importOriginal => {
-  const actual = await importOriginal<typeof import('@/lib/biometric/deviceClient')>();
+vi.mock('@/modules/asistencia/biometrico/deviceClient', async importOriginal => {
+  const actual =
+    await importOriginal<typeof import('@/modules/asistencia/biometrico/deviceClient')>();
   return { ...actual, ...cliente };
 });
 
-vi.mock('@/lib/biometric/eventStreamClient', async importOriginal => {
-  const actual = await importOriginal<typeof import('@/lib/biometric/eventStreamClient')>();
+vi.mock('@/modules/asistencia/biometrico/eventStreamClient', async importOriginal => {
+  const actual =
+    await importOriginal<typeof import('@/modules/asistencia/biometrico/eventStreamClient')>();
   return {
     ...actual,
     abrirFlujoEventos: async (
@@ -107,7 +111,7 @@ import {
   encenderListener,
   encenderTodos,
   listenersActivos
-} from '@/lib/biometric/eventListener';
+} from '@/modules/asistencia/biometrico/eventListener';
 
 const equipo = {
   id: 'dev-1',

@@ -1,14 +1,17 @@
 import { query, generateUUID } from '@/lib/database/db';
 import { BaseRepository } from '@/lib/repositories/BaseRepository';
 import { getNowInBusinessTimezone } from '@/lib/business/timezoneService';
-import { procesarEventoBiometrico } from '@/lib/biometric/processBiometricEvent';
-import { credencialesDeFila, type CredencialesEquipo } from '@/lib/biometric/deviceClient';
+import { procesarEventoBiometrico } from '@/modules/asistencia/biometrico/processBiometricEvent';
+import {
+  credencialesDeFila,
+  type CredencialesEquipo
+} from '@/modules/asistencia/biometrico/deviceClient';
 import {
   EventManagerNoSoportadoError,
   abrirFlujoEventos,
   type EventoDelEquipo
-} from '@/lib/biometric/eventStreamClient';
-import type { BiometricMetodo } from '@/lib/biometric/types';
+} from '@/modules/asistencia/biometrico/eventStreamClient';
+import type { BiometricMetodo } from '@/modules/asistencia/biometrico/types';
 import logger from '@/lib/utils/logger';
 import { abrirAvisosSdk } from './eventSdkClient';
 import { crearLecturaPorAviso } from './eventRecordWakeup';

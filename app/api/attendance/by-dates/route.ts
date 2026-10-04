@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server';
 import { withRoute } from '@/lib/api/withRoute';
-import { AttendanceService } from '@/lib/services/AttendanceService';
 import { ValidationError } from '@/lib/errors/errors';
+import { listarAsistenciasPorFechas, listarAsistenciasDeUsuario } from '@/modules/asistencia';
 
 export const GET = withRoute(
   { auth: true, access: 'authenticated', audit: true },
@@ -13,9 +13,9 @@ export const GET = withRoute(
 
     let result;
     if (dates) {
-      result = await AttendanceService.getByDates(user.id.toString(), dates.split(','));
+      result = await listarAsistenciasPorFechas(user.id.toString(), dates.split(','));
     } else if (startDate && endDate) {
-      result = await AttendanceService.getByUser(user.id.toString(), 'detalle', startDate, endDate);
+      result = await listarAsistenciasDeUsuario(user.id.toString(), 'detalle', startDate, endDate);
     } else {
       throw new ValidationError('Faltan parámetros de fecha', { startDate, endDate, dates });
     }

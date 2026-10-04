@@ -1,17 +1,20 @@
 import { query, generateUUID } from '@/lib/database/db';
 import { BaseRepository } from '@/lib/repositories/BaseRepository';
 import { getNowInBusinessTimezone } from '@/lib/business/timezoneService';
-import { procesarEventoBiometrico } from '@/lib/biometric/processBiometricEvent';
+import { procesarEventoBiometrico } from '@/modules/asistencia/biometrico/processBiometricEvent';
 import {
   credencialesDeFila,
   leerRegistrosAcceso,
   type CredencialesEquipo
-} from '@/lib/biometric/deviceClient';
-import { encolarFotoDeRecord, recuperarFotosPendientes } from '@/lib/biometric/recordPhotos';
-import { recuperarIdentificacionesPendientes } from '@/lib/biometric/identificacionFacial';
-import type { BiometricMetodo } from '@/lib/biometric/types';
+} from '@/modules/asistencia/biometrico/deviceClient';
+import {
+  encolarFotoDeRecord,
+  recuperarFotosPendientes
+} from '@/modules/asistencia/biometrico/recordPhotos';
+import { recuperarIdentificacionesPendientes } from '@/modules/asistencia/biometrico/identificacionFacial';
+import type { BiometricMetodo } from '@/modules/asistencia/biometrico/types';
 import logger from '@/lib/utils/logger';
-import { quizasSincronizarReloj } from '@/lib/biometric/clockSync';
+import { quizasSincronizarReloj } from '@/modules/asistencia/biometrico/clockSync';
 export interface RecordDelEquipo {
   recNo: number;
   createTime: number;

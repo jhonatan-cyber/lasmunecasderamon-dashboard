@@ -1,17 +1,17 @@
 import { NextResponse } from 'next/server';
 import { withRoute } from '@/lib/api/withRoute';
 import { getAnticipoBalances } from '@/lib/business/anticiposUtils';
-import { AttendanceService } from '@/lib/services/AttendanceService';
 import { TipService } from '@/lib/services/TipService';
 import { ServiceService } from '@/lib/services/ServiceService';
 import { query } from '@/lib/database/db';
+import { listarAsistenciasDeUsuario } from '@/modules/asistencia';
 
 export const GET = withRoute(
   { auth: true, access: 'authenticated', audit: true },
   async (_request: Request, { user }: { params: any; user: any }) => {
     const userId = user.id.toString();
 
-    const attendanceData = (await AttendanceService.getByUser(userId)) as any;
+    const attendanceData = (await listarAsistenciasDeUsuario(userId)) as any;
     const totalAsistencias = Array.isArray(attendanceData) ? attendanceData.length : 0;
 
     const tipsData = (await TipService.getByUser(userId)) as any;

@@ -11,11 +11,11 @@ vi.mock('@/lib/database/db', () => ({
   withTransaction: vi.fn()
 }));
 
-vi.mock('@/lib/biometric/puertaClient', () => ({
+vi.mock('@/modules/asistencia/biometrico/puertaClient', () => ({
   abrirPuerta: puerta.abrirPuerta
 }));
 
-vi.mock('@/lib/biometric/identificacionFacial', () => ({
+vi.mock('@/modules/asistencia/biometrico/identificacionFacial', () => ({
   identificarImagen: ident.identificarImagen
 }));
 
@@ -24,8 +24,9 @@ vi.mock('@/lib/utils/logger', () => {
   return { logger: mocks, default: mocks };
 });
 
-vi.mock('@/lib/biometric/deviceClient', async importOriginal => {
-  const actual = await importOriginal<typeof import('@/lib/biometric/deviceClient')>();
+vi.mock('@/modules/asistencia/biometrico/deviceClient', async importOriginal => {
+  const actual =
+    await importOriginal<typeof import('@/modules/asistencia/biometrico/deviceClient')>();
   return {
     ...actual,
     credencialesDeFila: vi.fn((fila: { ip: string | null }) =>
@@ -34,9 +35,12 @@ vi.mock('@/lib/biometric/deviceClient', async importOriginal => {
   };
 });
 
-import { evaluarVerificacionRemota } from '@/lib/biometric/verificacionRemota';
-import { DeviceConnectionError, DeviceAuthError } from '@/lib/biometric/deviceClient';
-import { ErrorFacial } from '@/lib/biometric/faceSdk';
+import { evaluarVerificacionRemota } from '@/modules/asistencia/biometrico/verificacionRemota';
+import {
+  DeviceConnectionError,
+  DeviceAuthError
+} from '@/modules/asistencia/biometrico/deviceClient';
+import { ErrorFacial } from '@/modules/asistencia/biometrico/faceSdk';
 
 const DISPOSITIVO = 'dev-1';
 const SERIAL = 'BF013C7PAJB4D74';

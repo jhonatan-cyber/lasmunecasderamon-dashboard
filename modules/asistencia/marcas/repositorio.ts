@@ -1,9 +1,12 @@
 import { query, generateUUID, withTransaction } from '@/lib/database/db';
 import { getNowInBusinessTimezone } from '@/lib/business/timezoneService';
 import { AttendanceRegisterSchema } from '@/lib/business/schemas';
-import { CHALLENGE_FAILURE_MESSAGES, redeemChallenge } from '@/lib/kiosk/attendanceChallenges';
-import { BaseRepository } from '../BaseRepository';
-import logger from '../../utils/logger';
+import {
+  CHALLENGE_FAILURE_MESSAGES,
+  redeemChallenge
+} from '@/modules/asistencia/kioskos/attendanceChallenges';
+import { BaseRepository } from '@/lib/repositories/BaseRepository';
+import logger from '@/lib/utils/logger';
 import { ValidationError, DatabaseError } from '@/lib/errors/errors';
 import { z } from 'zod';
 

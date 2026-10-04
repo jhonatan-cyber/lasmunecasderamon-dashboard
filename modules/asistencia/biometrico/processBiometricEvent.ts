@@ -1,10 +1,10 @@
 import { generateUUID, query } from '@/lib/database/db';
 import { BaseRepository } from '@/lib/repositories/BaseRepository';
-import { getAttendanceConfigHours } from '@/lib/repositories/attendance/AttendanceQueries';
+import { getAttendanceConfigHours } from '@/modules/asistencia/marcas/repositorio';
 import { getNowInBusinessTimezone } from '@/lib/business/timezoneService';
 import logger from '@/lib/utils/logger';
-import { avisarResultadoEnEquipo } from '@/lib/biometric/avisosAudio';
-import type { BiometricEvent, BiometricResultado } from '@/lib/biometric/types';
+import { avisarResultadoEnEquipo } from '@/modules/asistencia/biometrico/avisosAudio';
+import type { BiometricEvent, BiometricResultado } from '@/modules/asistencia/biometrico/types';
 
 export interface BiometricOutcome {
   resultado: BiometricResultado;

@@ -14,7 +14,7 @@ const atribucion = vi.hoisted(() => ({
   fn: vi.fn(() => Promise.resolve('registrado' as const))
 }));
 
-vi.mock('@/lib/biometric/processBiometricEvent', () => ({
+vi.mock('@/modules/asistencia/biometrico/processBiometricEvent', () => ({
   atribuirAsistenciaIdentificada: atribucion.fn
 }));
 
@@ -24,13 +24,14 @@ vi.mock('@/lib/database/db', () => ({
   withTransaction: vi.fn()
 }));
 
-vi.mock('@/lib/biometric/faceSdk', async importOriginal => {
-  const actual = await importOriginal<typeof import('@/lib/biometric/faceSdk')>();
+vi.mock('@/modules/asistencia/biometrico/faceSdk', async importOriginal => {
+  const actual = await importOriginal<typeof import('@/modules/asistencia/biometrico/faceSdk')>();
   return { ...actual, extraerVectorFacial: sdk.extraerVectorFacial };
 });
 
-vi.mock('@/lib/biometric/deviceClient', async importOriginal => {
-  const actual = await importOriginal<typeof import('@/lib/biometric/deviceClient')>();
+vi.mock('@/modules/asistencia/biometrico/deviceClient', async importOriginal => {
+  const actual =
+    await importOriginal<typeof import('@/modules/asistencia/biometrico/deviceClient')>();
   return {
     ...actual,
     credencialesDeFila: vi.fn(() => ({ ip: '192.168.0.5', usuario: 'admin', clave: 'x' }))
@@ -50,8 +51,8 @@ import {
   identificarRecord,
   recuperarIdentificacionesPendientes,
   serializarVector
-} from '@/lib/biometric/identificacionFacial';
-import { ErrorFacial } from '@/lib/biometric/faceSdk';
+} from '@/modules/asistencia/biometrico/identificacionFacial';
+import { ErrorFacial } from '@/modules/asistencia/biometrico/faceSdk';
 
 const RECORD = 'record-1';
 const DISPOSITIVO = 'dev-1';

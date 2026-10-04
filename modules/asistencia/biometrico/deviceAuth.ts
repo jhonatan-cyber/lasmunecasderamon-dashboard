@@ -1,7 +1,7 @@
 import crypto from 'crypto';
 import { query } from '@/lib/database/db';
 import { ValidationError } from '@/lib/errors/errors';
-import type { BiometricMarca } from '@/lib/biometric/types';
+import type { BiometricMarca } from '@/modules/asistencia/biometrico/types';
 
 const SERIAL_RE = /^[a-zA-Z0-9._:-]{3,64}$/;
 

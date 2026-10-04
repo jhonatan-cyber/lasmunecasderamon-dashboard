@@ -67,6 +67,10 @@ const MODULO_POR_RUTA = [
   // Los módulos migrados (Fase 2 en adelante) viven en modules/. Se agregan
   // entradas explícitas a medida que se crean.
   [/^modules\/personal\//, 'personal'],
+  // El directorio (`@/modules/asistencia`) y el index son API pública: ambos
+  // cuentan como arista del dominio, o el grafo no vería los imports reales.
+  [/^modules\/asistencia(\/|$)/, 'asistencia'],
+  [/^modules\/identidad(\/|$)/, 'identidad'],
   [/^lib\/repositories\/inventory\//, 'inventario'],
   [/^lib\/repositories\/(sale)/i, 'ventas'],
   [/^lib\/repositories\/(attendance)/i, 'asistencia'],
@@ -108,6 +112,9 @@ const MODULO_POR_RUTA = [
     'personal'
   ],
   [/^app\/api\/(clients)/, 'clientes'],
+  // El canal SSE del kiosko verifica kiosk_devices y difunde eventos de
+  // asistencia: es adaptador de Asistencia, no de Comunicaciones (Fase 3).
+  [/^app\/api\/notifications\/kiosk/, 'asistencia'],
   [/^app\/api\/(notifications|audit-logs|error-logs)/, 'comunicaciones'],
   [/^app\/api\/(calendar|events)/, 'agenda'],
   [/^app\/api\//, 'infraestructura']
@@ -204,11 +211,15 @@ const REGLAS = [
   {
     id: 'ui-consume-modulos-por-http',
     plan: '§5 — la UI y los hooks consumen HTTP y contratos seguros para cliente',
-    desc: 'components/ y hooks/ no importan módulos; la UI de app/ sólo contracts.ts',
+    desc:
+      'components/ y hooks/ no importan módulos; la UI de app/ sólo contracts.ts; un route.ts fuera de app/api es adaptador de servidor',
     viola: d => {
       if (!d.hacia.startsWith('modules/')) return false;
       if (/^(components|hooks)\//.test(d.desde)) return !d.hacia.endsWith('/contracts.ts');
       if (/^app\//.test(d.desde) && !d.desde.startsWith('app/api/')) {
+        // Un route handler es adaptador de servidor esté o no en /api (iclock
+        // y dahua quedan fuera a propósito: hablan HTTP plano, sin middleware).
+        if (d.desde.endsWith('/route.ts')) return false;
         return !d.hacia.endsWith('/contracts.ts');
       }
       return false;
