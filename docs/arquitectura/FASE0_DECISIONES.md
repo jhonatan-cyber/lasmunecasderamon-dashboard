@@ -3,6 +3,12 @@
 Fecha: 2026-10-03 Commit de línea base: `532a780a` Estado: Fase 0 completa. No
 se movió ningún archivo de producción.
 
+**Actualización 2026-10-04:** las cifras y pendientes siguientes describen la
+ejecución histórica sobre `532a780a`. La validación complementaria sobre
+`4f399cc6`, los fixtures reproducibles y la medición repetida de latencias se
+registran en [FASE0_VALIDACION.md](FASE0_VALIDACION.md). No atribuir los
+resultados posteriores al commit histórico.
+
 ## 1. Línea base
 
 Registrado sobre `532a780a`, con el árbol limpio.
@@ -145,6 +151,13 @@ el pool antes de medir, porque una línea base debe reflejar el estado estable y
 no el arranque. Queda un residuo sin explicar: en el contexto del test esa única
 ejecución sigue midiendo ~50 ms y no se reproduce aislada (aislada da 1,0–1,3
 ms).
+
+**Seguimiento 2026-10-04:** se verificó la expansión del pool de una a dos
+conexiones durante el cobro y hasta cuatro durante la anulación. El test ahora
+precalienta cuatro clientes distintos y registra conexiones antes/después; la
+nueva referencia conserva siete muestras por flujo, sin expansión del pool
+durante la medición. Ver el método, las limitaciones y los tiempos en
+[la validación complementaria](FASE0_VALIDACION.md).
 
 Dos cosas que conviene leer aquí:
 

@@ -1,7 +1,9 @@
 # Plan de consolidación como monolito modular
 
 Fecha: 2026-10-03  
-Estado: propuesta de implementación; no ejecutada.
+Estado: implementación en curso; seguimiento de la fase 0 revisado el
+2026-10-04. Las casillas de las demás fases todavía no reflejan todo el avance
+implementado.
 
 ## 1. Objetivo y alcance
 
@@ -193,16 +195,31 @@ sincronización offline e idempotencia.
 ### Fase 0 — Inventario y línea base
 
 - [ ] Registrar el estado de lint, tipos, build y suites existentes sobre un
-      commit identificado.
-- [ ] Separar errores previos de regresiones introducidas por la migración.
-- [ ] Mapear imports entre servicios, repositorios y rutas; registrar SQL fuera
+      commit identificado. **Parcial:** lint, tipos y unitarias registrados
+      sobre `532a780a` en
+      [la línea base](arquitectura/FASE0_DECISIONES.md#1-línea-base). Falta
+      completar la referencia de build, integración y E2E sobre un commit
+      identificado. Las verificaciones posteriores de PostgreSQL y build del
+      piloto no sustituyen la línea base previa a la migración.
+- [x] Separar errores previos de regresiones introducidas por la migración.
+- [x] Mapear imports entre servicios, repositorios y rutas; registrar SQL fuera
       de repositorios.
-- [ ] Identificar escrituras cruzadas, transacciones, cachés, listeners y
+- [x] Identificar escrituras cruzadas, transacciones, cachés, listeners y
       procesos periódicos.
-- [ ] Documentar propiedad de datos y matriz de dependencias propuesta.
-- [ ] Enumerar contratos HTTP y permisos que deben permanecer estables.
-- [ ] Medir consultas y tiempos de flujos representativos con datos
-      reproducibles.
+- [x] Documentar propiedad de datos y matriz de dependencias propuesta.
+- [x] Enumerar contratos HTTP y permisos que deben permanecer estables.
+- [x] Medir consultas y tiempos de flujos representativos con datos
+      reproducibles. Diez flujos, siete corridas medidas y una descartada;
+      fixtures restaurados, cuatro conexiones precalentadas, conteos estables y
+      latencias con mediana/rango. Método y muestras en
+      [la validación complementaria](arquitectura/FASE0_VALIDACION.md).
+
+**Evidencia de las tareas completadas:**
+[diagnóstico de imports, SQL, procesos y contratos HTTP](arquitectura/FASE0_DIAGNOSTICO.md),
+[propiedad de datos](MODULOS_Y_DATOS.md) y
+[decisiones, errores previos y riesgos](arquitectura/FASE0_DECISIONES.md). El
+cierre de las verificaciones pendientes se registra en
+[la validación complementaria](arquitectura/FASE0_VALIDACION.md).
 
 **Salida:** diagnóstico verificable, decisiones pendientes resueltas para el
 piloto y mapa de riesgos. No mover archivos antes de esta línea base.

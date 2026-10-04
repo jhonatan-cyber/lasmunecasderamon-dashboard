@@ -1,5 +1,8 @@
 import { defineConfig, devices } from '@playwright/test';
 
+const baseURL = process.env.E2E_BASE_URL || 'http://localhost:3000';
+const port = new URL(baseURL).port || '3000';
+
 export default defineConfig({
   testDir: './tests/e2e',
   fullyParallel: false,
@@ -8,7 +11,7 @@ export default defineConfig({
   retries: 1,
   timeout: 30_000,
   use: {
-    baseURL: 'http://localhost:3000',
+    baseURL,
     trace: 'on-first-retry',
     screenshot: 'only-on-failure'
   },
@@ -19,8 +22,8 @@ export default defineConfig({
     }
   ],
   webServer: {
-    command: 'pnpm start',
-    url: 'http://localhost:3000',
+    command: `pnpm start --port ${port}`,
+    url: baseURL,
     reuseExistingServer: !process.env.CI,
     timeout: 180_000
   }
