@@ -8,7 +8,12 @@ if (
 )
   throw new Error('PostgreSQL tests require a local DB_NAME ending in _test');
 export default defineConfig({
-  resolve: { alias: { '@': path.resolve(__dirname) } },
+  resolve: {
+    alias: {
+      '@': path.resolve(__dirname),
+      'server-only': path.resolve(__dirname, './tests/setup/server-only-stub.ts')
+    }
+  },
   test: {
     environment: 'node',
     include: ['tests/postgres/**/*.test.ts'],

@@ -88,13 +88,11 @@ pública admitida es el directorio o `index.ts`, nunca un archivo interior.
   `EventQueries` (agenda) y `lib/business/anticiposUtils`: quedan para las fases
   6 y 7; la del reporte es de las lecturas cruzadas registradas que el §6
   admite.
-- `server-only` no está instalado: la protección de la API pública es hoy la
-  regla estática de la puerta. Instalar el paquete exige un stub en las dos
-  configs de vitest (el paquete lanza fuera de un entorno React Server
-  Component); queda pendiente junto con la Fase 3.
 - `actualizarHoraExtra` y `eliminarHoraExtra` no tienen ruta HTTP que las use
   (tampoco la tenían en `OvertimeService`); se conservan como parte de la API
-  del módulo.## Verificación
+  del módulo.
+
+## Verificación
 
 - `pnpm arquitectura:limites`: sin dependencias prohibidas nuevas, 26/26
   excepciones vigentes, ninguna obsoleta.
@@ -139,3 +137,26 @@ la regla de monto máximo y calentamiento de las cachés de configuración. El m
 de `pushNotifications` en la suite debía devolver promesas: el repositorio
 encadena `.catch(...)` sobre el resultado, y un `vi.fn()` desnudo devuelve
 `undefined` — un TypeError disfrazado de DatabaseError.
+
+## server-only: la API pública protegida también en el cliente
+
+Pendiente desde este piloto, ya instalado: `pnpm add server-only` (v0.0.1) e
+`import 'server-only';` como primera línea de `modules/personal/index.ts`. El
+paquete lanza «This module cannot be imported from a Client Component module»
+salvo bajo la condición `react-server`, que sólo resuelve el bundle de servidor
+de Next.js: una UI que importara la API del módulo rompe la compilación, en
+complemento —no en sustitución— de la regla estática
+`ui-consume-modulos-por-http`, que sólo mira el código fuente. `contracts.ts` no
+lo importa: es el único de los dos apto para cliente (§5) y reexporta tipos, no
+implementaciones.
+
+El mismo throw rompería las suites —Vitest resuelve la condición `default`—, así
+que las dos configs (`vitest.config.ts` y `vitest.postgres.config.ts`)
+sustituyen `server-only` por `tests/setup/server-only-stub.ts` con
+`resolve.alias`. El stub se ejercita de verdad: cinco tests importan
+`@/modules/personal` (incluidos los de línea base) y pasan con el import
+presente.
+
+_Verificación_: unitarias **1702**, postgres **156**, `arquitectura:limites`
+26/26, tsc 0, eslint 0, prettier 0 y `pnpm build` en verde — el build es la
+comprobación de que Next resuelve la condición `react-server` y no el throw.

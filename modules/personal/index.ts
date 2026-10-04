@@ -1,3 +1,5 @@
+import 'server-only';
+
 /**
  * API pública del módulo Personal — servidor.
  *

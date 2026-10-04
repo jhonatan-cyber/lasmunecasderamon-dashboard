@@ -173,6 +173,9 @@ importers:
       recharts:
         specifier: 3.1.2
         version: 3.1.2(@types/react@19.2.17)(react-dom@19.2.7(react@19.2.7))(react-is@17.0.2)(react@19.2.7)(redux@5.0.1)
+      server-only:
+        specifier: ^0.0.1
+        version: 0.0.1
       sharp:
         specifier: ^0.35.4
         version: 0.35.4(@types/node@24.13.3)
@@ -7951,6 +7954,12 @@ packages:
       }
     engines: { node: '>=20.0.0' }
 
+  server-only@0.0.1:
+    resolution:
+      {
+        integrity: sha512-qepMx2JxAa5jjfzxG79yPPq+8BuFToHd1hm7kI+Z4zAq1ftQiP7HcxMhDDItrbtwVeLg/cY2JnKnrcFkmiswNA==
+      }
+
   set-function-length@1.2.2:
     resolution:
       {
@@ -14137,6 +14146,8 @@ snapshots:
       type-fest: 0.20.2
 
   serialize-javascript@7.0.3: {}
+
+  server-only@0.0.1: {}
 
   set-function-length@1.2.2:
     dependencies:
