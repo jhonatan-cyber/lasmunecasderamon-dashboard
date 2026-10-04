@@ -20,6 +20,7 @@
  * trabajo de esa fase, no de ésta.
  */
 import { withTransaction } from '@/lib/database/db';
+import { liberar, registrar } from './infraestructura';
 
 /** Lo que recibe un módulo para trabajar dentro de una unidad ajena. */
 export interface ContextoOperacion {
@@ -59,6 +60,11 @@ export async function enUnaUnidad<T>(
     const id = crypto.randomUUID();
     let abierta = true;
 
+    // La resolución del `trx` a partir del contexto vive en ./infraestructura
+    // y la puerta de arquitectura sólo deja importarla a la infraestructura de
+    // los módulos. Aquí el contrato se queda en el identificador.
+    registrar(id, trx);
+
     const unidad: UnidadDeTrabajo = {
       id,
       get abierta() {
@@ -82,7 +88,9 @@ export async function enUnaUnidad<T>(
       // el camino feliz dejaba la unidad "abierta" después de un rollback, y
       // quien luego lance efectos externos creyendo que el commit ocurrio.
       abierta = false;
-      void trx;
+      // Sin esto, el ejecutor de una unidad revertida seguiría resoluble y un
+      // módulo podría escribir sobre una transacción que ya no existe.
+      liberar(id);
     }
   });
 }

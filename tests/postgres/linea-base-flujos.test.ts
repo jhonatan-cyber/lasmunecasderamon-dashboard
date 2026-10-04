@@ -40,7 +40,7 @@ import db, { query, withTransaction } from '@/lib/database/db';
 import { snapshotDatabase, restoreDatabase } from '@/lib/database/maintenance';
 import { instantaneaPerfil, perfilActivo, reiniciarPerfil } from '@/lib/database/perfilConsultas';
 import { AccountService } from '@/lib/services/AccountService';
-import { OvertimeService } from '@/lib/services/OvertimeService';
+import { listarHorasExtrasDeUsuario, registrarHoraExtra } from '@/modules/personal';
 import { InventoryRepository } from '@/lib/repositories/InventoryRepository';
 import { OrderRepository } from '@/lib/repositories/OrderRepository';
 import { SaleService } from '@/lib/services/SaleService';
@@ -236,17 +236,12 @@ describe('línea base de consultas por flujo', () => {
       const usuarioId = user.id_usuario;
 
       const lectura = await medir('horas extras: listar', () =>
-        OvertimeService.getByUser(usuarioId)
+        listarHorasExtrasDeUsuario(usuarioId)
       );
       expect(lectura.n).toBeGreaterThan(0);
 
       const escritura = await medir('horas extras: crear', () =>
-        OvertimeService.create({
-          usuario_id: usuarioId,
-          hora: 2,
-          monto: 1000,
-          fecha: new Date().toISOString().slice(0, 10)
-        } as any)
+        registrarHoraExtra({ usuario_id: usuarioId, hora: 2, monto: 1000 })
       );
       expect(escritura.n).toBeGreaterThan(0);
     } finally {

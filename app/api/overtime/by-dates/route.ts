@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
 import { withRoute } from '@/lib/api/withRoute';
-import { OvertimeService } from '@/lib/services/OvertimeService';
+import { listarHorasExtrasDeUsuario, listarHorasExtrasPorFechas } from '@/modules/personal';
 import { ValidationError } from '@/lib/errors/errors';
 
 export const GET = withRoute(
@@ -13,9 +13,12 @@ export const GET = withRoute(
 
     let result;
     if (dates) {
-      result = await OvertimeService.getByDates(user.id.toString(), dates.split(','));
+      result = await listarHorasExtrasPorFechas(user.id.toString(), dates.split(','));
     } else if (startDate && endDate) {
-      result = await OvertimeService.getByUser(user.id.toString(), undefined, startDate, endDate);
+      result = await listarHorasExtrasDeUsuario(user.id.toString(), {
+        desde: startDate,
+        hasta: endDate
+      });
     } else {
       throw new ValidationError('Faltan parámetros de fecha', { startDate, endDate, dates });
     }

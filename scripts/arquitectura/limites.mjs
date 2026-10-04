@@ -64,6 +64,9 @@ function archivosDelProyecto() {
 }
 
 const MODULO_POR_RUTA = [
+  // Los módulos migrados (Fase 2 en adelante) viven en modules/. Se agregan
+  // entradas explícitas a medida que se crean.
+  [/^modules\/personal\//, 'personal'],
   [/^lib\/repositories\/inventory\//, 'inventario'],
   [/^lib\/repositories\/(sale)/i, 'ventas'],
   [/^lib\/repositories\/(attendance)/i, 'asistencia'],
@@ -183,6 +186,42 @@ const REGLAS = [
     plan: '§5 — los módulos no importan workflows',
     desc: 'nada fuera de workflows/ importa workflows/',
     viola: d => !d.desde.startsWith('workflows/') && d.hacia.startsWith('workflows/')
+  },
+  {
+    id: 'modulo-solo-api-publica',
+    plan: '§5 — entre módulos sólo se permiten imports desde index.ts o contracts.ts',
+    desc: 'nada fuera de modules/<mod>/ importa el interior de un módulo',
+    viola: d => {
+      if (!d.hacia.startsWith('modules/')) return false;
+      const modulo = d.hacia.split('/')[1];
+      if (d.desde.startsWith(`modules/${modulo}/`)) return false;
+      // La API pública es `modules/<mod>` (el directorio, que resuelve a su
+      // index.ts) o `modules/<mod>/index.ts`; `contracts.ts` para los tipos
+      // aptos para cliente. Todo lo demás es interior.
+      return !/^(modules\/[^/]+|modules\/[^/]+\/(index|contracts)\.ts)$/.test(d.hacia);
+    }
+  },
+  {
+    id: 'ui-consume-modulos-por-http',
+    plan: '§5 — la UI y los hooks consumen HTTP y contratos seguros para cliente',
+    desc: 'components/ y hooks/ no importan módulos; la UI de app/ sólo contracts.ts',
+    viola: d => {
+      if (!d.hacia.startsWith('modules/')) return false;
+      if (/^(components|hooks)\//.test(d.desde)) return !d.hacia.endsWith('/contracts.ts');
+      if (/^app\//.test(d.desde) && !d.desde.startsWith('app/api/')) {
+        return !d.hacia.endsWith('/contracts.ts');
+      }
+      return false;
+    }
+  },
+  {
+    id: 'infra-transaccional-autorizada',
+    plan: '§6 — sólo la infraestructura autorizada resuelve el contexto al cliente PostgreSQL',
+    desc: 'lib/transaccion/infraestructura sólo lo importa la infraestructura de los módulos',
+    viola: d =>
+      d.hacia === 'lib/transaccion/infraestructura.ts' &&
+      !d.desde.startsWith('modules/') &&
+      !d.desde.startsWith('lib/transaccion/')
   }
 ];
 

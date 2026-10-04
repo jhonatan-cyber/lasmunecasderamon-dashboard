@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
 import { withRoute } from '@/lib/api/withRoute';
-import { OvertimeService } from '@/lib/services/OvertimeService';
+import { listarHorasExtras, registrarHoraExtra } from '@/modules/personal';
 import { ApiResponse } from '@/lib/api/api-response';
 import { ValidationError } from '@/lib/errors/errors';
 
@@ -13,7 +13,7 @@ export const GET = withRoute(
     const isAdmin = user.role?.toLowerCase() === 'administrador';
     const targetUserId = isAdmin ? userIdInQuery || undefined : user.id;
 
-    const data = await OvertimeService.getAll(targetUserId);
+    const data = await listarHorasExtras(targetUserId ? { usuarioId: targetUserId } : {});
     return ApiResponse.success(data);
   }
 );
@@ -29,7 +29,7 @@ export const POST = withRoute(
         monto
       });
 
-    const id = await OvertimeService.create({ usuario_id, hora, monto, device_date });
+    const id = await registrarHoraExtra({ usuario_id, hora, monto, device_date });
     return ApiResponse.created({ id }, 'Hora extra creada exitosamente');
   }
 );

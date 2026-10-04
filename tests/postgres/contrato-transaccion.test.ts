@@ -1,17 +1,15 @@
 /**
- * El contrato transaccional de la Fase 1.
+ * El contrato transaccional de la Fase 1 y su primera prueba de fuego: el
+ * módulo migrado de la Fase 2 (Personal — horas extras) escribiendo dentro de
+ * una unidad ajena.
  *
- * Hay una limitación que conviene tener presente antes de leer este archivo: un
- * contrato opaco **no puede escribir dentro de la transacción por sí solo**. Que un
- * módulo escriba usando la unidad es trabajo de su repositorio, y ningún módulo ha
- * sido migrado todavía. Por eso aquí se comprueba la forma y el ciclo de vida del
- * contrato, y la atomicidad extremo a extremo sigue cubriéndose con el mecanismo
- * que hoy sí funciona: `withTransaction`, verificado en
- * `tests/postgres/cobro-con-venta.test.ts`.
- *
- * Inventar una vía de escritura dentro de la unidad —expuesta aquí— sería
- * reintroducir exactamente el `TransactionQuery` que el §6 quiere quitar, sólo que
- * con otro nombre.
+ * El contrato entrega a los participantes un contexto opaco sin SQL. La
+ * resolución del contexto al ejecutor vive en
+ * `lib/transaccion/infraestructura.ts` — la «infraestructura autorizada» del
+ * §6 — y la puerta `infra-transaccional-autorizada` restringe su import a la
+ * infraestructura de los módulos. Este archivo prueba ambos lados: la forma y
+ * el ciclo de vida del contrato, y que una escritura real del módulo se
+ * confirma o revierte junto con toda la unidad.
  */
 import { afterAll, describe, expect, it, vi } from 'vitest';
 
@@ -20,10 +18,15 @@ vi.mock('@/lib/integrations/pushNotifications', () => ({
   sendPushToUser: vi.fn()
 }));
 
-import db from '@/lib/database/db';
+import db, { query } from '@/lib/database/db';
 import { enUnaUnidad, type UnidadDeTrabajo } from '@/lib/transaccion/contrato';
+import { resolverTransaccion } from '@/lib/transaccion/infraestructura';
+import { registrarHoraExtra } from '@/modules/personal';
+
+const USUARIO_PRUEBA = 'lb-contrato-horas-extras';
 
 afterAll(async () => {
+  await query('DELETE FROM horas_extras WHERE usuario_id = ?', [USUARIO_PRUEBA]);
   await db.pool.end();
   globalThis.__lasMunecasPgPool = undefined;
 });
@@ -82,5 +85,71 @@ describe('contrato transaccional (§6)', () => {
       return `${dentro}:${unidad.abierta}`;
     });
     expect(resultado).toBe('interna:true');
+  });
+});
+
+describe('resolución autorizada del contexto (§6)', () => {
+  it('falla con un contexto que no proviene de ninguna unidad', () => {
+    expect(() => resolverTransaccion({ id: crypto.randomUUID() })).toThrow(
+      /no tiene transacción resoluble/
+    );
+  });
+
+  it('falla con el contexto de una unidad ya cerrada', async () => {
+    let contexto: { id: string } | null = null;
+    await enUnaUnidad(async unidad => {
+      contexto = await unidad.ejecutar(async c => c);
+    });
+    // La unidad confirmó; su ejecutor quedó liberado. Escribir después sería
+    // operar sobre una transacción que ya no existe, justo lo que el §6 prohíbe.
+    expect(() => resolverTransaccion(contexto!)).toThrow(/no tiene transacción resoluble/);
+  });
+});
+
+describe('módulo migrado dentro de la unidad (Fase 2)', () => {
+  it('el módulo escribe con el contexto opaco y todo se confirma junto', async () => {
+    await query('DELETE FROM horas_extras WHERE usuario_id = ?', [USUARIO_PRUEBA]);
+    const registrada = await enUnaUnidad(async unidad =>
+      unidad.ejecutar(contexto =>
+        registrarHoraExtra({ usuario_id: USUARIO_PRUEBA, hora: 1, monto: 100 }, contexto)
+      )
+    );
+    expect(registrada).not.toBeNull();
+    const filas = await query<any[]>('SELECT * FROM horas_extras WHERE id_hora_extra = ?', [
+      registrada!.id_hora_extra
+    ]);
+    expect(filas).toHaveLength(1);
+    expect(Number(filas[0].total)).toBe(100);
+  });
+
+  it('un fallo después de escribir revierte lo escrito por el módulo', async () => {
+    await query('DELETE FROM horas_extras WHERE usuario_id = ?', [USUARIO_PRUEBA]);
+    let idFila = '';
+    await expect(
+      enUnaUnidad(async unidad => {
+        const fila = await unidad.ejecutar(contexto =>
+          registrarHoraExtra({ usuario_id: USUARIO_PRUEBA, hora: 2, monto: 500 }, contexto)
+        );
+        idFila = fila!.id_hora_extra;
+        throw new Error('falla deliberada tras escribir');
+      })
+    ).rejects.toThrow('falla deliberada tras escribir');
+
+    const filas = await query<any[]>('SELECT * FROM horas_extras WHERE id_hora_extra = ?', [
+      idFila
+    ]);
+    expect(filas).toHaveLength(0);
+  });
+
+  it('una operación aislada del módulo sigue yendo por el pool', async () => {
+    await query('DELETE FROM horas_extras WHERE usuario_id = ?', [USUARIO_PRUEBA]);
+    const registrada = await registrarHoraExtra({
+      usuario_id: USUARIO_PRUEBA,
+      hora: 1,
+      monto: 200
+    });
+    expect(registrada).not.toBeNull();
+    expect(Number(registrada!.total)).toBe(200);
+    await query('DELETE FROM horas_extras WHERE id_hora_extra = ?', [registrada!.id_hora_extra]);
   });
 });

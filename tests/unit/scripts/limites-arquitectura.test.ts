@@ -156,6 +156,94 @@ describe('control de límites entre módulos', () => {
     expect(r.salida).toContain('ya no aplican');
     writeFileSync(join(raiz, 'docs', 'arquitectura', 'excepciones.json'), '{}\n');
   });
+
+  it('la ruta consume el módulo por su API pública sin hallazgos', () => {
+    mkdirSync(join(raiz, 'modules', 'personal', 'horas-extras'), { recursive: true });
+    mkdirSync(join(raiz, 'app', 'api', 'overtime'), { recursive: true });
+    writeFileSync(join(raiz, 'modules', 'personal', 'index.ts'), 'export const x = 1;\n');
+    writeFileSync(
+      join(raiz, 'modules', 'personal', 'contracts.ts'),
+      'export interface A { a: number }\n'
+    );
+    writeFileSync(
+      join(raiz, 'modules', 'personal', 'horas-extras', 'repositorio.ts'),
+      "import { query } from '@/lib/database/db';\nexport const buscar = query;\n"
+    );
+    writeFileSync(
+      join(raiz, 'app', 'api', 'overtime', 'route.ts'),
+      "import { x } from '@/modules/personal';\nexport const y = x;\n"
+    );
+    const reglas = ['modulo-solo-api-publica', 'ui-consume-modulos-por-http'];
+    for (const regla of reglas) {
+      expect(listar(raiz).hallazgos.filter((h: any) => h.regla === regla)).toHaveLength(0);
+    }
+  });
+
+  it('detecta un import al interior de un módulo desde fuera del módulo', () => {
+    writeFileSync(
+      join(raiz, 'app', 'api', 'overtime', 'Malo.ts'),
+      "import { buscar } from '@/modules/personal/horas-extras/repositorio';\nexport const y = buscar;\n"
+    );
+    const malos = listar(raiz).hallazgos.filter((h: any) => h.regla === 'modulo-solo-api-publica');
+    expect(
+      malos.some(
+        (h: any) =>
+          h.desde === 'app/api/overtime/Malo.ts' &&
+          h.hacia === 'modules/personal/horas-extras/repositorio.ts'
+      )
+    ).toBe(true);
+    rmSync(join(raiz, 'app', 'api', 'overtime', 'Malo.ts'));
+  });
+
+  it('detecta un componente que importa un módulo, pero permite sus contratos', () => {
+    writeFileSync(
+      join(raiz, 'components', 'Malo.tsx'),
+      "import { x } from '@/modules/personal';\nexport const y = x;\n"
+    );
+    const malos = listar(raiz).hallazgos.filter(
+      (h: any) => h.regla === 'ui-consume-modulos-por-http'
+    );
+    expect(malos.some((h: any) => h.desde === 'components/Malo.tsx')).toBe(true);
+    rmSync(join(raiz, 'components', 'Malo.tsx'));
+
+    writeFileSync(
+      join(raiz, 'components', 'Contratos.tsx'),
+      "import type { A } from '@/modules/personal/contracts';\nexport type B = A;\n"
+    );
+    expect(
+      listar(raiz).hallazgos.filter((h: any) => h.regla === 'ui-consume-modulos-por-http')
+    ).toHaveLength(0);
+    rmSync(join(raiz, 'components', 'Contratos.tsx'));
+  });
+
+  it('sólo la infraestructura de los módulos resuelve el contexto transaccional', () => {
+    mkdirSync(join(raiz, 'lib', 'transaccion'), { recursive: true });
+    mkdirSync(join(raiz, 'lib', 'services'), { recursive: true });
+    writeFileSync(
+      join(raiz, 'lib', 'transaccion', 'infraestructura.ts'),
+      'export function resolverTransaccion() { return null; }\n'
+    );
+
+    // Sano: la infraestructura del módulo es la autorizada.
+    writeFileSync(
+      join(raiz, 'modules', 'personal', 'horas-extras', 'repositorio.ts'),
+      "import { resolverTransaccion } from '@/lib/transaccion/infraestructura';\nexport const r = resolverTransaccion;\n"
+    );
+    expect(
+      listar(raiz).hallazgos.filter((h: any) => h.regla === 'infra-transaccional-autorizada')
+    ).toHaveLength(0);
+
+    // Prohibido: un servicio resuelve el contexto por su cuenta.
+    writeFileSync(
+      join(raiz, 'lib', 'services', 'Malo.ts'),
+      "import { resolverTransaccion } from '@/lib/transaccion/infraestructura';\nexport const r = resolverTransaccion;\n"
+    );
+    const malos = listar(raiz).hallazgos.filter(
+      (h: any) => h.regla === 'infra-transaccional-autorizada'
+    );
+    expect(malos.some((h: any) => h.desde === 'lib/services/Malo.ts')).toBe(true);
+    rmSync(join(raiz, 'lib', 'services', 'Malo.ts'));
+  });
 });
 
 describe('excepciones del repositorio real', () => {
