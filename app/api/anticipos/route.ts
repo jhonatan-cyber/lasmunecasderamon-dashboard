@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
 import { withRoute } from '@/lib/api/withRoute';
-import { AnticipoService } from '@/lib/services/AnticipoService';
+import { listarAnticipos, otorgarAnticipo, solicitarAnticipo } from '@/modules/personal';
 import { logger } from '@/lib/utils/logger';
 
 export const GET = withRoute(
@@ -15,7 +15,7 @@ export const GET = withRoute(
     const limit = Math.min(Number(searchParams.get('limit') ?? 50), 200);
     const offset = Number(searchParams.get('offset') ?? 0);
 
-    const { data, total } = await AnticipoService.getAll({
+    const { data, total } = await listarAnticipos({
       estado,
       usuario_id,
       startDate,
@@ -34,7 +34,7 @@ export const POST = withRoute(
     const { action, usuario_id, monto, device_date } = body;
 
     if (action === 'solicitar') {
-      const id = await AnticipoService.requestAnticipo(user.id.toString(), body);
+      const id = await solicitarAnticipo(user.id.toString(), body);
       return NextResponse.json(
         { success: true, message: 'Solicitud enviada', anticipo_id: id },
         { status: 201 }
@@ -50,13 +50,7 @@ export const POST = withRoute(
 
     const { motivo } = body;
     try {
-      const result = await AnticipoService.grantAnticipo(
-        usuario_id,
-        Number(monto),
-        motivo,
-        device_date,
-        user.id
-      );
+      const result = await otorgarAnticipo(usuario_id, Number(monto), motivo, device_date, user.id);
       return NextResponse.json(
         { success: true, message: 'Anticipo otorgado correctamente', ...result },
         { status: 201 }

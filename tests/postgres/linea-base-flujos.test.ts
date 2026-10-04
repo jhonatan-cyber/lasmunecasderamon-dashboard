@@ -20,8 +20,12 @@
 import { afterAll, beforeAll, describe, expect, it, vi } from 'vitest';
 
 vi.mock('@/lib/integrations/pushNotifications', () => ({
-  sendPushByRole: vi.fn(),
-  sendPushToUser: vi.fn()
+  // Devuelven promesa: el repositorio de anticipos encadena `.catch(...)` sobre
+  // el resultado, y un `vi.fn()` desnudo devolvería undefined. Los anticipos
+  // además notifican al empleado con `sendPushNotification`.
+  sendPushByRole: vi.fn(async () => undefined),
+  sendPushToUser: vi.fn(async () => undefined),
+  sendPushNotification: vi.fn(async () => undefined)
 }));
 vi.mock('@/lib/services/SecurityAlertService', () => ({
   SecurityAlertService: { checkMassAnulation: vi.fn().mockResolvedValue(undefined) }
@@ -40,7 +44,15 @@ import db, { query, withTransaction } from '@/lib/database/db';
 import { snapshotDatabase, restoreDatabase } from '@/lib/database/maintenance';
 import { instantaneaPerfil, perfilActivo, reiniciarPerfil } from '@/lib/database/perfilConsultas';
 import { AccountService } from '@/lib/services/AccountService';
-import { listarHorasExtrasDeUsuario, registrarHoraExtra } from '@/modules/personal';
+import {
+  listarAnticipos,
+  listarHorasExtrasDeUsuario,
+  registrarHoraExtra,
+  solicitarAnticipoSimple
+} from '@/modules/personal';
+import { getAnticipoBalances } from '@/lib/business/anticiposUtils';
+import { getAdminWhatsApp } from '@/lib/business/whatsappConfig';
+import { getTwilioConfig } from '@/lib/business/twilioConfig';
 import { InventoryRepository } from '@/lib/repositories/InventoryRepository';
 import { OrderRepository } from '@/lib/repositories/OrderRepository';
 import { SaleService } from '@/lib/services/SaleService';
@@ -77,6 +89,8 @@ interface Muestra {
 const TECHOS: Record<string, number> = Object.freeze({
   'horas extras: listar': 4,
   'horas extras: crear': 5,
+  'anticipos: listar': 5,
+  'anticipos: crear': 10,
   'cobro de cuenta con venta': 25,
   'inventario: consumo sin existencias': 5,
   'anulación: solicitar': 5,
@@ -506,6 +520,53 @@ describe('línea base de consultas por flujo', () => {
           fila.valor
         ]);
       }
+      await restoreDatabase(snapshot, 'test-only');
+    }
+  });
+
+  it('anticipos: listar y solicitar', async () => {
+    const snapshot = await snapshotDatabase();
+    try {
+      const [user] = await query<{ id_usuario: string }[]>(
+        'SELECT id_usuario FROM usuarios LIMIT 1'
+      );
+      const usuarioId = user.id_usuario;
+
+      // La regla de negocio pide monto <= saldo disponible (ingresos - egresos
+      // del empleado). Una comisión vigente da saldo sin armar una venta entera;
+      // sin solicitudes pendientes (estado 2) la petición pasa el guard de
+      // duplicados.
+      await query('DELETE FROM anticipos WHERE usuario_id = ? AND estado = 2', [usuarioId]);
+      const idComision = crypto.randomUUID();
+      await query(
+        `INSERT INTO comisiones (id_comision, venta_id, servicio_id, monto, estado, fecha_crea)
+         VALUES (?, NULL, NULL, 50000, 1, now())`,
+        [idComision]
+      );
+      await query(
+        `INSERT INTO detalle_comisiones
+           (id_detalle_comision, comision_id, usuario_id, comision, estado, fecha_crea)
+         VALUES (?, ?, ?, 50000, 1, now())`,
+        [crypto.randomUUID(), idComision, usuarioId]
+      );
+
+      // Calienta las cachés de configuración que el flujo consulta (chequeo de
+      // tablas en los balances, admin y Twilio de WhatsApp): la medición refleja
+      // el estado estable, no el primer arranque del proceso.
+      await getAnticipoBalances(usuarioId);
+      await getAdminWhatsApp();
+      await getTwilioConfig();
+
+      const lectura = await medir('anticipos: listar', () =>
+        listarAnticipos({ usuario_id: usuarioId })
+      );
+      expect(lectura.n).toBeGreaterThan(0);
+
+      const escritura = await medir('anticipos: crear', () =>
+        solicitarAnticipoSimple(usuarioId, 1000, 'Anticipo de línea base')
+      );
+      expect(escritura.n).toBeGreaterThan(0);
+    } finally {
       await restoreDatabase(snapshot, 'test-only');
     }
   });

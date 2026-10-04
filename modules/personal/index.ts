@@ -15,3 +15,17 @@ export {
   actualizarHoraExtra,
   eliminarHoraExtra
 } from './horas-extras/servicio';
+export {
+  solicitarAnticipo,
+  solicitarAnticipoSimple,
+  otorgarAnticipo,
+  listarAnticipos,
+  listarAnticiposPorFechas,
+  listarAnticiposDeUsuario,
+  listarSolicitudesDeUsuario,
+  procesarSolicitud,
+  procesarSolicitudDeTexto,
+  entregarAnticipo,
+  actualizarEstadoAnticipo,
+  procesarAnticipoDesdeComando
+} from './anticipos/servicio';

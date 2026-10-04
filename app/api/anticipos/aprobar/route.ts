@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
 import { withRoute } from '@/lib/api/withRoute';
-import { AnticipoService } from '@/lib/services/AnticipoService';
+import { procesarSolicitud } from '@/modules/personal';
 
 export const PUT = withRoute(
   { auth: true, audit: true, module: 'advances', action: 'process' },
@@ -18,7 +18,7 @@ export const PUT = withRoute(
     const action = accion === 'aprobar' ? 'approve' : 'reject';
 
     try {
-      await AnticipoService.processSolicitud(token, action);
+      await procesarSolicitud(token, action);
       return NextResponse.json({
         success: true,
         message: accion === 'aprobar' ? 'Anticipo aprobado' : 'Anticipo rechazado'

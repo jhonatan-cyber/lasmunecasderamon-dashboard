@@ -1,3 +1,12 @@
+/**
+ * Infraestructura del módulo Personal para anticipos.
+ *
+ * Portado del antiguo `tests/unit/lib/repositories/AnticipoRepository.test.ts`
+ * con los mismos mocks y las mismas aserciones: el repositorio se movió
+ * verbatim a `modules/personal/anticipos/repositorio.ts` y aquí se fija que el
+ * movimiento no cambió nada — historial por estado, sincronización con
+ * gratificaciones, entrega con descuento de caja.
+ */
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 const repositoryHarness = vi.hoisted(() => {
@@ -63,7 +72,7 @@ vi.mock('@/lib/repositories/BaseRepository', () => {
   };
 });
 
-import { AnticipoRepository } from '@/lib/repositories/AnticipoRepository';
+import * as repositorio from '@/modules/personal/anticipos/repositorio';
 import { BaseRepository } from '@/lib/repositories/BaseRepository';
 import { CashRegisterRepository } from '@/lib/repositories/CashRegisterRepository';
 
@@ -109,13 +118,13 @@ beforeEach(() => {
   vi.clearAllMocks();
 });
 
-describe('AnticipoRepository.updateStatus', () => {
+describe('repositorio.updateStatus', () => {
   beforeEach(() => {
     mockQueryImplementation();
   });
 
   it('actualiza estado y registra historial con accion "aprobado" para estado=1', async () => {
-    await AnticipoRepository.updateStatus('ant-1', 1, 'admin-123');
+    await repositorio.updateAnticipoStatus('ant-1', 1, 'admin-123');
 
     expect(BaseRepository.update).toHaveBeenCalledWith(
       repositoryHarness.queryMock,
@@ -138,7 +147,7 @@ describe('AnticipoRepository.updateStatus', () => {
   });
 
   it('registra historial con accion "rechazado" para estado=3', async () => {
-    await AnticipoRepository.updateStatus('ant-1', 3, 'admin-123');
+    await repositorio.updateAnticipoStatus('ant-1', 3, 'admin-123');
 
     expect(BaseRepository.insert).toHaveBeenCalledWith(
       repositoryHarness.queryMock,
@@ -151,7 +160,7 @@ describe('AnticipoRepository.updateStatus', () => {
   });
 
   it('registra historial con accion "anulado" para estado=0', async () => {
-    await AnticipoRepository.updateStatus('ant-1', 0, 'admin-123');
+    await repositorio.updateAnticipoStatus('ant-1', 0, 'admin-123');
 
     expect(BaseRepository.insert).toHaveBeenCalledWith(
       repositoryHarness.queryMock,
@@ -163,7 +172,7 @@ describe('AnticipoRepository.updateStatus', () => {
   });
 
   it('registra historial con accion generica "actualizado" para estado desconocido', async () => {
-    await AnticipoRepository.updateStatus('ant-1', 99, 'admin-123');
+    await repositorio.updateAnticipoStatus('ant-1', 99, 'admin-123');
 
     expect(BaseRepository.insert).toHaveBeenCalledWith(
       repositoryHarness.queryMock,
@@ -175,7 +184,7 @@ describe('AnticipoRepository.updateStatus', () => {
   });
 
   it('registra historial con usuario_id undefined si no se pasa adminId', async () => {
-    await AnticipoRepository.updateStatus('ant-1', 1);
+    await repositorio.updateAnticipoStatus('ant-1', 1);
 
     expect(BaseRepository.insert).toHaveBeenCalledWith(
       repositoryHarness.queryMock,
@@ -188,13 +197,13 @@ describe('AnticipoRepository.updateStatus', () => {
   });
 });
 
-describe('AnticipoRepository.grant', () => {
+describe('repositorio.grant', () => {
   beforeEach(() => {
     mockQueryImplementation();
   });
 
   it('guarda anticipo directo como entregado para no descontar caja dos veces', async () => {
-    await AnticipoRepository.grant('user-1', 100, 'Directo admin', undefined, 'admin-uuid-1');
+    await repositorio.grantAnticipo('user-1', 100, 'Directo admin', undefined, 'admin-uuid-1');
 
     expect(BaseRepository.insert).toHaveBeenCalledWith(
       repositoryHarness.queryMock,
@@ -216,7 +225,7 @@ describe('AnticipoRepository.grant', () => {
   });
 
   it('inserta historial con solicitud + aprobado + entregado', async () => {
-    await AnticipoRepository.grant('user-1', 100, 'Directo admin', undefined, 'admin-uuid-1');
+    await repositorio.grantAnticipo('user-1', 100, 'Directo admin', undefined, 'admin-uuid-1');
 
     const histCalls = repositoryHarness.queryMock.mock.calls.filter(
       ([sql]) => typeof sql === 'string' && sql.includes('anticipo_historial')
@@ -226,12 +235,22 @@ describe('AnticipoRepository.grant', () => {
     const histValues: unknown[] = histCalls[0][1];
     expect(histValues).toHaveLength(12);
     expect(histValues.slice(0, 4)).toEqual(['ant-1', 'solicitud', 'user-1', '2026-04-11 12:00:00']);
-    expect(histValues.slice(4, 8)).toEqual(['ant-1', 'aprobado', 'admin-uuid-1', '2026-04-11 12:00:00']);
-    expect(histValues.slice(8, 12)).toEqual(['ant-1', 'entregado', 'admin-uuid-1', '2026-04-11 12:00:00']);
+    expect(histValues.slice(4, 8)).toEqual([
+      'ant-1',
+      'aprobado',
+      'admin-uuid-1',
+      '2026-04-11 12:00:00'
+    ]);
+    expect(histValues.slice(8, 12)).toEqual([
+      'ant-1',
+      'entregado',
+      'admin-uuid-1',
+      '2026-04-11 12:00:00'
+    ]);
   });
 
   it('inserta historial sin usuario_id en aprobado/entregado si no se pasa adminId', async () => {
-    await AnticipoRepository.grant('user-1', 100, 'Sin admin', undefined, undefined);
+    await repositorio.grantAnticipo('user-1', 100, 'Sin admin', undefined, undefined);
 
     const histCalls = repositoryHarness.queryMock.mock.calls.filter(
       ([sql]) => typeof sql === 'string' && sql.includes('anticipo_historial')
@@ -242,11 +261,16 @@ describe('AnticipoRepository.grant', () => {
     expect(histValues).toHaveLength(12);
     expect(histValues.slice(0, 4)).toEqual(['ant-1', 'solicitud', 'user-1', '2026-04-11 12:00:00']);
     expect(histValues.slice(4, 8)).toEqual(['ant-1', 'aprobado', undefined, '2026-04-11 12:00:00']);
-    expect(histValues.slice(8, 12)).toEqual(['ant-1', 'entregado', undefined, '2026-04-11 12:00:00']);
+    expect(histValues.slice(8, 12)).toEqual([
+      'ant-1',
+      'entregado',
+      undefined,
+      '2026-04-11 12:00:00'
+    ]);
   });
 });
 
-describe('AnticipoRepository.request', () => {
+describe('repositorio.request', () => {
   beforeEach(() => {
     mockQueryImplementation({
       'FROM usuarios WHERE id_usuario = ?': USER_ROW,
@@ -256,7 +280,7 @@ describe('AnticipoRepository.request', () => {
   });
 
   it('inserta anticipo con estado pendiente (2)', async () => {
-    await AnticipoRepository.request('user-1', 100, 'Sueldo');
+    await repositorio.requestAnticipo('user-1', 100, 'Sueldo');
 
     expect(BaseRepository.insert).toHaveBeenCalledWith(
       repositoryHarness.queryMock,
@@ -271,7 +295,7 @@ describe('AnticipoRepository.request', () => {
   });
 
   it('inserta historial con accion "solicitud" y usuario_id del empleado', async () => {
-    await AnticipoRepository.request('user-1', 100, 'Sueldo');
+    await repositorio.requestAnticipo('user-1', 100, 'Sueldo');
 
     expect(BaseRepository.insert).toHaveBeenCalledWith(
       repositoryHarness.queryMock,
@@ -286,7 +310,7 @@ describe('AnticipoRepository.request', () => {
   });
 });
 
-describe('AnticipoRepository.processSolicitud', () => {
+describe('repositorio.processSolicitud', () => {
   beforeEach(() => {
     mockQueryImplementation({
       'FROM anticipos a': USER_ROW_WITH_PUSH
@@ -294,7 +318,7 @@ describe('AnticipoRepository.processSolicitud', () => {
   });
 
   it('aprueba solicitud y registra historial con accion "aprobado"', async () => {
-    await AnticipoRepository.processSolicitud('ant-1', 'approve', 'admin-123');
+    await repositorio.processSolicitudAnticipo('ant-1', 'approve', 'admin-123');
 
     expect(BaseRepository.update).toHaveBeenCalledWith(
       repositoryHarness.queryMock,
@@ -317,7 +341,7 @@ describe('AnticipoRepository.processSolicitud', () => {
   });
 
   it('rechaza solicitud y registra historial con accion "rechazado"', async () => {
-    await AnticipoRepository.processSolicitud('ant-1', 'reject', 'admin-123');
+    await repositorio.processSolicitudAnticipo('ant-1', 'reject', 'admin-123');
 
     expect(BaseRepository.update).toHaveBeenCalledWith(
       repositoryHarness.queryMock,
@@ -340,7 +364,7 @@ describe('AnticipoRepository.processSolicitud', () => {
   });
 
   it('inserta historial con usuario_id null si no se pasa adminId', async () => {
-    await AnticipoRepository.processSolicitud('ant-1', 'approve');
+    await repositorio.processSolicitudAnticipo('ant-1', 'approve');
 
     expect(BaseRepository.insert).toHaveBeenCalledWith(
       repositoryHarness.queryMock,
@@ -358,7 +382,7 @@ describe('AnticipoRepository.processSolicitud', () => {
       'SELECT estado FROM gratificaciones WHERE id = ?': [{ estado: 2 }]
     });
 
-    await AnticipoRepository.processSolicitud('ant-1', 'approve', 'admin-123');
+    await repositorio.processSolicitudAnticipo('ant-1', 'approve', 'admin-123');
 
     expect(BaseRepository.update).toHaveBeenCalledWith(
       repositoryHarness.queryMock,
@@ -370,7 +394,7 @@ describe('AnticipoRepository.processSolicitud', () => {
   });
 });
 
-describe('AnticipoRepository.deliverAnticipo', () => {
+describe('repositorio.deliverAnticipo', () => {
   beforeEach(() => {
     const approvedRow = [
       {
@@ -384,7 +408,7 @@ describe('AnticipoRepository.deliverAnticipo', () => {
   });
 
   it('entrega anticipo y registra historial con accion "entregado"', async () => {
-    await AnticipoRepository.deliverAnticipo('ant-1', 'cajero-456');
+    await repositorio.deliverAnticipo('ant-1', 'cajero-456');
 
     expect(BaseRepository.update).toHaveBeenCalledWith(
       repositoryHarness.queryMock,
@@ -410,7 +434,7 @@ describe('AnticipoRepository.deliverAnticipo', () => {
   });
 
   it('descuenta efectivo de caja al entregar', async () => {
-    await AnticipoRepository.deliverAnticipo('ant-1', 'cajero-456');
+    await repositorio.deliverAnticipo('ant-1', 'cajero-456');
 
     expect(CashRegisterRepository.updateBalances).toHaveBeenCalledWith(
       repositoryHarness.queryMock,

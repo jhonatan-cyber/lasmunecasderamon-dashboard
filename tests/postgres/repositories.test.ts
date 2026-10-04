@@ -18,7 +18,7 @@ import { QueryLogRepository } from '@/lib/repositories/QueryLogRepository';
 import { VentasStatsRepository } from '@/lib/repositories/VentasStatsRepository';
 import * as services from '@/lib/repositories/service/ServiceQueries';
 import * as attendance from '@/lib/repositories/attendance/AttendanceQueries';
-import * as anticipos from '@/lib/repositories/anticipo/AnticipoQueries';
+import * as anticipos from '@/modules/personal/anticipos/repositorio';
 import { getAllGratificaciones } from '@/lib/repositories/gratificacion/GratificacionQueries';
 import { getAnticipoBalances } from '@/lib/business/anticiposUtils';
 import { prepareQuery } from '@/lib/database/postgres.cjs';

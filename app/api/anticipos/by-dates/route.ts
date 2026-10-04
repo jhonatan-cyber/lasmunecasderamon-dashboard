@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
 import { withRoute } from '@/lib/api/withRoute';
-import { AnticipoService } from '@/lib/services/AnticipoService';
+import { listarAnticiposDeUsuario, listarAnticiposPorFechas } from '@/modules/personal';
 import { ValidationError } from '@/lib/errors/errors';
 
 export const GET = withRoute(
@@ -13,9 +13,9 @@ export const GET = withRoute(
 
     let result;
     if (dates) {
-      result = await AnticipoService.getByDates(user.id.toString(), dates.split(','));
+      result = await listarAnticiposPorFechas(user.id.toString(), dates.split(','));
     } else if (startDate && endDate) {
-      result = await AnticipoService.getByUser(user.id.toString(), startDate, endDate);
+      result = await listarAnticiposDeUsuario(user.id.toString(), startDate, endDate);
     } else {
       throw new ValidationError('Faltan parámetros de fecha', { startDate, endDate, dates });
     }

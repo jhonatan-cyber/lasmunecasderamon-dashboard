@@ -16,6 +16,20 @@ vi.mock('@/modules/personal/horas-extras/repositorio', () => ({
   eliminar: vi.fn()
 }));
 
+// La API pública (`modules/personal/index.ts`) carga también anticipos, cuyo
+// repositorio toca el driver; se mockea para no arrastrarlo a este entorno.
+vi.mock('@/modules/personal/anticipos/repositorio', () => ({
+  getAllAnticipos: vi.fn(),
+  getAnticiposByUser: vi.fn(),
+  getAnticiposByDates: vi.fn(),
+  listarSolicitudesDeUsuario: vi.fn(),
+  grantAnticipo: vi.fn(),
+  requestAnticipo: vi.fn(),
+  updateAnticipoStatus: vi.fn(),
+  processSolicitudAnticipo: vi.fn(),
+  deliverAnticipo: vi.fn()
+}));
+
 import {
   listarHorasExtras,
   listarHorasExtrasDeUsuario,

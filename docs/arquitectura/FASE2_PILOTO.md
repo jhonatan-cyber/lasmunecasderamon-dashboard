@@ -94,9 +94,7 @@ pública admitida es el directorio o `index.ts`, nunca un archivo interior.
   Component); queda pendiente junto con la Fase 3.
 - `actualizarHoraExtra` y `eliminarHoraExtra` no tienen ruta HTTP que las use
   (tampoco la tenían en `OvertimeService`); se conservan como parte de la API
-  del módulo.
-
-## Verificación
+  del módulo.## Verificación
 
 - `pnpm arquitectura:limites`: sin dependencias prohibidas nuevas, 26/26
   excepciones vigentes, ninguna obsoleta.
@@ -109,3 +107,35 @@ pública admitida es el directorio o `index.ts`, nunca un archivo interior.
 - Línea base intacta: horas extras **listar 1 consulta** (techo 4) y **crear 2**
   (techo 5); el resto de los flujos sin cambios (cobro 15, anulación 2 y 32,
   biometría 6 y 4).
+
+## Primera réplica del patrón: anticipos
+
+Anticipos migra con el mismo diseño — `modules/personal/anticipos/` con
+`servicio.ts` (aplicación) y `repositorio.ts` (infraestructura privada, el
+antiguo `anticipo/AnticipoQueries.ts` movido verbatim), contratos públicos en
+`contracts.ts` y API por el `index.ts` del módulo — con dos diferencias que el
+patrón admite:
+
+1. **Sin `ContextoOperacion` todavía.** Otorgar, procesar y entregar abren hoy
+   su propia transacción (tocan caja vía `CashRegisterRepository`); que
+   participen de una unidad ajena es trabajo de la Fase 5/6, cuando el workflow
+   exista. La operación de horas extras sí lo acepta porque su camino es
+   trivial; anticipos documenta la deuda en el encabezado del repositorio.
+2. **El listado de solicitudes de la ruta `GET /api/anticipos/solicitudes`**
+   tenía SQL en la ruta; se movió al repositorio como
+   `listarSolicitudesDeUsuario`, que es una consulta más fuera de los
+   controladores HTTP (§9).
+
+Deuda heredada que el movimiento no cambia (anotada en el repositorio): la
+coordinación con caja, el cierre de gratificaciones dentro de
+`procesarSolicitud` (intra-módulo) y el SQL de `anticiposUtils` (Fase 6). Las
+rutas `balances`, `maximo` y `solicitud-detalles` conservan su SQL: las dos
+primeras leen `anticiposUtils`, la tercera es el patrón legítimo de autorización
+por token (§5).
+
+La línea base incorpora los dos flujos de anticipos: **listar 2 consultas**
+(techo 5) y **crear 5** (techo 10), con fixture de comisión vigente para pasar
+la regla de monto máximo y calentamiento de las cachés de configuración. El mock
+de `pushNotifications` en la suite debía devolver promesas: el repositorio
+encadena `.catch(...)` sobre el resultado, y un `vi.fn()` desnudo devuelve
+`undefined` — un TypeError disfrazado de DatabaseError.

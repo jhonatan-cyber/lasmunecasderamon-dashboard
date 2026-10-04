@@ -231,7 +231,9 @@ describe('completitud del catálogo', () => {
    */
   function collectEmittedEvents(): Map<string, string[]> {
     const emitidos = new Map<string, string[]>();
-    const roots = ['app', 'lib'];
+    // `modules/` emite desde la Fase 2: el catálogo no puede quedarse ciego a
+    // los emisores que se mudan fuera de `lib/`.
+    const roots = ['app', 'lib', 'modules'];
 
     const visit = (dir: string) => {
       for (const entry of fs.readdirSync(dir, { withFileTypes: true })) {

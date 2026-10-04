@@ -10,7 +10,7 @@ import {
   parseSolicitudResponseCommand
 } from '@/lib/integrations/whatsappCommandUtils';
 import { processPendingSolicitud } from '@/lib/integrations/whatsappPendingActions';
-import { AnticipoService } from '@/lib/services/AnticipoService';
+import { procesarAnticipoDesdeComando } from '@/modules/personal';
 import { CashRegisterService } from '@/lib/services/CashRegisterService';
 import { GratificacionService } from '@/lib/services/GratificacionService';
 import { formatCurrencyCLP } from '@/lib/utils/formatters';
@@ -165,7 +165,7 @@ export async function POST(request: Request) {
 
     const comandoAnticipo = parseAnticipoCommand(mensaje);
     if (comandoAnticipo) {
-      const result = await AnticipoService.processAnticipoFromCommand(
+      const result = await procesarAnticipoDesdeComando(
         (anticiposPendientes as any[]).map(a => ({ ...a, tipo: 'anticipo' })),
         comandoAnticipo.anticipoId,
         comandoAnticipo.action === 'aprobar',
