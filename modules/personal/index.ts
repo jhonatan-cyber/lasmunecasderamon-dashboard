@@ -29,5 +29,8 @@ export {
   procesarSolicitudDeTexto,
   entregarAnticipo,
   actualizarEstadoAnticipo,
-  procesarAnticipoDesdeComando
+  procesarAnticipoDesdeComando,
+  tieneSolicitudPendiente,
+  obtenerSolicitudAnticipoPorId
 } from './anticipos/servicio';
+export { getAnticipoBalances } from './balances/servicio';

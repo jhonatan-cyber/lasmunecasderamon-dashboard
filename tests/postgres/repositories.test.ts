@@ -20,7 +20,7 @@ import * as services from '@/lib/repositories/service/ServiceQueries';
 import * as attendance from '@/modules/asistencia/marcas/repositorio';
 import * as anticipos from '@/modules/personal/anticipos/repositorio';
 import { getAllGratificaciones } from '@/lib/repositories/gratificacion/GratificacionQueries';
-import { getAnticipoBalances } from '@/lib/business/anticiposUtils';
+import { getAnticipoBalances } from '@/modules/personal';
 import { prepareQuery } from '@/lib/database/postgres.cjs';
 
 let userId: string, saleId: string, cajaId: string;

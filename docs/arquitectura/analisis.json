@@ -1,15 +1,15 @@
 {
   "resumen": {
-    "commit": "c68d8fbbe6ae57920b8067cd93db0a70bcede28e",
-    "generado": "2026-10-05T05:15:08.862Z",
-    "archivos": 1536,
+    "commit": "ca8282694eaae83ac49f55ca683d3fddf7eac3b2",
+    "generado": "2026-10-05T05:46:43.500Z",
+    "archivos": 1543,
     "rutas": 204,
-    "sqlFueraDeRepositorio": 97,
-    "tablasConEscritoresMultiples": 14,
+    "sqlFueraDeRepositorio": 88,
+    "tablasConEscritoresMultiples": 15,
     "ciclos": 5,
     "procesosPeriodicos": 15,
     "caches": 19,
-    "rutasApiConSqlDirecto": 32,
+    "rutasApiConSqlDirecto": 24,
     "rutasSinWrapper": 19
   },
   "rutas": [
@@ -83,7 +83,7 @@
       "nivel": "authenticated",
       "audit": true,
       "moduloDominio": "personal",
-      "usaDriver": true
+      "usaDriver": false
     },
     {
       "ruta": "/api/anticipos",
@@ -101,7 +101,7 @@
       "nivel": "publico",
       "audit": false,
       "moduloDominio": "personal",
-      "usaDriver": true
+      "usaDriver": false
     },
     {
       "ruta": "/api/anticipos/solicitudes",
@@ -812,7 +812,7 @@
       "nivel": "finances.write",
       "audit": true,
       "moduloDominio": "operacion",
-      "usaDriver": true
+      "usaDriver": false
     },
     {
       "ruta": "/api/cuentas/procesar-anulacion",
@@ -821,7 +821,7 @@
       "nivel": "SIN_WRAPPER",
       "audit": false,
       "moduloDominio": "operacion",
-      "usaDriver": true
+      "usaDriver": false
     },
     {
       "ruta": "/api/cuentas",
@@ -839,7 +839,7 @@
       "nivel": "SIN_WRAPPER",
       "audit": false,
       "moduloDominio": "operacion",
-      "usaDriver": true
+      "usaDriver": false
     },
     {
       "ruta": "/api/dashboard/composite",
@@ -1460,7 +1460,7 @@
       "nivel": "authenticated",
       "audit": true,
       "moduloDominio": "operacion",
-      "usaDriver": true
+      "usaDriver": false
     },
     {
       "ruta": "/api/servicios/by-dates",
@@ -1478,7 +1478,7 @@
       "nivel": "SIN_WRAPPER",
       "audit": false,
       "moduloDominio": "operacion",
-      "usaDriver": true
+      "usaDriver": false
     },
     {
       "ruta": "/api/servicios",
@@ -1496,7 +1496,7 @@
       "nivel": "SIN_WRAPPER",
       "audit": false,
       "moduloDominio": "operacion",
-      "usaDriver": true
+      "usaDriver": false
     },
     {
       "ruta": "/api/servicios/temporal",
@@ -2218,12 +2218,6 @@
       "escribe": []
     },
     {
-      "archivo": "lib/business/anticiposUtils.ts",
-      "capa": "lib/business",
-      "modulo": null,
-      "escribe": []
-    },
-    {
       "archivo": "lib/business/codigoService.ts",
       "capa": "lib/business",
       "modulo": null,
@@ -2257,18 +2251,6 @@
       "archivo": "lib/business/whatsappConfig.ts",
       "capa": "lib/business",
       "modulo": null,
-      "escribe": []
-    },
-    {
-      "archivo": "app/api/anticipos/maximo/route.ts",
-      "capa": "app/api",
-      "modulo": "personal",
-      "escribe": []
-    },
-    {
-      "archivo": "app/api/anticipos/solicitud-detalles/route.ts",
-      "capa": "app/api",
-      "modulo": "personal",
       "escribe": []
     },
     {
@@ -2326,24 +2308,6 @@
       "escribe": ["cuentas", "habitaciones", "servicios", "ventas"]
     },
     {
-      "archivo": "app/api/cuentas/anulacion/route.ts",
-      "capa": "app/api",
-      "modulo": "operacion",
-      "escribe": []
-    },
-    {
-      "archivo": "app/api/cuentas/procesar-anulacion/route.ts",
-      "capa": "app/api",
-      "modulo": "operacion",
-      "escribe": []
-    },
-    {
-      "archivo": "app/api/cuentas/solicitud-anulacion/route.ts",
-      "capa": "app/api",
-      "modulo": "operacion",
-      "escribe": []
-    },
-    {
       "archivo": "app/api/health/route.ts",
       "capa": "app/api",
       "modulo": null,
@@ -2390,24 +2354,6 @@
       "capa": "app/api",
       "modulo": "identidad",
       "escribe": []
-    },
-    {
-      "archivo": "app/api/servicios/anulacion/route.ts",
-      "capa": "app/api",
-      "modulo": "operacion",
-      "escribe": []
-    },
-    {
-      "archivo": "app/api/servicios/procesar-anulacion/route.ts",
-      "capa": "app/api",
-      "modulo": "operacion",
-      "escribe": []
-    },
-    {
-      "archivo": "app/api/servicios/solicitud-anulacion/route.ts",
-      "capa": "app/api",
-      "modulo": "operacion",
-      "escribe": ["solicitudes_anulacion_servicios"]
     },
     {
       "archivo": "app/api/settings/backup/[id]/download/route.ts",
@@ -2560,6 +2506,14 @@
       "escritores": [
         "lib/repositories/TimerRepository.ts",
         "lib/repositories/service/ServiceQueries.ts"
+      ],
+      "modulos": ["operacion"]
+    },
+    {
+      "tabla": "solicitudes_anulacion_servicios",
+      "escritores": [
+        "lib/repositories/service/ServiceQueries.ts",
+        "modules/operacion/servicios/repositorio.ts"
       ],
       "modulos": ["operacion"]
     },

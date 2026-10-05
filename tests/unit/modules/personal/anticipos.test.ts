@@ -25,6 +25,17 @@ vi.mock('@/modules/personal/horas-extras/repositorio', () => ({
   eliminar: vi.fn()
 }));
 
+// Los saldos que habilitan un anticipo viven en su propio subdominio y tocan el
+// driver; se mockean para no arrastrarlo a este entorno.
+vi.mock('@/modules/personal/balances/repositorio', () => ({
+  getAnticipoBalances: vi.fn(async () => ({
+    montoAsistencia: 0,
+    montoComision: 0,
+    montoPropina: 0,
+    montoMaximo: 0
+  }))
+}));
+
 import {
   otorgarAnticipo,
   procesarAnticipoDesdeComando,

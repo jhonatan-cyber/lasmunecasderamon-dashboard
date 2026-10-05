@@ -14,12 +14,12 @@
  *   a un workflow.
  * - `procesarSolicitud` cierra también la gratificación vinculada al mismo id:
  *   intra-módulo (personal), se reordena cuando migre gratificaciones.
- * - `getAnticipoBalances` ejecuta SQL desde `lib/business/anticiposUtils`:
- *   se reubica en la Fase 6.
+ * - `getAnticipoBalances` se mudó a `modules/personal/balances` en el corte 12;
+ *   este archivo lo importa de allí, dentro del mismo módulo.
  */
+import { getAnticipoBalances } from '../balances/repositorio';
 import { query, generateUUID, withTransaction, type TransactionQuery } from '@/lib/database/db';
 import { getNowInBusinessTimezone } from '@/lib/business/timezoneService';
-import { getAnticipoBalances } from '@/lib/business/anticiposUtils';
 import { enviarWhatsApp } from '@/lib/integrations/whatsappService';
 import { sendNotificationToAll } from '@/lib/api/sseService';
 import { getAdminWhatsApp } from '@/lib/business/whatsappConfig';
@@ -603,6 +603,35 @@ export async function deliverAnticipo(id: string, entregado_por: string) {
     if (err instanceof NotFoundError || err instanceof BusinessError) throw err;
     throw new DatabaseError(`Error al entregar anticipo ${id}`, err);
   }
+}
+
+/**
+ * ¿El usuario tiene una solicitud en estado pendiente (2)? La ruta de anticipo
+ * máximo la usa para no ofrecer un segundo botón de solicitud mientras la
+ * anterior no se resuelve.
+ */
+export async function tieneSolicitudPendiente(usuarioId: string): Promise<boolean> {
+  const rows = await query<{ count: string | number }[]>(
+    'SELECT COUNT(*) as count FROM anticipos WHERE usuario_id = ? AND estado = 2',
+    [usuarioId]
+  );
+  return Number(rows[0]?.count || 0) > 0;
+}
+
+/**
+ * Solicitud de anticipo con su usuario, para la vista pública de confirmación.
+ * El nombre viene concatenado en SQL porque así lo devolvía la ruta y el
+ * consumidor (WhatsApp y la página) muestra un solo campo.
+ */
+export async function obtenerSolicitudAnticipoPorId(id_anticipo: string) {
+  return await query<any[]>(
+    `SELECT A.id_anticipo, A.usuario_id, A.monto, A.motivo, A.estado, A.fecha_crea,
+            (CAST(U.nombre AS text) || CAST(' ' AS text) || CAST(U.apellido AS text)) AS usuario, U.nick
+     FROM anticipos A
+     INNER JOIN usuarios U ON U.id_usuario = A.usuario_id
+     WHERE A.id_anticipo = ?`,
+    [id_anticipo]
+  );
 }
 
 function mapEstadoToAccion(estado: number): string {

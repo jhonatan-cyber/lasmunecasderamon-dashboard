@@ -52,7 +52,7 @@ import {
   registrarHoraExtra,
   solicitarAnticipoSimple
 } from '@/modules/personal';
-import { getAnticipoBalances } from '@/lib/business/anticiposUtils';
+import { getAnticipoBalances } from '@/modules/personal';
 import { getAdminWhatsApp } from '@/lib/business/whatsappConfig';
 import { getTwilioConfig } from '@/lib/business/twilioConfig';
 

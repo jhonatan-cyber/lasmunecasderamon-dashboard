@@ -18,6 +18,15 @@ vi.mock('@/modules/personal/horas-extras/repositorio', () => ({
 
 // La API pública (`modules/personal/index.ts`) carga también anticipos, cuyo
 // repositorio toca el driver; se mockea para no arrastrarlo a este entorno.
+vi.mock('@/modules/personal/balances/repositorio', () => ({
+  getAnticipoBalances: vi.fn(async () => ({
+    montoAsistencia: 0,
+    montoComision: 0,
+    montoPropina: 0,
+    montoMaximo: 0
+  }))
+}));
+
 vi.mock('@/modules/personal/anticipos/repositorio', () => ({
   getAllAnticipos: vi.fn(),
   getAnticiposByUser: vi.fn(),

@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
 import { withRoute } from '@/lib/api/withRoute';
-import { getAnticipoBalances } from '@/lib/business/anticiposUtils';
+import { getAnticipoBalances } from '@/modules/personal';
 
 export const dynamic = 'force-dynamic';
 

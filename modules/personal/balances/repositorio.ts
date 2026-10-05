@@ -1,3 +1,13 @@
+/**
+ * Cálculo de los saldos que habilitan un anticipo. Infraestructura privada del
+ * módulo Personal: SQL de `usuarios`, `asistencias`, `comisiones`, `propinas`,
+ * `gratificaciones`, `horas_extras` y `anticipos`, todas tablas de Personal.
+ *
+ * Este SQL vivía en `lib/business/anticiposUtils.ts`, que era un segundo hogar
+ * para lógica de Personal fuera del módulo. La fase 6 pide «reubicar reglas en su
+ * propietario»: el archivo se movió verbatim y sus consumidores (las rutas de
+ * anticipos y la de estadísticas propias) ahora llaman la API pública del módulo.
+ */
 import { query } from '@/lib/database/db';
 import { DatabaseError } from '@/lib/errors/errors';
 

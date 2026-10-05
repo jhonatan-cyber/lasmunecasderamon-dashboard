@@ -10,11 +10,14 @@ export const GET = withPublicRoute(async (request: Request) => {
   return NextResponse.json({ success: true, data });
 });
 
-export const POST = withRoute({ auth: true, audit: true, module: 'finances', action: 'write' }, async (request: Request, { params, user }) => {
-  const body = await request.json();
-  const cuenta = await AccountService.create(body, user.id.toString());
-  return NextResponse.json(
-    { success: true, message: 'Cuenta creada correctamente', id: cuenta?.id_cuenta },
-    { status: 201 }
-  );
-});
+export const POST = withRoute(
+  { auth: true, audit: true, module: 'finances', action: 'write' },
+  async (request: Request, { params, user }) => {
+    const body = await request.json();
+    const cuenta = await AccountService.create(body, user.id.toString());
+    return NextResponse.json(
+      { success: true, message: 'Cuenta creada correctamente', id: cuenta?.id_cuenta },
+      { status: 201 }
+    );
+  }
+);

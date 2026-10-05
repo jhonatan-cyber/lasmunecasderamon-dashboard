@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
 import { withRoute } from '@/lib/api/withRoute';
-import { getAnticipoBalances } from '@/lib/business/anticiposUtils';
+import { getAnticipoBalances } from '@/modules/personal';
 import { TipService } from '@/lib/services/TipService';
 import { ServiceService } from '@/lib/services/ServiceService';
 import { query } from '@/lib/database/db';

@@ -25,7 +25,7 @@ vi.mock('@/lib/business/timezoneService', () => ({
   getSystemTimezone: () => 'America/La_Paz'
 }));
 
-vi.mock('@/lib/business/anticiposUtils', () => ({
+vi.mock('@/modules/personal/balances/repositorio', () => ({
   getAnticipoBalances: vi.fn(async () => ({
     montoAsistencia: 0,
     montoComision: 0,

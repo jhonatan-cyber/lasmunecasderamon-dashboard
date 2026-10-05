@@ -55,8 +55,11 @@ describe('analisis de arquitectura (Fase 0)', () => {
   it('detecta el driver por import, no por llamada', () => {
     // Regresión: contar sólo llamadas a query( dio 15 de 36 rutas, porque las
     // que importan los símbolos y los reexportan no dejaban rastro de llamada.
+    // El suelo de 30 que se fissaba era un proxy para esa trampa; con la fase 5
+    // la dirección correcta es a la baja, así que lo que se fija es el techo: las
+    // rutas con SQL no pueden volver a crecer por encima de la línea base de 36.
     const conImport = informe.rutas.filter(r => r.usaDriver);
-    expect(conImport.length).toBeGreaterThanOrEqual(30);
+    expect(conImport.length).toBeLessThan(36);
     // Coincide con el conteo agregado del informe, que viene del mismo grafo.
     expect(conImport.length).toBe(informe.resumen.rutasApiConSqlDirecto);
   });

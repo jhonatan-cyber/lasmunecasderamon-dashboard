@@ -85,6 +85,16 @@ export async function listarSolicitudesDeUsuario(
   return (await repositorio.listarSolicitudesDeUsuario(usuarioId)) as SolicitudAnticipoListado[];
 }
 
+/** ¿El usuario tiene una solicitud de anticipo en estado pendiente? */
+export async function tieneSolicitudPendiente(usuarioId: string): Promise<boolean> {
+  return repositorio.tieneSolicitudPendiente(usuarioId);
+}
+
+/** Solicitud de anticipo por identificador, para la vista pública de confirmación. */
+export async function obtenerSolicitudAnticipoPorId(idAnticipo: string) {
+  return repositorio.obtenerSolicitudAnticipoPorId(idAnticipo);
+}
+
 export async function procesarSolicitud(
   id: string,
   accion: 'approve' | 'reject',
