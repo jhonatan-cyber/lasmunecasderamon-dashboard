@@ -1,3 +1,5 @@
+import { actualizarDisponibilidad } from '@/modules/identidad';
+import { conContextoOperacionExistente } from '@/lib/transaccion/compatibilidad';
 import { type TransactionQuery } from '@/lib/database/db';
 import { getNowInBusinessTimezone } from '@/lib/business/timezoneService';
 
@@ -137,43 +139,8 @@ export class RoomManager {
     excludeServiceId?: string,
     excludeVentaId?: string
   ) {
-    if (!hostessIds || hostessIds.length === 0) return;
-
-    const uniqueIds = [...new Set(hostessIds)];
-    const ph = uniqueIds.map(() => '?').join(',');
-    const params = [
-      ...uniqueIds,
-      ...(excludeServiceId ? [excludeServiceId] : []),
-      ...(excludeVentaId ? [excludeVentaId] : [])
-    ];
-    const idle = await trx<{ id_usuario: string }[]>(
-      `
-      SELECT u.id_usuario
-      FROM usuarios u
-      WHERE u.id_usuario IN (${ph})
-        AND NOT EXISTS (
-          SELECT 1
-          FROM servicios s
-          JOIN detalle_servicios ds ON s.id_servicio = ds.servicio_id
-          WHERE ds.usuario_id = u.id_usuario AND s.estado = 2
-            ${excludeServiceId ? 'AND s.id_servicio != ?' : ''}
-        )
-        AND NOT EXISTS (
-          SELECT 1
-          FROM ventas v
-          JOIN ventas_usuarios vu ON v.id_venta = vu.venta_id
-          WHERE vu.usuario_id = u.id_usuario AND v.estado = 2 AND v.tiempo > 0
-            ${excludeVentaId ? 'AND v.id_venta != ?' : ''}
-        )
-      `,
-      params
+    return conContextoOperacionExistente(trx, contexto =>
+      actualizarDisponibilidad(hostessIds, contexto, excludeServiceId, excludeVentaId)
     );
-    if (idle.length > 0) {
-      const ids = idle.map(r => r.id_usuario);
-      await trx(
-        `UPDATE usuarios SET estado_servicio = 0 WHERE id_usuario IN (${ids.map(() => '?').join(',')})`,
-        ids
-      );
-    }
   }
 }

@@ -51,14 +51,6 @@ vi.mock('@/lib/utils/logger', () => ({
   logger: { debug: vi.fn(), info: vi.fn(), warn: vi.fn(), error: vi.fn() }
 }));
 
-vi.mock('@/lib/repositories/CashRegisterRepository', () => ({
-  CashRegisterRepository: {
-    getCurrentCajaId: vi.fn(async () => 'caja-1'),
-    getById: vi.fn(async () => ({ monto_apertura: 500, efectivo: 500 })),
-    updateBalances: vi.fn()
-  }
-}));
-
 vi.mock('@/lib/repositories/BaseRepository', () => {
   const mockInsert = vi.fn();
   const mockUpdate = vi.fn();
@@ -74,7 +66,13 @@ vi.mock('@/lib/repositories/BaseRepository', () => {
 
 import * as repositorio from '@/modules/personal/anticipos/repositorio';
 import { BaseRepository } from '@/lib/repositories/BaseRepository';
-import { CashRegisterRepository } from '@/lib/repositories/CashRegisterRepository';
+import { conContextoOperacionExistente } from '@/lib/transaccion/compatibilidad';
+
+function enContexto<T>(operacion: (contexto: any) => Promise<T>): Promise<T> {
+  return conContextoOperacionExistente(repositoryHarness.queryMock as any, operacion);
+}
+
+const aplazarNulo = () => {};
 
 const USER_ROW = [{ nombre: 'Ana', apellido: 'Perez', nick: 'ana', telefono: null }];
 const USER_ROW_WITH_PUSH = [
@@ -101,6 +99,9 @@ function mockQueryImplementation(customMocks?: Record<string, any[]>) {
       }
     }
     if (sql.includes('FROM usuarios WHERE id_usuario = ?')) return USER_ROW;
+    if (sql.includes('FROM cajas WHERE estado = 1')) return [{ id_caja: 'caja-1' }];
+    if (sql.includes('FROM cajas WHERE id_caja = ?'))
+      return [{ monto_apertura: 500, efectivo: 500 }];
     if (sql.includes('COUNT(*) as count FROM anticipos WHERE usuario_id = ?'))
       return [{ count: 0 }];
 
@@ -203,7 +204,17 @@ describe('repositorio.grant', () => {
   });
 
   it('guarda anticipo directo como entregado para no descontar caja dos veces', async () => {
-    await repositorio.grantAnticipo('user-1', 100, 'Directo admin', undefined, 'admin-uuid-1');
+    await enContexto(contexto =>
+      repositorio.grantAnticipo(
+        'user-1',
+        100,
+        'Directo admin',
+        undefined,
+        'admin-uuid-1',
+        contexto,
+        aplazarNulo
+      )
+    );
 
     expect(BaseRepository.insert).toHaveBeenCalledWith(
       repositoryHarness.queryMock,
@@ -217,15 +228,27 @@ describe('repositorio.grant', () => {
       })
     );
 
-    expect(CashRegisterRepository.updateBalances).toHaveBeenCalledWith(
-      repositoryHarness.queryMock,
-      'caja-1',
-      expect.objectContaining({ efectivo: -100, anticipo: 100 })
+    const cajaCalls = repositoryHarness.queryMock.mock.calls.filter(
+      ([sql]) => typeof sql === 'string' && sql.includes('UPDATE cajas SET')
     );
+    expect(cajaCalls).toHaveLength(1);
+    expect(cajaCalls[0][0]).toContain('efectivo = efectivo + ?');
+    expect(cajaCalls[0][0]).toContain('anticipo = anticipo + ?');
+    expect(cajaCalls[0][1]).toEqual([-100, 100, 'caja-1']);
   });
 
   it('inserta historial con solicitud + aprobado + entregado', async () => {
-    await repositorio.grantAnticipo('user-1', 100, 'Directo admin', undefined, 'admin-uuid-1');
+    await enContexto(contexto =>
+      repositorio.grantAnticipo(
+        'user-1',
+        100,
+        'Directo admin',
+        undefined,
+        'admin-uuid-1',
+        contexto,
+        aplazarNulo
+      )
+    );
 
     const histCalls = repositoryHarness.queryMock.mock.calls.filter(
       ([sql]) => typeof sql === 'string' && sql.includes('anticipo_historial')
@@ -250,7 +273,17 @@ describe('repositorio.grant', () => {
   });
 
   it('inserta historial sin usuario_id en aprobado/entregado si no se pasa adminId', async () => {
-    await repositorio.grantAnticipo('user-1', 100, 'Sin admin', undefined, undefined);
+    await enContexto(contexto =>
+      repositorio.grantAnticipo(
+        'user-1',
+        100,
+        'Sin admin',
+        undefined,
+        undefined,
+        contexto,
+        aplazarNulo
+      )
+    );
 
     const histCalls = repositoryHarness.queryMock.mock.calls.filter(
       ([sql]) => typeof sql === 'string' && sql.includes('anticipo_historial')
@@ -408,7 +441,9 @@ describe('repositorio.deliverAnticipo', () => {
   });
 
   it('entrega anticipo y registra historial con accion "entregado"', async () => {
-    await repositorio.deliverAnticipo('ant-1', 'cajero-456');
+    await enContexto(contexto =>
+      repositorio.deliverAnticipo('ant-1', 'cajero-456', contexto, aplazarNulo)
+    );
 
     expect(BaseRepository.update).toHaveBeenCalledWith(
       repositoryHarness.queryMock,
@@ -434,12 +469,14 @@ describe('repositorio.deliverAnticipo', () => {
   });
 
   it('descuenta efectivo de caja al entregar', async () => {
-    await repositorio.deliverAnticipo('ant-1', 'cajero-456');
-
-    expect(CashRegisterRepository.updateBalances).toHaveBeenCalledWith(
-      repositoryHarness.queryMock,
-      'caja-1',
-      expect.objectContaining({ efectivo: -100, anticipo: 100 })
+    await enContexto(contexto =>
+      repositorio.deliverAnticipo('ant-1', 'cajero-456', contexto, aplazarNulo)
     );
+
+    const cajaCalls = repositoryHarness.queryMock.mock.calls.filter(
+      ([sql]) => typeof sql === 'string' && sql.includes('UPDATE cajas SET')
+    );
+    expect(cajaCalls).toHaveLength(1);
+    expect(cajaCalls[0][1]).toEqual([-100, 100, 'caja-1']);
   });
 });

@@ -1,3 +1,7 @@
+vi.mock('@/modules/personal/conceptos/repositorio', () => ({
+  insertarComisiones: vi.fn(),
+  insertarPropina: vi.fn()
+}));
 /**
  * Casos de uso públicos del módulo Personal — anticipos.
  *
@@ -34,6 +38,15 @@ vi.mock('@/modules/personal/balances/repositorio', () => ({
     montoPropina: 0,
     montoMaximo: 0
   }))
+}));
+
+// `otorgar`/`entregar` abren su propia unidad: el contrato importa el driver,
+// que valida entorno al cargarse. Se mockea porque el repositorio ya está
+// mockeado y el driver no se usa en este entorno.
+vi.mock('@/lib/database/db', () => ({
+  generateUUID: () => 'test-uuid',
+  withTransaction: vi.fn(async (fn: any) => fn(vi.fn())),
+  query: vi.fn()
 }));
 
 import {
@@ -74,7 +87,9 @@ describe('otorgarAnticipo', () => {
       50000,
       'Motivo test',
       '2026-04-09',
-      undefined
+      undefined,
+      expect.objectContaining({ id: expect.any(String) }),
+      expect.any(Function)
     );
   });
 
@@ -83,7 +98,15 @@ describe('otorgarAnticipo', () => {
 
     await otorgarAnticipo('user-1', 50000, 'Motivo', undefined, 'admin-1');
 
-    expect(grantAnticipo).toHaveBeenCalledWith('user-1', 50000, 'Motivo', undefined, 'admin-1');
+    expect(grantAnticipo).toHaveBeenCalledWith(
+      'user-1',
+      50000,
+      'Motivo',
+      undefined,
+      'admin-1',
+      expect.objectContaining({ id: expect.any(String) }),
+      expect.any(Function)
+    );
   });
 
   it('retorna el resultado del repositorio', async () => {

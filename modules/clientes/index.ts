@@ -15,3 +15,14 @@ export {
   rechazarSolicitud,
   registrarRecordatorio
 } from './devoluciones/servicio';
+
+export { consumirPrepagoCuenta } from './prepago/servicio';
+
+export {
+  consumirPrepagoVenta,
+  leerPrepagoConsumidoPorVenta,
+  restituirPrepagoPorAnulacion,
+  cargarPrepago,
+  devolverSaldo
+} from './prepago/servicio';
+export type { EntradaRecargaPrepago, EntradaDevolucionSaldo } from './prepago/servicio';

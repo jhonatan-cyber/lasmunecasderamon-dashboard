@@ -1,4 +1,13 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
+
+// El servicio delega prepago al módulo, cuyo contrato importa el driver (valida
+// entorno al cargarse). Se mockea porque el repositorio ya está mockeado.
+vi.mock('@/lib/database/db', () => ({
+  generateUUID: () => 'test-uuid',
+  withTransaction: vi.fn(async (fn: any) => fn(vi.fn())),
+  query: vi.fn()
+}));
+
 import { ClientService } from '@/lib/services/ClientService';
 
 vi.mock('@/lib/repositories/ClientRepository', () => ({
@@ -13,6 +22,13 @@ vi.mock('@/lib/repositories/ClientRepository', () => ({
     delete: vi.fn()
   }
 }));
+
+vi.mock('@/modules/clientes', () => ({
+  cargarPrepago: vi.fn(),
+  devolverSaldo: vi.fn()
+}));
+
+import { cargarPrepago, devolverSaldo as devolverSaldoModulo } from '@/modules/clientes';
 
 import { ClientRepository } from '@/lib/repositories/ClientRepository';
 
@@ -118,7 +134,7 @@ describe('ClientService.getHistory', () => {
 });
 
 describe('ClientService.addPrepago', () => {
-  it('delega al repositorio sin validar schema (flujo de dinero)', async () => {
+  it('delega al modulo sin validar schema (flujo de dinero)', async () => {
     const prepago = {
       cliente_id: 'cli-1',
       monto: 50000,
@@ -126,12 +142,12 @@ describe('ClientService.addPrepago', () => {
       metodo_pago: 'efectivo',
       usuario_id: 'cajero-1'
     };
-    vi.mocked(ClientRepository.addPrepago).mockResolvedValue({ id: 'mov-1', saldo: 50000 } as any);
+    vi.mocked(cargarPrepago).mockResolvedValue(undefined);
 
     const result = await ClientService.addPrepago(prepago);
 
-    expect(ClientRepository.addPrepago).toHaveBeenCalledWith(prepago);
-    expect(result).toMatchObject({ saldo: 50000 });
+    expect(cargarPrepago).toHaveBeenCalledWith(prepago);
+    expect(result).toBeUndefined();
   });
 
   it('acepta pagos_mixtos', async () => {
@@ -144,16 +160,16 @@ describe('ClientService.addPrepago', () => {
         { metodo: 'tarjeta', monto: 10000 }
       ]
     };
-    vi.mocked(ClientRepository.addPrepago).mockResolvedValue({} as any);
+    vi.mocked(cargarPrepago).mockResolvedValue(undefined);
 
     await ClientService.addPrepago(prepago);
 
-    expect(ClientRepository.addPrepago).toHaveBeenCalledWith(prepago);
+    expect(cargarPrepago).toHaveBeenCalledWith(prepago);
   });
 
-  it('propaga BusinessError de caja cerrada desde el repo', async () => {
+  it('propaga BusinessError de caja cerrada desde el modulo', async () => {
     const { BusinessError } = await import('@/lib/errors/errors');
-    vi.mocked(ClientRepository.addPrepago).mockRejectedValue(
+    vi.mocked(cargarPrepago).mockRejectedValue(
       new BusinessError('NO_CAJA_ABIERTA', 'No hay caja abierta')
     );
 
@@ -168,7 +184,7 @@ describe('ClientService.addPrepago', () => {
 });
 
 describe('ClientService.devolverSaldo', () => {
-  it('delega al repositorio con payload completo', async () => {
+  it('delega al modulo con payload completo', async () => {
     const data = {
       cliente_id: 'cli-1',
       monto: 10000,
@@ -176,16 +192,16 @@ describe('ClientService.devolverSaldo', () => {
       motivo: 'cliente se retira',
       usuario_id: 'cajero-1'
     };
-    vi.mocked(ClientRepository.devolverSaldo).mockResolvedValue({ id: 'mov-2' } as any);
+    vi.mocked(devolverSaldoModulo).mockResolvedValue(undefined);
 
     const result = await ClientService.devolverSaldo(data);
 
-    expect(ClientRepository.devolverSaldo).toHaveBeenCalledWith(data);
-    expect(result).toMatchObject({ id: 'mov-2' });
+    expect(devolverSaldoModulo).toHaveBeenCalledWith(data);
+    expect(result).toBeUndefined();
   });
 
   it('acepta motivo opcional', async () => {
-    vi.mocked(ClientRepository.devolverSaldo).mockResolvedValue({} as any);
+    vi.mocked(devolverSaldoModulo).mockResolvedValue(undefined);
 
     await ClientService.devolverSaldo({
       cliente_id: 'cli-1',
@@ -193,7 +209,7 @@ describe('ClientService.devolverSaldo', () => {
       metodo_pago: 'efectivo'
     });
 
-    expect(ClientRepository.devolverSaldo).toHaveBeenCalledWith({
+    expect(devolverSaldoModulo).toHaveBeenCalledWith({
       cliente_id: 'cli-1',
       monto: 5000,
       metodo_pago: 'efectivo'

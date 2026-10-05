@@ -5,7 +5,9 @@ Estado: implementación en curso. Fases 1, 2 y 3 cerradas; la fase 4 tiene todo
 el SQL de inventario dentro de `modules/inventario` —incluidos el consumo, su
 reversión por anulación, los productos y las compras— y le queda migrar la
 transacción de ventas al contexto opaco. Revisión del 2026-10-05: las casillas
-de la fase 0 y de la fase 4 reflejan el avance real.
+de la fase 0 y de la fase 4 reflejan el avance real. Corte 13: workflow de cobro
+con venta implementado; fases 5, 6 y 7 siguen abiertas. Ver
+[avance y validación](arquitectura/FASE5_COBRO.md).
 
 ## 1. Objetivo y alcance
 
@@ -345,8 +347,8 @@ venta con su venta y con las unidades que tocó. **Corte 9:** productos y compra
 también viven en el módulo (`modules/inventario/productos` y
 `modules/inventario/compras`), y con ellos las dos excepciones del puente
 transaccional quedaron retiradas. Alcance y siguientes cortes en
-[FASE4_INVENTARIO.md](arquitectura/FASE4_INVENTARIO.md). El censo regenerado del
-árbol actual está en [MODULOS_Y_DATOS.md](MODULOS_Y_DATOS.md).
+[FASE4_INVENTARIO.md](arquitectura/FASE4_INVENTARIO.md). El mapa de propiedad y
+su censo histórico están en [MODULOS_Y_DATOS.md](MODULOS_Y_DATOS.md).
 
 ### Fase 5 — Operación, ventas y caja
 
@@ -359,29 +361,32 @@ tratamiento de escrituras actuales sobre `asistencias` y `logins`. Comisiones y
 propinas ya tienen propietario objetivo Personal, documentado en
 [FASE0_DECISIONES.md](arquitectura/FASE0_DECISIONES.md).
 
-- [x] Extraer el SQL que sigue en rutas de ventas y en servicios que acceden a
-      tablas ajenas. **Completo (cortes 11 y 12):** las tres rutas de anulación
+- [ ] Extraer el SQL que sigue en rutas de ventas y en servicios que acceden a
+      tablas ajenas. **Parcial (cortes 11 y 12):** las tres rutas de anulación
       de ventas quedaron sin SQL en el corte 11 (`modules/ventas/anulaciones`);
       los cortes 12a–12d vaciaron las rutas de servicios, cuentas, anticipos,
       devoluciones, cierres y temporizadores. `app/api` no tiene ni una ruta con
       SQL y `tests/unit/scripts/rutas-sin-sql.test.ts` lo impide. Sigue
       pendiente el SQL de servicios que escribe tablas ajenas, dentro de `lib/`.
-- [x] Definir los contratos de Caja, Clientes y Personal que consume el flujo
-      comercial. **Hecho en el corte 12:** `modules/caja/contracts.ts` y
+- [ ] Definir los contratos de Caja, Clientes y Personal que consume el flujo
+      comercial. **Parcial en el corte 12:** `modules/caja/contracts.ts` y
       `modules/clientes/contracts.ts` nacen con las formas que cruzan la
       frontera; Personal ya publicaba contratos desde la fase 2.
 - [ ] Crear el workflow de cobro de cuenta sobre APIs públicas, preservando una
-      transacción común. **Parcial (corte 12a):** las tres rutas de cobro y
-      anulación de cuentas llaman ya a la API de `modules/operacion`, pero la
-      transacción común sigue atada por `lib/transaccion/compatibilidad.ts`.
+      transacción común. **Corte 13:** el endpoint de cobro con venta usa
+      `workflows/cobrar-cuenta.ts`, que coordina Operación y Ventas con
+      `enUnaUnidad`. El cobro, registro, respuesta y propinas comparten
+      conexión. La validación y las deudas restantes se detallan en
+      [FASE5_COBRO.md](arquitectura/FASE5_COBRO.md).
 - [ ] Migrar creación y anulación de ventas, pedidos, servicios y liberación de
       habitaciones. **Parcial:** las rutas están vaciadas, pero los escritores
       (`SaleQueries`, `ServiceQueries`, `TimerRepository`) siguen en `lib/`.
 - [ ] Validar que movimientos de caja, prepago, stock, comisiones y propinas no
       se duplican.
 - [ ] Mantener el orden y las condiciones de notificaciones, auditoría e
-      invalidación de caché. **Respetado en cada corte:** los efectos externos
-      (SSE, push, WhatsApp) se emiten después del commit, nunca antes.
+      invalidación de caché. **Verificado para el workflow del corte 13:** sus
+      tareas se ejecutan después del commit. Falta auditar los demás flujos; no
+      se afirma esta garantía para todo el código heredado.
 
 **Avance inicial 2026-10-05 (corte 11):** nace `modules/ventas` con el
 subdominio de anulaciones. Las tres rutas de anulación dejan de ejecutar SQL y
@@ -403,6 +408,67 @@ primera vez en el plan, y la guarda `tests/unit/scripts/rutas-sin-sql.test.ts`
 vigila a la vez el texto SQL y el import a `lib/database/db`, que es el límite
 que el censo cuenta de verdad.
 
+**Corte 14 — anulación de ventas en contexto opaco (2026-10-05):** la
+transacción de ventas que pedía la fase 4 ya corre sobre `ContextoOperacion`.
+`modules/ventas/anulaciones` coordina en una sola unidad a Clientes (restituye
+prepago), Caja (revierte el movimiento), Personal (comisiones y propinas),
+Inventario (`revertirStockAnulacion`), Identidad (disponibilidad) y Operación
+(habitación y pedido); `SaleService` y `SaleQueries` delegan sin abrir su propia
+transacción y el puente `conContextoOperacionExistente` sale de `SaleQueries`
+(excepción retirada; quedan 2: `CashRegisterRepository` y `RoomManager`, de
+otros llamadores heredados). Auditoría y SSE se aplazan hasta después del
+commit. Detalle y validación en
+[FASE5_ANULACION.md](arquitectura/FASE5_ANULACION.md).
+
+**Corte 15 — anulación de servicios en contexto opaco (2026-10-05):** réplica
+del corte 14 en `modules/operacion/servicios/anulaciones`, en una sola unidad
+con Clientes, Caja, Personal (nuevas operaciones por `servicio_id`), Identidad y
+habitación propia; `ServiceService` y `ServiceQueries` delegan. Se preserva que
+`updateStatus` es liviano (sin reversión de plata) y que la solicitud no cambia
+el estado. Nueva arista `operacion → personal`, registrada como excepción
+explícita. Detalle y validación en
+[FASE5_ANULACION_SERVICIOS.md](arquitectura/FASE5_ANULACION_SERVICIOS.md).
+
+**Corte 16 — alta y edición de servicios en contexto opaco (2026-10-05):**
+`modules/operacion/servicios/creacion.ts` coordina prepago, habitación,
+comisiones (nueva alta por `servicio_id`), disponibilidad, conflictos y caja en
+una sola unidad; la edición ajusta el IVA conservando el `GREATEST(0, …)`.
+`ServiceService` delega sin abrir transacción propia y sin aristas nuevas.
+Detalle y validación en
+[FASE5_CREACION_SERVICIOS.md](arquitectura/FASE5_CREACION_SERVICIOS.md).
+
+**Corte 17 — anticipos contra caja sobre APIs públicas (2026-10-05):**
+`grantAnticipo` y `deliverAnticipo` reciben `ContextoOperacion` y coordinan con
+Caja (`obtenerCajaActiva`, nueva `leerFondoCaja`, `registrarMovimientoCobro`);
+los avisos salen después del commit. Sin aristas nuevas. Detalle y validación en
+[FASE5_ANTICIPOS_CAJA.md](arquitectura/FASE5_ANTICIPOS_CAJA.md).
+
+**Corte 18 — recarga y devolución de prepago sobre APIs públicas (2026-10-05):**
+`modules/clientes/prepago` coordina en una sola unidad saldo, movimientos, caja
+y cuentas PREP-* (nuevas operaciones de Operación); `ClientService` y
+`ClientRepository` delegan. Nueva arista `clientes → operacion`, registrada como
+excepción explícita. Detalle y validación en
+[FASE5_PREPAGO.md](arquitectura/FASE5_PREPAGO.md).
+
+**Corte 19 — temporizador y solicitud de anulación de cuentas (2026-10-05):**
+`modules/operacion/cuentas/temporizadores.ts` detiene el temporizador y solicita
+la anulación en una sola unidad con la habitación liberada por su propietario;
+la lógica pura de historial se reusa sin duplicar. `CuentaRepository` y
+`CuentaQueries` delegan, sin aristas nuevas. Detalle y validación en
+[FASE5_CUENTAS_TEMPORIZADOR.md](arquitectura/FASE5_CUENTAS_TEMPORIZADOR.md).
+
+**Corte 20 — edición de cuentas sobre APIs públicas (2026-10-05):**
+`modules/operacion/cuentas/actualizacion.ts` corre detalles, extensión de tiempo
+y cambio de habitación en una sola unidad (antes en transacción + consultas
+sueltas); `CuentaQueries` pierde el import a `RoomManager`. Detalle y validación
+en [FASE5_CUENTAS_EDICION.md](arquitectura/FASE5_CUENTAS_EDICION.md).
+
+**Corte 21 — alta de cuentas sobre APIs públicas (2026-10-05):**
+`modules/operacion/cuentas/alta.ts` crea cabecera, detalles, usuarios y ocupa la
+habitación en una sola unidad, reusando las operaciones del corte 20;
+`CuentaRepository` y `CuentaQueries` delegan, sin aristas nuevas. Detalle y
+validación en [FASE5_CUENTAS_ALTA.md](arquitectura/FASE5_CUENTAS_ALTA.md).
+
 **Salida:** fallos intermedios revierten todos los cambios; no existen
 escrituras cruzadas fuera de los propietarios; reintentos no duplican
 operaciones.
@@ -414,10 +480,11 @@ operaciones.
       solicitud y pendientes viven en `modules/personal/anticipos`—; comisiones,
       propinas, gratificaciones y nómina siguen en `lib/`.
 - [ ] Migrar Agenda, Comunicaciones y Auditoría con contratos mínimos.
-- [x] Reubicar reglas de configuración en su propietario. **Hecho en el corte
-      12b:** `modules/configuracion` es dueño de `configuraciones` y de
-      `backups`, con las rutas de `/api/configurations` y `/api/settings/backup`
-      como adaptadores.
+- [ ] Reubicar reglas de configuración en su propietario. **Centralizado,
+      pendiente de delegar reglas de dominio. Corte 12b:**
+      `modules/configuracion` es dueño de `configuraciones` y de `backups`, con
+      las rutas de `/api/configurations` y `/api/settings/backup` como
+      adaptadores.
 - [ ] Documentar y acotar las lecturas cruzadas de Reportes y dashboard.
 - [ ] Revisar cachés y consultas agregadas para evitar regresiones de
       rendimiento.
@@ -440,7 +507,8 @@ servicios compartidos que concentren nuevamente el negocio.
       código de producción. **En curso:** las guardas de `tests/unit/scripts/` y
       la puerta `modulo-solo-api-publica` ya son obligatorias; falta cerrar la
       excepción `puente-transaccional-heredado`.
-- [x] Validar build, despliegue y flujos críticos con la estructura final.
+- [ ] Validar build, despliegue y flujos críticos con la estructura final.
+      Evidencia del corte 12d, no de estructura final ni de despliegue:
       `pnpm build`, `pnpm test:unit` (1731 + 2 omitidas), `pnpm test:postgres`
       (161), `pnpm arquitectura:limites` (23/23) y `pnpm lint:full` pasan con la
       estructura del corte 12d.
@@ -464,9 +532,9 @@ pnpm build
 ```
 
 Las suites con PostgreSQL, Redis, autenticación o servidor requieren sus
-servicios y configuración de pruebas. No ejecutarlas contra producción. Añadir
-el control de arquitectura a CI cuando exista; no se da por implementado en este
-documento.
+servicios y configuración de pruebas. No ejecutarlas contra producción. El
+control `pnpm arquitectura:limites` ya está integrado en CI; su aprobación
+incluye las excepciones registradas, no acredita ausencia de deuda.
 
 Pruebas prioritarias:
 

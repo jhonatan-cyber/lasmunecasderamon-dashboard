@@ -28,3 +28,11 @@ export interface VentaParaAnulacion {
   total: number;
   cliente_nombre: string;
 }
+
+import type { z } from 'zod';
+import type { SaleCreateSchema } from '@/lib/business/schemas';
+export type EntradaRegistroVenta = z.input<typeof SaleCreateSchema> & {
+  skip_client_prepago?: boolean;
+  origen?: string;
+  id_pedido?: string;
+};

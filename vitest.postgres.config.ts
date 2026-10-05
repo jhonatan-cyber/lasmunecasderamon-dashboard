@@ -13,6 +13,7 @@ export default defineConfig({
     }
   },
   test: {
+    setupFiles: ['./tests/setup/postgres-integraciones.ts'],
     environment: 'node',
     include: ['tests/postgres/**/*.test.ts'],
     fileParallelism: false,

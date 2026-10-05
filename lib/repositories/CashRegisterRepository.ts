@@ -1,4 +1,6 @@
-﻿import { query, generateUUID, withTransaction, type TransactionQuery } from '@/lib/database/db';
+import { obtenerCajaActiva, registrarMovimientoCobro } from '@/modules/caja';
+import { conContextoOperacionExistente } from '@/lib/transaccion/compatibilidad';
+import { query, generateUUID, withTransaction, type TransactionQuery } from '@/lib/database/db';
 import { CajaSchema, type CajaType } from '@/lib/business/schemas';
 import { getNowInBusinessTimezone } from '@/lib/business/timezoneService';
 import { BaseRepository } from './BaseRepository';
@@ -160,16 +162,7 @@ export class CashRegisterRepository {
   }
 
   static async getCurrentCajaId(trx?: TransactionQuery): Promise<string | null> {
-    try {
-      const qFunc = trx || query;
-      const res = await qFunc<any[]>(
-        'SELECT id_caja FROM cajas WHERE estado = 1 ORDER BY fecha_apertura DESC LIMIT 1'
-      );
-      return res[0]?.id_caja || null;
-    } catch (err) {
-      logger.error('[CashRegisterRepository] Error en getCurrentCajaId:', { err });
-      throw new DatabaseError('Error al obtener caja activa', err);
-    }
+    return trx ? conContextoOperacionExistente(trx, obtenerCajaActiva) : obtenerCajaActiva();
   }
 
   static async updateBalances(
@@ -192,51 +185,9 @@ export class CashRegisterRepository {
       devolucion?: number;
     }
   ): Promise<void> {
-    const entries = Object.entries(deltas).filter(([_, v]) => v !== 0 && v !== undefined);
-    if (entries.length === 0) return;
-
-    const columnMap: Record<string, string> = {
-      venta: 'venta',
-      cargo_tarjeta: 'cargo_tarjeta',
-      servicio: 'servicio',
-      efectivo: 'efectivo',
-      tarjeta: 'tarjeta',
-      transferencia: 'transferencia',
-      prepago: 'prepago',
-      anticipo: 'anticipo',
-      iva: 'iva',
-      comision: 'comision',
-      propina: 'propina',
-
-      cuenta: 'venta',
-      devolucion: 'devolucion'
-    };
-
-    const knownEntries = entries.filter(([k]) => k in columnMap);
-    if (knownEntries.length === 0) return;
-
-    const colTotals: Record<string, number> = {};
-    for (const [k, v] of knownEntries) {
-      const col = columnMap[k];
-      colTotals[col] = (colTotals[col] ?? 0) + (v as number);
-    }
-
-    const dedupedEntries = Object.entries(colTotals).filter(([_, v]) => v !== 0);
-    if (dedupedEntries.length === 0) return;
-
-    const setClause = dedupedEntries.map(([col]) => `${col} = ${col} + ?`).join(', ');
-    const values = dedupedEntries.map(([_, v]) => v);
-
-    logger.debug('[CashRegisterRepository] updateBalances:', { id_caja, setClause, values });
-    try {
-      await trx(`UPDATE cajas SET ${setClause} WHERE id_caja = ? AND estado = 1`, [
-        ...values,
-        id_caja
-      ]);
-    } catch (err) {
-      logger.error('[CashRegisterRepository] Error en updateBalances:', { id_caja, err });
-      throw new DatabaseError(`Error al actualizar balances de caja ${id_caja}`, err);
-    }
+    await conContextoOperacionExistente(trx, contexto =>
+      registrarMovimientoCobro(id_caja, deltas, contexto)
+    );
   }
 
   static async summary(): Promise<any> {

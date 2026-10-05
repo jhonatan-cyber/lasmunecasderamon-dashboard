@@ -4,14 +4,16 @@
  * Valida la entrada y orquesta la infraestructura propia. No toca SQL ni el
  * driver: eso vive en `./repositorio`, que es privado del módulo.
  *
- * A diferencia de horas extras, estas operaciones no reciben `ContextoOperacion`:
- * otorgar, procesar y entregar abren hoy su propia transacción (y tocan caja),
- * así que su atomicidad es interna. Que participen de una unidad ajena —el
- * workflow que coordine cobro y caja— es trabajo de la Fase 5/6; el patrón para
- * hacerlo ya quedó probado con horas extras.
+ * Otorgar y entregar abren su propia unidad con `ContextoOperacion` y
+ * coordinan con Caja por su API pública; los avisos salen después del commit.
+ * Que participen de una unidad ajena —el workflow que coordine cobro y
+ * caja— es trabajo de la Fase 5/6; el patrón para hacerlo ya quedó probado
+ * con horas extras.
  */
 import { AnticipoRequestSchema } from '@/lib/business/schemas';
 import { ValidationError } from '@/lib/errors/errors';
+import { enUnaUnidad } from '@/lib/transaccion/contrato';
+import { ejecutarEfectosConfirmados } from '@/lib/transaccion/efectos';
 import type {
   AnticipoListado,
   AnticipoRegistrado,
@@ -54,7 +56,16 @@ export async function otorgarAnticipo(
   adminId?: string | number
 ): Promise<AnticipoRegistrado | null> {
   if (monto <= 0) throw new ValidationError('El monto debe ser positivo', { monto });
-  return repositorio.grantAnticipo(usuarioId, monto, motivo, deviceDate, adminId);
+  const tareas: Array<() => void | Promise<void>> = [];
+  const resultado = await enUnaUnidad(unidad =>
+    unidad.ejecutar(contexto =>
+      repositorio.grantAnticipo(usuarioId, monto, motivo, deviceDate, adminId, contexto, tarea =>
+        tareas.push(tarea)
+      )
+    )
+  );
+  await ejecutarEfectosConfirmados(tareas);
+  return resultado;
 }
 
 export async function listarAnticipos(
@@ -120,7 +131,14 @@ export async function entregarAnticipo(
   id: string,
   entregadoPor: string
 ): Promise<ResultadoProceso> {
-  return repositorio.deliverAnticipo(id, entregadoPor);
+  const tareas: Array<() => void | Promise<void>> = [];
+  const resultado = await enUnaUnidad(unidad =>
+    unidad.ejecutar(contexto =>
+      repositorio.deliverAnticipo(id, entregadoPor, contexto, tarea => tareas.push(tarea))
+    )
+  );
+  await ejecutarEfectosConfirmados(tareas);
+  return resultado;
 }
 
 export async function actualizarEstadoAnticipo(

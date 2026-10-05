@@ -95,7 +95,7 @@ describe('analisis de arquitectura (Fase 0)', () => {
   it('preserva el flujo atómico de cobro de cuenta con venta', () => {
     // El plan lo declara requisito de migración: si desaparece la transacción
     // compartida, un cobro puede confirmar sin su venta.
-    const atomico = informe.transacciones.some(t => t.archivo === 'lib/services/AccountService.ts');
+    const atomico = informe.transacciones.some(t => t.archivo === 'workflows/cobrar-cuenta.ts');
     expect(atomico).toBe(true);
   });
 

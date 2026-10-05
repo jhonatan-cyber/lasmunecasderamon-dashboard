@@ -1,12 +1,12 @@
 {
   "resumen": {
-    "commit": "d7ce2e63e5016299a1477406522918b2e33a2edf",
-    "generado": "2026-10-05T10:46:16.946Z",
-    "archivos": 1576,
+    "commit": "6cd071d42cda505014b42b21785ed8e57adab635",
+    "generado": "2026-10-05T15:40:37.769Z",
+    "archivos": 1605,
     "rutas": 204,
-    "sqlFueraDeRepositorio": 64,
+    "sqlFueraDeRepositorio": 66,
     "tablasConEscritoresMultiples": 18,
-    "ciclos": 5,
+    "ciclos": 6,
     "procesosPeriodicos": 15,
     "caches": 19,
     "rutasApiConSqlDirecto": 0,
@@ -1918,105 +1918,123 @@
       "escribe": []
     },
     {
+      "archivo": "modules/operacion/cuentas/alta.ts",
+      "capa": "raiz",
+      "modulo": "operacion",
+      "escribe": []
+    },
+    {
+      "archivo": "modules/operacion/servicios/creacion.ts",
+      "capa": "raiz",
+      "modulo": "operacion",
+      "escribe": []
+    },
+    {
+      "archivo": "modules/ventas/registro/servicio.ts",
+      "capa": "raiz",
+      "modulo": "ventas",
+      "escribe": []
+    },
+    {
       "archivo": "modules/asistencia/biometrico/avisosAudio.ts",
       "capa": "raiz",
-      "modulo": null,
+      "modulo": "asistencia",
       "escribe": []
     },
     {
       "archivo": "modules/asistencia/biometrico/clockSync.ts",
       "capa": "raiz",
-      "modulo": null,
+      "modulo": "asistencia",
       "escribe": []
     },
     {
       "archivo": "modules/asistencia/biometrico/deviceAuth.ts",
       "capa": "raiz",
-      "modulo": null,
+      "modulo": "asistencia",
       "escribe": ["biometric_devices"]
     },
     {
       "archivo": "modules/asistencia/biometrico/enrollmentService.ts",
       "capa": "raiz",
-      "modulo": null,
+      "modulo": "asistencia",
       "escribe": ["biometric_devices", "biometric_plantillas", "usuarios"]
     },
     {
       "archivo": "modules/asistencia/biometrico/eventListener.ts",
       "capa": "raiz",
-      "modulo": null,
+      "modulo": "asistencia",
       "escribe": []
     },
     {
       "archivo": "modules/asistencia/biometrico/identificacionFacial.ts",
       "capa": "raiz",
-      "modulo": null,
+      "modulo": "asistencia",
       "escribe": ["biometric_device_records", "biometric_plantillas"]
     },
     {
       "archivo": "modules/asistencia/biometrico/ipDiscovery.ts",
       "capa": "raiz",
-      "modulo": null,
+      "modulo": "asistencia",
       "escribe": ["biometric_devices"]
     },
     {
       "archivo": "modules/asistencia/biometrico/ipWatcher.ts",
       "capa": "raiz",
-      "modulo": null,
+      "modulo": "asistencia",
       "escribe": []
     },
     {
       "archivo": "modules/asistencia/biometrico/processBiometricEvent.ts",
       "capa": "raiz",
-      "modulo": null,
+      "modulo": "asistencia",
       "escribe": []
     },
     {
       "archivo": "modules/asistencia/biometrico/recordPhotos.ts",
       "capa": "raiz",
-      "modulo": null,
+      "modulo": "asistencia",
       "escribe": ["biometric_device_records"]
     },
     {
       "archivo": "modules/asistencia/biometrico/recordPoller.ts",
       "capa": "raiz",
-      "modulo": null,
+      "modulo": "asistencia",
       "escribe": []
     },
     {
       "archivo": "modules/asistencia/biometrico/statusService.ts",
       "capa": "raiz",
-      "modulo": null,
+      "modulo": "asistencia",
       "escribe": []
     },
     {
       "archivo": "modules/asistencia/biometrico/unenrollmentService.ts",
       "capa": "raiz",
-      "modulo": null,
+      "modulo": "asistencia",
       "escribe": ["biometric_plantillas", "usuarios"]
     },
     {
       "archivo": "modules/asistencia/biometrico/verificacionRemota.ts",
       "capa": "raiz",
-      "modulo": null,
+      "modulo": "asistencia",
       "escribe": []
     },
     {
       "archivo": "modules/asistencia/biometrico/videoStream.ts",
       "capa": "raiz",
-      "modulo": null,
+      "modulo": "asistencia",
       "escribe": []
     },
     {
       "archivo": "modules/asistencia/kioskos/attendanceChallenges.ts",
       "capa": "raiz",
-      "modulo": null,
+      "modulo": "asistencia",
       "escribe": ["asistencia_desafios"]
     },
     {
       "archivo": "modules/asistencia/kioskos/deviceAuth.ts",
       "capa": "raiz",
-      "modulo": null,
+      "modulo": "asistencia",
       "escribe": ["kiosk_devices"]
     },
     {
@@ -2080,12 +2098,6 @@
       "escribe": []
     },
     {
-      "archivo": "lib/services/AccountService.ts",
-      "capa": "lib/services",
-      "modulo": "operacion",
-      "escribe": []
-    },
-    {
       "archivo": "lib/services/AuditService.ts",
       "capa": "lib/services",
       "modulo": "comunicaciones",
@@ -2100,21 +2112,14 @@
     {
       "archivo": "lib/services/RoomManager.ts",
       "capa": "lib/services",
-      "modulo": null,
-      "escribe": ["habitaciones", "servicios", "usuarios", "ventas"]
+      "modulo": "operacion",
+      "escribe": ["habitaciones", "servicios", "ventas"]
     },
     {
       "archivo": "lib/services/SaleService.ts",
       "capa": "lib/services",
       "modulo": "ventas",
-      "escribe": [
-        "comisiones",
-        "detalle_comisiones",
-        "detalle_ventas",
-        "habitaciones",
-        "pedidos",
-        "ventas_usuarios"
-      ]
+      "escribe": []
     },
     {
       "archivo": "lib/services/SecurityAlertService.ts",
@@ -2126,13 +2131,7 @@
       "archivo": "lib/services/ServiceService.ts",
       "capa": "lib/services",
       "modulo": "operacion",
-      "escribe": [
-        "comisiones",
-        "detalle_comisiones",
-        "detalle_servicios",
-        "detalle_servicios_clientes",
-        "habitaciones"
-      ]
+      "escribe": []
     },
     {
       "archivo": "lib/services/WithdrawalService.ts",
@@ -2261,47 +2260,30 @@
         "lib/repositories/PayrollRepository.ts",
         "lib/repositories/auth/AuthQueries.ts"
       ],
-      "modulos": ["identidad"]
+      "modulos": ["identidad", "personal"]
     },
     {
       "tabla": "cajas",
       "escritores": [
         "lib/repositories/CashRegisterRepository.ts",
-        "lib/repositories/service/ServiceQueries.ts"
+        "lib/repositories/service/ServiceQueries.ts",
+        "modules/caja/movimientos/repositorio.ts"
       ],
-      "modulos": ["operacion"]
+      "modulos": ["caja", "operacion"]
     },
     {
       "tabla": "clientes",
       "escritores": [
         "lib/repositories/ClientRepository.ts",
-        "lib/repositories/cuenta/CuentaQueries.ts",
-        "lib/repositories/sale/SaleQueries.ts",
-        "lib/repositories/service/ServiceQueries.ts"
+        "modules/clientes/prepago/repositorio.ts"
       ],
-      "modulos": ["operacion", "ventas"]
-    },
-    {
-      "tabla": "clientes_prepago_movimientos",
-      "escritores": [
-        "lib/repositories/sale/SaleQueries.ts",
-        "lib/repositories/service/ServiceQueries.ts"
-      ],
-      "modulos": ["operacion", "ventas"]
-    },
-    {
-      "tabla": "comisiones",
-      "escritores": [
-        "lib/repositories/sale/SaleQueries.ts",
-        "lib/repositories/service/ServiceQueries.ts"
-      ],
-      "modulos": ["operacion", "ventas"]
+      "modulos": ["clientes"]
     },
     {
       "tabla": "cuentas",
       "escritores": [
-        "lib/repositories/ClientRepository.ts",
         "lib/repositories/cuenta/CuentaQueries.ts",
+        "modules/operacion/cuentas/repositorio.ts",
         "modules/operacion/temporizadores/repositorio.ts"
       ],
       "modulos": ["operacion"]
@@ -2310,16 +2292,32 @@
       "tabla": "detalle_comisiones",
       "escritores": [
         "lib/repositories/PayrollRepository.ts",
-        "lib/repositories/sale/SaleQueries.ts"
+        "modules/personal/conceptos/repositorio.ts"
       ],
-      "modulos": ["ventas"]
+      "modulos": ["personal"]
     },
     {
       "tabla": "detalle_propinas",
       "escritores": [
         "lib/repositories/PayrollRepository.ts",
-        "lib/repositories/TipRepository.ts",
-        "lib/repositories/sale/SaleQueries.ts"
+        "modules/personal/conceptos/repositorio.ts"
+      ],
+      "modulos": ["personal"]
+    },
+    {
+      "tabla": "detalle_servicios",
+      "escritores": [
+        "lib/repositories/service/ServiceQueries.ts",
+        "modules/operacion/servicios/repositorio.ts"
+      ],
+      "modulos": ["operacion"]
+    },
+    {
+      "tabla": "detalle_ventas",
+      "escritores": [
+        "lib/repositories/sale/SaleQueries.ts",
+        "modules/ventas/anulaciones/repositorio.ts",
+        "modules/ventas/registro/repositorio.ts"
       ],
       "modulos": ["ventas"]
     },
@@ -2327,7 +2325,6 @@
       "tabla": "habitaciones",
       "escritores": [
         "lib/repositories/TimerRepository.ts",
-        "lib/repositories/cuenta/CuentaQueries.ts",
         "modules/operacion/temporizadores/repositorio.ts"
       ],
       "modulos": ["operacion"]
@@ -2357,7 +2354,7 @@
         "lib/repositories/CashRegisterRepository.ts",
         "lib/repositories/auth/AuthQueries.ts"
       ],
-      "modulos": ["identidad"]
+      "modulos": ["caja", "identidad"]
     },
     {
       "tabla": "permissions",
@@ -2365,7 +2362,7 @@
         "lib/repositories/PermissionRepository.ts",
         "modules/identidad/permisos/repositorio.ts"
       ],
-      "modulos": []
+      "modulos": ["identidad"]
     },
     {
       "tabla": "role_permissions",
@@ -2373,22 +2370,15 @@
         "lib/repositories/RoleRepository.ts",
         "modules/identidad/permisos/repositorio.ts"
       ],
-      "modulos": []
+      "modulos": ["identidad"]
     },
     {
       "tabla": "servicios",
       "escritores": [
         "lib/repositories/TimerRepository.ts",
         "lib/repositories/service/ServiceQueries.ts",
+        "modules/operacion/servicios/repositorio.ts",
         "modules/operacion/temporizadores/repositorio.ts"
-      ],
-      "modulos": ["operacion"]
-    },
-    {
-      "tabla": "solicitudes_anulacion_servicios",
-      "escritores": [
-        "lib/repositories/service/ServiceQueries.ts",
-        "modules/operacion/servicios/repositorio.ts"
       ],
       "modulos": ["operacion"]
     },
@@ -2405,14 +2395,53 @@
       "escritores": [
         "lib/repositories/TimerRepository.ts",
         "lib/repositories/sale/SaleQueries.ts",
-        "modules/operacion/temporizadores/repositorio.ts"
+        "modules/operacion/temporizadores/repositorio.ts",
+        "modules/ventas/anulaciones/repositorio.ts"
+      ],
+      "modulos": ["operacion", "ventas"]
+    },
+    {
+      "tabla": "ventas_usuarios",
+      "escritores": [
+        "lib/repositories/sale/SaleQueries.ts",
+        "modules/ventas/registro/repositorio.ts"
       ],
       "modulos": ["ventas"]
     }
   ],
   "transacciones": [
     {
-      "archivo": "modules/operacion/temporizadores/repositorio.ts",
+      "archivo": "modules/clientes/prepago/servicio.ts",
+      "capa": "raiz",
+      "modulo": "clientes"
+    },
+    {
+      "archivo": "modules/operacion/cuentas/actualizacion.ts",
+      "capa": "raiz",
+      "modulo": "operacion"
+    },
+    {
+      "archivo": "modules/operacion/cuentas/alta.ts",
+      "capa": "raiz",
+      "modulo": "operacion"
+    },
+    {
+      "archivo": "modules/operacion/cuentas/temporizadores.ts",
+      "capa": "raiz",
+      "modulo": "operacion"
+    },
+    {
+      "archivo": "modules/operacion/servicios/anulaciones.ts",
+      "capa": "raiz",
+      "modulo": "operacion"
+    },
+    {
+      "archivo": "modules/operacion/servicios/creacion.ts",
+      "capa": "raiz",
+      "modulo": "operacion"
+    },
+    {
+      "archivo": "workflows/cobrar-cuenta.ts",
       "capa": "raiz",
       "modulo": null
     },
@@ -2424,37 +2453,32 @@
     {
       "archivo": "lib/repositories/CashRegisterRepository.ts",
       "capa": "lib/repositories",
-      "modulo": null
+      "modulo": "caja"
     },
     {
       "archivo": "lib/repositories/CategoryRepository.ts",
       "capa": "lib/repositories",
-      "modulo": null
-    },
-    {
-      "archivo": "lib/repositories/ClientRepository.ts",
-      "capa": "lib/repositories",
-      "modulo": null
+      "modulo": "inventario"
     },
     {
       "archivo": "lib/repositories/OrderRepository.ts",
       "capa": "lib/repositories",
-      "modulo": null
+      "modulo": "operacion"
     },
     {
       "archivo": "lib/repositories/PayrollRepository.ts",
       "capa": "lib/repositories",
-      "modulo": null
+      "modulo": "personal"
     },
     {
       "archivo": "lib/repositories/RoleRepository.ts",
       "capa": "lib/repositories",
-      "modulo": null
+      "modulo": "identidad"
     },
     {
       "archivo": "lib/repositories/TipRepository.ts",
       "capa": "lib/repositories",
-      "modulo": null
+      "modulo": "personal"
     },
     {
       "archivo": "lib/repositories/cuenta/CuentaQueries.ts",
@@ -2477,19 +2501,9 @@
       "modulo": "operacion"
     },
     {
-      "archivo": "lib/services/AccountService.ts",
-      "capa": "lib/services",
-      "modulo": "operacion"
-    },
-    {
       "archivo": "lib/services/SaleService.ts",
       "capa": "lib/services",
       "modulo": "ventas"
-    },
-    {
-      "archivo": "lib/services/ServiceService.ts",
-      "capa": "lib/services",
-      "modulo": "operacion"
     },
     {
       "archivo": "lib/services/WithdrawalService.ts",
@@ -2504,27 +2518,27 @@
     {
       "archivo": "modules/asistencia/biometrico/enrollmentService.ts",
       "capa": "raiz",
-      "modulo": null
+      "modulo": "asistencia"
     },
     {
       "archivo": "modules/asistencia/biometrico/unenrollmentService.ts",
       "capa": "raiz",
-      "modulo": null
+      "modulo": "asistencia"
     },
     {
       "archivo": "modules/asistencia/kioskos/deviceAuth.ts",
       "capa": "raiz",
-      "modulo": null
+      "modulo": "asistencia"
     },
     {
       "archivo": "modules/asistencia/marcas/repositorio.ts",
       "capa": "raiz",
-      "modulo": null
+      "modulo": "asistencia"
     },
     {
       "archivo": "modules/identidad/permisos/repositorio.ts",
       "capa": "raiz",
-      "modulo": null
+      "modulo": "identidad"
     },
     {
       "archivo": "modules/inventario/anulaciones/servicio.ts",
@@ -2562,9 +2576,24 @@
       "modulo": "inventario"
     },
     {
+      "archivo": "modules/operacion/temporizadores/repositorio.ts",
+      "capa": "raiz",
+      "modulo": "operacion"
+    },
+    {
       "archivo": "modules/personal/anticipos/repositorio.ts",
       "capa": "raiz",
-      "modulo": null
+      "modulo": "personal"
+    },
+    {
+      "archivo": "modules/personal/anticipos/servicio.ts",
+      "capa": "raiz",
+      "modulo": "personal"
+    },
+    {
+      "archivo": "modules/ventas/anulaciones/servicio.ts",
+      "capa": "raiz",
+      "modulo": "ventas"
     }
   ],
   "procesos": [
@@ -2719,7 +2748,7 @@
     },
     {
       "archivo": "scripts/arquitectura/analisis.mjs",
-      "linea": 319,
+      "linea": 330,
       "texto": "/\\bnew (Redis|RedisClient|ioredis)\\b/.test(linea) ||"
     },
     {
@@ -2776,6 +2805,7 @@
   "ciclos": [
     ["identidad", "personal", "identidad"],
     ["identidad", "personal", "comunicaciones", "identidad"],
+    ["personal", "comunicaciones", "ventas", "personal"],
     ["comunicaciones", "ventas", "comunicaciones"],
     ["comunicaciones", "operacion", "comunicaciones"],
     ["identidad", "personal", "comunicaciones", "operacion", "identidad"]

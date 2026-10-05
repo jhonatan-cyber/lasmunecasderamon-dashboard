@@ -64,6 +64,14 @@ function archivosDelProyecto() {
 }
 
 const MODULO_POR_RUTA = [
+  [/^lib\/repositories\/(CashRegister|Withdrawal)/, 'caja'],
+  [/^lib\/repositories\/Client/, 'clientes'],
+  [/^lib\/repositories\/(Commission|Tip|Payroll)/, 'personal'],
+  [/^lib\/repositories\/(Permission|Role|User)/, 'identidad'],
+  [/^lib\/repositories\/(Order|Room|Timer)/, 'operacion'],
+  [/^lib\/services\/RoomManager/, 'operacion'],
+  [/^lib\/repositories\/Category/, 'inventario'],
+
   // Los módulos migrados (Fase 2 en adelante) viven en modules/. Se agregan
   // entradas explícitas a medida que se crean.
   [/^modules\/inventario(\/|$)/, 'inventario'],
@@ -122,6 +130,8 @@ const MODULO_POR_RUTA = [
 ];
 
 function moduloDe(rel) {
+  const modulo = /^modules\/([^/]+)(?:\/|$)/.exec(rel);
+  if (modulo) return modulo[1];
   for (const [re, mod] of MODULO_POR_RUTA) if (re.test(rel)) return mod;
   return null;
 }
@@ -175,6 +185,14 @@ const ES_DRIVER = h => /^lib\/database\/(db|postgres)/.test(h) || h.startsWith('
 
 const REGLAS = [
   {
+    id: 'workflow-sin-persistencia',
+    plan: '§6 — el workflow coordina APIs públicas con una unidad de trabajo',
+    desc: 'un workflow no importa drivers, repositorios ni servicios heredados',
+    viola: d =>
+      d.desde.startsWith('workflows/') &&
+      (ES_DRIVER(d.hacia) || d.hacia.startsWith('lib/services/'))
+  },
+  {
     id: 'ui-no-infraestructura',
     plan: '§5 — la UI y los hooks consumen HTTP y contratos de cliente',
     desc: 'components/ y hooks/ no importan el driver ni los repositorios',
@@ -192,8 +210,11 @@ const REGLAS = [
   {
     id: 'modulos-sin-workflows',
     plan: '§5 — los módulos no importan workflows',
-    desc: 'nada fuera de workflows/ importa workflows/',
-    viola: d => !d.desde.startsWith('workflows/') && d.hacia.startsWith('workflows/')
+    desc: 'sólo workflows y adaptadores HTTP pueden importar workflows',
+    viola: d =>
+      d.hacia.startsWith('workflows/') &&
+      !d.desde.startsWith('workflows/') &&
+      !(d.desde.startsWith('app/') && d.desde.endsWith('/route.ts'))
   },
   {
     id: 'modulo-solo-api-publica',
@@ -253,22 +274,25 @@ function ciclos() {
     if (!g.has(m1)) g.set(m1, new Set());
     g.get(m1).add(m2);
   }
-  const estado = new Map();
-  const pila = [];
-  const salida = [];
-  const dfs = u => {
-    if (estado.get(u) === 1) {
-      salida.push([...pila.slice(pila.indexOf(u)), u]);
-      return;
+  // Una arista por hallazgo: no depende del orden de recorrido del DFS.
+  // Detecta todas las aristas ciclicas, incluso dentro de un ciclo ya exceptuado.
+  const camino = (desde, hasta, visitados = new Set()) => {
+    if (desde === hasta) return [desde];
+    if (visitados.has(desde)) return null;
+    visitados.add(desde);
+    for (const vecino of [...(g.get(desde) || [])].sort()) {
+      const resto = camino(vecino, hasta, visitados);
+      if (resto) return [desde, ...resto];
     }
-    if (estado.get(u) === 2) return;
-    estado.set(u, 1);
-    pila.push(u);
-    for (const v of g.get(u) || []) dfs(v);
-    pila.pop();
-    estado.set(u, 2);
+    return null;
   };
-  for (const u of [...g.keys()].sort()) dfs(u);
+  const salida = [];
+  for (const desde of [...g.keys()].sort()) {
+    for (const hacia of [...g.get(desde)].sort()) {
+      const vuelta = camino(hacia, desde);
+      if (vuelta) salida.push({ desde, hacia, ciclo: [desde, ...vuelta] });
+    }
+  }
   return salida;
 }
 
@@ -290,15 +314,14 @@ for (const regla of REGLAS) {
 }
 
 for (const c of ciclos()) {
-  for (let i = 0; i < c.length - 1; i++) {
-    hallazgos.push({
-      regla: 'sin-ciclos',
-      plan: '§5 — las dependencias entre módulos forman un grafo sin ciclos',
-      desde: `${c[i]} (dominio)`,
-      hacia: c.join(' → '),
-      spec: ''
-    });
-  }
+  hallazgos.push({
+    regla: 'sin-ciclos',
+    plan: '\u00a75 - las dependencias entre modulos forman un grafo sin ciclos',
+    desde: `${c.desde} (dominio)`,
+    hacia: `${c.hacia} (dominio)`,
+    ciclo: c.ciclo,
+    spec: ''
+  });
 }
 
 /* ───────────── Excepciones heredadas ───────────── */

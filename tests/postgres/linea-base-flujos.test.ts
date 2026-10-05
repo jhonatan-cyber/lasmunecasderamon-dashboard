@@ -1,3 +1,4 @@
+import { cobrarCuentaConVenta } from '@/workflows/cobrar-cuenta';
 /**
  * Línea base de consultas y tiempos por flujo — Fase 0 del plan de monolito modular.
  *
@@ -324,7 +325,7 @@ describe('línea base de consultas por flujo', () => {
       );
 
       const muestra = await medir('cobro de cuenta con venta', () =>
-        AccountService.cobrarConVenta(
+        cobrarCuentaConVenta(
           idCuenta,
           { montoFinal: 12000, propinaFinal: 0, metodoPago: 'efectivo' },
           usuarioId

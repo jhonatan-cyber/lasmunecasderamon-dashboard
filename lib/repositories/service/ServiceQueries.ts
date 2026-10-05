@@ -1,133 +1,28 @@
 import { query, generateUUID, withTransaction, type TransactionQuery } from '@/lib/database/db';
 import { ServiceCreateSchema, type ServiceType } from '@/lib/business/schemas';
 import { getNowInBusinessTimezone } from '@/lib/business/timezoneService';
-import { RoomManager } from '@/lib/services/RoomManager';
-import { CashRegisterRepository } from '../CashRegisterRepository';
 import { BaseRepository } from '../BaseRepository';
-import { NotFoundError, DatabaseError } from '@/lib/errors/errors';
+import { DatabaseError } from '@/lib/errors/errors';
+import {
+  actualizarEstadoServicio,
+  aprobarAnulacionServicio,
+  solicitarAnulacionServicio,
+  procesarAnulacionServicio
+} from '@/modules/operacion';
 import { logger } from '@/lib/utils/logger';
 import { z } from 'zod';
-import { mapServiceFromDB, parseMixedPayments } from './serviceMappers';
+import { mapServiceFromDB } from './serviceMappers';
 
 const TABLE = 'servicios';
 const ID_COL = 'id_servicio';
 
 type ServiceUpdateInput = z.input<typeof ServiceCreateSchema>;
 
-function normalizeSolicitudStatus(status: string): 'confirmada' | 'rechazada' {
-  const normalized = String(status || '').toLowerCase();
-  return normalized === 'confirmar' || normalized === 'aprobado' || normalized === 'confirmada'
-    ? 'confirmada'
-    : 'rechazada';
-}
-
 export async function approveAnulacionServicio(
   servicioId: string,
   approvedBy: string
 ): Promise<void> {
-  try {
-    await withTransaction(async trx => {
-      const serviceRows = await trx<any[]>(
-        `SELECT id_servicio, estado, habitacion_id, cliente_id, caja_id, metodo_pago, total, iva, pagos_mixtos
-         FROM servicios
-         WHERE id_servicio = ?
-         LIMIT 1`,
-        [servicioId]
-      );
-
-      if (!serviceRows.length) throw new NotFoundError('Servicio', servicioId);
-
-      const service = serviceRows[0];
-      const habitacionId = service.habitacion_id;
-      const clienteId = service.cliente_id;
-      const cajaId = service.caja_id;
-      const metodoPago = String(service.metodo_pago || '');
-      const total = Number(service.total || 0);
-      const iva = Number(service.iva || 0);
-      const pagosMixtos = parseMixedPayments(service.pagos_mixtos);
-      const now = getNowInBusinessTimezone();
-
-      const prepagoRows = clienteId
-        ? await trx<any[]>(
-            `SELECT COALESCE(SUM(monto), 0) as total_prepago
-             FROM clientes_prepago_movimientos
-             WHERE cliente_id = ?
-               AND UPPER(tipo) = 'CONSUMO'
-               AND (
-                 venta_id = ?
-                 OR (metadatos::jsonb ->> 'venta_id') = ?
-               )`,
-            [clienteId, servicioId, servicioId]
-          )
-        : [];
-      const prepagoMonto = Number(prepagoRows[0]?.total_prepago || 0);
-
-      const comisionRows = await trx<any[]>(
-        `SELECT COALESCE(SUM(dc.comision), 0) as total_comision
-         FROM detalle_comisiones dc
-         INNER JOIN comisiones c ON c.id_comision = dc.comision_id
-         WHERE c.servicio_id = ? AND c.estado = 1 AND dc.estado = 1`,
-        [servicioId]
-      );
-      const totalComision = Number(comisionRows[0]?.total_comision || 0);
-
-      let efectivo = 0, tarjeta = 0, transferencia = 0;
-      if (metodoPago === 'mixto') {
-        for (const pago of pagosMixtos) {
-          if (pago.metodo === 'efectivo') efectivo += pago.monto;
-          if (pago.metodo === 'tarjeta') tarjeta += pago.monto;
-          if (pago.metodo === 'transferencia') transferencia += pago.monto;
-        }
-      } else {
-        const montoMetodoPrincipal = Math.max(0, total - prepagoMonto);
-        if (metodoPago === 'efectivo') efectivo = montoMetodoPrincipal;
-        if (metodoPago === 'tarjeta') tarjeta = montoMetodoPrincipal;
-        if (metodoPago === 'transferencia') transferencia = montoMetodoPrincipal;
-      }
-
-      await BaseRepository.update(trx, TABLE, ID_COL, servicioId, { estado: 0, fecha_mod: now });
-
-      if (clienteId && prepagoMonto > 0) {
-        await trx('UPDATE clientes SET saldo = saldo + ? WHERE id_cliente = ?', [prepagoMonto, clienteId]);
-        await trx(
-          `INSERT INTO clientes_prepago_movimientos
-           (id_movimiento, cliente_id, tipo, monto, metodo_pago, venta_id, usuario_id, fecha_crea, metadatos)
-           VALUES (?, ?, 'DEVOLUCION', ?, 'prepago', ?, ?, ?, ?)`,
-          [generateUUID(), clienteId, prepagoMonto, servicioId, approvedBy || null, now,
-           JSON.stringify({ concepto: `Anulacion servicio ${servicioId}` })]
-        );
-      }
-
-      if (cajaId) {
-        await CashRegisterRepository.updateBalances(trx, cajaId, {
-          servicio: -(total - iva), efectivo: -efectivo, tarjeta: -tarjeta,
-          transferencia: -transferencia, prepago: -prepagoMonto,
-          iva: -iva, comision: -totalComision, devolucion: total
-        });
-      }
-
-      await trx('UPDATE comisiones SET estado = 0 WHERE servicio_id = ?', [servicioId]);
-      await trx(
-        `UPDATE detalle_comisiones dc SET estado = 0 FROM comisiones c WHERE c.id_comision = dc.comision_id AND c.servicio_id = ?`, [servicioId]
-      );
-
-      if (habitacionId) {
-        await RoomManager.resumeRoomLogic(trx, habitacionId, servicioId);
-      }
-
-      const hostessRows = await trx<any[]>(
-        'SELECT usuario_id FROM detalle_servicios WHERE servicio_id = ?', [servicioId]
-      );
-      await RoomManager.updateHostessServiceStatus(trx, hostessRows.map(row => row.usuario_id), servicioId);
-
-      const { addServicioLog } = await import('@/lib/utils/logUtils');
-      await addServicioLog(servicioId, 'ANULADO', 'Servicio anulado.', approvedBy);
-    });
-  } catch (err) {
-    logger.error('[ServiceQueries] Error en approveAnulacionServicio:', { servicioId, err });
-    if (err instanceof NotFoundError) throw err;
-    throw new DatabaseError(`Error al aprobar anulación de servicio ${servicioId}`, err);
-  }
+  await aprobarAnulacionServicio(servicioId, approvedBy);
 }
 
 export async function getAllServicios(params: {
@@ -227,7 +122,10 @@ export async function updateServicio(
           'SELECT id_caja FROM cajas WHERE estado = 1 ORDER BY fecha_apertura DESC LIMIT 1'
         );
         if (caja.length > 0)
-          await trx('UPDATE cajas SET iva = GREATEST(0, iva + ?) WHERE id_caja = ?', [ivaDelta, caja[0].id_caja]);
+          await trx('UPDATE cajas SET iva = GREATEST(0, iva + ?) WHERE id_caja = ?', [
+            ivaDelta,
+            caja[0].id_caja
+          ]);
       }
 
       if (validated.usuarios && validated.usuarios.length > 0) {
@@ -241,12 +139,19 @@ export async function updateServicio(
           fecha_crea: now
         }));
 
-        const columns = ['id_detalle_servicio', 'usuario_id', 'servicio_id', 'comision', 'fecha_crea'];
+        const columns = [
+          'id_detalle_servicio',
+          'usuario_id',
+          'servicio_id',
+          'comision',
+          'fecha_crea'
+        ];
         const placeholders = rows.map(() => `(${columns.map(() => '?').join(', ')})`).join(', ');
         const values = rows.flatMap(row => columns.map(col => row[col as keyof typeof row]));
 
         await trx(
-          `INSERT INTO detalle_servicios (${columns.join(', ')}) VALUES ${placeholders}`, values
+          `INSERT INTO detalle_servicios (${columns.join(', ')}) VALUES ${placeholders}`,
+          values
         );
       }
     });
@@ -263,56 +168,8 @@ export async function updateServicioStatus(
   estado: number,
   userId?: string
 ): Promise<ServiceType | null> {
-  try {
-    const prev = await query<any[]>(
-      'SELECT estado, habitacion_id, paused_at FROM servicios WHERE id_servicio = ?', [id]
-    );
-    if (prev.length === 0) throw new NotFoundError('Servicio', id);
-    const estadoAnterior = prev[0].estado;
-    const habitacionId = prev[0].habitacion_id;
-    const now = getNowInBusinessTimezone();
-
-    await withTransaction(async trx => {
-      await BaseRepository.update(trx, TABLE, ID_COL, id, { estado, fecha_mod: now });
-
-      if (estado === 1 || estado === 0) {
-        const wasActive = estadoAnterior === 2 || estadoAnterior === 3;
-        if (habitacionId && wasActive) {
-          await RoomManager.resumeRoomLogic(trx, habitacionId, id);
-        }
-
-        const anfsResult = await trx<any[]>(
-          'SELECT usuario_id FROM detalle_servicios WHERE servicio_id = ?', [id]
-        );
-        const hostessIds = anfsResult.map(a => a.usuario_id);
-        await RoomManager.updateHostessServiceStatus(trx, hostessIds, id);
-      }
-
-      const { addServicioLog } = await import('@/lib/utils/logUtils');
-      if (estado === 1 && estadoAnterior !== 1)
-        await addServicioLog(id, 'FINALIZADO', 'Servicio finalizado manualmente.', userId);
-      else if (estado === 0 && estadoAnterior !== 0)
-        await addServicioLog(id, 'ANULADO', 'Servicio anulado.', userId);
-      else if (estado === 3 && estadoAnterior !== 3) {
-        await addServicioLog(id, 'PAUSA', 'Servicio pausado manualmente.', userId);
-        await BaseRepository.update(trx, TABLE, ID_COL, id, { estado: 3, paused_at: now });
-      } else if (estadoAnterior === 3 && estado === 2) {
-        if (prev[0].paused_at) {
-          await trx(
-            `UPDATE ${TABLE} SET fecha_crea = (CAST(fecha_crea AS timestamp) + make_interval(secs => CAST(TRUNC(EXTRACT(EPOCH FROM (CAST(? AS timestamp) - CAST(paused_at AS timestamp))) / 1) AS double precision))), paused_at = NULL WHERE ${ID_COL} = ?`,
-            [now, id]
-          );
-          await addServicioLog(id, 'REANUDACION', 'Servicio reanudado manualmente.', userId);
-        }
-      }
-    });
-
-    return await getServicioById(id);
-  } catch (err) {
-    logger.error('[ServiceQueries] Error en updateServicioStatus:', { servicioId: id, estado, err });
-    if (err instanceof NotFoundError) throw err;
-    throw new DatabaseError(`Error al actualizar estado de servicio ${id}`, err);
-  }
+  await actualizarEstadoServicio(id, estado, userId);
+  return await getServicioById(id);
 }
 
 export async function deleteServicio(id: string): Promise<void> {
@@ -412,19 +269,7 @@ export async function requestAnulacionServicio(
   reason: string,
   requestedBy: string
 ): Promise<string> {
-  try {
-    const idAnul = generateUUID();
-    const token = generateUUID();
-    await query(
-      `INSERT INTO solicitudes_anulacion_servicios (id, servicio_id, token, estado, fecha_solicitud, solicitado_por, motivo)
-       VALUES (?, ?, ?, 'pendiente', ?, ?, ?)`,
-      [idAnul, id, token, getNowInBusinessTimezone(), requestedBy, reason]
-    );
-    return token;
-  } catch (err) {
-    logger.error('[ServiceQueries] Error en requestAnulacionServicio:', { servicioId: id, err });
-    throw new DatabaseError(`Error al solicitar anulación de servicio ${id}`, err);
-  }
+  return solicitarAnulacionServicio(id, reason, requestedBy);
 }
 
 export async function processAnulacionServicio(
@@ -432,31 +277,5 @@ export async function processAnulacionServicio(
   approvedBy: string,
   status: string
 ): Promise<void> {
-  try {
-    const now = getNowInBusinessTimezone();
-    const nextStatus = normalizeSolicitudStatus(status);
-    const shouldApprove = nextStatus === 'confirmada';
-
-    await withTransaction(async trx => {
-      const req = await trx<any[]>(
-        'SELECT servicio_id FROM solicitudes_anulacion_servicios WHERE id = ?', [requestId]
-      );
-      if (!req.length) throw new NotFoundError('Solicitud de anulacion de servicio', requestId);
-
-      await trx('UPDATE solicitudes_anulacion_servicios SET estado = ? WHERE id = ?', [nextStatus, requestId]);
-      return req[0].servicio_id as string;
-    });
-
-    if (shouldApprove) {
-      const req = await query<any[]>(
-        'SELECT servicio_id FROM solicitudes_anulacion_servicios WHERE id = ? LIMIT 1', [requestId]
-      );
-      if (!req.length) throw new NotFoundError('Solicitud de anulacion de servicio', requestId);
-      await approveAnulacionServicio(req[0].servicio_id, approvedBy);
-    }
-  } catch (err) {
-    logger.error('[ServiceQueries] Error en processAnulacionServicio:', { requestId, err });
-    if (err instanceof NotFoundError) throw err;
-    throw new DatabaseError(`Error al procesar anulación ${requestId}`, err);
-  }
+  await procesarAnulacionServicio(requestId, approvedBy, status);
 }

@@ -13,7 +13,21 @@
  * adelante en la fase.
  */
 import { query } from '@/lib/database/db';
+import type { ContextoOperacion } from '@/lib/transaccion/contrato';
+import { resolverTransaccion } from '@/lib/transaccion/infraestructura';
+import { generateUUID } from '@/lib/database/db';
+import { getNowInBusinessTimezone } from '@/lib/business/timezoneService';
+import {
+  allocateProportionally,
+  parseMixedPayments,
+  normalizeSolicitudStatus,
+  type MixedPayment,
+  type VentaRefundDetailRow
+} from '@/lib/repositories/sale/saleHelpers';
 import type { SolicitudAnulacion, VentaParaAnulacion } from '../contracts';
+
+export type { MixedPayment, VentaRefundDetailRow };
+export { parseMixedPayments, normalizeSolicitudStatus, allocateProportionally };
 
 /**
  * La venta y su cliente con el nombre ya resuelto. Se usa para validar el monto
@@ -66,8 +80,269 @@ export async function listarSolicitudesPendientes(): Promise<SolicitudAnulacion[
 export async function obtenerSolicitudPorToken(token: string): Promise<SolicitudAnulacion[]> {
   return await query<SolicitudAnulacion[]>(
     `${SELECCION_SOLICITUD}
-     WHERE sav.token = ? AND sav.estado = 'pendiente'
-     LIMIT 1`,
+      WHERE sav.token = ? AND sav.estado = 'pendiente'
+      LIMIT 1`,
     [token]
   );
+}
+
+/**
+ * Escrituras sobre tablas propias de Ventas (`ventas`, `detalle_ventas`,
+ * `devoluciones_ventas`, `detalle_devoluciones_ventas`,
+ * `solicitudes_anulacion_ventas`, `ventas_usuarios`). Reciben
+ * `ContextoOperacion`: la anulación confirma o revierte junto con caja,
+ * prepago, comisiones, propinas, stock y habitación. Mismo SQL heredado.
+ */
+
+export interface VentaAnulacion {
+  id_venta: string;
+  estado: number;
+  habitacion_id: string | null;
+  cliente_id: string | null;
+  caja_id: string | null;
+  pedido_id: string | null;
+  metodo_pago: string | null;
+  total: number;
+  sub_total: number;
+  propina: number;
+  total_comision: number;
+  pagos_mixtos: unknown;
+}
+
+export async function leerVentaParaAnular(
+  ventaId: string,
+  contexto: ContextoOperacion
+): Promise<VentaAnulacion | null> {
+  const trx = resolverTransaccion(contexto);
+  const rows = await trx<VentaAnulacion[]>(
+    `SELECT id_venta, estado, habitacion_id, cliente_id, caja_id, pedido_id, metodo_pago, total, sub_total,
+            propina, total_comision, pagos_mixtos
+       FROM ventas WHERE id_venta = ? LIMIT 1`,
+    [ventaId]
+  );
+  return rows[0] ?? null;
+}
+
+export async function estadoTrasSolicitud(
+  ventaId: string,
+  contexto: ContextoOperacion
+): Promise<number> {
+  const trx = resolverTransaccion(contexto);
+  const rows = await trx<{ habitacion_id: string | null; tiempo: number }[]>(
+    'SELECT habitacion_id, tiempo FROM ventas WHERE id_venta = ? LIMIT 1',
+    [ventaId]
+  );
+  return rows.length && rows[0].habitacion_id && Number(rows[0].tiempo || 0) > 0 ? 2 : 1;
+}
+
+export async function marcarEstadoVenta(
+  ventaId: string,
+  estado: number,
+  contexto: ContextoOperacion
+): Promise<void> {
+  await resolverTransaccion(contexto)(
+    'UPDATE ventas SET estado = ?, fecha_mod = ? WHERE id_venta = ?',
+    [estado, getNowInBusinessTimezone(), ventaId]
+  );
+}
+
+export async function leerDetallesParaDevolucion(
+  ventaId: string,
+  contexto: ContextoOperacion
+): Promise<VentaRefundDetailRow[]> {
+  return await resolverTransaccion(contexto)<VentaRefundDetailRow[]>(
+    `SELECT id_detalle_venta, producto_id, cantidad, precio, sub_total, comision
+       FROM detalle_ventas WHERE venta_id = ? ORDER BY id_detalle_venta ASC`,
+    [ventaId]
+  );
+}
+
+export async function registrarDevolucionVenta(
+  params: {
+    ventaId: string;
+    clienteId?: string | null;
+    refundTotal: number;
+    refundSubTotal: number;
+    refundComision: number;
+    detailRows: VentaRefundDetailRow[];
+  },
+  contexto: ContextoOperacion
+): Promise<void> {
+  const refundTotal = Math.max(0, Math.round(Number(params.refundTotal || 0)));
+  if (refundTotal <= 0) return;
+  const refundSubTotal = Math.max(0, Math.round(Number(params.refundSubTotal || 0)));
+  const refundComision = Math.max(0, Math.round(Number(params.refundComision || 0)));
+  const now = getNowInBusinessTimezone();
+  const trx = resolverTransaccion(contexto);
+  const devolucionVentaId = generateUUID();
+
+  await trx(
+    `INSERT INTO devoluciones_ventas
+       (id_devolucion_venta, cliente_id, venta_id, total, fecha_crea, estado)
+     VALUES (?, ?, ?, ?, ?, 1)`,
+    [devolucionVentaId, params.clienteId || null, params.ventaId, refundTotal, now]
+  );
+
+  if (!params.detailRows.length || refundSubTotal <= 0) return;
+
+  const refundedSubtotals = allocateProportionally(
+    params.detailRows,
+    row => row.sub_total,
+    refundSubTotal
+  );
+  const refundedComisiones = allocateProportionally(
+    params.detailRows,
+    row => row.comision,
+    refundComision
+  );
+  const refundComisionByDetailId = new Map(
+    refundedComisiones.map(row => [row.id_detalle_venta, Number(row.nextAmount || 0)])
+  );
+
+  for (const row of refundedSubtotals) {
+    const refundedLineSubTotal = Number(row.nextAmount || 0);
+    const refundedLineComision = refundComisionByDetailId.get(row.id_detalle_venta) || 0;
+    if (refundedLineSubTotal <= 0 && refundedLineComision <= 0) continue;
+
+    const originalQuantity = Math.max(0, Math.round(Number(row.cantidad || 0)));
+    const canPreserveOriginalQuantity =
+      originalQuantity > 0 &&
+      refundedLineSubTotal > 0 &&
+      refundedLineSubTotal % originalQuantity === 0;
+    const quantity = canPreserveOriginalQuantity
+      ? originalQuantity
+      : refundedLineSubTotal > 0
+        ? 1
+        : Math.max(originalQuantity, 1);
+    const price = canPreserveOriginalQuantity
+      ? Math.round(refundedLineSubTotal / originalQuantity)
+      : refundedLineSubTotal;
+
+    await trx(
+      `INSERT INTO detalle_devoluciones_ventas
+         (id_detalle_devolucion, devolucion_venta_id, producto_id, cantidad, precio, comision, fecha_crea, estado)
+       VALUES (?, ?, ?, ?, ?, ?, ?, 1)`,
+      [
+        generateUUID(),
+        devolucionVentaId,
+        row.producto_id || null,
+        quantity,
+        price,
+        refundedLineComision,
+        now
+      ]
+    );
+  }
+}
+
+export async function ajustarDetallesVenta(
+  detailRows: VentaRefundDetailRow[],
+  newSubTotal: number,
+  newComision: number,
+  contexto: ContextoOperacion
+): Promise<void> {
+  const trx = resolverTransaccion(contexto);
+  const updatedSubtotals = allocateProportionally(detailRows, row => row.sub_total, newSubTotal);
+  const updatedComisiones = allocateProportionally(detailRows, row => row.comision, newComision);
+  const comisionByDetailId = new Map(
+    updatedComisiones.map(row => [row.id_detalle_venta, Number(row.nextAmount || 0)])
+  );
+  for (const row of updatedSubtotals) {
+    await trx('UPDATE detalle_ventas SET sub_total = ?, comision = ? WHERE id_detalle_venta = ?', [
+      Number(row.nextAmount || 0),
+      comisionByDetailId.get(row.id_detalle_venta) || 0,
+      row.id_detalle_venta
+    ]);
+  }
+}
+
+export async function actualizarVentaParcial(
+  ventaId: string,
+  valores: {
+    newTotal: number;
+    newSubTotal: number;
+    newPropina: number;
+    newComision: number;
+    pagosMixtosJson: string;
+    nextState: number;
+  },
+  contexto: ContextoOperacion
+): Promise<void> {
+  await resolverTransaccion(contexto)(
+    `UPDATE ventas SET total = ?, sub_total = ?, propina = ?, total_comision = ?, pagos_mixtos = ?, estado = ?, fecha_mod = ? WHERE id_venta = ?`,
+    [
+      valores.newTotal,
+      valores.newSubTotal,
+      valores.newPropina,
+      valores.newComision,
+      valores.pagosMixtosJson,
+      valores.nextState,
+      getNowInBusinessTimezone(),
+      ventaId
+    ]
+  );
+}
+
+export async function crearSolicitudAnulacion(
+  ventaId: string,
+  motivo: string,
+  solicitadoPor: string,
+  monto: number,
+  contexto: ContextoOperacion
+): Promise<string> {
+  const idAnul = generateUUID();
+  const token = generateUUID();
+  const trx = resolverTransaccion(contexto);
+  await trx(
+    `INSERT INTO solicitudes_anulacion_ventas (id, venta_id, token, estado, fecha_solicitud, solicitado_por, motivo, monto)
+     VALUES (?, ?, ?, 'pendiente', ?, ?, ?, ?)`,
+    [idAnul, ventaId, token, getNowInBusinessTimezone(), solicitadoPor, motivo, monto]
+  );
+  return token;
+}
+
+export async function actualizarEstadoSolicitud(
+  requestId: string,
+  status: string,
+  contexto: ContextoOperacion
+): Promise<'confirmada' | 'rechazada'> {
+  const nextStatus = normalizeSolicitudStatus(status);
+  await resolverTransaccion(contexto)(
+    'UPDATE solicitudes_anulacion_ventas SET estado = ? WHERE id = ?',
+    [nextStatus, requestId]
+  );
+  return nextStatus;
+}
+
+export async function leerVentaDeSolicitud(
+  requestId: string,
+  contexto: ContextoOperacion
+): Promise<string | null> {
+  const rows = await resolverTransaccion(contexto)<{ venta_id: string }[]>(
+    'SELECT venta_id FROM solicitudes_anulacion_ventas WHERE id = ?',
+    [requestId]
+  );
+  return rows[0]?.venta_id ?? null;
+}
+
+export async function leerMontoSolicitud(
+  requestId: string,
+  contexto: ContextoOperacion
+): Promise<number> {
+  const rows = await resolverTransaccion(contexto)<{ monto: number }[]>(
+    'SELECT monto FROM solicitudes_anulacion_ventas WHERE id = ? LIMIT 1',
+    [requestId]
+  );
+  return Number(rows[0]?.monto || 0);
+}
+
+export async function leerAnfitrionasVenta(
+  ventaId: string,
+  contexto: ContextoOperacion
+): Promise<string[]> {
+  const rows = await resolverTransaccion(contexto)<{ usuario_id: string }[]>(
+    'SELECT usuario_id FROM ventas_usuarios WHERE venta_id = ?',
+    [ventaId]
+  );
+  return rows.map(row => row.usuario_id);
 }

@@ -108,6 +108,14 @@ function capaDe(rel) {
  * escrituras cruzadas entre dominios y no entre carpetas.
  */
 const MODULO_POR_RUTA = [
+  [/^lib\/repositories\/(CashRegister|Withdrawal)/, 'caja'],
+  [/^lib\/repositories\/Client/, 'clientes'],
+  [/^lib\/repositories\/(Commission|Tip|Payroll)/, 'personal'],
+  [/^lib\/repositories\/(Permission|Role|User)/, 'identidad'],
+  [/^lib\/repositories\/(Order|Room|Timer)/, 'operacion'],
+  [/^lib\/services\/RoomManager/, 'operacion'],
+  [/^lib\/repositories\/Category/, 'inventario'],
+
   [/^modules\/inventario(\/|$)/, 'inventario'],
   [/^lib\/repositories\/inventory\//, 'inventario'],
   [/^lib\/repositories\/(sale|saleQueries)/i, 'ventas'],
@@ -157,6 +165,8 @@ const MODULO_POR_RUTA = [
 ];
 
 function moduloDe(rel) {
+  const modulo = /^modules\/([^/]+)(?:\/|$)/.exec(rel);
+  if (modulo) return modulo[1];
   for (const [re, mod] of MODULO_POR_RUTA) if (re.test(rel)) return mod;
   return null;
 }
@@ -260,6 +270,10 @@ const RE_JOIN = /\bJOIN\s+["'`]?(\w+)/gi;
 
 for (const [rel, n] of grafo) {
   if (ES_TEST(rel)) continue;
+  // Un workflow abre la unidad sin importar el driver PostgreSQL.
+  if (/\b(?:withTransaction|enUnaUnidad)\s*\(/.test(n.txt)) {
+    transactores.push({ archivo: rel, capa: n.capa, modulo: n.modulo });
+  }
   const usaDriver = usaDriverDe(n);
   if (usaDriver) {
     const tablas = new Set();
@@ -279,9 +293,6 @@ for (const [rel, n] of grafo) {
         if (!escritoresTabla.has(t)) escritoresTabla.set(t, new Set());
         escritoresTabla.get(t).add(rel);
       }
-    }
-    if (/\bwithTransaction\s*\(/.test(n.txt)) {
-      transactores.push({ archivo: rel, capa: n.capa, modulo: n.modulo });
     }
   }
 }
@@ -575,7 +586,7 @@ function md() {
   s += `\n## 4. Transacciones\n\n`;
   s += tabla(
     transactores.map(t => [t.archivo, t.capa]),
-    ['Archivo con withTransaction', 'Capa']
+    ['Archivo con withTransaction/enUnaUnidad', 'Capa']
   );
 
   s += `\n## 5. Procesos periódicos y ciclo de vida\n\n`;

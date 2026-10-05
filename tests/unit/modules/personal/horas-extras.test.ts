@@ -1,3 +1,7 @@
+vi.mock('@/modules/personal/conceptos/repositorio', () => ({
+  insertarComisiones: vi.fn(),
+  insertarPropina: vi.fn()
+}));
 /**
  * Casos de uso públicos del módulo Personal — horas extras.
  *
@@ -37,6 +41,15 @@ vi.mock('@/modules/personal/anticipos/repositorio', () => ({
   updateAnticipoStatus: vi.fn(),
   processSolicitudAnticipo: vi.fn(),
   deliverAnticipo: vi.fn()
+}));
+
+// Las operaciones de anticipos abren su propia unidad: el contrato importa el
+// driver, que valida entorno al cargarse. Se mockea porque los repositorios
+// ya están mockeados y el driver no se usa en este entorno.
+vi.mock('@/lib/database/db', () => ({
+  generateUUID: () => 'test-uuid',
+  withTransaction: vi.fn(async (fn: any) => fn(vi.fn())),
+  query: vi.fn()
 }));
 
 import {

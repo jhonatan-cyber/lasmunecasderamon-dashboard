@@ -4,12 +4,12 @@ Generado por `scripts/arquitectura/analisis.mjs`. No modificar a mano.
 
 | Métrica                                    | Valor  |
 | ------------------------------------------ | ------ |
-| Archivos analizados                        | 1576   |
+| Archivos analizados                        | 1605   |
 | Rutas HTTP                                 | 204    |
 | **Rutas con SQL directo**                  | **0**  |
-| **Archivos con SQL fuera de repositorios** | **64** |
+| **Archivos con SQL fuera de repositorios** | **66** |
 | Tablas con más de un escritor              | 18     |
-| Ciclos entre dominios                      | 5      |
+| Ciclos entre dominios                      | 6      |
 | Procesos periódicos                        | 15     |
 | Puntos de caché                            | 19     |
 | Rutas sin `withRoute`                      | 19     |
@@ -22,8 +22,8 @@ controladores HTTP traducen. Esto es lo que hay que reducir a cero.
 | Capa             | Archivos con SQL |
 | ---------------- | ---------------- |
 | scripts          | 11               |
-| raiz             | 27               |
-| lib/services     | 8                |
+| raiz             | 30               |
+| lib/services     | 7                |
 | lib/otros        | 5                |
 | lib/integrations | 2                |
 | lib/identidad    | 2                |
@@ -32,72 +32,74 @@ controladores HTTP traducen. Esto es lo que hay que reducir a cero.
 
 <details><summary>Detalle por archivo</summary>
 
-| Archivo                                                | Capa             | Tablas que escribe                                                                          |
-| ------------------------------------------------------ | ---------------- | ------------------------------------------------------------------------------------------- |
-| scripts/clean-sync-probes.js                           | scripts          | sync_operations                                                                             |
-| scripts/compare-schema.mjs                             | scripts          | —                                                                                           |
-| scripts/db_test.js                                     | scripts          | —                                                                                           |
-| scripts/lib/twilio-config.js                           | scripts          | —                                                                                           |
-| scripts/postgres-migrations.mjs                        | scripts          | _postgres_migrations                                                                        |
-| scripts/purge-query-logs.js                            | scripts          | query_logs                                                                                  |
-| scripts/reconcile-migration-checksum.mjs               | scripts          | _postgres_migrations                                                                        |
-| scripts/run-integration-all.js                         | scripts          | —                                                                                           |
-| scripts/test-whatsapp.ts                               | scripts          | —                                                                                           |
-| scripts/verify-migrations.mjs                          | scripts          | —                                                                                           |
-| scripts/verify-schema-parity.mjs                       | scripts          | —                                                                                           |
-| modules/asistencia/biometrico/avisosAudio.ts           | raiz             | —                                                                                           |
-| modules/asistencia/biometrico/clockSync.ts             | raiz             | —                                                                                           |
-| modules/asistencia/biometrico/deviceAuth.ts            | raiz             | biometric_devices                                                                           |
-| modules/asistencia/biometrico/enrollmentService.ts     | raiz             | biometric_devices, biometric_plantillas, usuarios                                           |
-| modules/asistencia/biometrico/eventListener.ts         | raiz             | —                                                                                           |
-| modules/asistencia/biometrico/identificacionFacial.ts  | raiz             | biometric_device_records, biometric_plantillas                                              |
-| modules/asistencia/biometrico/ipDiscovery.ts           | raiz             | biometric_devices                                                                           |
-| modules/asistencia/biometrico/ipWatcher.ts             | raiz             | —                                                                                           |
-| modules/asistencia/biometrico/processBiometricEvent.ts | raiz             | —                                                                                           |
-| modules/asistencia/biometrico/recordPhotos.ts          | raiz             | biometric_device_records                                                                    |
-| modules/asistencia/biometrico/recordPoller.ts          | raiz             | —                                                                                           |
-| modules/asistencia/biometrico/statusService.ts         | raiz             | —                                                                                           |
-| modules/asistencia/biometrico/unenrollmentService.ts   | raiz             | biometric_plantillas, usuarios                                                              |
-| modules/asistencia/biometrico/verificacionRemota.ts    | raiz             | —                                                                                           |
-| modules/asistencia/biometrico/videoStream.ts           | raiz             | —                                                                                           |
-| modules/asistencia/kioskos/attendanceChallenges.ts     | raiz             | asistencia_desafios                                                                         |
-| modules/asistencia/kioskos/deviceAuth.ts               | raiz             | kiosk_devices                                                                               |
-| modules/inventario/anulaciones/servicio.ts             | raiz             | —                                                                                           |
-| modules/inventario/bar/configuracion.ts                | raiz             | —                                                                                           |
-| modules/inventario/compras/servicio.ts                 | raiz             | —                                                                                           |
-| modules/inventario/envases/servicio.ts                 | raiz             | —                                                                                           |
-| modules/inventario/presentaciones/servicio.ts          | raiz             | —                                                                                           |
-| modules/inventario/productos/servicio.ts               | raiz             | —                                                                                           |
-| modules/inventario/tipos.ts                            | raiz             | —                                                                                           |
-| modules/inventario/transferencias/servicio.ts          | raiz             | —                                                                                           |
-| modules/inventario/unidades/servicio.ts                | raiz             | —                                                                                           |
-| proxy.ts                                               | raiz             | —                                                                                           |
-| lib/services/AccountService.ts                         | lib/services     | —                                                                                           |
-| lib/services/AuditService.ts                           | lib/services     | —                                                                                           |
-| lib/services/PermissionService.ts                      | lib/services     | —                                                                                           |
-| lib/services/RoomManager.ts                            | lib/services     | habitaciones, servicios, usuarios, ventas                                                   |
-| lib/services/SaleService.ts                            | lib/services     | comisiones, detalle_comisiones, detalle_ventas, habitaciones, pedidos, ventas_usuarios      |
-| lib/services/SecurityAlertService.ts                   | lib/services     | —                                                                                           |
-| lib/services/ServiceService.ts                         | lib/services     | comisiones, detalle_comisiones, detalle_servicios, detalle_servicios_clientes, habitaciones |
-| lib/services/WithdrawalService.ts                      | lib/services     | cajas                                                                                       |
-| lib/notifications/orderNotificationUtils.ts            | lib/otros        | —                                                                                           |
-| lib/transaccion/compatibilidad.ts                      | lib/otros        | —                                                                                           |
-| lib/transaccion/contrato.ts                            | lib/otros        | —                                                                                           |
-| lib/transaccion/infraestructura.ts                     | lib/otros        | —                                                                                           |
-| lib/utils/logUtils.ts                                  | lib/otros        | servicio_logs, venta_logs                                                                   |
-| lib/integrations/pushNotifications.ts                  | lib/integrations | usuarios                                                                                    |
-| lib/integrations/whatsappPendingActions.ts             | lib/integrations | cuentas, detalle_cuentas, solicitudes_anulacion_cuentas, ventas                             |
-| lib/auth/auth.ts                                       | lib/identidad    | logins                                                                                      |
-| lib/middleware/auth.ts                                 | lib/identidad    | —                                                                                           |
-| lib/database/db.ts                                     | lib/database     | —                                                                                           |
-| lib/database/maintenance.ts                            | lib/database     | backups                                                                                     |
-| lib/database/perfilConsultas.ts                        | lib/database     | —                                                                                           |
-| lib/business/codigoService.ts                          | lib/business     | codigos                                                                                     |
-| lib/business/containerAlerts.ts                        | lib/business     | —                                                                                           |
-| lib/business/pagosMixtos.ts                            | lib/business     | clientes, clientes_prepago_movimientos, cuentas                                             |
-| lib/business/shotAlerts.ts                             | lib/business     | —                                                                                           |
-| lib/business/twilioConfig.ts                           | lib/business     | —                                                                                           |
-| lib/business/whatsappConfig.ts                         | lib/business     | —                                                                                           |
+| Archivo                                                | Capa             | Tablas que escribe                                              |
+| ------------------------------------------------------ | ---------------- | --------------------------------------------------------------- |
+| scripts/clean-sync-probes.js                           | scripts          | sync_operations                                                 |
+| scripts/compare-schema.mjs                             | scripts          | —                                                               |
+| scripts/db_test.js                                     | scripts          | —                                                               |
+| scripts/lib/twilio-config.js                           | scripts          | —                                                               |
+| scripts/postgres-migrations.mjs                        | scripts          | _postgres_migrations                                            |
+| scripts/purge-query-logs.js                            | scripts          | query_logs                                                      |
+| scripts/reconcile-migration-checksum.mjs               | scripts          | _postgres_migrations                                            |
+| scripts/run-integration-all.js                         | scripts          | —                                                               |
+| scripts/test-whatsapp.ts                               | scripts          | —                                                               |
+| scripts/verify-migrations.mjs                          | scripts          | —                                                               |
+| scripts/verify-schema-parity.mjs                       | scripts          | —                                                               |
+| modules/operacion/cuentas/alta.ts                      | raiz             | —                                                               |
+| modules/operacion/servicios/creacion.ts                | raiz             | —                                                               |
+| modules/ventas/registro/servicio.ts                    | raiz             | —                                                               |
+| modules/asistencia/biometrico/avisosAudio.ts           | raiz             | —                                                               |
+| modules/asistencia/biometrico/clockSync.ts             | raiz             | —                                                               |
+| modules/asistencia/biometrico/deviceAuth.ts            | raiz             | biometric_devices                                               |
+| modules/asistencia/biometrico/enrollmentService.ts     | raiz             | biometric_devices, biometric_plantillas, usuarios               |
+| modules/asistencia/biometrico/eventListener.ts         | raiz             | —                                                               |
+| modules/asistencia/biometrico/identificacionFacial.ts  | raiz             | biometric_device_records, biometric_plantillas                  |
+| modules/asistencia/biometrico/ipDiscovery.ts           | raiz             | biometric_devices                                               |
+| modules/asistencia/biometrico/ipWatcher.ts             | raiz             | —                                                               |
+| modules/asistencia/biometrico/processBiometricEvent.ts | raiz             | —                                                               |
+| modules/asistencia/biometrico/recordPhotos.ts          | raiz             | biometric_device_records                                        |
+| modules/asistencia/biometrico/recordPoller.ts          | raiz             | —                                                               |
+| modules/asistencia/biometrico/statusService.ts         | raiz             | —                                                               |
+| modules/asistencia/biometrico/unenrollmentService.ts   | raiz             | biometric_plantillas, usuarios                                  |
+| modules/asistencia/biometrico/verificacionRemota.ts    | raiz             | —                                                               |
+| modules/asistencia/biometrico/videoStream.ts           | raiz             | —                                                               |
+| modules/asistencia/kioskos/attendanceChallenges.ts     | raiz             | asistencia_desafios                                             |
+| modules/asistencia/kioskos/deviceAuth.ts               | raiz             | kiosk_devices                                                   |
+| modules/inventario/anulaciones/servicio.ts             | raiz             | —                                                               |
+| modules/inventario/bar/configuracion.ts                | raiz             | —                                                               |
+| modules/inventario/compras/servicio.ts                 | raiz             | —                                                               |
+| modules/inventario/envases/servicio.ts                 | raiz             | —                                                               |
+| modules/inventario/presentaciones/servicio.ts          | raiz             | —                                                               |
+| modules/inventario/productos/servicio.ts               | raiz             | —                                                               |
+| modules/inventario/tipos.ts                            | raiz             | —                                                               |
+| modules/inventario/transferencias/servicio.ts          | raiz             | —                                                               |
+| modules/inventario/unidades/servicio.ts                | raiz             | —                                                               |
+| proxy.ts                                               | raiz             | —                                                               |
+| lib/services/AuditService.ts                           | lib/services     | —                                                               |
+| lib/services/PermissionService.ts                      | lib/services     | —                                                               |
+| lib/services/RoomManager.ts                            | lib/services     | habitaciones, servicios, ventas                                 |
+| lib/services/SaleService.ts                            | lib/services     | —                                                               |
+| lib/services/SecurityAlertService.ts                   | lib/services     | —                                                               |
+| lib/services/ServiceService.ts                         | lib/services     | —                                                               |
+| lib/services/WithdrawalService.ts                      | lib/services     | cajas                                                           |
+| lib/notifications/orderNotificationUtils.ts            | lib/otros        | —                                                               |
+| lib/transaccion/compatibilidad.ts                      | lib/otros        | —                                                               |
+| lib/transaccion/contrato.ts                            | lib/otros        | —                                                               |
+| lib/transaccion/infraestructura.ts                     | lib/otros        | —                                                               |
+| lib/utils/logUtils.ts                                  | lib/otros        | servicio_logs, venta_logs                                       |
+| lib/integrations/pushNotifications.ts                  | lib/integrations | usuarios                                                        |
+| lib/integrations/whatsappPendingActions.ts             | lib/integrations | cuentas, detalle_cuentas, solicitudes_anulacion_cuentas, ventas |
+| lib/auth/auth.ts                                       | lib/identidad    | logins                                                          |
+| lib/middleware/auth.ts                                 | lib/identidad    | —                                                               |
+| lib/database/db.ts                                     | lib/database     | —                                                               |
+| lib/database/maintenance.ts                            | lib/database     | backups                                                         |
+| lib/database/perfilConsultas.ts                        | lib/database     | —                                                               |
+| lib/business/codigoService.ts                          | lib/business     | codigos                                                         |
+| lib/business/containerAlerts.ts                        | lib/business     | —                                                               |
+| lib/business/pagosMixtos.ts                            | lib/business     | clientes, clientes_prepago_movimientos, cuentas                 |
+| lib/business/shotAlerts.ts                             | lib/business     | —                                                               |
+| lib/business/twilioConfig.ts                           | lib/business     | —                                                               |
+| lib/business/whatsappConfig.ts                         | lib/business     | —                                                               |
 
 </details>
 
@@ -107,26 +109,26 @@ Tablas que escriben más de un repositorio. Son las escrituras cruzadas que el
 principio 1 del plan quiere eliminar: cada tabla debería tener un único módulo
 propietario.
 
-| Tabla                           | Escritores | Repositorios                                                                                                                                                                                                                                 |
-| ------------------------------- | ---------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| asistencias                     | 2          | lib/repositories/PayrollRepository.ts<br>lib/repositories/auth/AuthQueries.ts                                                                                                                                                                |
-| cajas                           | 2          | lib/repositories/CashRegisterRepository.ts<br>lib/repositories/service/ServiceQueries.ts                                                                                                                                                     |
-| clientes                        | 4          | lib/repositories/ClientRepository.ts<br>lib/repositories/cuenta/CuentaQueries.ts<br>lib/repositories/sale/SaleQueries.ts<br>lib/repositories/service/ServiceQueries.ts                                                                       |
-| clientes_prepago_movimientos    | 2          | lib/repositories/sale/SaleQueries.ts<br>lib/repositories/service/ServiceQueries.ts                                                                                                                                                           |
-| comisiones                      | 2          | lib/repositories/sale/SaleQueries.ts<br>lib/repositories/service/ServiceQueries.ts                                                                                                                                                           |
-| cuentas                         | 3          | lib/repositories/ClientRepository.ts<br>lib/repositories/cuenta/CuentaQueries.ts<br>modules/operacion/temporizadores/repositorio.ts                                                                                                          |
-| detalle_comisiones              | 2          | lib/repositories/PayrollRepository.ts<br>lib/repositories/sale/SaleQueries.ts                                                                                                                                                                |
-| detalle_propinas                | 3          | lib/repositories/PayrollRepository.ts<br>lib/repositories/TipRepository.ts<br>lib/repositories/sale/SaleQueries.ts                                                                                                                           |
-| habitaciones                    | 3          | lib/repositories/TimerRepository.ts<br>lib/repositories/cuenta/CuentaQueries.ts<br>modules/operacion/temporizadores/repositorio.ts                                                                                                           |
-| inventario_movimientos          | 2          | modules/inventario/anulaciones/repositorio.ts<br>modules/inventario/bar/consumoRepositorio.ts                                                                                                                                                |
-| inventario_unidades             | 5          | modules/inventario/anulaciones/repositorio.ts<br>modules/inventario/bar/consumoRepositorio.ts<br>modules/inventario/envases/repositorio.ts<br>modules/inventario/transferencias/repositorio.ts<br>modules/inventario/unidades/repositorio.ts |
-| logins                          | 2          | lib/repositories/CashRegisterRepository.ts<br>lib/repositories/auth/AuthQueries.ts                                                                                                                                                           |
-| permissions                     | 2          | lib/repositories/PermissionRepository.ts<br>modules/identidad/permisos/repositorio.ts                                                                                                                                                        |
-| role_permissions                | 2          | lib/repositories/RoleRepository.ts<br>modules/identidad/permisos/repositorio.ts                                                                                                                                                              |
-| servicios                       | 3          | lib/repositories/TimerRepository.ts<br>lib/repositories/service/ServiceQueries.ts<br>modules/operacion/temporizadores/repositorio.ts                                                                                                         |
-| solicitudes_anulacion_servicios | 2          | lib/repositories/service/ServiceQueries.ts<br>modules/operacion/servicios/repositorio.ts                                                                                                                                                     |
-| usuarios                        | 2          | lib/repositories/auth/AuthQueries.ts<br>modules/identidad/usuarios/repositorio.ts                                                                                                                                                            |
-| ventas                          | 3          | lib/repositories/TimerRepository.ts<br>lib/repositories/sale/SaleQueries.ts<br>modules/operacion/temporizadores/repositorio.ts                                                                                                               |
+| Tabla                  | Escritores | Repositorios                                                                                                                                                                                                                                 |
+| ---------------------- | ---------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| asistencias            | 2          | lib/repositories/PayrollRepository.ts<br>lib/repositories/auth/AuthQueries.ts                                                                                                                                                                |
+| cajas                  | 3          | lib/repositories/CashRegisterRepository.ts<br>lib/repositories/service/ServiceQueries.ts<br>modules/caja/movimientos/repositorio.ts                                                                                                          |
+| clientes               | 2          | lib/repositories/ClientRepository.ts<br>modules/clientes/prepago/repositorio.ts                                                                                                                                                              |
+| cuentas                | 3          | lib/repositories/cuenta/CuentaQueries.ts<br>modules/operacion/cuentas/repositorio.ts<br>modules/operacion/temporizadores/repositorio.ts                                                                                                      |
+| detalle_comisiones     | 2          | lib/repositories/PayrollRepository.ts<br>modules/personal/conceptos/repositorio.ts                                                                                                                                                           |
+| detalle_propinas       | 2          | lib/repositories/PayrollRepository.ts<br>modules/personal/conceptos/repositorio.ts                                                                                                                                                           |
+| detalle_servicios      | 2          | lib/repositories/service/ServiceQueries.ts<br>modules/operacion/servicios/repositorio.ts                                                                                                                                                     |
+| detalle_ventas         | 3          | lib/repositories/sale/SaleQueries.ts<br>modules/ventas/anulaciones/repositorio.ts<br>modules/ventas/registro/repositorio.ts                                                                                                                  |
+| habitaciones           | 2          | lib/repositories/TimerRepository.ts<br>modules/operacion/temporizadores/repositorio.ts                                                                                                                                                       |
+| inventario_movimientos | 2          | modules/inventario/anulaciones/repositorio.ts<br>modules/inventario/bar/consumoRepositorio.ts                                                                                                                                                |
+| inventario_unidades    | 5          | modules/inventario/anulaciones/repositorio.ts<br>modules/inventario/bar/consumoRepositorio.ts<br>modules/inventario/envases/repositorio.ts<br>modules/inventario/transferencias/repositorio.ts<br>modules/inventario/unidades/repositorio.ts |
+| logins                 | 2          | lib/repositories/CashRegisterRepository.ts<br>lib/repositories/auth/AuthQueries.ts                                                                                                                                                           |
+| permissions            | 2          | lib/repositories/PermissionRepository.ts<br>modules/identidad/permisos/repositorio.ts                                                                                                                                                        |
+| role_permissions       | 2          | lib/repositories/RoleRepository.ts<br>modules/identidad/permisos/repositorio.ts                                                                                                                                                              |
+| servicios              | 4          | lib/repositories/TimerRepository.ts<br>lib/repositories/service/ServiceQueries.ts<br>modules/operacion/servicios/repositorio.ts<br>modules/operacion/temporizadores/repositorio.ts                                                           |
+| usuarios               | 2          | lib/repositories/auth/AuthQueries.ts<br>modules/identidad/usuarios/repositorio.ts                                                                                                                                                            |
+| ventas                 | 4          | lib/repositories/TimerRepository.ts<br>lib/repositories/sale/SaleQueries.ts<br>modules/operacion/temporizadores/repositorio.ts<br>modules/ventas/anulaciones/repositorio.ts                                                                  |
+| ventas_usuarios        | 2          | lib/repositories/sale/SaleQueries.ts<br>modules/ventas/registro/repositorio.ts                                                                                                                                                               |
 
 ## 3. Ciclos entre dominios
 
@@ -134,19 +136,25 @@ propietario.
 | ------------------------------------------------------------- |
 | identidad → personal → identidad                              |
 | identidad → personal → comunicaciones → identidad             |
+| personal → comunicaciones → ventas → personal                 |
 | comunicaciones → ventas → comunicaciones                      |
 | comunicaciones → operacion → comunicaciones                   |
 | identidad → personal → comunicaciones → operacion → identidad |
 
 ## 4. Transacciones
 
-| Archivo con withTransaction                            | Capa             |
+| Archivo con withTransaction/enUnaUnidad                | Capa             |
 | ------------------------------------------------------ | ---------------- |
-| modules/operacion/temporizadores/repositorio.ts        | raiz             |
+| modules/clientes/prepago/servicio.ts                   | raiz             |
+| modules/operacion/cuentas/actualizacion.ts             | raiz             |
+| modules/operacion/cuentas/alta.ts                      | raiz             |
+| modules/operacion/cuentas/temporizadores.ts            | raiz             |
+| modules/operacion/servicios/anulaciones.ts             | raiz             |
+| modules/operacion/servicios/creacion.ts                | raiz             |
+| workflows/cobrar-cuenta.ts                             | raiz             |
 | lib/database/maintenance.ts                            | lib/database     |
 | lib/repositories/CashRegisterRepository.ts             | lib/repositories |
 | lib/repositories/CategoryRepository.ts                 | lib/repositories |
-| lib/repositories/ClientRepository.ts                   | lib/repositories |
 | lib/repositories/OrderRepository.ts                    | lib/repositories |
 | lib/repositories/PayrollRepository.ts                  | lib/repositories |
 | lib/repositories/RoleRepository.ts                     | lib/repositories |
@@ -155,9 +163,7 @@ propietario.
 | lib/repositories/gratificacion/GratificacionQueries.ts | lib/repositories |
 | lib/repositories/sale/SaleQueries.ts                   | lib/repositories |
 | lib/repositories/service/ServiceQueries.ts             | lib/repositories |
-| lib/services/AccountService.ts                         | lib/services     |
 | lib/services/SaleService.ts                            | lib/services     |
-| lib/services/ServiceService.ts                         | lib/services     |
 | lib/services/WithdrawalService.ts                      | lib/services     |
 | lib/transaccion/contrato.ts                            | lib/otros        |
 | modules/asistencia/biometrico/enrollmentService.ts     | raiz             |
@@ -172,7 +178,10 @@ propietario.
 | modules/inventario/productos/servicio.ts               | raiz             |
 | modules/inventario/transferencias/servicio.ts          | raiz             |
 | modules/inventario/unidades/servicio.ts                | raiz             |
+| modules/operacion/temporizadores/repositorio.ts        | raiz             |
 | modules/personal/anticipos/repositorio.ts              | raiz             |
+| modules/personal/anticipos/servicio.ts                 | raiz             |
+| modules/ventas/anulaciones/servicio.ts                 | raiz             |
 
 ## 5. Procesos periódicos y ciclo de vida
 
@@ -208,7 +217,7 @@ Deben pasar a tener un ciclo de vida explícito al migrar Asistencia (fase 3).
 | lib/cache/redisWindowCounter.ts              | 99    | client = new Redis(this.url!, {                                           |
 | lib/middleware/redisRateLimit.ts             | 69    | client = new Redis(process.env.REDIS_URL \|\| 'redis://localhost:6379', { |
 | lib/middleware/redisRateLimit.ts             | 132   | throw new Error('Respuesta inválida del limitador Redis');                |
-| scripts/arquitectura/analisis.mjs            | 319   | /\bnew (Redis\|RedisClient\|ioredis)\b/.test(linea) \|\|                  |
+| scripts/arquitectura/analisis.mjs            | 330   | /\bnew (Redis\|RedisClient\|ioredis)\b/.test(linea) \|\|                  |
 | scripts/redis-dev.js                         | 6     | const client = new Redis(url, {                                           |
 | components/shared/ProductPhoto.tsx           | —     | caché en memoria (new Map + cache)                                        |
 | hooks/shared/useConfigValue.ts               | —     | caché compartida en globalThis                                            |

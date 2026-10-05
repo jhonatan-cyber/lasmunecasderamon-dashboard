@@ -1,3 +1,9 @@
+vi.mock('@/modules/ventas/registro/repositorio', async importOriginal => {
+  const original = await importOriginal<typeof import('@/modules/ventas/registro/repositorio')>();
+  original.RegistroVenta.rawInsert = vi.fn();
+  return original;
+});
+import { RegistroVenta } from '@/modules/ventas/registro/repositorio';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { BusinessError, ValidationError } from '@/lib/errors/errors';
 
@@ -19,8 +25,9 @@ vi.mock('@/lib/business/shotAlerts', () => ({
   notifyBarShotAlerts: vi.fn().mockResolvedValue(undefined)
 }));
 
-vi.mock('@/lib/repositories/CashRegisterRepository', () => ({
-  CashRegisterRepository: { getCurrentCajaId: vi.fn(), updateBalances: vi.fn() }
+vi.mock('@/modules/caja', () => ({
+  obtenerCajaActiva: vi.fn(),
+  registrarMovimientoCobro: vi.fn()
 }));
 
 vi.mock('@/lib/repositories/ClientRepository', () => ({
@@ -35,8 +42,9 @@ vi.mock('@/lib/repositories/AuditRepository', () => ({
   AuditRepository: { log: vi.fn() }
 }));
 
-vi.mock('@/lib/repositories/TipRepository', () => ({
-  TipRepository: { register: vi.fn() }
+vi.mock('@/modules/personal', () => ({
+  registrarPropinaVenta: vi.fn(),
+  registrarComisionesVenta: vi.fn()
 }));
 
 vi.mock('@/lib/services/RoomManager', () => ({
@@ -143,11 +151,11 @@ describe('SaleService — lógica de pagos mixtos', () => {
 });
 
 import { SaleService } from '@/lib/services/SaleService';
-import { CashRegisterRepository } from '@/lib/repositories/CashRegisterRepository';
+import { obtenerCajaActiva, registrarMovimientoCobro } from '@/modules/caja';
 import { SaleRepository } from '@/lib/repositories/SaleRepository';
 import { consumirStockBar } from '@/modules/inventario';
 import { notifyBarShotAlerts } from '@/lib/business/shotAlerts';
-import { TipRepository } from '@/lib/repositories/TipRepository';
+import { registrarPropinaVenta } from '@/modules/personal';
 import { withTransaction } from '@/lib/database/db';
 import { sendNotificationToAll } from '@/lib/api/sseService';
 
@@ -175,7 +183,7 @@ describe('SaleService.createSale', () => {
   });
 
   it('lanza BusinessError si anfitrionas no están logueadas', async () => {
-    vi.mocked(CashRegisterRepository.getCurrentCajaId).mockResolvedValue('caja-1');
+    vi.mocked(obtenerCajaActiva).mockResolvedValue('caja-1');
 
     vi.mocked(withTransaction).mockImplementationOnce(async (fn: any) => {
       const trx = vi.fn().mockResolvedValueOnce([]).mockResolvedValue([]);
@@ -188,7 +196,7 @@ describe('SaleService.createSale', () => {
   });
 
   it('lanza ValidationError si pago mixto tiene menos de 2 métodos', async () => {
-    vi.mocked(CashRegisterRepository.getCurrentCajaId).mockResolvedValue('caja-1');
+    vi.mocked(obtenerCajaActiva).mockResolvedValue('caja-1');
 
     vi.mocked(withTransaction).mockImplementationOnce(async (fn: any) => {
       const trx = vi.fn().mockResolvedValue([]);
@@ -208,7 +216,7 @@ describe('SaleService.createSale', () => {
   });
 
   it('lanza ValidationError si suma de pagos mixtos no coincide con total', async () => {
-    vi.mocked(CashRegisterRepository.getCurrentCajaId).mockResolvedValue('caja-1');
+    vi.mocked(obtenerCajaActiva).mockResolvedValue('caja-1');
 
     vi.mocked(withTransaction).mockImplementationOnce(async (fn: any) => {
       const trx = vi.fn().mockResolvedValue([]);
@@ -232,7 +240,7 @@ describe('SaleService.createSale', () => {
   });
 
   it('no vuelve a impactar caja cuando la venta viene de una cuenta', async () => {
-    vi.mocked(CashRegisterRepository.getCurrentCajaId).mockResolvedValue('caja-1');
+    vi.mocked(obtenerCajaActiva).mockResolvedValue('caja-1');
 
     vi.mocked(withTransaction).mockImplementationOnce(async (fn: any) => {
       const trx = vi.fn().mockResolvedValue([]);
@@ -248,12 +256,12 @@ describe('SaleService.createSale', () => {
       'user-1'
     );
 
-    expect(SaleRepository.rawInsert).toHaveBeenCalled();
-    expect(CashRegisterRepository.updateBalances).not.toHaveBeenCalled();
+    expect(RegistroVenta.rawInsert).toHaveBeenCalled();
+    expect(registrarMovimientoCobro).not.toHaveBeenCalled();
   });
 
   it('emite updateSales por SSE al crear la venta (refetch en las apps)', async () => {
-    vi.mocked(CashRegisterRepository.getCurrentCajaId).mockResolvedValue('caja-1');
+    vi.mocked(obtenerCajaActiva).mockResolvedValue('caja-1');
 
     vi.mocked(withTransaction).mockImplementationOnce(async (fn: any) => {
       const trx = vi.fn().mockResolvedValue([]);
@@ -274,7 +282,7 @@ describe('SaleService.createSale', () => {
   });
 
   it('guarda la venta con propina, separa los balances de caja y registra la propina para distribucion', async () => {
-    vi.mocked(CashRegisterRepository.getCurrentCajaId).mockResolvedValue('caja-1');
+    vi.mocked(obtenerCajaActiva).mockResolvedValue('caja-1');
 
     await SaleService.createSale(
       {
@@ -288,7 +296,7 @@ describe('SaleService.createSale', () => {
     );
 
     // Se inserta la venta con propina y total desglosado
-    expect(SaleRepository.rawInsert).toHaveBeenCalledWith(
+    expect(RegistroVenta.rawInsert).toHaveBeenCalledWith(
       expect.anything(),
       expect.objectContaining({
         id_venta: 'mock-uuid',
@@ -302,8 +310,7 @@ describe('SaleService.createSale', () => {
     );
 
     // En caja: venta sin propina + propina por separado
-    expect(CashRegisterRepository.updateBalances).toHaveBeenCalledWith(
-      expect.anything(),
+    expect(registrarMovimientoCobro).toHaveBeenCalledWith(
       'caja-1',
       {
         venta: 10000,
@@ -313,18 +320,22 @@ describe('SaleService.createSale', () => {
         transferencia: 0,
         prepago: 0,
         comision: 0
-      }
+      },
+      expect.objectContaining({ id: expect.any(String) })
     );
 
     // La propina se registra con la venta y el monto (el reparto lo hace TipRepository)
-    expect(TipRepository.register).toHaveBeenCalledWith({
-      venta_id: 'mock-uuid',
-      monto: 1000
-    });
+    expect(registrarPropinaVenta).toHaveBeenCalledWith(
+      {
+        venta_id: 'mock-uuid',
+        monto: 1000
+      },
+      expect.objectContaining({ id: expect.any(String) })
+    );
   });
 
   it('con pago en tarjeta la caja registra venta sin propina y tarjeta = total pagado', async () => {
-    vi.mocked(CashRegisterRepository.getCurrentCajaId).mockResolvedValue('caja-1');
+    vi.mocked(obtenerCajaActiva).mockResolvedValue('caja-1');
 
     await SaleService.createSale(
       {
@@ -340,8 +351,7 @@ describe('SaleService.createSale', () => {
 
     // En caja: venta = total - propina = 10000 (sin cargo extra) y
     // tarjeta = total pagado. No hay bucket de cargo por tarjeta.
-    expect(CashRegisterRepository.updateBalances).toHaveBeenCalledWith(
-      expect.anything(),
+    expect(registrarMovimientoCobro).toHaveBeenCalledWith(
       'caja-1',
       {
         venta: 10000,
@@ -351,46 +361,41 @@ describe('SaleService.createSale', () => {
         transferencia: 0,
         prepago: 0,
         comision: 0
-      }
+      },
+      expect.objectContaining({ id: expect.any(String) })
     );
 
     // El reparto sigue siendo solo la propina de venta
-    expect(TipRepository.register).toHaveBeenCalledWith({
-      venta_id: 'mock-uuid',
-      monto: 1000
-    });
+    expect(registrarPropinaVenta).toHaveBeenCalledWith(
+      {
+        venta_id: 'mock-uuid',
+        monto: 1000
+      },
+      expect.objectContaining({ id: expect.any(String) })
+    );
   });
 
   it('no registra propina cuando la venta no trae propina', async () => {
-    vi.mocked(CashRegisterRepository.getCurrentCajaId).mockResolvedValue('caja-1');
+    vi.mocked(obtenerCajaActiva).mockResolvedValue('caja-1');
 
     await SaleService.createSale(
       { ...validSaleBody, total: 15000, sub_total: 15000, propina: 0 },
       'user-1'
     );
 
-    expect(TipRepository.register).not.toHaveBeenCalled();
+    expect(registrarPropinaVenta).not.toHaveBeenCalled();
   });
 
-  it('no falla la venta si el registro de la propina da error (try/catch)', async () => {
-    vi.mocked(CashRegisterRepository.getCurrentCajaId).mockResolvedValue('caja-1');
-    vi.mocked(TipRepository.register).mockRejectedValueOnce(new Error('DB caida'));
-
-    const result = await SaleService.createSale(
-      {
-        ...validSaleBody,
-        total: 11000,
-        sub_total: 10000,
-        propina: 1000
-      },
-      'user-1'
-    );
-
-    expect(TipRepository.register).toHaveBeenCalledWith({
-      venta_id: 'mock-uuid',
-      monto: 1000
-    });
-    expect(result).toEqual(expect.objectContaining({ total: 11000, estado: 1 }));
+  it('revierte la venta si falla la propina y no anuncia la venta', async () => {
+    vi.mocked(obtenerCajaActiva).mockResolvedValue('caja-1');
+    vi.mocked(registrarPropinaVenta).mockRejectedValueOnce(new Error('DB caida'));
+    await expect(
+      SaleService.createSale(
+        { ...validSaleBody, total: 11000, sub_total: 10000, propina: 1000 },
+        'user-1'
+      )
+    ).rejects.toThrow('DB caida');
+    expect(sendNotificationToAll).not.toHaveBeenCalled();
   });
 });
 
@@ -400,7 +405,7 @@ describe('SaleService.createSale — inventario del bar', () => {
   ];
 
   it('pasa los detalles a consume, que descuenta las botellas del bar', async () => {
-    vi.mocked(CashRegisterRepository.getCurrentCajaId).mockResolvedValue('caja-1');
+    vi.mocked(obtenerCajaActiva).mockResolvedValue('caja-1');
 
     await SaleService.createSale({ ...validSaleBody, detalles: detallesBar }, 'user-1');
 
@@ -414,7 +419,7 @@ describe('SaleService.createSale — inventario del bar', () => {
   });
 
   it('avisa al barman recién cuando la venta confirma y consume devuelve alertas', async () => {
-    vi.mocked(CashRegisterRepository.getCurrentCajaId).mockResolvedValue('caja-1');
+    vi.mocked(obtenerCajaActiva).mockResolvedValue('caja-1');
     const alertas = [
       { presentacion_id: 'pres-1', nombre: 'Whisky 750 ml', ml_restante: 60, shots_restantes: 1 }
     ];
@@ -426,7 +431,7 @@ describe('SaleService.createSale — inventario del bar', () => {
   });
 
   it('sin alertas de shots no dispara el aviso al barman', async () => {
-    vi.mocked(CashRegisterRepository.getCurrentCajaId).mockResolvedValue('caja-1');
+    vi.mocked(obtenerCajaActiva).mockResolvedValue('caja-1');
     vi.mocked(consumirStockBar).mockResolvedValueOnce([]);
 
     await SaleService.createSale({ ...validSaleBody, detalles: detallesBar }, 'user-1');
@@ -435,7 +440,7 @@ describe('SaleService.createSale — inventario del bar', () => {
   });
 
   it('conserva el tipo_venta shot en los detalles que descuenta el inventario', async () => {
-    vi.mocked(CashRegisterRepository.getCurrentCajaId).mockResolvedValue('caja-1');
+    vi.mocked(obtenerCajaActiva).mockResolvedValue('caja-1');
 
     await SaleService.createSale(
       {
@@ -462,7 +467,7 @@ describe('SaleService.createSale — inventario del bar', () => {
   });
 
   it('guarda en detalle_ventas si fue shot y si se cobró a una anfitriona', async () => {
-    vi.mocked(CashRegisterRepository.getCurrentCajaId).mockResolvedValue('caja-1');
+    vi.mocked(obtenerCajaActiva).mockResolvedValue('caja-1');
     const trx = vi.fn().mockResolvedValue([]);
     vi.mocked(withTransaction).mockImplementationOnce(async (fn: any) => fn(trx));
 
@@ -513,7 +518,7 @@ describe('SaleService.createSale — inventario del bar', () => {
   });
 
   it('aplica el mismo descuento al cobro de cuenta (origen cuenta)', async () => {
-    vi.mocked(CashRegisterRepository.getCurrentCajaId).mockResolvedValue('caja-1');
+    vi.mocked(obtenerCajaActiva).mockResolvedValue('caja-1');
 
     await SaleService.createSale(
       {
@@ -533,7 +538,7 @@ describe('SaleService.createSale — inventario del bar', () => {
   });
 
   it('propaga el rechazo cuando no alcanzan las botellas: la venta entera se revierte', async () => {
-    vi.mocked(CashRegisterRepository.getCurrentCajaId).mockResolvedValue('caja-1');
+    vi.mocked(obtenerCajaActiva).mockResolvedValue('caja-1');
     vi.mocked(consumirStockBar).mockRejectedValueOnce(
       new BusinessError('Quedan 1 de 2 botellas', 'INSUFFICIENT_BAR_STOCK')
     );
@@ -542,6 +547,6 @@ describe('SaleService.createSale — inventario del bar', () => {
       SaleService.createSale({ ...validSaleBody, detalles: detallesBar }, 'user-1')
     ).rejects.toMatchObject({ code: 'INSUFFICIENT_BAR_STOCK' });
 
-    expect(CashRegisterRepository.updateBalances).not.toHaveBeenCalled();
+    expect(registrarMovimientoCobro).not.toHaveBeenCalled();
   });
 });

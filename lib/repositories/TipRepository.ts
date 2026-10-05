@@ -1,3 +1,5 @@
+import { enUnaUnidad } from '@/lib/transaccion/contrato';
+import { registrarPropinaVenta } from '@/modules/personal';
 import { query, generateUUID, withTransaction } from '@/lib/database/db';
 import { getNowInBusinessTimezone } from '@/lib/business/timezoneService';
 import { TipRegisterSchema } from '@/lib/business/schemas';
@@ -10,104 +12,9 @@ type TipRegisterInput = z.input<typeof TipRegisterSchema>;
 
 export class TipRepository {
   static async register(body: TipRegisterInput) {
-    try {
-      const { venta_id, monto, usuario_ids } = TipRegisterSchema.parse(body);
-
-      const usuarioIdsNormalizados = Array.from(
-        new Set((usuario_ids || []).map(id => String(id)).filter(Boolean))
-      );
-
-      // La selección manual también debe cumplir las reglas de elegibilidad.
-      const distribucionUsuarios = await query<any[]>(
-        `SELECT DISTINCT u.id_usuario
-       FROM logins l
-       INNER JOIN usuarios u ON u.id_usuario = l.usuario_id
-       INNER JOIN roles r ON r.id_rol = u.rol_id
-       WHERE u.estado = 1
-         AND (l.estado = 1 OR l.en_local = 1)
-         AND LOWER(r.nombre) IN ('cajero', 'garzon', 'barman')
-         ${
-           usuarioIdsNormalizados.length > 0
-             ? `AND u.id_usuario IN (${usuarioIdsNormalizados.map(() => '?').join(', ')})`
-             : ''
-         }
-       ORDER BY u.id_usuario`,
-        usuarioIdsNormalizados
-      );
-
-      if (distribucionUsuarios.length === 0) {
-        const now = getNowInBusinessTimezone();
-        const id = generateUUID();
-
-        await withTransaction(async trx => {
-          await BaseRepository.insert(trx, 'propinas', {
-            id_propina: id,
-            venta_id,
-            propina: monto,
-            estado: 1,
-            fecha_crea: now
-          });
-        });
-
-        return { id, mensaje: 'Propina registrada sin distribución (sin usuarios activos)' };
-      }
-
-      const usuariosCount = distribucionUsuarios.length;
-      const montoBase = Math.floor(monto / usuariosCount);
-      const resto = Math.round(monto - montoBase * usuariosCount);
-      const now = getNowInBusinessTimezone();
-      const id = generateUUID();
-
-      await withTransaction(async trx => {
-        await BaseRepository.insert(trx, 'propinas', {
-          id_propina: id,
-          venta_id,
-          propina: monto,
-          estado: 1,
-          fecha_crea: now
-        });
-
-        // OPTIMIZACIÓN: Batch insert multi-row (antes N queries individuales)
-        const detalleRows = distribucionUsuarios.map((u, i) => ({
-          id_detalle_propina: generateUUID(),
-          propina_id: id,
-          usuario_id: u.id_usuario,
-          monto: montoBase + (i < resto ? 1 : 0),
-          fecha_mod: null,
-          estado: 1,
-          fecha_crea: now
-        }));
-
-        const columns = [
-          'id_detalle_propina',
-          'propina_id',
-          'usuario_id',
-          'monto',
-          'fecha_mod',
-          'estado',
-          'fecha_crea'
-        ];
-        const placeholders = detalleRows
-          .map(() => `(${columns.map(() => '?').join(', ')})`)
-          .join(', ');
-        const values = detalleRows.flatMap(row => columns.map(col => row[col as keyof typeof row]));
-        await trx(
-          `INSERT INTO detalle_propinas (${columns.join(', ')}) VALUES ${placeholders}`,
-          values
-        );
-      });
-
-      return {
-        id,
-        montoPorUsuario: montoBase,
-        count: usuariosCount,
-        usuarios_distribucion: usuariosCount
-      };
-    } catch (err) {
-      logger.error('[TipRepository] Error en register:', { err });
-      if (err instanceof z.ZodError) throw err;
-      throw new DatabaseError('Error al registrar propina', err);
-    }
+    return enUnaUnidad(unidad =>
+      unidad.ejecutar(contexto => registrarPropinaVenta(body, contexto))
+    );
   }
 
   static async getSummary(isAdmin: boolean, userId: string, cajaActiva: boolean) {

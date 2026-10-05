@@ -1,3 +1,4 @@
+vi.mock('@/modules/identidad', async () => import('@/modules/identidad/disponibilidad/servicio'));
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 
 vi.mock('@/lib/business/timezoneService', () => ({

@@ -19,6 +19,9 @@
  */
 import { getAnticipoBalances } from '../balances/repositorio';
 import { query, generateUUID, withTransaction, type TransactionQuery } from '@/lib/database/db';
+import type { ContextoOperacion } from '@/lib/transaccion/contrato';
+import { resolverTransaccion } from '@/lib/transaccion/infraestructura';
+import { obtenerCajaActiva, registrarMovimientoCobro, leerFondoCaja } from '@/modules/caja';
 import { getNowInBusinessTimezone } from '@/lib/business/timezoneService';
 import { enviarWhatsApp } from '@/lib/integrations/whatsappService';
 import { sendNotificationToAll } from '@/lib/api/sseService';
@@ -29,7 +32,6 @@ import {
   buildAnticipoRequestMessage,
   buildAnticipoProcessedMessages
 } from '@/lib/notifications/notificationMessages';
-import { CashRegisterRepository } from '@/lib/repositories/CashRegisterRepository';
 import { BaseRepository } from '@/lib/repositories/BaseRepository';
 import { sendPushByRole, sendPushNotification } from '@/lib/integrations/pushNotifications';
 import { NotFoundError, BusinessError, DatabaseError } from '@/lib/errors/errors';
@@ -174,8 +176,10 @@ export async function grantAnticipo(
   usuario_id: string,
   monto: number,
   motivo: string = 'Anticipo otorgado desde administración',
-  device_date?: string,
-  adminId?: string | number
+  device_date: string | undefined,
+  adminId: string | number | undefined,
+  contexto: ContextoOperacion,
+  aplazar: (tarea: () => void | Promise<void>) => void
 ) {
   try {
     const { montoMaximo } = await getAnticipoBalances(usuario_id);
@@ -185,7 +189,8 @@ export async function grantAnticipo(
         'MONTO_EXCEDE_MAXIMO'
       );
 
-    return await withTransaction(async trx => {
+    {
+      const trx = resolverTransaccion(contexto);
       const id = generateUUID();
       const now = getNowInBusinessTimezone(device_date);
       const deliveredById = adminId ? String(adminId) : undefined;
@@ -213,53 +218,52 @@ export async function grantAnticipo(
       const vals = historialRows.flatMap(row => cols.map(col => row[col as keyof typeof row]));
       await trx(`INSERT INTO anticipo_historial (${cols.join(', ')}) VALUES ${ph}`, vals);
 
-      const idCaja = await CashRegisterRepository.getCurrentCajaId(trx);
+      const idCaja = await obtenerCajaActiva(contexto);
       if (!idCaja)
         throw new BusinessError(
           'No hay una caja abierta para procesar el anticipo',
           'NO_CAJA_ABIERTA'
         );
 
-      const caja = await CashRegisterRepository.getById(idCaja);
+      const caja = await leerFondoCaja(idCaja, contexto);
       const efectivoTotal = Number(caja?.monto_apertura || 0) + Number(caja?.efectivo || 0);
       if (!caja || efectivoTotal < monto)
         throw new BusinessError('No hay suficiente efectivo en caja', 'SALDO_CAJA_INSUFICIENTE');
 
-      await CashRegisterRepository.updateBalances(trx, idCaja, {
-        efectivo: -monto,
-        anticipo: monto
+      await registrarMovimientoCobro(idCaja, { efectivo: -monto, anticipo: monto }, contexto);
+
+      aplazar(async () => {
+        const userRes = await query<any[]>(
+          'SELECT nombre, apellido, nick, telefono FROM usuarios WHERE id_usuario = ?',
+          [usuario_id]
+        );
+        if (userRes.length > 0) {
+          const user = userRes[0];
+
+          const confirmMsg = `*Anticipo Otorgado* ✅\n\nHola ${user.nombre}, se ha registrado un anticipo por *${formatCurrencyCLP(monto)}*.\n\n*Motivo:* ${motivo}\n*Fecha:* ${now}`;
+          if (user.telefono) {
+            enviarWhatsApp(user.telefono, confirmMsg).catch(err =>
+              logger.error('[AnticipoQueries] Error enviando WhatsApp confirmación:', { err })
+            );
+          }
+
+          sendNotificationToAll('ANTICIPO_PROCESSED', {
+            id,
+            usuario: `${user.nombre} ${user.apellido}`,
+            monto,
+            estado: 1
+          });
+
+          sendPushByRole(
+            'cajero',
+            'Anticipo Otorgado',
+            `Se otorgaron ${formatCurrencyCLP(monto)} a ${user.nick}`
+          ).catch(err => logger.error('[AnticipoQueries] Error enviando push:', { err }));
+        }
       });
 
-      const userRes = await query<any[]>(
-        'SELECT nombre, apellido, nick, telefono FROM usuarios WHERE id_usuario = ?',
-        [usuario_id]
-      );
-      if (userRes.length > 0) {
-        const user = userRes[0];
-
-        const confirmMsg = `*Anticipo Otorgado* ✅\n\nHola ${user.nombre}, se ha registrado un anticipo por *${formatCurrencyCLP(monto)}*.\n\n*Motivo:* ${motivo}\n*Fecha:* ${now}`;
-        if (user.telefono) {
-          enviarWhatsApp(user.telefono, confirmMsg).catch(err =>
-            logger.error('[AnticipoQueries] Error enviando WhatsApp confirmación:', { err })
-          );
-        }
-
-        sendNotificationToAll('ANTICIPO_PROCESSED', {
-          id,
-          usuario: `${user.nombre} ${user.apellido}`,
-          monto,
-          estado: 1
-        });
-
-        sendPushByRole(
-          'cajero',
-          'Anticipo Otorgado',
-          `Se otorgaron ${formatCurrencyCLP(monto)} a ${user.nick}`
-        ).catch(err => logger.error('[AnticipoQueries] Error enviando push:', { err }));
-      }
-
       return await BaseRepository.findOne<any>(trx, TABLE, ID_COL, id);
-    });
+    }
   } catch (err) {
     logger.error('[AnticipoQueries] Error en grantAnticipo:', { usuario_id, monto, err });
     if (err instanceof BusinessError || err instanceof NotFoundError) throw err;
@@ -517,12 +521,18 @@ export async function processSolicitudAnticipo(
   }
 }
 
-export async function deliverAnticipo(id: string, entregado_por: string) {
+export async function deliverAnticipo(
+  id: string,
+  entregado_por: string,
+  contexto: ContextoOperacion,
+  aplazar: (tarea: () => void | Promise<void>) => void
+) {
   try {
     const now = getNowInBusinessTimezone();
 
-    return await withTransaction(async trx => {
-      const request = await query<any[]>(
+    {
+      const trx = resolverTransaccion(contexto);
+      const request = await trx<any[]>(
         `
       SELECT a.*, u.nombre, u.apellido, u.nick
       FROM anticipos a
@@ -541,24 +551,25 @@ export async function deliverAnticipo(id: string, entregado_por: string) {
           'ANTICIPO_NO_APROBADO'
         );
 
-      const idCaja = await CashRegisterRepository.getCurrentCajaId(trx);
+      const idCaja = await obtenerCajaActiva(contexto);
       if (!idCaja)
         throw new BusinessError(
           'No hay una caja abierta para entregar el anticipo',
           'NO_CAJA_ABIERTA'
         );
 
-      const caja = await CashRegisterRepository.getById(idCaja);
+      const caja = await leerFondoCaja(idCaja, contexto);
       const efectivoTotal = Number(caja?.monto_apertura || 0) + Number(caja?.efectivo || 0);
       if (!caja || efectivoTotal < Number(sol.monto)) {
         throw new BusinessError('No hay suficiente efectivo en caja', 'SALDO_CAJA_INSUFICIENTE');
       }
 
       const montoAnticipo = Number(sol.monto);
-      await CashRegisterRepository.updateBalances(trx, idCaja, {
-        efectivo: -montoAnticipo,
-        anticipo: montoAnticipo
-      });
+      await registrarMovimientoCobro(
+        idCaja,
+        { efectivo: -montoAnticipo, anticipo: montoAnticipo },
+        contexto
+      );
 
       await BaseRepository.update(trx, TABLE, ID_COL, id, {
         fecha_mod: now,
@@ -573,31 +584,33 @@ export async function deliverAnticipo(id: string, entregado_por: string) {
         fecha_crea: now
       });
 
-      sendNotificationToAll('anticipo_delivered', {
-        id,
-        usuario_id: sol.usuario_id,
-        monto: Number(sol.monto),
-        fecha_mod: now,
-        empleado: `${sol.nombre} ${sol.apellido}`,
-        nick: sol.nick
-      });
+      aplazar(async () => {
+        sendNotificationToAll('anticipo_delivered', {
+          id,
+          usuario_id: sol.usuario_id,
+          monto: Number(sol.monto),
+          fecha_mod: now,
+          empleado: `${sol.nombre} ${sol.apellido}`,
+          nick: sol.nick
+        });
 
-      const title = 'Anticipo entregado';
-      const body = `Se entrego ${formatCurrencyCLP(Number(sol.monto))} a ${sol.nombre}.`;
+        const title = 'Anticipo entregado';
+        const body = `Se entrego ${formatCurrencyCLP(Number(sol.monto))} a ${sol.nombre}.`;
 
-      await sendPushByRole('cajero', title, body, {
-        id_anticipo: id,
-        type: 'anticipo',
-        action: 'delivered'
-      });
-      await sendPushNotification(sol.usuario_id, title, body, {
-        id_anticipo: id,
-        type: 'anticipo',
-        action: 'delivered'
+        await sendPushByRole('cajero', title, body, {
+          id_anticipo: id,
+          type: 'anticipo',
+          action: 'delivered'
+        });
+        await sendPushNotification(sol.usuario_id, title, body, {
+          id_anticipo: id,
+          type: 'anticipo',
+          action: 'delivered'
+        });
       });
 
       return { ok: true, id };
-    });
+    }
   } catch (err) {
     logger.error('[AnticipoQueries] Error en deliverAnticipo:', { id, entregado_por, err });
     if (err instanceof NotFoundError || err instanceof BusinessError) throw err;

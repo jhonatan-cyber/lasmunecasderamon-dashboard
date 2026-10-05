@@ -2,39 +2,11 @@ import { query, generateUUID, type TransactionQuery } from '@/lib/database/db';
 import { getNowInBusinessTimezone } from '@/lib/business/timezoneService';
 import { ClientSchema, type ClientType } from '@/lib/business/schemas';
 import { BaseRepository } from './BaseRepository';
-import { CashRegisterRepository } from './CashRegisterRepository';
-import { BusinessError, NotFoundError, DatabaseError } from '@/lib/errors/errors';
+import { NotFoundError, DatabaseError } from '@/lib/errors/errors';
+import { cargarPrepago, devolverSaldo as devolverSaldoPrepago } from '@/modules/clientes';
 import { logger } from '@/lib/utils/logger';
-import {
-  parsePagosMixtos,
-  validatePagosMixtos,
-  calcularDeltasCaja
-} from '@/lib/business/pagosMixtos';
 
 export class ClientRepository {
-  private static getPrepagoCajaDeltas(
-    monto: number,
-    metodoPago?: string,
-    pagosMixtos: Array<{ metodo: string; monto: number }> = []
-  ) {
-    const metodo = String(metodoPago || 'efectivo');
-    const pagosCaja =
-      metodo === 'mixto'
-        ? calcularDeltasCaja(pagosMixtos)
-        : {
-            efectivo: metodo === 'efectivo' ? monto : 0,
-            tarjeta: metodo === 'tarjeta' ? monto : 0,
-            transferencia: metodo === 'transferencia' ? monto : 0
-          };
-
-    return {
-      efectivo: pagosCaja.efectivo || 0,
-      tarjeta: pagosCaja.tarjeta || 0,
-      transferencia: pagosCaja.transferencia || 0,
-      prepago: 0
-    };
-  }
-
   private static mapClientFromDB(row: any): ClientType {
     return ClientSchema.parse({
       id: row.id_cliente,
@@ -329,106 +301,7 @@ export class ClientRepository {
     usuario_id?: string;
     metadatos?: any;
   }): Promise<void> {
-    try {
-      const moveId = generateUUID();
-      const now = getNowInBusinessTimezone();
-      const metodoPago = String(data.metodo_pago || 'efectivo');
-      const pagosMixtos = parsePagosMixtos(data.pagos_mixtos);
-
-      if (metodoPago === 'mixto') {
-        validatePagosMixtos(pagosMixtos, Number(data.monto || 0));
-      }
-
-      const { withTransaction } = await import('@/lib/database/db');
-
-      await withTransaction(async trx => {
-        const idCaja = await CashRegisterRepository.getCurrentCajaId(trx);
-        if (!idCaja) {
-          throw new BusinessError(
-            'No hay una caja abierta para registrar la recarga prepago',
-            'NO_CAJA_ABIERTA'
-          );
-        }
-
-        const metadatos =
-          data.metadatos || metodoPago === 'mixto'
-            ? JSON.stringify({
-                ...(data.metadatos || {}),
-                ...(metodoPago === 'mixto' ? { pagos_mixtos: pagosMixtos } : {})
-              })
-            : null;
-
-        await BaseRepository.insert(trx, 'clientes_prepago_movimientos', {
-          id_movimiento: moveId,
-          cliente_id: data.cliente_id,
-          tipo: data.tipo,
-          monto: data.monto,
-          metodo_pago: metodoPago,
-          usuario_id: data.usuario_id || null,
-          fecha_crea: now,
-          metadatos
-        });
-
-        await trx('UPDATE clientes SET saldo = saldo + ? WHERE id_cliente = ?', [
-          data.monto,
-          data.cliente_id
-        ]);
-
-        await CashRegisterRepository.updateBalances(
-          trx,
-          idCaja,
-          this.getPrepagoCajaDeltas(data.monto, metodoPago, pagosMixtos)
-        );
-
-        // Crear cuenta prepago automaticamente (visible en modulo cuentas)
-        // Solo actualiza Saldo prepago pendiente, no afecta caja mas alla de lo ya hecho
-        try {
-          const cuentaId = generateUUID();
-          const codigoPrepago = `PREP-${Math.random().toString(36).substring(2, 6).toUpperCase()}${Date.now().toString().slice(-4)}`;
-          await BaseRepository.insert(trx, 'cuentas', {
-            id_cuenta: cuentaId,
-            codigo: codigoPrepago,
-            cliente_id: data.cliente_id,
-            total_comision: 0,
-            habitacion_id: null,
-            sub_total: data.monto,
-            total: data.monto,
-            propina: 0,
-            fecha_crea: now,
-            estado: 1,
-            tiempo: 0,
-            tiempo_actual: 0,
-            tiempo_inicio_actual: null,
-            habitaciones_historial: null,
-            created_by: data.usuario_id || null
-          });
-
-          // Detalle generico para trazabilidad (sin producto especifico)
-          await BaseRepository.insert(trx, 'detalle_cuentas', {
-            id_detalle_cuenta: generateUUID(),
-            cuenta_id: cuentaId,
-            producto_id: null,
-            precio: data.monto,
-            cantidad: 1,
-            sub_total: data.monto,
-            comision: 0,
-            hostess_id: null,
-            fecha_crea: now,
-            created_by: data.usuario_id || null
-          });
-        } catch (cuentaErr) {
-          // No bloquea la recarga si falla la cuenta (log y continua)
-          logger.warn('[ClientRepository] No se pudo crear cuenta prepago automatica:', {
-            cliente_id: data.cliente_id,
-            err: cuentaErr instanceof Error ? cuentaErr.message : String(cuentaErr)
-          });
-        }
-      });
-    } catch (err) {
-      logger.error('[ClientRepository] Error en addPrepago:', { cliente_id: data.cliente_id, err });
-      if (err instanceof BusinessError || err instanceof NotFoundError) throw err;
-      throw new DatabaseError(`Error al agregar prepago para cliente ${data.cliente_id}`, err);
-    }
+    return cargarPrepago(data);
   }
 
   static async devolverSaldo(data: {
@@ -438,77 +311,6 @@ export class ClientRepository {
     motivo?: string;
     usuario_id?: string;
   }): Promise<void> {
-    try {
-      const monto = Number(data.monto);
-      // Devolucion siempre por transferencia (no afecta caja)
-      const metodo = 'transferencia';
-      const motivo = String(data.motivo || 'Devolucion de saldo').trim();
-
-      if (!data.cliente_id || !monto || monto <= 0) {
-        throw new BusinessError('Monto de devolucion invalido', 'MONTO_INVALIDO');
-      }
-
-      const { withTransaction } = await import('@/lib/database/db');
-
-      await withTransaction(async trx => {
-        // Lock cliente y validar saldo (no requiere caja abierta, solo actualiza saldo)
-        const clienteRows = await trx<any[]>(
-          'SELECT saldo FROM clientes WHERE id_cliente = ? FOR UPDATE',
-          [data.cliente_id]
-        );
-        if (!clienteRows || clienteRows.length === 0) {
-          throw new NotFoundError('Cliente no encontrado');
-        }
-        const saldoActual = Number(clienteRows[0].saldo || 0);
-        if (monto > saldoActual) {
-          throw new BusinessError(
-            `Saldo insuficiente. Disponible: $${saldoActual.toLocaleString('es-CL')}`,
-            'SALDO_INSUFICIENTE'
-          );
-        }
-
-        const moveId = generateUUID();
-        const now = getNowInBusinessTimezone();
-        const metadatos = JSON.stringify({ motivo, metodo_devolucion: metodo });
-
-        await BaseRepository.insert(trx, 'clientes_prepago_movimientos', {
-          id_movimiento: moveId,
-          cliente_id: data.cliente_id,
-          tipo: 'DEVOLUCION',
-          monto,
-          metodo_pago: metodo,
-          usuario_id: data.usuario_id || null,
-          fecha_crea: now,
-          metadatos
-        });
-
-        await trx('UPDATE clientes SET saldo = GREATEST(0, saldo - ?) WHERE id_cliente = ?', [
-          monto,
-          data.cliente_id
-        ]);
-
-        // No se descuenta de caja (efectivo/tarjeta/transferencia/devolucion).
-        // Solo se actualiza el saldo del cliente; el "Saldo prepago pendiente clientes"
-        // en caja se calcula como SUM(saldo) y se refleja automaticamente.
-
-        // Auto-cierre de cuentas PREP-* si saldo llega a 0
-        const [saldoRow] = await trx<any[]>('SELECT saldo FROM clientes WHERE id_cliente = ?', [
-          data.cliente_id
-        ]);
-        if (Number(saldoRow?.saldo || 0) === 0) {
-          await trx(
-            `UPDATE cuentas SET estado = 0, fecha_mod = ? WHERE cliente_id = ? AND codigo LIKE 'PREP-%' AND estado = 1`,
-            [now, data.cliente_id]
-          );
-        }
-      });
-    } catch (err) {
-      logger.error('[ClientRepository] Error en devolverSaldo:', {
-        cliente_id: data.cliente_id,
-        err
-      });
-      if (err instanceof BusinessError || err instanceof NotFoundError) throw err;
-      throw new DatabaseError(`Error al devolver saldo para cliente ${data.cliente_id}`, err);
-    }
+    return devolverSaldoPrepago(data);
   }
 }

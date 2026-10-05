@@ -1,5 +1,6 @@
 import { ClientSchema, type ClientType } from '@/lib/business/schemas';
 import { ClientRepository } from '@/lib/repositories/ClientRepository';
+import { cargarPrepago, devolverSaldo as devolverSaldoPrepago } from '@/modules/clientes';
 import { z } from 'zod';
 
 type ClientCreateInput = z.input<typeof ClientSchema>;
@@ -43,11 +44,11 @@ export class ClientService {
   }
 
   static async addPrepago(data: PrepagoInput) {
-    return await ClientRepository.addPrepago(data);
+    return await cargarPrepago(data);
   }
 
   static async devolverSaldo(data: DevolucionInput) {
-    return await ClientRepository.devolverSaldo(data);
+    return await devolverSaldoPrepago(data);
   }
 
   static async getById(id: string | number) {

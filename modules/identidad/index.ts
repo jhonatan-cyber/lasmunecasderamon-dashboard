@@ -24,3 +24,7 @@ export {
 } from './permisos/servicio';
 export type { ResultadoSeedCajero } from './permisos/servicio';
 export { contarRoles, obtenerRolPorNombre } from './roles/servicio';
+
+export { actualizarDisponibilidadTrasVenta } from './disponibilidad/servicio';
+
+export { actualizarDisponibilidad, validarAnfitrionasEnLocal } from './disponibilidad/servicio';

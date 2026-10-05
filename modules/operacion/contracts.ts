@@ -64,3 +64,16 @@ export interface EntradaSolicitudAnulacionServicio {
   servicioId: string | number;
   motivo: string;
 }
+
+export type CuentaCobrarBody = {
+  montoFinal?: number;
+  total_cobrado?: number;
+  propinaFinal?: number;
+  propina?: number;
+  tipoPago?: string;
+  metodoPago?: string;
+  metodo_pago?: string;
+  habitacion_id?: string | null;
+  /** Hora en que el cajero hizo el cobro (viene del dispositivo cuando se encola). */
+  device_date?: string;
+};

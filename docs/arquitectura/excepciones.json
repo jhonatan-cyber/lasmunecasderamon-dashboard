@@ -1,209 +1,445 @@
 {
-  "sin-ciclos|asistencia (dominio)|asistencia → identidad → asistencia": {
-    "regla": "sin-ciclos",
-    "plan": "§5 — las dependencias entre módulos forman un grafo sin ciclos",
-    "desde": "asistencia (dominio)",
-    "hacia": "asistencia → identidad → asistencia",
-    "motivo": "Ciclos heredados entre dominios: asistencia e identidad se necesitan mutuamente para autorizar marcas; ventas origina comisiones que pertenecen a Personal. El plan (principio 2) prohibe que un modulo escriba tablas de otro, no que se consulten.",
-    "responsable": "Fases 3 y 5 - Asistencia, Ventas y Personal",
-    "condicion": "Cuando cada ciclo se rompa subiendolo a workflows/ o declarandolo como lectura publica cruzada, la arista desaparece y la excepcion se elimina."
-  },
-  "sin-ciclos|identidad (dominio)|asistencia → identidad → asistencia": {
-    "regla": "sin-ciclos",
-    "plan": "§5 — las dependencias entre módulos forman un grafo sin ciclos",
-    "desde": "identidad (dominio)",
-    "hacia": "asistencia → identidad → asistencia",
-    "motivo": "Ciclos heredados entre dominios: asistencia e identidad se necesitan mutuamente para autorizar marcas; ventas origina comisiones que pertenecen a Personal. El plan (principio 2) prohibe que un modulo escriba tablas de otro, no que se consulten.",
-    "responsable": "Fases 3 y 5 - Asistencia, Ventas y Personal",
-    "condicion": "Cuando cada ciclo se rompa subiendolo a workflows/ o declarandolo como lectura publica cruzada, la arista desaparece y la excepcion se elimina."
-  },
-  "sin-ciclos|identidad (dominio)|identidad → personal → identidad": {
-    "regla": "sin-ciclos",
-    "plan": "§5 — las dependencias entre módulos forman un grafo sin ciclos",
-    "desde": "identidad (dominio)",
-    "hacia": "identidad → personal → identidad",
-    "motivo": "Ciclos heredados entre dominios: asistencia e identidad se necesitan mutuamente para autorizar marcas; ventas origina comisiones que pertenecen a Personal. El plan (principio 2) prohibe que un modulo escriba tablas de otro, no que se consulten.",
-    "responsable": "Fases 3 y 5 - Asistencia, Ventas y Personal",
-    "condicion": "Cuando cada ciclo se rompa subiendolo a workflows/ o declarandolo como lectura publica cruzada, la arista desaparece y la excepcion se elimina."
-  },
-  "sin-ciclos|personal (dominio)|identidad → personal → identidad": {
-    "regla": "sin-ciclos",
-    "plan": "§5 — las dependencias entre módulos forman un grafo sin ciclos",
-    "desde": "personal (dominio)",
-    "hacia": "identidad → personal → identidad",
-    "motivo": "Ciclos heredados entre dominios: asistencia e identidad se necesitan mutuamente para autorizar marcas; ventas origina comisiones que pertenecen a Personal. El plan (principio 2) prohibe que un modulo escriba tablas de otro, no que se consulten.",
-    "responsable": "Fases 3 y 5 - Asistencia, Ventas y Personal",
-    "condicion": "Cuando cada ciclo se rompa subiendolo a workflows/ o declarandolo como lectura publica cruzada, la arista desaparece y la excepcion se elimina."
-  },
-  "sin-ciclos|identidad (dominio)|identidad → personal → comunicaciones → identidad": {
-    "regla": "sin-ciclos",
-    "plan": "§5 — las dependencias entre módulos forman un grafo sin ciclos",
-    "desde": "identidad (dominio)",
-    "hacia": "identidad → personal → comunicaciones → identidad",
-    "motivo": "Ciclos heredados entre dominios: asistencia e identidad se necesitan mutuamente para autorizar marcas; ventas origina comisiones que pertenecen a Personal. El plan (principio 2) prohibe que un modulo escriba tablas de otro, no que se consulten.",
-    "responsable": "Fases 3 y 5 - Asistencia, Ventas y Personal",
-    "condicion": "Cuando cada ciclo se rompa subiendolo a workflows/ o declarandolo como lectura publica cruzada, la arista desaparece y la excepcion se elimina."
-  },
-  "sin-ciclos|personal (dominio)|identidad → personal → comunicaciones → identidad": {
-    "regla": "sin-ciclos",
-    "plan": "§5 — las dependencias entre módulos forman un grafo sin ciclos",
-    "desde": "personal (dominio)",
-    "hacia": "identidad → personal → comunicaciones → identidad",
-    "motivo": "Ciclos heredados entre dominios: asistencia e identidad se necesitan mutuamente para autorizar marcas; ventas origina comisiones que pertenecen a Personal. El plan (principio 2) prohibe que un modulo escriba tablas de otro, no que se consulten.",
-    "responsable": "Fases 3 y 5 - Asistencia, Ventas y Personal",
-    "condicion": "Cuando cada ciclo se rompa subiendolo a workflows/ o declarandolo como lectura publica cruzada, la arista desaparece y la excepcion se elimina."
-  },
-  "sin-ciclos|comunicaciones (dominio)|identidad → personal → comunicaciones → identidad": {
-    "regla": "sin-ciclos",
-    "plan": "§5 — las dependencias entre módulos forman un grafo sin ciclos",
-    "desde": "comunicaciones (dominio)",
-    "hacia": "identidad → personal → comunicaciones → identidad",
-    "motivo": "Ciclos heredados entre dominios: asistencia e identidad se necesitan mutuamente para autorizar marcas; ventas origina comisiones que pertenecen a Personal. El plan (principio 2) prohibe que un modulo escriba tablas de otro, no que se consulten.",
-    "responsable": "Fases 3 y 5 - Asistencia, Ventas y Personal",
-    "condicion": "Cuando cada ciclo se rompa subiendolo a workflows/ o declarandolo como lectura publica cruzada, la arista desaparece y la excepcion se elimina."
-  },
-  "sin-ciclos|comunicaciones (dominio)|comunicaciones → ventas → reportes → operacion → comunicaciones": {
-    "regla": "sin-ciclos",
-    "plan": "§5 — las dependencias entre módulos forman un grafo sin ciclos",
-    "desde": "comunicaciones (dominio)",
-    "hacia": "comunicaciones → ventas → reportes → operacion → comunicaciones",
-    "motivo": "Ciclos heredados entre dominios: asistencia e identidad se necesitan mutuamente para autorizar marcas; ventas origina comisiones que pertenecen a Personal. El plan (principio 2) prohibe que un modulo escriba tablas de otro, no que se consulten.",
-    "responsable": "Fases 3 y 5 - Asistencia, Ventas y Personal",
-    "condicion": "Cuando cada ciclo se rompa subiendolo a workflows/ o declarandolo como lectura publica cruzada, la arista desaparece y la excepcion se elimina."
-  },
-  "sin-ciclos|ventas (dominio)|comunicaciones → ventas → reportes → operacion → comunicaciones": {
-    "regla": "sin-ciclos",
-    "plan": "§5 — las dependencias entre módulos forman un grafo sin ciclos",
-    "desde": "ventas (dominio)",
-    "hacia": "comunicaciones → ventas → reportes → operacion → comunicaciones",
-    "motivo": "Ciclos heredados entre dominios: asistencia e identidad se necesitan mutuamente para autorizar marcas; ventas origina comisiones que pertenecen a Personal. El plan (principio 2) prohibe que un modulo escriba tablas de otro, no que se consulten.",
-    "responsable": "Fases 3 y 5 - Asistencia, Ventas y Personal",
-    "condicion": "Cuando cada ciclo se rompa subiendolo a workflows/ o declarandolo como lectura publica cruzada, la arista desaparece y la excepcion se elimina."
-  },
-  "sin-ciclos|reportes (dominio)|comunicaciones → ventas → reportes → operacion → comunicaciones": {
-    "regla": "sin-ciclos",
-    "plan": "§5 — las dependencias entre módulos forman un grafo sin ciclos",
-    "desde": "reportes (dominio)",
-    "hacia": "comunicaciones → ventas → reportes → operacion → comunicaciones",
-    "motivo": "Ciclos heredados entre dominios: asistencia e identidad se necesitan mutuamente para autorizar marcas; ventas origina comisiones que pertenecen a Personal. El plan (principio 2) prohibe que un modulo escriba tablas de otro, no que se consulten.",
-    "responsable": "Fases 3 y 5 - Asistencia, Ventas y Personal",
-    "condicion": "Cuando cada ciclo se rompa subiendolo a workflows/ o declarandolo como lectura publica cruzada, la arista desaparece y la excepcion se elimina."
-  },
-  "sin-ciclos|operacion (dominio)|comunicaciones → ventas → reportes → operacion → comunicaciones": {
-    "regla": "sin-ciclos",
-    "plan": "§5 — las dependencias entre módulos forman un grafo sin ciclos",
-    "desde": "operacion (dominio)",
-    "hacia": "comunicaciones → ventas → reportes → operacion → comunicaciones",
-    "motivo": "Ciclos heredados entre dominios: asistencia e identidad se necesitan mutuamente para autorizar marcas; ventas origina comisiones que pertenecen a Personal. El plan (principio 2) prohibe que un modulo escriba tablas de otro, no que se consulten.",
-    "responsable": "Fases 3 y 5 - Asistencia, Ventas y Personal",
-    "condicion": "Cuando cada ciclo se rompa subiendolo a workflows/ o declarandolo como lectura publica cruzada, la arista desaparece y la excepcion se elimina."
-  },
-  "sin-ciclos|identidad (dominio)|identidad → personal → comunicaciones → ventas → reportes → operacion → identidad": {
-    "regla": "sin-ciclos",
-    "plan": "§5 — las dependencias entre módulos forman un grafo sin ciclos",
-    "desde": "identidad (dominio)",
-    "hacia": "identidad → personal → comunicaciones → ventas → reportes → operacion → identidad",
-    "motivo": "Ciclos heredados entre dominios: asistencia e identidad se necesitan mutuamente para autorizar marcas; ventas origina comisiones que pertenecen a Personal. El plan (principio 2) prohibe que un modulo escriba tablas de otro, no que se consulten.",
-    "responsable": "Fases 3 y 5 - Asistencia, Ventas y Personal",
-    "condicion": "Cuando cada ciclo se rompa subiendolo a workflows/ o declarandolo como lectura publica cruzada, la arista desaparece y la excepcion se elimina."
-  },
-  "sin-ciclos|personal (dominio)|identidad → personal → comunicaciones → ventas → reportes → operacion → identidad": {
-    "regla": "sin-ciclos",
-    "plan": "§5 — las dependencias entre módulos forman un grafo sin ciclos",
-    "desde": "personal (dominio)",
-    "hacia": "identidad → personal → comunicaciones → ventas → reportes → operacion → identidad",
-    "motivo": "Ciclos heredados entre dominios: asistencia e identidad se necesitan mutuamente para autorizar marcas; ventas origina comisiones que pertenecen a Personal. El plan (principio 2) prohibe que un modulo escriba tablas de otro, no que se consulten.",
-    "responsable": "Fases 3 y 5 - Asistencia, Ventas y Personal",
-    "condicion": "Cuando cada ciclo se rompa subiendolo a workflows/ o declarandolo como lectura publica cruzada, la arista desaparece y la excepcion se elimina."
-  },
-  "sin-ciclos|comunicaciones (dominio)|identidad → personal → comunicaciones → ventas → reportes → operacion → identidad": {
-    "regla": "sin-ciclos",
-    "plan": "§5 — las dependencias entre módulos forman un grafo sin ciclos",
-    "desde": "comunicaciones (dominio)",
-    "hacia": "identidad → personal → comunicaciones → ventas → reportes → operacion → identidad",
-    "motivo": "Ciclos heredados entre dominios: asistencia e identidad se necesitan mutuamente para autorizar marcas; ventas origina comisiones que pertenecen a Personal. El plan (principio 2) prohibe que un modulo escriba tablas de otro, no que se consulten.",
-    "responsable": "Fases 3 y 5 - Asistencia, Ventas y Personal",
-    "condicion": "Cuando cada ciclo se rompa subiendolo a workflows/ o declarandolo como lectura publica cruzada, la arista desaparece y la excepcion se elimina."
-  },
-  "sin-ciclos|ventas (dominio)|identidad → personal → comunicaciones → ventas → reportes → operacion → identidad": {
-    "regla": "sin-ciclos",
-    "plan": "§5 — las dependencias entre módulos forman un grafo sin ciclos",
-    "desde": "ventas (dominio)",
-    "hacia": "identidad → personal → comunicaciones → ventas → reportes → operacion → identidad",
-    "motivo": "Ciclos heredados entre dominios: asistencia e identidad se necesitan mutuamente para autorizar marcas; ventas origina comisiones que pertenecen a Personal. El plan (principio 2) prohibe que un modulo escriba tablas de otro, no que se consulten.",
-    "responsable": "Fases 3 y 5 - Asistencia, Ventas y Personal",
-    "condicion": "Cuando cada ciclo se rompa subiendolo a workflows/ o declarandolo como lectura publica cruzada, la arista desaparece y la excepcion se elimina."
-  },
-  "sin-ciclos|reportes (dominio)|identidad → personal → comunicaciones → ventas → reportes → operacion → identidad": {
-    "regla": "sin-ciclos",
-    "plan": "§5 — las dependencias entre módulos forman un grafo sin ciclos",
-    "desde": "reportes (dominio)",
-    "hacia": "identidad → personal → comunicaciones → ventas → reportes → operacion → identidad",
-    "motivo": "Ciclos heredados entre dominios: asistencia e identidad se necesitan mutuamente para autorizar marcas; ventas origina comisiones que pertenecen a Personal. El plan (principio 2) prohibe que un modulo escriba tablas de otro, no que se consulten.",
-    "responsable": "Fases 3 y 5 - Asistencia, Ventas y Personal",
-    "condicion": "Cuando cada ciclo se rompa subiendolo a workflows/ o declarandolo como lectura publica cruzada, la arista desaparece y la excepcion se elimina."
-  },
-  "sin-ciclos|operacion (dominio)|identidad → personal → comunicaciones → ventas → reportes → operacion → identidad": {
-    "regla": "sin-ciclos",
-    "plan": "§5 — las dependencias entre módulos forman un grafo sin ciclos",
-    "desde": "operacion (dominio)",
-    "hacia": "identidad → personal → comunicaciones → ventas → reportes → operacion → identidad",
-    "motivo": "Ciclos heredados entre dominios: asistencia e identidad se necesitan mutuamente para autorizar marcas; ventas origina comisiones que pertenecen a Personal. El plan (principio 2) prohibe que un modulo escriba tablas de otro, no que se consulten.",
-    "responsable": "Fases 3 y 5 - Asistencia, Ventas y Personal",
-    "condicion": "Cuando cada ciclo se rompa subiendolo a workflows/ o declarandolo como lectura publica cruzada, la arista desaparece y la excepcion se elimina."
-  },
-  "sin-ciclos|ventas (dominio)|ventas → reportes → operacion → ventas": {
-    "regla": "sin-ciclos",
-    "plan": "§5 — las dependencias entre módulos forman un grafo sin ciclos",
-    "desde": "ventas (dominio)",
-    "hacia": "ventas → reportes → operacion → ventas",
-    "motivo": "Ciclos heredados entre dominios: asistencia e identidad se necesitan mutuamente para autorizar marcas; ventas origina comisiones que pertenecen a Personal. El plan (principio 2) prohibe que un modulo escriba tablas de otro, no que se consulten.",
-    "responsable": "Fases 3 y 5 - Asistencia, Ventas y Personal",
-    "condicion": "Cuando cada ciclo se rompa subiendolo a workflows/ o declarandolo como lectura publica cruzada, la arista desaparece y la excepcion se elimina."
-  },
-  "sin-ciclos|reportes (dominio)|ventas → reportes → operacion → ventas": {
-    "regla": "sin-ciclos",
-    "plan": "§5 — las dependencias entre módulos forman un grafo sin ciclos",
-    "desde": "reportes (dominio)",
-    "hacia": "ventas → reportes → operacion → ventas",
-    "motivo": "Ciclos heredados entre dominios: asistencia e identidad se necesitan mutuamente para autorizar marcas; ventas origina comisiones que pertenecen a Personal. El plan (principio 2) prohibe que un modulo escriba tablas de otro, no que se consulten.",
-    "responsable": "Fases 3 y 5 - Asistencia, Ventas y Personal",
-    "condicion": "Cuando cada ciclo se rompa subiendolo a workflows/ o declarandolo como lectura publica cruzada, la arista desaparece y la excepcion se elimina."
-  },
-  "sin-ciclos|operacion (dominio)|ventas → reportes → operacion → ventas": {
-    "regla": "sin-ciclos",
-    "plan": "§5 — las dependencias entre módulos forman un grafo sin ciclos",
-    "desde": "operacion (dominio)",
-    "hacia": "ventas → reportes → operacion → ventas",
-    "motivo": "Ciclos heredados entre dominios: asistencia e identidad se necesitan mutuamente para autorizar marcas; ventas origina comisiones que pertenecen a Personal. El plan (principio 2) prohibe que un modulo escriba tablas de otro, no que se consulten.",
-    "responsable": "Fases 3 y 5 - Asistencia, Ventas y Personal",
-    "condicion": "Cuando cada ciclo se rompa subiendolo a workflows/ o declarandolo como lectura publica cruzada, la arista desaparece y la excepcion se elimina."
-  },
-  "sin-ciclos|comunicaciones (dominio)|comunicaciones → ventas → comunicaciones": {
-    "regla": "sin-ciclos",
-    "plan": "§5 — las dependencias entre módulos forman un grafo sin ciclos",
-    "desde": "comunicaciones (dominio)",
-    "hacia": "comunicaciones → ventas → comunicaciones",
-    "motivo": "Ciclos heredados entre dominios: asistencia e identidad se necesitan mutuamente para autorizar marcas; ventas origina comisiones que pertenecen a Personal. El plan (principio 2) prohibe que un modulo escriba tablas de otro, no que se consulten.",
-    "responsable": "Fases 3 y 5 - Asistencia, Ventas y Personal",
-    "condicion": "Cuando cada ciclo se rompa subiendolo a workflows/ o declarandolo como lectura publica cruzada, la arista desaparece y la excepcion se elimina."
-  },
-  "sin-ciclos|ventas (dominio)|comunicaciones → ventas → comunicaciones": {
-    "regla": "sin-ciclos",
-    "plan": "§5 — las dependencias entre módulos forman un grafo sin ciclos",
-    "desde": "ventas (dominio)",
-    "hacia": "comunicaciones → ventas → comunicaciones",
-    "motivo": "Ciclos heredados entre dominios: asistencia e identidad se necesitan mutuamente para autorizar marcas; ventas origina comisiones que pertenecen a Personal. El plan (principio 2) prohibe que un modulo escriba tablas de otro, no que se consulten.",
-    "responsable": "Fases 3 y 5 - Asistencia, Ventas y Personal",
-    "condicion": "Cuando cada ciclo se rompa subiendolo a workflows/ o declarandolo como lectura publica cruzada, la arista desaparece y la excepcion se elimina."
-  },
-  "puente-transaccional-heredado|lib/repositories/sale/SaleQueries.ts|lib/transaccion/compatibilidad.ts": {
+  "puente-transaccional-heredado|lib/repositories/CashRegisterRepository.ts|lib/transaccion/compatibilidad.ts": {
     "regla": "puente-transaccional-heredado",
     "plan": "Transición de Fase 4 — el puente al contexto opaco se retira al migrar la transacción de ventas",
-    "desde": "lib/repositories/sale/SaleQueries.ts",
+    "desde": "lib/repositories/CashRegisterRepository.ts",
     "hacia": "lib/transaccion/compatibilidad.ts",
-    "motivo": "La anulación de una venta abre su propia transacción y devuelve el stock consumido en ella: revertirStockAnulacion tiene que escribir en la misma unidad que ajusta caja, prepago, comisiones y propinas, o la venta quedaría anulada sin las botellas de vuelta (corte 8 de la fase 4). Es la última arista del puente: productos y compras ya no lo usan (corte 9).",
-    "responsable": "Fase 4 - Catálogo e inventario (anulación de ventas)",
-    "condicion": "Retirar cuando la transacción de ventas se migre al contexto opaco (fase 5, con la unidad de trabajo): entonces la anulación recibirá su ContextoOperacion del flujo llamante y el puente quedará sin usuarios."
+    "spec": "@/lib/transaccion/compatibilidad",
+    "motivo": "Adaptador temporal para compartir una sola implementacion del propietario sin duplicar SQL. El workflow de cobro no usa este puente.",
+    "responsable": "Fase 5 - anulaciones, caja y operacion",
+    "condicion": "Migrar los llamadores heredados a ContextoOperacion y retirar el adaptador."
+  },
+  "puente-transaccional-heredado|lib/services/RoomManager.ts|lib/transaccion/compatibilidad.ts": {
+    "regla": "puente-transaccional-heredado",
+    "plan": "Transición de Fase 4 — el puente al contexto opaco se retira al migrar la transacción de ventas",
+    "desde": "lib/services/RoomManager.ts",
+    "hacia": "lib/transaccion/compatibilidad.ts",
+    "spec": "@/lib/transaccion/compatibilidad",
+    "motivo": "Adaptador temporal para compartir una sola implementacion del propietario sin duplicar SQL. El workflow de cobro no usa este puente.",
+    "responsable": "Fase 5 - anulaciones, caja y operacion",
+    "condicion": "Migrar los llamadores heredados a ContextoOperacion y retirar el adaptador."
+  },
+  "sin-ciclos|asistencia (dominio)|identidad (dominio)": {
+    "regla": "sin-ciclos",
+    "plan": "§5 - las dependencias entre modulos forman un grafo sin ciclos",
+    "desde": "asistencia (dominio)",
+    "hacia": "identidad (dominio)",
+    "ciclo": ["asistencia", "identidad", "asistencia"],
+    "spec": "",
+    "motivo": "Arista ciclica heredada verificada contra 6cd071d4 con el clasificador completo; antes faltaban propietarios de repositorios y el DFS no enumeraba todas las aristas. Ver CORTE13_DEPENDENCIAS.json.",
+    "responsable": "Fases 5 y 6 - propietarios de los dominios de la arista",
+    "condicion": "Eliminar esta arista ciclica mediante coordinacion de workflow o separacion de contratos. El control falla al desaparecer para retirar la excepcion."
+  },
+  "sin-ciclos|caja (dominio)|reportes (dominio)": {
+    "regla": "sin-ciclos",
+    "plan": "§5 - las dependencias entre modulos forman un grafo sin ciclos",
+    "desde": "caja (dominio)",
+    "hacia": "reportes (dominio)",
+    "ciclo": ["caja", "reportes", "operacion", "caja"],
+    "spec": "",
+    "motivo": "Arista ciclica heredada verificada contra 6cd071d4 con el clasificador completo; antes faltaban propietarios de repositorios y el DFS no enumeraba todas las aristas. Ver CORTE13_DEPENDENCIAS.json.",
+    "responsable": "Fases 5 y 6 - propietarios de los dominios de la arista",
+    "condicion": "Eliminar esta arista ciclica mediante coordinacion de workflow o separacion de contratos. El control falla al desaparecer para retirar la excepcion."
+  },
+  "sin-ciclos|caja (dominio)|ventas (dominio)": {
+    "regla": "sin-ciclos",
+    "plan": "§5 - las dependencias entre modulos forman un grafo sin ciclos",
+    "desde": "caja (dominio)",
+    "hacia": "ventas (dominio)",
+    "ciclo": ["caja", "ventas", "caja"],
+    "spec": "",
+    "motivo": "Arista ciclica heredada verificada contra 6cd071d4 con el clasificador completo; antes faltaban propietarios de repositorios y el DFS no enumeraba todas las aristas. Ver CORTE13_DEPENDENCIAS.json.",
+    "responsable": "Fases 5 y 6 - propietarios de los dominios de la arista",
+    "condicion": "Eliminar esta arista ciclica mediante coordinacion de workflow o separacion de contratos. El control falla al desaparecer para retirar la excepcion."
+  },
+  "sin-ciclos|clientes (dominio)|caja (dominio)": {
+    "regla": "sin-ciclos",
+    "plan": "§5 - las dependencias entre modulos forman un grafo sin ciclos",
+    "desde": "clientes (dominio)",
+    "hacia": "caja (dominio)",
+    "ciclo": ["clientes", "caja", "reportes", "operacion", "clientes"],
+    "spec": "",
+    "motivo": "Arista ciclica heredada verificada contra 6cd071d4 con el clasificador completo; antes faltaban propietarios de repositorios y el DFS no enumeraba todas las aristas. Ver CORTE13_DEPENDENCIAS.json.",
+    "responsable": "Fases 5 y 6 - propietarios de los dominios de la arista",
+    "condicion": "Eliminar esta arista ciclica mediante coordinacion de workflow o separacion de contratos. El control falla al desaparecer para retirar la excepcion."
+  },
+  "sin-ciclos|clientes (dominio)|operacion (dominio)": {
+    "regla": "sin-ciclos",
+    "plan": "§5 - las dependencias entre modulos forman un grafo sin ciclos",
+    "desde": "clientes (dominio)",
+    "hacia": "operacion (dominio)",
+    "ciclo": ["clientes", "operacion", "caja", "ventas", "clientes"],
+    "spec": "",
+    "motivo": "Coordinación por API pública desde el corte 18: la recarga crea su cuenta PREP-* y la devolución auto-cierra las saldadas vía Operación en la misma unidad (antes era SQL directo sobre cuentas desde ClientRepository). No se declara eliminado el ciclo; debe subir la coordinación a un workflow. Ver FASE5_PREPAGO.md.",
+    "responsable": "Fases 5 y 6 - propietarios de los dominios de la arista",
+    "condicion": "Eliminar esta arista ciclica mediante coordinacion de workflow o separacion de contratos. El control falla al desaparecer para retirar la excepcion."
+  },
+  "sin-ciclos|clientes (dominio)|comunicaciones (dominio)": {
+    "regla": "sin-ciclos",
+    "plan": "§5 - las dependencias entre modulos forman un grafo sin ciclos",
+    "desde": "clientes (dominio)",
+    "hacia": "comunicaciones (dominio)",
+    "ciclo": [
+      "clientes",
+      "comunicaciones",
+      "identidad",
+      "operacion",
+      "caja",
+      "ventas",
+      "clientes"
+    ],
+    "spec": "",
+    "motivo": "Arista ciclica heredada verificada contra 6cd071d4 con el clasificador completo; antes faltaban propietarios de repositorios y el DFS no enumeraba todas las aristas. Ver CORTE13_DEPENDENCIAS.json.",
+    "responsable": "Fases 5 y 6 - propietarios de los dominios de la arista",
+    "condicion": "Eliminar esta arista ciclica mediante coordinacion de workflow o separacion de contratos. El control falla al desaparecer para retirar la excepcion."
+  },
+  "sin-ciclos|comunicaciones (dominio)|identidad (dominio)": {
+    "regla": "sin-ciclos",
+    "plan": "§5 - las dependencias entre modulos forman un grafo sin ciclos",
+    "desde": "comunicaciones (dominio)",
+    "hacia": "identidad (dominio)",
+    "ciclo": [
+      "comunicaciones",
+      "identidad",
+      "operacion",
+      "caja",
+      "ventas",
+      "clientes",
+      "comunicaciones"
+    ],
+    "spec": "",
+    "motivo": "Arista ciclica heredada verificada contra 6cd071d4 con el clasificador completo; antes faltaban propietarios de repositorios y el DFS no enumeraba todas las aristas. Ver CORTE13_DEPENDENCIAS.json.",
+    "responsable": "Fases 5 y 6 - propietarios de los dominios de la arista",
+    "condicion": "Eliminar esta arista ciclica mediante coordinacion de workflow o separacion de contratos. El control falla al desaparecer para retirar la excepcion."
+  },
+  "sin-ciclos|comunicaciones (dominio)|operacion (dominio)": {
+    "regla": "sin-ciclos",
+    "plan": "§5 - las dependencias entre modulos forman un grafo sin ciclos",
+    "desde": "comunicaciones (dominio)",
+    "hacia": "operacion (dominio)",
+    "ciclo": [
+      "comunicaciones",
+      "operacion",
+      "caja",
+      "ventas",
+      "clientes",
+      "comunicaciones"
+    ],
+    "spec": "",
+    "motivo": "Arista ciclica heredada verificada contra 6cd071d4 con el clasificador completo; antes faltaban propietarios de repositorios y el DFS no enumeraba todas las aristas. Ver CORTE13_DEPENDENCIAS.json.",
+    "responsable": "Fases 5 y 6 - propietarios de los dominios de la arista",
+    "condicion": "Eliminar esta arista ciclica mediante coordinacion de workflow o separacion de contratos. El control falla al desaparecer para retirar la excepcion."
+  },
+  "sin-ciclos|comunicaciones (dominio)|ventas (dominio)": {
+    "regla": "sin-ciclos",
+    "plan": "§5 - las dependencias entre modulos forman un grafo sin ciclos",
+    "desde": "comunicaciones (dominio)",
+    "hacia": "ventas (dominio)",
+    "ciclo": [
+      "comunicaciones",
+      "ventas",
+      "caja",
+      "reportes",
+      "operacion",
+      "clientes",
+      "comunicaciones"
+    ],
+    "spec": "",
+    "motivo": "Arista ciclica heredada verificada contra 6cd071d4 con el clasificador completo; antes faltaban propietarios de repositorios y el DFS no enumeraba todas las aristas. Ver CORTE13_DEPENDENCIAS.json.",
+    "responsable": "Fases 5 y 6 - propietarios de los dominios de la arista",
+    "condicion": "Eliminar esta arista ciclica mediante coordinacion de workflow o separacion de contratos. El control falla al desaparecer para retirar la excepcion."
+  },
+  "sin-ciclos|identidad (dominio)|asistencia (dominio)": {
+    "regla": "sin-ciclos",
+    "plan": "§5 - las dependencias entre modulos forman un grafo sin ciclos",
+    "desde": "identidad (dominio)",
+    "hacia": "asistencia (dominio)",
+    "ciclo": ["identidad", "asistencia", "identidad"],
+    "spec": "",
+    "motivo": "Arista ciclica heredada verificada contra 6cd071d4 con el clasificador completo; antes faltaban propietarios de repositorios y el DFS no enumeraba todas las aristas. Ver CORTE13_DEPENDENCIAS.json.",
+    "responsable": "Fases 5 y 6 - propietarios de los dominios de la arista",
+    "condicion": "Eliminar esta arista ciclica mediante coordinacion de workflow o separacion de contratos. El control falla al desaparecer para retirar la excepcion."
+  },
+  "sin-ciclos|identidad (dominio)|operacion (dominio)": {
+    "regla": "sin-ciclos",
+    "plan": "§5 - las dependencias entre modulos forman un grafo sin ciclos",
+    "desde": "identidad (dominio)",
+    "hacia": "operacion (dominio)",
+    "ciclo": [
+      "identidad",
+      "operacion",
+      "caja",
+      "ventas",
+      "clientes",
+      "comunicaciones",
+      "identidad"
+    ],
+    "spec": "",
+    "motivo": "Arista ciclica heredada verificada contra 6cd071d4 con el clasificador completo; antes faltaban propietarios de repositorios y el DFS no enumeraba todas las aristas. Ver CORTE13_DEPENDENCIAS.json.",
+    "responsable": "Fases 5 y 6 - propietarios de los dominios de la arista",
+    "condicion": "Eliminar esta arista ciclica mediante coordinacion de workflow o separacion de contratos. El control falla al desaparecer para retirar la excepcion."
+  },
+  "sin-ciclos|identidad (dominio)|personal (dominio)": {
+    "regla": "sin-ciclos",
+    "plan": "§5 - las dependencias entre modulos forman un grafo sin ciclos",
+    "desde": "identidad (dominio)",
+    "hacia": "personal (dominio)",
+    "ciclo": [
+      "identidad",
+      "personal",
+      "caja",
+      "reportes",
+      "operacion",
+      "clientes",
+      "comunicaciones",
+      "identidad"
+    ],
+    "spec": "",
+    "motivo": "Arista ciclica heredada verificada contra 6cd071d4 con el clasificador completo; antes faltaban propietarios de repositorios y el DFS no enumeraba todas las aristas. Ver CORTE13_DEPENDENCIAS.json.",
+    "responsable": "Fases 5 y 6 - propietarios de los dominios de la arista",
+    "condicion": "Eliminar esta arista ciclica mediante coordinacion de workflow o separacion de contratos. El control falla al desaparecer para retirar la excepcion."
+  },
+  "sin-ciclos|operacion (dominio)|caja (dominio)": {
+    "regla": "sin-ciclos",
+    "plan": "§5 - las dependencias entre modulos forman un grafo sin ciclos",
+    "desde": "operacion (dominio)",
+    "hacia": "caja (dominio)",
+    "ciclo": ["operacion", "caja", "reportes", "operacion"],
+    "spec": "",
+    "motivo": "Arista ciclica heredada verificada contra 6cd071d4 con el clasificador completo; antes faltaban propietarios de repositorios y el DFS no enumeraba todas las aristas. Ver CORTE13_DEPENDENCIAS.json.",
+    "responsable": "Fases 5 y 6 - propietarios de los dominios de la arista",
+    "condicion": "Eliminar esta arista ciclica mediante coordinacion de workflow o separacion de contratos. El control falla al desaparecer para retirar la excepcion."
+  },
+  "sin-ciclos|operacion (dominio)|clientes (dominio)": {
+    "regla": "sin-ciclos",
+    "plan": "§5 - las dependencias entre modulos forman un grafo sin ciclos",
+    "desde": "operacion (dominio)",
+    "hacia": "clientes (dominio)",
+    "ciclo": ["operacion", "clientes", "caja", "reportes", "operacion"],
+    "spec": "",
+    "motivo": "Dependencia antes expresada por SQL directo y ahora por API publica: CuentaQueries escribia clientes.saldo y SaleService/RoomManager actualizaban usuarios. No se declara eliminado el ciclo; debe subir la coordinacion al workflow. Ver CORTE13_DEPENDENCIAS.json.",
+    "responsable": "Fases 5 y 6 - propietarios de los dominios de la arista",
+    "condicion": "Eliminar esta arista ciclica mediante coordinacion de workflow o separacion de contratos. El control falla al desaparecer para retirar la excepcion."
+  },
+  "sin-ciclos|operacion (dominio)|comunicaciones (dominio)": {
+    "regla": "sin-ciclos",
+    "plan": "§5 - las dependencias entre modulos forman un grafo sin ciclos",
+    "desde": "operacion (dominio)",
+    "hacia": "comunicaciones (dominio)",
+    "ciclo": ["operacion", "comunicaciones", "identidad", "operacion"],
+    "spec": "",
+    "motivo": "Arista ciclica heredada verificada contra 6cd071d4 con el clasificador completo; antes faltaban propietarios de repositorios y el DFS no enumeraba todas las aristas. Ver CORTE13_DEPENDENCIAS.json.",
+    "responsable": "Fases 5 y 6 - propietarios de los dominios de la arista",
+    "condicion": "Eliminar esta arista ciclica mediante coordinacion de workflow o separacion de contratos. El control falla al desaparecer para retirar la excepcion."
+  },
+  "sin-ciclos|operacion (dominio)|identidad (dominio)": {
+    "regla": "sin-ciclos",
+    "plan": "§5 - las dependencias entre modulos forman un grafo sin ciclos",
+    "desde": "operacion (dominio)",
+    "hacia": "identidad (dominio)",
+    "ciclo": ["operacion", "identidad", "operacion"],
+    "spec": "",
+    "motivo": "Arista ciclica heredada verificada contra 6cd071d4 con el clasificador completo; antes faltaban propietarios de repositorios y el DFS no enumeraba todas las aristas. Ver CORTE13_DEPENDENCIAS.json.",
+    "responsable": "Fases 5 y 6 - propietarios de los dominios de la arista",
+    "condicion": "Eliminar esta arista ciclica mediante coordinacion de workflow o separacion de contratos. El control falla al desaparecer para retirar la excepcion."
+  },
+  "sin-ciclos|operacion (dominio)|personal (dominio)": {
+    "regla": "sin-ciclos",
+    "plan": "§5 - las dependencias entre modulos forman un grafo sin ciclos",
+    "desde": "operacion (dominio)",
+    "hacia": "personal (dominio)",
+    "ciclo": ["operacion", "personal", "caja", "reportes", "operacion"],
+    "spec": "",
+    "motivo": "Coordinación por API pública desde el corte 15: la anulación de servicios revierte comisiones vía Personal en la misma unidad (antes era SQL directo sobre comisiones desde ServiceQueries). No se declara eliminado el ciclo; debe subir la coordinación a un workflow. Ver FASE5_ANULACION_SERVICIOS.md.",
+    "responsable": "Fases 5 y 6 - propietarios de los dominios de la arista",
+    "condicion": "Eliminar esta arista ciclica mediante coordinacion de workflow o separacion de contratos. El control falla al desaparecer para retirar la excepcion."
+  },
+  "sin-ciclos|operacion (dominio)|ventas (dominio)": {
+    "regla": "sin-ciclos",
+    "plan": "§5 - las dependencias entre modulos forman un grafo sin ciclos",
+    "desde": "operacion (dominio)",
+    "hacia": "ventas (dominio)",
+    "ciclo": ["operacion", "ventas", "caja", "reportes", "operacion"],
+    "spec": "",
+    "motivo": "Arista ciclica heredada verificada contra 6cd071d4 con el clasificador completo; antes faltaban propietarios de repositorios y el DFS no enumeraba todas las aristas. Ver CORTE13_DEPENDENCIAS.json.",
+    "responsable": "Fases 5 y 6 - propietarios de los dominios de la arista",
+    "condicion": "Eliminar esta arista ciclica mediante coordinacion de workflow o separacion de contratos. El control falla al desaparecer para retirar la excepcion."
+  },
+  "sin-ciclos|personal (dominio)|caja (dominio)": {
+    "regla": "sin-ciclos",
+    "plan": "§5 - las dependencias entre modulos forman un grafo sin ciclos",
+    "desde": "personal (dominio)",
+    "hacia": "caja (dominio)",
+    "ciclo": [
+      "personal",
+      "caja",
+      "reportes",
+      "operacion",
+      "clientes",
+      "comunicaciones",
+      "identidad",
+      "personal"
+    ],
+    "spec": "",
+    "motivo": "Arista ciclica heredada verificada contra 6cd071d4 con el clasificador completo; antes faltaban propietarios de repositorios y el DFS no enumeraba todas las aristas. Ver CORTE13_DEPENDENCIAS.json.",
+    "responsable": "Fases 5 y 6 - propietarios de los dominios de la arista",
+    "condicion": "Eliminar esta arista ciclica mediante coordinacion de workflow o separacion de contratos. El control falla al desaparecer para retirar la excepcion."
+  },
+  "sin-ciclos|personal (dominio)|comunicaciones (dominio)": {
+    "regla": "sin-ciclos",
+    "plan": "§5 - las dependencias entre modulos forman un grafo sin ciclos",
+    "desde": "personal (dominio)",
+    "hacia": "comunicaciones (dominio)",
+    "ciclo": [
+      "personal",
+      "comunicaciones",
+      "identidad",
+      "operacion",
+      "caja",
+      "ventas",
+      "personal"
+    ],
+    "spec": "",
+    "motivo": "Arista ciclica heredada verificada contra 6cd071d4 con el clasificador completo; antes faltaban propietarios de repositorios y el DFS no enumeraba todas las aristas. Ver CORTE13_DEPENDENCIAS.json.",
+    "responsable": "Fases 5 y 6 - propietarios de los dominios de la arista",
+    "condicion": "Eliminar esta arista ciclica mediante coordinacion de workflow o separacion de contratos. El control falla al desaparecer para retirar la excepcion."
+  },
+  "sin-ciclos|personal (dominio)|identidad (dominio)": {
+    "regla": "sin-ciclos",
+    "plan": "§5 - las dependencias entre modulos forman un grafo sin ciclos",
+    "desde": "personal (dominio)",
+    "hacia": "identidad (dominio)",
+    "ciclo": [
+      "personal",
+      "identidad",
+      "operacion",
+      "caja",
+      "ventas",
+      "personal"
+    ],
+    "spec": "",
+    "motivo": "Arista ciclica heredada verificada contra 6cd071d4 con el clasificador completo; antes faltaban propietarios de repositorios y el DFS no enumeraba todas las aristas. Ver CORTE13_DEPENDENCIAS.json.",
+    "responsable": "Fases 5 y 6 - propietarios de los dominios de la arista",
+    "condicion": "Eliminar esta arista ciclica mediante coordinacion de workflow o separacion de contratos. El control falla al desaparecer para retirar la excepcion."
+  },
+  "sin-ciclos|reportes (dominio)|operacion (dominio)": {
+    "regla": "sin-ciclos",
+    "plan": "§5 - las dependencias entre modulos forman un grafo sin ciclos",
+    "desde": "reportes (dominio)",
+    "hacia": "operacion (dominio)",
+    "ciclo": ["reportes", "operacion", "caja", "reportes"],
+    "spec": "",
+    "motivo": "Arista ciclica heredada verificada contra 6cd071d4 con el clasificador completo; antes faltaban propietarios de repositorios y el DFS no enumeraba todas las aristas. Ver CORTE13_DEPENDENCIAS.json.",
+    "responsable": "Fases 5 y 6 - propietarios de los dominios de la arista",
+    "condicion": "Eliminar esta arista ciclica mediante coordinacion de workflow o separacion de contratos. El control falla al desaparecer para retirar la excepcion."
+  },
+  "sin-ciclos|ventas (dominio)|caja (dominio)": {
+    "regla": "sin-ciclos",
+    "plan": "§5 - las dependencias entre modulos forman un grafo sin ciclos",
+    "desde": "ventas (dominio)",
+    "hacia": "caja (dominio)",
+    "ciclo": [
+      "ventas",
+      "caja",
+      "reportes",
+      "operacion",
+      "clientes",
+      "comunicaciones",
+      "ventas"
+    ],
+    "spec": "",
+    "motivo": "Arista ciclica heredada verificada contra 6cd071d4 con el clasificador completo; antes faltaban propietarios de repositorios y el DFS no enumeraba todas las aristas. Ver CORTE13_DEPENDENCIAS.json.",
+    "responsable": "Fases 5 y 6 - propietarios de los dominios de la arista",
+    "condicion": "Eliminar esta arista ciclica mediante coordinacion de workflow o separacion de contratos. El control falla al desaparecer para retirar la excepcion."
+  },
+  "sin-ciclos|ventas (dominio)|clientes (dominio)": {
+    "regla": "sin-ciclos",
+    "plan": "§5 - las dependencias entre modulos forman un grafo sin ciclos",
+    "desde": "ventas (dominio)",
+    "hacia": "clientes (dominio)",
+    "ciclo": [
+      "ventas",
+      "clientes",
+      "caja",
+      "reportes",
+      "operacion",
+      "comunicaciones",
+      "ventas"
+    ],
+    "spec": "",
+    "motivo": "Arista ciclica heredada verificada contra 6cd071d4 con el clasificador completo; antes faltaban propietarios de repositorios y el DFS no enumeraba todas las aristas. Ver CORTE13_DEPENDENCIAS.json.",
+    "responsable": "Fases 5 y 6 - propietarios de los dominios de la arista",
+    "condicion": "Eliminar esta arista ciclica mediante coordinacion de workflow o separacion de contratos. El control falla al desaparecer para retirar la excepcion."
+  },
+  "sin-ciclos|ventas (dominio)|comunicaciones (dominio)": {
+    "regla": "sin-ciclos",
+    "plan": "§5 - las dependencias entre modulos forman un grafo sin ciclos",
+    "desde": "ventas (dominio)",
+    "hacia": "comunicaciones (dominio)",
+    "ciclo": [
+      "ventas",
+      "comunicaciones",
+      "identidad",
+      "operacion",
+      "caja",
+      "ventas"
+    ],
+    "spec": "",
+    "motivo": "Arista ciclica heredada verificada contra 6cd071d4 con el clasificador completo; antes faltaban propietarios de repositorios y el DFS no enumeraba todas las aristas. Ver CORTE13_DEPENDENCIAS.json.",
+    "responsable": "Fases 5 y 6 - propietarios de los dominios de la arista",
+    "condicion": "Eliminar esta arista ciclica mediante coordinacion de workflow o separacion de contratos. El control falla al desaparecer para retirar la excepcion."
+  },
+  "sin-ciclos|ventas (dominio)|identidad (dominio)": {
+    "regla": "sin-ciclos",
+    "plan": "§5 - las dependencias entre modulos forman un grafo sin ciclos",
+    "desde": "ventas (dominio)",
+    "hacia": "identidad (dominio)",
+    "ciclo": ["ventas", "identidad", "operacion", "caja", "ventas"],
+    "spec": "",
+    "motivo": "Dependencia antes expresada por SQL directo y ahora por API publica: CuentaQueries escribia clientes.saldo y SaleService/RoomManager actualizaban usuarios. No se declara eliminado el ciclo; debe subir la coordinacion al workflow. Ver CORTE13_DEPENDENCIAS.json.",
+    "responsable": "Fases 5 y 6 - propietarios de los dominios de la arista",
+    "condicion": "Eliminar esta arista ciclica mediante coordinacion de workflow o separacion de contratos. El control falla al desaparecer para retirar la excepcion."
+  },
+  "sin-ciclos|ventas (dominio)|operacion (dominio)": {
+    "regla": "sin-ciclos",
+    "plan": "§5 - las dependencias entre modulos forman un grafo sin ciclos",
+    "desde": "ventas (dominio)",
+    "hacia": "operacion (dominio)",
+    "ciclo": ["ventas", "operacion", "caja", "ventas"],
+    "spec": "",
+    "motivo": "Arista ciclica heredada verificada contra 6cd071d4 con el clasificador completo; antes faltaban propietarios de repositorios y el DFS no enumeraba todas las aristas. Ver CORTE13_DEPENDENCIAS.json.",
+    "responsable": "Fases 5 y 6 - propietarios de los dominios de la arista",
+    "condicion": "Eliminar esta arista ciclica mediante coordinacion de workflow o separacion de contratos. El control falla al desaparecer para retirar la excepcion."
+  },
+  "sin-ciclos|ventas (dominio)|personal (dominio)": {
+    "regla": "sin-ciclos",
+    "plan": "§5 - las dependencias entre modulos forman un grafo sin ciclos",
+    "desde": "ventas (dominio)",
+    "hacia": "personal (dominio)",
+    "ciclo": [
+      "ventas",
+      "personal",
+      "caja",
+      "reportes",
+      "operacion",
+      "clientes",
+      "comunicaciones",
+      "ventas"
+    ],
+    "spec": "",
+    "motivo": "Arista ciclica heredada verificada contra 6cd071d4 con el clasificador completo; antes faltaban propietarios de repositorios y el DFS no enumeraba todas las aristas. Ver CORTE13_DEPENDENCIAS.json.",
+    "responsable": "Fases 5 y 6 - propietarios de los dominios de la arista",
+    "condicion": "Eliminar esta arista ciclica mediante coordinacion de workflow o separacion de contratos. El control falla al desaparecer para retirar la excepcion."
+  },
+  "sin-ciclos|ventas (dominio)|reportes (dominio)": {
+    "regla": "sin-ciclos",
+    "plan": "§5 - las dependencias entre modulos forman un grafo sin ciclos",
+    "desde": "ventas (dominio)",
+    "hacia": "reportes (dominio)",
+    "ciclo": ["ventas", "reportes", "operacion", "caja", "ventas"],
+    "spec": "",
+    "motivo": "Arista ciclica heredada verificada contra 6cd071d4 con el clasificador completo; antes faltaban propietarios de repositorios y el DFS no enumeraba todas las aristas. Ver CORTE13_DEPENDENCIAS.json.",
+    "responsable": "Fases 5 y 6 - propietarios de los dominios de la arista",
+    "condicion": "Eliminar esta arista ciclica mediante coordinacion de workflow o separacion de contratos. El control falla al desaparecer para retirar la excepcion."
   }
 }

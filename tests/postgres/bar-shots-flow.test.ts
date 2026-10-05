@@ -175,20 +175,22 @@ it('el shot descuenta ml de la botella y la deja abierta con su contenido en el 
     expect(Number(movimiento.ml)).toBe(100);
     expect(Number(movimiento.cantidad)).toBe(0);
 
-    // El histórico acumulado por presentación suma los shots servidos.
+    // El panel de resumen refleja el turno: lo servido hoy y lo que queda abierto.
+    // El resumen es global al bar, no del fixture: se mide en deltas para no
+    // depender de las botellas que ya tenga abiertas la base.
+    const base = await obtenerResumenShots();
     await venderShots(fixture, 1, 'PGSHOT-HISTORICO');
     const [historico] = await listarStockBar(fixture.productoId);
     expect(historico.ml_servidos).toBe(150);
     expect(Number((await unidadesDe(fixture.presentacionId))[0].ml_restante)).toBe(600);
 
-    // El panel de resumen refleja el turno: lo servido hoy y lo que queda abierto.
     const resumen = await obtenerResumenShots();
     expect(resumen.shotMl).toBe(50);
-    expect(resumen.mlServidosHoy).toBe(150);
-    expect(resumen.shotsServidosHoy).toBe(3);
-    expect(resumen.mlRestantesTotales).toBe(600);
-    expect(resumen.botellasAbiertas).toBe(1);
-    expect(resumen.botellasPorAgotarse).toBe(0);
+    expect(resumen.mlServidosHoy - base.mlServidosHoy).toBe(50);
+    expect(resumen.shotsServidosHoy - base.shotsServidosHoy).toBe(1);
+    expect(resumen.mlRestantesTotales - base.mlRestantesTotales).toBe(-50);
+    expect(resumen.botellasAbiertas - base.botellasAbiertas).toBe(0);
+    expect(resumen.botellasPorAgotarse).toBe(base.botellasPorAgotarse);
   } finally {
     await restoreBarDatabase(snapshot);
   }

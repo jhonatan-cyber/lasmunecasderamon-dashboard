@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server';
 import { runIdempotent } from '@/lib/api/idempotency';
 import { withRoute } from '@/lib/api/withRoute';
-import { AccountService } from '@/lib/services/AccountService';
+import { cobrarCuentaConVenta } from '@/workflows/cobrar-cuenta';
 
 /**
  * Cobro de cuenta + venta de lo consumido, en una sola transacción.
@@ -34,7 +34,7 @@ export const POST = withRoute(
           device_date: body.device_date
         };
 
-        const cuenta = await AccountService.cobrarConVenta(id, normalizedBody, user.id);
+        const cuenta = await cobrarCuentaConVenta(id, normalizedBody, user.id);
         return NextResponse.json({
           success: true,
           message: 'Cuenta cobrada y venta registrada',

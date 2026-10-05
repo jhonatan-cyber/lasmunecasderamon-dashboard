@@ -1,3 +1,6 @@
+vi.mock('@/workflows/cobrar-cuenta', () => ({
+  cobrarCuentaConVenta: accountService.cobrarConVenta
+}));
 // @vitest-environment node
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 

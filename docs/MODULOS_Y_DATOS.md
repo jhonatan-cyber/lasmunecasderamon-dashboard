@@ -55,11 +55,11 @@ hoy.
 | ------------------------ | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | Identidad y acceso       | `usuarios`, `logins`, `roles`, `permissions`, `role_permissions`                                                                                                                                                                                            | **Escritura partida.** `logins` la escriben `CashRegisterRepository` y `auth/AuthQueries`. Desde el corte 12b `usuarios`, `permissions` y `role_permissions` tienen su escritor en `modules/identidad`, aunque la capa heredada siga duplicando parte de la escritura            |
 | Catálogo e inventario    | `productos`, `categorias`, `inventario_unidades`, `inventario_presentaciones`, `inventario_movimientos`, `codigos`, `producto_champagne_tiers`                                                                                                              | **Inventario íntegro en el módulo.** Escrituras y lecturas de las tablas de inventario viven en `modules/inventario`; `inventario_unidades` tiene 4 escritores, todos en el módulo (consumo, transferencias, envases y unidades)                                                 |
-| Clientes                 | `clientes`, `clientes_prepago_movimientos`                                                                                                                                                                                                                  | **Escritura muy partida.** `clientes` la escriben 4 repositorios, entre ellos `cuenta/CuentaQueries` y `sale/SaleQueries`                                                                                                                                                        |
-| Operación                | `pedidos`, `pedidos_usuarios`, `detalle_pedidos`, `detalle_pedidos_anfitrionas`, `servicios`, `detalle_servicios`, `detalle_servicios_clientes`, `habitaciones`, `cuentas`, `detalle_cuentas`, `cuentas_usuarios`, `solicitudes_servicios`, `servicio_logs` | **Escritura partida.** `ventas`, `servicios`, `habitaciones` y `cajas` las escribe además `TimerRepository`                                                                                                                                                                      |
-| Ventas                   | `ventas`, `detalle_ventas`, `ventas_usuarios`, `venta_logs`, `devoluciones_ventas`, `detalle_devoluciones_ventas`, `devoluciones_ventas_usuarios`, `solicitudes_anulacion_ventas`                                                                           | **Escritura partida.** `ventas` la escriben `TimerRepository` y `sale/SaleQueries`, y fuera de repositorios la escriben 3 archivos                                                                                                                                               |
+| Clientes                 | `clientes`, `clientes_prepago_movimientos`                                                                                                                                                                                                                  | **En migración (corte 18).** Recarga y devolución corren en `modules/clientes/prepago` con contexto opaco (caja + cuentas PREP-* por API pública); `ClientService`/`ClientRepository` delegan. Consumo/restitución de ventas y cuentas conservan escritores heredados            |
+| Operación                | `pedidos`, `pedidos_usuarios`, `detalle_pedidos`, `detalle_pedidos_anfitrionas`, `servicios`, `detalle_servicios`, `detalle_servicios_clientes`, `habitaciones`, `cuentas`, `detalle_cuentas`, `cuentas_usuarios`, `solicitudes_servicios`, `servicio_logs` | **En migración (cortes 14–21).** Servicios, temporizador/solicitud/edición/alta de cuentas corren en el módulo con contexto opaco; sus repositorios heredados delegan. Cobro, borrado y `TimerRepository` siguen heredados                                                       |
+| Ventas                   | `ventas`, `detalle_ventas`, `ventas_usuarios`, `venta_logs`, `devoluciones_ventas`, `detalle_devoluciones_ventas`, `devoluciones_ventas_usuarios`, `solicitudes_anulacion_ventas`                                                                           | **En migración (corte 14).** Anulación total/parcial, solicitudes y devoluciones corren en `modules/ventas/anulaciones` con contexto opaco; `SaleService`/`SaleQueries` delegan. `TimerRepository` y escritores de servicios/pedidos siguen heredados                            |
 | Caja                     | `cajas`, `retiros_caja`, `logins` (parcial)                                                                                                                                                                                                                 | **Escritura partida.** `cajas` la escriben `CashRegisterRepository`, `service/ServiceQueries`, `lib/services/WithdrawalService.ts` y `modules/operacion/temporizadores`. Desde el corte 12c el módulo es dueño de `solicitudes_cierre_caja`; el resto de la caja sigue en `lib/` |
-| Personal y liquidaciones | `horas_extras`, `anticipos`, `anticipo_historial`, `solicitudes_anticipos`, `comisiones`, `detalle_comisiones`, `propinas`, `detalle_propinas`, `gratificaciones`, `asistencias`                                                                            | **Escritura partida.** `detalle_propinas` tiene 3 escritores; `asistencias` la escriben `PayrollRepository` y `auth/AuthQueries`                                                                                                                                                 |
+| Personal y liquidaciones | `horas_extras`, `anticipos`, `anticipo_historial`, `solicitudes_anticipos`, `comisiones`, `detalle_comisiones`, `propinas`, `detalle_propinas`, `gratificaciones`, `asistencias`                                                                            | **En migración (cortes 14–17).** Comisiones y propinas de ventas y servicios se escriben por API pública en la unidad del flujo; otorgar/entregar anticipos coordina con Caja sin adaptador. `PayrollRepository` y gratificaciones/nómina siguen en `lib/`                       |
 | Asistencia               | `asistencias`, `asistencia_desafios`, `kiosk_devices`, `biometric_devices`, `biometric_plantillas`, `biometric_device_records`                                                                                                                              | Las tablas biométricas las escribe `lib/biometric/` (15 archivos) sin pasar por repositorios                                                                                                                                                                                     |
 | Agenda                   | calendario y eventos                                                                                                                                                                                                                                        | Sin tabla propia en el esquema actual; se confirma en fase 0                                                                                                                                                                                                                     |
 | Comunicaciones           | `notificaciones`, `audit_logs`, `error_logs`, `query_logs`                                                                                                                                                                                                  | Limpia: sin escritores fuera de su repositorio                                                                                                                                                                                                                                   |
@@ -67,11 +67,12 @@ hoy.
 | Infraestructura          | `_migrations`                                                                                                                                                                                                                                               | Los runners de migraciones; se mantienen fuera del grafo de módulos                                                                                                                                                                                                              |
 | Salud                    | ninguna                                                                                                                                                                                                                                                     | **Módulo de infraestructura pura, nacido en el corte 12d.** No es dueño de ninguna tabla de negocio: sondea al driver para responder si el proceso vive. Existe para que `app/api/health` deje de importar `lib/database/db`, la última ruta que lo hacía                        |
 
-## 3. Los 13 casos de escritura cruzada
+## 3. Censo histórico de escritores (no equivale a dominios propietarios)
 
 Estas son las tablas que hoy aceptan escrituras desde más de un repositorio. Es
-la lista que gobierna el orden de las fases 4 y 5: **cada fila es un módulo que
-todavía no es dueño de su propia tabla.**
+la lista que gobierna el orden de las fases 4 y 5: varios repositorios dentro
+del mismo módulo son compatibles con un único propietario; las infracciones son
+escritores de dominios distintos.
 
 | Tabla                            | Repositorios que la escriben                                                                                                                                                                                                    | Módulos implicados          |
 | -------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | --------------------------- |
@@ -120,17 +121,18 @@ evidencia de que las escrituras cruzadas siguen activas sin revisar el HEAD.
 
 ## 4. Escrituras fuera de repositorios
 
-64 archivos escriben tablas sin pasar por `lib/repositories/`. Los que mandan
-son:
+El indicador histórico de 64 archivos mezcla uso del driver, lecturas y
+escrituras fuera de repositorios; no significa 64 escritores de negocio. Los que
+mandan son:
 
-| Archivo                                      | Tablas que escribe                                                                    | Migrará en                            |
-| -------------------------------------------- | ------------------------------------------------------------------------------------- | ------------------------------------- |
-| `lib/services/SaleService.ts`                | `comisiones`, `detalle_comisiones`, `detalle_ventas`, `pedidos`, `ventas_usuarios`    | fase 5                                |
-| `lib/services/ServiceService.ts`             | `comisiones`, `detalle_comisiones`, `detalle_servicios`, `detalle_servicios_clientes` | fase 5                                |
-| `lib/business/pagosMixtos.ts`                | `clientes`, `clientes_prepago_movimientos`, `cuentas`                                 | fase 5 (prepago: un solo propietario) |
-| `lib/biometric/*` (15 archivos)              | `biometric_devices`, `biometric_plantillas`, `biometric_device_records`               | fase 3                                |
-| `lib/services/RoomManager.ts`                | `habitaciones`, `servicios`, `usuarios`, `ventas`                                     | fase 5                                |
-| `lib/integrations/whatsappPendingActions.ts` | `cuentas`, `detalle_cuentas`, `solicitudes_anulacion_cuentas`, `ventas`               | fase 6                                |
+| Archivo                                      | Tablas que escribe                                                                                                                                                                           | Migrará en                                      |
+| -------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ----------------------------------------------- |
+| `lib/services/SaleService.ts`                | ~~`comisiones`, `detalle_comisiones`, `detalle_ventas`, `pedidos`, `ventas_usuarios`~~ → delega a `modules/ventas` desde el corte 14 (registro y anulación)                                  | fase 5 ✔ parcial                                |
+| `lib/services/ServiceService.ts`             | ~~`comisiones`, `detalle_comisiones`, `detalle_servicios`, `detalle_servicios_clientes`~~ → delega a `modules/operacion` desde el corte 16 (alta, edición y anulación)                       | fase 5 ✔ parcial                                |
+| `lib/business/pagosMixtos.ts`                | ~~`clientes`, `clientes_prepago_movimientos`, `cuentas`~~ → recarga/devolución delegan a `modules/clientes` desde el corte 18 (el consumo de ventas directas conserva el adaptador heredado) | fase 5 (prepago: un solo propietario) ✔ parcial |
+| `lib/biometric/*` (15 archivos)              | `biometric_devices`, `biometric_plantillas`, `biometric_device_records`                                                                                                                      | fase 3                                          |
+| `lib/services/RoomManager.ts`                | `habitaciones`, `servicios`, `usuarios`, `ventas`                                                                                                                                            | fase 5                                          |
+| `lib/integrations/whatsappPendingActions.ts` | `cuentas`, `detalle_cuentas`, `solicitudes_anulacion_cuentas`, `ventas`                                                                                                                      | fase 6                                          |
 
 **Ninguno de estos archivos es una ruta de `app/api`.** Es el indicador 3 del
 plan (§9, «SQL en controladores HTTP»): valía 36 en la referencia de Fase 0 y
@@ -147,23 +149,33 @@ más riesgo tiene si se toca**. Otros lugares con `withTransaction` que exigen l
 mismas precauciones: `SaleService`, `ServiceService`, `WithdrawalService`,
 `PurchaseService`, `CuentaQueries` y `SaleQueries`.
 
-La distinción importante: hoy `withTransaction` **envuelve** la operación, pero
-cada participante abre y cierra su propia unidad de trabajo. La fase 6 quiere
-que el workflow abra una sola unidad y la pase como contexto opaco (§6).
+El cobro con venta ya compartía `trx` antes del corte 13. No todos sus
+participantes respetaban esa unidad: el registro de propinas abría otra. En el
+corte 13 el workflow usa un contexto opaco para cobro, venta, caja, prepago,
+conceptos de Personal y lectura de la respuesta; las propinas ahora confirman o
+revierten con la venta. No generalizar esta garantía a los flujos heredados de
+anulación, servicio y cierre de caja.
 
-## 6. Lo que este documento deja abierto
+## 6. Decisiones vigentes del corte 13 (2026-10-05)
 
-- El prepago (`clientes_prepago_movimientos`) lo escriben `pagosMixtos`,
-  `sale/SaleQueries` y `service/ServiceQueries`. El plan exige un único
-  propietario entre Clientes y Caja y todavía no está decidido. Debe resolverse
-  antes de la Fase 5; Caja parece coherente con el saldo, pero la elección debe
-  preservar la atomicidad del cobro y considerar que la tabla incluye el saldo
-  prepago propio del cliente.
-- `asistencias` la escribían `PayrollRepository` (para nómina) y
-  `auth/AuthQueries` en la referencia histórica. Asistencia ya migró marcas al
-  módulo propietario; falta verificar y documentar si quedan escrituras actuales
-  desde nómina o identidad y definir el contrato de lectura requerido.
-- `logins` la escriben caja e identidad. Probablemente sea identidad, pero hay
-  que confirmar si el registro de apertura de caja es un evento de caja o de
-  identidad. La decisión y sus escritores actuales deben registrarse antes de
-  cerrar el mapa de propiedad.
+- **Prepago: Clientes.** `clientes.saldo` y `clientes_prepago_movimientos`
+  pertenecen al mismo propietario. Caja registra el impacto del medio de pago;
+  no administra el saldo del cliente. El cobro usa `consumirPrepagoCuenta`
+  dentro de la unidad compartida. La restitución de anulaciones y el consumo de
+  ventas directas conservan adaptadores/escritores heredados pendientes.
+- **Asistencias: Asistencia.** Confirmado: `PayrollRepository` modifica
+  `estado/fecha_pago` y `auth/AuthQueries` inserta marcas. Deben delegar en
+  operaciones públicas de Asistencia; Personal conserva las reglas de
+  liquidación, no la propiedad de la marca. Es una decisión, no una migración
+  completada.
+- **Logins: Identidad.** Confirmado: `CashRegisterRepository` cierra sesiones al
+  cerrar caja. Esa acción debe pasar por Identidad en la misma transacción; Caja
+  sigue siendo propietaria del cierre financiero.
+- **Configuración: excepción transitoria C1.** Se conserva el registro central
+  existente para mantener validaciones y formularios. Responsable: fase 6.
+  Retiro: Asistencia, Inventario, Ventas y Comunicaciones publican la validación
+  de sus claves y el registro técnico deja de decidir reglas de negocio. Mover
+  el registro a `modules/configuracion` no cierra esa tarea.
+
+El detalle del flujo implementado, las lecturas cruzadas preservadas y la
+validación del corte están en [FASE5_COBRO.md](arquitectura/FASE5_COBRO.md).

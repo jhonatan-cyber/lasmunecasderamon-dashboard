@@ -6,6 +6,9 @@ import {
   type CuentaUpdateBody,
   type CuentaCobrarBody
 } from './cuenta/CuentaQueries';
+import { detenerTemporizadorCuenta, solicitarAnulacionCuenta } from '@/modules/operacion';
+import { actualizarCuenta } from '@/modules/operacion';
+import { crearCuenta } from '@/modules/operacion';
 import type { CuentaRoomHistoryItem, CuentaRoomHistoryViewItem } from './cuenta/CuentaRoomHistory';
 
 export type {
@@ -31,30 +34,22 @@ export class CuentaRepository {
   }
 
   static async create(body: CuentaCreateBody, createdBy: string) {
-    return await CuentaQueries.create(body, createdBy);
+    const id = await crearCuenta(body, createdBy);
+    return await CuentaQueries.getById(id);
   }
 
   static async updateCuenta(id: string, body: CuentaUpdateBody, createdBy: string) {
-    return await CuentaQueries.updateCuenta(id, body, createdBy);
+    await actualizarCuenta(id, body, createdBy);
+    return await CuentaQueries.getById(id);
   }
 
   static async cobrar(id: string, body: CuentaCobrarBody, cobradoPor: string) {
     return await CuentaQueries.cobrar(id, body, cobradoPor);
   }
 
-  /** Cobro dentro de una transacción existente (ver `AccountService.cobrarConVenta`). */
-  static async cobrarEnTransaccion(
-    trx: TransactionQuery,
-    id: string,
-    body: CuentaCobrarBody,
-    cobradoPor: string,
-    onAfterCommit?: (task: () => void | Promise<void>) => void
-  ) {
-    return await CuentaQueries.cobrarEnTransaccion(trx, id, body, cobradoPor, onAfterCommit);
-  }
-
   static async stopTimer(id: string, userId: string) {
-    return await CuentaQueries.stopTimer(id, userId);
+    await detenerTemporizadorCuenta(id);
+    return await CuentaQueries.getById(id);
   }
 
   static async requestAnulacion(
@@ -63,7 +58,7 @@ export class CuentaRepository {
     requestedBy: string,
     requestedAmount: number
   ): Promise<string> {
-    return await CuentaQueries.requestAnulacion(id, reason, requestedBy, requestedAmount);
+    return await solicitarAnulacionCuenta(id, reason, requestedBy, requestedAmount);
   }
 
   static async delete(id: string) {

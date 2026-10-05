@@ -31,26 +31,22 @@ vi.mock('@/lib/repositories/BaseRepository', () => ({
   }
 }));
 
-vi.mock('@/lib/repositories/CashRegisterRepository', () => ({
-  CashRegisterRepository: {
-    getCurrentCajaId: vi.fn(),
-    updateBalances: vi.fn()
-  }
-}));
-
 import { BusinessError } from '@/lib/errors/errors';
 import { ClientRepository } from '@/lib/repositories/ClientRepository';
 import { BaseRepository } from '@/lib/repositories/BaseRepository';
-import { CashRegisterRepository } from '@/lib/repositories/CashRegisterRepository';
 
 describe('ClientRepository.addPrepago', () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    repositoryHarness.queryMock.mockImplementation(async (sql: string) => {
+      if (typeof sql === 'string' && sql.includes('FROM cajas WHERE estado = 1')) {
+        return [{ id_caja: 'caja-1' }];
+      }
+      return [];
+    });
   });
 
   it('registra la recarga en caja con el metodo de pago', async () => {
-    vi.mocked(CashRegisterRepository.getCurrentCajaId).mockResolvedValue('caja-1');
-
     await ClientRepository.addPrepago({
       cliente_id: 'client-1',
       monto: 100,
@@ -69,20 +65,16 @@ describe('ClientRepository.addPrepago', () => {
         tipo: 'CARGA'
       })
     );
-    expect(CashRegisterRepository.updateBalances).toHaveBeenCalledWith(
-      repositoryHarness.queryMock,
-      'caja-1',
-      {
-        efectivo: 0,
-        tarjeta: 100,
-        transferencia: 0,
-        prepago: 0
-      }
+    const cajaCalls = repositoryHarness.queryMock.mock.calls.filter(
+      ([sql]) => typeof sql === 'string' && sql.includes('UPDATE cajas SET')
     );
+    expect(cajaCalls).toHaveLength(1);
+    expect(cajaCalls[0][0]).toContain('tarjeta = tarjeta + ?');
+    expect(cajaCalls[0][1]).toEqual(expect.arrayContaining([100, 'caja-1']));
   });
 
   it('falla si no hay caja abierta', async () => {
-    vi.mocked(CashRegisterRepository.getCurrentCajaId).mockResolvedValue(null);
+    repositoryHarness.queryMock.mockImplementation(async () => []);
 
     await expect(
       ClientRepository.addPrepago({
@@ -98,6 +90,9 @@ describe('ClientRepository.addPrepago', () => {
       code: 'NO_CAJA_ABIERTA'
     } satisfies Partial<BusinessError>);
 
-    expect(CashRegisterRepository.updateBalances).not.toHaveBeenCalled();
+    const cajaCalls = repositoryHarness.queryMock.mock.calls.filter(
+      ([sql]) => typeof sql === 'string' && sql.includes('UPDATE cajas SET')
+    );
+    expect(cajaCalls).toHaveLength(0);
   });
 });

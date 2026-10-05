@@ -1,3 +1,4 @@
+import { cobrarCuentaConVenta } from '@/workflows/cobrar-cuenta';
 import { afterAll, expect, it, vi } from 'vitest';
 
 vi.mock('@/lib/integrations/pushNotifications', () => ({
@@ -10,7 +11,10 @@ vi.mock('@/lib/services/SecurityAlertService', () => ({
 
 import db, { query } from '@/lib/database/db';
 import { snapshotDatabase, restoreDatabase } from '@/lib/database/maintenance';
-import { AccountService } from '@/lib/services/AccountService';
+import * as conceptos from '@/modules/personal/conceptos/repositorio';
+import { sendNotificationToAll } from '@/lib/api/sseService';
+
+vi.mock('@/lib/api/sseService', () => ({ sendNotificationToAll: vi.fn() }));
 
 afterAll(async () => {
   await db.pool.end();
@@ -77,7 +81,7 @@ it('cierra la cuenta, factura y postula a caja en una sola transacción', async 
     const idCuenta = await crearCuentaConDetalle(codigo, user.id_usuario);
     await agregarDetalle(idCuenta, product.id_producto, user.id_usuario);
 
-    const cuenta = await AccountService.cobrarConVenta(
+    const cuenta = await cobrarCuentaConVenta(
       idCuenta,
       { montoFinal: 12000, propinaFinal: 0, metodoPago: 'efectivo' },
       user.id_usuario
@@ -117,6 +121,18 @@ it('cierra la cuenta, factura y postula a caja en una sola transacción', async 
       [codigo]
     );
     expect(Number(auditoria.total)).toBe(1);
+    await expect(
+      cobrarCuentaConVenta(
+        idCuenta,
+        { montoFinal: 12000, propinaFinal: 0, metodoPago: 'efectivo' },
+        user.id_usuario
+      )
+    ).rejects.toMatchObject({ code: 'CUENTA_YA_PROCESADA' });
+    const [reintento] = await query<{ efectivo: number }[]>(
+      'SELECT efectivo FROM cajas WHERE id_caja = ?',
+      [caja.id_caja]
+    );
+    expect(Number(reintento.efectivo)).toBe(Number(caja.efectivo) + 12000);
   } finally {
     await restoreDatabase(snapshot, 'test-only');
   }
@@ -133,7 +149,7 @@ it('revierte el cobro entero si la venta no se puede facturar', async () => {
     // actualizó la cuenta y la caja dentro de la misma transacción.
     const idCuenta = await crearCuentaConDetalle(codigo, user.id_usuario);
 
-    const error = await AccountService.cobrarConVenta(
+    const error = await cobrarCuentaConVenta(
       idCuenta,
       { montoFinal: 12000, propinaFinal: 0, metodoPago: 'efectivo' },
       user.id_usuario
@@ -180,7 +196,7 @@ it('rechaza un método de pago fuera del catálogo sin tocar nada', async () => 
     const idCuenta = await crearCuentaConDetalle(codigo, user.id_usuario);
     await agregarDetalle(idCuenta, product.id_producto, user.id_usuario);
 
-    const error = await AccountService.cobrarConVenta(
+    const error = await cobrarCuentaConVenta(
       idCuenta,
       { montoFinal: 12000, propinaFinal: 0, metodoPago: 'crypto' },
       user.id_usuario
@@ -195,6 +211,176 @@ it('rechaza un método de pago fuera del catálogo sin tocar nada', async () => 
     expect(Number(cuenta.estado)).toBe(1);
     expect(cuenta.metodo_pago).toBeNull();
   } finally {
+    await restoreDatabase(snapshot, 'test-only');
+  }
+});
+
+it('confirma la propina junto con la venta aunque falle un aviso posterior', async () => {
+  const snapshot = await snapshotDatabase();
+  try {
+    const [user] = await query<{ id_usuario: string }[]>('SELECT id_usuario FROM usuarios LIMIT 1');
+    const [product] = await query<{ id_producto: string }[]>(
+      'SELECT id_producto FROM productos LIMIT 1'
+    );
+    const caja = await cajaAbierta(user.id_usuario);
+    const id = await crearCuentaConDetalle('PGPROPINA', user.id_usuario);
+    await agregarDetalle(id, product.id_producto, user.id_usuario);
+    vi.mocked(sendNotificationToAll).mockImplementationOnce(() => {
+      throw new Error('SSE no disponible');
+    });
+    const cuenta = await cobrarCuentaConVenta(
+      id,
+      { montoFinal: 12000, propinaFinal: 1000, metodoPago: 'efectivo' },
+      user.id_usuario
+    );
+    expect(cuenta?.estado).toBe(0);
+    const [propina] = await query<{ propina: number }[]>(
+      'SELECT p.propina FROM propinas p JOIN ventas v ON v.id_venta = p.venta_id WHERE v.codigo = ?',
+      ['PGPROPINA']
+    );
+    expect(Number(propina.propina)).toBe(1000);
+    const [balance] = await query<{ efectivo: number; venta: number }[]>(
+      'SELECT efectivo, venta FROM cajas WHERE id_caja = ?',
+      [caja.id_caja]
+    );
+    expect(Number(balance.efectivo)).toBe(Number(caja.efectivo) + 13000);
+    expect(Number(balance.venta)).toBe(Number(caja.venta) + 12000);
+  } finally {
+    vi.mocked(sendNotificationToAll).mockReset();
+    await restoreDatabase(snapshot, 'test-only');
+  }
+});
+
+it('un fallo al registrar propina revierte venta, cuenta, caja y auditoria sin avisos', async () => {
+  const snapshot = await snapshotDatabase();
+  const fallo = vi
+    .spyOn(conceptos, 'insertarPropina')
+    .mockRejectedValueOnce(new Error('Fallo posterior a la venta'));
+  try {
+    const [user] = await query<{ id_usuario: string }[]>('SELECT id_usuario FROM usuarios LIMIT 1');
+    const [product] = await query<{ id_producto: string }[]>(
+      'SELECT id_producto FROM productos LIMIT 1'
+    );
+    const caja = await cajaAbierta(user.id_usuario);
+    const [auditoriaAntes] = await query<{ n: string }[]>(
+      'SELECT COUNT(*)::text AS n FROM audit_logs'
+    );
+    const id = await crearCuentaConDetalle('PGROLLBACKPROP', user.id_usuario);
+    await agregarDetalle(id, product.id_producto, user.id_usuario);
+    vi.mocked(sendNotificationToAll).mockClear();
+    await expect(
+      cobrarCuentaConVenta(
+        id,
+        { montoFinal: 12000, propinaFinal: 1000, metodoPago: 'efectivo' },
+        user.id_usuario
+      )
+    ).rejects.toThrow('Fallo posterior a la venta');
+    const [cuenta] = await query<{ estado: number }[]>(
+      'SELECT estado FROM cuentas WHERE id_cuenta = ?',
+      [id]
+    );
+    expect(cuenta.estado).toBe(1);
+    const ventas = await query('SELECT id_venta FROM ventas WHERE codigo = ?', ['PGROLLBACKPROP']);
+    expect(ventas).toEqual([]);
+    const [balance] = await query<{ efectivo: number; venta: number }[]>(
+      'SELECT efectivo, venta FROM cajas WHERE id_caja = ?',
+      [caja.id_caja]
+    );
+    expect(Number(balance.efectivo)).toBe(Number(caja.efectivo));
+    expect(Number(balance.venta)).toBe(Number(caja.venta));
+    const [auditoriaDespues] = await query<{ n: string }[]>(
+      'SELECT COUNT(*)::text AS n FROM audit_logs'
+    );
+    expect(auditoriaDespues.n).toBe(auditoriaAntes.n);
+    expect(sendNotificationToAll).not.toHaveBeenCalled();
+  } finally {
+    fallo.mockRestore();
+    await restoreDatabase(snapshot, 'test-only');
+  }
+});
+
+it('descuenta prepago una vez y la venta no vuelve a debitar al cliente', async () => {
+  const snapshot = await snapshotDatabase();
+  try {
+    const [user] = await query<{ id_usuario: string }[]>('SELECT id_usuario FROM usuarios LIMIT 1');
+    const [product] = await query<{ id_producto: string }[]>(
+      'SELECT id_producto FROM productos LIMIT 1'
+    );
+    const caja = await cajaAbierta(user.id_usuario);
+    const [antes] = await query<{ prepago: number }[]>(
+      'SELECT prepago FROM cajas WHERE id_caja = ?',
+      [caja.id_caja]
+    );
+    const clienteId = crypto.randomUUID();
+    await query(
+      'INSERT INTO clientes (id_cliente, nombre, apellido, fecha_crea, saldo) VALUES (?, ?, ?, now(), ?)',
+      [clienteId, 'Fixture', 'Prepago', 20000]
+    );
+    const id = await crearCuentaConDetalle('PGPREPAGO', user.id_usuario);
+    await query('UPDATE cuentas SET cliente_id = ? WHERE id_cuenta = ?', [clienteId, id]);
+    await agregarDetalle(id, product.id_producto, user.id_usuario);
+    await cobrarCuentaConVenta(
+      id,
+      { montoFinal: 12000, propinaFinal: 1000, metodoPago: 'prepago' },
+      user.id_usuario
+    );
+    const [cliente] = await query<{ saldo: number }[]>(
+      'SELECT saldo FROM clientes WHERE id_cliente = ?',
+      [clienteId]
+    );
+    expect(Number(cliente.saldo)).toBe(7000);
+    const [despues] = await query<{ prepago: number }[]>(
+      'SELECT prepago FROM cajas WHERE id_caja = ?',
+      [caja.id_caja]
+    );
+    expect(Number(despues.prepago)).toBe(Number(antes.prepago) + 13000);
+  } finally {
+    await restoreDatabase(snapshot, 'test-only');
+  }
+});
+
+it('restaura el saldo prepago si falla la propina al final de la unidad', async () => {
+  const snapshot = await snapshotDatabase();
+  const fallo = vi
+    .spyOn(conceptos, 'insertarPropina')
+    .mockRejectedValueOnce(new Error('Fallo tardio'));
+  try {
+    const [user] = await query<{ id_usuario: string }[]>('SELECT id_usuario FROM usuarios LIMIT 1');
+    const [product] = await query<{ id_producto: string }[]>(
+      'SELECT id_producto FROM productos LIMIT 1'
+    );
+    const caja = await cajaAbierta(user.id_usuario);
+    const [antes] = await query<{ prepago: number }[]>(
+      'SELECT prepago FROM cajas WHERE id_caja = ?',
+      [caja.id_caja]
+    );
+    const clienteId = crypto.randomUUID();
+    await query(
+      'INSERT INTO clientes (id_cliente, nombre, apellido, fecha_crea, saldo) VALUES (?, ?, ?, now(), ?)',
+      [clienteId, 'Fixture', 'Rollback', 20000]
+    );
+    const id = await crearCuentaConDetalle('PGPREPAGOFALLO', user.id_usuario);
+    await query('UPDATE cuentas SET cliente_id = ? WHERE id_cuenta = ?', [clienteId, id]);
+    await agregarDetalle(id, product.id_producto, user.id_usuario);
+    await expect(
+      cobrarCuentaConVenta(
+        id,
+        { montoFinal: 12000, propinaFinal: 1000, metodoPago: 'prepago' },
+        user.id_usuario
+      )
+    ).rejects.toThrow('Fallo tardio');
+    const [cliente] = await query<{ saldo: number }[]>(
+      'SELECT saldo FROM clientes WHERE id_cliente = ?',
+      [clienteId]
+    );
+    expect(Number(cliente.saldo)).toBe(20000);
+    const [despues] = await query<{ prepago: number }[]>(
+      'SELECT prepago FROM cajas WHERE id_caja = ?',
+      [caja.id_caja]
+    );
+    expect(Number(despues.prepago)).toBe(Number(antes.prepago));
+  } finally {
+    fallo.mockRestore();
     await restoreDatabase(snapshot, 'test-only');
   }
 });

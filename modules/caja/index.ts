@@ -14,3 +14,10 @@ import 'server-only';
  * fase 5 y queda anotada en `docs/MODULOS_Y_DATOS.md`.
  */
 export { listarSolicitudesCierrePendientes } from './cierres/servicio';
+
+export {
+  obtenerCajaActiva,
+  registrarMovimientoCobro,
+  ajustarIvaCaja,
+  leerFondoCaja
+} from './movimientos/servicio';

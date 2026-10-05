@@ -160,3 +160,25 @@ export interface ResultadoComando {
   ok: boolean;
   message: string;
 }
+
+export interface EntradaPropinaVenta {
+  venta_id: string;
+  monto: number;
+  usuario_ids?: string[];
+}
+export interface ComisionVenta {
+  id_comision: string;
+  venta_id: string;
+  usuario_id: string;
+  monto: number;
+  estado: number;
+  fecha_crea: string;
+}
+export interface DetalleComisionVenta {
+  id_detalle_comision: string;
+  comision_id: string;
+  usuario_id: string;
+  comision: number;
+  estado: number;
+  fecha_crea: string;
+}

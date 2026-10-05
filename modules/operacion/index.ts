@@ -14,7 +14,24 @@ export {
   obtenerServicioParaAnulacion,
   registrarSolicitudAnulacionServicio
 } from './servicios/servicio';
+export {
+  anularServicioEnUnidad,
+  aprobarAnulacionServicio,
+  actualizarEstadoServicio,
+  solicitarAnulacionServicio,
+  procesarAnulacionServicio
+} from './servicios/anulaciones';
+export {
+  crearServicioEnUnidad,
+  crearServicio,
+  actualizarServicio,
+  actualizarServicioCasoUso
+} from './servicios/creacion';
 export { obtenerCuentaParaAnulacion, obtenerSolicitudAnulacionCuenta } from './cuentas/servicio';
+export { crearCuentaPrepagoRecarga, cerrarCuentasPrepagoSaldadas } from './cuentas/servicio';
+export { detenerTemporizadorCuenta, solicitarAnulacionCuenta } from './cuentas/servicio';
+export { actualizarCuenta, type EntradaActualizacionCuenta } from './cuentas/servicio';
+export { crearCuenta, type EntradaAltaCuenta } from './cuentas/servicio';
 export {
   contarPedidosPendientes,
   listarServiciosEnCurso,
@@ -22,3 +39,18 @@ export {
 } from './lecturas/servicio';
 export { revisarTemporizadores } from './temporizadores/servicio';
 export type { ResultadoTemporizadores } from './temporizadores/servicio';
+
+export { cobrarYPrepararVenta, consultarCuentaCobrada } from './cobro/servicio';
+
+export {
+  ocuparHabitacionVenta,
+  cerrarPedidoFacturado,
+  pausarConflictosVenta,
+  pausarConflictosServicio,
+  ocuparHabitacionSiCorresponde,
+  liberarHabitacionPorAnulacion,
+  reabrirPedidoPorAnulacion,
+  marcarPedidoPorAnulacion
+} from './facturacion/servicio';
+
+export { cobrarCuenta } from './cobro/servicio';

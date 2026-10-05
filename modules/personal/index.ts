@@ -35,3 +35,17 @@ export {
   listarAnticiposPendientes
 } from './anticipos/servicio';
 export { getAnticipoBalances } from './balances/servicio';
+
+export {
+  registrarComisionesVenta,
+  registrarPropinaVenta,
+  registrarComisionesServicio,
+  revertirComisionesPorAnulacion,
+  revertirPropinasPorAnulacion,
+  revertirComisionesServicioPorAnulacion,
+  leerComisionTotalServicioPorAnulacion,
+  leerComisionesPorAnulacion,
+  ajustarComisionesPorAnulacion,
+  leerPropinasPorAnulacion,
+  ajustarPropinasPorAnulacion
+} from './conceptos/servicio';
