@@ -1,89 +1,78 @@
 import { NextResponse } from 'next/server';
 import { withRoute } from '@/lib/api/withRoute';
 import { SaleService } from '@/lib/services/SaleService';
-import { query } from '@/lib/database/db';
+import { existeSolicitudAnulacion, obtenerVentaParaAnulacion } from '@/modules/ventas';
 import { enviarMensajeSolicitudAnulacion } from '@/lib/integrations/whatsappService';
 import { ValidationError } from '@/lib/errors/errors';
 import logger from '@/lib/utils/logger';
 
-export const POST = withRoute({ auth: true, audit: true, module: 'sales', action: 'anulate' }, async (request: Request, { user }: { params: any; user: any }) => {
-  const body = await request.json();
+export const POST = withRoute(
+  { auth: true, audit: true, module: 'sales', action: 'anulate' },
+  async (request: Request, { user }: { params: any; user: any }) => {
+    const body = await request.json();
 
-  if (body.requestId) {
-    await SaleService.processAnulacion(body.requestId, user.id.toString(), body.status);
-    return NextResponse.json({ success: true, message: 'Solicitud procesada' });
-  }
+    if (body.requestId) {
+      await SaleService.processAnulacion(body.requestId, user.id.toString(), body.status);
+      return NextResponse.json({ success: true, message: 'Solicitud procesada' });
+    }
 
-  const ventaInfo = await query<any[]>(
-    `SELECT v.codigo, v.total,
-            COALESCE((CAST(c.nombre AS text) || CAST(' ' AS text) || CAST(c.apellido AS text)), 'Sin cliente registrado') as cliente_nombre
-     FROM ventas v
-     LEFT JOIN clientes c ON v.cliente_id = c.id_cliente
-     WHERE v.id_venta = ?
-     LIMIT 1`,
-    [body.ventaId]
-  );
+    const venta = await obtenerVentaParaAnulacion(body.ventaId);
 
-  const totalVenta = Number(ventaInfo[0]?.total || 0);
-  const montoSolicitado = Number(body.monto || 0);
+    const totalVenta = Number(venta?.total || 0);
+    const montoSolicitado = Number(body.monto || 0);
 
-  const existingRequest = await query<any[]>(
-    `SELECT id
-     FROM solicitudes_anulacion_ventas
-     WHERE venta_id = ?
-     LIMIT 1`,
-    [body.ventaId]
-  );
+    const yaSolicitada = await existeSolicitudAnulacion(body.ventaId);
 
-  if (!body.motivo || !String(body.motivo).trim())
-    throw new ValidationError('Debes ingresar el motivo de la anulacion');
+    if (!body.motivo || !String(body.motivo).trim())
+      throw new ValidationError('Debes ingresar el motivo de la anulacion');
 
-  if (existingRequest.length > 0)
-    throw new ValidationError('Esta venta ya tiene una solicitud de anulacion registrada');
+    if (yaSolicitada)
+      throw new ValidationError('Esta venta ya tiene una solicitud de anulacion registrada');
 
-  if (!Number.isFinite(montoSolicitado) || montoSolicitado <= 0)
-    throw new ValidationError('Debes ingresar un monto mayor a 0', { monto: montoSolicitado });
+    if (!Number.isFinite(montoSolicitado) || montoSolicitado <= 0)
+      throw new ValidationError('Debes ingresar un monto mayor a 0', { monto: montoSolicitado });
 
-  if (montoSolicitado > totalVenta)
-    throw new ValidationError('El monto no puede ser mayor al total de la venta', {
-      montoSolicitado,
-      totalVenta
-    });
+    if (montoSolicitado > totalVenta)
+      throw new ValidationError('El monto no puede ser mayor al total de la venta', {
+        montoSolicitado,
+        totalVenta
+      });
 
-  const token = await SaleService.requestAnulacion(
-    body.ventaId,
-    body.motivo,
-    user.nick || user.name || user.id.toString(),
-    montoSolicitado
-  );
-
-  const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || '';
-
-  logger.info('[Anulacion] baseUrl configurada:', baseUrl);
-
-  try {
-    await enviarMensajeSolicitudAnulacion({
-      tipo: 'venta',
-      codigo: ventaInfo[0]?.codigo || body.ventaId,
-      clienteNombre: ventaInfo[0]?.cliente_nombre || 'Sin cliente registrado',
-      total: Number(ventaInfo[0]?.total || 0),
-      motivo: body.motivo,
-      montoSolicitado,
-      solicitadoPor: user.nick || user.name || 'Usuario',
-      token,
-      baseUrl
-    });
-  } catch (err) {
-    logger.error('[AnulacionVenta] Error enviando WhatsApp:', { err });
-    return NextResponse.json(
-      {
-        success: false,
-        message: 'Solicitud creada pero no se pudo enviar WhatsApp al administrador',
-        token
-      },
-      { status: 202 }
+    const token = await SaleService.requestAnulacion(
+      body.ventaId,
+      body.motivo,
+      user.nick || user.name || user.id.toString(),
+      montoSolicitado
     );
-  }
 
-  return NextResponse.json({ success: true, token });
-});
+    const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || '';
+
+    logger.info('[Anulacion] baseUrl configurada:', baseUrl);
+
+    try {
+      await enviarMensajeSolicitudAnulacion({
+        tipo: 'venta',
+        codigo: venta?.codigo || body.ventaId,
+        clienteNombre: venta?.cliente_nombre || 'Sin cliente registrado',
+        total: Number(venta?.total || 0),
+        motivo: body.motivo,
+        montoSolicitado,
+        solicitadoPor: user.nick || user.name || 'Usuario',
+        token,
+        baseUrl
+      });
+    } catch (err) {
+      logger.error('[AnulacionVenta] Error enviando WhatsApp:', { err });
+      return NextResponse.json(
+        {
+          success: false,
+          message: 'Solicitud creada pero no se pudo enviar WhatsApp al administrador',
+          token
+        },
+        { status: 202 }
+      );
+    }
+
+    return NextResponse.json({ success: true, token });
+  }
+);

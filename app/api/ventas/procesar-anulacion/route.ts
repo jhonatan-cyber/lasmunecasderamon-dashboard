@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server';
-import { query } from '@/lib/database/db';
+import { obtenerSolicitudPorToken } from '@/modules/ventas';
 import { processPendingSolicitud } from '@/lib/integrations/whatsappPendingActions';
 
 export async function POST(request: Request) {
@@ -11,32 +11,20 @@ export async function POST(request: Request) {
     return NextResponse.json({ success: false, message: 'Solicitud invalida' }, { status: 400 });
   }
 
-  const rows = await query<any[]>(
-    `SELECT sav.id, sav.token, sav.estado, sav.monto,
-            v.id_venta, v.codigo, v.total,
-            COALESCE((CAST(c.nombre AS text) || CAST(' ' AS text) || CAST(c.apellido AS text)), 'Sin cliente registrado') as cliente_nombre
-     FROM solicitudes_anulacion_ventas sav
-     INNER JOIN ventas v ON v.id_venta = sav.venta_id
-     LEFT JOIN clientes c ON c.id_cliente = v.cliente_id
-     WHERE sav.token = ? AND sav.estado = 'pendiente'
-     LIMIT 1`,
-    [token]
-  );
+  const [solicitud] = await obtenerSolicitudPorToken(token);
 
-  if (!rows.length) {
+  if (!solicitud) {
     return NextResponse.json(
       { success: false, message: 'Solicitud no encontrada o ya procesada' },
       { status: 404 }
     );
   }
 
-  const solicitud = rows[0];
-
   await processPendingSolicitud(
     {
       tipo: 'venta',
       solicitud_id: solicitud.id,
-      id_venta: solicitud.id_venta,
+      id_venta: solicitud.venta_id,
       codigo: solicitud.codigo,
       cliente_nombre: solicitud.cliente_nombre,
       total: Number(solicitud.total || 0),

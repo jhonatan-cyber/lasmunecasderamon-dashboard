@@ -1,15 +1,15 @@
 {
   "resumen": {
-    "commit": "fe00f1d81efee7206c6fa3339a01115bad026839",
-    "generado": "2026-10-05T04:44:49.890Z",
-    "archivos": 1531,
+    "commit": "c68d8fbbe6ae57920b8067cd93db0a70bcede28e",
+    "generado": "2026-10-05T05:15:08.862Z",
+    "archivos": 1536,
     "rutas": 204,
-    "sqlFueraDeRepositorio": 100,
+    "sqlFueraDeRepositorio": 97,
     "tablasConEscritoresMultiples": 14,
     "ciclos": 5,
     "procesosPeriodicos": 15,
     "caches": 19,
-    "rutasApiConSqlDirecto": 35,
+    "rutasApiConSqlDirecto": 32,
     "rutasSinWrapper": 19
   },
   "rutas": [
@@ -1820,7 +1820,7 @@
       "nivel": "sales.anulate",
       "audit": true,
       "moduloDominio": "ventas",
-      "usaDriver": true
+      "usaDriver": false
     },
     {
       "ruta": "/api/ventas/procesar-anulacion",
@@ -1829,7 +1829,7 @@
       "nivel": "SIN_WRAPPER",
       "audit": false,
       "moduloDominio": "ventas",
-      "usaDriver": true
+      "usaDriver": false
     },
     {
       "ruta": "/api/ventas/solicitud-anulacion",
@@ -1838,7 +1838,7 @@
       "nivel": "SIN_WRAPPER",
       "audit": false,
       "moduloDominio": "ventas",
-      "usaDriver": true
+      "usaDriver": false
     },
     {
       "ruta": "/api/whatsapp/webhook",
@@ -2443,24 +2443,6 @@
       "archivo": "app/api/users/me/stats/route.ts",
       "capa": "app/api",
       "modulo": "identidad",
-      "escribe": []
-    },
-    {
-      "archivo": "app/api/ventas/anulacion/route.ts",
-      "capa": "app/api",
-      "modulo": "ventas",
-      "escribe": []
-    },
-    {
-      "archivo": "app/api/ventas/procesar-anulacion/route.ts",
-      "capa": "app/api",
-      "modulo": "ventas",
-      "escribe": []
-    },
-    {
-      "archivo": "app/api/ventas/solicitud-anulacion/route.ts",
-      "capa": "app/api",
-      "modulo": "ventas",
       "escribe": []
     },
     {

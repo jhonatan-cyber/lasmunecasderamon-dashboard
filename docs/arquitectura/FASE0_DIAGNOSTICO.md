@@ -2,17 +2,17 @@
 
 Generado por `scripts/arquitectura/analisis.mjs`. No modificar a mano.
 
-| Métrica                                    | Valor   |
-| ------------------------------------------ | ------- |
-| Archivos analizados                        | 1531    |
-| Rutas HTTP                                 | 204     |
-| **Rutas con SQL directo**                  | **35**  |
-| **Archivos con SQL fuera de repositorios** | **100** |
-| Tablas con más de un escritor              | 14      |
-| Ciclos entre dominios                      | 5       |
-| Procesos periódicos                        | 15      |
-| Puntos de caché                            | 19      |
-| Rutas sin `withRoute`                      | 19      |
+| Métrica                                    | Valor  |
+| ------------------------------------------ | ------ |
+| Archivos analizados                        | 1536   |
+| Rutas HTTP                                 | 204    |
+| **Rutas con SQL directo**                  | **32** |
+| **Archivos con SQL fuera de repositorios** | **97** |
+| Tablas con más de un escritor              | 14     |
+| Ciclos entre dominios                      | 5      |
+| Procesos periódicos                        | 15     |
+| Puntos de caché                            | 19     |
+| Rutas sin `withRoute`                      | 19     |
 
 ## 1. SQL fuera de repositorios
 
@@ -29,7 +29,7 @@ controladores HTTP traducen. Esto es lo que hay que reducir a cero.
 | lib/identidad    | 2                |
 | lib/database     | 3                |
 | lib/business     | 7                |
-| app/api          | 35               |
+| app/api          | 32               |
 
 <details><summary>Detalle por archivo</summary>
 
@@ -131,9 +131,6 @@ controladores HTTP traducen. Esto es lo que hay que reducir a cero.
 | app/api/solicitudes-servicios/pending-count/route.ts   | app/api          | —                                                                                           |
 | app/api/users/[id]/permissions/route.ts                | app/api          | —                                                                                           |
 | app/api/users/me/stats/route.ts                        | app/api          | —                                                                                           |
-| app/api/ventas/anulacion/route.ts                      | app/api          | —                                                                                           |
-| app/api/ventas/procesar-anulacion/route.ts             | app/api          | —                                                                                           |
-| app/api/ventas/solicitud-anulacion/route.ts            | app/api          | —                                                                                           |
 | app/api/whatsapp/webhook/route.ts                      | app/api          | —                                                                                           |
 
 </details>
@@ -460,9 +457,9 @@ migración no puede romper.
 | /api/users                               |          | users.write                       |        | audit |
 | /api/users/status                        |          | authenticated                     |        | audit |
 | /api/ventas/:id                          |          | publico                           |        | audit |
-| /api/ventas/anulacion                    |          | sales.anulate                     | ⚠️ SQL | audit |
-| /api/ventas/procesar-anulacion           | POST     | SIN_WRAPPER                       | ⚠️ SQL |       |
-| /api/ventas/solicitud-anulacion          | GET      | SIN_WRAPPER                       | ⚠️ SQL |       |
+| /api/ventas/anulacion                    |          | sales.anulate                     |        | audit |
+| /api/ventas/procesar-anulacion           | POST     | SIN_WRAPPER                       |        |       |
+| /api/ventas/solicitud-anulacion          | GET      | SIN_WRAPPER                       |        |       |
 | /api/whatsapp/webhook                    | POST     | SIN_WRAPPER                       | ⚠️ SQL |       |
 
 ## 8. Matriz de dependencias por capa

@@ -360,7 +360,10 @@ propinas ya tienen propietario objetivo Personal, documentado en
 [FASE0_DECISIONES.md](arquitectura/FASE0_DECISIONES.md).
 
 - [ ] Extraer el SQL que sigue en rutas de ventas y en servicios que acceden a
-      tablas ajenas.
+      tablas ajenas. **Parcial:** las tres rutas de anulación de ventas ya no
+      tienen SQL: viven en `modules/ventas/anulaciones` y una guarda lo impide
+      (corte 11). Quedan las rutas de servicios, cuentas y anticipos, y el SQL
+      de servicios que escribe tablas ajenas.
 - [ ] Definir los contratos de Caja, Clientes y Personal que consume el flujo
       comercial.
 - [ ] Crear el workflow de cobro de cuenta sobre APIs públicas, preservando una
@@ -371,6 +374,15 @@ propinas ya tienen propietario objetivo Personal, documentado en
       se duplican.
 - [ ] Mantener el orden y las condiciones de notificaciones, auditoría e
       invalidación de caché.
+
+**Avance inicial 2026-10-05 (corte 11):** nace `modules/ventas` con el
+subdominio de anulaciones. Las tres rutas de anulación dejan de ejecutar SQL y
+llaman a la API pública del módulo; `modules/ventas/contracts.ts` declara la
+forma de la solicitud que cruza la frontera, y
+`tests/unit/scripts/modulo-ventas-guardas.test.ts` falla si vuelve a aparecer
+una consulta en una ruta de ventas. Sigue en `SaleQueries` la escritura de la
+solicitud (crear, confirmar, rechazar) y la transacción de la anulación, que es
+lo que retirará la última excepción del puente.
 
 **Salida:** fallos intermedios revierten todos los cambios; no existen
 escrituras cruzadas fuera de los propietarios; reintentos no duplican
