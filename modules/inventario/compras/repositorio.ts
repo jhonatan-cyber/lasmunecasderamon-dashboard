@@ -13,7 +13,7 @@
  */
 import { query, generateUUID, type TransactionQuery } from '@/lib/database/db';
 import { getNowInBusinessTimezone } from '@/lib/business/timezoneService';
-import { BaseRepository } from '@/lib/repositories/BaseRepository';
+import { BaseRepository } from '@/lib/database/base-repository';
 import type { PurchaseDetailInput } from '@/types/purchase';
 
 export interface CompraRow {

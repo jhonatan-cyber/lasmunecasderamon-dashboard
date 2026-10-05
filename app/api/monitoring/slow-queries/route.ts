@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
 import { withRoute } from '@/lib/api/withRoute';
-import { QueryLogRepository } from '@/lib/repositories/QueryLogRepository';
+import { QueryLogRepository } from '@/lib/database/query-log';
 
 /**
  * GET /api/monitoring/slow-queries

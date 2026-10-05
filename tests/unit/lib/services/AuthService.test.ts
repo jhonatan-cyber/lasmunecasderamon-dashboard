@@ -14,9 +14,9 @@ const mocks = vi.hoisted(() => ({
   clearForcePasswordChange: vi.fn()
 }));
 
-vi.mock('@/lib/repositories/auth/AuthQueries', () => mocks);
+vi.mock('@/modules/identidad/autenticacion/consultas', () => mocks);
 
-import { AuthService } from '@/lib/services/AuthService';
+import { AuthService } from '@/modules/identidad/autenticacion/servicio';
 
 beforeEach(() => {
   vi.clearAllMocks();

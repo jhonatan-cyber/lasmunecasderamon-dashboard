@@ -1,6 +1,6 @@
 import { afterAll, beforeAll, describe, expect, it, vi } from 'vitest';
 import db, { query } from '@/lib/database/db';
-import { UserService } from '@/lib/services/UserService';
+import { UserService } from '@/modules/identidad/usuarios/fachada';
 import { guardarFotoCapturada } from '@/modules/asistencia/biometrico/enrollmentService';
 import { desenrolarUsuario } from '@/modules/asistencia/biometrico/unenrollmentService';
 import {
@@ -167,7 +167,8 @@ describe('ciclo biometrico local contra PostgreSQL', () => {
       { usuarioId: USUARIO, nombre: 'Ciclo', codigo: CODIGO },
       'NUEVA-FOTO'
     );
-    await UserService.delete(USUARIO);
+    const { eliminarUsuario } = await import('@/workflows/eliminar-usuario');
+    await eliminarUsuario(USUARIO);
     expect(await plantillasDe(USUARIO)).toHaveLength(0);
     expect(await estadoDe(USUARIO)).toBeUndefined();
     expect(cliente.eliminarUsuarioDelEquipo).not.toHaveBeenCalled();

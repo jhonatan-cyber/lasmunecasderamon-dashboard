@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
 import { withPublicRoute, withRoute } from '@/lib/api/withRoute';
-import { ServiceRequestService } from '@/lib/services/ServiceRequestService';
+import { ServiceRequestService } from '@/modules/operacion';
 import { sendNotificationToAll } from '@/lib/api/sseService';
 import { ValidationError } from '@/lib/errors/errors';
 

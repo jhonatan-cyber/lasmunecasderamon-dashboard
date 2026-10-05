@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
 import { withPublicRoute, withRoute } from '@/lib/api/withRoute';
-import { RoomService } from '@/lib/services/RoomService';
+import { RoomService } from '@/modules/operacion';
 import { RoomSchema } from '@/lib/business/schemas/room';
 import { validateOrResponse } from '@/lib/api/validate';
 

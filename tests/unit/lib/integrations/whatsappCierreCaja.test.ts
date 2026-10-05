@@ -17,7 +17,7 @@ vi.mock('@/lib/business/twilioConfig', () => ({
   })
 }));
 
-import { construirMensajeSolicitudCierreCaja } from '@/lib/integrations/whatsappService';
+import { construirMensajeSolicitudCierreCaja } from '@/modules/comunicaciones/whatsapp/adaptador';
 import { formatCurrencyCLP } from '@/lib/utils/formatters';
 
 const DATOS = {

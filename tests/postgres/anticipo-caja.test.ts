@@ -7,11 +7,11 @@
  */
 import { afterAll, expect, it, vi } from 'vitest';
 
-vi.mock('@/lib/integrations/pushNotifications', () => ({
+vi.mock('@/modules/comunicaciones/push/servicio', () => ({
   sendPushByRole: vi.fn(async () => undefined),
   sendPushNotification: vi.fn(async () => undefined)
 }));
-vi.mock('@/lib/integrations/whatsappService', () => ({ enviarWhatsApp: vi.fn() }));
+vi.mock('@/modules/comunicaciones/whatsapp/adaptador', () => ({ enviarWhatsApp: vi.fn() }));
 
 import db, { query } from '@/lib/database/db';
 import { snapshotDatabase, restoreDatabase } from '@/lib/database/maintenance';

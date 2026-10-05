@@ -20,7 +20,7 @@ import {
   type DatosAltaCuenta,
   type DetalleCuentaNuevo
 } from './repositorio';
-import { ocuparHabitacionSiCorresponde } from '../facturacion/repositorio';
+import { ocuparHabitacionSiCorresponde } from '../facturacion/servicio';
 
 type Tarea = () => void | Promise<void>;
 

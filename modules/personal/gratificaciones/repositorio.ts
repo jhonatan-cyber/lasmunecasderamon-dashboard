@@ -1,0 +1,50 @@
+import {
+  getAllGratificaciones,
+  createGratificacion,
+  requestGratificacion,
+  getGratificacionSolicitudDetalle,
+  processGratificacionSolicitud,
+  updateGratificacion,
+  deleteGratificacion
+} from '@/modules/personal/gratificaciones/consultas';
+import type { GratificacionAction } from '@/modules/personal/gratificaciones/consultas';
+
+export class GratificacionRepository {
+  static async getAll(userId?: string, solicitanteId?: string) {
+    return getAllGratificaciones(userId, solicitanteId);
+  }
+
+  static async create(data: {
+    usuario_id: string;
+    monto: number;
+    descripcion?: string;
+    solicitante_id?: string | null;
+  }) {
+    return createGratificacion(data);
+  }
+
+  static async request(
+    targetUserId: string,
+    monto: number,
+    descripcion: string | undefined,
+    requestedByUserId: string
+  ) {
+    return requestGratificacion(targetUserId, monto, descripcion, requestedByUserId);
+  }
+
+  static async getSolicitudDetalle(id: string) {
+    return getGratificacionSolicitudDetalle(id);
+  }
+
+  static async processSolicitud(id: string, action: GratificacionAction, adminId?: string) {
+    return processGratificacionSolicitud(id, action, adminId);
+  }
+
+  static async update(id: string, data: { monto: number; descripcion?: string }) {
+    return updateGratificacion(id, data);
+  }
+
+  static async delete(id: string) {
+    return deleteGratificacion(id);
+  }
+}

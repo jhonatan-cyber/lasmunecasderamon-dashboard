@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
 import { withPublicRoute } from '@/lib/api/withRoute';
-import { RoleService } from '@/lib/services/RoleService';
+import { RoleService } from '@/modules/identidad';
 
 export const GET = withPublicRoute(
   async (request: Request, { params }: { params: Promise<{ id: string }> }) => {

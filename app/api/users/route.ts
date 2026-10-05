@@ -1,6 +1,7 @@
+import { eliminarUsuario } from '@/workflows/eliminar-usuario';
 import { NextResponse } from 'next/server';
 import { withRoute } from '@/lib/api/withRoute';
-import { UserService } from '@/lib/services/UserService';
+import { UserService } from '@/modules/identidad';
 import { imagenGuardadaABase64Jpeg, processAndSaveImage } from '@/lib/utils/image-utils';
 import { darDeAltaConFoto } from '@/modules/asistencia';
 import logger from '@/lib/utils/logger';
@@ -322,7 +323,7 @@ export const DELETE = withRoute(
     if (!id)
       return NextResponse.json({ success: false, message: 'El ID es requerido' }, { status: 400 });
 
-    await UserService.delete(id);
+    await eliminarUsuario(id);
     return NextResponse.json({ success: true, message: 'Usuario eliminado' });
   }
 );

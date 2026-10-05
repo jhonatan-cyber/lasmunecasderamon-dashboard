@@ -184,3 +184,5 @@ export interface ContextoVentaInventario {
   fecha: string;
   ventaId?: string | null;
 }
+
+export { CLAVES_INVENTARIO } from './configuracionClaves';

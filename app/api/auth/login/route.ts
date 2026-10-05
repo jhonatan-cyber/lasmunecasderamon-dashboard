@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server';
-import { AuthService } from '@/lib/services/AuthService';
+import { iniciarSesion } from '@/workflows/autenticacion';
 import { generateRefreshToken } from '@/lib/auth/auth';
 import { cookies } from 'next/headers';
 import { ApiResponse } from '@/lib/api/api-response';
@@ -11,7 +11,7 @@ export const POST = async (request: Request) => {
     const forwarded = request.headers.get('x-forwarded-for');
     const ip = forwarded ? forwarded.split(',')[0] : 'unknown';
 
-    const result = await AuthService.login(body, ip);
+    const result = await iniciarSesion(body, ip);
 
     if (result.success && result.token) {
       const cookieStore = await cookies();

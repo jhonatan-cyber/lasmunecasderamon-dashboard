@@ -12,7 +12,7 @@ export default defineConfig({
       reporter: ['text', 'json', 'html'],
       reportsDirectory: './coverage',
       all: false,
-      include: ['lib/**', 'hooks/**'],
+      include: ['lib/**', 'hooks/**', 'modules/**', 'workflows/**'],
       thresholds: {
         branches: 62,
         functions: 40,

@@ -1,8 +1,5 @@
 import { NextResponse } from 'next/server';
-import {
-  SyncOperationRepository,
-  type SyncOperation
-} from '@/lib/repositories/SyncOperationRepository';
+import { SyncOperationRepository, type SyncOperation } from '@/lib/database/sync-operations';
 import logger from '@/lib/utils/logger';
 
 /**

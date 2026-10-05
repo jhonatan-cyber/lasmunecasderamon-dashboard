@@ -5,7 +5,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
  * El enfriamiento vive en el repositorio junto al cálculo en SQL; acá solo hace falta el
  * número para no arrastrar el módulo de base de datos a un test de unidad.
  */
-vi.mock('@/lib/repositories/CashRegisterRepository', () => ({
+vi.mock('@/modules/caja/turnos/repositorio', () => ({
   AVISO_CIERRE_ENFRIAMIENTO_MS: 60_000
 }));
 
@@ -19,10 +19,10 @@ const service = vi.hoisted(() => ({
   closeCaja: vi.fn()
 }));
 
-vi.mock('@/lib/services/CashRegisterService', () => ({ CashRegisterService: service }));
+vi.mock('@/modules/caja/turnos/servicio', () => ({ CashRegisterService: service }));
 
 const whatsapp = vi.hoisted(() => ({ enviarMensajeSolicitudCierreCaja: vi.fn() }));
-vi.mock('@/lib/integrations/whatsappService', () => whatsapp);
+vi.mock('@/modules/comunicaciones/whatsapp/adaptador', () => whatsapp);
 
 vi.mock('@/lib/middleware/auth', () => ({ isAdministrator: () => false }));
 

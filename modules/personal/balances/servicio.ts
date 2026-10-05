@@ -5,4 +5,8 @@
  * Es una reexportación porque el balance es una lectura pura, sin validación ni
  * orquestación que justifique una capa aparte.
  */
-export { getAnticipoBalances } from './repositorio';
+import { getAnticipoBalances as getAnticipoBalancesInterno } from './repositorio';
+
+export function getAnticipoBalances(...args: Parameters<typeof getAnticipoBalancesInterno>) {
+  return getAnticipoBalancesInterno(...args);
+}

@@ -12,6 +12,17 @@ import {
   ajustarComisionesVenta,
   leerPropinasVenta,
   ajustarPropinasVenta,
+  leerResumenPropinas as leerResumenPropinasRepo,
+  leerPropinasDeUsuario as leerPropinasDeUsuarioRepo,
+  leerDetallePropinas as leerDetallePropinasRepo,
+  obtenerPropinaConParticipantes as obtenerPropinaConParticipantesRepo,
+  resumirComisiones as resumirComisionesRepo,
+  listarComisiones as listarComisionesRepo,
+  crearComision as crearComisionRepo,
+  detalleComisionesDeUsuario as detalleComisionesDeUsuarioRepo,
+  actualizarComision as actualizarComisionRepo,
+  anularComision as anularComisionRepo,
+  insertarComisionConDetalle as insertarComisionConDetalleRepo,
   type ComisionServicio
 } from './repositorio';
 export function registrarComisionesVenta(
@@ -67,4 +78,55 @@ export function ajustarPropinasPorAnulacion(
   contexto: ContextoOperacion
 ) {
   return ajustarPropinasVenta(detalles, cabeceras, contexto);
+}
+
+export function leerResumenPropinas(isAdmin: boolean, userId: string, cajaActiva: boolean) {
+  return leerResumenPropinasRepo(isAdmin, userId, cajaActiva);
+}
+
+export function leerPropinasDeUsuario(userId: string) {
+  return leerPropinasDeUsuarioRepo(userId);
+}
+
+export function leerDetallePropinas(usuario_id: string, startDate?: string, endDate?: string) {
+  return leerDetallePropinasRepo(usuario_id, startDate, endDate);
+}
+
+export function obtenerPropinaConParticipantes(id: string) {
+  return obtenerPropinaConParticipantesRepo(id);
+}
+
+export function resumirComisiones() {
+  return resumirComisionesRepo();
+}
+
+export function listarComisiones(params: {
+  status?: string;
+  employeeId?: string;
+  search?: string;
+}) {
+  return listarComisionesRepo(params);
+}
+
+export function crearComision(data: Record<string, unknown>) {
+  return crearComisionRepo(data);
+}
+
+export function detalleComisionesDeUsuario(usuarioId: string) {
+  return detalleComisionesDeUsuarioRepo(usuarioId);
+}
+
+export function actualizarComision(id: string, data: Record<string, unknown>) {
+  return actualizarComisionRepo(id, data);
+}
+
+export function anularComision(id: string) {
+  return anularComisionRepo(id);
+}
+
+export function insertarComisionConDetalle(
+  data: { venta_id: string; usuario_id: string; monto: number },
+  contexto: ContextoOperacion
+) {
+  return insertarComisionConDetalleRepo(data, contexto);
 }

@@ -2,9 +2,9 @@
  * Contratos del módulo de Configuración — §5: «DTO y esquemas aptos para
  * consumidores».
  *
- * El módulo es dueño de `configuraciones` y `backups`. La regla de cada clave
- * (categoría, tipo, validación, default y alias deprecados) se mudó aquí como
- * `registro.ts`: es la fase 6 pidiendo que las reglas estén en su propietario.
+ * El módulo es dueño de `configuraciones` y `backups`. `registro.ts` agrega las
+ * reglas de cada propietario mediante contratos puros: asistencia, inventario,
+ * ventas y comunicaciones mantienen categoría, validación, default y alias.
  *
  * Como el registro es puro dato sin dependencias de servidor, la UI también lo
  * necesita —para no abrir un formulario con un default distinto al que valida el

@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
 import { withRoute } from '@/lib/api/withRoute';
-import { CashRegisterService } from '@/lib/services/CashRegisterService';
+import { CashRegisterService } from '@/modules/caja';
 import { CajaOpenSchema, CajaCloseSchema } from '@/lib/business/schemas/caja';
 import { validateOrResponse } from '@/lib/api/validate';
 import { respuestaCierreCaja, solicitarOProcesarCierreCaja } from '@/lib/api/cierreCaja';

@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
 import { withRoute } from '@/lib/api/withRoute';
-import { CategoryService } from '@/lib/services/CategoryService';
+import { CategoryService } from '@/modules/inventario';
 import { ValidationError } from '@/lib/errors/errors';
 
 // Guard del módulo `categories` (no `products`): la categoría tiene sus propios

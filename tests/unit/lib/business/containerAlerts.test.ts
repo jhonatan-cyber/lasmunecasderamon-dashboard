@@ -8,14 +8,15 @@ const capturar = vi.hoisted(() => vi.fn());
 
 vi.mock('@/lib/database/db', () => ({ query: consulta }));
 vi.mock('@/lib/api/sseService', () => ({ sendNotificationToAll: emitir }));
-vi.mock('@/lib/services/NotificationService', () => ({
+vi.mock('@/modules/comunicaciones/notificaciones/servicio', () => ({
   NotificationService: { create: crearNotificacion }
 }));
-vi.mock('@/lib/integrations/pushNotifications', () => ({
+vi.mock('@/modules/comunicaciones/push/servicio', () => ({
   sendPushByRole: push,
   sendPushToUser: vi.fn()
 }));
 vi.mock('@/lib/business/timezoneService', () => ({
+  getSystemTimezone: () => 'America/Santiago',
   getNowInBusinessTimezone: () => '2026-09-25 12:00:00'
 }));
 vi.mock('@/lib/utils/logger', () => ({ default: { captureException: capturar } }));

@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
 import { withRoute } from '@/lib/api/withRoute';
-import { EventService } from '@/lib/services/EventService';
+import { EventService } from '@/modules/agenda';
 
 export const GET = withRoute(
   { auth: true, access: 'authenticated', audit: true },

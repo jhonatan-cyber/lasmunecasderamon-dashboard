@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
 import { withRoute } from '@/lib/api/withRoute';
-import { OrderService } from '@/lib/services/OrderService';
+import { OrderService } from '@/modules/operacion';
 
 export const GET = withRoute(
   { auth: true, access: 'authenticated', audit: true },

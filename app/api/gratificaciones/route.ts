@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
 import { withRoute } from '@/lib/api/withRoute';
-import { GratificacionService } from '@/lib/services/GratificacionService';
+import { GratificacionService } from '@/modules/personal';
 import { ValidationError } from '@/lib/errors/errors';
 
 // GET: el filtrado vive en el handler. Solo el administrador consulta listados

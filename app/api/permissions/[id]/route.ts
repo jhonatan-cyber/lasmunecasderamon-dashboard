@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
 import { withRoute } from '@/lib/api/withRoute';
-import { PermissionService } from '@/lib/services/PermissionService';
+import { PermissionService } from '@/modules/identidad';
 import { sendNotificationToAll } from '@/lib/api/sseService';
 
 export const PUT = withRoute(

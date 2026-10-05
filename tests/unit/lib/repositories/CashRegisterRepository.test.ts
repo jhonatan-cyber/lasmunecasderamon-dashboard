@@ -23,7 +23,7 @@ vi.mock('@/lib/business/schemas', () => ({
   }
 }));
 
-vi.mock('@/lib/repositories/BaseRepository', () => ({
+vi.mock('@/lib/database/base-repository', () => ({
   BaseRepository: {
     insert: vi.fn(),
     update: vi.fn(),
@@ -32,8 +32,8 @@ vi.mock('@/lib/repositories/BaseRepository', () => ({
 }));
 
 import { ConflictError } from '@/lib/errors/errors';
-import { CashRegisterRepository } from '@/lib/repositories/CashRegisterRepository';
-import { BaseRepository } from '@/lib/repositories/BaseRepository';
+import { CashRegisterRepository } from '@/modules/caja/turnos/repositorio';
+import { BaseRepository } from '@/lib/database/base-repository';
 import { montoCierreCaja, totalCaja } from '@/lib/business/cajaEfectivo';
 
 describe('CashRegisterRepository.open', () => {

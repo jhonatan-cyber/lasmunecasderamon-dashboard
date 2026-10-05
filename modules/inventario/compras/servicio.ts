@@ -11,7 +11,7 @@
  * códigos que devuelve la propia respuesta, y el stock se lee bajo demanda.
  */
 import { withTransaction } from '@/lib/database/db';
-import { BaseRepository } from '@/lib/repositories/BaseRepository';
+import { BaseRepository } from '@/lib/database/base-repository';
 import { ValidationError, NotFoundError } from '@/lib/errors/errors';
 import { z } from 'zod';
 import type { PurchaseCreate, PurchaseGeneratedCode } from '@/types/purchase';

@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
 import { withPublicRoute, withRoute } from '@/lib/api/withRoute';
-import { SaleService } from '@/lib/services/SaleService';
+import { SaleService } from '@/workflows/ventas';
 
 export const GET = withPublicRoute(
   async (request: Request, { params }: { params: Promise<{ id: string }> }) => {

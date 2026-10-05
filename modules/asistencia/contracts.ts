@@ -38,3 +38,5 @@ export interface AsistenciaResponse {
   error?: string;
   details?: unknown;
 }
+
+export { CLAVES_ASISTENCIA } from './configuracionClaves';

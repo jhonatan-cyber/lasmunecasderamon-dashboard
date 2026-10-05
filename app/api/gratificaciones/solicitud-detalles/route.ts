@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server';
-import { GratificacionService } from '@/lib/services/GratificacionService';
+import { GratificacionService } from '@/modules/personal';
 import { ApiResponse } from '@/lib/api/api-response';
 
 export async function GET(request: Request) {

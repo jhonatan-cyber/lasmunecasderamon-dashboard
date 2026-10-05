@@ -1,4 +1,5 @@
 import 'server-only';
+export { getOrCreateAttendanceCode, regenerateAttendanceCode } from './autenticacion/codigos';
 
 /**
  * API pública del módulo Identidad — servidor.
@@ -10,7 +11,11 @@ import 'server-only';
  * interior por otra vía. Los tipos que consumen los clientes viven en `./contracts`.
  */
 export {
+  activarModalidadFacial,
+  guardarFotoPerfil,
   cambiarPassword,
+  listarDestinatariosAnulaciones,
+  quitarModalidadesBiometricas,
   listarPersonalActivo,
   listarUsuariosPublicos,
   obtenerResumenUsuario,
@@ -28,3 +33,16 @@ export { contarRoles, obtenerRolPorNombre } from './roles/servicio';
 export { actualizarDisponibilidadTrasVenta } from './disponibilidad/servicio';
 
 export { actualizarDisponibilidad, validarAnfitrionasEnLocal } from './disponibilidad/servicio';
+
+export { UserService } from './usuarios/fachada';
+
+export {
+  AuthService,
+  cerrarSesionesPorCierreCaja,
+  marcarPresenciaLocal,
+  asegurarSesionPresente
+} from './autenticacion/servicio';
+
+export { RoleService } from './roles/fachada';
+
+export { PermissionService } from './permisos/fachada';

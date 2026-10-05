@@ -1,5 +1,8 @@
-import { query, generateUUID, withTransaction } from '@/lib/database/db';
-import { BaseRepository } from '@/lib/repositories/BaseRepository';
+import { query, generateUUID } from '@/lib/database/db';
+import { enUnaUnidad } from '@/lib/transaccion/contrato';
+import { guardarPlantilla } from './plantillasRepositorio';
+import { activarModalidadFacial, guardarFotoPerfil } from '@/modules/identidad';
+import { BaseRepository } from '@/lib/database/base-repository';
 import { getNowInBusinessTimezone } from '@/lib/business/timezoneService';
 import logger from '@/lib/utils/logger';
 import {
@@ -272,15 +275,15 @@ export async function guardarFotoCapturada(
   const equipo = await obtenerEquipo(dispositivoId);
   if (!equipo) throw new DeviceConnectionError('Equipo no encontrado o revocado');
 
-  await withTransaction(async trx => {
-    await guardarPlantilla(persona.usuarioId, dispositivoId, 'cara', fotoBase64, {
-      sincronizada: false,
-      queryFn: trx
-    });
-    await trx('UPDATE usuarios SET biometrico_facial = 1 WHERE id_usuario = ?', [
-      persona.usuarioId
-    ]);
-  });
+  await enUnaUnidad(unidad =>
+    unidad.ejecutar(async contexto => {
+      await guardarPlantilla(persona.usuarioId, dispositivoId, 'cara', fotoBase64, {
+        sincronizada: false,
+        contexto
+      });
+      await activarModalidadFacial(persona.usuarioId, contexto);
+    })
+  );
   return {
     ok: true,
     mensaje: `Foto de ${persona.nombre} guardada en la base de datos del sistema.`,
@@ -309,7 +312,7 @@ export async function usarFotoDelLectorComoPerfil(
       position: 'center',
       quality: 80
     });
-    await query('UPDATE usuarios SET foto = ? WHERE id_usuario = ?', [nombre, usuarioId]);
+    await guardarFotoPerfil(usuarioId, nombre);
     logger.info('[biometric-enrol] Foto del lector usada como foto de perfil', {
       usuarioId,
       foto: nombre
@@ -775,51 +778,6 @@ function esNoSoportado(error: unknown): boolean {
     texto.includes('no implementado') ||
     texto.includes('no implementada')
   );
-}
-
-async function guardarPlantilla(
-  usuarioId: string,
-  dispositivoId: string,
-  tipo: 'huella' | 'cara',
-  datos: string,
-  opciones: { sincronizada?: boolean; queryFn?: typeof query } = {}
-): Promise<void> {
-  const queryFn = opciones.queryFn ?? query;
-  const sincronizada = opciones.sincronizada ?? true;
-  const existente = await queryFn<{ id: string; datos: string }[]>(
-    `SELECT id, datos FROM biometric_plantillas
-      WHERE usuario_id = ? AND dispositivo_id = ? AND tipo = ?`,
-    [usuarioId, dispositivoId, tipo]
-  );
-
-  const ahora = getNowInBusinessTimezone();
-  const marcaSync = sincronizada ? ahora : null;
-  if (existente.length > 0 && existente[0].datos === datos) {
-    await queryFn(
-      `UPDATE biometric_plantillas
-          SET fecha_sincronizacion = ?, sincronizada = ?
-        WHERE id = ?`,
-      [marcaSync, sincronizada ? 1 : 0, existente[0].id]
-    );
-    return;
-  }
-
-  if (existente.length > 0) {
-    await queryFn(
-      'UPDATE biometric_plantillas SET datos = ?, fecha_captura = ?, sincronizada = ?, fecha_sincronizacion = ?, vector = NULL, vector_actualizado_en = NULL WHERE id = ?',
-      [datos, ahora, sincronizada ? 1 : 0, marcaSync, existente[0].id]
-    );
-  } else {
-    await BaseRepository.insert(queryFn, 'biometric_plantillas', {
-      id: generateUUID(),
-      usuario_id: usuarioId,
-      dispositivo_id: dispositivoId,
-      tipo,
-      datos,
-      sincronizada: sincronizada ? 1 : 0,
-      fecha_sincronizacion: marcaSync
-    });
-  }
 }
 
 export interface ResultadoVerificacionFacial {

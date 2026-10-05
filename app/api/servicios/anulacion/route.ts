@@ -1,8 +1,8 @@
 import { NextResponse } from 'next/server';
 import { withRoute } from '@/lib/api/withRoute';
-import { ServiceService } from '@/lib/services/ServiceService';
+import { ServiceService } from '@/modules/operacion';
 import { obtenerServicioParaAnulacion } from '@/modules/operacion';
-import { enviarMensajeSolicitudAnulacion } from '@/lib/integrations/whatsappService';
+import { enviarMensajeSolicitudAnulacion } from '@/modules/comunicaciones';
 import logger from '@/lib/utils/logger';
 
 export const POST = withRoute(

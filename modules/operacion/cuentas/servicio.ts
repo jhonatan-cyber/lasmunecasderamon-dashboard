@@ -1,12 +1,11 @@
 /**
- * Casos de uso de anulación de cuentas — aplicación del módulo Operación.
+ * Casos de uso de cuentas — aplicación del módulo Operación.
  *
  * No toca SQL ni el driver: eso vive en `./repositorio`, que es privado del módulo.
- * El alta y el procesamiento (confirmar o rechazar) siguen en `AccountService`,
- * que abre su propia transacción y toca caja; se moverán cuando ese flujo migre al
- * contexto opaco, en la fase 5.
  */
 import type { ContextoOperacion } from '@/lib/transaccion/contrato';
+import { enUnaUnidad } from '@/lib/transaccion/contrato';
+import { getNowInBusinessTimezone } from '@/lib/business/timezoneService';
 import * as repositorio from './repositorio';
 
 export async function obtenerSolicitudAnulacionCuenta(solicitudId: string) {
@@ -15,6 +14,29 @@ export async function obtenerSolicitudAnulacionCuenta(solicitudId: string) {
 
 export async function obtenerCuentaParaAnulacion(cuentaId: string) {
   return repositorio.obtenerCuentaParaAnulacion(cuentaId);
+}
+
+export function listarCuentas(tipo?: string, estado?: string) {
+  return repositorio.listarCuentas(tipo, estado);
+}
+
+export function finalizarSesionHabitacion(
+  cuentaId: string,
+  nowStr?: string,
+  contexto?: ContextoOperacion
+) {
+  return repositorio.finalizarSesionHabitacion(
+    cuentaId,
+    nowStr ?? getNowInBusinessTimezone(),
+    contexto
+  );
+}
+
+/** Borrado físico. Sin llamadores en producción; lo usan tests heredados. */
+export async function eliminarCuenta(cuentaId: string): Promise<void> {
+  await enUnaUnidad(unidad =>
+    unidad.ejecutar(contexto => repositorio.eliminarCuentaFisica(cuentaId, contexto))
+  );
 }
 
 export function crearCuentaPrepagoRecarga(

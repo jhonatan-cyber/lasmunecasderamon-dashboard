@@ -15,7 +15,7 @@ import { ESTADO_UNIDAD_ACTIVA } from '../estados';
 import type { UnidadRow } from '../tipos';
 import { BusinessError } from '@/lib/errors/errors';
 import { getNowInBusinessTimezone } from '@/lib/business/timezoneService';
-import { BaseRepository } from '@/lib/repositories/BaseRepository';
+import { BaseRepository } from '@/lib/database/base-repository';
 
 async function nextCodigos(trx: TransactionQuery, count: number): Promise<string[]> {
   const rows = await trx<any[]>(

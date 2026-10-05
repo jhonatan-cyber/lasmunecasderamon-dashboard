@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
 import { withPublicRoute, withRoute } from '@/lib/api/withRoute';
-import { ClientService } from '@/lib/services/ClientService';
+import { ClientService } from '@/workflows/clientes';
 import { jsonWithNormalizedDates } from '@/lib/api/date-response';
 import { ValidationError } from '@/lib/errors/errors';
 

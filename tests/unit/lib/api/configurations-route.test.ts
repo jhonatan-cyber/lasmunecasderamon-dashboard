@@ -17,11 +17,11 @@ vi.mock('@/lib/auth/auth-app', () => ({
   getAuth: vi.fn().mockResolvedValue({ id: 'u-1', role: 'administrador', permissions: {} })
 }));
 
-vi.mock('@/lib/services/AuditService', () => ({
+vi.mock('@/modules/auditoria/registro/servicio', () => ({
   AuditService: { log: vi.fn().mockResolvedValue(undefined) }
 }));
 
-vi.mock('@/lib/services/ErrorLogService', () => ({
+vi.mock('@/modules/auditoria/errores/servicio', () => ({
   ErrorLogService: { log: vi.fn().mockResolvedValue(undefined) }
 }));
 

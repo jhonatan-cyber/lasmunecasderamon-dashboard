@@ -17,11 +17,11 @@ vi.mock('@/lib/auth/auth-app', () => ({
   getAuth: vi.fn().mockImplementation(async () => mockAuthUser)
 }));
 
-vi.mock('@/lib/services/AuditService', () => ({
+vi.mock('@/modules/auditoria/registro/servicio', () => ({
   AuditService: { log: vi.fn().mockResolvedValue(undefined) }
 }));
 
-vi.mock('@/lib/services/ErrorLogService', () => ({
+vi.mock('@/modules/auditoria/errores/servicio', () => ({
   ErrorLogService: { log: vi.fn().mockResolvedValue(undefined) }
 }));
 
@@ -43,7 +43,7 @@ const gratificacionService = vi.hoisted(() => ({
   update: vi.fn(),
   delete: vi.fn()
 }));
-vi.mock('@/lib/services/GratificacionService', () => ({
+vi.mock('@/modules/personal/gratificaciones/servicio', () => ({
   GratificacionService: gratificacionService
 }));
 

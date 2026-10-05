@@ -1,5 +1,5 @@
 import { query, generateUUID } from '@/lib/database/db';
-import { BaseRepository } from '@/lib/repositories/BaseRepository';
+import { BaseRepository } from '@/lib/database/base-repository';
 import { getNowInBusinessTimezone } from '@/lib/business/timezoneService';
 import { procesarEventoBiometrico } from '@/modules/asistencia/biometrico/processBiometricEvent';
 import {

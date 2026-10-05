@@ -15,11 +15,11 @@ vi.mock('@/lib/auth/auth-app', () => ({
   getAuth: vi.fn().mockResolvedValue({ id: 'user-42', role: 'anfitriona', permissions: {} })
 }));
 
-vi.mock('@/lib/services/AuditService', () => ({
+vi.mock('@/modules/auditoria/registro/servicio', () => ({
   AuditService: { log: vi.fn().mockResolvedValue(undefined) }
 }));
 
-vi.mock('@/lib/services/ErrorLogService', () => ({
+vi.mock('@/modules/auditoria/errores/servicio', () => ({
   ErrorLogService: { log: vi.fn().mockResolvedValue(undefined) }
 }));
 
@@ -38,7 +38,7 @@ const commissionService = vi.hoisted(() => ({
   list: vi.fn(),
   getDetails: vi.fn()
 }));
-vi.mock('@/lib/services/CommissionService', () => ({
+vi.mock('@/modules/personal/conceptos/comisiones', () => ({
   CommissionService: commissionService
 }));
 

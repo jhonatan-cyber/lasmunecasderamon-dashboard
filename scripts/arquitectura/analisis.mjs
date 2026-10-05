@@ -17,6 +17,8 @@ import { readdirSync, readFileSync, writeFileSync, mkdirSync, statSync } from 'n
 import { execFileSync } from 'node:child_process';
 import { join, dirname, relative, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
+import ts from 'typescript';
+import { escriturasDe } from './propiedad.mjs';
 
 const RAIZ = resolve(dirname(fileURLToPath(import.meta.url)), '..', '..');
 const ARGS = process.argv.slice(2);
@@ -53,6 +55,7 @@ function archivosDelProyecto() {
     return salida
       .split('\0')
       .filter(Boolean)
+      .filter(r => !r.startsWith('.') && !r.split('/').some(parte => IGNORAR_DIRS.has(parte)))
       .filter(r => EXTS.some(x => r.endsWith(x)))
       .map(r => join(RAIZ, r));
   } catch {
@@ -84,6 +87,11 @@ const archivos = archivosDelProyecto();
 
 /** Capa técnica de un archivo, según su ruta relativa a la raíz. */
 function capaDe(rel) {
+  if (rel.startsWith('modules/'))
+    return /(?:repositorio|Repositorio|consultas|registro|infraestructura)\.ts$/.test(rel)
+      ? 'modules/infraestructura'
+      : 'modules/aplicacion';
+  if (rel.startsWith('workflows/')) return 'workflows';
   if (rel.startsWith('app/api/')) return 'app/api';
   if (rel.startsWith('app/')) return 'app/ui';
   if (rel.startsWith('components/')) return 'components';
@@ -165,6 +173,7 @@ const MODULO_POR_RUTA = [
 ];
 
 function moduloDe(rel) {
+  if (rel.startsWith('app/')) return null;
   const modulo = /^modules\/([^/]+)(?:\/|$)/.exec(rel);
   if (modulo) return modulo[1];
   for (const [re, mod] of MODULO_POR_RUTA) if (re.test(rel)) return mod;
@@ -210,7 +219,8 @@ for (const abs of archivos) {
   }
   const imports = new Set();
   const dinamicos = new Set();
-  const considerar = (spec, esDinamico) => {
+  const ejecucion = new Set();
+  const considerar = (spec, esDinamico, esTipo = false) => {
     const d = resolverDestino(spec, rel);
     if (!d) return;
     // Resolver a archivo real
@@ -221,16 +231,45 @@ for (const abs of archivos) {
         final = `${d}/index.ts`;
     }
     (esDinamico ? dinamicos : imports).add(final);
+    if (!esTipo) ejecucion.add(final);
   };
-  for (const m of txt.matchAll(RE_IMPORT)) considerar(m[1], false);
-  for (const m of txt.matchAll(RE_EXPORT_FROM)) considerar(m[1], false);
-  for (const m of txt.matchAll(RE_DYN)) considerar(m[1], true);
+  const fuente = ts.createSourceFile(rel, txt, ts.ScriptTarget.Latest, true);
+  function visitar(nodo) {
+    if (
+      (ts.isImportDeclaration(nodo) || ts.isExportDeclaration(nodo)) &&
+      nodo.moduleSpecifier &&
+      ts.isStringLiteral(nodo.moduleSpecifier)
+    ) {
+      const clause = ts.isImportDeclaration(nodo) ? nodo.importClause : nodo.exportClause;
+      considerar(
+        nodo.moduleSpecifier.text,
+        false,
+        Boolean(
+          nodo.isTypeOnly ||
+          clause?.isTypeOnly ||
+          (clause?.elements?.length && clause.elements.every(e => e.isTypeOnly))
+        )
+      );
+    } else if (
+      ts.isCallExpression(nodo) &&
+      nodo.arguments.length &&
+      ts.isStringLiteral(nodo.arguments[0]) &&
+      (nodo.expression.kind === ts.SyntaxKind.ImportKeyword ||
+        (ts.isIdentifier(nodo.expression) && nodo.expression.text === 'require'))
+    ) {
+      considerar(nodo.arguments[0].text, true);
+    }
+    ts.forEachChild(nodo, visitar);
+  }
+  visitar(fuente);
 
   grafo.set(rel, {
     capa: capaDe(rel),
     modulo: moduloDe(rel),
     imports,
     dinamicos,
+    ejecucion,
+    fuente,
     txt
   });
 }
@@ -240,7 +279,9 @@ for (const abs of archivos) {
 const SIMBOLOS_DB = /\b(query|rawQuery|withTransaction|getPool|prepareQuery)\s*\(/;
 const MODULO_DRIVER = 'lib/database/db';
 const ES_REPO = rel =>
-  capaDe(rel) === 'lib/repositories' || /^modules\/.*(?:repositorio|Repositorio)\.ts$/.test(rel);
+  capaDe(rel) === 'lib/repositories' ||
+  capaDe(rel) === 'modules/infraestructura' ||
+  rel.startsWith('lib/database/');
 const ES_TEST = rel => rel.startsWith('tests/');
 
 /**
@@ -276,11 +317,7 @@ for (const [rel, n] of grafo) {
   }
   const usaDriver = usaDriverDe(n);
   if (usaDriver) {
-    const tablas = new Set();
-    for (const re of [RE_INSERT, RE_UPDATE, RE_DELETE]) {
-      re.lastIndex = 0;
-      for (const m of n.txt.matchAll(re)) tablas.add(m[1].toLowerCase());
-    }
+    const tablas = new Set(escriturasDe(n.fuente));
     if (!ES_REPO(rel)) {
       sqlFueraDeRepositorio.push({
         archivo: rel,
@@ -302,6 +339,7 @@ for (const [tabla, COLUMNAS] of [...escritoresTabla].sort()) {
   const reps = [...COLUMNAS].sort();
   if (reps.length < 2) continue;
   const modulos = new Set(reps.map(r => grafo.get(r)?.modulo).filter(Boolean));
+  if (modulos.size < 2) continue;
   escriturasCruzadas.push({ tabla, escritores: reps, modulos: [...modulos].sort() });
 }
 
@@ -402,7 +440,7 @@ for (const [rel, n] of grafo) {
 const aristas = new Map(); // módulo -> Set(módulos de los que depende)
 for (const [rel, n] of grafo) {
   if (!n.modulo || ES_TEST(rel)) continue;
-  for (const destino of [...n.imports, ...n.dinamicos]) {
+  for (const destino of n.ejecucion) {
     const nd = grafo.get(destino);
     if (!nd || !nd.modulo) continue;
     if (nd.modulo === n.modulo) continue;
@@ -434,6 +472,9 @@ const ciclos = [];
 /* ───────────── Matriz de dependencias por capa ───────────── */
 
 const ORDEN = [
+  'modules/aplicacion',
+  'modules/infraestructura',
+  'workflows',
   'app/api',
   'app/ui',
   'components',
@@ -454,7 +495,6 @@ const ORDEN = [
 
 const matriz = {};
 for (const [rel, n] of grafo) {
-  if (!aristas.has(rel)) continue;
   if (ES_TEST(rel)) continue;
   if (!matriz[n.capa]) matriz[n.capa] = {};
   for (const d of n.imports) {

@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server';
 import { withRoute } from '@/lib/api/withRoute';
 import { ApiResponse } from '@/lib/api/api-response';
-import { ClientService } from '@/lib/services/ClientService';
+import { ClientService } from '@/workflows/clientes';
 import { aprobarSolicitud, obtenerSolicitud, rechazarSolicitud } from '@/modules/clientes';
 
 export const POST = withRoute(

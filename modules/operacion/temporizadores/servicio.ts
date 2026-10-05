@@ -12,10 +12,10 @@
  */
 import { enUnaUnidad, type ContextoOperacion } from '@/lib/transaccion/contrato';
 import { ejecutarEfectosConfirmados } from '@/lib/transaccion/efectos';
-import { sendPushByRole, sendPushNotification } from '@/lib/integrations/pushNotifications';
+import { sendPushByRole, sendPushNotification } from '@/modules/comunicaciones';
 import { sendNotificationToAll } from '@/lib/api/sseService';
 import { actualizarDisponibilidad } from '@/modules/identidad';
-import { liberarHabitacionPorAnulacion } from '../facturacion/repositorio';
+import { liberarHabitacionPorAnulacion } from '../facturacion/servicio';
 import type { TemporizadorActivo } from './repositorio';
 import * as repositorio from './repositorio';
 
@@ -56,31 +56,35 @@ export async function revisarTemporizadores(ahora: Date): Promise<ResultadoTempo
     }
 
     if (remainingMin <= 0 && !item.push_notified_end) {
-      await repositorio.marcarAvisoFin(item.type, item.id);
-      cierres++;
-
-      if (item.created_by)
-        sendPushNotification(
-          [item.created_by],
-          'TIEMPO AGOTADO',
-          `Tiempo finalizado en ${item.room_name || 'habitación'}`,
-          { type: 'timer_ended' }
-        );
-      sendPushByRole('cajero', 'TIEMPO AGOTADO', `Tiempo finalizado en ${item.room_name}`, {
-        type: 'timer_ended'
-      });
-      sendNotificationToAll('timer_ended_event', {
-        id: item.id,
-        type: item.type,
-        room_name: item.room_name
-      });
-
       const tareas: Array<() => void | Promise<void>> = [];
       await enUnaUnidad(unidad =>
-        unidad.ejecutar(contexto =>
-          cerrarTemporizadorEnUnidad(item, contexto, tarea => tareas.push(tarea))
-        )
+        unidad.ejecutar(async contexto => {
+          await repositorio.marcarAvisoFin(item.type, item.id, contexto);
+          await cerrarTemporizadorEnUnidad(item, contexto, tarea => tareas.push(tarea));
+        })
       );
+      cierres++;
+      tareas.push(async () => {
+        if (item.created_by)
+          await sendPushNotification(
+            [item.created_by],
+            'TIEMPO AGOTADO',
+            `Tiempo finalizado en ${item.room_name || 'habitación'}`,
+            { type: 'timer_ended' }
+          );
+      });
+      tareas.push(async () => {
+        await sendPushByRole('cajero', 'TIEMPO AGOTADO', `Tiempo finalizado en ${item.room_name}`, {
+          type: 'timer_ended'
+        });
+      });
+      tareas.push(() => {
+        sendNotificationToAll('timer_ended_event', {
+          id: item.id,
+          type: item.type,
+          room_name: item.room_name
+        });
+      });
       await ejecutarEfectosConfirmados(tareas);
     }
   }

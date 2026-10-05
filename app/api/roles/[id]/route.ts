@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
 import { withPublicRoute, withRoute } from '@/lib/api/withRoute';
-import { RoleService } from '@/lib/services/RoleService';
+import { RoleService } from '@/modules/identidad';
 import { sendNotificationToAll } from '@/lib/api/sseService';
 
 export const GET = withPublicRoute(

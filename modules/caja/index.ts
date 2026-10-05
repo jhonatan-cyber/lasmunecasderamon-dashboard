@@ -21,3 +21,7 @@ export {
   ajustarIvaCaja,
   leerFondoCaja
 } from './movimientos/servicio';
+
+export { CashRegisterService } from './turnos/servicio';
+
+export { WithdrawalService } from './retiros/servicio';

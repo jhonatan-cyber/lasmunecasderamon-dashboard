@@ -26,7 +26,7 @@ describe('auth route contract', () => {
     vi.doMock('next/headers', () => ({
       cookies: vi.fn().mockResolvedValue({ set: setCookie })
     }));
-    vi.doMock('@/lib/repositories/AuthRepository', () => ({
+    vi.doMock('@/modules/identidad/autenticacion/repositorio', () => ({
       AuthRepository: { login: loginMock }
     }));
     const route = await import('@/app/api/auth/login/route');
@@ -43,7 +43,8 @@ describe('auth route contract', () => {
 
     expect(loginMock).toHaveBeenCalledWith(
       { email: 'user@test.com', password: 'secret123' },
-      '10.0.0.1'
+      '10.0.0.1',
+      expect.any(Function)
     );
     expect(setCookie).toHaveBeenCalledWith(
       'token',
@@ -73,7 +74,7 @@ describe('auth route contract', () => {
     vi.doMock('@/lib/auth/auth-app', () => ({
       getAuth: vi.fn().mockResolvedValue({ id: 'user-1' })
     }));
-    vi.doMock('@/lib/repositories/AuthRepository', () => ({
+    vi.doMock('@/modules/identidad/autenticacion/repositorio', () => ({
       AuthRepository: { logout: logoutMock }
     }));
 
@@ -98,7 +99,7 @@ describe('auth route contract', () => {
           handler(request, { ...context, user: { id: 'user-1' } });
       }
     }));
-    vi.doMock('@/lib/repositories/UserRepository', () => ({
+    vi.doMock('@/modules/identidad/usuarios/registro', () => ({
       UserRepository: {
         getById: vi.fn().mockResolvedValue({
           id: 'user-1',
@@ -154,7 +155,7 @@ describe('auth route contract', () => {
           handler(request, { ...context, user: { id: 'user-1' } });
       }
     }));
-    vi.doMock('@/lib/repositories/AuthRepository', () => ({
+    vi.doMock('@/modules/identidad/autenticacion/repositorio', () => ({
       AuthRepository: { checkSession: checkSessionMock }
     }));
 

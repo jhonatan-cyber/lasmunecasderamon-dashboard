@@ -17,11 +17,11 @@ vi.mock('@/lib/api/sseService', () => ({
   sendNotificationToAll: vi.fn()
 }));
 
-vi.mock('@/lib/integrations/pushNotifications', () => ({
+vi.mock('@/modules/comunicaciones/push/servicio', () => ({
   sendPushByRole: vi.fn()
 }));
 
-vi.mock('@/lib/integrations/whatsappService', () => ({
+vi.mock('@/modules/comunicaciones/whatsapp/adaptador', () => ({
   enviarWhatsApp: vi.fn()
 }));
 
@@ -29,13 +29,13 @@ vi.mock('@/lib/business/whatsappConfig', () => ({
   getAdminWhatsApp: vi.fn()
 }));
 
-vi.mock('@/lib/repositories/AuditRepository', () => ({
+vi.mock('@/modules/auditoria/registro/repositorio', () => ({
   AuditRepository: {
     log: vi.fn()
   }
 }));
 
-vi.mock('@/lib/services/NotificationService', () => ({
+vi.mock('@/modules/comunicaciones/notificaciones/servicio', () => ({
   NotificationService: {
     create: vi.fn()
   }
@@ -49,15 +49,15 @@ vi.mock('@/lib/utils/logger', () => ({
   }
 }));
 
-import { SecurityAlertService } from '@/lib/services/SecurityAlertService';
+import { SecurityAlertService } from '@/modules/auditoria/alertas/servicio';
 import { query } from '@/lib/database/db';
 import { sendNotificationToAll } from '@/lib/api/sseService';
-import { sendPushByRole } from '@/lib/integrations/pushNotifications';
-import { enviarWhatsApp } from '@/lib/integrations/whatsappService';
+import { sendPushByRole } from '@/modules/comunicaciones';
+import { enviarWhatsApp } from '@/modules/comunicaciones/whatsapp/adaptador';
 import { getAdminWhatsApp } from '@/lib/business/whatsappConfig';
-import { AuditRepository } from '@/lib/repositories/AuditRepository';
-import { NotificationService } from '@/lib/services/NotificationService';
-import { AnulationCounter } from '@/lib/services/anulationCounter';
+import { AuditRepository } from '@/modules/auditoria/registro/repositorio';
+import { NotificationService } from '@/modules/comunicaciones/notificaciones/servicio';
+import { AnulationCounter } from '@/modules/auditoria/alertas/contador';
 
 beforeEach(() => {
   vi.clearAllMocks();

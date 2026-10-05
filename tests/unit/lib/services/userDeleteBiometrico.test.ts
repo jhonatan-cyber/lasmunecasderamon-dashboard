@@ -1,3 +1,4 @@
+import { eliminarUsuario } from '@/workflows/eliminar-usuario';
 // @vitest-environment node
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
@@ -8,7 +9,7 @@ const enrollment = vi.hoisted(() => ({ quitarDelEquipo: vi.fn() }));
 vi.mock('@/lib/database/db', () => ({
   query: db.queryMock,
   generateUUID: () => 'uuid-test',
-  withTransaction: vi.fn()
+  withTransaction: vi.fn(async callback => callback(db.queryMock))
 }));
 
 vi.mock('@/lib/utils/logger', () => {
@@ -17,12 +18,13 @@ vi.mock('@/lib/utils/logger', () => {
 });
 
 vi.mock('@/lib/business/timezoneService', () => ({
+  getSystemTimezone: () => 'America/Santiago',
   getNowInBusinessTimezone: () => '2026-09-30 12:00:00'
 }));
 
 vi.mock('@/modules/asistencia/biometrico/enrollmentService', () => enrollment);
 
-import { UserService } from '@/lib/services/UserService';
+import { UserService } from '@/modules/identidad/usuarios/fachada';
 
 const personaEnrolada = {
   id_usuario: 'u-1',
@@ -82,7 +84,7 @@ describe('UserService.delete con enrolamiento biométrico', () => {
       return [];
     });
 
-    await UserService.delete('u-1');
+    await eliminarUsuario('u-1');
 
     expect(llamadasAlLector()).toHaveLength(0);
 
@@ -101,7 +103,7 @@ describe('UserService.delete con enrolamiento biométrico', () => {
       return [];
     });
 
-    await UserService.delete('u-2');
+    await eliminarUsuario('u-2');
 
     expect(llamadasAlLector()).toHaveLength(0);
     expect(sqls().filter(sql => sql.startsWith('DELETE FROM biometric_plantillas'))).toHaveLength(
@@ -119,7 +121,7 @@ describe('UserService.delete con enrolamiento biométrico', () => {
     });
     enrollment.quitarDelEquipo.mockRejectedValue(new Error('fetch failed'));
 
-    await UserService.delete('u-1');
+    await eliminarUsuario('u-1');
 
     // El borrado es local y no depende del lector.
     expect(llamadasAlLector()).toHaveLength(0);
@@ -130,7 +132,7 @@ describe('UserService.delete con enrolamiento biométrico', () => {
   });
 
   it('un usuario que ya no existe se elimina igual (borrado idempotente)', async () => {
-    await UserService.delete('nadie');
+    await eliminarUsuario('nadie');
 
     expect(llamadasAlLector()).toHaveLength(0);
     expect(sqls().some(sql => sql.includes('DELETE FROM usuarios'))).toBe(true);

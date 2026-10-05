@@ -23,7 +23,7 @@ import type { ContextoOperacion } from '@/lib/transaccion/contrato';
 import { resolverTransaccion } from '@/lib/transaccion/infraestructura';
 import { obtenerCajaActiva, registrarMovimientoCobro, leerFondoCaja } from '@/modules/caja';
 import { getNowInBusinessTimezone } from '@/lib/business/timezoneService';
-import { enviarWhatsApp } from '@/lib/integrations/whatsappService';
+import { enviarWhatsApp } from '@/modules/comunicaciones';
 import { sendNotificationToAll } from '@/lib/api/sseService';
 import { getAdminWhatsApp } from '@/lib/business/whatsappConfig';
 import { logger } from '@/lib/utils/logger';
@@ -32,8 +32,8 @@ import {
   buildAnticipoRequestMessage,
   buildAnticipoProcessedMessages
 } from '@/lib/notifications/notificationMessages';
-import { BaseRepository } from '@/lib/repositories/BaseRepository';
-import { sendPushByRole, sendPushNotification } from '@/lib/integrations/pushNotifications';
+import { BaseRepository } from '@/lib/database/base-repository';
+import { sendPushByRole, sendPushNotification } from '@/modules/comunicaciones';
 import { NotFoundError, BusinessError, DatabaseError } from '@/lib/errors/errors';
 
 const TABLE = 'anticipos';

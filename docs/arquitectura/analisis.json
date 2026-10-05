@@ -1,12 +1,12 @@
 {
   "resumen": {
-    "commit": "4851685bb7a427b3f38284faca3f76578ee84755",
-    "generado": "2026-10-05T16:47:10.455Z",
-    "archivos": 1606,
+    "commit": "a04f3a38272babcd8fea56d667c87c13469e182b",
+    "generado": "2026-10-05T19:46:16.607Z",
+    "archivos": 1642,
     "rutas": 204,
-    "sqlFueraDeRepositorio": 66,
-    "tablasConEscritoresMultiples": 17,
-    "ciclos": 6,
+    "sqlFueraDeRepositorio": 49,
+    "tablasConEscritoresMultiples": 0,
+    "ciclos": 0,
     "procesosPeriodicos": 15,
     "caches": 19,
     "rutasApiConSqlDirecto": 0,
@@ -19,7 +19,7 @@
       "metodos": [],
       "nivel": "users.write",
       "audit": true,
-      "moduloDominio": "personal",
+      "moduloDominio": null,
       "usaDriver": false
     },
     {
@@ -28,7 +28,7 @@
       "metodos": [],
       "nivel": "publico",
       "audit": false,
-      "moduloDominio": "personal",
+      "moduloDominio": null,
       "usaDriver": false
     },
     {
@@ -37,7 +37,7 @@
       "metodos": [],
       "nivel": "publico",
       "audit": false,
-      "moduloDominio": "personal",
+      "moduloDominio": null,
       "usaDriver": false
     },
     {
@@ -46,7 +46,7 @@
       "metodos": [],
       "nivel": "advances.process",
       "audit": true,
-      "moduloDominio": "personal",
+      "moduloDominio": null,
       "usaDriver": false
     },
     {
@@ -55,7 +55,7 @@
       "metodos": [],
       "nivel": "advances.process",
       "audit": true,
-      "moduloDominio": "personal",
+      "moduloDominio": null,
       "usaDriver": false
     },
     {
@@ -64,7 +64,7 @@
       "metodos": [],
       "nivel": "advances.read",
       "audit": true,
-      "moduloDominio": "personal",
+      "moduloDominio": null,
       "usaDriver": false
     },
     {
@@ -73,7 +73,7 @@
       "metodos": [],
       "nivel": "authenticated",
       "audit": true,
-      "moduloDominio": "personal",
+      "moduloDominio": null,
       "usaDriver": false
     },
     {
@@ -82,7 +82,7 @@
       "metodos": [],
       "nivel": "authenticated",
       "audit": true,
-      "moduloDominio": "personal",
+      "moduloDominio": null,
       "usaDriver": false
     },
     {
@@ -91,7 +91,7 @@
       "metodos": [],
       "nivel": "advances.read",
       "audit": true,
-      "moduloDominio": "personal",
+      "moduloDominio": null,
       "usaDriver": false
     },
     {
@@ -100,7 +100,7 @@
       "metodos": [],
       "nivel": "publico",
       "audit": false,
-      "moduloDominio": "personal",
+      "moduloDominio": null,
       "usaDriver": false
     },
     {
@@ -109,7 +109,7 @@
       "metodos": [],
       "nivel": "advances.read",
       "audit": true,
-      "moduloDominio": "personal",
+      "moduloDominio": null,
       "usaDriver": false
     },
     {
@@ -118,7 +118,7 @@
       "metodos": [],
       "nivel": "authenticated",
       "audit": true,
-      "moduloDominio": "personal",
+      "moduloDominio": null,
       "usaDriver": false
     },
     {
@@ -127,7 +127,7 @@
       "metodos": [],
       "nivel": "publico",
       "audit": false,
-      "moduloDominio": "asistencia",
+      "moduloDominio": null,
       "usaDriver": false
     },
     {
@@ -136,7 +136,7 @@
       "metodos": [],
       "nivel": "authenticated",
       "audit": true,
-      "moduloDominio": "asistencia",
+      "moduloDominio": null,
       "usaDriver": false
     },
     {
@@ -145,7 +145,7 @@
       "metodos": [],
       "nivel": "publico",
       "audit": false,
-      "moduloDominio": "asistencia",
+      "moduloDominio": null,
       "usaDriver": false
     },
     {
@@ -154,7 +154,7 @@
       "metodos": [],
       "nivel": "attendance.write",
       "audit": true,
-      "moduloDominio": "asistencia",
+      "moduloDominio": null,
       "usaDriver": false
     },
     {
@@ -163,7 +163,7 @@
       "metodos": [],
       "nivel": "attendance.write",
       "audit": true,
-      "moduloDominio": "asistencia",
+      "moduloDominio": null,
       "usaDriver": false
     },
     {
@@ -172,7 +172,7 @@
       "metodos": [],
       "nivel": "publico",
       "audit": false,
-      "moduloDominio": "asistencia",
+      "moduloDominio": null,
       "usaDriver": false
     },
     {
@@ -181,7 +181,7 @@
       "metodos": [],
       "nivel": "publico",
       "audit": true,
-      "moduloDominio": "asistencia",
+      "moduloDominio": null,
       "usaDriver": false
     },
     {
@@ -190,7 +190,7 @@
       "metodos": [],
       "nivel": "publico",
       "audit": false,
-      "moduloDominio": "asistencia",
+      "moduloDominio": null,
       "usaDriver": false
     },
     {
@@ -199,7 +199,7 @@
       "metodos": [],
       "nivel": "authenticated",
       "audit": true,
-      "moduloDominio": "asistencia",
+      "moduloDominio": null,
       "usaDriver": false
     },
     {
@@ -208,7 +208,7 @@
       "metodos": [],
       "nivel": "publico",
       "audit": false,
-      "moduloDominio": "comunicaciones",
+      "moduloDominio": null,
       "usaDriver": false
     },
     {
@@ -217,7 +217,7 @@
       "metodos": [],
       "nivel": "authenticated",
       "audit": true,
-      "moduloDominio": "identidad",
+      "moduloDominio": null,
       "usaDriver": false
     },
     {
@@ -226,7 +226,7 @@
       "metodos": [],
       "nivel": "authenticated",
       "audit": true,
-      "moduloDominio": "identidad",
+      "moduloDominio": null,
       "usaDriver": false
     },
     {
@@ -235,7 +235,7 @@
       "metodos": [],
       "nivel": "publico",
       "audit": false,
-      "moduloDominio": "identidad",
+      "moduloDominio": null,
       "usaDriver": false
     },
     {
@@ -244,7 +244,7 @@
       "metodos": [],
       "nivel": "authenticated",
       "audit": true,
-      "moduloDominio": "identidad",
+      "moduloDominio": null,
       "usaDriver": false
     },
     {
@@ -253,7 +253,7 @@
       "metodos": [],
       "nivel": "SIN_WRAPPER",
       "audit": false,
-      "moduloDominio": "identidad",
+      "moduloDominio": null,
       "usaDriver": false
     },
     {
@@ -262,7 +262,7 @@
       "metodos": [],
       "nivel": "publico",
       "audit": false,
-      "moduloDominio": "identidad",
+      "moduloDominio": null,
       "usaDriver": false
     },
     {
@@ -271,7 +271,7 @@
       "metodos": [],
       "nivel": "administrator",
       "audit": false,
-      "moduloDominio": "identidad",
+      "moduloDominio": null,
       "usaDriver": false
     },
     {
@@ -280,7 +280,7 @@
       "metodos": [],
       "nivel": "authenticated",
       "audit": true,
-      "moduloDominio": "identidad",
+      "moduloDominio": null,
       "usaDriver": false
     },
     {
@@ -289,7 +289,7 @@
       "metodos": [],
       "nivel": "publico",
       "audit": false,
-      "moduloDominio": "identidad",
+      "moduloDominio": null,
       "usaDriver": false
     },
     {
@@ -298,7 +298,7 @@
       "metodos": [],
       "nivel": "publico",
       "audit": false,
-      "moduloDominio": "identidad",
+      "moduloDominio": null,
       "usaDriver": false
     },
     {
@@ -307,7 +307,7 @@
       "metodos": [],
       "nivel": "publico",
       "audit": false,
-      "moduloDominio": "identidad",
+      "moduloDominio": null,
       "usaDriver": false
     },
     {
@@ -316,7 +316,7 @@
       "metodos": [],
       "nivel": "products.confirm_container_return",
       "audit": true,
-      "moduloDominio": "inventario",
+      "moduloDominio": null,
       "usaDriver": false
     },
     {
@@ -325,7 +325,7 @@
       "metodos": [],
       "nivel": "products.read",
       "audit": false,
-      "moduloDominio": "inventario",
+      "moduloDominio": null,
       "usaDriver": false
     },
     {
@@ -334,7 +334,7 @@
       "metodos": [],
       "nivel": "products.read",
       "audit": false,
-      "moduloDominio": "inventario",
+      "moduloDominio": null,
       "usaDriver": false
     },
     {
@@ -343,7 +343,7 @@
       "metodos": [],
       "nivel": "publico",
       "audit": false,
-      "moduloDominio": "inventario",
+      "moduloDominio": null,
       "usaDriver": false
     },
     {
@@ -352,7 +352,7 @@
       "metodos": [],
       "nivel": "publico",
       "audit": true,
-      "moduloDominio": "inventario",
+      "moduloDominio": null,
       "usaDriver": false
     },
     {
@@ -361,7 +361,7 @@
       "metodos": [],
       "nivel": "publico",
       "audit": false,
-      "moduloDominio": "inventario",
+      "moduloDominio": null,
       "usaDriver": false
     },
     {
@@ -370,7 +370,7 @@
       "metodos": [],
       "nivel": "administrator",
       "audit": true,
-      "moduloDominio": "asistencia",
+      "moduloDominio": null,
       "usaDriver": false
     },
     {
@@ -379,7 +379,7 @@
       "metodos": [],
       "nivel": "administrator",
       "audit": true,
-      "moduloDominio": "asistencia",
+      "moduloDominio": null,
       "usaDriver": false
     },
     {
@@ -388,7 +388,7 @@
       "metodos": [],
       "nivel": "administrator",
       "audit": true,
-      "moduloDominio": "asistencia",
+      "moduloDominio": null,
       "usaDriver": false
     },
     {
@@ -397,7 +397,7 @@
       "metodos": [],
       "nivel": "administrator",
       "audit": true,
-      "moduloDominio": "asistencia",
+      "moduloDominio": null,
       "usaDriver": false
     },
     {
@@ -406,7 +406,7 @@
       "metodos": [],
       "nivel": "administrator",
       "audit": true,
-      "moduloDominio": "asistencia",
+      "moduloDominio": null,
       "usaDriver": false
     },
     {
@@ -415,7 +415,7 @@
       "metodos": [],
       "nivel": "administrator",
       "audit": false,
-      "moduloDominio": "asistencia",
+      "moduloDominio": null,
       "usaDriver": false
     },
     {
@@ -424,7 +424,7 @@
       "metodos": [],
       "nivel": "administrator",
       "audit": false,
-      "moduloDominio": "asistencia",
+      "moduloDominio": null,
       "usaDriver": false
     },
     {
@@ -433,7 +433,7 @@
       "metodos": [],
       "nivel": "administrator",
       "audit": true,
-      "moduloDominio": "asistencia",
+      "moduloDominio": null,
       "usaDriver": false
     },
     {
@@ -442,7 +442,7 @@
       "metodos": [],
       "nivel": "authenticated",
       "audit": false,
-      "moduloDominio": "asistencia",
+      "moduloDominio": null,
       "usaDriver": false
     },
     {
@@ -451,7 +451,7 @@
       "metodos": [],
       "nivel": "administrator",
       "audit": true,
-      "moduloDominio": "asistencia",
+      "moduloDominio": null,
       "usaDriver": false
     },
     {
@@ -460,7 +460,7 @@
       "metodos": [],
       "nivel": "administrator",
       "audit": false,
-      "moduloDominio": "asistencia",
+      "moduloDominio": null,
       "usaDriver": false
     },
     {
@@ -469,7 +469,7 @@
       "metodos": [],
       "nivel": "publico",
       "audit": false,
-      "moduloDominio": "caja",
+      "moduloDominio": null,
       "usaDriver": false
     },
     {
@@ -478,7 +478,7 @@
       "metodos": [],
       "nivel": "publico",
       "audit": false,
-      "moduloDominio": "caja",
+      "moduloDominio": null,
       "usaDriver": false
     },
     {
@@ -487,7 +487,7 @@
       "metodos": [],
       "nivel": "publico",
       "audit": false,
-      "moduloDominio": "caja",
+      "moduloDominio": null,
       "usaDriver": false
     },
     {
@@ -496,7 +496,7 @@
       "metodos": [],
       "nivel": "publico",
       "audit": false,
-      "moduloDominio": "caja",
+      "moduloDominio": null,
       "usaDriver": false
     },
     {
@@ -505,7 +505,7 @@
       "metodos": [],
       "nivel": "publico",
       "audit": false,
-      "moduloDominio": "caja",
+      "moduloDominio": null,
       "usaDriver": false
     },
     {
@@ -514,7 +514,7 @@
       "metodos": [],
       "nivel": "publico",
       "audit": false,
-      "moduloDominio": "agenda",
+      "moduloDominio": null,
       "usaDriver": false
     },
     {
@@ -523,7 +523,7 @@
       "metodos": [],
       "nivel": "publico",
       "audit": false,
-      "moduloDominio": "agenda",
+      "moduloDominio": null,
       "usaDriver": false
     },
     {
@@ -532,7 +532,7 @@
       "metodos": [],
       "nivel": "publico",
       "audit": true,
-      "moduloDominio": "caja",
+      "moduloDominio": null,
       "usaDriver": false
     },
     {
@@ -541,7 +541,7 @@
       "metodos": [],
       "nivel": "finances.write",
       "audit": true,
-      "moduloDominio": "caja",
+      "moduloDominio": null,
       "usaDriver": false
     },
     {
@@ -550,7 +550,7 @@
       "metodos": [],
       "nivel": "finances.write",
       "audit": true,
-      "moduloDominio": "caja",
+      "moduloDominio": null,
       "usaDriver": false
     },
     {
@@ -559,7 +559,7 @@
       "metodos": [],
       "nivel": "publico",
       "audit": false,
-      "moduloDominio": "caja",
+      "moduloDominio": null,
       "usaDriver": false
     },
     {
@@ -568,7 +568,7 @@
       "metodos": [],
       "nivel": "finances.read",
       "audit": true,
-      "moduloDominio": "caja",
+      "moduloDominio": null,
       "usaDriver": false
     },
     {
@@ -577,7 +577,7 @@
       "metodos": [],
       "nivel": "finances.read",
       "audit": true,
-      "moduloDominio": "caja",
+      "moduloDominio": null,
       "usaDriver": false
     },
     {
@@ -586,7 +586,7 @@
       "metodos": [],
       "nivel": "publico",
       "audit": false,
-      "moduloDominio": "caja",
+      "moduloDominio": null,
       "usaDriver": false
     },
     {
@@ -595,7 +595,7 @@
       "metodos": [],
       "nivel": "publico",
       "audit": false,
-      "moduloDominio": "caja",
+      "moduloDominio": null,
       "usaDriver": false
     },
     {
@@ -604,7 +604,7 @@
       "metodos": [],
       "nivel": "categories.write",
       "audit": true,
-      "moduloDominio": "inventario",
+      "moduloDominio": null,
       "usaDriver": false
     },
     {
@@ -613,7 +613,7 @@
       "metodos": [],
       "nivel": "categories.write",
       "audit": true,
-      "moduloDominio": "inventario",
+      "moduloDominio": null,
       "usaDriver": false
     },
     {
@@ -622,7 +622,7 @@
       "metodos": [],
       "nivel": "publico",
       "audit": true,
-      "moduloDominio": "inventario",
+      "moduloDominio": null,
       "usaDriver": false
     },
     {
@@ -631,7 +631,7 @@
       "metodos": [],
       "nivel": "publico",
       "audit": true,
-      "moduloDominio": "clientes",
+      "moduloDominio": null,
       "usaDriver": false
     },
     {
@@ -640,7 +640,7 @@
       "metodos": [],
       "nivel": "clients.write",
       "audit": true,
-      "moduloDominio": "clientes",
+      "moduloDominio": null,
       "usaDriver": false
     },
     {
@@ -649,7 +649,7 @@
       "metodos": [],
       "nivel": "clients.write",
       "audit": true,
-      "moduloDominio": "clientes",
+      "moduloDominio": null,
       "usaDriver": false
     },
     {
@@ -658,7 +658,7 @@
       "metodos": [],
       "nivel": "clients.write",
       "audit": true,
-      "moduloDominio": "clientes",
+      "moduloDominio": null,
       "usaDriver": false
     },
     {
@@ -667,7 +667,7 @@
       "metodos": [],
       "nivel": "clients.read",
       "audit": false,
-      "moduloDominio": "clientes",
+      "moduloDominio": null,
       "usaDriver": false
     },
     {
@@ -676,7 +676,7 @@
       "metodos": [],
       "nivel": "publico",
       "audit": false,
-      "moduloDominio": "clientes",
+      "moduloDominio": null,
       "usaDriver": false
     },
     {
@@ -685,7 +685,7 @@
       "metodos": [],
       "nivel": "clients.write",
       "audit": true,
-      "moduloDominio": "clientes",
+      "moduloDominio": null,
       "usaDriver": false
     },
     {
@@ -694,7 +694,7 @@
       "metodos": [],
       "nivel": "publico",
       "audit": true,
-      "moduloDominio": "clientes",
+      "moduloDominio": null,
       "usaDriver": false
     },
     {
@@ -712,7 +712,7 @@
       "metodos": [],
       "nivel": "publico",
       "audit": false,
-      "moduloDominio": "personal",
+      "moduloDominio": null,
       "usaDriver": false
     },
     {
@@ -721,7 +721,7 @@
       "metodos": [],
       "nivel": "commissions.write",
       "audit": true,
-      "moduloDominio": "personal",
+      "moduloDominio": null,
       "usaDriver": false
     },
     {
@@ -730,7 +730,7 @@
       "metodos": [],
       "nivel": "publico",
       "audit": true,
-      "moduloDominio": "personal",
+      "moduloDominio": null,
       "usaDriver": false
     },
     {
@@ -739,7 +739,7 @@
       "metodos": [],
       "nivel": "authenticated",
       "audit": true,
-      "moduloDominio": "personal",
+      "moduloDominio": null,
       "usaDriver": false
     },
     {
@@ -775,7 +775,7 @@
       "metodos": [],
       "nivel": "finances.write",
       "audit": true,
-      "moduloDominio": "operacion",
+      "moduloDominio": null,
       "usaDriver": false
     },
     {
@@ -784,7 +784,7 @@
       "metodos": [],
       "nivel": "finances.write",
       "audit": true,
-      "moduloDominio": "operacion",
+      "moduloDominio": null,
       "usaDriver": false
     },
     {
@@ -793,7 +793,7 @@
       "metodos": [],
       "nivel": "publico",
       "audit": true,
-      "moduloDominio": "operacion",
+      "moduloDominio": null,
       "usaDriver": false
     },
     {
@@ -802,7 +802,7 @@
       "metodos": [],
       "nivel": "finances.write",
       "audit": true,
-      "moduloDominio": "operacion",
+      "moduloDominio": null,
       "usaDriver": false
     },
     {
@@ -811,7 +811,7 @@
       "metodos": [],
       "nivel": "finances.write",
       "audit": true,
-      "moduloDominio": "operacion",
+      "moduloDominio": null,
       "usaDriver": false
     },
     {
@@ -820,7 +820,7 @@
       "metodos": ["POST"],
       "nivel": "SIN_WRAPPER",
       "audit": false,
-      "moduloDominio": "operacion",
+      "moduloDominio": null,
       "usaDriver": false
     },
     {
@@ -829,7 +829,7 @@
       "metodos": [],
       "nivel": "publico",
       "audit": true,
-      "moduloDominio": "operacion",
+      "moduloDominio": null,
       "usaDriver": false
     },
     {
@@ -838,7 +838,7 @@
       "metodos": ["GET"],
       "nivel": "SIN_WRAPPER",
       "audit": false,
-      "moduloDominio": "operacion",
+      "moduloDominio": null,
       "usaDriver": false
     },
     {
@@ -856,7 +856,7 @@
       "metodos": [],
       "nivel": "publico",
       "audit": false,
-      "moduloDominio": "comunicaciones",
+      "moduloDominio": null,
       "usaDriver": false
     },
     {
@@ -865,7 +865,7 @@
       "metodos": [],
       "nivel": "authenticated",
       "audit": true,
-      "moduloDominio": "agenda",
+      "moduloDominio": null,
       "usaDriver": false
     },
     {
@@ -874,7 +874,7 @@
       "metodos": [],
       "nivel": "authenticated",
       "audit": true,
-      "moduloDominio": "agenda",
+      "moduloDominio": null,
       "usaDriver": false
     },
     {
@@ -883,7 +883,7 @@
       "metodos": [],
       "nivel": "authenticated",
       "audit": true,
-      "moduloDominio": "agenda",
+      "moduloDominio": null,
       "usaDriver": false
     },
     {
@@ -901,7 +901,7 @@
       "metodos": [],
       "nivel": "gratificaciones.delete",
       "audit": true,
-      "moduloDominio": "personal",
+      "moduloDominio": null,
       "usaDriver": false
     },
     {
@@ -910,7 +910,7 @@
       "metodos": ["PUT"],
       "nivel": "SIN_WRAPPER",
       "audit": false,
-      "moduloDominio": "personal",
+      "moduloDominio": null,
       "usaDriver": false
     },
     {
@@ -919,7 +919,7 @@
       "metodos": [],
       "nivel": "authenticated",
       "audit": true,
-      "moduloDominio": "personal",
+      "moduloDominio": null,
       "usaDriver": false
     },
     {
@@ -928,7 +928,7 @@
       "metodos": [],
       "nivel": "gratificaciones.write",
       "audit": true,
-      "moduloDominio": "personal",
+      "moduloDominio": null,
       "usaDriver": false
     },
     {
@@ -937,7 +937,7 @@
       "metodos": ["GET"],
       "nivel": "SIN_WRAPPER",
       "audit": false,
-      "moduloDominio": "personal",
+      "moduloDominio": null,
       "usaDriver": false
     },
     {
@@ -964,7 +964,7 @@
       "metodos": ["POST"],
       "nivel": "SIN_WRAPPER",
       "audit": false,
-      "moduloDominio": "asistencia",
+      "moduloDominio": null,
       "usaDriver": false
     },
     {
@@ -973,7 +973,7 @@
       "metodos": ["GET"],
       "nivel": "SIN_WRAPPER",
       "audit": false,
-      "moduloDominio": "asistencia",
+      "moduloDominio": null,
       "usaDriver": false
     },
     {
@@ -982,7 +982,7 @@
       "metodos": [],
       "nivel": "administrator",
       "audit": true,
-      "moduloDominio": "asistencia",
+      "moduloDominio": null,
       "usaDriver": false
     },
     {
@@ -991,7 +991,7 @@
       "metodos": [],
       "nivel": "administrator",
       "audit": false,
-      "moduloDominio": "asistencia",
+      "moduloDominio": null,
       "usaDriver": false
     },
     {
@@ -1000,7 +1000,7 @@
       "metodos": [],
       "nivel": "publico",
       "audit": true,
-      "moduloDominio": "asistencia",
+      "moduloDominio": null,
       "usaDriver": false
     },
     {
@@ -1009,7 +1009,7 @@
       "metodos": [],
       "nivel": "administrator",
       "audit": true,
-      "moduloDominio": "infraestructura",
+      "moduloDominio": null,
       "usaDriver": false
     },
     {
@@ -1018,7 +1018,7 @@
       "metodos": [],
       "nivel": "authenticated",
       "audit": true,
-      "moduloDominio": "comunicaciones",
+      "moduloDominio": null,
       "usaDriver": false
     },
     {
@@ -1027,7 +1027,7 @@
       "metodos": [],
       "nivel": "authenticated",
       "audit": true,
-      "moduloDominio": "comunicaciones",
+      "moduloDominio": null,
       "usaDriver": false
     },
     {
@@ -1036,7 +1036,7 @@
       "metodos": ["GET"],
       "nivel": "SIN_WRAPPER",
       "audit": false,
-      "moduloDominio": "comunicaciones",
+      "moduloDominio": null,
       "usaDriver": false
     },
     {
@@ -1045,7 +1045,7 @@
       "metodos": [],
       "nivel": "authenticated",
       "audit": true,
-      "moduloDominio": "comunicaciones",
+      "moduloDominio": null,
       "usaDriver": false
     },
     {
@@ -1054,7 +1054,7 @@
       "metodos": [],
       "nivel": "authenticated",
       "audit": true,
-      "moduloDominio": "comunicaciones",
+      "moduloDominio": null,
       "usaDriver": false
     },
     {
@@ -1063,7 +1063,7 @@
       "metodos": [],
       "nivel": "authenticated",
       "audit": true,
-      "moduloDominio": "comunicaciones",
+      "moduloDominio": null,
       "usaDriver": false
     },
     {
@@ -1072,7 +1072,7 @@
       "metodos": ["GET"],
       "nivel": "SIN_WRAPPER",
       "audit": false,
-      "moduloDominio": "comunicaciones",
+      "moduloDominio": null,
       "usaDriver": false
     },
     {
@@ -1081,7 +1081,7 @@
       "metodos": [],
       "nivel": "orders.delete",
       "audit": true,
-      "moduloDominio": "operacion",
+      "moduloDominio": null,
       "usaDriver": false
     },
     {
@@ -1090,7 +1090,7 @@
       "metodos": [],
       "nivel": "publico",
       "audit": false,
-      "moduloDominio": "operacion",
+      "moduloDominio": null,
       "usaDriver": false
     },
     {
@@ -1099,7 +1099,7 @@
       "metodos": [],
       "nivel": "publico",
       "audit": false,
-      "moduloDominio": "operacion",
+      "moduloDominio": null,
       "usaDriver": false
     },
     {
@@ -1108,7 +1108,7 @@
       "metodos": [],
       "nivel": "publico",
       "audit": true,
-      "moduloDominio": "operacion",
+      "moduloDominio": null,
       "usaDriver": false
     },
     {
@@ -1117,7 +1117,7 @@
       "metodos": ["GET"],
       "nivel": "SIN_WRAPPER",
       "audit": false,
-      "moduloDominio": "operacion",
+      "moduloDominio": null,
       "usaDriver": false
     },
     {
@@ -1126,7 +1126,7 @@
       "metodos": [],
       "nivel": "authenticated",
       "audit": true,
-      "moduloDominio": "operacion",
+      "moduloDominio": null,
       "usaDriver": false
     },
     {
@@ -1135,7 +1135,7 @@
       "metodos": [],
       "nivel": "authenticated",
       "audit": true,
-      "moduloDominio": "personal",
+      "moduloDominio": null,
       "usaDriver": false
     },
     {
@@ -1144,7 +1144,7 @@
       "metodos": [],
       "nivel": "overtime.write",
       "audit": true,
-      "moduloDominio": "personal",
+      "moduloDominio": null,
       "usaDriver": false
     },
     {
@@ -1153,7 +1153,7 @@
       "metodos": [],
       "nivel": "authenticated",
       "audit": true,
-      "moduloDominio": "personal",
+      "moduloDominio": null,
       "usaDriver": false
     },
     {
@@ -1162,7 +1162,7 @@
       "metodos": [],
       "nivel": "publico",
       "audit": true,
-      "moduloDominio": "personal",
+      "moduloDominio": null,
       "usaDriver": false
     },
     {
@@ -1171,7 +1171,7 @@
       "metodos": [],
       "nivel": "settings.write",
       "audit": true,
-      "moduloDominio": "identidad",
+      "moduloDominio": null,
       "usaDriver": false
     },
     {
@@ -1180,7 +1180,7 @@
       "metodos": [],
       "nivel": "administrator",
       "audit": true,
-      "moduloDominio": "identidad",
+      "moduloDominio": null,
       "usaDriver": false
     },
     {
@@ -1189,7 +1189,7 @@
       "metodos": [],
       "nivel": "publico",
       "audit": true,
-      "moduloDominio": "identidad",
+      "moduloDominio": null,
       "usaDriver": false
     },
     {
@@ -1198,7 +1198,7 @@
       "metodos": [],
       "nivel": "administrator",
       "audit": true,
-      "moduloDominio": "identidad",
+      "moduloDominio": null,
       "usaDriver": false
     },
     {
@@ -1216,7 +1216,7 @@
       "metodos": [],
       "nivel": "products.write",
       "audit": true,
-      "moduloDominio": "inventario",
+      "moduloDominio": null,
       "usaDriver": false
     },
     {
@@ -1225,7 +1225,7 @@
       "metodos": [],
       "nivel": "publico",
       "audit": true,
-      "moduloDominio": "inventario",
+      "moduloDominio": null,
       "usaDriver": false
     },
     {
@@ -1234,7 +1234,7 @@
       "metodos": [],
       "nivel": "publico",
       "audit": false,
-      "moduloDominio": "inventario",
+      "moduloDominio": null,
       "usaDriver": false
     },
     {
@@ -1243,7 +1243,7 @@
       "metodos": [],
       "nivel": "publico",
       "audit": true,
-      "moduloDominio": "inventario",
+      "moduloDominio": null,
       "usaDriver": false
     },
     {
@@ -1252,7 +1252,7 @@
       "metodos": [],
       "nivel": "products.write",
       "audit": true,
-      "moduloDominio": "inventario",
+      "moduloDominio": null,
       "usaDriver": false
     },
     {
@@ -1261,7 +1261,7 @@
       "metodos": [],
       "nivel": "publico",
       "audit": true,
-      "moduloDominio": "inventario",
+      "moduloDominio": null,
       "usaDriver": false
     },
     {
@@ -1270,7 +1270,7 @@
       "metodos": [],
       "nivel": "products.write",
       "audit": true,
-      "moduloDominio": "inventario",
+      "moduloDominio": null,
       "usaDriver": false
     },
     {
@@ -1279,7 +1279,7 @@
       "metodos": [],
       "nivel": "publico",
       "audit": true,
-      "moduloDominio": "inventario",
+      "moduloDominio": null,
       "usaDriver": false
     },
     {
@@ -1288,7 +1288,7 @@
       "metodos": ["GET"],
       "nivel": "SIN_WRAPPER",
       "audit": false,
-      "moduloDominio": "identidad",
+      "moduloDominio": null,
       "usaDriver": false
     },
     {
@@ -1297,7 +1297,7 @@
       "metodos": [],
       "nivel": "products.read",
       "audit": false,
-      "moduloDominio": "inventario",
+      "moduloDominio": null,
       "usaDriver": false
     },
     {
@@ -1306,7 +1306,7 @@
       "metodos": [],
       "nivel": "publico",
       "audit": false,
-      "moduloDominio": "infraestructura",
+      "moduloDominio": null,
       "usaDriver": false
     },
     {
@@ -1315,7 +1315,7 @@
       "metodos": [],
       "nivel": "publico",
       "audit": false,
-      "moduloDominio": "infraestructura",
+      "moduloDominio": null,
       "usaDriver": false
     },
     {
@@ -1324,7 +1324,7 @@
       "metodos": [],
       "nivel": "publico",
       "audit": false,
-      "moduloDominio": "infraestructura",
+      "moduloDominio": null,
       "usaDriver": false
     },
     {
@@ -1342,7 +1342,7 @@
       "metodos": [],
       "nivel": "publico",
       "audit": true,
-      "moduloDominio": "identidad",
+      "moduloDominio": null,
       "usaDriver": false
     },
     {
@@ -1351,7 +1351,7 @@
       "metodos": [],
       "nivel": "publico",
       "audit": true,
-      "moduloDominio": "identidad",
+      "moduloDominio": null,
       "usaDriver": false
     },
     {
@@ -1360,7 +1360,7 @@
       "metodos": [],
       "nivel": "publico",
       "audit": false,
-      "moduloDominio": "identidad",
+      "moduloDominio": null,
       "usaDriver": false
     },
     {
@@ -1369,7 +1369,7 @@
       "metodos": [],
       "nivel": "publico",
       "audit": false,
-      "moduloDominio": "identidad",
+      "moduloDominio": null,
       "usaDriver": false
     },
     {
@@ -1378,7 +1378,7 @@
       "metodos": [],
       "nivel": "publico",
       "audit": true,
-      "moduloDominio": "identidad",
+      "moduloDominio": null,
       "usaDriver": false
     },
     {
@@ -1387,7 +1387,7 @@
       "metodos": [],
       "nivel": "administrator",
       "audit": true,
-      "moduloDominio": "identidad",
+      "moduloDominio": null,
       "usaDriver": false
     },
     {
@@ -1396,7 +1396,7 @@
       "metodos": [],
       "nivel": "publico",
       "audit": true,
-      "moduloDominio": "inventario",
+      "moduloDominio": null,
       "usaDriver": false
     },
     {
@@ -1405,7 +1405,7 @@
       "metodos": [],
       "nivel": "rooms.write",
       "audit": true,
-      "moduloDominio": "inventario",
+      "moduloDominio": null,
       "usaDriver": false
     },
     {
@@ -1414,7 +1414,7 @@
       "metodos": [],
       "nivel": "publico",
       "audit": true,
-      "moduloDominio": "inventario",
+      "moduloDominio": null,
       "usaDriver": false
     },
     {
@@ -1423,7 +1423,7 @@
       "metodos": [],
       "nivel": "publico",
       "audit": true,
-      "moduloDominio": "ventas",
+      "moduloDominio": null,
       "usaDriver": false
     },
     {
@@ -1432,7 +1432,7 @@
       "metodos": [],
       "nivel": "publico",
       "audit": true,
-      "moduloDominio": "ventas",
+      "moduloDominio": null,
       "usaDriver": false
     },
     {
@@ -1441,7 +1441,7 @@
       "metodos": [],
       "nivel": "publico",
       "audit": false,
-      "moduloDominio": "ventas",
+      "moduloDominio": null,
       "usaDriver": false
     },
     {
@@ -1450,7 +1450,7 @@
       "metodos": [],
       "nivel": "publico",
       "audit": true,
-      "moduloDominio": "operacion",
+      "moduloDominio": null,
       "usaDriver": false
     },
     {
@@ -1459,7 +1459,7 @@
       "metodos": [],
       "nivel": "authenticated",
       "audit": true,
-      "moduloDominio": "operacion",
+      "moduloDominio": null,
       "usaDriver": false
     },
     {
@@ -1468,7 +1468,7 @@
       "metodos": [],
       "nivel": "publico",
       "audit": false,
-      "moduloDominio": "operacion",
+      "moduloDominio": null,
       "usaDriver": false
     },
     {
@@ -1477,7 +1477,7 @@
       "metodos": ["POST"],
       "nivel": "SIN_WRAPPER",
       "audit": false,
-      "moduloDominio": "operacion",
+      "moduloDominio": null,
       "usaDriver": false
     },
     {
@@ -1486,7 +1486,7 @@
       "metodos": [],
       "nivel": "publico",
       "audit": true,
-      "moduloDominio": "operacion",
+      "moduloDominio": null,
       "usaDriver": false
     },
     {
@@ -1495,7 +1495,7 @@
       "metodos": ["GET", "POST"],
       "nivel": "SIN_WRAPPER",
       "audit": false,
-      "moduloDominio": "operacion",
+      "moduloDominio": null,
       "usaDriver": false
     },
     {
@@ -1504,7 +1504,7 @@
       "metodos": [],
       "nivel": "authenticated",
       "audit": true,
-      "moduloDominio": "operacion",
+      "moduloDominio": null,
       "usaDriver": false
     },
     {
@@ -1513,7 +1513,7 @@
       "metodos": [],
       "nivel": "authenticated",
       "audit": true,
-      "moduloDominio": "operacion",
+      "moduloDominio": null,
       "usaDriver": false
     },
     {
@@ -1522,7 +1522,7 @@
       "metodos": [],
       "nivel": "settings.read",
       "audit": true,
-      "moduloDominio": "infraestructura",
+      "moduloDominio": null,
       "usaDriver": false
     },
     {
@@ -1531,7 +1531,7 @@
       "metodos": [],
       "nivel": "settings.write",
       "audit": true,
-      "moduloDominio": "infraestructura",
+      "moduloDominio": null,
       "usaDriver": false
     },
     {
@@ -1540,7 +1540,7 @@
       "metodos": [],
       "nivel": "settings.write",
       "audit": true,
-      "moduloDominio": "infraestructura",
+      "moduloDominio": null,
       "usaDriver": false
     },
     {
@@ -1549,7 +1549,7 @@
       "metodos": [],
       "nivel": "settings.write",
       "audit": true,
-      "moduloDominio": "infraestructura",
+      "moduloDominio": null,
       "usaDriver": false
     },
     {
@@ -1630,7 +1630,7 @@
       "metodos": ["GET"],
       "nivel": "SIN_WRAPPER",
       "audit": false,
-      "moduloDominio": "infraestructura",
+      "moduloDominio": null,
       "usaDriver": false
     },
     {
@@ -1639,7 +1639,7 @@
       "metodos": [],
       "nivel": "publico",
       "audit": false,
-      "moduloDominio": "infraestructura",
+      "moduloDominio": null,
       "usaDriver": false
     },
     {
@@ -1657,7 +1657,7 @@
       "metodos": [],
       "nivel": "publico",
       "audit": false,
-      "moduloDominio": "personal",
+      "moduloDominio": null,
       "usaDriver": false
     },
     {
@@ -1666,7 +1666,7 @@
       "metodos": [],
       "nivel": "tips.read",
       "audit": true,
-      "moduloDominio": "personal",
+      "moduloDominio": null,
       "usaDriver": false
     },
     {
@@ -1675,7 +1675,7 @@
       "metodos": [],
       "nivel": "authenticated",
       "audit": true,
-      "moduloDominio": "personal",
+      "moduloDominio": null,
       "usaDriver": false
     },
     {
@@ -1684,7 +1684,7 @@
       "metodos": [],
       "nivel": "products.accept_transfer",
       "audit": true,
-      "moduloDominio": "inventario",
+      "moduloDominio": null,
       "usaDriver": false
     },
     {
@@ -1693,7 +1693,7 @@
       "metodos": [],
       "nivel": "products.read",
       "audit": false,
-      "moduloDominio": "inventario",
+      "moduloDominio": null,
       "usaDriver": false
     },
     {
@@ -1702,7 +1702,7 @@
       "metodos": [],
       "nivel": "products.read",
       "audit": false,
-      "moduloDominio": "inventario",
+      "moduloDominio": null,
       "usaDriver": false
     },
     {
@@ -1711,7 +1711,7 @@
       "metodos": [],
       "nivel": "users.write",
       "audit": true,
-      "moduloDominio": "identidad",
+      "moduloDominio": null,
       "usaDriver": false
     },
     {
@@ -1720,7 +1720,7 @@
       "metodos": [],
       "nivel": "users.read",
       "audit": false,
-      "moduloDominio": "identidad",
+      "moduloDominio": null,
       "usaDriver": false
     },
     {
@@ -1729,7 +1729,7 @@
       "metodos": [],
       "nivel": "users.write",
       "audit": true,
-      "moduloDominio": "identidad",
+      "moduloDominio": null,
       "usaDriver": false
     },
     {
@@ -1738,7 +1738,7 @@
       "metodos": [],
       "nivel": "users.write",
       "audit": true,
-      "moduloDominio": "identidad",
+      "moduloDominio": null,
       "usaDriver": false
     },
     {
@@ -1747,7 +1747,7 @@
       "metodos": [],
       "nivel": "users.write",
       "audit": true,
-      "moduloDominio": "identidad",
+      "moduloDominio": null,
       "usaDriver": false
     },
     {
@@ -1756,7 +1756,7 @@
       "metodos": [],
       "nivel": "publico",
       "audit": false,
-      "moduloDominio": "identidad",
+      "moduloDominio": null,
       "usaDriver": false
     },
     {
@@ -1765,7 +1765,7 @@
       "metodos": [],
       "nivel": "users.write",
       "audit": true,
-      "moduloDominio": "identidad",
+      "moduloDominio": null,
       "usaDriver": false
     },
     {
@@ -1774,7 +1774,7 @@
       "metodos": [],
       "nivel": "authenticated",
       "audit": true,
-      "moduloDominio": "identidad",
+      "moduloDominio": null,
       "usaDriver": false
     },
     {
@@ -1783,7 +1783,7 @@
       "metodos": [],
       "nivel": "authenticated",
       "audit": true,
-      "moduloDominio": "identidad",
+      "moduloDominio": null,
       "usaDriver": false
     },
     {
@@ -1792,7 +1792,7 @@
       "metodos": [],
       "nivel": "users.write",
       "audit": true,
-      "moduloDominio": "identidad",
+      "moduloDominio": null,
       "usaDriver": false
     },
     {
@@ -1801,7 +1801,7 @@
       "metodos": [],
       "nivel": "authenticated",
       "audit": true,
-      "moduloDominio": "identidad",
+      "moduloDominio": null,
       "usaDriver": false
     },
     {
@@ -1810,7 +1810,7 @@
       "metodos": [],
       "nivel": "publico",
       "audit": true,
-      "moduloDominio": "ventas",
+      "moduloDominio": null,
       "usaDriver": false
     },
     {
@@ -1819,7 +1819,7 @@
       "metodos": [],
       "nivel": "sales.anulate",
       "audit": true,
-      "moduloDominio": "ventas",
+      "moduloDominio": null,
       "usaDriver": false
     },
     {
@@ -1828,7 +1828,7 @@
       "metodos": ["POST"],
       "nivel": "SIN_WRAPPER",
       "audit": false,
-      "moduloDominio": "ventas",
+      "moduloDominio": null,
       "usaDriver": false
     },
     {
@@ -1837,7 +1837,7 @@
       "metodos": ["GET"],
       "nivel": "SIN_WRAPPER",
       "audit": false,
-      "moduloDominio": "ventas",
+      "moduloDominio": null,
       "usaDriver": false
     },
     {
@@ -1918,235 +1918,187 @@
       "escribe": []
     },
     {
-      "archivo": "modules/asistencia/biometrico/avisosAudio.ts",
-      "capa": "raiz",
-      "modulo": "asistencia",
-      "escribe": []
-    },
-    {
-      "archivo": "modules/asistencia/biometrico/clockSync.ts",
-      "capa": "raiz",
-      "modulo": "asistencia",
-      "escribe": []
-    },
-    {
-      "archivo": "modules/asistencia/biometrico/deviceAuth.ts",
-      "capa": "raiz",
-      "modulo": "asistencia",
-      "escribe": ["biometric_devices"]
-    },
-    {
-      "archivo": "modules/asistencia/biometrico/enrollmentService.ts",
-      "capa": "raiz",
-      "modulo": "asistencia",
-      "escribe": ["biometric_devices", "biometric_plantillas", "usuarios"]
-    },
-    {
-      "archivo": "modules/asistencia/biometrico/eventListener.ts",
-      "capa": "raiz",
-      "modulo": "asistencia",
-      "escribe": []
-    },
-    {
-      "archivo": "modules/asistencia/biometrico/identificacionFacial.ts",
-      "capa": "raiz",
-      "modulo": "asistencia",
-      "escribe": ["biometric_device_records", "biometric_plantillas"]
-    },
-    {
-      "archivo": "modules/asistencia/biometrico/ipDiscovery.ts",
-      "capa": "raiz",
-      "modulo": "asistencia",
-      "escribe": ["biometric_devices"]
-    },
-    {
-      "archivo": "modules/asistencia/biometrico/ipWatcher.ts",
-      "capa": "raiz",
-      "modulo": "asistencia",
-      "escribe": []
-    },
-    {
-      "archivo": "modules/asistencia/biometrico/processBiometricEvent.ts",
-      "capa": "raiz",
-      "modulo": "asistencia",
-      "escribe": []
-    },
-    {
-      "archivo": "modules/asistencia/biometrico/recordPhotos.ts",
-      "capa": "raiz",
-      "modulo": "asistencia",
-      "escribe": ["biometric_device_records"]
-    },
-    {
-      "archivo": "modules/asistencia/biometrico/recordPoller.ts",
-      "capa": "raiz",
-      "modulo": "asistencia",
-      "escribe": []
-    },
-    {
-      "archivo": "modules/asistencia/biometrico/statusService.ts",
-      "capa": "raiz",
-      "modulo": "asistencia",
-      "escribe": []
-    },
-    {
-      "archivo": "modules/asistencia/biometrico/unenrollmentService.ts",
-      "capa": "raiz",
-      "modulo": "asistencia",
-      "escribe": ["biometric_plantillas", "usuarios"]
-    },
-    {
-      "archivo": "modules/asistencia/biometrico/verificacionRemota.ts",
-      "capa": "raiz",
-      "modulo": "asistencia",
-      "escribe": []
-    },
-    {
-      "archivo": "modules/asistencia/biometrico/videoStream.ts",
-      "capa": "raiz",
-      "modulo": "asistencia",
-      "escribe": []
-    },
-    {
-      "archivo": "modules/asistencia/kioskos/attendanceChallenges.ts",
-      "capa": "raiz",
-      "modulo": "asistencia",
-      "escribe": ["asistencia_desafios"]
-    },
-    {
-      "archivo": "modules/asistencia/kioskos/deviceAuth.ts",
-      "capa": "raiz",
-      "modulo": "asistencia",
-      "escribe": ["kiosk_devices"]
-    },
-    {
-      "archivo": "modules/inventario/anulaciones/servicio.ts",
-      "capa": "raiz",
-      "modulo": "inventario",
-      "escribe": []
-    },
-    {
-      "archivo": "modules/inventario/bar/configuracion.ts",
-      "capa": "raiz",
-      "modulo": "inventario",
-      "escribe": []
-    },
-    {
-      "archivo": "modules/inventario/compras/servicio.ts",
-      "capa": "raiz",
-      "modulo": "inventario",
-      "escribe": []
-    },
-    {
-      "archivo": "modules/inventario/envases/servicio.ts",
-      "capa": "raiz",
-      "modulo": "inventario",
-      "escribe": []
-    },
-    {
-      "archivo": "modules/inventario/presentaciones/servicio.ts",
-      "capa": "raiz",
-      "modulo": "inventario",
-      "escribe": []
-    },
-    {
-      "archivo": "modules/inventario/productos/servicio.ts",
-      "capa": "raiz",
-      "modulo": "inventario",
-      "escribe": []
-    },
-    {
-      "archivo": "modules/inventario/tipos.ts",
-      "capa": "raiz",
-      "modulo": "inventario",
-      "escribe": []
-    },
-    {
-      "archivo": "modules/inventario/transferencias/servicio.ts",
-      "capa": "raiz",
-      "modulo": "inventario",
-      "escribe": []
-    },
-    {
-      "archivo": "modules/inventario/unidades/servicio.ts",
-      "capa": "raiz",
-      "modulo": "inventario",
-      "escribe": []
-    },
-    {
-      "archivo": "modules/operacion/cuentas/alta.ts",
-      "capa": "raiz",
-      "modulo": "operacion",
-      "escribe": []
-    },
-    {
-      "archivo": "modules/operacion/servicios/creacion.ts",
-      "capa": "raiz",
-      "modulo": "operacion",
-      "escribe": []
-    },
-    {
-      "archivo": "modules/ventas/registro/servicio.ts",
-      "capa": "raiz",
-      "modulo": "ventas",
-      "escribe": []
-    },
-    {
       "archivo": "proxy.ts",
       "capa": "raiz",
       "modulo": null,
       "escribe": []
     },
     {
-      "archivo": "lib/services/AuditService.ts",
-      "capa": "lib/services",
-      "modulo": "comunicaciones",
+      "archivo": "modules/auditoria/alertas/servicio.ts",
+      "capa": "modules/aplicacion",
+      "modulo": "auditoria",
       "escribe": []
     },
     {
-      "archivo": "lib/services/PermissionService.ts",
-      "capa": "lib/services",
-      "modulo": "identidad",
-      "escribe": []
-    },
-    {
-      "archivo": "lib/services/RoomManager.ts",
-      "capa": "lib/services",
-      "modulo": "operacion",
-      "escribe": ["habitaciones", "servicios", "ventas"]
-    },
-    {
-      "archivo": "lib/services/SaleService.ts",
-      "capa": "lib/services",
-      "modulo": "ventas",
-      "escribe": []
-    },
-    {
-      "archivo": "lib/services/SecurityAlertService.ts",
-      "capa": "lib/services",
-      "modulo": null,
-      "escribe": []
-    },
-    {
-      "archivo": "lib/services/ServiceService.ts",
-      "capa": "lib/services",
-      "modulo": "operacion",
-      "escribe": []
-    },
-    {
-      "archivo": "lib/services/WithdrawalService.ts",
-      "capa": "lib/services",
+      "archivo": "modules/caja/retiros/servicio.ts",
+      "capa": "modules/aplicacion",
       "modulo": "caja",
       "escribe": ["cajas"]
     },
     {
-      "archivo": "lib/notifications/orderNotificationUtils.ts",
-      "capa": "lib/otros",
-      "modulo": null,
+      "archivo": "modules/comunicaciones/push/servicio.ts",
+      "capa": "modules/aplicacion",
+      "modulo": "comunicaciones",
+      "escribe": ["push_tokens"]
+    },
+    {
+      "archivo": "modules/identidad/autenticacion/codigos.ts",
+      "capa": "modules/aplicacion",
+      "modulo": "identidad",
+      "escribe": ["codigos"]
+    },
+    {
+      "archivo": "modules/reportes/informes/caja.ts",
+      "capa": "modules/aplicacion",
+      "modulo": "reportes",
       "escribe": []
     },
     {
-      "archivo": "lib/transaccion/compatibilidad.ts",
+      "archivo": "modules/reportes/informes/comisiones.ts",
+      "capa": "modules/aplicacion",
+      "modulo": "reportes",
+      "escribe": []
+    },
+    {
+      "archivo": "modules/reportes/informes/ventas.ts",
+      "capa": "modules/aplicacion",
+      "modulo": "reportes",
+      "escribe": []
+    },
+    {
+      "archivo": "modules/asistencia/biometrico/avisosAudio.ts",
+      "capa": "modules/aplicacion",
+      "modulo": "asistencia",
+      "escribe": []
+    },
+    {
+      "archivo": "modules/asistencia/biometrico/clockSync.ts",
+      "capa": "modules/aplicacion",
+      "modulo": "asistencia",
+      "escribe": []
+    },
+    {
+      "archivo": "modules/asistencia/biometrico/deviceAuth.ts",
+      "capa": "modules/aplicacion",
+      "modulo": "asistencia",
+      "escribe": ["biometric_devices"]
+    },
+    {
+      "archivo": "modules/asistencia/biometrico/enrollmentService.ts",
+      "capa": "modules/aplicacion",
+      "modulo": "asistencia",
+      "escribe": ["biometric_devices", "biometric_plantillas"]
+    },
+    {
+      "archivo": "modules/asistencia/biometrico/eventListener.ts",
+      "capa": "modules/aplicacion",
+      "modulo": "asistencia",
+      "escribe": ["biometric_device_records"]
+    },
+    {
+      "archivo": "modules/asistencia/biometrico/identificacionFacial.ts",
+      "capa": "modules/aplicacion",
+      "modulo": "asistencia",
+      "escribe": ["biometric_device_records", "biometric_plantillas"]
+    },
+    {
+      "archivo": "modules/asistencia/biometrico/ipDiscovery.ts",
+      "capa": "modules/aplicacion",
+      "modulo": "asistencia",
+      "escribe": ["biometric_devices"]
+    },
+    {
+      "archivo": "modules/asistencia/biometrico/ipWatcher.ts",
+      "capa": "modules/aplicacion",
+      "modulo": "asistencia",
+      "escribe": []
+    },
+    {
+      "archivo": "modules/asistencia/biometrico/processBiometricEvent.ts",
+      "capa": "modules/aplicacion",
+      "modulo": "asistencia",
+      "escribe": ["asistencias", "biometric_events"]
+    },
+    {
+      "archivo": "modules/asistencia/biometrico/recordPhotos.ts",
+      "capa": "modules/aplicacion",
+      "modulo": "asistencia",
+      "escribe": ["biometric_device_records"]
+    },
+    {
+      "archivo": "modules/asistencia/biometrico/recordPoller.ts",
+      "capa": "modules/aplicacion",
+      "modulo": "asistencia",
+      "escribe": ["biometric_device_records"]
+    },
+    {
+      "archivo": "modules/asistencia/biometrico/statusService.ts",
+      "capa": "modules/aplicacion",
+      "modulo": "asistencia",
+      "escribe": []
+    },
+    {
+      "archivo": "modules/asistencia/biometrico/verificacionRemota.ts",
+      "capa": "modules/aplicacion",
+      "modulo": "asistencia",
+      "escribe": []
+    },
+    {
+      "archivo": "modules/asistencia/biometrico/videoStream.ts",
+      "capa": "modules/aplicacion",
+      "modulo": "asistencia",
+      "escribe": []
+    },
+    {
+      "archivo": "modules/asistencia/kioskos/attendanceChallenges.ts",
+      "capa": "modules/aplicacion",
+      "modulo": "asistencia",
+      "escribe": ["asistencia_desafios"]
+    },
+    {
+      "archivo": "modules/asistencia/kioskos/deviceAuth.ts",
+      "capa": "modules/aplicacion",
+      "modulo": "asistencia",
+      "escribe": ["kiosk_devices"]
+    },
+    {
+      "archivo": "modules/inventario/bar/configuracion.ts",
+      "capa": "modules/aplicacion",
+      "modulo": "inventario",
+      "escribe": []
+    },
+    {
+      "archivo": "modules/inventario/compras/servicio.ts",
+      "capa": "modules/aplicacion",
+      "modulo": "inventario",
+      "escribe": ["inventario_presentaciones"]
+    },
+    {
+      "archivo": "modules/inventario/productos/servicio.ts",
+      "capa": "modules/aplicacion",
+      "modulo": "inventario",
+      "escribe": []
+    },
+    {
+      "archivo": "modules/inventario/tipos.ts",
+      "capa": "modules/aplicacion",
+      "modulo": "inventario",
+      "escribe": []
+    },
+    {
+      "archivo": "modules/operacion/cuentas/alta.ts",
+      "capa": "modules/aplicacion",
+      "modulo": "operacion",
+      "escribe": []
+    },
+    {
+      "archivo": "modules/operacion/servicios/creacion.ts",
+      "capa": "modules/aplicacion",
+      "modulo": "operacion",
+      "escribe": []
+    },
+    {
+      "archivo": "lib/notifications/orderNotificationUtils.ts",
       "capa": "lib/otros",
       "modulo": null,
       "escribe": []
@@ -2164,75 +2116,16 @@
       "escribe": []
     },
     {
-      "archivo": "lib/utils/logUtils.ts",
-      "capa": "lib/otros",
-      "modulo": null,
-      "escribe": ["servicio_logs", "venta_logs"]
-    },
-    {
-      "archivo": "lib/integrations/pushNotifications.ts",
-      "capa": "lib/integrations",
-      "modulo": "comunicaciones",
-      "escribe": ["usuarios"]
-    },
-    {
-      "archivo": "lib/integrations/whatsappPendingActions.ts",
-      "capa": "lib/integrations",
-      "modulo": "comunicaciones",
-      "escribe": [
-        "cuentas",
-        "detalle_cuentas",
-        "solicitudes_anulacion_cuentas",
-        "ventas"
-      ]
-    },
-    {
-      "archivo": "lib/auth/auth.ts",
-      "capa": "lib/identidad",
-      "modulo": "identidad",
-      "escribe": ["logins"]
-    },
-    {
       "archivo": "lib/middleware/auth.ts",
       "capa": "lib/identidad",
       "modulo": "identidad",
       "escribe": []
     },
     {
-      "archivo": "lib/database/db.ts",
-      "capa": "lib/database",
-      "modulo": null,
-      "escribe": []
-    },
-    {
-      "archivo": "lib/database/maintenance.ts",
-      "capa": "lib/database",
-      "modulo": null,
-      "escribe": ["backups"]
-    },
-    {
-      "archivo": "lib/database/perfilConsultas.ts",
-      "capa": "lib/database",
-      "modulo": null,
-      "escribe": []
-    },
-    {
-      "archivo": "lib/business/codigoService.ts",
-      "capa": "lib/business",
-      "modulo": null,
-      "escribe": ["codigos"]
-    },
-    {
       "archivo": "lib/business/containerAlerts.ts",
       "capa": "lib/business",
       "modulo": null,
       "escribe": []
-    },
-    {
-      "archivo": "lib/business/pagosMixtos.ts",
-      "capa": "lib/business",
-      "modulo": null,
-      "escribe": ["clientes", "clientes_prepago_movimientos", "cuentas"]
     },
     {
       "archivo": "lib/business/shotAlerts.ts",
@@ -2253,217 +2146,122 @@
       "escribe": []
     }
   ],
-  "escriturasCruzadas": [
-    {
-      "tabla": "asistencias",
-      "escritores": [
-        "lib/repositories/PayrollRepository.ts",
-        "lib/repositories/auth/AuthQueries.ts"
-      ],
-      "modulos": ["identidad", "personal"]
-    },
-    {
-      "tabla": "cajas",
-      "escritores": [
-        "lib/repositories/CashRegisterRepository.ts",
-        "lib/repositories/service/ServiceQueries.ts",
-        "modules/caja/movimientos/repositorio.ts"
-      ],
-      "modulos": ["caja", "operacion"]
-    },
-    {
-      "tabla": "clientes",
-      "escritores": [
-        "lib/repositories/ClientRepository.ts",
-        "modules/clientes/prepago/repositorio.ts"
-      ],
-      "modulos": ["clientes"]
-    },
-    {
-      "tabla": "cuentas",
-      "escritores": [
-        "lib/repositories/cuenta/CuentaQueries.ts",
-        "modules/operacion/cuentas/repositorio.ts"
-      ],
-      "modulos": ["operacion"]
-    },
-    {
-      "tabla": "detalle_comisiones",
-      "escritores": [
-        "lib/repositories/PayrollRepository.ts",
-        "modules/personal/conceptos/repositorio.ts"
-      ],
-      "modulos": ["personal"]
-    },
-    {
-      "tabla": "detalle_propinas",
-      "escritores": [
-        "lib/repositories/PayrollRepository.ts",
-        "modules/personal/conceptos/repositorio.ts"
-      ],
-      "modulos": ["personal"]
-    },
-    {
-      "tabla": "detalle_servicios",
-      "escritores": [
-        "lib/repositories/service/ServiceQueries.ts",
-        "modules/operacion/servicios/repositorio.ts"
-      ],
-      "modulos": ["operacion"]
-    },
-    {
-      "tabla": "detalle_ventas",
-      "escritores": [
-        "lib/repositories/sale/SaleQueries.ts",
-        "modules/ventas/anulaciones/repositorio.ts",
-        "modules/ventas/registro/repositorio.ts"
-      ],
-      "modulos": ["ventas"]
-    },
-    {
-      "tabla": "inventario_movimientos",
-      "escritores": [
-        "modules/inventario/anulaciones/repositorio.ts",
-        "modules/inventario/bar/consumoRepositorio.ts"
-      ],
-      "modulos": ["inventario"]
-    },
-    {
-      "tabla": "inventario_unidades",
-      "escritores": [
-        "modules/inventario/anulaciones/repositorio.ts",
-        "modules/inventario/bar/consumoRepositorio.ts",
-        "modules/inventario/envases/repositorio.ts",
-        "modules/inventario/transferencias/repositorio.ts",
-        "modules/inventario/unidades/repositorio.ts"
-      ],
-      "modulos": ["inventario"]
-    },
-    {
-      "tabla": "logins",
-      "escritores": [
-        "lib/repositories/CashRegisterRepository.ts",
-        "lib/repositories/auth/AuthQueries.ts"
-      ],
-      "modulos": ["caja", "identidad"]
-    },
-    {
-      "tabla": "permissions",
-      "escritores": [
-        "lib/repositories/PermissionRepository.ts",
-        "modules/identidad/permisos/repositorio.ts"
-      ],
-      "modulos": ["identidad"]
-    },
-    {
-      "tabla": "role_permissions",
-      "escritores": [
-        "lib/repositories/RoleRepository.ts",
-        "modules/identidad/permisos/repositorio.ts"
-      ],
-      "modulos": ["identidad"]
-    },
-    {
-      "tabla": "servicios",
-      "escritores": [
-        "lib/repositories/TimerRepository.ts",
-        "lib/repositories/service/ServiceQueries.ts",
-        "modules/operacion/servicios/repositorio.ts",
-        "modules/operacion/temporizadores/repositorio.ts"
-      ],
-      "modulos": ["operacion"]
-    },
-    {
-      "tabla": "usuarios",
-      "escritores": [
-        "lib/repositories/auth/AuthQueries.ts",
-        "modules/identidad/usuarios/repositorio.ts"
-      ],
-      "modulos": ["identidad"]
-    },
-    {
-      "tabla": "ventas",
-      "escritores": [
-        "lib/repositories/TimerRepository.ts",
-        "lib/repositories/sale/SaleQueries.ts",
-        "modules/ventas/anulaciones/repositorio.ts"
-      ],
-      "modulos": ["operacion", "ventas"]
-    },
-    {
-      "tabla": "ventas_usuarios",
-      "escritores": [
-        "lib/repositories/sale/SaleQueries.ts",
-        "modules/ventas/registro/repositorio.ts"
-      ],
-      "modulos": ["ventas"]
-    }
-  ],
+  "escriturasCruzadas": [],
   "transacciones": [
+    {
+      "archivo": "modules/caja/retiros/servicio.ts",
+      "capa": "modules/aplicacion",
+      "modulo": "caja"
+    },
+    {
+      "archivo": "modules/caja/turnos/repositorio.ts",
+      "capa": "modules/infraestructura",
+      "modulo": "caja"
+    },
+    {
+      "archivo": "modules/identidad/autenticacion/consultas.ts",
+      "capa": "modules/infraestructura",
+      "modulo": "identidad"
+    },
+    {
+      "archivo": "modules/identidad/roles/registro.ts",
+      "capa": "modules/infraestructura",
+      "modulo": "identidad"
+    },
+    {
+      "archivo": "modules/inventario/anulaciones/infraestructura.ts",
+      "capa": "modules/infraestructura",
+      "modulo": "inventario"
+    },
+    {
+      "archivo": "modules/inventario/categorias/repositorio.ts",
+      "capa": "modules/infraestructura",
+      "modulo": "inventario"
+    },
+    {
+      "archivo": "modules/inventario/envases/infraestructura.ts",
+      "capa": "modules/infraestructura",
+      "modulo": "inventario"
+    },
+    {
+      "archivo": "modules/inventario/presentaciones/infraestructura.ts",
+      "capa": "modules/infraestructura",
+      "modulo": "inventario"
+    },
+    {
+      "archivo": "modules/inventario/transferencias/infraestructura.ts",
+      "capa": "modules/infraestructura",
+      "modulo": "inventario"
+    },
+    {
+      "archivo": "modules/inventario/unidades/infraestructura.ts",
+      "capa": "modules/infraestructura",
+      "modulo": "inventario"
+    },
+    {
+      "archivo": "modules/operacion/cuentas/anulacionesServicio.ts",
+      "capa": "modules/aplicacion",
+      "modulo": "operacion"
+    },
+    {
+      "archivo": "modules/operacion/cuentas/consultas.ts",
+      "capa": "modules/infraestructura",
+      "modulo": "operacion"
+    },
+    {
+      "archivo": "modules/operacion/pedidos/repositorio.ts",
+      "capa": "modules/infraestructura",
+      "modulo": "operacion"
+    },
+    {
+      "archivo": "modules/operacion/temporizadores/fachada.ts",
+      "capa": "modules/aplicacion",
+      "modulo": "operacion"
+    },
+    {
+      "archivo": "modules/personal/conceptos/propinas.ts",
+      "capa": "modules/aplicacion",
+      "modulo": "personal"
+    },
+    {
+      "archivo": "modules/personal/gratificaciones/consultas.ts",
+      "capa": "modules/infraestructura",
+      "modulo": "personal"
+    },
+    {
+      "archivo": "modules/personal/nomina/servicio.ts",
+      "capa": "modules/aplicacion",
+      "modulo": "personal"
+    },
+    {
+      "archivo": "workflows/anulaciones-venta.ts",
+      "capa": "workflows",
+      "modulo": null
+    },
+    {
+      "archivo": "workflows/anulaciones-whatsapp.ts",
+      "capa": "workflows",
+      "modulo": null
+    },
+    {
+      "archivo": "workflows/eliminar-usuario.ts",
+      "capa": "workflows",
+      "modulo": null
+    },
+    {
+      "archivo": "workflows/prepago.ts",
+      "capa": "workflows",
+      "modulo": null
+    },
+    {
+      "archivo": "workflows/ventas.ts",
+      "capa": "workflows",
+      "modulo": null
+    },
     {
       "archivo": "lib/database/maintenance.ts",
       "capa": "lib/database",
       "modulo": null
-    },
-    {
-      "archivo": "lib/repositories/CashRegisterRepository.ts",
-      "capa": "lib/repositories",
-      "modulo": "caja"
-    },
-    {
-      "archivo": "lib/repositories/CategoryRepository.ts",
-      "capa": "lib/repositories",
-      "modulo": "inventario"
-    },
-    {
-      "archivo": "lib/repositories/OrderRepository.ts",
-      "capa": "lib/repositories",
-      "modulo": "operacion"
-    },
-    {
-      "archivo": "lib/repositories/PayrollRepository.ts",
-      "capa": "lib/repositories",
-      "modulo": "personal"
-    },
-    {
-      "archivo": "lib/repositories/RoleRepository.ts",
-      "capa": "lib/repositories",
-      "modulo": "identidad"
-    },
-    {
-      "archivo": "lib/repositories/TipRepository.ts",
-      "capa": "lib/repositories",
-      "modulo": "personal"
-    },
-    {
-      "archivo": "lib/repositories/cuenta/CuentaQueries.ts",
-      "capa": "lib/repositories",
-      "modulo": "operacion"
-    },
-    {
-      "archivo": "lib/repositories/gratificacion/GratificacionQueries.ts",
-      "capa": "lib/repositories",
-      "modulo": "personal"
-    },
-    {
-      "archivo": "lib/repositories/sale/SaleQueries.ts",
-      "capa": "lib/repositories",
-      "modulo": "ventas"
-    },
-    {
-      "archivo": "lib/repositories/service/ServiceQueries.ts",
-      "capa": "lib/repositories",
-      "modulo": "operacion"
-    },
-    {
-      "archivo": "lib/services/SaleService.ts",
-      "capa": "lib/services",
-      "modulo": "ventas"
-    },
-    {
-      "archivo": "lib/services/WithdrawalService.ts",
-      "capa": "lib/services",
-      "modulo": "caja"
     },
     {
       "archivo": "lib/transaccion/contrato.ts",
@@ -2472,117 +2270,97 @@
     },
     {
       "archivo": "modules/asistencia/biometrico/enrollmentService.ts",
-      "capa": "raiz",
+      "capa": "modules/aplicacion",
       "modulo": "asistencia"
     },
     {
       "archivo": "modules/asistencia/biometrico/unenrollmentService.ts",
-      "capa": "raiz",
+      "capa": "modules/aplicacion",
       "modulo": "asistencia"
     },
     {
       "archivo": "modules/asistencia/kioskos/deviceAuth.ts",
-      "capa": "raiz",
+      "capa": "modules/aplicacion",
       "modulo": "asistencia"
     },
     {
       "archivo": "modules/asistencia/marcas/repositorio.ts",
-      "capa": "raiz",
+      "capa": "modules/infraestructura",
       "modulo": "asistencia"
     },
     {
-      "archivo": "modules/clientes/prepago/servicio.ts",
-      "capa": "raiz",
-      "modulo": "clientes"
-    },
-    {
       "archivo": "modules/identidad/permisos/repositorio.ts",
-      "capa": "raiz",
+      "capa": "modules/infraestructura",
       "modulo": "identidad"
     },
     {
-      "archivo": "modules/inventario/anulaciones/servicio.ts",
-      "capa": "raiz",
-      "modulo": "inventario"
-    },
-    {
       "archivo": "modules/inventario/compras/servicio.ts",
-      "capa": "raiz",
-      "modulo": "inventario"
-    },
-    {
-      "archivo": "modules/inventario/envases/servicio.ts",
-      "capa": "raiz",
-      "modulo": "inventario"
-    },
-    {
-      "archivo": "modules/inventario/presentaciones/servicio.ts",
-      "capa": "raiz",
+      "capa": "modules/aplicacion",
       "modulo": "inventario"
     },
     {
       "archivo": "modules/inventario/productos/servicio.ts",
-      "capa": "raiz",
-      "modulo": "inventario"
-    },
-    {
-      "archivo": "modules/inventario/transferencias/servicio.ts",
-      "capa": "raiz",
-      "modulo": "inventario"
-    },
-    {
-      "archivo": "modules/inventario/unidades/servicio.ts",
-      "capa": "raiz",
+      "capa": "modules/aplicacion",
       "modulo": "inventario"
     },
     {
       "archivo": "modules/operacion/cuentas/actualizacion.ts",
-      "capa": "raiz",
+      "capa": "modules/aplicacion",
       "modulo": "operacion"
     },
     {
       "archivo": "modules/operacion/cuentas/alta.ts",
-      "capa": "raiz",
+      "capa": "modules/aplicacion",
+      "modulo": "operacion"
+    },
+    {
+      "archivo": "modules/operacion/cuentas/repositorio.ts",
+      "capa": "modules/infraestructura",
+      "modulo": "operacion"
+    },
+    {
+      "archivo": "modules/operacion/cuentas/servicio.ts",
+      "capa": "modules/aplicacion",
       "modulo": "operacion"
     },
     {
       "archivo": "modules/operacion/cuentas/temporizadores.ts",
-      "capa": "raiz",
+      "capa": "modules/aplicacion",
       "modulo": "operacion"
     },
     {
       "archivo": "modules/operacion/servicios/anulaciones.ts",
-      "capa": "raiz",
+      "capa": "modules/aplicacion",
       "modulo": "operacion"
     },
     {
       "archivo": "modules/operacion/servicios/creacion.ts",
-      "capa": "raiz",
+      "capa": "modules/aplicacion",
+      "modulo": "operacion"
+    },
+    {
+      "archivo": "modules/operacion/servicios/servicio.ts",
+      "capa": "modules/aplicacion",
       "modulo": "operacion"
     },
     {
       "archivo": "modules/operacion/temporizadores/servicio.ts",
-      "capa": "raiz",
+      "capa": "modules/aplicacion",
       "modulo": "operacion"
     },
     {
       "archivo": "modules/personal/anticipos/repositorio.ts",
-      "capa": "raiz",
+      "capa": "modules/infraestructura",
       "modulo": "personal"
     },
     {
       "archivo": "modules/personal/anticipos/servicio.ts",
-      "capa": "raiz",
+      "capa": "modules/aplicacion",
       "modulo": "personal"
     },
     {
-      "archivo": "modules/ventas/anulaciones/servicio.ts",
-      "capa": "raiz",
-      "modulo": "ventas"
-    },
-    {
       "archivo": "workflows/cobrar-cuenta.ts",
-      "capa": "raiz",
+      "capa": "workflows",
       "modulo": null
     }
   ],
@@ -2697,6 +2475,11 @@
   ],
   "caches": [
     {
+      "archivo": "lib/cache/failedLoginStore.ts",
+      "linea": 111,
+      "texto": "client = new Redis(this.url!, {"
+    },
+    {
       "archivo": "lib/api/sseBus.ts",
       "linea": 112,
       "texto": "publisher = new Redis(process.env.REDIS_URL!, options);"
@@ -2705,11 +2488,6 @@
       "archivo": "lib/api/sseBus.ts",
       "linea": 113,
       "texto": "subscriber = new Redis(process.env.REDIS_URL!, options);"
-    },
-    {
-      "archivo": "lib/auth/failed-login-store.ts",
-      "linea": 111,
-      "texto": "client = new Redis(this.url!, {"
     },
     {
       "archivo": "lib/auth/permissions-cache.ts",
@@ -2738,13 +2516,18 @@
     },
     {
       "archivo": "scripts/arquitectura/analisis.mjs",
-      "linea": 330,
+      "linea": 368,
       "texto": "/\\bnew (Redis|RedisClient|ioredis)\\b/.test(linea) ||"
     },
     {
       "archivo": "scripts/redis-dev.js",
       "linea": 6,
       "texto": "const client = new Redis(url, {"
+    },
+    {
+      "archivo": "lib/cache/failedLoginStore.ts",
+      "linea": 0,
+      "texto": "caché en memoria (new Map + cache)"
     },
     {
       "archivo": "components/shared/ProductPhoto.tsx",
@@ -2760,11 +2543,6 @@
       "archivo": "lib/api/sseBus.ts",
       "linea": 0,
       "texto": "caché compartida en globalThis"
-    },
-    {
-      "archivo": "lib/auth/failed-login-store.ts",
-      "linea": 0,
-      "texto": "caché en memoria (new Map + cache)"
     },
     {
       "archivo": "lib/auth/permissions-cache.ts",
@@ -2792,16 +2570,111 @@
       "texto": "caché compartida en globalThis"
     }
   ],
-  "ciclos": [
-    ["identidad", "personal", "identidad"],
-    ["identidad", "personal", "comunicaciones", "identidad"],
-    ["comunicaciones", "ventas", "comunicaciones"],
-    ["personal", "comunicaciones", "ventas", "personal"],
-    ["comunicaciones", "operacion", "comunicaciones"],
-    ["identidad", "personal", "comunicaciones", "operacion", "identidad"]
-  ],
-  "matriz": {},
+  "ciclos": [],
+  "matriz": {
+    "lib/business": {
+      "lib/api": 3,
+      "lib/otros": 6,
+      "lib/database": 4,
+      "modules/aplicacion": 2,
+      "components": 1,
+      "raiz": 1
+    },
+    "lib/otros": {
+      "lib/business": 6,
+      "lib/database": 3,
+      "components": 2,
+      "raiz": 4
+    },
+    "lib/database": {
+      "lib/business": 1,
+      "lib/otros": 3
+    },
+    "modules/infraestructura": {
+      "lib/database": 100,
+      "lib/otros": 125,
+      "lib/business": 51,
+      "lib/identidad": 2,
+      "lib/api": 6,
+      "modules/aplicacion": 24,
+      "raiz": 2
+    },
+    "modules/aplicacion": {
+      "modules/infraestructura": 23,
+      "lib/otros": 81,
+      "lib/database": 37,
+      "lib/business": 24,
+      "lib/api": 8,
+      "lib/identidad": 3,
+      "raiz": 4
+    },
+    "scripts": {},
+    "workflows": {
+      "lib/business": 6,
+      "lib/otros": 17,
+      "lib/api": 3,
+      "modules/aplicacion": 6
+    },
+    "app/ui": {
+      "hooks": 49,
+      "lib/otros": 50,
+      "lib/api": 6,
+      "lib/business": 3,
+      "modules/aplicacion": 1,
+      "raiz": 13,
+      "components": 2
+    },
+    "app/api": {
+      "lib/api": 231,
+      "lib/otros": 63,
+      "lib/identidad": 11,
+      "workflows": 19,
+      "lib/business": 21,
+      "modules/aplicacion": 1,
+      "lib/database": 2,
+      "lib/integrations": 1
+    },
+    "components": {
+      "hooks": 122,
+      "lib/otros": 267,
+      "raiz": 79,
+      "lib/business": 25,
+      "modules/aplicacion": 4,
+      "lib/api": 1,
+      "app/ui": 1
+    },
+    "raiz": {
+      "lib/otros": 9,
+      "hooks": 4,
+      "lib/api": 1,
+      "lib/identidad": 1,
+      "modules/aplicacion": 1
+    },
+    "hooks": {
+      "lib/otros": 69,
+      "raiz": 36,
+      "components": 14,
+      "lib/api": 6,
+      "lib/business": 8,
+      "modules/aplicacion": 2
+    },
+    "lib/api": {
+      "lib/identidad": 3,
+      "modules/aplicacion": 1,
+      "lib/otros": 6,
+      "lib/business": 2,
+      "lib/database": 2
+    },
+    "lib/identidad": {
+      "lib/otros": 5,
+      "lib/business": 1
+    },
+    "lib/integrations": {}
+  },
   "ordenCapas": [
+    "modules/aplicacion",
+    "modules/infraestructura",
+    "workflows",
     "app/api",
     "app/ui",
     "components",

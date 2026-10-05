@@ -3,9 +3,9 @@ import {
   parsePagosMixtos,
   validatePagosMixtos,
   calcularDeltasCaja,
-  procesarPrepago,
   type MixedPayment
 } from '@/lib/business/pagosMixtos';
+import { procesarPrepago } from '@/modules/clientes/prepago/consumoRepositorio';
 import { ValidationError, BusinessError } from '@/lib/errors/errors';
 
 vi.mock('@/lib/database/db', () => ({
@@ -184,7 +184,7 @@ describe('procesarPrepago', () => {
       prepagoSolicitado: null
     });
     expect(result).toBe(2000);
-    expect(trx.mock.calls[4][0]).toContain('UPDATE cuentas');
+    expect(trx.mock.calls.every(([sql]) => !String(sql).includes('UPDATE cuentas'))).toBe(true);
   });
 
   it('descuenta el total si prepagoSolicitado es null y saldo >= total', async () => {
@@ -241,7 +241,7 @@ describe('procesarPrepago', () => {
 
     await procesarPrepago(trx as any, { ...baseParams, prepagoSolicitado: 2000 });
 
-    expect(trx).toHaveBeenCalledTimes(4);
+    expect(trx).toHaveBeenCalledTimes(3);
     expect(trx.mock.calls[1][0]).toContain('UPDATE clientes');
     expect(trx.mock.calls[2][0]).toContain('INSERT INTO clientes_prepago_movimientos');
   });

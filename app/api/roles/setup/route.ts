@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server';
 import { withRoute } from '@/lib/api/withRoute';
 import { contarRoles } from '@/modules/identidad';
-import { RoleService } from '@/lib/services/RoleService';
+import { RoleService } from '@/modules/identidad';
 import logger from '@/lib/utils/logger';
 
 const DEFAULT_ROLES = [

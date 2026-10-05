@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server';
 import { withRoute } from '@/lib/api/withRoute';
 import { listarTransferencias } from '@/modules/inventario';
-import { ProductService } from '@/lib/services/ProductService';
+import { ProductService } from '@/modules/inventario';
 
 export { POST } from '@/app/api/bar/route';
 

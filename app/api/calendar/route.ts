@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
 import { withPublicRoute } from '@/lib/api/withRoute';
-import { CalendarService } from '@/lib/services/CalendarService';
+import { CalendarService } from '@/modules/agenda';
 
 export const GET = withPublicRoute(async (request: Request) => {
   const { searchParams } = new URL(request.url);

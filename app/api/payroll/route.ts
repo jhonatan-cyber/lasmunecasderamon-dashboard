@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
 import { withPublicRoute, withRoute } from '@/lib/api/withRoute';
-import { PayrollService } from '@/lib/services/PayrollService';
+import { PayrollService } from '@/modules/personal';
 
 export const GET = withPublicRoute(async () => {
   const data = await PayrollService.getSummary();

@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
 import { getNowInBusinessTimezone } from '@/lib/business/timezoneService';
-import { getOrCreateAttendanceCode } from '@/lib/business/codigoService';
+import { getOrCreateAttendanceCode } from '@/modules/identidad';
 import { consultarVentana, getKioskDevice, listarMarcasDelDia } from '@/modules/asistencia';
 import { listarPersonalActivo } from '@/modules/identidad';
 import { obtenerValorConfiguracion } from '@/modules/configuracion';

@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
 import { withPublicRoute, withRoute } from '@/lib/api/withRoute';
-import { ProductService } from '@/lib/services/ProductService';
+import { ProductService } from '@/modules/inventario';
 import { processAndSaveImage } from '@/lib/utils/image-utils';
 
 export const GET = withPublicRoute(async (request: Request) => {

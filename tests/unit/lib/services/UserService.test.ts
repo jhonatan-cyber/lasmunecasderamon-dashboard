@@ -1,8 +1,8 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { UserService } from '@/lib/services/UserService';
+import { UserService } from '@/modules/identidad/usuarios/fachada';
 import { ValidationError, NotFoundError } from '@/lib/errors/errors';
 
-vi.mock('@/lib/repositories/UserRepository', () => ({
+vi.mock('@/modules/identidad/usuarios/registro', () => ({
   UserRepository: {
     getByRun: vi.fn(),
     getById: vi.fn(),
@@ -38,7 +38,7 @@ vi.mock('fs', async importOriginal => {
   return { ...actual, existsSync: vi.fn().mockReturnValue(false) };
 });
 
-import { UserRepository } from '@/lib/repositories/UserRepository';
+import { UserRepository } from '@/modules/identidad/usuarios/registro';
 import { PermissionsCache } from '@/lib/auth/permissions-cache';
 
 beforeEach(() => {

@@ -1,4 +1,5 @@
 import 'server-only';
+export { obtenerServicioParaAlerta } from './servicios/servicio';
 
 /**
  * API pública del módulo Operación — servidor.
@@ -12,7 +13,12 @@ import 'server-only';
 export {
   obtenerSolicitudAnulacionServicioPorToken,
   obtenerServicioParaAnulacion,
-  registrarSolicitudAnulacionServicio
+  registrarSolicitudAnulacionServicio,
+  listarServicios,
+  listarServiciosPorFechas,
+  listarServiciosDeUsuario,
+  obtenerServicioDetallado,
+  eliminarServicio
 } from './servicios/servicio';
 export {
   anularServicioEnUnidad,
@@ -32,6 +38,7 @@ export { crearCuentaPrepagoRecarga, cerrarCuentasPrepagoSaldadas } from './cuent
 export { detenerTemporizadorCuenta, solicitarAnulacionCuenta } from './cuentas/servicio';
 export { actualizarCuenta, type EntradaActualizacionCuenta } from './cuentas/servicio';
 export { crearCuenta, type EntradaAltaCuenta } from './cuentas/servicio';
+export { listarCuentas, finalizarSesionHabitacion, eliminarCuenta } from './cuentas/servicio';
 export {
   contarPedidosPendientes,
   listarServiciosEnCurso,
@@ -54,3 +61,18 @@ export {
 } from './facturacion/servicio';
 
 export { cobrarCuenta } from './cobro/servicio';
+
+export { consultarHabitacion } from './facturacion/servicio';
+
+export { ServiceService } from './servicios/fachada';
+export { procesarAnulacionCuentaCanal } from './cuentas/anulacionesServicio';
+
+export { AccountService } from './cuentas/fachada';
+
+export { RoomService } from './habitaciones/servicio';
+
+export { OrderService } from './pedidos/servicio';
+
+export { TimerService } from './temporizadores/fachada';
+
+export { ServiceRequestService } from './solicitudes/servicio';

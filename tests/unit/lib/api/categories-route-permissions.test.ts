@@ -36,7 +36,7 @@ vi.mock('@/lib/auth/auth-app', () => ({
   getAuth: vi.fn().mockImplementation(async () => auth.user)
 }));
 
-vi.mock('@/lib/services/CategoryService', () => ({
+vi.mock('@/modules/inventario/categorias/servicio', () => ({
   CategoryService: {
     getAll: vi.fn().mockResolvedValue([]),
     create: vi.fn().mockResolvedValue({ id: 'cat-1', name: 'Nueva' }),
@@ -47,11 +47,11 @@ vi.mock('@/lib/services/CategoryService', () => ({
   }
 }));
 
-vi.mock('@/lib/services/AuditService', () => ({
+vi.mock('@/modules/auditoria/registro/servicio', () => ({
   AuditService: { log: vi.fn().mockResolvedValue(undefined) }
 }));
 
-vi.mock('@/lib/services/ErrorLogService', () => ({
+vi.mock('@/modules/auditoria/errores/servicio', () => ({
   ErrorLogService: { log: vi.fn().mockResolvedValue(undefined) }
 }));
 
@@ -69,7 +69,7 @@ vi.mock('@/lib/utils/logger', () => {
 vi.mock('@/lib/database/db', () => ({ query: db.query }));
 vi.mock('@/lib/auth/permissions-cache', () => ({ PermissionsCache: permissionsCache }));
 
-import { CategoryService } from '@/lib/services/CategoryService';
+import { CategoryService } from '@/modules/inventario/categorias/servicio';
 import { DELETE, PATCH, POST, PUT } from '@/app/api/categories/route';
 import {
   DELETE as DELETE_BY_ID,

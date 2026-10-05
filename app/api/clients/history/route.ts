@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server';
-import { ClientService } from '@/lib/services/ClientService';
+import { ClientService } from '@/workflows/clientes';
 import { withPublicRoute } from '@/lib/api/withRoute';
 
 export const GET = withPublicRoute(async (request: Request) => {

@@ -1,5 +1,8 @@
 import { beforeAll, afterAll, afterEach, vi } from 'vitest';
 import '@testing-library/jest-dom';
+// Las entradas públicas cargan autenticación; estas credenciales son exclusivas del entorno de pruebas.
+process.env.JWT_SECRET ??= 'unit-test-secret-59a048d28576c31e';
+process.env.JWT_REFRESH_SECRET ??= 'unit-test-refresh-68fe2975b0a1c43d';
 
 vi.mock('next/navigation', () => ({
   useRouter: () => ({

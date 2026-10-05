@@ -20,20 +20,20 @@ vi.mock('@/lib/business/timezoneService', () => ({
   getSystemTimezone: () => 'America/Santiago'
 }));
 
-vi.mock('@/lib/services/RoomManager', () => ({
+vi.mock('@/tests/setup/room-manager', () => ({
   RoomManager: { resumeRoomLogic: vi.fn() }
 }));
 
-vi.mock('@/lib/repositories/CashRegisterRepository', () => ({
+vi.mock('@/modules/caja/turnos/repositorio', () => ({
   CashRegisterRepository: { updateBalances: vi.fn() }
 }));
 
-vi.mock('@/lib/utils/logUtils', () => ({
+vi.mock('@/modules/ventas/logs/servicio', () => ({
   addVentaLog: vi.fn()
 }));
 
-import { SaleRepository } from '@/lib/repositories/SaleRepository';
-import { OrderRepository } from '@/lib/repositories/OrderRepository';
+import { SaleService as SaleRepository } from '@/workflows/ventas';
+import { OrderRepository } from '@/modules/operacion/pedidos/repositorio';
 
 const VENTA = {
   id_venta: 'v-1',

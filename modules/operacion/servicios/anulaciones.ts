@@ -11,9 +11,9 @@
  */
 import { enUnaUnidad, type ContextoOperacion } from '@/lib/transaccion/contrato';
 import { ejecutarEfectosConfirmados } from '@/lib/transaccion/efectos';
-import { addServicioLog } from '@/lib/utils/logUtils';
+import { addServicioLog } from './logsServicio';
 import { NotFoundError } from '@/lib/errors/errors';
-import { parseMixedPayments } from '@/lib/repositories/service/serviceMappers';
+import { parseMixedPayments } from '@/modules/operacion/servicios/mapeo';
 import {
   leerServicioParaAnular,
   leerEstadoServicio,
@@ -32,7 +32,7 @@ import {
   leerComisionTotalServicioPorAnulacion
 } from '@/modules/personal';
 import { actualizarDisponibilidad } from '@/modules/identidad';
-import { liberarHabitacionPorAnulacion } from '../facturacion/repositorio';
+import { liberarHabitacionPorAnulacion } from '../facturacion/servicio';
 
 type Tarea = () => void | Promise<void>;
 

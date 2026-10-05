@@ -89,7 +89,7 @@ vi.mock('@/modules/asistencia/biometrico/eventStreamClient', async importOrigina
   };
 });
 
-vi.mock('@/lib/repositories/BaseRepository', () => ({
+vi.mock('@/lib/database/base-repository', () => ({
   BaseRepository: { insert: insercion.fn }
 }));
 

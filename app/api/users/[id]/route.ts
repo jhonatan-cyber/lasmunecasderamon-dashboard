@@ -1,6 +1,7 @@
+import { eliminarUsuario } from '@/workflows/eliminar-usuario';
 import { NextResponse } from 'next/server';
 import { withRoute } from '@/lib/api/withRoute';
-import { UserService } from '@/lib/services/UserService';
+import { UserService } from '@/modules/identidad';
 import { sendNotificationToAll } from '@/lib/api/sseService';
 
 export const GET = withRoute(
@@ -32,7 +33,7 @@ export const DELETE = withRoute(
   { auth: true, audit: true, module: 'users', action: 'delete' },
   async (request: Request, { params }: { params: Promise<{ id: string }> }) => {
     const id = (await params).id;
-    await UserService.delete(id);
+    await eliminarUsuario(id);
     // La cuenta ya no existe: quien la tenía abierta se entera en caliente de que su
     // sesión murió (el cliente la cierra al recibir `force_logout` con su userId).
     sendNotificationToAll('force_logout', { userId: id, message: 'Tu cuenta fue eliminada.' });

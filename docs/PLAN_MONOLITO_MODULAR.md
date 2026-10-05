@@ -481,6 +481,31 @@ tenían llamadores y se eliminan con la última excepción; la puerta queda en
 29/29 sólo con ciclos. Detalle y validación en
 [FASE5_PUENTE_CERO.md](arquitectura/FASE5_PUENTE_CERO.md).
 
+**Corte 24 — fase 7 parcial en ventas (2026-10-05):** `listarVentas` y
+`obtenerVenta` viven en `modules/ventas/lecturas`; `SaleService` ya no importa
+`SaleRepository` y caen los inserts muertos. Detalle y validación en
+[FASE7_VENTAS.md](arquitectura/FASE7_VENTAS.md).
+
+**Corte 25 — fase 7 parcial en servicios (2026-10-05):** lecturas, edición y
+borrado en `modules/operacion/servicios`; `ServiceQueries.ts` se elimina y
+`ServiceService` ya no importa `ServiceRepository`. Detalle y validación en
+[FASE7_SERVICIOS.md](arquitectura/FASE7_SERVICIOS.md).
+
+**Corte 26 — fase 7 parcial en cuentas (2026-10-05):** listado, cierre de sesión
+y borrado en `modules/operacion/cuentas`; `CuentaQueries` queda en helpers
+puros + delegación. Detalle y validación en
+[FASE7_CUENTAS.md](arquitectura/FASE7_CUENTAS.md).
+
+**Corte 27 — fase 7 parcial en clientes (2026-10-05):** fichas (CRUD, listado,
+detalle, historial) en `modules/clientes/fichas`; `ClientService` ya no importa
+`ClientRepository` y caen dos helpers muertos. Detalle y validación en
+[FASE7_CLIENTES.md](arquitectura/FASE7_CLIENTES.md).
+
+**Corte 28 — fase 7 parcial en personal (2026-10-05):** lecturas de propinas en
+`modules/personal/conceptos`; `TipService` compone del módulo y `TipRepository`
+delega. Detalle y validación en
+[FASE7_PERSONAL.md](arquitectura/FASE7_PERSONAL.md).
+
 **Salida:** fallos intermedios revierten todos los cambios; no existen
 escrituras cruzadas fuera de los propietarios; reintentos no duplican
 operaciones.
@@ -596,3 +621,12 @@ Empezar por la fase 0 y el piloto de Horas extras. El primer resultado
 implementable será su límite modular, con rutas compatibles y controles de
 arquitectura funcionando. Solo después se extenderá el patrón a los flujos de
 mayor acoplamiento.
+
+## 11. Consolidación implementada
+
+El estado actual, los límites exigibles y la validación de la migración se
+documentan en [CONSOLIDACION_FINAL.md](arquitectura/CONSOLIDACION_FINAL.md). Los
+propietarios de tablas se fijan en
+[propietarios-tablas.json](arquitectura/propietarios-tablas.json); el control
+bloquea escrituras ajenas y las excepciones heredadas quedaron vacías. Los
+documentos de fases anteriores conservan el historial de decisiones y cortes.

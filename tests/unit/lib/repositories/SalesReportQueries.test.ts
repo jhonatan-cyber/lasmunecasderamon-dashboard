@@ -7,7 +7,7 @@ vi.mock('@/lib/database/db', () => ({
   withTransaction: vi.fn()
 }));
 
-import { getSalesReport } from '@/lib/repositories/report/SalesReportQueries';
+import { getSalesReport } from '@/modules/reportes/informes/ventas';
 
 describe('getSalesReport · shots separados por audiencia', () => {
   beforeEach(() => {

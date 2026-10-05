@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
 import { withPublicRoute, withRoute } from '@/lib/api/withRoute';
-import { ProductService } from '@/lib/services/ProductService';
+import { ProductService } from '@/modules/inventario';
 
 export const GET = withPublicRoute(async (request: Request) => {
   const productoId = new URL(request.url).searchParams.get('producto_id') || undefined;

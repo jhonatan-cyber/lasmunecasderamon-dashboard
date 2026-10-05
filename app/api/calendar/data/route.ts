@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
 import { withPublicRoute } from '@/lib/api/withRoute';
-import { CalendarService } from '@/lib/services/CalendarService';
+import { CalendarService } from '@/modules/agenda';
 import { jsonWithNormalizedDates } from '@/lib/api/date-response';
 import { ValidationError } from '@/lib/errors/errors';
 

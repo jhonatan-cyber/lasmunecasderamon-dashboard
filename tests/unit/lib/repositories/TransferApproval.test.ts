@@ -1,6 +1,6 @@
 import { describe, expect, it, vi } from 'vitest';
 import { aceptarTransferencia } from '@/modules/inventario';
-import { conContextoOperacionExistente } from '@/lib/transaccion/compatibilidad';
+import { conContextoOperacionExistente } from '@/tests/setup/contexto-operacion';
 vi.mock('@/lib/database/db', () => ({
   query: vi.fn(),
   withTransaction: vi.fn(),

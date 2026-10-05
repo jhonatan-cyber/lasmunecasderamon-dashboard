@@ -1,4 +1,5 @@
 import 'server-only';
+export { saldoPrepagoAgotado } from './prepago/servicio';
 
 /**
  * API pública del módulo Clientes — servidor.
@@ -22,7 +23,15 @@ export {
   consumirPrepagoVenta,
   leerPrepagoConsumidoPorVenta,
   restituirPrepagoPorAnulacion,
-  cargarPrepago,
-  devolverSaldo
+  registrarRecargaEnUnidad,
+  devolverSaldoEnUnidad
 } from './prepago/servicio';
 export type { EntradaRecargaPrepago, EntradaDevolucionSaldo } from './prepago/servicio';
+export {
+  listarClientes,
+  obtenerCliente,
+  crearCliente,
+  actualizarCliente,
+  eliminarCliente,
+  obtenerHistorial
+} from './fichas/servicio';

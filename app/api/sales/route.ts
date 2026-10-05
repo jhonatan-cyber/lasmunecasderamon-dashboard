@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server';
 import { withPublicRoute, withRoute } from '@/lib/api/withRoute';
 import { runIdempotent } from '@/lib/api/idempotency';
-import { SaleService } from '@/lib/services/SaleService';
+import { SaleService } from '@/workflows/ventas';
 import { SaleCreateSchema } from '@/lib/business/schemas/sale';
 import { validateOrResponse } from '@/lib/api/validate';
 

@@ -20,7 +20,7 @@ import { cobrarCuentaConVenta } from '@/workflows/cobrar-cuenta';
  */
 import { afterAll, beforeAll, describe, expect, it, vi } from 'vitest';
 
-vi.mock('@/lib/integrations/pushNotifications', () => ({
+vi.mock('@/modules/comunicaciones/push/servicio', () => ({
   // Devuelven promesa: el repositorio de anticipos encadena `.catch(...)` sobre
   // el resultado, y un `vi.fn()` desnudo devolvería undefined. Los anticipos
   // además notifican al empleado con `sendPushNotification`.
@@ -28,7 +28,7 @@ vi.mock('@/lib/integrations/pushNotifications', () => ({
   sendPushToUser: vi.fn(async () => undefined),
   sendPushNotification: vi.fn(async () => undefined)
 }));
-vi.mock('@/lib/services/SecurityAlertService', () => ({
+vi.mock('@/modules/auditoria/alertas/servicio', () => ({
   SecurityAlertService: { checkMassAnulation: vi.fn().mockResolvedValue(undefined) }
 }));
 // `procesarEventoBiometrico` dispara el aviso de audio con `void` (no espera): su
@@ -44,22 +44,22 @@ import { resolve } from 'node:path';
 import db, { query, withTransaction } from '@/lib/database/db';
 import { snapshotDatabase, restoreDatabase } from '@/lib/database/maintenance';
 import { instantaneaPerfil, perfilActivo, reiniciarPerfil } from '@/lib/database/perfilConsultas';
-import { AccountService } from '@/lib/services/AccountService';
+import { AccountService } from '@/modules/operacion/cuentas/fachada';
 import { consumirStockBar } from '@/modules/inventario';
-import { conContextoOperacionExistente } from '@/lib/transaccion/compatibilidad';
+import { conContextoOperacionExistente } from '@/tests/setup/contexto-operacion';
 import {
   listarAnticipos,
   listarHorasExtrasDeUsuario,
   registrarHoraExtra,
-  solicitarAnticipoSimple
+  solicitarAnticipoSimple,
+  insertarComisionConDetalle
 } from '@/modules/personal';
 import { getAnticipoBalances } from '@/modules/personal';
 import { getAdminWhatsApp } from '@/lib/business/whatsappConfig';
 import { getTwilioConfig } from '@/lib/business/twilioConfig';
 
-import { OrderRepository } from '@/lib/repositories/OrderRepository';
-import { SaleService } from '@/lib/services/SaleService';
-import { CommissionRepository } from '@/lib/repositories/CommissionRepository';
+import { OrderRepository } from '@/modules/operacion/pedidos/repositorio';
+import { SaleService } from '@/workflows/ventas';
 import { procesarEventoBiometrico } from '@/modules/asistencia/biometrico/processBiometricEvent';
 import { getNowInBusinessTimezone } from '@/lib/business/timezoneService';
 
@@ -428,11 +428,12 @@ describe('línea base de consultas por flujo', () => {
       );
 
       await withTransaction(trx =>
-        CommissionRepository.createWithDetail(trx, {
-          venta_id: venta.id,
-          usuario_id: usuarioId,
-          monto: 1500
-        })
+        conContextoOperacionExistente(trx, contexto =>
+          insertarComisionConDetalle(
+            { venta_id: venta.id, usuario_id: usuarioId, monto: 1500 },
+            contexto
+          )
+        )
       );
       const propinaId = crypto.randomUUID();
       await query(

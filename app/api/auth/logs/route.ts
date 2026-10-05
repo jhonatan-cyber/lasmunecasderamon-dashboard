@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
 import { withRoute } from '@/lib/api/withRoute';
-import { AuthService } from '@/lib/services/AuthService';
+import { AuthService } from '@/modules/identidad';
 
 // Los logs de autenticación exponen el historial de sesiones de todo el personal,
 // por eso su lectura queda reservada al administrador.

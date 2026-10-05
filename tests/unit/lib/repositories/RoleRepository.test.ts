@@ -17,7 +17,7 @@ vi.mock('@/lib/business/timezoneService', () => ({
   getNowInBusinessTimezone: () => '2026-09-27 05:00:00'
 }));
 
-import { RoleRepository } from '@/lib/repositories/RoleRepository';
+import { RoleRepository } from '@/modules/identidad/roles/registro';
 
 const trx = vi.fn();
 

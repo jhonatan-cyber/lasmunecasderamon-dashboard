@@ -13,7 +13,7 @@
  */
 import { afterAll, describe, expect, it, vi } from 'vitest';
 
-vi.mock('@/lib/integrations/pushNotifications', () => ({
+vi.mock('@/modules/comunicaciones/push/servicio', () => ({
   sendPushByRole: vi.fn(),
   sendPushToUser: vi.fn()
 }));

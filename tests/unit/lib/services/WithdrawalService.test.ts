@@ -1,8 +1,8 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { WithdrawalService } from '@/lib/services/WithdrawalService';
+import { WithdrawalService } from '@/modules/caja/retiros/servicio';
 import { ValidationError, BusinessError } from '@/lib/errors/errors';
 
-vi.mock('@/lib/repositories/WithdrawalRepository', () => ({
+vi.mock('@/modules/caja/retiros/repositorio', () => ({
   WithdrawalRepository: {
     getByCajaId: vi.fn(),
     create: vi.fn()
@@ -13,7 +13,7 @@ vi.mock('@/lib/database/db', () => ({
   withTransaction: vi.fn(async (fn: any) => fn(vi.fn()))
 }));
 
-import { WithdrawalRepository } from '@/lib/repositories/WithdrawalRepository';
+import { WithdrawalRepository } from '@/modules/caja/retiros/repositorio';
 import { withTransaction } from '@/lib/database/db';
 
 beforeEach(() => {

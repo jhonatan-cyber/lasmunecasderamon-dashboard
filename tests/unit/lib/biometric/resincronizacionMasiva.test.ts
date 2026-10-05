@@ -55,6 +55,7 @@ vi.mock('@/modules/asistencia/biometrico/faceSdk', async importOriginal => {
 });
 
 vi.mock('@/lib/business/timezoneService', () => ({
+  getSystemTimezone: () => 'America/Santiago',
   getNowInBusinessTimezone: () => '2026-09-30 12:00:00'
 }));
 

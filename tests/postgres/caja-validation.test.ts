@@ -1,17 +1,17 @@
 import { afterAll, expect, it, vi } from 'vitest';
 
-vi.mock('@/lib/integrations/pushNotifications', () => ({
+vi.mock('@/modules/comunicaciones/push/servicio', () => ({
   sendPushByRole: vi.fn(),
   sendPushToUser: vi.fn()
 }));
-vi.mock('@/lib/services/SecurityAlertService', () => ({
+vi.mock('@/modules/auditoria/alertas/servicio', () => ({
   SecurityAlertService: { checkMassAnulation: vi.fn().mockResolvedValue(undefined) }
 }));
 
 import db, { query } from '@/lib/database/db';
 import { snapshotDatabase, restoreDatabase } from '@/lib/database/maintenance';
-import { SaleService } from '@/lib/services/SaleService';
-import { CuentaRepository } from '@/lib/repositories/CuentaRepository';
+import { SaleService } from '@/workflows/ventas';
+import { CuentaRepository } from '@/modules/operacion/cuentas/registro';
 import { BusinessError } from '@/lib/errors/errors';
 
 afterAll(async () => {

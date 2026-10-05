@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
 import { withRoute } from '@/lib/api/withRoute';
-import { ProductService } from '@/lib/services/ProductService';
+import { ProductService } from '@/modules/inventario';
 
 export const PUT = withRoute(
   { auth: true, audit: true, module: 'products', action: 'write' },

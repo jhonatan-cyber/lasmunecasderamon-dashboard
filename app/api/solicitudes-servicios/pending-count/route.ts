@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
 import { withPublicRoute } from '@/lib/api/withRoute';
-import { ServiceRequestService } from '@/lib/services/ServiceRequestService';
+import { ServiceRequestService } from '@/modules/operacion';
 import { contarPedidosPendientes } from '@/modules/operacion';
 import { logger } from '@/lib/utils/logger';
 

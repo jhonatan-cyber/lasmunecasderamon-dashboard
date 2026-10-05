@@ -1,7 +1,7 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { GratificacionService } from '@/lib/services/GratificacionService';
+import { GratificacionService } from '@/modules/personal/gratificaciones/servicio';
 
-vi.mock('@/lib/repositories/GratificacionRepository', () => ({
+vi.mock('@/modules/personal/gratificaciones/repositorio', () => ({
   GratificacionRepository: {
     create: vi.fn(),
     getAll: vi.fn(),
@@ -16,7 +16,7 @@ vi.mock('@/lib/utils/logger', () => ({
   logger: { debug: vi.fn(), info: vi.fn(), warn: vi.fn(), error: vi.fn() }
 }));
 
-import { GratificacionRepository } from '@/lib/repositories/GratificacionRepository';
+import { GratificacionRepository } from '@/modules/personal/gratificaciones/repositorio';
 
 beforeEach(() => {
   vi.clearAllMocks();

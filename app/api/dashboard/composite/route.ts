@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
 import { withRoute } from '@/lib/api/withRoute';
-import { StatsService } from '@/lib/services/StatsService';
+import { StatsService } from '@/modules/reportes';
 import { DashboardCache, DASHBOARD_CACHE_KEYS, DASHBOARD_TTL } from '@/lib/cache/dashboardCache';
 
 export const GET = withRoute(

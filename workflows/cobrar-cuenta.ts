@@ -3,7 +3,7 @@ import { enUnaUnidad } from '@/lib/transaccion/contrato';
 import { ejecutarEfectosConfirmados } from '@/lib/transaccion/efectos';
 import { cobrarYPrepararVenta, consultarCuentaCobrada } from '@/modules/operacion';
 import type { CuentaCobrarBody } from '@/modules/operacion/contracts';
-import { registrarVenta } from '@/modules/ventas';
+import { registrarVenta } from '@/workflows/registrar-venta';
 export async function cobrarCuentaConVenta(id: string, body: CuentaCobrarBody, usuarioId: string) {
   const tareas: Array<() => void | Promise<void>> = [];
   const aplazar = (tarea: () => void | Promise<void>) => {

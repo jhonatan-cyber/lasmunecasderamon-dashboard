@@ -9,14 +9,14 @@
  */
 import { afterAll, expect, it, vi } from 'vitest';
 
-vi.mock('@/lib/integrations/pushNotifications', () => ({
+vi.mock('@/modules/comunicaciones/push/servicio', () => ({
   sendPushByRole: vi.fn(async () => undefined),
   sendPushNotification: vi.fn(async () => undefined)
 }));
 
 import db, { query } from '@/lib/database/db';
 import { snapshotDatabase, restoreDatabase } from '@/lib/database/maintenance';
-import { AccountService } from '@/lib/services/AccountService';
+import { AccountService } from '@/modules/operacion/cuentas/fachada';
 
 afterAll(async () => {
   await db.pool.end();

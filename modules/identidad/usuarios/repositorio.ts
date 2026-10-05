@@ -9,6 +9,23 @@
  */
 import { query } from '@/lib/database/db';
 import { getNowInBusinessTimezone } from '@/lib/business/timezoneService';
+import type { ContextoOperacion } from '@/lib/transaccion/contrato';
+import { resolverTransaccion } from '@/lib/transaccion/infraestructura';
+
+export function listarDestinatariosAnulaciones() {
+  return query<{ id_usuario: string; rol_nombre: string }[]>(
+    `SELECT u.id_usuario, LOWER(r.nombre) as rol_nombre
+     FROM usuarios u INNER JOIN roles r ON u.rol_id = r.id_rol
+     WHERE LOWER(r.nombre) IN ('administrador', 'cajero')`
+  );
+}
+
+export async function quitarModalidadesBiometricas(usuarioId: string, contexto: ContextoOperacion) {
+  await resolverTransaccion(contexto)(
+    'UPDATE usuarios SET biometrico_facial = 0, biometrico_huella = 0 WHERE id_usuario = ?',
+    [usuarioId]
+  );
+}
 
 /** Rol asignado al usuario, o `null` si no tiene. */
 export async function obtenerRolIdUsuario(usuarioId: string): Promise<{ rol_id: string | null }[]> {
@@ -76,6 +93,17 @@ export async function actualizarPassword(usuarioId: string, hash: string): Promi
     'UPDATE usuarios SET password = ?, force_password_change = 0, fecha_mod = ? WHERE id_usuario = ?',
     [hash, getNowInBusinessTimezone(), usuarioId]
   );
+}
+
+export async function activarModalidadFacial(usuarioId: string, contexto: ContextoOperacion) {
+  await resolverTransaccion(contexto)(
+    'UPDATE usuarios SET biometrico_facial = 1 WHERE id_usuario = ?',
+    [usuarioId]
+  );
+}
+
+export async function guardarFotoPerfil(usuarioId: string, foto: string) {
+  await query('UPDATE usuarios SET foto = ? WHERE id_usuario = ?', [foto, usuarioId]);
 }
 
 interface ResumenUsuario {

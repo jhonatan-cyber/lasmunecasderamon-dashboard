@@ -2,7 +2,7 @@ import { afterAll, expect, it } from 'vitest';
 import { randomUUID } from 'node:crypto';
 import db, { withTransaction } from '@/lib/database/db';
 import { ESTADO_UNIDAD_ACTIVA, listarPresentaciones, traspasarAlBar } from '@/modules/inventario';
-import { conContextoOperacionExistente } from '@/lib/transaccion/compatibilidad';
+import { conContextoOperacionExistente } from '@/tests/setup/contexto-operacion';
 
 afterAll(async () => {
   await db.pool.end();

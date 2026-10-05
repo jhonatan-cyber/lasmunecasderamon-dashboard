@@ -47,5 +47,24 @@ export {
   leerComisionesPorAnulacion,
   ajustarComisionesPorAnulacion,
   leerPropinasPorAnulacion,
-  ajustarPropinasPorAnulacion
+  ajustarPropinasPorAnulacion,
+  leerResumenPropinas,
+  leerPropinasDeUsuario,
+  leerDetallePropinas,
+  obtenerPropinaConParticipantes,
+  resumirComisiones,
+  listarComisiones,
+  crearComision,
+  detalleComisionesDeUsuario,
+  actualizarComision,
+  anularComision,
+  insertarComisionConDetalle
 } from './conceptos/servicio';
+
+export { PayrollService } from './nomina/servicio';
+
+export { GratificacionService } from './gratificaciones/servicio';
+
+export { CommissionService } from './conceptos/comisiones';
+
+export { TipService } from './conceptos/propinas';

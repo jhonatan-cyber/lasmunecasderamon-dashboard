@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
 import { withPublicRoute, withRoute } from '@/lib/api/withRoute';
-import { CommissionService } from '@/lib/services/CommissionService';
+import { CommissionService } from '@/modules/personal';
 
 export const GET = withPublicRoute(async (request: Request) => {
   const { searchParams } = new URL(request.url);

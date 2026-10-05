@@ -1,8 +1,8 @@
 import { NextResponse } from 'next/server';
 import { withRoute } from '@/lib/api/withRoute';
-import { SaleService } from '@/lib/services/SaleService';
+import { SaleService } from '@/workflows/ventas';
 import { existeSolicitudAnulacion, obtenerVentaParaAnulacion } from '@/modules/ventas';
-import { enviarMensajeSolicitudAnulacion } from '@/lib/integrations/whatsappService';
+import { enviarMensajeSolicitudAnulacion } from '@/modules/comunicaciones';
 import { ValidationError } from '@/lib/errors/errors';
 import logger from '@/lib/utils/logger';
 

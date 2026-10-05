@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
 import { withRoute } from '@/lib/api/withRoute';
-import { ServiceService } from '@/lib/services/ServiceService';
+import { ServiceService } from '@/modules/operacion';
 import { sendNotificationToAll } from '@/lib/api/sseService';
 
 function toStringArray(value: unknown): string[] {

@@ -42,7 +42,7 @@ vi.mock('@/lib/api/withRoute', () => ({
     }
 }));
 
-vi.mock('@/lib/services/UserService', () => ({ UserService: userService }));
+vi.mock('@/modules/identidad/usuarios/fachada', () => ({ UserService: userService }));
 
 vi.mock('@/lib/utils/image-utils', () => ({
   processAndSaveImage: imagenes.processAndSaveImage,

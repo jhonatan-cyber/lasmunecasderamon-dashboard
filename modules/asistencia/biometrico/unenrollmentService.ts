@@ -1,16 +1,16 @@
-import { withTransaction } from '@/lib/database/db';
-import { UserRepository } from '@/lib/repositories/UserRepository';
+import { enUnaUnidad } from '@/lib/transaccion/contrato';
+import { obtenerResumenUsuario, quitarModalidadesBiometricas } from '@/modules/identidad';
+import { eliminarPlantillasUsuario } from './unenrollmentRepositorio';
 import { NotFoundError } from '@/lib/errors/errors';
 
 export async function desenrolarUsuario(usuarioId: string) {
-  const usuario = await UserRepository.getById(usuarioId);
+  const usuario = await obtenerResumenUsuario(usuarioId);
   if (!usuario) throw new NotFoundError('Usuario', usuarioId);
-  await withTransaction(async trx => {
-    await trx('DELETE FROM biometric_plantillas WHERE usuario_id = ?', [usuarioId]);
-    await trx(
-      'UPDATE usuarios SET biometrico_facial = 0, biometrico_huella = 0 WHERE id_usuario = ?',
-      [usuarioId]
-    );
-  });
+  await enUnaUnidad(unidad =>
+    unidad.ejecutar(async contexto => {
+      await eliminarPlantillasUsuario(usuarioId, contexto);
+      await quitarModalidadesBiometricas(usuarioId, contexto);
+    })
+  );
   return { ok: true, mensaje: 'Usuario desenrolado del sistema correctamente.' };
 }

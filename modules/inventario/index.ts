@@ -65,3 +65,7 @@ export {
 export { listarStockBar, obtenerResumenShots } from './bar/servicio';
 export { listarParaVenta } from './catalogo/servicio';
 export { listarMovimientos, listarMovimientosRecientes } from './movimientos/servicio';
+
+export { CategoryService } from './categorias/servicio';
+
+export { ProductService } from './productos/fachada';

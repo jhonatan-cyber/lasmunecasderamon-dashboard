@@ -13,12 +13,9 @@ vi.mock('@/lib/database/db', () => ({
   query: serviceHarness.queryMock
 }));
 
-vi.mock('@/lib/repositories/ServiceRepository', () => ({
-  ServiceRepository: { rawInsert: vi.fn() }
-}));
-
-vi.mock('@/lib/services/RoomManager', () => ({
-  RoomManager: { pauseConflictingServices: vi.fn() }
+vi.mock('@/modules/operacion/facturacion/servicio', async importOriginal => ({
+  ...(await importOriginal<typeof import('@/modules/operacion/facturacion/servicio')>()),
+  pausarConflictosServicio: vi.fn()
 }));
 
 vi.mock('@/lib/api/sseService', () => ({
@@ -30,8 +27,8 @@ vi.mock('@/lib/business/timezoneService', () => ({
   getSystemTimezone: () => 'America/Santiago'
 }));
 
-import { ServiceService } from '@/lib/services/ServiceService';
-import { RoomManager } from '@/lib/services/RoomManager';
+import { ServiceService } from '@/modules/operacion/servicios/fachada';
+import { pausarConflictosServicio } from '@/modules/operacion/facturacion/servicio';
 
 beforeEach(() => {
   vi.clearAllMocks();
@@ -154,10 +151,10 @@ describe('ServiceService.createService', () => {
 
     expect(insertedAmounts).toEqual([51, 50]);
     expect(insertedAmounts.reduce((sum, value) => sum + value, 0)).toBe(101);
-    expect(RoomManager.pauseConflictingServices).toHaveBeenCalledWith(
-      expect.any(Function),
+    expect(pausarConflictosServicio).toHaveBeenCalledWith(
       ['user-1', 'user-2'],
-      'mock-uuid'
+      'mock-uuid',
+      expect.objectContaining({ id: expect.any(String) })
     );
   });
 });

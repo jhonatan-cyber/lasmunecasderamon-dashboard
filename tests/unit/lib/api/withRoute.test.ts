@@ -14,7 +14,7 @@ vi.mock('@/lib/api/api-response', () => ({
   }
 }));
 
-vi.mock('@/lib/services/ErrorLogService', () => ({
+vi.mock('@/modules/auditoria/errores/servicio', () => ({
   ErrorLogService: { log: vi.fn().mockResolvedValue(undefined) }
 }));
 
@@ -53,7 +53,7 @@ vi.mock('next/server', () => ({
 }));
 
 import { withRoute, withPublicRoute } from '@/lib/api/withRoute';
-import { ErrorLogService } from '@/lib/services/ErrorLogService';
+import { ErrorLogService } from '@/modules/auditoria/errores/servicio';
 import { ApiResponse } from '@/lib/api/api-response';
 
 const okHandler = (_req: Request, _ctx: { params: any }) =>

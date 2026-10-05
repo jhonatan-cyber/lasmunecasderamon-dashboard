@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
 import { withPublicRoute, withRoute } from '@/lib/api/withRoute';
-import { ErrorLogService } from '@/lib/services/ErrorLogService';
+import { ErrorLogService } from '@/modules/auditoria';
 
 // Los registros incluyen stack traces y request bodies de toda la aplicacion,
 // por eso solo el administrador los puede consultar.

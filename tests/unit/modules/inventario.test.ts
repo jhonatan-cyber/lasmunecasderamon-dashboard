@@ -10,7 +10,7 @@ vi.mock('@/modules/inventario/bar/consumoRepositorio', () => ({
 
 import { consumirStock } from '@/modules/inventario/bar/consumoRepositorio';
 import { consumirStockBar } from '@/modules/inventario';
-import { conContextoOperacionExistente } from '@/lib/transaccion/compatibilidad';
+import { conContextoOperacionExistente } from '@/tests/setup/contexto-operacion';
 
 it('resuelve el contexto a la misma transacción de venta', async () => {
   const trx = vi.fn().mockResolvedValue([]);

@@ -1,7 +1,7 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { OrderService } from '@/lib/services/OrderService';
+import { OrderService } from '@/modules/operacion/pedidos/servicio';
 
-vi.mock('@/lib/repositories/OrderRepository', () => ({
+vi.mock('@/modules/operacion/pedidos/repositorio', () => ({
   OrderRepository: {
     getAll: vi.fn(),
     getByUser: vi.fn(),
@@ -16,7 +16,7 @@ vi.mock('@/lib/utils/logger', () => ({
   logger: { debug: vi.fn(), info: vi.fn(), warn: vi.fn(), error: vi.fn() }
 }));
 
-import { OrderRepository } from '@/lib/repositories/OrderRepository';
+import { OrderRepository } from '@/modules/operacion/pedidos/repositorio';
 
 beforeEach(() => {
   vi.clearAllMocks();

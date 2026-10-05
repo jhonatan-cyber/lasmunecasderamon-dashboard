@@ -1,4 +1,4 @@
-import { CashRegisterService } from '@/lib/services/CashRegisterService';
+import { CashRegisterService } from '@/modules/caja';
 import { avisarCierreAlAdministrador } from '@/lib/api/cierreCaja';
 import logger from '@/lib/utils/logger';
 

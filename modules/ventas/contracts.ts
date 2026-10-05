@@ -36,3 +36,5 @@ export type EntradaRegistroVenta = z.input<typeof SaleCreateSchema> & {
   origen?: string;
   id_pedido?: string;
 };
+
+export { CLAVES_VENTAS } from './configuracionClaves';

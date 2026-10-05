@@ -11,7 +11,7 @@ import { ESTADO_UNIDAD_ACTIVA } from '../estados';
 import type { PresentacionRow } from '../tipos';
 import type { NuevaPresentacionInput, PresentacionCamposInput } from '../contracts';
 import { getNowInBusinessTimezone } from '@/lib/business/timezoneService';
-import { BaseRepository } from '@/lib/repositories/BaseRepository';
+import { BaseRepository } from '@/lib/database/base-repository';
 
 type Ejecutor = TransactionQuery | typeof query;
 

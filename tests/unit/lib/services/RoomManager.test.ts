@@ -5,7 +5,7 @@ vi.mock('@/lib/business/timezoneService', () => ({
   getNowInBusinessTimezone: vi.fn(() => '2026-01-15 12:00:00')
 }));
 
-import { RoomManager } from '@/lib/services/RoomManager';
+import { RoomManager } from '@/tests/setup/room-manager';
 import { getNowInBusinessTimezone } from '@/lib/business/timezoneService';
 import type { TransactionQuery } from '@/lib/database/db';
 

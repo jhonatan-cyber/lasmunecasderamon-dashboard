@@ -4,11 +4,11 @@ Generado por `scripts/arquitectura/analisis.mjs`. No modificar a mano.
 
 | Métrica                                    | Valor  |
 | ------------------------------------------ | ------ |
-| Archivos analizados                        | 1606   |
+| Archivos analizados                        | 1607   |
 | Rutas HTTP                                 | 204    |
 | **Rutas con SQL directo**                  | **0**  |
 | **Archivos con SQL fuera de repositorios** | **66** |
-| Tablas con más de un escritor              | 17     |
+| Tablas con más de un escritor              | 14     |
 | Ciclos entre dominios                      | 6      |
 | Procesos periódicos                        | 15     |
 | Puntos de caché                            | 19     |
@@ -112,19 +112,16 @@ propietario.
 | Tabla                  | Escritores | Repositorios                                                                                                                                                                                                                                 |
 | ---------------------- | ---------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | asistencias            | 2          | lib/repositories/PayrollRepository.ts<br>lib/repositories/auth/AuthQueries.ts                                                                                                                                                                |
-| cajas                  | 3          | lib/repositories/CashRegisterRepository.ts<br>lib/repositories/service/ServiceQueries.ts<br>modules/caja/movimientos/repositorio.ts                                                                                                          |
-| clientes               | 2          | lib/repositories/ClientRepository.ts<br>modules/clientes/prepago/repositorio.ts                                                                                                                                                              |
-| cuentas                | 2          | lib/repositories/cuenta/CuentaQueries.ts<br>modules/operacion/cuentas/repositorio.ts                                                                                                                                                         |
+| cajas                  | 2          | lib/repositories/CashRegisterRepository.ts<br>modules/caja/movimientos/repositorio.ts                                                                                                                                                        |
 | detalle_comisiones     | 2          | lib/repositories/PayrollRepository.ts<br>modules/personal/conceptos/repositorio.ts                                                                                                                                                           |
 | detalle_propinas       | 2          | lib/repositories/PayrollRepository.ts<br>modules/personal/conceptos/repositorio.ts                                                                                                                                                           |
-| detalle_servicios      | 2          | lib/repositories/service/ServiceQueries.ts<br>modules/operacion/servicios/repositorio.ts                                                                                                                                                     |
 | detalle_ventas         | 3          | lib/repositories/sale/SaleQueries.ts<br>modules/ventas/anulaciones/repositorio.ts<br>modules/ventas/registro/repositorio.ts                                                                                                                  |
 | inventario_movimientos | 2          | modules/inventario/anulaciones/repositorio.ts<br>modules/inventario/bar/consumoRepositorio.ts                                                                                                                                                |
 | inventario_unidades    | 5          | modules/inventario/anulaciones/repositorio.ts<br>modules/inventario/bar/consumoRepositorio.ts<br>modules/inventario/envases/repositorio.ts<br>modules/inventario/transferencias/repositorio.ts<br>modules/inventario/unidades/repositorio.ts |
 | logins                 | 2          | lib/repositories/CashRegisterRepository.ts<br>lib/repositories/auth/AuthQueries.ts                                                                                                                                                           |
 | permissions            | 2          | lib/repositories/PermissionRepository.ts<br>modules/identidad/permisos/repositorio.ts                                                                                                                                                        |
 | role_permissions       | 2          | lib/repositories/RoleRepository.ts<br>modules/identidad/permisos/repositorio.ts                                                                                                                                                              |
-| servicios              | 4          | lib/repositories/TimerRepository.ts<br>lib/repositories/service/ServiceQueries.ts<br>modules/operacion/servicios/repositorio.ts<br>modules/operacion/temporizadores/repositorio.ts                                                           |
+| servicios              | 3          | lib/repositories/TimerRepository.ts<br>modules/operacion/servicios/repositorio.ts<br>modules/operacion/temporizadores/repositorio.ts                                                                                                         |
 | usuarios               | 2          | lib/repositories/auth/AuthQueries.ts<br>modules/identidad/usuarios/repositorio.ts                                                                                                                                                            |
 | ventas                 | 3          | lib/repositories/TimerRepository.ts<br>lib/repositories/sale/SaleQueries.ts<br>modules/ventas/anulaciones/repositorio.ts                                                                                                                     |
 | ventas_usuarios        | 2          | lib/repositories/sale/SaleQueries.ts<br>modules/ventas/registro/repositorio.ts                                                                                                                                                               |
@@ -154,8 +151,8 @@ propietario.
 | lib/repositories/cuenta/CuentaQueries.ts               | lib/repositories |
 | lib/repositories/gratificacion/GratificacionQueries.ts | lib/repositories |
 | lib/repositories/sale/SaleQueries.ts                   | lib/repositories |
-| lib/repositories/service/ServiceQueries.ts             | lib/repositories |
 | lib/services/SaleService.ts                            | lib/services     |
+| lib/services/TipService.ts                             | lib/services     |
 | lib/services/WithdrawalService.ts                      | lib/services     |
 | lib/transaccion/contrato.ts                            | lib/otros        |
 | modules/asistencia/biometrico/enrollmentService.ts     | raiz             |
@@ -173,9 +170,12 @@ propietario.
 | modules/inventario/unidades/servicio.ts                | raiz             |
 | modules/operacion/cuentas/actualizacion.ts             | raiz             |
 | modules/operacion/cuentas/alta.ts                      | raiz             |
+| modules/operacion/cuentas/repositorio.ts               | raiz             |
+| modules/operacion/cuentas/servicio.ts                  | raiz             |
 | modules/operacion/cuentas/temporizadores.ts            | raiz             |
 | modules/operacion/servicios/anulaciones.ts             | raiz             |
 | modules/operacion/servicios/creacion.ts                | raiz             |
+| modules/operacion/servicios/servicio.ts                | raiz             |
 | modules/operacion/temporizadores/servicio.ts           | raiz             |
 | modules/personal/anticipos/repositorio.ts              | raiz             |
 | modules/personal/anticipos/servicio.ts                 | raiz             |

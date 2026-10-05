@@ -21,6 +21,7 @@ vi.mock('@/lib/database/db', () => ({
 }));
 
 vi.mock('@/lib/business/timezoneService', () => ({
+  getSystemTimezone: () => 'America/Santiago',
   getNowInBusinessTimezone: () => '2026-09-22 12:00:00'
 }));
 

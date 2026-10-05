@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
 import { withRoute } from '@/lib/api/withRoute';
-import { WithdrawalService } from '@/lib/services/WithdrawalService';
+import { WithdrawalService } from '@/modules/caja';
 import { jsonWithNormalizedDates } from '@/lib/api/date-response';
 import { RetiroCajaSchema } from '@/lib/business/schemas/withdrawal';
 import { validateOrResponse } from '@/lib/api/validate';

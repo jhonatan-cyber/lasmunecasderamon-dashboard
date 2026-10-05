@@ -1,5 +1,6 @@
 import { generateUUID, query } from '@/lib/database/db';
-import { BaseRepository } from '@/lib/repositories/BaseRepository';
+import { marcarPresenciaLocal } from '@/modules/identidad';
+import { BaseRepository } from '@/lib/database/base-repository';
 import { getAttendanceConfigHours } from '@/modules/asistencia/marcas/repositorio';
 import { getNowInBusinessTimezone } from '@/lib/business/timezoneService';
 import logger from '@/lib/utils/logger';
@@ -175,7 +176,7 @@ async function resolverUsuario(codigo: string): Promise<UsuarioBiometrico | null
 }
 
 async function marcarEnLocal(usuarioId: string) {
-  await BaseRepository.update(query, 'logins', 'usuario_id', usuarioId, { en_local: 1 });
+  await marcarPresenciaLocal(usuarioId);
 }
 
 async function registrarEvento(

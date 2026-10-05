@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server';
 import { withRoute } from '@/lib/api/withRoute';
 import { ValidationError } from '@/lib/errors/errors';
-import { ServiceRequestService } from '@/lib/services/ServiceRequestService';
+import { ServiceRequestService } from '@/modules/operacion';
 import { sendNotificationToAll } from '@/lib/api/sseService';
 
 export const PATCH = withRoute(

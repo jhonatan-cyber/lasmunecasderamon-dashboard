@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server';
 import { withRoute } from '@/lib/api/withRoute';
 import { ApiResponse } from '@/lib/api/api-response';
-import { getOrCreateAttendanceCode } from '@/lib/business/codigoService';
+import { getOrCreateAttendanceCode } from '@/modules/identidad';
 import { logger } from '@/lib/utils/logger';
 
 export const dynamic = 'force-dynamic';

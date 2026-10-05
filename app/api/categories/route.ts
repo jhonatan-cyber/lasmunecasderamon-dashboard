@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
 import { withPublicRoute, withRoute } from '@/lib/api/withRoute';
-import { CategoryService } from '@/lib/services/CategoryService';
+import { CategoryService } from '@/modules/inventario';
 import { ValidationError } from '@/lib/errors/errors';
 
 // Las mutaciones de categorías se guardan con el módulo `categories`, no con

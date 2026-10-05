@@ -15,7 +15,8 @@ import {
   cpSync,
   mkdirSync,
   existsSync,
-  readFileSync
+  readFileSync,
+  symlinkSync
 } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join, resolve } from 'node:path';
@@ -71,6 +72,20 @@ function repoDePrueba(): string {
     "import { formatMoney } from './util';\nexport const a = formatMoney;\n"
   );
   cpSync(join(RAIZ, SCRIPT_REL), join(dir, SCRIPT_REL));
+  cpSync(
+    join(RAIZ, 'scripts/arquitectura/propiedad.mjs'),
+    join(dir, 'scripts/arquitectura/propiedad.mjs')
+  );
+  cpSync(
+    join(RAIZ, 'docs/arquitectura/propietarios-tablas.json'),
+    join(dir, 'docs/arquitectura/propietarios-tablas.json')
+  );
+  mkdirSync(join(dir, 'node_modules'), { recursive: true });
+  symlinkSync(
+    join(RAIZ, 'node_modules/typescript'),
+    join(dir, 'node_modules/typescript'),
+    'junction'
+  );
   writeFileSync(join(dir, 'docs', 'arquitectura', 'excepciones.json'), '{}\n');
   return dir;
 }
@@ -271,7 +286,7 @@ describe('control de límites entre módulos', () => {
     rmSync(join(raiz, 'lib', 'services', 'Malo.ts'));
   });
 
-  it('sólo SaleService puede usar el puente transaccional heredado', () => {
+  it('ningún servicio puede usar el puente transaccional heredado', () => {
     mkdirSync(join(raiz, 'lib', 'transaccion'), { recursive: true });
     mkdirSync(join(raiz, 'lib', 'services'), { recursive: true });
     writeFileSync(
@@ -284,7 +299,7 @@ describe('control de límites entre módulos', () => {
     );
     expect(
       listar(raiz).hallazgos.filter((h: any) => h.regla === 'puente-transaccional-heredado')
-    ).toHaveLength(0);
+    ).toHaveLength(1);
 
     writeFileSync(
       join(raiz, 'lib', 'services', 'Malo.ts'),
@@ -356,12 +371,89 @@ describe('cobertura de los nuevos limites', () => {
 });
 
 describe('excepciones del repositorio real', () => {
+  it('bloquea servidor transitivo en contratos y permite referencias sólo de tipos', () => {
+    const raiz = repoDePrueba();
+    try {
+      mkdirSync(join(raiz, 'modules/clientes'), { recursive: true });
+      writeFileSync(
+        join(raiz, 'modules/clientes/repositorio.ts'),
+        "import 'server-only'; export const dato = 1; export interface Dato { id: string }"
+      );
+      writeFileSync(
+        join(raiz, 'modules/clientes/puente.ts'),
+        "export { dato } from './repositorio';"
+      );
+      writeFileSync(
+        join(raiz, 'modules/clientes/contracts.ts'),
+        "export { dato } from './puente';"
+      );
+      expect(listar(raiz).hallazgos.some((h: any) => h.regla === 'contratos-sin-servidor')).toBe(
+        true
+      );
+      writeFileSync(
+        join(raiz, 'modules/clientes/contracts.ts'),
+        "export type { Dato } from './repositorio';"
+      );
+      expect(listar(raiz).hallazgos.some((h: any) => h.regla === 'contratos-sin-servidor')).toBe(
+        false
+      );
+    } finally {
+      rmSync(raiz, { recursive: true, force: true });
+    }
+  });
+
+  it('bloquea SQL y BaseRepository sobre tablas de otro propietario', () => {
+    const raiz = repoDePrueba();
+    try {
+      mkdirSync(join(raiz, 'modules/caja'), { recursive: true });
+      writeFileSync(
+        join(raiz, 'modules/caja/repositorio.ts'),
+        "export const sql = 'UPDATE usuarios SET estado = 0'; BaseRepository.insert(query, 'asistencias', {});"
+      );
+      const hallazgos = listar(raiz).hallazgos.filter(
+        (h: any) => h.regla === 'tabla-unico-propietario'
+      );
+      expect(hallazgos).toHaveLength(2);
+      expect(correr(raiz).codigo).toBe(1);
+      writeFileSync(
+        join(raiz, 'modules/caja/repositorio.ts'),
+        "export const sql = 'UPDATE cajas SET estado = 0';"
+      );
+      expect(correr(raiz).codigo).toBe(0);
+    } finally {
+      rmSync(raiz, { recursive: true, force: true });
+    }
+  });
+
+  it('no inventa ciclos a partir de rutas HTTP, comentarios o imports de tipos', () => {
+    const raiz = repoDePrueba();
+    try {
+      for (const ruta of ['modules/caja', 'modules/ventas', 'app/api/caja'])
+        mkdirSync(join(raiz, ruta), { recursive: true });
+      writeFileSync(
+        join(raiz, 'modules/caja/index.ts'),
+        "import type { Venta } from '@/modules/ventas/contracts'; // import { x } from '@/modules/ventas';\nexport const x = 1;"
+      );
+      writeFileSync(
+        join(raiz, 'modules/ventas/contracts.ts'),
+        'export interface Venta { id: string }'
+      );
+      writeFileSync(join(raiz, 'modules/ventas/index.ts'), "export { x } from '@/modules/caja';");
+      writeFileSync(join(raiz, 'app/api/caja/route.ts'), "export { x } from '@/modules/ventas';");
+      expect(correr(raiz).codigo).toBe(0);
+      writeFileSync(join(raiz, 'modules/caja/index.ts'), "export { x } from '@/modules/ventas';");
+      expect(listar(raiz).hallazgos.some((h: any) => h.regla === 'sin-ciclos')).toBe(true);
+    } finally {
+      rmSync(raiz, { recursive: true, force: true });
+    }
+  });
+
   it('toda excepción registrada tiene motivo, responsable y condición', () => {
     const ruta = join(RAIZ, 'docs', 'arquitectura', 'excepciones.json');
     if (!existsSync(ruta)) throw new Error('falta docs/arquitectura/excepciones.json');
     const exc = JSON.parse(readFileSync(ruta, 'utf8'));
     const claves = Object.keys(exc);
-    expect(claves.length).toBeGreaterThan(0);
+    expect(claves).toHaveLength(0);
     for (const k of claves) {
       expect(exc[k].motivo, `${k} sin motivo`).toBeTruthy();
       expect(exc[k].responsable, `${k} sin responsable`).toBeTruthy();

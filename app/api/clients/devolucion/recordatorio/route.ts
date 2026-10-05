@@ -1,8 +1,8 @@
 import { NextResponse } from 'next/server';
 import { withRoute } from '@/lib/api/withRoute';
 import { ApiResponse } from '@/lib/api/api-response';
-import { ClientRepository } from '@/lib/repositories/ClientRepository';
-import { enviarRecordatorioDevolucionSaldo } from '@/lib/integrations/whatsappService';
+import { ClientService as ClientRepository } from '@/workflows/clientes';
+import { enviarRecordatorioDevolucionSaldo } from '@/modules/comunicaciones';
 import { registrarRecordatorio } from '@/modules/clientes';
 
 export const POST = withRoute(

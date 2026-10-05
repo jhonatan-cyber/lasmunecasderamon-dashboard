@@ -36,19 +36,20 @@ vi.mock('@/modules/asistencia/kioskos/deviceAuth', () => ({
 
 vi.mock('@/lib/auth/auth-app', () => ({ getAuth: async () => auth.user }));
 vi.mock('next/headers', () => ({ cookies: async () => ({ get: () => ({ value: auth.token }) }) }));
-vi.mock('@/lib/services/AuditService', () => ({
+vi.mock('@/modules/auditoria/registro/servicio', () => ({
   AuditService: { log: vi.fn().mockResolvedValue(undefined) }
 }));
-vi.mock('@/lib/services/ErrorLogService', () => ({
+vi.mock('@/modules/auditoria/errores/servicio', () => ({
   ErrorLogService: { log: vi.fn().mockResolvedValue(undefined) }
 }));
 
-vi.mock('@/lib/business/codigoService', () => ({
+vi.mock('@/modules/identidad/autenticacion/codigos', () => ({
   getOrCreateAttendanceCode: async () => '4821',
   regenerateAttendanceCode: async () => '9999'
 }));
 
 vi.mock('@/lib/business/timezoneService', () => ({
+  getSystemTimezone: () => 'America/Santiago',
   getNowInBusinessTimezone: () => '2026-04-11 22:15:00'
 }));
 

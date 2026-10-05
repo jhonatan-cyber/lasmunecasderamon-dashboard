@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
 import { withRoute } from '@/lib/api/withRoute';
-import { UserService } from '@/lib/services/UserService';
+import { UserService } from '@/modules/identidad';
 import { estadoEnEquipos } from '@/modules/asistencia';
 import { NotFoundError } from '@/lib/errors/errors';
 

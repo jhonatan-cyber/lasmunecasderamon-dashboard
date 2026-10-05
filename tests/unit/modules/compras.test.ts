@@ -8,7 +8,7 @@ vi.mock('@/lib/database/db', () => ({
   generateUUID: () => 'uuid-test'
 }));
 
-vi.mock('@/lib/repositories/BaseRepository', () => ({
+vi.mock('@/lib/database/base-repository', () => ({
   BaseRepository: { insert: vi.fn(), update: vi.fn(), findOne: vi.fn(), delete: vi.fn() }
 }));
 
@@ -37,7 +37,7 @@ import { crearCompra } from '@/modules/inventario/compras/repositorio';
 import { productosPorIds } from '@/modules/inventario/productos/repositorio';
 import { listarPresentacionesPorProductos } from '@/modules/inventario/presentaciones/repositorio';
 import { generarUnidades, sincronizarStockTotal } from '@/modules/inventario/unidades/repositorio';
-import { BaseRepository } from '@/lib/repositories/BaseRepository';
+import { BaseRepository } from '@/lib/database/base-repository';
 
 const detalle = {
   producto_id: 'prod-1',

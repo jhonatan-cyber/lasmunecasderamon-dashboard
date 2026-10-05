@@ -14,12 +14,12 @@ const mocks = vi.hoisted(() => ({
   getUserDashboardSummary: vi.fn()
 }));
 
-vi.mock('@/lib/repositories/stats/StatsQueries', () => ({
+vi.mock('@/modules/reportes/dashboard/consultas', () => ({
   StatsQueries: mocks
 }));
 
-import { StatsService } from '@/lib/services/StatsService';
-import { StatsRepository } from '@/lib/repositories/StatsRepository';
+import { StatsService } from '@/modules/reportes/dashboard/servicio';
+import { StatsRepository } from '@/modules/reportes/dashboard/repositorio';
 
 beforeEach(() => {
   vi.clearAllMocks();

@@ -29,7 +29,7 @@ vi.mock('@/lib/auth/permissions-cache', () => ({
   PermissionsCache: { invalidate: vi.fn(), set: vi.fn(), get: vi.fn(), clear: vi.fn() }
 }));
 
-import { UserService } from '@/lib/services/UserService';
+import { UserService } from '@/modules/identidad/usuarios/fachada';
 import { NotFoundError } from '@/lib/errors/errors';
 
 const personaEnrolada = {

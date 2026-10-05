@@ -1,7 +1,7 @@
 import type { ContextoOperacion } from '@/lib/transaccion/contrato';
 import { resolverTransaccion } from '@/lib/transaccion/infraestructura';
 import { getNowInBusinessTimezone } from '@/lib/business/timezoneService';
-import { RoomManager } from '@/lib/services/RoomManager';
+
 export async function ocuparHabitacionVenta(id: string, contexto: ContextoOperacion) {
   await resolverTransaccion(contexto)(
     'UPDATE habitaciones SET estado = 2 WHERE id_habitacion = ?',
@@ -11,82 +11,6 @@ export async function ocuparHabitacionVenta(id: string, contexto: ContextoOperac
 export async function cerrarPedidoFacturado(id: string, contexto: ContextoOperacion) {
   await resolverTransaccion(contexto)('UPDATE pedidos SET estado = 0 WHERE id_pedido = ?', [id]);
 }
-// Transición de ventas temporizadas; el cobro de cuenta no entra en esta rama.
-export function pausarConflictosVenta(ids: string[], ventaId: string, contexto: ContextoOperacion) {
-  return RoomManager.pauseConflictingServices(
-    resolverTransaccion(contexto),
-    ids,
-    undefined,
-    ventaId
-  );
-}
-
-export function pausarConflictosServicio(
-  ids: string[],
-  servicioId: string,
-  contexto: ContextoOperacion
-) {
-  return RoomManager.pauseConflictingServices(resolverTransaccion(contexto), ids, servicioId);
-}
-
-/**
- * Libera la habitación al anular una venta. Mismo SQL que ejecutaba
- * `RoomManager.resumeRoomLogic` desde `SaleQueries.updateStatus`: si hay una
- * venta o servicio pausado más reciente se reanuda, si no la habitación vuelve
- * a libre. Vive en Operación porque `habitaciones`, `ventas` en pausa y
- * `servicios` en pausa son de este dominio.
- */
-export async function liberarHabitacionPorAnulacion(
-  habitacionId: string,
-  contexto: ContextoOperacion,
-  excluirVentaId?: string,
-  excluirServicioId?: string
-): Promise<void> {
-  if (!habitacionId) return;
-  const trx = resolverTransaccion(contexto);
-  const vP = await trx<{ id_venta: string; paused_at: unknown }[]>(
-    `SELECT id_venta, paused_at FROM ventas WHERE habitacion_id = ? AND estado = 3
-     ${excluirVentaId ? 'AND id_venta != ?' : ''} ORDER BY paused_at DESC LIMIT 1`,
-    excluirVentaId ? [habitacionId, excluirVentaId] : [habitacionId]
-  );
-  const sP = await trx<{ id_servicio: string; paused_at: unknown }[]>(
-    `SELECT id_servicio, paused_at FROM servicios WHERE habitacion_id = ? AND estado = 3
-     ${excluirServicioId ? 'AND id_servicio != ?' : ''} ORDER BY paused_at DESC LIMIT 1`,
-    excluirServicioId ? [habitacionId, excluirServicioId] : [habitacionId]
-  );
-  const hasVP = vP.length > 0;
-  const hasSP = sP.length > 0;
-  const nowStr = getNowInBusinessTimezone();
-  if (hasVP || hasSP) {
-    const resumeVenta =
-      hasVP &&
-      (!hasSP ||
-        new Date(String(vP[0].paused_at).replace(' ', 'T')) >=
-          new Date(String(sP[0].paused_at).replace(' ', 'T')));
-    if (resumeVenta) {
-      await trx(
-        `UPDATE ventas
-            SET estado = 2,
-                fecha_crea = (CAST(fecha_crea AS timestamp) + make_interval(secs => CAST(TRUNC(EXTRACT(EPOCH FROM (CAST(? AS timestamp) - CAST(paused_at AS timestamp))) / 1) AS double precision))),
-                paused_at = NULL
-          WHERE id_venta = ?`,
-        [nowStr, vP[0].id_venta]
-      );
-    } else if (hasSP) {
-      await trx(
-        `UPDATE servicios
-            SET estado = 2,
-                fecha_crea = (CAST(fecha_crea AS timestamp) + make_interval(secs => CAST(TRUNC(EXTRACT(EPOCH FROM (CAST(? AS timestamp) - CAST(paused_at AS timestamp))) / 1) AS double precision))),
-                paused_at = NULL
-          WHERE id_servicio = ?`,
-        [nowStr, sP[0].id_servicio]
-      );
-    }
-  } else {
-    await trx('UPDATE habitaciones SET estado = 1 WHERE id_habitacion = ?', [habitacionId]);
-  }
-}
-
 export async function reabrirPedidoPorAnulacion(
   pedidoId: string,
   contexto: ContextoOperacion
@@ -122,6 +46,72 @@ export async function ocuparHabitacionSiCorresponde(
   if (!corresponde) return;
   await resolverTransaccion(contexto)(
     'UPDATE habitaciones SET estado = 2 WHERE id_habitacion = ?',
+    [habitacionId]
+  );
+}
+
+export async function consultarHabitacion(habitacionId: string, contexto: ContextoOperacion) {
+  const trx = resolverTransaccion(contexto);
+  return await trx<any[]>(
+    'SELECT precio, comision_anfitriona FROM habitaciones WHERE id_habitacion = ?',
+    [habitacionId]
+  );
+}
+
+export async function pausarServiciosEnConflicto(
+  ids: string[],
+  contexto: ContextoOperacion,
+  fecha: string,
+  excluirServicioId?: string
+) {
+  if (!ids?.length) return 0;
+  const trx = resolverTransaccion(contexto);
+  const filas = await trx<{ id_servicio: string }[]>(
+    `
+    SELECT DISTINCT s.id_servicio FROM servicios s
+    JOIN detalle_servicios ds ON s.id_servicio = ds.servicio_id
+    JOIN habitaciones h ON s.habitacion_id = h.id_habitacion
+    WHERE s.estado = 2 AND s.paused_at IS NULL
+      ${excluirServicioId ? 'AND s.id_servicio != ?' : ''}
+      AND ds.usuario_id IN (${ids.map(() => '?').join(',')})
+      AND (h.precio > 0 OR h.comision_anfitriona > 0 OR h.tiempo > 0)`,
+    excluirServicioId ? [excluirServicioId, ...ids] : ids
+  );
+  if (filas.length)
+    await trx(
+      `UPDATE servicios SET estado = 3, paused_at = ? WHERE id_servicio IN (${filas.map(() => '?').join(',')})`,
+      [fecha, ...filas.map(fila => fila.id_servicio)]
+    );
+  return filas.length;
+}
+
+export function obtenerUltimoServicioPausado(
+  habitacionId: string,
+  contexto: ContextoOperacion,
+  excluirServicioId?: string
+) {
+  return resolverTransaccion(contexto)<{ id_servicio: string; paused_at: unknown }[]>(
+    `SELECT id_servicio, paused_at FROM servicios WHERE habitacion_id = ? AND estado = 3
+    ${excluirServicioId ? 'AND id_servicio != ?' : ''} ORDER BY paused_at DESC LIMIT 1`,
+    excluirServicioId ? [habitacionId, excluirServicioId] : [habitacionId]
+  );
+}
+
+export async function reanudarServicioPausado(
+  servicioId: string,
+  contexto: ContextoOperacion,
+  fecha: string
+) {
+  await resolverTransaccion(contexto)(
+    `UPDATE servicios SET estado = 2,
+    fecha_crea = (CAST(fecha_crea AS timestamp) + make_interval(secs => CAST(TRUNC(EXTRACT(EPOCH FROM (CAST(? AS timestamp) - CAST(paused_at AS timestamp))) / 1) AS double precision))), paused_at = NULL WHERE id_servicio = ?`,
+    [fecha, servicioId]
+  );
+}
+
+export async function liberarHabitacion(habitacionId: string, contexto: ContextoOperacion) {
+  await resolverTransaccion(contexto)(
+    'UPDATE habitaciones SET estado = 1 WHERE id_habitacion = ?',
     [habitacionId]
   );
 }

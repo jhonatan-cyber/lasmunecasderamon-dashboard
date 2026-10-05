@@ -14,7 +14,7 @@ vi.mock('@/lib/utils/logger', () => {
   return { logger: mocks, default: mocks };
 });
 
-import { UserService } from '@/lib/services/UserService';
+import { UserService } from '@/modules/identidad/usuarios/fachada';
 import { ConflictError, NotFoundError } from '@/lib/errors/errors';
 
 const usuario = {

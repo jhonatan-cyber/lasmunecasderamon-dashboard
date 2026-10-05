@@ -1,7 +1,7 @@
 import { query } from '@/lib/database/db';
-import { NotificationService } from '@/lib/services/NotificationService';
+import { NotificationService } from '@/modules/comunicaciones';
 import { sendNotificationToAll } from '@/lib/api/sseService';
-import { sendPushByRole } from '@/lib/integrations/pushNotifications';
+import { sendPushByRole } from '@/modules/comunicaciones';
 import logger from '@/lib/utils/logger';
 import type { ShotAlert } from '@/modules/inventario/contracts';
 

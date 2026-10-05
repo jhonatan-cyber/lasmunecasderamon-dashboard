@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
 import { withPublicRoute } from '@/lib/api/withRoute';
-import { VentasStatsService } from '@/lib/services/VentasStatsService';
+import { VentasStatsService } from '@/modules/reportes';
 import { ValidationError } from '@/lib/errors/errors';
 import { DashboardCache, DASHBOARD_CACHE_KEYS, DASHBOARD_TTL } from '@/lib/cache/dashboardCache';
 

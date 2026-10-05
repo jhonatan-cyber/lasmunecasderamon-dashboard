@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
 import { withPublicRoute } from '@/lib/api/withRoute';
-import { TimerService } from '@/lib/services/TimerService';
+import { TimerService } from '@/modules/operacion';
 import { getNowInBusinessTimezoneISO } from '@/lib/business/timezoneService';
 import { logger } from '@/lib/utils/logger';
 

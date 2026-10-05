@@ -17,15 +17,15 @@ vi.mock('@/lib/api/date-response', () => ({
   normalizeJsonResponseDates: (r: any) => r
 }));
 
-vi.mock('@/lib/services/AuditService', () => ({
+vi.mock('@/modules/auditoria/registro/servicio', () => ({
   AuditService: { log: vi.fn().mockResolvedValue(undefined) }
 }));
 
-vi.mock('@/lib/services/ErrorLogService', () => ({
+vi.mock('@/modules/auditoria/errores/servicio', () => ({
   ErrorLogService: { getAll: vi.fn().mockResolvedValue([]), log: vi.fn() }
 }));
 
-vi.mock('@/lib/repositories/QueryLogRepository', () => ({
+vi.mock('@/lib/database/query-log', () => ({
   QueryLogRepository: {
     getRecent: vi.fn().mockResolvedValue({ data: [], total: 0 }),
     getStats: vi.fn().mockResolvedValue([])
@@ -45,8 +45,8 @@ vi.mock('@/lib/utils/logger', () => {
 
 import { GET as errorLogsGET } from '@/app/api/error-logs/route';
 import { GET as monitoringSlowQueriesGET } from '@/app/api/monitoring/slow-queries/route';
-import { ErrorLogService } from '@/lib/services/ErrorLogService';
-import { QueryLogRepository } from '@/lib/repositories/QueryLogRepository';
+import { ErrorLogService } from '@/modules/auditoria/errores/servicio';
+import { QueryLogRepository } from '@/lib/database/query-log';
 
 const call = (handler: any, url: string) => handler(new Request(url), { params: {} });
 

@@ -1,7 +1,7 @@
 import { generateUUID, type TransactionQuery } from '@/lib/database/db';
 import { resolverTransaccion } from '@/lib/transaccion/infraestructura';
 import type { ContextoOperacion } from '@/lib/transaccion/contrato';
-import { BaseRepository } from '@/lib/repositories/BaseRepository';
+import { BaseRepository } from '@/lib/database/base-repository';
 export class RegistroVenta {
   static async rawInsert(contexto: ContextoOperacion, data: Record<string, unknown>) {
     return BaseRepository.insert(resolverTransaccion(contexto), 'ventas', data);
@@ -47,37 +47,4 @@ export class RegistroVenta {
 
     await trx(`INSERT INTO ventas_usuarios (${columns.join(', ')}) VALUES ${placeholders}`, values);
   }
-}
-
-export async function consultarHabitacion(habitacionId: string, contexto: ContextoOperacion) {
-  const trx = resolverTransaccion(contexto);
-  return await trx<any[]>(
-    'SELECT precio, comision_anfitriona FROM habitaciones WHERE id_habitacion = ?',
-    [habitacionId]
-  );
-}
-
-export async function consultarAnfitrionas(
-  allRequestedHostessIds: string[],
-  contexto: ContextoOperacion
-) {
-  const trx = resolverTransaccion(contexto);
-  return await trx<any[]>(
-    `SELECT DISTINCT u.id_usuario
-           FROM usuarios u
-           INNER JOIN roles r ON r.id_rol = u.rol_id
-           INNER JOIN logins l ON l.usuario_id = u.id_usuario
-           WHERE u.id_usuario IN (${allRequestedHostessIds.map(() => '?').join(', ')})
-             AND u.estado = 1
-             AND l.estado = 1
-             AND l.en_local = 1
-             AND LOWER(r.nombre) = 'anfitriona'`,
-    allRequestedHostessIds
-  );
-}
-
-// Auditoría conserva su infraestructura compartida hasta la fase 6.
-import { AuditRepository, type AuditLog } from '@/lib/repositories/AuditRepository';
-export function registrarAuditoriaVenta(datos: AuditLog, contexto: ContextoOperacion) {
-  return AuditRepository.log(datos, resolverTransaccion(contexto));
 }

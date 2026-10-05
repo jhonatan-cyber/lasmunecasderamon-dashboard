@@ -1,0 +1,76 @@
+{
+  "agenda": ["eventos"],
+  "asistencia": [
+    "asistencias",
+    "asistencia_desafios",
+    "biometric_devices",
+    "biometric_device_records",
+    "biometric_events",
+    "biometric_plantillas",
+    "kiosk_devices"
+  ],
+  "auditoria": ["audit_logs", "error_logs"],
+  "caja": ["cajas", "retiros_caja", "solicitudes_cierre_caja"],
+  "clientes": [
+    "clientes",
+    "clientes_prepago_movimientos",
+    "solicitudes_devolucion_saldo"
+  ],
+  "comunicaciones": ["notificaciones", "push_tokens"],
+  "configuracion": ["configuraciones", "backups"],
+  "identidad": [
+    "usuarios",
+    "roles",
+    "permissions",
+    "role_permissions",
+    "logins",
+    "codigos"
+  ],
+  "inventario": [
+    "categorias",
+    "productos",
+    "producto_champagne_tiers",
+    "compras",
+    "detalle_compras",
+    "inventario_presentaciones",
+    "inventario_unidades",
+    "inventario_movimientos",
+    "inventario_movimiento_unidades"
+  ],
+  "operacion": [
+    "cuentas",
+    "cuentas_usuarios",
+    "detalle_cuentas",
+    "habitaciones",
+    "pedidos",
+    "pedidos_usuarios",
+    "detalle_pedidos",
+    "detalle_pedidos_anfitrionas",
+    "servicios",
+    "detalle_servicios",
+    "detalle_servicios_clientes",
+    "solicitudes_servicios",
+    "solicitudes_anulacion_servicios",
+    "solicitudes_anulacion_cuentas",
+    "servicio_logs"
+  ],
+  "personal": [
+    "anticipos",
+    "anticipo_historial",
+    "comisiones",
+    "detalle_comisiones",
+    "propinas",
+    "detalle_propinas",
+    "horas_extras",
+    "gratificaciones"
+  ],
+  "ventas": [
+    "ventas",
+    "detalle_ventas",
+    "ventas_usuarios",
+    "solicitudes_anulacion_ventas",
+    "devoluciones_ventas",
+    "detalle_devoluciones_ventas",
+    "venta_logs"
+  ]
+}

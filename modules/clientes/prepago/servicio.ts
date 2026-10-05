@@ -1,5 +1,8 @@
 import type { ContextoOperacion } from '@/lib/transaccion/contrato';
-import { enUnaUnidad } from '@/lib/transaccion/contrato';
+import { saldoClienteAgotado } from './repositorio';
+export function saldoPrepagoAgotado(clienteId: string, contexto: ContextoOperacion) {
+  return saldoClienteAgotado(clienteId, contexto);
+}
 import { descontarSaldoCuenta } from './repositorio';
 export function consumirPrepagoCuenta(
   clienteId: string | null,
@@ -25,16 +28,18 @@ export function consumirPrepagoVenta(
 
 export type { EntradaRecargaPrepago, EntradaDevolucionSaldo };
 
-export function cargarPrepago(entrada: EntradaRecargaPrepago): Promise<void> {
-  return enUnaUnidad(unidad =>
-    unidad.ejecutar(contexto => cargarPrepagoRecarga(entrada, contexto))
-  );
+export function registrarRecargaEnUnidad(
+  entrada: EntradaRecargaPrepago,
+  contexto: ContextoOperacion
+) {
+  return cargarPrepagoRecarga(entrada, contexto);
 }
 
-export function devolverSaldo(entrada: EntradaDevolucionSaldo): Promise<void> {
-  return enUnaUnidad(unidad =>
-    unidad.ejecutar(contexto => devolverSaldoConCierre(entrada, contexto))
-  );
+export function devolverSaldoEnUnidad(
+  entrada: EntradaDevolucionSaldo,
+  contexto: ContextoOperacion
+) {
+  return devolverSaldoConCierre(entrada, contexto);
 }
 import { leerConsumoPrepagoVenta, restituirPrepagoAnulacion } from './repositorio';
 export function leerPrepagoConsumidoPorVenta(

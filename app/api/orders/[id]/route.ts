@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
 import { withRoute } from '@/lib/api/withRoute';
-import { OrderService } from '@/lib/services/OrderService';
+import { OrderService } from '@/modules/operacion';
 import { ValidationError } from '@/lib/errors/errors';
 
 export const DELETE = withRoute(

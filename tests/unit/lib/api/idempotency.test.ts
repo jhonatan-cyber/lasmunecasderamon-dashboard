@@ -24,7 +24,7 @@ const repo = vi.hoisted(() => ({
   fail: vi.fn()
 }));
 
-vi.mock('@/lib/repositories/SyncOperationRepository', () => ({
+vi.mock('@/lib/database/sync-operations', () => ({
   SyncOperationRepository: {
     claim: repo.claim,
     resolve: repo.resolve,

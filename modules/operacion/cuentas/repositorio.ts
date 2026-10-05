@@ -9,9 +9,10 @@
  */
 import { generateUUID, query } from '@/lib/database/db';
 import type { ContextoOperacion } from '@/lib/transaccion/contrato';
+import { enUnaUnidad } from '@/lib/transaccion/contrato';
 import { resolverTransaccion } from '@/lib/transaccion/infraestructura';
 import { getNowInBusinessTimezone, parseBusinessDate } from '@/lib/business/timezoneService';
-import { BaseRepository } from '@/lib/repositories/BaseRepository';
+import { BaseRepository } from '@/lib/database/base-repository';
 import { logger } from '@/lib/utils/logger';
 import {
   parseRoomHistory,
@@ -19,7 +20,7 @@ import {
   getRemainingMinutes,
   ensureOpenHistorySegment,
   closeOpenHistorySegment
-} from '@/lib/repositories/cuenta/CuentaRoomHistory';
+} from '@/modules/operacion/cuentas/historial';
 import type { CuentaParaAnulacion, SolicitudAnulacionCuenta } from '../contracts';
 
 /** La cuenta con su cliente resuelto; la ruta lo usa para el aviso de WhatsApp. */
@@ -159,41 +160,6 @@ export async function leerCuentaParaTemporizador(
     [cuentaId]
   );
   return rows[0] ?? null;
-}
-
-export async function finalizarSesionHabitacion(
-  cuentaId: string,
-  nowStr: string,
-  contexto: ContextoOperacion
-): Promise<void> {
-  const trx = resolverTransaccion(contexto);
-  const rows = await trx<(CuentaTemporizador & { habitacion_numero: string | null })[]>(
-    `SELECT c.*, h.nombre as habitacion_numero
-       FROM cuentas c
-       LEFT JOIN habitaciones h ON h.id_habitacion = c.habitacion_id
-      WHERE c.id_cuenta = ?`,
-    [cuentaId]
-  );
-  if (!rows.length) return;
-  const row = rows[0];
-  const timing = getRemainingMinutes(row as never, parseBusinessDate(nowStr));
-  let history = parseRoomHistory(row.habitaciones_historial);
-  history = ensureOpenHistorySegment(
-    history,
-    row as never,
-    row.habitacion_numero || 'Sin habitacion'
-  );
-  history = closeOpenHistorySegment(
-    history,
-    nowStr,
-    timing.elapsedMinutes,
-    !timing.isActive,
-    timing.isActive ? 'manual' : 'expired'
-  );
-  await trx(
-    'UPDATE cuentas SET tiempo_actual = 0, tiempo_inicio_actual = NULL, habitaciones_historial = ?, fecha_mod = ? WHERE id_cuenta = ?',
-    [stringifyRoomHistory(history), nowStr, cuentaId]
-  );
 }
 
 export async function detenerSinHabitacion(
@@ -610,4 +576,109 @@ export async function leerNombreCliente(
     [clienteId]
   );
   return rows[0]?.nombre ?? null;
+}
+
+/**
+ * Listado de cuentas. Mismo SQL que `CuentaQueries.getAll`: resumen por
+ * cobrar o filas con cliente, habitación, cajero y conteos.
+ */
+export async function listarCuentas(tipo?: string, estado?: string): Promise<any> {
+  if (tipo === 'resumen') {
+    const result = await query<{ total_por_cobrar: number }[]>(
+      `SELECT SUM(total) as total_por_cobrar FROM cuentas WHERE estado = 1`
+    );
+    return { total_por_cobrar: result[0]?.total_por_cobrar || 0 };
+  }
+
+  let where = 'WHERE c.estado >= 0';
+  let params: (string | number)[] = [];
+  if (estado !== undefined) {
+    where = 'WHERE c.estado = ?';
+    params.push(estado);
+  }
+
+  return await query(
+    `
+      SELECT c.*,
+             COALESCE(c.tiempo_actual, CASE WHEN c.estado = 1 THEN c.tiempo ELSE 0 END) as tiempo_activo,
+             c.tiempo as tiempo_total,
+             (CAST(cl.nombre AS text) || CAST(' ' AS text) || CAST(cl.apellido AS text)) as cliente_nombre, cl.saldo as cliente_saldo,
+             h.nombre as habitacion_numero, u.nick as nombre_cajero,
+             (SELECT COUNT(*) FROM detalle_cuentas dc WHERE dc.cuenta_id = c.id_cuenta) as total_detalles,
+             (SELECT COUNT(*) FROM cuentas_usuarios cu WHERE cu.cuenta_id = c.id_cuenta) as total_usuarios
+      FROM cuentas c
+      LEFT JOIN clientes cl ON c.cliente_id = cl.id_cliente
+      LEFT JOIN habitaciones h ON c.habitacion_id = h.id_habitacion
+      LEFT JOIN usuarios u ON c.created_by = u.id_usuario
+      ${where} ORDER BY c.fecha_crea DESC
+    `,
+    params
+  );
+}
+
+/**
+ * Cierre de sesión de habitación de una cuenta. Mismo SQL que
+ * `CuentaQueries.finalizeRoomSession`, con `ContextoOperacion` cuando se
+ * tiene y unidad propia cuando no (temporizadores heredados).
+ */
+export async function finalizarSesionHabitacion(
+  cuentaId: string,
+  nowStr: string,
+  contexto?: ContextoOperacion
+): Promise<unknown> {
+  if (contexto) {
+    return await finalizarSesionConTrx(cuentaId, nowStr, resolverTransaccion(contexto));
+  }
+  let historial: unknown = null;
+  await enUnaUnidad(unidad =>
+    unidad.ejecutar(async inner => {
+      historial = await finalizarSesionConTrx(cuentaId, nowStr, resolverTransaccion(inner));
+    })
+  );
+  return historial;
+}
+
+async function finalizarSesionConTrx(
+  cuentaId: string,
+  nowStr: string,
+  trx: (sql: string, params?: unknown[]) => Promise<any[]>
+): Promise<unknown> {
+  const rows = await trx(
+    `SELECT c.*, h.nombre as habitacion_numero
+       FROM cuentas c
+       LEFT JOIN habitaciones h ON h.id_habitacion = c.habitacion_id
+      WHERE c.id_cuenta = ?`,
+    [cuentaId]
+  );
+  if (!rows.length) return null;
+  const row = rows[0];
+  const timing = getRemainingMinutes(row, parseBusinessDate(nowStr));
+  let history = parseRoomHistory(row.habitaciones_historial);
+  history = ensureOpenHistorySegment(history, row, row.habitacion_numero || 'Sin habitacion');
+  history = closeOpenHistorySegment(
+    history,
+    nowStr,
+    timing.elapsedMinutes,
+    !timing.isActive,
+    timing.isActive ? 'manual' : 'expired'
+  );
+  await trx(
+    'UPDATE cuentas SET tiempo_actual = 0, tiempo_inicio_actual = NULL, habitaciones_historial = ?, fecha_mod = ? WHERE id_cuenta = ?',
+    [stringifyRoomHistory(history), nowStr, cuentaId]
+  );
+  return history;
+}
+
+/**
+ * Borrado físico de una cuenta. Sin llamadores en producción; lo usan tests
+ * heredados.
+ */
+export async function eliminarCuentaFisica(
+  cuentaId: string,
+  contexto: ContextoOperacion
+): Promise<void> {
+  const trx = resolverTransaccion(contexto);
+  await trx('DELETE FROM detalle_cuentas WHERE cuenta_id = ?', [cuentaId]);
+  await trx('DELETE FROM cuentas_usuarios WHERE cuenta_id = ?', [cuentaId]);
+  await trx('DELETE FROM cuentas WHERE id_cuenta = ?', [cuentaId]);
 }

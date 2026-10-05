@@ -12,7 +12,7 @@
 import { query, type TransactionQuery } from '@/lib/database/db';
 import type { ContextoOperacion } from '@/lib/transaccion/contrato';
 import { resolverTransaccion } from '@/lib/transaccion/infraestructura';
-import { finalizarVentaTemporizada } from '@/modules/ventas';
+import { finalizarVentaTemporizada, marcarAvisoVenta } from '@/modules/ventas';
 import { finalizarCuentaTemporizada } from '../cuentas/repositorio';
 
 /** Temporizador en curso, con la habitación en la que corre. */
@@ -55,14 +55,34 @@ export async function listarTemporizadoresActivos(): Promise<TemporizadorActivo[
 
 /** Marca que ya se avisó el aviso de 5 minutos, para no repetirlo. */
 export async function marcarAviso5m(tipo: TemporizadorActivo['type'], id: string): Promise<void> {
-  const { tabla, id: idCol } = TABLA_POR_TIPO[tipo];
-  await query(`UPDATE ${tabla} SET push_notified_5m = 1 WHERE ${idCol} = ?`, [id]);
+  if (tipo === 'venta') {
+    await marcarAvisoVenta(id, '5m');
+    return;
+  }
+  await query(
+    tipo === 'servicio'
+      ? 'UPDATE servicios SET push_notified_5m = 1 WHERE id_servicio = ?'
+      : 'UPDATE cuentas SET push_notified_5m = 1 WHERE id_cuenta = ?',
+    [id]
+  );
 }
 
 /** Marca que ya se avisó que terminó. */
-export async function marcarAvisoFin(tipo: TemporizadorActivo['type'], id: string): Promise<void> {
-  const { tabla, id: idCol } = TABLA_POR_TIPO[tipo];
-  await query(`UPDATE ${tabla} SET push_notified_end = 1 WHERE ${idCol} = ?`, [id]);
+export async function marcarAvisoFin(
+  tipo: TemporizadorActivo['type'],
+  id: string,
+  contexto: ContextoOperacion
+): Promise<void> {
+  if (tipo === 'venta') {
+    await marcarAvisoVenta(id, 'fin', contexto);
+    return;
+  }
+  await resolverTransaccion(contexto)(
+    tipo === 'servicio'
+      ? 'UPDATE servicios SET push_notified_end = 1 WHERE id_servicio = ?'
+      : 'UPDATE cuentas SET push_notified_end = 1 WHERE id_cuenta = ?',
+    [id]
+  );
 }
 
 /**

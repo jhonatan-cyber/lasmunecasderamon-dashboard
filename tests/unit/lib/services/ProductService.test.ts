@@ -1,8 +1,8 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { ProductService } from '@/lib/services/ProductService';
+import { ProductService } from '@/modules/inventario/productos/fachada';
 import { ConflictError } from '@/lib/errors/errors';
 
-vi.mock('@/modules/inventario', () => ({
+const productHarness = vi.hoisted(() => ({
   traspasarAlBar: vi.fn().mockResolvedValue({ trasladadas: 3, stock_bar: 8 }),
   aceptarTransferencia: vi.fn().mockResolvedValue(undefined),
   rechazarTransferencia: vi.fn().mockResolvedValue(undefined),
@@ -33,6 +33,15 @@ vi.mock('@/modules/inventario', () => ({
   obtenerNivelesChampagne: vi.fn().mockResolvedValue([]),
   guardarNivelesChampagne: vi.fn().mockResolvedValue(undefined)
 }));
+vi.mock('@/modules/inventario', () => productHarness);
+vi.mock('@/modules/inventario/transferencias/servicio', () => productHarness);
+vi.mock('@/modules/inventario/presentaciones/servicio', () => productHarness);
+vi.mock('@/modules/inventario/productos/servicio', () => productHarness);
+vi.mock('@/modules/inventario/unidades/servicio', () => productHarness);
+vi.mock('@/modules/inventario/envases/servicio', () => productHarness);
+vi.mock('@/modules/inventario/movimientos/servicio', () => productHarness);
+vi.mock('@/modules/inventario/catalogo/servicio', () => productHarness);
+vi.mock('@/modules/inventario/bar/servicio', () => productHarness);
 
 vi.mock('@/lib/utils/logger', () => ({
   logger: { debug: vi.fn(), info: vi.fn(), warn: vi.fn(), error: vi.fn() }

@@ -15,7 +15,7 @@ vi.mock('@/lib/utils/logger', () => ({ logger, default: logger }));
 vi.mock('argon2', () => ({ hash: vi.fn(), verify: vi.fn(), argon2id: 2 }));
 vi.mock('@/lib/auth/auth', () => ({ generateToken: vi.fn(), registrarLogin: vi.fn() }));
 
-import { getUserPermissions } from '@/lib/repositories/auth/AuthQueries';
+import { getUserPermissions } from '@/modules/identidad/autenticacion/consultas';
 import { type UserPermissions } from '@/lib/middleware/auth';
 
 const concedidos = (perms: UserPermissions): string[] =>

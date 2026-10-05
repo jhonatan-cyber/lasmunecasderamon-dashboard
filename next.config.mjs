@@ -126,6 +126,9 @@ const nextConfig = {
   },
 
   experimental: {
+    // Separate compiler workers release memory between the server and client builds.
+    webpackBuildWorker: true,
+    webpackMemoryOptimizations: true,
     optimizePackageImports: [
       'recharts',
       '@radix-ui/react-dialog',

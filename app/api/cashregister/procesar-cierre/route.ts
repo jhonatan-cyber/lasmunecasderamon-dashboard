@@ -2,7 +2,7 @@ import { NextResponse } from 'next/server';
 import { withPublicRoute } from '@/lib/api/withRoute';
 import { CajaProcesarCierreSchema } from '@/lib/business/schemas/caja';
 import { validateOrResponse } from '@/lib/api/validate';
-import { CashRegisterService } from '@/lib/services/CashRegisterService';
+import { CashRegisterService } from '@/modules/caja';
 
 /**
  * El administrador resuelve la solicitud desde el link del WhatsApp.

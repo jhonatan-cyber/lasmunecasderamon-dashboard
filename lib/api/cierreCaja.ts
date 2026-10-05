@@ -1,7 +1,7 @@
-import { CashRegisterService } from '@/lib/services/CashRegisterService';
-import { enviarMensajeSolicitudCierreCaja } from '@/lib/integrations/whatsappService';
+import { CashRegisterService } from '@/modules/caja';
+import { enviarMensajeSolicitudCierreCaja } from '@/modules/comunicaciones';
 import { isAdministrator } from '@/lib/middleware/auth';
-import { AVISO_CIERRE_ENFRIAMIENTO_MS } from '@/lib/repositories/CashRegisterRepository';
+import { AVISO_CIERRE_ENFRIAMIENTO_MS } from '@/modules/caja/contracts';
 import logger from '@/lib/utils/logger';
 
 export interface CierreCajaSolicitante {

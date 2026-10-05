@@ -2,15 +2,13 @@ import type { ContextoOperacion } from '@/lib/transaccion/contrato';
 import { resolverTransaccion } from '@/lib/transaccion/infraestructura';
 import { generateUUID } from '@/lib/database/db';
 import { getNowInBusinessTimezone } from '@/lib/business/timezoneService';
-import { BaseRepository } from '@/lib/repositories/BaseRepository';
+import { BaseRepository } from '@/lib/database/base-repository';
 import { BusinessError, NotFoundError } from '@/lib/errors/errors';
 import {
   parsePagosMixtos,
   validatePagosMixtos,
   calcularDeltasCaja
 } from '@/lib/business/pagosMixtos';
-import { obtenerCajaActiva, registrarMovimientoCobro } from '@/modules/caja';
-import { crearCuentaPrepagoRecarga, cerrarCuentasPrepagoSaldadas } from '@/modules/operacion';
 export async function descontarSaldoCuenta(
   clienteId: string | null,
   monto: number,
@@ -26,8 +24,14 @@ export async function descontarSaldoCuenta(
   await trx('UPDATE clientes SET saldo = saldo - ? WHERE id_cliente = ?', [monto, clienteId]);
 }
 
-// El consumo de ventas directas aún conserva el auto-cierre PREP-* heredado.
-import { procesarPrepago } from '@/lib/business/pagosMixtos';
+import { procesarPrepago } from './consumoRepositorio';
+export async function saldoClienteAgotado(clienteId: string, contexto: ContextoOperacion) {
+  const [fila] = await resolverTransaccion(contexto)<{ saldo: number }[]>(
+    'SELECT saldo FROM clientes WHERE id_cliente = ?',
+    [clienteId]
+  );
+  return Number(fila?.saldo || 0) === 0;
+}
 export function descontarSaldoVenta(
   entrada: Parameters<typeof procesarPrepago>[1],
   contexto: ContextoOperacion
@@ -125,7 +129,7 @@ export interface EntradaRecargaPrepago {
 export async function cargarPrepagoRecarga(
   data: EntradaRecargaPrepago,
   contexto: ContextoOperacion
-): Promise<void> {
+): Promise<{ efectivo: number; tarjeta: number; transferencia: number; prepago: number }> {
   const moveId = generateUUID();
   const now = getNowInBusinessTimezone();
   const metodoPago = String(data.metodo_pago || 'efectivo');
@@ -133,14 +137,6 @@ export async function cargarPrepagoRecarga(
 
   if (metodoPago === 'mixto') {
     validatePagosMixtos(pagosMixtos, Number(data.monto || 0));
-  }
-
-  const idCaja = await obtenerCajaActiva(contexto);
-  if (!idCaja) {
-    throw new BusinessError(
-      'No hay una caja abierta para registrar la recarga prepago',
-      'NO_CAJA_ABIERTA'
-    );
   }
 
   const metadatos =
@@ -168,13 +164,7 @@ export async function cargarPrepagoRecarga(
     data.cliente_id
   ]);
 
-  await registrarMovimientoCobro(
-    idCaja,
-    deltasCajaRecarga(data.monto, metodoPago, pagosMixtos),
-    contexto
-  );
-
-  await crearCuentaPrepagoRecarga(data.cliente_id, data.monto, data.usuario_id || null, contexto);
+  return deltasCajaRecarga(data.monto, metodoPago, pagosMixtos);
 }
 
 export interface EntradaDevolucionSaldo {
@@ -193,7 +183,7 @@ export interface EntradaDevolucionSaldo {
 export async function devolverSaldoConCierre(
   data: EntradaDevolucionSaldo,
   contexto: ContextoOperacion
-): Promise<void> {
+): Promise<boolean> {
   const monto = Number(data.monto);
   const motivo = String(data.motivo || 'Devolucion de saldo').trim();
 
@@ -238,7 +228,5 @@ export async function devolverSaldoConCierre(
     'SELECT saldo FROM clientes WHERE id_cliente = ?',
     [data.cliente_id]
   );
-  if (Number(saldoRow?.saldo || 0) === 0) {
-    await cerrarCuentasPrepagoSaldadas(data.cliente_id, contexto);
-  }
+  return Number(saldoRow?.saldo || 0) === 0;
 }

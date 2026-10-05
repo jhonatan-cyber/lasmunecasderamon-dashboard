@@ -1,8 +1,8 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { CashRegisterService } from '@/lib/services/CashRegisterService';
+import { CashRegisterService } from '@/modules/caja/turnos/servicio';
 import { ConflictError, NotFoundError } from '@/lib/errors/errors';
 
-vi.mock('@/lib/repositories/CashRegisterRepository', () => ({
+vi.mock('@/modules/caja/turnos/repositorio', () => ({
   CashRegisterRepository: {
     open: vi.fn(),
     close: vi.fn(),
@@ -11,7 +11,7 @@ vi.mock('@/lib/repositories/CashRegisterRepository', () => ({
   }
 }));
 
-import { CashRegisterRepository } from '@/lib/repositories/CashRegisterRepository';
+import { CashRegisterRepository } from '@/modules/caja/turnos/repositorio';
 
 beforeEach(() => {
   vi.clearAllMocks();

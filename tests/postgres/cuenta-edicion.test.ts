@@ -7,14 +7,15 @@
  */
 import { afterAll, expect, it, vi } from 'vitest';
 
-vi.mock('@/lib/integrations/pushNotifications', () => ({
+vi.mock('@/modules/comunicaciones/push/servicio', () => ({
   sendPushByRole: vi.fn(async () => undefined),
   sendPushNotification: vi.fn(async () => undefined)
 }));
 
 import db, { query } from '@/lib/database/db';
 import { snapshotDatabase, restoreDatabase } from '@/lib/database/maintenance';
-import { AccountService } from '@/lib/services/AccountService';
+import { AccountService } from '@/modules/operacion/cuentas/fachada';
+import { listarCuentas, finalizarSesionHabitacion, eliminarCuenta } from '@/modules/operacion';
 
 afterAll(async () => {
   await db.pool.end();
@@ -186,6 +187,42 @@ it('crear una cuenta registra detalles, usuarios y ocupa la habitación', async 
       [habitacionId]
     );
     expect(habitacion.estado).toBe(2);
+  } finally {
+    await restoreDatabase(snapshot, 'test-only');
+  }
+});
+
+it('listar, finalizar sesión y eliminar por API del módulo', async () => {
+  const snapshot = await snapshotDatabase();
+  try {
+    const habitacionId = await crearHabitacion('L');
+    const cuentaId = await crearCuentaBase(habitacionId);
+    const [usuario] = await query<{ id_usuario: string }[]>(
+      'SELECT id_usuario FROM usuarios LIMIT 1'
+    );
+    await AccountService.updateCuenta(cuentaId, { extraTiempo: 20 } as any, usuario.id_usuario);
+
+    const resumen = (await listarCuentas('resumen')) as { total_por_cobrar: number };
+    expect(Number(resumen.total_por_cobrar)).toBeGreaterThanOrEqual(0);
+    const listado = (await listarCuentas(undefined, '1')) as unknown[];
+    expect(Array.isArray(listado)).toBe(true);
+
+    await finalizarSesionHabitacion(
+      cuentaId,
+      new Date().toISOString().slice(0, 19).replace('T', ' ')
+    );
+    const [cuenta] = await query<{ tiempo_actual: number }[]>(
+      'SELECT tiempo_actual FROM cuentas WHERE id_cuenta = ?',
+      [cuentaId]
+    );
+    expect(Number(cuenta.tiempo_actual)).toBe(0);
+
+    await eliminarCuenta(cuentaId);
+    const resto = await query<{ total: string }[]>(
+      'SELECT COUNT(*) AS total FROM cuentas WHERE id_cuenta = ?',
+      [cuentaId]
+    );
+    expect(Number(resto[0].total)).toBe(0);
   } finally {
     await restoreDatabase(snapshot, 'test-only');
   }

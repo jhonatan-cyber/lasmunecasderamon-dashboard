@@ -8,29 +8,28 @@ vi.mock('@/lib/database/db', () => ({
   query: vi.fn()
 }));
 
-import { ClientService } from '@/lib/services/ClientService';
-
-vi.mock('@/lib/repositories/ClientRepository', () => ({
-  ClientRepository: {
-    create: vi.fn(),
-    update: vi.fn(),
-    getHistory: vi.fn(),
-    addPrepago: vi.fn(),
-    devolverSaldo: vi.fn(),
-    getById: vi.fn(),
-    getAll: vi.fn(),
-    delete: vi.fn()
-  }
-}));
+import { ClientService } from '@/workflows/clientes';
 
 vi.mock('@/modules/clientes', () => ({
-  cargarPrepago: vi.fn(),
-  devolverSaldo: vi.fn()
+  crearCliente: vi.fn(),
+  actualizarCliente: vi.fn(),
+  obtenerHistorial: vi.fn(),
+  obtenerCliente: vi.fn(),
+  listarClientes: vi.fn(),
+  eliminarCliente: vi.fn()
 }));
 
-import { cargarPrepago, devolverSaldo as devolverSaldoModulo } from '@/modules/clientes';
+vi.mock('@/workflows/prepago', () => ({ cargarPrepago: vi.fn(), devolverSaldo: vi.fn() }));
+import { cargarPrepago, devolverSaldo as devolverSaldoModulo } from '@/workflows/prepago';
 
-import { ClientRepository } from '@/lib/repositories/ClientRepository';
+import {
+  crearCliente,
+  actualizarCliente,
+  obtenerHistorial,
+  obtenerCliente,
+  listarClientes,
+  eliminarCliente
+} from '@/modules/clientes';
 
 const validClient = {
   name: 'Ana',
@@ -46,43 +45,43 @@ beforeEach(() => {
 describe('ClientService.createClient', () => {
   it('valida con Zod (omite id) y delega al repositorio', async () => {
     const mockClient = { id: 'cli-1', name: 'Ana', lastName: 'Rivas' };
-    vi.mocked(ClientRepository.create).mockResolvedValue(mockClient as any);
+    vi.mocked(crearCliente).mockResolvedValue(mockClient as any);
 
     const result = await ClientService.createClient(validClient as any);
 
-    expect(ClientRepository.create).toHaveBeenCalledWith(
+    expect(crearCliente).toHaveBeenCalledWith(
       expect.objectContaining({ name: 'Ana', lastName: 'Rivas', run: '12345678-9' })
     );
     expect(result).toEqual(mockClient);
   });
 
   it('aplica defaults de saldo/deuda/status', async () => {
-    vi.mocked(ClientRepository.create).mockResolvedValue({ id: 'cli-1' } as any);
+    vi.mocked(crearCliente).mockResolvedValue({ id: 'cli-1' } as any);
 
     await ClientService.createClient({ name: 'Ana', lastName: 'Rivas' } as any);
 
-    const arg = vi.mocked(ClientRepository.create).mock.calls[0][0];
+    const arg = vi.mocked(crearCliente).mock.calls[0][0];
     expect(arg).toMatchObject({ saldo: 0, deuda: 0, status: 1, phone: '' });
   });
 
   it('lanza ZodError si falta name', async () => {
     await expect(ClientService.createClient({ lastName: 'Rivas' } as any)).rejects.toThrow();
-    expect(ClientRepository.create).not.toHaveBeenCalled();
+    expect(crearCliente).not.toHaveBeenCalled();
   });
 
   it('lanza ZodError si falta lastName', async () => {
     await expect(ClientService.createClient({ name: 'Ana' } as any)).rejects.toThrow();
-    expect(ClientRepository.create).not.toHaveBeenCalled();
+    expect(crearCliente).not.toHaveBeenCalled();
   });
 });
 
 describe('ClientService.updateClient', () => {
   it('valida parcial y delega al repositorio', async () => {
-    vi.mocked(ClientRepository.update).mockResolvedValue({ id: 'cli-1', phone: 'nuevo' } as any);
+    vi.mocked(actualizarCliente).mockResolvedValue({ id: 'cli-1', phone: 'nuevo' } as any);
 
     const result = await ClientService.updateClient('cli-1', { phone: '+56911111111' });
 
-    expect(ClientRepository.update).toHaveBeenCalledWith(
+    expect(actualizarCliente).toHaveBeenCalledWith(
       'cli-1',
       expect.objectContaining({ phone: '+56911111111' })
     );
@@ -93,28 +92,28 @@ describe('ClientService.updateClient', () => {
     await expect(
       ClientService.updateClient('cli-1', { saldo: 'no-numero' } as any)
     ).rejects.toThrow();
-    expect(ClientRepository.update).not.toHaveBeenCalled();
+    expect(actualizarCliente).not.toHaveBeenCalled();
   });
 });
 
 describe('ClientService.update', () => {
   it('convierte id numérico a string', async () => {
-    vi.mocked(ClientRepository.update).mockResolvedValue({ id: '42' } as any);
+    vi.mocked(actualizarCliente).mockResolvedValue({ id: '42' } as any);
 
     await ClientService.update(42, { name: 'Pedro' });
 
-    expect(ClientRepository.update).toHaveBeenCalledWith(
+    expect(actualizarCliente).toHaveBeenCalledWith(
       '42',
       expect.objectContaining({ name: 'Pedro' })
     );
   });
 
   it('acepta id string', async () => {
-    vi.mocked(ClientRepository.update).mockResolvedValue({ id: 'cli-1' } as any);
+    vi.mocked(actualizarCliente).mockResolvedValue({ id: 'cli-1' } as any);
 
     await ClientService.update('cli-1', { name: 'Pedro' });
 
-    expect(ClientRepository.update).toHaveBeenCalledWith(
+    expect(actualizarCliente).toHaveBeenCalledWith(
       'cli-1',
       expect.objectContaining({ name: 'Pedro' })
     );
@@ -124,11 +123,11 @@ describe('ClientService.update', () => {
 describe('ClientService.getHistory', () => {
   it('delega al repositorio con el clientId', async () => {
     const mockHistory = [{ id: 'mov-1', monto: 10000 }];
-    vi.mocked(ClientRepository.getHistory).mockResolvedValue(mockHistory as any);
+    vi.mocked(obtenerHistorial).mockResolvedValue(mockHistory as any);
 
     const result = await ClientService.getHistory('cli-1');
 
-    expect(ClientRepository.getHistory).toHaveBeenCalledWith('cli-1');
+    expect(obtenerHistorial).toHaveBeenCalledWith('cli-1');
     expect(result).toEqual(mockHistory);
   });
 });
@@ -220,32 +219,32 @@ describe('ClientService.devolverSaldo', () => {
 describe('ClientService.getById', () => {
   it('delega al repositorio con id string', async () => {
     const mockClient = { id: 'cli-1', name: 'Ana' };
-    vi.mocked(ClientRepository.getById).mockResolvedValue(mockClient as any);
+    vi.mocked(obtenerCliente).mockResolvedValue(mockClient as any);
 
     const result = await ClientService.getById('cli-1');
 
-    expect(ClientRepository.getById).toHaveBeenCalledWith('cli-1');
+    expect(obtenerCliente).toHaveBeenCalledWith('cli-1');
     expect(result).toEqual(mockClient);
   });
 
   it('convierte id numérico a string', async () => {
-    vi.mocked(ClientRepository.getById).mockResolvedValue({ id: '7' } as any);
+    vi.mocked(obtenerCliente).mockResolvedValue({ id: '7' } as any);
 
     await ClientService.getById(7);
 
-    expect(ClientRepository.getById).toHaveBeenCalledWith('7');
+    expect(obtenerCliente).toHaveBeenCalledWith('7');
   });
 });
 
 describe('ClientService.getAll', () => {
   it('delega al repositorio con params opcionales', async () => {
     const mockClients = [{ id: 'cli-1' }];
-    vi.mocked(ClientRepository.getAll).mockResolvedValue(mockClients as any);
+    vi.mocked(listarClientes).mockResolvedValue(mockClients as any);
     const params = { search: 'ana', limit: 10, conSaldo: true };
 
     const result = await ClientService.getAll(params);
 
-    expect(ClientRepository.getAll).toHaveBeenCalledWith({
+    expect(listarClientes).toHaveBeenCalledWith({
       search: 'ana',
       limit: 10,
       offset: undefined,
@@ -255,11 +254,11 @@ describe('ClientService.getAll', () => {
   });
 
   it('permite llamar sin params', async () => {
-    vi.mocked(ClientRepository.getAll).mockResolvedValue({ data: [], total: 0 } as any);
+    vi.mocked(listarClientes).mockResolvedValue({ data: [], total: 0 } as any);
 
     await ClientService.getAll();
 
-    expect(ClientRepository.getAll).toHaveBeenCalledWith({
+    expect(listarClientes).toHaveBeenCalledWith({
       search: undefined,
       limit: undefined,
       offset: undefined,
@@ -270,18 +269,18 @@ describe('ClientService.getAll', () => {
 
 describe('ClientService.delete', () => {
   it('delega al repositorio con id string', async () => {
-    vi.mocked(ClientRepository.delete).mockResolvedValue(undefined as any);
+    vi.mocked(eliminarCliente).mockResolvedValue(undefined as any);
 
     await ClientService.delete('cli-1');
 
-    expect(ClientRepository.delete).toHaveBeenCalledWith('cli-1');
+    expect(eliminarCliente).toHaveBeenCalledWith('cli-1');
   });
 
   it('convierte id numérico a string', async () => {
-    vi.mocked(ClientRepository.delete).mockResolvedValue(undefined as any);
+    vi.mocked(eliminarCliente).mockResolvedValue(undefined as any);
 
     await ClientService.delete(99);
 
-    expect(ClientRepository.delete).toHaveBeenCalledWith('99');
+    expect(eliminarCliente).toHaveBeenCalledWith('99');
   });
 });

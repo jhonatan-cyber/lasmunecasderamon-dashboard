@@ -1,8 +1,8 @@
 import { NextResponse } from 'next/server';
 import { withRoute } from '@/lib/api/withRoute';
 import { getAnticipoBalances } from '@/modules/personal';
-import { TipService } from '@/lib/services/TipService';
-import { ServiceService } from '@/lib/services/ServiceService';
+import { TipService } from '@/modules/personal';
+import { ServiceService } from '@/modules/operacion';
 import { listarAsistenciasDeUsuario } from '@/modules/asistencia';
 import { obtenerResumenUsuario } from '@/modules/identidad';
 

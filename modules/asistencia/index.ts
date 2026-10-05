@@ -1,4 +1,7 @@
 import 'server-only';
+export { eliminarPlantillasLocales } from './biometrico/plantillasServicio';
+export { registrarMarcaLogin } from './marcas/loginServicio';
+export { liquidarAsistencias } from './marcas/liquidacionServicio';
 
 /**
  * API pública del módulo Asistencia — servidor.

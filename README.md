@@ -4,18 +4,24 @@ Aplicacion `Next.js 16` que combina sitio publico y panel operativo interno.
 
 ## Arquitectura
 
-Proyecto usa arquitectura por capas:
+El proyecto es un monolito modular: un despliegue de Next.js y una base
+PostgreSQL, con límites por dominio.
 
 ```text
 app/api/          # Rutas App Router / API
 components/       # UI y componentes por modulo
 hooks/            # Hooks de dominio y UI
-lib/services/     # Logica de negocio
-lib/repositories/ # Acceso a datos con SQL directo
+modules/          # APIs públicas, contratos y persistencia privada de cada dominio
+workflows/        # Coordinación de casos de uso entre módulos
 lib/database/     # Pool PostgreSQL y transacciones
 tests/            # Unit, integration, e2e
 types/            # Tipos TypeScript globales
 ```
+
+Los consumidores usan `modules/<dominio>/index.ts` o `contracts.ts`. El control
+`pnpm arquitectura:limites` bloquea imports privados, ciclos y escrituras en
+tablas ajenas. El estado y la validación están en
+[Consolidación del monolito modular](docs/arquitectura/CONSOLIDACION_FINAL.md).
 
 ## Requisitos
 

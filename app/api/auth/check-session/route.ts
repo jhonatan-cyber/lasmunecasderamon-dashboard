@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
 import { withRoute } from '@/lib/api/withRoute';
-import { AuthService } from '@/lib/services/AuthService';
+import { AuthService } from '@/modules/identidad';
 
 export const GET = withRoute(
   { auth: true, access: 'authenticated', audit: true },

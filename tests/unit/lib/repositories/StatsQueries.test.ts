@@ -11,6 +11,7 @@ vi.mock('@/lib/database/db', () => ({
 }));
 
 vi.mock('@/lib/business/timezoneService', () => ({
+  getSystemTimezone: () => 'America/Santiago',
   getNowInBusinessTimezone: () => '2026-04-11 12:00:00'
 }));
 
@@ -22,37 +23,37 @@ vi.mock('@/lib/utils/logger', () => ({
   logger: { info: vi.fn(), warn: vi.fn(), error: vi.fn() }
 }));
 
-vi.mock('@/lib/repositories/TimerRepository', () => ({
+vi.mock('@/modules/operacion/temporizadores/consultas', () => ({
   TimerRepository: {
     getActive: vi.fn().mockResolvedValue([])
   }
 }));
 
-vi.mock('@/lib/repositories/ServiceRequestRepository', () => ({
+vi.mock('@/modules/operacion/solicitudes/repositorio', () => ({
   ServiceRequestRepository: {
     getPendingCount: vi.fn().mockResolvedValue(0),
     getPendingServiceRequests: vi.fn().mockResolvedValue([])
   }
 }));
 
-vi.mock('@/lib/repositories/RoomRepository', () => ({
+vi.mock('@/modules/operacion/habitaciones/repositorio', () => ({
   RoomRepository: {
     getAll: vi.fn().mockResolvedValue([])
   }
 }));
 
-vi.mock('@/lib/repositories/OrderRepository', () => ({
+vi.mock('@/modules/operacion/pedidos/repositorio', () => ({
   OrderRepository: {
     getAll: vi.fn().mockResolvedValue([])
   }
 }));
 
-vi.mock('@/lib/repositories/stats/index', () => ({
+vi.mock('@/modules/reportes/dashboard/infraestructura', () => ({
   buildDashboardInsights: (args: any) => ({ args }),
   buildCajaStatsResult: (args: any) => ({ args })
 }));
 
-import { StatsQueries } from '@/lib/repositories/stats/StatsQueries';
+import { StatsQueries } from '@/modules/reportes/dashboard/consultas';
 import { DatabaseError } from '@/lib/errors/errors';
 
 describe('StatsQueries.getCajaGeneralStats', () => {

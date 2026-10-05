@@ -7,14 +7,14 @@
  */
 import { afterAll, expect, it, vi } from 'vitest';
 
-vi.mock('@/lib/integrations/pushNotifications', () => ({
+vi.mock('@/modules/comunicaciones/push/servicio', () => ({
   sendPushByRole: vi.fn(async () => undefined),
   sendPushNotification: vi.fn(async () => undefined)
 }));
 
 import db, { query } from '@/lib/database/db';
 import { snapshotDatabase, restoreDatabase } from '@/lib/database/maintenance';
-import { ClientService } from '@/lib/services/ClientService';
+import { ClientService } from '@/workflows/clientes';
 
 afterAll(async () => {
   await db.pool.end();

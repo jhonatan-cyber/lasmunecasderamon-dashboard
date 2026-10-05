@@ -16,7 +16,8 @@ vi.mock('@/lib/business/timezoneService', () => ({
   getSystemTimezone: () => 'America/Santiago'
 }));
 
-import { ServiceRepository } from '@/lib/repositories/ServiceRepository';
+import { procesarAnulacionServicio } from '@/modules/operacion/servicios/anulaciones';
+const ServiceRepository = { processAnulacion: procesarAnulacionServicio };
 
 describe('ServiceRepository.processAnulacion', () => {
   beforeEach(() => {

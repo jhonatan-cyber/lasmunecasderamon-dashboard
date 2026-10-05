@@ -11,7 +11,7 @@ vi.mock('@/lib/database/db', () => ({
 
 import { CajaCard } from '@/components/caja/CajaCard';
 import { buildCajaDetailsNumbers } from '@/components/caja/details/cajaDetailsModel';
-import { CashRegisterRepository } from '@/lib/repositories/CashRegisterRepository';
+import { CashRegisterRepository } from '@/modules/caja/turnos/repositorio';
 import { totalCaja } from '@/lib/business/cajaEfectivo';
 import type { CajaWithUser } from '@/types/caja';
 

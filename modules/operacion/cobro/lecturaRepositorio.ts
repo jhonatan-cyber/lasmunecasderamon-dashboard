@@ -1,15 +1,11 @@
 import type { ContextoOperacion } from '@/lib/transaccion/contrato';
 import { resolverTransaccion } from '@/lib/transaccion/infraestructura';
-import { normalizeCuentaRow } from '@/lib/repositories/cuenta/CuentaRoomHistory';
+import { normalizeCuentaRow } from '@/modules/operacion/cuentas/historial';
 import {
   buildFinancialSummary,
   type CuentaAnulacionRow
-} from '@/lib/repositories/cuenta/cuentaFinancialSummary';
-import type {
-  CuentaGetByIdRow,
-  DetalleCuentaRow,
-  CuentaUsuarioRow
-} from '@/lib/repositories/types';
+} from '@/modules/operacion/cuentas/resumen';
+import type { CuentaGetByIdRow, DetalleCuentaRow, CuentaUsuarioRow } from '@/lib/database/rows';
 export async function leerCuentaCobrada(id: string, contexto: ContextoOperacion) {
   const trx = resolverTransaccion(contexto);
 

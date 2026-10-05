@@ -12,7 +12,10 @@ const mocks = vi.hoisted(() => ({
   cgi: vi.fn()
 }));
 vi.mock('@/lib/database/db', () => ({ query: mocks.query, withTransaction: mocks.transaction }));
-vi.mock('@/lib/repositories/UserRepository', () => ({ UserRepository: { getById: mocks.user } }));
+vi.mock('@/modules/identidad', async () => {
+  const { quitarModalidadesBiometricas } = await import('@/modules/identidad/usuarios/servicio');
+  return { obtenerResumenUsuario: mocks.user, quitarModalidadesBiometricas };
+});
 vi.mock('@/modules/asistencia/biometrico/deviceClient', () => ({
   credencialesDeFila: mocks.credentials,
   eliminarUsuarioDelEquipo: mocks.cgi

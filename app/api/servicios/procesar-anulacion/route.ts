@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
 import { obtenerSolicitudAnulacionServicioPorToken } from '@/modules/operacion';
-import { processPendingSolicitud } from '@/lib/integrations/whatsappPendingActions';
+import { processPendingSolicitud } from '@/workflows/anulaciones-whatsapp';
 
 export async function POST(request: Request) {
   const body = await request.json();

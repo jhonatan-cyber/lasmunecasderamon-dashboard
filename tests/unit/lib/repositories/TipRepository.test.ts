@@ -23,13 +23,13 @@ vi.mock('@/lib/business/timezoneService', () => ({
   getSystemTimezone: () => 'America/Santiago'
 }));
 
-vi.mock('@/lib/repositories/BaseRepository', () => {
+vi.mock('@/lib/database/base-repository', () => {
   const mockInsert = vi.fn(async () => undefined);
   return { BaseRepository: { insert: mockInsert } };
 });
 
-import { TipRepository } from '@/lib/repositories/TipRepository';
-import { BaseRepository } from '@/lib/repositories/BaseRepository';
+import { TipService as TipRepository } from '@/modules/personal/conceptos/propinas';
+import { BaseRepository } from '@/lib/database/base-repository';
 
 const ACTIVE_LOCAL_STAFF = [
   { id_usuario: 'cajero-1' },

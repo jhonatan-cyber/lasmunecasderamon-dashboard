@@ -18,7 +18,7 @@ import {
   closeOpenHistorySegment,
   appendHistorySegment,
   stringifyRoomHistory
-} from '@/lib/repositories/cuenta/CuentaRoomHistory';
+} from '@/modules/operacion/cuentas/historial';
 import {
   acumularTotalesCuenta,
   agregarDetallesCuenta,
@@ -36,7 +36,7 @@ import {
 import {
   liberarHabitacionPorAnulacion,
   ocuparHabitacionSiCorresponde
-} from '../facturacion/repositorio';
+} from '../facturacion/servicio';
 
 type Tarea = () => void | Promise<void>;
 

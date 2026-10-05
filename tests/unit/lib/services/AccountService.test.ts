@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { AccountService } from '@/lib/services/AccountService';
+import { AccountService } from '@/modules/operacion/cuentas/fachada';
 
 // El módulo de env valida al importarse y vitest no carga .env: se mockea para
 // que el test no dependa del orden de ejecución en el worker.
@@ -17,7 +17,7 @@ vi.mock('@/lib/utils/env', () => ({
   }
 }));
 
-vi.mock('@/lib/repositories/CuentaRepository', () => ({
+vi.mock('@/modules/operacion/cuentas/registro', () => ({
   CuentaRepository: {
     create: vi.fn(),
     getAll: vi.fn(),
@@ -31,7 +31,7 @@ vi.mock('@/lib/repositories/CuentaRepository', () => ({
   }
 }));
 
-import { CuentaRepository } from '@/lib/repositories/CuentaRepository';
+import { CuentaRepository } from '@/modules/operacion/cuentas/registro';
 
 const validCuenta = {
   codigo: 'C-001',

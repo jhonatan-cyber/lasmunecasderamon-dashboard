@@ -8,13 +8,13 @@ import {
   parseAnticipoCommand,
   parseSolicitudResponseCommand
 } from '@/lib/integrations/whatsappCommandUtils';
-import { processPendingSolicitud } from '@/lib/integrations/whatsappPendingActions';
+import { processPendingSolicitud } from '@/workflows/anulaciones-whatsapp';
 import { listarAnticiposPendientes, procesarAnticipoDesdeComando } from '@/modules/personal';
 import { listarSolicitudesCierrePendientes } from '@/modules/caja';
 import { listarServiciosEnCurso, listarSolicitudesCuentasPendientes } from '@/modules/operacion';
 import { listarVentasEnCurso } from '@/modules/ventas';
-import { CashRegisterService } from '@/lib/services/CashRegisterService';
-import { GratificacionService } from '@/lib/services/GratificacionService';
+import { CashRegisterService } from '@/modules/caja';
+import { GratificacionService } from '@/modules/personal';
 import { formatCurrencyCLP } from '@/lib/utils/formatters';
 import { getTwilioConfig } from '@/lib/business/twilioConfig';
 import { getAdminWhatsApp } from '@/lib/business/whatsappConfig';

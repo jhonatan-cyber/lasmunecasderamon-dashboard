@@ -7,18 +7,18 @@
  */
 import { afterAll, expect, it, vi } from 'vitest';
 
-vi.mock('@/lib/integrations/pushNotifications', () => ({
+vi.mock('@/modules/comunicaciones/push/servicio', () => ({
   sendPushByRole: vi.fn(),
   sendPushByUser: vi.fn(),
   sendPushToUser: vi.fn()
 }));
-vi.mock('@/lib/services/SecurityAlertService', () => ({
+vi.mock('@/modules/auditoria/alertas/servicio', () => ({
   SecurityAlertService: { checkMassAnulation: vi.fn().mockResolvedValue(undefined) }
 }));
 
 import db, { query } from '@/lib/database/db';
 import { snapshotDatabase, restoreDatabase } from '@/lib/database/maintenance';
-import { ServiceService } from '@/lib/services/ServiceService';
+import { ServiceService } from '@/modules/operacion/servicios/fachada';
 
 afterAll(async () => {
   await db.pool.end();

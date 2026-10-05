@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server';
-import { ClientService } from '@/lib/services/ClientService';
+import { ClientService } from '@/workflows/clientes';
 import { withRoute } from '@/lib/api/withRoute';
 import { ApiResponse } from '@/lib/api/api-response';
 

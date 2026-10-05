@@ -7,7 +7,7 @@ vi.mock('@/lib/database/db', () => ({
   withTransaction: vi.fn()
 }));
 
-import { VentasStatsRepository } from '@/lib/repositories/VentasStatsRepository';
+import { VentasStatsRepository } from '@/modules/reportes/ventas/repositorio';
 
 describe('VentasStatsRepository · shots del cierre de caja', () => {
   beforeEach(() => {

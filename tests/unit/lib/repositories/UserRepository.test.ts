@@ -21,7 +21,7 @@ vi.mock('@/lib/business/schemas', () => ({
   }
 }));
 
-vi.mock('@/lib/repositories/BaseRepository', () => ({
+vi.mock('@/lib/database/base-repository', () => ({
   BaseRepository: {
     insert: vi.fn(),
     update: vi.fn(),
@@ -30,7 +30,7 @@ vi.mock('@/lib/repositories/BaseRepository', () => ({
   }
 }));
 
-import { UserRepository } from '@/lib/repositories/UserRepository';
+import { UserRepository } from '@/modules/identidad/usuarios/registro';
 
 describe('UserRepository.getAvailableAnfitrionas', () => {
   beforeEach(() => {

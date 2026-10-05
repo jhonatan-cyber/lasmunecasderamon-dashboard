@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
 import { withPublicRoute } from '@/lib/api/withRoute';
-import { ReportRepository } from '@/lib/repositories/ReportRepository';
+import { ReportService } from '@/modules/reportes';
 
 export const GET = withPublicRoute(async (request: Request) => {
   const { searchParams } = new URL(request.url);
@@ -8,6 +8,6 @@ export const GET = withPublicRoute(async (request: Request) => {
   const startDate = searchParams.get('startDate');
   const endDate = searchParams.get('endDate');
 
-  const data = await ReportRepository.getCommissionsReport(period, startDate, endDate);
+  const data = await ReportService.getCommissionsReport(period, startDate, endDate);
   return NextResponse.json({ success: true, ...data });
 });

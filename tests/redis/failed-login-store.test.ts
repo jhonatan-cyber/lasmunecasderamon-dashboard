@@ -1,7 +1,7 @@
 import { afterEach, beforeEach, expect, it, vi } from 'vitest';
 import { randomUUID } from 'node:crypto';
 import Redis from 'ioredis';
-import { RedisFailedLoginStore } from '@/lib/auth/failed-login-store';
+import { RedisFailedLoginStore } from '@/lib/cache/failedLoginStore';
 
 vi.mock('@/lib/utils/logger', () => ({
   logger: { info: vi.fn(), warn: vi.fn(), error: vi.fn() }

@@ -7,7 +7,7 @@
  */
 import { afterAll, expect, it, vi } from 'vitest';
 
-vi.mock('@/lib/integrations/pushNotifications', () => ({
+vi.mock('@/modules/comunicaciones/push/servicio', () => ({
   sendPushByRole: vi.fn(async () => undefined),
   sendPushNotification: vi.fn(async () => undefined),
   sendPushToUser: vi.fn(async () => undefined),
@@ -16,8 +16,9 @@ vi.mock('@/lib/integrations/pushNotifications', () => ({
 
 import db, { query } from '@/lib/database/db';
 import { snapshotDatabase, restoreDatabase } from '@/lib/database/maintenance';
-import { ServiceService } from '@/lib/services/ServiceService';
+import { ServiceService } from '@/modules/operacion/servicios/fachada';
 import { revisarTemporizadores } from '@/modules/operacion';
+import { TimerService } from '@/modules/operacion';
 
 afterAll(async () => {
   await db.pool.end();
@@ -129,6 +130,27 @@ it('no toca el servicio con tiempo vigente', async () => {
       [id]
     );
     expect(servicio.estado).toBe(2);
+  } finally {
+    await restoreDatabase(snapshot, 'test-only');
+  }
+});
+
+it('la limpieza automática confirma servicio y habitación juntos', async () => {
+  const snapshot = await snapshotDatabase();
+  try {
+    await abrirCajaSiHaceFalta();
+    const { id, habitacionId } = await crearServicioConTiempo(true);
+    await TimerService.runAutoCleanup();
+    const [servicio] = await query<{ estado: number }[]>(
+      'SELECT estado FROM servicios WHERE id_servicio = ?',
+      [id]
+    );
+    const [habitacion] = await query<{ estado: number }[]>(
+      'SELECT estado FROM habitaciones WHERE id_habitacion = ?',
+      [habitacionId]
+    );
+    expect(servicio.estado).toBe(1);
+    expect(habitacion.estado).toBe(1);
   } finally {
     await restoreDatabase(snapshot, 'test-only');
   }

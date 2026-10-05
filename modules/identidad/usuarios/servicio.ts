@@ -8,6 +8,23 @@
 import * as argon2 from 'argon2';
 import type { PersonalActivo, ResumenUsuario, UsuarioPublico } from '../contracts';
 import * as repositorio from './repositorio';
+import type { ContextoOperacion } from '@/lib/transaccion/contrato';
+
+export function listarDestinatariosAnulaciones() {
+  return repositorio.listarDestinatariosAnulaciones();
+}
+
+export function activarModalidadFacial(usuarioId: string, contexto: ContextoOperacion) {
+  return repositorio.activarModalidadFacial(usuarioId, contexto);
+}
+
+export function guardarFotoPerfil(usuarioId: string, foto: string) {
+  return repositorio.guardarFotoPerfil(usuarioId, foto);
+}
+
+export async function quitarModalidadesBiometricas(usuarioId: string, contexto: ContextoOperacion) {
+  await repositorio.quitarModalidadesBiometricas(usuarioId, contexto);
+}
 
 /** Nombre, apellido y nick del actor; la ruta los mete en su respuesta. */
 export async function obtenerResumenUsuario(usuarioId: string): Promise<ResumenUsuario | null> {

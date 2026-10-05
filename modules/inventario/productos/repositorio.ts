@@ -16,7 +16,7 @@ import { query, generateUUID, withTransaction, type TransactionQuery } from '@/l
 import { getNowInBusinessTimezone } from '@/lib/business/timezoneService';
 import { ProductSchema, type ProductType } from '@/lib/business/schemas';
 import { logger } from '@/lib/utils/logger';
-import { BaseRepository } from '@/lib/repositories/BaseRepository';
+import { BaseRepository } from '@/lib/database/base-repository';
 import { crearPresentacion } from '../presentaciones/repositorio';
 import { generarUnidades, sincronizarStockTotal } from '../unidades/repositorio';
 

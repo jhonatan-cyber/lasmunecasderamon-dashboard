@@ -5,7 +5,7 @@ import { consumirPrepagoCuenta } from '@/modules/clientes';
 import { getNowInBusinessTimezone, parseBusinessDate } from '@/lib/business/timezoneService';
 import { sendNotificationToAll } from '@/lib/api/sseService';
 import { NotFoundError, BusinessError } from '@/lib/errors/errors';
-import type { CuentaRow, HabitacionRow } from '@/lib/repositories/types';
+import type { CuentaRow, HabitacionRow } from '@/lib/database/rows';
 import type { CuentaCobrarBody } from '../contracts';
 import {
   getRemainingMinutes,
@@ -13,7 +13,7 @@ import {
   ensureOpenHistorySegment,
   closeOpenHistorySegment,
   stringifyRoomHistory
-} from '@/lib/repositories/cuenta/CuentaRoomHistory';
+} from '@/modules/operacion/cuentas/historial';
 import {
   buildCuentaSalePayload,
   esMetodoPagoVenta,

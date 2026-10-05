@@ -1,7 +1,7 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { CategoryService } from '@/lib/services/CategoryService';
+import { CategoryService } from '@/modules/inventario/categorias/servicio';
 
-vi.mock('@/lib/repositories/CategoryRepository', () => ({
+vi.mock('@/modules/inventario/categorias/repositorio', () => ({
   CategoryRepository: {
     getAll: vi.fn(),
     create: vi.fn(),
@@ -16,7 +16,7 @@ vi.mock('@/lib/utils/logger', () => ({
   logger: { debug: vi.fn(), info: vi.fn(), warn: vi.fn(), error: vi.fn() }
 }));
 
-import { CategoryRepository } from '@/lib/repositories/CategoryRepository';
+import { CategoryRepository } from '@/modules/inventario/categorias/repositorio';
 
 beforeEach(() => {
   vi.clearAllMocks();

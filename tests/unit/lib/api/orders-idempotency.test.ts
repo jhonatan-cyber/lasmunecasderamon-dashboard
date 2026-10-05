@@ -35,11 +35,11 @@ vi.mock('@/lib/auth/auth-app', () => ({
   })
 }));
 
-vi.mock('@/lib/services/AuditService', () => ({
+vi.mock('@/modules/auditoria/registro/servicio', () => ({
   AuditService: { log: vi.fn().mockResolvedValue(undefined) }
 }));
 
-vi.mock('@/lib/services/ErrorLogService', () => ({
+vi.mock('@/modules/auditoria/errores/servicio', () => ({
   ErrorLogService: { log: vi.fn().mockResolvedValue(undefined) }
 }));
 
@@ -57,7 +57,7 @@ vi.mock('@/lib/utils/logger', () => {
 /** Tabla `sync_operations` en memoria, con la misma semántica del repositorio real. */
 const syncOperations = vi.hoisted(() => ({ filas: new Map<string, Record<string, unknown>>() }));
 
-vi.mock('@/lib/repositories/SyncOperationRepository', () => ({
+vi.mock('@/lib/database/sync-operations', () => ({
   SyncOperationRepository: {
     claim: vi.fn(
       async (idCliente: string, input: { endpoint: string; usuarioId?: string | null }) => {
@@ -106,7 +106,7 @@ vi.mock('@/lib/repositories/SyncOperationRepository', () => ({
 }));
 
 const orderService = vi.hoisted(() => ({ create: vi.fn() }));
-vi.mock('@/lib/services/OrderService', () => ({ OrderService: orderService }));
+vi.mock('@/modules/operacion/pedidos/servicio', () => ({ OrderService: orderService }));
 
 import { POST } from '@/app/api/orders/route';
 import { IDEMPOTENCY_HEADER } from '@/lib/api/idempotency';

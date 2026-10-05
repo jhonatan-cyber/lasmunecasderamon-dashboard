@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server';
 import { withPublicRoute, withRoute } from '@/lib/api/withRoute';
 import { runIdempotent } from '@/lib/api/idempotency';
-import { AccountService } from '@/lib/services/AccountService';
+import { AccountService } from '@/modules/operacion';
 
 export const GET = withPublicRoute(
   async (request: Request, { params }: { params: Promise<{ id: string }> }) => {

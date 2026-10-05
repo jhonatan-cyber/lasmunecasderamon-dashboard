@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
 import { withRoute } from '@/lib/api/withRoute';
-import { CommissionService } from '@/lib/services/CommissionService';
+import { CommissionService } from '@/modules/personal';
 
 // `CommissionRepository.getDetails` devuelve `estado` como texto legible
 // ('Por pagar' | 'Pagado' | 'Anulado'); las pantallas de eventos financieros

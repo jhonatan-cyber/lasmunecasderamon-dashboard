@@ -23,7 +23,7 @@ import {
   normalizeSolicitudStatus,
   type MixedPayment,
   type VentaRefundDetailRow
-} from '@/lib/repositories/sale/saleHelpers';
+} from '@/modules/ventas/lecturas/mapeo';
 import type { SolicitudAnulacion, VentaParaAnulacion } from '../contracts';
 
 export type { MixedPayment, VentaRefundDetailRow };
@@ -357,4 +357,18 @@ export async function finalizarVentaTemporizada(
   contexto: ContextoOperacion
 ): Promise<void> {
   await resolverTransaccion(contexto)('UPDATE ventas SET estado = 1 WHERE id_venta = ?', [ventaId]);
+}
+
+/**
+ * Borrado físico de una venta. Sin llamadores en producción (la ruta DELETE
+ * está deshabilitada y el flujo es la anulación); se conserva para los tests
+ * de integración heredados.
+ */
+export async function eliminarVentaFisica(
+  ventaId: string,
+  contexto: ContextoOperacion
+): Promise<void> {
+  const trx = resolverTransaccion(contexto);
+  await trx('DELETE FROM detalle_ventas WHERE venta_id = ?', [ventaId]);
+  await trx('DELETE FROM ventas WHERE id_venta = ?', [ventaId]);
 }

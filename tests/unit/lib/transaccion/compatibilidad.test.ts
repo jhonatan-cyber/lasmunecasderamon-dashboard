@@ -1,6 +1,6 @@
 import { expect, it, vi } from 'vitest';
 import { resolverTransaccion } from '@/lib/transaccion/infraestructura';
-import { conContextoOperacionExistente } from '@/lib/transaccion/compatibilidad';
+import { conContextoOperacionExistente } from '@/tests/setup/contexto-operacion';
 
 it('libera el contexto opaco al terminar la operación heredada', async () => {
   const trx = vi.fn();

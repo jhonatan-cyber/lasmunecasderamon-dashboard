@@ -22,11 +22,11 @@ vi.mock('@/lib/api/date-response', () => ({ normalizeJsonResponseDates: (r: any)
 
 vi.mock('@/lib/auth/auth-app', () => ({ getAuth: vi.fn() }));
 
-vi.mock('@/lib/services/AuditService', () => ({
+vi.mock('@/modules/auditoria/registro/servicio', () => ({
   AuditService: { log: vi.fn().mockResolvedValue(undefined) }
 }));
 
-vi.mock('@/lib/services/ErrorLogService', () => ({
+vi.mock('@/modules/auditoria/errores/servicio', () => ({
   ErrorLogService: { log: vi.fn().mockResolvedValue(undefined) }
 }));
 
@@ -41,8 +41,8 @@ vi.mock('@/lib/utils/logger', () => {
   return { logger: mocks, default: mocks };
 });
 
-vi.mock('@/lib/services/StatsService', () => ({ StatsService: stats }));
-vi.mock('@/lib/services/VentasStatsService', () => ({ VentasStatsService: ventas }));
+vi.mock('@/modules/reportes/dashboard/servicio', () => ({ StatsService: stats }));
+vi.mock('@/modules/reportes/ventas/servicio', () => ({ VentasStatsService: ventas }));
 
 vi.mock('@/lib/cache/dashboardCache', async importOriginal => {
   const actual = await importOriginal<typeof import('@/lib/cache/dashboardCache')>();

@@ -38,11 +38,11 @@ vi.mock('@/lib/auth/auth-app', () => ({
   })
 }));
 
-vi.mock('@/lib/services/AuditService', () => ({
+vi.mock('@/modules/auditoria/registro/servicio', () => ({
   AuditService: { log: vi.fn().mockResolvedValue(undefined) }
 }));
 
-vi.mock('@/lib/services/ErrorLogService', () => ({
+vi.mock('@/modules/auditoria/errores/servicio', () => ({
   ErrorLogService: { log: vi.fn().mockResolvedValue(undefined) }
 }));
 
@@ -60,7 +60,7 @@ vi.mock('@/lib/utils/logger', () => {
 /** Tabla `sync_operations` en memoria, con la misma semántica del repositorio real. */
 const syncOperations = vi.hoisted(() => ({ filas: new Map<string, Record<string, unknown>>() }));
 
-vi.mock('@/lib/repositories/SyncOperationRepository', () => ({
+vi.mock('@/lib/database/sync-operations', () => ({
   SyncOperationRepository: {
     claim: vi.fn(
       async (idCliente: string, input: { endpoint: string; usuarioId?: string | null }) => {
@@ -109,10 +109,10 @@ vi.mock('@/lib/repositories/SyncOperationRepository', () => ({
 }));
 
 const saleService = vi.hoisted(() => ({ createSale: vi.fn() }));
-vi.mock('@/lib/services/SaleService', () => ({ SaleService: saleService }));
+vi.mock('@/workflows/ventas', () => ({ SaleService: saleService }));
 
 const accountService = vi.hoisted(() => ({ updateCuenta: vi.fn(), cobrarConVenta: vi.fn() }));
-vi.mock('@/lib/services/AccountService', () => ({ AccountService: accountService }));
+vi.mock('@/modules/operacion/cuentas/fachada', () => ({ AccountService: accountService }));
 
 import { POST as postSale } from '@/app/api/sales/route';
 import { PUT as putCuenta } from '@/app/api/cuentas/[id]/route';

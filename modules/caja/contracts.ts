@@ -34,3 +34,4 @@ export interface MovimientoCobro {
   cuenta?: number;
   devolucion?: number;
 }
+export const AVISO_CIERRE_ENFRIAMIENTO_MS = 60_000;

@@ -30,28 +30,28 @@ vi.mock('@/lib/api/sseService', () => ({
   sendNotificationToAll: vi.fn()
 }));
 
-vi.mock('@/lib/repositories/CashRegisterRepository', () => ({
+vi.mock('@/modules/caja/turnos/repositorio', () => ({
   CashRegisterRepository: {
     getCurrentCajaId: vi.fn(),
     updateBalances: vi.fn()
   }
 }));
 
-vi.mock('@/lib/repositories/BaseRepository', () => ({
+vi.mock('@/lib/database/base-repository', () => ({
   BaseRepository: {
     insert: vi.fn(),
     delete: vi.fn()
   }
 }));
 
-vi.mock('@/lib/services/RoomManager', () => ({
+vi.mock('@/tests/setup/room-manager', () => ({
   RoomManager: {
     resumeRoomLogic: vi.fn()
   }
 }));
 
-import { BaseRepository } from '@/lib/repositories/BaseRepository';
-import { CuentaRepository } from '@/lib/repositories/CuentaRepository';
+import { BaseRepository } from '@/lib/database/base-repository';
+import { CuentaRepository } from '@/modules/operacion/cuentas/registro';
 
 describe('CuentaRepository hostess links', () => {
   beforeEach(() => {

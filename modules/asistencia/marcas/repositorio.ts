@@ -1,11 +1,14 @@
-import { query, generateUUID, withTransaction } from '@/lib/database/db';
+import { query, generateUUID } from '@/lib/database/db';
+import { enUnaUnidad } from '@/lib/transaccion/contrato';
+import { resolverTransaccion } from '@/lib/transaccion/infraestructura';
+import { marcarPresenciaLocal, asegurarSesionPresente } from '@/modules/identidad';
 import { getNowInBusinessTimezone } from '@/lib/business/timezoneService';
 import { AttendanceRegisterSchema } from '@/lib/business/schemas';
 import {
   CHALLENGE_FAILURE_MESSAGES,
   redeemChallenge
 } from '@/modules/asistencia/kioskos/attendanceChallenges';
-import { BaseRepository } from '@/lib/repositories/BaseRepository';
+import { BaseRepository } from '@/lib/database/base-repository';
 import logger from '@/lib/utils/logger';
 import { ValidationError, DatabaseError } from '@/lib/errors/errors';
 import { z } from 'zod';
@@ -191,10 +194,7 @@ export async function registerAttendance(
     const alreadyRegistered = existing.length > 0;
 
     if (alreadyRegistered) {
-      await BaseRepository.update(query, 'logins', 'usuario_id', targetUser.id_usuario, {
-        en_local: 1,
-        ...(ipLimpia && { ip_address: ipLimpia })
-      });
+      await marcarPresenciaLocal(targetUser.id_usuario, ipLimpia);
       return {
         success: true,
         alreadyRegistered: true,
@@ -204,10 +204,7 @@ export async function registerAttendance(
 
     const { startHour, endHour } = await getAttendanceConfigHours();
     if (hour < startHour || hour >= endHour) {
-      await BaseRepository.update(query, 'logins', 'usuario_id', targetUser.id_usuario, {
-        en_local: 1,
-        ...(ipLimpia && { ip_address: ipLimpia })
-      });
+      await marcarPresenciaLocal(targetUser.id_usuario, ipLimpia);
       return { success: true, tipo: 'login', message: 'Ubicación registrada en el local.' };
     }
 
@@ -221,17 +218,14 @@ export async function registerAttendance(
       estado: 1
     });
 
-    await BaseRepository.update(query, 'logins', 'usuario_id', targetUser.id_usuario, {
-      en_local: 1,
-      ...(ipLimpia && { ip_address: ipLimpia })
-    });
+    await marcarPresenciaLocal(targetUser.id_usuario, ipLimpia);
 
     // El desafio ya quedo consumido por el canje. El codigo del local, en cambio, es
     // compartido: rota en cada uso para que una foto del codigo no vuelva a servir.
     if (isSystemCode) {
       setTimeout(async () => {
         try {
-          const { regenerateAttendanceCode } = await import('@/lib/business/codigoService');
+          const { regenerateAttendanceCode } = await import('@/modules/identidad');
           await regenerateAttendanceCode();
         } catch (e) {
           logger.error('Error al regenerar codigo de asistencia', e);
@@ -431,72 +425,57 @@ export async function registerAttendanceManual(
  */
 export async function registerMasivoHoy(ip?: string) {
   try {
-    return await withTransaction(async trx => {
-      const nowStr = getNowInBusinessTimezone();
-      const fechaHoy = nowStr.substring(0, 10);
-      const timeStr = nowStr.substring(11, 19);
-      const ipLimpia = ip?.split(',')[0].trim() || null;
+    return await enUnaUnidad(unidad =>
+      unidad.ejecutar(async contexto => {
+        const trx = resolverTransaccion(contexto);
+        const nowStr = getNowInBusinessTimezone();
+        const fechaHoy = nowStr.substring(0, 10);
+        const timeStr = nowStr.substring(11, 19);
+        const ipLimpia = ip?.split(',')[0].trim() || null;
 
-      const candidatos = await trx<any[]>(
-        `SELECT u.id_usuario, u.nick FROM usuarios u
+        const candidatos = await trx<any[]>(
+          `SELECT u.id_usuario, u.nick FROM usuarios u
          INNER JOIN roles r ON r.id_rol = u.rol_id
          WHERE u.estado = 1 AND LOWER(r.nombre) IN ('anfitriona', 'garzon', 'garzona')
            AND NOT EXISTS (
              SELECT 1 FROM asistencias a WHERE a.usuario_id = u.id_usuario AND a.fecha = ?
            )`,
-        [fechaHoy]
-      );
+          [fechaHoy]
+        );
 
-      const yaRegistrados = await trx<any[]>(
-        `SELECT u.nick FROM usuarios u
+        const yaRegistrados = await trx<any[]>(
+          `SELECT u.nick FROM usuarios u
          INNER JOIN roles r ON r.id_rol = u.rol_id
          INNER JOIN asistencias a ON a.usuario_id = u.id_usuario AND a.fecha = ?
          WHERE u.estado = 1 AND LOWER(r.nombre) IN ('anfitriona', 'garzon', 'garzona')`,
-        [fechaHoy]
-      );
-
-      const registrados: string[] = [];
-      for (const user of candidatos) {
-        await BaseRepository.insert(trx, 'asistencias', {
-          id_asistencia: generateUUID(),
-          usuario_id: user.id_usuario,
-          fecha: fechaHoy,
-          hora: timeStr,
-          estado: 1
-        });
-        const loginRows = await trx<any[]>(
-          'SELECT id_login FROM logins WHERE usuario_id = ? LIMIT 1',
-          [user.id_usuario]
+          [fechaHoy]
         );
-        if (loginRows.length > 0) {
-          await BaseRepository.update(trx, 'logins', 'usuario_id', user.id_usuario, {
-            en_local: 1,
-            ...(ipLimpia && { ip_address: ipLimpia })
-          });
-        } else {
-          await BaseRepository.insert(trx, 'logins', {
-            id_login: generateUUID(),
-            usuario_id: user.id_usuario,
-            last_login: nowStr,
-            estado: 1,
-            ...(ipLimpia ? { ip_address: ipLimpia } : {}),
-            en_local: 1
-          });
-        }
-        registrados.push(user.nick);
-      }
 
-      return {
-        success: true,
-        fecha: fechaHoy,
-        registrados,
-        omitidos: yaRegistrados.map(r => r.nick),
-        message:
-          registrados.length > 0
-            ? `Asistencia registrada para ${registrados.length}: ${registrados.join(', ')}`
-            : 'Todas las anfitrionas y garzones ya tenían asistencia hoy'
-      };
-    });
+        const registrados: string[] = [];
+        for (const user of candidatos) {
+          await BaseRepository.insert(trx, 'asistencias', {
+            id_asistencia: generateUUID(),
+            usuario_id: user.id_usuario,
+            fecha: fechaHoy,
+            hora: timeStr,
+            estado: 1
+          });
+          await asegurarSesionPresente(user.id_usuario, nowStr, ipLimpia, contexto);
+          registrados.push(user.nick);
+        }
+
+        return {
+          success: true,
+          fecha: fechaHoy,
+          registrados,
+          omitidos: yaRegistrados.map(r => r.nick),
+          message:
+            registrados.length > 0
+              ? `Asistencia registrada para ${registrados.length}: ${registrados.join(', ')}`
+              : 'Todas las anfitrionas y garzones ya tenían asistencia hoy'
+        };
+      })
+    );
   } catch (err) {
     logger.error('[AttendanceQueries] Error en registerMasivoHoy:', { err });
     throw new DatabaseError('Error en el registro masivo de asistencia', err);

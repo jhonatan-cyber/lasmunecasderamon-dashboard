@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
 import { withRoute } from '@/lib/api/withRoute';
-import { GratificacionService } from '@/lib/services/GratificacionService';
+import { GratificacionService } from '@/modules/personal';
 import { ValidationError } from '@/lib/errors/errors';
 export const PUT = withRoute(
   // `edit`, no `write`: la matriz traduce create y edit a write, así que con

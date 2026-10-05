@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server';
-import { ClientService } from '@/lib/services/ClientService';
+import { ClientService } from '@/workflows/clientes';
 import { withPublicRoute, withRoute } from '@/lib/api/withRoute';
 import { ClientSchema } from '@/lib/business/schemas/client';
 import { validateOrResponse } from '@/lib/api/validate';

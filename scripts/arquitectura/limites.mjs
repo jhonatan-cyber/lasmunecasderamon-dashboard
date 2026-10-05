@@ -28,6 +28,8 @@ import { readFileSync, existsSync } from 'node:fs';
 import { execFileSync } from 'node:child_process';
 import { join, resolve, dirname } from 'node:path';
 import { fileURLToPath } from 'node:url';
+import ts from 'typescript';
+import { escriturasDe } from './propiedad.mjs';
 
 const RAIZ = resolve(dirname(fileURLToPath(import.meta.url)), '..', '..');
 const LISTAR = process.argv.includes('--listar');
@@ -59,6 +61,7 @@ function archivosDelProyecto() {
   })
     .split('\0')
     .filter(Boolean)
+    .filter(r => !r.startsWith('.') && !r.split('/').some(parte => IGNORAR_DIRS.has(parte)))
     .filter(r => EXTS.some(x => r.endsWith(x)))
     .map(r => join(RAIZ, r));
 }
@@ -130,6 +133,8 @@ const MODULO_POR_RUTA = [
 ];
 
 function moduloDe(rel) {
+  // Los adaptadores HTTP coordinan casos de uso; su URL no es un dominio.
+  if (rel.startsWith('app/')) return null;
   const modulo = /^modules\/([^/]+)(?:\/|$)/.exec(rel);
   if (modulo) return modulo[1];
   for (const [re, mod] of MODULO_POR_RUTA) if (re.test(rel)) return mod;
@@ -149,6 +154,8 @@ function resolverDestino(spec, desdeRel) {
 }
 
 const aristas = [];
+const escrituras = [];
+const archivosServidor = new Set();
 for (const abs of archivosDelProyecto()) {
   const rel = abs
     .slice(RAIZ.length + 1)
@@ -161,12 +168,36 @@ for (const abs of archivosDelProyecto()) {
   } catch {
     continue;
   }
-  const specs = new Set();
-  for (const re of [RE_IMPORT, RE_EXPORT_FROM, RE_DYN]) {
-    re.lastIndex = 0;
-    for (const m of txt.matchAll(re)) specs.add(m[1]);
+  const specs = [];
+  const fuente = ts.createSourceFile(rel, txt, ts.ScriptTarget.Latest, true);
+  for (const tabla of escriturasDe(fuente)) escrituras.push({ desde: rel, tabla });
+  function visitar(nodo) {
+    if (
+      (ts.isImportDeclaration(nodo) || ts.isExportDeclaration(nodo)) &&
+      nodo.moduleSpecifier &&
+      ts.isStringLiteral(nodo.moduleSpecifier)
+    ) {
+      const clause = ts.isImportDeclaration(nodo) ? nodo.importClause : nodo.exportClause;
+      const tipo = Boolean(
+        nodo.isTypeOnly ||
+        clause?.isTypeOnly ||
+        (clause?.elements?.length && clause.elements.every(e => e.isTypeOnly))
+      );
+      specs.push({ spec: nodo.moduleSpecifier.text, tipo, reexport: ts.isExportDeclaration(nodo) });
+    } else if (
+      ts.isCallExpression(nodo) &&
+      nodo.arguments.length &&
+      ts.isStringLiteral(nodo.arguments[0]) &&
+      (nodo.expression.kind === ts.SyntaxKind.ImportKeyword ||
+        (ts.isIdentifier(nodo.expression) && nodo.expression.text === 'require'))
+    ) {
+      specs.push({ spec: nodo.arguments[0].text, tipo: false, reexport: false });
+    }
+    ts.forEachChild(nodo, visitar);
   }
-  for (const spec of specs) {
+  visitar(fuente);
+  if (specs.some(importacion => importacion.spec === 'server-only')) archivosServidor.add(rel);
+  for (const { spec, tipo, reexport } of specs) {
     const destino = resolverDestino(spec, rel);
     if (!destino) continue;
     let final = destino;
@@ -174,7 +205,7 @@ for (const abs of archivosDelProyecto()) {
       if (existsSync(join(RAIZ, `${destino}.ts`))) final = `${destino}.ts`;
       else if (existsSync(join(RAIZ, destino, 'index.ts'))) final = `${destino}/index.ts`;
     }
-    aristas.push({ desde: rel, hacia: final, spec });
+    aristas.push({ desde: rel, hacia: final, spec, tipo, reexport });
   }
 }
 
@@ -184,6 +215,17 @@ for (const abs of archivosDelProyecto()) {
 const ES_DRIVER = h => /^lib\/database\/(db|postgres)/.test(h) || h.startsWith('lib/repositories/');
 
 const REGLAS = [
+  {
+    id: 'api-sin-reexportar-persistencia',
+    plan: '§5 — los repositorios son privados, también a través de reexportaciones',
+    desc: 'una API pública o servicio no reexporta funciones de un repositorio',
+    viola: d =>
+      d.reexport &&
+      !d.tipo &&
+      /^modules\//.test(d.desde) &&
+      /\/(index|servicio)\.ts$/.test(d.desde) &&
+      /[Rr]epositorio/.test(d.hacia)
+  },
   {
     id: 'workflow-sin-persistencia',
     plan: '§6 — el workflow coordina APIs públicas con una unidad de trabajo',
@@ -252,15 +294,16 @@ const REGLAS = [
     desc: 'lib/transaccion/infraestructura sólo lo importa la infraestructura de los módulos',
     viola: d =>
       d.hacia === 'lib/transaccion/infraestructura.ts' &&
-      !d.desde.startsWith('modules/') &&
+      !/^modules\/.*\/(?:repositorio|[^/]*Repositorio|consultas|registro|infraestructura)\.ts$/.test(
+        d.desde
+      ) &&
       !d.desde.startsWith('lib/transaccion/')
   },
   {
     id: 'puente-transaccional-heredado',
     plan: 'Transición de Fase 4 — el puente al contexto opaco se retira al migrar la transacción de ventas',
-    desc: 'el puente de transacción heredada sólo lo usa SaleService',
-    viola: d =>
-      d.hacia === 'lib/transaccion/compatibilidad.ts' && d.desde !== 'lib/services/SaleService.ts'
+    desc: 'ningún consumidor de producción usa el puente de transacción heredada',
+    viola: d => d.hacia === 'lib/transaccion/compatibilidad.ts' || d.hacia.startsWith('tests/')
   }
 ];
 
@@ -268,6 +311,7 @@ const REGLAS = [
 function ciclos() {
   const g = new Map();
   for (const a of aristas) {
+    if (a.tipo) continue;
     const m1 = moduloDe(a.desde);
     const m2 = moduloDe(a.hacia);
     if (!m1 || !m2 || m1 === m2) continue;
@@ -298,7 +342,85 @@ function ciclos() {
 
 /* ───────────── Hallazgos ───────────── */
 
+if (process.argv.includes('--grafo')) {
+  console.log(
+    JSON.stringify(
+      aristas
+        .filter(a => {
+          const desde = moduloDe(a.desde);
+          const hacia = moduloDe(a.hacia);
+          return desde && hacia && desde !== hacia;
+        })
+        .map(a => ({ ...a, origen: moduloDe(a.desde), destino: moduloDe(a.hacia) })),
+      null,
+      2
+    )
+  );
+  process.exit(0);
+}
+
 const hallazgos = [];
+const dependenciasEjecucion = new Map();
+for (const arista of aristas)
+  if (!arista.tipo) {
+    if (!dependenciasEjecucion.has(arista.desde)) dependenciasEjecucion.set(arista.desde, []);
+    dependenciasEjecucion.get(arista.desde).push(arista.hacia);
+  }
+for (const contrato of new Set(
+  aristas
+    .map(arista => arista.desde)
+    .filter(archivo => /^modules\/[^/]+\/contracts\.ts$/.test(archivo))
+)) {
+  const pendientes = [contrato];
+  const vistos = new Set();
+  while (pendientes.length) {
+    const archivo = pendientes.pop();
+    if (vistos.has(archivo)) continue;
+    vistos.add(archivo);
+    if (archivosServidor.has(archivo) || ES_DRIVER(archivo)) {
+      hallazgos.push({
+        regla: 'contratos-sin-servidor',
+        plan: '§5 — contratos seguros para cliente',
+        desde: contrato,
+        hacia: archivo,
+        spec: ''
+      });
+      continue;
+    }
+    pendientes.push(...(dependenciasEjecucion.get(archivo) ?? []));
+  }
+}
+const propietarios = JSON.parse(
+  readFileSync(join(RAIZ, 'docs/arquitectura/propietarios-tablas.json'), 'utf8')
+);
+const propietarioPorTabla = new Map();
+for (const [modulo, tablas] of Object.entries(propietarios)) {
+  for (const tabla of tablas) {
+    if (propietarioPorTabla.has(tabla)) throw new Error(`Tabla con dos propietarios: ${tabla}`);
+    propietarioPorTabla.set(tabla, modulo);
+  }
+}
+// Infraestructura técnica global: instrumentación y mantenimiento explícito de la base.
+const ESCRITORES_TECNICOS = new Set([
+  'lib/database/base-repository.ts',
+  'lib/database/db.ts',
+  'lib/database/query-log.ts',
+  'lib/database/sync-operations.ts',
+  'lib/database/maintenance.ts'
+]);
+for (const escritura of escrituras) {
+  if (ESCRITORES_TECNICOS.has(escritura.desde)) continue;
+  const propietario = propietarioPorTabla.get(escritura.tabla);
+  const modulo = /^modules\/([^/]+)\//.exec(escritura.desde)?.[1];
+  if (!propietario || modulo !== propietario)
+    hallazgos.push({
+      regla: 'tabla-unico-propietario',
+      plan: '§5 — sólo el módulo propietario escribe su tabla',
+      desde: escritura.desde,
+      hacia: `${escritura.tabla} (${propietario ?? 'sin propietario'})`,
+      spec: ''
+    });
+}
 for (const regla of REGLAS) {
   for (const a of aristas) {
     if (regla.viola(a)) {

@@ -14,7 +14,7 @@ it('measures local read-only dashboard queries and Redis hits without exposing b
   if (!['127.0.0.1', 'localhost', '::1'].includes(process.env.DB_HOST || '127.0.0.1')) {
     throw new Error('El benchmark solo permite PostgreSQL local');
   }
-  const { StatsService } = await import('@/lib/services/StatsService');
+  const { StatsService } = await import('@/modules/reportes/dashboard/servicio');
   const { default: database } = await import('@/lib/database/db');
   const prefix = `verification:benchmark:${randomUUID()}:`;
   const cache = new RedisDashboardCache('redis://127.0.0.1:6379', prefix);

@@ -14,7 +14,7 @@ import { completarOpciones, parseOpcionesVenta, resolverBotella } from '../helpe
 import { ESTADO_UNIDAD_ACTIVA } from '../estados';
 import { BusinessError, NotFoundError } from '@/lib/errors/errors';
 import { getNowInBusinessTimezone } from '@/lib/business/timezoneService';
-import { BaseRepository } from '@/lib/repositories/BaseRepository';
+import { BaseRepository } from '@/lib/database/base-repository';
 import { sincronizarStockTotal } from '../unidades/repositorio';
 import type { TraspasoInput, TraspasoResultado } from '../contracts';
 import type { TransferRecord } from '@/types/transfer';

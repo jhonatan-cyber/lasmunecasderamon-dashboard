@@ -30,7 +30,8 @@ import {
   leerIvaServicio
 } from './repositorio';
 import { obtenerCajaActiva, registrarMovimientoCobro, ajustarIvaCaja } from '@/modules/caja';
-import { consumirPrepagoVenta } from '@/modules/clientes';
+import { consumirPrepagoVenta, saldoPrepagoAgotado } from '@/modules/clientes';
+import { cerrarCuentasPrepagoSaldadas } from '../cuentas/servicio';
 import { registrarComisionesServicio } from '@/modules/personal';
 import { validarAnfitrionasEnLocal } from '@/modules/identidad';
 import { ocuparHabitacionVenta, pausarConflictosServicio } from '../facturacion/servicio';
@@ -82,6 +83,9 @@ export async function crearServicioEnUnidad(
     );
   }
 
+  if (v.cliente_id && prepagoMonto > 0 && (await saldoPrepagoAgotado(v.cliente_id, contexto))) {
+    await cerrarCuentasPrepagoSaldadas(v.cliente_id, contexto);
+  }
   let esLibreIngreso = false;
   let comisionHabitacion = 0;
   if (v.habitacion_id) {

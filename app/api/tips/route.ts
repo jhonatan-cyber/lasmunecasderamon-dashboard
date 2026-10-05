@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
 import { withRoute } from '@/lib/api/withRoute';
-import { TipService } from '@/lib/services/TipService';
+import { TipService } from '@/modules/personal';
 import { ValidationError } from '@/lib/errors/errors';
 
 export const GET = withRoute(

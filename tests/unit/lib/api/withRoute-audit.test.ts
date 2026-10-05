@@ -4,7 +4,7 @@ vi.hoisted(() => {
   process.env.JWT_SECRET = 'test-secret-that-is-long-enough-for-validation';
 });
 
-vi.mock('@/lib/services/AuditService', () => ({
+vi.mock('@/modules/auditoria/registro/servicio', () => ({
   AuditService: { log: vi.fn().mockResolvedValue(undefined) }
 }));
 
@@ -52,7 +52,7 @@ vi.mock('next/server', () => ({
 }));
 
 import { withRoute } from '@/lib/api/withRoute';
-import { AuditService } from '@/lib/services/AuditService';
+import { AuditService } from '@/modules/auditoria/registro/servicio';
 
 const okHandler = (_req: Request, _ctx: { params: any }) =>
   Promise.resolve(Response.json({ success: true }));

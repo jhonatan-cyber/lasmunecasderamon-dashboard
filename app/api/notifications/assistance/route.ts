@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
 import { withRoute } from '@/lib/api/withRoute';
-import { NotificationService } from '@/lib/services/NotificationService';
+import { NotificationService } from '@/modules/comunicaciones';
 import { sendNotificationToAll } from '@/lib/api/sseService';
 import { ValidationError } from '@/lib/errors/errors';
 

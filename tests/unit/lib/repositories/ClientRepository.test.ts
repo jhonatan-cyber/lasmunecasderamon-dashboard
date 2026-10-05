@@ -22,7 +22,7 @@ vi.mock('@/lib/business/schemas', () => ({
   }
 }));
 
-vi.mock('@/lib/repositories/BaseRepository', () => ({
+vi.mock('@/lib/database/base-repository', () => ({
   BaseRepository: {
     insert: vi.fn(),
     update: vi.fn(),
@@ -32,8 +32,8 @@ vi.mock('@/lib/repositories/BaseRepository', () => ({
 }));
 
 import { BusinessError } from '@/lib/errors/errors';
-import { ClientRepository } from '@/lib/repositories/ClientRepository';
-import { BaseRepository } from '@/lib/repositories/BaseRepository';
+import { ClientService as ClientRepository } from '@/workflows/clientes';
+import { BaseRepository } from '@/lib/database/base-repository';
 
 describe('ClientRepository.addPrepago', () => {
   beforeEach(() => {

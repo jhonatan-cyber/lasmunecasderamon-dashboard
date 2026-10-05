@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
 import { withPublicRoute } from '@/lib/api/withRoute';
-import { ProductService } from '@/lib/services/ProductService';
+import { ProductService } from '@/modules/inventario';
 
 // Catálogo para ventas: solo presentaciones con stock en el bar.
 export const GET = withPublicRoute(async (request: Request) => {

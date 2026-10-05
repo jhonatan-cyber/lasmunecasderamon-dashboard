@@ -4,6 +4,7 @@ vi.mock('@/modules/ventas/registro/repositorio', async importOriginal => {
   return original;
 });
 import { RegistroVenta } from '@/modules/ventas/registro/repositorio';
+vi.mock('@/lib/utils/ids', () => ({ generateUUID: () => 'mock-uuid' }));
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { BusinessError, ValidationError } from '@/lib/errors/errors';
 
@@ -11,10 +12,6 @@ vi.mock('@/lib/database/db', () => ({
   generateUUID: () => 'mock-uuid',
   withTransaction: vi.fn(async (fn: any) => fn(vi.fn())),
   query: vi.fn()
-}));
-
-vi.mock('@/lib/repositories/SaleRepository', () => ({
-  SaleRepository: { rawInsert: vi.fn(), insertDetail: vi.fn(), insertUserRelation: vi.fn() }
 }));
 
 vi.mock('@/modules/inventario', () => ({
@@ -34,11 +31,7 @@ vi.mock('@/lib/repositories/ClientRepository', () => ({
   ClientRepository: {}
 }));
 
-vi.mock('@/lib/repositories/CommissionRepository', () => ({
-  CommissionRepository: { createWithDetail: vi.fn() }
-}));
-
-vi.mock('@/lib/repositories/AuditRepository', () => ({
+vi.mock('@/modules/auditoria/registro/repositorio', () => ({
   AuditRepository: { log: vi.fn() }
 }));
 
@@ -47,7 +40,7 @@ vi.mock('@/modules/personal', () => ({
   registrarComisionesVenta: vi.fn()
 }));
 
-vi.mock('@/lib/services/RoomManager', () => ({
+vi.mock('@/tests/setup/room-manager', () => ({
   RoomManager: {
     pauseConflictingServices: vi.fn()
   }
@@ -149,9 +142,8 @@ describe('SaleService — lógica de pagos mixtos', () => {
   });
 });
 
-import { SaleService } from '@/lib/services/SaleService';
+import { SaleService } from '@/workflows/ventas';
 import { obtenerCajaActiva, registrarMovimientoCobro } from '@/modules/caja';
-import { SaleRepository } from '@/lib/repositories/SaleRepository';
 import { consumirStockBar } from '@/modules/inventario';
 import { notifyBarShotAlerts } from '@/lib/business/shotAlerts';
 import { registrarPropinaVenta } from '@/modules/personal';

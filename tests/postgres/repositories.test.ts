@@ -1,25 +1,25 @@
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import db, { query, withTransaction } from '@/lib/database/db';
-import { StatsRepository } from '@/lib/repositories/StatsRepository';
-import { TimerRepository } from '@/lib/repositories/TimerRepository';
-import { CalendarRepository } from '@/lib/repositories/CalendarRepository';
-import { ReportRepository } from '@/lib/repositories/ReportRepository';
-import { PayrollRepository } from '@/lib/repositories/PayrollRepository';
-import { EventRepository } from '@/lib/repositories/EventRepository';
-import { SaleRepository } from '@/lib/repositories/SaleRepository';
-import { CashRegisterRepository } from '@/lib/repositories/CashRegisterRepository';
-import { ServiceRequestRepository } from '@/lib/repositories/ServiceRequestRepository';
-import { OrderRepository } from '@/lib/repositories/OrderRepository';
-import { ClientRepository } from '@/lib/repositories/ClientRepository';
-import { UserRepository } from '@/lib/repositories/UserRepository';
-import { TipRepository } from '@/lib/repositories/TipRepository';
-import { CommissionRepository } from '@/lib/repositories/CommissionRepository';
-import { QueryLogRepository } from '@/lib/repositories/QueryLogRepository';
-import { VentasStatsRepository } from '@/lib/repositories/VentasStatsRepository';
-import * as services from '@/lib/repositories/service/ServiceQueries';
+import { StatsRepository } from '@/modules/reportes/dashboard/repositorio';
+import { TimerRepository } from '@/modules/operacion/temporizadores/consultas';
+import { CalendarRepository } from '@/modules/agenda/calendario/repositorio';
+import { ReportRepository } from '@/modules/reportes/informes/repositorio';
+import { PayrollRepository } from '@/modules/personal/nomina/repositorio';
+import { EventRepository } from '@/modules/agenda/eventos/repositorio';
+import { SaleService as SaleRepository } from '@/workflows/ventas';
+import { CashRegisterRepository } from '@/modules/caja/turnos/repositorio';
+import { ServiceRequestRepository } from '@/modules/operacion/solicitudes/repositorio';
+import { OrderRepository } from '@/modules/operacion/pedidos/repositorio';
+import { ClientService as ClientRepository } from '@/workflows/clientes';
+import { UserRepository } from '@/modules/identidad/usuarios/registro';
+import { TipService as TipRepository } from '@/modules/personal/conceptos/propinas';
+import { resumirComisiones, detalleComisionesDeUsuario } from '@/modules/personal';
+import { QueryLogRepository } from '@/lib/database/query-log';
+import { VentasStatsRepository } from '@/modules/reportes/ventas/repositorio';
+import * as services from '@/modules/operacion';
 import * as attendance from '@/modules/asistencia/marcas/repositorio';
 import * as anticipos from '@/modules/personal/anticipos/repositorio';
-import { getAllGratificaciones } from '@/lib/repositories/gratificacion/GratificacionQueries';
+import { getAllGratificaciones } from '@/modules/personal/gratificaciones/consultas';
 import { getAnticipoBalances } from '@/modules/personal';
 import { prepareQuery } from '@/lib/database/postgres.cjs';
 
@@ -54,9 +54,9 @@ const reads: [string, () => Promise<unknown>][] = [
   ['event sale detail', () => EventRepository.getEventDetail(saleId, 'venta')],
   ['sales', () => SaleRepository.getAll({})],
   ['sale detail', () => SaleRepository.getById(saleId)],
-  ['services', () => services.getAllServicios({})],
-  ['user services', () => services.getServiciosByUser(userId)],
-  ['service detail', () => services.getServicioById('missing')],
+  ['services', () => services.listarServicios({})],
+  ['user services', () => services.listarServiciosDeUsuario(userId)],
+  ['service detail', () => services.obtenerServicioDetallado('missing')],
   ['cash summary', () => CashRegisterRepository.summary()],
   ['cash registers', () => CashRegisterRepository.getAll()],
   ['cash detail', () => CashRegisterRepository.getById(cajaId)],
@@ -67,8 +67,8 @@ const reads: [string, () => Promise<unknown>][] = [
   ['users', () => UserRepository.getAll({})],
   ['tips', () => TipRepository.getSummary(true, userId, false)],
   ['tip details', () => TipRepository.getDetails(userId)],
-  ['commissions', () => CommissionRepository.summary()],
-  ['commission details', () => CommissionRepository.getDetails(userId)],
+  ['commissions', () => resumirComisiones()],
+  ['commission details', () => detalleComisionesDeUsuario(userId)],
   ['query logs', () => QueryLogRepository.getRecent()],
   ['query stats', () => QueryLogRepository.getStats()],
   ['bar sales', () => VentasStatsRepository.getVentasBarras(cajaId)],

@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
 import { withRoute } from '@/lib/api/withRoute';
-import { AccountService } from '@/lib/services/AccountService';
+import { AccountService } from '@/modules/operacion';
 
 export const POST = withRoute(
   { auth: true, audit: true, module: 'finances', action: 'write' },

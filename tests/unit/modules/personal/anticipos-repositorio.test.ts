@@ -34,7 +34,7 @@ vi.mock('@/modules/personal/balances/repositorio', () => ({
   }))
 }));
 
-vi.mock('@/lib/integrations/whatsappService', () => ({
+vi.mock('@/modules/comunicaciones/whatsapp/adaptador', () => ({
   enviarWhatsApp: vi.fn()
 }));
 
@@ -42,7 +42,7 @@ vi.mock('@/lib/api/sseService', () => ({
   sendNotificationToAll: vi.fn()
 }));
 
-vi.mock('@/lib/integrations/pushNotifications', () => ({
+vi.mock('@/modules/comunicaciones/push/servicio', () => ({
   sendPushByRole: vi.fn(async () => undefined),
   sendPushNotification: vi.fn(async () => undefined)
 }));
@@ -51,7 +51,7 @@ vi.mock('@/lib/utils/logger', () => ({
   logger: { debug: vi.fn(), info: vi.fn(), warn: vi.fn(), error: vi.fn() }
 }));
 
-vi.mock('@/lib/repositories/BaseRepository', () => {
+vi.mock('@/lib/database/base-repository', () => {
   const mockInsert = vi.fn();
   const mockUpdate = vi.fn();
   const mockFindOne = vi.fn(async () => ({ id_anticipo: 'ant-1', estado: 0 }));
@@ -65,8 +65,8 @@ vi.mock('@/lib/repositories/BaseRepository', () => {
 });
 
 import * as repositorio from '@/modules/personal/anticipos/repositorio';
-import { BaseRepository } from '@/lib/repositories/BaseRepository';
-import { conContextoOperacionExistente } from '@/lib/transaccion/compatibilidad';
+import { BaseRepository } from '@/lib/database/base-repository';
+import { conContextoOperacionExistente } from '@/tests/setup/contexto-operacion';
 
 function enContexto<T>(operacion: (contexto: any) => Promise<T>): Promise<T> {
   return conContextoOperacionExistente(repositoryHarness.queryMock as any, operacion);

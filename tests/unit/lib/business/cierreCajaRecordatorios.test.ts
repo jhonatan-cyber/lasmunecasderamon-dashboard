@@ -7,7 +7,7 @@ const avisarMock = vi.hoisted(() => vi.fn());
 const errorMock = vi.hoisted(() => vi.fn());
 const capturarMock = vi.hoisted(() => vi.fn());
 
-vi.mock('@/lib/services/CashRegisterService', () => ({
+vi.mock('@/modules/caja/turnos/servicio', () => ({
   CashRegisterService: {
     cierresPendientesParaRecordar: pendientesMock,
     getById: getByIdMock,

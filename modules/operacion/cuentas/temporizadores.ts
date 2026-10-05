@@ -19,7 +19,7 @@ import {
   ensureOpenHistorySegment,
   closeOpenHistorySegment,
   stringifyRoomHistory
-} from '@/lib/repositories/cuenta/CuentaRoomHistory';
+} from '@/modules/operacion/cuentas/historial';
 import {
   leerCuentaParaTemporizador,
   finalizarSesionHabitacion,
@@ -28,7 +28,7 @@ import {
   actualizarTemporizadorCancelado,
   crearSolicitudAnulacionCuenta
 } from './repositorio';
-import { liberarHabitacionPorAnulacion } from '../facturacion/repositorio';
+import { liberarHabitacionPorAnulacion } from '../facturacion/servicio';
 
 type Tarea = () => void | Promise<void>;
 
