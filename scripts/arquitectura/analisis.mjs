@@ -108,6 +108,7 @@ function capaDe(rel) {
  * escrituras cruzadas entre dominios y no entre carpetas.
  */
 const MODULO_POR_RUTA = [
+  [/^modules\/inventario(\/|$)/, 'inventario'],
   [/^lib\/repositories\/inventory\//, 'inventario'],
   [/^lib\/repositories\/(sale|saleQueries)/i, 'ventas'],
   [/^lib\/repositories\/(attendance)/i, 'asistencia'],
@@ -228,7 +229,8 @@ for (const abs of archivos) {
 
 const SIMBOLOS_DB = /\b(query|rawQuery|withTransaction|getPool|prepareQuery)\s*\(/;
 const MODULO_DRIVER = 'lib/database/db';
-const ES_REPO = rel => capaDe(rel) === 'lib/repositories';
+const ES_REPO = rel =>
+  capaDe(rel) === 'lib/repositories' || /^modules\/.*(?:repositorio|Repositorio)\.ts$/.test(rel);
 const ES_TEST = rel => rel.startsWith('tests/');
 
 /**

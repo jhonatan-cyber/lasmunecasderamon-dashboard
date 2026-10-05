@@ -66,6 +66,7 @@ function archivosDelProyecto() {
 const MODULO_POR_RUTA = [
   // Los módulos migrados (Fase 2 en adelante) viven en modules/. Se agregan
   // entradas explícitas a medida que se crean.
+  [/^modules\/inventario(\/|$)/, 'inventario'],
   [/^modules\/personal\//, 'personal'],
   // El directorio (`@/modules/asistencia`) y el index son API pública: ambos
   // cuentan como arista del dominio, o el grafo no vería los imports reales.
@@ -211,8 +212,7 @@ const REGLAS = [
   {
     id: 'ui-consume-modulos-por-http',
     plan: '§5 — la UI y los hooks consumen HTTP y contratos seguros para cliente',
-    desc:
-      'components/ y hooks/ no importan módulos; la UI de app/ sólo contracts.ts; un route.ts fuera de app/api es adaptador de servidor',
+    desc: 'components/ y hooks/ no importan módulos; la UI de app/ sólo contracts.ts; un route.ts fuera de app/api es adaptador de servidor',
     viola: d => {
       if (!d.hacia.startsWith('modules/')) return false;
       if (/^(components|hooks)\//.test(d.desde)) return !d.hacia.endsWith('/contracts.ts');
@@ -233,6 +233,13 @@ const REGLAS = [
       d.hacia === 'lib/transaccion/infraestructura.ts' &&
       !d.desde.startsWith('modules/') &&
       !d.desde.startsWith('lib/transaccion/')
+  },
+  {
+    id: 'puente-transaccional-heredado',
+    plan: 'Transición de Fase 4 — el puente al contexto opaco se retira al migrar la transacción de ventas',
+    desc: 'el puente de transacción heredada sólo lo usa SaleService',
+    viola: d =>
+      d.hacia === 'lib/transaccion/compatibilidad.ts' && d.desde !== 'lib/services/SaleService.ts'
   }
 ];
 

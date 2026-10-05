@@ -3,7 +3,9 @@ import { getNowInBusinessTimezone } from '@/lib/business/timezoneService';
 import { SaleCreateSchema } from '@/lib/business/schemas';
 import { SaleRepository } from '@/lib/repositories/SaleRepository';
 import { CashRegisterRepository } from '@/lib/repositories/CashRegisterRepository';
-import { InventoryRepository, type ShotAlert } from '@/lib/repositories/InventoryRepository';
+import { consumirStockBar } from '@/modules/inventario';
+import type { ShotAlert } from '@/modules/inventario/contracts';
+import { conContextoOperacionExistente } from '@/lib/transaccion/compatibilidad';
 import { notifyBarShotAlerts } from '@/lib/business/shotAlerts';
 import { ClientRepository } from '@/lib/repositories/ClientRepository';
 import { CommissionRepository } from '@/lib/repositories/CommissionRepository';
@@ -324,10 +326,9 @@ export class SaleService {
       // INSUFFICIENT_BAR_STOCK revierte la transacción entera: venta, caja, comisiones y
       // detalles. Cubre también el cobro de cuenta, que entra por este mismo método con
       // origen 'cuenta'. Los detalles sin presentación (catálogo anterior) no se tocan.
-      alertasShots = await InventoryRepository.consume(trx, validated.detalles, {
-        usuarioId: createdBy,
-        fecha: now
-      });
+      alertasShots = await conContextoOperacionExistente(trx, contexto =>
+        consumirStockBar(validated.detalles, { usuarioId: createdBy, fecha: now }, contexto)
+      );
 
       // BATCH INSERT comisiones + detalle_comisiones
       if (commissionMainRows.length > 0) {

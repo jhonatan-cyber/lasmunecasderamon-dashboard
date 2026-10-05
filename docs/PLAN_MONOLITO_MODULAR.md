@@ -226,58 +226,72 @@ piloto y mapa de riesgos. No mover archivos antes de esta línea base.
 
 ### Fase 1 — Contratos y restricciones
 
-- [ ] Crear la estructura mínima de módulos y registrar las reglas de
+- [x] Crear la estructura mínima de módulos y registrar las reglas de
       dependencia.
-- [ ] Definir el contrato transaccional y los efectos posteriores al commit.
-- [ ] Configurar restricciones de imports, acceso al driver y ciclos. Elegir
+- [x] Definir el contrato transaccional y los efectos posteriores al commit.
+- [x] Configurar restricciones de imports, acceso al driver y ciclos. Elegir
       herramienta según el repositorio, sin asumir que ESLint básico cubre todo.
-- [ ] Integrar un comando de arquitectura en CI; su nombre y herramienta se
+- [x] Integrar un comando de arquitectura en CI; su nombre y herramienta se
       definirán al implementarlo.
-- [ ] Bloquear incumplimientos nuevos y establecer una lista explícita de
+- [x] Bloquear incumplimientos nuevos y establecer una lista explícita de
       excepciones heredadas.
-- [ ] Verificar que imports relativos, alias e imports dinámicos no eludan las
+- [x] Verificar que imports relativos, alias e imports dinámicos no eludan las
       restricciones.
 
 **Salida:** una dependencia prohibida introducida deliberadamente hace fallar el
 control; los módulos migrados tienen límites comprobables.
 
+**Estado 2026-10-04:** implementada en alcance reducido; evidencia y las 26
+excepciones heredadas en [FASE1_LIMITES.md](arquitectura/FASE1_LIMITES.md).
+
 ### Fase 2 — Piloto: Horas extras
 
-- [ ] Migrar `OvertimeService` y `OvertimeRepository` al contexto de Personal,
+- [x] Migrar `OvertimeService` y `OvertimeRepository` al contexto de Personal,
       manteniendo el caso de uso pequeño.
-- [ ] Exponer operaciones y DTO públicos sin filtrar tipos SQL.
-- [ ] Adaptar rutas de horas extras, incluidos consumidores alternativos, sin
+- [x] Exponer operaciones y DTO públicos sin filtrar tipos SQL.
+- [x] Adaptar rutas de horas extras, incluidos consumidores alternativos, sin
       cambiar URL ni permisos.
-- [ ] Mantener temporalmente adaptadores en las rutas antiguas de imports si
-      hace falta.
-- [ ] Migrar consumidores y tests; eliminar adaptadores una vez sin referencias.
+- [x] Evaluar adaptadores temporales en las rutas antiguas de imports; no fueron
+      necesarios porque todos los consumidores se migraron.
+- [x] Migrar consumidores y tests; eliminar adaptadores una vez sin referencias.
 
 **Salida:** funcionalidad equivalente, repositorio privado, cero imports
 prohibidos y tests de permisos, validación y persistencia aprobados. Revisar el
 patrón antes de replicarlo.
 
+**Estado 2026-10-04:** Horas extras completada; anticipos es una primera réplica
+del patrón, aún sin participación en una transacción ajena. Ver
+[FASE2_PILOTO.md](arquitectura/FASE2_PILOTO.md).
+
 ### Fase 3 — Límites de identidad y Asistencia
 
-- [ ] Establecer contratos de identidad y permisos usados por los demás módulos.
-- [ ] Migrar ventana de asistencia, marcas, kioskos y equipos biométricos.
-- [ ] Centralizar el arranque de listeners, poller y vigilancia de IP mediante
+- [x] Establecer contratos de identidad y permisos usados por los demás módulos.
+- [x] Migrar ventana de asistencia, marcas, kioskos y equipos biométricos.
+- [x] Centralizar el arranque de listeners, poller y vigilancia de IP mediante
       una API de servidor de Asistencia.
-- [ ] Preservar deduplicación de eventos y restricciones de horarios y
+- [x] Preservar deduplicación de eventos y restricciones de horarios y
       dispositivos.
-- [ ] Evitar duplicar procesos al recargar módulos o desplegar varias
+- [x] Evitar duplicar procesos al recargar módulos o desplegar varias
       instancias; revisar el mecanismo existente antes de cambiarlo.
 
 **Salida:** permisos equivalentes, una ruta de registro de marcas consistente y
 procesos con ciclo de vida definido.
+
+**Estado 2026-10-04:** migración implementada. La recepción es idempotente por
+proceso; las instancias que no deban escuchar deben desactivarse por
+configuración. El build de producción usa Webpack porque el chunk de
+instrumentation con Turbopack bloqueaba la carga del módulo. Build y arranque
+`next start` comprobados; la verificación no incluye conexión a un equipo
+físico. Detalle en [FASE3_ASISTENCIA.md](arquitectura/FASE3_ASISTENCIA.md).
 
 ### Fase 4 — Catálogo e inventario
 
 - [ ] Encapsular productos, presentaciones, compras, transferencias y envases.
 - [ ] Exponer consumo y reversión de stock mediante operaciones de negocio, no
       actualizaciones genéricas.
-- [ ] Migrar Bar a esas APIs y separar sus contratos de tipos de
+- [x] Migrar Bar a esas APIs y separar sus contratos de tipos de
       `InventoryRepository`.
-- [ ] Preservar capacidad de botellas, ml por shot, existencias, alertas y
+- [x] Preservar capacidad de botellas, ml por shot, existencias, alertas y
       permisos de recepción.
 - [ ] Preparar las operaciones transaccionales que necesitarán ventas y
       anulaciones.
@@ -285,10 +299,44 @@ procesos con ciclo de vida definido.
 **Salida:** escrituras de inventario bajo un único propietario, con flujos de
 compras, transferencias, shots y envases validados.
 
+**Avance inicial 2026-10-04:** el consumo de stock de ventas pasa por la API
+pública `modules/inventario` con contexto transaccional opaco y su SQL reside en
+la infraestructura privada del módulo. **Corte 2:** las transferencias completas
+(`traspasarAlBar`, aceptar, rechazar, listar) también viven en el módulo, las
+rutas `/api/transfers*` y `ProductService` las consumen, `TransferQueries` se
+borró y la UI importa los DTO de inventario desde `contracts.ts` (las 4
+excepciones `ui-no-infraestructura` se eliminaron; quedan 22 vigentes).
+
+**Corte 3:** el control de envases bar → almacén (verificar, confirmar
+recepción, historial) vive en `modules/inventario/envases` y `EnvaseQueries` se
+borró. **Corte 4:** presentaciones y unidades de catálogo (alta, edición,
+generación de unidades, estados, stock) viven en
+`modules/inventario/presentaciones` y `modules/inventario/unidades`;
+`PresentacionQueries` y `UnidadQueries` se borraron y
+`lib/repositories/inventory/` ya no tiene escrituras — ProductRepository y
+PurchaseService usan el puente de contexto con 2 excepciones anotadas.
+
+**Corte 5:** las últimas lecturas (stock del bar, resumen de shots, catálogo
+para venta, movimientos) viven en `modules/inventario` y se borraron
+`BarQueries`, `CatalogoQueries`, `MovimientoQueries` y la fachada
+`InventoryRepository`. Todo el SQL de inventario —lecturas y escrituras— está
+hoy en el módulo; `lib/repositories/inventory/` sólo conserva helpers y tipos
+puros. Productos y compras siguen en la capa heredada, pero ya escriben
+inventario a través de la API del módulo. Falta la reversión de stock por
+anulación para cerrar la fase. Alcance y siguientes cortes en
+[FASE4_INVENTARIO.md](arquitectura/FASE4_INVENTARIO.md). El censo regenerado del
+árbol actual está en [MODULOS_Y_DATOS.md](MODULOS_Y_DATOS.md).
+
 ### Fase 5 — Operación, ventas y caja
 
 Esta fase depende de los contratos de inventario, identidad y conceptos de
 liquidación necesarios para registrar ventas.
+
+Antes de migrar el flujo comercial hay que cerrar en
+[MODULOS_Y_DATOS.md](MODULOS_Y_DATOS.md) la propiedad del prepago y confirmar el
+tratamiento de escrituras actuales sobre `asistencias` y `logins`. Comisiones y
+propinas ya tienen propietario objetivo Personal, documentado en
+[FASE0_DECISIONES.md](arquitectura/FASE0_DECISIONES.md).
 
 - [ ] Extraer el SQL que sigue en rutas de ventas y en servicios que acceden a
       tablas ajenas.

@@ -151,10 +151,10 @@ y doble confirmación— está cubierto por
 Ejecuta `corepack pnpm db:migrate` para aplicar `003_inventory.sql`. No altera
 las existencias ni los registros históricos del catálogo anterior.
 
-Las pruebas de unidad `tests/unit/lib/repositories/InventoryRepository.test.ts`
-cubren códigos únicos, traspasos, stock por ubicación y el descuento de venta:
-bloqueo de la presentación, marcado de unidades, movimiento histórico y rechazo
-por stock insuficiente sin modificar nada.
+Las pruebas de unidad `tests/unit/modules/inventario-dominio.test.ts` cubren
+códigos únicos, traspasos, stock por ubicación y el descuento de venta: bloqueo
+de la presentación, marcado de unidades, movimiento histórico y rechazo por
+stock insuficiente sin modificar nada.
 `tests/unit/lib/services/SaleService.test.ts` comprueba que el descuento se
 dispara dentro de la transacción de la venta (y por lo tanto también en el cobro
 de cuenta) y que un rechazo revierte la venta entera. No existe hoy una prueba

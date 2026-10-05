@@ -104,7 +104,7 @@ cuando haya código que la ocupe.
 
 - **Fase 2**: migrar Horas extras detrás de este contrato. Con 1 consulta al
   listar y 2 al crear, es el piloto más barato y valida el patrón.
-- Las 4 excepciones de UI se resuelven en la **Fase 4**, cuando exista
-  `contracts.ts` de inventario.
+- Las 4 excepciones de UI se resolvieron en la **Fase 4**: `contracts.ts` de
+  inventario existe y la UI importa desde él.
 - Los 6 ciclos se rompen en las **Fases 3 y 5**, subiendo la coordinación a
   `workflows/`.

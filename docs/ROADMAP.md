@@ -53,10 +53,10 @@
   inicial.
 - ✅ Tablas paginadas con `React.memo` en filas (ProductTable/CuentaTable) —
   virtualización no aplica.
-- ✅ N+1 en datos: `RoomManager`, `TimerRepository.runAutoCleanup`,
-  `InventoryRepository.generateUnits` (batch `generate_series` + multi-row
-  INSERT), `PurchaseService` (validación IN + sync por producto + INSERT batch)
-  (Fase 5).
+- ✅ N+1 en datos: `RoomManager`, `TimerRepository.runAutoCleanup`, generación
+  de unidades de inventario (batch `generate_series` + multi-row INSERT; hoy
+  `modules/inventario/unidades/repositorio.ts`), `PurchaseService` (validación
+  IN + sync por producto + INSERT batch) (Fase 5).
 - ✅ Índices en `audit_logs.created_at` y `error_logs.fecha_crea`
   (`migrations/029_audit_error_log_indexes.sql`, Fase 5).
 

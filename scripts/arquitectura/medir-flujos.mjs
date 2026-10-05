@@ -11,9 +11,9 @@ const raiz = resolve(dirname(fileURLToPath(import.meta.url)), '../..');
 config({ path: join(raiz, '.env'), quiet: true });
 if (
   !['127.0.0.1', 'localhost', '::1'].includes(process.env.DB_HOST || '') ||
-  !process.env.DB_NAME?.endsWith('_test')
+  process.env.DB_NAME !== 'lasmunecasderamon'
 ) {
-  throw new Error('La medición exige DB_HOST local y DB_NAME terminado en _test');
+  throw new Error('La medición exige DB_HOST local y DB_NAME=lasmunecasderamon');
 }
 const repeticiones = Number(process.env.BASELINE_RUNS ?? 7);
 if (!Number.isInteger(repeticiones) || repeticiones < 3 || repeticiones > 30) {
