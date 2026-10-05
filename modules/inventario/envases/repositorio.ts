@@ -10,10 +10,10 @@
  */
 import { query, type TransactionQuery } from '@/lib/database/db';
 import {
-  ESTADO_UNIDAD_VENDIDA,
   fechaDevolucionLegible,
   mapearEnvase
 } from '@/lib/repositories/inventory/inventoryHelpers';
+import { ESTADO_UNIDAD_VENDIDA } from '../estados';
 import type { EnvaseFila } from '@/lib/repositories/inventory/inventoryTypes';
 import type {
   DevolucionEnvaseRegistro,

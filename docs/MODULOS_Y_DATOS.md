@@ -86,10 +86,12 @@ Nota sobre `inventario_unidades`: con las transferencias (corte 2), los envases
 (corte 3), las unidades de catálogo (corte 4) y las lecturas (corte 5) migrados
 en la fase 4, los cuatro escritores son repositorios de `modules/inventario` y
 `lib/repositories/inventory/` ya no contiene SQL: sólo quedan
-`inventoryHelpers.ts` (mapeos, constantes de estado, EAN-13) e
-`inventoryTypes.ts` como helpers y tipos puros. La propiedad que el plan pedía
-está alcanzada para inventario; productos y compras siguen en la capa heredada
-aunque escriban inventario a través del módulo.
+`inventoryHelpers.ts` (opciones de venta, mapeos y EAN-13) e `inventoryTypes.ts`
+como helpers y tipos puros. Las constantes de estado de unidad son ya
+vocabulario del módulo (`modules/inventario/estados.ts`), igual que
+`ResumenEnvases` y el resto de los DTO en `contracts.ts`. La propiedad que el
+plan pedía está alcanzada para inventario; productos y compras siguen en la capa
+heredada aunque escriban inventario a través del módulo.
 
 Nota sobre `detalle_propinas`, `detalle_comisiones` y sus cabeceras: la
 propiedad quedó decidida (D5 resuelta — §8 de

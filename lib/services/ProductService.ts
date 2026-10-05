@@ -1,6 +1,5 @@
 import { ProductSchema, PresentacionSchema, type ProductType } from '@/lib/business/schemas';
 import { ProductRepository, type NewPresentacion } from '@/lib/repositories/ProductRepository';
-import { esEstadoUnidadValido } from '@/lib/repositories/inventory/inventoryHelpers';
 import {
   aceptarTransferencia,
   actualizarFotoPresentacion,
@@ -10,6 +9,7 @@ import {
   confirmarRecepcionEnvase,
   crearPresentacion,
   eliminarPresentacion,
+  esEstadoUnidadValido,
   listarDevoluciones,
   listarMovimientos,
   listarMovimientosRecientes,

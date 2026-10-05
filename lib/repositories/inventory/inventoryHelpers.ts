@@ -1,7 +1,10 @@
 /**
- * Funciones puras del inventario: leer y componer opciones de venta, y mapear filas crudas
- * a los tipos de `inventoryTypes.ts`. Sin SQL ni red, así que se comparten por igual entre
- * los módulos de dominio.
+ * Funciones puras del inventario: leer y componer opciones de venta, mapear filas crudas
+ * a los tipos de `inventoryTypes.ts` y generar códigos EAN internos. Sin SQL ni red, así
+ * que se comparten por igual entre los módulos de dominio.
+ *
+ * Los estados de unidad viven en el módulo inventario
+ * (`modules/inventario/estados.ts`), que es su dueño.
  */
 import type { SaleOption } from '@/types/sale-options';
 import { randomInt } from 'crypto';
@@ -163,20 +166,6 @@ export const fechaDevolucionLegible = (valor: string | Date): string => {
     minute: '2-digit'
   })}`;
 };
-
-// Nota: `estado` indica si la unidad está vigente ('almacen' = activa,
-// 'inactivo' = dada de baja, 'vendida' = salió del bar con una venta) y `ubicacion`
-// dónde está físicamente ('almacen' | 'bar' | ...). El conteo de stock solo suma activas.
-export const ESTADO_UNIDAD_ACTIVA = 'almacen';
-export const ESTADO_UNIDAD_INACTIVA = 'inactivo';
-export const ESTADO_UNIDAD_VENDIDA = 'vendida';
-// 'vendida' queda fuera a propósito: no se puede reactivar una botella vendida desde
-// el alta/baja manual de unidades.
-export const ESTADOS_UNIDAD_VALIDOS = [ESTADO_UNIDAD_ACTIVA, ESTADO_UNIDAD_INACTIVA];
-
-export function esEstadoUnidadValido(estado: unknown): estado is string {
-  return typeof estado === 'string' && ESTADOS_UNIDAD_VALIDOS.includes(estado);
-}
 
 /** Prefijo GS1 reservado para códigos internos de tienda. */
 export const EAN_PREFIJO_INTERNO = '29';

@@ -5,10 +5,7 @@ import {
   DEFAULT_SHOTS_ALERTA,
   getBarMlConfig
 } from './configuracion';
-import {
-  ESTADO_UNIDAD_ACTIVA,
-  ESTADO_UNIDAD_VENDIDA
-} from '@/lib/repositories/inventory/inventoryHelpers';
+import { ESTADO_UNIDAD_ACTIVA, ESTADO_UNIDAD_VENDIDA } from '../estados';
 import { BusinessError } from '@/lib/errors/errors';
 import { resolveBotellaMl, resolveShotMl, resolveShotMlAnfitriona } from '@/lib/business/shotMl';
 import type { ConsumoInventarioDetalle, ShotAlert } from '../contracts';

@@ -13,10 +13,6 @@ vi.mock('@/lib/repositories/ProductRepository', () => ({
   }
 }));
 
-vi.mock('@/lib/repositories/inventory/inventoryHelpers', () => ({
-  esEstadoUnidadValido: (v: unknown) => v === 'almacen' || v === 'inactivo'
-}));
-
 vi.mock('@/modules/inventario', () => ({
   traspasarAlBar: vi.fn().mockResolvedValue({ trasladadas: 3, stock_bar: 8 }),
   aceptarTransferencia: vi.fn().mockResolvedValue(undefined),
@@ -35,6 +31,7 @@ vi.mock('@/modules/inventario', () => ({
   listarUnidades: vi.fn().mockResolvedValue({ total: 0, unidades: [] }),
   registrarUnidades: vi.fn().mockResolvedValue([]),
   cambiarEstadoUnidades: vi.fn().mockResolvedValue(4),
+  esEstadoUnidadValido: (v: unknown) => v === 'almacen' || v === 'inactivo',
   listarStockBar: vi.fn().mockResolvedValue([]),
   obtenerResumenShots: vi.fn(),
   listarParaVenta: vi.fn().mockResolvedValue([]),

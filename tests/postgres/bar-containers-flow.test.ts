@@ -10,12 +10,10 @@ vi.mock('@/lib/services/SecurityAlertService', () => ({
 
 import db, { query } from '@/lib/database/db';
 import { snapshotDatabase, restoreDatabase } from '@/lib/database/maintenance';
-import {
-  ESTADO_UNIDAD_VENDIDA,
-  generarEan13Interno
-} from '@/lib/repositories/inventory/inventoryHelpers';
+import { generarEan13Interno } from '@/lib/repositories/inventory/inventoryHelpers';
 import {
   confirmarRecepcionEnvase,
+  ESTADO_UNIDAD_VENDIDA,
   listarDevoluciones,
   verificarEnvase
 } from '@/modules/inventario';

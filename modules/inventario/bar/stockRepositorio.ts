@@ -6,7 +6,7 @@
 import { query } from '@/lib/database/db';
 import { getBarMlConfig, getTopeSimple } from '../bar/configuracion';
 import { mapPresentacion } from '@/lib/repositories/inventory/inventoryHelpers';
-import { ESTADO_UNIDAD_ACTIVA } from '@/lib/repositories/inventory/inventoryHelpers';
+import { ESTADO_UNIDAD_ACTIVA } from '../estados';
 import type { ShotsSummary } from '../contracts';
 import type { PresentacionRow } from '@/lib/repositories/inventory/inventoryTypes';
 import { getNowInBusinessTimezone } from '@/lib/business/timezoneService';

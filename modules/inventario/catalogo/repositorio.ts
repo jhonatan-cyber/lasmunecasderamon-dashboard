@@ -6,7 +6,7 @@
 import { query } from '@/lib/database/db';
 import { getTopeSimple } from '../bar/configuracion';
 import { completarOpciones } from '@/lib/repositories/inventory/inventoryHelpers';
-import { ESTADO_UNIDAD_ACTIVA } from '@/lib/repositories/inventory/inventoryHelpers';
+import { ESTADO_UNIDAD_ACTIVA } from '../estados';
 
 export interface FiltrosParaVenta {
   category_id?: string;

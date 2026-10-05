@@ -13,9 +13,10 @@ import { snapshotDatabase, restoreDatabase } from '@/lib/database/maintenance';
 import { SaleService } from '@/lib/services/SaleService';
 import {
   ESTADO_UNIDAD_ACTIVA,
-  ESTADO_UNIDAD_VENDIDA
-} from '@/lib/repositories/inventory/inventoryHelpers';
-import { listarStockBar, obtenerResumenShots } from '@/modules/inventario';
+  ESTADO_UNIDAD_VENDIDA,
+  listarStockBar,
+  obtenerResumenShots
+} from '@/modules/inventario';
 
 afterAll(async () => {
   await db.pool.end();

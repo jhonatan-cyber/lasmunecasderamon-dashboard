@@ -1,8 +1,8 @@
 {
   "resumen": {
-    "commit": "c6d13189748c57d189b61223ab1cf0f75ffe74e1",
-    "generado": "2026-10-05T01:54:53.735Z",
-    "archivos": 1525,
+    "commit": "8734827ca45b22151c9dfcc823850a8ae90b4ce3",
+    "generado": "2026-10-05T01:56:48.247Z",
+    "archivos": 1526,
     "rutas": 204,
     "sqlFueraDeRepositorio": 97,
     "tablasConEscritoresMultiples": 13,

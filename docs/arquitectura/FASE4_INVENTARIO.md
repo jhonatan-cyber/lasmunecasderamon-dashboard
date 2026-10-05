@@ -1,9 +1,9 @@
 # Fase 4 — Catálogo e inventario
 
-Fecha: 2026-10-04. Estado: seis cortes verticales completados (consumo de stock
+Fecha: 2026-10-04. Estado: siete cortes verticales completados (consumo de stock
 en ventas, transferencias, devolución de envases, catálogo
-presentaciones/unidades, lecturas de bar/catálogo/movimientos y resumen de
-envases de la alerta).
+presentaciones/unidades, lecturas de bar/catálogo/movimientos, resumen de
+envases y dueño de los estados de unidad).
 
 ## Corte 1: consumo de stock en ventas
 
@@ -125,11 +125,12 @@ envases de la alerta).
   lecturas puras, sin unidad de trabajo ni efectos.
 - `ProductService` (y por tanto las rutas de Bar, productos y movimientos)
   consume el módulo; `lib/business/shotAlerts.ts` toma `ShotAlert` desde
-  `contracts.ts`.- **Se borró la fachada `InventoryRepository.ts`** junto con
-  `BarQueries`, `CatalogoQueries` y `MovimientoQueries`. En
-  `lib/repositories/inventory/` sólo quedan `inventoryHelpers.ts` (mapeos,
-  constantes de estado, EAN-13) e `inventoryTypes.ts`, que son helpers y tipos
-  puros compartidos por el módulo.
+  `contracts.ts`.
+- **Se borró la fachada `InventoryRepository.ts`** junto con `BarQueries`,
+  `CatalogoQueries` y `MovimientoQueries`. En `lib/repositories/inventory/` sólo
+  quedan `inventoryHelpers.ts` (mapeos y EAN-13; las constantes de estado
+  pasaron al módulo en el corte 7) e `inventoryTypes.ts`, que son helpers y
+  tipos puros compartidos por el módulo.
 - El test `tests/unit/lib/repositories/InventoryRepository.test.ts` pasó a
   `tests/unit/modules/inventario-dominio.test.ts` (mismo contenido, ahora contra
   la API del módulo).
@@ -268,13 +269,61 @@ envases de la alerta).
   porque el módulo usa el mismo `query`).
 - `pnpm test:postgres` completa: **156 aprobadas en 15 archivos**.
 - `pnpm arquitectura:limites`: aprobado; **24 hallazgos / 24 excepciones**.
-- `pnpm build`: aprobado.## Siguientes cortes
+- `pnpm build`: aprobado.
+
+## Corte 7: dueño de los estados de unidad
+
+- `ESTADO_UNIDAD_ACTIVA`, `ESTADO_UNIDAD_INACTIVA`, `ESTADO_UNIDAD_VENDIDA`,
+  `ESTADOS_UNIDAD_VALIDOS` y `esEstadoUnidadValido` se movieron de
+  `lib/repositories/inventory/inventoryHelpers.ts` a
+  `modules/inventario/estados.ts`, que los publica por la API pública del
+  módulo. Son vocabulario del dominio (qué significa `estado` y cuáles son
+  válidos al dar de baja), no una función compartida como los mapeos o el
+  EAN-13, así que su dueño natural es el módulo y no un helper huérfano de la
+  capa heredada.
+- Los siete repositorios del módulo (consumo, stock de bar, catálogo, envases,
+  presentaciones, transferencias y unidades) interpolan ya esas constantes desde
+  `../estados`; `ProductService` valida el estado contra `esEstadoUnidadValido`
+  importado de `@/modules/inventario`, igual que el resto de sus operaciones.
+  `inventoryHelpers.ts` conserva sólo funciones puras: opciones de venta,
+  resolución de botella, mapeos de filas y generación de EAN.
+- **Contratos de UI, revisión pendiente: nada.** Se comprobó que ninguna
+  importación en `components/`, `hooks/` y `app/` referencia ya
+  `lib/repositories/inventory`, `InventoryRepository` ni `inventoryTypes`; los
+  DTO de inventario (incluidos `ResumenEnvases`, del corte 6) llegan desde
+  `modules/inventario/contracts.ts`. No hay entradas que migrar ni excepciones
+  `ui-no-infraestructura` que retirar.
+- `inventoryTypes.ts` mantiene la reexportación de los DTO para los tipos de
+  fila heredados, pero ya no expone estados.
+
+## Verificación del corte 7
+
+- `pnpm typecheck`: aprobado.
+- `pnpm lint:full`: 0 errores; 1 warning preexistente (`instrumentation.ts`).
+- Prettier verificado en todos los archivos cambiados.
+- `pnpm test:unit --maxWorkers=2`: **1713 aprobadas, 2 omitidas** (180
+  archivos). `ProductService.test.ts` mockea ahora `esEstadoUnidadValido` a
+  través del mock de `@/modules/inventario`, que es donde lo consume el
+  servicio.
+- `pnpm test:postgres` completa: **156 aprobadas en 15 archivos**; las tres
+  pruebas que usaban `ESTADO_UNIDAD_*` (`bar-containers-flow`, `bar-shots-flow`,
+  `transfers-flow`) los toman de la API pública del módulo.
+- `pnpm arquitectura:limites`: aprobado; **24 hallazgos / 24 excepciones**, sin
+  dependencias prohibidas nuevas ni excepciones obsoletas.
+- `pnpm arquitectura`: análisis regenerado; el archivo nuevo es el único cambio
+  de métrica (1525 → 1526 archivos analizados); los archivos con SQL y con
+  `withTransaction` siguen siendo los mismos.
+- `pnpm build`: aprobado (Webpack + service worker).
+- No se ejecutaron `pnpm test:integration:*` ni e2e.
+
+## Siguientes cortes
 
 1. Cerrar la fase con la reversión de stock por anulación (API de negocio en el
    módulo) y decidir el dueño de productos/compras, que siguen en la capa
    heredada aunque ya escriban inventario a través del módulo.
-2. Migrar las constantes de estado desde `inventoryHelpers` y revisar los
-   contratos de inventario que la UI aún importa desde la fachada heredada.
+2. Decidir el destino de los dos archivos restantes de la capa heredada
+   (`inventoryHelpers.ts` e `inventoryTypes.ts`): moverlos dentro del módulo o
+   declararlos utils compartidos con una nota en `MODULOS_Y_DATOS.md`.
 3. Actualizar el censo de propietarios tras cada corte; no cerrar la fase hasta
    que las escrituras de inventario pasen por el módulo y los flujos de compras,
    transferencias, shots y envases estén cubiertos.

@@ -1,8 +1,7 @@
 import { afterAll, expect, it } from 'vitest';
 import { randomUUID } from 'node:crypto';
 import db, { withTransaction } from '@/lib/database/db';
-import { ESTADO_UNIDAD_ACTIVA } from '@/lib/repositories/inventory/inventoryHelpers';
-import { listarPresentaciones, traspasarAlBar } from '@/modules/inventario';
+import { ESTADO_UNIDAD_ACTIVA, listarPresentaciones, traspasarAlBar } from '@/modules/inventario';
 import { conContextoOperacionExistente } from '@/lib/transaccion/compatibilidad';
 
 afterAll(async () => {

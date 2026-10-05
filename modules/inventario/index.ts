@@ -39,6 +39,13 @@ export {
   getBarMlConfig,
   getTopeSimple
 } from './bar/configuracion';
+export {
+  ESTADO_UNIDAD_ACTIVA,
+  ESTADO_UNIDAD_INACTIVA,
+  ESTADO_UNIDAD_VENDIDA,
+  ESTADOS_UNIDAD_VALIDOS,
+  esEstadoUnidadValido
+} from './estados';
 export { listarStockBar, obtenerResumenShots } from './bar/servicio';
 export { listarParaVenta } from './catalogo/servicio';
 export { listarMovimientos, listarMovimientosRecientes } from './movimientos/servicio';
