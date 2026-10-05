@@ -9,19 +9,11 @@ vi.mock('@/lib/repositories/WithdrawalRepository', () => ({
   }
 }));
 
-vi.mock('@/lib/repositories/CashRegisterRepository', () => ({
-  CashRegisterRepository: {
-    getCurrentCajaId: vi.fn(),
-    updateBalances: vi.fn()
-  }
-}));
-
 vi.mock('@/lib/database/db', () => ({
   withTransaction: vi.fn(async (fn: any) => fn(vi.fn()))
 }));
 
 import { WithdrawalRepository } from '@/lib/repositories/WithdrawalRepository';
-import { CashRegisterRepository } from '@/lib/repositories/CashRegisterRepository';
 import { withTransaction } from '@/lib/database/db';
 
 beforeEach(() => {
@@ -64,7 +56,6 @@ describe('WithdrawalService.addRetiro', () => {
 
     vi.mocked(withTransaction).mockImplementation(async (fn: any) => {
       const trx = vi.fn().mockResolvedValue([]);
-      vi.mocked(CashRegisterRepository.getCurrentCajaId).mockResolvedValue(null);
       return fn(trx);
     });
 
@@ -74,7 +65,6 @@ describe('WithdrawalService.addRetiro', () => {
 
   it('usa la caja del parámetro si se proporciona', async () => {
     vi.mocked(WithdrawalRepository.create).mockResolvedValue('ret-1' as any);
-    vi.mocked(CashRegisterRepository.updateBalances).mockResolvedValue(undefined);
 
     vi.mocked(withTransaction).mockImplementationOnce(async (fn: any) => {
       const trx = vi.fn().mockResolvedValue([{ monto_apertura: 100000, efectivo: 0 }]);
@@ -83,7 +73,6 @@ describe('WithdrawalService.addRetiro', () => {
 
     const result = await WithdrawalService.addRetiro(validRetiro as any);
 
-    expect(CashRegisterRepository.getCurrentCajaId).not.toHaveBeenCalled();
     expect(result).toMatchObject({ id_retiro: 'ret-1', caja_id: 'caja-1' });
   });
 

@@ -1,5 +1,3 @@
-import { obtenerCajaActiva, registrarMovimientoCobro } from '@/modules/caja';
-import { conContextoOperacionExistente } from '@/lib/transaccion/compatibilidad';
 import { query, generateUUID, withTransaction, type TransactionQuery } from '@/lib/database/db';
 import { CajaSchema, type CajaType } from '@/lib/business/schemas';
 import { getNowInBusinessTimezone } from '@/lib/business/timezoneService';
@@ -159,35 +157,6 @@ export class CashRegisterRepository {
       cierre_pendiente: row.cierre_pendiente === true,
       cierre_estancado: row.cierre_estancado === true
     });
-  }
-
-  static async getCurrentCajaId(trx?: TransactionQuery): Promise<string | null> {
-    return trx ? conContextoOperacionExistente(trx, obtenerCajaActiva) : obtenerCajaActiva();
-  }
-
-  static async updateBalances(
-    trx: TransactionQuery,
-    id_caja: string,
-    deltas: {
-      venta?: number;
-      cargo_tarjeta?: number;
-      servicio?: number;
-      efectivo?: number;
-      tarjeta?: number;
-      transferencia?: number;
-      prepago?: number;
-      anticipo?: number;
-      egreso?: number;
-      iva?: number;
-      comision?: number;
-      propina?: number;
-      cuenta?: number;
-      devolucion?: number;
-    }
-  ): Promise<void> {
-    await conContextoOperacionExistente(trx, contexto =>
-      registrarMovimientoCobro(id_caja, deltas, contexto)
-    );
   }
 
   static async summary(): Promise<any> {

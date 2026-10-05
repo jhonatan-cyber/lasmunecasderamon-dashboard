@@ -7,9 +7,13 @@
  *
  * Excepción de lectura, explícita y revisable (fase 7): el UNION trae
  * `habitaciones` (Operación) y `ventas` (Ventas) para poder avisar "terminó en la
- * habitación 3". Las escrituras sí son del dueño: cada tabla la escribe su módulo.
+ * habitación 3". El cierre de ventas y servicios pasa por sus propietarios.
  */
-import { query, withTransaction, type TransactionQuery } from '@/lib/database/db';
+import { query, type TransactionQuery } from '@/lib/database/db';
+import type { ContextoOperacion } from '@/lib/transaccion/contrato';
+import { resolverTransaccion } from '@/lib/transaccion/infraestructura';
+import { finalizarVentaTemporizada } from '@/modules/ventas';
+import { finalizarCuentaTemporizada } from '../cuentas/repositorio';
 
 /** Temporizador en curso, con la habitación en la que corre. */
 export interface TemporizadorActivo {
@@ -62,40 +66,46 @@ export async function marcarAvisoFin(tipo: TemporizadorActivo['type'], id: strin
 }
 
 /**
- * Cierre del temporizador: se actualiza la tabla y se libera la habitación, cada
- * una con su estado final (1 = terminado, 0 = cerrado).
- *
- * Excepción de escritura heredada: `ventas` y `cuentas` son de Ventas y Operación
- * respectivamente y aquí se escriben igual. Se mantiene exactamente como estaba para
- * no cambiar el orden de los efectos; la fase 5 la sube a un workflow con contexto
- * opaco.
+ * Cierre del temporizador en la unidad del llamador: se actualiza la tabla
+ * por su propietario y se libera la habitación, cada una con su estado final
+ * (1 = terminado, 0 = cerrado). La liberación vive en quien la llama para
+ * que este archivo no coordine otros dominios.
  */
 export async function cerrarTemporizador(
   tipo: TemporizadorActivo['type'],
   id: string,
-  habitacionId: string | null,
-  conLiberacion: (trx: TransactionQuery) => Promise<void>
+  contexto: ContextoOperacion
 ): Promise<void> {
-  if (habitacionId) {
-    await query('UPDATE habitaciones SET estado = 1 WHERE id_habitacion = ?', [habitacionId]);
-  }
-
+  const trx = resolverTransaccion(contexto);
   if (tipo === 'servicio') {
-    await query('UPDATE servicios SET estado = 1 WHERE id_servicio = ?', [id]);
-    await withTransaction(conLiberacion);
+    await trx('UPDATE servicios SET estado = 1 WHERE id_servicio = ?', [id]);
   } else if (tipo === 'venta') {
-    await query('UPDATE ventas SET estado = 1 WHERE id_venta = ?', [id]);
+    await finalizarVentaTemporizada(id, contexto);
   } else if (tipo === 'cuenta') {
-    await query('UPDATE cuentas SET estado = 0 WHERE id_cuenta = ?', [id]);
+    await finalizarCuentaTemporizada(id, contexto);
   }
+}
+
+/** Habitación a liberar al cerrar, si el temporizador tiene una. */
+export async function leerHabitacionTemporizador(
+  tipo: TemporizadorActivo['type'],
+  id: string,
+  contexto: ContextoOperacion
+): Promise<string | null> {
+  const { tabla, id: idCol } = TABLA_POR_TIPO[tipo];
+  const rows = await resolverTransaccion(contexto)<{ habitacion_id: string | null }[]>(
+    `SELECT habitacion_id FROM ${tabla} WHERE ${idCol} = ?`,
+    [id]
+  );
+  return rows[0]?.habitacion_id ?? null;
 }
 
 /** Anfitrionas asignadas a un servicio, para la liberación de la habitación. */
 export async function obtenerAnfitrionasDeServicio(
-  trx: TransactionQuery,
+  contexto: ContextoOperacion,
   servicioId: string
 ): Promise<{ usuario_id: string }[]> {
-  return await trx<{ usuario_id: string }[]>(
+  return await resolverTransaccion(contexto)<{ usuario_id: string }[]>(
     'SELECT usuario_id FROM detalle_servicios WHERE servicio_id = ?',
     [servicioId]
   );

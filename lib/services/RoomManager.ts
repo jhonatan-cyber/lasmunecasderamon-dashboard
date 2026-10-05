@@ -1,5 +1,3 @@
-import { actualizarDisponibilidad } from '@/modules/identidad';
-import { conContextoOperacionExistente } from '@/lib/transaccion/compatibilidad';
 import { type TransactionQuery } from '@/lib/database/db';
 import { getNowInBusinessTimezone } from '@/lib/business/timezoneService';
 
@@ -132,15 +130,5 @@ export class RoomManager {
     } else {
       await trx('UPDATE habitaciones SET estado = 1 WHERE id_habitacion = ?', [habitacionId]);
     }
-  }
-  static async updateHostessServiceStatus(
-    trx: TransactionQuery,
-    hostessIds: string[],
-    excludeServiceId?: string,
-    excludeVentaId?: string
-  ) {
-    return conContextoOperacionExistente(trx, contexto =>
-      actualizarDisponibilidad(hostessIds, contexto, excludeServiceId, excludeVentaId)
-    );
   }
 }

@@ -484,6 +484,19 @@ export async function leerNombreClienteCuenta(
   return rows[0]?.nombre ?? null;
 }
 
+/**
+ * Cierre de una cuenta temporizada. La escribe el propio módulo en la misma
+ * unidad donde se libera la habitación.
+ */
+export async function finalizarCuentaTemporizada(
+  cuentaId: string,
+  contexto: ContextoOperacion
+): Promise<void> {
+  await resolverTransaccion(contexto)('UPDATE cuentas SET estado = 0 WHERE id_cuenta = ?', [
+    cuentaId
+  ]);
+}
+
 export interface CuentaParaCambio {
   codigo: string;
   cliente_id: string | null;

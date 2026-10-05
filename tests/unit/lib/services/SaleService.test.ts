@@ -49,8 +49,7 @@ vi.mock('@/modules/personal', () => ({
 
 vi.mock('@/lib/services/RoomManager', () => ({
   RoomManager: {
-    pauseConflictingServices: vi.fn(),
-    updateHostessServiceStatus: vi.fn()
+    pauseConflictingServices: vi.fn()
   }
 }));
 

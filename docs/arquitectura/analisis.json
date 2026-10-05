@@ -1,11 +1,11 @@
 {
   "resumen": {
-    "commit": "6cd071d42cda505014b42b21785ed8e57adab635",
-    "generado": "2026-10-05T15:40:37.769Z",
-    "archivos": 1605,
+    "commit": "4851685bb7a427b3f38284faca3f76578ee84755",
+    "generado": "2026-10-05T16:47:10.455Z",
+    "archivos": 1606,
     "rutas": 204,
     "sqlFueraDeRepositorio": 66,
-    "tablasConEscritoresMultiples": 18,
+    "tablasConEscritoresMultiples": 17,
     "ciclos": 6,
     "procesosPeriodicos": 15,
     "caches": 19,
@@ -1918,24 +1918,6 @@
       "escribe": []
     },
     {
-      "archivo": "modules/operacion/cuentas/alta.ts",
-      "capa": "raiz",
-      "modulo": "operacion",
-      "escribe": []
-    },
-    {
-      "archivo": "modules/operacion/servicios/creacion.ts",
-      "capa": "raiz",
-      "modulo": "operacion",
-      "escribe": []
-    },
-    {
-      "archivo": "modules/ventas/registro/servicio.ts",
-      "capa": "raiz",
-      "modulo": "ventas",
-      "escribe": []
-    },
-    {
       "archivo": "modules/asistencia/biometrico/avisosAudio.ts",
       "capa": "raiz",
       "modulo": "asistencia",
@@ -2089,6 +2071,24 @@
       "archivo": "modules/inventario/unidades/servicio.ts",
       "capa": "raiz",
       "modulo": "inventario",
+      "escribe": []
+    },
+    {
+      "archivo": "modules/operacion/cuentas/alta.ts",
+      "capa": "raiz",
+      "modulo": "operacion",
+      "escribe": []
+    },
+    {
+      "archivo": "modules/operacion/servicios/creacion.ts",
+      "capa": "raiz",
+      "modulo": "operacion",
+      "escribe": []
+    },
+    {
+      "archivo": "modules/ventas/registro/servicio.ts",
+      "capa": "raiz",
+      "modulo": "ventas",
       "escribe": []
     },
     {
@@ -2283,8 +2283,7 @@
       "tabla": "cuentas",
       "escritores": [
         "lib/repositories/cuenta/CuentaQueries.ts",
-        "modules/operacion/cuentas/repositorio.ts",
-        "modules/operacion/temporizadores/repositorio.ts"
+        "modules/operacion/cuentas/repositorio.ts"
       ],
       "modulos": ["operacion"]
     },
@@ -2320,14 +2319,6 @@
         "modules/ventas/registro/repositorio.ts"
       ],
       "modulos": ["ventas"]
-    },
-    {
-      "tabla": "habitaciones",
-      "escritores": [
-        "lib/repositories/TimerRepository.ts",
-        "modules/operacion/temporizadores/repositorio.ts"
-      ],
-      "modulos": ["operacion"]
     },
     {
       "tabla": "inventario_movimientos",
@@ -2395,7 +2386,6 @@
       "escritores": [
         "lib/repositories/TimerRepository.ts",
         "lib/repositories/sale/SaleQueries.ts",
-        "modules/operacion/temporizadores/repositorio.ts",
         "modules/ventas/anulaciones/repositorio.ts"
       ],
       "modulos": ["operacion", "ventas"]
@@ -2410,41 +2400,6 @@
     }
   ],
   "transacciones": [
-    {
-      "archivo": "modules/clientes/prepago/servicio.ts",
-      "capa": "raiz",
-      "modulo": "clientes"
-    },
-    {
-      "archivo": "modules/operacion/cuentas/actualizacion.ts",
-      "capa": "raiz",
-      "modulo": "operacion"
-    },
-    {
-      "archivo": "modules/operacion/cuentas/alta.ts",
-      "capa": "raiz",
-      "modulo": "operacion"
-    },
-    {
-      "archivo": "modules/operacion/cuentas/temporizadores.ts",
-      "capa": "raiz",
-      "modulo": "operacion"
-    },
-    {
-      "archivo": "modules/operacion/servicios/anulaciones.ts",
-      "capa": "raiz",
-      "modulo": "operacion"
-    },
-    {
-      "archivo": "modules/operacion/servicios/creacion.ts",
-      "capa": "raiz",
-      "modulo": "operacion"
-    },
-    {
-      "archivo": "workflows/cobrar-cuenta.ts",
-      "capa": "raiz",
-      "modulo": null
-    },
     {
       "archivo": "lib/database/maintenance.ts",
       "capa": "lib/database",
@@ -2536,6 +2491,11 @@
       "modulo": "asistencia"
     },
     {
+      "archivo": "modules/clientes/prepago/servicio.ts",
+      "capa": "raiz",
+      "modulo": "clientes"
+    },
+    {
       "archivo": "modules/identidad/permisos/repositorio.ts",
       "capa": "raiz",
       "modulo": "identidad"
@@ -2576,7 +2536,32 @@
       "modulo": "inventario"
     },
     {
-      "archivo": "modules/operacion/temporizadores/repositorio.ts",
+      "archivo": "modules/operacion/cuentas/actualizacion.ts",
+      "capa": "raiz",
+      "modulo": "operacion"
+    },
+    {
+      "archivo": "modules/operacion/cuentas/alta.ts",
+      "capa": "raiz",
+      "modulo": "operacion"
+    },
+    {
+      "archivo": "modules/operacion/cuentas/temporizadores.ts",
+      "capa": "raiz",
+      "modulo": "operacion"
+    },
+    {
+      "archivo": "modules/operacion/servicios/anulaciones.ts",
+      "capa": "raiz",
+      "modulo": "operacion"
+    },
+    {
+      "archivo": "modules/operacion/servicios/creacion.ts",
+      "capa": "raiz",
+      "modulo": "operacion"
+    },
+    {
+      "archivo": "modules/operacion/temporizadores/servicio.ts",
       "capa": "raiz",
       "modulo": "operacion"
     },
@@ -2594,6 +2579,11 @@
       "archivo": "modules/ventas/anulaciones/servicio.ts",
       "capa": "raiz",
       "modulo": "ventas"
+    },
+    {
+      "archivo": "workflows/cobrar-cuenta.ts",
+      "capa": "raiz",
+      "modulo": null
     }
   ],
   "procesos": [
@@ -2805,8 +2795,8 @@
   "ciclos": [
     ["identidad", "personal", "identidad"],
     ["identidad", "personal", "comunicaciones", "identidad"],
-    ["personal", "comunicaciones", "ventas", "personal"],
     ["comunicaciones", "ventas", "comunicaciones"],
+    ["personal", "comunicaciones", "ventas", "personal"],
     ["comunicaciones", "operacion", "comunicaciones"],
     ["identidad", "personal", "comunicaciones", "operacion", "identidad"]
   ],

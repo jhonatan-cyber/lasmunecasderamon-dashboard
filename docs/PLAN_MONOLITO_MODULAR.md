@@ -469,6 +469,18 @@ habitación en una sola unidad, reusando las operaciones del corte 20;
 `CuentaRepository` y `CuentaQueries` delegan, sin aristas nuevas. Detalle y
 validación en [FASE5_CUENTAS_ALTA.md](arquitectura/FASE5_CUENTAS_ALTA.md).
 
+**Corte 22 — cierre de temporizadores en contexto opaco (2026-10-05):** cada
+temporizador vencido se cierra en su propia unidad con estado por propietario,
+disponibilidad y habitación liberada; `RoomManager.updateHostessServiceStatus`
+se elimina y el puente baja a 1 uso. Detalle y validación en
+[FASE5_TEMPORIZADORES.md](arquitectura/FASE5_TEMPORIZADORES.md).
+
+**Corte 23 — el puente transaccional llega a cero (2026-10-05):** los
+adaptadores `getCurrentCajaId`/`updateBalances` de `CashRegisterRepository` no
+tenían llamadores y se eliminan con la última excepción; la puerta queda en
+29/29 sólo con ciclos. Detalle y validación en
+[FASE5_PUENTE_CERO.md](arquitectura/FASE5_PUENTE_CERO.md).
+
 **Salida:** fallos intermedios revierten todos los cambios; no existen
 escrituras cruzadas fuera de los propietarios; reintentos no duplican
 operaciones.

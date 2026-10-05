@@ -25,6 +25,7 @@ export {
   leerVentaDeSolicitud,
   leerMontoSolicitud,
   leerAnfitrionasVenta,
+  finalizarVentaTemporizada,
   parseMixedPayments,
   normalizeSolicitudStatus,
   allocateProportionally

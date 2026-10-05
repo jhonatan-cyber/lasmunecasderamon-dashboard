@@ -17,10 +17,6 @@ vi.mock('@/lib/repositories/ServiceRepository', () => ({
   ServiceRepository: { rawInsert: vi.fn() }
 }));
 
-vi.mock('@/lib/repositories/CashRegisterRepository', () => ({
-  CashRegisterRepository: { getCurrentCajaId: vi.fn(), updateBalances: vi.fn() }
-}));
-
 vi.mock('@/lib/services/RoomManager', () => ({
   RoomManager: { pauseConflictingServices: vi.fn() }
 }));
@@ -35,7 +31,6 @@ vi.mock('@/lib/business/timezoneService', () => ({
 }));
 
 import { ServiceService } from '@/lib/services/ServiceService';
-import { CashRegisterRepository } from '@/lib/repositories/CashRegisterRepository';
 import { RoomManager } from '@/lib/services/RoomManager';
 
 beforeEach(() => {
@@ -74,8 +69,6 @@ describe('ServiceService.createService', () => {
   });
 
   it('lanza ValidationError si pago mixto tiene menos de 2 metodos', async () => {
-    vi.mocked(CashRegisterRepository.getCurrentCajaId).mockResolvedValue('caja-1');
-
     await expect(
       ServiceService.createService(
         {
@@ -89,8 +82,6 @@ describe('ServiceService.createService', () => {
   });
 
   it('lanza ValidationError si suma de pagos mixtos no coincide con total', async () => {
-    vi.mocked(CashRegisterRepository.getCurrentCajaId).mockResolvedValue('caja-1');
-
     await expect(
       ServiceService.createService(
         {
@@ -108,8 +99,6 @@ describe('ServiceService.createService', () => {
   });
 
   it('retorna id, codigo y tiempo si la creacion es exitosa', async () => {
-    vi.mocked(CashRegisterRepository.getCurrentCajaId).mockResolvedValue('caja-1');
-
     const result = await ServiceService.createService(validServiceBody, 'cajero-1');
 
     expect(result).toHaveProperty('id');
@@ -119,7 +108,6 @@ describe('ServiceService.createService', () => {
   });
 
   it('rechaza anfitrionas que no estan logueadas en el local', async () => {
-    vi.mocked(CashRegisterRepository.getCurrentCajaId).mockResolvedValue('caja-1');
     serviceHarness.transactionMock.mockImplementation(async (sql: string) => {
       if (sql.includes('SELECT DISTINCT u.id_usuario')) {
         return [{ id_usuario: 'user-1' }];
@@ -136,7 +124,6 @@ describe('ServiceService.createService', () => {
   });
 
   it('reparte resto de comision de habitacion sin perder monto total', async () => {
-    vi.mocked(CashRegisterRepository.getCurrentCajaId).mockResolvedValue('caja-1');
     serviceHarness.queryMock.mockResolvedValue([{ comision_anfitriona: 101 }]);
     serviceHarness.transactionMock.mockImplementation(async (sql: string, params?: unknown[]) => {
       if (sql.includes('SELECT DISTINCT u.id_usuario')) {

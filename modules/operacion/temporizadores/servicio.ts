@@ -7,10 +7,15 @@
  *
  * Los avisos salen después de marcar la fila que los evita repetir, igual que antes:
  * si el push falla, el temporizador ya queda marcado y no se reintenta en bucle.
+ * El cierre corre en una sola unidad con `ContextoOperacion`: la habitación se
+ * libera por su propietario y la disponibilidad por Identidad.
  */
-import { RoomManager } from '@/lib/services/RoomManager';
+import { enUnaUnidad, type ContextoOperacion } from '@/lib/transaccion/contrato';
+import { ejecutarEfectosConfirmados } from '@/lib/transaccion/efectos';
 import { sendPushByRole, sendPushNotification } from '@/lib/integrations/pushNotifications';
 import { sendNotificationToAll } from '@/lib/api/sseService';
+import { actualizarDisponibilidad } from '@/modules/identidad';
+import { liberarHabitacionPorAnulacion } from '../facturacion/repositorio';
 import type { TemporizadorActivo } from './repositorio';
 import * as repositorio from './repositorio';
 
@@ -70,23 +75,54 @@ export async function revisarTemporizadores(ahora: Date): Promise<ResultadoTempo
         room_name: item.room_name
       });
 
-      await repositorio.cerrarTemporizador(item.type, item.id, item.habitacion_id, async trx => {
-        if (item.type !== 'servicio') return;
-        const anfitrionas = await repositorio.obtenerAnfitrionasDeServicio(trx, item.id);
-        const hostessIds = anfitrionas.map(a => a.usuario_id);
-        if (hostessIds.length > 0) {
-          await RoomManager.updateHostessServiceStatus(trx, hostessIds, item.id);
-        }
-        await RoomManager.resumeRoomLogic(trx, item.habitacion_id!, item.id);
-      });
-
-      if (item.type === 'venta' || item.type === 'servicio') {
-        sendNotificationToAll('updateSales', { id: item.id, type: item.type });
-      }
+      const tareas: Array<() => void | Promise<void>> = [];
+      await enUnaUnidad(unidad =>
+        unidad.ejecutar(contexto =>
+          cerrarTemporizadorEnUnidad(item, contexto, tarea => tareas.push(tarea))
+        )
+      );
+      await ejecutarEfectosConfirmados(tareas);
     }
   }
 
   return { avisos5m, cierres };
+}
+
+/**
+ * Cierre de un temporizador vencido en la unidad del llamador: estado final
+ * por su propietario, disponibilidad de anfitrionas y liberación de
+ * habitación. El aviso a ventas sale después del commit.
+ */
+export async function cerrarTemporizadorEnUnidad(
+  item: TemporizadorActivo,
+  contexto: ContextoOperacion,
+  aplazar: (tarea: () => void | Promise<void>) => void
+): Promise<void> {
+  await repositorio.cerrarTemporizador(item.type, item.id, contexto);
+
+  if (item.type === 'servicio') {
+    const anfitrionas = await repositorio.obtenerAnfitrionasDeServicio(contexto, item.id);
+    const hostessIds = anfitrionas.map(a => a.usuario_id);
+    if (hostessIds.length > 0) {
+      await actualizarDisponibilidad(hostessIds, contexto, item.id);
+    }
+  }
+
+  const habitacionId = await repositorio.leerHabitacionTemporizador(item.type, item.id, contexto);
+  if (habitacionId) {
+    await liberarHabitacionPorAnulacion(
+      habitacionId,
+      contexto,
+      undefined,
+      item.type === 'cuenta' ? undefined : item.id
+    );
+  }
+
+  if (item.type === 'venta' || item.type === 'servicio') {
+    aplazar(() => {
+      sendNotificationToAll('updateSales', { id: item.id, type: item.type });
+    });
+  }
 }
 
 export type { TemporizadorActivo } from './repositorio';

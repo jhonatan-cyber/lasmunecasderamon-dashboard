@@ -221,54 +221,7 @@ describe('RoomManager.resumeRoomLogic', () => {
   });
 });
 
-describe('RoomManager.updateHostessServiceStatus', () => {
-  it('retorna undefined si hostessIds está vacío', async () => {
-    const { trx, calls } = makeTrx();
-
-    await expect(RoomManager.updateHostessServiceStatus(trx, [])).resolves.toBeUndefined();
-    expect(calls).toHaveLength(0);
-  });
-
-  it('pone estado_servicio=0 solo a quienes quedaron idle', async () => {
-    const { trx, calls } = makeTrx([
-      {
-        match: /SELECT u\.id_usuario/,
-        result: [{ id_usuario: 'anf-1' }, { id_usuario: 'anf-3' }]
-      }
-    ]);
-
-    await RoomManager.updateHostessServiceStatus(trx, ['anf-1', 'anf-2', 'anf-3', 'anf-1']);
-
-    const idleSelect = calls.find(c => /SELECT u\.id_usuario/.test(c.sql));
-    expect(idleSelect!.sql).toContain('u.id_usuario IN (?,?,?)');
-    expect(idleSelect!.params!.slice(0, 3)).toEqual(['anf-1', 'anf-2', 'anf-3']);
-
-    const update = calls.find(c => /UPDATE usuarios SET estado_servicio = 0/.test(c.sql));
-    expect(update).toBeDefined();
-    expect(update!.params).toEqual(['anf-1', 'anf-3']);
-  });
-
-  it('no actualiza si nadie quedó idle', async () => {
-    const { trx, calls } = makeTrx([{ match: /SELECT u\.id_usuario/, result: [] }]);
-
-    await RoomManager.updateHostessServiceStatus(trx, ['anf-1']);
-
-    expect(calls.some(c => /UPDATE usuarios SET estado_servicio = 0/.test(c.sql))).toBe(false);
-  });
-
-  it('incluye excludeServiceId/ excludeVentaId en la lógica idle', async () => {
-    const { trx, calls } = makeTrx([
-      { match: /SELECT u\.id_usuario/, result: [{ id_usuario: 'anf-1' }] }
-    ]);
-
-    await RoomManager.updateHostessServiceStatus(trx, ['anf-1'], 'serv-keep', 'venta-keep');
-
-    const idleSelect = calls.find(c => /SELECT u\.id_usuario/.test(c.sql));
-    expect(idleSelect!.sql).toContain('AND s.id_servicio != ?');
-    expect(idleSelect!.sql).toContain('AND v.id_venta != ?');
-    expect(idleSelect!.params).toEqual(['anf-1', 'serv-keep', 'venta-keep']);
-  });
-
+describe('RoomManager.pauseConflictingServices (zona horaria)', () => {
   it('usa getNowInBusinessTimezone de forma consistente en pause', async () => {
     const { trx, calls } = makeTrx([
       { match: /SELECT DISTINCT s\.id_servicio/, result: [{ id_servicio: 's1' }] },

@@ -21,7 +21,7 @@ vi.mock('@/lib/business/timezoneService', () => ({
 }));
 
 vi.mock('@/lib/services/RoomManager', () => ({
-  RoomManager: { resumeRoomLogic: vi.fn(), updateHostessServiceStatus: vi.fn() }
+  RoomManager: { resumeRoomLogic: vi.fn() }
 }));
 
 vi.mock('@/lib/repositories/CashRegisterRepository', () => ({

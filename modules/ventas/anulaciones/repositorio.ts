@@ -346,3 +346,15 @@ export async function leerAnfitrionasVenta(
   );
   return rows.map(row => row.usuario_id);
 }
+
+/**
+ * Cierre de una venta temporizada. La escribe Operación (temporizadores) a
+ * través de esta operación del propietario, en la misma unidad donde se
+ * libera la habitación.
+ */
+export async function finalizarVentaTemporizada(
+  ventaId: string,
+  contexto: ContextoOperacion
+): Promise<void> {
+  await resolverTransaccion(contexto)('UPDATE ventas SET estado = 1 WHERE id_venta = ?', [ventaId]);
+}

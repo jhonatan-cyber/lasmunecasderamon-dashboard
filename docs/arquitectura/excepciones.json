@@ -1,24 +1,4 @@
 {
-  "puente-transaccional-heredado|lib/repositories/CashRegisterRepository.ts|lib/transaccion/compatibilidad.ts": {
-    "regla": "puente-transaccional-heredado",
-    "plan": "Transición de Fase 4 — el puente al contexto opaco se retira al migrar la transacción de ventas",
-    "desde": "lib/repositories/CashRegisterRepository.ts",
-    "hacia": "lib/transaccion/compatibilidad.ts",
-    "spec": "@/lib/transaccion/compatibilidad",
-    "motivo": "Adaptador temporal para compartir una sola implementacion del propietario sin duplicar SQL. El workflow de cobro no usa este puente.",
-    "responsable": "Fase 5 - anulaciones, caja y operacion",
-    "condicion": "Migrar los llamadores heredados a ContextoOperacion y retirar el adaptador."
-  },
-  "puente-transaccional-heredado|lib/services/RoomManager.ts|lib/transaccion/compatibilidad.ts": {
-    "regla": "puente-transaccional-heredado",
-    "plan": "Transición de Fase 4 — el puente al contexto opaco se retira al migrar la transacción de ventas",
-    "desde": "lib/services/RoomManager.ts",
-    "hacia": "lib/transaccion/compatibilidad.ts",
-    "spec": "@/lib/transaccion/compatibilidad",
-    "motivo": "Adaptador temporal para compartir una sola implementacion del propietario sin duplicar SQL. El workflow de cobro no usa este puente.",
-    "responsable": "Fase 5 - anulaciones, caja y operacion",
-    "condicion": "Migrar los llamadores heredados a ContextoOperacion y retirar el adaptador."
-  },
   "sin-ciclos|asistencia (dominio)|identidad (dominio)": {
     "regla": "sin-ciclos",
     "plan": "§5 - las dependencias entre modulos forman un grafo sin ciclos",
