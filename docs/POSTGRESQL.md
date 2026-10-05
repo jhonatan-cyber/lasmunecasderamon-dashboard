@@ -139,6 +139,20 @@ solo las migraciones deja a las instalaciones nuevas con otro. CI ejecuta
 `db:verify` en el job `migrations` y `db:parity` en el job `integration`, con
 historial completo para poder leer el volcado del commit base.
 
+### FK diferibles
+
+Todas las claves foráneas deben quedar `DEFERRABLE INITIALLY IMMEDIATE`: la
+restauración de respaldos las difiere para poder insertar en cualquier orden. La
+001 lo normalizó y la 022 lo repitió para las FK que fueran apareciendo después.
+**Una migración que agregue una FK debe declararla diferible**, porque el runner
+adopta por efectos las migraciones cuyo trabajo ya está en el volcado: en una
+instalación nueva la 001 la deja diferible, pero en un entorno que ya estaba
+desplegado se ejecuta tal cual y queda como se escribió. La 037 hizo justo eso y
+dejó `gratificaciones.solicitante_id` sin diferir sólo en los entornos migrados;
+la 059 lo corrigió. Es el criterio de la 022(f) y la razón por la que
+`db:parity` lo señalaba: una definición de esquema que difiere entre rutas no es
+cosmética, rompe el respaldo.
+
 ## Consultas y contratos de la API
 
 Las consultas usan funciones, agrupaciones, JSON y actualizaciones nativas de
