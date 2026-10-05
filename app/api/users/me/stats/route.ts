@@ -3,8 +3,8 @@ import { withRoute } from '@/lib/api/withRoute';
 import { getAnticipoBalances } from '@/modules/personal';
 import { TipService } from '@/lib/services/TipService';
 import { ServiceService } from '@/lib/services/ServiceService';
-import { query } from '@/lib/database/db';
 import { listarAsistenciasDeUsuario } from '@/modules/asistencia';
+import { obtenerResumenUsuario } from '@/modules/identidad';
 
 export const GET = withRoute(
   { auth: true, access: 'authenticated', audit: true },
@@ -29,11 +29,11 @@ export const GET = withRoute(
 
     const anticipoBalances = await getAnticipoBalances(userId);
 
-    const userRes = await query<any[]>(
-      'SELECT nombre, apellido, nick FROM usuarios WHERE id_usuario = ?',
-      [userId]
-    );
-    const userInfo = userRes[0] || {};
+    const userInfo = (await obtenerResumenUsuario(userId)) ?? {
+      nombre: '',
+      apellido: '',
+      nick: null
+    };
 
     return NextResponse.json({
       success: true,

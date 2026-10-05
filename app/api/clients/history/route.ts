@@ -8,7 +8,7 @@ export const GET = withPublicRoute(async (request: Request) => {
 
   if (!clientId) {
     return NextResponse.json(
-      { success: false, message: 'El ID del cliente es requerido' }, 
+      { success: false, message: 'El ID del cliente es requerido' },
       { status: 400 }
     );
   }

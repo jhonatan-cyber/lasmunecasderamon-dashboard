@@ -214,6 +214,15 @@ export function generateUUID(): string {
   return randomUUID();
 }
 
+/**
+ * Sondeo de vida de la conexión. Vive acá y no en la ruta de health para que un
+ * endpoint de infraestructura no tenga que escribir SQL: el `SELECT 1` es del
+ * driver, no de un dominio.
+ */
+export async function verificarConexion<T = any>(): Promise<T> {
+  return query<T>('SELECT 1 as health_check');
+}
+
 const database = {
   query,
   withTransaction,

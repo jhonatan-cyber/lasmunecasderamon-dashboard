@@ -8,7 +8,7 @@ import {
   definicionDe,
   esClaveConfigValida,
   validarConfig
-} from '@/lib/configuraciones/registroClaves';
+} from '@/modules/configuracion/contracts';
 
 /**
  * El registro es la lista única de claves guardables: de él salen la allowlist y los

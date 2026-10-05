@@ -20,11 +20,7 @@ export function SettingsLogsTabHeader({ refreshing, onRefresh }: SettingsLogsTab
         </p>
       </div>
 
-      <Button
-        onClick={onRefresh}
-        disabled={refreshing}
-        className='w-full rounded-full sm:w-auto'
-      >
+      <Button onClick={onRefresh} disabled={refreshing} className='w-full rounded-full sm:w-auto'>
         <RefreshCw className={`mr-2 h-4 w-4 ${refreshing ? 'animate-spin' : ''}`} />
         Refrescar logs
       </Button>

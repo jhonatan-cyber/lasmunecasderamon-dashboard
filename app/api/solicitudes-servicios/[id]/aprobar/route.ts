@@ -3,7 +3,8 @@ import { withRoute } from '@/lib/api/withRoute';
 import { ServiceRequestService } from '@/lib/services/ServiceRequestService';
 import { sendNotificationToAll } from '@/lib/api/sseService';
 
-export const PATCH = withRoute({ auth: true, audit: true, module: 'orders', action: 'process' },
+export const PATCH = withRoute(
+  { auth: true, audit: true, module: 'orders', action: 'process' },
   async (request: Request, { params, user }: { params: Promise<{ id: string }>; user: any }) => {
     const { id } = await params;
     const body = await request.json().catch(() => ({}));

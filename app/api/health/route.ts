@@ -1,10 +1,10 @@
 import { withPublicRoute } from '@/lib/api';
 import { ApiResponse } from '@/lib/api';
-import { query } from '@/lib/database/db';
+import { verificarConexion } from '@/lib/database/db';
 import { getNowInBusinessTimezone } from '@/lib/business/timezoneService';
 
 export const GET = withPublicRoute(async () => {
-  const dbCheck = await query('SELECT 1 as health_check');
+  const dbCheck = await verificarConexion();
   return ApiResponse.success(
     {
       status: 'healthy',

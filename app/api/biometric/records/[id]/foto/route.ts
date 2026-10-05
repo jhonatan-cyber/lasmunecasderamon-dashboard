@@ -1,5 +1,5 @@
 import { withRoute } from '@/lib/api/withRoute';
-import { query } from '@/lib/database/db';
+import { obtenerBytesDeFoto } from '@/modules/asistencia';
 
 /**
  * Foto de la verificación que originó una asistencia: el JPEG que el lector
@@ -15,22 +15,17 @@ export const GET = withRoute(
   { auth: true, access: 'authenticated' },
   async (_request: Request, { params }: { params: Promise<{ id: string }> }) => {
     const { id } = await params;
-    const filas = await query<{ foto: Buffer | null }[]>(
-      'SELECT foto FROM biometric_device_records WHERE id = ?',
-      [id]
-    );
-    const foto = filas[0]?.foto;
-    if (!foto || foto.length === 0) {
+    const bytes = await obtenerBytesDeFoto(id);
+    if (!bytes) {
       return Response.json(
         { success: false, message: 'Sin foto para este registro.' },
         { status: 404 }
       );
     }
-    const bytes = Buffer.from(foto);
-    return new Response(new Uint8Array(bytes), {
+    return new Response(bytes, {
       headers: {
         'Content-Type': 'image/jpeg',
-        'Content-Length': String(bytes.length),
+        'Content-Length': String(bytes.byteLength),
         'Cache-Control': 'private, max-age=604800'
       }
     });

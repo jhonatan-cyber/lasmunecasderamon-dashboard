@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { definicionDe } from '@/lib/configuraciones/registroClaves';
+import { definicionDe } from '@/modules/configuracion/contracts';
 
 /**
  * Estado compartido en `globalThis` y no en el módulo.

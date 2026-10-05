@@ -1,9 +1,9 @@
 import { NextResponse } from 'next/server';
-import { query } from '@/lib/database/db';
 import { getNowInBusinessTimezone } from '@/lib/business/timezoneService';
 import { getOrCreateAttendanceCode } from '@/lib/business/codigoService';
-import { consultarVentana } from '@/modules/asistencia';
-import { getKioskDevice } from '@/modules/asistencia';
+import { consultarVentana, getKioskDevice, listarMarcasDelDia } from '@/modules/asistencia';
+import { listarPersonalActivo } from '@/modules/identidad';
+import { obtenerValorConfiguracion } from '@/modules/configuracion';
 
 export const dynamic = 'force-dynamic';
 
@@ -14,6 +14,10 @@ export const dynamic = 'force-dynamic';
  * Reemplaza a `/api/public/users` como fuente de la pantalla, que era pública y
  * devolvía el QR de cada persona (o sea, la credencial). Acá no hay ninguna credencial
  * personal: el QR se pide aparte, por persona y por 120 segundos.
+ *
+ * Son tres lecturas de tres dueños distintos —el padrón es de Identidad, las marcas y
+ * la ventana son de Asistencia, la zona horaria es de Configuración— y la ruta las
+ * une sin tocar ninguna tabla.
  */
 export async function GET() {
   const deviceId = await getKioskDevice();
@@ -26,24 +30,12 @@ export async function GET() {
 
   const fechaHoy = getNowInBusinessTimezone().substring(0, 10);
 
-  const usuarios = await query<any[]>(`
-    SELECT u.id_usuario AS id, u.nombre, u.apellido, u.nick, u.foto, r.nombre AS rol
-    FROM usuarios u
-    LEFT JOIN roles r ON u.rol_id = r.id_rol
-    WHERE u.estado = 1 AND (r.nombre IS NULL OR LOWER(r.nombre) <> 'administrador')
-    ORDER BY u.nombre ASC, u.apellido ASC
-  `);
-
-  const asistencias = await query<any[]>(
-    'SELECT usuario_id, hora FROM asistencias WHERE fecha = ? AND estado = 1',
-    [fechaHoy]
-  );
+  const usuarios = await listarPersonalActivo();
+  const asistencias = await listarMarcasDelDia(fechaHoy);
   const marcaron = new Map(asistencias.map(row => [String(row.usuario_id), String(row.hora)]));
 
   const { startHour, endHour } = await consultarVentana();
-  const configuracion = await query<any[]>(
-    "SELECT clave, valor FROM configuraciones WHERE clave = 'timezone'"
-  );
+  const timezone = (await obtenerValorConfiguracion('timezone')) || 'America/Santiago';
 
   return NextResponse.json({
     success: true,
@@ -61,7 +53,7 @@ export async function GET() {
       config: {
         asistencia_hora_inicio: startHour,
         asistencia_hora_fin: endHour,
-        timezone: configuracion[0]?.valor || 'America/Santiago'
+        timezone
       },
       fecha: fechaHoy
     }

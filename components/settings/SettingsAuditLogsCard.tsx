@@ -10,7 +10,7 @@ import {
   TableCell,
   TableHead,
   TableHeader,
-  TableRow,
+  TableRow
 } from '@/components/ui/table';
 import { Skeleton } from '@/components/ui/skeleton';
 import { cardClass } from '@/components/settings/constants';
@@ -41,7 +41,7 @@ export function SettingsAuditLogsCard({
   loading,
   formatDate,
   parseDetails,
-  getRangeLabel,
+  getRangeLabel
 }: SettingsAuditLogsCardProps) {
   return (
     <Card className={cardClass}>

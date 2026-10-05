@@ -28,17 +28,14 @@ export function SettingsLogsTab() {
     formatDate,
     parseRequestBody,
     parseDetails,
-    getRangeLabel,
+    getRangeLabel
   } = useSettingsLogs();
 
   const handleRefresh = useCallback(() => fetchLogs(false), [fetchLogs]);
 
   return (
     <div className='space-y-4 sm:space-y-6'>
-      <SettingsLogsTabHeader
-        refreshing={refreshing}
-        onRefresh={handleRefresh}
-      />
+      <SettingsLogsTabHeader refreshing={refreshing} onRefresh={handleRefresh} />
 
       <SettingsAuditLogsCard
         auditLogs={auditLogs}

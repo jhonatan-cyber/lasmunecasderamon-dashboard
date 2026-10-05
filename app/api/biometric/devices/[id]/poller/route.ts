@@ -1,16 +1,12 @@
 import { NextResponse } from 'next/server';
 import { withRoute } from '@/lib/api/withRoute';
-import { query } from '@/lib/database/db';
-import { credencialesDeFila, verificarConexion } from '@/modules/asistencia';
-import { apagarListener, encenderListener } from '@/modules/asistencia';
+import { setRecolector } from '@/modules/asistencia';
 
 /**
  * Interruptor del recolector de registros de un equipo.
  *
- * Encenderlo exige credenciales completas y una conexión exitosa: no tiene
- * sentido dejar "encendido" un equipo al que el servidor no puede llegar.
- * Al encender también abre el LISTENER EN VIVO (tiempo real); el poller de 1
- * minuto queda como red de seguridad.
+ * La lógica —credenciales completas, conexión exitosa, listener en vivo— vive en el
+ * módulo; la ruta sólo traduce el resultado a HTTP.
  */
 export const PUT = withRoute(
   { auth: true, access: 'administrator', audit: true },
@@ -19,64 +15,15 @@ export const PUT = withRoute(
     const body = await request.json();
     const encender = Boolean(body?.encender);
 
-    if (!encender) {
-      await query('UPDATE biometric_devices SET recoger_registros = 0 WHERE id = ?', [id]);
-      apagarListener(id);
-      return NextResponse.json({ success: true, message: 'Recolector apagado.' });
-    }
+    const resultado = await setRecolector(id, encender);
 
-    const filas = await query<
-      {
-        id: string;
-        serial: string;
-        ip: string | null;
-        usuario_equipo: string | null;
-        clave_cifrada: string | null;
-      }[]
-    >(
-      'SELECT id, serial, ip, usuario_equipo, clave_cifrada FROM biometric_devices WHERE id = ? AND revocado_en IS NULL',
-      [id]
-    );
-    const fila = filas[0];
-    if (!fila) {
+    if (!resultado.success) {
       return NextResponse.json(
-        { success: false, message: 'Equipo no encontrado o revocado' },
-        { status: 404 }
+        { success: false, message: resultado.message },
+        { status: resultado.status }
       );
     }
 
-    const credenciales = credencialesDeFila(fila);
-    if (!credenciales) {
-      return NextResponse.json(
-        {
-          success: false,
-          message: 'Cargá IP y credenciales del equipo antes de encender el recolector.'
-        },
-        { status: 400 }
-      );
-    }
-
-    try {
-      await verificarConexion(credenciales);
-    } catch (error) {
-      return NextResponse.json(
-        {
-          success: false,
-          message: `No se pudo conectar al equipo: ${
-            error instanceof Error ? error.message : 'error de conexión'
-          }`
-        },
-        { status: 502 }
-      );
-    }
-
-    await query('UPDATE biometric_devices SET recoger_registros = 1 WHERE id = ?', [id]);
-    const vivo = await encenderListener(id);
-    return NextResponse.json({
-      success: true,
-      message: vivo
-        ? 'Recolector encendido: tiempo real activo + red de seguridad cada minuto.'
-        : 'Recolector encendido (sin listener en vivo en este proceso; queda el ciclo de 1 minuto).'
-    });
+    return NextResponse.json({ success: true, message: resultado.message });
   }
 );

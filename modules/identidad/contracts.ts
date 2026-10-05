@@ -31,3 +31,54 @@ export type Permisos = UserPermissions;
  * rol y permisos para autorizar; los módulos sólo reciben `Actor`.
  */
 export type Sesion = AuthenticatedUser;
+
+/* Forma de datos que cruzan la frontera del módulo (corte 12). */
+
+/** Permiso vivo, tal como lo devuelve la matriz de un rol. */
+export interface Permiso {
+  id: string;
+  name: string;
+  description: string | null;
+  module: string;
+  action: string;
+}
+
+/** Permiso con la marca de si el rol lo tiene asignado. */
+export interface PermisoDeRol extends Permiso {
+  created_at: string | null;
+  updated_at: string | null;
+  assigned: boolean;
+}
+
+/** Entrada del catálogo que siembra los permisos del rol cajero. */
+export interface PermisoCatalogo {
+  module: string;
+  action: string;
+  name: string;
+}
+
+/** Nombre, apellido y nick de una persona: lo que muestra su propia pantalla. */
+export interface ResumenUsuario {
+  nombre: string;
+  apellido: string;
+  nick: string | null;
+}
+
+/** Entrada del padrón público de personal, ya con el nombre unido. */
+export interface UsuarioPublico {
+  id: string;
+  name: string;
+  nick: string | null;
+  foto: string;
+  role: string;
+}
+
+/** Personal activo con su rol, tal como lo pinta el tablero del kiosko. */
+export interface PersonalActivo {
+  id: string;
+  nombre: string;
+  apellido: string;
+  nick: string | null;
+  foto: string | null;
+  rol: string | null;
+}

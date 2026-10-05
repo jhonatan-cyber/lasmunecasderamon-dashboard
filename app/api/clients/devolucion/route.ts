@@ -12,7 +12,9 @@ export const POST = withRoute(
     const montoNum = Number(monto);
 
     if (!cliente_id || !montoNum || montoNum <= 0) {
-      return ApiResponse.error(new Error('Datos de devolucion invalidos: cliente y monto requerido'));
+      return ApiResponse.error(
+        new Error('Datos de devolucion invalidos: cliente y monto requerido')
+      );
     }
 
     // Devolucion siempre por transferencia, no afecta caja

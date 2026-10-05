@@ -344,6 +344,19 @@ export async function getAttendanceHoy() {
   }
 }
 
+/**
+ * Marcas de un día, para el tablero del kiosko: sólo la hora de cada persona, que
+ * es lo que la pantalla necesita para marcar a quien ya asistió.
+ */
+export async function getMarcasDelDia(
+  fecha: string
+): Promise<{ usuario_id: string; hora: string }[]> {
+  return await query<{ usuario_id: string; hora: string }[]>(
+    'SELECT usuario_id, hora FROM asistencias WHERE fecha = ? AND estado = 1',
+    [fecha]
+  );
+}
+
 export async function getAttendanceByDates(userId: string, dates: string[]) {
   try {
     if (dates.length === 0) return [];

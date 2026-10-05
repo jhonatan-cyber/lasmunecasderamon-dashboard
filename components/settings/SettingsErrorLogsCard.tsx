@@ -10,7 +10,7 @@ import {
   Accordion,
   AccordionContent,
   AccordionItem,
-  AccordionTrigger,
+  AccordionTrigger
 } from '@/components/ui/accordion';
 import { cardClass } from '@/components/settings/constants';
 import type { ErrorLog } from '@/hooks/settings/useSettingsLogs';
@@ -40,7 +40,7 @@ export function SettingsErrorLogsCard({
   loading,
   formatDate,
   parseRequestBody,
-  getRangeLabel,
+  getRangeLabel
 }: SettingsErrorLogsCardProps) {
   return (
     <Card className={cardClass}>

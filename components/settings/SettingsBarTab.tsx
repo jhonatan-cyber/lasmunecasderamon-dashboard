@@ -5,7 +5,7 @@ import { Save, GlassWater, Wine, AlertTriangle } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { toast } from 'sonner';
 import logger from '@/lib/utils/logger';
-import { categoriaDeClave, defaultDeClave } from '@/lib/configuraciones/registroClaves';
+import { categoriaDeClave, defaultDeClave } from '@/modules/configuracion/contracts';
 import { refrescarConfiguraciones } from '@/hooks/shared/useConfigValue';
 
 // Defaults y categoría salen del registro de claves: la misma lista que valida el endpoint,

@@ -23,7 +23,12 @@ const RUTAS_SIN_SQL = [
   'app/api/sales',
   'app/api/servicios',
   'app/api/cuentas',
-  'app/api/anticipos'
+  'app/api/anticipos',
+  'app/api/users',
+  'app/api/roles',
+  'app/api/permissions',
+  'app/api/public',
+  'app/api/auth'
 ];
 
 /**
@@ -101,7 +106,7 @@ describe('guardas de los modulos ya extraidos de las rutas', () => {
   });
 
   it('los modulos con rutas migradas declaran su API como server-only', () => {
-    for (const modulo of ['ventas', 'operacion', 'personal']) {
+    for (const modulo of ['ventas', 'operacion', 'personal', 'identidad']) {
       const fuente = readFileSync(join(RAIZ, 'modules', modulo, 'index.ts'), 'utf8');
       expect(fuente, `modules/${modulo}/index.ts`).toContain("import 'server-only'");
     }

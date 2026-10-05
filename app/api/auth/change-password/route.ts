@@ -1,8 +1,6 @@
 import { NextResponse } from 'next/server';
 import { withRoute } from '@/lib/api/withRoute';
-import * as argon2 from 'argon2';
-import { query } from '@/lib/database/db';
-import { getNowInBusinessTimezone } from '@/lib/business/timezoneService';
+import { cambiarPassword } from '@/modules/identidad';
 import { changePasswordSchema } from '@/lib/validations/auth';
 
 export const POST = withRoute(
@@ -30,11 +28,7 @@ export const POST = withRoute(
         );
       }
 
-      const hashedPassword = await argon2.hash(password);
-      await query(
-        'UPDATE usuarios SET password = ?, force_password_change = 0, fecha_mod = ? WHERE id_usuario = ?',
-        [hashedPassword, getNowInBusinessTimezone(), userId]
-      );
+      await cambiarPassword(userId, password);
 
       return NextResponse.json({
         success: true,

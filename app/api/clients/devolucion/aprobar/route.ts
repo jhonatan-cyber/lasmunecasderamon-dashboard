@@ -16,13 +16,13 @@ export const POST = withRoute(
     }
 
     try {
-      const rows = await query<any[]>(
-        `SELECT * FROM solicitudes_devolucion_saldo WHERE id = ?`,
-        [String(solicitud_id)]
-      );
+      const rows = await query<any[]>(`SELECT * FROM solicitudes_devolucion_saldo WHERE id = ?`, [
+        String(solicitud_id)
+      ]);
       const sol = rows[0];
       if (!sol) return ApiResponse.error(new Error('Solicitud no encontrada'));
-      if (sol.estado !== 'pendiente') return ApiResponse.error(new Error(`Solicitud ya ${sol.estado}`));
+      if (sol.estado !== 'pendiente')
+        return ApiResponse.error(new Error(`Solicitud ya ${sol.estado}`));
 
       const now = getNowInBusinessTimezone();
       const adminId = String((user as any)?.id || (user as any)?.userId || '');

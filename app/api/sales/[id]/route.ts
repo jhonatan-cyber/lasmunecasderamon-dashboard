@@ -12,7 +12,8 @@ export const GET = withPublicRoute(
   }
 );
 
-export const PATCH = withRoute({ auth: true, audit: true, module: 'sales', action: 'write' },
+export const PATCH = withRoute(
+  { auth: true, audit: true, module: 'sales', action: 'write' },
   async (request: Request, { params, user }: { params: Promise<{ id: string }>; user: any }) => {
     const id = (await params).id;
     const body = await request.json();
@@ -28,12 +29,15 @@ export const PATCH = withRoute({ auth: true, audit: true, module: 'sales', actio
   }
 );
 
-export const DELETE = withRoute({ auth: true, audit: true, module: 'sales', action: 'delete' }, async () => {
-  return NextResponse.json(
-    {
-      success: false,
-      message: 'La eliminacion fisica de ventas esta deshabilitada. Use el flujo de anulacion.'
-    },
-    { status: 409 }
-  );
-});
+export const DELETE = withRoute(
+  { auth: true, audit: true, module: 'sales', action: 'delete' },
+  async () => {
+    return NextResponse.json(
+      {
+        success: false,
+        message: 'La eliminacion fisica de ventas esta deshabilitada. Use el flujo de anulacion.'
+      },
+      { status: 409 }
+    );
+  }
+);

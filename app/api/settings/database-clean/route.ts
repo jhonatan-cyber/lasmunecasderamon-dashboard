@@ -3,7 +3,8 @@ import { withRoute } from '@/lib/api/withRoute';
 import { cleanDatabase } from '@/lib/database/maintenance';
 import { logger } from '@/lib/utils/logger';
 
-export const POST = withRoute({ auth: true, audit: true, module: 'settings', action: 'write' },
+export const POST = withRoute(
+  { auth: true, audit: true, module: 'settings', action: 'write' },
   async () => {
     const { deletedTables, skippedTables } = await cleanDatabase();
 

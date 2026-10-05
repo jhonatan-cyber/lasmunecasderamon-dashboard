@@ -1,9 +1,9 @@
 import { NextResponse } from 'next/server';
 import { z } from 'zod';
 import { withRoute } from '@/lib/api/withRoute';
-import { query } from '@/lib/database/db';
 import { ValidationError } from '@/lib/errors/errors';
 import { issueChallenge } from '@/modules/asistencia';
+import { usuarioEstaActivo } from '@/modules/identidad';
 
 export const dynamic = 'force-dynamic';
 
@@ -21,11 +21,8 @@ export const POST = withRoute(
   async (request: Request, { user }: { params: any; user: { id: string } }) => {
     const { userId } = ChallengeSchema.parse(await request.json());
 
-    const usuarios = await query<any[]>(
-      'SELECT id_usuario FROM usuarios WHERE id_usuario = ? AND estado = 1',
-      [userId]
-    );
-    if (usuarios.length === 0) throw new ValidationError('Usuario no encontrado o inactivo');
+    if (!(await usuarioEstaActivo(userId)))
+      throw new ValidationError('Usuario no encontrado o inactivo');
 
     const desafio = await issueChallenge(userId, { kind: 'user', userId: String(user.id) });
 

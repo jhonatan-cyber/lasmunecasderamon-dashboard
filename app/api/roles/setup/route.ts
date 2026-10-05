@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
 import { withRoute } from '@/lib/api/withRoute';
-import { query } from '@/lib/database/db';
+import { contarRoles } from '@/modules/identidad';
 import { RoleService } from '@/lib/services/RoleService';
 import logger from '@/lib/utils/logger';
 
@@ -17,8 +17,7 @@ const DEFAULT_ROLES = [
  */
 export const POST = withRoute({ auth: true, access: 'administrator', audit: true }, async () => {
   try {
-    const existing = await query<any[]>(`SELECT COUNT(*)::int AS count FROM roles`);
-    const count = existing?.[0]?.count ?? 0;
+    const count = await contarRoles();
 
     if (count > 0) {
       return NextResponse.json({

@@ -25,7 +25,7 @@ export async function POST(request: NextRequest) {
       'source-file': cspReport['source-file'] || 'unknown',
       'line-number': cspReport['line-number'] || 'unknown',
       'column-number': cspReport['column-number'] || 'unknown',
-      'disposition': cspReport['disposition'] || 'unknown',
+      disposition: cspReport['disposition'] || 'unknown',
       'user-agent': request.headers.get('user-agent') || 'unknown'
     });
 

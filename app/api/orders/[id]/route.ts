@@ -3,7 +3,8 @@ import { withRoute } from '@/lib/api/withRoute';
 import { OrderService } from '@/lib/services/OrderService';
 import { ValidationError } from '@/lib/errors/errors';
 
-export const DELETE = withRoute({ auth: true, audit: true, module: 'orders', action: 'delete' },
+export const DELETE = withRoute(
+  { auth: true, audit: true, module: 'orders', action: 'delete' },
   async (_request: Request, { params }: { params: Promise<{ id: string }> }) => {
     const id = (await params).id;
     await OrderService.delete(id);
@@ -11,7 +12,8 @@ export const DELETE = withRoute({ auth: true, audit: true, module: 'orders', act
   }
 );
 
-export const PUT = withRoute({ auth: true, audit: true, module: 'orders', action: 'write' },
+export const PUT = withRoute(
+  { auth: true, audit: true, module: 'orders', action: 'write' },
   async (request: Request, { params }: { params: Promise<{ id: string }> }) => {
     const id = (await params).id;
     const { estado } = await request.json();

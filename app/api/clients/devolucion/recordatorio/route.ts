@@ -25,10 +25,16 @@ export const POST = withRoute(
 
       const saldoActual = Number((cliente as any).saldo || 0);
       if (montoNum > saldoActual) {
-        return ApiResponse.error(new Error(`Saldo insuficiente. Disponible: $${saldoActual.toLocaleString('es-CL')}`));
+        return ApiResponse.error(
+          new Error(`Saldo insuficiente. Disponible: $${saldoActual.toLocaleString('es-CL')}`)
+        );
       }
 
-      const solicitadoPor = (user as any)?.username || (user as any)?.nick || (user as any)?.name || String((user as any)?.id || 'cajero');
+      const solicitadoPor =
+        (user as any)?.username ||
+        (user as any)?.nick ||
+        (user as any)?.name ||
+        String((user as any)?.id || 'cajero');
       const clienteNombre = `${(cliente as any).name} ${(cliente as any).lastName}`.trim();
 
       // Guardar solicitud para que admin la vea en dashboard
@@ -38,7 +44,14 @@ export const POST = withRoute(
       try {
         await query(
           `INSERT INTO solicitudes_devolucion_saldo (id, cliente_id, monto, motivo, solicitado_por, estado, fecha_crea, metodo_pago) VALUES (?, ?, ?, ?, ?, 'pendiente', ?, 'transferencia')`,
-          [solicitudId, String(cliente_id), montoNum, motivo || 'Solicitud de devolucion', userId || null, now]
+          [
+            solicitudId,
+            String(cliente_id),
+            montoNum,
+            motivo || 'Solicitud de devolucion',
+            userId || null,
+            now
+          ]
         );
       } catch (dbErr) {
         // No bloquea el recordatorio si falla el insert (tabla puede no existir aun)

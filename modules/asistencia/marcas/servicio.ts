@@ -39,6 +39,11 @@ export async function listarAsistenciasPorFechas(usuarioId: string, fechas: stri
   return repositorio.getAttendanceByDates(usuarioId, fechas);
 }
 
+/** Marcas de un día: la hora de entrada de cada persona que ya asistió. */
+export async function listarMarcasDelDia(fecha: string) {
+  return repositorio.getMarcasDelDia(fecha);
+}
+
 /** Resumen del día para la vista general. */
 export async function listarAsistenciasDeHoy() {
   return repositorio.getAttendanceHoy();

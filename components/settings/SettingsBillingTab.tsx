@@ -13,7 +13,7 @@ import {
 import { toast } from 'sonner';
 import type { BillingConfig } from './settings-types';
 import logger from '@/lib/utils/logger';
-import { categoriaDeClave, defaultDeClave } from '@/lib/configuraciones/registroClaves';
+import { categoriaDeClave, defaultDeClave } from '@/modules/configuracion/contracts';
 import { refrescarConfiguraciones } from '@/hooks/shared/useConfigValue';
 
 // Defaults y categorías salen del registro de claves: el mismo que valida el endpoint, así

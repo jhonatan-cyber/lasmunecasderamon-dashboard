@@ -17,6 +17,7 @@ export {
   listarAsistenciasDeUsuario,
   listarAsistenciasPorFechas,
   listarAsistenciasDeHoy,
+  listarMarcasDelDia,
   registrarAsistenciaMasivaDeHoy,
   listarResumenAsistencias,
   registrarAsistenciaManual,
@@ -59,6 +60,8 @@ export {
 export { desenrolarUsuario } from './biometrico/unenrollmentService';
 export { descubrirIpDispositivo } from './biometrico/ipDiscovery';
 export { apagarListener, encenderListener } from './biometrico/eventListener';
+export { obtenerBytesDeFoto, setRecolector } from './biometrico/servicio';
+export type { RecolectorApagado, RecolectorEncendido } from './biometrico/servicio';
 export { obtenerEstadoBiometrico } from './biometrico/statusService';
 export { openVideoStream } from './biometrico/videoStream';
 export { pollEquipo, pollTodos, estaCorriendo } from './biometrico/recordPoller';
