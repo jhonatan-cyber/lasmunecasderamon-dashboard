@@ -6,9 +6,9 @@
  * (`PresentacionQueries`): este corte mueve código, no cambia comportamiento.
  */
 import { query, generateUUID, type TransactionQuery } from '@/lib/database/db';
-import { mapPresentacion } from '@/lib/repositories/inventory/inventoryHelpers';
+import { mapPresentacion } from '../helpers';
 import { ESTADO_UNIDAD_ACTIVA } from '../estados';
-import type { PresentacionRow } from '@/lib/repositories/inventory/inventoryTypes';
+import type { PresentacionRow } from '../tipos';
 import type { NuevaPresentacionInput, PresentacionCamposInput } from '../contracts';
 import { getNowInBusinessTimezone } from '@/lib/business/timezoneService';
 import { BaseRepository } from '@/lib/repositories/BaseRepository';

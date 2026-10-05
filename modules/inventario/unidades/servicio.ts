@@ -11,7 +11,7 @@
 import { withTransaction } from '@/lib/database/db';
 import { resolverTransaccion } from '@/lib/transaccion/infraestructura';
 import type { ContextoOperacion } from '@/lib/transaccion/contrato';
-import type { UnidadRow } from '@/lib/repositories/inventory/inventoryTypes';
+import type { UnidadRow } from '../tipos';
 import type { UnidadesGenerarInput } from '../contracts';
 import {
   cambiarEstadoUnidades as cambiarEstadoEnRepositorio,

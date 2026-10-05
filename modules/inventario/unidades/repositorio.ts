@@ -10,9 +10,9 @@
  * (`UnidadQueries`): este corte mueve código, no cambia comportamiento.
  */
 import { query, withTransaction, generateUUID, type TransactionQuery } from '@/lib/database/db';
-import { generarEan13Interno, mapUnidad } from '@/lib/repositories/inventory/inventoryHelpers';
+import { generarEan13Interno, mapUnidad } from '../helpers';
 import { ESTADO_UNIDAD_ACTIVA } from '../estados';
-import type { UnidadRow } from '@/lib/repositories/inventory/inventoryTypes';
+import type { UnidadRow } from '../tipos';
 import { BusinessError } from '@/lib/errors/errors';
 import { getNowInBusinessTimezone } from '@/lib/business/timezoneService';
 import { BaseRepository } from '@/lib/repositories/BaseRepository';

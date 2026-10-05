@@ -2,17 +2,17 @@
 
 Generado por `scripts/arquitectura/analisis.mjs`. No modificar a mano.
 
-| Métrica                                    | Valor  |
-| ------------------------------------------ | ------ |
-| Archivos analizados                        | 1530   |
-| Rutas HTTP                                 | 204    |
-| **Rutas con SQL directo**                  | **35** |
-| **Archivos con SQL fuera de repositorios** | **99** |
-| Tablas con más de un escritor              | 14     |
-| Ciclos entre dominios                      | 5      |
-| Procesos periódicos                        | 15     |
-| Puntos de caché                            | 19     |
-| Rutas sin `withRoute`                      | 19     |
+| Métrica                                    | Valor   |
+| ------------------------------------------ | ------- |
+| Archivos analizados                        | 1531    |
+| Rutas HTTP                                 | 204     |
+| **Rutas con SQL directo**                  | **35**  |
+| **Archivos con SQL fuera de repositorios** | **100** |
+| Tablas con más de un escritor              | 14      |
+| Ciclos entre dominios                      | 5       |
+| Procesos periódicos                        | 15      |
+| Puntos de caché                            | 19      |
+| Rutas sin `withRoute`                      | 19      |
 
 ## 1. SQL fuera de repositorios
 
@@ -22,7 +22,7 @@ controladores HTTP traducen. Esto es lo que hay que reducir a cero.
 | Capa             | Archivos con SQL |
 | ---------------- | ---------------- |
 | scripts          | 11               |
-| raiz             | 26               |
+| raiz             | 27               |
 | lib/services     | 8                |
 | lib/otros        | 5                |
 | lib/integrations | 2                |
@@ -46,8 +46,6 @@ controladores HTTP traducen. Esto es lo que hay que reducir a cero.
 | scripts/test-whatsapp.ts                               | scripts          | —                                                                                           |
 | scripts/verify-migrations.mjs                          | scripts          | —                                                                                           |
 | scripts/verify-schema-parity.mjs                       | scripts          | —                                                                                           |
-| modules/inventario/compras/servicio.ts                 | raiz             | —                                                                                           |
-| modules/inventario/productos/servicio.ts               | raiz             | —                                                                                           |
 | modules/asistencia/biometrico/avisosAudio.ts           | raiz             | —                                                                                           |
 | modules/asistencia/biometrico/clockSync.ts             | raiz             | —                                                                                           |
 | modules/asistencia/biometrico/deviceAuth.ts            | raiz             | biometric_devices                                                                           |
@@ -67,8 +65,11 @@ controladores HTTP traducen. Esto es lo que hay que reducir a cero.
 | modules/asistencia/kioskos/deviceAuth.ts               | raiz             | kiosk_devices                                                                               |
 | modules/inventario/anulaciones/servicio.ts             | raiz             | —                                                                                           |
 | modules/inventario/bar/configuracion.ts                | raiz             | —                                                                                           |
+| modules/inventario/compras/servicio.ts                 | raiz             | —                                                                                           |
 | modules/inventario/envases/servicio.ts                 | raiz             | —                                                                                           |
 | modules/inventario/presentaciones/servicio.ts          | raiz             | —                                                                                           |
+| modules/inventario/productos/servicio.ts               | raiz             | —                                                                                           |
+| modules/inventario/tipos.ts                            | raiz             | —                                                                                           |
 | modules/inventario/transferencias/servicio.ts          | raiz             | —                                                                                           |
 | modules/inventario/unidades/servicio.ts                | raiz             | —                                                                                           |
 | proxy.ts                                               | raiz             | —                                                                                           |
@@ -174,8 +175,6 @@ propietario.
 
 | Archivo con withTransaction                            | Capa             |
 | ------------------------------------------------------ | ---------------- |
-| modules/inventario/compras/servicio.ts                 | raiz             |
-| modules/inventario/productos/servicio.ts               | raiz             |
 | app/api/cron/check-timers/route.ts                     | app/api          |
 | app/api/roles/[id]/permissions/route.ts                | app/api          |
 | lib/database/maintenance.ts                            | lib/database     |
@@ -200,8 +199,10 @@ propietario.
 | modules/asistencia/kioskos/deviceAuth.ts               | raiz             |
 | modules/asistencia/marcas/repositorio.ts               | raiz             |
 | modules/inventario/anulaciones/servicio.ts             | raiz             |
+| modules/inventario/compras/servicio.ts                 | raiz             |
 | modules/inventario/envases/servicio.ts                 | raiz             |
 | modules/inventario/presentaciones/servicio.ts          | raiz             |
+| modules/inventario/productos/servicio.ts               | raiz             |
 | modules/inventario/transferencias/servicio.ts          | raiz             |
 | modules/inventario/unidades/servicio.ts                | raiz             |
 | modules/personal/anticipos/repositorio.ts              | raiz             |

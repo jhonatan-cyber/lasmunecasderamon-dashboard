@@ -2,9 +2,9 @@
  * Contratos del módulo de inventario — §5: «DTO y esquemas aptos para consumidores».
  *
  * Aquí vive lo que el módulo comparte con quien está fuera: la UI de Bar y el
- * escáner de envases consumen estos tipos directamente, y la capa heredada
- * (`lib/repositories/inventory/`) los reexporta mientras dure la transición.
- * Ninguna fila SQL, tipo del driver ni implementación cruza este archivo.
+ * escáner de envases consumen estos tipos directamente. Con la fase 4 cerrada,
+ * `lib/repositories/inventory/` ya no existe y este archivo es la única fuente
+ * de los DTO. Ninguna fila SQL, tipo del driver ni implementación lo cruza.
  */
 
 import type { SaleOption } from '@/types/sale-options';

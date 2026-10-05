@@ -10,11 +10,7 @@
  */
 import { query, generateUUID, type TransactionQuery } from '@/lib/database/db';
 import { getTopeSimple } from '../bar/configuracion';
-import {
-  completarOpciones,
-  parseOpcionesVenta,
-  resolverBotella
-} from '@/lib/repositories/inventory/inventoryHelpers';
+import { completarOpciones, parseOpcionesVenta, resolverBotella } from '../helpers';
 import { ESTADO_UNIDAD_ACTIVA } from '../estados';
 import { BusinessError, NotFoundError } from '@/lib/errors/errors';
 import { getNowInBusinessTimezone } from '@/lib/business/timezoneService';

@@ -6,7 +6,7 @@
  */
 import { query } from '@/lib/database/db';
 import { getTopeSimple } from '../bar/configuracion';
-import { completarOpciones } from '@/lib/repositories/inventory/inventoryHelpers';
+import { completarOpciones } from '../helpers';
 
 export async function listarMovimientos(presentacionId: string, limit = 20): Promise<any[]> {
   return await query<any[]>(

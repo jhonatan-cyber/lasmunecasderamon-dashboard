@@ -5,7 +5,7 @@
  */
 import { query } from '@/lib/database/db';
 import { getTopeSimple } from '../bar/configuracion';
-import { completarOpciones } from '@/lib/repositories/inventory/inventoryHelpers';
+import { completarOpciones } from '../helpers';
 import { ESTADO_UNIDAD_ACTIVA } from '../estados';
 
 export interface FiltrosParaVenta {

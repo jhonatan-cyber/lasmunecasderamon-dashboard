@@ -11,7 +11,7 @@
 import { query, withTransaction } from '@/lib/database/db';
 import { resolverTransaccion } from '@/lib/transaccion/infraestructura';
 import type { ContextoOperacion } from '@/lib/transaccion/contrato';
-import type { PresentacionRow } from '@/lib/repositories/inventory/inventoryTypes';
+import type { PresentacionRow } from '../tipos';
 import type { NuevaPresentacionInput, PresentacionCamposInput } from '../contracts';
 import {
   actualizarFotoPresentacion as actualizarFotoEnRepositorio,

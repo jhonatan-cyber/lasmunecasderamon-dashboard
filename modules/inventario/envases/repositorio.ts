@@ -9,12 +9,9 @@
  * (`EnvaseQueries`): este corte mueve código, no cambia reglas.
  */
 import { query, type TransactionQuery } from '@/lib/database/db';
-import {
-  fechaDevolucionLegible,
-  mapearEnvase
-} from '@/lib/repositories/inventory/inventoryHelpers';
+import { fechaDevolucionLegible, mapearEnvase } from '../helpers';
 import { ESTADO_UNIDAD_VENDIDA } from '../estados';
-import type { EnvaseFila } from '@/lib/repositories/inventory/inventoryTypes';
+import type { EnvaseFila } from '../tipos';
 import type {
   DevolucionEnvaseRegistro,
   DevolucionEnvaseResultado,

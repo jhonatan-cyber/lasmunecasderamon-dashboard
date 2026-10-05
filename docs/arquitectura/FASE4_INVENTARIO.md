@@ -452,14 +452,60 @@ stock: es una consulta de inventario porque la tabla es de inventario.
   `TEST_PASSWORD`), con la aplicación de producción servida por el propio
   `webServer` de Playwright.
 
+## Corte 10: blindaje del módulo y fin de la capa heredada de inventario
+
+**Por qué.** La dependencia que más fácil se reintroduce sin que nadie lo note
+es volver a leer inventario desde la capa heredada. `arquitectura:limites` mide
+las reglas del plan, pero ésa era tolerable durante la transición (el módulo
+tomaba los helpers puros de `inventoryHelpers`), así que quedó fuera de la
+puerta.
+
+**La guarda lo encontró el primer día.** Al escribir
+`tests/unit/scripts/modulo-inventario-guardas.test.ts` falló de inmediato:
+**seis repositorios del módulo** importaban `inventoryTypes`, es decir, para
+leer los tipos de su propio SQL entraban a `lib/repositories/inventory/`. No se
+relajó la guarda: se corrigió la causa.
+
+**Qué se mudó**
+
+- `inventoryTypes.ts` → `modules/inventario/tipos.ts`. Lo consumían sólo esos
+  seis archivos del módulo; nadie fuera lo usaba.
+- `inventoryHelpers.ts` → `modules/inventario/helpers.ts`. Lo consumían los
+  siete repositorios del módulo y dos pruebas, nada más.
+
+Con los dos mudados, **`lib/repositories/inventory/` desaparece**: era el último
+resto de la capa heredada de inventario, y ahora ni existe el directorio.
+
+**Las cuatro guardas** (`tests/unit/scripts/modulo-inventario-guardas.test.ts`):
+
+| Guarda | Qué falla                                                                                    |
+| ------ | -------------------------------------------------------------------------------------------- |
+| A      | Un archivo de `modules/inventario/**` lee SQL o tipos de fila heredados                      |
+| B      | Alguien fuera del módulo vuelve a usar `InventoryRepository` o `inventoryTypes`              |
+| C      | La UI (fuera de `app/api`) importa el módulo por su API de servidor en vez de `contracts.ts` |
+| D      | Vuelve a existir `lib/repositories/inventory/`                                               |
+
+A, B y D detectan la arista como esté escrita — alias, ruta relativa o import
+dinámico — porque comparan el final de la ruta, no la forma del import.
+
+## Verificación del corte 10
+
+- `pnpm typecheck`: aprobado (0 errores).
+- `pnpm lint:full`: 0 errores; 1 warning preexistente (`instrumentation.ts`).
+- `pnpm test:unit --maxWorkers=2`: **1727 aprobadas, 2 omitidas** (181
+  archivos); las 4 guardas nuevas incluidas.
+- `pnpm test:postgres`: **161 aprobadas en 16 archivos**.
+- `pnpm arquitectura:limites`: **23 hallazgos / 23 excepciones**, sin obsoletas.
+- `pnpm arquitectura` y `pnpm build`: regenerados con el árbol de este corte.
+
 ## Siguientes cortes1. Cerrar la fase 4 queda pendiente de migrar la transacción de ventas al
 
 contexto opaco, que es lo que retira la última excepción del puente. Todo lo
 demás de la fase está en el módulo: consumo, reversión, transferencias, envases,
-presentaciones, unidades, lecturas, productos y compras. 2. Decidir el destino
-de los dos archivos restantes de la capa heredada (`inventoryHelpers.ts` e
-`inventoryTypes.ts`): moverlos dentro del módulo o declararlos utils compartidos
-con una nota en `MODULOS_Y_DATOS.md`. 3. Actualizar el censo de propietarios
-tras cada corte; no cerrar la fase hasta que las escrituras de inventario pasen
-por el módulo y los flujos de compras, transferencias, shots y envases estén
-cubiertos.
+presentaciones, unidades, lecturas, productos y compras.2.
+`lib/repositories/inventory/` ya no existe (corte 10), así que no queda decidir
+su destino. Lo que sigue para la fase 7 es vaciar el resto de la capa heredada y
+convertir las 23 excepciones transitorias en reglas obligatorias. 3. Actualizar
+el censo de propietarios tras cada corte; no cerrar la fase hasta que las
+escrituras de inventario pasen por el módulo y los flujos de compras,
+transferencias, shots y envases estén cubiertos.

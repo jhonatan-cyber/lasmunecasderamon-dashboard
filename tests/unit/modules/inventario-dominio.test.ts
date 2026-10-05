@@ -1,8 +1,5 @@
 import { describe, it, expect, vi } from 'vitest';
-import {
-  ean13CheckDigit,
-  generarEan13Interno
-} from '@/lib/repositories/inventory/inventoryHelpers';
+import { ean13CheckDigit, generarEan13Interno } from '@/modules/inventario/helpers';
 import { query, withTransaction } from '@/lib/database/db';
 import { sendNotificationToAll } from '@/lib/api/sseService';
 import {

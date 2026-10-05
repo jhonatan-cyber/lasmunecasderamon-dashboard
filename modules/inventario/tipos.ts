@@ -1,13 +1,18 @@
 /**
- * Tipos del inventario. Sólo declaraciones: si algún día aparece lógica aquí, va a
- * `inventoryHelpers.ts` (puro) o a `modules/inventario/bar/configuracion.ts` (configuración).
+ * Tipos de fila del inventario. Sólo declaraciones: si algún día aparece lógica
+ * aquí, va a `modules/inventario/bar/configuracion.ts` (configuración) o a los
+ * helpers puros compartidos.
+ *
+ * Este archivo era `lib/repositories/inventory/inventoryTypes.ts` y lo consumían
+ * seis repositorios del propio módulo, que para leer los tipos de su SQL
+ * entraban a la capa heredada. Como nadie fuera del módulo lo usaba, se mudó
+ * completo: la última tabla de tipos del inventario ya está junto a su dueño.
  */
 import { type TransactionQuery, type query } from '@/lib/database/db';
 import type { SaleOption } from '@/types/sale-options';
-// Los DTO que la UI consume viven en el módulo propietario (Fase 4). Este archivo
-// sólo los reexporta mientras la fachada heredada siga en uso: definirlos acá
-// duplicaría el contrato y la excepción de UI no podría eliminarse.
-import type { DevolucionEnvaseUnidad } from '@/modules/inventario/contracts';
+// Los DTO que la UI consume se reexportan desde contracts.ts para que los
+// repositorios del módulo tengan una sola fuente de verdad.
+import type { DevolucionEnvaseUnidad } from './contracts';
 export type {
   DevolucionEnvaseMotivo,
   DevolucionEnvaseRegistro,
@@ -15,7 +20,7 @@ export type {
   DevolucionEnvaseUnidad,
   ShotAlert,
   ShotsSummary
-} from '@/modules/inventario/contracts';
+} from './contracts';
 /** Cualquier cosa que sepa ejecutar SQL: la conexión libre o una transacción. */
 export type Queryable = TransactionQuery | typeof query;
 

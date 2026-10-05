@@ -1,6 +1,6 @@
 /**
  * Funciones puras del inventario: leer y componer opciones de venta, mapear filas crudas
- * a los tipos de `inventoryTypes.ts` y generar códigos EAN internos. Sin SQL ni red, así
+ * a los tipos de `./tipos.ts` y generar códigos EAN internos. Sin SQL ni red, así
  * que se comparten por igual entre los módulos de dominio.
  *
  * Los estados de unidad viven en el módulo inventario
@@ -8,12 +8,7 @@
  */
 import type { SaleOption } from '@/types/sale-options';
 import { randomInt } from 'crypto';
-import type {
-  DevolucionEnvaseUnidad,
-  NivelPrecio,
-  PresentacionRow,
-  UnidadRow
-} from './inventoryTypes';
+import type { DevolucionEnvaseUnidad, NivelPrecio, PresentacionRow, UnidadRow } from './tipos';
 
 export function parseOpcionesVenta(
   raw: unknown,

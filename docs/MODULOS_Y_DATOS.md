@@ -85,16 +85,19 @@ todavía no es dueño de su propia tabla.**
 | `asistencias`                    | `PayrollRepository`, `auth/AuthQueries`                                                                                                                                                                                         | personal, asistencia        |
 
 Nota sobre `inventario_unidades`: con las transferencias (corte 2), los envases
-(corte 3), las unidades de catálogo (corte 4), las lecturas (corte 5) y la
-reversión por anulación (corte 8) migrados en la fase 4, los cinco escritores
-son repositorios de `modules/inventario` y `lib/repositories/inventory/` ya no
-contiene SQL: sólo quedan `inventoryHelpers.ts` (opciones de venta, mapeos y
-EAN-13) e `inventoryTypes.ts` como helpers y tipos puros. Las constantes de
-estado de unidad son ya vocabulario del módulo
+(corte 3), las unidades de catálogo (corte 4), las lecturas (corte 5), la
+reversión por anulación (corte 8) y productos y compras (corte 9) migrados en la
+fase 4, los cinco escritores son repositorios de `modules/inventario`. Con el
+corte 10 **la capa heredada de inventario desapareció**: `inventoryTypes.ts` y
+`inventoryHelpers.ts` se mudaron a `modules/inventario/tipos.ts` y
+`modules/inventario/helpers.ts`, y `lib/repositories/inventory/` ya no existe.
+Las constantes de estado de unidad son vocabulario del módulo
 (`modules/inventario/estados.ts`), igual que `ResumenEnvases` y el resto de los
-DTO en `contracts.ts`. La propiedad que el plan pedía está alcanzada para
-inventario; productos y compras siguen en la capa heredada aunque escriban
-inventario a través del módulo.
+DTO en `contracts.ts`. Cuatro guardas en
+`tests/unit/scripts/modulo-inventario-guardas.test.ts` impiden que la
+dependencia vuelva: el módulo no lee la capa heredada, nadie fuera vuelve a usar
+`InventoryRepository`, la UI no importa la API de servidor y el directorio
+eliminado no reaparece.
 
 Nota sobre `detalle_propinas`, `detalle_comisiones` y sus cabeceras: la
 propiedad quedó decidida (D5 resuelta — §8 de

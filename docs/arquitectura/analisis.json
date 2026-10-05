@@ -1,10 +1,10 @@
 {
   "resumen": {
-    "commit": "25b9c14bb89f02709ae6834fd169c9c74ad16b7d",
-    "generado": "2026-10-05T04:25:59.427Z",
-    "archivos": 1530,
+    "commit": "fe00f1d81efee7206c6fa3339a01115bad026839",
+    "generado": "2026-10-05T04:44:49.890Z",
+    "archivos": 1531,
     "rutas": 204,
-    "sqlFueraDeRepositorio": 99,
+    "sqlFueraDeRepositorio": 100,
     "tablasConEscritoresMultiples": 14,
     "ciclos": 5,
     "procesosPeriodicos": 15,
@@ -1918,18 +1918,6 @@
       "escribe": []
     },
     {
-      "archivo": "modules/inventario/compras/servicio.ts",
-      "capa": "raiz",
-      "modulo": "inventario",
-      "escribe": []
-    },
-    {
-      "archivo": "modules/inventario/productos/servicio.ts",
-      "capa": "raiz",
-      "modulo": "inventario",
-      "escribe": []
-    },
-    {
       "archivo": "modules/asistencia/biometrico/avisosAudio.ts",
       "capa": "raiz",
       "modulo": null,
@@ -2044,6 +2032,12 @@
       "escribe": []
     },
     {
+      "archivo": "modules/inventario/compras/servicio.ts",
+      "capa": "raiz",
+      "modulo": "inventario",
+      "escribe": []
+    },
+    {
       "archivo": "modules/inventario/envases/servicio.ts",
       "capa": "raiz",
       "modulo": "inventario",
@@ -2051,6 +2045,18 @@
     },
     {
       "archivo": "modules/inventario/presentaciones/servicio.ts",
+      "capa": "raiz",
+      "modulo": "inventario",
+      "escribe": []
+    },
+    {
+      "archivo": "modules/inventario/productos/servicio.ts",
+      "capa": "raiz",
+      "modulo": "inventario",
+      "escribe": []
+    },
+    {
+      "archivo": "modules/inventario/tipos.ts",
       "capa": "raiz",
       "modulo": "inventario",
       "escribe": []
@@ -2586,16 +2592,6 @@
   ],
   "transacciones": [
     {
-      "archivo": "modules/inventario/compras/servicio.ts",
-      "capa": "raiz",
-      "modulo": "inventario"
-    },
-    {
-      "archivo": "modules/inventario/productos/servicio.ts",
-      "capa": "raiz",
-      "modulo": "inventario"
-    },
-    {
       "archivo": "app/api/cron/check-timers/route.ts",
       "capa": "app/api",
       "modulo": null
@@ -2716,12 +2712,22 @@
       "modulo": "inventario"
     },
     {
+      "archivo": "modules/inventario/compras/servicio.ts",
+      "capa": "raiz",
+      "modulo": "inventario"
+    },
+    {
       "archivo": "modules/inventario/envases/servicio.ts",
       "capa": "raiz",
       "modulo": "inventario"
     },
     {
       "archivo": "modules/inventario/presentaciones/servicio.ts",
+      "capa": "raiz",
+      "modulo": "inventario"
+    },
+    {
+      "archivo": "modules/inventario/productos/servicio.ts",
       "capa": "raiz",
       "modulo": "inventario"
     },
