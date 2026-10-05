@@ -2,17 +2,6 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { ProductService } from '@/lib/services/ProductService';
 import { ConflictError } from '@/lib/errors/errors';
 
-vi.mock('@/lib/repositories/ProductRepository', () => ({
-  ProductRepository: {
-    getByCodeOrName: vi.fn(),
-    getById: vi.fn(),
-    create: vi.fn(),
-    update: vi.fn(),
-    getChampagneTiers: vi.fn().mockResolvedValue([]),
-    saveChampagneTiers: vi.fn().mockResolvedValue(undefined)
-  }
-}));
-
 vi.mock('@/modules/inventario', () => ({
   traspasarAlBar: vi.fn().mockResolvedValue({ trasladadas: 3, stock_bar: 8 }),
   aceptarTransferencia: vi.fn().mockResolvedValue(undefined),
@@ -36,14 +25,19 @@ vi.mock('@/modules/inventario', () => ({
   obtenerResumenShots: vi.fn(),
   listarParaVenta: vi.fn().mockResolvedValue([]),
   listarMovimientos: vi.fn().mockResolvedValue([]),
-  listarMovimientosRecientes: vi.fn().mockResolvedValue([])
+  listarMovimientosRecientes: vi.fn().mockResolvedValue([]),
+  obtenerProductoPorCodigoONombre: vi.fn(),
+  obtenerProductoPorId: vi.fn(),
+  crearProducto: vi.fn(),
+  actualizarProducto: vi.fn(),
+  obtenerNivelesChampagne: vi.fn().mockResolvedValue([]),
+  guardarNivelesChampagne: vi.fn().mockResolvedValue(undefined)
 }));
 
 vi.mock('@/lib/utils/logger', () => ({
   logger: { debug: vi.fn(), info: vi.fn(), warn: vi.fn(), error: vi.fn() }
 }));
 
-import { ProductRepository } from '@/lib/repositories/ProductRepository';
 import {
   aceptarTransferencia,
   actualizarPresentacion,
@@ -52,7 +46,13 @@ import {
   listarPresentaciones,
   rechazarTransferencia,
   registrarUnidades,
-  traspasarAlBar
+  traspasarAlBar,
+  obtenerNivelesChampagne,
+  obtenerProductoPorCodigoONombre,
+  obtenerProductoPorId,
+  guardarNivelesChampagne,
+  crearProducto,
+  actualizarProducto
 } from '@/modules/inventario';
 
 const validProduct = {
@@ -70,7 +70,7 @@ beforeEach(() => {
 
 describe('ProductService.createProduct', () => {
   it('lanza ConflictError si ya existe un producto con el mismo código/nombre', async () => {
-    vi.mocked(ProductRepository.getByCodeOrName).mockResolvedValue({ id: 'existing-1' } as any);
+    vi.mocked(obtenerProductoPorCodigoONombre).mockResolvedValue({ id: 'existing-1' } as any);
 
     await expect(ProductService.createProduct(validProduct)).rejects.toThrow(ConflictError);
     await expect(ProductService.createProduct(validProduct)).rejects.toThrow(
@@ -79,33 +79,31 @@ describe('ProductService.createProduct', () => {
   });
 
   it('crea el producto si no existe duplicado', async () => {
-    vi.mocked(ProductRepository.getByCodeOrName).mockResolvedValue(null);
-    vi.mocked(ProductRepository.create).mockResolvedValue({ id: 'new-1', ...validProduct } as any);
+    vi.mocked(obtenerProductoPorCodigoONombre).mockResolvedValue(null);
+    vi.mocked(crearProducto).mockResolvedValue({ id: 'new-1', ...validProduct } as any);
 
     const result = await ProductService.createProduct(validProduct, 'foto.jpg');
 
-    expect(ProductRepository.create).toHaveBeenCalledWith(
+    expect(crearProducto).toHaveBeenCalledWith(
       expect.objectContaining({ code: 'PROD-001', name: 'Whisky Premium' }),
       'foto.jpg',
-      { presentaciones: [] }
+      []
     );
     expect(result).toMatchObject({ id: 'new-1' });
   });
 
   it('usa default.png si no se pasa fotoName', async () => {
-    vi.mocked(ProductRepository.getByCodeOrName).mockResolvedValue(null);
-    vi.mocked(ProductRepository.create).mockResolvedValue({ id: 'new-1' } as any);
+    vi.mocked(obtenerProductoPorCodigoONombre).mockResolvedValue(null);
+    vi.mocked(crearProducto).mockResolvedValue({ id: 'new-1' } as any);
 
     await ProductService.createProduct(validProduct);
 
-    expect(ProductRepository.create).toHaveBeenCalledWith(expect.anything(), 'default.png', {
-      presentaciones: []
-    });
+    expect(crearProducto).toHaveBeenCalledWith(expect.anything(), 'default.png', []);
   });
 
   it('normaliza category_id desde categoryId', async () => {
-    vi.mocked(ProductRepository.getByCodeOrName).mockResolvedValue(null);
-    vi.mocked(ProductRepository.create).mockResolvedValue({ id: 'new-1' } as any);
+    vi.mocked(obtenerProductoPorCodigoONombre).mockResolvedValue(null);
+    vi.mocked(crearProducto).mockResolvedValue({ id: 'new-1' } as any);
 
     const bodyWithCategoryId = {
       ...validProduct,
@@ -114,7 +112,7 @@ describe('ProductService.createProduct', () => {
     };
     await ProductService.createProduct(bodyWithCategoryId);
 
-    expect(ProductRepository.getByCodeOrName).toHaveBeenCalledWith(
+    expect(obtenerProductoPorCodigoONombre).toHaveBeenCalledWith(
       'PROD-001',
       'Whisky Premium',
       'cat-2'
@@ -122,8 +120,8 @@ describe('ProductService.createProduct', () => {
   });
 
   it('pasa presentaciones con stock por fila al repositorio', async () => {
-    vi.mocked(ProductRepository.getByCodeOrName).mockResolvedValue(null);
-    vi.mocked(ProductRepository.create).mockResolvedValue({ id: 'new-1' } as any);
+    vi.mocked(obtenerProductoPorCodigoONombre).mockResolvedValue(null);
+    vi.mocked(crearProducto).mockResolvedValue({ id: 'new-1' } as any);
 
     await ProductService.createProduct({
       ...validProduct,
@@ -133,28 +131,26 @@ describe('ProductService.createProduct', () => {
       ]
     } as any);
 
-    expect(ProductRepository.create).toHaveBeenCalledWith(expect.anything(), 'default.png', {
-      presentaciones: [
-        {
-          nombre: '500 ml',
-          codigo_barras: '7801111111111',
-          precio_compra: 5000,
-          foto: null,
-          cantidad: 3
-        },
-        {
-          nombre: '750 ml',
-          codigo_barras: '7801234567890',
-          precio_compra: 8000,
-          foto: null,
-          cantidad: 2
-        }
-      ]
-    });
+    expect(crearProducto).toHaveBeenCalledWith(expect.anything(), 'default.png', [
+      {
+        nombre: '500 ml',
+        codigo_barras: '7801111111111',
+        precio_compra: 5000,
+        foto: null,
+        cantidad: 3
+      },
+      {
+        nombre: '750 ml',
+        codigo_barras: '7801234567890',
+        precio_compra: 8000,
+        foto: null,
+        cantidad: 2
+      }
+    ]);
   });
 
   it('rechaza códigos de barras duplicados en la misma carga', async () => {
-    vi.mocked(ProductRepository.getByCodeOrName).mockResolvedValue(null);
+    vi.mocked(obtenerProductoPorCodigoONombre).mockResolvedValue(null);
 
     await expect(
       ProductService.createProduct({
@@ -166,11 +162,11 @@ describe('ProductService.createProduct', () => {
       } as any)
     ).rejects.toThrow('duplicado');
 
-    expect(ProductRepository.create).not.toHaveBeenCalled();
+    expect(crearProducto).not.toHaveBeenCalled();
   });
 
   it('rechaza un código de barras ya registrado en otro producto', async () => {
-    vi.mocked(ProductRepository.getByCodeOrName).mockResolvedValue(null);
+    vi.mocked(obtenerProductoPorCodigoONombre).mockResolvedValue(null);
     vi.mocked(buscarPresentacionPorCodigo).mockResolvedValue({
       id: 'pres-1',
       producto_id: 'otro-producto',
@@ -190,13 +186,13 @@ describe('ProductService.createProduct', () => {
       } as any)
     ).rejects.toThrow('ya está registrado en otro producto');
 
-    expect(ProductRepository.create).not.toHaveBeenCalled();
+    expect(crearProducto).not.toHaveBeenCalled();
   });
 
   it('permite conservar el código al editar la misma presentación', async () => {
-    vi.mocked(ProductRepository.getById).mockResolvedValue({ id: 'prod-1' } as any);
-    vi.mocked(ProductRepository.getByCodeOrName).mockResolvedValue(null);
-    vi.mocked(ProductRepository.update).mockResolvedValue({ id: 'prod-1' } as any);
+    vi.mocked(obtenerProductoPorId).mockResolvedValue({ id: 'prod-1' } as any);
+    vi.mocked(obtenerProductoPorCodigoONombre).mockResolvedValue(null);
+    vi.mocked(actualizarProducto).mockResolvedValue({ id: 'prod-1' } as any);
     vi.mocked(buscarPresentacionPorCodigo).mockResolvedValue({
       id: 'pres-1',
       producto_id: 'prod-1',
@@ -256,13 +252,13 @@ describe('ProductService.createProduct', () => {
 describe('ProductService champagne tiers', () => {
   it('devuelve los tramos guardados', async () => {
     const rows = [{ anfitrionas: 2, precio: 120000, comision: 40000 }];
-    vi.mocked(ProductRepository.getChampagneTiers).mockResolvedValue(rows as any);
+    vi.mocked(obtenerNivelesChampagne).mockResolvedValue(rows as any);
 
     await expect(ProductService.getChampagneTiers('prod-1')).resolves.toEqual(rows);
   });
 
   it('usa los valores por defecto si no hay tramos', async () => {
-    vi.mocked(ProductRepository.getChampagneTiers).mockResolvedValue([]);
+    vi.mocked(obtenerNivelesChampagne).mockResolvedValue([]);
 
     const tiers = await ProductService.getChampagneTiers('prod-1');
 
@@ -271,14 +267,14 @@ describe('ProductService champagne tiers', () => {
   });
 
   it('guarda tramos válidos y rechaza duplicados', async () => {
-    vi.mocked(ProductRepository.saveChampagneTiers).mockResolvedValue(undefined);
+    vi.mocked(guardarNivelesChampagne).mockResolvedValue(undefined);
 
     await ProductService.saveChampagneTiers('prod-1', [
       { anfitrionas: 1, precio: 120000, comision: 40000 },
       { anfitrionas: 2, precio: 120000, comision: 40000 }
     ]);
 
-    expect(ProductRepository.saveChampagneTiers).toHaveBeenCalledWith('prod-1', [
+    expect(guardarNivelesChampagne).toHaveBeenCalledWith('prod-1', [
       { anfitrionas: 1, precio: 120000, comision: 40000 },
       { anfitrionas: 2, precio: 120000, comision: 40000 }
     ]);
@@ -294,7 +290,7 @@ describe('ProductService champagne tiers', () => {
 
 describe('ProductService.addUnits', () => {
   it('genera códigos vinculados a la presentación', async () => {
-    vi.mocked(ProductRepository.getById).mockResolvedValue({ id: 'prod-1' } as any);
+    vi.mocked(obtenerProductoPorId).mockResolvedValue({ id: 'prod-1' } as any);
     vi.mocked(listarPresentaciones).mockResolvedValue([
       {
         id: 'pres-1',
@@ -335,7 +331,7 @@ describe('ProductService.addUnits', () => {
   });
 
   it('rechaza una presentación de otro producto', async () => {
-    vi.mocked(ProductRepository.getById).mockResolvedValue({ id: 'prod-1' } as any);
+    vi.mocked(obtenerProductoPorId).mockResolvedValue({ id: 'prod-1' } as any);
     vi.mocked(listarPresentaciones).mockResolvedValue([]);
 
     await expect(ProductService.addUnits('prod-1', 'pres-ajena', 3)).rejects.toThrow(
@@ -354,7 +350,7 @@ describe('ProductService.addUnits', () => {
 
 describe('ProductService.setUnitsEstado', () => {
   it('desactiva los códigos seleccionados', async () => {
-    vi.mocked(ProductRepository.getById).mockResolvedValue({ id: 'prod-1' } as any);
+    vi.mocked(obtenerProductoPorId).mockResolvedValue({ id: 'prod-1' } as any);
 
     const total = await ProductService.setUnitsEstado('prod-1', ['u-1', 'u-2'], 'inactivo');
 
@@ -375,7 +371,7 @@ describe('ProductService.setUnitsEstado', () => {
 
 describe('ProductService.traspasarAlBar', () => {
   it('guarda botella y shot con importes independientes y comisión opcional', async () => {
-    vi.mocked(ProductRepository.getById).mockResolvedValue({ id: 'prod-1' } as any);
+    vi.mocked(obtenerProductoPorId).mockResolvedValue({ id: 'prod-1' } as any);
     vi.mocked(listarPresentaciones).mockResolvedValue([{ id: 'pres-1' }] as any);
     await ProductService.traspasarAlBar('prod-1', 'pres-1', 2, undefined, undefined, 'user-1', [
       { tipo: 'botella', precio: 25000, comision: 1500 },
@@ -395,7 +391,7 @@ describe('ProductService.traspasarAlBar', () => {
   });
 
   it('permite solo shot sin reutilizar su precio como precio de botella', async () => {
-    vi.mocked(ProductRepository.getById).mockResolvedValue({ id: 'prod-1' } as any);
+    vi.mocked(obtenerProductoPorId).mockResolvedValue({ id: 'prod-1' } as any);
     vi.mocked(listarPresentaciones).mockResolvedValue([{ id: 'pres-1' }] as any);
     await ProductService.traspasarAlBar('prod-1', 'pres-1', 1, undefined, undefined, 'user-1', [
       { tipo: 'shot', precio: 2000 }
@@ -441,7 +437,7 @@ describe('ProductService.traspasarAlBar', () => {
   ];
 
   it('traspasa con precio y comisión válidos', async () => {
-    vi.mocked(ProductRepository.getById).mockResolvedValue({ id: 'prod-1' } as any);
+    vi.mocked(obtenerProductoPorId).mockResolvedValue({ id: 'prod-1' } as any);
     vi.mocked(listarPresentaciones).mockResolvedValue(presConStock);
 
     const result = await ProductService.traspasarAlBar(
@@ -475,7 +471,7 @@ describe('ProductService.traspasarAlBar', () => {
   });
 
   it('rechaza una presentación de otro producto', async () => {
-    vi.mocked(ProductRepository.getById).mockResolvedValue({ id: 'prod-1' } as any);
+    vi.mocked(obtenerProductoPorId).mockResolvedValue({ id: 'prod-1' } as any);
     vi.mocked(listarPresentaciones).mockResolvedValue([]);
 
     await expect(
@@ -525,8 +521,8 @@ describe('ProductService.updateProduct', () => {
   };
 
   it('lanza ConflictError si otro producto tiene el mismo código/nombre', async () => {
-    vi.mocked(ProductRepository.getById).mockResolvedValue(existingProduct as any);
-    vi.mocked(ProductRepository.getByCodeOrName).mockResolvedValue({ id: 'otro-prod' } as any);
+    vi.mocked(obtenerProductoPorId).mockResolvedValue(existingProduct as any);
+    vi.mocked(obtenerProductoPorCodigoONombre).mockResolvedValue({ id: 'otro-prod' } as any);
 
     await expect(
       ProductService.updateProduct('prod-1', { code: 'PROD-001', name: 'Whisky' })
@@ -534,9 +530,9 @@ describe('ProductService.updateProduct', () => {
   });
 
   it('no lanza si el producto encontrado es el mismo que se actualiza', async () => {
-    vi.mocked(ProductRepository.getById).mockResolvedValue(existingProduct as any);
-    vi.mocked(ProductRepository.getByCodeOrName).mockResolvedValue(existingProduct as any);
-    vi.mocked(ProductRepository.update).mockResolvedValue(existingProduct as any);
+    vi.mocked(obtenerProductoPorId).mockResolvedValue(existingProduct as any);
+    vi.mocked(obtenerProductoPorCodigoONombre).mockResolvedValue(existingProduct as any);
+    vi.mocked(actualizarProducto).mockResolvedValue(existingProduct as any);
 
     await expect(
       ProductService.updateProduct('prod-1', { code: 'PROD-001' })
@@ -544,29 +540,22 @@ describe('ProductService.updateProduct', () => {
   });
 
   it('usa la foto existente si no se pasa fotoName', async () => {
-    vi.mocked(ProductRepository.getById).mockResolvedValue(existingProduct as any);
-    vi.mocked(ProductRepository.getByCodeOrName).mockResolvedValue(null);
-    vi.mocked(ProductRepository.update).mockResolvedValue(existingProduct as any);
+    vi.mocked(obtenerProductoPorId).mockResolvedValue(existingProduct as any);
+    vi.mocked(obtenerProductoPorCodigoONombre).mockResolvedValue(null);
+    vi.mocked(actualizarProducto).mockResolvedValue(existingProduct as any);
 
     await ProductService.updateProduct('prod-1', { name: 'Nuevo nombre' });
 
-    expect(ProductRepository.update).toHaveBeenCalledWith('prod-1', expect.anything(), 'old.jpg', {
-      presentacionesNuevas: []
-    });
+    expect(actualizarProducto).toHaveBeenCalledWith('prod-1', expect.anything(), 'old.jpg', []);
   });
 
   it('usa la nueva foto si se pasa fotoName', async () => {
-    vi.mocked(ProductRepository.getById).mockResolvedValue(existingProduct as any);
-    vi.mocked(ProductRepository.getByCodeOrName).mockResolvedValue(null);
-    vi.mocked(ProductRepository.update).mockResolvedValue(existingProduct as any);
+    vi.mocked(obtenerProductoPorId).mockResolvedValue(existingProduct as any);
+    vi.mocked(obtenerProductoPorCodigoONombre).mockResolvedValue(null);
+    vi.mocked(actualizarProducto).mockResolvedValue(existingProduct as any);
 
     await ProductService.updateProduct('prod-1', { name: 'Nuevo nombre' }, 'nueva.jpg');
 
-    expect(ProductRepository.update).toHaveBeenCalledWith(
-      'prod-1',
-      expect.anything(),
-      'nueva.jpg',
-      { presentacionesNuevas: [] }
-    );
+    expect(actualizarProducto).toHaveBeenCalledWith('prod-1', expect.anything(), 'nueva.jpg', []);
   });
 });

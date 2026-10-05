@@ -1,10 +1,10 @@
 {
   "resumen": {
-    "commit": "80cd9a4260c5197c5126c527b50193de0bbb6e1f",
-    "generado": "2026-10-05T03:42:38.953Z",
-    "archivos": 1529,
+    "commit": "25b9c14bb89f02709ae6834fd169c9c74ad16b7d",
+    "generado": "2026-10-05T04:25:59.427Z",
+    "archivos": 1530,
     "rutas": 204,
-    "sqlFueraDeRepositorio": 98,
+    "sqlFueraDeRepositorio": 99,
     "tablasConEscritoresMultiples": 14,
     "ciclos": 5,
     "procesosPeriodicos": 15,
@@ -1918,7 +1918,13 @@
       "escribe": []
     },
     {
-      "archivo": "modules/inventario/anulaciones/servicio.ts",
+      "archivo": "modules/inventario/compras/servicio.ts",
+      "capa": "raiz",
+      "modulo": "inventario",
+      "escribe": []
+    },
+    {
+      "archivo": "modules/inventario/productos/servicio.ts",
       "capa": "raiz",
       "modulo": "inventario",
       "escribe": []
@@ -2026,6 +2032,12 @@
       "escribe": ["kiosk_devices"]
     },
     {
+      "archivo": "modules/inventario/anulaciones/servicio.ts",
+      "capa": "raiz",
+      "modulo": "inventario",
+      "escribe": []
+    },
+    {
       "archivo": "modules/inventario/bar/configuracion.ts",
       "capa": "raiz",
       "modulo": "inventario",
@@ -2077,12 +2089,6 @@
       "archivo": "lib/services/PermissionService.ts",
       "capa": "lib/services",
       "modulo": "identidad",
-      "escribe": []
-    },
-    {
-      "archivo": "lib/services/PurchaseService.ts",
-      "capa": "lib/services",
-      "modulo": "inventario",
       "escribe": []
     },
     {
@@ -2580,7 +2586,12 @@
   ],
   "transacciones": [
     {
-      "archivo": "modules/inventario/anulaciones/servicio.ts",
+      "archivo": "modules/inventario/compras/servicio.ts",
+      "capa": "raiz",
+      "modulo": "inventario"
+    },
+    {
+      "archivo": "modules/inventario/productos/servicio.ts",
       "capa": "raiz",
       "modulo": "inventario"
     },
@@ -2625,16 +2636,6 @@
       "modulo": null
     },
     {
-      "archivo": "lib/repositories/ProductRepository.ts",
-      "capa": "lib/repositories",
-      "modulo": null
-    },
-    {
-      "archivo": "lib/repositories/PurchaseRepository.ts",
-      "capa": "lib/repositories",
-      "modulo": null
-    },
-    {
       "archivo": "lib/repositories/RoleRepository.ts",
       "capa": "lib/repositories",
       "modulo": null
@@ -2668,11 +2669,6 @@
       "archivo": "lib/services/AccountService.ts",
       "capa": "lib/services",
       "modulo": "operacion"
-    },
-    {
-      "archivo": "lib/services/PurchaseService.ts",
-      "capa": "lib/services",
-      "modulo": "inventario"
     },
     {
       "archivo": "lib/services/SaleService.ts",
@@ -2713,6 +2709,11 @@
       "archivo": "modules/asistencia/marcas/repositorio.ts",
       "capa": "raiz",
       "modulo": null
+    },
+    {
+      "archivo": "modules/inventario/anulaciones/servicio.ts",
+      "capa": "raiz",
+      "modulo": "inventario"
     },
     {
       "archivo": "modules/inventario/envases/servicio.ts",

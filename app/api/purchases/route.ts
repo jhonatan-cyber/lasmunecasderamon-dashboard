@@ -1,9 +1,9 @@
 import { NextResponse } from 'next/server';
 import { withRoute } from '@/lib/api/withRoute';
-import { PurchaseService } from '@/lib/services/PurchaseService';
+import { listarCompras, registrarCompra } from '@/modules/inventario';
 
 export const GET = withRoute({ auth: true, module: 'products', action: 'read' }, async () => {
-  const data = await PurchaseService.listar();
+  const data = await listarCompras();
   return NextResponse.json({ success: true, data });
 });
 
@@ -11,7 +11,7 @@ export const POST = withRoute(
   { auth: true, audit: true, module: 'products', action: 'write' },
   async (request: Request, context: any) => {
     const payload = await request.json();
-    const data = await PurchaseService.registrarCompra(
+    const data = await registrarCompra(
       {
         detalles: payload.detalles ?? [],
         proveedor: payload.proveedor ?? null,

@@ -3,6 +3,21 @@ import 'server-only';
 export { consumirStockBar } from './bar/servicio';
 export { revertirStockAnulacion } from './anulaciones/servicio';
 export {
+  actualizarProducto,
+  buscarProductos,
+  crearProducto,
+  eliminarProducto,
+  guardarNivelesChampagne,
+  listarProductos,
+  obtenerNivelesChampagne,
+  obtenerProductoPorCodigoONombre,
+  obtenerProductoPorId,
+  reordenarProductos,
+  type CodigoGenerado,
+  type NuevaPresentacionProducto
+} from './productos/servicio';
+export { listar as listarCompras, registrarCompra } from './compras/servicio';
+export {
   aceptarTransferencia,
   listarTransferencias,
   rechazarTransferencia,

@@ -1,5 +1,4 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { PurchaseService } from '@/lib/services/PurchaseService';
 import { ValidationError } from '@/lib/errors/errors';
 import { withTransaction } from '@/lib/database/db';
 
@@ -13,25 +12,31 @@ vi.mock('@/lib/repositories/BaseRepository', () => ({
   BaseRepository: { insert: vi.fn(), update: vi.fn(), findOne: vi.fn(), delete: vi.fn() }
 }));
 
-vi.mock('@/lib/repositories/PurchaseRepository', () => ({
-  PurchaseRepository: {
-    create: vi.fn(async (_trx: any, data: any) => ({ id: 'comp-1', folio: 'C-0001', ...data })),
-    list: vi.fn().mockResolvedValue([])
-  }
+// La compra vive en el módulo: sus colaboradores son los repositorios privados
+// del propio módulo, no una API pública ni un repositorio heredado.
+vi.mock('@/modules/inventario/compras/repositorio', () => ({
+  crearCompra: vi.fn(async (_trx: any, data: any) => ({ id: 'comp-1', folio: 'C-0001', ...data })),
+  listarCompras: vi.fn().mockResolvedValue([])
 }));
 
-vi.mock('@/modules/inventario', () => ({
-  listarPresentacionesPorProductos: vi.fn(),
+vi.mock('@/modules/inventario/productos/repositorio', () => ({
+  productosPorIds: vi.fn(async () => [{ id_producto: 'prod-1', nombre: 'Ron Habana' }])
+}));
+
+vi.mock('@/modules/inventario/presentaciones/repositorio', () => ({
+  listarPresentacionesPorProductos: vi.fn()
+}));
+
+vi.mock('@/modules/inventario/unidades/repositorio', () => ({
   generarUnidades: vi.fn().mockResolvedValue([]),
   sincronizarStockTotal: vi.fn().mockResolvedValue(0)
 }));
 
-import {
-  generarUnidades,
-  listarPresentacionesPorProductos,
-  sincronizarStockTotal
-} from '@/modules/inventario';
-import { PurchaseRepository } from '@/lib/repositories/PurchaseRepository';
+import { registrarCompra } from '@/modules/inventario/compras/servicio';
+import { crearCompra } from '@/modules/inventario/compras/repositorio';
+import { productosPorIds } from '@/modules/inventario/productos/repositorio';
+import { listarPresentacionesPorProductos } from '@/modules/inventario/presentaciones/repositorio';
+import { generarUnidades, sincronizarStockTotal } from '@/modules/inventario/unidades/repositorio';
 import { BaseRepository } from '@/lib/repositories/BaseRepository';
 
 const detalle = {
@@ -45,10 +50,8 @@ let trxMock: any;
 
 beforeEach(() => {
   vi.clearAllMocks();
-  trxMock = vi.fn(async (sql: string) => {
-    if (sql.includes('FROM productos')) return [{ id_producto: 'prod-1', nombre: 'Ron Habana' }];
-    return [];
-  });
+  trxMock = vi.fn(async () => []);
+  vi.mocked(productosPorIds).mockResolvedValue([{ id_producto: 'prod-1', nombre: 'Ron Habana' }]);
   vi.mocked(listarPresentacionesPorProductos).mockResolvedValue({
     'prod-1': [
       { id: 'pres-1', nombre: 'Botella 750ml' },
@@ -56,49 +59,44 @@ beforeEach(() => {
     ]
   } as any);
   // Un código por unidad pedida, con id para poder marcarlo como impreso.
-  vi.mocked(generarUnidades).mockImplementation(async (input, _contexto) =>
-    Array.from({ length: input.cantidad }, (_, i) => ({
-      id: `${input.presentacion_id}-u${i + 1}`,
-      codigo: `LM-${input.presentacion_id}-${i + 1}`,
-      codigo_barras: `29${String(i + 1).padStart(11, '0')}`
-    }))
+  // Un código por unidad pedida, con id para poder marcarlo como impreso.
+  vi.mocked(generarUnidades).mockImplementation(
+    async (_trx, _productoId, cantidad, presentacionId) =>
+      Array.from({ length: cantidad }, (_, i) => ({
+        id: `${presentacionId}-u${i + 1}`,
+        codigo: `LM-${presentacionId}-${i + 1}`,
+        codigo_barras: `29${String(i + 1).padStart(11, '0')}`
+      })) as any
   );
   vi.mocked(withTransaction).mockImplementation(async (cb: any) => cb(trxMock));
 });
 
-describe('PurchaseService.registrarCompra', () => {
+describe('registrarCompra (modulo inventario)', () => {
   it('rechaza compra sin detalles', async () => {
-    await expect(PurchaseService.registrarCompra({ detalles: [] }, 'u1')).rejects.toThrow(
-      ValidationError
-    );
+    await expect(registrarCompra({ detalles: [] }, 'u1')).rejects.toThrow(ValidationError);
   });
 
   it('rechaza cantidad fuera de rango y precio negativo', async () => {
     await expect(
-      PurchaseService.registrarCompra({ detalles: [{ ...detalle, cantidad: 0 }] }, 'u1')
+      registrarCompra({ detalles: [{ ...detalle, cantidad: 0 }] }, 'u1')
     ).rejects.toThrow(ValidationError);
     await expect(
-      PurchaseService.registrarCompra({ detalles: [{ ...detalle, precio_compra: -1 }] }, 'u1')
+      registrarCompra({ detalles: [{ ...detalle, precio_compra: -1 }] }, 'u1')
     ).rejects.toThrow(ValidationError);
   });
 
   it('rechaza presentación que no pertenece al producto', async () => {
     vi.mocked(listarPresentacionesPorProductos).mockResolvedValue({} as any);
-    await expect(PurchaseService.registrarCompra({ detalles: [detalle] }, 'u1')).rejects.toThrow(
-      'no pertenece'
-    );
+    await expect(registrarCompra({ detalles: [detalle] }, 'u1')).rejects.toThrow('no pertenece');
   });
 
   it('rechaza producto inexistente', async () => {
-    trxMock = vi.fn(async () => []);
-    vi.mocked(withTransaction).mockImplementation(async (cb: any) => cb(trxMock));
-    await expect(PurchaseService.registrarCompra({ detalles: [detalle] }, 'u1')).rejects.toThrow(
-      'Producto'
-    );
+    vi.mocked(productosPorIds).mockResolvedValue([]);
+    await expect(registrarCompra({ detalles: [detalle] }, 'u1')).rejects.toThrow('Producto');
   });
 
   it('calcula el total en servidor y genera unidades en almacén', async () => {
-    const compra = await PurchaseService.registrarCompra(
+    const compra = await registrarCompra(
       {
         detalles: [
           detalle,
@@ -110,7 +108,7 @@ describe('PurchaseService.registrarCompra', () => {
       'u1'
     );
     expect(compra.folio).toBe('C-0001');
-    expect(PurchaseRepository.create).toHaveBeenCalledWith(
+    expect(crearCompra).toHaveBeenCalledWith(
       expect.anything(),
       expect.objectContaining({
         total: 3 * 5000 + 2 * 8000,
@@ -123,26 +121,22 @@ describe('PurchaseService.registrarCompra', () => {
     expect(generarUnidades).toHaveBeenCalledTimes(2);
     expect(generarUnidades).toHaveBeenNthCalledWith(
       1,
-      {
-        producto_id: 'prod-1',
-        cantidad: 3,
-        presentacion_id: 'pres-1',
-        compra_id: 'comp-1'
-      },
-      expect.anything()
+      expect.anything(),
+      'prod-1',
+      3,
+      'pres-1',
+      'comp-1'
     );
     expect(generarUnidades).toHaveBeenNthCalledWith(
       2,
-      {
-        producto_id: 'prod-1',
-        cantidad: 2,
-        presentacion_id: 'pres-2',
-        compra_id: 'comp-1'
-      },
-      expect.anything()
+      expect.anything(),
+      'prod-1',
+      2,
+      'pres-2',
+      'comp-1'
     );
     expect(sincronizarStockTotal).toHaveBeenCalledTimes(1);
-    expect(sincronizarStockTotal).toHaveBeenCalledWith('prod-1', expect.anything());
+    expect(sincronizarStockTotal).toHaveBeenCalledWith(expect.anything(), 'prod-1');
     expect(BaseRepository.update).toHaveBeenCalledWith(
       expect.anything(),
       'inventario_presentaciones',
@@ -153,7 +147,7 @@ describe('PurchaseService.registrarCompra', () => {
   });
 
   it('devuelve los códigos generados con producto, presentación y folio', async () => {
-    const compra = await PurchaseService.registrarCompra(
+    const compra = await registrarCompra(
       {
         detalles: [
           detalle,
@@ -183,7 +177,7 @@ describe('PurchaseService.registrarCompra', () => {
 
   it('no inventa códigos cuando la compra no genera unidades', async () => {
     vi.mocked(generarUnidades).mockResolvedValue([]);
-    const compra = await PurchaseService.registrarCompra({ detalles: [detalle] }, 'u1');
+    const compra = await registrarCompra({ detalles: [detalle] }, 'u1');
     expect(compra.codigos_generados).toEqual([]);
   });
 });

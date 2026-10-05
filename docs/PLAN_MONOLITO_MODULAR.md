@@ -2,10 +2,10 @@
 
 Fecha: 2026-10-03  
 Estado: implementación en curso. Fases 1, 2 y 3 cerradas; la fase 4 tiene todo
-el SQL de inventario dentro de `modules/inventario`, incluido el consumo y su
-reversión por anulación, y le queda el dueño de productos y compras. Revisión
-del 2026-10-05: las casillas de la fase 0 y de la fase 4 reflejan el avance
-real.
+el SQL de inventario dentro de `modules/inventario` —incluidos el consumo, su
+reversión por anulación, los productos y las compras— y le queda migrar la
+transacción de ventas al contexto opaco. Revisión del 2026-10-05: las casillas
+de la fase 0 y de la fase 4 reflejan el avance real.
 
 ## 1. Objetivo y alcance
 
@@ -288,11 +288,11 @@ físico. Detalle en [FASE3_ASISTENCIA.md](arquitectura/FASE3_ASISTENCIA.md).
 
 ### Fase 4 — Catálogo e inventario
 
-- [ ] Encapsular productos, presentaciones, compras, transferencias y envases.
-      **Parcial:** transferencias, presentaciones, unidades, envases y sus
-      lecturas viven en el módulo y las seis clases heredadas de inventario se
-      borraron; productos y compras siguen en la capa heredada, aunque ya
-      escriban inventario a través de la API del módulo.
+- [x] Encapsular productos, presentaciones, compras, transferencias y envases.
+      Transferencias, presentaciones, unidades, envases, sus lecturas, productos
+      y compras viven en `modules/inventario`; las seis clases heredadas de
+      inventario más `ProductRepository`, `PurchaseRepository` y
+      `PurchaseService` se borraron (cortes 2-5 y 9).
 - [x] Exponer consumo y reversión de stock mediante operaciones de negocio, no
       actualizaciones genéricas. El consumo expone `consumirStockBar` con
       contexto opaco (corte 1) y la reversión expone `revertirStockAnulacion`,
@@ -339,12 +339,12 @@ puros. **Corte 6:** el resumen de envases de la alerta también vive en el
 módulo. **Corte 7:** las constantes de estado de unidad pasaron a
 `modules/inventario/estados.ts` como vocabulario del dominio, y se verificó que
 la UI ya no importa nada de la capa heredada (los DTO llegan desde
-`contracts.ts`). Productos y compras siguen en la capa heredada, pero ya
-escriben inventario a través de la API del módulo. **Corte 8:** anular una venta
-devuelve el stock consumido (`revertirStockAnulacion`), con la migración 058 que
-enlaza cada movimiento de venta con su venta y con las unidades que tocó. Es lo
-único que faltaba para cerrar la casilla de consumir y revertir; queda decidir
-el dueño de productos y compras. Alcance y siguientes cortes en
+`contracts.ts`). **Corte 8:** anular una venta devuelve el stock consumido
+(`revertirStockAnulacion`), con la migración 058 que enlaza cada movimiento de
+venta con su venta y con las unidades que tocó. **Corte 9:** productos y compras
+también viven en el módulo (`modules/inventario/productos` y
+`modules/inventario/compras`), y con ellos las dos excepciones del puente
+transaccional quedaron retiradas. Alcance y siguientes cortes en
 [FASE4_INVENTARIO.md](arquitectura/FASE4_INVENTARIO.md). El censo regenerado del
 árbol actual está en [MODULOS_Y_DATOS.md](MODULOS_Y_DATOS.md).
 

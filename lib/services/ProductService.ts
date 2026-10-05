@@ -1,29 +1,39 @@
 import { ProductSchema, PresentacionSchema, type ProductType } from '@/lib/business/schemas';
-import { ProductRepository, type NewPresentacion } from '@/lib/repositories/ProductRepository';
 import {
   aceptarTransferencia,
   actualizarFotoPresentacion,
   actualizarPresentacion,
+  actualizarProducto,
   buscarPresentacionPorCodigo,
+  buscarProductos,
   cambiarEstadoUnidades,
   confirmarRecepcionEnvase,
   crearPresentacion,
+  crearProducto,
   eliminarPresentacion,
+  eliminarProducto,
   esEstadoUnidadValido,
+  guardarNivelesChampagne,
   listarDevoluciones,
   listarMovimientos,
   listarMovimientosRecientes,
   listarParaVenta,
   listarPresentaciones,
   listarPresentacionesPorProductos,
+  listarProductos,
   listarStockBar,
   listarUnidades,
+  obtenerNivelesChampagne,
   obtenerPresentacion,
+  obtenerProductoPorCodigoONombre,
+  obtenerProductoPorId,
   obtenerResumenShots,
   rechazarTransferencia,
   registrarUnidades,
+  reordenarProductos,
   traspasarAlBar,
-  verificarEnvase
+  verificarEnvase,
+  type NuevaPresentacionProducto as NewPresentacion
 } from '@/modules/inventario';
 import { ConflictError, ValidationError, NotFoundError } from '@/lib/errors/errors';
 import { z } from 'zod';
@@ -80,7 +90,7 @@ export class ProductService {
 
     const validated = ProductSchema.parse(normalizedBody);
 
-    const existing = await ProductRepository.getByCodeOrName(
+    const existing = await obtenerProductoPorCodigoONombre(
       validated.code,
       validated.name,
       validated.category_id
@@ -98,33 +108,33 @@ export class ProductService {
       (body as any).presentacion_fotos
     );
     await assertBarcodesAvailable(presentaciones);
-    const created = await ProductRepository.create(validated, foto, { presentaciones });
+    const created = await crearProducto(validated, foto, presentaciones);
     return created;
   }
 
   static async getAll(categoryId?: string | number) {
-    return await ProductRepository.getAll(categoryId?.toString());
+    return await listarProductos(categoryId?.toString());
   }
 
   static async getById(id: string | number) {
-    return await ProductRepository.getById(id.toString());
+    return await obtenerProductoPorId(id.toString());
   }
 
   static async search(term: string) {
-    return await ProductRepository.search(term);
+    return await buscarProductos(term);
   }
 
   static async update(id: string | number, data: Record<string, unknown>) {
     const validated = ProductSchema.partial().parse(data);
-    return await ProductRepository.update(id.toString(), validated as Record<string, unknown>);
+    return await actualizarProducto(id.toString(), validated as Record<string, unknown>);
   }
 
   static async delete(id: string | number) {
-    return await ProductRepository.delete(id.toString());
+    return await eliminarProducto(id.toString());
   }
 
   static async reorder(product_orders: Array<{ id: string; orden: number }>) {
-    return await ProductRepository.reorder(
+    return await reordenarProductos(
       product_orders.map(p => ({ id: p.id, display_order: p.orden }))
     );
   }
@@ -139,11 +149,11 @@ export class ProductService {
 
     const validated = ProductSchema.partial().parse(normalizedBody);
 
-    const currentProduct = await ProductRepository.getById(id);
+    const currentProduct = await obtenerProductoPorId(id);
     const categoryId = validated.category_id || currentProduct?.category_id || '0';
 
     if (validated.code || validated.name) {
-      const existing = await ProductRepository.getByCodeOrName(
+      const existing = await obtenerProductoPorCodigoONombre(
         validated.code || currentProduct?.code || '',
         validated.name || currentProduct?.name || '',
         categoryId
@@ -162,7 +172,7 @@ export class ProductService {
       (body as any).presentacion_fotos
     );
     await assertBarcodesAvailable(presentacionesNuevas);
-    return await ProductRepository.update(id, { ...validated }, foto, { presentacionesNuevas });
+    return await actualizarProducto(id, { ...validated }, foto, presentacionesNuevas);
   }
 
   static async addPresentation(
@@ -186,7 +196,7 @@ export class ProductService {
     const codigo_barras = parsed.data.codigo_barras?.trim() || null;
     const precio_compra = parsed.data.precio_compra ?? 0;
     const foto = parsed.data.foto || null;
-    const producto = await ProductRepository.getById(productoId);
+    const producto = await obtenerProductoPorId(productoId);
     if (!producto) throw new NotFoundError('Producto', productoId);
     await assertBarcodesAvailable([{ nombre, codigo_barras, precio_compra }]);
     return await crearPresentacion({
@@ -280,9 +290,9 @@ export class ProductService {
     // Si el producto aún usa la imagen por defecto, adopta esta foto para el catálogo.
     const presentacion = await obtenerPresentacion(id);
     if (presentacion) {
-      const producto = await ProductRepository.getById(presentacion.producto_id);
+      const producto = await obtenerProductoPorId(presentacion.producto_id);
       if (producto && (!producto.foto || producto.foto === 'default.png')) {
-        await ProductRepository.update(presentacion.producto_id, {}, foto);
+        await actualizarProducto(presentacion.producto_id, {}, foto);
       }
     }
   }
@@ -334,7 +344,7 @@ export class ProductService {
       );
     }
     let options = parsedOptions?.success ? parsedOptions.data : undefined;
-    const producto = await ProductRepository.getById(productoId);
+    const producto = await obtenerProductoPorId(productoId);
     if (!producto) throw new NotFoundError('Producto', productoId);
     const presentaciones = await listarPresentaciones(productoId);
     const presentacion = presentaciones.find(p => p.id === presentacionId);
@@ -455,7 +465,7 @@ export class ProductService {
 
   static async getChampagneTiers(productoId: string) {
     if (!productoId) throw new ValidationError('ID de producto es requerido');
-    const rows = await ProductRepository.getChampagneTiers(String(productoId));
+    const rows = await obtenerNivelesChampagne(String(productoId));
     if (rows.length > 0) return rows;
     const { CHAMPAGNE_DEFAULT_TIERS } = await import('@/lib/business/champagne');
     return CHAMPAGNE_DEFAULT_TIERS;
@@ -490,7 +500,7 @@ export class ProductService {
       }
       vistos.add(tier.anfitrionas);
     }
-    await ProductRepository.saveChampagneTiers(String(productoId), parsed.data);
+    await guardarNivelesChampagne(String(productoId), parsed.data);
     return parsed.data;
   }
 
@@ -506,7 +516,7 @@ export class ProductService {
     if (!esEstadoUnidadValido(estado)) {
       throw new ValidationError('Estado inválido');
     }
-    const producto = await ProductRepository.getById(productoId);
+    const producto = await obtenerProductoPorId(productoId);
     if (!producto) throw new NotFoundError('Producto', productoId);
     return await cambiarEstadoUnidades(productoId, ids, estado);
   }
@@ -520,7 +530,7 @@ export class ProductService {
     if (!Number.isFinite(unidades) || unidades < 1 || unidades > 1000) {
       throw new ValidationError('Cantidad debe ser un número entre 1 y 1000');
     }
-    const producto = await ProductRepository.getById(productoId);
+    const producto = await obtenerProductoPorId(productoId);
     if (!producto) throw new NotFoundError('Producto', productoId);
     const presentaciones = await listarPresentaciones(productoId);
     const presentacion = presentaciones.find(p => p.id === presentacionId);

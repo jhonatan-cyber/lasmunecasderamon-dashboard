@@ -399,15 +399,67 @@ su `sale_cancelled`.
 - `pnpm build`: aprobado.
 - No se ejecutaron `pnpm test:integration:*` ni e2e.
 
-## Siguientes cortes
+## Corte 9: productos y compras al módulo
 
-1. Cerrar la fase decidiendo el dueño de productos y compras, que siguen en la
-   capa heredada aunque ya escriban inventario a través del módulo. Con el corte
-   8 el consumo y su reversión ya son operaciones del módulo, que es lo que
-   pedía la casilla de «consumir y revertir existencias».
-2. Decidir el destino de los dos archivos restantes de la capa heredada
-   (`inventoryHelpers.ts` e `inventoryTypes.ts`): moverlos dentro del módulo o
-   declararlos utils compartidos con una nota en `MODULOS_Y_DATOS.md`.
-3. Actualizar el censo de propietarios tras cada corte; no cerrar la fase hasta
-   que las escrituras de inventario pasen por el módulo y los flujos de compras,
-   transferencias, shots y envases estén cubiertos.
+**Qué faltaba.** El dueño de productos y compras. `ProductRepository` (319
+líneas) y `PurchaseRepository` + `PurchaseService` (274 líneas) seguían en la
+capa heredada, y ambos entraban al módulo inventario por el puente de
+transacción heredado para escribir presentaciones y unidades en su propia
+transacción.
+
+**Qué se movió**
+
+- `modules/inventario/productos/` con `repositorio.ts` y `servicio.ts`: SQL de
+  `productos` y `producto_champagne_tiers`, el mapeo con `ProductSchema`, la
+  búsqueda con acentos, el reordenamiento y el alta y la edición con sus
+  presentaciones y unidades. Mismo SQL y mismas reglas: este corte mueve código.
+- `modules/inventario/compras/` con `repositorio.ts` y `servicio.ts`: SQL de
+  `compras` y `detalle_compras` con su folio por secuencia, y el caso de uso que
+  valida el payload, valida la pertenencia de cada presentación, crea la compra,
+  genera las unidades, fija el último costo y sincroniza el stock.
+- `ProductService` y la ruta `/api/purchases` consumen ahora la API pública del
+  módulo. `lib/repositories/ProductRepository.ts`,
+  `lib/repositories/PurchaseRepository.ts` y `lib/services/PurchaseService.ts`
+  se borraron.
+
+**Lo que cambia de verdad.** El puente transaccional deja de usarse para
+productos y compras: dentro del módulo, el alta de un producto llama a
+`crearPresentacion` y `generarUnidades` con el mismo `trx`, sin salir del
+subdominio. **Las excepciones del puente pasan de tres a una**, y la que queda
+es la anulación de ventas, con su condición de retiro ya anotada para la fase 5.
+
+`productosPorIds` vive en el subdominio de productos porque las compras
+necesitan validar a qué producto pertenece cada presentación antes de mover
+stock: es una consulta de inventario porque la tabla es de inventario.
+
+## Verificación del corte 9
+
+- `pnpm typecheck`: aprobado (0 errores).
+- `pnpm lint:full`: 0 errores; 1 warning preexistente (`instrumentation.ts`).
+- `pnpm test:unit --maxWorkers=2`: **1723 aprobadas, 2 omitidas** (180
+  archivos). `ProductService.test.ts` mockea los productos por la API pública
+  del módulo, y el test de compras se movió a
+  `tests/unit/modules/compras.test.ts` porque su sujeto ya es el módulo: ahora
+  verifica que las presentaciones se validan antes de crear la compra, que el
+  total se calcula en servidor y que los códigos generados salen con producto,
+  presentación y folio.
+- `pnpm test:postgres`: **161 aprobadas en 16 archivos**.
+- `pnpm test:integration` y `pnpm test:integration:settings`: en verde.
+- `pnpm arquitectura:limites`: **23 hallazgos / 23 excepciones** (22 ciclos + 1
+  puente), sin obsoletas.
+- `pnpm arquitectura` y `pnpm build`: regenerados con el árbol de este corte.
+- `pnpm test:e2e`: **8 aprobadas, 13 omitidas** (las omitidas necesitan
+  `TEST_PASSWORD`), con la aplicación de producción servida por el propio
+  `webServer` de Playwright.
+
+## Siguientes cortes1. Cerrar la fase 4 queda pendiente de migrar la transacción de ventas al
+
+contexto opaco, que es lo que retira la última excepción del puente. Todo lo
+demás de la fase está en el módulo: consumo, reversión, transferencias, envases,
+presentaciones, unidades, lecturas, productos y compras. 2. Decidir el destino
+de los dos archivos restantes de la capa heredada (`inventoryHelpers.ts` e
+`inventoryTypes.ts`): moverlos dentro del módulo o declararlos utils compartidos
+con una nota en `MODULOS_Y_DATOS.md`. 3. Actualizar el censo de propietarios
+tras cada corte; no cerrar la fase hasta que las escrituras de inventario pasen
+por el módulo y los flujos de compras, transferencias, shots y envases estén
+cubiertos.
