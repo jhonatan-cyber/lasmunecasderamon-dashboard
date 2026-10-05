@@ -3,7 +3,7 @@
 import { useCallback, useEffect, useId, useMemo, useRef, useState } from 'react';
 import { toast } from 'sonner';
 import { playScanSound, prepareScanSound } from '@/lib/utils/audioUtils';
-import type { DevolucionEnvaseResultado } from '@/lib/repositories/InventoryRepository';
+import type { DevolucionEnvaseResultado } from '@/modules/inventario/contracts';
 
 /** Texto corto del motivo por el que un escaneo no se aceptó. */
 export const MOTIVO_ENVASE: Record<string, string> = {

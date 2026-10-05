@@ -1,16 +1,9 @@
-/**
- * Ml por shot efectivos de un producto: si define los suyos (`productos.ml_shot`) se usan
- * esos; sin valor propio se cae al `shot_ml` global de Configuraciones.
- */
+/** Ml por shot efectivos de un producto; sin valor propio se usa Configuraciones. */
 export function resolveShotMl(mlShot: number | null | undefined, globalShotMl: number): number {
   return Number(mlShot ?? 0) > 0 ? Number(mlShot) : globalShotMl;
 }
 
-/**
- * Ml por shot cuando lo pide una anfitriona: si el producto define los suyos
- * (`productos.ml_shot_anfitriona`) se usan esos; sin valor propio se sirve el mismo
- * volumen que a un cliente (`mlCliente`, ya resuelto).
- */
+/** Sin volumen de anfitriona, usa el volumen de cliente ya resuelto. */
 export function resolveShotMlAnfitriona(
   mlShotAnfitriona: number | null | undefined,
   mlCliente: number
@@ -18,7 +11,6 @@ export function resolveShotMlAnfitriona(
   return Number(mlShotAnfitriona ?? 0) > 0 ? Number(mlShotAnfitriona) : mlCliente;
 }
 
-/** Unidades de volumen que aparecen en el nombre de una presentación, con su factor a ml. */
 const FACTOR_UNIDAD_ML: Record<string, number> = {
   ml: 1,
   mililitro: 1,
@@ -28,12 +20,6 @@ const FACTOR_UNIDAD_ML: Record<string, number> = {
   litros: 1000
 };
 
-/**
- * Capacidad en ml que declara el nombre de una presentación (`1000 ml`, `750ml`, `1 litro`).
- * Las presentaciones se nombran por su formato, así que su nombre dice la capacidad que la
- * columna `ml_botella` todavía no tiene. `null` cuando el nombre no declara un volumen
- * (`Botella chica`, `750`), para que el llamador decida el default.
- */
 export function mlDesdeNombrePresentacion(nombre?: string | null): number | null {
   const texto = (nombre ?? '').trim();
   if (!texto) return null;
@@ -45,15 +31,6 @@ export function mlDesdeNombrePresentacion(nombre?: string | null): number | null
   return ml > 0 ? ml : null;
 }
 
-/**
- * Capacidad de la botella con la que se descuenta el contenido de una presentación: la que
- * define la propia (`ml_botella`), si no la que declara su nombre y, en último caso, la de
- * Configuraciones (`botella_ml`).
- *
- * Sin el paso por el nombre, una presentación llamada "1000 ml" sin `ml_botella` guardada se
- * abriría como una botella de 750 ml: el primer shot descontaría 50 ml de 750 y el bar
- * mostraría 700 ml de algo que nunca se sirvió.
- */
 export function resolveBotellaMl(
   mlBotella: number | null | undefined,
   nombrePresentacion: string | null | undefined,

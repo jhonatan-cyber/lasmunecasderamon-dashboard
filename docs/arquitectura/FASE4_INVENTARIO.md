@@ -1,0 +1,262 @@
+# Fase 4 — Catálogo e inventario
+
+Fecha: 2026-10-04. Estado: cinco cortes verticales completados (consumo de stock
+en ventas, transferencias, devolución de envases, catálogo
+presentaciones/unidades y lecturas de bar/catálogo/movimientos tras API
+pública).
+
+## Corte 1: consumo de stock en ventas
+
+- `SaleService` llama `consumirStockBar` desde la API pública
+  `modules/inventario`; los DTO están en `contracts.ts` y la API de servidor usa
+  `server-only`.
+- El módulo recibe `ContextoOperacion`, resuelve el ejecutor autorizado dentro
+  de su infraestructura y conserva el `trx` de la transacción de venta.
+- El SQL de consumo está en `modules/inventario/bar/consumoRepositorio.ts`.
+  `modules/inventario/bar/repositorio.ts` recibe el contexto opaco y resuelve la
+  misma transacción que inició la venta.
+- El adaptador `consume` ya se retiró de `BarQueries` y `InventoryRepository`.
+  `SaleService`, las pruebas unitarias y la línea base PostgreSQL llaman la API
+  pública del módulo; solo `SaleService` conserva el puente temporal porque su
+  transacción aún es heredada.
+- La lectura de `shot_ml`, `botella_ml` y `shots_alerta` ahora pertenece a
+  `modules/inventario/bar/configuracion.ts`; Bar, Catálogo, Movimientos y
+  Transferencias ya la consumen desde el API público del módulo. Se retiró el
+  wrapper `lib/repositories/inventory/inventoryConfig.ts` y la fachada
+  `InventoryRepository` ya no reexporta esos helpers.
+- El movimiento de venta se inserta desde la infraestructura del módulo con su
+  tabla y columnas explícitas; el consumo ya no depende de `BaseRepository`.
+- Los cálculos puros de ml permanecen en `lib/business/shotMl.ts` porque también
+  los consumen componentes y hooks. Las constantes de estado siguen viniendo del
+  helper heredado `inventoryHelpers` hasta migrar el resto de operaciones.
+- La lógica de stock, shots, locking, movimientos y alertas no se reescribió.
+  Las alertas siguen saliendo después del commit de la venta.
+
+## Corte 2: contratos de UI y transferencias
+
+- Los DTO que la UI consumía desde la fachada heredada (`ShotAlert`,
+  `ShotsSummary`, `DevolucionEnvase*`, `ConsumoInventarioDetalle`,
+  `TraspasoInput`/`TraspasoResultado`) ahora se definen en
+  `modules/inventario/contracts.ts`; `inventoryTypes.ts` los reexporta para
+  quienes aún importan la fachada.
+- `app/bar`, `components/bar`, `components/products` y `hooks/productos`
+  importan esos tipos desde el contrato del módulo: se retiraron las 4
+  excepciones `ui-no-infraestructura` de `excepciones.json` (26 → 22), y la
+  puerta exige que ninguna quede obsoleta.
+- Transferencias completas detrás de la API pública
+  `modules/inventario/transferencias`: `traspasarAlBar`, `aceptarTransferencia`,
+  `rechazarTransferencia` y `listarTransferencias` aceptan `ContextoOperacion`
+  opaco y, sin contexto, abren su propia unidad y sólo notifican
+  `transfers_updated` después del commit.
+- Rutas `/api/transfers*` y `ProductService` llaman el módulo; la fachada
+  `InventoryRepository` perdió `traspasarAlBar(Standalone)`,
+  `accept/rejectTransfer(Standalone)` y `listTransfers`, y `BarQueries` perdió
+  sus métodos de traspaso (hoy sólo lecturas de bar y resumen de shots).
+- Se borró `lib/repositories/inventory/TransferQueries.ts` sin consumidores
+  restantes; el SQL vive en `modules/inventario/transferencias/repositorio.ts`.
+- Las pruebas de transferencias (unitarias, de aprobación y PostgreSQL) migraron
+  a la API pública del módulo con `conContextoOperacionExistente` para las
+  variantes con transacción heredada.
+
+## Corte 3: devolución de envases
+
+- El control bar → almacén completo vive en `modules/inventario/envases/`:
+  `verificarEnvase` (entrega del vacío en el bar), `confirmarRecepcionEnvase`
+  (recepción en almacén) y `listarDevoluciones` (historial) son la API pública;
+  con `ContextoOperacion` escriben en la transacción del flujo llamante y sin
+  contexto abren la suya.
+- El SQL se movió 1:1 desde `lib/repositories/inventory/EnvaseQueries.ts`
+  (buscado con `FOR UPDATE`, marcas de `fecha_devolucion`/`fecha_confirmacion`,
+  motivos de rechazo `no_es_nuestro`/`no_esta_vacia`/`venta_entera`/
+  `ya_devuelto`/`no_entregado`/`ya_confirmado`). El archivo se borró sin
+  consumidores restantes.
+- `ProductService.verifyAndReturnContainer`, `confirmContainerReturn` y
+  `listContainerReturns` ahora delegan al módulo; las rutas
+  `/api/bar/containers*` no cambian. La fachada `InventoryRepository` perdió
+  esos cinco métodos y ya no importa `EnvaseQueries`.
+- Estas operaciones no tienen efectos posteriores al commit: la entrega y la
+  recepción son sólo marcas físicas sobre la unidad, sin movimientos de
+  inventario ni notificaciones SSE (el panel sigue refrescando por sondeo).
+- Las pruebas unitarias (núcleos con `conContextoOperacionExistente`, wrappers
+  con `withTransaction` mockeado) y `tests/postgres/bar-containers-flow.test.ts`
+  migraron a la API del módulo.
+
+## Corte 4: presentaciones y unidades de catálogo
+
+- `modules/inventario/presentaciones/` y `modules/inventario/unidades/` absorben
+  el SQL de `PresentacionQueries` y `UnidadQueries` (los dos archivos se
+  borraron): alta/edición/borrado de presentaciones, generación de unidades con
+  códigos `LM-…` y EAN-13, cambio de estado, listado, marca de impresión y
+  `sincronizarStockTotal`.
+- API pública: `crearPresentacion`, `actualizarPresentacion`,
+  `actualizarFotoPresentacion`, `eliminarPresentacion`, `obtenerPresentacion`,
+  `buscarPresentacionPorCodigo`, `listarPresentaciones(PorProductos)`,
+  `generarUnidades`, `registrarUnidades` (alta atómica = generación + sync),
+  `cambiarEstadoUnidades`, `sincronizarStockTotal`, `listarUnidades` y
+  `marcarUnidadesImpresas`; con `ContextoOperacion` escriben en la transacción
+  del flujo llamante y sin contexto abren la suya.
+- `ProductService` delega al módulo; la ruta `units/printed` llama al módulo
+  directamente (los `route.ts` de `app/api` son adaptadores de servidor y pueden
+  importar la API pública).
+- `ProductRepository` (creación/edición de producto) y `PurchaseService`
+  (compras) escriben presentaciones y unidades dentro de su propia transacción:
+  usan `conContextoOperacionExistente`, el mismo puente heredado que
+  `SaleService`. Las dos aristas están registradas en `excepciones.json` con
+  motivo, responsable y condición de retiro (22 → 24 excepciones, ninguna
+  obsoleta).
+- `transferencias/repositorio.ts` ahora usa `../unidades/repositorio` para el
+  sync de stock (misma subdomaña del módulo).
+- **Hito:** `lib/repositories/inventory/` ya no contiene ninguna escritura
+  (INSERT/UPDATE/DELETE): todas las escrituras de inventario viven en
+  `modules/inventario/*`. Los 4 escritores de `inventario_unidades` son
+  repositorios del módulo (consumo, envases, transferencias, unidades).- La
+  fachada `InventoryRepository` perdió los 18 métodos de presentaciones y
+  unidades; quedan sólo bar, catálogo y movimientos (lecturas). Métodos muertos
+  sin consumidores (`findByUnitBarcode`, `countUnits`, `setUnitsEstado(trx)`) no
+  se migraron: se eliminaron.
+
+## Corte 5: lecturas de bar, catálogo y movimientos; retirada de la fachada
+
+- Las últimas lecturas pasaron al módulo: `bar/stockRepositorio.ts`
+  (`listarStockBar`, `obtenerResumenShots` y el tolerant
+  `obtenerMaxAnfitrionasPorProducto`), `catalogo/repositorio.ts` + `servicio.ts`
+  (`listarParaVenta`) y `movimientos/repositorio.ts` + `servicio.ts`
+  (`listarMovimientos`, `listarMovimientosRecientes`). SQL movido 1:1; son
+  lecturas puras, sin unidad de trabajo ni efectos.
+- `ProductService` (y por tanto las rutas de Bar, productos y movimientos)
+  consume el módulo; `lib/business/shotAlerts.ts` toma `ShotAlert` desde
+  `contracts.ts`.
+- **Se borró la fachada `InventoryRepository.ts`** junto con `BarQueries`,
+  `CatalogoQueries` y `MovimientoQueries`. En `lib/repositories/inventory/` sólo
+  quedan `inventoryHelpers.ts` (mapeos, constantes de estado, EAN-13) e
+  `inventoryTypes.ts`, que son helpers y tipos puros compartidos por el módulo.
+- El test `tests/unit/lib/repositories/InventoryRepository.test.ts` pasó a
+  `tests/unit/modules/inventario-dominio.test.ts` (mismo contenido, ahora contra
+  la API del módulo).
+- **Estado de la fase:** todo el SQL de inventario (lecturas y escrituras) vive
+  en `modules/inventario`; no queda ningún escritor ni lector de inventario en
+  `lib/repositories/inventory/`.
+
+## Verificación del corte 1
+
+- Suite unitaria completa después de retirar el adaptador: 1713 aprobadas y 2
+  omitidas por depender de hardware físico.
+- 12 pruebas PostgreSQL focalizadas aprobadas: shots y línea base de consultas.
+- Suite PostgreSQL completa: 156 aprobadas en 15 archivos.
+- `pnpm typecheck`: aprobado.
+- `pnpm lint:full`: 0 errores; queda 1 warning preexistente en
+  `instrumentation.ts` (`no-console`).
+- `pnpm build`: aprobado con Webpack; Next generó las 217 páginas.
+- `next start -- --port 3107`: listo en 191 ms; `GET /api/kiosk/session`
+  respondió 200.
+- `pnpm arquitectura:limites`: aprobado en su momento con 26 excepciones
+  heredadas vigentes, sin ciclos nuevos ni dependencias prohibidas nuevas.
+- `pnpm arquitectura`: 204 rutas, 35 rutas con SQL directo, 92 archivos con SQL
+  fuera de repositorios, 13 tablas con varios escritores y 5 ciclos. El conteo
+  ahora reconoce repositorios bajo `modules/`.
+- Prettier: verificado después de formatear todos los archivos tocados.
+- Los totales están en [Módulos y datos](../MODULOS_Y_DATOS.md).
+- Antes de migrar se creó y verificó un respaldo custom en
+  `%TEMP%\lasmunecasderamon-before-migrations-20261004.dump` (369 entradas).
+- Se aplicaron las 16 migraciones pendientes, de `042_envases_solo_shots.sql` a
+  `057_presentaciones_capacidad_desde_nombre.sql`. `pnpm db:plan` ya no muestra
+  migraciones pendientes; conserva el aviso de tres nombres históricos sin
+  archivo (`003`, `011` y `014`), que el runner ignora y no se borraron.
+- `pnpm test:postgres`: **156 aprobadas en 15 archivos** contra
+  `lasmunecasderamon`, después de aplicar las migraciones pendientes.
+- Después de retirar el adaptador, 98 pruebas unitarias focalizadas pasaron y
+  `tests/postgres/linea-base-flujos.test.ts` pasó sus 6 flujos, incluido el
+  consumo de inventario.
+- Tras mover configuración e inserción: 93 pruebas unitarias focalizadas y 12
+  pruebas PostgreSQL focalizadas aprobadas.
+- La suite completa se repitió tras la extracción: 1713 unitarias aprobadas, 2
+  omitidas por hardware y los 12 flujos PostgreSQL focalizados aprobados.
+- La suite de cierre de caja se ajustó para incorporar el saldo prepago que ya
+  exista en la base y afirmar el delta introducido por sus fixtures.
+- La restauración de snapshots serializa arrays JSON/JSONB. Tras la suite,
+  `shot_ml` permanece en 50 y no quedan productos fixture.
+- `pnpm db:plan`: sin migraciones pendientes. El runner conserva el aviso sobre
+  tres migraciones históricas sin archivo (`003`, `011` y `014`), que se
+  ignoraron sin alterar su historial.
+- No se ejecutó `pnpm test:integration:all`.
+
+## Verificación del corte 2
+
+- `pnpm typecheck`: aprobado.
+- `pnpm lint:full`: 0 errores; 1 warning preexistente (`instrumentation.ts`).
+- Prettier verificado en todos los archivos tocados.
+- `pnpm test:unit --maxWorkers=2`: **1713 aprobadas, 2 omitidas** (180
+  archivos).
+- `pnpm arquitectura:limites`: aprobado; **22 hallazgos / 22 excepciones**, sin
+  dependencias prohibidas nuevas ni excepciones obsoletas (las 4 de UI se
+  eliminaron al apuntar la UI a `contracts.ts`).
+- `pnpm arquitectura`: análisis regenerado (`FASE0_DIAGNOSTICO.md` y
+  `analisis.json`); `inventario_unidades` queda con 4 escritores:
+  `EnvaseQueries`, `UnidadQueries` y los dos repositorios del módulo (consumo y
+  transferencias).
+- Pruebas PostgreSQL focalizadas contra la base local: **13 aprobadas** en
+  `transfers-flow`, `bar-shots-flow` y `linea-base-flujos`.- No se ejecutó la
+  suite PostgreSQL completa ni `pnpm test:integration:all` en este corte.
+- `pnpm build`: aprobado (Webpack + service worker) después del corte 2.
+- `pnpm test:postgres` completa: **156 aprobadas en 15 archivos**.
+
+## Verificación del corte 3
+
+- `pnpm typecheck`: aprobado.
+- `pnpm lint:full`: 0 errores; 1 warning preexistente (`instrumentation.ts`).
+- Prettier verificado en todos los archivos tocados.
+- `pnpm test:unit --maxWorkers=2`: **1713 aprobadas, 2 omitidas** (180
+  archivos).
+- `pnpm arquitectura:limites`: aprobado; **22 hallazgos / 22 excepciones**, sin
+  dependencias prohibidas nuevas ni excepciones obsoletas.
+- `pnpm arquitectura`: análisis regenerado; `EnvaseQueries` ya no aparece y
+  `inventario_unidades` queda con 4 escritores: `UnidadQueries` y los tres
+  repositorios del módulo (consumo, transferencias y envases).
+- Pruebas PostgreSQL focalizadas: **16 aprobadas** en 4 archivos (envases,
+  transferencias, shots y línea base).
+- No se ejecutaron la suite PostgreSQL completa ni `pnpm test:integration:all`
+  en este corte.
+
+## Verificación del corte 4
+
+- `pnpm typecheck`: aprobado.
+- `pnpm lint:full`: 0 errores; 1 warning preexistente (`instrumentation.ts`).
+- Prettier verificado en todos los archivos cambiados.
+- `pnpm test:unit --maxWorkers=2`: **1713 aprobadas, 2 omitidas** (180
+  archivos).
+- `pnpm arquitectura:limites`: aprobado; **24 hallazgos / 24 excepciones** (las
+  2 nuevas del puente en ProductRepository y PurchaseService), sin dependencias
+  prohibidas nuevas ni excepciones obsoletas.
+- `pnpm arquitectura`: análisis regenerado; `PresentacionQueries` y
+  `UnidadQueries` ya no aparecen; los 4 escritores de `inventario_unidades` son
+  repositorios de `modules/inventario`.
+- `pnpm test:postgres` completa: **156 aprobadas en 15 archivos** (incluye
+  creación de producto, compras y transfers contra la base local).
+- `pnpm build`: aprobado (Webpack + service worker).
+- No se ejecutaron `pnpm test:integration:*` ni e2e.
+
+## Verificación del corte 5
+
+- `pnpm typecheck`: aprobado.
+- `pnpm lint:full`: 0 errores; 1 warning preexistente (`instrumentation.ts`).
+- Prettier verificado en todos los archivos cambiados.
+- `pnpm test:unit --maxWorkers=2`: **1713 aprobadas, 2 omitidas** (180
+  archivos).
+- `pnpm test:postgres` completa: **156 aprobadas en 15 archivos**.
+- `pnpm arquitectura:limites`: aprobado; **24 hallazgos / 24 excepciones**, sin
+  dependencias prohibidas nuevas ni excepciones obsoletas.
+- `pnpm arquitectura`: análisis regenerado; `InventoryRepository` y los tres
+  `<X>Queries` de inventario ya no aparecen.
+- `pnpm build`: aprobado (Webpack + service worker).
+- No se ejecutaron `pnpm test:integration:*` ni e2e.
+
+## Siguientes cortes
+
+1. Cerrar la fase con la reversión de stock por anulación (API de negocio en el
+   módulo) y decidir el dueño de productos/compras, que siguen en la capa
+   heredada aunque ya escriban inventario a través del módulo.
+2. Migrar las constantes de estado desde `inventoryHelpers` y revisar los
+   contratos de inventario que la UI aún importa desde la fachada heredada.
+3. Actualizar el censo de propietarios tras cada corte; no cerrar la fase hasta
+   que las escrituras de inventario pasen por el módulo y los flujos de compras,
+   transferencias, shots y envases estén cubiertos.

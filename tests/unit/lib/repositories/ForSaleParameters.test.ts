@@ -1,6 +1,6 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { createRequire } from 'node:module';
-import { InventoryRepository } from '@/lib/repositories/InventoryRepository';
+import { listarParaVenta } from '@/modules/inventario';
 import { query } from '@/lib/database/db';
 
 vi.mock('@/lib/database/db', () => ({
@@ -30,7 +30,7 @@ describe('parámetros del catálogo del bar', () => {
       params: ['cat1', '%ron%', '%ron%', '%ron%', '%ron%']
     }
   ])('enlaza los filtros $filters con el adaptador PostgreSQL', async ({ filters, params }) => {
-    await expect(InventoryRepository.listForSale(filters)).resolves.toEqual([]);
+    await expect(listarParaVenta(filters)).resolves.toEqual([]);
     expect(query).toHaveBeenCalledWith(expect.stringContaining("ubicacion = 'bar'"), params);
   });
 });

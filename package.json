@@ -4,8 +4,8 @@
   "private": true,
   "scripts": {
     "bones:build": "npx boneyard-js build",
-    "build": "next build && node scripts/generate-sw.js && echo 'Build completed successfully'",
-    "build:analyze": "ANALYZE=true next build && node scripts/generate-sw.js",
+    "build": "next build --webpack && node scripts/generate-sw.js && echo 'Build completed successfully'",
+    "build:analyze": "ANALYZE=true next build --webpack && node scripts/generate-sw.js",
     "build:sw": "node scripts/generate-sw.js",
     "dev": "node scripts/generate-sw.js --dev && node scripts/dev-lan-auto.js",
     "dev:mobile": "node scripts/generate-sw.js --dev && cross-env TZ=UTC next dev --webpack --no-server-fast-refresh --hostname 0.0.0.0 --port 3000",

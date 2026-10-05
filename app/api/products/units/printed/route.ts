@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server';
 import { z } from 'zod';
 import { withRoute } from '@/lib/api/withRoute';
-import { InventoryRepository } from '@/lib/repositories/InventoryRepository';
+import { marcarUnidadesImpresas } from '@/modules/inventario';
 
 const schema = z.object({ ids: z.array(z.string().min(1).max(36)).min(1).max(1000) });
 
@@ -15,7 +15,7 @@ export const POST = withRoute(
         { status: 400 }
       );
     }
-    const data = await InventoryRepository.markUnitsPrinted([...new Set(parsed.data.ids)]);
+    const data = await marcarUnidadesImpresas([...new Set(parsed.data.ids)]);
     return NextResponse.json({ success: true, data });
   }
 );

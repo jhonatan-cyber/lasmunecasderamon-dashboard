@@ -114,7 +114,7 @@ El esquema se define en dos lugares: el volcado base
 (`database/lasmunecasderamon.postgres.sql`) y la cadena de `migrations/`. Las
 dos rutas de instalación —una base nueva y un entorno que ya venía funcionando—
 pueden desviarse entre sí, así que hay tres comprobaciones que lo detectan.
-Requieren una base de referencia local:
+Requieren una base de referencia local separada:
 
 ```powershell
 $env:DB_NAME = 'lasmunecasderamon_test'
@@ -217,15 +217,15 @@ comprobarla antes de cambiar la configuración de la aplicación.
 
 ## Pruebas
 
-Las pruebas de integración escriben datos. Requieren una base local cuyo nombre
-termine en `_test`; nunca usar la base operativa.
+Las pruebas PostgreSQL e integración apuntan a la base local `lasmunecasderamon`
+(`DB_HOST` debe ser loopback). Escriben datos; la mayoría de los flujos usa
+snapshot/restauración, que reescribe temporalmente las tablas no protegidas.
+Ejecútalas cuando no haya otros usuarios ni procesos usando esa base.
 
 ```powershell
-$env:DB_NAME = 'lasmunecasderamon_test'
-corepack pnpm db:setup
+$env:DB_NAME = 'lasmunecasderamon'
 corepack pnpm test:postgres
 corepack pnpm test:integration:all
-Remove-Item Env:DB_NAME
 corepack pnpm test:unit
 corepack pnpm typecheck
 corepack pnpm lint

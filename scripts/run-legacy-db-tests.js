@@ -10,8 +10,9 @@ const DB_HOST = process.env.DB_HOST || '127.0.0.1';
 const DB_PORT = process.env.DB_PORT || '5432';
 const DB_USER = process.env.DB_USER || 'postgres';
 const DB_PASSWORD = process.env.DB_PASSWORD || '';
-const DB_NAME = process.env.DB_NAME || 'lasmunecasderamon_test';
-if (!DB_NAME.endsWith('_test')) throw new Error('Tests require DB_NAME ending in _test');
+const DB_NAME = process.env.DB_NAME || 'lasmunecasderamon';
+if (DB_NAME !== 'lasmunecasderamon')
+  throw new Error('Integration tests require DB_NAME=lasmunecasderamon');
 
 // Guarda de seguridad: aborta si DB_HOST no es loopback (nunca producción por
 // accidente). loadDotenv:false — el runner resuelve sus propios defaults.

@@ -11,8 +11,8 @@ vi.mock('@/lib/repositories/SaleRepository', () => ({
   SaleRepository: { rawInsert: vi.fn(), insertDetail: vi.fn(), insertUserRelation: vi.fn() }
 }));
 
-vi.mock('@/lib/repositories/InventoryRepository', () => ({
-  InventoryRepository: { consume: vi.fn().mockResolvedValue(undefined) }
+vi.mock('@/modules/inventario', () => ({
+  consumirStockBar: vi.fn().mockResolvedValue([])
 }));
 
 vi.mock('@/lib/business/shotAlerts', () => ({
@@ -145,7 +145,7 @@ describe('SaleService — lógica de pagos mixtos', () => {
 import { SaleService } from '@/lib/services/SaleService';
 import { CashRegisterRepository } from '@/lib/repositories/CashRegisterRepository';
 import { SaleRepository } from '@/lib/repositories/SaleRepository';
-import { InventoryRepository } from '@/lib/repositories/InventoryRepository';
+import { consumirStockBar } from '@/modules/inventario';
 import { notifyBarShotAlerts } from '@/lib/business/shotAlerts';
 import { TipRepository } from '@/lib/repositories/TipRepository';
 import { withTransaction } from '@/lib/database/db';
@@ -404,10 +404,10 @@ describe('SaleService.createSale — inventario del bar', () => {
 
     await SaleService.createSale({ ...validSaleBody, detalles: detallesBar }, 'user-1');
 
-    expect(InventoryRepository.consume).toHaveBeenCalledWith(
-      expect.anything(),
+    expect(consumirStockBar).toHaveBeenCalledWith(
       [expect.objectContaining({ presentacion_id: 'pres-1', cantidad: 2 })],
-      { usuarioId: 'user-1', fecha: expect.any(String) }
+      { usuarioId: 'user-1', fecha: expect.any(String) },
+      { id: expect.any(String) }
     );
   });
 
@@ -416,7 +416,7 @@ describe('SaleService.createSale — inventario del bar', () => {
     const alertas = [
       { presentacion_id: 'pres-1', nombre: 'Whisky 750 ml', ml_restante: 60, shots_restantes: 1 }
     ];
-    vi.mocked(InventoryRepository.consume).mockResolvedValueOnce(alertas);
+    vi.mocked(consumirStockBar).mockResolvedValueOnce(alertas);
 
     await SaleService.createSale({ ...validSaleBody, detalles: detallesBar }, 'user-1');
 
@@ -425,7 +425,7 @@ describe('SaleService.createSale — inventario del bar', () => {
 
   it('sin alertas de shots no dispara el aviso al barman', async () => {
     vi.mocked(CashRegisterRepository.getCurrentCajaId).mockResolvedValue('caja-1');
-    vi.mocked(InventoryRepository.consume).mockResolvedValueOnce([]);
+    vi.mocked(consumirStockBar).mockResolvedValueOnce([]);
 
     await SaleService.createSale({ ...validSaleBody, detalles: detallesBar }, 'user-1');
 
@@ -452,10 +452,10 @@ describe('SaleService.createSale — inventario del bar', () => {
       'user-1'
     );
 
-    expect(InventoryRepository.consume).toHaveBeenCalledWith(
-      expect.anything(),
+    expect(consumirStockBar).toHaveBeenCalledWith(
       [expect.objectContaining({ presentacion_id: 'pres-1', cantidad: 2, tipo_venta: 'shot' })],
-      { usuarioId: 'user-1', fecha: expect.any(String) }
+      { usuarioId: 'user-1', fecha: expect.any(String) },
+      { id: expect.any(String) }
     );
   });
 
@@ -523,15 +523,16 @@ describe('SaleService.createSale — inventario del bar', () => {
       'user-1'
     );
 
-    expect(InventoryRepository.consume).toHaveBeenCalledWith(expect.anything(), expect.any(Array), {
-      usuarioId: 'user-1',
-      fecha: expect.any(String)
-    });
+    expect(consumirStockBar).toHaveBeenCalledWith(
+      expect.any(Array),
+      { usuarioId: 'user-1', fecha: expect.any(String) },
+      { id: expect.any(String) }
+    );
   });
 
   it('propaga el rechazo cuando no alcanzan las botellas: la venta entera se revierte', async () => {
     vi.mocked(CashRegisterRepository.getCurrentCajaId).mockResolvedValue('caja-1');
-    vi.mocked(InventoryRepository.consume).mockRejectedValueOnce(
+    vi.mocked(consumirStockBar).mockRejectedValueOnce(
       new BusinessError('Quedan 1 de 2 botellas', 'INSUFFICIENT_BAR_STOCK')
     );
 

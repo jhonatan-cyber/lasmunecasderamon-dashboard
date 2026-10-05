@@ -1,6 +1,30 @@
 import { ProductSchema, PresentacionSchema, type ProductType } from '@/lib/business/schemas';
 import { ProductRepository, type NewPresentacion } from '@/lib/repositories/ProductRepository';
-import { InventoryRepository, esEstadoUnidadValido } from '@/lib/repositories/InventoryRepository';
+import { esEstadoUnidadValido } from '@/lib/repositories/inventory/inventoryHelpers';
+import {
+  aceptarTransferencia,
+  actualizarFotoPresentacion,
+  actualizarPresentacion,
+  buscarPresentacionPorCodigo,
+  cambiarEstadoUnidades,
+  confirmarRecepcionEnvase,
+  crearPresentacion,
+  eliminarPresentacion,
+  listarDevoluciones,
+  listarMovimientos,
+  listarMovimientosRecientes,
+  listarParaVenta,
+  listarPresentaciones,
+  listarPresentacionesPorProductos,
+  listarStockBar,
+  listarUnidades,
+  obtenerPresentacion,
+  obtenerResumenShots,
+  rechazarTransferencia,
+  registrarUnidades,
+  traspasarAlBar,
+  verificarEnvase
+} from '@/modules/inventario';
 import { ConflictError, ValidationError, NotFoundError } from '@/lib/errors/errors';
 import { z } from 'zod';
 import { SaleOptionsSchema } from '@/lib/business/schemas/sale-options';
@@ -37,7 +61,7 @@ async function assertBarcodesAvailable(
       throw new ValidationError(`Código de barras duplicado: ${p.codigo_barras}`);
     }
     vistos.add(p.codigo_barras);
-    const existente = await InventoryRepository.findByBarcode(p.codigo_barras);
+    const existente = await buscarPresentacionPorCodigo(p.codigo_barras);
     if (existente && existente.id !== excludePresentationId) {
       throw new ConflictError(
         `El código de barras ${p.codigo_barras} ya está registrado en otro producto`
@@ -165,7 +189,7 @@ export class ProductService {
     const producto = await ProductRepository.getById(productoId);
     if (!producto) throw new NotFoundError('Producto', productoId);
     await assertBarcodesAvailable([{ nombre, codigo_barras, precio_compra }]);
-    return await InventoryRepository.createPresentationStandalone({
+    return await crearPresentacion({
       producto_id: productoId,
       nombre,
       codigo_barras,
@@ -175,7 +199,7 @@ export class ProductService {
   }
 
   static async removePresentation(id: string): Promise<void> {
-    await InventoryRepository.deletePresentation(id);
+    await eliminarPresentacion(id);
   }
 
   static async updatePresentation(id: string, input: unknown): Promise<void> {
@@ -238,7 +262,7 @@ export class ProductService {
         id
       );
     }
-    await InventoryRepository.updatePresentation(id, {
+    await actualizarPresentacion(id, {
       ...(has('nombre') ? { nombre: nombre as string } : {}),
       ...(has('codigo_barras') ? { codigo_barras: codigo_barras ?? null } : {}),
       ...(has('precio_compra') && precio_compra !== undefined ? { precio_compra } : {}),
@@ -252,9 +276,9 @@ export class ProductService {
     if (!foto || typeof foto !== 'string') {
       throw new ValidationError('Foto es requerida');
     }
-    await InventoryRepository.updatePresentationFoto(id, foto);
+    await actualizarFotoPresentacion(id, foto);
     // Si el producto aún usa la imagen por defecto, adopta esta foto para el catálogo.
-    const presentacion = await InventoryRepository.getPresentationById(id);
+    const presentacion = await obtenerPresentacion(id);
     if (presentacion) {
       const producto = await ProductRepository.getById(presentacion.producto_id);
       if (producto && (!producto.foto || producto.foto === 'default.png')) {
@@ -264,23 +288,23 @@ export class ProductService {
   }
 
   static async listPresentations(productoId: string) {
-    return await InventoryRepository.listPresentations(productoId);
+    return await listarPresentaciones(productoId);
   }
 
   static async listPresentationsMap(productoIds: string[]) {
-    return await InventoryRepository.listPresentationsByProducts(productoIds);
+    return await listarPresentacionesPorProductos(productoIds);
   }
 
   static async listUnits(productoId: string, presentacionId?: string) {
-    return await InventoryRepository.listUnits(productoId, 1000, undefined, presentacionId);
+    return await listarUnidades(productoId, 1000, undefined, presentacionId);
   }
 
   static async listBarStock(productoId?: string) {
-    return await InventoryRepository.listBarStock(productoId);
+    return await listarStockBar(productoId);
   }
 
   static async listForSale(filters?: { category_id?: string; term?: string }) {
-    return await InventoryRepository.listForSale(filters);
+    return await listarParaVenta(filters);
   }
 
   static async traspasarAlBar(
@@ -312,7 +336,7 @@ export class ProductService {
     let options = parsedOptions?.success ? parsedOptions.data : undefined;
     const producto = await ProductRepository.getById(productoId);
     if (!producto) throw new NotFoundError('Producto', productoId);
-    const presentaciones = await InventoryRepository.listPresentations(productoId);
+    const presentaciones = await listarPresentaciones(productoId);
     const presentacion = presentaciones.find(p => p.id === presentacionId);
     if (!presentacion) {
       throw new ValidationError('La presentación no pertenece a este producto');
@@ -362,7 +386,7 @@ export class ProductService {
     if (!Number.isFinite(com) || com < 0) {
       throw new ValidationError('Comisión debe ser mayor o igual a 0');
     }
-    return await InventoryRepository.traspasarAlBarStandalone({
+    return await traspasarAlBar({
       producto_id: productoId,
       presentacion_id: presentacionId,
       cantidad: cant,
@@ -386,27 +410,25 @@ export class ProductService {
       throw new ValidationError('Se requiere el usuario que resuelve');
     }
     if (accion === 'aprobar') {
-      await InventoryRepository.acceptTransferStandalone(transferenciaId, usuarioId);
+      await aceptarTransferencia(transferenciaId, usuarioId);
       return { estado: 'aceptada' };
     }
-    await InventoryRepository.rejectTransferStandalone(transferenciaId, usuarioId);
+    await rechazarTransferencia(transferenciaId, usuarioId);
     return { estado: 'rechazada' };
   }
 
   static async listMovimientos(presentacionId: string) {
-    return await InventoryRepository.listMovimientos(presentacionId);
+    return await listarMovimientos(presentacionId);
   }
 
   static async listMovimientosRecientes(limit?: unknown) {
     const n = Math.floor(Number(limit));
-    return await InventoryRepository.listMovimientosRecientes(
-      Number.isFinite(n) && n > 0 ? Math.min(n, 500) : 100
-    );
+    return await listarMovimientosRecientes(Number.isFinite(n) && n > 0 ? Math.min(n, 500) : 100);
   }
 
   /** Resumen del panel de shots del bar (servidos hoy, restantes, por agotarse). */
   static async getShotsSummary() {
-    return await InventoryRepository.getShotsSummary();
+    return await obtenerResumenShots();
   }
 
   /**
@@ -415,7 +437,7 @@ export class ProductService {
    * almacén en el mismo paso (control bar → almacén, migración 032).
    */
   static async verifyAndReturnContainer(codigo: unknown, usuarioId: string | null) {
-    return await InventoryRepository.verifyAndReturnContainer(codigo, usuarioId);
+    return await verificarEnvase(codigo, usuarioId);
   }
 
   /**
@@ -423,12 +445,12 @@ export class ProductService {
    * entregado (segundo paso del control, migración 033).
    */
   static async confirmContainerReturn(codigo: unknown, usuarioId: string | null) {
-    return await InventoryRepository.confirmContainerReturn(codigo, usuarioId);
+    return await confirmarRecepcionEnvase(codigo, usuarioId);
   }
 
   /** Historial de envases entregados por el bar, lo más reciente primero. */
   static async listContainerReturns(limite?: number) {
-    return await InventoryRepository.listContainerReturns(limite);
+    return await listarDevoluciones(limite);
   }
 
   static async getChampagneTiers(productoId: string) {
@@ -486,7 +508,7 @@ export class ProductService {
     }
     const producto = await ProductRepository.getById(productoId);
     if (!producto) throw new NotFoundError('Producto', productoId);
-    return await InventoryRepository.setUnitsEstadoStandalone(productoId, ids, estado);
+    return await cambiarEstadoUnidades(productoId, ids, estado);
   }
 
   static async addUnits(
@@ -500,11 +522,15 @@ export class ProductService {
     }
     const producto = await ProductRepository.getById(productoId);
     if (!producto) throw new NotFoundError('Producto', productoId);
-    const presentaciones = await InventoryRepository.listPresentations(productoId);
+    const presentaciones = await listarPresentaciones(productoId);
     const presentacion = presentaciones.find(p => p.id === presentacionId);
     if (!presentacion) {
       throw new ValidationError('La presentación no pertenece a este producto');
     }
-    return await InventoryRepository.generateUnitsStandalone(productoId, unidades, presentacionId);
+    return await registrarUnidades({
+      producto_id: productoId,
+      cantidad: unidades,
+      presentacion_id: presentacionId
+    });
   }
 }

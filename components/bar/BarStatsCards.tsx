@@ -1,6 +1,6 @@
 import { AlertTriangle, GlassWater, Wine } from 'lucide-react';
 import { Card, CardContent } from '@/components/ui/card';
-import type { ShotsSummary } from '@/lib/repositories/InventoryRepository';
+import type { ShotsSummary } from '@/modules/inventario/contracts';
 
 export function BarStatsCards({ resumen }: { resumen: ShotsSummary | null }) {
   const stats = [

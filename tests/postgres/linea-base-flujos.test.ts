@@ -44,6 +44,8 @@ import db, { query, withTransaction } from '@/lib/database/db';
 import { snapshotDatabase, restoreDatabase } from '@/lib/database/maintenance';
 import { instantaneaPerfil, perfilActivo, reiniciarPerfil } from '@/lib/database/perfilConsultas';
 import { AccountService } from '@/lib/services/AccountService';
+import { consumirStockBar } from '@/modules/inventario';
+import { conContextoOperacionExistente } from '@/lib/transaccion/compatibilidad';
 import {
   listarAnticipos,
   listarHorasExtrasDeUsuario,
@@ -53,7 +55,7 @@ import {
 import { getAnticipoBalances } from '@/lib/business/anticiposUtils';
 import { getAdminWhatsApp } from '@/lib/business/whatsappConfig';
 import { getTwilioConfig } from '@/lib/business/twilioConfig';
-import { InventoryRepository } from '@/lib/repositories/InventoryRepository';
+
 import { OrderRepository } from '@/lib/repositories/OrderRepository';
 import { SaleService } from '@/lib/services/SaleService';
 import { CommissionRepository } from '@/lib/repositories/CommissionRepository';
@@ -363,10 +365,12 @@ describe('línea base de consultas por flujo', () => {
       // ruta que mide cuántas consultas cuesta el rechazo.
       const muestra = await medir('inventario: consumo sin existencias', async () => {
         await withTransaction(async trx => {
-          await InventoryRepository.consume(
-            trx,
-            [{ presentacion_id: presentacionId, cantidad: 1, tipo_venta: 'venta' }],
-            { usuarioId: user.id_usuario, fecha: new Date().toISOString().slice(0, 10) }
+          await conContextoOperacionExistente(trx, contexto =>
+            consumirStockBar(
+              [{ presentacion_id: presentacionId, cantidad: 1, tipo_venta: 'venta' }],
+              { usuarioId: user.id_usuario, fecha: new Date().toISOString().slice(0, 10) },
+              contexto
+            )
           );
         }).catch(() => undefined);
       });

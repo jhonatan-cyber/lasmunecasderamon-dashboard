@@ -1,15 +1,15 @@
 {
   "resumen": {
-    "commit": "9ae1f4a1141e84d8861435794ea8942c2a475481",
-    "generado": "2026-10-03T15:12:35.747Z",
-    "archivos": 1500,
+    "commit": "c66000c693b333c62b80fd0285e0197f480b5a58",
+    "generado": "2026-10-05T00:45:31.497Z",
+    "archivos": 1525,
     "rutas": 204,
-    "sqlFueraDeRepositorio": 90,
+    "sqlFueraDeRepositorio": 97,
     "tablasConEscritoresMultiples": 13,
-    "ciclos": 6,
+    "ciclos": 5,
     "procesosPeriodicos": 15,
     "caches": 19,
-    "rutasApiConSqlDirecto": 36,
+    "rutasApiConSqlDirecto": 35,
     "rutasSinWrapper": 19
   },
   "rutas": [
@@ -110,7 +110,7 @@
       "nivel": "advances.read",
       "audit": true,
       "moduloDominio": "personal",
-      "usaDriver": true
+      "usaDriver": false
     },
     {
       "ruta": "/api/anticipos/user",
@@ -1918,6 +1918,138 @@
       "escribe": []
     },
     {
+      "archivo": "modules/inventario/bar/configuracion.ts",
+      "capa": "raiz",
+      "modulo": "inventario",
+      "escribe": []
+    },
+    {
+      "archivo": "modules/inventario/envases/servicio.ts",
+      "capa": "raiz",
+      "modulo": "inventario",
+      "escribe": []
+    },
+    {
+      "archivo": "modules/inventario/presentaciones/servicio.ts",
+      "capa": "raiz",
+      "modulo": "inventario",
+      "escribe": []
+    },
+    {
+      "archivo": "modules/inventario/transferencias/servicio.ts",
+      "capa": "raiz",
+      "modulo": "inventario",
+      "escribe": []
+    },
+    {
+      "archivo": "modules/inventario/unidades/servicio.ts",
+      "capa": "raiz",
+      "modulo": "inventario",
+      "escribe": []
+    },
+    {
+      "archivo": "modules/asistencia/biometrico/avisosAudio.ts",
+      "capa": "raiz",
+      "modulo": null,
+      "escribe": []
+    },
+    {
+      "archivo": "modules/asistencia/biometrico/clockSync.ts",
+      "capa": "raiz",
+      "modulo": null,
+      "escribe": []
+    },
+    {
+      "archivo": "modules/asistencia/biometrico/deviceAuth.ts",
+      "capa": "raiz",
+      "modulo": null,
+      "escribe": ["biometric_devices"]
+    },
+    {
+      "archivo": "modules/asistencia/biometrico/enrollmentService.ts",
+      "capa": "raiz",
+      "modulo": null,
+      "escribe": ["biometric_devices", "biometric_plantillas", "usuarios"]
+    },
+    {
+      "archivo": "modules/asistencia/biometrico/eventListener.ts",
+      "capa": "raiz",
+      "modulo": null,
+      "escribe": []
+    },
+    {
+      "archivo": "modules/asistencia/biometrico/identificacionFacial.ts",
+      "capa": "raiz",
+      "modulo": null,
+      "escribe": ["biometric_device_records", "biometric_plantillas"]
+    },
+    {
+      "archivo": "modules/asistencia/biometrico/ipDiscovery.ts",
+      "capa": "raiz",
+      "modulo": null,
+      "escribe": ["biometric_devices"]
+    },
+    {
+      "archivo": "modules/asistencia/biometrico/ipWatcher.ts",
+      "capa": "raiz",
+      "modulo": null,
+      "escribe": []
+    },
+    {
+      "archivo": "modules/asistencia/biometrico/processBiometricEvent.ts",
+      "capa": "raiz",
+      "modulo": null,
+      "escribe": []
+    },
+    {
+      "archivo": "modules/asistencia/biometrico/recordPhotos.ts",
+      "capa": "raiz",
+      "modulo": null,
+      "escribe": ["biometric_device_records"]
+    },
+    {
+      "archivo": "modules/asistencia/biometrico/recordPoller.ts",
+      "capa": "raiz",
+      "modulo": null,
+      "escribe": []
+    },
+    {
+      "archivo": "modules/asistencia/biometrico/statusService.ts",
+      "capa": "raiz",
+      "modulo": null,
+      "escribe": []
+    },
+    {
+      "archivo": "modules/asistencia/biometrico/unenrollmentService.ts",
+      "capa": "raiz",
+      "modulo": null,
+      "escribe": ["biometric_plantillas", "usuarios"]
+    },
+    {
+      "archivo": "modules/asistencia/biometrico/verificacionRemota.ts",
+      "capa": "raiz",
+      "modulo": null,
+      "escribe": []
+    },
+    {
+      "archivo": "modules/asistencia/biometrico/videoStream.ts",
+      "capa": "raiz",
+      "modulo": null,
+      "escribe": []
+    },
+    {
+      "archivo": "modules/asistencia/kioskos/attendanceChallenges.ts",
+      "capa": "raiz",
+      "modulo": null,
+      "escribe": ["asistencia_desafios"]
+    },
+    {
+      "archivo": "modules/asistencia/kioskos/deviceAuth.ts",
+      "capa": "raiz",
+      "modulo": null,
+      "escribe": ["kiosk_devices"]
+    },
+    {
       "archivo": "proxy.ts",
       "capa": "raiz",
       "modulo": null,
@@ -1991,19 +2123,25 @@
       "escribe": ["cajas"]
     },
     {
-      "archivo": "lib/kiosk/attendanceChallenges.ts",
+      "archivo": "lib/transaccion/compatibilidad.ts",
       "capa": "lib/otros",
       "modulo": null,
-      "escribe": ["asistencia_desafios"]
-    },
-    {
-      "archivo": "lib/kiosk/deviceAuth.ts",
-      "capa": "lib/otros",
-      "modulo": null,
-      "escribe": ["kiosk_devices"]
+      "escribe": []
     },
     {
       "archivo": "lib/notifications/orderNotificationUtils.ts",
+      "capa": "lib/otros",
+      "modulo": null,
+      "escribe": []
+    },
+    {
+      "archivo": "lib/transaccion/contrato.ts",
+      "capa": "lib/otros",
+      "modulo": null,
+      "escribe": []
+    },
+    {
+      "archivo": "lib/transaccion/infraestructura.ts",
       "capa": "lib/otros",
       "modulo": null,
       "escribe": []
@@ -2104,96 +2242,6 @@
       "escribe": []
     },
     {
-      "archivo": "lib/biometric/avisosAudio.ts",
-      "capa": "lib/biometric",
-      "modulo": "asistencia",
-      "escribe": []
-    },
-    {
-      "archivo": "lib/biometric/clockSync.ts",
-      "capa": "lib/biometric",
-      "modulo": "asistencia",
-      "escribe": []
-    },
-    {
-      "archivo": "lib/biometric/deviceAuth.ts",
-      "capa": "lib/biometric",
-      "modulo": "asistencia",
-      "escribe": ["biometric_devices"]
-    },
-    {
-      "archivo": "lib/biometric/enrollmentService.ts",
-      "capa": "lib/biometric",
-      "modulo": "asistencia",
-      "escribe": ["biometric_devices", "biometric_plantillas", "usuarios"]
-    },
-    {
-      "archivo": "lib/biometric/eventListener.ts",
-      "capa": "lib/biometric",
-      "modulo": "asistencia",
-      "escribe": []
-    },
-    {
-      "archivo": "lib/biometric/identificacionFacial.ts",
-      "capa": "lib/biometric",
-      "modulo": "asistencia",
-      "escribe": ["biometric_device_records", "biometric_plantillas"]
-    },
-    {
-      "archivo": "lib/biometric/ipDiscovery.ts",
-      "capa": "lib/biometric",
-      "modulo": "asistencia",
-      "escribe": ["biometric_devices"]
-    },
-    {
-      "archivo": "lib/biometric/ipWatcher.ts",
-      "capa": "lib/biometric",
-      "modulo": "asistencia",
-      "escribe": []
-    },
-    {
-      "archivo": "lib/biometric/processBiometricEvent.ts",
-      "capa": "lib/biometric",
-      "modulo": "asistencia",
-      "escribe": []
-    },
-    {
-      "archivo": "lib/biometric/recordPhotos.ts",
-      "capa": "lib/biometric",
-      "modulo": "asistencia",
-      "escribe": ["biometric_device_records"]
-    },
-    {
-      "archivo": "lib/biometric/recordPoller.ts",
-      "capa": "lib/biometric",
-      "modulo": "asistencia",
-      "escribe": []
-    },
-    {
-      "archivo": "lib/biometric/statusService.ts",
-      "capa": "lib/biometric",
-      "modulo": "asistencia",
-      "escribe": []
-    },
-    {
-      "archivo": "lib/biometric/unenrollmentService.ts",
-      "capa": "lib/biometric",
-      "modulo": "asistencia",
-      "escribe": ["biometric_plantillas", "usuarios"]
-    },
-    {
-      "archivo": "lib/biometric/verificacionRemota.ts",
-      "capa": "lib/biometric",
-      "modulo": "asistencia",
-      "escribe": []
-    },
-    {
-      "archivo": "lib/biometric/videoStream.ts",
-      "capa": "lib/biometric",
-      "modulo": "asistencia",
-      "escribe": []
-    },
-    {
       "archivo": "app/api/anticipos/maximo/route.ts",
       "capa": "app/api",
       "modulo": "personal",
@@ -2201,12 +2249,6 @@
     },
     {
       "archivo": "app/api/anticipos/solicitud-detalles/route.ts",
-      "capa": "app/api",
-      "modulo": "personal",
-      "escribe": []
-    },
-    {
-      "archivo": "app/api/anticipos/solicitudes/route.ts",
       "capa": "app/api",
       "modulo": "personal",
       "escribe": []
@@ -2489,10 +2531,10 @@
     {
       "tabla": "inventario_unidades",
       "escritores": [
-        "lib/repositories/inventory/BarQueries.ts",
-        "lib/repositories/inventory/EnvaseQueries.ts",
-        "lib/repositories/inventory/TransferQueries.ts",
-        "lib/repositories/inventory/UnidadQueries.ts"
+        "modules/inventario/bar/consumoRepositorio.ts",
+        "modules/inventario/envases/repositorio.ts",
+        "modules/inventario/transferencias/repositorio.ts",
+        "modules/inventario/unidades/repositorio.ts"
       ],
       "modulos": ["inventario"]
     },
@@ -2523,6 +2565,26 @@
   ],
   "transacciones": [
     {
+      "archivo": "modules/inventario/envases/servicio.ts",
+      "capa": "raiz",
+      "modulo": "inventario"
+    },
+    {
+      "archivo": "modules/inventario/presentaciones/servicio.ts",
+      "capa": "raiz",
+      "modulo": "inventario"
+    },
+    {
+      "archivo": "modules/inventario/transferencias/servicio.ts",
+      "capa": "raiz",
+      "modulo": "inventario"
+    },
+    {
+      "archivo": "modules/inventario/unidades/servicio.ts",
+      "capa": "raiz",
+      "modulo": "inventario"
+    },
+    {
       "archivo": "app/api/cron/check-timers/route.ts",
       "capa": "app/api",
       "modulo": null
@@ -2533,23 +2595,8 @@
       "modulo": "identidad"
     },
     {
-      "archivo": "lib/biometric/enrollmentService.ts",
-      "capa": "lib/biometric",
-      "modulo": "asistencia"
-    },
-    {
-      "archivo": "lib/biometric/unenrollmentService.ts",
-      "capa": "lib/biometric",
-      "modulo": "asistencia"
-    },
-    {
       "archivo": "lib/database/maintenance.ts",
       "capa": "lib/database",
-      "modulo": null
-    },
-    {
-      "archivo": "lib/kiosk/deviceAuth.ts",
-      "capa": "lib/otros",
       "modulo": null
     },
     {
@@ -2598,16 +2645,6 @@
       "modulo": null
     },
     {
-      "archivo": "lib/repositories/anticipo/AnticipoQueries.ts",
-      "capa": "lib/repositories",
-      "modulo": "personal"
-    },
-    {
-      "archivo": "lib/repositories/attendance/AttendanceQueries.ts",
-      "capa": "lib/repositories",
-      "modulo": "asistencia"
-    },
-    {
       "archivo": "lib/repositories/cuenta/CuentaQueries.ts",
       "capa": "lib/repositories",
       "modulo": "operacion"
@@ -2616,31 +2653,6 @@
       "archivo": "lib/repositories/gratificacion/GratificacionQueries.ts",
       "capa": "lib/repositories",
       "modulo": "personal"
-    },
-    {
-      "archivo": "lib/repositories/inventory/BarQueries.ts",
-      "capa": "lib/repositories",
-      "modulo": "inventario"
-    },
-    {
-      "archivo": "lib/repositories/inventory/EnvaseQueries.ts",
-      "capa": "lib/repositories",
-      "modulo": "inventario"
-    },
-    {
-      "archivo": "lib/repositories/inventory/PresentacionQueries.ts",
-      "capa": "lib/repositories",
-      "modulo": "inventario"
-    },
-    {
-      "archivo": "lib/repositories/inventory/TransferQueries.ts",
-      "capa": "lib/repositories",
-      "modulo": "inventario"
-    },
-    {
-      "archivo": "lib/repositories/inventory/UnidadQueries.ts",
-      "capa": "lib/repositories",
-      "modulo": "inventario"
     },
     {
       "archivo": "lib/repositories/sale/SaleQueries.ts",
@@ -2676,6 +2688,36 @@
       "archivo": "lib/services/WithdrawalService.ts",
       "capa": "lib/services",
       "modulo": "caja"
+    },
+    {
+      "archivo": "lib/transaccion/contrato.ts",
+      "capa": "lib/otros",
+      "modulo": null
+    },
+    {
+      "archivo": "modules/asistencia/biometrico/enrollmentService.ts",
+      "capa": "raiz",
+      "modulo": null
+    },
+    {
+      "archivo": "modules/asistencia/biometrico/unenrollmentService.ts",
+      "capa": "raiz",
+      "modulo": null
+    },
+    {
+      "archivo": "modules/asistencia/kioskos/deviceAuth.ts",
+      "capa": "raiz",
+      "modulo": null
+    },
+    {
+      "archivo": "modules/asistencia/marcas/repositorio.ts",
+      "capa": "raiz",
+      "modulo": null
+    },
+    {
+      "archivo": "modules/personal/anticipos/repositorio.ts",
+      "capa": "raiz",
+      "modulo": null
     }
   ],
   "procesos": [
@@ -2752,22 +2794,22 @@
       "texto": "this.heartbeatInterval = setInterval(() => {"
     },
     {
-      "archivo": "lib/biometric/ipWatcher.ts",
-      "linea": 102,
-      "tipo": "setInterval",
-      "texto": "timer = setInterval(arrancar, intervaloVigilanciaIp());"
-    },
-    {
-      "archivo": "lib/biometric/recordPoller.ts",
-      "linea": 357,
-      "tipo": "setInterval",
-      "texto": "estado.timer = setInterval(() => {"
-    },
-    {
       "archivo": "lib/store/timerStore.ts",
       "linea": 164,
       "tipo": "setInterval",
       "texto": "tickInterval = setInterval(() => {"
+    },
+    {
+      "archivo": "modules/asistencia/biometrico/ipWatcher.ts",
+      "linea": 105,
+      "tipo": "setInterval",
+      "texto": "timer = setInterval(arrancar, intervaloVigilanciaIp());"
+    },
+    {
+      "archivo": "modules/asistencia/biometrico/recordPoller.ts",
+      "linea": 360,
+      "tipo": "setInterval",
+      "texto": "estado.timer = setInterval(() => {"
     }
   ],
   "listeners": [
@@ -2830,7 +2872,7 @@
     },
     {
       "archivo": "scripts/arquitectura/analisis.mjs",
-      "linea": 317,
+      "linea": 319,
       "texto": "/\\bnew (Redis|RedisClient|ioredis)\\b/.test(linea) ||"
     },
     {
@@ -2864,19 +2906,19 @@
       "texto": "caché en memoria (new Map + cache)"
     },
     {
-      "archivo": "lib/biometric/netSdk.ts",
-      "linea": 0,
-      "texto": "caché compartida en globalThis"
-    },
-    {
-      "archivo": "lib/biometric/videoStream.ts",
-      "linea": 0,
-      "texto": "caché en memoria (new Map + cache)"
-    },
-    {
       "archivo": "lib/database/db.ts",
       "linea": 0,
       "texto": "caché compartida en globalThis"
+    },
+    {
+      "archivo": "modules/asistencia/biometrico/netSdk.ts",
+      "linea": 0,
+      "texto": "caché compartida en globalThis"
+    },
+    {
+      "archivo": "modules/asistencia/biometrico/videoStream.ts",
+      "linea": 0,
+      "texto": "caché en memoria (new Map + cache)"
     },
     {
       "archivo": "scripts/arquitectura/analisis.mjs",
@@ -2885,7 +2927,6 @@
     }
   ],
   "ciclos": [
-    ["asistencia", "identidad", "asistencia"],
     ["identidad", "personal", "identidad"],
     ["identidad", "personal", "comunicaciones", "identidad"],
     ["comunicaciones", "ventas", "comunicaciones"],

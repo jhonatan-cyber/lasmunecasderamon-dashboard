@@ -1,40 +1,4 @@
 {
-  "ui-no-infraestructura|app/bar/page.tsx|lib/repositories/InventoryRepository.ts": {
-    "regla": "ui-no-infraestructura",
-    "plan": "§5 — la UI y los hooks consumen HTTP y contratos de cliente",
-    "desde": "app/bar/page.tsx",
-    "hacia": "lib/repositories/InventoryRepository.ts",
-    "motivo": "La UI importa tipos y constantes de InventoryRepository porque Bar y el escaner de envases comparten el catalogo con el servidor. El plan (Fase 4) exige separar los contratos de Bar de los tipos de repositorio.",
-    "responsable": "Fase 4 - Catalogo e inventario",
-    "condicion": "Cuando exista modules/inventario/contracts.ts con los DTO que necesita la UI, esta importacion pasa a apuntar ahi y la excepcion se elimina."
-  },
-  "ui-no-infraestructura|components/bar/BarStatsCards.tsx|lib/repositories/InventoryRepository.ts": {
-    "regla": "ui-no-infraestructura",
-    "plan": "§5 — la UI y los hooks consumen HTTP y contratos de cliente",
-    "desde": "components/bar/BarStatsCards.tsx",
-    "hacia": "lib/repositories/InventoryRepository.ts",
-    "motivo": "La UI importa tipos y constantes de InventoryRepository porque Bar y el escaner de envases comparten el catalogo con el servidor. El plan (Fase 4) exige separar los contratos de Bar de los tipos de repositorio.",
-    "responsable": "Fase 4 - Catalogo e inventario",
-    "condicion": "Cuando exista modules/inventario/contracts.ts con los DTO que necesita la UI, esta importacion pasa a apuntar ahi y la excepcion se elimina."
-  },
-  "ui-no-infraestructura|components/products/ContainerReturnsPanel.tsx|lib/repositories/InventoryRepository.ts": {
-    "regla": "ui-no-infraestructura",
-    "plan": "§5 — la UI y los hooks consumen HTTP y contratos de cliente",
-    "desde": "components/products/ContainerReturnsPanel.tsx",
-    "hacia": "lib/repositories/InventoryRepository.ts",
-    "motivo": "La UI importa tipos y constantes de InventoryRepository porque Bar y el escaner de envases comparten el catalogo con el servidor. El plan (Fase 4) exige separar los contratos de Bar de los tipos de repositorio.",
-    "responsable": "Fase 4 - Catalogo e inventario",
-    "condicion": "Cuando exista modules/inventario/contracts.ts con los DTO que necesita la UI, esta importacion pasa a apuntar ahi y la excepcion se elimina."
-  },
-  "ui-no-infraestructura|hooks/productos/useContainerScan.ts|lib/repositories/InventoryRepository.ts": {
-    "regla": "ui-no-infraestructura",
-    "plan": "§5 — la UI y los hooks consumen HTTP y contratos de cliente",
-    "desde": "hooks/productos/useContainerScan.ts",
-    "hacia": "lib/repositories/InventoryRepository.ts",
-    "motivo": "La UI importa tipos y constantes de InventoryRepository porque Bar y el escaner de envases comparten el catalogo con el servidor. El plan (Fase 4) exige separar los contratos de Bar de los tipos de repositorio.",
-    "responsable": "Fase 4 - Catalogo e inventario",
-    "condicion": "Cuando exista modules/inventario/contracts.ts con los DTO que necesita la UI, esta importacion pasa a apuntar ahi y la excepcion se elimina."
-  },
   "sin-ciclos|asistencia (dominio)|asistencia → identidad → asistencia": {
     "regla": "sin-ciclos",
     "plan": "§5 — las dependencias entre módulos forman un grafo sin ciclos",
@@ -232,5 +196,23 @@
     "motivo": "Ciclos heredados entre dominios: asistencia e identidad se necesitan mutuamente para autorizar marcas; ventas origina comisiones que pertenecen a Personal. El plan (principio 2) prohibe que un modulo escriba tablas de otro, no que se consulten.",
     "responsable": "Fases 3 y 5 - Asistencia, Ventas y Personal",
     "condicion": "Cuando cada ciclo se rompa subiendolo a workflows/ o declarandolo como lectura publica cruzada, la arista desaparece y la excepcion se elimina."
+  },
+  "puente-transaccional-heredado|lib/repositories/ProductRepository.ts|lib/transaccion/compatibilidad.ts": {
+    "regla": "puente-transaccional-heredado",
+    "plan": "Transición de Fase 4 — el puente al contexto opaco se retira al migrar la transacción de ventas",
+    "desde": "lib/repositories/ProductRepository.ts",
+    "hacia": "lib/transaccion/compatibilidad.ts",
+    "motivo": "La creación y actualización de productos escribe presentaciones y unidades de inventario dentro de su propia transacción; conContextoOperacionExistente adapta ese trx heredado al contexto opaco del módulo inventario (mismo patrón que SaleService, corte 4 de la fase 4).",
+    "responsable": "Fase 4 - Catálogo e inventario",
+    "condicion": "Retirar cuando ProductRepository reciba el ContextoOperacion de su flujo llamante en lugar de abrir la unidad él mismo; entonces la regla vuelve a exigir que sólo SaleService use el puente."
+  },
+  "puente-transaccional-heredado|lib/services/PurchaseService.ts|lib/transaccion/compatibilidad.ts": {
+    "regla": "puente-transaccional-heredado",
+    "plan": "Transición de Fase 4 — el puente al contexto opaco se retira al migrar la transacción de ventas",
+    "desde": "lib/services/PurchaseService.ts",
+    "hacia": "lib/transaccion/compatibilidad.ts",
+    "motivo": "El registro de compras genera unidades y sincroniza stock dentro de su propia transacción; conContextoOperacionExistente adapta ese trx heredado al contexto opaco del módulo inventario (mismo patrón que SaleService, corte 4 de la fase 4).",
+    "responsable": "Fase 4 - Catálogo e inventario",
+    "condicion": "Retirar cuando PurchaseService reciba el ContextoOperacion de su flujo llamante en lugar de abrir la unidad él mismo; entonces la regla vuelve a exigir que sólo SaleService use el puente."
   }
 }

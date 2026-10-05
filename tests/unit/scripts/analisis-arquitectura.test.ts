@@ -69,8 +69,10 @@ describe('analisis de arquitectura (Fase 0)', () => {
   });
 
   it('no cuenta los repositorios como SQL fuera de repositorios', () => {
-    const enRepo = informe.sqlFueraDeRepositorio.filter(x =>
-      x.archivo.startsWith('lib/repositories/')
+    const enRepo = informe.sqlFueraDeRepositorio.filter(
+      x =>
+        x.archivo.startsWith('lib/repositories/') ||
+        (/^modules\//.test(x.archivo) && /(?:repositorio|Repositorio)\.ts$/.test(x.archivo))
     );
     expect(enRepo).toHaveLength(0);
   });

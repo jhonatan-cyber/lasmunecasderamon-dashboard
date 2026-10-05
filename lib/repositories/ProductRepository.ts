@@ -3,7 +3,8 @@ import { getNowInBusinessTimezone } from '@/lib/business/timezoneService';
 import { ProductSchema, type ProductType } from '@/lib/business/schemas';
 import { logger } from '@/lib/utils/logger';
 import { BaseRepository } from './BaseRepository';
-import { InventoryRepository } from './InventoryRepository';
+import { crearPresentacion, generarUnidades, sincronizarStockTotal } from '@/modules/inventario';
+import { conContextoOperacionExistente } from '@/lib/transaccion/compatibilidad';
 
 export interface NewPresentacion {
   nombre: string;
@@ -126,22 +127,33 @@ export class ProductRepository {
         fecha_crea: now
       });
 
-      for (const p of presentaciones) {
-        const creada = await InventoryRepository.createPresentation(trx, {
-          producto_id: id,
-          nombre: p.nombre,
-          codigo_barras: p.codigo_barras,
-          precio_compra: p.precio_compra,
-          foto: p.foto
-        });
-        const cantidad = Math.max(0, Math.floor(p.cantidad ?? 0));
-        if (cantidad > 0) {
-          const generados = await InventoryRepository.generateUnits(trx, id, cantidad, creada.id);
-          codigos.push(...generados);
+      // Las escrituras de inventario pasan por la API pública del módulo con el
+      // contexto de esta misma unidad (puente heredado: excepción anotada en
+      // excepciones.json, se retira cuando ProductRepository maneje contexto).
+      await conContextoOperacionExistente(trx, async contexto => {
+        for (const p of presentaciones) {
+          const creada = await crearPresentacion(
+            {
+              producto_id: id,
+              nombre: p.nombre,
+              codigo_barras: p.codigo_barras,
+              precio_compra: p.precio_compra,
+              foto: p.foto
+            },
+            contexto
+          );
+          const cantidad = Math.max(0, Math.floor(p.cantidad ?? 0));
+          if (cantidad > 0) {
+            const generados = await generarUnidades(
+              { producto_id: id, cantidad, presentacion_id: creada.id },
+              contexto
+            );
+            codigos.push(...generados);
+          }
         }
-      }
 
-      await InventoryRepository.syncStockTotal(trx, id);
+        await sincronizarStockTotal(id, contexto);
+      });
     });
 
     const created = await this.getById(id);
@@ -190,21 +202,30 @@ export class ProductRepository {
     await withTransaction(async trx => {
       await BaseRepository.update(trx, 'productos', 'id_producto', id, updateData);
 
-      for (const p of presentacionesNuevas) {
-        const creada = await InventoryRepository.createPresentation(trx, {
-          producto_id: id,
-          nombre: p.nombre,
-          codigo_barras: p.codigo_barras,
-          precio_compra: p.precio_compra,
-          foto: p.foto
-        });
-        const cantidad = Math.max(0, Math.floor(p.cantidad ?? 0));
-        if (cantidad > 0) {
-          await InventoryRepository.generateUnits(trx, id, cantidad, creada.id);
+      // Mismo patrón que en `create`: contexto opaco para el módulo inventario.
+      await conContextoOperacionExistente(trx, async contexto => {
+        for (const p of presentacionesNuevas) {
+          const creada = await crearPresentacion(
+            {
+              producto_id: id,
+              nombre: p.nombre,
+              codigo_barras: p.codigo_barras,
+              precio_compra: p.precio_compra,
+              foto: p.foto
+            },
+            contexto
+          );
+          const cantidad = Math.max(0, Math.floor(p.cantidad ?? 0));
+          if (cantidad > 0) {
+            await generarUnidades(
+              { producto_id: id, cantidad, presentacion_id: creada.id },
+              contexto
+            );
+          }
         }
-      }
 
-      await InventoryRepository.syncStockTotal(trx, id);
+        await sincronizarStockTotal(id, contexto);
+      });
     });
     return await this.getById(id);
   }

@@ -2,11 +2,9 @@ import { defineConfig } from 'vitest/config';
 import { config } from 'dotenv';
 import path from 'node:path';
 config({ quiet: true });
-if (
-  !['localhost', '127.0.0.1', '::1'].includes(process.env.DB_HOST || '127.0.0.1') ||
-  !process.env.DB_NAME?.endsWith('_test')
-)
-  throw new Error('PostgreSQL tests require a local DB_NAME ending in _test');
+const hostLocal = ['localhost', '127.0.0.1', '::1'].includes(process.env.DB_HOST || '127.0.0.1');
+if (!hostLocal || process.env.DB_NAME !== 'lasmunecasderamon')
+  throw new Error('PostgreSQL tests require local DB_NAME=lasmunecasderamon');
 export default defineConfig({
   resolve: {
     alias: {

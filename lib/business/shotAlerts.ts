@@ -3,7 +3,7 @@ import { NotificationService } from '@/lib/services/NotificationService';
 import { sendNotificationToAll } from '@/lib/api/sseService';
 import { sendPushByRole } from '@/lib/integrations/pushNotifications';
 import logger from '@/lib/utils/logger';
-import type { ShotAlert } from '@/lib/repositories/InventoryRepository';
+import type { ShotAlert } from '@/modules/inventario/contracts';
 
 /** Tipo de notificación persistida para el aviso (campanita / historial). */
 export const BAR_SHOT_ALERT_TIPO = 'bar_shot_alert';

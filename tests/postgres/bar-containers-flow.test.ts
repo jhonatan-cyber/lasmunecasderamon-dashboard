@@ -12,9 +12,13 @@ import db, { query } from '@/lib/database/db';
 import { snapshotDatabase, restoreDatabase } from '@/lib/database/maintenance';
 import {
   ESTADO_UNIDAD_VENDIDA,
-  generarEan13Interno,
-  InventoryRepository
-} from '@/lib/repositories/InventoryRepository';
+  generarEan13Interno
+} from '@/lib/repositories/inventory/inventoryHelpers';
+import {
+  confirmarRecepcionEnvase,
+  listarDevoluciones,
+  verificarEnvase
+} from '@/modules/inventario';
 import {
   checkWarehouseContainerAlerts,
   getContainerReturnsSummary
@@ -84,10 +88,7 @@ it('el bar entrega y el almacén confirma; los rechazos de cada paso no escriben
     const pendiente = await crearEnvase(ESTADO_UNIDAD_VENDIDA);
 
     // Escaneo válido por EAN-13: es nuestro, vacío y sin devolver → se marca.
-    const ok = await InventoryRepository.verifyAndReturnContainer(
-      vacia.codigoBarras,
-      vacia.usuarioId
-    );
+    const ok = await verificarEnvase(vacia.codigoBarras, vacia.usuarioId);
     expect(ok.ok).toBe(true);
 
     const [fila] = await query(
@@ -98,26 +99,17 @@ it('el bar entrega y el almacén confirma; los rechazos de cada paso no escriben
     expect(fila.devuelto_por).toBe(vacia.usuarioId);
 
     // Re-escaneo por SKU (la unidad se busca por barra o por código): ya devuelto.
-    const rescan = await InventoryRepository.verifyAndReturnContainer(
-      vacia.codigo,
-      vacia.usuarioId
-    );
+    const rescan = await verificarEnvase(vacia.codigo, vacia.usuarioId);
     expect(rescan).toMatchObject({ ok: false, motivo: 'ya_devuelto' });
 
     // Un envase lleno no se puede devolver: no está vacío.
-    const llenaRes = await InventoryRepository.verifyAndReturnContainer(
-      llena.codigoBarras,
-      llena.usuarioId
-    );
+    const llenaRes = await verificarEnvase(llena.codigoBarras, llena.usuarioId);
     expect(llenaRes).toMatchObject({ ok: false, motivo: 'no_esta_vacia' });
 
     // La botella vendida entera (sin shots) no entra al control: su envase se
     // lo llevó el cliente (migración 042).
     const entera = await crearEnvase(ESTADO_UNIDAD_VENDIDA, false);
-    const enteraRes = await InventoryRepository.verifyAndReturnContainer(
-      entera.codigoBarras,
-      entera.usuarioId
-    );
+    const enteraRes = await verificarEnvase(entera.codigoBarras, entera.usuarioId);
     expect(enteraRes).toMatchObject({ ok: false, motivo: 'venta_entera' });
     const [filaEntera] = await query(
       'SELECT fecha_devolucion FROM inventario_unidades WHERE id = ?',
@@ -126,32 +118,20 @@ it('el bar entrega y el almacén confirma; los rechazos de cada paso no escriben
     expect(filaEntera.fecha_devolucion).toBeNull();
 
     // Un código que no registramos nosotros no es nuestro.
-    const ajeno = await InventoryRepository.verifyAndReturnContainer(
-      '7800000000001',
-      vacia.usuarioId
-    );
+    const ajeno = await verificarEnvase('7800000000001', vacia.usuarioId);
     expect(ajeno).toMatchObject({ ok: false, motivo: 'no_es_nuestro', unidad: null });
 
     // --- Paso 2 (almacén): la recepción la confirma quien recibe, no quien entrega.
 
     // Sin entrega del bar no hay nada que recibir.
-    const sinEntrega = await InventoryRepository.confirmContainerReturn(
-      llena.codigoBarras,
-      vacia.usuarioId
-    );
+    const sinEntrega = await confirmarRecepcionEnvase(llena.codigoBarras, vacia.usuarioId);
     expect(sinEntrega).toMatchObject({ ok: false, motivo: 'no_entregado' });
 
     // Entrega pendiente y entrega confirmada conviven en el historial.
-    const entregaPendiente = await InventoryRepository.verifyAndReturnContainer(
-      pendiente.codigoBarras,
-      pendiente.usuarioId
-    );
+    const entregaPendiente = await verificarEnvase(pendiente.codigoBarras, pendiente.usuarioId);
     expect(entregaPendiente.ok).toBe(true);
 
-    const confirmada = await InventoryRepository.confirmContainerReturn(
-      vacia.codigoBarras,
-      vacia.usuarioId
-    );
+    const confirmada = await confirmarRecepcionEnvase(vacia.codigoBarras, vacia.usuarioId);
     expect(confirmada.ok).toBe(true);
 
     const [recepcion] = await query(
@@ -162,21 +142,15 @@ it('el bar entrega y el almacén confirma; los rechazos de cada paso no escriben
     expect(recepcion.confirmado_por).toBe(vacia.usuarioId);
 
     // El almacén no puede recibir dos veces el mismo envase.
-    const reConfirmacion = await InventoryRepository.confirmContainerReturn(
-      vacia.codigo,
-      vacia.usuarioId
-    );
+    const reConfirmacion = await confirmarRecepcionEnvase(vacia.codigo, vacia.usuarioId);
     expect(reConfirmacion).toMatchObject({ ok: false, motivo: 'ya_confirmado' });
 
     // Un código ajeno tampoco se confirma.
-    const ajenoConfirmado = await InventoryRepository.confirmContainerReturn(
-      '7800000000001',
-      vacia.usuarioId
-    );
+    const ajenoConfirmado = await confirmarRecepcionEnvase('7800000000001', vacia.usuarioId);
     expect(ajenoConfirmado).toMatchObject({ ok: false, motivo: 'no_es_nuestro', unidad: null });
 
     // El historial trae el envase con su producto, su entrega y su recepción.
-    const historial = await InventoryRepository.listContainerReturns();
+    const historial = await listarDevoluciones();
     const registro = historial.find(r => r.id === vacia.unidadId);
     expect(registro).toBeDefined();
     expect(registro!.producto_nombre).toBe(vacia.nombreProducto);
@@ -270,18 +244,12 @@ it('el resumen cuenta entregados, atrasados y confirmados, y el chequeo avisa al
 
     // El bar entrega los tres envases.
     for (const envase of [reciente, atrasado, recibido]) {
-      const marcado = await InventoryRepository.verifyAndReturnContainer(
-        envase.codigoBarras,
-        envase.usuarioId
-      );
+      const marcado = await verificarEnvase(envase.codigoBarras, envase.usuarioId);
       expect(marcado.ok).toBe(true);
     }
 
     // El almacén confirma uno y otro lleva más de 2 horas esperando recepción.
-    const confirmado = await InventoryRepository.confirmContainerReturn(
-      recibido.codigoBarras,
-      recibido.usuarioId
-    );
+    const confirmado = await confirmarRecepcionEnvase(recibido.codigoBarras, recibido.usuarioId);
     expect(confirmado.ok).toBe(true);
     await query(
       `UPDATE inventario_unidades SET fecha_devolucion = (?::timestamp - interval '3 hours') WHERE id = ?`,

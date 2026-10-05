@@ -108,31 +108,28 @@ existen), no por código.
   (`lib/configuraciones/registroClaves.ts`): reubicarlas en el propietario es la
   Fase 6 («Reubicar reglas de configuración en su propietario»).
 - El módulo asume hoy `ContextoOperacion` sólo donde ya existía; anticipos y la
-  biometría siguen con transacciones propias hasta el workflow de la Fase 5.##
-  Lo que el runtime destapó (y no lo arregla esta fase)
+  biometría siguen con transacciones propias hasta el workflow de la Fase 5.
 
-Al arrancar el build de producción (`next start`) para verificar de verdad que
-el cable funciona, se vio que `register()` sí se invoca pero **el import del
-módulo nunca resuelve**: se queda colgado. Bisecado con sondas en el propio
-`instrumentation.ts`:
+## Incidencia de runtime y resolución
 
-| Sonda                       | Resultado                                   |
-| --------------------------- | ------------------------------------------- |
-| `@/lib/utils/logger`        | carga en 7 ms                               |
-| `@/lib/database/db`         | **cuelga** (indefinido)                     |
-| 3 s después del arranque    | sigue colgando (no es un problema de orden) |
-| misma ruta servida por HTTP | carga bien (401/200, sin módulos rotos)     |
+Con Turbopack, la importación del grafo de `lib/database/db` desde el chunk de
+`instrumentation` se quedaba pendiente; las sondas cargaban `logger` pero no
+`db`. La cadena incluía `pg`, `postgres.cjs`, `env` y `perfilConsultas`. El
+comportamiento también existía antes de la migración, cuando `instrumentation`
+importaba `recordPoller` directamente.
 
-O sea: el bloqueo es la carga del grafo de `lib/database/db` **desde el chunk de
-instrumentation** con Turbopack, no el código. `pg` ya está en
-`serverExternalPackages`, y la cadena (`pg` → `postgres.cjs` → `env` →
-`perfilConsultas`) no tiene efectos de módulo. **Es preexistente**: el
-`instrumentation.ts` anterior importaba `recordPoller`, que importa `db` igual,
-así que el arranque automático de la recepción biométrica en `next start`
-llevaba tiempo sin completarse. La Fase 3 no lo introduce y no lo arregla: lo
-deja centralizado, medido y documentado. Cerrarlo es trabajo de runtime (build
-con webpack, mover el arranque fuera de instrumentation o arranque perezoso
-desde una ruta), y es una decisión de despliegue, no de módulos.
+Se cambió `build` y `build:analyze` a `next build --webpack`, opción documentada
+por la versión instalada de Next.js. Verificación en el entorno local:
+
+- `pnpm build`: Webpack compiló, TypeScript terminó y se generaron 217 páginas.
+- `pnpm start -- --port 3107`: servidor listo en 197 ms.
+- `GET /api/kiosk/session`: HTTP 200.
+
+Esto elimina el bloqueo observado durante el arranque del servidor. No valida la
+conexión con un reloj biométrico físico; esa comprobación requiere el
+dispositivo y su configuración de despliegue. La recepción es idempotente por
+proceso, no un líder distribuido: las instancias que no deban escuchar deben
+desactivarse con la configuración operativa correspondiente.
 
 ## Verificación
 
@@ -145,6 +142,6 @@ desde una ruta), y es una decisión de despliegue, no de módulos.
 - `pnpm arquitectura:limites`: 26/26 excepciones vigentes, ninguna nueva ni
   obsoleta.
 - `pnpm typecheck`, ESLint y Prettier: sin errores en los 130 archivos tocados.
-- `pnpm build`: compila; y en runtime, las rutas que consumen el módulo
-  responden bien (`/api/kiosk/session` 200, `/api/attendance/hoy` 401 con el
-  guard de sesión) — `server-only` no truena en el bundle de servidor.
+- `pnpm build` con Webpack y arranque productivo comprobados;
+  `/api/kiosk/session` responde 200 y `server-only` no truena en el bundle de
+  servidor.

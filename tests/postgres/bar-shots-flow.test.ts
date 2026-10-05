@@ -13,9 +13,9 @@ import { snapshotDatabase, restoreDatabase } from '@/lib/database/maintenance';
 import { SaleService } from '@/lib/services/SaleService';
 import {
   ESTADO_UNIDAD_ACTIVA,
-  ESTADO_UNIDAD_VENDIDA,
-  InventoryRepository
-} from '@/lib/repositories/InventoryRepository';
+  ESTADO_UNIDAD_VENDIDA
+} from '@/lib/repositories/inventory/inventoryHelpers';
+import { listarStockBar, obtenerResumenShots } from '@/modules/inventario';
 
 afterAll(async () => {
   await db.pool.end();
@@ -37,6 +37,27 @@ async function fijarShotMl(valor: number): Promise<void> {
       'INSERT INTO configuraciones (id, clave, valor, categoria, tipo, fecha_crea) VALUES (?, ?, ?, ?, ?, now())',
       [crypto.randomUUID(), 'shot_ml', String(valor), 'bar', 'number']
     );
+  }
+}
+
+async function snapshotBarDatabase() {
+  const [configuracion] = await query<{ valor: string }[]>(
+    "SELECT valor FROM configuraciones WHERE clave = 'shot_ml' LIMIT 1"
+  );
+  return { database: await snapshotDatabase(), shotMlOriginal: configuracion?.valor ?? null };
+}
+
+async function restoreBarDatabase(snapshot: {
+  database: unknown;
+  shotMlOriginal: string | null;
+}): Promise<void> {
+  await restoreDatabase(snapshot.database, 'test-only');
+  if (snapshot.shotMlOriginal === null) {
+    await query("DELETE FROM configuraciones WHERE clave = 'shot_ml'");
+  } else {
+    await query("UPDATE configuraciones SET valor = ? WHERE clave = 'shot_ml'", [
+      snapshot.shotMlOriginal
+    ]);
   }
 }
 
@@ -127,7 +148,7 @@ async function abrirCajaSiHaceFalta(): Promise<void> {
 }
 
 it('el shot descuenta ml de la botella y la deja abierta con su contenido en el bar', async () => {
-  const snapshot = await snapshotDatabase();
+  const snapshot = await snapshotBarDatabase();
   try {
     await abrirCajaSiHaceFalta();
     await fijarShotMl(50);
@@ -141,7 +162,7 @@ it('el shot descuenta ml de la botella y la deja abierta con su contenido en el 
     expect(Number(unidades[0].ml_restante)).toBe(650);
 
     // El inventario del bar publica lo que le queda a la botella abierta.
-    const [enBar] = await InventoryRepository.listBarStock(fixture.productoId);
+    const [enBar] = await listarStockBar(fixture.productoId);
     expect(enBar.stock_bar).toBe(1);
     expect(enBar.ml_abierta).toBe(650);
 
@@ -155,12 +176,12 @@ it('el shot descuenta ml de la botella y la deja abierta con su contenido en el 
 
     // El histórico acumulado por presentación suma los shots servidos.
     await venderShots(fixture, 1, 'PGSHOT-HISTORICO');
-    const [historico] = await InventoryRepository.listBarStock(fixture.productoId);
+    const [historico] = await listarStockBar(fixture.productoId);
     expect(historico.ml_servidos).toBe(150);
     expect(Number((await unidadesDe(fixture.presentacionId))[0].ml_restante)).toBe(600);
 
     // El panel de resumen refleja el turno: lo servido hoy y lo que queda abierto.
-    const resumen = await InventoryRepository.getShotsSummary();
+    const resumen = await obtenerResumenShots();
     expect(resumen.shotMl).toBe(50);
     expect(resumen.mlServidosHoy).toBe(150);
     expect(resumen.shotsServidosHoy).toBe(3);
@@ -168,12 +189,12 @@ it('el shot descuenta ml de la botella y la deja abierta con su contenido en el 
     expect(resumen.botellasAbiertas).toBe(1);
     expect(resumen.botellasPorAgotarse).toBe(0);
   } finally {
-    await restoreDatabase(snapshot, 'test-only');
+    await restoreBarDatabase(snapshot);
   }
 });
 
 it('abre la botella con la capacidad que dice el nombre cuando la presentación no la tiene', async () => {
-  const snapshot = await snapshotDatabase();
+  const snapshot = await snapshotBarDatabase();
   try {
     await abrirCajaSiHaceFalta();
     await fijarShotMl(50);
@@ -189,16 +210,16 @@ it('abre la botella con la capacidad que dice el nombre cuando la presentación 
     expect(Number(unidad.ml_restante)).toBe(950);
 
     // Y el bar publica lo mismo que el movimiento de venta: 1000 - 50.
-    const [enBar] = await InventoryRepository.listBarStock(fixture.productoId);
+    const [enBar] = await listarStockBar(fixture.productoId);
     expect(enBar.ml_abierta).toBe(950);
     expect(enBar.ml_servidos).toBe(50);
   } finally {
-    await restoreDatabase(snapshot, 'test-only');
+    await restoreBarDatabase(snapshot);
   }
 });
 
 it('al agotar los ml la botella abierta pasa a vendida', async () => {
-  const snapshot = await snapshotDatabase();
+  const snapshot = await snapshotBarDatabase();
   try {
     await abrirCajaSiHaceFalta();
     await fijarShotMl(50);
@@ -214,16 +235,16 @@ it('al agotar los ml la botella abierta pasa a vendida', async () => {
     expect(unidad.estado).toBe(ESTADO_UNIDAD_VENDIDA);
     expect(Number(unidad.ml_restante)).toBe(0);
 
-    const [enBar] = await InventoryRepository.listBarStock(fixture.productoId);
+    const [enBar] = await listarStockBar(fixture.productoId);
     expect(enBar.stock_bar).toBe(0);
     expect(enBar.ml_abierta).toBe(0);
   } finally {
-    await restoreDatabase(snapshot, 'test-only');
+    await restoreBarDatabase(snapshot);
   }
 });
 
 it('la botella completa sigue descontando unidades completas junto a los shots', async () => {
-  const snapshot = await snapshotDatabase();
+  const snapshot = await snapshotBarDatabase();
   try {
     await abrirCajaSiHaceFalta();
     await fijarShotMl(50);
@@ -267,12 +288,12 @@ it('la botella completa sigue descontando unidades completas junto a los shots',
     expect(Number(unidades[0].ml_restante)).toBe(700);
     expect(unidades[1].estado).toBe(ESTADO_UNIDAD_VENDIDA);
   } finally {
-    await restoreDatabase(snapshot, 'test-only');
+    await restoreBarDatabase(snapshot);
   }
 });
 
 it('avisa al barman cuando una botella abierta queda bajo el umbral de shots', async () => {
-  const snapshot = await snapshotDatabase();
+  const snapshot = await snapshotBarDatabase();
   try {
     await abrirCajaSiHaceFalta();
     await fijarShotMl(50);
@@ -289,12 +310,12 @@ it('avisa al barman cuando una botella abierta queda bajo el umbral de shots', a
     expect(avisos[0].mensaje).toContain('quedan 1 shot');
     expect(avisos[0].mensaje).toContain('50 ml');
   } finally {
-    await restoreDatabase(snapshot, 'test-only');
+    await restoreBarDatabase(snapshot);
   }
 });
 
 it('rechaza la venta por shot sin botellas en el bar y no registra la venta', async () => {
-  const snapshot = await snapshotDatabase();
+  const snapshot = await snapshotBarDatabase();
   try {
     await abrirCajaSiHaceFalta();
     await fijarShotMl(50);
@@ -314,6 +335,6 @@ it('rechaza la venta por shot sin botellas en el bar y no registra la venta', as
     expect(venta).toBeUndefined();
     expect(await unidadesDe(fixture.presentacionId)).toHaveLength(0);
   } finally {
-    await restoreDatabase(snapshot, 'test-only');
+    await restoreBarDatabase(snapshot);
   }
 });

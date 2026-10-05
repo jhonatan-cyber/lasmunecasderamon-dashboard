@@ -68,8 +68,13 @@ export async function restoreDatabase(data: unknown, backupId: string) {
   return withTransaction(async trx => {
     const allowed = new Set((await tables(trx)).filter(table => !excluded.has(table)));
     const entries = Object.entries(data);
-    const metadata = await trx<{ table_name: string; column_name: string; is_identity: string }[]>(
-      'SELECT table_name, column_name, is_identity FROM information_schema.columns WHERE table_schema = current_schema()'
+    const metadata = await trx<
+      { table_name: string; column_name: string; is_identity: string; data_type: string }[]
+    >(
+      'SELECT table_name, column_name, is_identity, data_type FROM information_schema.columns WHERE table_schema = current_schema()'
+    );
+    const tiposColumna = new Map(
+      metadata.map(column => [`${column.table_name}.${column.column_name}`, column.data_type])
     );
     for (const [table, records] of entries) {
       if (!allowed.has(table) || !Array.isArray(records))
@@ -97,7 +102,13 @@ export async function restoreDatabase(data: unknown, backupId: string) {
         await trx(
           `INSERT INTO ${quoteIdentifier(table)} (${columns.map(quoteIdentifier).join(', ')})
           VALUES (${columns.map(() => '?').join(', ')})`,
-          columns.map(column => row[column])
+          columns.map(column => {
+            const value = row[column];
+            const dataType = tiposColumna.get(`${table}.${column}`);
+            return Array.isArray(value) && (dataType === 'json' || dataType === 'jsonb')
+              ? JSON.stringify(value)
+              : value;
+          })
         );
         totalRecords++;
       }

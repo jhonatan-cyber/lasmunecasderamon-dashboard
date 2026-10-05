@@ -1,11 +1,26 @@
 import { describe, it, expect, vi } from 'vitest';
 import {
   ean13CheckDigit,
-  generarEan13Interno,
-  InventoryRepository
-} from '@/lib/repositories/InventoryRepository';
+  generarEan13Interno
+} from '@/lib/repositories/inventory/inventoryHelpers';
 import { query, withTransaction } from '@/lib/database/db';
 import { sendNotificationToAll } from '@/lib/api/sseService';
+import {
+  aceptarTransferencia,
+  confirmarRecepcionEnvase,
+  consumirStockBar,
+  generarUnidades,
+  listarDevoluciones,
+  listarStockBar,
+  listarTransferencias,
+  marcarUnidadesImpresas,
+  obtenerResumenShots,
+  rechazarTransferencia,
+  sincronizarStockTotal,
+  traspasarAlBar,
+  verificarEnvase
+} from '@/modules/inventario';
+import { conContextoOperacionExistente } from '@/lib/transaccion/compatibilidad';
 
 vi.mock('@/lib/database/db', () => ({
   query: vi.fn(),
@@ -32,9 +47,9 @@ describe('transferencias de almacén al bar', () => {
       .fn()
       .mockResolvedValueOnce([{ id_producto: 'prod-1' }])
       .mockResolvedValueOnce([{ id: 'unit-1' }]);
-    await expect(InventoryRepository.traspasarAlBar(trx, input)).rejects.toThrow(
-      'Stock insuficiente'
-    );
+    await expect(
+      conContextoOperacionExistente(trx, contexto => traspasarAlBar(input, contexto))
+    ).rejects.toThrow('Stock insuficiente');
     expect(trx).toHaveBeenCalledTimes(2);
     expect(trx.mock.calls.every(([sql]) => sql.trim().startsWith('SELECT'))).toBe(true);
   });
@@ -50,10 +65,9 @@ describe('transferencias de almacén al bar', () => {
       { tipo: 'botella' as const, precio: 1500, comision: 100 },
       { tipo: 'shot' as const, precio: 300, comision: 0 }
     ];
-    const result = await InventoryRepository.traspasarAlBar(trx, {
-      ...input,
-      opciones_venta: options
-    });
+    const result = await conContextoOperacionExistente(trx, contexto =>
+      traspasarAlBar({ ...input, opciones_venta: options }, contexto)
+    );
     expect(trx.mock.calls[0][0]).toContain('FOR UPDATE');
     expect(trx).toHaveBeenCalledWith(expect.stringContaining("SET ubicacion = 'transito'"), [
       'uuid-test',
@@ -85,7 +99,7 @@ describe('transferencias de almacén al bar', () => {
       return [];
     });
     vi.mocked(withTransaction).mockImplementationOnce(async callback => callback(trx));
-    await InventoryRepository.traspasarAlBarStandalone(input);
+    await traspasarAlBar(input);
     expect(sendNotificationToAll).toHaveBeenCalledWith('transfers_updated', {
       action: 'created',
       producto_id: 'prod-1',
@@ -113,7 +127,7 @@ describe('transferencias de almacén al bar', () => {
       return [];
     });
     vi.mocked(withTransaction).mockImplementationOnce(async callback => callback(trxAprobar));
-    await InventoryRepository.acceptTransferStandalone('mov-1', 'barman-1');
+    await aceptarTransferencia('mov-1', 'barman-1');
     expect(sendNotificationToAll).toHaveBeenCalledWith('transfers_updated', {
       action: 'accepted',
       id: 'mov-1'
@@ -128,7 +142,7 @@ describe('transferencias de almacén al bar', () => {
       return [];
     });
     vi.mocked(withTransaction).mockImplementationOnce(async callback => callback(trxRechazar));
-    await InventoryRepository.rejectTransferStandalone('mov-1', 'barman-1');
+    await rechazarTransferencia('mov-1', 'barman-1');
     expect(sendNotificationToAll).toHaveBeenCalledWith('transfers_updated', {
       action: 'rejected',
       id: 'mov-1'
@@ -165,7 +179,7 @@ describe('listBarStock hereda precio/comisión', () => {
       comision: 5000,
       opciones_venta: [{ tipo: 'botella', precio: 20000, comision: 0 }]
     });
-    const rows = await InventoryRepository.listBarStock();
+    const rows = await listarStockBar();
     expect(rows[0].opciones_venta).toEqual([{ tipo: 'botella', precio: 20000, comision: 5000 }]);
   });
 
@@ -178,13 +192,13 @@ describe('listBarStock hereda precio/comisión', () => {
       producto_precio: 15000,
       producto_comision: 1500
     });
-    const rows = await InventoryRepository.listBarStock();
+    const rows = await listarStockBar();
     expect(rows[0].opciones_venta).toEqual([{ tipo: 'botella', precio: 15000, comision: 1500 }]);
   });
 
   it('respeta el 0 cuando no hay nada configurado en ningún nivel', async () => {
     mockBar({ ...baseRow, precio_venta: 0, comision: 0, opciones_venta: null });
-    const rows = await InventoryRepository.listBarStock();
+    const rows = await listarStockBar();
     expect(rows[0].opciones_venta).toEqual([{ tipo: 'botella', precio: 0, comision: 0 }]);
   });
 
@@ -195,7 +209,7 @@ describe('listBarStock hereda precio/comisión', () => {
       comision: 3000,
       opciones_venta: [{ tipo: 'botella', precio: 8000, comision: 3000 }]
     });
-    const rows = await InventoryRepository.listBarStock();
+    const rows = await listarStockBar();
     expect(rows[0].opciones_venta).toEqual([{ tipo: 'botella', precio: 8000, comision: 0 }]);
   });
 
@@ -209,7 +223,7 @@ describe('listBarStock hereda precio/comisión', () => {
         { tipo: 'shot', precio: 3000, comision: 200 }
       ]
     });
-    const rows = await InventoryRepository.listBarStock();
+    const rows = await listarStockBar();
     expect(rows[0].opciones_venta).toEqual([
       { tipo: 'botella', precio: 8000, comision: 0 },
       { tipo: 'shot', precio: 3000, comision: 200 }
@@ -225,7 +239,7 @@ describe('listBarStock hereda precio/comisión', () => {
         { tipo: 'shot', precio: 3000, comision: 200, precio_anfitriona: 2000 }
       ]
     });
-    const rows = await InventoryRepository.listBarStock();
+    const rows = await listarStockBar();
     expect(rows[0].opciones_venta).toEqual([
       { tipo: 'botella', precio: 8000, comision: 0 },
       { tipo: 'shot', precio: 3000, comision: 200, precio_anfitriona: 2000 }
@@ -237,7 +251,7 @@ describe('listBarStock hereda precio/comisión', () => {
       ...baseRow,
       opciones_venta: [{ tipo: 'shot', precio: 3000, comision: 0, precio_anfitriona: 0 }]
     });
-    const rows = await InventoryRepository.listBarStock();
+    const rows = await listarStockBar();
     expect(rows[0].opciones_venta).toEqual([{ tipo: 'shot', precio: 3000, comision: 0 }]);
   });
 
@@ -249,7 +263,7 @@ describe('listBarStock hereda precio/comisión', () => {
       ml_abierta: 650,
       ml_servidos: 1250
     });
-    const rows = await InventoryRepository.listBarStock();
+    const rows = await listarStockBar();
     expect(rows[0].ml_abierta).toBe(650);
     expect(rows[0].ml_servidos).toBe(1250);
     // El histórico sale de los movimientos de venta con ml, por presentación.
@@ -261,12 +275,12 @@ describe('listBarStock hereda precio/comisión', () => {
 
   it('sin datos de shots los campos quedan en 0/ausentes sin romper el listado', async () => {
     mockBar({ ...baseRow, precio_venta: 20000, comision: 5000 });
-    const rows = await InventoryRepository.listBarStock();
+    const rows = await listarStockBar();
     expect(rows[0].opciones_venta).toEqual([{ tipo: 'botella', precio: 20000, comision: 5000 }]);
   });
 });
 
-describe('listTransfers historial', () => {
+describe('listarTransferencias historial', () => {
   it('muestra quién recibió y completa la comisión con la presentación actual', async () => {
     (query as any).mockImplementation(async (sql: string) => {
       if (sql.includes('FROM inventario_movimientos')) {
@@ -295,7 +309,7 @@ describe('listTransfers historial', () => {
       }
       return [];
     });
-    const rows = await InventoryRepository.listTransfers();
+    const rows = await listarTransferencias();
     expect(rows[0].aceptado_nombre).toBe('barman');
     expect(rows[0].opciones_venta).toEqual([{ tipo: 'botella', precio: 20000, comision: 5000 }]);
   });
@@ -319,7 +333,7 @@ describe('unidades de compras', () => {
       .mockResolvedValueOnce([{ id: 'unit-1' }])
       .mockResolvedValueOnce(saved);
     vi.mocked(withTransaction).mockImplementationOnce(async callback => callback(trx));
-    expect(await InventoryRepository.markUnitsPrinted(['unit-1'])).toEqual(saved);
+    expect(await marcarUnidadesImpresas(['unit-1'])).toEqual(saved);
     expect(trx).toHaveBeenLastCalledWith(
       expect.stringContaining('SET fecha_impresion = CURRENT_TIMESTAMP'),
       ['unit-1']
@@ -342,7 +356,7 @@ describe('unidades de compras', () => {
           ]
         : []
     );
-    const rows = await InventoryRepository.listBarStock('prod-1');
+    const rows = await listarStockBar('prod-1');
     expect(query).toHaveBeenCalledWith(expect.stringContaining('WHERE p.producto_id = ?'), [
       'prod-1'
     ]);
@@ -352,9 +366,7 @@ describe('unidades de compras', () => {
   it('rechaza un lote incompleto antes de marcar ninguna unidad', async () => {
     const trx = vi.fn().mockResolvedValueOnce([]);
     vi.mocked(withTransaction).mockImplementationOnce(async callback => callback(trx));
-    await expect(InventoryRepository.markUnitsPrinted(['missing'])).rejects.toThrow(
-      'ya no existen'
-    );
+    await expect(marcarUnidadesImpresas(['missing'])).rejects.toThrow('ya no existen');
     expect(trx).toHaveBeenCalledTimes(1);
   });
   it('agrega unidades nuevas con origen sin modificar los codigos anteriores y sincroniza el stock', async () => {
@@ -380,8 +392,13 @@ describe('unidades de compras', () => {
       return [];
     });
 
-    const codes = await InventoryRepository.generateUnits(trx, 'prod-1', 2, 'pres-1', 'comp-2');
-    await InventoryRepository.syncStockTotal(trx, 'prod-1');
+    const codes = await conContextoOperacionExistente(trx, contexto =>
+      generarUnidades(
+        { producto_id: 'prod-1', cantidad: 2, presentacion_id: 'pres-1', compra_id: 'comp-2' },
+        contexto
+      )
+    );
+    await conContextoOperacionExistente(trx, contexto => sincronizarStockTotal('prod-1', contexto));
 
     expect(codes.map(c => c.codigo)).toEqual(['LM-000011', 'LM-000012']);
     expect(inserted).toHaveLength(2);
@@ -446,10 +463,15 @@ describe('descuento del bar al registrar una venta', () => {
   const movimiento = (trx: any) =>
     trx.mock.calls.find(([sql]: string[]) => sql.includes('INSERT INTO inventario_movimientos'));
 
+  const consumirStockConTransaccion = (trx: any, detalles: any[], contextoVenta: any) =>
+    conContextoOperacionExistente(trx, contexto =>
+      consumirStockBar(detalles, contextoVenta, contexto)
+    );
+
   it('ignora los detalles sin presentación: el catálogo anterior no tiene inventario', async () => {
     const trx = vi.fn();
 
-    await InventoryRepository.consume(
+    await consumirStockConTransaccion(
       trx,
       [{ presentacion_id: null, cantidad: 3 }, { cantidad: 1 }],
       contexto
@@ -461,7 +483,7 @@ describe('descuento del bar al registrar una venta', () => {
   it('suma las cantidades de la misma presentación en un solo descuento', async () => {
     const trx = trxCon([{ id: 'u1' }, { id: 'u2' }, { id: 'u3' }]);
 
-    await InventoryRepository.consume(
+    await consumirStockConTransaccion(
       trx,
       [
         { presentacion_id: 'pres-1', cantidad: 2 },
@@ -479,7 +501,7 @@ describe('descuento del bar al registrar una venta', () => {
   it('bloquea la presentación, marca las unidades como vendidas y registra el movimiento', async () => {
     const trx = trxCon([{ id: 'u1' }, { id: 'u2' }]);
 
-    await InventoryRepository.consume(trx, [{ presentacion_id: 'pres-1', cantidad: 2 }], contexto);
+    await consumirStockConTransaccion(trx, [{ presentacion_id: 'pres-1', cantidad: 2 }], contexto);
 
     expect(trx.mock.calls[0][0]).toContain('FOR UPDATE');
     const descuento = trx.mock.calls.find(([sql]) => sql.includes('SET estado ='));
@@ -498,7 +520,7 @@ describe('descuento del bar al registrar una venta', () => {
     const trx = trxCon([{ id: 'u1' }]);
 
     await expect(
-      InventoryRepository.consume(trx, [{ presentacion_id: 'pres-1', cantidad: 2 }], contexto)
+      consumirStockConTransaccion(trx, [{ presentacion_id: 'pres-1', cantidad: 2 }], contexto)
     ).rejects.toMatchObject({
       code: 'INSUFFICIENT_BAR_STOCK',
       details: { presentacion_id: 'pres-1', disponibles: 1, requeridas: 2 }
@@ -511,7 +533,7 @@ describe('descuento del bar al registrar una venta', () => {
     const trx = trxCon([]);
 
     await expect(
-      InventoryRepository.consume(trx, [{ presentacion_id: 'pres-1', cantidad: 1 }], contexto)
+      consumirStockConTransaccion(trx, [{ presentacion_id: 'pres-1', cantidad: 1 }], contexto)
     ).rejects.toMatchObject({ code: 'INSUFFICIENT_BAR_STOCK' });
     expect(trx).toHaveBeenCalledTimes(2);
   });
@@ -520,7 +542,7 @@ describe('descuento del bar al registrar una venta', () => {
     const trx = vi.fn().mockResolvedValue([]);
 
     await expect(
-      InventoryRepository.consume(trx, [{ presentacion_id: 'pres-1', cantidad: 1 }], contexto)
+      consumirStockConTransaccion(trx, [{ presentacion_id: 'pres-1', cantidad: 1 }], contexto)
     ).resolves.toEqual([]);
     expect(trx).toHaveBeenCalledTimes(1);
   });
@@ -531,7 +553,7 @@ describe('descuento del bar al registrar una venta', () => {
       { id: 'u2', ml_restante: null }
     ]);
 
-    await InventoryRepository.consume(
+    await consumirStockConTransaccion(
       trx,
       [{ presentacion_id: 'pres-1', cantidad: 2, tipo_venta: 'shot' }],
       contexto
@@ -553,7 +575,7 @@ describe('descuento del bar al registrar una venta', () => {
   it('abre una botella llena cuando no hay ninguna abierta', async () => {
     const trx = trxCon([{ id: 'u1', ml_restante: null }]);
 
-    await InventoryRepository.consume(
+    await consumirStockConTransaccion(
       trx,
       [{ presentacion_id: 'pres-1', cantidad: 1, tipo_venta: 'shot' }],
       contexto
@@ -572,7 +594,7 @@ describe('descuento del bar al registrar una venta', () => {
   it('respeta los ml propios de la presentación', async () => {
     const trx = trxCon([{ id: 'u1', ml_restante: null }], { ...presentacion, ml_botella: 1000 });
 
-    await InventoryRepository.consume(
+    await consumirStockConTransaccion(
       trx,
       [{ presentacion_id: 'pres-1', cantidad: 4, tipo_venta: 'shot' }],
       contexto
@@ -593,7 +615,7 @@ describe('descuento del bar al registrar una venta', () => {
       ml_botella: null
     });
 
-    await InventoryRepository.consume(
+    await consumirStockConTransaccion(
       trx,
       [{ presentacion_id: 'pres-1', cantidad: 1, tipo_venta: 'shot' }],
       contexto
@@ -612,7 +634,7 @@ describe('descuento del bar al registrar una venta', () => {
       ml_botella: 375
     });
 
-    await InventoryRepository.consume(
+    await consumirStockConTransaccion(
       trx,
       [{ presentacion_id: 'pres-1', cantidad: 1, tipo_venta: 'shot' }],
       contexto
@@ -630,7 +652,7 @@ describe('descuento del bar al registrar una venta', () => {
       { id: 'u2', ml_restante: null }
     ]);
 
-    await InventoryRepository.consume(
+    await consumirStockConTransaccion(
       trx,
       [{ presentacion_id: 'pres-1', cantidad: 1, tipo_venta: 'shot' }],
       contexto
@@ -648,7 +670,7 @@ describe('descuento del bar al registrar una venta', () => {
     // 160 ml > umbral (50 x 3 = 150) → al servir 2 shots quedan 60: toca avisar.
     const trx = trxCon([{ id: 'u1', ml_restante: 160 }]);
 
-    const alertas = await InventoryRepository.consume(
+    const alertas = await consumirStockConTransaccion(
       trx,
       [{ presentacion_id: 'pres-1', cantidad: 2, tipo_venta: 'shot' }],
       contexto
@@ -663,7 +685,7 @@ describe('descuento del bar al registrar una venta', () => {
     // Ya estaba bajo el umbral: no vuelve a avisar por cada shot siguiente.
     const yaAvisada = trxCon([{ id: 'u1', ml_restante: 100 }]);
     expect(
-      await InventoryRepository.consume(
+      await consumirStockConTransaccion(
         yaAvisada,
         [{ presentacion_id: 'pres-1', cantidad: 1, tipo_venta: 'shot' }],
         contexto
@@ -673,7 +695,7 @@ describe('descuento del bar al registrar una venta', () => {
     // Sigue por encima del umbral: tampoco hay aviso.
     const holgada = trxCon([{ id: 'u1', ml_restante: 700 }]);
     expect(
-      await InventoryRepository.consume(
+      await consumirStockConTransaccion(
         holgada,
         [{ presentacion_id: 'pres-1', cantidad: 1, tipo_venta: 'shot' }],
         contexto
@@ -683,7 +705,7 @@ describe('descuento del bar al registrar una venta', () => {
     // Venta de botella completa: el umbral es de shots, no aplica.
     const botella = trxCon([{ id: 'u1', ml_restante: null }]);
     expect(
-      await InventoryRepository.consume(
+      await consumirStockConTransaccion(
         botella,
         [{ presentacion_id: 'pres-1', cantidad: 1 }],
         contexto
@@ -695,7 +717,7 @@ describe('descuento del bar al registrar una venta', () => {
     const trx = trxCon([]);
 
     await expect(
-      InventoryRepository.consume(
+      consumirStockConTransaccion(
         trx,
         [{ presentacion_id: 'pres-1', cantidad: 3, tipo_venta: 'shot' }],
         contexto
@@ -719,7 +741,7 @@ describe('descuento del bar al registrar una venta', () => {
       { id: 'u3', ml_restante: null }
     ]);
 
-    await InventoryRepository.consume(
+    await consumirStockConTransaccion(
       trx,
       [
         { presentacion_id: 'pres-1', cantidad: 1, tipo_venta: 'shot' },
@@ -744,7 +766,7 @@ describe('descuento del bar al registrar una venta', () => {
       ml_shot_anfitriona: 30
     });
 
-    await InventoryRepository.consume(
+    await consumirStockConTransaccion(
       trx,
       [
         { presentacion_id: 'pres-1', cantidad: 1, tipo_venta: 'shot' },
@@ -764,7 +786,7 @@ describe('descuento del bar al registrar una venta', () => {
   it('el shot de anfitriona usa el ml de cliente cuando no tiene propio', async () => {
     const trx = trxCon([{ id: 'u1', ml_restante: 800 }], { ...presentacion, ml_shot: 60 });
 
-    await InventoryRepository.consume(
+    await consumirStockConTransaccion(
       trx,
       [
         { presentacion_id: 'pres-1', cantidad: 1, tipo_venta: 'shot' },
@@ -796,7 +818,7 @@ describe('resumen de shots del bar', () => {
       return [];
     });
 
-    const resumen = await InventoryRepository.getShotsSummary();
+    const resumen = await obtenerResumenShots();
 
     expect(resumen).toEqual({
       shotMl: 50,
@@ -833,7 +855,7 @@ describe('resumen de shots del bar', () => {
       return [];
     });
 
-    const resumen = await InventoryRepository.getShotsSummary();
+    const resumen = await obtenerResumenShots();
     expect(resumen.shotMl).toBe(50);
     expect(resumen.shotsAlerta).toBe(3);
     expect(resumen.shotsServidosHoy).toBe(0);
@@ -874,10 +896,8 @@ describe('control de devolución de envases', () => {
   it('marca como devuelto un envase nuestro, vacío y pendiente', async () => {
     const trx = trxCon([envase()]);
 
-    const resultado = await InventoryRepository.verificarYMarcarEnvase(
-      trx,
-      ' 2912345678901 ',
-      'user-1'
+    const resultado = await conContextoOperacionExistente(trx, contexto =>
+      verificarEnvase(' 2912345678901 ', 'user-1', contexto)
     );
 
     expect(resultado.ok).toBe(true);
@@ -901,10 +921,8 @@ describe('control de devolución de envases', () => {
   it('rechaza un código que no está en nuestro inventario sin escribir nada', async () => {
     const trx = trxCon([]);
 
-    const resultado = await InventoryRepository.verificarYMarcarEnvase(
-      trx,
-      '7899999999999',
-      'user-1'
+    const resultado = await conContextoOperacionExistente(trx, contexto =>
+      verificarEnvase('7899999999999', 'user-1', contexto)
     );
 
     expect(resultado).toMatchObject({ ok: false, motivo: 'no_es_nuestro', unidad: null });
@@ -914,7 +932,9 @@ describe('control de devolución de envases', () => {
   it('rechaza un envase nuestro que no está vacío', async () => {
     const trx = trxCon([envase({ estado: 'almacen' })]);
 
-    const resultado = await InventoryRepository.verificarYMarcarEnvase(trx, 'LM-000123', 'user-1');
+    const resultado = await conContextoOperacionExistente(trx, contexto =>
+      verificarEnvase('LM-000123', 'user-1', contexto)
+    );
 
     expect(resultado).toMatchObject({ ok: false, motivo: 'no_esta_vacia' });
     expect(trx).toHaveBeenCalledTimes(1);
@@ -923,7 +943,9 @@ describe('control de devolución de envases', () => {
   it('detecta el re-escaneo de un envase ya devuelto y trae la fecha anterior', async () => {
     const trx = trxCon([envase({ fecha_devolucion: '2026-09-20 22:30:00' })]);
 
-    const resultado = await InventoryRepository.verificarYMarcarEnvase(trx, 'LM-000123', 'user-1');
+    const resultado = await conContextoOperacionExistente(trx, contexto =>
+      verificarEnvase('LM-000123', 'user-1', contexto)
+    );
 
     expect(resultado).toMatchObject({ ok: false, motivo: 'ya_devuelto' });
     if (!resultado.ok && resultado.unidad) {
@@ -935,7 +957,9 @@ describe('control de devolución de envases', () => {
   it('rechaza la botella que se vendió entera: su envase no vuelve al bar', async () => {
     const trx = trxCon([envase({ abierta_por_shots: false })]);
 
-    const resultado = await InventoryRepository.verificarYMarcarEnvase(trx, 'LM-000123', 'user-1');
+    const resultado = await conContextoOperacionExistente(trx, contexto =>
+      verificarEnvase('LM-000123', 'user-1', contexto)
+    );
 
     expect(resultado).toMatchObject({ ok: false, motivo: 'venta_entera' });
     expect(trx).toHaveBeenCalledTimes(1);
@@ -944,16 +968,18 @@ describe('control de devolución de envases', () => {
   it('exige un código para verificar', async () => {
     const trx = trxCon([]);
 
-    await expect(InventoryRepository.verificarYMarcarEnvase(trx, '   ', null)).rejects.toThrow(
-      'código del envase'
-    );
+    await expect(
+      conContextoOperacionExistente(trx, contexto => verificarEnvase('   ', null, contexto))
+    ).rejects.toThrow('código del envase');
     expect(trx).not.toHaveBeenCalled();
   });
 
   it('normaliza el escaneo (espacios y minúsculas) al buscar por barra o SKU', async () => {
     const trx = trxCon([envase()]);
 
-    await InventoryRepository.verificarYMarcarEnvase(trx, '  lm-000123  ', 'user-1');
+    await conContextoOperacionExistente(trx, contexto =>
+      verificarEnvase('  lm-000123  ', 'user-1', contexto)
+    );
 
     expect(trx.mock.calls[0][1]).toEqual(['LM-000123', 'LM-000123']);
   });
@@ -962,7 +988,7 @@ describe('control de devolución de envases', () => {
     const trx = trxCon([envase()]);
     (withTransaction as any).mockImplementationOnce(async (cb: any) => await cb(trx));
 
-    const resultado = await InventoryRepository.verifyAndReturnContainer('2912345678901', 'user-1');
+    const resultado = await verificarEnvase('2912345678901', 'user-1');
 
     expect(vi.mocked(withTransaction)).toHaveBeenCalledTimes(1);
     expect(resultado.ok).toBe(true);
@@ -1000,7 +1026,7 @@ describe('control de devolución de envases', () => {
       return [];
     });
 
-    const historial = await InventoryRepository.listContainerReturns();
+    const historial = await listarDevoluciones();
 
     expect(historial).toHaveLength(2);
     expect(historial[0]).toMatchObject({
@@ -1039,10 +1065,8 @@ describe('control de devolución de envases', () => {
       envase({ fecha_devolucion: '2026-09-20 22:30:00', devuelto_por: 'user-1' })
     ]);
 
-    const resultado = await InventoryRepository.confirmarRecepcionEnvase(
-      trx,
-      ' LM-000123 ',
-      'user-2'
+    const resultado = await conContextoOperacionExistente(trx, contexto =>
+      confirmarRecepcionEnvase(' LM-000123 ', 'user-2', contexto)
     );
 
     expect(resultado.ok).toBe(true);
@@ -1061,10 +1085,8 @@ describe('control de devolución de envases', () => {
   it('rechaza la recepción de un envase que el bar todavía no entregó', async () => {
     const trx = trxConfirm([envase()]);
 
-    const resultado = await InventoryRepository.confirmarRecepcionEnvase(
-      trx,
-      'LM-000123',
-      'user-2'
+    const resultado = await conContextoOperacionExistente(trx, contexto =>
+      confirmarRecepcionEnvase('LM-000123', 'user-2', contexto)
     );
 
     expect(resultado).toMatchObject({ ok: false, motivo: 'no_entregado' });
@@ -1080,10 +1102,8 @@ describe('control de devolución de envases', () => {
       })
     ]);
 
-    const resultado = await InventoryRepository.confirmarRecepcionEnvase(
-      trx,
-      'LM-000123',
-      'user-2'
+    const resultado = await conContextoOperacionExistente(trx, contexto =>
+      confirmarRecepcionEnvase('LM-000123', 'user-2', contexto)
     );
 
     expect(resultado).toMatchObject({ ok: false, motivo: 'ya_confirmado' });
@@ -1096,10 +1116,8 @@ describe('control de devolución de envases', () => {
   it('rechaza un código ajeno en la recepción sin escribir nada', async () => {
     const trx = trxConfirm([]);
 
-    const resultado = await InventoryRepository.confirmarRecepcionEnvase(
-      trx,
-      '7800000000001',
-      'user-2'
+    const resultado = await conContextoOperacionExistente(trx, contexto =>
+      confirmarRecepcionEnvase('7800000000001', 'user-2', contexto)
     );
 
     expect(resultado).toMatchObject({ ok: false, motivo: 'no_es_nuestro', unidad: null });
@@ -1109,16 +1127,18 @@ describe('control de devolución de envases', () => {
   it('exige un código para confirmar la recepción', async () => {
     const trx = trxConfirm([]);
 
-    await expect(InventoryRepository.confirmarRecepcionEnvase(trx, '  ', null)).rejects.toThrow(
-      'código del envase'
-    );
+    await expect(
+      conContextoOperacionExistente(trx, contexto => confirmarRecepcionEnvase('  ', null, contexto))
+    ).rejects.toThrow('código del envase');
     expect(trx).not.toHaveBeenCalled();
   });
 
   it('normaliza el escaneo de la recepción (espacios y minúsculas)', async () => {
     const trx = trxConfirm([envase({ fecha_devolucion: '2026-09-20 22:30:00' })]);
 
-    await InventoryRepository.confirmarRecepcionEnvase(trx, '  lm-000123  ', 'user-2');
+    await conContextoOperacionExistente(trx, contexto =>
+      confirmarRecepcionEnvase('  lm-000123  ', 'user-2', contexto)
+    );
 
     expect(trx.mock.calls[0][1]).toEqual(['LM-000123', 'LM-000123']);
   });
@@ -1127,7 +1147,7 @@ describe('control de devolución de envases', () => {
     const trx = trxConfirm([envase({ fecha_devolucion: '2026-09-20 22:30:00' })]);
     (withTransaction as any).mockImplementationOnce(async (cb: any) => await cb(trx));
 
-    const resultado = await InventoryRepository.confirmContainerReturn('LM-000123', 'user-2');
+    const resultado = await confirmarRecepcionEnvase('LM-000123', 'user-2');
 
     expect(vi.mocked(withTransaction)).toHaveBeenCalledTimes(1);
     expect(resultado.ok).toBe(true);

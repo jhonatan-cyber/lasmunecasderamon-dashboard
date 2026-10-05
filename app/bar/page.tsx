@@ -41,10 +41,7 @@ import { BarAnfitrionas, isTierPricedItem } from '@/components/bar/BarAnfitriona
 import { useConfig } from '@/hooks/shared/useConfigValue';
 import { resolveBotellaMl, resolveShotMl } from '@/lib/business/shotMl';
 import { useSharedSSE } from '@/hooks/shared';
-import type {
-  DevolucionEnvaseRegistro,
-  ShotsSummary
-} from '@/lib/repositories/InventoryRepository';
+import type { DevolucionEnvaseRegistro, ShotsSummary } from '@/modules/inventario/contracts';
 import { useContainerScan, MOTIVO_ENVASE } from '@/hooks/productos/useContainerScan';
 import { EscaneoLote } from '@/components/products/EscaneoLote';
 

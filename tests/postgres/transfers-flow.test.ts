@@ -1,7 +1,9 @@
 import { afterAll, expect, it } from 'vitest';
 import { randomUUID } from 'node:crypto';
 import db, { withTransaction } from '@/lib/database/db';
-import { ESTADO_UNIDAD_ACTIVA, InventoryRepository } from '@/lib/repositories/InventoryRepository';
+import { ESTADO_UNIDAD_ACTIVA } from '@/lib/repositories/inventory/inventoryHelpers';
+import { listarPresentaciones, traspasarAlBar } from '@/modules/inventario';
+import { conContextoOperacionExistente } from '@/lib/transaccion/compatibilidad';
 
 afterAll(async () => {
   await db.pool.end();
@@ -48,7 +50,9 @@ it('consulta presentaciones y transfiere unidades con botella y shot en la misma
           ]
         );
       }
-      const [presentation] = await InventoryRepository.listPresentations(productoId, trx);
+      const [presentation] = await conContextoOperacionExistente(trx, contexto =>
+        listarPresentaciones(productoId, contexto)
+      );
       expect(presentation).toMatchObject({
         id: presentacionId,
         stock: 2,
@@ -59,13 +63,18 @@ it('consulta presentaciones y transfiere unidades con botella y shot en la misma
         { tipo: 'botella' as const, precio: 70000, comision: 15000 },
         { tipo: 'shot' as const, precio: 5000, comision: 0 }
       ];
-      const result = await InventoryRepository.traspasarAlBar(trx, {
-        producto_id: productoId,
-        presentacion_id: presentacionId,
-        cantidad: 1,
-        usuario_id: user.id_usuario,
-        opciones_venta: options
-      });
+      const result = await conContextoOperacionExistente(trx, contexto =>
+        traspasarAlBar(
+          {
+            producto_id: productoId,
+            presentacion_id: presentacionId,
+            cantidad: 1,
+            usuario_id: user.id_usuario,
+            opciones_venta: options
+          },
+          contexto
+        )
+      );
       expect(result).toEqual({ trasladadas: 1, stock_bar: 1 });
       const [movement] = await trx(
         'SELECT estado, opciones_venta, precio_venta, comision FROM inventario_movimientos WHERE presentacion_id = ?',
@@ -77,7 +86,9 @@ it('consulta presentaciones y transfiere unidades con botella y shot en la misma
         precio_venta: 70000,
         comision: 15000
       });
-      const [updated] = await InventoryRepository.listPresentations(productoId, trx);
+      const [updated] = await conContextoOperacionExistente(trx, contexto =>
+        listarPresentaciones(productoId, contexto)
+      );
       expect(updated).toMatchObject({ stock: 1, stock_bar: 1, ml_abierta: 750 });
       const [{ total }] = await trx(
         "SELECT COUNT(*) AS total FROM inventario_unidades WHERE presentacion_id = ? AND ubicacion = 'transito'",

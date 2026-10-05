@@ -15,7 +15,7 @@ import {
   TableRow
 } from '@/components/ui/table';
 import { cn } from '@/lib/utils/utils';
-import type { DevolucionEnvaseRegistro } from '@/lib/repositories/InventoryRepository';
+import type { DevolucionEnvaseRegistro } from '@/modules/inventario/contracts';
 import { EscaneoLote } from '@/components/products/EscaneoLote';
 import { MOTIVO_ENVASE, useContainerScan } from '@/hooks/productos/useContainerScan';
 import { useSharedSSE } from '@/hooks/shared';

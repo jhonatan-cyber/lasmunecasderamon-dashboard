@@ -20,15 +20,17 @@ vi.mock('@/lib/repositories/PurchaseRepository', () => ({
   }
 }));
 
-vi.mock('@/lib/repositories/InventoryRepository', () => ({
-  InventoryRepository: {
-    listPresentationsByProducts: vi.fn(),
-    generateUnits: vi.fn().mockResolvedValue([]),
-    syncStockTotal: vi.fn().mockResolvedValue(0)
-  }
+vi.mock('@/modules/inventario', () => ({
+  listarPresentacionesPorProductos: vi.fn(),
+  generarUnidades: vi.fn().mockResolvedValue([]),
+  sincronizarStockTotal: vi.fn().mockResolvedValue(0)
 }));
 
-import { InventoryRepository } from '@/lib/repositories/InventoryRepository';
+import {
+  generarUnidades,
+  listarPresentacionesPorProductos,
+  sincronizarStockTotal
+} from '@/modules/inventario';
 import { PurchaseRepository } from '@/lib/repositories/PurchaseRepository';
 import { BaseRepository } from '@/lib/repositories/BaseRepository';
 
@@ -47,25 +49,19 @@ beforeEach(() => {
     if (sql.includes('FROM productos')) return [{ id_producto: 'prod-1', nombre: 'Ron Habana' }];
     return [];
   });
-  vi.mocked(InventoryRepository.listPresentationsByProducts).mockResolvedValue({
+  vi.mocked(listarPresentacionesPorProductos).mockResolvedValue({
     'prod-1': [
       { id: 'pres-1', nombre: 'Botella 750ml' },
       { id: 'pres-2', nombre: 'Six pack' }
     ]
   } as any);
   // Un código por unidad pedida, con id para poder marcarlo como impreso.
-  vi.mocked(InventoryRepository.generateUnits).mockImplementation(
-    async (
-      _trx: unknown,
-      _productoId: string,
-      count: number,
-      presentacionId: string | null = null
-    ) =>
-      Array.from({ length: count }, (_, i) => ({
-        id: `${presentacionId}-u${i + 1}`,
-        codigo: `LM-${presentacionId}-${i + 1}`,
-        codigo_barras: `29${String(i + 1).padStart(11, '0')}`
-      }))
+  vi.mocked(generarUnidades).mockImplementation(async (input, _contexto) =>
+    Array.from({ length: input.cantidad }, (_, i) => ({
+      id: `${input.presentacion_id}-u${i + 1}`,
+      codigo: `LM-${input.presentacion_id}-${i + 1}`,
+      codigo_barras: `29${String(i + 1).padStart(11, '0')}`
+    }))
   );
   vi.mocked(withTransaction).mockImplementation(async (cb: any) => cb(trxMock));
 });
@@ -87,7 +83,7 @@ describe('PurchaseService.registrarCompra', () => {
   });
 
   it('rechaza presentación que no pertenece al producto', async () => {
-    vi.mocked(InventoryRepository.listPresentationsByProducts).mockResolvedValue({} as any);
+    vi.mocked(listarPresentacionesPorProductos).mockResolvedValue({} as any);
     await expect(PurchaseService.registrarCompra({ detalles: [detalle] }, 'u1')).rejects.toThrow(
       'no pertenece'
     );
@@ -124,25 +120,29 @@ describe('PurchaseService.registrarCompra', () => {
       }),
       [expect.objectContaining({ subtotal: 15000 }), expect.objectContaining({ subtotal: 16000 })]
     );
-    expect(InventoryRepository.generateUnits).toHaveBeenCalledTimes(2);
-    expect(InventoryRepository.generateUnits).toHaveBeenNthCalledWith(
+    expect(generarUnidades).toHaveBeenCalledTimes(2);
+    expect(generarUnidades).toHaveBeenNthCalledWith(
       1,
-      expect.anything(),
-      'prod-1',
-      3,
-      'pres-1',
-      'comp-1'
+      {
+        producto_id: 'prod-1',
+        cantidad: 3,
+        presentacion_id: 'pres-1',
+        compra_id: 'comp-1'
+      },
+      expect.anything()
     );
-    expect(InventoryRepository.generateUnits).toHaveBeenNthCalledWith(
+    expect(generarUnidades).toHaveBeenNthCalledWith(
       2,
-      expect.anything(),
-      'prod-1',
-      2,
-      'pres-2',
-      'comp-1'
+      {
+        producto_id: 'prod-1',
+        cantidad: 2,
+        presentacion_id: 'pres-2',
+        compra_id: 'comp-1'
+      },
+      expect.anything()
     );
-    expect(InventoryRepository.syncStockTotal).toHaveBeenCalledTimes(1);
-    expect(InventoryRepository.syncStockTotal).toHaveBeenCalledWith(expect.anything(), 'prod-1');
+    expect(sincronizarStockTotal).toHaveBeenCalledTimes(1);
+    expect(sincronizarStockTotal).toHaveBeenCalledWith('prod-1', expect.anything());
     expect(BaseRepository.update).toHaveBeenCalledWith(
       expect.anything(),
       'inventario_presentaciones',
@@ -182,7 +182,7 @@ describe('PurchaseService.registrarCompra', () => {
   });
 
   it('no inventa códigos cuando la compra no genera unidades', async () => {
-    vi.mocked(InventoryRepository.generateUnits).mockResolvedValue([]);
+    vi.mocked(generarUnidades).mockResolvedValue([]);
     const compra = await PurchaseService.registrarCompra({ detalles: [detalle] }, 'u1');
     expect(compra.codigos_generados).toEqual([]);
   });

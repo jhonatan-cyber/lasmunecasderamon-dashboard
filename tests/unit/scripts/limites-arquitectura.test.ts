@@ -270,6 +270,33 @@ describe('control de límites entre módulos', () => {
     expect(malos.some((h: any) => h.desde === 'lib/services/Malo.ts')).toBe(true);
     rmSync(join(raiz, 'lib', 'services', 'Malo.ts'));
   });
+
+  it('sólo SaleService puede usar el puente transaccional heredado', () => {
+    mkdirSync(join(raiz, 'lib', 'transaccion'), { recursive: true });
+    mkdirSync(join(raiz, 'lib', 'services'), { recursive: true });
+    writeFileSync(
+      join(raiz, 'lib', 'transaccion', 'compatibilidad.ts'),
+      'export function conContextoOperacionExistente() { return null; }\n'
+    );
+    writeFileSync(
+      join(raiz, 'lib', 'services', 'SaleService.ts'),
+      "import { conContextoOperacionExistente } from '@/lib/transaccion/compatibilidad';\nexport const f = conContextoOperacionExistente;\n"
+    );
+    expect(
+      listar(raiz).hallazgos.filter((h: any) => h.regla === 'puente-transaccional-heredado')
+    ).toHaveLength(0);
+
+    writeFileSync(
+      join(raiz, 'lib', 'services', 'Malo.ts'),
+      "import { conContextoOperacionExistente } from '@/lib/transaccion/compatibilidad';\nexport const f = conContextoOperacionExistente;\n"
+    );
+    const malos = listar(raiz).hallazgos.filter(
+      (h: any) => h.regla === 'puente-transaccional-heredado'
+    );
+    expect(malos.some((h: any) => h.desde === 'lib/services/Malo.ts')).toBe(true);
+    rmSync(join(raiz, 'lib', 'services', 'SaleService.ts'));
+    rmSync(join(raiz, 'lib', 'services', 'Malo.ts'));
+  });
 });
 
 describe('excepciones del repositorio real', () => {

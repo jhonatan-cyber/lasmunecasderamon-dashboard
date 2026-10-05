@@ -13,22 +13,33 @@ vi.mock('@/lib/repositories/ProductRepository', () => ({
   }
 }));
 
-vi.mock('@/lib/repositories/InventoryRepository', () => ({
-  InventoryRepository: {
-    findByBarcode: vi.fn().mockResolvedValue(null),
-    listPresentations: vi.fn().mockResolvedValue([]),
-    listUnits: vi.fn().mockResolvedValue({ total: 0, unidades: [] }),
-    countUnits: vi.fn().mockResolvedValue(0),
-    createPresentationStandalone: vi.fn(),
-    updatePresentation: vi.fn().mockResolvedValue(undefined),
-    generateUnitsStandalone: vi.fn().mockResolvedValue([]),
-    setUnitsEstadoStandalone: vi.fn().mockResolvedValue(4),
-    traspasarAlBarStandalone: vi.fn().mockResolvedValue({ trasladadas: 3, stock_bar: 8 }),
-    acceptTransferStandalone: vi.fn().mockResolvedValue(undefined),
-    rejectTransferStandalone: vi.fn().mockResolvedValue(undefined),
-    listBarStock: vi.fn().mockResolvedValue([])
-  },
+vi.mock('@/lib/repositories/inventory/inventoryHelpers', () => ({
   esEstadoUnidadValido: (v: unknown) => v === 'almacen' || v === 'inactivo'
+}));
+
+vi.mock('@/modules/inventario', () => ({
+  traspasarAlBar: vi.fn().mockResolvedValue({ trasladadas: 3, stock_bar: 8 }),
+  aceptarTransferencia: vi.fn().mockResolvedValue(undefined),
+  rechazarTransferencia: vi.fn().mockResolvedValue(undefined),
+  verificarEnvase: vi.fn(),
+  confirmarRecepcionEnvase: vi.fn(),
+  listarDevoluciones: vi.fn().mockResolvedValue([]),
+  buscarPresentacionPorCodigo: vi.fn().mockResolvedValue(null),
+  crearPresentacion: vi.fn(),
+  actualizarPresentacion: vi.fn().mockResolvedValue(undefined),
+  actualizarFotoPresentacion: vi.fn().mockResolvedValue(undefined),
+  eliminarPresentacion: vi.fn().mockResolvedValue(undefined),
+  obtenerPresentacion: vi.fn().mockResolvedValue(null),
+  listarPresentaciones: vi.fn().mockResolvedValue([]),
+  listarPresentacionesPorProductos: vi.fn().mockResolvedValue({}),
+  listarUnidades: vi.fn().mockResolvedValue({ total: 0, unidades: [] }),
+  registrarUnidades: vi.fn().mockResolvedValue([]),
+  cambiarEstadoUnidades: vi.fn().mockResolvedValue(4),
+  listarStockBar: vi.fn().mockResolvedValue([]),
+  obtenerResumenShots: vi.fn(),
+  listarParaVenta: vi.fn().mockResolvedValue([]),
+  listarMovimientos: vi.fn().mockResolvedValue([]),
+  listarMovimientosRecientes: vi.fn().mockResolvedValue([])
 }));
 
 vi.mock('@/lib/utils/logger', () => ({
@@ -36,7 +47,16 @@ vi.mock('@/lib/utils/logger', () => ({
 }));
 
 import { ProductRepository } from '@/lib/repositories/ProductRepository';
-import { InventoryRepository } from '@/lib/repositories/InventoryRepository';
+import {
+  aceptarTransferencia,
+  actualizarPresentacion,
+  buscarPresentacionPorCodigo,
+  cambiarEstadoUnidades,
+  listarPresentaciones,
+  rechazarTransferencia,
+  registrarUnidades,
+  traspasarAlBar
+} from '@/modules/inventario';
 
 const validProduct = {
   code: 'PROD-001',
@@ -154,7 +174,7 @@ describe('ProductService.createProduct', () => {
 
   it('rechaza un código de barras ya registrado en otro producto', async () => {
     vi.mocked(ProductRepository.getByCodeOrName).mockResolvedValue(null);
-    vi.mocked(InventoryRepository.findByBarcode).mockResolvedValue({
+    vi.mocked(buscarPresentacionPorCodigo).mockResolvedValue({
       id: 'pres-1',
       producto_id: 'otro-producto',
       nombre: '750 ml',
@@ -180,7 +200,7 @@ describe('ProductService.createProduct', () => {
     vi.mocked(ProductRepository.getById).mockResolvedValue({ id: 'prod-1' } as any);
     vi.mocked(ProductRepository.getByCodeOrName).mockResolvedValue(null);
     vi.mocked(ProductRepository.update).mockResolvedValue({ id: 'prod-1' } as any);
-    vi.mocked(InventoryRepository.findByBarcode).mockResolvedValue({
+    vi.mocked(buscarPresentacionPorCodigo).mockResolvedValue({
       id: 'pres-1',
       producto_id: 'prod-1',
       nombre: '750 ml',
@@ -201,7 +221,7 @@ describe('ProductService.createProduct', () => {
   });
 
   it('rechaza el código de otra presentación aunque sea del mismo producto', async () => {
-    vi.mocked(InventoryRepository.findByBarcode).mockResolvedValue({
+    vi.mocked(buscarPresentacionPorCodigo).mockResolvedValue({
       id: 'pres-otra',
       producto_id: 'prod-1',
       nombre: '500 ml',
@@ -222,14 +242,14 @@ describe('ProductService.createProduct', () => {
   });
 
   it('actualiza nombre y precio de la presentación', async () => {
-    vi.mocked(InventoryRepository.findByBarcode).mockResolvedValue(null);
+    vi.mocked(buscarPresentacionPorCodigo).mockResolvedValue(null);
 
     await ProductService.updatePresentation('pres-1', {
       nombre: '750 ml premium',
       precio_compra: 9000
     } as any);
 
-    expect(vi.mocked(InventoryRepository.updatePresentation)).toHaveBeenCalledWith('pres-1', {
+    expect(vi.mocked(actualizarPresentacion)).toHaveBeenCalledWith('pres-1', {
       nombre: '750 ml premium',
       precio_compra: 9000
     });
@@ -278,7 +298,7 @@ describe('ProductService champagne tiers', () => {
 describe('ProductService.addUnits', () => {
   it('genera códigos vinculados a la presentación', async () => {
     vi.mocked(ProductRepository.getById).mockResolvedValue({ id: 'prod-1' } as any);
-    vi.mocked(InventoryRepository.listPresentations).mockResolvedValue([
+    vi.mocked(listarPresentaciones).mockResolvedValue([
       {
         id: 'pres-1',
         producto_id: 'prod-1',
@@ -291,14 +311,18 @@ describe('ProductService.addUnits', () => {
         stock: 2
       }
     ]);
-    vi.mocked(InventoryRepository.generateUnitsStandalone).mockResolvedValue([
+    vi.mocked(registrarUnidades).mockResolvedValue([
       { id: 'u3', codigo: 'LM-000003', codigo_barras: '2900000000034' },
       { id: 'u4', codigo: 'LM-000004', codigo_barras: '2900000000041' }
     ]);
 
     const result = await ProductService.addUnits('prod-1', 'pres-1', 2);
 
-    expect(InventoryRepository.generateUnitsStandalone).toHaveBeenCalledWith('prod-1', 2, 'pres-1');
+    expect(registrarUnidades).toHaveBeenCalledWith({
+      producto_id: 'prod-1',
+      cantidad: 2,
+      presentacion_id: 'pres-1'
+    });
     expect(result).toEqual([
       { id: 'u3', codigo: 'LM-000003', codigo_barras: '2900000000034' },
       { id: 'u4', codigo: 'LM-000004', codigo_barras: '2900000000041' }
@@ -310,24 +334,24 @@ describe('ProductService.addUnits', () => {
     await expect(ProductService.addUnits('prod-1', 'pres-1', 1001)).rejects.toThrow(
       'entre 1 y 1000'
     );
-    expect(InventoryRepository.generateUnitsStandalone).not.toHaveBeenCalled();
+    expect(registrarUnidades).not.toHaveBeenCalled();
   });
 
   it('rechaza una presentación de otro producto', async () => {
     vi.mocked(ProductRepository.getById).mockResolvedValue({ id: 'prod-1' } as any);
-    vi.mocked(InventoryRepository.listPresentations).mockResolvedValue([]);
+    vi.mocked(listarPresentaciones).mockResolvedValue([]);
 
     await expect(ProductService.addUnits('prod-1', 'pres-ajena', 3)).rejects.toThrow(
       'no pertenece a este producto'
     );
-    expect(InventoryRepository.generateUnitsStandalone).not.toHaveBeenCalled();
+    expect(registrarUnidades).not.toHaveBeenCalled();
   });
 
   it('rechaza cantidades fraccionarias sin mover existencias', async () => {
     await expect(ProductService.traspasarAlBar('prod-1', 'pres-1', 1.5, 15000, 0)).rejects.toThrow(
       'entre 1 y 1000'
     );
-    expect(InventoryRepository.traspasarAlBarStandalone).not.toHaveBeenCalled();
+    expect(traspasarAlBar).not.toHaveBeenCalled();
   });
 });
 
@@ -337,11 +361,7 @@ describe('ProductService.setUnitsEstado', () => {
 
     const total = await ProductService.setUnitsEstado('prod-1', ['u-1', 'u-2'], 'inactivo');
 
-    expect(InventoryRepository.setUnitsEstadoStandalone).toHaveBeenCalledWith(
-      'prod-1',
-      ['u-1', 'u-2'],
-      'inactivo'
-    );
+    expect(cambiarEstadoUnidades).toHaveBeenCalledWith('prod-1', ['u-1', 'u-2'], 'inactivo');
     expect(total).toBe(4);
   });
 
@@ -352,19 +372,19 @@ describe('ProductService.setUnitsEstado', () => {
     await expect(ProductService.setUnitsEstado('prod-1', [], 'inactivo')).rejects.toThrow(
       'entre 1 y 1000'
     );
-    expect(InventoryRepository.setUnitsEstadoStandalone).not.toHaveBeenCalled();
+    expect(cambiarEstadoUnidades).not.toHaveBeenCalled();
   });
 });
 
 describe('ProductService.traspasarAlBar', () => {
   it('guarda botella y shot con importes independientes y comisión opcional', async () => {
     vi.mocked(ProductRepository.getById).mockResolvedValue({ id: 'prod-1' } as any);
-    vi.mocked(InventoryRepository.listPresentations).mockResolvedValue([{ id: 'pres-1' }] as any);
+    vi.mocked(listarPresentaciones).mockResolvedValue([{ id: 'pres-1' }] as any);
     await ProductService.traspasarAlBar('prod-1', 'pres-1', 2, undefined, undefined, 'user-1', [
       { tipo: 'botella', precio: 25000, comision: 1500 },
       { tipo: 'shot', precio: 3000 }
     ]);
-    expect(InventoryRepository.traspasarAlBarStandalone).toHaveBeenCalledWith(
+    expect(traspasarAlBar).toHaveBeenCalledWith(
       expect.objectContaining({
         cantidad: 2,
         precio_venta: 25000,
@@ -379,11 +399,11 @@ describe('ProductService.traspasarAlBar', () => {
 
   it('permite solo shot sin reutilizar su precio como precio de botella', async () => {
     vi.mocked(ProductRepository.getById).mockResolvedValue({ id: 'prod-1' } as any);
-    vi.mocked(InventoryRepository.listPresentations).mockResolvedValue([{ id: 'pres-1' }] as any);
+    vi.mocked(listarPresentaciones).mockResolvedValue([{ id: 'pres-1' }] as any);
     await ProductService.traspasarAlBar('prod-1', 'pres-1', 1, undefined, undefined, 'user-1', [
       { tipo: 'shot', precio: 2000 }
     ]);
-    expect(InventoryRepository.traspasarAlBarStandalone).toHaveBeenCalledWith(
+    expect(traspasarAlBar).toHaveBeenCalledWith(
       expect.objectContaining({
         precio_venta: 0,
         comision: 0,
@@ -407,7 +427,7 @@ describe('ProductService.traspasarAlBar', () => {
     await expect(
       ProductService.traspasarAlBar('prod-1', 'pres-1', 1, undefined, undefined, 'user-1', entries)
     ).rejects.toThrow('Tipos de venta');
-    expect(InventoryRepository.traspasarAlBarStandalone).not.toHaveBeenCalled();
+    expect(traspasarAlBar).not.toHaveBeenCalled();
   });
   const presConStock = [
     {
@@ -425,7 +445,7 @@ describe('ProductService.traspasarAlBar', () => {
 
   it('traspasa con precio y comisión válidos', async () => {
     vi.mocked(ProductRepository.getById).mockResolvedValue({ id: 'prod-1' } as any);
-    vi.mocked(InventoryRepository.listPresentations).mockResolvedValue(presConStock);
+    vi.mocked(listarPresentaciones).mockResolvedValue(presConStock);
 
     const result = await ProductService.traspasarAlBar(
       'prod-1',
@@ -436,7 +456,7 @@ describe('ProductService.traspasarAlBar', () => {
       'user-1'
     );
 
-    expect(InventoryRepository.traspasarAlBarStandalone).toHaveBeenCalledWith({
+    expect(traspasarAlBar).toHaveBeenCalledWith({
       producto_id: 'prod-1',
       presentacion_id: 'pres-1',
       cantidad: 3,
@@ -454,17 +474,17 @@ describe('ProductService.traspasarAlBar', () => {
     await expect(ProductService.traspasarAlBar('prod-1', 'pres-1', 2, -5, 0)).rejects.toThrow(
       'Precio de venta'
     );
-    expect(InventoryRepository.traspasarAlBarStandalone).not.toHaveBeenCalled();
+    expect(traspasarAlBar).not.toHaveBeenCalled();
   });
 
   it('rechaza una presentación de otro producto', async () => {
     vi.mocked(ProductRepository.getById).mockResolvedValue({ id: 'prod-1' } as any);
-    vi.mocked(InventoryRepository.listPresentations).mockResolvedValue([]);
+    vi.mocked(listarPresentaciones).mockResolvedValue([]);
 
     await expect(
       ProductService.traspasarAlBar('prod-1', 'pres-ajena', 2, 15000, 0)
     ).rejects.toThrow('no pertenece a este producto');
-    expect(InventoryRepository.traspasarAlBarStandalone).not.toHaveBeenCalled();
+    expect(traspasarAlBar).not.toHaveBeenCalled();
   });
 });
 
@@ -472,14 +492,14 @@ describe('ProductService.resolverTransferencia', () => {
   it('aprueba delegando en el repositorio', async () => {
     const result = await ProductService.resolverTransferencia('t-1', 'aprobar', 'barman-1');
 
-    expect(InventoryRepository.acceptTransferStandalone).toHaveBeenCalledWith('t-1', 'barman-1');
+    expect(aceptarTransferencia).toHaveBeenCalledWith('t-1', 'barman-1');
     expect(result).toEqual({ estado: 'aceptada' });
   });
 
   it('rechaza delegando en el repositorio', async () => {
     const result = await ProductService.resolverTransferencia('t-1', 'rechazar', 'barman-1');
 
-    expect(InventoryRepository.rejectTransferStandalone).toHaveBeenCalledWith('t-1', 'barman-1');
+    expect(rechazarTransferencia).toHaveBeenCalledWith('t-1', 'barman-1');
     expect(result).toEqual({ estado: 'rechazada' });
   });
 
@@ -493,8 +513,8 @@ describe('ProductService.resolverTransferencia', () => {
     await expect(ProductService.resolverTransferencia('t-1', 'aprobar', null)).rejects.toThrow(
       'usuario'
     );
-    expect(InventoryRepository.acceptTransferStandalone).not.toHaveBeenCalled();
-    expect(InventoryRepository.rejectTransferStandalone).not.toHaveBeenCalled();
+    expect(aceptarTransferencia).not.toHaveBeenCalled();
+    expect(rechazarTransferencia).not.toHaveBeenCalled();
   });
 });
 

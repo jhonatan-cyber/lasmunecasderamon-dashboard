@@ -1,5 +1,6 @@
 import { describe, expect, it, vi } from 'vitest';
-import { InventoryRepository } from '@/lib/repositories/InventoryRepository';
+import { aceptarTransferencia } from '@/modules/inventario';
+import { conContextoOperacionExistente } from '@/lib/transaccion/compatibilidad';
 vi.mock('@/lib/database/db', () => ({
   query: vi.fn(),
   withTransaction: vi.fn(),
@@ -37,7 +38,9 @@ function connection(
 describe('aceptación de transferencias', () => {
   it('ingresa al bar y registra al receptor tras verificar la reserva', async () => {
     const trx = connection();
-    await InventoryRepository.acceptTransfer(trx, 't1', 'barman-1');
+    await conContextoOperacionExistente(trx, contexto =>
+      aceptarTransferencia('t1', 'barman-1', contexto)
+    );
     expect(trx).toHaveBeenCalledWith(expect.stringContaining("SET ubicacion = 'bar'"), ['t1']);
     expect(trx).toHaveBeenCalledWith(
       expect.stringContaining('UPDATE inventario_movimientos'),
@@ -48,7 +51,11 @@ describe('aceptación de transferencias', () => {
     'rechaza sin modificar inventario: %j',
     async overrides => {
       const trx = connection(overrides);
-      await expect(InventoryRepository.acceptTransfer(trx, 't1', 'barman-1')).rejects.toThrow();
+      await expect(
+        conContextoOperacionExistente(trx, contexto =>
+          aceptarTransferencia('t1', 'barman-1', contexto)
+        )
+      ).rejects.toThrow();
       expect(trx.mock.calls.some(([sql]) => sql.startsWith('UPDATE'))).toBe(false);
     }
   );

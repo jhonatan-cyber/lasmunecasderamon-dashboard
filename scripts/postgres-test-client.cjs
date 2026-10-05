@@ -3,8 +3,11 @@
 const { Client } = require('pg');
 const { connectionConfig, prepareQuery } = require('../lib/database/postgres.cjs');
 async function createConnection(config = {}) {
-  if (!String(config.database || process.env.DB_NAME).endsWith('_test'))
-    throw new Error('Integration tests require a database ending in _test');
+  const database = String(config.database || process.env.DB_NAME || '');
+  const host = String(config.host || process.env.DB_HOST || '127.0.0.1');
+  const hostLocal = ['localhost', '127.0.0.1', '::1'].includes(host);
+  if (!hostLocal || database !== 'lasmunecasderamon')
+    throw new Error('Integration tests require local DB_NAME=lasmunecasderamon');
   const client = new Client({ ...connectionConfig(), ...config });
   await client.connect();
   const execute = async (sql, params = []) => {

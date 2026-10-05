@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
 import { withRoute } from '@/lib/api/withRoute';
-import { InventoryRepository } from '@/lib/repositories/InventoryRepository';
+import { listarTransferencias } from '@/modules/inventario';
 import { ProductService } from '@/lib/services/ProductService';
 
 export { POST } from '@/app/api/bar/route';
@@ -8,7 +8,7 @@ export { POST } from '@/app/api/bar/route';
 export const GET = withRoute({ auth: true, module: 'products', action: 'read' }, async () => {
   const [items, history] = await Promise.all([
     ProductService.listBarStock(),
-    InventoryRepository.listTransfers()
+    listarTransferencias()
   ]);
   return NextResponse.json({ success: true, data: { items, history } });
 });
