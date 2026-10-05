@@ -321,11 +321,13 @@ para venta, movimientos) viven en `modules/inventario` y se borraron
 `BarQueries`, `CatalogoQueries`, `MovimientoQueries` y la fachada
 `InventoryRepository`. Todo el SQL de inventario —lecturas y escrituras— está
 hoy en el módulo; `lib/repositories/inventory/` sólo conserva helpers y tipos
-puros. Productos y compras siguen en la capa heredada, pero ya escriben
-inventario a través de la API del módulo. Falta la reversión de stock por
-anulación para cerrar la fase. Alcance y siguientes cortes en
-[FASE4_INVENTARIO.md](arquitectura/FASE4_INVENTARIO.md). El censo regenerado del
-árbol actual está en [MODULOS_Y_DATOS.md](MODULOS_Y_DATOS.md).
+puros. **Corte 6:** el resumen de envases de la alerta también vive en el
+módulo, con su tipo `ResumenEnvases` en el dominio. Productos y compras siguen
+en la capa heredada, pero ya escriben inventario a través de la API del módulo.
+Falta la reversión de stock por anulación para cerrar la fase. Alcance y
+siguientes cortes en [FASE4_INVENTARIO.md](arquitectura/FASE4_INVENTARIO.md). El
+censo regenerado del árbol actual está en
+[MODULOS_Y_DATOS.md](MODULOS_Y_DATOS.md).
 
 ### Fase 5 — Operación, ventas y caja
 

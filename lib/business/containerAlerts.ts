@@ -2,21 +2,17 @@ import { query } from '@/lib/database/db';
 import { NotificationService } from '@/lib/services/NotificationService';
 import { sendNotificationToAll } from '@/lib/api/sseService';
 import { sendPushByRole } from '@/lib/integrations/pushNotifications';
-import { getNowInBusinessTimezone } from '@/lib/business/timezoneService';
+import { HORAS_ENVASE_SIN_CONFIRMAR, obtenerResumenEnvases } from '@/modules/inventario';
+import type { ResumenEnvases } from '@/modules/inventario/contracts';
 import logger from '@/lib/utils/logger';
 
 /** Tipo de notificación persistida para el aviso (campanita / historial). */
 export const WAREHOUSE_CONTAINER_ALERT_TIPO = 'warehouse_container_alert';
 
-/** Horas que un envase puede estar entregado sin recibir antes de avisar. */
-export const HORAS_ENVASE_SIN_CONFIRMAR = 2;
-
-export interface ResumenEnvases {
-  /** Envases entregados por el bar que el almacén todavía no confirmó. */
-  pendientes: number;
-  /** De esos, entregados hace más de `HORAS_ENVASE_SIN_CONFIRMAR` horas. */
-  vencidos: number;
-}
+// El umbral y el tipo del resumen son dominio del módulo inventario; aquí sólo
+// se reexportan para no cambiar la API que consumen rutas y pruebas.
+export { HORAS_ENVASE_SIN_CONFIRMAR };
+export type { ResumenEnvases };
 
 /**
  * Quien recibe envases: los roles con el permiso de confirmación (migración 033)
@@ -28,28 +24,11 @@ const DESTINATARIOS_ALMACEN = `SELECT u.id_usuario FROM usuarios u
      AND u.estado = 1`;
 
 /**
- * Contadores del control de envases.
- *
- * `fecha_devolucion` es naive y la escribe la aplicación con la hora del
- * negocio, así que la comparación también se hace con esa hora y no con
- * `now()` de Postgres (que iría en la zona del servidor).
+ * Contadores del control de envases. La consulta vive en el módulo inventario
+ * (`obtenerResumenEnvases`); aquí sólo se conserva el nombre heredado.
  */
 export async function getContainerReturnsSummary(): Promise<ResumenEnvases> {
-  const [fila] = await query<Array<{ pendientes: unknown; vencidos: unknown }>>(
-    `SELECT
-       COUNT(*) FILTER (WHERE u.fecha_confirmacion IS NULL) AS pendientes,
-       COUNT(*) FILTER (
-         WHERE u.fecha_confirmacion IS NULL
-           AND u.fecha_devolucion <= (?::timestamp - interval '${HORAS_ENVASE_SIN_CONFIRMAR} hours')
-       ) AS vencidos
-     FROM inventario_unidades u
-     WHERE u.fecha_devolucion IS NOT NULL`,
-    [getNowInBusinessTimezone()]
-  );
-  return {
-    pendientes: Number(fila?.pendientes ?? 0),
-    vencidos: Number(fila?.vencidos ?? 0)
-  };
+  return await obtenerResumenEnvases();
 }
 
 const globalForAlerts = globalThis as typeof globalThis & {

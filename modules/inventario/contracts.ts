@@ -134,3 +134,13 @@ export interface UnidadesGenerarInput {
   presentacion_id?: string | null;
   compra_id?: string | null;
 }
+
+/**
+ * Contadores del control de envases: entregados por el bar que el almacén
+ * todavía no confirmó, y de esos, los que superan el umbral de horas sin
+ * recibir.
+ */
+export interface ResumenEnvases {
+  pendientes: number;
+  vencidos: number;
+}

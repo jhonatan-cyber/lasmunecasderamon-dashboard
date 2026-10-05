@@ -1,7 +1,7 @@
 {
   "resumen": {
-    "commit": "c66000c693b333c62b80fd0285e0197f480b5a58",
-    "generado": "2026-10-05T00:45:31.497Z",
+    "commit": "c6d13189748c57d189b61223ab1cf0f75ffe74e1",
+    "generado": "2026-10-05T01:54:53.735Z",
     "archivos": 1525,
     "rutas": 204,
     "sqlFueraDeRepositorio": 97,
@@ -1918,36 +1918,6 @@
       "escribe": []
     },
     {
-      "archivo": "modules/inventario/bar/configuracion.ts",
-      "capa": "raiz",
-      "modulo": "inventario",
-      "escribe": []
-    },
-    {
-      "archivo": "modules/inventario/envases/servicio.ts",
-      "capa": "raiz",
-      "modulo": "inventario",
-      "escribe": []
-    },
-    {
-      "archivo": "modules/inventario/presentaciones/servicio.ts",
-      "capa": "raiz",
-      "modulo": "inventario",
-      "escribe": []
-    },
-    {
-      "archivo": "modules/inventario/transferencias/servicio.ts",
-      "capa": "raiz",
-      "modulo": "inventario",
-      "escribe": []
-    },
-    {
-      "archivo": "modules/inventario/unidades/servicio.ts",
-      "capa": "raiz",
-      "modulo": "inventario",
-      "escribe": []
-    },
-    {
       "archivo": "modules/asistencia/biometrico/avisosAudio.ts",
       "capa": "raiz",
       "modulo": null,
@@ -2050,6 +2020,36 @@
       "escribe": ["kiosk_devices"]
     },
     {
+      "archivo": "modules/inventario/bar/configuracion.ts",
+      "capa": "raiz",
+      "modulo": "inventario",
+      "escribe": []
+    },
+    {
+      "archivo": "modules/inventario/envases/servicio.ts",
+      "capa": "raiz",
+      "modulo": "inventario",
+      "escribe": []
+    },
+    {
+      "archivo": "modules/inventario/presentaciones/servicio.ts",
+      "capa": "raiz",
+      "modulo": "inventario",
+      "escribe": []
+    },
+    {
+      "archivo": "modules/inventario/transferencias/servicio.ts",
+      "capa": "raiz",
+      "modulo": "inventario",
+      "escribe": []
+    },
+    {
+      "archivo": "modules/inventario/unidades/servicio.ts",
+      "capa": "raiz",
+      "modulo": "inventario",
+      "escribe": []
+    },
+    {
       "archivo": "proxy.ts",
       "capa": "raiz",
       "modulo": null,
@@ -2123,13 +2123,13 @@
       "escribe": ["cajas"]
     },
     {
-      "archivo": "lib/transaccion/compatibilidad.ts",
+      "archivo": "lib/notifications/orderNotificationUtils.ts",
       "capa": "lib/otros",
       "modulo": null,
       "escribe": []
     },
     {
-      "archivo": "lib/notifications/orderNotificationUtils.ts",
+      "archivo": "lib/transaccion/compatibilidad.ts",
       "capa": "lib/otros",
       "modulo": null,
       "escribe": []
@@ -2565,26 +2565,6 @@
   ],
   "transacciones": [
     {
-      "archivo": "modules/inventario/envases/servicio.ts",
-      "capa": "raiz",
-      "modulo": "inventario"
-    },
-    {
-      "archivo": "modules/inventario/presentaciones/servicio.ts",
-      "capa": "raiz",
-      "modulo": "inventario"
-    },
-    {
-      "archivo": "modules/inventario/transferencias/servicio.ts",
-      "capa": "raiz",
-      "modulo": "inventario"
-    },
-    {
-      "archivo": "modules/inventario/unidades/servicio.ts",
-      "capa": "raiz",
-      "modulo": "inventario"
-    },
-    {
       "archivo": "app/api/cron/check-timers/route.ts",
       "capa": "app/api",
       "modulo": null
@@ -2713,6 +2693,26 @@
       "archivo": "modules/asistencia/marcas/repositorio.ts",
       "capa": "raiz",
       "modulo": null
+    },
+    {
+      "archivo": "modules/inventario/envases/servicio.ts",
+      "capa": "raiz",
+      "modulo": "inventario"
+    },
+    {
+      "archivo": "modules/inventario/presentaciones/servicio.ts",
+      "capa": "raiz",
+      "modulo": "inventario"
+    },
+    {
+      "archivo": "modules/inventario/transferencias/servicio.ts",
+      "capa": "raiz",
+      "modulo": "inventario"
+    },
+    {
+      "archivo": "modules/inventario/unidades/servicio.ts",
+      "capa": "raiz",
+      "modulo": "inventario"
     },
     {
       "archivo": "modules/personal/anticipos/repositorio.ts",

@@ -1,9 +1,9 @@
 # Fase 4 — Catálogo e inventario
 
-Fecha: 2026-10-04. Estado: cinco cortes verticales completados (consumo de stock
+Fecha: 2026-10-04. Estado: seis cortes verticales completados (consumo de stock
 en ventas, transferencias, devolución de envases, catálogo
-presentaciones/unidades y lecturas de bar/catálogo/movimientos tras API
-pública).
+presentaciones/unidades, lecturas de bar/catálogo/movimientos y resumen de
+envases de la alerta).
 
 ## Corte 1: consumo de stock en ventas
 
@@ -125,11 +125,11 @@ pública).
   lecturas puras, sin unidad de trabajo ni efectos.
 - `ProductService` (y por tanto las rutas de Bar, productos y movimientos)
   consume el módulo; `lib/business/shotAlerts.ts` toma `ShotAlert` desde
-  `contracts.ts`.
-- **Se borró la fachada `InventoryRepository.ts`** junto con `BarQueries`,
-  `CatalogoQueries` y `MovimientoQueries`. En `lib/repositories/inventory/` sólo
-  quedan `inventoryHelpers.ts` (mapeos, constantes de estado, EAN-13) e
-  `inventoryTypes.ts`, que son helpers y tipos puros compartidos por el módulo.
+  `contracts.ts`.- **Se borró la fachada `InventoryRepository.ts`** junto con
+  `BarQueries`, `CatalogoQueries` y `MovimientoQueries`. En
+  `lib/repositories/inventory/` sólo quedan `inventoryHelpers.ts` (mapeos,
+  constantes de estado, EAN-13) e `inventoryTypes.ts`, que son helpers y tipos
+  puros compartidos por el módulo.
 - El test `tests/unit/lib/repositories/InventoryRepository.test.ts` pasó a
   `tests/unit/modules/inventario-dominio.test.ts` (mismo contenido, ahora contra
   la API del módulo).
@@ -250,7 +250,25 @@ pública).
 - `pnpm build`: aprobado (Webpack + service worker).
 - No se ejecutaron `pnpm test:integration:*` ni e2e.
 
-## Siguientes cortes
+## Corte 6: resumen de envases de la alerta
+
+- La última lectura de inventario fuera del módulo era el contador que alimenta
+  la campana de envases sin recibir (`lib/business/containerAlerts.ts`). Pasa al
+  módulo como `obtenerResumenEnvases` (SQL 1:1, con `HORAS_ENVASE_SIN_CONFIRMAR`
+  y el tipo `ResumenEnvases` en el dominio); `lib/business` conserva la alerta,
+  el SSE y el push, y reexporta el nombre heredado `getContainerReturnsSummary`
+  para no cambiar la API de rutas y pruebas.
+- **Estado:** no queda SQL de inventario fuera de `modules/inventario` salvo
+  `lib/database/maintenance.ts`, que lee `inventario_unidades` para reconstruir
+  secuencias en el snapshot de la base y no es una lectura de dominio.
+- `pnpm typecheck`: aprobado. `pnpm lint:full`: 0 errores; 1 warning
+  preexistente. Prettier verificado.
+- `pnpm test:unit --maxWorkers=2`: **1713 aprobadas, 2 omitidas** (el test de
+  `containerAlerts` sigue comprobando el SQL y la hora del negocio sin cambios,
+  porque el módulo usa el mismo `query`).
+- `pnpm test:postgres` completa: **156 aprobadas en 15 archivos**.
+- `pnpm arquitectura:limites`: aprobado; **24 hallazgos / 24 excepciones**.
+- `pnpm build`: aprobado.## Siguientes cortes
 
 1. Cerrar la fase con la reversión de stock por anulación (API de negocio en el
    módulo) y decidir el dueño de productos/compras, que siguen en la capa

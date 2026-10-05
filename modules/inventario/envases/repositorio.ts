@@ -15,9 +15,16 @@ import {
   mapearEnvase
 } from '@/lib/repositories/inventory/inventoryHelpers';
 import type { EnvaseFila } from '@/lib/repositories/inventory/inventoryTypes';
-import type { DevolucionEnvaseRegistro, DevolucionEnvaseResultado } from '../contracts';
+import type {
+  DevolucionEnvaseRegistro,
+  DevolucionEnvaseResultado,
+  ResumenEnvases
+} from '../contracts';
 import { BusinessError, ValidationError } from '@/lib/errors/errors';
 import { getNowInBusinessTimezone } from '@/lib/business/timezoneService';
+
+/** Horas que un envase puede estar entregado sin recibir antes de avisar. */
+export const HORAS_ENVASE_SIN_CONFIRMAR = 2;
 
 async function buscarEnvase(trx: TransactionQuery, escaneo: string): Promise<EnvaseFila | null> {
   const filas = await trx<any[]>(
@@ -234,4 +241,30 @@ export async function listarDevoluciones(
     confirmado_nick: fila.confirmado_nick ?? null,
     pendiente_confirmacion: !fila.fecha_confirmacion
   }));
+}
+
+/**
+ * Contadores del control de envases: los consumen la alerta del almacén y el
+ * panel de devoluciones.
+ *
+ * `fecha_devolucion` es naive y la escribe la aplicación con la hora del
+ * negocio, así que la comparación también se hace con esa hora y no con
+ * `now()` de Postgres (que iría en la zona del servidor).
+ */
+export async function obtenerResumenEnvases(): Promise<ResumenEnvases> {
+  const [fila] = await query<Array<{ pendientes: unknown; vencidos: unknown }>>(
+    `SELECT
+       COUNT(*) FILTER (WHERE u.fecha_confirmacion IS NULL) AS pendientes,
+       COUNT(*) FILTER (
+         WHERE u.fecha_confirmacion IS NULL
+           AND u.fecha_devolucion <= (?::timestamp - interval '${HORAS_ENVASE_SIN_CONFIRMAR} hours')
+       ) AS vencidos
+     FROM inventario_unidades u
+     WHERE u.fecha_devolucion IS NOT NULL`,
+    [getNowInBusinessTimezone()]
+  );
+  return {
+    pendientes: Number(fila?.pendientes ?? 0),
+    vencidos: Number(fila?.vencidos ?? 0)
+  };
 }

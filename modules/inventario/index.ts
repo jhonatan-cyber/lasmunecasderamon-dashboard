@@ -7,7 +7,13 @@ export {
   rechazarTransferencia,
   traspasarAlBar
 } from './transferencias/servicio';
-export { confirmarRecepcionEnvase, listarDevoluciones, verificarEnvase } from './envases/servicio';
+export {
+  confirmarRecepcionEnvase,
+  HORAS_ENVASE_SIN_CONFIRMAR,
+  listarDevoluciones,
+  obtenerResumenEnvases,
+  verificarEnvase
+} from './envases/servicio';
 export {
   actualizarFotoPresentacion,
   actualizarPresentacion,

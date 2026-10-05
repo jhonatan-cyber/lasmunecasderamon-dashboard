@@ -12,13 +12,16 @@ import { withTransaction } from '@/lib/database/db';
 import { resolverTransaccion } from '@/lib/transaccion/infraestructura';
 import type { ContextoOperacion } from '@/lib/transaccion/contrato';
 import type { DevolucionEnvaseRegistro, DevolucionEnvaseResultado } from '../contracts';
+export type { ResumenEnvases } from '../contracts';
 import {
   confirmarRecepcionEnvase as confirmarEnRepositorio,
+  HORAS_ENVASE_SIN_CONFIRMAR,
   listarDevoluciones,
+  obtenerResumenEnvases,
   verificarYMarcarEnvase as verificarEnRepositorio
 } from './repositorio';
 
-export { listarDevoluciones };
+export { HORAS_ENVASE_SIN_CONFIRMAR, listarDevoluciones, obtenerResumenEnvases };
 
 /**
  * Escanea un envase en el bar: si es nuestro, está vacío y todavía no se

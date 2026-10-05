@@ -46,11 +46,6 @@ controladores HTTP traducen. Esto es lo que hay que reducir a cero.
 | scripts/test-whatsapp.ts                               | scripts          | —                                                                                           |
 | scripts/verify-migrations.mjs                          | scripts          | —                                                                                           |
 | scripts/verify-schema-parity.mjs                       | scripts          | —                                                                                           |
-| modules/inventario/bar/configuracion.ts                | raiz             | —                                                                                           |
-| modules/inventario/envases/servicio.ts                 | raiz             | —                                                                                           |
-| modules/inventario/presentaciones/servicio.ts          | raiz             | —                                                                                           |
-| modules/inventario/transferencias/servicio.ts          | raiz             | —                                                                                           |
-| modules/inventario/unidades/servicio.ts                | raiz             | —                                                                                           |
 | modules/asistencia/biometrico/avisosAudio.ts           | raiz             | —                                                                                           |
 | modules/asistencia/biometrico/clockSync.ts             | raiz             | —                                                                                           |
 | modules/asistencia/biometrico/deviceAuth.ts            | raiz             | biometric_devices                                                                           |
@@ -68,6 +63,11 @@ controladores HTTP traducen. Esto es lo que hay que reducir a cero.
 | modules/asistencia/biometrico/videoStream.ts           | raiz             | —                                                                                           |
 | modules/asistencia/kioskos/attendanceChallenges.ts     | raiz             | asistencia_desafios                                                                         |
 | modules/asistencia/kioskos/deviceAuth.ts               | raiz             | kiosk_devices                                                                               |
+| modules/inventario/bar/configuracion.ts                | raiz             | —                                                                                           |
+| modules/inventario/envases/servicio.ts                 | raiz             | —                                                                                           |
+| modules/inventario/presentaciones/servicio.ts          | raiz             | —                                                                                           |
+| modules/inventario/transferencias/servicio.ts          | raiz             | —                                                                                           |
+| modules/inventario/unidades/servicio.ts                | raiz             | —                                                                                           |
 | proxy.ts                                               | raiz             | —                                                                                           |
 | lib/services/AccountService.ts                         | lib/services     | —                                                                                           |
 | lib/services/AuditService.ts                           | lib/services     | —                                                                                           |
@@ -78,8 +78,8 @@ controladores HTTP traducen. Esto es lo que hay que reducir a cero.
 | lib/services/SecurityAlertService.ts                   | lib/services     | —                                                                                           |
 | lib/services/ServiceService.ts                         | lib/services     | comisiones, detalle_comisiones, detalle_servicios, detalle_servicios_clientes, habitaciones |
 | lib/services/WithdrawalService.ts                      | lib/services     | cajas                                                                                       |
-| lib/transaccion/compatibilidad.ts                      | lib/otros        | —                                                                                           |
 | lib/notifications/orderNotificationUtils.ts            | lib/otros        | —                                                                                           |
+| lib/transaccion/compatibilidad.ts                      | lib/otros        | —                                                                                           |
 | lib/transaccion/contrato.ts                            | lib/otros        | —                                                                                           |
 | lib/transaccion/infraestructura.ts                     | lib/otros        | —                                                                                           |
 | lib/utils/logUtils.ts                                  | lib/otros        | servicio_logs, venta_logs                                                                   |
@@ -171,10 +171,6 @@ propietario.
 
 | Archivo con withTransaction                            | Capa             |
 | ------------------------------------------------------ | ---------------- |
-| modules/inventario/envases/servicio.ts                 | raiz             |
-| modules/inventario/presentaciones/servicio.ts          | raiz             |
-| modules/inventario/transferencias/servicio.ts          | raiz             |
-| modules/inventario/unidades/servicio.ts                | raiz             |
 | app/api/cron/check-timers/route.ts                     | app/api          |
 | app/api/roles/[id]/permissions/route.ts                | app/api          |
 | lib/database/maintenance.ts                            | lib/database     |
@@ -201,6 +197,10 @@ propietario.
 | modules/asistencia/biometrico/unenrollmentService.ts   | raiz             |
 | modules/asistencia/kioskos/deviceAuth.ts               | raiz             |
 | modules/asistencia/marcas/repositorio.ts               | raiz             |
+| modules/inventario/envases/servicio.ts                 | raiz             |
+| modules/inventario/presentaciones/servicio.ts          | raiz             |
+| modules/inventario/transferencias/servicio.ts          | raiz             |
+| modules/inventario/unidades/servicio.ts                | raiz             |
 | modules/personal/anticipos/repositorio.ts              | raiz             |
 
 ## 5. Procesos periódicos y ciclo de vida
