@@ -1,9 +1,10 @@
 # Plan de consolidación como monolito modular
 
 Fecha: 2026-10-03  
-Estado: implementación en curso; seguimiento de la fase 0 revisado el
-2026-10-04. Las casillas de las demás fases todavía no reflejan todo el avance
-implementado.
+Estado: implementación en curso. Fases 1, 2 y 3 cerradas; la fase 4 tiene todo
+el SQL de inventario dentro de `modules/inventario` y le quedan la reversión de
+stock por anulación y el dueño de productos y compras. Revisión del 2026-10-05:
+las casillas de la fase 0 y de la fase 4 reflejan el avance real.
 
 ## 1. Objetivo y alcance
 
@@ -287,14 +288,23 @@ físico. Detalle en [FASE3_ASISTENCIA.md](arquitectura/FASE3_ASISTENCIA.md).
 ### Fase 4 — Catálogo e inventario
 
 - [ ] Encapsular productos, presentaciones, compras, transferencias y envases.
+      **Parcial:** transferencias, presentaciones, unidades, envases y sus
+      lecturas viven en el módulo y las seis clases heredadas de inventario se
+      borraron; productos y compras siguen en la capa heredada, aunque ya
+      escriban inventario a través de la API del módulo.
 - [ ] Exponer consumo y reversión de stock mediante operaciones de negocio, no
-      actualizaciones genéricas.
+      actualizaciones genéricas. **Parcial:** el consumo expone
+      `consumirStockBar` con contexto opaco desde el corte 1; la reversión por
+      anulación sigue fuera del módulo.
 - [x] Migrar Bar a esas APIs y separar sus contratos de tipos de
       `InventoryRepository`.
 - [x] Preservar capacidad de botellas, ml por shot, existencias, alertas y
       permisos de recepción.
 - [ ] Preparar las operaciones transaccionales que necesitarán ventas y
-      anulaciones.
+      anulaciones. **Parcial:** existe el puente `conContextoOperacionExistente`
+      para adaptar la transacción heredada; ventas, productos y compras lo usan
+      y las dos aristas de productos y compras están anotadas con su condición
+      de retiro. Las anulaciones todavía no tienen operación de reversión.
 
 **Salida:** escrituras de inventario bajo un único propietario, con flujos de
 compras, transferencias, shots y envases validados.
