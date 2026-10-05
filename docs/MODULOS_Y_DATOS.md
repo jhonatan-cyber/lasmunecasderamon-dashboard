@@ -66,32 +66,35 @@ Estas son las tablas que hoy aceptan escrituras desde más de un repositorio. Es
 la lista que gobierna el orden de las fases 4 y 5: **cada fila es un módulo que
 todavía no es dueño de su propia tabla.**
 
-| Tabla                          | Repositorios que la escriben                                                                                                                                                      | Módulos implicados          |
-| ------------------------------ | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | --------------------------- |
-| `clientes`                     | `ClientRepository`, `cuenta/CuentaQueries`, `sale/SaleQueries`, `service/ServiceQueries`                                                                                          | clientes, operación, ventas |
-| `inventario_unidades`          | `modules/inventario/bar/consumoRepositorio`, `modules/inventario/envases/repositorio`, `modules/inventario/transferencias/repositorio`, `modules/inventario/unidades/repositorio` | inventario                  |
-| `detalle_propinas`             | `PayrollRepository`, `TipRepository`, `sale/SaleQueries`                                                                                                                          | personal, ventas            |
-| `cajas`                        | `CashRegisterRepository`, `service/ServiceQueries`                                                                                                                                | caja, operación             |
-| `clientes_prepago_movimientos` | `sale/SaleQueries`, `service/ServiceQueries`                                                                                                                                      | clientes, ventas            |
-| `comisiones`                   | `sale/SaleQueries`, `service/ServiceQueries`                                                                                                                                      | personal, ventas            |
-| `detalle_comisiones`           | `PayrollRepository`, `sale/SaleQueries`                                                                                                                                           | personal, ventas            |
-| `cuentas`                      | `ClientRepository`, `cuenta/CuentaQueries`                                                                                                                                        | clientes, operación         |
-| `habitaciones`                 | `TimerRepository`, `cuenta/CuentaQueries`                                                                                                                                         | operación                   |
-| `logins`                       | `CashRegisterRepository`, `auth/AuthQueries`                                                                                                                                      | caja, identidad             |
-| `servicios`                    | `TimerRepository`, `service/ServiceQueries`                                                                                                                                       | operación                   |
-| `ventas`                       | `TimerRepository`, `sale/SaleQueries`                                                                                                                                             | ventas, operación           |
-| `asistencias`                  | `PayrollRepository`, `auth/AuthQueries`                                                                                                                                           | personal, asistencia        |
+| Tabla                            | Repositorios que la escriben                                                                                                                                                                                                    | Módulos implicados          |
+| -------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | --------------------------- |
+| `clientes`                       | `ClientRepository`, `cuenta/CuentaQueries`, `sale/SaleQueries`, `service/ServiceQueries`                                                                                                                                        | clientes, operación, ventas |
+| `inventario_unidades`            | `modules/inventario/anulaciones/repositorio`, `modules/inventario/bar/consumoRepositorio`, `modules/inventario/envases/repositorio`, `modules/inventario/transferencias/repositorio`, `modules/inventario/unidades/repositorio` | inventario                  |
+| `inventario_movimientos`         | `modules/inventario/anulaciones/repositorio`, `modules/inventario/bar/consumoRepositorio`, `modules/inventario/transferencias/repositorio`                                                                                      | inventario                  |
+| `inventario_movimiento_unidades` | `modules/inventario/bar/consumoRepositorio`                                                                                                                                                                                     | inventario                  |
+| `detalle_propinas`               | `PayrollRepository`, `TipRepository`, `sale/SaleQueries`                                                                                                                                                                        | personal, ventas            |
+| `cajas`                          | `CashRegisterRepository`, `service/ServiceQueries`                                                                                                                                                                              | caja, operación             |
+| `clientes_prepago_movimientos`   | `sale/SaleQueries`, `service/ServiceQueries`                                                                                                                                                                                    | clientes, ventas            |
+| `comisiones`                     | `sale/SaleQueries`, `service/ServiceQueries`                                                                                                                                                                                    | personal, ventas            |
+| `detalle_comisiones`             | `PayrollRepository`, `sale/SaleQueries`                                                                                                                                                                                         | personal, ventas            |
+| `cuentas`                        | `ClientRepository`, `cuenta/CuentaQueries`                                                                                                                                                                                      | clientes, operación         |
+| `habitaciones`                   | `TimerRepository`, `cuenta/CuentaQueries`                                                                                                                                                                                       | operación                   |
+| `logins`                         | `CashRegisterRepository`, `auth/AuthQueries`                                                                                                                                                                                    | caja, identidad             |
+| `servicios`                      | `TimerRepository`, `service/ServiceQueries`                                                                                                                                                                                     | operación                   |
+| `ventas`                         | `TimerRepository`, `sale/SaleQueries`                                                                                                                                                                                           | ventas, operación           |
+| `asistencias`                    | `PayrollRepository`, `auth/AuthQueries`                                                                                                                                                                                         | personal, asistencia        |
 
 Nota sobre `inventario_unidades`: con las transferencias (corte 2), los envases
-(corte 3), las unidades de catálogo (corte 4) y las lecturas (corte 5) migrados
-en la fase 4, los cuatro escritores son repositorios de `modules/inventario` y
-`lib/repositories/inventory/` ya no contiene SQL: sólo quedan
-`inventoryHelpers.ts` (opciones de venta, mapeos y EAN-13) e `inventoryTypes.ts`
-como helpers y tipos puros. Las constantes de estado de unidad son ya
-vocabulario del módulo (`modules/inventario/estados.ts`), igual que
-`ResumenEnvases` y el resto de los DTO en `contracts.ts`. La propiedad que el
-plan pedía está alcanzada para inventario; productos y compras siguen en la capa
-heredada aunque escriban inventario a través del módulo.
+(corte 3), las unidades de catálogo (corte 4), las lecturas (corte 5) y la
+reversión por anulación (corte 8) migrados en la fase 4, los cinco escritores
+son repositorios de `modules/inventario` y `lib/repositories/inventory/` ya no
+contiene SQL: sólo quedan `inventoryHelpers.ts` (opciones de venta, mapeos y
+EAN-13) e `inventoryTypes.ts` como helpers y tipos puros. Las constantes de
+estado de unidad son ya vocabulario del módulo
+(`modules/inventario/estados.ts`), igual que `ResumenEnvases` y el resto de los
+DTO en `contracts.ts`. La propiedad que el plan pedía está alcanzada para
+inventario; productos y compras siguen en la capa heredada aunque escriban
+inventario a través del módulo.
 
 Nota sobre `detalle_propinas`, `detalle_comisiones` y sus cabeceras: la
 propiedad quedó decidida (D5 resuelta — §8 de

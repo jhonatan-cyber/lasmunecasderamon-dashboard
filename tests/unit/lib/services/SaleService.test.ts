@@ -406,7 +406,9 @@ describe('SaleService.createSale — inventario del bar', () => {
 
     expect(consumirStockBar).toHaveBeenCalledWith(
       [expect.objectContaining({ presentacion_id: 'pres-1', cantidad: 2 })],
-      { usuarioId: 'user-1', fecha: expect.any(String) },
+      // La venta que se está creando: sin ella el consumo no queda ligado a
+      // nada y la anulación no puede devolver las botellas (migración 058).
+      { usuarioId: 'user-1', fecha: expect.any(String), ventaId: 'mock-uuid' },
       { id: expect.any(String) }
     );
   });
@@ -454,7 +456,7 @@ describe('SaleService.createSale — inventario del bar', () => {
 
     expect(consumirStockBar).toHaveBeenCalledWith(
       [expect.objectContaining({ presentacion_id: 'pres-1', cantidad: 2, tipo_venta: 'shot' })],
-      { usuarioId: 'user-1', fecha: expect.any(String) },
+      { usuarioId: 'user-1', fecha: expect.any(String), ventaId: expect.any(String) },
       { id: expect.any(String) }
     );
   });
@@ -525,7 +527,7 @@ describe('SaleService.createSale — inventario del bar', () => {
 
     expect(consumirStockBar).toHaveBeenCalledWith(
       expect.any(Array),
-      { usuarioId: 'user-1', fecha: expect.any(String) },
+      { usuarioId: 'user-1', fecha: expect.any(String), ventaId: expect.any(String) },
       { id: expect.any(String) }
     );
   });

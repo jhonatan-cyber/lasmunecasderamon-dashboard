@@ -1,6 +1,7 @@
 import 'server-only';
 
 export { consumirStockBar } from './bar/servicio';
+export { revertirStockAnulacion } from './anulaciones/servicio';
 export {
   aceptarTransferencia,
   listarTransferencias,

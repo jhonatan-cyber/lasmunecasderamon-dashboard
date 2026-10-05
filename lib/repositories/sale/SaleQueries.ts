@@ -1,4 +1,6 @@
 import { query, generateUUID, withTransaction, type TransactionQuery } from '@/lib/database/db';
+import { revertirStockAnulacion } from '@/modules/inventario';
+import { conContextoOperacionExistente } from '@/lib/transaccion/compatibilidad';
 import { sendNotificationToAll } from '@/lib/api/sseService';
 import { type SaleType } from '@/lib/business/schemas';
 import { getNowInBusinessTimezone } from '@/lib/business/timezoneService';
@@ -330,6 +332,21 @@ export class SaleQueries {
           refundComision: Math.max(0, currentComision - newComision),
           detailRows
         });
+
+        // El stock se devuelve en la proporción del dinero devuelto, igual que
+        // la propina y la comisión. Va antes que el reparto de los detalles para
+        // que el módulo vea los consumos tal como los dejó la venta.
+        await conContextoOperacionExistente(trx, contexto =>
+          revertirStockAnulacion(
+            {
+              venta_id: ventaId,
+              usuario_id: approvedBy || null,
+              fecha: getNowInBusinessTimezone(),
+              fraccion: currentTotal > 0 ? approvedAmount / currentTotal : 0
+            },
+            contexto
+          )
+        );
 
         const updatedDetailSubtotals = this.allocateProportionally(
           detailRows,
@@ -815,6 +832,21 @@ export class SaleQueries {
             refundComision: totalComision,
             detailRows
           });
+
+          // Anular devuelve también las botellas que dejó la venta: sin esto el
+          // bar perdía stock en cada anulación y la siguiente venta de lo mismo
+          // se quedaba sin existencias. Va en la misma transacción que el resto
+          // de la anulación, para que no se devuelva plata sin devolver stock.
+          await conContextoOperacionExistente(trx, contexto =>
+            revertirStockAnulacion(
+              {
+                venta_id: id,
+                usuario_id: userId || null,
+                fecha: getNowInBusinessTimezone()
+              },
+              contexto
+            )
+          );
 
           await addVentaLog(id, 'ANULADO', 'Venta anulada manualmente.', userId);
           // Fuera de la transacción, para no extenderla con I/O de red: si el stream

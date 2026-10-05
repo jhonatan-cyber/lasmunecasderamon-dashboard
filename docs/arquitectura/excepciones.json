@@ -214,5 +214,14 @@
     "motivo": "El registro de compras genera unidades y sincroniza stock dentro de su propia transacción; conContextoOperacionExistente adapta ese trx heredado al contexto opaco del módulo inventario (mismo patrón que SaleService, corte 4 de la fase 4).",
     "responsable": "Fase 4 - Catálogo e inventario",
     "condicion": "Retirar cuando PurchaseService reciba el ContextoOperacion de su flujo llamante en lugar de abrir la unidad él mismo; entonces la regla vuelve a exigir que sólo SaleService use el puente."
+  },
+  "puente-transaccional-heredado|lib/repositories/sale/SaleQueries.ts|lib/transaccion/compatibilidad.ts": {
+    "regla": "puente-transaccional-heredado",
+    "plan": "Transición de Fase 4 — el puente al contexto opaco se retira al migrar la transacción de ventas",
+    "desde": "lib/repositories/sale/SaleQueries.ts",
+    "hacia": "lib/transaccion/compatibilidad.ts",
+    "motivo": "La anulación de una venta abre su propia transacción y devuelve el stock consumido en ella: revertirStockAnulacion tiene que escribir en la misma unidad que ajusta caja, prepago, comisiones y propinas, o la venta quedaría anulada sin las botellas de vuelta (corte 8 de la fase 4).",
+    "responsable": "Fase 4 - Catálogo e inventario (anulación de ventas)",
+    "condicion": "Retirar cuando la transacción de ventas se migre al contexto opaco (fase 5, con la unidad de trabajo): entonces la anulación recibirá su ContextoOperacion del flujo llamante y el puente volverá a ser exclusivo de SaleService."
   }
 }

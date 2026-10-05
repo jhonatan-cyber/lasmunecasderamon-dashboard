@@ -316,11 +316,95 @@ envases y dueño de los estados de unidad).
 - `pnpm build`: aprobado (Webpack + service worker).
 - No se ejecutaron `pnpm test:integration:*` ni e2e.
 
+## Corte 8: reversión de stock por anulación
+
+**Qué faltaba.** Anular una venta devolvía la plata y se quedaba con las
+botellas: `SaleQueries.updateStatus(0)` y `approveAnulacion` ajustan caja,
+prepago, comisiones y propinas, y nunca tocaban `inventario_unidades`. La
+botella quedaba en el bar con estado `vendida` y la venta siguiente de lo mismo
+ya no la encontraba. La fase 4 pedía «consumir y revertir existencias mediante
+operaciones de negocio», y sólo la mitad estaba.
+
+**Por qué no se podía hacer sin esquema.** `inventario_movimientos` anotaba qué
+presentación salió, cuántas unidades y cuánta ml, pero no qué venta lo consumió
+ni qué botellas tocó. Sin esa cadena, devolver el stock era adivinar.
+
+**Migración 058** (`migrations/058_reversion_stock_anulacion.sql`):
+
+- `inventario_movimientos.venta_id`: la venta que consumió el stock.
+- `inventario_movimientos.movimiento_origen`: el consumo que una fila de tipo
+  `devolucion` deshace. La reversión **no borra** el consumo: escribe un
+  movimiento nuevo que apunta al original, así el historial sigue contando lo
+  que salió y lo que volvió.
+- `inventario_movimiento_unidades (movimiento_id, unidad_id, ml_consumido)`: qué
+  unidades tocó cada movimiento y cuánta ml les quitó. Es lo que hace la
+  reversión exacta en vez de aproximada.
+
+Las filas anteriores quedan con `venta_id` nulo: no se puede reconstruir a qué
+venta pertenecía un movimiento viejo, y por eso la anulación de esas ventas no
+repone stock (el módulo no inventa).
+
+**Módulo.** `modules/inventario/anulaciones/` con `repositorio.ts` y
+`servicio.ts`, expuestos como `revertirStockAnulacion` en la API pública. La
+idempotencia es por suma, no por bandera: un consumo está devuelto cuando lo ya
+revertido alcanza lo que consumió, y eso lo contesta la suma de sus reversiones.
+Una venta anulada dos veces (parcial y luego total) repone cada botella una sola
+vez, sin columna que pueda quedar desincronizada.
+
+La ml se devuelve a las botellas de las que salió, empezando por las más vacías
+(el orden inverso al del consumo); si a esas ya no les cabe porque su capacidad
+cambió tras la venta, se reporta en `ml_no_repuesto` en vez de repartirse en
+botellas ajenas. Anular una venta nunca falla por stock descuadrado.
+
+**Consumo.** `consumirStock` ahora graba `venta_id` y la trazabilidad de
+unidades. El plan de consumo lleva `ml_consumido` explícito porque la diferencia
+con `ml_restante` no dice nada cuando la venta abre una botella cerrada en ese
+momento (su `ml_restante` anterior es 0): sin ese dato, la reversión de un shot
+servido de una botella recién abierta no devolvía nada. Lo detectó el test de
+PostgreSQL, no la revisión.
+
+**Cableado.** `SaleQueries` (anulación total y parcial) llama al módulo dentro
+de su propia transacción mediante `conContextoOperacionExistente`, con la
+fracción del monto devuelto en el caso parcial. Nueva excepción
+`puente-transaccional-heredado|lib/repositories/sale/SaleQueries.ts` (25
+vigentes) con su condición de retiro: cuando la transacción de ventas se migre
+al contexto opaco en la fase 5.
+
+Sin efectos externos: el stock del bar se lee bajo demanda y la venta ya emite
+su `sale_cancelled`.
+
+## Verificación del corte 8
+
+- `pnpm typecheck`: aprobado (0 errores).
+- `pnpm lint:full`: 0 errores; 1 warning preexistente (`instrumentation.ts`).
+- Prettier: verificado en todos los archivos tocados (prettier no parsea `.sql`,
+  que queda fuera del chequeo).
+- `pnpm test:unit --maxWorkers=2`: **1723 aprobadas, 2 omitidas** (180
+  archivos). Pruebas nuevas en `inventario-dominio.test.ts`: reversión de
+  botellas, de ml, fracción parcial, saldo ya devuelto, ml que no cupo, y la
+  trazabilidad que graba el consumo (incluida la botella que la venta abre).
+- `pnpm test:postgres`: **161 aprobadas en 16 archivos**.
+  `anulacion-stock.test.ts` prueba el camino completo contra la base: botellas
+  de vuelta, ml repuesto a la botella abierta, parcial + total sin duplicar,
+  anulación doble idempotente y venta sin presentación que no inventa stock.
+- `pnpm arquitectura:limites`: aprobado; **25 hallazgos / 25 excepciones**, sin
+  obsoletas.
+- `pnpm db:parity`: la referencia local arrastraba 12 migraciones de retraso
+  (048-057) y por eso la puerta ya estaba roja antes de este corte; tras
+  actualizarla, las dos rutas de instalación coinciden con la referencia en todo
+  lo que agrega la 058. Queda **una diferencia preexistente y ajena**: la FK
+  `fk_gratificaciones_solicitante` de la migración 037 difiere en `DEFERRABLE`.
+- `pnpm arquitectura`: censo regenerado; `inventario_movimientos` queda con dos
+  propietarios (consumo y anulaciones), los dos dentro del módulo.
+- `pnpm build`: aprobado.
+- No se ejecutaron `pnpm test:integration:*` ni e2e.
+
 ## Siguientes cortes
 
-1. Cerrar la fase con la reversión de stock por anulación (API de negocio en el
-   módulo) y decidir el dueño de productos/compras, que siguen en la capa
-   heredada aunque ya escriban inventario a través del módulo.
+1. Cerrar la fase decidiendo el dueño de productos y compras, que siguen en la
+   capa heredada aunque ya escriban inventario a través del módulo. Con el corte
+   8 el consumo y su reversión ya son operaciones del módulo, que es lo que
+   pedía la casilla de «consumir y revertir existencias».
 2. Decidir el destino de los dos archivos restantes de la capa heredada
    (`inventoryHelpers.ts` e `inventoryTypes.ts`): moverlos dentro del módulo o
    declararlos utils compartidos con una nota en `MODULOS_Y_DATOS.md`.

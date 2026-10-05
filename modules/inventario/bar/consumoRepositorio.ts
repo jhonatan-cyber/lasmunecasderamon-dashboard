@@ -8,7 +8,7 @@ import {
 import { ESTADO_UNIDAD_ACTIVA, ESTADO_UNIDAD_VENDIDA } from '../estados';
 import { BusinessError } from '@/lib/errors/errors';
 import { resolveBotellaMl, resolveShotMl, resolveShotMlAnfitriona } from '@/lib/business/shotMl';
-import type { ConsumoInventarioDetalle, ShotAlert } from '../contracts';
+import type { ContextoVentaInventario, ConsumoInventarioDetalle, ShotAlert } from '../contracts';
 
 interface PedidoPresentacion {
   botellas: number;
@@ -36,7 +36,7 @@ interface UnidadConsumo {
 export async function consumirStock(
   trx: TransactionQuery,
   detalles: ConsumoInventarioDetalle[],
-  contextoVenta: { usuarioId: string | null; fecha: string }
+  contextoVenta: ContextoVentaInventario
 ): Promise<ShotAlert[]> {
   const alertas: ShotAlert[] = [];
   const requerido = new Map<string, PedidoPresentacion>();
@@ -103,7 +103,10 @@ export async function consumirStock(
       [presentacionId]
     );
 
-    const plan: { id: string; ml_restante: number }[] = [];
+    // `ml_consumido` es lo que este movimiento le quitó a la unidad, no la
+    // diferencia con lo que tenía: si la venta abrió una botella cerrada, la
+    // diferencia con su `ml_restante` (0) no diría nada de los ml que salieron.
+    const plan: { id: string; ml_restante: number; ml_consumido: number }[] = [];
     let mlPendiente =
       pedido.shotsCliente * shotMlPresentacion + pedido.shotsAnfitriona * shotMlAnfitriona;
     let botellasPendientes = pedido.botellas;
@@ -114,7 +117,7 @@ export async function consumirStock(
       if (restante <= 0) continue;
       const consumido = Math.min(restante, mlPendiente);
       mlPendiente -= consumido;
-      plan.push({ id: unidad.id, ml_restante: restante - consumido });
+      plan.push({ id: unidad.id, ml_restante: restante - consumido, ml_consumido: consumido });
     }
 
     for (const unidad of unidades) {
@@ -122,12 +125,13 @@ export async function consumirStock(
       if (mlPendiente > 0) {
         const consumido = Math.min(capacidadMl, mlPendiente);
         mlPendiente -= consumido;
-        plan.push({ id: unidad.id, ml_restante: capacidadMl - consumido });
+        plan.push({ id: unidad.id, ml_restante: capacidadMl - consumido, ml_consumido: consumido });
         continue;
       }
       if (botellasPendientes > 0) {
         botellasPendientes -= 1;
-        plan.push({ id: unidad.id, ml_restante: 0 });
+        // Botella vendida entera: no sale ml de ella, sale la botella.
+        plan.push({ id: unidad.id, ml_restante: 0, ml_consumido: 0 });
         continue;
       }
       break;
@@ -219,6 +223,7 @@ export async function consumirStock(
       precio_venta: Math.floor(Number(presentacion.precio_venta ?? 0)),
       comision: Math.floor(Number(presentacion.comision ?? 0)),
       usuario_id: contextoVenta.usuarioId,
+      venta_id: contextoVenta.ventaId ?? null,
       fecha_crea: contextoVenta.fecha
     };
     const columnas = Object.keys(movimiento);
@@ -226,6 +231,20 @@ export async function consumirStock(
       `INSERT INTO inventario_movimientos (${columnas.join(', ')}) VALUES (${columnas.map(() => '?').join(', ')})`,
       Object.values(movimiento)
     );
+
+    // Qué unidades tocó este consumo y cuánta ml les quitó (migración 058). Sin
+    // esta trazabilidad la anulación de la venta no puede devolver lo que salió:
+    // solo sabría cuántas botellas vender, no cuáles ni cuánto les queda.
+    const tocadas = plan.map(item => [movimiento.id, item.id, item.ml_consumido]);
+    if (tocadas.length > 0) {
+      const valores = tocadas.flat();
+      const marcadores = tocadas.map(() => '(?, ?, ?)').join(',');
+      await trx(
+        `INSERT INTO inventario_movimiento_unidades (movimiento_id, unidad_id, ml_consumido)
+         VALUES ${marcadores}`,
+        valores
+      );
+    }
   }
 
   return alertas;

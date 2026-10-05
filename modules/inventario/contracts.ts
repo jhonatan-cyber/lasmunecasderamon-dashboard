@@ -144,3 +144,43 @@ export interface ResumenEnvases {
   pendientes: number;
   vencidos: number;
 }
+
+/**
+ * Venta cuyo stock se devuelve porque se anuló.
+ *
+ * `fraccion` es la parte del consumo que esta anulación repone: 1 cuando la
+ * venta se anula entera, y el porcentaje del monto devuelto cuando sólo se
+ * anula una parte. Lo que ya se repuso en una anulación anterior no vuelve a
+ * contarse, así que una segunda anulación sobre la misma venta no duplica stock.
+ */
+export interface AnulacionStockEntrada {
+  venta_id: string;
+  usuario_id: string | null;
+  fecha: string;
+  fraccion?: number;
+}
+
+/** Lo que una anulación devolvió al bar. */
+export interface ReversaStockAnulacion {
+  movimientos_revertidos: number;
+  unidades_repuestas: number;
+  ml_repuesto: number;
+  /**
+   * ml que no se pudo reponer porque las botellas de aquella venta ya no
+   * tienen esa capacidad (se les cambió `ml_botella` después). Se reporta en
+   * vez de repartirse en otras botellas: devolvería al bar contenido que esa
+   * venta no llegó a sacar.
+   */
+  ml_no_repuesto: number;
+}
+
+/**
+ * Contexto de la venta que consume stock: quién la cobró, cuándo y cuál es
+ * (`venta_id`). Sin `venta_id` el consumo sigue funcionando, pero la anulación
+ * de esa venta no podrá reponer las unidades consumidas.
+ */
+export interface ContextoVentaInventario {
+  usuarioId: string | null;
+  fecha: string;
+  ventaId?: string | null;
+}

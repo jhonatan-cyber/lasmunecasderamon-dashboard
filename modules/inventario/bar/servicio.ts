@@ -1,5 +1,5 @@
 import type { ContextoOperacion } from '@/lib/transaccion/contrato';
-import type { ConsumoInventarioDetalle, ShotAlert } from '../contracts';
+import type { ContextoVentaInventario, ConsumoInventarioDetalle, ShotAlert } from '../contracts';
 import { consumirStock } from './repositorio';
 
 // Lecturas de la barra (stock abierto y resumen del turno): no abren unidad ni
@@ -8,7 +8,7 @@ export { listarStockBar, obtenerResumenShots } from './stockRepositorio';
 
 export function consumirStockBar(
   detalles: ConsumoInventarioDetalle[],
-  contextoVenta: { usuarioId: string | null; fecha: string },
+  contextoVenta: ContextoVentaInventario,
   contexto: ContextoOperacion
 ): Promise<ShotAlert[]> {
   return consumirStock(detalles, contextoVenta, contexto);

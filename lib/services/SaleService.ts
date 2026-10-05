@@ -327,7 +327,11 @@ export class SaleService {
       // detalles. Cubre también el cobro de cuenta, que entra por este mismo método con
       // origen 'cuenta'. Los detalles sin presentación (catálogo anterior) no se tocan.
       alertasShots = await conContextoOperacionExistente(trx, contexto =>
-        consumirStockBar(validated.detalles, { usuarioId: createdBy, fecha: now }, contexto)
+        consumirStockBar(
+          validated.detalles,
+          { usuarioId: createdBy, fecha: now, ventaId },
+          contexto
+        )
       );
 
       // BATCH INSERT comisiones + detalle_comisiones

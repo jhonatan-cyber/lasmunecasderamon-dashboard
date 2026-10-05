@@ -1,11 +1,11 @@
 {
   "resumen": {
-    "commit": "8734827ca45b22151c9dfcc823850a8ae90b4ce3",
-    "generado": "2026-10-05T01:56:48.247Z",
-    "archivos": 1526,
+    "commit": "80cd9a4260c5197c5126c527b50193de0bbb6e1f",
+    "generado": "2026-10-05T03:42:38.953Z",
+    "archivos": 1529,
     "rutas": 204,
-    "sqlFueraDeRepositorio": 97,
-    "tablasConEscritoresMultiples": 13,
+    "sqlFueraDeRepositorio": 98,
+    "tablasConEscritoresMultiples": 14,
     "ciclos": 5,
     "procesosPeriodicos": 15,
     "caches": 19,
@@ -1918,6 +1918,12 @@
       "escribe": []
     },
     {
+      "archivo": "modules/inventario/anulaciones/servicio.ts",
+      "capa": "raiz",
+      "modulo": "inventario",
+      "escribe": []
+    },
+    {
       "archivo": "modules/asistencia/biometrico/avisosAudio.ts",
       "capa": "raiz",
       "modulo": null,
@@ -2529,8 +2535,17 @@
       "modulos": ["operacion"]
     },
     {
+      "tabla": "inventario_movimientos",
+      "escritores": [
+        "modules/inventario/anulaciones/repositorio.ts",
+        "modules/inventario/bar/consumoRepositorio.ts"
+      ],
+      "modulos": ["inventario"]
+    },
+    {
       "tabla": "inventario_unidades",
       "escritores": [
+        "modules/inventario/anulaciones/repositorio.ts",
         "modules/inventario/bar/consumoRepositorio.ts",
         "modules/inventario/envases/repositorio.ts",
         "modules/inventario/transferencias/repositorio.ts",
@@ -2564,6 +2579,11 @@
     }
   ],
   "transacciones": [
+    {
+      "archivo": "modules/inventario/anulaciones/servicio.ts",
+      "capa": "raiz",
+      "modulo": "inventario"
+    },
     {
       "archivo": "app/api/cron/check-timers/route.ts",
       "capa": "app/api",

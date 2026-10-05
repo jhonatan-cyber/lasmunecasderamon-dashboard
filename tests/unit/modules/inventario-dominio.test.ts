@@ -16,6 +16,7 @@ import {
   marcarUnidadesImpresas,
   obtenerResumenShots,
   rechazarTransferencia,
+  revertirStockAnulacion,
   sincronizarStockTotal,
   traspasarAlBar,
   verificarEnvase
@@ -514,6 +515,45 @@ describe('descuento del bar al registrar una venta', () => {
     expect(movimiento![1]).toEqual(
       expect.arrayContaining(['venta', 'completada', 'prod-1', 'pres-1', 2, 'user-1'])
     );
+  });
+
+  it('deja constancia de qué unidades tocó el consumo y cuánta ml les quitó', async () => {
+    const trx = trxCon([
+      { id: 'u1', ml_restante: 50 },
+      { id: 'u2', ml_restante: null }
+    ]);
+
+    await consumirStockConTransaccion(
+      trx,
+      [{ presentacion_id: 'pres-1', cantidad: 2, tipo_venta: 'shot' }],
+      { ...contexto, ventaId: 'venta-9' }
+    );
+
+    const movimiento = trx.mock.calls.find(([sql]: string[]) =>
+      sql.includes('INSERT INTO inventario_movimientos')
+    );
+    expect(movimiento![1]).toEqual(expect.arrayContaining(['venta-9']));
+    // El primer shot vació u1 y el segundo abrió u2 en esta misma venta: la
+    // diferencia con su ml_restante (0) no diría cuánto salió de ella, por eso se
+    // guarda lo que el movimiento le quitó a cada una.
+    const trazabilidad = trx.mock.calls.find(([sql]: string[]) =>
+      sql.includes('INSERT INTO inventario_movimiento_unidades')
+    );
+    expect(trazabilidad![1]).toEqual([movimiento![1][0], 'u1', 50, movimiento![1][0], 'u2', 50]);
+  });
+
+  it('una botella vendida entera no cuenta como ml consumida', async () => {
+    const trx = trxCon([{ id: 'u1', ml_restante: null }]);
+
+    await consumirStockConTransaccion(trx, [{ presentacion_id: 'pres-1', cantidad: 1 }], {
+      ...contexto,
+      ventaId: 'venta-9'
+    });
+
+    const trazabilidad = trx.mock.calls.find(([sql]: string[]) =>
+      sql.includes('INSERT INTO inventario_movimiento_unidades')
+    );
+    expect(trazabilidad![1].slice(-1)).toEqual([0]);
   });
 
   it('rechaza la venta sin modificar nada cuando no alcanzan las botellas', async () => {
@@ -1151,5 +1191,188 @@ describe('control de devolución de envases', () => {
 
     expect(vi.mocked(withTransaction)).toHaveBeenCalledTimes(1);
     expect(resultado.ok).toBe(true);
+  });
+});
+
+describe('reversión de stock por anulación de venta', () => {
+  const entrada = {
+    venta_id: 'venta-1',
+    usuario_id: 'user-1',
+    fecha: '2026-10-05 21:00:00'
+  };
+
+  function movimiento(over: Record<string, unknown> = {}) {
+    return {
+      id: 'mov-1',
+      producto_id: 'prod-1',
+      presentacion_id: 'pres-1',
+      nombre: 'Whisky 750 ml',
+      cantidad: 2,
+      ml: null,
+      precio_venta: 15000,
+      comision: 1000,
+      ml_botella: 750,
+      unidades_revertidas: 0,
+      ml_revertido: 0,
+      ...over
+    };
+  }
+
+  /** trx de mentira: responde por el texto del SQL y guarda lo que se escribe. */
+  function trxAnulacion(respuestas: {
+    movimientos?: unknown[];
+    tocadas?: unknown[];
+    vendidas?: unknown[];
+  }) {
+    return vi.fn().mockImplementation(async (sql: string) => {
+      if (sql.includes('FROM inventario_movimientos m')) return respuestas.movimientos ?? [];
+      if (sql.includes('mu.ml_consumido > 0')) return respuestas.tocadas ?? [];
+      if (sql.includes('mu.ml_consumido = 0')) return respuestas.vendidas ?? [];
+      if (sql.includes('configuraciones')) return [];
+      return [];
+    });
+  }
+
+  const inserts = (trx: any): [string, any[]][] =>
+    trx.mock.calls.filter(([sql]: [string]) => sql.includes('INSERT INTO')) as [string, any[]][];
+
+  const escritura = (trx: any, fragmento: string): [string, any[]] =>
+    trx.mock.calls.find(([sql]: [string]) => sql.includes(fragmento)) as [string, any[]];
+
+  it('devuelve al bar las botellas que el consumo vendió enteras', async () => {
+    const trx = trxAnulacion({
+      movimientos: [movimiento()],
+      vendidas: [{ id: 'unit-2' }, { id: 'unit-1' }]
+    });
+
+    const resultado = await conContextoOperacionExistente(trx, contexto =>
+      revertirStockAnulacion(entrada, contexto)
+    );
+
+    expect(resultado).toMatchObject({ unidades_repuestas: 2, ml_repuesto: 0, ml_no_repuesto: 0 });
+    const [, ids] = escritura(trx, 'ml_restante = 0');
+    expect(ids).toEqual(['unit-2', 'unit-1']);
+    const [columnas, valores] = inserts(trx)[0];
+    expect(columnas).toContain('tipo');
+    expect(columnas).toContain('movimiento_origen');
+    expect(valores).toEqual([
+      'uuid-test',
+      'devolucion',
+      'completada',
+      'prod-1',
+      'pres-1',
+      2,
+      null,
+      15000,
+      1000,
+      'user-1',
+      'venta-1',
+      'mov-1',
+      '2026-10-05 21:00:00'
+    ]);
+  });
+
+  it('no devuelve dos veces lo que una anulación anterior ya repuso', async () => {
+    const trx = trxAnulacion({ movimientos: [movimiento({ unidades_revertidas: 2 })] });
+
+    const resultado = await conContextoOperacionExistente(trx, contexto =>
+      revertirStockAnulacion(entrada, contexto)
+    );
+
+    expect(resultado.unidades_repuestas).toBe(0);
+    expect(inserts(trx)).toHaveLength(0);
+    expect(trx.mock.calls.every(([sql]) => String(sql).trim().startsWith('SELECT'))).toBe(true);
+  });
+
+  it('repone sólo la fracción de una anulación parcial y respeta lo ya devuelto', async () => {
+    const trx = trxAnulacion({
+      movimientos: [movimiento({ cantidad: 10, unidades_revertidas: 2 })],
+      vendidas: [{ id: 'unit-3' }, { id: 'unit-4' }]
+    });
+
+    const resultado = await conContextoOperacionExistente(trx, contexto =>
+      revertirStockAnulacion({ ...entrada, fraccion: 0.2 }, contexto)
+    );
+
+    // 10 * 20% son 2 botellas, que es lo que se devuelve en cada anulación del 20%,
+    // aunque otra anterior ya hubiera devuelto otras 2 (quedan 8 en total por reponer).
+    expect(resultado.unidades_repuestas).toBe(2);
+    const [, ids] = escritura(trx, 'ml_restante = 0');
+    expect(ids).toEqual(['unit-3', 'unit-4']);
+  });
+
+  it('vuelve a llenar las botellas de las que salieron los shots', async () => {
+    const trx = trxAnulacion({
+      movimientos: [movimiento({ cantidad: 0, ml: 200 })],
+      tocadas: [
+        { id: 'unit-1', ml_restante: 650, estado: 'almacen', ml_consumido: 100 },
+        { id: 'unit-2', ml_restante: 650, estado: 'almacen', ml_consumido: 100 }
+      ]
+    });
+
+    const resultado = await conContextoOperacionExistente(trx, contexto =>
+      revertirStockAnulacion(entrada, contexto)
+    );
+
+    expect(resultado).toMatchObject({ ml_repuesto: 200, ml_no_repuesto: 0, unidades_repuestas: 0 });
+    // Cada botella recupera los 100 ml que el consumo le sacó, empezando por la más vacía.
+    expect(trx.mock.calls[3][1]).toEqual([750, 'unit-1']);
+    expect(trx.mock.calls[4][1]).toEqual([750, 'unit-2']);
+  });
+
+  it('reabre una botella que el consumo vació por shots y la devuelve al bar', async () => {
+    const trx = trxAnulacion({
+      movimientos: [movimiento({ cantidad: 0, ml: 750 })],
+      tocadas: [{ id: 'unit-1', ml_restante: 0, estado: 'vendida', ml_consumido: 750 }]
+    });
+
+    const resultado = await conContextoOperacionExistente(trx, contexto =>
+      revertirStockAnulacion(entrada, contexto)
+    );
+
+    expect(resultado.ml_repuesto).toBe(750);
+    const [sql, valores] = trx.mock.calls[3];
+    expect(sql).toContain("estado = CASE WHEN estado = 'vendida'");
+    expect(valores).toEqual([750, 'unit-1']);
+  });
+
+  it('reporta la ml que no cupo en las botellas en vez de inventarse otra', async () => {
+    const trx = trxAnulacion({
+      movimientos: [movimiento({ cantidad: 0, ml: 1500 })],
+      tocadas: [{ id: 'unit-1', ml_restante: 0, estado: 'vendida', ml_consumido: 1500 }]
+    });
+
+    const resultado = await conContextoOperacionExistente(trx, contexto =>
+      revertirStockAnulacion(entrada, contexto)
+    );
+
+    expect(resultado.ml_repuesto).toBe(750);
+    expect(resultado.ml_no_repuesto).toBe(750);
+  });
+
+  it('no escribe nada cuando la venta no consumió stock', async () => {
+    const trx = trxAnulacion({});
+
+    const resultado = await conContextoOperacionExistente(trx, contexto =>
+      revertirStockAnulacion(entrada, contexto)
+    );
+
+    expect(resultado).toMatchObject({ movimientos_revertidos: 0, unidades_repuestas: 0 });
+    expect(trx).toHaveBeenCalledTimes(1);
+  });
+
+  it('no hace nada sin venta, sin fracción o sin transacción abierta', async () => {
+    const trx = trxAnulacion({ movimientos: [movimiento()] });
+
+    await expect(revertirStockAnulacion({ ...entrada, venta_id: '' })).resolves.toMatchObject({
+      unidades_repuestas: 0
+    });
+    await expect(
+      conContextoOperacionExistente(trx, contexto =>
+        revertirStockAnulacion({ ...entrada, fraccion: 0 }, contexto)
+      )
+    ).resolves.toMatchObject({ unidades_repuestas: 0 });
+    expect(trx).not.toHaveBeenCalled();
+    expect(vi.mocked(withTransaction)).not.toHaveBeenCalled();
   });
 });
