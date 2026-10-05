@@ -509,3 +509,65 @@ convertir las 23 excepciones transitorias en reglas obligatorias. 3. Actualizar
 el censo de propietarios tras cada corte; no cerrar la fase hasta que las
 escrituras de inventario pasen por el módulo y los flujos de compras,
 transferencias, shots y envases estén cubiertos.
+
+## Bitácora posterior: cortes 12a a 12d (2026-10-05)
+
+Inventario y catálogos quedaron cerrados en el corte 10. Lo que sigue es la
+bitácora de los cortes que rematan la fase 5 y vacían `app/api` de SQL. Se
+registra aquí porque es el mismo hilo: el principio que se inventarió —cada
+tabla con un módulo dueño— se incumple por el lado de los controladores HTTP.
+
+### Qué cambió
+
+| Corte | Qué nació o se completó                                                                   | Rutas que quedaron sin SQL                                                                                             |
+| ----- | ----------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------- |
+| 12a   | `modules/operacion` (servicios, cuentas); `modules/personal/anticipos`                    | las 6 de `app/api/servicios/*` y `app/api/cuentas/*`, más anticipos, balances y `users/me/stats`                       |
+| 12b   | servidor de `modules/identidad`; `modules/configuracion`; `modules/asistencia/biometrico` | permisos de usuarios y roles, `roles/setup`, `public/users`, `change-password`, configuraciones, respaldos, biométrico |
+| 12c   | `modules/clientes`, `modules/caja`, lecturas agregadas de 4 módulos                       | devoluciones de saldo, `check-active-room`, `pending-count`, webhook de WhatsApp                                       |
+| 12d   | `modules/operacion/temporizadores`, `modules/salud`                                       | `cron/check-timers` y `health`                                                                                         |
+
+### El detalle que costó entender: el límite es el import, no el texto
+
+`app/api/health` no escribía SQL. Llamaba a `verificarConexion()` de
+`lib/database/db` y por eso el censo seguía reportando una ruta con acceso al
+driver, y el objetivo de la fase 5 seguía sin cumplirse.
+`scripts/arquitectura/analisis.mjs` documenta la razón en `usaDriverDe`: _«el
+límite arquitectónico es el import, y buscar sólo llamadas perdía 21 de las 36
+rutas que lo traen»_.
+
+Por eso `tests/unit/scripts/rutas-sin-sql.test.ts` vigila dos cosas: el texto
+SQL y el import a `lib/database/db`. Ambas se probaron en sentido negativo
+inyectando la violación en `app/api/health/route.ts` (SQL, y luego import sin
+SQL): cada guarda falla nombrando el archivo y las otras tres siguen en verde, o
+sea que los dos detectores no se solapan.
+
+### Un test que se estaba quedar sin trabajo
+
+`tests/postgres/sql-compatibility.test.ts` recorre `lib` y `app/api`, pide a
+Postgres un `EXPLAIN` de cada sentencia estática y exige `checked > 400`. Al
+vaciar las rutas, el SQL salió del alcance del test: el conteo bajó solo y llegó
+justo al umbral. El arreglo no era bajar el número sino añadir `modules/` al
+recorrido, que es donde vive ese SQL desde el corte 12. Si no, el test llevaba
+varios cortes dando verde sobre la mitad de las consultas.
+
+## Verificación del corte 12d
+
+- `pnpm typecheck`: aprobado (0 errores).
+- `pnpm lint:full`: 0 errores; 1 warning preexistente (`instrumentation.ts`).
+- `pnpm test:unit --maxWorkers=2`: **1731 aprobadas, 2 omitidas** (184
+  archivos).
+- `pnpm test:postgres`: **161 aprobadas en 16 archivos**.
+- `pnpm arquitectura:limites`: **23 hallazgos / 23 excepciones**, sin obsoletas.
+- `pnpm arquitectura`: **0 rutas con SQL directo** (antes 1).
+- `pnpm build`: correcto.
+
+## Lo que sigue
+
+1. `lib/` sigue siendo el grueso del trabajo: `SaleQueries`, `ServiceQueries`,
+   `TimerRepository`, `CashRegisterRepository`, `PayrollRepository`, agenda,
+   comunicaciones y auditoría. Vaciarlos es la fase 7.
+2. El puente transaccional heredado (`SaleQueries` ↔
+   `lib/transaccion/compatibilidad.ts`) es la única excepción que queda viva;
+   retirarla es lo que convierte las 23 excepciones transitorias en reglas.
+3. Decidir la propiedad del prepago, `asistencias` y `logins`
+   (`docs/MODULOS_Y_DATOS.md` §6) antes de tocar nómina o caja.

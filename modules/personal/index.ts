@@ -31,6 +31,7 @@ export {
   actualizarEstadoAnticipo,
   procesarAnticipoDesdeComando,
   tieneSolicitudPendiente,
-  obtenerSolicitudAnticipoPorId
+  obtenerSolicitudAnticipoPorId,
+  listarAnticiposPendientes
 } from './anticipos/servicio';
 export { getAnticipoBalances } from './balances/servicio';

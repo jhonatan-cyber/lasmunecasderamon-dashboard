@@ -19,7 +19,11 @@ afterAll(async () => {
 it('PostgreSQL can plan every complete static SQL statement in repositories and API routes', async () => {
   const errors: string[] = [];
   let checked = 0;
-  for (const filename of [...files('lib'), ...files('app/api')].filter(file =>
+  // `modules` entra en el escaneo a partir del corte 12: al vaciar `app/api`, el SQL
+  // se mudó allí y este test dejó de ver la mitad de las consultas sin que nadie lo
+  // notara — el conteo bajaba solo mientras el umbral `> 400` se cumplía por
+  // margen. Si algún día `modules` desaparece, que lo diga el fallo y no el umbral.
+  for (const filename of [...files('lib'), ...files('modules'), ...files('app/api')].filter(file =>
     file.endsWith('.ts')
   )) {
     const source = ts.createSourceFile(
@@ -57,5 +61,6 @@ it('PostgreSQL can plan every complete static SQL statement in repositories and 
     }
   }
   expect(errors).toEqual([]);
+  // Suelo, no firma: cada corte mueve SQL entre carpetas y el número sube o baja solo.
   expect(checked).toBeGreaterThan(400);
 });

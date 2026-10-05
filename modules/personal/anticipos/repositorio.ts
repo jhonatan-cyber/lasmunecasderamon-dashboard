@@ -606,6 +606,32 @@ export async function deliverAnticipo(id: string, entregado_por: string) {
 }
 
 /**
+ * Anticipos solicitados y sin resolver, para el comando de WhatsApp del
+ * administrador. El nombre viene concatenado porque es lo que se le responde.
+ */
+export async function listarAnticiposPendientes(): Promise<
+  {
+    id: string;
+    monto: number | string;
+    empleado_nombre: string;
+    empleado_nick: string | null;
+    fecha_mod: string;
+  }[]
+> {
+  return await query<
+    {
+      id: string;
+      monto: number | string;
+      empleado_nombre: string;
+      empleado_nick: string | null;
+      fecha_mod: string;
+    }[]
+  >(
+    `SELECT a.id_anticipo as id, a.monto, (CAST(u.nombre AS text) || CAST(' ' AS text) || CAST(u.apellido AS text)) as empleado_nombre, u.nick as empleado_nick, a.fecha_crea as fecha_mod FROM anticipos a INNER JOIN usuarios u ON a.usuario_id = u.id_usuario WHERE a.estado = 2 ORDER BY a.fecha_crea DESC`
+  );
+}
+
+/**
  * ¿El usuario tiene una solicitud en estado pendiente (2)? La ruta de anticipo
  * máximo la usa para no ofrecer un segundo botón de solicitud mientras la
  * anterior no se resuelve.

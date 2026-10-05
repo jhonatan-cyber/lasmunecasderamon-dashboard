@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
 import { withPublicRoute } from '@/lib/api/withRoute';
-import { query } from '@/lib/database/db';
+import { obtenerHabitacionActivaDeAnfitrionas } from '@/modules/ventas';
 
 export const POST = withPublicRoute(async (request: Request) => {
   const { anfitrionasIds } = await request.json();
@@ -8,23 +8,13 @@ export const POST = withPublicRoute(async (request: Request) => {
     return NextResponse.json({ success: true, hasActiveRoom: false });
   }
 
-  const result = await query<any[]>(
-    `
-      SELECT v.habitacion_id AS "habitacionId", h.nombre AS "habitacionNombre", v.tiempo, vu.usuario_id AS "anfitrionaId"
-      FROM ventas v
-      INNER JOIN ventas_usuarios vu ON v.id_venta = vu.venta_id
-      INNER JOIN habitaciones h ON v.habitacion_id = h.id_habitacion
-      WHERE vu.usuario_id IN (?) AND v.habitacion_id IS NOT NULL AND v.tiempo > 0 AND v.estado = 2
-      ORDER BY v.fecha_crea DESC LIMIT 1
-    `,
-    [anfitrionasIds]
-  );
+  const [habitacion] = await obtenerHabitacionActivaDeAnfitrionas(anfitrionasIds);
 
-  if (result.length > 0) {
+  if (habitacion) {
     return NextResponse.json({
       success: true,
       hasActiveRoom: true,
-      data: result[0]
+      data: habitacion
     });
   }
 

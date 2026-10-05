@@ -3,8 +3,7 @@ import { withRoute } from '@/lib/api/withRoute';
 import { ApiResponse } from '@/lib/api/api-response';
 import { ClientRepository } from '@/lib/repositories/ClientRepository';
 import { enviarRecordatorioDevolucionSaldo } from '@/lib/integrations/whatsappService';
-import { query, generateUUID } from '@/lib/database/db';
-import { getNowInBusinessTimezone } from '@/lib/business/timezoneService';
+import { registrarRecordatorio } from '@/modules/clientes';
 
 export const POST = withRoute(
   { auth: true, audit: true, module: 'clients', action: 'write' },
@@ -29,7 +28,6 @@ export const POST = withRoute(
           new Error(`Saldo insuficiente. Disponible: $${saldoActual.toLocaleString('es-CL')}`)
         );
       }
-
       const solicitadoPor =
         (user as any)?.username ||
         (user as any)?.nick ||
@@ -38,25 +36,12 @@ export const POST = withRoute(
       const clienteNombre = `${(cliente as any).name} ${(cliente as any).lastName}`.trim();
 
       // Guardar solicitud para que admin la vea en dashboard
-      const solicitudId = generateUUID();
-      const now = getNowInBusinessTimezone();
-      const userId = String((user as any)?.id || (user as any)?.userId || '');
-      try {
-        await query(
-          `INSERT INTO solicitudes_devolucion_saldo (id, cliente_id, monto, motivo, solicitado_por, estado, fecha_crea, metodo_pago) VALUES (?, ?, ?, ?, ?, 'pendiente', ?, 'transferencia')`,
-          [
-            solicitudId,
-            String(cliente_id),
-            montoNum,
-            motivo || 'Solicitud de devolucion',
-            userId || null,
-            now
-          ]
-        );
-      } catch (dbErr) {
-        // No bloquea el recordatorio si falla el insert (tabla puede no existir aun)
-        console.error('Error guardando solicitud devolucion:', dbErr);
-      }
+      const { solicitud_id: solicitudId } = await registrarRecordatorio({
+        clienteId: String(cliente_id),
+        monto: montoNum,
+        motivo: motivo || 'Solicitud de devolucion',
+        solicitadoPor: String((user as any)?.id || (user as any)?.userId || '')
+      });
 
       await enviarRecordatorioDevolucionSaldo({
         clienteNombre,

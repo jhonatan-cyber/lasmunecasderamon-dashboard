@@ -1,6 +1,5 @@
 import { NextResponse } from 'next/server';
 import twilio from 'twilio';
-import { query } from '@/lib/database/db';
 import {
   isApprovalAction,
   parseCierreCajaCommand,
@@ -10,7 +9,10 @@ import {
   parseSolicitudResponseCommand
 } from '@/lib/integrations/whatsappCommandUtils';
 import { processPendingSolicitud } from '@/lib/integrations/whatsappPendingActions';
-import { procesarAnticipoDesdeComando } from '@/modules/personal';
+import { listarAnticiposPendientes, procesarAnticipoDesdeComando } from '@/modules/personal';
+import { listarSolicitudesCierrePendientes } from '@/modules/caja';
+import { listarServiciosEnCurso, listarSolicitudesCuentasPendientes } from '@/modules/operacion';
+import { listarVentasEnCurso } from '@/modules/ventas';
 import { CashRegisterService } from '@/lib/services/CashRegisterService';
 import { GratificacionService } from '@/lib/services/GratificacionService';
 import { formatCurrencyCLP } from '@/lib/utils/formatters';
@@ -93,32 +95,11 @@ export async function POST(request: Request) {
       anticiposPendientes,
       cierresPendientes
     ] = await Promise.all([
-      query(
-        `SELECT v.id_venta, v.codigo, v.total, COALESCE((CAST(c.nombre AS text) || CAST(' ' AS text) || CAST(c.apellido AS text)), 'Sin cliente registrado') as cliente_nombre, v.fecha_mod FROM ventas v LEFT JOIN clientes c ON v.cliente_id = c.id_cliente WHERE v.estado = 2 ORDER BY v.fecha_mod DESC`
-      ),
-      query(
-        `SELECT s.id_servicio, s.codigo, s.total, COALESCE(c.nombre, 'Sin cliente registrado') as cliente_nombre, s.fecha_mod FROM servicios s LEFT JOIN clientes c ON s.cliente_id = c.id_cliente WHERE s.estado = 2 ORDER BY s.fecha_mod DESC`
-      ),
-      query(
-        `SELECT sac.id as solicitud_id, sac.cuenta_id as id_cuenta, sac.monto, c.codigo, c.total,
-                COALESCE(cl.nombre, 'Sin cliente registrado') as cliente_nombre,
-                COALESCE(sac.fecha_mod, sac.fecha_crea) as fecha_mod
-         FROM solicitudes_anulacion_cuentas sac
-         INNER JOIN cuentas c ON c.id_cuenta = sac.cuenta_id
-         LEFT JOIN clientes cl ON c.cliente_id = cl.id_cliente
-         WHERE sac.estado = 'pendiente'
-         ORDER BY COALESCE(sac.fecha_mod, sac.fecha_crea) DESC`
-      ),
-      query(
-        `SELECT a.id_anticipo as id, a.monto, (CAST(u.nombre AS text) || CAST(' ' AS text) || CAST(u.apellido AS text)) as empleado_nombre, u.nick as empleado_nick, a.fecha_crea as fecha_mod FROM anticipos a INNER JOIN usuarios u ON a.usuario_id = u.id_usuario WHERE a.estado = 2 ORDER BY a.fecha_crea DESC`
-      ),
-      query(
-        `SELECT s.id, s.token, s.caja_id, s.solicitado_por, s.monto_cierre_calculado,
-                  s.saldo_clientes_descontado, s.fecha_solicitud as fecha_mod
-           FROM solicitudes_cierre_caja s
-           WHERE s.estado = 'pendiente'
-           ORDER BY s.fecha_solicitud DESC`
-      )
+      listarVentasEnCurso(),
+      listarServiciosEnCurso(),
+      listarSolicitudesCuentasPendientes(),
+      listarAnticiposPendientes(),
+      listarSolicitudesCierrePendientes()
     ]);
 
     const todasLasSolicitudes = [

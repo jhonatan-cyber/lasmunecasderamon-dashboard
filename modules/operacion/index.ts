@@ -15,3 +15,10 @@ export {
   registrarSolicitudAnulacionServicio
 } from './servicios/servicio';
 export { obtenerCuentaParaAnulacion, obtenerSolicitudAnulacionCuenta } from './cuentas/servicio';
+export {
+  contarPedidosPendientes,
+  listarServiciosEnCurso,
+  listarSolicitudesCuentasPendientes
+} from './lecturas/servicio';
+export { revisarTemporizadores } from './temporizadores/servicio';
+export type { ResultadoTemporizadores } from './temporizadores/servicio';

@@ -6,3 +6,4 @@ export {
   obtenerSolicitudPorToken,
   obtenerVentaParaAnulacion
 } from './anulaciones/servicio';
+export { listarVentasEnCurso, obtenerHabitacionActivaDeAnfitrionas } from './lecturas/servicio';

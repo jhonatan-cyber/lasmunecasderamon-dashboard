@@ -1,17 +1,20 @@
 import { NextResponse } from 'next/server';
 import { withPublicRoute } from '@/lib/api/withRoute';
-import { query, withTransaction } from '@/lib/database/db';
-import { sendPushNotification, sendPushByRole } from '@/lib/integrations/pushNotifications';
 import { sendNotificationToAll } from '@/lib/api/sseService';
-import { getSystemTimezone, getNowInBusinessTimezone } from '@/lib/business/timezoneService';
-import { RoomManager } from '@/lib/services/RoomManager';
+import { getNowInBusinessTimezone, getSystemTimezone } from '@/lib/business/timezoneService';
 import { checkWarehouseContainerAlerts } from '@/lib/business/containerAlerts';
 import { reavisarCierresPendientes } from '@/lib/business/cierreCajaRecordatorios';
+import { revisarTemporizadores } from '@/modules/operacion';
 
 export const dynamic = 'force-dynamic';
 
 const globalForCron = globalThis as typeof globalThis & { __attendanceCheckDate?: string };
 
+/**
+ * Chequeo periódico. El aviso de 5 minutos, el cierre y la liberación de habitación
+ * viven en el módulo de Operación; acá sólo queda lo que es del proceso que
+ * dispara: los dos avisos que nunca lanzan y el recordatorio diario de asistencia.
+ */
 export const GET = withPublicRoute(async () => {
   // Control de envases: si cambió cuántos llevan más de 2 horas entregados sin
   // recibir, avisa al almacén (SSE en vivo + campana + push) y si no, no hace
@@ -24,7 +27,6 @@ export const GET = withPublicRoute(async () => {
   await reavisarCierresPendientes();
 
   const bizNow = getNowInBusinessTimezone();
-  const now = new Date(bizNow.replace(' ', 'T'));
   const tz = getSystemTimezone();
   const localHour = parseInt(bizNow.substring(11, 13), 10);
   const todayStr = bizNow.substring(0, 10);
@@ -37,94 +39,7 @@ export const GET = withPublicRoute(async () => {
     });
   }
 
-  const allActive = await query<any[]>(`
-      SELECT s.id_servicio as id, s.codigo, s.tiempo, s.fecha_crea, s.created_by, s.push_notified_5m, s.push_notified_end, s.habitacion_id, h.nombre as room_name, 'servicio' as type
-      FROM servicios s LEFT JOIN habitaciones h ON s.habitacion_id = h.id_habitacion WHERE s.estado = 2 AND s.paused_at IS NULL AND s.tiempo > 0
-      UNION ALL
-      SELECT v.id_venta as id, v.codigo, v.tiempo, v.fecha_crea, v.created_by, v.push_notified_5m, v.push_notified_end, v.habitacion_id, h.nombre as room_name, 'venta' as type
-      FROM ventas v LEFT JOIN habitaciones h ON v.habitacion_id = h.id_habitacion WHERE v.estado = 2 AND v.paused_at IS NULL AND v.tiempo > 0
-      UNION ALL
-      SELECT c.id_cuenta as id, c.codigo, c.tiempo, c.fecha_crea, c.created_by, c.push_notified_5m, c.push_notified_end, c.habitacion_id, h.nombre as room_name, 'cuenta' as type
-      FROM cuentas c LEFT JOIN habitaciones h ON c.habitacion_id = h.id_habitacion WHERE c.estado = 1 AND c.tiempo > 0
-    `);
-
-  for (const item of allActive) {
-    const startTime = new Date(item.fecha_crea);
-    const remainingMin = (startTime.getTime() + item.tiempo * 60000 - now.getTime()) / 60000;
-    const table = { servicio: 'servicios', venta: 'ventas', cuenta: 'cuentas' }[
-      item.type as 'servicio' | 'venta' | 'cuenta'
-    ];
-    const idField = { servicio: 'id_servicio', venta: 'id_venta', cuenta: 'id_cuenta' }[
-      item.type as 'servicio' | 'venta' | 'cuenta'
-    ];
-
-    if (remainingMin <= 5 && remainingMin > 4.5 && !item.push_notified_5m) {
-      await query(`UPDATE ${table} SET push_notified_5m = 1 WHERE ${idField} = ?`, [item.id]);
-      if (item.created_by)
-        sendPushNotification(
-          [item.created_by],
-          '5 MINUTOS RESTANTES',
-          `Tiempo por terminar en ${item.room_name || 'habitación'}`,
-          { type: 'timer_warning_5m' }
-        );
-      sendNotificationToAll('timer_warning_5m', {
-        id: item.id,
-        type: item.type,
-        room_name: item.room_name
-      });
-    }
-
-    if (remainingMin <= 0 && !item.push_notified_end) {
-      await query(`UPDATE ${table} SET push_notified_end = 1 WHERE ${idField} = ?`, [item.id]);
-      if (item.created_by)
-        sendPushNotification(
-          [item.created_by],
-          'TIEMPO AGOTADO',
-          `Tiempo finalizado en ${item.room_name || 'habitación'}`,
-          { type: 'timer_ended' }
-        );
-      sendPushByRole('cajero', 'TIEMPO AGOTADO', `Tiempo finalizado en ${item.room_name}`, {
-        type: 'timer_ended'
-      });
-      sendNotificationToAll('timer_ended_event', {
-        id: item.id,
-        type: item.type,
-        room_name: item.room_name
-      });
-
-      if (item.habitacion_id) {
-        await query('UPDATE habitaciones SET estado = 1 WHERE id_habitacion = ?', [
-          item.habitacion_id
-        ]);
-
-        if (item.type === 'servicio') {
-          await query('UPDATE servicios SET estado = 1 WHERE id_servicio = ?', [item.id]);
-          await withTransaction(async trx => {
-            const anfsResult = await trx<any[]>(
-              'SELECT usuario_id FROM detalle_servicios WHERE servicio_id = ?',
-              [item.id]
-            );
-            const hostessIds = anfsResult.map(a => a.usuario_id);
-            if (hostessIds.length > 0) {
-              await RoomManager.updateHostessServiceStatus(trx, hostessIds, item.id);
-            }
-
-            await RoomManager.resumeRoomLogic(trx, item.habitacion_id, item.id);
-          });
-        } else if (item.type === 'venta') {
-          await query('UPDATE ventas SET estado = 1 WHERE id_venta = ?', [item.id]);
-        } else if (item.type === 'cuenta') {
-          await query('UPDATE cuentas SET estado = 0 WHERE id_cuenta = ?', [item.id]);
-        }
-      }
-
-      if (item.type === 'venta') {
-        sendNotificationToAll('updateSales', { id: item.id, type: item.type });
-      } else if (item.type === 'servicio') {
-        sendNotificationToAll('updateSales', { id: item.id, type: item.type });
-      }
-    }
-  }
+  await revisarTemporizadores(new Date(bizNow.replace(' ', 'T')));
 
   return NextResponse.json({ success: true, timestamp: bizNow });
 });

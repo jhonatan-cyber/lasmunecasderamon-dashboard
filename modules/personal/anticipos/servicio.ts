@@ -90,6 +90,11 @@ export async function tieneSolicitudPendiente(usuarioId: string): Promise<boolea
   return repositorio.tieneSolicitudPendiente(usuarioId);
 }
 
+/** Anticipos solicitados y sin resolver, para el comando de WhatsApp. */
+export async function listarAnticiposPendientes() {
+  return repositorio.listarAnticiposPendientes();
+}
+
 /** Solicitud de anticipo por identificador, para la vista pública de confirmación. */
 export async function obtenerSolicitudAnticipoPorId(idAnticipo: string) {
   return repositorio.obtenerSolicitudAnticipoPorId(idAnticipo);

@@ -1,15 +1,15 @@
 {
   "resumen": {
-    "commit": "ca8282694eaae83ac49f55ca683d3fddf7eac3b2",
-    "generado": "2026-10-05T05:46:43.500Z",
-    "archivos": 1543,
+    "commit": "d7ce2e63e5016299a1477406522918b2e33a2edf",
+    "generado": "2026-10-05T10:46:16.946Z",
+    "archivos": 1576,
     "rutas": 204,
-    "sqlFueraDeRepositorio": 88,
-    "tablasConEscritoresMultiples": 15,
+    "sqlFueraDeRepositorio": 64,
+    "tablasConEscritoresMultiples": 18,
     "ciclos": 5,
     "procesosPeriodicos": 15,
     "caches": 19,
-    "rutasApiConSqlDirecto": 24,
+    "rutasApiConSqlDirecto": 0,
     "rutasSinWrapper": 19
   },
   "rutas": [
@@ -164,7 +164,7 @@
       "nivel": "attendance.write",
       "audit": true,
       "moduloDominio": "asistencia",
-      "usaDriver": true
+      "usaDriver": false
     },
     {
       "ruta": "/api/attendance/register",
@@ -218,7 +218,7 @@
       "nivel": "authenticated",
       "audit": true,
       "moduloDominio": "identidad",
-      "usaDriver": true
+      "usaDriver": false
     },
     {
       "ruta": "/api/auth/check-session",
@@ -389,7 +389,7 @@
       "nivel": "administrator",
       "audit": true,
       "moduloDominio": "asistencia",
-      "usaDriver": true
+      "usaDriver": false
     },
     {
       "ruta": "/api/biometric/devices/:id/resync",
@@ -443,7 +443,7 @@
       "nivel": "authenticated",
       "audit": false,
       "moduloDominio": "asistencia",
-      "usaDriver": true
+      "usaDriver": false
     },
     {
       "ruta": "/api/biometric/records/poll",
@@ -641,7 +641,7 @@
       "nivel": "clients.write",
       "audit": true,
       "moduloDominio": "clientes",
-      "usaDriver": true
+      "usaDriver": false
     },
     {
       "ruta": "/api/clients/devolucion/recordatorio",
@@ -650,7 +650,7 @@
       "nivel": "clients.write",
       "audit": true,
       "moduloDominio": "clientes",
-      "usaDriver": true
+      "usaDriver": false
     },
     {
       "ruta": "/api/clients/devolucion",
@@ -668,7 +668,7 @@
       "nivel": "clients.read",
       "audit": false,
       "moduloDominio": "clientes",
-      "usaDriver": true
+      "usaDriver": false
     },
     {
       "ruta": "/api/clients/history",
@@ -749,7 +749,7 @@
       "nivel": "settings.write",
       "audit": true,
       "moduloDominio": null,
-      "usaDriver": true
+      "usaDriver": false
     },
     {
       "ruta": "/api/cron/check-timers",
@@ -758,7 +758,7 @@
       "nivel": "publico",
       "audit": false,
       "moduloDominio": null,
-      "usaDriver": true
+      "usaDriver": false
     },
     {
       "ruta": "/api/csp-violation",
@@ -947,7 +947,7 @@
       "nivel": "publico",
       "audit": false,
       "moduloDominio": null,
-      "usaDriver": true
+      "usaDriver": false
     },
     {
       "ruta": "/api/images/products/:id",
@@ -965,7 +965,7 @@
       "nivel": "SIN_WRAPPER",
       "audit": false,
       "moduloDominio": "asistencia",
-      "usaDriver": true
+      "usaDriver": false
     },
     {
       "ruta": "/api/kiosk/board",
@@ -974,7 +974,7 @@
       "nivel": "SIN_WRAPPER",
       "audit": false,
       "moduloDominio": "asistencia",
-      "usaDriver": true
+      "usaDriver": false
     },
     {
       "ruta": "/api/kiosk/devices/:id",
@@ -1091,7 +1091,7 @@
       "nivel": "publico",
       "audit": false,
       "moduloDominio": "operacion",
-      "usaDriver": true
+      "usaDriver": false
     },
     {
       "ruta": "/api/orders/detail",
@@ -1199,7 +1199,7 @@
       "nivel": "administrator",
       "audit": true,
       "moduloDominio": "identidad",
-      "usaDriver": true
+      "usaDriver": false
     },
     {
       "ruta": "/api/ping",
@@ -1289,7 +1289,7 @@
       "nivel": "SIN_WRAPPER",
       "audit": false,
       "moduloDominio": "identidad",
-      "usaDriver": true
+      "usaDriver": false
     },
     {
       "ruta": "/api/purchases",
@@ -1343,7 +1343,7 @@
       "nivel": "publico",
       "audit": true,
       "moduloDominio": "identidad",
-      "usaDriver": true
+      "usaDriver": false
     },
     {
       "ruta": "/api/roles/:id",
@@ -1388,7 +1388,7 @@
       "nivel": "administrator",
       "audit": true,
       "moduloDominio": "identidad",
-      "usaDriver": true
+      "usaDriver": false
     },
     {
       "ruta": "/api/rooms/:id",
@@ -1523,7 +1523,7 @@
       "nivel": "settings.read",
       "audit": true,
       "moduloDominio": "infraestructura",
-      "usaDriver": true
+      "usaDriver": false
     },
     {
       "ruta": "/api/settings/backup/:id/restore",
@@ -1532,7 +1532,7 @@
       "nivel": "settings.write",
       "audit": true,
       "moduloDominio": "infraestructura",
-      "usaDriver": true
+      "usaDriver": false
     },
     {
       "ruta": "/api/settings/backup",
@@ -1541,7 +1541,7 @@
       "nivel": "settings.write",
       "audit": true,
       "moduloDominio": "infraestructura",
-      "usaDriver": true
+      "usaDriver": false
     },
     {
       "ruta": "/api/settings/database-clean",
@@ -1577,7 +1577,7 @@
       "nivel": "publico",
       "audit": false,
       "moduloDominio": null,
-      "usaDriver": true
+      "usaDriver": false
     },
     {
       "ruta": "/api/solicitudes-servicios",
@@ -1757,7 +1757,7 @@
       "nivel": "publico",
       "audit": false,
       "moduloDominio": "identidad",
-      "usaDriver": true
+      "usaDriver": false
     },
     {
       "ruta": "/api/users/:id",
@@ -1775,7 +1775,7 @@
       "nivel": "authenticated",
       "audit": true,
       "moduloDominio": "identidad",
-      "usaDriver": true
+      "usaDriver": false
     },
     {
       "ruta": "/api/users/profile",
@@ -1847,7 +1847,7 @@
       "nivel": "SIN_WRAPPER",
       "audit": false,
       "moduloDominio": null,
-      "usaDriver": true
+      "usaDriver": false
     }
   ],
   "sqlFueraDeRepositorio": [
@@ -2252,150 +2252,6 @@
       "capa": "lib/business",
       "modulo": null,
       "escribe": []
-    },
-    {
-      "archivo": "app/api/attendance/qr/route.ts",
-      "capa": "app/api",
-      "modulo": "asistencia",
-      "escribe": []
-    },
-    {
-      "archivo": "app/api/auth/change-password/route.ts",
-      "capa": "app/api",
-      "modulo": "identidad",
-      "escribe": ["usuarios"]
-    },
-    {
-      "archivo": "app/api/biometric/devices/[id]/poller/route.ts",
-      "capa": "app/api",
-      "modulo": "asistencia",
-      "escribe": ["biometric_devices"]
-    },
-    {
-      "archivo": "app/api/biometric/records/[id]/foto/route.ts",
-      "capa": "app/api",
-      "modulo": "asistencia",
-      "escribe": []
-    },
-    {
-      "archivo": "app/api/clients/devolucion/aprobar/route.ts",
-      "capa": "app/api",
-      "modulo": "clientes",
-      "escribe": ["solicitudes_devolucion_saldo"]
-    },
-    {
-      "archivo": "app/api/clients/devolucion/recordatorio/route.ts",
-      "capa": "app/api",
-      "modulo": "clientes",
-      "escribe": ["solicitudes_devolucion_saldo"]
-    },
-    {
-      "archivo": "app/api/clients/devolucion/solicitudes/route.ts",
-      "capa": "app/api",
-      "modulo": "clientes",
-      "escribe": []
-    },
-    {
-      "archivo": "app/api/configurations/route.ts",
-      "capa": "app/api",
-      "modulo": null,
-      "escribe": ["configuraciones"]
-    },
-    {
-      "archivo": "app/api/cron/check-timers/route.ts",
-      "capa": "app/api",
-      "modulo": null,
-      "escribe": ["cuentas", "habitaciones", "servicios", "ventas"]
-    },
-    {
-      "archivo": "app/api/health/route.ts",
-      "capa": "app/api",
-      "modulo": null,
-      "escribe": []
-    },
-    {
-      "archivo": "app/api/kiosk/attendance/challenge/route.ts",
-      "capa": "app/api",
-      "modulo": "asistencia",
-      "escribe": []
-    },
-    {
-      "archivo": "app/api/kiosk/board/route.ts",
-      "capa": "app/api",
-      "modulo": "asistencia",
-      "escribe": []
-    },
-    {
-      "archivo": "app/api/orders/check-active-room/route.ts",
-      "capa": "app/api",
-      "modulo": "operacion",
-      "escribe": []
-    },
-    {
-      "archivo": "app/api/permissions/setup-cajero/route.ts",
-      "capa": "app/api",
-      "modulo": "identidad",
-      "escribe": ["permissions", "role_permissions"]
-    },
-    {
-      "archivo": "app/api/public/users/route.ts",
-      "capa": "app/api",
-      "modulo": "identidad",
-      "escribe": []
-    },
-    {
-      "archivo": "app/api/roles/[id]/permissions/route.ts",
-      "capa": "app/api",
-      "modulo": "identidad",
-      "escribe": ["role_permissions"]
-    },
-    {
-      "archivo": "app/api/roles/setup/route.ts",
-      "capa": "app/api",
-      "modulo": "identidad",
-      "escribe": []
-    },
-    {
-      "archivo": "app/api/settings/backup/[id]/download/route.ts",
-      "capa": "app/api",
-      "modulo": "infraestructura",
-      "escribe": []
-    },
-    {
-      "archivo": "app/api/settings/backup/[id]/restore/route.ts",
-      "capa": "app/api",
-      "modulo": "infraestructura",
-      "escribe": []
-    },
-    {
-      "archivo": "app/api/settings/backup/route.ts",
-      "capa": "app/api",
-      "modulo": "infraestructura",
-      "escribe": ["backups"]
-    },
-    {
-      "archivo": "app/api/solicitudes-servicios/pending-count/route.ts",
-      "capa": "app/api",
-      "modulo": null,
-      "escribe": []
-    },
-    {
-      "archivo": "app/api/users/[id]/permissions/route.ts",
-      "capa": "app/api",
-      "modulo": "identidad",
-      "escribe": []
-    },
-    {
-      "archivo": "app/api/users/me/stats/route.ts",
-      "capa": "app/api",
-      "modulo": "identidad",
-      "escribe": []
-    },
-    {
-      "archivo": "app/api/whatsapp/webhook/route.ts",
-      "capa": "app/api",
-      "modulo": null,
-      "escribe": []
     }
   ],
   "escriturasCruzadas": [
@@ -2445,7 +2301,8 @@
       "tabla": "cuentas",
       "escritores": [
         "lib/repositories/ClientRepository.ts",
-        "lib/repositories/cuenta/CuentaQueries.ts"
+        "lib/repositories/cuenta/CuentaQueries.ts",
+        "modules/operacion/temporizadores/repositorio.ts"
       ],
       "modulos": ["operacion"]
     },
@@ -2470,7 +2327,8 @@
       "tabla": "habitaciones",
       "escritores": [
         "lib/repositories/TimerRepository.ts",
-        "lib/repositories/cuenta/CuentaQueries.ts"
+        "lib/repositories/cuenta/CuentaQueries.ts",
+        "modules/operacion/temporizadores/repositorio.ts"
       ],
       "modulos": ["operacion"]
     },
@@ -2502,10 +2360,27 @@
       "modulos": ["identidad"]
     },
     {
+      "tabla": "permissions",
+      "escritores": [
+        "lib/repositories/PermissionRepository.ts",
+        "modules/identidad/permisos/repositorio.ts"
+      ],
+      "modulos": []
+    },
+    {
+      "tabla": "role_permissions",
+      "escritores": [
+        "lib/repositories/RoleRepository.ts",
+        "modules/identidad/permisos/repositorio.ts"
+      ],
+      "modulos": []
+    },
+    {
       "tabla": "servicios",
       "escritores": [
         "lib/repositories/TimerRepository.ts",
-        "lib/repositories/service/ServiceQueries.ts"
+        "lib/repositories/service/ServiceQueries.ts",
+        "modules/operacion/temporizadores/repositorio.ts"
       ],
       "modulos": ["operacion"]
     },
@@ -2518,24 +2393,28 @@
       "modulos": ["operacion"]
     },
     {
+      "tabla": "usuarios",
+      "escritores": [
+        "lib/repositories/auth/AuthQueries.ts",
+        "modules/identidad/usuarios/repositorio.ts"
+      ],
+      "modulos": ["identidad"]
+    },
+    {
       "tabla": "ventas",
       "escritores": [
         "lib/repositories/TimerRepository.ts",
-        "lib/repositories/sale/SaleQueries.ts"
+        "lib/repositories/sale/SaleQueries.ts",
+        "modules/operacion/temporizadores/repositorio.ts"
       ],
       "modulos": ["ventas"]
     }
   ],
   "transacciones": [
     {
-      "archivo": "app/api/cron/check-timers/route.ts",
-      "capa": "app/api",
+      "archivo": "modules/operacion/temporizadores/repositorio.ts",
+      "capa": "raiz",
       "modulo": null
-    },
-    {
-      "archivo": "app/api/roles/[id]/permissions/route.ts",
-      "capa": "app/api",
-      "modulo": "identidad"
     },
     {
       "archivo": "lib/database/maintenance.ts",
@@ -2639,6 +2518,11 @@
     },
     {
       "archivo": "modules/asistencia/marcas/repositorio.ts",
+      "capa": "raiz",
+      "modulo": null
+    },
+    {
+      "archivo": "modules/identidad/permisos/repositorio.ts",
       "capa": "raiz",
       "modulo": null
     },

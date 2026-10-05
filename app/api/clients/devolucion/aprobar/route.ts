@@ -2,8 +2,7 @@ import { NextResponse } from 'next/server';
 import { withRoute } from '@/lib/api/withRoute';
 import { ApiResponse } from '@/lib/api/api-response';
 import { ClientService } from '@/lib/services/ClientService';
-import { query } from '@/lib/database/db';
-import { getNowInBusinessTimezone } from '@/lib/business/timezoneService';
+import { aprobarSolicitud, obtenerSolicitud, rechazarSolicitud } from '@/modules/clientes';
 
 export const POST = withRoute(
   { auth: true, audit: true, module: 'clients', action: 'write' },
@@ -16,26 +15,20 @@ export const POST = withRoute(
     }
 
     try {
-      const rows = await query<any[]>(`SELECT * FROM solicitudes_devolucion_saldo WHERE id = ?`, [
-        String(solicitud_id)
-      ]);
-      const sol = rows[0];
+      const sol = await obtenerSolicitud(String(solicitud_id));
       if (!sol) return ApiResponse.error(new Error('Solicitud no encontrada'));
       if (sol.estado !== 'pendiente')
         return ApiResponse.error(new Error(`Solicitud ya ${sol.estado}`));
 
-      const now = getNowInBusinessTimezone();
       const adminId = String((user as any)?.id || (user as any)?.userId || '');
 
       if (String(accion) === 'rechazar') {
-        await query(
-          `UPDATE solicitudes_devolucion_saldo SET estado='rechazada', fecha_resolucion=?, resuelto_por=? WHERE id=?`,
-          [now, adminId, String(solicitud_id)]
-        );
+        await rechazarSolicitud(String(solicitud_id), adminId);
         return NextResponse.json({ success: true, message: 'Solicitud rechazada' });
       }
 
-      // Aprobar: ejecutar devolucion real
+      // Aprobar: ejecutar devolucion real antes de marcar la solicitud, para que un
+      // fallo en el pago la deje pendiente y se pueda reintentar.
       await ClientService.devolverSaldo({
         cliente_id: String(sol.cliente_id),
         monto: Number(sol.monto),
@@ -44,10 +37,7 @@ export const POST = withRoute(
         usuario_id: adminId
       });
 
-      await query(
-        `UPDATE solicitudes_devolucion_saldo SET estado='aprobada', fecha_resolucion=?, resuelto_por=? WHERE id=?`,
-        [now, adminId, String(solicitud_id)]
-      );
+      await aprobarSolicitud(String(solicitud_id), adminId);
 
       return NextResponse.json({ success: true, message: 'Devolucion aprobada y ejecutada' });
     } catch (error: unknown) {

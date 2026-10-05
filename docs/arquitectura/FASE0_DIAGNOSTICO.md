@@ -4,11 +4,11 @@ Generado por `scripts/arquitectura/analisis.mjs`. No modificar a mano.
 
 | Métrica                                    | Valor  |
 | ------------------------------------------ | ------ |
-| Archivos analizados                        | 1536   |
+| Archivos analizados                        | 1576   |
 | Rutas HTTP                                 | 204    |
-| **Rutas con SQL directo**                  | **32** |
-| **Archivos con SQL fuera de repositorios** | **97** |
-| Tablas con más de un escritor              | 14     |
+| **Rutas con SQL directo**                  | **0**  |
+| **Archivos con SQL fuera de repositorios** | **64** |
+| Tablas con más de un escritor              | 18     |
 | Ciclos entre dominios                      | 5      |
 | Procesos periódicos                        | 15     |
 | Puntos de caché                            | 19     |
@@ -28,8 +28,7 @@ controladores HTTP traducen. Esto es lo que hay que reducir a cero.
 | lib/integrations | 2                |
 | lib/identidad    | 2                |
 | lib/database     | 3                |
-| lib/business     | 7                |
-| app/api          | 32               |
+| lib/business     | 6                |
 
 <details><summary>Detalle por archivo</summary>
 
@@ -93,45 +92,12 @@ controladores HTTP traducen. Esto es lo que hay que reducir a cero.
 | lib/database/db.ts                                     | lib/database     | —                                                                                           |
 | lib/database/maintenance.ts                            | lib/database     | backups                                                                                     |
 | lib/database/perfilConsultas.ts                        | lib/database     | —                                                                                           |
-| lib/business/anticiposUtils.ts                         | lib/business     | —                                                                                           |
 | lib/business/codigoService.ts                          | lib/business     | codigos                                                                                     |
 | lib/business/containerAlerts.ts                        | lib/business     | —                                                                                           |
 | lib/business/pagosMixtos.ts                            | lib/business     | clientes, clientes_prepago_movimientos, cuentas                                             |
 | lib/business/shotAlerts.ts                             | lib/business     | —                                                                                           |
 | lib/business/twilioConfig.ts                           | lib/business     | —                                                                                           |
 | lib/business/whatsappConfig.ts                         | lib/business     | —                                                                                           |
-| app/api/anticipos/maximo/route.ts                      | app/api          | —                                                                                           |
-| app/api/anticipos/solicitud-detalles/route.ts          | app/api          | —                                                                                           |
-| app/api/attendance/qr/route.ts                         | app/api          | —                                                                                           |
-| app/api/auth/change-password/route.ts                  | app/api          | usuarios                                                                                    |
-| app/api/biometric/devices/[id]/poller/route.ts         | app/api          | biometric_devices                                                                           |
-| app/api/biometric/records/[id]/foto/route.ts           | app/api          | —                                                                                           |
-| app/api/clients/devolucion/aprobar/route.ts            | app/api          | solicitudes_devolucion_saldo                                                                |
-| app/api/clients/devolucion/recordatorio/route.ts       | app/api          | solicitudes_devolucion_saldo                                                                |
-| app/api/clients/devolucion/solicitudes/route.ts        | app/api          | —                                                                                           |
-| app/api/configurations/route.ts                        | app/api          | configuraciones                                                                             |
-| app/api/cron/check-timers/route.ts                     | app/api          | cuentas, habitaciones, servicios, ventas                                                    |
-| app/api/cuentas/anulacion/route.ts                     | app/api          | —                                                                                           |
-| app/api/cuentas/procesar-anulacion/route.ts            | app/api          | —                                                                                           |
-| app/api/cuentas/solicitud-anulacion/route.ts           | app/api          | —                                                                                           |
-| app/api/health/route.ts                                | app/api          | —                                                                                           |
-| app/api/kiosk/attendance/challenge/route.ts            | app/api          | —                                                                                           |
-| app/api/kiosk/board/route.ts                           | app/api          | —                                                                                           |
-| app/api/orders/check-active-room/route.ts              | app/api          | —                                                                                           |
-| app/api/permissions/setup-cajero/route.ts              | app/api          | permissions, role_permissions                                                               |
-| app/api/public/users/route.ts                          | app/api          | —                                                                                           |
-| app/api/roles/[id]/permissions/route.ts                | app/api          | role_permissions                                                                            |
-| app/api/roles/setup/route.ts                           | app/api          | —                                                                                           |
-| app/api/servicios/anulacion/route.ts                   | app/api          | —                                                                                           |
-| app/api/servicios/procesar-anulacion/route.ts          | app/api          | —                                                                                           |
-| app/api/servicios/solicitud-anulacion/route.ts         | app/api          | solicitudes_anulacion_servicios                                                             |
-| app/api/settings/backup/[id]/download/route.ts         | app/api          | —                                                                                           |
-| app/api/settings/backup/[id]/restore/route.ts          | app/api          | —                                                                                           |
-| app/api/settings/backup/route.ts                       | app/api          | backups                                                                                     |
-| app/api/solicitudes-servicios/pending-count/route.ts   | app/api          | —                                                                                           |
-| app/api/users/[id]/permissions/route.ts                | app/api          | —                                                                                           |
-| app/api/users/me/stats/route.ts                        | app/api          | —                                                                                           |
-| app/api/whatsapp/webhook/route.ts                      | app/api          | —                                                                                           |
 
 </details>
 
@@ -141,22 +107,26 @@ Tablas que escriben más de un repositorio. Son las escrituras cruzadas que el
 principio 1 del plan quiere eliminar: cada tabla debería tener un único módulo
 propietario.
 
-| Tabla                        | Escritores | Repositorios                                                                                                                                                                                                                                 |
-| ---------------------------- | ---------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| asistencias                  | 2          | lib/repositories/PayrollRepository.ts<br>lib/repositories/auth/AuthQueries.ts                                                                                                                                                                |
-| cajas                        | 2          | lib/repositories/CashRegisterRepository.ts<br>lib/repositories/service/ServiceQueries.ts                                                                                                                                                     |
-| clientes                     | 4          | lib/repositories/ClientRepository.ts<br>lib/repositories/cuenta/CuentaQueries.ts<br>lib/repositories/sale/SaleQueries.ts<br>lib/repositories/service/ServiceQueries.ts                                                                       |
-| clientes_prepago_movimientos | 2          | lib/repositories/sale/SaleQueries.ts<br>lib/repositories/service/ServiceQueries.ts                                                                                                                                                           |
-| comisiones                   | 2          | lib/repositories/sale/SaleQueries.ts<br>lib/repositories/service/ServiceQueries.ts                                                                                                                                                           |
-| cuentas                      | 2          | lib/repositories/ClientRepository.ts<br>lib/repositories/cuenta/CuentaQueries.ts                                                                                                                                                             |
-| detalle_comisiones           | 2          | lib/repositories/PayrollRepository.ts<br>lib/repositories/sale/SaleQueries.ts                                                                                                                                                                |
-| detalle_propinas             | 3          | lib/repositories/PayrollRepository.ts<br>lib/repositories/TipRepository.ts<br>lib/repositories/sale/SaleQueries.ts                                                                                                                           |
-| habitaciones                 | 2          | lib/repositories/TimerRepository.ts<br>lib/repositories/cuenta/CuentaQueries.ts                                                                                                                                                              |
-| inventario_movimientos       | 2          | modules/inventario/anulaciones/repositorio.ts<br>modules/inventario/bar/consumoRepositorio.ts                                                                                                                                                |
-| inventario_unidades          | 5          | modules/inventario/anulaciones/repositorio.ts<br>modules/inventario/bar/consumoRepositorio.ts<br>modules/inventario/envases/repositorio.ts<br>modules/inventario/transferencias/repositorio.ts<br>modules/inventario/unidades/repositorio.ts |
-| logins                       | 2          | lib/repositories/CashRegisterRepository.ts<br>lib/repositories/auth/AuthQueries.ts                                                                                                                                                           |
-| servicios                    | 2          | lib/repositories/TimerRepository.ts<br>lib/repositories/service/ServiceQueries.ts                                                                                                                                                            |
-| ventas                       | 2          | lib/repositories/TimerRepository.ts<br>lib/repositories/sale/SaleQueries.ts                                                                                                                                                                  |
+| Tabla                           | Escritores | Repositorios                                                                                                                                                                                                                                 |
+| ------------------------------- | ---------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| asistencias                     | 2          | lib/repositories/PayrollRepository.ts<br>lib/repositories/auth/AuthQueries.ts                                                                                                                                                                |
+| cajas                           | 2          | lib/repositories/CashRegisterRepository.ts<br>lib/repositories/service/ServiceQueries.ts                                                                                                                                                     |
+| clientes                        | 4          | lib/repositories/ClientRepository.ts<br>lib/repositories/cuenta/CuentaQueries.ts<br>lib/repositories/sale/SaleQueries.ts<br>lib/repositories/service/ServiceQueries.ts                                                                       |
+| clientes_prepago_movimientos    | 2          | lib/repositories/sale/SaleQueries.ts<br>lib/repositories/service/ServiceQueries.ts                                                                                                                                                           |
+| comisiones                      | 2          | lib/repositories/sale/SaleQueries.ts<br>lib/repositories/service/ServiceQueries.ts                                                                                                                                                           |
+| cuentas                         | 3          | lib/repositories/ClientRepository.ts<br>lib/repositories/cuenta/CuentaQueries.ts<br>modules/operacion/temporizadores/repositorio.ts                                                                                                          |
+| detalle_comisiones              | 2          | lib/repositories/PayrollRepository.ts<br>lib/repositories/sale/SaleQueries.ts                                                                                                                                                                |
+| detalle_propinas                | 3          | lib/repositories/PayrollRepository.ts<br>lib/repositories/TipRepository.ts<br>lib/repositories/sale/SaleQueries.ts                                                                                                                           |
+| habitaciones                    | 3          | lib/repositories/TimerRepository.ts<br>lib/repositories/cuenta/CuentaQueries.ts<br>modules/operacion/temporizadores/repositorio.ts                                                                                                           |
+| inventario_movimientos          | 2          | modules/inventario/anulaciones/repositorio.ts<br>modules/inventario/bar/consumoRepositorio.ts                                                                                                                                                |
+| inventario_unidades             | 5          | modules/inventario/anulaciones/repositorio.ts<br>modules/inventario/bar/consumoRepositorio.ts<br>modules/inventario/envases/repositorio.ts<br>modules/inventario/transferencias/repositorio.ts<br>modules/inventario/unidades/repositorio.ts |
+| logins                          | 2          | lib/repositories/CashRegisterRepository.ts<br>lib/repositories/auth/AuthQueries.ts                                                                                                                                                           |
+| permissions                     | 2          | lib/repositories/PermissionRepository.ts<br>modules/identidad/permisos/repositorio.ts                                                                                                                                                        |
+| role_permissions                | 2          | lib/repositories/RoleRepository.ts<br>modules/identidad/permisos/repositorio.ts                                                                                                                                                              |
+| servicios                       | 3          | lib/repositories/TimerRepository.ts<br>lib/repositories/service/ServiceQueries.ts<br>modules/operacion/temporizadores/repositorio.ts                                                                                                         |
+| solicitudes_anulacion_servicios | 2          | lib/repositories/service/ServiceQueries.ts<br>modules/operacion/servicios/repositorio.ts                                                                                                                                                     |
+| usuarios                        | 2          | lib/repositories/auth/AuthQueries.ts<br>modules/identidad/usuarios/repositorio.ts                                                                                                                                                            |
+| ventas                          | 3          | lib/repositories/TimerRepository.ts<br>lib/repositories/sale/SaleQueries.ts<br>modules/operacion/temporizadores/repositorio.ts                                                                                                               |
 
 ## 3. Ciclos entre dominios
 
@@ -172,8 +142,7 @@ propietario.
 
 | Archivo con withTransaction                            | Capa             |
 | ------------------------------------------------------ | ---------------- |
-| app/api/cron/check-timers/route.ts                     | app/api          |
-| app/api/roles/[id]/permissions/route.ts                | app/api          |
+| modules/operacion/temporizadores/repositorio.ts        | raiz             |
 | lib/database/maintenance.ts                            | lib/database     |
 | lib/repositories/CashRegisterRepository.ts             | lib/repositories |
 | lib/repositories/CategoryRepository.ts                 | lib/repositories |
@@ -195,6 +164,7 @@ propietario.
 | modules/asistencia/biometrico/unenrollmentService.ts   | raiz             |
 | modules/asistencia/kioskos/deviceAuth.ts               | raiz             |
 | modules/asistencia/marcas/repositorio.ts               | raiz             |
+| modules/identidad/permisos/repositorio.ts              | raiz             |
 | modules/inventario/anulaciones/servicio.ts             | raiz             |
 | modules/inventario/compras/servicio.ts                 | raiz             |
 | modules/inventario/envases/servicio.ts                 | raiz             |
@@ -264,22 +234,22 @@ migración no puede romper.
 | /api/anticipos/aprobar                   |          | advances.process                  |        | audit |
 | /api/anticipos/balances                  |          | advances.read                     |        | audit |
 | /api/anticipos/by-dates                  |          | authenticated                     |        | audit |
-| /api/anticipos/maximo                    |          | authenticated                     | ⚠️ SQL | audit |
+| /api/anticipos/maximo                    |          | authenticated                     |        | audit |
 | /api/anticipos                           |          | advances.read                     |        | audit |
-| /api/anticipos/solicitud-detalles        |          | publico                           | ⚠️ SQL |       |
+| /api/anticipos/solicitud-detalles        |          | publico                           |        |       |
 | /api/anticipos/solicitudes               |          | advances.read                     |        | audit |
 | /api/anticipos/user                      |          | authenticated                     |        | audit |
 | /api/attendance/:id/detalle              |          | publico                           |        |       |
 | /api/attendance/by-dates                 |          | authenticated                     |        | audit |
 | /api/attendance/hoy                      |          | publico                           |        |       |
 | /api/attendance/masivo                   |          | attendance.write                  |        | audit |
-| /api/attendance/qr                       |          | attendance.write                  | ⚠️ SQL | audit |
+| /api/attendance/qr                       |          | attendance.write                  |        | audit |
 | /api/attendance/register                 |          | publico                           |        |       |
 | /api/attendance                          |          | publico                           |        | audit |
 | /api/attendance/stats                    |          | publico                           |        |       |
 | /api/attendance/user                     |          | authenticated                     |        | audit |
 | /api/audit-logs                          |          | publico                           |        |       |
-| /api/auth/change-password                |          | authenticated                     | ⚠️ SQL | audit |
+| /api/auth/change-password                |          | authenticated                     |        | audit |
 | /api/auth/check-session                  |          | authenticated                     |        | audit |
 | /api/auth/check-users                    |          | publico                           |        |       |
 | /api/auth/check                          |          | authenticated                     |        | audit |
@@ -298,13 +268,13 @@ migración no puede romper.
 | /api/bar/shots                           |          | publico                           |        |       |
 | /api/biometric/devices/:id/credentials   |          | administrator                     |        | audit |
 | /api/biometric/devices/:id/discover      |          | administrator                     |        | audit |
-| /api/biometric/devices/:id/poller        |          | administrator                     | ⚠️ SQL | audit |
+| /api/biometric/devices/:id/poller        |          | administrator                     |        | audit |
 | /api/biometric/devices/:id/resync        |          | administrator                     |        | audit |
 | /api/biometric/devices/:id               |          | administrator                     |        | audit |
 | /api/biometric/devices/:id/snapshot      |          | administrator                     |        |       |
 | /api/biometric/devices/:id/video         |          | administrator                     |        |       |
 | /api/biometric/devices                   |          | administrator                     |        | audit |
-| /api/biometric/records/:id/foto          |          | authenticated                     | ⚠️ SQL |       |
+| /api/biometric/records/:id/foto          |          | authenticated                     |        |       |
 | /api/biometric/records/poll              |          | administrator                     |        | audit |
 | /api/biometric/status                    |          | administrator                     |        |       |
 | /api/caja/stats                          |          | publico                           |        |       |
@@ -326,10 +296,10 @@ migración no puede romper.
 | /api/categories/reorder                  |          | categories.write                  |        | audit |
 | /api/categories                          |          | publico                           |        | audit |
 | /api/clients/:id                         |          | publico                           |        | audit |
-| /api/clients/devolucion/aprobar          |          | clients.write                     | ⚠️ SQL | audit |
-| /api/clients/devolucion/recordatorio     |          | clients.write                     | ⚠️ SQL | audit |
+| /api/clients/devolucion/aprobar          |          | clients.write                     |        | audit |
+| /api/clients/devolucion/recordatorio     |          | clients.write                     |        | audit |
 | /api/clients/devolucion                  |          | clients.write                     |        | audit |
-| /api/clients/devolucion/solicitudes      |          | clients.read                      | ⚠️ SQL |       |
+| /api/clients/devolucion/solicitudes      |          | clients.read                      |        |       |
 | /api/clients/history                     |          | publico                           |        |       |
 | /api/clients/prepago                     |          | clients.write                     |        | audit |
 | /api/clients                             |          | publico                           |        | audit |
@@ -338,17 +308,17 @@ migración no puede romper.
 | /api/commissions/:id                     |          | commissions.write                 |        | audit |
 | /api/commissions                         |          | publico                           |        | audit |
 | /api/commissions/user                    |          | authenticated                     |        | audit |
-| /api/configurations                      |          | settings.write                    | ⚠️ SQL | audit |
-| /api/cron/check-timers                   |          | publico                           | ⚠️ SQL |       |
+| /api/configurations                      |          | settings.write                    |        | audit |
+| /api/cron/check-timers                   |          | publico                           |        |       |
 | /api/csp-violation                       | POST     | SIN_WRAPPER                       |        |       |
 | /api/cuentas/:id/cobrar-con-venta        |          | finances.write                    |        | audit |
 | /api/cuentas/:id/cobrar                  |          | finances.write                    |        | audit |
 | /api/cuentas/:id                         |          | publico                           |        | audit |
 | /api/cuentas/:id/stop                    |          | finances.write                    |        | audit |
-| /api/cuentas/anulacion                   |          | finances.write                    | ⚠️ SQL | audit |
-| /api/cuentas/procesar-anulacion          | POST     | SIN_WRAPPER                       | ⚠️ SQL |       |
+| /api/cuentas/anulacion                   |          | finances.write                    |        | audit |
+| /api/cuentas/procesar-anulacion          | POST     | SIN_WRAPPER                       |        |       |
 | /api/cuentas                             |          | publico                           |        | audit |
-| /api/cuentas/solicitud-anulacion         | GET      | SIN_WRAPPER                       | ⚠️ SQL |       |
+| /api/cuentas/solicitud-anulacion         | GET      | SIN_WRAPPER                       |        |       |
 | /api/dashboard/composite                 |          | dashboard.read                    |        | audit |
 | /api/error-logs                          |          | publico                           |        |       |
 | /api/events/detail/:id                   |          | authenticated                     |        | audit |
@@ -360,10 +330,10 @@ migración no puede romper.
 | /api/gratificaciones/me                  |          | authenticated                     |        | audit |
 | /api/gratificaciones                     |          | gratificaciones.write             |        | audit |
 | /api/gratificaciones/solicitud-detalles  | GET      | SIN_WRAPPER                       |        |       |
-| /api/health                              |          | publico                           | ⚠️ SQL |       |
+| /api/health                              |          | publico                           |        |       |
 | /api/images/products/:id                 | GET      | SIN_WRAPPER                       |        |       |
-| /api/kiosk/attendance/challenge          | POST     | SIN_WRAPPER                       | ⚠️ SQL |       |
-| /api/kiosk/board                         | GET      | SIN_WRAPPER                       | ⚠️ SQL |       |
+| /api/kiosk/attendance/challenge          | POST     | SIN_WRAPPER                       |        |       |
+| /api/kiosk/board                         | GET      | SIN_WRAPPER                       |        |       |
 | /api/kiosk/devices/:id                   |          | administrator                     |        | audit |
 | /api/kiosk/devices                       |          | administrator                     |        |       |
 | /api/kiosk/session                       |          | publico                           |        | audit |
@@ -376,7 +346,7 @@ migración no puede romper.
 | /api/notifications                       |          | authenticated                     |        | audit |
 | /api/notifications/sse                   | GET      | SIN_WRAPPER                       |        |       |
 | /api/orders/:id                          |          | orders.delete                     |        | audit |
-| /api/orders/check-active-room            |          | publico                           | ⚠️ SQL |       |
+| /api/orders/check-active-room            |          | publico                           |        |       |
 | /api/orders/detail                       |          | publico                           |        |       |
 | /api/orders                              |          | publico                           |        | audit |
 | /api/orders/sse                          | GET      | SIN_WRAPPER                       |        |       |
@@ -388,7 +358,7 @@ migración no puede romper.
 | /api/permissions/:id                     |          | settings.write                    |        | audit |
 | /api/permissions/invalidate-cache        |          | administrator                     |        | audit |
 | /api/permissions                         |          | publico                           |        | audit |
-| /api/permissions/setup-cajero            |          | administrator                     | ⚠️ SQL | audit |
+| /api/permissions/setup-cajero            |          | administrator                     |        | audit |
 | /api/ping                                |          | publico                           |        |       |
 | /api/products/:id                        |          | products.write                    |        | audit |
 | /api/products/:id/tiers                  |          | publico                           |        | audit |
@@ -398,18 +368,18 @@ migración no puede romper.
 | /api/products                            |          | publico                           |        | audit |
 | /api/products/units/printed              |          | products.write                    |        | audit |
 | /api/products/units                      |          | publico                           |        | audit |
-| /api/public/users                        | GET      | SIN_WRAPPER                       | ⚠️ SQL |       |
+| /api/public/users                        | GET      | SIN_WRAPPER                       |        |       |
 | /api/purchases                           |          | products.read                     |        |       |
 | /api/reports/cash-register               |          | publico                           |        |       |
 | /api/reports/commissions                 |          | publico                           |        |       |
 | /api/reports/sales                       |          | publico                           |        |       |
 | /api/reviews                             |          | publico                           |        |       |
-| /api/roles/:id/permissions               |          | publico                           | ⚠️ SQL | audit |
+| /api/roles/:id/permissions               |          | publico                           |        | audit |
 | /api/roles/:id                           |          | publico                           |        | audit |
 | /api/roles/:id/users                     |          | publico                           |        |       |
 | /api/roles/admin/permissions             |          | publico                           |        |       |
 | /api/roles                               |          | publico                           |        | audit |
-| /api/roles/setup                         |          | administrator                     | ⚠️ SQL | audit |
+| /api/roles/setup                         |          | administrator                     |        | audit |
 | /api/rooms/:id                           |          | publico                           |        | audit |
 | /api/rooms/reorder                       |          | rooms.write                       |        | audit |
 | /api/rooms                               |          | publico                           |        | audit |
@@ -417,20 +387,20 @@ migración no puede romper.
 | /api/sales                               |          | publico                           |        | audit |
 | /api/sales/stats                         |          | publico                           |        |       |
 | /api/servicios/:id                       |          | publico                           |        | audit |
-| /api/servicios/anulacion                 |          | authenticated                     | ⚠️ SQL | audit |
+| /api/servicios/anulacion                 |          | authenticated                     |        | audit |
 | /api/servicios/by-dates                  |          | publico                           |        |       |
-| /api/servicios/procesar-anulacion        | POST     | SIN_WRAPPER                       | ⚠️ SQL |       |
+| /api/servicios/procesar-anulacion        | POST     | SIN_WRAPPER                       |        |       |
 | /api/servicios                           |          | publico                           |        | audit |
-| /api/servicios/solicitud-anulacion       | GET POST | SIN_WRAPPER                       | ⚠️ SQL |       |
+| /api/servicios/solicitud-anulacion       | GET POST | SIN_WRAPPER                       |        |       |
 | /api/servicios/temporal                  |          | authenticated                     |        | audit |
 | /api/servicios/user                      |          | authenticated                     |        | audit |
-| /api/settings/backup/:id/download        |          | settings.read                     | ⚠️ SQL | audit |
-| /api/settings/backup/:id/restore         |          | settings.write                    | ⚠️ SQL | audit |
-| /api/settings/backup                     |          | settings.write                    | ⚠️ SQL | audit |
+| /api/settings/backup/:id/download        |          | settings.read                     |        | audit |
+| /api/settings/backup/:id/restore         |          | settings.write                    |        | audit |
+| /api/settings/backup                     |          | settings.write                    |        | audit |
 | /api/settings/database-clean             |          | settings.write                    |        | audit |
 | /api/solicitudes-servicios/:id/aprobar   |          | orders.process                    |        | audit |
 | /api/solicitudes-servicios/:id/rechazar  |          | orders.process                    |        | audit |
-| /api/solicitudes-servicios/pending-count |          | publico                           | ⚠️ SQL |       |
+| /api/solicitudes-servicios/pending-count |          | publico                           |        |       |
 | /api/solicitudes-servicios               |          | publico                           |        | audit |
 | /api/stats/dashboard-summary             |          | dashboard.read                    |        | audit |
 | /api/stats/logged-users                  |          | publico                           |        |       |
@@ -450,9 +420,9 @@ migración no puede romper.
 | /api/users/:id/biometric                 |          | users.write                       |        | audit |
 | /api/users/:id/biometric/sync            |          | users.write                       |        | audit |
 | /api/users/:id/biometric/verificar       |          | users.write                       |        | audit |
-| /api/users/:id/permissions               |          | publico                           | ⚠️ SQL |       |
+| /api/users/:id/permissions               |          | publico                           |        |       |
 | /api/users/:id                           |          | users.write                       |        | audit |
-| /api/users/me/stats                      |          | authenticated                     | ⚠️ SQL | audit |
+| /api/users/me/stats                      |          | authenticated                     |        | audit |
 | /api/users/profile                       |          | authenticated                     |        | audit |
 | /api/users                               |          | users.write                       |        | audit |
 | /api/users/status                        |          | authenticated                     |        | audit |
@@ -460,7 +430,7 @@ migración no puede romper.
 | /api/ventas/anulacion                    |          | sales.anulate                     |        | audit |
 | /api/ventas/procesar-anulacion           | POST     | SIN_WRAPPER                       |        |       |
 | /api/ventas/solicitud-anulacion          | GET      | SIN_WRAPPER                       |        |       |
-| /api/whatsapp/webhook                    | POST     | SIN_WRAPPER                       | ⚠️ SQL |       |
+| /api/whatsapp/webhook                    | POST     | SIN_WRAPPER                       |        |       |
 
 ## 8. Matriz de dependencias por capa
 

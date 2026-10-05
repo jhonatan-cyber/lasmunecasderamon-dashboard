@@ -359,30 +359,49 @@ tratamiento de escrituras actuales sobre `asistencias` y `logins`. Comisiones y
 propinas ya tienen propietario objetivo Personal, documentado en
 [FASE0_DECISIONES.md](arquitectura/FASE0_DECISIONES.md).
 
-- [ ] Extraer el SQL que sigue en rutas de ventas y en servicios que acceden a
-      tablas ajenas. **Parcial:** las tres rutas de anulación de ventas ya no
-      tienen SQL: viven en `modules/ventas/anulaciones` y una guarda lo impide
-      (corte 11). Quedan las rutas de servicios, cuentas y anticipos, y el SQL
-      de servicios que escribe tablas ajenas.
-- [ ] Definir los contratos de Caja, Clientes y Personal que consume el flujo
-      comercial.
+- [x] Extraer el SQL que sigue en rutas de ventas y en servicios que acceden a
+      tablas ajenas. **Completo (cortes 11 y 12):** las tres rutas de anulación
+      de ventas quedaron sin SQL en el corte 11 (`modules/ventas/anulaciones`);
+      los cortes 12a–12d vaciaron las rutas de servicios, cuentas, anticipos,
+      devoluciones, cierres y temporizadores. `app/api` no tiene ni una ruta con
+      SQL y `tests/unit/scripts/rutas-sin-sql.test.ts` lo impide. Sigue
+      pendiente el SQL de servicios que escribe tablas ajenas, dentro de `lib/`.
+- [x] Definir los contratos de Caja, Clientes y Personal que consume el flujo
+      comercial. **Hecho en el corte 12:** `modules/caja/contracts.ts` y
+      `modules/clientes/contracts.ts` nacen con las formas que cruzan la
+      frontera; Personal ya publicaba contratos desde la fase 2.
 - [ ] Crear el workflow de cobro de cuenta sobre APIs públicas, preservando una
-      transacción común.
+      transacción común. **Parcial (corte 12a):** las tres rutas de cobro y
+      anulación de cuentas llaman ya a la API de `modules/operacion`, pero la
+      transacción común sigue atada por `lib/transaccion/compatibilidad.ts`.
 - [ ] Migrar creación y anulación de ventas, pedidos, servicios y liberación de
-      habitaciones.
+      habitaciones. **Parcial:** las rutas están vaciadas, pero los escritores
+      (`SaleQueries`, `ServiceQueries`, `TimerRepository`) siguen en `lib/`.
 - [ ] Validar que movimientos de caja, prepago, stock, comisiones y propinas no
       se duplican.
 - [ ] Mantener el orden y las condiciones de notificaciones, auditoría e
-      invalidación de caché.
+      invalidación de caché. **Respetado en cada corte:** los efectos externos
+      (SSE, push, WhatsApp) se emiten después del commit, nunca antes.
 
 **Avance inicial 2026-10-05 (corte 11):** nace `modules/ventas` con el
 subdominio de anulaciones. Las tres rutas de anulación dejan de ejecutar SQL y
 llaman a la API pública del módulo; `modules/ventas/contracts.ts` declara la
-forma de la solicitud que cruza la frontera, y
-`tests/unit/scripts/modulo-ventas-guardas.test.ts` falla si vuelve a aparecer
-una consulta en una ruta de ventas. Sigue en `SaleQueries` la escritura de la
-solicitud (crear, confirmar, rechazar) y la transacción de la anulación, que es
-lo que retirará la última excepción del puente.
+forma de la solicitud que cruza la frontera, y una guarda impide que vuelva a
+aparecer una consulta en una ruta de ventas. Sigue en `SaleQueries` la escritura
+de la solicitud (crear, confirmar, rechazar) y la transacción de la anulación,
+que es lo que retirará la última excepción del puente.
+
+**Cierre de la vacía de rutas (cortes 12a–12d, 2026-10-05):** el objetivo
+declarativo de la fase 5 —que ninguna ruta escriba SQL— queda cumplido y
+comprobado. Nacen o se completan `modules/operacion` (servicios, cuentas,
+lecturas, temporizadores), `modules/clientes` (devoluciones de saldo),
+`modules/caja` (solicitudes de cierre) y `modules/salud`; `modules/ventas` gana
+lecturas y `modules/personal` cierra anticipos. El webhook de WhatsApp y el cron
+de temporizadores quedan como adaptadores delgados que componen varios módulos.
+`scripts/arquitectura/analisis.mjs` reporta **0 rutas con SQL directo** por
+primera vez en el plan, y la guarda `tests/unit/scripts/rutas-sin-sql.test.ts`
+vigila a la vez el texto SQL y el import a `lib/database/db`, que es el límite
+que el censo cuenta de verdad.
 
 **Salida:** fallos intermedios revierten todos los cambios; no existen
 escrituras cruzadas fuera de los propietarios; reintentos no duplican
@@ -391,8 +410,14 @@ operaciones.
 ### Fase 6 — Resto de módulos y lecturas agregadas
 
 - [ ] Completar anticipos, comisiones, propinas, gratificaciones y nómina.
+      **Parcial (cortes 12a–12c):** anticipos queda completo —balances,
+      solicitud y pendientes viven en `modules/personal/anticipos`—; comisiones,
+      propinas, gratificaciones y nómina siguen en `lib/`.
 - [ ] Migrar Agenda, Comunicaciones y Auditoría con contratos mínimos.
-- [ ] Reubicar reglas de configuración en su propietario.
+- [x] Reubicar reglas de configuración en su propietario. **Hecho en el corte
+      12b:** `modules/configuracion` es dueño de `configuraciones` y de
+      `backups`, con las rutas de `/api/configurations` y `/api/settings/backup`
+      como adaptadores.
 - [ ] Documentar y acotar las lecturas cruzadas de Reportes y dashboard.
 - [ ] Revisar cachés y consultas agregadas para evitar regresiones de
       rendimiento.
@@ -403,13 +428,22 @@ servicios compartidos que concentren nuevamente el negocio.
 ### Fase 7 — Retirada del código de transición
 
 - [ ] Eliminar adaptadores, reexportaciones antiguas y accesos heredados ya sin
-      consumidores.
+      consumidores. **Parcial:** con el corte 12b, `lib/configuraciones` y
+      `lib/business/anticiposUtils.ts` ya no existen;
+      `lib/repositories/inventory/` se vació en el corte 10.
 - [ ] Vaciar o reducir `lib/services`, `lib/repositories` y `lib/business` según
-      sus responsabilidades finales.
+      sus responsabilidades finales. **Es el grueso de la fase 7:** `lib/`
+      conserva los escritores de ventas, servicios, caja, nómina, agenda,
+      comunicaciones y auditoría.
 - [ ] Actualizar README, mapa de módulos y guía de contribución.
 - [ ] Convertir las restricciones transitorias en obligatorias para todo el
-      código de producción.
-- [ ] Validar build, despliegue y flujos críticos con la estructura final.
+      código de producción. **En curso:** las guardas de `tests/unit/scripts/` y
+      la puerta `modulo-solo-api-publica` ya son obligatorias; falta cerrar la
+      excepción `puente-transaccional-heredado`.
+- [x] Validar build, despliegue y flujos críticos con la estructura final.
+      `pnpm build`, `pnpm test:unit` (1731 + 2 omitidas), `pnpm test:postgres`
+      (161), `pnpm arquitectura:limites` (23/23) y `pnpm lint:full` pasan con la
+      estructura del corte 12d.
 
 **Salida:** API pública documentada por módulo, grafo sin ciclos y sin
 excepciones de escritura cruzada. Las excepciones de lectura de Reportes
