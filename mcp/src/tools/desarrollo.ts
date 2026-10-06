@@ -32,6 +32,10 @@ function nodo(rutaRelativa: string, argumentos: string[], timeoutMs: number) {
   return correr(process.execPath, [rutaRelativa, ...argumentos], timeoutMs);
 }
 
+function resultado(r: { codigo: number; salida: string }, texto = r.salida) {
+  return r.codigo === 0 ? ok(texto) : fallo(`Comando terminó con código ${r.codigo}\n\n${texto}`);
+}
+
 export const herramientas = {
   check_limites: {
     description:
@@ -43,7 +47,8 @@ export const herramientas = {
       try {
         const argumentos = ['scripts/arquitectura/limites.mjs', ...(a?.listar ? ['--listar'] : [])];
         const r = await nodo(argumentos[0], argumentos.slice(1), 180_000);
-        return ok(
+        return resultado(
+          r,
           `${r.codigo === 0 ? '✓ VERDE' : '✗ FALLA (código ' + r.codigo + ')'}\n\n${r.salida}`
         );
       } catch (e) {
@@ -59,7 +64,7 @@ export const herramientas = {
     execute: async () => {
       try {
         const r = await nodo('scripts/arquitectura/analisis.mjs', ['--json'], 300_000);
-        return ok(r.salida);
+        return resultado(r);
       } catch (e) {
         return fallo(e);
       }
@@ -77,7 +82,10 @@ export const herramientas = {
           ['--noEmit', '-p', 'tsconfig.typecheck.json'],
           420_000
         );
-        return ok(r.salida === '(sin salida)' ? '✓ TypeScript sin errores' : r.salida);
+        return resultado(
+          r,
+          r.codigo === 0 && r.salida === '(sin salida)' ? '✓ TypeScript sin errores' : r.salida
+        );
       } catch (e) {
         return fallo(e);
       }
@@ -95,7 +103,7 @@ export const herramientas = {
         const argumentos = ['node_modules/vitest/vitest.mjs', 'run'];
         if (a?.filtro) argumentos.push(a.filtro);
         const r = await nodo(argumentos[0], argumentos.slice(1), 600_000);
-        return ok(r.salida);
+        return resultado(r);
       } catch (e) {
         return fallo(e);
       }

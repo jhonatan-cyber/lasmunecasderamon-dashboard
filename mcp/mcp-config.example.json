@@ -1,0 +1,14 @@
+{
+  "mcpServers": {
+    "lasmunecas": {
+      "command": "node",
+      "args": ["C:/MCP/lasmunecas/node_modules/lasmunecas-mcp/dist/index.js"],
+      "env": {
+        "MCP_BASE_URL": "https://dashboard.example.com",
+        "MCP_EMAIL": "usuario@example.com",
+        "MCP_PASSWORD": "REEMPLAZAR",
+        "MCP_ENABLE_DEV_TOOLS": "0"
+      }
+    }
+  }
+}

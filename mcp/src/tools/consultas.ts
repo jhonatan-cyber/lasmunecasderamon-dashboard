@@ -1,5 +1,5 @@
 import { z } from 'zod';
-import { api, ping, destino } from '../api-client.js';
+import { api, diagnosticarConexion } from '../api-client.js';
 import { acotar, ok, fallo } from '../formato.js';
 
 type Esquema = Record<string, z.ZodTypeAny>;
@@ -23,15 +23,19 @@ function consulta(
 }
 
 export const herramientas = {
-  verificar_conexion: consulta(
-    'Verifica conectividad con el dashboard: responde /api/ping y valida credenciales con /api/auth/me. Úsala primero si otras tools fallan.',
-    undefined,
-    async () => {
-      const eco = await ping();
-      const usuario = await api('GET', '/api/auth/me');
-      return { destino: destino(), ping: eco, usuario };
+  verificar_conexion: {
+    description:
+      'Diagnostica /api/ping y autenticación por separado: red, timeout, credenciales y permisos. Conserva ambos resultados aunque uno falle.',
+    inputSchema: {},
+    execute: async () => {
+      const diagnostico = await diagnosticarConexion();
+      return {
+        ...ok(acotar(diagnostico)),
+        structuredContent: diagnostico,
+        ...(diagnostico.ok ? {} : { isError: true as const })
+      };
     }
-  ),
+  },
 
   resumen_dashboard: consulta(
     'Resumen operativo del día (ventas, cuentas, ocupación): GET /api/stats/dashboard-summary.',

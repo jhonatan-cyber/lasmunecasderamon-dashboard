@@ -4,6 +4,7 @@ import { StdioServerTransport } from '@modelcontextprotocol/sdk/server/stdio.js'
 import * as consultas from './tools/consultas.js';
 import * as operaciones from './tools/operaciones.js';
 import * as desarrollo from './tools/desarrollo.js';
+import { config } from './config.js';
 
 process.on('uncaughtException', error => {
   console.error('[lasmunecas-mcp] excepción no capturada:', error);
@@ -17,7 +18,7 @@ const server = new McpServer({ name: 'lasmunecas-dashboard', version: '0.1.0' })
 const familias = {
   ...consultas.herramientas,
   ...operaciones.herramientas,
-  ...desarrollo.herramientas
+  ...(config.desarrollo ? desarrollo.herramientas : {})
 };
 
 for (const [nombre, herramienta] of Object.entries(familias)) {

@@ -13,13 +13,15 @@ const { tools } = await cliente.listTools();
 console.log('tools:', tools.length);
 for (const t of tools) console.log(' -', t.name);
 
-console.log('\n--- call check_limites ---');
-const r = await cliente.callTool({ name: 'check_limites', arguments: {} });
-for (const c of r.content ?? []) console.log(c.text?.slice(0, 400));
+if (tools.some(t => t.name === 'check_limites')) {
+  console.log('\n--- call check_limites ---');
+  const r = await cliente.callTool({ name: 'check_limites', arguments: {} });
+  for (const c of r.content ?? []) console.log(c.text?.slice(0, 400));
+}
 
 console.log('\n--- call verificar_conexion (dashboard probablemente apagado) ---');
 const v = await cliente.callTool({ name: 'verificar_conexion', arguments: {} });
-for (const c of v.content ?? []) console.log(c.text?.slice(0, 300));
+for (const c of v.content ?? []) console.log(c.text);
 
 await cliente.close();
 process.exit(0);

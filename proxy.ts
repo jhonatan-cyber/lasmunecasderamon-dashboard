@@ -249,7 +249,7 @@ export default async function proxy(request: NextRequest) {
     response.headers.set('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS, PATCH');
     response.headers.set(
       'Access-Control-Allow-Headers',
-      'Content-Type, Authorization, X-Requested-With, X-CSRF-TOKEN'
+      'Content-Type, Authorization, X-Requested-With, X-CSRF-TOKEN, X-Refresh-Token, X-Idempotency-Key'
     );
     response.headers.set('Access-Control-Max-Age', '86400');
     return response;

@@ -4,6 +4,7 @@
 /node_modules
 /mcp/node_modules
 /mcp/dist
+/mcp/releases
 
 # next.js
 /.next/

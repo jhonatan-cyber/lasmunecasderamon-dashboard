@@ -96,6 +96,35 @@ beforeEach(() => {
   mockCheckRateLimit.mockResolvedValue({ allowed: true, limit: 100, remaining: 99, reset: 0 });
 });
 
+describe('proxy — CORS de Expo Web', () => {
+  it.each([
+    ['/api/orders', 'content-type,authorization,x-idempotency-key'],
+    ['/api/auth/refresh', 'content-type,x-refresh-token']
+  ])('autoriza las cabeceras del preflight %s sin exigir sesión', async (pathname, requested) => {
+    const proxy = await loadProxy();
+    const res = await proxy(
+      createRequest({
+        pathname,
+        method: 'OPTIONS',
+        headers: {
+          origin: 'http://localhost:8081',
+          'access-control-request-method': 'POST',
+          'access-control-request-headers': requested
+        }
+      })
+    );
+    expect(res.status).toBe(200);
+    expect(res.headers.get('Access-Control-Allow-Origin')).toBe('http://localhost:8081');
+    const allowed = res.headers
+      .get('Access-Control-Allow-Headers')!
+      .toLowerCase()
+      .split(',')
+      .map(s => s.trim());
+    for (const header of requested.split(',')) expect(allowed).toContain(header);
+    expect(res.headers.get('Access-Control-Allow-Methods')).toContain('POST');
+  });
+});
+
 describe('proxy — rutas públicas', () => {
   it('deja pasar /login sin token', async () => {
     const proxy = await loadProxy();

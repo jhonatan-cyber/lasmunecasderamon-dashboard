@@ -12,7 +12,8 @@ export class ApiError extends Error {
   constructor(
     mensaje: string,
     readonly estado: number | null,
-    readonly cuerpo?: unknown
+    readonly cuerpo?: unknown,
+    readonly codigo = 'ERROR_API'
   ) {
     super(mensaje);
     this.name = 'ApiError';
@@ -41,20 +42,46 @@ async function bruto(
   for (const [k, v] of Object.entries(opciones.query ?? {})) {
     if (v !== undefined && v !== '') url.searchParams.set(k, String(v));
   }
-  const respuesta = await fetch(url, {
-    method: metodo,
-    headers: {
-      ...(opciones.cuerpo !== undefined ? { 'Content-Type': 'application/json' } : {}),
-      ...opciones.cabeceras
-    },
-    body: opciones.cuerpo !== undefined ? JSON.stringify(opciones.cuerpo) : undefined,
-    signal: AbortSignal.timeout(config.tiempoRedMs)
-  });
+  let respuesta: Response;
+  try {
+    respuesta = await fetch(url, {
+      method: metodo,
+      headers: {
+        ...(opciones.cuerpo !== undefined ? { 'Content-Type': 'application/json' } : {}),
+        ...opciones.cabeceras
+      },
+      body: opciones.cuerpo !== undefined ? JSON.stringify(opciones.cuerpo) : undefined,
+      signal: AbortSignal.timeout(config.tiempoRedMs)
+    });
+  } catch (error) {
+    const e = error as Error & { cause?: { code?: string } };
+    const timeout = e.name === 'TimeoutError' || e.name === 'AbortError';
+    const rechazado = e.cause?.code === 'ECONNREFUSED';
+    throw new ApiError(
+      timeout
+        ? `Tiempo de espera agotado (${config.tiempoRedMs} ms) al conectar con ${config.baseUrl}.`
+        : rechazado
+          ? `Conexión rechazada por ${config.baseUrl}. Comprueba que el dashboard esté iniciado.`
+          : `No se pudo conectar con ${config.baseUrl}. Comprueba la dirección y la red.`,
+      null,
+      undefined,
+      timeout ? 'TIMEOUT' : rechazado ? 'CONEXION_RECHAZADA' : 'ERROR_RED'
+    );
+  }
   let json: any = null;
   try {
     json = await respuesta.json();
-  } catch {
-    // Respuesta sin cuerpo JSON: se devuelve null y manda el estado.
+  } catch (error) {
+    if (respuesta.ok) {
+      throw new ApiError(
+        'El dashboard devolvió una respuesta sin JSON válido.',
+        respuesta.status,
+        undefined,
+        (error as Error).name === 'TimeoutError' || (error as Error).name === 'AbortError'
+          ? 'TIMEOUT'
+          : 'RESPUESTA_INVALIDA'
+      );
+    }
   }
   return { estado: respuesta.status, json };
 }
@@ -63,7 +90,9 @@ async function iniciarSesion(): Promise<void> {
   if (!config.email || !config.password) {
     throw new ApiError(
       'Credenciales no configuradas: define MCP_EMAIL y MCP_PASSWORD en la configuración MCP del cliente.',
-      null
+      null,
+      undefined,
+      'CREDENCIALES_FALTANTES'
     );
   }
   const { estado, json } = await bruto('POST', '/api/auth/login', {
@@ -77,11 +106,21 @@ async function iniciarSesion(): Promise<void> {
     throw new ApiError(
       'El rol exige código de turno y el usuario no tiene asistencia marcada: define MCP_CODIGO con el código del día.',
       estado,
-      json
+      json,
+      'CODIGO_TURNO_REQUERIDO'
     );
   }
   if (estado !== 200 || !json?.token) {
-    throw new ApiError(`Login falló (${estado}): ${json?.message ?? 'sin detalle'}`, estado, json);
+    throw new ApiError(
+      `Login falló (${estado}): ${json?.message ?? 'sin detalle'}`,
+      estado,
+      json,
+      estado === 401
+        ? 'CREDENCIALES_INVALIDAS'
+        : estado === 403
+          ? 'PERMISOS_INSUFICIENTES'
+          : 'LOGIN_FALLIDO'
+    );
   }
   sesion.token = json.token as string;
   sesion.refreshToken = (json.refreshToken as string | undefined) ?? null;
@@ -159,15 +198,53 @@ export async function api<T = unknown>(
     throw new ApiError(
       `${metodo} ${ruta} falló (${estado}): ${json?.message ?? json?.error ?? 'sin detalle'}`,
       estado,
-      json
+      json,
+      estado === 403 ? 'PERMISOS_INSUFICIENTES' : estado === 401 ? 'SESION_RECHAZADA' : 'ERROR_HTTP'
     );
   }
   return desenvolver(json) as T;
 }
 
-export async function ping(): Promise<unknown> {
+export async function ping() {
   const { estado, json } = await bruto('GET', '/api/ping');
   return { estado, respuesta: json };
+}
+
+export async function diagnosticarConexion() {
+  function detalle(error: unknown) {
+    return error instanceof ApiError
+      ? { codigo: error.codigo, estado: error.estado, mensaje: error.message }
+      : {
+          codigo: 'ERROR_INESPERADO',
+          estado: null,
+          mensaje: 'No se pudo completar el diagnóstico.'
+        };
+  }
+  let eco;
+  try {
+    const r = await ping();
+    eco =
+      r.estado >= 200 && r.estado < 300
+        ? { ok: true, ...r }
+        : {
+            ok: false,
+            ...r,
+            error: {
+              codigo: 'ERROR_HTTP',
+              estado: r.estado,
+              mensaje: `/api/ping respondió HTTP ${r.estado}.`
+            }
+          };
+  } catch (error) {
+    eco = { ok: false, error: detalle(error) };
+  }
+  let autenticacion;
+  try {
+    autenticacion = { ok: true, usuario: await api('GET', '/api/auth/me') };
+  } catch (error) {
+    autenticacion = { ok: false, error: detalle(error) };
+  }
+  return { destino: destino(), ok: eco.ok && autenticacion.ok, ping: eco, autenticacion };
 }
 
 export function destino(): string {
