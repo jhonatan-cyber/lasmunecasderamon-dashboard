@@ -1,7 +1,7 @@
 'use client';
 
-import { useState, useEffect, type ChangeEvent } from 'react';
-import { MessageCircle, Save, ShieldCheck } from 'lucide-react';
+import { useState, useEffect, useCallback, type ChangeEvent } from 'react';
+import { MessageCircle, Save, ShieldCheck, Send, RefreshCw } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { toast } from 'sonner';
 import logger from '@/lib/utils/logger';
@@ -27,6 +27,69 @@ export function SettingsWhatsAppTab() {
   const [tokenGuardado, setTokenGuardado] = useState(false);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
+  const [testing, setTesting] = useState(false);
+  const [dirty, setDirty] = useState(false);
+  const [pollUntil, setPollUntil] = useState(0);
+  const [history, setHistory] = useState<
+    Array<{
+      message_sid: string;
+      destino: string | null;
+      tipo: string;
+      estado: string;
+      error_code: string | null;
+    }>
+  >([]);
+  const [urls, setUrls] = useState({ incomingUrl: '', statusCallbackUrl: '' });
+  const [testResult, setTestResult] = useState('');
+  const loadHistory = useCallback(async () => {
+    const response = await fetch('/api/whatsapp/test', { cache: 'no-store' });
+    const result = await response.json();
+    if (!response.ok || !result.success) throw new Error('No se pudo consultar el seguimiento');
+    setHistory(result.data.messages);
+    setUrls({
+      incomingUrl: result.data.incomingUrl,
+      statusCallbackUrl: result.data.statusCallbackUrl
+    });
+  }, []);
+  useEffect(() => {
+    void loadHistory().catch(() => {});
+  }, [loadHistory]);
+  useEffect(() => {
+    if (!pollUntil) return;
+    const timer = setInterval(() => {
+      if (Date.now() >= pollUntil) {
+        clearInterval(timer);
+        return;
+      }
+      void loadHistory().catch(() => {});
+    }, 3000);
+    return () => clearInterval(timer);
+  }, [pollUntil, loadHistory]);
+  const handleTest = async () => {
+    setTesting(true);
+    setTestResult('');
+    try {
+      const response = await fetch('/api/whatsapp/test', { method: 'POST' });
+      const result = await response.json();
+      if (!response.ok || !result.success)
+        throw new Error(result.message || 'No se pudo enviar la prueba');
+      const message = result.data.seguimientoGuardado
+        ? `Prueba aceptada por Twilio para ${result.data.destino}. Revisa abajo si fue entregada o leída.`
+        : 'Twilio aceptó la prueba, pero no se pudo guardar su seguimiento. Actualiza el historial para comprobar el callback.';
+      setTestResult(message);
+      toast.success('Prueba aceptada por Twilio');
+      setPollUntil(Date.now() + 60_000);
+      await loadHistory().catch(() =>
+        toast.error('Twilio aceptó la prueba, pero no se pudo actualizar su seguimiento.')
+      );
+    } catch (error) {
+      const message = error instanceof Error ? error.message : 'No se pudo enviar la prueba';
+      setTestResult(message);
+      toast.error(message);
+    } finally {
+      setTesting(false);
+    }
+  };
 
   useEffect(() => {
     let cancelled = false;
@@ -101,6 +164,7 @@ export function SettingsWhatsAppTab() {
           ? tokenGuardado
           : true
       );
+      setDirty(false);
       toast.success('Configuración de WhatsApp guardada');
     } catch (error) {
       logger.captureException(error, { context: 'SettingsWhatsAppTab:save' });
@@ -110,8 +174,10 @@ export function SettingsWhatsAppTab() {
     }
   };
 
-  const setText = (campo: keyof TwilioForm) => (evento: ChangeEvent<HTMLInputElement>) =>
+  const setText = (campo: keyof TwilioForm) => (evento: ChangeEvent<HTMLInputElement>) => {
+    setDirty(true);
     setForm(prev => ({ ...prev, [campo]: evento.target.value }));
+  };
 
   const campos: Array<{
     id: string;
@@ -192,7 +258,7 @@ export function SettingsWhatsAppTab() {
                 <input
                   id={campo.id}
                   type={campo.tipo || 'text'}
-                  disabled={saving}
+                  disabled={saving || testing}
                   value={form[campo.campo]}
                   onChange={setText(campo.campo)}
                   placeholder={campo.placeholder}
@@ -207,6 +273,103 @@ export function SettingsWhatsAppTab() {
           </div>
         )}
 
+        {!loading && (
+          <div className='mt-6 space-y-4 border-t border-neutral-200 dark:border-neutral-800 pt-4'>
+            <div className='flex flex-wrap items-center gap-3'>
+              <button
+                onClick={handleTest}
+                disabled={saving || testing || dirty}
+                className='flex items-center gap-2 rounded-full border px-4 py-2 text-sm font-semibold disabled:opacity-50'
+              >
+                <Send className='h-4 w-4' />
+                {testing ? 'Enviando prueba...' : 'Enviar mensaje de prueba'}
+              </button>
+              <p className='text-xs text-neutral-500'>
+                {dirty
+                  ? 'Guarda los cambios antes de probar.'
+                  : 'Se envía al WhatsApp del administrador con la configuración guardada.'}
+              </p>
+            </div>
+            {testResult && (
+              <p role='status' className='text-sm'>
+                {testResult}
+              </p>
+            )}
+            <div className='space-y-2 text-sm'>
+              <p className='font-semibold'>URLs para Twilio · método POST</p>
+              {Object.entries(urls).map(([key, url]) => (
+                <div key={key}>
+                  <label htmlFor={`whatsapp-${key}`} className='text-xs text-neutral-500'>
+                    {key === 'incomingUrl' ? 'When a message comes in' : 'Status callback URL'}
+                  </label>
+                  <input
+                    id={`whatsapp-${key}`}
+                    readOnly
+                    value={url}
+                    className='mt-1 w-full rounded-lg border bg-transparent px-3 py-2 text-xs'
+                  />
+                </div>
+              ))}
+              <p className='text-xs text-neutral-500'>
+                En el Sandbox, el destinatario debe unirse usando el código de Twilio y enviarle un
+                mensaje antes de la prueba.
+              </p>
+            </div>
+            <div>
+              <div className='flex items-center justify-between gap-2'>
+                <p className='text-sm font-semibold'>Estado de los últimos mensajes</p>
+                <button
+                  aria-label='Actualizar estados de WhatsApp'
+                  onClick={() => {
+                    void loadHistory().catch(() =>
+                      toast.error('No se pudo actualizar el seguimiento')
+                    );
+                  }}
+                  className='rounded-full border p-2'
+                >
+                  <RefreshCw className='h-4 w-4' />
+                </button>
+              </div>
+              {history.length === 0 ? (
+                <p className='mt-2 text-sm text-neutral-500'>
+                  Todavía no hay mensajes registrados.
+                </p>
+              ) : (
+                <ul className='mt-2 divide-y divide-neutral-200 dark:divide-neutral-800'>
+                  {history.map(message => (
+                    <li
+                      key={message.message_sid}
+                      className='flex flex-wrap items-center justify-between gap-2 py-2 text-sm'
+                    >
+                      <span>
+                        {message.tipo === 'prueba' ? 'Prueba' : 'Mensaje'} ·{' '}
+                        {message.destino || 'Destino no informado'}
+                      </span>
+                      <span>
+                        {(
+                          {
+                            accepted: 'Aceptado por Twilio',
+                            scheduled: 'Programado',
+                            queued: 'En cola',
+                            sending: 'Enviando',
+                            sent: 'Enviado',
+                            delivered: 'Entregado',
+                            read: 'Leído',
+                            failed: 'Falló',
+                            undelivered: 'No entregado',
+                            canceled: 'Cancelado'
+                          } as Record<string, string>
+                        )[message.estado] || message.estado}
+                        {message.error_code ? ` · Error ${message.error_code}` : ''}
+                      </span>
+                    </li>
+                  ))}
+                </ul>
+              )}
+            </div>
+          </div>
+        )}
+
         <div className='flex items-start gap-2 mt-4 text-xs text-neutral-500 dark:text-neutral-400'>
           <ShieldCheck className='h-4 w-4 shrink-0 mt-0.5' />
           <p>
@@ -218,7 +381,7 @@ export function SettingsWhatsAppTab() {
         <div className='flex justify-end pt-4'>
           <button
             onClick={handleSave}
-            disabled={saving || loading}
+            disabled={saving || loading || testing}
             className='flex items-center gap-2 px-6 py-2.5 bg-black dark:bg-white text-white dark:text-black border-2 border-black dark:border-white hover:scale-105 active:scale-95 transition-all duration-200 rounded-full font-bold disabled:opacity-50'
           >
             <Save className='h-4 w-4' />

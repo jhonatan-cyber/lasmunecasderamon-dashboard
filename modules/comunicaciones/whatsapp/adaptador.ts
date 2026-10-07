@@ -5,32 +5,64 @@ import { getTwilioConfig } from '@/lib/business/twilioConfig';
 import { ROUTES } from '@/lib/constants/routes';
 import logger from '@/lib/utils/logger';
 
-export async function enviarWhatsApp(numero: string, mensaje: string): Promise<boolean> {
+export async function enviarWhatsAppConEstado(
+  numero: string,
+  mensaje: string,
+  tipo: 'mensaje' | 'prueba' = 'mensaje'
+) {
   const { accountSid, authToken, whatsappNumber } = await getTwilioConfig();
-  const client = accountSid && authToken ? twilio(accountSid, authToken) : null;
-
-  if (!client || !whatsappNumber) {
-    logger.error('❌ Twilio no configurado. No se puede enviar WhatsApp.');
-    throw new Error(
-      'Twilio no está configurado. Configura TWILIO_ACCOUNT_SID, TWILIO_AUTH_TOKEN y TWILIO_WHATSAPP_NUMBER en Configuraciones → WhatsApp (o en el .env)'
-    );
-  }
-  const numeroFormateado = `+${numero.replace(/^\+/, '')}`;
-
+  if (!accountSid || !authToken || !whatsappNumber) throw new Error('Twilio no configurado');
+  const numeroFormateado = `+${numero
+    .trim()
+    .replace(/^whatsapp:/, '')
+    .replace(/^\+/, '')}`;
+  if (!/^\+\d{7,15}$/.test(numeroFormateado)) throw new Error('Número de destino inválido');
+  const { whatsappWebhookUrl } = await import('@/lib/integrations/twilioWebhook');
+  const callback =
+    process.env.NEXT_PUBLIC_BASE_URL || process.env.BASE_URL
+      ? whatsappWebhookUrl('/api/whatsapp/status')
+      : null;
+  const result = await twilio(accountSid, authToken).messages.create({
+    body: mensaje,
+    from: `whatsapp:${whatsappNumber}`,
+    to: `whatsapp:${numeroFormateado}`,
+    ...(callback?.startsWith('https://') ? { statusCallback: callback } : {})
+  });
+  let seguimientoGuardado = true;
   try {
-    const result = await client.messages.create({
-      body: mensaje,
-      from: `whatsapp:${whatsappNumber}`,
-      to: `whatsapp:${numeroFormateado}`
+    const { registrarEntregaWhatsApp } = await import('./seguimiento');
+    await registrarEntregaWhatsApp({
+      sid: result.sid,
+      accountSid,
+      destino: numeroFormateado,
+      estado: result.status,
+      tipo
     });
-
-    logger.info(`✅ WhatsApp enviado a ${numeroFormateado}. SID: ${result.sid}`);
-    return true;
-  } catch (error) {
-    const message = error instanceof Error ? error.message : String(error);
-    logger.error(`❌ Error enviando WhatsApp a ${numeroFormateado}: ${message}`);
-    throw error;
+  } catch {
+    seguimientoGuardado = false;
+    logger.error('No se pudo registrar el seguimiento de WhatsApp', { sid: result.sid });
   }
+  return {
+    sid: result.sid,
+    estado: result.status,
+    destino: `••••${numeroFormateado.slice(-4)}`,
+    seguimientoGuardado
+  };
+}
+
+export async function enviarWhatsApp(numero: string, mensaje: string): Promise<boolean> {
+  await enviarWhatsAppConEstado(numero, mensaje);
+  return true;
+}
+
+export async function enviarPruebaWhatsApp() {
+  const destino = await getAdminWhatsApp();
+  if (!destino) throw new Error('Configura el WhatsApp del administrador');
+  return enviarWhatsAppConEstado(
+    destino,
+    'Mensaje de prueba de Las Muñecas de Ramon. La conexión de WhatsApp está funcionando.',
+    'prueba'
+  );
 }
 
 export async function enviarMensajeSolicitudAnulacion(datos: {

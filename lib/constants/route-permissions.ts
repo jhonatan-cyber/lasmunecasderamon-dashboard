@@ -65,6 +65,7 @@ export const PUBLIC_PATHS: string[] = [
   '/api/test-auth',
   '/api/health',
   '/api/whatsapp/webhook',
+  '/api/whatsapp/status',
   '/api/ventas/solicitud-anulacion',
   '/api/ventas/procesar-anulacion',
   '/api/servicios/solicitud-anulacion',
