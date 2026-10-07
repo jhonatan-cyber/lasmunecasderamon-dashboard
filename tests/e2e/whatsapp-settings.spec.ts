@@ -1,5 +1,8 @@
 import { test, expect } from '@playwright/test';
 
+// The production PWA worker bypasses Playwright routes; keep transport simulated.
+test.use({ serviceWorkers: 'block' });
+
 test('WhatsApp: prueba explícita, URL de callback y actualización de entrega', async ({ page }) => {
   test.skip(!process.env.TEST_PASSWORD, 'Se necesita un administrador de pruebas');
   test.setTimeout(120_000);
@@ -35,12 +38,21 @@ test('WhatsApp: prueba explícita, URL de callback y actualización de entrega',
       }
     });
   });
+  const usersLoaded = page.waitForResponse(
+    response => response.url().includes('/api/auth/check-users') && response.status() === 200
+  );
   await page.goto('/login');
+  await usersLoaded;
   await page.locator('#nick').fill(process.env.TEST_USER || 'admin');
   await page.locator('#password').fill(process.env.TEST_PASSWORD!);
   await page.locator('button[type="submit"]').first().click();
   await page.waitForURL(url => !url.pathname.includes('/login'));
+  const settingsLoaded = page.waitForResponse(
+    response =>
+      new URL(response.url()).pathname === '/api/configurations' && response.status() === 200
+  );
   await page.goto('/settings');
+  await settingsLoaded;
   await page.getByRole('tab', { name: 'WhatsApp', exact: true }).click();
   await expect(page.getByLabel('Status callback URL')).toHaveValue(
     'https://dashboard.example.com/api/whatsapp/status'
