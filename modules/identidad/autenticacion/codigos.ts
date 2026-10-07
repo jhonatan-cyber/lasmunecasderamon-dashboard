@@ -1,4 +1,4 @@
-import { query } from '@/lib/database/db';
+import { query, generateUUID } from '@/lib/database/db';
 import { logger } from '@/lib/utils/logger';
 import { getNowInBusinessTimezone } from '@/lib/business/timezoneService';
 import { generateRandomCode4 } from '@/lib/utils/codeUtils';
@@ -25,7 +25,6 @@ export async function regenerateAttendanceCode(): Promise<string> {
     await query('DELETE FROM codigos');
 
     const fechaSQL = getNowInBusinessTimezone();
-    const { generateUUID } = require('@/lib/database/db');
 
     await query('INSERT INTO codigos (id_codigo, codigo, fecha_crea, estado) VALUES (?, ?, ?, 1)', [
       generateUUID(),

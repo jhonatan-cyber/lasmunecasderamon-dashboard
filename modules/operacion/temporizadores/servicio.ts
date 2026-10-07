@@ -14,6 +14,7 @@ import { enUnaUnidad, type ContextoOperacion } from '@/lib/transaccion/contrato'
 import { ejecutarEfectosConfirmados } from '@/lib/transaccion/efectos';
 import { sendPushByRole, sendPushNotification } from '@/modules/comunicaciones';
 import { sendNotificationToAll } from '@/lib/api/sseService';
+import { parseBusinessDate } from '@/lib/business/timezoneService';
 import { actualizarDisponibilidad } from '@/modules/identidad';
 import { liberarHabitacionPorAnulacion } from '../facturacion/servicio';
 import type { TemporizadorActivo } from './repositorio';
@@ -35,7 +36,7 @@ export async function revisarTemporizadores(ahora: Date): Promise<ResultadoTempo
   let cierres = 0;
 
   for (const item of activos) {
-    const startTime = new Date(item.fecha_crea);
+    const startTime = parseBusinessDate(item.fecha_crea);
     const remainingMin = (startTime.getTime() + item.tiempo * 60000 - ahora.getTime()) / 60000;
 
     if (remainingMin <= 5 && remainingMin > 4.5 && !item.push_notified_5m) {

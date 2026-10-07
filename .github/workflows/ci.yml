@@ -363,6 +363,7 @@ jobs:
           path: |
             playwright-report/
             test-results/
+            logs/error.log
           retention-days: 7
 
   mcp:
