@@ -286,7 +286,9 @@ jobs:
           JWT_REFRESH_SECRET: test-refresh-secret
 
       - name: Integration tests (legacy-db + flows)
-        run: pnpm test:integration:all
+        run: |
+          CI_LEGACY_FIXTURES=true node --import dotenv/config --input-type=module -e "import seed from './tests/setup/ci-fixtures.ts'; await seed();"
+          pnpm test:integration:all
 
   e2e:
     runs-on: ubuntu-latest
