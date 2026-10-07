@@ -1,5 +1,6 @@
 import { query, generateUUID } from '@/lib/database/db';
 import { logger } from '@/lib/utils/logger';
+import { getNowInBusinessTimezone } from '@/lib/business/timezoneService';
 export const addServicioLog = async (
   servicioId: string | number,
   tipoEvento: string,
@@ -8,8 +9,15 @@ export const addServicioLog = async (
 ) => {
   try {
     await query(
-      'INSERT INTO servicio_logs (id, servicio_id, tipo_evento, descripcion, usuario_id) VALUES (?, ?, ?, ?, ?)',
-      [generateUUID(), servicioId, tipoEvento, descripcion, usuarioId || null]
+      'INSERT INTO servicio_logs (id, servicio_id, tipo_evento, descripcion, usuario_id, fecha_crea) VALUES (?, ?, ?, ?, ?, ?)',
+      [
+        generateUUID(),
+        servicioId,
+        tipoEvento,
+        descripcion,
+        usuarioId || null,
+        getNowInBusinessTimezone()
+      ]
     );
   } catch (error) {
     const exception = error instanceof Error ? error : new Error('Error desconocido al añadir log');

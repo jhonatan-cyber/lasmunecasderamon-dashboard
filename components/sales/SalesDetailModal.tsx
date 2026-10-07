@@ -11,8 +11,9 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { VentaWithDetails } from '@/types/venta';
+import { SalesDistribution } from './SalesDistribution';
 import { formatCurrency, statusColors, statusLabels } from '@/lib/business/salesUtils';
-import { esShot, etiquetaVentaDetalle } from '@/lib/sales/ventaDetalle';
+import { esShot, etiquetaVentaDetalle, agruparProductosVenta } from '@/lib/sales/ventaDetalle';
 import { useConfigValue } from '@/hooks/shared/useConfigValue';
 import {
   ShoppingBag,
@@ -42,6 +43,7 @@ export function SalesDetailModal({
   metodoPagoLabels
 }: SalesDetailModalProps) {
   if (!selectedVenta) return null;
+  const productosVendidos = agruparProductosVenta(selectedVenta.detalles ?? []);
 
   const hostesses = Array.from(
     new Set(
@@ -275,7 +277,7 @@ export function SalesDetailModal({
             {selectedVenta.detalles && selectedVenta.detalles.length > 0 ? (
               <div className='bg-white dark:bg-slate-900/40 border border-gray-100 dark:border-gray-800 rounded-3xl overflow-hidden'>
                 <div className='divide-y divide-gray-100 dark:divide-gray-800'>
-                  {selectedVenta.detalles.map((det, idx) => (
+                  {productosVendidos.map((det, idx) => (
                     <div
                       key={idx}
                       className='flex items-center justify-between px-5 py-3.5 hover:bg-gray-50/50 dark:hover:bg-slate-800/50 transition-colors'
@@ -349,6 +351,15 @@ export function SalesDetailModal({
               </div>
             )}
           </div>
+          <SalesDistribution
+            title='Distribución de comisión entre anfitrionas'
+            rows={selectedVenta.comisiones_detalle ?? []}
+            defaultRole='Anfitriona'
+          />
+          <SalesDistribution
+            title='Distribución de propina entre garzones, cajeros y barman'
+            rows={selectedVenta.propinas_detalle ?? []}
+          />
         </div>
 
         {}

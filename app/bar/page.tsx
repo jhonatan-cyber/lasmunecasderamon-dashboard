@@ -21,6 +21,7 @@ import { useCurrentUser } from '@/hooks/auth/useCurrentUser';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
+import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
 import { cn } from '@/lib/utils/utils';
 import {
@@ -44,8 +45,11 @@ import { useSharedSSE } from '@/hooks/shared';
 import type { DevolucionEnvaseRegistro, ShotsSummary } from '@/modules/inventario/contracts';
 import { useContainerScan, MOTIVO_ENVASE } from '@/hooks/productos/useContainerScan';
 import { EscaneoLote } from '@/components/products/EscaneoLote';
+import { ProductImageLightbox } from '@/components/products/ProductImageLightbox';
 
 const isTierPriced = (item: BarStockItem) => isTierPricedItem(item);
+const barTabClassName =
+  'cursor-pointer rounded-full gap-1.5 transition-[background-color,color,box-shadow] duration-200 motion-reduce:transition-none data-[state=inactive]:hover:bg-accent data-[state=inactive]:hover:text-accent-foreground data-[state=active]:hover:bg-primary/10 data-[state=active]:hover:shadow-md data-[state=active]:hover:ring-1 data-[state=active]:hover:ring-primary/30';
 import type { TransferRecord } from '@/types/transfer';
 import { formatCurrencyCLP } from '@/lib/utils/formatters';
 
@@ -87,6 +91,7 @@ export default function BarPage() {
   const [search, setSearch] = useState('');
   const [stockFilter, setStockFilter] = useState('todos');
   const [showTableView, setShowTableView] = useState(false);
+  const [tablePhoto, setTablePhoto] = useState<{ src: string; alt: string } | null>(null);
   const [tab, setTab] = useState('productos');
   const shotMl = useConfig<number>('shot_ml');
   const botellaMl = useConfig<number>('botella_ml');
@@ -253,13 +258,13 @@ export default function BarPage() {
   );
 
   const filtered = useMemo(() => {
-    const enBar = items.filter(i => (i.stock_bar ?? 0) > 0);
     const term = search.trim().toLowerCase();
-    return enBar.filter(
+    return items.filter(
       i =>
         (stockFilter !== 'abiertas' || Number(i.ml_abierta ?? 0) > 0) &&
         (!term ||
           i.producto_nombre.toLowerCase().includes(term) ||
+          (i.categoria_nombre ?? '').toLowerCase().includes(term) ||
           i.nombre.toLowerCase().includes(term) ||
           (i.codigo_barras || '').toLowerCase().includes(term) ||
           (i.producto_codigo || '').toLowerCase().includes(term))
@@ -292,19 +297,19 @@ export default function BarPage() {
           <div className='flex min-w-0 flex-wrap items-center gap-3'>
             <div className='max-w-full shrink-0 overflow-x-auto pb-1 lg:pb-0'>
               <TabsList className='h-auto w-max min-w-full justify-start gap-1 rounded-full p-1 sm:min-w-0'>
-                <TabsTrigger value='productos' className='rounded-full'>
+                <TabsTrigger value='productos' className={barTabClassName}>
                   Productos
                 </TabsTrigger>
-                <TabsTrigger value='pendientes' className='rounded-full flex items-center gap-1.5'>
+                <TabsTrigger value='pendientes' className={barTabClassName}>
                   <Clock className='w-3.5 h-3.5' />
                   Pendientes{pendientes.length > 0 ? ` (${pendientes.length})` : ''}
                 </TabsTrigger>
-                <TabsTrigger value='historial' className='rounded-full flex items-center gap-1.5'>
+                <TabsTrigger value='historial' className={barTabClassName}>
                   <History className='w-3.5 h-3.5' />
                   Historial
                 </TabsTrigger>
                 {puedeDevolver && (
-                  <TabsTrigger value='envases' className='rounded-full flex items-center gap-1.5'>
+                  <TabsTrigger value='envases' className={barTabClassName}>
                     <ScanLine className='w-3.5 h-3.5' />
                     Envases
                   </TabsTrigger>
@@ -322,47 +327,64 @@ export default function BarPage() {
                   <Input
                     value={search}
                     onChange={e => setSearch(e.target.value)}
-                    placeholder='Buscar producto, presentación o código'
+                    placeholder='Buscar producto, categoría, presentación o código'
                     aria-label='Buscar productos del bar'
                     className='h-11 rounded-full pl-9 pr-11'
                   />
                   {search && (
-                    <Button
-                      variant='ghost'
-                      size='icon'
-                      className='absolute right-0 top-0 size-11 rounded-full'
-                      aria-label='Limpiar búsqueda'
-                      onClick={() => setSearch('')}
-                    >
-                      <X />
-                    </Button>
+                    <Tooltip>
+                      <TooltipTrigger asChild>
+                        <Button
+                          variant='ghost'
+                          size='icon'
+                          className='absolute right-0 top-0 size-11 rounded-full'
+                          aria-label='Limpiar búsqueda'
+                          onClick={() => setSearch('')}
+                        >
+                          <X />
+                        </Button>
+                      </TooltipTrigger>
+                      <TooltipContent>Limpiar búsqueda</TooltipContent>
+                    </Tooltip>
                   )}
                 </div>
-                <Button
-                  variant={stockFilter === 'abiertas' ? 'secondary' : 'outline'}
-                  className='h-11 shrink-0 gap-2 rounded-full'
-                  onClick={() =>
-                    setStockFilter(value => (value === 'todos' ? 'abiertas' : 'todos'))
-                  }
-                  aria-label='Filtrar solo botellas abiertas'
-                  aria-pressed={stockFilter === 'abiertas'}
-                  title={
-                    stockFilter === 'abiertas' ? 'Mostrar todos' : 'Mostrar solo botellas abiertas'
-                  }
-                >
-                  <Wine />
-                  {stockFilter === 'abiertas' ? 'Botellas abiertas' : 'Todos'}
-                </Button>
-                <Button
-                  variant='outline'
-                  className='h-11 shrink-0 gap-2 rounded-full'
-                  onClick={() => setShowTableView(value => !value)}
-                  aria-label={showTableView ? 'Cambiar a tarjetas' : 'Cambiar a tabla'}
-                  title={showTableView ? 'Cambiar a tarjetas' : 'Cambiar a tabla'}
-                >
-                  {showTableView ? <Grid3X3 /> : <TableIcon />}
-                  {showTableView ? 'Tarjetas' : 'Tabla'}
-                </Button>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Button
+                      variant={stockFilter === 'abiertas' ? 'secondary' : 'outline'}
+                      className='h-11 shrink-0 gap-2 rounded-full'
+                      onClick={() =>
+                        setStockFilter(value => (value === 'todos' ? 'abiertas' : 'todos'))
+                      }
+                      aria-label='Filtrar solo botellas abiertas'
+                      aria-pressed={stockFilter === 'abiertas'}
+                    >
+                      <Wine />
+                      {stockFilter === 'abiertas' ? 'Botellas abiertas' : 'Todos'}
+                    </Button>
+                  </TooltipTrigger>
+                  <TooltipContent>
+                    {stockFilter === 'abiertas'
+                      ? 'Mostrar todos'
+                      : 'Mostrar solo botellas abiertas'}
+                  </TooltipContent>
+                </Tooltip>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Button
+                      variant='outline'
+                      className='h-11 shrink-0 gap-2 rounded-full'
+                      onClick={() => setShowTableView(value => !value)}
+                      aria-label={showTableView ? 'Cambiar a tarjetas' : 'Cambiar a tabla'}
+                    >
+                      {showTableView ? <Grid3X3 /> : <TableIcon />}
+                      {showTableView ? 'Tarjetas' : 'Tabla'}
+                    </Button>
+                  </TooltipTrigger>
+                  <TooltipContent>
+                    {showTableView ? 'Cambiar a tarjetas' : 'Cambiar a tabla'}
+                  </TooltipContent>
+                </Tooltip>
               </div>
             )}
           </div>
@@ -389,9 +411,6 @@ export default function BarPage() {
                             Producto
                           </TableHead>
                           <TableHead className='py-4 px-5 text-xs uppercase text-gray-500'>
-                            Presentación
-                          </TableHead>
-                          <TableHead className='py-4 px-5 text-xs uppercase text-gray-500'>
                             Precio venta
                           </TableHead>
                           <TableHead className='py-4 px-5 text-xs uppercase text-gray-500'>
@@ -412,7 +431,7 @@ export default function BarPage() {
                         {filtered.length === 0 ? (
                           <TableRow key='empty'>
                             <TableCell
-                              colSpan={8}
+                              colSpan={7}
                               className='py-10 text-center text-sm text-muted-foreground'
                             >
                               {isLoading
@@ -449,26 +468,46 @@ export default function BarPage() {
                                 className='border-b transition-colors hover:bg-muted/50'
                               >
                                 <TableCell className='py-3 px-2 sm:px-4 text-center'>
-                                  <div
-                                    data-photo-surface
-                                    className='relative mx-auto flex h-12 w-12 items-center justify-center overflow-hidden rounded-xl border border-gray-100'
+                                  <button
+                                    type='button'
+                                    onClick={() =>
+                                      setTablePhoto({
+                                        src: imageUrl(item.foto || item.producto_foto),
+                                        alt: `${item.producto_nombre} ${item.nombre}`
+                                      })
+                                    }
+                                    aria-label={`Ver ${item.producto_nombre} ${item.nombre} en grande`}
+                                    className='mx-auto block cursor-zoom-in rounded-xl focus-visible:ring-2 focus-visible:ring-purple-500 focus-visible:outline-hidden'
                                   >
-                                    <ProductPhoto
-                                      src={imageUrl(item.foto || item.producto_foto)}
-                                      alt={`${item.producto_nombre} ${item.nombre}`}
-                                      width={48}
-                                      height={48}
-                                      className='h-12 w-12 object-contain p-0.5'
-                                    />
-                                  </div>
+                                    <div
+                                      data-photo-surface
+                                      className='relative mx-auto flex h-12 w-12 items-center justify-center overflow-hidden rounded-xl border border-gray-100'
+                                    >
+                                      <ProductPhoto
+                                        src={imageUrl(item.foto || item.producto_foto)}
+                                        alt={`${item.producto_nombre} ${item.nombre}`}
+                                        width={48}
+                                        height={48}
+                                        className='h-12 w-12 object-contain p-0.5'
+                                      />
+                                    </div>
+                                  </button>
                                 </TableCell>
                                 <TableCell className='py-3 px-2 sm:px-4 text-center text-xs sm:text-sm font-medium'>
-                                  {item.producto_nombre}
-                                </TableCell>
-                                <TableCell className='py-3 px-2 sm:px-4 text-center text-xs sm:text-sm'>
-                                  <span className='inline-flex rounded-full bg-gray-100 dark:bg-slate-800 px-2.5 py-0.5 font-medium whitespace-nowrap'>
-                                    {item.nombre}
-                                  </span>
+                                  <div className='flex flex-wrap items-center justify-center gap-2'>
+                                    {item.categoria_nombre?.trim() && (
+                                      <Badge
+                                        variant='outline'
+                                        className='max-w-full break-words whitespace-normal'
+                                      >
+                                        {item.categoria_nombre}
+                                      </Badge>
+                                    )}
+                                    <span>{item.producto_nombre}</span>
+                                    <span className='inline-flex shrink-0 rounded-full bg-gray-100 dark:bg-slate-800 px-2.5 py-0.5 font-medium whitespace-nowrap'>
+                                      {item.nombre}
+                                    </span>
+                                  </div>
                                 </TableCell>
                                 <TableCell className='py-3 px-2 sm:px-4 text-center font-mono text-xs sm:text-sm'>
                                   {isTierPriced(item) ? (
@@ -508,8 +547,10 @@ export default function BarPage() {
                                   />
                                 </TableCell>
                                 <TableCell className='py-3 px-2 sm:px-4 text-center'>
-                                  <Badge className='bg-green-100 text-green-700 rounded-full px-2 sm:px-3 py-1 text-xs sm:text-sm'>
-                                    {item.stock_bar ?? 0}
+                                  <Badge
+                                    className={`rounded-full px-2 sm:px-3 py-1 text-xs sm:text-sm ${Number(item.stock_bar ?? 0) > 0 ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'}`}
+                                  >
+                                    {Number(item.stock_bar ?? 0) > 0 ? item.stock_bar : 'Agotado'}
                                   </Badge>
                                   {Number(item.ml_abierta ?? 0) > 0 && (
                                     <p className='mt-1 text-[10px] font-bold uppercase text-amber-600 dark:text-amber-400'>
@@ -526,8 +567,10 @@ export default function BarPage() {
                                   )}
                                 </TableCell>
                                 <TableCell className='py-3 px-2 sm:px-4 text-center'>
-                                  <Badge className='bg-blue-100 text-blue-700 rounded-full px-2 sm:px-3 py-1 text-xs sm:text-sm'>
-                                    {item.stock ?? 0}
+                                  <Badge
+                                    className={`rounded-full px-2 sm:px-3 py-1 text-xs sm:text-sm ${Number(item.stock ?? 0) > 0 ? 'bg-blue-100 text-blue-700' : 'bg-red-100 text-red-700'}`}
+                                  >
+                                    {Number(item.stock ?? 0) > 0 ? item.stock : 'Agotado'}
                                   </Badge>
                                 </TableCell>
                               </TableRow>
@@ -553,7 +596,7 @@ export default function BarPage() {
                       <p className='max-w-sm text-sm text-muted-foreground'>
                         {search || stockFilter !== 'todos'
                           ? 'Prueba con otro nombre o código, o limpia los filtros para ver todas las presentaciones.'
-                          : 'Los productos aparecerán aquí cuando tengan existencias en el bar.'}
+                          : 'Los productos aparecerán aquí cuando se registren sus presentaciones.'}
                       </p>
                       {(search || stockFilter !== 'todos') && (
                         <Button
@@ -569,14 +612,22 @@ export default function BarPage() {
                     </div>
                   ) : (
                     <div className='grid grid-cols-[repeat(auto-fill,minmax(min(100%,250px),1fr))] gap-4 sm:gap-5'>
-                      {filtered.map(item => (
-                        <BarCard key={item.id} item={item} />
+                      {filtered.map((item, index) => (
+                        <BarCard key={item.id} item={item} entranceIndex={index} />
                       ))}
                     </div>
                   )}
                 </>
               )}
             </BoneyardSkeleton>
+            <ProductImageLightbox
+              open={Boolean(tablePhoto)}
+              onOpenChange={open => {
+                if (!open) setTablePhoto(null);
+              }}
+              src={tablePhoto?.src ?? ''}
+              alt={tablePhoto?.alt ?? ''}
+            />
           </TabsContent>
 
           <TabsContent value='pendientes' className='mt-4'>

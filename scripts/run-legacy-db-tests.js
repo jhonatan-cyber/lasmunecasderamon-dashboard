@@ -11,8 +11,13 @@ const DB_PORT = process.env.DB_PORT || '5432';
 const DB_USER = process.env.DB_USER || 'postgres';
 const DB_PASSWORD = process.env.DB_PASSWORD || '';
 const DB_NAME = process.env.DB_NAME || 'lasmunecasderamon';
-if (DB_NAME !== 'lasmunecasderamon')
-  throw new Error('Integration tests require DB_NAME=lasmunecasderamon');
+if (
+  DB_NAME !== 'lasmunecasderamon' &&
+  !(process.env.CI === 'true' && DB_NAME === 'lasmunecasderamon_test')
+)
+  throw new Error(
+    'Integration tests require DB_NAME=lasmunecasderamon, or lasmunecasderamon_test with CI=true'
+  );
 
 // Guarda de seguridad: aborta si DB_HOST no es loopback (nunca producción por
 // accidente). loadDotenv:false — el runner resuelve sus propios defaults.

@@ -2,6 +2,8 @@ import { withPublicRoute } from '@/lib/api';
 import { ApiResponse } from '@/lib/api';
 import logger from '@/lib/utils/logger';
 
+export const GET = withPublicRoute(async () => ApiResponse.success({ status: 'ok' }));
+
 export const POST = withPublicRoute(async (request: Request) => {
   const body = await request.json().catch(() => ({}));
   logger.info('[PING][CLIENT_MOUNT]', {

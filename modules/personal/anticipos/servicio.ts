@@ -29,14 +29,16 @@ import * as repositorio from './repositorio';
 
 export async function solicitarAnticipo(
   usuarioId: string,
-  entrada: EntradaSolicitudAnticipo
+  entrada: EntradaSolicitudAnticipo,
+  solicitadoPor?: string
 ): Promise<SolicitudAnticipoRegistrada> {
   const validated = AnticipoRequestSchema.parse(entrada);
   return repositorio.requestAnticipo(
     usuarioId,
     validated.monto,
     validated.motivo,
-    validated.device_date
+    validated.device_date,
+    solicitadoPor
   );
 }
 
@@ -55,7 +57,8 @@ export async function otorgarAnticipo(
   deviceDate?: string,
   adminId?: string | number
 ): Promise<AnticipoRegistrado | null> {
-  if (monto <= 0) throw new ValidationError('El monto debe ser positivo', { monto });
+  if (!Number.isFinite(monto) || monto <= 0)
+    throw new ValidationError('El monto debe ser positivo y finito', { monto });
   const tareas: Array<() => void | Promise<void>> = [];
   const resultado = await enUnaUnidad(unidad =>
     unidad.ejecutar(contexto =>
@@ -114,9 +117,10 @@ export async function obtenerSolicitudAnticipoPorId(idAnticipo: string) {
 export async function procesarSolicitud(
   id: string,
   accion: 'approve' | 'reject',
-  adminId?: string
+  adminId?: string,
+  montoEsperado?: number
 ): Promise<ResultadoProceso> {
-  return repositorio.processSolicitudAnticipo(id, accion, adminId);
+  return repositorio.processSolicitudAnticipo(id, accion, adminId, montoEsperado);
 }
 
 export async function procesarSolicitudDeTexto(
@@ -129,12 +133,19 @@ export async function procesarSolicitudDeTexto(
 
 export async function entregarAnticipo(
   id: string,
-  entregadoPor: string
+  entregadoPor: string,
+  montoEsperado?: number
 ): Promise<ResultadoProceso> {
   const tareas: Array<() => void | Promise<void>> = [];
   const resultado = await enUnaUnidad(unidad =>
     unidad.ejecutar(contexto =>
-      repositorio.deliverAnticipo(id, entregadoPor, contexto, tarea => tareas.push(tarea))
+      repositorio.deliverAnticipo(
+        id,
+        entregadoPor,
+        contexto,
+        tarea => tareas.push(tarea),
+        montoEsperado
+      )
     )
   );
   await ejecutarEfectosConfirmados(tareas);

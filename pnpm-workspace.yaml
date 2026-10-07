@@ -1,45 +1,48 @@
 packages:
-  - '.'
-  - 'mcp'
-
+  - .
+  - mcp
+ignoredBuiltDependencies:
+  - '@scarf/scarf'
+  - '@tree-sitter-grammars/tree-sitter-yaml'
+  - argon2
+  - core-js
+  - core-js-pure
+  - esbuild
+  - sharp
+  - tree-sitter
+  - tree-sitter-json
+  - unrs-resolver
 onlyBuiltDependencies:
-  - 'ffmpeg-static'
-
+  - ffmpeg-static
 overrides:
-  axios: '1.18.0'
-  jspdf: '4.2.1'
-  js-yaml: '4.3.2'
-  glob: '10.5.0'
-  rimraf: '^6.1.2'
-  jws: '3.2.3'
-  prismjs: '1.30.0'
-  sweetalert2: '11.22.4'
-  fast-xml-parser: '5.4.0'
-  serialize-javascript: '7.0.3'
-  minimatch@3: '3.1.4'
-  minimatch@5: '5.1.8'
-  minimatch@7: '7.4.7'
-  fast-uri: '3.1.6'
-  brace-expansion: '1.1.18'
-  baseline-browser-mapping: '2.11.0'
-  undici: '7.29.0'
-  nanoid: '3.3.18'
-  immutable: '3.8.4'
-  qs: '6.16.0'
-
+  axios: 1.20.0
+  baseline-browser-mapping: 2.11.0
+  fast-uri: 3.1.7
+  fast-xml-parser: 5.4.0
+  glob: 10.5.0
+  immutable: 3.8.4
+  js-yaml: 4.3.2
+  jspdf: 4.2.1
+  jws: 3.2.3
+  minimatch@3: 3.1.4
+  minimatch@5: 5.1.8
+  minimatch@7: 7.4.7
+  nanoid: 3.3.18
+  prismjs: 1.30.0
+  qs: 6.16.0
+  rimraf: ^6.1.2
+  serialize-javascript: 7.0.3
+  sweetalert2: 11.22.4
+  undici: 7.29.1
+  source-map-js: 1.2.2
+  tinypool: 2.1.2
+  brace-expansion@1: 1.1.20
+patchedDependencies:
+  braces@3.0.3: patches/braces@3.0.3.patch
 peerDependencyRules:
   allowedVersions:
     react: '>=19'
     react-dom: '>=19'
-
-ignoredBuiltDependencies:
-  - '@scarf/scarf'
-  - '@tree-sitter-grammars/tree-sitter-yaml'
-  - 'argon2'
-  - 'core-js'
-  - 'core-js-pure'
-  - 'esbuild'
-  - 'sharp'
-  - 'tree-sitter'
-  - 'tree-sitter-json'
-  - 'unrs-resolver'
+auditConfig:
+  ignoreCves:
+    - CVE-2026-93687

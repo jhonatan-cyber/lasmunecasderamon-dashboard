@@ -4,6 +4,7 @@ import { GratificacionService } from '@/modules/personal/gratificaciones/servici
 vi.mock('@/modules/personal/gratificaciones/repositorio', () => ({
   GratificacionRepository: {
     create: vi.fn(),
+    request: vi.fn(),
     getAll: vi.fn(),
     getSolicitudDetalle: vi.fn(),
     processSolicitud: vi.fn(),
@@ -23,6 +24,18 @@ beforeEach(() => {
 });
 
 describe('GratificacionService.create', () => {
+  it.each([NaN, Infinity, -Infinity])(
+    'rechaza montos no finitos al crear, solicitar y editar: %s',
+    async monto => {
+      await expect(GratificacionService.create({ usuario_id: 'user-1', monto })).rejects.toThrow(
+        /positivo/
+      );
+      await expect(GratificacionService.request('user-1', monto)).rejects.toThrow(/positivo/);
+      await expect(GratificacionService.update('g1', { monto })).rejects.toThrow(/positivo/);
+      expect(GratificacionRepository.create).not.toHaveBeenCalled();
+      expect(GratificacionRepository.update).not.toHaveBeenCalled();
+    }
+  );
   it('throws if usuario_id is empty', async () => {
     await expect(GratificacionService.create({ usuario_id: '', monto: 1000 })).rejects.toThrow(
       'Usuario es requerido'
@@ -124,12 +137,31 @@ describe('GratificacionService.getAll', () => {
 });
 
 describe('GratificacionService.processSolicitud', () => {
+  it('MCP crea una solicitud pendiente independiente y conserva al administrador solicitante', async () => {
+    vi.mocked(GratificacionRepository.request).mockResolvedValue({ id: 'g1', estado: 2 } as any);
+    const result = await GratificacionService.solicitarParaUsuario(
+      'empleado',
+      100,
+      'Bono',
+      'admin'
+    );
+    expect(GratificacionRepository.request).toHaveBeenCalledWith(
+      'empleado',
+      100,
+      'Bono',
+      'admin',
+      false
+    );
+    expect(GratificacionRepository.create).not.toHaveBeenCalled();
+    expect(result).toMatchObject({ estado: 2 });
+  });
   it('calls repository with id and action', async () => {
     await GratificacionService.processSolicitud('gr-1', 'approve', 'admin-1');
     expect(GratificacionRepository.processSolicitud).toHaveBeenCalledWith(
       'gr-1',
       'approve',
-      'admin-1'
+      'admin-1',
+      undefined
     );
   });
 });

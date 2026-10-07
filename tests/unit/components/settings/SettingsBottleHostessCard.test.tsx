@@ -5,6 +5,19 @@ import { SettingsBottleHostessCard } from '@/components/settings/SettingsBottleH
 import { invalidateSettingsProducts } from '@/hooks/settings/useSettingsProducts';
 
 vi.mock('sonner', () => ({ toast: { success: vi.fn(), error: vi.fn() } }));
+vi.mock('@/components/ui/popover', () => ({
+  Popover: ({ children }: any) => <div>{children}</div>,
+  PopoverTrigger: ({ children }: any) => children,
+  PopoverContent: ({ children }: any) => <div>{children}</div>
+}));
+vi.mock('@/components/ui/command', () => ({
+  Command: ({ children }: any) => <div>{children}</div>,
+  CommandInput: (props: any) => <input {...props} />,
+  CommandList: ({ children }: any) => <div>{children}</div>,
+  CommandEmpty: () => null,
+  CommandGroup: ({ children }: any) => <div>{children}</div>,
+  CommandItem: ({ children, onSelect }: any) => <button onClick={onSelect}>{children}</button>
+}));
 
 afterEach(() => {
   cleanup();
@@ -46,9 +59,13 @@ const productos = [
 
 describe('SettingsBottleHostessCard', () => {
   it('lista solo productos del bar que se venden por botella, guarda y vuelve al default', async () => {
+    invalidateSettingsProducts();
     let getCount = 0;
     const request = vi.fn(async (url: string, init?: any) => {
-      if (init?.method === 'PUT') return { ok: true, json: async () => ({ success: true }) };
+      if (init?.method === 'PUT' || init?.method === 'PATCH')
+        return { ok: true, json: async () => ({ success: true }) };
+      if (String(url).includes('/tiers'))
+        return { ok: true, json: async () => ({ success: true, data: [] }) };
       if (String(url).includes('/api/bar')) {
         return {
           ok: true,
@@ -56,6 +73,8 @@ describe('SettingsBottleHostessCard', () => {
             success: true,
             data: [
               {
+                id: 'pres-p1',
+                nombre: '750ml',
                 producto_id: 'p1',
                 opciones_venta: [
                   { tipo: 'botella', precio: 200000, comision: 10000 },
@@ -79,28 +98,39 @@ describe('SettingsBottleHostessCard', () => {
     vi.stubGlobal('fetch', request);
 
     render(<SettingsBottleHostessCard />);
-    await waitFor(() => expect(screen.getByLabelText('Producto')).toBeInTheDocument());
+    await waitFor(() =>
+      expect(screen.getByLabelText('Producto y presentación')).toBeInTheDocument()
+    );
     // Solo botella del bar; el solo-shot y el solo-almacén no se listan.
     expect(screen.queryByText(/Solo shot/)).not.toBeInTheDocument();
     expect(screen.queryByText(/Solo almacén/)).not.toBeInTheDocument();
     // El listado muestra el precio y al elegir se cargan precio y comisión.
-    expect(screen.getByRole('option', { name: /Whisky.*200\.000/ })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /Whisky.*200\.000/ })).toBeInTheDocument();
     await waitFor(() => expect(screen.getByLabelText('Precio venta')).toHaveValue('200.000'));
     expect(screen.getByLabelText('Comisión')).toHaveValue('10.000');
     expect(screen.getByText(/Vigente:/).textContent).toMatch(/regla por defecto/);
 
     fireEvent.change(screen.getByLabelText('Máx. anfitrionas'), { target: { value: '3' } });
+    await screen.findByLabelText('Precio para 3 anfitrionas');
     fireEvent.change(screen.getByLabelText('Comisión'), { target: { value: '12000' } });
     fireEvent.click(screen.getByRole('button', { name: /Guardar Cambios/ }));
 
     await waitFor(() => {
-      const put = request.mock.calls.find(args => args[1]?.method === 'PUT');
-      expect(put?.[0]).toBe('/api/products/p1');
-      expect(JSON.parse(put![1].body)).toEqual({
-        precio: 200000,
+      const patch = request.mock.calls.find(args => args[1]?.method === 'PATCH');
+      expect(patch?.[0]).toBe('/api/products/presentations');
+      expect(JSON.parse(patch![1].body)).toEqual({
+        id: 'pres-p1',
+        precio_venta: 200000,
         comision: 12000,
-        max_anfitrionas: 3
+        opciones_venta: [
+          { tipo: 'botella', precio: 200000, comision: 12000 },
+          { tipo: 'shot', precio: 5000, comision: 1000 }
+        ]
       });
+      const productPut = request.mock.calls.find(
+        args => args[0] === '/api/products/p1' && args[1]?.method === 'PUT'
+      );
+      expect(JSON.parse(productPut![1].body)).toEqual({ max_anfitrionas: 3 });
     });
     await waitFor(() => expect(screen.getByText(/Vigente:/).textContent).toMatch(/Máx\. 3 anf\./));
 
@@ -121,7 +151,7 @@ describe('SettingsBottleHostessCard', () => {
           ok: true,
           json: async () => ({
             success: true,
-            data: [{ anfitrionas: 1, precio: 120000, comision: 20000 }]
+            data: [{ anfitrionas: 2, precio: 160000, comision: 20000 }]
           })
         };
       }
@@ -132,6 +162,8 @@ describe('SettingsBottleHostessCard', () => {
             success: true,
             data: [
               {
+                id: 'pres-p9',
+                nombre: '750ml',
                 producto_id: 'p9',
                 opciones_venta: [{ tipo: 'botella', precio: 120000, comision: 20000 }]
               }
@@ -151,7 +183,7 @@ describe('SettingsBottleHostessCard', () => {
               categoria: 'Champagne',
               price: 120000,
               commission: 20000,
-              max_anfitrionas: null,
+              max_anfitrionas: 2,
               status: 1
             }
           ]
@@ -162,19 +194,22 @@ describe('SettingsBottleHostessCard', () => {
 
     render(<SettingsBottleHostessCard />);
     await waitFor(() =>
-      expect(screen.getByLabelText('Precio para 1 anfitrionas')).toHaveValue('120.000')
+      expect(screen.getByLabelText('Precio para 2 anfitrionas')).toHaveValue('160.000')
     );
-    fireEvent.change(screen.getByLabelText('Precio para 1 anfitrionas'), {
-      target: { value: '130000' }
+    fireEvent.change(screen.getByLabelText('Precio para 2 anfitrionas'), {
+      target: { value: '170000' }
     });
-    fireEvent.click(screen.getByRole('button', { name: /Guardar precios/ }));
+    fireEvent.click(screen.getByRole('button', { name: /Guardar Cambios/ }));
     await waitFor(() => {
       const put = request.mock.calls.find(
         args => args[1]?.method === 'PUT' && String(args[0]).includes('/tiers')
       );
       expect(put?.[0]).toBe('/api/products/p9/tiers');
       expect(JSON.parse(put![1].body)).toEqual({
-        tiers: [{ anfitrionas: 1, precio: 130000, comision: 20000 }]
+        tiers: [
+          { anfitrionas: 1, precio: 120000, comision: 40000 },
+          { anfitrionas: 2, precio: 170000, comision: 20000 }
+        ]
       });
     });
   });

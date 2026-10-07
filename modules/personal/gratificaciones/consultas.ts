@@ -124,7 +124,8 @@ export async function requestGratificacion(
   targetUserId: string,
   monto: number,
   descripcion: string | undefined,
-  requestedByUserId: string
+  requestedByUserId: string,
+  vincularAnticipo = true
 ) {
   try {
     const tableCheck = await query<any[]>(
@@ -177,21 +178,25 @@ export async function requestGratificacion(
       fecha_crea: now
     });
 
-    await BaseRepository.insert(query, 'anticipos', {
-      id_anticipo: id,
-      usuario_id: targetUserId,
-      monto,
-      motivo: `Gratificación: ${descripcion || 'Sin descripción'}`,
-      estado: 2,
-      fecha_crea: now
-    });
+    // El MCP crea una gratificación independiente. La compatibilidad histórica
+    // mantiene el espejo sólo para los llamadores que todavía lo necesitan.
+    if (vincularAnticipo) {
+      await BaseRepository.insert(query, 'anticipos', {
+        id_anticipo: id,
+        usuario_id: targetUserId,
+        monto,
+        motivo: `Gratificación: ${descripcion || 'Sin descripción'}`,
+        estado: 2,
+        fecha_crea: now
+      });
 
-    await BaseRepository.insert(query, 'anticipo_historial', {
-      anticipo_id: id,
-      accion: 'solicitud',
-      usuario_id: targetUserId,
-      fecha_crea: now
-    });
+      await BaseRepository.insert(query, 'anticipo_historial', {
+        anticipo_id: id,
+        accion: 'solicitud',
+        usuario_id: requestedByUserId,
+        fecha_crea: now
+      });
+    }
 
     const adminWhatsApp = await getAdminWhatsApp();
     const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || '';
@@ -230,15 +235,16 @@ ${
       fecha_crea: now
     });
 
-    sendNotificationToAll('new_anticipo_request', {
-      id,
-      usuario_id: targetUserId,
-      monto,
-      motivo: `Gratificación: ${descripcion || 'Sin descripción'}`,
-      empleado: `${target.nombre} ${target.apellido}`,
-      nick: target.nick || null,
-      fecha_crea: now
-    });
+    if (vincularAnticipo)
+      sendNotificationToAll('new_anticipo_request', {
+        id,
+        usuario_id: targetUserId,
+        monto,
+        motivo: `Gratificación: ${descripcion || 'Sin descripción'}`,
+        empleado: `${target.nombre} ${target.apellido}`,
+        nick: target.nick || null,
+        fecha_crea: now
+      });
 
     await sendPushByRole(
       'administrador',
@@ -303,7 +309,8 @@ export async function getGratificacionSolicitudDetalle(id: string) {
 export async function processGratificacionSolicitud(
   id: string,
   action: GratificacionAction,
-  adminId?: string
+  adminId?: string,
+  montoEsperado?: number
 ) {
   try {
     return await withTransaction(async trx => {
@@ -315,7 +322,7 @@ export async function processGratificacionSolicitud(
       FROM gratificaciones g
       INNER JOIN usuarios u ON u.id_usuario = g.usuario_id
       WHERE g.id = ?
-      LIMIT 1
+      LIMIT 1 FOR UPDATE OF g
     `,
         [id]
       );
@@ -323,6 +330,8 @@ export async function processGratificacionSolicitud(
       if (rows.length === 0) throw new NotFoundError('Solicitud de gratificación', id);
 
       const solicitud = rows[0];
+      if (montoEsperado !== undefined && Number(solicitud.monto) !== montoEsperado)
+        throw new BusinessError('El monto cambió; consulta el detalle nuevamente');
       if (Number(solicitud.estado) !== 2) {
         throw new BusinessError(
           'La solicitud ya fue procesada anteriormente',

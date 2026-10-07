@@ -1,7 +1,8 @@
 'use client';
 
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import { ProductPhoto } from '@/components/shared/ProductPhoto';
+import { InteractiveProductPhoto } from '@/components/shared/InteractiveProductPhoto';
+import { StaggeredEntrance } from '@/components/shared/StaggeredEntrance';
 import { ArrowRight, ArrowRightLeft, Check, Clock, Loader2, RefreshCw, X } from 'lucide-react';
 import { PermissionGuard } from '@/components/auth/PermissionGuard';
 import { useCurrentUser } from '@/hooks/auth/useCurrentUser';
@@ -55,20 +56,13 @@ function TransferPhoto({ item }: { item: BarStockItem }) {
     : '/img/products/default.png';
 
   return (
-    <div
-      data-photo-surface
-      className='relative aspect-square w-full shrink-0 overflow-hidden rounded-xl sm:aspect-4/3'
-    >
-      <ProductPhoto
-        src={src}
-        alt={`${item.producto_nombre} — ${item.nombre}`}
-        fill
-        className='object-contain p-3'
-        onError={() => {
-          if (photo) setFailed(previous => [...previous, photo]);
-        }}
-      />
-    </div>
+    <InteractiveProductPhoto
+      src={src}
+      alt={`${item.producto_nombre} — ${item.nombre}`}
+      containerClassName='relative aspect-square w-full shrink-0 overflow-hidden rounded-xl sm:aspect-4/3'
+      photoClassName='object-contain p-3'
+      onError={photo ? () => setFailed(previous => [...previous, photo]) : undefined}
+    />
   );
 }
 
@@ -356,67 +350,71 @@ function TransfersContent() {
                       : 'Registra productos y presentaciones en Almacén para comenzar.'}
                   </p>
                 ) : (
-                  visibleItems.map(item => (
-                    <Card key={item.id} className='flex h-full min-w-0 flex-col rounded-2xl'>
-                      <CardHeader className='flex-row items-start justify-between gap-2 space-y-0 p-3 pb-2'>
-                        <CardTitle
-                          className='min-w-0 flex-1 line-clamp-2 text-sm leading-5'
-                          title={item.producto_nombre}
-                        >
-                          {item.producto_nombre}
-                        </CardTitle>
-                        <Badge
-                          variant='secondary'
-                          className='max-w-[45%] shrink-0 whitespace-normal break-words'
-                        >
-                          {item.nombre}
-                        </Badge>
-                      </CardHeader>
-                      <CardContent className='flex flex-1 flex-col gap-2 px-3 pb-3'>
-                        <CardDescription className='text-xs break-words'>
-                          Categoría: {item.categoria_nombre?.trim() || 'Sin categoría'}
-                        </CardDescription>
-                        <TransferPhoto item={item} />
-                        <CardDescription
-                          className='truncate text-center text-xs'
-                          title={item.codigo_barras || item.producto_codigo}
-                        >
-                          Código: {item.codigo_barras || item.producto_codigo || 'Sin código'}
-                        </CardDescription>
-                        <dl className='mt-auto grid grid-cols-2 gap-2 rounded-lg bg-muted/50 p-2 text-center'>
-                          <div>
-                            <dt className='text-xs text-muted-foreground'>Almacén</dt>
-                            <dd className='text-base font-semibold tabular-nums'>{item.stock}</dd>
-                          </div>
-                          <div>
-                            <dt className='text-xs text-muted-foreground'>Bar</dt>
-                            <dd className='text-base font-semibold tabular-nums'>
-                              {item.stock_bar ?? 0}
-                            </dd>
-                          </div>
-                        </dl>
-                      </CardContent>
-                      <CardFooter className='px-3 pb-3'>
-                        <PermissionGuard
-                          module='products'
-                          action='accept_transfer'
-                          fallback={
-                            <span className='text-sm text-muted-foreground'>Solo consulta</span>
-                          }
-                        >
-                          <Button
-                            variant='outline'
-                            className='w-full gap-1 rounded-full px-2 text-xs'
-                            disabled={item.stock < 1 || !!error}
-                            onClick={() => setSelected(item)}
-                            aria-label={['Transferir', item.producto_nombre, item.nombre].join(' ')}
+                  visibleItems.map((item, index) => (
+                    <StaggeredEntrance key={item.id} index={index} className='h-full'>
+                      <Card className='flex h-full min-w-0 flex-col rounded-2xl'>
+                        <CardHeader className='flex-row items-start justify-between gap-2 space-y-0 p-3 pb-2'>
+                          <CardTitle
+                            className='min-w-0 flex-1 line-clamp-2 text-sm leading-5'
+                            title={item.producto_nombre}
                           >
-                            <ArrowRightLeft aria-hidden='true' />
-                            {item.stock > 0 ? 'Transferir' : 'Sin stock'}
-                          </Button>
-                        </PermissionGuard>
-                      </CardFooter>
-                    </Card>
+                            {item.producto_nombre}
+                          </CardTitle>
+                          <Badge
+                            variant='secondary'
+                            className='max-w-[45%] shrink-0 whitespace-normal break-words'
+                          >
+                            {item.nombre}
+                          </Badge>
+                        </CardHeader>
+                        <CardContent className='flex flex-1 flex-col gap-2 px-3 pb-3'>
+                          <CardDescription className='text-xs break-words'>
+                            Categoría: {item.categoria_nombre?.trim() || 'Sin categoría'}
+                          </CardDescription>
+                          <TransferPhoto item={item} />
+                          <CardDescription
+                            className='truncate text-center text-xs'
+                            title={item.codigo_barras || item.producto_codigo}
+                          >
+                            Código: {item.codigo_barras || item.producto_codigo || 'Sin código'}
+                          </CardDescription>
+                          <dl className='mt-auto grid grid-cols-2 gap-2 rounded-lg bg-muted/50 p-2 text-center'>
+                            <div>
+                              <dt className='text-xs text-muted-foreground'>Almacén</dt>
+                              <dd className='text-base font-semibold tabular-nums'>{item.stock}</dd>
+                            </div>
+                            <div>
+                              <dt className='text-xs text-muted-foreground'>Bar</dt>
+                              <dd className='text-base font-semibold tabular-nums'>
+                                {item.stock_bar ?? 0}
+                              </dd>
+                            </div>
+                          </dl>
+                        </CardContent>
+                        <CardFooter className='px-3 pb-3'>
+                          <PermissionGuard
+                            module='products'
+                            action='accept_transfer'
+                            fallback={
+                              <span className='text-sm text-muted-foreground'>Solo consulta</span>
+                            }
+                          >
+                            <Button
+                              variant='outline'
+                              className='w-full gap-1 rounded-full px-2 text-xs'
+                              disabled={item.stock < 1 || !!error}
+                              onClick={() => setSelected(item)}
+                              aria-label={['Transferir', item.producto_nombre, item.nombre].join(
+                                ' '
+                              )}
+                            >
+                              <ArrowRightLeft aria-hidden='true' />
+                              {item.stock > 0 ? 'Transferir' : 'Sin stock'}
+                            </Button>
+                          </PermissionGuard>
+                        </CardFooter>
+                      </Card>
+                    </StaggeredEntrance>
                   ))
                 )}
               </div>

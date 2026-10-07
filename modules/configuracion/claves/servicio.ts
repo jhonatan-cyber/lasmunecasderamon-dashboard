@@ -35,7 +35,8 @@ export async function listarConfiguracionesAgrupadas(): Promise<ConfiguracionesP
 
     let value: string | number | boolean = config.valor;
     if (config.tipo === 'number') {
-      value = parseInt(config.valor) || 0;
+      const numericValue = Number(config.valor);
+      value = Number.isFinite(numericValue) ? numericValue : 0;
     } else if (config.tipo === 'boolean') {
       value = config.valor === 'true' || config.valor === '1' || config.valor === 'yes';
     }

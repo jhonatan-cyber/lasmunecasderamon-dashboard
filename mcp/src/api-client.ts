@@ -1,12 +1,19 @@
 import { config } from './config.js';
+import { siguientePaso } from './pasos.js';
+import { AsyncLocalStorage } from 'node:async_hooks';
 
-interface Sesion {
+export interface Sesion {
   token: string | null;
   refreshToken: string | null;
   expiraEn: number;
+  renovacion?: Promise<string>;
 }
 
-const sesion: Sesion = { token: null, refreshToken: null, expiraEn: 0 };
+const sesionLocal: Sesion = { token: null, refreshToken: null, expiraEn: 0 };
+const contextoSesion = new AsyncLocalStorage<Sesion>();
+export const conSesion = <T>(sesion: Sesion, accion: () => T): T =>
+  contextoSesion.run(sesion, accion);
+const sesionActual = () => contextoSesion.getStore() ?? sesionLocal;
 
 export class ApiError extends Error {
   constructor(
@@ -29,8 +36,12 @@ function expiracionDelJwt(token: string): number {
   }
 }
 
+export function sesionDelDashboard(token: string, refreshToken: string): Sesion {
+  return { token, refreshToken, expiraEn: expiracionDelJwt(token) };
+}
+
 async function bruto(
-  metodo: 'GET' | 'POST',
+  metodo: 'GET' | 'POST' | 'PUT' | 'PATCH' | 'DELETE',
   ruta: string,
   opciones: {
     query?: Record<string, string | number | undefined>;
@@ -42,31 +53,41 @@ async function bruto(
   for (const [k, v] of Object.entries(opciones.query ?? {})) {
     if (v !== undefined && v !== '') url.searchParams.set(k, String(v));
   }
+  // Sólo GET reintenta: es idempotente por definición, mientras que un POST
+  // puede mover dinero y un reintento duplicaría la operación.
+  const maxIntentos = metodo === 'GET' ? Math.max(1, config.reintentos) : 1;
   let respuesta: Response;
-  try {
-    respuesta = await fetch(url, {
-      method: metodo,
-      headers: {
-        ...(opciones.cuerpo !== undefined ? { 'Content-Type': 'application/json' } : {}),
-        ...opciones.cabeceras
-      },
-      body: opciones.cuerpo !== undefined ? JSON.stringify(opciones.cuerpo) : undefined,
-      signal: AbortSignal.timeout(config.tiempoRedMs)
-    });
-  } catch (error) {
-    const e = error as Error & { cause?: { code?: string } };
-    const timeout = e.name === 'TimeoutError' || e.name === 'AbortError';
-    const rechazado = e.cause?.code === 'ECONNREFUSED';
-    throw new ApiError(
-      timeout
-        ? `Tiempo de espera agotado (${config.tiempoRedMs} ms) al conectar con ${config.baseUrl}.`
-        : rechazado
-          ? `Conexión rechazada por ${config.baseUrl}. Comprueba que el dashboard esté iniciado.`
-          : `No se pudo conectar con ${config.baseUrl}. Comprueba la dirección y la red.`,
-      null,
-      undefined,
-      timeout ? 'TIMEOUT' : rechazado ? 'CONEXION_RECHAZADA' : 'ERROR_RED'
-    );
+  for (let intento = 1; ; intento++) {
+    try {
+      respuesta = await fetch(url, {
+        method: metodo,
+        headers: {
+          ...(opciones.cuerpo !== undefined ? { 'Content-Type': 'application/json' } : {}),
+          ...opciones.cabeceras
+        },
+        body: opciones.cuerpo !== undefined ? JSON.stringify(opciones.cuerpo) : undefined,
+        signal: AbortSignal.timeout(config.tiempoRedMs)
+      });
+    } catch (error) {
+      if (intento < maxIntentos) {
+        await esperarReintento(intento);
+        continue;
+      }
+      throw errorDeRed(error);
+    }
+    // 408/429/5xx son transitorios: el backend puede volver en el siguiente intento.
+    const transitorio =
+      respuesta.status === 408 || respuesta.status === 429 || respuesta.status >= 500;
+    if (intento < maxIntentos && transitorio) {
+      try {
+        await respuesta.body?.cancel();
+      } catch {
+        /* cuerpo descartado, no hay nada que conservar */
+      }
+      await esperarReintento(intento);
+      continue;
+    }
+    break;
   }
   let json: any = null;
   try {
@@ -86,7 +107,40 @@ async function bruto(
   return { estado: respuesta.status, json };
 }
 
+/** Error de red con el código que corresponde al tipo de fallo. */
+function errorDeRed(error: unknown): ApiError {
+  const e = error as Error & { cause?: { code?: string } };
+  const timeout = e?.name === 'TimeoutError' || e?.name === 'AbortError';
+  const rechazado = e?.cause?.code === 'ECONNREFUSED';
+  return new ApiError(
+    timeout
+      ? `Tiempo de espera agotado (${config.tiempoRedMs} ms) al conectar con ${config.baseUrl}.`
+      : rechazado
+        ? `Conexión rechazada por ${config.baseUrl}. Comprueba que el dashboard esté iniciado.`
+        : `No se pudo conectar con ${config.baseUrl}. Comprueba la dirección y la red.`,
+    null,
+    undefined,
+    timeout ? 'TIMEOUT' : rechazado ? 'CONEXION_RECHAZADA' : 'ERROR_RED'
+  );
+}
+
+/** Backoff exponencial con jitter: `base * 2^(intento-1)` + hasta una base más. */
+function esperarReintento(intento: number): Promise<void> {
+  if (config.reintentoBaseMs <= 0) return Promise.resolve();
+  const espera = config.reintentoBaseMs * 2 ** (intento - 1) + Math.random() * config.reintentoBaseMs;
+  return new Promise(resolve => setTimeout(resolve, espera));
+}
+
 async function iniciarSesion(): Promise<void> {
+  if (contextoSesion.getStore()) {
+    throw new ApiError(
+      'La sesión del dashboard expiró. Vuelve a autorizar el MCP.',
+      401,
+      undefined,
+      'SESION_RECHAZADA'
+    );
+  }
+  const sesion = sesionActual();
   if (!config.email || !config.password) {
     throw new ApiError(
       'Credenciales no configuradas: define MCP_EMAIL y MCP_PASSWORD en la configuración MCP del cliente.',
@@ -127,27 +181,59 @@ async function iniciarSesion(): Promise<void> {
   sesion.expiraEn = expiracionDelJwt(json.token);
 }
 
-async function renovar(): Promise<boolean> {
-  if (!sesion.refreshToken) return false;
-  const { estado, json } = await bruto('POST', '/api/auth/refresh', {
-    cabeceras: { 'x-refresh-token': sesion.refreshToken }
-  });
+type Renovacion = 'renovada' | 'invalida' | 'transitoria';
+
+async function renovar(): Promise<Renovacion> {
+  const sesion = sesionActual();
+  if (!sesion.refreshToken) return 'invalida';
+  let resultado: { estado: number; json: any };
+  try {
+    resultado = await bruto('POST', '/api/auth/refresh', {
+      cabeceras: { 'x-refresh-token': sesion.refreshToken }
+    });
+  } catch (error) {
+    if (error instanceof ApiError) return 'transitoria';
+    throw error;
+  }
+  const { estado, json } = resultado;
   if (estado !== 200 || !json?.token) {
+    // Solo el 401 descarta el refresh token: un 5xx o un corte de red no invalidan la sesión.
+    if (estado !== 401) return 'transitoria';
     sesion.refreshToken = null;
-    return false;
+    return 'invalida';
   }
   sesion.token = json.token as string;
   sesion.refreshToken = (json.refreshToken as string | undefined) ?? sesion.refreshToken;
   sesion.expiraEn = expiracionDelJwt(json.token);
-  return true;
+  return 'renovada';
 }
 
 async function autenticar(): Promise<string> {
+  const sesion = sesionActual();
   const margen = Date.now() + 30_000;
   if (sesion.token && sesion.expiraEn > margen) return sesion.token;
-  if (sesion.token && (await renovar())) return sesion.token!;
-  await iniciarSesion();
-  return sesion.token!;
+  if (sesion.renovacion) return sesion.renovacion;
+  sesion.renovacion = (async () => {
+    if (sesion.refreshToken) {
+      const renovacion = await renovar();
+      if (renovacion === 'renovada') return sesion.token!;
+      if (renovacion === 'transitoria') {
+        throw new ApiError(
+          'El dashboard no respondió al renovar la sesión. Reintenta en unos segundos.',
+          null,
+          undefined,
+          'REFRESH_FALLIDO'
+        );
+      }
+    }
+    await iniciarSesion();
+    return sesion.token!;
+  })();
+  try {
+    return await sesion.renovacion;
+  } finally {
+    delete sesion.renovacion;
+  }
 }
 
 /** Quita el sobre {success, data} cuando existe y devuelve el dato útil. */
@@ -165,10 +251,16 @@ function desenvolver(json: any): unknown {
 }
 
 export async function api<T = unknown>(
-  metodo: 'GET' | 'POST',
+  metodo: 'GET' | 'POST' | 'PUT' | 'PATCH' | 'DELETE',
   ruta: string,
-  opciones: { query?: Record<string, string | number | undefined>; cuerpo?: unknown } = {}
+  opciones: {
+    query?: Record<string, string | number | undefined>;
+    cuerpo?: unknown;
+    /** Cabeceras propias de la operación, p. ej. x-idempotency-key. */
+    cabeceras?: Record<string, string>;
+  } = {}
 ): Promise<T> {
+  const sesion = sesionActual();
   let token: string;
   try {
     token = await autenticar();
@@ -180,18 +272,19 @@ export async function api<T = unknown>(
     );
   }
 
-  let { estado, json } = await bruto(metodo, ruta, {
+  // La clave de idempotencia viaja siempre: se reintenta contra el mismo token
+  // de intención, o el backend trataría el reintento como una operación nueva.
+  const conToken = () => ({
     ...opciones,
-    cabeceras: { Authorization: `Bearer ${token}` }
+    cabeceras: { ...opciones.cabeceras, Authorization: `Bearer ${token}` }
   });
+
+  let { estado, json } = await bruto(metodo, ruta, conToken());
 
   if (estado === 401) {
     sesion.token = null;
     token = await autenticar();
-    ({ estado, json } = await bruto(metodo, ruta, {
-      ...opciones,
-      cabeceras: { Authorization: `Bearer ${token}` }
-    }));
+    ({ estado, json } = await bruto(metodo, ruta, conToken()));
   }
 
   if (estado >= 400) {
@@ -202,23 +295,38 @@ export async function api<T = unknown>(
       estado === 403 ? 'PERMISOS_INSUFICIENTES' : estado === 401 ? 'SESION_RECHAZADA' : 'ERROR_HTTP'
     );
   }
+  if (json?.success === false) {
+    throw new ApiError(json.message ?? json.error ?? 'La operación no se completó.', estado, json, 'OPERACION_RECHAZADA');
+  }
   return desenvolver(json) as T;
 }
 
 export async function ping() {
-  const { estado, json } = await bruto('GET', '/api/ping');
+  const token = sesionActual().token;
+  const { estado, json } = await bruto('GET', '/api/ping', {
+    ...(token ? { cabeceras: { Authorization: `Bearer ${token}` } } : {})
+  });
   return { estado, respuesta: json };
 }
 
 export async function diagnosticarConexion() {
   function detalle(error: unknown) {
-    return error instanceof ApiError
-      ? { codigo: error.codigo, estado: error.estado, mensaje: error.message }
-      : {
-          codigo: 'ERROR_INESPERADO',
-          estado: null,
-          mensaje: 'No se pudo completar el diagnóstico.'
-        };
+    const base =
+      error instanceof ApiError
+        ? { codigo: error.codigo, estado: error.estado, mensaje: error.message }
+        : {
+            codigo: 'ERROR_INESPERADO',
+            estado: null as number | null,
+            mensaje: 'No se pudo completar el diagnóstico.'
+          };
+    // Mismo contrato que las herramientas: código, estado, mensaje y paso.
+    return { ...base, siguientePaso: siguientePaso(base.codigo) };
+  }
+  let autenticacion;
+  try {
+    autenticacion = { ok: true, usuario: await api('GET', '/api/auth/me') };
+  } catch (error) {
+    autenticacion = { ok: false, error: detalle(error) };
   }
   let eco;
   try {
@@ -232,17 +340,12 @@ export async function diagnosticarConexion() {
             error: {
               codigo: 'ERROR_HTTP',
               estado: r.estado,
-              mensaje: `/api/ping respondió HTTP ${r.estado}.`
+              mensaje: `/api/ping respondió HTTP ${r.estado}.`,
+              siguientePaso: siguientePaso('ERROR_HTTP')
             }
           };
   } catch (error) {
     eco = { ok: false, error: detalle(error) };
-  }
-  let autenticacion;
-  try {
-    autenticacion = { ok: true, usuario: await api('GET', '/api/auth/me') };
-  } catch (error) {
-    autenticacion = { ok: false, error: detalle(error) };
   }
   return { destino: destino(), ok: eco.ok && autenticacion.ok, ping: eco, autenticacion };
 }

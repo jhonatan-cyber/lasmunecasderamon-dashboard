@@ -31,6 +31,9 @@ describe('SaleRepository.processAnulacion', () => {
       if (sql.includes('SELECT monto FROM solicitudes_anulacion_ventas')) {
         return [{ monto: 50 }];
       }
+      if (sql.includes('SELECT estado FROM solicitudes_anulacion_ventas')) {
+        return [{ estado: 'pendiente' }];
+      }
       if (
         sql.includes('FROM ventas') &&
         sql.includes('WHERE id_venta = ?') &&

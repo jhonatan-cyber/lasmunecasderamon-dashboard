@@ -9,6 +9,16 @@ const MAX_CACHE = 150;
 
 const processedCache = new Map<string, string>();
 
+function productImageSource(src: string): string {
+  if (!/^\/(?:api\/images|img)\/products\//.test(src)) return src;
+  const url = new URL(src, 'http://product-photo.local');
+  if (url.pathname.endsWith('/default.png')) return src;
+  url.pathname = url.pathname.replace(/^\/img\/products\//, '/api/images/products/');
+  url.searchParams.set('sin_fondo', '1');
+  url.searchParams.set('recorte', '2');
+  return `${url.pathname}${url.search}`;
+}
+
 function remember(src: string, dataUrl: string) {
   if (processedCache.size >= MAX_CACHE) {
     const oldest = processedCache.keys().next().value;
@@ -130,9 +140,20 @@ export function ProductPhoto({
   height,
   onError
 }: ProductPhotoProps) {
-  const [visibleSrc, setVisibleSrc] = useState<string>(() => processedCache.get(src) ?? src);
+  const [visibleSrc, setVisibleSrc] = useState<string>(
+    () => processedCache.get(src) ?? productImageSource(src)
+  );
 
   useEffect(() => {
+    if (src.endsWith('/default.png')) {
+      setVisibleSrc(src);
+      return;
+    }
+    const serverSource = productImageSource(src);
+    if (serverSource !== src) {
+      setVisibleSrc(serverSource);
+      return;
+    }
     const cached = processedCache.get(src);
     if (cached) {
       setVisibleSrc(cached);

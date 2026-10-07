@@ -68,10 +68,22 @@ test('diagnóstico y autenticación con backend simulado', async t => {
     assert.equal(r.structuredContent.ping.error.codigo, 'RESPUESTA_INVALIDA');
   });
   await t.test('conexión correcta devuelve datos estructurados', async () => {
-    globalThis.fetch = async url => new URL(url).pathname === '/api/auth/login' ? login() : json({ id: 1 });
+    let pingAutenticado = false;
+    globalThis.fetch = async (url, options) => {
+      const path = new URL(url).pathname;
+      if (path === '/api/auth/login') return login();
+      if (path === '/api/ping') {
+        assert.equal(options.method, 'GET');
+        assert.match(options.headers.Authorization, /^Bearer /);
+        pingAutenticado = true;
+        return json({ status: 'ok' });
+      }
+      return json({ id: 1 });
+    };
     const r = await herramientas.verificar_conexion.execute();
     assert.notEqual(r.isError, true);
     assert.equal(r.structuredContent.ok, true);
+    assert.equal(pingAutenticado, true);
     assert.deepEqual(JSON.parse(r.content[0].text), r.structuredContent);
   });
   await t.test('renueva token y rota refresh token', async () => {
@@ -89,6 +101,29 @@ test('diagnóstico y autenticación con backend simulado', async t => {
     const refresh = calls.filter(([path]) => path === '/api/auth/refresh');
     assert.equal(refresh.length, 2);
     assert.equal(refresh[0][1]['x-refresh-token'], 'refresh-inicial');
+    assert.equal(refresh[1][1]['x-refresh-token'], 'refresh-rotado');
+  });
+  await t.test('falla transitoria en refresh no descarta el refresh token', async () => {
+    const calls = [];
+    let refreshFallido = false;
+    globalThis.fetch = async (url, options) => {
+      const path = new URL(url).pathname;
+      calls.push([path, options.headers]);
+      if (path === '/api/auth/refresh') {
+        if (!refreshFallido) {
+          refreshFallido = true;
+          return json({ message: 'Recompilando' }, 500);
+        }
+        return json({ token: token(0), refreshToken: 'refresh-recuperado' });
+      }
+      return json({ success: true, data: { id: 1 } });
+    };
+    const error = await api('GET', '/api/auth/me').catch(e => e);
+    assert.equal(error.codigo, 'REFRESH_FALLIDO');
+    assert.deepEqual(await api('GET', '/api/auth/me'), { id: 1 });
+    const refresh = calls.filter(([path]) => path === '/api/auth/refresh');
+    assert.equal(refresh.length, 2);
+    assert.equal(refresh[0][1]['x-refresh-token'], refresh[1][1]['x-refresh-token']);
     assert.equal(refresh[1][1]['x-refresh-token'], 'refresh-rotado');
   });
 });

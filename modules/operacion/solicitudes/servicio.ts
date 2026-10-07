@@ -25,11 +25,11 @@ export class ServiceRequestService {
     return await ServiceRequestRepository.getById(id);
   }
 
-  static async approve(id: string, processedBy: string, habitacionId?: string) {
-    return await ServiceRequestRepository.approve(id, processedBy, habitacionId);
+  static async approve(id: string, processedBy: string, habitacionId?: string, montoEsperado?: number) {
+    return await ServiceRequestRepository.approve(id, processedBy, habitacionId, montoEsperado);
   }
 
-  static async reject(id: string, processedBy: string, motivoRechazo: string) {
-    return await ServiceRequestRepository.reject(id, processedBy, motivoRechazo);
+  static async reject(id: string, processedBy: string, motivoRechazo: string, montoEsperado?: number) {
+    return await ServiceRequestRepository.reject(id, processedBy, motivoRechazo, montoEsperado);
   }
 }

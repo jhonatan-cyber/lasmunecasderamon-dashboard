@@ -1,0 +1,37 @@
+export const EMAIL_DOMAIN = '@lasmuñecasderamon.com';
+const escape = (value: string) =>
+  value.replace(
+    /[&<>"']/g,
+    char => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[char]!
+  );
+
+export function loginView(options: {
+  nonce: string;
+  dashboard: URL;
+  flow: string;
+  csrf: string;
+  client: string;
+  redirect: string;
+  write: boolean;
+  error: string;
+}) {
+  const { nonce, dashboard, flow, csrf, error } = options;
+  const image = (name: string) => escape(new URL(`/img/system/${name}.png`, dashboard).href);
+  return `<!doctype html><html lang="es"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Iniciar sesión · Las Muñecas de Ramón</title>
+  <style nonce="${nonce}">
+  *{box-sizing:border-box}body{margin:0;font:14px/1.5 Arial,sans-serif;background:#f9fafb;color:#111827}main{min-height:100svh;display:flex;align-items:center;justify-content:center;gap:32px;max-width:1152px;margin:auto;padding:40px 24px}.logo{width:320px;max-width:100%;height:auto}.panel{width:100%;display:flex;justify-content:center}.card{width:100%;max-width:448px;padding:40px;background:white;border:1px solid #e5e7eb;border-radius:16px;box-shadow:0 10px 25px #1118270b}h2{text-align:center;font-size:24px;margin:0 0 4px}.intro{text-align:center;color:#4b5563;margin:0 0 24px}.field{margin-bottom:20px}label{display:block;font-weight:500;margin-bottom:4px}.input{display:flex;align-items:center;border:1px solid #d1d5db;border-radius:8px;background:white;min-height:44px;padding:0 12px;gap:10px}.input:focus-within{outline:2px solid #9ca3af;outline-offset:2px}.icon{width:20px;height:20px;flex-shrink:0;color:#9ca3af}input:not([type=hidden]){width:100%;min-width:0;border:0;background:transparent;color:inherit;font:inherit;padding:11px 0;outline:none}.suffix{font-size:12px;color:#6b7280;white-space:nowrap}.input:has(input:placeholder-shown) .suffix{display:none}button{font:inherit;cursor:pointer}.eye{border:0;background:transparent;color:#6b7280;padding:4px;display:flex}.primary,.cancel{width:100%;border-radius:999px;padding:11px 16px;font-weight:600;transition:transform .2s,background .2s}.primary{background:#000;color:white;border:1px solid #000}.primary:hover{transform:scale(1.03);background:#252525}.cancel{margin-top:8px;border:0;background:transparent;color:#6b7280}.cancel:hover{background:#f3f4f6}.consent{border-top:1px solid #e5e7eb;margin-top:24px;padding-top:20px;color:#4b5563;font-size:12px}.consent strong{color:#111827}.consent p{margin:8px 0}.destination{overflow-wrap:anywhere}.error{padding:12px;background:#fef2f2;border:1px solid #fecaca;color:#991b1b;border-radius:8px;margin-bottom:20px}.mobile-logo{display:block;width:200px;max-width:100%;height:auto;margin:0 auto 24px}.themes{display:flex;justify-content:center;gap:4px;margin-top:20px}.themes button{border:1px solid #e5e7eb;border-radius:999px;background:transparent;color:inherit;padding:6px 12px}.themes button[aria-pressed=true]{background:#f3f4f6;color:#2563eb}html[data-theme=dark] body{background:#000;color:#f9fafb}html[data-theme=dark] .card{background:#0d0d0f;border-color:#242426}html[data-theme=dark] .input{background:#18181b;border-color:#303034}html[data-theme=dark] .intro,html[data-theme=dark] .consent{color:#d1d5db}html[data-theme=dark] .consent strong{color:white}html[data-theme=dark] .primary{background:white;color:black;border-color:white}html[data-theme=dark] .cancel:hover,html[data-theme=dark] .themes button[aria-pressed=true]{background:#1f2937}html[data-theme=dark] .consent,html[data-theme=dark] .themes button{border-color:#374151}@media(max-width:767px){main{padding:28px 16px}.card{padding:28px 24px}.mobile-logo{display:block;width:200px;margin:0 auto 24px}.suffix{font-size:11px}.input{gap:6px}}@media(prefers-reduced-motion:reduce){*{transition:none!important}}
+  </style></head><body><main>
+  <section class="panel"><div class="card"><img class="mobile-logo" src="${image('logo2')}" alt="Las Muñecas de Ramón"><h2>Iniciar sesión</h2><p class="intro">Ingrese sus datos para conectar su cuenta con el MCP</p>${error ? `<p class="error" role="alert">${escape(error)}</p>` : ''}
+  <form method="post" action="/oauth/consent"><input type="hidden" name="flow" value="${escape(flow)}"><input type="hidden" name="csrf" value="${escape(csrf)}">
+  <div class="field"><label for="username">Usuario</label><div class="input"><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true"><rect x="3" y="5" width="18" height="14" rx="2"/><path d="m3 6 9 7 9-7"/></svg><input id="username" type="text" name="email" placeholder="admin, pepe, lizi..." autocomplete="username" autocapitalize="none" spellcheck="false" required maxlength="254" aria-describedby="domain-help"><span class="suffix">${EMAIL_DOMAIN}</span></div><span id="domain-help" hidden>Si escribe solo el usuario, se completa ${EMAIL_DOMAIN} automáticamente.</span></div>
+  <div class="field"><label for="password">Contraseña</label><div class="input"><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true"><rect x="4" y="10" width="16" height="11" rx="2"/><path d="M8 10V7a4 4 0 0 1 8 0v3"/></svg><input id="password" type="password" name="password" placeholder="Contraseña" autocomplete="current-password" required maxlength="1024"><button class="eye" type="button" id="toggle-password" aria-label="Mostrar contraseña" aria-pressed="false"><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true"><path d="M2 12s4-7 10-7 10 7 10 7-4 7-10 7-10-7-10-7Z"/><circle cx="12" cy="12" r="3"/></svg></button></div></div>
+  <p>Acceso exclusivo para administradores. Las operaciones requieren confirmación de sus datos.</p>
+  <button class="primary" name="decision" value="allow">Iniciar sesión y autorizar</button><button class="cancel" name="decision" value="deny" formnovalidate>Cancelar</button></form>
+  <div class="themes" role="group" aria-label="Apariencia"><button type="button" data-theme="light">Claro</button><button type="button" data-theme="dark">Oscuro</button><button type="button" data-theme="system">Sistema</button></div>
+  </div></section></main>
+  <script nonce="${nonce}">
+  const username=document.getElementById('username');username.addEventListener('input',()=>{document.querySelector('.suffix').hidden=username.value.includes('@');});
+  const password=document.getElementById('password');document.getElementById('toggle-password').addEventListener('click',function(){const show=password.type==='password';password.type=show?'text':'password';this.setAttribute('aria-pressed',String(show));this.setAttribute('aria-label',show?'Ocultar contraseña':'Mostrar contraseña');});
+  const media=matchMedia('(prefers-color-scheme: dark)');let mode='system';try{mode=localStorage.getItem('mcp-theme')||'system';}catch{}function theme(){document.documentElement.dataset.theme=mode==='system'?(media.matches?'dark':'light'):mode;document.querySelectorAll('[data-theme][type=button]').forEach(button=>button.setAttribute('aria-pressed',String(button.dataset.theme===mode)));}document.querySelectorAll('[data-theme][type=button]').forEach(button=>button.addEventListener('click',()=>{mode=button.dataset.theme;try{localStorage.setItem('mcp-theme',mode);}catch{}theme();}));media.addEventListener('change',theme);theme();
+  </script></body></html>`;
+}

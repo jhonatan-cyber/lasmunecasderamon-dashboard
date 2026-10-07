@@ -275,7 +275,8 @@ export async function requestAnticipo(
   usuario_id: string,
   monto: number,
   motivo: string,
-  device_date?: string
+  device_date?: string,
+  solicitadoPor?: string
 ) {
   try {
     const userRes = await query<any[]>(
@@ -318,7 +319,7 @@ export async function requestAnticipo(
     await BaseRepository.insert(query, 'anticipo_historial', {
       anticipo_id: id,
       accion: 'solicitud',
-      usuario_id,
+      usuario_id: solicitadoPor ?? usuario_id,
       fecha_crea: now
     });
 
@@ -426,25 +427,28 @@ export async function updateAnticipoStatus(id: string, estado: number, adminId?:
 export async function processSolicitudAnticipo(
   id: string,
   action: 'approve' | 'reject',
-  adminId?: string
+  adminId?: string,
+  montoEsperado?: number
 ) {
   try {
     const estado = action === 'approve' ? 1 : 3;
     const now = getNowInBusinessTimezone();
 
     return await withTransaction(async trx => {
-      const request = await query<any[]>(
+      const request = await trx<any[]>(
         `
       SELECT a.*, u.nombre, u.apellido, u.nick, u.telefono, u.push_token
       FROM anticipos a
       INNER JOIN usuarios u ON a.usuario_id = u.id_usuario
-      WHERE a.id_anticipo = ?
+      WHERE a.id_anticipo = ? FOR UPDATE OF a
     `,
         [id]
       );
 
       if (request.length === 0) throw new NotFoundError('Solicitud de anticipo', id);
       const sol = request[0];
+      if (montoEsperado !== undefined && Number(sol.monto) !== montoEsperado)
+        throw new BusinessError('El monto cambió; consulta el detalle nuevamente');
 
       if (Number(sol.estado) !== 2)
         throw new BusinessError(
@@ -525,7 +529,8 @@ export async function deliverAnticipo(
   id: string,
   entregado_por: string,
   contexto: ContextoOperacion,
-  aplazar: (tarea: () => void | Promise<void>) => void
+  aplazar: (tarea: () => void | Promise<void>) => void,
+  montoEsperado?: number
 ) {
   try {
     const now = getNowInBusinessTimezone();
@@ -537,7 +542,7 @@ export async function deliverAnticipo(
       SELECT a.*, u.nombre, u.apellido, u.nick
       FROM anticipos a
       INNER JOIN usuarios u ON a.usuario_id = u.id_usuario
-      WHERE a.id_anticipo = ?
+      WHERE a.id_anticipo = ? FOR UPDATE OF a
     `,
         [id]
       );
@@ -550,6 +555,11 @@ export async function deliverAnticipo(
           'Solo se pueden entregar anticipos aprobados',
           'ANTICIPO_NO_APROBADO'
         );
+
+      if (sol.fecha_entrega || sol.entregado_por)
+        throw new BusinessError('El anticipo ya fue entregado', 'ANTICIPO_YA_ENTREGADO');
+      if (montoEsperado !== undefined && Number(sol.monto) !== montoEsperado)
+        throw new BusinessError('El monto cambió; consulta el detalle nuevamente');
 
       const idCaja = await obtenerCajaActiva(contexto);
       if (!idCaja)

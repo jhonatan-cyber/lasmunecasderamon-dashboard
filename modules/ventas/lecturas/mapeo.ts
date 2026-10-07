@@ -30,8 +30,16 @@ export type VentaGetByIdResponse = SaleType & {
   garzon_nombre?: string | null;
   habitacion_nombre?: string | null;
   total_comision: number;
-  comisiones_detalle: { nick: string; foto: string | null; monto: number }[];
+  comisiones_detalle: {
+    usuario_id?: string;
+    nombre?: string | null;
+    apellido?: string | null;
+    nick: string;
+    foto: string | null;
+    monto: number;
+  }[];
   propinas_detalle: {
+    rol?: string | null;
     usuario_id: string | null;
     nick: string | null;
     nombre: string | null;
@@ -40,6 +48,9 @@ export type VentaGetByIdResponse = SaleType & {
     monto: number;
   }[];
   detalles: {
+    presentacion_id?: string | null;
+    tipo_venta?: string | null;
+    shot_anfitriona?: boolean | null;
     id: string;
     venta_id: string;
     producto_id: string | null;

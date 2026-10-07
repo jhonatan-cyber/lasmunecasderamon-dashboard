@@ -4,7 +4,7 @@ import { Users, ChevronDown } from 'lucide-react';
 import { Popover, PopoverTrigger, PopoverContent } from '@/components/ui/popover';
 import { Checkbox } from '@/components/ui/checkbox';
 import SearchInput from '@/components/shared/SearchInput';
-import React, { useRef, useState } from 'react';
+import React, { useRef, useState, useMemo } from 'react';
 import {
   ORDER_FIELD_POPOVER_CLASS,
   ORDER_MULTISELECT_TRIGGER_CLASS,
@@ -32,15 +32,23 @@ const HostessMultiSelect: React.FC<HostessMultiSelectProps> = ({
   const triggerRef = useRef<HTMLButtonElement>(null);
 
   const hasReachedLimit = maxSelection ? value.length >= maxSelection : false;
+  const anfitrionasUnicas = useMemo(() => {
+    const porId = new Map<string, any>();
+    for (const anfitriona of anfitrionas) {
+      const id = String(anfitriona.id_usuario ?? anfitriona.id ?? '');
+      if (id && !porId.has(id)) porId.set(id, anfitriona);
+    }
+    return [...porId.values()];
+  }, [anfitrionas]);
 
   const searchQuery = searchValue.trim().toLowerCase();
   const visibles = searchQuery
-    ? anfitrionas.filter(a =>
+    ? anfitrionasUnicas.filter(a =>
         `${a.nick || ''} ${a.nombre || a.name || ''} ${a.apellido || a.lastName || ''}`
           .toLowerCase()
           .includes(searchQuery)
       )
-    : anfitrionas;
+    : anfitrionasUnicas;
 
   return (
     <div className='flex-1 min-w-[200px]'>
@@ -62,7 +70,7 @@ const HostessMultiSelect: React.FC<HostessMultiSelectProps> = ({
                 </span>
               ) : (
                 <span className='flex min-w-0 flex-1 flex-wrap items-center gap-1'>
-                  {anfitrionas
+                  {anfitrionasUnicas
                     .filter(a => value.includes(String(a.id_usuario || a.id)))
                     .map(a => (
                       <span key={a.id_usuario || a.id} className={ORDER_SELECTED_TAG_CLASS}>

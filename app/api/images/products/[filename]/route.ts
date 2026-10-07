@@ -1,11 +1,11 @@
 import { NextResponse } from 'next/server';
 import path from 'path';
 import fs from 'fs/promises';
+import { removeProductBackground } from '@/lib/media/product-background.mjs';
 
-export async function GET(
-  _request: Request,
-  { params }: { params: Promise<{ filename: string }> }
-) {
+export const runtime = 'nodejs';
+
+export async function GET(request: Request, { params }: { params: Promise<{ filename: string }> }) {
   try {
     const { filename } = await params;
     // Sanitize: prevent path traversal by resolving and verifying the path
@@ -44,10 +44,26 @@ export async function GET(
       }
     }
 
+    let removalFailed = false;
+    if (
+      new URL(request.url).searchParams.get('sin_fondo') === '1' &&
+      safeFilename !== 'default.png'
+    ) {
+      try {
+        imageBuffer = await removeProductBackground(imageBuffer);
+        contentType = 'image/png';
+      } catch (error) {
+        removalFailed = true;
+        console.warn(
+          '[Product photos] No se pudo recortar la foto; se conserva la original',
+          error
+        );
+      }
+    }
     return new Response(new Uint8Array(imageBuffer), {
       headers: {
         'Content-Type': contentType,
-        'Cache-Control': 'public, max-age=31536000',
+        'Cache-Control': removalFailed ? 'public, max-age=60' : 'public, max-age=31536000',
         'Access-Control-Allow-Origin': '*'
       }
     });

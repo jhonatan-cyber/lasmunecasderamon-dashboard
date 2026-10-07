@@ -95,20 +95,7 @@ export const useSales = () => {
 
         if (!response.ok) {
           const errorData = await response.json();
-          if (errorData.errorCode === 'CAJA_CERRADA') {
-            const errorMessage =
-              errorData.message || 'No se puede realizar la venta. No hay una caja abierta.';
-            showErrorToast(errorMessage);
-            throw new Error(errorMessage);
-          }
-          if (errorData.errorCode === 'HOSTESS_NOT_LOGGED_IN') {
-            const errorMessage =
-              errorData.message ||
-              'Las anfitrionas seleccionadas deben estar logueadas en el local.';
-            showErrorToast(errorMessage);
-            throw new Error(errorMessage);
-          }
-          throw new Error(errorData.message || 'Error al crear venta');
+          throw new Error(errorData.error?.message || errorData.message || 'Error al crear venta');
         }
 
         const nuevaVenta = await response.json();
@@ -125,9 +112,7 @@ export const useSales = () => {
         const errorMessage = err instanceof Error ? err.message : 'Error desconocido';
         setError(errorMessage);
 
-        if (!errorMessage.includes('caja abierta') && !errorMessage.includes('caja cerrada')) {
-          showErrorToast('Error al generar la venta');
-        }
+        showErrorToast(errorMessage);
 
         return null;
       } finally {

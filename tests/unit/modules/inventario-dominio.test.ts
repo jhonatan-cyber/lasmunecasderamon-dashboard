@@ -84,7 +84,7 @@ describe('transferencias de almacén al bar', () => {
     expect(trx.mock.calls.some(([sql]) => sql.includes('UPDATE inventario_presentaciones'))).toBe(
       false
     );
-    expect(result).toEqual({ trasladadas: 2, stock_bar: 3 });
+    expect(result).toEqual({ transferencia_id: 'uuid-test', trasladadas: 2, stock_bar: 3 });
   });
 
   it('emite transfers_updated al crear, aprobar y rechazar (refresco en vivo)', async () => {

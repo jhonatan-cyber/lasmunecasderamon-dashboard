@@ -77,12 +77,10 @@ export class UserRepository {
         sqlParams.push(params.role);
       }
 
-      const loginJoin = params?.loggedIn
-        ? 'INNER JOIN logins l ON l.usuario_id = u.id_usuario AND l.estado = 1'
-        : '';
-
-      if (params?.enLocal && params?.loggedIn) {
-        where += ' AND l.en_local = 1';
+      // Una persona puede tener varias sesiones: comprobar existencia sin multiplicar filas.
+      const loginJoin = '';
+      if (params?.loggedIn) {
+        where += ` AND EXISTS (SELECT 1 FROM logins l WHERE l.usuario_id = u.id_usuario AND l.estado = 1${params.enLocal ? ' AND l.en_local = 1' : ''})`;
       }
 
       const countSql = `SELECT COUNT(*) as total FROM usuarios u LEFT JOIN roles r ON u.rol_id = r.id_rol ${loginJoin} ${where}`;

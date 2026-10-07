@@ -12,7 +12,8 @@ export function SalePrices({
   commission,
   field,
   mlShot,
-  mlShotAnfitriona
+  mlShotAnfitriona,
+  layout = 'stacked'
 }: {
   options?: SaleOption[] | string | null;
   price?: number | null;
@@ -22,16 +23,27 @@ export function SalePrices({
   mlShot?: number | null;
   /** Ml por shot a anfitriona; sin valor propio se usa el de cliente. */
   mlShotAnfitriona?: number | null;
+  layout?: 'stacked' | 'columns';
 }) {
   const shotMlGlobal = useConfig<number>('shot_ml');
   const shotMl = resolveShotMl(mlShot, shotMlGlobal);
   const shotMlAnf = resolveShotMlAnfitriona(mlShotAnfitriona, shotMl);
   const parsed = typeof options === 'string' ? parseSavedOptions(options) : options;
   const values = parsed ?? [{ tipo: 'botella', precio: price ?? 0, comision: commission ?? 0 }];
+  const orderedValues =
+    layout === 'columns'
+      ? [...values].sort((a, b) => (a.tipo === b.tipo ? 0 : a.tipo === 'shot' ? -1 : 1))
+      : values;
   return (
-    <div className='flex flex-col gap-2 text-sm'>
-      {values.map(option => (
-        <div key={option.tipo} className='flex flex-col gap-0.5'>
+    <div
+      className={
+        layout === 'columns' && values.length > 1
+          ? 'grid grid-cols-2 items-start gap-4 text-left text-sm'
+          : 'flex flex-col gap-2 text-sm'
+      }
+    >
+      {orderedValues.map(option => (
+        <div key={option.tipo} className='flex min-w-0 flex-col gap-0.5 break-words'>
           {option.tipo === 'botella' ? (
             <span className='text-xs font-medium text-muted-foreground'>Botella</span>
           ) : shotMlAnf !== shotMl ? (

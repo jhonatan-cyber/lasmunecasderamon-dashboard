@@ -556,6 +556,7 @@ export interface VentaGetByIdRow extends VentaRawRow {
 
 /** Row for detail_ventas + productos join */
 export interface DetalleVentaWithProductRow {
+  presentacion_id?: string | null;
   id: string;
   venta_id: string;
   producto_id: string | null;
@@ -580,6 +581,9 @@ export interface VentaUsuarioDetailRow {
 
 /** Row for comisiones grouped by hostess */
 export interface VentaComisionGroupRow {
+  usuario_id?: string;
+  nombre?: string | null;
+  apellido?: string | null;
   nick: string;
   foto: string | null;
   monto: number;
@@ -587,6 +591,7 @@ export interface VentaComisionGroupRow {
 
 /** Row for propinas grouped by usuario */
 export interface VentaPropinaGroupRow {
+  rol?: string | null;
   usuario_id: string | null;
   nick: string | null;
   nombre: string | null;

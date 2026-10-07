@@ -2,6 +2,17 @@ import { GratificacionRepository } from '@/modules/personal/gratificaciones/repo
 import type { GratificacionAction } from '@/modules/personal/gratificaciones/consultas';
 
 export class GratificacionService {
+  /** Solicitud pendiente; no confundir con create(), que crea un monto por pagar. */
+  static async solicitarParaUsuario(
+    usuarioId: string,
+    monto: number,
+    motivo: string,
+    adminId: string
+  ) {
+    if (!usuarioId || !Number.isFinite(monto) || monto <= 0)
+      throw new Error('Usuario y monto positivo requeridos');
+    return GratificacionRepository.request(usuarioId, monto, motivo, adminId, false);
+  }
   static async request(
     usuario_id: string,
     monto: number,
@@ -10,7 +21,7 @@ export class GratificacionService {
     solicitanteId?: string
   ) {
     if (!usuario_id) throw new Error('Usuario es requerido');
-    if (!monto || monto <= 0) throw new Error('Monto debe ser positivo');
+    if (!Number.isFinite(monto) || monto <= 0) throw new Error('Monto debe ser positivo');
     return await GratificacionRepository.create({
       usuario_id,
       monto,
@@ -34,7 +45,7 @@ export class GratificacionService {
     solicitante_id?: string | null;
   }) {
     if (!data.usuario_id) throw new Error('Usuario es requerido');
-    if (!data.monto || data.monto <= 0) throw new Error('Monto debe ser positivo');
+    if (!Number.isFinite(data.monto) || data.monto <= 0) throw new Error('Monto debe ser positivo');
     return await GratificacionRepository.create(data);
   }
 
@@ -42,11 +53,17 @@ export class GratificacionService {
     return await GratificacionRepository.getSolicitudDetalle(id);
   }
 
-  static async processSolicitud(id: string, action: GratificacionAction, adminId?: string) {
-    return await GratificacionRepository.processSolicitud(id, action, adminId);
+  static async processSolicitud(
+    id: string,
+    action: GratificacionAction,
+    adminId?: string,
+    montoEsperado?: number
+  ) {
+    return await GratificacionRepository.processSolicitud(id, action, adminId, montoEsperado);
   }
 
   static async update(id: string, data: { monto: number; descripcion?: string }) {
+    if (!Number.isFinite(data.monto) || data.monto <= 0) throw new Error('Monto debe ser positivo');
     return await GratificacionRepository.update(id, data);
   }
 

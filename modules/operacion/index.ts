@@ -12,6 +12,7 @@ export { obtenerServicioParaAlerta } from './servicios/servicio';
  */
 export {
   obtenerSolicitudAnulacionServicioPorToken,
+  listarSolicitudesAnulacionServiciosPendientes,
   obtenerServicioParaAnulacion,
   registrarSolicitudAnulacionServicio,
   listarServicios,

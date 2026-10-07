@@ -69,19 +69,84 @@ export function ExistingPresentacionCard({
     <div className='p-2.5 pl-4 rounded-2xl bg-gray-100 dark:bg-slate-800 space-y-2'>
       {isEditing ? (
         <div className='space-y-2'>
+          <div className='flex flex-col gap-3 rounded-xl border p-3'>
+            <div className='flex items-center gap-3'>
+              {/* eslint-disable-next-line @next/next/no-img-element -- Vista previa de la foto existente. */}
+              <img
+                src={
+                  p.foto && p.foto !== 'default.png'
+                    ? p.foto.startsWith('http') || p.foto.startsWith('blob:')
+                      ? p.foto
+                      : `/api/images/products/${p.foto}`
+                    : defaultFoto && defaultFoto !== 'default.png'
+                      ? defaultFoto.startsWith('http')
+                        ? defaultFoto
+                        : `/api/images/products/${defaultFoto}`
+                      : '/api/images/products/default.png'
+                }
+                alt={`Imagen de ${p.nombre}`}
+                className='size-20 shrink-0 rounded-xl object-contain'
+              />
+              <div className='flex min-w-0 flex-1 flex-col gap-1'>
+                <label htmlFor={`edit-pres-foto-${p.id}`} className='text-xs font-semibold'>
+                  Imagen de la presentación
+                </label>
+                <Input
+                  id={`edit-pres-foto-${p.id}`}
+                  type='file'
+                  accept='image/jpeg,image/png,image/gif,image/webp'
+                  disabled={isLoading || guardandoPres}
+                  onChange={e => {
+                    const file = e.target.files?.[0];
+                    if (file) updateExistenteFoto(p.id, file);
+                    e.target.value = '';
+                  }}
+                />
+              </div>
+            </div>
+            <div className='flex items-end gap-2'>
+              <div className='flex min-w-0 flex-1 flex-col gap-1'>
+                <label htmlFor={`edit-pres-foto-url-${p.id}`} className='text-xs font-semibold'>
+                  URL de imagen
+                </label>
+                <Input
+                  id={`edit-pres-foto-url-${p.id}`}
+                  value={urlInput}
+                  onChange={e => setUrlInput(e.target.value)}
+                  placeholder='https://...'
+                  disabled={isLoading || guardandoPres}
+                />
+              </div>
+              <button
+                type='button'
+                disabled={isLoading || guardandoPres || !urlInput.trim()}
+                onClick={() => {
+                  updateExistenteFotoUrl(p.id, urlInput);
+                  setUrlInput('');
+                }}
+                className='shrink-0 rounded-full border px-3 py-2 text-xs font-semibold disabled:opacity-50'
+              >
+                Aplicar URL
+              </button>
+            </div>
+            <p className='text-xs text-muted-foreground'>
+              JPG, PNG, GIF o WEBP, hasta 5 MB. La imagen se guarda al seleccionar el archivo o
+              aplicar la URL.
+            </p>
+          </div>
           <div className='grid grid-cols-2 gap-2'>
             <div className='col-span-2 space-y-1'>
               <label
                 htmlFor='edit-pres-nombre'
                 className='block text-[10px] font-bold uppercase tracking-wider text-gray-400 ml-1'
               >
-                Nombre
+                Presentación
               </label>
               <Input
                 id='edit-pres-nombre'
                 value={editPresDraft.nombre}
                 onChange={e => changeEditPresDraft('nombre', e.target.value)}
-                placeholder='Nombre (ej. 750 ml)'
+                placeholder='Presentación (ej. 750 ml)'
                 disabled={isLoading || guardandoPres}
                 className='h-10 bg-white dark:bg-slate-900'
               />
@@ -170,28 +235,28 @@ export function ExistingPresentacionCard({
                 className='h-10 bg-white dark:bg-slate-900'
               />
             </div>
+            <div className='space-y-1'>
+              <label
+                htmlFor='edit-pres-stock'
+                className='block text-[10px] font-bold uppercase tracking-wider text-gray-400 ml-1'
+              >
+                Stock (actual: {p.stock ?? 0})
+              </label>
+              <Input
+                id='edit-pres-stock'
+                value={editPresDraft.stock}
+                onChange={e => changeEditPresDraft('stock', e.target.value)}
+                placeholder='Stock'
+                disabled={isLoading || guardandoPres}
+                inputMode='numeric'
+                className='h-10 bg-white dark:bg-slate-900'
+              />
+            </div>
           </div>
-          <div className='space-y-1'>
-            <label
-              htmlFor='edit-pres-stock'
-              className='block text-[10px] font-bold uppercase tracking-wider text-gray-400 ml-1'
-            >
-              Stock (actual: {p.stock ?? 0})
-            </label>
-            <Input
-              id='edit-pres-stock'
-              value={editPresDraft.stock}
-              onChange={e => changeEditPresDraft('stock', e.target.value)}
-              placeholder='Stock'
-              disabled={isLoading || guardandoPres}
-              inputMode='numeric'
-              className='h-10 bg-white dark:bg-slate-900'
-            />
-            <p className='text-[11px] text-gray-400 ml-1'>
-              Al subir se generan códigos nuevos. Al bajar, selecciona abajo los códigos a
-              desactivar (no se eliminan).
-            </p>
-          </div>
+          <p className='text-[11px] text-gray-400 ml-1'>
+            Al subir se generan códigos nuevos. Al bajar, selecciona abajo los códigos a desactivar
+            (no se eliminan).
+          </p>
           <CodeDeactivationPicker
             presentacionId={p.id}
             currentStock={p.stock ?? 0}

@@ -120,7 +120,7 @@ export async function traspasarAlBar(
      WHERE presentacion_id = ? AND estado = '${ESTADO_UNIDAD_ACTIVA}' AND ubicacion = 'bar'`,
     [input.presentacion_id]
   );
-  return { trasladadas: input.cantidad, stock_bar: Number(enBar[0]?.total ?? 0) };
+  return { transferencia_id: movimientoId, trasladadas: input.cantidad, stock_bar: Number(enBar[0]?.total ?? 0) };
 }
 
 export async function aceptarTransferencia(
@@ -130,11 +130,11 @@ export async function aceptarTransferencia(
 ): Promise<void> {
   const receivers = await trx<any[]>(
     `SELECT u.id_usuario FROM usuarios u INNER JOIN roles r ON r.id_rol = u.rol_id
-     WHERE u.id_usuario = ? AND u.estado = 1 AND r.estado = 1 AND LOWER(r.nombre) = 'barman'`,
+     WHERE u.id_usuario = ? AND u.estado = 1 AND r.estado = 1 AND LOWER(r.nombre) IN ('barman', 'administrador')`,
     [usuarioId]
   );
   if (!receivers.length)
-    throw new BusinessError('Solo el encargado del bar (Barman) puede aceptar la transferencia');
+    throw new BusinessError('Solo Barman o Administrador puede aceptar la transferencia');
   const lookup = await trx<any[]>(
     "SELECT producto_id FROM inventario_movimientos WHERE id = ? AND tipo = 'traspaso'",
     [id]
@@ -182,11 +182,11 @@ export async function rechazarTransferencia(
 ): Promise<void> {
   const resolvers = await trx<any[]>(
     `SELECT u.id_usuario FROM usuarios u INNER JOIN roles r ON r.id_rol = u.rol_id
-     WHERE u.id_usuario = ? AND u.estado = 1 AND r.estado = 1 AND LOWER(r.nombre) = 'barman'`,
+     WHERE u.id_usuario = ? AND u.estado = 1 AND r.estado = 1 AND LOWER(r.nombre) IN ('barman', 'administrador')`,
     [usuarioId]
   );
   if (!resolvers.length)
-    throw new BusinessError('Solo el encargado del bar (Barman) puede rechazar la transferencia');
+    throw new BusinessError('Solo Barman o Administrador puede rechazar la transferencia');
   const lookup = await trx<any[]>(
     "SELECT producto_id FROM inventario_movimientos WHERE id = ? AND tipo = 'traspaso'",
     [id]

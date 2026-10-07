@@ -1,6 +1,7 @@
 'use client';
 
 import { AlertTriangle, Gauge, Target } from 'lucide-react';
+import Link from 'next/link';
 import { Skeleton } from '@/components/ui/skeleton';
 import { useDashboardComposite } from '@/hooks/stats/useDashboardComposite';
 import { formatCurrencyCLP } from '@/lib/utils/formatters';
@@ -15,6 +16,23 @@ const toneStyles = {
 export default function ForecastInsights() {
   const { data: composite, isLoading, error } = useDashboardComposite();
   const data = composite?.insights;
+  const forecast = data?.forecast;
+  const forecastExplanation = !forecast
+    ? ''
+    : forecast.status === 'ready'
+      ? `Basado en ${forecast.historyCount} turnos cerrados. Duración estimada: ${Math.round((forecast.expectedMinutes / 60) * 10) / 10} h.`
+      : forecast.status === 'closed'
+        ? 'Abre una caja para estimar las ventas del turno.'
+        : forecast.elapsedMinutesToday > 24 * 60
+          ? 'La caja lleva más de 24 horas abierta. Revisa el cierre del turno anterior.'
+          : [
+              forecast.historyCount < 3 || !forecast.expectedMinutes
+                ? `Hay ${forecast.historyCount} turnos cerrados válidos; se necesitan al menos 3, con una duración de hasta 24 horas.`
+                : '',
+              forecast.elapsedMinutesToday < 30
+                ? `La caja lleva ${Math.floor(forecast.elapsedMinutesToday)} minutos abierta; la estimación comienza a los 30 minutos.`
+                : ''
+            ].filter(Boolean).join(' ');
 
   if (isLoading) {
     return (
@@ -46,7 +64,7 @@ export default function ForecastInsights() {
               Cierre Estimado
             </span>
             <span className='text-[10px] font-bold text-slate-400 uppercase tracking-tighter'>
-              Proyección Algorítmica
+              Estimación por duración histórica del turno
             </span>
           </div>
         </div>
@@ -56,15 +74,27 @@ export default function ForecastInsights() {
             <span className='text-[10px] font-black uppercase tracking-widest text-slate-400 dark:text-slate-500'>
               Total Proyectado
             </span>
-            <p className='text-3xl font-black tracking-tighter text-white dark:text-slate-900'>
-              {formatCurrencyCLP(data.forecast.projectedRevenue)}
+            <p className='text-2xl font-black tracking-tighter text-white dark:text-slate-900'>
+              {data.forecast.projectedRevenue !== null
+                ? formatCurrencyCLP(data.forecast.projectedRevenue)
+                : data.forecast.status === 'closed'
+                  ? 'Sin caja abierta'
+                  : 'Sin datos suficientes'}
             </p>
+            <p className='text-xs text-slate-400 dark:text-slate-500'>
+              {forecastExplanation}
+            </p>
+            {data.forecast.status === 'closed' || data.forecast.elapsedMinutesToday > 24 * 60 ? (
+              <Link href='/cash-register' className='inline-block text-xs font-bold underline text-white dark:text-slate-900'>
+                Revisar caja
+              </Link>
+            ) : null}
           </div>
 
           <div className='grid grid-cols-2 gap-3'>
             <div className='flex flex-col p-3 rounded-2xl bg-slate-50 dark:bg-slate-900/50 border border-slate-100 dark:border-slate-800'>
               <span className='text-[9px] font-black uppercase tracking-widest text-slate-400 mb-1'>
-                Actual
+                Turno actual
               </span>
               <span className='text-sm font-black text-slate-900 dark:text-white'>
                 {formatCurrencyCLP(data.forecast.currentRevenue)}
@@ -72,7 +102,7 @@ export default function ForecastInsights() {
             </div>
             <div className='flex flex-col p-3 rounded-2xl bg-slate-50 dark:bg-slate-900/50 border border-slate-100 dark:border-slate-800'>
               <span className='text-[9px] font-black uppercase tracking-widest text-slate-400 mb-1'>
-                Ayer
+                Último turno cerrado
               </span>
               <span className='text-sm font-black text-slate-900 dark:text-white'>
                 {formatCurrencyCLP(data.forecast.yesterdayRevenue)}

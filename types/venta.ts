@@ -16,6 +16,7 @@ export interface Venta {
 }
 
 export interface VentaDetalle {
+  presentacion_id?: string | null;
   id?: string | number;
   venta_id: string | number;
   producto_id: string | number;
@@ -40,6 +41,8 @@ export interface VentaUsuario {
 }
 
 export interface VentaWithDetails extends Venta {
+  comisiones_detalle?: DistribucionVenta[];
+  propinas_detalle?: DistribucionVenta[];
   detalles: VentaDetalle[];
   usuarios: VentaUsuario[];
   has_anulacion_solicitada?: boolean;
@@ -52,6 +55,15 @@ export interface VentaWithDetails extends Venta {
   cajero_nick?: string | null;
   garzon_nombre?: string | null;
   garzon_nick?: string | null;
+}
+
+export interface DistribucionVenta {
+  usuario_id?: string | null;
+  nick?: string | null;
+  nombre?: string | null;
+  apellido?: string | null;
+  rol?: string | null;
+  monto: number;
 }
 
 export interface VentaCreate {
@@ -75,7 +87,7 @@ export interface VentaDetalleCreate {
   cantidad: number;
   sub_total: number;
   hostess_id?: string | number | null;
-  hostesses?: number[];
+  hostesses?: Array<string | number>;
   isChampagne?: boolean;
   /** 'shot' descuenta ml de la botella abierta; sin valor, botella entera. */
   tipo_venta?: 'botella' | 'shot';

@@ -319,11 +319,6 @@ export const NewSaleSearch = ({
                                   : otherProductHostessSelections[id] || []
                               })
                             }
-                            disabled={
-                              pideAnfitriona &&
-                              ((isChampagne && !champagneHostessSelections[id]?.length) ||
-                                (!isChampagne && !otherProductHostessSelections[id]?.length))
-                            }
                           >
                             <Plus className='w-4 h-4' />
                           </Button>

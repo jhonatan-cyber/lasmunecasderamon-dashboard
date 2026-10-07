@@ -240,9 +240,9 @@ describe('StatsQueries.getLoggedUsers', () => {
 
     const result = await StatsQueries.getLoggedUsers();
 
-    expect(result.anfitrionas).toEqual({ total: 2, logueadas: 1 });
-    expect(result.garzones).toEqual({ total: 1, logueadas: 1 });
-    expect(result.cajeros).toEqual({ total: 1, logueadas: 1 });
+    expect(result.anfitrionas).toMatchObject({ total: 2, logueadas: 1, porcentaje: 50 });
+    expect(result.garzones).toMatchObject({ total: 1, logueadas: 1, porcentaje: 100 });
+    expect(result.cajeros).toMatchObject({ total: 1, logueadas: 1, porcentaje: 100 });
   });
 
   it('devuelve ceros cuando no existe el rol', async () => {
@@ -250,7 +250,30 @@ describe('StatsQueries.getLoggedUsers', () => {
     repositoryHarness.queryMock.mockResolvedValueOnce([]);
 
     const result = await StatsQueries.getLoggedUsers();
-    expect(result.anfitrionas).toEqual({ total: 0, logueadas: 0 });
+    expect(result.anfitrionas).toEqual({ total: 0, logueadas: 0, porcentaje: 0, usuarios: [] });
+  });
+
+  it('incluye al barman con los cajeros y lista solo los usuarios en el local', async () => {
+    repositoryHarness.queryMock
+      .mockResolvedValueOnce([
+        { id_rol: 3, nombre: 'cajero' },
+        { id_rol: 4, nombre: 'Barman' }
+      ])
+      .mockResolvedValueOnce([
+        { id_usuario: 'c1', nick: 'Caja', estado: 1, rol_id: 3 },
+        { id_usuario: 'b1', nick: 'Bar', estado: '1', rol_id: 4 },
+        { id_usuario: 'b2', nick: 'Ausente', estado: 0, rol_id: 4 }
+      ]);
+
+    expect((await StatsQueries.getLoggedUsers()).cajeros).toEqual({
+      total: 3,
+      logueadas: 2,
+      porcentaje: 67,
+      usuarios: [
+        { id_usuario: 'c1', nick: 'Caja' },
+        { id_usuario: 'b1', nick: 'Bar' }
+      ]
+    });
   });
 });
 

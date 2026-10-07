@@ -104,6 +104,7 @@ export interface TraspasoInput {
 
 /** Resultado de un traspaso: unidades enviadas y stock resultante en el bar. */
 export interface TraspasoResultado {
+  transferencia_id?: string;
   trasladadas: number;
   stock_bar: number;
 }
@@ -119,6 +120,7 @@ export interface NuevaPresentacionInput {
 
 /** Campos editables de una presentación (los no enviados no se tocan). */
 export interface PresentacionCamposInput {
+  opciones_venta?: SaleOption[];
   nombre?: string;
   codigo_barras?: string | null;
   precio_compra?: number;

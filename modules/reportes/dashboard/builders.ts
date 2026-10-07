@@ -1,3 +1,4 @@
+import { buildShiftForecast } from './forecast';
 import {
   buildAnomalies,
   buildFinancialSummary,
@@ -123,10 +124,7 @@ export function buildDashboardInsights({
       withdrawals
     }),
     forecast: {
-      projectedRevenue: Math.round((movementToday / elapsedMinutesToday) * 24 * 60),
-      currentRevenue: movementToday,
-      yesterdayRevenue: movementYesterday,
-      elapsedMinutesToday,
+      ...buildShiftForecast(),
       anomalies: buildAnomalies({
         todaySalesSameTime,
         yesterdaySalesSameTime,

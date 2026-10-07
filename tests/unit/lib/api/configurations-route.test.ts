@@ -177,6 +177,13 @@ describe('PUT /api/configurations · shots_alerta', () => {
 });
 
 describe('GET /api/configurations · shot_ml', () => {
+  it('conserva los decimales de porcentajes configurados', async () => {
+    db.query.mockResolvedValue([
+      { clave: 'propina_venta', valor: '12.5', categoria: 'facturacion', tipo: 'number' }
+    ]);
+    const response = await call(GET, 'http://localhost/api/configurations');
+    expect((await response.json()).data.facturacion.propina_venta).toBe(12.5);
+  });
   it('agrupa shot_ml bajo la categoría bar y lo expone como número', async () => {
     db.query.mockResolvedValue([
       {

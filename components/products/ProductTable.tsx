@@ -154,16 +154,14 @@ const SortableRow: React.FC<SortableRowProps> = React.memo(
           {presentation?.codigo_barras || product.code}
         </TableCell>
         <TableCell className='py-3 px-2 sm:px-4 text-center font-mono text-xs sm:text-sm'>
-          {product.name}
-        </TableCell>
-        <TableCell className='py-3 px-2 sm:px-4 text-center text-xs sm:text-sm'>
-          {presentation ? (
-            <span className='inline-flex items-center gap-1.5 rounded-full bg-gray-100 dark:bg-slate-800 px-2.5 py-0.5 font-medium text-gray-700 dark:text-gray-200 whitespace-nowrap'>
-              {presentation.nombre}
-            </span>
-          ) : (
-            <span className='text-gray-300'>—</span>
-          )}
+          <div className='flex items-center justify-center gap-2'>
+            <span>{product.name}</span>
+            {presentation && (
+              <Badge variant='secondary' className='shrink-0'>
+                {presentation.nombre}
+              </Badge>
+            )}
+          </div>
         </TableCell>
         <TableCell className='py-3 px-2 sm:px-4 text-center font-mono text-xs sm:text-sm'>
           {formatCurrencyCLP(presentation?.precio_compra ?? product.price)}
@@ -382,9 +380,6 @@ const ProductTable: React.FC<ProductTableProps> = ({
                     Nombre
                   </TableHead>
                   <TableHead className='py-4 px-5 text-xs uppercase text-gray-500 text-center'>
-                    Presentación
-                  </TableHead>
-                  <TableHead className='py-4 px-5 text-xs uppercase text-gray-500 text-center'>
                     Precio compra
                   </TableHead>
                   <TableHead className='py-4 px-5 text-xs uppercase text-gray-500 text-center'>
@@ -402,7 +397,7 @@ const ProductTable: React.FC<ProductTableProps> = ({
                 {localProducts.length === 0 && (
                   <TableRow key='empty'>
                     <TableCell
-                      colSpan={9}
+                      colSpan={8}
                       className='text-center py-8 text-gray-400 bg-white text-sm sm:text-base'
                     >
                       No hay productos

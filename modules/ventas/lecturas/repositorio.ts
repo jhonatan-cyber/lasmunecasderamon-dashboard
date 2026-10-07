@@ -146,7 +146,10 @@ export async function listarVentas(params: {
             FROM solicitudes_anulacion_ventas sav
             WHERE sav.venta_id = v.id_venta
           ) as has_anulacion_solicitada,
-          (SELECT COUNT(*) FROM detalle_ventas dv WHERE dv.venta_id = v.id_venta) as item_count,
+          -- El detalle guarda una fila por anfitriona para repartir la comisión
+          -- (filas auxiliares con cantidad 0). Contar filas multiplicaba el
+          -- producto por las anfitrionas: se suman las unidades vendidas.
+          (SELECT COALESCE(SUM(dv.cantidad), 0) FROM detalle_ventas dv WHERE dv.venta_id = v.id_venta) as item_count,
           (SELECT STRING_AGG(u2.nick, ',')
            FROM ventas_usuarios vu
            JOIN usuarios u2 ON u2.id_usuario = vu.usuario_id
@@ -214,7 +217,7 @@ export async function obtenerVenta(id: string): Promise<VentaGetByIdResponse | n
 
     const [detalles, usuarios, comisiones, propinas] = await Promise.all([
       query<DetalleVentaWithProductRow[]>(
-        `SELECT dv.id_detalle_venta as id, dv.venta_id, dv.producto_id, dv.precio, dv.comision, dv.cantidad, dv.sub_total,
+        `SELECT dv.id_detalle_venta as id, dv.venta_id, dv.producto_id, dv.presentacion_id, dv.precio, dv.comision, dv.cantidad, dv.sub_total,
                 dv.tipo_venta, dv.shot_anfitriona,
                 p.nombre as producto_nombre, p.precio as producto_precio
          FROM detalle_ventas dv
@@ -231,21 +234,21 @@ export async function obtenerVenta(id: string): Promise<VentaGetByIdResponse | n
         [id]
       ),
       query<VentaComisionGroupRow[]>(
-        `SELECT u.nick, u.foto, SUM(dv.comision) as monto
+        `SELECT dv.hostess_id AS usuario_id, u.nick, u.nombre, u.apellido, u.foto, SUM(dv.comision) as monto
          FROM detalle_ventas dv
-         JOIN ventas_usuarios vu ON vu.venta_id = dv.venta_id AND vu.usuario_id = dv.hostess_id
          JOIN usuarios u ON u.id_usuario = dv.hostess_id
          WHERE dv.venta_id = ? AND dv.comision > 0
-         GROUP BY dv.hostess_id, u.nick, u.foto`,
+         GROUP BY dv.hostess_id, u.nick, u.nombre, u.apellido, u.foto`,
         [id]
       ),
       query<VentaPropinaGroupRow[]>(
-        `SELECT dp.usuario_id, u.nick, u.nombre, u.apellido, u.foto, SUM(dp.monto) as monto
+        `SELECT dp.usuario_id, u.nick, u.nombre, u.apellido, u.foto, r.nombre AS rol, SUM(dp.monto) as monto
          FROM propinas p
          INNER JOIN detalle_propinas dp ON dp.propina_id = p.id_propina
          LEFT JOIN usuarios u ON u.id_usuario = dp.usuario_id
+         LEFT JOIN roles r ON r.id_rol = u.rol_id
          WHERE p.venta_id = ?
-         GROUP BY dp.usuario_id, u.nick, u.nombre, u.apellido, u.foto
+         GROUP BY dp.usuario_id, u.nick, u.nombre, u.apellido, u.foto, r.nombre
          ORDER BY monto DESC`,
         [id]
       )
@@ -262,11 +265,15 @@ export async function obtenerVenta(id: string): Promise<VentaGetByIdResponse | n
       habitacion_nombre: res[0].habitacion_nombre,
       total_comision: totalComision,
       comisiones_detalle: comisiones.map(c => ({
+        usuario_id: c.usuario_id,
+        nombre: c.nombre,
+        apellido: c.apellido,
         nick: c.nick,
         foto: c.foto,
         monto: Number(c.monto || 0)
       })),
       propinas_detalle: propinas.map(p => ({
+        rol: p.rol,
         usuario_id: p.usuario_id,
         nick: p.nick,
         nombre: p.nombre,
@@ -278,6 +285,9 @@ export async function obtenerVenta(id: string): Promise<VentaGetByIdResponse | n
         id: d.id,
         venta_id: d.venta_id,
         producto_id: d.producto_id,
+        presentacion_id: d.presentacion_id,
+        tipo_venta: d.tipo_venta,
+        shot_anfitriona: d.shot_anfitriona,
         precio: Number(d.precio || 0),
         comision: Number(d.comision || 0),
         cantidad: Number(d.cantidad || 0),

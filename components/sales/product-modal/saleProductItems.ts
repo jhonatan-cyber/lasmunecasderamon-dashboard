@@ -28,7 +28,7 @@ export interface SaleProductItem {
   cantidadActual: number;
   /** Unidades de esta presentación y tipo de venta ya agregadas al carrito. */
   enCarrito: number;
-  /** La forma de venta elegida cobra comisión ⇒ exige anfitriona. */
+  /** La forma de venta elegida ofrece comisión para una anfitriona opcional. */
   pideAnfitriona: boolean;
   muestraAnfitriona: boolean;
   agregarDisabled: boolean;
@@ -112,10 +112,7 @@ export function buildSaleProductItem(producto: any, ctx: SaleProductItemContext)
   const cantidadActual = ctx.cantidades[id] || 1;
   const champagneSelected = ctx.champagneHostessSelections[id] || [];
   const otherSelected = ctx.otherProductHostessSelections[id] || [];
-  const agregarDisabled =
-    pideAnfitriona &&
-    ((isChampagne && champagneSelected.length === 0) ||
-      (!isChampagne && otherSelected.length === 0));
+  const agregarDisabled = false;
 
   const onAgregar = () => {
     const productWithHostess = {

@@ -1,6 +1,7 @@
 import type { ContextoOperacion } from '@/lib/transaccion/contrato';
 import { resolverTransaccion } from '@/lib/transaccion/infraestructura';
 import { getNowInBusinessTimezone } from '@/lib/business/timezoneService';
+import { BusinessError } from '@/lib/errors/errors';
 
 type CuentaCommissionRow = {
   id_detalle_cuenta: string;
@@ -80,14 +81,18 @@ async function adjustCuentaCommission(
 }
 
 export async function procesarAnulacionCuentaCanal(
-  solicitud: { id_cuenta?: string; solicitud_id?: string; monto?: number },
+  solicitud: { id_cuenta?: string; solicitud_id?: string; monto?: number; adminId?: string },
   accion: 'confirmar' | 'rechazar',
   contexto: ContextoOperacion
 ) {
   const dbQuery = resolverTransaccion(contexto);
+  if (solicitud.solicitud_id) {
+    const rows = await dbQuery<Array<{ estado: string }>>('SELECT estado FROM solicitudes_anulacion_cuentas WHERE id = ? FOR UPDATE', [solicitud.solicitud_id]);
+    if (!rows[0] || rows[0].estado !== 'pendiente') throw new BusinessError('La solicitud ya fue procesada');
+  }
   const now = getNowInBusinessTimezone();
   const requestedAmount = Number(solicitud.monto || 0);
-  const cuentaInfo = (await dbQuery('SELECT total FROM cuentas WHERE id_cuenta = ? LIMIT 1', [
+  const cuentaInfo = (await dbQuery('SELECT total FROM cuentas WHERE id_cuenta = ? LIMIT 1 FOR UPDATE', [
     solicitud.id_cuenta
   ])) as Array<{ total: number }>;
 
@@ -125,7 +130,7 @@ export async function procesarAnulacionCuentaCanal(
   if (solicitud.solicitud_id) {
     await dbQuery(
       'UPDATE solicitudes_anulacion_cuentas SET estado = ?, approved_by = ?, fecha_mod = ? WHERE id = ?',
-      [accion === 'confirmar' ? 'aprobado' : 'rechazado', 'whatsapp', now, solicitud.solicitud_id]
+      [accion === 'confirmar' ? 'aprobado' : 'rechazado', solicitud.adminId ?? 'whatsapp', now, solicitud.solicitud_id]
     );
   }
 }

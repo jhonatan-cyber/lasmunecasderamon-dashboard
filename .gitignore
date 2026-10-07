@@ -2,6 +2,7 @@
 
 # dependencies
 /node_modules
+/.cache/product-photos/
 /mcp/node_modules
 /mcp/dist
 /mcp/releases
@@ -60,6 +61,7 @@ database/nul
 
 # MariaDB portable de desarrollo (scripts/db-dev.js)
 .dev/
+/mcp/.data/
 tests/integration/backups/
 
 # Backups de base de datos (nunca commitear dumps)
@@ -67,7 +69,13 @@ tests/integration/backups/
 
 # Sondas y utilidades de diagnostico locales (no forman parte del proyecto)
 /_tmp_real/
+/_inspect_tmp.mjs
+/_seed_trans_tmp.mjs
+/module-review-*.json
 .freebuff/
+
+# Configuracion MCP del cliente con credenciales del dashboard (nunca commitear)
+/.agents/mcp.json
 
 # Reportes que se regeneran al correr la suite: los milisegundos cambian en cada
 # corrida y ensuciarian el arbol sin que nada haya cambiado. El numero que

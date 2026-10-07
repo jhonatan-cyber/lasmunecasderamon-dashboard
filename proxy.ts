@@ -249,7 +249,7 @@ export default async function proxy(request: NextRequest) {
     response.headers.set('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS, PATCH');
     response.headers.set(
       'Access-Control-Allow-Headers',
-      'Content-Type, Authorization, X-Requested-With, X-CSRF-TOKEN, X-Refresh-Token, X-Idempotency-Key'
+      'Content-Type, Authorization, Cache-Control, Last-Event-ID, X-Requested-With, X-CSRF-TOKEN, X-Refresh-Token, X-Idempotency-Key'
     );
     response.headers.set('Access-Control-Max-Age', '86400');
     return response;
@@ -333,14 +333,16 @@ export default async function proxy(request: NextRequest) {
     }
   }
 
-  let token = tokenFromCookie || tokenFromHeader;
+  // Una app con Bearer puede compartir origen con otra sesión del dashboard.
+  // Su credencial explícita debe prevalecer sobre las cookies del navegador.
+  let token = tokenFromHeader || tokenFromCookie;
   let payload: any = null;
 
   if (token) {
     payload = await verifyToken(token);
   }
 
-  if (!payload) {
+  if (!payload && !tokenFromHeader) {
     const refreshToken = request.cookies.get('refresh_token')?.value;
     if (refreshToken) {
       const refreshPayload = await verifyRefreshToken(refreshToken);

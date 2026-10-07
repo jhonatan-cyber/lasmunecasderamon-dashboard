@@ -1,206 +1,101 @@
-name: Deploy to VPS (PM2)
+name: Deploy to VPS (Nginx + systemd)
 on:
   workflow_run:
     workflows: ['CI - Quality & Tests']
-    types:
-      - completed
-    branches:
-      - main
-
+    types: [completed]
+    branches: [main]
+permissions:
+  contents: read
+concurrency:
+  group: dashboard-production
+  cancel-in-progress: false
 jobs:
   deploy:
-    # Solo despliega si el CI de main terminó en éxito
-    if: ${{ github.event.workflow_run.conclusion == 'success' }}
+    if: >-
+      ${{ vars.ENABLE_PRODUCTION_DEPLOY == 'true' &&
+          github.event.workflow_run.conclusion == 'success' &&
+          github.event.workflow_run.event == 'push' &&
+          github.event.workflow_run.head_repository.full_name == github.repository }}
+    environment: production
     runs-on: ubuntu-latest
+    timeout-minutes: 30
     env:
-      JWT_SECRET: ${{ secrets.JWT_SECRET }}
-      JWT_REFRESH_SECRET: ${{ secrets.JWT_REFRESH_SECRET }}
+      HUSKY: '0'
+      NEXT_TELEMETRY_DISABLED: '1'
+      JWT_SECRET: build-only-secret
+      JWT_REFRESH_SECRET: build-only-refresh-secret
+      DEPLOY_SHA: ${{ github.event.workflow_run.head_sha }}
     steps:
-      - name: Checkout repository
-        uses: actions/checkout@v5
+      - uses: actions/checkout@v5
         with:
           ref: ${{ github.event.workflow_run.head_sha }}
-
-      - name: Set deploy directory
-        run: echo "DEPLOY_DIR=/var/www/lasmunecasderamon" >> $GITHUB_ENV
-
-      - name: Resolve SSH host to IPv4
+          persist-credentials: false
+      - name: Reject obsolete deployment
+        env:
+          GH_TOKEN: ${{ github.token }}
         run: |
-          RESOLVED_HOST=$(python3 -c "import socket; print(socket.gethostbyname('${{ secrets.SSH_HOST }}'))")
-          echo "SSH_IPV4_HOST=$RESOLVED_HOST" >> $GITHUB_ENV
-
-      - name: Install pnpm
-        uses: pnpm/action-setup@v6
+          test "$(gh api repos/$GITHUB_REPOSITORY/commits/main --jq .sha)" = "$DEPLOY_SHA"
+      - uses: pnpm/action-setup@v6
         with:
           run_install: false
-
-      - name: Setup Node.js
-        uses: actions/setup-node@v7
+      - uses: actions/setup-node@v7
         with:
           node-version: '24'
-          cache: 'pnpm'
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - name: Generate isolated build and runtime JWT keys
+        run: |
+          node -e "const fs=require('node:fs'),crypto=require('node:crypto'); for(const key of ['JWT_SECRET','JWT_REFRESH_SECRET']) fs.appendFileSync(process.env.GITHUB_ENV,key+'='+crypto.randomBytes(72).toString('base64url')+'\n');"
 
-      - name: Install dependencies
-        run: pnpm install --no-frozen-lockfile
-
-      - name: Build application
-        run: pnpm run build
+      - name: Build production bundle
+        run: |
+          test -n "$SSH_HOST"
+          test -n "$SSH_USERNAME"
+          test -n "$SSH_FINGERPRINT"
+          test -n "$SSH_PRIVATE_KEY$SSH_PASSWORD"
+          test -n "$NEXT_PUBLIC_BASE_URL"
+          test -n "$NEXT_PUBLIC_API_URL"
+          pnpm build
         env:
+          SSH_HOST: ${{ secrets.SSH_HOST }}
+          SSH_USERNAME: ${{ secrets.SSH_USERNAME }}
+          SSH_FINGERPRINT: ${{ secrets.SSH_FINGERPRINT }}
+          SSH_PRIVATE_KEY: ${{ secrets.SSH_PRIVATE_KEY }}
+          SSH_PASSWORD: ${{ secrets.SSH_PASSWORD }}
           NEXT_PUBLIC_BASE_URL: ${{ secrets.NEXT_PUBLIC_BASE_URL }}
           NEXT_PUBLIC_API_URL: ${{ secrets.NEXT_PUBLIC_API_URL }}
           NEXT_PUBLIC_SOCKET_URL: ${{ secrets.NEXT_PUBLIC_SOCKET_URL }}
-
-      - name: Copy files via SCP
+      - name: Package runtime and migration dependencies
+        run: |
+          tar --exclude='.next/cache' --exclude='.next/dev' -czf dashboard-release.tar.gz .next public package.json pnpm-lock.yaml pnpm-workspace.yaml .npmrc next.config.mjs scripts lib migrations patches mcp/package.json
+      - name: Transfer release
         uses: appleboy/scp-action@v1.0.0
         with:
-          host: ${{ env.SSH_IPV4_HOST }}
+          host: ${{ secrets.SSH_HOST }}
           username: ${{ secrets.SSH_USERNAME }}
+          key: ${{ secrets.SSH_PRIVATE_KEY }}
           password: ${{ secrets.SSH_PASSWORD }}
-          port: 22
-          source: '.next/,public/,package.json,pnpm-lock.yaml,next.config.mjs,migrations/,scripts/run-migrations.mjs,scripts/biometric-events-sdk.cjs'
-          target: '${{ env.DEPLOY_DIR }}'
-          rm: false
-          strip_components: 0
-
-      - name: Execute remote commands via SSH
-        uses: appleboy/ssh-action@v0.1.10
+          fingerprint: ${{ secrets.SSH_FINGERPRINT }}
+          port: ${{ vars.SSH_PORT || '22' }}
+          source: dashboard-release.tar.gz
+          target: /var/www/lasmunecasderamon-dashboard/incoming/${{ github.event.workflow_run.head_sha }}
+      - name: Install, migrate, restart and check health
+        uses: appleboy/ssh-action@v1.2.0
         with:
-          host: ${{ env.SSH_IPV4_HOST }}
+          host: ${{ secrets.SSH_HOST }}
           username: ${{ secrets.SSH_USERNAME }}
+          key: ${{ secrets.SSH_PRIVATE_KEY }}
           password: ${{ secrets.SSH_PASSWORD }}
-          port: 22
+          fingerprint: ${{ secrets.SSH_FINGERPRINT }}
+          port: ${{ vars.SSH_PORT || '22' }}
+          command_timeout: 20m
+          envs: DEPLOY_SHA
           script: |
-            DEPLOY_DIR="${{ env.DEPLOY_DIR }}"
-            mkdir -p "$DEPLOY_DIR"
-            cd "$DEPLOY_DIR"
-
-            # Crear/Actualizar archivo .env
-            cat <<EOF > .env
-            DB_HOST=${{ secrets.DB_HOST }}
-            DB_USER=${{ secrets.DB_USER }}
-            DB_PASSWORD='${{ secrets.DB_PASSWORD }}'
-            DB_NAME=${{ secrets.DB_NAME }}
-            DB_PORT=${{ secrets.DB_PORT }}
-            TWILIO_ACCOUNT_SID=${{ secrets.TWILIO_ACCOUNT_SID }}
-            TWILIO_AUTH_TOKEN=${{ secrets.TWILIO_AUTH_TOKEN }}
-            TWILIO_WHATSAPP_NUMBER=${{ secrets.TWILIO_WHATSAPP_NUMBER }}
-            ADMIN_WHATSAPP_NUMBER=${{ secrets.ADMIN_WHATSAPP_NUMBER }}
-            NEXT_PUBLIC_BASE_URL=${{ secrets.NEXT_PUBLIC_BASE_URL }}
-            NEXT_PUBLIC_API_URL=${{ secrets.NEXT_PUBLIC_API_URL }}
-            NEXT_PUBLIC_SOCKET_URL=${{ secrets.NEXT_PUBLIC_SOCKET_URL }}
-            CORS_ORIGINS=${{ secrets.CORS_ORIGINS }}
-            JWT_SECRET=${{ secrets.JWT_SECRET }}
-            JWT_REFRESH_SECRET=${{ secrets.JWT_REFRESH_SECRET }}
-            EOF
-
-            # Configurar pnpm
-            export PNPM_HOME="/root/.local/share/pnpm"
-            export PATH="$PNPM_HOME:$PATH"
-
-            if ! command -v pnpm &> /dev/null; then
-              npm install -g pnpm@latest
-            fi
-
-            # Instalación limpia (incluye devDependencies porque next.config.mjs requiere plugins de build)
-            # Saltar generate-sw del postinstall: el SW de producción ya lo generó el build (next build && node scripts/generate-sw.js)
-            export SKIP_SW_GENERATE=1
-            pnpm install --no-frozen-lockfile
-
-            # Ejecutar migraciones de BD (idempotentes: ignoran columnas duplicadas)
-            pnpm db:migrate
-
-            # Limpiar logs anteriores
-            pm2 flush
-
-            # Eliminar todos los procesos existentes en PM2 para limpiar la lista y evitar duplicados
-            pm2 delete all || true
-            PORT=3000 pm2 start "pnpm start" --name "lasmunecasderamon-dashboard" --cwd "$DEPLOY_DIR"
-            pm2 save
-
-            # Verificar estado
-            sleep 5
-            pm2 status lasmunecasderamon-dashboard
-            tail -n 20 logs/pm2-error.log || true
-
-            # --- Health check post-deploy ---
-            # Espera hasta 30s a que /api/health responda 200; si no, el run falla.
-            HEALTH_URL="http://127.0.0.1:3000/api/health"
-            HEALTH_OK=0
-            for i in $(seq 1 30); do
-              CODE=$(curl -s -o /dev/null -w "%{http_code}" --max-time 5 "$HEALTH_URL" || echo "000")
-              echo "health check (intento $i/30): HTTP $CODE"
-              if [ "$CODE" = "200" ]; then
-                HEALTH_OK=1
-                break
-              fi
-              sleep 1
-            done
-
-            if [ "$HEALTH_OK" != "1" ]; then
-              echo "::error::Health check falló: /api/health no respondió 200 tras 30s de arranque"
-              tail -n 50 logs/pm2-error.log || true
-              exit 1
-            fi
-            echo "✅ Health check OK: /api/health respondió 200"
-
-            # --- Health check autenticado (login de seed + ruta protegida) ---
-            # Verifica que el auth real funcione: login con usuario del seed y
-            # GET a una ruta protegida (/api/users/profile) respondiendo 200.
-            # El token se envía como Bearer (la cookie es Secure y curl sobre
-            # http://127.0.0.1 no la reenvía).
-            HC_USER='${{ secrets.HEALTH_CHECK_USER }}'
-            HC_PASS='${{ secrets.HEALTH_CHECK_PASSWORD }}'
-
-            AUTH_TOKEN=""
-            for i in $(seq 1 10); do
-              LOGIN_RESP=$(curl -s -X POST "http://127.0.0.1:3000/api/auth/login" \
-                -H "Content-Type: application/json" \
-                -d "{\"email\":\"$HC_USER\",\"password\":\"$HC_PASS\"}" \
-                --max-time 10)
-              AUTH_TOKEN=$(echo "$LOGIN_RESP" | node -e "let d='';process.stdin.on('data',c=>d+=c).on('end',()=>{try{const j=JSON.parse(d);console.log(j.token||'')}catch(e){console.log('')}})")
-              if [ -n "$AUTH_TOKEN" ]; then
-                break
-              fi
-              sleep 2
-            done
-
-            if [ -z "$AUTH_TOKEN" ]; then
-              echo "::error::Health check autenticado falló: login no devolvió token"
-              tail -n 50 logs/pm2-error.log || true
-              exit 1
-            fi
-
-            AUTH_OK=0
-            for i in $(seq 1 30); do
-              AUTH_CODE=$(curl -s -o /dev/null -w "%{http_code}" -H "Authorization: Bearer $AUTH_TOKEN" --max-time 5 "http://127.0.0.1:3000/api/users/profile" || echo "000")
-              echo "auth check (intento $i/30): HTTP $AUTH_CODE"
-              if [ "$AUTH_CODE" = "200" ]; then
-                AUTH_OK=1
-                break
-              fi
-              sleep 1
-            done
-
-            if [ "$AUTH_OK" != "1" ]; then
-              echo "::error::Health check autenticado falló: /api/users/profile no respondió 200 tras 30s"
-              tail -n 50 logs/pm2-error.log || true
-              exit 1
-            fi
-            echo "✅ Health check autenticado OK: login + /api/users/profile respondió 200"
-
-      - name: Notify WhatsApp on deploy failure
-        if: failure()
-        run: |
-          # Normaliza el número (acepta con o sin prefijo whatsapp:)
-          TO=$(echo "${{ secrets.ADMIN_WHATSAPP_NUMBER }}" | sed 's/^whatsapp://')
-          FROM=$(echo "${{ secrets.TWILIO_WHATSAPP_NUMBER }}" | sed 's/^whatsapp://')
-          COMMIT_MSG="${{ github.event.head_commit.message }}"
-          COMMIT_MSG=$(echo "$COMMIT_MSG" | head -1)
-          RUN_URL="${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}"
-          BODY=$(printf '⚠️ Deploy FALLÓ en producción\nCommit: %s\nMensaje: %s\nVer: %s' "${{ github.sha }}" "$COMMIT_MSG" "$RUN_URL")
-          curl -s -X POST "https://api.twilio.com/2010-04-01/Accounts/${{ secrets.TWILIO_ACCOUNT_SID }}/Messages.json" \
-            -u "${{ secrets.TWILIO_ACCOUNT_SID }}:${{ secrets.TWILIO_AUTH_TOKEN }}" \
-            --data-urlencode "From=whatsapp:${FROM}" \
-            --data-urlencode "To=whatsapp:${TO}" \
-            --data-urlencode "Body=${BODY}" \
-            --max-time 20
+            set -eu
+            ROOT=/var/www/lasmunecasderamon-dashboard
+            RELEASE="$ROOT/releases/$DEPLOY_SHA"
+            test -f "$ROOT/.env"
+            test ! -e "$RELEASE"
+            mkdir -p "$RELEASE"
+            tar -xzf "$ROOT/incoming/$DEPLOY_SHA/dashboard-release.tar.gz" -C "$RELEASE"
+            bash "$RELEASE/scripts/deploy-vps.sh" "$ROOT" "$DEPLOY_SHA"

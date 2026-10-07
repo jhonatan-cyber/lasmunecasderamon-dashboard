@@ -1,0 +1,15 @@
+diff --git a/lib/parse.js b/lib/parse.js
+index 3a6988e629f52aee6609dc5ec290a5e9ff47cecb..d4d539c9fc384a40e2ebc320362af4c4d08e0adc 100644
+--- a/lib/parse.js
++++ b/lib/parse.js
+@@ -55,6 +55,10 @@ const parse = (input, options = {}) => {
+ 
+   const advance = () => input[index++];
+   const push = node => {
++    // Bound every nested AST container before recursive compile/expand walkers.
++    if (node.nodes && stack.length >= 128) {
++      throw new SyntaxError("Brace nesting exceeds the maximum depth of 128");
++    }
+     if (node.type === 'text' && prev.type === 'dot') {
+       prev.type = 'text';
+     }

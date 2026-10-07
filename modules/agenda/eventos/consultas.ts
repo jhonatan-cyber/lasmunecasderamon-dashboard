@@ -23,6 +23,27 @@ import type {
 } from '@/lib/database/rows';
 
 export class EventQueries {
+  static async canReadEvent(id: string, type: string, userId: string): Promise<boolean> {
+    const ownershipQueries: Record<string, string> = {
+      propina: 'SELECT 1 FROM detalle_propinas WHERE id_detalle_propina = ? AND usuario_id = ?',
+      comision: 'SELECT 1 FROM detalle_comisiones WHERE id_detalle_comision = ? AND usuario_id = ?',
+      asistencia: 'SELECT 1 FROM asistencias WHERE id_asistencia = ? AND usuario_id = ?',
+      anticipo: 'SELECT 1 FROM anticipos WHERE id_anticipo = ? AND usuario_id = ?',
+      gratificacion: 'SELECT 1 FROM gratificaciones WHERE id = ? AND usuario_id = ?',
+      hora_extra: 'SELECT 1 FROM horas_extras WHERE id_hora_extra = ? AND usuario_id = ?',
+      servicio: `SELECT 1 FROM servicios s WHERE s.id_servicio = ? AND
+        (s.created_by = ? OR EXISTS (SELECT 1 FROM detalle_servicios ds WHERE ds.servicio_id = s.id_servicio AND ds.usuario_id = ?))`,
+      venta: `SELECT 1 FROM ventas v WHERE v.id_venta = ? AND
+        (v.created_by = ? OR EXISTS (SELECT 1 FROM ventas_usuarios vu WHERE vu.venta_id = v.id_venta AND vu.usuario_id = ?))`
+    };
+    const sql = Object.prototype.hasOwnProperty.call(ownershipQueries, type)
+      ? ownershipQueries[type]
+      : null;
+    if (!sql) return false;
+    const params = type === 'servicio' || type === 'venta' ? [id, userId, userId] : [id, userId];
+    const rows = await query(sql, params);
+    return rows.length > 0;
+  }
   static async getStats(userId: string) {
     try {
       const now = getNowInBusinessTimezone();
@@ -150,11 +171,20 @@ export class EventQueries {
       if (hasHorasExtras) params.push(userId);
       if (hasGratificaciones) params.push(userId);
 
-      let whereClause = '';
-      if (startDate && endDate) {
-        whereClause = 'WHERE date >= ? AND date <= ?';
-        params.push(startDate, endDate);
+      const conditions: string[] = [];
+      if (startDate) {
+        conditions.push('date >= CAST(? AS timestamp)');
+        params.push(startDate);
       }
+      if (endDate) {
+        conditions.push(
+          /^\d{4}-\d{2}-\d{2}$/.test(endDate)
+            ? "date < CAST(? AS date) + INTERVAL '1 day'"
+            : 'date <= CAST(? AS timestamp)'
+        );
+        params.push(endDate);
+      }
+      const whereClause = conditions.length ? `WHERE ${conditions.join(' AND ')}` : '';
 
       return await query(
         `

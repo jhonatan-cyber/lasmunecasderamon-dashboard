@@ -18,6 +18,10 @@ import * as repositorio from './repositorio';
 
 type EntradaAsistencia = z.input<typeof AttendanceRegisterSchema>;
 
+export function consultarRankingAsistencia(startDate?: string, endDate?: string) {
+  return repositorio.getAttendanceRanking(startDate, endDate);
+}
+
 /** Registra una marca (QR, código o desafío canjeado) con validación zod. */
 export async function registrarAsistencia(entrada: EntradaAsistencia, actor?: Actor, ip?: string) {
   const validated = AttendanceRegisterSchema.parse(entrada);

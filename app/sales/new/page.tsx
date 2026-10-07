@@ -68,7 +68,7 @@ export default function NewSale() {
     categories,
     isLoading: loadingCategorias,
     refreshAll
-  } = useMasterData();
+  } = useMasterData({ soloAnfitrionasEnLocal: true });
   useRefreshOnFocus(refreshAll, { immediate: false });
 
   const categoriasFiltradas = useMemo(

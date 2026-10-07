@@ -62,14 +62,16 @@ export const NewSaleConfiguration = ({
               requireCompleteConfig={true}
             />
           </div>
-          <div className={fieldWrapperClass}>
-            <TimeSelect
-              value={manualTime}
-              onChange={setManualTime}
-              label='Tiempo'
-              placeholder='Seleccione tiempo'
-            />
-          </div>
+          {selectedHabitacion && selectedHabitacion !== 'none' && (
+            <div className={fieldWrapperClass}>
+              <TimeSelect
+                value={manualTime}
+                onChange={setManualTime}
+                label='Tiempo'
+                placeholder='Seleccione tiempo'
+              />
+            </div>
+          )}
         </>
       )}
 

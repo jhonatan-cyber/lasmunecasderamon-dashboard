@@ -243,7 +243,7 @@ describe('buscador rápido de Nueva Venta', () => {
     expect(screen.getByRole('button', { name: 'Agregar producto' })).toBeEnabled();
   });
 
-  it('pide anfitriona antes de vender un shot con comisión', () => {
+  it('agrega un shot con comisión sin anfitriona (la anfitriona es opcional)', () => {
     const conComision = {
       ...conShotAnfitriona,
       opciones_venta: [
@@ -253,10 +253,9 @@ describe('buscador rápido de Nueva Venta', () => {
     };
     renderSearch([conComision]);
 
-    // La botella no cobra comisión: se puede agregar sin anfitriona.
     expect(screen.getByRole('button', { name: 'Agregar producto' })).toBeEnabled();
     fireEvent.click(screen.getByRole('button', { name: 'Shot anfitriona · $3.000' }));
-    // El shot sí: falta asignar quién lo sirve.
-    expect(screen.getByRole('button', { name: 'Agregar producto' })).toBeDisabled();
+    // El shot ofrece asignar anfitriona, pero no exige elegirla para vender.
+    expect(screen.getByRole('button', { name: 'Agregar producto' })).toBeEnabled();
   });
 });

@@ -1,5 +1,6 @@
 'use client';
 import React, { useState, useMemo, useCallback } from 'react';
+import { useQuery, keepPreviousData } from '@tanstack/react-query';
 import { useParams } from 'next/navigation';
 import useProducts from '@/hooks/productos/useProducts';
 import { useCategories } from '@/hooks/productos/useCategories';
@@ -96,12 +97,13 @@ const ProductCategoryPage = () => {
   }, [products, searchTerm, filterStatus]);
 
   React.useEffect(() => {
-    const filteredIds = filteredProducts.map(p => p.id).join(',');
-    const localIds = localProductsCards.map(p => p.id).join(',');
-    if (filteredIds !== localIds) {
-      setLocalProductsCards(filteredProducts);
-    }
-  }, [filteredProducts, localProductsCards]);
+    setLocalProductsCards(previous =>
+      previous.length === filteredProducts.length &&
+      previous.every((product, index) => product === filteredProducts[index])
+        ? previous
+        : filteredProducts
+    );
+  }, [filteredProducts]);
 
   React.useEffect(() => {
     if (typeof window === 'undefined') return;
@@ -156,8 +158,6 @@ const ProductCategoryPage = () => {
     return localProductsCards.slice(start, start + pageSizeCards);
   }, [localProductsCards, pageCards, pageSizeCards]);
 
-  const [presentacionesMap, setPresentacionesMap] = useState<Record<string, Presentacion[]>>({});
-
   // Clave estable: los memos de filtros generan arrays nuevos en cada render
   // (searchFields es un literal), así que el efecto debe depender del contenido.
   // Une tabla + cards para que ambas vistas tengan las presentaciones.
@@ -166,24 +166,34 @@ const ProductCategoryPage = () => {
     .filter((id, i, arr) => arr.indexOf(id) === i)
     .join(',');
 
-  React.useEffect(() => {
-    if (paginatedIdsKey === '') {
-      setPresentacionesMap({});
-      return;
+  const { data: presentacionesMap = {}, isPending: presentacionesPending } = useQuery<
+    Record<string, Presentacion[]>
+  >({
+    queryKey: ['product-presentations', paginatedIdsKey],
+    enabled: Boolean(paginatedIdsKey),
+    placeholderData: keepPreviousData,
+    queryFn: async () => {
+      const response = await fetch(
+        `/api/products/presentations?producto_ids=${encodeURIComponent(paginatedIdsKey)}`,
+        { cache: 'no-store' }
+      );
+      const result = await response.json();
+      if (!response.ok || !result.success) {
+        throw new Error(result.message || 'No se pudieron cargar las presentaciones');
+      }
+      return result.data ?? {};
     }
-    let cancelled = false;
-    fetch(`/api/products/presentations?producto_ids=${paginatedIdsKey}`)
-      .then(res => res.json().catch(() => ({})))
-      .then(data => {
-        if (cancelled) return;
-        if (data.success && data.data) setPresentacionesMap(data.data);
-        else console.warn('[products] No se pudieron cargar presentaciones:', data.message);
-      })
-      .catch(err => console.warn('[products] Error cargando presentaciones:', err));
-    return () => {
-      cancelled = true;
-    };
-  }, [paginatedIdsKey]);
+  });
+
+  // Las tarjetas se revelan recién cuando están las presentaciones: así la
+  // entrada animada se reproduce una sola vez y con los datos finales.
+  const cardsReady = !isLoading && !(Boolean(paginatedIdsKey) && presentacionesPending);
+  const cardsGridKey = [
+    cardsReady ? 'ready' : 'loading',
+    pageCards,
+    pageSizeCards,
+    filterStatus ?? 'all'
+  ].join('-');
 
   const flatCards: { rowId: string; product: Product; presentation: Presentacion | null }[] =
     useMemo(
@@ -435,7 +445,7 @@ const ProductCategoryPage = () => {
                 </div>
               ) : (
                 <>
-                  <BoneyardSkeleton name='category-products-cards' loading={isLoading}>
+                  <BoneyardSkeleton name='category-products-cards' loading={!cardsReady}>
                     <DndContext
                       sensors={sensors}
                       collisionDetection={closestCenter}
@@ -445,7 +455,10 @@ const ProductCategoryPage = () => {
                         items={flatCards.map(c => c.rowId)}
                         strategy={rectSortingStrategy}
                       >
-                        <div className='grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 sm:gap-6'>
+                        <div
+                          key={cardsGridKey}
+                          className='grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 sm:gap-6'
+                        >
                           {(flatCards.length > 0
                             ? flatCards
                             : isLoading
@@ -508,7 +521,7 @@ const ProductCategoryPage = () => {
                                   presentation: Presentacion | null;
                                 }[])
                               : []
-                          ).map(card => (
+                          ).map((card, index) => (
                             <ProductCard
                               key={card.rowId}
                               rowId={card.rowId}
@@ -520,6 +533,7 @@ const ProductCategoryPage = () => {
                               onDeactivate={handleDeactivate}
                               isDraggable={true}
                               isLoading={isMutating}
+                              entranceIndex={index}
                             />
                           ))}
                         </div>
@@ -549,7 +563,7 @@ const ProductCategoryPage = () => {
             </div>
           ) : (
             <>
-              <BoneyardSkeleton name='category-products-mobile' loading={isLoading}>
+              <BoneyardSkeleton name='category-products-mobile' loading={!cardsReady}>
                 <DndContext
                   sensors={sensors}
                   collisionDetection={closestCenter}
@@ -559,7 +573,10 @@ const ProductCategoryPage = () => {
                     items={flatCards.map(c => c.rowId)}
                     strategy={rectSortingStrategy}
                   >
-                    <div className='grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6'>
+                    <div
+                      key={cardsGridKey}
+                      className='grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6'
+                    >
                       {(flatCards.length > 0
                         ? flatCards
                         : isLoading
@@ -596,7 +613,7 @@ const ProductCategoryPage = () => {
                               presentation: Presentacion | null;
                             }[])
                           : []
-                      ).map(card => (
+                      ).map((card, index) => (
                         <ProductCard
                           key={card.rowId}
                           rowId={card.rowId}
@@ -608,6 +625,7 @@ const ProductCategoryPage = () => {
                           onDeactivate={handleDeactivate}
                           isDraggable={true}
                           isLoading={isMutating}
+                          entranceIndex={index}
                         />
                       ))}
                     </div>

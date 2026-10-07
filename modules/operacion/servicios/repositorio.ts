@@ -17,7 +17,7 @@ import type { ContextoOperacion } from '@/lib/transaccion/contrato';
 import { resolverTransaccion } from '@/lib/transaccion/infraestructura';
 import { getNowInBusinessTimezone } from '@/lib/business/timezoneService';
 import { BaseRepository } from '@/lib/database/base-repository';
-import { DatabaseError } from '@/lib/errors/errors';
+import { BusinessError, DatabaseError } from '@/lib/errors/errors';
 import { logger } from '@/lib/utils/logger';
 import type { ServiceType } from '@/lib/business/schemas';
 import { mapServiceFromDB } from '@/modules/operacion/servicios/mapeo';
@@ -69,6 +69,14 @@ export async function obtenerSolicitudAnulacionServicioPorToken(
      WHERE sas.token = ? AND sas.estado = 'pendiente'
      LIMIT 1`,
     [token]
+  );
+}
+
+export async function listarSolicitudesAnulacionServiciosPendientes() {
+  return query<Array<{ id: string; servicio_id: string; monto: number; motivo: string; estado: string; fecha_solicitud: string; codigo: string }>>(
+    `SELECT sas.id, sas.servicio_id, s.total AS monto, sas.motivo, sas.estado, sas.fecha_solicitud, s.codigo
+     FROM solicitudes_anulacion_servicios sas JOIN servicios s ON s.id_servicio = sas.servicio_id
+     WHERE sas.estado = 'pendiente' ORDER BY sas.fecha_solicitud DESC`
   );
 }
 
@@ -212,6 +220,9 @@ export async function actualizarEstadoSolicitudServicio(
   contexto: ContextoOperacion
 ): Promise<'confirmada' | 'rechazada'> {
   const normalized = String(status || '').toLowerCase();
+  const trx = resolverTransaccion(contexto);
+  const rows = await trx<Array<{estado: string}>>('SELECT estado FROM solicitudes_anulacion_servicios WHERE id = ? FOR UPDATE', [requestId]);
+  if (!rows[0] || rows[0].estado !== 'pendiente') throw new BusinessError('La solicitud ya fue procesada');
   const nextStatus =
     normalized === 'confirmar' || normalized === 'aprobado' || normalized === 'confirmada'
       ? 'confirmada'

@@ -119,7 +119,9 @@ const normalizeCategory = (category: AnyRecord): NormalizedCategory => ({
   productCount: category.productCount ?? category.total_products ?? 0
 });
 
-export function useMasterData() {
+export function useMasterData({
+  soloAnfitrionasEnLocal = false
+}: { soloAnfitrionasEnLocal?: boolean } = {}) {
   const clientsQuery = useGenericFetch<NormalizedClient>('/api/clients', {
     queryKey: queryKeys.clients.all,
     transform: result => asArray(result).map(normalizeClient)
@@ -133,9 +135,11 @@ export function useMasterData() {
   // Todas las anfitrionas activas: la presencia (login/en local) no puede
   // dejar la venta sin opciones para asignar comisión.
   const anfitrionasQuery = useGenericFetch<NormalizedAnfitriona>(
-    '/api/users?anfitrionas=1&status=active',
+    `/api/users?anfitrionas=1&status=active${soloAnfitrionasEnLocal ? '&loggedIn=true&enLocal=true' : ''}`,
     {
-      queryKey: queryKeys.anfitrionas.all,
+      queryKey: soloAnfitrionasEnLocal
+        ? [...queryKeys.anfitrionas.all, 'en-local']
+        : queryKeys.anfitrionas.all,
       transform: result => asArray(result).map(normalizeAnfitriona)
     }
   );

@@ -1,10 +1,14 @@
 import { Product } from '@/types/product';
+import { useQueryClient } from '@tanstack/react-query';
 import { toast } from 'sonner';
 import { useGenericFetch } from '../shared/useGenericFetch';
 import { useGenericFilters } from '../shared/useGenericFilters';
 import { useGenericMutations } from '../shared/useGenericMutations';
 
+const PRODUCT_SEARCH_FIELDS: (keyof Product)[] = ['name', 'code'];
+
 export default function useProducts(categoryId?: string) {
+  const queryClient = useQueryClient();
   const endpoint = categoryId ? `/api/products?category_id=${categoryId}` : '/api/products';
 
   const {
@@ -28,16 +32,14 @@ export default function useProducts(categoryId?: string) {
     remove,
     isLoading: isMutating
   } = useGenericMutations<Product>('/api/products', {
-    onSuccess: () => {
-      refetch();
-    },
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['product-presentations'] }),
     showToasts: true,
     entityName: 'Producto',
     invalidateKey: endpoint
   });
 
   const filters = useGenericFilters(products, {
-    searchFields: ['name', 'code'] as any,
+    searchFields: PRODUCT_SEARCH_FIELDS,
     initialPageSize: 20,
     initialSortBy: 'display_order',
     initialSortOrder: 'asc'

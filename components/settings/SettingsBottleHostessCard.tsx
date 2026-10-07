@@ -1,7 +1,18 @@
 'use client';
 
-import { useState, useEffect, useMemo } from 'react';
-import { Save, Users, RotateCcw } from 'lucide-react';
+import { useState, useEffect, useMemo, useRef } from 'react';
+import { Save, Users, RotateCcw, Check, ChevronsUpDown } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import { Popover, PopoverTrigger, PopoverContent } from '@/components/ui/popover';
+import {
+  Command,
+  CommandInput,
+  CommandList,
+  CommandEmpty,
+  CommandGroup,
+  CommandItem
+} from '@/components/ui/command';
+import { cn } from '@/lib/utils/utils';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { toast } from 'sonner';
 import logger from '@/lib/utils/logger';
@@ -10,8 +21,18 @@ import {
   invalidateSettingsProducts
 } from '@/hooks/settings/useSettingsProducts';
 import { isChampagneProduct } from '@/components/orders/productModalRules';
-import { SettingsChampagneTiers } from './SettingsChampagneTiers';
+import { SettingsChampagneTiers, type SettingsTiersHandle } from './SettingsChampagneTiers';
 import { formatCurrencyCLP } from '@/lib/utils/formatters';
+import type { SaleOption } from '@/types/sale-options';
+
+type PresentacionComisiones = {
+  id: string;
+  producto_id: string;
+  nombre: string;
+  precio_venta: number;
+  comision: number;
+  opciones_venta: SaleOption[];
+};
 
 const MIN_ANFITRIONAS = 1;
 const MAX_ANFITRIONAS = 10;
@@ -25,14 +46,16 @@ const toNumber = (v: string) => Number(String(v).replace(/\./g, '')) || 0;
 export function SettingsBottleHostessCard() {
   const { productos: allProductos, loading, refresh } = useSettingsProducts();
   const [selectedId, setSelectedId] = useState<string>('');
+  const [productSelectorOpen, setProductSelectorOpen] = useState(false);
   // Lo que el usuario editó; null = sin editar, se muestra el valor vigente.
   const [maximoEdit, setMaximoEdit] = useState<string | null>(null);
   const [precioEdit, setPrecioEdit] = useState<string | null>(null);
   const [comisionEdit, setComisionEdit] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
+  const tiersRef = useRef<SettingsTiersHandle>(null);
   // Productos del bar que se venden por botella (no importa si también tienen
   // shot): son los únicos donde aplica el máximo por botella.
-  const [botellaIds, setBotellaIds] = useState<Set<string> | null>(null);
+  const [presentaciones, setPresentaciones] = useState<PresentacionComisiones[] | null>(null);
   const [barError, setBarError] = useState(false);
   const [barNonce, setBarNonce] = useState(0);
 
@@ -40,11 +63,16 @@ export function SettingsBottleHostessCard() {
     let cancelled = false;
     setBarError(false);
     fetch('/api/bar', { cache: 'no-store' })
-      .then(res => res.json().catch(() => ({})))
+      .then(async res => {
+        const result = await res.json();
+        if (!res.ok || !result.success || !Array.isArray(result.data))
+          throw new Error('Error al cargar las presentaciones');
+        return result;
+      })
       .then(result => {
         if (cancelled) return;
         const rows = result.success && Array.isArray(result.data) ? result.data : [];
-        const ids = new Set<string>();
+        const disponibles: PresentacionComisiones[] = [];
         for (const row of rows) {
           const pid = String(row?.producto_id ?? '');
           if (!pid) continue;
@@ -60,10 +88,17 @@ export function SettingsBottleHostessCard() {
           }
           // Sin opciones configuradas la botella es la venta por defecto.
           if (opciones.length === 0 || opciones.some(o => o?.tipo === 'botella')) {
-            ids.add(pid);
+            disponibles.push({
+              id: String(row.id),
+              producto_id: pid,
+              nombre: String(row.nombre ?? ''),
+              precio_venta: Number(row.precio_venta ?? 0),
+              comision: Number(row.comision ?? 0),
+              opciones_venta: opciones
+            });
           }
         }
-        setBotellaIds(ids);
+        setPresentaciones(disponibles);
       })
       .catch(() => {
         if (!cancelled) setBarError(true);
@@ -75,10 +110,30 @@ export function SettingsBottleHostessCard() {
 
   const productos = useMemo(
     () =>
-      allProductos
-        .filter(p => (botellaIds ? botellaIds.has(String(p.id)) : true))
-        .sort((a, b) => String(a.name).localeCompare(String(b.name), 'es')),
-    [allProductos, botellaIds]
+      (presentaciones ?? [])
+        .flatMap(presentacion => {
+          const producto = allProductos.find(p => String(p.id) === presentacion.producto_id);
+          if (!producto) return [];
+          const botella = presentacion.opciones_venta.find(o => o.tipo === 'botella');
+          return [
+            {
+              ...producto,
+              id: presentacion.id,
+              producto_id: presentacion.producto_id,
+              presentacion: presentacion.nombre,
+              opciones_venta: presentacion.opciones_venta,
+              price: botella?.precio ?? presentacion.precio_venta,
+              commission: botella?.comision ?? presentacion.comision
+            }
+          ];
+        })
+        .sort((a, b) =>
+          `${a.categoria} ${a.name} ${a.presentacion}`.localeCompare(
+            `${b.categoria} ${b.name} ${b.presentacion}`,
+            'es'
+          )
+        ),
+    [allProductos, presentaciones]
   );
 
   useEffect(() => {
@@ -103,6 +158,10 @@ export function SettingsBottleHostessCard() {
   }, [productos, selectedId]);
 
   const seleccionado = productos.find(p => String(p.id) === selectedId);
+  const etiquetaProducto = (p: (typeof productos)[number]) =>
+    [p.categoria, p.name, p.presentacion, formatCurrencyCLP(Number(p.price ?? 0))]
+      .filter(Boolean)
+      .join(' ');
   const esChampagne = isChampagneProduct({
     categoria: seleccionado?.categoria,
     category_name: seleccionado?.categoria
@@ -128,7 +187,7 @@ export function SettingsBottleHostessCard() {
   };
 
   const guardarMaximo = async (valor: number | null) => {
-    if (!selectedId) return;
+    if (!seleccionado) return;
     if (
       valor !== null &&
       (!Number.isInteger(valor) || valor < MIN_ANFITRIONAS || valor > MAX_ANFITRIONAS)
@@ -138,7 +197,7 @@ export function SettingsBottleHostessCard() {
     }
     try {
       setSaving(true);
-      const res = await fetch(`/api/products/${selectedId}`, {
+      const res = await fetch(`/api/products/${seleccionado.producto_id}`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ max_anfitrionas: valor })
@@ -158,7 +217,7 @@ export function SettingsBottleHostessCard() {
   };
 
   const handleSave = async () => {
-    if (!selectedId) return;
+    if (!seleccionado) return;
     const textoMax = maximo.trim();
     const maximoValor = textoMax === '' ? null : Number(textoMax);
     if (
@@ -184,26 +243,62 @@ export function SettingsBottleHostessCard() {
     }
     try {
       setSaving(true);
-      const res = await fetch(`/api/products/${selectedId}`, {
-        method: 'PUT',
+      const tiers =
+        maximoValor !== null && maximoValor >= 2 ? tiersRef.current?.getTiers() : undefined;
+      if (maximoValor !== null && maximoValor >= 2 && !tiers)
+        throw new Error('Esperá a que se cargue la tabla de precios');
+      const res = await fetch('/api/products/presentations', {
+        method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          precio: precioValor,
+          id: selectedId,
+          precio_venta: precioValor,
           comision: comisionValor,
-          max_anfitrionas: maximoValor
+          opciones_venta: seleccionado.opciones_venta.length
+            ? seleccionado.opciones_venta.map(o =>
+                o.tipo === 'botella' ? { ...o, precio: precioValor, comision: comisionValor } : o
+              )
+            : [{ tipo: 'botella', precio: precioValor, comision: comisionValor }]
         })
       });
       const result = await res.json().catch(() => ({}));
       if (!res.ok || !result.success) throw new Error(result.message || 'Error al guardar');
+      if (tiers) {
+        const tiersRes = await fetch(`/api/products/${seleccionado.producto_id}/tiers`, {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ tiers })
+        });
+        const tiersResult = await tiersRes.json();
+        if (!tiersRes.ok || !tiersResult.success)
+          throw new Error(
+            'Precio y comisión guardados; no se pudo guardar la tabla por anfitrionas'
+          );
+      }
+      if (maximoValor !== vigente) {
+        const maxRes = await fetch(`/api/products/${seleccionado.producto_id}`, {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ max_anfitrionas: maximoValor })
+        });
+        const maxResult = await maxRes.json();
+        if (!maxRes.ok || !maxResult.success) {
+          setBarNonce(n => n + 1);
+          throw new Error(
+            'Precio y comisión guardados; no se pudo guardar el máximo de anfitrionas'
+          );
+        }
+      }
       invalidateSettingsProducts();
       await refresh();
+      setBarNonce(n => n + 1);
       setMaximoEdit(null);
       setPrecioEdit(null);
       setComisionEdit(null);
-      toast.success('Producto actualizado');
+      toast.success('Presentación actualizada');
     } catch (error) {
       logger.captureException(error, { context: 'SettingsBottleHostessCard:save' });
-      toast.error('Error al guardar');
+      toast.error(error instanceof Error ? error.message : 'Error al guardar');
     } finally {
       setSaving(false);
     }
@@ -214,18 +309,16 @@ export function SettingsBottleHostessCard() {
       <CardHeader>
         <CardTitle className='flex items-center gap-2 text-xl font-bold dark:text-white'>
           <Users className='h-5 w-5 text-neutral-500' />
-          Anfitrionas por producto
+          Comisiones por presentación
         </CardTitle>
         <CardDescription className='text-neutral-500 dark:text-neutral-400'>
-          Precio, comisión y máximo de anfitrionas por botella de cada producto del bar que se venda
-          por botella (no importa si también tiene shot). Al elegir un producto se cargan sus datos:
-          editá y guardá. Máximo vacío = regla por defecto (champagne usa su tabla, bebida cara pide
-          hasta la cantidad, el resto una anfitriona). Si el producto es champagne, acá mismo se
-          editan sus precios por cantidad de anfitrionas.
+          Elegí una presentación para editar su precio y comisión por botella. El máximo de
+          anfitrionas y la tabla de champagne se comparten entre las presentaciones del producto.
+          Máximo vacío = regla por defecto.
         </CardDescription>
       </CardHeader>
       <CardContent>
-        {loading || (botellaIds === null && !barError) ? (
+        {loading || (presentaciones === null && !barError) ? (
           <div className='text-center py-8'>
             <div className='animate-spin rounded-full h-8 w-8 border-b-2 border-neutral-500 mx-auto' />
             <p className='text-sm text-neutral-500 dark:text-neutral-400 mt-2'>
@@ -256,21 +349,63 @@ export function SettingsBottleHostessCard() {
                 htmlFor='botella-producto'
                 className='block text-xs font-bold uppercase tracking-wider text-neutral-500 ml-1'
               >
-                Producto
+                Producto y presentación
               </label>
-              <select
-                id='botella-producto'
-                value={selectedId}
-                onChange={e => handleSelectChange(e.target.value)}
-                className='w-full px-4 py-2.5 bg-white dark:bg-neutral-950 border border-neutral-300 dark:border-neutral-800 rounded-full text-sm'
-              >
-                {productos.map(p => (
-                  <option key={p.id} value={String(p.id)}>
-                    {p.name} · {formatCurrencyCLP(Number(p.price ?? 0))}
-                    {p.categoria ? ` · ${p.categoria}` : ''}
-                  </option>
-                ))}
-              </select>
+              <Popover open={productSelectorOpen} onOpenChange={setProductSelectorOpen}>
+                <PopoverTrigger asChild>
+                  <Button
+                    id='botella-producto'
+                    type='button'
+                    variant='outline'
+                    role='combobox'
+                    aria-expanded={productSelectorOpen}
+                    aria-controls='botella-productos-lista'
+                    disabled={saving}
+                    className='w-full justify-between rounded-full font-normal'
+                  >
+                    <span className='truncate'>
+                      {seleccionado ? etiquetaProducto(seleccionado) : 'Seleccionar producto'}
+                    </span>
+                    <ChevronsUpDown className='opacity-50' />
+                  </Button>
+                </PopoverTrigger>
+                <PopoverContent
+                  align='start'
+                  className='w-[var(--radix-popover-trigger-width)] p-0'
+                >
+                  <Command>
+                    <CommandInput
+                      id='botella-producto-busqueda'
+                      placeholder='Buscar producto, categoría o presentación...'
+                      aria-label='Buscar producto, categoría o presentación'
+                      className='border-0 shadow-none focus-visible:outline-none focus-visible:ring-0 focus-visible:ring-offset-0'
+                    />
+                    <CommandList id='botella-productos-lista'>
+                      <CommandEmpty>No se encontraron productos.</CommandEmpty>
+                      <CommandGroup>
+                        {productos.map(p => (
+                          <CommandItem
+                            key={p.id}
+                            value={String(p.id)}
+                            keywords={[String(p.name), String(p.categoria ?? ''), p.presentacion]}
+                            onSelect={() => {
+                              if (String(p.id) !== selectedId) handleSelectChange(String(p.id));
+                              setProductSelectorOpen(false);
+                            }}
+                          >
+                            <Check
+                              className={cn(
+                                selectedId === String(p.id) ? 'opacity-100' : 'opacity-0'
+                              )}
+                            />
+                            <span>{etiquetaProducto(p)}</span>
+                          </CommandItem>
+                        ))}
+                      </CommandGroup>
+                    </CommandList>
+                  </Command>
+                </PopoverContent>
+              </Popover>
             </div>
             <div className='grid grid-cols-1 sm:grid-cols-3 gap-4'>
               <div className='space-y-1'>
@@ -332,7 +467,18 @@ export function SettingsBottleHostessCard() {
               </span>
             </p>
 
-            {esChampagne && selectedId && <SettingsChampagneTiers productId={selectedId} />}
+            {Number(maximo) >= 2 && Number(maximo) <= MAX_ANFITRIONAS && seleccionado && (
+              <SettingsChampagneTiers
+                key={selectedId}
+                ref={tiersRef}
+                disabled={saving}
+                productId={seleccionado.producto_id}
+                maxAnfitrionas={Number(maximo)}
+                champagne={esChampagne}
+                precioBase={precioVigente}
+                comisionBase={comisionVigente}
+              />
+            )}
 
             <div className='flex flex-wrap justify-end gap-2 pt-2'>
               {vigente !== null && (

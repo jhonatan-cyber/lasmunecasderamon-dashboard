@@ -68,12 +68,31 @@ function Harness({
 }
 
 describe('vistas de productos en nueva venta', () => {
+  it('permite agregar un producto con comisión sin seleccionar anfitrionas', () => {
+    const add = vi.fn();
+    render(
+      <Harness
+        productos={[
+          {
+            ...product,
+            comision: 2000,
+            opciones_venta: [{ tipo: 'botella', precio: 4000, comision: 2000 }]
+          }
+        ]}
+        onAdd={add}
+      />
+    );
+    const button = screen.getByRole('button', { name: 'Agregar producto' });
+    expect(button).toBeEnabled();
+    fireEvent.click(button);
+    expect(add).toHaveBeenCalledWith(expect.objectContaining({ selectedHostesses: [] }));
+  });
   it('conserva cantidad y tipo de venta al alternar tabla y tarjetas y permite agregar', () => {
     const add = vi.fn();
     render(<Harness productos={[product]} onAdd={add} />);
     expect(screen.getByRole('table')).toBeInTheDocument();
     const photo = screen.getByRole('img', { name: product.nombre });
-    expect(photo).toHaveAttribute('src', '/api/images/products/producto.webp');
+    expect(photo).toHaveAttribute('src', '/api/images/products/producto.webp?sin_fondo=1&recorte=2');
     fireEvent.error(photo);
     expect(photo).toHaveAttribute('src', '/api/images/products/default.png');
     fireEvent.click(screen.getByRole('button', { name: 'Aumentar' }));
@@ -153,7 +172,7 @@ describe('vistas de productos en nueva venta', () => {
     expect(screen.getByRole('button', { name: 'Agregar producto' })).not.toBeDisabled();
   });
 
-  it('pide anfitriona al vender el shot cuando el shot sí tiene comisión', () => {
+  it('ofrece anfitriona opcional al vender el shot con comisión', () => {
     const shotConComision = {
       ...product,
       opciones_venta: [
@@ -166,9 +185,9 @@ describe('vistas de productos en nueva venta', () => {
     expect(screen.getByText('Sin comisión')).toBeInTheDocument();
     expect(screen.getByRole('button', { name: 'Agregar producto' })).not.toBeDisabled();
     fireEvent.click(screen.getByRole('button', { name: /^Shot · 50 ml/ }));
-    // El shot sí: se pide anfitriona antes de agregar.
+    // El shot ofrece asignación, pero se puede agregar sin anfitriona.
     expect(screen.queryByText('Sin comisión')).not.toBeInTheDocument();
-    expect(screen.getByRole('button', { name: 'Agregar producto' })).toBeDisabled();
+    expect(screen.getByRole('button', { name: 'Agregar producto' })).toBeEnabled();
   });
 
   it('el contador «En carrito» separa el shot de cliente del de anfitriona', () => {

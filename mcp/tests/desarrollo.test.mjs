@@ -6,8 +6,10 @@ import { join, dirname } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { Client } from '@modelcontextprotocol/sdk/client/index.js';
 import { StdioClientTransport } from '@modelcontextprotocol/sdk/client/stdio.js';
+import { backendAdministrador } from './helpers/backend.mjs';
 
 test('estado de comandos a través del protocolo MCP', async t => {
+  const backend = await backendAdministrador(t);
   const root = await mkdtemp(join(tmpdir(), 'lasmunecas-mcp-test-'));
   const client = new Client({ name: 'regression', version: '1.0.0' });
   t.after(async () => { await client.close(); await rm(root, { recursive: true, force: true }); });
@@ -16,9 +18,9 @@ test('estado de comandos a través del protocolo MCP', async t => {
   await client.connect(new StdioClientTransport({
     command: process.execPath,
     args: [fileURLToPath(new URL('../dist/index.js', import.meta.url))],
-    env: { ...process.env, MCP_REPO_ROOT: root, MCP_ENABLE_DEV_TOOLS: '1' }
+    env: { ...process.env, ...backend.env, MCP_REPO_ROOT: root, MCP_ENABLE_DEV_TOOLS: '1' }
   }));
-  assert.equal((await client.listTools()).tools.length, 16);
+  assert.equal((await client.listTools()).tools.length, 37);
   for (const code of [0, 7]) {
     for (const path of scripts) await writeFile(join(root, path), `console.log('diagnostico-prueba'); process.exit(${code});`);
     for (const name of ['check_limites', 'diagnostico_arquitectura', 'typecheck', 'test_unit']) {

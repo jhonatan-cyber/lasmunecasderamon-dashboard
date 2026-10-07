@@ -99,7 +99,8 @@ beforeEach(() => {
 describe('proxy — CORS de Expo Web', () => {
   it.each([
     ['/api/orders', 'content-type,authorization,x-idempotency-key'],
-    ['/api/auth/refresh', 'content-type,x-refresh-token']
+    ['/api/auth/refresh', 'content-type,x-refresh-token'],
+    ['/api/notifications/sse', 'authorization,cache-control,x-requested-with,last-event-id']
   ])('autoriza las cabeceras del preflight %s sin exigir sesión', async (pathname, requested) => {
     const proxy = await loadProxy();
     const res = await proxy(
@@ -194,6 +195,32 @@ describe('proxy — autenticación', () => {
 });
 
 describe('proxy — token admin', () => {
+  it('verifica el Bearer de la app aunque el navegador tenga otra sesión', async () => {
+    mockJwtVerify.mockResolvedValue({ payload: ADMIN_PAYLOAD });
+    const proxy = await loadProxy();
+    const res = await proxy(createRequest({
+      pathname: '/api/users',
+      headers: { authorization: 'Bearer app-token' },
+      cookies: { token: 'browser-token' }
+    }));
+    expect(res.status).toBe(200);
+    expect(mockJwtVerify).toHaveBeenCalledWith('app-token', expect.anything());
+    expect(mockJwtVerify).not.toHaveBeenCalledWith('browser-token', expect.anything());
+  });
+
+  it('no sustituye un Bearer inválido por el refresh de otra sesión', async () => {
+    mockJwtVerify.mockRejectedValue(new Error('Token inválido'));
+    const proxy = await loadProxy();
+    const res = await proxy(createRequest({
+      pathname: '/api/users',
+      headers: { authorization: 'Bearer invalid-app-token' },
+      cookies: { token: 'browser-token', refresh_token: 'browser-refresh' }
+    }));
+    expect(res.status).toBe(401);
+    expect(mockJwtVerify).toHaveBeenCalledTimes(1);
+    expect(mockSignJWT).not.toHaveBeenCalled();
+  });
+
   it('administrador con token válido accede a página protegida', async () => {
     mockJwtVerify.mockResolvedValue({ payload: ADMIN_PAYLOAD });
     const proxy = await loadProxy();

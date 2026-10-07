@@ -463,9 +463,37 @@ body {
   margin-left: 0 !important;
 }
 
-*:focus-visible {
+/* Hover compartido con el botón Atrás de Nueva venta, incluidos botones nativos. */
+:is(button, [role='button'], [data-ui-button]):not([role='checkbox']):not([role='switch']):not([role='radio']) {
+  transition-property: color, background-color, border-color, box-shadow, transform, scale;
+  transition-duration: 200ms;
+}
+
+@media (hover: hover) and (pointer: fine) {
+  :is(button, [role='button'], [data-ui-button]):not([role='checkbox']):not([role='switch']):not([role='radio']):not(:disabled):not([aria-disabled='true']):not([data-disabled]):hover {
+    background-color: hsl(var(--accent));
+    background-image: none;
+    color: hsl(var(--accent-foreground));
+  }
+}
+
+@media (hover: hover) and (pointer: fine) and (prefers-reduced-motion: no-preference) {
+  :is(button, [role='button'], [data-ui-button]):not([role='checkbox']):not([role='switch']):not([role='radio']):not(:disabled):not([aria-disabled='true']):not([data-disabled]):hover:not(:active) {
+    scale: 1.05;
+  }
+}
+
+*:focus-visible:not(input):not(textarea):not(select):not([contenteditable='true']) {
   outline: 2px solid #f59e0b;
   outline-offset: 3px;
+}
+
+input:focus-visible,
+textarea:focus-visible,
+select:focus-visible,
+[contenteditable='true']:focus-visible {
+  outline: none;
+  outline-offset: 0;
 }
 
 @media (prefers-reduced-motion: reduce) {

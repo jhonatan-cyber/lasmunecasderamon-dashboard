@@ -64,6 +64,7 @@
     "horas_extras",
     "gratificaciones"
   ],
+  "mcp-oauth": ["oauth_state"],
   "ventas": [
     "ventas",
     "detalle_ventas",

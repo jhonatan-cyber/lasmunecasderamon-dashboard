@@ -74,7 +74,7 @@ export const NewSaleCart = ({
                       size='sm'
                       variant='outline'
                       onClick={() => handleCantidadChangeTable(i, p.cantidad - 1)}
-                      className='rounded-full w-7 h-7 p-0 border-gray-200 hover:bg-gray-100 hover:scale-110 transition-all'
+                      className='rounded-full w-7 h-7 p-0 border-black bg-black text-white dark:border-white dark:bg-white dark:text-black hover:bg-accent hover:text-accent-foreground hover:scale-105 transition-all duration-200'
                     >
                       <Minus className='w-3 h-3' />
                     </Button>
@@ -83,7 +83,7 @@ export const NewSaleCart = ({
                       size='sm'
                       variant='outline'
                       onClick={() => handleCantidadChangeTable(i, p.cantidad + 1)}
-                      className='rounded-full w-7 h-7 p-0 border-gray-200 hover:bg-gray-100 hover:scale-110 transition-all'
+                      className='rounded-full w-7 h-7 p-0 border-black bg-black text-white dark:border-white dark:bg-white dark:text-black hover:bg-accent hover:text-accent-foreground hover:scale-105 transition-all duration-200'
                     >
                       <Plus className='w-3 h-3' />
                     </Button>
@@ -93,14 +93,15 @@ export const NewSaleCart = ({
                   {formatCurrencyNoDecimals(p.precio)}
                 </TableCell>
                 <TableCell
-                  className={`${CUENTA_TABLE_CELL_CLASS} text-center text-[11px] leading-tight text-gray-500 max-w-[150px]`}
+                  className={`${CUENTA_TABLE_CELL_CLASS} text-center text-[11px] leading-tight font-medium text-gray-900 dark:text-neutral-100 max-w-[150px]`}
                 >
                   {p.selectedHostesses
                     ?.map(
-                      (id: any) => anfitrionas.find(a => String(a.id || a.id_usuario) === id)?.nick
+                      (id: any) =>
+                        anfitrionas.find(a => String(a.id ?? a.id_usuario) === String(id))?.nick
                     )
                     .filter(Boolean)
-                    .join(', ') || <span className='text-gray-300 italic'>N/A</span>}
+                    .join(', ') || <span className='text-gray-600 dark:text-neutral-400 italic'>N/A</span>}
                 </TableCell>
                 <TableCell
                   className={`${CUENTA_TABLE_CELL_CLASS} text-center font-bold text-gray-900`}
@@ -109,10 +110,11 @@ export const NewSaleCart = ({
                 </TableCell>
                 <TableCell className={`${CUENTA_TABLE_CELL_CLASS} text-center`}>
                   <Button
-                    variant='ghost'
+                    variant='outline'
                     size='sm'
                     onClick={() => handleRemoveProducto(i)}
-                    className='text-gray-300 hover:text-red-500 hover:bg-red-50 rounded-full transition-all p-2'
+                    aria-label={`Eliminar ${p.nombre}`}
+                    className='rounded-full w-7 h-7 p-0 border-black bg-black text-white dark:border-white dark:bg-white dark:text-black hover:bg-accent hover:text-accent-foreground hover:scale-105 transition-all duration-200'
                   >
                     <Trash className='w-4 h-4' />
                   </Button>

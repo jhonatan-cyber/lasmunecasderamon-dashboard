@@ -74,12 +74,17 @@ it('consulta presentaciones y transfiere unidades con botella y shot en la misma
           contexto
         )
       );
-      expect(result).toEqual({ trasladadas: 1, stock_bar: 1 });
+      expect(result).toEqual({
+        transferencia_id: expect.any(String),
+        trasladadas: 1,
+        stock_bar: 1
+      });
       const [movement] = await trx(
-        'SELECT estado, opciones_venta, precio_venta, comision FROM inventario_movimientos WHERE presentacion_id = ?',
+        'SELECT id, estado, opciones_venta, precio_venta, comision FROM inventario_movimientos WHERE presentacion_id = ?',
         [presentacionId]
       );
       expect(movement).toMatchObject({
+        id: result.transferencia_id,
         estado: 'pendiente',
         opciones_venta: options,
         precio_venta: 70000,

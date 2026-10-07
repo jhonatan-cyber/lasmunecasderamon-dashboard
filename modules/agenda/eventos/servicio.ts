@@ -8,6 +8,7 @@ import { EventRepository } from '@/modules/agenda/eventos/repositorio';
  * (se habían borrado en a414a7e como "rutas muertas" solo desde la perspectiva del web).
  */
 export class EventService {
+  static canReadEvent = EventRepository.canReadEvent;
   static async getStats(userId: string) {
     return await EventRepository.getStats(userId);
   }

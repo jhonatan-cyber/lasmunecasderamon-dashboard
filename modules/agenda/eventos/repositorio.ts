@@ -1,6 +1,7 @@
 import { EventQueries } from '@/modules/agenda/eventos/consultas';
 
 export class EventRepository {
+  static canReadEvent = EventQueries.canReadEvent;
   static async getStats(userId: string) {
     return await EventQueries.getStats(userId);
   }

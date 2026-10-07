@@ -2,7 +2,7 @@ import { execFile } from 'node:child_process';
 import { promisify } from 'node:util';
 import { z } from 'zod';
 import { config } from '../config.js';
-import { acotar, ok, fallo } from '../formato.js';
+import { acotar, esquemaSalida, ok, fallo } from '../formato.js';
 
 const ejecutar = promisify(execFile);
 const MAX_BUFFER = 16 * 1024 * 1024;
@@ -33,7 +33,12 @@ function nodo(rutaRelativa: string, argumentos: string[], timeoutMs: number) {
 }
 
 function resultado(r: { codigo: number; salida: string }, texto = r.salida) {
-  return r.codigo === 0 ? ok(texto) : fallo(`Comando terminó con código ${r.codigo}\n\n${texto}`);
+  // structuredContent también en error: el SDK omite la validación cuando hay
+  // isError, pero el cliente conserva código y salida de todos modos.
+  const estructurado = { structuredContent: { resultado: { codigo: r.codigo, salida: r.salida } } };
+  return r.codigo === 0
+    ? { ...ok(texto), ...estructurado }
+    : { ...fallo(`Comando terminó con código ${r.codigo}\n\n${texto}`), ...estructurado };
 }
 
 export const herramientas = {
@@ -43,6 +48,7 @@ export const herramientas = {
     inputSchema: {
       listar: z.boolean().optional().describe('Solo enumerar hallazgos y excepciones (--listar)')
     },
+    outputSchema: esquemaSalida,
     execute: async (a: any) => {
       try {
         const argumentos = ['scripts/arquitectura/limites.mjs', ...(a?.listar ? ['--listar'] : [])];
@@ -61,6 +67,7 @@ export const herramientas = {
     description:
       'Diagnóstico completo de arquitectura (scripts/arquitectura/analisis.mjs --json): SQL fuera de repositorios, propiedad de tablas, ciclos entre dominos, transacciones. Más lento que check_limites; úsalo para el informe completo.',
     inputSchema: {},
+    outputSchema: esquemaSalida,
     execute: async () => {
       try {
         const r = await nodo('scripts/arquitectura/analisis.mjs', ['--json'], 300_000);
@@ -75,6 +82,7 @@ export const herramientas = {
     description:
       'Verificación estricta de TypeScript del dashboard (tsc --noEmit -p tsconfig.typecheck.json). Lenta la primera vez; respeta la caché incremental.',
     inputSchema: {},
+    outputSchema: esquemaSalida,
     execute: async () => {
       try {
         const r = await nodo(
@@ -98,6 +106,7 @@ export const herramientas = {
     inputSchema: {
       filtro: z.string().optional().describe('Filtro de nombre de archivo para vitest')
     },
+    outputSchema: esquemaSalida,
     execute: async (a: any) => {
       try {
         const argumentos = ['node_modules/vitest/vitest.mjs', 'run'];

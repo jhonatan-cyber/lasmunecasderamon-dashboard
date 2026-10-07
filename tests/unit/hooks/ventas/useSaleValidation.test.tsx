@@ -44,6 +44,183 @@ const setEnableTip = (result: any, enabled: boolean) => {
 };
 
 describe('useSaleValidation totals (propina / total)', () => {
+  it('mantiene el máximo configurado al generar una venta', async () => {
+    const { result } = renderSaleHook();
+    act(() =>
+      result.current.formState.setProductos([
+        {
+          id: 'p1',
+          nombre: 'Vodka',
+          precio: 20000,
+          cantidad: 1,
+          subtotal: 20000,
+          max_anfitrionas: 1,
+          selectedHostesses: ['a1', 'a2']
+        }
+      ])
+    );
+    setMetodoPago(result, 'efectivo');
+    await act(async () => {
+      await result.current.handleSubmit([], []);
+    });
+    expect(createVentaMock).not.toHaveBeenCalled();
+  });
+  it('genera la venta sin anfitrionas y sin asignar una comisión sin beneficiaria', async () => {
+    const { result } = renderSaleHook();
+    act(() =>
+      result.current.formState.setProductos([
+        {
+          id: 'p1',
+          nombre: 'Vodka',
+          precio: 20000,
+          comision: 4000,
+          cantidad: 1,
+          subtotal: 20000,
+          selectedHostesses: []
+        }
+      ])
+    );
+    setMetodoPago(result, 'efectivo');
+    createVentaMock.mockResolvedValue({ success: true, data: { id: 'v1' } });
+    await act(async () => {
+      await result.current.handleSubmit([], []);
+    });
+    expect(createVentaMock).toHaveBeenCalledWith(
+      expect.objectContaining({
+        usuarios: [],
+        detalles: [expect.objectContaining({ producto_id: 'p1', comision: 0 })]
+      })
+    );
+    expect(createVentaMock.mock.calls[0][0].detalles[0].hostess_id).toBeUndefined();
+  });
+  it('conserva los UUID de anfitrionas al agregar al carrito y generar la venta', async () => {
+    const hostessId = '1b3a4f92-250b-4daf-bb5e-9809ee4b9088';
+    createVentaMock.mockResolvedValue({ success: true, data: { id: 'venta-test' } });
+    const { result } = renderSaleHook();
+    await act(async () => {
+      await result.current.handleAddProducto({
+        id: 'pres-uuid',
+        producto_id: 'prod-uuid',
+        nombre: 'Vodka',
+        categoria: 'Vodka',
+        precio: 20000,
+        comision: 4000,
+        selectedHostesses: [hostessId]
+      });
+    });
+    expect(result.current.formState.productos[0].selectedHostesses).toEqual([hostessId]);
+    act(() => result.current.formState.setMetodoPago('efectivo'));
+    await act(async () => {
+      await result.current.handleSubmit([], [{ id: hostessId, nick: 'Ana' }]);
+    });
+    expect(createVentaMock).toHaveBeenCalledWith(
+      expect.objectContaining({
+        detalles: expect.arrayContaining([expect.objectContaining({ hostess_id: hostessId })]),
+        usuarios: [hostessId]
+      })
+    );
+  });
+  it('aplica la tabla personalizada de un producto con varias anfitrionas', async () => {
+    window.localStorage.clear();
+    const fetchSpy = vi.spyOn(globalThis, 'fetch').mockResolvedValue({
+      json: async () => ({
+        success: true,
+        data: [{ anfitrionas: 2, precio: 42000, comision: 9000 }]
+      })
+    } as Response);
+    try {
+      const { result } = renderSaleHook();
+      await act(async () => {
+        await result.current.handleAddProducto({
+          id: 'pres-1',
+          producto_id: 'prod-1',
+          nombre: 'Vodka',
+          categoria: 'Vodka',
+          max_anfitrionas: 3,
+          precio: 20000,
+          comision: 4000,
+          selectedHostesses: [1, 2],
+          tipo_venta: 'botella'
+        });
+      });
+      expect(result.current.formState.productos[0]).toMatchObject({
+        precio: 42000,
+        comision: 9000
+      });
+      expect(fetchSpy).toHaveBeenCalledWith('/api/products/prod-1/tiers?configurados=1');
+    } finally {
+      fetchSpy.mockRestore();
+    }
+  });
+
+  it('respeta el máximo de anfitrionas configurado al agregar al carrito', async () => {
+    const fetchSpy = vi.spyOn(globalThis, 'fetch').mockResolvedValue({
+      json: async () => ({ success: true, data: [] })
+    } as Response);
+    try {
+      const { result } = renderSaleHook();
+      await act(async () => {
+        await result.current.handleAddProducto({
+          id: 'pres-1',
+          producto_id: 'prod-1',
+          nombre: 'Vodka',
+          categoria: 'Vodka',
+          max_anfitrionas: 2,
+          precio: 20000,
+          comision: 4000,
+          stock_bar: 5,
+          tipo_venta: 'botella',
+          selectedHostesses: ['a1', 'a2', 'a3']
+        });
+      });
+      expect(result.current.formState.productos[0].selectedHostesses).toEqual(['a1', 'a2']);
+    } finally {
+      fetchSpy.mockRestore();
+    }
+  });
+
+  it('en una bebida cara el máximo de anfitrionas sigue a la cantidad', async () => {
+    const { result } = renderSaleHook();
+    act(() => result.current.formState.setCantidades({ 'pres-1': 2 }));
+    await act(async () => {
+      await result.current.handleAddProducto({
+        id: 'pres-1',
+        producto_id: 'prod-1',
+        nombre: 'Whisky 750 ml',
+        categoria: 'Whisky',
+        precio: 400000,
+        comision: 50000,
+        stock_bar: 5,
+        tipo_venta: 'botella',
+        selectedHostesses: ['a1', 'a2', 'a3']
+      });
+    });
+    expect(result.current.formState.productos[0].selectedHostesses).toEqual(['a1', 'a2']);
+  });
+
+  it('bajar la cantidad en el carro recorta las anfitrionas de la bebida cara', async () => {
+    const { result } = renderSaleHook();
+    act(() => result.current.formState.setCantidades({ 'pres-1': 3 }));
+    await act(async () => {
+      await result.current.handleAddProducto({
+        id: 'pres-1',
+        producto_id: 'prod-1',
+        nombre: 'Whisky 750 ml',
+        categoria: 'Whisky',
+        precio: 400000,
+        comision: 50000,
+        stock_bar: 5,
+        tipo_venta: 'botella',
+        selectedHostesses: ['a1', 'a2', 'a3']
+      });
+    });
+    expect(result.current.formState.productos[0].selectedHostesses).toEqual(['a1', 'a2', 'a3']);
+
+    act(() => result.current.handleCantidadChangeTable(0, 1));
+    expect(result.current.formState.productos[0].selectedHostesses).toEqual(['a1']);
+    expect(result.current.formState.productos[0].cantidad).toBe(1);
+  });
+
   beforeEach(() => {
     configValues.clear();
     configValues.set('propina_venta', '10');

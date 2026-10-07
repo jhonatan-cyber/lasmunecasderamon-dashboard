@@ -225,6 +225,7 @@ export class ProductService {
     const raw = typeof input === 'string' ? JSON.parse(input) : input;
     const parsed = z
       .object({
+        opciones_venta: SaleOptionsSchema.optional(),
         nombre: z.string().trim().min(1, 'Nombre de presentación requerido').max(100).optional(),
         codigo_barras: z
           .string()
@@ -261,8 +262,15 @@ export class ProductService {
     if (!parsed.success) {
       throw new ValidationError('Presentación inválida', parsed.error.issues);
     }
-    const { nombre, codigo_barras, precio_compra, precio_venta, comision, ml_botella } =
-      parsed.data;
+    const {
+      nombre,
+      codigo_barras,
+      precio_compra,
+      precio_venta,
+      comision,
+      ml_botella,
+      opciones_venta
+    } = parsed.data;
     const rawObj = (typeof raw === 'object' && raw !== null ? raw : {}) as Record<string, unknown>;
     const has = (k: string) => rawObj[k] !== undefined;
     if (
@@ -271,6 +279,7 @@ export class ProductService {
       !has('precio_compra') &&
       !has('precio_venta') &&
       !has('comision') &&
+      !has('opciones_venta') &&
       !has('ml_botella')
     ) {
       throw new ValidationError('Nada que actualizar');
@@ -282,6 +291,7 @@ export class ProductService {
       );
     }
     await actualizarPresentacion(id, {
+      ...(opciones_venta !== undefined ? { opciones_venta } : {}),
       ...(has('nombre') ? { nombre: nombre as string } : {}),
       ...(has('codigo_barras') ? { codigo_barras: codigo_barras ?? null } : {}),
       ...(has('precio_compra') && precio_compra !== undefined ? { precio_compra } : {}),
@@ -472,10 +482,10 @@ export class ProductService {
     return await listarDevoluciones(limite);
   }
 
-  static async getChampagneTiers(productoId: string) {
+  static async getChampagneTiers(productoId: string, usarPredeterminados = true) {
     if (!productoId) throw new ValidationError('ID de producto es requerido');
     const rows = await obtenerNivelesChampagne(String(productoId));
-    if (rows.length > 0) return rows;
+    if (rows.length > 0 || !usarPredeterminados) return rows;
     const { CHAMPAGNE_DEFAULT_TIERS } = await import('@/lib/business/champagne');
     return CHAMPAGNE_DEFAULT_TIERS;
   }

@@ -1,6 +1,7 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
+import { useQueryClient } from '@tanstack/react-query';
 import { toast } from 'sonner';
 import { Product, Presentacion } from '@/types/product';
 
@@ -78,6 +79,7 @@ export function useProductForm({
   onSubmit,
   autoEditPresentation = null
 }: UseProductFormProps) {
+  const queryClient = useQueryClient();
   const [form, setForm] = useState<ProductFormValues>(initialFormState);
   const [errors, setErrors] = useState<Partial<Record<keyof ProductFormValues, string>>>({});
   const [presentaciones, setPresentaciones] = useState<PresentacionFormItem[]>([]);
@@ -115,40 +117,46 @@ export function useProductForm({
 
   const isEdit = Boolean(initialValues?.id);
 
-  const fetchInventario = async (productoId: string) => {
-    setCargandoInventario(true);
-    try {
-      const [presRes, uniRes] = await Promise.all([
-        fetch(`/api/products/presentations?producto_id=${productoId}`),
-        fetch(`/api/products/units?producto_id=${productoId}`)
-      ]);
-      const presData = await presRes.json().catch(() => ({}));
-      const uniData = await uniRes.json().catch(() => ({}));
-      if (presData.success && Array.isArray(presData.data)) setExistentes(presData.data);
-      if (uniData.success && uniData.data) {
-        setUnidadesTotal(Number(uniData.data.total ?? 0));
-        setUnidadesInactivas(Number(uniData.data.inactivas ?? 0));
-        setUnidadesCodigos(
-          Array.isArray(uniData.data.unidades)
-            ? uniData.data.unidades.map((u: any) => ({
-                id: String(u.id),
-                codigo: String(u.codigo),
-                codigo_barras: u.codigo_barras ? String(u.codigo_barras) : null,
-                compra_folio: u.compra_folio ?? null,
-                fecha_crea: u.fecha_crea ?? null,
-                fecha_impresion: u.fecha_impresion ?? null,
-                presentacion_id: u.presentacion_id ?? null,
-                estado: u.estado || 'almacen'
-              }))
-            : []
-        );
+  const fetchInventario = useCallback(
+    async (productoId: string) => {
+      setCargandoInventario(true);
+      try {
+        const [presRes, uniRes] = await Promise.all([
+          fetch(`/api/products/presentations?producto_id=${productoId}`),
+          fetch(`/api/products/units?producto_id=${productoId}`)
+        ]);
+        const presData = await presRes.json().catch(() => ({}));
+        const uniData = await uniRes.json().catch(() => ({}));
+        if (presData.success && Array.isArray(presData.data)) {
+          setExistentes(presData.data);
+          await queryClient.invalidateQueries({ queryKey: ['product-presentations'] });
+        }
+        if (uniData.success && uniData.data) {
+          setUnidadesTotal(Number(uniData.data.total ?? 0));
+          setUnidadesInactivas(Number(uniData.data.inactivas ?? 0));
+          setUnidadesCodigos(
+            Array.isArray(uniData.data.unidades)
+              ? uniData.data.unidades.map((u: any) => ({
+                  id: String(u.id),
+                  codigo: String(u.codigo),
+                  codigo_barras: u.codigo_barras ? String(u.codigo_barras) : null,
+                  compra_folio: u.compra_folio ?? null,
+                  fecha_crea: u.fecha_crea ?? null,
+                  fecha_impresion: u.fecha_impresion ?? null,
+                  presentacion_id: u.presentacion_id ?? null,
+                  estado: u.estado || 'almacen'
+                }))
+              : []
+          );
+        }
+      } catch (err) {
+        logger.warn('[useProductForm] No se pudo cargar inventario del producto', err);
+      } finally {
+        setCargandoInventario(false);
       }
-    } catch (err) {
-      logger.warn('[useProductForm] No se pudo cargar inventario del producto', err);
-    } finally {
-      setCargandoInventario(false);
-    }
-  };
+    },
+    [queryClient]
+  );
 
   useEffect(() => {
     if (open && initialValues) {
@@ -234,7 +242,7 @@ export function useProductForm({
       setUnidadesInactivas(0);
       setUnidadesCodigos([]);
     }
-  }, [open, initialValues, autoEditPresentation]);
+  }, [open, initialValues, autoEditPresentation, fetchInventario]);
 
   const validate = () => {
     const newErrors: Partial<Record<keyof ProductFormValues, string>> = {};

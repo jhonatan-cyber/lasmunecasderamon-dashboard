@@ -5,7 +5,10 @@ import { ProductService } from '@/modules/inventario';
 export const GET = withPublicRoute(
   async (request: Request, { params }: { params: Promise<{ id: string }> }) => {
     const { id } = await params;
-    const data = await ProductService.getChampagneTiers(id);
+    const data = await ProductService.getChampagneTiers(
+      id,
+      new URL(request.url).searchParams.get('configurados') !== '1'
+    );
     return NextResponse.json({ success: true, data });
   }
 );

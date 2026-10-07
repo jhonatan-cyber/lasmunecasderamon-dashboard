@@ -12,9 +12,32 @@ import { BaseRepository } from '@/lib/database/base-repository';
 import logger from '@/lib/utils/logger';
 import { ValidationError, DatabaseError } from '@/lib/errors/errors';
 import { z } from 'zod';
+import { calcularRankingAsistencia, type HistorialAsistencia } from './ranking';
 
 type AttendanceRegisterInput = z.input<typeof AttendanceRegisterSchema>;
 
+export async function getAttendanceRanking(startDate?: string, endDate?: string) {
+  const hoy = new Intl.DateTimeFormat('en-CA', { timeZone: 'America/La_Paz' }).format(new Date());
+  const diaAnterior = new Date(`${hoy}T00:00:00Z`);
+  diaAnterior.setUTCDate(diaAnterior.getUTCDate() - 1);
+  const ayer = diaAnterior.toISOString().slice(0, 10);
+  const hasta = endDate && endDate < ayer ? endDate : ayer;
+  const historial = await query<HistorialAsistencia[]>(`
+    SELECT u.id_usuario, u.nick,
+      CONCAT_WS(' ', u.nombre, u.apellido) AS nombre_completo,
+      r.nombre AS rol,
+      MIN(a.fecha)::text AS primera_fecha,
+      MAX(a.fecha)::text AS ultima_fecha,
+      COALESCE(ARRAY_AGG(DISTINCT a.fecha::text)
+        FILTER (WHERE a.estado = 1 OR a.fecha_pago IS NOT NULL), ARRAY[]::text[]) AS fechas_presentes
+    FROM asistencias a
+    JOIN usuarios u ON u.id_usuario = a.usuario_id
+    JOIN roles r ON r.id_rol = u.rol_id
+    GROUP BY u.id_usuario, u.nick, u.nombre, u.apellido, r.nombre
+    ORDER BY nombre_completo ASC
+  `);
+  return calcularRankingAsistencia(historial, hasta, startDate);
+}
 export async function getAttendanceSummary() {
   try {
     const sql = `

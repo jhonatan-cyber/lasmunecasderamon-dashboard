@@ -1,4 +1,5 @@
 import { query } from '@/lib/database/db';
+import { buildShiftForecast } from './forecast';
 import { type StatsGeneralType } from '@/lib/business/schemas';
 import { getNowInBusinessTimezone } from '@/lib/business/timezoneService';
 import { NotFoundError, DatabaseError } from '@/lib/errors/errors';
@@ -28,6 +29,35 @@ import type {
 } from '@/lib/database/rows';
 
 export class StatsQueries {
+  static async getShiftForecast() {
+    const rows = await query<any[]>(
+      `WITH active AS (
+        SELECT id_caja, fecha_apertura FROM cajas WHERE estado = 1
+        ORDER BY fecha_apertura DESC LIMIT 1
+      ), history AS (
+        SELECT id_caja, fecha_apertura, fecha_cierre,
+          EXTRACT(EPOCH FROM (fecha_cierre - fecha_apertura)) / 60 AS duration
+        FROM cajas WHERE fecha_cierre > fecha_apertura AND estado <> 1
+          AND fecha_cierre - fecha_apertura <= INTERVAL '24 hours'
+        ORDER BY fecha_cierre DESC LIMIT 14
+      ), revenue AS (
+        SELECT caja_id, fecha_crea, total - COALESCE(cargo_tarjeta, 0) AS amount
+        FROM ventas WHERE estado IN (1, 2)
+        UNION ALL
+        SELECT caja_id, fecha_crea, total AS amount FROM servicios WHERE estado IN (1, 2)
+      )
+      SELECT a.id_caja AS caja_id,
+        EXTRACT(EPOCH FROM (CAST(? AS timestamp) - a.fecha_apertura)) / 60 AS elapsed_minutes,
+        (SELECT AVG(duration) FROM history) AS expected_minutes,
+        (SELECT COUNT(*) FROM history) AS history_count,
+        COALESCE((SELECT SUM(amount) FROM revenue WHERE caja_id = a.id_caja), 0) AS current_revenue,
+        COALESCE((SELECT SUM(amount) FROM revenue WHERE caja_id =
+          (SELECT id_caja FROM history ORDER BY fecha_cierre DESC LIMIT 1)), 0) AS previous_revenue
+      FROM active a`,
+      [getNowInBusinessTimezone()]
+    );
+    return buildShiftForecast(rows[0]);
+  }
   static async getDashboardAlerts(options?: { timers?: any[]; rooms?: any[] }) {
     try {
       const { timers: preloadedTimers, rooms: preloadedRooms } = options || {};
@@ -182,9 +212,9 @@ export class StatsQueries {
           FROM (
             SELECT (CAST(u.nombre AS text) || CAST(' ' AS text) || CAST(u.apellido AS text)) AS item_name, COUNT(*) AS operations_count, SUM(staff_source.total) AS total_generated
             FROM (
-              SELECT ds.usuario_id, s.total FROM detalle_servicios ds INNER JOIN servicios s ON s.id_servicio = ds.servicio_id WHERE s.estado IN (1, 2) AND s.fecha_crea >= DATE(?) AND s.fecha_crea < (CAST(DATE(?) AS timestamp) + make_interval(days => CAST(1 AS integer)))
+              SELECT DISTINCT ds.usuario_id, s.id_servicio AS operation_id, s.total FROM detalle_servicios ds INNER JOIN servicios s ON s.id_servicio = ds.servicio_id WHERE s.estado IN (1, 2) AND s.fecha_crea >= DATE(?) AND s.fecha_crea < (CAST(DATE(?) AS timestamp) + make_interval(days => CAST(1 AS integer)))
               UNION ALL
-              SELECT vu.usuario_id, v.total FROM ventas_usuarios vu INNER JOIN ventas v ON v.id_venta = vu.venta_id WHERE v.estado IN (1, 2) AND v.fecha_crea >= DATE(?) AND v.fecha_crea < (CAST(DATE(?) AS timestamp) + make_interval(days => CAST(1 AS integer)))
+              SELECT DISTINCT vu.usuario_id, v.id_venta AS operation_id, v.total - COALESCE(v.cargo_tarjeta, 0) AS total FROM ventas_usuarios vu INNER JOIN ventas v ON v.id_venta = vu.venta_id WHERE v.estado IN (1, 2) AND v.fecha_crea >= DATE(?) AND v.fecha_crea < (CAST(DATE(?) AS timestamp) + make_interval(days => CAST(1 AS integer)))
             ) staff_source
             INNER JOIN usuarios u ON u.id_usuario = staff_source.usuario_id
             GROUP BY u.id_usuario, u.nombre, u.apellido
@@ -235,7 +265,7 @@ export class StatsQueries {
       const servicesActive = alerts.summary.activeServices;
       const expiringServices = alerts.summary.expiringServices;
 
-      return buildDashboardInsights({
+      const insights = buildDashboardInsights({
         salesToday: comparisonBase.sales_today,
         salesYesterday: comparisonBase.sales_yesterday,
         servicesToday: comparisonBase.services_today,
@@ -270,6 +300,13 @@ export class StatsQueries {
         yesterdaySalesSameTime,
         elapsedMinutesToday
       });
+      const shiftForecast = await this.getShiftForecast();
+      insights.forecast = {
+        ...insights.forecast,
+        ...shiftForecast,
+        anomalies: [...shiftForecast.anomalies, ...insights.forecast.anomalies]
+      };
+      return insights;
     } catch (err) {
       logger.error('[StatsQueries] Error en getDashboardInsights:', { err });
       if (err instanceof NotFoundError) throw err;
@@ -499,20 +536,26 @@ export class StatsQueries {
        INNER JOIN roles r ON r.id_rol = u.rol_id`
       );
 
-      const filterByRole = (roleName: string) => {
-        const r = roles.find(role => role.nombre.toLowerCase() === roleName);
-        if (!r) return { total: 0, logueadas: 0 };
-        const roleUsers = users.filter(u => u.rol_id === r.id_rol);
+      const filterByRole = (...roleNames: string[]) => {
+        const roleIds = roles
+          .filter(role => roleNames.includes(role.nombre.toLowerCase()))
+          .map(role => role.id_rol);
+        const roleUsers = users.filter(u => roleIds.includes(u.rol_id));
+        const loggedUsers = roleUsers.filter(u => Number(u.estado) === 1);
         return {
           total: roleUsers.length,
-          logueadas: roleUsers.filter(u => Number(u.estado) === 1).length
+          logueadas: loggedUsers.length,
+          porcentaje: roleUsers.length
+            ? Math.round((loggedUsers.length / roleUsers.length) * 100)
+            : 0,
+          usuarios: loggedUsers.map(u => ({ id_usuario: u.id_usuario, nick: u.nick }))
         };
       };
 
       return {
         anfitrionas: filterByRole('anfitriona'),
         garzones: filterByRole('garzon'),
-        cajeros: filterByRole('cajero')
+        cajeros: filterByRole('cajero', 'barman')
       };
     } catch (err) {
       logger.error('[StatsQueries] Error en getLoggedUsers:', { err });
@@ -634,12 +677,12 @@ export class StatsQueries {
               COALESCE(SUM(CASE WHEN v.metodo_pago = 'efectivo' THEN v.total ELSE 0 END), 0) as total_ventas_efectivo,
               COALESCE(SUM(CASE WHEN v.metodo_pago = 'tarjeta' THEN v.total ELSE 0 END), 0) as total_ventas_tarjeta,
               COALESCE(SUM(CASE WHEN v.metodo_pago = 'transferencia' THEN v.total ELSE 0 END), 0) as total_ventas_transferencia,
-              COALESCE(SUM(s.total), 0) as total_servicios, COUNT(s.id_servicio) as cantidad_servicios,
-              COALESCE(AVG(s.total), 0) as promedio_servicio
+              (SELECT COALESCE(SUM(total), 0) FROM servicios WHERE caja_id = ? AND estado IN (1, 2)) as total_servicios,
+              (SELECT COUNT(*) FROM servicios WHERE caja_id = ? AND estado IN (1, 2)) as cantidad_servicios,
+              (SELECT COALESCE(AVG(total), 0) FROM servicios WHERE caja_id = ? AND estado IN (1, 2)) as promedio_servicio
             FROM ventas v
-            LEFT JOIN servicios s ON s.caja_id = v.caja_id AND s.estado IN (1, 2)
             WHERE v.caja_id = ? AND v.estado IN (1, 2)`,
-              [cajaId]
+              [cajaId, cajaId, cajaId, cajaId]
             )
           : Promise.resolve([
               {
@@ -706,7 +749,6 @@ export class StatsQueries {
       const occupancyRate = totalRooms > 0 ? Math.round((occupiedRooms / totalRooms) * 100) : 0;
       const teamCoverageRate =
         totalTeamMembers > 0 ? Math.round((totalLoggedUsers / totalTeamMembers) * 100) : 0;
-      const projectedRevenue = Math.round((movementToday / elapsedMinutesToday) * 24 * 60);
       const yesterdaySalesSameTime = Number(comparisonBase.sales_same_time_yesterday || 0);
       const todaySalesSameTime = Number(comparisonBase.sales_same_time_today || 0);
 
@@ -756,6 +798,12 @@ export class StatsQueries {
         cajaStats
       });
 
+      const shiftForecast = await this.getShiftForecast();
+      insights.forecast = {
+        ...insights.forecast,
+        ...shiftForecast,
+        anomalies: [...shiftForecast.anomalies, ...insights.forecast.anomalies]
+      };
       return {
         insights,
         cajaStats: cajaStatsResult,

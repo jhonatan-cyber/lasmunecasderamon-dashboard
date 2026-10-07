@@ -103,6 +103,8 @@ export async function actualizarPresentacion(
   if (fields.precio_compra !== undefined) data.precio_compra = fields.precio_compra;
   if (fields.precio_venta !== undefined) data.precio_venta = fields.precio_venta;
   if (fields.comision !== undefined) data.comision = fields.comision;
+  if (fields.opciones_venta !== undefined)
+    data.opciones_venta = JSON.stringify(fields.opciones_venta);
   if (fields.ml_botella !== undefined) data.ml_botella = fields.ml_botella;
   if (Object.keys(data).length === 0) return;
   await BaseRepository.update(query, 'inventario_presentaciones', 'id', id, data);

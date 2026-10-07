@@ -32,6 +32,19 @@ vi.mock('@/lib/database/base-repository', () => ({
 
 import { UserRepository } from '@/modules/identidad/usuarios/registro';
 
+describe('listado de usuarios con varias sesiones', () => {
+  it('filtra presencia con EXISTS para mantener un usuario por fila y un total correcto', async () => {
+    repositoryHarness.queryMock.mockReset();
+    repositoryHarness.queryMock.mockResolvedValueOnce([{ total: 1 }]).mockResolvedValueOnce([]);
+    await UserRepository.getAll({ anfitrionas: '1', loggedIn: true, enLocal: true });
+    for (const [sql] of repositoryHarness.queryMock.mock.calls) {
+      expect(sql).toContain('EXISTS (SELECT 1 FROM logins');
+      expect(sql).toContain('l.estado = 1 AND l.en_local = 1');
+      expect(sql).not.toContain('INNER JOIN logins');
+    }
+  });
+});
+
 describe('UserRepository.getAvailableAnfitrionas', () => {
   beforeEach(() => {
     vi.clearAllMocks();

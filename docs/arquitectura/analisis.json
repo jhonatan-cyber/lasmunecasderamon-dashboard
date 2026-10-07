@@ -1,0 +1,2754 @@
+{
+  "resumen": {
+    "commit": "9ab31bb7d2be7db89f63f7519cd2ad5e34c38579",
+    "generado": "2026-10-07T19:23:51.830Z",
+    "archivos": 1715,
+    "rutas": 207,
+    "sqlFueraDeRepositorio": 50,
+    "tablasConEscritoresMultiples": 0,
+    "ciclos": 0,
+    "procesosPeriodicos": 15,
+    "caches": 21,
+    "rutasApiConSqlDirecto": 0,
+    "rutasSinWrapper": 19
+  },
+  "rutas": [
+    {
+      "ruta": "/api/attendance/ranking",
+      "archivo": "app/api/attendance/ranking/route.ts",
+      "metodos": [],
+      "nivel": "attendance.read",
+      "audit": false,
+      "moduloDominio": null,
+      "usaDriver": false
+    },
+    {
+      "ruta": "/api/mcp/admin/session",
+      "archivo": "app/api/mcp/admin/session/route.ts",
+      "metodos": [],
+      "nivel": "administrator",
+      "audit": false,
+      "moduloDominio": null,
+      "usaDriver": false
+    },
+    {
+      "ruta": "/api/mcp/admin/solicitudes",
+      "archivo": "app/api/mcp/admin/solicitudes/route.ts",
+      "metodos": [],
+      "nivel": "administrator",
+      "audit": true,
+      "moduloDominio": null,
+      "usaDriver": false
+    },
+    {
+      "ruta": "/api/anfitrionas/:id/status",
+      "archivo": "app/api/anfitrionas/[id]/status/route.ts",
+      "metodos": [],
+      "nivel": "users.write",
+      "audit": true,
+      "moduloDominio": null,
+      "usaDriver": false
+    },
+    {
+      "ruta": "/api/anfitrionas/disponibles",
+      "archivo": "app/api/anfitrionas/disponibles/route.ts",
+      "metodos": [],
+      "nivel": "publico",
+      "audit": false,
+      "moduloDominio": null,
+      "usaDriver": false
+    },
+    {
+      "ruta": "/api/anfitrionas",
+      "archivo": "app/api/anfitrionas/route.ts",
+      "metodos": [],
+      "nivel": "publico",
+      "audit": false,
+      "moduloDominio": null,
+      "usaDriver": false
+    },
+    {
+      "ruta": "/api/anticipos/:id",
+      "archivo": "app/api/anticipos/[id]/route.ts",
+      "metodos": [],
+      "nivel": "advances.process",
+      "audit": true,
+      "moduloDominio": null,
+      "usaDriver": false
+    },
+    {
+      "ruta": "/api/anticipos/aprobar",
+      "archivo": "app/api/anticipos/aprobar/route.ts",
+      "metodos": [],
+      "nivel": "advances.process",
+      "audit": true,
+      "moduloDominio": null,
+      "usaDriver": false
+    },
+    {
+      "ruta": "/api/anticipos/balances",
+      "archivo": "app/api/anticipos/balances/route.ts",
+      "metodos": [],
+      "nivel": "advances.read",
+      "audit": true,
+      "moduloDominio": null,
+      "usaDriver": false
+    },
+    {
+      "ruta": "/api/anticipos/by-dates",
+      "archivo": "app/api/anticipos/by-dates/route.ts",
+      "metodos": [],
+      "nivel": "authenticated",
+      "audit": true,
+      "moduloDominio": null,
+      "usaDriver": false
+    },
+    {
+      "ruta": "/api/anticipos/maximo",
+      "archivo": "app/api/anticipos/maximo/route.ts",
+      "metodos": [],
+      "nivel": "authenticated",
+      "audit": true,
+      "moduloDominio": null,
+      "usaDriver": false
+    },
+    {
+      "ruta": "/api/anticipos",
+      "archivo": "app/api/anticipos/route.ts",
+      "metodos": [],
+      "nivel": "advances.read",
+      "audit": true,
+      "moduloDominio": null,
+      "usaDriver": false
+    },
+    {
+      "ruta": "/api/anticipos/solicitud-detalles",
+      "archivo": "app/api/anticipos/solicitud-detalles/route.ts",
+      "metodos": [],
+      "nivel": "publico",
+      "audit": false,
+      "moduloDominio": null,
+      "usaDriver": false
+    },
+    {
+      "ruta": "/api/anticipos/solicitudes",
+      "archivo": "app/api/anticipos/solicitudes/route.ts",
+      "metodos": [],
+      "nivel": "advances.read",
+      "audit": true,
+      "moduloDominio": null,
+      "usaDriver": false
+    },
+    {
+      "ruta": "/api/anticipos/user",
+      "archivo": "app/api/anticipos/user/route.ts",
+      "metodos": [],
+      "nivel": "authenticated",
+      "audit": true,
+      "moduloDominio": null,
+      "usaDriver": false
+    },
+    {
+      "ruta": "/api/attendance/:id/detalle",
+      "archivo": "app/api/attendance/[id]/detalle/route.ts",
+      "metodos": [],
+      "nivel": "publico",
+      "audit": false,
+      "moduloDominio": null,
+      "usaDriver": false
+    },
+    {
+      "ruta": "/api/attendance/by-dates",
+      "archivo": "app/api/attendance/by-dates/route.ts",
+      "metodos": [],
+      "nivel": "authenticated",
+      "audit": true,
+      "moduloDominio": null,
+      "usaDriver": false
+    },
+    {
+      "ruta": "/api/attendance/hoy",
+      "archivo": "app/api/attendance/hoy/route.ts",
+      "metodos": [],
+      "nivel": "publico",
+      "audit": false,
+      "moduloDominio": null,
+      "usaDriver": false
+    },
+    {
+      "ruta": "/api/attendance/masivo",
+      "archivo": "app/api/attendance/masivo/route.ts",
+      "metodos": [],
+      "nivel": "attendance.write",
+      "audit": true,
+      "moduloDominio": null,
+      "usaDriver": false
+    },
+    {
+      "ruta": "/api/attendance/qr",
+      "archivo": "app/api/attendance/qr/route.ts",
+      "metodos": [],
+      "nivel": "attendance.write",
+      "audit": true,
+      "moduloDominio": null,
+      "usaDriver": false
+    },
+    {
+      "ruta": "/api/attendance/register",
+      "archivo": "app/api/attendance/register/route.ts",
+      "metodos": [],
+      "nivel": "publico",
+      "audit": false,
+      "moduloDominio": null,
+      "usaDriver": false
+    },
+    {
+      "ruta": "/api/attendance",
+      "archivo": "app/api/attendance/route.ts",
+      "metodos": [],
+      "nivel": "publico",
+      "audit": true,
+      "moduloDominio": null,
+      "usaDriver": false
+    },
+    {
+      "ruta": "/api/attendance/stats",
+      "archivo": "app/api/attendance/stats/route.ts",
+      "metodos": [],
+      "nivel": "publico",
+      "audit": false,
+      "moduloDominio": null,
+      "usaDriver": false
+    },
+    {
+      "ruta": "/api/attendance/user",
+      "archivo": "app/api/attendance/user/route.ts",
+      "metodos": [],
+      "nivel": "authenticated",
+      "audit": true,
+      "moduloDominio": null,
+      "usaDriver": false
+    },
+    {
+      "ruta": "/api/audit-logs",
+      "archivo": "app/api/audit-logs/route.ts",
+      "metodos": [],
+      "nivel": "publico",
+      "audit": false,
+      "moduloDominio": null,
+      "usaDriver": false
+    },
+    {
+      "ruta": "/api/auth/change-password",
+      "archivo": "app/api/auth/change-password/route.ts",
+      "metodos": [],
+      "nivel": "authenticated",
+      "audit": true,
+      "moduloDominio": null,
+      "usaDriver": false
+    },
+    {
+      "ruta": "/api/auth/check-session",
+      "archivo": "app/api/auth/check-session/route.ts",
+      "metodos": [],
+      "nivel": "authenticated",
+      "audit": true,
+      "moduloDominio": null,
+      "usaDriver": false
+    },
+    {
+      "ruta": "/api/auth/check-users",
+      "archivo": "app/api/auth/check-users/route.ts",
+      "metodos": [],
+      "nivel": "publico",
+      "audit": false,
+      "moduloDominio": null,
+      "usaDriver": false
+    },
+    {
+      "ruta": "/api/auth/check",
+      "archivo": "app/api/auth/check/route.ts",
+      "metodos": [],
+      "nivel": "authenticated",
+      "audit": true,
+      "moduloDominio": null,
+      "usaDriver": false
+    },
+    {
+      "ruta": "/api/auth/login",
+      "archivo": "app/api/auth/login/route.ts",
+      "metodos": [],
+      "nivel": "SIN_WRAPPER",
+      "audit": false,
+      "moduloDominio": null,
+      "usaDriver": false
+    },
+    {
+      "ruta": "/api/auth/logout",
+      "archivo": "app/api/auth/logout/route.ts",
+      "metodos": [],
+      "nivel": "publico",
+      "audit": false,
+      "moduloDominio": null,
+      "usaDriver": false
+    },
+    {
+      "ruta": "/api/auth/logs",
+      "archivo": "app/api/auth/logs/route.ts",
+      "metodos": [],
+      "nivel": "administrator",
+      "audit": false,
+      "moduloDominio": null,
+      "usaDriver": false
+    },
+    {
+      "ruta": "/api/auth/me",
+      "archivo": "app/api/auth/me/route.ts",
+      "metodos": [],
+      "nivel": "authenticated",
+      "audit": true,
+      "moduloDominio": null,
+      "usaDriver": false
+    },
+    {
+      "ruta": "/api/auth/refresh",
+      "archivo": "app/api/auth/refresh/route.ts",
+      "metodos": [],
+      "nivel": "publico",
+      "audit": false,
+      "moduloDominio": null,
+      "usaDriver": false
+    },
+    {
+      "ruta": "/api/auth/register-first-user",
+      "archivo": "app/api/auth/register-first-user/route.ts",
+      "metodos": [],
+      "nivel": "publico",
+      "audit": false,
+      "moduloDominio": null,
+      "usaDriver": false
+    },
+    {
+      "ruta": "/api/auth/reset-password",
+      "archivo": "app/api/auth/reset-password/route.ts",
+      "metodos": [],
+      "nivel": "publico",
+      "audit": false,
+      "moduloDominio": null,
+      "usaDriver": false
+    },
+    {
+      "ruta": "/api/bar/containers/confirm",
+      "archivo": "app/api/bar/containers/confirm/route.ts",
+      "metodos": [],
+      "nivel": "products.confirm_container_return",
+      "audit": true,
+      "moduloDominio": null,
+      "usaDriver": false
+    },
+    {
+      "ruta": "/api/bar/containers",
+      "archivo": "app/api/bar/containers/route.ts",
+      "metodos": [],
+      "nivel": "products.read",
+      "audit": false,
+      "moduloDominio": null,
+      "usaDriver": false
+    },
+    {
+      "ruta": "/api/bar/containers/summary",
+      "archivo": "app/api/bar/containers/summary/route.ts",
+      "metodos": [],
+      "nivel": "products.read",
+      "audit": false,
+      "moduloDominio": null,
+      "usaDriver": false
+    },
+    {
+      "ruta": "/api/bar/movements",
+      "archivo": "app/api/bar/movements/route.ts",
+      "metodos": [],
+      "nivel": "publico",
+      "audit": false,
+      "moduloDominio": null,
+      "usaDriver": false
+    },
+    {
+      "ruta": "/api/bar",
+      "archivo": "app/api/bar/route.ts",
+      "metodos": [],
+      "nivel": "publico",
+      "audit": true,
+      "moduloDominio": null,
+      "usaDriver": false
+    },
+    {
+      "ruta": "/api/bar/shots",
+      "archivo": "app/api/bar/shots/route.ts",
+      "metodos": [],
+      "nivel": "publico",
+      "audit": false,
+      "moduloDominio": null,
+      "usaDriver": false
+    },
+    {
+      "ruta": "/api/biometric/devices/:id/credentials",
+      "archivo": "app/api/biometric/devices/[id]/credentials/route.ts",
+      "metodos": [],
+      "nivel": "administrator",
+      "audit": true,
+      "moduloDominio": null,
+      "usaDriver": false
+    },
+    {
+      "ruta": "/api/biometric/devices/:id/discover",
+      "archivo": "app/api/biometric/devices/[id]/discover/route.ts",
+      "metodos": [],
+      "nivel": "administrator",
+      "audit": true,
+      "moduloDominio": null,
+      "usaDriver": false
+    },
+    {
+      "ruta": "/api/biometric/devices/:id/poller",
+      "archivo": "app/api/biometric/devices/[id]/poller/route.ts",
+      "metodos": [],
+      "nivel": "administrator",
+      "audit": true,
+      "moduloDominio": null,
+      "usaDriver": false
+    },
+    {
+      "ruta": "/api/biometric/devices/:id/resync",
+      "archivo": "app/api/biometric/devices/[id]/resync/route.ts",
+      "metodos": [],
+      "nivel": "administrator",
+      "audit": true,
+      "moduloDominio": null,
+      "usaDriver": false
+    },
+    {
+      "ruta": "/api/biometric/devices/:id",
+      "archivo": "app/api/biometric/devices/[id]/route.ts",
+      "metodos": [],
+      "nivel": "administrator",
+      "audit": true,
+      "moduloDominio": null,
+      "usaDriver": false
+    },
+    {
+      "ruta": "/api/biometric/devices/:id/snapshot",
+      "archivo": "app/api/biometric/devices/[id]/snapshot/route.ts",
+      "metodos": [],
+      "nivel": "administrator",
+      "audit": false,
+      "moduloDominio": null,
+      "usaDriver": false
+    },
+    {
+      "ruta": "/api/biometric/devices/:id/video",
+      "archivo": "app/api/biometric/devices/[id]/video/route.ts",
+      "metodos": [],
+      "nivel": "administrator",
+      "audit": false,
+      "moduloDominio": null,
+      "usaDriver": false
+    },
+    {
+      "ruta": "/api/biometric/devices",
+      "archivo": "app/api/biometric/devices/route.ts",
+      "metodos": [],
+      "nivel": "administrator",
+      "audit": true,
+      "moduloDominio": null,
+      "usaDriver": false
+    },
+    {
+      "ruta": "/api/biometric/records/:id/foto",
+      "archivo": "app/api/biometric/records/[id]/foto/route.ts",
+      "metodos": [],
+      "nivel": "authenticated",
+      "audit": false,
+      "moduloDominio": null,
+      "usaDriver": false
+    },
+    {
+      "ruta": "/api/biometric/records/poll",
+      "archivo": "app/api/biometric/records/poll/route.ts",
+      "metodos": [],
+      "nivel": "administrator",
+      "audit": true,
+      "moduloDominio": null,
+      "usaDriver": false
+    },
+    {
+      "ruta": "/api/biometric/status",
+      "archivo": "app/api/biometric/status/route.ts",
+      "metodos": [],
+      "nivel": "administrator",
+      "audit": false,
+      "moduloDominio": null,
+      "usaDriver": false
+    },
+    {
+      "ruta": "/api/caja/stats",
+      "archivo": "app/api/caja/stats/route.ts",
+      "metodos": [],
+      "nivel": "publico",
+      "audit": false,
+      "moduloDominio": null,
+      "usaDriver": false
+    },
+    {
+      "ruta": "/api/caja/ventas-barras",
+      "archivo": "app/api/caja/ventas-barras/route.ts",
+      "metodos": [],
+      "nivel": "publico",
+      "audit": false,
+      "moduloDominio": null,
+      "usaDriver": false
+    },
+    {
+      "ruta": "/api/caja/ventas-champagne",
+      "archivo": "app/api/caja/ventas-champagne/route.ts",
+      "metodos": [],
+      "nivel": "publico",
+      "audit": false,
+      "moduloDominio": null,
+      "usaDriver": false
+    },
+    {
+      "ruta": "/api/caja/ventas-por-producto",
+      "archivo": "app/api/caja/ventas-por-producto/route.ts",
+      "metodos": [],
+      "nivel": "publico",
+      "audit": false,
+      "moduloDominio": null,
+      "usaDriver": false
+    },
+    {
+      "ruta": "/api/caja/ventas-tragos-chicas",
+      "archivo": "app/api/caja/ventas-tragos-chicas/route.ts",
+      "metodos": [],
+      "nivel": "publico",
+      "audit": false,
+      "moduloDominio": null,
+      "usaDriver": false
+    },
+    {
+      "ruta": "/api/calendar/data",
+      "archivo": "app/api/calendar/data/route.ts",
+      "metodos": [],
+      "nivel": "publico",
+      "audit": false,
+      "moduloDominio": null,
+      "usaDriver": false
+    },
+    {
+      "ruta": "/api/calendar",
+      "archivo": "app/api/calendar/route.ts",
+      "metodos": [],
+      "nivel": "publico",
+      "audit": false,
+      "moduloDominio": null,
+      "usaDriver": false
+    },
+    {
+      "ruta": "/api/cashregister/:id",
+      "archivo": "app/api/cashregister/[id]/route.ts",
+      "metodos": [],
+      "nivel": "publico",
+      "audit": true,
+      "moduloDominio": null,
+      "usaDriver": false
+    },
+    {
+      "ruta": "/api/cashregister/cierre/reenviar",
+      "archivo": "app/api/cashregister/cierre/reenviar/route.ts",
+      "metodos": [],
+      "nivel": "finances.write",
+      "audit": true,
+      "moduloDominio": null,
+      "usaDriver": false
+    },
+    {
+      "ruta": "/api/cashregister/cierre",
+      "archivo": "app/api/cashregister/cierre/route.ts",
+      "metodos": [],
+      "nivel": "finances.write",
+      "audit": true,
+      "moduloDominio": null,
+      "usaDriver": false
+    },
+    {
+      "ruta": "/api/cashregister/procesar-cierre",
+      "archivo": "app/api/cashregister/procesar-cierre/route.ts",
+      "metodos": [],
+      "nivel": "publico",
+      "audit": false,
+      "moduloDominio": null,
+      "usaDriver": false
+    },
+    {
+      "ruta": "/api/cashregister/retiros",
+      "archivo": "app/api/cashregister/retiros/route.ts",
+      "metodos": [],
+      "nivel": "finances.read",
+      "audit": true,
+      "moduloDominio": null,
+      "usaDriver": false
+    },
+    {
+      "ruta": "/api/cashregister",
+      "archivo": "app/api/cashregister/route.ts",
+      "metodos": [],
+      "nivel": "finances.read",
+      "audit": true,
+      "moduloDominio": null,
+      "usaDriver": false
+    },
+    {
+      "ruta": "/api/cashregister/solicitud-cierre",
+      "archivo": "app/api/cashregister/solicitud-cierre/route.ts",
+      "metodos": [],
+      "nivel": "publico",
+      "audit": false,
+      "moduloDominio": null,
+      "usaDriver": false
+    },
+    {
+      "ruta": "/api/cashregister/status",
+      "archivo": "app/api/cashregister/status/route.ts",
+      "metodos": [],
+      "nivel": "publico",
+      "audit": false,
+      "moduloDominio": null,
+      "usaDriver": false
+    },
+    {
+      "ruta": "/api/categories/:id",
+      "archivo": "app/api/categories/[id]/route.ts",
+      "metodos": [],
+      "nivel": "categories.write",
+      "audit": true,
+      "moduloDominio": null,
+      "usaDriver": false
+    },
+    {
+      "ruta": "/api/categories/reorder",
+      "archivo": "app/api/categories/reorder/route.ts",
+      "metodos": [],
+      "nivel": "categories.write",
+      "audit": true,
+      "moduloDominio": null,
+      "usaDriver": false
+    },
+    {
+      "ruta": "/api/categories",
+      "archivo": "app/api/categories/route.ts",
+      "metodos": [],
+      "nivel": "publico",
+      "audit": true,
+      "moduloDominio": null,
+      "usaDriver": false
+    },
+    {
+      "ruta": "/api/clients/:id",
+      "archivo": "app/api/clients/[id]/route.ts",
+      "metodos": [],
+      "nivel": "publico",
+      "audit": true,
+      "moduloDominio": null,
+      "usaDriver": false
+    },
+    {
+      "ruta": "/api/clients/devolucion/aprobar",
+      "archivo": "app/api/clients/devolucion/aprobar/route.ts",
+      "metodos": [],
+      "nivel": "clients.write",
+      "audit": true,
+      "moduloDominio": null,
+      "usaDriver": false
+    },
+    {
+      "ruta": "/api/clients/devolucion/recordatorio",
+      "archivo": "app/api/clients/devolucion/recordatorio/route.ts",
+      "metodos": [],
+      "nivel": "clients.write",
+      "audit": true,
+      "moduloDominio": null,
+      "usaDriver": false
+    },
+    {
+      "ruta": "/api/clients/devolucion",
+      "archivo": "app/api/clients/devolucion/route.ts",
+      "metodos": [],
+      "nivel": "clients.write",
+      "audit": true,
+      "moduloDominio": null,
+      "usaDriver": false
+    },
+    {
+      "ruta": "/api/clients/devolucion/solicitudes",
+      "archivo": "app/api/clients/devolucion/solicitudes/route.ts",
+      "metodos": [],
+      "nivel": "clients.read",
+      "audit": false,
+      "moduloDominio": null,
+      "usaDriver": false
+    },
+    {
+      "ruta": "/api/clients/history",
+      "archivo": "app/api/clients/history/route.ts",
+      "metodos": [],
+      "nivel": "publico",
+      "audit": false,
+      "moduloDominio": null,
+      "usaDriver": false
+    },
+    {
+      "ruta": "/api/clients/prepago",
+      "archivo": "app/api/clients/prepago/route.ts",
+      "metodos": [],
+      "nivel": "clients.write",
+      "audit": true,
+      "moduloDominio": null,
+      "usaDriver": false
+    },
+    {
+      "ruta": "/api/clients",
+      "archivo": "app/api/clients/route.ts",
+      "metodos": [],
+      "nivel": "publico",
+      "audit": true,
+      "moduloDominio": null,
+      "usaDriver": false
+    },
+    {
+      "ruta": "/api/codigo/actual",
+      "archivo": "app/api/codigo/actual/route.ts",
+      "metodos": [],
+      "nivel": "authenticated",
+      "audit": true,
+      "moduloDominio": null,
+      "usaDriver": false
+    },
+    {
+      "ruta": "/api/commissions/:id/details",
+      "archivo": "app/api/commissions/[id]/details/route.ts",
+      "metodos": [],
+      "nivel": "publico",
+      "audit": false,
+      "moduloDominio": null,
+      "usaDriver": false
+    },
+    {
+      "ruta": "/api/commissions/:id",
+      "archivo": "app/api/commissions/[id]/route.ts",
+      "metodos": [],
+      "nivel": "commissions.write",
+      "audit": true,
+      "moduloDominio": null,
+      "usaDriver": false
+    },
+    {
+      "ruta": "/api/commissions",
+      "archivo": "app/api/commissions/route.ts",
+      "metodos": [],
+      "nivel": "publico",
+      "audit": true,
+      "moduloDominio": null,
+      "usaDriver": false
+    },
+    {
+      "ruta": "/api/commissions/user",
+      "archivo": "app/api/commissions/user/route.ts",
+      "metodos": [],
+      "nivel": "authenticated",
+      "audit": true,
+      "moduloDominio": null,
+      "usaDriver": false
+    },
+    {
+      "ruta": "/api/configurations",
+      "archivo": "app/api/configurations/route.ts",
+      "metodos": [],
+      "nivel": "settings.write",
+      "audit": true,
+      "moduloDominio": null,
+      "usaDriver": false
+    },
+    {
+      "ruta": "/api/cron/check-timers",
+      "archivo": "app/api/cron/check-timers/route.ts",
+      "metodos": [],
+      "nivel": "publico",
+      "audit": false,
+      "moduloDominio": null,
+      "usaDriver": false
+    },
+    {
+      "ruta": "/api/csp-violation",
+      "archivo": "app/api/csp-violation/route.ts",
+      "metodos": ["POST"],
+      "nivel": "SIN_WRAPPER",
+      "audit": false,
+      "moduloDominio": null,
+      "usaDriver": false
+    },
+    {
+      "ruta": "/api/cuentas/:id/cobrar-con-venta",
+      "archivo": "app/api/cuentas/[id]/cobrar-con-venta/route.ts",
+      "metodos": [],
+      "nivel": "finances.write",
+      "audit": true,
+      "moduloDominio": null,
+      "usaDriver": false
+    },
+    {
+      "ruta": "/api/cuentas/:id/cobrar",
+      "archivo": "app/api/cuentas/[id]/cobrar/route.ts",
+      "metodos": [],
+      "nivel": "finances.write",
+      "audit": true,
+      "moduloDominio": null,
+      "usaDriver": false
+    },
+    {
+      "ruta": "/api/cuentas/:id",
+      "archivo": "app/api/cuentas/[id]/route.ts",
+      "metodos": [],
+      "nivel": "publico",
+      "audit": true,
+      "moduloDominio": null,
+      "usaDriver": false
+    },
+    {
+      "ruta": "/api/cuentas/:id/stop",
+      "archivo": "app/api/cuentas/[id]/stop/route.ts",
+      "metodos": [],
+      "nivel": "finances.write",
+      "audit": true,
+      "moduloDominio": null,
+      "usaDriver": false
+    },
+    {
+      "ruta": "/api/cuentas/anulacion",
+      "archivo": "app/api/cuentas/anulacion/route.ts",
+      "metodos": [],
+      "nivel": "finances.write",
+      "audit": true,
+      "moduloDominio": null,
+      "usaDriver": false
+    },
+    {
+      "ruta": "/api/cuentas/procesar-anulacion",
+      "archivo": "app/api/cuentas/procesar-anulacion/route.ts",
+      "metodos": ["POST"],
+      "nivel": "SIN_WRAPPER",
+      "audit": false,
+      "moduloDominio": null,
+      "usaDriver": false
+    },
+    {
+      "ruta": "/api/cuentas",
+      "archivo": "app/api/cuentas/route.ts",
+      "metodos": [],
+      "nivel": "publico",
+      "audit": true,
+      "moduloDominio": null,
+      "usaDriver": false
+    },
+    {
+      "ruta": "/api/cuentas/solicitud-anulacion",
+      "archivo": "app/api/cuentas/solicitud-anulacion/route.ts",
+      "metodos": ["GET"],
+      "nivel": "SIN_WRAPPER",
+      "audit": false,
+      "moduloDominio": null,
+      "usaDriver": false
+    },
+    {
+      "ruta": "/api/dashboard/composite",
+      "archivo": "app/api/dashboard/composite/route.ts",
+      "metodos": [],
+      "nivel": "dashboard.read",
+      "audit": true,
+      "moduloDominio": null,
+      "usaDriver": false
+    },
+    {
+      "ruta": "/api/error-logs",
+      "archivo": "app/api/error-logs/route.ts",
+      "metodos": [],
+      "nivel": "publico",
+      "audit": false,
+      "moduloDominio": null,
+      "usaDriver": false
+    },
+    {
+      "ruta": "/api/events/detail/:id",
+      "archivo": "app/api/events/detail/[id]/route.ts",
+      "metodos": [],
+      "nivel": "authenticated",
+      "audit": true,
+      "moduloDominio": null,
+      "usaDriver": false
+    },
+    {
+      "ruta": "/api/events/stats",
+      "archivo": "app/api/events/stats/route.ts",
+      "metodos": [],
+      "nivel": "authenticated",
+      "audit": true,
+      "moduloDominio": null,
+      "usaDriver": false
+    },
+    {
+      "ruta": "/api/events/user",
+      "archivo": "app/api/events/user/route.ts",
+      "metodos": [],
+      "nivel": "authenticated",
+      "audit": true,
+      "moduloDominio": null,
+      "usaDriver": false
+    },
+    {
+      "ruta": "/api/garzones",
+      "archivo": "app/api/garzones/route.ts",
+      "metodos": [],
+      "nivel": "publico",
+      "audit": false,
+      "moduloDominio": null,
+      "usaDriver": false
+    },
+    {
+      "ruta": "/api/gratificaciones/:id",
+      "archivo": "app/api/gratificaciones/[id]/route.ts",
+      "metodos": [],
+      "nivel": "gratificaciones.delete",
+      "audit": true,
+      "moduloDominio": null,
+      "usaDriver": false
+    },
+    {
+      "ruta": "/api/gratificaciones/aprobar",
+      "archivo": "app/api/gratificaciones/aprobar/route.ts",
+      "metodos": ["PUT"],
+      "nivel": "SIN_WRAPPER",
+      "audit": false,
+      "moduloDominio": null,
+      "usaDriver": false
+    },
+    {
+      "ruta": "/api/gratificaciones/me",
+      "archivo": "app/api/gratificaciones/me/route.ts",
+      "metodos": [],
+      "nivel": "authenticated",
+      "audit": true,
+      "moduloDominio": null,
+      "usaDriver": false
+    },
+    {
+      "ruta": "/api/gratificaciones",
+      "archivo": "app/api/gratificaciones/route.ts",
+      "metodos": [],
+      "nivel": "gratificaciones.write",
+      "audit": true,
+      "moduloDominio": null,
+      "usaDriver": false
+    },
+    {
+      "ruta": "/api/gratificaciones/solicitud-detalles",
+      "archivo": "app/api/gratificaciones/solicitud-detalles/route.ts",
+      "metodos": ["GET"],
+      "nivel": "SIN_WRAPPER",
+      "audit": false,
+      "moduloDominio": null,
+      "usaDriver": false
+    },
+    {
+      "ruta": "/api/health",
+      "archivo": "app/api/health/route.ts",
+      "metodos": [],
+      "nivel": "publico",
+      "audit": false,
+      "moduloDominio": null,
+      "usaDriver": false
+    },
+    {
+      "ruta": "/api/images/products/:id",
+      "archivo": "app/api/images/products/[filename]/route.ts",
+      "metodos": ["GET"],
+      "nivel": "SIN_WRAPPER",
+      "audit": false,
+      "moduloDominio": null,
+      "usaDriver": false
+    },
+    {
+      "ruta": "/api/kiosk/attendance/challenge",
+      "archivo": "app/api/kiosk/attendance/challenge/route.ts",
+      "metodos": ["POST"],
+      "nivel": "SIN_WRAPPER",
+      "audit": false,
+      "moduloDominio": null,
+      "usaDriver": false
+    },
+    {
+      "ruta": "/api/kiosk/board",
+      "archivo": "app/api/kiosk/board/route.ts",
+      "metodos": ["GET"],
+      "nivel": "SIN_WRAPPER",
+      "audit": false,
+      "moduloDominio": null,
+      "usaDriver": false
+    },
+    {
+      "ruta": "/api/kiosk/devices/:id",
+      "archivo": "app/api/kiosk/devices/[id]/route.ts",
+      "metodos": [],
+      "nivel": "administrator",
+      "audit": true,
+      "moduloDominio": null,
+      "usaDriver": false
+    },
+    {
+      "ruta": "/api/kiosk/devices",
+      "archivo": "app/api/kiosk/devices/route.ts",
+      "metodos": [],
+      "nivel": "administrator",
+      "audit": false,
+      "moduloDominio": null,
+      "usaDriver": false
+    },
+    {
+      "ruta": "/api/kiosk/session",
+      "archivo": "app/api/kiosk/session/route.ts",
+      "metodos": [],
+      "nivel": "publico",
+      "audit": true,
+      "moduloDominio": null,
+      "usaDriver": false
+    },
+    {
+      "ruta": "/api/monitoring/slow-queries",
+      "archivo": "app/api/monitoring/slow-queries/route.ts",
+      "metodos": [],
+      "nivel": "administrator",
+      "audit": true,
+      "moduloDominio": null,
+      "usaDriver": false
+    },
+    {
+      "ruta": "/api/notifications/assistance/accept",
+      "archivo": "app/api/notifications/assistance/accept/route.ts",
+      "metodos": [],
+      "nivel": "authenticated",
+      "audit": true,
+      "moduloDominio": null,
+      "usaDriver": false
+    },
+    {
+      "ruta": "/api/notifications/assistance",
+      "archivo": "app/api/notifications/assistance/route.ts",
+      "metodos": [],
+      "nivel": "authenticated",
+      "audit": true,
+      "moduloDominio": null,
+      "usaDriver": false
+    },
+    {
+      "ruta": "/api/notifications/kiosk",
+      "archivo": "app/api/notifications/kiosk/route.ts",
+      "metodos": ["GET"],
+      "nivel": "SIN_WRAPPER",
+      "audit": false,
+      "moduloDominio": null,
+      "usaDriver": false
+    },
+    {
+      "ruta": "/api/notifications/pending-count",
+      "archivo": "app/api/notifications/pending-count/route.ts",
+      "metodos": [],
+      "nivel": "authenticated",
+      "audit": true,
+      "moduloDominio": null,
+      "usaDriver": false
+    },
+    {
+      "ruta": "/api/notifications/pending",
+      "archivo": "app/api/notifications/pending/route.ts",
+      "metodos": [],
+      "nivel": "authenticated",
+      "audit": true,
+      "moduloDominio": null,
+      "usaDriver": false
+    },
+    {
+      "ruta": "/api/notifications",
+      "archivo": "app/api/notifications/route.ts",
+      "metodos": [],
+      "nivel": "authenticated",
+      "audit": true,
+      "moduloDominio": null,
+      "usaDriver": false
+    },
+    {
+      "ruta": "/api/notifications/sse",
+      "archivo": "app/api/notifications/sse/route.ts",
+      "metodos": ["GET"],
+      "nivel": "SIN_WRAPPER",
+      "audit": false,
+      "moduloDominio": null,
+      "usaDriver": false
+    },
+    {
+      "ruta": "/api/orders/:id",
+      "archivo": "app/api/orders/[id]/route.ts",
+      "metodos": [],
+      "nivel": "orders.delete",
+      "audit": true,
+      "moduloDominio": null,
+      "usaDriver": false
+    },
+    {
+      "ruta": "/api/orders/check-active-room",
+      "archivo": "app/api/orders/check-active-room/route.ts",
+      "metodos": [],
+      "nivel": "publico",
+      "audit": false,
+      "moduloDominio": null,
+      "usaDriver": false
+    },
+    {
+      "ruta": "/api/orders/detail",
+      "archivo": "app/api/orders/detail/route.ts",
+      "metodos": [],
+      "nivel": "publico",
+      "audit": false,
+      "moduloDominio": null,
+      "usaDriver": false
+    },
+    {
+      "ruta": "/api/orders",
+      "archivo": "app/api/orders/route.ts",
+      "metodos": [],
+      "nivel": "publico",
+      "audit": true,
+      "moduloDominio": null,
+      "usaDriver": false
+    },
+    {
+      "ruta": "/api/orders/sse",
+      "archivo": "app/api/orders/sse/route.ts",
+      "metodos": ["GET"],
+      "nivel": "SIN_WRAPPER",
+      "audit": false,
+      "moduloDominio": null,
+      "usaDriver": false
+    },
+    {
+      "ruta": "/api/orders/user",
+      "archivo": "app/api/orders/user/route.ts",
+      "metodos": [],
+      "nivel": "authenticated",
+      "audit": true,
+      "moduloDominio": null,
+      "usaDriver": false
+    },
+    {
+      "ruta": "/api/overtime/by-dates",
+      "archivo": "app/api/overtime/by-dates/route.ts",
+      "metodos": [],
+      "nivel": "authenticated",
+      "audit": true,
+      "moduloDominio": null,
+      "usaDriver": false
+    },
+    {
+      "ruta": "/api/overtime",
+      "archivo": "app/api/overtime/route.ts",
+      "metodos": [],
+      "nivel": "overtime.write",
+      "audit": true,
+      "moduloDominio": null,
+      "usaDriver": false
+    },
+    {
+      "ruta": "/api/overtime/user",
+      "archivo": "app/api/overtime/user/route.ts",
+      "metodos": [],
+      "nivel": "authenticated",
+      "audit": true,
+      "moduloDominio": null,
+      "usaDriver": false
+    },
+    {
+      "ruta": "/api/payroll",
+      "archivo": "app/api/payroll/route.ts",
+      "metodos": [],
+      "nivel": "publico",
+      "audit": true,
+      "moduloDominio": null,
+      "usaDriver": false
+    },
+    {
+      "ruta": "/api/permissions/:id",
+      "archivo": "app/api/permissions/[id]/route.ts",
+      "metodos": [],
+      "nivel": "settings.write",
+      "audit": true,
+      "moduloDominio": null,
+      "usaDriver": false
+    },
+    {
+      "ruta": "/api/permissions/invalidate-cache",
+      "archivo": "app/api/permissions/invalidate-cache/route.ts",
+      "metodos": [],
+      "nivel": "administrator",
+      "audit": true,
+      "moduloDominio": null,
+      "usaDriver": false
+    },
+    {
+      "ruta": "/api/permissions",
+      "archivo": "app/api/permissions/route.ts",
+      "metodos": [],
+      "nivel": "publico",
+      "audit": true,
+      "moduloDominio": null,
+      "usaDriver": false
+    },
+    {
+      "ruta": "/api/permissions/setup-cajero",
+      "archivo": "app/api/permissions/setup-cajero/route.ts",
+      "metodos": [],
+      "nivel": "administrator",
+      "audit": true,
+      "moduloDominio": null,
+      "usaDriver": false
+    },
+    {
+      "ruta": "/api/ping",
+      "archivo": "app/api/ping/route.ts",
+      "metodos": [],
+      "nivel": "publico",
+      "audit": false,
+      "moduloDominio": null,
+      "usaDriver": false
+    },
+    {
+      "ruta": "/api/products/:id",
+      "archivo": "app/api/products/[id]/route.ts",
+      "metodos": [],
+      "nivel": "products.write",
+      "audit": true,
+      "moduloDominio": null,
+      "usaDriver": false
+    },
+    {
+      "ruta": "/api/products/:id/tiers",
+      "archivo": "app/api/products/[id]/tiers/route.ts",
+      "metodos": [],
+      "nivel": "publico",
+      "audit": true,
+      "moduloDominio": null,
+      "usaDriver": false
+    },
+    {
+      "ruta": "/api/products/for-sale",
+      "archivo": "app/api/products/for-sale/route.ts",
+      "metodos": [],
+      "nivel": "publico",
+      "audit": false,
+      "moduloDominio": null,
+      "usaDriver": false
+    },
+    {
+      "ruta": "/api/products/presentations",
+      "archivo": "app/api/products/presentations/route.ts",
+      "metodos": [],
+      "nivel": "publico",
+      "audit": true,
+      "moduloDominio": null,
+      "usaDriver": false
+    },
+    {
+      "ruta": "/api/products/reorder",
+      "archivo": "app/api/products/reorder/route.ts",
+      "metodos": [],
+      "nivel": "products.write",
+      "audit": true,
+      "moduloDominio": null,
+      "usaDriver": false
+    },
+    {
+      "ruta": "/api/products",
+      "archivo": "app/api/products/route.ts",
+      "metodos": [],
+      "nivel": "publico",
+      "audit": true,
+      "moduloDominio": null,
+      "usaDriver": false
+    },
+    {
+      "ruta": "/api/products/units/printed",
+      "archivo": "app/api/products/units/printed/route.ts",
+      "metodos": [],
+      "nivel": "products.write",
+      "audit": true,
+      "moduloDominio": null,
+      "usaDriver": false
+    },
+    {
+      "ruta": "/api/products/units",
+      "archivo": "app/api/products/units/route.ts",
+      "metodos": [],
+      "nivel": "publico",
+      "audit": true,
+      "moduloDominio": null,
+      "usaDriver": false
+    },
+    {
+      "ruta": "/api/public/users",
+      "archivo": "app/api/public/users/route.ts",
+      "metodos": ["GET"],
+      "nivel": "SIN_WRAPPER",
+      "audit": false,
+      "moduloDominio": null,
+      "usaDriver": false
+    },
+    {
+      "ruta": "/api/purchases",
+      "archivo": "app/api/purchases/route.ts",
+      "metodos": [],
+      "nivel": "products.read",
+      "audit": false,
+      "moduloDominio": null,
+      "usaDriver": false
+    },
+    {
+      "ruta": "/api/reports/cash-register",
+      "archivo": "app/api/reports/cash-register/route.ts",
+      "metodos": [],
+      "nivel": "publico",
+      "audit": false,
+      "moduloDominio": null,
+      "usaDriver": false
+    },
+    {
+      "ruta": "/api/reports/commissions",
+      "archivo": "app/api/reports/commissions/route.ts",
+      "metodos": [],
+      "nivel": "publico",
+      "audit": false,
+      "moduloDominio": null,
+      "usaDriver": false
+    },
+    {
+      "ruta": "/api/reports/sales",
+      "archivo": "app/api/reports/sales/route.ts",
+      "metodos": [],
+      "nivel": "publico",
+      "audit": false,
+      "moduloDominio": null,
+      "usaDriver": false
+    },
+    {
+      "ruta": "/api/reviews",
+      "archivo": "app/api/reviews/route.ts",
+      "metodos": [],
+      "nivel": "publico",
+      "audit": false,
+      "moduloDominio": null,
+      "usaDriver": false
+    },
+    {
+      "ruta": "/api/roles/:id/permissions",
+      "archivo": "app/api/roles/[id]/permissions/route.ts",
+      "metodos": [],
+      "nivel": "publico",
+      "audit": true,
+      "moduloDominio": null,
+      "usaDriver": false
+    },
+    {
+      "ruta": "/api/roles/:id",
+      "archivo": "app/api/roles/[id]/route.ts",
+      "metodos": [],
+      "nivel": "publico",
+      "audit": true,
+      "moduloDominio": null,
+      "usaDriver": false
+    },
+    {
+      "ruta": "/api/roles/:id/users",
+      "archivo": "app/api/roles/[id]/users/route.ts",
+      "metodos": [],
+      "nivel": "publico",
+      "audit": false,
+      "moduloDominio": null,
+      "usaDriver": false
+    },
+    {
+      "ruta": "/api/roles/admin/permissions",
+      "archivo": "app/api/roles/admin/permissions/route.ts",
+      "metodos": [],
+      "nivel": "publico",
+      "audit": false,
+      "moduloDominio": null,
+      "usaDriver": false
+    },
+    {
+      "ruta": "/api/roles",
+      "archivo": "app/api/roles/route.ts",
+      "metodos": [],
+      "nivel": "publico",
+      "audit": true,
+      "moduloDominio": null,
+      "usaDriver": false
+    },
+    {
+      "ruta": "/api/roles/setup",
+      "archivo": "app/api/roles/setup/route.ts",
+      "metodos": [],
+      "nivel": "administrator",
+      "audit": true,
+      "moduloDominio": null,
+      "usaDriver": false
+    },
+    {
+      "ruta": "/api/rooms/:id",
+      "archivo": "app/api/rooms/[id]/route.ts",
+      "metodos": [],
+      "nivel": "publico",
+      "audit": true,
+      "moduloDominio": null,
+      "usaDriver": false
+    },
+    {
+      "ruta": "/api/rooms/reorder",
+      "archivo": "app/api/rooms/reorder/route.ts",
+      "metodos": [],
+      "nivel": "rooms.write",
+      "audit": true,
+      "moduloDominio": null,
+      "usaDriver": false
+    },
+    {
+      "ruta": "/api/rooms",
+      "archivo": "app/api/rooms/route.ts",
+      "metodos": [],
+      "nivel": "publico",
+      "audit": true,
+      "moduloDominio": null,
+      "usaDriver": false
+    },
+    {
+      "ruta": "/api/sales/:id",
+      "archivo": "app/api/sales/[id]/route.ts",
+      "metodos": [],
+      "nivel": "publico",
+      "audit": true,
+      "moduloDominio": null,
+      "usaDriver": false
+    },
+    {
+      "ruta": "/api/sales",
+      "archivo": "app/api/sales/route.ts",
+      "metodos": [],
+      "nivel": "publico",
+      "audit": true,
+      "moduloDominio": null,
+      "usaDriver": false
+    },
+    {
+      "ruta": "/api/sales/stats",
+      "archivo": "app/api/sales/stats/route.ts",
+      "metodos": [],
+      "nivel": "publico",
+      "audit": false,
+      "moduloDominio": null,
+      "usaDriver": false
+    },
+    {
+      "ruta": "/api/servicios/:id",
+      "archivo": "app/api/servicios/[id]/route.ts",
+      "metodos": [],
+      "nivel": "publico",
+      "audit": true,
+      "moduloDominio": null,
+      "usaDriver": false
+    },
+    {
+      "ruta": "/api/servicios/anulacion",
+      "archivo": "app/api/servicios/anulacion/route.ts",
+      "metodos": [],
+      "nivel": "authenticated",
+      "audit": true,
+      "moduloDominio": null,
+      "usaDriver": false
+    },
+    {
+      "ruta": "/api/servicios/by-dates",
+      "archivo": "app/api/servicios/by-dates/route.ts",
+      "metodos": [],
+      "nivel": "publico",
+      "audit": false,
+      "moduloDominio": null,
+      "usaDriver": false
+    },
+    {
+      "ruta": "/api/servicios/procesar-anulacion",
+      "archivo": "app/api/servicios/procesar-anulacion/route.ts",
+      "metodos": ["POST"],
+      "nivel": "SIN_WRAPPER",
+      "audit": false,
+      "moduloDominio": null,
+      "usaDriver": false
+    },
+    {
+      "ruta": "/api/servicios",
+      "archivo": "app/api/servicios/route.ts",
+      "metodos": [],
+      "nivel": "publico",
+      "audit": true,
+      "moduloDominio": null,
+      "usaDriver": false
+    },
+    {
+      "ruta": "/api/servicios/solicitud-anulacion",
+      "archivo": "app/api/servicios/solicitud-anulacion/route.ts",
+      "metodos": ["GET", "POST"],
+      "nivel": "SIN_WRAPPER",
+      "audit": false,
+      "moduloDominio": null,
+      "usaDriver": false
+    },
+    {
+      "ruta": "/api/servicios/temporal",
+      "archivo": "app/api/servicios/temporal/route.ts",
+      "metodos": [],
+      "nivel": "authenticated",
+      "audit": true,
+      "moduloDominio": null,
+      "usaDriver": false
+    },
+    {
+      "ruta": "/api/servicios/user",
+      "archivo": "app/api/servicios/user/route.ts",
+      "metodos": [],
+      "nivel": "authenticated",
+      "audit": true,
+      "moduloDominio": null,
+      "usaDriver": false
+    },
+    {
+      "ruta": "/api/settings/backup/:id/download",
+      "archivo": "app/api/settings/backup/[id]/download/route.ts",
+      "metodos": [],
+      "nivel": "settings.read",
+      "audit": true,
+      "moduloDominio": null,
+      "usaDriver": false
+    },
+    {
+      "ruta": "/api/settings/backup/:id/restore",
+      "archivo": "app/api/settings/backup/[id]/restore/route.ts",
+      "metodos": [],
+      "nivel": "settings.write",
+      "audit": true,
+      "moduloDominio": null,
+      "usaDriver": false
+    },
+    {
+      "ruta": "/api/settings/backup",
+      "archivo": "app/api/settings/backup/route.ts",
+      "metodos": [],
+      "nivel": "settings.write",
+      "audit": true,
+      "moduloDominio": null,
+      "usaDriver": false
+    },
+    {
+      "ruta": "/api/settings/database-clean",
+      "archivo": "app/api/settings/database-clean/route.ts",
+      "metodos": [],
+      "nivel": "settings.write",
+      "audit": true,
+      "moduloDominio": null,
+      "usaDriver": false
+    },
+    {
+      "ruta": "/api/solicitudes-servicios/:id/aprobar",
+      "archivo": "app/api/solicitudes-servicios/[id]/aprobar/route.ts",
+      "metodos": [],
+      "nivel": "orders.process",
+      "audit": true,
+      "moduloDominio": null,
+      "usaDriver": false
+    },
+    {
+      "ruta": "/api/solicitudes-servicios/:id/rechazar",
+      "archivo": "app/api/solicitudes-servicios/[id]/rechazar/route.ts",
+      "metodos": [],
+      "nivel": "orders.process",
+      "audit": true,
+      "moduloDominio": null,
+      "usaDriver": false
+    },
+    {
+      "ruta": "/api/solicitudes-servicios/pending-count",
+      "archivo": "app/api/solicitudes-servicios/pending-count/route.ts",
+      "metodos": [],
+      "nivel": "publico",
+      "audit": false,
+      "moduloDominio": null,
+      "usaDriver": false
+    },
+    {
+      "ruta": "/api/solicitudes-servicios",
+      "archivo": "app/api/solicitudes-servicios/route.ts",
+      "metodos": [],
+      "nivel": "publico",
+      "audit": true,
+      "moduloDominio": null,
+      "usaDriver": false
+    },
+    {
+      "ruta": "/api/stats/dashboard-summary",
+      "archivo": "app/api/stats/dashboard-summary/route.ts",
+      "metodos": [],
+      "nivel": "dashboard.read",
+      "audit": true,
+      "moduloDominio": null,
+      "usaDriver": false
+    },
+    {
+      "ruta": "/api/stats/logged-users",
+      "archivo": "app/api/stats/logged-users/route.ts",
+      "metodos": [],
+      "nivel": "publico",
+      "audit": false,
+      "moduloDominio": null,
+      "usaDriver": false
+    },
+    {
+      "ruta": "/api/stats/sales-by-month",
+      "archivo": "app/api/stats/sales-by-month/route.ts",
+      "metodos": [],
+      "nivel": "publico",
+      "audit": false,
+      "moduloDominio": null,
+      "usaDriver": false
+    },
+    {
+      "ruta": "/api/stats/sales-by-week",
+      "archivo": "app/api/stats/sales-by-week/route.ts",
+      "metodos": [],
+      "nivel": "publico",
+      "audit": false,
+      "moduloDominio": null,
+      "usaDriver": false
+    },
+    {
+      "ruta": "/api/swagger",
+      "archivo": "app/api/swagger/route.ts",
+      "metodos": ["GET"],
+      "nivel": "SIN_WRAPPER",
+      "audit": false,
+      "moduloDominio": null,
+      "usaDriver": false
+    },
+    {
+      "ruta": "/api/test-auth",
+      "archivo": "app/api/test-auth/route.ts",
+      "metodos": [],
+      "nivel": "publico",
+      "audit": false,
+      "moduloDominio": null,
+      "usaDriver": false
+    },
+    {
+      "ruta": "/api/timers/active",
+      "archivo": "app/api/timers/active/route.ts",
+      "metodos": [],
+      "nivel": "publico",
+      "audit": false,
+      "moduloDominio": null,
+      "usaDriver": false
+    },
+    {
+      "ruta": "/api/tips/:id",
+      "archivo": "app/api/tips/[id]/route.ts",
+      "metodos": [],
+      "nivel": "publico",
+      "audit": false,
+      "moduloDominio": null,
+      "usaDriver": false
+    },
+    {
+      "ruta": "/api/tips",
+      "archivo": "app/api/tips/route.ts",
+      "metodos": [],
+      "nivel": "tips.read",
+      "audit": true,
+      "moduloDominio": null,
+      "usaDriver": false
+    },
+    {
+      "ruta": "/api/tips/user",
+      "archivo": "app/api/tips/user/route.ts",
+      "metodos": [],
+      "nivel": "authenticated",
+      "audit": true,
+      "moduloDominio": null,
+      "usaDriver": false
+    },
+    {
+      "ruta": "/api/transfers/:id/accept",
+      "archivo": "app/api/transfers/[id]/accept/route.ts",
+      "metodos": [],
+      "nivel": "products.accept_transfer",
+      "audit": true,
+      "moduloDominio": null,
+      "usaDriver": false
+    },
+    {
+      "ruta": "/api/transfers/pending",
+      "archivo": "app/api/transfers/pending/route.ts",
+      "metodos": [],
+      "nivel": "products.read",
+      "audit": false,
+      "moduloDominio": null,
+      "usaDriver": false
+    },
+    {
+      "ruta": "/api/transfers",
+      "archivo": "app/api/transfers/route.ts",
+      "metodos": [],
+      "nivel": "products.read",
+      "audit": false,
+      "moduloDominio": null,
+      "usaDriver": false
+    },
+    {
+      "ruta": "/api/users/:id/biometric/captura",
+      "archivo": "app/api/users/[id]/biometric/captura/route.ts",
+      "metodos": [],
+      "nivel": "users.write",
+      "audit": true,
+      "moduloDominio": null,
+      "usaDriver": false
+    },
+    {
+      "ruta": "/api/users/:id/biometric/devices",
+      "archivo": "app/api/users/[id]/biometric/devices/route.ts",
+      "metodos": [],
+      "nivel": "users.read",
+      "audit": false,
+      "moduloDominio": null,
+      "usaDriver": false
+    },
+    {
+      "ruta": "/api/users/:id/biometric",
+      "archivo": "app/api/users/[id]/biometric/route.ts",
+      "metodos": [],
+      "nivel": "users.write",
+      "audit": true,
+      "moduloDominio": null,
+      "usaDriver": false
+    },
+    {
+      "ruta": "/api/users/:id/biometric/sync",
+      "archivo": "app/api/users/[id]/biometric/sync/route.ts",
+      "metodos": [],
+      "nivel": "users.write",
+      "audit": true,
+      "moduloDominio": null,
+      "usaDriver": false
+    },
+    {
+      "ruta": "/api/users/:id/biometric/verificar",
+      "archivo": "app/api/users/[id]/biometric/verificar/route.ts",
+      "metodos": [],
+      "nivel": "users.write",
+      "audit": true,
+      "moduloDominio": null,
+      "usaDriver": false
+    },
+    {
+      "ruta": "/api/users/:id/permissions",
+      "archivo": "app/api/users/[id]/permissions/route.ts",
+      "metodos": [],
+      "nivel": "publico",
+      "audit": false,
+      "moduloDominio": null,
+      "usaDriver": false
+    },
+    {
+      "ruta": "/api/users/:id",
+      "archivo": "app/api/users/[id]/route.ts",
+      "metodos": [],
+      "nivel": "users.write",
+      "audit": true,
+      "moduloDominio": null,
+      "usaDriver": false
+    },
+    {
+      "ruta": "/api/users/me/stats",
+      "archivo": "app/api/users/me/stats/route.ts",
+      "metodos": [],
+      "nivel": "authenticated",
+      "audit": true,
+      "moduloDominio": null,
+      "usaDriver": false
+    },
+    {
+      "ruta": "/api/users/profile",
+      "archivo": "app/api/users/profile/route.ts",
+      "metodos": [],
+      "nivel": "authenticated",
+      "audit": true,
+      "moduloDominio": null,
+      "usaDriver": false
+    },
+    {
+      "ruta": "/api/users",
+      "archivo": "app/api/users/route.ts",
+      "metodos": [],
+      "nivel": "users.write",
+      "audit": true,
+      "moduloDominio": null,
+      "usaDriver": false
+    },
+    {
+      "ruta": "/api/users/status",
+      "archivo": "app/api/users/status/route.ts",
+      "metodos": [],
+      "nivel": "authenticated",
+      "audit": true,
+      "moduloDominio": null,
+      "usaDriver": false
+    },
+    {
+      "ruta": "/api/ventas/:id",
+      "archivo": "app/api/ventas/[id]/route.ts",
+      "metodos": [],
+      "nivel": "publico",
+      "audit": true,
+      "moduloDominio": null,
+      "usaDriver": false
+    },
+    {
+      "ruta": "/api/ventas/anulacion",
+      "archivo": "app/api/ventas/anulacion/route.ts",
+      "metodos": [],
+      "nivel": "sales.anulate",
+      "audit": true,
+      "moduloDominio": null,
+      "usaDriver": false
+    },
+    {
+      "ruta": "/api/ventas/procesar-anulacion",
+      "archivo": "app/api/ventas/procesar-anulacion/route.ts",
+      "metodos": ["POST"],
+      "nivel": "SIN_WRAPPER",
+      "audit": false,
+      "moduloDominio": null,
+      "usaDriver": false
+    },
+    {
+      "ruta": "/api/ventas/solicitud-anulacion",
+      "archivo": "app/api/ventas/solicitud-anulacion/route.ts",
+      "metodos": ["GET"],
+      "nivel": "SIN_WRAPPER",
+      "audit": false,
+      "moduloDominio": null,
+      "usaDriver": false
+    },
+    {
+      "ruta": "/api/whatsapp/webhook",
+      "archivo": "app/api/whatsapp/webhook/route.ts",
+      "metodos": ["POST"],
+      "nivel": "SIN_WRAPPER",
+      "audit": false,
+      "moduloDominio": null,
+      "usaDriver": false
+    }
+  ],
+  "sqlFueraDeRepositorio": [
+    {
+      "archivo": "scripts/clean-sync-probes.js",
+      "capa": "scripts",
+      "modulo": null,
+      "escribe": ["sync_operations"]
+    },
+    {
+      "archivo": "scripts/compare-schema.mjs",
+      "capa": "scripts",
+      "modulo": null,
+      "escribe": []
+    },
+    {
+      "archivo": "scripts/db_test.js",
+      "capa": "scripts",
+      "modulo": null,
+      "escribe": []
+    },
+    {
+      "archivo": "scripts/lib/twilio-config.js",
+      "capa": "scripts",
+      "modulo": null,
+      "escribe": []
+    },
+    {
+      "archivo": "scripts/postgres-migrations.mjs",
+      "capa": "scripts",
+      "modulo": null,
+      "escribe": ["_postgres_migrations"]
+    },
+    {
+      "archivo": "scripts/purge-query-logs.js",
+      "capa": "scripts",
+      "modulo": null,
+      "escribe": ["query_logs"]
+    },
+    {
+      "archivo": "scripts/reconcile-migration-checksum.mjs",
+      "capa": "scripts",
+      "modulo": null,
+      "escribe": ["_postgres_migrations"]
+    },
+    {
+      "archivo": "scripts/run-integration-all.js",
+      "capa": "scripts",
+      "modulo": null,
+      "escribe": []
+    },
+    {
+      "archivo": "scripts/test-whatsapp.ts",
+      "capa": "scripts",
+      "modulo": null,
+      "escribe": []
+    },
+    {
+      "archivo": "scripts/verify-migrations.mjs",
+      "capa": "scripts",
+      "modulo": null,
+      "escribe": []
+    },
+    {
+      "archivo": "scripts/verify-schema-parity.mjs",
+      "capa": "scripts",
+      "modulo": null,
+      "escribe": []
+    },
+    {
+      "archivo": "proxy.ts",
+      "capa": "raiz",
+      "modulo": null,
+      "escribe": []
+    },
+    {
+      "archivo": "modules/asistencia/seed/seed-asistencia.mjs",
+      "capa": "modules/aplicacion",
+      "modulo": "asistencia",
+      "escribe": ["asistencias"]
+    },
+    {
+      "archivo": "modules/asistencia/biometrico/avisosAudio.ts",
+      "capa": "modules/aplicacion",
+      "modulo": "asistencia",
+      "escribe": []
+    },
+    {
+      "archivo": "modules/asistencia/biometrico/clockSync.ts",
+      "capa": "modules/aplicacion",
+      "modulo": "asistencia",
+      "escribe": []
+    },
+    {
+      "archivo": "modules/asistencia/biometrico/deviceAuth.ts",
+      "capa": "modules/aplicacion",
+      "modulo": "asistencia",
+      "escribe": ["biometric_devices"]
+    },
+    {
+      "archivo": "modules/asistencia/biometrico/enrollmentService.ts",
+      "capa": "modules/aplicacion",
+      "modulo": "asistencia",
+      "escribe": ["biometric_devices", "biometric_plantillas"]
+    },
+    {
+      "archivo": "modules/asistencia/biometrico/eventListener.ts",
+      "capa": "modules/aplicacion",
+      "modulo": "asistencia",
+      "escribe": ["biometric_device_records"]
+    },
+    {
+      "archivo": "modules/asistencia/biometrico/identificacionFacial.ts",
+      "capa": "modules/aplicacion",
+      "modulo": "asistencia",
+      "escribe": ["biometric_device_records", "biometric_plantillas"]
+    },
+    {
+      "archivo": "modules/asistencia/biometrico/ipDiscovery.ts",
+      "capa": "modules/aplicacion",
+      "modulo": "asistencia",
+      "escribe": ["biometric_devices"]
+    },
+    {
+      "archivo": "modules/asistencia/biometrico/ipWatcher.ts",
+      "capa": "modules/aplicacion",
+      "modulo": "asistencia",
+      "escribe": []
+    },
+    {
+      "archivo": "modules/asistencia/biometrico/processBiometricEvent.ts",
+      "capa": "modules/aplicacion",
+      "modulo": "asistencia",
+      "escribe": ["asistencias", "biometric_events"]
+    },
+    {
+      "archivo": "modules/asistencia/biometrico/recordPhotos.ts",
+      "capa": "modules/aplicacion",
+      "modulo": "asistencia",
+      "escribe": ["biometric_device_records"]
+    },
+    {
+      "archivo": "modules/asistencia/biometrico/recordPoller.ts",
+      "capa": "modules/aplicacion",
+      "modulo": "asistencia",
+      "escribe": ["biometric_device_records"]
+    },
+    {
+      "archivo": "modules/asistencia/biometrico/statusService.ts",
+      "capa": "modules/aplicacion",
+      "modulo": "asistencia",
+      "escribe": []
+    },
+    {
+      "archivo": "modules/asistencia/biometrico/verificacionRemota.ts",
+      "capa": "modules/aplicacion",
+      "modulo": "asistencia",
+      "escribe": []
+    },
+    {
+      "archivo": "modules/asistencia/biometrico/videoStream.ts",
+      "capa": "modules/aplicacion",
+      "modulo": "asistencia",
+      "escribe": []
+    },
+    {
+      "archivo": "modules/asistencia/kioskos/attendanceChallenges.ts",
+      "capa": "modules/aplicacion",
+      "modulo": "asistencia",
+      "escribe": ["asistencia_desafios"]
+    },
+    {
+      "archivo": "modules/asistencia/kioskos/deviceAuth.ts",
+      "capa": "modules/aplicacion",
+      "modulo": "asistencia",
+      "escribe": ["kiosk_devices"]
+    },
+    {
+      "archivo": "modules/auditoria/alertas/servicio.ts",
+      "capa": "modules/aplicacion",
+      "modulo": "auditoria",
+      "escribe": []
+    },
+    {
+      "archivo": "modules/caja/retiros/servicio.ts",
+      "capa": "modules/aplicacion",
+      "modulo": "caja",
+      "escribe": ["cajas"]
+    },
+    {
+      "archivo": "modules/comunicaciones/push/servicio.ts",
+      "capa": "modules/aplicacion",
+      "modulo": "comunicaciones",
+      "escribe": ["push_tokens"]
+    },
+    {
+      "archivo": "modules/identidad/autenticacion/codigos.ts",
+      "capa": "modules/aplicacion",
+      "modulo": "identidad",
+      "escribe": ["codigos"]
+    },
+    {
+      "archivo": "modules/inventario/bar/configuracion.ts",
+      "capa": "modules/aplicacion",
+      "modulo": "inventario",
+      "escribe": []
+    },
+    {
+      "archivo": "modules/inventario/compras/servicio.ts",
+      "capa": "modules/aplicacion",
+      "modulo": "inventario",
+      "escribe": ["inventario_presentaciones"]
+    },
+    {
+      "archivo": "modules/inventario/productos/servicio.ts",
+      "capa": "modules/aplicacion",
+      "modulo": "inventario",
+      "escribe": []
+    },
+    {
+      "archivo": "modules/inventario/tipos.ts",
+      "capa": "modules/aplicacion",
+      "modulo": "inventario",
+      "escribe": []
+    },
+    {
+      "archivo": "modules/operacion/cuentas/alta.ts",
+      "capa": "modules/aplicacion",
+      "modulo": "operacion",
+      "escribe": []
+    },
+    {
+      "archivo": "modules/operacion/servicios/creacion.ts",
+      "capa": "modules/aplicacion",
+      "modulo": "operacion",
+      "escribe": []
+    },
+    {
+      "archivo": "modules/reportes/informes/caja.ts",
+      "capa": "modules/aplicacion",
+      "modulo": "reportes",
+      "escribe": []
+    },
+    {
+      "archivo": "modules/reportes/informes/comisiones.ts",
+      "capa": "modules/aplicacion",
+      "modulo": "reportes",
+      "escribe": []
+    },
+    {
+      "archivo": "modules/reportes/informes/ventas.ts",
+      "capa": "modules/aplicacion",
+      "modulo": "reportes",
+      "escribe": []
+    },
+    {
+      "archivo": "lib/notifications/orderNotificationUtils.ts",
+      "capa": "lib/otros",
+      "modulo": null,
+      "escribe": []
+    },
+    {
+      "archivo": "lib/transaccion/contrato.ts",
+      "capa": "lib/otros",
+      "modulo": null,
+      "escribe": []
+    },
+    {
+      "archivo": "lib/transaccion/infraestructura.ts",
+      "capa": "lib/otros",
+      "modulo": null,
+      "escribe": []
+    },
+    {
+      "archivo": "lib/middleware/auth.ts",
+      "capa": "lib/identidad",
+      "modulo": "identidad",
+      "escribe": []
+    },
+    {
+      "archivo": "lib/business/containerAlerts.ts",
+      "capa": "lib/business",
+      "modulo": null,
+      "escribe": []
+    },
+    {
+      "archivo": "lib/business/shotAlerts.ts",
+      "capa": "lib/business",
+      "modulo": null,
+      "escribe": []
+    },
+    {
+      "archivo": "lib/business/twilioConfig.ts",
+      "capa": "lib/business",
+      "modulo": null,
+      "escribe": []
+    },
+    {
+      "archivo": "lib/business/whatsappConfig.ts",
+      "capa": "lib/business",
+      "modulo": null,
+      "escribe": []
+    }
+  ],
+  "escriturasCruzadas": [],
+  "transacciones": [
+    {
+      "archivo": "lib/database/maintenance.ts",
+      "capa": "lib/database",
+      "modulo": null
+    },
+    {
+      "archivo": "lib/transaccion/contrato.ts",
+      "capa": "lib/otros",
+      "modulo": null
+    },
+    {
+      "archivo": "modules/asistencia/biometrico/enrollmentService.ts",
+      "capa": "modules/aplicacion",
+      "modulo": "asistencia"
+    },
+    {
+      "archivo": "modules/asistencia/biometrico/unenrollmentService.ts",
+      "capa": "modules/aplicacion",
+      "modulo": "asistencia"
+    },
+    {
+      "archivo": "modules/asistencia/kioskos/deviceAuth.ts",
+      "capa": "modules/aplicacion",
+      "modulo": "asistencia"
+    },
+    {
+      "archivo": "modules/asistencia/marcas/repositorio.ts",
+      "capa": "modules/infraestructura",
+      "modulo": "asistencia"
+    },
+    {
+      "archivo": "modules/caja/retiros/servicio.ts",
+      "capa": "modules/aplicacion",
+      "modulo": "caja"
+    },
+    {
+      "archivo": "modules/caja/turnos/repositorio.ts",
+      "capa": "modules/infraestructura",
+      "modulo": "caja"
+    },
+    {
+      "archivo": "modules/identidad/autenticacion/consultas.ts",
+      "capa": "modules/infraestructura",
+      "modulo": "identidad"
+    },
+    {
+      "archivo": "modules/identidad/permisos/repositorio.ts",
+      "capa": "modules/infraestructura",
+      "modulo": "identidad"
+    },
+    {
+      "archivo": "modules/identidad/roles/registro.ts",
+      "capa": "modules/infraestructura",
+      "modulo": "identidad"
+    },
+    {
+      "archivo": "modules/inventario/anulaciones/infraestructura.ts",
+      "capa": "modules/infraestructura",
+      "modulo": "inventario"
+    },
+    {
+      "archivo": "modules/inventario/categorias/repositorio.ts",
+      "capa": "modules/infraestructura",
+      "modulo": "inventario"
+    },
+    {
+      "archivo": "modules/inventario/compras/servicio.ts",
+      "capa": "modules/aplicacion",
+      "modulo": "inventario"
+    },
+    {
+      "archivo": "modules/inventario/envases/infraestructura.ts",
+      "capa": "modules/infraestructura",
+      "modulo": "inventario"
+    },
+    {
+      "archivo": "modules/inventario/presentaciones/infraestructura.ts",
+      "capa": "modules/infraestructura",
+      "modulo": "inventario"
+    },
+    {
+      "archivo": "modules/inventario/productos/servicio.ts",
+      "capa": "modules/aplicacion",
+      "modulo": "inventario"
+    },
+    {
+      "archivo": "modules/inventario/transferencias/infraestructura.ts",
+      "capa": "modules/infraestructura",
+      "modulo": "inventario"
+    },
+    {
+      "archivo": "modules/inventario/unidades/infraestructura.ts",
+      "capa": "modules/infraestructura",
+      "modulo": "inventario"
+    },
+    {
+      "archivo": "modules/operacion/cuentas/actualizacion.ts",
+      "capa": "modules/aplicacion",
+      "modulo": "operacion"
+    },
+    {
+      "archivo": "modules/operacion/cuentas/alta.ts",
+      "capa": "modules/aplicacion",
+      "modulo": "operacion"
+    },
+    {
+      "archivo": "modules/operacion/cuentas/anulacionesServicio.ts",
+      "capa": "modules/aplicacion",
+      "modulo": "operacion"
+    },
+    {
+      "archivo": "modules/operacion/cuentas/consultas.ts",
+      "capa": "modules/infraestructura",
+      "modulo": "operacion"
+    },
+    {
+      "archivo": "modules/operacion/cuentas/repositorio.ts",
+      "capa": "modules/infraestructura",
+      "modulo": "operacion"
+    },
+    {
+      "archivo": "modules/operacion/cuentas/servicio.ts",
+      "capa": "modules/aplicacion",
+      "modulo": "operacion"
+    },
+    {
+      "archivo": "modules/operacion/cuentas/temporizadores.ts",
+      "capa": "modules/aplicacion",
+      "modulo": "operacion"
+    },
+    {
+      "archivo": "modules/operacion/pedidos/repositorio.ts",
+      "capa": "modules/infraestructura",
+      "modulo": "operacion"
+    },
+    {
+      "archivo": "modules/operacion/servicios/anulaciones.ts",
+      "capa": "modules/aplicacion",
+      "modulo": "operacion"
+    },
+    {
+      "archivo": "modules/operacion/servicios/creacion.ts",
+      "capa": "modules/aplicacion",
+      "modulo": "operacion"
+    },
+    {
+      "archivo": "modules/operacion/servicios/servicio.ts",
+      "capa": "modules/aplicacion",
+      "modulo": "operacion"
+    },
+    {
+      "archivo": "modules/operacion/solicitudes/repositorio.ts",
+      "capa": "modules/infraestructura",
+      "modulo": "operacion"
+    },
+    {
+      "archivo": "modules/operacion/temporizadores/fachada.ts",
+      "capa": "modules/aplicacion",
+      "modulo": "operacion"
+    },
+    {
+      "archivo": "modules/operacion/temporizadores/servicio.ts",
+      "capa": "modules/aplicacion",
+      "modulo": "operacion"
+    },
+    {
+      "archivo": "modules/personal/anticipos/repositorio.ts",
+      "capa": "modules/infraestructura",
+      "modulo": "personal"
+    },
+    {
+      "archivo": "modules/personal/anticipos/servicio.ts",
+      "capa": "modules/aplicacion",
+      "modulo": "personal"
+    },
+    {
+      "archivo": "modules/personal/conceptos/propinas.ts",
+      "capa": "modules/aplicacion",
+      "modulo": "personal"
+    },
+    {
+      "archivo": "modules/personal/gratificaciones/consultas.ts",
+      "capa": "modules/infraestructura",
+      "modulo": "personal"
+    },
+    {
+      "archivo": "modules/personal/nomina/servicio.ts",
+      "capa": "modules/aplicacion",
+      "modulo": "personal"
+    },
+    {
+      "archivo": "workflows/anulaciones-venta.ts",
+      "capa": "workflows",
+      "modulo": null
+    },
+    {
+      "archivo": "workflows/anulaciones-whatsapp.ts",
+      "capa": "workflows",
+      "modulo": null
+    },
+    {
+      "archivo": "workflows/cobrar-cuenta.ts",
+      "capa": "workflows",
+      "modulo": null
+    },
+    {
+      "archivo": "workflows/eliminar-usuario.ts",
+      "capa": "workflows",
+      "modulo": null
+    },
+    {
+      "archivo": "workflows/prepago.ts",
+      "capa": "workflows",
+      "modulo": null
+    },
+    {
+      "archivo": "workflows/ventas.ts",
+      "capa": "workflows",
+      "modulo": null
+    }
+  ],
+  "procesos": [
+    {
+      "archivo": "app/api/notifications/kiosk/route.ts",
+      "linea": 30,
+      "tipo": "setInterval",
+      "texto": "const interval = setInterval(() => {"
+    },
+    {
+      "archivo": "app/asistencia-qr/page.tsx",
+      "linea": 143,
+      "tipo": "setInterval",
+      "texto": "const intervalo = setInterval(() => cargarTablero(true), 60_000);"
+    },
+    {
+      "archivo": "app/asistencia-qr/page.tsx",
+      "linea": 150,
+      "tipo": "setInterval",
+      "texto": "const intervalo = setInterval(() => {"
+    },
+    {
+      "archivo": "components/attendance/QrCodeDialog.tsx",
+      "linea": 80,
+      "tipo": "setInterval",
+      "texto": "const intervalo = setInterval(() => {"
+    },
+    {
+      "archivo": "components/caja/CajaFormDialog.tsx",
+      "linea": 46,
+      "tipo": "setInterval",
+      "texto": "const timer = setInterval(() => {"
+    },
+    {
+      "archivo": "components/clients/DevolucionSolicitudesModal.tsx",
+      "linea": 55,
+      "tipo": "setInterval",
+      "texto": "const id = setInterval(fetchSolicitudes, 15000);"
+    },
+    {
+      "archivo": "components/products/ContainerReturnsPanel.tsx",
+      "linea": 99,
+      "tipo": "setInterval",
+      "texto": "const intervalo = setInterval(fetchResumen, 60_000);"
+    },
+    {
+      "archivo": "components/settings/BiometricStatus.tsx",
+      "linea": 103,
+      "tipo": "setInterval",
+      "texto": "const intervalo = setInterval(() => void load(), 30_000);"
+    },
+    {
+      "archivo": "hooks/shared/useSSE.ts",
+      "linea": 27,
+      "tipo": "setInterval",
+      "texto": "const interval = setInterval(() => {"
+    },
+    {
+      "archivo": "hooks/shared/useSharedSSE.ts",
+      "linea": 28,
+      "tipo": "setInterval",
+      "texto": "const interval = setInterval(() => {"
+    },
+    {
+      "archivo": "hooks/timer/useTimerAudio.ts",
+      "linea": 12,
+      "tipo": "setInterval",
+      "texto": "const interval = setInterval(() => {"
+    },
+    {
+      "archivo": "lib/api/sseService.ts",
+      "linea": 87,
+      "tipo": "setInterval",
+      "texto": "this.heartbeatInterval = setInterval(() => {"
+    },
+    {
+      "archivo": "lib/store/timerStore.ts",
+      "linea": 164,
+      "tipo": "setInterval",
+      "texto": "tickInterval = setInterval(() => {"
+    },
+    {
+      "archivo": "modules/asistencia/biometrico/ipWatcher.ts",
+      "linea": 105,
+      "tipo": "setInterval",
+      "texto": "timer = setInterval(arrancar, intervaloVigilanciaIp());"
+    },
+    {
+      "archivo": "modules/asistencia/biometrico/recordPoller.ts",
+      "linea": 360,
+      "tipo": "setInterval",
+      "texto": "estado.timer = setInterval(() => {"
+    }
+  ],
+  "listeners": [
+    {
+      "archivo": "mcp/src/index.ts",
+      "linea": 7,
+      "texto": "process.on('uncaughtException', error => {"
+    },
+    {
+      "archivo": "mcp/src/index.ts",
+      "linea": 10,
+      "texto": "process.on('unhandledRejection', motivo => {"
+    },
+    {
+      "archivo": "scripts/dev-lan-auto.js",
+      "linea": 44,
+      "texto": "process.on(signal, () => {"
+    },
+    {
+      "archivo": "scripts/production-start.js",
+      "linea": 106,
+      "texto": "process.on('SIGINT', () => {"
+    },
+    {
+      "archivo": "scripts/production-start.js",
+      "linea": 111,
+      "texto": "process.on('SIGTERM', () => {"
+    }
+  ],
+  "caches": [
+    {
+      "archivo": "lib/api/sseBus.ts",
+      "linea": 112,
+      "texto": "publisher = new Redis(process.env.REDIS_URL!, options);"
+    },
+    {
+      "archivo": "lib/api/sseBus.ts",
+      "linea": 113,
+      "texto": "subscriber = new Redis(process.env.REDIS_URL!, options);"
+    },
+    {
+      "archivo": "lib/auth/permissions-cache.ts",
+      "linea": 101,
+      "texto": "client = new Redis(this.url, {"
+    },
+    {
+      "archivo": "lib/cache/failedLoginStore.ts",
+      "linea": 111,
+      "texto": "client = new Redis(this.url!, {"
+    },
+    {
+      "archivo": "lib/cache/redisDashboardCache.ts",
+      "linea": 47,
+      "texto": "const client = new Redis(this.url, {"
+    },
+    {
+      "archivo": "lib/cache/redisWindowCounter.ts",
+      "linea": 99,
+      "texto": "client = new Redis(this.url!, {"
+    },
+    {
+      "archivo": "lib/middleware/redisRateLimit.ts",
+      "linea": 69,
+      "texto": "client = new Redis(process.env.REDIS_URL || 'redis://localhost:6379', {"
+    },
+    {
+      "archivo": "lib/middleware/redisRateLimit.ts",
+      "linea": 132,
+      "texto": "throw new Error('Respuesta inválida del limitador Redis');"
+    },
+    {
+      "archivo": "scripts/arquitectura/analisis.mjs",
+      "linea": 368,
+      "texto": "/\\bnew (Redis|RedisClient|ioredis)\\b/.test(linea) ||"
+    },
+    {
+      "archivo": "scripts/redis-dev.js",
+      "linea": 6,
+      "texto": "const client = new Redis(url, {"
+    },
+    {
+      "archivo": "lib/media/product-background.mjs",
+      "linea": 0,
+      "texto": "caché compartida en globalThis"
+    },
+    {
+      "archivo": "mcp/src/http-app.ts",
+      "linea": 0,
+      "texto": "caché en memoria (new Map + cache)"
+    },
+    {
+      "archivo": "components/shared/ProductPhoto.tsx",
+      "linea": 0,
+      "texto": "caché en memoria (new Map + cache)"
+    },
+    {
+      "archivo": "hooks/shared/useConfigValue.ts",
+      "linea": 0,
+      "texto": "caché compartida en globalThis"
+    },
+    {
+      "archivo": "lib/api/sseBus.ts",
+      "linea": 0,
+      "texto": "caché compartida en globalThis"
+    },
+    {
+      "archivo": "lib/auth/permissions-cache.ts",
+      "linea": 0,
+      "texto": "caché en memoria (new Map + cache)"
+    },
+    {
+      "archivo": "lib/cache/failedLoginStore.ts",
+      "linea": 0,
+      "texto": "caché en memoria (new Map + cache)"
+    },
+    {
+      "archivo": "lib/database/db.ts",
+      "linea": 0,
+      "texto": "caché compartida en globalThis"
+    },
+    {
+      "archivo": "modules/asistencia/biometrico/netSdk.ts",
+      "linea": 0,
+      "texto": "caché compartida en globalThis"
+    },
+    {
+      "archivo": "modules/asistencia/biometrico/videoStream.ts",
+      "linea": 0,
+      "texto": "caché en memoria (new Map + cache)"
+    },
+    {
+      "archivo": "scripts/arquitectura/analisis.mjs",
+      "linea": 0,
+      "texto": "caché compartida en globalThis"
+    }
+  ],
+  "ciclos": [],
+  "matriz": {
+    "app/api": {
+      "lib/api": 235,
+      "lib/otros": 68,
+      "workflows": 20,
+      "lib/identidad": 12,
+      "lib/business": 21,
+      "modules/aplicacion": 1,
+      "lib/database": 2,
+      "lib/integrations": 1
+    },
+    "components": {
+      "raiz": 81,
+      "lib/business": 26,
+      "hooks": 123,
+      "lib/otros": 267,
+      "modules/aplicacion": 4,
+      "lib/api": 1,
+      "app/ui": 1
+    },
+    "lib/otros": {
+      "lib/database": 4,
+      "lib/api": 1,
+      "lib/business": 6,
+      "components": 2,
+      "raiz": 5
+    },
+    "raiz": {
+      "lib/otros": 9,
+      "hooks": 4,
+      "lib/api": 1,
+      "lib/identidad": 1,
+      "modules/aplicacion": 1
+    },
+    "modules/aplicacion": {
+      "modules/infraestructura": 23,
+      "lib/otros": 83,
+      "lib/database": 37,
+      "lib/business": 24,
+      "lib/api": 8,
+      "lib/identidad": 3,
+      "raiz": 4
+    },
+    "scripts": {},
+    "workflows": {
+      "lib/api": 4,
+      "lib/otros": 19,
+      "lib/business": 6,
+      "modules/aplicacion": 6
+    },
+    "app/ui": {
+      "hooks": 49,
+      "lib/otros": 49,
+      "lib/api": 6,
+      "lib/business": 3,
+      "modules/aplicacion": 1,
+      "raiz": 13,
+      "components": 2
+    },
+    "hooks": {
+      "lib/otros": 70,
+      "raiz": 36,
+      "components": 14,
+      "lib/api": 6,
+      "lib/business": 8,
+      "modules/aplicacion": 2
+    },
+    "lib/api": {
+      "lib/identidad": 3,
+      "modules/aplicacion": 1,
+      "lib/otros": 6,
+      "lib/business": 2,
+      "lib/database": 2
+    },
+    "lib/identidad": {
+      "lib/otros": 5,
+      "lib/business": 1
+    },
+    "lib/business": {
+      "lib/api": 3,
+      "lib/otros": 6,
+      "lib/database": 4,
+      "modules/aplicacion": 2,
+      "components": 1,
+      "raiz": 1
+    },
+    "lib/database": {
+      "lib/otros": 3,
+      "lib/business": 1
+    },
+    "lib/integrations": {},
+    "modules/infraestructura": {
+      "lib/database": 100,
+      "lib/otros": 132,
+      "lib/business": 53,
+      "modules/aplicacion": 23,
+      "lib/identidad": 2,
+      "lib/api": 6,
+      "raiz": 2
+    }
+  },
+  "ordenCapas": [
+    "modules/aplicacion",
+    "modules/infraestructura",
+    "workflows",
+    "app/api",
+    "app/ui",
+    "components",
+    "hooks",
+    "lib/api",
+    "lib/business",
+    "lib/services",
+    "lib/repositories",
+    "lib/database",
+    "lib/identidad",
+    "lib/biometric",
+    "lib/integrations",
+    "lib/otros",
+    "scripts",
+    "raiz",
+    "tests"
+  ]
+}

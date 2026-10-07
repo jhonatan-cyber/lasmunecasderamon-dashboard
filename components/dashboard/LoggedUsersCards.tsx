@@ -126,7 +126,7 @@ export default function LoggedUsersCards() {
       iconColor: 'text-blue-500 dark:text-blue-400'
     },
     {
-      title: 'Cajeros',
+      title: 'Cajeros y barman',
       logueadas: stats.cajeros.logueadas,
       total: stats.cajeros.total,
       porcentaje: stats.cajeros.porcentaje,
@@ -180,20 +180,21 @@ export default function LoggedUsersCards() {
                   <p className='text-[10px] font-black uppercase tracking-wider text-slate-500 dark:text-slate-400'>
                     Usuarios ({card.usuarios?.length})
                   </p>
-                  <div className='space-y-1 max-h-24 overflow-y-auto pr-1'>
+                  <div className='flex flex-wrap gap-1.5 max-h-24 overflow-y-auto pr-1'>
                     {card.usuarios?.map((user: any, userIndex: number) => (
                       <div
                         key={`${index}-${user.id_usuario}-${userIndex}`}
-                        className='text-xs bg-slate-50 dark:bg-slate-900/40 border border-slate-200/70 dark:border-slate-700/60 px-2 py-1 rounded-lg'
+                        className='inline-flex max-w-full items-center gap-1.5 text-xs bg-slate-50 dark:bg-slate-900/40 border border-slate-200/70 dark:border-slate-700/60 px-2 py-1 rounded-lg'
                       >
-                        <div className='flex items-center gap-1'>
-                          <div
-                            className={`w-1.5 h-1.5 rounded-full ${card.iconColor.replace('text-', 'bg-')}`}
-                          ></div>
-                          <span className='font-medium text-slate-900 dark:text-slate-100'>
-                            {user.nick}
-                          </span>
-                        </div>
+                        <div
+                          className={`w-1.5 h-1.5 shrink-0 rounded-full ${card.iconColor.replace('text-', 'bg-')}`}
+                        ></div>
+                        <span
+                          className='truncate font-medium text-slate-900 dark:text-slate-100'
+                          title={user.nick}
+                        >
+                          {user.nick}
+                        </span>
                       </div>
                     ))}
                   </div>

@@ -256,6 +256,24 @@ describe('ProductService.createProduct', () => {
       precio_compra: 9000
     });
   });
+
+  it('guarda la opción botella de una presentación conservando su opción shot', async () => {
+    const opciones = [
+      { tipo: 'botella', precio: 20000, comision: 4000 },
+      { tipo: 'shot', precio: 2500, comision: 0, precio_anfitriona: 3000 }
+    ];
+    await ProductService.updatePresentation('pres-750', {
+      precio_venta: 20000,
+      comision: 4000,
+      opciones_venta: opciones
+    });
+    expect(actualizarPresentacion).toHaveBeenCalledWith('pres-750', {
+      precio_venta: 20000,
+      comision: 4000,
+      opciones_venta: opciones
+    });
+    expect(actualizarProducto).not.toHaveBeenCalled();
+  });
 });
 
 describe('ProductService champagne tiers', () => {

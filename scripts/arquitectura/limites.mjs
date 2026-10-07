@@ -411,7 +411,10 @@ const ESCRITORES_TECNICOS = new Set([
 for (const escritura of escrituras) {
   if (ESCRITORES_TECNICOS.has(escritura.desde)) continue;
   const propietario = propietarioPorTabla.get(escritura.tabla);
-  const modulo = /^modules\/([^/]+)\//.exec(escritura.desde)?.[1];
+  // El servidor MCP mantiene su estado OAuth en SQLite, separado del PostgreSQL del dashboard.
+  const modulo =
+    /^modules\/([^/]+)\//.exec(escritura.desde)?.[1] ||
+    (/^mcp\/src\/oauth\//.test(escritura.desde) ? 'mcp-oauth' : undefined);
   if (!propietario || modulo !== propietario)
     hallazgos.push({
       regla: 'tabla-unico-propietario',

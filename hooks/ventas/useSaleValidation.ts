@@ -7,11 +7,17 @@ import { useSales } from '@/hooks/caja/useSales';
 import { useTimer } from '@/contexts/TimerContext';
 import { VentaCreate } from '@/types/venta';
 import logger from '@/lib/utils/logger';
-import { isChampagneProduct } from '@/components/orders/productModalRules';
+import {
+  getExplicitMaxAnfitrionas,
+  getHostessLimit,
+  isChampagneProduct,
+  isExpensiveDrink
+} from '@/components/orders/productModalRules';
 import { setServiceLevels, roomRequiredForPrice } from '@/components/orders/productModalRules';
 import { useConfigValue } from '@/hooks/shared/useConfigValue';
 import { calcularPropina, calcularTotalVenta } from '@/lib/business/saleTotals';
 import { mapForSaleToCartItem } from '@/lib/sales/forSaleMapper';
+import { resolverVentaProducto, type SaleChoice } from '@/lib/sales/saleChoice';
 import {
   CHAMPAGNE_DEFAULT_TIERS,
   champagneTierFor,
@@ -181,20 +187,25 @@ export function useSaleValidation({
   // ── Champagne tiers (precio según Nº anfitrionas) ──────────────────────
   const champagneTiersCache = useRef<Record<string, ChampagneTier[]>>({});
 
-  const fetchChampagneTiers = async (productoId: string): Promise<ChampagneTier[]> => {
+  const fetchChampagneTiers = async (
+    productoId: string,
+    champagne = true
+  ): Promise<ChampagneTier[]> => {
     const pid = String(productoId);
     if (champagneTiersCache.current[pid]) return champagneTiersCache.current[pid];
     try {
-      const res = await fetch(`/api/products/${pid}/tiers`);
+      const res = await fetch(`/api/products/${pid}/tiers?configurados=1`);
       const data = await res.json().catch(() => ({}));
       const tiers =
         data.success && Array.isArray(data.data) && data.data.length > 0
           ? data.data
-          : CHAMPAGNE_DEFAULT_TIERS;
+          : champagne
+            ? CHAMPAGNE_DEFAULT_TIERS
+            : [];
       champagneTiersCache.current[pid] = tiers;
       return tiers;
     } catch {
-      return CHAMPAGNE_DEFAULT_TIERS;
+      return champagne ? CHAMPAGNE_DEFAULT_TIERS : [];
     }
   };
 
@@ -204,19 +215,41 @@ export function useSaleValidation({
     return Math.max(...tiers.map(t => t.anfitrionas), 1);
   };
 
+  // ── Anfitrionas: opcionales, pero nunca por encima del máximo ────────
+  // Misma cascada que la UI: champaña (máximo del producto y de sus tramos),
+  // bebida cara (una por unidad, con su máximo explícito) y el resto, una sola.
+  // La regla por precio es de la botella: el shot no la hereda.
+  const eleccionDe = (p: any): SaleChoice =>
+    p?.tipo_venta === 'shot' ? (p?.shot_anfitriona ? 'shot_anfitriona' : 'shot') : 'botella';
+
+  const esBebidaCara = (p: any) =>
+    isExpensiveDrink({ precio: resolverVentaProducto(p, eleccionDe(p)).precioBotella });
+
+  const limiteAnfitrionasDe = async (p: any): Promise<number> => {
+    const maxExplicito = getExplicitMaxAnfitrionas(p);
+    if (isChampagneProduct(p)) return Math.min(getHostessLimit(p), await getChampagneMax(p));
+    if (esBebidaCara(p)) {
+      const cantidad = Math.max(1, Number(p.cantidad) || 1);
+      return maxExplicito ? Math.min(cantidad, maxExplicito) : cantidad;
+    }
+    return maxExplicito ?? 1;
+  };
+
+  // Bajar la cantidad en el carro recorta las anfitrionas de una bebida cara para
+  // no quedar con más elegidas de las que permite la nueva cantidad.
+  const recortePorCantidad = (p: any, cantidad: number) => {
+    const actuales: any[] = Array.isArray(p.selectedHostesses) ? p.selectedHostesses : [];
+    if (!actuales.length || isChampagneProduct(p) || !esBebidaCara(p)) return actuales;
+    const maxExplicito = getExplicitMaxAnfitrionas(p);
+    const limite = maxExplicito ? Math.min(cantidad, maxExplicito) : cantidad;
+    if (actuales.length <= limite) return actuales;
+    toast.info(`Máximo ${limite} anfitrionas para ${p.nombre}`);
+    return actuales.slice(0, limite);
+  };
+
   // ── Product cart handlers ───────────────────────────────────────────
   const handleAddProducto = async (producto: any) => {
     const id = producto.id || producto.id_producto;
-    const hostessIds = (producto.selectedHostesses || []).map((h: number) => Number(h));
-    let precio = producto.precio ?? producto.price ?? 0;
-    let comision = producto.comision ?? producto.commission ?? 0;
-    if (isChampagneProduct(producto) && hostessIds.length > 0) {
-      const pid = String(producto.producto_id || producto.id_producto || producto.id);
-      const tiers = await fetchChampagneTiers(pid);
-      const tier = champagneTierFor(hostessIds.length, tiers);
-      precio = tier.precio;
-      comision = tier.comision;
-    }
     // Un shot no gasta una botella: se sirve de la botella abierta (ml), así que el
     // tope de unidades en bar solo aplica a la venta de botella completa.
     const tipoVenta = producto.tipo_venta === 'shot' ? 'shot' : 'botella';
@@ -232,6 +265,39 @@ export function useSaleValidation({
     ) {
       toast.warning(`Stock máximo en bar: ${producto.stock_bar}`);
       cantidad = Math.max(1, producto.stock_bar);
+    }
+
+    // Elegir anfitriona es opcional; si se eligieron más de las que permite el
+    // producto, la línea entra al carro recortada al máximo.
+    const elegidas = (producto.selectedHostesses || [])
+      .filter((h: unknown) => h !== null && h !== undefined)
+      .map((h: string | number) => String(h));
+    const limite = elegidas.length ? await limiteAnfitrionasDe({ ...producto, cantidad }) : 0;
+    const hostessIds = elegidas.slice(0, limite);
+    if (hostessIds.length < elegidas.length) {
+      toast.info(
+        `Máximo ${limite} anfitrionas para ${producto.nombre || producto.name || 'este producto'}`
+      );
+    }
+
+    let precio = producto.precio ?? producto.price ?? 0;
+    let comision = producto.comision ?? producto.commission ?? 0;
+    if (
+      producto.tipo_venta !== 'shot' &&
+      (isChampagneProduct(producto) || Number(producto.max_anfitrionas) >= 2) &&
+      hostessIds.length > 0
+    ) {
+      const pid = String(producto.producto_id || producto.id_producto || producto.id);
+      const tiers = await fetchChampagneTiers(pid, isChampagneProduct(producto));
+      const tier =
+        tiers.find(t => Number(t.anfitrionas) === hostessIds.length) ??
+        (isChampagneProduct(producto) && tiers.length
+          ? champagneTierFor(hostessIds.length, tiers)
+          : undefined);
+      if (tier) {
+        precio = tier.precio;
+        comision = tier.comision;
+      }
     }
 
     const productoNormalizado = {
@@ -297,7 +363,14 @@ export function useSaleValidation({
         final = tope;
       }
       return prev.map((p, i) =>
-        i === index ? { ...p, cantidad: final, subtotal: (p.precio || 0) * final } : p
+        i === index
+          ? {
+              ...p,
+              cantidad: final,
+              subtotal: (p.precio || 0) * final,
+              selectedHostesses: recortePorCantidad(p, final)
+            }
+          : p
       );
     });
   };
@@ -313,7 +386,9 @@ export function useSaleValidation({
 
   const commissionTotal = useMemo(() => {
     return productos.reduce(
-      (acc, p) => acc + Number(p?.comision || 0) * Number(p?.cantidad || 0),
+      (acc, p) =>
+        acc +
+        (p.selectedHostesses?.length ? Number(p?.comision || 0) * Number(p?.cantidad || 0) : 0),
       0
     );
   }, [productos]);
@@ -331,9 +406,12 @@ export function useSaleValidation({
         return;
       }
     }
+
     for (const p of productos) {
-      if ((p.comision || 0) > 0 && (!p.selectedHostesses || p.selectedHostesses.length === 0)) {
-        toast.error(`Producto ${p.nombre} requiere asignar anfitriona`);
+      if (!p.selectedHostesses?.length) continue;
+      const max = await limiteAnfitrionasDe(p);
+      if (p.selectedHostesses.length > max) {
+        toast.error(`Producto ${p.nombre} permite máximo ${max} anfitrionas`);
         return;
       }
     }
@@ -349,7 +427,9 @@ export function useSaleValidation({
         total: totals.total,
         detalles: productos.map(p => {
           const selectedHostesses = Array.isArray(p.selectedHostesses)
-            ? p.selectedHostesses.map((h: number) => Number(h))
+            ? p.selectedHostesses
+                .filter((h: unknown) => h !== null && h !== undefined)
+                .map((h: string | number) => String(h))
             : [];
           const normalizedDetail = {
             producto_id: p.producto_id || p.id,
@@ -358,7 +438,7 @@ export function useSaleValidation({
               ? { tipo_venta: 'shot' as const, shot_anfitriona: Boolean(p.shot_anfitriona) }
               : {}),
             precio: p.precio,
-            comision: (p.comision || 0) * p.cantidad,
+            comision: selectedHostesses.length > 0 ? (p.comision || 0) * p.cantidad : 0,
             cantidad: p.cantidad,
             sub_total: p.subtotal,
             isChampagne: Boolean(p.isChampagne)

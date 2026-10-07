@@ -69,7 +69,10 @@ export interface DashboardInsightsResponse {
     netRevenue: number;
   };
   forecast: {
-    projectedRevenue: number;
+    projectedRevenue: number | null;
+    status: 'closed' | 'insufficient' | 'ready';
+    expectedMinutes: number;
+    historyCount: number;
     currentRevenue: number;
     yesterdayRevenue: number;
     elapsedMinutesToday: number;
@@ -164,6 +167,7 @@ export const useDashboardComposite = () => {
       return result.data;
     },
     staleTime: 30000,
+    refetchInterval: 60000,
     refetchOnWindowFocus: true
   });
 };

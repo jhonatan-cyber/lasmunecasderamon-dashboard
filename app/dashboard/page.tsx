@@ -5,10 +5,8 @@ import dynamic from 'next/dynamic';
 import { useCurrentUser } from '@/hooks/auth/useCurrentUser';
 import { useRouter } from 'next/navigation';
 import { Skeleton as BoneyardSkeleton } from 'boneyard-js/react';
-import { MarcarAsistenciaCard } from '@/components/attendance/MarcarAsistenciaCard';
 import { Medal, TrendingUp, BarChart3, Activity, Clock, ShieldCheck } from 'lucide-react';
 import { toast } from 'sonner';
-import { cn } from '@/lib/utils/utils';
 
 import CriticalMetrics from '@/components/dashboard/CriticalMetrics';
 import LocalAndPending from '@/components/dashboard/LocalAndPending';
@@ -184,9 +182,8 @@ function GeneralDashboard() {
             </div>
           </section>
 
-          {}
-          <section className='grid grid-cols-1 lg:grid-cols-3 gap-10 items-start'>
-            {isCajero && (
+          {isCajero && (
+            <section className='grid grid-cols-1 lg:grid-cols-3 gap-10 items-start'>
               <div className='lg:col-span-2'>
                 <div className='flex items-center gap-2 px-2 mb-6'>
                   <BarChart3 className='h-4 w-4 text-emerald-500' />
@@ -196,12 +193,8 @@ function GeneralDashboard() {
                 </div>
                 <DashboardStatsCards />
               </div>
-            )}
-
-            <div className={cn('space-y-6', !isCajero && 'lg:col-start-2')}>
-              <MarcarAsistenciaCard />
-            </div>
-          </section>
+            </section>
+          )}
         </div>
       </BoneyardSkeleton>
     </div>

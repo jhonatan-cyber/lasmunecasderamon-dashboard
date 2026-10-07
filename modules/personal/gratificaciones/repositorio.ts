@@ -27,17 +27,18 @@ export class GratificacionRepository {
     targetUserId: string,
     monto: number,
     descripcion: string | undefined,
-    requestedByUserId: string
+    requestedByUserId: string,
+    vincularAnticipo = true
   ) {
-    return requestGratificacion(targetUserId, monto, descripcion, requestedByUserId);
+    return requestGratificacion(targetUserId, monto, descripcion, requestedByUserId, vincularAnticipo);
   }
 
   static async getSolicitudDetalle(id: string) {
     return getGratificacionSolicitudDetalle(id);
   }
 
-  static async processSolicitud(id: string, action: GratificacionAction, adminId?: string) {
-    return processGratificacionSolicitud(id, action, adminId);
+  static async processSolicitud(id: string, action: GratificacionAction, adminId?: string, montoEsperado?: number) {
+    return processGratificacionSolicitud(id, action, adminId, montoEsperado);
   }
 
   static async update(id: string, data: { monto: number; descripcion?: string }) {

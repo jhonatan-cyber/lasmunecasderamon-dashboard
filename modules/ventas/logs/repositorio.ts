@@ -1,5 +1,6 @@
 import { query, generateUUID } from '@/lib/database/db';
 import { logger } from '@/lib/utils/logger';
+import { getNowInBusinessTimezone } from '@/lib/business/timezoneService';
 export const addVentaLog = async (
   ventaId: string | number,
   tipoEvento: string,
@@ -8,8 +9,15 @@ export const addVentaLog = async (
 ) => {
   try {
     await query(
-      'INSERT INTO venta_logs (id, venta_id, tipo_evento, descripcion, usuario_id) VALUES (?, ?, ?, ?, ?)',
-      [generateUUID(), ventaId, tipoEvento, descripcion, usuarioId || null]
+      'INSERT INTO venta_logs (id, venta_id, tipo_evento, descripcion, usuario_id, fecha_crea) VALUES (?, ?, ?, ?, ?, ?)',
+      [
+        generateUUID(),
+        ventaId,
+        tipoEvento,
+        descripcion,
+        usuarioId || null,
+        getNowInBusinessTimezone()
+      ]
     );
   } catch (error) {
     const exception =

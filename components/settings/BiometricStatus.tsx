@@ -6,6 +6,7 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Skeleton } from '@/components/ui/skeleton';
 import { formatFechaConHora } from '@/lib/utils/formatters';
+import { useSharedSSE } from '@/hooks/shared/useSharedSSE';
 
 interface DesfaseReloj {
   segundos: number;
@@ -93,39 +94,14 @@ export function BiometricStatus() {
     }
   }, []);
 
+  useSharedSSE('/api/notifications/sse', payload => {
+    if (payload?.type === 'attendance_registered') void load();
+  });
+
   useEffect(() => {
     void load();
     const intervalo = setInterval(() => void load(), 30_000);
-
-    // Refresco instantáneo cuando alguien marca asistencia (incluido el lector).
-    let vivo = true;
-    let intentos = 0;
-    let fuente: EventSource | null = null;
-    let reintento: ReturnType<typeof setTimeout> | null = null;
-
-    const conectar = () => {
-      if (!vivo) return;
-      fuente = new EventSource('/api/sse');
-      fuente.addEventListener('attendance_registered', () => void load());
-      fuente.onopen = () => {
-        intentos = 0;
-      };
-      fuente.onerror = () => {
-        fuente?.close();
-        if (!vivo) return;
-        const espera = Math.min(30_000, 1_000 * 2 ** intentos);
-        intentos += 1;
-        reintento = setTimeout(conectar, espera);
-      };
-    };
-    conectar();
-
-    return () => {
-      vivo = false;
-      clearInterval(intervalo);
-      if (reintento) clearTimeout(reintento);
-      fuente?.close();
-    };
+    return () => clearInterval(intervalo);
   }, [load]);
 
   if (loading) {
@@ -220,7 +196,7 @@ export function BiometricStatus() {
             </div>
 
             <div className='rounded-2xl border p-4'>
-              <TituloSeccion>Últimos marcasjes</TituloSeccion>
+              <TituloSeccion>Últimas marcas</TituloSeccion>
               {estado.asistencias.length === 0 ? (
                 <p className='mt-2 text-sm text-muted-foreground'>
                   Todavía nadie marcó asistencia hoy.

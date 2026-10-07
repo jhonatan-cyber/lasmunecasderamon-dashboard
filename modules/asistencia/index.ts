@@ -25,6 +25,7 @@ export {
   listarResumenAsistencias,
   registrarAsistenciaManual,
   consultarEstadisticasAsistencia,
+  consultarRankingAsistencia,
   consultarVentana
 } from './marcas/servicio';
 

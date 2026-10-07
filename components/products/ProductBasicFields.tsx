@@ -18,8 +18,7 @@ export function ProductBasicFields({
   form,
   errors,
   handleChange,
-  isLoading,
-  isEdit
+  isLoading
 }: ProductBasicFieldsProps) {
   return (
     <div className='grid grid-cols-1 sm:grid-cols-2 gap-4'>
@@ -67,9 +66,7 @@ export function ProductBasicFields({
             onChange={handleChange}
             placeholder='Ej: Cerveza Corona 330ml'
             disabled={isLoading}
-            readOnly={isEdit}
-            title={isEdit ? 'El nombre no se puede editar' : undefined}
-            className={`h-12 pl-12 ${isEdit ? 'bg-gray-100 dark:bg-slate-800 cursor-not-allowed' : ''}`}
+            className='h-12 pl-12'
           />
         </div>
         {errors.name && (

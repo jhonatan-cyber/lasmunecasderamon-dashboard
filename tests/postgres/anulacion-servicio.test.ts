@@ -125,6 +125,12 @@ it('aprobar la anulación revierte prepago, caja, comisiones y pedido en una uni
       [fixture.servicioId]
     );
     expect(servicio.estado).toBe(0);
+    const logs = await query(
+      'SELECT fecha_crea FROM servicio_logs WHERE servicio_id = ? AND tipo_evento = ?',
+      [fixture.servicioId, 'ANULADO']
+    );
+    expect(logs).toHaveLength(1);
+    expect(logs[0].fecha_crea).toBeTruthy();
 
     const [saldo] = await query<{ saldo: number }[]>(
       'SELECT saldo FROM clientes WHERE id_cliente = ?',

@@ -19,7 +19,7 @@ const rankingConfig = [
   {
     key: 'rooms',
     title: 'Salas Top',
-    description: 'Actividad por espacio',
+    description: 'Actividad del día por espacio',
     icon: Sofa,
     href: '/rooms',
     color: 'indigo'
@@ -27,7 +27,7 @@ const rankingConfig = [
   {
     key: 'staff',
     title: 'Staff Destacado',
-    description: 'Participación operativa',
+    description: 'Participación del día · importes asociados',
     icon: Music2,
     href: '/users',
     color: 'amber'

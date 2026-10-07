@@ -7,5 +7,10 @@ export default defineConfig({
     include: ['tests/benchmarks/dashboard.test.ts'],
     testTimeout: 60000
   },
-  resolve: { alias: { '@': path.resolve(__dirname, './') } }
+  resolve: {
+    alias: {
+      '@': path.resolve(__dirname, './'),
+      'server-only': path.resolve(__dirname, './tests/setup/server-only-stub.ts')
+    }
+  }
 });

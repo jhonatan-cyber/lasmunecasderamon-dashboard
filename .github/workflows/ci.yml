@@ -7,14 +7,28 @@ on:
       - main
       - master
 
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  CI: 'true'
+  HUSKY: '0'
+  NEXT_TELEMETRY_DISABLED: '1'
+  TZ: UTC
+
 jobs:
   quality:
     runs-on: ubuntu-latest
+    timeout-minutes: 30
     env:
-      JWT_SECRET: ${{ secrets.JWT_SECRET || 'test-secret' }}
-      JWT_REFRESH_SECRET: ${{ secrets.JWT_REFRESH_SECRET || 'test-refresh-secret' }}
-      NEXT_PUBLIC_BASE_URL: ${{ secrets.NEXT_PUBLIC_BASE_URL || 'http://localhost:3000' }}
-      BASE_URL: ${{ secrets.BASE_URL || 'http://localhost:3000' }}
+      JWT_SECRET: ci-test-secret-only
+      JWT_REFRESH_SECRET: ci-test-refresh-secret-only
+      NEXT_PUBLIC_BASE_URL: http://localhost:3000
+      BASE_URL: http://localhost:3000
       PORT: '3000'
     steps:
       - name: Checkout repository
@@ -32,7 +46,7 @@ jobs:
           cache: pnpm
 
       - name: Install dependencies
-        run: pnpm install --no-frozen-lockfile
+        run: pnpm install --frozen-lockfile
 
       - name: Lint
         run: pnpm lint:full
@@ -46,12 +60,17 @@ jobs:
       - name: Unit Tests
         run: pnpm test:unit
 
+      - name: Generate isolated build and runtime JWT keys
+        run: |
+          node -e "const fs=require('node:fs'),crypto=require('node:crypto'); for(const key of ['JWT_SECRET','JWT_REFRESH_SECRET']) fs.appendFileSync(process.env.GITHUB_ENV,key+'='+crypto.randomBytes(72).toString('base64url')+'\n');"
+
       - name: Build
         run: pnpm build
 
   redis:
     name: Redis (limitador, caché y seguridad)
     runs-on: ubuntu-latest
+    timeout-minutes: 30
     services:
       redis:
         image: redis:7-alpine
@@ -63,8 +82,8 @@ jobs:
           --health-timeout=5s
           --health-retries=10
     env:
-      JWT_SECRET: ${{ secrets.JWT_SECRET || 'test-secret' }}
-      JWT_REFRESH_SECRET: ${{ secrets.JWT_REFRESH_SECRET || 'test-refresh-secret' }}
+      JWT_SECRET: ci-test-secret-only
+      JWT_REFRESH_SECRET: ci-test-refresh-secret-only
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
@@ -81,7 +100,7 @@ jobs:
           cache: pnpm
 
       - name: Install dependencies
-        run: pnpm install --no-frozen-lockfile
+        run: pnpm install --frozen-lockfile
 
       # Cada test usa claves temporales con prefijo aleatorio y un relay TCP para
       # simular cortes: no detienen ni vacían el Redis del servicio.
@@ -91,6 +110,7 @@ jobs:
   migrations:
     name: Migrations (fresh database)
     runs-on: ubuntu-latest
+    timeout-minutes: 30
     services:
       postgres:
         image: postgres:18
@@ -128,13 +148,14 @@ jobs:
           cache: pnpm
 
       - name: Install dependencies
-        run: pnpm install --no-frozen-lockfile
+        run: pnpm install --frozen-lockfile
 
       - name: Migrations drill on a freshly created database
         run: pnpm db:verify
 
   security:
     runs-on: ubuntu-latest
+    timeout-minutes: 30
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
@@ -151,7 +172,7 @@ jobs:
           cache: pnpm
 
       - name: Install dependencies
-        run: pnpm install --no-frozen-lockfile
+        run: pnpm install --frozen-lockfile
 
       - name: Audit production dependencies (informativo)
         run: pnpm audit --prod || true
@@ -164,9 +185,10 @@ jobs:
 
   coverage:
     runs-on: ubuntu-latest
+    timeout-minutes: 30
     env:
-      JWT_SECRET: ${{ secrets.JWT_SECRET || 'test-secret' }}
-      JWT_REFRESH_SECRET: ${{ secrets.JWT_REFRESH_SECRET || 'test-refresh-secret' }}
+      JWT_SECRET: ci-test-secret-only
+      JWT_REFRESH_SECRET: ci-test-refresh-secret-only
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
@@ -183,7 +205,7 @@ jobs:
           cache: pnpm
 
       - name: Install dependencies
-        run: pnpm install --no-frozen-lockfile
+        run: pnpm install --frozen-lockfile
 
       - name: Unit Tests with Coverage
         run: pnpm test:unit:coverage
@@ -199,6 +221,7 @@ jobs:
 
   integration:
     runs-on: ubuntu-latest
+    timeout-minutes: 30
     services:
       postgres:
         image: postgres:18
@@ -240,10 +263,12 @@ jobs:
           cache: pnpm
 
       - name: Install dependencies
-        run: pnpm install --no-frozen-lockfile
+        run: pnpm install --frozen-lockfile
 
       - name: Setup database
-        run: node scripts/ci-setup-db.js
+        run: |
+          node scripts/ci-setup-db.js
+          node scripts/ci-seed-auth.cjs
 
       - name: Schema parity (fresh install and existing environment vs reference)
         shell: bash
@@ -255,7 +280,7 @@ jobs:
           pnpm db:parity --reference "$DB_NAME" --base-ref "$BASE_REF"
 
       - name: PostgreSQL repositories and maintenance
-        run: pnpm test:postgres
+        run: pnpm exec vitest run --config vitest.ci-postgres.config.ts
         env:
           JWT_SECRET: test-secret
           JWT_REFRESH_SECRET: test-refresh-secret
@@ -265,6 +290,7 @@ jobs:
 
   e2e:
     runs-on: ubuntu-latest
+    timeout-minutes: 30
     services:
       postgres:
         image: postgres:18
@@ -285,13 +311,13 @@ jobs:
       DB_USER: postgres
       DB_PASSWORD: postgres_ci
       DB_NAME: lasmunecasderamon_test
-      JWT_SECRET: ${{ secrets.JWT_SECRET || 'test-secret' }}
-      JWT_REFRESH_SECRET: ${{ secrets.JWT_REFRESH_SECRET || 'test-refresh-secret' }}
-      NEXT_PUBLIC_BASE_URL: ${{ secrets.NEXT_PUBLIC_BASE_URL || 'http://localhost:3000' }}
-      NEXT_PUBLIC_API_URL: ${{ secrets.NEXT_PUBLIC_API_URL || 'http://localhost:3000/api' }}
-      BASE_URL: ${{ secrets.BASE_URL || 'http://localhost:3000' }}
-      TEST_USER: ${{ secrets.TEST_USER || 'admin' }}
-      TEST_PASSWORD: ${{ secrets.TEST_PASSWORD }}
+      JWT_SECRET: ci-test-secret-only
+      JWT_REFRESH_SECRET: ci-test-refresh-secret-only
+      NEXT_PUBLIC_BASE_URL: http://localhost:3000
+      NEXT_PUBLIC_API_URL: http://localhost:3000/api
+      BASE_URL: http://localhost:3000
+      TEST_USER: Admin
+      TEST_PASSWORD: CI-Only-Password-2026!
       SKIP_RATE_LIMIT: 'true'
     steps:
       - name: Checkout repository
@@ -309,10 +335,16 @@ jobs:
           cache: pnpm
 
       - name: Install dependencies
-        run: pnpm install --no-frozen-lockfile
+        run: pnpm install --frozen-lockfile
 
       - name: Setup database
-        run: node scripts/ci-setup-db.js
+        run: |
+          node scripts/ci-setup-db.js
+          node scripts/ci-seed-auth.cjs
+
+      - name: Generate isolated build and runtime JWT keys
+        run: |
+          node -e "const fs=require('node:fs'),crypto=require('node:crypto'); for(const key of ['JWT_SECRET','JWT_REFRESH_SECRET']) fs.appendFileSync(process.env.GITHUB_ENV,key+'='+crypto.randomBytes(72).toString('base64url')+'\n');"
 
       - name: Build
         run: pnpm build
@@ -322,3 +354,44 @@ jobs:
 
       - name: E2E tests
         run: pnpm test:e2e
+
+      - name: Upload E2E diagnostics
+        if: failure()
+        uses: actions/upload-artifact@v7
+        with:
+          name: e2e-diagnostics
+          path: |
+            playwright-report/
+            test-results/
+          retention-days: 7
+
+  mcp:
+    name: MCP (build + tests)
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v6
+        with:
+          run_install: false
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v7
+        with:
+          node-version: 24
+          cache: pnpm
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      # Compila el paquete mcp/ (tsc) antes de los tests: falla rápido ante errores de tipos.
+      - name: Build MCP
+        run: pnpm --dir mcp build
+
+      # `pnpm test` = build + node --test sobre tests/*.test.mjs (56 tests actuales).
+      # Los tests levantan un backend simulado propio; no requieren BD ni servicios externos.
+      - name: MCP tests (node --test)
+        run: pnpm --dir mcp test

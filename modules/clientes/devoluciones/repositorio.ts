@@ -8,9 +8,11 @@
 import { generateUUID, query } from '@/lib/database/db';
 import { getNowInBusinessTimezone } from '@/lib/business/timezoneService';
 import type { SolicitudDevolucionSaldo } from '../contracts';
+import type { ContextoOperacion } from '@/lib/transaccion/contrato';
+import { resolverTransaccion } from '@/lib/transaccion/infraestructura';
 
 /** Bandeja: pendientes primero y, dentro de cada grupo, lo más reciente. */
-export async function listarSolicitudes(): Promise<SolicitudDevolucionSaldo[]> {
+export async function listarSolicitudes(limite: number | null = 50): Promise<SolicitudDevolucionSaldo[]> {
   return await query<SolicitudDevolucionSaldo[]>(
     `SELECT s.id, s.cliente_id, s.monto, s.motivo, s.estado, s.fecha_crea, s.fecha_resolucion,
                 c.nombre, c.apellido, c.run, c.telefono, c.saldo as saldo_actual,
@@ -22,7 +24,21 @@ export async function listarSolicitudes(): Promise<SolicitudDevolucionSaldo[]> {
          ORDER BY
            CASE WHEN s.estado='pendiente' THEN 0 ELSE 1 END,
            s.fecha_crea DESC
-         LIMIT 50`
+         ${limite === null ? '' : 'LIMIT ?'}`, limite === null ? [] : [limite]
+  );
+}
+
+export async function bloquearSolicitud(id: string, contexto: ContextoOperacion) {
+  const filas = await resolverTransaccion(contexto)<Array<{id: string; cliente_id: string; monto: number; motivo: string | null; estado: string}>>(
+    'SELECT id, cliente_id, monto, motivo, estado FROM solicitudes_devolucion_saldo WHERE id = ? FOR UPDATE', [id]
+  );
+  return filas[0] ?? null;
+}
+
+export async function resolverSolicitudEnUnidad(id: string, estado: 'aprobada' | 'rechazada', adminId: string, contexto: ContextoOperacion) {
+  await resolverTransaccion(contexto)(
+    "UPDATE solicitudes_devolucion_saldo SET estado = ?, fecha_resolucion = ?, resuelto_por = ? WHERE id = ? AND estado = 'pendiente'",
+    [estado, getNowInBusinessTimezone(), adminId, id]
   );
 }
 

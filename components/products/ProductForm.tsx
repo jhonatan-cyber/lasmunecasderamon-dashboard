@@ -219,21 +219,13 @@ export function ProductForm({
 
   return (
     <form id='product-form' onSubmit={handleSubmit} className='space-y-6 py-2'>
-      {scoped && initialValues && (
-        <p className='text-xs text-gray-500 dark:text-gray-400 ml-1 -mb-2'>
-          Producto: <span className='font-semibold'>{initialValues.name}</span>
-        </p>
-      )}
-
-      {!scoped && (
-        <ProductBasicFields
-          form={form}
-          errors={errors}
-          handleChange={handleChange}
-          isLoading={isLoading}
-          isEdit={isEdit}
-        />
-      )}
+      <ProductBasicFields
+        form={form}
+        errors={errors}
+        handleChange={handleChange}
+        isLoading={isLoading}
+        isEdit={isEdit}
+      />
 
       <div className='space-y-3'>
         <div className='flex items-center justify-between ml-1'>

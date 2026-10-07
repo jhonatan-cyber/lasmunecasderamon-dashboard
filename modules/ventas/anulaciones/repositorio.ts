@@ -17,6 +17,7 @@ import type { ContextoOperacion } from '@/lib/transaccion/contrato';
 import { resolverTransaccion } from '@/lib/transaccion/infraestructura';
 import { generateUUID } from '@/lib/database/db';
 import { getNowInBusinessTimezone } from '@/lib/business/timezoneService';
+import { BusinessError } from '@/lib/errors/errors';
 import {
   allocateProportionally,
   parseMixedPayments,
@@ -307,6 +308,9 @@ export async function actualizarEstadoSolicitud(
   contexto: ContextoOperacion
 ): Promise<'confirmada' | 'rechazada'> {
   const nextStatus = normalizeSolicitudStatus(status);
+  const trx = resolverTransaccion(contexto);
+  const rows = await trx<Array<{estado: string}>>('SELECT estado FROM solicitudes_anulacion_ventas WHERE id = ? FOR UPDATE', [requestId]);
+  if (!rows[0] || rows[0].estado !== 'pendiente') throw new BusinessError('La solicitud ya fue procesada');
   await resolverTransaccion(contexto)(
     'UPDATE solicitudes_anulacion_ventas SET estado = ? WHERE id = ?',
     [nextStatus, requestId]

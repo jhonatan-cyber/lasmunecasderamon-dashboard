@@ -111,7 +111,7 @@ const CategoryCardList: React.FC<CategoryCardListProps> = ({
             size='sm'
             onClick={handlePreviousPage}
             disabled={currentPage === 1}
-            className='flex items-center gap-2'
+            className='flex items-center gap-2 rounded-full'
           >
             <ChevronLeft className='w-3 h-3' />
             Anterior
@@ -128,7 +128,7 @@ const CategoryCardList: React.FC<CategoryCardListProps> = ({
             size='sm'
             onClick={handleNextPage}
             disabled={currentPage === totalPages}
-            className='flex items-center gap-2'
+            className='flex items-center gap-2 rounded-full'
           >
             Siguiente
             <ChevronRight className='w-3 h-3' />

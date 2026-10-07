@@ -68,6 +68,13 @@ beforeEach(() => {
 });
 
 describe('otorgarAnticipo', () => {
+  it.each([NaN, Infinity, -Infinity])(
+    'rechaza el monto no finito %s antes de abrir la operación',
+    async monto => {
+      await expect(otorgarAnticipo('user-1', monto)).rejects.toThrow(/positivo/);
+      expect(grantAnticipo).not.toHaveBeenCalled();
+    }
+  );
   it('lanza ValidationError si monto es 0', async () => {
     await expect(otorgarAnticipo('user-1', 0)).rejects.toThrow(ValidationError);
     await expect(otorgarAnticipo('user-1', 0)).rejects.toThrow('positivo');
@@ -119,12 +126,22 @@ describe('otorgarAnticipo', () => {
 });
 
 describe('solicitarAnticipo', () => {
+  it('distingue al administrador solicitante del empleado beneficiario', async () => {
+    await solicitarAnticipo('empleado-1', { monto: 100, motivo: 'Emergencia' }, 'admin-1');
+    expect(requestAnticipo).toHaveBeenCalledWith(
+      'empleado-1',
+      100,
+      'Emergencia',
+      undefined,
+      'admin-1'
+    );
+  });
   it('valida con el esquema y delega al repositorio', async () => {
     vi.mocked(requestAnticipo).mockResolvedValue({ id_anticipo: 'ant-1' } as any);
 
     await solicitarAnticipo('user-1', { monto: 100, motivo: 'Sueldo', device_date: '2026-04-09' });
 
-    expect(requestAnticipo).toHaveBeenCalledWith('user-1', 100, 'Sueldo', '2026-04-09');
+    expect(requestAnticipo).toHaveBeenCalledWith('user-1', 100, 'Sueldo', '2026-04-09', undefined);
   });
 
   it('rechaza un monto no positivo sin tocar el repositorio', async () => {
@@ -159,7 +176,12 @@ describe('procesarSolicitud', () => {
 
     await procesarSolicitud('ant-1', 'approve', 'admin-123');
 
-    expect(processSolicitudAnticipo).toHaveBeenCalledWith('ant-1', 'approve', 'admin-123');
+    expect(processSolicitudAnticipo).toHaveBeenCalledWith(
+      'ant-1',
+      'approve',
+      'admin-123',
+      undefined
+    );
   });
 
   it('procesarSolicitudDeTexto pasa el texto crudo, como la ruta por token', async () => {

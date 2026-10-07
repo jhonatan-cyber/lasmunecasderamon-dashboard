@@ -19,6 +19,8 @@ permissions:
 
 jobs:
   analyze:
+    # Private repository: opt in after GitHub Code Security is available.
+    if: ${{ vars.ENABLE_CODEQL == 'true' }}
     name: Analyze
     runs-on: ubuntu-latest
     timeout-minutes: 360

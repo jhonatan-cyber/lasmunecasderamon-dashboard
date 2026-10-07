@@ -26,6 +26,9 @@ describe('ServiceRepository.processAnulacion', () => {
 
   it('actualiza solicitudes_anulacion_servicios y no tabla equivocada', async () => {
     repositoryHarness.queryMock.mockImplementation(async (sql: string) => {
+      if (sql.includes('SELECT estado FROM solicitudes_anulacion_servicios')) {
+        return [{ estado: 'pendiente' }];
+      }
       if (sql.includes('SELECT servicio_id FROM solicitudes_anulacion_servicios')) {
         return [{ servicio_id: 'serv-1' }];
       }

@@ -96,6 +96,7 @@ export const PATCH = withRoute(
           : payload.foto;
       }
       for (const key of [
+        'opciones_venta',
         'nombre',
         'codigo_barras',
         'precio_compra',

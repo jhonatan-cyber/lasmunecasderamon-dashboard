@@ -9,6 +9,7 @@
 import type { EntradaSolicitudAnulacionServicio } from '../contracts';
 import { enUnaUnidad } from '@/lib/transaccion/contrato';
 import * as repositorio from './repositorio';
+export const listarSolicitudesAnulacionServiciosPendientes = repositorio.listarSolicitudesAnulacionServiciosPendientes;
 
 export async function obtenerSolicitudAnulacionServicioPorToken(token: string) {
   return repositorio.obtenerSolicitudAnulacionServicioPorToken(token);
