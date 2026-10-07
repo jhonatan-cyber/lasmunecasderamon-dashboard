@@ -80,7 +80,7 @@ jobs:
           source: dashboard-release.tar.gz
           target: /var/www/lasmunecasderamon-dashboard/incoming/${{ github.event.workflow_run.head_sha }}
       - name: Install, migrate, restart and check health
-        uses: appleboy/ssh-action@v1.2.0
+        uses: appleboy/ssh-action@v1.2.5
         with:
           host: ${{ secrets.SSH_HOST }}
           username: ${{ secrets.SSH_USERNAME }}
