@@ -47,9 +47,10 @@ vi.mock('@tanstack/react-query', () => ({
     mutate: vi.fn(),
     mutateAsync: vi.fn()
   })),
-  QueryClient: vi.fn().mockImplementation(function () {
-    return { setDefaultOptions: vi.fn(), clear: vi.fn() };
-  }),
+  QueryClient: vi.fn().mockImplementation(() => ({
+    setDefaultOptions: vi.fn(),
+    clear: vi.fn()
+  })),
   QueryClientProvider: ({ children }: { children: React.ReactNode }) => children
 }));
 
@@ -98,13 +99,18 @@ Object.defineProperty(window, 'matchMedia', {
   }))
 });
 
-global.IntersectionObserver = vi.fn().mockImplementation(function () {
-  return { observe: vi.fn(), unobserve: vi.fn(), disconnect: vi.fn(), takeRecords: vi.fn() };
-});
+global.IntersectionObserver = vi.fn().mockImplementation(() => ({
+  observe: vi.fn(),
+  unobserve: vi.fn(),
+  disconnect: vi.fn(),
+  takeRecords: vi.fn()
+}));
 
-global.ResizeObserver = vi.fn().mockImplementation(function () {
-  return { observe: vi.fn(), unobserve: vi.fn(), disconnect: vi.fn() };
-});
+global.ResizeObserver = vi.fn().mockImplementation(() => ({
+  observe: vi.fn(),
+  unobserve: vi.fn(),
+  disconnect: vi.fn()
+}));
 
 if (typeof window !== 'undefined' && typeof window.HTMLElement !== 'undefined') {
   (window as any).Notification = {
