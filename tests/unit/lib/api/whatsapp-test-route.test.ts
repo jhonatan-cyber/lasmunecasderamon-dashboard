@@ -47,3 +47,26 @@ it('explica el error de Sandbox sin revelar la respuesta original del proveedor'
   expect(body.message).toContain('unirse al Sandbox');
   expect(JSON.stringify(body)).not.toContain('secret-token');
 });
+it('envía la prueba sin reconstruir una solicitud cuyo cuerpo ya se consumió', async () => {
+  mocks.user = { id: 'admin', role: 'Administrador', permissions: {} };
+  const consumed = new Request('http://localhost/api/whatsapp/test', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: '{}'
+  });
+  await consumed.json();
+  const response = await POST(consumed, { params: {} });
+  expect(response.status).toBe(200);
+  expect(mocks.send).toHaveBeenCalledOnce();
+  expect(mocks.limit).toHaveBeenCalledWith(consumed, expect.objectContaining({ max: 1 }));
+});
+it('informa un fallo preparando la prueba sin enviar ni revelar detalles internos', async () => {
+  mocks.user = { id: 'admin', role: 'Administrador', permissions: {} };
+  mocks.limit.mockRejectedValueOnce(new Error('secret-redis-url'));
+  const response = await POST(request(), { params: {} });
+  expect(response.status).toBe(503);
+  const body = await response.json();
+  expect(body.message).toContain('preparar la prueba');
+  expect(JSON.stringify(body)).not.toContain('secret-redis-url');
+  expect(mocks.send).not.toHaveBeenCalled();
+});

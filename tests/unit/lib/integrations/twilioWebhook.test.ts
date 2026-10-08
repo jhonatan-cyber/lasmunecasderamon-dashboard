@@ -7,7 +7,7 @@ vi.mock('@/lib/business/twilioConfig', () => ({
     .mockResolvedValue({ accountSid: 'AC' + 'a'.repeat(32), authToken: 'token-de-pruebas' })
 }));
 vi.mock('@/modules/comunicaciones', () => ({ registrarEntregaWhatsApp: vi.fn() }));
-import { validarWebhookTwilio } from '@/lib/integrations/twilioWebhook';
+import { validarWebhookTwilio, whatsappWebhookUrl } from '@/lib/integrations/twilioWebhook';
 import { registrarEntregaWhatsApp } from '@/modules/comunicaciones';
 import { POST } from '@/app/api/whatsapp/status/route';
 
@@ -37,10 +37,17 @@ function signedRequest(overrides = {}, signedPath = '/api/whatsapp/status') {
 }
 beforeEach(() => {
   vi.stubEnv('NEXT_PUBLIC_BASE_URL', base);
+  vi.stubEnv('TWILIO_WEBHOOK_BASE_URL', '');
   vi.clearAllMocks();
 });
 afterEach(() => vi.unstubAllEnvs());
 describe('Twilio detrás de Nginx', () => {
+  it('permite usar webhooks públicos mientras el dashboard apunta a localhost', async () => {
+    vi.stubEnv('NEXT_PUBLIC_BASE_URL', 'http://localhost:3000');
+    vi.stubEnv('TWILIO_WEBHOOK_BASE_URL', base);
+    expect(whatsappWebhookUrl('/api/whatsapp/status')).toBe(base + '/api/whatsapp/status');
+    expect(await validarWebhookTwilio(signedRequest())).toBe(true);
+  });
   it('valida la URL pública y todos los parámetros, ignorando el host interno y headers falsificados', async () => {
     expect(await validarWebhookTwilio(signedRequest())).toBe(true);
   });

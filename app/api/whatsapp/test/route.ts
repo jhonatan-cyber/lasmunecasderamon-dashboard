@@ -1,8 +1,9 @@
-import { NextRequest, NextResponse } from 'next/server';
+import { NextResponse } from 'next/server';
 import { withRoute } from '@/lib/api/withRoute';
 import { enviarPruebaWhatsApp, historialWhatsApp } from '@/modules/comunicaciones';
 import { whatsappWebhookUrl } from '@/lib/integrations/twilioWebhook';
 import { checkRateLimit } from '@/lib/middleware/redisRateLimit';
+import logger from '@/lib/utils/logger';
 
 export const GET = withRoute({ auth: true, module: 'settings', action: 'read' }, async () => {
   return NextResponse.json({
@@ -18,11 +19,23 @@ export const GET = withRoute({ auth: true, module: 'settings', action: 'read' },
 export const POST = withRoute(
   { auth: true, audit: true, module: 'settings', action: 'write' },
   async (request, { user }) => {
-    const limit = await checkRateLimit(new NextRequest(request), {
-      windowMs: 30_000,
-      max: 1,
-      prefix: `whatsapp-test:${user.id}`
-    });
+    let limit;
+    try {
+      limit = await checkRateLimit(request, {
+        windowMs: 30_000,
+        max: 1,
+        prefix: `whatsapp-test:${user.id}`
+      });
+    } catch {
+      logger.error('No se pudo verificar el límite de pruebas de WhatsApp');
+      return NextResponse.json(
+        {
+          success: false,
+          message: 'No se pudo preparar la prueba de WhatsApp. Intenta nuevamente en unos segundos.'
+        },
+        { status: 503 }
+      );
+    }
     if (limit && !limit.allowed)
       return NextResponse.json(
         { success: false, message: 'Espera 30 segundos antes de enviar otra prueba.' },
@@ -37,7 +50,11 @@ export const POST = withRoute(
           'Twilio aceptó el mensaje. El estado de entrega se actualizará cuando llegue el callback.'
       });
     } catch (error) {
-      const code = Number((error as { code?: number }).code);
+      const code = Number((error as { code?: number } | null)?.code);
+      logger.error('Falló el envío de prueba de WhatsApp', {
+        ...(Number.isFinite(code) && code > 0 ? { twilioCode: code } : {}),
+        errorType: error instanceof Error ? error.name : typeof error
+      });
       const errors: Record<number, string> = {
         20003: 'Twilio rechazó las credenciales. Revisa Account SID y Auth Token.',
         21211: 'El número de destino no es válido.',

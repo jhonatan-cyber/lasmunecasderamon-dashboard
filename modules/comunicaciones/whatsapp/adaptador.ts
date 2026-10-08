@@ -19,7 +19,7 @@ export async function enviarWhatsAppConEstado(
   if (!/^\+\d{7,15}$/.test(numeroFormateado)) throw new Error('Número de destino inválido');
   const { whatsappWebhookUrl } = await import('@/lib/integrations/twilioWebhook');
   const callback =
-    process.env.NEXT_PUBLIC_BASE_URL || process.env.BASE_URL
+    process.env.TWILIO_WEBHOOK_BASE_URL || process.env.NEXT_PUBLIC_BASE_URL || process.env.BASE_URL
       ? whatsappWebhookUrl('/api/whatsapp/status')
       : null;
   const result = await twilio(accountSid, authToken).messages.create({

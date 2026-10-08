@@ -2,8 +2,9 @@ import twilio from 'twilio';
 import { getTwilioConfig } from '@/lib/business/twilioConfig';
 
 export function whatsappWebhookUrl(path: string): string {
-  const base = process.env.NEXT_PUBLIC_BASE_URL || process.env.BASE_URL;
-  if (!base) throw new Error('Configura NEXT_PUBLIC_BASE_URL para los webhooks de WhatsApp');
+  const base =
+    process.env.TWILIO_WEBHOOK_BASE_URL || process.env.NEXT_PUBLIC_BASE_URL || process.env.BASE_URL;
+  if (!base) throw new Error('Configura TWILIO_WEBHOOK_BASE_URL para los webhooks de WhatsApp');
   return new URL(path, base).toString();
 }
 

@@ -194,12 +194,12 @@ function checkMemoryRateLimit(key: string, config: RateLimitConfig): RateLimitRe
 // ─── Función principal de rate limiting ────────────────────────────
 
 export async function checkRateLimit(
-  request: NextRequest,
+  request: Request,
   config: RateLimitConfig
 ): Promise<RateLimitResult | null> {
   const forwarded = request.headers.get('x-forwarded-for');
   const clientIP = forwarded ? forwarded.split(',')[0].trim() : 'unknown';
-  const pathname = request.nextUrl.pathname;
+  const pathname = new URL(request.url).pathname;
 
   // Key por IP + ruta para granularidad
   const key = `${clientIP}:${pathname}`;

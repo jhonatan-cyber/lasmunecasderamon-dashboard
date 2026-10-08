@@ -59,7 +59,44 @@ const okHandler = (_req: Request, _ctx: { params: any }) =>
 
 describe('withRoute - audit logging', () => {
   beforeEach(() => {
+    vi.clearAllMocks();
     mockAuthUser = { id: 'user-1', role: 'cajero', permissions: {} };
+  });
+
+  it('oculta tokens en configuraciones sin alterar los valores recibidos por el handler', async () => {
+    const payload = {
+      configs: [
+        { clave: 'twilio_auth_token', valor: 'token-ficticio-no-publicar' },
+        { clave: 'twilio_account_sid', valor: 'AC-cuenta-ficticia' }
+      ]
+    };
+    const handler = vi.fn(async (request: Request) => {
+      expect(await request.json()).toEqual(payload);
+      return Response.json({ success: true });
+    });
+    const wrapped = withRoute({ auth: true, access: 'authenticated', audit: true }, handler);
+    await wrapped(
+      new Request('http://localhost/api/configurations', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload)
+      }),
+      { params: {} }
+    );
+    expect(AuditService.log).toHaveBeenCalledWith(
+      expect.objectContaining({
+        details: {
+          params: {},
+          body: {
+            configs: [
+              { clave: 'twilio_auth_token', valor: '***' },
+              { clave: 'twilio_account_sid', valor: 'AC-cuenta-ficticia' }
+            ]
+          }
+        }
+      })
+    );
+    expect(handler).toHaveBeenCalledOnce();
   });
 
   it('logs audit for POST mutations', async () => {
