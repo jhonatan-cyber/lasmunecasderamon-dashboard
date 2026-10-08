@@ -47,6 +47,14 @@ jobs:
         run: |
           node -e "const fs=require('node:fs'),crypto=require('node:crypto'); for(const key of ['JWT_SECRET','JWT_REFRESH_SECRET']) fs.appendFileSync(process.env.GITHUB_ENV,key+'='+crypto.randomBytes(72).toString('base64url')+'\n');"
 
+      - name: Restore Next.js compiler cache
+        uses: actions/cache@v5
+        with:
+          path: .next/cache
+          key: next-production-${{ runner.os }}-${{ hashFiles('pnpm-lock.yaml') }}-${{ github.sha }}
+          restore-keys: |
+            next-production-${{ runner.os }}-${{ hashFiles('pnpm-lock.yaml') }}-
+
       - name: Build production bundle
         run: |
           test -n "$SSH_HOST"

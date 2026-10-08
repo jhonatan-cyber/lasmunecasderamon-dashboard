@@ -21,6 +21,27 @@ env:
   TZ: UTC
 
 jobs:
+  changes:
+    name: Detect affected suites
+    runs-on: ubuntu-latest
+    outputs:
+      redis: ${{ steps.diff.outputs.redis }}
+      migrations: ${{ steps.diff.outputs.migrations }}
+      mcp: ${{ steps.diff.outputs.mcp }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 24
+      - run: node --test tests/ci-changes.test.mjs
+      - id: diff
+        run: node scripts/ci-changes.mjs
+        env:
+          CI_DIFF_BASE: ${{ github.event.pull_request.base.sha || github.event.before }}
+          CI_DIFF_HEAD: ${{ github.event.pull_request.head.sha || github.sha }}
+
   quality:
     runs-on: ubuntu-latest
     timeout-minutes: 30
@@ -57,8 +78,14 @@ jobs:
       - name: Typecheck
         run: pnpm typecheck
 
-      - name: Unit Tests
-        run: pnpm test:unit
+      # El job coverage ya ejecuta toda la suite unitaria y exige sus umbrales.
+      - name: Restore Next.js compiler cache
+        uses: actions/cache@v5
+        with:
+          path: .next/cache
+          key: next-quality-${{ runner.os }}-${{ hashFiles('pnpm-lock.yaml') }}-${{ github.sha }}
+          restore-keys: |
+            next-quality-${{ runner.os }}-${{ hashFiles('pnpm-lock.yaml') }}-
 
       - name: Generate isolated build and runtime JWT keys
         run: |
@@ -68,6 +95,8 @@ jobs:
         run: pnpm build
 
   redis:
+    needs: changes
+    if: needs.changes.outputs.redis == 'true'
     name: Redis (limitador, caché y seguridad)
     runs-on: ubuntu-latest
     timeout-minutes: 30
@@ -108,6 +137,8 @@ jobs:
         run: pnpm test:redis
 
   migrations:
+    needs: changes
+    if: needs.changes.outputs.migrations == 'true'
     name: Migrations (fresh database)
     runs-on: ubuntu-latest
     timeout-minutes: 30
@@ -348,6 +379,14 @@ jobs:
         run: |
           node -e "const fs=require('node:fs'),crypto=require('node:crypto'); for(const key of ['JWT_SECRET','JWT_REFRESH_SECRET']) fs.appendFileSync(process.env.GITHUB_ENV,key+'='+crypto.randomBytes(72).toString('base64url')+'\n');"
 
+      - name: Restore Next.js compiler cache
+        uses: actions/cache@v5
+        with:
+          path: .next/cache
+          key: next-e2e-${{ runner.os }}-${{ hashFiles('pnpm-lock.yaml') }}-${{ github.sha }}
+          restore-keys: |
+            next-e2e-${{ runner.os }}-${{ hashFiles('pnpm-lock.yaml') }}-
+
       - name: Build
         run: pnpm build
 
@@ -369,6 +408,8 @@ jobs:
           retention-days: 7
 
   mcp:
+    needs: changes
+    if: needs.changes.outputs.mcp == 'true'
     name: MCP (build + tests)
     runs-on: ubuntu-latest
     timeout-minutes: 30
@@ -390,11 +431,7 @@ jobs:
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
 
-      # Compila el paquete mcp/ (tsc) antes de los tests: falla rápido ante errores de tipos.
-      - name: Build MCP
-        run: pnpm --dir mcp build
-
-      # `pnpm test` = build + node --test sobre tests/*.test.mjs (56 tests actuales).
+      # `pnpm test` compila antes de ejecutar los tests; no repetir el build.
       # Los tests levantan un backend simulado propio; no requieren BD ni servicios externos.
       - name: MCP tests (node --test)
         run: pnpm --dir mcp test
