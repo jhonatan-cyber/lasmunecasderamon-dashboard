@@ -25,9 +25,22 @@ jobs:
     name: Detect affected suites
     runs-on: ubuntu-latest
     outputs:
+      full: ${{ steps.diff.outputs.full }}
+      build: ${{ steps.diff.outputs.build }}
+      integration: ${{ steps.diff.outputs.integration }}
+      e2e: ${{ steps.diff.outputs.e2e }}
+      unit: ${{ steps.diff.outputs.unit }}
       redis: ${{ steps.diff.outputs.redis }}
       migrations: ${{ steps.diff.outputs.migrations }}
       mcp: ${{ steps.diff.outputs.mcp }}
+      auth: ${{ steps.diff.outputs.auth }}
+      caja: ${{ steps.diff.outputs.caja }}
+      compras: ${{ steps.diff.outputs.compras }}
+      inventario: ${{ steps.diff.outputs.inventario }}
+      ventas: ${{ steps.diff.outputs.ventas }}
+      personal: ${{ steps.diff.outputs.personal }}
+      reportes: ${{ steps.diff.outputs.reportes }}
+      whatsapp: ${{ steps.diff.outputs.whatsapp }}
     steps:
       - uses: actions/checkout@v7
         with:
@@ -39,10 +52,12 @@ jobs:
       - id: diff
         run: node scripts/ci-changes.mjs
         env:
-          CI_DIFF_BASE: ${{ github.event.pull_request.base.sha || github.event.before }}
+          CI_DIFF_BASE: ${{ github.event.pull_request.base.sha || github.event.before || github.event.workflow_run.head_sha }}
           CI_DIFF_HEAD: ${{ github.event.pull_request.head.sha || github.sha }}
 
   quality:
+    needs: changes
+    if: needs.changes.outputs.build == 'true' || needs.changes.outputs.full == 'true'
     runs-on: ubuntu-latest
     timeout-minutes: 30
     env:
@@ -69,10 +84,21 @@ jobs:
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
 
-      - name: Lint
+      - name: Lint changed files
+        if: needs.changes.outputs.full != 'true'
+        env:
+          BASE_SHA: ${{ github.event.pull_request.base.sha || github.event.before || github.event.workflow_run.head_sha }}
+          HEAD_SHA: ${{ github.event.pull_request.head.sha || github.sha }}
+        run: |
+          FILES="$(git diff --name-only "$BASE_SHA" "$HEAD_SHA" -- '*.js' '*.jsx' '*.ts' '*.tsx' | tr '\n' ' ')"
+          if [ -n "$FILES" ]; then pnpm exec eslint $FILES; fi
+
+      - name: Lint all files
+        if: needs.changes.outputs.full == 'true'
         run: pnpm lint:full
 
       - name: Architecture boundaries
+        if: needs.changes.outputs.full == 'true' || needs.changes.outputs.integration == 'true'
         run: pnpm arquitectura:limites
 
       - name: Typecheck
@@ -215,6 +241,8 @@ jobs:
         run: pnpm outdated --format list | head -50 || true
 
   coverage:
+    needs: changes
+    if: needs.changes.outputs.unit == 'true' || needs.changes.outputs.full == 'true'
     runs-on: ubuntu-latest
     timeout-minutes: 30
     env:
@@ -239,18 +267,28 @@ jobs:
         run: pnpm install --frozen-lockfile
 
       - name: Unit Tests with Coverage
+        if: needs.changes.outputs.full == 'true'
         run: pnpm test:unit:coverage
         timeout-minutes: 15
 
+      - name: Unit Tests for changed domains
+        if: needs.changes.outputs.full != 'true'
+        env:
+          BASE_SHA: ${{ github.event.pull_request.base.sha || github.event.before || github.event.workflow_run.head_sha }}
+          HEAD_SHA: ${{ github.event.pull_request.head.sha || github.sha }}
+        run: node scripts/run-affected-unit-tests.mjs
+
       - name: Upload coverage to GitHub
         uses: actions/upload-artifact@v7
-        if: always()
+        if: always() && needs.changes.outputs.full == 'true'
         with:
           name: coverage-report
           path: coverage/
           retention-days: 7
 
   integration:
+    needs: changes
+    if: needs.changes.outputs.integration == 'true' || needs.changes.outputs.full == 'true'
     runs-on: ubuntu-latest
     timeout-minutes: 30
     services:
@@ -322,6 +360,8 @@ jobs:
           pnpm test:integration:all
 
   e2e:
+    needs: changes
+    if: needs.changes.outputs.e2e == 'true' || needs.changes.outputs.full == 'true'
     runs-on: ubuntu-latest
     timeout-minutes: 30
     services:
