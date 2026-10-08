@@ -7,7 +7,7 @@ export function classifyChanges(files) {
   for (const file of files) {
     // Shared code and CI/dependency changes conservatively require every suite.
     if (
-      /^(app\/api\/|lib\/|modules\/|workflows\/|\.github\/|tests\/setup\/|scripts\/ci-|package\.json$|pnpm-|\.npmrc$|patches\/|next\.config|tsconfig|vitest\.config)/.test(
+      /^(app\/api\/|lib\/|modules\/|workflows\/|\.github\/|tests\/setup\/|scripts\/ci-|package\.json$|pnpm-|\.pnpmfile\.cjs$|\.npmrc$|patches\/|next\.config|tsconfig|vitest\.config)/.test(
         file
       )
     ) {

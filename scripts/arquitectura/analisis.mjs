@@ -17,7 +17,7 @@ import { readdirSync, readFileSync, writeFileSync, mkdirSync, statSync } from 'n
 import { execFileSync } from 'node:child_process';
 import { join, dirname, relative, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
-import ts from 'typescript';
+import ts from 'typescript-compiler-api';
 import { escriturasDe } from './propiedad.mjs';
 
 const RAIZ = resolve(dirname(fileURLToPath(import.meta.url)), '..', '..');

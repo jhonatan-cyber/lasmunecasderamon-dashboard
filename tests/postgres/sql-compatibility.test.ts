@@ -1,7 +1,7 @@
 import { afterAll, expect, it } from 'vitest';
 import fs from 'node:fs';
 import path from 'node:path';
-import ts from 'typescript';
+import ts from 'typescript-compiler-api';
 import db from '@/lib/database/db';
 import { prepareQuery } from '@/lib/database/postgres.cjs';
 

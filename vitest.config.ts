@@ -11,15 +11,23 @@ export default defineConfig({
       provider: 'v8',
       reporter: ['text', 'json', 'html'],
       reportsDirectory: './coverage',
-      all: false,
-      include: ['lib/**', 'hooks/**', 'modules/**', 'workflows/**'],
       thresholds: {
         branches: 62,
         functions: 40,
         lines: 48,
         statements: 48
       },
-      exclude: ['node_modules/', 'tests/', '**/*.d.ts', '**/*.config.*', '.next/', '**/types/**']
+      // Preserve v3's all:false policy: covered files in these four directories.
+      // In v5 an explicit include also adds every untested matching file.
+      exclude: [
+        '!(lib|hooks|modules|workflows)/**',
+        'node_modules/',
+        'tests/',
+        '**/*.d.ts',
+        '**/*.config.*',
+        '.next/',
+        '**/types/**'
+      ]
     },
     testTimeout: 30000,
     hookTimeout: 30000

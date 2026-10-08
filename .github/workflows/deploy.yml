@@ -75,7 +75,7 @@ jobs:
           NEXT_PUBLIC_SOCKET_URL: ${{ secrets.NEXT_PUBLIC_SOCKET_URL }}
       - name: Package runtime and migration dependencies
         run: |
-          tar --exclude='.next/cache' --exclude='.next/dev' -czf dashboard-release.tar.gz .next public package.json pnpm-lock.yaml pnpm-workspace.yaml .npmrc next.config.mjs scripts lib migrations patches mcp/package.json
+          tar --exclude='.next/cache' --exclude='.next/dev' -czf dashboard-release.tar.gz .next public package.json pnpm-lock.yaml pnpm-workspace.yaml .npmrc .pnpmfile.cjs next.config.mjs scripts lib migrations patches mcp/package.json
       - name: Transfer release
         uses: appleboy/scp-action@v1.0.0
         with:

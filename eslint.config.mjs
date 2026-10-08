@@ -1,10 +1,10 @@
 /* eslint-disable */
 import nextVitals from 'eslint-config-next/core-web-vitals';
 import nextTypescript from 'eslint-config-next/typescript';
+import { fixupConfigRules } from '@eslint/compat';
 
 export default [
-  ...nextVitals,
-  ...nextTypescript,
+  ...fixupConfigRules([...nextVitals, ...nextTypescript]),
   {
     ignores: [
       '.next/**',

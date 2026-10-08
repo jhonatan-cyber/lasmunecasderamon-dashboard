@@ -1,4 +1,4 @@
-import ts from 'typescript';
+import ts from 'typescript-compiler-api';
 
 /** Extrae destinos de escrituras SQL y del adaptador BaseRepository. */
 export function escriturasDe(fuente) {

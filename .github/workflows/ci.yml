@@ -75,6 +75,9 @@ jobs:
       - name: Architecture boundaries
         run: pnpm arquitectura:limites
 
+      - name: Toolchain compatibility
+        run: node --test tests/toolchain.test.mjs
+
       - name: Typecheck
         run: pnpm typecheck
 

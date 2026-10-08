@@ -1,45 +1,18 @@
 {
   "resumen": {
-    "commit": "9ab31bb7d2be7db89f63f7519cd2ad5e34c38579",
-    "generado": "2026-10-07T19:23:51.830Z",
-    "archivos": 1715,
-    "rutas": 207,
+    "commit": "48485c70fa87c47ba8f9e0a84513a59f47d804e8",
+    "generado": "2026-10-08T14:07:08.119Z",
+    "archivos": 1746,
+    "rutas": 209,
     "sqlFueraDeRepositorio": 50,
     "tablasConEscritoresMultiples": 0,
     "ciclos": 0,
-    "procesosPeriodicos": 15,
+    "procesosPeriodicos": 16,
     "caches": 21,
     "rutasApiConSqlDirecto": 0,
-    "rutasSinWrapper": 19
+    "rutasSinWrapper": 20
   },
   "rutas": [
-    {
-      "ruta": "/api/attendance/ranking",
-      "archivo": "app/api/attendance/ranking/route.ts",
-      "metodos": [],
-      "nivel": "attendance.read",
-      "audit": false,
-      "moduloDominio": null,
-      "usaDriver": false
-    },
-    {
-      "ruta": "/api/mcp/admin/session",
-      "archivo": "app/api/mcp/admin/session/route.ts",
-      "metodos": [],
-      "nivel": "administrator",
-      "audit": false,
-      "moduloDominio": null,
-      "usaDriver": false
-    },
-    {
-      "ruta": "/api/mcp/admin/solicitudes",
-      "archivo": "app/api/mcp/admin/solicitudes/route.ts",
-      "metodos": [],
-      "nivel": "administrator",
-      "audit": true,
-      "moduloDominio": null,
-      "usaDriver": false
-    },
     {
       "ruta": "/api/anfitrionas/:id/status",
       "archivo": "app/api/anfitrionas/[id]/status/route.ts",
@@ -190,6 +163,15 @@
       "metodos": [],
       "nivel": "attendance.write",
       "audit": true,
+      "moduloDominio": null,
+      "usaDriver": false
+    },
+    {
+      "ruta": "/api/attendance/ranking",
+      "archivo": "app/api/attendance/ranking/route.ts",
+      "metodos": [],
+      "nivel": "attendance.read",
+      "audit": false,
       "moduloDominio": null,
       "usaDriver": false
     },
@@ -1026,6 +1008,24 @@
       "archivo": "app/api/kiosk/session/route.ts",
       "metodos": [],
       "nivel": "publico",
+      "audit": true,
+      "moduloDominio": null,
+      "usaDriver": false
+    },
+    {
+      "ruta": "/api/mcp/admin/session",
+      "archivo": "app/api/mcp/admin/session/route.ts",
+      "metodos": [],
+      "nivel": "administrator",
+      "audit": false,
+      "moduloDominio": null,
+      "usaDriver": false
+    },
+    {
+      "ruta": "/api/mcp/admin/solicitudes",
+      "archivo": "app/api/mcp/admin/solicitudes/route.ts",
+      "metodos": [],
+      "nivel": "administrator",
       "audit": true,
       "moduloDominio": null,
       "usaDriver": false
@@ -1868,6 +1868,24 @@
       "usaDriver": false
     },
     {
+      "ruta": "/api/whatsapp/status",
+      "archivo": "app/api/whatsapp/status/route.ts",
+      "metodos": ["POST"],
+      "nivel": "SIN_WRAPPER",
+      "audit": false,
+      "moduloDominio": null,
+      "usaDriver": false
+    },
+    {
+      "ruta": "/api/whatsapp/test",
+      "archivo": "app/api/whatsapp/test/route.ts",
+      "metodos": [],
+      "nivel": "settings.read",
+      "audit": false,
+      "moduloDominio": null,
+      "usaDriver": false
+    },
+    {
       "ruta": "/api/whatsapp/webhook",
       "archivo": "app/api/whatsapp/webhook/route.ts",
       "metodos": ["POST"],
@@ -1949,12 +1967,6 @@
       "capa": "raiz",
       "modulo": null,
       "escribe": []
-    },
-    {
-      "archivo": "modules/asistencia/seed/seed-asistencia.mjs",
-      "capa": "modules/aplicacion",
-      "modulo": "asistencia",
-      "escribe": ["asistencias"]
     },
     {
       "archivo": "modules/asistencia/biometrico/avisosAudio.ts",
@@ -2051,6 +2063,12 @@
       "capa": "modules/aplicacion",
       "modulo": "asistencia",
       "escribe": ["kiosk_devices"]
+    },
+    {
+      "archivo": "modules/asistencia/seed/seed-asistencia.mjs",
+      "capa": "modules/aplicacion",
+      "modulo": "asistencia",
+      "escribe": ["asistencias"]
     },
     {
       "archivo": "modules/auditoria/alertas/servicio.ts",
@@ -2452,6 +2470,12 @@
       "texto": "const intervalo = setInterval(() => void load(), 30_000);"
     },
     {
+      "archivo": "components/settings/SettingsWhatsAppTab.tsx",
+      "linea": 59,
+      "tipo": "setInterval",
+      "texto": "const timer = setInterval(() => {"
+    },
+    {
       "archivo": "hooks/shared/useSSE.ts",
       "linea": 27,
       "tipo": "setInterval",
@@ -2573,16 +2597,6 @@
       "texto": "const client = new Redis(url, {"
     },
     {
-      "archivo": "lib/media/product-background.mjs",
-      "linea": 0,
-      "texto": "caché compartida en globalThis"
-    },
-    {
-      "archivo": "mcp/src/http-app.ts",
-      "linea": 0,
-      "texto": "caché en memoria (new Map + cache)"
-    },
-    {
       "archivo": "components/shared/ProductPhoto.tsx",
       "linea": 0,
       "texto": "caché en memoria (new Map + cache)"
@@ -2613,6 +2627,16 @@
       "texto": "caché compartida en globalThis"
     },
     {
+      "archivo": "lib/media/product-background.mjs",
+      "linea": 0,
+      "texto": "caché compartida en globalThis"
+    },
+    {
+      "archivo": "mcp/src/http-app.ts",
+      "linea": 0,
+      "texto": "caché en memoria (new Map + cache)"
+    },
+    {
       "archivo": "modules/asistencia/biometrico/netSdk.ts",
       "linea": 0,
       "texto": "caché compartida en globalThis"
@@ -2630,55 +2654,6 @@
   ],
   "ciclos": [],
   "matriz": {
-    "app/api": {
-      "lib/api": 235,
-      "lib/otros": 68,
-      "workflows": 20,
-      "lib/identidad": 12,
-      "lib/business": 21,
-      "modules/aplicacion": 1,
-      "lib/database": 2,
-      "lib/integrations": 1
-    },
-    "components": {
-      "raiz": 81,
-      "lib/business": 26,
-      "hooks": 123,
-      "lib/otros": 267,
-      "modules/aplicacion": 4,
-      "lib/api": 1,
-      "app/ui": 1
-    },
-    "lib/otros": {
-      "lib/database": 4,
-      "lib/api": 1,
-      "lib/business": 6,
-      "components": 2,
-      "raiz": 5
-    },
-    "raiz": {
-      "lib/otros": 9,
-      "hooks": 4,
-      "lib/api": 1,
-      "lib/identidad": 1,
-      "modules/aplicacion": 1
-    },
-    "modules/aplicacion": {
-      "modules/infraestructura": 23,
-      "lib/otros": 83,
-      "lib/database": 37,
-      "lib/business": 24,
-      "lib/api": 8,
-      "lib/identidad": 3,
-      "raiz": 4
-    },
-    "scripts": {},
-    "workflows": {
-      "lib/api": 4,
-      "lib/otros": 19,
-      "lib/business": 6,
-      "modules/aplicacion": 6
-    },
     "app/ui": {
       "hooks": 49,
       "lib/otros": 49,
@@ -2687,6 +2662,32 @@
       "modules/aplicacion": 1,
       "raiz": 13,
       "components": 2
+    },
+    "app/api": {
+      "lib/api": 237,
+      "lib/otros": 69,
+      "lib/identidad": 13,
+      "workflows": 20,
+      "lib/business": 20,
+      "modules/aplicacion": 1,
+      "lib/database": 2,
+      "lib/integrations": 4
+    },
+    "components": {
+      "hooks": 123,
+      "lib/otros": 267,
+      "raiz": 81,
+      "lib/business": 26,
+      "modules/aplicacion": 4,
+      "lib/api": 1,
+      "app/ui": 1
+    },
+    "raiz": {
+      "lib/otros": 9,
+      "hooks": 4,
+      "lib/api": 1,
+      "lib/identidad": 1,
+      "modules/aplicacion": 1
     },
     "hooks": {
       "lib/otros": 70,
@@ -2715,19 +2716,44 @@
       "components": 1,
       "raiz": 1
     },
+    "lib/otros": {
+      "lib/database": 4,
+      "lib/api": 1,
+      "lib/business": 6,
+      "components": 2,
+      "raiz": 5
+    },
     "lib/database": {
       "lib/otros": 3,
       "lib/business": 1
     },
-    "lib/integrations": {},
+    "lib/integrations": {
+      "lib/business": 1
+    },
     "modules/infraestructura": {
-      "lib/database": 100,
+      "lib/database": 101,
       "lib/otros": 132,
       "lib/business": 53,
       "modules/aplicacion": 23,
       "lib/identidad": 2,
       "lib/api": 6,
       "raiz": 2
+    },
+    "modules/aplicacion": {
+      "modules/infraestructura": 23,
+      "lib/otros": 84,
+      "lib/database": 37,
+      "lib/business": 26,
+      "lib/api": 8,
+      "lib/identidad": 3,
+      "raiz": 4
+    },
+    "scripts": {},
+    "workflows": {
+      "lib/business": 6,
+      "lib/otros": 19,
+      "lib/api": 4,
+      "modules/aplicacion": 6
     }
   },
   "ordenCapas": [

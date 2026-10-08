@@ -93,8 +93,9 @@ export function BarAnfitrionas({
   // Prioridad: explícito > tiers cargados > fallback por precio.
   const limite = hasExplicitMax
     ? Number(maxAnfitrionas)
-    : ((isChampagne ? (tiersMax ?? null) : null) ??
-      getHostessLimit({ categoria: categoriaNombre ?? '', precio: Number(precio ?? 0) }));
+    : isChampagne && tiersMax != null
+      ? tiersMax
+      : getHostessLimit({ categoria: categoriaNombre ?? '', precio: Number(precio ?? 0) });
 
   const label = hasExplicitMax
     ? `Máx. ${limite} anf.`

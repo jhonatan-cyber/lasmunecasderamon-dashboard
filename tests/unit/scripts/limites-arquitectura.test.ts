@@ -82,8 +82,8 @@ function repoDePrueba(): string {
   );
   mkdirSync(join(dir, 'node_modules'), { recursive: true });
   symlinkSync(
-    join(RAIZ, 'node_modules/typescript'),
-    join(dir, 'node_modules/typescript'),
+    join(RAIZ, 'node_modules/typescript-compiler-api'),
+    join(dir, 'node_modules/typescript-compiler-api'),
     'junction'
   );
   writeFileSync(join(dir, 'docs', 'arquitectura', 'excepciones.json'), '{}\n');
