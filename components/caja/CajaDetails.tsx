@@ -51,6 +51,8 @@ export default function CajaDetails({ caja, open, onOpenChange }: CajaDetailsPro
             reabriendoCierre={view.reabriendoCierre}
             onPrint={view.handlePrint}
             onExportPdf={view.exportPdf}
+            onSendWhatsApp={view.canSendWhatsApp ? view.handleSendWhatsApp : undefined}
+            sendingWhatsApp={view.sendingWhatsApp}
           />
 
           <CajaDetailsStatsBar

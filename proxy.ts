@@ -21,15 +21,21 @@ import {
 // Orígenes permitidos para CORS
 const ALLOWED_ORIGINS = [
   siteConfig.url,
+  // Dashboard en ejecución: en local se accede por IP y el navegador envía esa
+  // dirección como Origin para las peticiones mutables (por ejemplo, cerrar caja).
+  ...(process.env.NEXT_PUBLIC_BASE_URL ? [new URL(process.env.NEXT_PUBLIC_BASE_URL).origin] : []),
   'http://localhost:3000',
   'http://localhost:8081',
   'https://dashboard.xn--lasmuecasderamon-bub.com',
 
-  ...(process.env.DEV_ALLOWED_ORIGINS
-    ? process.env.DEV_ALLOWED_ORIGINS.split(',')
-        .map(s => s.trim())
+  ...[process.env.DEV_ALLOWED_ORIGINS, process.env.CORS_ORIGINS]
+    .filter((origins): origins is string => Boolean(origins))
+    .flatMap(origins =>
+      origins
+        .split(',')
+        .map(origin => origin.trim())
         .filter(Boolean)
-    : [])
+    )
 ];
 
 if (process.env.NODE_ENV === 'development' && !process.env.DEV_ALLOWED_ORIGINS) {

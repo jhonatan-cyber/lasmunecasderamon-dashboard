@@ -272,6 +272,14 @@ const generateResumenHTML = (ctx: CajaExportContext) => {
           }
         ]
       : []),
+    ...(ctx.caja.saldo_clientes_por_devolver
+      ? [
+          {
+            label: 'Falta devolver a clientes',
+            value: ctx.caja.saldo_clientes_por_devolver
+          }
+        ]
+      : []),
     { label: 'Anticipos (ya descontados del efectivo)', value: -(ctx.caja.anticipo || 0) },
     {
       label: 'Retiros (ya descontados del efectivo)',
@@ -446,6 +454,14 @@ export const getPDFData = (ctx: CajaExportContext) => {
         ...(ctx.caja.saldo_clientes_descontado
           ? [
               ['Saldos de clientes descontados', -(ctx.caja.saldo_clientes_descontado || 0)] as [
+                string,
+                number
+              ]
+            ]
+          : []),
+        ...(ctx.caja.saldo_clientes_por_devolver
+          ? [
+              ['Falta devolver a clientes', ctx.caja.saldo_clientes_por_devolver] as [
                 string,
                 number
               ]

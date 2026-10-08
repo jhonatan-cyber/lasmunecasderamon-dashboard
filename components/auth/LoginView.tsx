@@ -10,6 +10,14 @@ import { QrCode } from 'lucide-react';
 export const LoginView = () => {
   const {
     loading,
+    view,
+    setView,
+    recoveryLoading,
+    recoveryComplete,
+    recoveryRun,
+    setRecoveryRun,
+    handlePasswordRecovery,
+    resetRecovery,
     theme,
     toggleTheme,
     setThemeMode,
@@ -80,7 +88,7 @@ export const LoginView = () => {
               />
             </div>
 
-            <div className='bg-white dark:bg-gray-900 rounded-2xl shadow-lg dark:shadow-gray-900/50 p-10 w-full max-w-md transition-all duration-300 border dark:border-gray-800'>
+            <div className='w-full max-w-md p-6 sm:p-10'>
               <h2 className='text-2xl font-bold text-center mb-2 text-gray-900 dark:text-white transition-colors duration-300'>
                 {step === 'login' ? 'Iniciar sesión' : 'Verificación'}
               </h2>
@@ -93,7 +101,12 @@ export const LoginView = () => {
               <LoginForm
                 form={{
                   step,
+                  view,
                   loading,
+                  recoveryLoading,
+                  recoveryComplete,
+                  recoveryRun,
+                  setRecoveryRun,
                   codigo,
                   setCodigo,
                   hasUsers
@@ -103,6 +116,7 @@ export const LoginView = () => {
                 inputRefs={{ emailInputRef, passwordInputRef, submitButtonRef }}
                 handlers={{
                   handleLogin,
+                  handlePasswordRecovery,
                   handleVerifyCode,
                   handleKeyDown,
                   handlePasswordKeyDown
@@ -110,7 +124,9 @@ export const LoginView = () => {
                 theme={{ theme, toggleTheme, setThemeMode }}
                 callbacks={{
                   onShowRegister: () => setShowRegisterModal(true),
-                  onSetStep: setStep
+                  onSetStep: setStep,
+                  onSetView: setView,
+                  onResetRecovery: resetRecovery
                 }}
               />
               <div className='mt-6 pt-6 border-t border-gray-100 dark:border-gray-800/80 text-center w-full'>

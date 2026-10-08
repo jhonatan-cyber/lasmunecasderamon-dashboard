@@ -15,7 +15,8 @@ import type { SolicitudCierrePendiente } from '../contracts';
 export async function listarSolicitudesCierrePendientes(): Promise<SolicitudCierrePendiente[]> {
   return await query<SolicitudCierrePendiente[]>(
     `SELECT s.id, s.token, s.caja_id, s.solicitado_por, s.monto_cierre_calculado,
-                  s.saldo_clientes_descontado, s.fecha_solicitud as fecha_mod
+                  s.saldo_clientes_descontado, s.saldo_clientes_por_devolver,
+                  s.fecha_solicitud as fecha_mod
            FROM solicitudes_cierre_caja s
            WHERE s.estado = 'pendiente'
            ORDER BY s.fecha_solicitud DESC`

@@ -99,6 +99,9 @@ export const SSE_EVENTS = {
   // Los clientes no administradores refrescan sus permisos al recibirlo (cada uno
   // compara su propio rol/usuario); los administradores no lo necesitan.
   'permissions-updated': { audiences: NON_ADMIN_STAFF },
+  // El cierre autorizado de caja termina la sesión del personal en todas las pestañas.
+  // Los administradores no reciben este evento y conservan su sesión.
+  cash_register_closed: { audiences: NON_ADMIN_STAFF },
   // El payload trae el roleId eliminado: cada cliente decide si era el suyo. Se
   // difunde al personal porque la sesión no lleva roleId y no se puede dirigir
   // desde el servidor sin una consulta por cliente.

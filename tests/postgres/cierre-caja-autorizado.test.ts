@@ -44,6 +44,15 @@ beforeEach(() => {
  */
 
 const MONTO_ESPERADO = 100000 + 50000 + 20000 + 5000 - 3000; // 172.000
+const EFECTIVO_DISPONIBLE_PARA_CLIENTES = 100000 + 50000 - 3000; // 147.000
+const separarSaldoClientes = (saldo: number) => {
+  const descontado = Math.min(EFECTIVO_DISPONIBLE_PARA_CLIENTES, saldo);
+  return {
+    descontado,
+    pendiente: Math.max(0, saldo - descontado),
+    montoCierre: MONTO_ESPERADO - descontado
+  };
+};
 
 const limpiarCajas = async () => {
   await query('UPDATE cajas SET estado = 0 WHERE estado = 1');
@@ -82,12 +91,14 @@ it('el cajero pide el cierre: la solicitud queda pendiente y la caja sigue abier
     const { idCaja } = await abrirCaja();
     await crearClienteConSaldo(12000);
     const saldoTotalClientes = saldoInicialClientes + 12000;
+    const saldoCierre = separarSaldoClientes(saldoTotalClientes);
 
     const resultado = await solicitarOProcesarCierreCaja({ user: cajero, id_caja: idCaja });
 
     expect(resultado.estado).toBe('pendiente');
-    expect(resultado.montoCierre).toBe(MONTO_ESPERADO - saldoTotalClientes);
-    expect(resultado.saldoClientesDescontado).toBe(saldoTotalClientes);
+    expect(resultado.montoCierre).toBe(saldoCierre.montoCierre);
+    expect(resultado.saldoClientesDescontado).toBe(saldoCierre.descontado);
+    expect(resultado.saldoClientesPorDevolver).toBe(saldoCierre.pendiente);
     expect(enviarMensajeSolicitudCierreCaja).toHaveBeenCalledOnce();
 
     const [caja] = await query(
@@ -99,11 +110,13 @@ it('el cajero pide el cierre: la solicitud queda pendiente y la caja sigue abier
     expect(caja.cierre_solicitado_en).not.toBeNull();
 
     const [solicitud] = await query(
-      'SELECT estado, monto_cierre_calculado, saldo_clientes_descontado FROM solicitudes_cierre_caja WHERE caja_id = ?',
+      'SELECT estado, monto_cierre_calculado, saldo_clientes_descontado, saldo_clientes_por_devolver FROM solicitudes_cierre_caja WHERE caja_id = ?',
       [idCaja]
     );
     expect(solicitud.estado).toBe('pendiente');
-    expect(Number(solicitud.monto_cierre_calculado)).toBe(MONTO_ESPERADO - saldoTotalClientes);
+    expect(Number(solicitud.monto_cierre_calculado)).toBe(saldoCierre.montoCierre);
+    expect(Number(solicitud.saldo_clientes_descontado)).toBe(saldoCierre.descontado);
+    expect(Number(solicitud.saldo_clientes_por_devolver)).toBe(saldoCierre.pendiente);
   } finally {
     await restoreDatabase(snapshot, 'test-only');
   }
@@ -116,6 +129,7 @@ it('el administrador cierra en el acto, sin mandar nada por WhatsApp', async () 
     const { idCaja, userId } = await abrirCaja();
     await crearClienteConSaldo(12000);
     const saldoTotalClientes = saldoInicialClientes + 12000;
+    const saldoCierre = separarSaldoClientes(saldoTotalClientes);
 
     const resultado = await solicitarOProcesarCierreCaja({
       user: { id: userId, role: 'administrador', nick: 'Admin' },
@@ -126,12 +140,13 @@ it('el administrador cierra en el acto, sin mandar nada por WhatsApp', async () 
     expect(enviarMensajeSolicitudCierreCaja).not.toHaveBeenCalled();
 
     const [caja] = await query(
-      'SELECT estado, monto_cierre, saldo_clientes_descontado FROM cajas WHERE id_caja = ?',
+      'SELECT estado, monto_cierre, saldo_clientes_descontado, saldo_clientes_por_devolver FROM cajas WHERE id_caja = ?',
       [idCaja]
     );
     expect(Number(caja.estado)).toBe(0);
-    expect(Number(caja.monto_cierre)).toBe(MONTO_ESPERADO - saldoTotalClientes);
-    expect(Number(caja.saldo_clientes_descontado)).toBe(saldoTotalClientes);
+    expect(Number(caja.monto_cierre)).toBe(saldoCierre.montoCierre);
+    expect(Number(caja.saldo_clientes_descontado)).toBe(saldoCierre.descontado);
+    expect(Number(caja.saldo_clientes_por_devolver)).toBe(saldoCierre.pendiente);
   } finally {
     await restoreDatabase(snapshot, 'test-only');
   }
@@ -144,6 +159,7 @@ it('autorizar el cierre cierra la caja descontando los saldos de clientes', asyn
     const { idCaja } = await abrirCaja();
     await crearClienteConSaldo(12000);
     const saldoTotalClientes = saldoInicialClientes + 12000;
+    const saldoCierre = separarSaldoClientes(saldoTotalClientes);
 
     const solicitud = await CashRegisterRepository.solicitarCierre(idCaja, {
       nombre: 'CajeroTest'
@@ -155,15 +171,17 @@ it('autorizar el cierre cierra la caja descontando los saldos de clientes', asyn
     );
 
     expect(resultado.estado).toBe('aprobada');
-    expect(resultado.saldo_clientes_descontado).toBe(saldoTotalClientes);
+    expect(resultado.saldo_clientes_descontado).toBe(saldoCierre.descontado);
+    expect(resultado.saldo_clientes_por_devolver).toBe(saldoCierre.pendiente);
 
     const [caja] = await query(
-      'SELECT estado, monto_cierre, saldo_clientes_descontado, cierre_solicitado_en FROM cajas WHERE id_caja = ?',
+      'SELECT estado, monto_cierre, saldo_clientes_descontado, saldo_clientes_por_devolver, cierre_solicitado_en FROM cajas WHERE id_caja = ?',
       [idCaja]
     );
     expect(Number(caja.estado)).toBe(0);
-    expect(Number(caja.monto_cierre)).toBe(MONTO_ESPERADO - saldoTotalClientes);
-    expect(Number(caja.saldo_clientes_descontado)).toBe(saldoTotalClientes);
+    expect(Number(caja.monto_cierre)).toBe(saldoCierre.montoCierre);
+    expect(Number(caja.saldo_clientes_descontado)).toBe(saldoCierre.descontado);
+    expect(Number(caja.saldo_clientes_por_devolver)).toBe(saldoCierre.pendiente);
     expect(caja.cierre_solicitado_en).toBeNull();
 
     const [sol] = await query(
@@ -198,9 +216,16 @@ it('el descuento se recalcula al autorizar, no se arrastra desde la solicitud', 
     );
 
     const saldoTotalClientes = saldoInicialClientes + 17000;
-    expect(resultado.saldo_clientes_descontado).toBe(saldoTotalClientes);
-    const [caja] = await query('SELECT monto_cierre FROM cajas WHERE id_caja = ?', [idCaja]);
-    expect(Number(caja.monto_cierre)).toBe(MONTO_ESPERADO - saldoTotalClientes);
+    const saldoCierre = separarSaldoClientes(saldoTotalClientes);
+    expect(resultado.saldo_clientes_descontado).toBe(saldoCierre.descontado);
+    expect(resultado.saldo_clientes_por_devolver).toBe(saldoCierre.pendiente);
+    const [caja] = await query(
+      'SELECT monto_cierre, saldo_clientes_descontado, saldo_clientes_por_devolver FROM cajas WHERE id_caja = ?',
+      [idCaja]
+    );
+    expect(Number(caja.monto_cierre)).toBe(saldoCierre.montoCierre);
+    expect(Number(caja.saldo_clientes_descontado)).toBe(saldoCierre.descontado);
+    expect(Number(caja.saldo_clientes_por_devolver)).toBe(saldoCierre.pendiente);
   } finally {
     await restoreDatabase(snapshot, 'test-only');
   }
@@ -612,6 +637,7 @@ describe('el detalle de caja que se envía al administrador', () => {
       const { idCaja } = await abrirCaja();
       await crearClienteConSaldo(12000);
       const saldoTotalClientes = saldoInicialClientes + 12000;
+      const saldoCierre = separarSaldoClientes(saldoTotalClientes);
       await query(
         `UPDATE cajas SET venta = ?, servicio = ?, propina = ?, comision = ?, anticipo = ?, iva = ?
          WHERE id_caja = ?`,
@@ -638,7 +664,8 @@ describe('el detalle de caja que se envía al administrador', () => {
       expect(Number(solicitud.monto_apertura)).toBe(100000);
       expect(Number(solicitud.efectivo)).toBe(50000);
       expect(Number(solicitud.retiro_total)).toBe(0);
-      expect(Number(solicitud.saldo_clientes_descontado)).toBe(saldoTotalClientes);
+      expect(Number(solicitud.saldo_clientes_descontado)).toBe(saldoCierre.descontado);
+      expect(Number(solicitud.saldo_clientes_por_devolver)).toBe(saldoCierre.pendiente);
 
       // Prepago del turno, calculado al abrir el link como en el aviso.
       expect(typeof solicitud.prepago_cargado).toBe('number');
@@ -715,10 +742,11 @@ describe('el monto de cierre previsto cuadra con el detalle', () => {
       expect(Number(cajaRow.efectivo)).toBe(30000);
 
       const saldos = await CashRegisterRepository.saldosPendientesClientes();
+      const saldoCierre = CashRegisterRepository.calcularSaldosDevolucionClientes(cajaRow, saldos);
       const monto = CashRegisterRepository.calcularMontoCierre(cajaRow, saldos);
 
       // Si el monto volviera a restar el retiro, quedaría 20.000 abajo del cajón.
-      expect(monto).toBe(100000 + 30000 + 20000 + 5000 - 3000 - saldos);
+      expect(monto).toBe(100000 + 30000 + 20000 + 5000 - 3000 - saldoCierre.descontado);
 
       // El detalle del dashboard tiene que dar exactamente el mismo número.
       const detalle = buildCajaDetailsNumbers(
@@ -729,7 +757,8 @@ describe('el monto de cierre previsto cuadra con el detalle', () => {
           transferencia: Number(cajaRow.transferencia),
           devoluciones: Number(cajaRow.devolucion),
           anticipo: 0,
-          saldo_clientes_descontado: saldos
+          saldo_clientes_descontado: saldoCierre.descontado,
+          saldo_clientes_por_devolver: saldoCierre.pendiente
         },
         {},
         {
@@ -741,10 +770,10 @@ describe('el monto de cierre previsto cuadra con el detalle', () => {
       );
       expect(detalle.totalReal).toBe(monto);
       // Se descuentan los saldos prepago de la base además del retiro ya aplicado.
-      expect(detalle.efectivoNeto).toBe(127000 - saldos);
-      expect(detalle.egresosCaja).toBe(3000 + saldos);
+      expect(detalle.efectivoNeto).toBe(Math.max(0, 127000 - saldoCierre.descontado));
+      expect(detalle.egresosCaja).toBe(3000 + saldoCierre.descontado);
       // El resumen del turno sí sigue mostrando el retiro: es otra vista.
-      expect(detalle.totalEgresos).toBe(3000 + 20000 + saldos);
+      expect(detalle.totalEgresos).toBe(3000 + 20000 + saldoCierre.descontado);
 
       // El resumen (`?resumen=1`) también ve el retiro: antes `SELECT c.*` sin el
       // subselect de `retiros_caja` hacía que el mapeo inventara un 0.

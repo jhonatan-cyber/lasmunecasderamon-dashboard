@@ -17,6 +17,7 @@ interface SolicitudCierreCaja {
   estado: 'pendiente' | 'aprobada' | 'rechazada';
   monto_cierre_calculado: number;
   saldo_clientes_descontado: number;
+  saldo_clientes_por_devolver: number;
   solicitado_por: string;
   motivo: string | null;
   fecha_solicitud: string;
@@ -148,6 +149,18 @@ function ConfirmarCierreCajaContent() {
       }
 
       setResuelta(accion === 'confirmar' ? 'aprobada' : 'rechazada');
+      if (accion === 'confirmar' && result.data) {
+        setSolicitud(actual =>
+          actual
+            ? {
+                ...actual,
+                monto_cierre_calculado: Number(result.data.monto_cierre || 0),
+                saldo_clientes_descontado: Number(result.data.saldo_clientes_descontado || 0),
+                saldo_clientes_por_devolver: Number(result.data.saldo_clientes_por_devolver || 0)
+              }
+            : actual
+        );
+      }
       toast.success(
         accion === 'confirmar' ? 'Cierre de caja autorizado' : 'Cierre de caja rechazado'
       );
@@ -217,11 +230,13 @@ function ConfirmarCierreCajaContent() {
                 </h4>
                 <p className='text-sm text-gray-700 dark:text-gray-300'>
                   {resuelta === 'aprobada'
-                    ? `La caja quedó cerrada con un monto de cierre de ${formatCurrencyCLP(
+                    ? `La caja quedó cerrada con un monto de ${formatCurrencyCLP(
                         solicitud.monto_cierre_calculado || 0
-                      )}, descontando ${formatCurrencyCLP(
+                      )}, se cubrieron ${formatCurrencyCLP(
                         solicitud.saldo_clientes_descontado || 0
-                      )} de saldos de clientes.`
+                      )} de saldos con efectivo y falta devolver ${formatCurrencyCLP(
+                        solicitud.saldo_clientes_por_devolver || 0
+                      )}.`
                     : 'La caja sigue abierta. El cajero tendrá que volver a pedir el cierre.'}
                 </p>
                 {solicitud.resuelto_por && (
@@ -333,9 +348,16 @@ function ConfirmarCierreCajaContent() {
                       valor={`-${formatCurrencyCLP(solicitud.retiro_total || 0)}`}
                     />
                     <Fila
-                      etiqueta='Saldos de clientes a descontar:'
+                      etiqueta='Saldos cubiertos con efectivo:'
                       valor={`-${formatCurrencyCLP(solicitud.saldo_clientes_descontado || 0)}`}
                     />
+                    {solicitud.saldo_clientes_por_devolver > 0 && (
+                      <Fila
+                        etiqueta='Falta devolver a clientes:'
+                        valor={formatCurrencyCLP(solicitud.saldo_clientes_por_devolver)}
+                        destacar
+                      />
+                    )}
                   </div>
                   <p className='text-xs text-gray-600 dark:text-gray-400 mt-2'>
                     Efectivo es lo que queda en el cajón: los retiros y los anticipos de turno ya

@@ -77,6 +77,7 @@ const WRITE_METHODS = new Set(['POST', 'PUT', 'PATCH', 'DELETE']);
 const PUBLIC_API_POLICY: Record<string, string> = {
   // Ciclo de sesión (rate-limited en proxy.ts).
   '/api/auth/login': 'inicio de sesión',
+  '/api/auth/logout': 'cierre de sesión incluso cuando el token venció',
   '/api/auth/reset-password': 'recuperación de contraseña por RUN',
   '/api/auth/register-first-user': 'primer administrador; el servicio rechaza si ya hay usuarios',
   '/api/auth/check-users':
@@ -95,6 +96,9 @@ const PUBLIC_API_POLICY: Record<string, string> = {
   '/api/cuentas/solicitud-anulacion': 'confirmación de anulación por token de un solo uso',
   '/api/cuentas/procesar-anulacion': 'confirmación de anulación por token de un solo uso',
   '/api/cashregister/solicitud-cierre': 'confirmación de cierre de caja por token de un solo uso',
+  '/api/cashregister/cierre-pdf': 'PDF del cierre por el token impredecible de la solicitud',
+  '/api/cashregister/reporte-pdf':
+    'PDF de caja para Twilio mediante token firmado de corta duración',
   '/api/cashregister/procesar-cierre':
     'confirmación de cierre de caja por token de un solo uso (el administrador abre el link sin sesión)',
   '/api/anticipos/solicitud-detalles': 'confirmación de anticipo por token de un solo uso',

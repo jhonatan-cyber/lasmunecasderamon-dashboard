@@ -1,6 +1,16 @@
 'use client';
 
-import { Mail, Lock, Eye, EyeOff, Sun, Moon, Monitor } from 'lucide-react';
+import {
+  Mail,
+  Lock,
+  Eye,
+  EyeOff,
+  Sun,
+  Moon,
+  Monitor,
+  ArrowLeft,
+  MessageCircle
+} from 'lucide-react';
 import { useRef, useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { EMAIL_DOMAIN } from '@/lib/constants/email';
@@ -11,7 +21,12 @@ import type { LoginFormData } from '@/hooks/auth/useLoginForm';
 
 interface FormState {
   step: 'login' | 'codigo';
+  view: 'login' | 'recovery';
   loading: boolean;
+  recoveryLoading: boolean;
+  recoveryComplete: boolean;
+  recoveryRun: string;
+  setRecoveryRun: (value: string) => void;
   codigo: string;
   setCodigo: (val: string) => void;
   hasUsers: boolean | null;
@@ -30,6 +45,7 @@ interface InputRefs {
 
 interface FormHandlers {
   handleLogin: (e?: React.FormEvent) => void;
+  handlePasswordRecovery: (e: React.FormEvent) => void;
   handleVerifyCode: (e: React.FormEvent) => void;
   handleKeyDown: (
     e: React.KeyboardEvent<HTMLInputElement>,
@@ -47,6 +63,8 @@ interface ThemeState {
 interface Callbacks {
   onShowRegister: () => void;
   onSetStep: (step: 'login' | 'codigo') => void;
+  onSetView: (view: 'login' | 'recovery') => void;
+  onResetRecovery: () => void;
 }
 
 interface LoginFormProps {
@@ -71,13 +89,30 @@ export const LoginForm = ({
   theme: themeState,
   callbacks
 }: LoginFormProps) => {
-  const { step, loading, codigo, setCodigo, hasUsers } = form;
+  const {
+    step,
+    view,
+    loading,
+    recoveryLoading,
+    recoveryComplete,
+    recoveryRun,
+    setRecoveryRun,
+    codigo,
+    setCodigo,
+    hasUsers
+  } = form;
   const { loginData, setLoginData } = credentials;
   const { showPassword, setShowPassword } = password;
   const { emailInputRef, passwordInputRef, submitButtonRef } = inputRefs;
-  const { handleLogin, handleVerifyCode, handleKeyDown, handlePasswordKeyDown } = handlers;
+  const {
+    handleLogin,
+    handleVerifyCode,
+    handlePasswordRecovery,
+    handleKeyDown,
+    handlePasswordKeyDown
+  } = handlers;
   const { theme, toggleTheme, setThemeMode } = themeState;
-  const { onShowRegister, onSetStep } = callbacks;
+  const { onShowRegister, onSetStep, onSetView, onResetRecovery } = callbacks;
   const [themeChanging, setThemeChanging] = useState<string | null>(null);
   const passwordTapRef = useRef(0);
   const themeTapRef = useRef(0);
@@ -101,6 +136,73 @@ export const LoginForm = ({
     { value: 'dark', label: 'Dark', icon: Moon },
     { value: 'system', label: 'System', icon: Monitor }
   ];
+
+  if (view === 'recovery') {
+    return (
+      <div className='space-y-5'>
+        <button
+          type='button'
+          onClick={() => {
+            onResetRecovery();
+            onSetView('login');
+          }}
+          className='inline-flex items-center gap-2 text-sm text-gray-600 transition-colors hover:text-blue-600 dark:text-gray-300'
+        >
+          <ArrowLeft className='h-4 w-4' aria-hidden='true' />
+          Volver al inicio de sesión
+        </button>
+
+        {recoveryComplete ? (
+          <div className='space-y-3 text-center' role='status'>
+            <MessageCircle className='mx-auto h-10 w-10 text-emerald-600' aria-hidden='true' />
+            <h3 className='text-lg font-semibold text-gray-900 dark:text-white'>
+              Revisa tu WhatsApp
+            </h3>
+            <p className='text-sm leading-relaxed text-gray-600 dark:text-gray-300'>
+              Si los datos corresponden a una cuenta con teléfono registrado, enviaremos una clave
+              temporal por WhatsApp. Tendrás que cambiarla al iniciar sesión.
+            </p>
+            <Button
+              type='button'
+              variant='outline'
+              className='w-full rounded-full'
+              onClick={() => onSetView('login')}
+            >
+              Ir a iniciar sesión
+            </Button>
+          </div>
+        ) : (
+          <form className='space-y-4' onSubmit={handlePasswordRecovery}>
+            <div className='text-center'>
+              <h3 className='text-lg font-semibold text-gray-900 dark:text-white'>
+                Recuperar contraseña
+              </h3>
+              <p className='mt-2 text-sm text-gray-600 dark:text-gray-300'>
+                Ingresa tu RUN/CI. Enviaremos una clave temporal al WhatsApp registrado en tu
+                cuenta.
+              </p>
+            </div>
+            <div className='space-y-2'>
+              <Label htmlFor='recovery-run'>RUN / CI</Label>
+              <Input
+                id='recovery-run'
+                autoComplete='off'
+                value={recoveryRun}
+                onChange={event => setRecoveryRun(event.target.value)}
+                placeholder='Número de identificación'
+                minLength={4}
+                maxLength={24}
+                required
+              />
+            </div>
+            <Button type='submit' disabled={recoveryLoading} className='w-full rounded-full'>
+              {recoveryLoading ? 'Enviando...' : 'Enviar clave por WhatsApp'}
+            </Button>
+          </form>
+        )}
+      </div>
+    );
+  }
 
   if (step === 'login') {
     return (
@@ -182,6 +284,16 @@ export const LoginForm = ({
         >
           {loading ? 'Validando...' : 'Iniciar sesión'}
         </Button>
+
+        <div className='text-center'>
+          <button
+            type='button'
+            onClick={() => onSetView('recovery')}
+            className='text-sm font-medium text-blue-600 underline-offset-4 hover:underline dark:text-blue-400'
+          >
+            ¿Olvidaste tu contraseña?
+          </button>
+        </div>
 
         {hasUsers === false && (
           <Button

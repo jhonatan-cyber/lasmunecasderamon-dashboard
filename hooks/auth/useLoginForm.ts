@@ -21,6 +21,10 @@ export interface UserTemp {
 export const useLoginForm = () => {
   const router = useRouter();
   const [loading, setLoading] = useState(false);
+  const [view, setView] = useState<'login' | 'recovery'>('login');
+  const [recoveryLoading, setRecoveryLoading] = useState(false);
+  const [recoveryComplete, setRecoveryComplete] = useState(false);
+  const [recoveryRun, setRecoveryRun] = useState('');
   const [theme, setTheme] = useState('system');
   const [codigo, setCodigo] = useState('');
   const [loginData, setLoginData] = useState<LoginFormData>({ email: '', password: '' });
@@ -63,6 +67,42 @@ export const useLoginForm = () => {
 
     router.replace(target);
   }, [getRedirectTarget, router]);
+
+  const handlePasswordRecovery = async (event: React.FormEvent) => {
+    event.preventDefault();
+    if (recoveryLoading) return;
+    const run = recoveryRun.trim();
+    if (run.length < 4) {
+      toast.error('Ingresa un RUN/CI válido');
+      return;
+    }
+    setRecoveryLoading(true);
+    try {
+      const response = await fetch('/api/auth/reset-password', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+        cache: 'no-store',
+        body: JSON.stringify({ run })
+      });
+      const data = await response.json().catch(() => null);
+      if (!response.ok || data?.success !== true) {
+        toast.error(data?.message || 'No se pudo procesar la recuperación');
+        return;
+      }
+      setRecoveryComplete(true);
+    } catch {
+      toast.error('No se pudo conectar al servidor. Intenta nuevamente.');
+    } finally {
+      setRecoveryLoading(false);
+    }
+  };
+
+  const resetRecovery = () => {
+    setRecoveryRun('');
+    setRecoveryComplete(false);
+    setRecoveryLoading(false);
+  };
 
   const applyTheme = (mode: string) => {
     if (typeof window === 'undefined') return;
@@ -327,6 +367,14 @@ export const useLoginForm = () => {
 
   return {
     loading,
+    view,
+    setView,
+    recoveryLoading,
+    recoveryComplete,
+    recoveryRun,
+    setRecoveryRun,
+    handlePasswordRecovery,
+    resetRecovery,
     theme,
     toggleTheme,
     setThemeMode,

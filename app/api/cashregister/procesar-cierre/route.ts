@@ -31,6 +31,7 @@ export const POST = withPublicRoute(async (request: Request) => {
     message:
       resultado.estado === 'aprobada' ? 'Cierre de caja autorizado' : 'Cierre de caja rechazado',
     data: resultado.caja,
-    saldo_clientes_descontado: resultado.saldo_clientes_descontado
+    saldo_clientes_descontado: resultado.saldo_clientes_descontado,
+    saldo_clientes_por_devolver: resultado.saldo_clientes_por_devolver
   });
 });

@@ -20,6 +20,8 @@ export interface Caja {
   estado: number;
   /** Saldos de clientes que se descontaron del efectivo en este cierre. */
   saldo_clientes_descontado?: number;
+  /** Saldo prepago que no alcanzó a cubrirse con el efectivo de este cierre. */
+  saldo_clientes_por_devolver?: number;
   /** Hay una solicitud de cierre esperando autorización del administrador. */
   cierre_pendiente?: boolean;
   /** Cuándo se pidió el cierre (la caja sigue abierta hasta que la autoricen). */

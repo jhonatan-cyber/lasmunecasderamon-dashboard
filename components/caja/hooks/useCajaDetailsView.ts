@@ -1,6 +1,8 @@
 'use client';
 
 import { useState } from 'react';
+import { toast } from 'sonner';
+import { useAuth } from '@/contexts/AuthContext';
 import { useCajaDetails } from '@/components/caja/hooks/useCajaDetails';
 import { useReenviarAvisoCierre } from '@/hooks/caja/useReenviarAvisoCierre';
 import { useReabrirCierre } from '@/hooks/caja/useReabrirCierre';
@@ -28,6 +30,8 @@ export function useCajaDetailsView({ caja, open }: { caja: any; open: boolean })
   const [statsOpen, setStatsOpen] = useState(true);
   const { reenviarAvisoCierre, reenviandoId } = useReenviarAvisoCierre();
   const { reabrirCierre, reabriendoId } = useReabrirCierre();
+  const { user } = useAuth();
+  const [sendingWhatsApp, setSendingWhatsApp] = useState(false);
 
   if (!caja) {
     return null;
@@ -119,6 +123,25 @@ export function useCajaDetailsView({ caja, open }: { caja: any; open: boolean })
   };
   const reabriendoCierre = reabriendoId === caja.id_caja;
 
+  const handleSendWhatsApp = async () => {
+    setSendingWhatsApp(true);
+    try {
+      const response = await fetch(`/api/cashregister/${caja.id_caja}/whatsapp`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' }
+      });
+      const result = await response.json().catch(() => ({}));
+      if (!response.ok || !result.success) throw new Error(result.message || 'No se pudo enviar');
+      toast.success('Reporte PDF enviado al WhatsApp del administrador');
+    } catch (error) {
+      toast.error(
+        error instanceof Error ? error.message : 'Error al enviar el detalle por WhatsApp'
+      );
+    } finally {
+      setSendingWhatsApp(false);
+    }
+  };
+
   const tabCounts = {
     ventas: ventas.length,
     servicios: servicios.length,
@@ -168,6 +191,9 @@ export function useCajaDetailsView({ caja, open }: { caja: any; open: boolean })
     reenviandoAviso,
     handleReabrirCierre,
     reabriendoCierre,
+    canSendWhatsApp: user?.role?.toLowerCase() === 'administrador',
+    handleSendWhatsApp,
+    sendingWhatsApp,
     cajaId: caja.id_caja,
     numeros,
     estadoInfo,

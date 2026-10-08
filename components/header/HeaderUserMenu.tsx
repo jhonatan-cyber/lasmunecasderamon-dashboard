@@ -1,6 +1,7 @@
 'use client';
 
 import Image from 'next/image';
+import { useState } from 'react';
 
 import { User, ChevronDown, Settings } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -22,22 +23,29 @@ export function HeaderUserMenu() {
   const router = useRouter();
   const { user, loading: userLoading } = useCurrentUser();
   const { imageVersion } = useUserImage();
+  const [loggingOut, setLoggingOut] = useState(false);
 
   const isAdmin = user?.role?.toLowerCase() === 'administrador';
 
   async function handleLogout() {
+    if (loggingOut) return;
+    setLoggingOut(true);
     try {
-      const res = await fetch('/api/auth/logout', { method: 'POST' });
-      if (res.ok) {
-        showSuccessToast('Sesión cerrada exitosamente');
-        setTimeout(() => {
-          router.replace('/login');
-        }, 3000);
-      } else {
-        showErrorToast('No se pudo cerrar la sesión');
-      }
+      const res = await fetch('/api/auth/logout', {
+        method: 'POST',
+        credentials: 'include',
+        cache: 'no-store'
+      });
+      const data = await res.json().catch(() => null);
+      if (!res.ok || data?.success !== true) throw new Error('Logout failed');
+
+      localStorage.removeItem('userRole');
+      localStorage.removeItem('auth_role_hint');
+      showSuccessToast('Sesión cerrada exitosamente');
+      window.location.replace('/login');
     } catch {
       showErrorToast('Error de red al cerrar sesión');
+      setLoggingOut(false);
     }
   }
 
@@ -87,7 +95,7 @@ export function HeaderUserMenu() {
           </DropdownMenuItem>
         )}
         <DropdownMenuSeparator />
-        <DropdownMenuItem className='text-red-600' onClick={handleLogout}>
+        <DropdownMenuItem className='text-red-600' disabled={loggingOut} onClick={handleLogout}>
           Cerrar Sesión
         </DropdownMenuItem>
       </DropdownMenuContent>

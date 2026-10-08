@@ -14,6 +14,7 @@ export interface SolicitudCierrePendiente {
   solicitado_por: string | null;
   monto_cierre_calculado: number | string | null;
   saldo_clientes_descontado: number | string | null;
+  saldo_clientes_por_devolver?: number | string | null;
   fecha_mod: string;
 }
 

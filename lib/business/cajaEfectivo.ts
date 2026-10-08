@@ -52,7 +52,7 @@ export function efectivoBaseCaja(caja: CajaEfectivo | null): number {
 
 /** Efectivo real que hay en el cajón. */
 export function efectivoNetoCaja(caja: CajaEfectivo | null): number {
-  return efectivoBaseCaja(caja) - egresosPendientesCaja(caja);
+  return Math.max(0, efectivoBaseCaja(caja) - egresosPendientesCaja(caja));
 }
 
 /**
@@ -61,7 +61,18 @@ export function efectivoNetoCaja(caja: CajaEfectivo | null): number {
  * (`Total real`) y el que usa `calcularMontoCierre`.
  */
 export function totalCaja(caja: CajaEfectivo | null): number {
-  return efectivoNetoCaja(caja) + num(caja?.tarjeta) + num(caja?.transferencia);
+  return Math.max(0, efectivoNetoCaja(caja) + num(caja?.tarjeta) + num(caja?.transferencia));
+}
+
+/** Reparte el saldo prepago entre lo cubierto por el efectivo disponible y lo pendiente. */
+export function calcularDevolucionSaldoClientes(
+  caja: CajaEfectivo | null,
+  saldosClientes: number | null | undefined
+): { descontado: number; pendiente: number } {
+  const saldo = Math.max(0, num(saldosClientes));
+  const efectivoDisponible = Math.max(0, efectivoBaseCaja(caja) - devolucionesDe(caja));
+  const descontado = Math.min(efectivoDisponible, saldo);
+  return { descontado, pendiente: saldo - descontado };
 }
 
 /**
@@ -87,5 +98,6 @@ export function montoCierreCaja(
   caja: CajaEfectivo | null,
   saldosClientes: number | null | undefined
 ): number {
-  return totalCaja({ ...(caja ?? {}), saldo_clientes_descontado: saldosClientes ?? 0 });
+  const { descontado } = calcularDevolucionSaldoClientes(caja, saldosClientes);
+  return totalCaja({ ...(caja ?? {}), saldo_clientes_descontado: descontado });
 }

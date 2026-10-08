@@ -23,6 +23,7 @@ export interface ResultadoCierreCaja {
   token: string | null;
   montoCierre: number;
   saldoClientesDescontado: number;
+  saldoClientesPorDevolver: number;
 }
 
 /**
@@ -36,12 +37,23 @@ export async function avisarCierreAlAdministrador(args: {
   caja: Record<string, any>;
   cajeroNombre: string;
   saldoClientes: number;
+  saldoClientesPorDevolver?: number;
   montoCierre: number;
   motivo?: string | null;
   token: string;
   reenvio?: boolean;
 }): Promise<void> {
-  const { cajaId, caja, cajeroNombre, saldoClientes, montoCierre, motivo, token, reenvio } = args;
+  const {
+    cajaId,
+    caja,
+    cajeroNombre,
+    saldoClientes,
+    saldoClientesPorDevolver = 0,
+    montoCierre,
+    motivo,
+    token,
+    reenvio
+  } = args;
 
   await enviarMensajeSolicitudCierreCaja({
     cajaId,
@@ -66,6 +78,7 @@ export async function avisarCierreAlAdministrador(args: {
     prepagoConsumido: Number(caja.prepago_consumido || 0),
     prepagoPendienteClientes: Number(caja.prepago_pendiente_clientes || 0),
     saldoClientes,
+    saldoClientesPorDevolver,
     montoCierre,
     motivo,
     token,
@@ -122,7 +135,8 @@ export async function solicitarOProcesarCierreCaja(args: {
         caja: resuelto.caja,
         token: pendiente.token,
         montoCierre: Number(resuelto.caja?.monto_cierre || 0),
-        saldoClientesDescontado: resuelto.saldo_clientes_descontado
+        saldoClientesDescontado: resuelto.saldo_clientes_descontado,
+        saldoClientesPorDevolver: resuelto.saldo_clientes_por_devolver
       };
     }
 
@@ -139,7 +153,8 @@ export async function solicitarOProcesarCierreCaja(args: {
       caja,
       token: null,
       montoCierre: Number(caja?.monto_cierre || 0),
-      saldoClientesDescontado: Number(caja?.saldo_clientes_descontado || 0)
+      saldoClientesDescontado: Number(caja?.saldo_clientes_descontado || 0),
+      saldoClientesPorDevolver: Number(caja?.saldo_clientes_por_devolver || 0)
     };
   }
 
@@ -156,6 +171,7 @@ export async function solicitarOProcesarCierreCaja(args: {
       caja: solicitud.caja as Record<string, any>,
       cajeroNombre: nombre,
       saldoClientes: solicitud.saldo_clientes_descontado,
+      saldoClientesPorDevolver: solicitud.saldo_clientes_por_devolver,
       montoCierre: solicitud.monto_cierre_calculado,
       motivo,
       token: solicitud.token
@@ -174,7 +190,8 @@ export async function solicitarOProcesarCierreCaja(args: {
       caja: solicitud.caja,
       token: solicitud.token,
       montoCierre: solicitud.monto_cierre_calculado,
-      saldoClientesDescontado: solicitud.saldo_clientes_descontado
+      saldoClientesDescontado: solicitud.saldo_clientes_descontado,
+      saldoClientesPorDevolver: solicitud.saldo_clientes_por_devolver
     };
   }
 
@@ -190,7 +207,8 @@ export async function solicitarOProcesarCierreCaja(args: {
     caja: solicitud.caja,
     token: solicitud.token,
     montoCierre: solicitud.monto_cierre_calculado,
-    saldoClientesDescontado: solicitud.saldo_clientes_descontado
+    saldoClientesDescontado: solicitud.saldo_clientes_descontado,
+    saldoClientesPorDevolver: solicitud.saldo_clientes_por_devolver
   };
 }
 
@@ -269,6 +287,7 @@ export async function reenviarAvisoCierreCaja(args: {
       caja: caja as Record<string, any>,
       cajeroNombre: pendiente.solicitado_por || solicitante,
       saldoClientes: Number(pendiente.saldo_clientes_descontado || 0),
+      saldoClientesPorDevolver: Number(pendiente.saldo_clientes_por_devolver || 0),
       montoCierre: Number(pendiente.monto_cierre_calculado || 0),
       motivo: pendiente.motivo,
       token: pendiente.token,
@@ -317,6 +336,7 @@ export const respuestaCierreCaja = (resultado: ResultadoCierreCaja) =>
       caja: resultado.caja,
       token: resultado.token,
       monto_cierre_calculado: resultado.montoCierre,
-      saldo_clientes_descontado: resultado.saldoClientesDescontado
+      saldo_clientes_descontado: resultado.saldoClientesDescontado,
+      saldo_clientes_por_devolver: resultado.saldoClientesPorDevolver
     }
   }) as const;

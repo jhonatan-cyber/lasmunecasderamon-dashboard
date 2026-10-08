@@ -26,6 +26,7 @@ export interface CierreCajaResultado {
   mensaje: string;
   /** Saldos de clientes que se descuentan del efectivo al cerrar. */
   saldoClientesDescontado: number;
+  saldoClientesPorDevolver: number;
   montoCierre: number;
 }
 
@@ -268,6 +269,7 @@ export const useCashRegister = (): UseCashRegisterReturn => {
           caja: payload.caja ?? null,
           mensaje: result.message || '',
           saldoClientesDescontado: Number(payload.saldo_clientes_descontado || 0),
+          saldoClientesPorDevolver: Number(payload.saldo_clientes_por_devolver || 0),
           montoCierre: Number(payload.monto_cierre_calculado ?? payload.caja?.monto_cierre ?? 0)
         };
       } catch (error) {

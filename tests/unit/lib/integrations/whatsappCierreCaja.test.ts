@@ -40,6 +40,7 @@ const DATOS = {
   prepagoConsumido: 18000,
   prepagoPendienteClientes: 12000,
   saldoClientes: 12000,
+  saldoClientesPorDevolver: 0,
   montoCierre: 160000
 };
 
@@ -69,7 +70,10 @@ describe('construirMensajeSolicitudCierreCaja', () => {
     expect(mensaje).toContain(
       `• Retiros (ya descontados del efectivo): -${formatCurrencyCLP(7000)}`
     );
-    expect(mensaje).toContain(`• Saldos de clientes a descontar: -${formatCurrencyCLP(12000)}`);
+    expect(mensaje).toContain(
+      `• Saldos de clientes cubiertos con efectivo: -${formatCurrencyCLP(12000)}`
+    );
+    expect(mensaje).toContain(`• Saldo pendiente de devolución: ${formatCurrencyCLP(0)}`);
     // Aclara que el efectivo ya viene neto, para que nadie los descueste dos veces.
     expect(mensaje).toContain('Efectivo es lo que queda en el cajón');
 
@@ -127,5 +131,17 @@ describe('construirMensajeSolicitudCierreCaja', () => {
     expect(mensaje).toContain(`• Ventas: ${formatCurrencyCLP(0)}`);
     expect(mensaje).toContain(`• Propinas: ${formatCurrencyCLP(0)}`);
     expect(mensaje).toContain(`• Pendiente de clientes: ${formatCurrencyCLP(0)}`);
+  });
+
+  it('muestra cuánto falta devolver si el saldo supera el efectivo del cajón', () => {
+    const mensaje = construirMensajeSolicitudCierreCaja({
+      ...DATOS,
+      saldoClientes: 147000,
+      saldoClientesPorDevolver: 53000,
+      montoCierre: 25000
+    });
+
+    expect(mensaje).toContain(`• Saldo pendiente de devolución: ${formatCurrencyCLP(53000)}`);
+    expect(mensaje).toContain(`*Monto de cierre previsto:* ${formatCurrencyCLP(25000)}`);
   });
 });

@@ -28,6 +28,8 @@ export interface CajaDetailsNumbers {
   prepagoPendienteClientes: number;
   /** Saldos de clientes que se descontaron del efectivo en este cierre. */
   saldoClientesDescontado: number;
+  /** Saldo que quedó por devolver al agotarse el efectivo del cierre. */
+  saldoClientesPorDevolver: number;
   /** Monto con que quedó cerrada la caja (0 mientras sigue abierta). */
   montoCierre: number;
   totalEgresos: number;
@@ -82,6 +84,7 @@ export function buildCajaDetailsNumbers(
   // **Sin doble descuento**: el cálculo del cajón vive en `lib/business/cajaEfectivo` y
   // lo comparten la tarjeta, el detalle, el diálogo de retiro y el monto de cierre.
   const saldoClientesDescontado = saldosClientesDe(caja);
+  const saldoClientesPorDevolver = num(caja?.saldo_clientes_por_devolver);
   const montoCierre = num(caja?.monto_cierre);
   const egresosCajaValor = egresosPendientesCaja(caja);
   // «Egresos del turno» es otra vista: qué salió del negocio en el día (devoluciones,
@@ -107,6 +110,7 @@ export function buildCajaDetailsNumbers(
     prepagoConsumido,
     prepagoPendienteClientes,
     saldoClientesDescontado,
+    saldoClientesPorDevolver,
     montoCierre,
     totalEgresos,
     egresosCaja: egresosCajaValor,

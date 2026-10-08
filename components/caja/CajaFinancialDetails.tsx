@@ -14,8 +14,11 @@ interface CajaFinancialDetailsProps {
   prepagoPendienteClientes: number;
   /** Saldos de clientes descontados del efectivo al cerrar la caja. */
   saldoClientesDescontado?: number;
+  /** Saldo prepago que quedó pendiente de devolución al agotarse el efectivo. */
+  saldoClientesPorDevolver?: number;
   /** Monto con que quedó cerrada la caja (0 si sigue abierta). */
   montoCierre?: number;
+  mostrarMontoCierre?: boolean;
 }
 
 function FinancialSkeleton() {
@@ -56,7 +59,9 @@ export function CajaFinancialDetails({
   retirosTotal,
   prepagoPendienteClientes,
   saldoClientesDescontado = 0,
-  montoCierre = 0
+  saldoClientesPorDevolver = 0,
+  montoCierre = 0,
+  mostrarMontoCierre = montoCierre > 0
 }: CajaFinancialDetailsProps) {
   return (
     <div className='bg-gray-50 dark:bg-gray-800/50 rounded-2xl border border-gray-200 dark:border-gray-700 overflow-hidden'>
@@ -106,6 +111,13 @@ export function CajaFinancialDetails({
                     valueClassName='font-bold text-rose-600'
                   />
                 )}
+                {saldoClientesPorDevolver > 0 && (
+                  <Row
+                    label='Falta devolver a clientes'
+                    value={formatCurrencyNoDecimals(saldoClientesPorDevolver)}
+                    valueClassName='font-bold text-amber-600 dark:text-amber-400'
+                  />
+                )}
                 <p className='text-[11px] font-semibold text-slate-500 dark:text-slate-400 mt-3 mb-1'>
                   Ya salieron del efectivo (no se descuentan dos veces):
                 </p>
@@ -137,9 +149,17 @@ export function CajaFinancialDetails({
                   </span>
                 </div>
               )}
+              {saldoClientesPorDevolver > 0 && (
+                <div className='flex justify-between gap-4 mt-1'>
+                  <span>Saldo que falta devolver</span>
+                  <span className='font-bold text-amber-600 dark:text-amber-400'>
+                    {formatCurrencyNoDecimals(saldoClientesPorDevolver)}
+                  </span>
+                </div>
+              )}
             </div>
 
-            {montoCierre > 0 && (
+            {mostrarMontoCierre && (
               <div className='flex justify-between items-center rounded-xl bg-emerald-50 px-4 py-3 mt-4 border border-emerald-200 dark:border-emerald-800 dark:bg-emerald-950/30'>
                 <span className='text-sm font-bold text-emerald-900 dark:text-emerald-300'>
                   Monto de cierre

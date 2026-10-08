@@ -198,11 +198,13 @@ describe('proxy — token admin', () => {
   it('verifica el Bearer de la app aunque el navegador tenga otra sesión', async () => {
     mockJwtVerify.mockResolvedValue({ payload: ADMIN_PAYLOAD });
     const proxy = await loadProxy();
-    const res = await proxy(createRequest({
-      pathname: '/api/users',
-      headers: { authorization: 'Bearer app-token' },
-      cookies: { token: 'browser-token' }
-    }));
+    const res = await proxy(
+      createRequest({
+        pathname: '/api/users',
+        headers: { authorization: 'Bearer app-token' },
+        cookies: { token: 'browser-token' }
+      })
+    );
     expect(res.status).toBe(200);
     expect(mockJwtVerify).toHaveBeenCalledWith('app-token', expect.anything());
     expect(mockJwtVerify).not.toHaveBeenCalledWith('browser-token', expect.anything());
@@ -211,11 +213,13 @@ describe('proxy — token admin', () => {
   it('no sustituye un Bearer inválido por el refresh de otra sesión', async () => {
     mockJwtVerify.mockRejectedValue(new Error('Token inválido'));
     const proxy = await loadProxy();
-    const res = await proxy(createRequest({
-      pathname: '/api/users',
-      headers: { authorization: 'Bearer invalid-app-token' },
-      cookies: { token: 'browser-token', refresh_token: 'browser-refresh' }
-    }));
+    const res = await proxy(
+      createRequest({
+        pathname: '/api/users',
+        headers: { authorization: 'Bearer invalid-app-token' },
+        cookies: { token: 'browser-token', refresh_token: 'browser-refresh' }
+      })
+    );
     expect(res.status).toBe(401);
     expect(mockJwtVerify).toHaveBeenCalledTimes(1);
     expect(mockSignJWT).not.toHaveBeenCalled();
@@ -344,6 +348,21 @@ describe('proxy — CSRF', () => {
         pathname: '/api/sales',
         method: 'POST',
         headers: { origin: 'http://localhost:3000' },
+        cookies: { token: 'good' }
+      })
+    );
+    expect(res.status).toBe(200);
+  });
+
+  it('permite POST desde la IP configurada del dashboard local', async () => {
+    vi.stubEnv('NEXT_PUBLIC_BASE_URL', 'http://192.168.0.11:3000');
+    mockJwtVerify.mockResolvedValue({ payload: ADMIN_PAYLOAD });
+    const proxy = await loadProxy();
+    const res = await proxy(
+      createRequest({
+        pathname: '/api/cashregister',
+        method: 'POST',
+        headers: { origin: 'http://192.168.0.11:3000' },
         cookies: { token: 'good' }
       })
     );

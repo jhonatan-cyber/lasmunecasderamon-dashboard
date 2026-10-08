@@ -7,7 +7,14 @@ import { getNowInBusinessTimezone } from '@/lib/business/timezoneService';
 import { BaseRepository } from '@/lib/database/base-repository';
 import { logger } from '@/lib/utils/logger';
 import { ConflictError, NotFoundError, BusinessError, DatabaseError } from '@/lib/errors/errors';
-import { efectivoBaseCaja, montoCierreCaja, devolucionesDe } from '@/lib/business/cajaEfectivo';
+import {
+  calcularDevolucionSaldoClientes,
+  efectivoBaseCaja,
+  montoCierreCaja,
+  devolucionesDe
+} from '@/lib/business/cajaEfectivo';
+import { sendNotificationToAll } from '@/lib/api/sseService';
+import { enviarPdfCierreCajaWhatsApp } from '@/modules/comunicaciones';
 
 /** Solicitud de cierre de caja esperando (o con) la autorización del admin. */
 export interface SolicitudCierreCaja {
@@ -22,6 +29,7 @@ export interface SolicitudCierreCaja {
   estado: 'pendiente' | 'aprobada' | 'rechazada' | 'expirada';
   monto_cierre_calculado: number;
   saldo_clientes_descontado: number;
+  saldo_clientes_por_devolver: number;
   solicitado_por: string;
   motivo: string | null;
   fecha_solicitud: string;
@@ -158,6 +166,7 @@ export class CashRegisterRepository {
       cierre_solicitado_por: row.cierre_solicitado_por ?? null,
       cierre_ultimo_aviso_en: row.cierre_ultimo_aviso_en ?? null,
       saldo_clientes_descontado: Number(row.saldo_clientes_descontado ?? 0),
+      saldo_clientes_por_devolver: Number(row.saldo_clientes_por_devolver ?? 0),
       cierre_pendiente: row.cierre_pendiente === true,
       cierre_estancado: row.cierre_estancado === true
     });
@@ -399,6 +408,13 @@ export class CashRegisterRepository {
     return montoCierreCaja(caja, saldosClientes);
   }
 
+  static calcularSaldosDevolucionClientes(
+    caja: CajaType | Record<string, any>,
+    saldosClientes: number
+  ) {
+    return calcularDevolucionSaldoClientes(caja, saldosClientes);
+  }
+
   /** Saldos que los clientes todavía tienen cargados (`clientes.saldo > 0`). */
   static async saldosPendientesClientes(trx?: TransactionQuery | typeof query): Promise<number> {
     const qFunc = trx || query;
@@ -418,7 +434,8 @@ export class CashRegisterRepository {
     try {
       const rows = await query<SolicitudCierreCaja[]>(
         `SELECT s.id, s.caja_id, s.token, s.estado, s.monto_cierre_calculado,
-                s.saldo_clientes_descontado, s.solicitado_por, s.motivo, s.fecha_solicitud,
+                s.saldo_clientes_descontado, s.saldo_clientes_por_devolver,
+                s.solicitado_por, s.motivo, s.fecha_solicitud,
                 s.ultimo_aviso_en
          FROM solicitudes_cierre_caja s
          WHERE s.caja_id = ? AND s.estado = 'pendiente'
@@ -499,7 +516,8 @@ export class CashRegisterRepository {
     try {
       const rows = await query<any[]>(
         `SELECT s.id, s.caja_id, s.token, s.estado, s.monto_cierre_calculado,
-                s.saldo_clientes_descontado, s.solicitado_por, s.motivo,
+                s.saldo_clientes_descontado, s.saldo_clientes_por_devolver,
+                s.solicitado_por, s.motivo,
                 s.fecha_solicitud, s.fecha_resolucion, s.resuelto_por,
                 s.avisos_enviados, s.ultimo_aviso_en,
                 GREATEST(0, FLOOR(EXTRACT(EPOCH FROM (
@@ -558,6 +576,7 @@ export class CashRegisterRepository {
     caja: CajaType;
     monto_cierre_calculado: number;
     saldo_clientes_descontado: number;
+    saldo_clientes_por_devolver: number;
     /** `true` cuando reemplazó una solicitud que quedó sin respuesta. */
     reemplazo: boolean;
   }> {
@@ -567,6 +586,7 @@ export class CashRegisterRepository {
       if (Number(caja.estado) !== 1) throw new ConflictError('La caja ya está cerrada');
 
       const saldos = await this.saldosPendientesClientes();
+      const devolucionClientes = this.calcularSaldosDevolucionClientes(caja, saldos);
       const montoCierre = this.calcularMontoCierre(caja, saldos);
       const id = generateUUID();
       const token = generateUUID();
@@ -614,7 +634,8 @@ export class CashRegisterRepository {
           token,
           estado: 'pendiente',
           monto_cierre_calculado: montoCierre,
-          saldo_clientes_descontado: saldos,
+          saldo_clientes_descontado: devolucionClientes.descontado,
+          saldo_clientes_por_devolver: devolucionClientes.pendiente,
           solicitado_por: solicitante.nombre,
           usuario_id_solicita: solicitante.usuarioId ?? null,
           motivo: solicitante.motivo?.trim() || 'Cierre de turno',
@@ -631,7 +652,8 @@ export class CashRegisterRepository {
         token,
         caja,
         monto_cierre_calculado: montoCierre,
-        saldo_clientes_descontado: saldos,
+        saldo_clientes_descontado: devolucionClientes.descontado,
+        saldo_clientes_por_devolver: devolucionClientes.pendiente,
         reemplazo
       };
     } catch (err) {
@@ -661,6 +683,7 @@ export class CashRegisterRepository {
       motivo: string | null;
       monto_cierre_calculado: number;
       saldo_clientes_descontado: number;
+      saldo_clientes_por_devolver: number;
       ultimo_aviso_en: string;
     }>
   > {
@@ -668,7 +691,8 @@ export class CashRegisterRepository {
       const ahora = getNowInBusinessTimezone();
       return await query(
         `SELECT s.caja_id, s.token, s.solicitado_por, s.motivo,
-                s.monto_cierre_calculado, s.saldo_clientes_descontado, s.ultimo_aviso_en
+                s.monto_cierre_calculado, s.saldo_clientes_descontado,
+                s.saldo_clientes_por_devolver, s.ultimo_aviso_en
          FROM solicitudes_cierre_caja s
          INNER JOIN cajas c ON c.id_caja = s.caja_id
          WHERE s.estado = 'pendiente'
@@ -704,10 +728,13 @@ export class CashRegisterRepository {
     estado: 'aprobada' | 'rechazada';
     caja: CajaType | null;
     saldo_clientes_descontado: number;
+    saldo_clientes_por_devolver: number;
   }> {
     let cajaId: string;
     let estado: 'aprobada' | 'rechazada';
     let saldos = 0;
+    let saldoPendiente = 0;
+    let sesionesCerradas = false;
 
     try {
       const resultado = await enUnaUnidad(unidad =>
@@ -734,7 +761,12 @@ export class CashRegisterRepository {
             await trx('UPDATE cajas SET cierre_solicitado_en = NULL WHERE id_caja = ?', [
               solicitud.caja_id
             ]);
-            return { cajaId: solicitud.caja_id as string, estado: 'rechazada' as const, saldos: 0 };
+            return {
+              cajaId: solicitud.caja_id as string,
+              estado: 'rechazada' as const,
+              saldos: 0,
+              saldoPendiente: 0
+            };
           }
 
           const caja = await BaseRepository.findOne<any>(
@@ -747,25 +779,32 @@ export class CashRegisterRepository {
           if (Number(caja.estado) !== 1) throw new ConflictError('La caja ya estaba cerrada');
 
           const saldosActuales = await this.saldosPendientesClientes(trx);
+          const devolucionClientes = this.calcularSaldosDevolucionClientes(
+            caja as CajaType,
+            saldosActuales
+          );
 
           // El que cierra es el administrador que autoriza. Por el link público no
           // hay sesión, así que puede quedar sin usuario: quién autorizó queda igual
           // registrado en `resuelto_por` de la solicitud.
           await this.close(solicitud.caja_id, resuelto.usuarioId ?? null, {
             contexto,
-            saldoClientesDescontado: saldosActuales
+            saldoClientesDescontado: devolucionClientes.descontado,
+            saldoClientesPorDevolver: devolucionClientes.pendiente
           });
+          sesionesCerradas = true;
 
           await trx(
             `UPDATE solicitudes_cierre_caja
            SET estado = 'aprobada', fecha_resolucion = ?, resuelto_por = ?,
-               saldo_clientes_descontado = ?, monto_cierre_calculado = ?
+               saldo_clientes_descontado = ?, saldo_clientes_por_devolver = ?, monto_cierre_calculado = ?
            WHERE id = ?`,
             [
               now,
               resuelto.nombre,
-              saldosActuales,
-              this.calcularMontoCierre(caja as CajaType, saldosActuales),
+              devolucionClientes.descontado,
+              devolucionClientes.pendiente,
+              this.calcularMontoCierre(caja as CajaType, devolucionClientes.descontado),
               solicitud.id
             ]
           );
@@ -773,7 +812,8 @@ export class CashRegisterRepository {
           return {
             cajaId: solicitud.caja_id as string,
             estado: 'aprobada' as const,
-            saldos: saldosActuales
+            saldos: devolucionClientes.descontado,
+            saldoPendiente: devolucionClientes.pendiente
           };
         })
       );
@@ -781,6 +821,7 @@ export class CashRegisterRepository {
       cajaId = resultado.cajaId;
       estado = resultado.estado;
       saldos = resultado.saldos;
+      saldoPendiente = resultado.saldoPendiente;
     } catch (err) {
       logger.error('[CashRegisterRepository] Error en procesarSolicitudCierre:', { token, err });
       if (err instanceof NotFoundError || err instanceof ConflictError) throw err;
@@ -789,13 +830,35 @@ export class CashRegisterRepository {
 
     // La lectura va **después** del commit: leer la caja dentro de la transacción
     // devolvería la fila vieja, de una conexión distinta.
-    return { estado, caja: await this.getById(cajaId), saldo_clientes_descontado: saldos };
+    if (estado === 'aprobada' && sesionesCerradas) {
+      sendNotificationToAll('cash_register_closed', { cajaId });
+      try {
+        await enviarPdfCierreCajaWhatsApp({ cajaId, token });
+      } catch (err) {
+        // El cierre y el fin de sesiones ya se confirmaron. Una caída de Twilio o
+        // del enlace PDF se registra, pero no revierte ni presenta el cierre como fallido.
+        logger.error('[CashRegisterRepository] No se pudo enviar el PDF del cierre por WhatsApp', {
+          cajaId,
+          error: err instanceof Error ? err.message : 'Error desconocido'
+        });
+      }
+    }
+    return {
+      estado,
+      caja: await this.getById(cajaId),
+      saldo_clientes_descontado: saldos,
+      saldo_clientes_por_devolver: saldoPendiente
+    };
   }
 
   static async close(
     id: string,
     usuario_id_cierre: string | null,
-    options: { contexto?: ContextoOperacion; saldoClientesDescontado?: number } = {}
+    options: {
+      contexto?: ContextoOperacion;
+      saldoClientesDescontado?: number;
+      saldoClientesPorDevolver?: number;
+    } = {}
   ): Promise<CajaType | null> {
     if (!options.contexto) {
       await enUnaUnidad(unidad =>
@@ -812,10 +875,18 @@ export class CashRegisterRepository {
       // se cobraron en un turno anterior. Se descuentan del monto de cierre y se
       // guardan, para que el detalle de la caja muestre el descuento en vez de un
       // faltante inexplicable.
-      const saldoClientes =
-        options.saldoClientesDescontado ?? (await this.saldosPendientesClientes(qFunc));
+      const saldosClientesTotal = await this.saldosPendientesClientes(qFunc);
+      const devolucionClientes = {
+        ...this.calcularSaldosDevolucionClientes(caja as CajaType, saldosClientesTotal),
+        ...(options.saldoClientesDescontado !== undefined
+          ? { descontado: options.saldoClientesDescontado }
+          : {}),
+        ...(options.saldoClientesPorDevolver !== undefined
+          ? { pendiente: options.saldoClientesPorDevolver }
+          : {})
+      };
 
-      const montoCierre = this.calcularMontoCierre(caja as CajaType, saldoClientes);
+      const montoCierre = this.calcularMontoCierre(caja as CajaType, devolucionClientes.descontado);
 
       await cerrarSesionesPorCierreCaja(options.contexto);
 
@@ -824,7 +895,8 @@ export class CashRegisterRepository {
         usuario_id_cierre,
         fecha_cierre: now,
         monto_cierre: montoCierre,
-        saldo_clientes_descontado: saldoClientes,
+        saldo_clientes_descontado: devolucionClientes.descontado,
+        saldo_clientes_por_devolver: devolucionClientes.pendiente,
         cierre_solicitado_en: null,
         estado: 0
       });

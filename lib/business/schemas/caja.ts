@@ -49,6 +49,8 @@ export const CajaSchema = z.object({
   cierre_solicitado_en: z.string().or(z.date()).nullable().optional(),
   /** Saldos de clientes que se descontaron del efectivo en este cierre. */
   saldo_clientes_descontado: z.number().optional().default(0),
+  /** Saldo prepago pendiente de devolución tras agotar el efectivo del cierre. */
+  saldo_clientes_por_devolver: z.number().optional().default(0),
   /** Hay una solicitud de cierre esperando autorización. */
   cierre_pendiente: z.boolean().optional().default(false),
   /** Quién pidió el cierre, si hay una solicitud pendiente. */

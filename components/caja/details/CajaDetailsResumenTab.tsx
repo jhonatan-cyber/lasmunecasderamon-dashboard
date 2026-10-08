@@ -64,7 +64,9 @@ export const CajaDetailsResumenTab = memo(function CajaDetailsResumenTab({
         retirosTotal={retirosSum}
         prepagoPendienteClientes={numeros.prepagoPendienteClientes}
         saldoClientesDescontado={numeros.saldoClientesDescontado}
+        saldoClientesPorDevolver={numeros.saldoClientesPorDevolver}
         montoCierre={numeros.montoCierre}
+        mostrarMontoCierre={Number(caja?.estado) === 0}
       />
 
       <div className='bg-gray-50 dark:bg-gray-800/50 rounded-2xl border border-gray-200 dark:border-gray-700 overflow-hidden'>

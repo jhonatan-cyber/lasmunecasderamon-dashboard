@@ -22,7 +22,7 @@ import { useCurrentUser } from '@/hooks/auth/useCurrentUser';
 import type { CierreCajaResultado } from '@/hooks/caja/useCashRegister';
 import { formatCurrencyCLP } from '@/lib/utils/formatters';
 import { ClientesSaldoList } from '@/components/caja/ClientesSaldoList';
-import { montoCierreCaja } from '@/lib/business/cajaEfectivo';
+import { calcularDevolucionSaldoClientes, montoCierreCaja } from '@/lib/business/cajaEfectivo';
 import { Loader2, Users, Clock } from 'lucide-react';
 
 const getDiaSemana = (fecha: string): string => {
@@ -122,6 +122,7 @@ export const CerrarCajaDialog = ({
   // Misma resta que tarjeta, detalle y monto de cierre del repositorio: la fórmula
   // vive en `lib/business/cajaEfectivo`, acá solo se aportan los saldos leídos de clientes.
   const montoCierrePrevisto = montoCierreCaja(caja, saldoClientesPendiente);
+  const devolucionClientesPrevista = calcularDevolucionSaldoClientes(caja, saldoClientesPendiente);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -199,11 +200,19 @@ export const CerrarCajaDialog = ({
                 </p>
                 <div className='rounded-xl bg-white/70 dark:bg-slate-900/40 p-3 space-y-1 text-sm'>
                   <div className='flex justify-between'>
-                    <span className='text-slate-500'>Saldos de clientes a descontar:</span>
+                    <span className='text-slate-500'>Saldos cubiertos con efectivo:</span>
                     <span className='font-bold'>
                       {formatCurrencyCLP(pendiente.saldoClientesDescontado)}
                     </span>
                   </div>
+                  {pendiente.saldoClientesPorDevolver > 0 && (
+                    <div className='flex justify-between text-amber-700 dark:text-amber-300'>
+                      <span>Falta devolver a clientes:</span>
+                      <span className='font-bold'>
+                        {formatCurrencyCLP(pendiente.saldoClientesPorDevolver)}
+                      </span>
+                    </div>
+                  )}
                   <div className='flex justify-between'>
                     <span className='text-slate-500'>Monto de cierre previsto:</span>
                     <span className='font-bold'>{formatCurrencyCLP(pendiente.montoCierre)}</span>
@@ -270,11 +279,19 @@ export const CerrarCajaDialog = ({
                     </div>
                   )}
                   <div>
-                    <span className='text-gray-500'>Saldos clientes:</span>
+                    <span className='text-gray-500'>Saldos cubiertos con efectivo:</span>
                     <span className='ml-2 mr-2 font-medium text-red-600'>
-                      -{formatCurrencyCLP(saldoClientesPendiente)}
+                      -{formatCurrencyCLP(devolucionClientesPrevista.descontado)}
                     </span>
                   </div>
+                  {devolucionClientesPrevista.pendiente > 0 && (
+                    <div className='flex justify-between col-span-2'>
+                      <span className='text-amber-700'>Falta devolver a clientes:</span>
+                      <span className='ml-2 mr-2 font-bold text-amber-700'>
+                        {formatCurrencyCLP(devolucionClientesPrevista.pendiente)}
+                      </span>
+                    </div>
+                  )}
                   <div className='col-span-2 border-t pt-2 mt-1'>
                     <span className='text-gray-900 font-bold uppercase text-[10px] tracking-wider'>
                       Total a Cerrar:

@@ -45,6 +45,18 @@ describe('buildCajaDetailsNumbers · efectivo neto', () => {
     expect(resultado.efectivoNeto).toBe(10000); // 585.000 − 575.000
   });
 
+  it('expone el saldo de clientes que quedó pendiente de devolución en el cierre', () => {
+    const resultado = numeros({
+      ...cajaBase,
+      saldo_clientes_descontado: 560000,
+      saldo_clientes_por_devolver: 90000
+    });
+
+    expect(resultado.saldoClientesDescontado).toBe(560000);
+    expect(resultado.saldoClientesPorDevolver).toBe(90000);
+    expect(resultado.efectivoNeto).toBe(0);
+  });
+
   it('sin retiros ni anticipos el efectivo neto es el cajón menos las devoluciones', () => {
     const resultado = numeros({ ...cajaBase, anticipo: 0 }, []);
 

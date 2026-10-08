@@ -2,6 +2,8 @@ import 'server-only';
 export {
   enviarWhatsApp,
   enviarPruebaWhatsApp,
+  enviarPdfCierreCajaWhatsApp,
+  enviarReporteCajaWhatsApp,
   enviarMensajeSolicitudAnulacion,
   construirMensajeSolicitudCierreCaja,
   enviarMensajeSolicitudCierreCaja,

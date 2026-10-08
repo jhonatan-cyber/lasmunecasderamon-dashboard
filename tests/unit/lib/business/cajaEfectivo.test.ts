@@ -5,6 +5,7 @@ import {
   efectivoBaseCaja,
   efectivoNetoCaja,
   egresosPendientesCaja,
+  calcularDevolucionSaldoClientes,
   montoCierreCaja,
   saldosClientesDe,
   totalCaja
@@ -88,5 +89,19 @@ describe('cajaEfectivo · montoCierreCaja', () => {
     expect(montoCierreCaja(conSaldos, 0)).toBe(
       totalCaja({ ...cajaBase, saldo_clientes_descontado: 0 })
     );
+  });
+
+  it('solo descuenta hasta el efectivo disponible y deja el resto pendiente de devolver', () => {
+    const caja = { monto_apertura: 100, efectivo: 20, devoluciones: 10, tarjeta: 60 };
+
+    expect(calcularDevolucionSaldoClientes(caja, 200)).toEqual({
+      descontado: 110,
+      pendiente: 90
+    });
+    expect(montoCierreCaja(caja, 200)).toBe(60);
+  });
+
+  it('nunca calcula un cierre negativo aunque las devoluciones agoten el cajón', () => {
+    expect(montoCierreCaja({ monto_apertura: 100, efectivo: 20, devoluciones: 500 }, 100)).toBe(0);
   });
 });

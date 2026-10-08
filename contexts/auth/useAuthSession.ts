@@ -196,6 +196,10 @@ export function useAuthSession({
       }
       return;
     }
+    if (payload.type === 'cash_register_closed' && rolUsuario !== 'administrador') {
+      doLogout('La caja fue cerrada. Ingresa nuevamente cuando se abra un nuevo turno.');
+      return;
+    }
     // El servidor solo emite este evento a barman y administradores.
     if (payload.type === 'bar_shot_alert') {
       toast.warning('Botella por agotarse', {

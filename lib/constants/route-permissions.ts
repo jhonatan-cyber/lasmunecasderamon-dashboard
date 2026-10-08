@@ -53,8 +53,13 @@ export const PUBLIC_PATHS: string[] = [
   // creacion de la solicitud (POST /api/cashregister/cierre) NO es publica.
   ROUTES.CONFIRMAR_CIERRE_CAJA,
   '/api/cashregister/solicitud-cierre',
+  '/api/cashregister/cierre-pdf',
+  // Twilio descarga el adjunto con un token firmado de corta duración; no hay sesión web.
+  '/api/cashregister/reporte-pdf',
   '/api/cashregister/procesar-cierre',
   '/api/auth/login',
+  // Logout debe aceptar una sesión ya expirada para poder borrar las cookies.
+  '/api/auth/logout',
   '/api/auth/reset-password',
   // '/api/login' y '/api/logout' retirados: rutas muertas (el front usa /api/auth/*).
   '/api/auth/register-first-user',

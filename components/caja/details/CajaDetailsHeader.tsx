@@ -1,7 +1,16 @@
 'use client';
 
 import { memo } from 'react';
-import { Calendar, Clock, Printer, Download, Send, Loader2, RotateCcw } from 'lucide-react';
+import {
+  Calendar,
+  Clock,
+  Printer,
+  Download,
+  Send,
+  Loader2,
+  RotateCcw,
+  MessageCircle
+} from 'lucide-react';
 import { DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -26,7 +35,9 @@ export const CajaDetailsHeader = memo(function CajaDetailsHeader({
   onReabrirCierre,
   reabriendoCierre = false,
   onPrint,
-  onExportPdf
+  onExportPdf,
+  onSendWhatsApp,
+  sendingWhatsApp = false
 }: {
   fechaApertura: string | Date;
   estadoInfo: { label: string; color: string };
@@ -39,6 +50,8 @@ export const CajaDetailsHeader = memo(function CajaDetailsHeader({
   reabriendoCierre?: boolean;
   onPrint: () => void;
   onExportPdf: () => void;
+  onSendWhatsApp?: () => void;
+  sendingWhatsApp?: boolean;
 }) {
   const solicitud = cierrePendiente?.solicitadoEn
     ? formatDateTimeLabel(cierrePendiente.solicitadoEn)
@@ -57,6 +70,22 @@ export const CajaDetailsHeader = memo(function CajaDetailsHeader({
           </Badge>
         </DialogTitle>
         <div className='flex items-center gap-3 ml-auto'>
+          {onSendWhatsApp && (
+            <Button
+              variant='outline'
+              size='sm'
+              className='rounded-full gap-2 border-green-300 text-green-700 hover:bg-green-50 dark:border-green-700 dark:text-green-400 dark:hover:bg-green-950'
+              onClick={onSendWhatsApp}
+              disabled={sendingWhatsApp}
+            >
+              {sendingWhatsApp ? (
+                <Loader2 className='w-4 h-4 animate-spin' />
+              ) : (
+                <MessageCircle className='w-4 h-4' />
+              )}
+              <span>{sendingWhatsApp ? 'Enviando…' : 'Enviar reporte PDF'}</span>
+            </Button>
+          )}
           <Button variant='outline' size='sm' className='rounded-full gap-2' onClick={onPrint}>
             <Printer className='w-4 h-4' />
             <span className='hidden sm:inline'>Imprimir</span>

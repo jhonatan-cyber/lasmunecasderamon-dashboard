@@ -3,7 +3,14 @@
 const repositoryHarness = vi.hoisted(() => {
   const queryMock = vi.fn();
   const withTransactionMock = vi.fn(async (cb: any) => cb(queryMock));
-  return { queryMock, withTransactionMock };
+  const sendNotificationToAll = vi.fn();
+  const enviarPdfCierreCajaWhatsApp = vi.fn().mockResolvedValue(true);
+  return {
+    queryMock,
+    withTransactionMock,
+    sendNotificationToAll,
+    enviarPdfCierreCajaWhatsApp
+  };
 });
 
 vi.mock('@/lib/database/db', () => ({
@@ -29,6 +36,13 @@ vi.mock('@/lib/database/base-repository', () => ({
     update: vi.fn(),
     findOne: vi.fn()
   }
+}));
+
+vi.mock('@/lib/api/sseService', () => ({
+  sendNotificationToAll: repositoryHarness.sendNotificationToAll
+}));
+vi.mock('@/modules/comunicaciones', () => ({
+  enviarPdfCierreCajaWhatsApp: repositoryHarness.enviarPdfCierreCajaWhatsApp
 }));
 
 import { ConflictError } from '@/lib/errors/errors';
@@ -197,11 +211,13 @@ describe('CashRegisterRepository.solicitarCierre', () => {
         estado: 'pendiente',
         solicitado_por: 'Cajero',
         monto_cierre_calculado: 160000,
-        saldo_clientes_descontado: 12000
+        saldo_clientes_descontado: 12000,
+        saldo_clientes_por_devolver: 0
       })
     );
     expect(resultado.monto_cierre_calculado).toBe(160000);
     expect(resultado.saldo_clientes_descontado).toBe(12000);
+    expect(resultado.saldo_clientes_por_devolver).toBe(0);
     // La caja sigue abierta: sólo queda marcado cuándo se pidió el cierre.
     expect(repositoryHarness.queryMock).toHaveBeenCalledWith(
       'UPDATE cajas SET cierre_solicitado_en = ? WHERE id_caja = ?',
@@ -219,6 +235,30 @@ describe('CashRegisterRepository.solicitarCierre', () => {
       new ConflictError('Ya hay una solicitud de cierre de esta caja esperando autorización')
     );
     expect(BaseRepository.insert).not.toHaveBeenCalled();
+  });
+
+  it('limita lo descontado al efectivo y guarda cuánto queda por devolver', async () => {
+    simular({ saldos: 200000 });
+
+    const resultado = await CashRegisterRepository.solicitarCierre('caja-1', {
+      nombre: 'Cajero'
+    });
+
+    expect(resultado).toEqual(
+      expect.objectContaining({
+        monto_cierre_calculado: 25000,
+        saldo_clientes_descontado: 147000,
+        saldo_clientes_por_devolver: 53000
+      })
+    );
+    expect(BaseRepository.insert).toHaveBeenCalledWith(
+      repositoryHarness.queryMock,
+      'solicitudes_cierre_caja',
+      expect.objectContaining({
+        saldo_clientes_descontado: 147000,
+        saldo_clientes_por_devolver: 53000
+      })
+    );
   });
 });
 
@@ -247,6 +287,14 @@ describe('CashRegisterRepository.procesarSolicitudCierre', () => {
 
     expect(resultado.estado).toBe('aprobada');
     expect(resultado.saldo_clientes_descontado).toBe(12000);
+    expect(resultado.saldo_clientes_por_devolver).toBe(0);
+    expect(repositoryHarness.enviarPdfCierreCajaWhatsApp).toHaveBeenCalledWith({
+      cajaId: 'caja-1',
+      token: 'token-1'
+    });
+    expect(repositoryHarness.sendNotificationToAll).toHaveBeenCalledWith('cash_register_closed', {
+      cajaId: 'caja-1'
+    });
     expect(BaseRepository.update).toHaveBeenCalledWith(
       repositoryHarness.queryMock,
       'cajas',
@@ -256,13 +304,36 @@ describe('CashRegisterRepository.procesarSolicitudCierre', () => {
         estado: 0,
         monto_cierre: 160000,
         saldo_clientes_descontado: 12000,
+        saldo_clientes_por_devolver: 0,
         cierre_solicitado_en: null
       })
     );
     // La solicitud queda resuelta a nombre de quien autorizó.
     expect(repositoryHarness.queryMock).toHaveBeenCalledWith(
       expect.stringContaining("estado = 'aprobada'"),
-      ['2026-04-11 12:00:00', 'Admin', 12000, 160000, 'sol-1']
+      ['2026-04-11 12:00:00', 'Admin', 12000, 0, 160000, 'sol-1']
+    );
+  });
+
+  it('al aprobar deja pendiente lo que excede el efectivo disponible', async () => {
+    simularSolicitudPendiente(200000);
+
+    const resultado = await CashRegisterRepository.procesarSolicitudCierre('token-1', 'confirmar', {
+      nombre: 'Admin'
+    });
+
+    expect(resultado.saldo_clientes_descontado).toBe(147000);
+    expect(resultado.saldo_clientes_por_devolver).toBe(53000);
+    expect(BaseRepository.update).toHaveBeenCalledWith(
+      repositoryHarness.queryMock,
+      'cajas',
+      'id_caja',
+      'caja-1',
+      expect.objectContaining({
+        monto_cierre: 25000,
+        saldo_clientes_descontado: 147000,
+        saldo_clientes_por_devolver: 53000
+      })
     );
   });
 
@@ -279,6 +350,8 @@ describe('CashRegisterRepository.procesarSolicitudCierre', () => {
 
     expect(resultado.estado).toBe('rechazada');
     expect(resultado.saldo_clientes_descontado).toBe(0);
+    expect(repositoryHarness.sendNotificationToAll).not.toHaveBeenCalled();
+    expect(repositoryHarness.enviarPdfCierreCajaWhatsApp).not.toHaveBeenCalled();
     // `close()` nunca corre: la caja sigue como estaba.
     expect(BaseRepository.update).not.toHaveBeenCalled();
     expect(repositoryHarness.queryMock).toHaveBeenCalledWith(

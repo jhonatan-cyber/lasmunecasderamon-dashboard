@@ -101,7 +101,7 @@ export async function POST(request: Request) {
       return NextResponse.json({
         message:
           resultado.estado === 'aprobada'
-            ? `Caja cerrada con ${formatCurrencyCLP(resultado.caja?.monto_cierre || 0)} (descontados ${formatCurrencyCLP(resultado.saldo_clientes_descontado)} de saldos de clientes).`
+            ? `Caja cerrada con ${formatCurrencyCLP(resultado.caja?.monto_cierre || 0)} (descontados ${formatCurrencyCLP(resultado.saldo_clientes_descontado)} de saldos de clientes; falta devolver ${formatCurrencyCLP(resultado.saldo_clientes_por_devolver)}).`
             : 'Cierre de caja rechazado: la caja sigue abierta.'
       });
     }
@@ -154,7 +154,7 @@ export async function POST(request: Request) {
         resueltoPor: 'Administrador (WhatsApp)'
       });
       return NextResponse.json({
-        message: `Caja cerrada con ${formatCurrencyCLP(resultado.caja?.monto_cierre || 0)} (descontados ${formatCurrencyCLP(resultado.saldo_clientes_descontado)} de saldos de clientes).`
+        message: `Caja cerrada con ${formatCurrencyCLP(resultado.caja?.monto_cierre || 0)} (descontados ${formatCurrencyCLP(resultado.saldo_clientes_descontado)} de saldos de clientes; falta devolver ${formatCurrencyCLP(resultado.saldo_clientes_por_devolver)}).`
       });
     }
 

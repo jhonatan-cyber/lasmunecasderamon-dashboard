@@ -15,6 +15,7 @@ const solicitud = {
   estado: 'pendiente',
   monto_cierre_calculado: 160000,
   saldo_clientes_descontado: 12000,
+  saldo_clientes_por_devolver: 0,
   solicitado_por: 'CajeroTest',
   motivo: 'Fin del turno',
   fecha_solicitud: '2026-09-29 18:00:00',
@@ -114,7 +115,7 @@ describe('La página pública de autorización del cierre', () => {
     expect(texto).toContain('Anticipos (ya descontados):');
     expect(texto).toContain(`-${formatCurrencyCLP(solicitud.anticipo || 0)}`);
     expect(texto).toContain('Retiros (ya descontados):');
-    expect(texto).toContain('Saldos de clientes a descontar:');
+    expect(texto).toContain('Saldos cubiertos con efectivo:');
     expect(texto).toContain('los retiros y los anticipos de turno');
     expect(texto).toContain('Monto de cierre previsto');
     expect(texto).toContain(formatCurrencyCLP(160000));
@@ -122,6 +123,17 @@ describe('La página pública de autorización del cierre', () => {
 
     expect(screen.queryByRole('button', { name: /Autorizar cierre/i })).not.toBeNull();
     expect(screen.queryByRole('button', { name: /Rechazar/i })).not.toBeNull();
+  });
+
+  it('muestra cuánto falta devolver si el saldo excede el efectivo disponible', async () => {
+    const { texto } = await montarPagina({
+      ...solicitud,
+      saldo_clientes_descontado: 147000,
+      saldo_clientes_por_devolver: 53000
+    });
+
+    expect(texto).toContain('Falta devolver a clientes:');
+    expect(texto).toContain(formatCurrencyCLP(53000));
   });
 
   it('si el servidor viejo no manda el detalle nuevo, la página sigue funcionando', async () => {

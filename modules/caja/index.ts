@@ -23,5 +23,11 @@ export {
 } from './movimientos/servicio';
 
 export { CashRegisterService } from './turnos/servicio';
+export async function generarPdfCierreCaja(data: Record<string, unknown>): Promise<Buffer> {
+  // jsPDF is only needed by PDF routes; load it on demand so importing the Caja
+  // module does not pull browser-only globals into unrelated Node test/runtime paths.
+  const { generarPdfCierreCaja: generar } = await import('./turnos/cierrePdf');
+  return generar(data);
+}
 
 export { WithdrawalService } from './retiros/servicio';

@@ -4,19 +4,17 @@ import { getAdminWhatsApp } from '@/lib/business/whatsappConfig';
 import { getTwilioConfig } from '@/lib/business/twilioConfig';
 import { ROUTES } from '@/lib/constants/routes';
 import logger from '@/lib/utils/logger';
+import { normalizeWhatsAppPhone } from '@/lib/utils/whatsappPhone';
 
 export async function enviarWhatsAppConEstado(
   numero: string,
   mensaje: string,
-  tipo: 'mensaje' | 'prueba' = 'mensaje'
+  tipo: 'mensaje' | 'prueba' = 'mensaje',
+  mediaUrls?: string[]
 ) {
   const { accountSid, authToken, whatsappNumber } = await getTwilioConfig();
   if (!accountSid || !authToken || !whatsappNumber) throw new Error('Twilio no configurado');
-  const numeroFormateado = `+${numero
-    .trim()
-    .replace(/^whatsapp:/, '')
-    .replace(/^\+/, '')}`;
-  if (!/^\+\d{7,15}$/.test(numeroFormateado)) throw new Error('Número de destino inválido');
+  const numeroFormateado = normalizeWhatsAppPhone(numero);
   const { whatsappWebhookUrl } = await import('@/lib/integrations/twilioWebhook');
   const callback =
     process.env.TWILIO_WEBHOOK_BASE_URL || process.env.NEXT_PUBLIC_BASE_URL || process.env.BASE_URL
@@ -26,6 +24,7 @@ export async function enviarWhatsAppConEstado(
     body: mensaje,
     from: `whatsapp:${whatsappNumber}`,
     to: `whatsapp:${numeroFormateado}`,
+    ...(mediaUrls?.length ? { mediaUrl: mediaUrls } : {}),
     ...(callback?.startsWith('https://') ? { statusCallback: callback } : {})
   });
   let seguimientoGuardado = true;
@@ -63,6 +62,67 @@ export async function enviarPruebaWhatsApp() {
     'Mensaje de prueba de Las Muñecas de Ramon. La conexión de WhatsApp está funcionando.',
     'prueba'
   );
+}
+
+/** Envía al administrador el arqueo final de caja como documento PDF por WhatsApp. */
+export async function enviarPdfCierreCajaWhatsApp(datos: {
+  cajaId: string;
+  token: string;
+}): Promise<boolean> {
+  const destino = await getAdminWhatsApp();
+  if (!destino) throw new Error('Configura el WhatsApp del administrador');
+
+  const baseUrl =
+    process.env.TWILIO_WEBHOOK_BASE_URL || process.env.NEXT_PUBLIC_BASE_URL || process.env.BASE_URL;
+  if (!baseUrl) throw new Error('Configura la URL pública HTTPS del dashboard');
+  const url = new URL(
+    `/api/cashregister/cierre-pdf?token=${encodeURIComponent(datos.token)}`,
+    baseUrl
+  );
+  if (url.protocol !== 'https:') {
+    throw new Error('El PDF de cierre requiere una URL pública HTTPS para WhatsApp');
+  }
+
+  await enviarWhatsAppConEstado(
+    destino,
+    `Caja ${datos.cajaId.slice(0, 8)} cerrada. Adjunto el detalle final del cierre en PDF.`,
+    'mensaje',
+    [url.toString()]
+  );
+  return true;
+}
+
+/** Envía al administrador el reporte PDF con gráficos de la caja desde su detalle. */
+export async function enviarReporteCajaWhatsApp(datos: {
+  cajaId: string;
+  token: string;
+}): Promise<boolean> {
+  const destino = await getAdminWhatsApp();
+  if (!destino) throw new Error('Configura el WhatsApp del administrador');
+
+  const bases = [
+    process.env.TWILIO_WEBHOOK_BASE_URL,
+    process.env.NEXT_PUBLIC_BASE_URL,
+    process.env.BASE_URL
+  ].filter((base): base is string => Boolean(base));
+  const basePublica = bases.find(base => {
+    try {
+      return new URL(base).protocol === 'https:';
+    } catch {
+      return false;
+    }
+  });
+  if (!basePublica) {
+    throw new Error('Configura una URL pública HTTPS accesible para adjuntar el reporte PDF');
+  }
+
+  const pdfUrl = new URL(
+    `/api/cashregister/reporte-pdf?token=${encodeURIComponent(datos.token)}`,
+    basePublica
+  );
+  const mensaje = `*REPORTE DE CAJA*\nCaja ${datos.cajaId.slice(0, 8)}. Adjunto el informe PDF con el resumen financiero y los gráficos del turno.`;
+  await enviarWhatsAppConEstado(destino, mensaje, 'mensaje', [pdfUrl.toString()]);
+  return true;
 }
 
 export async function enviarMensajeSolicitudAnulacion(datos: {
@@ -151,6 +211,7 @@ export interface DatosSolicitudCierreCaja {
   prepagoConsumido?: number;
   prepagoPendienteClientes?: number;
   saldoClientes: number;
+  saldoClientesPorDevolver?: number;
   montoCierre: number;
   motivo?: string | null;
   token?: string;
@@ -199,7 +260,8 @@ export function construirMensajeSolicitudCierreCaja(datos: DatosSolicitudCierreC
 • Devoluciones: -${formatCurrencyCLP(datos.devoluciones)}
 • Anticipos (ya descontados del efectivo): -${formatCurrencyCLP(datos.anticipos || 0)}
 • Retiros (ya descontados del efectivo): -${formatCurrencyCLP(datos.retiroTotal || 0)}
-• Saldos de clientes a descontar: -${formatCurrencyCLP(datos.saldoClientes)}
+• Saldos de clientes cubiertos con efectivo: -${formatCurrencyCLP(datos.saldoClientes)}
+• Saldo pendiente de devolución: ${formatCurrencyCLP(datos.saldoClientesPorDevolver || 0)}
 
 _Efectivo es lo que queda en el cajón: retiros y anticipos ya salieron._
 

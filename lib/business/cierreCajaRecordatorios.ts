@@ -37,6 +37,7 @@ export async function reavisarCierresPendientes(): Promise<number> {
           caja: caja as Record<string, any>,
           cajeroNombre: pendiente.solicitado_por,
           saldoClientes: Number(pendiente.saldo_clientes_descontado || 0),
+          saldoClientesPorDevolver: Number(pendiente.saldo_clientes_por_devolver || 0),
           montoCierre: Number(pendiente.monto_cierre_calculado || 0),
           motivo: pendiente.motivo,
           token: pendiente.token,

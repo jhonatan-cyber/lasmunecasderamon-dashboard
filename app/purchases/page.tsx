@@ -1,6 +1,7 @@
 'use client';
 
 import { Fragment, useCallback, useEffect, useMemo, useState } from 'react';
+import Link from 'next/link';
 import { ChevronDown, Plus, Search, ShoppingBag } from 'lucide-react';
 import { PermissionGuard } from '@/components/auth/PermissionGuard';
 import { Button } from '@/components/ui/button';
@@ -15,17 +16,14 @@ import {
   TableRow
 } from '@/components/ui/table';
 import { Skeleton as BoneyardSkeleton } from 'boneyard-js/react';
-import { PurchaseForm, type PurchaseCatalogItem } from '@/components/purchases/PurchaseForm';
 import type { PurchaseRecord } from '@/types/purchase';
 import { formatCurrencyCLP } from '@/lib/utils/formatters';
 import { cn } from '@/lib/utils/utils';
 
 export default function PurchasesPage() {
   const [history, setHistory] = useState<PurchaseRecord[]>([]);
-  const [catalog, setCatalog] = useState<PurchaseCatalogItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState('');
-  const [modalOpen, setModalOpen] = useState(false);
   const [expanded, setExpanded] = useState<string | null>(null);
 
   const fetchHistory = useCallback(async () => {
@@ -40,30 +38,9 @@ export default function PurchasesPage() {
     }
   }, []);
 
-  const fetchCatalog = useCallback(async () => {
-    try {
-      // Catálogo de presentaciones (reutiliza stock del bar/transferencias).
-      const res = await fetch('/api/transfers', { cache: 'no-store' });
-      const data = await res.json().catch(() => ({}));
-      const items =
-        res.ok && data.success && Array.isArray(data.data?.items) ? data.data.items : [];
-      setCatalog(
-        items.map((i: any) => ({
-          id: String(i.id),
-          producto_id: String(i.producto_id),
-          producto_nombre: i.producto_nombre,
-          nombre: i.nombre,
-          precio_compra: Number(i.precio_compra ?? 0),
-          stock: Number(i.stock ?? 0)
-        }))
-      );
-    } catch {}
-  }, []);
-
   useEffect(() => {
     void fetchHistory();
-    void fetchCatalog();
-  }, [fetchHistory, fetchCatalog]);
+  }, [fetchHistory]);
 
   const filtered = useMemo(() => {
     const term = search.trim().toLowerCase();
@@ -109,13 +86,17 @@ export default function PurchasesPage() {
                 className='pl-9 rounded-full'
               />
             </div>
-            <Button
-              onClick={() => setModalOpen(true)}
-              className='rounded-full bg-black text-white hover:bg-gray-800 flex items-center gap-2'
-            >
-              <Plus className='w-4 h-4' />
-              Nueva compra
-            </Button>
+            <PermissionGuard module='products' action='create' fallback={null}>
+              <Button
+                asChild
+                className='rounded-full bg-black text-white hover:bg-gray-800 flex items-center gap-2'
+              >
+                <Link href='/purchases/new'>
+                  <Plus className='w-4 h-4' />
+                  Nueva compra
+                </Link>
+              </Button>
+            </PermissionGuard>
           </div>
         </div>
 
@@ -234,16 +215,6 @@ export default function PurchasesPage() {
             </div>
           </div>
         </BoneyardSkeleton>
-
-        <PurchaseForm
-          open={modalOpen}
-          onOpenChange={setModalOpen}
-          catalog={catalog}
-          onDone={() => {
-            void fetchHistory();
-            void fetchCatalog();
-          }}
-        />
       </div>
     </PermissionGuard>
   );

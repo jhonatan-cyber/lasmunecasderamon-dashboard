@@ -45,7 +45,23 @@ export async function asegurarSesionPresente(
 }
 
 export async function cerrarSesionesPorCierreCaja(contexto: ContextoOperacion) {
-  await resolverTransaccion(contexto)('UPDATE logins SET estado = 0 WHERE estado = 1');
+  // El administrador que autoriza el cierre debe conservar su sesión; todos los
+  // registros de login del personal no administrador se invalidan atómicamente
+  // con el cierre de caja. También se incluyen sesiones de usuarios desactivados.
+  await resolverTransaccion(contexto)(
+    `
+      UPDATE logins l
+      SET estado = 0
+      WHERE l.estado = 1
+        AND NOT EXISTS (
+          SELECT 1
+          FROM usuarios u
+          INNER JOIN roles r ON r.id_rol = u.rol_id
+          WHERE u.id_usuario = l.usuario_id
+            AND LOWER(BTRIM(r.nombre)) = 'administrador'
+        )
+    `
+  );
 }
 const ROLES_PARA_REGISTRAR = ['cajero', 'garzon', 'anfitriona'];
 

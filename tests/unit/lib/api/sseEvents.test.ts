@@ -33,6 +33,19 @@ describe('catálogo de eventos SSE', () => {
     });
   });
 
+  it('el cierre de caja expulsa al personal y excluye al administrador y al kiosko', () => {
+    const data = { cajaId: 'caja-1' };
+    expect(resolvePayload({ type: 'cash_register_closed', data, subscriber: cajero })).toEqual(
+      data
+    );
+    expect(resolvePayload({ type: 'cash_register_closed', data, subscriber: anfitriona })).toEqual(
+      data
+    );
+    expect(canReceive({ type: 'cash_register_closed', data, subscriber: admin })).toBe(false);
+    expect(canReceive({ type: 'cash_register_closed', data, subscriber: kiosk })).toBe(false);
+    expect(canReceive({ type: 'cash_register_closed', data, subscriber: sinRol })).toBe(false);
+  });
+
   describe('eventos personales o financieros', () => {
     const sensibles = [
       'ANTICIPO_PROCESSED',
