@@ -115,9 +115,16 @@ export function classifyChanges(files) {
 
 if (process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href) {
   const head = process.env.CI_DIFF_HEAD;
-  const base = process.env.CI_DIFF_BASE;
+  let base = process.env.CI_DIFF_BASE;
   let flags = all();
-  if (base && head && !/^0+$/.test(base)) {
+  if (base && /^0+$/.test(base)) {
+    try {
+      base = execFileSync('git', ['rev-parse', `${head}^`], { encoding: 'utf8' }).trim();
+    } catch {
+      base = '';
+    }
+  }
+  if (base && head) {
     try {
       const files = execFileSync('git', ['diff', '--name-only', '-z', base, head], {
         encoding: 'utf8'
