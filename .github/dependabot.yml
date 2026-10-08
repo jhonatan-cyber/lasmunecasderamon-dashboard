@@ -13,9 +13,19 @@ updates:
         update-types:
           - 'minor'
           - 'patch'
-      major:
+      major-test-runner:
+        patterns:
+          - 'vitest'
+          - '@vitest/coverage-v8'
         update-types:
           - 'major'
+    ignore:
+      # The compiler API and typescript-eslint currently require TypeScript 5.
+      - dependency-name: 'typescript'
+        update-types: ['version-update:semver-major']
+      # Production and CI run Node 24; its declarations must match the runtime.
+      - dependency-name: '@types/node'
+        update-types: ['version-update:semver-major']
 
   - package-ecosystem: 'github-actions'
     directory: '/'
