@@ -30,6 +30,18 @@ import { cn } from '@/lib/utils/utils';
 
 type ViewMode = 'month' | 'week';
 
+interface SalesChartPoint {
+  label: string;
+  ventas: number;
+  promedio: number;
+  cantidad_ventas?: number;
+  mes_num?: number;
+  dia_semana?: string;
+  dia_espanol?: string;
+  orden?: number;
+  total?: number;
+}
+
 interface MonthSalesData {
   mes: string;
   mes_num: number;
@@ -164,7 +176,7 @@ export default function MiniSalesChart() {
     );
   }, [yearOffset, weekOffset, fetchMonthData, fetchWeekData]);
 
-  const chartData = useMemo(() => {
+  const chartData = useMemo<SalesChartPoint[]>(() => {
     const promedio =
       viewMode === 'month'
         ? monthData?.summary?.promedioMensual || 0

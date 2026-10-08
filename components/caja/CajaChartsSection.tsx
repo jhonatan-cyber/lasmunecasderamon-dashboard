@@ -151,7 +151,7 @@ export function CajaChartsSection({
                     <Cell key={`cell-${index}`} fill={CHART_COLORS[index % CHART_COLORS.length]} />
                   ))}
                 </Pie>
-                <Tooltip formatter={(value: number) => formatCurrencyNoDecimals(value)} />
+                <Tooltip formatter={value => formatCurrencyNoDecimals(Number(value ?? 0))} />
               </PieChart>
             </ResponsiveContainer>
           ) : (
