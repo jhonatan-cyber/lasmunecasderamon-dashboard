@@ -90,6 +90,7 @@ jobs:
           BASE_SHA: ${{ github.event.pull_request.base.sha || github.event.before || github.event.workflow_run.head_sha }}
           HEAD_SHA: ${{ github.event.pull_request.head.sha || github.sha }}
         run: |
+          if [ -z "$BASE_SHA" ] || [ "$BASE_SHA" = "0000000000000000000000000000000000000000" ]; then BASE_SHA="$(git rev-parse "$HEAD_SHA^")"; fi
           FILES="$(git diff --name-only "$BASE_SHA" "$HEAD_SHA" -- '*.js' '*.jsx' '*.ts' '*.tsx' | tr '\n' ' ')"
           if [ -n "$FILES" ]; then pnpm exec eslint $FILES; fi
 

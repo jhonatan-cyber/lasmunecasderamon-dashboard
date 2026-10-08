@@ -117,7 +117,7 @@ if (process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href) 
   const head = process.env.CI_DIFF_HEAD;
   let base = process.env.CI_DIFF_BASE;
   let flags = all();
-  if (base && /^0+$/.test(base)) {
+  if (!base || /^0+$/.test(base)) {
     try {
       base = execFileSync('git', ['rev-parse', `${head}^`], { encoding: 'utf8' }).trim();
     } catch {

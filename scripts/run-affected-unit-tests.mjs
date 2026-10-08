@@ -1,4 +1,4 @@
-import { execFileSync } from 'node:child_process';
+import { execFileSync, spawnSync } from 'node:child_process';
 import { readdirSync } from 'node:fs';
 import path from 'node:path';
 import { pathToFileURL } from 'node:url';
@@ -114,10 +114,13 @@ export function selectUnitTests(files, candidates = walk(path.join(ROOT, 'tests'
 }
 
 if (process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href) {
-  const base = process.env.BASE_SHA;
+  let base = process.env.BASE_SHA;
   const head = process.env.HEAD_SHA;
   let files;
   try {
+    if (!base || /^0+$/.test(base)) {
+      base = execFileSync('git', ['rev-parse', `${head}^`], { encoding: 'utf8' }).trim();
+    }
     files = execFileSync('git', ['diff', '--name-only', base, head], { encoding: 'utf8' })
       .split(/\r?\n/)
       .filter(Boolean);
@@ -134,11 +137,13 @@ if (process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href) 
 
   console.log(`Ejecutando ${selected.length} archivos de prueba relacionados:`);
   for (const file of selected) console.log(`- ${path.relative(ROOT, file).replaceAll('\\', '/')}`);
-  const vitest = process.platform === 'win32' ? 'pnpm.cmd' : 'pnpm';
-  const { spawnSync } = await import('node:child_process');
-  const result = spawnSync(vitest, ['exec', 'vitest', 'run', ...selected], {
-    stdio: 'inherit',
-    env: process.env
-  });
+  const result = spawnSync(
+    process.execPath,
+    [path.join(ROOT, 'node_modules', 'vitest', 'vitest.mjs'), 'run', ...selected],
+    {
+      stdio: 'inherit',
+      env: process.env
+    }
+  );
   process.exit(result.status ?? 1);
 }
