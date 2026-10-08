@@ -17,7 +17,8 @@ onlyBuiltDependencies:
 overrides:
   axios: 1.20.0
   baseline-browser-mapping: 2.11.0
-  fast-uri: 3.1.7
+  dompurify: 3.4.16
+  fast-uri: 3.1.8
   fast-xml-parser: 5.4.0
   glob: 10.5.0
   immutable: 3.8.4
@@ -31,12 +32,12 @@ overrides:
   prismjs: 1.30.0
   qs: 6.16.0
   rimraf: ^6.1.2
-  serialize-javascript: 7.0.3
+  serialize-javascript: 7.0.5
   sweetalert2: 11.22.4
   undici: 7.29.1
   source-map-js: 1.2.2
   tinypool: 2.1.2
-  brace-expansion@1: 1.1.20
+  brace-expansion@1: 1.1.21
 patchedDependencies:
   braces@3.0.3: patches/braces@3.0.3.patch
 peerDependencyRules:
