@@ -26,7 +26,7 @@ jobs:
       JWT_REFRESH_SECRET: build-only-refresh-secret
       DEPLOY_SHA: ${{ github.event.workflow_run.head_sha }}
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@v7
         with:
           ref: ${{ github.event.workflow_run.head_sha }}
           persist-credentials: false
