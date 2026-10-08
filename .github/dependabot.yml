@@ -26,6 +26,9 @@ updates:
       # Production and CI run Node 24; its declarations must match the runtime.
       - dependency-name: '@types/node'
         update-types: ['version-update:semver-major']
+      # Next's bundled React, import and accessibility plugins support ESLint 9.
+      - dependency-name: 'eslint'
+        update-types: ['version-update:semver-major']
 
   - package-ecosystem: 'github-actions'
     directory: '/'

@@ -15,7 +15,11 @@ su proveedor de cobertura se agrupan porque deben utilizar la misma versión.
 | TypeScript  | 5.9                | typescript-eslint rechaza TypeScript 7. El control de arquitectura y las pruebas SQL usan la API del compilador, ausente en esa actualización. |
 | @types/node | 24                 | El VPS, el CI y el entorno de desarrollo utilizan Node 24. Declaraciones de Node 26 permitirían APIs que ese servidor no ofrece.               |
 
-Dependabot sigue actualizando parches y versiones menores de ambas dependencias.
+ESLint debe mantenerse en la versión 9: los plugins de React, accesibilidad e
+imports incluidos por eslint-config-next 16.3.8 todavía excluyen ESLint 10 de
+sus peer dependencies.
+
+Dependabot sigue actualizando parches y versiones menores de estas dependencias.
 Antes de retirar estas excepciones, hay que validar el soporte de
 typescript-eslint, la API del compilador, el control de arquitectura, las
 pruebas SQL y el runtime del VPS.
@@ -28,3 +32,11 @@ completo en cada PR. Las pruebas de WhatsApp simulan el transporte y verifican
 firmas; no envían mensajes reales. La migración de herramientas mantiene
 TypeScript 5 y ajusta los hooks de Husky y los mocks de constructores al
 contrato de las nuevas versiones.
+
+La cobertura mantiene los mismos umbrales y el alcance anterior: archivos
+ejecutados de lib, hooks, modules y workflows. Vitest 5 añade archivos sin
+ejecutar si se declara coverage.include; por eso se restringen las carpetas
+mediante coverage.exclude.
+
+Guías oficiales: [migración de Vitest](https://vitest.dev/guide/migration/) y
+[configuración de Husky](https://typicode.github.io/husky/get-started.html).

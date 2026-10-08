@@ -24,7 +24,9 @@ vi.mock('@tanstack/react-query', () => ({
     invalidateQueries: vi.fn(),
     clear: vi.fn()
   })),
-  QueryClient: vi.fn().mockImplementation(() => ({ setDefaultOptions: vi.fn(), clear: vi.fn() })),
+  QueryClient: vi.fn().mockImplementation(function () {
+    return { setDefaultOptions: vi.fn(), clear: vi.fn() };
+  }),
   QueryClientProvider: ({ children }: { children: React.ReactNode }) => children
 }));
 
