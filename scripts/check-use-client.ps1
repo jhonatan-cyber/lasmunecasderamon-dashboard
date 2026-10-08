@@ -28,7 +28,7 @@ $skipped = 0
 
 # Get all .ts and .tsx files
 $files = Get-ChildItem -Recurse -Include '*.ts', '*.tsx' | Where-Object {
-    $_.FullName -notmatch 'node_modules|\.next|\.git|tests/e2e|tests/unit|\.agents'
+    $_.FullName -notmatch 'node_modules|\.next|\.git|tests[\\/]e2e|tests[\\/]unit|\.agents'
 }
 
 foreach ($file in $files) {

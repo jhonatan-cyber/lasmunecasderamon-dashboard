@@ -85,6 +85,8 @@ const PUBLIC_API_POLICY: Record<string, string> = {
   '/api/health': 'sondeo de infraestructura',
   '/api/test-auth': 'diagnóstico de sesión; solo devuelve lo que getAuth resuelva',
   '/api/whatsapp/webhook': 'webhook de WhatsApp, verificado por firma',
+  '/api/whatsapp/status':
+    'estado de entrega de WhatsApp; exige firma de Twilio y Account SID configurado',
   // Páginas de confirmación por enlace de un solo uso (token en la URL, sin sesión):
   '/api/ventas/solicitud-anulacion': 'confirmación de anulación por token de un solo uso',
   '/api/ventas/procesar-anulacion': 'confirmación de anulación por token de un solo uso',

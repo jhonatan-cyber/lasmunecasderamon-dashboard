@@ -16,7 +16,7 @@
     "clientes_prepago_movimientos",
     "solicitudes_devolucion_saldo"
   ],
-  "comunicaciones": ["notificaciones", "push_tokens"],
+  "comunicaciones": ["notificaciones", "push_tokens", "whatsapp_entregas"],
   "configuracion": ["configuraciones", "backups"],
   "identidad": [
     "usuarios",

@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server';
-import twilio from 'twilio';
+import { validarWebhookTwilio } from '@/lib/integrations/twilioWebhook';
 import {
   isApprovalAction,
   parseCierreCajaCommand,
@@ -16,51 +16,13 @@ import { listarVentasEnCurso } from '@/modules/ventas';
 import { CashRegisterService } from '@/modules/caja';
 import { GratificacionService } from '@/modules/personal';
 import { formatCurrencyCLP } from '@/lib/utils/formatters';
-import { getTwilioConfig } from '@/lib/business/twilioConfig';
 import { getAdminWhatsApp } from '@/lib/business/whatsappConfig';
-
-/**
- * Valida la firma de Twilio para evitar solicitudes falsificadas.
- * Twilio firma cada webhook con X-Twilio-Signature usando tu Auth Token.
- * Ver: https://www.twilio.com/docs/usage/webhooks/webhooks-security
- */
-async function validateTwilioRequest(request: Request): Promise<boolean> {
-  const { authToken } = await getTwilioConfig();
-  if (!authToken) {
-    return false;
-  }
-
-  const signature = request.headers.get('x-twilio-signature');
-  if (!signature) {
-    return false;
-  }
-
-  try {
-    // Reconstruir la URL original que Twilio usó para firmar
-    const forwardedProto = request.headers.get('x-forwarded-proto');
-    const forwardedHost = request.headers.get('x-forwarded-host');
-    const url = request.url;
-
-    // Extraer los parámetros POST del body (form-data)
-    const formData = await request.clone().formData();
-    const params: Record<string, string> = {};
-    for (const [key, value] of formData.entries()) {
-      if (typeof value === 'string') {
-        params[key] = value;
-      }
-    }
-
-    return twilio.validateRequest(authToken, signature, url, params);
-  } catch {
-    return false;
-  }
-}
 
 export async function POST(request: Request) {
   try {
     // Validar firma de Twilio en producción para prevenir suplantación
     if (process.env.NODE_ENV === 'production') {
-      const isValid = await validateTwilioRequest(request);
+      const isValid = await validarWebhookTwilio(request);
       if (!isValid) {
         return NextResponse.json(
           { error: 'Firma inválida: solicitud no autorizada' },

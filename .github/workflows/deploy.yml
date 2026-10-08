@@ -26,7 +26,7 @@ jobs:
       JWT_REFRESH_SECRET: build-only-refresh-secret
       DEPLOY_SHA: ${{ github.event.workflow_run.head_sha }}
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@v7
         with:
           ref: ${{ github.event.workflow_run.head_sha }}
           persist-credentials: false
@@ -46,6 +46,14 @@ jobs:
       - name: Generate isolated build and runtime JWT keys
         run: |
           node -e "const fs=require('node:fs'),crypto=require('node:crypto'); for(const key of ['JWT_SECRET','JWT_REFRESH_SECRET']) fs.appendFileSync(process.env.GITHUB_ENV,key+'='+crypto.randomBytes(72).toString('base64url')+'\n');"
+
+      - name: Restore Next.js compiler cache
+        uses: actions/cache@v5
+        with:
+          path: .next/cache
+          key: next-production-${{ runner.os }}-${{ hashFiles('pnpm-lock.yaml') }}-${{ github.sha }}
+          restore-keys: |
+            next-production-${{ runner.os }}-${{ hashFiles('pnpm-lock.yaml') }}-
 
       - name: Build production bundle
         run: |

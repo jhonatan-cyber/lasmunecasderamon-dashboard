@@ -65,11 +65,7 @@ export const parseBusinessDate = (dateStr: string | Date | null | undefined): Da
 
   const cleanStr = dateStr.includes('T') ? dateStr : dateStr.replace(' ', 'T');
 
-  if (
-    cleanStr.includes('Z') ||
-    cleanStr.includes('+') ||
-    (cleanStr.includes('-') && cleanStr.length > 19)
-  ) {
+  if (/(?:Z|[+-]\d{2}:?\d{2})$/i.test(cleanStr)) {
     return new Date(cleanStr);
   }
 

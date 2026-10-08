@@ -226,9 +226,17 @@ export function withRoute<M extends PermissionModule>(
             ];
             const sanitize = (obj: any): any => {
               if (!obj || typeof obj !== 'object') return obj;
+              // Configuraciones guarda secretos como { clave, valor }, no como
+              // propiedades con el nombre del secreto.
+              const secretConfig =
+                typeof obj.clave === 'string' &&
+                sensitiveKeys.some(sk => obj.clave.toLowerCase().includes(sk));
               const clean: any = Array.isArray(obj) ? [] : {};
               for (const [k, v] of Object.entries(obj)) {
-                if (sensitiveKeys.some(sk => k.toLowerCase().includes(sk))) {
+                if (
+                  (secretConfig && k === 'valor') ||
+                  sensitiveKeys.some(sk => k.toLowerCase().includes(sk))
+                ) {
                   clean[k] = '***';
                 } else if (typeof v === 'object') {
                   clean[k] = sanitize(v);

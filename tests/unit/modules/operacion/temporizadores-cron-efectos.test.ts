@@ -1,6 +1,7 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 const mocks = vi.hoisted(() => ({
+  fecha: '2026-10-05T10:00:00Z',
   orden: [] as string[],
   falloCommit: false,
   marcar: vi.fn(),
@@ -22,7 +23,7 @@ vi.mock('@/modules/operacion/temporizadores/repositorio', () => ({
     {
       id: 'venta-1',
       type: 'venta',
-      fecha_crea: '2026-10-05T10:00:00Z',
+      fecha_crea: mocks.fecha,
       tiempo: 60,
       created_by: 'usuario-1',
       room_name: 'Sala',
@@ -47,6 +48,7 @@ import { revisarTemporizadores } from '@/modules/operacion/temporizadores/servic
 beforeEach(() => {
   vi.clearAllMocks();
   mocks.orden.length = 0;
+  mocks.fecha = '2026-10-05T10:00:00Z';
   mocks.falloCommit = false;
   mocks.marcar.mockImplementation(async () => {
     mocks.orden.push('marca');
@@ -64,6 +66,20 @@ beforeEach(() => {
 });
 
 describe('efectos del cron de temporizadores', () => {
+  it.each(['2026-10-07 12:00:00', '2026-10-07 12:00:00.123456'])(
+    'conserva un servicio vigente con fecha local %s en un servidor UTC',
+    async fecha => {
+      vi.useFakeTimers();
+      try {
+        vi.setSystemTime(new Date('2026-10-07T15:00:00Z'));
+        mocks.fecha = fecha;
+        expect(await revisarTemporizadores(new Date())).toEqual({ avisos5m: 0, cierres: 0 });
+        expect(mocks.cerrar).not.toHaveBeenCalled();
+      } finally {
+        vi.useRealTimers();
+      }
+    }
+  );
   it('marca y cierre comparten contexto y los avisos esperan al commit', async () => {
     expect(await revisarTemporizadores(new Date('2026-10-05T12:00:00Z'))).toEqual({
       avisos5m: 0,
