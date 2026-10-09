@@ -5,8 +5,8 @@ import { z } from 'zod';
 type CategoryInput = z.input<typeof CategorySchema>;
 
 export class CategoryService {
-  static async getAll() {
-    return await CategoryRepository.getAll();
+  static async getAll(forSale = false) {
+    return await CategoryRepository.getAll(forSale);
   }
 
   static async create(name: string, description: string = '') {

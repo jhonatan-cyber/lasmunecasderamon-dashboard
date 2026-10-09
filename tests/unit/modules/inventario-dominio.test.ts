@@ -274,6 +274,23 @@ describe('listBarStock hereda precio/comisión', () => {
     );
   });
 
+  it('cuenta botellas agotadas por shots pendientes de devolución', async () => {
+    mockBar({
+      ...baseRow,
+      precio_venta: 20000,
+      comision: 5000,
+      botellas_vacias_shots: 2
+    });
+    const rows = await listarStockBar();
+    expect(rows[0].botellas_vacias_shots).toBe(2);
+    expect(query).toHaveBeenCalledWith(
+      expect.stringContaining(
+        "u.estado = 'vendida' AND u.ubicacion = 'bar' AND u.abierta_por_shots = true AND u.fecha_devolucion IS NULL"
+      ),
+      expect.anything()
+    );
+  });
+
   it('sin datos de shots los campos quedan en 0/ausentes sin romper el listado', async () => {
     mockBar({ ...baseRow, precio_venta: 20000, comision: 5000 });
     const rows = await listarStockBar();

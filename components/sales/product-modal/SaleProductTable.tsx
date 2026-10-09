@@ -22,11 +22,6 @@ import {
 import { SaleProductPhoto } from '@/components/sales/product-modal/SaleProductPhoto';
 import { SaleProductDetails } from '@/components/sales/product-modal/SaleProductDetails';
 import { SaleProductHostess } from '@/components/sales/product-modal/SaleProductHostess';
-import {
-  SaleProductCommission,
-  SaleProductPrice,
-  SaleProductQuantity
-} from '@/components/sales/product-modal/SaleProductCells';
 import type { SaleProductItem } from '@/components/sales/product-modal/saleProductItems';
 
 /** Página de productos en modo tabla (una fila por presentación). */
@@ -44,9 +39,6 @@ export function SaleProductTable({
           <TableHeader className={CUENTA_TABLE_HEADER_CLASS}>
             <TableRow className={CUENTA_TABLE_HEADER_ROW_CLASS}>
               <TableHead className={CUENTA_TABLE_HEAD_CLASS}>Producto</TableHead>
-              <TableHead className={`${CUENTA_TABLE_HEAD_CLASS} text-center`}>Precio</TableHead>
-              <TableHead className={`${CUENTA_TABLE_HEAD_CLASS} text-center`}>Comisión</TableHead>
-              <TableHead className={`${CUENTA_TABLE_HEAD_CLASS} text-center`}>Cantidad</TableHead>
               <TableHead className={`${CUENTA_TABLE_HEAD_CLASS} text-center`}>Anfitriona</TableHead>
               <TableHead className={`${CUENTA_TABLE_HEAD_CLASS} text-center`}>Agregar</TableHead>
             </TableRow>
@@ -63,15 +55,6 @@ export function SaleProductTable({
                       <SaleProductDetails item={item} />
                     </div>
                   </div>
-                </TableCell>
-                <TableCell className={`${CUENTA_TABLE_CELL_CLASS} text-center align-middle`}>
-                  <SaleProductPrice item={item} />
-                </TableCell>
-                <TableCell className={`${CUENTA_TABLE_CELL_CLASS} text-center align-middle`}>
-                  <SaleProductCommission item={item} />
-                </TableCell>
-                <TableCell className={`${CUENTA_TABLE_CELL_CLASS} text-center align-middle`}>
-                  <SaleProductQuantity item={item} />
                 </TableCell>
                 <TableCell
                   className={`${CUENTA_TABLE_CELL_CLASS} min-w-[210px] text-center align-middle`}

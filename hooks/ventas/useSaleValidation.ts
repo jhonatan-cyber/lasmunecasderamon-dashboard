@@ -256,7 +256,7 @@ export function useSaleValidation({
     // Un shot cobrado a precio de anfitriona es un shot más: cambia el precio, no el
     // descuento de ml. Se marca para que reportes y caja lo separen.
     const shotAnfitriona = tipoVenta === 'shot' && Boolean(producto.shot_anfitriona);
-    let cantidad = cantidades[id] || 1;
+    let cantidad = Math.max(1, Math.trunc(Number(producto.cantidad ?? cantidades[id] ?? 1) || 1));
     if (
       tipoVenta !== 'shot' &&
       producto.stock_bar !== undefined &&
@@ -342,7 +342,6 @@ export function useSaleValidation({
     });
 
     setCantidades(prev => ({ ...prev, [id]: 1 }));
-    handleClearSearch();
   };
 
   const handleRemoveProducto = (index: number) => {

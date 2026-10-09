@@ -2,6 +2,7 @@
 
 import { Check } from 'lucide-react';
 import type { SaleProductItem } from '@/components/sales/product-modal/saleProductItems';
+import { SaleFormatQuantities } from '@/components/sales/SaleFormatQuantities';
 
 /**
  * Celda de detalles (compartida por tabla y tarjeta): nombre, stock en bar,
@@ -36,34 +37,7 @@ export function SaleProductDetails({ item }: { item: SaleProductItem }) {
             : ''}
         </p>
       )}
-      {item.tieneShot && (
-        <div className='mt-2 flex flex-wrap gap-1 rounded-2xl border border-neutral-200 bg-neutral-100 p-1 dark:border-white/10 dark:bg-white/5'>
-          {item.opcionesTipo.map(({ value, label }) => {
-            const active = item.tipoVenta === value;
-            return (
-              <button
-                key={value}
-                type='button'
-                onClick={() => item.onSaleTypeChange(value)}
-                aria-pressed={active}
-                className={`flex min-w-[130px] flex-1 items-center justify-center gap-1.5 rounded-xl px-3 py-1.5 text-[11px] font-bold transition-all ${
-                  active
-                    ? 'bg-black text-white shadow dark:bg-white dark:text-black'
-                    : 'text-neutral-500 hover:text-neutral-800 dark:text-neutral-400 dark:hover:text-neutral-200'
-                }`}
-              >
-                <span
-                  className={`size-1.5 shrink-0 rounded-full ${
-                    active ? 'bg-current' : 'bg-neutral-400 dark:bg-neutral-600'
-                  }`}
-                  aria-hidden='true'
-                />
-                {label}
-              </button>
-            );
-          })}
-        </div>
-      )}
+      <SaleFormatQuantities options={item.opcionesTipo} onChange={item.onSaleTypeChange} dense />
     </>
   );
 }

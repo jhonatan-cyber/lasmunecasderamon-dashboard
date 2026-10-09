@@ -7,6 +7,7 @@ import { hostessAllowedForPrice } from '@/components/orders/productModalRules';
 import { getChampagneHostessLimit, hasCommission, isChampagneProduct } from '@/components/orders';
 import { resolverVentaProducto, type SaleChoice } from '@/lib/sales/saleChoice';
 import { resolveShotMl, resolveShotMlAnfitriona } from '@/lib/business/shotMl';
+import type { SaleFormatQuantityOption } from '@/components/sales/SaleFormatQuantities';
 
 /** Una fila/tarjeta del modal: qué mostrar y qué pasa al interactuar. */
 export interface SaleProductItem {
@@ -20,7 +21,7 @@ export interface SaleProductItem {
   /** La presentación ofrece venta por ml (además de la botella). */
   tieneShot: boolean;
   /** Opciones con el label ya formateado (nombre · ml · precio). */
-  opcionesTipo: { value: SaleChoice; label: string }[];
+  opcionesTipo: SaleFormatQuantityOption[];
   precioVenta: number;
   comisionVenta: number;
   /** Tope del stepper: stock en bar para la botella, 99 para el shot. */
@@ -36,7 +37,7 @@ export interface SaleProductItem {
   totalAgregar: string;
   /** Ml por shot con el que se estima la botella abierta según la venta elegida. */
   mlEstimacion: number;
-  onSaleTypeChange: (value: SaleChoice) => void;
+  onSaleTypeChange: (value: SaleChoice, cantidad: number) => void;
   onCantidadChange: (next: number) => void;
   onAgregar: () => void;
   champagneSelected: string[];
@@ -51,13 +52,13 @@ export interface SaleProductItem {
 export interface SaleProductItemContext {
   shotMl: number;
   cantidades: { [key: string]: number };
-  tiposVenta: { [key: string]: SaleChoice };
+  cantidadesPorTipo: { [key: string]: number };
   champagneHostessSelections: { [key: string]: string[] };
   otherProductHostessSelections: { [key: string]: string[] };
   hostessSearchValues: { [key: string]: string };
   productosEnCarrito: any[];
   availableHostesses: any[];
-  onSaleTypeChange: (id: string, value: SaleChoice) => void;
+  onSaleTypeChange: (id: string, value: SaleChoice, cantidad: number) => void;
   onCantidadChange: (id: string, value: string) => void;
   onChampagneHostessChange: (productId: string, hostessIds: string[]) => void;
   onOtherProductHostessChange: (productId: string, hostessIds: string[]) => void;
@@ -67,66 +68,68 @@ export interface SaleProductItemContext {
 
 /** Resuelve las reglas de venta/anfitriona de una presentación y ata sus callbacks. */
 export function buildSaleProductItem(producto: any, ctx: SaleProductItemContext): SaleProductItem {
-  const id = String(producto.id_producto || producto.id);
+  // La identidad del selector y del carrito es la presentación; producto_id se
+  // conserva aparte para persistencia y puede repetirse entre presentaciones.
+  const id = String(producto.id || producto.id_producto);
   const isChampagne = isChampagneProduct(producto);
   const champagneHostessLimit = getChampagneHostessLimit(producto);
 
   // Ml por shot del producto; sin valor propio se usa el global de Configuraciones.
   const mlPorShot = resolveShotMl(producto.ml_shot, ctx.shotMl);
   const mlPorShotAnfitriona = resolveShotMlAnfitriona(producto.ml_shot_anfitriona, mlPorShot);
-  const venta = resolverVentaProducto(producto, ctx.tiposVenta[id]);
+  const venta = resolverVentaProducto(producto);
   const { tipoVenta, esShot, tieneShot } = venta;
   const precioVenta = venta.precio;
   const comisionVenta = venta.comision;
 
   // El listado muestra el precio de cada forma de venta, no solo el tipo.
   // Cada audiencia muestra sus propios ml.
-  const opcionesTipo = venta.opciones.map(opcion => {
+  const opcionesTipo: SaleFormatQuantityOption[] = venta.opciones.map(opcion => {
     const mlOpcion = opcion.value === 'shot_anfitriona' ? mlPorShotAnfitriona : mlPorShot;
     return {
       value: opcion.value,
-      label: `${opcion.nombre}${opcion.esShot ? ` · ${mlOpcion} ml` : ''} · ${formatCurrencyNoDecimals(opcion.precio)}`
+      label: `${opcion.nombre}${opcion.esShot ? ` · ${mlOpcion} ml` : ''}`,
+      precio: opcion.precio,
+      comision: opcion.comision,
+      cantidad: ctx.cantidadesPorTipo[`${id}:${opcion.value}`] || 0,
+      maxCantidad: opcion.esShot ? 99 : Number(producto.stock_bar ?? 0)
     };
   });
 
   // Cada tipo de venta lleva su propia comisión: sin comisión no se pide anfitriona.
-  const pideAnfitriona = esShot
-    ? comisionVenta > 0
-    : hasCommission(producto) || venta.comisionBotella > 0;
+  const pideAnfitriona =
+    opcionesTipo.some(opcion => opcion.comision > 0) || hasCommission(producto);
   // La regla por precio (bebida cara) es de la botella: el shot no la hereda.
-  const muestraAnfitriona =
-    pideAnfitriona || (!esShot && hostessAllowedForPrice(venta.precioBotella));
+  const muestraAnfitriona = pideAnfitriona || hostessAllowedForPrice(venta.precioBotella);
 
   // Unidades de esta presentación y forma de venta ya agregadas al carrito:
   // el shot de cliente y el de anfitriona se cobran distinto, así que cada uno
   // cuenta lo suyo.
   const enCarrito = (ctx.productosEnCarrito || [])
-    .filter(c => {
-      if (String(c.id) !== id) return false;
-      const delCarro: SaleChoice =
-        c.tipo_venta === 'shot' ? (c.shot_anfitriona ? 'shot_anfitriona' : 'shot') : 'botella';
-      return delCarro === tipoVenta;
-    })
+    .filter(c => String(c.id) === id)
     .reduce((sum, c) => sum + (Number(c.cantidad) || 0), 0);
 
-  const cantidadActual = ctx.cantidades[id] || 1;
+  const cantidadActual = opcionesTipo.reduce((sum, opcion) => sum + opcion.cantidad, 0);
   const champagneSelected = ctx.champagneHostessSelections[id] || [];
   const otherSelected = ctx.otherProductHostessSelections[id] || [];
-  const agregarDisabled = false;
+  const agregarDisabled = cantidadActual === 0;
 
   const onAgregar = () => {
-    const productWithHostess = {
-      ...producto,
-      // El shot a anfitriona comparte el mismo comportamiento por ml; lo que
-      // cambia es el precio, y se guarda para separarlo en reportes y caja.
-      tipo_venta: tipoVenta === 'botella' ? 'botella' : 'shot',
-      shot_anfitriona: tipoVenta === 'shot_anfitriona',
-      precio: precioVenta,
-      comision: comisionVenta,
-      selectedHostesses: isChampagne ? champagneSelected : otherSelected,
-      isChampagne
-    };
-    ctx.onAgregarProducto(productWithHostess);
+    opcionesTipo
+      .filter(opcion => opcion.cantidad > 0)
+      .forEach(opcion => {
+        ctx.onAgregarProducto({
+          ...producto,
+          tipo_venta: opcion.value === 'botella' ? 'botella' : 'shot',
+          shot_anfitriona: opcion.value === 'shot_anfitriona',
+          precio: opcion.precio,
+          comision: opcion.comision,
+          cantidad: opcion.cantidad,
+          selectedHostesses: isChampagne ? champagneSelected : otherSelected,
+          isChampagne
+        });
+        ctx.onSaleTypeChange(id, opcion.value, 0);
+      });
   };
 
   return {
@@ -146,9 +149,11 @@ export function buildSaleProductItem(producto: any, ctx: SaleProductItemContext)
     pideAnfitriona,
     muestraAnfitriona,
     agregarDisabled,
-    totalAgregar: formatCurrencyNoDecimals(precioVenta * cantidadActual),
+    totalAgregar: formatCurrencyNoDecimals(
+      opcionesTipo.reduce((sum, opcion) => sum + opcion.precio * opcion.cantidad, 0)
+    ),
     mlEstimacion: tipoVenta === 'shot_anfitriona' ? mlPorShotAnfitriona : mlPorShot,
-    onSaleTypeChange: value => ctx.onSaleTypeChange(id, value),
+    onSaleTypeChange: (value, cantidad) => ctx.onSaleTypeChange(id, value, cantidad),
     onCantidadChange: next => ctx.onCantidadChange(id, String(next)),
     onAgregar,
     champagneSelected,

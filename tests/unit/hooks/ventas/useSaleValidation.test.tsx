@@ -186,6 +186,7 @@ describe('useSaleValidation totals (propina / total)', () => {
       await result.current.handleAddProducto({
         id: 'pres-1',
         producto_id: 'prod-1',
+        presentacion_id: 'pres-1',
         nombre: 'Whisky 750 ml',
         categoria: 'Whisky',
         precio: 400000,
@@ -377,6 +378,53 @@ describe('useSaleValidation totals (propina / total)', () => {
     expect(productos).toHaveLength(2);
     expect(productos.map((p: any) => p.shot_anfitriona)).toEqual([false, true]);
     expect(productos.map((p: any) => p.precio)).toEqual([5000, 3000]);
+  });
+
+  it('incluye dos productos distintos y sus cantidades en el payload de una misma venta', async () => {
+    const { result } = renderSaleHook();
+    await act(async () => {
+      await result.current.handleAddProducto({
+        id: 'pres-1',
+        producto_id: 'prod-1',
+        presentacion_id: 'pres-1',
+        nombre: 'Ron',
+        precio: 12000,
+        cantidad: 2,
+        tipo_venta: 'botella',
+        stock_bar: 5
+      });
+      await result.current.handleAddProducto({
+        id: 'pres-2',
+        producto_id: 'prod-2',
+        presentacion_id: 'pres-2',
+        nombre: 'Cerveza',
+        precio: 8000,
+        cantidad: 3,
+        tipo_venta: 'botella',
+        stock_bar: 8
+      });
+    });
+
+    expect(result.current.formState.productos).toHaveLength(2);
+    act(() => result.current.formState.setMetodoPago('efectivo'));
+    createVentaMock.mockResolvedValue({ success: true, data: { id: 'v-multiple' } });
+    await act(async () => result.current.handleSubmit([], []));
+
+    expect(createVentaMock).toHaveBeenCalledTimes(1);
+    expect(createVentaMock.mock.calls[0][0].detalles).toEqual([
+      expect.objectContaining({
+        producto_id: 'prod-1',
+        presentacion_id: 'pres-1',
+        cantidad: 2,
+        sub_total: 24000
+      }),
+      expect.objectContaining({
+        producto_id: 'prod-2',
+        presentacion_id: 'pres-2',
+        cantidad: 3,
+        sub_total: 24000
+      })
+    ]);
   });
 
   it('el payload de la venta envía la propina (reparto) y el total sin cargo extra', async () => {

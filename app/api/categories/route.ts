@@ -8,8 +8,9 @@ import { ValidationError } from '@/lib/errors/errors';
 // de permisos (`categories.create/edit/activate/deactivate`). Con el guard anterior
 // (`products.write`) el botón «Editar» de la UI aparecía para quien tuviera
 // `categories.edit` y la API le respondía 403.
-export const GET = withPublicRoute(async () => {
-  const data = await CategoryService.getAll();
+export const GET = withPublicRoute(async (request: Request) => {
+  const { searchParams } = new URL(request.url);
+  const data = await CategoryService.getAll(searchParams.get('for_sale') === '1');
   return NextResponse.json(
     { success: true, data },
     {

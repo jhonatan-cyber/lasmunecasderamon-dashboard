@@ -6,7 +6,7 @@
 import { query } from '@/lib/database/db';
 import { getBarMlConfig, getTopeSimple } from '../bar/configuracion';
 import { mapPresentacion } from '../helpers';
-import { ESTADO_UNIDAD_ACTIVA } from '../estados';
+import { ESTADO_UNIDAD_ACTIVA, ESTADO_UNIDAD_VENDIDA } from '../estados';
 import type { ShotsSummary } from '../contracts';
 import type { PresentacionRow } from '../tipos';
 import { getNowInBusinessTimezone } from '@/lib/business/timezoneService';
@@ -45,12 +45,14 @@ export async function listarStockBar(productoId?: string): Promise<
     producto_codigo: string;
     producto_foto: string | null;
     categoria_nombre: string | null;
+    botellas_vacias_shots: number;
   })[]
 > {
   const rows = await query<any[]>(
     `SELECT p.*,
       (SELECT COUNT(*) FROM inventario_unidades u WHERE u.presentacion_id = p.id AND u.estado = '${ESTADO_UNIDAD_ACTIVA}' AND u.ubicacion = 'almacen') AS stock,
       (SELECT COUNT(*) FROM inventario_unidades u WHERE u.presentacion_id = p.id AND u.estado = '${ESTADO_UNIDAD_ACTIVA}' AND u.ubicacion = 'bar') AS stock_bar,
+      (SELECT COUNT(*) FROM inventario_unidades u WHERE u.presentacion_id = p.id AND u.estado = '${ESTADO_UNIDAD_VENDIDA}' AND u.ubicacion = 'bar' AND u.abierta_por_shots = true AND u.fecha_devolucion IS NULL) AS botellas_vacias_shots,
       (SELECT COALESCE(SUM(u.ml_restante), 0) FROM inventario_unidades u WHERE u.presentacion_id = p.id AND u.estado = '${ESTADO_UNIDAD_ACTIVA}' AND u.ubicacion = 'bar') AS ml_abierta,
       (SELECT COALESCE(SUM(m.ml), 0) FROM inventario_movimientos m WHERE m.presentacion_id = p.id AND m.tipo = 'venta' AND m.ml > 0) AS ml_servidos,
       pr.nombre AS producto_nombre, pr.codigo AS producto_codigo, pr.foto AS producto_foto,
@@ -76,7 +78,8 @@ export async function listarStockBar(productoId?: string): Promise<
     producto_nombre: row.producto_nombre,
     producto_codigo: row.producto_codigo,
     producto_foto: row.producto_foto ?? null,
-    categoria_nombre: row.categoria_nombre ?? null
+    categoria_nombre: row.categoria_nombre ?? null,
+    botellas_vacias_shots: Number(row.botellas_vacias_shots ?? 0)
   }));
 }
 

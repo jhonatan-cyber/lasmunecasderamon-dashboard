@@ -560,6 +560,12 @@ export default function BarPage() {
                                         : ''}
                                     </p>
                                   )}
+                                  {Number(item.botellas_vacias_shots ?? 0) > 0 && (
+                                    <p className='mt-1 text-[10px] font-bold uppercase text-amber-700 dark:text-amber-400'>
+                                      Vacías por shots: {Number(item.botellas_vacias_shots)} ·
+                                      pendientes de devolución
+                                    </p>
+                                  )}
                                   {Number(item.ml_servidos ?? 0) > 0 && (
                                     <p className='mt-1 text-[10px] font-bold uppercase text-amber-700 dark:text-amber-500'>
                                       Servido: {Number(item.ml_servidos)} ml

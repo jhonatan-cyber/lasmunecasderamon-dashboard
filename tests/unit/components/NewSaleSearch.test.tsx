@@ -8,6 +8,7 @@ vi.mock('sonner', () => ({ toast: { warning: vi.fn() } }));
 
 vi.mock('@/components/orders', () => ({
   HostessMultiSelect: () => null,
+  getExplicitMaxAnfitrionas: () => null,
   getHostessLimit: () => 1,
   hasCommission: (producto: any) => Number(producto?.comision || 0) > 0,
   isExpensiveDrink: () => false
@@ -98,43 +99,54 @@ const celdas = () =>
 const fila = () => within(screen.getByRole('row', { name: /Black Label 750 ml/ }));
 
 describe('buscador rápido de Nueva Venta', () => {
-  it('ofrece botella, shot cliente y shot anfitriona con el precio de cada uno', () => {
-    renderSearch([conShotAnfitriona]);
-
-    expect(screen.getByRole('button', { name: 'Botella · $180.000' })).toBeInTheDocument();
-    expect(screen.getByRole('button', { name: 'Shot cliente · $5.000' })).toBeInTheDocument();
-    expect(screen.getByRole('button', { name: 'Shot anfitriona · $3.000' })).toBeInTheDocument();
-    // Arranca en botella.
-    expect(celdas()[1]).toHaveTextContent('$180.000');
-  });
-
-  it('marca el detalle con la audiencia del shot al agregarlo al carro', () => {
+  it('permite elegir cantidades independientes y agregar los tres formatos juntos', () => {
     const onAdd = vi.fn();
     renderSearch([conShotAnfitriona], { onAdd });
-
-    fireEvent.click(screen.getByRole('button', { name: 'Shot anfitriona · $3.000' }));
-    expect(celdas()[1]).toHaveTextContent('$3.000');
-    fireEvent.click(screen.getByRole('button', { name: 'Agregar producto' }));
-
-    expect(onAdd).toHaveBeenLastCalledWith(
-      expect.objectContaining({
-        tipo_venta: 'shot',
-        shot_anfitriona: true,
-        precio: 3000,
-        comision: 0
-      })
+    const row = fila();
+    fireEvent.click(row.getByRole('button', { name: 'Botella: aumentar cantidad' }));
+    fireEvent.click(row.getByRole('button', { name: 'Shot cliente · 50 ml: aumentar cantidad' }));
+    fireEvent.click(
+      row.getByRole('button', { name: 'Shot anfitriona · 50 ml: aumentar cantidad' })
     );
+    fireEvent.click(row.getByRole('button', { name: 'Agregar Black Label 750 ml' }));
 
-    fireEvent.click(screen.getByRole('button', { name: 'Shot cliente · $5.000' }));
-    fireEvent.click(screen.getByRole('button', { name: 'Agregar producto' }));
-
-    expect(onAdd).toHaveBeenLastCalledWith(
+    expect(onAdd).toHaveBeenCalledTimes(3);
+    expect(onAdd).toHaveBeenNthCalledWith(
+      1,
+      expect.objectContaining({ tipo_venta: 'botella', cantidad: 1, precio: 180000 })
+    );
+    expect(onAdd).toHaveBeenNthCalledWith(
+      2,
       expect.objectContaining({
         tipo_venta: 'shot',
         shot_anfitriona: false,
+        cantidad: 1,
         precio: 5000
       })
     );
+    expect(onAdd).toHaveBeenNthCalledWith(
+      3,
+      expect.objectContaining({
+        tipo_venta: 'shot',
+        shot_anfitriona: true,
+        cantidad: 1,
+        precio: 3000
+      })
+    );
+  });
+
+  it('permite seguir usando la búsqueda para añadir otro producto después del primero', () => {
+    const onAdd = vi.fn();
+    renderSearch([conShotAnfitriona, sinShot], { onAdd });
+    const ron = within(screen.getByRole('row', { name: /Black Label 750 ml/ }));
+    fireEvent.click(ron.getByRole('button', { name: 'Botella: aumentar cantidad' }));
+    fireEvent.click(ron.getByRole('button', { name: 'Agregar Black Label 750 ml' }));
+
+    const cerveza = within(screen.getByRole('row', { name: /Corona 330 ml/ }));
+    expect(cerveza.getByRole('button', { name: 'Agregar Corona 330 ml' })).toBeInTheDocument();
+    fireEvent.click(cerveza.getByRole('button', { name: 'Botella: aumentar cantidad' }));
+    fireEvent.click(cerveza.getByRole('button', { name: 'Agregar Corona 330 ml' }));
+    expect(onAdd).toHaveBeenCalledTimes(2);
   });
 
   it('muestra la botella abierta y los shots aproximados que quedan', () => {
@@ -160,25 +172,7 @@ describe('buscador rápido de Nueva Venta', () => {
     expect(screen.queryByText(/Botella abierta/)).not.toBeInTheDocument();
   });
 
-  it('permite subir y bajar la cantidad antes de agregar', () => {
-    const { onCantidadChange } = renderSearch([conShotAnfitriona]);
-
-    // Arranca en una unidad y no deja bajar de ahí.
-    expect(fila().getByText('1')).toBeInTheDocument();
-    expect(fila().getByRole('button', { name: 'Disminuir' })).toBeDisabled();
-
-    fireEvent.click(fila().getByRole('button', { name: 'Aumentar' }));
-    expect(onCantidadChange).toHaveBeenLastCalledWith('presentation-1', '2');
-    fireEvent.click(fila().getByRole('button', { name: 'Aumentar' }));
-    expect(onCantidadChange).toHaveBeenLastCalledWith('presentation-1', '3');
-    expect(fila().getByText('3')).toBeInTheDocument();
-
-    fireEvent.click(fila().getByRole('button', { name: 'Disminuir' }));
-    expect(onCantidadChange).toHaveBeenLastCalledWith('presentation-1', '2');
-    expect(fila().getByText('2')).toBeInTheDocument();
-  });
-
-  it('muestra el stock disponible en bar junto al selector de cantidad', () => {
+  it('muestra el stock disponible en bar junto a los formatos', () => {
     renderSearch([conShotAnfitriona, sinShot]);
 
     // Mismo aviso que el modal de categoría, con el stock de cada presentación.
@@ -196,51 +190,11 @@ describe('buscador rápido de Nueva Venta', () => {
     ).toBeInTheDocument();
   });
 
-  it('respeta el tope de stock en botella y suelta el tope al pasar a shot', () => {
-    // Black Label trae 5 botellas en bar: con 5 elegidas no se puede subir más.
-    const { onCantidadChange } = renderSearch([conShotAnfitriona], {
-      cantidadesIniciales: { 'presentation-1': 5 }
-    });
-
-    const aumentar = () => fila().getByRole('button', { name: 'Aumentar' });
-    expect(aumentar()).toHaveAttribute('aria-disabled', 'true');
-
-    // El shot sale de la botella abierta, no gasta botellas: su tope es otro.
-    fireEvent.click(fila().getByRole('button', { name: 'Shot cliente · $5.000' }));
-    expect(aumentar()).toHaveAttribute('aria-disabled', 'false');
-
-    fireEvent.click(aumentar());
-    expect(onCantidadChange).toHaveBeenLastCalledWith('presentation-1', '6');
-  });
-
-  it('avisa en bar cuando el botón de aumentar llega al tope', () => {
-    const { onCantidadChange } = renderSearch([conShotAnfitriona], {
-      cantidadesIniciales: { 'presentation-1': 5 }
-    });
-
-    fireEvent.click(fila().getByRole('button', { name: 'Aumentar' }));
-
-    // Mismo aviso que el carro del dashboard ante un tope de stock.
-    expect(toast.warning).toHaveBeenLastCalledWith('Stock máximo en bar: 5');
-    // Y la cantidad no cambia.
-    expect(onCantidadChange).not.toHaveBeenCalled();
-    expect(fila().getByText('5')).toBeInTheDocument();
-  });
-
-  it('no avisa nada mientras quede margen para subir', () => {
-    const { onCantidadChange } = renderSearch([conShotAnfitriona]);
-
-    fireEvent.click(fila().getByRole('button', { name: 'Aumentar' }));
-
-    expect(toast.warning).not.toHaveBeenCalled();
-    expect(onCantidadChange).toHaveBeenLastCalledWith('presentation-1', '2');
-  });
-
   it('no ofrece shot en un producto que no lo tiene configurado', () => {
     renderSearch([sinShot]);
 
     expect(screen.queryByRole('button', { name: /Shot/ })).not.toBeInTheDocument();
-    expect(screen.getByRole('button', { name: 'Agregar producto' })).toBeEnabled();
+    expect(screen.getByRole('button', { name: 'Agregar Corona 330 ml' })).toBeDisabled();
   });
 
   it('agrega un shot con comisión sin anfitriona (la anfitriona es opcional)', () => {
@@ -253,9 +207,11 @@ describe('buscador rápido de Nueva Venta', () => {
     };
     renderSearch([conComision]);
 
-    expect(screen.getByRole('button', { name: 'Agregar producto' })).toBeEnabled();
-    fireEvent.click(screen.getByRole('button', { name: 'Shot anfitriona · $3.000' }));
+    expect(screen.getByRole('button', { name: 'Agregar Black Label 750 ml' })).toBeDisabled();
+    fireEvent.click(
+      screen.getByRole('button', { name: 'Shot anfitriona · 50 ml: aumentar cantidad' })
+    );
     // El shot ofrece asignar anfitriona, pero no exige elegirla para vender.
-    expect(screen.getByRole('button', { name: 'Agregar producto' })).toBeEnabled();
+    expect(screen.getByRole('button', { name: 'Agregar Black Label 750 ml' })).toBeEnabled();
   });
 });

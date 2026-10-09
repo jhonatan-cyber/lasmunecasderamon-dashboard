@@ -29,6 +29,12 @@ describe('CategoryService.getAll', () => {
     const result = await CategoryService.getAll();
     expect(result).toEqual(cats);
   });
+
+  it('passes the for-sale stock filter to the repository', async () => {
+    vi.mocked(CategoryRepository.getAll).mockResolvedValue([]);
+    await CategoryService.getAll(true);
+    expect(CategoryRepository.getAll).toHaveBeenCalledWith(true);
+  });
 });
 
 describe('CategoryService.create', () => {

@@ -4,7 +4,6 @@ import { useEffect, useState } from 'react';
 import type { Dispatch, SetStateAction } from 'react';
 import { useConfigValue } from '@/hooks/shared/useConfigValue';
 import { getActiveHostesses } from '@/components/orders';
-import type { SaleChoice } from '@/lib/sales/saleChoice';
 import {
   buildSaleProductItem,
   type SaleProductItem,
@@ -69,8 +68,8 @@ export function useSaleProductModal({
   const [currentPage, setCurrentPage] = useState(1);
   const [query, setQuery] = useState('');
   const [hostessSearchValues, setHostessSearchValues] = useState<{ [key: string]: string }>({});
-  // Tipo de venta elegido por presentación: botella entera o shot (descuenta ml).
-  const [tiposVenta, setTiposVenta] = useState<{ [key: string]: SaleChoice }>({});
+  // Cada formato conserva su propia cantidad por presentación.
+  const [cantidadesPorTipo, setCantidadesPorTipo] = useState<{ [key: string]: number }>({});
   const shotMl = useConfigValue<number>('bar', 'shot_ml', 50);
 
   // Cambiar de categoría o reabrir reinicia la vista.
@@ -92,13 +91,14 @@ export function useSaleProductModal({
   const context: SaleProductItemContext = {
     shotMl,
     cantidades,
-    tiposVenta,
+    cantidadesPorTipo,
     champagneHostessSelections,
     otherProductHostessSelections,
     hostessSearchValues,
     productosEnCarrito,
     availableHostesses,
-    onSaleTypeChange: (id, value) => setTiposVenta(prev => ({ ...prev, [id]: value })),
+    onSaleTypeChange: (id, value, cantidad) =>
+      setCantidadesPorTipo(prev => ({ ...prev, [`${id}:${value}`]: cantidad })),
     onCantidadChange: handleCantidadChange,
     onChampagneHostessChange,
     onOtherProductHostessChange,

@@ -66,6 +66,8 @@ export interface BarStockItem {
   foto: string | null;
   stock: number;
   stock_bar?: number;
+  /** Botellas agotadas por shots que siguen en el bar pendientes de devolución. */
+  botellas_vacias_shots?: number;
   /** Capacidad de la botella en ml (null = default de Configuraciones > Bar). */
   ml_botella?: number | null;
   /** Ml servidos por shot de ese producto (null = default de Configuraciones > Bar). */

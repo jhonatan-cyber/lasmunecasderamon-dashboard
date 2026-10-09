@@ -120,8 +120,9 @@ const normalizeCategory = (category: AnyRecord): NormalizedCategory => ({
 });
 
 export function useMasterData({
-  soloAnfitrionasEnLocal = false
-}: { soloAnfitrionasEnLocal?: boolean } = {}) {
+  soloAnfitrionasEnLocal = false,
+  categoriasConStockBar = false
+}: { soloAnfitrionasEnLocal?: boolean; categoriasConStockBar?: boolean } = {}) {
   const clientsQuery = useGenericFetch<NormalizedClient>('/api/clients', {
     queryKey: queryKeys.clients.all,
     transform: result => asArray(result).map(normalizeClient)
@@ -144,10 +145,15 @@ export function useMasterData({
     }
   );
 
-  const categoriesQuery = useGenericFetch<NormalizedCategory>('/api/categories', {
-    queryKey: queryKeys.categories.all,
-    transform: result => asArray(result).map(normalizeCategory)
-  });
+  const categoriesQuery = useGenericFetch<NormalizedCategory>(
+    `/api/categories${categoriasConStockBar ? '?for_sale=1' : ''}`,
+    {
+      queryKey: categoriasConStockBar
+        ? [...queryKeys.categories.all, 'for-sale']
+        : queryKeys.categories.all,
+      transform: result => asArray(result).map(normalizeCategory)
+    }
+  );
 
   const refreshAll = async () => {
     await Promise.all([

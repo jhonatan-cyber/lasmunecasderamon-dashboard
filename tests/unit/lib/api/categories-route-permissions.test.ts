@@ -70,7 +70,7 @@ vi.mock('@/lib/database/db', () => ({ query: db.query }));
 vi.mock('@/lib/auth/permissions-cache', () => ({ PermissionsCache: permissionsCache }));
 
 import { CategoryService } from '@/modules/inventario/categorias/servicio';
-import { DELETE, PATCH, POST, PUT } from '@/app/api/categories/route';
+import { DELETE, GET, PATCH, POST, PUT } from '@/app/api/categories/route';
 import {
   DELETE as DELETE_BY_ID,
   PATCH as PATCH_BY_ID,
@@ -116,6 +116,11 @@ beforeEach(() => {
 });
 
 describe('rutas de categorías · las mutaciones exigen el módulo categories', () => {
+  it('GET con for_sale=1 solicita solo categorías con inventario vendible', async () => {
+    await call(GET, 'http://localhost/api/categories?for_sale=1');
+    expect(service.getAll).toHaveBeenCalledWith(true);
+  });
+
   it('POST con categories.write crea la categoría', async () => {
     const res = await post();
 

@@ -6,11 +6,6 @@ import { Card, CardContent, CardFooter, CardHeader, CardTitle } from '@/componen
 import { SaleProductPhoto } from '@/components/sales/product-modal/SaleProductPhoto';
 import { SaleProductDetails } from '@/components/sales/product-modal/SaleProductDetails';
 import { SaleProductHostess } from '@/components/sales/product-modal/SaleProductHostess';
-import {
-  SaleProductCommission,
-  SaleProductPrice,
-  SaleProductQuantity
-} from '@/components/sales/product-modal/SaleProductCells';
 import type { SaleProductItem } from '@/components/sales/product-modal/saleProductItems';
 
 /** Página de productos en modo tarjetas (una card por presentación). */
@@ -44,24 +39,6 @@ export function SaleProductCards({
             <SaleProductDetails item={item} />
           </CardHeader>
           <CardContent className='flex flex-1 flex-col gap-4 p-4 pt-0'>
-            <dl className='grid grid-cols-2 gap-3 rounded-xl border border-neutral-200/60 bg-muted p-3 dark:border-white/10'>
-              <div>
-                <dt className='text-xs text-muted-foreground'>Precio</dt>
-                <dd className='font-semibold tabular-nums'>
-                  <SaleProductPrice item={item} />
-                </dd>
-              </div>
-              <div>
-                <dt className='text-xs text-muted-foreground'>Comisión</dt>
-                <dd className='font-semibold tabular-nums'>
-                  <SaleProductCommission item={item} />
-                </dd>
-              </div>
-            </dl>
-            <div className='flex items-center justify-between gap-2'>
-              <span className='text-sm text-muted-foreground'>Cantidad</span>
-              <SaleProductQuantity item={item} />
-            </div>
             <div className='flex flex-col gap-2'>
               <span className='text-sm text-muted-foreground'>Anfitriona</span>
               <SaleProductHostess item={item} availableHostesses={availableHostesses} />

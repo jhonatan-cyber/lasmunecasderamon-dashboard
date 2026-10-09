@@ -1,6 +1,7 @@
-﻿'use client';
+'use client';
 
 import { Search, X, Plus } from 'lucide-react';
+import { useState } from 'react';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import {
@@ -20,8 +21,6 @@ import {
   CUENTA_TABLE_HEADER_ROW_CLASS,
   CUENTA_TABLE_ROW_CLASS
 } from '@/components/cuentas/tables/cuentaTableStyles';
-import { useState } from 'react';
-import { formatCurrencyNoDecimals } from '@/lib/utils/formatters';
 import {
   HostessMultiSelect,
   getExplicitMaxAnfitrionas,
@@ -31,10 +30,11 @@ import {
 } from '@/components/orders';
 import { hostessAllowedForPrice } from '@/components/orders/productModalRules';
 import { IndividualHostessSelect } from '@/components/shared/selects';
-import { resolverVentaProducto, type SaleChoice } from '@/lib/sales/saleChoice';
-import { QuantityStepper } from '@/components/shared/QuantityStepper';
+import { resolverVentaProducto } from '@/lib/sales/saleChoice';
+import { SaleFormatQuantities } from '@/components/sales/SaleFormatQuantities';
+import type { SaleChoice } from '@/lib/sales/saleChoice';
 import { useConfigValue } from '@/hooks/shared/useConfigValue';
-import { resolveShotMl } from '@/lib/business/shotMl';
+import { resolveShotMl, resolveShotMlAnfitriona } from '@/lib/business/shotMl';
 
 interface NewSaleSearchProps {
   searchProducto: string;
@@ -55,75 +55,48 @@ interface NewSaleSearchProps {
   handleCantidadChange: (id: string, val: string) => void;
 }
 
-export const NewSaleSearch = ({
-  searchProducto,
-  setSearchProducto,
-  handleClearSearch,
-  searchLoading,
-  searchResults,
-  anfitrionas,
-  champagneHostessSelections,
-  handleChampagneHostessChange,
-  hostessSearchValues,
-  setHostessSearchValues,
-  otherProductHostessSelections,
-  handleOtherProductHostessChange,
-  handleAddProducto,
-  isChampagneProduct,
-  cantidades,
-  handleCantidadChange
-}: NewSaleSearchProps) => {
-  // Forma de venta elegida por presentación: botella entera o shot, a precio de cliente
-  // o de anfitriona. El buscador ofrece lo mismo que el modal de categoría.
-  const [tiposVenta, setTiposVenta] = useState<{ [key: string]: SaleChoice }>({});
-  // Ml por shot global de Configuraciones: sirve para estimar los shots que quedan
-  // en la botella abierta. Cada presentación puede traer su propio ml_shot.
+export const NewSaleSearch = (props: NewSaleSearchProps) => {
+  const [cantidadesPorFormato, setCantidadesPorFormato] = useState<Record<string, number>>({});
   const shotMl = useConfigValue<number>('bar', 'shot_ml', 50);
   return (
     <div className='space-y-4'>
-      <div className='flex flex-col sm:flex-row items-center justify-center gap-2 mb-4'>
+      <div className='mb-4 flex flex-col items-center justify-center gap-2 sm:flex-row'>
         <div className='relative w-full max-w-xs'>
-          <Search className='absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-3 h-3 sm:w-4 sm:h-4' />
+          <Search className='absolute left-3 top-1/2 h-3 w-3 -translate-y-1/2 transform text-gray-400 sm:h-4 sm:w-4' />
           <Input
             placeholder='Buscar Producto'
-            value={searchProducto}
-            onChange={e => setSearchProducto(e.target.value)}
-            className='pl-10 pr-20 py-2 text-sm sm:text-base rounded-full'
+            value={props.searchProducto}
+            onChange={e => props.setSearchProducto(e.target.value)}
+            className='rounded-full py-2 pl-10 pr-20 text-sm sm:text-base'
           />
           <Button
             variant='outline'
-            className='absolute bg-black text-white right-0 top-1/2 -translate-y-1/2 text-xs sm:text-sm rounded-full'
+            className='absolute right-0 top-1/2 -translate-y-1/2 rounded-full bg-black text-xs text-white sm:text-sm'
           >
             Buscar
           </Button>
         </div>
-        {searchProducto && (
+        {props.searchProducto && (
           <Button
             variant='outline'
             size='sm'
-            className='rounded-full px-4 bg-black text-white'
-            onClick={handleClearSearch}
+            className='rounded-full bg-black px-4 text-white'
+            onClick={props.handleClearSearch}
           >
-            <X className='mr-1' /> Limpiar
+            <X className='mr-1' />
+            Limpiar
           </Button>
         )}
       </div>
 
-      {searchProducto && (
+      {props.searchProducto && (
         <div className={`mb-4 ${CUENTA_TABLE_CARD_CLASS}`}>
           <div className='overflow-x-auto'>
             <Table className={CUENTA_TABLE_CLASS}>
               <TableHeader className={CUENTA_TABLE_HEADER_CLASS}>
                 <TableRow className={CUENTA_TABLE_HEADER_ROW_CLASS}>
-                  <TableHead className={CUENTA_TABLE_HEAD_CLASS}>PRODUCTO</TableHead>
-                  <TableHead className={`${CUENTA_TABLE_HEAD_CLASS} text-center`}>PRECIO</TableHead>
+                  <TableHead className={CUENTA_TABLE_HEAD_CLASS}>PRODUCTO Y FORMATOS</TableHead>
                   <TableHead className={`${CUENTA_TABLE_HEAD_CLASS} text-center`}>
-                    COMISIÓN
-                  </TableHead>
-                  <TableHead className={`${CUENTA_TABLE_HEAD_CLASS} text-center`}>
-                    CANTIDAD
-                  </TableHead>
-                  <TableHead className={`${CUENTA_TABLE_HEAD_CLASS} text-center text-xs`}>
                     CATEGORÍA
                   </TableHead>
                   <TableHead className={`${CUENTA_TABLE_HEAD_CLASS} text-center`}>
@@ -135,192 +108,170 @@ export const NewSaleSearch = ({
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {searchLoading ? (
+                {props.searchLoading ? (
                   <TableRow>
                     <TableCell
-                      colSpan={7}
-                      className={`${CUENTA_TABLE_CELL_CLASS} text-center py-4`}
+                      colSpan={4}
+                      className={`${CUENTA_TABLE_CELL_CLASS} py-4 text-center`}
                     >
                       Buscando...
                     </TableCell>
                   </TableRow>
-                ) : searchResults.length === 0 ? (
+                ) : props.searchResults.length === 0 ? (
                   <TableRow>
                     <TableCell
-                      colSpan={7}
-                      className={`${CUENTA_TABLE_CELL_CLASS} text-center py-4 text-gray-400`}
+                      colSpan={4}
+                      className={`${CUENTA_TABLE_CELL_CLASS} py-4 text-center text-gray-400`}
                     >
                       No hay resultados
                     </TableCell>
                   </TableRow>
                 ) : (
-                  searchResults.map((producto, idx) => {
+                  props.searchResults.map(producto => {
                     const id = String(producto.id_producto || producto.id);
-                    const isChampagne = isChampagneProduct(producto);
-                    const champagneHostessLimit = getHostessLimit(producto);
-                    const venta = resolverVentaProducto(producto, tiposVenta[id]);
-                    const mlPorShot = resolveShotMl(producto.ml_shot, shotMl);
-                    const mlAbierta = Number(producto.ml_abierta ?? 0);
-                    // Cantidad pedida para esta presentación: es la que el carro recibe al
-                    // agregar, y la que limita cuántas anfitrionas pide una bebida cara.
-                    const cantidad = cantidades[id] || 1;
-                    // Sin comisión no se pide anfitriona; la regla por precio (bebida cara)
-                    // es de la botella, el shot no la hereda.
-                    const pideAnfitriona = venta.esShot
-                      ? venta.comision > 0
-                      : hasCommission(producto) || venta.comisionBotella > 0;
+                    const isChampagne = props.isChampagneProduct(producto);
+                    const champagneLimit = getHostessLimit(producto);
+                    const sale = resolverVentaProducto(producto);
+                    const shotMlCliente = resolveShotMl(producto.ml_shot, shotMl);
+                    const shotMlAnfitriona = resolveShotMlAnfitriona(
+                      producto.ml_shot_anfitriona,
+                      shotMlCliente
+                    );
+                    const options = sale.opciones.map(option => ({
+                      value: option.value,
+                      label: `${option.nombre}${option.esShot ? ` · ${option.value === 'shot_anfitriona' ? shotMlAnfitriona : shotMlCliente} ml` : ''}`,
+                      precio: option.precio,
+                      comision: option.comision,
+                      cantidad: cantidadesPorFormato[`${id}:${option.value}`] || 0,
+                      maxCantidad: option.esShot ? 99 : Number(producto.stock_bar ?? 0)
+                    }));
+                    const totalCantidad = options.reduce((sum, option) => sum + option.cantidad, 0);
+                    const champagneSelected = props.champagneHostessSelections[id] || [];
+                    const otherSelected = props.otherProductHostessSelections[id] || [];
+                    const botellaConComision = hasCommission(producto) || sale.comisionBotella > 0;
+                    const shotConComision = options.some(
+                      option => option.value !== 'botella' && option.comision > 0
+                    );
                     const muestraAnfitriona =
-                      pideAnfitriona ||
-                      (!venta.esShot && hostessAllowedForPrice(venta.precioBotella));
+                      isChampagne ||
+                      shotConComision ||
+                      botellaConComision ||
+                      hostessAllowedForPrice(sale.precioBotella);
+                    const maxHostesses = isChampagne
+                      ? champagneLimit
+                      : isExpensiveDrink(producto)
+                        ? Math.max(1, totalCantidad)
+                        : (getExplicitMaxAnfitrionas(producto) ?? 1);
+                    const selectedHostesses = isChampagne ? champagneSelected : otherSelected;
+                    const onAdd = () =>
+                      options
+                        .filter(option => option.cantidad > 0)
+                        .forEach(option => {
+                          props.handleAddProducto({
+                            ...producto,
+                            tipo_venta: option.value === 'botella' ? 'botella' : 'shot',
+                            shot_anfitriona: option.value === 'shot_anfitriona',
+                            precio: option.precio,
+                            comision: option.comision,
+                            cantidad: option.cantidad,
+                            selectedHostesses,
+                            isChampagne
+                          });
+                          setCantidadesPorFormato(prev => ({
+                            ...prev,
+                            [`${id}:${option.value}`]: 0
+                          }));
+                        });
                     return (
-                      <TableRow key={idx} className={CUENTA_TABLE_ROW_CLASS}>
-                        <TableCell className={CUENTA_TABLE_CELL_CLASS}>
-                          <div>{producto.nombre}</div>
-                          {mlAbierta > 0 && (
-                            <p className='text-xs text-amber-600 dark:text-amber-400 font-medium'>
-                              Botella abierta: {mlAbierta} ml
-                              {mlPorShot > 0
-                                ? ` · ≈${Math.floor(mlAbierta / mlPorShot)} shots`
-                                : ''}
+                      <TableRow key={id} className={CUENTA_TABLE_ROW_CLASS}>
+                        <TableCell className={`${CUENTA_TABLE_CELL_CLASS} min-w-[340px]`}>
+                          <div className='font-semibold'>{producto.nombre}</div>
+                          {Number(producto.ml_abierta ?? 0) > 0 && (
+                            <p className='text-xs font-medium text-amber-600 dark:text-amber-400'>
+                              Botella abierta: {Number(producto.ml_abierta)} ml · ≈
+                              {Math.floor(Number(producto.ml_abierta) / Math.max(shotMlCliente, 1))}{' '}
+                              shots
                             </p>
                           )}
-                          {venta.tieneShot && (
-                            <div className='mt-1.5 flex flex-wrap items-center gap-1.5'>
-                              {venta.opciones.map(opcion => (
-                                <button
-                                  key={opcion.value}
-                                  type='button'
-                                  onClick={() =>
-                                    setTiposVenta(prev => ({ ...prev, [id]: opcion.value }))
-                                  }
-                                  className={`px-2 py-0.5 rounded-full text-[10px] font-bold border transition-colors ${
-                                    venta.tipoVenta === opcion.value
-                                      ? 'bg-black text-white border-black dark:bg-white dark:text-black dark:border-white'
-                                      : 'border-neutral-300 dark:border-neutral-700 text-neutral-500'
-                                  }`}
-                                >
-                                  {opcion.nombre} · {formatCurrencyNoDecimals(opcion.precio)}
-                                </button>
-                              ))}
-                            </div>
-                          )}
-                        </TableCell>
-                        <TableCell className={`${CUENTA_TABLE_CELL_CLASS} text-center`}>
-                          {formatCurrencyNoDecimals(venta.precio)}
-                        </TableCell>
-                        <TableCell className={`${CUENTA_TABLE_CELL_CLASS} text-center`}>
-                          {formatCurrencyNoDecimals(venta.comision)}
-                        </TableCell>
-                        <TableCell className={`${CUENTA_TABLE_CELL_CLASS} text-center`}>
-                          <QuantityStepper
-                            value={cantidad}
-                            max={venta.maxCantidad}
-                            onChange={siguiente => handleCantidadChange(id, siguiente.toString())}
-                          >
-                            {/* Cuánto hay en el bar, como el modal de categoría: es el tope
-                                que aplica el botón de aumentar al vender botella entera. */}
-                            <p className='text-[10px] whitespace-nowrap text-muted-foreground'>
-                              Disponibles en bar: {producto.stock_bar ?? 0}
-                            </p>
-                          </QuantityStepper>
+                          <SaleFormatQuantities
+                            options={options}
+                            onChange={(value: SaleChoice, cantidad) =>
+                              setCantidadesPorFormato(prev => ({
+                                ...prev,
+                                [`${id}:${value}`]: cantidad
+                              }))
+                            }
+                          />
+                          <p className='mt-1 text-[10px] text-muted-foreground'>
+                            Disponibles en bar: {producto.stock_bar ?? 0}
+                          </p>
                         </TableCell>
                         <TableCell className={`${CUENTA_TABLE_CELL_CLASS} text-center text-xs`}>
                           {producto.categoria}
                         </TableCell>
-                        <TableCell className={`${CUENTA_TABLE_CELL_CLASS} text-center`}>
-                          {muestraAnfitriona ? (
-                            isChampagne ? (
-                              <div className='space-y-2'>
-                                <HostessMultiSelect
-                                  anfitrionas={anfitrionas.filter(
-                                    h => h.status === 1 || h.status === 2
-                                  )}
-                                  value={champagneHostessSelections[id] || []}
-                                  onChange={ids => handleChampagneHostessChange(id, ids)}
-                                  searchValue={hostessSearchValues[id] || ''}
-                                  onSearchChange={val =>
-                                    setHostessSearchValues((prev: any) => ({ ...prev, [id]: val }))
-                                  }
-                                  maxSelection={champagneHostessLimit}
-                                />
-                                <div className='text-xs text-gray-500'>
-                                  {(champagneHostessSelections[id] || []).length} de{' '}
-                                  {champagneHostessLimit} seleccionadas
-                                </div>
-                              </div>
-                            ) : (
-                              (() => {
-                                if (isExpensiveDrink(producto)) {
-                                  // Botella cara: tantas anfitrionas como unidades, salvo máximo
-                                  // explícito por producto (Configuraciones > Comisiones).
-                                  const maxExplicito = getExplicitMaxAnfitrionas(producto ?? {});
-                                  const limiteAnfitrionas = maxExplicito
-                                    ? Math.min(cantidad, maxExplicito)
-                                    : cantidad;
-                                  return (
-                                    <div className='space-y-2'>
-                                      <HostessMultiSelect
-                                        anfitrionas={anfitrionas.filter(
-                                          h => h.status === 1 || h.status === 2
-                                        )}
-                                        value={otherProductHostessSelections[id] || []}
-                                        onChange={ids => handleOtherProductHostessChange(id, ids)}
-                                        searchValue={hostessSearchValues[id] || ''}
-                                        onSearchChange={val =>
-                                          setHostessSearchValues((prev: any) => ({
-                                            ...prev,
-                                            [id]: val
-                                          }))
-                                        }
-                                        maxSelection={limiteAnfitrionas}
-                                      />
-                                      <div className='text-xs text-gray-500'>
-                                        {(otherProductHostessSelections[id] || []).length} de{' '}
-                                        {limiteAnfitrionas} seleccionadas
-                                      </div>
-                                    </div>
-                                  );
+                        <TableCell
+                          className={`${CUENTA_TABLE_CELL_CLASS} min-w-[190px] text-center`}
+                        >
+                          {!muestraAnfitriona ? (
+                            <span className='text-xs text-gray-400'>Sin comisión</span>
+                          ) : isChampagne ? (
+                            <div className='space-y-2'>
+                              <HostessMultiSelect
+                                anfitrionas={props.anfitrionas.filter(
+                                  h => h.status === 1 || h.status === 2
+                                )}
+                                value={champagneSelected}
+                                onChange={ids => props.handleChampagneHostessChange(id, ids)}
+                                searchValue={props.hostessSearchValues[id] || ''}
+                                onSearchChange={val =>
+                                  props.setHostessSearchValues((prev: any) => ({
+                                    ...prev,
+                                    [id]: val
+                                  }))
                                 }
-
-                                return (
-                                  <IndividualHostessSelect
-                                    anfitrionas={anfitrionas.filter(
-                                      h => h.status === 1 || h.status === 2
-                                    )}
-                                    value={otherProductHostessSelections[id]?.[0] || ''}
-                                    onChange={val =>
-                                      handleOtherProductHostessChange(id, val ? [val] : [])
-                                    }
-                                  />
-                                );
-                              })()
-                            )
+                                maxSelection={champagneLimit}
+                              />
+                              <div className='text-xs text-gray-500'>
+                                {champagneSelected.length} de {champagneLimit} seleccionadas
+                              </div>
+                            </div>
+                          ) : isExpensiveDrink(producto) ? (
+                            <HostessMultiSelect
+                              anfitrionas={props.anfitrionas.filter(
+                                h => h.status === 1 || h.status === 2
+                              )}
+                              value={otherSelected}
+                              onChange={ids => props.handleOtherProductHostessChange(id, ids)}
+                              searchValue={props.hostessSearchValues[id] || ''}
+                              onSearchChange={val =>
+                                props.setHostessSearchValues((prev: any) => ({
+                                  ...prev,
+                                  [id]: val
+                                }))
+                              }
+                              maxSelection={maxHostesses}
+                            />
                           ) : (
-                            <span className='text-gray-400 text-xs'>Sin comisión</span>
+                            <IndividualHostessSelect
+                              anfitrionas={props.anfitrionas.filter(
+                                h => h.status === 1 || h.status === 2
+                              )}
+                              value={otherSelected[0] || ''}
+                              onChange={val =>
+                                props.handleOtherProductHostessChange(id, val ? [val] : [])
+                              }
+                            />
                           )}
                         </TableCell>
                         <TableCell className={`${CUENTA_TABLE_CELL_CLASS} text-center`}>
                           <Button
                             size='icon'
-                            aria-label='Agregar producto'
-                            className='bg-black text-white rounded-full hover:scale-110 transition-all duration-200'
-                            onClick={() =>
-                              handleAddProducto({
-                                ...producto,
-                                // El shot se sirve por ml y puede cobrarse a precio de
-                                // anfitriona: viaja marcado para separarlo en reportes y caja.
-                                tipo_venta: venta.esShot ? 'shot' : 'botella',
-                                shot_anfitriona: venta.tipoVenta === 'shot_anfitriona',
-                                ...(venta.esShot
-                                  ? { precio: venta.precio, comision: venta.comision }
-                                  : {}),
-                                selectedHostesses: isChampagne
-                                  ? champagneHostessSelections[id] || []
-                                  : otherProductHostessSelections[id] || []
-                              })
-                            }
+                            aria-label={`Agregar ${producto.nombre}`}
+                            className='rounded-full bg-black text-white transition-all duration-200 hover:scale-110 disabled:opacity-40'
+                            onClick={onAdd}
+                            disabled={totalCantidad === 0}
                           >
-                            <Plus className='w-4 h-4' />
+                            <Plus className='h-4 w-4' />
                           </Button>
                         </TableCell>
                       </TableRow>

@@ -3,6 +3,7 @@ import { getNowInBusinessTimezone } from '@/lib/business/timezoneService';
 import { sendNotificationToAll } from '@/lib/api/sseService';
 import { BaseRepository } from '@/lib/database/base-repository';
 import { ConflictError } from '@/lib/errors/errors';
+import { ESTADO_UNIDAD_ACTIVA } from '@/modules/inventario/estados';
 
 export class CategoryRepository {
   private static mapCategoryFromDB(row: any) {
@@ -18,12 +19,22 @@ export class CategoryRepository {
     };
   }
 
-  static async getAll() {
+  static async getAll(forSale = false) {
     const results = (await query(`
       SELECT 
         C.id_categoria, C.nombre, C.descripcion, C.estado, C.fecha_crea, C.display_order,
-        (SELECT COUNT(*) FROM productos P WHERE P.categoria_id = C.id_categoria AND P.estado = 1) AS total_productos
+        (SELECT COUNT(DISTINCT P.id_producto)
+         FROM productos P
+         ${
+           forSale
+             ? `INNER JOIN inventario_presentaciones IP ON IP.producto_id = P.id_producto
+         INNER JOIN inventario_unidades IU ON IU.presentacion_id = IP.id
+           AND IU.estado = '${ESTADO_UNIDAD_ACTIVA}' AND IU.ubicacion = 'bar'`
+             : ''
+         }
+         WHERE P.categoria_id = C.id_categoria AND P.estado = 1) AS total_productos
       FROM categorias C
+      ${forSale ? 'WHERE C.estado = 1' : ''}
       ORDER BY C.display_order ASC, C.nombre ASC
     `)) as any[];
     return results.map(this.mapCategoryFromDB);
