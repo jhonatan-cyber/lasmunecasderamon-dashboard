@@ -219,9 +219,13 @@ export async function obtenerVenta(id: string): Promise<VentaGetByIdResponse | n
       query<DetalleVentaWithProductRow[]>(
         `SELECT dv.id_detalle_venta as id, dv.venta_id, dv.producto_id, dv.presentacion_id, dv.precio, dv.comision, dv.cantidad, dv.sub_total,
                 dv.tipo_venta, dv.shot_anfitriona,
-                p.nombre as producto_nombre, p.precio as producto_precio
+                p.nombre as producto_nombre, p.precio as producto_precio,
+                c.nombre as categoria_nombre, ip.nombre as presentacion_nombre,
+                p.foto as producto_foto
          FROM detalle_ventas dv
          LEFT JOIN productos p ON p.id_producto = dv.producto_id
+         LEFT JOIN categorias c ON c.id_categoria = p.categoria_id
+         LEFT JOIN inventario_presentaciones ip ON ip.id = dv.presentacion_id
          WHERE dv.venta_id = ?
          ORDER BY dv.id_detalle_venta ASC`,
         [id]
@@ -293,7 +297,14 @@ export async function obtenerVenta(id: string): Promise<VentaGetByIdResponse | n
         cantidad: Number(d.cantidad || 0),
         sub_total: Number(d.sub_total || 0),
         producto_nombre: d.producto_nombre,
-        producto_precio: d.producto_precio ? Number(d.producto_precio) : undefined
+        producto_precio: d.producto_precio ? Number(d.producto_precio) : undefined,
+        categoria_nombre: d.categoria_nombre,
+        presentacion_nombre: d.presentacion_nombre,
+        producto_foto: d.producto_foto,
+        producto_etiqueta: [d.categoria_nombre, d.producto_nombre, d.presentacion_nombre]
+          .map(value => String(value || '').trim())
+          .filter(Boolean)
+          .join(' - ')
       })),
       usuarios: usuarios.map(u => ({
         id: u.usuario_id,

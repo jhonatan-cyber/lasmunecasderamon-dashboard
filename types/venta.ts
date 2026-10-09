@@ -25,6 +25,10 @@ export interface VentaDetalle {
   cantidad: number;
   sub_total: number;
   producto_nombre?: string;
+  categoria_nombre?: string | null;
+  presentacion_nombre?: string | null;
+  producto_foto?: string | null;
+  producto_etiqueta?: string;
   producto_precio?: number;
   /** 'botella' | 'shot'. Ausente en ventas anteriores a la migración 039. */
   tipo_venta?: 'botella' | 'shot' | null;

@@ -16,7 +16,8 @@ import {
   revertirStockAnulacion,
   sincronizarStockTotal,
   traspasarAlBar,
-  verificarEnvase
+  verificarEnvase,
+  verificarEnvases
 } from '@/modules/inventario';
 import { conContextoOperacionExistente } from '@/tests/setup/contexto-operacion';
 
@@ -1000,7 +1001,7 @@ describe('control de devolución de envases', () => {
     );
 
     expect(resultado).toMatchObject({ ok: false, motivo: 'no_es_nuestro', unidad: null });
-    expect(trx).toHaveBeenCalledTimes(1);
+    expect(trx).toHaveBeenCalledTimes(2);
   });
 
   it('rechaza un envase nuestro que no está vacío', async () => {
@@ -1055,7 +1056,29 @@ describe('control de devolución de envases', () => {
       verificarEnvase('  lm-000123  ', 'user-1', contexto)
     );
 
-    expect(trx.mock.calls[0][1]).toEqual(['LM-000123', 'LM-000123']);
+    expect(trx.mock.calls[0][0]).toContain('WHERE u.codigo = ?');
+    expect(trx.mock.calls[0][1]).toEqual(['LM-000123']);
+  });
+
+  it('procesa el lote con una sola transacción y usa búsquedas indexables exactas', async () => {
+    const trx = trxCon([envase()]);
+    (withTransaction as any).mockImplementationOnce(async (cb: any) => await cb(trx));
+
+    const resultados = await verificarEnvases(
+      [' 2912345678901 ', 'LM-000124', '2912345678901'],
+      'user-1'
+    );
+
+    expect(resultados).toHaveLength(2);
+    expect(resultados.every(resultado => resultado.ok)).toBe(true);
+    expect(vi.mocked(withTransaction)).toHaveBeenCalledTimes(1);
+    const consultas = trx.mock.calls.filter(call =>
+      String(call[0]).includes('FROM inventario_unidades')
+    );
+    expect(consultas[0][0]).toContain('WHERE u.codigo_barras = ?');
+    expect(consultas[0][1]).toEqual(['2912345678901']);
+    expect(consultas[1][0]).toContain('WHERE u.codigo = ?');
+    expect(consultas[1][1]).toEqual(['LM-000124']);
   });
 
   it('el escaneo corre dentro de una transacción (wrapper público)', async () => {
@@ -1195,7 +1218,7 @@ describe('control de devolución de envases', () => {
     );
 
     expect(resultado).toMatchObject({ ok: false, motivo: 'no_es_nuestro', unidad: null });
-    expect(trx).toHaveBeenCalledTimes(1);
+    expect(trx).toHaveBeenCalledTimes(2);
   });
 
   it('exige un código para confirmar la recepción', async () => {
@@ -1214,7 +1237,7 @@ describe('control de devolución de envases', () => {
       confirmarRecepcionEnvase('  lm-000123  ', 'user-2', contexto)
     );
 
-    expect(trx.mock.calls[0][1]).toEqual(['LM-000123', 'LM-000123']);
+    expect(trx.mock.calls[0][1]).toEqual(['LM-000123']);
   });
 
   it('la confirmación corre dentro de una transacción (wrapper público)', async () => {

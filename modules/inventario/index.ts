@@ -29,7 +29,8 @@ export {
   HORAS_ENVASE_SIN_CONFIRMAR,
   listarDevoluciones,
   obtenerResumenEnvases,
-  verificarEnvase
+  verificarEnvase,
+  verificarEnvases
 } from './envases/servicio';
 export {
   actualizarFotoPresentacion,

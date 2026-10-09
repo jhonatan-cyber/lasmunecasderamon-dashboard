@@ -42,6 +42,34 @@ export async function verificarEnvase(
   return resultado;
 }
 
+/** Verifica varios códigos dentro de una sola transacción para el scanner móvil. */
+export async function verificarEnvases(
+  codigosEscaneados: unknown[],
+  usuarioId: string | null
+): Promise<DevolucionEnvaseResultado[]> {
+  const codigos = [
+    ...new Set(
+      codigosEscaneados
+        .map(codigo =>
+          String(codigo ?? '')
+            .trim()
+            .toUpperCase()
+        )
+        .filter(Boolean)
+    )
+  ];
+  if (codigos.length === 0) return [];
+
+  let resultados: DevolucionEnvaseResultado[] = [];
+  await withTransaction(async trx => {
+    resultados = [];
+    for (const codigo of codigos) {
+      resultados.push(await verificarEnRepositorio(trx, codigo, usuarioId));
+    }
+  });
+  return resultados;
+}
+
 /**
  * Escanea un envase en el almacén: confirma la recepción de uno que el bar ya
  * entregó.

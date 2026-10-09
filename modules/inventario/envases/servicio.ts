@@ -12,6 +12,9 @@ export function obtenerResumenEnvases(
 export function verificarEnvase(...args: Parameters<typeof infraestructura.verificarEnvase>) {
   return infraestructura.verificarEnvase(...args);
 }
+export function verificarEnvases(...args: Parameters<typeof infraestructura.verificarEnvases>) {
+  return infraestructura.verificarEnvases(...args);
+}
 export function confirmarRecepcionEnvase(
   ...args: Parameters<typeof infraestructura.confirmarRecepcionEnvase>
 ) {

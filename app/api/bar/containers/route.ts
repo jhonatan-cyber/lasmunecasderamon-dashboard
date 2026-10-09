@@ -17,7 +17,7 @@ export const POST = withRoute(
           ...new Set(
             payload.codigos
               .filter((codigo: unknown): codigo is string => typeof codigo === 'string')
-              .map((codigo: string) => codigo.trim())
+              .map((codigo: string) => codigo.trim().toUpperCase())
               .filter(Boolean)
           )
         ]
@@ -29,12 +29,10 @@ export const POST = withRoute(
           { status: 400 }
         );
       }
-      const resultados = [];
-      for (const codigo of codigos) {
-        resultados.push(
-          await ProductService.verifyAndReturnContainer(codigo, context?.user?.id ?? null)
-        );
-      }
+      const resultados = await ProductService.verifyAndReturnContainers(
+        codigos,
+        context?.user?.id ?? null
+      );
       await notifyContainerReturnBatch(resultados, context?.user?.id ?? null);
       const entregados = resultados.filter(resultado => resultado.ok).length;
       return NextResponse.json({

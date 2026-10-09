@@ -341,6 +341,9 @@ export interface DetalleVentaCompletoRow {
   sub_total: number;
   producto_nombre: string | null;
   producto_precio: number | null;
+  categoria_nombre?: string | null;
+  presentacion_nombre?: string | null;
+  producto_foto?: string | null;
 }
 
 export interface VentaUsuarioRow {
@@ -557,6 +560,9 @@ export interface VentaGetByIdRow extends VentaRawRow {
 /** Row for detail_ventas + productos join */
 export interface DetalleVentaWithProductRow {
   presentacion_id?: string | null;
+  categoria_nombre?: string | null;
+  presentacion_nombre?: string | null;
+  producto_foto?: string | null;
   id: string;
   venta_id: string;
   producto_id: string | null;

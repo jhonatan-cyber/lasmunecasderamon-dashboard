@@ -285,7 +285,7 @@ export function SalesDetailModal({
                       <div className='flex-1 min-w-0'>
                         <div className='flex items-center gap-2'>
                           <span className='text-sm font-semibold text-gray-900 dark:text-white truncate'>
-                            {det.producto_nombre || 'Producto'}
+                            {det.producto_etiqueta || det.producto_nombre || 'Producto'}
                           </span>
                           {esShot(det) && (
                             <Badge

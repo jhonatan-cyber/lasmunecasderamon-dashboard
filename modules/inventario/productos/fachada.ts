@@ -35,7 +35,8 @@ import {
 import {
   confirmarRecepcionEnvase,
   listarDevoluciones,
-  verificarEnvase
+  verificarEnvase,
+  verificarEnvases
 } from '@/modules/inventario/envases/servicio';
 import { esEstadoUnidadValido } from '@/modules/inventario/estados';
 import {
@@ -467,6 +468,10 @@ export class ProductService {
    */
   static async verifyAndReturnContainer(codigo: unknown, usuarioId: string | null) {
     return await verificarEnvase(codigo, usuarioId);
+  }
+
+  static async verifyAndReturnContainers(codigos: unknown[], usuarioId: string | null) {
+    return await verificarEnvases(codigos, usuarioId);
   }
 
   /**

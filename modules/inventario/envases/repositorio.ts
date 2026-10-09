@@ -24,20 +24,29 @@ import { getNowInBusinessTimezone } from '@/lib/business/timezoneService';
 export const HORAS_ENVASE_SIN_CONFIRMAR = 2;
 
 async function buscarEnvase(trx: TransactionQuery, escaneo: string): Promise<EnvaseFila | null> {
-  const filas = await trx<any[]>(
-    `SELECT u.id, u.codigo, u.codigo_barras, u.estado, u.fecha_devolucion, u.devuelto_por,
-            u.fecha_confirmacion, u.confirmado_por, u.abierta_por_shots,
-            p.nombre AS producto_nombre, pr.nombre AS presentacion_nombre, c.folio AS compra_folio
-       FROM inventario_unidades u
-       LEFT JOIN productos p ON p.id_producto = u.producto_id
-       LEFT JOIN inventario_presentaciones pr ON pr.id = u.presentacion_id
-       LEFT JOIN compras c ON c.id = u.compra_id
-      WHERE u.codigo_barras = ? OR u.codigo = ?
-      LIMIT 1
-      FOR UPDATE OF u`,
-    [escaneo, escaneo]
-  );
-  return filas[0] ?? null;
+  // Cada columna tiene un índice UNIQUE propio. Buscar por igualdad exacta
+  // permite usarlo incluso con millones de unidades y evita el OR sobre ambas.
+  // Prioriza el formato más probable para hacer una sola consulta en el caso normal.
+  const campos: Array<'codigo_barras' | 'codigo'> = /^\d{8,20}$/.test(escaneo)
+    ? ['codigo_barras', 'codigo']
+    : ['codigo', 'codigo_barras'];
+  for (const campo of campos) {
+    const filas = await trx<any[]>(
+      `SELECT u.id, u.codigo, u.codigo_barras, u.estado, u.fecha_devolucion, u.devuelto_por,
+              u.fecha_confirmacion, u.confirmado_por, u.abierta_por_shots,
+              p.nombre AS producto_nombre, pr.nombre AS presentacion_nombre, c.folio AS compra_folio
+         FROM inventario_unidades u
+         LEFT JOIN productos p ON p.id_producto = u.producto_id
+         LEFT JOIN inventario_presentaciones pr ON pr.id = u.presentacion_id
+         LEFT JOIN compras c ON c.id = u.compra_id
+        WHERE u.${campo} = ?
+        LIMIT 1
+        FOR UPDATE OF u`,
+      [escaneo]
+    );
+    if (filas[0]) return filas[0];
+  }
+  return null;
 }
 
 /**

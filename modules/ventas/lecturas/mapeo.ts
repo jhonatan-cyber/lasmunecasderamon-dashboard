@@ -60,6 +60,10 @@ export type VentaGetByIdResponse = SaleType & {
     sub_total: number;
     producto_nombre: string | null;
     producto_precio: number | undefined;
+    categoria_nombre?: string | null;
+    presentacion_nombre?: string | null;
+    producto_foto?: string | null;
+    producto_etiqueta: string;
   }[];
   usuarios: { id: string; usuario_id: string; nick: string; usuario_nombre: string | null }[];
 };
