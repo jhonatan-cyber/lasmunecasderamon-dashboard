@@ -191,19 +191,19 @@ export function PurchaseForm({ catalog }: Props) {
 
   return (
     <section className='mx-auto max-w-5xl space-y-6 p-4 sm:p-6 lg:p-10'>
-      <header className='flex flex-wrap items-center gap-x-5 gap-y-2'>
-        <Button asChild variant='ghost' className='-ml-3 shrink-0 rounded-full'>
-          <Link href='/purchases'>
-            <ArrowLeft className='mr-2 h-4 w-4' aria-hidden='true' />
-            Volver a compras
-          </Link>
-        </Button>
+      <header className='flex flex-wrap items-center justify-between gap-x-5 gap-y-2'>
         <div className='min-w-0'>
           <h1 className='text-2xl font-bold text-gray-900 sm:text-3xl'>Nueva compra</h1>
           <p className='mt-1 text-sm text-gray-600'>
             Ingresa mercadería al almacén. Solo stock, no mueve caja.
           </p>
         </div>
+        <Button asChild variant='ghost' className='shrink-0 rounded-full'>
+          <Link href='/purchases'>
+            <ArrowLeft className='mr-2 h-4 w-4' aria-hidden='true' />
+            Volver a compras
+          </Link>
+        </Button>
       </header>
       <form onSubmit={handleSubmit} className='space-y-4'>
         <div className='flex flex-col gap-2'>
