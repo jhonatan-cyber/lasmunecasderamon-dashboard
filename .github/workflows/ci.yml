@@ -173,8 +173,8 @@ jobs:
       postgres:
         image: public.ecr.aws/docker/library/postgres:18
         env:
-          PGUSER: postgres
-          PGPASSWORD: postgres_ci
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres_ci
         ports:
           - 5432:5432
         options: >-
@@ -299,9 +299,9 @@ jobs:
       postgres:
         image: public.ecr.aws/docker/library/postgres:18
         env:
-          PGUSER: postgres
-          PGPASSWORD: postgres_ci
-          PGDATABASE: lasmunecasderamon_test
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres_ci
+          POSTGRES_DB: lasmunecasderamon_test
         ports:
           - 5432:5432
         options: >-
@@ -372,9 +372,9 @@ jobs:
       postgres:
         image: public.ecr.aws/docker/library/postgres:18
         env:
-          PGUSER: postgres
-          PGPASSWORD: postgres_ci
-          PGDATABASE: lasmunecasderamon_test
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres_ci
+          POSTGRES_DB: lasmunecasderamon_test
         ports:
           - 5432:5432
         options: >-
