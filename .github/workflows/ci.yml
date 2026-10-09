@@ -129,7 +129,7 @@ jobs:
     timeout-minutes: 30
     services:
       redis:
-        image: ghcr.io/redis/docker-library-redis:unstable-37852504352-alpine
+        image: public.ecr.aws/docker/library/redis:7-alpine
         ports:
           - 6379:6379
         options: >-
@@ -141,13 +141,6 @@ jobs:
       JWT_SECRET: ci-test-secret-only
       JWT_REFRESH_SECRET: ci-test-refresh-secret-only
     steps:
-      - name: Authenticate Docker Hub pulls
-        uses: docker/login-action@v3
-        with:
-          registry: docker.io
-          username: ${{ github.actor }}
-          password: ${{ secrets.GITHUB_TOKEN }}
-
       - name: Checkout repository
         uses: actions/checkout@v7
 
@@ -178,7 +171,7 @@ jobs:
     timeout-minutes: 30
     services:
       postgres:
-        image: postgres:18
+        image: public.ecr.aws/docker/library/postgres:18
         env:
           PGUSER: postgres
           PGPASSWORD: postgres_ci
@@ -196,13 +189,6 @@ jobs:
       DB_PASSWORD: postgres_ci
       DB_NAME: lasmunecasderamon
     steps:
-      - name: Authenticate Docker Hub pulls
-        uses: docker/login-action@v3
-        with:
-          registry: docker.io
-          username: ${{ github.actor }}
-          password: ${{ secrets.GITHUB_TOKEN }}
-
       - name: Checkout repository
         uses: actions/checkout@v7
         with:
@@ -311,7 +297,7 @@ jobs:
     timeout-minutes: 30
     services:
       postgres:
-        image: postgres:18
+        image: public.ecr.aws/docker/library/postgres:18
         env:
           PGUSER: postgres
           PGPASSWORD: postgres_ci
@@ -332,13 +318,6 @@ jobs:
       JWT_SECRET: test-secret
       JWT_REFRESH_SECRET: test-refresh-secret
     steps:
-      - name: Authenticate Docker Hub pulls
-        uses: docker/login-action@v3
-        with:
-          registry: docker.io
-          username: ${{ github.actor }}
-          password: ${{ secrets.GITHUB_TOKEN }}
-
       - name: Checkout repository
         uses: actions/checkout@v7
         with:
@@ -391,7 +370,7 @@ jobs:
     timeout-minutes: 30
     services:
       postgres:
-        image: postgres:18
+        image: public.ecr.aws/docker/library/postgres:18
         env:
           PGUSER: postgres
           PGPASSWORD: postgres_ci
@@ -418,13 +397,6 @@ jobs:
       TEST_PASSWORD: CI-Only-Password-2026!
       SKIP_RATE_LIMIT: 'true'
     steps:
-      - name: Authenticate Docker Hub pulls
-        uses: docker/login-action@v3
-        with:
-          registry: docker.io
-          username: ${{ github.actor }}
-          password: ${{ secrets.GITHUB_TOKEN }}
-
       - name: Checkout repository
         uses: actions/checkout@v7
 
