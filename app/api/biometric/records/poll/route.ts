@@ -2,12 +2,6 @@ import { NextResponse } from 'next/server';
 import { withRoute } from '@/lib/api/withRoute';
 import { pollEquipo, pollTodos, estaCorriendo } from '@/modules/asistencia';
 
-/**
- * Recolección manual de registros (Configuraciones → Asistencia).
- *
- * GET  → estado del ciclo de fondo.
- * POST → recoger ahora: `{ equipoId }` para un equipo, sin cuerpo para todos.
- */
 export const GET = withRoute({ auth: true, access: 'administrator' }, async () => {
   return NextResponse.json({ success: true, data: { corriendo: estaCorriendo() } });
 });

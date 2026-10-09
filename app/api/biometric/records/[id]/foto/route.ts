@@ -1,14 +1,5 @@
 import { withRoute } from '@/lib/api/withRoute';
 import { obtenerBytesDeFoto } from '@/modules/asistencia';
-
-/**
- * Foto de la verificación que originó una asistencia: el JPEG que el lector
- * capturó en la puerta (`/SnapShotFilePath/...`), bajado y guardado por
- * `recordPhotos`. Sirve las miniaturas del panel de Configuraciones →
- * Asistencia y el detalle de asistencias.
- *
- * Caché privada larga: el contenido de un record nunca cambia.
- */
 export const dynamic = 'force-dynamic';
 
 export const GET = withRoute(
