@@ -5,9 +5,11 @@ import { sendPushByRole } from '@/modules/comunicaciones';
 import { HORAS_ENVASE_SIN_CONFIRMAR, obtenerResumenEnvases } from '@/modules/inventario';
 import type { ResumenEnvases } from '@/modules/inventario/contracts';
 import logger from '@/lib/utils/logger';
+import { randomUUID } from 'crypto';
 
 /** Tipo de notificación persistida para el aviso (campanita / historial). */
 export const WAREHOUSE_CONTAINER_ALERT_TIPO = 'warehouse_container_alert';
+export const CONTAINER_RETURN_PENDING_TIPO = 'container_return_pending';
 
 // El umbral y el tipo del resumen son dominio del módulo inventario; aquí sólo
 // se reexportan para no cambiar la API que consumen rutas y pruebas.
@@ -22,6 +24,75 @@ const DESTINATARIOS_ALMACEN = `SELECT u.id_usuario FROM usuarios u
    INNER JOIN roles r ON r.id_rol = u.rol_id
    WHERE LOWER(r.nombre) IN ('almacen', 'almacén', 'almacenero', 'inventario', 'administrador')
      AND u.estado = 1`;
+
+const DESTINATARIOS_APROBACION = `SELECT u.id_usuario FROM usuarios u
+   INNER JOIN roles r ON r.id_rol = u.rol_id
+   WHERE LOWER(r.nombre) IN ('administrador', 'cajero') AND u.estado = 1`;
+
+/** Persiste y anuncia a administración y caja la comparación completa del lote. */
+export async function notifyContainerReturnBatch(
+  resultados: Array<{
+    ok: boolean;
+    motivo?: string;
+    mensaje: string;
+    unidad?: {
+      codigo?: string;
+      codigo_barras?: string | null;
+      producto_nombre?: string | null;
+      presentacion_nombre?: string | null;
+    } | null;
+  }>,
+  usuarioId: string | null
+): Promise<void> {
+  if (resultados.length === 0) return;
+  try {
+    const batchId = randomUUID();
+    const encontrados = resultados.filter(resultado => Boolean(resultado.unidad));
+    const aprobables = resultados.filter(
+      resultado => resultado.ok && Boolean(resultado.unidad?.codigo)
+    );
+    const mensaje = `Lote de ${resultados.length}: ${aprobables.length} devolución(es) lista(s) para aprobar, ${resultados.length - aprobables.length} código(s) rechazado(s).`;
+    const datos = {
+      batchId,
+      usuarioId,
+      total: resultados.length,
+      encontrados: encontrados.length,
+      aprobables: aprobables.length,
+      rechazados: resultados.length - aprobables.length,
+      resultados: resultados.map(resultado => ({
+        codigo: resultado.unidad?.codigo_barras || resultado.unidad?.codigo || null,
+        sku: resultado.unidad?.codigo || null,
+        existe: Boolean(resultado.unidad),
+        ok: resultado.ok,
+        motivo: resultado.motivo ?? null,
+        mensaje: resultado.mensaje,
+        producto: resultado.unidad?.producto_nombre ?? null,
+        presentacion: resultado.unidad?.presentacion_nombre ?? null
+      }))
+    };
+    const destinatarios = await query<Array<{ id_usuario: string }>>(DESTINATARIOS_APROBACION);
+    for (const destinatario of destinatarios) {
+      await NotificationService.create({
+        usuario_id: destinatario.id_usuario,
+        tipo: CONTAINER_RETURN_PENDING_TIPO,
+        titulo: 'Lote de envases para revisar',
+        mensaje,
+        estado: 1,
+        data: JSON.stringify(datos)
+      });
+    }
+    // Literal requerido por el test de completitud del catálogo SSE.
+    sendNotificationToAll('container_return_pending', { ...datos, mensaje });
+    for (const rol of ['administrador', 'cajero']) {
+      await sendPushByRole(rol, 'Lote de envases para revisar', mensaje, {
+        type: CONTAINER_RETURN_PENDING_TIPO,
+        batchId
+      });
+    }
+  } catch (error) {
+    logger.captureException(error, { context: 'notifyContainerReturnBatch' });
+  }
+}
 
 /**
  * Contadores del control de envases. La consulta vive en el módulo inventario

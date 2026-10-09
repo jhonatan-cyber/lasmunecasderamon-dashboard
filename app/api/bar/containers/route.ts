@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import { withRoute } from '@/lib/api/withRoute';
 import { ProductService } from '@/modules/inventario';
+import { notifyContainerReturnBatch } from '@/lib/business/containerAlerts';
 
 export const GET = withRoute({ auth: true, module: 'products', action: 'read' }, async () => {
   const data = await ProductService.listContainerReturns();
@@ -11,6 +12,37 @@ export const POST = withRoute(
   { auth: true, audit: true, module: 'products', action: 'return_container' },
   async (request: Request, context: { params: any; user: { id: string } }) => {
     const payload = await request.json().catch(() => null);
+    const codigos = Array.isArray(payload?.codigos)
+      ? [
+          ...new Set(
+            payload.codigos
+              .filter((codigo: unknown): codigo is string => typeof codigo === 'string')
+              .map((codigo: string) => codigo.trim())
+              .filter(Boolean)
+          )
+        ]
+      : [];
+    if (codigos.length > 0) {
+      if (codigos.length > 100) {
+        return NextResponse.json(
+          { success: false, message: 'Se permite enviar hasta 100 códigos por lote' },
+          { status: 400 }
+        );
+      }
+      const resultados = [];
+      for (const codigo of codigos) {
+        resultados.push(
+          await ProductService.verifyAndReturnContainer(codigo, context?.user?.id ?? null)
+        );
+      }
+      await notifyContainerReturnBatch(resultados, context?.user?.id ?? null);
+      const entregados = resultados.filter(resultado => resultado.ok).length;
+      return NextResponse.json({
+        success: true,
+        message: `${entregados} de ${resultados.length} envases entregados`,
+        data: { resultados, entregados, rechazados: resultados.length - entregados }
+      });
+    }
     const codigo = typeof payload?.codigo === 'string' ? payload.codigo.trim() : '';
     if (!codigo) {
       return NextResponse.json(
@@ -23,6 +55,7 @@ export const POST = withRoute(
       codigo,
       context?.user?.id ?? null
     );
+    await notifyContainerReturnBatch([resultado], context?.user?.id ?? null);
     return NextResponse.json({
       success: resultado.ok,
       message: resultado.mensaje,

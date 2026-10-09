@@ -31,6 +31,20 @@ describe('catálogo de eventos SSE', () => {
       expect(canReceive({ type: 'timers_updated', subscriber: kiosk })).toBe(false);
       expect(canReceive({ type: 'updateSales', subscriber: kiosk })).toBe(false);
     });
+
+    it('el lote de envases solo llega a administración y caja', () => {
+      const data = { aprobables: 2, rechazados: 1 };
+      expect(resolvePayload({ type: 'container_return_pending', data, subscriber: admin })).toEqual(
+        data
+      );
+      expect(
+        resolvePayload({ type: 'container_return_pending', data, subscriber: cajero })
+      ).toEqual(data);
+      expect(canReceive({ type: 'container_return_pending', data, subscriber: anfitriona })).toBe(
+        false
+      );
+      expect(canReceive({ type: 'container_return_pending', data, subscriber: kiosk })).toBe(false);
+    });
   });
 
   it('el cierre de caja expulsa al personal y excluye al administrador y al kiosko', () => {

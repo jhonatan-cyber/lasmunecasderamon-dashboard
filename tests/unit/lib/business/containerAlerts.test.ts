@@ -25,7 +25,9 @@ import {
   checkWarehouseContainerAlerts,
   getContainerReturnsSummary,
   HORAS_ENVASE_SIN_CONFIRMAR,
-  WAREHOUSE_CONTAINER_ALERT_TIPO
+  WAREHOUSE_CONTAINER_ALERT_TIPO,
+  notifyContainerReturnBatch,
+  CONTAINER_RETURN_PENDING_TIPO
 } from '@/lib/business/containerAlerts';
 
 /** Contadores que devolverá el siguiente chequeo. */
@@ -167,6 +169,66 @@ describe('alerta de envases entregados sin recibir', () => {
 
     expect(emitir).toHaveBeenCalledWith(WAREHOUSE_CONTAINER_ALERT_TIPO, expect.any(Object));
     expect(crearNotificacion.mock.calls[0][0].tipo).toBe(WAREHOUSE_CONTAINER_ALERT_TIPO);
+  });
+
+  it('notifica a administración y caja con el resultado de cada código del lote', async () => {
+    consulta.mockResolvedValue([{ id_usuario: 'admin-1' }, { id_usuario: 'cajero-1' }]);
+    const resultados = [
+      {
+        ok: true,
+        mensaje: 'Envase validado',
+        unidad: {
+          codigo: 'LM-001',
+          codigo_barras: '2900000000001',
+          producto_nombre: 'Vino',
+          presentacion_nombre: 'Botella 750 ml'
+        }
+      },
+      { ok: false, motivo: 'no_es_nuestro', mensaje: 'No existe', unidad: null }
+    ];
+
+    await notifyContainerReturnBatch(resultados, 'barman-1');
+
+    expect(crearNotificacion).toHaveBeenCalledTimes(2);
+    const notificacion = crearNotificacion.mock.calls[0][0];
+    expect(notificacion).toMatchObject({
+      usuario_id: 'admin-1',
+      tipo: CONTAINER_RETURN_PENDING_TIPO,
+      titulo: 'Lote de envases para revisar'
+    });
+    const datos = JSON.parse(notificacion.data);
+    expect(datos).toMatchObject({ total: 2, encontrados: 1, aprobables: 1, rechazados: 1 });
+    expect(datos.resultados).toEqual([
+      expect.objectContaining({
+        codigo: '2900000000001',
+        existe: true,
+        ok: true,
+        producto: 'Vino'
+      }),
+      expect.objectContaining({ codigo: null, existe: false, ok: false, mensaje: 'No existe' })
+    ]);
+    expect(emitir).toHaveBeenCalledWith(
+      CONTAINER_RETURN_PENDING_TIPO,
+      expect.objectContaining({ batchId: datos.batchId, resultados: datos.resultados })
+    );
+    expect(push).toHaveBeenCalledWith(
+      'administrador',
+      'Lote de envases para revisar',
+      expect.any(String),
+      {
+        type: CONTAINER_RETURN_PENDING_TIPO,
+        batchId: datos.batchId
+      }
+    );
+    expect(push).toHaveBeenCalledWith(
+      'cajero',
+      'Lote de envases para revisar',
+      expect.any(String),
+      {
+        type: CONTAINER_RETURN_PENDING_TIPO,
+        batchId: datos.batchId
+      }
+    );
   });
 
   it('un fallo de consulta no lanza ni emite: la petición que lo llamó sigue viva', async () => {

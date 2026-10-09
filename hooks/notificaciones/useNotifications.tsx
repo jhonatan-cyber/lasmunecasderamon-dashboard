@@ -2,7 +2,7 @@
 
 /* eslint-disable react-hooks/exhaustive-deps */
 import { useCallback, useEffect, useState } from 'react';
-import { usePathname } from 'next/navigation';
+import { usePathname, useRouter } from 'next/navigation';
 import { toast } from 'sonner';
 import { useCurrentUser } from '@/hooks/auth/useCurrentUser';
 import { useQuery } from '@tanstack/react-query';
@@ -34,6 +34,7 @@ export function useNotifications() {
   const [pendingServiceRequestsCount, setPendingServiceRequestsCount] = useState(0);
   const { user } = useCurrentUser();
   const pathname = usePathname();
+  const router = useRouter();
 
   const { data: pendingCounts, refetch: refetchCounts } = useQuery({
     queryKey: ['notifications', 'pending-count'],
@@ -230,6 +231,23 @@ export function useNotifications() {
       });
 
       appEventBus.emit('updateServiceRequests');
+    }
+
+    if (payload?.type === 'container_return_pending' && payload?.data) {
+      const data = payload.data;
+      toast.info('Lote de envases para revisar', {
+        description: `${Number(data.aprobables || 0)} devolución(es) lista(s) para aceptar; ${Number(data.rechazados || 0)} código(s) no coinciden.`,
+        duration: 9000,
+        action: {
+          label: 'Revisar',
+          onClick: () =>
+            router.push(
+              `/products/containers?batchId=${encodeURIComponent(String(data.batchId || ''))}`
+            )
+        }
+      });
+      playNotificationSound();
+      setLastNotification({ type: 'container_return_pending', data, timestamp: Date.now() });
     }
 
     if (payload?.type === 'service_request_processed') {

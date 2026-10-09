@@ -66,6 +66,11 @@ const WAREHOUSE_STAFF: readonly SseAudience[] = [
   { channel: 'role', roles: ['administrador', 'almacen'] }
 ];
 
+/** Aprobación de entregas físicas: administración y caja revisan cada lote. */
+const CONTAINER_APPROVERS: readonly SseAudience[] = [
+  { channel: 'role', roles: ['administrador', 'cajero'] }
+];
+
 export const SSE_EVENTS = {
   // ─── Operativos: los ve cualquier sesión válida ─────────────────────────────
   new_order: { audiences: STAFF_ONLY },
@@ -130,6 +135,8 @@ export const SSE_EVENTS = {
   // panel); lo ven quienes reciben envases y quienes administran (payload
   // { pendientes, vencidos, umbral_horas, mensaje }).
   warehouse_container_alert: { audiences: WAREHOUSE_STAFF },
+  // Comparación del lote escaneado por el bar, incluyendo códigos no encontrados.
+  container_return_pending: { audiences: CONTAINER_APPROVERS },
 
   // ─── Dirigidos: solo el usuario afectado (y la pantalla del local) ──────────
   // `qr_token_updated` desaparecio con la credencial personal: ya no hay token que

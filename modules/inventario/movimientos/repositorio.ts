@@ -18,7 +18,9 @@ export async function listarMovimientos(presentacionId: string, limit = 20): Pro
 export async function listarMovimientosRecientes(limit = 100): Promise<any[]> {
   try {
     const rows = await query<any[]>(
-      `SELECT m.*, pr.nombre AS producto_nombre, p.nombre AS presentacion_nombre,
+      `SELECT m.*, pr.nombre AS producto_nombre, pr.foto AS producto_foto,
+        pr.codigo AS producto_codigo, p.codigo_barras AS codigo_barras,
+        p.nombre AS presentacion_nombre,
         u.nick AS usuario_nombre,
         r.nick AS aceptado_nombre,
         c.nombre AS categoria_nombre,

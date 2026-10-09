@@ -1,7 +1,9 @@
 'use client';
 
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { AlertTriangle, PackageCheck, ScanLine } from 'lucide-react';
+import { useSearchParams } from 'next/navigation';
+import { AlertTriangle, Check, PackageCheck, ScanLine } from 'lucide-react';
+import { toast } from 'sonner';
 import { PermissionGuard } from '@/components/auth/PermissionGuard';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -23,6 +25,15 @@ import type { ResumenEnvases } from '@/lib/business/containerAlerts';
 
 /** El servidor contesta además con el umbral en horas que usó para contar. */
 type ResumenEnvasesUI = ResumenEnvases & { umbral_horas?: number };
+type ResultadoComparacion = {
+  codigo: string | null;
+  sku: string | null;
+  existe: boolean;
+  ok: boolean;
+  mensaje: string;
+  producto: string | null;
+  presentacion: string | null;
+};
 
 /** Fallback si un payload viejo no trae el umbral (por defecto: 2 horas). */
 const UMBRAL_DEFECTO = 2;
@@ -57,11 +68,15 @@ const MOTIVOS_AVISO = ['ya_confirmado', 'no_entregado'];
  * cuándo la hizo (migración 033).
  */
 export function ContainerReturnsPanel() {
+  const searchParams = useSearchParams();
+  const batchId = searchParams.get('batchId');
   const [devoluciones, setDevoluciones] = useState<DevolucionEnvaseRegistro[]>([]);
+  const [comparacion, setComparacion] = useState<ResultadoComparacion[]>([]);
   const [loading, setLoading] = useState(false);
   const [codigo, setCodigo] = useState('');
   const [soloPendientes, setSoloPendientes] = useState(true);
   const [resumen, setResumen] = useState<ResumenEnvasesUI | null>(null);
+  const [confirmandoId, setConfirmandoId] = useState<string | null>(null);
   const inputEnvaseRef = useRef<HTMLInputElement>(null);
 
   const fetchDevoluciones = useCallback(async () => {
@@ -81,6 +96,29 @@ export function ContainerReturnsPanel() {
     fetchDevoluciones();
   }, [fetchDevoluciones]);
 
+  useEffect(() => {
+    if (!batchId) return;
+    let cancelled = false;
+    fetch('/api/notifications?type=history', { cache: 'no-store' })
+      .then(response => response.json())
+      .then(body => {
+        const notification = (Array.isArray(body?.data) ? body.data : []).find((item: any) => {
+          try {
+            return JSON.parse(item.datos || 'null')?.batchId === batchId;
+          } catch {
+            return false;
+          }
+        });
+        if (cancelled || !notification) return;
+        const datos = JSON.parse(notification.datos || 'null');
+        setComparacion(Array.isArray(datos?.resultados) ? datos.resultados : []);
+      })
+      .catch(() => undefined);
+    return () => {
+      cancelled = true;
+    };
+  }, [batchId]);
+
   const fetchResumen = useCallback(async () => {
     try {
       const res = await fetch('/api/bar/containers/summary', { cache: 'no-store' });
@@ -90,6 +128,33 @@ export function ContainerReturnsPanel() {
       // el contador se retoma en el siguiente ciclo
     }
   }, []);
+
+  const confirmarPendiente = useCallback(
+    async (devolucion: DevolucionEnvaseRegistro) => {
+      setConfirmandoId(devolucion.id);
+      try {
+        const response = await fetch('/api/bar/containers/confirm', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ codigo: devolucion.codigo })
+        });
+        const result = await response.json().catch(() => ({}));
+        if (!response.ok || !result?.data?.ok) {
+          toast.error(
+            result?.message || result?.data?.mensaje || 'No se pudo aceptar la devolución'
+          );
+          return;
+        }
+        toast.success(`Devolución aceptada: ${devolucion.producto_nombre || devolucion.codigo}`);
+        await Promise.all([fetchDevoluciones(), fetchResumen()]);
+      } catch {
+        toast.error('Error de red al aceptar la devolución');
+      } finally {
+        setConfirmandoId(null);
+      }
+    },
+    [fetchDevoluciones, fetchResumen]
+  );
 
   useEffect(() => {
     fetchResumen();
@@ -102,6 +167,9 @@ export function ContainerReturnsPanel() {
 
   // Alerta en vivo: el servidor la emite cuando cambia el número de atrasados.
   useSharedSSE('/api/notifications/sse', payload => {
+    if (payload?.type === 'container_return_pending') {
+      fetchDevoluciones();
+    }
     if (payload?.type === 'warehouse_container_alert') {
       setResumen(payload.data ?? null);
       fetchDevoluciones();
@@ -167,6 +235,41 @@ export function ContainerReturnsPanel() {
             localmente y se verifica al reconectar.
           </p>
         </div>
+
+        {comparacion.length > 0 && (
+          <section className='rounded-2xl border border-blue-200 dark:border-blue-900 bg-blue-50/70 dark:bg-blue-950/20 p-4 space-y-3'>
+            <h2 className='text-sm font-black uppercase tracking-wide text-blue-900 dark:text-blue-200'>
+              Comparación del lote escaneado
+            </h2>
+            <div className='grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-2'>
+              {comparacion.map((item, index) => (
+                <div
+                  key={`${item.codigo}-${index}`}
+                  className='rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-slate-900/60 p-3 flex gap-2'
+                >
+                  <PackageCheck
+                    className={`w-5 h-5 shrink-0 ${item.ok ? 'text-green-600' : 'text-red-500'}`}
+                  />
+                  <div className='min-w-0'>
+                    <p className='font-mono text-xs font-bold'>
+                      {item.codigo || item.sku || 'Código desconocido'}
+                    </p>
+                    <p className='text-xs text-gray-600 dark:text-gray-300'>
+                      {item.existe
+                        ? `${item.producto || 'Producto'} · ${item.presentacion || 'Presentación'}`
+                        : 'No existe en nuestro inventario'}
+                    </p>
+                    <p
+                      className={`text-xs mt-1 font-semibold ${item.ok ? 'text-green-700 dark:text-green-400' : 'text-red-600 dark:text-red-400'}`}
+                    >
+                      {item.ok ? 'Válido para aprobar' : item.mensaje}
+                    </p>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </section>
+        )}
 
         {resumen && resumen.vencidos > 0 && (
           <div
@@ -348,13 +451,16 @@ export function ContainerReturnsPanel() {
                     <TableHead className='py-4 px-5 text-xs uppercase text-gray-500'>
                       Recepción
                     </TableHead>
+                    <TableHead className='py-4 px-5 text-xs uppercase text-gray-500'>
+                      Acción
+                    </TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
                   {visibles.length === 0 ? (
                     <TableRow key='empty'>
                       <TableCell
-                        colSpan={6}
+                        colSpan={7}
                         className='text-center py-8 text-gray-400 text-sm sm:text-base bg-white'
                       >
                         {loading
@@ -410,6 +516,22 @@ export function ContainerReturnsPanel() {
                                   : ''}
                               </p>
                             </>
+                          )}
+                        </TableCell>
+                        <TableCell className='py-3 px-2 sm:px-4 text-center'>
+                          {d.pendiente_confirmacion ? (
+                            <Button
+                              type='button'
+                              size='sm'
+                              className='rounded-full whitespace-nowrap'
+                              disabled={confirmandoId === d.id}
+                              onClick={() => void confirmarPendiente(d)}
+                            >
+                              <Check className='w-4 h-4 mr-1' />
+                              {confirmandoId === d.id ? 'Aceptando…' : 'Aceptar devolución'}
+                            </Button>
+                          ) : (
+                            <span className='text-xs text-gray-400'>Completada</span>
                           )}
                         </TableCell>
                       </TableRow>
