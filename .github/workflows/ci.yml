@@ -129,7 +129,7 @@ jobs:
     timeout-minutes: 30
     services:
       redis:
-        image: ghcr.io/redis/redis-stack-server:7.4.0-v3
+        image: ghcr.io/redis/docker-library-redis:unstable-37852504352-alpine
         ports:
           - 6379:6379
         options: >-
