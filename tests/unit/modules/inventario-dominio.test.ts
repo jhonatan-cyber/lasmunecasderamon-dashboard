@@ -100,8 +100,10 @@ describe('transferencias de almacén al bar', () => {
     await traspasarAlBar(input);
     expect(sendNotificationToAll).toHaveBeenCalledWith('transfers_updated', {
       action: 'created',
+      id: 'uuid-test',
       producto_id: 'prod-1',
-      presentacion_id: 'pres-1'
+      presentacion_id: 'pres-1',
+      cantidad: 2
     });
 
     // Aprobación del Barman: el listado del módulo Transferencias se repinta en todas las sesiones.
@@ -310,6 +312,41 @@ describe('listarTransferencias historial', () => {
     const rows = await listarTransferencias();
     expect(rows[0].aceptado_nombre).toBe('barman');
     expect(rows[0].opciones_venta).toEqual([{ tipo: 'botella', precio: 20000, comision: 5000 }]);
+  });
+
+  it('incluye precios de shots y resuelve los ml por defecto para cliente y anfitriona', async () => {
+    (query as any).mockImplementation(async (sql: string) => {
+      if (sql.includes('FROM inventario_movimientos')) {
+        return [
+          {
+            id: 'mov-shots',
+            cantidad: 1,
+            precio_venta: 20000,
+            comision: 0,
+            opciones_venta: [
+              { tipo: 'botella', precio: 20000, comision: 0 },
+              { tipo: 'shot', precio: 2500, comision: 0, precio_anfitriona: 1800 }
+            ],
+            ml_shot: null,
+            ml_shot_anfitriona: null,
+            pres_precio: 20000,
+            pres_comision: 0,
+            producto_precio: 0,
+            producto_comision: 0
+          }
+        ];
+      }
+      return [];
+    });
+
+    const rows = await listarTransferencias(true);
+
+    expect(rows[0].opciones_venta).toEqual([
+      { tipo: 'botella', precio: 20000, comision: 0 },
+      { tipo: 'shot', precio: 2500, comision: 0, precio_anfitriona: 1800 }
+    ]);
+    expect(rows[0].ml_shot).toBe(50);
+    expect(rows[0].ml_shot_anfitriona).toBe(50);
   });
 });
 

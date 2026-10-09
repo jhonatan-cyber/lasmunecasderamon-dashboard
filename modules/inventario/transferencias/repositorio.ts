@@ -9,7 +9,7 @@
  * (`TransferQueries`/`BarQueries`): este corte mueve código, no cambia reglas.
  */
 import { query, generateUUID, type TransactionQuery } from '@/lib/database/db';
-import { getTopeSimple } from '../bar/configuracion';
+import { getBarMlConfig, getTopeSimple } from '../bar/configuracion';
 import { completarOpciones, parseOpcionesVenta, resolverBotella } from '../helpers';
 import { ESTADO_UNIDAD_ACTIVA } from '../estados';
 import { BusinessError, NotFoundError } from '@/lib/errors/errors';
@@ -120,7 +120,11 @@ export async function traspasarAlBar(
      WHERE presentacion_id = ? AND estado = '${ESTADO_UNIDAD_ACTIVA}' AND ubicacion = 'bar'`,
     [input.presentacion_id]
   );
-  return { transferencia_id: movimientoId, trasladadas: input.cantidad, stock_bar: Number(enBar[0]?.total ?? 0) };
+  return {
+    transferencia_id: movimientoId,
+    trasladadas: input.cantidad,
+    stock_bar: Number(enBar[0]?.total ?? 0)
+  };
 }
 
 export async function aceptarTransferencia(
@@ -240,35 +244,42 @@ export async function listarTransferencias(pendientesOnly = false): Promise<Tran
       ORDER BY (m.estado = 'pendiente') DESC, m.fecha_crea DESC, m.id DESC ${pendientesOnly ? '' : 'LIMIT 100'}`,
     []
   );
-  const topeSimple = await getTopeSimple();
-  return rows.map(row => ({
-    ...row,
-    opciones_venta:
-      completarOpciones(
-        row.opciones_venta,
-        [
-          { precio: Number(row.precio_venta ?? 0), comision: Number(row.comision ?? 0) },
-          { precio: Number(row.pres_precio ?? 0), comision: Number(row.pres_comision ?? 0) },
-          {
-            precio: Number(row.producto_precio ?? 0),
-            comision: Number(row.producto_comision ?? 0)
-          }
-        ],
-        topeSimple
-      ) ??
-      (row.precio_venta !== null && row.precio_venta !== undefined
-        ? [
-            resolverBotella(
-              { precio: 0, comision: 0 },
-              [
-                {
-                  precio: Number(row.precio_venta ?? 0),
-                  comision: Number(row.comision ?? 0)
-                }
-              ],
-              topeSimple
-            )
-          ]
-        : undefined)
-  })) as TransferRecord[];
+  const [{ shotMl }, topeSimple] = await Promise.all([getBarMlConfig(), getTopeSimple()]);
+  return rows.map(row => {
+    const mlShotCliente = Number(row.ml_shot) > 0 ? Number(row.ml_shot) : shotMl;
+    const mlShotAnfitriona =
+      Number(row.ml_shot_anfitriona) > 0 ? Number(row.ml_shot_anfitriona) : mlShotCliente;
+    return {
+      ...row,
+      ml_shot: mlShotCliente,
+      ml_shot_anfitriona: mlShotAnfitriona,
+      opciones_venta:
+        completarOpciones(
+          row.opciones_venta,
+          [
+            { precio: Number(row.precio_venta ?? 0), comision: Number(row.comision ?? 0) },
+            { precio: Number(row.pres_precio ?? 0), comision: Number(row.pres_comision ?? 0) },
+            {
+              precio: Number(row.producto_precio ?? 0),
+              comision: Number(row.producto_comision ?? 0)
+            }
+          ],
+          topeSimple
+        ) ??
+        (row.precio_venta !== null && row.precio_venta !== undefined
+          ? [
+              resolverBotella(
+                { precio: 0, comision: 0 },
+                [
+                  {
+                    precio: Number(row.precio_venta ?? 0),
+                    comision: Number(row.comision ?? 0)
+                  }
+                ],
+                topeSimple
+              )
+            ]
+          : undefined)
+    };
+  }) as TransferRecord[];
 }

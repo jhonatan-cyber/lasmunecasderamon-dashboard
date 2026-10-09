@@ -9,6 +9,7 @@
  */
 import { withTransaction } from '@/lib/database/db';
 import { sendNotificationToAll } from '@/lib/api/sseService';
+import { sendPushByRole } from '@/modules/comunicaciones';
 import { resolverTransaccion } from '@/lib/transaccion/infraestructura';
 import type { ContextoOperacion } from '@/lib/transaccion/contrato';
 import type { TraspasoInput, TraspasoResultado } from '../contracts';
@@ -33,9 +34,17 @@ export async function traspasarAlBar(
   // Sólo después del commit: el módulo Transferencias se refresca en vivo.
   sendNotificationToAll('transfers_updated', {
     action: 'created',
+    id: resultado.transferencia_id,
     producto_id: input.producto_id,
-    presentacion_id: input.presentacion_id
+    presentacion_id: input.presentacion_id,
+    cantidad: resultado.trasladadas
   });
+  void sendPushByRole(
+    'barman',
+    'Nuevo traspaso pendiente',
+    `${resultado.trasladadas} unidad(es) esperan tu aprobación en el bar.`,
+    { type: 'transfer_created', id: resultado.transferencia_id }
+  );
   return resultado;
 }
 
