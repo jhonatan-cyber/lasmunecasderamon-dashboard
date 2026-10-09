@@ -129,7 +129,7 @@ jobs:
     timeout-minutes: 30
     services:
       redis:
-        image: redis:7-alpine
+        image: ghcr.io/redis/redis-stack-server:7.4.0-v3
         ports:
           - 6379:6379
         options: >-
@@ -171,7 +171,7 @@ jobs:
     timeout-minutes: 30
     services:
       postgres:
-        image: postgres:18
+        image: ghcr.io/cloudnative-pg/postgresql:18
         env:
           POSTGRES_USER: postgres
           POSTGRES_PASSWORD: postgres_ci
@@ -297,7 +297,7 @@ jobs:
     timeout-minutes: 30
     services:
       postgres:
-        image: postgres:18
+        image: ghcr.io/cloudnative-pg/postgresql:18
         env:
           POSTGRES_USER: postgres
           POSTGRES_PASSWORD: postgres_ci
@@ -370,7 +370,7 @@ jobs:
     timeout-minutes: 30
     services:
       postgres:
-        image: postgres:18
+        image: ghcr.io/cloudnative-pg/postgresql:18
         env:
           POSTGRES_USER: postgres
           POSTGRES_PASSWORD: postgres_ci
