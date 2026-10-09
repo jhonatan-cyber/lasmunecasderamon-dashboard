@@ -269,7 +269,8 @@ export function useSaleValidation({
 
     // Elegir anfitriona es opcional; si se eligieron más de las que permite el
     // producto, la línea entra al carro recortada al máximo.
-    const elegidas = (producto.selectedHostesses || [])
+    const tieneComisionParaAnfitriona = Number(producto.comision ?? producto.commission ?? 0) > 0;
+    const elegidas = (tieneComisionParaAnfitriona ? producto.selectedHostesses || [] : [])
       .filter((h: unknown) => h !== null && h !== undefined)
       .map((h: string | number) => String(h));
     const limite = elegidas.length ? await limiteAnfitrionasDe({ ...producto, cantidad }) : 0;
@@ -387,7 +388,9 @@ export function useSaleValidation({
     return productos.reduce(
       (acc, p) =>
         acc +
-        (p.selectedHostesses?.length ? Number(p?.comision || 0) * Number(p?.cantidad || 0) : 0),
+        (p.selectedHostesses?.length && Number(p?.comision ?? p?.commission ?? 0) > 0
+          ? Number(p?.comision ?? p?.commission ?? 0) * Number(p?.cantidad || 0)
+          : 0),
       0
     );
   }, [productos]);
@@ -407,7 +410,7 @@ export function useSaleValidation({
     }
 
     for (const p of productos) {
-      if (!p.selectedHostesses?.length) continue;
+      if (!p.selectedHostesses?.length || Number(p.comision ?? p.commission ?? 0) <= 0) continue;
       const max = await limiteAnfitrionasDe(p);
       if (p.selectedHostesses.length > max) {
         toast.error(`Producto ${p.nombre} permite máximo ${max} anfitrionas`);
@@ -417,7 +420,13 @@ export function useSaleValidation({
 
     setLoading(true);
     try {
-      const todasAnf = Array.from(new Set(productos.flatMap(p => p.selectedHostesses || [])));
+      const todasAnf = Array.from(
+        new Set(
+          productos.flatMap(p =>
+            Number(p.comision ?? p.commission ?? 0) > 0 ? p.selectedHostesses || [] : []
+          )
+        )
+      );
       const ventaData: VentaCreate = {
         cliente_id: selectedCliente !== 'none' ? selectedCliente : null,
         metodo_pago: metodoPago as 'efectivo' | 'tarjeta' | 'transferencia' | 'prepago',
@@ -425,11 +434,12 @@ export function useSaleValidation({
         sub_total: totals.subtotal,
         total: totals.total,
         detalles: productos.map(p => {
-          const selectedHostesses = Array.isArray(p.selectedHostesses)
-            ? p.selectedHostesses
-                .filter((h: unknown) => h !== null && h !== undefined)
-                .map((h: string | number) => String(h))
-            : [];
+          const selectedHostesses =
+            Number(p.comision ?? p.commission ?? 0) > 0 && Array.isArray(p.selectedHostesses)
+              ? p.selectedHostesses
+                  .filter((h: unknown) => h !== null && h !== undefined)
+                  .map((h: string | number) => String(h))
+              : [];
           const normalizedDetail = {
             producto_id: p.producto_id || p.id,
             presentacion_id: p.presentacion_id || null,

@@ -53,6 +53,10 @@ export interface PresentacionRow {
   ml_shot_anfitriona?: number | null;
   /** ml que quedan en las botellas abiertas de esta presentación en el bar. */
   ml_abierta?: number;
+  /** Botellas individuales abiertas: código y ml restantes. */
+  botellas_abiertas?: import('./contracts').BotellaAbiertaDetalle[];
+  /** Botellas vacías por shots o dentro de tolerancia, listas para devolver. */
+  botellas_por_devolver?: import('./contracts').BotellaDevolucionPendiente[];
   /** Acumulado de ml servidos por shots en las ventas de esta presentación. */
   ml_servidos?: number;
   /** Config de Comisiones (tabla productos). Null = default según precio/categoría. */
@@ -88,6 +92,8 @@ export interface NivelPrecio {
 export type EnvaseFila = DevolucionEnvaseUnidad & {
   devuelto_por?: string | null;
   confirmado_por?: string | null;
+  ml_restante?: number | null;
+  ubicacion?: string;
 };
 
 /**

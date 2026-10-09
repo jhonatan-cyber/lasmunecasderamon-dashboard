@@ -102,6 +102,20 @@ export function BarCard({ item, entranceIndex }: BarCardProps) {
                 {shotsRestantes > 0 ? ` · ≈${shotsRestantes} shots` : ''}
               </div>
             )}
+            {Number(item.botellas_vacias_shots ?? 0) > 0 && (
+              <div className='rounded-xl bg-rose-500/10 px-3 py-2 text-xs font-semibold text-rose-700 dark:text-rose-300'>
+                {item.botellas_vacias_shots} botella(s) vacía(s) por shots o dentro de tolerancia ·
+                pendiente(s) de devolución
+                <div className='mt-1 space-y-0.5 font-mono font-medium'>
+                  {item.botellas_por_devolver?.map(botella => (
+                    <p key={botella.id}>
+                      {botella.codigo} ·{' '}
+                      {botella.ml_restante > 0 ? `${botella.ml_restante} ml de merma` : 'vacía'}
+                    </p>
+                  ))}
+                </div>
+              </div>
+            )}
             {mlServidos > 0 && (
               <p className='text-xs text-muted-foreground'>Shots servidos: {mlServidos} ml</p>
             )}

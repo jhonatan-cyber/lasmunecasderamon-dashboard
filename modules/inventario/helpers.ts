@@ -145,6 +145,7 @@ export const mapearEnvase = (fila: any): DevolucionEnvaseUnidad => ({
   codigo_barras: fila.codigo_barras ?? null,
   estado: fila.estado,
   abierta_por_shots: fila.abierta_por_shots === true,
+  ml_merma: Number(fila.ml_merma ?? 0),
   fecha_devolucion: fila.fecha_devolucion ?? null,
   fecha_confirmacion: fila.fecha_confirmacion ?? null,
   producto_nombre: fila.producto_nombre ?? null,

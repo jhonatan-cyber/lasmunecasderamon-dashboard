@@ -18,5 +18,11 @@ export const CLAVES_INVENTARIO: Record<string, DefinicionClave> = {
     tipo: 'number',
     default: 3,
     validar: enteroEnRango('shots_alerta', 1, 50, 'shots restantes')
+  },
+  merma_shots_ml: {
+    categoria: 'bar',
+    tipo: 'number',
+    default: 50,
+    validar: enteroEnRango('merma_shots_ml', 0, 250, 'ml de merma por botella')
   }
 };

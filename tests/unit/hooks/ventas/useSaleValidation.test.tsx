@@ -52,6 +52,7 @@ describe('useSaleValidation totals (propina / total)', () => {
           id: 'p1',
           nombre: 'Vodka',
           precio: 20000,
+          comision: 1000,
           cantidad: 1,
           subtotal: 20000,
           max_anfitrionas: 1,
@@ -119,6 +120,21 @@ describe('useSaleValidation totals (propina / total)', () => {
         usuarios: [hostessId]
       })
     );
+  });
+
+  it('descarta anfitrionas si la forma de venta no tiene comisión, aunque el precio sea alto', async () => {
+    const { result } = renderSaleHook();
+    await act(async () => {
+      await result.current.handleAddProducto({
+        id: 'pres-caro',
+        producto_id: 'prod-caro',
+        nombre: 'Bebida cara sin comisión',
+        precio: 50000,
+        comision: 0,
+        selectedHostesses: ['hostess-1']
+      });
+    });
+    expect(result.current.formState.productos[0].selectedHostesses).toEqual([]);
   });
   it('aplica la tabla personalizada de un producto con varias anfitrionas', async () => {
     window.localStorage.clear();

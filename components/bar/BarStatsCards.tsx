@@ -1,8 +1,33 @@
+'use client';
+
+import { useState } from 'react';
 import { AlertTriangle, GlassWater, Wine } from 'lucide-react';
 import { Card, CardContent } from '@/components/ui/card';
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle
+} from '@/components/ui/dialog';
 import type { ShotsSummary } from '@/modules/inventario/contracts';
 
-export function BarStatsCards({ resumen }: { resumen: ShotsSummary | null }) {
+interface BarOpenBottleDetail {
+  id: string;
+  codigo: string;
+  ml_restante: number;
+  producto_nombre: string;
+  presentacion_nombre: string;
+}
+
+export function BarStatsCards({
+  resumen,
+  botellasAbiertas = []
+}: {
+  resumen: ShotsSummary | null;
+  botellasAbiertas?: BarOpenBottleDetail[];
+}) {
+  const [detalleAbierto, setDetalleAbierto] = useState(false);
   const stats = [
     {
       title: 'Shots servidos hoy',
@@ -22,7 +47,7 @@ export function BarStatsCards({ resumen }: { resumen: ShotsSummary | null }) {
       label: 'Disponible',
       value: resumen ? `${resumen.mlRestantesTotales} ml` : '—',
       detail: resumen
-        ? `${resumen.botellasAbiertas} ${resumen.botellasAbiertas === 1 ? 'botella abierta' : 'botellas abiertas'} en bar`
+        ? `${resumen.botellasAbiertas} ${resumen.botellasAbiertas === 1 ? 'botella abierta' : 'botellas abiertas'} en bar · clic para ver detalle`
         : 'Cargando resumen del bar…',
       icon: Wine,
       color: '139, 92, 246',
@@ -58,7 +83,7 @@ export function BarStatsCards({ resumen }: { resumen: ShotsSummary | null }) {
             backgroundColor: `rgba(${stat.color}, 0.1)`,
             border: `1px solid rgba(${stat.color}, 0.2)`
           }}
-          className='min-w-0 overflow-hidden rounded-3xl shadow-xs backdrop-blur-xs transition-transform duration-300 motion-safe:hover:scale-[1.02] motion-reduce:transition-none'
+          className={`relative min-w-0 overflow-hidden rounded-3xl shadow-xs backdrop-blur-xs transition-transform duration-300 motion-safe:hover:scale-[1.02] motion-reduce:transition-none ${stat.title === 'Disponible en botellas abiertas' ? 'cursor-pointer focus-within:ring-2 focus-within:ring-primary' : ''}`}
         >
           <CardContent className='p-5'>
             <div className='mb-4 flex items-center justify-between gap-2'>
@@ -81,8 +106,50 @@ export function BarStatsCards({ resumen }: { resumen: ShotsSummary | null }) {
               <p className={`pt-1 text-[10px] font-medium ${stat.detailClass}`}>{stat.detail}</p>
             </div>
           </CardContent>
+          {stat.title === 'Disponible en botellas abiertas' && (
+            <button
+              type='button'
+              className='absolute inset-0 rounded-3xl focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary'
+              onClick={() => setDetalleAbierto(true)}
+              aria-label='Ver las botellas abiertas y sus mililitros disponibles'
+            />
+          )}
         </Card>
       ))}
+      <Dialog open={detalleAbierto} onOpenChange={setDetalleAbierto}>
+        <DialogContent className='max-h-[85vh] overflow-hidden rounded-2xl sm:max-w-xl'>
+          <DialogHeader>
+            <DialogTitle>Mililitros disponibles por botella</DialogTitle>
+            <DialogDescription>
+              Contenido calculado individualmente para cada botella abierta en el bar.
+            </DialogDescription>
+          </DialogHeader>
+          <div className='max-h-[60vh] space-y-2 overflow-y-auto pr-1'>
+            {botellasAbiertas.length === 0 ? (
+              <p className='py-8 text-center text-sm text-muted-foreground'>
+                No hay botellas abiertas con contenido.
+              </p>
+            ) : (
+              botellasAbiertas.map(botella => (
+                <div
+                  key={botella.id}
+                  className='flex items-center justify-between gap-3 rounded-xl border bg-muted/30 p-3'
+                >
+                  <div className='min-w-0'>
+                    <p className='truncate font-semibold'>{botella.producto_nombre}</p>
+                    <p className='truncate text-xs text-muted-foreground'>
+                      {botella.presentacion_nombre} · Código {botella.codigo}
+                    </p>
+                  </div>
+                  <span className='shrink-0 rounded-full bg-purple-500/10 px-3 py-1 text-sm font-bold text-purple-700 dark:text-purple-300'>
+                    {botella.ml_restante} ml
+                  </span>
+                </div>
+              ))
+            )}
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

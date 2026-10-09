@@ -3,8 +3,7 @@
 // JSX de cada celda; aquí solo viven datos y callbacks atados al producto, y el
 // JSX está en los subcomponentes de `components/sales/product-modal/`.
 import { formatCurrencyNoDecimals } from '@/lib/utils/formatters';
-import { hostessAllowedForPrice } from '@/components/orders/productModalRules';
-import { getChampagneHostessLimit, hasCommission, isChampagneProduct } from '@/components/orders';
+import { getChampagneHostessLimit, isChampagneProduct } from '@/components/orders';
 import { resolverVentaProducto, type SaleChoice } from '@/lib/sales/saleChoice';
 import { resolveShotMl, resolveShotMlAnfitriona } from '@/lib/business/shotMl';
 import type { SaleFormatQuantityOption } from '@/components/sales/SaleFormatQuantities';
@@ -97,10 +96,8 @@ export function buildSaleProductItem(producto: any, ctx: SaleProductItemContext)
   });
 
   // Cada tipo de venta lleva su propia comisión: sin comisión no se pide anfitriona.
-  const pideAnfitriona =
-    opcionesTipo.some(opcion => opcion.comision > 0) || hasCommission(producto);
-  // La regla por precio (bebida cara) es de la botella: el shot no la hereda.
-  const muestraAnfitriona = pideAnfitriona || hostessAllowedForPrice(venta.precioBotella);
+  const pideAnfitriona = opcionesTipo.some(opcion => opcion.cantidad > 0 && opcion.comision > 0);
+  const muestraAnfitriona = pideAnfitriona;
 
   // Unidades de esta presentación y forma de venta ya agregadas al carrito:
   // el shot de cliente y el de anfitriona se cobran distinto, así que cada uno
@@ -125,7 +122,8 @@ export function buildSaleProductItem(producto: any, ctx: SaleProductItemContext)
           precio: opcion.precio,
           comision: opcion.comision,
           cantidad: opcion.cantidad,
-          selectedHostesses: isChampagne ? champagneSelected : otherSelected,
+          selectedHostesses:
+            opcion.comision > 0 ? (isChampagne ? champagneSelected : otherSelected) : [],
           isChampagne
         });
         ctx.onSaleTypeChange(id, opcion.value, 0);

@@ -68,6 +68,18 @@ export interface BarStockItem {
   stock_bar?: number;
   /** Botellas agotadas por shots que siguen en el bar pendientes de devolución. */
   botellas_vacias_shots?: number;
+  botellas_abiertas?: Array<{
+    id: string;
+    codigo: string;
+    codigo_barras: string | null;
+    ml_restante: number;
+  }>;
+  botellas_por_devolver?: Array<{
+    id: string;
+    codigo: string;
+    codigo_barras: string | null;
+    ml_restante: number;
+  }>;
   /** Capacidad de la botella en ml (null = default de Configuraciones > Bar). */
   ml_botella?: number | null;
   /** Ml servidos por shot de ese producto (null = default de Configuraciones > Bar). */

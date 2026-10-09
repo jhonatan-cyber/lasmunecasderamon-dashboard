@@ -274,6 +274,66 @@ describe('listBarStock hereda precio/comisión', () => {
     );
   });
 
+  it('devuelve el ml restante junto al código de cada botella abierta', async () => {
+    (query as any).mockImplementation(async (sql: string) => {
+      if (sql.includes('FROM inventario_presentaciones')) return [{ ...baseRow, ml_abierta: 125 }];
+      if (sql.includes('SELECT id, presentacion_id, codigo, codigo_barras, ml_restante')) {
+        return [
+          {
+            id: 'unit-1',
+            presentacion_id: 'pres-1',
+            codigo: 'LM-000001',
+            codigo_barras: '2912345678901',
+            ml_restante: 125,
+            estado: 'almacen',
+            abierta_por_shots: false
+          }
+        ];
+      }
+      return [];
+    });
+
+    const [presentacion] = await listarStockBar();
+
+    expect(presentacion.botellas_abiertas).toEqual([
+      { id: 'unit-1', codigo: 'LM-000001', codigo_barras: '2912345678901', ml_restante: 125 }
+    ]);
+  });
+
+  it('lista por código las botellas vacías y las que esperan devolución por merma', async () => {
+    (query as any).mockImplementation(async (sql: string) => {
+      if (sql.includes('FROM inventario_presentaciones')) return [{ ...baseRow }];
+      if (sql.includes('SELECT id, presentacion_id, codigo, codigo_barras, ml_restante, estado')) {
+        return [
+          {
+            id: 'unit-empty',
+            presentacion_id: 'pres-1',
+            codigo: 'LM-EMPTY',
+            ml_restante: 0,
+            estado: 'vendida',
+            abierta_por_shots: true
+          },
+          {
+            id: 'unit-waste',
+            presentacion_id: 'pres-1',
+            codigo: 'LM-WASTE',
+            ml_restante: 35,
+            estado: 'almacen',
+            abierta_por_shots: true
+          }
+        ];
+      }
+      return [];
+    });
+
+    const [presentacion] = await listarStockBar();
+
+    expect(presentacion.botellas_por_devolver).toEqual([
+      { id: 'unit-empty', codigo: 'LM-EMPTY', codigo_barras: null, ml_restante: 0 },
+      { id: 'unit-waste', codigo: 'LM-WASTE', codigo_barras: null, ml_restante: 35 }
+    ]);
+  });
+
   it('cuenta botellas agotadas por shots pendientes de devolución', async () => {
     mockBar({
       ...baseRow,
@@ -285,9 +345,9 @@ describe('listBarStock hereda precio/comisión', () => {
     expect(rows[0].botellas_vacias_shots).toBe(2);
     expect(query).toHaveBeenCalledWith(
       expect.stringContaining(
-        "u.estado = 'vendida' AND u.ubicacion = 'bar' AND u.abierta_por_shots = true AND u.fecha_devolucion IS NULL"
+        "u.abierta_por_shots = true AND u.fecha_devolucion IS NULL AND (u.estado = 'vendida'"
       ),
-      expect.anything()
+      expect.arrayContaining([50])
     );
   });
 
@@ -410,9 +470,10 @@ describe('unidades de compras', () => {
         : []
     );
     const rows = await listarStockBar('prod-1');
-    expect(query).toHaveBeenCalledWith(expect.stringContaining('WHERE p.producto_id = ?'), [
-      'prod-1'
-    ]);
+    expect(query).toHaveBeenCalledWith(
+      expect.stringContaining('WHERE p.producto_id = ?'),
+      expect.arrayContaining(['prod-1'])
+    );
     expect(rows[0].opciones_venta).toEqual([{ tipo: 'botella', precio: 25000, comision: 5000 }]);
   });
 
@@ -961,6 +1022,9 @@ describe('control de devolución de envases', () => {
     codigo: 'LM-000123',
     codigo_barras: '2912345678901',
     estado: 'vendida',
+    ml_restante: 0,
+    ml_merma: 0,
+    ubicacion: 'bar',
     abierta_por_shots: true,
     fecha_devolucion: null,
     devuelto_por: null,
@@ -975,6 +1039,7 @@ describe('control de devolución de envases', () => {
   /** trx simulado: la búsqueda devuelve `busqueda` y la marca `marcado`. */
   const trxCon = (busqueda: any[], marcado: any[] = [{ id: 'unidad-1' }]) =>
     vi.fn().mockImplementation(async (sql: string) => {
+      if (sql.includes('FROM configuraciones')) return [];
       if (sql.includes('SET fecha_devolucion = ?')) return marcado;
       if (sql.includes('FROM inventario_unidades')) return busqueda;
       return [];
@@ -1007,7 +1072,14 @@ describe('control de devolución de envases', () => {
     // La marca lleva hora del negocio, quién verificó, y solo acepta
     // unidades vacías que todavía no se devolvieron.
     expect(marca(trx)![0]).toContain('fecha_devolucion IS NULL');
-    expect(marca(trx)![1]).toEqual([expect.any(String), 'user-1', 'unidad-1', 'vendida']);
+    expect(marca(trx)![1]).toEqual([
+      expect.any(String),
+      'user-1',
+      'vendida',
+      0,
+      'unidad-1',
+      'vendida'
+    ]);
   });
 
   it('rechaza un código que no está en nuestro inventario sin escribir nada', async () => {
@@ -1018,18 +1090,55 @@ describe('control de devolución de envases', () => {
     );
 
     expect(resultado).toMatchObject({ ok: false, motivo: 'no_es_nuestro', unidad: null });
-    expect(trx).toHaveBeenCalledTimes(2);
+    expect(trx).toHaveBeenCalledTimes(3);
   });
 
   it('rechaza un envase nuestro que no está vacío', async () => {
-    const trx = trxCon([envase({ estado: 'almacen' })]);
+    const trx = trxCon([envase({ estado: 'almacen', ml_restante: 100 })]);
 
     const resultado = await conContextoOperacionExistente(trx, contexto =>
       verificarEnvase('LM-000123', 'user-1', contexto)
     );
 
     expect(resultado).toMatchObject({ ok: false, motivo: 'no_esta_vacia' });
-    expect(trx).toHaveBeenCalledTimes(1);
+    expect(trx).toHaveBeenCalledTimes(2);
+  });
+
+  it('acepta una botella servida por shots dentro de la tolerancia y registra el residuo', async () => {
+    const abierta = envase({
+      estado: 'almacen',
+      ubicacion: 'bar',
+      ml_restante: 35,
+      abierta_por_shots: true
+    });
+    const trx = trxCon([abierta]);
+
+    const resultado = await conContextoOperacionExistente(trx, contexto =>
+      verificarEnvase('LM-000123', 'user-1', contexto)
+    );
+
+    expect(resultado).toMatchObject({ ok: true, unidad: { ml_merma: 35 } });
+    expect(resultado.mensaje).toContain('35 ml como merma');
+    expect(marca(trx)![1]).toEqual([
+      expect.any(String),
+      'user-1',
+      'vendida',
+      35,
+      'unidad-1',
+      'almacen'
+    ]);
+  });
+
+  it('no acepta como merma una botella por encima de la tolerancia', async () => {
+    const abierta = envase({ estado: 'almacen', ubicacion: 'bar', ml_restante: 51 });
+    const trx = trxCon([abierta]);
+
+    const resultado = await conContextoOperacionExistente(trx, contexto =>
+      verificarEnvase('LM-000123', 'user-1', contexto)
+    );
+
+    expect(resultado).toMatchObject({ ok: false, motivo: 'no_esta_vacia' });
+    expect(marca(trx)).toBeUndefined();
   });
 
   it('detecta el re-escaneo de un envase ya devuelto y trae la fecha anterior', async () => {
@@ -1043,7 +1152,7 @@ describe('control de devolución de envases', () => {
     if (!resultado.ok && resultado.unidad) {
       expect(resultado.unidad.fecha_devolucion).toBe('2026-09-20 22:30:00');
     }
-    expect(trx).toHaveBeenCalledTimes(1);
+    expect(trx).toHaveBeenCalledTimes(2);
   });
 
   it('rechaza la botella que se vendió entera: su envase no vuelve al bar', async () => {
@@ -1054,7 +1163,7 @@ describe('control de devolución de envases', () => {
     );
 
     expect(resultado).toMatchObject({ ok: false, motivo: 'venta_entera' });
-    expect(trx).toHaveBeenCalledTimes(1);
+    expect(trx).toHaveBeenCalledTimes(2);
   });
 
   it('exige un código para verificar', async () => {
@@ -1073,8 +1182,8 @@ describe('control de devolución de envases', () => {
       verificarEnvase('  lm-000123  ', 'user-1', contexto)
     );
 
-    expect(trx.mock.calls[0][0]).toContain('WHERE u.codigo = ?');
-    expect(trx.mock.calls[0][1]).toEqual(['LM-000123']);
+    expect(busqueda(trx)[0]).toContain('WHERE u.codigo = ?');
+    expect(busqueda(trx)[1]).toEqual(['LM-000123']);
   });
 
   it('procesa el lote con una sola transacción y usa búsquedas indexables exactas', async () => {

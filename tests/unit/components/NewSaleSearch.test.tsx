@@ -214,4 +214,33 @@ describe('buscador rápido de Nueva Venta', () => {
     // El shot ofrece asignar anfitriona, pero no exige elegirla para vender.
     expect(screen.getByRole('button', { name: 'Agregar Black Label 750 ml' })).toBeEnabled();
   });
+
+  it('no permite seleccionar anfitrionas para formatos sin comisión aunque el producto sea caro', () => {
+    const onAdd = vi.fn();
+    renderSearch([conShotAnfitriona], { onAdd });
+    const row = fila();
+    expect(row.getByText('Sin comisión')).toBeInTheDocument();
+    fireEvent.click(row.getByRole('button', { name: 'Botella: aumentar cantidad' }));
+    fireEvent.click(row.getByRole('button', { name: 'Shot cliente · 50 ml: aumentar cantidad' }));
+    expect(row.getByText('Sin comisión')).toBeInTheDocument();
+    fireEvent.click(row.getByRole('button', { name: 'Agregar Black Label 750 ml' }));
+    expect(onAdd).toHaveBeenCalledWith(expect.objectContaining({ selectedHostesses: [] }));
+  });
+
+  it('solo habilita anfitrionas para el formato seleccionado que tiene comisión', () => {
+    const producto = {
+      ...conShotAnfitriona,
+      opciones_venta: [
+        { tipo: 'botella', precio: 180000, comision: 1000 },
+        { tipo: 'shot', precio: 5000, comision: 0, precio_anfitriona: 3000 }
+      ]
+    };
+    renderSearch([producto]);
+    const row = fila();
+    expect(row.getByText('Sin comisión')).toBeInTheDocument();
+    fireEvent.click(row.getByRole('button', { name: 'Shot cliente · 50 ml: aumentar cantidad' }));
+    expect(row.getByText('Sin comisión')).toBeInTheDocument();
+    fireEvent.click(row.getByRole('button', { name: 'Botella: aumentar cantidad' }));
+    expect(row.queryByText('Sin comisión')).not.toBeInTheDocument();
+  });
 });

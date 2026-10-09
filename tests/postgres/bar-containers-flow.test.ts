@@ -13,6 +13,7 @@ import { snapshotDatabase, restoreDatabase } from '@/lib/database/maintenance';
 import { generarEan13Interno } from '@/modules/inventario/helpers';
 import {
   confirmarRecepcionEnvase,
+  ESTADO_UNIDAD_ACTIVA,
   ESTADO_UNIDAD_VENDIDA,
   listarDevoluciones,
   verificarEnvase
@@ -82,12 +83,38 @@ it('el bar entrega y el almacén confirma; los rechazos de cada paso no escriben
   try {
     const vacia = await crearEnvase(ESTADO_UNIDAD_VENDIDA);
     const llena = await crearEnvase('almacen');
+    const tolerancia = await crearEnvase(ESTADO_UNIDAD_ACTIVA);
+    const [configMerma] = await query<Array<{ valor: string }>>(
+      `SELECT valor FROM configuraciones WHERE clave = 'merma_shots_ml' LIMIT 1`
+    );
+    const valorMerma = Number(configMerma?.valor ?? 50);
+    const limiteMerma = Number.isInteger(valorMerma) && valorMerma >= 0 ? valorMerma : 50;
+    const mlResidual = Math.min(45, limiteMerma);
+    await query(
+      `UPDATE inventario_unidades SET ubicacion = 'bar', abierta_por_shots = true, ml_restante = ? WHERE id = ?`,
+      [mlResidual, tolerancia.unidadId]
+    );
     // Otro envase vacío que el bar entrega pero el almacén todavía no confirma.
     const pendiente = await crearEnvase(ESTADO_UNIDAD_VENDIDA);
 
     // Escaneo válido por EAN-13: es nuestro, vacío y sin devolver → se marca.
     const ok = await verificarEnvase(vacia.codigoBarras, vacia.usuarioId);
     expect(ok.ok).toBe(true);
+
+    // Una botella servida por shots puede devolverse dentro de la merma
+    // configurada; los ml residuales se conservan como dato auditable.
+    const retornoConMerma = await verificarEnvase(tolerancia.codigoBarras, tolerancia.usuarioId);
+    expect(retornoConMerma).toMatchObject({ ok: true, unidad: { ml_merma: mlResidual } });
+    if (mlResidual > 0) expect(retornoConMerma.mensaje).toContain(`${mlResidual} ml como merma`);
+    const [unidadConMerma] = await query(
+      'SELECT estado, ml_restante, ml_merma FROM inventario_unidades WHERE id = ?',
+      [tolerancia.unidadId]
+    );
+    expect(unidadConMerma).toMatchObject({
+      estado: ESTADO_UNIDAD_VENDIDA,
+      ml_restante: 0,
+      ml_merma: mlResidual
+    });
 
     const [fila] = await query(
       'SELECT fecha_devolucion, devuelto_por FROM inventario_unidades WHERE id = ?',

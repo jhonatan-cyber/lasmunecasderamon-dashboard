@@ -39,6 +39,22 @@ export interface ShotsSummary {
   botellasPorAgotarse: number;
 }
 
+/** Detalle de una botella actualmente abierta en el bar. */
+export interface BotellaAbiertaDetalle {
+  id: string;
+  codigo: string;
+  codigo_barras: string | null;
+  ml_restante: number;
+}
+
+/** Botella abierta por shots vacía o dentro de la tolerancia, lista para escanear. */
+export interface BotellaDevolucionPendiente {
+  id: string;
+  codigo: string;
+  codigo_barras: string | null;
+  ml_restante: number;
+}
+
 /** Motivo por el que un escaneo de envase no quedó marcado. */
 export type DevolucionEnvaseMotivo =
   | 'no_es_nuestro'
@@ -59,6 +75,8 @@ export interface DevolucionEnvaseUnidad {
   estado: string;
   /** true si esta botella se sirvió alguna vez por shots: es la que vuelve a almacén. */
   abierta_por_shots: boolean;
+  /** Ml que se reconocieron como merma al entregar la botella vacía. */
+  ml_merma: number;
   /** Date crudo de pg en la consulta; string al marcar (hora del negocio). */
   fecha_devolucion: string | Date | null;
   /** Confirmación de recepción del almacén (null = todavía no se confirma). */

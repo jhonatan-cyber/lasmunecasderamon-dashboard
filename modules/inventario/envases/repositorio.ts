@@ -10,7 +10,7 @@
  */
 import { query, type TransactionQuery } from '@/lib/database/db';
 import { fechaDevolucionLegible, mapearEnvase } from '../helpers';
-import { ESTADO_UNIDAD_VENDIDA } from '../estados';
+import { ESTADO_UNIDAD_ACTIVA, ESTADO_UNIDAD_VENDIDA } from '../estados';
 import type { EnvaseFila } from '../tipos';
 import type {
   DevolucionEnvaseRegistro,
@@ -19,6 +19,7 @@ import type {
 } from '../contracts';
 import { BusinessError, ValidationError } from '@/lib/errors/errors';
 import { getNowInBusinessTimezone } from '@/lib/business/timezoneService';
+import { getBarMlConfig } from '../bar/configuracion';
 
 /** Horas que un envase puede estar entregado sin recibir antes de avisar. */
 export const HORAS_ENVASE_SIN_CONFIRMAR = 2;
@@ -32,7 +33,8 @@ async function buscarEnvase(trx: TransactionQuery, escaneo: string): Promise<Env
     : ['codigo', 'codigo_barras'];
   for (const campo of campos) {
     const filas = await trx<any[]>(
-      `SELECT u.id, u.codigo, u.codigo_barras, u.estado, u.fecha_devolucion, u.devuelto_por,
+      `SELECT u.id, u.codigo, u.codigo_barras, u.estado, u.ml_restante, u.ml_merma,
+              u.ubicacion, u.fecha_devolucion, u.devuelto_por,
               u.fecha_confirmacion, u.confirmado_por, u.abierta_por_shots,
               p.nombre AS producto_nombre, pr.nombre AS presentacion_nombre, c.folio AS compra_folio
          FROM inventario_unidades u
@@ -72,6 +74,7 @@ export async function verificarYMarcarEnvase(
     .trim()
     .toUpperCase();
   if (!escaneo) throw new ValidationError('Escanea o digita el código del envase');
+  const { mermaShotsMl } = await getBarMlConfig(trx);
 
   const clasificar = (fila: EnvaseFila): DevolucionEnvaseResultado | null => {
     if (fila.fecha_devolucion) {
@@ -82,11 +85,23 @@ export async function verificarYMarcarEnvase(
         unidad: mapearEnvase(fila)
       };
     }
-    if (fila.estado !== ESTADO_UNIDAD_VENDIDA) {
+    const mlRestante = Number(fila.ml_restante ?? 0);
+    const esAbiertaDentroDeMerma =
+      fila.estado === ESTADO_UNIDAD_ACTIVA &&
+      fila.ubicacion === 'bar' &&
+      fila.abierta_por_shots &&
+      fila.ml_restante !== null &&
+      fila.ml_restante !== undefined &&
+      mlRestante >= 0 &&
+      mlRestante <= mermaShotsMl;
+    if (fila.estado !== ESTADO_UNIDAD_VENDIDA && !esAbiertaDentroDeMerma) {
       return {
         ok: false,
         motivo: 'no_esta_vacia',
-        mensaje: `El envase es nuestro pero no está vacío (estado '${fila.estado}'); solo se devuelven botellas ya consumidas.`,
+        mensaje:
+          fila.estado === ESTADO_UNIDAD_ACTIVA && fila.abierta_por_shots
+            ? `A esta botella abierta le quedan ${mlRestante} ml; solo se acepta para devolución con ${mermaShotsMl} ml o menos de merma.`
+            : `El envase es nuestro pero no está vacío (estado '${fila.estado}'); solo se devuelven botellas ya consumidas.`,
         unidad: mapearEnvase(fila)
       };
     }
@@ -118,12 +133,13 @@ export async function verificarYMarcarEnvase(
   if (rechazo) return rechazo;
 
   const ahora = getNowInBusinessTimezone();
+  const mlMerma = fila.estado === ESTADO_UNIDAD_VENDIDA ? 0 : Number(fila.ml_restante ?? 0);
   const marcadas = await trx<any[]>(
     `UPDATE inventario_unidades
-        SET fecha_devolucion = ?, devuelto_por = ?
+        SET fecha_devolucion = ?, devuelto_por = ?, estado = ?, ml_merma = ?, ml_restante = 0
       WHERE id = ? AND estado = ? AND fecha_devolucion IS NULL
       RETURNING id`,
-    [ahora, usuarioId, fila.id, ESTADO_UNIDAD_VENDIDA]
+    [ahora, usuarioId, ESTADO_UNIDAD_VENDIDA, mlMerma, fila.id, fila.estado]
   );
   if (marcadas.length === 0) {
     // La fila estaba bloqueada con FOR UPDATE, así que esto no debería pasar:
@@ -133,8 +149,11 @@ export async function verificarYMarcarEnvase(
 
   return {
     ok: true,
-    mensaje: 'Envase verificado: es nuestro, estaba vacío y quedó marcado como devuelto.',
-    unidad: { ...mapearEnvase(fila), fecha_devolucion: ahora }
+    mensaje:
+      mlMerma > 0
+        ? `Envase verificado y devuelto. Se registraron ${mlMerma} ml como merma permitida.`
+        : 'Envase verificado: es nuestro, estaba vacío y quedó marcado como devuelto.',
+    unidad: { ...mapearEnvase(fila), fecha_devolucion: ahora, ml_merma: mlMerma }
   };
 }
 
@@ -219,7 +238,7 @@ export async function listarDevoluciones(
 ): Promise<DevolucionEnvaseRegistro[]> {
   const tope = Math.min(Math.max(Math.floor(Number(limite) || 100), 1), 500);
   const rows = await query<any[]>(
-    `SELECT u.id, u.codigo, u.codigo_barras, u.estado, u.fecha_devolucion, u.devuelto_por,
+    `SELECT u.id, u.codigo, u.codigo_barras, u.estado, u.ml_merma, u.fecha_devolucion, u.devuelto_por,
             u.fecha_confirmacion, u.confirmado_por,
             p.nombre AS producto_nombre, pr.nombre AS presentacion_nombre, c.folio AS compra_folio,
             us.nombre AS usuario_nombre, us.apellido AS usuario_apellido, us.nick AS usuario_nick,

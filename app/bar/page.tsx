@@ -261,7 +261,9 @@ export default function BarPage() {
     const term = search.trim().toLowerCase();
     return items.filter(
       i =>
-        (stockFilter !== 'abiertas' || Number(i.ml_abierta ?? 0) > 0) &&
+        (stockFilter !== 'abiertas' ||
+          Number(i.ml_abierta ?? 0) > 0 ||
+          Number(i.botellas_vacias_shots ?? 0) > 0) &&
         (!term ||
           i.producto_nombre.toLowerCase().includes(term) ||
           (i.categoria_nombre ?? '').toLowerCase().includes(term) ||
@@ -270,6 +272,18 @@ export default function BarPage() {
           (i.producto_codigo || '').toLowerCase().includes(term))
     );
   }, [items, search, stockFilter]);
+
+  const botellasAbiertasDetalle = useMemo(
+    () =>
+      items.flatMap(item =>
+        (item.botellas_abiertas ?? []).map(botella => ({
+          ...botella,
+          producto_nombre: item.producto_nombre,
+          presentacion_nombre: item.nombre
+        }))
+      ),
+    [items]
+  );
 
   const totalBar = useMemo(() => items.reduce((acc, i) => acc + (i.stock_bar ?? 0), 0), [items]);
 
@@ -291,7 +305,7 @@ export default function BarPage() {
           </Badge>
         </div>
 
-        <BarStatsCards resumen={resumen} />
+        <BarStatsCards resumen={resumen} botellasAbiertas={botellasAbiertasDetalle} />
 
         <Tabs value={tab} onValueChange={setTab} className='w-full'>
           <div className='flex min-w-0 flex-wrap items-center gap-3'>
@@ -366,7 +380,7 @@ export default function BarPage() {
                   <TooltipContent>
                     {stockFilter === 'abiertas'
                       ? 'Mostrar todos'
-                      : 'Mostrar solo botellas abiertas'}
+                      : 'Mostrar botellas abiertas y vacías por shots'}
                   </TooltipContent>
                 </Tooltip>
                 <Tooltip>
@@ -562,8 +576,9 @@ export default function BarPage() {
                                   )}
                                   {Number(item.botellas_vacias_shots ?? 0) > 0 && (
                                     <p className='mt-1 text-[10px] font-bold uppercase text-amber-700 dark:text-amber-400'>
-                                      Vacías por shots: {Number(item.botellas_vacias_shots)} ·
-                                      pendientes de devolución
+                                      Vacías por shots o dentro de tolerancia:{' '}
+                                      {Number(item.botellas_vacias_shots)} · pendientes de
+                                      devolución
                                     </p>
                                   )}
                                   {Number(item.ml_servidos ?? 0) > 0 && (
@@ -933,6 +948,9 @@ export default function BarPage() {
                                 Compra
                               </TableHead>
                               <TableHead className='py-4 px-5 text-xs uppercase text-gray-500'>
+                                Merma
+                              </TableHead>
+                              <TableHead className='py-4 px-5 text-xs uppercase text-gray-500'>
                                 Entregado por
                               </TableHead>
                               <TableHead className='py-4 px-5 text-xs uppercase text-gray-500'>
@@ -944,7 +962,7 @@ export default function BarPage() {
                             {devoluciones.length === 0 ? (
                               <TableRow key='empty'>
                                 <TableCell
-                                  colSpan={7}
+                                  colSpan={8}
                                   className='py-10 text-center text-sm text-muted-foreground'
                                 >
                                   {loadingDevol ? 'Cargando...' : 'Sin envases entregados todavía.'}
@@ -990,6 +1008,9 @@ export default function BarPage() {
                                   </TableCell>
                                   <TableCell className='py-3 px-2 sm:px-4 text-center font-mono text-xs sm:text-sm'>
                                     {d.compra_folio || '—'}
+                                  </TableCell>
+                                  <TableCell className='py-3 px-2 sm:px-4 text-center font-mono text-xs sm:text-sm'>
+                                    {Number(d.ml_merma ?? 0)} ml
                                   </TableCell>
                                   <TableCell className='py-3 px-2 sm:px-4 text-center text-xs sm:text-sm'>
                                     {d.usuario_nombre || d.usuario_nick

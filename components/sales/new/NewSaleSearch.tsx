@@ -25,10 +25,8 @@ import {
   HostessMultiSelect,
   getExplicitMaxAnfitrionas,
   getHostessLimit,
-  hasCommission,
   isExpensiveDrink
 } from '@/components/orders';
-import { hostessAllowedForPrice } from '@/components/orders/productModalRules';
 import { IndividualHostessSelect } from '@/components/shared/selects';
 import { resolverVentaProducto } from '@/lib/sales/saleChoice';
 import { SaleFormatQuantities } from '@/components/sales/SaleFormatQuantities';
@@ -148,15 +146,9 @@ export const NewSaleSearch = (props: NewSaleSearchProps) => {
                     const totalCantidad = options.reduce((sum, option) => sum + option.cantidad, 0);
                     const champagneSelected = props.champagneHostessSelections[id] || [];
                     const otherSelected = props.otherProductHostessSelections[id] || [];
-                    const botellaConComision = hasCommission(producto) || sale.comisionBotella > 0;
-                    const shotConComision = options.some(
-                      option => option.value !== 'botella' && option.comision > 0
+                    const muestraAnfitriona = options.some(
+                      option => option.cantidad > 0 && option.comision > 0
                     );
-                    const muestraAnfitriona =
-                      isChampagne ||
-                      shotConComision ||
-                      botellaConComision ||
-                      hostessAllowedForPrice(sale.precioBotella);
                     const maxHostesses = isChampagne
                       ? champagneLimit
                       : isExpensiveDrink(producto)
@@ -174,7 +166,7 @@ export const NewSaleSearch = (props: NewSaleSearchProps) => {
                             precio: option.precio,
                             comision: option.comision,
                             cantidad: option.cantidad,
-                            selectedHostesses,
+                            selectedHostesses: option.comision > 0 ? selectedHostesses : [],
                             isChampagne
                           });
                           setCantidadesPorFormato(prev => ({

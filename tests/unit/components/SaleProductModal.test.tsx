@@ -167,11 +167,14 @@ describe('vistas de productos en nueva venta', () => {
     ]
   };
 
-  it('oculta el select de anfitrionas cuando el shot no tiene comisión', () => {
+  it('solo permite seleccionar anfitrionas en el formato con comisión', () => {
     render(<Harness productos={[conComisiones]} onAdd={vi.fn()} />);
-    // La botella sí genera comisión: con botella se pide anfitriona.
+    expect(screen.getByText('Sin comisión')).toBeInTheDocument();
+    fireEvent.click(screen.getByRole('button', { name: 'Shot · 50 ml: aumentar cantidad' }));
+    expect(screen.getByText('Sin comisión')).toBeInTheDocument();
+    fireEvent.click(screen.getByRole('button', { name: 'Botella: aumentar cantidad' }));
     expect(screen.queryByText('Sin comisión')).not.toBeInTheDocument();
-    expect(screen.getByRole('button', { name: 'Agregar producto' })).toBeDisabled();
+    expect(screen.getByRole('button', { name: 'Agregar producto' })).toBeEnabled();
   });
 
   it('ofrece anfitriona opcional al vender el shot con comisión', () => {

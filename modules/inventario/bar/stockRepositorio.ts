@@ -46,13 +46,16 @@ export async function listarStockBar(productoId?: string): Promise<
     producto_foto: string | null;
     categoria_nombre: string | null;
     botellas_vacias_shots: number;
+    botellas_abiertas: NonNullable<PresentacionRow['botellas_abiertas']>;
+    botellas_por_devolver: NonNullable<PresentacionRow['botellas_por_devolver']>;
   })[]
 > {
+  const { mermaShotsMl } = await getBarMlConfig();
   const rows = await query<any[]>(
     `SELECT p.*,
       (SELECT COUNT(*) FROM inventario_unidades u WHERE u.presentacion_id = p.id AND u.estado = '${ESTADO_UNIDAD_ACTIVA}' AND u.ubicacion = 'almacen') AS stock,
       (SELECT COUNT(*) FROM inventario_unidades u WHERE u.presentacion_id = p.id AND u.estado = '${ESTADO_UNIDAD_ACTIVA}' AND u.ubicacion = 'bar') AS stock_bar,
-      (SELECT COUNT(*) FROM inventario_unidades u WHERE u.presentacion_id = p.id AND u.estado = '${ESTADO_UNIDAD_VENDIDA}' AND u.ubicacion = 'bar' AND u.abierta_por_shots = true AND u.fecha_devolucion IS NULL) AS botellas_vacias_shots,
+      (SELECT COUNT(*) FROM inventario_unidades u WHERE u.presentacion_id = p.id AND u.ubicacion = 'bar' AND u.abierta_por_shots = true AND u.fecha_devolucion IS NULL AND (u.estado = '${ESTADO_UNIDAD_VENDIDA}' OR (u.estado = '${ESTADO_UNIDAD_ACTIVA}' AND u.ml_restante IS NOT NULL AND u.ml_restante >= 0 AND u.ml_restante <= ?))) AS botellas_vacias_shots,
       (SELECT COALESCE(SUM(u.ml_restante), 0) FROM inventario_unidades u WHERE u.presentacion_id = p.id AND u.estado = '${ESTADO_UNIDAD_ACTIVA}' AND u.ubicacion = 'bar') AS ml_abierta,
       (SELECT COALESCE(SUM(m.ml), 0) FROM inventario_movimientos m WHERE m.presentacion_id = p.id AND m.tipo = 'venta' AND m.ml > 0) AS ml_servidos,
       pr.nombre AS producto_nombre, pr.codigo AS producto_codigo, pr.foto AS producto_foto,
@@ -64,11 +67,66 @@ export async function listarStockBar(productoId?: string): Promise<
      LEFT JOIN categorias c ON c.id_categoria = pr.categoria_id
      ${productoId ? 'WHERE p.producto_id = ?' : ''}
      ORDER BY pr.nombre ASC, p.fecha_crea ASC, p.id ASC`,
-    productoId ? [productoId] : []
+    productoId ? [mermaShotsMl, productoId] : [mermaShotsMl]
   );
   const maxMap = await obtenerMaxAnfitrionasPorProducto([
     ...new Set(rows.map(r => String(r.producto_id)).filter(Boolean))
   ]);
+  const presentacionIds = rows.map(row => String(row.id)).filter(Boolean);
+  const botellasPorPresentacion = new Map<
+    string,
+    NonNullable<PresentacionRow['botellas_abiertas']>
+  >();
+  const botellasPendientesPorPresentacion = new Map<
+    string,
+    NonNullable<PresentacionRow['botellas_por_devolver']>
+  >();
+  if (presentacionIds.length > 0) {
+    const placeholders = presentacionIds.map(() => '?').join(',');
+    const unidades = await query<any[]>(
+      `SELECT id, presentacion_id, codigo, codigo_barras, ml_restante, estado, abierta_por_shots
+         FROM inventario_unidades
+        WHERE presentacion_id IN (${placeholders})
+          AND ubicacion = 'bar'
+          AND ((estado = '${ESTADO_UNIDAD_ACTIVA}' AND COALESCE(ml_restante, 0) > 0)
+            OR (abierta_por_shots = true AND fecha_devolucion IS NULL
+              AND (estado = '${ESTADO_UNIDAD_VENDIDA}'
+                OR (estado = '${ESTADO_UNIDAD_ACTIVA}' AND ml_restante IS NOT NULL AND ml_restante >= 0 AND ml_restante <= ?))))
+        ORDER BY presentacion_id, fecha_crea, codigo`,
+      [...presentacionIds, mermaShotsMl]
+    );
+    for (const unidad of unidades) {
+      const id = String(unidad.presentacion_id);
+      const mlRestante = Number(unidad.ml_restante ?? 0);
+      if (unidad.estado === ESTADO_UNIDAD_ACTIVA && mlRestante > 0) {
+        const detalleAbiertas = botellasPorPresentacion.get(id) ?? [];
+        detalleAbiertas.push({
+          id: String(unidad.id),
+          codigo: String(unidad.codigo),
+          codigo_barras: unidad.codigo_barras ?? null,
+          ml_restante: mlRestante
+        });
+        botellasPorPresentacion.set(id, detalleAbiertas);
+      }
+      if (
+        unidad.abierta_por_shots === true &&
+        (unidad.estado === ESTADO_UNIDAD_VENDIDA ||
+          (unidad.estado === ESTADO_UNIDAD_ACTIVA &&
+            unidad.ml_restante !== null &&
+            mlRestante >= 0 &&
+            mlRestante <= mermaShotsMl))
+      ) {
+        const detallePendientes = botellasPendientesPorPresentacion.get(id) ?? [];
+        detallePendientes.push({
+          id: String(unidad.id),
+          codigo: String(unidad.codigo),
+          codigo_barras: unidad.codigo_barras ?? null,
+          ml_restante: mlRestante
+        });
+        botellasPendientesPorPresentacion.set(id, detallePendientes);
+      }
+    }
+  }
   const topeSimple = await getTopeSimple();
   return rows.map(row => ({
     ...mapPresentacion(
@@ -79,7 +137,9 @@ export async function listarStockBar(productoId?: string): Promise<
     producto_codigo: row.producto_codigo,
     producto_foto: row.producto_foto ?? null,
     categoria_nombre: row.categoria_nombre ?? null,
-    botellas_vacias_shots: Number(row.botellas_vacias_shots ?? 0)
+    botellas_vacias_shots: Number(row.botellas_vacias_shots ?? 0),
+    botellas_abiertas: botellasPorPresentacion.get(String(row.id)) ?? [],
+    botellas_por_devolver: botellasPendientesPorPresentacion.get(String(row.id)) ?? []
   }));
 }
 

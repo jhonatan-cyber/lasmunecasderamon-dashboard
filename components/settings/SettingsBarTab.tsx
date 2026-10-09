@@ -17,6 +17,7 @@ export function SettingsBarTab() {
   const [shotMl, setShotMl] = useState(() => defaultDe('shot_ml'));
   const [botellaMl, setBotellaMl] = useState(() => defaultDe('botella_ml'));
   const [shotsAlerta, setShotsAlerta] = useState(() => defaultDe('shots_alerta'));
+  const [mermaShotsMl, setMermaShotsMl] = useState(() => defaultDe('merma_shots_ml'));
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
 
@@ -31,6 +32,7 @@ export function SettingsBarTab() {
           const guardadoShot = bar.shot_ml;
           const guardadoBotella = bar.botella_ml;
           const guardadoAlerta = bar.shots_alerta;
+          const guardadaMerma = bar.merma_shots_ml;
           if (guardadoShot !== undefined && guardadoShot !== null && String(guardadoShot).trim()) {
             setShotMl(String(guardadoShot));
           }
@@ -47,6 +49,13 @@ export function SettingsBarTab() {
             String(guardadoAlerta).trim()
           ) {
             setShotsAlerta(String(guardadoAlerta));
+          }
+          if (
+            guardadaMerma !== undefined &&
+            guardadaMerma !== null &&
+            String(guardadaMerma).trim()
+          ) {
+            setMermaShotsMl(String(guardadaMerma));
           }
         }
       } catch (error) {
@@ -80,6 +89,11 @@ export function SettingsBarTab() {
       toast.error('La alerta debe ser un número entero entre 1 y 50 shots restantes');
       return;
     }
+    const merma = Number(String(mermaShotsMl).trim());
+    if (!Number.isInteger(merma) || merma < 0 || merma > 250) {
+      toast.error('La merma permitida debe ser un número entero entre 0 y 250 ml');
+      return;
+    }
     try {
       setSaving(true);
       const response = await fetch('/api/configurations', {
@@ -89,7 +103,8 @@ export function SettingsBarTab() {
           configs: [
             { clave: 'shot_ml', valor: String(shot) },
             { clave: 'botella_ml', valor: String(botella) },
-            { clave: 'shots_alerta', valor: String(alerta) }
+            { clave: 'shots_alerta', valor: String(alerta) },
+            { clave: 'merma_shots_ml', valor: String(merma) }
           ]
         })
       });
@@ -100,6 +115,7 @@ export function SettingsBarTab() {
       setShotMl(String(shot));
       setBotellaMl(String(botella));
       setShotsAlerta(String(alerta));
+      setMermaShotsMl(String(merma));
       // El resto de la pestaña lee la configuración de la caché compartida: sin esto, el bar
       // y los formularios seguirían mostrando el valor viejo hasta recargar.
       await refrescarConfiguraciones();
@@ -120,14 +136,13 @@ export function SettingsBarTab() {
           Tragos y Shots
         </CardTitle>
         <CardDescription className='text-neutral-500 dark:text-neutral-400'>
-          Cuánto se sirve en cada shot y cuánto trae la botella. La venta de un shot descuenta ml de
-          la botella abierta y el inventario del bar muestra lo que le queda; cuando se vacía, pasa
-          a vendida. Es el valor global: cada producto puede definir sus propios ml por shot en su
-          ficha (si lo tiene, manda sobre este).
+          Cuánto se sirve en cada shot y cuánto trae la botella. La tolerancia se aplica al escanear
+          una botella abierta para devolverla: el residuo aceptado queda registrado como merma. Cada
+          producto puede definir sus propios ml por shot en su ficha.
         </CardDescription>
       </CardHeader>
       <CardContent>
-        <div className='grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4'>
+        <div className='grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4'>
           <div className='p-4 bg-neutral-50 dark:bg-neutral-800/30 rounded-2xl border border-neutral-200 dark:border-neutral-700'>
             <div className='flex items-center gap-3'>
               <GlassWater className='h-5 w-5 text-neutral-500 shrink-0' />
@@ -152,6 +167,36 @@ export function SettingsBarTab() {
                   value={shotMl}
                   onChange={event => setShotMl(event.target.value)}
                   className='w-24 px-3 py-1.5 bg-white dark:bg-neutral-950 border border-neutral-300 dark:border-neutral-800 rounded-full focus:ring-2 focus:ring-black dark:focus:ring-white focus:border-transparent text-neutral-900 dark:text-white text-sm text-center'
+                />
+                <span className='text-sm text-neutral-500'>ml</span>
+              </div>
+            </div>
+          </div>
+          <div className='p-4 bg-neutral-50 dark:bg-neutral-800/30 rounded-2xl border border-neutral-200 dark:border-neutral-700'>
+            <div className='flex items-center gap-3'>
+              <Wine className='h-5 w-5 text-neutral-500 shrink-0' />
+              <div className='flex-1'>
+                <label
+                  htmlFor='bar-merma-shots-ml'
+                  className='text-sm font-bold text-neutral-700 dark:text-neutral-300'
+                >
+                  Tolerancia de merma
+                </label>
+                <p className='text-xs text-neutral-500 dark:text-neutral-400 mt-0.5'>
+                  Permite devolver una botella abierta con este máximo de ml restantes. 0 desactiva
+                  la tolerancia.
+                </p>
+              </div>
+              <div className='flex items-center gap-2 shrink-0'>
+                <input
+                  id='bar-merma-shots-ml'
+                  type='number'
+                  min='0'
+                  max='250'
+                  disabled={loading}
+                  value={mermaShotsMl}
+                  onChange={event => setMermaShotsMl(event.target.value)}
+                  className='w-20 px-3 py-1.5 bg-white dark:bg-neutral-950 border border-neutral-300 dark:border-neutral-800 rounded-full focus:ring-2 focus:ring-black dark:focus:ring-white focus:border-transparent text-neutral-900 dark:text-white text-sm text-center'
                 />
                 <span className='text-sm text-neutral-500'>ml</span>
               </div>
