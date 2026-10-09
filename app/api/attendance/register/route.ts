@@ -16,8 +16,6 @@ export const POST = withPublicRoute(async (request: Request) => {
   const result = await registrarAsistencia(body, user || undefined, ip);
 
   if (result.success) {
-    // El qrToken no se difunde: es la credencial que acepta este mismo endpoint.
-    // Los consumidores identifican al usuario por su id.
     sendNotificationToAll('attendance_registered', {
       user: result.user
     });

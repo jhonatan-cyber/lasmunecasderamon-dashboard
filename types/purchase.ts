@@ -10,6 +10,7 @@ export interface PurchaseCreate {
   proveedor?: string | null;
   telefono?: string | null;
   observaciones?: string | null;
+  metodo_pago?: 'efectivo' | 'tarjeta' | 'transferencia';
 }
 
 export interface PurchaseDetail extends PurchaseDetailInput {
@@ -26,6 +27,7 @@ export interface PurchaseRecord {
   proveedor: string | null;
   telefono: string | null;
   observaciones: string | null;
+  metodo_pago: 'efectivo' | 'tarjeta' | 'transferencia';
   usuario_id: string | null;
   usuario_nombre: string | null;
   fecha_crea: string;

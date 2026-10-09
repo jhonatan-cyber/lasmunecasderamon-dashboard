@@ -37,7 +37,8 @@ const CompraSchema = z.object({
   detalles: z.array(DetalleSchema).min(1, 'Agrega al menos un ítem').max(100),
   proveedor: z.string().max(120).nullish(),
   telefono: z.string().max(30).nullish(),
-  observaciones: z.string().max(500).nullish()
+  observaciones: z.string().max(500).nullish(),
+  metodo_pago: z.enum(['efectivo', 'tarjeta', 'transferencia']).default('efectivo')
 });
 
 /**
@@ -94,6 +95,7 @@ export async function registrarCompra(
         proveedor: parsed.data.proveedor ?? null,
         telefono: parsed.data.telefono ?? null,
         observaciones: parsed.data.observaciones ?? null,
+        metodo_pago: parsed.data.metodo_pago,
         usuario_id: usuarioId
       },
       detalles

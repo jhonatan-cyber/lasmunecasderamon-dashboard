@@ -144,6 +144,7 @@ export const AUTHENTICATED_ONLY_APIS = [
   '/api/anfitrionas',
   '/api/garzones',
   '/api/products',
+  '/api/purchases',
   '/api/categories',
   '/api/clients',
   '/api/rooms',

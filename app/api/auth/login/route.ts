@@ -3,8 +3,6 @@ import { iniciarSesion } from '@/workflows/autenticacion';
 import { generateRefreshToken } from '@/lib/auth/auth';
 import { cookies } from 'next/headers';
 import { ApiResponse } from '@/lib/api/api-response';
-
-// ponytail: rate limiting handled in proxy.ts via redisRateLimit (Redis + memory fallback)
 export const POST = async (request: Request) => {
   try {
     const body = await request.json();
@@ -17,7 +15,6 @@ export const POST = async (request: Request) => {
       const cookieStore = await cookies();
       const isProduction = process.env.NODE_ENV === 'production';
 
-      // Access token (15 min) — cookie httpOnly
       cookieStore.set('token', result.token, {
         httpOnly: true,
         secure: isProduction,
@@ -26,8 +23,6 @@ export const POST = async (request: Request) => {
         maxAge: 15 * 60
       });
 
-      // Refresh token (7 días) — cookie httpOnly + body para clientes móviles
-      // (no pueden leer cookies httpOnly y sin él la sesión móvil duraría 15 min).
       let refreshToken: string | null = null;
       const userData = (result as any).user as Record<string, unknown> | undefined;
       if (userData && userData.id) {
@@ -49,7 +44,6 @@ export const POST = async (request: Request) => {
             maxAge: 7 * 24 * 60 * 60
           });
         } catch {
-          // Refresh token no crítico para el login inicial
           refreshToken = null;
         }
       }

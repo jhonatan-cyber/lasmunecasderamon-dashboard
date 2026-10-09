@@ -2,7 +2,7 @@
 
 import React, { useState } from 'react';
 import { Product, Presentacion } from '@/types/product';
-import { ProductPhoto } from '@/components/shared/ProductPhoto';
+import { InteractiveProductPhoto } from '@/components/shared/InteractiveProductPhoto';
 import {
   MoreVertical,
   Pencil,
@@ -137,18 +137,12 @@ const SortableRow: React.FC<SortableRowProps> = React.memo(
           </div>
         </TableCell>
         <TableCell className='py-3 px-2 sm:px-4 text-center'>
-          <div
-            data-photo-surface
-            className='relative mx-auto flex h-12 w-12 shrink-0 items-center justify-center overflow-hidden rounded-xl border border-gray-100 dark:border-slate-800 bg-gray-50 dark:bg-slate-800/40 shadow-xs transition-all group-hover:shadow-sm'
-          >
-            <ProductPhoto
-              src={productFoto(presentation?.foto || product.foto)}
-              alt={presentation ? `${product.name} ${presentation.nombre}` : product.name}
-              width={48}
-              height={48}
-              className='h-12 w-12 object-cover transition-transform duration-300 group-hover:scale-110'
-            />
-          </div>
+          <InteractiveProductPhoto
+            src={productFoto(presentation?.foto || product.foto)}
+            alt={presentation ? `${product.name} ${presentation.nombre}` : product.name}
+            containerClassName='relative mx-auto h-12 w-12 shrink-0 overflow-hidden rounded-xl border border-gray-100 bg-gray-50 shadow-xs transition-all group-hover:shadow-sm dark:border-slate-800 dark:bg-slate-800/40'
+            photoClassName='h-12 w-12 object-cover transition-transform duration-300 group-hover:scale-110'
+          />
         </TableCell>
         <TableCell className='py-3 px-2 sm:px-4 text-center font-mono text-xs sm:text-sm'>
           {presentation?.codigo_barras || product.code}

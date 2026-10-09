@@ -17,6 +17,7 @@ export {
   type NuevaPresentacionProducto
 } from './productos/servicio';
 export { listar as listarCompras, registrarCompra } from './compras/servicio';
+export { listar as listarCatalogoCompras } from './compras/catalogo';
 export {
   aceptarTransferencia,
   listarTransferencias,

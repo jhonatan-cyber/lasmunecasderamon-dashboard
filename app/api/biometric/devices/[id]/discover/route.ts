@@ -2,14 +2,6 @@ import { NextResponse } from 'next/server';
 import { withRoute } from '@/lib/api/withRoute';
 import { descubrirIpDispositivo } from '@/modules/asistencia';
 
-/**
- * Re-encontrar el equipo por su MAC cuando el DHCP le cambió la IP.
- *
- * El terminal no es fijo: su IP la asigna el router. Guardar la MAC (que sí es
- * fija) y re-barrer la red confirmando con el serial permite volver a apuntarle
- * sin tocar la identidad del equipo. POST `{"forzar": false}` solo chequea la
- * IP actual; por omisión (`true`) busca en toda la subred.
- */
 export const POST = withRoute(
   { auth: true, access: 'administrator', audit: true },
   async (request: Request, { params }: { params: Promise<{ id: string }> }) => {

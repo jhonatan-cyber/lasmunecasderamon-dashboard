@@ -4,12 +4,6 @@ import { createBiometricDevice, listBiometricDevices } from '@/modules/asistenci
 import type { BiometricMarca } from '@/modules/asistencia';
 
 export const dynamic = 'force-dynamic';
-
-/**
- * Administración de los equipos biométricos de la puerta. El alta es la única
- * "autorización" que tiene el flujo: el serial dado de alta es lo que el handler
- * de `/iclock/cdata` y `/dahua/push` comprueba antes de aceptar un evento.
- */
 export const GET = withRoute({ auth: true, access: 'administrator' }, async () => {
   return NextResponse.json(
     { success: true, data: await listBiometricDevices() },

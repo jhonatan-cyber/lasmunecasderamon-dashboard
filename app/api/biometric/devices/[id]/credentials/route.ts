@@ -2,14 +2,6 @@ import { NextResponse } from 'next/server';
 import { withRoute } from '@/lib/api/withRoute';
 import { guardarCredenciales, probarConexion } from '@/modules/asistencia';
 
-/**
- * Credenciales CGI del equipo (usuario/clave del lector + su IP).
- *
- * Se guardan cifradas y se validan EN EL MOMENTO: la prueba de conexión confirma
- * que el equipo de esa IP reporta el serial vinculado, para no enrolar contra
- * un terminal equivocado. GET = prueba de conexión con las credenciales ya
- * guardadas; POST = guardar nuevas (probando primero).
- */
 export const GET = withRoute(
   { auth: true, access: 'administrator' },
   async (_request: Request, { params }: { params: Promise<{ id: string }> }) => {
@@ -30,8 +22,7 @@ export const POST = withRoute(
     const ip = String(body?.ip || '').trim();
     const usuario = String(body?.usuario || '').trim();
     const clave = String(body?.clave || '');
-    // La IP es opcional: si se deja vacía (o si no responde), el servicio la
-    // re-busca por MAC y recién ahí valida usuario/clave contra el serial.
+
     if (!usuario || !clave) {
       return NextResponse.json(
         {

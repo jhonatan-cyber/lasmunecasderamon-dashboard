@@ -2,12 +2,13 @@
 
 import { useId, useMemo, useState } from 'react';
 import Link from 'next/link';
+import Image from 'next/image';
 import { useRouter } from 'next/navigation';
 import { toast } from 'sonner';
 import {
   ArrowLeft,
   Check,
-  ChevronsUpDown,
+  CheckCircle2,
   Loader2,
   Minus,
   Plus,
@@ -17,25 +18,26 @@ import {
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { Textarea } from '@/components/ui/textarea';
 import {
-  Command,
-  CommandEmpty,
-  CommandGroup,
-  CommandInput,
-  CommandItem,
-  CommandList
-} from '@/components/ui/command';
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue
+} from '@/components/ui/select';
+import { Card, CardContent } from '@/components/ui/card';
 import { formatCurrencyCLP } from '@/lib/utils/formatters';
 import { PurchaseCodesPanel } from './PurchaseCodesPanel';
+import { PURCHASE_BUTTON_CLASS } from './buttonStyles';
 import type { PurchaseRegistered } from '@/types/purchase';
-import styles from './PurchaseForm.module.css';
 
 export interface PurchaseCatalogItem {
   id: string;
   producto_id: string;
   producto_nombre: string;
   nombre: string;
+  foto: string;
   precio_compra: number;
   stock: number;
 }
@@ -45,6 +47,7 @@ interface Line {
   producto_id: string;
   producto_nombre: string;
   presentacion_nombre: string;
+  foto: string;
   cantidad: string;
   precio_compra: string;
 }
@@ -55,15 +58,23 @@ interface Props {
 
 const formatMiles = (v: string) => v.replace(/\D/g, '').replace(/\B(?=(\d{3})+(?!\d))/g, '.');
 const toNumber = (v: string) => Number(v.replace(/\./g, '')) || 0;
+const metodoPagoLabel = (method: string) =>
+  ({ efectivo: 'Efectivo', transferencia: 'Transferencia', tarjeta: 'Tarjeta' })[
+    method as 'efectivo' | 'transferencia' | 'tarjeta'
+  ] ?? method;
 
 export function PurchaseForm({ catalog }: Props) {
   const router = useRouter();
   const formId = useId();
-  const [comboOpen, setComboOpen] = useState(false);
+  const [step, setStep] = useState<1 | 2 | 3>(1);
+  const [search, setSearch] = useState('');
   const [lines, setLines] = useState<Line[]>([]);
   const [proveedor, setProveedor] = useState('');
   const [telefono, setTelefono] = useState('');
   const [observaciones, setObservaciones] = useState('');
+  const [metodoPago, setMetodoPago] = useState<'efectivo' | 'tarjeta' | 'transferencia'>(
+    'efectivo'
+  );
   const [saving, setSaving] = useState(false);
   const [result, setResult] = useState<PurchaseRegistered | null>(null);
 
@@ -71,6 +82,14 @@ export function PurchaseForm({ catalog }: Props) {
     () => lines.reduce((acc, l) => acc + toNumber(l.cantidad) * toNumber(l.precio_compra), 0),
     [lines]
   );
+
+  const filteredCatalog = useMemo(() => {
+    const term = search.trim().toLocaleLowerCase('es');
+    if (!term) return catalog;
+    return catalog.filter(item =>
+      `${item.producto_nombre} ${item.nombre}`.toLocaleLowerCase('es').includes(term)
+    );
+  }, [catalog, search]);
 
   const addItem = (item: PurchaseCatalogItem) => {
     if (lines.some(l => l.presentacion_id === item.id)) {
@@ -84,12 +103,15 @@ export function PurchaseForm({ catalog }: Props) {
         producto_id: item.producto_id,
         producto_nombre: item.producto_nombre,
         presentacion_nombre: item.nombre,
+        foto: item.foto,
         cantidad: '1',
         precio_compra: formatMiles(String(item.precio_compra ?? 0))
       }
     ]);
-    setComboOpen(false);
   };
+
+  const removeItem = (presentacionId: string) =>
+    setLines(prev => prev.filter(line => line.presentacion_id !== presentacionId));
 
   const adjustQuantity = (presentacionId: string, delta: number) => {
     setLines(prev =>
@@ -111,13 +133,15 @@ export function PurchaseForm({ catalog }: Props) {
     setProveedor('');
     setTelefono('');
     setObservaciones('');
-    setComboOpen(false);
+    setMetodoPago('efectivo');
+    setStep(1);
+    setSearch('');
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (lines.length === 0) {
-      toast.error('Agrega al menos una presentación');
+      toast.error('Selecciona al menos un producto');
       return;
     }
     const detalles = [];
@@ -148,7 +172,8 @@ export function PurchaseForm({ catalog }: Props) {
           detalles,
           proveedor: proveedor.trim() || null,
           telefono: telefono.trim() || null,
-          observaciones: observaciones.trim() || null
+          observaciones: observaciones.trim() || null,
+          metodo_pago: metodoPago
         })
       });
       const data = await res.json().catch(() => ({}));
@@ -198,282 +223,422 @@ export function PurchaseForm({ catalog }: Props) {
             Ingresa mercadería al almacén. Solo stock, no mueve caja.
           </p>
         </div>
-        <Button asChild variant='ghost' className='shrink-0 rounded-full'>
+        <Button asChild variant='ghost' className={`${PURCHASE_BUTTON_CLASS} shrink-0`}>
           <Link href='/purchases'>
             <ArrowLeft className='mr-2 h-4 w-4' aria-hidden='true' />
             Volver a compras
           </Link>
         </Button>
       </header>
-      <form onSubmit={handleSubmit} className='space-y-4'>
-        <div className='flex flex-col gap-2'>
-          <Label htmlFor={`${formId}-producto`}>Producto / presentación</Label>
-          <Popover open={comboOpen} onOpenChange={setComboOpen}>
-            <PopoverTrigger asChild>
-              <Button
-                type='button'
-                variant='outline'
-                id={`${formId}-producto`}
-                role='combobox'
-                aria-label='Agregar producto a la compra'
-                aria-expanded={comboOpen}
-                disabled={saving}
-                className='w-full justify-between rounded-full font-normal'
+      <div className='space-y-6'>
+        <ol aria-label='Pasos de la compra' className='grid grid-cols-3 gap-2'>
+          {['Productos', 'Proveedor y pago', 'Confirmar'].map((label, index) => {
+            const number = (index + 1) as 1 | 2 | 3;
+            const active = step === number;
+            const complete = step > number;
+            return (
+              <li
+                key={label}
+                aria-current={active ? 'step' : undefined}
+                className={`flex items-center gap-2 border-b-2 px-1 pb-3 text-xs font-semibold sm:text-sm ${active || complete ? 'border-primary text-foreground' : 'border-muted text-muted-foreground'}`}
               >
-                <span className='truncate text-muted-foreground'>
-                  {lines.length === 0
-                    ? 'Seleccionar o buscar producto...'
-                    : `${lines.length} en la compra — agregar otra...`}
+                <span
+                  className={`flex h-7 w-7 shrink-0 items-center justify-center rounded-full ${active || complete ? 'bg-primary text-primary-foreground' : 'bg-muted'}`}
+                >
+                  {complete ? <Check className='h-4 w-4' /> : number}
                 </span>
-                <ChevronsUpDown className='ml-2 h-4 w-4 shrink-0 opacity-50' />
-              </Button>
-            </PopoverTrigger>
-            <PopoverContent
-              className='w-[var(--radix-popover-trigger-width)] overflow-hidden p-0 rounded-2xl'
-              align='start'
-              sideOffset={8}
-            >
-              <Command>
-                <div className='flex flex-col gap-2 p-3'>
-                  <Label htmlFor={`${formId}-buscar`}>Buscar producto</Label>
-                  <div className={styles.searchField}>
-                    <CommandInput
-                      id={`${formId}-buscar`}
-                      aria-label='Buscar producto o presentación'
-                      placeholder='Buscar producto o presentación...'
-                    />
-                  </div>
-                </div>
-                <CommandList className='max-h-[min(16rem,40dvh,var(--radix-popover-content-available-height))] px-1 pb-1'>
-                  <CommandEmpty>
-                    {catalog.length === 0
-                      ? 'No hay productos disponibles.'
-                      : 'No se encontraron productos.'}
-                  </CommandEmpty>
-                  <CommandGroup heading='Productos disponibles'>
-                    {catalog.map(c => {
-                      const added = lines.some(l => l.presentacion_id === c.id);
-                      return (
-                        <CommandItem
-                          key={c.id}
-                          value={c.id}
-                          keywords={[c.producto_nombre, c.nombre]}
-                          disabled={added}
-                          onSelect={() => addItem(c)}
-                          className='flex cursor-pointer items-center justify-between gap-3 rounded-lg px-3 py-3'
-                        >
-                          <span className='flex min-w-0 flex-1 flex-col gap-1'>
-                            <span className='truncate font-medium'>{c.producto_nombre}</span>
-                            <span className='text-xs text-muted-foreground'>
-                              {c.nombre} · Stock: {c.stock}
-                            </span>
-                          </span>
-                          <span className='flex shrink-0 flex-col items-end gap-1'>
-                            <span className='text-sm font-medium tabular-nums'>
-                              {formatCurrencyCLP(c.precio_compra)}
-                            </span>
-                            <span className='flex items-center gap-1 text-xs text-muted-foreground'>
-                              {added && <Check aria-hidden='true' />}
-                              {added ? 'Agregado' : 'Por unidad'}
-                            </span>
-                          </span>
-                        </CommandItem>
-                      );
-                    })}
-                  </CommandGroup>
-                </CommandList>
-              </Command>
-            </PopoverContent>
-          </Popover>
-        </div>
+                {label}
+              </li>
+            );
+          })}
+        </ol>
 
-        {lines.length === 0 ? (
-          <p className='text-center text-sm text-gray-400 py-6'>
-            Sin ítems. Busca y agrega presentaciones.
-          </p>
-        ) : (
-          <div className='space-y-2'>
-            {lines.map(l => (
-              <div
-                key={l.presentacion_id}
-                className='grid grid-cols-[minmax(0,1fr)_auto] items-end gap-2 rounded-2xl border border-gray-200 p-3 sm:grid-cols-[minmax(0,1fr)_10rem_7rem_auto]'
-              >
-                <div className='col-span-2 min-w-0 sm:col-span-1'>
-                  <p className='text-sm font-semibold truncate'>
-                    {l.producto_nombre} — {l.presentacion_nombre}
-                  </p>
-                  <p className='text-xs text-gray-400'>
-                    Subtotal: {formatCurrencyCLP(toNumber(l.cantidad) * toNumber(l.precio_compra))}
+        <form
+          onSubmit={handleSubmit}
+          className={`space-y-5 ${step === 1 && lines.length > 0 ? 'pb-24' : ''}`}
+        >
+          {step === 1 && (
+            <div className='space-y-5'>
+              <div className='flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between'>
+                <div>
+                  <h2 className='text-lg font-semibold'>Selecciona los productos</h2>
+                  <p className='text-sm text-muted-foreground'>
+                    Elige las presentaciones que ingresarán al almacén.
                   </p>
                 </div>
-                <div className='col-span-2 flex flex-col gap-2 sm:col-span-1'>
-                  <Label htmlFor={`${formId}-cantidad-${l.presentacion_id}`}>Cantidad</Label>
-                  <div className='flex items-center gap-1'>
-                    <Button
-                      type='button'
-                      variant='outline'
-                      size='icon'
-                      className='shrink-0 rounded-full'
-                      aria-label={`Disminuir cantidad de ${l.producto_nombre}, ${l.presentacion_nombre}`}
-                      disabled={saving || toNumber(l.cantidad) <= 1}
-                      onClick={() => adjustQuantity(l.presentacion_id, -1)}
-                    >
-                      <Minus aria-hidden='true' />
-                    </Button>
-                    <Input
-                      id={`${formId}-cantidad-${l.presentacion_id}`}
-                      inputMode='numeric'
-                      value={l.cantidad}
-                      onChange={e =>
-                        setLines(prev =>
-                          prev.map(x =>
-                            x.presentacion_id === l.presentacion_id
-                              ? { ...x, cantidad: formatMiles(e.target.value) }
-                              : x
-                          )
-                        )
+                <Input
+                  aria-label='Buscar productos'
+                  value={search}
+                  onChange={event => setSearch(event.target.value)}
+                  placeholder='Buscar producto...'
+                  className='sm:max-w-xs'
+                />
+              </div>
+              {filteredCatalog.length === 0 ? (
+                <p className='py-8 text-center text-sm text-muted-foreground'>
+                  {catalog.length ? 'No hay coincidencias.' : 'No hay productos disponibles.'}
+                </p>
+              ) : (
+                <div className='grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4'>
+                  {filteredCatalog.map(item => {
+                    const selected = lines.some(line => line.presentacion_id === item.id);
+                    const image =
+                      item.foto && item.foto !== 'default.png'
+                        ? item.foto.startsWith('http')
+                          ? item.foto
+                          : `/api/images/products/${encodeURIComponent(item.foto)}`
+                        : '/api/images/products/default.png';
+                    return (
+                      <Card
+                        key={item.id}
+                        className={`overflow-hidden transition-colors ${selected ? 'border-primary ring-2 ring-primary/20' : 'hover:border-primary/50'}`}
+                      >
+                        <div className='aspect-square bg-muted'>
+                          <Image
+                            src={image}
+                            alt={`${item.producto_nombre} ${item.nombre}`}
+                            width={400}
+                            height={400}
+                            unoptimized
+                            className='h-full w-full object-cover'
+                            onError={event => {
+                              event.currentTarget.src = '/api/images/products/default.png';
+                            }}
+                          />
+                        </div>
+                        <CardContent className='space-y-2 p-3'>
+                          <div className='min-h-12'>
+                            <p className='line-clamp-2 text-sm font-semibold'>
+                              {item.producto_nombre}
+                            </p>
+                            <p className='truncate text-xs text-muted-foreground'>{item.nombre}</p>
+                          </div>
+                          <div className='flex items-center justify-between gap-1 text-xs'>
+                            <span className='font-medium'>
+                              {formatCurrencyCLP(item.precio_compra)}
+                            </span>
+                            <span className='text-muted-foreground'>Stock {item.stock}</span>
+                          </div>
+                          <Button
+                            type='button'
+                            size='sm'
+                            variant={selected ? 'secondary' : 'default'}
+                            className={`${PURCHASE_BUTTON_CLASS} w-full`}
+                            onClick={() => (selected ? removeItem(item.id) : addItem(item))}
+                            aria-pressed={selected}
+                          >
+                            {selected ? (
+                              <CheckCircle2 className='mr-2 h-4 w-4' />
+                            ) : (
+                              <Plus className='mr-2 h-4 w-4' />
+                            )}
+                            {selected ? 'Seleccionado' : 'Agregar'}
+                          </Button>
+                        </CardContent>
+                      </Card>
+                    );
+                  })}
+                </div>
+              )}
+            </div>
+          )}
+
+          {step === 2 && (
+            <div className='mx-auto max-w-4xl space-y-6'>
+              <div className='space-y-3'>
+                <div>
+                  <h2 className='text-lg font-semibold'>Cantidades y precios</h2>
+                  <p className='text-sm text-muted-foreground'>
+                    Define cuántas unidades ingresan y su precio de compra.
+                  </p>
+                </div>
+                {lines.map(line => (
+                  <div
+                    key={line.presentacion_id}
+                    className='grid grid-cols-[3.5rem_minmax(0,1fr)] items-end gap-3 rounded-xl border p-3 sm:grid-cols-[4rem_minmax(0,1fr)_10rem_8rem_auto]'
+                  >
+                    <Image
+                      src={
+                        line.foto && line.foto !== 'default.png'
+                          ? line.foto.startsWith('http')
+                            ? line.foto
+                            : `/api/images/products/${encodeURIComponent(line.foto)}`
+                          : '/api/images/products/default.png'
                       }
-                      disabled={saving}
-                      className='h-10 min-w-0 flex-1 text-center'
+                      alt={`${line.producto_nombre} ${line.presentacion_nombre}`}
+                      width={64}
+                      height={64}
+                      unoptimized
+                      className='h-14 w-14 rounded-lg object-cover'
+                      onError={event => {
+                        event.currentTarget.src = '/api/images/products/default.png';
+                      }}
                     />
+                    <div className='min-w-0'>
+                      <p className='truncate text-sm font-semibold'>{line.producto_nombre}</p>
+                      <p className='truncate text-xs text-muted-foreground'>
+                        {line.presentacion_nombre}
+                      </p>
+                    </div>
+                    <div className='col-span-2 flex flex-col gap-1 sm:col-span-1'>
+                      <Label htmlFor={`${formId}-cantidad-${line.presentacion_id}`}>Cantidad</Label>
+                      <div className='flex items-center gap-1'>
+                        <Button
+                          type='button'
+                          variant='outline'
+                          size='icon'
+                          className={PURCHASE_BUTTON_CLASS}
+                          aria-label={`Disminuir cantidad de ${line.producto_nombre}`}
+                          disabled={toNumber(line.cantidad) <= 1}
+                          onClick={() => adjustQuantity(line.presentacion_id, -1)}
+                        >
+                          <Minus />
+                        </Button>
+                        <Input
+                          id={`${formId}-cantidad-${line.presentacion_id}`}
+                          inputMode='numeric'
+                          value={line.cantidad}
+                          onChange={event =>
+                            setLines(prev =>
+                              prev.map(item =>
+                                item.presentacion_id === line.presentacion_id
+                                  ? { ...item, cantidad: formatMiles(event.target.value) }
+                                  : item
+                              )
+                            )
+                          }
+                          className='text-center'
+                        />
+                        <Button
+                          type='button'
+                          variant='outline'
+                          size='icon'
+                          className={PURCHASE_BUTTON_CLASS}
+                          aria-label={`Aumentar cantidad de ${line.producto_nombre}`}
+                          disabled={toNumber(line.cantidad) >= 1000}
+                          onClick={() => adjustQuantity(line.presentacion_id, 1)}
+                        >
+                          <Plus />
+                        </Button>
+                      </div>
+                    </div>
+                    <div className='flex flex-col gap-1'>
+                      <Label htmlFor={`${formId}-precio-${line.presentacion_id}`}>
+                        Precio unitario
+                      </Label>
+                      <Input
+                        id={`${formId}-precio-${line.presentacion_id}`}
+                        inputMode='numeric'
+                        value={line.precio_compra}
+                        onChange={event =>
+                          setLines(prev =>
+                            prev.map(item =>
+                              item.presentacion_id === line.presentacion_id
+                                ? { ...item, precio_compra: formatMiles(event.target.value) }
+                                : item
+                            )
+                          )
+                        }
+                        className='text-right'
+                      />
+                    </div>
                     <Button
                       type='button'
-                      variant='outline'
+                      variant='ghost'
                       size='icon'
-                      className='shrink-0 rounded-full'
-                      aria-label={`Aumentar cantidad de ${l.producto_nombre}, ${l.presentacion_nombre}`}
-                      disabled={saving || toNumber(l.cantidad) >= 1000}
-                      onClick={() => adjustQuantity(l.presentacion_id, 1)}
+                      className={PURCHASE_BUTTON_CLASS}
+                      aria-label={`Quitar ${line.producto_nombre}`}
+                      onClick={() => removeItem(line.presentacion_id)}
                     >
-                      <Plus aria-hidden='true' />
+                      <Trash2 className='h-4 w-4 text-red-500' />
                     </Button>
                   </div>
-                </div>
+                ))}
+                <p className='text-right text-sm text-muted-foreground'>
+                  Subtotal productos:{' '}
+                  <strong className='text-foreground'>{formatCurrencyCLP(total)}</strong>
+                </p>
+              </div>
+              <div className='grid gap-4 sm:grid-cols-2'>
                 <div className='flex flex-col gap-2'>
-                  <Label htmlFor={`${formId}-precio_compra-${l.presentacion_id}`}>
-                    Precio unitario
-                  </Label>
+                  <Label htmlFor={`${formId}-proveedor`}>Proveedor (opcional)</Label>
                   <Input
-                    id={`${formId}-precio_compra-${l.presentacion_id}`}
-                    inputMode='numeric'
-                    value={l.precio_compra}
-                    onChange={e =>
-                      setLines(prev =>
-                        prev.map(x =>
-                          x.presentacion_id === l.presentacion_id
-                            ? { ...x, precio_compra: formatMiles(e.target.value) }
-                            : x
+                    id={`${formId}-proveedor`}
+                    value={proveedor}
+                    onChange={event =>
+                      setProveedor(
+                        event.target.value.replace(
+                          /(^|\s)(\p{L})/gu,
+                          (_, space, letter) => space + letter.toLocaleUpperCase('es')
                         )
                       )
                     }
-                    disabled={saving}
-                    className='h-10 text-right'
+                    autoCapitalize='words'
+                    placeholder='Nombre del proveedor'
+                    maxLength={120}
                   />
                 </div>
+                <div className='flex flex-col gap-2'>
+                  <Label htmlFor={`${formId}-telefono`}>Teléfono (opcional)</Label>
+                  <Input
+                    id={`${formId}-telefono`}
+                    value={telefono}
+                    onChange={event => setTelefono(event.target.value)}
+                    placeholder='Teléfono del proveedor'
+                    maxLength={30}
+                  />
+                </div>
+                <div className='flex flex-col gap-2 sm:col-span-2'>
+                  <Label htmlFor={`${formId}-observaciones`}>Descripción (opcional)</Label>
+                  <Textarea
+                    id={`${formId}-observaciones`}
+                    value={observaciones}
+                    onChange={event => setObservaciones(event.target.value)}
+                    placeholder='Descripción, factura u otros detalles de la compra'
+                    maxLength={500}
+                    rows={4}
+                  />
+                </div>
+                <div className='flex flex-col gap-2 sm:col-span-2'>
+                  <Label htmlFor={`${formId}-metodo-pago`}>Método de pago</Label>
+                  <Select
+                    value={metodoPago}
+                    onValueChange={(value: string) => setMetodoPago(value as typeof metodoPago)}
+                  >
+                    <SelectTrigger id={`${formId}-metodo-pago`}>
+                      <SelectValue placeholder='Selecciona un método' />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value='efectivo'>Efectivo</SelectItem>
+                      <SelectItem value='transferencia'>Transferencia</SelectItem>
+                      <SelectItem value='tarjeta'>Tarjeta</SelectItem>
+                    </SelectContent>
+                  </Select>
+                  <p className='text-xs text-muted-foreground'>
+                    Se registra como dato de la compra; no genera un movimiento de caja.
+                  </p>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {step === 3 && (
+            <div className='mx-auto max-w-3xl space-y-4'>
+              <h2 className='text-lg font-semibold'>Confirma la compra</h2>
+              <div className='divide-y rounded-2xl border'>
+                {lines.map(line => (
+                  <div
+                    key={line.presentacion_id}
+                    className='flex items-center justify-between gap-3 p-3'
+                  >
+                    <div className='min-w-0'>
+                      <p className='truncate text-sm font-semibold'>
+                        {line.producto_nombre} · {line.presentacion_nombre}
+                      </p>
+                      <p className='text-xs text-muted-foreground'>
+                        {line.cantidad} × {formatCurrencyCLP(toNumber(line.precio_compra))}
+                      </p>
+                    </div>
+                    <span className='shrink-0 text-sm font-semibold'>
+                      {formatCurrencyCLP(toNumber(line.cantidad) * toNumber(line.precio_compra))}
+                    </span>
+                  </div>
+                ))}
+              </div>
+              <dl className='grid gap-3 rounded-2xl bg-muted/50 p-4 text-sm sm:grid-cols-2'>
+                <div>
+                  <dt className='text-muted-foreground'>Proveedor</dt>
+                  <dd className='font-medium'>{proveedor}</dd>
+                </div>
+                <div>
+                  <dt className='text-muted-foreground'>Teléfono</dt>
+                  <dd className='font-medium'>{telefono || 'No indicado'}</dd>
+                </div>
+                <div>
+                  <dt className='text-muted-foreground'>Método de pago</dt>
+                  <dd className='font-medium'>{metodoPagoLabel(metodoPago)}</dd>
+                </div>
+                <div>
+                  <dt className='text-muted-foreground'>Descripción</dt>
+                  <dd className='font-medium'>{observaciones || 'Sin descripción'}</dd>
+                </div>
+              </dl>
+              <div className='flex justify-between border-t pt-4 text-lg font-bold'>
+                <span>Total</span>
+                <span>{formatCurrencyCLP(total)}</span>
+              </div>
+            </div>
+          )}
+
+          {step !== 1 && (
+            <div className='flex flex-wrap items-center justify-between gap-3 border-t pt-4'>
+              <p className='text-sm text-muted-foreground'>
+                {lines.length} presentaciones · Total {formatCurrencyCLP(total)}
+              </p>
+              <div className='flex gap-2'>
                 <Button
                   type='button'
-                  variant='ghost'
-                  size='icon'
+                  variant='outline'
+                  className={PURCHASE_BUTTON_CLASS}
+                  onClick={() => setStep(step === 3 ? 2 : 1)}
                   disabled={saving}
-                  onClick={() =>
-                    setLines(prev => prev.filter(x => x.presentacion_id !== l.presentacion_id))
-                  }
-                  className='rounded-full'
-                  aria-label='Quitar'
                 >
-                  <Trash2 className='w-4 h-4 text-red-500' />
+                  Atrás
                 </Button>
+                {step === 2 && (
+                  <Button
+                    type='button'
+                    onClick={() => setStep(3)}
+                    disabled={saving}
+                    className={PURCHASE_BUTTON_CLASS}
+                  >
+                    Revisar compra
+                  </Button>
+                )}
+                {step === 3 && (
+                  <Button
+                    type='submit'
+                    disabled={saving || lines.length === 0}
+                    className={PURCHASE_BUTTON_CLASS}
+                  >
+                    {saving ? (
+                      <>
+                        <Loader2 className='mr-2 h-4 w-4 animate-spin' />
+                        Registrando...
+                      </>
+                    ) : (
+                      <>
+                        <ShoppingBag className='mr-2 h-4 w-4' />
+                        Finalizar compra
+                      </>
+                    )}
+                  </Button>
+                )}
               </div>
-            ))}
+            </div>
+          )}
+        </form>
+        {step === 1 && lines.length > 0 && (
+          <div className='fixed bottom-4 right-4 z-40 sm:bottom-6 sm:right-6'>
+            <div className='flex items-center gap-3 rounded-2xl border bg-background/95 p-3 shadow-xl backdrop-blur sm:gap-5 sm:px-4'>
+              <div className='min-w-0'>
+                <p className='truncate text-sm font-semibold'>
+                  {lines.length} {lines.length === 1 ? 'presentación' : 'presentaciones'}{' '}
+                  seleccionadas
+                </p>
+                <p className='text-xs text-muted-foreground'>Total {formatCurrencyCLP(total)}</p>
+              </div>
+              <Button
+                type='button'
+                onClick={() => setStep(2)}
+                className={`${PURCHASE_BUTTON_CLASS} shrink-0`}
+              >
+                Continuar
+              </Button>
+            </div>
           </div>
         )}
-
-        <div className='grid grid-cols-1 sm:grid-cols-2 gap-2'>
-          <div className='flex flex-col gap-2'>
-            <Label htmlFor={`${formId}-proveedor`}>Proveedor (opcional)</Label>
-            <Input
-              id={`${formId}-proveedor`}
-              value={proveedor}
-              onChange={e =>
-                setProveedor(
-                  e.target.value.replace(
-                    /(^|\s)(\p{L})/gu,
-                    (_, space, letter) => space + letter.toLocaleUpperCase('es')
-                  )
-                )
-              }
-              autoCapitalize='words'
-              placeholder='Proveedor (opcional)'
-              maxLength={120}
-              className='rounded-full'
-              disabled={saving}
-            />
-          </div>
-          <div className='flex flex-col gap-2'>
-            <Label htmlFor={`${formId}-telefono`}>Teléfono (opcional)</Label>
-            <Input
-              id={`${formId}-telefono`}
-              value={telefono}
-              onChange={e => setTelefono(e.target.value)}
-              placeholder='Teléfono (opcional)'
-              maxLength={30}
-              className='rounded-full'
-              disabled={saving}
-            />
-          </div>
-        </div>
-        <div className='flex flex-col gap-2'>
-          <Label htmlFor={`${formId}-observaciones`}>Observaciones (opcional)</Label>
-          <Input
-            id={`${formId}-observaciones`}
-            value={observaciones}
-            onChange={e =>
-              setObservaciones(
-                e.target.value.replace(/\p{L}/u, letter => letter.toLocaleUpperCase('es'))
-              )
-            }
-            autoCapitalize='off'
-            placeholder='Observaciones (opcional: factura...)'
-            className='rounded-full'
-            disabled={saving}
-          />
-        </div>
-
-        <div className='flex items-center justify-between pt-2'>
-          <p className='text-sm text-gray-500'>
-            Total:{' '}
-            <span className='text-lg font-bold text-gray-900'>{formatCurrencyCLP(total)}</span>
-          </p>
-          <div className='flex gap-2'>
-            <Button
-              type='button'
-              variant='outline'
-              onClick={() => router.push('/purchases')}
-              disabled={saving}
-              className='rounded-full px-6'
-            >
-              Volver a compras
-            </Button>
-            <Button
-              type='submit'
-              disabled={saving || lines.length === 0}
-              className='rounded-full px-6 bg-black text-white hover:bg-white hover:text-black border-2'
-            >
-              {saving ? (
-                <span className='flex items-center gap-2'>
-                  <Loader2 className='w-4 h-4 animate-spin' />
-                  Guardando...
-                </span>
-              ) : (
-                <span className='flex items-center gap-2'>
-                  <Plus className='w-4 h-4' />
-                  Registrar
-                </span>
-              )}
-            </Button>
-          </div>
-        </div>
-      </form>
+      </div>
     </section>
   );
 }

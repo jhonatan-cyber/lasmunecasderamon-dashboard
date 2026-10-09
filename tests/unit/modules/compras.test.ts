@@ -85,6 +85,12 @@ describe('registrarCompra (modulo inventario)', () => {
     ).rejects.toThrow(ValidationError);
   });
 
+  it('solo acepta efectivo, tarjeta o transferencia como método de pago', async () => {
+    const input = { detalles: [detalle], metodo_pago: 'otro' };
+    // @ts-expect-error comprueba que el servidor también rechaza valores ajenos al tipo público
+    await expect(registrarCompra(input, 'u1')).rejects.toThrow(ValidationError);
+  });
+
   it('rechaza presentación que no pertenece al producto', async () => {
     vi.mocked(listarPresentacionesPorProductos).mockResolvedValue({} as any);
     await expect(registrarCompra({ detalles: [detalle] }, 'u1')).rejects.toThrow('no pertenece');
@@ -103,7 +109,8 @@ describe('registrarCompra (modulo inventario)', () => {
           { ...detalle, presentacion_id: 'pres-2', cantidad: 2, precio_compra: 8000 }
         ],
         proveedor: 'Distribuidora Sur',
-        telefono: '+56912345678'
+        telefono: '+56912345678',
+        metodo_pago: 'transferencia'
       },
       'u1'
     );
@@ -114,6 +121,7 @@ describe('registrarCompra (modulo inventario)', () => {
         total: 3 * 5000 + 2 * 8000,
         proveedor: 'Distribuidora Sur',
         telefono: '+56912345678',
+        metodo_pago: 'transferencia',
         usuario_id: 'u1'
       }),
       [expect.objectContaining({ subtotal: 15000 }), expect.objectContaining({ subtotal: 16000 })]

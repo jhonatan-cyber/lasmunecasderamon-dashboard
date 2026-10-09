@@ -4,7 +4,6 @@ import { revokeBiometricDevice } from '@/modules/asistencia';
 
 export const dynamic = 'force-dynamic';
 
-/** Revocar: el equipo sigue pudiendo conectarse, pero sus eventos ya no se aceptan. */
 export const DELETE = withRoute(
   { auth: true, access: 'administrator', audit: true },
   async (_request: Request, { params }: { params: any }) => {

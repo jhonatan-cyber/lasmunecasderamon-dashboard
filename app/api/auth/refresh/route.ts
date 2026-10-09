@@ -4,23 +4,9 @@ import { cookies } from 'next/headers';
 import { withPublicRoute } from '@/lib/api/withRoute';
 import { ApiResponse } from '@/lib/api/api-response';
 
-/**
- * POST /api/auth/refresh
- *
- * Renueva el access token usando el refresh token.
- * Soporta dos fuentes para el token (en orden de precedencia):
- * 1. Header `x-refresh-token` (para clientes móviles que no pueden setear httpOnly cookies)
- * 2. Cookie `refresh_token` (para el dashboard web con httpOnly)
- *
- * Implementa refresh token rotation: cada renovación genera un nuevo refresh token.
- * Cuando se usa header (no cookie), devuelve el nuevo refresh token en el body.
- */
-// El middleware valida el refresh token y el limitador estricto de credenciales vive en
-// proxy.ts (Redis + memoria); el handler rota el par access/refresh.
 export const POST = withPublicRoute(async (request: Request) => {
   try {
     const cookieStore = await cookies();
-    // Precedencia: header > cookie
     const refreshTokenHeader = request.headers.get('x-refresh-token');
     const refreshToken = refreshTokenHeader || cookieStore.get('refresh_token')?.value;
     const isHeaderAuth = !!refreshTokenHeader;
@@ -32,10 +18,8 @@ export const POST = withPublicRoute(async (request: Request) => {
       );
     }
 
-    // Verificar refresh token
     const payload = await verifyRefreshToken(refreshToken);
     if (!payload) {
-      // Refresh token inválido/expirado — limpiar cookies
       cookieStore.delete('token');
       cookieStore.delete('refresh_token');
       return NextResponse.json(
@@ -48,7 +32,6 @@ export const POST = withPublicRoute(async (request: Request) => {
       );
     }
 
-    // Generar nuevos tokens (rotation)
     if (!payload.id || !payload.role) {
       return NextResponse.json(
         {
@@ -75,18 +58,15 @@ export const POST = withPublicRoute(async (request: Request) => {
     ]);
 
     const isProduction = process.env.NODE_ENV === 'production';
-
-    // Setear cookie de access token (útil para dashboard web via proxy)
     cookieStore.set('token', newAccessToken, {
       httpOnly: true,
       secure: isProduction,
       sameSite: 'strict',
       path: '/',
-      maxAge: 15 * 60 // 15 minutos
+      maxAge: 15 * 60
     });
 
     if (isHeaderAuth) {
-      // Mobile: devolver refresh token en body (no puede leer httpOnly cookies)
       return NextResponse.json({
         success: true,
         token: newAccessToken,
@@ -95,13 +75,12 @@ export const POST = withPublicRoute(async (request: Request) => {
       });
     }
 
-    // Web: setear refresh token como cookie httpOnly
     cookieStore.set('refresh_token', newRefreshToken, {
       httpOnly: true,
       secure: isProduction,
       sameSite: 'strict',
       path: '/',
-      maxAge: 7 * 24 * 60 * 60 // 7 días
+      maxAge: 7 * 24 * 60 * 60
     });
 
     return NextResponse.json({

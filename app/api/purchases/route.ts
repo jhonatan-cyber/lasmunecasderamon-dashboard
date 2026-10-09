@@ -16,7 +16,8 @@ export const POST = withRoute(
         detalles: payload.detalles ?? [],
         proveedor: payload.proveedor ?? null,
         telefono: payload.telefono ?? null,
-        observaciones: payload.observaciones ?? null
+        observaciones: payload.observaciones ?? null,
+        metodo_pago: payload.metodo_pago ?? 'efectivo'
       },
       context?.user?.id ?? null
     );

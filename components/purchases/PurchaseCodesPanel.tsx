@@ -5,6 +5,7 @@ import { Button } from '@/components/ui/button';
 import { UnitLabelSelector } from '@/components/products/UnitLabelSelector';
 import type { LabelUnit } from '@/lib/utils/unitLabelGroups';
 import type { PurchaseGeneratedCode } from '@/types/purchase';
+import { PURCHASE_BUTTON_CLASS } from './buttonStyles';
 
 /** Adapta los códigos devueltos por la compra al formato de etiquetas imprimibles. */
 export function purchaseCodesToLabelUnits(
@@ -58,11 +59,15 @@ export function PurchaseCodesPanel({
           Sin códigos generados en esta compra.
         </p>
       ) : (
-        <UnitLabelSelector units={units} defaultGroupBy='product' />
+        <UnitLabelSelector
+          units={units}
+          defaultGroupBy='product'
+          buttonClassName={PURCHASE_BUTTON_CLASS}
+        />
       )}
 
       <div className='flex justify-end'>
-        <Button type='button' onClick={onClose} className='rounded-full px-6'>
+        <Button type='button' onClick={onClose} className={`${PURCHASE_BUTTON_CLASS} px-6`}>
           Cerrar
         </Button>
       </div>

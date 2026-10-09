@@ -26,11 +26,14 @@ const FILTER_LABEL_CLASS =
 
 export function UnitLabelSelector({
   units,
-  defaultGroupBy = 'purchase'
+  defaultGroupBy = 'purchase',
+  buttonClassName = ''
 }: {
   units: LabelUnit[];
   /** Agrupación inicial; "product" sirve al ingresar stock de varios productos. */
   defaultGroupBy?: LabelGroupBy;
+  /** Estilo del módulo que incorpora el selector, si necesita una variante local. */
+  buttonClassName?: string;
 }) {
   const id = useId();
   const [selected, setSelected] = useState<Set<string>>(new Set());
@@ -141,7 +144,7 @@ export function UnitLabelSelector({
             type='button'
             variant='outline'
             size='sm'
-            className='rounded-full'
+            className={`rounded-full ${buttonClassName}`}
             onClick={() => setSelected(new Set(visible.map(u => u.id)))}
           >
             Seleccionar todos
@@ -150,7 +153,7 @@ export function UnitLabelSelector({
             type='button'
             variant='outline'
             size='sm'
-            className='rounded-full'
+            className={`rounded-full ${buttonClassName}`}
             onClick={() =>
               setSelected(new Set(visible.filter(u => !u.fecha_impresion).map(u => u.id)))
             }
@@ -161,7 +164,7 @@ export function UnitLabelSelector({
             type='button'
             variant='ghost'
             size='sm'
-            className='rounded-full'
+            className={`rounded-full ${buttonClassName}`}
             onClick={() => setSelected(new Set())}
             disabled={!selected.size}
           >
@@ -172,7 +175,7 @@ export function UnitLabelSelector({
           <Button
             type='button'
             size='sm'
-            className='rounded-full'
+            className={`rounded-full ${buttonClassName}`}
             onClick={print}
             disabled={!printable.length || !!pending.length}
           >
@@ -183,7 +186,7 @@ export function UnitLabelSelector({
             type='button'
             size='sm'
             variant='outline'
-            className='rounded-full'
+            className={`rounded-full ${buttonClassName}`}
             onClick={() => setPending(printable.map(u => u.id))}
             disabled={!printable.length || !!pending.length}
           >
@@ -200,7 +203,7 @@ export function UnitLabelSelector({
             <Button
               type='button'
               size='sm'
-              className='rounded-full'
+              className={`rounded-full ${buttonClassName}`}
               onClick={confirmPrint}
               disabled={saving}
             >
@@ -210,7 +213,7 @@ export function UnitLabelSelector({
               type='button'
               size='sm'
               variant='outline'
-              className='rounded-full'
+              className={`rounded-full ${buttonClassName}`}
               onClick={() => setPending([])}
               disabled={saving}
             >
@@ -240,7 +243,7 @@ export function UnitLabelSelector({
                 type='button'
                 variant='outline'
                 size='sm'
-                className='rounded-full'
+                className={`rounded-full ${buttonClassName}`}
                 onClick={() =>
                   setSelected(previous => new Set([...previous, ...group.units.map(u => u.id)]))
                 }

@@ -21,6 +21,7 @@ export interface CompraRow {
   folio: string;
   total: number;
   observaciones: string | null;
+  metodo_pago: 'efectivo' | 'tarjeta' | 'transferencia';
   usuario_id: string | null;
   fecha_crea: string;
 }
@@ -33,6 +34,7 @@ export async function crearCompra(
     proveedor?: string | null;
     telefono?: string | null;
     observaciones?: string | null;
+    metodo_pago?: 'efectivo' | 'tarjeta' | 'transferencia';
     usuario_id?: string | null;
   },
   detalles: (PurchaseDetailInput & { subtotal: number })[]
@@ -47,6 +49,7 @@ export async function crearCompra(
     proveedor: data.proveedor?.trim() ? data.proveedor.trim().slice(0, 120) : null,
     telefono: data.telefono?.trim() ? data.telefono.trim().slice(0, 30) : null,
     observaciones: data.observaciones?.trim() ? data.observaciones.trim() : null,
+    metodo_pago: data.metodo_pago ?? 'efectivo',
     usuario_id: data.usuario_id ?? null,
     fecha_crea: getNowInBusinessTimezone()
   });
@@ -78,6 +81,7 @@ export async function crearCompra(
     folio: row.folio,
     total: Number(row.total ?? 0),
     observaciones: row.observaciones ?? null,
+    metodo_pago: row.metodo_pago ?? 'efectivo',
     usuario_id: row.usuario_id ?? null,
     fecha_crea: row.fecha_crea
   };

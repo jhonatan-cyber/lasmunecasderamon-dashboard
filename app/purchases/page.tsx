@@ -19,6 +19,7 @@ import { Skeleton as BoneyardSkeleton } from 'boneyard-js/react';
 import type { PurchaseRecord } from '@/types/purchase';
 import { formatCurrencyCLP } from '@/lib/utils/formatters';
 import { cn } from '@/lib/utils/utils';
+import { PURCHASE_BUTTON_CLASS } from '@/components/purchases/buttonStyles';
 
 export default function PurchasesPage() {
   const [history, setHistory] = useState<PurchaseRecord[]>([]);
@@ -87,10 +88,7 @@ export default function PurchasesPage() {
               />
             </div>
             <PermissionGuard module='products' action='create' fallback={null}>
-              <Button
-                asChild
-                className='rounded-full bg-black text-white hover:bg-gray-800 flex items-center gap-2'
-              >
+              <Button asChild className={`${PURCHASE_BUTTON_CLASS} flex items-center gap-2`}>
                 <Link href='/purchases/new'>
                   <Plus className='w-4 h-4' />
                   Nueva compra
@@ -145,7 +143,7 @@ export default function PurchasesPage() {
                             <button
                               type='button'
                               onClick={() => setExpanded(v => (v === h.id ? null : h.id))}
-                              className='rounded-full p-1 hover:bg-gray-100'
+                              className={`${PURCHASE_BUTTON_CLASS} p-1`}
                               aria-label='Ver detalle'
                             >
                               <ChevronDown

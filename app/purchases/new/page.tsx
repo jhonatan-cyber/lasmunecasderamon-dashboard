@@ -1,10 +1,10 @@
 'use client';
 
-import Link from 'next/link';
 import { useCallback, useEffect, useState } from 'react';
 import { Loader2 } from 'lucide-react';
 import { PermissionGuard } from '@/components/auth/PermissionGuard';
 import { PurchaseForm, type PurchaseCatalogItem } from '@/components/purchases/PurchaseForm';
+import { PURCHASE_BUTTON_CLASS } from '@/components/purchases/buttonStyles';
 
 export default function NewPurchasePage() {
   const [catalog, setCatalog] = useState<PurchaseCatalogItem[]>([]);
@@ -15,18 +15,19 @@ export default function NewPurchasePage() {
     setLoading(true);
     setLoadError(false);
     try {
-      const response = await fetch('/api/transfers', { cache: 'no-store' });
+      const response = await fetch('/api/purchases/catalog', { cache: 'no-store' });
       const data = await response.json().catch(() => ({}));
-      if (!response.ok || !data.success || !Array.isArray(data.data?.items)) {
+      if (!response.ok || !data.success || !Array.isArray(data.data)) {
         throw new Error(data.message || 'No se pudo cargar el catálogo de productos');
       }
 
       setCatalog(
-        data.data.items.map((item: Record<string, unknown>) => ({
+        data.data.map((item: Record<string, unknown>) => ({
           id: String(item.id),
           producto_id: String(item.producto_id),
           producto_nombre: String(item.producto_nombre ?? ''),
           nombre: String(item.nombre ?? ''),
+          foto: String(item.foto ?? 'default.png'),
           precio_compra: Number(item.precio_compra ?? 0),
           stock: Number(item.stock ?? 0)
         }))
@@ -55,7 +56,7 @@ export default function NewPurchasePage() {
           <button
             type='button'
             onClick={() => void fetchCatalog()}
-            className='rounded-full border px-5 py-2 text-sm font-medium hover:bg-gray-50'
+            className={`${PURCHASE_BUTTON_CLASS} px-5 py-2 text-sm font-medium`}
           >
             Reintentar
           </button>
