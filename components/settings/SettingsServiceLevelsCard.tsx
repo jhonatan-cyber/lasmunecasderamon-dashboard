@@ -92,7 +92,7 @@ export function SettingsServiceLevelsCard() {
       <CardHeader>
         <CardTitle className='flex items-center gap-2 text-xl font-bold dark:text-white'>
           <Users className='h-5 w-5 text-neutral-500' />
-          Reglas por Precio de Venta
+          Reglas de venta
         </CardTitle>
         <CardDescription className='text-neutral-500 dark:text-neutral-400'>
           Fuente única de reglas por precio. Hasta el primer monto es venta simple (sin comisión ni

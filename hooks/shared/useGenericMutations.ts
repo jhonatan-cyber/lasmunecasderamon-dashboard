@@ -46,7 +46,13 @@ export function useGenericMutations<T>(
       throw new Error(message);
     }
 
-    return response.json();
+    const result = await response.json();
+    if (result?.success === false) {
+      throw new Error(
+        result.message || result.error?.message || result.error || `Error con ${entityName}`
+      );
+    }
+    return result;
   };
 
   const createMutation = useMutation({
@@ -66,11 +72,11 @@ export function useGenericMutations<T>(
     mutationFn: async (data: (Omit<Partial<T>, 'id'> & { id: number | string }) | FormData) => {
       if (data instanceof FormData) {
         const id = data.get('id') as string;
-        return request('PUT', `?id=${id}`, data);
+        return request('PUT', `?id=${encodeURIComponent(id)}`, data);
       }
 
       const { id, ...payload } = data;
-      return request('PUT', `?id=${id}`, JSON.stringify(payload));
+      return request('PUT', `?id=${encodeURIComponent(String(id))}`, JSON.stringify(payload));
     },
     onSuccess: async data => {
       await handleSuccess(`${entityName} actualizado correctamente`);
@@ -82,7 +88,7 @@ export function useGenericMutations<T>(
 
   const removeMutation = useMutation({
     mutationFn: async (id: number | string) => {
-      return request('DELETE', `?id=${id}`);
+      return request('DELETE', `?id=${encodeURIComponent(String(id))}`);
     },
     onSuccess: async () => {
       await handleSuccess(`${entityName} eliminado correctamente`);

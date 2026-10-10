@@ -11,50 +11,46 @@ import {
 import { showErrorToast } from '@/lib/utils/toastUtils';
 import { useGenericFetch } from '../shared/useGenericFetch';
 
+function salesEndpoint(filters?: VentaFiltros): string {
+  const params = new URLSearchParams({ limit: '1000' });
+  for (const [key, value] of Object.entries(filters ?? {})) {
+    if (value != null && key !== 'limit' && key !== 'page') params.append(key, String(value));
+  }
+  return `/api/sales?${params.toString()}`;
+}
+
+function salesArray(data: any): VentaWithDetails[] {
+  const payload = data?.data;
+  const rows = Array.isArray(payload?.data)
+    ? payload.data
+    : Array.isArray(payload)
+      ? payload
+      : Array.isArray(data)
+        ? data
+        : [];
+  return rows.filter(
+    (item: unknown): item is VentaWithDetails =>
+      item != null && typeof item === 'object' && 'estado' in item
+  );
+}
+
 export const useSales = () => {
   const [resumen, setResumen] = useState<VentaResumen | null>(null);
   const [mutationLoading, setMutationLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [currentFilters, setCurrentFilters] = useState<VentaFiltros | undefined>(undefined);
 
-  const endpoint = useMemo(() => {
-    const params = new URLSearchParams();
-
-    params.append('limit', '1000');
-
-    if (currentFilters) {
-      Object.entries(currentFilters).forEach(([key, value]) => {
-        if (value !== undefined && value !== null && key !== 'limit' && key !== 'page') {
-          params.append(key, value.toString());
-        }
-      });
-    }
-
-    return `/api/sales?${params.toString()}`;
-  }, [currentFilters]);
+  const endpoint = useMemo(() => salesEndpoint(currentFilters), [currentFilters]);
 
   const {
     data: ventas,
-    isLoading: fetchLoading,
+    isFetching: fetchLoading,
     error: fetchError,
-    refetch,
+    fetchEndpoint,
     setData: setVentas
   } = useGenericFetch<VentaWithDetails>(endpoint, {
     initialFetch: false,
-    transform: data => {
-      const payload = data?.data;
-      const ventasArray = Array.isArray(payload?.data)
-        ? payload.data
-        : Array.isArray(payload)
-          ? payload
-          : Array.isArray(data)
-            ? data
-            : [];
-      return ventasArray.filter(
-        (item: unknown): item is VentaWithDetails =>
-          item != null && typeof item === 'object' && 'estado' in item
-      );
-    }
+    transform: salesArray
   });
 
   const loading = fetchLoading || mutationLoading;
@@ -62,9 +58,14 @@ export const useSales = () => {
   const getVentas = useCallback(
     async (filtros?: VentaFiltros) => {
       setCurrentFilters(filtros);
-      await refetch();
+      setError(null);
+      try {
+        await fetchEndpoint(salesEndpoint(filtros));
+      } catch (err) {
+        setError(err instanceof Error ? err.message : 'Error al cargar ventas');
+      }
     },
-    [refetch]
+    [fetchEndpoint]
   );
 
   const getVentaById = async (id: string | number): Promise<VentaWithDetails | null> => {
@@ -236,7 +237,7 @@ export const useSales = () => {
     ventas,
     resumen,
     loading,
-    error,
+    error: error || fetchError,
     getVentas,
     getVentaById,
     createVenta,

@@ -61,9 +61,7 @@ export function useCommissions(): UseCommissionsReturn {
   });
 
   const { create, update, remove } = useGenericMutations<Commission>('/api/commissions', {
-    onSuccess: () => {
-      refetch();
-    },
+    invalidateKey: buildUrl(),
     showToasts: true,
     entityName: 'Comisión'
   });
@@ -74,10 +72,6 @@ export function useCommissions(): UseCommissionsReturn {
     }, 300);
     return () => clearTimeout(timer);
   }, [searchTerm]);
-
-  useEffect(() => {
-    refetch();
-  }, [statusFilter, employeeFilter, debouncedSearchTerm, refetch]);
 
   const filteredCommissions = useMemo(() => {
     if (!commissions) return [];

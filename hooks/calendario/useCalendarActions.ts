@@ -17,21 +17,32 @@ interface CalendarActions {
   [date: string]: CalendarAction[];
 }
 
+const calendarEndpoint = (start: string, end: string) =>
+  `/api/calendar?${new URLSearchParams({ startDate: start, endDate: end })}`;
+const calendarData = (data: any) =>
+  data.success && data.data && typeof data.data === 'object' && !Array.isArray(data.data)
+    ? data.data
+    : {};
+
 export const useCalendarActions = (startDate?: string, endDate?: string) => {
   const [mutationError, setMutationError] = useState<string | null>(null);
-  const endpoint = useMemo(() => {
-    if (!startDate || !endDate) return null;
-    return `/api/calendar?startDate=${startDate}&endDate=${endDate}`;
+  const [range, setRange] = useState({ start: startDate, end: endDate });
+  useEffect(() => {
+    setRange({ start: startDate, end: endDate });
   }, [startDate, endDate]);
+  const endpoint = useMemo(() => {
+    if (!range.start || !range.end) return null;
+    return calendarEndpoint(range.start, range.end);
+  }, [range.start, range.end]);
 
   const {
     data: actions,
-    isLoading: loading,
+    isFetching: loading,
     error: fetchError,
-    refetch
+    fetchEndpoint
   } = useGenericFetch<CalendarActions>(endpoint || '/api/calendar', {
     initialFetch: !!endpoint,
-    transform: data => (data.success ? data.data : {})
+    transform: calendarData
   });
 
   const error = fetchError || mutationError;
@@ -39,13 +50,18 @@ export const useCalendarActions = (startDate?: string, endDate?: string) => {
   const fetchActions = useCallback(
     async (start: string, end: string) => {
       setMutationError(null);
-      await refetch();
+      setRange({ start, end });
+      try {
+        await fetchEndpoint(calendarEndpoint(start, end));
+      } catch (error) {
+        setMutationError(error instanceof Error ? error.message : 'Error al obtener calendario');
+      }
     },
-    [refetch]
+    [fetchEndpoint]
   );
 
   return {
-    actions: (actions as any) || {},
+    actions: (endpoint && !Array.isArray(actions) ? actions : {}) as unknown as CalendarActions,
     loading,
     error,
     refetch: fetchActions

@@ -37,7 +37,7 @@ export default function useOrders() {
           body: JSON.stringify(order)
         });
         const data = await res.json();
-        if (data.success) {
+        if (res.ok && data.success) {
           showSuccessToast(data.message || 'Pedido creado correctamente');
           await fetchOrders();
         } else {
@@ -65,7 +65,7 @@ export default function useOrders() {
           body: JSON.stringify(order)
         });
         const data = await res.json();
-        if (data.success) {
+        if (res.ok && data.success) {
           showSuccessToast(data.message || 'Pedido actualizado correctamente');
           await fetchOrders();
         } else {
@@ -91,7 +91,7 @@ export default function useOrders() {
           method: 'DELETE'
         });
         const data = await res.json();
-        if (data.success) {
+        if (res.ok && data.success) {
           showSuccessToast(data.message || 'Pedido eliminado correctamente');
           await fetchOrders();
         } else {
@@ -114,7 +114,7 @@ export default function useOrders() {
     try {
       const res = await fetch(`/api/orders/detail?id=${id}`);
       const data = await res.json();
-      if (data.success) {
+      if (res.ok && data.success) {
         setOrderDetail(data.data);
       } else {
         setDetailError(data.message || 'Error al obtener el detalle del pedido');

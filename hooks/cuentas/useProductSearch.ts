@@ -19,6 +19,10 @@ export function useProductSearch(debounceMs: number = 300) {
   const itemsPerPage = 10;
 
   useEffect(() => {
+    const controller = new AbortController();
+    setSearchResults([]);
+    setCurrentPage(1);
+    setSearchLoading(false);
     const searchProducts = async () => {
       if (!internalSearchTerm.trim()) {
         setSearchResults([]);
@@ -28,23 +32,31 @@ export function useProductSearch(debounceMs: number = 300) {
 
       setSearchLoading(true);
       try {
-        const res = await fetch(`/api/products?term=${encodeURIComponent(internalSearchTerm)}`);
+        const res = await fetch(
+          `/api/products?term=${encodeURIComponent(internalSearchTerm.trim())}`,
+          { signal: controller.signal }
+        );
         if (!res.ok) {
           throw new Error(`HTTP error! status: ${res.status}`);
         }
         const data = await res.json();
-        setSearchResults(data.success ? data.data : []);
+        if (controller.signal.aborted) return;
+        setSearchResults(data.success && Array.isArray(data.data) ? data.data : []);
         setCurrentPage(1);
       } catch (error) {
+        if (controller.signal.aborted) return;
         logger.captureException(error, { context: 'ProductSearch:searchProducts' });
         setSearchResults([]);
       } finally {
-        setSearchLoading(false);
+        if (!controller.signal.aborted) setSearchLoading(false);
       }
     };
 
     const timeoutId = setTimeout(searchProducts, debounceMs);
-    return () => clearTimeout(timeoutId);
+    return () => {
+      clearTimeout(timeoutId);
+      controller.abort();
+    };
   }, [internalSearchTerm, debounceMs]);
 
   const startIndex = (currentPage - 1) * itemsPerPage;

@@ -16,7 +16,7 @@ import {
 import { setServiceLevels, roomRequiredForPrice } from '@/components/orders/productModalRules';
 import { useConfigValue } from '@/hooks/shared/useConfigValue';
 import { calcularPropina, calcularTotalVenta } from '@/lib/business/saleTotals';
-import { mapForSaleToCartItem } from '@/lib/sales/forSaleMapper';
+import { useSaleProductSearch } from './useSaleProductSearch';
 import { resolverVentaProducto, type SaleChoice } from '@/lib/sales/saleChoice';
 import {
   CHAMPAGNE_DEFAULT_TIERS,
@@ -81,12 +81,12 @@ export function useSaleValidation({
   const [enableTip, setEnableTip] = useState(false);
   const [selectedRoomInfo, setSelectedRoomInfo] = useState<any>(null);
   const [loading, setLoading] = useState(false);
+  const submitting = useRef(false);
+  const roomRequest = useRef<AbortController | null>(null);
   const [searchProducto, setSearchProducto] = useState('');
   const [manualTime, setManualTime] = useState<string>('30');
   const [cantidades, setCantidades] = useState<{ [key: string]: number }>({});
-  const searchTimeout = useRef<NodeJS.Timeout | null>(null);
-  const [searchResults, setSearchResults] = useState<any[]>([]);
-  const [searchLoading, setSearchLoading] = useState(false);
+  const { results: searchResults, loading: searchLoading } = useSaleProductSearch(searchProducto);
 
   // ── Derived product rules ───────────────────────────────────────────
   const configSimpleHasta = useConfigValue('comisiones', 'umbral_simple_hasta', 10000);
@@ -138,51 +138,36 @@ export function useSaleValidation({
   }, []);
 
   // ── Room info fetch ─────────────────────────────────────────────────
+  useEffect(() => () => roomRequest.current?.abort(), []);
+
   const handleHabitacionChange = async (habitacionId: string) => {
+    roomRequest.current?.abort();
     if (!habitacionId) {
       setSelectedHabitacion('');
       setSelectedRoomInfo(null);
       return;
     }
+    const controller = new AbortController();
+    roomRequest.current = controller;
     try {
-      const res = await fetch(`/api/rooms/${habitacionId}`);
+      const res = await fetch(`/api/rooms/${habitacionId}`, { signal: controller.signal });
       const data = await res.json();
-      if (data.success) {
+      if (!controller.signal.aborted && res.ok && data.success) {
         setSelectedRoomInfo(data.data);
         setSelectedHabitacion(habitacionId);
       }
     } catch (error) {
-      logger.captureException(error, { context: 'useSaleValidation:fetchRoomInfo' });
+      if (!controller.signal.aborted) {
+        logger.captureException(error, { context: 'useSaleValidation:fetchRoomInfo' });
+      }
     }
   };
 
   // ── Product search (solo bar: presentaciones con stock) ────────────────
   const handleClearSearch = () => {
     setSearchProducto('');
-    setSearchResults([]);
     onClearSearch();
   };
-
-  useEffect(() => {
-    const term = searchProducto.trim();
-    if (!term) {
-      setSearchResults([]);
-      return;
-    }
-    setSearchLoading(true);
-    if (searchTimeout.current) clearTimeout(searchTimeout.current);
-    searchTimeout.current = setTimeout(async () => {
-      try {
-        const res = await fetch(`/api/products?for_sale=1&term=${encodeURIComponent(term)}`);
-        const data = await res.json();
-        if (data.success && Array.isArray(data.data)) {
-          setSearchResults(data.data.map(mapForSaleToCartItem));
-        }
-      } finally {
-        setSearchLoading(false);
-      }
-    }, 300);
-  }, [searchProducto]);
 
   // ── Champagne tiers (precio según Nº anfitrionas) ──────────────────────
   const champagneTiersCache = useRef<Record<string, ChampagneTier[]>>({});
@@ -256,7 +241,15 @@ export function useSaleValidation({
     // Un shot cobrado a precio de anfitriona es un shot más: cambia el precio, no el
     // descuento de ml. Se marca para que reportes y caja lo separen.
     const shotAnfitriona = tipoVenta === 'shot' && Boolean(producto.shot_anfitriona);
-    let cantidad = Math.max(1, Math.trunc(Number(producto.cantidad ?? cantidades[id] ?? 1) || 1));
+    let cantidad = Number(producto.cantidad ?? cantidades[id] ?? 1);
+    if (!Number.isInteger(cantidad) || cantidad < 1 || cantidad > 2147483647) {
+      toast.warning('La cantidad debe ser un número entero positivo');
+      return;
+    }
+    if (tipoVenta !== 'shot' && producto.stock_bar != null && Number(producto.stock_bar) < 1) {
+      toast.warning('Producto sin stock disponible en bar');
+      return;
+    }
     if (
       tipoVenta !== 'shot' &&
       producto.stock_bar !== undefined &&
@@ -326,20 +319,40 @@ export function useSaleValidation({
       (p.tipo_venta === 'shot' ? 'shot' : 'botella') === tipoVenta &&
       // Shot de cliente y shot de anfitriona son líneas distintas: no se suman.
       Boolean(p.shot_anfitriona) === shotAnfitriona &&
+      Number(p.precio) === Number(precio) &&
+      Number(p.comision ?? 0) === Number(comision) &&
       (p.presentacion_id || null) === (productoNormalizado.presentacion_id || null) &&
       JSON.stringify([...(p.selectedHostesses || [])].sort()) ===
         JSON.stringify([...(productoNormalizado.selectedHostesses || [])].sort());
 
     setProductos(prev => {
       const existing = prev.find(isMatch);
+      let agregar = cantidad;
+      if (tipoVenta === 'shot') {
+        agregar = Math.min(agregar, Math.max(0, 99 - Number(existing?.cantidad ?? 0)));
+      } else if (producto.stock_bar != null) {
+        // Distintas anfitrionas o precios siguen consumiendo la misma presentación.
+        const reservadas = prev.reduce((total, p) => {
+          const mismaPresentacion =
+            (p.presentacion_id || p.id) === (productoNormalizado.presentacion_id || id);
+          return mismaPresentacion && p.tipo_venta !== 'shot' ? total + Number(p.cantidad) : total;
+        }, 0);
+        agregar = Math.min(agregar, Math.max(0, Number(producto.stock_bar) - reservadas));
+      }
+      if (agregar < cantidad) toast.warning('La cantidad solicitada supera el disponible');
+      if (agregar <= 0) return prev;
       if (existing) {
         return prev.map(p =>
           isMatch(p)
-            ? { ...p, cantidad: p.cantidad + cantidad, subtotal: precio * (p.cantidad + cantidad) }
+            ? {
+                ...p,
+                cantidad: Number(p.cantidad) + agregar,
+                subtotal: p.precio * (Number(p.cantidad) + agregar)
+              }
             : p
         );
       }
-      return [...prev, productoNormalizado];
+      return [...prev, { ...productoNormalizado, cantidad: agregar, subtotal: precio * agregar }];
     });
 
     setCantidades(prev => ({ ...prev, [id]: 1 }));
@@ -350,18 +363,38 @@ export function useSaleValidation({
   };
 
   const handleCantidadChangeTable = (index: number, nuevaCantidad: number) => {
+    if (!Number.isInteger(nuevaCantidad) || nuevaCantidad > 2147483647) {
+      toast.warning('La cantidad debe ser un número entero');
+      return;
+    }
     if (nuevaCantidad <= 0) {
       handleRemoveProducto(index);
       return;
     }
     setProductos(prev => {
       const actual = prev[index];
-      const tope = actual?.tipo_venta === 'shot' ? 99 : actual?.stock_bar;
+      if (!actual) return prev;
+      const reservadas = prev.reduce(
+        (total, p, i) =>
+          i !== index &&
+          p.tipo_venta !== 'shot' &&
+          (p.presentacion_id || p.id) === (actual.presentacion_id || actual.id)
+            ? total + Number(p.cantidad)
+            : total,
+        0
+      );
+      const tope =
+        actual.tipo_venta === 'shot'
+          ? 99
+          : actual.stock_bar == null
+            ? undefined
+            : Math.max(0, Number(actual.stock_bar) - reservadas);
       let final = nuevaCantidad;
       if (tope !== undefined && tope !== null && nuevaCantidad > tope) {
         toast.warning(`Stock máximo en bar: ${tope}`);
         final = tope;
       }
+      if (final <= 0) return prev.filter((_, i) => i !== index);
       return prev.map((p, i) =>
         i === index
           ? {
@@ -397,6 +430,7 @@ export function useSaleValidation({
 
   // ── Submit handler ──────────────────────────────────────────────────
   const handleSubmit = async (clientes: any[], anfitrionas: any[]) => {
+    if (submitting.current) return;
     if (!metodoPago || productos.length === 0) {
       toast.info('Completa todos los campos requeridos');
       return;
@@ -409,17 +443,17 @@ export function useSaleValidation({
       }
     }
 
-    for (const p of productos) {
-      if (!p.selectedHostesses?.length || Number(p.comision ?? p.commission ?? 0) <= 0) continue;
-      const max = await limiteAnfitrionasDe(p);
-      if (p.selectedHostesses.length > max) {
-        toast.error(`Producto ${p.nombre} permite máximo ${max} anfitrionas`);
-        return;
-      }
-    }
-
+    submitting.current = true;
     setLoading(true);
     try {
+      for (const p of productos) {
+        if (!p.selectedHostesses?.length || Number(p.comision ?? p.commission ?? 0) <= 0) continue;
+        const max = await limiteAnfitrionasDe(p);
+        if (p.selectedHostesses.length > max) {
+          toast.error(`Producto ${p.nombre} permite máximo ${max} anfitrionas`);
+          return;
+        }
+      }
       const todasAnf = Array.from(
         new Set(
           productos.flatMap(p =>
@@ -514,6 +548,7 @@ export function useSaleValidation({
       logger.captureException(error, { context: 'useSaleValidation:createSale' });
       toast.error('Error al generar la venta');
     } finally {
+      submitting.current = false;
       setLoading(false);
     }
   };

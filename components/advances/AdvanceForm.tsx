@@ -19,7 +19,7 @@ export function AdvanceForm({
   open,
   onSubmit,
   onCancel,
-  isLoading = false,
+  isLoading: externalLoading = false,
   error,
   efectivoEnCaja = 0,
   hideButtons = false
@@ -34,8 +34,10 @@ export function AdvanceForm({
     setMotivo,
     handleSubmit,
     balance,
-    loadingBalance
+    loadingBalance,
+    isSubmitting
   } = useAdvanceForm({ open, onSubmit });
+  const isLoading = externalLoading || isSubmitting;
 
   const rawMonto = Number(montoDisplay.replace(/\./g, ''));
   const exceedsCaja = rawMonto > efectivoEnCaja;

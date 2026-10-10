@@ -20,16 +20,18 @@ export function useGenericFetch<T>(
   }
 ) {
   const queryClient = useQueryClient();
+  const transform = options?.transform;
+  const schema = options?.schema;
   const queryKey = useMemo(() => options?.queryKey ?? [endpoint], [options?.queryKey, endpoint]);
 
-  const { data, isLoading, error, refetch } = useQuery({
-    queryKey,
-    queryFn: async () => {
-      const response = await fetch(endpoint, {
+  const fetchData = useCallback(
+    async (target: string, signal?: AbortSignal) => {
+      const response = await fetch(target, {
         method: 'GET',
         headers: { 'Content-Type': 'application/json' },
         credentials: 'include',
-        cache: 'no-store'
+        cache: 'no-store',
+        signal
       });
 
       if (!response.ok) {
@@ -37,17 +39,17 @@ export function useGenericFetch<T>(
       }
 
       const result = await response.json();
-      let rawData = options?.transform ? options.transform(result) : result;
+      const rawData = transform ? transform(result) : result;
 
-      if (options?.schema && Array.isArray(rawData)) {
+      if (schema && Array.isArray(rawData)) {
         try {
-          z.array(options.schema).parse(rawData);
+          z.array(schema).parse(rawData);
         } catch (err) {
           logger.captureException(err, { context: 'GenericFetch:fetchData' });
         }
-      } else if (options?.schema) {
+      } else if (schema) {
         try {
-          options.schema.parse(rawData);
+          schema.parse(rawData);
         } catch (err) {
           logger.captureException(err, { context: 'GenericFetch:processData' });
         }
@@ -55,9 +57,26 @@ export function useGenericFetch<T>(
 
       return rawData;
     },
+    [transform, schema]
+  );
+
+  const { data, isLoading, isFetching, error, refetch } = useQuery({
+    queryKey,
+    queryFn: ({ signal }) => fetchData(endpoint, signal),
     enabled: options?.initialFetch !== false,
     staleTime: options?.staleTime ?? 1000 * 60
   });
+
+  // Una consulta manual puede usar la URL nueva antes de que React actualice el estado.
+  const fetchEndpoint = useCallback(
+    (target: string) =>
+      queryClient.fetchQuery({
+        queryKey: [target],
+        queryFn: ({ signal }) => fetchData(target, signal),
+        staleTime: 0
+      }),
+    [queryClient, fetchData]
+  );
 
   const setData = useCallback(
     (updater: any) => {
@@ -69,8 +88,10 @@ export function useGenericFetch<T>(
   return {
     data: (data || EMPTY_ARRAY) as T[],
     isLoading,
+    isFetching,
     error: error instanceof Error ? error.message : null,
     refetch,
+    fetchEndpoint,
     setData
   };
 }

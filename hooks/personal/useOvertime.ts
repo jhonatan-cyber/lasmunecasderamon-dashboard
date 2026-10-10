@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { useGenericFetch } from '../shared/useGenericFetch';
 import { Overtime, CreateOvertimeRequest } from '@/types/overtime';
 
@@ -28,6 +28,9 @@ export const useOvertime = () => {
   const [detailsError, setDetailsError] = useState<string | null>(null);
   const [overtimeDetails, setOvertimeDetails] = useState<OvertimeDetail[]>([]);
 
+  const detailRequest = useRef<AbortController | null>(null);
+  useEffect(() => () => detailRequest.current?.abort(), []);
+
   const createOvertime = useCallback(
     async (overtimeData: CreateOvertimeRequest) => {
       try {
@@ -38,11 +41,20 @@ export const useOvertime = () => {
         });
 
         if (!response.ok) {
-          const errorData = await response.json();
-          throw new Error(errorData.message || 'Error al crear la hora extra');
+          const errorData = await response.json().catch(() => ({}));
+          throw new Error(
+            errorData.message ||
+              errorData.error?.message ||
+              errorData.error ||
+              'Error al crear la hora extra'
+          );
         }
 
         const result = await response.json();
+        if (result?.success === false)
+          throw new Error(
+            result.message || result.error?.message || result.error || 'Solicitud rechazada'
+          );
         await getOvertime();
         return result;
       } catch (err) {
@@ -53,11 +65,17 @@ export const useOvertime = () => {
   );
 
   const getOvertimeDetails = useCallback(async (userId: string) => {
+    detailRequest.current?.abort();
+    const controller = new AbortController();
+    detailRequest.current = controller;
+    setOvertimeDetails([]);
     try {
       setDetailsLoading(true);
       setDetailsError(null);
 
-      const response = await fetch(`/api/overtime?userId=${userId}`);
+      const response = await fetch(`/api/overtime?userId=${encodeURIComponent(String(userId))}`, {
+        signal: controller.signal
+      });
 
       if (!response.ok) {
         const errorText = await response.text();
@@ -65,6 +83,7 @@ export const useOvertime = () => {
       }
 
       const result = await response.json();
+      if (controller.signal.aborted) return [];
 
       if (result.success && Array.isArray(result.data)) {
         const processedDetails = result.data.map((detail: any) => ({
@@ -83,11 +102,12 @@ export const useOvertime = () => {
         throw new Error('Formato de respuesta inválido');
       }
     } catch (err) {
+      if (controller.signal.aborted) return [];
       const errorMessage = err instanceof Error ? err.message : 'Error desconocido';
       setDetailsError(errorMessage);
       throw err;
     } finally {
-      setDetailsLoading(false);
+      if (!controller.signal.aborted) setDetailsLoading(false);
     }
   }, []);
 

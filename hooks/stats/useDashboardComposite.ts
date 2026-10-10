@@ -153,8 +153,8 @@ export const useDashboardComposite = () => {
 
   return useQuery<DashboardCompositeResponse>({
     queryKey: queryKeys.dashboard.composite(),
-    queryFn: async () => {
-      const response = await fetch('/api/dashboard/composite');
+    queryFn: async ({ signal }) => {
+      const response = await fetch('/api/dashboard/composite', { signal });
       if (!response.ok) {
         throw new Error('Error al obtener datos compuestos del dashboard');
       }

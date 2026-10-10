@@ -18,6 +18,7 @@ interface DevolucionModalProps {
   motivoDevolucion: string;
   onMotivoChange: (motivo: string) => void;
   onConfirmar: () => void;
+  isSubmitting?: boolean;
 }
 
 export const DevolucionModal = ({
@@ -26,17 +27,23 @@ export const DevolucionModal = ({
   selectedVenta,
   motivoDevolucion,
   onMotivoChange,
-  onConfirmar
+  onConfirmar,
+  isSubmitting = false
 }: DevolucionModalProps) => (
-  <Dialog open={isOpen} onOpenChange={onOpenChange}>
-    <DialogContent className="max-h-[90vh] flex flex-col p-0">
-      <DialogHeader className="shrink-0 px-6 pt-6 pb-4 border-b">
+  <Dialog
+    open={isOpen}
+    onOpenChange={open => {
+      if (!isSubmitting) onOpenChange(open);
+    }}
+  >
+    <DialogContent className='max-h-[90vh] flex flex-col p-0'>
+      <DialogHeader className='shrink-0 px-6 pt-6 pb-4 border-b'>
         <DialogTitle>Procesar Devolución</DialogTitle>
         <DialogDescription>
           ¿Está seguro de que desea procesar la devolución de esta venta?
         </DialogDescription>
       </DialogHeader>
-      <div className="flex-1 overflow-y-auto px-6 py-4">
+      <div className='flex-1 overflow-y-auto px-6 py-4'>
         <div className='space-y-4'>
           <div>
             <Label htmlFor='motivo'>Motivo de la devolución:</Label>
@@ -46,24 +53,27 @@ export const DevolucionModal = ({
               onChange={e => onMotivoChange(e.target.value)}
               placeholder='Ingrese el motivo de la devolución...'
               rows={3}
+              disabled={isSubmitting}
             />
           </div>
           {selectedVenta && (
             <div className='bg-gray-50 p-4 rounded-lg'>
               <p className='text-sm text-gray-600'>
-                <strong>Venta:</strong> {selectedVenta.codigo} - {formatCurrency(selectedVenta.total)}
+                <strong>Venta:</strong> {selectedVenta.codigo} -{' '}
+                {formatCurrency(selectedVenta.total)}
               </p>
             </div>
           )}
         </div>
       </div>
-      <div className="shrink-0 border-t px-6 py-4">
-        <div className="flex justify-end gap-2">
+      <div className='shrink-0 border-t px-6 py-4'>
+        <div className='flex justify-end gap-2'>
           <Button
             size='sm'
             className='rounded-full  hover:scale-105 transition-all duration-200 hover:bg-black hover:text-white'
             variant='outline'
             onClick={() => onOpenChange(false)}
+            disabled={isSubmitting}
           >
             Cancelar
           </Button>
@@ -72,8 +82,9 @@ export const DevolucionModal = ({
             variant='outline'
             className='bg-black text-white rounded-full hover:scale-105 transition-all duration-200'
             onClick={onConfirmar}
+            disabled={isSubmitting || !motivoDevolucion.trim()}
           >
-            Solicitar Devolución
+            {isSubmitting ? 'Enviando...' : 'Solicitar Devolución'}
           </Button>
         </div>
       </div>

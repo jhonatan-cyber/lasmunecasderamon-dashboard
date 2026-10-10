@@ -8,8 +8,8 @@ import { useEffect } from 'react';
 
 const clientFormSchema = z.object({
   run: z.string().optional().or(z.literal('')),
-  name: z.string().min(2, 'Mínimo 2 caracteres'),
-  lastName: z.string().min(2, 'Mínimo 2 caracteres'),
+  name: z.string().trim().min(2, 'Mínimo 2 caracteres'),
+  lastName: z.string().trim().min(2, 'Mínimo 2 caracteres'),
   phone: z.string().optional().or(z.literal(''))
 });
 
@@ -31,9 +31,14 @@ export const useClientForm = ({ clientData, onSubmit, open }: UseClientFormProps
 
   useEffect(() => {
     if (open) {
-      reset(clientData);
+      reset({
+        name: clientData.name,
+        lastName: clientData.lastName,
+        run: clientData.run,
+        phone: clientData.phone
+      });
     }
-  }, [clientData, reset, open]);
+  }, [clientData.name, clientData.lastName, clientData.run, clientData.phone, reset, open]);
 
   const capitalizeWords = (value?: string) => {
     if (!value) return '';
@@ -41,6 +46,7 @@ export const useClientForm = ({ clientData, onSubmit, open }: UseClientFormProps
     const endsWithSpace = value.endsWith(' ');
 
     const transformed = value
+      .trim()
       .split(/\s+/)
       .map(w => w.charAt(0).toUpperCase() + w.slice(1).toLowerCase())
       .join(' ');

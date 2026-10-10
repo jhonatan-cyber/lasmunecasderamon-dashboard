@@ -24,8 +24,8 @@ export const useDashboardSummary = () => {
 
   return useQuery<DashboardSummary>({
     queryKey: queryKeys.dashboard.summary(),
-    queryFn: async () => {
-      const response = await fetch('/api/stats/dashboard-summary');
+    queryFn: async ({ signal }) => {
+      const response = await fetch('/api/stats/dashboard-summary', { signal });
       if (!response.ok) {
         throw new Error('Error al obtener el resumen del dashboard');
       }

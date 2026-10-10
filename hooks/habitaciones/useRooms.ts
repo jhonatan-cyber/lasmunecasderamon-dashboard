@@ -50,9 +50,6 @@ export default function useRooms(): UseRooms {
     remove,
     isLoading: crudMutating
   } = useGenericMutations<Room>('/api/rooms', {
-    onSuccess: () => {
-      refetch();
-    },
     showToasts: true,
     entityName: 'Habitación'
   });
@@ -61,7 +58,7 @@ export default function useRooms(): UseRooms {
     if (!rooms || rooms.length === 0) return EMPTY_ARRAY as Room[];
     if (!searchTerm.trim()) return rooms;
 
-    const term = searchTerm.toLowerCase();
+    const term = searchTerm.trim().toLowerCase();
     return rooms.filter((room: Room) => room.name.toLowerCase().includes(term));
   }, [searchTerm, rooms]);
 
@@ -134,7 +131,10 @@ export default function useRooms(): UseRooms {
       showErrorToast(err.message || 'Error al actualizar el estado de la habitación');
     },
     onSettled: () => {
-      queryClient.invalidateQueries({ queryKey: roomsQueryKey });
+      return Promise.all([
+        queryClient.invalidateQueries({ queryKey: roomsQueryKey }),
+        queryClient.invalidateQueries({ queryKey: ['/api/rooms'] })
+      ]);
     },
     onSuccess: (_, variables) => {
       const { action, subAction } = variables;
@@ -185,7 +185,7 @@ export default function useRooms(): UseRooms {
         });
 
         const data = await res.json();
-        if (data.success) {
+        if (res.ok && data.success) {
           showSuccessToast('Orden actualizado correctamente');
           await refetch();
         } else {

@@ -10,34 +10,37 @@ interface AnulacionModalProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   servicio: ServicioWithDetails | null;
-  onConfirm: () => void;
+  onConfirm: () => void | Promise<void>;
 }
 
 export function AnulacionModal({ open, onOpenChange, servicio, onConfirm }: AnulacionModalProps) {
-  const {
-    motivo,
-    setMotivo,
-    isLoading,
-    handleSubmit,
-    handleCancel
-  } = useServiceAnulacionForm({
+  const { motivo, setMotivo, isLoading, handleSubmit, handleCancel } = useServiceAnulacionForm({
     onOpenChange,
     servicio,
     onConfirm
   });
 
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
+    <Dialog
+      open={open}
+      onOpenChange={value => {
+        if (!isLoading) onOpenChange(value);
+      }}
+    >
       <DialogContent className='sm:max-w-[425px] max-h-[90vh] flex flex-col p-0'>
-        <DialogHeader className="shrink-0 px-6 pt-6 pb-4 border-b dark:border-gray-700">
-          <DialogTitle className="text-gray-900 dark:text-gray-100">Solicitar Anulación de Servicio</DialogTitle>
+        <DialogHeader className='shrink-0 px-6 pt-6 pb-4 border-b dark:border-gray-700'>
+          <DialogTitle className='text-gray-900 dark:text-gray-100'>
+            Solicitar Anulación de Servicio
+          </DialogTitle>
         </DialogHeader>
         <form onSubmit={handleSubmit} className='flex flex-col flex-1'>
-          <div className="flex-1 overflow-y-auto px-6 py-4">
+          <div className='flex-1 overflow-y-auto px-6 py-4'>
             <div className='space-y-4'>
               {servicio && (
                 <div className='space-y-2'>
-                  <Label className='text-sm font-medium text-gray-900 dark:text-gray-100'>Servicio a anular:</Label>
+                  <Label className='text-sm font-medium text-gray-900 dark:text-gray-100'>
+                    Servicio a anular:
+                  </Label>
                   <div className='p-3 bg-gray-50 dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700'>
                     <div className='text-sm text-gray-600 dark:text-gray-300'>
                       <p>
@@ -58,7 +61,10 @@ export function AnulacionModal({ open, onOpenChange, servicio, onConfirm }: Anul
               )}
 
               <div className='space-y-2'>
-                <Label htmlFor='motivo' className='text-sm font-medium text-gray-900 dark:text-gray-100'>
+                <Label
+                  htmlFor='motivo'
+                  className='text-sm font-medium text-gray-900 dark:text-gray-100'
+                >
                   Motivo de la anulación *
                 </Label>
                 <Textarea
@@ -68,12 +74,13 @@ export function AnulacionModal({ open, onOpenChange, servicio, onConfirm }: Anul
                   onChange={e => setMotivo(e.target.value)}
                   className='min-h-[100px] bg-white dark:bg-gray-800 border-gray-300 dark:border-gray-600 text-gray-900 dark:text-gray-100 placeholder:text-gray-500 dark:placeholder:text-gray-400'
                   required
+                  disabled={isLoading}
                 />
               </div>
             </div>
           </div>
 
-          <div className="shrink-0 border-t dark:border-gray-700 px-6 py-4">
+          <div className='shrink-0 border-t dark:border-gray-700 px-6 py-4'>
             <div className='flex justify-end space-x-2'>
               <Button
                 type='button'
@@ -101,4 +108,3 @@ export function AnulacionModal({ open, onOpenChange, servicio, onConfirm }: Anul
     </Dialog>
   );
 }
-

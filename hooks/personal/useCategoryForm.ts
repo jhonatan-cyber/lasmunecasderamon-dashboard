@@ -14,7 +14,11 @@ interface UseCategoryFormProps {
 
 export const useCategoryForm = ({ initialValues, onSubmit, open }: UseCategoryFormProps) => {
   const form = useForm<CategoryType>({
-    resolver: zodResolver(CategorySchema),
+    resolver: zodResolver(
+      CategorySchema.extend({
+        name: CategorySchema.shape.name.trim().min(1, 'El nombre es obligatorio')
+      })
+    ),
     defaultValues: {
       name: initialValues?.name ?? '',
       description: initialValues?.description ?? '',
@@ -24,16 +28,19 @@ export const useCategoryForm = ({ initialValues, onSubmit, open }: UseCategoryFo
   });
 
   const { reset, handleSubmit, watch, setValue } = form;
+  const initialName = initialValues?.name;
+  const initialDescription = initialValues?.description;
+  const initialId = initialValues?.id;
 
   useEffect(() => {
     if (open) {
       reset({
-        name: initialValues?.name ?? '',
-        description: initialValues?.description ?? '',
-        id: initialValues?.id
+        name: initialName ?? '',
+        description: initialDescription ?? '',
+        id: initialId
       });
     }
-  }, [initialValues, reset, open]);
+  }, [initialName, initialDescription, initialId, reset, open]);
 
   const capitalizeWords = (value: string = '') => {
     const endsWithSpace = value.endsWith(' ');

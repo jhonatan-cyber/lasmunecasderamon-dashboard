@@ -10,7 +10,6 @@ import {
   Settings as SettingsIcon,
   ShieldAlert,
   Clock,
-  Users,
   type LucideIcon
 } from 'lucide-react';
 import { SettingsCompanyTab } from '@/components/settings/SettingsCompanyTab';
@@ -37,8 +36,7 @@ const TABS: { value: string; label: string; icon: LucideIcon }[] = [
   { value: 'empresa', label: 'Empresa', icon: Building2 },
   { value: 'facturacion', label: 'Facturación', icon: SettingsIcon },
   { value: 'permisos', label: 'Permisos', icon: Key },
-  { value: 'comisiones', label: 'Comisiones', icon: Users },
-  { value: 'bar', label: 'Bar', icon: GlassWater },
+  { value: 'bar', label: 'Bar y comisiones', icon: GlassWater },
   { value: 'whatsapp', label: 'WhatsApp', icon: MessageCircle },
   { value: 'mantenimiento', label: 'Mantenimiento', icon: Database },
   { value: 'logs', label: 'Logs', icon: ShieldAlert },
@@ -47,7 +45,8 @@ const TABS: { value: string; label: string; icon: LucideIcon }[] = [
 
 // Referencias estables: si cambiaran en cada render, el efecto que restaura el tab se
 // volvería a ejecutar siempre.
-const VALORES_TAB = TABS.map(tab => tab.value);
+// Conserva la selección anterior de Comisiones y la muestra en la pestaña unificada.
+const VALORES_TAB = [...TABS.map(tab => tab.value), 'comisiones'];
 const CLAVE_TAB = 'settings_tab';
 
 export default function Settings() {
@@ -56,7 +55,11 @@ export default function Settings() {
 
   return (
     <div className='w-full max-w-none p-4 sm:p-6 lg:p-8'>
-      <Tabs value={tab} onValueChange={setTab} className='w-full space-y-6'>
+      <Tabs
+        value={tab === 'comisiones' ? 'bar' : tab}
+        onValueChange={setTab}
+        className='w-full space-y-6'
+      >
         <TabsList className='@container flex w-full flex-nowrap justify-start gap-1 sm:gap-2 bg-gray-100 dark:bg-gray-800 p-1 rounded-full overflow-x-auto [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden'>
           {TABS.map(({ value, label, icon: Icon }) => (
             <TabsTrigger
@@ -82,12 +85,10 @@ export default function Settings() {
           <SettingsPermissionsTab />
         </TabsContent>
 
-        <TabsContent value='comisiones' className='space-y-6'>
-          <SettingsServiceLevelsCard />
-          <SettingsBottleHostessCard />
-        </TabsContent>
-        <TabsContent value='bar'>
+        <TabsContent value='bar' className='space-y-6'>
           <SettingsBarTab />
+          <SettingsBottleHostessCard />
+          <SettingsServiceLevelsCard />
         </TabsContent>
 
         <TabsContent value='whatsapp'>

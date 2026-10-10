@@ -1,7 +1,7 @@
-"use client";
+'use client';
 
-import { useMemo, useState } from "react";
-import { useGenericFetch } from "../shared/useGenericFetch";
+import { useEffect, useMemo, useState } from 'react';
+import { useGenericFetch } from '../shared/useGenericFetch';
 
 export interface PayrollRow {
   id_usuario: number;
@@ -25,7 +25,7 @@ export type RoleFilter = 'all' | 'anfitriona' | 'garzon' | 'cajero';
 
 export default function usePayroll() {
   const [roleFilter, setRoleFilter] = useState<RoleFilter>('all');
-  const [searchTerm, setSearchTerm] = useState<string>("");
+  const [searchTerm, setSearchTerm] = useState<string>('');
   const [rowsPerPage, setRowsPerPage] = useState<number>(5);
   const [page, setPage] = useState<number>(1);
 
@@ -33,10 +33,10 @@ export default function usePayroll() {
     data: rows,
     isLoading: loading,
     error,
-    refetch: fetchPayroll,
-  } = useGenericFetch<PayrollRow>("/api/payroll", {
+    refetch: fetchPayroll
+  } = useGenericFetch<PayrollRow>('/api/payroll', {
     initialFetch: true,
-    transform: (data) => (data.success ? data.data || [] : []),
+    transform: data => (data.success && Array.isArray(data.data) ? data.data : [])
   });
 
   const filtered = useMemo(() => {
@@ -48,19 +48,28 @@ export default function usePayroll() {
       if (roleFilter === 'cajero') return rolLower.includes('cajero');
       return true;
     });
-    const bySearch = byRole.filter(r =>
-      searchTerm.trim() === '' || (r.usuario || '').toLowerCase().includes(searchTerm.toLowerCase())
+    const bySearch = byRole.filter(
+      r =>
+        searchTerm.trim() === '' ||
+        (r.usuario || '').toLowerCase().includes(searchTerm.trim().toLowerCase())
     );
     return bySearch;
   }, [rows, roleFilter, searchTerm]);
 
   const totalPages = Math.max(1, Math.ceil(filtered.length / rowsPerPage));
-  const startIdx = (page - 1) * rowsPerPage;
+  const currentPage = Math.min(totalPages, Math.max(1, page));
+  useEffect(() => {
+    setPage(1);
+  }, [roleFilter, searchTerm, rowsPerPage]);
+  useEffect(() => {
+    if (page !== currentPage) setPage(currentPage);
+  }, [page, currentPage]);
+  const startIdx = (currentPage - 1) * rowsPerPage;
   const endIdx = startIdx + rowsPerPage;
   const paginated = filtered.slice(startIdx, endIdx);
 
   const clearFilters = () => {
-    setSearchTerm("");
+    setSearchTerm('');
     setRowsPerPage(5);
     setPage(1);
     setRoleFilter('all');
@@ -75,15 +84,17 @@ export default function usePayroll() {
     searchTerm,
     setSearchTerm,
     rowsPerPage,
-    setRowsPerPage,
-    page,
-    setPage,
+    setRowsPerPage: (size: number) => {
+      if (Number.isInteger(size) && size > 0) setRowsPerPage(size);
+    },
+    page: currentPage,
+    setPage: (value: number) => {
+      if (Number.isInteger(value) && value >= 1 && value <= totalPages) setPage(value);
+    },
     filtered,
     paginated,
     totalPages,
     fetchPayroll,
-    clearFilters,
+    clearFilters
   };
 }
-
-

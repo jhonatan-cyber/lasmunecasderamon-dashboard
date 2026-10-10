@@ -44,7 +44,7 @@ interface ProductCardProps {
   presentation?: Presentacion | null;
   rowId?: string | number;
   onEdit: (product: Product, presentation: Presentacion | null) => void;
-  onDelete: (product: Product) => void;
+  onDelete: (product: Product, presentation?: Presentacion | null) => void;
   onActivate: (product: Product) => void;
   onDeactivate: (product: Product) => void;
   isDraggable?: boolean;
@@ -94,7 +94,7 @@ const ProductCard: React.FC<ProductCardProps> = ({
   };
 
   const handleConfirmDelete = () => {
-    onDelete(product);
+    onDelete(product, presentation);
     setDeleteModalOpen(false);
   };
 
@@ -301,9 +301,9 @@ const ProductCard: React.FC<ProductCardProps> = ({
         open={deleteModalOpen}
         onOpenChange={setDeleteModalOpen}
         onConfirm={handleConfirmDelete}
-        entityLabel='producto'
-        entityValue={product.name}
-        fieldName='Producto'
+        entityLabel={presentation ? 'presentación' : 'producto'}
+        entityValue={presentation ? `${product.name} · ${presentation.nombre}` : product.name}
+        fieldName={presentation ? 'Presentación' : 'Producto'}
         isLoading={isLoading}
       />
 

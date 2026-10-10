@@ -133,12 +133,13 @@ export function SettingsBarTab() {
       <CardHeader>
         <CardTitle className='flex items-center gap-2 text-xl font-bold dark:text-white'>
           <GlassWater className='h-5 w-5 text-neutral-500' />
-          Tragos y Shots
+          Medidas y control del bar
         </CardTitle>
         <CardDescription className='text-neutral-500 dark:text-neutral-400'>
           Cuánto se sirve en cada shot y cuánto trae la botella. La tolerancia se aplica al escanear
           una botella abierta para devolverla: el residuo aceptado queda registrado como merma. Cada
-          producto puede definir sus propios ml por shot en su ficha.
+          producto puede definir sus propios ml por shot para cliente y anfitriona en su ficha o al
+          traspasar. Estas medidas generales se usan cuando el producto no tiene un valor propio.
         </CardDescription>
       </CardHeader>
       <CardContent>

@@ -105,7 +105,7 @@ export const SaleTypeEditor = memo(function SaleTypeEditor({
             <div className='grid grid-cols-2 items-end gap-3'>
               <div className='flex flex-col gap-2'>
                 <label htmlFor={'price-' + tipo} className='text-sm'>
-                  {tipo === 'botella' ? 'Precio por botella' : 'Precio shot'}
+                  {tipo === 'botella' ? 'Precio por botella' : 'Precio shot (cliente y anfitriona)'}
                 </label>
                 <Input
                   id={'price-' + tipo}

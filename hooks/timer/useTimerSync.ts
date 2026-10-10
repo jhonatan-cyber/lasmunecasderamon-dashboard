@@ -9,6 +9,8 @@ import { batch } from '@preact/signals-react';
 import logger from '@/lib/utils/logger';
 import { activeTimers, serverOffsetSignal, TimerInstance } from '@/lib/store/timerStore';
 
+const TIMER_SYNC_INTERVAL_MS = 120_000;
+
 interface TimerSyncProps {
   isInitialized: boolean;
   setIsInitialized: (val: boolean) => void;
@@ -24,6 +26,7 @@ export function useTimerSync({
 }: TimerSyncProps) {
   const initialSyncExecutedRef = useRef(false);
   const periodicSyncStartedRef = useRef(false);
+  const syncInFlightRef = useRef(false);
 
   useEffect(() => {
     if (isInitialized) {
@@ -54,7 +57,7 @@ export function useTimerSync({
         .filter(t => t.isActive);
 
       try {
-        const res = await fetch('/api/timers/active?source=web');
+        const res = await fetch('/api/timers/active?source=web', { cache: 'no-store' });
         const json = await res.json();
 
         const { success, data, serverTime } = json;
@@ -146,22 +149,86 @@ export function useTimerSync({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  // Sync function: cleanup stale timers that weren't removed via SSE (e.g. after reconnect)
+  // The server is authoritative: reconcile additions, updates, and removals after
+  // reconnects or missed SSE events. localStorage is only a startup fallback.
   const syncTimers = useCallback(async () => {
-    if (!isInitialized) return;
+    if (!isInitialized || syncInFlightRef.current) return;
+    syncInFlightRef.current = true;
     try {
-      const res = await fetch('/api/timers/active?source=poll');
+      const res = await fetch('/api/timers/active?source=poll', { cache: 'no-store' });
+      if (!res.ok) throw new Error(`Timer sync failed: HTTP ${res.status}`);
       const data = await res.json();
-      if (data.success) {
-        const dbIds = new Set(data.data.map((t: any) => t.servicioId));
-        activeTimers.value = activeTimers
-          .peek()
-          .filter(t => t.isTemporary || dbIds.has(t.servicioId));
+      if (!data.success || !Array.isArray(data.data)) return;
+
+      if (data.serverTime) {
+        const offset = new Date(data.serverTime).getTime() - Date.now();
+        setServerOffset(offset);
+        serverOffsetSignal.value = offset;
+      }
+
+      const previousTimers = activeTimers.peek();
+      const previousIds = new Set(previousTimers.map(timer => timer.servicioId));
+      const existingById = new Map(
+        previousTimers.map(timer => [`${timer.tipoTransaccion.peek()}:${timer.servicioId}`, timer])
+      );
+      const reconciled: TimerInstance[] = data.data.flatMap((serverTimer: any) => {
+        const servicioId = String(serverTimer.servicioId ?? serverTimer.id ?? '');
+        if (!servicioId) return [];
+
+        const startTime = parseDateSafe(serverTimer.startTime);
+        const duration = Number(serverTimer.duration || 0);
+        const isPaused = serverTimer.isPaused === true;
+        const remaining = Number.isFinite(Number(serverTimer.remainingTime))
+          ? Math.max(0, Number(serverTimer.remainingTime))
+          : calculateRemainingTime(
+              { startTime, duration, isPaused, remainingTime: 0 },
+              serverOffsetSignal.peek()
+            );
+        if (remaining <= 0 && !isPaused) return [];
+
+        const tipoTransaccion = serverTimer.tipoTransaccion || 'servicio';
+        const originalId = serverTimer.servicioOriginalId
+          ? String(serverTimer.servicioOriginalId)
+          : null;
+        const datosTemporales = serverTimer.isTemporary
+          ? { servicio_original_id: originalId }
+          : undefined;
+        const timerData = {
+          id: `${tipoTransaccion}-${servicioId}`,
+          servicioId,
+          roomId: String(serverTimer.roomId ?? ''),
+          roomName: serverTimer.roomName ?? '',
+          duration,
+          startTime,
+          servicioCode: serverTimer.codigo ?? '',
+          clienteNombre: serverTimer.clienteNombre ?? 'Sin Nombre',
+          isActive: true,
+          isPaused,
+          isTemporary: serverTimer.isTemporary === true,
+          datosTemporales,
+          tipoTransaccion,
+          anfitrionas: serverTimer.anfitrionas ?? ''
+        } as const;
+
+        const existing = existingById.get(`${tipoTransaccion}:${servicioId}`);
+        if (!existing) return [new TimerInstance(timerData, remaining)];
+
+        existing.patch(timerData);
+        existing.remainingSeconds.value = remaining;
+        return [existing];
+      });
+
+      activeTimers.value = reconciled;
+      const nextIds = new Set(reconciled.map((timer: TimerInstance) => timer.servicioId));
+      if (previousIds.size !== nextIds.size || [...previousIds].some(id => !nextIds.has(id))) {
+        window.dispatchEvent(new CustomEvent('updateSales'));
       }
     } catch (e) {
       logger.captureException(e, { context: 'useTimerSync:timerPoll' });
+    } finally {
+      syncInFlightRef.current = false;
     }
-  }, [isInitialized]);
+  }, [isInitialized, setServerOffset]);
 
   const sseUrl =
     typeof window !== 'undefined' && !['/', '/login'].includes(window.location.pathname)
@@ -175,6 +242,10 @@ export function useTimerSync({
     switch (payload.type) {
       // Sync on SSE reconnect — reemplaza periodic polling
       case 'connected':
+        syncTimers();
+        break;
+
+      case 'timers_updated':
         syncTimers();
         break;
 
@@ -260,10 +331,22 @@ export function useTimerSync({
     }
   });
 
-  // Initial sync on mount (one-time, no more periodic polling)
+  // Reconcile on mount and periodically as a safety net for missed SSE messages.
   useEffect(() => {
     if (!isInitialized || periodicSyncStartedRef.current) return;
     periodicSyncStartedRef.current = true;
     syncTimers();
+    const interval = window.setInterval(() => {
+      if (document.visibilityState === 'visible') syncTimers();
+    }, TIMER_SYNC_INTERVAL_MS);
+    const onVisible = () => {
+      if (document.visibilityState === 'visible') syncTimers();
+    };
+    document.addEventListener('visibilitychange', onVisible);
+    return () => {
+      window.clearInterval(interval);
+      document.removeEventListener('visibilitychange', onVisible);
+      periodicSyncStartedRef.current = false;
+    };
   }, [isInitialized, syncTimers]);
 }

@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useCallback, useMemo } from 'react';
+import { useState, useEffect, useCallback, useMemo, useRef } from 'react';
 import {
   Caja,
   CajaWithUser,
@@ -50,12 +50,17 @@ interface UseCashRegisterReturn {
   deleteCaja: (id: number) => Promise<boolean>;
 }
 
+const cashRegisterData = (data: any) => (data.success && Array.isArray(data.data) ? data.data : []);
+
 export const useCashRegister = (): UseCashRegisterReturn => {
   const [cajaActual, setCajaActual] = useState<CajaWithUser | null>(null);
   const [resumen, setResumen] = useState<CajaResumen | null>(null);
   const [hasOpenCaja, setHasOpenCaja] = useState<boolean | null>(null);
   const [cajaInfo, setCajaInfo] = useState<any | null>(null);
-  const [mutationLoading, setMutationLoading] = useState(false);
+  const [pendingOperations, setPendingOperations] = useState(0);
+  const writeInProgress = useRef(false);
+  const detailRequest = useRef<AbortController | null>(null);
+  useEffect(() => () => detailRequest.current?.abort(), []);
   const [mutationError, setMutationError] = useState<string | null>(null);
   const [estadoFilter, setEstadoFilter] = useState<number | undefined>(undefined);
 
@@ -66,16 +71,15 @@ export const useCashRegister = (): UseCashRegisterReturn => {
 
   const {
     data: cajas,
-    isLoading: fetchLoading,
+    isFetching: fetchLoading,
     error: fetchError,
-    refetch: refetchCajas,
-    setData: setCajas
+    fetchEndpoint
   } = useGenericFetch<CajaWithUser>(cajasEndpoint, {
     initialFetch: false,
-    transform: data => (data.success ? data.data : [])
+    transform: cashRegisterData
   });
 
-  const loading = fetchLoading || mutationLoading;
+  const loading = fetchLoading || pendingOperations > 0;
   const error = fetchError || mutationError;
 
   const handleError = useCallback((error: any, message: string) => {
@@ -86,42 +90,55 @@ export const useCashRegister = (): UseCashRegisterReturn => {
 
   const getCajas = useCallback(
     async (estado?: number) => {
+      setMutationError(null);
       setEstadoFilter(estado);
-      await refetchCajas();
+      try {
+        await fetchEndpoint(
+          estado === undefined ? '/api/cashregister' : `/api/cashregister?estado=${estado}`
+        );
+      } catch (error) {
+        handleError(error, 'Error al obtener cajas');
+      }
     },
-    [refetchCajas]
+    [fetchEndpoint, handleError]
   );
 
   const getCajaById = useCallback(
     async (id: number) => {
-      setMutationLoading(true);
+      detailRequest.current?.abort();
+      const controller = new AbortController();
+      detailRequest.current = controller;
+      setCajaActual(null);
+      setPendingOperations(count => count + 1);
       setMutationError(null);
       try {
-        const response = await fetch(`/api/cashregister?id=${id}`);
+        const response = await fetch(`/api/cashregister?id=${id}`, { signal: controller.signal });
         const result = await response.json();
+        if (controller.signal.aborted) return;
 
-        if (!result.success) {
+        if (!response.ok || !result.success) {
           throw new Error(result.message || 'Error al obtener caja');
         }
 
         setCajaActual(result.data);
       } catch (error) {
+        if (controller.signal.aborted) return;
         handleError(error, 'Error al obtener caja');
       } finally {
-        setMutationLoading(false);
+        setPendingOperations(count => Math.max(0, count - 1));
       }
     },
     [handleError]
   );
 
   const getResumen = useCallback(async () => {
-    setMutationLoading(true);
+    setPendingOperations(count => count + 1);
     setMutationError(null);
     try {
       const response = await fetch('/api/cashregister?resumen=1');
       const result = await response.json();
 
-      if (!result.success) {
+      if (!response.ok || !result.success) {
         throw new Error(result.message || 'Error al obtener resumen');
       }
 
@@ -129,37 +146,39 @@ export const useCashRegister = (): UseCashRegisterReturn => {
     } catch (error) {
       handleError(error, 'Error al obtener resumen');
     } finally {
-      setMutationLoading(false);
+      setPendingOperations(count => Math.max(0, count - 1));
     }
   }, [handleError]);
 
   const checkCajaStatus = useCallback(async () => {
     try {
-      setMutationLoading(true);
+      setPendingOperations(count => count + 1);
       setMutationError(null);
       const response = await fetch('/api/cashregister/status');
       const data = await response.json();
 
-      if (data.success) {
+      if (response.ok && data.success) {
         setHasOpenCaja(data.data.hasOpenCaja);
         setCajaInfo(data.data.cajaInfo);
       } else {
-        setHasOpenCaja(false);
+        setHasOpenCaja(null);
         setCajaInfo(null);
         setMutationError(data.message || 'Error al verificar estado de caja');
       }
     } catch (err) {
       setMutationError(err instanceof Error ? err.message : 'Error desconocido');
-      setHasOpenCaja(false);
+      setHasOpenCaja(null);
       setCajaInfo(null);
     } finally {
-      setMutationLoading(false);
+      setPendingOperations(count => Math.max(0, count - 1));
     }
   }, []);
 
   const createCaja = useCallback(
     async (data: CajaCreate): Promise<CajaWithUser | null> => {
-      setMutationLoading(true);
+      if (writeInProgress.current) return null;
+      writeInProgress.current = true;
+      setPendingOperations(count => count + 1);
       setMutationError(null);
       try {
         const response = await fetch('/api/cashregister', {
@@ -172,7 +191,7 @@ export const useCashRegister = (): UseCashRegisterReturn => {
 
         const result = await response.json();
 
-        if (!result.success) {
+        if (!response.ok || !result.success) {
           throw new Error(result.message || 'Error al crear caja');
         }
 
@@ -187,7 +206,8 @@ export const useCashRegister = (): UseCashRegisterReturn => {
         handleError(error, 'Error al crear caja');
         return null;
       } finally {
-        setMutationLoading(false);
+        writeInProgress.current = false;
+        setPendingOperations(count => Math.max(0, count - 1));
       }
     },
     [getCajas, checkCajaStatus, handleError]
@@ -195,7 +215,9 @@ export const useCashRegister = (): UseCashRegisterReturn => {
 
   const updateCaja = useCallback(
     async (id: number, data: CajaUpdate): Promise<CajaWithUser | null> => {
-      setMutationLoading(true);
+      if (writeInProgress.current) return null;
+      writeInProgress.current = true;
+      setPendingOperations(count => count + 1);
       setMutationError(null);
       try {
         const response = await fetch('/api/cashregister', {
@@ -208,7 +230,7 @@ export const useCashRegister = (): UseCashRegisterReturn => {
 
         const result = await response.json();
 
-        if (!result.success) {
+        if (!response.ok || !result.success) {
           throw new Error(result.message || 'Error al actualizar caja');
         }
 
@@ -219,7 +241,8 @@ export const useCashRegister = (): UseCashRegisterReturn => {
         handleError(error, 'Error al actualizar caja');
         return null;
       } finally {
-        setMutationLoading(false);
+        writeInProgress.current = false;
+        setPendingOperations(count => Math.max(0, count - 1));
       }
     },
     [getCajas, handleError]
@@ -227,7 +250,9 @@ export const useCashRegister = (): UseCashRegisterReturn => {
 
   const cerrarCaja = useCallback(
     async (data: CajaCierre & { motivo?: string }): Promise<CierreCajaResultado | null> => {
-      setMutationLoading(true);
+      if (writeInProgress.current) return null;
+      writeInProgress.current = true;
+      setPendingOperations(count => count + 1);
       setMutationError(null);
       try {
         // Nunca cierra directo: el endpoint decide. El administrador cierra en el
@@ -244,7 +269,12 @@ export const useCashRegister = (): UseCashRegisterReturn => {
 
         // 202: la solicitud quedó creada pero el WhatsApp no salió. Sigue pendiente
         // de autorización igual, así que no se trata como error.
-        if (!response.ok && response.status !== 202) {
+        if (
+          !response.ok ||
+          (result.success === false &&
+            !(response.status === 202 && result.data?.estado === 'pendiente')) ||
+          !['pendiente', 'cerrada'].includes(result.data?.estado)
+        ) {
           throw new Error(result.message || 'Error al cerrar caja');
         }
 
@@ -276,7 +306,8 @@ export const useCashRegister = (): UseCashRegisterReturn => {
         handleError(error, 'Error al cerrar caja');
         return null;
       } finally {
-        setMutationLoading(false);
+        writeInProgress.current = false;
+        setPendingOperations(count => Math.max(0, count - 1));
       }
     },
     [getCajas, checkCajaStatus, handleError]
@@ -284,7 +315,9 @@ export const useCashRegister = (): UseCashRegisterReturn => {
 
   const retirarDinero = useCallback(
     async (data: CajaRetiro): Promise<boolean> => {
-      setMutationLoading(true);
+      if (writeInProgress.current) return false;
+      writeInProgress.current = true;
+      setPendingOperations(count => count + 1);
       setMutationError(null);
       try {
         const response = await fetch('/api/cashregister/retiros', {
@@ -297,19 +330,19 @@ export const useCashRegister = (): UseCashRegisterReturn => {
 
         const result = await response.json();
 
-        if (!result.success) {
+        if (!response.ok || !result.success) {
           throw new Error(result.message || 'Error al retirar dinero');
         }
 
         toast.success('Retiro realizado exitosamente');
-        void getCajas();
-        void getResumen();
+        await Promise.all([getCajas(), getResumen()]);
         return true;
       } catch (error) {
         handleError(error, 'Error al retirar dinero');
         return false;
       } finally {
-        setMutationLoading(false);
+        writeInProgress.current = false;
+        setPendingOperations(count => Math.max(0, count - 1));
       }
     },
     [getCajas, getResumen, handleError]
@@ -317,7 +350,9 @@ export const useCashRegister = (): UseCashRegisterReturn => {
 
   const deleteCaja = useCallback(
     async (id: number): Promise<boolean> => {
-      setMutationLoading(true);
+      if (writeInProgress.current) return false;
+      writeInProgress.current = true;
+      setPendingOperations(count => count + 1);
       setMutationError(null);
       try {
         const response = await fetch(`/api/cashregister?id=${id}`, {
@@ -326,7 +361,7 @@ export const useCashRegister = (): UseCashRegisterReturn => {
 
         const result = await response.json();
 
-        if (!result.success) {
+        if (!response.ok || !result.success) {
           throw new Error(result.message || 'Error al eliminar caja');
         }
 
@@ -337,7 +372,8 @@ export const useCashRegister = (): UseCashRegisterReturn => {
         handleError(error, 'Error al eliminar caja');
         return false;
       } finally {
-        setMutationLoading(false);
+        writeInProgress.current = false;
+        setPendingOperations(count => Math.max(0, count - 1));
       }
     },
     [getCajas, handleError]

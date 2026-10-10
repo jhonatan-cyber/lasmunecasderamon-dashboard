@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { useGenericFetch } from '../shared/useGenericFetch';
 import {
   Gratificacion,
@@ -28,6 +28,9 @@ export const useGratificaciones = () => {
   const [detailsError, setDetailsError] = useState<string | null>(null);
   const [gratificacionesDetails, setGratificacionesDetails] = useState<GratificacionDetail[]>([]);
 
+  const detailRequest = useRef<AbortController | null>(null);
+  useEffect(() => () => detailRequest.current?.abort(), []);
+
   const createGratificacion = useCallback(
     async (gratificacionData: CreateGratificacionRequest) => {
       try {
@@ -38,11 +41,20 @@ export const useGratificaciones = () => {
         });
 
         if (!response.ok) {
-          const errorData = await response.json();
-          throw new Error(errorData.message || 'Error al crear la gratificación');
+          const errorData = await response.json().catch(() => ({}));
+          throw new Error(
+            errorData.message ||
+              errorData.error?.message ||
+              errorData.error ||
+              'Error al crear la gratificación'
+          );
         }
 
         const result = await response.json();
+        if (result?.success === false)
+          throw new Error(
+            result.message || result.error?.message || result.error || 'Solicitud rechazada'
+          );
         await getGratificaciones();
         return result;
       } catch (err) {
@@ -62,11 +74,20 @@ export const useGratificaciones = () => {
         });
 
         if (!response.ok) {
-          const errorData = await response.json();
-          throw new Error(errorData.message || 'Error al actualizar la gratificación');
+          const errorData = await response.json().catch(() => ({}));
+          throw new Error(
+            errorData.message ||
+              errorData.error?.message ||
+              errorData.error ||
+              'Error al actualizar la gratificación'
+          );
         }
 
         const result = await response.json();
+        if (result?.success === false)
+          throw new Error(
+            result.message || result.error?.message || result.error || 'Solicitud rechazada'
+          );
         await getGratificaciones();
         return result;
       } catch (err) {
@@ -86,11 +107,20 @@ export const useGratificaciones = () => {
         });
 
         if (!response.ok) {
-          const errorData = await response.json();
-          throw new Error(errorData.message || 'Error al eliminar la gratificación');
+          const errorData = await response.json().catch(() => ({}));
+          throw new Error(
+            errorData.message ||
+              errorData.error?.message ||
+              errorData.error ||
+              'Error al eliminar la gratificación'
+          );
         }
 
         const result = await response.json();
+        if (result?.success === false)
+          throw new Error(
+            result.message || result.error?.message || result.error || 'Solicitud rechazada'
+          );
         await getGratificaciones();
         return result;
       } catch (err) {
@@ -101,11 +131,18 @@ export const useGratificaciones = () => {
   );
 
   const getGratificacionesDetails = useCallback(async (userId: number) => {
+    detailRequest.current?.abort();
+    const controller = new AbortController();
+    detailRequest.current = controller;
+    setGratificacionesDetails([]);
     try {
       setDetailsLoading(true);
       setDetailsError(null);
 
-      const response = await fetch(`/api/gratificaciones?userId=${userId}`);
+      const response = await fetch(
+        `/api/gratificaciones?userId=${encodeURIComponent(String(userId))}`,
+        { signal: controller.signal }
+      );
 
       if (!response.ok) {
         const errorText = await response.text();
@@ -113,9 +150,11 @@ export const useGratificaciones = () => {
       }
 
       const result = await response.json();
+      if (controller.signal.aborted) return [];
 
-      if (result.success && Array.isArray(result.data)) {
-        const processedDetails = result.data.map((detail: any) => ({
+      const rows = Array.isArray(result) ? result : result.success ? result.data : null;
+      if (Array.isArray(rows)) {
+        const processedDetails = rows.map((detail: any) => ({
           fecha_crea: detail.fecha_crea,
           fecha_mod: detail.fecha_mod,
           usuario: String(detail.usuario),
@@ -130,11 +169,12 @@ export const useGratificaciones = () => {
         throw new Error('Formato de respuesta inválido');
       }
     } catch (err) {
+      if (controller.signal.aborted) return [];
       const errorMessage = err instanceof Error ? err.message : 'Error desconocido';
       setDetailsError(errorMessage);
       throw err;
     } finally {
-      setDetailsLoading(false);
+      if (!controller.signal.aborted) setDetailsLoading(false);
     }
   }, []);
 

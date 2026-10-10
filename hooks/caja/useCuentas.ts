@@ -21,9 +21,6 @@ export const useCuentas = () => {
   });
 
   const { create, update, remove } = useGenericMutations<CuentaWithDetails>('/api/cuentas', {
-    onSuccess: () => {
-      refetch();
-    },
     showToasts: false
   });
 

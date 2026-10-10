@@ -51,6 +51,7 @@ const ProductCategoryPage = () => {
     createProduct,
     updateProduct,
     deleteProduct,
+    deletePresentation,
     activateProduct,
     deactivateProduct,
     reorderProducts,
@@ -281,14 +282,15 @@ const ProductCategoryPage = () => {
   );
 
   const handleDelete = useCallback(
-    async (product: Product) => {
+    async (product: Product, presentation?: Presentacion | null) => {
       try {
-        await deleteProduct(product.id);
+        if (presentation) await deletePresentation(presentation.id);
+        else await deleteProduct(product.id);
       } catch {
         // El toast lo emite useGenericMutations; el modal de confirmación ya cerró.
       }
     },
-    [deleteProduct]
+    [deleteProduct, deletePresentation]
   );
 
   const handleActivate = useCallback(

@@ -55,7 +55,7 @@ import { formatCurrencyCLP } from '@/lib/utils/formatters';
 interface ProductTableProps {
   products: Product[];
   onEdit: (product: Product, presentation: Presentacion | null) => void;
-  onDelete: (product: Product) => void;
+  onDelete: (product: Product, presentation?: Presentacion | null) => void;
   onActivate: (product: Product) => void;
   onDeactivate: (product: Product) => void;
   onReorder?: (products: Product[]) => void;
@@ -77,7 +77,7 @@ interface SortableRowProps {
   onEdit: (product: Product, presentation: Presentacion | null) => void;
   onActivate: (product: Product) => void;
   onDeactivate: (product: Product) => void;
-  handleDeleteClick: (product: Product) => void;
+  handleDeleteClick: (product: Product, presentation: Presentacion | null) => void;
   onViewDetails: (product: Product, presentation: Presentacion | null) => void;
   isLastRow: boolean;
   canEdit: boolean;
@@ -224,7 +224,7 @@ const SortableRow: React.FC<SortableRowProps> = React.memo(
               ) : null}
               {canDelete && (
                 <DropdownMenuItem
-                  onClick={() => handleDeleteClick(product)}
+                  onClick={() => handleDeleteClick(product, presentation)}
                   className='cursor-pointer group'
                 >
                   <Trash className='mr-2 text-red-600 group-hover:text-red-700 transition-colors' />
@@ -255,6 +255,7 @@ const ProductTable: React.FC<ProductTableProps> = ({
 }) => {
   const [deleteModalOpen, setDeleteModalOpen] = useState(false);
   const [productToDelete, setProductToDelete] = useState<Product | null>(null);
+  const [presentationToDelete, setPresentationToDelete] = useState<Presentacion | null>(null);
   const [detailsProduct, setDetailsProduct] = useState<Product | null>(null);
   const [detailsPresentation, setDetailsPresentation] = useState<Presentacion | null>(null);
   const openDetails = React.useCallback((product: Product, presentation: Presentacion | null) => {
@@ -337,17 +338,21 @@ const ProductTable: React.FC<ProductTableProps> = ({
     }
   };
 
-  const handleDeleteClick = React.useCallback((product: Product) => {
-    setProductToDelete(product);
-    setDeleteModalOpen(true);
-  }, []);
+  const handleDeleteClick = React.useCallback(
+    (product: Product, presentation: Presentacion | null) => {
+      setProductToDelete(product);
+      setPresentationToDelete(presentation);
+      setDeleteModalOpen(true);
+    },
+    []
+  );
 
   const handleConfirmDelete = React.useCallback(() => {
     if (productToDelete) {
-      onDelete(productToDelete);
+      onDelete(productToDelete, presentationToDelete);
       setProductToDelete(null);
     }
-  }, [productToDelete, onDelete]);
+  }, [productToDelete, presentationToDelete, onDelete]);
 
   return (
     <TooltipProvider>
@@ -430,9 +435,13 @@ const ProductTable: React.FC<ProductTableProps> = ({
         open={deleteModalOpen}
         onOpenChange={setDeleteModalOpen}
         onConfirm={handleConfirmDelete}
-        entityLabel='producto'
-        entityValue={productToDelete?.name || ''}
-        fieldName='Producto'
+        entityLabel={presentationToDelete ? 'presentación' : 'producto'}
+        entityValue={
+          presentationToDelete
+            ? `${productToDelete?.name} · ${presentationToDelete.nombre}`
+            : productToDelete?.name || ''
+        }
+        fieldName={presentationToDelete ? 'Presentación' : 'Producto'}
         isLoading={isMutating}
       />
 

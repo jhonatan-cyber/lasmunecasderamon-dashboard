@@ -72,7 +72,7 @@ export function useServicios() {
         body: JSON.stringify(servicioData)
       });
       const data = await response.json();
-      if (!data.success) throw new Error(data.message);
+      if (!response.ok || !data.success) throw new Error(data.message);
       return data;
     },
     onSuccess: () => {
@@ -89,7 +89,7 @@ export function useServicios() {
         body: JSON.stringify(data)
       });
       const result = await response.json();
-      if (!result.success) throw new Error(result.message);
+      if (!response.ok || !result.success) throw new Error(result.message);
       return result;
     },
     onSuccess: () => {
@@ -102,7 +102,7 @@ export function useServicios() {
     mutationFn: async (id: string | number) => {
       const response = await fetch(`/api/servicios/${id}`, { method: 'DELETE' });
       const data = await response.json();
-      if (!data.success) throw new Error(data.message);
+      if (!response.ok || !data.success) throw new Error(data.message);
       return data;
     },
     onSuccess: () => {
@@ -124,7 +124,7 @@ export function useServicios() {
         body: JSON.stringify(data)
       });
       const result = await response.json();
-      if (!result.success) throw new Error(result.message);
+      if (!response.ok || !result.success) throw new Error(result.message);
       return result;
     },
     onMutate: async ({ id, data }) => {

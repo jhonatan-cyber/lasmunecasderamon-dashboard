@@ -1,11 +1,11 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useRef } from 'react';
 import { useEmployees } from '@/hooks/personal';
 import { formatNumberCL } from '@/lib/utils/formatters';
 
 interface UseOvertimeFormProps {
-  onSubmit: (data: { usuario_id: string; hora: number; monto: number }) => Promise<void>;
+  onSubmit: (data: { usuario_id: string; hora: number; monto: number }) => Promise<void | boolean>;
 }
 
 export function useOvertimeForm({ onSubmit }: UseOvertimeFormProps) {
@@ -16,6 +16,8 @@ export function useOvertimeForm({ onSubmit }: UseOvertimeFormProps) {
   const [hora, setHora] = useState('');
   const [monto, setMonto] = useState('');
   const [montoDisplay, setMontoDisplay] = useState('');
+  const submitting = useRef(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   const reset = () => {
     setSelectedUser('');
@@ -34,8 +36,27 @@ export function useOvertimeForm({ onSubmit }: UseOvertimeFormProps) {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    await onSubmit({ usuario_id: selectedUser, hora: parseFloat(hora), monto: parseFloat(monto) });
-    reset();
+    const hours = Number(hora);
+    const amount = Number(monto);
+    if (
+      submitting.current ||
+      !selectedUser ||
+      !Number.isFinite(hours) ||
+      hours <= 0 ||
+      !Number.isFinite(amount) ||
+      amount <= 0 ||
+      !Number.isFinite(hours * amount)
+    )
+      return;
+    submitting.current = true;
+    setIsSubmitting(true);
+    try {
+      const saved = await onSubmit({ usuario_id: selectedUser, hora: hours, monto: amount });
+      if (saved !== false) reset();
+    } finally {
+      submitting.current = false;
+      setIsSubmitting(false);
+    }
   };
 
   return {
@@ -48,6 +69,7 @@ export function useOvertimeForm({ onSubmit }: UseOvertimeFormProps) {
     montoDisplay,
     handleMontoChange,
     calculateTotal,
-    handleSubmit
+    handleSubmit,
+    isSubmitting
   };
 }

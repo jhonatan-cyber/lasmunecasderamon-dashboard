@@ -1,13 +1,11 @@
 'use client';
 
-import { useState } from 'react';
 import { Client } from '@/types/client';
 import { useGenericFetch } from '../shared/useGenericFetch';
 import { useGenericMutations } from '../shared/useGenericMutations';
 import { useGenericFilters } from '../shared/useGenericFilters';
 
 export function useClients() {
-  const [isMutating, setIsMutating] = useState(false);
   const {
     data,
     setData,
@@ -32,7 +30,8 @@ export function useClients() {
   const {
     create: createMutation,
     update: updateMutation,
-    remove: removeMutation
+    remove: removeMutation,
+    isLoading: isMutating
   } = useGenericMutations<Client>('/api/clients', {
     showToasts: false,
     entityName: 'Cliente'
@@ -46,48 +45,21 @@ export function useClients() {
   });
 
   const createClient = async (payload: any) => {
-    setIsMutating(true);
-    try {
-      const res = await createMutation(payload);
-      await refetch();
-      return res;
-    } finally {
-      setIsMutating(false);
-    }
+    return createMutation(payload);
   };
 
   const updateClient = async (payload: any) => {
-    setIsMutating(true);
-    try {
-      const res = await updateMutation(payload);
-
-      setData((prev: Client[] | undefined) =>
-        (prev || []).map((c: Client) =>
-          String(c.id) === String(payload.id)
-            ? { ...c, ...payload, updated_at: new Date().toISOString() }
-            : c
-        )
-      );
-
-      return res;
-    } finally {
-      setIsMutating(false);
-    }
+    return updateMutation(payload);
   };
 
   const deleteClient = async (id: string | number) => {
-    setIsMutating(true);
-    try {
-      const res = await removeMutation(id);
+    const res = await removeMutation(id);
 
-      setData((prev: Client[] | undefined) =>
-        (prev || []).filter((c: Client) => String(c.id) !== String(id))
-      );
+    setData((prev: Client[] | undefined) =>
+      (prev || []).filter((c: Client) => String(c.id) !== String(id))
+    );
 
-      return res;
-    } finally {
-      setIsMutating(false);
-    }
+    return res;
   };
 
   const updateClientSaldo = (id: string | number, nuevoSaldo: number) => {

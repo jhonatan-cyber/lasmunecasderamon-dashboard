@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useRef, useState } from 'react';
 import { ServicioWithDetails } from '@/types/servicio';
 import { showSuccessToast, showErrorToast } from '@/lib/utils/toastUtils';
 import logger from '@/lib/utils/logger';
@@ -8,7 +8,7 @@ import logger from '@/lib/utils/logger';
 interface UseServiceAnulacionFormProps {
   onOpenChange: (open: boolean) => void;
   servicio: ServicioWithDetails | null;
-  onConfirm: () => void;
+  onConfirm: () => void | Promise<void>;
 }
 
 export function useServiceAnulacionForm({
@@ -18,9 +18,11 @@ export function useServiceAnulacionForm({
 }: UseServiceAnulacionFormProps) {
   const [motivo, setMotivo] = useState('');
   const [isLoading, setIsLoading] = useState(false);
+  const submitting = useRef(false);
 
   const handleSubmit = async (e?: React.FormEvent) => {
     if (e) e.preventDefault();
+    if (submitting.current) return;
 
     if (!motivo.trim()) {
       showErrorToast('Por favor ingrese un motivo para la anulación');
@@ -32,6 +34,7 @@ export function useServiceAnulacionForm({
       return;
     }
 
+    submitting.current = true;
     setIsLoading(true);
 
     try {
@@ -42,29 +45,42 @@ export function useServiceAnulacionForm({
         },
         body: JSON.stringify({
           servicioId: servicio.id_servicio,
-          motivo
+          motivo: motivo.trim()
         })
       });
 
       const result = await response.json();
 
-      if (result.success) {
+      if (response.ok && result.success) {
         showSuccessToast('Solicitud de anulación enviada al administrador');
         setMotivo('');
         onOpenChange(false);
-        onConfirm();
+        try {
+          await onConfirm();
+        } catch {
+          showErrorToast(
+            'La solicitud fue enviada, pero no se pudo actualizar la lista de servicios'
+          );
+        }
       } else {
-        showErrorToast(result.error || 'Error al enviar la solicitud de anulación');
+        showErrorToast(
+          result.error?.message ||
+            result.error ||
+            result.message ||
+            'Error al enviar la solicitud de anulación'
+        );
       }
     } catch (error) {
       logger.captureException(error, { context: 'ServiceAnulacionForm:submitAnulacion' });
       showErrorToast('Error de conexión al enviar la solicitud');
     } finally {
+      submitting.current = false;
       setIsLoading(false);
     }
   };
 
   const handleCancel = () => {
+    if (submitting.current) return;
     setMotivo('');
     onOpenChange(false);
   };

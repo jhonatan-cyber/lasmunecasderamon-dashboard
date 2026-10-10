@@ -33,7 +33,7 @@ export function useRoles() {
         id: role.id_rol || role.id,
         name: role.nombre || role.name || 'Sin nombre',
         description: role.descripcion || role.description || 'Sin descripción',
-        status: role.estado || role.status || 0,
+        status: Number(role.estado ?? role.status ?? 0),
         created_at: role.fecha_crea || role.created_at || new Date().toISOString(),
         updated_at: role.fecha_mod || role.updated_at || null,
         deleted_at: role.fecha_baja || role.deleted_at || null,

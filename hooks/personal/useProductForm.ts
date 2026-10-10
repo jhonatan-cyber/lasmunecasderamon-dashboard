@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { useQueryClient } from '@tanstack/react-query';
 import { toast } from 'sonner';
 import { Product, Presentacion } from '@/types/product';
@@ -114,23 +114,39 @@ export function useProductForm({
     }[]
   >([]);
   const [cargandoInventario, setCargandoInventario] = useState<boolean>(false);
+  const inventoryRequest = useRef<AbortController | null>(null);
+  const activeProductId = useRef<string | null>(null);
+  const addingStock = useRef(false);
+  const savingPresentation = useRef(false);
 
   const isEdit = Boolean(initialValues?.id);
 
   const fetchInventario = useCallback(
     async (productoId: string) => {
+      if (activeProductId.current !== productoId) return;
+      inventoryRequest.current?.abort();
+      const controller = new AbortController();
+      inventoryRequest.current = controller;
       setCargandoInventario(true);
       try {
         const [presRes, uniRes] = await Promise.all([
-          fetch(`/api/products/presentations?producto_id=${productoId}`),
-          fetch(`/api/products/units?producto_id=${productoId}`)
+          fetch(`/api/products/presentations?producto_id=${encodeURIComponent(productoId)}`, {
+            signal: controller.signal
+          }),
+          fetch(`/api/products/units?producto_id=${encodeURIComponent(productoId)}`, {
+            signal: controller.signal
+          })
         ]);
         const presData = await presRes.json().catch(() => ({}));
         const uniData = await uniRes.json().catch(() => ({}));
-        if (presData.success && Array.isArray(presData.data)) {
+        if (controller.signal.aborted) return;
+        if (!presRes.ok || !uniRes.ok || !presData.success || !uniData.success)
+          throw new Error(presData.message || uniData.message || 'No se pudo cargar el inventario');
+        if (Array.isArray(presData.data)) {
           setExistentes(presData.data);
           await queryClient.invalidateQueries({ queryKey: ['product-presentations'] });
         }
+        if (controller.signal.aborted) return;
         if (uniData.success && uniData.data) {
           setUnidadesTotal(Number(uniData.data.total ?? 0));
           setUnidadesInactivas(Number(uniData.data.inactivas ?? 0));
@@ -150,15 +166,19 @@ export function useProductForm({
           );
         }
       } catch (err) {
+        if (controller.signal.aborted) return;
         logger.warn('[useProductForm] No se pudo cargar inventario del producto', err);
+        toast.error(err instanceof Error ? err.message : 'No se pudo cargar el inventario');
       } finally {
-        setCargandoInventario(false);
+        if (!controller.signal.aborted) setCargandoInventario(false);
       }
     },
     [queryClient]
   );
 
   useEffect(() => {
+    activeProductId.current = open && initialValues?.id ? String(initialValues.id) : null;
+    setCargandoInventario(false);
     if (open && initialValues) {
       setForm({
         code: initialValues.code || '',
@@ -242,6 +262,10 @@ export function useProductForm({
       setUnidadesInactivas(0);
       setUnidadesCodigos([]);
     }
+    return () => {
+      activeProductId.current = null;
+      inventoryRequest.current?.abort();
+    };
   }, [open, initialValues, autoEditPresentation, fetchInventario]);
 
   const validate = () => {
@@ -331,7 +355,12 @@ export function useProductForm({
     presentacionId: string,
     cantidad: number
   ): Promise<boolean> => {
-    if (!initialValues?.id) return false;
+    if (!initialValues?.id || addingStock.current) return false;
+    if (!Number.isInteger(cantidad) || cantidad < 1 || cantidad > 1000) {
+      toast.error('Indica una cantidad entre 1 y 1000');
+      return false;
+    }
+    addingStock.current = true;
     setAgregandoStock(true);
     try {
       const res = await fetch('/api/products/units', {
@@ -354,11 +383,13 @@ export function useProductForm({
       toast.error('Error de red al agregar stock');
       return false;
     } finally {
+      addingStock.current = false;
       setAgregandoStock(false);
     }
   };
 
   const agregarStock = async (presentacionId: string) => {
+    if (savingPresentation.current) return;
     const cantidad = Number(getNumericValue(stockExtra[presentacionId] || ''));
     if (!Number.isInteger(cantidad) || cantidad < 1 || cantidad > 1000) {
       toast.error('Indica una cantidad entre 1 y 1000');
@@ -520,13 +551,13 @@ export function useProductForm({
     );
 
   const saveEditPres = async () => {
-    if (!editingPresId) return;
+    if (!editingPresId || savingPresentation.current || addingStock.current) return;
     if (!editPresDraft.nombre.trim()) {
       toast.error('El nombre de la presentación es requerido');
       return;
     }
     const actual = existentes.find(e => e.id === editingPresId);
-    const stockActual = actual?.stock ?? 0;
+    const stockActual = Number(actual?.stock ?? 0);
     const stockDeseadoRaw = getNumericValue(editPresDraft.stock);
     if (stockDeseadoRaw && !/^\d+$/.test(stockDeseadoRaw)) {
       toast.error('Stock debe ser un número entero mayor o igual a 0');
@@ -534,12 +565,18 @@ export function useProductForm({
     }
     const stockDeseado = stockDeseadoRaw ? Number(stockDeseadoRaw) : stockActual;
     const diferencia = stockDeseado - stockActual;
+    if (!Number.isSafeInteger(stockDeseado) || stockDeseado < 0 || diferencia > 1000) {
+      toast.error('Stock inválido: puedes agregar hasta 1000 unidades por operación');
+      return;
+    }
     if (diferencia < 0 && codigosSeleccionados.length !== Math.abs(diferencia)) {
       toast.error(
         `Selecciona ${Math.abs(diferencia)} código(s) para desactivar (llevas ${codigosSeleccionados.length})`
       );
       return;
     }
+    savingPresentation.current = true;
+    const productId = initialValues?.id ? String(initialValues.id) : null;
     setGuardandoPres(true);
     try {
       const res = await fetch('/api/products/presentations', {
@@ -562,7 +599,11 @@ export function useProductForm({
         return;
       }
       if (diferencia > 0 && initialValues?.id) {
-        await agregarStockCantidad(editingPresId, diferencia);
+        const added = await agregarStockCantidad(editingPresId, diferencia);
+        if (!added) {
+          if (productId) await fetchInventario(productId);
+          return;
+        }
       } else if (diferencia < 0 && initialValues?.id) {
         const resUni = await fetch('/api/products/units', {
           method: 'PATCH',
@@ -576,17 +617,20 @@ export function useProductForm({
         const dataUni = await resUni.json().catch(() => ({}));
         if (!resUni.ok || !dataUni.success) {
           toast.error(dataUni.message || 'No se pudieron desactivar los códigos');
+          if (productId) await fetchInventario(productId);
           return;
         }
         toast.success(`${codigosSeleccionados.length} código(s) desactivados`);
       } else {
         toast.success('Presentación actualizada correctamente');
       }
+      if (activeProductId.current !== productId) return;
       cancelEditPres();
       if (initialValues?.id) await fetchInventario(String(initialValues.id));
     } catch {
       toast.error('Error de red al actualizar la presentación');
     } finally {
+      savingPresentation.current = false;
       setGuardandoPres(false);
     }
   };
@@ -599,8 +643,20 @@ export function useProductForm({
       );
       return;
     }
-    await fetch(`/api/products/presentations?id=${id}`, { method: 'DELETE' });
-    if (initialValues?.id) await fetchInventario(String(initialValues.id));
+    try {
+      const response = await fetch(`/api/products/presentations?id=${encodeURIComponent(id)}`, {
+        method: 'DELETE'
+      });
+      const result = await response.json().catch(() => ({}));
+      if (!response.ok || !result.success)
+        throw new Error(
+          result.message || result.error?.message || 'Error al eliminar presentación'
+        );
+      toast.success('Presentación eliminada correctamente');
+      if (initialValues?.id) await fetchInventario(String(initialValues.id));
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : 'Error al eliminar presentación');
+    }
   };
 
   const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {

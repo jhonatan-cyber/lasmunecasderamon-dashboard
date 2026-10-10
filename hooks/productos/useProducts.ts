@@ -38,6 +38,19 @@ export default function useProducts(categoryId?: string) {
     invalidateKey: endpoint
   });
 
+  const { remove: deletePresentation, isLoading: isDeletingPresentation } = useGenericMutations(
+    '/api/products/presentations',
+    {
+      entityName: 'Presentación',
+      onSuccess: async () => {
+        await Promise.all([
+          queryClient.invalidateQueries({ queryKey: [endpoint] }),
+          queryClient.invalidateQueries({ queryKey: ['product-presentations'] })
+        ]);
+      }
+    }
+  );
+
   const filters = useGenericFilters(products, {
     searchFields: PRODUCT_SEARCH_FIELDS,
     initialPageSize: 20,
@@ -45,39 +58,33 @@ export default function useProducts(categoryId?: string) {
     initialSortOrder: 'asc'
   });
 
-  const activateProduct = async (id: string | number) => {
+  const changeProductStatus = async (id: string | number, action: 'activate' | 'deactivate') => {
+    const operation = action === 'activate' ? 'activar' : 'desactivar';
+    const completed = action === 'activate' ? 'activado' : 'desactivado';
     try {
-      const res = await fetch(`/api/products?id=${id}&action=activate`, {
-        method: 'PATCH'
-      });
-      const data = await res.json();
-      if (data.success) {
-        toast.success(data.message || 'Producto activado correctamente');
-        await refetch();
+      const res = await fetch(
+        `/api/products?id=${encodeURIComponent(String(id))}&action=${action}`,
+        {
+          method: 'PATCH'
+        }
+      );
+      const data = await res.json().catch(() => ({}));
+      if (res.ok && data.success) {
+        toast.success(data.message || `Producto ${completed} correctamente`);
+        await Promise.all([
+          refetch(),
+          queryClient.invalidateQueries({ queryKey: ['product-presentations'] })
+        ]);
       } else {
-        toast.error(data.message || 'Error al activar producto');
+        toast.error(data.error?.message || data.message || `Error al ${operation} producto`);
       }
     } catch (err) {
-      toast.error('Error de red al activar producto');
+      toast.error(`Error de red al ${operation} producto`);
     }
   };
 
-  const deactivateProduct = async (id: string | number) => {
-    try {
-      const res = await fetch(`/api/products?id=${id}&action=deactivate`, {
-        method: 'PATCH'
-      });
-      const data = await res.json();
-      if (data.success) {
-        toast.success(data.message || 'Producto desactivado correctamente');
-        await refetch();
-      } else {
-        toast.error(data.message || 'Error al desactivar producto');
-      }
-    } catch (err) {
-      toast.error('Error de red al desactivar producto');
-    }
-  };
+  const activateProduct = (id: string | number) => changeProductStatus(id, 'activate');
+  const deactivateProduct = (id: string | number) => changeProductStatus(id, 'deactivate');
 
   const reorderProducts = async (reorderedProducts: Product[]) => {
     if (!categoryId) {
@@ -103,9 +110,11 @@ export default function useProducts(categoryId?: string) {
       });
 
       const data = await res.json();
-      if (data.success) {
+      if (res.ok && data.success) {
         toast.success('Orden actualizado correctamente');
-        setProducts(reorderedProducts);
+        setProducts(
+          reorderedProducts.map((product, index) => ({ ...product, display_order: index + 1 }))
+        );
       } else {
         toast.error(data.message || 'Error al actualizar el orden');
         await refetch();
@@ -120,7 +129,7 @@ export default function useProducts(categoryId?: string) {
     products: filters.paginatedData,
     allProducts: products,
     isLoading,
-    isMutating,
+    isMutating: isMutating || isDeletingPresentation,
     error,
     searchTerm: filters.searchTerm,
     setSearchTerm: filters.setSearchTerm,
@@ -137,6 +146,7 @@ export default function useProducts(categoryId?: string) {
     createProduct: create,
     updateProduct: update,
     deleteProduct: remove,
+    deletePresentation,
     activateProduct,
     deactivateProduct,
     reorderProducts

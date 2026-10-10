@@ -7,8 +7,8 @@ import { z } from 'zod';
 import { zodResolver } from '@hookform/resolvers/zod';
 
 const roleFormSchema = z.object({
-  name: z.string().min(3, 'Mínimo 3 caracteres'),
-  description: z.string().min(5, 'Mínimo 5 caracteres')
+  name: z.string().trim().min(3, 'Mínimo 3 caracteres'),
+  description: z.string().trim().min(5, 'Mínimo 5 caracteres')
 });
 
 export type RoleFormValues = z.infer<typeof roleFormSchema>;
@@ -34,8 +34,8 @@ export function useRoleForm({ initialValues, open, onSubmit }: UseRoleFormProps)
   } = form;
 
   useEffect(() => {
-    if (open) reset(initialValues);
-  }, [initialValues, open, reset]);
+    if (open) reset({ name: initialValues.name, description: initialValues.description });
+  }, [initialValues.name, initialValues.description, open, reset]);
 
   const watchedName = watch('name');
   const watchedDescription = watch('description');

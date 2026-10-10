@@ -18,7 +18,7 @@ import { Timer, Banknote, Calculator, Loader2 } from 'lucide-react';
 interface OvertimeFormModalProps {
   isOpen: boolean;
   onOpenChange: (open: boolean) => void;
-  onSubmit: (data: { usuario_id: string; hora: number; monto: number }) => Promise<void>;
+  onSubmit: (data: { usuario_id: string; hora: number; monto: number }) => Promise<void | boolean>;
   isLoading?: boolean;
 }
 
@@ -26,7 +26,7 @@ export default function OvertimeFormModal({
   isOpen,
   onOpenChange,
   onSubmit,
-  isLoading = false
+  isLoading: externalLoading = false
 }: OvertimeFormModalProps) {
   const {
     employees,
@@ -37,11 +37,18 @@ export default function OvertimeFormModal({
     montoDisplay,
     handleMontoChange,
     calculateTotal,
-    handleSubmit
+    handleSubmit,
+    isSubmitting
   } = useOvertimeForm({ onSubmit });
+  const isLoading = externalLoading || isSubmitting;
 
   return (
-    <Dialog open={isOpen} onOpenChange={onOpenChange}>
+    <Dialog
+      open={isOpen}
+      onOpenChange={open => {
+        if (!isLoading) onOpenChange(open);
+      }}
+    >
       <DialogContent className='max-w-lg max-h-[90vh] flex flex-col p-0 overflow-hidden rounded-2xl'>
         <DialogHeader className='p-6 sm:p-8 pb-4 border-b bg-white dark:bg-slate-900'>
           <DialogTitle className='text-xl sm:text-2xl font-bold flex items-center gap-2'>
@@ -66,6 +73,7 @@ export default function OvertimeFormModal({
                   onChange={setSelectedUser}
                   roles={['garzon', 'cajero']}
                   placeholder='Busca un empleado...'
+                  disabled={isLoading}
                 />
               </div>
             </div>

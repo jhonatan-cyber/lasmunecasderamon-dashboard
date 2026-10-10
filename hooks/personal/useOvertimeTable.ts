@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useMemo, useCallback } from 'react';
+import { useState, useMemo, useCallback, useEffect } from 'react';
 import { Overtime } from '@/types/overtime';
 
 interface UseOvertimeTableProps {
@@ -20,8 +20,8 @@ export function useOvertimeTable({ overtime }: UseOvertimeTableProps) {
 
     data = data.filter(item => {
       const matchesSearch =
-        item.usuario.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        item.motivo?.toLowerCase().includes(searchTerm.toLowerCase());
+        item.usuario.toLowerCase().includes(searchTerm.trim().toLowerCase()) ||
+        item.motivo?.toLowerCase().includes(searchTerm.trim().toLowerCase());
 
       const matchesStatus =
         statusFilter === 'all' ||
@@ -36,14 +36,18 @@ export function useOvertimeTable({ overtime }: UseOvertimeTableProps) {
     data.forEach(item => {
       const existing = groupedMap.get(item.id_usuario);
       if (existing) {
-        existing.hora += item.hora;
-        existing.total += item.total;
+        existing.hora += Number(item.hora) || 0;
+        existing.total += Number(item.total) || 0;
 
         if (new Date(item.fecha_crea) > new Date(existing.fecha_crea)) {
           existing.fecha_crea = item.fecha_crea;
         }
       } else {
-        groupedMap.set(item.id_usuario, { ...item });
+        groupedMap.set(item.id_usuario, {
+          ...item,
+          hora: Number(item.hora) || 0,
+          total: Number(item.total) || 0
+        });
       }
     });
 
@@ -58,6 +62,7 @@ export function useOvertimeTable({ overtime }: UseOvertimeTableProps) {
         bValue = new Date(bValue || 0).getTime();
       }
 
+      if (aValue === bValue) return 0;
       if (sortOrder === 'asc') return aValue > bValue ? 1 : -1;
       return aValue < bValue ? 1 : -1;
     });
@@ -66,10 +71,17 @@ export function useOvertimeTable({ overtime }: UseOvertimeTableProps) {
   }, [overtime, searchTerm, statusFilter, sortBy, sortOrder]);
 
   const totalPages = Math.ceil(processedData.length / pageSize) || 1;
+  const currentPage = Math.min(totalPages, Math.max(1, page));
+  useEffect(() => {
+    setPage(1);
+  }, [searchTerm, statusFilter, pageSize]);
+  useEffect(() => {
+    if (page !== currentPage) setPage(currentPage);
+  }, [page, currentPage]);
 
   const paginatedData = useMemo(
-    () => processedData.slice((page - 1) * pageSize, page * pageSize),
-    [processedData, page, pageSize]
+    () => processedData.slice((currentPage - 1) * pageSize, currentPage * pageSize),
+    [processedData, currentPage, pageSize]
   );
 
   const handleClearFilters = useCallback(() => {
@@ -90,9 +102,13 @@ export function useOvertimeTable({ overtime }: UseOvertimeTableProps) {
     sortOrder,
     setSortOrder,
     pageSize,
-    setPageSize,
-    page,
-    setPage,
+    setPageSize: (size: number) => {
+      if (Number.isInteger(size) && size > 0) setPageSize(size);
+    },
+    page: currentPage,
+    setPage: (value: number) => {
+      if (Number.isInteger(value) && value >= 1 && value <= totalPages) setPage(value);
+    },
 
     processedData,
     paginatedData,

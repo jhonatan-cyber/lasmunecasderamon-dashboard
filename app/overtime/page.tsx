@@ -33,7 +33,7 @@ const CajaAviso = ({ loading, hasOpenCaja }: { loading: boolean; hasOpenCaja: bo
 };
 
 export default function OvertimePage() {
-  const { overtime: data, loading, error, getOvertime, createOvertime } = useOvertime();
+  const { overtime: data, loading, error, createOvertime } = useOvertime();
   const { hasOpenCaja, loading: cajaLoading } = useCashRegisterStatus();
   const table = useOvertimeTable({ overtime: data });
   const [showFormDialog, setShowFormDialog] = useState(false);
@@ -61,9 +61,10 @@ export default function OvertimePage() {
       await createOvertime(formData);
       toast.success('Hora extra registrada exitosamente');
       setShowFormDialog(false);
-      getOvertime();
+      return true;
     } catch (e) {
       toast.error(e instanceof Error ? e.message : 'Error al registrar');
+      return false;
     }
   };
 

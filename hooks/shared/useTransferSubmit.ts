@@ -48,9 +48,8 @@ export function useTransferSubmit({
           precio: Number(option.precio ?? 0),
           comision: Number(option.comision ?? 0)
         };
-        const anfitriona = Number(option.precio_anfitriona ?? 0);
-        if (option.tipo === 'shot' && Number.isInteger(anfitriona) && anfitriona > 0) {
-          reutilizada.precio_anfitriona = anfitriona;
+        if (option.tipo === 'shot' && reutilizada.precio > 0) {
+          reutilizada.precio_anfitriona = reutilizada.precio;
         }
         return reutilizada;
       });

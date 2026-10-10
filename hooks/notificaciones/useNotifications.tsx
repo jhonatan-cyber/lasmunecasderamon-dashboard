@@ -30,52 +30,47 @@ function nombreDe(user?: { nombre?: string; apellido?: string } | null): string 
 
 export function useNotifications() {
   const [lastNotification, setLastNotification] = useState<any>(null);
-  const [pendingOrdersCount, setPendingOrdersCount] = useState(0);
-  const [pendingServiceRequestsCount, setPendingServiceRequestsCount] = useState(0);
   const { user } = useCurrentUser();
   const pathname = usePathname();
   const router = useRouter();
+  const canLoadCounts = !!user && !!pathname && pathname !== '/' && pathname !== '/login';
 
   const { data: pendingCounts, refetch: refetchCounts } = useQuery({
-    queryKey: ['notifications', 'pending-count'],
-    queryFn: async () => {
+    queryKey: ['notifications', 'pending-count', user?.id, user?.role],
+    queryFn: async ({ signal }) => {
       const isPublic = !pathname || pathname === '/' || pathname === '/login';
       if (!user || isPublic) return { pedidosCount: 0, solicitudesCount: 0 };
 
-      const res = await fetch('/api/notifications/pending-count');
+      const res = await fetch('/api/notifications/pending-count', { signal });
       if (!res.ok) throw new Error('Failed to fetch pending counts');
       return res.json();
     },
     staleTime: 20000,
     refetchOnWindowFocus: true,
-    enabled: !!user
+    enabled: canLoadCounts
   });
 
-  useEffect(() => {
-    if (pendingCounts) {
-      setPendingOrdersCount(pendingCounts.pedidosCount || 0);
-      setPendingServiceRequestsCount(pendingCounts.solicitudesCount || 0);
-    }
-  }, [pendingCounts]);
-
-  const loadPendingCounts = useCallback(async () => {
-    refetchCounts();
-  }, [refetchCounts]);
+  const pendingOrdersCount = canLoadCounts ? Number(pendingCounts?.pedidosCount || 0) : 0;
+  const pendingServiceRequestsCount = canLoadCounts
+    ? Number(pendingCounts?.solicitudesCount || 0)
+    : 0;
 
   useEffect(() => {
-    const handleRefresh = () => refetchCounts();
+    const handleRefresh = () => {
+      if (canLoadCounts) void refetchCounts();
+    };
     const u1 = appEventBus.on('updatePendingOrders', handleRefresh);
     const u2 = appEventBus.on('updateServiceRequests', handleRefresh);
     return () => {
       u1();
       u2();
     };
-  }, [refetchCounts]);
+  }, [refetchCounts, canLoadCounts]);
 
   const showNotification = useCallback(
     (data: NotificationData) => {
+      appEventBus.emit('updatePendingOrders', { type: 'order-created', orderId: data.id });
       if (user && data.createdBy && user.id === data.createdBy) {
-        appEventBus.emit('updatePendingOrders', { type: 'order-created', orderId: data.id });
         return;
       }
       if (user?.role?.toLowerCase() === 'anfitriona') {
@@ -85,8 +80,6 @@ export function useNotifications() {
       const userRole = user?.role?.toLowerCase();
       const isCajeroOrAdmin = userRole === 'administrador' || userRole === 'cajero';
       const shouldShowAlert = isCajeroOrAdmin;
-
-      appEventBus.emit('updatePendingOrders', { type: 'order-created', orderId: data.id });
 
       if (!shouldShowAlert) {
         return;
@@ -216,21 +209,17 @@ export function useNotifications() {
 
     if (payload?.type === 'new_order' && payload?.data) {
       showNotification(payload.data as NotificationData);
-      setPendingOrdersCount(prev => prev + 1);
       setLastNotification({ type: 'new_order', data: payload.data, timestamp: Date.now() });
     }
 
     if (payload?.type === 'new_service_request' && payload?.data) {
       showServiceNotification(payload.data);
-      setPendingServiceRequestsCount(prev => prev + 1);
 
       setLastNotification({
         type: 'new_service_request',
         data: payload.data,
         timestamp: Date.now()
       });
-
-      appEventBus.emit('updateServiceRequests');
     }
 
     if (payload?.type === 'container_return_pending' && payload?.data) {
@@ -251,17 +240,14 @@ export function useNotifications() {
     }
 
     if (payload?.type === 'service_request_processed') {
-      setPendingServiceRequestsCount(prev => Math.max(0, prev - 1));
       appEventBus.emit('updateServiceRequests');
     }
 
     if (payload?.type === 'order_updated') {
-      setPendingOrdersCount(prev => Math.max(0, prev - 1));
       appEventBus.emit('updatePendingOrders', {});
     }
 
     if (payload?.type === 'order_deleted' && payload?.data) {
-      setPendingOrdersCount(prev => Math.max(0, prev - 1));
       appEventBus.emit('updatePendingOrders', {
         type: 'order-deleted',
         orderId: payload.data.orderId

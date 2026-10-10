@@ -1,6 +1,6 @@
 'use client';
 
-import { useCallback, useState } from 'react';
+import { useCallback, useState, useRef, useEffect } from 'react';
 import { useGenericFetch } from '../shared/useGenericFetch';
 
 interface UseTipsReturn {
@@ -66,17 +66,24 @@ export function useTipsDetalle(usuarioId?: string | number): UseTipsDetalleRetur
   const [detalles, setDetalles] = useState<any[]>([]);
   const [loading, setLoading] = useState<boolean>(false);
   const [error, setError] = useState<string | null>(null);
+  const pending = useRef<AbortController | null>(null);
+  useEffect(() => () => pending.current?.abort(), []);
 
   const fetchDetalles = useCallback(async (userId: string | number) => {
+    pending.current?.abort();
+    const controller = new AbortController();
+    pending.current = controller;
     try {
       setLoading(true);
       setError(null);
+      setDetalles([]);
 
-      const endpoint = `/api/tips?tipo=detalle&usuario_id=${userId}`;
+      const endpoint = `/api/tips?tipo=detalle&usuario_id=${encodeURIComponent(String(userId))}`;
 
       const response = await fetch(endpoint, {
         credentials: 'include',
-        cache: 'no-store'
+        cache: 'no-store',
+        signal: controller.signal
       });
 
       if (!response.ok) {
@@ -86,15 +93,23 @@ export function useTipsDetalle(usuarioId?: string | number): UseTipsDetalleRetur
       const result = await response.json();
 
       if (!result.success) {
-        throw new Error(result.error || 'Error al obtener los detalles de propinas');
+        throw new Error(
+          result.error?.message ||
+            result.message ||
+            (typeof result.error === 'string'
+              ? result.error
+              : 'Error al obtener los detalles de propinas')
+        );
       }
 
-      setDetalles(result.data || []);
+      if (!controller.signal.aborted) setDetalles(Array.isArray(result.data) ? result.data : []);
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Error desconocido');
-      setDetalles([]);
+      if (!controller.signal.aborted) {
+        setError(err instanceof Error ? err.message : 'Error desconocido');
+        setDetalles([]);
+      }
     } finally {
-      setLoading(false);
+      if (!controller.signal.aborted) setLoading(false);
     }
   }, []);
 

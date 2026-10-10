@@ -1,4 +1,4 @@
-import { describe, expect, it, vi, beforeEach } from 'vitest';
+import { describe, expect, it, vi, beforeEach, afterEach } from 'vitest';
 import { renderHook, act } from '@testing-library/react';
 
 // ── Mocks ────────────────────────────────────────────────────────────────
@@ -42,6 +42,173 @@ const setEnableTip = (result: any, enabled: boolean) => {
     result.current.formState.setEnableTip(enabled);
   });
 };
+
+describe('concurrencia al generar ventas', () => {
+  beforeEach(() => {
+    createVentaMock.mockReset();
+    configValues.clear();
+    window.localStorage.clear();
+  });
+  afterEach(() => vi.unstubAllGlobals());
+
+  it('dos envíos simultáneos crean una sola solicitud y permiten reintentar un fallo', async () => {
+    let finish!: (value: { success: boolean }) => void;
+    createVentaMock.mockImplementationOnce(
+      () =>
+        new Promise(resolve => {
+          finish = resolve;
+        })
+    );
+    const { result } = renderSaleHook();
+    addProduct(result);
+    setMetodoPago(result, 'efectivo');
+    let pending!: Promise<void>;
+    act(() => {
+      pending = result.current.handleSubmit([], []);
+      void result.current.handleSubmit([], []);
+    });
+    expect(createVentaMock).toHaveBeenCalledTimes(1);
+    expect(result.current.formState.loading).toBe(true);
+    await act(async () => {
+      finish({ success: false });
+      await pending;
+    });
+    expect(result.current.formState.loading).toBe(false);
+    createVentaMock.mockResolvedValueOnce({ success: false });
+    await act(async () => {
+      await result.current.handleSubmit([], []);
+    });
+    expect(createVentaMock).toHaveBeenCalledTimes(2);
+  });
+
+  it('una habitación anterior no reemplaza la selección más reciente', async () => {
+    let finish!: (value: object) => void;
+    const request = vi.fn().mockImplementationOnce(
+      () =>
+        new Promise(resolve => {
+          finish = resolve;
+        })
+    );
+    request.mockResolvedValueOnce({
+      ok: true,
+      json: async () => ({ success: true, data: { name: 'Nueva' } })
+    });
+    vi.stubGlobal('fetch', request);
+    const { result } = renderSaleHook();
+    let pending!: Promise<void>;
+    act(() => {
+      pending = result.current.handleHabitacionChange('anterior');
+    });
+    await act(async () => {
+      await result.current.handleHabitacionChange('nueva');
+    });
+    expect(request.mock.calls[0][1].signal.aborted).toBe(true);
+    await act(async () => {
+      finish({ ok: true, json: async () => ({ success: true, data: { name: 'Anterior' } }) });
+      await pending;
+    });
+    expect(result.current.formState.selectedHabitacion).toBe('nueva');
+    expect(result.current.formState.selectedRoomInfo.name).toBe('Nueva');
+  });
+
+  it('quitar la habitación impide que una respuesta pendiente vuelva a seleccionarla', async () => {
+    let finish!: (value: object) => void;
+    vi.stubGlobal(
+      'fetch',
+      vi.fn().mockImplementation(
+        () =>
+          new Promise(resolve => {
+            finish = resolve;
+          })
+      )
+    );
+    const { result } = renderSaleHook();
+    let pending!: Promise<void>;
+    act(() => {
+      pending = result.current.handleHabitacionChange('anterior');
+    });
+    await act(async () => {
+      await result.current.handleHabitacionChange('');
+      finish({ ok: true, json: async () => ({ success: true, data: { name: 'Anterior' } }) });
+      await pending;
+    });
+    expect(result.current.formState.selectedHabitacion).toBe('');
+    expect(result.current.formState.selectedRoomInfo).toBeNull();
+  });
+});
+
+describe('cantidades y stock del carrito', () => {
+  beforeEach(() => {
+    window.localStorage.clear();
+    configValues.clear();
+  });
+
+  it('no agrega botellas sin stock ni cantidades inválidas', async () => {
+    const { result } = renderSaleHook();
+    for (const producto of [
+      { id: 'p1', precio: 10000, stock_bar: 0 },
+      { id: 'p1', precio: 10000, cantidad: Infinity },
+      { id: 'p1', precio: 10000, cantidad: 1.5 }
+    ]) {
+      await act(async () => {
+        await result.current.handleAddProducto(producto);
+      });
+    }
+    expect(result.current.formState.productos).toEqual([]);
+  });
+
+  it('agregar repetidamente no supera el stock de la presentación', async () => {
+    const { result } = renderSaleHook();
+    const producto = { id: 'p1', precio: 10000, cantidad: 2, stock_bar: 3 };
+    await act(async () => {
+      await result.current.handleAddProducto(producto);
+      await result.current.handleAddProducto(producto);
+    });
+    expect(result.current.formState.productos).toHaveLength(1);
+    expect(result.current.formState.productos[0].cantidad).toBe(3);
+    expect(result.current.formState.productos[0].subtotal).toBe(30000);
+  });
+
+  it('comparte el stock entre líneas con distintos precios y conserva sus subtotales', async () => {
+    const { result } = renderSaleHook();
+    await act(async () => {
+      await result.current.handleAddProducto({
+        id: 'p1',
+        precio: 10000,
+        cantidad: 2,
+        stock_bar: 4
+      });
+      await result.current.handleAddProducto({
+        id: 'p1',
+        precio: 12000,
+        cantidad: 2,
+        stock_bar: 4
+      });
+    });
+    expect(result.current.formState.productos).toHaveLength(2);
+    act(() => result.current.handleCantidadChangeTable(0, 4));
+    expect(result.current.formState.productos.map((p: any) => p.cantidad)).toEqual([2, 2]);
+    expect(result.current.formState.totals.subtotal).toBe(44000);
+    act(() => result.current.handleCantidadChangeTable(0, NaN));
+    act(() => result.current.handleCantidadChangeTable(0, 1.5));
+    expect(result.current.formState.productos[0].cantidad).toBe(2);
+  });
+
+  it('los shots usan su límite propio aunque no haya botellas completas en stock', async () => {
+    const { result } = renderSaleHook();
+    await act(async () => {
+      await result.current.handleAddProducto({
+        id: 'p1',
+        tipo_venta: 'shot',
+        precio: 3000,
+        cantidad: 100,
+        stock_bar: 0
+      });
+    });
+    expect(result.current.formState.productos[0].cantidad).toBe(99);
+    expect(result.current.formState.productos[0].subtotal).toBe(297000);
+  });
+});
 
 describe('useSaleValidation totals (propina / total)', () => {
   it('mantiene el máximo configurado al generar una venta', async () => {

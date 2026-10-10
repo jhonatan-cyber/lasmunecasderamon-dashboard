@@ -1,5 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { renderHook, waitFor } from '@testing-library/react';
+import { act, renderHook, waitFor } from '@testing-library/react';
 
 const RESPUESTA = {
   success: true,
@@ -30,6 +30,7 @@ beforeEach(() => {
   }
   delete globalThis.__lmrConfigEnCurso;
   delete globalThis.__lmrConfigCargada;
+  delete globalThis.__lmrConfigRefresco;
   fetchMock = vi.fn(
     async () =>
       new Response(JSON.stringify(RESPUESTA), {
@@ -45,6 +46,59 @@ afterEach(() => {
 });
 
 describe('useConfigValue', () => {
+  it('actualiza lectores montados y comparte los refrescos simultáneos', async () => {
+    const { useConfigValue, refrescarConfiguraciones } = await cargarHooks();
+    const { result } = renderHook(() => useConfigValue('bar', 'shot_ml', 50));
+    await waitFor(() => expect(result.current).toBe(30));
+    fetchMock.mockResolvedValueOnce(
+      new Response(
+        JSON.stringify({
+          success: true,
+          data: { bar: { shot_ml: 60 } }
+        })
+      )
+    );
+    await act(async () => {
+      await Promise.all([refrescarConfiguraciones(), refrescarConfiguraciones()]);
+    });
+    expect(result.current).toBe(60);
+    expect(fetchMock).toHaveBeenCalledTimes(2);
+  });
+
+  it('conserva los valores válidos si falla el refresco', async () => {
+    const { useConfigValue, refrescarConfiguraciones, valorDeConfig } = await cargarHooks();
+    const { result } = renderHook(() => useConfigValue('bar', 'shot_ml', 50));
+    await waitFor(() => expect(result.current).toBe(30));
+    fetchMock.mockRejectedValueOnce(new Error('sin red'));
+    await act(async () => {
+      await refrescarConfiguraciones();
+    });
+    expect(result.current).toBe(30);
+    expect(valorDeConfig('shot_ml')).toBe(30);
+  });
+
+  it('espera una lectura anterior antes de refrescar los valores', async () => {
+    const { useConfigValue, refrescarConfiguraciones } = await cargarHooks();
+    let responder!: (response: Response) => void;
+    fetchMock.mockImplementationOnce(
+      () =>
+        new Promise<Response>(resolve => {
+          responder = resolve;
+        })
+    );
+    const { result } = renderHook(() => useConfigValue('bar', 'shot_ml', 50));
+    fetchMock.mockResolvedValueOnce(
+      new Response(JSON.stringify({ success: true, data: { bar: { shot_ml: 75 } } }))
+    );
+    await act(async () => {
+      const refresco = refrescarConfiguraciones();
+      responder(new Response(JSON.stringify(RESPUESTA)));
+      await refresco;
+    });
+    expect(result.current).toBe(75);
+    expect(fetchMock).toHaveBeenCalledTimes(2);
+  });
+
   it('varios lectores montados a la vez piden /api/configurations una sola vez', async () => {
     const { useConfigValue } = await cargarHooks();
 

@@ -16,9 +16,11 @@ declare global {
   var __lmrConfigCache: Record<string, string | number | boolean> | undefined;
   var __lmrConfigEnCurso: Promise<void> | null | undefined;
   var __lmrConfigCargada: boolean | undefined;
+  var __lmrConfigRefresco: Promise<void> | null | undefined;
 }
 
 const configCache: Record<string, string | number | boolean> = (globalThis.__lmrConfigCache ??= {});
+const CONFIG_UPDATED = 'lmr:config-updated';
 /**
  * Devuelve la promesa de la descarga en curso, o lanza una si no hay ninguna.
  *
@@ -36,13 +38,17 @@ function ensureConfigs(): Promise<void> {
     try {
       const res = await fetch('/api/configurations');
       const result = await res.json();
-      if (result.success && result.data) {
+      if (res.ok && result.success && result.data) {
+        const nuevos: typeof configCache = {};
         for (const category of Object.keys(result.data)) {
           for (const key of Object.keys(result.data[category])) {
-            configCache[`${category}.${key}`] = result.data[category][key];
+            nuevos[`${category}.${key}`] = result.data[category][key];
           }
         }
+        for (const clave of Object.keys(configCache)) delete configCache[clave];
+        Object.assign(configCache, nuevos);
         globalThis.__lmrConfigCargada = true;
+        window.dispatchEvent(new Event(CONFIG_UPDATED));
       }
     } catch {
       // keep defaults
@@ -74,17 +80,24 @@ export function cargarConfiguraciones(): Promise<void> {
 }
 
 /**
- * Descarta la caché y vuelve a traer `/api/configurations`.
+ * Reemplaza la caché con una respuesta nueva de `/api/configurations` y actualiza lectores.
  *
  * Sin esto, guardar desde Configuraciones dejaba a las demás pantallas con el valor viejo
  * hasta que se recargara la página: la caché es de vida de la pestaña. Se llama después de
  * un guardado correcto, desde los tabs que editan claves.
  */
-export async function refrescarConfiguraciones(): Promise<void> {
-  globalThis.__lmrConfigCargada = false;
-  globalThis.__lmrConfigEnCurso = null;
-  for (const clave of Object.keys(configCache)) delete configCache[clave];
-  await ensureConfigs();
+export function refrescarConfiguraciones(): Promise<void> {
+  if (globalThis.__lmrConfigRefresco) return globalThis.__lmrConfigRefresco;
+  globalThis.__lmrConfigRefresco = (async () => {
+    // Espera la lectura anterior para impedir que sobrescriba los valores recién guardados.
+    await globalThis.__lmrConfigEnCurso;
+    globalThis.__lmrConfigCargada = false;
+    // Conserva los últimos valores válidos si la red falla durante el refresco.
+    await ensureConfigs();
+  })().finally(() => {
+    globalThis.__lmrConfigRefresco = null;
+  });
+  return globalThis.__lmrConfigRefresco;
 }
 
 export function useConfigValue<T = string>(category: string, key: string, defaultValue: T): T {
@@ -92,15 +105,17 @@ export function useConfigValue<T = string>(category: string, key: string, defaul
 
   useEffect(() => {
     const cacheKey = `${category}.${key}`;
-    if (configCache[cacheKey] !== undefined) {
-      setValue(configCache[cacheKey] as T);
-      return;
-    }
-    ensureConfigs().then(() => {
-      if (configCache[cacheKey] !== undefined) {
-        setValue(configCache[cacheKey] as T);
-      }
-    });
+    let activo = true;
+    const actualizar = () => {
+      if (activo) setValue((configCache[cacheKey] as T | undefined) ?? defaultValue);
+    };
+    window.addEventListener(CONFIG_UPDATED, actualizar);
+    actualizar();
+    void ensureConfigs().then(actualizar);
+    return () => {
+      activo = false;
+      window.removeEventListener(CONFIG_UPDATED, actualizar);
+    };
   }, [category, key, defaultValue]);
 
   return value;

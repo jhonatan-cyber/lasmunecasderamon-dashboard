@@ -20,6 +20,15 @@ interface ApiResponse<T> {
   }>;
 }
 
+async function readUsersResponse<T>(response: Response): Promise<ApiResponse<T>> {
+  const result = await response.json();
+  return {
+    ...result,
+    success: response.ok && result.success === true,
+    message: result.message || result.error?.message || result.error || 'Error al procesar usuarios'
+  };
+}
+
 /** Lo que PATCH /api/users?action=… devuelve sobre el lector de la puerta. */
 export interface LectorSyncInfo {
   /** Hubo algo que sincronizar (la persona tenía código y plantillas). */
@@ -96,18 +105,20 @@ export function useUsers(): UseUsersReturn {
     error: queryError
   } = useQuery({
     queryKey: ['users', debouncedSearchTerm, filterStatus, filterRole, page, pageSize],
-    queryFn: async () => {
+    queryFn: async ({ signal }) => {
       const params = new URLSearchParams({
-        search: debouncedSearchTerm,
+        search: debouncedSearchTerm.trim(),
         status: filterStatus === 'active' ? '1' : filterStatus === 'inactive' ? '0' : 'all',
         role: filterRole,
         limit: pageSize.toString(),
         offset: ((page - 1) * pageSize).toString()
       });
 
-      const res = await fetch(`/api/users?${params.toString()}`);
+      const res = await fetch(`/api/users?${params.toString()}`, { signal });
       if (!res.ok) throw new Error('Error al obtener usuarios');
-      return res.json() as Promise<ApiResponse<User[]>>;
+      const result = await readUsersResponse<User[]>(res);
+      if (!result.success) throw new Error(result.message);
+      return result;
     },
     placeholderData: previousData => previousData
   });
@@ -119,9 +130,11 @@ export function useUsers(): UseUsersReturn {
   const createMutation = useMutation({
     mutationFn: async (formData: FormData) => {
       const res = await fetch('/api/users', { method: 'POST', body: formData });
-      return res.json() as Promise<ApiResponse<{ id?: string | number } | null>>;
+      return readUsersResponse<{ id?: string | number } | null>(res);
     },
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['users'] })
+    onSuccess: result => {
+      if (result.success) return queryClient.invalidateQueries({ queryKey: ['users'] });
+    }
   });
 
   const updateMutation = useMutation({
@@ -147,19 +160,23 @@ export function useUsers(): UseUsersReturn {
         headers: isFormData ? {} : { 'Content-Type': 'application/json' },
         body
       });
-      return res.json() as Promise<ApiResponse<null>>;
+      return readUsersResponse<null>(res);
     },
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['users'] })
+    onSuccess: result => {
+      if (result.success) return queryClient.invalidateQueries({ queryKey: ['users'] });
+    }
   });
 
   const deleteMutation = useMutation({
     mutationFn: async ({ id, action }: { id: string | number; action: string }) => {
       const method = action === 'delete' ? 'DELETE' : 'PATCH';
-      const url = `/api/users?action=${action}&id=${id}`;
+      const url = `/api/users?action=${action}&id=${encodeURIComponent(String(id))}`;
       const res = await fetch(url, { method });
-      return res.json() as Promise<ApiResponse<null>>;
+      return readUsersResponse<null>(res);
     },
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['users'] })
+    onSuccess: result => {
+      if (result.success) return queryClient.invalidateQueries({ queryKey: ['users'] });
+    }
   });
 
   const createUser = async (formData: FormData) => {
@@ -199,12 +216,18 @@ export function useUsers(): UseUsersReturn {
 
   const getUserById = useCallback(async (id: string | number): Promise<User | null> => {
     try {
-      const res = await fetch(`/api/users?id=${id}`);
+      const res = await fetch(`/api/users?id=${encodeURIComponent(String(id))}`);
       const data = await res.json();
-      return data.success ? data.data : null;
+      return res.ok && data.success ? data.data : null;
     } catch (e) {
       return null;
     }
+  }, []);
+
+  const changePageSize = useCallback((size: number) => {
+    if (!Number.isInteger(size) || size <= 0) return;
+    setPageSize(size);
+    setPage(1);
   }, []);
 
   return {
@@ -221,7 +244,7 @@ export function useUsers(): UseUsersReturn {
     page,
     setPage,
     pageSize,
-    setPageSize,
+    setPageSize: changePageSize,
     totalPages,
     createUser,
     updateUser,

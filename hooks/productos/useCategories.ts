@@ -44,7 +44,7 @@ export function useCategories(): UseCategoriesReturn {
     error,
     refetch
   } = useGenericFetch<Category>('/api/categories', {
-    transform: result => (result.success ? result.data : [])
+    transform: result => (result.success && Array.isArray(result.data) ? result.data : [])
   });
 
   const refetchCategories = useCallback(async () => {
@@ -59,7 +59,6 @@ export function useCategories(): UseCategoriesReturn {
     remove,
     isLoading: isMutating
   } = useGenericMutations<Category>('/api/categories', {
-    onSuccess: refetchCategories,
     showToasts: false
   });
 
@@ -77,7 +76,7 @@ export function useCategories(): UseCategoriesReturn {
 
     if (!searchTerm.trim()) return unique;
 
-    const lower = searchTerm.toLowerCase();
+    const lower = searchTerm.trim().toLowerCase();
     return unique.filter(
       cat =>
         cat.name.toLowerCase().includes(lower) ||
@@ -88,77 +87,37 @@ export function useCategories(): UseCategoriesReturn {
   const createCategory = useCallback(
     async (category: { name: string; description: string }) => {
       try {
-        const res = await create(category);
-        if (res && (res as any).id && setData) {
-          const newClient: Category = {
-            id: (res as any).id,
-            name: category.name,
-            description: category.description || '',
-            status: 1,
-            total_products: 0,
-            created_at: new Date().toISOString(),
-            display_order: (categories?.length || 0) + 1
-          };
-          setData((prev: Category[] | undefined) => {
-            const merged = [newClient, ...(prev || [])];
-            const seen = new Set<string>();
-            return merged.filter(i => {
-              if (seen.has(String(i.id))) return false;
-              seen.add(String(i.id));
-              return true;
-            });
-          });
-        } else {
-          await refetchCategories();
-        }
+        await create(category);
         return { success: true, message: 'Categoría creada correctamente' };
       } catch (e) {
         return { success: false, message: e instanceof Error ? e.message : 'Error desconocido' };
       }
     },
-    [create, setData, categories, refetchCategories]
+    [create]
   );
 
   const updateCategory = useCallback(
     async (id: string, category: { name: string; description: string }) => {
       try {
-        const res = await update({ id, ...category });
-        if (setData) {
-          setData((prev: Category[] | undefined) =>
-            (prev || []).map((c: Category) =>
-              String(c.id) === String(id)
-                ? { ...c, ...category, updated_at: new Date().toISOString() }
-                : c
-            )
-          );
-        } else {
-          await refetchCategories();
-        }
+        await update({ id, ...category });
         return { success: true, message: 'Categoría actualizada correctamente' };
       } catch (e) {
         return { success: false, message: e instanceof Error ? e.message : 'Error desconocido' };
       }
     },
-    [update, setData, refetchCategories]
+    [update]
   );
 
   const deleteCategory = useCallback(
     async (id: string) => {
       try {
-        const res = await remove(id);
-        if (setData) {
-          setData((prev: Category[] | undefined) =>
-            (prev || []).filter((c: Category) => String(c.id) !== String(id))
-          );
-        } else {
-          await refetchCategories();
-        }
+        await remove(id);
         return { success: true, message: 'Categoría eliminada correctamente' };
       } catch (e) {
         return { success: false, message: e instanceof Error ? e.message : 'Error desconocido' };
       }
     },
-    [remove, setData, refetchCategories]
+    [remove]
   );
 
   const activateCategory = useCallback(
@@ -173,10 +132,12 @@ export function useCategories(): UseCategoriesReturn {
           );
         }
 
-        const res = await fetch(`/api/categories?id=${id}&action=activate`, { method: 'PATCH' });
+        const res = await fetch(`/api/categories?id=${encodeURIComponent(id)}&action=activate`, {
+          method: 'PATCH'
+        });
         const data = await res.json();
 
-        if (!data.success) {
+        if (!res.ok || !data.success) {
           if (setData) setData(previous);
           const { showErrorToast } = await import('@/lib/utils/toastUtils');
           showErrorToast(data.message || 'Error al activar categoría');
@@ -216,10 +177,12 @@ export function useCategories(): UseCategoriesReturn {
           );
         }
 
-        const res = await fetch(`/api/categories?id=${id}&action=deactivate`, { method: 'PATCH' });
+        const res = await fetch(`/api/categories?id=${encodeURIComponent(id)}&action=deactivate`, {
+          method: 'PATCH'
+        });
         const data = await res.json();
 
-        if (!data.success) {
+        if (!res.ok || !data.success) {
           if (setData) setData(previous);
           const { showErrorToast } = await import('@/lib/utils/toastUtils');
           showErrorToast(data.message || 'Error al desactivar categoría');
@@ -276,7 +239,7 @@ export function useCategories(): UseCategoriesReturn {
 
         const data = await res.json();
 
-        if (!data.success) {
+        if (!res.ok || !data.success) {
           if (setData) setData(previous);
           const { showErrorToast } = await import('@/lib/utils/toastUtils');
           showErrorToast(data.message || 'Error al actualizar el orden');

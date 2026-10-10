@@ -77,7 +77,7 @@ export const useOrdersList = () => {
       setLoadingOrders(true);
       const res = await fetch('/api/orders');
       const data = await res.json();
-      if (data.success) setOrders((data.data || []).map(normalizeOrder));
+      if (res.ok && data.success) setOrders((data.data || []).map(normalizeOrder));
     } catch (error) {
       logger.captureException(error, { context: 'useOrdersList:fetchOrders' });
     } finally {
@@ -90,7 +90,7 @@ export const useOrdersList = () => {
       setLoadingServicios(true);
       const res = await fetch('/api/solicitudes-servicios?estado=pendiente');
       const data = await res.json();
-      if (data.success) {
+      if (res.ok && data.success) {
         setServicios(
           (data.data || []).map(normalizeServicio).filter((s: any) => s.estado === 'pendiente')
         );
@@ -151,7 +151,7 @@ export const useOrdersList = () => {
     try {
       const res = await fetch(`/api/orders/${orderId}`, { method: 'DELETE' });
       const data = await res.json();
-      if (data.success) {
+      if (res.ok && data.success) {
         setOrders(prev => prev.filter(o => o.id_pedido !== orderId));
         toast.success('Pedido eliminado');
         return true;
@@ -168,7 +168,7 @@ export const useOrdersList = () => {
     try {
       const res = await fetch(`/api/solicitudes-servicios?id=${servicioId}`, { method: 'DELETE' });
       const data = await res.json();
-      if (data.success) {
+      if (res.ok && data.success) {
         setServicios(prev => prev.filter(s => s.id_solicitud !== servicioId));
         toast.success('Solicitud eliminada');
         return true;

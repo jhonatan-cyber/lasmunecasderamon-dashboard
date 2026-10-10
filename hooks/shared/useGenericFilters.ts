@@ -22,7 +22,7 @@ export function useGenericFilters<T>(
     let result = data;
 
     if (searchTerm.trim() && options?.searchFields) {
-      const lowercasedFilter = searchTerm.toLowerCase();
+      const lowercasedFilter = searchTerm.trim().toLowerCase();
       result = result.filter(item =>
         options.searchFields!.some(field => {
           const value = item[field];
@@ -59,16 +59,6 @@ export function useGenericFilters<T>(
             : bValue.getTime() - aValue.getTime();
         }
 
-        if (typeof aValue === 'string' && typeof bValue === 'string') {
-          const aDate = new Date(aValue);
-          const bDate = new Date(bValue);
-          if (!isNaN(aDate.getTime()) && !isNaN(bDate.getTime())) {
-            return sortOrder === 'asc'
-              ? aDate.getTime() - bDate.getTime()
-              : bDate.getTime() - aDate.getTime();
-          }
-        }
-
         const aStr = String(aValue);
         const bStr = String(bValue);
         const comparison = aStr.localeCompare(bStr);
@@ -79,12 +69,20 @@ export function useGenericFilters<T>(
     return result;
   }, [data, searchTerm, filterStatus, options?.searchFields, sortBy, sortOrder]);
 
-  const paginatedData = useMemo(() => {
-    const start = (page - 1) * pageSize;
-    return filteredData.slice(start, start + pageSize);
-  }, [filteredData, page, pageSize]);
-
   const totalPages = Math.max(1, Math.ceil(filteredData.length / pageSize));
+  const currentPage = Math.min(
+    totalPages,
+    Math.max(1, Number.isFinite(page) ? Math.trunc(page) : 1)
+  );
+
+  const paginatedData = useMemo(() => {
+    const start = (currentPage - 1) * pageSize;
+    return filteredData.slice(start, start + pageSize);
+  }, [filteredData, currentPage, pageSize]);
+
+  useEffect(() => {
+    if (page !== currentPage) setPage(currentPage);
+  }, [page, currentPage]);
 
   useEffect(() => {
     setPage(1);
@@ -101,7 +99,7 @@ export function useGenericFilters<T>(
     setSortBy,
     sortOrder,
     setSortOrder,
-    page,
+    page: currentPage,
     setPage,
     pageSize,
     setPageSize,

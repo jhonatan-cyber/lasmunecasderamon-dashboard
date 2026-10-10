@@ -1,6 +1,6 @@
 'use client';
 
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import logger from '@/lib/utils/logger';
 import { formatDateTimeDmyLabel } from '@/lib/utils/calendarUtils';
 
@@ -35,33 +35,56 @@ export function useSettingsLogs() {
   const [errorPageSize, setErrorPageSize] = useState(5);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
+  const request = useRef<AbortController | null>(null);
+  const [error, setError] = useState<string | null>(null);
 
   const fetchLogs = useCallback(async (showLoader = true) => {
-    if (showLoader) setLoading(true);
-    else setRefreshing(true);
+    request.current?.abort();
+    const controller = new AbortController();
+    request.current = controller;
+    setLoading(showLoader);
+    setRefreshing(!showLoader);
+    setError(null);
 
     try {
-      const [auditRes, errorRes] = await Promise.all([
-        fetch('/api/audit-logs?limit=200'),
-        fetch('/api/error-logs'),
+      const read = async (url: string) => {
+        const response = await fetch(url, { signal: controller.signal });
+        const payload = await response.json();
+        if (!response.ok || payload?.success === false || !Array.isArray(payload?.data))
+          throw new Error(payload?.message || `Error al cargar ${url}`);
+        return payload.data;
+      };
+      const results = await Promise.allSettled([
+        read('/api/audit-logs?limit=200'),
+        read('/api/error-logs')
       ]);
-
-      const [auditJson, errorJson] = await Promise.all([auditRes.json(), errorRes.json()]);
-
-      setAuditLogs(Array.isArray(auditJson?.data) ? auditJson.data : []);
-      setErrorLogs(Array.isArray(errorJson?.data) ? errorJson.data : []);
+      if (controller.signal.aborted) return;
+      if (results[0].status === 'fulfilled') setAuditLogs(results[0].value);
+      if (results[1].status === 'fulfilled') setErrorLogs(results[1].value);
+      const failures = results.filter(result => result.status === 'rejected');
+      if (failures.length) {
+        setError(
+          'No se pudieron actualizar todos los registros. Se conservan los datos disponibles.'
+        );
+        failures.forEach(result => {
+          if (result.status === 'rejected')
+            logger.captureException(result.reason, { context: 'SettingsLogsTab:fetchLogs' });
+        });
+      }
     } catch (error) {
       logger.captureException(error, { context: 'SettingsLogsTab:fetchLogs' });
-      setAuditLogs([]);
-      setErrorLogs([]);
+      if (!controller.signal.aborted) setError('No se pudieron actualizar los registros');
     } finally {
-      setLoading(false);
-      setRefreshing(false);
+      if (!controller.signal.aborted) {
+        setLoading(false);
+        setRefreshing(false);
+      }
     }
   }, []);
 
   useEffect(() => {
     fetchLogs(true);
+    return () => request.current?.abort();
   }, [fetchLogs]);
 
   useEffect(() => {
@@ -141,6 +164,7 @@ export function useSettingsLogs() {
     errorPageSize,
     setErrorPageSize,
     loading,
+    error,
     refreshing,
     fetchLogs,
     formatDate,
@@ -150,6 +174,6 @@ export function useSettingsLogs() {
     auditTotalPages,
     errorTotalPages,
     paginatedAuditLogs,
-    paginatedErrorLogs,
+    paginatedErrorLogs
   };
 }

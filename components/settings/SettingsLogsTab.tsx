@@ -23,6 +23,7 @@ export function SettingsLogsTab() {
     setErrorPageSize,
     errorTotalPages,
     loading,
+    error,
     refreshing,
     fetchLogs,
     formatDate,
@@ -36,6 +37,11 @@ export function SettingsLogsTab() {
   return (
     <div className='space-y-4 sm:space-y-6'>
       <SettingsLogsTabHeader refreshing={refreshing} onRefresh={handleRefresh} />
+      {error && (
+        <p role='alert' className='text-sm text-red-600'>
+          {error}
+        </p>
+      )}
 
       <SettingsAuditLogsCard
         auditLogs={auditLogs}

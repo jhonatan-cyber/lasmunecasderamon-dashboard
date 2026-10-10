@@ -58,7 +58,7 @@ export default function useAnticipos() {
     let result = [...(allAnticipos || [])];
 
     if (searchTerm.trim()) {
-      const lower = searchTerm.toLowerCase();
+      const lower = searchTerm.trim().toLowerCase();
       result = result.filter(
         item =>
           item.nick?.toLowerCase().includes(lower) ||
@@ -71,7 +71,6 @@ export default function useAnticipos() {
     }
 
     if (statusFilter !== 'all') {
-      const targetState = statusFilter === 'por_cobrar' ? 1 : 2;
       result = result.filter(item => {
         if (statusFilter === 'por_cobrar') return Number(item.estado) === 1;
         return Number(item.estado) !== 1;
@@ -95,12 +94,18 @@ export default function useAnticipos() {
     return result;
   }, [allAnticipos, searchTerm, statusFilter, sortBy, sortOrder]);
 
-  const paginatedData = useMemo(() => {
-    const start = (page - 1) * pageSize;
-    return filteredData.slice(start, start + pageSize);
-  }, [filteredData, page, pageSize]);
-
   const totalPages = Math.max(1, Math.ceil(filteredData.length / pageSize));
+  const currentPage = Math.min(
+    totalPages,
+    Math.max(1, Number.isFinite(page) ? Math.trunc(page) : 1)
+  );
+  const paginatedData = useMemo(() => {
+    const start = (currentPage - 1) * pageSize;
+    return filteredData.slice(start, start + pageSize);
+  }, [filteredData, currentPage, pageSize]);
+  useEffect(() => {
+    if (page !== currentPage) setPage(currentPage);
+  }, [page, currentPage]);
 
   useEffect(() => {
     setPage(1);
@@ -162,7 +167,7 @@ export default function useAnticipos() {
     sortOrder,
     setSortOrder,
 
-    page,
+    page: currentPage,
     setPage,
     pageSize,
     setPageSize,

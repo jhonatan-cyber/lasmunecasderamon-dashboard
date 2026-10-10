@@ -44,7 +44,7 @@ const formatMiles = (v: string | number) =>
 const toNumber = (v: string) => Number(String(v).replace(/\./g, '')) || 0;
 
 export function SettingsBottleHostessCard() {
-  const { productos: allProductos, loading, refresh } = useSettingsProducts();
+  const { productos: allProductos, loading, error: productsError, refresh } = useSettingsProducts();
   const [selectedId, setSelectedId] = useState<string>('');
   const [productSelectorOpen, setProductSelectorOpen] = useState(false);
   // Lo que el usuario editó; null = sin editar, se muestra el valor vigente.
@@ -309,7 +309,7 @@ export function SettingsBottleHostessCard() {
       <CardHeader>
         <CardTitle className='flex items-center gap-2 text-xl font-bold dark:text-white'>
           <Users className='h-5 w-5 text-neutral-500' />
-          Comisiones por presentación
+          Precios y comisiones por producto
         </CardTitle>
         <CardDescription className='text-neutral-500 dark:text-neutral-400'>
           Elegí una presentación para editar su precio y comisión por botella. El máximo de
@@ -318,6 +318,14 @@ export function SettingsBottleHostessCard() {
         </CardDescription>
       </CardHeader>
       <CardContent>
+        {productsError && (
+          <div role='alert' className='mb-4 text-sm text-red-600'>
+            {productsError}{' '}
+            <button type='button' onClick={() => void refresh()} className='underline'>
+              Reintentar
+            </button>
+          </div>
+        )}
         {loading || (presentaciones === null && !barError) ? (
           <div className='text-center py-8'>
             <div className='animate-spin rounded-full h-8 w-8 border-b-2 border-neutral-500 mx-auto' />

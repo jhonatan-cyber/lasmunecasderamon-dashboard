@@ -76,12 +76,8 @@ export function useTransferForm({
   const [editarPrecios, setEditarPrecios] = useState(false);
 
   // Lo que se muestra en los labels: lo que se está editando o el valor vigente.
-  const mlPorShot =
-    mlShotCliente !== '' ? Number(mlShotCliente) : resolveShotMl(item?.ml_shot, shotMl);
-  const mlPorShotAnfitriona =
-    mlShotAnfitriona !== ''
-      ? Number(mlShotAnfitriona)
-      : resolveShotMlAnfitriona(item?.ml_shot_anfitriona, mlPorShot);
+  const mlPorShot = resolveShotMl(Number(mlShotCliente), shotMl);
+  const mlPorShotAnfitriona = resolveShotMlAnfitriona(Number(mlShotAnfitriona), mlPorShot);
   const etiquetaShot =
     mlPorShotAnfitriona !== mlPorShot
       ? `Shot · ${mlPorShot} ml · Anf ${mlPorShotAnfitriona} ml`
@@ -95,6 +91,7 @@ export function useTransferForm({
   const tieneConfig = opcionesGuardadas.some(option => Number(option.precio ?? 0) > 0);
 
   useEffect(() => {
+    let cancelado = false;
     if (open && item) {
       setCantidad('');
       // Cadena: traspaso guardado → presentación → producto (un 0 intermedio se salta).
@@ -135,6 +132,7 @@ export function useTransferForm({
         fetch(`/api/products/${item.producto_id}/tiers`)
           .then(res => res.json().catch(() => ({})))
           .then(data => {
+            if (cancelado) return;
             const rows =
               data.success && Array.isArray(data.data) && data.data.length > 0
                 ? data.data
@@ -148,6 +146,7 @@ export function useTransferForm({
             );
           })
           .catch(() => {
+            if (cancelado) return;
             setTiers(
               CHAMPAGNE_DEFAULT_TIERS.map(t => ({
                 anfitrionas: t.anfitrionas,
@@ -158,6 +157,9 @@ export function useTransferForm({
           });
       }
     }
+    return () => {
+      cancelado = true;
+    };
   }, [open, item]);
 
   const reset = () => {

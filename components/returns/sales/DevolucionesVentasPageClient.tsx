@@ -39,6 +39,7 @@ export function DevolucionesVentasPageClient() {
     isDetailModalOpen,
     isDevolucionModalOpen,
     motivoDevolucion,
+    isSubmitting,
     setMotivoDevolucion,
     setIsDetailModalOpen,
     setIsDevolucionModalOpen,
@@ -281,6 +282,7 @@ export function DevolucionesVentasPageClient() {
         motivoDevolucion={motivoDevolucion}
         onMotivoChange={setMotivoDevolucion}
         onConfirmar={() => confirmarDevolucion(getVentas)}
+        isSubmitting={isSubmitting}
       />
     </div>
   );

@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { Room } from '@/types/room';
 
 export interface RoomFormValues {
@@ -27,6 +27,7 @@ interface UseRoomFormProps {
 export function useRoomForm({ open, initialValues, onSubmit }: UseRoomFormProps) {
   const [form, setForm] = useState<RoomFormValues>(initialFormState);
   const [errors, setErrors] = useState<{ [key: string]: string }>({});
+  const focusValues = useRef<Partial<RoomFormValues>>({});
 
   useEffect(() => {
     if (open && initialValues) {
@@ -47,12 +48,17 @@ export function useRoomForm({ open, initialValues, onSubmit }: UseRoomFormProps)
   const validate = () => {
     const newErrors: { [key: string]: string } = {};
     if (!form.name.trim()) newErrors.name = 'El nombre es requerido';
-    if (!form.price.trim() || isNaN(Number(form.price.replace(/\./g, ''))))
+    if (
+      !form.price.trim() ||
+      !Number.isFinite(Number(form.price.replace(/\./g, ''))) ||
+      Number(form.price.replace(/\./g, '')) < 0
+    )
       newErrors.price = 'Precio válido requerido';
-    if (!form.time.trim() || isNaN(Number(form.time))) newErrors.time = 'Tiempo válido requerido';
+    if (!form.time.trim() || !Number.isFinite(Number(form.time)) || Number(form.time) <= 0)
+      newErrors.time = 'Tiempo válido requerido';
     if (
       form.comision_anfitriona &&
-      (isNaN(Number(form.comision_anfitriona.replace(/\./g, ''))) ||
+      (!Number.isFinite(Number(form.comision_anfitriona.replace(/\./g, ''))) ||
         Number(form.comision_anfitriona.replace(/\./g, '')) < 0)
     ) {
       newErrors.comision_anfitriona = 'La comisión debe ser un monto válido mayor o igual a 0';
@@ -74,6 +80,8 @@ export function useRoomForm({ open, initialValues, onSubmit }: UseRoomFormProps)
 
   const handleFocus = (e: React.FocusEvent<HTMLInputElement>) => {
     if (['price', 'time', 'comision_anfitriona'].includes(e.target.name)) {
+      focusValues.current[e.target.name as keyof RoomFormValues] =
+        form[e.target.name as keyof RoomFormValues];
       setForm(prev => ({ ...prev, [e.target.name]: '' }));
     }
   };
@@ -84,7 +92,8 @@ export function useRoomForm({ open, initialValues, onSubmit }: UseRoomFormProps)
       ['price', 'time', 'comision_anfitriona'].includes(name) &&
       !form[name as keyof RoomFormValues]
     ) {
-      const initialValue = initialValues ? (initialValues as any)[name] : '';
+      const initialValue =
+        focusValues.current[name as keyof RoomFormValues] ?? form[name as keyof RoomFormValues];
       setForm(prev => ({
         ...prev,
         [name]: initialValue
