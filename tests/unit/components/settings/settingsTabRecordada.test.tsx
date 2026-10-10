@@ -72,7 +72,7 @@ describe('pestaña activa de Configuraciones', () => {
 
   it('al recargar vuelve al tab que estaba abierto, no al primero', async () => {
     render(<Settings />);
-    abrirTab('Bar');
+    abrirTab('Bar y comisiones');
     expect(await screen.findByText('panel-bar')).toBeInTheDocument();
 
     // Recarga: la página se desmonta y vuelve a montar desde cero.
