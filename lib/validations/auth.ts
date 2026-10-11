@@ -13,7 +13,7 @@ export const registerSchema = z.object({
 });
 
 export const resetPasswordSchema = z.object({
-  run: z.string().trim().min(4, 'El RUN es obligatorio')
+  run: z.string().trim().min(4, 'El RUT es obligatorio')
 });
 
 export const changePasswordSchema = z

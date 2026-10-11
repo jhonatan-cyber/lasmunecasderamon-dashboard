@@ -1,6 +1,5 @@
 import { query, generateUUID } from '@/lib/database/db';
 import * as argon2 from 'argon2';
-import { randomBytes } from 'node:crypto';
 import { generateToken } from '@/lib/auth/auth';
 import { registrarLogin } from './sesionesRepositorio';
 import { getSystemTimezone, getNowInBusinessTimezone } from '@/lib/business/timezoneService';
@@ -18,7 +17,6 @@ import logger from '@/lib/utils/logger';
 import { regenerateAttendanceCode } from './codigos';
 import { enUnaUnidad, type ContextoOperacion } from '@/lib/transaccion/contrato';
 import { resolverTransaccion } from '@/lib/transaccion/infraestructura';
-import { enviarWhatsApp } from '@/modules/comunicaciones';
 
 const ROLES_CON_CODIGO = ['cajero', 'garzon', 'anfitriona'];
 const SHIFT_START = 21 * 60;
@@ -307,49 +305,28 @@ export async function resetPassword(run: string) {
 
     if (users.length === 0) throw new ValidationError('Usuario no encontrado');
     const user = users[0];
-    const telefono = String(user.telefono || '').trim();
-    const digitosTelefono = telefono.replace(/\D/g, '');
-    if (!telefono || digitosTelefono.length < 7 || digitosTelefono.length > 15) {
-      throw new ValidationError(
-        'La cuenta no tiene un teléfono válido registrado. Contacta al administrador.'
-      );
-    }
-
-    // El RUN solo identifica la cuenta: nunca se reutiliza como contraseña.
-    const passwordTemporal = randomBytes(18).toString('base64url');
+    const passwordTemporal = String(user.run).trim();
     const hashedPassword = await argon2.hash(passwordTemporal);
-    try {
-      await enUnaUnidad(unidad =>
-        unidad.ejecutar(async contexto => {
-          const trx = resolverTransaccion(contexto);
-          await trx(
-            'UPDATE usuarios SET password = ?, force_password_change = 1, fecha_mod = ? WHERE id_usuario = ?',
-            [hashedPassword, getNowInBusinessTimezone(), user.id_usuario]
-          );
-          await enviarWhatsApp(
-            telefono,
-            `Recuperación de contraseña — Las Muñecas de Ramón. Tu clave temporal es: ${passwordTemporal}. Inicia sesión y crea una contraseña nueva. Si no solicitaste este cambio, contacta al administrador.`
-          );
-        })
-      );
-    } catch (error) {
-      logger.error('[AuthQueries] No se pudo enviar la clave temporal de recuperación', {
-        usuarioId: user.id_usuario,
-        error: error instanceof Error ? error.message : 'Error desconocido'
-      });
-      throw new BusinessError('No se pudo enviar la clave temporal. Contacta al administrador.');
-    }
+    await enUnaUnidad(unidad =>
+      unidad.ejecutar(async contexto => {
+        const trx = resolverTransaccion(contexto);
+        await trx(
+          'UPDATE usuarios SET password = ?, force_password_change = 1, fecha_mod = ? WHERE id_usuario = ?',
+          [hashedPassword, getNowInBusinessTimezone(), user.id_usuario]
+        );
+        await trx('DELETE FROM logins WHERE usuario_id = ?', [user.id_usuario]);
+      })
+    );
 
     return {
       success: true,
-      message: 'Enviamos una clave temporal a tu WhatsApp registrado. Cámbiala al ingresar.',
+      message: 'Tu contraseña temporal es tu RUT registrado. Cámbiala al ingresar.',
       user: {
         id: user.id_usuario,
         name: user.nombre,
         lastName: user.apellido,
         email: user.email,
-        nick: user.nick,
-        telefono: `••••${digitosTelefono.slice(-4)}`
+        nick: user.nick
       }
     };
   } catch (err) {
