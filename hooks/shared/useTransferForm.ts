@@ -26,6 +26,8 @@ export interface TransferForm {
   setTipos: (value: SaleType[]) => void;
   precioShot: string;
   setPrecioShot: (value: string) => void;
+  precioShotAnfitriona: string;
+  setPrecioShotAnfitriona: (value: string) => void;
   comisionShot: string;
   setComisionShot: (value: string) => void;
   mlShotCliente: string;
@@ -68,6 +70,7 @@ export function useTransferForm({
   const [comision, setComision] = useState('');
   const [tipos, setTipos] = useState<SaleType[]>(['botella']);
   const [precioShot, setPrecioShot] = useState('');
+  const [precioShotAnfitriona, setPrecioShotAnfitriona] = useState('');
   const [comisionShot, setComisionShot] = useState('');
   // Ml por shot para cada audiencia (anfitriona vacío = igual que cliente).
   const [mlShotCliente, setMlShotCliente] = useState('');
@@ -112,6 +115,9 @@ export function useTransferForm({
       setPrecioVenta(bottlePrecio > 0 ? formatNumber(String(bottlePrecio)) : '');
       setComision(bottleComision ? formatNumber(String(bottleComision)) : '');
       setPrecioShot(shot && Number(shot.precio) > 0 ? formatNumber(String(shot.precio)) : '');
+      setPrecioShotAnfitriona(
+        shot?.precio_anfitriona != null ? formatNumber(String(shot.precio_anfitriona)) : ''
+      );
       setComisionShot(shot?.comision ? formatNumber(String(shot.comision)) : '');
       setMlShotCliente(
         item.ml_shot !== null && item.ml_shot !== undefined && Number(item.ml_shot) > 0
@@ -167,6 +173,7 @@ export function useTransferForm({
     setPrecioVenta('');
     setComision('');
     setPrecioShot('');
+    setPrecioShotAnfitriona('');
     setComisionShot('');
     setMlShotCliente('');
     setMlShotAnfitriona('');
@@ -192,6 +199,8 @@ export function useTransferForm({
     setTipos,
     precioShot,
     setPrecioShot,
+    precioShotAnfitriona,
+    setPrecioShotAnfitriona,
     comisionShot,
     setComisionShot,
     mlShotCliente,

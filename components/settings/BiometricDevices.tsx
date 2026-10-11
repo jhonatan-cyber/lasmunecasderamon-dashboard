@@ -58,6 +58,18 @@ const RESUMEN_POLL = (r: ResumenPoll): string =>
   (r.usuarioInactivo ? ` · ${r.usuarioInactivo} inactivo(s)` : '') +
   (r.errores ? ` · ${r.errores} error(es)` : '');
 
+async function leerRespuesta(response: Response) {
+  try {
+    return await response.json();
+  } catch {
+    throw new Error(
+      response.status === 502 || response.status === 504
+        ? 'El servidor no pudo completar la conexión con el lector. Verifica que el VPS tenga acceso a la red del equipo mediante VPN o un enlace local.'
+        : `El servidor devolvió una respuesta inesperada (HTTP ${response.status}). Recarga la página y vuelve a intentarlo.`
+    );
+  }
+}
+
 export function BiometricDevices() {
   const id = useId();
   const [devices, setDevices] = useState<BiometricDevice[]>([]);
@@ -97,7 +109,7 @@ export function BiometricDevices() {
         setAllowed(false);
         return;
       }
-      const result = await response.json();
+      const result = await leerRespuesta(response);
       if (!response.ok || !result.success) throw new Error('No se pudieron cargar los equipos.');
       setDevices(result.data);
       setRecoger(
@@ -134,7 +146,7 @@ export function BiometricDevices() {
           ip: ip.trim()
         })
       });
-      const result = await response.json();
+      const result = await leerRespuesta(response);
       if (!response.ok || !result.success)
         throw new Error(result.message || 'No se pudo vincular el equipo.');
       toast.success('Equipo vinculado. Configuralo en su menú para que apunte a este sitio.');
@@ -163,14 +175,18 @@ export function BiometricDevices() {
             body: JSON.stringify(cred)
           })
         : await fetch(`/api/biometric/devices/${encodeURIComponent(device.id)}/credentials`);
-      const result = await res.json();
+      const result = await leerRespuesta(res);
       setConexionPorEquipo(prev => ({
         ...prev,
         [device.id]: { probando: false, ok: Boolean(result.success), mensaje: result.message }
       }));
-      if (result.success) {
+      if (res.ok && result.success) {
         toast.success(result.message || 'Conexión OK.');
-        setCredPorEquipo(prev => ({ ...prev, [device.id]: { ip: '', usuario: '', clave: '' } }));
+        setCredPorEquipo(prev => {
+          const next = { ...prev };
+          delete next[device.id];
+          return next;
+        });
         await load();
       } else {
         toast.error(result.message || 'No se pudo conectar.');
@@ -189,20 +205,34 @@ export function BiometricDevices() {
   async function buscarPorMac(device: BiometricDevice) {
     setDescPorEquipo(prev => ({ ...prev, [device.id]: { probando: true } }));
     try {
-      const res = await fetch(`/api/biometric/devices/${encodeURIComponent(device.id)}/discover`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ forzar: true })
-      });
-      const result = await res.json();
+      const cred = credPorEquipo[device.id];
+      const conCredenciales = Boolean(cred?.usuario.trim() && cred?.clave);
+      if (cred && !conCredenciales) {
+        throw new Error(
+          'Completa el usuario y la clave CGI y prueba la conexión antes de buscar por MAC.'
+        );
+      }
+      const res = await fetch(
+        `/api/biometric/devices/${encodeURIComponent(device.id)}/${conCredenciales ? 'credentials' : 'discover'}`,
+        {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(conCredenciales ? cred : { forzar: true })
+        }
+      );
+      const result = await leerRespuesta(res);
       setDescPorEquipo(prev => ({
         ...prev,
         [device.id]: { probando: false, ok: Boolean(result.success), mensaje: result.message }
       }));
-      if (result.success) {
+      if (res.ok && result.success) {
         toast.success(result.message || 'Equipo encontrado.');
         // La IP nueva vino de la BD: limpia lo tipeado para no pisarla.
-        setCredPorEquipo(prev => ({ ...prev, [device.id]: { ip: '', usuario: '', clave: '' } }));
+        setCredPorEquipo(prev => {
+          const next = { ...prev };
+          delete next[device.id];
+          return next;
+        });
         await load();
       } else {
         toast.error(result.message || 'No se encontró el equipo en la red.');
@@ -221,7 +251,7 @@ export function BiometricDevices() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ encender })
       });
-      const result = await res.json();
+      const result = await leerRespuesta(res);
       if (!result.success) throw new Error(result.message || 'No se pudo cambiar el recolector.');
       toast.success(result.message);
       setRecoger(prev => ({ ...prev, [device.id]: encender }));
@@ -241,7 +271,7 @@ export function BiometricDevices() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ equipoId: device.id })
       });
-      const result = await res.json();
+      const result = await leerRespuesta(res);
       if (!result.success) throw new Error(result.message || 'No se pudo recoger.');
       const r = result.data as ResumenPoll;
       setPollMensaje(prev => ({ ...prev, [device.id]: RESUMEN_POLL(r) }));
@@ -260,7 +290,7 @@ export function BiometricDevices() {
       const response = await fetch(`/api/biometric/devices/${encodeURIComponent(id)}`, {
         method: 'DELETE'
       });
-      const result = await response.json();
+      const result = await leerRespuesta(response);
       if (!response.ok || !result.success)
         throw new Error(result.message || 'No se pudo desvincular.');
       toast.success('Equipo desvinculado: sus eventos ya no se aceptan.');

@@ -20,6 +20,7 @@ export const SaleTypeEditor = memo(function SaleTypeEditor({
   precioVenta,
   comision,
   precioShot,
+  precioShotAnfitriona,
   comisionShot,
   shotMl,
   mlShotCliente,
@@ -31,6 +32,7 @@ export const SaleTypeEditor = memo(function SaleTypeEditor({
   onPrecioVentaChange,
   onComisionChange,
   onPrecioShotChange,
+  onPrecioShotAnfitrionaChange,
   onComisionShotChange,
   onMlShotClienteChange,
   onMlShotAnfitrionaChange,
@@ -42,6 +44,7 @@ export const SaleTypeEditor = memo(function SaleTypeEditor({
   precioVenta: string;
   comision: string;
   precioShot: string;
+  precioShotAnfitriona: string;
   comisionShot: string;
   shotMl: number;
   mlShotCliente: string;
@@ -53,6 +56,7 @@ export const SaleTypeEditor = memo(function SaleTypeEditor({
   onPrecioVentaChange: (value: string) => void;
   onComisionChange: (value: string) => void;
   onPrecioShotChange: (value: string) => void;
+  onPrecioShotAnfitrionaChange: (value: string) => void;
   onComisionShotChange: (value: string) => void;
   onMlShotClienteChange: (value: string) => void;
   onMlShotAnfitrionaChange: (value: string) => void;
@@ -105,7 +109,7 @@ export const SaleTypeEditor = memo(function SaleTypeEditor({
             <div className='grid grid-cols-2 items-end gap-3'>
               <div className='flex flex-col gap-2'>
                 <label htmlFor={'price-' + tipo} className='text-sm'>
-                  {tipo === 'botella' ? 'Precio por botella' : 'Precio shot (cliente y anfitriona)'}
+                  {tipo === 'botella' ? 'Precio por botella' : 'Precio shot cliente'}
                 </label>
                 <Input
                   id={'price-' + tipo}
@@ -121,6 +125,23 @@ export const SaleTypeEditor = memo(function SaleTypeEditor({
                   }
                 />
               </div>
+              {tipo === 'shot' && (
+                <div className='flex flex-col gap-2'>
+                  <label htmlFor='price-shot-anfitriona' className='text-sm'>
+                    Precio shot anfitriona
+                  </label>
+                  <Input
+                    id='price-shot-anfitriona'
+                    inputMode='numeric'
+                    placeholder='Igual que cliente'
+                    disabled={saving}
+                    value={precioShotAnfitriona}
+                    onChange={event =>
+                      onPrecioShotAnfitrionaChange(formatNumber(event.target.value))
+                    }
+                  />
+                </div>
+              )}
               <div className='flex flex-col gap-2'>
                 <label htmlFor={'commission-' + tipo} className='text-sm'>
                   Comisión (opcional)
@@ -173,9 +194,9 @@ export const SaleTypeEditor = memo(function SaleTypeEditor({
             </div>
             {tipo === 'shot' && (
               <p className='mt-2 ml-1 text-[11px] text-gray-400 dark:text-gray-500'>
-                El precio del shot es único para cliente y anfitriona. Los ml se guardan en el
-                producto al traspasar: en vacío, cliente usa el valor global ({shotMl} ml) y
-                anfitriona usa el de cliente.
+                Si dejas el precio de anfitriona vacío, se usa el precio de cliente. Los ml se
+                guardan en el producto al traspasar: en vacío, cliente usa el valor global ({shotMl}{' '}
+                ml) y anfitriona usa el de cliente.
               </p>
             )}
           </fieldset>

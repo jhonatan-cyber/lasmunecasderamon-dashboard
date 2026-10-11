@@ -1,6 +1,7 @@
 import React from 'react';
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import { cleanup, render, screen, waitFor } from '@testing-library/react';
+import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react';
+import { toast } from 'sonner';
 import { BiometricDevices } from '@/components/settings/BiometricDevices';
 
 vi.mock('sonner', () => ({ toast: { success: vi.fn(), error: vi.fn() } }));
@@ -37,6 +38,57 @@ function stubearEquipos() {
 }
 
 describe('BiometricDevices', () => {
+  it('usa las credenciales ingresadas al buscar y conserva la IP guardada después', async () => {
+    const request = vi.fn(async (_url: unknown, options?: RequestInit) => ({
+      ok: true,
+      status: 200,
+      json: async () =>
+        options?.method === 'POST'
+          ? { success: true, message: 'Conexión OK' }
+          : { success: true, data: [equipo] }
+    }));
+    vi.stubGlobal('fetch', request);
+    render(<BiometricDevices />);
+    await screen.findByText('Puerta principal');
+    fireEvent.change(screen.getByLabelText('Clave CGI'), { target: { value: 'test-password' } });
+    fireEvent.click(screen.getByRole('button', { name: 'Buscar por MAC' }));
+    await waitFor(() =>
+      expect(request).toHaveBeenCalledWith(
+        '/api/biometric/devices/eq1/credentials',
+        expect.objectContaining({
+          method: 'POST',
+          body: JSON.stringify({ ip: equipo.ip, usuario: 'admin', clave: 'test-password' })
+        })
+      )
+    );
+    await waitFor(() => expect(screen.getByLabelText('Clave CGI')).toHaveValue(''));
+    expect(screen.getByLabelText('IP del equipo')).toHaveValue(equipo.ip);
+    fireEvent.click(screen.getByRole('button', { name: 'Probar conexión' }));
+    await waitFor(() =>
+      expect(request).toHaveBeenCalledWith('/api/biometric/devices/eq1/credentials')
+    );
+  });
+
+  it('explica un timeout HTML sin mostrar un error de JSON', async () => {
+    const request = vi.fn(async (url: unknown) =>
+      String(url).endsWith('/credentials')
+        ? {
+            ok: false,
+            status: 504,
+            json: async () => {
+              throw new SyntaxError('Unexpected token <');
+            }
+          }
+        : { ok: true, status: 200, json: async () => ({ success: true, data: [equipo] }) }
+    );
+    vi.stubGlobal('fetch', request);
+    render(<BiometricDevices />);
+    await screen.findByText('Puerta principal');
+    fireEvent.click(screen.getByRole('button', { name: 'Probar conexión' }));
+    await waitFor(() =>
+      expect(toast.error).toHaveBeenCalledWith(expect.stringContaining('VPS tenga acceso'))
+    );
+  });
   it('lista el equipo sin mostrar la URL de configuración ni el botón de copiar', async () => {
     stubearEquipos();
 

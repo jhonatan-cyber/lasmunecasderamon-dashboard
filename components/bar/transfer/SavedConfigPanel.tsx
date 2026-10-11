@@ -82,7 +82,8 @@ export const SavedConfigPanel = memo(function SavedConfigPanel({
               )}
               {option.tipo === 'shot' ? (
                 <span className='font-semibold'>
-                  {formatCurrencyCLP(option.precio)} · Cliente y anfitriona
+                  Cliente {formatCurrencyCLP(option.precio)} · Anfitriona{' '}
+                  {formatCurrencyCLP(option.precio_anfitriona ?? option.precio)}
                 </span>
               ) : (
                 <span className='font-semibold'>{formatCurrencyCLP(option.precio)}</span>

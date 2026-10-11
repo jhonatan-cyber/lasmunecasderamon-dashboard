@@ -110,6 +110,7 @@ export function TransferModal({
                 precioVenta={form.precioVenta}
                 comision={form.comision}
                 precioShot={form.precioShot}
+                precioShotAnfitriona={form.precioShotAnfitriona}
                 comisionShot={form.comisionShot}
                 shotMl={form.shotMl}
                 mlShotCliente={form.mlShotCliente}
@@ -121,6 +122,7 @@ export function TransferModal({
                 onPrecioVentaChange={form.setPrecioVenta}
                 onComisionChange={form.setComision}
                 onPrecioShotChange={form.setPrecioShot}
+                onPrecioShotAnfitrionaChange={form.setPrecioShotAnfitriona}
                 onComisionShotChange={form.setComisionShot}
                 onMlShotClienteChange={form.setMlShotCliente}
                 onMlShotAnfitrionaChange={form.setMlShotAnfitriona}

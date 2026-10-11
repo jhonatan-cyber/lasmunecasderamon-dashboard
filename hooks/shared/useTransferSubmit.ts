@@ -49,16 +49,18 @@ export function useTransferSubmit({
           comision: Number(option.comision ?? 0)
         };
         if (option.tipo === 'shot' && reutilizada.precio > 0) {
-          reutilizada.precio_anfitriona = reutilizada.precio;
+          reutilizada.precio_anfitriona = Number(option.precio_anfitriona ?? reutilizada.precio);
         }
         return reutilizada;
       });
     } else {
       const pv = Number(form.precioVenta.replace(/\./g, ''));
       const com = form.comision.trim() === '' ? 0 : Number(form.comision.replace(/\./g, ''));
-      // Precio único del shot: rige para cliente y anfitriona (se guarda en ambos
-      // campos para que la venta siga ofreciendo el "shot anfitriona" con comisión).
       const pvShot = Number(form.precioShot.replace(/\./g, ''));
+      const pvShotAnfitriona =
+        form.precioShotAnfitriona.trim() === ''
+          ? pvShot
+          : Number(form.precioShotAnfitriona.replace(/\./g, ''));
       options = form.tipos.map(tipo => {
         if (tipo === 'botella') return { tipo, precio: pv, comision: com };
         const option: SaleOption = {
@@ -67,7 +69,7 @@ export function useTransferSubmit({
           comision: Number(form.comisionShot.replace(/\./g, ''))
         };
         if (Number.isInteger(pvShot) && pvShot > 0) {
-          option.precio_anfitriona = pvShot;
+          option.precio_anfitriona = pvShotAnfitriona;
         }
         return option;
       });
@@ -78,6 +80,10 @@ export function useTransferSubmit({
             !Number.isInteger(option.precio) ||
             option.precio < 0 ||
             option.precio > 2147483647 ||
+            (option.precio_anfitriona !== undefined &&
+              (!Number.isInteger(option.precio_anfitriona) ||
+                option.precio_anfitriona < 0 ||
+                option.precio_anfitriona > 2147483647)) ||
             !Number.isInteger(option.comision) ||
             option.comision < 0 ||
             option.comision > 2147483647
