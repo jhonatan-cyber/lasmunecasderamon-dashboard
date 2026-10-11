@@ -107,6 +107,7 @@ const PUBLIC_API_POLICY: Record<string, string> = {
   // Públicos de producto:
   '/api/public/users': 'padrón para la pantalla del local (sin credenciales desde la 024)',
   '/api/timers/active': 'lectura de timers activos para pantallas del local',
+  '/api/images/users/[filename]': 'fotos de perfil publicadas del personal',
   '/api/images/products/[filename]': 'imágenes de productos públicas del catálogo'
 };
 
