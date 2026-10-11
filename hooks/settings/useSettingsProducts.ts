@@ -7,6 +7,7 @@ export interface SettingsProduct {
   id: string;
   code: string;
   name: string;
+  foto?: string | null;
   category_id: string;
   price: number;
   commission: number;

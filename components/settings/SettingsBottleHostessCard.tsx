@@ -3,6 +3,7 @@
 import { useState, useEffect, useMemo, useRef } from 'react';
 import { Save, Users, RotateCcw, Check, ChevronsUpDown } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { ProductPhoto } from '@/components/shared/ProductPhoto';
 import { Popover, PopoverTrigger, PopoverContent } from '@/components/ui/popover';
 import {
   Command,
@@ -29,6 +30,7 @@ type PresentacionComisiones = {
   id: string;
   producto_id: string;
   nombre: string;
+  foto: string | null;
   precio_venta: number;
   comision: number;
   opciones_venta: SaleOption[];
@@ -42,6 +44,28 @@ const formatMiles = (v: string | number) =>
     .replace(/\D/g, '')
     .replace(/\B(?=(\d{3})+(?!\d))/g, '.');
 const toNumber = (v: string) => Number(String(v).replace(/\./g, '')) || 0;
+
+function ProductSelectorPhoto({ foto }: { foto?: string | null }) {
+  const src =
+    !foto || foto === 'default.png'
+      ? '/api/images/products/default.png'
+      : /^(https?:\/\/|\/)/.test(foto)
+        ? foto
+        : `/api/images/products/${foto}`;
+  const [failed, setFailed] = useState(false);
+  useEffect(() => setFailed(false), [src]);
+  return (
+    <ProductPhoto
+      key={src}
+      src={failed ? '/api/images/products/default.png' : src}
+      alt=''
+      width={36}
+      height={36}
+      className='h-9 w-9 shrink-0 rounded-md object-contain'
+      onError={() => setFailed(true)}
+    />
+  );
+}
 
 export function SettingsBottleHostessCard() {
   const { productos: allProductos, loading, error: productsError, refresh } = useSettingsProducts();
@@ -92,6 +116,7 @@ export function SettingsBottleHostessCard() {
               id: String(row.id),
               producto_id: pid,
               nombre: String(row.nombre ?? ''),
+              foto: row.foto ? String(row.foto) : null,
               precio_venta: Number(row.precio_venta ?? 0),
               comision: Number(row.comision ?? 0),
               opciones_venta: opciones
@@ -121,6 +146,7 @@ export function SettingsBottleHostessCard() {
               id: presentacion.id,
               producto_id: presentacion.producto_id,
               presentacion: presentacion.nombre,
+              foto: presentacion.foto || producto.foto,
               opciones_venta: presentacion.opciones_venta,
               price: botella?.precio ?? presentacion.precio_venta,
               commission: botella?.comision ?? presentacion.comision
@@ -369,10 +395,13 @@ export function SettingsBottleHostessCard() {
                     aria-expanded={productSelectorOpen}
                     aria-controls='botella-productos-lista'
                     disabled={saving}
-                    className='w-full justify-between rounded-full font-normal'
+                    className='h-auto min-h-12 w-full justify-between rounded-full font-normal'
                   >
-                    <span className='truncate'>
-                      {seleccionado ? etiquetaProducto(seleccionado) : 'Seleccionar producto'}
+                    <span className='flex min-w-0 items-center gap-2'>
+                      {seleccionado && <ProductSelectorPhoto foto={seleccionado.foto} />}
+                      <span className='truncate'>
+                        {seleccionado ? etiquetaProducto(seleccionado) : 'Seleccionar producto'}
+                      </span>
                     </span>
                     <ChevronsUpDown className='opacity-50' />
                   </Button>
@@ -406,7 +435,8 @@ export function SettingsBottleHostessCard() {
                                 selectedId === String(p.id) ? 'opacity-100' : 'opacity-0'
                               )}
                             />
-                            <span>{etiquetaProducto(p)}</span>
+                            <ProductSelectorPhoto foto={p.foto} />
+                            <span className='min-w-0 break-words'>{etiquetaProducto(p)}</span>
                           </CommandItem>
                         ))}
                       </CommandGroup>
