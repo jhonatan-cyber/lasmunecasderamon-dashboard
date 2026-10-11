@@ -100,6 +100,19 @@ export async function runIdempotent(
   });
 
   if (!claimed && operation) {
+    if (
+      operation.endpoint !== config.endpoint ||
+      String(operation.usuario_id ?? '') !== String(config.usuarioId ?? '')
+    ) {
+      return NextResponse.json(
+        {
+          success: false,
+          code: 'IDEMPOTENCY_OWNER_MISMATCH',
+          message: 'La clave pertenece a otra operación.'
+        },
+        { status: 409 }
+      );
+    }
     logger.info('[idempotency] reintento: se replica la respuesta guardada', {
       key,
       endpoint: config.endpoint,

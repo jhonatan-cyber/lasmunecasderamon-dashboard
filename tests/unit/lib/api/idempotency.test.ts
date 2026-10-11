@@ -73,6 +73,24 @@ const filaAplicada = (body: unknown, status = 201) => ({
   aplicado_en: '2026-09-28 10:00:01'
 });
 
+it('no replica la respuesta de otra persona ni de otro endpoint', async () => {
+  for (const operation of [
+    { ...filaAplicada({ datos: 'privados' }), usuario_id: 'otro' },
+    { ...filaAplicada({ datos: 'privados' }), endpoint: 'sales.create' }
+  ]) {
+    repo.claim.mockResolvedValueOnce({ claimed: false, operation });
+    const handler = vi.fn();
+    const response = await runIdempotent(
+      buildRequest(CLAVE),
+      { endpoint: 'orders.create' },
+      handler
+    );
+    expect(response.status).toBe(409);
+    expect(await response.json()).toMatchObject({ code: 'IDEMPOTENCY_OWNER_MISMATCH' });
+    expect(handler).not.toHaveBeenCalled();
+  }
+});
+
 describe('claves de idempotencia', () => {
   it('debe aceptar claves opacas entre 8 y 64 caracteres', () => {
     expect(isValidIdempotencyKey('abc12345')).toBe(true);
