@@ -98,13 +98,13 @@ describe('registro de claves de configuración', () => {
         'split_tarjeta_venta debe ser un número entero positivo'
       );
       expect(validarConfig('shot_ml', '0')).toBe(
-        'shot_ml debe ser un número entero entre 1 y 1000 (ml por shot)'
+        'shot_ml debe ser un número entero entre 1 y 1000 (ml por corto)'
       );
       expect(validarConfig('botella_ml', '10001')).toBe(
         'botella_ml debe ser un número entero entre 1 y 10000 (ml por botella)'
       );
       expect(validarConfig('shots_alerta', '51')).toBe(
-        'shots_alerta debe ser un número entero entre 1 y 50 (shots restantes)'
+        'shots_alerta debe ser un número entero entre 1 y 50 (cortos restantes)'
       );
       expect(validarConfig('admin_whatsapp', 'no-es-un-numero')).toBe(
         'admin_whatsapp debe ser un número válido (ej: 59172419112)'

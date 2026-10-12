@@ -231,11 +231,11 @@ describe('StatsQueries.getLoggedUsers', () => {
         { id_rol: 3, nombre: 'cajero' }
       ])
       .mockResolvedValueOnce([
-        { id_usuario: 'a1', estado: 1, rol_id: 1 },
+        { id_usuario: 'a1', estado: 1, rol_id: 1, logueado_en_local: 1 },
         { id_usuario: 'a2', estado: 0, rol_id: 1 },
-        { id_usuario: 'g1', estado: 1, rol_id: 2 },
-        { id_usuario: 'c1', estado: 1, rol_id: 3 },
-        { id_usuario: 'x1', estado: 1, rol_id: 99 }
+        { id_usuario: 'g1', estado: 1, rol_id: 2, logueado_en_local: 1 },
+        { id_usuario: 'c1', estado: 1, rol_id: 3, logueado_en_local: 1 },
+        { id_usuario: 'x1', estado: 1, rol_id: 99, logueado_en_local: 1 }
       ]);
 
     const result = await StatsQueries.getLoggedUsers();
@@ -260,8 +260,8 @@ describe('StatsQueries.getLoggedUsers', () => {
         { id_rol: 4, nombre: 'Barman' }
       ])
       .mockResolvedValueOnce([
-        { id_usuario: 'c1', nick: 'Caja', estado: 1, rol_id: 3 },
-        { id_usuario: 'b1', nick: 'Bar', estado: '1', rol_id: 4 },
+        { id_usuario: 'c1', nick: 'Caja', estado: 1, rol_id: 3, logueado_en_local: 1 },
+        { id_usuario: 'b1', nick: 'Bar', estado: '1', rol_id: 4, logueado_en_local: 1 },
         { id_usuario: 'b2', nick: 'Ausente', estado: 0, rol_id: 4 }
       ]);
 

@@ -310,7 +310,7 @@ it('avisa al barman cuando una botella abierta queda bajo el umbral de shots', a
     );
     expect(avisos.length).toBeGreaterThan(0);
     expect(avisos[0].titulo).toContain('Botella por agotarse');
-    expect(avisos[0].mensaje).toContain('quedan 1 shot');
+    expect(avisos[0].mensaje).toContain('quedan 1 corto');
     expect(avisos[0].mensaje).toContain('50 ml');
   } finally {
     await restoreBarDatabase(snapshot);
