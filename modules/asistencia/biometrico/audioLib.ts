@@ -94,7 +94,13 @@ export async function reproducirAudio(
 
     talk = await net.startTalkEx(h);
     if (!talk) {
-      throw new Error(`CLIENT_StartTalkEx falló (código ${net.getLastError()})`);
+      const codigo = net.getLastError();
+      if ((codigo & 0x7fffffff) === 376) {
+        throw new Error(
+          'El canal de audio del lector está ocupado por otro cliente. Detén Talk/Intercomunicación en SmartPSS u otra conexión antes de enviar el aviso (código 376).'
+        );
+      }
+      throw new Error(`CLIENT_StartTalkEx falló (código ${codigo})`);
     }
 
     const inicio = ahora();

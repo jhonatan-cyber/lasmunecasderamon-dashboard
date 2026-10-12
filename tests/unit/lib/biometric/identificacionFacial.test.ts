@@ -198,7 +198,9 @@ describe('identificarRecord', () => {
 
     expect(estado).toBe('identificado');
     expect(resultadoDe(actualizaciones)?.params?.[0]).toBe(USUARIO_A);
-    expect(atribucion.fn).toHaveBeenCalledWith(USUARIO_A, RECORD, DISPOSITIVO, expect.any(Date));
+    expect(atribucion.fn).toHaveBeenCalledWith(USUARIO_A, RECORD, DISPOSITIVO, expect.any(Date), {
+      avisarDuplicado: false
+    });
   });
 
   it('graba usuario, similitud y estado en el record', async () => {

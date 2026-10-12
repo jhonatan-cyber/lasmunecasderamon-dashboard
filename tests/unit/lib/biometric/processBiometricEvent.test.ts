@@ -87,6 +87,16 @@ beforeEach(() => {
 });
 
 describe('resolucion del codigo del equipo', () => {
+  it('espera la identificación facial antes de anunciar usuario no registrado', async () => {
+    usuarios = [];
+    const resultado = await procesarEventoBiometrico(
+      evento({ codigo: '', metodo: 'cara', recordId: 'record-face' }),
+      device
+    );
+    expect(resultado.resultado).toBe('sin_usuario');
+    expect(avisos.resultado).not.toHaveBeenCalled();
+    expect(sqls().some(sql => sql.includes('INSERT INTO asistencias'))).toBe(false);
+  });
   it('registra la asistencia y difunde el evento al kiosko', async () => {
     const resultado = await procesarEventoBiometrico(evento(), device);
 
@@ -273,15 +283,30 @@ describe('atribución por identificación facial', () => {
     expect(avisos.resultado).toHaveBeenCalledWith('dev-1', 'registrado');
   });
 
-  it('si ya marcó hoy no duplica ni vuelve a avisar', async () => {
+  it('si ya marcó hoy avisa por audio y SSE sin duplicar la asistencia', async () => {
     existentes = [{ id_asistencia: 'asis-1' }];
 
     const resultado = await atribuirAsistenciaIdentificada('u-1', 'record-7', 'dev-1', new Date());
 
     expect(resultado).toBe('duplicado');
     expect(sqls().some(sql => sql.includes('INSERT INTO asistencias'))).toBe(false);
+    expect(sse.enviar).toHaveBeenCalledWith('attendance_duplicate', {
+      user: { id: 'u-1', nombre: 'Ana', apellido: 'Perez' },
+      origen: 'biometrico'
+    });
+    expect(avisos.resultado).toHaveBeenCalledWith('dev-1', 'duplicado');
+  });
+
+  it('no repite el aviso facial si el evento por código ya lo emitió', async () => {
+    existentes = [{ id_asistencia: 'asis-1' }];
+    expect(
+      await atribuirAsistenciaIdentificada('u-1', 'record-7', 'dev-1', new Date(), {
+        avisarDuplicado: false
+      })
+    ).toBe('duplicado');
     expect(sse.enviar).not.toHaveBeenCalled();
     expect(avisos.resultado).not.toHaveBeenCalled();
+    expect(sqls().some(sql => sql.includes('INSERT INTO asistencias'))).toBe(false);
   });
 
   it('fuera de la ventana no acredita (el evento por código ya avisó)', async () => {

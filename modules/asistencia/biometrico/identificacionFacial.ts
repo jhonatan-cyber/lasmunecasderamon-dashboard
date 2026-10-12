@@ -282,7 +282,8 @@ export async function identificarRecord(
         mejor.usuarioId,
         recordId,
         dispositivoId,
-        record.fecha_dispositivo
+        record.fecha_dispositivo,
+        { avisarDuplicado: reclamado !== mejor.usuarioId }
       );
       if (atribucion === 'registrado') {
         logger.info('[biometric-ident] Asistencia acreditada por la cara', {

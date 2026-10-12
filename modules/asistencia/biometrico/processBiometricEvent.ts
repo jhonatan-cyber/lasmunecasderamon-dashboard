@@ -24,7 +24,10 @@ export async function procesarEventoBiometrico(
       serial: device.serial,
       codigo: evento.codigo
     });
-    void avisarResultadoEnEquipo(device.id, 'sin_usuario');
+    // El código vacío/desconocido de una captura todavía puede identificarse por su foto.
+    if (evento.metodo !== 'cara' && !evento.recordId) {
+      void avisarResultadoEnEquipo(device.id, 'sin_usuario');
+    }
     return { resultado: 'sin_usuario' };
   }
 
@@ -101,14 +104,15 @@ async function difundirAsistencia(
  * La identificación facial (1:N del servidor) confirmó quién salió en la foto
  * del record: si todavía no marcó hoy y estamos en ventana, crea la asistencia
  * con el record como respaldo — así quien entra sin código también queda.
- * Los negativos y duplicados son silenciosos (el evento por código ya avisó en
- * la puerta) y los records históricos del barrido solo auditan: no acreditan.
+ * Los duplicados avisan salvo que el evento por código ya haya notificado.
+ * Los records históricos del barrido solo auditan: no acreditan.
  */
 export async function atribuirAsistenciaIdentificada(
   usuarioId: string,
   recordId: string,
   deviceId: string,
-  fechaDispositivo: Date | string | null
+  fechaDispositivo: Date | string | null,
+  opciones: { avisarDuplicado?: boolean } = {}
 ): Promise<'registrado' | 'duplicado' | 'fuera_ventana' | 'fuera_de_alcance' | 'ignorado'> {
   const instante = fechaDispositivo ? new Date(fechaDispositivo).getTime() : NaN;
   if (!Number.isFinite(instante) || Date.now() - instante > 3 * 3_600_000) {
@@ -130,7 +134,14 @@ export async function atribuirAsistenciaIdentificada(
     'SELECT id_asistencia FROM asistencias WHERE usuario_id = ? AND fecha = ?',
     [usuario.id_usuario, fecha]
   );
-  if (yaMarcada.length > 0) return 'duplicado';
+  if (yaMarcada.length > 0) {
+    await marcarEnLocal(usuario.id_usuario);
+    if (opciones.avisarDuplicado !== false) {
+      await difundirAsistencia('attendance_duplicate', usuario);
+      void avisarResultadoEnEquipo(deviceId, 'duplicado');
+    }
+    return 'duplicado';
+  }
 
   const { startHour, endHour } = await getAttendanceConfigHours();
   if (isNaN(hora) || hora < startHour || hora >= endHour) return 'fuera_ventana';
