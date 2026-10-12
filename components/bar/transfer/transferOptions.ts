@@ -43,6 +43,24 @@ export function parseSavedOptions(raw: unknown): SaleOption[] | undefined {
         if (option.tipo === 'shot' && Number.isFinite(anfitriona) && anfitriona > 0) {
           option.precio_anfitriona = anfitriona;
         }
+        if (option.tipo === 'shot' && Array.isArray(o.precios_anfitriona)) {
+          option.precios_anfitriona = o.precios_anfitriona.map((row: any) => ({
+            precio: Number(row.precio),
+            comision: Number(row.comision ?? 0)
+          }));
+        }
+        if (
+          option.tipo === 'botella' &&
+          ['gaseosa', 'soda'].includes(o.acompanamiento?.tipo) &&
+          Number.isInteger(Number(o.acompanamiento.unidades)) &&
+          Number(o.acompanamiento.unidades) > 0 &&
+          Number(o.acompanamiento.unidades) <= 1000
+        ) {
+          option.acompanamiento = {
+            tipo: o.acompanamiento.tipo,
+            unidades: Number(o.acompanamiento.unidades)
+          };
+        }
         return option;
       });
     return options.length > 0 ? options : undefined;

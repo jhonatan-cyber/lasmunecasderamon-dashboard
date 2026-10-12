@@ -1,3 +1,4 @@
+import { saleInventoryFields, type SaleInventoryFields } from '@/lib/sales/saleInventoryFields';
 import { query, generateUUID, withTransaction, type TransactionQuery } from '@/lib/database/db';
 import {
   OrderSchema,
@@ -104,17 +105,19 @@ export class OrderRepository {
       } = data;
 
       // Los identificadores de anfitrionas son UUID; conservarlos como strings.
-      let detalles: Array<{
-        productoId: string;
-        precio: number;
-        comision: number;
-        generaComision: number;
-        cantidad: number;
-        subtotal: number;
-        hostessId: string | null;
-        roomId: string | null;
-        selectedHostesses: string[];
-      }> = rawDetalles.map(d => ({
+      let detalles: Array<
+        SaleInventoryFields & {
+          productoId: string;
+          precio: number;
+          comision: number;
+          generaComision: number;
+          cantidad: number;
+          subtotal: number;
+          hostessId: string | null;
+          roomId: string | null;
+          selectedHostesses: string[];
+        }
+      > = rawDetalles.map(d => ({
         ...d,
         hostessId: d.hostessId ?? null,
         roomId: d.roomId ?? null,
@@ -187,6 +190,7 @@ export class OrderRepository {
             id_detalle_pedido: detallePedidoId,
             pedido_id: pedidoId,
             producto_id: d.productoId,
+            configuracion_venta: d.presentacion_id ? JSON.stringify(saleInventoryFields(d)) : null,
             precio: d.precio,
             comision: d.comision,
             genera_comision: d.generaComision,
@@ -308,7 +312,7 @@ export class OrderRepository {
          FROM pedidos_usuarios PU
          INNER JOIN usuarios U2 ON U2.id_usuario = PU.usuario_id
          WHERE PU.pedido_id = P.id_pedido) AS "anfitrionaIds",
-        DP.producto_id, DP.precio, DP.cantidad, DP.comision, DP.subtotal AS subtotal_detalle,
+        DP.configuracion_venta, DP.producto_id, DP.precio, DP.cantidad, DP.comision, DP.subtotal AS subtotal_detalle,
         DP.genera_comision, PROD.nombre AS producto_nombre, C.nombre AS categoria, DP.hostess_id, DP.habitacion_id,
         (SELECT STRING_AGG(DPA.anfitriona_id, ',') FROM detalle_pedidos_anfitrionas DPA
          WHERE DPA.detalle_pedido_id = DP.id_detalle_pedido) AS anfitrionas_asignadas_ids

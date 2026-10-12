@@ -24,6 +24,10 @@ import {
 import { isChampagneProduct } from '@/components/orders/productModalRules';
 import { SettingsChampagneTiers, type SettingsTiersHandle } from './SettingsChampagneTiers';
 import { formatCurrencyCLP } from '@/lib/utils/formatters';
+import {
+  SettingsSaleOptionsEditor,
+  type SettingsSaleOptionsHandle
+} from './SettingsSaleOptionsEditor';
 import type { SaleOption } from '@/types/sale-options';
 
 type PresentacionComisiones = {
@@ -34,6 +38,8 @@ type PresentacionComisiones = {
   precio_venta: number;
   comision: number;
   opciones_venta: SaleOption[];
+  ml_shot?: number | null;
+  ml_shot_anfitriona?: number | null;
 };
 
 const MIN_ANFITRIONAS = 1;
@@ -76,9 +82,9 @@ export function SettingsBottleHostessCard() {
   const [precioEdit, setPrecioEdit] = useState<string | null>(null);
   const [comisionEdit, setComisionEdit] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
+  const saleOptionsRef = useRef<SettingsSaleOptionsHandle>(null);
   const tiersRef = useRef<SettingsTiersHandle>(null);
-  // Productos del bar que se venden por botella (no importa si también tienen
-  // shot): son los únicos donde aplica el máximo por botella.
+  // Presentaciones del bar, incluidas las que solo se venden por corto.
   const [presentaciones, setPresentaciones] = useState<PresentacionComisiones[] | null>(null);
   const [barError, setBarError] = useState(false);
   const [barNonce, setBarNonce] = useState(0);
@@ -110,8 +116,8 @@ export function SettingsBottleHostessCard() {
               opciones = [];
             }
           }
-          // Sin opciones configuradas la botella es la venta por defecto.
-          if (opciones.length === 0 || opciones.some(o => o?.tipo === 'botella')) {
+          // Incluye también las presentaciones que solo ofrecen cortos.
+          {
             disponibles.push({
               id: String(row.id),
               producto_id: pid,
@@ -119,6 +125,8 @@ export function SettingsBottleHostessCard() {
               foto: row.foto ? String(row.foto) : null,
               precio_venta: Number(row.precio_venta ?? 0),
               comision: Number(row.comision ?? 0),
+              ml_shot: row.ml_shot,
+              ml_shot_anfitriona: row.ml_shot_anfitriona,
               opciones_venta: opciones
             });
           }
@@ -148,6 +156,8 @@ export function SettingsBottleHostessCard() {
               presentacion: presentacion.nombre,
               foto: presentacion.foto || producto.foto,
               opciones_venta: presentacion.opciones_venta,
+              ml_shot: presentacion.ml_shot,
+              ml_shot_anfitriona: presentacion.ml_shot_anfitriona,
               price: botella?.precio ?? presentacion.precio_venta,
               commission: botella?.comision ?? presentacion.comision
             }
@@ -268,6 +278,8 @@ export function SettingsBottleHostessCard() {
       return;
     }
     try {
+      const config = saleOptionsRef.current?.getConfig();
+      if (!config) throw new Error('Espera a que se cargue la configuración');
       setSaving(true);
       const tiers =
         maximoValor !== null && maximoValor >= 2 ? tiersRef.current?.getTiers() : undefined;
@@ -279,12 +291,8 @@ export function SettingsBottleHostessCard() {
         body: JSON.stringify({
           id: selectedId,
           precio_venta: precioValor,
-          comision: comisionValor,
-          opciones_venta: seleccionado.opciones_venta.length
-            ? seleccionado.opciones_venta.map(o =>
-                o.tipo === 'botella' ? { ...o, precio: precioValor, comision: comisionValor } : o
-              )
-            : [{ tipo: 'botella', precio: precioValor, comision: comisionValor }]
+          comision: config.opciones_venta.find(o => o.tipo === 'botella')?.comision ?? 0,
+          opciones_venta: config.opciones_venta
         })
       });
       const result = await res.json().catch(() => ({}));
@@ -301,11 +309,20 @@ export function SettingsBottleHostessCard() {
             'Precio y comisión guardados; no se pudo guardar la tabla por anfitrionas'
           );
       }
-      if (maximoValor !== vigente) {
+      if (
+        maximoValor !== vigente ||
+        (config.ml_shot !== undefined &&
+          (config.ml_shot !== (seleccionado.ml_shot ?? null) ||
+            config.ml_shot_anfitriona !== (seleccionado.ml_shot_anfitriona ?? null)))
+      ) {
         const maxRes = await fetch(`/api/products/${seleccionado.producto_id}`, {
           method: 'PUT',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ max_anfitrionas: maximoValor })
+          body: JSON.stringify({
+            max_anfitrionas: maximoValor,
+            ml_shot: config.ml_shot,
+            ml_shot_anfitriona: config.ml_shot_anfitriona
+          })
         });
         const maxResult = await maxRes.json();
         if (!maxRes.ok || !maxResult.success) {
@@ -338,9 +355,10 @@ export function SettingsBottleHostessCard() {
           Precios y comisiones por producto
         </CardTitle>
         <CardDescription className='text-neutral-500 dark:text-neutral-400'>
-          Elegí una presentación para editar su precio y comisión por botella. El máximo de
-          anfitrionas y la tabla de champagne se comparten entre las presentaciones del producto.
-          Máximo vacío = regla por defecto.
+          Configura los tipos de venta, precios de botella y cortos, comisiones de anfitrionas, ml
+          por corto y gaseosas o sodas incluidas por botella. El máximo de anfitrionas, los ml y la
+          tabla de precios se comparten entre las presentaciones del producto. Máximo vacío = regla
+          por defecto.
         </CardDescription>
       </CardHeader>
       <CardContent>
@@ -374,7 +392,7 @@ export function SettingsBottleHostessCard() {
           </div>
         ) : productos.length === 0 ? (
           <p className='text-center py-8 text-neutral-400 text-sm'>
-            No hay productos del bar que se vendan por botella.
+            No hay presentaciones del bar para configurar.
           </p>
         ) : (
           <div className='space-y-6'>
@@ -445,39 +463,21 @@ export function SettingsBottleHostessCard() {
                 </PopoverContent>
               </Popover>
             </div>
-            <div className='grid grid-cols-1 sm:grid-cols-3 gap-4'>
-              <div className='space-y-1'>
-                <label
-                  htmlFor='botella-precio'
-                  className='block text-xs font-bold uppercase tracking-wider text-neutral-500 ml-1'
-                >
-                  Precio venta
-                </label>
-                <input
-                  id='botella-precio'
-                  inputMode='numeric'
-                  value={precio}
-                  onChange={e => setPrecioEdit(formatMiles(e.target.value))}
-                  placeholder='0'
-                  className='w-full px-4 py-2.5 text-right bg-white dark:bg-neutral-950 border border-neutral-300 dark:border-neutral-800 rounded-full text-sm'
-                />
-              </div>
-              <div className='space-y-1'>
-                <label
-                  htmlFor='botella-comision'
-                  className='block text-xs font-bold uppercase tracking-wider text-neutral-500 ml-1'
-                >
-                  Comisión
-                </label>
-                <input
-                  id='botella-comision'
-                  inputMode='numeric'
-                  value={comision}
-                  onChange={e => setComisionEdit(formatMiles(e.target.value))}
-                  placeholder='0'
-                  className='w-full px-4 py-2.5 text-right bg-white dark:bg-neutral-950 border border-neutral-300 dark:border-neutral-800 rounded-full text-sm'
-                />
-              </div>
+            {seleccionado && (
+              <SettingsSaleOptionsEditor
+                key={`${selectedId}:${barNonce}`}
+                ref={saleOptionsRef}
+                options={seleccionado.opciones_venta}
+                precio={precio}
+                comision={comision}
+                mlCliente={seleccionado.ml_shot}
+                mlAnfitriona={seleccionado.ml_shot_anfitriona}
+                onPrecio={setPrecioEdit}
+                onComision={setComisionEdit}
+                saving={saving}
+              />
+            )}
+            <div>
               <div className='space-y-1'>
                 <label
                   htmlFor='botella-max'

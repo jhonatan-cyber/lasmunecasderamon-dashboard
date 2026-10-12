@@ -11,11 +11,15 @@ vi.mock('@/modules/auditoria/alertas/servicio', () => ({
 import db, { query } from '@/lib/database/db';
 import { snapshotDatabase, restoreDatabase } from '@/lib/database/maintenance';
 import { SaleService } from '@/workflows/ventas';
+import { OrderService, AccountService } from '@/modules/operacion';
+import { saleInventoryFields } from '@/lib/sales/saleInventoryFields';
+import { buildCuentaSalePayload } from '@/lib/business/cuentaSale';
 import {
   ESTADO_UNIDAD_ACTIVA,
   ESTADO_UNIDAD_VENDIDA,
   listarStockBar,
-  obtenerResumenShots
+  obtenerResumenShots,
+  revertirStockAnulacion
 } from '@/modules/inventario';
 
 afterAll(async () => {
@@ -341,3 +345,148 @@ it('rechaza la venta por shot sin botellas en el bar y no registra la venta', as
     await restoreBarDatabase(snapshot);
   }
 });
+
+it('consume la soda incluida por ml, reutiliza la botella y revierte la venta sin stock', async () => {
+  const snapshot = await snapshotBarDatabase();
+  try {
+    await abrirCajaSiHaceFalta();
+    await fijarShotMl(50);
+    const licor = await crearBar(750, 1);
+    const soda = await crearBar(500, 1);
+    const vender = (codigo: string, cantidad: number) =>
+      SaleService.createSale(
+        {
+          codigo,
+          total: 3000 * cantidad,
+          sub_total: 3000 * cantidad,
+          metodo_pago: 'efectivo',
+          detalles: [
+            {
+              producto_id: licor.productoId,
+              presentacion_id: licor.presentacionId,
+              tipo_venta: 'shot',
+              precio: 3000,
+              cantidad,
+              acompanamiento_corto: { presentacion_id: soda.presentacionId, ml_por_corto: 100 }
+            }
+          ]
+        },
+        licor.usuarioId
+      );
+    await vender('PGMIX-1', 2);
+    expect(Number((await unidadesDe(soda.presentacionId))[0].ml_restante)).toBe(300);
+    expect(Number((await unidadesDe(licor.presentacionId))[0].ml_restante)).toBe(650);
+    await vender('PGMIX-2', 1);
+    expect(Number((await unidadesDe(soda.presentacionId))[0].ml_restante)).toBe(200);
+    expect(Number((await unidadesDe(licor.presentacionId))[0].ml_restante)).toBe(600);
+    const movimientos = await query(
+      'SELECT m.ml, m.precio_venta, v.total FROM inventario_movimientos m JOIN ventas v ON v.id_venta = m.venta_id WHERE m.presentacion_id = ? AND v.codigo = ?',
+      [soda.presentacionId, 'PGMIX-1']
+    );
+    expect(Number(movimientos[0].ml)).toBe(200);
+    expect(Number(movimientos[0].total)).toBe(6000);
+    expect(Number(movimientos[0].precio_venta)).toBe(0);
+    await expect(vender('PGMIX-FAIL', 3)).rejects.toMatchObject({
+      code: 'INSUFFICIENT_BAR_STOCK',
+      details: expect.objectContaining({ presentacion_id: soda.presentacionId, ml_requeridos: 300 })
+    });
+    expect(Number((await unidadesDe(licor.presentacionId))[0].ml_restante)).toBe(600);
+    expect(Number((await unidadesDe(soda.presentacionId))[0].ml_restante)).toBe(200);
+    expect(
+      await query('SELECT id_venta FROM ventas WHERE codigo = ?', ['PGMIX-FAIL'])
+    ).toHaveLength(0);
+    await vender('PGMIX-EMPTY', 2);
+    expect((await unidadesDe(soda.presentacionId))[0].estado).toBe(ESTADO_UNIDAD_VENDIDA);
+    const [venta] = await query('SELECT id_venta FROM ventas WHERE codigo = ?', ['PGMIX-EMPTY']);
+    await revertirStockAnulacion({
+      venta_id: venta.id_venta,
+      fraccion: 1,
+      usuario_id: licor.usuarioId,
+      fecha: new Date().toISOString()
+    });
+    expect(Number((await unidadesDe(soda.presentacionId))[0].ml_restante)).toBe(200);
+    expect(Number((await unidadesDe(licor.presentacionId))[0].ml_restante)).toBe(600);
+  } finally {
+    await restoreBarDatabase(snapshot);
+  }
+});
+
+it.each(['directo', 'cuenta'])(
+  'conserva el corto y su soda al cobrar un pedido por %s',
+  async via => {
+    const snapshot = await snapshotBarDatabase();
+    try {
+      await abrirCajaSiHaceFalta();
+      await fijarShotMl(50);
+      const licor = await crearBar(750, 1);
+      const soda = await crearBar(500, 1);
+      const fields = {
+        presentacion_id: licor.presentacionId,
+        tipo_venta: 'shot' as const,
+        shot_anfitriona: false,
+        acompanamiento_corto: {
+          presentacion_id: soda.presentacionId,
+          ml_por_corto: 100,
+          nombre: 'Soda'
+        }
+      };
+      const pedido = await OrderService.create({
+        codigo: `PGORDER-${via}`,
+        meseroId: licor.usuarioId,
+        subtotal: 6000,
+        total: 6000,
+        detalles: [
+          { ...fields, productoId: licor.productoId, precio: 3000, cantidad: 2, subtotal: 6000 }
+        ]
+      });
+      const [detail] = await OrderService.getDetail(pedido.id);
+      expect(saleInventoryFields(detail)).toMatchObject(fields);
+      expect((await unidadesDe(soda.presentacionId))[0].ml_restante).toBeNull();
+      const saleDetail = {
+        ...saleInventoryFields(detail),
+        producto_id: detail.producto_id,
+        precio: Number(detail.precio),
+        cantidad: Number(detail.cantidad),
+        sub_total: 6000,
+        comision: 0
+      };
+      if (via === 'directo') {
+        await SaleService.createSale(
+          {
+            codigo: 'PGORDER-DIRECT',
+            pedido_id: pedido.id,
+            total: 6000,
+            sub_total: 6000,
+            detalles: [saleDetail]
+          },
+          licor.usuarioId
+        );
+      } else {
+        const cuenta = await AccountService.create(
+          {
+            codigo: 'PGORDER-CUENTA',
+            total: 6000,
+            sub_total: 6000,
+            total_comision: 0,
+            detalles: [saleDetail]
+          },
+          licor.usuarioId
+        );
+        expect(cuenta).not.toBeNull();
+        const loaded = cuenta!;
+        const payload = buildCuentaSalePayload({
+          cuenta: loaded,
+          cobro: { montoFinal: 6000, propinaFinal: 0, metodoPago: 'efectivo' },
+          detalles: loaded.detalles!,
+          usuarios: []
+        });
+        expect(payload.detalles[0]).toMatchObject(fields);
+        await SaleService.createSale(payload, licor.usuarioId);
+      }
+      expect(Number((await unidadesDe(licor.presentacionId))[0].ml_restante)).toBe(650);
+      expect(Number((await unidadesDe(soda.presentacionId))[0].ml_restante)).toBe(300);
+    } finally {
+      await restoreBarDatabase(snapshot);
+    }
+  }
+);

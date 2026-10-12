@@ -200,7 +200,8 @@ export async function registrarVenta(
           ? requestedHostesses.filter((id: string) => validatedHostessSet.has(id))
           : [];
 
-      const totalComm = Math.round(d.comision || 0);
+      const totalComm =
+        d.tipo_venta === 'shot' && !d.shot_anfitriona ? 0 : Math.round(d.comision || 0);
       const totalQty = Math.max(1, Number(d.cantidad || 1));
       const isChampagne = Boolean(d.isChampagne);
       const effectiveHostesses =

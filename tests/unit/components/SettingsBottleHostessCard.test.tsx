@@ -53,7 +53,13 @@ beforeEach(() => {
               comision: 4000,
               opciones_venta: [
                 { tipo: 'botella', precio: 20000, comision: 4000 },
-                { tipo: 'shot', precio: 2500, comision: 0, precio_anfitriona: 3000 }
+                {
+                  tipo: 'shot',
+                  precio: 2500,
+                  comision: 0,
+                  precio_anfitriona: 3000,
+                  precios_anfitriona: [{ precio: 3000, comision: 0 }]
+                }
               ]
             },
             {
@@ -92,11 +98,11 @@ describe('comisiones por presentación', () => {
     const botella750 = screen.getByRole('button', { name: /Vodka Absolut 750ml/ });
     expect(botella750).toHaveTextContent('20.000');
     fireEvent.click(botella750);
-    expect(screen.getByLabelText('Precio venta')).toHaveValue('20.000');
-    expect(screen.getByLabelText('Comisión')).toHaveValue('4.000');
+    expect(screen.getByLabelText('Precio por botella')).toHaveValue('20.000');
+    expect(screen.getByLabelText('Comisión (opcional)')).toHaveValue('4.000');
     fireEvent.click(screen.getByRole('button', { name: /Vodka Absolut 1000ml/ }));
-    expect(screen.getByLabelText('Precio venta')).toHaveValue('30.000');
-    expect(screen.getByLabelText('Comisión')).toHaveValue('6.000');
+    expect(screen.getByLabelText('Precio por botella')).toHaveValue('30.000');
+    expect(screen.getByLabelText('Comisión (opcional)')).toHaveValue('6.000');
     await screen.findByLabelText('Precio para 2 anfitrionas');
   });
 
@@ -108,7 +114,7 @@ describe('comisiones por presentación', () => {
     fireEvent.change(screen.getByLabelText('Precio para 2 anfitrionas'), {
       target: { value: '35000' }
     });
-    fireEvent.change(screen.getByLabelText('Precio venta'), { target: { value: '22000' } });
+    fireEvent.change(screen.getByLabelText('Precio por botella'), { target: { value: '22000' } });
     fireEvent.click(screen.getByRole('button', { name: 'Guardar Cambios' }));
     await waitFor(() =>
       expect(fetchMock).toHaveBeenCalledWith(
@@ -125,7 +131,13 @@ describe('comisiones por presentación', () => {
       comision: 4000,
       opciones_venta: [
         { tipo: 'botella', precio: 22000, comision: 4000 },
-        { tipo: 'shot', precio: 2500, comision: 0, precio_anfitriona: 3000 }
+        {
+          tipo: 'shot',
+          precio: 2500,
+          comision: 0,
+          precio_anfitriona: 3000,
+          precios_anfitriona: [{ precio: 3000, comision: 0 }]
+        }
       ]
     });
     expect(fetchMock.mock.calls.some(([url]) => url === '/api/products/producto')).toBe(false);

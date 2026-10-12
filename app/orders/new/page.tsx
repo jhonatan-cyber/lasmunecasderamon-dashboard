@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useMemo } from 'react';
+import { ShotMixerSelection } from '@/components/sales/new/ShotMixerSelection';
 import { useRouter } from 'next/navigation';
 import { Button } from '@/components/ui/button';
 import { ArrowLeft } from 'lucide-react';
@@ -15,7 +16,12 @@ export default function NewOrder() {
   const [selectedCliente, setSelectedCliente] = useState('');
   const [selectedAnfitrionas, setSelectedAnfitrionas] = useState<string[]>([]);
   const [productos, setProductos] = useState<any[]>([]);
-  const { clients: clientes, anfitrionas, categories, refreshAll } = useMasterData({
+  const {
+    clients: clientes,
+    anfitrionas,
+    categories,
+    refreshAll
+  } = useMasterData({
     soloAnfitrionasEnLocal: true,
     categoriasConStockBar: true
   });
@@ -152,6 +158,9 @@ export default function NewOrder() {
               searchAnfitriona={searchAnfitriona}
               setSearchAnfitriona={setSearchAnfitriona}
             />
+            {productos.some(p => p.tipo_venta === 'shot') && (
+              <ShotMixerSelection productos={productos} setProductos={setProductos} />
+            )}
           </TabsContent>
 
           <TabsContent value='servicios' className='space-y-6'>

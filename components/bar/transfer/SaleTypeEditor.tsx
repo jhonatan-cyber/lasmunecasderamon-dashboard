@@ -15,6 +15,11 @@ import type { SaleType } from '@/types/sale-options';
  * precio y comisión por tipo, ml por shot y la tabla champagne editable.
  */
 export const SaleTypeEditor = memo(function SaleTypeEditor({
+  context = 'transfer',
+  acompanamientoBotella,
+  unidadesAcompanamiento,
+  onAcompanamientoBotellaChange,
+  onUnidadesAcompanamientoChange,
   tipos,
   etiquetaShot,
   precioVenta,
@@ -22,6 +27,8 @@ export const SaleTypeEditor = memo(function SaleTypeEditor({
   precioShot,
   precioShotAnfitriona,
   comisionShot,
+  preciosAnfitrionaExtra,
+  onPreciosAnfitrionaExtraChange,
   shotMl,
   mlShotCliente,
   mlShotAnfitriona,
@@ -39,6 +46,11 @@ export const SaleTypeEditor = memo(function SaleTypeEditor({
   onTierChange,
   onUseSavedConfig
 }: {
+  context?: 'transfer' | 'settings';
+  acompanamientoBotella: 'ninguno' | 'gaseosa' | 'soda';
+  unidadesAcompanamiento: string;
+  onAcompanamientoBotellaChange: (value: 'ninguno' | 'gaseosa' | 'soda') => void;
+  onUnidadesAcompanamientoChange: (value: string) => void;
   tipos: SaleType[];
   etiquetaShot: string;
   precioVenta: string;
@@ -46,6 +58,8 @@ export const SaleTypeEditor = memo(function SaleTypeEditor({
   precioShot: string;
   precioShotAnfitriona: string;
   comisionShot: string;
+  preciosAnfitrionaExtra: { precio: string; comision: string }[];
+  onPreciosAnfitrionaExtraChange: (rows: { precio: string; comision: string }[]) => void;
   shotMl: number;
   mlShotCliente: string;
   mlShotAnfitriona: string;
@@ -107,9 +121,50 @@ export const SaleTypeEditor = memo(function SaleTypeEditor({
               {tipo === 'botella' ? 'Botella' : etiquetaShot}
             </legend>
             <div className='grid grid-cols-2 items-end gap-3'>
+              {tipo === 'botella' && (
+                <>
+                  <div className='flex flex-col gap-2'>
+                    <label htmlFor='bottle-mixer'>Acompañamiento de la botella</label>
+                    <select
+                      id='bottle-mixer'
+                      className='h-10 rounded-md border bg-background px-3 text-sm'
+                      disabled={saving}
+                      value={acompanamientoBotella}
+                      onChange={event =>
+                        onAcompanamientoBotellaChange(
+                          event.target.value as 'ninguno' | 'gaseosa' | 'soda'
+                        )
+                      }
+                    >
+                      <option value='ninguno'>Sin acompañamiento</option>
+                      <option value='gaseosa'>Gaseosas</option>
+                      <option value='soda'>Sodas</option>
+                    </select>
+                  </div>
+                  {acompanamientoBotella !== 'ninguno' && (
+                    <div className='flex flex-col gap-2'>
+                      <label htmlFor='bottle-mixer-units'>Unidades por botella</label>
+                      <Input
+                        id='bottle-mixer-units'
+                        required
+                        type='number'
+                        min={1}
+                        max={1000}
+                        step={1}
+                        disabled={saving}
+                        value={unidadesAcompanamiento}
+                        onChange={event => onUnidadesAcompanamientoChange(event.target.value)}
+                      />
+                    </div>
+                  )}
+                </>
+              )}
+
               <div className='flex flex-col gap-2'>
                 <label htmlFor={'price-' + tipo} className='text-sm'>
-                  {tipo === 'botella' ? 'Precio por botella' : 'Precio corto cliente'}
+                  {tipo === 'botella'
+                    ? 'Precio por botella'
+                    : 'Precio corto cliente (sin comisión)'}
                 </label>
                 <Input
                   id={'price-' + tipo}
@@ -144,7 +199,7 @@ export const SaleTypeEditor = memo(function SaleTypeEditor({
               )}
               <div className='flex flex-col gap-2'>
                 <label htmlFor={'commission-' + tipo} className='text-sm'>
-                  Comisión (opcional)
+                  {tipo === 'shot' ? 'Comisión corto anfitriona' : 'Comisión (opcional)'}
                 </label>
                 <Input
                   id={'commission-' + tipo}
@@ -159,6 +214,79 @@ export const SaleTypeEditor = memo(function SaleTypeEditor({
                   }
                 />
               </div>
+              {tipo === 'shot' && (
+                <div className='col-span-2 space-y-3'>
+                  {preciosAnfitrionaExtra.map((row, index) => (
+                    <div key={index} className='grid grid-cols-2 gap-2 rounded-lg border p-3'>
+                      <label className='text-sm'>
+                        Precio anfitriona {index + 2}
+                        <Input
+                          aria-label={`Precio anfitriona ${index + 2}`}
+                          inputMode='numeric'
+                          disabled={saving}
+                          value={row.precio}
+                          onChange={event =>
+                            onPreciosAnfitrionaExtraChange(
+                              preciosAnfitrionaExtra.map((item, i) =>
+                                i === index
+                                  ? { ...item, precio: formatNumber(event.target.value) }
+                                  : item
+                              )
+                            )
+                          }
+                        />
+                      </label>
+                      <label className='text-sm'>
+                        Comisión anfitriona {index + 2}
+                        <Input
+                          aria-label={`Comisión anfitriona ${index + 2}`}
+                          inputMode='numeric'
+                          disabled={saving}
+                          value={row.comision}
+                          onChange={event =>
+                            onPreciosAnfitrionaExtraChange(
+                              preciosAnfitrionaExtra.map((item, i) =>
+                                i === index
+                                  ? { ...item, comision: formatNumber(event.target.value) }
+                                  : item
+                              )
+                            )
+                          }
+                        />
+                      </label>
+                      <Button
+                        type='button'
+                        variant='ghost'
+                        disabled={saving}
+                        onClick={() =>
+                          onPreciosAnfitrionaExtraChange(
+                            preciosAnfitrionaExtra.filter((_, i) => i !== index)
+                          )
+                        }
+                      >
+                        Quitar precio {index + 2}
+                      </Button>
+                    </div>
+                  ))}
+                  <Button
+                    type='button'
+                    variant='outline'
+                    disabled={saving || preciosAnfitrionaExtra.length >= 19}
+                    onClick={() =>
+                      onPreciosAnfitrionaExtraChange([
+                        ...preciosAnfitrionaExtra,
+                        { precio: '', comision: '' }
+                      ])
+                    }
+                  >
+                    Agregar precio de anfitriona
+                  </Button>
+                  <p className='text-xs text-muted-foreground'>
+                    Cada precio de anfitriona tiene su propia comisión. El corto de cliente se vende
+                    sin comisión.
+                  </p>
+                </div>
+              )}
               {tipo === 'shot' && (
                 <div className='flex flex-col gap-2'>
                   <label htmlFor='transfer-ml-shot-cliente' className='text-sm'>
@@ -195,8 +323,8 @@ export const SaleTypeEditor = memo(function SaleTypeEditor({
             {tipo === 'shot' && (
               <p className='mt-2 ml-1 text-[11px] text-gray-400 dark:text-gray-500'>
                 Si dejas el precio de anfitriona vacío, se usa el precio de cliente. Los ml se
-                guardan en el producto al traspasar: en vacío, cliente usa el valor global ({shotMl}{' '}
-                ml) y anfitriona usa el de cliente.
+                guardan en el producto: en vacío, cliente usa el valor global ({shotMl} ml) y
+                anfitriona usa el de cliente.
               </p>
             )}
           </fieldset>
@@ -204,8 +332,9 @@ export const SaleTypeEditor = memo(function SaleTypeEditor({
       </fieldset>
 
       <p className='text-[11px] text-gray-400 ml-1'>
-        Se trasladan las unidades más antiguas. El precio y la comisión quedan definidos para esta
-        presentación.
+        {context === 'settings'
+          ? 'La configuración se aplica a esta presentación en ventas y pedidos; guardar no traslada unidades.'
+          : 'Se trasladan las unidades más antiguas. El precio y la comisión quedan definidos para esta presentación.'}
       </p>
 
       {esChampagne && tiers.length > 0 && (

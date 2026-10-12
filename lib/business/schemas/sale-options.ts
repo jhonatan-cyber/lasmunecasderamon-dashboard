@@ -3,13 +3,43 @@ import { z } from 'zod';
 const amount = z.number().int().min(0).max(2147483647);
 export const SaleOptionsSchema = z
   .array(
-    z.object({
-      tipo: z.enum(['botella', 'shot']),
-      precio: amount,
-      comision: amount.optional().default(0),
-      // Precio del shot para anfitrionas; ausente = mismo precio que a un cliente.
-      precio_anfitriona: amount.optional()
-    })
+    z
+      .object({
+        tipo: z.enum(['botella', 'shot']),
+        acompanamiento: z
+          .object({
+            tipo: z.enum(['gaseosa', 'soda']),
+            unidades: z.number().int().min(1).max(1000)
+          })
+          .optional(),
+        precio: amount,
+        comision: amount.optional().default(0),
+        // Precio del shot para anfitrionas; ausente = mismo precio que a un cliente.
+        precio_anfitriona: amount.optional(),
+        precios_anfitriona: z
+          .array(z.object({ precio: amount.min(1), comision: amount }))
+          .max(20)
+          .refine(
+            rows => new Set(rows.map(row => row.precio)).size === rows.length,
+            'No repitas precios de corto para anfitrionas'
+          )
+          .refine(
+            rows => rows.every(row => row.comision <= row.precio),
+            'La comisión no puede superar el precio del corto'
+          )
+          .optional()
+      })
+      .refine(
+        option => option.tipo === 'shot' || option.precios_anfitriona === undefined,
+        'Los precios de anfitriona solo corresponden a cortos'
+      )
+      .refine(
+        option => option.tipo === 'botella' || option.acompanamiento === undefined,
+        'El acompañamiento solo corresponde a botellas'
+      )
+      .transform(option =>
+        option.tipo === 'shot' && option.precios_anfitriona ? { ...option, comision: 0 } : option
+      )
   )
   .min(1, 'Selecciona al menos un tipo de venta')
   .max(2)

@@ -1,3 +1,5 @@
+import { saleInventoryFields, type SaleInventoryFields } from '@/lib/sales/saleInventoryFields';
+
 /**
  * Venta que sale del cobro de una cuenta, armada de forma pura a partir de las
  * filas de la cuenta.
@@ -47,6 +49,7 @@ export interface CuentaSaleRow {
 }
 
 export interface CuentaSaleDetalleRow {
+  configuracion_venta?: SaleInventoryFields | null;
   producto_id: string | null;
   precio: number;
   cantidad: number;
@@ -101,6 +104,7 @@ export function buildCuentaSalePayload(input: {
     total_comision: Number(cuenta.total_comision ?? 0),
     ...(cobro.deviceDate ? { device_date: cobro.deviceDate } : {}),
     detalles: detalles.map(detalle => ({
+      ...saleInventoryFields(detalle),
       producto_id: String(detalle.producto_id),
       precio: Number(detalle.precio ?? 0),
       cantidad: Number(detalle.cantidad ?? 1),

@@ -8,4 +8,6 @@ export interface SaleOption {
    * se cobra el mismo precio que a un cliente.
    */
   precio_anfitriona?: number;
+  acompanamiento?: { tipo: 'gaseosa' | 'soda'; unidades: number };
+  precios_anfitriona?: { precio: number; comision: number }[];
 }

@@ -7,6 +7,7 @@
  * mezclaban adaptación, consulta y validación. Mismo SQL y misma selección que tenían
  * las rutas; el alta y el procesamiento siguen en `AccountService`.
  */
+import { saleInventoryFields, type SaleInventoryFields } from '@/lib/sales/saleInventoryFields';
 import { generateUUID, query } from '@/lib/database/db';
 import type { ContextoOperacion } from '@/lib/transaccion/contrato';
 import { enUnaUnidad } from '@/lib/transaccion/contrato';
@@ -248,7 +249,7 @@ export async function acumularTotalesCuenta(
   );
 }
 
-export interface DetalleCuentaNuevo {
+export interface DetalleCuentaNuevo extends SaleInventoryFields {
   producto_id: string;
   precio: number;
   cantidad: number;
@@ -278,7 +279,7 @@ export async function agregarDetallesCuenta(
       const rem = tComm % selectedHostesses.length;
       for (let i = 0; i < selectedHostesses.length; i++) {
         await trx(
-          'INSERT INTO detalle_cuentas (id_detalle_cuenta, cuenta_id, producto_id, precio, cantidad, sub_total, comision, hostess_id, fecha_crea, created_by) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)',
+          'INSERT INTO detalle_cuentas (id_detalle_cuenta, cuenta_id, producto_id, precio, cantidad, sub_total, comision, hostess_id, fecha_crea, created_by, configuracion_venta) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)',
           [
             generateUUID(),
             cuentaId,
@@ -289,7 +290,8 @@ export async function agregarDetallesCuenta(
             base + (i === 0 ? rem : 0),
             selectedHostesses[i],
             nowStr,
-            createdBy
+            createdBy,
+            d.presentacion_id ? JSON.stringify(saleInventoryFields(d)) : null
           ]
         );
       }
@@ -301,7 +303,7 @@ export async function agregarDetallesCuenta(
         remQty -= qty;
         if (qty > 0 || selectedHostesses.length === 1) {
           await trx(
-            'INSERT INTO detalle_cuentas (id_detalle_cuenta, cuenta_id, producto_id, precio, cantidad, sub_total, comision, hostess_id, fecha_crea, created_by) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)',
+            'INSERT INTO detalle_cuentas (id_detalle_cuenta, cuenta_id, producto_id, precio, cantidad, sub_total, comision, hostess_id, fecha_crea, created_by, configuracion_venta) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)',
             [
               generateUUID(),
               cuentaId,
@@ -312,7 +314,8 @@ export async function agregarDetallesCuenta(
               comision,
               selectedHostesses[i],
               nowStr,
-              createdBy
+              createdBy,
+              d.presentacion_id ? JSON.stringify(saleInventoryFields(d)) : null
             ]
           );
         }

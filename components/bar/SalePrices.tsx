@@ -1,5 +1,6 @@
 'use client';
 
+import { preciosCortoAnfitriona } from '@/lib/sales/hostessShortPrices';
 import type { SaleOption } from '@/types/sale-options';
 import { formatCurrencyCLP } from '@/lib/utils/formatters';
 import { useConfig } from '@/hooks/shared/useConfigValue';
@@ -64,25 +65,31 @@ export function SalePrices({
           ) : (
             <span className='text-xs font-medium text-muted-foreground'>Corto · {shotMl} ml</span>
           )}
-          {field !== 'comision' &&
-            (option.tipo === 'shot' &&
-            Number(option.precio_anfitriona ?? 0) > 0 &&
-            Number(option.precio_anfitriona) !== Number(option.precio) ? (
-              // El shot tiene precio distinto según quién lo pida.
-              <span className='flex flex-col'>
-                <span className='font-semibold tabular-nums'>
-                  Cliente {formatCurrencyCLP(option.precio)}
+          {option.tipo === 'shot' && (
+            <span className='flex flex-col gap-1'>
+              {preciosCortoAnfitriona(option).map((row, index) => (
+                <span key={index} className='text-xs'>
+                  Anfitriona {field !== 'comision' && formatCurrencyCLP(row.precio)}{' '}
+                  {field !== 'precio' && `· Comisión ${formatCurrencyCLP(row.comision)}`}
                 </span>
-                <span className='font-semibold tabular-nums text-muted-foreground'>
-                  Anfitriona {formatCurrencyCLP(Number(option.precio_anfitriona))}
-                </span>
-              </span>
-            ) : (
-              <span className='font-semibold tabular-nums'>{formatCurrencyCLP(option.precio)}</span>
-            ))}
+              ))}
+            </span>
+          )}
+          {option.acompanamiento && (
+            <span className='text-xs text-muted-foreground'>
+              Incluye {option.acompanamiento.unidades}{' '}
+              {option.acompanamiento.tipo === 'gaseosa' ? 'gaseosas' : 'sodas'} por botella
+            </span>
+          )}
+          {field !== 'comision' && (
+            <span className='font-semibold tabular-nums'>
+              {option.tipo === 'shot' ? 'Cliente ' : ''}
+              {formatCurrencyCLP(option.precio)}
+            </span>
+          )}
           {field !== 'precio' && (
             <span className='text-xs text-muted-foreground'>
-              {option.comision > 0
+              {option.tipo !== 'shot' && option.comision > 0
                 ? `${field ? '' : 'Comisión: '}${formatCurrencyCLP(option.comision)}`
                 : 'Sin comisión'}
             </span>

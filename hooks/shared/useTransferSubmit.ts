@@ -7,6 +7,7 @@ import { isSimpleProduct } from '@/components/orders/productModalRules';
 import type { TransferForm } from '@/hooks/shared/useTransferForm';
 import type { SaleOption } from '@/types/sale-options';
 import type { BarStockItem } from '@/components/bar/transfer/transferOptions';
+import { preciosCortoAnfitriona } from '@/lib/sales/hostessShortPrices';
 
 /**
  * Envío del traspaso: valida la cantidad, (opcionalmente) reescribe los ml por
@@ -48,8 +49,12 @@ export function useTransferSubmit({
           precio: Number(option.precio ?? 0),
           comision: Number(option.comision ?? 0)
         };
+        if (option.tipo === 'botella' && option.acompanamiento)
+          reutilizada.acompanamiento = { ...option.acompanamiento };
         if (option.tipo === 'shot' && reutilizada.precio > 0) {
           reutilizada.precio_anfitriona = Number(option.precio_anfitriona ?? reutilizada.precio);
+          reutilizada.precios_anfitriona = preciosCortoAnfitriona(option);
+          reutilizada.comision = 0;
         }
         return reutilizada;
       });
@@ -62,17 +67,67 @@ export function useTransferSubmit({
           ? pvShot
           : Number(form.precioShotAnfitriona.replace(/\./g, ''));
       options = form.tipos.map(tipo => {
-        if (tipo === 'botella') return { tipo, precio: pv, comision: com };
+        if (tipo === 'botella')
+          return {
+            tipo,
+            precio: pv,
+            comision: com,
+            ...(form.acompanamientoBotella !== 'ninguno'
+              ? {
+                  acompanamiento: {
+                    tipo: form.acompanamientoBotella,
+                    unidades: Number(form.unidadesAcompanamiento)
+                  }
+                }
+              : {})
+          };
         const option: SaleOption = {
           tipo,
           precio: pvShot,
-          comision: Number(form.comisionShot.replace(/\./g, ''))
+          comision: 0,
+          precios_anfitriona: [
+            { precio: pvShotAnfitriona, comision: Number(form.comisionShot.replace(/\./g, '')) },
+            ...form.preciosAnfitrionaExtra.map(row => ({
+              precio: Number(row.precio.replace(/\./g, '')),
+              comision: Number(row.comision.replace(/\./g, ''))
+            }))
+          ]
         };
         if (Number.isInteger(pvShot) && pvShot > 0) {
           option.precio_anfitriona = pvShotAnfitriona;
         }
         return option;
       });
+      const acompanamiento = options.find(option => option.tipo === 'botella')?.acompanamiento;
+      if (
+        acompanamiento &&
+        (!Number.isInteger(acompanamiento.unidades) ||
+          acompanamiento.unidades < 1 ||
+          acompanamiento.unidades > 1000)
+      ) {
+        toast.error('Indica entre 1 y 1000 unidades de acompañamiento por botella');
+        return;
+      }
+      const anfitrionaRows =
+        options.find(option => option.tipo === 'shot')?.precios_anfitriona ?? [];
+      if (
+        anfitrionaRows.length > 20 ||
+        new Set(anfitrionaRows.map(row => row.precio)).size !== anfitrionaRows.length ||
+        anfitrionaRows.some(
+          row =>
+            !Number.isInteger(row.precio) ||
+            row.precio <= 0 ||
+            row.precio > 2147483647 ||
+            !Number.isInteger(row.comision) ||
+            row.comision < 0 ||
+            row.comision > row.precio
+        )
+      ) {
+        toast.error(
+          'Cada precio de corto para anfitriona debe ser positivo y distinto, con comisión entre 0 y su precio'
+        );
+        return;
+      }
       if (
         !options.length ||
         options.some(

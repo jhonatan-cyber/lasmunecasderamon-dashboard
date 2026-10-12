@@ -3,9 +3,10 @@
 // cada uno resolvía la regla por su cuenta, y el buscador se quedaba solo con la botella.
 import type { SaleOption, SaleType } from '@/types/sale-options';
 import { parseSavedOptions } from '@/components/bar/transfer/transferOptions';
+import { preciosCortoAnfitriona, esCortoAnfitriona } from './hostessShortPrices';
 
 /** Forma de venta elegida: botella entera o shot, a precio de cliente o de anfitriona. */
-export type SaleChoice = SaleType | 'shot_anfitriona';
+export type SaleChoice = SaleType | 'shot_anfitriona' | `shot_anfitriona:${number}`;
 
 export interface OpcionVentaProducto {
   value: SaleChoice;
@@ -51,15 +52,16 @@ export function resolverVentaProducto(producto: any, eleccion?: SaleChoice): Ven
     opcionBotella?.comision ?? producto?.comision ?? producto?.commission ?? 0
   );
   const precioShotCliente = Number(opcionShot?.precio ?? 0);
-  const comisionShot = Number(opcionShot?.comision ?? 0);
-  const precioAnfitriona = Number(opcionShot?.precio_anfitriona ?? 0);
+  const preciosAnfitriona = preciosCortoAnfitriona(opcionShot);
   const tieneShot = Boolean(opcionShot && precioShotCliente > 0);
-  const tieneShotAnfitriona = tieneShot && precioAnfitriona > 0;
+  const tieneShotAnfitriona = tieneShot && preciosAnfitriona.length > 0;
 
   const opciones: OpcionVentaProducto[] = [
     {
       value: 'botella',
-      nombre: 'Botella',
+      nombre: opcionBotella?.acompanamiento
+        ? `Botella · ${opcionBotella.acompanamiento.unidades} ${opcionBotella.acompanamiento.tipo === 'gaseosa' ? 'gaseosas' : 'sodas'}`
+        : 'Botella',
       precio: precioBotella,
       comision: comisionBotella,
       esShot: false
@@ -70,28 +72,31 @@ export function resolverVentaProducto(producto: any, eleccion?: SaleChoice): Ven
             value: 'shot' as SaleChoice,
             nombre: tieneShotAnfitriona ? 'Corto cliente' : 'Corto',
             precio: precioShotCliente,
-            comision: comisionShot,
+            comision: 0,
             esShot: true
           }
         ]
       : []),
     ...(tieneShotAnfitriona
       ? [
-          {
-            value: 'shot_anfitriona' as SaleChoice,
-            nombre: 'Corto anfitriona',
-            precio: precioAnfitriona,
-            comision: comisionShot,
+          ...preciosAnfitriona.map((row, index) => ({
+            value: (index === 0 ? 'shot_anfitriona' : `shot_anfitriona:${index}`) as SaleChoice,
+            nombre:
+              preciosAnfitriona.length > 1
+                ? `Corto anfitriona · $${row.precio.toLocaleString('es-CL')}`
+                : 'Corto anfitriona',
+            precio: row.precio,
+            comision: row.comision,
             esShot: true
-          }
+          }))
         ]
       : [])
   ];
 
   const tipoVenta: SaleChoice =
-    eleccion === 'shot_anfitriona' && tieneShotAnfitriona
-      ? 'shot_anfitriona'
-      : (eleccion === 'shot' || eleccion === 'shot_anfitriona') && tieneShot
+    eleccion && esCortoAnfitriona(eleccion) && opciones.some(option => option.value === eleccion)
+      ? eleccion
+      : (eleccion === 'shot' || (eleccion && esCortoAnfitriona(eleccion))) && tieneShot
         ? 'shot'
         : 'botella';
 

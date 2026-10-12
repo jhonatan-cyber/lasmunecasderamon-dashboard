@@ -105,6 +105,10 @@ export function TransferModal({
               />
             ) : (
               <SaleTypeEditor
+                acompanamientoBotella={form.acompanamientoBotella}
+                unidadesAcompanamiento={form.unidadesAcompanamiento}
+                onAcompanamientoBotellaChange={form.setAcompanamientoBotella}
+                onUnidadesAcompanamientoChange={form.setUnidadesAcompanamiento}
                 tipos={form.tipos}
                 etiquetaShot={form.etiquetaShot}
                 precioVenta={form.precioVenta}
@@ -124,6 +128,8 @@ export function TransferModal({
                 onPrecioShotChange={form.setPrecioShot}
                 onPrecioShotAnfitrionaChange={form.setPrecioShotAnfitriona}
                 onComisionShotChange={form.setComisionShot}
+                preciosAnfitrionaExtra={form.preciosAnfitrionaExtra}
+                onPreciosAnfitrionaExtraChange={form.setPreciosAnfitrionaExtra}
                 onMlShotClienteChange={form.setMlShotCliente}
                 onMlShotAnfitrionaChange={form.setMlShotAnfitriona}
                 onTierChange={handleTierChange}

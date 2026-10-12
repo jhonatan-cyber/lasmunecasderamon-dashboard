@@ -1,4 +1,5 @@
 'use client';
+import { esCortoAnfitriona } from '@/lib/sales/hostessShortPrices';
 
 import { Search, X, Plus } from 'lucide-react';
 import { useState } from 'react';
@@ -137,7 +138,7 @@ export const NewSaleSearch = (props: NewSaleSearchProps) => {
                     );
                     const options = sale.opciones.map(option => ({
                       value: option.value,
-                      label: `${option.nombre}${option.esShot ? ` · ${option.value === 'shot_anfitriona' ? shotMlAnfitriona : shotMlCliente} ml` : ''}`,
+                      label: `${option.nombre}${option.esShot ? ` · ${esCortoAnfitriona(option.value) ? shotMlAnfitriona : shotMlCliente} ml` : ''}`,
                       precio: option.precio,
                       comision: option.comision,
                       cantidad: cantidadesPorFormato[`${id}:${option.value}`] || 0,
@@ -162,7 +163,7 @@ export const NewSaleSearch = (props: NewSaleSearchProps) => {
                           props.handleAddProducto({
                             ...producto,
                             tipo_venta: option.value === 'botella' ? 'botella' : 'shot',
-                            shot_anfitriona: option.value === 'shot_anfitriona',
+                            shot_anfitriona: esCortoAnfitriona(option.value),
                             precio: option.precio,
                             comision: option.comision,
                             cantidad: option.cantidad,

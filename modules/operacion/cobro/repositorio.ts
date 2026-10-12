@@ -130,7 +130,7 @@ export async function prepararVentaCuenta(
   if (!cuenta) throw new NotFoundError('Cuenta', id);
 
   const detalles = await trx<CuentaSaleDetalleRow[]>(
-    `SELECT producto_id, precio, cantidad, sub_total, comision, hostess_id
+    `SELECT configuracion_venta, producto_id, precio, cantidad, sub_total, comision, hostess_id
          FROM detalle_cuentas
         WHERE cuenta_id = ?
         ORDER BY fecha_crea ASC`,

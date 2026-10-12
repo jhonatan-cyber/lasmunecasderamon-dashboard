@@ -1,5 +1,6 @@
 'use client';
 
+import { saleInventoryFields } from '@/lib/sales/saleInventoryFields';
 import { useEffect, useCallback } from 'react';
 import logger from '@/lib/utils/logger';
 import { appEventBus } from '@/lib/utils/eventBus';
@@ -74,7 +75,7 @@ export function useOrderDetailModal({
     propina,
     habitacionId,
     tiempoHabitacion,
-    showMetodoPagoError,
+    showMetodoPagoError
   },
   setters: {
     setIsRegistering,
@@ -83,7 +84,7 @@ export function useOrderDetailModal({
     setHabitacionId,
     setTiempoHabitacion,
     setShowMetodoPagoError,
-    setConfirmVentaModalOpen,
+    setConfirmVentaModalOpen
   },
   derived: {
     hasChampagneProducts,
@@ -93,8 +94,8 @@ export function useOrderDetailModal({
     champagneLimit,
     recargoAnfitrionas,
     anfitrionasFinal,
-    habitacionesActivas,
-  },
+    habitacionesActivas
+  }
 }: UseOrderDetailModalParams) {
   // --- Event listeners ---
   useEffect(() => {
@@ -134,162 +135,201 @@ export function useOrderDetailModal({
   }, [detail]);
 
   // --- Handlers ---
-  const actualizarEstadoPedido = useCallback(async (nuevoEstado: number) => {
-    if (!orderId) {
-      throw new Error('No hay ID de pedido');
-    }
+  const actualizarEstadoPedido = useCallback(
+    async (nuevoEstado: number) => {
+      if (!orderId) {
+        throw new Error('No hay ID de pedido');
+      }
 
-    const response = await fetch(`/api/orders/${orderId}`, {
-      method: 'PUT',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ estado: nuevoEstado }),
-    });
+      const response = await fetch(`/api/orders/${orderId}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ estado: nuevoEstado })
+      });
 
-    if (!response.ok) {
-      throw new Error('Error al actualizar el estado del pedido');
-    }
+      if (!response.ok) {
+        throw new Error('Error al actualizar el estado del pedido');
+      }
 
-    return response.json();
-  }, [orderId]);
+      return response.json();
+    },
+    [orderId]
+  );
 
-  const handleRegistrarVenta = useCallback((e?: React.MouseEvent) => {
-    e?.preventDefault();
-    setShowMetodoPagoError(true);
+  const handleRegistrarVenta = useCallback(
+    (e?: React.MouseEvent) => {
+      e?.preventDefault();
+      setShowMetodoPagoError(true);
 
-    if (!metodoPago) {
-      toast.error('Selecciona un método de pago');
-      return;
-    }
-
-    if (!detail || detail.length === 0) {
-      toast.error('No hay detalles del pedido');
-      return;
-    }
-
-    if (hasChampagneProducts && cantidadAnfitrionas === 0) {
-      toast.error('Para productos de champaña es obligatorio tener al menos una anfitriona en el pedido');
-      return;
-    }
-
-    if (cantidadAnfitrionas > maxAnfitrionas) {
-      const extraText =
-        hasChampagneProducts && otherCommissionQuantity > 0
-          ? ` + ${otherCommissionQuantity} por ${otherCommissionQuantity === 1 ? 'trago' : 'tragos'} con comisión`
-          : '';
-      toast.error(
-        `El pedido excede el límite combinado de ${maxAnfitrionas} anfitriona${maxAnfitrionas !== 1 ? 's' : ''} (champaña: ${champagneLimit}${extraText})`
-      );
-      return;
-    }
-
-    setConfirmVentaModalOpen(true);
-  }, [
-    metodoPago, detail, hasChampagneProducts, cantidadAnfitrionas,
-    maxAnfitrionas, otherCommissionQuantity, champagneLimit,
-    setShowMetodoPagoError, setConfirmVentaModalOpen,
-  ]);
-
-  const handleConfirmRegistrarVenta = useCallback(async (e?: React.MouseEvent) => {
-    e?.preventDefault();
-    setIsRegistering(true);
-    try {
-      const pedido = detail[0];
-
-      const sub_total = detail.reduce((acc: number, item: any) => acc + item.precio * item.cantidad, 0);
-
-      const usuariosIds = extractHostessIds(anfitrionasFinal);
-
-      if (usuariosIds.length === 0 && hasChampagneProducts) {
-        toast.error('No se pudieron obtener los IDs de las anfitrionas');
+      if (!metodoPago) {
+        toast.error('Selecciona un método de pago');
         return;
       }
 
-      const selectedRoom = habitacionId
-        ? rooms.find((room: any) => getOrderRoomId(room) === String(habitacionId))
-        : null;
+      if (!detail || detail.length === 0) {
+        toast.error('No hay detalles del pedido');
+        return;
+      }
 
-      const ventaData = {
-        cliente_id: pedido.cliente_id || null,
-        pedido_id: orderId || null,
-        metodo_pago: metodoPago as 'efectivo' | 'tarjeta' | 'transferencia',
-        propina: propina,
-        sub_total: sub_total,
-        total: sub_total + propina + recargoAnfitrionas,
-        detalles: detail.map((item: any) => ({
-          producto_id: item.id_producto || item.producto_id,
-          precio: item.precio || 0,
-          cantidad: item.cantidad || 0,
-          comision: item.comision || 0,
-          sub_total: (item.precio || 0) * (item.cantidad || 0),
-          hostess_id: item.hostess_id || null,
-          selectedHostesses: extractHostessIds(item.anfitrionas_asignadas_ids || item.hostess_id),
-        })),
-        usuarios: usuariosIds,
-        habitacion_id: shouldShowRoomSelector && habitacionId ? habitacionId : undefined,
-        tiempo: shouldShowRoomSelector && habitacionId ? tiempoHabitacion : 0,
-      };
+      if (hasChampagneProducts && cantidadAnfitrionas === 0) {
+        toast.error(
+          'Para productos de champaña es obligatorio tener al menos una anfitriona en el pedido'
+        );
+        return;
+      }
 
-      const resultado = await createVenta(ventaData);
-      if (resultado && resultado.success) {
-        if (propina > 0) {
-          toast.success(`Venta registrada con propina de ${formatCurrencyCLP(propina)} distribuida entre los cajeros y garzones`);
+      if (cantidadAnfitrionas > maxAnfitrionas) {
+        const extraText =
+          hasChampagneProducts && otherCommissionQuantity > 0
+            ? ` + ${otherCommissionQuantity} por ${otherCommissionQuantity === 1 ? 'trago' : 'tragos'} con comisión`
+            : '';
+        toast.error(
+          `El pedido excede el límite combinado de ${maxAnfitrionas} anfitriona${maxAnfitrionas !== 1 ? 's' : ''} (champaña: ${champagneLimit}${extraText})`
+        );
+        return;
+      }
+
+      setConfirmVentaModalOpen(true);
+    },
+    [
+      metodoPago,
+      detail,
+      hasChampagneProducts,
+      cantidadAnfitrionas,
+      maxAnfitrionas,
+      otherCommissionQuantity,
+      champagneLimit,
+      setShowMetodoPagoError,
+      setConfirmVentaModalOpen
+    ]
+  );
+
+  const handleConfirmRegistrarVenta = useCallback(
+    async (e?: React.MouseEvent) => {
+      e?.preventDefault();
+      setIsRegistering(true);
+      try {
+        const pedido = detail[0];
+
+        const sub_total = detail.reduce(
+          (acc: number, item: any) => acc + item.precio * item.cantidad,
+          0
+        );
+
+        const usuariosIds = extractHostessIds(anfitrionasFinal);
+
+        if (usuariosIds.length === 0 && hasChampagneProducts) {
+          toast.error('No se pudieron obtener los IDs de las anfitrionas');
+          return;
         }
 
-        await actualizarEstadoPedido(0);
+        const selectedRoom = habitacionId
+          ? rooms.find((room: any) => getOrderRoomId(room) === String(habitacionId))
+          : null;
 
-        onOrderStatusChange?.();
-        appEventBus.emit('updatePendingOrders', { type: 'order-processed', orderId });
-        appEventBus.emit('refreshNotifications');
+        const ventaData = {
+          cliente_id: pedido.cliente_id || null,
+          pedido_id: orderId || null,
+          metodo_pago: metodoPago as 'efectivo' | 'tarjeta' | 'transferencia',
+          propina: propina,
+          sub_total: sub_total,
+          total: sub_total + propina + recargoAnfitrionas,
+          detalles: detail.map((item: any) => ({
+            ...saleInventoryFields(item),
+            producto_id: item.id_producto || item.producto_id,
+            precio: item.precio || 0,
+            cantidad: item.cantidad || 0,
+            comision: item.comision || 0,
+            sub_total: (item.precio || 0) * (item.cantidad || 0),
+            hostess_id: item.hostess_id || null,
+            hostesses: extractHostessIds(item.anfitrionas_asignadas_ids || item.hostess_id)
+          })),
+          usuarios: usuariosIds,
+          habitacion_id: shouldShowRoomSelector && habitacionId ? habitacionId : undefined,
+          tiempo: shouldShowRoomSelector && habitacionId ? tiempoHabitacion : 0
+        };
 
-        if (habitacionId) {
-          const selectedRoom = rooms.find((room: any) => getOrderRoomId(room) === String(habitacionId));
-          if (selectedRoom) {
-            try {
-              const roomUpdateResponse = await fetch(`/api/rooms/${habitacionId}`, {
-                method: 'PATCH',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ action: 'occupy' }),
-              });
+        const resultado = await createVenta(ventaData);
+        if (resultado && resultado.success) {
+          if (propina > 0) {
+            toast.success(
+              `Venta registrada con propina de ${formatCurrencyCLP(propina)} distribuida entre los cajeros y garzones`
+            );
+          }
 
-              if (roomUpdateResponse.ok) {
-                startTimer(
-                  resultado.data?.id || resultado.data?.id_venta || orderId || 0,
-                  String(selectedRoom.id ?? selectedRoom.id_habitacion ?? ''),
-                  getOrderRoomName(selectedRoom),
-                  tiempoHabitacion,
-                  resultado.data?.codigo || `VENTA_${orderId}`,
-                  detail[0]?.cliente || 'cliente sin registrar',
-                  detail[0]?.anfitriona || '',
-                  'venta',
-                  detail[0]?.garzon || undefined,
-                );
-              } else {
+          await actualizarEstadoPedido(0);
+
+          onOrderStatusChange?.();
+          appEventBus.emit('updatePendingOrders', { type: 'order-processed', orderId });
+          appEventBus.emit('refreshNotifications');
+
+          if (habitacionId) {
+            const selectedRoom = rooms.find(
+              (room: any) => getOrderRoomId(room) === String(habitacionId)
+            );
+            if (selectedRoom) {
+              try {
+                const roomUpdateResponse = await fetch(`/api/rooms/${habitacionId}`, {
+                  method: 'PATCH',
+                  headers: { 'Content-Type': 'application/json' },
+                  body: JSON.stringify({ action: 'occupy' })
+                });
+
+                if (roomUpdateResponse.ok) {
+                  startTimer(
+                    resultado.data?.id || resultado.data?.id_venta || orderId || 0,
+                    String(selectedRoom.id ?? selectedRoom.id_habitacion ?? ''),
+                    getOrderRoomName(selectedRoom),
+                    tiempoHabitacion,
+                    resultado.data?.codigo || `VENTA_${orderId}`,
+                    detail[0]?.cliente || 'cliente sin registrar',
+                    detail[0]?.anfitriona || '',
+                    'venta',
+                    detail[0]?.garzon || undefined
+                  );
+                } else {
+                  toast.error('Error al actualizar estado de habitación');
+                }
+              } catch {
                 toast.error('Error al actualizar estado de habitación');
               }
-            } catch {
-              toast.error('Error al actualizar estado de habitación');
             }
           }
-        }
 
-        toast.success('Venta registrada exitosamente');
-        appEventBus.emit('ventaRegistrada');
-        onClose();
-        onVentaRegistrada?.();
+          toast.success('Venta registrada exitosamente');
+          appEventBus.emit('ventaRegistrada');
+          onClose();
+          onVentaRegistrada?.();
+        }
+      } catch {
+        toast.error('Error al registrar la venta');
+      } finally {
+        setIsRegistering(false);
+        setConfirmVentaModalOpen(false);
       }
-    } catch {
-      toast.error('Error al registrar la venta');
-    } finally {
-      setIsRegistering(false);
-      setConfirmVentaModalOpen(false);
-    }
-  }, [
-    detail, anfitrionasFinal, hasChampagneProducts, habitacionId, rooms,
-    metodoPago, propina, recargoAnfitrionas, shouldShowRoomSelector,
-    tiempoHabitacion, orderId, createVenta, startTimer,
-    actualizarEstadoPedido, onOrderStatusChange, onClose, onVentaRegistrada,
-    setIsRegistering, setConfirmVentaModalOpen,
-  ]);
+    },
+    [
+      detail,
+      anfitrionasFinal,
+      hasChampagneProducts,
+      habitacionId,
+      rooms,
+      metodoPago,
+      propina,
+      recargoAnfitrionas,
+      shouldShowRoomSelector,
+      tiempoHabitacion,
+      orderId,
+      createVenta,
+      startTimer,
+      actualizarEstadoPedido,
+      onOrderStatusChange,
+      onClose,
+      onVentaRegistrada,
+      setIsRegistering,
+      setConfirmVentaModalOpen
+    ]
+  );
 
   const handleCancelRegistrarVenta = useCallback(() => {
     setConfirmVentaModalOpen(false);
@@ -308,73 +348,91 @@ export function useOrderDetailModal({
     }
   }, [actualizarEstadoPedido, orderId, onClose, onVentaRegistrada]);
 
-  const handleRegistrarCuenta = useCallback(async (e?: React.MouseEvent) => {
-    e?.preventDefault();
-    setIsRegistering(true);
-    try {
-      const pedido = detail[0];
-      const total_comision = detail.reduce((acc: number, item: any) => acc + (item.comision || 0), 0) + recargoAnfitrionas;
-      const sub_total = detail.reduce((acc: number, item: any) => acc + item.precio * item.cantidad, 0);
+  const handleRegistrarCuenta = useCallback(
+    async (e?: React.MouseEvent) => {
+      e?.preventDefault();
+      setIsRegistering(true);
+      try {
+        const pedido = detail[0];
+        const total_comision =
+          detail.reduce((acc: number, item: any) => acc + (item.comision || 0), 0) +
+          recargoAnfitrionas;
+        const sub_total = detail.reduce(
+          (acc: number, item: any) => acc + item.precio * item.cantidad,
+          0
+        );
 
-      const anfitrionasIds = extractHostessIds(anfitrionasFinal);
+        const anfitrionasIds = extractHostessIds(anfitrionasFinal);
 
-      const cuentaData = {
-        codigo: generateRandomCode(),
-        cliente_id: pedido.cliente_id || null,
-        total_comision,
-        sub_total,
-        total: sub_total + recargoAnfitrionas,
-        habitacion_id: shouldShowRoomSelector && habitacionId ? parseInt(habitacionId) : null,
-        detalles: detail.map((item: any) => ({
-          producto_id: item.id_producto || 1,
-          precio: item.precio || 0,
-          cantidad: item.cantidad || 0,
-          comision: item.comision || 0,
-          sub_total: (item.precio || 0) * (item.cantidad || 0),
-        })),
-        usuarios: anfitrionasIds,
-      };
+        const cuentaData = {
+          codigo: generateRandomCode(),
+          cliente_id: pedido.cliente_id || null,
+          total_comision,
+          sub_total,
+          total: sub_total + recargoAnfitrionas,
+          habitacion_id: shouldShowRoomSelector && habitacionId ? String(habitacionId) : null,
+          detalles: detail.map((item: any) => ({
+            ...saleInventoryFields(item),
+            producto_id: item.id_producto || item.producto_id,
+            hostesses: extractHostessIds(item.anfitrionas_asignadas_ids || item.hostess_id),
+            precio: item.precio || 0,
+            cantidad: item.cantidad || 0,
+            comision: item.comision || 0,
+            sub_total: (item.precio || 0) * (item.cantidad || 0)
+          })),
+          usuarios: anfitrionasIds
+        };
 
-      const response = await fetch('/api/cuentas', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(cuentaData),
-      });
+        const response = await fetch('/api/cuentas', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(cuentaData)
+        });
 
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.message || 'Error al crear la cuenta');
-      }
-
-      const result = await response.json();
-
-      if (result.success) {
-        toast.success('Cuenta registrada exitosamente');
-
-        try {
-          await actualizarEstadoPedido(0);
-          appEventBus.emit('updatePendingOrders', { type: 'order-processed', orderId });
-          appEventBus.emit('refreshNotifications');
-        } catch (estadoError) {
-          logger.captureException(estadoError, { context: 'OrderDetailModal:fetchDetail' });
+        if (!response.ok) {
+          const errorData = await response.json();
+          throw new Error(errorData.message || 'Error al crear la cuenta');
         }
 
-        onClose();
-        onVentaRegistrada?.();
-        onOrderStatusChange?.();
-      } else {
-        throw new Error(result.message || 'Error al crear la cuenta');
+        const result = await response.json();
+
+        if (result.success) {
+          toast.success('Cuenta registrada exitosamente');
+
+          try {
+            await actualizarEstadoPedido(0);
+            appEventBus.emit('updatePendingOrders', { type: 'order-processed', orderId });
+            appEventBus.emit('refreshNotifications');
+          } catch (estadoError) {
+            logger.captureException(estadoError, { context: 'OrderDetailModal:fetchDetail' });
+          }
+
+          onClose();
+          onVentaRegistrada?.();
+          onOrderStatusChange?.();
+        } else {
+          throw new Error(result.message || 'Error al crear la cuenta');
+        }
+      } catch (error) {
+        toast.error('Error al registrar la cuenta');
+      } finally {
+        setIsRegistering(false);
       }
-    } catch (error) {
-      toast.error('Error al registrar la cuenta');
-    } finally {
-      setIsRegistering(false);
-    }
-  }, [
-    detail, anfitrionasFinal, recargoAnfitrionas, shouldShowRoomSelector, habitacionId,
-    orderId, actualizarEstadoPedido, onClose, onVentaRegistrada, onOrderStatusChange,
-    setIsRegistering,
-  ]);
+    },
+    [
+      detail,
+      anfitrionasFinal,
+      recargoAnfitrionas,
+      shouldShowRoomSelector,
+      habitacionId,
+      orderId,
+      actualizarEstadoPedido,
+      onClose,
+      onVentaRegistrada,
+      onOrderStatusChange,
+      setIsRegistering
+    ]
+  );
 
   return {
     handleRegistrarVenta,
@@ -388,6 +446,6 @@ export function useOrderDetailModal({
     shouldShowRoomSelector,
     hasRoomSelectedInOrder,
     isClienteRegistrado,
-    isRegistering,
+    isRegistering
   };
 }

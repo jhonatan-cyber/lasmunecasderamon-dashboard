@@ -11,6 +11,7 @@ import SaleProductModal from '@/components/sales/SaleProductModal';
 import { NewSaleHeader } from '@/components/sales/new/NewSaleHeader';
 import { NewSaleSearch } from '@/components/sales/new/NewSaleSearch';
 import { NewSaleConfiguration } from '@/components/sales/new/NewSaleConfiguration';
+import { ShotMixerSelection } from '@/components/sales/new/ShotMixerSelection';
 import { NewSaleCart } from '@/components/sales/new/NewSaleCart';
 import { NewSaleSummary } from '@/components/sales/new/NewSaleSummary';
 import { useMasterData, useRefreshOnFocus } from '@/hooks/shared';
@@ -23,6 +24,7 @@ export default function NewSale() {
     metodoPago,
     setMetodoPago,
     productos,
+    setProductos,
     enableTip,
     setEnableTip,
     loading,
@@ -169,6 +171,10 @@ export default function NewSale() {
           enableTip={enableTip}
           setEnableTip={setEnableTip}
         />
+
+        {productos.some(p => p.tipo_venta === 'shot') && (
+          <ShotMixerSelection productos={productos} setProductos={setProductos} />
+        )}
 
         <NewSaleSummary
           subtotal={totals.subtotal}

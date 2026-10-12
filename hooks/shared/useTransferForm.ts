@@ -14,8 +14,15 @@ import {
   type ChampagneTierRow
 } from '@/components/bar/transfer/transferOptions';
 import type { SaleOption, SaleType } from '@/types/sale-options';
+import { preciosCortoAnfitriona } from '@/lib/sales/hostessShortPrices';
 
 export interface TransferForm {
+  acompanamientoBotella: 'ninguno' | 'gaseosa' | 'soda';
+  setAcompanamientoBotella: (value: 'ninguno' | 'gaseosa' | 'soda') => void;
+  unidadesAcompanamiento: string;
+  setUnidadesAcompanamiento: (value: string) => void;
+  preciosAnfitrionaExtra: { precio: string; comision: string }[];
+  setPreciosAnfitrionaExtra: Dispatch<SetStateAction<{ precio: string; comision: string }[]>>;
   cantidad: string;
   setCantidad: (value: string) => void;
   precioVenta: string;
@@ -64,6 +71,10 @@ export function useTransferForm({
   item: BarStockItem | null;
   open: boolean;
 }): TransferForm {
+  const [acompanamientoBotella, setAcompanamientoBotella] = useState<
+    'ninguno' | 'gaseosa' | 'soda'
+  >('ninguno');
+  const [unidadesAcompanamiento, setUnidadesAcompanamiento] = useState('');
   const [cantidad, setCantidad] = useState('');
   const shotMl = useConfigValue<number>('bar', 'shot_ml', 50);
   const [precioVenta, setPrecioVenta] = useState('');
@@ -72,6 +83,9 @@ export function useTransferForm({
   const [precioShot, setPrecioShot] = useState('');
   const [precioShotAnfitriona, setPrecioShotAnfitriona] = useState('');
   const [comisionShot, setComisionShot] = useState('');
+  const [preciosAnfitrionaExtra, setPreciosAnfitrionaExtra] = useState<
+    { precio: string; comision: string }[]
+  >([]);
   // Ml por shot para cada audiencia (anfitriona vacío = igual que cliente).
   const [mlShotCliente, setMlShotCliente] = useState('');
   const [mlShotAnfitriona, setMlShotAnfitriona] = useState('');
@@ -108,7 +122,18 @@ export function useTransferForm({
         { tipo: 'botella', precio: presPrecio, comision: presComision }
       ];
       const bottle = options.find(option => option.tipo === 'botella');
+      setAcompanamientoBotella(bottle?.acompanamiento?.tipo ?? 'ninguno');
+      setUnidadesAcompanamiento(
+        bottle?.acompanamiento ? String(bottle.acompanamiento.unidades) : ''
+      );
       const shot = options.find(option => option.tipo === 'shot');
+      const preciosAnfitriona = preciosCortoAnfitriona(shot);
+      setPreciosAnfitrionaExtra(
+        preciosAnfitriona.slice(1).map(row => ({
+          precio: formatNumber(String(row.precio)),
+          comision: formatNumber(String(row.comision))
+        }))
+      );
       setTipos(options.map(option => option.tipo));
       const bottlePrecio = Number(bottle?.precio) > 0 ? Number(bottle?.precio) : presPrecio;
       const bottleComision = Number(bottle?.comision) > 0 ? Number(bottle?.comision) : presComision;
@@ -116,9 +141,11 @@ export function useTransferForm({
       setComision(bottleComision ? formatNumber(String(bottleComision)) : '');
       setPrecioShot(shot && Number(shot.precio) > 0 ? formatNumber(String(shot.precio)) : '');
       setPrecioShotAnfitriona(
-        shot?.precio_anfitriona != null ? formatNumber(String(shot.precio_anfitriona)) : ''
+        preciosAnfitriona[0]?.precio != null
+          ? formatNumber(String(preciosAnfitriona[0].precio))
+          : ''
       );
-      setComisionShot(shot?.comision ? formatNumber(String(shot.comision)) : '');
+      setComisionShot(formatNumber(String(preciosAnfitriona[0]?.comision ?? shot?.comision ?? 0)));
       setMlShotCliente(
         item.ml_shot !== null && item.ml_shot !== undefined && Number(item.ml_shot) > 0
           ? String(item.ml_shot)
@@ -169,12 +196,15 @@ export function useTransferForm({
   }, [open, item]);
 
   const reset = () => {
+    setAcompanamientoBotella('ninguno');
+    setUnidadesAcompanamiento('');
     setCantidad('');
     setPrecioVenta('');
     setComision('');
     setPrecioShot('');
     setPrecioShotAnfitriona('');
     setComisionShot('');
+    setPreciosAnfitrionaExtra([]);
     setMlShotCliente('');
     setMlShotAnfitriona('');
     setTipos(['botella']);
@@ -189,6 +219,12 @@ export function useTransferForm({
     : tipos.includes('shot');
 
   return {
+    acompanamientoBotella,
+    setAcompanamientoBotella,
+    unidadesAcompanamiento,
+    setUnidadesAcompanamiento,
+    preciosAnfitrionaExtra,
+    setPreciosAnfitrionaExtra,
     cantidad,
     setCantidad,
     precioVenta,

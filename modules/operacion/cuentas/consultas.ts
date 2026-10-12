@@ -1,3 +1,4 @@
+import type { SaleInventoryFields } from '@/lib/sales/saleInventoryFields';
 import { enUnaUnidad } from '@/lib/transaccion/contrato';
 import { ejecutarEfectosConfirmados } from '@/lib/transaccion/efectos';
 import { cobrarCuenta, consultarCuentaCobrada } from '@/modules/operacion/cobro/servicio';
@@ -30,7 +31,7 @@ import type {
   ClienteRow
 } from '@/lib/database/rows';
 
-export type CuentaDetalle = {
+export type CuentaDetalle = SaleInventoryFields & {
   producto_id: string;
   precio: number;
   cantidad: number;

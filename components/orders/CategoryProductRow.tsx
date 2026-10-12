@@ -1,5 +1,8 @@
 'use client';
 
+import { useState } from 'react';
+import { resolverVentaProducto, type SaleChoice } from '@/lib/sales/saleChoice';
+import { esCortoAnfitriona } from '@/lib/sales/hostessShortPrices';
 import { TableCell, TableRow } from '@/components/ui/table';
 import { Button } from '@/components/ui/button';
 import { Plus, Minus } from 'lucide-react';
@@ -35,7 +38,7 @@ interface CategoryProductRowProps {
 }
 
 export function CategoryProductRow({
-  product: p,
+  product: original,
   cantidades,
   onCantidadChange,
   onAgregarProducto,
@@ -54,14 +57,46 @@ export function CategoryProductRow({
   getAvailableHostessesForOtherProducts,
   requiresRoom
 }: CategoryProductRowProps) {
+  const [choice, setChoice] = useState<SaleChoice>('botella');
+  const venta = resolverVentaProducto(original, choice);
+  const p = original.opciones_venta
+    ? {
+        ...original,
+        precio: venta.precio,
+        price: venta.precio,
+        comision: venta.comision,
+        commission: venta.comision,
+        tipo_venta: venta.esShot ? 'shot' : 'botella',
+        shot_anfitriona: esCortoAnfitriona(venta.tipoVenta)
+      }
+    : original;
   const id = String(p.id_producto || p.id);
   const isChampagne = isChampagneProduct(p);
   const hasComm = hasCommission(p);
-  const needsRoom = requiresRoom(p);
+  const needsRoom = !venta.esShot && requiresRoom(p);
 
   return (
     <TableRow key={id}>
-      <TableCell>{p.nombre || p.name}</TableCell>
+      <TableCell>
+        {p.nombre || p.name}
+        {venta.tieneShot && (
+          <select
+            aria-label={`Formato de ${p.nombre || p.name}`}
+            className='mt-2 block w-full rounded-md border bg-background p-2 text-sm'
+            value={venta.tipoVenta}
+            onChange={e => {
+              setChoice(e.target.value as SaleChoice);
+              onCantidadChange(id, '1');
+            }}
+          >
+            {venta.opciones.map(o => (
+              <option key={o.value} value={o.value}>
+                {o.nombre} - {formatCurrencyNoDecimals(o.precio)}
+              </option>
+            ))}
+          </select>
+        )}
+      </TableCell>
       <TableCell className='text-center'>{formatCurrencyNoDecimals(p.price || p.precio)}</TableCell>
       <TableCell className='text-center'>
         {formatCurrencyNoDecimals(p.commission || p.comision || 0)}
@@ -90,7 +125,8 @@ export function CategoryProductRow({
             aria-label='Aumentar'
             onClick={() => {
               const currentCantidad = cantidades[id] || 1;
-              onCantidadChange(id, (currentCantidad + 1).toString());
+              if (currentCantidad < (venta.esShot ? 99 : Number(p.stock_bar ?? 99)))
+                onCantidadChange(id, (currentCantidad + 1).toString());
             }}
             className='w-6 h-6 p-0 rounded-full hover:scale-105 transition-all duration-200'
           >
@@ -165,21 +201,25 @@ export function CategoryProductRow({
           onClick={() => {
             onAgregarProducto({
               ...p,
-              selectedHostesses: isChampagne
-                ? champagneHostessSelections[id] || []
-                : otherProductHostessSelections[id] || [],
+              cantidad: cantidades[id] || 1,
+              selectedHostesses: !hasComm
+                ? []
+                : isChampagne
+                  ? champagneHostessSelections[id] || []
+                  : otherProductHostessSelections[id] || [],
               isChampagne: isChampagne,
               selectedRoom: roomSelections[id] || null,
               requiresRoom: needsRoom
             });
           }}
           disabled={
-            hasComm &&
-            ((isChampagne &&
-              (!champagneHostessSelections[id] || champagneHostessSelections[id].length === 0)) ||
-              (!isChampagne &&
-                (!otherProductHostessSelections[id] ||
-                  otherProductHostessSelections[id].length === 0)))
+            (!venta.esShot && Number(p.stock_bar ?? 99) < (cantidades[id] || 1)) ||
+            (hasComm &&
+              ((isChampagne &&
+                (!champagneHostessSelections[id] || champagneHostessSelections[id].length === 0)) ||
+                (!isChampagne &&
+                  (!otherProductHostessSelections[id] ||
+                    otherProductHostessSelections[id].length === 0))))
           }
         >
           <Plus className='h-4 w-4' />

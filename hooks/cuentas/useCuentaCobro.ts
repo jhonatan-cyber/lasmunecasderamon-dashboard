@@ -1,5 +1,6 @@
 'use client';
 
+import { saleInventoryFields } from '@/lib/sales/saleInventoryFields';
 import { useState, useEffect, useCallback } from 'react';
 import { toast } from 'sonner';
 import logger from '@/lib/utils/logger';
@@ -140,6 +141,7 @@ export function useCuentaCobro() {
           codigo: cuenta?.codigo,
           detalles:
             cuenta.detalles?.map((d: any) => ({
+              ...saleInventoryFields(d),
               producto_id: String(d.producto_id ?? d.id_producto),
               precio: Number(d.precio ?? 0),
               cantidad: Number(d.cantidad ?? 1),

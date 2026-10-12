@@ -78,7 +78,13 @@ describe('SettingsBottleHostessCard', () => {
                 producto_id: 'p1',
                 opciones_venta: [
                   { tipo: 'botella', precio: 200000, comision: 10000 },
-                  { tipo: 'shot', precio: 5000, comision: 1000 }
+                  {
+                    tipo: 'shot',
+                    precio: 5000,
+                    comision: 0,
+                    precio_anfitriona: 5000,
+                    precios_anfitriona: [{ precio: 5000, comision: 1000 }]
+                  }
                 ]
               },
               { producto_id: 'p2', opciones_venta: [{ tipo: 'shot', precio: 5000, comision: 0 }] }
@@ -102,17 +108,18 @@ describe('SettingsBottleHostessCard', () => {
       expect(screen.getByLabelText('Producto y presentación')).toBeInTheDocument()
     );
     // Solo botella del bar; el solo-shot y el solo-almacén no se listan.
-    expect(screen.queryByText(/Solo shot/)).not.toBeInTheDocument();
+    expect(screen.getByText(/Solo shot/)).toBeInTheDocument();
     expect(screen.queryByText(/Solo almacén/)).not.toBeInTheDocument();
     // El listado muestra el precio y al elegir se cargan precio y comisión.
     expect(screen.getByRole('button', { name: /Whisky.*200\.000/ })).toBeInTheDocument();
-    await waitFor(() => expect(screen.getByLabelText('Precio venta')).toHaveValue('200.000'));
-    expect(screen.getByLabelText('Comisión')).toHaveValue('10.000');
+    fireEvent.click(screen.getByRole('button', { name: /Whisky.*200\.000/ }));
+    await waitFor(() => expect(screen.getByLabelText('Precio por botella')).toHaveValue('200.000'));
+    expect(screen.getByLabelText('Comisión (opcional)')).toHaveValue('10.000');
     expect(screen.getByText(/Vigente:/).textContent).toMatch(/regla por defecto/);
 
     fireEvent.change(screen.getByLabelText('Máx. anfitrionas'), { target: { value: '3' } });
     await screen.findByLabelText('Precio para 3 anfitrionas');
-    fireEvent.change(screen.getByLabelText('Comisión'), { target: { value: '12000' } });
+    fireEvent.change(screen.getByLabelText('Comisión (opcional)'), { target: { value: '12000' } });
     fireEvent.click(screen.getByRole('button', { name: /Guardar Cambios/ }));
 
     await waitFor(() => {
@@ -124,13 +131,23 @@ describe('SettingsBottleHostessCard', () => {
         comision: 12000,
         opciones_venta: [
           { tipo: 'botella', precio: 200000, comision: 12000 },
-          { tipo: 'shot', precio: 5000, comision: 1000 }
+          {
+            tipo: 'shot',
+            precio: 5000,
+            comision: 0,
+            precio_anfitriona: 5000,
+            precios_anfitriona: [{ precio: 5000, comision: 1000 }]
+          }
         ]
       });
       const productPut = request.mock.calls.find(
         args => args[0] === '/api/products/p1' && args[1]?.method === 'PUT'
       );
-      expect(JSON.parse(productPut![1].body)).toEqual({ max_anfitrionas: 3 });
+      expect(JSON.parse(productPut![1].body)).toEqual({
+        max_anfitrionas: 3,
+        ml_shot: null,
+        ml_shot_anfitriona: null
+      });
     });
     await waitFor(() => expect(screen.getByText(/Vigente:/).textContent).toMatch(/Máx\. 3 anf\./));
 

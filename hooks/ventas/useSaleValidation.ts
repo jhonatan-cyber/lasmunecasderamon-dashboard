@@ -319,6 +319,8 @@ export function useSaleValidation({
       (p.tipo_venta === 'shot' ? 'shot' : 'botella') === tipoVenta &&
       // Shot de cliente y shot de anfitriona son líneas distintas: no se suman.
       Boolean(p.shot_anfitriona) === shotAnfitriona &&
+      JSON.stringify(p.acompanamiento_corto ?? null) ===
+        JSON.stringify(producto.acompanamiento_corto ?? null) &&
       Number(p.precio) === Number(precio) &&
       Number(p.comision ?? 0) === Number(comision) &&
       (p.presentacion_id || null) === (productoNormalizado.presentacion_id || null) &&
@@ -430,6 +432,19 @@ export function useSaleValidation({
 
   // ── Submit handler ──────────────────────────────────────────────────
   const handleSubmit = async (clientes: any[], anfitrionas: any[]) => {
+    if (
+      productos.some(
+        p =>
+          p.tipo_venta === 'shot' &&
+          (!p.acompanamiento_corto?.presentacion_id ||
+            !Number.isInteger(p.acompanamiento_corto.ml_por_corto) ||
+            p.acompanamiento_corto.ml_por_corto < 1 ||
+            p.acompanamiento_corto.ml_por_corto > 10000)
+      )
+    ) {
+      toast.warning('Selecciona la soda o gaseosa y los ml por corto para cada producto');
+      return;
+    }
     if (submitting.current) return;
     if (!metodoPago || productos.length === 0) {
       toast.info('Completa todos los campos requeridos');
@@ -478,7 +493,11 @@ export function useSaleValidation({
             producto_id: p.producto_id || p.id,
             presentacion_id: p.presentacion_id || null,
             ...(p.tipo_venta === 'shot'
-              ? { tipo_venta: 'shot' as const, shot_anfitriona: Boolean(p.shot_anfitriona) }
+              ? {
+                  tipo_venta: 'shot' as const,
+                  shot_anfitriona: Boolean(p.shot_anfitriona),
+                  acompanamiento_corto: p.acompanamiento_corto
+                }
               : {}),
             precio: p.precio,
             comision: selectedHostesses.length > 0 ? (p.comision || 0) * p.cantidad : 0,

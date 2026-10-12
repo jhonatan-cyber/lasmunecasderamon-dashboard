@@ -7,6 +7,7 @@ import { formatCurrencyCLP } from '@/lib/utils/formatters';
 import { ChampagneTiersReadonly } from '@/components/bar/transfer/ChampagneTiers';
 import type { ChampagneTierRow } from '@/components/bar/transfer/transferOptions';
 import type { SaleOption } from '@/types/sale-options';
+import { preciosCortoAnfitriona } from '@/lib/sales/hostessShortPrices';
 
 /**
  * Bloque «Configuración guardada»: reutiliza precio/comisión/anfitrionas ya
@@ -80,19 +81,32 @@ export const SavedConfigPanel = memo(function SavedConfigPanel({
                   <span className='text-xs text-muted-foreground'>ml</span>
                 </span>
               )}
+              {option.acompanamiento && (
+                <span className='text-xs text-muted-foreground'>
+                  Incluye {option.acompanamiento.unidades}{' '}
+                  {option.acompanamiento.tipo === 'gaseosa' ? 'gaseosas' : 'sodas'} por botella
+                </span>
+              )}
               {option.tipo === 'shot' ? (
                 <span className='font-semibold'>
-                  Cliente {formatCurrencyCLP(option.precio)} · Anfitriona{' '}
-                  {formatCurrencyCLP(option.precio_anfitriona ?? option.precio)}
+                  Cliente {formatCurrencyCLP(option.precio)} · Sin comisión
+                  {preciosCortoAnfitriona(option).map((row, index) => (
+                    <span key={index} className='block'>
+                      Anfitriona {formatCurrencyCLP(row.precio)} · Comisión{' '}
+                      {formatCurrencyCLP(row.comision)}
+                    </span>
+                  ))}
                 </span>
               ) : (
                 <span className='font-semibold'>{formatCurrencyCLP(option.precio)}</span>
               )}{' '}
-              <span className='text-xs text-muted-foreground'>
-                {Number(option.comision) > 0
-                  ? `· Comisión ${formatCurrencyCLP(Number(option.comision))}`
-                  : '· Sin comisión'}
-              </span>
+              {option.tipo !== 'shot' && (
+                <span className='text-xs text-muted-foreground'>
+                  {Number(option.comision) > 0
+                    ? `· Comisión ${formatCurrencyCLP(Number(option.comision))}`
+                    : '· Sin comisión'}
+                </span>
+              )}
             </dd>
           </div>
         ))}

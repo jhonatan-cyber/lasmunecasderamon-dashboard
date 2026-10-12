@@ -466,6 +466,7 @@ describe('useSaleValidation totals (propina / total)', () => {
           presentacion_id: 'pres-1',
           nombre: 'Whisky 750 ml',
           precio: 3000,
+          acompanamiento_corto: { presentacion_id: 'soda-1', ml_por_corto: 100 },
           cantidad: 2,
           subtotal: 6000,
           tipo_venta: 'shot'
@@ -492,6 +493,7 @@ describe('useSaleValidation totals (propina / total)', () => {
     const detalles = createVentaMock.mock.calls[0][0].detalles;
     expect(detalles[0]).toMatchObject({
       presentacion_id: 'pres-1',
+      acompanamiento_corto: { presentacion_id: 'soda-1', ml_por_corto: 100 },
       cantidad: 2,
       tipo_venta: 'shot'
     });
@@ -508,6 +510,7 @@ describe('useSaleValidation totals (propina / total)', () => {
           presentacion_id: 'pres-1',
           nombre: 'Whisky 750 ml',
           precio: 3000,
+          acompanamiento_corto: { presentacion_id: 'soda-1', ml_por_corto: 100 },
           cantidad: 2,
           subtotal: 6000,
           tipo_venta: 'shot',
@@ -524,6 +527,7 @@ describe('useSaleValidation totals (propina / total)', () => {
 
     expect(createVentaMock.mock.calls[0][0].detalles[0]).toMatchObject({
       presentacion_id: 'pres-1',
+      acompanamiento_corto: { presentacion_id: 'soda-1', ml_por_corto: 100 },
       cantidad: 2,
       tipo_venta: 'shot',
       shot_anfitriona: true
@@ -630,4 +634,27 @@ describe('useSaleValidation totals (propina / total)', () => {
     expect(payload.metodo_pago).toBe('tarjeta');
     expect(payload.cargo_tarjeta).toBeUndefined(); // el cargo por tarjeta ya no existe
   });
+});
+
+it('impide guardar cortos sin producto y ml de acompanamiento', async () => {
+  createVentaMock.mockReset();
+  const { result } = renderSaleHook();
+  act(() =>
+    result.current.formState.setProductos([
+      {
+        id: 'pres-1',
+        presentacion_id: 'pres-1',
+        nombre: 'Whisky',
+        tipo_venta: 'shot',
+        precio: 3000,
+        cantidad: 1,
+        subtotal: 3000
+      }
+    ])
+  );
+  setMetodoPago(result, 'efectivo');
+  await act(async () => {
+    await result.current.handleSubmit([], []);
+  });
+  expect(createVentaMock).not.toHaveBeenCalled();
 });

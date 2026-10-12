@@ -15,6 +15,7 @@ interface PedidoPresentacion {
   shotsCliente: number;
   shotsAnfitriona: number;
   tieneShots: boolean;
+  mlAcompanamiento: number;
 }
 
 interface PresentacionConsumo {
@@ -42,6 +43,32 @@ export async function consumirStock(
   const requerido = new Map<string, PedidoPresentacion>();
 
   for (const detalle of detalles) {
+    if (detalle.acompanamiento_corto) {
+      const mixer = detalle.acompanamiento_corto;
+      const cantidad = Number(detalle.cantidad);
+      if (
+        detalle.tipo_venta !== 'shot' ||
+        !detalle.presentacion_id ||
+        mixer.presentacion_id === detalle.presentacion_id ||
+        !Number.isInteger(cantidad) ||
+        cantidad < 1 ||
+        cantidad > 99 ||
+        !Number.isInteger(mixer.ml_por_corto) ||
+        mixer.ml_por_corto < 1 ||
+        mixer.ml_por_corto > 10000
+      )
+        throw new BusinessError('Consumo de acompa\u00f1amiento inv\u00e1lido');
+      const acumulado = requerido.get(mixer.presentacion_id) ?? {
+        botellas: 0,
+        shotsCliente: 0,
+        shotsAnfitriona: 0,
+        tieneShots: false,
+        mlAcompanamiento: 0
+      };
+      acumulado.mlAcompanamiento += cantidad * mixer.ml_por_corto;
+      acumulado.tieneShots = true;
+      requerido.set(mixer.presentacion_id, acumulado);
+    }
     const presentacionId = detalle.presentacion_id?.trim();
     const unidades = Math.max(0, Math.floor(Number(detalle.cantidad ?? 0)));
     if (!presentacionId || unidades === 0) continue;
@@ -50,7 +77,8 @@ export async function consumirStock(
       botellas: 0,
       shotsCliente: 0,
       shotsAnfitriona: 0,
-      tieneShots: false
+      tieneShots: false,
+      mlAcompanamiento: 0
     };
     if (detalle.tipo_venta === 'shot') {
       if (detalle.shot_anfitriona) acumulado.shotsAnfitriona += unidades;
@@ -65,7 +93,7 @@ export async function consumirStock(
   if (requerido.size === 0) return alertas;
 
   const hayShots = [...requerido.values()].some(
-    pedido => pedido.shotsCliente > 0 || pedido.shotsAnfitriona > 0
+    pedido => pedido.shotsCliente > 0 || pedido.shotsAnfitriona > 0 || pedido.mlAcompanamiento > 0
   );
   const { shotMl, botellaMl, shotsAlerta } = hayShots
     ? await getBarMlConfig(trx)
@@ -75,7 +103,8 @@ export async function consumirStock(
         shotsAlerta: DEFAULT_SHOTS_ALERTA
       };
 
-  for (const [presentacionId, pedido] of requerido) {
+  // Orden estable de bloqueo para ventas concurrentes que comparten bebidas.
+  for (const [presentacionId, pedido] of [...requerido].sort(([a], [b]) => a.localeCompare(b))) {
     const presentaciones = await trx<PresentacionConsumo[]>(
       `SELECT p.id, p.producto_id, p.nombre, p.precio_venta, p.comision, p.ml_botella, pr.ml_shot,
         pr.ml_shot_anfitriona
@@ -85,7 +114,11 @@ export async function consumirStock(
       [presentacionId]
     );
     const presentacion = presentaciones[0];
-    if (!presentacion) continue;
+    if (!presentacion) {
+      if (pedido.mlAcompanamiento > 0)
+        throw new BusinessError('El producto de acompa\u00f1amiento ya no existe');
+      continue;
+    }
 
     const capacidadMl = resolveBotellaMl(presentacion.ml_botella, presentacion.nombre, botellaMl);
     const shotMlPresentacion = resolveShotMl(presentacion.ml_shot, shotMl);
@@ -108,7 +141,9 @@ export async function consumirStock(
     // diferencia con su `ml_restante` (0) no diría nada de los ml que salieron.
     const plan: { id: string; ml_restante: number; ml_consumido: number }[] = [];
     let mlPendiente =
-      pedido.shotsCliente * shotMlPresentacion + pedido.shotsAnfitriona * shotMlAnfitriona;
+      pedido.shotsCliente * shotMlPresentacion +
+      pedido.shotsAnfitriona * shotMlAnfitriona +
+      pedido.mlAcompanamiento;
     let botellasPendientes = pedido.botellas;
 
     for (const unidad of unidades) {
@@ -141,9 +176,11 @@ export async function consumirStock(
       const abiertas = unidades.filter(unidad => Number(unidad.ml_restante ?? 0) > 0).length;
       const totalShots = pedido.shotsCliente + pedido.shotsAnfitriona;
       const mlRequeridos =
-        pedido.shotsCliente * shotMlPresentacion + pedido.shotsAnfitriona * shotMlAnfitriona;
+        pedido.shotsCliente * shotMlPresentacion +
+        pedido.shotsAnfitriona * shotMlAnfitriona +
+        pedido.mlAcompanamiento;
       const mensaje =
-        totalShots === 0
+        totalShots === 0 && pedido.mlAcompanamiento === 0
           ? `Quedan ${unidades.length} de ${pedido.botellas} botellas de "${presentacion.nombre}" en el bar`
           : `No alcanza el stock de "${presentacion.nombre}" en el bar: faltan ${
               mlPendiente > 0 ? `${mlPendiente} ml` : `${botellasPendientes} botella(s)`
@@ -152,7 +189,7 @@ export async function consumirStock(
         presentacion_id: presentacionId,
         disponibles: unidades.length,
         requeridas: pedido.botellas + totalShots,
-        ml_requeridos: totalShots > 0 ? mlRequeridos : 0,
+        ml_requeridos: mlRequeridos,
         ml_disponibles: unidades.reduce(
           (total, unidad) =>
             total +
@@ -217,11 +254,25 @@ export async function consumirStock(
       presentacion_id: presentacionId,
       cantidad: vendidas.length,
       ml:
-        pedido.shotsCliente + pedido.shotsAnfitriona > 0
-          ? pedido.shotsCliente * shotMlPresentacion + pedido.shotsAnfitriona * shotMlAnfitriona
+        pedido.shotsCliente + pedido.shotsAnfitriona > 0 || pedido.mlAcompanamiento > 0
+          ? pedido.shotsCliente * shotMlPresentacion +
+            pedido.shotsAnfitriona * shotMlAnfitriona +
+            pedido.mlAcompanamiento
           : null,
-      precio_venta: Math.floor(Number(presentacion.precio_venta ?? 0)),
-      comision: Math.floor(Number(presentacion.comision ?? 0)),
+      precio_venta:
+        pedido.mlAcompanamiento > 0 &&
+        pedido.botellas === 0 &&
+        pedido.shotsCliente === 0 &&
+        pedido.shotsAnfitriona === 0
+          ? 0
+          : Math.floor(Number(presentacion.precio_venta ?? 0)),
+      comision:
+        pedido.mlAcompanamiento > 0 &&
+        pedido.botellas === 0 &&
+        pedido.shotsCliente === 0 &&
+        pedido.shotsAnfitriona === 0
+          ? 0
+          : Math.floor(Number(presentacion.comision ?? 0)),
       usuario_id: contextoVenta.usuarioId,
       venta_id: contextoVenta.ventaId ?? null,
       fecha_crea: contextoVenta.fecha

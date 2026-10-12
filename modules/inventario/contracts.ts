@@ -10,6 +10,7 @@
 import type { SaleOption } from '@/types/sale-options';
 
 export interface ConsumoInventarioDetalle {
+  acompanamiento_corto?: { presentacion_id: string; ml_por_corto: number };
   presentacion_id?: string | null;
   cantidad?: number | null;
   tipo_venta?: string | null;

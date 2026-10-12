@@ -1,3 +1,4 @@
+import { esCortoAnfitriona } from '@/lib/sales/hostessShortPrices';
 // Modelo de vista de una presentación en el modal de productos de la venta.
 // Antes todo este cálculo vivía dentro del `.map()` del modal mezclado con el
 // JSX de cada celda; aquí solo viven datos y callbacks atados al producto, y el
@@ -84,7 +85,7 @@ export function buildSaleProductItem(producto: any, ctx: SaleProductItemContext)
   // El listado muestra el precio de cada forma de venta, no solo el tipo.
   // Cada audiencia muestra sus propios ml.
   const opcionesTipo: SaleFormatQuantityOption[] = venta.opciones.map(opcion => {
-    const mlOpcion = opcion.value === 'shot_anfitriona' ? mlPorShotAnfitriona : mlPorShot;
+    const mlOpcion = esCortoAnfitriona(opcion.value) ? mlPorShotAnfitriona : mlPorShot;
     return {
       value: opcion.value,
       label: `${opcion.nombre}${opcion.esShot ? ` · ${mlOpcion} ml` : ''}`,
@@ -118,7 +119,7 @@ export function buildSaleProductItem(producto: any, ctx: SaleProductItemContext)
         ctx.onAgregarProducto({
           ...producto,
           tipo_venta: opcion.value === 'botella' ? 'botella' : 'shot',
-          shot_anfitriona: opcion.value === 'shot_anfitriona',
+          shot_anfitriona: esCortoAnfitriona(opcion.value),
           precio: opcion.precio,
           comision: opcion.comision,
           cantidad: opcion.cantidad,
@@ -150,7 +151,7 @@ export function buildSaleProductItem(producto: any, ctx: SaleProductItemContext)
     totalAgregar: formatCurrencyNoDecimals(
       opcionesTipo.reduce((sum, opcion) => sum + opcion.precio * opcion.cantidad, 0)
     ),
-    mlEstimacion: tipoVenta === 'shot_anfitriona' ? mlPorShotAnfitriona : mlPorShot,
+    mlEstimacion: esCortoAnfitriona(tipoVenta) ? mlPorShotAnfitriona : mlPorShot,
     onSaleTypeChange: (value, cantidad) => ctx.onSaleTypeChange(id, value, cantidad),
     onCantidadChange: next => ctx.onCantidadChange(id, String(next)),
     onAgregar,

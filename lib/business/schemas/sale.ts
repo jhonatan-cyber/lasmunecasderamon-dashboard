@@ -57,21 +57,41 @@ export const SaleCreateSchema = z.object({
   device_date: z.string().optional(),
   detalles: z
     .array(
-      z.object({
-        producto_id: z.string(),
-        presentacion_id: z.string().nullable().optional(),
-        // 'shot' descuenta ml de la botella abierta en el bar; por defecto, botella entera.
-        tipo_venta: z.enum(['botella', 'shot']).optional(),
-        // El shot puede cobrarse a precio de cliente (default) o de anfitriona.
-        shot_anfitriona: z.boolean().optional().default(false),
-        precio: z.number(),
-        comision: z.number().optional().default(0),
-        cantidad: z.number().min(1),
-        sub_total: z.number().optional(),
-        hostess_id: z.string().nullable().optional(),
-        hostesses: z.array(z.string()).optional(),
-        isChampagne: z.boolean().optional()
-      })
+      z
+        .object({
+          producto_id: z.string(),
+          presentacion_id: z.string().nullable().optional(),
+          // 'shot' descuenta ml de la botella abierta en el bar; por defecto, botella entera.
+          tipo_venta: z.enum(['botella', 'shot']).optional(),
+          // El shot puede cobrarse a precio de cliente (default) o de anfitriona.
+          acompanamiento_corto: z
+            .object({
+              presentacion_id: z.string().min(1),
+              ml_por_corto: z.number().int().min(1).max(10000)
+            })
+            .optional(),
+          shot_anfitriona: z.boolean().optional().default(false),
+          precio: z.number(),
+          comision: z.number().optional().default(0),
+          cantidad: z.number().min(1),
+          sub_total: z.number().optional(),
+          hostess_id: z.string().nullable().optional(),
+          hostesses: z.array(z.string()).optional(),
+          isChampagne: z.boolean().optional()
+        })
+        .refine(
+          detail =>
+            !detail.acompanamiento_corto ||
+            (detail.tipo_venta === 'shot' &&
+              Boolean(detail.presentacion_id) &&
+              detail.presentacion_id !== detail.acompanamiento_corto.presentacion_id),
+          'El acompa\u00f1amiento requiere un corto y una presentaci\u00f3n distinta'
+        )
+        .transform(detail =>
+          detail.tipo_venta === 'shot' && !detail.shot_anfitriona
+            ? { ...detail, comision: 0, hostess_id: null, hostesses: [] }
+            : detail
+        )
     )
     .min(1, 'Al menos un detalle es requerido')
 });

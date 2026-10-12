@@ -1,6 +1,8 @@
 'use client';
 
 import { useState, useMemo, useCallback } from 'react';
+import { mapForSaleToCartItem } from '@/lib/sales/forSaleMapper';
+import { saleInventoryFields, type SaleInventoryFields } from '@/lib/sales/saleInventoryFields';
 import { generateRandomCode } from '@/lib/utils/codeUtils';
 import { useRouter } from 'next/navigation';
 import { useCurrentUser } from '@/hooks/auth/useCurrentUser';
@@ -11,7 +13,8 @@ import { appEventBus } from '@/lib/utils/eventBus';
 import { useConfigValue } from '@/hooks/shared/useConfigValue';
 import { isChampagneProduct, getHostessLimit } from '@/components/orders/productModalRules';
 
-export type OrderProducto = {
+export type OrderProducto = SaleInventoryFields & {
+  producto_id?: string;
   id_producto?: string | number;
   id?: string | number;
   id_categoria?: string | number;
@@ -22,7 +25,7 @@ export type OrderProducto = {
   cantidad?: number;
   subtotal?: number;
   generaComision?: number;
-  selectedHostesses?: number[];
+  selectedHostesses?: (string | number)[];
   isChampagne?: boolean;
   selectedRoom?: string | null;
   requiresRoom?: boolean;
@@ -48,7 +51,7 @@ export type OrderProductoPayload = OrderProducto & {
   subtotal: number;
   generaComision: number;
   hostessId: string;
-  selectedHostesses: number[];
+  selectedHostesses: (string | number)[];
   isChampagne: boolean;
   selectedRoom: string | null;
   requiresRoom: boolean;
@@ -131,9 +134,9 @@ export function useOrderForm({
     setModalOpen(true);
     setLoadingProductos(true);
     try {
-      const res = await fetch(`/api/products?category_id=${cat.id_categoria || cat.id}`);
+      const res = await fetch(`/api/products?for_sale=1&category_id=${cat.id_categoria || cat.id}`);
       const data = await res.json();
-      if (data.success) setProductosCategoria(data.data);
+      if (data.success) setProductosCategoria(data.data.map(mapForSaleToCartItem));
       else setProductosCategoria([]);
     } catch {
       setProductosCategoria([]);
@@ -168,7 +171,7 @@ export function useOrderForm({
   const handleAgregarProducto = useCallback(
     (producto: OrderProducto) => {
       const productKey = String(producto.id_producto || producto.id || '');
-      const cantidad = cantidades[productKey] || 1;
+      const cantidad = producto.cantidad ?? cantidades[productKey] ?? 1;
       const comisionUnitaria = producto.comision ?? producto.commission ?? 0;
       const generaComision = comisionUnitaria > 0 ? 1 : 0;
       const selectedHostesses = producto.selectedHostesses || [];
@@ -212,6 +215,20 @@ export function useOrderForm({
   const handleSubmitInternal = async () => {
     if (!metodoPago) {
       setError('Selecciona un método de pago');
+      return;
+    }
+    if (
+      productos.some(
+        p =>
+          p.tipo_venta === 'shot' &&
+          (!p.acompanamiento_corto?.presentacion_id ||
+            !Number.isInteger(p.acompanamiento_corto.ml_por_corto) ||
+            p.acompanamiento_corto.ml_por_corto < 1 ||
+            p.acompanamiento_corto.ml_por_corto > 10000 ||
+            Number(p.cantidad) > 99)
+      )
+    ) {
+      setError('Selecciona soda o gaseosa y los ml por corto para cada producto (hasta 99 cortos)');
       return;
     }
     if (productos.length === 0) {
@@ -291,7 +308,8 @@ export function useOrderForm({
         metodoPago,
         totalComision: productos.reduce((sum, item) => sum + (item.comision || 0), 0),
         detalles: productos.map(item => ({
-          productoId: toNullableStringId(item.id_producto || item.id),
+          ...saleInventoryFields(item),
+          productoId: toNullableStringId(item.producto_id || item.id_producto || item.id),
           cantidad: Number(item.cantidad),
           precio: Number(item.precio || item.price),
           subtotal: Number(item.subtotal),
