@@ -56,7 +56,7 @@ describe('resolverVentaProducto', () => {
 
     expect(venta.opciones.map(opcion => opcion.value)).toEqual(['botella', 'shot']);
     // Sin precio de anfitriona el shot es uno solo: no hay a quién diferenciar.
-    expect(venta.opciones[1].nombre).toBe('Shot');
+    expect(venta.opciones[1].nombre).toBe('Corto');
     expect(venta.tieneShotAnfitriona).toBe(false);
     expect(venta.precioBotella).toBe(180000);
     expect(venta.comisionBotella).toBe(20000);
@@ -70,8 +70,8 @@ describe('resolverVentaProducto', () => {
       'shot',
       'shot_anfitriona'
     ]);
-    expect(venta.opciones[1].nombre).toBe('Shot cliente');
-    expect(venta.opciones[2]).toMatchObject({ nombre: 'Shot anfitriona', precio: 3000 });
+    expect(venta.opciones[1].nombre).toBe('Corto cliente');
+    expect(venta.opciones[2]).toMatchObject({ nombre: 'Corto anfitriona', precio: 3000 });
     expect(venta.tieneShotAnfitriona).toBe(true);
     expect(venta.esShot).toBe(true);
     expect(venta.precio).toBe(3000);

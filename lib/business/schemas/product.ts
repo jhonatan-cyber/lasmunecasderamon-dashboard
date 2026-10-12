@@ -24,7 +24,7 @@ export const ProductSchema = z.object({
     z
       .number()
       .int()
-      .min(1, 'Los ml por shot deben ser mayores a 0')
+      .min(1, 'Los ml por corto deben ser mayores a 0')
       .max(10000)
       .nullable()
       .optional()
@@ -36,7 +36,7 @@ export const ProductSchema = z.object({
     z
       .number()
       .int()
-      .min(1, 'Los ml por shot deben ser mayores a 0')
+      .min(1, 'Los ml por corto deben ser mayores a 0')
       .max(10000)
       .nullable()
       .optional()

@@ -380,7 +380,7 @@ export default function BarPage() {
                   <TooltipContent>
                     {stockFilter === 'abiertas'
                       ? 'Mostrar todos'
-                      : 'Mostrar botellas abiertas y vacías por shots'}
+                      : 'Mostrar botellas abiertas y vacías por cortos'}
                   </TooltipContent>
                 </Tooltip>
                 <Tooltip>
@@ -570,13 +570,13 @@ export default function BarPage() {
                                     <p className='mt-1 text-[10px] font-bold uppercase text-amber-600 dark:text-amber-400'>
                                       Abierta: {Number(item.ml_abierta)} de {capacidadBotella} ml
                                       {mlPorShot > 0
-                                        ? ` · ≈${Math.floor(Number(item.ml_abierta) / mlPorShot)} shots`
+                                        ? ` · ≈${Math.floor(Number(item.ml_abierta) / mlPorShot)} cortos`
                                         : ''}
                                     </p>
                                   )}
                                   {Number(item.botellas_vacias_shots ?? 0) > 0 && (
                                     <p className='mt-1 text-[10px] font-bold uppercase text-amber-700 dark:text-amber-400'>
-                                      Vacías por shots o dentro de tolerancia:{' '}
+                                      Vacías por cortos o dentro de tolerancia:{' '}
                                       {Number(item.botellas_vacias_shots)} · pendientes de
                                       devolución
                                     </p>

@@ -178,7 +178,7 @@ export function CajaChartsSection({
           <div className='mt-4 pt-3 border-t border-gray-200 dark:border-gray-700'>
             <div className='flex items-center justify-between gap-2'>
               <span className='text-[10px] font-black uppercase tracking-widest text-amber-600 dark:text-amber-400'>
-                Shots vendidos
+                Cortos vendidos
               </span>
               <span className='text-[10px] text-gray-400 dark:text-gray-500'>
                 Ya incluidos en las ventas
@@ -191,7 +191,7 @@ export function CajaChartsSection({
                   className='flex items-center justify-between rounded-lg bg-amber-50 px-3 py-1.5 dark:bg-amber-900/20'
                 >
                   <span className='text-xs text-amber-700 dark:text-amber-300'>
-                    {item.label} · {Number(item.datos.cantidad || 0)} shots
+                    {item.label} · {Number(item.datos.cantidad || 0)} cortos
                   </span>
                   <span className='text-sm font-bold text-amber-800 dark:text-amber-200'>
                     {formatCurrencyNoDecimals(item.datos.monto || 0)}

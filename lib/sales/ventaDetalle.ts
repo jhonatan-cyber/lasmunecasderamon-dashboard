@@ -38,10 +38,10 @@ export function esShot(detalle: DetalleConTipo): boolean {
   return detalle.tipo_venta === 'shot';
 }
 
-export type EtiquetaVentaDetalle = 'Botella' | 'Shot cliente' | 'Shot anfitriona';
+export type EtiquetaVentaDetalle = 'Botella' | 'Corto cliente' | 'Corto anfitriona';
 
 /** Etiqueta corta para listados: qué se vendió y, si es shot, a quién se le cobró. */
 export function etiquetaVentaDetalle(detalle: DetalleConTipo): EtiquetaVentaDetalle {
   if (!esShot(detalle)) return 'Botella';
-  return detalle.shot_anfitriona ? 'Shot anfitriona' : 'Shot cliente';
+  return detalle.shot_anfitriona ? 'Corto anfitriona' : 'Corto cliente';
 }

@@ -5,6 +5,9 @@ import { z } from 'zod';
 type CategoryInput = z.input<typeof CategorySchema>;
 
 export class CategoryService {
+  static async deletionPreview(id: string) {
+    return CategoryRepository.deletionPreview(id);
+  }
   static async getAll(forSale = false) {
     return await CategoryRepository.getAll(forSale);
   }

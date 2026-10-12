@@ -13,6 +13,8 @@ export interface DeleteConfirmModalProps {
   fieldName?: string;
   action?: 'delete' | 'deactivate';
   isLoading?: boolean;
+  children?: React.ReactNode;
+  confirmDisabled?: boolean;
 }
 
 const capitalize = (s: string) => s.charAt(0).toUpperCase() + s.slice(1);
@@ -25,7 +27,9 @@ export function DeleteConfirmModal({
   entityValue,
   fieldName,
   action = 'delete',
-  isLoading = false
+  isLoading = false,
+  children,
+  confirmDisabled = false
 }: DeleteConfirmModalProps) {
   const isDeactivate = action === 'deactivate';
   const field = fieldName ?? capitalize(entityLabel);
@@ -63,6 +67,7 @@ export function DeleteConfirmModal({
                 </p>
               </div>
             </div>
+            {children}
             {isDeactivate && (
               <div className='mt-4 flex items-start gap-2.5 rounded-xl border border-amber-300 dark:border-amber-900/50 bg-amber-50 dark:bg-amber-900/10 p-3'>
                 <Fingerprint className='h-4 w-4 mt-0.5 shrink-0 text-amber-600 dark:text-amber-400' />
@@ -91,7 +96,7 @@ export function DeleteConfirmModal({
             <Button
               onClick={handleConfirm}
               variant='outline'
-              disabled={isLoading}
+              disabled={isLoading || confirmDisabled}
               className='flex items-center bg-black text-white dark:bg-white dark:text-black gap-2 rounded-full px-6 hover:scale-105 transition-all duration-200 text-sm sm:text-base w-full sm:w-auto dark:hover:bg-gray-200'
             >
               {isLoading ? (

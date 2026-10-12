@@ -41,8 +41,8 @@ describe('cajaExportUtils · shots del cierre', () => {
   it('el resumen imprimible separa los shots de cliente y de anfitriona', () => {
     const html = generatePrintContent(baseContext());
 
-    expect(html).toContain('Shots a clientes (ya en ventas)');
-    expect(html).toContain('Shots a anfitrionas (ya en ventas)');
+    expect(html).toContain('Cortos a clientes (ya en ventas)');
+    expect(html).toContain('Cortos a anfitrionas (ya en ventas)');
     expect(html).toContain('$10.000');
     expect(html).toContain('$6.000');
   });
@@ -51,11 +51,11 @@ describe('cajaExportUtils · shots del cierre', () => {
     const { body } = getPDFData(baseContext());
     const conceptos = body.map((fila: unknown[]) => fila[1]);
 
-    expect(conceptos.indexOf('Shots a clientes (ya en ventas)')).toBe(
+    expect(conceptos.indexOf('Cortos a clientes (ya en ventas)')).toBe(
       conceptos.indexOf('Ventas Barras') + 1
     );
-    expect(conceptos.indexOf('Shots a anfitrionas (ya en ventas)')).toBe(
-      conceptos.indexOf('Shots a clientes (ya en ventas)') + 1
+    expect(conceptos.indexOf('Cortos a anfitrionas (ya en ventas)')).toBe(
+      conceptos.indexOf('Cortos a clientes (ya en ventas)') + 1
     );
     // Al insertar filas nuevas la numeración tiene que seguir correlativa.
     expect(body.map((fila: unknown[]) => fila[0])).toEqual(
@@ -66,9 +66,9 @@ describe('cajaExportUtils · shots del cierre', () => {
   it('sin shots vendidos no agrega filas al cierre', () => {
     const sinShots = baseContext({ ventasBarras: { total_venta: 25900, propinas: 900 } });
 
-    expect(generatePrintContent(sinShots)).not.toContain('Shots a');
+    expect(generatePrintContent(sinShots)).not.toContain('Cortos a');
     expect(getPDFData(sinShots).body.map((fila: unknown[]) => fila[1])).not.toContain(
-      'Shots a clientes (ya en ventas)'
+      'Cortos a clientes (ya en ventas)'
     );
   });
 });

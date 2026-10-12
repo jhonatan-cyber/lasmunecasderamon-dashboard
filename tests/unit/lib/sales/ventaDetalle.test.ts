@@ -12,9 +12,9 @@ describe('ventaDetalle', () => {
   });
 
   it('distingue el shot de cliente del de anfitriona', () => {
-    expect(etiquetaVentaDetalle({ tipo_venta: 'shot' })).toBe('Shot cliente');
+    expect(etiquetaVentaDetalle({ tipo_venta: 'shot' })).toBe('Corto cliente');
     expect(etiquetaVentaDetalle({ tipo_venta: 'shot', shot_anfitriona: true })).toBe(
-      'Shot anfitriona'
+      'Corto anfitriona'
     );
   });
 

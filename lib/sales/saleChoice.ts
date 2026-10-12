@@ -68,7 +68,7 @@ export function resolverVentaProducto(producto: any, eleccion?: SaleChoice): Ven
       ? [
           {
             value: 'shot' as SaleChoice,
-            nombre: tieneShotAnfitriona ? 'Shot cliente' : 'Shot',
+            nombre: tieneShotAnfitriona ? 'Corto cliente' : 'Corto',
             precio: precioShotCliente,
             comision: comisionShot,
             esShot: true
@@ -79,7 +79,7 @@ export function resolverVentaProducto(producto: any, eleccion?: SaleChoice): Ven
       ? [
           {
             value: 'shot_anfitriona' as SaleChoice,
-            nombre: 'Shot anfitriona',
+            nombre: 'Corto anfitriona',
             precio: precioAnfitriona,
             comision: comisionShot,
             esShot: true

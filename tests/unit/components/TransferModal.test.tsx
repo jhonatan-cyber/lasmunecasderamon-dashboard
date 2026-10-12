@@ -59,8 +59,8 @@ describe('tipos de venta al transferir', () => {
     render(<TransferModal open item={item} onOpenChange={vi.fn()} onDone={onDone} />);
     fireEvent.click(screen.getByRole('button', { name: 'Modificar precios' }));
     // El toggle muestra los ml por shot efectivos (producto o global).
-    fireEvent.click(screen.getByRole('button', { name: 'Shot · 50 ml' }));
-    fireEvent.change(screen.getByLabelText('Precio shot cliente'), {
+    fireEvent.click(screen.getByRole('button', { name: 'Corto · 50 ml' }));
+    fireEvent.change(screen.getByLabelText('Precio corto cliente'), {
       target: { value: '3000' }
     });
     fireEvent.change(screen.getByLabelText('Cantidad'), { target: { value: '2' } });
@@ -83,20 +83,20 @@ describe('tipos de venta al transferir', () => {
     const onDone = vi.fn();
     render(<TransferModal open item={item} onOpenChange={vi.fn()} onDone={onDone} />);
     // Sin shot activo los inputs de ml permanecen ocultos.
-    expect(screen.queryByLabelText('Ml shot cliente')).not.toBeInTheDocument();
-    expect(screen.queryByLabelText('Ml shot anfitriona')).not.toBeInTheDocument();
+    expect(screen.queryByLabelText('Ml corto cliente')).not.toBeInTheDocument();
+    expect(screen.queryByLabelText('Ml corto anfitriona')).not.toBeInTheDocument();
     fireEvent.click(screen.getByRole('button', { name: 'Modificar precios' }));
-    expect(screen.queryByLabelText('Ml shot cliente')).not.toBeInTheDocument();
+    expect(screen.queryByLabelText('Ml corto cliente')).not.toBeInTheDocument();
     // Al activar el shot aparecen el precio único y los dos inputs de ml.
-    fireEvent.click(screen.getByRole('button', { name: 'Shot · 50 ml' }));
-    expect(screen.getByLabelText('Ml shot cliente')).toHaveValue('');
-    expect(screen.getByLabelText('Ml shot anfitriona')).toHaveValue('');
-    fireEvent.change(screen.getByLabelText('Ml shot cliente'), { target: { value: '75' } });
+    fireEvent.click(screen.getByRole('button', { name: 'Corto · 50 ml' }));
+    expect(screen.getByLabelText('Ml corto cliente')).toHaveValue('');
+    expect(screen.getByLabelText('Ml corto anfitriona')).toHaveValue('');
+    fireEvent.change(screen.getByLabelText('Ml corto cliente'), { target: { value: '75' } });
     // El label del tipo de venta refleja el valor editado al instante.
-    expect(screen.getByRole('button', { name: 'Shot · 75 ml' })).toBeInTheDocument();
-    fireEvent.change(screen.getByLabelText('Ml shot anfitriona'), { target: { value: '40' } });
-    expect(screen.getByRole('button', { name: 'Shot · 75 ml · Anf 40 ml' })).toBeInTheDocument();
-    fireEvent.change(screen.getByLabelText('Precio shot cliente'), {
+    expect(screen.getByRole('button', { name: 'Corto · 75 ml' })).toBeInTheDocument();
+    fireEvent.change(screen.getByLabelText('Ml corto anfitriona'), { target: { value: '40' } });
+    expect(screen.getByRole('button', { name: 'Corto · 75 ml · Anf 40 ml' })).toBeInTheDocument();
+    fireEvent.change(screen.getByLabelText('Precio corto cliente'), {
       target: { value: '3000' }
     });
     fireEvent.change(screen.getByLabelText('Cantidad'), { target: { value: '2' } });
@@ -137,17 +137,17 @@ describe('tipos de venta al transferir', () => {
     render(<TransferModal open item={item} onOpenChange={vi.fn()} onDone={onDone} />);
     fireEvent.click(screen.getByRole('button', { name: 'Modificar precios' }));
     // Sin shot activo no se piden ni el precio ni los ml del shot.
-    expect(screen.queryByLabelText('Precio shot cliente')).not.toBeInTheDocument();
-    fireEvent.click(screen.getByRole('button', { name: 'Shot · 50 ml' }));
-    expect(screen.getByLabelText('Precio shot cliente')).toBeInTheDocument();
-    expect(screen.getByLabelText('Ml shot cliente')).toBeInTheDocument();
-    expect(screen.getByLabelText('Ml shot anfitriona')).toBeInTheDocument();
-    fireEvent.change(screen.getByLabelText('Precio shot cliente'), {
+    expect(screen.queryByLabelText('Precio corto cliente')).not.toBeInTheDocument();
+    fireEvent.click(screen.getByRole('button', { name: 'Corto · 50 ml' }));
+    expect(screen.getByLabelText('Precio corto cliente')).toBeInTheDocument();
+    expect(screen.getByLabelText('Ml corto cliente')).toBeInTheDocument();
+    expect(screen.getByLabelText('Ml corto anfitriona')).toBeInTheDocument();
+    fireEvent.change(screen.getByLabelText('Precio corto cliente'), {
       target: { value: '3000' }
     });
-    fireEvent.change(screen.getByLabelText('Ml shot cliente'), { target: { value: '50' } });
-    fireEvent.change(screen.getByLabelText('Ml shot anfitriona'), { target: { value: '30' } });
-    fireEvent.change(screen.getByLabelText('Precio shot anfitriona'), {
+    fireEvent.change(screen.getByLabelText('Ml corto cliente'), { target: { value: '50' } });
+    fireEvent.change(screen.getByLabelText('Ml corto anfitriona'), { target: { value: '30' } });
+    fireEvent.change(screen.getByLabelText('Precio corto anfitriona'), {
       target: { value: '5000' }
     });
     fireEvent.change(screen.getByLabelText('Cantidad'), { target: { value: '1' } });
@@ -173,11 +173,11 @@ describe('tipos de venta al transferir', () => {
     const onDone = vi.fn();
     render(<TransferModal open item={item} onOpenChange={vi.fn()} onDone={onDone} />);
     fireEvent.click(screen.getByRole('button', { name: 'Modificar precios' }));
-    fireEvent.click(screen.getByRole('button', { name: 'Shot · 50 ml' }));
-    fireEvent.change(screen.getByLabelText('Precio shot cliente'), {
+    fireEvent.click(screen.getByRole('button', { name: 'Corto · 50 ml' }));
+    fireEvent.change(screen.getByLabelText('Precio corto cliente'), {
       target: { value: '3000' }
     });
-    fireEvent.change(screen.getByLabelText('Ml shot cliente'), { target: { value: '50' } });
+    fireEvent.change(screen.getByLabelText('Ml corto cliente'), { target: { value: '50' } });
     fireEvent.change(screen.getByLabelText('Cantidad'), { target: { value: '1' } });
     fireEvent.click(screen.getByRole('button', { name: 'Traspasar' }));
     await waitFor(() => expect(onDone).toHaveBeenCalledOnce());

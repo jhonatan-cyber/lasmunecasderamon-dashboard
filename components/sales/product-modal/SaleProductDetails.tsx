@@ -33,7 +33,7 @@ export function SaleProductDetails({ item }: { item: SaleProductItem }) {
         <p className='text-xs text-amber-600 dark:text-amber-400 font-medium'>
           Botella abierta: {Number(p.ml_abierta)} ml
           {item.mlEstimacion > 0
-            ? ` · ≈${Math.floor(Number(p.ml_abierta) / item.mlEstimacion)} shots`
+            ? ` · ≈${Math.floor(Number(p.ml_abierta) / item.mlEstimacion)} cortos`
             : ''}
         </p>
       )}

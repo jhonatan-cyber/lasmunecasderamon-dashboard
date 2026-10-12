@@ -531,7 +531,11 @@ export class StatsQueries {
     try {
       const roles = await query<any[]>(`SELECT id_rol, nombre FROM roles`);
       const users = await query<any[]>(
-        `SELECT u.id_usuario, u.nick, u.estado, u.rol_id, r.nombre as rol_nombre
+        `SELECT u.id_usuario, u.nick, u.estado, u.rol_id, r.nombre as rol_nombre,
+         CASE WHEN EXISTS (
+           SELECT 1 FROM logins l
+           WHERE l.usuario_id = u.id_usuario AND l.estado = 1 AND l.en_local = 1
+         ) THEN 1 ELSE 0 END AS logueado_en_local
        FROM usuarios u
        INNER JOIN roles r ON r.id_rol = u.rol_id`
       );
@@ -541,7 +545,9 @@ export class StatsQueries {
           .filter(role => roleNames.includes(role.nombre.toLowerCase()))
           .map(role => role.id_rol);
         const roleUsers = users.filter(u => roleIds.includes(u.rol_id));
-        const loggedUsers = roleUsers.filter(u => Number(u.estado) === 1);
+        const loggedUsers = roleUsers.filter(
+          u => Number(u.estado) === 1 && Number(u.logueado_en_local) === 1
+        );
         return {
           total: roleUsers.length,
           logueadas: loggedUsers.length,

@@ -52,8 +52,8 @@ describe('capacidad de la botella en la tarjeta del bar', () => {
 
     expect(screen.getByText(/Abierta: 950 de 1000 ml/)).toBeInTheDocument();
     // El resto de los números de la tarjeta no cambian.
-    expect(screen.getByText(/≈19 shots/)).toBeInTheDocument();
-    expect(screen.getByText(/Shots servidos: 50 ml/)).toBeInTheDocument();
+    expect(screen.getByText(/≈19 cortos/)).toBeInTheDocument();
+    expect(screen.getByText(/Cortos servidos: 50 ml/)).toBeInTheDocument();
   });
 
   it('toma la capacidad del nombre cuando la presentación no la tiene guardada', () => {

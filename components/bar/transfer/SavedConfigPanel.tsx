@@ -48,7 +48,7 @@ export const SavedConfigPanel = memo(function SavedConfigPanel({
             className='flex items-center justify-between rounded-lg bg-white/70 px-3 py-2 text-sm dark:bg-black/20'
           >
             <dt className='font-medium capitalize'>
-              {option.tipo === 'botella' ? 'Botella' : 'Shot'}
+              {option.tipo === 'botella' ? 'Botella' : 'Corto'}
             </dt>
             <dd className='flex flex-wrap items-center justify-end gap-x-2 gap-y-1 text-right tabular-nums'>
               {option.tipo === 'shot' && (
@@ -56,7 +56,7 @@ export const SavedConfigPanel = memo(function SavedConfigPanel({
                   <span className='text-xs text-muted-foreground'>Cli.</span>
                   <Input
                     id='transfer-ml-shot'
-                    aria-label='Ml por shot a cliente'
+                    aria-label='Ml por corto a cliente'
                     value={mlShotCliente}
                     onChange={event => onMlShotClienteChange(event.target.value.replace(/\D/g, ''))}
                     placeholder={String(shotMl)}
@@ -67,7 +67,7 @@ export const SavedConfigPanel = memo(function SavedConfigPanel({
                   <span className='text-xs text-muted-foreground'>ml · Anf.</span>
                   <Input
                     id='transfer-ml-shot-anfitriona'
-                    aria-label='Ml por shot a anfitriona'
+                    aria-label='Ml por corto a anfitriona'
                     value={mlShotAnfitriona}
                     onChange={event =>
                       onMlShotAnfitrionaChange(event.target.value.replace(/\D/g, ''))

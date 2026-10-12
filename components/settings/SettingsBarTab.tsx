@@ -72,7 +72,7 @@ export function SettingsBarTab() {
   const handleSave = async () => {
     const shot = Number(String(shotMl).trim());
     if (!Number.isInteger(shot) || shot < 1 || shot > 1000) {
-      toast.error('Los ml por shot deben ser un número entero entre 1 y 1000');
+      toast.error('Los ml por corto deben ser un número entero entre 1 y 1000');
       return;
     }
     const botella = Number(String(botellaMl).trim());
@@ -81,12 +81,12 @@ export function SettingsBarTab() {
       return;
     }
     if (shot > botella) {
-      toast.error('Los ml por shot no pueden superar los ml de la botella');
+      toast.error('Los ml por corto no pueden superar los ml de la botella');
       return;
     }
     const alerta = Number(String(shotsAlerta).trim());
     if (!Number.isInteger(alerta) || alerta < 1 || alerta > 50) {
-      toast.error('La alerta debe ser un número entero entre 1 y 50 shots restantes');
+      toast.error('La alerta debe ser un número entero entre 1 y 50 cortos restantes');
       return;
     }
     const merma = Number(String(mermaShotsMl).trim());
@@ -119,7 +119,7 @@ export function SettingsBarTab() {
       // El resto de la pestaña lee la configuración de la caché compartida: sin esto, el bar
       // y los formularios seguirían mostrando el valor viejo hasta recargar.
       await refrescarConfiguraciones();
-      toast.success('Tragos y shots actualizados');
+      toast.success('Tragos y cortos actualizados');
     } catch (error) {
       logger.captureException(error, { context: 'SettingsBarTab:save' });
       toast.error('Error al guardar la configuración del bar');
@@ -131,9 +131,9 @@ export function SettingsBarTab() {
   const fields = [
     {
       id: 'bar-shot-ml',
-      title: 'Mililitros por shot',
+      title: 'Mililitros por corto',
       icon: GlassWater,
-      description: 'Cantidad que se sirve en cada shot.',
+      description: 'Cantidad que se sirve en cada corto.',
       hint: 'Medida general para productos sin un valor propio.',
       value: shotMl,
       onChange: setShotMl,
@@ -159,13 +159,13 @@ export function SettingsBarTab() {
       id: 'bar-shots-alerta',
       title: 'Alerta de nivel bajo',
       icon: AlertTriangle,
-      description: 'Avisa cuando queden estos shots o menos.',
+      description: 'Avisa cuando queden estos cortos o menos.',
       hint: 'Ayuda a identificar las botellas abiertas que están por agotarse.',
       value: shotsAlerta,
       onChange: setShotsAlerta,
       min: 1,
       max: 50,
-      unit: 'shots',
+      unit: 'cortos',
       tone: 'bg-amber-100 text-amber-700 dark:bg-amber-950 dark:text-amber-300'
     },
     {
@@ -268,7 +268,7 @@ export function SettingsBarTab() {
         </div>
         <div className='rounded-xl border border-sky-100 bg-sky-50/70 px-4 py-3 text-sm leading-relaxed text-sky-900 dark:border-sky-900 dark:bg-sky-950/30 dark:text-sky-200'>
           <span className='font-semibold'>Medidas por producto.</span> Puedes definir distintos ml
-          por shot para cliente y anfitriona en la ficha del producto o al traspasar. Esos valores
+          por corto para cliente y anfitriona en la ficha del producto o al traspasar. Esos valores
           tienen prioridad sobre estas medidas generales.
         </div>
         <div className='flex flex-col gap-3 border-t border-neutral-200 pt-5 sm:flex-row sm:items-center sm:justify-between dark:border-neutral-800'>

@@ -101,7 +101,7 @@ describe('vistas de productos en nueva venta', () => {
     fireEvent.error(photo);
     expect(photo).toHaveAttribute('src', '/api/images/products/default.png');
     fireEvent.click(screen.getByRole('button', { name: 'Botella: aumentar cantidad' }));
-    fireEvent.click(screen.getByRole('button', { name: 'Shot · 50 ml: aumentar cantidad' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Corto · 50 ml: aumentar cantidad' }));
     fireEvent.click(screen.getByRole('radio', { name: 'Ver como tarjetas' }));
     expect(screen.queryByRole('table')).not.toBeInTheDocument();
     expect(screen.getAllByText('1')).toHaveLength(2);
@@ -139,10 +139,10 @@ describe('vistas de productos en nueva venta', () => {
     render(<Harness productos={[conAnfitriona]} onAdd={add} />);
 
     // Con precio de anfitriona el shot se parte en dos opciones, cada una con su precio.
-    expect(screen.getByText('Shot cliente · 50 ml')).toBeInTheDocument();
-    expect(screen.getByText('Shot anfitriona · 50 ml')).toBeInTheDocument();
+    expect(screen.getByText('Corto cliente · 50 ml')).toBeInTheDocument();
+    expect(screen.getByText('Corto anfitriona · 50 ml')).toBeInTheDocument();
     fireEvent.click(
-      screen.getByRole('button', { name: 'Shot anfitriona · 50 ml: aumentar cantidad' })
+      screen.getByRole('button', { name: 'Corto anfitriona · 50 ml: aumentar cantidad' })
     );
     fireEvent.click(screen.getByRole('button', { name: 'Agregar producto' }));
 
@@ -155,8 +155,8 @@ describe('vistas de productos en nueva venta', () => {
 
   it('mantiene una sola opción de shot cuando no hay precio de anfitriona', () => {
     render(<Harness productos={[product]} onAdd={vi.fn()} />);
-    expect(screen.getByText('Shot · 50 ml')).toBeInTheDocument();
-    expect(screen.queryByText('Shot anfitriona · 50 ml')).not.toBeInTheDocument();
+    expect(screen.getByText('Corto · 50 ml')).toBeInTheDocument();
+    expect(screen.queryByText('Corto anfitriona · 50 ml')).not.toBeInTheDocument();
   });
 
   const conComisiones = {
@@ -170,7 +170,7 @@ describe('vistas de productos en nueva venta', () => {
   it('solo permite seleccionar anfitrionas en el formato con comisión', () => {
     render(<Harness productos={[conComisiones]} onAdd={vi.fn()} />);
     expect(screen.getByText('Sin comisión')).toBeInTheDocument();
-    fireEvent.click(screen.getByRole('button', { name: 'Shot · 50 ml: aumentar cantidad' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Corto · 50 ml: aumentar cantidad' }));
     expect(screen.getByText('Sin comisión')).toBeInTheDocument();
     fireEvent.click(screen.getByRole('button', { name: 'Botella: aumentar cantidad' }));
     expect(screen.queryByText('Sin comisión')).not.toBeInTheDocument();
@@ -187,7 +187,7 @@ describe('vistas de productos en nueva venta', () => {
     };
     render(<Harness productos={[shotConComision]} onAdd={vi.fn()} />);
     expect(screen.getByRole('button', { name: 'Agregar producto' })).toBeDisabled();
-    fireEvent.click(screen.getByRole('button', { name: 'Shot · 50 ml: aumentar cantidad' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Corto · 50 ml: aumentar cantidad' }));
     expect(screen.getByRole('button', { name: 'Agregar producto' })).toBeEnabled();
   });
 
@@ -213,6 +213,6 @@ describe('vistas de productos en nueva venta', () => {
     // La cantidad en carrito es un total del producto, independiente del formato.
     expect(screen.getByText('En carrito · 2')).toBeInTheDocument();
 
-    expect(screen.getByText('Shot cliente · 50 ml')).toBeInTheDocument();
+    expect(screen.getByText('Corto cliente · 50 ml')).toBeInTheDocument();
   });
 });

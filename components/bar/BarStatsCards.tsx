@@ -30,7 +30,7 @@ export function BarStatsCards({
   const [detalleAbierto, setDetalleAbierto] = useState(false);
   const stats = [
     {
-      title: 'Shots servidos hoy',
+      title: 'Cortos servidos hoy',
       label: 'Hoy',
       value: resumen ? resumen.shotsServidosHoy : '—',
       detail: resumen ? `${resumen.mlServidosHoy} ml servidos` : 'Cargando resumen del bar…',
@@ -62,7 +62,7 @@ export function BarStatsCards({
       label: 'Stock bajo',
       value: resumen ? resumen.botellasPorAgotarse : '—',
       detail: resumen
-        ? `Con ${resumen.shotsAlerta} shots o menos restantes`
+        ? `Con ${resumen.shotsAlerta} cortos o menos restantes`
         : 'Cargando resumen del bar…',
       icon: AlertTriangle,
       color: '245, 158, 11',

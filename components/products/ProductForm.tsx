@@ -375,7 +375,7 @@ export function ProductForm({
             htmlFor='prod-ml-shot'
             className='block text-xs font-bold uppercase tracking-wider text-gray-500 dark:text-gray-400 ml-1'
           >
-            Ml por shot
+            Ml por corto
           </label>
           <div className='grid grid-cols-1 sm:grid-cols-2 gap-2'>
             <Input
@@ -400,7 +400,7 @@ export function ProductForm({
             />
           </div>
           <p className='text-[11px] text-gray-400 dark:text-gray-500 ml-1'>
-            Ml que se sirve en cada shot de este producto. En vacío, cliente usa el valor global de
+            Ml que se sirve en cada corto de este producto. En vacío, cliente usa el valor global de
             Ajustes → Bar y anfitriona usa el de cliente.
           </p>
         </div>

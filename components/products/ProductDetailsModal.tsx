@@ -242,7 +242,7 @@ export function ProductDetailsModal({
                     <Info label='Máximo de anfitrionas'>
                       {item.max_anfitrionas ?? 'Según configuración general'}
                     </Info>
-                    <Info label='Ml por shot'>
+                    <Info label='Ml por corto'>
                       {item.ml_shot != null && Number(item.ml_shot) > 0
                         ? `${Number(item.ml_shot)} ml`
                         : 'Configuración global'}

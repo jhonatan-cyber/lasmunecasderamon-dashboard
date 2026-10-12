@@ -109,7 +109,7 @@ export const SaleTypeEditor = memo(function SaleTypeEditor({
             <div className='grid grid-cols-2 items-end gap-3'>
               <div className='flex flex-col gap-2'>
                 <label htmlFor={'price-' + tipo} className='text-sm'>
-                  {tipo === 'botella' ? 'Precio por botella' : 'Precio shot cliente'}
+                  {tipo === 'botella' ? 'Precio por botella' : 'Precio corto cliente'}
                 </label>
                 <Input
                   id={'price-' + tipo}
@@ -128,7 +128,7 @@ export const SaleTypeEditor = memo(function SaleTypeEditor({
               {tipo === 'shot' && (
                 <div className='flex flex-col gap-2'>
                   <label htmlFor='price-shot-anfitriona' className='text-sm'>
-                    Precio shot anfitriona
+                    Precio corto anfitriona
                   </label>
                   <Input
                     id='price-shot-anfitriona'
@@ -162,7 +162,7 @@ export const SaleTypeEditor = memo(function SaleTypeEditor({
               {tipo === 'shot' && (
                 <div className='flex flex-col gap-2'>
                   <label htmlFor='transfer-ml-shot-cliente' className='text-sm'>
-                    Ml shot cliente
+                    Ml corto cliente
                   </label>
                   <Input
                     id='transfer-ml-shot-cliente'
@@ -177,7 +177,7 @@ export const SaleTypeEditor = memo(function SaleTypeEditor({
               {tipo === 'shot' && (
                 <div className='flex flex-col gap-2'>
                   <label htmlFor='transfer-ml-shot-anfitriona' className='text-sm'>
-                    Ml shot anfitriona
+                    Ml corto anfitriona
                   </label>
                   <Input
                     id='transfer-ml-shot-anfitriona'

@@ -99,12 +99,12 @@ export function BarCard({ item, entranceIndex }: BarCardProps) {
             {mlAbierta > 0 && (
               <div className='rounded-xl bg-amber-500/15 px-3 py-2 text-xs font-medium text-amber-700 dark:text-amber-300'>
                 Abierta: {mlAbierta} de {capacidadBotella} ml
-                {shotsRestantes > 0 ? ` · ≈${shotsRestantes} shots` : ''}
+                {shotsRestantes > 0 ? ` · ≈${shotsRestantes} cortos` : ''}
               </div>
             )}
             {Number(item.botellas_vacias_shots ?? 0) > 0 && (
               <div className='rounded-xl bg-rose-500/10 px-3 py-2 text-xs font-semibold text-rose-700 dark:text-rose-300'>
-                {item.botellas_vacias_shots} botella(s) vacía(s) por shots o dentro de tolerancia ·
+                {item.botellas_vacias_shots} botella(s) vacía(s) por cortos o dentro de tolerancia ·
                 pendiente(s) de devolución
                 <div className='mt-1 space-y-0.5 font-mono font-medium'>
                   {item.botellas_por_devolver?.map(botella => (
@@ -117,7 +117,7 @@ export function BarCard({ item, entranceIndex }: BarCardProps) {
               </div>
             )}
             {mlServidos > 0 && (
-              <p className='text-xs text-muted-foreground'>Shots servidos: {mlServidos} ml</p>
+              <p className='text-xs text-muted-foreground'>Cortos servidos: {mlServidos} ml</p>
             )}
           </div>
         </CardHeader>

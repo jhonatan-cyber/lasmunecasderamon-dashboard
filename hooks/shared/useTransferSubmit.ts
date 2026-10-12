@@ -118,11 +118,11 @@ export function useTransferSubmit({
           : '';
       if (form.shotActivo) {
         if (mlNuevo !== '' && (Number(mlNuevo) < 1 || Number(mlNuevo) > 10000)) {
-          toast.error('Los ml por shot deben estar entre 1 y 10000');
+          toast.error('Los ml por corto deben estar entre 1 y 10000');
           return;
         }
         if (mlAnfNuevo !== '' && (Number(mlAnfNuevo) < 1 || Number(mlAnfNuevo) > 10000)) {
-          toast.error('Los ml del shot de anfitriona deben estar entre 1 y 10000');
+          toast.error('Los ml del corto de anfitriona deben estar entre 1 y 10000');
           return;
         }
         if (mlNuevo !== mlActual || mlAnfNuevo !== mlAnfActual) {
@@ -136,7 +136,7 @@ export function useTransferSubmit({
           });
           const mlData = await mlRes.json().catch(() => ({}));
           if (!mlRes.ok || !mlData.success) {
-            toast.error(mlData.message || 'No se pudieron guardar los ml por shot');
+            toast.error(mlData.message || 'No se pudieron guardar los ml por corto');
             return;
           }
         }

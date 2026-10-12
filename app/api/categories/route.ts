@@ -91,10 +91,12 @@ export const DELETE = withRoute(
     const id = searchParams.get('id');
     if (!id) throw new ValidationError('Falta el id');
 
-    await CategoryService.delete(id);
+    const result = await CategoryService.delete(id);
     return NextResponse.json({
       success: true,
-      message: 'Categoría y productos asociados eliminados correctamente'
+      message: result.failedImages
+        ? `Categoría y productos eliminados. No se pudieron borrar ${result.failedImages} imágenes; revisa los permisos de archivos.`
+        : 'Categoría, productos asociados e imágenes eliminados correctamente'
     });
   }
 );

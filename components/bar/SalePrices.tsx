@@ -62,7 +62,7 @@ export function SalePrices({
               </span>
             </span>
           ) : (
-            <span className='text-xs font-medium text-muted-foreground'>Shot · {shotMl} ml</span>
+            <span className='text-xs font-medium text-muted-foreground'>Corto · {shotMl} ml</span>
           )}
           {field !== 'comision' &&
             (option.tipo === 'shot' &&

@@ -237,11 +237,11 @@ const shotsDeCaja = (ctx: CajaExportContext) =>
   ctx.ventasBarras?.shots_cliente || ctx.ventasBarras?.shots_anfitriona
     ? [
         {
-          label: 'Shots a clientes (ya en ventas)',
+          label: 'Cortos a clientes (ya en ventas)',
           value: Number(ctx.ventasBarras?.shots_cliente?.monto || 0)
         },
         {
-          label: 'Shots a anfitrionas (ya en ventas)',
+          label: 'Cortos a anfitrionas (ya en ventas)',
           value: Number(ctx.ventasBarras?.shots_anfitriona?.monto || 0)
         }
       ]

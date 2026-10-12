@@ -104,9 +104,9 @@ describe('buscador rápido de Nueva Venta', () => {
     renderSearch([conShotAnfitriona], { onAdd });
     const row = fila();
     fireEvent.click(row.getByRole('button', { name: 'Botella: aumentar cantidad' }));
-    fireEvent.click(row.getByRole('button', { name: 'Shot cliente · 50 ml: aumentar cantidad' }));
+    fireEvent.click(row.getByRole('button', { name: 'Corto cliente · 50 ml: aumentar cantidad' }));
     fireEvent.click(
-      row.getByRole('button', { name: 'Shot anfitriona · 50 ml: aumentar cantidad' })
+      row.getByRole('button', { name: 'Corto anfitriona · 50 ml: aumentar cantidad' })
     );
     fireEvent.click(row.getByRole('button', { name: 'Agregar Black Label 750 ml' }));
 
@@ -153,13 +153,13 @@ describe('buscador rápido de Nueva Venta', () => {
     renderSearch([{ ...conShotAnfitriona, ml_abierta: 620, ml_shot: null }]);
 
     // Sin ml_shot propio se usa el global de 50 ml.
-    expect(screen.getByText('Botella abierta: 620 ml · ≈12 shots')).toBeInTheDocument();
+    expect(screen.getByText('Botella abierta: 620 ml · ≈12 cortos')).toBeInTheDocument();
   });
 
   it('calcula los shots con el ml propio de la presentación', () => {
     renderSearch([{ ...conShotAnfitriona, ml_abierta: 500, ml_shot: 40 }]);
 
-    expect(screen.getByText('Botella abierta: 500 ml · ≈12 shots')).toBeInTheDocument();
+    expect(screen.getByText('Botella abierta: 500 ml · ≈12 cortos')).toBeInTheDocument();
   });
 
   it('sin botella abierta no muestra la línea', () => {
@@ -193,7 +193,7 @@ describe('buscador rápido de Nueva Venta', () => {
   it('no ofrece shot en un producto que no lo tiene configurado', () => {
     renderSearch([sinShot]);
 
-    expect(screen.queryByRole('button', { name: /Shot/ })).not.toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: /Corto/ })).not.toBeInTheDocument();
     expect(screen.getByRole('button', { name: 'Agregar Corona 330 ml' })).toBeDisabled();
   });
 
@@ -209,7 +209,7 @@ describe('buscador rápido de Nueva Venta', () => {
 
     expect(screen.getByRole('button', { name: 'Agregar Black Label 750 ml' })).toBeDisabled();
     fireEvent.click(
-      screen.getByRole('button', { name: 'Shot anfitriona · 50 ml: aumentar cantidad' })
+      screen.getByRole('button', { name: 'Corto anfitriona · 50 ml: aumentar cantidad' })
     );
     // El shot ofrece asignar anfitriona, pero no exige elegirla para vender.
     expect(screen.getByRole('button', { name: 'Agregar Black Label 750 ml' })).toBeEnabled();
@@ -221,7 +221,7 @@ describe('buscador rápido de Nueva Venta', () => {
     const row = fila();
     expect(row.getByText('Sin comisión')).toBeInTheDocument();
     fireEvent.click(row.getByRole('button', { name: 'Botella: aumentar cantidad' }));
-    fireEvent.click(row.getByRole('button', { name: 'Shot cliente · 50 ml: aumentar cantidad' }));
+    fireEvent.click(row.getByRole('button', { name: 'Corto cliente · 50 ml: aumentar cantidad' }));
     expect(row.getByText('Sin comisión')).toBeInTheDocument();
     fireEvent.click(row.getByRole('button', { name: 'Agregar Black Label 750 ml' }));
     expect(onAdd).toHaveBeenCalledWith(expect.objectContaining({ selectedHostesses: [] }));
@@ -238,7 +238,7 @@ describe('buscador rápido de Nueva Venta', () => {
     renderSearch([producto]);
     const row = fila();
     expect(row.getByText('Sin comisión')).toBeInTheDocument();
-    fireEvent.click(row.getByRole('button', { name: 'Shot cliente · 50 ml: aumentar cantidad' }));
+    fireEvent.click(row.getByRole('button', { name: 'Corto cliente · 50 ml: aumentar cantidad' }));
     expect(row.getByText('Sin comisión')).toBeInTheDocument();
     fireEvent.click(row.getByRole('button', { name: 'Botella: aumentar cantidad' }));
     expect(row.queryByText('Sin comisión')).not.toBeInTheDocument();

@@ -111,8 +111,11 @@ export function useCategories(): UseCategoriesReturn {
   const deleteCategory = useCallback(
     async (id: string) => {
       try {
-        await remove(id);
-        return { success: true, message: 'Categoría eliminada correctamente' };
+        const result = await remove(id);
+        return {
+          success: true,
+          message: result.message || 'Categoría, productos e imágenes eliminados correctamente'
+        };
       } catch (e) {
         return { success: false, message: e instanceof Error ? e.message : 'Error desconocido' };
       }

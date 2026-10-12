@@ -83,8 +83,8 @@ export function useTransferForm({
   const mlPorShotAnfitriona = resolveShotMlAnfitriona(Number(mlShotAnfitriona), mlPorShot);
   const etiquetaShot =
     mlPorShotAnfitriona !== mlPorShot
-      ? `Shot · ${mlPorShot} ml · Anf ${mlPorShotAnfitriona} ml`
-      : `Shot · ${mlPorShot} ml`;
+      ? `Corto · ${mlPorShot} ml · Anf ${mlPorShotAnfitriona} ml`
+      : `Corto · ${mlPorShot} ml`;
 
   const esChampagneItem = esChampagne(item?.categoria_nombre);
   const opcionesGuardadas: SaleOption[] = parseSavedOptions(item?.opciones_venta) ?? [

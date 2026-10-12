@@ -182,7 +182,7 @@ export const NewSaleSearch = (props: NewSaleSearchProps) => {
                             <p className='text-xs font-medium text-amber-600 dark:text-amber-400'>
                               Botella abierta: {Number(producto.ml_abierta)} ml · ≈
                               {Math.floor(Number(producto.ml_abierta) / Math.max(shotMlCliente, 1))}{' '}
-                              shots
+                              cortos
                             </p>
                           )}
                           <SaleFormatQuantities

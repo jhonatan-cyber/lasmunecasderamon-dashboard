@@ -2,7 +2,8 @@ import { query, generateUUID, withTransaction } from '@/lib/database/db';
 import { getNowInBusinessTimezone } from '@/lib/business/timezoneService';
 import { sendNotificationToAll } from '@/lib/api/sseService';
 import { BaseRepository } from '@/lib/database/base-repository';
-import { ConflictError } from '@/lib/errors/errors';
+import { ConflictError, NotFoundError } from '@/lib/errors/errors';
+import { eliminarFotosProductosSinUso } from '../productos/eliminarFotos';
 import { ESTADO_UNIDAD_ACTIVA } from '@/modules/inventario/estados';
 
 export class CategoryRepository {
@@ -149,11 +150,33 @@ export class CategoryRepository {
     return updatedRows.length > 0 ? this.mapCategoryFromDB(updatedRows[0]) : null;
   }
 
+  static async deletionPreview(id: string) {
+    const categories = await query<any[]>('SELECT nombre FROM categorias WHERE id_categoria = ?', [
+      id
+    ]);
+    if (!categories.length) throw new NotFoundError('Categoría no encontrada');
+    const products = await query<any[]>(
+      'SELECT id_producto AS id, nombre AS name, estado AS status FROM productos WHERE categoria_id = ? ORDER BY nombre',
+      [id]
+    );
+    return { name: categories[0].nombre, products };
+  }
+
   static async delete(id: string) {
-    await withTransaction(async trx => {
+    const fotos = await withTransaction(async trx => {
+      const products = (await trx('SELECT foto FROM productos WHERE categoria_id = ? FOR UPDATE', [
+        id
+      ])) as { foto: string | null }[];
+      const presentations = (await trx(
+        'SELECT IP.foto FROM inventario_presentaciones IP JOIN productos P ON P.id_producto = IP.producto_id WHERE P.categoria_id = ?',
+        [id]
+      )) as { foto: string | null }[];
       await trx('DELETE FROM productos WHERE categoria_id = ?', [id]);
       await BaseRepository.delete(trx, 'categorias', 'id_categoria', id);
+      return [...products, ...presentations].map(p => p.foto);
     });
+    const failedImages = await eliminarFotosProductosSinUso(fotos);
     sendNotificationToAll('categories_updated', { action: 'deleted', id });
+    return { failedImages };
   }
 }

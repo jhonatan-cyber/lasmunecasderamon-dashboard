@@ -42,7 +42,7 @@ vi.mock('@/modules/inventario/categorias/servicio', () => ({
     create: vi.fn().mockResolvedValue({ id: 'cat-1', name: 'Nueva' }),
     update: vi.fn().mockResolvedValue({ id: 'cat-1' }),
     updateStatus: vi.fn().mockResolvedValue({ id: 'cat-1', estado: 0 }),
-    delete: vi.fn().mockResolvedValue(undefined),
+    delete: vi.fn().mockResolvedValue({ failedImages: 0 }),
     reorder: vi.fn().mockResolvedValue(undefined)
   }
 }));

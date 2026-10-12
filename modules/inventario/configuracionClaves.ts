@@ -5,7 +5,7 @@ export const CLAVES_INVENTARIO: Record<string, DefinicionClave> = {
     categoria: 'bar',
     tipo: 'number',
     default: 50,
-    validar: enteroEnRango('shot_ml', 1, 1000, 'ml por shot')
+    validar: enteroEnRango('shot_ml', 1, 1000, 'ml por corto')
   },
   botella_ml: {
     categoria: 'bar',
@@ -17,7 +17,7 @@ export const CLAVES_INVENTARIO: Record<string, DefinicionClave> = {
     categoria: 'bar',
     tipo: 'number',
     default: 3,
-    validar: enteroEnRango('shots_alerta', 1, 50, 'shots restantes')
+    validar: enteroEnRango('shots_alerta', 1, 50, 'cortos restantes')
   },
   merma_shots_ml: {
     categoria: 'bar',

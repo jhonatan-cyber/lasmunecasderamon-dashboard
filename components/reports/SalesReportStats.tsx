@@ -112,9 +112,9 @@ export function SalesReportStats({
         />
         {shotsCliente > 0 && (
           <StatCard
-            title='Shots Cliente'
+            title='Cortos Cliente'
             value={formatCurrencyNoDecimals(shotsCliente)}
-            sub={`${shotsClienteCantidad} shots a precio de cliente`}
+            sub={`${shotsClienteCantidad} cortos a precio de cliente`}
             Icon={Martini}
             grad='from-lime-50 to-emerald-50 dark:from-lime-950/20 dark:to-emerald-950/20'
             iconColor='text-lime-600 dark:text-lime-400'
@@ -122,9 +122,9 @@ export function SalesReportStats({
         )}
         {shotsAnfitriona > 0 && (
           <StatCard
-            title='Shots Anfitriona'
+            title='Cortos Anfitriona'
             value={formatCurrencyNoDecimals(shotsAnfitriona)}
-            sub={`${shotsAnfitrionaCantidad} shots a precio de anfitriona`}
+            sub={`${shotsAnfitrionaCantidad} cortos a precio de anfitriona`}
             Icon={Wine}
             grad='from-fuchsia-50 to-pink-50 dark:from-fuchsia-950/20 dark:to-pink-950/20'
             iconColor='text-fuchsia-600 dark:text-fuchsia-400'

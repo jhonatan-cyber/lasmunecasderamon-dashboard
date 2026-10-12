@@ -22,7 +22,7 @@ import {
 } from '@/components/ui/dropdown-menu';
 import { MoreHorizontal } from 'lucide-react';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { DeleteConfirmModal } from '@/components/shared/DeleteConfirmModal';
 import { CardContainer, CardBody } from '@/components/shared/3d-card';
 import { formatLongDateEs } from '@/lib/utils/calendarUtils';
@@ -74,6 +74,36 @@ export default function CategoryCard({
   isLoading = false
 }: CategoryCardProps) {
   const [showDeleteModal, setShowDeleteModal] = useState(false);
+  const [deletePreview, setDeletePreview] = useState<{
+    name: string;
+    products: { id: string; name: string; status: number }[];
+  } | null>(null);
+  const [previewError, setPreviewError] = useState('');
+
+  useEffect(() => {
+    if (!showDeleteModal) return;
+    const controller = new AbortController();
+    setDeletePreview(null);
+    setPreviewError('');
+    void (async () => {
+      try {
+        const response = await fetch(`/api/categories/${encodeURIComponent(category.id)}`, {
+          signal: controller.signal,
+          cache: 'no-store'
+        });
+        const result = await response.json();
+        if (!response.ok || !result.success)
+          throw new Error(result.message || 'No se pudieron consultar los productos');
+        if (!controller.signal.aborted) setDeletePreview(result.data);
+      } catch (error) {
+        if (!controller.signal.aborted)
+          setPreviewError(
+            error instanceof Error ? error.message : 'No se pudieron consultar los productos'
+          );
+      }
+    })();
+    return () => controller.abort();
+  }, [showDeleteModal, category.id]);
 
   const hasAnyAction = canEdit || canDelete || canActivate || canDeactivate;
 
@@ -264,7 +294,39 @@ export default function CategoryCard({
           entityValue={category.name}
           fieldName='Categoría'
           isLoading={isLoading}
-        />
+          confirmDisabled={!deletePreview}
+        >
+          <div className='mt-4 text-sm'>
+            {previewError ? (
+              <p role='alert' className='text-red-600'>
+                {previewError}
+              </p>
+            ) : !deletePreview ? (
+              <p role='status'>Consultando productos…</p>
+            ) : (
+              <>
+                <p>
+                  Se eliminarán esta categoría, sus {deletePreview.products.length} productos
+                  (incluidos los inactivos), sus presentaciones, existencias e imágenes. Las
+                  imágenes compartidas con otros productos se conservarán.
+                </p>
+                {deletePreview.products.length > 0 && (
+                  <ul
+                    className='mt-3 max-h-48 overflow-y-auto space-y-1 rounded-lg border p-3'
+                    aria-label='Productos que se eliminarán'
+                  >
+                    {deletePreview.products.map(product => (
+                      <li key={product.id}>
+                        {product.name}
+                        {product.status !== 1 ? ' (inactivo)' : ''}
+                      </li>
+                    ))}
+                  </ul>
+                )}
+              </>
+            )}
+          </div>
+        </DeleteConfirmModal>
       </CardBody>
     </CardContainer>
   );

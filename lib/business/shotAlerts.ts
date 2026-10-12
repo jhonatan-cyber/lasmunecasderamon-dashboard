@@ -12,7 +12,7 @@ function mensajeDe(alertas: ShotAlert[]): string {
   return alertas
     .map(
       alerta =>
-        `${alerta.nombre}: quedan ${alerta.shots_restantes} shot(s) (${alerta.ml_restante} ml)`
+        `${alerta.nombre}: quedan ${alerta.shots_restantes} corto(s) (${alerta.ml_restante} ml)`
     )
     .join(' · ');
 }
