@@ -5,6 +5,7 @@ import { formatNumberCL } from '@/lib/utils/formatters';
 import { computeHostessLimit, extractHostessIds } from '@/components/orders/detail';
 import { useConfigValue } from '@/hooks/shared/useConfigValue';
 import { calcularPropina } from '@/lib/business/saleTotals';
+import { getOrderHostessIds } from '@/components/orders/orderDetailUtils';
 import logger from '@/lib/utils/logger';
 
 interface UseOrderDetailModalStateParams {
@@ -85,6 +86,7 @@ export function useOrderDetailModalState({
     }
 
     if (detail && detail.length > 0) {
+      setMetodoPago(detail[0]?.metodo_pago || '');
       const propinaOriginal = detail[0]?.propina || 0;
 
       if (propinaOriginal > 0) {
@@ -116,11 +118,8 @@ export function useOrderDetailModalState({
         setPropinaDisplayValue(formatNumberCL(propinaCalculada));
       }
     } else {
-      const propinaOriginal = detail[0]?.propina || 0;
-      if (propinaOriginal === 0) {
-        setPropina(0);
-        setPropinaDisplayValue('');
-      }
+      setPropina(0);
+      setPropinaDisplayValue('');
     }
   }, [agregarPropina, detail, propinaPct]);
 
@@ -139,32 +138,7 @@ export function useOrderDetailModalState({
     maxChampagnePrice
   } = hostessLimits;
 
-  const anfitrionasFinal = useMemo(() => {
-    const raw =
-      detail[0]?.anfitrionas_con_ids ||
-      detail[0]?.anfitrionas ||
-      detail[0]?.anfitriona ||
-      detail[0]?.usuarios ||
-      detail[0]?.hostesses ||
-      [];
-
-    const array = Array.isArray(raw) ? raw : raw ? [raw] : [];
-    return array
-      .map((anfitriona: any) => {
-        if (typeof anfitriona === 'object' && anfitriona !== null) {
-          return anfitriona.id_usuario ?? anfitriona.id ?? anfitriona.usuario_id ?? null;
-        }
-        if (typeof anfitriona === 'number') return anfitriona;
-        if (typeof anfitriona === 'string') {
-          const match = anfitriona.match(/^(\d+)\s*-\s*(.+)$/);
-          if (match) return parseInt(match[1]);
-          const parsed = parseInt(anfitriona);
-          return Number.isNaN(parsed) ? null : parsed;
-        }
-        return null;
-      })
-      .filter((id: number | null): id is number => id !== null && !Number.isNaN(id));
-  }, [detail]);
+  const anfitrionasFinal = useMemo(() => getOrderHostessIds(detail), [detail]);
 
   const cantidadAnfitrionas = anfitrionasFinal.length;
   const recargoAnfitrionas = 0;

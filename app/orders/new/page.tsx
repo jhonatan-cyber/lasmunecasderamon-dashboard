@@ -15,7 +15,9 @@ export default function NewOrder() {
   const [selectedCliente, setSelectedCliente] = useState('');
   const [selectedAnfitrionas, setSelectedAnfitrionas] = useState<string[]>([]);
   const [productos, setProductos] = useState<any[]>([]);
-  const { clients: clientes, anfitrionas, categories, refreshAll } = useMasterData();
+  const { clients: clientes, anfitrionas, categories, refreshAll } = useMasterData({
+    categoriasConStockBar: true
+  });
   const [searchCliente, setSearchCliente] = useState('');
   const [searchAnfitriona, setSearchAnfitriona] = useState('');
   useRefreshOnFocus(refreshAll, { immediate: false });

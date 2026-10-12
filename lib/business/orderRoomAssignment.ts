@@ -7,7 +7,7 @@ type OrderDetail = {
   generaComision: number;
   precio: number;
   hostessId?: string | null;
-  selectedHostesses: number[];
+  selectedHostesses: (string | number)[];
   roomId?: string | null;
   productoId: string;
 };

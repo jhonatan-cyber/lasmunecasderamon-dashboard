@@ -78,6 +78,8 @@ export default function OrderForm({
     propina,
     propinaHabilitada,
     error,
+    metodoPago,
+    setMetodoPago,
     subtotal,
     total,
     rooms,
@@ -118,6 +120,8 @@ export default function OrderForm({
         tipEnabled={propinaHabilitada}
         onSubmit={handleSubmitInternal}
         onTipChange={handleTipChange}
+        metodoPago={metodoPago}
+        onMetodoPagoChange={setMetodoPago}
       />
 
       <CategoryProductsModal

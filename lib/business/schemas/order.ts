@@ -9,6 +9,7 @@ export const OrderSchema = z.object({
   total: z.number().min(0),
   total_comision: z.number().optional().default(0),
   propina: z.number().optional().default(0),
+  metodo_pago: z.enum(['efectivo', 'tarjeta', 'transferencia']).nullable().optional(),
   estado: z.number().optional().default(1),
   fecha_crea: z.string().or(z.date()).optional(),
   cliente_nombre: z.string().nullable().optional(),
@@ -27,6 +28,7 @@ export const OrderCreateSchema = z.object({
   total: z.number().min(0),
   totalComision: z.number().optional().default(0),
   propina: z.number().optional().default(0),
+  metodoPago: z.enum(['efectivo', 'tarjeta', 'transferencia']).optional(),
   device_date: z.string().optional(),
   detalles: z.array(z.object({
     productoId: z.string().min(1),

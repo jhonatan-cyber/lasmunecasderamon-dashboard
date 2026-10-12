@@ -7,6 +7,7 @@ import { toast } from 'sonner';
 import { formatCurrencyCLP } from '@/lib/utils/formatters';
 import { generateRandomCode } from '@/lib/utils/codeUtils';
 import { getOrderRoomId, getOrderRoomName } from '@/components/orders/detail';
+import { extractHostessIds } from '@/components/orders/orderDetailUtils';
 import { isChampagneProduct, isExpensiveDrink } from '@/components/orders/productModalRules';
 
 interface OrderDetailModalState {
@@ -196,20 +197,7 @@ export function useOrderDetailModal({
 
       const sub_total = detail.reduce((acc: number, item: any) => acc + item.precio * item.cantidad, 0);
 
-      const usuariosIds = anfitrionasFinal
-        .map((anfitriona: any) => {
-          if (typeof anfitriona === 'object' && anfitriona.usuario_id) return anfitriona.usuario_id;
-          if (typeof anfitriona === 'object' && anfitriona.id) return anfitriona.id;
-          if (typeof anfitriona === 'number') return anfitriona;
-          if (typeof anfitriona === 'string') {
-            const match = anfitriona.match(/^(\d+)\s*-\s*(.+)$/);
-            if (match) return parseInt(match[1]);
-            const parsedId = parseInt(anfitriona);
-            if (!isNaN(parsedId)) return parsedId;
-          }
-          return null;
-        })
-        .filter((id: number | null): id is number => id !== null && !isNaN(id));
+      const usuariosIds = extractHostessIds(anfitrionasFinal);
 
       if (usuariosIds.length === 0 && hasChampagneProducts) {
         toast.error('No se pudieron obtener los IDs de las anfitrionas');
@@ -234,6 +222,7 @@ export function useOrderDetailModal({
           comision: item.comision || 0,
           sub_total: (item.precio || 0) * (item.cantidad || 0),
           hostess_id: item.hostess_id || null,
+          selectedHostesses: extractHostessIds(item.anfitrionas_asignadas_ids || item.hostess_id),
         })),
         usuarios: usuariosIds,
         habitacion_id: shouldShowRoomSelector && habitacionId ? habitacionId : undefined,
@@ -327,7 +316,7 @@ export function useOrderDetailModal({
       const total_comision = detail.reduce((acc: number, item: any) => acc + (item.comision || 0), 0) + recargoAnfitrionas;
       const sub_total = detail.reduce((acc: number, item: any) => acc + item.precio * item.cantidad, 0);
 
-      const anfitrionasIds = detail[0]?.anfitrionas_con_ids?.map((a: any) => a.usuario_id) || [];
+      const anfitrionasIds = extractHostessIds(anfitrionasFinal);
 
       const cuentaData = {
         codigo: generateRandomCode(),
@@ -382,7 +371,7 @@ export function useOrderDetailModal({
       setIsRegistering(false);
     }
   }, [
-    detail, recargoAnfitrionas, shouldShowRoomSelector, habitacionId,
+    detail, anfitrionasFinal, recargoAnfitrionas, shouldShowRoomSelector, habitacionId,
     orderId, actualizarEstadoPedido, onClose, onVentaRegistrada, onOrderStatusChange,
     setIsRegistering,
   ]);

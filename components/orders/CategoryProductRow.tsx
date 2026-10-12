@@ -244,7 +244,7 @@ function OtherHostessSection({
   onHostessSearchChange: (value: string) => void;
   product: any;
 }) {
-  if (isExpensiveDrink(product)) {
+  if (isExpensiveDrink(product) || cantidad > 1) {
     return (
       <div className='space-y-2'>
         <HostessMultiSelect

@@ -103,7 +103,7 @@ export class OrderRepository {
         device_date
       } = data;
 
-      // Normalizar selectedHostesses de string[] (Zod) a number[] (app types OrderDetail[])
+      // Los identificadores de anfitrionas son UUID; conservarlos como strings.
       let detalles: Array<{
         productoId: string;
         precio: number;
@@ -113,12 +113,12 @@ export class OrderRepository {
         subtotal: number;
         hostessId: string | null;
         roomId: string | null;
-        selectedHostesses: number[];
+        selectedHostesses: string[];
       }> = rawDetalles.map(d => ({
         ...d,
         hostessId: d.hostessId ?? null,
         roomId: d.roomId ?? null,
-        selectedHostesses: (d.selectedHostesses || []).map((s: string) => Number(s))
+        selectedHostesses: d.selectedHostesses || []
       }));
 
       const subtotalNormalizado = Number(subtotal || 0);
@@ -154,6 +154,7 @@ export class OrderRepository {
         const roomAssigned = applyAutoRoomToDetails(detalles, habitacionAutoSeleccionada);
         detalles = roomAssigned.map(d => ({
           ...d,
+          selectedHostesses: d.selectedHostesses.map(String),
           hostessId: d.hostessId ?? null,
           roomId: d.roomId ?? null
         }));
@@ -172,6 +173,7 @@ export class OrderRepository {
           total: totalBasePedido,
           total_comision: totalComision,
           propina: propinaNormalizada,
+          metodo_pago: data.metodoPago ?? null,
           estado: 1,
           fecha_crea: fechaCrea
         });
@@ -294,7 +296,7 @@ export class OrderRepository {
       return await query<any[]>(
         `
       SELECT
-        P.id_pedido, P.codigo, P.fecha_crea, P.subtotal, P.total, P.propina, P.total_comision,
+        P.id_pedido, P.codigo, P.fecha_crea, P.subtotal, P.total, P.propina, P.total_comision, P.metodo_pago,
         COALESCE((CAST(CL.nombre AS text) || CAST(' ' AS text) || CAST(CL.apellido AS text)), 'Sin cliente registrado') AS cliente,
         P.cliente_id,
         (CAST(U.nombre AS text) || CAST(' ' AS text) || CAST(U.apellido AS text)) AS garzon,
@@ -307,7 +309,9 @@ export class OrderRepository {
          INNER JOIN usuarios U2 ON U2.id_usuario = PU.usuario_id
          WHERE PU.pedido_id = P.id_pedido) AS "anfitrionaIds",
         DP.producto_id, DP.precio, DP.cantidad, DP.comision, DP.subtotal AS subtotal_detalle,
-        DP.genera_comision, PROD.nombre AS producto_nombre, C.nombre AS categoria, DP.hostess_id, DP.habitacion_id
+        DP.genera_comision, PROD.nombre AS producto_nombre, C.nombre AS categoria, DP.hostess_id, DP.habitacion_id,
+        (SELECT STRING_AGG(DPA.anfitriona_id, ',') FROM detalle_pedidos_anfitrionas DPA
+         WHERE DPA.detalle_pedido_id = DP.id_detalle_pedido) AS anfitrionas_asignadas_ids
       FROM pedidos P
       LEFT JOIN clientes CL ON CL.id_cliente = P.cliente_id
       LEFT JOIN usuarios U ON U.id_usuario = P.mesero_id

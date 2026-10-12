@@ -1,9 +1,11 @@
 'use client';
 
-import { CustomerSelect } from '@/components/shared/selects';
+import { CustomerSelect, PaymentMethodSelect } from '@/components/shared/selects';
 import OrderTotalHeader from '@/components/orders/OrderTotalHeader';
 
 interface OrderFormHeaderProps {
+  metodoPago: string;
+  onMetodoPagoChange: (value: string) => void;
   clientes: Array<{ id_cliente?: string | number; id?: string | number }>;
   selectedCliente: string;
   onClienteChange: (v: string) => void;
@@ -25,10 +27,12 @@ export default function OrderFormHeader({
   tipEnabled,
   onSubmit,
   onTipChange,
+  metodoPago,
+  onMetodoPagoChange,
 }: OrderFormHeaderProps) {
   return (
     <div className='mb-6 grid grid-cols-1 gap-6 lg:grid-cols-2 lg:items-start'>
-      <div className='flex-1'>
+      <div className='flex-1 space-y-4'>
         <CustomerSelect
           clientes={clientes}
           value={selectedCliente}
@@ -37,6 +41,13 @@ export default function OrderFormHeader({
           placeholder='Sin cliente seleccionado'
           required={false}
           className='w-full'
+        />
+        <PaymentMethodSelect
+          value={metodoPago}
+          onChange={onMetodoPagoChange}
+          required
+          showPrepago={false}
+          showMixto={false}
         />
       </div>
 

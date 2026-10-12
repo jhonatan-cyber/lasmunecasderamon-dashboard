@@ -7,34 +7,24 @@ export const getOrderRoomId = (room: any) => String(room?.id_habitacion ?? room?
 export const getOrderRoomName = (room: any) =>
   room?.nombre || room?.name || `Habitación ${getOrderRoomId(room)}`;
 
-export const extractHostessIds = (value: any): number[] => {
-  const ids: number[] = [];
-
-  if (typeof value === 'string') {
-    const parsed = value
-      .split(',')
-      .map((id: string) => parseInt(id.trim()))
-      .filter((id: number) => !isNaN(id));
-    ids.push(...parsed);
-    return ids;
-  }
-
-  if (Array.isArray(value)) {
-    value.forEach(item => {
-      if (typeof item === 'number') {
-        ids.push(item);
-      } else if (typeof item === 'string') {
-        const parsed = parseInt(item.trim());
-        if (!isNaN(parsed)) ids.push(parsed);
-      } else if (item && typeof item === 'object') {
-        const extracted = item.id_usuario ?? item.id ?? item.usuario_id;
-        if (extracted !== undefined && extracted !== null) {
-          const parsed = Number(extracted);
-          if (!isNaN(parsed)) ids.push(parsed);
-        }
-      }
-    });
-  }
-
-  return ids;
+export const extractHostessIds = (value: any): string[] => {
+  if (value === null || value === undefined) return [];
+  const values = Array.isArray(value) ? value : typeof value === 'string' ? value.split(',') : [value];
+  return values.flatMap(item => {
+    const raw = item && typeof item === 'object'
+      ? item.id_usuario ?? item.id ?? item.usuario_id
+      : item;
+    if (raw === null || raw === undefined) return [];
+    const id = String(raw).trim();
+    return id && id !== 'NaN' && id !== 'null' && id !== 'undefined' ? [id] : [];
+  });
 };
+
+export const getOrderHostessIds = (detail: any[]): string[] => [...new Set(detail.flatMap(item => [
+  ...extractHostessIds(item.anfitrionaIds),
+  ...extractHostessIds(item.anfitrionas_con_ids),
+  ...extractHostessIds(item.anfitrionas_asignadas_ids),
+  ...extractHostessIds(item.hostess_id),
+  ...extractHostessIds(item.usuarios),
+  ...extractHostessIds(item.hostesses)
+]))];

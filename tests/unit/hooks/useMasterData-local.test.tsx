@@ -7,6 +7,13 @@ vi.mock('@/hooks/shared/useGenericFetch', () => ({
 }));
 beforeEach(() => vi.clearAllMocks());
 describe('selección de anfitrionas para venta', () => {
+  it('consulta las categorías con stock en el bar con una caché propia', () => {
+    renderHook(() => useMasterData({ categoriasConStockBar: true }));
+    expect(useGenericFetch).toHaveBeenCalledWith(
+      '/api/categories?for_sale=1',
+      expect.objectContaining({ queryKey: expect.arrayContaining(['for-sale']) })
+    );
+  });
   it('consulta las sesiones en el local con una caché propia', () => {
     renderHook(() => useMasterData({ soloAnfitrionasEnLocal: true }));
     expect(useGenericFetch).toHaveBeenCalledWith(

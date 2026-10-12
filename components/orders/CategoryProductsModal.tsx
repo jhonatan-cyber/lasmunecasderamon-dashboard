@@ -106,7 +106,7 @@ const CategoryProductsModal: React.FC<CategoryProductsModalProps> = ({
               <span className='text-blue-600 dark:text-blue-400 font-medium'>
                 Bebidas &lt; $30,000
               </span>
-              : Una anfitriona por bebida, sin opción de habitación
+              : Hasta una anfitriona por unidad seleccionada, sin opción de habitación
             </div>
           )}
         </DialogHeader>

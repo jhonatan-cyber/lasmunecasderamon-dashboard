@@ -91,6 +91,7 @@ export function useOrderForm({
   const [propina, setPropina] = useState(configPropina);
   const [propinaHabilitada, setPropinaHabilitada] = useState(false);
   const [error, setError] = useState('');
+  const [metodoPago, setMetodoPago] = useState('');
 
   const router = useRouter();
   const { user } = useCurrentUser();
@@ -143,7 +144,13 @@ export function useOrderForm({
 
   const handleCantidadChange = useCallback((id: string, value: string) => {
     const num = parseInt(value, 10);
-    setCantidades(prev => ({ ...prev, [id]: isNaN(num) ? 1 : num }));
+    const cantidad = isNaN(num) ? 1 : Math.max(1, num);
+    setCantidades(prev => ({ ...prev, [id]: cantidad }));
+    setOtherProductHostessSelections(prev => {
+      const seleccionadas = prev[id];
+      if (!seleccionadas || seleccionadas.length <= cantidad) return prev;
+      return { ...prev, [id]: seleccionadas.slice(0, cantidad) };
+    });
   }, []);
 
   const handleChampagneHostessChange = useCallback((productId: string, hostessIds: string[]) => {
@@ -203,6 +210,10 @@ export function useOrderForm({
   );
 
   const handleSubmitInternal = async () => {
+    if (!metodoPago) {
+      setError('Selecciona un método de pago');
+      return;
+    }
     if (productos.length === 0) {
       setError('Debe agregar al menos un producto');
       return;
@@ -277,6 +288,7 @@ export function useOrderForm({
         subtotal,
         total: subtotal,
         propina: tipAmount,
+        metodoPago,
         totalComision: productos.reduce((sum, item) => sum + (item.comision || 0), 0),
         detalles: productos.map(item => ({
           productoId: toNullableStringId(item.id_producto || item.id),
@@ -289,7 +301,7 @@ export function useOrderForm({
             (item.selectedHostesses || []).length === 1
               ? toNullableStringId((item.selectedHostesses || [])[0])
               : null,
-          selectedHostesses: item.selectedHostesses || [],
+          selectedHostesses: (item.selectedHostesses || []).map(String),
           roomId: toNullableStringId(item.selectedRoom)
         })),
         usuarios: Array.from(new Set(bebidasConComision.flatMap(p => p.selectedHostesses || [])))
@@ -348,6 +360,8 @@ export function useOrderForm({
     propina,
     propinaHabilitada,
     error,
+    metodoPago,
+    setMetodoPago,
     subtotal,
     tipAmount,
     total,
