@@ -27,12 +27,12 @@ type UseAnfitrionasConfig =
 export function useAnfitrionas(config: UseAnfitrionasConfig = false) {
   const normalizedConfig =
     typeof config === 'boolean'
-      ? { disponiblesOnly: config, loggedIn: false, enLocal: false, status: undefined }
+      ? { disponiblesOnly: config, loggedIn: true, enLocal: true, status: 'active' }
       : {
           disponiblesOnly: config.disponiblesOnly ?? false,
-          loggedIn: config.loggedIn ?? false,
-          enLocal: config.enLocal ?? false,
-          status: config.status
+          loggedIn: config.loggedIn ?? true,
+          enLocal: config.enLocal ?? true,
+          status: config.status ?? 'active'
         };
 
   const endpoint = useMemo(() => {

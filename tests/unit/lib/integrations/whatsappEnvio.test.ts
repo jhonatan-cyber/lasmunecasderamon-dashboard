@@ -17,6 +17,7 @@ vi.mock('@/modules/comunicaciones/whatsapp/seguimiento', () => ({
 }));
 import {
   enviarPruebaWhatsApp,
+  enviarWhatsApp,
   enviarReporteCajaWhatsApp
 } from '@/modules/comunicaciones/whatsapp/adaptador';
 beforeEach(() => {
@@ -26,6 +27,11 @@ beforeEach(() => {
   mocks.registrar.mockResolvedValue(undefined);
 });
 afterEach(() => vi.unstubAllEnvs());
+it.each(['failed', 'undelivered', 'canceled'])('no confirma como enviado un mensaje con estado %s', async status => {
+  mocks.create.mockResolvedValue({ sid: 'SM' + 'b'.repeat(32), status });
+  await expect(enviarWhatsApp('+59177712345', 'Clave temporal de prueba')).rejects.toThrow('WhatsApp rechazó el envío');
+  expect(mocks.registrar).toHaveBeenCalledWith(expect.objectContaining({ estado: status }));
+});
 it('usa el destino guardado e incluye el callback público al enviar la prueba', async () => {
   const result = await enviarPruebaWhatsApp();
   expect(mocks.create).toHaveBeenCalledWith(

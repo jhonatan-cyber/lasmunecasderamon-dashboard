@@ -64,7 +64,24 @@ vi.mock('@/lib/utils/logger', () => {
   return { logger: mocks, default: mocks };
 });
 
-import { POST } from '@/app/api/users/route';
+import { GET, POST } from '@/app/api/users/route';
+
+describe('Selección de anfitrionas en todo el sistema', () => {
+  it('filtra sesiones activas y presencia incluso para clientes que no envían los filtros', async () => {
+    userService.getAll.mockResolvedValue({ data: [], total: 0 });
+    await GET(new Request('https://example.com/api/users?anfitrionas=1'), { params: Promise.resolve({}) });
+    expect(userService.getAll).toHaveBeenLastCalledWith(expect.objectContaining({
+      anfitrionas: '1', status: 'active', loggedIn: true, enLocal: true
+    }));
+  });
+  it('mantiene la administración general de usuarios sin filtro de presencia', async () => {
+    userService.getAll.mockResolvedValue({ data: [], total: 0 });
+    await GET(new Request('https://example.com/api/users'), { params: Promise.resolve({}) });
+    expect(userService.getAll).toHaveBeenLastCalledWith(expect.objectContaining({
+      loggedIn: false, enLocal: false
+    }));
+  });
+});
 
 const FOTO_B64 = Buffer.from('foto-jpeg-de-prueba').toString('base64');
 

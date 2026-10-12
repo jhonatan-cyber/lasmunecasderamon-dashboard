@@ -93,13 +93,14 @@ export const GET = withRoute(
   { auth: true, access: 'authenticated', audit: true },
   async (request: Request) => {
     const { searchParams } = new URL(request.url);
+    const seleccionAnfitrionas = searchParams.get('anfitrionas') === '1';
     const params = {
       anfitrionas: searchParams.get('anfitrionas') || undefined,
       search: searchParams.get('search') || undefined,
-      status: searchParams.get('status') || undefined,
+      status: seleccionAnfitrionas ? 'active' : searchParams.get('status') || undefined,
       role: searchParams.get('role') || undefined,
-      loggedIn: searchParams.get('loggedIn') === '1' || searchParams.get('loggedIn') === 'true',
-      enLocal: searchParams.get('enLocal') === '1' || searchParams.get('enLocal') === 'true',
+      loggedIn: seleccionAnfitrionas || searchParams.get('loggedIn') === '1' || searchParams.get('loggedIn') === 'true',
+      enLocal: seleccionAnfitrionas || searchParams.get('enLocal') === '1' || searchParams.get('enLocal') === 'true',
       limit: searchParams.get('limit') ? parseInt(searchParams.get('limit')!) : undefined,
       offset: searchParams.get('offset') ? parseInt(searchParams.get('offset')!) : undefined
     };

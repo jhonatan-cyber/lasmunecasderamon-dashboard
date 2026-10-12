@@ -16,6 +16,7 @@ export default function NewOrder() {
   const [selectedAnfitrionas, setSelectedAnfitrionas] = useState<string[]>([]);
   const [productos, setProductos] = useState<any[]>([]);
   const { clients: clientes, anfitrionas, categories, refreshAll } = useMasterData({
+    soloAnfitrionasEnLocal: true,
     categoriasConStockBar: true
   });
   const [searchCliente, setSearchCliente] = useState('');

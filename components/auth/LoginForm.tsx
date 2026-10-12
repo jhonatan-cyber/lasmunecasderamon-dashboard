@@ -159,7 +159,7 @@ export const LoginForm = ({
               Revisa tu WhatsApp
             </h3>
             <p className='text-sm leading-relaxed text-gray-600 dark:text-gray-300'>
-              Si los datos corresponden a una cuenta con teléfono registrado, enviaremos una clave
+              Si los datos corresponden a un administrador con teléfono registrado, enviaremos una clave
               temporal por WhatsApp. Tendrás que cambiarla al iniciar sesión.
             </p>
             <Button
@@ -178,8 +178,8 @@ export const LoginForm = ({
                 Recuperar contraseña
               </h3>
               <p className='mt-2 text-sm text-gray-600 dark:text-gray-300'>
-                Ingresa tu RUN/CI. Enviaremos una clave temporal al WhatsApp registrado en tu
-                cuenta.
+                Solo para administradores: ingresa tu RUN/CI. Enviaremos una clave temporal al
+                número de WhatsApp registrado en tu perfil.
               </p>
             </div>
             <div className='space-y-2'>

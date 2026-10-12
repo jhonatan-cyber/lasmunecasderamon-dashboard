@@ -41,6 +41,9 @@ export async function enviarWhatsAppConEstado(
     seguimientoGuardado = false;
     logger.error('No se pudo registrar el seguimiento de WhatsApp', { sid: result.sid });
   }
+  if (result.status === 'failed' || result.status === 'undelivered' || result.status === 'canceled') {
+    throw new Error('WhatsApp rechazó el envío');
+  }
   return {
     sid: result.sid,
     estado: result.status,

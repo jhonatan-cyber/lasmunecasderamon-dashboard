@@ -120,7 +120,7 @@ const normalizeCategory = (category: AnyRecord): NormalizedCategory => ({
 });
 
 export function useMasterData({
-  soloAnfitrionasEnLocal = false,
+  soloAnfitrionasEnLocal = true,
   categoriasConStockBar = false
 }: { soloAnfitrionasEnLocal?: boolean; categoriasConStockBar?: boolean } = {}) {
   const clientsQuery = useGenericFetch<NormalizedClient>('/api/clients', {
@@ -133,8 +133,7 @@ export function useMasterData({
     transform: result => asArray(result).map(normalizeRoom)
   });
 
-  // Todas las anfitrionas activas: la presencia (login/en local) no puede
-  // dejar la venta sin opciones para asignar comisión.
+  // Para nuevas asignaciones, solo sesiones activas con presencia en el local.
   const anfitrionasQuery = useGenericFetch<NormalizedAnfitriona>(
     `/api/users?anfitrionas=1&status=active${soloAnfitrionasEnLocal ? '&loggedIn=true&enLocal=true' : ''}`,
     {

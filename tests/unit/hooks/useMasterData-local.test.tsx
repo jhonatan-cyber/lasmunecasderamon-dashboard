@@ -21,11 +21,11 @@ describe('selección de anfitrionas para venta', () => {
       expect.objectContaining({ queryKey: expect.arrayContaining(['en-local']) })
     );
   });
-  it('conserva el padrón completo para los otros módulos', () => {
+  it('filtra las anfitrionas en el local por defecto para todas las nuevas asignaciones', () => {
     renderHook(() => useMasterData());
     expect(useGenericFetch).toHaveBeenCalledWith(
-      '/api/users?anfitrionas=1&status=active',
-      expect.any(Object)
+      '/api/users?anfitrionas=1&status=active&loggedIn=true&enLocal=true',
+      expect.objectContaining({ queryKey: expect.arrayContaining(['en-local']) })
     );
   });
 });

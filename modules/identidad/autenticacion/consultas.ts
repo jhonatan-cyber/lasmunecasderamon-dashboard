@@ -17,6 +17,9 @@ import logger from '@/lib/utils/logger';
 import { regenerateAttendanceCode } from './codigos';
 import { enUnaUnidad, type ContextoOperacion } from '@/lib/transaccion/contrato';
 import { resolverTransaccion } from '@/lib/transaccion/infraestructura';
+import { randomBytes } from 'node:crypto';
+import { enviarWhatsApp } from '@/modules/comunicaciones';
+import { normalizeWhatsAppPhone } from '@/lib/utils/whatsappPhone';
 
 const ROLES_CON_CODIGO = ['cajero', 'garzon', 'anfitriona'];
 const SHIFT_START = 21 * 60;
@@ -295,17 +298,30 @@ export async function resetPassword(run: string) {
   try {
     const normalizedRun = run.trim();
     const users = await query<any[]>(
-      `SELECT id_usuario, run, email, nick, nombre, apellido, telefono
-     FROM usuarios
-     WHERE estado = 1
-     AND run = ?
+      `SELECT u.id_usuario, u.run, u.telefono
+     FROM usuarios u
+     INNER JOIN roles r ON r.id_rol = u.rol_id
+     WHERE u.estado = 1
+     AND LOWER(r.nombre) = 'administrador'
+     AND u.run = ?
      LIMIT 1`,
       [normalizedRun]
     );
 
-    if (users.length === 0) throw new ValidationError('Usuario no encontrado');
+    const respuesta = {
+      success: true,
+      message: 'Si el RUN/CI corresponde a un administrador con teléfono registrado, recibirá una clave temporal por WhatsApp.'
+    };
+    if (users.length === 0) return respuesta;
     const user = users[0];
-    const passwordTemporal = String(user.run).trim();
+    if (!user.telefono) return respuesta;
+    let telefono: string;
+    try {
+      telefono = normalizeWhatsAppPhone(String(user.telefono));
+    } catch {
+      return respuesta;
+    }
+    const passwordTemporal = randomBytes(18).toString('base64url');
     const hashedPassword = await argon2.hash(passwordTemporal);
     await enUnaUnidad(unidad =>
       unidad.ejecutar(async contexto => {
@@ -315,20 +331,20 @@ export async function resetPassword(run: string) {
           [hashedPassword, getNowInBusinessTimezone(), user.id_usuario]
         );
         await trx('DELETE FROM logins WHERE usuario_id = ?', [user.id_usuario]);
+        // Si WhatsApp rechaza el envío, la unidad revierte contraseña y sesiones.
+        try {
+          const enviado = await enviarWhatsApp(
+            telefono,
+            `*Recuperación de contraseña - Las Muñecas de Ramón*\n\nTu clave temporal de administrador es:\n${passwordTemporal}\n\nIngresa al dashboard con tu usuario habitual. Deberás cambiar esta clave al iniciar sesión. No compartas esta clave con nadie.`
+          );
+          if (!enviado) throw new Error('Envío rechazado');
+        } catch {
+          throw new BusinessError('No se pudo enviar el WhatsApp de recuperación. Intenta nuevamente más tarde.');
+        }
       })
     );
 
-    return {
-      success: true,
-      message: 'Tu contraseña temporal es tu RUT registrado. Cámbiala al ingresar.',
-      user: {
-        id: user.id_usuario,
-        name: user.nombre,
-        lastName: user.apellido,
-        email: user.email,
-        nick: user.nick
-      }
-    };
+    return respuesta;
   } catch (err) {
     logger.error('[AuthQueries] Error en resetPassword:', { run, err });
     if (err instanceof ValidationError || err instanceof BusinessError) throw err;
