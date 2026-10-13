@@ -2,7 +2,7 @@
  * Casos de uso de compras — API pública de servidor del módulo inventario.
  *
  * Registrar una compra es una operación de inventario: crea la cabecera y el
- * detalle, genera las unidades que ingresan al almacén con su código, fija el
+ * detalle, genera las unidades que ingresan a la bodega con su código, fija el
  * último costo de cada presentación y sincroniza el stock del producto. Todo
  * eso ocurre en una sola unidad de trabajo, y ahora dentro del módulo, así que
  * ya no hace falta el puente que adaptaba la transacción heredada.
@@ -43,7 +43,7 @@ const CompraSchema = z.object({
 
 /**
  * Registra una compra: valida el payload, guarda cabecera y detalle e ingresa
- * las unidades al almacén. O se guarda todo, o no se guarda nada.
+ * las unidades a la bodega. O se guarda todo, o no se guarda nada.
  */
 export async function registrarCompra(
   input: PurchaseCreate,

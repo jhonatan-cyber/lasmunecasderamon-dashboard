@@ -1,10 +1,10 @@
 /**
- * SQL de transferencias entre almacén y bar. Infraestructura privada del módulo:
+ * SQL de transferencias entre bodega y bar. Infraestructura privada del módulo:
  * nadie fuera de `modules/inventario` importa este archivo (§5).
  *
  * El traspaso crea el movimiento pendiente y reserva las unidades en tránsito; la
  * aceptación las ingresa al bar y fija precio/comisión en la presentación; el
- * rechazo las devuelve al almacén y recalcula el stock del producto. Mismo SQL,
+ * rechazo las devuelve a la bodega y recalcula el stock del producto. Mismo SQL,
  * mismos bloqueos `FOR UPDATE` y mismas validaciones que la capa heredada
  * (`TransferQueries`/`BarQueries`): este corte mueve código, no cambia reglas.
  */
@@ -38,7 +38,7 @@ export async function traspasarAlBar(
   );
   if (candidatas.length < input.cantidad) {
     throw new BusinessError(
-      `Stock insuficiente en almacén: hay ${candidatas.length} y se pidieron ${input.cantidad}`
+      `Stock insuficiente en bodega: hay ${candidatas.length} y se pidieron ${input.cantidad}`
     );
   }
   const ids = candidatas.map(r => String(r.id));
@@ -233,7 +233,7 @@ export async function listarTransferencias(pendientesOnly = false): Promise<Tran
       c.nombre AS categoria_nombre,
       pr.precio_venta AS pres_precio, pr.comision AS pres_comision,
       p.precio AS producto_precio, p.comision AS producto_comision, p.ml_shot,
-      p.ml_shot_anfitriona
+      p.ml_shot_anfitriona, p.max_anfitrionas, pr.ml_botella
      FROM inventario_movimientos m
      LEFT JOIN productos p ON p.id_producto = m.producto_id
      LEFT JOIN inventario_presentaciones pr ON pr.id = m.presentacion_id
@@ -245,12 +245,26 @@ export async function listarTransferencias(pendientesOnly = false): Promise<Tran
     []
   );
   const [{ shotMl }, topeSimple] = await Promise.all([getBarMlConfig(), getTopeSimple()]);
+  const productIds = [...new Set(rows.map(row => row.producto_id).filter(Boolean))];
+  const tiers = productIds.length
+    ? await query<{ producto_id: string; anfitrionas: number; precio: number; comision: number }[]>(
+        `SELECT producto_id, anfitrionas, precio, comision FROM producto_champagne_tiers WHERE producto_id IN (${productIds.map(() => '?').join(',')}) ORDER BY anfitrionas ASC`,
+        productIds
+      )
+    : [];
   return rows.map(row => {
     const mlShotCliente = Number(row.ml_shot) > 0 ? Number(row.ml_shot) : shotMl;
     const mlShotAnfitriona =
       Number(row.ml_shot_anfitriona) > 0 ? Number(row.ml_shot_anfitriona) : mlShotCliente;
     return {
       ...row,
+      tiers: tiers
+        .filter(tier => tier.producto_id === row.producto_id)
+        .map(tier => ({
+          anfitrionas: Number(tier.anfitrionas),
+          precio: Number(tier.precio),
+          comision: Number(tier.comision)
+        })),
       ml_shot: mlShotCliente,
       ml_shot_anfitriona: mlShotAnfitriona,
       opciones_venta:

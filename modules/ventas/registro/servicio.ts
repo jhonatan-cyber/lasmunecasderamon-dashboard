@@ -10,6 +10,7 @@ export function registrarCabeceraVenta(
     'codigo',
     'cliente_id',
     'pedido_id',
+    'servicio_id',
     'habitacion_id',
     'metodo_pago',
     'propina',

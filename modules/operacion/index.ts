@@ -77,3 +77,9 @@ export { OrderService } from './pedidos/servicio';
 export { TimerService } from './temporizadores/fachada';
 
 export { ServiceRequestService } from './solicitudes/servicio';
+
+export {
+  cambiarAnfitrionasServicio,
+  cambiarAnfitrionasServicioEnUnidad,
+  obtenerServicioParaConsumo
+} from './servicios/asignaciones';

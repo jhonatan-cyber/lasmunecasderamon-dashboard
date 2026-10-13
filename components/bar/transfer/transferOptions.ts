@@ -38,6 +38,16 @@ export function parseSavedOptions(raw: unknown): SaleOption[] | undefined {
           precio: Number(o.precio ?? 0),
           comision: Number(o.comision ?? 0)
         };
+        if (option.tipo === 'shot') {
+          option.ml_acompanamiento_cliente =
+            o.ml_acompanamiento_cliente === undefined
+              ? undefined
+              : Number(o.ml_acompanamiento_cliente);
+          option.ml_acompanamiento_anfitriona =
+            o.ml_acompanamiento_anfitriona === undefined
+              ? undefined
+              : Number(o.ml_acompanamiento_anfitriona);
+        }
         // Precio del shot para anfitrionas; 0 o ausente = igual que a un cliente.
         const anfitriona = Number(o.precio_anfitriona ?? 0);
         if (option.tipo === 'shot' && Number.isFinite(anfitriona) && anfitriona > 0) {
@@ -51,7 +61,9 @@ export function parseSavedOptions(raw: unknown): SaleOption[] | undefined {
         }
         if (
           option.tipo === 'botella' &&
-          ['gaseosa', 'soda'].includes(o.acompanamiento?.tipo) &&
+          o.acompanamiento &&
+          (o.acompanamiento.tipo === undefined ||
+            ['gaseosa', 'soda'].includes(o.acompanamiento.tipo)) &&
           Number.isInteger(Number(o.acompanamiento.unidades)) &&
           Number(o.acompanamiento.unidades) > 0 &&
           Number(o.acompanamiento.unidades) <= 1000

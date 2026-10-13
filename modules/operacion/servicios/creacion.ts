@@ -6,6 +6,7 @@
  * comisiones, detalles, clientes y caja, todo en una sola unidad con
  * `ContextoOperacion`. El aviso a los temporizadores sale después del commit.
  */
+import { cambiarAnfitrionasServicioEnUnidad, obtenerServicioParaConsumo } from './asignaciones';
 import { enUnaUnidad, type ContextoOperacion } from '@/lib/transaccion/contrato';
 import { ejecutarEfectosConfirmados } from '@/lib/transaccion/efectos';
 import { generateUUID } from '@/lib/database/db';
@@ -22,9 +23,10 @@ import { sendNotificationToAll } from '@/lib/api/sseService';
 import type { z } from 'zod';
 import {
   leerHabitacionParaServicio,
+  marcarPausaServicio,
+  leerAdicionalActivo,
   insertarServicio,
   insertarDetallesServicio,
-  reemplazarDetallesServicio,
   insertarClientesServicio,
   actualizarCamposServicio,
   leerIvaServicio
@@ -33,7 +35,8 @@ import { obtenerCajaActiva, registrarMovimientoCobro, ajustarIvaCaja } from '@/m
 import { consumirPrepagoVenta, saldoPrepagoAgotado } from '@/modules/clientes';
 import { cerrarCuentasPrepagoSaldadas } from '../cuentas/servicio';
 import { registrarComisionesServicio } from '@/modules/personal';
-import { validarAnfitrionasEnLocal } from '@/modules/identidad';
+import { consumirStockBar } from '@/modules/inventario';
+import { validarAnfitrionasEnLocal, ocuparAnfitrionasServicio } from '@/modules/identidad';
 import { ocuparHabitacionVenta, pausarConflictosServicio } from '../facturacion/servicio';
 
 type Tarea = () => void | Promise<void>;
@@ -46,12 +49,35 @@ export async function crearServicioEnUnidad(
   aplazar: (tarea: Tarea) => void
 ): Promise<{ id: string; codigo: string; tiempo: number | undefined; total: number }> {
   const v = ServiceCreateSchema.parse(body);
+  if (v.es_temporal) {
+    if (!v.servicio_original_id) {
+      throw new BusinessError('Selecciona el servicio original para crear el adicional');
+    }
+    const original = await obtenerServicioParaConsumo(v.servicio_original_id, contexto);
+    if (Number(original.es_temporal) === 1)
+      throw new BusinessError('Crea el adicional desde el servicio principal');
+    if (String(original.habitacion_id) !== String(v.habitacion_id)) {
+      throw new BusinessError(
+        'El servicio adicional debe usar la habitación del servicio original'
+      );
+    }
+    if (await leerAdicionalActivo(v.servicio_original_id, contexto)) {
+      throw new BusinessError(
+        'Este servicio ya tiene un adicional activo',
+        'TEMPORARY_SERVICE_ACTIVE'
+      );
+    }
+    if (Number(original.estado) === 2) await marcarPausaServicio(v.servicio_original_id, contexto);
+    await cambiarAnfitrionasServicioEnUnidad(v.servicio_original_id, v.usuarios, contexto);
+  }
   const servicioId = generateUUID();
   const codigo = Math.random().toString(36).substring(2, 10).toUpperCase();
   const now = getNowInBusinessTimezone(v.device_date);
   const pagosMixtos: MixedPayment[] = parsePagosMixtos(v.pagos_mixtos);
 
   const cajaId = await obtenerCajaActiva(contexto);
+  if (!cajaId)
+    throw new BusinessError('Abre una caja antes de registrar un servicio', 'CASH_REGISTER_CLOSED');
 
   let prepagoMonto = 0;
   const numAnfitrionas = Math.max(1, v.usuarios.length);
@@ -90,6 +116,7 @@ export async function crearServicioEnUnidad(
   let comisionHabitacion = 0;
   if (v.habitacion_id) {
     const habitacion = await leerHabitacionParaServicio(v.habitacion_id, contexto);
+    if (!habitacion) throw new BusinessError('La habitación ya no existe');
     if (habitacion) {
       const roomPrice = Number(habitacion.precio || 0);
       const roomCommission = Number(habitacion.comision_anfitriona || 0);
@@ -98,18 +125,35 @@ export async function crearServicioEnUnidad(
     }
   }
 
-  const tieneComisionHabitacion = comisionHabitacion > 0;
+  const tieneComisionHabitacion = comisionHabitacion > 0 && !v.es_temporal;
+  const requiereProducto = tieneComisionHabitacion && !v.es_temporal;
+  if (requiereProducto && !v.producto_incluido_presentacion_id) {
+    throw new BusinessError(
+      'Selecciona el producto incluido en la habitación',
+      'INCLUDED_PRODUCT_REQUIRED'
+    );
+  }
+  if (!requiereProducto && v.producto_incluido_presentacion_id) {
+    throw new BusinessError('Esta habitación o extensión no incluye un producto');
+  }
   const comisionIndividualBase = tieneComisionHabitacion
     ? Math.floor(comisionHabitacion / numAnfitrionas)
-    : precioServicioInput;
+    : v.es_temporal
+      ? Math.floor(precioServicioInput / numAnfitrionas)
+      : precioServicioInput;
   const comisionTotal = tieneComisionHabitacion
     ? comisionHabitacion
-    : precioServicioInput * numAnfitrionas;
+    : v.es_temporal
+      ? precioServicioInput
+      : precioServicioInput * numAnfitrionas;
 
   await insertarServicio(
     {
       id_servicio: servicioId,
       codigo,
+      producto_incluido_presentacion_id: requiereProducto
+        ? v.producto_incluido_presentacion_id
+        : null,
       cliente_id: v.cliente_id || null,
       habitacion_id: v.habitacion_id,
       precio_habitacion: v.precio_habitacion,
@@ -130,6 +174,20 @@ export async function crearServicioEnUnidad(
     contexto
   );
 
+  if (requiereProducto) {
+    await consumirStockBar(
+      [
+        {
+          presentacion_id: v.producto_incluido_presentacion_id!,
+          cantidad: 1,
+          tipo_venta: 'botella'
+        }
+      ],
+      { servicioId, usuarioId: creadoPor, fecha: now },
+      contexto
+    );
+  }
+
   if (v.habitacion_id && !esLibreIngreso) {
     await ocuparHabitacionVenta(v.habitacion_id, contexto);
   }
@@ -145,7 +203,7 @@ export async function crearServicioEnUnidad(
   await pausarConflictosServicio(hostessIds, servicioId, contexto);
 
   const commissionId = generateUUID();
-  const remainder = tieneComisionHabitacion ? comisionTotal % numAnfitrionas : 0;
+  const remainder = tieneComisionHabitacion || v.es_temporal ? comisionTotal % numAnfitrionas : 0;
 
   const detalleComisionRows: Array<{
     id_detalle_comision: string;
@@ -199,6 +257,8 @@ export async function crearServicioEnUnidad(
   }
   if (detalleServicioRows.length > 0) {
     await insertarDetallesServicio(detalleServicioRows, contexto);
+    if (!(esLibreIngreso && (!v.tiempo || v.tiempo <= 0)))
+      await ocuparAnfitrionasServicio(hostessIds, contexto);
   }
 
   const clientesArray =
@@ -266,20 +326,28 @@ export async function actualizarServicio(
 ): Promise<void> {
   const validated = ServiceCreateSchema.partial().parse(body);
   const ivaPrevio = await leerIvaServicio(id, contexto);
-  const ivaDelta = Number(validated.iva || 0) - Number(ivaPrevio || 0);
+  const ivaDelta = Object.prototype.hasOwnProperty.call(body, 'iva')
+    ? Number(validated.iva || 0) - Number(ivaPrevio || 0)
+    : 0;
   const now = getNowInBusinessTimezone(validated.device_date);
 
   await actualizarCamposServicio(
     id,
     {
-      cliente_id: validated.cliente_id || null,
-      habitacion_id: validated.habitacion_id,
-      precio_habitacion: validated.precio_habitacion || 0,
-      precio_servicio: validated.precio_servicio,
-      iva: validated.iva || 0,
-      sub_total: validated.sub_total,
-      total: validated.total,
-      tiempo: validated.tiempo,
+      ...Object.fromEntries(
+        [
+          'cliente_id',
+          'habitacion_id',
+          'precio_habitacion',
+          'precio_servicio',
+          'iva',
+          'sub_total',
+          'total',
+          'tiempo'
+        ]
+          .filter(key => Object.prototype.hasOwnProperty.call(body, key))
+          .map(key => [key, validated[key as keyof typeof validated]])
+      ),
       fecha_mod: now
     },
     contexto
@@ -289,8 +357,8 @@ export async function actualizarServicio(
     await ajustarIvaCaja(ivaDelta, contexto);
   }
 
-  if (validated.usuarios && validated.usuarios.length > 0) {
-    await reemplazarDetallesServicio(id, validated.usuarios, contexto);
+  if (body.usuarios !== undefined && validated.usuarios) {
+    await cambiarAnfitrionasServicioEnUnidad(id, validated.usuarios, contexto);
   }
 }
 

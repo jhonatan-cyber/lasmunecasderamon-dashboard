@@ -35,7 +35,7 @@ export async function revertirStockAnulacion(
   entrada: AnulacionStockEntrada,
   contexto?: ContextoOperacion
 ): Promise<ReversaStockAnulacion> {
-  if (!entrada?.venta_id) return SIN_REVERSA;
+  if (!entrada?.venta_id && !entrada?.servicio_id) return SIN_REVERSA;
   if (contexto) return await revertirStockPorAnulacion(resolverTransaccion(contexto), entrada);
   let resultado: ReversaStockAnulacion = SIN_REVERSA;
   await withTransaction(async trx => {

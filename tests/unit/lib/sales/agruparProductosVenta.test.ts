@@ -10,6 +10,21 @@ const base = {
   sub_total: 160000
 };
 describe('detalle comercial de la venta', () => {
+  it('conserva las anfitrionas y separa las bebidas diferentes', () => {
+    const sprite = { presentacion_id: 'sprite', unidades: 1 };
+    const cola = { presentacion_id: 'cola', unidades: 1 };
+    const grouped = agruparProductosVenta([
+      { ...base, acompanamiento: sprite, anfitrionas: ['Ana'] },
+      { ...base, acompanamiento: sprite, anfitrionas: ['Bea'] },
+      { ...base, acompanamiento: cola, anfitrionas: ['Carla'] }
+    ]);
+    expect(grouped).toHaveLength(2);
+    expect(grouped[0]).toMatchObject({
+      cantidad: 2,
+      anfitrionas: ['Ana', 'Bea'],
+      acompanamiento: sprite
+    });
+  });
   it('muestra una botella y suma las comisiones de todas las anfitrionas', () => {
     const detalles = [
       base,

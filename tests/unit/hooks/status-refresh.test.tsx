@@ -27,6 +27,31 @@ afterEach(() => {
 });
 
 describe('actualización de estados', () => {
+  it('conserva el orden nuevo de habitaciones y actualiza sus posiciones', async () => {
+    const request = vi.fn(async () => ({
+      ok: true,
+      json: async () => ({
+        success: true,
+        data: [
+          { id: 'a', name: 'Primera', display_order: 1 },
+          { id: 'b', name: 'Segunda', display_order: 2 }
+        ]
+      })
+    }));
+    vi.stubGlobal('fetch', request);
+    const { result } = renderHook(useRooms, { wrapper: wrapper() });
+    await waitFor(() => expect(result.current.rooms).toHaveLength(2));
+    await act(async () => {
+      await result.current.reorderRooms([...result.current.rooms].reverse());
+    });
+    await waitFor(() => expect(result.current.rooms.map(room => room.id)).toEqual(['b', 'a']));
+    expect(result.current.rooms.map(room => room.display_order)).toEqual([1, 2]);
+    expect(
+      [...result.current.rooms]
+        .sort((a, b) => (a.display_order ?? 0) - (b.display_order ?? 0))
+        .map(room => room.id)
+    ).toEqual(['b', 'a']);
+  });
   it('eliminar una presentación usa su ID y conserva el producto y la otra presentación', async () => {
     let deleted = false;
     const request = vi.fn(async (url: string, options?: RequestInit) => {

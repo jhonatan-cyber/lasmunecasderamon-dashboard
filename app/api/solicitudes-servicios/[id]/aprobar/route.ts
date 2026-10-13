@@ -11,7 +11,11 @@ export const PATCH = withRoute(
     const result = await ServiceRequestService.approve(
       id,
       String(user.id),
-      body?.habitacion_id ? String(body.habitacion_id) : undefined
+      body?.habitacion_id ? String(body.habitacion_id) : undefined,
+      undefined,
+      body?.producto_incluido_presentacion_id
+        ? String(body.producto_incluido_presentacion_id)
+        : undefined
     );
 
     sendNotificationToAll('service_request_processed', {

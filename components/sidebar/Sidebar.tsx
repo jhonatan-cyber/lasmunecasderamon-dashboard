@@ -4,10 +4,7 @@ import React from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import {
-  Search,
-  X
-} from 'lucide-react';
+import { Search, X } from 'lucide-react';
 import { cn } from '@/lib/utils/utils';
 import { useSidebar } from '@/contexts/SidebarContext';
 import { Tooltip, TooltipTrigger, TooltipContent, TooltipProvider } from '@/components/ui/tooltip';
@@ -101,7 +98,7 @@ function SidebarSkeleton({ isCollapsed }: { isCollapsed: boolean }) {
   return (
     <SidebarShell isCollapsed={isCollapsed}>
       <SidebarHeader isCollapsed={isCollapsed} loading />
-      <nav className='flex-1 px-4 py-6 space-y-2 overflow-y-auto'>
+      <nav className='flex-1 px-4 py-6 space-y-2 overflow-y-auto [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden'>
         {!isCollapsed && (
           <>
             <div className='h-4 bg-gray-200 rounded w-20 mb-4 animate-pulse' />
@@ -226,7 +223,7 @@ export function Sidebar() {
           </div>
         </div>
       )}
-      <nav className='flex-1 overflow-y-auto px-4 py-5 space-y-7'>
+      <nav className='flex-1 overflow-y-auto [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden px-4 py-5 space-y-7'>
         {sections.map(section => (
           <SidebarSectionBlock
             key={section.key}

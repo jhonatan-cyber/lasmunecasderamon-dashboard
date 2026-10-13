@@ -391,6 +391,24 @@ export default async function proxy(request: NextRequest) {
   const userRole = (payload.role as string)?.toLowerCase();
   const userId = payload.id as number;
 
+  if (userRole === 'barman' && (pathname === '/sales' || pathname.startsWith('/sales/'))) {
+    return NextResponse.redirect(new URL('/orders', request.url));
+  }
+
+  if (
+    userRole === 'barman' &&
+    (pathname === '/api/sales' || pathname.startsWith('/api/sales/')) &&
+    request.method !== 'GET' &&
+    request.method !== 'HEAD'
+  ) {
+    return addApiHeaders(
+      NextResponse.json(
+        { success: false, message: 'El barman puede realizar pedidos, pero no operar ventas.' },
+        { status: 403 }
+      )
+    );
+  }
+
   if (userRole === 'administrador') {
     return addApiHeaders(
       NextResponse.next({

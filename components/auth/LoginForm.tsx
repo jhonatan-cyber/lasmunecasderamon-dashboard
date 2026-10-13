@@ -25,6 +25,7 @@ interface FormState {
   loading: boolean;
   recoveryLoading: boolean;
   recoveryComplete: boolean;
+  recoveryMode: 'whatsapp' | 'usuarios';
   recoveryRun: string;
   setRecoveryRun: (value: string) => void;
   codigo: string;
@@ -45,7 +46,7 @@ interface InputRefs {
 
 interface FormHandlers {
   handleLogin: (e?: React.FormEvent) => void;
-  handlePasswordRecovery: (e: React.FormEvent) => void;
+  handlePasswordRecovery: (e?: React.FormEvent, modo?: 'whatsapp' | 'usuarios') => void;
   handleVerifyCode: (e: React.FormEvent) => void;
   handleKeyDown: (
     e: React.KeyboardEvent<HTMLInputElement>,
@@ -95,6 +96,7 @@ export const LoginForm = ({
     loading,
     recoveryLoading,
     recoveryComplete,
+    recoveryMode,
     recoveryRun,
     setRecoveryRun,
     codigo,
@@ -156,11 +158,12 @@ export const LoginForm = ({
           <div className='space-y-3 text-center' role='status'>
             <MessageCircle className='mx-auto h-10 w-10 text-emerald-600' aria-hidden='true' />
             <h3 className='text-lg font-semibold text-gray-900 dark:text-white'>
-              Revisa tu WhatsApp
+              {recoveryMode === 'usuarios' ? 'Restablecimiento de usuario' : 'Revisa tu WhatsApp'}
             </h3>
             <p className='text-sm leading-relaxed text-gray-600 dark:text-gray-300'>
-              Si los datos corresponden a un administrador con teléfono registrado, enviaremos una clave
-              temporal por WhatsApp. Tendrás que cambiarla al iniciar sesión.
+              {recoveryMode === 'usuarios'
+                ? 'Si el RUT corresponde a un usuario activo que no es administrador, su contraseña será su RUT registrado. Tendrá que cambiarla al iniciar sesión.'
+                : 'Si los datos corresponden a un administrador con teléfono registrado, enviaremos una clave temporal por WhatsApp. Tendrás que cambiarla al iniciar sesión.'}
             </p>
             <Button
               type='button'
@@ -178,12 +181,11 @@ export const LoginForm = ({
                 Recuperar contraseña
               </h3>
               <p className='mt-2 text-sm text-gray-600 dark:text-gray-300'>
-                Solo para administradores: ingresa tu RUN/CI. Enviaremos una clave temporal al
-                número de WhatsApp registrado en tu perfil.
+                Ingresa el RUT de la cuenta y elige cómo recuperar su contraseña.
               </p>
             </div>
             <div className='space-y-2'>
-              <Label htmlFor='recovery-run'>RUN / CI</Label>
+              <Label htmlFor='recovery-run'>RUT / RUN / CI</Label>
               <Input
                 id='recovery-run'
                 autoComplete='off'
@@ -196,8 +198,28 @@ export const LoginForm = ({
               />
             </div>
             <Button type='submit' disabled={recoveryLoading} className='w-full rounded-full'>
-              {recoveryLoading ? 'Enviando...' : 'Enviar clave por WhatsApp'}
+              {recoveryLoading && recoveryMode === 'whatsapp'
+                ? 'Enviando...'
+                : 'Enviar clave por WhatsApp'}
             </Button>
+            <p className='text-xs text-gray-600 dark:text-gray-300'>
+              WhatsApp: solo para el administrador, al teléfono registrado en su perfil.
+            </p>
+            <Button
+              type='button'
+              variant='outline'
+              disabled={recoveryLoading}
+              className='w-full rounded-full'
+              onClick={() => handlePasswordRecovery(undefined, 'usuarios')}
+            >
+              {recoveryLoading && recoveryMode === 'usuarios'
+                ? 'Restableciendo...'
+                : 'Reset usuarios'}
+            </Button>
+            <p className='text-xs text-gray-600 dark:text-gray-300'>
+              Restablece únicamente el usuario del RUT ingresado. Su contraseña será su RUT
+              registrado y deberá cambiarla al ingresar. No aplica a administradores.
+            </p>
           </form>
         )}
       </div>

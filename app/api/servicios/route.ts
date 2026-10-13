@@ -1,3 +1,4 @@
+import { runIdempotent } from '@/lib/api/idempotency';
 import { NextResponse } from 'next/server';
 import { withPublicRoute, withRoute } from '@/lib/api/withRoute';
 import { ServiceService } from '@/modules/operacion';
@@ -20,16 +21,21 @@ export const GET = withPublicRoute(async (request: Request) => {
 
 export const POST = withRoute(
   { auth: true, access: 'authenticated', audit: true },
-  async (request: Request, { user }) => {
-    const body = await request.json();
-    const validated = validateOrResponse(ServiceCreateSchema, body);
-    if (validated instanceof NextResponse) return validated;
-    const result = await ServiceService.createService(validated, user.id.toString());
-    sendNotificationToAll('service_changed', {
-      action: 'create',
-      id: result.id,
-      timestamp: new Date().toISOString()
-    });
-    return NextResponse.json({ success: true, ...result });
-  }
+  async (request: Request, { user }) =>
+    runIdempotent(
+      request,
+      { endpoint: 'services.create', usuarioId: String(user.id) },
+      async () => {
+        const body = await request.json();
+        const validated = validateOrResponse(ServiceCreateSchema, body);
+        if (validated instanceof NextResponse) return validated;
+        const result = await ServiceService.createService(validated, user.id.toString());
+        sendNotificationToAll('service_changed', {
+          action: 'create',
+          id: result.id,
+          timestamp: new Date().toISOString()
+        });
+        return NextResponse.json({ success: true, ...result });
+      }
+    )
 );

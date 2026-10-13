@@ -1,4 +1,5 @@
 'use client';
+import { requiresShortMixer, bottleMixerUnits } from '@/lib/sales/productConfiguration';
 
 import { useState, useMemo, useCallback } from 'react';
 import { mapForSaleToCartItem } from '@/lib/sales/forSaleMapper';
@@ -33,6 +34,7 @@ export type OrderProducto = SaleInventoryFields & {
   name?: string;
   categoria?: string;
   category_name?: string;
+  comisionUnitaria?: number;
 };
 
 export type OrderCategory = {
@@ -63,7 +65,7 @@ interface UseOrderFormProps {
   setSelectedCliente: (v: string) => void;
   onAddProducto?: (producto: OrderProductoPayload) => void;
   onUpdateCantidad?: (index: number, nuevaCantidad: number) => void;
-  onAssignHostess?: (index: number, hostessId: string) => void;
+  onAssignHostess?: (index: number, hostessId: string | string[]) => void;
   onToggleComision?: (index: number) => void;
   onSubmit?: () => void;
 }
@@ -169,21 +171,49 @@ export function useOrderForm({
   }, []);
 
   const handleAgregarProducto = useCallback(
-    (producto: OrderProducto) => {
+    async (producto: OrderProducto) => {
       const productKey = String(producto.id_producto || producto.id || '');
       const cantidad = producto.cantidad ?? cantidades[productKey] ?? 1;
-      const comisionUnitaria = producto.comision ?? producto.commission ?? 0;
-      const generaComision = comisionUnitaria > 0 ? 1 : 0;
+      let comisionUnitaria =
+        producto.comisionUnitaria ?? producto.comision ?? producto.commission ?? 0;
       const selectedHostesses = producto.selectedHostesses || [];
+      let precio = Number(producto.precio ?? producto.price ?? 0);
+      if (
+        producto.presentacion_id &&
+        producto.tipo_venta !== 'shot' &&
+        selectedHostesses.length > 0
+      ) {
+        try {
+          const pid = String(producto.producto_id || producto.id_producto || producto.id);
+          const response = await fetch(
+            `/api/products/${encodeURIComponent(pid)}/tiers?configurados=1`
+          );
+          const result = await response.json();
+          if (!response.ok || !result.success) throw new Error();
+          const tier = (result.data || []).find(
+            (row: any) => Number(row.anfitrionas) === selectedHostesses.length
+          );
+          if (tier) {
+            precio = Number(tier.precio);
+            comisionUnitaria = Number(tier.comision);
+          }
+        } catch {
+          setError('No se pudieron comprobar los precios por anfitriona. Reintenta.');
+          return;
+        }
+      }
 
+      const commissionTotal = selectedHostesses.length > 0 ? comisionUnitaria * cantidad : 0;
       if (onAddProducto) {
         onAddProducto({
           ...producto,
-          comision: comisionUnitaria * cantidad,
+          precio,
+          price: precio,
+          comision: commissionTotal,
           comisionUnitaria,
           cantidad,
-          subtotal: Number(producto.precio || producto.price || 0) * cantidad,
-          generaComision,
+          subtotal: precio * cantidad,
+          generaComision: comisionUnitaria > 0 && selectedHostesses.length > 0 ? 1 : 0,
           hostessId: '',
           selectedHostesses,
           isChampagne: producto.isChampagne || false,
@@ -213,6 +243,21 @@ export function useOrderForm({
   );
 
   const handleSubmitInternal = async () => {
+    if (productos.length === 0) {
+      setError('Selecciona al menos un producto para realizar el pedido');
+      return;
+    }
+    if (
+      productos.some(
+        p =>
+          p.tipo_venta !== 'shot' &&
+          bottleMixerUnits(p) > 0 &&
+          !p.acompanamiento_botella?.presentacion_id
+      )
+    ) {
+      setError('Selecciona el acompa\u00f1amiento de botella');
+      return;
+    }
     if (!metodoPago) {
       setError('Selecciona un método de pago');
       return;
@@ -220,15 +265,16 @@ export function useOrderForm({
     if (
       productos.some(
         p =>
-          p.tipo_venta === 'shot' &&
+          requiresShortMixer(p) &&
           (!p.acompanamiento_corto?.presentacion_id ||
-            !Number.isInteger(p.acompanamiento_corto.ml_por_corto) ||
-            p.acompanamiento_corto.ml_por_corto < 1 ||
-            p.acompanamiento_corto.ml_por_corto > 10000 ||
+            !Number.isInteger(p.acompanamiento_corto.unidades ?? 1) ||
+            (p.acompanamiento_corto.unidades ?? 1) < 1 ||
             Number(p.cantidad) > 99)
       )
     ) {
-      setError('Selecciona soda o gaseosa y los ml por corto para cada producto (hasta 99 cortos)');
+      setError(
+        'Selecciona soda o gaseosa para entregar completo para cada producto (hasta 99 cortos)'
+      );
       return;
     }
     if (productos.length === 0) {
@@ -273,7 +319,7 @@ export function useOrderForm({
     }
 
     for (const producto of bebidasConComision) {
-      if (isChampagneProduct(producto)) {
+      if (producto.tipo_venta !== 'shot' && isChampagneProduct(producto)) {
         const limit = getHostessLimit(producto);
         if ((producto.selectedHostesses || []).length > limit) {
           setError(
@@ -320,7 +366,9 @@ export function useOrderForm({
               ? toNullableStringId((item.selectedHostesses || [])[0])
               : null,
           selectedHostesses: (item.selectedHostesses || []).map(String),
-          roomId: toNullableStringId(item.selectedRoom)
+          roomId: toNullableStringId(
+            roomSelections[String(item.id || item.id_producto)] ?? item.selectedRoom
+          )
         })),
         usuarios: Array.from(new Set(bebidasConComision.flatMap(p => p.selectedHostesses || [])))
           .map(id => toNullableStringId(id))

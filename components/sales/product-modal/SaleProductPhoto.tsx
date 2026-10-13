@@ -10,11 +10,13 @@ import { ProductPhoto } from '@/components/shared/ProductPhoto';
 export function SaleProductPhoto({
   foto,
   name,
-  large
+  large,
+  compact = false
 }: {
   foto?: string;
   name: string;
   large: boolean;
+  compact?: boolean;
 }) {
   const [failedSource, setFailedSource] = useState<string | null>(null);
   const fallback = '/api/images/products/default.png';
@@ -28,9 +30,11 @@ export function SaleProductPhoto({
     <div
       data-photo-surface
       className={
-        large
-          ? 'relative h-44 w-full shrink-0 overflow-hidden rounded-2xl border border-gray-200/70 bg-white dark:border-white/10 dark:bg-white/[0.04]'
-          : 'relative size-20 shrink-0 overflow-hidden rounded-2xl border border-gray-200/70 bg-white dark:border-white/10 dark:bg-white/[0.04]'
+        compact
+          ? 'relative size-10 shrink-0 overflow-hidden rounded-lg bg-white dark:bg-white/5'
+          : large
+            ? 'relative h-44 w-full shrink-0 overflow-hidden rounded-2xl border border-gray-200/70 bg-white dark:border-white/10 dark:bg-white/[0.04]'
+            : 'relative size-20 shrink-0 overflow-hidden rounded-2xl border border-gray-200/70 bg-white dark:border-white/10 dark:bg-white/[0.04]'
       }
     >
       <ProductPhoto

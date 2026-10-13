@@ -1,4 +1,5 @@
 'use client';
+import { parseSavedOptions } from '@/components/bar/transfer/transferOptions';
 
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { ProductPhoto } from '@/components/shared/ProductPhoto';
@@ -34,13 +35,13 @@ import {
 } from '@/components/ui/table';
 import { Skeleton as BoneyardSkeleton } from 'boneyard-js/react';
 import { type BarStockItem } from '@/components/bar/TransferModal';
-import { BarCard } from '@/components/bar/BarCard';
+import { BarProductGrid } from '@/components/bar/BarProductGrid';
 import { BarStatsCards } from '@/components/bar/BarStatsCards';
 import { PendingApprovals } from '@/components/bar/PendingApprovals';
 import { SalePrices } from '@/components/bar/SalePrices';
 import { BarAnfitrionas, isTierPricedItem } from '@/components/bar/BarAnfitrionas';
 import { useConfig } from '@/hooks/shared/useConfigValue';
-import { resolveBotellaMl, resolveShotMl } from '@/lib/business/shotMl';
+import { resolveBotellaMl, resolveShotMl, resolveShotMlAnfitriona } from '@/lib/business/shotMl';
 import { useSharedSSE } from '@/hooks/shared';
 import type { DevolucionEnvaseRegistro, ShotsSummary } from '@/modules/inventario/contracts';
 import { useContainerScan, MOTIVO_ENVASE } from '@/hooks/productos/useContainerScan';
@@ -275,14 +276,32 @@ export default function BarPage() {
 
   const botellasAbiertasDetalle = useMemo(
     () =>
-      items.flatMap(item =>
-        (item.botellas_abiertas ?? []).map(botella => ({
-          ...botella,
-          producto_nombre: item.producto_nombre,
-          presentacion_nombre: item.nombre
-        }))
-      ),
-    [items]
+      items
+        .filter(item => (item.botellas_abiertas?.length ?? 0) > 0 || Number(item.ml_abierta) > 0)
+        .map(item => {
+          const mlCliente = resolveShotMl(item.ml_shot, shotMl);
+          const mlAnfitriona = resolveShotMlAnfitriona(item.ml_shot_anfitriona, mlCliente);
+          const abiertas = item.botellas_abiertas ?? [];
+          const disponibles = abiertas.length
+            ? abiertas.reduce((total, botella) => total + Number(botella.ml_restante || 0), 0)
+            : Number(item.ml_abierta || 0);
+          return {
+            id: item.id,
+            producto_nombre: item.producto_nombre,
+            foto: item.foto || item.producto_foto,
+            presentacion_nombre: item.nombre,
+            cantidad: abiertas.length || 1,
+            ml_disponibles: disponibles,
+            venta_corto_habilitada: (parseSavedOptions(item.opciones_venta) ?? []).some(
+              option => option.tipo === 'shot'
+            ),
+            ml_cliente: mlCliente,
+            ml_anfitriona: mlAnfitriona,
+            shots_anfitriona_disponibles: Math.floor(disponibles / mlAnfitriona),
+            shots_disponibles: Math.floor(disponibles / mlCliente)
+          };
+        }),
+    [items, shotMl]
   );
 
   const totalBar = useMemo(() => items.reduce((acc, i) => acc + (i.stock_bar ?? 0), 0), [items]);
@@ -437,7 +456,7 @@ export default function BarPage() {
                             Stock bar
                           </TableHead>
                           <TableHead className='py-4 px-5 text-xs uppercase text-gray-500'>
-                            Stock almacén
+                            Stock bodega
                           </TableHead>
                         </TableRow>
                       </TableHeader>
@@ -508,7 +527,7 @@ export default function BarPage() {
                                   </button>
                                 </TableCell>
                                 <TableCell className='py-3 px-2 sm:px-4 text-center text-xs sm:text-sm font-medium'>
-                                  <div className='flex flex-wrap items-center justify-center gap-2'>
+                                  <div className='flex min-w-0 flex-col items-start gap-1.5 text-left'>
                                     {item.categoria_nombre?.trim() && (
                                       <Badge
                                         variant='outline'
@@ -517,7 +536,9 @@ export default function BarPage() {
                                         {item.categoria_nombre}
                                       </Badge>
                                     )}
-                                    <span>{item.producto_nombre}</span>
+                                    <span className='text-sm font-semibold leading-snug'>
+                                      {item.producto_nombre}
+                                    </span>
                                     <span className='inline-flex shrink-0 rounded-full bg-gray-100 dark:bg-slate-800 px-2.5 py-0.5 font-medium whitespace-nowrap'>
                                       {item.nombre}
                                     </span>
@@ -632,11 +653,7 @@ export default function BarPage() {
                       )}
                     </div>
                   ) : (
-                    <div className='grid grid-cols-[repeat(auto-fill,minmax(min(100%,250px),1fr))] gap-4 sm:gap-5'>
-                      {filtered.map((item, index) => (
-                        <BarCard key={item.id} item={item} entranceIndex={index} />
-                      ))}
-                    </div>
+                    <BarProductGrid items={filtered} />
                   )}
                 </>
               )}
@@ -838,10 +855,10 @@ export default function BarPage() {
             >
               <div className='space-y-4'>
                 <p className='text-sm text-muted-foreground'>
-                  Escanea el envase vacío (EAN-13 o SKU LM-…) antes de entregarlo al almacén: el
+                  Escanea el envase vacío (EAN-13 o SKU LM-…) antes de entregarlo a la bodega: el
                   sistema confirma que es nuestro, que está vacío y que no se entregó antes, y lo
-                  marca en el mismo paso. La recepción queda pendiente hasta que el almacén la
-                  confirme desde Almacén → Envases devueltos. Puedes escanear envases uno tras otro
+                  marca en el mismo paso. La recepción queda pendiente hasta que la bodega la
+                  confirme desde Bodega → Envases devueltos. Puedes escanear envases uno tras otro
                   sin recargar: el contador y la lista de la sesión quedan abajo. Si no hay red, los
                   escaneos se guardan localmente y se verifican solos al reconectar.
                 </p>
@@ -888,7 +905,7 @@ export default function BarPage() {
                       {resultadoEnvase.ok ? (
                         <>
                           <PackageCheck className='w-4 h-4' />
-                          Envase entregado al almacén
+                          Envase entregado a la bodega
                         </>
                       ) : (
                         <>
@@ -919,7 +936,7 @@ export default function BarPage() {
                   onLimpiar={limpiarSesionEnvases}
                   onReintentar={reintentarEnvases}
                   etiquetaAceptado='Entregado'
-                  tituloAceptados='Entregados al almacén'
+                  tituloAceptados='Entregados a la bodega'
                 />
 
                 <div>
@@ -954,7 +971,7 @@ export default function BarPage() {
                                 Entregado por
                               </TableHead>
                               <TableHead className='py-4 px-5 text-xs uppercase text-gray-500'>
-                                Recepción en almacén
+                                Recepción en bodega
                               </TableHead>
                             </TableRow>
                           </TableHeader>
@@ -1021,7 +1038,7 @@ export default function BarPage() {
                                   <TableCell className='py-3 px-2 sm:px-4 text-center text-xs sm:text-sm'>
                                     {d.pendiente_confirmacion ? (
                                       <Badge className='bg-amber-100 text-amber-700 rounded-full px-2 sm:px-3 py-1 text-xs'>
-                                        Pendiente de almacén
+                                        Pendiente de bodega
                                       </Badge>
                                     ) : (
                                       <>

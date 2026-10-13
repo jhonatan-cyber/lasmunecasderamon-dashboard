@@ -5,6 +5,7 @@ export interface ServicioFormData {
   clientes: string[];
   usuarios: string[];
   habitacion_id: string;
+  producto_incluido_presentacion_id?: string;
   precio_habitacion: number;
   tiempo_habitacion: number;
   precio_servicio: number;
@@ -127,6 +128,7 @@ export function buildServicioPayload(args: {
     cliente_id: formData.clientes.length > 0 ? normalizeId(formData.clientes[0]) : null,
     clientes: formData.clientes.map(normalizeId),
     habitacion_id: formData.habitacion_id,
+    producto_incluido_presentacion_id: formData.producto_incluido_presentacion_id || null,
     precio_habitacion: precioHabitacion,
     precio_servicio: formData.precio_servicio,
     iva: formData.iva,

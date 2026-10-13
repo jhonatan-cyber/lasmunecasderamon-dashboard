@@ -42,7 +42,9 @@ export async function obtenerMaxAnfitrionasPorProducto(
 export async function listarStockBar(productoId?: string): Promise<
   (PresentacionRow & {
     producto_nombre: string;
+    stock_bar_cerrado: number;
     producto_codigo: string;
+    codigos_unidades_bar: string[];
     producto_foto: string | null;
     categoria_nombre: string | null;
     botellas_vacias_shots: number;
@@ -58,6 +60,12 @@ export async function listarStockBar(productoId?: string): Promise<
       (SELECT COUNT(*) FROM inventario_unidades u WHERE u.presentacion_id = p.id AND u.ubicacion = 'bar' AND u.abierta_por_shots = true AND u.fecha_devolucion IS NULL AND (u.estado = '${ESTADO_UNIDAD_VENDIDA}' OR (u.estado = '${ESTADO_UNIDAD_ACTIVA}' AND u.ml_restante IS NOT NULL AND u.ml_restante >= 0 AND u.ml_restante <= ?))) AS botellas_vacias_shots,
       (SELECT COALESCE(SUM(u.ml_restante), 0) FROM inventario_unidades u WHERE u.presentacion_id = p.id AND u.estado = '${ESTADO_UNIDAD_ACTIVA}' AND u.ubicacion = 'bar') AS ml_abierta,
       (SELECT COALESCE(SUM(m.ml), 0) FROM inventario_movimientos m WHERE m.presentacion_id = p.id AND m.tipo = 'venta' AND m.ml > 0) AS ml_servidos,
+      (SELECT COUNT(*) FROM inventario_unidades u WHERE u.presentacion_id = p.id AND u.estado = '${ESTADO_UNIDAD_ACTIVA}' AND u.ubicacion = 'bar' AND COALESCE(u.ml_restante,0) = 0 AND u.abierta_por_shots IS NOT TRUE) AS stock_bar_cerrado,
+      ARRAY(SELECT DISTINCT codigo FROM (
+        SELECT u.codigo FROM inventario_unidades u WHERE u.presentacion_id = p.id AND u.estado = '${ESTADO_UNIDAD_ACTIVA}' AND u.ubicacion = 'bar' AND COALESCE(u.ml_restante, 0) = 0 AND u.abierta_por_shots IS NOT TRUE
+        UNION
+        SELECT u.codigo_barras AS codigo FROM inventario_unidades u WHERE u.presentacion_id = p.id AND u.estado = '${ESTADO_UNIDAD_ACTIVA}' AND u.ubicacion = 'bar' AND COALESCE(u.ml_restante, 0) = 0 AND u.abierta_por_shots IS NOT TRUE
+      ) codigos WHERE codigo IS NOT NULL AND codigo <> '') AS codigos_unidades_bar,
       pr.nombre AS producto_nombre, pr.codigo AS producto_codigo, pr.foto AS producto_foto,
       pr.precio AS producto_precio, pr.comision AS producto_comision, pr.ml_shot,
       pr.ml_shot_anfitriona,
@@ -133,8 +141,10 @@ export async function listarStockBar(productoId?: string): Promise<
       { ...row, max_anfitrionas: maxMap[String(row.producto_id)] ?? null },
       topeSimple
     ),
+    stock_bar_cerrado: Number(row.stock_bar_cerrado || 0),
     producto_nombre: row.producto_nombre,
     producto_codigo: row.producto_codigo,
+    codigos_unidades_bar: row.codigos_unidades_bar ?? [],
     producto_foto: row.producto_foto ?? null,
     categoria_nombre: row.categoria_nombre ?? null,
     botellas_vacias_shots: Number(row.botellas_vacias_shots ?? 0),

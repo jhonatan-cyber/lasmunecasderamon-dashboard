@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect, useCallback, useMemo, useRef } from 'react';
+import { isCancelledError } from '@tanstack/react-query';
 import {
   Caja,
   CajaWithUser,
@@ -60,6 +61,7 @@ export const useCashRegister = (): UseCashRegisterReturn => {
   const [pendingOperations, setPendingOperations] = useState(0);
   const writeInProgress = useRef(false);
   const detailRequest = useRef<AbortController | null>(null);
+  const listRequest = useRef(0);
   useEffect(() => () => detailRequest.current?.abort(), []);
   const [mutationError, setMutationError] = useState<string | null>(null);
   const [estadoFilter, setEstadoFilter] = useState<number | undefined>(undefined);
@@ -90,6 +92,7 @@ export const useCashRegister = (): UseCashRegisterReturn => {
 
   const getCajas = useCallback(
     async (estado?: number) => {
+      const requestId = ++listRequest.current;
       setMutationError(null);
       setEstadoFilter(estado);
       try {
@@ -97,6 +100,12 @@ export const useCashRegister = (): UseCashRegisterReturn => {
           estado === undefined ? '/api/cashregister' : `/api/cashregister?estado=${estado}`
         );
       } catch (error) {
+        if (
+          requestId !== listRequest.current ||
+          isCancelledError(error) ||
+          (error instanceof Error && error.name === 'AbortError')
+        )
+          return;
         handleError(error, 'Error al obtener cajas');
       }
     },
@@ -166,6 +175,7 @@ export const useCashRegister = (): UseCashRegisterReturn => {
         setMutationError(data.message || 'Error al verificar estado de caja');
       }
     } catch (err) {
+      if (isCancelledError(err) || (err instanceof Error && err.name === 'AbortError')) return;
       setMutationError(err instanceof Error ? err.message : 'Error desconocido');
       setHasOpenCaja(null);
       setCajaInfo(null);

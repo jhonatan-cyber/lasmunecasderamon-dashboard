@@ -1,4 +1,5 @@
 'use client';
+import { requiresShortMixer, bottleMixerUnits } from '@/lib/sales/productConfiguration';
 
 import { useState, useEffect, useMemo, useRef } from 'react';
 import { useRouter } from 'next/navigation';
@@ -25,6 +26,9 @@ import {
 } from '@/lib/business/champagne';
 
 export interface SaleFormState {
+  servicioId: string | null;
+  servicioNombre: string;
+  servicioAnfitrionas: string[];
   selectedCliente: string;
   setSelectedCliente: (v: string) => void;
   selectedHabitacion: string;
@@ -64,6 +68,8 @@ interface UseSaleValidationReturn {
   handleCantidadChangeTable: (index: number, nuevaCantidad: number) => void;
   handleSubmit: (clientes: any[], anfitrionas: any[]) => Promise<void>;
   getChampagneMax: (producto: any) => Promise<number>;
+  handleServiceHostessChange: (previous: string[], next: string[]) => void;
+  handleCartHostessesChange: (index: number, ids: string[]) => void;
 }
 
 export function useSaleValidation({
@@ -74,10 +80,16 @@ export function useSaleValidation({
   const { startTimer } = useTimer();
 
   // ── Form state ──────────────────────────────────────────────────────
+  const [servicioId, setServicioId] = useState<string | null>(null);
+  const [servicioNombre, setServicioNombre] = useState('');
+  const [servicioAnfitrionas, setServicioAnfitrionas] = useState<string[]>([]);
+  const servicioAnfitrionasIniciales = useRef<string[]>([]);
+  const [servicioListo, setServicioListo] = useState(false);
   const [selectedCliente, setSelectedCliente] = useState('none');
   const [selectedHabitacion, setSelectedHabitacion] = useState('');
   const [metodoPago, setMetodoPago] = useState('');
   const [productos, setProductos] = useState<any[]>([]);
+  const [draftReady, setDraftReady] = useState(false);
   const [enableTip, setEnableTip] = useState(false);
   const [selectedRoomInfo, setSelectedRoomInfo] = useState<any>(null);
   const [loading, setLoading] = useState(false);
@@ -103,39 +115,78 @@ export function useSaleValidation({
 
   const hasChampagneProducts = useMemo(() => productos.some(isChampagneProduct), [productos]);
   const requiresRoom =
-    hasChampagneProducts || productos.some(p => roomRequiredForPrice(p.precio ?? p.price));
+    !servicioId &&
+    (hasChampagneProducts || productos.some(p => roomRequiredForPrice(p.precio ?? p.price)));
 
   // ── localStorage persistence ────────────────────────────────────────
   useEffect(() => {
     if (typeof window !== 'undefined') {
-      setSelectedCliente(localStorage.getItem('selectedCliente') || 'none');
-      setSelectedHabitacion(localStorage.getItem('selectedHabitacion') || '');
-      setMetodoPago(localStorage.getItem('metodoPago') || '');
-      const savedProds = localStorage.getItem('productos');
-      if (savedProds) setProductos(JSON.parse(savedProds));
-    }
-  }, []);
-
-  useEffect(() => {
-    if (typeof window !== 'undefined') {
-      localStorage.setItem('selectedCliente', selectedCliente);
-      localStorage.setItem('selectedHabitacion', selectedHabitacion);
-      localStorage.setItem('metodoPago', metodoPago);
-      localStorage.setItem('productos', JSON.stringify(productos));
-    }
-  }, [selectedCliente, selectedHabitacion, metodoPago, productos]);
-
-  useEffect(() => {
-    return () => {
-      if (typeof window !== 'undefined') {
-        localStorage.removeItem('selectedCliente');
-        localStorage.removeItem('selectedHabitacion');
-        localStorage.removeItem('metodoPago');
-        localStorage.removeItem('productos');
-        localStorage.removeItem('enableTip');
+      const id = new URLSearchParams(window.location.search).get('servicio_id');
+      if (id) {
+        setServicioId(id);
+        fetch(`/api/servicios/${encodeURIComponent(id)}`)
+          .then(r => r.json())
+          .then(res => {
+            if (!res.success || ![2, 3].includes(Number(res.data?.estado)))
+              throw new Error('El servicio ya no está activo');
+            setSelectedCliente(res.data.cliente_id || 'none');
+            setSelectedHabitacion(res.data.habitacion_id);
+            setServicioNombre(
+              res.data.habitacion_nombre || res.data.habitacion_numero || 'Habitación'
+            );
+            const ids: string[] = [
+              ...new Set<string>(
+                String(res.data.anfitrionas_ids || '')
+                  .split(',')
+                  .map(id => id.trim())
+                  .filter(Boolean)
+              )
+            ];
+            servicioAnfitrionasIniciales.current = ids;
+            setServicioAnfitrionas(ids);
+            setServicioListo(true);
+          })
+          .catch(err => toast.error(err.message));
+        return;
       }
-    };
+      try {
+        setSelectedCliente(localStorage.getItem('selectedCliente') || 'none');
+        setSelectedHabitacion(localStorage.getItem('selectedHabitacion') || '');
+        setMetodoPago(localStorage.getItem('metodoPago') || '');
+        const savedProds = localStorage.getItem('productos');
+        if (savedProds) {
+          const saved = JSON.parse(savedProds);
+          if (Array.isArray(saved)) setProductos(saved);
+        }
+        setEnableTip(localStorage.getItem('enableTip') === 'true');
+      } catch {
+        /* Ignora borradores dañados o almacenamiento no disponible. */
+      }
+      setDraftReady(true);
+    }
   }, []);
+
+  useEffect(() => {
+    if (typeof window !== 'undefined' && draftReady && !servicioId) {
+      try {
+        localStorage.setItem('enableTip', String(enableTip));
+        localStorage.setItem('selectedCliente', selectedCliente);
+        localStorage.setItem('selectedHabitacion', selectedHabitacion);
+        localStorage.setItem('metodoPago', metodoPago);
+        localStorage.setItem('productos', JSON.stringify(productos));
+      } catch {
+        /* Mantiene el formulario operativo sin almacenamiento. */
+      }
+    }
+  }, [
+    draftReady,
+    servicioId,
+    enableTip,
+    selectedCliente,
+    selectedHabitacion,
+    metodoPago,
+    productos
+  ]);
 
   // ── Room info fetch ─────────────────────────────────────────────────
   useEffect(() => () => roomRequest.current?.abort(), []);
@@ -211,11 +262,12 @@ export function useSaleValidation({
     isExpensiveDrink({ precio: resolverVentaProducto(p, eleccionDe(p)).precioBotella });
 
   const limiteAnfitrionasDe = async (p: any): Promise<number> => {
+    if (p.tipo_venta === 'shot') return Math.max(1, Number(p.cantidad) || 1);
     const maxExplicito = getExplicitMaxAnfitrionas(p);
     if (isChampagneProduct(p)) return Math.min(getHostessLimit(p), await getChampagneMax(p));
     if (esBebidaCara(p)) {
       const cantidad = Math.max(1, Number(p.cantidad) || 1);
-      return maxExplicito ? Math.min(cantidad, maxExplicito) : cantidad;
+      return maxExplicito ?? cantidad;
     }
     return maxExplicito ?? 1;
   };
@@ -224,9 +276,10 @@ export function useSaleValidation({
   // no quedar con más elegidas de las que permite la nueva cantidad.
   const recortePorCantidad = (p: any, cantidad: number) => {
     const actuales: any[] = Array.isArray(p.selectedHostesses) ? p.selectedHostesses : [];
+    if (p.tipo_venta === 'shot') return actuales.slice(0, cantidad);
     if (!actuales.length || isChampagneProduct(p) || !esBebidaCara(p)) return actuales;
     const maxExplicito = getExplicitMaxAnfitrionas(p);
-    const limite = maxExplicito ? Math.min(cantidad, maxExplicito) : cantidad;
+    const limite = maxExplicito ?? cantidad;
     if (actuales.length <= limite) return actuales;
     toast.info(`Máximo ${limite} anfitrionas para ${p.nombre}`);
     return actuales.slice(0, limite);
@@ -319,6 +372,8 @@ export function useSaleValidation({
       (p.tipo_venta === 'shot' ? 'shot' : 'botella') === tipoVenta &&
       // Shot de cliente y shot de anfitriona son líneas distintas: no se suman.
       Boolean(p.shot_anfitriona) === shotAnfitriona &&
+      JSON.stringify(p.acompanamiento_botella ?? null) ===
+        JSON.stringify(producto?.acompanamiento_botella ?? null) &&
       JSON.stringify(p.acompanamiento_corto ?? null) ===
         JSON.stringify(producto.acompanamiento_corto ?? null) &&
       Number(p.precio) === Number(precio) &&
@@ -431,18 +486,55 @@ export function useSaleValidation({
   }, [productos]);
 
   // ── Submit handler ──────────────────────────────────────────────────
+  const handleServiceHostessChange = (previous: string[], next: string[]) => {
+    if (!servicioId) return;
+    setServicioAnfitrionas(current => [
+      ...new Set([...current.filter(id => !previous.includes(id) || next.includes(id)), ...next])
+    ]);
+  };
+
+  const handleCartHostessesChange = (index: number, ids: string[]) => {
+    const product = productos[index];
+    if (
+      !product ||
+      product.tipo_venta !== 'shot' ||
+      !product.shot_anfitriona ||
+      Number(product.comision) <= 0
+    )
+      return;
+    const selected = [...new Set(ids)].slice(0, Number(product.cantidad));
+    handleServiceHostessChange(product.selectedHostesses || [], selected);
+    setProductos(current =>
+      current.map((p, i) => (i === index ? { ...p, selectedHostesses: selected } : p))
+    );
+  };
+
   const handleSubmit = async (clientes: any[], anfitrionas: any[]) => {
+    if (
+      requiresRoom &&
+      (!selectedHabitacion || selectedHabitacion === 'none' || !selectedRoomInfo)
+    ) {
+      toast.error('Selecciona una habitación disponible');
+      return;
+    }
+    if (requiresRoom && (!Number.isInteger(Number(manualTime)) || Number(manualTime) <= 0)) {
+      toast.error('Selecciona un tiempo válido para la habitación');
+      return;
+    }
+    if (servicioId && !servicioListo) {
+      toast.error('Espera a que se cargue el servicio activo');
+      return;
+    }
     if (
       productos.some(
         p =>
-          p.tipo_venta === 'shot' &&
+          requiresShortMixer(p) &&
           (!p.acompanamiento_corto?.presentacion_id ||
-            !Number.isInteger(p.acompanamiento_corto.ml_por_corto) ||
-            p.acompanamiento_corto.ml_por_corto < 1 ||
-            p.acompanamiento_corto.ml_por_corto > 10000)
+            !Number.isInteger(p.acompanamiento_corto.unidades ?? 1) ||
+            (p.acompanamiento_corto.unidades ?? 1) < 1)
       )
     ) {
-      toast.warning('Selecciona la soda o gaseosa y los ml por corto para cada producto');
+      toast.warning('Selecciona la soda o gaseosa para entregar completo para cada producto');
       return;
     }
     if (submitting.current) return;
@@ -476,6 +568,17 @@ export function useSaleValidation({
           )
         )
       );
+      if (
+        productos.some(
+          p =>
+            p.tipo_venta !== 'shot' &&
+            bottleMixerUnits(p) > 0 &&
+            !p.acompanamiento_botella?.presentacion_id
+        )
+      ) {
+        toast.warning('Selecciona la bebida para cada botella');
+        return;
+      }
       const ventaData: VentaCreate = {
         cliente_id: selectedCliente !== 'none' ? selectedCliente : null,
         metodo_pago: metodoPago as 'efectivo' | 'tarjeta' | 'transferencia' | 'prepago',
@@ -499,6 +602,7 @@ export function useSaleValidation({
                   acompanamiento_corto: p.acompanamiento_corto
                 }
               : {}),
+            acompanamiento_botella: p.tipo_venta !== 'shot' ? p.acompanamiento_botella : undefined,
             precio: p.precio,
             comision: selectedHostesses.length > 0 ? (p.comision || 0) * p.cantidad : 0,
             cantidad: p.cantidad,
@@ -513,21 +617,29 @@ export function useSaleValidation({
           return { ...normalizedDetail, hostesses: selectedHostesses };
         }),
         usuarios: todasAnf,
-        ...(selectedHabitacion && { habitacion_id: selectedHabitacion }),
-        ...(selectedHabitacion && {
-          tiempo: requiresRoom ? parseInt(manualTime) : selectedRoomInfo?.time || 60
-        })
+        ...(servicioId && { servicio_id: servicioId }),
+        ...(servicioId &&
+          [...servicioAnfitrionas].sort().join(',') !==
+            [...servicioAnfitrionasIniciales.current].sort().join(',') && {
+            servicio_anfitrionas: servicioAnfitrionas
+          }),
+        ...((servicioId || requiresRoom) &&
+          selectedHabitacion && { habitacion_id: selectedHabitacion }),
+        ...((servicioId || requiresRoom) &&
+          selectedHabitacion && {
+            tiempo: servicioId
+              ? 0
+              : requiresRoom
+                ? parseInt(manualTime)
+                : selectedRoomInfo?.time || 60
+          })
       };
 
       const res = await createVenta(ventaData);
       if (res && (res.success || res.data)) {
         const data = res.data || res;
-        if (selectedHabitacion) {
+        if (requiresRoom && selectedHabitacion && !servicioId && Number(data.estado) === 2) {
           const duration = requiresRoom ? parseInt(manualTime) : selectedRoomInfo?.time || 60;
-          const roomPrice = selectedRoomInfo?.precio ?? selectedRoomInfo?.price ?? 0;
-          const roomTime = selectedRoomInfo?.tiempo ?? selectedRoomInfo?.time ?? 0;
-          const roomCommission = selectedRoomInfo?.comision_anfitriona ?? 0;
-          const shouldOccupyRoom = roomPrice > 0 && roomTime > 0 && roomCommission > 0;
 
           if (duration > 0) {
             const anfNombres = todasAnf
@@ -550,18 +662,24 @@ export function useSaleValidation({
               'venta'
             );
           }
-
-          if (shouldOccupyRoom) {
-            await fetch(`/api/rooms/${selectedHabitacion}`, {
-              method: 'PATCH',
-              headers: { 'Content-Type': 'application/json' },
-              body: JSON.stringify({ action: 'occupy' })
-            });
-          }
         }
         window.dispatchEvent(new CustomEvent('ventaRegistrada'));
+        if (!servicioId) {
+          try {
+            [
+              'selectedCliente',
+              'selectedHabitacion',
+              'metodoPago',
+              'productos',
+              'enableTip'
+            ].forEach(key => localStorage.removeItem(key));
+          } catch {
+            /* La venta ya fue registrada. */
+          }
+          setDraftReady(false);
+        }
         toast.success('Venta generada exitosamente');
-        router.push('/sales');
+        router.push(servicioId ? '/private-rooms' : '/sales');
       }
     } catch (error) {
       logger.captureException(error, { context: 'useSaleValidation:createSale' });
@@ -574,6 +692,9 @@ export function useSaleValidation({
 
   return {
     formState: {
+      servicioId,
+      servicioNombre,
+      servicioAnfitrionas,
       selectedCliente,
       setSelectedCliente,
       selectedHabitacion,
@@ -605,6 +726,8 @@ export function useSaleValidation({
     handleRemoveProducto,
     handleCantidadChangeTable,
     handleSubmit,
-    getChampagneMax
+    getChampagneMax,
+    handleServiceHostessChange,
+    handleCartHostessesChange
   };
 }

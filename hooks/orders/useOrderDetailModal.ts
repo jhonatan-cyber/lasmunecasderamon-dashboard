@@ -1,7 +1,7 @@
 'use client';
 
-import { saleInventoryFields } from '@/lib/sales/saleInventoryFields';
-import { useEffect, useCallback } from 'react';
+import { orderLineToSaleDetail } from '@/lib/sales/orderSale';
+import { useEffect, useCallback, useRef } from 'react';
 import logger from '@/lib/utils/logger';
 import { appEventBus } from '@/lib/utils/eventBus';
 import { toast } from 'sonner';
@@ -97,6 +97,7 @@ export function useOrderDetailModal({
     habitacionesActivas
   }
 }: UseOrderDetailModalParams) {
+  const registeringSale = useRef(false);
   // --- Event listeners ---
   useEffect(() => {
     const handleCloseOrderModal = (eventDetail: { orderId: number | string }) => {
@@ -207,6 +208,8 @@ export function useOrderDetailModal({
   const handleConfirmRegistrarVenta = useCallback(
     async (e?: React.MouseEvent) => {
       e?.preventDefault();
+      if (registeringSale.current) return;
+      registeringSale.current = true;
       setIsRegistering(true);
       try {
         const pedido = detail[0];
@@ -234,16 +237,7 @@ export function useOrderDetailModal({
           propina: propina,
           sub_total: sub_total,
           total: sub_total + propina + recargoAnfitrionas,
-          detalles: detail.map((item: any) => ({
-            ...saleInventoryFields(item),
-            producto_id: item.id_producto || item.producto_id,
-            precio: item.precio || 0,
-            cantidad: item.cantidad || 0,
-            comision: item.comision || 0,
-            sub_total: (item.precio || 0) * (item.cantidad || 0),
-            hostess_id: item.hostess_id || null,
-            hostesses: extractHostessIds(item.anfitrionas_asignadas_ids || item.hostess_id)
-          })),
+          detalles: detail.map(orderLineToSaleDetail),
           usuarios: usuariosIds,
           habitacion_id: shouldShowRoomSelector && habitacionId ? habitacionId : undefined,
           tiempo: shouldShowRoomSelector && habitacionId ? tiempoHabitacion : 0
@@ -256,8 +250,6 @@ export function useOrderDetailModal({
               `Venta registrada con propina de ${formatCurrencyCLP(propina)} distribuida entre los cajeros y garzones`
             );
           }
-
-          await actualizarEstadoPedido(0);
 
           onOrderStatusChange?.();
           appEventBus.emit('updatePendingOrders', { type: 'order-processed', orderId });
@@ -304,6 +296,7 @@ export function useOrderDetailModal({
       } catch {
         toast.error('Error al registrar la venta');
       } finally {
+        registeringSale.current = false;
         setIsRegistering(false);
         setConfirmVentaModalOpen(false);
       }
@@ -322,7 +315,6 @@ export function useOrderDetailModal({
       orderId,
       createVenta,
       startTimer,
-      actualizarEstadoPedido,
       onOrderStatusChange,
       onClose,
       onVentaRegistrada,
@@ -371,15 +363,7 @@ export function useOrderDetailModal({
           sub_total,
           total: sub_total + recargoAnfitrionas,
           habitacion_id: shouldShowRoomSelector && habitacionId ? String(habitacionId) : null,
-          detalles: detail.map((item: any) => ({
-            ...saleInventoryFields(item),
-            producto_id: item.id_producto || item.producto_id,
-            hostesses: extractHostessIds(item.anfitrionas_asignadas_ids || item.hostess_id),
-            precio: item.precio || 0,
-            cantidad: item.cantidad || 0,
-            comision: item.comision || 0,
-            sub_total: (item.precio || 0) * (item.cantidad || 0)
-          })),
+          detalles: detail.map(orderLineToSaleDetail),
           usuarios: anfitrionasIds
         };
 

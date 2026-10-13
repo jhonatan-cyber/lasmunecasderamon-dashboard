@@ -31,6 +31,7 @@ import {
 import type { SaleOption } from '@/types/sale-options';
 
 type PresentacionComisiones = {
+  codigo_barras?: string | null;
   id: string;
   producto_id: string;
   nombre: string;
@@ -43,7 +44,8 @@ type PresentacionComisiones = {
 };
 
 const MIN_ANFITRIONAS = 1;
-const MAX_ANFITRIONAS = 10;
+// Mismo tope que la transferencia y que la API de tramos (1..20).
+const MAX_ANFITRIONAS = 20;
 
 const formatMiles = (v: string | number) =>
   String(v ?? '')
@@ -122,6 +124,7 @@ export function SettingsBottleHostessCard() {
               id: String(row.id),
               producto_id: pid,
               nombre: String(row.nombre ?? ''),
+              codigo_barras: row.codigo_barras ? String(row.codigo_barras) : null,
               foto: row.foto ? String(row.foto) : null,
               precio_venta: Number(row.precio_venta ?? 0),
               comision: Number(row.comision ?? 0),
@@ -154,6 +157,7 @@ export function SettingsBottleHostessCard() {
               id: presentacion.id,
               producto_id: presentacion.producto_id,
               presentacion: presentacion.nombre,
+              codigo_barras: presentacion.codigo_barras,
               foto: presentacion.foto || producto.foto,
               opciones_venta: presentacion.opciones_venta,
               ml_shot: presentacion.ml_shot,
@@ -195,7 +199,7 @@ export function SettingsBottleHostessCard() {
 
   const seleccionado = productos.find(p => String(p.id) === selectedId);
   const etiquetaProducto = (p: (typeof productos)[number]) =>
-    [p.categoria, p.name, p.presentacion, formatCurrencyCLP(Number(p.price ?? 0))]
+    [p.categoria, p.name, p.presentacion, p.codigo_barras, formatCurrencyCLP(Number(p.price ?? 0))]
       .filter(Boolean)
       .join(' ');
   const esChampagne = isChampagneProduct({
@@ -475,28 +479,12 @@ export function SettingsBottleHostessCard() {
                 onPrecio={setPrecioEdit}
                 onComision={setComisionEdit}
                 saving={saving}
+                maxAnfitrionas={maximo}
+                onMaxAnfitrionasChange={value =>
+                  setMaximoEdit(value.replace(/\D/g, '').slice(0, 2))
+                }
               />
             )}
-            <div>
-              <div className='space-y-1'>
-                <label
-                  htmlFor='botella-max'
-                  className='block text-xs font-bold uppercase tracking-wider text-neutral-500 ml-1'
-                >
-                  Máx. anfitrionas
-                </label>
-                <input
-                  id='botella-max'
-                  type='number'
-                  min={MIN_ANFITRIONAS}
-                  max={MAX_ANFITRIONAS}
-                  value={maximo}
-                  onChange={e => setMaximoEdit(e.target.value.replace(/\D/g, '').slice(0, 2))}
-                  placeholder='Default'
-                  className='w-full px-4 py-2.5 text-center bg-white dark:bg-neutral-950 border border-neutral-300 dark:border-neutral-800 rounded-full text-sm'
-                />
-              </div>
-            </div>
 
             <p className='text-sm text-neutral-500 dark:text-neutral-400 ml-1'>
               Vigente:{' '}

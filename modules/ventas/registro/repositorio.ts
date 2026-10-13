@@ -23,6 +23,7 @@ export class RegistroVenta {
       'cantidad',
       'sub_total',
       'hostess_id',
+      'acompanamiento',
       'fecha_crea'
     ];
     const placeholders = rows.map(() => `(${columns.map(() => '?').join(', ')})`).join(', ');

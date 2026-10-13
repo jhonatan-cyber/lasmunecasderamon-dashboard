@@ -83,8 +83,7 @@ export const SavedConfigPanel = memo(function SavedConfigPanel({
               )}
               {option.acompanamiento && (
                 <span className='text-xs text-muted-foreground'>
-                  Incluye {option.acompanamiento.unidades}{' '}
-                  {option.acompanamiento.tipo === 'gaseosa' ? 'gaseosas' : 'sodas'} por botella
+                  Incluye {option.acompanamiento.unidades} unidades de bebida por botella
                 </span>
               )}
               {option.tipo === 'shot' ? (

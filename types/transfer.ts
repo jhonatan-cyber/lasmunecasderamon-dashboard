@@ -19,4 +19,7 @@ export interface TransferRecord {
   ml_shot?: number | null;
   /** Ml por shot a anfitriona; null/undefined = igual que a cliente. */
   ml_shot_anfitriona?: number | null;
+  max_anfitrionas?: number | null;
+  ml_botella?: number | null;
+  tiers?: { anfitrionas: number; precio: number; comision: number }[];
 }

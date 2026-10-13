@@ -41,6 +41,7 @@
     "test:unit:watch": "vitest",
     "test:unit:coverage": "vitest run --coverage",
     "test:integration": "node tests/integration/order_flow.test.js",
+    "test:integration:cleaning": "vitest run --config vitest.cleaning.config.ts tests/integration/cleaning-inventory.test.ts",
     "test:integration:settings": "node tests/integration/settings_clean.test.js",
     "test:integration:legacy-db": "node scripts/run-legacy-db-tests.js",
     "test:integration:all": "node scripts/run-integration-all.js",

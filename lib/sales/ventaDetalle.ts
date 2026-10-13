@@ -13,7 +13,10 @@ export function agruparProductosVenta(detalles: VentaDetalle[]): VentaDetalle[] 
       detalle.presentacion_id ?? null,
       Number(detalle.precio),
       detalle.tipo_venta ?? 'botella',
-      Boolean(detalle.shot_anfitriona)
+      Boolean(detalle.shot_anfitriona),
+      detalle.acompanamiento?.presentacion_id ?? null,
+      detalle.acompanamiento?.unidades ?? null,
+      detalle.acompanamiento?.ml_por_corto ?? null
     ]);
     const grupo = grupos.get(key);
     if (!grupo) grupos.set(key, { ...detalle });
@@ -21,6 +24,10 @@ export function agruparProductosVenta(detalles: VentaDetalle[]): VentaDetalle[] 
       grupo.cantidad += Number(detalle.cantidad);
       grupo.sub_total += Number(detalle.sub_total);
       grupo.comision += Number(detalle.comision);
+      if (grupo.anfitrionas?.length || detalle.anfitrionas?.length)
+        grupo.anfitrionas = [
+          ...new Set([...(grupo.anfitrionas ?? []), ...(detalle.anfitrionas ?? [])])
+        ];
     }
   }
   return [...grupos.values()].filter(d => Number(d.cantidad) > 0 || Number(d.sub_total) !== 0);

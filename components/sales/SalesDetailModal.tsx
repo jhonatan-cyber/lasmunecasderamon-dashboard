@@ -7,25 +7,15 @@ import {
   DialogTitle,
   DialogFooter
 } from '@/components/ui/dialog';
-import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { VentaWithDetails } from '@/types/venta';
 import { SalesDistribution } from './SalesDistribution';
 import { formatCurrency, statusColors, statusLabels } from '@/lib/business/salesUtils';
-import { esShot, etiquetaVentaDetalle, agruparProductosVenta } from '@/lib/sales/ventaDetalle';
-import { useConfigValue } from '@/hooks/shared/useConfigValue';
-import {
-  ShoppingBag,
-  User,
-  Home,
-  CreditCard,
-  Users,
-  Clock,
-  DollarSign,
-  Receipt,
-  Hash
-} from 'lucide-react';
+import { agruparProductosVenta } from '@/lib/sales/ventaDetalle';
+import { SalesProductDetail } from './SalesProductDetail';
+import { SaleProductPhoto } from './product-modal/SaleProductPhoto';
+import { ShoppingBag, User, Home, CreditCard, Users, Clock, Receipt, Hash } from 'lucide-react';
 
 interface SalesDetailModalProps {
   open: boolean;
@@ -78,9 +68,8 @@ export function SalesDetailModal({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className='max-w-2xl max-h-[95vh] p-0 border-none shadow-2xl rounded-3xl overflow-hidden bg-white dark:bg-slate-900 flex flex-col'>
-        {}
-        <DialogHeader className='px-8 pt-8 pb-4 bg-gray-50/50 dark:bg-slate-800/50 border-b border-gray-100 dark:border-gray-800'>
+      <DialogContent className='w-[calc(100vw-1rem)] max-w-5xl max-h-[90vh] gap-0 p-0 border-none shadow-2xl rounded-3xl overflow-hidden bg-background flex flex-col'>
+        <DialogHeader className='px-5 py-5 sm:px-8 bg-gray-50/50 dark:bg-slate-800/50 border-b border-gray-100 dark:border-gray-800'>
           <div className='flex items-center justify-between'>
             <div className='flex items-center gap-3'>
               <div className='p-3 bg-blue-100 dark:bg-blue-900/30 rounded-2xl'>
@@ -104,62 +93,30 @@ export function SalesDetailModal({
           </div>
         </DialogHeader>
 
-        {}
-        <div className='flex-1 overflow-y-auto px-8 py-6 space-y-6 scrollbar-thin scrollbar-thumb-gray-200 dark:scrollbar-thumb-gray-800'>
-          {}
-          <div className='grid grid-cols-2 md:grid-cols-3 gap-3'>
-            <Card className='rounded-3xl border-none shadow-md bg-emerald-50/50 dark:bg-emerald-900/20 overflow-hidden'>
-              <CardContent className='p-4 flex items-center gap-3'>
-                <div className='h-10 w-10 rounded-2xl bg-emerald-100 dark:bg-emerald-900/40 flex items-center justify-center'>
-                  <DollarSign className='h-5 w-5 text-emerald-600' />
-                </div>
-                <div>
-                  <p className='text-[10px] uppercase font-black text-emerald-400 tracking-wider'>
-                    Total
-                  </p>
-                  <p className='text-lg font-black text-emerald-600'>
-                    ${formatCurrency(selectedVenta.total)}
-                  </p>
-                </div>
-              </CardContent>
-            </Card>
-
-            <Card className='rounded-3xl border-none shadow-md bg-blue-50/50 dark:bg-blue-900/20 overflow-hidden'>
-              <CardContent className='p-4 flex items-center gap-3'>
-                <div className='h-10 w-10 rounded-2xl bg-blue-100 dark:bg-blue-900/40 flex items-center justify-center'>
-                  <CreditCard className='h-5 w-5 text-blue-600' />
-                </div>
-                <div>
-                  <p className='text-[10px] uppercase font-black text-blue-400 tracking-wider'>
-                    Pago
-                  </p>
-                  <p className='text-sm font-black text-gray-900 dark:text-white capitalize'>
-                    {metodoPagoLabel}
-                  </p>
-                </div>
-              </CardContent>
-            </Card>
-
-            <Card className='rounded-3xl border-none shadow-md bg-amber-50/50 dark:bg-amber-900/20 overflow-hidden'>
-              <CardContent className='p-4 flex items-center gap-3'>
-                <div className='h-10 w-10 rounded-2xl bg-amber-100 dark:bg-amber-900/40 flex items-center justify-center'>
-                  <DollarSign className='h-5 w-5 text-amber-600' />
-                </div>
-                <div>
-                  <p className='text-[10px] uppercase font-black text-amber-400 tracking-wider'>
-                    Propina
-                  </p>
-                  <p className='text-sm font-black text-gray-900 dark:text-white'>
-                    ${formatCurrency(selectedVenta.propina)}
-                  </p>
-                </div>
-              </CardContent>
-            </Card>
+        <div className='flex-1 overflow-y-auto min-h-0 px-5 py-5 sm:px-8 space-y-6 scrollbar-thin scrollbar-thumb-gray-200 dark:scrollbar-thumb-gray-800'>
+          <div className='grid grid-cols-2 gap-5 border-b pb-5 sm:grid-cols-3'>
+            <div>
+              <p className='text-xs text-muted-foreground'>Total de venta</p>
+              <p className='mt-1 text-2xl font-bold tabular-nums text-emerald-600'>
+                ${formatCurrency(selectedVenta.total)}
+              </p>
+            </div>
+            <div>
+              <p className='flex items-center gap-2 text-xs text-muted-foreground'>
+                <CreditCard className='h-4 w-4' />
+                Método de pago
+              </p>
+              <p className='mt-2 text-sm font-semibold capitalize'>{metodoPagoLabel}</p>
+            </div>
+            <div>
+              <p className='text-xs text-muted-foreground'>Propina</p>
+              <p className='mt-2 text-sm font-semibold tabular-nums'>
+                ${formatCurrency(selectedVenta.propina)}
+              </p>
+            </div>
           </div>
 
-          {}
-          <div className='space-y-4'>
-            {}
+          <div className='grid grid-cols-1 gap-x-6 gap-y-5 border-b pb-6 sm:grid-cols-2 lg:grid-cols-3'>
             <div className='flex items-center gap-3'>
               <Clock className='w-4 h-4 text-gray-400 shrink-0' />
               <div>
@@ -172,7 +129,6 @@ export function SalesDetailModal({
               </div>
             </div>
 
-            {}
             <div className='flex items-center gap-3'>
               <Home className='w-4 h-4 text-indigo-500 shrink-0' />
               <div>
@@ -188,7 +144,6 @@ export function SalesDetailModal({
               </div>
             </div>
 
-            {}
             <div className='flex items-center gap-3'>
               <User className='w-4 h-4 text-blue-500 shrink-0' />
               <div>
@@ -204,7 +159,6 @@ export function SalesDetailModal({
               </div>
             </div>
 
-            {}
             <div className='flex items-center gap-3'>
               <User className='w-4 h-4 text-green-500 shrink-0' />
               <div>
@@ -222,7 +176,6 @@ export function SalesDetailModal({
               </div>
             </div>
 
-            {}
             {selectedVenta.pedido_id && (
               <div className='flex items-center gap-3'>
                 <Receipt className='w-4 h-4 text-amber-500 shrink-0' />
@@ -238,7 +191,6 @@ export function SalesDetailModal({
               </div>
             )}
 
-            {}
             <div className='flex items-start gap-3'>
               <Users className='w-4 h-4 text-purple-500 shrink-0 mt-1' />
               <div className='flex-1'>
@@ -265,7 +217,6 @@ export function SalesDetailModal({
             </div>
           </div>
 
-          {}
           <div>
             <div className='flex items-center gap-2 mb-3'>
               <ShoppingBag className='w-4 h-4 text-orange-500' />
@@ -275,46 +226,14 @@ export function SalesDetailModal({
             </div>
 
             {selectedVenta.detalles && selectedVenta.detalles.length > 0 ? (
-              <div className='bg-white dark:bg-slate-900/40 border border-gray-100 dark:border-gray-800 rounded-3xl overflow-hidden'>
+              <div className='border-t'>
                 <div className='divide-y divide-gray-100 dark:divide-gray-800'>
                   {productosVendidos.map((det, idx) => (
-                    <div
-                      key={idx}
-                      className='flex items-center justify-between px-5 py-3.5 hover:bg-gray-50/50 dark:hover:bg-slate-800/50 transition-colors'
-                    >
-                      <div className='flex-1 min-w-0'>
-                        <div className='flex items-center gap-2'>
-                          <span className='text-sm font-semibold text-gray-900 dark:text-white truncate'>
-                            {det.producto_etiqueta || det.producto_nombre || 'Producto'}
-                          </span>
-                          {esShot(det) && (
-                            <Badge
-                              variant='secondary'
-                              className='rounded-full text-[10px] font-bold whitespace-nowrap'
-                            >
-                              {etiquetaVentaDetalle(det)}
-                            </Badge>
-                          )}
-                        </div>
-                        <span className='text-[10px] text-gray-400 font-medium'>
-                          ${formatCurrency(det.precio)} c/u · Comisión: $
-                          {formatCurrency(det.comision)}
-                        </span>
-                      </div>
-                      <div className='flex items-center gap-4'>
-                        <Badge variant='outline' className='rounded-full text-xs font-bold'>
-                          x{det.cantidad}
-                        </Badge>
-                        <span className='font-black text-emerald-600 text-sm min-w-[80px] text-right'>
-                          ${formatCurrency(det.sub_total)}
-                        </span>
-                      </div>
-                    </div>
+                    <SalesProductDetail key={idx} detail={det} />
                   ))}
                 </div>
 
-                {}
-                <div className='px-5 py-3.5 bg-gray-50/80 dark:bg-slate-800/50 border-t border-gray-100 dark:border-gray-800'>
+                <div className='py-4 border-t border-border'>
                   <div className='flex items-center justify-between text-sm'>
                     <span className='font-bold text-gray-500 uppercase tracking-wide text-[10px]'>
                       Subtotal
@@ -344,25 +263,50 @@ export function SalesDetailModal({
                 </div>
               </div>
             ) : (
-              <div className='text-center py-8 bg-gray-50 dark:bg-slate-800/30 rounded-3xl border-2 border-dashed border-gray-100 dark:border-gray-800'>
+              <div className='text-center py-8 border-y border-border'>
                 <p className='text-gray-400 font-medium tracking-tight'>
                   No se encontraron productos
                 </p>
               </div>
             )}
           </div>
+          {!!selectedVenta.consumos_inventario?.length && (
+            <section className='space-y-3'>
+              <h4 className='text-sm font-semibold'>Consumo de inventario registrado</h4>
+              <div className='grid gap-x-6 sm:grid-cols-2'>
+                {selectedVenta.consumos_inventario.map((consumo, index) => (
+                  <div key={index} className='flex min-w-0 items-center gap-3 border-b py-3'>
+                    <SaleProductPhoto
+                      foto={consumo.foto ?? undefined}
+                      name={consumo.nombre}
+                      large={false}
+                      compact
+                    />
+                    <div className='space-y-1 text-sm'>
+                      <p className='font-medium'>{consumo.nombre}</p>
+                      <p className='text-xs text-muted-foreground'>
+                        {consumo.unidades} unidades descontadas
+                        {consumo.ml > 0 ? ` · ${consumo.ml} ml servidos` : ''}
+                      </p>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </section>
+          )}
           <SalesDistribution
+            flat
             title='Distribución de comisión entre anfitrionas'
             rows={selectedVenta.comisiones_detalle ?? []}
             defaultRole='Anfitriona'
           />
           <SalesDistribution
+            flat
             title='Distribución de propina entre garzones, cajeros y barman'
             rows={selectedVenta.propinas_detalle ?? []}
           />
         </div>
 
-        {}
         <DialogFooter className='px-8 py-4 bg-gray-50/50 dark:bg-slate-800/50 border-t border-gray-100 dark:border-gray-800 flex items-center justify-center sm:justify-center'>
           <Button
             onClick={() => onOpenChange(false)}

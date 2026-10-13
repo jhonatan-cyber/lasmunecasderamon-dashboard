@@ -12,6 +12,7 @@
  * `./anulaciones` con contexto opaco, en una sola unidad junto con caja,
  * prepago, comisiones, habitación y disponibilidad.
  */
+import { guardarAsignaciones } from './asignacionesRepositorio';
 import { generateUUID, query } from '@/lib/database/db';
 import type { ContextoOperacion } from '@/lib/transaccion/contrato';
 import { resolverTransaccion } from '@/lib/transaccion/infraestructura';
@@ -73,7 +74,17 @@ export async function obtenerSolicitudAnulacionServicioPorToken(
 }
 
 export async function listarSolicitudesAnulacionServiciosPendientes() {
-  return query<Array<{ id: string; servicio_id: string; monto: number; motivo: string; estado: string; fecha_solicitud: string; codigo: string }>>(
+  return query<
+    Array<{
+      id: string;
+      servicio_id: string;
+      monto: number;
+      motivo: string;
+      estado: string;
+      fecha_solicitud: string;
+      codigo: string;
+    }>
+  >(
     `SELECT sas.id, sas.servicio_id, s.total AS monto, sas.motivo, sas.estado, sas.fecha_solicitud, s.codigo
      FROM solicitudes_anulacion_servicios sas JOIN servicios s ON s.id_servicio = sas.servicio_id
      WHERE sas.estado = 'pendiente' ORDER BY sas.fecha_solicitud DESC`
@@ -128,7 +139,7 @@ export async function leerServicioParaAnular(
     `SELECT id_servicio, estado, habitacion_id, cliente_id, caja_id, metodo_pago, total, iva, pagos_mixtos
        FROM servicios
       WHERE id_servicio = ?
-      LIMIT 1`,
+      LIMIT 1 FOR UPDATE`,
     [servicioId]
   );
   return rows[0] ?? null;
@@ -140,7 +151,9 @@ export async function leerEstadoServicio(
 ): Promise<{ estado: number; habitacion_id: string | null; paused_at: unknown } | null> {
   const rows = await resolverTransaccion(contexto)<
     { estado: number; habitacion_id: string | null; paused_at: unknown }[]
-  >('SELECT estado, habitacion_id, paused_at FROM servicios WHERE id_servicio = ?', [servicioId]);
+  >('SELECT estado, habitacion_id, paused_at FROM servicios WHERE id_servicio = ? FOR UPDATE', [
+    servicioId
+  ]);
   return rows[0] ?? null;
 }
 
@@ -221,8 +234,12 @@ export async function actualizarEstadoSolicitudServicio(
 ): Promise<'confirmada' | 'rechazada'> {
   const normalized = String(status || '').toLowerCase();
   const trx = resolverTransaccion(contexto);
-  const rows = await trx<Array<{estado: string}>>('SELECT estado FROM solicitudes_anulacion_servicios WHERE id = ? FOR UPDATE', [requestId]);
-  if (!rows[0] || rows[0].estado !== 'pendiente') throw new BusinessError('La solicitud ya fue procesada');
+  const rows = await trx<Array<{ estado: string }>>(
+    'SELECT estado FROM solicitudes_anulacion_servicios WHERE id = ? FOR UPDATE',
+    [requestId]
+  );
+  if (!rows[0] || rows[0].estado !== 'pendiente')
+    throw new BusinessError('La solicitud ya fue procesada');
   const nextStatus =
     normalized === 'confirmar' || normalized === 'aprobado' || normalized === 'confirmada'
       ? 'confirmada'
@@ -292,19 +309,7 @@ export async function reemplazarDetallesServicio(
   usuarioIds: string[],
   contexto: ContextoOperacion
 ): Promise<void> {
-  const trx = resolverTransaccion(contexto);
-  const now = getNowInBusinessTimezone();
-  await trx('DELETE FROM detalle_servicios WHERE servicio_id = ?', [servicioId]);
-  await insertarDetallesServicio(
-    usuarioIds.map(uId => ({
-      id_detalle_servicio: generateUUID(),
-      usuario_id: uId,
-      servicio_id: servicioId,
-      comision: 0,
-      fecha_crea: now
-    })),
-    contexto
-  );
+  await guardarAsignaciones(servicioId, usuarioIds, getNowInBusinessTimezone(), contexto);
 }
 
 export async function insertarClientesServicio(
@@ -384,7 +389,9 @@ export async function listarServicios(params: {
         s.id_servicio, s.codigo, s.cliente_id, s.habitacion_id, s.precio_habitacion,
         s.precio_servicio, s.iva, s.sub_total, s.total, s.tiempo, s.metodo_pago,
         s.caja_id, s.created_by, s.estado, s.es_temporal, s.servicio_original_id,
-        s.fecha_crea, s.fecha_mod, s.pagos_mixtos,
+        s.fecha_crea, s.fecha_mod, s.pagos_mixtos, s.producto_incluido_presentacion_id,
+        (SELECT CONCAT(pr.nombre, ' · ', ip.nombre) FROM inventario_presentaciones ip JOIN productos pr ON pr.id_producto = ip.producto_id WHERE ip.id = s.producto_incluido_presentacion_id) AS producto_incluido_nombre,
+        (SELECT COALESCE(SUM(dc.comision),0) FROM detalle_servicios dc WHERE dc.servicio_id = s.id_servicio) AS comision_registrada,
         h.nombre as habitacion_numero, h.comision_anfitriona as habitacion_comision,
         cu.nick as creator_nick, cu.nombre as creator_nombre, cu.apellido as creator_apellido, cu.foto as creator_foto,
         (CAST(cl.nombre AS text) || CAST(' ' AS text) || CAST(cl.apellido AS text)) as cliente_nombre,
@@ -394,7 +401,7 @@ export async function listarServicios(params: {
       LEFT JOIN habitaciones h ON h.id_habitacion = s.habitacion_id
       LEFT JOIN usuarios cu ON cu.id_usuario = s.created_by
       LEFT JOIN clientes cl ON cl.id_cliente = s.cliente_id
-      LEFT JOIN detalle_servicios ds ON ds.servicio_id = s.id_servicio
+      LEFT JOIN detalle_servicios ds ON ds.servicio_id = s.id_servicio AND ds.liberado_en IS NULL
       LEFT JOIN usuarios u ON u.id_usuario = ds.usuario_id
       ${where}
       GROUP BY s.id_servicio, h.id_habitacion, cl.id_cliente, cu.id_usuario
@@ -421,7 +428,9 @@ export async function listarServiciosPorFechas(
 ): Promise<ServiceType[]> {
   try {
     const results = await query<any[]>(
-      `SELECT s.*, h.nombre as habitacion_nombre, cl.nombre as cliente_nombre
+      `SELECT s.*,
+      (SELECT CONCAT(pr.nombre, ' · ', ip.nombre) FROM inventario_presentaciones ip JOIN productos pr ON pr.id_producto = ip.producto_id WHERE ip.id = s.producto_incluido_presentacion_id) AS producto_incluido_nombre,
+      (SELECT COALESCE(SUM(dc.comision),0) FROM detalle_servicios dc WHERE dc.servicio_id = s.id_servicio) AS comision_registrada, h.nombre as habitacion_nombre, cl.nombre as cliente_nombre
        , cu.nick as creator_nick, cu.nombre as creator_nombre, cu.apellido as creator_apellido, cu.foto as creator_foto
        FROM servicios s
        LEFT JOIN habitaciones h ON s.habitacion_id = h.id_habitacion
@@ -454,10 +463,10 @@ export async function listarServiciosDeUsuario(userId: string): Promise<any[]> {
         STRING_AGG(DISTINCT COALESCE(u.nick, (CAST(u.nombre AS text) || CAST(' ' AS text) || CAST(u.apellido AS text))), ', ') as anfitriona,
         cu.nick as creado_por
        FROM servicios s
-       INNER JOIN detalle_servicios ds ON s.id_servicio = ds.servicio_id AND ds.usuario_id = ?
+       INNER JOIN (SELECT servicio_id, usuario_id, SUM(comision) AS comision FROM detalle_servicios GROUP BY servicio_id, usuario_id) ds ON s.id_servicio = ds.servicio_id AND ds.usuario_id = ?
        LEFT JOIN habitaciones h ON s.habitacion_id = h.id_habitacion
        LEFT JOIN clientes c ON c.id_cliente = s.cliente_id
-       LEFT JOIN detalle_servicios ds2 ON ds2.servicio_id = s.id_servicio
+       LEFT JOIN detalle_servicios ds2 ON ds2.servicio_id = s.id_servicio AND ds2.liberado_en IS NULL
        LEFT JOIN usuarios u ON u.id_usuario = ds2.usuario_id
        LEFT JOIN usuarios cu ON cu.id_usuario = s.created_by
        GROUP BY s.id_servicio, ds.comision, h.id_habitacion, c.id_cliente, cu.id_usuario
@@ -470,10 +479,23 @@ export async function listarServiciosDeUsuario(userId: string): Promise<any[]> {
   }
 }
 
-export async function obtenerServicioDetallado(id: string): Promise<ServiceType | null> {
+export async function obtenerServicioDetallado(id: string): Promise<
+  | (ServiceType & {
+      usuarios: Array<{
+        id_usuario: string;
+        nombre: string;
+        apellido: string;
+        nick: string | null;
+        estado_servicio: number;
+      }>;
+    })
+  | null
+> {
   try {
     const res = await query<any[]>(
-      `SELECT s.*, h.nombre as habitacion_name, cl.nombre as cliente_name,
+      `SELECT s.*,
+      (SELECT CONCAT(pr.nombre, ' · ', ip.nombre) FROM inventario_presentaciones ip JOIN productos pr ON pr.id_producto = ip.producto_id WHERE ip.id = s.producto_incluido_presentacion_id) AS producto_incluido_nombre,
+      (SELECT COALESCE(SUM(dc.comision),0) FROM detalle_servicios dc WHERE dc.servicio_id = s.id_servicio) AS comision_registrada, h.comision_anfitriona AS habitacion_comision, h.nombre as habitacion_name, cl.nombre as cliente_name,
               cu.nick as creator_nick, cu.nombre as creator_nombre, cu.apellido as creator_apellido, cu.foto as creator_foto,
               STRING_AGG(DISTINCT
                 CASE
@@ -486,13 +508,22 @@ export async function obtenerServicioDetallado(id: string): Promise<ServiceType 
        LEFT JOIN habitaciones h ON s.habitacion_id = h.id_habitacion
        LEFT JOIN clientes cl ON s.cliente_id = cl.id_cliente
        LEFT JOIN usuarios cu ON cu.id_usuario = s.created_by
-       LEFT JOIN detalle_servicios ds ON s.id_servicio = ds.servicio_id
+       LEFT JOIN detalle_servicios ds ON s.id_servicio = ds.servicio_id AND ds.liberado_en IS NULL
        LEFT JOIN usuarios u ON u.id_usuario = ds.usuario_id
        WHERE s.id_servicio = ?
        GROUP BY s.id_servicio, h.id_habitacion, cl.id_cliente, cu.id_usuario`,
       [id]
     );
-    return res.length > 0 ? mapServiceFromDB(res[0]) : null;
+    if (!res.length) return null;
+    const usuarios = await query<any[]>(
+      `SELECT DISTINCT u.id_usuario, u.nombre, u.apellido, u.nick, u.estado_servicio
+       FROM detalle_servicios ds
+       JOIN usuarios u ON u.id_usuario = ds.usuario_id
+       WHERE ds.servicio_id = ? AND ds.liberado_en IS NULL
+       ORDER BY u.nombre, u.apellido`,
+      [id]
+    );
+    return { ...mapServiceFromDB(res[0]), usuarios };
   } catch (err) {
     logger.error('[operacion/servicios] Error en obtenerServicioDetallado:', {
       servicioId: id,
@@ -509,4 +540,15 @@ export async function eliminarServicioFisico(
   const trx = resolverTransaccion(contexto);
   await trx('DELETE FROM detalle_servicios WHERE servicio_id = ?', [servicioId]);
   await trx('DELETE FROM servicios WHERE id_servicio = ?', [servicioId]);
+}
+
+export async function leerAdicionalActivo(
+  id: string,
+  contexto: ContextoOperacion
+): Promise<boolean> {
+  const rows = await resolverTransaccion(contexto)<{ id_servicio: string }[]>(
+    'SELECT id_servicio FROM servicios WHERE servicio_original_id = ? AND es_temporal = 1 AND estado IN (2, 3) LIMIT 1',
+    [id]
+  );
+  return rows.length > 0;
 }

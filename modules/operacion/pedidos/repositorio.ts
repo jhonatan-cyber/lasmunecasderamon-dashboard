@@ -1,3 +1,4 @@
+import { validarConfiguracionVenta } from '@/modules/inventario';
 import { saleInventoryFields, type SaleInventoryFields } from '@/lib/sales/saleInventoryFields';
 import { query, generateUUID, withTransaction, type TransactionQuery } from '@/lib/database/db';
 import {
@@ -167,6 +168,7 @@ export class OrderRepository {
       const fechaCrea = getNowInBusinessTimezone(device_date || undefined);
 
       await withTransaction(async trx => {
+        await validarConfiguracionVenta(trx, detalles);
         await BaseRepository.insert(trx, 'pedidos', {
           id_pedido: pedidoId,
           codigo,
@@ -297,7 +299,7 @@ export class OrderRepository {
 
   static async getDetail(id: string): Promise<any[]> {
     try {
-      return await query<any[]>(
+      const rows = await query<any[]>(
         `
       SELECT
         P.id_pedido, P.codigo, P.fecha_crea, P.subtotal, P.total, P.propina, P.total_comision, P.metodo_pago,
@@ -312,20 +314,45 @@ export class OrderRepository {
          FROM pedidos_usuarios PU
          INNER JOIN usuarios U2 ON U2.id_usuario = PU.usuario_id
          WHERE PU.pedido_id = P.id_pedido) AS "anfitrionaIds",
-        DP.configuracion_venta, DP.producto_id, DP.precio, DP.cantidad, DP.comision, DP.subtotal AS subtotal_detalle,
+        DP.id_detalle_pedido, DP.configuracion_venta, DP.producto_id, DP.precio, DP.cantidad, DP.comision, DP.subtotal AS subtotal_detalle,
+        IP.nombre AS presentacion_nombre, COALESCE(IP.foto, PROD.foto) AS producto_foto,
+        PROD.ml_shot, PROD.ml_shot_anfitriona,
+        CONCAT_WS(' ', MP.nombre, MI.nombre) AS acompanamiento_nombre, COALESCE(MI.foto, MP.foto) AS acompanamiento_foto,
         DP.genera_comision, PROD.nombre AS producto_nombre, C.nombre AS categoria, DP.hostess_id, DP.habitacion_id,
         (SELECT STRING_AGG(DPA.anfitriona_id, ',') FROM detalle_pedidos_anfitrionas DPA
-         WHERE DPA.detalle_pedido_id = DP.id_detalle_pedido) AS anfitrionas_asignadas_ids
+         WHERE DPA.detalle_pedido_id = DP.id_detalle_pedido) AS anfitrionas_asignadas_ids,
+        COALESCE((SELECT STRING_AGG(COALESCE(H.nick, H.nombre), ', ')
+          FROM detalle_pedidos_anfitrionas DPA JOIN usuarios H ON H.id_usuario = DPA.anfitriona_id
+          WHERE DPA.detalle_pedido_id = DP.id_detalle_pedido), HU.nick, HU.nombre) AS anfitrionas_asignadas_nombres
       FROM pedidos P
       LEFT JOIN clientes CL ON CL.id_cliente = P.cliente_id
       LEFT JOIN usuarios U ON U.id_usuario = P.mesero_id
       INNER JOIN detalle_pedidos DP ON DP.pedido_id = P.id_pedido
       INNER JOIN productos PROD ON PROD.id_producto = DP.producto_id
+      LEFT JOIN inventario_presentaciones IP ON IP.id = DP.configuracion_venta->>'presentacion_id'
+      LEFT JOIN inventario_presentaciones MI ON MI.id = COALESCE(
+        DP.configuracion_venta->'acompanamiento_corto'->>'presentacion_id',
+        DP.configuracion_venta->'acompanamiento_botella'->>'presentacion_id')
+      LEFT JOIN productos MP ON MP.id_producto = MI.producto_id
+      LEFT JOIN usuarios HU ON HU.id_usuario = DP.hostess_id
       LEFT JOIN categorias C ON C.id_categoria = PROD.categoria_id
       WHERE P.id_pedido = ?
     `,
         [id]
       );
+      return rows.map(row => {
+        const fields = saleInventoryFields(row);
+        const enrich = (mixer: any) =>
+          mixer
+            ? { ...mixer, nombre: row.acompanamiento_nombre, foto: row.acompanamiento_foto }
+            : undefined;
+        return {
+          ...row,
+          ...fields,
+          acompanamiento_corto: enrich(fields.acompanamiento_corto),
+          acompanamiento_botella: enrich(fields.acompanamiento_botella)
+        };
+      });
     } catch (err) {
       logger.error('[OrderRepository] Error en getDetail:', { id, err });
       throw new DatabaseError(`Error al obtener detalle del pedido ${id}`, err);

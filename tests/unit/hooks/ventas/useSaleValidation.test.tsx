@@ -1,9 +1,12 @@
 import { describe, expect, it, vi, beforeEach, afterEach } from 'vitest';
-import { renderHook, act } from '@testing-library/react';
+import { renderHook, act, waitFor } from '@testing-library/react';
 
 // ── Mocks ────────────────────────────────────────────────────────────────
 const configValues = vi.hoisted(() => new Map<string, string>());
 const createVentaMock = vi.hoisted(() => vi.fn());
+const startTimerMock = vi.hoisted(() => vi.fn());
+const routerPush = vi.hoisted(() => vi.fn());
+vi.mock('next/navigation', () => ({ useRouter: () => ({ push: routerPush }) }));
 
 vi.mock('@/hooks/shared/useConfigValue', () => ({
   useConfigValue: (_category: string, key: string, fallback: string) =>
@@ -15,7 +18,7 @@ vi.mock('@/hooks/caja/useSales', () => ({
 }));
 
 vi.mock('@/contexts/TimerContext', () => ({
-  useTimer: () => ({ startTimer: vi.fn() })
+  useTimer: () => ({ startTimer: startTimerMock })
 }));
 
 import { useSaleValidation } from '@/hooks/ventas/useSaleValidation';
@@ -44,12 +47,162 @@ const setEnableTip = (result: any, enabled: boolean) => {
 };
 
 describe('concurrencia al generar ventas', () => {
+  it('permite asignar anfitriona al corto con comisión desde el carrito y la envía en la venta', async () => {
+    const { result } = renderSaleHook();
+    act(() =>
+      result.current.formState.setProductos([
+        {
+          id: 'corto',
+          nombre: 'Corto',
+          tipo_venta: 'shot',
+          shot_anfitriona: true,
+          precio: 5000,
+          comision: 1000,
+          cantidad: 1,
+          subtotal: 5000,
+          selectedHostesses: []
+        }
+      ])
+    );
+    act(() => result.current.handleCartHostessesChange(0, ['ana', 'bea']));
+    expect(result.current.formState.productos[0].selectedHostesses).toEqual(['ana']);
+    setMetodoPago(result, 'efectivo');
+    createVentaMock.mockResolvedValue({ success: false });
+    await act(() => result.current.handleSubmit([], []));
+    expect(createVentaMock.mock.calls[0][0].detalles[0]).toMatchObject({
+      hostess_id: 'ana',
+      comision: 1000,
+      shot_anfitriona: true
+    });
+  });
+
+  it('dos unidades de corto permiten dos anfitrionas y al bajar a una recorta la selección', async () => {
+    const { result } = renderSaleHook();
+    await act(async () => {
+      await result.current.handleAddProducto({
+        id: 'corto',
+        nombre: 'Corto',
+        tipo_venta: 'shot',
+        shot_anfitriona: true,
+        precio: 6000,
+        comision: 1000,
+        cantidad: 2,
+        max_anfitrionas: 5,
+        selectedHostesses: ['ana', 'bea', 'carla']
+      });
+    });
+    expect(result.current.formState.productos[0].selectedHostesses).toEqual(['ana', 'bea']);
+    act(() => result.current.handleCantidadChangeTable(0, 1));
+    expect(result.current.formState.productos[0].selectedHostesses).toEqual(['ana']);
+  });
+
+  it('limita el corto a una anfitriona aunque la botella permita varias', async () => {
+    const { result } = renderSaleHook();
+    await act(async () => {
+      await result.current.handleAddProducto({
+        id: 'corto',
+        nombre: 'Corto',
+        tipo_venta: 'shot',
+        shot_anfitriona: true,
+        precio: 6000,
+        precio_botella: 60000,
+        comision: 1000,
+        cantidad: 1,
+        max_anfitrionas: 5,
+        selectedHostesses: ['ana', 'bea']
+      });
+    });
+    expect(result.current.formState.productos[0].selectedHostesses).toEqual(['ana']);
+  });
+
   beforeEach(() => {
     createVentaMock.mockReset();
     configValues.clear();
     window.localStorage.clear();
   });
   afterEach(() => vi.unstubAllGlobals());
+
+  it('omite una habitación anterior cuando los productos ya no la requieren', async () => {
+    vi.stubGlobal(
+      'fetch',
+      vi.fn().mockResolvedValue({
+        ok: true,
+        json: async () => ({ success: true, data: { name: 'VIP', time: 30 } })
+      })
+    );
+    const { result } = renderSaleHook();
+    await act(() => result.current.handleHabitacionChange('vip'));
+    addProduct(result, 5000);
+    setMetodoPago(result, 'efectivo');
+    createVentaMock.mockResolvedValue({ success: true, data: { id: 'sale', estado: 1 } });
+    startTimerMock.mockClear();
+    await act(() => result.current.handleSubmit([], []));
+    expect(createVentaMock).toHaveBeenCalledTimes(1);
+    expect(createVentaMock.mock.calls[0][0]).not.toHaveProperty('habitacion_id');
+    expect(createVentaMock.mock.calls[0][0]).not.toHaveProperty('tiempo');
+    expect(startTimerMock).not.toHaveBeenCalled();
+  });
+
+  it('no permite una venta que requiere habitación sin seleccionarla', async () => {
+    const { result } = renderSaleHook();
+    addProduct(result, 50000);
+    setMetodoPago(result, 'efectivo');
+    await act(() => result.current.handleSubmit([], []));
+    expect(createVentaMock).not.toHaveBeenCalled();
+  });
+
+  it('inicia el temporizador con los minutos manuales de una venta activa en habitación libre', async () => {
+    const request = vi.fn().mockResolvedValue({
+      ok: true,
+      json: async () => ({
+        success: true,
+        data: { name: 'Libre', time: 0, price: 0, comision_anfitriona: 0 }
+      })
+    });
+    vi.stubGlobal('fetch', request);
+    const { result } = renderSaleHook();
+    await act(() => result.current.handleHabitacionChange('libre'));
+    addProduct(result, 50000);
+    setMetodoPago(result, 'efectivo');
+    act(() => result.current.formState.setManualTime('37'));
+    createVentaMock.mockResolvedValue({
+      success: true,
+      data: { id: 'sale', codigo: 'V-1', estado: 2 }
+    });
+    startTimerMock.mockClear();
+    await act(() => result.current.handleSubmit([], []));
+    expect(createVentaMock.mock.calls[0][0]).toMatchObject({ habitacion_id: 'libre', tiempo: 37 });
+    expect(startTimerMock).toHaveBeenCalledWith(
+      'sale',
+      'libre',
+      'Libre',
+      37,
+      'V-1',
+      'General',
+      '',
+      'venta'
+    );
+    expect(request).toHaveBeenCalledTimes(1);
+  });
+
+  it('una venta que el servidor devuelve finalizada no inicia temporizador', async () => {
+    vi.stubGlobal(
+      'fetch',
+      vi.fn().mockResolvedValue({
+        ok: true,
+        json: async () => ({ success: true, data: { name: 'VIP', time: 30 } })
+      })
+    );
+    const { result } = renderSaleHook();
+    await act(() => result.current.handleHabitacionChange('vip'));
+    addProduct(result, 50000);
+    setMetodoPago(result, 'efectivo');
+    createVentaMock.mockResolvedValue({ success: true, data: { id: 'sale', estado: 1 } });
+    startTimerMock.mockClear();
+    await act(() => result.current.handleSubmit([], []));
+    expect(createVentaMock).toHaveBeenCalledTimes(1);
+    expect(startTimerMock).not.toHaveBeenCalled();
+  });
 
   it('dos envíos simultáneos crean una sola solicitud y permiten reintentar un fallo', async () => {
     let finish!: (value: { success: boolean }) => void;
@@ -657,4 +810,82 @@ it('impide guardar cortos sin producto y ml de acompanamiento', async () => {
     await result.current.handleSubmit([], []);
   });
   expect(createVentaMock).not.toHaveBeenCalled();
+});
+
+it('vincula una venta adicional a la habitación sin iniciar otro temporizador', async () => {
+  window.history.replaceState({}, '', '/sales/new?servicio_id=servicio-1');
+  const fetchMock = vi.fn().mockResolvedValue({
+    ok: true,
+    json: async () => ({
+      success: true,
+      data: {
+        estado: 2,
+        habitacion_id: 'vip-1',
+        habitacion_nombre: 'VIP',
+        cliente_id: 'cliente-1',
+        anfitrionas_ids: 'ana, bea,ana'
+      }
+    })
+  });
+  vi.stubGlobal('fetch', fetchMock);
+  startTimerMock.mockClear();
+  createVentaMock.mockReset();
+  createVentaMock.mockResolvedValue({ success: true, data: { id: 'venta-adicional' } });
+  const { result, unmount } = renderSaleHook();
+  try {
+    await waitFor(() => expect(result.current.formState.selectedHabitacion).toBe('vip-1'));
+    expect(result.current.formState.servicioAnfitrionas).toEqual(['ana', 'bea']);
+    act(() => result.current.handleServiceHostessChange(['ana'], ['nueva']));
+    expect(result.current.formState.servicioAnfitrionas).toEqual(['bea', 'nueva']);
+    addProduct(result);
+    setMetodoPago(result, 'efectivo');
+    await act(async () => {
+      await result.current.handleSubmit([], []);
+    });
+    expect(createVentaMock).toHaveBeenCalledWith(
+      expect.objectContaining({
+        servicio_id: 'servicio-1',
+        servicio_anfitrionas: ['bea', 'nueva'],
+        habitacion_id: 'vip-1',
+        tiempo: 0,
+        total: 10000
+      })
+    );
+    expect(startTimerMock).not.toHaveBeenCalled();
+    expect(routerPush).toHaveBeenLastCalledWith('/private-rooms');
+    expect(fetchMock.mock.calls.some(([url]) => String(url).includes('/api/rooms/'))).toBe(false);
+  } finally {
+    unmount();
+    window.history.replaceState({}, '', '/');
+    vi.unstubAllGlobals();
+  }
+});
+
+it('una venta normal vuelve al listado de ventas', async () => {
+  createVentaMock.mockResolvedValue({ success: true, data: { id: 'normal-sale' } });
+  const { result, unmount } = renderSaleHook();
+  addProduct(result);
+  setMetodoPago(result, 'efectivo');
+  await act(async () => {
+    await result.current.handleSubmit([], []);
+  });
+  expect(routerPush).toHaveBeenLastCalledWith('/sales');
+  unmount();
+});
+
+it('restaura el carrito guardado y lo conserva al desmontar la pantalla', () => {
+  localStorage.setItem(
+    'productos',
+    JSON.stringify([{ id: 'draft', cantidad: 2, precio: 5000, subtotal: 10000 }])
+  );
+  const { result, unmount } = renderSaleHook();
+  expect(result.current.formState.productos[0].id).toBe('draft');
+  expect(JSON.parse(localStorage.getItem('productos')!)[0].id).toBe('draft');
+  unmount();
+  expect(JSON.parse(localStorage.getItem('productos')!)[0].cantidad).toBe(2);
+});
+it('permite cargar el formulario si el borrador guardado no es JSON válido', () => {
+  localStorage.setItem('productos', '{invalid');
+  const { result } = renderSaleHook();
+  expect(result.current.formState.productos).toEqual([]);
 });

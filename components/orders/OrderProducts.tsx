@@ -1,16 +1,11 @@
 'use client';
 
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from '@/components/ui/table';
 import { Separator } from '@/components/ui/separator';
-import { formatCurrencyCLP } from '@/lib/utils/formatters';
 import { OrderDetailTotalsSummary } from '@/components/orders/detail';
+import { SalesProductDetail } from '@/components/sales/SalesProductDetail';
+import { orderLineToSaleDetail } from '@/lib/sales/orderSale';
+import { useConfigValue } from '@/hooks/shared/useConfigValue';
+import { resolveShotMl, resolveShotMlAnfitriona } from '@/lib/business/shotMl';
 
 interface OrderProductsProps {
   detail: any[];
@@ -19,61 +14,61 @@ interface OrderProductsProps {
 }
 
 export function OrderProducts({ detail, propina, recargoAnfitrionas }: OrderProductsProps) {
+  const defaultShotMl = useConfigValue<number>('bar', 'shot_ml', 50);
+  const subtotal = detail.reduce(
+    (sum, item) => sum + Number(item.precio || 0) * Number(item.cantidad || 0),
+    0
+  );
   return (
-    <div className="bg-white dark:bg-slate-900/40 backdrop-blur-xs rounded-2xl border-none shadow-md overflow-hidden">
-      <Table>
-        <TableHeader className="bg-gray-100 dark:bg-slate-900/50">
-          <TableRow className="hover:bg-transparent border-gray-100 dark:border-gray-800">
-            <TableHead className="py-4 px-5 text-xs uppercase text-gray-500 text-left">
-              Bebida
-            </TableHead>
-            <TableHead className="py-4 px-5 text-xs uppercase text-gray-500 text-center">
-              Cantidad
-            </TableHead>
-            <TableHead className="py-4 px-5 text-xs uppercase text-gray-500 text-center">
-              Precio
-            </TableHead>
-            <TableHead className="py-4 px-5 text-xs uppercase text-gray-500 text-center">
-              Comisión
-            </TableHead>
-            <TableHead className="py-4 px-5 text-xs uppercase text-gray-500 text-right">
-              Sub Total
-            </TableHead>
-          </TableRow>
-        </TableHeader>
-        <TableBody>
-          {detail.map((item: any, idx: number) => (
-            <TableRow
-              key={idx}
-              className={`border-b transition-colors hover:bg-gray-50 dark:hover:bg-slate-800/30 ${
-                idx === 0 ? 'first:rounded-t-xl' : ''
-              } ${idx === detail.length - 1 ? 'last:rounded-b-xl' : ''}`}
-            >
-              <TableCell className="py-3 px-4 text-left font-medium">
-                {item.producto_nombre}
-              </TableCell>
-              <TableCell className="py-3 px-4 text-center">{item.cantidad}</TableCell>
-              <TableCell className="py-3 px-4 text-center">
-                {formatCurrencyCLP(item.precio)}
-              </TableCell>
-              <TableCell className="py-3 px-4 text-center">
-                {formatCurrencyCLP(item.comision)}
-              </TableCell>
-              <TableCell className="py-3 px-4 text-right font-medium">
-                {formatCurrencyCLP(item.subtotal)}
-              </TableCell>
-            </TableRow>
-          ))}
-        </TableBody>
-      </Table>
-
-      <Separator className="my-4" />
-
+    <div className='overflow-hidden rounded-2xl border bg-background shadow-sm'>
+      <div className='divide-y'>
+        {detail.map((item, index) => {
+          const line = orderLineToSaleDetail(item);
+          const mlCliente = resolveShotMl(item.ml_shot, defaultShotMl);
+          const ml = line.shot_anfitriona
+            ? resolveShotMlAnfitriona(item.ml_shot_anfitriona, mlCliente)
+            : mlCliente;
+          const mixer =
+            line.tipo_venta === 'shot' ? line.acompanamiento_corto : line.acompanamiento_botella;
+          return (
+            <SalesProductDetail
+              consumoProducto={
+                line.tipo_venta === 'shot'
+                  ? `${ml * line.cantidad} ml (${ml} ml por corto)`
+                  : `${line.cantidad} unidades`
+              }
+              key={item.id_detalle_pedido || index}
+              detail={{
+                ...line,
+                venta_id: item.id_pedido,
+                producto_nombre: item.producto_nombre,
+                categoria_nombre: item.categoria,
+                presentacion_nombre: item.presentacion_nombre,
+                producto_foto: item.producto_foto,
+                anfitrionas:
+                  item.anfitrionas_asignadas_nombres
+                    ?.split(',')
+                    .map((name: string) => name.trim()) ?? line.hostesses,
+                acompanamiento: mixer
+                  ? {
+                      ...mixer,
+                      nombre:
+                        item.acompanamiento_nombre ||
+                        ('nombre' in mixer ? mixer.nombre : undefined),
+                      foto: item.acompanamiento_foto
+                    }
+                  : undefined
+              }}
+            />
+          );
+        })}
+      </div>
+      <Separator />
       <OrderDetailTotalsSummary
-        subtotal={detail[0]?.total || 0}
+        subtotal={subtotal}
         propina={propina}
         recargoAnfitrionas={recargoAnfitrionas}
-        total={(detail[0]?.total || 0) + propina + recargoAnfitrionas}
+        total={subtotal + propina + recargoAnfitrionas}
       />
     </div>
   );

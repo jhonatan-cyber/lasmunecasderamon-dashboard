@@ -26,6 +26,8 @@ export default function NewPurchasePage() {
           id: String(item.id),
           producto_id: String(item.producto_id),
           producto_nombre: String(item.producto_nombre ?? ''),
+          categoria_nombre: String(item.categoria_nombre ?? ''),
+          codigo_barras: String(item.codigo_barras ?? ''),
           nombre: String(item.nombre ?? ''),
           foto: String(item.foto ?? 'default.png'),
           precio_compra: Number(item.precio_compra ?? 0),

@@ -8,10 +8,12 @@ export const SaleOptionsSchema = z
         tipo: z.enum(['botella', 'shot']),
         acompanamiento: z
           .object({
-            tipo: z.enum(['gaseosa', 'soda']),
+            tipo: z.enum(['gaseosa', 'soda']).optional(),
             unidades: z.number().int().min(1).max(1000)
           })
           .optional(),
+        ml_acompanamiento_cliente: z.number().int().min(0).max(10000).optional(),
+        ml_acompanamiento_anfitriona: z.number().int().min(0).max(10000).optional(),
         precio: amount,
         comision: amount.optional().default(0),
         // Precio del shot para anfitrionas; ausente = mismo precio que a un cliente.
@@ -30,12 +32,19 @@ export const SaleOptionsSchema = z
           .optional()
       })
       .refine(
+        option =>
+          option.tipo === 'shot' ||
+          (option.ml_acompanamiento_cliente === undefined &&
+            option.ml_acompanamiento_anfitriona === undefined),
+        'Los ml de bebida solo corresponden a cortos'
+      )
+      .refine(
         option => option.tipo === 'shot' || option.precios_anfitriona === undefined,
         'Los precios de anfitriona solo corresponden a cortos'
       )
       .refine(
         option => option.tipo === 'botella' || option.acompanamiento === undefined,
-        'El acompañamiento solo corresponde a botellas'
+        'La bebida solo corresponde a botellas'
       )
       .transform(option =>
         option.tipo === 'shot' && option.precios_anfitriona ? { ...option, comision: 0 } : option

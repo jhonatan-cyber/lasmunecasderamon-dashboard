@@ -71,7 +71,7 @@ export async function verificarEnvases(
 }
 
 /**
- * Escanea un envase en el almacén: confirma la recepción de uno que el bar ya
+ * Escanea un envase en la bodega: confirma la recepción de uno que el bar ya
  * entregó.
  */
 export async function confirmarRecepcionEnvase(

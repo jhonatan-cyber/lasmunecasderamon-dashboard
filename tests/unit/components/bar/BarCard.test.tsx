@@ -1,6 +1,6 @@
 import React from 'react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { cleanup, render, screen } from '@testing-library/react';
+import { cleanup, fireEvent, render, screen } from '@testing-library/react';
 import { BarCard } from '@/components/bar/BarCard';
 import type { BarStockItem } from '@/components/bar/TransferModal';
 
@@ -32,6 +32,7 @@ const item = (extra: Partial<BarStockItem> = {}): BarStockItem =>
     stock_bar: 5,
     ml_abierta: 950,
     ml_servidos: 50,
+    opciones_venta: [{ tipo: 'shot', precio: 3000, comision: 0 }],
     ...extra
   }) as BarStockItem;
 
@@ -47,6 +48,40 @@ afterEach(() => {
 });
 
 describe('capacidad de la botella en la tarjeta del bar', () => {
+  it('separa los precios de cliente y anfitrionas y muestra sus bebidas', () => {
+    render(
+      <BarCard
+        item={item({
+          opciones_venta: [
+            {
+              tipo: 'shot',
+              precio: 3000,
+              comision: 0,
+              ml_acompanamiento_cliente: 100,
+              ml_acompanamiento_anfitriona: 80,
+              precios_anfitriona: [{ precio: 5000, comision: 1000 }]
+            }
+          ],
+          ml_shot: 50,
+          ml_shot_anfitriona: 30
+        })}
+      />
+    );
+    expect(screen.queryByText('Anfitriona 1')).not.toBeInTheDocument();
+    fireEvent.click(screen.getByRole('button', { name: 'Ver información' }));
+    expect(screen.getByRole('button', { name: 'Ocultar información' })).toHaveAttribute(
+      'aria-expanded',
+      'true'
+    );
+    expect(screen.getByText('Anfitriona 1')).toBeInTheDocument();
+    expect(screen.getByText('$5.000')).toBeInTheDocument();
+    expect(screen.getByText('$1.000')).toBeInTheDocument();
+    expect(screen.getByText('Acomp.: producto completo')).toBeInTheDocument();
+    expect(screen.getByText('Acomp.: 80 ml')).toBeInTheDocument();
+    fireEvent.click(screen.getByRole('button', { name: 'Ocultar información' }));
+    expect(screen.queryByText('Anfitriona 1')).not.toBeInTheDocument();
+    expect(screen.getByText('Mistral')).toBeInTheDocument();
+  });
   it('muestra lo que queda junto a la capacidad real de la botella', () => {
     render(<BarCard item={item({ ml_botella: 1000 })} />);
 

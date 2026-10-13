@@ -24,7 +24,7 @@ export async function actualizarDisponibilidadAnfitrionas(
         AND NOT EXISTS (
           SELECT 1
           FROM servicios s
-          JOIN detalle_servicios ds ON s.id_servicio = ds.servicio_id
+          JOIN detalle_servicios ds ON s.id_servicio = ds.servicio_id AND ds.liberado_en IS NULL
           WHERE ds.usuario_id = u.id_usuario AND s.estado = 2
             ${excludeServiceId ? 'AND s.id_servicio != ?' : ''}
         )
@@ -71,4 +71,12 @@ export async function listarAnfitrionasEnLocal(
     usuarioIds
   );
   return rows.map(row => row.id_usuario);
+}
+
+export async function ocuparAnfitrionasServicio(ids: string[], contexto: ContextoOperacion) {
+  if (!ids.length) return;
+  await resolverTransaccion(contexto)(
+    `UPDATE usuarios SET estado_servicio = 1 WHERE id_usuario IN (${ids.map(() => '?').join(',')})`,
+    ids
+  );
 }

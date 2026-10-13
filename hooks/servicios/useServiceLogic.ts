@@ -3,13 +3,11 @@
 import { useState, useCallback, useMemo } from 'react';
 import { useServicios, useAllServicios } from '@/hooks/servicios/useServicios';
 import { useRouter } from 'next/navigation';
-import { toast } from 'sonner';
 import { ServicioWithDetails } from '@/types/servicio';
 import logger from '@/lib/utils/logger';
 
 export function useServiceLogic() {
-  const { servicios, loading, getServicios, removeServicioFromState, patchServicio, includeAll } =
-    useServicios();
+  const { servicios, loading, getServicios, removeServicioFromState, includeAll } = useServicios();
 
   const { servicios: allServicios, loading: loadingAll } = useAllServicios();
 
@@ -39,19 +37,11 @@ export function useServiceLogic() {
   }, [getServicios]);
 
   const handleStopTimer = useCallback(
-    async (servicioId: string | number) => {
-      try {
-        await patchServicio(servicioId, { estado: 1 });
-
-        removeServicioFromState(servicioId);
-
-        toast.success('Servicio finalizado exitosamente');
-      } catch (error) {
-        logger.captureException(error, { context: 'ServiceLogic:fetchServiceData' });
-        toast.error('Error al finalizar el servicio');
-      }
+    (servicioId: string | number) => {
+      removeServicioFromState(servicioId);
+      getServicios(false);
     },
-    [patchServicio, removeServicioFromState]
+    [getServicios, removeServicioFromState]
   );
 
   const handleServiceFinalized = useCallback(
@@ -79,8 +69,16 @@ export function useServiceLogic() {
           servicio.estado === 1 || servicio.estado === 0 || servicio.estado === 4
       );
     } else {
-      return servicios.filter(
+      const activos = servicios.filter(
         (servicio: ServicioWithDetails) => servicio.estado === 2 || servicio.estado === 3
+      );
+      const principalesOcultos = new Set(
+        activos
+          .filter(servicio => servicio.es_temporal && servicio.servicio_original_id)
+          .map(servicio => String(servicio.servicio_original_id))
+      );
+      return activos.filter(
+        servicio => !principalesOcultos.has(String(servicio.id_servicio ?? servicio.id))
       );
     }
   }, [servicios, showAllServices]);

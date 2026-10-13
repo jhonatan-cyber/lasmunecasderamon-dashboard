@@ -13,6 +13,9 @@ export interface SettingsTiersHandle {
   getTiers: () => Array<{ anfitrionas: number; precio: number; comision: number }>;
 }
 
+/** Tope de la tabla: el mismo que la transferencia y la API de tramos (1..20). */
+const MAX_TIERS = 20;
+
 const formatMiles = (v: string | number) =>
   String(v ?? '')
     .replace(/\D/g, '')
@@ -55,7 +58,7 @@ export function SettingsChampagneTiers({
   ref?: Ref<SettingsTiersHandle>;
   disabled?: boolean;
 }) {
-  const maxN = Math.min(10, Math.max(1, Math.floor(maxAnfitrionas)));
+  const maxN = Math.min(MAX_TIERS, Math.max(1, Math.floor(maxAnfitrionas)));
   const [rows, setRows] = useState<ChampagneRow[]>([]);
   const [loadError, setLoadError] = useState(false);
   const [loadingTiers, setLoadingTiers] = useState(false);
@@ -77,9 +80,9 @@ export function SettingsChampagneTiers({
       .then(data => {
         if (cancelled) return;
         const saved = data.success && Array.isArray(data.data) ? data.data : [];
-        const defaults = defaultRows(10, champagne, precioBase, comisionBase);
+        const defaults = defaultRows(MAX_TIERS, champagne, precioBase, comisionBase);
         const merged: ChampagneRow[] = [];
-        for (let i = 1; i <= 10; i++) {
+        for (let i = 1; i <= MAX_TIERS; i++) {
           const found = saved.find((t: any) => Number(t.anfitrionas) === i);
           const base = defaults[i - 1];
           merged.push({

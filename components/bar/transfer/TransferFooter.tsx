@@ -33,10 +33,10 @@ export const TransferFooter = memo(function TransferFooter({
         {saving ? (
           <span className='flex items-center gap-2'>
             <Loader2 className='w-4 h-4 animate-spin' />
-            Traspasando...
+            Transfiriendo...
           </span>
         ) : (
-          'Traspasar'
+          'Transferir'
         )}
       </Button>
     </div>

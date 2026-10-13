@@ -5,6 +5,7 @@ export const SaleSchema = z.object({
   codigo: z.string().nullable().optional(),
   cliente_id: z.string().nullable().optional(),
   pedido_id: z.string().nullable().optional(),
+  servicio_id: z.string().min(1).nullable().optional(),
   habitacion_id: z.string().nullable().optional(),
   metodo_pago: z
     .enum(['efectivo', 'tarjeta', 'transferencia', 'prepago', 'mixto'])
@@ -38,6 +39,8 @@ export const SaleCreateSchema = z.object({
   total_comision: z.number().optional().default(0),
   cliente_id: z.string().nullable().optional(),
   pedido_id: z.string().nullable().optional(),
+  servicio_id: z.string().min(1).nullable().optional(),
+  servicio_anfitrionas: z.array(z.string().min(1)).max(100).optional(),
   habitacion_id: z.string().nullable().optional(),
   metodo_pago: z
     .enum(['efectivo', 'tarjeta', 'transferencia', 'prepago', 'mixto'])
@@ -64,11 +67,22 @@ export const SaleCreateSchema = z.object({
           // 'shot' descuenta ml de la botella abierta en el bar; por defecto, botella entera.
           tipo_venta: z.enum(['botella', 'shot']).optional(),
           // El shot puede cobrarse a precio de cliente (default) o de anfitriona.
+          acompanamiento_botella: z
+            .object({
+              presentacion_id: z.string().min(1),
+              unidades: z.number().int().min(1).max(1000)
+            })
+            .optional(),
           acompanamiento_corto: z
             .object({
               presentacion_id: z.string().min(1),
-              ml_por_corto: z.number().int().min(1).max(10000)
+              unidades: z.number().int().min(1).max(1000).optional(),
+              ml_por_corto: z.number().int().min(1).max(10000).optional()
             })
+            .refine(
+              value => (value.unidades !== undefined) !== (value.ml_por_corto !== undefined),
+              'Selecciona unidades completas del acompa\u00f1amiento'
+            )
             .optional(),
           shot_anfitriona: z.boolean().optional().default(false),
           precio: z.number(),
@@ -81,16 +95,35 @@ export const SaleCreateSchema = z.object({
         })
         .refine(
           detail =>
-            !detail.acompanamiento_corto ||
-            (detail.tipo_venta === 'shot' &&
-              Boolean(detail.presentacion_id) &&
-              detail.presentacion_id !== detail.acompanamiento_corto.presentacion_id),
-          'El acompa\u00f1amiento requiere un corto y una presentaci\u00f3n distinta'
+            (!detail.acompanamiento_botella ||
+              (detail.tipo_venta !== 'shot' &&
+                Boolean(detail.presentacion_id) &&
+                detail.presentacion_id !== detail.acompanamiento_botella.presentacion_id)) &&
+            (!detail.acompanamiento_corto ||
+              (detail.tipo_venta === 'shot' &&
+                Boolean(detail.presentacion_id) &&
+                detail.presentacion_id !== detail.acompanamiento_corto.presentacion_id)),
+          'La bebida requiere el tipo de venta correcto y una presentación distinta'
+        )
+        .refine(
+          detail =>
+            detail.tipo_venta !== 'shot' ||
+            (Number.isInteger(detail.cantidad) && detail.cantidad <= 99),
+          'La cantidad de cortos debe ser un entero entre 1 y 99'
         )
         .transform(detail =>
           detail.tipo_venta === 'shot' && !detail.shot_anfitriona
             ? { ...detail, comision: 0, hostess_id: null, hostesses: [] }
             : detail
+        )
+        .refine(
+          detail =>
+            detail.tipo_venta !== 'shot' ||
+            new Set([
+              ...(detail.hostesses ?? []),
+              ...(detail.hostess_id ? [detail.hostess_id] : [])
+            ]).size <= detail.cantidad,
+          'Se permite una anfitriona por unidad de corto'
         )
     )
     .min(1, 'Al menos un detalle es requerido')

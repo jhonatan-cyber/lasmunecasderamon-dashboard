@@ -79,10 +79,9 @@ export function useAuthPermissions({
       }
       isFetchingPermissionsRef.current = true;
       setPermissionsLoading(true);
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 15000);
       try {
-        const controller = new AbortController();
-        const timeoutId = setTimeout(() => controller.abort(), 15000);
-
         /*
          * Sin cache-buster `?t=` (misma razón que en `useAuthSession`).
          *
@@ -103,7 +102,6 @@ export function useAuthPermissions({
           cache: 'no-store',
           signal: controller.signal
         });
-        clearTimeout(timeoutId);
         if (response.ok) {
           const result = await response.json();
           if (result.success && result.data) {
@@ -116,10 +114,22 @@ export function useAuthPermissions({
           onSessionExpiredRef.current();
         }
       } catch (error) {
-        logger.captureException(error, { context: 'AuthContext:fetchPermissions' });
+        if (controller.signal.aborted || (error instanceof Error && error.name === 'AbortError')) {
+          logger.warn(
+            'La consulta de permisos agotó el tiempo de espera; se conservan los permisos cargados.',
+            {
+              context: 'AuthContext:fetchPermissions'
+            }
+          );
+        } else {
+          logger.captureException(error, { context: 'AuthContext:fetchPermissions' });
+        }
       } finally {
-        setPermissionsLoaded(true);
-        setPermissionsLoading(false);
+        clearTimeout(timeoutId);
+        if (isMountedRef.current) {
+          setPermissionsLoaded(true);
+          setPermissionsLoading(false);
+        }
         isFetchingPermissionsRef.current = false;
 
         if (pendingPermissionsRefreshRef.current && isMountedRef.current) {

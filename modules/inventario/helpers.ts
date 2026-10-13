@@ -35,6 +35,12 @@ export function parseOpcionesVenta(
         };
         // Precio del shot para anfitrionas: 0 o ausente = igual que a un cliente.
         const anfitriona = Number(o.precio_anfitriona ?? 0);
+        if (o.tipo === 'shot') {
+          if (o.ml_acompanamiento_cliente !== undefined)
+            option.ml_acompanamiento_cliente = Number(o.ml_acompanamiento_cliente);
+          if (o.ml_acompanamiento_anfitriona !== undefined)
+            option.ml_acompanamiento_anfitriona = Number(o.ml_acompanamiento_anfitriona);
+        }
         if (o.tipo === 'shot' && Number.isFinite(anfitriona) && anfitriona > 0) {
           option.precio_anfitriona = anfitriona;
         }
@@ -46,7 +52,9 @@ export function parseOpcionesVenta(
         }
         if (
           option.tipo === 'botella' &&
-          ['gaseosa', 'soda'].includes(o.acompanamiento?.tipo) &&
+          o.acompanamiento &&
+          (o.acompanamiento.tipo === undefined ||
+            ['gaseosa', 'soda'].includes(o.acompanamiento.tipo)) &&
           Number.isInteger(Number(o.acompanamiento.unidades)) &&
           Number(o.acompanamiento.unidades) > 0 &&
           Number(o.acompanamiento.unidades) <= 1000

@@ -57,15 +57,19 @@ export function resolverVentaProducto(producto: any, eleccion?: SaleChoice): Ven
   const tieneShotAnfitriona = tieneShot && preciosAnfitriona.length > 0;
 
   const opciones: OpcionVentaProducto[] = [
-    {
-      value: 'botella',
-      nombre: opcionBotella?.acompanamiento
-        ? `Botella · ${opcionBotella.acompanamiento.unidades} ${opcionBotella.acompanamiento.tipo === 'gaseosa' ? 'gaseosas' : 'sodas'}`
-        : 'Botella',
-      precio: precioBotella,
-      comision: comisionBotella,
-      esShot: false
-    },
+    ...(opcionBotella || !tieneShot
+      ? [
+          {
+            value: 'botella' as SaleChoice,
+            nombre: opcionBotella?.acompanamiento
+              ? `Botella · ${opcionBotella.acompanamiento.unidades} ${opcionBotella.acompanamiento.tipo ? (opcionBotella.acompanamiento.tipo === 'gaseosa' ? 'gaseosas' : 'sodas') : 'bebidas'}`
+              : 'Botella',
+            precio: precioBotella,
+            comision: comisionBotella,
+            esShot: false
+          }
+        ]
+      : []),
     ...(tieneShot
       ? [
           {
@@ -98,7 +102,7 @@ export function resolverVentaProducto(producto: any, eleccion?: SaleChoice): Ven
       ? eleccion
       : (eleccion === 'shot' || (eleccion && esCortoAnfitriona(eleccion))) && tieneShot
         ? 'shot'
-        : 'botella';
+        : opciones[0].value;
 
   const elegida = opciones.find(opcion => opcion.value === tipoVenta) ?? opciones[0];
   const maxCantidad = elegida.esShot ? 99 : Number(producto?.stock_bar ?? 0);

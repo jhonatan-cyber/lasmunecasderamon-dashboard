@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import { useQueryClient } from '@tanstack/react-query';
 import { toast } from 'sonner';
@@ -41,6 +41,9 @@ const INITIAL_FORM: ServicioFormData = {
  */
 export function useServicioForm() {
   const router = useRouter();
+  const submitKey = useRef<string>('');
+  const submitSignature = useRef('');
+  const submitting = useRef(false);
   const queryClient = useQueryClient();
   const [loading, setLoading] = useState(false);
   const { allClients: clientes = [], fetchClients } = useClients();
@@ -129,6 +132,8 @@ export function useServicioForm() {
         setFormData(prev => ({
           ...prev,
           tiempo,
+          producto_incluido_presentacion_id:
+            roomCommission > 0 ? prev.producto_incluido_presentacion_id : undefined,
           precio_servicio: roomCommission > 0 ? 0 : prev.precio_servicio
         }));
       }
@@ -171,7 +176,10 @@ export function useServicioForm() {
   }, [selectedClientData, formData.metodo_pago]);
 
   const handleSubmit = () => {
-    const validationError = validateServicioForm(formData);
+    const validationError =
+      hasComision && !formData.producto_incluido_presentacion_id
+        ? 'Selecciona el producto incluido en la habitación'
+        : validateServicioForm(formData);
     if (validationError) {
       toast.error(validationError);
       return;
@@ -185,6 +193,11 @@ export function useServicioForm() {
       pagosMixtos
     });
 
+    const signature = JSON.stringify(servicioData);
+    if (submitSignature.current !== signature) {
+      submitKey.current = crypto.randomUUID();
+      submitSignature.current = signature;
+    }
     setServicioDataToSubmit(servicioData);
     setShowConfirmModal(true);
   };
@@ -200,7 +213,8 @@ export function useServicioForm() {
   };
 
   const confirmAndSubmit = async () => {
-    if (!servicioDataToSubmit) return;
+    if (!servicioDataToSubmit || submitting.current) return;
+    submitting.current = true;
 
     setLoading(true);
     setShowConfirmModal(false);
@@ -208,7 +222,8 @@ export function useServicioForm() {
       const response = await fetch('/api/servicios', {
         method: 'POST',
         headers: {
-          'Content-Type': 'application/json'
+          'Content-Type': 'application/json',
+          'x-idempotency-key': submitKey.current
         },
         body: JSON.stringify(servicioDataToSubmit)
       });
@@ -248,6 +263,7 @@ export function useServicioForm() {
       logger.captureException(error, { context: 'NewPrivateRoomPageClient:createRoom' });
       toast.error('Error al crear servicio');
     } finally {
+      submitting.current = false;
       setLoading(false);
     }
   };

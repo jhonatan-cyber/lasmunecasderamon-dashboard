@@ -50,8 +50,8 @@ export const ChampagneTiersEditor = memo(function ChampagneTiersEditor({
   onTierChange: (index: number, field: 'precio' | 'comision', value: string) => void;
 }) {
   return (
-    <div className='space-y-2 rounded-xl border p-3'>
-      <p className='text-sm font-semibold'>Precios champagne por anfitrionas</p>
+    <div className='space-y-2'>
+      <p className='text-sm font-semibold'>Precios y comisiones por anfitrionas</p>
       <div className='grid grid-cols-[2.5rem_1fr_1fr] gap-2 items-center'>
         <ColumnHeaders />
         {tiers.flatMap((t, i) => [
@@ -63,6 +63,7 @@ export const ChampagneTiersEditor = memo(function ChampagneTiersEditor({
           </span>,
           <Input
             key={`p-${t.anfitrionas}`}
+            aria-label={`Precio con ${t.anfitrionas} anfitrionas`}
             value={t.precio}
             onChange={e => onTierChange(i, 'precio', formatMiles(e.target.value))}
             inputMode='numeric'
@@ -71,6 +72,7 @@ export const ChampagneTiersEditor = memo(function ChampagneTiersEditor({
           />,
           <Input
             key={`c-${t.anfitrionas}`}
+            aria-label={`Comisión con ${t.anfitrionas} anfitrionas`}
             value={t.comision}
             onChange={e => onTierChange(i, 'comision', formatMiles(e.target.value))}
             inputMode='numeric'

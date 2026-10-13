@@ -23,7 +23,7 @@ export const STAFF_ROLES = [
   'garzon',
   'anfitriona',
   'barman',
-  // Quien recibe envases en el almacén: hoy suele entrar como administrador,
+  // Quien recibe envases en la bodega: hoy suele entrar como administrador,
   // pero el rol existe para el permiso products/confirm_container_return (033).
   'almacen'
 ] as const;
@@ -61,7 +61,7 @@ const NON_ADMIN_STAFF: readonly SseAudience[] = [
 /** Quienes sirven el bar y quienes lo administran (avisos de botellas por agotarse). */
 const BAR_STAFF: readonly SseAudience[] = [{ channel: 'role', roles: ['barman', 'administrador'] }];
 
-/** Quienes reciben envases en el almacén y quienes administran (recepciones atrasadas). */
+/** Quienes reciben envases en la bodega y quienes administran (recepciones atrasadas). */
 const WAREHOUSE_STAFF: readonly SseAudience[] = [
   { channel: 'role', roles: ['administrador', 'almacen'] }
 ];
@@ -80,7 +80,7 @@ export const SSE_EVENTS = {
   service_request_processed: { audiences: STAFF_ONLY },
   service_request_deleted: { audiences: STAFF_ONLY },
   service_changed: { audiences: STAFF_ONLY },
-  // ─── Transferencias almacén → bar ────────────────────────────────────────────
+  // ─── Transferencias bodega → bar ────────────────────────────────────────────
   // Se emite al crear una solicitud y al aprobarla/rechazarla el Barman: el
   // módulo Transferencias se refresca en vivo en todas las sesiones
   // (payload { action: 'created' | 'accepted' | 'rejected', ... }).
@@ -130,7 +130,7 @@ export const SSE_EVENTS = {
   // administran (payload { alertas, mensaje }).
   bar_shot_alert: { audiences: BAR_STAFF },
 
-  // ─── Almacén: un envase entregado lleva más de 2 horas sin recibir ─────────
+  // ─── Bodega: un envase entregado lleva más de 2 horas sin recibir ─────────
   // Lo dispara el chequeo periódico del control de envases (cron y contador del
   // panel); lo ven quienes reciben envases y quienes administran (payload
   // { pendientes, vencidos, umbral_horas, mensaje }).

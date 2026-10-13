@@ -68,14 +68,18 @@ export default function EditServiceModal({
       <DialogContent className='w-[95vw] max-w-[95vw] sm:w-auto sm:max-w-[600px] max-h-[90vh] flex flex-col p-0'>
         <DialogHeader className='shrink-0 px-4 sm:px-6 pt-4 sm:pt-6 pb-4 border-b'>
           <DialogTitle className='flex items-center justify-between'>
-            <span>Crear Nuevo Servicio + Timer</span>
+            <span>Servicio adicional</span>
             <div className='flex items-center gap-2 text-sm text-blue-600'>
               <Clock className='w-4 h-4' />
-              <span>Timer principal pausado</span>
+              <span>Temporizador principal pausado</span>
             </div>
           </DialogTitle>
           <p className='text-sm text-gray-600'>
             Habitación {servicio.habitacion_numero} - Código #{servicio.codigo}
+          </p>
+          <p className='text-sm text-muted-foreground'>
+            Se creará un servicio con su propio cobro y temporizador. Al terminar, continuará el
+            tiempo pendiente del servicio original.
           </p>
           {numAnfitrionasOriginal > 1 && (
             <p className='text-xs text-purple-600 bg-purple-50 px-2 py-1 rounded'>
@@ -139,7 +143,7 @@ export default function EditServiceModal({
               Cancelar
             </Button>
             <Button className='flex-1 rounded-full' onClick={handleSave} disabled={isSaving}>
-              {isSaving ? 'Guardando...' : 'Guardar Cambios'}
+              {isSaving ? 'Guardando...' : 'Crear servicio adicional'}
             </Button>
           </div>
         </div>

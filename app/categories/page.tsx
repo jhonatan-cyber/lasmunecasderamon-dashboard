@@ -89,10 +89,15 @@ export default function Categories() {
 
   const handleReorder = useCallback(
     async (newOrder: Category[]) => {
-      const result = await reorderCategories(newOrder);
+      const moved = new Set(newOrder.map(category => category.id));
+      let index = 0;
+      const fullOrder = filteredCategories.map(category =>
+        moved.has(category.id) ? newOrder[index++] : category
+      );
+      const result = await reorderCategories(fullOrder);
       if (!result.success) toast.error(result.message);
     },
-    [reorderCategories]
+    [reorderCategories, filteredCategories]
   );
 
   const handleClearFilters = useCallback(() => {
@@ -103,49 +108,49 @@ export default function Categories() {
 
   return (
     <PermissionGuard module='categories' action='view'>
-      <BoneyardSkeleton name="categories-main" loading={isLoading}>
-      <div className='p-4 sm:p-6 lg:p-10 space-y-4 sm:space-y-6 mt-4 sm:mt-6 lg:mt-10'>
-        <CategoryHeader onCreateClick={openCreateModal} />
+      <BoneyardSkeleton name='categories-main' loading={isLoading}>
+        <div className='p-4 sm:p-6 lg:p-10 space-y-4 sm:space-y-6 mt-4 sm:mt-6 lg:mt-10'>
+          <CategoryHeader onCreateClick={openCreateModal} />
 
-        <CategoryFilters
-          searchTerm={searchTerm}
-          setSearchTerm={setSearchTerm}
-          filterStatus={filterStatus}
-          setFilterStatus={setFilterStatus}
-          onClearFilters={handleClearFilters}
-          pageSize={pageSize}
-          setPageSize={setPageSize}
-          setPage={setPage}
-        />
+          <CategoryFilters
+            searchTerm={searchTerm}
+            setSearchTerm={setSearchTerm}
+            filterStatus={filterStatus}
+            setFilterStatus={setFilterStatus}
+            onClearFilters={handleClearFilters}
+            pageSize={pageSize}
+            setPageSize={setPageSize}
+            setPage={setPage}
+          />
 
-        {error && <div className='text-center text-red-500 text-sm sm:text-base'>{error}</div>}
+          {error && <div className='text-center text-red-500 text-sm sm:text-base'>{error}</div>}
 
-        <CategoryGrid
-          categories={paginatedCategories}
-          isMutating={isMutating}
-          onEdit={openEditModal}
-          onDelete={handleDelete}
-          onActivate={activateCategory}
-          onDeactivate={deactivateCategory}
-          onReorder={handleReorder}
-        />
+          <CategoryGrid
+            categories={paginatedCategories}
+            isMutating={isMutating}
+            onEdit={openEditModal}
+            onDelete={handleDelete}
+            onActivate={activateCategory}
+            onDeactivate={deactivateCategory}
+            onReorder={handleReorder}
+          />
 
-        {totalPages > 1 && (
-          <div className='flex justify-center mt-4 sm:mt-6'>
-            <Paginate page={page} totalPages={totalPages} setPage={setPage} />
-          </div>
-        )}
+          {totalPages > 1 && (
+            <div className='flex justify-center mt-4 sm:mt-6'>
+              <Paginate page={page} totalPages={totalPages} setPage={setPage} />
+            </div>
+          )}
 
-        <CategoryFormModal
-          isOpen={isModalOpen}
-          onOpenChange={setIsModalOpen}
-          isEditMode={isEditMode}
-          initialValues={isEditMode ? modalValues : undefined}
-          onSubmit={handleSubmit}
-          onCancel={closeModal}
-          isMutating={isMutating}
-        />
-      </div>
+          <CategoryFormModal
+            isOpen={isModalOpen}
+            onOpenChange={setIsModalOpen}
+            isEditMode={isEditMode}
+            initialValues={isEditMode ? modalValues : undefined}
+            onSubmit={handleSubmit}
+            onCancel={closeModal}
+            isMutating={isMutating}
+          />
+        </div>
       </BoneyardSkeleton>
     </PermissionGuard>
   );

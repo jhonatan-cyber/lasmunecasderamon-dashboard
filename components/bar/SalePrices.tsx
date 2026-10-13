@@ -1,4 +1,5 @@
 'use client';
+import React from 'react';
 
 import { preciosCortoAnfitriona } from '@/lib/sales/hostessShortPrices';
 import type { SaleOption } from '@/types/sale-options';
@@ -35,6 +36,67 @@ export function SalePrices({
     layout === 'columns'
       ? [...values].sort((a, b) => (a.tipo === b.tipo ? 0 : a.tipo === 'shot' ? -1 : 1))
       : values;
+  if (layout === 'columns' && !field) {
+    return (
+      <div className='space-y-4 text-sm'>
+        {values.map(option => {
+          const hostPrices = preciosCortoAnfitriona(option);
+          return (
+            <section key={option.tipo} className='min-w-0 space-y-2'>
+              <h4 className='text-xs font-semibold uppercase tracking-wide text-muted-foreground'>
+                {option.tipo === 'botella' ? 'Botella' : 'Cortos'}
+              </h4>
+              <div className='grid grid-cols-[minmax(0,1fr)_auto_auto] items-center gap-x-3 gap-y-2'>
+                <span className='text-xs text-muted-foreground'>Venta</span>
+                <span className='text-right text-xs text-muted-foreground'>Precio</span>
+                <span className='text-right text-xs text-muted-foreground'>Comisión</span>
+                <span>{option.tipo === 'shot' ? 'Cliente' : 'Botella'}</span>
+                <span className='text-right font-semibold tabular-nums'>
+                  {formatCurrencyCLP(option.precio)}
+                </span>
+                <span className='text-right text-xs tabular-nums text-muted-foreground'>
+                  {option.tipo === 'shot' || !option.comision
+                    ? '—'
+                    : formatCurrencyCLP(option.comision)}
+                </span>
+                {option.tipo === 'shot' &&
+                  hostPrices.map((row, index) => (
+                    <React.Fragment key={index}>
+                      <span className='text-xs'>Anfitriona {index + 1}</span>
+                      <span className='text-right font-semibold tabular-nums'>
+                        {formatCurrencyCLP(row.precio)}
+                      </span>
+                      <span className='text-right text-xs tabular-nums text-muted-foreground'>
+                        {formatCurrencyCLP(row.comision)}
+                      </span>
+                    </React.Fragment>
+                  ))}
+              </div>
+              {option.tipo === 'shot' && (
+                <div className='grid grid-cols-2 gap-3 rounded-xl bg-muted/40 p-2.5 text-xs'>
+                  <div>
+                    <p className='font-medium'>Cliente · {shotMl} ml</p>
+                    <p className='mt-1 text-muted-foreground'>Acomp.: producto completo</p>
+                  </div>
+                  <div>
+                    <p className='font-medium'>Anfitriona · {shotMlAnf} ml</p>
+                    <p className='mt-1 text-muted-foreground'>
+                      Acomp.: {option.ml_acompanamiento_anfitriona ?? 0} ml
+                    </p>
+                  </div>
+                </div>
+              )}
+              {option.acompanamiento && (
+                <p className='text-xs text-muted-foreground'>
+                  Incluye {option.acompanamiento.unidades} bebidas por botella
+                </p>
+              )}
+            </section>
+          );
+        })}
+      </div>
+    );
+  }
   return (
     <div
       className={
@@ -78,7 +140,12 @@ export function SalePrices({
           {option.acompanamiento && (
             <span className='text-xs text-muted-foreground'>
               Incluye {option.acompanamiento.unidades}{' '}
-              {option.acompanamiento.tipo === 'gaseosa' ? 'gaseosas' : 'sodas'} por botella
+              {option.acompanamiento.tipo === 'gaseosa'
+                ? 'gaseosas'
+                : option.acompanamiento.tipo === 'soda'
+                  ? 'sodas'
+                  : 'bebidas'}{' '}
+              por botella
             </span>
           )}
           {field !== 'comision' && (

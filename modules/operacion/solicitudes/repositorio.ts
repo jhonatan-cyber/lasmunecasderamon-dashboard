@@ -2,6 +2,7 @@ import { query, generateUUID } from '@/lib/database/db';
 import { getNowInBusinessTimezone } from '@/lib/business/timezoneService';
 import { NotFoundError, BusinessError, DatabaseError } from '@/lib/errors/errors';
 import { logger } from '@/lib/utils/logger';
+import { leerHabitacionParaServicio } from '../servicios/repositorio';
 import { crearServicioEnUnidad } from '../servicios/creacion';
 import { enUnaUnidad } from '@/lib/transaccion/contrato';
 import { resolverTransaccion } from '@/lib/transaccion/infraestructura';
@@ -45,8 +46,8 @@ export class ServiceRequestRepository {
         `
       INSERT INTO solicitudes_servicios
       (id_solicitud, cliente_id, habitacion_id, precio_servicio, precio_habitacion, comision_anfitriona, anfitrionas_ids,
-       num_clientes, metodo_pago, tiempo, total, iva, solicitado_por, codigo, fecha_solicitud)
-      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+       num_clientes, metodo_pago, tiempo, total, iva, solicitado_por, codigo, fecha_solicitud, producto_incluido_presentacion_id)
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
     `,
         [
           id,
@@ -63,7 +64,8 @@ export class ServiceRequestRepository {
           data.iva || 0,
           solicitadoPor,
           data.codigo || null,
-          fecha
+          fecha,
+          data.producto_incluido_presentacion_id || null
         ]
       );
 
@@ -165,51 +167,122 @@ export class ServiceRequestRepository {
     }
   }
 
-  static async approve(id: string, processedBy: string, habitacionId?: string, montoEsperado?: number) {
+  static async approve(
+    id: string,
+    processedBy: string,
+    habitacionId?: string,
+    montoEsperado?: number,
+    productoIncluido?: string
+  ) {
     const tareas: Array<() => void | Promise<void>> = [];
-    const resultado = await enUnaUnidad(unidad => unidad.ejecutar(async contexto => {
-      const trx = resolverTransaccion(contexto);
-      const rows = await trx<any[]>('SELECT * FROM solicitudes_servicios WHERE id_solicitud = ? FOR UPDATE', [id]);
-      const solicitud = rows[0];
-      if (!solicitud) throw new NotFoundError('Solicitud de servicio', id);
-      if (solicitud.estado !== 'pendiente') throw new BusinessError('La solicitud ya fue procesada', 'SERVICE_REQUEST_ALREADY_PROCESSED');
-      if (montoEsperado !== undefined && Number(solicitud.total) !== montoEsperado) throw new BusinessError('El monto cambió; consulta el detalle nuevamente');
-      const anfitrionasIds = typeof solicitud.anfitrionas_ids === 'string' ? JSON.parse(solicitud.anfitrionas_ids) : solicitud.anfitrionas_ids;
-      if (!Array.isArray(anfitrionasIds) || !anfitrionasIds.length) throw new BusinessError('La solicitud no tiene anfitrionas asignadas', 'SERVICE_REQUEST_NO_HOSTESS');
-      const targetHabitacionId = String(habitacionId || solicitud.habitacion_id || '');
-      if (!targetHabitacionId) throw new BusinessError('La solicitud no tiene habitación válida', 'SERVICE_REQUEST_NO_ROOM');
-      const total = Number(solicitud.total || 0);
-      const iva = Number(solicitud.iva || 0);
-      const created = await crearServicioEnUnidad({
-        cliente_id: solicitud.cliente_id ? String(solicitud.cliente_id) : null,
-        clientes: solicitud.cliente_id ? [String(solicitud.cliente_id)] : [],
-        habitacion_id: targetHabitacionId,
-        precio_habitacion: Number(solicitud.precio_habitacion || 0),
-        precio_servicio: Number(solicitud.precio_servicio || 0),
-        iva, sub_total: Math.max(0, total - iva), total,
-        tiempo: Number(solicitud.tiempo || 0), metodo_pago: solicitud.metodo_pago,
-        usuarios: anfitrionasIds.map(String)
-      }, processedBy, contexto, tarea => tareas.push(tarea));
-      await trx(`UPDATE solicitudes_servicios SET estado = 'aprobada', procesado_por = ?, fecha_procesamiento = ?, habitacion_id = ? WHERE id_solicitud = ?`,
-        [processedBy, getNowInBusinessTimezone(), targetHabitacionId, id]);
-      return { solicitud_id: id, servicio_id: created.id, codigo: created.codigo, habitacion_id: targetHabitacionId, tiempo: Number(solicitud.tiempo || 0), total };
-    }));
+    const resultado = await enUnaUnidad(unidad =>
+      unidad.ejecutar(async contexto => {
+        const trx = resolverTransaccion(contexto);
+        const rows = await trx<any[]>(
+          'SELECT * FROM solicitudes_servicios WHERE id_solicitud = ? FOR UPDATE',
+          [id]
+        );
+        const solicitud = rows[0];
+        if (!solicitud) throw new NotFoundError('Solicitud de servicio', id);
+        if (solicitud.estado !== 'pendiente')
+          throw new BusinessError(
+            'La solicitud ya fue procesada',
+            'SERVICE_REQUEST_ALREADY_PROCESSED'
+          );
+        if (montoEsperado !== undefined && Number(solicitud.total) !== montoEsperado)
+          throw new BusinessError('El monto cambió; consulta el detalle nuevamente');
+        const anfitrionasIds =
+          typeof solicitud.anfitrionas_ids === 'string'
+            ? JSON.parse(solicitud.anfitrionas_ids)
+            : solicitud.anfitrionas_ids;
+        if (!Array.isArray(anfitrionasIds) || !anfitrionasIds.length)
+          throw new BusinessError(
+            'La solicitud no tiene anfitrionas asignadas',
+            'SERVICE_REQUEST_NO_HOSTESS'
+          );
+        const targetHabitacionId = String(habitacionId || solicitud.habitacion_id || '');
+        if (!targetHabitacionId)
+          throw new BusinessError(
+            'La solicitud no tiene habitación válida',
+            'SERVICE_REQUEST_NO_ROOM'
+          );
+        const room = await leerHabitacionParaServicio(targetHabitacionId, contexto);
+        const total = Number(solicitud.total || 0);
+        const iva = Number(solicitud.iva || 0);
+        const created = await crearServicioEnUnidad(
+          {
+            cliente_id: solicitud.cliente_id ? String(solicitud.cliente_id) : null,
+            clientes: solicitud.cliente_id ? [String(solicitud.cliente_id)] : [],
+            habitacion_id: targetHabitacionId,
+            producto_incluido_presentacion_id:
+              Number(room?.comision_anfitriona || 0) > 0
+                ? productoIncluido || solicitud.producto_incluido_presentacion_id || null
+                : null,
+            precio_habitacion: Number(solicitud.precio_habitacion || 0),
+            precio_servicio: Number(solicitud.precio_servicio || 0),
+            iva,
+            sub_total: Math.max(0, total - iva),
+            total,
+            tiempo: Number(solicitud.tiempo || 0),
+            metodo_pago: solicitud.metodo_pago,
+            usuarios: anfitrionasIds.map(String)
+          },
+          processedBy,
+          contexto,
+          tarea => tareas.push(tarea)
+        );
+        await trx(
+          `UPDATE solicitudes_servicios SET estado = 'aprobada', procesado_por = ?, fecha_procesamiento = ?, habitacion_id = ? WHERE id_solicitud = ?`,
+          [processedBy, getNowInBusinessTimezone(), targetHabitacionId, id]
+        );
+        return {
+          solicitud_id: id,
+          servicio_id: created.id,
+          codigo: created.codigo,
+          habitacion_id: targetHabitacionId,
+          tiempo: Number(solicitud.tiempo || 0),
+          total
+        };
+      })
+    );
     await ejecutarEfectosConfirmados(tareas);
     const servicio = await obtenerServicioDetallado(resultado.servicio_id);
-    return { ...resultado, codigo: servicio?.codigo || resultado.codigo,
-      habitacion_nombre: servicio?.habitacion_nombre || '', cliente_nombre: servicio?.cliente_nombre || '', anfitrionas: servicio?.anfitrionas_nombres || '' };
+    return {
+      ...resultado,
+      codigo: servicio?.codigo || resultado.codigo,
+      habitacion_nombre: servicio?.habitacion_nombre || '',
+      cliente_nombre: servicio?.cliente_nombre || '',
+      anfitrionas: servicio?.anfitrionas_nombres || ''
+    };
   }
 
-  static async reject(id: string, processedBy: string, motivoRechazo: string, montoEsperado?: number) {
-    return enUnaUnidad(unidad => unidad.ejecutar(async contexto => {
-      const trx = resolverTransaccion(contexto);
-      const rows = await trx<any[]>('SELECT estado, total FROM solicitudes_servicios WHERE id_solicitud = ? FOR UPDATE', [id]);
-      if (!rows[0]) throw new NotFoundError('Solicitud de servicio', id);
-      if (rows[0].estado !== 'pendiente') throw new BusinessError('La solicitud ya fue procesada', 'SERVICE_REQUEST_ALREADY_PROCESSED');
-      if (montoEsperado !== undefined && Number(rows[0].total) !== montoEsperado) throw new BusinessError('El monto cambió; consulta el detalle nuevamente');
-      await trx(`UPDATE solicitudes_servicios SET estado = 'rechazada', motivo_rechazo = ?, procesado_por = ?, fecha_procesamiento = ? WHERE id_solicitud = ?`,
-        [motivoRechazo, processedBy, getNowInBusinessTimezone(), id]);
-      return { id_solicitud: id, estado: 'rechazada', motivo_rechazo: motivoRechazo };
-    }));
+  static async reject(
+    id: string,
+    processedBy: string,
+    motivoRechazo: string,
+    montoEsperado?: number
+  ) {
+    return enUnaUnidad(unidad =>
+      unidad.ejecutar(async contexto => {
+        const trx = resolverTransaccion(contexto);
+        const rows = await trx<any[]>(
+          'SELECT estado, total FROM solicitudes_servicios WHERE id_solicitud = ? FOR UPDATE',
+          [id]
+        );
+        if (!rows[0]) throw new NotFoundError('Solicitud de servicio', id);
+        if (rows[0].estado !== 'pendiente')
+          throw new BusinessError(
+            'La solicitud ya fue procesada',
+            'SERVICE_REQUEST_ALREADY_PROCESSED'
+          );
+        if (montoEsperado !== undefined && Number(rows[0].total) !== montoEsperado)
+          throw new BusinessError('El monto cambió; consulta el detalle nuevamente');
+        await trx(
+          `UPDATE solicitudes_servicios SET estado = 'rechazada', motivo_rechazo = ?, procesado_por = ?, fecha_procesamiento = ? WHERE id_solicitud = ?`,
+          [motivoRechazo, processedBy, getNowInBusinessTimezone(), id]
+        );
+        return { id_solicitud: id, estado: 'rechazada', motivo_rechazo: motivoRechazo };
+      })
+    );
   }
 }

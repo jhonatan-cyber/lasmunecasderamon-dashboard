@@ -39,6 +39,46 @@ function defaults(url: string) {
 }
 
 describe('integridad de caja', () => {
+  it('una consulta cancelada al cargar no muestra error de caja y permite recargar', async () => {
+    let holdList = true;
+    vi.stubGlobal(
+      'fetch',
+      vi.fn((url: string) =>
+        url === '/api/cashregister' && holdList
+          ? new Promise(() => {})
+          : Promise.resolve(defaults(url))
+      )
+    );
+    const { result } = renderHook(useCashRegister, { wrapper: wrapper() });
+    await waitFor(() => expect(result.current.hasOpenCaja).toBe(true));
+    await act(async () => {
+      await clients[clients.length - 1].cancelQueries({ queryKey: ['/api/cashregister'] });
+    });
+    await waitFor(() => expect(result.current.loading).toBe(false));
+    expect(result.current.error).toBeNull();
+    expect(toast.error).not.toHaveBeenCalled();
+    holdList = false;
+    await act(async () => {
+      await result.current.getCajas();
+    });
+    expect(result.current.error).toBeNull();
+    expect(result.current.hasOpenCaja).toBe(true);
+  });
+
+  it('conserva los errores reales al cargar el listado de cajas', async () => {
+    vi.stubGlobal(
+      'fetch',
+      vi.fn(async (url: string) =>
+        url === '/api/cashregister'
+          ? { ok: false, statusText: 'Service Unavailable' }
+          : defaults(url)
+      )
+    );
+    const { result } = renderHook(useCashRegister, { wrapper: wrapper() });
+    await waitFor(() => expect(result.current.error).toContain('Service Unavailable'));
+    expect(toast.error).toHaveBeenCalled();
+  });
+
   it('consulta el filtro solicitado sin volver al listado anterior', async () => {
     const request = vi.fn(async (url: string) =>
       url.includes('estado=0') ? response([{ id_caja: 2, estado: 0 }]) : defaults(url)

@@ -46,3 +46,5 @@ export {
 export { RoleService } from './roles/fachada';
 
 export { PermissionService } from './permisos/fachada';
+
+export { ocuparAnfitrionasServicio } from './disponibilidad/ocupacion';

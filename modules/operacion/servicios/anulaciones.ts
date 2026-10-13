@@ -12,7 +12,7 @@
 import { enUnaUnidad, type ContextoOperacion } from '@/lib/transaccion/contrato';
 import { ejecutarEfectosConfirmados } from '@/lib/transaccion/efectos';
 import { addServicioLog } from './logsServicio';
-import { NotFoundError } from '@/lib/errors/errors';
+import { BusinessError, NotFoundError } from '@/lib/errors/errors';
 import { parseMixedPayments } from '@/modules/operacion/servicios/mapeo';
 import {
   leerServicioParaAnular,
@@ -25,6 +25,8 @@ import {
   actualizarEstadoSolicitudServicio,
   leerServicioDeSolicitud
 } from './repositorio';
+import { revertirStockAnulacion } from '@/modules/inventario';
+import { getNowInBusinessTimezone } from '@/lib/business/timezoneService';
 import { registrarMovimientoCobro } from '@/modules/caja';
 import { leerPrepagoConsumidoPorVenta, restituirPrepagoPorAnulacion } from '@/modules/clientes';
 import {
@@ -49,6 +51,7 @@ export async function anularServicioEnUnidad(
 ): Promise<void> {
   const servicio = await leerServicioParaAnular(servicioId, contexto);
   if (!servicio) throw new NotFoundError('Servicio', servicioId);
+  if (Number(servicio.estado) === 0) return;
   const habitacionId = servicio.habitacion_id;
   const clienteId = servicio.cliente_id;
   const cajaId = servicio.caja_id;
@@ -78,6 +81,10 @@ export async function anularServicioEnUnidad(
   }
 
   await marcarEstadoServicio(servicioId, 0, contexto);
+  await revertirStockAnulacion(
+    { servicio_id: servicioId, usuario_id: approvedBy, fecha: getNowInBusinessTimezone() },
+    contexto
+  );
 
   if (clienteId && prepagoMonto > 0) {
     await restituirPrepagoPorAnulacion(
@@ -138,6 +145,11 @@ export async function actualizarEstadoServicio(
   estado: number,
   userId?: string
 ): Promise<void> {
+  if (estado === 0)
+    throw new BusinessError(
+      'Para anular el servicio utiliza la solicitud de anulación y su aprobación'
+    );
+  if (![1, 2, 3, 4].includes(estado)) throw new BusinessError('Estado de servicio inválido');
   const tareas: Tarea[] = [];
   const aplazar = (tarea: Tarea) => tareas.push(tarea);
   await enUnaUnidad(unidad =>
@@ -145,6 +157,10 @@ export async function actualizarEstadoServicio(
       const previo = await leerEstadoServicio(id, contexto);
       if (!previo) throw new NotFoundError('Servicio', id);
       const estadoAnterior = previo.estado;
+      if (Number(estadoAnterior) === estado) return;
+      if ([0, 1].includes(Number(estadoAnterior)) && [2, 3, 4].includes(estado)) {
+        throw new BusinessError('Un servicio finalizado o anulado no se puede reactivar');
+      }
       const habitacionId = previo.habitacion_id;
 
       await marcarEstadoServicio(id, estado, contexto);

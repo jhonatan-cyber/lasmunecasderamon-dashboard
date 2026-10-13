@@ -3,12 +3,20 @@ const inventoryFields = {
   presentacion_id: z.string().nullable().optional(),
   tipo_venta: z.enum(['botella', 'shot']).optional(),
   shot_anfitriona: z.boolean().optional(),
+  acompanamiento_botella: z
+    .object({ presentacion_id: z.string().min(1), unidades: z.number().int().min(1).max(1000) })
+    .optional(),
   acompanamiento_corto: z
     .object({
       presentacion_id: z.string().min(1),
-      ml_por_corto: z.number().int().min(1).max(10000),
+      unidades: z.number().int().min(1).max(1000).optional(),
+      ml_por_corto: z.number().int().min(1).max(10000).optional(),
       nombre: z.string().max(300).optional()
     })
+    .refine(
+      value => (value.unidades !== undefined) !== (value.ml_por_corto !== undefined),
+      'Selecciona unidades completas del acompa\u00f1amiento'
+    )
     .optional()
 };
 
@@ -61,7 +69,6 @@ export const OrderCreateSchema = z.object({
           d =>
             d.tipo_venta !== 'shot' ||
             (Boolean(d.presentacion_id) &&
-              Boolean(d.acompanamiento_corto) &&
               Number.isInteger(d.cantidad) &&
               d.cantidad <= 99 &&
               d.presentacion_id !== d.acompanamiento_corto?.presentacion_id),
@@ -71,10 +78,25 @@ export const OrderCreateSchema = z.object({
           d => !d.acompanamiento_corto || d.tipo_venta === 'shot',
           'El consumo por ml corresponde a cortos'
         )
+        .refine(
+          d =>
+            !d.acompanamiento_botella ||
+            (d.tipo_venta !== 'shot' &&
+              Boolean(d.presentacion_id) &&
+              d.presentacion_id !== d.acompanamiento_botella.presentacion_id),
+          'Acompa\u00f1amiento de botella inv\u00e1lido'
+        )
         .transform(d =>
           d.tipo_venta === 'shot' && !d.shot_anfitriona
             ? { ...d, comision: 0, generaComision: 0, selectedHostesses: [], hostessId: null }
             : d
+        )
+        .refine(
+          d =>
+            d.tipo_venta !== 'shot' ||
+            new Set([...d.selectedHostesses, ...(d.hostessId ? [d.hostessId] : [])]).size <=
+              d.cantidad,
+          'Se permite una anfitriona por unidad de corto'
         )
     )
     .min(1, 'Al menos un detalle es requerido'),

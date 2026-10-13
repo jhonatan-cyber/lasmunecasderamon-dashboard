@@ -1,6 +1,7 @@
 'use client';
 
-import { useState, useEffect, useCallback, useMemo } from 'react';
+import { useState, useEffect, useCallback, useMemo, useRef } from 'react';
+import { isCancelledError } from '@tanstack/react-query';
 import {
   VentaWithDetails,
   VentaCreate,
@@ -39,6 +40,7 @@ export const useSales = () => {
   const [mutationLoading, setMutationLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [currentFilters, setCurrentFilters] = useState<VentaFiltros | undefined>(undefined);
+  const salesRequestRef = useRef(0);
 
   const endpoint = useMemo(() => salesEndpoint(currentFilters), [currentFilters]);
 
@@ -57,11 +59,18 @@ export const useSales = () => {
 
   const getVentas = useCallback(
     async (filtros?: VentaFiltros) => {
+      const requestId = ++salesRequestRef.current;
       setCurrentFilters(filtros);
       setError(null);
       try {
         await fetchEndpoint(salesEndpoint(filtros));
       } catch (err) {
+        if (
+          requestId !== salesRequestRef.current ||
+          isCancelledError(err) ||
+          (err instanceof Error && err.name === 'AbortError')
+        )
+          return;
         setError(err instanceof Error ? err.message : 'Error al cargar ventas');
       }
     },

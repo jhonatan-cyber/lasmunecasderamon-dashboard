@@ -87,7 +87,7 @@ export default function OrderDetailModal({
 
   return (
     <Dialog open={open} onOpenChange={onClose}>
-      <DialogContent className='flex max-h-[90vh] w-[95vw] max-w-[95vw] flex-col border border-border/60 bg-white p-0 sm:w-4xl sm:max-w-3xl dark:border-zinc-800 dark:bg-zinc-950'>
+      <DialogContent className='flex max-h-[94dvh] w-[calc(100vw-1rem)] max-w-5xl flex-col border border-border/60 bg-white p-0 sm:w-[calc(100vw-3rem)] dark:border-zinc-800 dark:bg-zinc-950'>
         <DialogHeader className='shrink-0 border-b border-border/60 px-4 pb-4 pt-4 sm:px-6 sm:pt-6 dark:border-zinc-800'>
           <DialogTitle className='text-lg text-gray-900 dark:text-zinc-100 sm:text-xl'>
             Detalles del Pedido - {orderCode}

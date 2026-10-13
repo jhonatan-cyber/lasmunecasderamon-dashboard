@@ -9,13 +9,16 @@ export const buildServicioCardDisplayData = (
     return {
       ...servicio,
       ...temporaryTimer.datosTemporales,
-      id_servicio: temporaryTimer.datosTemporales.servicio_original_id ?? servicio.id_servicio
+      id_servicio: servicio.id_servicio ?? servicio.id
     };
   }
 
   return {
     ...servicio,
-    anfitrionas_nombres: anfitrionasDelContexto || servicio.anfitrionas_nombres
+    anfitrionas_nombres:
+      servicio.anfitrionas_ids !== undefined
+        ? servicio.anfitrionas_nombres || ''
+        : anfitrionasDelContexto || servicio.anfitrionas_nombres
   };
 };
 

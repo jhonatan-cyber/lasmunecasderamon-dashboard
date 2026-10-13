@@ -28,7 +28,7 @@ interface EscaneoLoteProps {
  * Panel del escaneo continuo: contadores del lote en curso (aceptados,
  * rechazados y los que siguen en cola local sin conexión), lista de repaso con
  * el motivo de cada rechazo y el interruptor del aviso sonoro. Es el mismo en
- * los dos pasos del control (entrega del bar y recepción del almacén); solo
+ * los dos pasos del control (entrega del bar y recepción de la bodega); solo
  * cambian los rótulos.
  */
 export function EscaneoLote({

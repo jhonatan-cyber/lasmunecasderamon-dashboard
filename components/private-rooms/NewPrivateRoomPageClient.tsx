@@ -10,6 +10,7 @@ import { PagosMixtosSection } from './PagosMixtosSection';
 import { ServicioPageHeader } from './new/ServicioPageHeader';
 import { ServicioSelectsRow } from './new/ServicioSelectsRow';
 import { ServicioPaymentRow } from './new/ServicioPaymentRow';
+import { ServicioIncludedProduct } from './new/ServicioIncludedProduct';
 import { ServicioConfirmModal } from './new/ServicioConfirmModal';
 
 /**
@@ -37,6 +38,15 @@ export default function NuevoServicioPage() {
           maxHostesses={form.maxHostesses}
           maxClients={form.maxClients}
         />
+
+        {Number(form.selectedRoom?.comision_anfitriona || 0) > 0 && (
+          <ServicioIncludedProduct
+            value={form.formData.producto_incluido_presentacion_id || ''}
+            onChange={id =>
+              form.setFormData(prev => ({ ...prev, producto_incluido_presentacion_id: id }))
+            }
+          />
+        )}
 
         <ServicioPaymentRow
           formData={form.formData}

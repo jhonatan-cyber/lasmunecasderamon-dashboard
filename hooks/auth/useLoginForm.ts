@@ -25,6 +25,8 @@ export const useLoginForm = () => {
   const [recoveryLoading, setRecoveryLoading] = useState(false);
   const [recoveryComplete, setRecoveryComplete] = useState(false);
   const [recoveryRun, setRecoveryRun] = useState('');
+  const [recoveryMode, setRecoveryMode] = useState<'whatsapp' | 'usuarios'>('whatsapp');
+  const recoveryBusyRef = useRef(false);
   const [theme, setTheme] = useState('system');
   const [codigo, setCodigo] = useState('');
   const [loginData, setLoginData] = useState<LoginFormData>({ email: '', password: '' });
@@ -68,14 +70,19 @@ export const useLoginForm = () => {
     router.replace(target);
   }, [getRedirectTarget, router]);
 
-  const handlePasswordRecovery = async (event: React.FormEvent) => {
-    event.preventDefault();
-    if (recoveryLoading) return;
+  const handlePasswordRecovery = async (
+    event?: React.FormEvent,
+    modo: 'whatsapp' | 'usuarios' = 'whatsapp'
+  ) => {
+    event?.preventDefault();
+    if (recoveryBusyRef.current) return;
     const run = recoveryRun.trim();
     if (run.length < 4) {
       toast.error('Ingresa un RUN/CI válido');
       return;
     }
+    recoveryBusyRef.current = true;
+    setRecoveryMode(modo);
     setRecoveryLoading(true);
     try {
       const response = await fetch('/api/auth/reset-password', {
@@ -83,7 +90,7 @@ export const useLoginForm = () => {
         headers: { 'Content-Type': 'application/json' },
         credentials: 'include',
         cache: 'no-store',
-        body: JSON.stringify({ run })
+        body: JSON.stringify({ run, modo })
       });
       const data = await response.json().catch(() => null);
       if (!response.ok || data?.success !== true) {
@@ -94,6 +101,7 @@ export const useLoginForm = () => {
     } catch {
       toast.error('No se pudo conectar al servidor. Intenta nuevamente.');
     } finally {
+      recoveryBusyRef.current = false;
       setRecoveryLoading(false);
     }
   };
@@ -101,6 +109,7 @@ export const useLoginForm = () => {
   const resetRecovery = () => {
     setRecoveryRun('');
     setRecoveryComplete(false);
+    setRecoveryMode('whatsapp');
     setRecoveryLoading(false);
   };
 
@@ -371,6 +380,7 @@ export const useLoginForm = () => {
     setView,
     recoveryLoading,
     recoveryComplete,
+    recoveryMode,
     recoveryRun,
     setRecoveryRun,
     handlePasswordRecovery,

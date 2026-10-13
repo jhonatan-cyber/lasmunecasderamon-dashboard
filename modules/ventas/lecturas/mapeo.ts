@@ -24,6 +24,7 @@ export type VentaRefundDetailRow = {
 };
 
 export type VentaGetByIdResponse = SaleType & {
+  consumos_inventario?: { nombre: string; foto: string | null; unidades: number; ml: number }[];
   cajero_nick?: string | null;
   cajero_nombre?: string | null;
   cajero_apellido?: string | null;
@@ -48,6 +49,8 @@ export type VentaGetByIdResponse = SaleType & {
     monto: number;
   }[];
   detalles: {
+    acompanamiento?: import('@/types/venta').VentaDetalle['acompanamiento'];
+    anfitrionas?: string[];
     presentacion_id?: string | null;
     tipo_venta?: string | null;
     shot_anfitriona?: boolean | null;

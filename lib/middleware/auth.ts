@@ -32,7 +32,7 @@ export interface UserPermissions {
     accept_transfer?: boolean;
     /** Verificar y marcar la devolución de un envase vacío (migración 032). */
     return_container?: boolean;
-    /** Confirmar que el almacén recibió el envase entregado por el bar (033). */
+    /** Confirmar que la bodega recibió el envase entregado por el bar (033). */
     confirm_container_return?: boolean;
   };
   clients: {

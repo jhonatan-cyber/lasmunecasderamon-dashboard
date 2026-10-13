@@ -37,7 +37,8 @@ export class RoomRepository {
             (SELECT COUNT(*) FROM servicios s WHERE s.habitacion_id = h.id_habitacion AND s.estado = 2) as servicios_activos,
             (SELECT COUNT(*) FROM ventas v WHERE v.habitacion_id = h.id_habitacion AND v.estado = 2) as ventas_activas
            FROM habitaciones h 
-           WHERE h.estado = 1 
+           WHERE (COALESCE(h.precio, 0) = 0 AND COALESCE(h.comision_anfitriona, 0) = 0 AND COALESCE(h.tiempo, 0) = 0)
+           OR (h.estado = 1
            AND NOT EXISTS (
              SELECT 1 FROM servicios s 
              WHERE s.habitacion_id = h.id_habitacion AND s.estado = 2
@@ -45,7 +46,7 @@ export class RoomRepository {
            AND NOT EXISTS (
              SELECT 1 FROM ventas v 
              WHERE v.habitacion_id = h.id_habitacion AND v.estado = 2
-           )
+           ))
            ORDER BY h.display_order ASC, h.id_habitacion ASC`,
           []
         );

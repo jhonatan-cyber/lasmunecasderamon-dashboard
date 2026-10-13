@@ -11,11 +11,13 @@ const roles: Record<string, string> = {
 export function SalesDistribution({
   title,
   rows,
-  defaultRole
+  defaultRole,
+  flat = false
 }: {
   title: string;
   rows: DistribucionVenta[];
   defaultRole?: string;
+  flat?: boolean;
 }) {
   const total = rows.reduce((sum, row) => sum + Number(row.monto || 0), 0);
   return (
@@ -26,7 +28,13 @@ export function SalesDistribution({
           No hay reparto registrado para esta venta.
         </p>
       ) : (
-        <div className='overflow-x-auto rounded-3xl border border-gray-100 dark:border-gray-800'>
+        <div
+          className={
+            flat
+              ? 'overflow-x-auto border-y border-border'
+              : 'overflow-x-auto rounded-3xl border border-gray-100 dark:border-gray-800'
+          }
+        >
           <table className='w-full text-sm'>
             <thead className='bg-gray-50 dark:bg-slate-800/50 text-xs text-gray-500 dark:text-neutral-400'>
               <tr>

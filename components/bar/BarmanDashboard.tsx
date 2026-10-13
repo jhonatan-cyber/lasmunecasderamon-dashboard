@@ -99,10 +99,10 @@ export default function BarmanDashboard({ name }: { name: string }) {
       </header>
 
       <nav aria-label='Accesos de barra' className='flex flex-wrap gap-2'>
-        <PermissionGuard module='sales' action='view' fallback={null}>
+        <PermissionGuard module='orders' action='view' fallback={null}>
           <Button asChild variant='outline' className='rounded-full'>
-            <Link href='/sales'>
-              Ventas <ArrowRight aria-hidden='true' />
+            <Link href='/orders'>
+              Pedidos <ArrowRight aria-hidden='true' />
             </Link>
           </Button>
         </PermissionGuard>
@@ -158,7 +158,7 @@ export default function BarmanDashboard({ name }: { name: string }) {
               <CardHeader>
                 <CardTitle>Por recibir</CardTitle>
                 <CardDescription>
-                  Confirma en Bar lo que recibiste del almacén. Primero, las solicitudes más
+                  Confirma en Bar lo que recibiste de la bodega. Primero, las solicitudes más
                   antiguas.
                 </CardDescription>
               </CardHeader>

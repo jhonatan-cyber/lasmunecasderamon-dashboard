@@ -43,7 +43,7 @@ export default function SalesWithRoomTab({
 
     const timer = getTimerByServicioId(String(v.id));
 
-    const isInProcess = Number(v.estado) === 2;
+    const isInProcess = [2, 3].includes(Number(v.estado));
     const hasTimer = !!timer;
 
     return isInProcess || hasTimer;

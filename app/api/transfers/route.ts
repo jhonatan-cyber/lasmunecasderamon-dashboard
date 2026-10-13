@@ -35,7 +35,7 @@ export const PATCH = withRoute(
       message:
         data.estado === 'aceptada'
           ? 'Transferencia aprobada: stock disponible en el bar'
-          : 'Transferencia rechazada: unidades devueltas al almacén',
+          : 'Transferencia rechazada: unidades devueltas a la bodega',
       data
     });
   }

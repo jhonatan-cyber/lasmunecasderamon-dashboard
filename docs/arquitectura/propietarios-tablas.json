@@ -35,7 +35,10 @@
     "inventario_presentaciones",
     "inventario_unidades",
     "inventario_movimientos",
-    "inventario_movimiento_unidades"
+    "inventario_movimiento_unidades",
+    "limpieza_articulos",
+    "limpieza_movimientos",
+    "limpieza_stock"
   ],
   "operacion": [
     "cuentas",

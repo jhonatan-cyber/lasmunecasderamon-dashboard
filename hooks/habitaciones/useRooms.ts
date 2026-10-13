@@ -36,6 +36,7 @@ const EMPTY_ARRAY: any[] = [];
 export default function useRooms(): UseRooms {
   const {
     data: rooms,
+    setData,
     isLoading,
     error,
     refetch
@@ -172,8 +173,11 @@ export default function useRooms(): UseRooms {
 
   const reorderRooms = useCallback(
     async (reorderedRooms: Room[]) => {
+      const previous = rooms || [];
+      const ordered = reorderedRooms.map((room, index) => ({ ...room, display_order: index + 1 }));
+      setData(ordered);
       try {
-        const room_orders = reorderedRooms.map((room, index) => ({
+        const room_orders = ordered.map((room, index) => ({
           id: room.id,
           display_order: index + 1
         }));
@@ -187,17 +191,18 @@ export default function useRooms(): UseRooms {
         const data = await res.json();
         if (res.ok && data.success) {
           showSuccessToast('Orden actualizado correctamente');
-          await refetch();
         } else {
+          setData(previous);
           showErrorToast(data.message || 'Error al actualizar el orden');
           await refetch();
         }
       } catch (err) {
+        setData(previous);
         showErrorToast('Error de red al actualizar el orden');
         await refetch();
       }
     },
-    [refetch]
+    [refetch, rooms, setData]
   );
 
   return {

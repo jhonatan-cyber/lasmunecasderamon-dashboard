@@ -1,6 +1,7 @@
 import type { ContextoOperacion } from '@/lib/transaccion/contrato';
 import { resolverTransaccion } from '@/lib/transaccion/infraestructura';
 import { getNowInBusinessTimezone } from '@/lib/business/timezoneService';
+import { BusinessError } from '@/lib/errors/errors';
 
 export async function ocuparHabitacionVenta(id: string, contexto: ContextoOperacion) {
   await resolverTransaccion(contexto)(
@@ -9,7 +10,15 @@ export async function ocuparHabitacionVenta(id: string, contexto: ContextoOperac
   );
 }
 export async function cerrarPedidoFacturado(id: string, contexto: ContextoOperacion) {
-  await resolverTransaccion(contexto)('UPDATE pedidos SET estado = 0 WHERE id_pedido = ?', [id]);
+  const rows = await resolverTransaccion(contexto)(
+    'UPDATE pedidos SET estado = 0 WHERE id_pedido = ? AND estado = 1 RETURNING id_pedido',
+    [id]
+  );
+  if (!rows.length)
+    throw new BusinessError(
+      'El pedido ya fue procesado o no está pendiente',
+      'ORDER_ALREADY_PROCESSED'
+    );
 }
 export async function reabrirPedidoPorAnulacion(
   pedidoId: string,
@@ -50,12 +59,19 @@ export async function ocuparHabitacionSiCorresponde(
   );
 }
 
-export async function consultarHabitacion(habitacionId: string, contexto: ContextoOperacion) {
+export async function consultarHabitacion(
+  habitacionId: string,
+  contexto: ContextoOperacion,
+  bloquear = false
+) {
   const trx = resolverTransaccion(contexto);
-  return await trx<any[]>(
-    'SELECT precio, comision_anfitriona FROM habitaciones WHERE id_habitacion = ?',
+  const rows = await trx<any[]>(
+    `SELECT precio, tiempo, estado, comision_anfitriona FROM habitaciones WHERE id_habitacion = ?${bloquear ? ' FOR UPDATE' : ''}`,
     [habitacionId]
   );
+  if (bloquear && rows.length)
+    rows[0].actividad = await habitacionTieneActividad(habitacionId, contexto);
+  return rows;
 }
 
 export async function pausarServiciosEnConflicto(
@@ -69,7 +85,7 @@ export async function pausarServiciosEnConflicto(
   const filas = await trx<{ id_servicio: string }[]>(
     `
     SELECT DISTINCT s.id_servicio FROM servicios s
-    JOIN detalle_servicios ds ON s.id_servicio = ds.servicio_id
+    JOIN detalle_servicios ds ON s.id_servicio = ds.servicio_id AND ds.liberado_en IS NULL
     JOIN habitaciones h ON s.habitacion_id = h.id_habitacion
     WHERE s.estado = 2 AND s.paused_at IS NULL
       ${excluirServicioId ? 'AND s.id_servicio != ?' : ''}
@@ -114,4 +130,17 @@ export async function liberarHabitacion(habitacionId: string, contexto: Contexto
     'UPDATE habitaciones SET estado = 1 WHERE id_habitacion = ?',
     [habitacionId]
   );
+}
+
+export async function habitacionTieneActividad(
+  habitacionId: string,
+  contexto: ContextoOperacion
+): Promise<boolean> {
+  const rows = await resolverTransaccion(contexto)<{ activa: number }[]>(
+    `SELECT 1 AS activa WHERE EXISTS (SELECT 1 FROM servicios WHERE habitacion_id = ? AND estado = 2)
+      OR EXISTS (SELECT 1 FROM ventas WHERE habitacion_id = ? AND estado = 2 AND tiempo > 0)
+      OR EXISTS (SELECT 1 FROM cuentas WHERE habitacion_id = ? AND estado = 1 AND COALESCE(tiempo_actual, tiempo) > 0)`,
+    [habitacionId, habitacionId, habitacionId]
+  );
+  return rows.length > 0;
 }

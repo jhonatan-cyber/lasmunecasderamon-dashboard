@@ -39,16 +39,23 @@ export function mapServiceFromDB(row: any): ServiceType {
 
   const habitacionComision = row.habitacion_comision ? Number(row.habitacion_comision) : 0;
   const precioServicio = Number(row.precio_servicio || 0);
-  const tieneComisionHabitacion = habitacionComision > 0;
+  const esTemporal = Number(row.es_temporal || 0) === 1;
+  const tieneComisionHabitacion = habitacionComision > 0 && !esTemporal;
   const totalComision = tieneComisionHabitacion
     ? habitacionComision
-    : precioServicio * numAnfitrionas;
+    : esTemporal
+      ? precioServicio
+      : precioServicio * numAnfitrionas;
   const comisionIndividual = tieneComisionHabitacion
     ? Math.floor(habitacionComision / numAnfitrionas)
-    : precioServicio;
+    : esTemporal
+      ? Math.floor(precioServicio / numAnfitrionas)
+      : precioServicio;
 
   return ServiceSchema.parse({
     id: row.id_servicio,
+    producto_incluido_presentacion_id: row.producto_incluido_presentacion_id || null,
+    producto_incluido_nombre: row.producto_incluido_nombre || null,
     codigo: row.codigo,
     cliente_id: row.cliente_id,
     habitacion_id: row.habitacion_id,
@@ -64,9 +71,9 @@ export function mapServiceFromDB(row: any): ServiceType {
     fecha_mod: row.fecha_mod || null,
     habitacion_nombre: row.habitacion_numero || row.habitacion_nombre || row.habitacion_name,
     habitacion_numero: row.habitacion_numero || row.habitacion_nombre || row.habitacion_name,
-    anfitrionas_nombres: row.anfitrionas_nombres || row.anfitrionas,
+    anfitrionas_nombres: row.anfitrionas_nombres || row.anfitrionas || '',
     anfitrionas_ids: row.anfitrionas_ids,
-    total_usuarios: numAnfitrionas,
+    total_usuarios: anfitrionasIds.length,
     created_by: row.created_by,
     creator_nick: row.creator_nick || null,
     creator_nombre: row.creator_nombre || null,
@@ -79,7 +86,8 @@ export function mapServiceFromDB(row: any): ServiceType {
     es_temporal: Number(row.es_temporal || 0),
     servicio_original_id: row.servicio_original_id || null,
     habitacion_comision: habitacionComision > 0 ? habitacionComision : null,
-    total_comision: totalComision,
+    total_comision:
+      row.comision_registrada != null ? Number(row.comision_registrada) : totalComision,
     comision_individual: comisionIndividual
   });
 }

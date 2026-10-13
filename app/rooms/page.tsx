@@ -18,6 +18,7 @@ import { RoomFormDialog } from '@/components/rooms/RoomFormDialog';
 
 const RoomsPage = () => {
   const {
+    rooms: allRooms,
     filteredRooms,
     isLoading,
     isMutating,
@@ -101,6 +102,17 @@ const RoomsPage = () => {
     const start = (page - 1) * pageSize;
     return localRooms.slice(start, start + pageSize);
   }, [localRooms, page, pageSize]);
+
+  const handleReorderRooms = async (visibleOrder: Room[]) => {
+    const byId = new Map(visibleOrder.map(room => [String(room.id), room]));
+    let index = 0;
+    const fullOrder = allRooms.map(room =>
+      byId.has(String(room.id)) ? visibleOrder[index++] : room
+    );
+    setSortBy('display_order');
+    setSortOrder('asc');
+    await reorderRooms(fullOrder);
+  };
 
   // Los handlers siguientes envuelven la llamada en try/catch por la misma razón que en
   // el listado de productos: useGenericMutations y statusMutation rechazan la promesa,
@@ -228,6 +240,7 @@ const RoomsPage = () => {
             <div className='mt-4 sm:mt-6'>
               <RoomTable
                 rooms={paginatedRooms}
+                onReorder={handleReorderRooms}
                 onEdit={handleEdit}
                 onDelete={handleDelete}
                 onActivate={handleActivate}
@@ -250,7 +263,7 @@ const RoomsPage = () => {
                 rooms={paginatedRooms}
                 localRooms={localRooms}
                 setLocalRooms={setLocalRooms}
-                reorderRooms={reorderRooms}
+                reorderRooms={handleReorderRooms}
                 onEdit={handleEdit}
                 onDelete={handleDelete}
                 onActivate={handleActivate}

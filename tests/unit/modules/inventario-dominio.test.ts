@@ -552,6 +552,70 @@ describe('generarEan13Interno', () => {
 });
 
 describe('descuento del bar al registrar una venta', () => {
+  it('descuenta el acompa\u00f1amiento de cortos como unidades completas', async () => {
+    const trx = vi.fn(async (sql: string, args?: any[]) => {
+      const id = args?.[0];
+      if (sql.includes('FROM configuraciones')) return [];
+      if (sql.includes('FROM inventario_presentaciones')) return [{ ...presentacion, id }];
+      if (sql.includes('FROM inventario_unidades'))
+        return [
+          { id: `${id}-1`, ml_restante: id === 'sprite' ? null : 750 },
+          { id: `${id}-2`, ml_restante: id === 'sprite' ? null : 750 }
+        ];
+      return [];
+    });
+    await consumirStockConTransaccion(
+      trx,
+      [
+        {
+          presentacion_id: 'pres-1',
+          tipo_venta: 'shot',
+          cantidad: 2,
+          acompanamiento_corto: { presentacion_id: 'sprite', unidades: 1 }
+        }
+      ],
+      contexto
+    );
+    const changes = trx.mock.calls.filter(([sql]) => sql.includes('UPDATE inventario_unidades'));
+    expect(
+      changes.some(
+        ([sql, args]) =>
+          sql.includes("SET estado = 'vendida'") &&
+          args?.includes('sprite-1') &&
+          args?.includes('sprite-2')
+      )
+    ).toBe(true);
+  });
+  it('descuenta bebidas completos por cada botella vendida', async () => {
+    const trx = vi.fn(async (sql: string, args?: any[]) => {
+      const id = args?.[0];
+      if (sql.includes('FROM inventario_presentaciones')) return [{ ...presentacion, id }];
+      if (sql.includes('FROM inventario_unidades'))
+        return Array.from({ length: 6 }, (_, i) => ({ id: `${id}-${i}`, ml_restante: null }));
+      return [];
+    });
+    await consumirStockConTransaccion(
+      trx,
+      [
+        {
+          presentacion_id: 'pres-1',
+          cantidad: 2,
+          acompanamiento_botella: { presentacion_id: 'sprite', unidades: 3 }
+        }
+      ],
+      contexto
+    );
+    const movimientos = trx.mock.calls.filter(([sql]) =>
+      sql.includes('INSERT INTO inventario_movimientos')
+    );
+    expect(movimientos).toHaveLength(2);
+    expect(movimientos.find(([, args]) => args?.includes('sprite'))?.[1]).toEqual(
+      expect.arrayContaining([6])
+    );
+    expect(movimientos.find(([, args]) => args?.includes('pres-1'))?.[1]).toEqual(
+      expect.arrayContaining([2])
+    );
+  });
   const contexto = { usuarioId: 'user-1', fecha: '2026-09-24 10:00:00' };
   const presentacion = {
     id: 'pres-1',
@@ -688,7 +752,7 @@ describe('descuento del bar al registrar una venta', () => {
     await expect(
       consumirStockConTransaccion(trx, [{ presentacion_id: 'pres-1', cantidad: 1 }], contexto)
     ).rejects.toMatchObject({ code: 'INSUFFICIENT_BAR_STOCK' });
-    expect(trx).toHaveBeenCalledTimes(2);
+    expect(trx).toHaveBeenCalledTimes(3);
   });
 
   it('no falla si la presentación ya no existe (unidades huérfanas)', async () => {
@@ -697,7 +761,7 @@ describe('descuento del bar al registrar una venta', () => {
     await expect(
       consumirStockConTransaccion(trx, [{ presentacion_id: 'pres-1', cantidad: 1 }], contexto)
     ).resolves.toEqual([]);
-    expect(trx).toHaveBeenCalledTimes(1);
+    expect(trx).toHaveBeenCalledTimes(2);
   });
 
   it('un shot descuenta ml de la botella abierta sin gastar unidades', async () => {
@@ -1046,7 +1110,10 @@ describe('control de devolución de envases', () => {
     });
 
   const busqueda = (trx: any) =>
-    trx.mock.calls.find(([sql]: [string]) => sql.includes('FROM inventario_unidades'))!;
+    trx.mock.calls.find(
+      ([sql]: [string]) =>
+        sql.includes('FROM inventario_unidades') && sql.includes('FOR UPDATE OF u')
+    )!;
   const marca = (trx: any) =>
     trx.mock.calls.find(([sql]: [string]) => sql.includes('SET fecha_devolucion = ?'));
 
@@ -1101,7 +1168,7 @@ describe('control de devolución de envases', () => {
     );
 
     expect(resultado).toMatchObject({ ok: false, motivo: 'no_esta_vacia' });
-    expect(trx).toHaveBeenCalledTimes(2);
+    expect(trx).toHaveBeenCalledTimes(3);
   });
 
   it('acepta una botella servida por shots dentro de la tolerancia y registra el residuo', async () => {
@@ -1152,7 +1219,7 @@ describe('control de devolución de envases', () => {
     if (!resultado.ok && resultado.unidad) {
       expect(resultado.unidad.fecha_devolucion).toBe('2026-09-20 22:30:00');
     }
-    expect(trx).toHaveBeenCalledTimes(2);
+    expect(trx).toHaveBeenCalledTimes(3);
   });
 
   it('rechaza la botella que se vendió entera: su envase no vuelve al bar', async () => {
@@ -1163,7 +1230,7 @@ describe('control de devolución de envases', () => {
     );
 
     expect(resultado).toMatchObject({ ok: false, motivo: 'venta_entera' });
-    expect(trx).toHaveBeenCalledTimes(2);
+    expect(trx).toHaveBeenCalledTimes(3);
   });
 
   it('exige un código para verificar', async () => {
@@ -1203,8 +1270,8 @@ describe('control de devolución de envases', () => {
     );
     expect(consultas[0][0]).toContain('WHERE u.codigo_barras = ?');
     expect(consultas[0][1]).toEqual(['2912345678901']);
-    expect(consultas[1][0]).toContain('WHERE u.codigo = ?');
-    expect(consultas[1][1]).toEqual(['LM-000124']);
+    expect(consultas[2][0]).toContain('WHERE u.codigo = ?');
+    expect(consultas[2][1]).toEqual(['LM-000124']);
   });
 
   it('el escaneo corre dentro de una transacción (wrapper público)', async () => {

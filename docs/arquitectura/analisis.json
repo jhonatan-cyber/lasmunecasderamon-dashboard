@@ -1,42 +1,33 @@
 {
   "resumen": {
-    "commit": "c65bb1ac2de180700808a440e43c9659c65aa1e3",
-    "generado": "2026-10-08T21:17:44.396Z",
-    "archivos": 1742,
-    "rutas": 212,
-    "sqlFueraDeRepositorio": 50,
+    "commit": "8cfdc38c58372e33cd89d657ae356ec3ddc25c28",
+    "generado": "2026-10-13T21:40:55.211Z",
+    "archivos": 1857,
+    "rutas": 217,
+    "sqlFueraDeRepositorio": 53,
     "tablasConEscritoresMultiples": 0,
     "ciclos": 0,
-    "procesosPeriodicos": 16,
+    "procesosPeriodicos": 18,
     "caches": 21,
     "rutasApiConSqlDirecto": 0,
-    "rutasSinWrapper": 20
+    "rutasSinWrapper": 21
   },
   "rutas": [
     {
-      "ruta": "/api/cashregister/:id/whatsapp",
-      "archivo": "app/api/cashregister/[id]/whatsapp/route.ts",
+      "ruta": "/api/cleaning",
+      "archivo": "app/api/cleaning/route.ts",
       "metodos": [],
-      "nivel": "administrator",
+      "nivel": "authenticated",
       "audit": true,
       "moduloDominio": null,
       "usaDriver": false
     },
     {
-      "ruta": "/api/cashregister/cierre-pdf",
-      "archivo": "app/api/cashregister/cierre-pdf/route.ts",
+      "ruta": "/api/servicios/:id/anfitrionas",
+      "archivo": "app/api/servicios/[id]/anfitrionas/route.ts",
       "metodos": [],
-      "nivel": "publico",
-      "audit": false,
-      "moduloDominio": null,
-      "usaDriver": false
-    },
-    {
-      "ruta": "/api/cashregister/reporte-pdf",
-      "archivo": "app/api/cashregister/reporte-pdf/route.ts",
-      "metodos": [],
-      "nivel": "publico",
-      "audit": false,
+      "nivel": "private_rooms.write",
+      "audit": true,
       "moduloDominio": null,
       "usaDriver": false
     },
@@ -572,6 +563,24 @@
       "usaDriver": false
     },
     {
+      "ruta": "/api/cashregister/:id/whatsapp",
+      "archivo": "app/api/cashregister/[id]/whatsapp/route.ts",
+      "metodos": [],
+      "nivel": "administrator",
+      "audit": true,
+      "moduloDominio": null,
+      "usaDriver": false
+    },
+    {
+      "ruta": "/api/cashregister/cierre-pdf",
+      "archivo": "app/api/cashregister/cierre-pdf/route.ts",
+      "metodos": [],
+      "nivel": "publico",
+      "audit": false,
+      "moduloDominio": null,
+      "usaDriver": false
+    },
+    {
       "ruta": "/api/cashregister/cierre/reenviar",
       "archivo": "app/api/cashregister/cierre/reenviar/route.ts",
       "metodos": [],
@@ -592,6 +601,15 @@
     {
       "ruta": "/api/cashregister/procesar-cierre",
       "archivo": "app/api/cashregister/procesar-cierre/route.ts",
+      "metodos": [],
+      "nivel": "publico",
+      "audit": false,
+      "moduloDominio": null,
+      "usaDriver": false
+    },
+    {
+      "ruta": "/api/cashregister/reporte-pdf",
+      "archivo": "app/api/cashregister/reporte-pdf/route.ts",
       "metodos": [],
       "nivel": "publico",
       "audit": false,
@@ -638,8 +656,8 @@
       "ruta": "/api/categories/:id",
       "archivo": "app/api/categories/[id]/route.ts",
       "metodos": [],
-      "nivel": "categories.write",
-      "audit": true,
+      "nivel": "categories.delete",
+      "audit": false,
       "moduloDominio": null,
       "usaDriver": false
     },
@@ -988,6 +1006,15 @@
     {
       "ruta": "/api/images/products/:id",
       "archivo": "app/api/images/products/[filename]/route.ts",
+      "metodos": ["GET"],
+      "nivel": "SIN_WRAPPER",
+      "audit": false,
+      "moduloDominio": null,
+      "usaDriver": false
+    },
+    {
+      "ruta": "/api/images/users/:id",
+      "archivo": "app/api/images/users/[filename]/route.ts",
       "metodos": ["GET"],
       "nivel": "SIN_WRAPPER",
       "audit": false,
@@ -1346,6 +1373,15 @@
       "usaDriver": false
     },
     {
+      "ruta": "/api/purchases/catalog",
+      "archivo": "app/api/purchases/catalog/route.ts",
+      "metodos": [],
+      "nivel": "products.read",
+      "audit": false,
+      "moduloDominio": null,
+      "usaDriver": false
+    },
+    {
       "ruta": "/api/purchases",
       "archivo": "app/api/purchases/route.ts",
       "metodos": [],
@@ -1688,6 +1724,15 @@
       "usaDriver": false
     },
     {
+      "ruta": "/api/sync-operations",
+      "archivo": "app/api/sync-operations/route.ts",
+      "metodos": [],
+      "nivel": "authenticated",
+      "audit": false,
+      "moduloDominio": null,
+      "usaDriver": false
+    },
+    {
       "ruta": "/api/test-auth",
       "archivo": "app/api/test-auth/route.ts",
       "metodos": [],
@@ -1996,6 +2041,22 @@
       "escribe": []
     },
     {
+      "archivo": "modules/inventario/bar/validarConfiguracionVenta.ts",
+      "capa": "modules/aplicacion",
+      "modulo": "inventario",
+      "escribe": []
+    },
+    {
+      "archivo": "modules/inventario/limpieza/servicio.ts",
+      "capa": "modules/aplicacion",
+      "modulo": "inventario",
+      "escribe": [
+        "limpieza_articulos",
+        "limpieza_movimientos",
+        "limpieza_stock"
+      ]
+    },
+    {
       "archivo": "modules/asistencia/biometrico/avisosAudio.ts",
       "capa": "modules/aplicacion",
       "modulo": "asistencia",
@@ -2134,6 +2195,12 @@
       "escribe": ["inventario_presentaciones"]
     },
     {
+      "archivo": "modules/inventario/productos/eliminarFotos.ts",
+      "capa": "modules/aplicacion",
+      "modulo": "inventario",
+      "escribe": []
+    },
+    {
       "archivo": "modules/inventario/productos/servicio.ts",
       "capa": "modules/aplicacion",
       "modulo": "inventario",
@@ -2226,6 +2293,16 @@
   ],
   "escriturasCruzadas": [],
   "transacciones": [
+    {
+      "archivo": "modules/inventario/limpieza/servicio.ts",
+      "capa": "modules/aplicacion",
+      "modulo": "inventario"
+    },
+    {
+      "archivo": "modules/operacion/servicios/asignaciones.ts",
+      "capa": "modules/aplicacion",
+      "modulo": "operacion"
+    },
     {
       "archivo": "lib/database/maintenance.ts",
       "capa": "lib/database",
@@ -2449,6 +2526,12 @@
   ],
   "procesos": [
     {
+      "archivo": "components/cleaning/CleaningInventory.tsx",
+      "linea": 83,
+      "tipo": "setInterval",
+      "texto": "const interval = window.setInterval(refresh, 30000);"
+    },
+    {
       "archivo": "app/api/notifications/kiosk/route.ts",
       "linea": 30,
       "tipo": "setInterval",
@@ -2486,7 +2569,7 @@
     },
     {
       "archivo": "components/products/ContainerReturnsPanel.tsx",
-      "linea": 99,
+      "linea": 164,
       "tipo": "setInterval",
       "texto": "const intervalo = setInterval(fetchResumen, 60_000);"
     },
@@ -2519,6 +2602,12 @@
       "linea": 12,
       "tipo": "setInterval",
       "texto": "const interval = setInterval(() => {"
+    },
+    {
+      "archivo": "hooks/timer/useTimerSync.ts",
+      "linea": 342,
+      "tipo": "setInterval",
+      "texto": "const interval = window.setInterval(() => {"
     },
     {
       "archivo": "lib/api/sseService.ts",
@@ -2682,55 +2771,65 @@
   "ciclos": [],
   "matriz": {
     "app/api": {
-      "lib/api": 242,
-      "lib/otros": 71,
-      "lib/business": 21,
+      "lib/api": 251,
+      "lib/business": 23,
+      "lib/otros": 72,
       "lib/identidad": 13,
       "workflows": 20,
       "modules/aplicacion": 1,
-      "lib/database": 2,
+      "lib/database": 3,
       "lib/integrations": 4
     },
     "app/ui": {
-      "hooks": 49,
-      "lib/otros": 49,
+      "hooks": 50,
+      "lib/otros": 52,
       "lib/api": 6,
+      "components": 6,
       "lib/business": 3,
       "modules/aplicacion": 1,
-      "raiz": 13,
-      "components": 2
-    },
-    "lib/api": {
-      "lib/otros": 7,
-      "lib/identidad": 3,
-      "modules/aplicacion": 1,
-      "lib/business": 2,
-      "lib/database": 2
-    },
-    "lib/otros": {
-      "lib/database": 4,
-      "lib/api": 1,
-      "lib/business": 6,
-      "components": 2,
-      "raiz": 5
-    },
-    "modules/aplicacion": {
-      "lib/otros": 86,
-      "modules/infraestructura": 23,
-      "lib/database": 37,
-      "lib/business": 26,
-      "lib/api": 8,
-      "lib/identidad": 3,
-      "raiz": 4
+      "raiz": 13
     },
     "components": {
-      "hooks": 123,
-      "lib/otros": 267,
-      "raiz": 81,
-      "lib/business": 26,
+      "raiz": 87,
+      "lib/otros": 294,
+      "lib/business": 31,
+      "hooks": 130,
       "modules/aplicacion": 4,
       "lib/api": 1,
       "app/ui": 1
+    },
+    "lib/business": {
+      "raiz": 2,
+      "lib/api": 3,
+      "lib/otros": 7,
+      "lib/database": 4,
+      "modules/aplicacion": 2,
+      "components": 1
+    },
+    "lib/otros": {
+      "components": 3,
+      "lib/database": 4,
+      "lib/api": 1,
+      "lib/business": 6,
+      "raiz": 6
+    },
+    "modules/aplicacion": {
+      "lib/database": 40,
+      "lib/otros": 91,
+      "lib/business": 29,
+      "raiz": 5,
+      "lib/api": 9,
+      "modules/infraestructura": 23,
+      "lib/identidad": 3
+    },
+    "modules/infraestructura": {
+      "lib/otros": 140,
+      "lib/database": 102,
+      "lib/business": 53,
+      "modules/aplicacion": 24,
+      "lib/api": 7,
+      "lib/identidad": 2,
+      "raiz": 2
     },
     "raiz": {
       "lib/otros": 9,
@@ -2740,24 +2839,23 @@
       "modules/aplicacion": 1
     },
     "hooks": {
-      "lib/otros": 70,
+      "lib/otros": 80,
       "raiz": 36,
-      "components": 14,
+      "components": 16,
       "lib/api": 6,
-      "lib/business": 8,
+      "lib/business": 9,
       "modules/aplicacion": 2
+    },
+    "lib/api": {
+      "lib/otros": 7,
+      "lib/identidad": 3,
+      "modules/aplicacion": 1,
+      "lib/business": 2,
+      "lib/database": 2
     },
     "lib/identidad": {
       "lib/otros": 5,
       "lib/business": 1
-    },
-    "lib/business": {
-      "lib/api": 3,
-      "lib/otros": 6,
-      "lib/database": 4,
-      "modules/aplicacion": 2,
-      "components": 1,
-      "raiz": 1
     },
     "lib/database": {
       "lib/otros": 3,
@@ -2765,15 +2863,6 @@
     },
     "lib/integrations": {
       "lib/business": 1
-    },
-    "modules/infraestructura": {
-      "lib/database": 101,
-      "lib/otros": 132,
-      "lib/business": 53,
-      "modules/aplicacion": 23,
-      "lib/api": 7,
-      "lib/identidad": 2,
-      "raiz": 2
     },
     "scripts": {},
     "workflows": {

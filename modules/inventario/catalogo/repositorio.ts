@@ -25,8 +25,8 @@ export async function listarParaVenta(filters?: FiltrosParaVenta): Promise<any[]
   if (term) {
     const like = `%${term}%`;
     whereTerm =
-      'AND (LOWER(pr.nombre) LIKE LOWER(?) OR LOWER(pr.codigo) LIKE LOWER(?) OR LOWER(p.nombre) LIKE LOWER(?) OR LOWER(p.codigo_barras) LIKE LOWER(?))';
-    params.push(like, like, like, like);
+      'AND (LOWER(pr.nombre) LIKE LOWER(?) OR LOWER(pr.codigo) LIKE LOWER(?) OR LOWER(p.nombre) LIKE LOWER(?) OR LOWER(p.codigo_barras) LIKE LOWER(?) OR LOWER(c.nombre) LIKE LOWER(?))';
+    params.push(like, like, like, like, like);
   }
   const rows = await query<any[]>(
     `SELECT p.id AS presentacion_id, p.nombre AS presentacion_nombre,

@@ -1,7 +1,6 @@
 'use client';
 
-import { useState, useMemo } from 'react';
-import { ShotMixerSelection } from '@/components/sales/new/ShotMixerSelection';
+import { useState, useMemo, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { Button } from '@/components/ui/button';
 import { ArrowLeft } from 'lucide-react';
@@ -16,6 +15,25 @@ export default function NewOrder() {
   const [selectedCliente, setSelectedCliente] = useState('');
   const [selectedAnfitrionas, setSelectedAnfitrionas] = useState<string[]>([]);
   const [productos, setProductos] = useState<any[]>([]);
+  const [cartReady, setCartReady] = useState(false);
+  useEffect(() => {
+    try {
+      const saved = JSON.parse(sessionStorage.getItem('orders:cart') || '[]');
+      if (Array.isArray(saved)) setProductos(saved);
+    } catch {
+      /* Un borrador dañado no debe impedir crear un pedido. */
+    }
+    setCartReady(true);
+  }, []);
+  useEffect(() => {
+    if (!cartReady) return;
+    try {
+      if (productos.length) sessionStorage.setItem('orders:cart', JSON.stringify(productos));
+      else sessionStorage.removeItem('orders:cart');
+    } catch {
+      /* El carrito sigue disponible si el almacenamiento está lleno. */
+    }
+  }, [productos, cartReady]);
   const {
     clients: clientes,
     anfitrionas,
@@ -61,6 +79,7 @@ export default function NewOrder() {
   };
 
   const handleUpdateCantidad = (index: number, nuevaCantidad: number) => {
+    if (nuevaCantidad < 1 || !Number.isInteger(nuevaCantidad)) return;
     setProductos((prev: any[]) =>
       prev.map((producto, i) => {
         if (i !== index) return producto;
@@ -73,15 +92,34 @@ export default function NewOrder() {
           ...producto,
           cantidad: nuevaCantidad,
           subtotal: (producto.precio || producto.price) * nuevaCantidad,
-          comision: comisionUnitaria * nuevaCantidad,
-          comisionUnitaria: comisionUnitaria
+          comision: producto.selectedHostesses?.length ? comisionUnitaria * nuevaCantidad : 0,
+          comisionUnitaria: comisionUnitaria,
+          selectedHostesses:
+            producto.tipo_venta === 'shot' || !isChampagneProduct(producto)
+              ? (producto.selectedHostesses || []).slice(0, nuevaCantidad)
+              : producto.selectedHostesses
         };
       })
     );
   };
 
-  const handleAssignHostess = (index: number, hostessId: string) => {
-    setProductos((prev: any[]) => prev.map((p, i) => (i === index ? { ...p, hostessId } : p)));
+  const handleAssignHostess = (index: number, hostessId: string | string[]) => {
+    setProductos(prev =>
+      prev.map((p, i) => {
+        if (i !== index) return p;
+        const ids = [
+          ...new Set(Array.isArray(hostessId) ? hostessId : hostessId ? [hostessId] : [])
+        ].slice(0, Number(p.cantidad));
+        const unit = Number(p.comisionUnitaria ?? 0);
+        return {
+          ...p,
+          hostessId: ids[0] || '',
+          selectedHostesses: ids,
+          generaComision: ids.length && unit > 0 ? 1 : 0,
+          comision: ids.length ? unit * Number(p.cantidad) : 0
+        };
+      })
+    );
   };
 
   const handleToggleComision = (index: number) => {
@@ -99,7 +137,8 @@ export default function NewOrder() {
   };
 
   const handleSubmit = () => {
-    const clienteId = selectedCliente || '1';
+    setProductos([]);
+    sessionStorage.removeItem('orders:cart');
   };
 
   const hasChampagne = productos.some((item: any) => isChampagneProduct(item));
@@ -119,7 +158,13 @@ export default function NewOrder() {
         <Button
           variant='outline'
           className='rounded-full bg-black text-white hover:scale-105 transition-all duration-200 dark:bg-zinc-100 dark:text-zinc-950 dark:hover:bg-white'
-          onClick={() => router.back()}
+          onClick={() => {
+            setProductos([]);
+            try {
+              sessionStorage.removeItem('orders:cart');
+            } catch {}
+            router.back();
+          }}
           type='button'
         >
           <ArrowLeft />
@@ -158,9 +203,6 @@ export default function NewOrder() {
               searchAnfitriona={searchAnfitriona}
               setSearchAnfitriona={setSearchAnfitriona}
             />
-            {productos.some(p => p.tipo_venta === 'shot') && (
-              <ShotMixerSelection productos={productos} setProductos={setProductos} />
-            )}
           </TabsContent>
 
           <TabsContent value='servicios' className='space-y-6'>

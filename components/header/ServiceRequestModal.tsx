@@ -1,5 +1,6 @@
 'use client';
 
+import { ServicioIncludedProduct } from '@/components/private-rooms/new/ServicioIncludedProduct';
 import { useState, useEffect, useCallback } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import {
@@ -38,10 +39,11 @@ export function ServiceRequestModal({
   const { startTimer } = useTimer();
   const ivaRate = useIvaRate();
 
+  const [productoIncluido, setProductoIncluido] = useState('');
   const [rejectReason, setRejectReason] = useState('');
   const [processing, setProcessing] = useState(false);
   const [isRoomAvailable, setIsRoomAvailable] = useState(true);
-  const [selectedRoomId, setSelectedRoomId] = useState<number | ''>('');
+  const [selectedRoomId, setSelectedRoomId] = useState<string>('');
 
   useRefreshOnFocus(
     async () => {
@@ -56,13 +58,14 @@ export function ServiceRequestModal({
   useEffect(() => {
     if (!solicitud) return;
 
+    setProductoIncluido(solicitud.producto_incluido_presentacion_id || '');
     const currentRoomId = solicitud?.habitacion_id;
     const currentIsAvailable = availableRooms.some(
       (r: any) => String(r.id_habitacion || r.id) === String(currentRoomId)
     );
 
     setIsRoomAvailable(currentIsAvailable);
-    setSelectedRoomId(currentIsAvailable ? currentRoomId : '');
+    setSelectedRoomId(currentIsAvailable ? String(currentRoomId) : '');
   }, [availableRooms, solicitud]);
 
   const getAnfitrionasNicks = (ids: any): string => {
@@ -139,7 +142,10 @@ export function ServiceRequestModal({
       const response = await fetch(url, {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ habitacion_id: habitacionIdFinal })
+        body: JSON.stringify({
+          habitacion_id: habitacionIdFinal,
+          producto_incluido_presentacion_id: productoIncluido || undefined
+        })
       });
       const data = await response.json();
 
@@ -223,6 +229,13 @@ export function ServiceRequestModal({
           <DialogTitle>Solicitud de Servicio #{solicitud.id_solicitud}</DialogTitle>
         </DialogHeader>
 
+        {Number(
+          availableRooms.find(
+            (r: any) => String(r.id_habitacion || r.id) === String(selectedRoomId)
+          )?.comision_anfitriona ?? solicitud.comision_anfitriona
+        ) > 0 && (
+          <ServicioIncludedProduct value={productoIncluido} onChange={setProductoIncluido} />
+        )}
         <div className='space-y-3 text-sm'>
           <div>
             <span className='font-medium'>Anfitrionas:</span>{' '}
@@ -239,7 +252,10 @@ export function ServiceRequestModal({
               </div>
               <Select
                 value={selectedRoomId ? String(selectedRoomId) : ''}
-                onValueChange={(value: string) => setSelectedRoomId(value ? Number(value) : '')}
+                onValueChange={(value: string) => {
+                  setProductoIncluido('');
+                  setSelectedRoomId(value || '');
+                }}
               >
                 <SelectTrigger className='bg-white dark:bg-[#2a2a2a] border-gray-300 dark:border-gray-700 text-gray-900 dark:text-white rounded-full'>
                   <SelectValue placeholder='Seleccionar habitación' />

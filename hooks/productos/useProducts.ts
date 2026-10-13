@@ -1,3 +1,4 @@
+import { matchesProductSearch } from '@/lib/utils/productSearch';
 import { Product } from '@/types/product';
 import { useQueryClient } from '@tanstack/react-query';
 import { toast } from 'sonner';
@@ -53,6 +54,7 @@ export default function useProducts(categoryId?: string) {
 
   const filters = useGenericFilters(products, {
     searchFields: PRODUCT_SEARCH_FIELDS,
+    searchPredicate: matchesProductSearch,
     initialPageSize: 20,
     initialSortBy: 'display_order',
     initialSortOrder: 'asc'

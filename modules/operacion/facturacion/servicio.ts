@@ -45,6 +45,7 @@ export async function liberarHabitacionPorAnulacion(
   excluirServicioId?: string
 ) {
   if (!habitacionId) return;
+  if (await repositorio.habitacionTieneActividad(habitacionId, contexto)) return;
   const ventas = await obtenerUltimaVentaPausada(habitacionId, contexto, excluirVentaId);
   const servicios = await repositorio.obtenerUltimoServicioPausado(
     habitacionId,

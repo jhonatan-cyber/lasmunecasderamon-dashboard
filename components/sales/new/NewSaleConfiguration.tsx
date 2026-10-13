@@ -3,7 +3,7 @@ import { Checkbox } from '@/components/ui/checkbox';
 import { CustomerSelect } from '@/components/shared/selects';
 import { RoomSelect } from '@/components/shared/selects';
 import { PaymentMethodSelect } from '@/components/shared/selects';
-import { TimeSelect } from '@/components/shared/selects';
+import { Input } from '@/components/ui/input';
 import { formatCurrencyNoDecimals } from '@/lib/utils/formatters';
 import { useConfigValue } from '@/hooks/shared/useConfigValue';
 import { Coins } from 'lucide-react';
@@ -59,16 +59,23 @@ export const NewSaleConfiguration = ({
               habitaciones={habitaciones}
               value={selectedHabitacion}
               onChange={handleHabitacionChange}
-              requireCompleteConfig={true}
             />
           </div>
           {selectedHabitacion && selectedHabitacion !== 'none' && (
             <div className={fieldWrapperClass}>
-              <TimeSelect
+              <Label htmlFor='sale-room-minutes' className={fieldLabelClass}>
+                Tiempo (minutos)
+              </Label>
+              <Input
+                id='sale-room-minutes'
+                type='number'
+                min={1}
+                step={1}
+                inputMode='numeric'
                 value={manualTime}
-                onChange={setManualTime}
-                label='Tiempo'
-                placeholder='Seleccione tiempo'
+                onChange={event => setManualTime(event.target.value)}
+                placeholder='Escribe los minutos'
+                className='rounded-full'
               />
             </div>
           )}

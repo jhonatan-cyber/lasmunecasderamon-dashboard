@@ -9,7 +9,13 @@ import { SaleFormatQuantities } from '@/components/sales/SaleFormatQuantities';
  * unidades en carrito, estimación de la botella abierta y las opciones de
  * tipo de venta (botella / shot · ml · precio) cuando la presentación tiene shot.
  */
-export function SaleProductDetails({ item }: { item: SaleProductItem }) {
+export function SaleProductDetails({
+  item,
+  showFormats = true
+}: {
+  item: SaleProductItem;
+  showFormats?: boolean;
+}) {
   const p = item.product;
   return (
     <>
@@ -37,7 +43,9 @@ export function SaleProductDetails({ item }: { item: SaleProductItem }) {
             : ''}
         </p>
       )}
-      <SaleFormatQuantities options={item.opcionesTipo} onChange={item.onSaleTypeChange} dense />
+      {showFormats && (
+        <SaleFormatQuantities options={item.opcionesTipo} onChange={item.onSaleTypeChange} dense />
+      )}
     </>
   );
 }

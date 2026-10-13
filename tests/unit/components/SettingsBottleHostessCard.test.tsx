@@ -82,19 +82,24 @@ afterEach(() => {
 describe('comisiones por presentación', () => {
   it('muestra la tabla desde dos anfitrionas y la oculta con una o máximo vacío', async () => {
     render(<SettingsBottleHostessCard />);
-    await screen.findByLabelText('Máx. anfitrionas');
+    await screen.findByLabelText('Máximo de anfitrionas');
     expect(await screen.findByText('Precios por cantidad de anfitrionas')).toBeInTheDocument();
-    fireEvent.change(screen.getByLabelText('Máx. anfitrionas'), { target: { value: '1' } });
+    fireEvent.change(screen.getByLabelText('Máximo de anfitrionas'), { target: { value: '1' } });
     expect(screen.queryByText('Precios por cantidad de anfitrionas')).not.toBeInTheDocument();
-    fireEvent.change(screen.getByLabelText('Máx. anfitrionas'), { target: { value: '' } });
+    fireEvent.change(screen.getByLabelText('Máximo de anfitrionas'), { target: { value: '' } });
     expect(screen.queryByText('Precios por cantidad de anfitrionas')).not.toBeInTheDocument();
-    fireEvent.change(screen.getByLabelText('Máx. anfitrionas'), { target: { value: '3' } });
+    fireEvent.change(screen.getByLabelText('Máximo de anfitrionas'), { target: { value: '3' } });
     await screen.findByLabelText('Precio para 3 anfitrionas');
     expect(screen.queryByLabelText('Precio para 4 anfitrionas')).not.toBeInTheDocument();
   });
   it('muestra dos opciones independientes y carga los valores de la presentación elegida', async () => {
     render(<SettingsBottleHostessCard />);
     await screen.findByRole('button', { name: /Vodka Absolut 1000ml/ });
+    // Espera a que el efecto elija la presentación inicial: si se hace clic antes de ese
+    // commit, la selección automática pisa lo elegido y la aserción lee el estado viejo.
+    await waitFor(() =>
+      expect(screen.getByLabelText('Producto y presentación')).toHaveTextContent(/Vodka Absolut/)
+    );
     const botella750 = screen.getByRole('button', { name: /Vodka Absolut 750ml/ });
     expect(botella750).toHaveTextContent('20.000');
     fireEvent.click(botella750);
@@ -136,6 +141,7 @@ describe('comisiones por presentación', () => {
           precio: 2500,
           comision: 0,
           precio_anfitriona: 3000,
+          ml_acompanamiento_anfitriona: 0,
           precios_anfitriona: [{ precio: 3000, comision: 0 }]
         }
       ]

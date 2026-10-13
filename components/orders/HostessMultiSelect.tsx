@@ -51,7 +51,7 @@ const HostessMultiSelect: React.FC<HostessMultiSelectProps> = ({
     : anfitrionasUnicas;
 
   return (
-    <div className='flex-1 min-w-[200px]'>
+    <div className='w-full min-w-0 flex-1'>
       <div className='relative'>
         <Users className='absolute left-2 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none z-10 h-4 w-4' />
         <Popover open={open} onOpenChange={setOpen}>

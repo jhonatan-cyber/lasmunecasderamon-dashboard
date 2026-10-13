@@ -1,4 +1,4 @@
-import { cleanup, fireEvent, render, screen } from '@testing-library/react';
+import { cleanup, fireEvent, render, screen, within } from '@testing-library/react';
 import { afterEach, expect, it } from 'vitest';
 import { BarStatsCards } from '@/components/bar/BarStatsCards';
 
@@ -18,18 +18,16 @@ it('abre el detalle de ml disponibles por cada botella', async () => {
       }}
       botellasAbiertas={[
         {
-          id: 'unit-1',
-          codigo: 'LM-000001',
-          ml_restante: 75,
+          id: 'pres-1',
+          venta_corto_habilitada: true,
           producto_nombre: 'Paceña',
-          presentacion_nombre: '750 ml'
-        },
-        {
-          id: 'unit-2',
-          codigo: 'LM-000002',
-          ml_restante: 50,
-          producto_nombre: 'Paceña',
-          presentacion_nombre: '750 ml'
+          presentacion_nombre: '750 ml',
+          cantidad: 2,
+          ml_disponibles: 125,
+          ml_cliente: 50,
+          ml_anfitriona: 25,
+          shots_anfitriona_disponibles: 5,
+          shots_disponibles: 2
         }
       ]}
     />
@@ -39,7 +37,10 @@ it('abre el detalle de ml disponibles por cada botella', async () => {
     screen.getByRole('button', { name: 'Ver las botellas abiertas y sus mililitros disponibles' })
   );
 
-  expect(await screen.findByText(/Código LM-000001/)).toBeInTheDocument();
-  expect(screen.getByText('75 ml')).toBeInTheDocument();
-  expect(screen.getByText('50 ml')).toBeInTheDocument();
+  expect(await screen.findByText('Paceña')).toBeInTheDocument();
+  expect(within(screen.getByRole('dialog')).getByText('125 ml')).toBeInTheDocument();
+  expect(screen.getByText('Cliente · 50 ml')).toBeInTheDocument();
+  expect(screen.getByText('Anfitriona · 25 ml')).toBeInTheDocument();
+  expect(within(screen.getByRole('dialog')).getByText('5 cortos')).toBeInTheDocument();
+  expect(screen.queryByText(/LM-/)).not.toBeInTheDocument();
 });

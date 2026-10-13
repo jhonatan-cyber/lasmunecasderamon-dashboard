@@ -224,9 +224,13 @@ function TransfersContent() {
   const filtered = useMemo(() => {
     const term = search.trim().toLocaleLowerCase('es');
     return items.filter(item =>
-      [item.producto_nombre, item.producto_codigo, item.nombre, item.codigo_barras].some(value =>
-        value?.toLocaleLowerCase('es').includes(term)
-      )
+      [
+        item.producto_nombre,
+        item.categoria_nombre,
+        item.producto_codigo,
+        item.nombre,
+        item.codigo_barras
+      ].some(value => value?.toLocaleLowerCase('es').includes(term))
     );
   }, [items, search]);
 
@@ -290,53 +294,50 @@ function TransfersContent() {
       )}
 
       <Tabs value={tab} onValueChange={setTab} className='flex flex-col gap-4'>
-        <TabsList
-          aria-label='Listados de transferencias'
-          className='mx-auto grid h-auto w-full shrink-0 grid-cols-3 rounded-full sm:w-fit'
-        >
-          <TabsTrigger value='products' className='rounded-full'>
-            Productos
-          </TabsTrigger>
-          <TabsTrigger value='pending' className='rounded-full whitespace-normal text-center'>
-            Pendientes{pendientes.length > 0 ? ` (${pendientes.length})` : ''}
-          </TabsTrigger>
-          <TabsTrigger value='history' className='rounded-full whitespace-normal text-center'>
-            Historial de transferencias
-          </TabsTrigger>
-        </TabsList>
-        <TabsContent value='products'>
-          <section aria-labelledby='presentations-title' className='flex flex-col gap-4'>
-            <div className='flex flex-wrap items-end justify-between gap-3'>
-              <div className='flex flex-col gap-1'>
-                <h2 id='presentations-title' className='text-lg font-semibold'>
-                  Presentaciones disponibles
-                </h2>
-                <p className='text-sm text-muted-foreground'>
-                  Consulta el stock en almacén y en bar antes de transferir.
-                </p>
-              </div>
-              <div className='flex min-w-0 flex-1 flex-wrap items-end gap-3 sm:flex-none sm:justify-end'>
-                <Input
-                  aria-label='Buscar producto, presentación o código'
-                  placeholder='Buscar producto, presentación o código'
-                  value={search}
-                  onChange={event => {
-                    setSearch(event.target.value);
-                    setPage(1);
-                  }}
-                  className='h-10 min-w-0 flex-1 rounded-full sm:w-64 sm:flex-none'
+        <div className='flex flex-wrap items-center justify-between gap-3'>
+          <TabsList
+            aria-label='Listados de transferencias'
+            className='grid h-auto w-full shrink-0 grid-cols-3 rounded-full sm:w-fit'
+          >
+            <TabsTrigger value='products' className='rounded-full'>
+              Productos
+            </TabsTrigger>
+            <TabsTrigger value='pending' className='rounded-full whitespace-normal text-center'>
+              Pendientes{pendientes.length > 0 ? ` (${pendientes.length})` : ''}
+            </TabsTrigger>
+            <TabsTrigger value='history' className='rounded-full whitespace-normal text-center'>
+              Historial de transferencias
+            </TabsTrigger>
+          </TabsList>
+          {tab === 'products' && (
+            <div className='flex min-w-0 flex-1 items-center justify-end gap-3'>
+              <Input
+                aria-label='Buscar producto, categoría, presentación o código'
+                placeholder='Buscar producto, categoría, presentación o código'
+                value={search}
+                onChange={event => {
+                  setSearch(event.target.value);
+                  setPage(1);
+                }}
+                className='h-10 min-w-0 flex-1 rounded-full sm:max-w-80'
+              />
+              <div className='shrink-0'>
+                <SelectElements
+                  value={pageSize}
+                  onChange={setPageSize}
+                  setPage={setPage}
+                  options={PAGE_SIZE_OPTIONS}
+                  label={PAGE_SIZE_LABEL}
                 />
-                <div className='shrink-0'>
-                  <SelectElements
-                    value={pageSize}
-                    onChange={setPageSize}
-                    setPage={setPage}
-                    options={PAGE_SIZE_OPTIONS}
-                    label={PAGE_SIZE_LABEL}
-                  />
-                </div>
               </div>
             </div>
+          )}
+        </div>
+        <TabsContent value='products'>
+          <section
+            aria-label='Productos disponibles para transferir'
+            className='flex flex-col gap-4'
+          >
             {loading ? (
               <p role='status' className='py-10 text-center text-muted-foreground'>
                 Cargando existencias…
@@ -347,7 +348,7 @@ function TransfersContent() {
                   <p className='col-span-full rounded-2xl border border-dashed py-12 text-center text-muted-foreground'>
                     {search
                       ? 'No hay coincidencias para esta búsqueda.'
-                      : 'Registra productos y presentaciones en Almacén para comenzar.'}
+                      : 'Registra productos y presentaciones en Bodega para comenzar.'}
                   </p>
                 ) : (
                   visibleItems.map((item, index) => (
@@ -380,7 +381,7 @@ function TransfersContent() {
                           </CardDescription>
                           <dl className='mt-auto grid grid-cols-2 gap-2 rounded-lg bg-muted/50 p-2 text-center'>
                             <div>
-                              <dt className='text-xs text-muted-foreground'>Almacén</dt>
+                              <dt className='text-xs text-muted-foreground'>Bodega</dt>
                               <dd className='text-base font-semibold tabular-nums'>{item.stock}</dd>
                             </div>
                             <div>
@@ -526,7 +527,7 @@ function TransfersContent() {
                   Historial de transferencias
                 </h2>
                 <p className='text-sm text-muted-foreground'>
-                  Últimos 100 movimientos de almacén a bar.
+                  Últimos 100 movimientos de bodega a bar.
                 </p>
               </div>
               <div className='shrink-0'>

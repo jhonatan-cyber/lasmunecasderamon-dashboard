@@ -4,6 +4,8 @@ vi.mock('@/lib/utils/env', () => ({
   env: { JWT_SECRET: 'test-secret', JWT_REFRESH_SECRET: 'test-refresh' }
 }));
 
+vi.mock('@/modules/asistencia', () => ({ registrarMarcaLogin: vi.fn() }));
+
 const jsonResponse = (body: unknown, init?: ResponseInit) => Response.json(body, init);
 
 describe('auth route contract', () => {

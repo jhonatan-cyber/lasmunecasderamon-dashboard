@@ -74,7 +74,7 @@ export default function PurchasesPage() {
               Compras
             </h1>
             <p className='text-sm sm:text-base text-gray-600'>
-              Ingresos de mercadería al almacén ({formatCurrencyCLP(totalPeriodo)} en el listado)
+              Ingresos de mercadería a la bodega ({formatCurrencyCLP(totalPeriodo)} en el listado)
             </p>
           </div>
           <div className='flex flex-col sm:flex-row gap-2 w-full sm:w-auto'>

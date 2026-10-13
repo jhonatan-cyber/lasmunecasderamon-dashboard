@@ -215,17 +215,29 @@ export async function obtenerVenta(id: string): Promise<VentaGetByIdResponse | n
     const venta = mapSaleFromDB(res[0]);
     if (!venta) return null;
 
-    const [detalles, usuarios, comisiones, propinas] = await Promise.all([
-      query<DetalleVentaWithProductRow[]>(
+    const [detalles, usuarios, comisiones, propinas, consumos] = await Promise.all([
+      query<
+        (DetalleVentaWithProductRow & {
+          acompanamiento: import('@/types/venta').VentaDetalle['acompanamiento'];
+          anfitriona_nombre: string | null;
+        })[]
+      >(
         `SELECT dv.id_detalle_venta as id, dv.venta_id, dv.producto_id, dv.presentacion_id, dv.precio, dv.comision, dv.cantidad, dv.sub_total,
                 dv.tipo_venta, dv.shot_anfitriona,
+                CASE WHEN dv.acompanamiento IS NOT NULL AND dv.acompanamiento <> 'null'::jsonb THEN
+                  dv.acompanamiento || jsonb_build_object('nombre', CONCAT_WS(' ', mp.nombre, mi.nombre), 'foto', COALESCE(mi.foto, mp.foto))
+                END AS acompanamiento,
+                COALESCE(hu.nick, hu.nombre) AS anfitriona_nombre,
                 p.nombre as producto_nombre, p.precio as producto_precio,
                 c.nombre as categoria_nombre, ip.nombre as presentacion_nombre,
-                p.foto as producto_foto
+                COALESCE(ip.foto, p.foto) as producto_foto
          FROM detalle_ventas dv
          LEFT JOIN productos p ON p.id_producto = dv.producto_id
          LEFT JOIN categorias c ON c.id_categoria = p.categoria_id
          LEFT JOIN inventario_presentaciones ip ON ip.id = dv.presentacion_id
+         LEFT JOIN usuarios hu ON hu.id_usuario = dv.hostess_id
+         LEFT JOIN inventario_presentaciones mi ON mi.id = dv.acompanamiento->>'presentacion_id'
+         LEFT JOIN productos mp ON mp.id_producto = mi.producto_id
          WHERE dv.venta_id = ?
          ORDER BY dv.id_detalle_venta ASC`,
         [id]
@@ -255,6 +267,16 @@ export async function obtenerVenta(id: string): Promise<VentaGetByIdResponse | n
          GROUP BY dp.usuario_id, u.nick, u.nombre, u.apellido, u.foto, r.nombre
          ORDER BY monto DESC`,
         [id]
+      ),
+      query<{ nombre: string; foto: string | null; unidades: number; ml: number }[]>(
+        `SELECT CONCAT_WS(' ', p.nombre, ip.nombre) AS nombre, COALESCE(ip.foto,p.foto) AS foto,
+          SUM(COALESCE(m.cantidad,0)) AS unidades, SUM(COALESCE(m.ml,0)) AS ml
+         FROM inventario_movimientos m
+         JOIN inventario_presentaciones ip ON ip.id = m.presentacion_id
+         JOIN productos p ON p.id_producto = ip.producto_id
+         WHERE m.venta_id = ? AND m.tipo = 'venta'
+         GROUP BY p.nombre, ip.nombre, ip.foto, p.foto ORDER BY p.nombre, ip.nombre`,
+        [id]
       )
     ]);
 
@@ -262,6 +284,11 @@ export async function obtenerVenta(id: string): Promise<VentaGetByIdResponse | n
 
     return {
       ...venta,
+      consumos_inventario: consumos.map(row => ({
+        ...row,
+        unidades: Number(row.unidades),
+        ml: Number(row.ml)
+      })),
       cajero_nick: res[0].cajero_nick,
       cajero_nombre: res[0].cajero_nombre,
       cajero_apellido: res[0].cajero_apellido,
@@ -290,6 +317,8 @@ export async function obtenerVenta(id: string): Promise<VentaGetByIdResponse | n
         venta_id: d.venta_id,
         producto_id: d.producto_id,
         presentacion_id: d.presentacion_id,
+        acompanamiento: d.acompanamiento,
+        anfitrionas: d.anfitriona_nombre ? [d.anfitriona_nombre] : [],
         tipo_venta: d.tipo_venta,
         shot_anfitriona: d.shot_anfitriona,
         precio: Number(d.precio || 0),

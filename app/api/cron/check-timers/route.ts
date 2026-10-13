@@ -17,7 +17,7 @@ const globalForCron = globalThis as typeof globalThis & { __attendanceCheckDate?
  */
 export const GET = withPublicRoute(async () => {
   // Control de envases: si cambió cuántos llevan más de 2 horas entregados sin
-  // recibir, avisa al almacén (SSE en vivo + campana + push) y si no, no hace
+  // recibir, avisa a la bodega (SSE en vivo + campana + push) y si no, no hace
   // ruido. Nunca lanza, así que no puede tumbar el resto del chequeo.
   await checkWarehouseContainerAlerts();
 

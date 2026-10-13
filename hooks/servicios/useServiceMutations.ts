@@ -4,7 +4,6 @@ import { useState, useEffect, useCallback, useRef } from 'react';
 import { ServicioWithDetails } from '@/types/servicio';
 import { toast } from 'sonner';
 import { useTimer } from '@/contexts/TimerContext';
-import { useAnfitrionas } from '@/hooks/personal';
 import logger from '@/lib/utils/logger';
 
 interface UseServiceMutationsProps {
@@ -59,78 +58,92 @@ export function useServiceMutations({
     resumeTimerByServicioId,
     getTemporaryTimerByServicioId
   } = useTimer();
-  const { anfitrionas, loading: loadingAnfitrionas } = useAnfitrionas();
+  const [loadingAnfitrionas, setLoadingAnfitrionas] = useState(false);
   const temporaryCreatedRef = useRef(false);
+  const savingRef = useRef(false);
+  const operationRef = useRef({ signature: '', key: '' });
 
   const [isSaving, setIsSaving] = useState(false);
   const [anfitrionasDisponibles, setAnfitrionasDisponibles] = useState<any[]>([]);
   const [anfitrionasDelServicio, setAnfitrionasDelServicio] = useState<string[]>([]);
 
-  const fetchAnfitrionasParaEdicion = useCallback(
-    async (servicioId: string | number) => {
-      try {
-        const disponiblesResponse = await fetch('/api/anfitrionas/disponibles');
-        const disponiblesData = await disponiblesResponse.json();
+  const fetchAnfitrionasParaEdicion = useCallback(async (servicioId: string | number) => {
+    setLoadingAnfitrionas(true);
+    setAnfitrionasDisponibles([]);
+    setAnfitrionasDelServicio([]);
+    try {
+      const disponiblesResponse = await fetch('/api/anfitrionas/disponibles');
+      const disponiblesData = await disponiblesResponse.json();
 
-        const servicioResponse = await fetch(`/api/servicios/${servicioId}`);
-        const servicioData = await servicioResponse.json();
+      const servicioResponse = await fetch(`/api/servicios/${servicioId}`);
+      const servicioData = await servicioResponse.json();
+      if (
+        !disponiblesResponse.ok ||
+        !disponiblesData.success ||
+        !servicioResponse.ok ||
+        !servicioData.success
+      ) {
+        throw new Error('No se pudieron cargar las anfitrionas del servicio');
+      }
 
-        let anfitrionasDelServicioArr: any[] = [];
-        let idsDelServicio: string[] = [];
+      let anfitrionasDelServicioArr: any[] = [];
+      let idsDelServicio: string[] = [];
 
-        if (servicioData.success && servicioData.data) {
-          const usuariosFromApi = Array.isArray(servicioData.data.usuarios)
-            ? servicioData.data.usuarios
-            : [];
+      if (servicioData.success && servicioData.data) {
+        const usuariosFromApi = Array.isArray(servicioData.data.usuarios)
+          ? servicioData.data.usuarios
+          : [];
 
-          if (usuariosFromApi.length > 0) {
-            anfitrionasDelServicioArr = usuariosFromApi;
-            idsDelServicio = usuariosFromApi
-              .map((user: any) => String(user.id_usuario ?? user.id ?? '').trim())
+        if (usuariosFromApi.length > 0) {
+          anfitrionasDelServicioArr = usuariosFromApi;
+          idsDelServicio = usuariosFromApi
+            .map((user: any) => String(user.id_usuario ?? user.id ?? '').trim())
+            .filter(Boolean);
+        } else {
+          const rawIds = servicioData.data.anfitrionas_ids;
+          if (Array.isArray(rawIds)) {
+            idsDelServicio = rawIds.map((id: any) => String(id).trim()).filter(Boolean);
+          } else if (typeof rawIds === 'string') {
+            idsDelServicio = rawIds
+              .split(',')
+              .map((id: string) => id.trim())
               .filter(Boolean);
-          } else {
-            const rawIds = servicioData.data.anfitrionas_ids;
-            if (Array.isArray(rawIds)) {
-              idsDelServicio = rawIds.map((id: any) => String(id).trim()).filter(Boolean);
-            } else if (typeof rawIds === 'string') {
-              idsDelServicio = rawIds
-                .split(',')
-                .map((id: string) => id.trim())
-                .filter(Boolean);
-            }
           }
         }
-
-        let todasLasAnfitrionas = [...(disponiblesData.data || [])];
-        anfitrionasDelServicioArr.forEach(anfitriona => {
-          const yaExiste = todasLasAnfitrionas.some(
-            a => (a.id_usuario || a.id) === anfitriona.id_usuario
-          );
-          if (!yaExiste) {
-            todasLasAnfitrionas.push({
-              id_usuario: anfitriona.id_usuario,
-              id: anfitriona.id_usuario,
-              nombre: anfitriona.nombre,
-              name: anfitriona.nombre,
-              apellido: anfitriona.apellido,
-              lastName: anfitriona.apellido,
-              nick: anfitriona.nick,
-              estado: 1
-            });
-          }
-        });
-
-        setAnfitrionasDisponibles(todasLasAnfitrionas);
-        setAnfitrionasDelServicio(idsDelServicio);
-        return idsDelServicio;
-      } catch (error) {
-        logger.captureException(error, { context: 'EditServiceForm:fetchAnfitrionas' });
-        setAnfitrionasDisponibles(anfitrionas);
-        return [];
       }
-    },
-    [anfitrionas]
-  );
+
+      let todasLasAnfitrionas = [...(disponiblesData.data || [])];
+      anfitrionasDelServicioArr.forEach(anfitriona => {
+        const anfitrionaId = String(anfitriona.id_usuario ?? anfitriona.id ?? '');
+        const yaExiste = todasLasAnfitrionas.some(
+          a => String(a.id_usuario ?? a.id ?? '') === anfitrionaId
+        );
+        if (!yaExiste) {
+          todasLasAnfitrionas.push({
+            id_usuario: anfitrionaId,
+            id: anfitrionaId,
+            nombre: anfitriona.nombre,
+            name: anfitriona.nombre,
+            apellido: anfitriona.apellido,
+            lastName: anfitriona.apellido,
+            nick: anfitriona.nick,
+            estado: 1
+          });
+        }
+      });
+
+      setAnfitrionasDisponibles(todasLasAnfitrionas);
+      setAnfitrionasDelServicio(idsDelServicio);
+      return idsDelServicio;
+    } catch (error) {
+      logger.captureException(error, { context: 'EditServiceForm:fetchAnfitrionas' });
+      setAnfitrionasDisponibles([]);
+      toast.error('No se pudieron cargar las anfitrionas disponibles');
+      return [];
+    } finally {
+      setLoadingAnfitrionas(false);
+    }
+  }, []);
 
   useEffect(() => {
     if (servicio && open) {
@@ -154,13 +167,13 @@ export function useServiceMutations({
     const wasOpen = prevOpenRef.current;
     prevOpenRef.current = open;
 
-    if (wasOpen === true && !open && onResumeMainTimer && servicioPrincipalId) {
+    if (wasOpen === true && !open && servicioPrincipalId) {
       if (temporaryCreatedRef.current) {
         temporaryCreatedRef.current = false;
         return;
       }
 
-      onResumeMainTimer();
+      onResumeMainTimer?.();
       const tempTimer = getTemporaryTimerByServicioId(servicioPrincipalId);
       if (!tempTimer) resumeTimerByServicioId(servicioPrincipalId);
     }
@@ -168,11 +181,12 @@ export function useServiceMutations({
   }, [open]);
 
   const handleClose = useCallback(() => {
+    if (savingRef.current && !temporaryCreatedRef.current) return;
     onOpenChange(false);
   }, [onOpenChange]);
 
   const handleSave = useCallback(async () => {
-    if (!servicio) return;
+    if (!servicio || savingRef.current) return;
     const servicioPrincipalId = String(servicio.id_servicio ?? servicio.id ?? '').trim();
     if (!servicioPrincipalId) {
       toast.error('No se pudo determinar el servicio principal');
@@ -195,6 +209,11 @@ export function useServiceMutations({
       return;
     }
 
+    savingRef.current = true;
+    const signature = JSON.stringify({ servicioPrincipalId, formData, pricing });
+    if (operationRef.current.signature !== signature) {
+      operationRef.current = { signature, key: crypto.randomUUID() };
+    }
     setIsSaving(true);
     try {
       if (formData.tiempo > 0 && servicio.habitacion_id) {
@@ -205,7 +224,10 @@ export function useServiceMutations({
 
         const servicioTemporalResponse = await fetch('/api/servicios/temporal', {
           method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
+          headers: {
+            'Content-Type': 'application/json',
+            'x-idempotency-key': operationRef.current.key
+          },
           body: JSON.stringify({
             servicio_original_id: servicioPrincipalId,
             cliente_id: servicio.cliente_id || null,
@@ -261,11 +283,6 @@ export function useServiceMutations({
           servicio.cliente_nombre || 'Sin registrar',
           async () => {
             try {
-              await fetch(`/api/servicios/${servicioTemporalResult.data.id_servicio}`, {
-                method: 'PATCH',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ estado: 0 })
-              });
               if (onTemporaryTimerComplete)
                 onTemporaryTimerComplete(datosTemporales.anfitrionas_nombres);
               toast.success('Servicio temporal finalizado - Nuevo servicio completado');
@@ -290,6 +307,7 @@ export function useServiceMutations({
       logger.captureException(error, { context: 'EditServiceForm:saveServicio' });
       toast.error('Error general al procesar la solicitud');
     } finally {
+      savingRef.current = false;
       setIsSaving(false);
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps

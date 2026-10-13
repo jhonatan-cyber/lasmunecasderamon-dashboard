@@ -64,7 +64,7 @@ export async function revertirStockPorAnulacion(
   };
 
   const fraccion = Math.min(1, Math.max(0, Number(entrada.fraccion ?? 1)));
-  if (!entrada.venta_id || fraccion <= 0) return resultado;
+  if ((!entrada.venta_id && !entrada.servicio_id) || fraccion <= 0) return resultado;
 
   const movimientos = await trx<MovimientoVenta[]>(
     `SELECT m.id, m.producto_id, m.presentacion_id, p.nombre, m.cantidad, m.ml,
@@ -75,10 +75,10 @@ export async function revertirStockPorAnulacion(
                        WHERE r.movimiento_origen = m.id), 0) AS ml_revertido
        FROM inventario_movimientos m
        INNER JOIN inventario_presentaciones p ON p.id = m.presentacion_id
-      WHERE m.tipo = 'venta' AND m.venta_id = ?
+      WHERE m.tipo = 'venta' AND m.${entrada.servicio_id ? 'servicio_id' : 'venta_id'} = ?
       ORDER BY m.fecha_crea ASC, m.id ASC
       FOR UPDATE OF m`,
-    [entrada.venta_id]
+    [entrada.servicio_id || entrada.venta_id]
   );
 
   if (movimientos.length === 0) return resultado;
@@ -131,7 +131,8 @@ export async function revertirStockPorAnulacion(
       precio_venta: movimiento.precio_venta,
       comision: movimiento.comision,
       usuario_id: entrada.usuario_id,
-      venta_id: entrada.venta_id,
+      venta_id: entrada.venta_id ?? null,
+      ...(entrada.servicio_id ? { servicio_id: entrada.servicio_id } : {}),
       movimiento_origen: movimiento.id,
       fecha_crea: entrada.fecha
     };

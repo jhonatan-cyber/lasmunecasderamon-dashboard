@@ -6,6 +6,7 @@ import { ConfirmModal } from '@/components/shared/ConfirmModal';
 import { PermissionGuard } from '@/components/auth/PermissionGuard';
 import dynamic from 'next/dynamic';
 import { useUserPermissions } from '@/hooks/auth/useUserPermissions';
+import { useCurrentUser } from '@/hooks/auth/useCurrentUser';
 import { useCashRegisterStatus } from '@/hooks/caja/useCashRegisterStatus';
 import { useOrdersList, Order, SolicitudServicio } from '@/hooks/orders/useOrdersList';
 import { useOrderDetail } from '@/hooks/orders/useOrderDetail';
@@ -34,6 +35,7 @@ export default function OrdersPage() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const { hasPermission } = useUserPermissions();
+  const { user } = useCurrentUser();
   const { hasOpenCaja, loading: cajaLoading } = useCashRegisterStatus();
 
   const {
@@ -81,7 +83,7 @@ export default function OrdersPage() {
   const [isDeletingServicio, setIsDeletingServicio] = useState(false);
 
   const canDelete = hasPermission('orders', 'delete');
-  const canProcess = hasPermission('orders', 'process');
+  const canProcess = user?.role?.toLowerCase() !== 'barman' && hasPermission('orders', 'process');
 
   const handleOrderClick = (id: string, code: string) => {
     if (!canProcess) {

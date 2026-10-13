@@ -6,21 +6,28 @@ import { useTimer } from '@/contexts/TimerContext';
 
 export const useServicioTimerSync = () => {
   const { servicios } = useServicios();
-  const { timers, pauseTimerByServicioId, resumeTimerByServicioId } = useTimer();
+  const { timers, pauseTimerByServicioId } = useTimer();
 
   useEffect(() => {
     if (!servicios) return;
 
     timers.forEach(timer => {
-      const servicio = servicios.find(s => String(s.id_servicio) === String(timer.servicioId));
+      const servicio = servicios.find(
+        s => String(s.id_servicio ?? s.id) === String(timer.servicioId)
+      );
 
       if (servicio) {
-        if (servicio.estado === 2 && !timer.isPaused) {
+        if (
+          servicio.estado === 3 &&
+          !timer.isPaused &&
+          !timer.isTemporary &&
+          timer.tipoTransaccion === 'servicio'
+        ) {
           pauseTimerByServicioId(timer.servicioId);
         }
       }
     });
-  }, [servicios, timers, pauseTimerByServicioId, resumeTimerByServicioId]);
+  }, [servicios, timers, pauseTimerByServicioId]);
 
   return null;
 };

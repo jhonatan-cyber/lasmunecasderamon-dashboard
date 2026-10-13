@@ -1,5 +1,6 @@
 'use client';
 
+import { matchesProductSearch } from '@/lib/utils/productSearch';
 import { useId, useMemo, useState } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
@@ -33,6 +34,8 @@ import { PURCHASE_BUTTON_CLASS } from './buttonStyles';
 import type { PurchaseRegistered } from '@/types/purchase';
 
 export interface PurchaseCatalogItem {
+  categoria_nombre?: string | null;
+  codigo_barras?: string | null;
   id: string;
   producto_id: string;
   producto_nombre: string;
@@ -86,9 +89,7 @@ export function PurchaseForm({ catalog }: Props) {
   const filteredCatalog = useMemo(() => {
     const term = search.trim().toLocaleLowerCase('es');
     if (!term) return catalog;
-    return catalog.filter(item =>
-      `${item.producto_nombre} ${item.nombre}`.toLocaleLowerCase('es').includes(term)
-    );
+    return catalog.filter(item => matchesProductSearch(item, term));
   }, [catalog, search]);
 
   const addItem = (item: PurchaseCatalogItem) => {
@@ -220,7 +221,7 @@ export function PurchaseForm({ catalog }: Props) {
         <div className='min-w-0'>
           <h1 className='text-2xl font-bold text-gray-900 sm:text-3xl'>Nueva compra</h1>
           <p className='mt-1 text-sm text-gray-600'>
-            Ingresa mercadería al almacén. Solo stock, no mueve caja.
+            Ingresa mercadería a la bodega. Solo stock, no mueve caja.
           </p>
         </div>
         <Button asChild variant='ghost' className={`${PURCHASE_BUTTON_CLASS} shrink-0`}>
@@ -263,7 +264,7 @@ export function PurchaseForm({ catalog }: Props) {
                 <div>
                   <h2 className='text-lg font-semibold'>Selecciona los productos</h2>
                   <p className='text-sm text-muted-foreground'>
-                    Elige las presentaciones que ingresarán al almacén.
+                    Elige las presentaciones que ingresarán a la bodega.
                   </p>
                 </div>
                 <Input

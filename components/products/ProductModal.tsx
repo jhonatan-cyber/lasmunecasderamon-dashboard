@@ -1,6 +1,7 @@
 'use client';
 
 /* eslint-disable */
+import { matchesProductSearch } from '@/lib/utils/productSearch';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -67,10 +68,11 @@ export default function SaleProductModal({
     if (!searchTerm) return productos || [];
 
     return (
-      productos?.filter(
-        p =>
-          (p.nombre || p.name || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
-          (p.codigo || p.code || '').toLowerCase().includes(searchTerm.toLowerCase())
+      productos?.filter(p =>
+        matchesProductSearch(
+          { ...p, categoria: p.categoria || categoria?.name || categoria?.nombre },
+          searchTerm
+        )
       ) || []
     );
   }, [productos, searchTerm]);

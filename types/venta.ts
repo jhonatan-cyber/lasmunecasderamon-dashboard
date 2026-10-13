@@ -16,6 +16,14 @@ export interface Venta {
 }
 
 export interface VentaDetalle {
+  acompanamiento?: {
+    presentacion_id: string;
+    unidades?: number;
+    ml_por_corto?: number;
+    nombre?: string;
+    foto?: string | null;
+  } | null;
+  anfitrionas?: string[];
   presentacion_id?: string | null;
   id?: string | number;
   venta_id: string | number;
@@ -45,6 +53,7 @@ export interface VentaUsuario {
 }
 
 export interface VentaWithDetails extends Venta {
+  consumos_inventario?: { nombre: string; foto?: string | null; unidades: number; ml: number }[];
   comisiones_detalle?: DistribucionVenta[];
   propinas_detalle?: DistribucionVenta[];
   detalles: VentaDetalle[];
@@ -71,6 +80,8 @@ export interface DistribucionVenta {
 }
 
 export interface VentaCreate {
+  servicio_id?: string;
+  servicio_anfitrionas?: string[];
   cliente_id?: string | number | null;
   pedido_id?: string | number | null;
   habitacion_id?: string | number;
@@ -84,6 +95,7 @@ export interface VentaCreate {
 }
 
 export interface VentaDetalleCreate {
+  acompanamiento_botella?: { presentacion_id: string; unidades: number };
   producto_id: string | number;
   presentacion_id?: string | null;
   precio: number;

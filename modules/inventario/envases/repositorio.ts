@@ -3,7 +3,7 @@
  * Infraestructura privada del módulo: nadie fuera de `modules/inventario`
  * importa este archivo (§5).
  *
- * Distingue el escaneo en el punto de venta del ingreso a almacén, y ambos
+ * Distingue el escaneo en el punto de venta del ingreso a bodega, y ambos
  * casos registran por qué la unidad ya no está activa. Mismo SQL, mismos
  * bloqueos `FOR UPDATE` y mismas validaciones que la capa heredada
  * (`EnvaseQueries`): este corte mueve código, no cambia reglas.
@@ -24,7 +24,11 @@ import { getBarMlConfig } from '../bar/configuracion';
 /** Horas que un envase puede estar entregado sin recibir antes de avisar. */
 export const HORAS_ENVASE_SIN_CONFIRMAR = 2;
 
-async function buscarEnvase(trx: TransactionQuery, escaneo: string): Promise<EnvaseFila | null> {
+async function buscarEnvase(
+  trx: TransactionQuery,
+  escaneo: string,
+  bloquear = true
+): Promise<EnvaseFila | null> {
   // Cada columna tiene un índice UNIQUE propio. Buscar por igualdad exacta
   // permite usarlo incluso con millones de unidades y evita el OR sobre ambas.
   // Prioriza el formato más probable para hacer una sola consulta en el caso normal.
@@ -33,7 +37,7 @@ async function buscarEnvase(trx: TransactionQuery, escaneo: string): Promise<Env
     : ['codigo', 'codigo_barras'];
   for (const campo of campos) {
     const filas = await trx<any[]>(
-      `SELECT u.id, u.codigo, u.codigo_barras, u.estado, u.ml_restante, u.ml_merma,
+      `SELECT u.id, u.producto_id, u.presentacion_id, u.codigo, u.codigo_barras, u.estado, u.ml_restante, u.ml_merma,
               u.ubicacion, u.fecha_devolucion, u.devuelto_por,
               u.fecha_confirmacion, u.confirmado_por, u.abierta_por_shots,
               p.nombre AS producto_nombre, pr.nombre AS presentacion_nombre, c.folio AS compra_folio
@@ -43,7 +47,7 @@ async function buscarEnvase(trx: TransactionQuery, escaneo: string): Promise<Env
          LEFT JOIN compras c ON c.id = u.compra_id
         WHERE u.${campo} = ?
         LIMIT 1
-        FOR UPDATE OF u`,
+        ${bloquear ? 'FOR UPDATE OF u' : ''}`,
       [escaneo]
     );
     if (filas[0]) return filas[0];
@@ -56,7 +60,7 @@ async function buscarEnvase(trx: TransactionQuery, escaneo: string): Promise<Env
  * (EAN-13 interno `codigo_barras` o SKU `LM-…` en `codigo`) y, si el envase
  * es nuestro, está vacío (`vendida`) y todavía no se entregó, lo marca con
  * `fecha_devolucion` + `devuelto_por` en el mismo paso (migración 032). Esta
- * es la mitad del bar del control bar → almacén; la recepción la confirma
+ * es la mitad del bar del control bar → bodega; la recepción la confirma
  * `confirmarRecepcionEnvase`.
  *
  * No crea movimientos de inventario: la botella ya salió con la venta; el
@@ -119,7 +123,14 @@ export async function verificarYMarcarEnvase(
     return null;
   };
 
-  const fila = await buscarEnvase(trx, escaneo);
+  // Bloquear la presentación antes de sus unidades, igual que las ventas por corto.
+  const inicial = await buscarEnvase(trx, escaneo, false);
+  if (inicial?.presentacion_id) {
+    await trx('SELECT id FROM inventario_presentaciones WHERE id = ? FOR UPDATE', [
+      inicial.presentacion_id
+    ]);
+  }
+  let fila = inicial ? await buscarEnvase(trx, escaneo) : null;
   if (!fila) {
     return {
       ok: false,
@@ -129,7 +140,79 @@ export async function verificarYMarcarEnvase(
     };
   }
 
-  const rechazo = clasificar(fila);
+  let rechazo = clasificar(fila);
+  if (
+    rechazo &&
+    !fila.fecha_devolucion &&
+    fila.estado === ESTADO_UNIDAD_ACTIVA &&
+    fila.ubicacion === 'bar' &&
+    fila.presentacion_id &&
+    fila.producto_id
+  ) {
+    const candidatos = await trx<EnvaseFila[]>(
+      `SELECT id, estado, ml_restante, ml_merma, abierta_por_shots
+         FROM inventario_unidades
+        WHERE producto_id = ? AND presentacion_id = ? AND id <> ?
+          AND ubicacion = 'bar' AND fecha_devolucion IS NULL
+          AND abierta_por_shots = true
+          AND (estado = ? OR (estado = ? AND ml_restante BETWEEN 0 AND ?))
+        ORDER BY fecha_crea ASC, codigo ASC LIMIT 1 FOR UPDATE`,
+      [
+        fila.producto_id,
+        fila.presentacion_id,
+        fila.id,
+        ESTADO_UNIDAD_VENDIDA,
+        ESTADO_UNIDAD_ACTIVA,
+        mermaShotsMl
+      ]
+    );
+    const consumida = candidatos[0];
+    if (consumida) {
+      // El código físico se conoce al devolver: intercambiar el consumo lógico,
+      // conservando códigos, compras y transferencias de cada envase físico.
+      await trx(
+        `UPDATE inventario_unidades SET estado = ?, ml_restante = ?, ml_merma = ?, abierta_por_shots = ? WHERE id = ?`,
+        [
+          fila.estado,
+          fila.ml_restante ?? 0,
+          fila.ml_merma ?? 0,
+          Boolean(fila.abierta_por_shots),
+          consumida.id
+        ]
+      );
+      await trx(
+        `UPDATE inventario_unidades SET estado = ?, ml_restante = ?, ml_merma = ?, abierta_por_shots = true WHERE id = ?`,
+        [consumida.estado, consumida.ml_restante ?? 0, consumida.ml_merma ?? 0, fila.id]
+      );
+      // Mover también los vínculos de consumo y reversión para que una anulación
+      // reponga los ml en la unidad correcta. DELETE/INSERT evita colisiones de PK.
+      const vinculos = await trx<
+        { movimiento_id: string; unidad_id: string; ml_consumido: number }[]
+      >(
+        'DELETE FROM inventario_movimiento_unidades WHERE unidad_id IN (?, ?) RETURNING movimiento_id, unidad_id, ml_consumido',
+        [fila.id, consumida.id]
+      );
+      if (vinculos.length) {
+        await trx(
+          `INSERT INTO inventario_movimiento_unidades (movimiento_id, unidad_id, ml_consumido) VALUES ${vinculos.map(() => '(?, ?, ?)').join(', ')}`,
+          vinculos.flatMap(vinculo => [
+            vinculo.movimiento_id,
+            vinculo.unidad_id === fila!.id ? consumida.id : fila!.id,
+            vinculo.ml_consumido
+          ])
+        );
+      }
+
+      fila = {
+        ...fila,
+        estado: consumida.estado,
+        ml_restante: consumida.ml_restante,
+        ml_merma: consumida.ml_merma,
+        abierta_por_shots: true
+      };
+      rechazo = clasificar(fila);
+    }
+  }
   if (rechazo) return rechazo;
 
   const ahora = getNowInBusinessTimezone();
@@ -158,13 +241,13 @@ export async function verificarYMarcarEnvase(
 }
 
 /**
- * Confirma la recepción en almacén de un envase que el bar ya entregó
+ * Confirma la recepción en bodega de un envase que el bar ya entregó
  * (`fecha_devolucion` marcada en 032) y que todavía no se confirmó (033).
  *
- * Es el segundo paso del control bar → almacén: el barman escanea el vacío al
- * entregarlo y el almacén escanea al recibirlo. Quien entrega no puede
+ * Es el segundo paso del control bar → bodega: el barman escanea el vacío al
+ * entregarlo y la bodega escanea al recibirlo. Quien entrega no puede
  * confirmar porque el permiso es distinto (`confirm_container_return`), y el
- * almacén no puede dar por recibido un envase que el bar nunca entregó.
+ * bodega no puede dar por recibido un envase que el bar nunca entregó.
  *
  * Como la entrega, no crea movimientos de inventario ni repone stock: solo
  * deja la marca de recepción. Corre en una transacción con `FOR UPDATE` para
@@ -201,7 +284,7 @@ export async function confirmarRecepcionEnvase(
     return {
       ok: false,
       motivo: 'ya_confirmado',
-      mensaje: `Este envase ya fue recibido en almacén el ${fechaDevolucionLegible(
+      mensaje: `Este envase ya fue recibido en bodega el ${fechaDevolucionLegible(
         fila.fecha_confirmacion
       )}.`,
       unidad: mapearEnvase(fila)
@@ -224,14 +307,14 @@ export async function confirmarRecepcionEnvase(
 
   return {
     ok: true,
-    mensaje: 'Recepción confirmada: el envase entregado por el bar quedó recibido en almacén.',
+    mensaje: 'Recepción confirmada: el envase entregado por el bar quedó recibido en bodega.',
     unidad: { ...mapearEnvase(fila), fecha_confirmacion: ahora }
   };
 }
 
 /**
  * Historial de envases entregados por el bar, lo más reciente primero, con la
- * entrega y la recepción en almacén de cada uno. Lectura: va por el pool.
+ * entrega y la recepción en bodega de cada uno. Lectura: va por el pool.
  */
 export async function listarDevoluciones(
   limite: number = 100
@@ -269,7 +352,7 @@ export async function listarDevoluciones(
 }
 
 /**
- * Contadores del control de envases: los consumen la alerta del almacén y el
+ * Contadores del control de envases: los consumen la alerta de la bodega y el
  * panel de devoluciones.
  *
  * `fecha_devolucion` es naive y la escribe la aplicación con la hora del

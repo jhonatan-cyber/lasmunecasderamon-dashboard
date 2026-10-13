@@ -8,6 +8,7 @@ import { useTimer, useCountdown } from '@/contexts/TimerContext';
 import { toast } from 'sonner';
 import { useServicioAnfitrionas } from '@/contexts/ServicioAnfitrionasContext';
 import { useCurrentUser } from '@/hooks/auth/useCurrentUser';
+import { ServicioAssignmentActions } from './ServicioAssignmentActions';
 import EditServiceModal from './EditServiceModal';
 import { buildServicioCardDisplayData } from './servicioCardUtils';
 import {
@@ -58,7 +59,7 @@ export default function ServicioCard({
 
   const globalTimer = getTimerByServicioId(effectiveTimerId);
   const temporaryTimer = getTemporaryTimerByServicioId(effectiveTimerId);
-  const displayTimer = temporaryTimer || globalTimer;
+  const displayTimer = servicio.es_temporal ? temporaryTimer : globalTimer;
   const isTemporaryActive = !!temporaryTimer;
   const shouldHideCard = !servicio.es_temporal && isTemporaryActive;
 
@@ -164,22 +165,9 @@ export default function ServicioCard({
 
     setStopping(true);
     try {
-      const response = await fetch(`/api/servicios/${servicioIdStr}`, {
-        method: 'PATCH',
-        headers: {
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify({ estado: 1 })
-      });
-
-      if (response.ok) {
-        stopTimerByServicioId(servicioIdStr);
-        if (onStopTimer && rawId != null) onStopTimer(rawId);
-        toast.success('Servicio finalizado exitosamente');
-        setShowConfirm(false);
-      } else {
-        toast.error('Error al finalizar el servicio');
-      }
+      await stopTimerByServicioId(servicioIdStr);
+      if (onStopTimer && rawId != null) onStopTimer(rawId);
+      setShowConfirm(false);
     } catch {
       toast.error('Error al finalizar el servicio');
     } finally {
@@ -210,7 +198,11 @@ export default function ServicioCard({
   );
 
   const showEditButton =
-    Number(servicio.habitacion_comision || 0) > 0 && !isEditing && servicio.estado !== 1;
+    Number(servicio.habitacion_comision || 0) > 0 &&
+    !servicio.es_temporal &&
+    !servicio.servicio_original_id &&
+    !isEditing &&
+    [2, 3].includes(Number(servicio.estado));
   const canStop =
     isAdminOrCajero && !!displayTimer && displayTimer.isActive && !showAllServices && !isEditing;
 
@@ -220,17 +212,15 @@ export default function ServicioCard({
 
   return (
     <Card
-      className={`relative w-full cursor-pointer overflow-hidden border border-zinc-200/70 bg-white shadow-xs transition-all duration-300 hover:-translate-y-0.5 hover:shadow-lg dark:border-zinc-800/70 dark:bg-zinc-950/95 dark:shadow-black/20 ${showAllServices ? 'hover:cursor-pointer' : ''} ${isCriticalTime ? 'animate-pulse-red border-red-500/80 shadow-red-100/30 dark:border-red-900/70 dark:shadow-red-950/20' : isLowTime ? 'animate-pulse-yellow border-amber-400/80 shadow-amber-100/30 dark:border-amber-900/70 dark:shadow-amber-950/10' : 'hover:border-zinc-300 dark:hover:border-zinc-700'} ${isLowTime && !isCriticalTime ? 'bg-amber-50/40 dark:bg-amber-950/10' : ''} ${isCriticalTime ? 'bg-red-50/40 dark:bg-red-950/15' : ''}`}
+      className={`relative flex h-full w-full flex-col rounded-2xl overflow-hidden border border-zinc-200/70 bg-white shadow-xs transition-all duration-300 hover:shadow-md dark:border-zinc-800/70 dark:bg-zinc-950/95 dark:shadow-black/20 ${showAllServices ? 'cursor-pointer' : ''} ${isCriticalTime ? 'animate-pulse-red border-red-500/80 shadow-red-100/30 dark:border-red-900/70 dark:shadow-red-950/20' : isLowTime ? 'animate-pulse-yellow border-amber-400/80 shadow-amber-100/30 dark:border-amber-900/70 dark:shadow-amber-950/10' : 'hover:border-zinc-300 dark:hover:border-zinc-700'} ${isLowTime && !isCriticalTime ? 'bg-amber-50/40 dark:bg-amber-950/10' : ''} ${isCriticalTime ? 'bg-red-50/40 dark:bg-red-950/15' : ''}`}
       onClick={handleCardClick}
     >
-      <div className='relative space-y-3.5 p-4 md:p-5'>
+      <div className='relative flex flex-1 flex-col gap-3 p-4'>
         <ServicioCardHeader
           habitacionNumero={servicio.habitacion_numero}
           codigo={servicio.codigo}
           estado={servicio.estado ?? 1}
           isTemporaryActive={isTemporaryActive}
-          onEditClick={() => setShowEditModal(true)}
-          showEditButton={showEditButton}
         />
 
         <ServicioCardTimerSection
@@ -277,14 +267,29 @@ export default function ServicioCard({
           fechaCreacion={servicio.fecha_crea || ''}
         />
 
-        <ServicioCardActions
-          isEditing={isEditing}
-          isSaving={isSaving}
-          onCancelEdit={() => setIsEditing(false)}
-          onSaveEdit={handleSaveEdit}
-          canStop={canStop}
-          onStopTimer={handleStopTimer}
-        />
+        {servicio.producto_incluido_nombre && (
+          <p className='break-words text-xs leading-relaxed text-muted-foreground'>
+            <span className='font-medium text-foreground'>Producto incluido:</span>{' '}
+            {servicio.producto_incluido_nombre} · 1 unidad
+          </p>
+        )}
+        <div
+          className='mt-auto flex flex-wrap items-center gap-2'
+          onClick={event => event.stopPropagation()}
+        >
+          {isAdminOrCajero && <ServicioAssignmentActions servicio={servicio} onUpdate={onUpdate} />}
+
+          <ServicioCardActions
+            isEditing={isEditing}
+            isSaving={isSaving}
+            onCancelEdit={() => setIsEditing(false)}
+            onSaveEdit={handleSaveEdit}
+            canStop={canStop}
+            onStopTimer={handleStopTimer}
+            showEditButton={showEditButton}
+            onEditClick={() => setShowEditModal(true)}
+          />
+        </div>
       </div>
 
       <EditServiceModal
@@ -314,14 +319,14 @@ export default function ServicioCard({
             <div className='p-6 border-t shrink-0'>
               <div className='flex gap-3'>
                 <button
-                  className='flex-1 rounded-md border px-4 py-2 text-sm'
+                  className='flex-1 rounded-full border px-4 py-2 text-sm'
                   onClick={() => setShowConfirm(false)}
                   disabled={stopping}
                 >
                   Cancelar
                 </button>
                 <button
-                  className='flex-1 rounded-md bg-red-600 px-4 py-2 text-sm text-white'
+                  className='flex-1 rounded-full bg-red-600 px-4 py-2 text-sm text-white'
                   onClick={confirmStopTimer}
                   disabled={stopping}
                 >

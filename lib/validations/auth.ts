@@ -13,7 +13,8 @@ export const registerSchema = z.object({
 });
 
 export const resetPasswordSchema = z.object({
-  run: z.string().trim().min(4, 'El RUT es obligatorio')
+  run: z.string().trim().min(4, 'El RUT es obligatorio').max(24),
+  modo: z.enum(['whatsapp', 'usuarios']).default('whatsapp')
 });
 
 export const changePasswordSchema = z

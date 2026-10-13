@@ -32,6 +32,8 @@ export interface ForSaleItem {
 }
 
 export interface CartSaleItem {
+  producto_nombre?: string;
+  presentacion_nombre?: string;
   id: string;
   producto_id: string;
   presentacion_id: string;
@@ -69,6 +71,8 @@ export function mapForSaleToCartItem(item: ForSaleItem): CartSaleItem {
   const precio = Number(item.precio_venta ?? 0);
   const comision = isSimpleProduct(precio) ? 0 : Number(item.comision ?? 0);
   return {
+    producto_nombre: item.producto_nombre,
+    presentacion_nombre: item.presentacion_nombre,
     id: String(item.presentacion_id),
     producto_id: String(item.producto_id),
     presentacion_id: String(item.presentacion_id),

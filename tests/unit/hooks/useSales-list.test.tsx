@@ -65,4 +65,63 @@ describe('carga de ventas con filtros', () => {
     unmount();
     expect(signal.aborted).toBe(true);
   });
+
+  it('no muestra CancelledError al cancelar una consulta y permite volver a cargar', async () => {
+    const request = vi
+      .fn()
+      .mockImplementationOnce(() => new Promise(() => {}))
+      .mockResolvedValue({
+        ok: true,
+        json: async () => ({ data: [{ id: 'v1', estado: 'activa' }] })
+      });
+    vi.stubGlobal('fetch', request);
+    const { result } = renderHook(useSales, { wrapper: wrapper() });
+    let pending: Promise<void>;
+    act(() => {
+      pending = result.current.getVentas();
+    });
+    await act(async () => {
+      await clients[clients.length - 1].cancelQueries({ queryKey: ['/api/sales?limit=1000'] });
+      await pending!;
+    });
+    expect(result.current.error).toBeNull();
+    await act(async () => {
+      await result.current.getVentas();
+    });
+    expect(result.current.error).toBeNull();
+    expect(result.current.ventas).toEqual([{ id: 'v1', estado: 'activa' }]);
+  });
+
+  it('un fallo de filtros anteriores no reemplaza el resultado del filtro nuevo', async () => {
+    let rejectPrevious: (error: Error) => void;
+    vi.stubGlobal(
+      'fetch',
+      vi
+        .fn()
+        .mockImplementationOnce(
+          () =>
+            new Promise((_resolve, reject) => {
+              rejectPrevious = reject;
+            })
+        )
+        .mockResolvedValue({
+          ok: true,
+          json: async () => ({ data: [{ id: 'v2', estado: 'activa' }] })
+        })
+    );
+    const { result } = renderHook(useSales, { wrapper: wrapper() });
+    let pending: Promise<void>;
+    act(() => {
+      pending = result.current.getVentas({ metodo_pago: 'efectivo' });
+    });
+    await act(async () => {
+      await result.current.getVentas({ metodo_pago: 'tarjeta' });
+    });
+    await act(async () => {
+      rejectPrevious!(new Error('Solicitud anterior fallida'));
+      await pending!;
+    });
+    expect(result.current.error).toBeNull();
+    expect(result.current.ventas).toEqual([{ id: 'v2', estado: 'activa' }]);
+  });
 });

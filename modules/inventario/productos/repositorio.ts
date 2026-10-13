@@ -45,6 +45,7 @@ function normalizeSearchText(value: string | null | undefined): string {
 
 function mapProductFromDB(row: any): ProductType & {
   categoria?: string;
+  search_text?: string;
   nombre?: string;
   precio?: number;
   comision?: number;
@@ -70,6 +71,7 @@ function mapProductFromDB(row: any): ProductType & {
       updated_at: row.fecha_mod
     }),
     categoria: row.categoria,
+    search_text: row.search_text,
     nombre: row.nombre,
     precio: row.precio,
     comision: row.comision,
@@ -85,7 +87,8 @@ export async function listarProductos(categoryId?: string): Promise<ProductType[
     params.push(categoryId);
   }
   const sql = `
-      SELECT P.*, C.nombre AS categoria
+      SELECT P.*, C.nombre AS categoria,
+        (SELECT string_agg(concat_ws(' ', ip.nombre, ip.codigo_barras), ' ') FROM inventario_presentaciones ip WHERE ip.producto_id = P.id_producto) AS search_text
       FROM productos P
       INNER JOIN categorias C ON C.id_categoria = P.categoria_id
       ${where}
@@ -234,11 +237,19 @@ export async function buscarProductos(term: string): Promise<ProductType[]> {
       WHERE (LOWER(p.nombre) LIKE LOWER(?)
          OR LOWER(p.codigo) LIKE LOWER(?)
          OR LOWER(p.descripcion) LIKE LOWER(?)
-         OR LOWER(c.nombre) LIKE LOWER(?))
+         OR LOWER(c.nombre) LIKE LOWER(?)
+         OR EXISTS (SELECT 1 FROM inventario_presentaciones ip WHERE ip.producto_id = p.id_producto AND (LOWER(ip.nombre) LIKE LOWER(?) OR LOWER(ip.codigo_barras) LIKE LOWER(?))))
          AND p.estado = 1
       ORDER BY p.nombre ASC
     `,
-    [termWithWildcards, termWithWildcards, termWithWildcards, termWithWildcards]
+    [
+      termWithWildcards,
+      termWithWildcards,
+      termWithWildcards,
+      termWithWildcards,
+      termWithWildcards,
+      termWithWildcards
+    ]
   );
 
   if (results.length > 0 && searchTerm === normalizedTerm) {
@@ -253,7 +264,8 @@ export async function buscarProductos(term: string): Promise<ProductType[]> {
       product.name,
       product.code,
       product.description,
-      (product as any).categoria
+      (product as any).categoria,
+      (product as any).search_text
     ]
       .map(value => normalizeSearchText(value))
       .join(' ');

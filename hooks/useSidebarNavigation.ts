@@ -8,6 +8,7 @@ import {
   ShoppingBag,
   ShoppingCart,
   Package,
+  SprayCan,
   Settings,
   Home,
   FileText,
@@ -33,6 +34,7 @@ import {
 import { useCurrentUser } from '@/hooks/auth/useCurrentUser';
 import { useUserPermissions } from '@/hooks/auth/useUserPermissions';
 import { BARMAN_ROUTE_ALLOWLIST, findSidebarPermission } from '@/lib/constants/route-permissions';
+import { accesoLimpieza } from '@/lib/business/limpieza';
 
 type SidebarItem = {
   name: string;
@@ -113,10 +115,11 @@ const SIDEBAR_SECTIONS: SidebarSection[] = [
         icon: UserCheck
       },
       {
-        name: 'Almacén',
+        name: 'Bodega',
         href: '/products',
         icon: Package
       },
+      { name: 'Insumos de limpieza', href: '/cleaning', icon: SprayCan },
       {
         name: 'Envases devueltos',
         href: '/products/containers',
@@ -263,13 +266,14 @@ export function useSidebarNavigation(
   const hasModulePermission = useCallback(
     (item: SidebarItem) => {
       if (isBarman && !BARMAN_ROUTE_ALLOWLIST.includes(item.href)) return false;
+      if (item.href === '/cleaning') return accesoLimpieza(user?.role || '').ubicaciones.length > 0;
       if (isAdmin) return true;
       if (!permissions.length) return false;
       const permission = findSidebarPermission(item.href);
       if (!permission) return false;
       return hasPermission(permission.module, permission.action);
     },
-    [hasPermission, isAdmin, isBarman, permissions.length]
+    [hasPermission, isAdmin, isBarman, permissions.length, user?.role]
   );
 
   const normalizedSearch = (options?.searchTerm || '').toLowerCase().trim();

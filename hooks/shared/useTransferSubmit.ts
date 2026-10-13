@@ -52,6 +52,7 @@ export function useTransferSubmit({
         if (option.tipo === 'botella' && option.acompanamiento)
           reutilizada.acompanamiento = { ...option.acompanamiento };
         if (option.tipo === 'shot' && reutilizada.precio > 0) {
+          reutilizada.ml_acompanamiento_anfitriona = option.ml_acompanamiento_anfitriona;
           reutilizada.precio_anfitriona = Number(option.precio_anfitriona ?? reutilizada.precio);
           reutilizada.precios_anfitriona = preciosCortoAnfitriona(option);
           reutilizada.comision = 0;
@@ -75,7 +76,6 @@ export function useTransferSubmit({
             ...(form.acompanamientoBotella !== 'ninguno'
               ? {
                   acompanamiento: {
-                    tipo: form.acompanamientoBotella,
                     unidades: Number(form.unidadesAcompanamiento)
                   }
                 }
@@ -84,6 +84,10 @@ export function useTransferSubmit({
         const option: SaleOption = {
           tipo,
           precio: pvShot,
+          ml_acompanamiento_anfitriona:
+            form.mlAcompanamientoAnfitriona === ''
+              ? undefined
+              : Number(form.mlAcompanamientoAnfitriona),
           comision: 0,
           precios_anfitriona: [
             { precio: pvShotAnfitriona, comision: Number(form.comisionShot.replace(/\./g, '')) },
@@ -105,7 +109,7 @@ export function useTransferSubmit({
           acompanamiento.unidades < 1 ||
           acompanamiento.unidades > 1000)
       ) {
-        toast.error('Indica entre 1 y 1000 unidades de acompañamiento por botella');
+        toast.error('Indica entre 1 y 1000 unidades de bebida por botella');
         return;
       }
       const anfitrionaRows =
@@ -154,9 +158,35 @@ export function useTransferSubmit({
         ? { ...option, comision: 0 }
         : option
     );
+    const hasBottle = options.some(option => option.tipo === 'botella');
+    const maxText = form.maxAnfitrionas.trim();
+    const bottleCommission = Number(
+      options.find(option => option.tipo === 'botella')?.comision ?? 0
+    );
+    const maxHostesses = bottleCommission > 0 ? (maxText === '' ? 1 : Number(maxText)) : 0;
+    if (
+      hasBottle &&
+      bottleCommission > 0 &&
+      (!Number.isInteger(maxHostesses) || maxHostesses < 1 || maxHostesses > 20)
+    ) {
+      toast.error('El máximo de anfitrionas debe ser un entero entre 1 y 20');
+      return;
+    }
     submitting.current = true;
     setSaving(true);
     try {
+      if (hasBottle && maxHostesses !== (item.max_anfitrionas ?? null)) {
+        const response = await fetch(`/api/products/${encodeURIComponent(item.producto_id)}`, {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ max_anfitrionas: maxHostesses })
+        });
+        const result = await response.json().catch(() => ({}));
+        if (!response.ok || !result.success) {
+          toast.error(result.message || 'No se pudo guardar el máximo de anfitrionas');
+          return;
+        }
+      }
       // Ml por shot: se guardan en el producto si cambiaron, solo con el shot activo
       // (vacío anfitriona = igual que cliente; vacío cliente = valor global).
       const mlNuevo = form.mlShotCliente.replace(/\D/g, '');
@@ -197,7 +227,7 @@ export function useTransferSubmit({
         }
       }
       // Solo se reescribe la tabla de anfitrionas si el usuario editó precios manualmente.
-      if (form.esChampagneItem && form.tiers.length > 0 && !form.usarConfigGuardada) {
+      if (hasBottle && bottleCommission > 0 && maxHostesses >= 2 && form.tiers.length > 0) {
         const tiersRes = await fetch(`/api/products/${item.producto_id}/tiers`, {
           method: 'PUT',
           headers: { 'Content-Type': 'application/json' },
@@ -227,15 +257,15 @@ export function useTransferSubmit({
       });
       const data = await res.json().catch(() => ({}));
       if (!res.ok || !data.success) {
-        toast.error(data.message || 'No se pudo traspasar');
+        toast.error(data.message || 'No se pudo transferir');
         return;
       }
-      toast.success(data.message || 'Traspaso realizado');
+      toast.success(data.message || 'Transferencia realizada');
       form.reset();
       onOpenChange(false);
       onDone();
     } catch {
-      toast.error('Error de red al traspasar');
+      toast.error('Error de red al transferir');
     } finally {
       submitting.current = false;
       setSaving(false);

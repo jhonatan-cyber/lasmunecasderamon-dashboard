@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useState, useMemo } from 'react';
+import { dragModifiers } from '@/components/shared/dragBounds';
 import { Room } from '@/types/room';
 import { MoreVertical, Edit, Trash2, Check, Power, Bed, GripVertical } from 'lucide-react';
 import { TooltipProvider, Tooltip, TooltipTrigger, TooltipContent } from '@/components/ui/tooltip';
@@ -301,11 +302,13 @@ const RoomTable: React.FC<RoomTableProps> = ({
   );
 
   const handleDragEnd = (event: DragEndEvent) => {
+    if (!canEdit || isMutating || !onReorder) return;
     const { active, over } = event;
 
     if (over && active.id !== over.id) {
       const oldIndex = localRooms.findIndex(r => r.id === active.id);
       const newIndex = localRooms.findIndex(r => r.id === over.id);
+      if (oldIndex < 0 || newIndex < 0) return;
 
       const newRooms = arrayMove(localRooms, oldIndex, newIndex);
       setLocalRooms(newRooms);
@@ -322,6 +325,8 @@ const RoomTable: React.FC<RoomTableProps> = ({
         <div className='bg-white dark:bg-slate-900/40 backdrop-blur-xs rounded-3xl border-none shadow-md overflow-hidden'>
           <div className='overflow-x-auto'>
             <DndContext
+              modifiers={dragModifiers}
+              autoScroll={false}
               sensors={sensors}
               collisionDetection={closestCenter}
               onDragEnd={handleDragEnd}

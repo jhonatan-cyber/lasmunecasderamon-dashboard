@@ -4,7 +4,7 @@
  *
  * Venía de `lib/repositories/PurchaseRepository.ts` y `lib/services/PurchaseService.ts`,
  * los últimos reductos de la compra en la capa heredada. La compra es,inventario:
- * genera las unidades que ingresan al almacén y fija el último costo de cada
+ * genera las unidades que ingresan a la bodega y fija el último costo de cada
  * presentación, así que su escritura ahora es del módulo de punta a punta y no
  * necesita el puente de transacción heredada.
  *

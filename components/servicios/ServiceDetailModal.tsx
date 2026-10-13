@@ -95,6 +95,12 @@ export function ServiceDetailModal({ open, onOpenChange, servicio }: ServiceDeta
 
         {}
         <div className='flex-1 overflow-y-auto px-6 py-4 space-y-6'>
+          {servicio.producto_incluido_nombre && (
+            <div className='rounded-xl border p-4 text-sm'>
+              <p className='font-semibold'>Producto incluido</p>
+              <p>{servicio.producto_incluido_nombre} · 1 unidad</p>
+            </div>
+          )}
           {}
           <div className='flex items-center justify-between'>
             <span className='text-sm font-medium text-gray-500'>Estado</span>

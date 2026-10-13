@@ -27,6 +27,8 @@ interface HostessSelectProps {
   maxSelection?: number;
   disabled?: boolean;
   disabledReason?: string;
+  allowedOccupiedIds?: string[];
+  showAvailability?: boolean;
 }
 
 const HostessSelect: React.FC<HostessSelectProps> = ({
@@ -40,24 +42,33 @@ const HostessSelect: React.FC<HostessSelectProps> = ({
   required = false,
   maxSelection = 5,
   disabled = false,
-  disabledReason
+  disabledReason,
+  allowedOccupiedIds = [],
+  showAvailability = false
 }) => {
   const normalizedHostesses = useMemo(() => {
     if (!Array.isArray(anfitrionas)) return [];
 
-    return anfitrionas.map(a => {
-      const id = String(a.id_usuario ?? a.id ?? '');
-      const nombre = a.nombre || a.name || '';
-      const apellido = a.apellido || a.lastName || '';
-      const labelText = a.nick || `${nombre} ${apellido}`.trim() || 'Sin nombre';
+    return anfitrionas
+      .map(a => {
+        const id = String(a.id_usuario ?? a.id ?? '');
+        const nombre = a.nombre || a.name || '';
+        const apellido = a.apellido || a.lastName || '';
+        const labelText = a.nick || `${nombre} ${apellido}`.trim() || 'Sin nombre';
 
-      return {
-        id,
-        label: labelText,
-        disabled: Number(a.estado_servicio) === 1
-      };
-    }).filter(item => item.id !== '');
-  }, [anfitrionas]);
+        return {
+          id,
+          label: labelText,
+          extraLabel: showAvailability
+            ? allowedOccupiedIds.includes(id)
+              ? 'En este servicio'
+              : 'Libre'
+            : undefined,
+          disabled: Number(a.estado_servicio) === 1 && !allowedOccupiedIds.includes(id)
+        };
+      })
+      .filter(item => item.id !== '' && (!showAvailability || !item.disabled));
+  }, [anfitrionas, allowedOccupiedIds, showAvailability]);
 
   return (
     <MultiEntitySelect

@@ -192,10 +192,17 @@ export const getAssignedHostessIds = (sources: {
 };
 
 export const computeOrderHostessLimit = (items: any[]) => {
-  const champagneProducts = items.filter(isChampagneProduct);
+  const champagneProducts = items.filter(
+    p =>
+      p.tipo_venta !== 'shot' &&
+      isChampagneProduct(p) &&
+      (Number(p.genera_comision) === 1 || Number(p.generaComision) === 1 || Number(p.comision) > 0)
+  );
   const otherCommissionProducts = items.filter(
     p =>
-      !isChampagneProduct(p) && (Number(p.genera_comision) === 1 || Number(p.generaComision) === 1)
+      (p.tipo_venta === 'shot' || !isChampagneProduct(p)) &&
+      !(p.tipo_venta === 'shot' && !p.shot_anfitriona) &&
+      (Number(p.genera_comision) === 1 || Number(p.generaComision) === 1 || Number(p.comision) > 0)
   );
 
   const otherCommissionQuantity = otherCommissionProducts.reduce(
@@ -208,10 +215,7 @@ export const computeOrderHostessLimit = (items: any[]) => {
 
   if (champagneProducts.length > 0) {
     maxChampagnePrice = Math.max(...champagneProducts.map(p => Number(p.precio || p.price || 0)));
-    const maxChampagneProduct = champagneProducts.find(
-      p => Number(p.precio || p.price || 0) === maxChampagnePrice
-    );
-    champagneLimit = getHostessLimit(maxChampagneProduct || champagneProducts[0]);
+    champagneLimit = champagneProducts.reduce((sum, product) => sum + getHostessLimit(product), 0);
   }
 
   const maxAnfitrionas =

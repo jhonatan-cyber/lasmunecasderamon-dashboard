@@ -73,7 +73,7 @@ export function useTimerActions({ onNotificationExpira, onRefreshCaja }: TimerAc
       );
 
       activeTimers.value = [...activeTimers.peek(), newT];
-      updateRoomStatus(roomId, 2);
+      if (tipoTransaccion !== 'venta') updateRoomStatus(roomId, 2);
       toast.success(`Temporizador iniciado para ${roomName}`);
     },
     []
@@ -90,32 +90,41 @@ export function useTimerActions({ onNotificationExpira, onRefreshCaja }: TimerAc
         ? (timer as TimerInstance).tipoTransaccion.peek()
         : (timer as any).tipoTransaccion;
 
-      activeTimers.value = activeTimers.peek().filter(t => t.id !== timerId);
-
       const othersInRoom = activeTimers
         .peek()
         .filter(t => t.roomId.peek() === tRoomId && t.id !== timerId && t.isActive.peek());
       const updates = [];
 
       if (tTipo === 'servicio') {
-        updates.push(updateServiceStatus(timer.servicioId, 1));
+        updates.push(
+          fetch(`/api/servicios/${timer.servicioId}`, {
+            method: 'PATCH',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ estado: 1 })
+          }).then(response => {
+            if (!response.ok) throw new Error('No se pudo finalizar el servicio');
+          })
+        );
       } else if (tTipo === 'venta') {
         updates.push(
           fetch(`/api/sales/${timer.servicioId}`, {
             method: 'PATCH',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ action: 'stop' })
+          }).then(response => {
+            if (!response.ok) throw new Error('No se pudo finalizar la venta');
           })
         );
       } else if (tTipo === 'cuenta') {
         updates.push(fetch(`/api/cuentas/${timer.servicioId}/stop`, { method: 'PATCH' }));
       }
 
-      if (othersInRoom.length === 0) {
+      if (othersInRoom.length === 0 && tTipo !== 'servicio' && tTipo !== 'venta') {
         updates.push(updateRoomStatus(tRoomId, 1));
       }
 
       await Promise.all(updates);
+      activeTimers.value = activeTimers.peek().filter(t => t.id !== timerId);
 
       setTimeout(() => {
         if (onRefreshCaja) onRefreshCaja(timer.servicioId);
@@ -125,7 +134,7 @@ export function useTimerActions({ onNotificationExpira, onRefreshCaja }: TimerAc
       const tRoomName = isInstance
         ? (timer as TimerInstance).roomName.peek()
         : (timer as any).roomName;
-      if (isManualStop) toast.success(`Habitación ${tRoomName} liberada`);
+      if (isManualStop) toast.success(`Temporizador de ${tRoomName} finalizado`);
     },
     [onRefreshCaja]
   );
@@ -159,7 +168,15 @@ export function useTimerActions({ onNotificationExpira, onRefreshCaja }: TimerAc
       anfitrionas?: string
     ) => {
       const current = activeTimers.peek();
-      if (current.some(t => t.servicioId === servicioId && t.isTemporary)) return;
+      if (
+        current.some(
+          t =>
+            t.isTemporary &&
+            String(t.datosTemporales.peek()?.servicio_original_id ?? t.servicioId) ===
+              String(servicioId)
+        )
+      )
+        return;
 
       const normalizedServicioId = String(servicioId);
       const normalizedRoomId = String(roomId);
@@ -178,13 +195,13 @@ export function useTimerActions({ onNotificationExpira, onRefreshCaja }: TimerAc
       const temporaryTimer = new TimerInstance(
         {
           id: `temp_timer_${servicioId}_${Date.now()}`,
-          servicioId,
+          servicioId: String(datosTemporales?.servicio_temporal_id || servicioId),
           roomId,
           roomName,
           duration,
           isActive: true,
           isPaused: false,
-          startTime: new Date(),
+          startTime: new Date(Date.now() + serverOffsetSignal.peek()),
           servicioCode: `${servicioCode}-TEMP`,
           clienteNombre,
           isTemporary: true,

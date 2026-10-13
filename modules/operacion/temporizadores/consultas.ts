@@ -20,6 +20,7 @@ export class TimerRepository {
                s.habitacion_id AS "roomId", 'servicio' AS "tipoTransaccion",
                s.es_temporal, s.servicio_original_id,
                h.comision_anfitriona as habitacion_comision,
+               (SELECT COALESCE(SUM(dc.comision), 0) FROM detalle_servicios dc WHERE dc.servicio_id = s.id_servicio) AS total_comision,
                s.precio_servicio, s.precio_habitacion, s.iva, s.cliente_id,
                COALESCE(STRING_AGG(DISTINCT CASE WHEN u.nick IS NOT NULL AND u.nick != '' THEN u.nick ELSE (CAST(u.nombre AS text) || CAST(' ' AS text) || CAST(u.apellido AS text)) END, ', '), 'Sin asignar') as anfitrionas,
                STRING_AGG(DISTINCT ds.usuario_id, ',') as anfitrionas_ids,
@@ -27,12 +28,12 @@ export class TimerRepository {
                s.total, s.metodo_pago, creator.nick as waiter_name, creator.foto as waiter_foto
         FROM servicios s
         LEFT JOIN habitaciones h ON s.habitacion_id = h.id_habitacion
-        LEFT JOIN detalle_servicios ds ON ds.servicio_id = s.id_servicio
+        LEFT JOIN detalle_servicios ds ON ds.servicio_id = s.id_servicio AND ds.liberado_en IS NULL
         LEFT JOIN usuarios u ON u.id_usuario = ds.usuario_id
         LEFT JOIN clientes c ON c.id_cliente = s.cliente_id
         LEFT JOIN usuarios creator ON creator.id_usuario = s.created_by
         WHERE s.tiempo > 0
-          AND s.estado IN (1, 2, 3)
+          AND s.estado IN (2, 3)
           AND (s.estado = 3 OR TRUNC(EXTRACT(EPOCH FROM (CAST(? AS timestamp) - CAST(s.fecha_crea AS timestamp))) / 1) < (s.tiempo * 60))
         GROUP BY s.id_servicio, h.id_habitacion, c.id_cliente, creator.id_usuario
       `,
@@ -54,7 +55,7 @@ export class TimerRepository {
         LEFT JOIN clientes c ON c.id_cliente = v.cliente_id
         LEFT JOIN usuarios creator ON creator.id_usuario = v.created_by
         WHERE v.tiempo > 0
-          AND v.estado IN (1, 2, 3)
+          AND v.estado IN (2, 3)
           AND (v.estado = 3 OR TRUNC(EXTRACT(EPOCH FROM (CAST(? AS timestamp) - CAST(v.fecha_crea AS timestamp))) / 1) < (v.tiempo * 60))
         GROUP BY v.id_venta, h.id_habitacion, c.id_cliente, creator.id_usuario
       `,

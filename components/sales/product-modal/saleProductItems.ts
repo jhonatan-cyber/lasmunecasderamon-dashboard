@@ -1,4 +1,10 @@
+import { parseSavedOptions } from '@/components/bar/transfer/transferOptions';
 import { esCortoAnfitriona } from '@/lib/sales/hostessShortPrices';
+import {
+  bottleMixerUnits,
+  hostessMixerMl,
+  shortMixerConsumption
+} from '@/lib/sales/productConfiguration';
 // Modelo de vista de una presentación en el modal de productos de la venta.
 // Antes todo este cálculo vivía dentro del `.map()` del modal mezclado con el
 // JSX de cada celda; aquí solo viven datos y callbacks atados al producto, y el
@@ -11,6 +17,20 @@ import type { SaleFormatQuantityOption } from '@/components/sales/SaleFormatQuan
 
 /** Una fila/tarjeta del modal: qué mostrar y qué pasa al interactuar. */
 export interface SaleProductItem {
+  hostessFormats?: Array<{
+    unitIndex?: number;
+    value: SaleChoice;
+    label: string;
+    cantidad: number;
+    comision: number;
+    selected: string[];
+    onChange: (ids: string[]) => void;
+  }>;
+
+  mixers?: SaleProductMixer[];
+  mixerLoading?: boolean;
+  mixerError?: string;
+  onMixerRetry?: () => void;
   id: string;
   product: any;
   name: string;
@@ -39,7 +59,7 @@ export interface SaleProductItem {
   mlEstimacion: number;
   onSaleTypeChange: (value: SaleChoice, cantidad: number) => void;
   onCantidadChange: (next: number) => void;
-  onAgregar: () => void;
+  onAgregar: () => Promise<void>;
   champagneSelected: string[];
   otherSelected: string[];
   onChampagneSelect: (hostessIds: string[]) => void;
@@ -48,8 +68,27 @@ export interface SaleProductItem {
   onHostessSearchChange: (value: string) => void;
 }
 
+export interface SaleProductMixer {
+  unitIndex?: number;
+  value: SaleChoice;
+  label: string;
+  cantidad: number;
+  unidades?: number;
+  ml_por_corto?: number;
+  selected: any;
+  choices: any[];
+  needsConfiguration: boolean;
+  onChange: (id: string) => void;
+}
+
 /** Estado del modal + callbacks del consumidor, para construir cada item. */
 export interface SaleProductItemContext {
+  mixers?: Record<string, any>;
+  bar?: any[];
+  mixerLoading?: boolean;
+  mixerError?: string;
+  onMixerChange?: (key: string, value: any) => void;
+  onMixerRetry?: () => void;
   shotMl: number;
   cantidades: { [key: string]: number };
   cantidadesPorTipo: { [key: string]: number };
@@ -99,6 +138,37 @@ export function buildSaleProductItem(producto: any, ctx: SaleProductItemContext)
   // Cada tipo de venta lleva su propia comisión: sin comisión no se pide anfitriona.
   const pideAnfitriona = opcionesTipo.some(opcion => opcion.cantidad > 0 && opcion.comision > 0);
   const muestraAnfitriona = pideAnfitriona;
+  const hostessFormats = opcionesTipo
+    .filter(option => option.cantidad > 0 && option.comision > 0)
+    .flatMap(option =>
+      Array.from({ length: option.value === 'botella' ? 1 : option.cantidad }, (_, unitIndex) => {
+        const key =
+          option.value === 'botella'
+            ? id
+            : `${id}:${option.value}${unitIndex > 0 ? `:unit:${unitIndex}` : ''}`;
+        return {
+          unitIndex,
+          value: option.value,
+          label: option.label,
+          cantidad: option.value === 'botella' ? option.cantidad : 1,
+          comision: option.comision,
+          selected:
+            option.value === 'botella' && isChampagne
+              ? ctx.champagneHostessSelections[id] || []
+              : (ctx.otherProductHostessSelections[key] || []).slice(
+                  0,
+                  option.value === 'botella' ? undefined : 1
+                ),
+          onChange: (ids: string[]) =>
+            option.value === 'botella' && isChampagne
+              ? ctx.onChampagneHostessChange(id, ids)
+              : ctx.onOtherProductHostessChange(
+                  key,
+                  option.value === 'botella' ? ids : ids.slice(0, 1)
+                )
+        };
+      })
+    );
 
   // Unidades de esta presentación y forma de venta ya agregadas al carrito:
   // el shot de cliente y el de anfitriona se cobran distinto, así que cada uno
@@ -110,28 +180,141 @@ export function buildSaleProductItem(producto: any, ctx: SaleProductItemContext)
   const cantidadActual = opcionesTipo.reduce((sum, opcion) => sum + opcion.cantidad, 0);
   const champagneSelected = ctx.champagneHostessSelections[id] || [];
   const otherSelected = ctx.otherProductHostessSelections[id] || [];
-  const agregarDisabled = cantidadActual === 0;
+  const mixers: SaleProductMixer[] = opcionesTipo
+    .filter(
+      opcion =>
+        opcion.cantidad > 0 && (opcion.value !== 'botella' || bottleMixerUnits(producto) > 0)
+    )
+    .flatMap(opcion =>
+      Array.from({ length: opcion.value === 'botella' ? 1 : opcion.cantidad }, (_, unitIndex) => {
+        const quantity = opcion.value === 'botella' ? opcion.cantidad : 1;
+        const product = { ...producto, shot_anfitriona: esCortoAnfitriona(opcion.value) };
+        const consumption =
+          opcion.value === 'botella'
+            ? { unidades: bottleMixerUnits(producto) }
+            : shortMixerConsumption(product);
+        const needsConfiguration = esCortoAnfitriona(opcion.value) && hostessMixerMl(product) <= 0;
+        const key = `${id}:${opcion.value}${unitIndex > 0 ? `:unit:${unitIndex}` : ''}`;
+        const selected = ctx.mixers?.[key];
+        const choices = (ctx.bar ?? []).filter(
+          b =>
+            String(b.id) !== id &&
+            ('unidades' in consumption
+              ? Number(b.stock_bar) > 0 && Number(b.stock_bar) >= consumption.unidades * quantity
+              : Number(b.stock_bar) > 0 ||
+                (consumption.ml_por_corto > 0 &&
+                  Number(b.ml_abierta) >= consumption.ml_por_corto * quantity))
+        );
+        return {
+          unitIndex,
+          value: opcion.value,
+          label: opcion.label,
+          cantidad: quantity,
+          ...consumption,
+          selected,
+          choices,
+          needsConfiguration,
+          onChange: (selectedId: string) => {
+            const choice = choices.find(b => String(b.id) === selectedId);
+            ctx.onMixerChange?.(
+              key,
+              choice
+                ? {
+                    presentacion_id: String(choice.id),
+                    nombre: `${choice.producto_nombre} ${choice.nombre}`,
+                    foto:
+                      choice.foto && choice.foto !== 'default.png'
+                        ? choice.foto
+                        : choice.producto_foto,
+                    stock_bar: Number(choice.stock_bar) || 0,
+                    ml_abierta: Number(choice.ml_abierta) || 0,
+                    ...consumption
+                  }
+                : undefined
+            );
+          }
+        };
+      })
+    );
+  const agregarDisabled =
+    cantidadActual === 0 ||
+    mixers.some(mixer => {
+      if (!mixer.selected || mixer.unidades === undefined) return false;
+      const required = mixers
+        .filter(
+          other =>
+            other.selected?.presentacion_id === mixer.selected.presentacion_id &&
+            other.unidades !== undefined
+        )
+        .reduce((sum, other) => sum + other.cantidad * (other.unidades ?? 0), 0);
+      return (
+        required >
+        Number(
+          mixer.selected.stock_bar ??
+            ctx.bar?.find(choice => String(choice.id) === mixer.selected.presentacion_id)
+              ?.stock_bar ??
+            0
+        )
+      );
+    }) ||
+    mixers.some(
+      mixer =>
+        !mixer.needsConfiguration &&
+        (!mixer.selected ||
+          !mixer.choices.some(choice => String(choice.id) === mixer.selected.presentacion_id))
+    );
 
-  const onAgregar = () => {
-    opcionesTipo
-      .filter(opcion => opcion.cantidad > 0)
-      .forEach(opcion => {
-        ctx.onAgregarProducto({
+  const onAgregar = async () => {
+    if (agregarDisabled) return;
+    for (const opcion of opcionesTipo.filter(opcion => opcion.cantidad > 0)) {
+      for (
+        let unitIndex = 0;
+        unitIndex < (opcion.value === 'botella' ? 1 : opcion.cantidad);
+        unitIndex++
+      ) {
+        await ctx.onAgregarProducto({
           ...producto,
+          acompanamiento_corto:
+            opcion.value !== 'botella'
+              ? mixers.find(
+                  m =>
+                    m.value === opcion.value && m.unitIndex === unitIndex && !m.needsConfiguration
+                )?.selected
+              : undefined,
+          acompanamiento_botella:
+            opcion.value === 'botella'
+              ? mixers.find(m => m.value === opcion.value)?.selected
+              : undefined,
+          unidades_acompanamiento:
+            opcion.value === 'botella'
+              ? parseSavedOptions(producto.opciones_venta)?.find(o => o.tipo === 'botella')
+                  ?.acompanamiento?.unidades
+              : undefined,
           tipo_venta: opcion.value === 'botella' ? 'botella' : 'shot',
           shot_anfitriona: esCortoAnfitriona(opcion.value),
           precio: opcion.precio,
           comision: opcion.comision,
-          cantidad: opcion.cantidad,
+          cantidad: opcion.value === 'botella' ? opcion.cantidad : 1,
           selectedHostesses:
-            opcion.comision > 0 ? (isChampagne ? champagneSelected : otherSelected) : [],
+            opcion.comision > 0
+              ? (
+                  hostessFormats.find(
+                    format => format.value === opcion.value && format.unitIndex === unitIndex
+                  )?.selected || []
+                ).slice(0, opcion.value === 'botella' ? undefined : opcion.cantidad)
+              : [],
           isChampagne
         });
-        ctx.onSaleTypeChange(id, opcion.value, 0);
-      });
+      }
+      ctx.onSaleTypeChange(id, opcion.value, 0);
+    }
   };
 
   return {
+    mixers,
+    mixerLoading: ctx.mixerLoading,
+    mixerError: ctx.mixerError,
+    onMixerRetry: ctx.onMixerRetry,
     id,
     product: producto,
     name: producto.nombre || producto.name,
@@ -147,6 +330,7 @@ export function buildSaleProductItem(producto: any, ctx: SaleProductItemContext)
     enCarrito,
     pideAnfitriona,
     muestraAnfitriona,
+    hostessFormats,
     agregarDisabled,
     totalAgregar: formatCurrencyNoDecimals(
       opcionesTipo.reduce((sum, opcion) => sum + opcion.precio * opcion.cantidad, 0)

@@ -3,6 +3,9 @@
 import { useState, useMemo, useRef, useEffect } from 'react';
 import { toast } from 'sonner';
 import { mapForSaleToCartItem } from '@/lib/sales/forSaleMapper';
+import { getHostessLimit } from '@/components/orders/productModalRules';
+import { resolverVentaProducto } from '@/lib/sales/saleChoice';
+import { esCortoAnfitriona } from '@/lib/sales/hostessShortPrices';
 import { useNewSaleForm } from '@/hooks/ventas/useNewSaleForm';
 import { CajaStatusCheck } from '@/components/sales/CajaStatusCheck';
 import CategoryCardList from '@/components/shared/CategoryCardList';
@@ -11,13 +14,15 @@ import SaleProductModal from '@/components/sales/SaleProductModal';
 import { NewSaleHeader } from '@/components/sales/new/NewSaleHeader';
 import { NewSaleSearch } from '@/components/sales/new/NewSaleSearch';
 import { NewSaleConfiguration } from '@/components/sales/new/NewSaleConfiguration';
-import { ShotMixerSelection } from '@/components/sales/new/ShotMixerSelection';
 import { NewSaleCart } from '@/components/sales/new/NewSaleCart';
 import { NewSaleSummary } from '@/components/sales/new/NewSaleSummary';
 import { useMasterData, useRefreshOnFocus } from '@/hooks/shared';
 
 export default function NewSale() {
   const {
+    servicioId,
+    servicioNombre,
+    servicioAnfitrionas,
     selectedCliente,
     setSelectedCliente,
     selectedHabitacion,
@@ -34,9 +39,9 @@ export default function NewSale() {
     setManualTime,
     cantidades,
     setCantidades,
-    champagneHostessSelections,
+    champagneHostessSelections: champagneOverrides,
     setChampagneHostessSelections,
-    otherProductHostessSelections,
+    otherProductHostessSelections: otherOverrides,
     setOtherProductHostessSelections,
     hostessSearchValues,
     setHostessSearchValues,
@@ -48,6 +53,8 @@ export default function NewSale() {
     handleRemoveProducto,
     handleCantidadChangeTable,
     getChampagneMax,
+    handleServiceHostessChange,
+    handleCartHostessesChange,
     totals,
     handleSubmit,
     requiresRoom,
@@ -72,6 +79,21 @@ export default function NewSale() {
     refreshAll
   } = useMasterData({ soloAnfitrionasEnLocal: true, categoriasConStockBar: true });
   useRefreshOnFocus(refreshAll, { immediate: false });
+
+  const defaultHostesses = useMemo(
+    () =>
+      Object.fromEntries(
+        [...searchResults, ...productosCategoria].flatMap(product => {
+          const ids = servicioAnfitrionas.slice(0, getHostessLimit(product));
+          return [...new Set([product.id, product.id_producto].filter(Boolean).map(String))].map(
+            id => [id, ids]
+          );
+        })
+      ),
+    [searchResults, productosCategoria, servicioAnfitrionas]
+  );
+  const champagneHostessSelections = { ...defaultHostesses, ...champagneOverrides };
+  const otherProductHostessSelections = { ...defaultHostesses, ...otherOverrides };
 
   const categoriasFiltradas = useMemo(
     () => categories.filter(cat => cat?.estado === 1 && (cat?.productCount || 0) > 0),
@@ -114,7 +136,23 @@ export default function NewSale() {
 
   return (
     <>
-      <NewSaleHeader />
+      {servicioId && (
+        <div className='mx-4 rounded-xl border p-4 text-sm'>
+          Venta adicional · {servicioNombre || 'Cargando habitación…'} · Conserva el tiempo del
+          servicio.
+          <p className='mt-1 text-xs text-muted-foreground'>
+            Los cambios de anfitrionas se aplicarán también al privado al registrar la venta.
+          </p>
+        </div>
+      )}
+      <NewSaleHeader
+        onBack={() => {
+          setProductos([]);
+          try {
+            localStorage.removeItem('productos');
+          } catch {}
+        }}
+      />
 
       <div className='mx-4 mb-10 space-y-4 sm:mx-6 sm:space-y-6 lg:mx-8 dark:text-neutral-100'>
         <CajaStatusCheck onStatusChange={setHasOpenCaja} />
@@ -132,6 +170,7 @@ export default function NewSale() {
             if (prod) {
               const max = await getChampagneMax(prod);
               if (ids.length <= max) {
+                handleServiceHostessChange(champagneHostessSelections[id] || [], ids);
                 setChampagneHostessSelections(prev => ({ ...prev, [id]: ids }));
               }
             }
@@ -139,10 +178,31 @@ export default function NewSale() {
           hostessSearchValues={hostessSearchValues}
           setHostessSearchValues={setHostessSearchValues}
           otherProductHostessSelections={otherProductHostessSelections}
-          handleOtherProductHostessChange={(id, ids) =>
-            setOtherProductHostessSelections(prev => ({ ...prev, [id]: ids }))
-          }
-          handleAddProducto={handleAddProducto}
+          handleOtherProductHostessChange={(id, ids) => {
+            handleServiceHostessChange(otherProductHostessSelections[id] || [], ids);
+            setOtherProductHostessSelections(prev => ({ ...prev, [id]: ids }));
+          }}
+          handleAddProducto={producto => {
+            categoryRequest.current?.abort();
+            setModalCategoria(null);
+            const format = resolverVentaProducto(producto).opciones.find(
+              option =>
+                option.precio === producto.precio &&
+                option.esShot === (producto.tipo_venta === 'shot') &&
+                esCortoAnfitriona(option.value) === Boolean(producto.shot_anfitriona)
+            )?.value;
+            setProductosCategoria(previous => [
+              {
+                ...producto,
+                modalCantidades: {
+                  ...(previous[0]?.id === producto.id ? previous[0]?.modalCantidades : {}),
+                  ...(format ? { [format]: producto.cantidad } : {})
+                }
+              }
+            ]);
+            setLoadingProductos(false);
+            setModalOpen(true);
+          }}
           isChampagneProduct={isChampagneProduct}
           cantidades={cantidades}
           handleCantidadChange={handleCantidadChange}
@@ -172,10 +232,6 @@ export default function NewSale() {
           setEnableTip={setEnableTip}
         />
 
-        {productos.some(p => p.tipo_venta === 'shot') && (
-          <ShotMixerSelection productos={productos} setProductos={setProductos} />
-        )}
-
         <NewSaleSummary
           subtotal={totals.subtotal}
           propina={totals.propina}
@@ -191,6 +247,7 @@ export default function NewSale() {
           anfitrionas={anfitrionas}
           handleCantidadChangeTable={handleCantidadChangeTable}
           handleRemoveProducto={handleRemoveProducto}
+          onHostessesChange={handleCartHostessesChange}
         />
       </div>
 
@@ -199,6 +256,7 @@ export default function NewSale() {
         onClose={() => {
           categoryRequest.current?.abort();
           setModalOpen(false);
+          setProductosCategoria([]);
         }}
         loading={loadingProductos}
         productos={productosCategoria}
@@ -212,13 +270,15 @@ export default function NewSale() {
           const prod = productosCategoria.find(p => String(p.id_producto || p.id) === id);
           const max = prod ? await getChampagneMax(prod) : 5;
           if (ids.length <= max) {
+            handleServiceHostessChange(champagneHostessSelections[id] || [], ids);
             setChampagneHostessSelections(prev => ({ ...prev, [id]: ids }));
           }
         }}
         otherProductHostessSelections={otherProductHostessSelections}
-        onOtherProductHostessChange={(id, ids) =>
-          setOtherProductHostessSelections(prev => ({ ...prev, [id]: ids }))
-        }
+        onOtherProductHostessChange={(id, ids) => {
+          handleServiceHostessChange(otherProductHostessSelections[id] || [], ids);
+          setOtherProductHostessSelections(prev => ({ ...prev, [id]: ids }));
+        }}
         productosEnCarrito={productos}
       />
     </>

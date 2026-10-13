@@ -15,6 +15,8 @@ export interface Servicio {
 }
 
 export interface ServicioWithDetails extends Servicio {
+  producto_incluido_presentacion_id?: string | null;
+  producto_incluido_nombre?: string | null;
   cliente_nombre?: string;
   habitacion_numero?: string;
   habitacion_comision?: string | number;

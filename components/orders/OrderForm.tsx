@@ -9,10 +9,10 @@ import {
   useOrderForm,
   type OrderProducto,
   type OrderCategory,
-  type OrderProductoPayload,
+  type OrderProductoPayload
 } from '@/hooks/personal';
 
-const CategoryProductsModal = dynamic(() => import('@/components/orders/CategoryProductsModal'), {
+const CategoryProductsModal = dynamic(() => import('@/components/sales/SaleProductModal'), {
   loading: () => (
     <div className='fixed inset-0 bg-black/50 flex items-center justify-center z-50'>
       <div className='rounded-lg bg-white p-6 dark:bg-zinc-900 dark:border dark:border-zinc-800'>
@@ -21,7 +21,7 @@ const CategoryProductsModal = dynamic(() => import('@/components/orders/Category
       </div>
     </div>
   ),
-  ssr: false,
+  ssr: false
 });
 
 interface OrderFormProps {
@@ -37,7 +37,7 @@ interface OrderFormProps {
   onRemoveProducto?: (index: number) => void;
   onUpdateCantidad?: (index: number, nuevaCantidad: number) => void;
   onToggleComision?: (index: number) => void;
-  onAssignHostess?: (index: number, hostessId: string) => void;
+  onAssignHostess?: (index: number, hostessId: string | string[]) => void;
   onSubmit?: () => void;
   searchCliente?: string;
   setSearchCliente?: (v: string) => void;
@@ -63,7 +63,7 @@ export default function OrderForm({
   searchCliente,
   setSearchCliente,
   searchAnfitriona,
-  setSearchAnfitriona,
+  setSearchAnfitriona
 }: OrderFormProps) {
   const {
     modalOpen,
@@ -90,7 +90,7 @@ export default function OrderForm({
     handleOtherProductHostessChange,
     handleRoomChange,
     handleAgregarProducto,
-    handleSubmitInternal,
+    handleSubmitInternal
   } = useOrderForm({
     productos,
     selectedCliente,
@@ -99,7 +99,7 @@ export default function OrderForm({
     onUpdateCantidad,
     onAssignHostess,
     onToggleComision,
-    onSubmit,
+    onSubmit
   });
 
   return (
@@ -119,6 +119,7 @@ export default function OrderForm({
         tipPercentage={propina}
         tipEnabled={propinaHabilitada}
         onSubmit={handleSubmitInternal}
+        submitDisabled={productos.length === 0}
         onTipChange={handleTipChange}
         metodoPago={metodoPago}
         onMetodoPagoChange={setMetodoPago}
@@ -128,20 +129,17 @@ export default function OrderForm({
         open={modalOpen}
         onClose={() => setModalOpen(false)}
         loading={loadingProductos}
-        productosCategoria={productosCategoria}
+        productos={productosCategoria}
         cantidades={cantidades}
         handleCantidadChange={handleCantidadChange}
         handleAgregarProducto={handleAgregarProducto}
-        modalCategoria={modalCategoria}
+        categoria={modalCategoria}
         anfitrionas={anfitrionas}
         champagneHostessSelections={champagneHostessSelections}
         onChampagneHostessChange={handleChampagneHostessChange}
         otherProductHostessSelections={otherProductHostessSelections}
         onOtherProductHostessChange={handleOtherProductHostessChange}
         productosEnCarrito={productos}
-        habitaciones={rooms}
-        roomSelections={roomSelections}
-        onRoomChange={handleRoomChange}
       />
 
       <OrderFormError message={error} />
@@ -163,6 +161,8 @@ export default function OrderForm({
           onAssignHostess={onAssignHostess}
           anfitrionas={anfitrionas}
           habitaciones={rooms}
+          roomSelections={roomSelections}
+          onRoomChange={handleRoomChange}
         />
       </div>
     </div>

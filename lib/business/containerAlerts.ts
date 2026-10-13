@@ -109,8 +109,8 @@ const globalForAlerts = globalThis as typeof globalThis & {
 
 function mensajeDe(resumen: ResumenEnvases): string {
   return resumen.vencidos > 0
-    ? `${resumen.vencidos} envase(s) entregado(s) hace más de ${HORAS_ENVASE_SIN_CONFIRMAR} horas sin recibir en almacén.`
-    : 'Todos los envases entregados fueron recibidos en almacén.';
+    ? `${resumen.vencidos} envase(s) entregado(s) hace más de ${HORAS_ENVASE_SIN_CONFIRMAR} horas sin recibir en bodega.`
+    : 'Todos los envases entregados fueron recibidos en bodega.';
 }
 
 async function notificarAlmacen(resumen: ResumenEnvases, mensaje: string): Promise<void> {
@@ -133,7 +133,7 @@ async function notificarAlmacen(resumen: ResumenEnvases, mensaje: string): Promi
 }
 
 /**
- * Avisa al almacén cuando un envase entregado lleva más de
+ * Avisa a la bodega cuando un envase entregado lleva más de
  * `HORAS_ENVASE_SIN_CONFIRMAR` horas sin que se confirme la recepción.
  *
  * Se ejecuta desde el cron y cada vez que el panel pide su contador, así
@@ -155,7 +155,7 @@ export async function checkWarehouseContainerAlerts(): Promise<ResumenEnvases> {
     globalForAlerts.__warehouseContainerAlert = resumen.vencidos;
 
     const mensaje = mensajeDe(resumen);
-    // En vivo: la audiencia del evento (almacén + administración) la define
+    // En vivo: la audiencia del evento (bodega + administración) la define
     // sseEvents.ts. El nombre va literal porque el test de completitud del
     // catálogo escanea los literales emitidos (lo comprueba el test unitario
     // de este módulo contra WAREHOUSE_CONTAINER_ALERT_TIPO).

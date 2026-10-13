@@ -294,9 +294,39 @@ export async function logoutUser(userId: string) {
   }
 }
 
-export async function resetPassword(run: string) {
+export async function resetPassword(run: string, modo: 'whatsapp' | 'usuarios' = 'whatsapp') {
   try {
     const normalizedRun = run.trim();
+    if (modo === 'usuarios') {
+      const respuesta = {
+        success: true,
+        message:
+          'Si el RUT corresponde a un usuario activo que no es administrador, su contraseña será su RUT registrado. Deberá cambiarla al iniciar sesión.'
+      };
+      await enUnaUnidad(unidad =>
+        unidad.ejecutar(async contexto => {
+          const trx = resolverTransaccion(contexto);
+          const users = await trx<Array<{ id_usuario: string; run: string }>>(
+            `SELECT u.id_usuario, u.run FROM usuarios u
+           INNER JOIN roles r ON r.id_rol = u.rol_id
+           WHERE u.estado = 1 AND LOWER(r.nombre) NOT IN ('administrador', 'admin')
+             AND upper(regexp_replace(u.run, '[.\\s-]', '', 'g')) = upper(regexp_replace(?, '[.\\s-]', '', 'g'))
+           LIMIT 2 FOR UPDATE OF u`,
+            [normalizedRun]
+          );
+          // No resolver cuentas ambiguas ni exponer si existe el RUT consultado.
+          if (users.length !== 1) return;
+          const user = users[0];
+          const hashedPassword = await argon2.hash(user.run.trim());
+          await trx(
+            'UPDATE usuarios SET password = ?, force_password_change = 1, fecha_mod = ? WHERE id_usuario = ?',
+            [hashedPassword, getNowInBusinessTimezone(), user.id_usuario]
+          );
+          await trx('DELETE FROM logins WHERE usuario_id = ?', [user.id_usuario]);
+        })
+      );
+      return respuesta;
+    }
     const users = await query<any[]>(
       `SELECT u.id_usuario, u.run, u.telefono
      FROM usuarios u
@@ -310,7 +340,8 @@ export async function resetPassword(run: string) {
 
     const respuesta = {
       success: true,
-      message: 'Si el RUN/CI corresponde a un administrador con teléfono registrado, recibirá una clave temporal por WhatsApp.'
+      message:
+        'Si el RUN/CI corresponde a un administrador con teléfono registrado, recibirá una clave temporal por WhatsApp.'
     };
     if (users.length === 0) return respuesta;
     const user = users[0];
@@ -339,7 +370,9 @@ export async function resetPassword(run: string) {
           );
           if (!enviado) throw new Error('Envío rechazado');
         } catch {
-          throw new BusinessError('No se pudo enviar el WhatsApp de recuperación. Intenta nuevamente más tarde.');
+          throw new BusinessError(
+            'No se pudo enviar el WhatsApp de recuperación. Intenta nuevamente más tarde.'
+          );
         }
       })
     );

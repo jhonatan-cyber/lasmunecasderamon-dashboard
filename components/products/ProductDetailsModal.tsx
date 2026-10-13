@@ -253,7 +253,7 @@ export function ProductDetailsModal({
                     <Info label='Precio de compra'>
                       {formatCurrencyCLP(selectedPrices.precio_compra ?? 0)}
                     </Info>
-                    <Info label='Stock en almacén'>{selectedPrices.stock ?? 0} unidades</Info>
+                    <Info label='Stock en bodega'>{selectedPrices.stock ?? 0} unidades</Info>
                     <Info label='Stock en bar'>{selectedPrices.stock_bar ?? 0} unidades</Info>
                   </dl>
                 </section>

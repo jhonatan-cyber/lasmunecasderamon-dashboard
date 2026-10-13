@@ -163,6 +163,84 @@ const validSaleBody = {
 };
 
 describe('SaleService.createSale', () => {
+  it.each([0, null])(
+    'permite varias ventas sin ocupar una habitación con configuración %s',
+    async value => {
+      vi.mocked(obtenerCajaActiva).mockResolvedValue('caja-1');
+      const trx = vi
+        .fn()
+        .mockResolvedValueOnce([
+          { precio: value, tiempo: value, comision_anfitriona: value, estado: 2 }
+        ])
+        .mockResolvedValue([]);
+      vi.mocked(withTransaction).mockImplementationOnce(async (fn: any) => fn(trx));
+      const sale = await SaleService.createSale(
+        { ...validSaleBody, habitacion_id: 'libre', tiempo: 60 },
+        'user-1'
+      );
+      const secondTrx = vi
+        .fn()
+        .mockResolvedValueOnce([
+          { precio: value, tiempo: value, comision_anfitriona: value, estado: 2 }
+        ])
+        .mockResolvedValue([]);
+      vi.mocked(withTransaction).mockImplementationOnce(async (fn: any) => fn(secondTrx));
+      const secondSale = await SaleService.createSale(
+        { ...validSaleBody, habitacion_id: 'libre', tiempo: 60 },
+        'user-1'
+      );
+      expect(secondSale.estado).toBe(2);
+      expect(sale.estado).toBe(2);
+      expect(RegistroVenta.rawInsert).toHaveBeenCalledWith(
+        expect.anything(),
+        expect.objectContaining({ estado: 2, tiempo: 60 })
+      );
+      expect(trx.mock.calls.some(([sql]) => String(sql).includes('UPDATE habitaciones'))).toBe(
+        false
+      );
+    }
+  );
+
+  it('rechaza un tiempo cero en una habitación que requiere temporizador', async () => {
+    vi.mocked(obtenerCajaActiva).mockResolvedValue('caja-1');
+    const trx = vi
+      .fn()
+      .mockResolvedValueOnce([{ precio: 10000, comision_anfitriona: 5000, estado: 1 }])
+      .mockResolvedValue([]);
+    vi.mocked(withTransaction).mockImplementationOnce(async (fn: any) => fn(trx));
+    await expect(
+      SaleService.createSale({ ...validSaleBody, habitacion_id: 'vip', tiempo: 0 }, 'user-1')
+    ).rejects.toThrow('tiempo válido');
+    expect(RegistroVenta.rawInsert).not.toHaveBeenCalled();
+  });
+
+  it('rechaza la habitación ocupada antes de insertar la venta', async () => {
+    vi.mocked(obtenerCajaActiva).mockResolvedValue('caja-1');
+    const trx = vi
+      .fn()
+      .mockResolvedValueOnce([{ precio: 10000, comision_anfitriona: 5000, estado: 2 }])
+      .mockResolvedValue([]);
+    vi.mocked(withTransaction).mockImplementationOnce(async (fn: any) => fn(trx));
+    await expect(
+      SaleService.createSale({ ...validSaleBody, habitacion_id: 'vip', tiempo: 30 }, 'user-1')
+    ).rejects.toThrow('ocupada');
+    expect(trx.mock.calls[0][0]).toContain('FOR UPDATE');
+    expect(RegistroVenta.rawInsert).not.toHaveBeenCalled();
+  });
+
+  it('rechaza actividad vigente incluso si el estado de habitación figura libre', async () => {
+    vi.mocked(obtenerCajaActiva).mockResolvedValue('caja-1');
+    const trx = vi
+      .fn()
+      .mockResolvedValueOnce([{ precio: 10000, comision_anfitriona: 5000, estado: 1 }])
+      .mockResolvedValueOnce([{ activa: 1 }]);
+    vi.mocked(withTransaction).mockImplementationOnce(async (fn: any) => fn(trx));
+    await expect(
+      SaleService.createSale({ ...validSaleBody, habitacion_id: 'vip', tiempo: 30 }, 'user-1')
+    ).rejects.toThrow('ocupada');
+    expect(RegistroVenta.rawInsert).not.toHaveBeenCalled();
+  });
+
   it('lanza ZodError si faltan campos requeridos (total)', async () => {
     await expect(SaleService.createSale({ detalles: [] } as any, 'user-1')).rejects.toThrow();
   });
@@ -473,7 +551,8 @@ describe('SaleService.createSale — inventario del bar', () => {
             cantidad: 2,
             comision: 0,
             tipo_venta: 'shot' as const,
-            shot_anfitriona: true
+            shot_anfitriona: true,
+            acompanamiento_corto: { presentacion_id: 'sprite', ml_por_corto: 150 }
           },
           {
             producto_id: 'prod-2',
@@ -504,6 +583,10 @@ describe('SaleService.createSale — inventario del bar', () => {
     // El shot a anfitriona se guarda como shot + bandera; el precio queda en `precio`
     // (por eso el reporte puede sumar los dos precios por separado).
     expect(fila(0)).toMatchObject({ tipo_venta: 'shot', shot_anfitriona: true, cantidad: 2 });
+    expect(JSON.parse(String(fila(0).acompanamiento))).toEqual({
+      presentacion_id: 'sprite',
+      ml_por_corto: 150
+    });
     // Lo que no se marca es botella, igual que el default de la migración 039.
     expect(fila(1)).toMatchObject({ tipo_venta: 'botella', shot_anfitriona: false, cantidad: 1 });
   });

@@ -1,4 +1,5 @@
 'use client';
+import { matchesProductSearch } from '@/lib/utils/productSearch';
 import React, { useState, useMemo, useCallback } from 'react';
 import { useQuery, keepPreviousData } from '@tanstack/react-query';
 import { useParams } from 'next/navigation';
@@ -87,9 +88,7 @@ const ProductCategoryPage = () => {
     let result = products;
     const term = searchTerm.trim().toLowerCase();
     if (term) {
-      result = result.filter(
-        p => p.name.toLowerCase().includes(term) || p.code.toLowerCase().includes(term)
-      );
+      result = result.filter(p => matchesProductSearch(p, term));
     }
     if (filterStatus !== null) {
       result = result.filter(p => p.status === filterStatus);

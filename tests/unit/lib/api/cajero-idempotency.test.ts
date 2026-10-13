@@ -114,6 +114,13 @@ vi.mock('@/workflows/ventas', () => ({ SaleService: saleService }));
 const accountService = vi.hoisted(() => ({ updateCuenta: vi.fn(), cobrarConVenta: vi.fn() }));
 vi.mock('@/modules/operacion/cuentas/fachada', () => ({ AccountService: accountService }));
 
+const serviceService = vi.hoisted(() => ({ createService: vi.fn() }));
+vi.mock('@/modules/operacion', () => ({
+  ServiceService: serviceService,
+  AccountService: accountService
+}));
+import { POST as postTemporaryService } from '@/app/api/servicios/temporal/route';
+
 import { POST as postSale } from '@/app/api/sales/route';
 import { PUT as putCuenta } from '@/app/api/cuentas/[id]/route';
 import { POST as postCobroConVenta } from '@/app/api/cuentas/[id]/cobrar-con-venta/route';
@@ -321,5 +328,45 @@ describe('PUT /api/cuentas/[id] con idempotencia', () => {
     const reintento = await putConsumos('consumos-key-0005');
     expect(reintento.status).toBe(409);
     expect(accountService.updateCuenta).toHaveBeenCalledTimes(1);
+  });
+});
+
+describe('POST /api/servicios/temporal', () => {
+  it('normaliza el adicional de Expo y reintentar no registra otro cobro', async () => {
+    syncOperations.filas.clear();
+    serviceService.createService.mockReset();
+    serviceService.createService.mockResolvedValue({
+      id: 'temp-1',
+      codigo: 'TEMP',
+      tiempo: 2,
+      total: 10000
+    });
+    const request = () =>
+      postTemporaryService(
+        new Request('http://localhost/api/servicios/temporal', {
+          method: 'POST',
+          headers: {
+            'content-type': 'application/json',
+            [IDEMPOTENCY_HEADER]: 'service-temp-0001'
+          },
+          body: JSON.stringify({
+            servicio_original_id: 'original',
+            habitacion_id: 'vip',
+            usuarios: ['host-1'],
+            tiempo: 2
+          })
+        }),
+        { params: Promise.resolve({}) }
+      );
+    const first = await request();
+    const second = await request();
+    expect(first.status).toBe(200);
+    expect(second.status).toBe(200);
+    expect(serviceService.createService).toHaveBeenCalledTimes(1);
+    expect(serviceService.createService).toHaveBeenCalledWith(
+      expect.objectContaining({ es_temporal: true, tiempo: 2 }),
+      expect.any(String)
+    );
+    expect(second.headers.get('x-idempotent-replay')).toBe('1');
   });
 });

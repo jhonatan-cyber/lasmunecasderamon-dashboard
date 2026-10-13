@@ -38,6 +38,8 @@ describe('dashboard del Barman', () => {
     vi.stubGlobal('fetch', request);
     render(<BarmanDashboard name='Damián' />);
     const summary = await screen.findByRole('region', { name: 'Resumen de barra' });
+    expect(screen.getByRole('link', { name: /Pedidos/ })).toHaveAttribute('href', '/orders');
+    expect(screen.queryByRole('link', { name: /Ventas/ })).not.toBeInTheDocument();
     expect(within(summary).getByText('7')).toBeInTheDocument();
     expect(within(summary).getByText('4')).toBeInTheDocument();
     expect(screen.getByRole('link', { name: 'Revisar recepciones (1)' })).toHaveAttribute(
@@ -66,12 +68,10 @@ describe('dashboard del Barman', () => {
   it('muestra un error en vez de presentar ceros como datos válidos', async () => {
     vi.stubGlobal(
       'fetch',
-      vi
-        .fn()
-        .mockResolvedValue({
-          ok: false,
-          json: async () => ({ success: false, message: 'Permisos insuficientes' })
-        })
+      vi.fn().mockResolvedValue({
+        ok: false,
+        json: async () => ({ success: false, message: 'Permisos insuficientes' })
+      })
     );
     render(<BarmanDashboard name='Damián' />);
     expect(await screen.findByText('Permisos insuficientes')).toBeInTheDocument();

@@ -90,6 +90,8 @@ export interface NivelPrecio {
 
 /** Fila cruda de la consulta de envase (trae los nombres con join). */
 export type EnvaseFila = DevolucionEnvaseUnidad & {
+  producto_id?: string;
+  presentacion_id?: string | null;
   devuelto_por?: string | null;
   confirmado_por?: string | null;
   ml_restante?: number | null;

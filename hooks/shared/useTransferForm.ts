@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useRef } from 'react';
 import type { Dispatch, SetStateAction } from 'react';
 import { CHAMPAGNE_DEFAULT_TIERS, type ChampagneTier } from '@/lib/business/champagne';
 import { resolveShotMl, resolveShotMlAnfitriona } from '@/lib/business/shotMl';
@@ -17,6 +17,11 @@ import type { SaleOption, SaleType } from '@/types/sale-options';
 import { preciosCortoAnfitriona } from '@/lib/sales/hostessShortPrices';
 
 export interface TransferForm {
+  mlAcompanamientoAnfitriona: string;
+  setMlAcompanamientoAnfitriona: (value: string) => void;
+
+  maxAnfitrionas: string;
+  setMaxAnfitrionas: (value: string) => void;
   acompanamientoBotella: 'ninguno' | 'gaseosa' | 'soda';
   setAcompanamientoBotella: (value: 'ninguno' | 'gaseosa' | 'soda') => void;
   unidadesAcompanamiento: string;
@@ -71,6 +76,8 @@ export function useTransferForm({
   item: BarStockItem | null;
   open: boolean;
 }): TransferForm {
+  const [mlAcompanamientoAnfitriona, setMlAcompanamientoAnfitriona] = useState('');
+  const [maxAnfitrionas, setMaxAnfitrionas] = useState('');
   const [acompanamientoBotella, setAcompanamientoBotella] = useState<
     'ninguno' | 'gaseosa' | 'soda'
   >('ninguno');
@@ -89,7 +96,12 @@ export function useTransferForm({
   // Ml por shot para cada audiencia (anfitriona vacío = igual que cliente).
   const [mlShotCliente, setMlShotCliente] = useState('');
   const [mlShotAnfitriona, setMlShotAnfitriona] = useState('');
-  const [tiers, setTiers] = useState<ChampagneTierRow[]>([]);
+  const [tiers, setTiersState] = useState<ChampagneTierRow[]>([]);
+  const tiersEdited = useRef(false);
+  const setTiers: Dispatch<SetStateAction<ChampagneTierRow[]>> = updater => {
+    tiersEdited.current = true;
+    setTiersState(updater);
+  };
   const [editarPrecios, setEditarPrecios] = useState(false);
 
   // Lo que se muestra en los labels: lo que se está editando o el valor vigente.
@@ -121,12 +133,16 @@ export function useTransferForm({
       const options = parseSavedOptions(item.opciones_venta) ?? [
         { tipo: 'botella', precio: presPrecio, comision: presComision }
       ];
+      setMaxAnfitrionas(Number(item.max_anfitrionas) > 0 ? String(item.max_anfitrionas) : '');
       const bottle = options.find(option => option.tipo === 'botella');
-      setAcompanamientoBotella(bottle?.acompanamiento?.tipo ?? 'ninguno');
+      setAcompanamientoBotella(
+        bottle?.acompanamiento ? (bottle.acompanamiento.tipo ?? 'gaseosa') : 'ninguno'
+      );
       setUnidadesAcompanamiento(
         bottle?.acompanamiento ? String(bottle.acompanamiento.unidades) : ''
       );
       const shot = options.find(option => option.tipo === 'shot');
+      setMlAcompanamientoAnfitriona(String(shot?.ml_acompanamiento_anfitriona ?? ''));
       const preciosAnfitriona = preciosCortoAnfitriona(shot);
       setPreciosAnfitrionaExtra(
         preciosAnfitriona.slice(1).map(row => ({
@@ -136,7 +152,8 @@ export function useTransferForm({
       );
       setTipos(options.map(option => option.tipo));
       const bottlePrecio = Number(bottle?.precio) > 0 ? Number(bottle?.precio) : presPrecio;
-      const bottleComision = Number(bottle?.comision) > 0 ? Number(bottle?.comision) : presComision;
+      const bottleComision =
+        bottle?.comision !== undefined ? Number(bottle.comision) : presComision;
       setPrecioVenta(bottlePrecio > 0 ? formatNumber(String(bottlePrecio)) : '');
       setComision(bottleComision ? formatNumber(String(bottleComision)) : '');
       setPrecioShot(shot && Number(shot.precio) > 0 ? formatNumber(String(shot.precio)) : '');
@@ -160,17 +177,23 @@ export function useTransferForm({
       );
       // Con configuración existente se usa directo; solo la primera vez se pide manual.
       setEditarPrecios(!options.some(option => Number(option.precio ?? 0) > 0));
-      setTiers([]);
-      if (esChampagne(item.categoria_nombre)) {
-        fetch(`/api/products/${item.producto_id}/tiers`)
+      tiersEdited.current = false;
+      setTiersState([]);
+      if (options.some(option => option.tipo === 'botella')) {
+        fetch(
+          `/api/products/${item.producto_id}/tiers${esChampagne(item.categoria_nombre) ? '' : '?configurados=1'}`
+        )
           .then(res => res.json().catch(() => ({})))
           .then(data => {
-            if (cancelado) return;
+            if (cancelado || tiersEdited.current) return;
             const rows =
               data.success && Array.isArray(data.data) && data.data.length > 0
                 ? data.data
-                : CHAMPAGNE_DEFAULT_TIERS;
-            setTiers(
+                : esChampagne(item.categoria_nombre)
+                  ? CHAMPAGNE_DEFAULT_TIERS
+                  : [];
+            if (!rows.length) return;
+            setTiersState(
               rows.map((t: ChampagneTier) => ({
                 anfitrionas: t.anfitrionas,
                 precio: formatMiles(t.precio),
@@ -179,9 +202,10 @@ export function useTransferForm({
             );
           })
           .catch(() => {
-            if (cancelado) return;
-            setTiers(
-              CHAMPAGNE_DEFAULT_TIERS.map(t => ({
+            if (cancelado || tiersEdited.current) return;
+            if (!esChampagne(item.categoria_nombre)) return;
+            setTiersState(
+              (esChampagne(item.categoria_nombre) ? CHAMPAGNE_DEFAULT_TIERS : []).map(t => ({
                 anfitrionas: t.anfitrionas,
                 precio: formatMiles(t.precio),
                 comision: formatMiles(t.comision)
@@ -195,7 +219,31 @@ export function useTransferForm({
     };
   }, [open, item]);
 
+  const tierCount = Math.min(20, Math.max(1, Number(maxAnfitrionas || 1) || 1));
+  useEffect(() => {
+    if (
+      !open ||
+      !tipos.includes('botella') ||
+      Number(comision.replace(/\./g, '')) <= 0 ||
+      tierCount < 2 ||
+      !Number.isInteger(tierCount)
+    )
+      return;
+    setTiersState(previous =>
+      Array.from(
+        { length: tierCount },
+        (_, index) =>
+          previous.find(row => row.anfitrionas === index + 1) ?? {
+            anfitrionas: index + 1,
+            precio: precioVenta || '0',
+            comision: comision || '0'
+          }
+      )
+    );
+  }, [open, tierCount, tipos, comision, precioVenta, tiers.length]);
+
   const reset = () => {
+    setMaxAnfitrionas('');
     setAcompanamientoBotella('ninguno');
     setUnidadesAcompanamiento('');
     setCantidad('');
@@ -208,7 +256,7 @@ export function useTransferForm({
     setMlShotCliente('');
     setMlShotAnfitriona('');
     setTipos(['botella']);
-    setTiers([]);
+    setTiersState([]);
     setEditarPrecios(false);
   };
 
@@ -219,6 +267,10 @@ export function useTransferForm({
     : tipos.includes('shot');
 
   return {
+    mlAcompanamientoAnfitriona,
+    setMlAcompanamientoAnfitriona,
+    maxAnfitrionas,
+    setMaxAnfitrionas,
     acompanamientoBotella,
     setAcompanamientoBotella,
     unidadesAcompanamiento,

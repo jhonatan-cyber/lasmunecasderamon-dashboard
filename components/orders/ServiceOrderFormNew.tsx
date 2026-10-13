@@ -1,5 +1,6 @@
 ﻿'use client';
 
+import { ServicioIncludedProduct } from '@/components/private-rooms/new/ServicioIncludedProduct';
 import { useState, useMemo, useEffect, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import { Button } from '@/components/ui/button';
@@ -45,6 +46,7 @@ interface ServiceOrderFormProps {
 
 export default function ServiceOrderForm({ clientes }: ServiceOrderFormProps) {
   const router = useRouter();
+  const [productoIncluido, setProductoIncluido] = useState('');
   const { user } = useCurrentUser();
   const { anfitrionas: anfitrionasDisponiblesBase, getAnfitrionasDisponibles } =
     useAnfitrionasDisponibles();
@@ -194,6 +196,10 @@ export default function ServiceOrderForm({ clientes }: ServiceOrderFormProps) {
   );
 
   const handleCreateOrder = async () => {
+    if (tieneComision && !productoIncluido) {
+      showErrorToast('Selecciona el producto incluido');
+      return;
+    }
     if (!tempForm.habitacion_id) {
       showErrorToast('Selecciona una habitación');
       return;
@@ -213,6 +219,7 @@ export default function ServiceOrderForm({ clientes }: ServiceOrderFormProps) {
           cliente_id: tempForm.clientes_ids.length > 0 ? tempForm.clientes_ids[0] : null,
           clientes_ids: tempForm.clientes_ids.length > 0 ? tempForm.clientes_ids : [],
           habitacion_id: tempForm.habitacion_id,
+          producto_incluido_presentacion_id: tieneComision ? productoIncluido : null,
           precio_servicio: tempForm.precio_servicio,
           precio_habitacion: tempForm.precio_habitacion,
           comision_anfitriona: tempForm.comision_anfitriona,
@@ -323,6 +330,9 @@ export default function ServiceOrderForm({ clientes }: ServiceOrderFormProps) {
   ]);
   return (
     <div className='space-y-6'>
+      {tieneComision && (
+        <ServicioIncludedProduct value={productoIncluido} onChange={setProductoIncluido} />
+      )}
       {}
 
       <div className='grid grid-cols-1 md:grid-cols-3 gap-6 mb-6'>
@@ -332,6 +342,7 @@ export default function ServiceOrderForm({ clientes }: ServiceOrderFormProps) {
             habitaciones={habitacionesDisponibles}
             value={tempForm.habitacion_id ? String(tempForm.habitacion_id) : ''}
             onChange={(value: string) => {
+              setProductoIncluido('');
               const habitacion = habitacionesDisponibles.find(
                 h => String(h.id_habitacion || h.id || '') === value
               );

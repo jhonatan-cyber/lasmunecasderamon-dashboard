@@ -83,6 +83,7 @@ describe('SettingsBottleHostessCard', () => {
                     precio: 5000,
                     comision: 0,
                     precio_anfitriona: 5000,
+                    ml_acompanamiento_anfitriona: 150,
                     precios_anfitriona: [{ precio: 5000, comision: 1000 }]
                   }
                 ]
@@ -117,9 +118,13 @@ describe('SettingsBottleHostessCard', () => {
     expect(screen.getByLabelText('Comisión (opcional)')).toHaveValue('10.000');
     expect(screen.getByText(/Vigente:/).textContent).toMatch(/regla por defecto/);
 
-    fireEvent.change(screen.getByLabelText('Máx. anfitrionas'), { target: { value: '3' } });
+    fireEvent.change(screen.getByLabelText('Máximo de anfitrionas'), { target: { value: '3' } });
     await screen.findByLabelText('Precio para 3 anfitrionas');
     fireEvent.change(screen.getByLabelText('Comisión (opcional)'), { target: { value: '12000' } });
+    expect(screen.queryByLabelText('Ml acompa\u00f1amiento cliente')).not.toBeInTheDocument();
+    fireEvent.change(screen.getByLabelText('Ml acompa\u00f1amiento anfitriona'), {
+      target: { value: '150' }
+    });
     fireEvent.click(screen.getByRole('button', { name: /Guardar Cambios/ }));
 
     await waitFor(() => {
@@ -136,6 +141,7 @@ describe('SettingsBottleHostessCard', () => {
             precio: 5000,
             comision: 0,
             precio_anfitriona: 5000,
+            ml_acompanamiento_anfitriona: 150,
             precios_anfitriona: [{ precio: 5000, comision: 1000 }]
           }
         ]
@@ -157,6 +163,96 @@ describe('SettingsBottleHostessCard', () => {
       const last = puts[puts.length - 1];
       expect(JSON.parse(last![1].body)).toEqual({ max_anfitrionas: null });
     });
+  });
+
+  it('permite fijar hasta 20 anfitrionas y guarda la tabla completa', async () => {
+    invalidateSettingsProducts();
+    const request = vi.fn(async (url: string, init?: any) => {
+      if (init?.method === 'PUT' || init?.method === 'PATCH')
+        return { ok: true, json: async () => ({ success: true }) };
+      if (String(url).includes('/tiers'))
+        return { ok: true, json: async () => ({ success: true, data: [] }) };
+      if (String(url).includes('/api/bar')) {
+        return {
+          ok: true,
+          json: async () => ({
+            success: true,
+            data: [
+              {
+                id: 'pres-p1',
+                nombre: '750ml',
+                producto_id: 'p1',
+                opciones_venta: [{ tipo: 'botella', precio: 200000, comision: 10000 }]
+              }
+            ]
+          })
+        };
+      }
+      return { ok: true, json: async () => ({ success: true, data: productos }) };
+    });
+    vi.stubGlobal('fetch', request);
+
+    render(<SettingsBottleHostessCard />);
+    await screen.findByLabelText('Producto y presentación');
+    fireEvent.click(screen.getByRole('button', { name: /Whisky.*200\.000/ }));
+    // El campo vive dentro del editor de configuración de venta, como en la transferencia.
+    const max = await screen.findByLabelText('Máximo de anfitrionas');
+    fireEvent.change(max, { target: { value: '12' } });
+    await screen.findByLabelText('Precio para 12 anfitrionas');
+    expect(screen.queryByLabelText('Precio para 13 anfitrionas')).not.toBeInTheDocument();
+    fireEvent.click(screen.getByRole('button', { name: /Guardar Cambios/ }));
+
+    await waitFor(() => {
+      const productPut = request.mock.calls.find(
+        args => args[0] === '/api/products/p1' && args[1]?.method === 'PUT'
+      );
+      expect(JSON.parse(productPut![1].body)).toEqual({ max_anfitrionas: 12 });
+      const tiersPut = request.mock.calls.find(
+        args => String(args[0]).includes('/tiers') && args[1]?.method === 'PUT'
+      );
+      const tiers = JSON.parse(tiersPut![1].body).tiers;
+      expect(tiers).toHaveLength(12);
+      expect(tiers[11]).toEqual({ anfitrionas: 12, precio: 200000, comision: 10000 });
+    });
+  });
+
+  it('permite fijar el máximo de anfitrionas aunque la botella no tenga comisión', async () => {
+    invalidateSettingsProducts();
+    const request = vi.fn(async (url: string, init?: any) => {
+      if (init?.method === 'PUT' || init?.method === 'PATCH')
+        return { ok: true, json: async () => ({ success: true }) };
+      if (String(url).includes('/tiers'))
+        return { ok: true, json: async () => ({ success: true, data: [] }) };
+      if (String(url).includes('/api/bar')) {
+        return {
+          ok: true,
+          json: async () => ({
+            success: true,
+            data: [
+              {
+                id: 'pres-p1',
+                nombre: '750ml',
+                producto_id: 'p1',
+                opciones_venta: [{ tipo: 'botella', precio: 200000, comision: 0 }]
+              }
+            ]
+          })
+        };
+      }
+      return { ok: true, json: async () => ({ success: true, data: productos }) };
+    });
+    vi.stubGlobal('fetch', request);
+
+    render(<SettingsBottleHostessCard />);
+    await screen.findByLabelText('Producto y presentación');
+    fireEvent.click(screen.getByRole('button', { name: /Whisky.*200\.000/ }));
+
+    const max = await screen.findByLabelText('Máximo de anfitrionas');
+    expect(max).toHaveValue(null);
+    expect(max).toHaveAttribute('placeholder', 'Default');
+    expect(screen.getByText(/regla por defecto del producto/)).toBeInTheDocument();
+    fireEvent.change(max, { target: { value: '2' } });
+    await screen.findByLabelText('Precio para 2 anfitrionas');
   });
 
   it('muestra y guarda la tabla de precios cuando el producto es champagne', async () => {

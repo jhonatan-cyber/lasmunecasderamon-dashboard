@@ -1,6 +1,7 @@
 'use client';
 
-import React from 'react';
+import React, { useRef, useState } from 'react';
+import { dragModifiers } from '@/components/shared/dragBounds';
 import {
   DndContext,
   closestCenter,
@@ -25,7 +26,7 @@ interface RoomGridViewProps {
   rooms: Room[];
   localRooms: Room[];
   setLocalRooms: React.Dispatch<React.SetStateAction<Room[]>>;
-  reorderRooms: (rooms: Room[]) => void;
+  reorderRooms: (rooms: Room[]) => Promise<void>;
   onEdit: (room: Room) => void;
   onDelete: (room: Room) => void;
   onActivate: (room: Room) => void;
@@ -71,16 +72,30 @@ export function RoomGridView({
     })
   );
 
-  const handleDragEnd = (event: DragEndEvent) => {
+  const busy = useRef(false);
+  const [saving, setSaving] = useState(false);
+  const handleDragEnd = async (event: DragEndEvent) => {
+    if (!canEdit || isMutating || busy.current) return;
     const { active, over } = event;
 
     if (over && active.id !== over.id) {
       const oldIndex = localRooms.findIndex(r => r.id === active.id);
       const newIndex = localRooms.findIndex(r => r.id === over.id);
 
-      const newRooms = arrayMove(localRooms, oldIndex, newIndex);
+      if (oldIndex < 0 || newIndex < 0) return;
+      const newRooms = arrayMove(localRooms, oldIndex, newIndex).map((room, index) => ({
+        ...room,
+        display_order: index + 1
+      }));
       setLocalRooms(newRooms);
-      reorderRooms(newRooms);
+      busy.current = true;
+      setSaving(true);
+      try {
+        await reorderRooms(newRooms);
+      } finally {
+        busy.current = false;
+        setSaving(false);
+      }
     }
   };
 
@@ -112,7 +127,13 @@ export function RoomGridView({
   }
 
   return (
-    <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
+    <DndContext
+      modifiers={dragModifiers}
+      autoScroll={false}
+      sensors={sensors}
+      collisionDetection={closestCenter}
+      onDragEnd={handleDragEnd}
+    >
       <SortableContext items={rooms.map(r => r.id)} strategy={rectSortingStrategy}>
         <div className='grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5 gap-4 mt-4 sm:mt-6'>
           {rooms.map(room => (
@@ -125,7 +146,7 @@ export function RoomGridView({
               onDeactivate={onDeactivate}
               onOccupy={onOccupy}
               isMutating={isMutating}
-              isDraggable={true}
+              isDraggable={canEdit && !saving && !isMutating}
               canEdit={canEdit}
               canDelete={canDelete}
               canActivate={canActivate}

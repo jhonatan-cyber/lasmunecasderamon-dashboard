@@ -29,7 +29,7 @@ export interface EscaneoEnvase {
 }
 
 interface UseContainerScanOptions {
-  /** Endpoint del paso: entrega del bar o confirmación del almacén. */
+  /** Endpoint del paso: entrega del bar o confirmación de la bodega. */
   endpoint: string;
   /** Se llama con retardo tras un escaneo aceptado, para refrescar el historial. */
   onAceptado?: () => void;

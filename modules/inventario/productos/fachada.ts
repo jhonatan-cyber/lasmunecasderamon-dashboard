@@ -464,7 +464,7 @@ export class ProductService {
   /**
    * Verifica un código escaneado contra nuestro inventario y, si el envase es
    * nuestro, está vacío y todavía no se entregó, lo marca como entregado al
-   * almacén en el mismo paso (control bar → almacén, migración 032).
+   * bodega en el mismo paso (control bar → bodega, migración 032).
    */
   static async verifyAndReturnContainer(codigo: unknown, usuarioId: string | null) {
     return await verificarEnvase(codigo, usuarioId);
@@ -475,7 +475,7 @@ export class ProductService {
   }
 
   /**
-   * Confirma la recepción en almacén de un envase que el bar ya marcó como
+   * Confirma la recepción en bodega de un envase que el bar ya marcó como
    * entregado (segundo paso del control, migración 033).
    */
   static async confirmContainerReturn(codigo: unknown, usuarioId: string | null) {
@@ -500,7 +500,7 @@ export class ProductService {
     const parsed = z
       .array(
         z.object({
-          anfitrionas: z.preprocess(v => Number(v), z.number().int().min(1).max(10)),
+          anfitrionas: z.preprocess(v => Number(v), z.number().int().min(1).max(20)),
           precio: z.preprocess(
             v => (v === undefined || v === null || v === '' ? 0 : Number(v)),
             z.number().int().min(0)
@@ -512,7 +512,7 @@ export class ProductService {
         })
       )
       .min(1, 'Se requiere al menos un tramo')
-      .max(10)
+      .max(20)
       .safeParse(typeof tiers === 'string' ? JSON.parse(tiers) : tiers);
     if (!parsed.success) {
       throw new ValidationError('Tramos inválidos', parsed.error.issues);

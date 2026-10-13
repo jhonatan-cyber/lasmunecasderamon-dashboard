@@ -1,6 +1,7 @@
 'use client';
 
 import { useState } from 'react';
+import { SaleProductPhoto } from '@/components/sales/product-modal/SaleProductPhoto';
 import { AlertTriangle, GlassWater, Wine } from 'lucide-react';
 import { Card, CardContent } from '@/components/ui/card';
 import {
@@ -13,9 +14,15 @@ import {
 import type { ShotsSummary } from '@/modules/inventario/contracts';
 
 interface BarOpenBottleDetail {
+  foto?: string | null;
+  venta_corto_habilitada?: boolean;
   id: string;
-  codigo: string;
-  ml_restante: number;
+  cantidad: number;
+  ml_disponibles: number;
+  ml_cliente: number;
+  ml_anfitriona: number;
+  shots_anfitriona_disponibles: number;
+  shots_disponibles: number;
   producto_nombre: string;
   presentacion_nombre: string;
 }
@@ -109,6 +116,7 @@ export function BarStatsCards({
           {stat.title === 'Disponible en botellas abiertas' && (
             <button
               type='button'
+              style={{ backgroundColor: 'transparent' }}
               className='absolute inset-0 rounded-3xl focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary'
               onClick={() => setDetalleAbierto(true)}
               aria-label='Ver las botellas abiertas y sus mililitros disponibles'
@@ -117,14 +125,15 @@ export function BarStatsCards({
         </Card>
       ))}
       <Dialog open={detalleAbierto} onOpenChange={setDetalleAbierto}>
-        <DialogContent className='max-h-[85vh] overflow-hidden rounded-2xl sm:max-w-xl'>
-          <DialogHeader>
+        <DialogContent className='flex max-h-[85dvh] flex-col gap-0 overflow-hidden rounded-2xl p-0 sm:max-w-2xl'>
+          <DialogHeader className='shrink-0 border-b px-5 py-5 sm:px-6'>
             <DialogTitle>Mililitros disponibles por botella</DialogTitle>
             <DialogDescription>
-              Contenido calculado individualmente para cada botella abierta en el bar.
+              Contenido disponible por producto y presentación. Los cortos se calculan según su
+              configuración.
             </DialogDescription>
           </DialogHeader>
-          <div className='max-h-[60vh] space-y-2 overflow-y-auto pr-1'>
+          <div className='min-h-0 flex-1 divide-y divide-border overflow-y-auto px-5 sm:px-6'>
             {botellasAbiertas.length === 0 ? (
               <p className='py-8 text-center text-sm text-muted-foreground'>
                 No hay botellas abiertas con contenido.
@@ -133,17 +142,55 @@ export function BarStatsCards({
               botellasAbiertas.map(botella => (
                 <div
                   key={botella.id}
-                  className='flex items-center justify-between gap-3 rounded-xl border bg-muted/30 p-3'
+                  className='-mx-5 flex items-center gap-3 px-5 py-3 transition-colors duration-200 hover:bg-muted/50 sm:-mx-6 sm:px-6'
                 >
-                  <div className='min-w-0'>
-                    <p className='truncate font-semibold'>{botella.producto_nombre}</p>
-                    <p className='truncate text-xs text-muted-foreground'>
-                      {botella.presentacion_nombre} · Código {botella.codigo}
-                    </p>
+                  <SaleProductPhoto
+                    foto={botella.foto ?? undefined}
+                    name={botella.producto_nombre}
+                    large={false}
+                    compact
+                  />
+                  <div className='grid min-w-0 flex-1 items-center gap-2 sm:grid-cols-[minmax(0,1fr)_auto] sm:gap-4'>
+                    <div className='min-w-0'>
+                      <p className='text-sm font-semibold leading-snug'>
+                        {botella.producto_nombre}
+                      </p>
+                      <p className='text-xs text-muted-foreground'>
+                        {botella.presentacion_nombre} · {botella.cantidad}{' '}
+                        {botella.cantidad === 1 ? 'botella abierta' : 'botellas abiertas'}
+                      </p>
+                    </div>
+                    <dl
+                      className={`grid gap-x-4 ${botella.venta_corto_habilitada ? 'grid-cols-3' : 'grid-cols-1'}`}
+                    >
+                      <div>
+                        <dt className='text-[11px] text-muted-foreground'>Disponible</dt>
+                        <dd className='text-base font-semibold tabular-nums text-purple-700 dark:text-purple-300'>
+                          {botella.ml_disponibles} ml
+                        </dd>
+                      </div>
+                      {botella.venta_corto_habilitada && (
+                        <>
+                          <div>
+                            <dt className='text-[11px] text-muted-foreground'>
+                              Cliente · {botella.ml_cliente} ml
+                            </dt>
+                            <dd className='text-base font-semibold tabular-nums'>
+                              {botella.shots_disponibles} cortos
+                            </dd>
+                          </div>
+                          <div>
+                            <dt className='text-[11px] text-muted-foreground'>
+                              Anfitriona · {botella.ml_anfitriona} ml
+                            </dt>
+                            <dd className='text-base font-semibold tabular-nums'>
+                              {botella.shots_anfitriona_disponibles} cortos
+                            </dd>
+                          </div>
+                        </>
+                      )}
+                    </dl>
                   </div>
-                  <span className='shrink-0 rounded-full bg-purple-500/10 px-3 py-1 text-sm font-bold text-purple-700 dark:text-purple-300'>
-                    {botella.ml_restante} ml
-                  </span>
                 </div>
               ))
             )}

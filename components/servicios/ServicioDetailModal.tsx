@@ -133,6 +133,11 @@ export function ServicioDetailModal({
             </div>
 
             {}
+            {selectedServicio.producto_incluido_nombre && (
+              <div className='rounded-xl border p-4 text-sm'>
+                Producto incluido: {selectedServicio.producto_incluido_nombre} · 1 unidad
+              </div>
+            )}
             {hasAnfitrionas && (
               <div className='space-y-3'>
                 <Label className='text-sm font-medium flex items-center gap-2 text-black dark:text-neutral-200'>
@@ -181,10 +186,7 @@ export function ServicioDetailModal({
                       Precio Servicio
                     </TableCell>
                     <TableCell className='text-right text-black dark:text-neutral-100'>
-                      {formatCurrency(
-                        (Number(selectedServicio.precio_servicio) || 0) *
-                          (Number(selectedServicio.total_usuarios) || 1)
-                      )}
+                      {formatCurrency(Number(selectedServicio.total_comision ?? 0))}
                     </TableCell>
                   </TableRow>
                   <TableRow>
@@ -211,10 +213,7 @@ export function ServicioDetailModal({
                       Total Comisión
                     </TableCell>
                     <TableCell className='text-right text-green-700 dark:text-green-400 font-bold'>
-                      {formatCurrency(
-                        (Number(selectedServicio.precio_servicio) || 0) *
-                          (Number(selectedServicio.total_usuarios) || 1)
-                      )}
+                      {formatCurrency(Number(selectedServicio.total_comision ?? 0))}
                     </TableCell>
                   </TableRow>
                   <TableRow className='bg-green-50 dark:bg-green-900/20'>
@@ -222,7 +221,7 @@ export function ServicioDetailModal({
                       Comisión por Anfitriona
                     </TableCell>
                     <TableCell className='text-right text-green-700 dark:text-green-400 font-medium'>
-                      {formatCurrency(Number(selectedServicio.precio_servicio) || 0)} c/u
+                      {formatCurrency(Number(selectedServicio.comision_individual) || 0)} c/u
                     </TableCell>
                   </TableRow>
                 </TableBody>
@@ -239,7 +238,7 @@ export function ServicioDetailModal({
                 className='rounded-full hover:scale-105 transition-all duration-200 bg-blue-600 text-white hover:bg-blue-700'
                 disabled
               >
-                Editar Servicio
+                Servicio adicional
               </Button>
             )}
             <Button

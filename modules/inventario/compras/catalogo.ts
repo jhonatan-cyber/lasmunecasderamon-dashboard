@@ -12,6 +12,8 @@ export async function listar() {
       id: String(presentacion.id),
       producto_id: String(producto.id),
       producto_nombre: producto.name,
+      categoria_nombre: (producto as typeof producto & { categoria?: string }).categoria,
+      codigo_barras: presentacion.codigo_barras,
       nombre: presentacion.nombre,
       foto: presentacion.foto || producto.foto || 'default.png',
       precio_compra: Number(presentacion.precio_compra ?? 0),

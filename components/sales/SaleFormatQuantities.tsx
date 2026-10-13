@@ -8,6 +8,7 @@ import type { SaleChoice } from '@/lib/sales/saleChoice';
 export interface SaleFormatQuantityOption {
   value: SaleChoice;
   label: string;
+  displayLabel?: string;
   precio: number;
   comision: number;
   cantidad: number;
@@ -31,11 +32,13 @@ export function SaleFormatQuantities({
         return (
           <div
             key={option.value}
-            className={`flex items-center justify-between gap-2 rounded-xl border border-neutral-200/70 bg-white px-2.5 dark:border-white/10 dark:bg-neutral-950 ${dense ? 'py-1' : 'py-2'}`}
+            className={`flex items-center justify-between gap-2 rounded-xl border border-neutral-200/70 bg-white px-2.5 dark:border-white/10 dark:bg-neutral-950 ${dense ? 'h-14 min-h-14 py-2' : 'py-2'}`}
           >
             <div className='min-w-0 flex-1'>
-              <p className='truncate text-xs font-bold'>{option.label}</p>
-              <p className='text-[10px] text-muted-foreground'>
+              <p className='text-xs font-bold leading-tight'>
+                {option.displayLabel ?? option.label}
+              </p>
+              <p className='text-xs text-muted-foreground'>
                 {formatCurrencyNoDecimals(option.precio)} · comisión{' '}
                 {formatCurrencyNoDecimals(option.comision)}
               </p>

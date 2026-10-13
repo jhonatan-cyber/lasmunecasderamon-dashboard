@@ -1,23 +1,28 @@
 'use client';
 
-import { Check, Plus } from 'lucide-react';
+import { Check } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { SaleProductPhoto } from '@/components/sales/product-modal/SaleProductPhoto';
 import { SaleProductDetails } from '@/components/sales/product-modal/SaleProductDetails';
-import { SaleProductHostess } from '@/components/sales/product-modal/SaleProductHostess';
+import { SaleProductSummary } from './SaleProductSummary';
+import { SaleProductFormatRows } from './SaleProductFormatRows';
 import type { SaleProductItem } from '@/components/sales/product-modal/saleProductItems';
 
 /** Página de productos en modo tarjetas (una card por presentación). */
 export function SaleProductCards({
   items,
-  availableHostesses
+  availableHostesses,
+  collapsed = {},
+  onToggle = () => {}
 }: {
   items: SaleProductItem[];
   availableHostesses: any[];
+  collapsed?: Record<string, boolean>;
+  onToggle?: (id: string) => void;
 }) {
   return (
-    <div className='grid grid-cols-1 gap-4 sm:grid-cols-2'>
+    <div className='grid grid-cols-1 gap-5'>
       {items.map(item => (
         <Card
           key={item.id}
@@ -25,36 +30,41 @@ export function SaleProductCards({
             item.enCarrito > 0 ? 'ring-1 ring-emerald-500/50' : ''
           }`}
         >
-          <div className='relative px-4 pt-4'>
-            <SaleProductPhoto foto={item.product.foto} name={item.name} large />
-            {item.enCarrito > 0 && (
-              <span className='absolute right-7 top-7 inline-flex items-center gap-1 rounded-full bg-emerald-500 px-2.5 py-1 text-[11px] font-bold text-white shadow'>
-                <Check className='size-3' aria-hidden='true' />
-                {item.enCarrito}
-              </span>
-            )}
-          </div>
-          <CardHeader className='p-4'>
-            <CardTitle className='sr-only'>{item.name}</CardTitle>
-            <SaleProductDetails item={item} />
-          </CardHeader>
-          <CardContent className='flex flex-1 flex-col gap-4 p-4 pt-0'>
-            <div className='flex flex-col gap-2'>
-              <span className='text-sm text-muted-foreground'>Anfitriona</span>
-              <SaleProductHostess item={item} availableHostesses={availableHostesses} />
+          {collapsed[item.id] ? (
+            <div className='p-4'>
+              <SaleProductSummary item={item} collapsed onToggle={() => onToggle(item.id)} />
             </div>
-          </CardContent>
-          <CardFooter className='border-t p-4'>
-            <Button
-              aria-label='Agregar producto'
-              onClick={item.onAgregar}
-              disabled={item.agregarDisabled}
-              className='h-11 w-full rounded-full bg-black text-sm font-bold text-white shadow-md transition-all hover:scale-[1.02] hover:bg-black/80 disabled:opacity-40 dark:bg-white dark:text-black dark:hover:bg-white/90'
-            >
-              <Plus className='mr-2 size-4' aria-hidden='true' />
-              Agregar · {item.totalAgregar}
-            </Button>
-          </CardFooter>
+          ) : (
+            <>
+              <div className='relative px-4 pt-4'>
+                <Button
+                  type='button'
+                  variant='secondary'
+                  size='sm'
+                  className='absolute bottom-3 right-7 z-10'
+                  aria-expanded
+                  aria-label={`Ocultar detalles de ${item.name}`}
+                  onClick={() => onToggle(item.id)}
+                >
+                  Ocultar detalles
+                </Button>
+                <SaleProductPhoto foto={item.product.foto} name={item.name} large />
+                {item.enCarrito > 0 && (
+                  <span className='absolute right-7 top-7 inline-flex items-center gap-1 rounded-full bg-emerald-500 px-2.5 py-1 text-[11px] font-bold text-white shadow'>
+                    <Check className='size-3' aria-hidden='true' />
+                    {item.enCarrito}
+                  </span>
+                )}
+              </div>
+              <CardHeader className='p-4'>
+                <CardTitle className='sr-only'>{item.name}</CardTitle>
+                <SaleProductDetails item={item} showFormats={false} />
+              </CardHeader>
+              <CardContent className='flex flex-1 flex-col gap-4 p-4 pt-0'>
+                <SaleProductFormatRows item={item} availableHostesses={availableHostesses} />
+              </CardContent>
+            </>
+          )}
         </Card>
       ))}
     </div>

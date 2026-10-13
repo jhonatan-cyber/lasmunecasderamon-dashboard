@@ -69,9 +69,11 @@ export const ServiceFormFields = React.memo<ServiceFormFieldsProps>(
           <Label>Anfitrionas</Label>
           <HostessSelect
             anfitrionas={anfitrionasDisponibles}
+            allowedOccupiedIds={anfitrionasDelServicio}
+            showAvailability
             value={selectedUsuarios}
             onChange={onUsuariosChange}
-            placeholder='Seleccione anfitrionas'
+            placeholder='Selecciona anfitrionas libres o del servicio'
             maxSelection={10}
             disabled={isSaving || loadingAnfitrionas}
           />
@@ -83,7 +85,8 @@ export const ServiceFormFields = React.memo<ServiceFormFieldsProps>(
           )}
           {anfitrionasDelServicio.length > 0 && (
             <p className='text-xs text-blue-600'>
-              Anfitrionas actuales del servicio están incluidas en la lista
+              Desmarca para liberar o selecciona otras para agregar. Los cambios se aplicarán al
+              guardar, también al servicio original.
             </p>
           )}
         </div>

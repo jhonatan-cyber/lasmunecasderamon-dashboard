@@ -2,6 +2,7 @@
 
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import {
   Eye,
   Ban,
@@ -16,7 +17,7 @@ import {
   Clock,
   AlertCircle,
   XCircle,
-  type LucideIcon,
+  type LucideIcon
 } from 'lucide-react';
 import { VentaWithDetails } from '@/types/venta';
 
@@ -60,7 +61,7 @@ const statusTheme: Record<number, StatusTheme> = {
     titleColor: 'text-emerald-900 dark:text-emerald-100',
     textColor: 'text-emerald-800 dark:text-emerald-200',
     mutedColor: 'text-emerald-700/50 dark:text-emerald-400/50',
-    border: 'border-emerald-500/20',
+    border: 'border-emerald-500/20'
   },
   2: {
     bg: 'rgba(59, 130, 246, 0.08)',
@@ -73,7 +74,7 @@ const statusTheme: Record<number, StatusTheme> = {
     titleColor: 'text-blue-900 dark:text-blue-100',
     textColor: 'text-blue-800 dark:text-blue-200',
     mutedColor: 'text-blue-700/50 dark:text-blue-400/50',
-    border: 'border-blue-500/20',
+    border: 'border-blue-500/20'
   },
   3: {
     bg: 'rgba(245, 158, 11, 0.08)',
@@ -86,7 +87,7 @@ const statusTheme: Record<number, StatusTheme> = {
     titleColor: 'text-amber-900 dark:text-amber-100',
     textColor: 'text-amber-800 dark:text-amber-200',
     mutedColor: 'text-amber-700/50 dark:text-amber-400/50',
-    border: 'border-amber-500/20',
+    border: 'border-amber-500/20'
   },
   0: {
     bg: 'rgba(244, 63, 94, 0.08)',
@@ -99,15 +100,15 @@ const statusTheme: Record<number, StatusTheme> = {
     titleColor: 'text-rose-900 dark:text-rose-100',
     textColor: 'text-rose-800 dark:text-rose-200',
     mutedColor: 'text-rose-700/50 dark:text-rose-400/50',
-    border: 'border-rose-500/20',
-  },
+    border: 'border-rose-500/20'
+  }
 };
 
 const metodoPagoIcons: Record<string, LucideIcon> = {
   efectivo: Banknote,
   tarjeta: CreditCard,
   transferencia: Landmark,
-  prepago: Ticket,
+  prepago: Ticket
 };
 
 export function SalesListItem({
@@ -120,7 +121,7 @@ export function SalesListItem({
   canAnular,
   hasAnyAction,
   onVerDetalles,
-  onAnularClick,
+  onAnularClick
 }: SalesListItemProps) {
   const estadoNum =
     venta?.estado !== null && venta?.estado !== undefined ? Number(venta.estado) : 1;
@@ -142,13 +143,13 @@ export function SalesListItem({
     ? new Date(venta.fecha_crea).toLocaleDateString('es-ES', {
         day: '2-digit',
         month: 'short',
-        year: 'numeric',
+        year: 'numeric'
       })
     : '';
   const horaStr = venta?.fecha_crea
     ? new Date(venta.fecha_crea).toLocaleTimeString('es-ES', {
         hour: '2-digit',
-        minute: '2-digit',
+        minute: '2-digit'
       })
     : '';
 
@@ -210,7 +211,9 @@ export function SalesListItem({
               {venta.cliente_nombre || 'Sin cliente'}
             </span>
             {ubicacion ? (
-              <span className={`inline-flex items-center gap-1 text-sm ${t.textColor} font-semibold`}>
+              <span
+                className={`inline-flex items-center gap-1 text-sm ${t.textColor} font-semibold`}
+              >
                 <MapPin className='w-4 h-4' />
                 {ubicacion}
               </span>
@@ -232,7 +235,9 @@ export function SalesListItem({
               {metodoPagoLabels[venta?.metodo_pago as keyof typeof metodoPagoLabels] || 'Efectivo'}
             </span>
             {propina > 0 && (
-              <span className={`text-xs font-bold ${t.textColor} ${t.badgeBg} px-2 py-0.5 rounded-full ml-auto`}>
+              <span
+                className={`text-xs font-bold ${t.textColor} ${t.badgeBg} px-2 py-0.5 rounded-full ml-auto`}
+              >
                 +{formatCurrency(propina)} prop
               </span>
             )}
@@ -250,44 +255,50 @@ export function SalesListItem({
                 </Badge>
               ))
             ) : (
-              <span className='text-xs text-gray-300 dark:text-slate-600 italic'>Sin anfitrionas</span>
+              <span className='text-xs text-gray-300 dark:text-slate-600 italic'>
+                Sin anfitrionas
+              </span>
             )}
           </div>
         </div>
 
-        {/* Actions */}
         {hasAnyAction && (
-          <div className='flex gap-2'>
-            {canViewDetails && (
-              <Button
-                variant='outline'
-                size='sm'
-                className='flex-1 h-10 rounded-2xl text-xs font-bold gap-1.5 transition-colors'
-                style={{
-                  borderColor: t.bg.replace('0.08', '0.2'),
-                  color: estadoNum === 1 ? '#059669' : estadoNum === 2 ? '#2563eb' : estadoNum === 3 ? '#d97706' : '#e11d48',
-                }}
-                onClick={() => onVerDetalles(venta?.id)}
-              >
-                <Eye className='h-4 w-4' />
-                Detalles
-              </Button>
-            )}
-            {canRequestAnulacion && (
-              <Button
-                variant='ghost'
-                size='sm'
-                className='flex-1 h-10 rounded-2xl text-xs font-bold gap-1.5
-                  text-gray-400 dark:text-slate-500
-                  hover:text-rose-600 dark:hover:text-rose-400
-                  hover:bg-rose-50 dark:hover:bg-rose-950/30'
-                onClick={() => onAnularClick(venta)}
-              >
-                <Ban className='h-4 w-4' />
-                Anular
-              </Button>
-            )}
-          </div>
+          <TooltipProvider delayDuration={150}>
+            <div className='flex gap-2'>
+              {canViewDetails && (
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Button
+                      variant='outline'
+                      size='icon'
+                      aria-label='Ver detalles'
+                      className='h-9 w-9 rounded-full'
+                      onClick={() => onVerDetalles(venta.id)}
+                    >
+                      <Eye className='h-4 w-4' />
+                    </Button>
+                  </TooltipTrigger>
+                  <TooltipContent>Ver detalles</TooltipContent>
+                </Tooltip>
+              )}
+              {canRequestAnulacion && (
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Button
+                      variant='outline'
+                      size='icon'
+                      aria-label='Solicitar anulación'
+                      className='h-9 w-9 rounded-full text-muted-foreground hover:border-rose-500 hover:bg-rose-50 hover:text-rose-600 dark:hover:bg-rose-950/30'
+                      onClick={() => onAnularClick(venta)}
+                    >
+                      <Ban className='h-4 w-4' />
+                    </Button>
+                  </TooltipTrigger>
+                  <TooltipContent>Solicitar anulación</TooltipContent>
+                </Tooltip>
+              )}
+            </div>
+          </TooltipProvider>
         )}
       </div>
     </div>

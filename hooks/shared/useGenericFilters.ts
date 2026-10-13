@@ -1,11 +1,11 @@
 'use client';
 
-/* eslint-disable react-hooks/preserve-manual-memoization */
 import { useState, useMemo, useEffect } from 'react';
 export function useGenericFilters<T>(
   data: T[],
   options?: {
     searchFields?: (keyof T)[];
+    searchPredicate?: (item: T, term: string) => boolean;
     initialPageSize?: number;
     initialSortBy?: string;
     initialSortOrder?: 'asc' | 'desc';
@@ -18,16 +18,20 @@ export function useGenericFilters<T>(
   const [sortBy, setSortBy] = useState(options?.initialSortBy || 'created_at');
   const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>(options?.initialSortOrder || 'desc');
 
+  const searchFields = options?.searchFields;
+  const searchPredicate = options?.searchPredicate;
   const filteredData = useMemo(() => {
     let result = data;
 
-    if (searchTerm.trim() && options?.searchFields) {
+    if (searchTerm.trim() && (searchFields || searchPredicate)) {
       const lowercasedFilter = searchTerm.trim().toLowerCase();
       result = result.filter(item =>
-        options.searchFields!.some(field => {
-          const value = item[field];
-          return typeof value === 'string' && value.toLowerCase().includes(lowercasedFilter);
-        })
+        searchPredicate
+          ? searchPredicate(item, searchTerm)
+          : searchFields!.some(field => {
+              const value = item[field];
+              return typeof value === 'string' && value.toLowerCase().includes(lowercasedFilter);
+            })
       );
     }
 
@@ -67,7 +71,7 @@ export function useGenericFilters<T>(
     }
 
     return result;
-  }, [data, searchTerm, filterStatus, options?.searchFields, sortBy, sortOrder]);
+  }, [data, searchTerm, filterStatus, searchFields, searchPredicate, sortBy, sortOrder]);
 
   const totalPages = Math.max(1, Math.ceil(filteredData.length / pageSize));
   const currentPage = Math.min(

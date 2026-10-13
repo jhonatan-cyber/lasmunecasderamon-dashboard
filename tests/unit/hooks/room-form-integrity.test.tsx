@@ -19,7 +19,35 @@ describe('formulario de habitaciones', () => {
     act(() => result.current.handleBlur(focus('price')));
     expect(result.current.form.price).toBe('2.000');
   });
-  it.each(['0', '-5', 'Infinity', 'NaN'])('rechaza una duración inválida: %s', time => {
+  it('permite crear una habitación con tiempo, precio y comisión en cero', () => {
+    const submit = vi.fn();
+    const { result } = renderHook(() => useRoomForm({ open: true, onSubmit: submit }));
+    act(() => {
+      result.current.handleChange(change('name', 'Sala'));
+      for (const field of ['time', 'price', 'comision_anfitriona'])
+        result.current.handleChange(change(field, '0'));
+    });
+    act(() => result.current.handleSubmit(submitEvent));
+    expect(submit).toHaveBeenCalledWith({
+      name: 'Sala',
+      time: '0',
+      price: '0',
+      comision_anfitriona: '0'
+    });
+  });
+  it('conserva los valores cero al editar', () => {
+    const room = { name: 'Sala', price: 0, time: 0, comision_anfitriona: 0 } as Room;
+    const { result } = renderHook(() =>
+      useRoomForm({ open: true, initialValues: room, onSubmit: vi.fn() })
+    );
+    expect(result.current.form).toEqual({
+      name: 'Sala',
+      price: '0',
+      time: '0',
+      comision_anfitriona: '0'
+    });
+  });
+  it.each(['', '-5', 'Infinity', 'NaN'])('rechaza una duración inválida: %s', time => {
     const submit = vi.fn();
     const { result } = renderHook(() => useRoomForm({ open: true, onSubmit: submit }));
     act(() => {

@@ -27,6 +27,8 @@ export function SettingsSaleOptionsEditor({
   saving,
   onPrecio,
   onComision,
+  maxAnfitrionas,
+  onMaxAnfitrionasChange,
   ref
 }: {
   options: SaleOption[];
@@ -37,6 +39,9 @@ export function SettingsSaleOptionsEditor({
   saving: boolean;
   onPrecio: (value: string) => void;
   onComision: (value: string) => void;
+  /** Vacío = regla por defecto del producto. Mismo campo que en la transferencia. */
+  maxAnfitrionas?: string;
+  onMaxAnfitrionasChange?: (value: string) => void;
   ref: Ref<SettingsSaleOptionsHandle>;
 }) {
   const shot = options.find(o => o.tipo === 'shot');
@@ -54,11 +59,12 @@ export function SettingsSaleOptionsEditor({
     hostPrices.slice(1).map(p => ({ precio: String(p.precio), comision: String(p.comision) }))
   );
   const [mix, setMix] = useState<'ninguno' | 'gaseosa' | 'soda'>(
-    bottle?.acompanamiento?.tipo ?? 'ninguno'
+    bottle?.acompanamiento ? (bottle.acompanamiento.tipo ?? 'gaseosa') : 'ninguno'
   );
   const [units, setUnits] = useState(String(bottle?.acompanamiento?.unidades ?? 1));
   const [ml, setMl] = useState(mlCliente ? String(mlCliente) : '');
   const [mlHost, setMlHost] = useState(mlAnfitriona ? String(mlAnfitriona) : '');
+  const [mlMixHost, setMlMixHost] = useState(String(shot?.ml_acompanamiento_anfitriona ?? ''));
   const shotMl = useConfigValue<number>('bar', 'shot_ml', 50);
 
   useImperativeHandle(ref, () => ({
@@ -70,14 +76,13 @@ export function SettingsSaleOptionsEditor({
                 tipo,
                 precio: numeric(precio),
                 comision: isSimpleProduct(numeric(precio)) ? 0 : numeric(comision),
-                ...(mix !== 'ninguno'
-                  ? { acompanamiento: { tipo: mix, unidades: Number(units) } }
-                  : {})
+                ...(mix !== 'ninguno' ? { acompanamiento: { unidades: Number(units) } } : {})
               }
             : {
                 tipo,
                 precio: numeric(precioShot),
                 comision: 0,
+                ml_acompanamiento_anfitriona: Number(mlMixHost || 0),
                 precio_anfitriona: numeric(precioHost || precioShot),
                 precios_anfitriona: [
                   { precio: numeric(precioHost || precioShot), comision: numeric(comisionHost) },
@@ -109,7 +114,11 @@ export function SettingsSaleOptionsEditor({
 
   return (
     <SaleTypeEditor
+      mlAcompanamientoAnfitriona={mlMixHost}
+      onMlAcompanamientoAnfitrionaChange={setMlMixHost}
       context='settings'
+      maxAnfitrionas={maxAnfitrionas}
+      onMaxAnfitrionasChange={onMaxAnfitrionasChange}
       tipos={tipos}
       onTiposChange={setTipos}
       etiquetaShot='Corto'

@@ -3,6 +3,7 @@
 import { Card } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { Clock, User, Home, CreditCard, Square, Users, Eye } from 'lucide-react';
 import { VentaWithDetails } from '@/types/venta';
 import { formatCurrencyNoDecimals } from '@/lib/utils/formatters';
@@ -223,35 +224,42 @@ export default function SaleCard({ venta, onRefresh, onVerDetalles }: SaleCardPr
           </div>
         </div>
 
-        {/* Actions */}
-        <div className='flex items-center justify-end pt-2 gap-2'>
-          {onVerDetalles && (
-            <Button
-              size='sm'
-              variant='outline'
-              onClick={e => {
-                e.stopPropagation();
-                onVerDetalles(venta.id);
-              }}
-              className='flex-1 rounded-full'
-            >
-              <Eye className='w-3 h-3 mr-1' /> Ver detalles
-            </Button>
-          )}
-          {timer && timer.isActive && (
-            <Button
-              size='sm'
-              variant='default'
-              onClick={e => {
-                e.stopPropagation();
-                setShowConfirm(true);
-              }}
-              className='bg-blue-600 hover:bg-blue-700 text-white rounded-full'
-            >
-              <Square className='w-3 h-3 mr-1' /> Finalizar
-            </Button>
-          )}
-        </div>
+        <TooltipProvider delayDuration={150}>
+          <div className='flex items-center gap-2 pt-2' onClick={event => event.stopPropagation()}>
+            {onVerDetalles && (
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Button
+                    size='icon'
+                    variant='outline'
+                    aria-label='Ver detalles'
+                    className='h-9 w-9 rounded-full'
+                    onClick={() => onVerDetalles(venta.id)}
+                  >
+                    <Eye className='h-4 w-4' />
+                  </Button>
+                </TooltipTrigger>
+                <TooltipContent>Ver detalles</TooltipContent>
+              </Tooltip>
+            )}
+            {timer && timer.isActive && (
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Button
+                    size='icon'
+                    variant='outline'
+                    aria-label='Finalizar venta'
+                    className='h-9 w-9 rounded-full hover:border-red-500 hover:text-red-600'
+                    onClick={() => setShowConfirm(true)}
+                  >
+                    <Square className='h-4 w-4' />
+                  </Button>
+                </TooltipTrigger>
+                <TooltipContent>Finalizar venta</TooltipContent>
+              </Tooltip>
+            )}
+          </div>
+        </TooltipProvider>
       </div>
 
       {/* Confirm Modal */}

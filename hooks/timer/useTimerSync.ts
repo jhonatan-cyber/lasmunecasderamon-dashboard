@@ -76,7 +76,9 @@ export function useTimerSync({
               const start = parseDateSafe(dbT.startTime);
               const elapsed = Math.floor((now.getTime() - start.getTime()) / 1000);
               const durationSecs = Number(dbT.duration || 0) * 60;
-              let remaining = Math.max(0, durationSecs - elapsed);
+              let remaining = Number.isFinite(Number(dbT.remainingTime))
+                ? Math.max(0, Number(dbT.remainingTime))
+                : Math.max(0, durationSecs - elapsed);
 
               if (remaining === 0 && durationSecs > 0 && elapsed < 120) {
                 remaining = durationSecs;
@@ -245,6 +247,7 @@ export function useTimerSync({
         syncTimers();
         break;
 
+      case 'service_changed':
       case 'timers_updated':
         syncTimers();
         break;
@@ -343,9 +346,11 @@ export function useTimerSync({
       if (document.visibilityState === 'visible') syncTimers();
     };
     document.addEventListener('visibilitychange', onVisible);
+    window.addEventListener('updateSales', syncTimers);
     return () => {
       window.clearInterval(interval);
       document.removeEventListener('visibilitychange', onVisible);
+      window.removeEventListener('updateSales', syncTimers);
       periodicSyncStartedRef.current = false;
     };
   }, [isInitialized, syncTimers]);

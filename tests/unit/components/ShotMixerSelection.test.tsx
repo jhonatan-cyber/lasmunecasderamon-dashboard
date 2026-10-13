@@ -8,7 +8,7 @@ afterEach(() => {
   cleanup();
   vi.unstubAllGlobals();
 });
-it('selecciona el sabor disponible y actualiza los ml al cambiar la cantidad de cortos', async () => {
+it('selecciona el sabor disponible y actualiza las unidades al cambiar la cantidad de cortos', async () => {
   vi.stubGlobal(
     'fetch',
     vi.fn().mockResolvedValue({
@@ -20,7 +20,7 @@ it('selecciona el sabor disponible y actualiza los ml al cambiar la cantidad de 
             id: 'soda',
             producto_nombre: 'Soda limón',
             nombre: '500 ml',
-            stock_bar: 1,
+            stock_bar: 3,
             ml_abierta: 300
           },
           { id: 'sin-stock', producto_nombre: 'Cola', nombre: '500 ml', stock_bar: 0 }
@@ -54,14 +54,46 @@ it('selecciona el sabor disponible y actualiza los ml al cambiar la cantidad de 
   fireEvent.change(screen.getByLabelText('Soda o gaseosa para Whisky'), {
     target: { value: 'soda' }
   });
-  fireEvent.change(screen.getByLabelText('Ml de acompañamiento para Whisky'), {
-    target: { value: '100' }
-  });
-  expect(screen.getByText('Consumo incluido: 200 ml de Soda limón 500 ml')).toBeInTheDocument();
+  expect(screen.getByText('Consumo incluido: 2 unidades de Soda limón 500 ml')).toBeInTheDocument();
   fireEvent.click(screen.getByText('Otro corto'));
-  expect(screen.getByText('Consumo incluido: 300 ml de Soda limón 500 ml')).toBeInTheDocument();
+  expect(screen.getByText('Consumo incluido: 3 unidades de Soda limón 500 ml')).toBeInTheDocument();
 });
-it('valida el consumo y rechaza usar la propia bebida como acompañamiento', () => {
+it('descuenta los ml configurados al elegir Coca-Cola o Sprite para cortos de anfitriona', async () => {
+  vi.stubGlobal(
+    'fetch',
+    vi.fn().mockResolvedValue({
+      ok: true,
+      json: async () => ({
+        success: true,
+        data: [
+          { id: 'cola', producto_nombre: 'Coca-Cola', nombre: '350 ml', stock_bar: 3 },
+          { id: 'sprite', producto_nombre: 'Sprite', nombre: '350 ml', stock_bar: 3 }
+        ]
+      })
+    })
+  );
+  function Form() {
+    const [productos, setProductos] = useState<any[]>([
+      {
+        id: 'whisky',
+        nombre: 'Whisky',
+        tipo_venta: 'shot',
+        shot_anfitriona: true,
+        cantidad: 2,
+        opciones_venta: [{ tipo: 'shot', ml_acompanamiento_anfitriona: 150 }]
+      }
+    ]);
+    return <ShotMixerSelection productos={productos} setProductos={setProductos} />;
+  }
+  render(<Form />);
+  await screen.findByRole('option', { name: /Coca-Cola/ });
+  expect(screen.getByRole('option', { name: /Sprite/ })).toBeInTheDocument();
+  fireEvent.change(screen.getByLabelText('Soda o gaseosa para Whisky'), {
+    target: { value: 'sprite' }
+  });
+  expect(screen.getByText('Consumo incluido: 300 ml de Sprite 350 ml')).toBeInTheDocument();
+});
+it('valida el consumo y rechaza usar la propia bebida como bebida', () => {
   const detail = {
     producto_id: 'licor',
     presentacion_id: 'licor',

@@ -10,7 +10,8 @@
 import type { SaleOption } from '@/types/sale-options';
 
 export interface ConsumoInventarioDetalle {
-  acompanamiento_corto?: { presentacion_id: string; ml_por_corto: number };
+  acompanamiento_botella?: { presentacion_id: string; unidades: number };
+  acompanamiento_corto?: { presentacion_id: string; unidades?: number; ml_por_corto?: number };
   presentacion_id?: string | null;
   cantidad?: number | null;
   tipo_venta?: string | null;
@@ -63,9 +64,9 @@ export type DevolucionEnvaseMotivo =
   | 'ya_devuelto'
   /** La botella se vendió entera: su envase se lo llevó el cliente, no vuelve al bar. */
   | 'venta_entera'
-  /** El bar todavía no marcó la entrega, así que el almacén no puede confirmar. */
+  /** El bar todavía no marcó la entrega, así que la bodega no puede confirmar. */
   | 'no_entregado'
-  /** El almacén ya confirmó la recepción de este envase. */
+  /** El bodega ya confirmó la recepción de este envase. */
   | 'ya_confirmado';
 
 /** Envase verificado, con lo necesario para mostrarlo en el panel de envases. */
@@ -74,13 +75,13 @@ export interface DevolucionEnvaseUnidad {
   codigo: string;
   codigo_barras: string | null;
   estado: string;
-  /** true si esta botella se sirvió alguna vez por shots: es la que vuelve a almacén. */
+  /** true si esta botella se sirvió alguna vez por shots: es la que vuelve a bodega. */
   abierta_por_shots: boolean;
   /** Ml que se reconocieron como merma al entregar la botella vacía. */
   ml_merma: number;
   /** Date crudo de pg en la consulta; string al marcar (hora del negocio). */
   fecha_devolucion: string | Date | null;
-  /** Confirmación de recepción del almacén (null = todavía no se confirma). */
+  /** Confirmación de recepción de la bodega (null = todavía no se confirma). */
   fecha_confirmacion: string | Date | null;
   producto_nombre: string | null;
   presentacion_nombre: string | null;
@@ -97,7 +98,7 @@ export interface DevolucionEnvaseRegistro extends DevolucionEnvaseUnidad {
   confirmado_nombre: string | null;
   confirmado_apellido: string | null;
   confirmado_nick: string | null;
-  /** true mientras el almacén no confirme la recepción. */
+  /** true mientras la bodega no confirme la recepción. */
   pendiente_confirmacion: boolean;
 }
 
@@ -110,7 +111,7 @@ export type DevolucionEnvaseResultado =
       unidad: DevolucionEnvaseUnidad | null;
     };
 
-/** Solicitud de traspaso de unidades de almacén al bar (crea la transferencia). */
+/** Solicitud de traspaso de unidades de bodega al bar (crea la transferencia). */
 export interface TraspasoInput {
   opciones_venta?: SaleOption[];
   producto_id: string;
@@ -157,7 +158,7 @@ export interface UnidadesGenerarInput {
 }
 
 /**
- * Contadores del control de envases: entregados por el bar que el almacén
+ * Contadores del control de envases: entregados por el bar que la bodega
  * todavía no confirmó, y de esos, los que superan el umbral de horas sin
  * recibir.
  */
@@ -175,7 +176,8 @@ export interface ResumenEnvases {
  * contarse, así que una segunda anulación sobre la misma venta no duplica stock.
  */
 export interface AnulacionStockEntrada {
-  venta_id: string;
+  venta_id?: string;
+  servicio_id?: string;
   usuario_id: string | null;
   fecha: string;
   fraccion?: number;
@@ -204,6 +206,7 @@ export interface ContextoVentaInventario {
   usuarioId: string | null;
   fecha: string;
   ventaId?: string | null;
+  servicioId?: string;
 }
 
 export { CLAVES_INVENTARIO } from './configuracionClaves';

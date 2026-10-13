@@ -33,11 +33,15 @@ export function useRoomForm({ open, initialValues, onSubmit }: UseRoomFormProps)
     if (open && initialValues) {
       setForm({
         name: initialValues.name || '',
-        price: initialValues.price ? formatNumberWithSeparators(String(initialValues.price)) : '',
-        time: initialValues.time ? String(initialValues.time) : '',
-        comision_anfitriona: initialValues.comision_anfitriona
-          ? formatNumberWithSeparators(String(initialValues.comision_anfitriona))
-          : ''
+        price:
+          initialValues.price != null
+            ? formatNumberWithSeparators(String(initialValues.price))
+            : '',
+        time: initialValues.time != null ? String(initialValues.time) : '',
+        comision_anfitriona:
+          initialValues.comision_anfitriona != null
+            ? formatNumberWithSeparators(String(initialValues.comision_anfitriona))
+            : ''
       });
     } else if (open) {
       setForm(initialFormState);
@@ -54,7 +58,7 @@ export function useRoomForm({ open, initialValues, onSubmit }: UseRoomFormProps)
       Number(form.price.replace(/\./g, '')) < 0
     )
       newErrors.price = 'Precio válido requerido';
-    if (!form.time.trim() || !Number.isFinite(Number(form.time)) || Number(form.time) <= 0)
+    if (!form.time.trim() || !Number.isFinite(Number(form.time)) || Number(form.time) < 0)
       newErrors.time = 'Tiempo válido requerido';
     if (
       form.comision_anfitriona &&

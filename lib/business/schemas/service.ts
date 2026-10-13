@@ -5,13 +5,18 @@ export const ServiceSchema = z.object({
   codigo: z.string().optional(),
   cliente_id: z.string().nullable().optional(),
   habitacion_id: z.string().optional(),
+  producto_incluido_presentacion_id: z.string().nullable().optional(),
+  producto_incluido_nombre: z.string().nullable().optional(),
   precio_habitacion: z.number().optional().default(0),
   precio_servicio: z.number().optional().default(0),
   iva: z.number().optional().default(0),
   sub_total: z.number().optional().default(0),
   total: z.number().min(0),
   tiempo: z.number().min(0).optional(),
-  metodo_pago: z.enum(['efectivo', 'tarjeta', 'transferencia', 'prepago', 'mixto']).optional().default('efectivo'),
+  metodo_pago: z
+    .enum(['efectivo', 'tarjeta', 'transferencia', 'prepago', 'mixto'])
+    .optional()
+    .default('efectivo'),
   created_by: z.string().nullable().optional(),
   estado: z.number().optional().default(1),
   fecha_crea: z.string().or(z.date()).nullable().optional(),
@@ -33,19 +38,23 @@ export const ServiceSchema = z.object({
   servicio_original_id: z.string().nullable().optional(),
   habitacion_comision: z.number().nullable().optional(),
   total_comision: z.number().optional().default(0),
-  comision_individual: z.number().optional().default(0),
+  comision_individual: z.number().optional().default(0)
 });
 
 export const ServiceCreateSchema = z.object({
   cliente_id: z.string().nullable().optional(),
   habitacion_id: z.string().min(1, 'Habitación es requerida'),
+  producto_incluido_presentacion_id: z.string().min(1).nullable().optional(),
   precio_habitacion: z.number().min(0).optional().default(0),
   precio_servicio: z.number().min(0),
   iva: z.number().optional().default(0),
   sub_total: z.number().min(0),
   total: z.number().min(0),
   tiempo: z.number().min(1, 'Tiempo es requerido'),
-  metodo_pago: z.enum(['efectivo', 'tarjeta', 'transferencia', 'prepago', 'mixto']).optional().default('efectivo'),
+  metodo_pago: z
+    .enum(['efectivo', 'tarjeta', 'transferencia', 'prepago', 'mixto'])
+    .optional()
+    .default('efectivo'),
   usuarios: z.array(z.string()).min(1, 'Al menos una anfitriona es requerida'),
   clientes: z.array(z.string()).optional().default([]),
   es_temporal: z.union([z.number(), z.boolean()]).optional().default(0),

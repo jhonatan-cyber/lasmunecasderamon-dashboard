@@ -162,6 +162,7 @@ export const AUTHENTICATED_ONLY_APIS = [
  */
 export const ROUTE_PERMISSIONS: RoutePermissionMap = {
   '/dashboard': { module: 'dashboard', action: 'view' },
+  '/cleaning': { module: 'dashboard', action: 'view' },
   '/users': { module: 'users', action: 'view' },
   '/clients': { module: 'clients', action: 'view' },
   '/products': { module: 'products', action: 'view' },
@@ -254,7 +255,7 @@ export function httpActionForMethod(method: string, declaredAction: string): str
 export const SIDEBAR_PERMISSION_OVERRIDES: RoutePermissionMap = {
   // La página lista habitaciones (`rooms.view`); el ítem crea un privado.
   '/rooms': { module: 'rooms', action: 'create' },
-  // La página es el almacén; el ítem confirma la devolución de envases.
+  // La página es la bodega; el ítem confirma la devolución de envases.
   '/products/containers': { module: 'products', action: 'confirm_container_return' },
   // Compras no figura en la tabla de páginas (el middleware solo le pide sesión).
   '/purchases': { module: 'products', action: 'view' }
@@ -264,7 +265,13 @@ export const SIDEBAR_PERMISSION_OVERRIDES: RoutePermissionMap = {
  * Menú reducido del Barman: aunque la sesión tenga permisos de más, la barra solo ofrece
  * estos destinos. Son hrefs reales del sidebar; el test falla si alguno deja de existir.
  */
-export const BARMAN_ROUTE_ALLOWLIST = ['/dashboard', '/bar', '/sales', '/private-rooms'];
+export const BARMAN_ROUTE_ALLOWLIST = [
+  '/dashboard',
+  '/bar',
+  '/orders',
+  '/private-rooms',
+  '/cleaning'
+];
 
 export const ACCESS_DENIED_PATH = '/access-denied';
 

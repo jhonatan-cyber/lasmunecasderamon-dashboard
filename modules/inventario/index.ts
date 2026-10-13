@@ -1,4 +1,5 @@
 import 'server-only';
+export { listarLimpieza, operarLimpieza } from './limpieza/servicio';
 
 export { consumirStockBar } from './bar/servicio';
 export { revertirStockAnulacion } from './anulaciones/servicio';
@@ -71,3 +72,5 @@ export { listarMovimientos, listarMovimientosRecientes } from './movimientos/ser
 export { CategoryService } from './categorias/servicio';
 
 export { ProductService } from './productos/fachada';
+
+export { validarConfiguracionVenta } from './bar/validarConfiguracionVenta';

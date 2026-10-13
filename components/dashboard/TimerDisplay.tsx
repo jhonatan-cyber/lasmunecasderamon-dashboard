@@ -4,8 +4,7 @@
 import { useTimer, useCountdown } from '@/contexts/TimerContext';
 import { Clock, Square, ChevronDown, ChevronUp } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { FloatingTimerPanel } from './FloatingTimerPanel';
 import { toast } from 'sonner';
 import { useConfirmModal } from '@/hooks/shared';
 import { ConfirmModal } from '@/components/shared/ConfirmModal';
@@ -174,83 +173,31 @@ export function TimerDisplay() {
     return null;
   }
 
-  if (activeTimers.length === 1) {
-    const timer = activeTimers[0];
-    return (
-      <>
-        <div className='fixed bottom-4 right-4 z-50 max-w-xs'>
-          <Card className='border border-gray-200 bg-white shadow-lg dark:border-slate-800 dark:bg-slate-950/95 dark:shadow-2xl'>
-            <CardHeader className='pb-1'>
-              <CardTitle className='flex items-center gap-1 text-xs font-semibold text-slate-900 dark:text-slate-100'>
-                <Clock className='text-xs text-blue-600 dark:text-blue-300' />
-                Temporizador
-              </CardTitle>
-            </CardHeader>
-            <CardContent className='pt-0'>
-              <TimerItem timer={timer} onStop={handleStopTimer} formatTime={formatTime} />
-            </CardContent>
-          </Card>
-        </div>
-        <ConfirmModal
-          open={modalState.open}
-          onOpenChange={open => modalState.onCancel?.()}
-          title={modalState.title}
-          message={modalState.message}
-          confirmText={modalState.confirmText}
-          cancelText={modalState.cancelText}
-          hideCancel={modalState.hideCancel}
-          type={modalState.type}
-          onConfirm={modalState.onConfirm || (() => {})}
-          onCancel={modalState.onCancel}
-          confirmVariant={modalState.confirmVariant}
-          cancelVariant={modalState.cancelVariant}
-          size={modalState.size}
-        />
-      </>
-    );
-  }
-
   const firstTimer = activeTimers[0];
   const remainingCount = activeTimers.length - 1;
 
   return (
     <>
-      <div className='fixed bottom-4 right-4 z-50 max-w-xs'>
-        <Card className='border border-gray-200 bg-white shadow-lg dark:border-slate-800 dark:bg-slate-950/95 dark:shadow-2xl'>
-          <CardHeader className='pb-1'>
-            <CardTitle className='flex items-center gap-1 text-xs font-semibold text-slate-900 dark:text-slate-100'>
-              <Clock className='text-xs text-blue-600 dark:text-blue-300' />
-              Temporizadores
-              <Badge
-                variant='secondary'
-                className='ml-auto text-xs dark:bg-slate-800 dark:text-slate-100'
-              >
-                {activeTimers.length}
-              </Badge>
-            </CardTitle>
-          </CardHeader>
-          <CardContent className='pt-0'>
-            {}
-            <TimerItem timer={firstTimer} onStop={handleStopTimer} formatTime={formatTime} />
-
-            {}
+      <FloatingTimerPanel count={activeTimers.length}>
+        <TimerItem timer={firstTimer} onStop={handleStopTimer} formatTime={formatTime} />
+        {remainingCount > 0 && (
+          <>
             <Button
+              type='button'
               variant='ghost'
               size='sm'
               onClick={() => setIsExpanded(!isExpanded)}
-              className='mt-1 h-6 w-full text-xs text-slate-700 hover:bg-slate-100 dark:text-slate-200 dark:hover:bg-slate-800'
+              className='mt-1 h-7 w-full rounded-full text-xs text-slate-700 hover:bg-slate-100 dark:text-slate-200 dark:hover:bg-slate-800'
             >
               {isExpanded ? (
-                <ChevronUp className='text-xs mr-1' />
+                <ChevronUp className='mr-1 h-4 w-4' />
               ) : (
-                <ChevronDown className='text-xs mr-1' />
+                <ChevronDown className='mr-1 h-4 w-4' />
               )}
-              {isExpanded ? 'Ocultar' : `Mostrar ${remainingCount} más`}
+              {isExpanded ? 'Mostrar menos' : `Mostrar ${remainingCount} más`}
             </Button>
-
-            {}
             {isExpanded && (
-              <div className='space-y-1 mt-1 max-h-32 overflow-y-auto'>
+              <div className='mt-1 max-h-[min(16rem,40vh)] space-y-1 overflow-y-auto'>
                 {activeTimers.slice(1).map(timer => (
                   <TimerItem
                     key={timer.id}
@@ -261,9 +208,9 @@ export function TimerDisplay() {
                 ))}
               </div>
             )}
-          </CardContent>
-        </Card>
-      </div>
+          </>
+        )}
+      </FloatingTimerPanel>
 
       <ConfirmModal
         open={modalState.open}

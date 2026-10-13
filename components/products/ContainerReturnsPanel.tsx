@@ -62,7 +62,7 @@ function nombreDe(...campos: Array<string | null>): string {
 const MOTIVOS_AVISO = ['ya_confirmado', 'no_entregado'];
 
 /**
- * Segundo paso del control de envases: el almacén escanea lo que el bar
+ * Segundo paso del control de envases: la bodega escanea lo que el bar
  * entregó y confirma la recepción. Solo puede confirmar envases que el barman
  * ya marcó como entregados en `/bar`, y cada confirmación queda con quién y
  * cuándo la hizo (migración 033).
@@ -318,7 +318,7 @@ export function ContainerReturnsPanel() {
           </div>
           <div className='p-4 rounded-2xl bg-white dark:bg-slate-900/40 shadow-md'>
             <p className='text-[10px] font-black uppercase tracking-widest text-gray-500 dark:text-gray-400'>
-              Recibidos en almacén
+              Recibidos en bodega
             </p>
             <p className='mt-1 text-2xl font-bold text-gray-900 dark:text-white'>
               {devoluciones.length - pendientes.length}
@@ -410,7 +410,7 @@ export function ContainerReturnsPanel() {
           onLimpiar={limpiar}
           onReintentar={sincronizar}
           etiquetaAceptado='Recibido'
-          tituloAceptados='Recibidos en almacén'
+          tituloAceptados='Recibidos en bodega'
         />
 
         <div className='space-y-2'>

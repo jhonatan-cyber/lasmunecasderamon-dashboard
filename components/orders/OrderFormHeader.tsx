@@ -14,6 +14,7 @@ interface OrderFormHeaderProps {
   tipPercentage: number;
   tipEnabled: boolean;
   onSubmit: () => void;
+  submitDisabled?: boolean;
   onTipChange: (enabled: boolean, percentage: number) => void;
 }
 
@@ -26,9 +27,10 @@ export default function OrderFormHeader({
   tipPercentage,
   tipEnabled,
   onSubmit,
+  submitDisabled = false,
   onTipChange,
   metodoPago,
-  onMetodoPagoChange,
+  onMetodoPagoChange
 }: OrderFormHeaderProps) {
   return (
     <div className='mb-6 grid grid-cols-1 gap-6 lg:grid-cols-2 lg:items-start'>
@@ -55,6 +57,7 @@ export default function OrderFormHeader({
         total={total}
         subtotal={subtotal}
         onSubmit={onSubmit}
+        disabled={submitDisabled}
         tipPercentage={tipPercentage}
         tipEnabled={tipEnabled}
         onTipChange={onTipChange}

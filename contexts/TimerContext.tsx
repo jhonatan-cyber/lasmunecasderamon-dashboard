@@ -174,20 +174,17 @@ export const TimerProvider: React.FC<{ children: React.ReactNode }> = ({ childre
       showTimerExpiredNotification(timer);
 
       if (timer.isTemporary) {
-        activeTimers.value = activeTimers.peek().filter(x => x.id !== timer.id);
-
-        const mainTimer = activeTimers
-          .peek()
-          .find(t => t.servicioId === timer.servicioId && !t.isTemporary);
-        if (mainTimer) {
-          mainTimer.isPaused.value = false;
-        }
+        stopTimer(timer.id, false, timer).catch(error =>
+          logger.captureException(error, { context: 'TimerContext:finalize' })
+        );
       } else {
         logger.info('[TimerContext] Llamando stopTimer para', {
           id: timer.id,
           servicioId: timer.servicioId
         });
-        stopTimer(timer.id, false, timer);
+        stopTimer(timer.id, false, timer).catch(error =>
+          logger.captureException(error, { context: 'TimerContext:finalize' })
+        );
 
         if (refreshCallbackRef.current) {
           logger.info('[TimerContext] Llamando refreshCallback para:', timer.servicioId);
@@ -213,6 +210,16 @@ export const TimerProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     async (sid: string) => {
       const t = timers.find(x => x.servicioId === sid);
       if (t) await stopTimer(t.id, true, t);
+      else {
+        const response = await fetch(`/api/servicios/${sid}`, {
+          method: 'PATCH',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ estado: 1 })
+        });
+        if (!response.ok) throw new Error('No se pudo finalizar el servicio');
+        refreshCallbackRef.current?.(sid);
+        window.dispatchEvent(new CustomEvent('updateSales'));
+      }
     },
     [timers, stopTimer]
   );
@@ -226,7 +233,12 @@ export const TimerProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     [timers]
   );
   const getTemporaryTimerByServicioId = useCallback(
-    (sid: string) => timers.find(t => t.servicioId === sid && t.isTemporary),
+    (sid: string) =>
+      timers.find(
+        t =>
+          t.isTemporary &&
+          (t.servicioId === sid || String(t.datosTemporales?.servicio_original_id ?? '') === sid)
+      ),
     [timers]
   );
   const getAccurateNow = useCallback(() => new Date(Date.now() + serverOffset), [serverOffset]);

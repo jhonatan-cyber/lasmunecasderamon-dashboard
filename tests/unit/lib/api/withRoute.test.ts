@@ -93,6 +93,25 @@ describe('withRoute middleware', () => {
   });
 
   describe('permission guard', () => {
+    it('rechaza ventas del barman aunque tenga permisos antiguos', async () => {
+      mockAuthUser = { id: 'barman-1', role: 'Barman', permissions: { sales: { write: true } } };
+      const handler = vi.fn().mockResolvedValue(Response.json({ success: true }));
+      const wrapped = withRoute({ auth: true, module: 'sales', action: 'write' }, handler);
+      await wrapped(new Request('http://localhost/api/sales', { method: 'POST' }), { params: {} });
+      expect(ApiResponse.forbidden).toHaveBeenCalled();
+      expect(handler).not.toHaveBeenCalled();
+    });
+
+    it('permite al barman crear pedidos', async () => {
+      mockAuthUser = { id: 'barman-1', role: 'Barman', permissions: { orders: { write: true } } };
+      const wrapped = withRoute({ auth: true, module: 'orders', action: 'write' }, okHandler);
+      const res = await wrapped(new Request('http://localhost/api/orders', { method: 'POST' }), {
+        params: {}
+      });
+      await expect(res.json()).resolves.toEqual({ success: true });
+      expect(ApiResponse.forbidden).not.toHaveBeenCalled();
+    });
+
     it('returns 403 when user lacks module permission', async () => {
       mockAuthUser = {
         id: 'user-1',

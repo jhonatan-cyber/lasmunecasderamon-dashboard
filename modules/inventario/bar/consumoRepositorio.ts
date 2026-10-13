@@ -1,3 +1,4 @@
+import { validarConfiguracionVenta } from './validarConfiguracionVenta';
 import { generateUUID, type TransactionQuery } from '@/lib/database/db';
 import {
   DEFAULT_BOTTLE_ML,
@@ -39,10 +40,37 @@ export async function consumirStock(
   detalles: ConsumoInventarioDetalle[],
   contextoVenta: ContextoVentaInventario
 ): Promise<ShotAlert[]> {
+  // El producto incluido consume una unidad completa sin reglas de precio de venta.
+  if (!contextoVenta.servicioId) await validarConfiguracionVenta(trx, detalles);
   const alertas: ShotAlert[] = [];
   const requerido = new Map<string, PedidoPresentacion>();
 
   for (const detalle of detalles) {
+    if (detalle.acompanamiento_botella) {
+      const mixer = detalle.acompanamiento_botella;
+      const cantidad = Number(detalle.cantidad);
+      if (
+        detalle.tipo_venta === 'shot' ||
+        !detalle.presentacion_id ||
+        mixer.presentacion_id === detalle.presentacion_id ||
+        !Number.isInteger(cantidad) ||
+        cantidad < 1 ||
+        !Number.isInteger(mixer.unidades) ||
+        mixer.unidades < 1 ||
+        mixer.unidades > 1000
+      )
+        throw new BusinessError('Bebida de botella inválida');
+      const pedido = requerido.get(mixer.presentacion_id) ?? {
+        botellas: 0,
+        shotsCliente: 0,
+        shotsAnfitriona: 0,
+        tieneShots: false,
+        mlAcompanamiento: 0
+      };
+      pedido.botellas += cantidad * mixer.unidades;
+      requerido.set(mixer.presentacion_id, pedido);
+    }
+
     if (detalle.acompanamiento_corto) {
       const mixer = detalle.acompanamiento_corto;
       const cantidad = Number(detalle.cantidad);
@@ -53,9 +81,11 @@ export async function consumirStock(
         !Number.isInteger(cantidad) ||
         cantidad < 1 ||
         cantidad > 99 ||
-        !Number.isInteger(mixer.ml_por_corto) ||
-        mixer.ml_por_corto < 1 ||
-        mixer.ml_por_corto > 10000
+        (mixer.unidades !== undefined
+          ? !Number.isInteger(mixer.unidades) || mixer.unidades < 1 || mixer.unidades > 1000
+          : !Number.isInteger(mixer.ml_por_corto) ||
+            Number(mixer.ml_por_corto) < 1 ||
+            Number(mixer.ml_por_corto) > 10000)
       )
         throw new BusinessError('Consumo de acompa\u00f1amiento inv\u00e1lido');
       const acumulado = requerido.get(mixer.presentacion_id) ?? {
@@ -65,8 +95,11 @@ export async function consumirStock(
         tieneShots: false,
         mlAcompanamiento: 0
       };
-      acumulado.mlAcompanamiento += cantidad * mixer.ml_por_corto;
-      acumulado.tieneShots = true;
+      if (mixer.unidades !== undefined) acumulado.botellas += cantidad * mixer.unidades;
+      else {
+        acumulado.mlAcompanamiento += cantidad * Number(mixer.ml_por_corto);
+        acumulado.tieneShots = true;
+      }
       requerido.set(mixer.presentacion_id, acumulado);
     }
     const presentacionId = detalle.presentacion_id?.trim();
@@ -115,7 +148,11 @@ export async function consumirStock(
     );
     const presentacion = presentaciones[0];
     if (!presentacion) {
-      if (pedido.mlAcompanamiento > 0)
+      if (contextoVenta.servicioId) throw new BusinessError('El producto incluido ya no existe');
+      if (
+        pedido.mlAcompanamiento > 0 ||
+        detalles.some(d => d.acompanamiento_botella?.presentacion_id === presentacionId)
+      )
         throw new BusinessError('El producto de acompa\u00f1amiento ya no existe');
       continue;
     }
@@ -259,22 +296,25 @@ export async function consumirStock(
             pedido.shotsAnfitriona * shotMlAnfitriona +
             pedido.mlAcompanamiento
           : null,
-      precio_venta:
-        pedido.mlAcompanamiento > 0 &&
-        pedido.botellas === 0 &&
-        pedido.shotsCliente === 0 &&
-        pedido.shotsAnfitriona === 0
+      precio_venta: contextoVenta.servicioId
+        ? 0
+        : pedido.mlAcompanamiento > 0 &&
+            pedido.botellas === 0 &&
+            pedido.shotsCliente === 0 &&
+            pedido.shotsAnfitriona === 0
           ? 0
           : Math.floor(Number(presentacion.precio_venta ?? 0)),
-      comision:
-        pedido.mlAcompanamiento > 0 &&
-        pedido.botellas === 0 &&
-        pedido.shotsCliente === 0 &&
-        pedido.shotsAnfitriona === 0
+      comision: contextoVenta.servicioId
+        ? 0
+        : pedido.mlAcompanamiento > 0 &&
+            pedido.botellas === 0 &&
+            pedido.shotsCliente === 0 &&
+            pedido.shotsAnfitriona === 0
           ? 0
           : Math.floor(Number(presentacion.comision ?? 0)),
       usuario_id: contextoVenta.usuarioId,
       venta_id: contextoVenta.ventaId ?? null,
+      ...(contextoVenta.servicioId ? { servicio_id: contextoVenta.servicioId } : {}),
       fecha_crea: contextoVenta.fecha
     };
     const columnas = Object.keys(movimiento);

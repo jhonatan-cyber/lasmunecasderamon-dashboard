@@ -3,7 +3,18 @@ import { SaleOptionsSchema } from '@/lib/business/schemas/sale-options';
 import { completarOpciones } from '@/modules/inventario/helpers';
 import { parseSavedOptions } from '@/components/bar/transfer/transferOptions';
 import { resolverVentaProducto } from '@/lib/sales/saleChoice';
-it('conserva acompañamientos en validación, precios y catálogo de venta', () => {
+it('guarda solo las unidades y permite elegir la bebida al vender', () => {
+  const options = SaleOptionsSchema.parse([
+    { tipo: 'botella', precio: 20000, acompanamiento: { unidades: 2 } }
+  ]);
+  expect(parseSavedOptions(JSON.stringify(completarOpciones(JSON.stringify(options), [])))).toEqual(
+    options
+  );
+  expect(resolverVentaProducto({ opciones_venta: options }).opciones[0].nombre).toBe(
+    'Botella · 2 bebidas'
+  );
+});
+it('conserva bebidas en validación, precios y catálogo de venta', () => {
   const options = SaleOptionsSchema.parse([
     { tipo: 'botella', precio: 20000, acompanamiento: { tipo: 'soda', unidades: 3 } }
   ]);
@@ -14,7 +25,7 @@ it('conserva acompañamientos en validación, precios y catálogo de venta', () 
     'Botella · 3 sodas'
   );
 });
-it('rechaza cantidades inválidas y acompañamiento en cortos', () => {
+it('rechaza cantidades inválidas y bebida en cortos', () => {
   for (const unidades of [0, -1, 1.5, 1001])
     expect(
       SaleOptionsSchema.safeParse([

@@ -1,5 +1,6 @@
 'use client';
 
+import { bottleMixerUnits } from '@/lib/sales/productConfiguration';
 import { useState } from 'react';
 import { resolverVentaProducto, type SaleChoice } from '@/lib/sales/saleChoice';
 import { esCortoAnfitriona } from '@/lib/sales/hostessShortPrices';
@@ -62,6 +63,7 @@ export function CategoryProductRow({
   const p = original.opciones_venta
     ? {
         ...original,
+        unidades_acompanamiento: bottleMixerUnits(original),
         precio: venta.precio,
         price: venta.precio,
         comision: venta.comision,

@@ -66,6 +66,17 @@ export function RouteGuard({ children }: RouteGuardProps) {
         return;
       }
 
+      if (
+        user.role?.toLowerCase() === 'barman' &&
+        currentPathname &&
+        matchesRoutePath(currentPathname, '/sales')
+      ) {
+        setAuthorized(false);
+        setChecking(false);
+        routerRef.current.replace('/orders');
+        return;
+      }
+
       /*
        * La tabla de rutas es la misma que usa el middleware (`ROUTE_PERMISSIONS`, en
        * `lib/constants/route-permissions`): una sola lista de pares módulo/acción y un
@@ -118,7 +129,15 @@ export function RouteGuard({ children }: RouteGuardProps) {
     };
 
     checkAuth();
-  }, [user, userLoading, hasPermission, permissionsLoading, permissionsLoaded, refreshPermissions]);
+  }, [
+    pathname,
+    user,
+    userLoading,
+    hasPermission,
+    permissionsLoading,
+    permissionsLoaded,
+    refreshPermissions
+  ]);
 
   if (checking || userLoading) {
     return (

@@ -1,5 +1,9 @@
 import 'server-only';
-import { consultarHabitacion } from '@/modules/operacion';
+import {
+  obtenerServicioParaConsumo,
+  consultarHabitacion,
+  cambiarAnfitrionasServicioEnUnidad
+} from '@/modules/operacion';
 import { validarAnfitrionasEnLocal } from '@/modules/identidad';
 import { AuditService } from '@/modules/auditoria';
 import { generateUUID } from '@/lib/utils/ids';
@@ -41,11 +45,20 @@ export async function registrarVenta(
   aplazar: (task: () => void | Promise<void>) => void
 ) {
   const validated = SaleCreateSchema.parse(body);
+  if (validated.servicio_anfitrionas !== undefined && !validated.servicio_id)
+    throw new BusinessError('El cambio de anfitrionas requiere un servicio activo');
   const skipClientPrepago = Boolean(body?.skip_client_prepago || body?.origen === 'cuenta');
   const skipCashRegisterPosting = body?.origen === 'cuenta';
 
   const pedidoId = validated.pedido_id || body.pedido_id || body.id_pedido;
-  const clienteId = validated.cliente_id || body.cliente_id;
+  const servicio = validated.servicio_id
+    ? await obtenerServicioParaConsumo(validated.servicio_id, contexto)
+    : null;
+  if (servicio) {
+    validated.habitacion_id = servicio.habitacion_id;
+    validated.tiempo = 0;
+  }
+  const clienteId = validated.cliente_id || servicio?.cliente_id || body.cliente_id;
 
   const ventaId = generateUUID();
   const codigo = validated.codigo || Math.random().toString(36).substring(2, 10).toUpperCase();
@@ -108,15 +121,25 @@ export async function registrarVenta(
     }
     let esLibreIngreso = false;
     if (validated.habitacion_id) {
-      const roomRows = await consultarHabitacion(validated.habitacion_id, contexto);
+      const roomRows = await consultarHabitacion(validated.habitacion_id, contexto, !servicio);
+      if (!roomRows.length) throw new BusinessError('La habitación no existe', 'ROOM_NOT_FOUND');
       if (roomRows.length > 0) {
         const roomPrice = Number(roomRows[0].precio || 0);
         const roomCommission = Number(roomRows[0].comision_anfitriona || 0);
         esLibreIngreso = roomPrice <= 0 || roomCommission <= 0;
+        if (!servicio && !esLibreIngreso) {
+          if (Number(roomRows[0].estado) !== 1 || roomRows[0].actividad)
+            throw new BusinessError('La habitación ya está ocupada', 'ROOM_OCCUPIED');
+          if (!Number.isInteger(validated.tiempo) || validated.tiempo <= 0)
+            throw new BusinessError(
+              'Selecciona un tiempo válido para la habitación',
+              'INVALID_ROOM_TIME'
+            );
+        }
       }
     }
 
-    const estado = validated.habitacion_id && validated.tiempo > 0 && !esLibreIngreso ? 2 : 1;
+    const estado = validated.habitacion_id && validated.tiempo > 0 ? 2 : 1;
 
     // === INSERT VENTA PRINCIPAL ===
     await registrarCabeceraVenta(contexto, {
@@ -124,6 +147,7 @@ export async function registrarVenta(
       codigo,
       cliente_id: clienteId,
       pedido_id: pedidoId,
+      servicio_id: validated.servicio_id || null,
       habitacion_id: validated.habitacion_id,
       metodo_pago: validated.metodo_pago,
       propina: validated.propina,
@@ -138,7 +162,7 @@ export async function registrarVenta(
       pagos_mixtos: validated.pagos_mixtos ? JSON.stringify(validated.pagos_mixtos) : null
     });
 
-    if (validated.habitacion_id && estado === 2) {
+    if (validated.habitacion_id && estado === 2 && !esLibreIngreso) {
       await ocuparHabitacionVenta(validated.habitacion_id, contexto);
     }
 
@@ -169,12 +193,19 @@ export async function registrarVenta(
     }
 
     const validatedHostessSet = new Set(validatedHostessIds);
+    if (validated.servicio_id && validated.servicio_anfitrionas !== undefined) {
+      await cambiarAnfitrionasServicioEnUnidad(
+        validated.servicio_id,
+        validated.servicio_anfitrionas,
+        contexto
+      );
+    }
 
     // === VALIDACIÓN DE USUARIOS PRINCIPALES + RELACIONES ===
     if (validated.usuarios?.length) {
       const mainHostessIds = validated.usuarios.filter((id: string) => validatedHostessSet.has(id));
 
-      if (estado === 2) {
+      if (estado === 2 && !esLibreIngreso) {
         await pausarConflictosVenta(mainHostessIds, ventaId, contexto);
       }
 
@@ -203,7 +234,7 @@ export async function registrarVenta(
       const totalComm =
         d.tipo_venta === 'shot' && !d.shot_anfitriona ? 0 : Math.round(d.comision || 0);
       const totalQty = Math.max(1, Number(d.cantidad || 1));
-      const isChampagne = Boolean(d.isChampagne);
+      const isChampagne = d.tipo_venta !== 'shot' && Boolean(d.isChampagne);
       const effectiveHostesses =
         hostesses.length === 0 ? [null] : isChampagne ? hostesses : hostesses.slice(0, totalQty);
       const hostessCount = Math.max(1, effectiveHostesses.length);
@@ -263,6 +294,9 @@ export async function registrarVenta(
           cantidad: qtyPart,
           sub_total: subPart,
           hostess_id: hostessId,
+          acompanamiento: JSON.stringify(
+            (tipoVenta === 'shot' ? d.acompanamiento_corto : d.acompanamiento_botella) ?? null
+          ),
           fecha_crea: now
         });
 
@@ -385,6 +419,8 @@ export async function registrarVenta(
   const notificar = async () => {
     // SSE notification (no bloquea — broadcast es síncrono en memoria)
     sendNotificationToAll('timers_updated', { timestamp: now });
+    if (validated.servicio_id && validated.servicio_anfitrionas !== undefined)
+      sendNotificationToAll('service_changed', { action: 'hostesses', id: validated.servicio_id });
 
     // Al crear una venta se notifica al staff: antes solo lo hacía el cron de
     // timers (y `sale_cancelled` al anular), así que las apps no veían ventas

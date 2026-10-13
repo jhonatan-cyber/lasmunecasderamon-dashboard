@@ -48,12 +48,14 @@ export function PrivateRoomSummaryCard({
         </div>
       </div>
 
-      <div className='grid grid-cols-1 gap-3 lg:grid-cols-2'>
-        <div className='rounded-xl border border-stone-200 bg-white/70 px-3 py-3 dark:border-stone-800 dark:bg-stone-900/40'>
+      <div className='grid grid-cols-1 gap-4 border-t border-stone-200 pt-4 dark:border-stone-800 lg:grid-cols-2 lg:gap-6'>
+        <div className='min-w-0'>
           <p className='text-[10px] font-black uppercase tracking-[0.22em] text-stone-500'>
             Habitación
           </p>
-          <p className='mt-1 text-sm font-semibold text-stone-900 dark:text-stone-50'>{roomName}</p>
+          <p className='mt-1 break-words text-sm font-semibold text-stone-900 dark:text-stone-50'>
+            {roomName}
+          </p>
 
           <div className='mt-3 space-y-2 text-sm'>
             <div className='flex items-center justify-between gap-3'>
@@ -76,14 +78,14 @@ export function PrivateRoomSummaryCard({
           </div>
         </div>
 
-        <div className='rounded-xl border border-stone-200 bg-white/70 px-3 py-3 dark:border-stone-800 dark:bg-stone-900/40'>
+        <div className='min-w-0 border-t border-stone-200 pt-4 dark:border-stone-800 lg:border-l lg:border-t-0 lg:pl-6 lg:pt-0'>
           <div className='space-y-3'>
             <div className='flex items-start justify-between gap-3'>
               <div>
                 <p className='text-[10px] font-black uppercase tracking-[0.22em] text-stone-500'>
                   Cliente
                 </p>
-                <p className='mt-1 text-sm font-semibold text-stone-900 dark:text-stone-50'>
+                <p className='mt-1 break-words text-sm font-semibold text-stone-900 dark:text-stone-50'>
                   {clientName || 'Sin cliente'}
                 </p>
               </div>
@@ -93,7 +95,7 @@ export function PrivateRoomSummaryCard({
                   <p className='text-[10px] font-black uppercase tracking-[0.22em] text-stone-500'>
                     IVA
                   </p>
-                  <p className='mt-1 text-sm font-semibold text-stone-900 dark:text-stone-50'>
+                  <p className='mt-1 break-words text-sm font-semibold text-stone-900 dark:text-stone-50'>
                     {iva > 0 ? formatCurrencyCLP(iva) : 'Sin IVA'}
                   </p>
                 </div>
@@ -104,7 +106,7 @@ export function PrivateRoomSummaryCard({
               <p className='text-[10px] font-black uppercase tracking-[0.22em] text-stone-500'>
                 Anfitrionas
               </p>
-              <p className='mt-1 text-sm font-semibold text-stone-900 dark:text-stone-50'>
+              <p className='mt-1 break-words text-sm font-semibold text-stone-900 dark:text-stone-50'>
                 {hostessNames || 'Sin anfitrionas seleccionadas'}
               </p>
             </div>
@@ -113,8 +115,8 @@ export function PrivateRoomSummaryCard({
       </div>
 
       {showImportantNote && (
-        <div className='mt-3 flex items-center gap-3 rounded-xl border border-amber-200/70 bg-amber-50/80 px-3 py-2 dark:border-amber-500/20 dark:bg-amber-500/10'>
-          <div className='flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-amber-100 text-amber-700 dark:bg-amber-500/15 dark:text-amber-300'>
+        <div className='mt-4 flex items-start gap-3 border-t border-stone-200 pt-3 dark:border-stone-800'>
+          <div className='mt-0.5 shrink-0 text-amber-700 dark:text-amber-300'>
             <Receipt className='h-4 w-4' />
           </div>
           <p className='text-xs leading-5 text-slate-700 dark:text-slate-100'>
