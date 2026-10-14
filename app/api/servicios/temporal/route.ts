@@ -1,3 +1,4 @@
+import { assertServiceMutationAllowed } from '@/lib/business/serviceAccess';
 import { runIdempotent } from '@/lib/api/idempotency';
 import { NextResponse } from 'next/server';
 import { withRoute } from '@/lib/api/withRoute';
@@ -16,6 +17,7 @@ export const POST = withRoute(
       request,
       { endpoint: 'services.temporary', usuarioId: String(user.id) },
       async () => {
+        assertServiceMutationAllowed(user.role);
         const body = await request.json();
 
         const payload = {

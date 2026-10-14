@@ -48,44 +48,21 @@ interface CalendarDayModalProps {
 
 function getStatusBadge(estado: number, dataType?: DataType) {
   if (dataType === 'servicios') {
-    switch (estado) {
-      case 0:
-        return (
-          <Badge className='bg-yellow-100 text-yellow-800 hover:bg-yellow-100 rounded-full font-medium border-0'>
-            POR COBRAR
-          </Badge>
-        );
-      case 1:
-        return (
-          <Badge className='bg-blue-100 text-blue-800 hover:bg-blue-100 rounded-full font-medium border-0'>
-            EN PROCESO
-          </Badge>
-        );
-      case 2:
-        return (
-          <Badge className='bg-orange-100 text-orange-800 hover:bg-orange-100 rounded-full font-medium border-0'>
-            PENDIENTE ANULACIÓN
-          </Badge>
-        );
-      case 3:
-        return (
-          <Badge className='bg-red-100 text-red-800 hover:bg-red-100 rounded-full font-medium border-0'>
-            ANULADO
-          </Badge>
-        );
-      case 4:
-        return (
-          <Badge className='bg-green-100 text-green-800 hover:bg-green-100 rounded-full font-medium border-0'>
-            PAGADO
-          </Badge>
-        );
-      default:
-        return (
-          <Badge className='bg-gray-100 text-gray-800 hover:bg-gray-100 rounded-full font-medium border-0'>
-            DESCONOCIDO
-          </Badge>
-        );
-    }
+    const labels: Record<number, string> = {
+      0: 'ANULADO',
+      1: 'FINALIZADO',
+      2: 'EN PROCESO',
+      3: 'PAUSADO',
+      4: 'SOLICITUD ANULACIÓN'
+    };
+    return <Badge variant='secondary'>{labels[Number(estado)] || 'DESCONOCIDO'}</Badge>;
+  }
+  if (dataType === 'comisiones') {
+    return (
+      <Badge variant='secondary'>
+        {Number(estado) === 0 ? 'ANULADO' : Number(estado) === 2 ? 'PAGADO' : 'POR PAGAR'}
+      </Badge>
+    );
   }
 
   if (estado === 0) {

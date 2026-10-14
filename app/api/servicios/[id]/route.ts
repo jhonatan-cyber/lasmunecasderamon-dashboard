@@ -1,3 +1,4 @@
+import { assertServiceMutationAllowed } from '@/lib/business/serviceAccess';
 import { NextResponse } from 'next/server';
 import { withPublicRoute, withRoute } from '@/lib/api/withRoute';
 import { ServiceService } from '@/modules/operacion';
@@ -18,7 +19,8 @@ export const GET = withPublicRoute(
 
 export const PUT = withRoute(
   { auth: true, access: 'authenticated', audit: true },
-  async (request: Request, { params }: { params: Promise<{ id: string }> }) => {
+  async (request: Request, { params, user }) => {
+    assertServiceMutationAllowed(user.role);
     const id = (await params).id;
     const body = await request.json();
     await ServiceService.updateService(id, body);
@@ -34,6 +36,7 @@ export const PUT = withRoute(
 export const PATCH = withRoute(
   { auth: true, access: 'authenticated', audit: true },
   async (request: Request, { params, user }: { params: Promise<{ id: string }>; user: any }) => {
+    assertServiceMutationAllowed(user.role);
     const id = (await params).id;
     const body = await request.json();
     const hasEstado = typeof body?.estado === 'number';

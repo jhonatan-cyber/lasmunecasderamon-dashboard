@@ -4,6 +4,8 @@ import {
   registrarSolicitudAnulacionServicio
 } from '@/modules/operacion';
 import { logger } from '@/lib/utils/logger';
+import { withRoute } from '@/lib/api/withRoute';
+import { assertServiceMutationAllowed } from '@/lib/business/serviceAccess';
 
 export async function GET(request: Request) {
   const { searchParams } = new URL(request.url);
@@ -25,24 +27,28 @@ export async function GET(request: Request) {
   return NextResponse.json({ success: true, solicitud });
 }
 
-export async function POST(request: Request) {
-  try {
-    const body = await request.json();
-    const { servicioId, motivo } = body;
+export const POST = withRoute(
+  { auth: true, access: 'authenticated', audit: true },
+  async (request, { user }) => {
+    assertServiceMutationAllowed(user.role);
+    try {
+      const body = await request.json();
+      const { servicioId, motivo } = body;
 
-    if (!servicioId || !motivo) {
-      return NextResponse.json(
-        { success: false, message: 'Faltan datos requeridos' },
-        { status: 400 }
-      );
+      if (!servicioId || !motivo) {
+        return NextResponse.json(
+          { success: false, message: 'Faltan datos requeridos' },
+          { status: 400 }
+        );
+      }
+
+      const token = await registrarSolicitudAnulacionServicio({ servicioId, motivo });
+
+      return NextResponse.json({ success: true, token });
+    } catch (error: unknown) {
+      const msg = error instanceof Error ? error.message : 'Error desconocido';
+      logger.error('Error al solicitar anulación:', { error });
+      return NextResponse.json({ success: false, error: msg }, { status: 500 });
     }
-
-    const token = await registrarSolicitudAnulacionServicio({ servicioId, motivo });
-
-    return NextResponse.json({ success: true, token });
-  } catch (error: unknown) {
-    const msg = error instanceof Error ? error.message : 'Error desconocido';
-    logger.error('Error al solicitar anulación:', { error });
-    return NextResponse.json({ success: false, error: msg }, { status: 500 });
   }
-}
+);

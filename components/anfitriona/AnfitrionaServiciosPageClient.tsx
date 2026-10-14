@@ -4,7 +4,7 @@ import { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { useCurrentUser } from '@/hooks/auth/useCurrentUser';
-import { ArrowLeft, Search, ChevronUp, ChevronDown, Pencil } from 'lucide-react';
+import { ArrowLeft, Search, ChevronUp, ChevronDown } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { Input } from '@/components/ui/input';
 import SelectElements from '@/components/shared/SelectElements';
@@ -12,7 +12,6 @@ import Paginate from '@/components/shared/Paginate';
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { formatDateLabel, formatDateTimeDmyLabel } from '@/lib/utils/calendarUtils';
 import { formatCurrencyCLP } from '@/lib/utils/formatters';
-import EditServiceModal from '@/components/servicios/EditServiceModal';
 import { useAnfitrionaServicios, type Service } from '@/hooks/anfitriona/useAnfitrionaServicios';
 
 function getStatusBadge(estado: number) {
@@ -67,8 +66,6 @@ export default function AnfitrionaServiciosPage() {
     sortField,
     sortDirection,
     statusFilter,
-    selectedService,
-    isEditModalOpen,
     totalServices,
     totalEarnings,
     serviciosEnProceso,
@@ -82,11 +79,7 @@ export default function AnfitrionaServiciosPage() {
     setRowsPerPage,
     setPage,
     setStatusFilter,
-    setSelectedService,
-    setIsEditModalOpen,
-    handleSort,
-    fetchServices,
-    formatServiceForEdit
+    handleSort
   } = useAnfitrionaServicios();
 
   if (userLoading) {
@@ -226,7 +219,7 @@ export default function AnfitrionaServiciosPage() {
                     { field: 'cliente' as const, label: 'CLIENTE' },
                     { field: 'tiempo' as const, label: 'TIEMPO' },
                     { field: 'habitacion' as const, label: 'HABITACIÓN' },
-                    { field: 'precio_servicio' as const, label: 'PRECIO' },
+                    { field: 'comision_usuario' as const, label: 'MI COMISIÓN' },
                     { field: 'fecha_crea' as const, label: 'FECHA HORA' },
                     { field: 'estado' as const, label: 'ESTADO' }
                   ].map(col => (
@@ -251,22 +244,19 @@ export default function AnfitrionaServiciosPage() {
                       </button>
                     </th>
                   ))}
-                  <th className='px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider'>
-                    ACCIONES
-                  </th>
                 </tr>
               </thead>
               <tbody className='bg-white divide-y divide-gray-200'>
                 {loading ? (
                   <tr>
-                    <td colSpan={9} className='px-6 py-4 text-center'>
+                    <td colSpan={8} className='px-6 py-4 text-center'>
                       <div className='animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto'></div>
                       <p className='mt-2 text-gray-600'>Cargando servicios...</p>
                     </td>
                   </tr>
                 ) : paginatedServices.length === 0 ? (
                   <tr>
-                    <td colSpan={9} className='px-6 py-4 text-center text-gray-500'>
+                    <td colSpan={8} className='px-6 py-4 text-center text-gray-500'>
                       No se encontraron servicios
                     </td>
                   </tr>
@@ -291,7 +281,7 @@ export default function AnfitrionaServiciosPage() {
                         {service.habitacion || 'N/A'}
                       </td>
                       <td className='px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900 dark:text-gray-100'>
-                        {formatCurrencyCLP(service.precio_servicio)}
+                        {formatCurrencyCLP(service.comision_usuario)}
                       </td>
                       <td className='px-6 py-4 whitespace-nowrap'>
                         <div>
@@ -306,20 +296,6 @@ export default function AnfitrionaServiciosPage() {
                       <td className='px-6 py-4 whitespace-nowrap'>
                         {getStatusBadge(service.estado)}
                       </td>
-                      <td className='px-6 py-4 whitespace-nowrap'>
-                        {(service.habitacion_comision || 0) > 0 && service.estado === 2 && (
-                          <button
-                            onClick={() => {
-                              setSelectedService(service);
-                              setIsEditModalOpen(true);
-                            }}
-                            className='inline-flex items-center gap-1 px-3 py-1.5 bg-blue-600 text-white text-xs font-medium rounded-full hover:bg-blue-700 transition-colors'
-                          >
-                            <Pencil className='w-3 h-3' />
-                            Editar
-                          </button>
-                        )}
-                      </td>
                     </tr>
                   ))
                 )}
@@ -332,13 +308,6 @@ export default function AnfitrionaServiciosPage() {
       <div className='flex justify-center'>
         <Paginate page={page} totalPages={totalPages} setPage={setPage} />
       </div>
-
-      <EditServiceModal
-        open={isEditModalOpen}
-        onOpenChange={setIsEditModalOpen}
-        servicio={selectedService ? formatServiceForEdit(selectedService) : null}
-        onUpdate={fetchServices}
-      />
     </div>
   );
 }

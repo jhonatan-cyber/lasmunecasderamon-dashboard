@@ -458,18 +458,19 @@ export async function listarServiciosDeUsuario(userId: string): Promise<any[]> {
         s.id_servicio, s.codigo, s.tiempo, s.fecha_crea, s.precio_servicio,
         s.precio_habitacion, s.total, s.metodo_pago, s.estado,
         ds.comision as comision_usuario,
+        ds.asignacion_activa,
         h.nombre as habitacion, h.comision_anfitriona as habitacion_comision,
         COALESCE((CAST(c.nombre AS text) || CAST(' ' AS text) || CAST(c.apellido AS text)), 'Sin cliente registrado') as cliente,
         STRING_AGG(DISTINCT COALESCE(u.nick, (CAST(u.nombre AS text) || CAST(' ' AS text) || CAST(u.apellido AS text))), ', ') as anfitriona,
         cu.nick as creado_por
        FROM servicios s
-       INNER JOIN (SELECT servicio_id, usuario_id, SUM(comision) AS comision FROM detalle_servicios GROUP BY servicio_id, usuario_id) ds ON s.id_servicio = ds.servicio_id AND ds.usuario_id = ?
+       INNER JOIN (SELECT servicio_id, usuario_id, SUM(comision) AS comision, BOOL_OR(liberado_en IS NULL) AS asignacion_activa FROM detalle_servicios GROUP BY servicio_id, usuario_id) ds ON s.id_servicio = ds.servicio_id AND ds.usuario_id = ?
        LEFT JOIN habitaciones h ON s.habitacion_id = h.id_habitacion
        LEFT JOIN clientes c ON c.id_cliente = s.cliente_id
        LEFT JOIN detalle_servicios ds2 ON ds2.servicio_id = s.id_servicio AND ds2.liberado_en IS NULL
        LEFT JOIN usuarios u ON u.id_usuario = ds2.usuario_id
        LEFT JOIN usuarios cu ON cu.id_usuario = s.created_by
-       GROUP BY s.id_servicio, ds.comision, h.id_habitacion, c.id_cliente, cu.id_usuario
+       GROUP BY s.id_servicio, ds.comision, ds.asignacion_activa, h.id_habitacion, c.id_cliente, cu.id_usuario
        ORDER BY s.fecha_crea DESC`,
       [userId]
     );

@@ -603,22 +603,22 @@ export async function detalleComisionesDeUsuario(usuarioId: string): Promise<any
         v.codigo AS codigo_venta,
         NULL AS codigo_servicio,
         'venta' AS tipo,
-        c.monto AS monto,
+        dc.comision AS monto,
         CASE
-          WHEN c.estado = 1 THEN 'Por pagar'
-          WHEN c.estado = 2 THEN 'Pagado'
+          WHEN c.estado = 0 THEN 'Anulado'
+          WHEN dc.estado = 0 OR c.estado = 2 THEN 'Pagado'
+          WHEN dc.estado = 1 THEN 'Por pagar'
           ELSE 'Anulado'
         END AS estado,
-        p.nombre AS producto,
-        NULL AS fecha_pago,
+        (SELECT STRING_AGG(DISTINCT p.nombre, ', ')
+         FROM detalle_ventas dv JOIN productos p ON p.id_producto = dv.producto_id
+         WHERE dv.venta_id = v.id_venta AND dv.hostess_id = dc.usuario_id) AS producto,
+        CASE WHEN dc.estado = 0 THEN dc.fecha_mod ELSE NULL END AS fecha_pago,
         v.codigo AS descripcion
       FROM comisiones c
       INNER JOIN detalle_comisiones dc ON c.id_comision = dc.comision_id
       INNER JOIN usuarios u ON dc.usuario_id = u.id_usuario
       LEFT JOIN ventas v ON c.venta_id = v.id_venta
-      -- Intentamos unir con el detalle de venta para obtener el nombre del producto
-      LEFT JOIN detalle_ventas dv ON (v.id_venta = dv.venta_id AND dc.usuario_id = dv.hostess_id AND (c.monto = dv.comision OR c.monto = (dv.comision * dv.cantidad)))
-      LEFT JOIN productos p ON dv.producto_id = p.id_producto
       WHERE dc.usuario_id = ? AND c.venta_id IS NOT NULL AND c.venta_id <> '' AND c.venta_id <> '0'
 
       UNION ALL
@@ -629,14 +629,15 @@ export async function detalleComisionesDeUsuario(usuarioId: string): Promise<any
         NULL AS codigo_venta,
         s.codigo AS codigo_servicio,
         'servicio' AS tipo,
-        c.monto AS monto,
+        dc.comision AS monto,
         CASE
-          WHEN c.estado = 1 THEN 'Por pagar'
-          WHEN c.estado = 2 THEN 'Pagado'
+          WHEN c.estado = 0 THEN 'Anulado'
+          WHEN dc.estado = 0 OR c.estado = 2 THEN 'Pagado'
+          WHEN dc.estado = 1 THEN 'Por pagar'
           ELSE 'Anulado'
         END AS estado,
         'Servicio de Acompañante' AS producto,
-        NULL AS fecha_pago,
+        CASE WHEN dc.estado = 0 THEN dc.fecha_mod ELSE NULL END AS fecha_pago,
         s.codigo AS descripcion
       FROM comisiones c
       INNER JOIN detalle_comisiones dc ON c.id_comision = dc.comision_id

@@ -1,3 +1,4 @@
+import { assertServiceMutationAllowed } from '@/lib/business/serviceAccess';
 import { runIdempotent } from '@/lib/api/idempotency';
 import { NextResponse } from 'next/server';
 import { withPublicRoute, withRoute } from '@/lib/api/withRoute';
@@ -26,6 +27,7 @@ export const POST = withRoute(
       request,
       { endpoint: 'services.create', usuarioId: String(user.id) },
       async () => {
+        assertServiceMutationAllowed(user.role);
         const body = await request.json();
         const validated = validateOrResponse(ServiceCreateSchema, body);
         if (validated instanceof NextResponse) return validated;

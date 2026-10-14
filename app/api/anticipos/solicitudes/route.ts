@@ -1,10 +1,10 @@
 import { NextResponse } from 'next/server';
 import { withRoute } from '@/lib/api/withRoute';
 import { listarSolicitudesDeUsuario, solicitarAnticipoSimple } from '@/modules/personal';
-import { ValidationError } from '@/lib/errors/errors';
+import { AnticipoRequestSchema } from '@/lib/business/schemas/anticipo';
 
 export const GET = withRoute(
-  { auth: true, audit: true, module: 'advances', action: 'read' },
+  { auth: true, access: 'authenticated', audit: true },
   async (_request: Request, { user }: { params: any; user: any }) => {
     const solicitudes = await listarSolicitudesDeUsuario(user.id.toString());
     return NextResponse.json({ success: true, data: solicitudes });
@@ -12,13 +12,9 @@ export const GET = withRoute(
 );
 
 export const POST = withRoute(
-  { auth: true, audit: true, module: 'advances', action: 'write' },
+  { auth: true, access: 'authenticated', audit: true },
   async (request: Request, { user }: { params: any; user: any }) => {
-    const body = await request.json();
-    const { monto, motivo } = body;
-
-    if (!monto || !motivo)
-      throw new ValidationError('monto y motivo son requeridos', { monto, motivo });
+    const { monto, motivo } = AnticipoRequestSchema.parse(await request.json());
 
     const result = await solicitarAnticipoSimple(user.id.toString(), Number(monto), motivo);
     return NextResponse.json(

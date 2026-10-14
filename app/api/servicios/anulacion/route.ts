@@ -4,10 +4,12 @@ import { ServiceService } from '@/modules/operacion';
 import { obtenerServicioParaAnulacion } from '@/modules/operacion';
 import { enviarMensajeSolicitudAnulacion } from '@/modules/comunicaciones';
 import logger from '@/lib/utils/logger';
+import { assertServiceMutationAllowed } from '@/lib/business/serviceAccess';
 
 export const POST = withRoute(
   { auth: true, access: 'authenticated', audit: true },
   async (request: Request, { user }: { params: any; user: any }) => {
+    assertServiceMutationAllowed(user.role);
     const body = await request.json();
 
     if (body.requestId) {

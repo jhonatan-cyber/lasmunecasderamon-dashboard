@@ -194,12 +194,12 @@ export class EventQueries {
           'servicio' as type,
           CAST(s.id_servicio AS text) as id,
           s.fecha_crea as date,
-          s.total as amount,
+          ds.comision as amount,
           s.codigo as codigo,
           s.estado as estado,
           NULL AS "subType"
         FROM servicios s
-        INNER JOIN detalle_servicios ds ON s.id_servicio = ds.servicio_id
+        INNER JOIN (SELECT servicio_id, usuario_id, SUM(comision) AS comision FROM detalle_servicios GROUP BY servicio_id, usuario_id) ds ON s.id_servicio = ds.servicio_id
         WHERE ds.usuario_id = ?
 
         UNION ALL
@@ -210,7 +210,7 @@ export class EventQueries {
           dc.fecha_crea as date,
           dc.comision as amount,
           COALESCE(v.codigo, s.codigo, 'COMM') as codigo,
-          dc.estado as estado,
+          CASE WHEN c.estado = 0 THEN 0 WHEN dc.estado = 0 OR c.estado = 2 THEN 2 ELSE 1 END as estado,
           CASE
             WHEN c.venta_id IS NOT NULL AND c.venta_id IS NOT NULL THEN 'venta'
             WHEN c.servicio_id IS NOT NULL AND c.servicio_id IS NOT NULL THEN 'servicio'

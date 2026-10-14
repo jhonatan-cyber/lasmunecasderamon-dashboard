@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { useCurrentUser } from '@/hooks/auth/useCurrentUser';
 import { useRouter } from 'next/navigation';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -12,6 +12,7 @@ import Paginate from '@/components/shared/Paginate';
 import { formatDateTimeDmyLabel } from '@/lib/utils/calendarUtils';
 import { formatCurrencyCLP } from '@/lib/utils/formatters';
 import logger from '@/lib/utils/logger';
+import { EmployeeAdvanceRequests } from './EmployeeAdvanceRequests';
 
 interface Advance {
   id_anticipo: number;
@@ -56,13 +57,25 @@ export function AdvancesEmployeeList({ allowedRole, title }: Props) {
   const [currentPage, setCurrentPage] = useState(1);
   const [rowsPerPage, setRowsPerPage] = useState(10);
 
-  const fetchAdvances = async () => {
+  const fetchAdvances = useCallback(async () => {
     setLoading(true);
     try {
       const res = await fetch('/api/anticipos/user');
       const data = await res.json();
       if (data.success) {
-        setAdvances(data.data || []);
+        setAdvances(
+          (data.data || [])
+            .filter((row: Advance) =>
+              allowedRole === 'anfitriona'
+                ? Number(row.estado) === 0
+                : [0, 1].includes(Number(row.estado))
+            )
+            .map((row: Advance) => ({
+              ...row,
+              estado: Number(row.estado),
+              monto: Number(row.monto)
+            }))
+        );
       } else {
         logger.error('Error fetching advances:', data.message);
       }
@@ -71,13 +84,13 @@ export function AdvancesEmployeeList({ allowedRole, title }: Props) {
     } finally {
       setLoading(false);
     }
-  };
+  }, [allowedRole]);
 
   useEffect(() => {
     if (user && !userLoading) {
       fetchAdvances();
     }
-  }, [user, userLoading]);
+  }, [user, userLoading, fetchAdvances]);
 
   if (userLoading) {
     return (
@@ -133,7 +146,7 @@ export function AdvancesEmployeeList({ allowedRole, title }: Props) {
   const totalPages = Math.ceil(sortedAdvances.length / rowsPerPage);
 
   const totalToPay = advances
-    .filter(advance => advance.estado === 1)
+    .filter(advance => advance.estado === (allowedRole === 'anfitriona' ? 0 : 1))
     .reduce((sum, advance) => sum + (advance.monto || 0), 0);
 
   const getStatusBadge = (estado: number) => {
@@ -154,7 +167,7 @@ export function AdvancesEmployeeList({ allowedRole, title }: Props) {
 
   return (
     <div className='p-6 space-y-6'>
-      {}
+      {allowedRole === 'anfitriona' && <EmployeeAdvanceRequests onRequested={fetchAdvances} />}
       <div className='flex items-center justify-between'>
         <div>
           <h1 className='text-2xl font-bold text-gray-900 dark:text-white'>
@@ -176,7 +189,9 @@ export function AdvancesEmployeeList({ allowedRole, title }: Props) {
 
       {}
       <div className='text-center'>
-        <p className='text-sm text-gray-500'>TOTAL A PAGAR</p>
+        <p className='text-sm text-gray-500'>
+          {allowedRole === 'anfitriona' ? 'TOTAL ENTREGADO' : 'TOTAL A PAGAR'}
+        </p>
         <p className='text-2xl font-bold text-gray-900 dark:text-white'>
           {formatCurrencyCLP(totalToPay)}
         </p>
@@ -204,7 +219,9 @@ export function AdvancesEmployeeList({ allowedRole, title }: Props) {
           label='Estado'
           value={statusFilter}
           onChange={setStatusFilter}
-          options={ADVANCE_STATUS_OPTIONS}
+          options={ADVANCE_STATUS_OPTIONS.filter(
+            option => allowedRole !== 'anfitriona' || option.value !== 'por_pagar'
+          )}
         />
         <FilterSelect
           label='Ordenar por'
@@ -240,7 +257,10 @@ export function AdvancesEmployeeList({ allowedRole, title }: Props) {
       {}
       <Card>
         <CardHeader>
-          <CardTitle aria-live='polite'>Anticipos ({filteredAdvances.length})</CardTitle>
+          <CardTitle aria-live='polite'>
+            {allowedRole === 'anfitriona' ? 'Anticipos entregados' : 'Anticipos'} (
+            {filteredAdvances.length})
+          </CardTitle>
         </CardHeader>
         <CardContent>
           {loading ? (

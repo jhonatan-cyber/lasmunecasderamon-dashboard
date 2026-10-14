@@ -10,6 +10,7 @@ export interface Service {
   tiempo: string;
   fecha_crea: string;
   precio_servicio: number;
+  comision_usuario: number;
   habitacion: string;
   anfitriona: string;
   cliente: string;
@@ -30,8 +31,6 @@ export interface UseAnfitrionaServiciosReturn {
   sortField: keyof Service;
   sortDirection: SortDirection;
   statusFilter: StatusFilter;
-  selectedService: Service | null;
-  isEditModalOpen: boolean;
 
   totalServices: number;
   totalEarnings: number;
@@ -47,11 +46,8 @@ export interface UseAnfitrionaServiciosReturn {
   setRowsPerPage: (rows: number) => void;
   setPage: (page: number) => void;
   setStatusFilter: (filter: StatusFilter) => void;
-  setSelectedService: (service: Service | null) => void;
-  setIsEditModalOpen: (open: boolean) => void;
   handleSort: (field: keyof Service) => void;
   fetchServices: () => Promise<void>;
-  formatServiceForEdit: (service: Service) => any;
 }
 
 export function useAnfitrionaServicios(): UseAnfitrionaServiciosReturn {
@@ -63,8 +59,6 @@ export function useAnfitrionaServicios(): UseAnfitrionaServiciosReturn {
   const [sortField, setSortField] = useState<keyof Service>('fecha_crea');
   const [sortDirection, setSortDirection] = useState<SortDirection>('desc');
   const [statusFilter, setStatusFilter] = useState<StatusFilter>('proceso');
-  const [selectedService, setSelectedService] = useState<Service | null>(null);
-  const [isEditModalOpen, setIsEditModalOpen] = useState(false);
 
   const fetchServices = async () => {
     setLoading(true);
@@ -73,7 +67,13 @@ export function useAnfitrionaServicios(): UseAnfitrionaServiciosReturn {
       const data = await res.json();
 
       if (res.ok && data.success) {
-        setServices(data.data || []);
+        setServices(
+          (data.data || []).map((service: Service) => ({
+            ...service,
+            estado: Number(service.estado),
+            comision_usuario: Number(service.comision_usuario || 0)
+          }))
+        );
       } else {
         logger.error('API error:', data.message);
         setServices([]);
@@ -91,7 +91,9 @@ export function useAnfitrionaServicios(): UseAnfitrionaServiciosReturn {
   }, []);
 
   const totalServices = services.length;
-  const totalEarnings = services.reduce((sum, service) => sum + (service.precio_servicio || 0), 0);
+  const totalEarnings = services
+    .filter(service => Number(service.estado) !== 0)
+    .reduce((sum, service) => sum + Number(service.comision_usuario || 0), 0);
   const serviciosEnProceso = services.filter(service => service.estado === 2).length;
   const serviciosFinalizados = services.filter(service => service.estado === 1).length;
   const serviciosAnulados = services.filter(service => service.estado === 0).length;
@@ -154,24 +156,6 @@ export function useAnfitrionaServicios(): UseAnfitrionaServiciosReturn {
     }
   };
 
-  const formatServiceForEdit = (service: Service) => ({
-    ...service,
-    id_servicio: service.id_servicio.toString(),
-    habitacion_id: '',
-    habitacion_numero: service.habitacion,
-    cliente_id: '',
-    precio_habitacion: 0,
-    iva: 0,
-    sub_total: 0,
-    total: service.precio_servicio || 0,
-    tiempo: parseInt(service.tiempo || '0'),
-    metodo_pago: 'efectivo',
-    fecha_crea: service.fecha_crea,
-    estado: service.estado,
-    anfitrionas_nombres: service.anfitriona,
-    total_usuarios: 1
-  });
-
   return {
     services,
     loading,
@@ -181,8 +165,6 @@ export function useAnfitrionaServicios(): UseAnfitrionaServiciosReturn {
     sortField,
     sortDirection,
     statusFilter,
-    selectedService,
-    isEditModalOpen,
     totalServices,
     totalEarnings,
     serviciosEnProceso,
@@ -196,10 +178,7 @@ export function useAnfitrionaServicios(): UseAnfitrionaServiciosReturn {
     setRowsPerPage,
     setPage,
     setStatusFilter,
-    setSelectedService,
-    setIsEditModalOpen,
     handleSort,
-    fetchServices,
-    formatServiceForEdit
+    fetchServices
   };
 }

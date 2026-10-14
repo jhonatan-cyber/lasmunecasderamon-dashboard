@@ -75,6 +75,7 @@ export function useRoleCalendar({ role, userId }: UseRoleCalendarProps): UseRole
     servicios: []
   });
 
+  const [hostessEvents, setHostessEvents] = useState<any[]>([]);
   const isAnfitriona = role === 'anfitriona';
   const roleCategories: DataType[] = useMemo(
     () =>
@@ -270,6 +271,50 @@ export function useRoleCalendar({ role, userId }: UseRoleCalendarProps): UseRole
     try {
       const { startDate, endDate } = getMonthDateRange(currentDate);
 
+      if (isAnfitriona) {
+        const [response, servicesResponse] = await Promise.all([
+          fetch(`/api/events/user?startDate=${startDate}&endDate=${endDate}`),
+          fetch('/api/servicios/user')
+        ]);
+        const [result, servicesResult] = await Promise.all([
+          response.json(),
+          servicesResponse.json()
+        ]);
+        if (!response.ok || !result.success || !servicesResponse.ok || !servicesResult.success)
+          throw new Error('No se pudo cargar el calendario');
+        const events = result.data || [];
+        const services = new Map<string, any>(
+          (servicesResult.data || []).map((service: any) => [String(service.id_servicio), service])
+        );
+        setHostessEvents(events);
+        const rows = (type: string) =>
+          events
+            .filter((event: any) => event.type === type)
+            .map((event: any) => ({
+              ...event,
+              ...(event.type === 'servicio'
+                ? {
+                    tiempo: services.get(String(event.id))?.tiempo,
+                    cliente_nombre: services.get(String(event.id))?.cliente,
+                    habitacion_numero: services.get(String(event.id))?.habitacion
+                  }
+                : {}),
+              fecha_crea: event.date,
+              sueldo_final: Number(event.amount || 0),
+              comision: Number(event.amount || 0),
+              precio_servicio: Number(event.amount || 0),
+              monto: Number(event.amount || 0)
+            }));
+        setCalendarData({
+          asistencias: rows('asistencia'),
+          anticipos: rows('anticipo'),
+          comisiones: rows('comision').filter((event: any) => event.subType === 'venta'),
+          servicios: rows('servicio'),
+          propinas: [],
+          horasExtras: []
+        });
+        return;
+      }
       const [asistenciasRes, anticiposRes, thirdRes, fourthRes] = await Promise.all([
         fetch(`/api/attendance/by-dates?startDate=${startDate}&endDate=${endDate}`),
         fetch(`/api/anticipos/by-dates?startDate=${startDate}&endDate=${endDate}`),
@@ -331,6 +376,30 @@ export function useRoleCalendar({ role, userId }: UseRoleCalendarProps): UseRole
     try {
       const dateKeys = toDateKeys(selectedDates);
       const datesParam = dateKeys.join(',');
+      if (isAnfitriona) {
+        const selected = Object.fromEntries(
+          Object.entries(calendarData).map(([key, rows]) => [
+            key,
+            rows.filter((item: any) => matchesAnyDateKey(item.fecha_crea, dateKeys))
+          ])
+        );
+        setModalCounts(
+          Object.fromEntries(Object.entries(selected).map(([key, rows]) => [key, rows.length]))
+        );
+        setSelectedDateData(selected[selectedDataType] || []);
+        const total = hostessEvents
+          .filter(event => matchesAnyDateKey(event.date, dateKeys))
+          .reduce((sum, event) => {
+            const amount = Number(event.amount || 0),
+              state = Number(event.estado);
+            if (event.type === 'anticipo') return sum - ([0, 1].includes(state) ? amount : 0);
+            if (['asistencia', 'comision', 'gratificacion'].includes(event.type) && state === 1)
+              return sum + amount;
+            return sum;
+          }, 0);
+        setModalTotal(total);
+        return;
+      }
 
       const fetchCountsPromises = [
         fetch(`/api/attendance/by-dates?dates=${datesParam}`)
@@ -447,7 +516,7 @@ export function useRoleCalendar({ role, userId }: UseRoleCalendarProps): UseRole
     } finally {
       setIsLoadingSelectedData(false);
     }
-  }, [selectedDates, selectedDataType, isAnfitriona, calendarData]);
+  }, [selectedDates, selectedDataType, isAnfitriona, calendarData, hostessEvents]);
 
   useEffect(() => {
     if (isModalOpen && selectedDates.length > 0) {

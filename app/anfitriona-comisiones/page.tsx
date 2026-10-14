@@ -39,11 +39,21 @@ export default function AnfitrionaComisionesPage() {
   const fetchCommissions = async () => {
     setLoading(true);
     try {
-      const res = await fetch('/api/commissions/user');
+      const res = await fetch('/api/commissions/user?tipo=detalle');
       const data = await res.json();
 
       if (res.ok && data.success) {
-        setCommissions(data.data || []);
+        setCommissions(
+          (data.data || [])
+            .filter((row: any) => row.tipo === 'venta')
+            .map((row: any) => ({
+              ...row,
+              id_comision: row.id,
+              comision: Number(row.monto || 0),
+              fecha_mod: row.fecha_pago,
+              estado: Number(row.estado)
+            }))
+        );
       } else {
         logger.error('API error:', data.message);
         setCommissions([]);
@@ -83,7 +93,9 @@ export default function AnfitrionaComisionesPage() {
   }
 
   const totalCommissions = commissions.length;
-  const totalAmount = commissions.reduce((sum, commission) => sum + (commission.comision || 0), 0);
+  const totalAmount = commissions
+    .filter(commission => commission.estado !== 0)
+    .reduce((sum, commission) => sum + (commission.comision || 0), 0);
   const pendingCommissionsCount = commissions.filter(commission => commission.estado === 1).length;
   const totalPendingAmount = commissions
     .filter(commission => commission.estado === 1)
@@ -146,7 +158,7 @@ export default function AnfitrionaComisionesPage() {
     } else {
       return (
         <span className='inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-purple-50 text-purple-700'>
-          Cobrado
+          {estado === 2 ? 'Cobrado' : 'Anulado'}
         </span>
       );
     }
@@ -154,205 +166,205 @@ export default function AnfitrionaComisionesPage() {
 
   return (
     <div className='p-6 space-y-6'>
-      <BoneyardSkeleton name="anfitriona-comisiones-main" loading={loading}>
-      {}
-      <div className='flex justify-between items-center'>
-        <div>
-          <p className='text-sm text-gray-500'>LAS MUÑECAS DE RAMÓN</p>
-          <h1 className='text-2xl font-bold text-gray-900'>
-            Listado de Comisiones {user?.name} {user?.lastName}
-          </h1>
-        </div>
-        <Button
-          variant='outline'
-          onClick={() => router.back()}
-          className='flex items-center gap-2 rounded-full bg-black text-white hover:scale-105 transition-all duration-200'
-        >
-          <ArrowLeft className='h-4 w-4' />
-          Atrás
-        </Button>
-      </div>
-
-      {}
-      <div className='text-center space-y-2'>
-        <div className='flex justify-center flex-wrap gap-4 sm:gap-8'>
+      <BoneyardSkeleton name='anfitriona-comisiones-main' loading={loading}>
+        {}
+        <div className='flex justify-between items-center'>
           <div>
-            <p className='text-sm text-gray-500'>Total Comisiones:</p>
-            <p className='text-xl font-bold text-gray-900'>{totalCommissions}</p>
+            <p className='text-sm text-gray-500'>LAS MUÑECAS DE RAMÓN</p>
+            <h1 className='text-2xl font-bold text-gray-900'>
+              Listado de Comisiones {user?.name} {user?.lastName}
+            </h1>
           </div>
-          <div>
-            <p className='text-sm text-gray-500'>Pendientes:</p>
-            <p className='text-xl font-bold text-gray-900'>{pendingCommissionsCount}</p>
-          </div>
-          <div>
-            <p className='text-sm text-gray-500'>Total Ganado:</p>
-            <p className='text-xl font-bold text-gray-900'>{formatCurrencyCLP(totalAmount)}</p>
-          </div>
-          <div>
-            <p className='text-sm text-gray-500'>Por Cobrar:</p>
-            <p className='text-xl font-bold text-gray-900'>
-              {formatCurrencyCLP(totalPendingAmount)}
-            </p>
-          </div>
+          <Button
+            variant='outline'
+            onClick={() => router.back()}
+            className='flex items-center gap-2 rounded-full bg-black text-white hover:scale-105 transition-all duration-200'
+          >
+            <ArrowLeft className='h-4 w-4' />
+            Atrás
+          </Button>
         </div>
 
-        <div className='flex justify-center gap-8 mt-4 pt-4 border-t border-gray-200'>
-          <div>
-            <p className='text-sm text-gray-500'>Resumen Detallado:</p>
-            <p className='text-lg font-bold text-green-600'>
-              {commissions.length} registros totales • {formatCurrencyCLP(totalAmount)}
-            </p>
+        {}
+        <div className='text-center space-y-2'>
+          <div className='flex justify-center flex-wrap gap-4 sm:gap-8'>
+            <div>
+              <p className='text-sm text-gray-500'>Total Comisiones:</p>
+              <p className='text-xl font-bold text-gray-900'>{totalCommissions}</p>
+            </div>
+            <div>
+              <p className='text-sm text-gray-500'>Pendientes:</p>
+              <p className='text-xl font-bold text-gray-900'>{pendingCommissionsCount}</p>
+            </div>
+            <div>
+              <p className='text-sm text-gray-500'>Total Ganado:</p>
+              <p className='text-xl font-bold text-gray-900'>{formatCurrencyCLP(totalAmount)}</p>
+            </div>
+            <div>
+              <p className='text-sm text-gray-500'>Por Cobrar:</p>
+              <p className='text-xl font-bold text-gray-900'>
+                {formatCurrencyCLP(totalPendingAmount)}
+              </p>
+            </div>
+          </div>
+
+          <div className='flex justify-center gap-8 mt-4 pt-4 border-t border-gray-200'>
+            <div>
+              <p className='text-sm text-gray-500'>Resumen Detallado:</p>
+              <p className='text-lg font-bold text-green-600'>
+                {commissions.length} registros totales • {formatCurrencyCLP(totalAmount)}
+              </p>
+            </div>
           </div>
         </div>
-      </div>
 
-      {}
-      <div className='flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4'>
-        <SelectElements
-          value={rowsPerPage}
-          onChange={value => {
-            setRowsPerPage(value);
-            setPage(1);
-          }}
-          options={[5, 10, 25, 50]}
-          label='Listar'
-        />
-
-        <div className='flex items-center gap-2'>
-          <span className='text-sm text-gray-600'>Buscar:</span>
-          <Input
-            type='text'
-            placeholder='Buscar comisiones...'
-            value={searchTerm}
-            onChange={e => setSearchTerm(e.target.value)}
-            className='w-48'
+        {}
+        <div className='flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4'>
+          <SelectElements
+            value={rowsPerPage}
+            onChange={value => {
+              setRowsPerPage(value);
+              setPage(1);
+            }}
+            options={[5, 10, 25, 50]}
+            label='Listar'
           />
-        </div>
-      </div>
 
-      {}
-      <Card>
-        <CardContent className='p-0'>
-          <div className='overflow-x-auto'>
-            <table className='w-full'>
-              <thead className='bg-gray-50'>
-                <tr>
-                  <SortableTh
-                    field='id_comision'
-                    sortField={sortField}
-                    sortDirection={sortDirection}
-                    onSort={handleSort}
-                  >
-                    #
-                  </SortableTh>
-                  <SortableTh
-                    field='codigo'
-                    sortField={sortField}
-                    sortDirection={sortDirection}
-                    onSort={handleSort}
-                  >
-                    CÓDIGO (Venta/Serv.)
-                  </SortableTh>
-                  <SortableTh
-                    field='comision'
-                    sortField={sortField}
-                    sortDirection={sortDirection}
-                    onSort={handleSort}
-                  >
-                    COMISIÓN
-                  </SortableTh>
-                  <th className='px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider'>
-                    TIPO
-                  </th>
-                  <SortableTh
-                    field='fecha_crea'
-                    sortField={sortField}
-                    sortDirection={sortDirection}
-                    onSort={handleSort}
-                  >
-                    FECHA
-                  </SortableTh>
-                  <th className='px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider'>
-                    FECHA COBRO
-                  </th>
-                  <SortableTh
-                    field='estado'
-                    sortField={sortField}
-                    sortDirection={sortDirection}
-                    onSort={handleSort}
-                  >
-                    ESTADO
-                  </SortableTh>
-                </tr>
-              </thead>
-              <tbody className='bg-white divide-y divide-gray-200'>
-                {paginatedCommissions.length === 0 ? (
+          <div className='flex items-center gap-2'>
+            <span className='text-sm text-gray-600'>Buscar:</span>
+            <Input
+              type='text'
+              placeholder='Buscar comisiones...'
+              value={searchTerm}
+              onChange={e => setSearchTerm(e.target.value)}
+              className='w-48'
+            />
+          </div>
+        </div>
+
+        {}
+        <Card>
+          <CardContent className='p-0'>
+            <div className='overflow-x-auto'>
+              <table className='w-full'>
+                <thead className='bg-gray-50'>
                   <tr>
-                    <td colSpan={7} className='px-6 py-4 text-center text-gray-500'>
-                      No se encontraron comisiones
-                    </td>
+                    <SortableTh
+                      field='id_comision'
+                      sortField={sortField}
+                      sortDirection={sortDirection}
+                      onSort={handleSort}
+                    >
+                      #
+                    </SortableTh>
+                    <SortableTh
+                      field='codigo'
+                      sortField={sortField}
+                      sortDirection={sortDirection}
+                      onSort={handleSort}
+                    >
+                      CÓDIGO (Venta/Serv.)
+                    </SortableTh>
+                    <SortableTh
+                      field='comision'
+                      sortField={sortField}
+                      sortDirection={sortDirection}
+                      onSort={handleSort}
+                    >
+                      COMISIÓN
+                    </SortableTh>
+                    <th className='px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider'>
+                      TIPO
+                    </th>
+                    <SortableTh
+                      field='fecha_crea'
+                      sortField={sortField}
+                      sortDirection={sortDirection}
+                      onSort={handleSort}
+                    >
+                      FECHA
+                    </SortableTh>
+                    <th className='px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider'>
+                      FECHA COBRO
+                    </th>
+                    <SortableTh
+                      field='estado'
+                      sortField={sortField}
+                      sortDirection={sortDirection}
+                      onSort={handleSort}
+                    >
+                      ESTADO
+                    </SortableTh>
                   </tr>
-                ) : (
-                  paginatedCommissions.map((commission, index) => {
-                    return (
-                      <tr key={commission.id_comision} className='hover:bg-gray-50'>
-                        <td className='px-6 py-4 whitespace-nowrap'>
-                          <div className='w-8 h-8 bg-purple-300 text-white rounded-full flex items-center justify-center text-sm font-medium'>
-                            {(page - 1) * rowsPerPage + index + 1}
-                          </div>
-                        </td>
-                        <td className='px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900'>
-                          {commission.codigo || 'N/A'}
-                        </td>
-                        <td className='px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900'>
-                          {formatCurrencyCLP(commission.comision)}
-                        </td>
-                        <td className='px-6 py-4 whitespace-nowrap text-sm capitalize'>
-                          {commission.tipo || 'venta'}
-                        </td>
-                        <td className='px-6 py-4 whitespace-nowrap'>
-                          <div>
-                            <div className='text-sm font-medium text-gray-900'>
-                              {formatDateTimeDmyLabel(commission.fecha_crea).date}
+                </thead>
+                <tbody className='bg-white divide-y divide-gray-200'>
+                  {paginatedCommissions.length === 0 ? (
+                    <tr>
+                      <td colSpan={7} className='px-6 py-4 text-center text-gray-500'>
+                        No se encontraron comisiones
+                      </td>
+                    </tr>
+                  ) : (
+                    paginatedCommissions.map((commission, index) => {
+                      return (
+                        <tr key={commission.id_comision} className='hover:bg-gray-50'>
+                          <td className='px-6 py-4 whitespace-nowrap'>
+                            <div className='w-8 h-8 bg-purple-300 text-white rounded-full flex items-center justify-center text-sm font-medium'>
+                              {(page - 1) * rowsPerPage + index + 1}
                             </div>
-                            <div className='text-sm text-gray-500'>
-                              {formatDateTimeDmyLabel(commission.fecha_crea).time}
-                            </div>
-                          </div>
-                        </td>
-                        <td className='px-6 py-4 whitespace-nowrap'>
-                          {commission.fecha_mod ? (
+                          </td>
+                          <td className='px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900'>
+                            {commission.codigo || 'N/A'}
+                          </td>
+                          <td className='px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900'>
+                            {formatCurrencyCLP(commission.comision)}
+                          </td>
+                          <td className='px-6 py-4 whitespace-nowrap text-sm capitalize'>
+                            {commission.tipo || 'venta'}
+                          </td>
+                          <td className='px-6 py-4 whitespace-nowrap'>
                             <div>
                               <div className='text-sm font-medium text-gray-900'>
-                                {formatDateTimeDmyLabel(commission.fecha_mod).date}
+                                {formatDateTimeDmyLabel(commission.fecha_crea).date}
                               </div>
                               <div className='text-sm text-gray-500'>
-                                {formatDateTimeDmyLabel(commission.fecha_mod).time}
+                                {formatDateTimeDmyLabel(commission.fecha_crea).time}
                               </div>
                             </div>
-                          ) : (
-                            <span className='inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-purple-100 text-purple-800'>
-                              Por cobrar
-                            </span>
-                          )}
-                        </td>
-                        <td className='px-6 py-4 whitespace-nowrap'>
-                          {getStatusBadge(commission.estado)}
-                        </td>
-                      </tr>
-                    );
-                  })
-                )}
-              </tbody>
-            </table>
-          </div>
-        </CardContent>
-      </Card>
+                          </td>
+                          <td className='px-6 py-4 whitespace-nowrap'>
+                            {commission.fecha_mod ? (
+                              <div>
+                                <div className='text-sm font-medium text-gray-900'>
+                                  {formatDateTimeDmyLabel(commission.fecha_mod).date}
+                                </div>
+                                <div className='text-sm text-gray-500'>
+                                  {formatDateTimeDmyLabel(commission.fecha_mod).time}
+                                </div>
+                              </div>
+                            ) : (
+                              <span className='inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-purple-100 text-purple-800'>
+                                Por cobrar
+                              </span>
+                            )}
+                          </td>
+                          <td className='px-6 py-4 whitespace-nowrap'>
+                            {getStatusBadge(commission.estado)}
+                          </td>
+                        </tr>
+                      );
+                    })
+                  )}
+                </tbody>
+              </table>
+            </div>
+          </CardContent>
+        </Card>
 
-      {}
-      <div className='flex justify-center'>
-        <Paginate page={page} totalPages={totalPages} setPage={setPage} />
-      </div>
+        {}
+        <div className='flex justify-center'>
+          <Paginate page={page} totalPages={totalPages} setPage={setPage} />
+        </div>
       </BoneyardSkeleton>
     </div>
   );
