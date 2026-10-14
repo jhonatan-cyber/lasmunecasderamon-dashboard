@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import { act, renderHook } from '@testing-library/react';
+import { act, renderHook, waitFor } from '@testing-library/react';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import type { ReactNode } from 'react';
 import { useSales } from '@/hooks/caja/useSales';
@@ -89,7 +89,10 @@ describe('carga de ventas con filtros', () => {
       await result.current.getVentas();
     });
     expect(result.current.error).toBeNull();
-    expect(result.current.ventas).toEqual([{ id: 'v1', estado: 'activa' }]);
+    expect(request).toHaveBeenCalledTimes(2);
+    await waitFor(() => {
+      expect(result.current.ventas).toEqual([{ id: 'v1', estado: 'activa' }]);
+    });
   });
 
   it('un fallo de filtros anteriores no reemplaza el resultado del filtro nuevo', async () => {

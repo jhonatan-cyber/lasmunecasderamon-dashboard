@@ -20,21 +20,24 @@ beforeEach(() => {
   state.allowed = true;
 });
 describe('menú del Barman', () => {
-  it('muestra solamente Bar, Ventas y Servicios / Privados', () => {
+  it('muestra inicio, bar, pedidos, servicios e insumos de limpieza', () => {
     const { result } = renderHook(() => useSidebarNavigation());
     const items = result.current.sections.flatMap(section => section.items);
     expect(items.map(item => item.href).sort()).toEqual([
       '/bar',
+      '/cleaning',
       '/dashboard',
-      '/private-rooms',
-      '/sales'
+      '/orders',
+      '/private-rooms'
     ]);
     expect(items.find(item => item.href === '/private-rooms')?.name).toBe('Servicios / Privados');
   });
-  it('no ignora permisos revocados', () => {
+  it('oculta módulos revocados y conserva limpieza autorizada por el rol', () => {
     state.allowed = false;
     const { result } = renderHook(() => useSidebarNavigation());
-    expect(result.current.sections).toEqual([]);
+    expect(
+      result.current.sections.flatMap(section => section.items).map(item => item.href)
+    ).toEqual(['/cleaning']);
   });
   it('conserva los módulos del administrador', () => {
     state.role = 'Administrador';

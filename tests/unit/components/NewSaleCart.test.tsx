@@ -94,10 +94,11 @@ describe('anfitrionas en el carrito de nueva venta', () => {
         handleRemoveProducto={vi.fn()}
       />
     );
-    expect(screen.getByText('Ana, María')).toBeInTheDocument();
+    expect(screen.getByText('Ana')).toBeInTheDocument();
+    expect(screen.getByText('María')).toBeInTheDocument();
     expect(screen.queryByText('N/A')).not.toBeInTheDocument();
   });
-  it('muestra N/A cuando no se han seleccionado anfitrionas', () => {
+  it('muestra Sin asignación cuando no se han seleccionado anfitrionas', () => {
     render(
       <NewSaleCart
         productos={[{ nombre: 'Agua', precio: 3000, cantidad: 1, subtotal: 3000 }]}
@@ -106,6 +107,6 @@ describe('anfitrionas en el carrito de nueva venta', () => {
         handleRemoveProducto={vi.fn()}
       />
     );
-    expect(screen.getByText('N/A')).toBeInTheDocument();
+    expect(screen.getByText('Sin asignación')).toBeInTheDocument();
   });
 });

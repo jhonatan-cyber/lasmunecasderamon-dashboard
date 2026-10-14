@@ -24,10 +24,10 @@ describe('parámetros del catálogo del bar', () => {
   it.each([
     { filters: undefined, params: [] },
     { filters: { category_id: 'cat1' }, params: ['cat1'] },
-    { filters: { term: ' ron ' }, params: ['%ron%', '%ron%', '%ron%', '%ron%'] },
+    { filters: { term: ' ron ' }, params: ['%ron%', '%ron%', '%ron%', '%ron%', '%ron%'] },
     {
       filters: { category_id: 'cat1', term: 'ron' },
-      params: ['cat1', '%ron%', '%ron%', '%ron%', '%ron%']
+      params: ['cat1', '%ron%', '%ron%', '%ron%', '%ron%', '%ron%']
     }
   ])('enlaza los filtros $filters con el adaptador PostgreSQL', async ({ filters, params }) => {
     await expect(listarParaVenta(filters)).resolves.toEqual([]);
