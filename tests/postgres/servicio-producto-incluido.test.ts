@@ -60,7 +60,10 @@ it('incluye una unidad sin aumentar el precio, conserva comisiones al liberar y 
         );
         if (!caja)
           await trx(
-            'INSERT INTO cajas (id_caja, fecha_apertura, usuario_id_apertura, monto_apertura, estado) VALUES (?, now(), ?, 0, 1)',
+            `INSERT INTO cajas (id_caja, fecha_apertura, usuario_id_apertura, monto_apertura,
+              monto_cierre, efectivo, tarjeta, transferencia, venta, servicio, cargo_tarjeta, iva,
+              comision, propina, anticipo, estado)
+             VALUES (?, now(), ?, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1)`,
             [generateUUID(), host.id_usuario]
           );
         const body = {
@@ -195,8 +198,13 @@ it('incluye una unidad sin aumentar el precio, conserva comisiones al liberar y 
           [extraUnit, product, pres, extraUnit.slice(0, 10)]
         );
         const [incoming] = await trx<{ id_usuario: string }[]>(
-          "SELECT u.id_usuario FROM usuarios u JOIN roles r ON r.id_rol = u.rol_id WHERE LOWER(r.nombre) = 'anfitriona' AND u.estado = 1 AND u.id_usuario <> ? LIMIT 1",
-          [host.id_usuario]
+          `INSERT INTO usuarios
+           (id_usuario, run, nick, nombre, apellido, direccion, telefono, estado_civil, afp,
+            aporte, sueldo, password, rol_id, estado, fecha_crea)
+           SELECT ?, ?, ?, nombre, apellido, direccion, telefono, estado_civil, afp,
+                  aporte, sueldo, password, rol_id, 1, now()
+           FROM usuarios WHERE id_usuario = ? RETURNING id_usuario`,
+          [generateUUID(), `TEST-${extraUnit}`, `Host-${extraUnit.slice(0, 8)}`, host.id_usuario]
         );
         expect(incoming).toBeTruthy();
         await trx(

@@ -19,6 +19,7 @@ import { snapshotDatabase, restoreDatabase } from '@/lib/database/maintenance';
 import { ServiceService } from '@/modules/operacion/servicios/fachada';
 import { revisarTemporizadores } from '@/modules/operacion';
 import { TimerService } from '@/modules/operacion';
+import { crearProductoIncluido } from './fixtures/producto-incluido';
 
 afterAll(async () => {
   await db.pool.end();
@@ -71,6 +72,7 @@ async function crearServicioConTiempo(
   const venta = await ServiceService.createService(
     {
       habitacion_id: habitacionId,
+      producto_incluido_presentacion_id: await crearProductoIncluido(),
       precio_habitacion: 50000,
       precio_servicio: 20000,
       iva: 0,

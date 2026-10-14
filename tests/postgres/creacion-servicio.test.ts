@@ -19,6 +19,7 @@ vi.mock('@/modules/auditoria/alertas/servicio', () => ({
 import db, { query } from '@/lib/database/db';
 import { snapshotDatabase, restoreDatabase } from '@/lib/database/maintenance';
 import { ServiceService } from '@/modules/operacion/servicios/fachada';
+import { crearProductoIncluido } from './fixtures/producto-incluido';
 
 afterAll(async () => {
   await db.pool.end();
@@ -83,6 +84,7 @@ it('crear un servicio postula caja, comisiones y habitación en una unidad', asy
     const resultado = await ServiceService.createService(
       {
         habitacion_id: habitacionId,
+        producto_incluido_presentacion_id: await crearProductoIncluido(),
         precio_habitacion: 50000,
         precio_servicio: 20000,
         iva: 2000,
@@ -142,6 +144,7 @@ it('editar el iva ajusta la caja sin duplicar el servicio', async () => {
     const resultado = await ServiceService.createService(
       {
         habitacion_id: habitacionId,
+        producto_incluido_presentacion_id: await crearProductoIncluido(),
         precio_habitacion: 50000,
         precio_servicio: 20000,
         iva: 2000,

@@ -130,7 +130,7 @@ function venderShots(
 }
 
 async function unidadesDe(presentacionId: string) {
-  return await query(
+  return await query<{ id: string; estado: string; ml_restante: number | null }[]>(
     `SELECT id, estado, ml_restante FROM inventario_unidades
       WHERE presentacion_id = ? ORDER BY fecha_crea ASC, codigo ASC`,
     [presentacionId]
@@ -353,6 +353,12 @@ it('consume la soda incluida por ml, reutiliza la botella y revierte la venta si
     await fijarShotMl(50);
     const licor = await crearBar(750, 1);
     const soda = await crearBar(500, 1);
+    await query('UPDATE inventario_presentaciones SET opciones_venta = ? WHERE id = ?', [
+      JSON.stringify([
+        { tipo: 'shot', precio: 3000, comision: 0, ml_acompanamiento_anfitriona: 100 }
+      ]),
+      licor.presentacionId
+    ]);
     const vender = (codigo: string, cantidad: number) =>
       SaleService.createSale(
         {
@@ -365,6 +371,7 @@ it('consume la soda incluida por ml, reutiliza la botella y revierte la venta si
               producto_id: licor.productoId,
               presentacion_id: licor.presentacionId,
               tipo_venta: 'shot',
+              shot_anfitriona: true,
               precio: 3000,
               cantidad,
               acompanamiento_corto: { presentacion_id: soda.presentacionId, ml_por_corto: 100 }
@@ -419,14 +426,14 @@ it.each(['directo', 'cuenta'])(
       await abrirCajaSiHaceFalta();
       await fijarShotMl(50);
       const licor = await crearBar(750, 1);
-      const soda = await crearBar(500, 1);
+      const soda = await crearBar(500, 2);
       const fields = {
         presentacion_id: licor.presentacionId,
         tipo_venta: 'shot' as const,
         shot_anfitriona: false,
         acompanamiento_corto: {
           presentacion_id: soda.presentacionId,
-          ml_por_corto: 100,
+          unidades: 1,
           nombre: 'Soda'
         }
       };
@@ -484,7 +491,10 @@ it.each(['directo', 'cuenta'])(
         await SaleService.createSale(payload, licor.usuarioId);
       }
       expect(Number((await unidadesDe(licor.presentacionId))[0].ml_restante)).toBe(650);
-      expect(Number((await unidadesDe(soda.presentacionId))[0].ml_restante)).toBe(300);
+      expect((await unidadesDe(soda.presentacionId)).map(unidad => unidad.estado)).toEqual([
+        ESTADO_UNIDAD_VENDIDA,
+        ESTADO_UNIDAD_VENDIDA
+      ]);
     } finally {
       await restoreBarDatabase(snapshot);
     }
