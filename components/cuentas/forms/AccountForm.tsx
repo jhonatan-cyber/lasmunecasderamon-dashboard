@@ -87,6 +87,8 @@ export default function AccountFormData({
           value={selectedAnfitrionas}
           onChange={onAnfitrionaChange}
           maxSelection={maxAnfitrionas}
+          showAvailability={true}
+          showOccupied={true}
           disabled={loading || !hasCommissionProducts}
           disabledReason={
             !hasCommissionProducts

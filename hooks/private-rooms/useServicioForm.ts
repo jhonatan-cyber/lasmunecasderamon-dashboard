@@ -43,6 +43,7 @@ export function useServicioForm() {
   const router = useRouter();
   const submitKey = useRef<string>('');
   const submitSignature = useRef('');
+  const submitCode = useRef('');
   const submitting = useRef(false);
   const queryClient = useQueryClient();
   const [loading, setLoading] = useState(false);
@@ -176,6 +177,7 @@ export function useServicioForm() {
   }, [selectedClientData, formData.metodo_pago]);
 
   const handleSubmit = () => {
+    if (submitting.current) return;
     const validationError =
       hasComision && !formData.producto_incluido_presentacion_id
         ? 'Selecciona el producto incluido en la habitación'
@@ -193,11 +195,13 @@ export function useServicioForm() {
       pagosMixtos
     });
 
-    const signature = JSON.stringify(servicioData);
+    const signature = JSON.stringify({ ...servicioData, codigo: undefined });
     if (submitSignature.current !== signature) {
       submitKey.current = crypto.randomUUID();
+      submitCode.current = servicioData.codigo;
       submitSignature.current = signature;
     }
+    servicioData.codigo = submitCode.current;
     setServicioDataToSubmit(servicioData);
     setShowConfirmModal(true);
   };

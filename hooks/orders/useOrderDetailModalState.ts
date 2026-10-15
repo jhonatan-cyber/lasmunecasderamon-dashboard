@@ -1,12 +1,9 @@
 'use client';
 
-import { useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { formatNumberCL } from '@/lib/utils/formatters';
-import { computeHostessLimit, extractHostessIds } from '@/components/orders/detail';
-import { useConfigValue } from '@/hooks/shared/useConfigValue';
-import { calcularPropina } from '@/lib/business/saleTotals';
+import { computeHostessLimit } from '@/components/orders/detail';
 import { getOrderHostessIds } from '@/components/orders/orderDetailUtils';
-import logger from '@/lib/utils/logger';
 
 interface UseOrderDetailModalStateParams {
   open: boolean;
@@ -15,113 +12,39 @@ interface UseOrderDetailModalStateParams {
   onClose: () => void;
 }
 
-export function useOrderDetailModalState({
-  open,
-  detail,
-  rooms,
-  onClose
-}: UseOrderDetailModalStateParams) {
+export function useOrderDetailModalState({ open, detail, rooms }: UseOrderDetailModalStateParams) {
   const [isRegistering, setIsRegistering] = useState(false);
-  const [metodoPago, setMetodoPago] = useState('');
-  const [propina, setPropina] = useState(0);
-  const [habitacionId, setHabitacionId] = useState('');
-  const [tiempoHabitacion, setTiempoHabitacion] = useState(30);
-  const [propinaDisplayValue, setPropinaDisplayValue] = useState('');
+  const metodoPago = detail[0]?.metodo_pago || '';
+  const propina = Number(detail[0]?.propina || 0);
+  const habitacionId = String(detail.find(d => d.habitacion_id)?.habitacion_id || '');
+  const [tiempoHabitacion, updateTiempoHabitacion] = useState(30);
+  const tiempoEditado = useRef(false);
+  const room = rooms.find(r => String(r.id_habitacion ?? r.id) === habitacionId);
+  const tiempoInicial = Number(
+    detail.find(d => d.habitacion_id)?.tiempo_habitacion || room?.tiempo || room?.time || 30
+  );
+  const setTiempoHabitacion = useCallback((minutes: number) => {
+    tiempoEditado.current = true;
+    updateTiempoHabitacion(minutes);
+  }, []);
+  const propinaDisplayValue = propina ? formatNumberCL(propina) : '';
+  const agregarPropina = propina > 0;
   const [showMetodoPagoError, setShowMetodoPagoError] = useState(false);
-  const [agregarPropina, setAgregarPropina] = useState(false);
-  const propinaPct = Number(useConfigValue('facturacion', 'propina_venta', '10'));
   const [confirmVentaModalOpen, setConfirmVentaModalOpen] = useState(false);
 
-  const resetState = () => {
-    setMetodoPago('');
-    setPropina(0);
-    setHabitacionId('');
-    setTiempoHabitacion(30);
-    setPropinaDisplayValue('');
-    setShowMetodoPagoError(false);
+  useEffect(() => {
     setIsRegistering(false);
-    setAgregarPropina(false);
+    setShowMetodoPagoError(false);
     setConfirmVentaModalOpen(false);
-  };
-
-  const buscarHabitacionActiva = async () => {
-    if (!detail || detail.length === 0) return;
-
-    try {
-      const anfitrionasIds = Array.from(
-        new Set(
-          detail.flatMap(d => [
-            ...extractHostessIds(d.anfitrionaIds),
-            ...extractHostessIds(d.hostess_id),
-            ...extractHostessIds(d.anfitrionas_asignadas_ids)
-          ])
-        )
-      );
-
-      if (anfitrionasIds.length === 0) return;
-
-      const response = await fetch('/api/orders/check-active-room', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify({ anfitrionasIds })
-      });
-
-      const data = await response.json();
-
-      if (data.success && data.hasActiveRoom && data.data) {
-        setHabitacionId(String(data.data.habitacionId));
-        setTiempoHabitacion(data.data.tiempo || 30);
-      }
-    } catch (error) {
-      logger.captureException(error, { context: 'OrderDetailModal:fetchDetail' });
-    }
-  };
-
-  useEffect(() => {
-    if (!open) {
-      resetState();
-      return;
-    }
-
-    if (detail && detail.length > 0) {
-      setMetodoPago(detail[0]?.metodo_pago || '');
-      const propinaOriginal = detail[0]?.propina || 0;
-
-      if (propinaOriginal > 0) {
-        setPropina(propinaOriginal);
-        setPropinaDisplayValue(formatNumberCL(propinaOriginal));
-        setAgregarPropina(true);
-      }
-
-      const detalleConHabitacion = detail.find(d => d.habitacion_id);
-      if (detalleConHabitacion && detalleConHabitacion.habitacion_id) {
-        setHabitacionId(String(detalleConHabitacion.habitacion_id));
-      } else {
-        void buscarHabitacionActiva();
-      }
-    }
+    tiempoEditado.current = false;
+    updateTiempoHabitacion(tiempoInicial);
+    // Initialize on opening or switching order, without resetting a cashier's edited duration on refresh.
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [open, detail]);
+  }, [open, detail[0]?.id_pedido, habitacionId]);
 
   useEffect(() => {
-    if (agregarPropina && detail && detail.length > 0) {
-      const propinaOriginal = detail[0]?.propina || 0;
-      if (propinaOriginal > 0) {
-        setPropina(propinaOriginal);
-        setPropinaDisplayValue(formatNumberCL(propinaOriginal));
-      } else {
-        const totalPedido = detail[0]?.total || 0;
-        const propinaCalculada = calcularPropina(totalPedido, propinaPct, true);
-        setPropina(propinaCalculada);
-        setPropinaDisplayValue(formatNumberCL(propinaCalculada));
-      }
-    } else {
-      setPropina(0);
-      setPropinaDisplayValue('');
-    }
-  }, [agregarPropina, detail, propinaPct]);
+    if (!tiempoEditado.current) updateTiempoHabitacion(tiempoInicial);
+  }, [tiempoInicial]);
 
   useEffect(() => {
     if (metodoPago && showMetodoPagoError) {
@@ -169,13 +92,8 @@ export function useOrderDetailModalState({
     },
     setters: {
       setIsRegistering,
-      setMetodoPago,
-      setPropina,
-      setHabitacionId,
       setTiempoHabitacion,
-      setPropinaDisplayValue,
       setShowMetodoPagoError,
-      setAgregarPropina,
       setConfirmVentaModalOpen
     },
     derived: {

@@ -1,5 +1,6 @@
 'use client';
 /* eslint-disable */
+import { permiteAnfitrionaConComision } from '@/lib/sales/hostessShortPrices';
 import { Button } from '@/components/ui/button';
 import { Trash2, Plus, Minus } from 'lucide-react';
 import { formatCurrencyNoDecimals } from '@/lib/utils/formatters';
@@ -52,6 +53,11 @@ const ProductRow = memo(
     habitaciones: any[];
   }) => {
     const [search, setSearch] = useState('');
+    const admiteAnfitriona = permiteAnfitrionaConComision(
+      producto.tipo_venta === 'shot' ? 'shot' : 'botella',
+      producto.comisionUnitaria ?? producto.comision,
+      Boolean(producto.shot_anfitriona)
+    );
     const defaultMl = useConfigValue<number>('bar', 'shot_ml', 50);
     const clientMl = resolveShotMl(producto.ml_shot, defaultMl);
     const shotMl = producto.shot_anfitriona
@@ -207,7 +213,7 @@ const ProductRow = memo(
         <TableCell className='text-center'>
           {producto.tipo_venta === 'shot' &&
           producto.shot_anfitriona &&
-          Number(producto.comisionUnitaria ?? producto.comision) > 0 &&
+          admiteAnfitriona &&
           onAssignHostess ? (
             <HostessMultiSelect
               anfitrionas={anfitrionas}
@@ -217,7 +223,7 @@ const ProductRow = memo(
               searchValue={search}
               onSearchChange={setSearch}
             />
-          ) : producto.generaComision === 1 ? (
+          ) : producto.generaComision === 1 && admiteAnfitriona ? (
             producto.selectedHostesses && producto.selectedHostesses.length > 0 ? (
               <div className='flex flex-row flex-wrap items-center justify-center gap-1'>
                 {producto.selectedHostesses.map((hostessId: string, idx: number) => {

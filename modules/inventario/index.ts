@@ -74,3 +74,5 @@ export { CategoryService } from './categorias/servicio';
 export { ProductService } from './productos/fachada';
 
 export { validarConfiguracionVenta } from './bar/validarConfiguracionVenta';
+
+export { validarConfiguracionPedido } from './bar/validarPedido';

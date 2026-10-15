@@ -1,3 +1,5 @@
+import { timerNow } from './timerClock';
+
 export const parseDateSafe = (dateStr: string | number | Date | null | undefined): Date => {
   if (!dateStr) return new Date();
   if (dateStr instanceof Date) return dateStr;
@@ -19,7 +21,13 @@ export const parseDateSafe = (dateStr: string | number | Date | null | undefined
 };
 
 export const calculateRemainingTime = (
-  timer: { startTime: Date | string; duration: number; isPaused: boolean; remainingTime: number },
+  timer: {
+    startTime: Date | string;
+    duration: number;
+    isPaused: boolean;
+    remainingTime: number;
+    expiresAt?: Date | string | null;
+  },
   serverOffset: number = 0
 ): number => {
   if (timer.isPaused) {
@@ -28,16 +36,18 @@ export const calculateRemainingTime = (
 
   const start =
     typeof timer.startTime === 'string' ? parseDateSafe(timer.startTime) : timer.startTime;
-  const now = new Date(Date.now() + serverOffset);
+  const now = new Date(timerNow(serverOffset));
 
   const diffMs = now.getTime() - start.getTime();
   const elapsedSeconds = Math.floor(diffMs / 1000);
 
   const totalDurationSeconds = (Number(timer.duration) || 0) * 60;
 
-  const remaining = totalDurationSeconds - elapsedSeconds;
+  const remaining = timer.expiresAt
+    ? Math.ceil((new Date(timer.expiresAt).getTime() - now.getTime()) / 1000)
+    : totalDurationSeconds - elapsedSeconds;
 
-  return isNaN(remaining) ? 0 : Math.max(0, remaining);
+  return isNaN(remaining) ? 0 : Math.min(totalDurationSeconds, Math.max(0, remaining));
 };
 
 export const formatTime = (seconds: number): string => {

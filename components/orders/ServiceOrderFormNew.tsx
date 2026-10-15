@@ -9,12 +9,11 @@ import { Label } from '@/components/ui/label';
 import { showSuccessToast, showErrorToast } from '@/lib/utils/toastUtils';
 import { useCurrentUser } from '@/hooks/auth/useCurrentUser';
 import { appEventBus } from '@/lib/utils/eventBus';
-import { useAnfitrionasDisponibles } from '@/hooks/personal';
+import { useAnfitrionas } from '@/hooks/personal';
 import { useAvailableRooms } from '@/hooks/habitaciones';
 import { useClients } from '@/hooks/clientes/useClients';
 import { useRefreshOnFocus } from '@/hooks/shared';
 import { formatCurrencyCLP, formatNumberCL } from '@/lib/utils/formatters';
-import logger from '@/lib/utils/logger';
 import { useIvaRate } from '@/components/providers/IvaRateProvider';
 
 import {
@@ -48,20 +47,18 @@ export default function ServiceOrderForm({ clientes }: ServiceOrderFormProps) {
   const router = useRouter();
   const [productoIncluido, setProductoIncluido] = useState('');
   const { user } = useCurrentUser();
-  const { anfitrionas: anfitrionasDisponiblesBase, getAnfitrionasDisponibles } =
-    useAnfitrionasDisponibles();
+  const { anfitrionas: anfitrionasBase, getAnfitrionas } = useAnfitrionas(false);
   const { rooms: habitaciones, refetchRooms } = useAvailableRooms();
   const { allClients: clientesDB = [], fetchClients } = useClients();
   const ivaRate = useIvaRate();
 
-  const habitacionesDisponibles = habitaciones?.filter(h => h.estado === 1 || h.status === 1) || [];
+  const habitacionesDisponibles = habitaciones?.filter(h => (h.estado ?? h.status) !== 0) || [];
 
   const [selectedClienteId, setSelectedClienteId] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [searchCliente, setSearchCliente] = useState('');
   const [searchAnfitriona, setSearchAnfitriona] = useState('');
   const [anfitrionaDropdownOpen, setAnfitrionaDropdownOpen] = useState(false);
-  const [anfitrionasOcupadas, setAnfitrionasOcupadas] = useState<number[]>([]);
 
   const [tempForm, setTempForm] = useState({
     precio_servicio: 0,
@@ -121,42 +118,12 @@ export default function ServiceOrderForm({ clientes }: ServiceOrderFormProps) {
   const haAlcanzadoMaxClientes = tempForm.clientes_ids.length >= maxClientesSegunAnfitrionas;
 
   const refreshLookupData = useCallback(async () => {
-    await Promise.all([fetchClients(), getAnfitrionasDisponibles(), refetchRooms()]);
-  }, [fetchClients, getAnfitrionasDisponibles, refetchRooms]);
-
-  useEffect(() => {
-    const fetchAnfitrionasOcupadas = async () => {
-      try {
-        const response = await fetch('/api/servicios?estado=1');
-        const data = await response.json();
-        if (data.success) {
-          const servicios = Array.isArray(data.data)
-            ? data.data
-            : Array.isArray(data.data?.data)
-              ? data.data.data
-              : [];
-          const ocupadas: number[] = [];
-          servicios.forEach((servicio: any) => {
-            if (servicio.anfitrionas_ids && Array.isArray(servicio.anfitrionas_ids)) {
-              ocupadas.push(...servicio.anfitrionas_ids);
-            }
-          });
-          setAnfitrionasOcupadas([...new Set(ocupadas)]);
-        }
-      } catch (error) {
-        logger.captureException(error, { context: 'ServiceOrderFormNew:submitOrder' });
-      }
-    };
-    fetchAnfitrionasOcupadas();
-  }, []);
+    await Promise.all([fetchClients(), getAnfitrionas(), refetchRooms()]);
+  }, [fetchClients, getAnfitrionas, refetchRooms]);
 
   useRefreshOnFocus(refreshLookupData);
 
-  const anfitrionasDisponibles =
-    anfitrionasDisponiblesBase?.filter(a => {
-      const id = String(a.id_usuario || a.id || '');
-      return !anfitrionasOcupadas.includes(Number(id)) && !tempForm.anfitrionas_ids.includes(id);
-    }) || [];
+  const anfitrionasDisponibles = anfitrionasBase || [];
 
   const parseNumberFromDots = (value: string) => {
     if (!value || value.trim() === '') return 0;
@@ -374,6 +341,8 @@ export default function ServiceOrderForm({ clientes }: ServiceOrderFormProps) {
             placeholder='Seleccionar anfitrionas'
             maxSelection={maxAnfitrionasSegunClientes}
             disabled={!habitacionSeleccionada}
+            showAvailability={true}
+            showOccupied={true}
           />
         </div>
 

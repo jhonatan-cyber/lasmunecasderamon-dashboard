@@ -646,6 +646,52 @@ describe('descuento del bar al registrar una venta', () => {
       consumirStockBar(detalles, contextoVenta, contexto)
     );
 
+  it('reutiliza la presentación bloqueada sin cambiar las fases de escritura', async () => {
+    const trx = trxCon([{ id: 'u1' }]);
+    await consumirStockConTransaccion(trx, [{ presentacion_id: 'pres-1', cantidad: 1 }], contexto);
+    expect(
+      trx.mock.calls.map(([sql]) => {
+        if (sql.includes('FROM inventario_presentaciones')) return 'configuracion';
+        if (sql.includes('FROM inventario_unidades')) return 'unidades';
+        if (sql.includes('UPDATE inventario_unidades')) return 'descuento';
+        if (sql.includes('INSERT INTO inventario_movimientos')) return 'movimiento';
+        if (sql.includes('INSERT INTO inventario_movimiento_unidades')) return 'trazabilidad';
+        return sql;
+      })
+    ).toEqual(['configuracion', 'unidades', 'descuento', 'movimiento', 'trazabilidad']);
+    expect(trx.mock.calls[0][0]).toContain('ORDER BY id FOR UPDATE');
+  });
+
+  it('mantiene la lectura del producto al consumir shots', async () => {
+    const trx = trxCon([{ id: 'u1' }], { ...presentacion, ml_shot: 75 });
+    await consumirStockConTransaccion(
+      trx,
+      [{ presentacion_id: 'pres-1', cantidad: 1, tipo_venta: 'shot' }],
+      contexto
+    );
+    const lecturas = trx.mock.calls.filter(([sql]) =>
+      sql.includes('FROM inventario_presentaciones')
+    );
+    expect(lecturas).toHaveLength(2);
+    expect(lecturas[1][0]).toContain('INNER JOIN productos');
+    expect(lecturas[1][0]).toContain('FOR UPDATE OF p');
+    const traza = trx.mock.calls.find(([sql]) =>
+      sql.includes('INSERT INTO inventario_movimiento_unidades')
+    );
+    expect(traza![1].at(-1)).toBe(75);
+  });
+
+  it('mantiene la lectura y bloqueo por presentación para el producto incluido', async () => {
+    const trx = trxCon([{ id: 'u1' }]);
+    await consumirStockConTransaccion(trx, [{ presentacion_id: 'pres-1', cantidad: 1 }], {
+      ...contexto,
+      servicioId: 'servicio-1'
+    });
+    expect(trx.mock.calls[0][0]).toContain('INNER JOIN productos');
+    expect(trx.mock.calls[0][0]).toContain('FOR UPDATE OF p');
+    expect(movimiento(trx)![1]).toEqual(expect.arrayContaining(['servicio-1']));
+  });
+
   it('ignora los detalles sin presentación: el catálogo anterior no tiene inventario', async () => {
     const trx = vi.fn();
 
@@ -752,7 +798,7 @@ describe('descuento del bar al registrar una venta', () => {
     await expect(
       consumirStockConTransaccion(trx, [{ presentacion_id: 'pres-1', cantidad: 1 }], contexto)
     ).rejects.toMatchObject({ code: 'INSUFFICIENT_BAR_STOCK' });
-    expect(trx).toHaveBeenCalledTimes(3);
+    expect(trx).toHaveBeenCalledTimes(2);
   });
 
   it('no falla si la presentación ya no existe (unidades huérfanas)', async () => {

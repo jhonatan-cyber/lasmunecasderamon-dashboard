@@ -1,187 +1,105 @@
-﻿'use client';
+'use client';
 
-import { Coins, DollarSign } from 'lucide-react';
-import { Checkbox } from '@/components/ui/checkbox';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Separator } from '@/components/ui/separator';
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue
-} from '@/components/ui/select';
-import { PaymentMethodSelect } from '@/components/shared/selects';
-import { RoomSelect } from '@/components/shared/selects';
 import { formatCurrencyCLP } from '@/lib/utils/formatters';
-import {
-  ORDER_FIELD_INPUT_CLASS,
-  ORDER_FIELD_INPUT_WITH_ICON_CLASS,
-  ORDER_FIELD_LABEL_CLASS,
-  ORDER_FIELD_POPOVER_CLASS,
-  ORDER_FIELD_TRIGGER_CLASS
-} from '@/components/orders/orderFieldStyles';
+import { ORDER_FIELD_INPUT_CLASS, ORDER_FIELD_LABEL_CLASS } from './orderFieldStyles';
 
 interface OrderDetailPaymentPanelProps {
   metodoPago: string;
-  setMetodoPago: (value: string) => void;
-  showMetodoPagoError: boolean;
-  shouldShowRoomSelector: boolean;
   habitacionesActivas: any[];
   habitacionId: string;
-  setHabitacionId: (value: string) => void;
-  hasRoomSelectedInOrder: boolean;
   tiempoHabitacion: number;
   setTiempoHabitacion: (value: number) => void;
-  propinaDisplayValue: string;
-  agregarPropina: boolean;
-  setAgregarPropina: (value: boolean) => void;
   propina: number;
   orderTotalCommission: number;
 }
 
 export function OrderDetailPaymentPanel({
   metodoPago,
-  setMetodoPago,
-  showMetodoPagoError,
-  shouldShowRoomSelector,
   habitacionesActivas,
   habitacionId,
-  setHabitacionId,
-  hasRoomSelectedInOrder,
   tiempoHabitacion,
   setTiempoHabitacion,
-  propinaDisplayValue,
-  agregarPropina,
-  setAgregarPropina,
   propina,
   orderTotalCommission
 }: OrderDetailPaymentPanelProps) {
+  const room = habitacionesActivas.find(r => String(r.id_habitacion ?? r.id) === habitacionId);
+  const paymentLabels: Record<string, string> = {
+    efectivo: 'Efectivo',
+    tarjeta: 'Tarjeta',
+    transferencia: 'Transferencia'
+  };
   return (
     <div className='space-y-4'>
+      <p className='text-xs text-muted-foreground'>
+        Los datos del pedido son de solo lectura. Si tiene habitación, puedes ajustar el tiempo de
+        uso.
+      </p>
       <div>
-        <PaymentMethodSelect
-          value={metodoPago}
-          onChange={setMetodoPago}
-          label='Método de pago'
-          placeholder='Seleccione un método de pago'
-          required={true}
-          className={showMetodoPagoError && !metodoPago ? 'border-red-300' : ''}
+        <Label htmlFor='order-payment' className={ORDER_FIELD_LABEL_CLASS}>
+          Método de pago
+        </Label>
+        <Input
+          id='order-payment'
+          className={ORDER_FIELD_INPUT_CLASS}
+          value={paymentLabels[metodoPago] || 'Sin registrar'}
+          readOnly
         />
-        {showMetodoPagoError && !metodoPago && (
-          <div role='alert' className='text-xs text-red-500 mt-1'>
-            âš ï¸ El método de pago es obligatorio
-          </div>
-        )}
       </div>
-
-      {shouldShowRoomSelector && (
+      {habitacionId && (
         <>
-          <RoomSelect
-            habitaciones={habitacionesActivas}
-            value={habitacionId}
-            onChange={setHabitacionId}
-            label='Habitación (opcional)'
-            placeholder='Seleccione una habitación'
-            searchPlaceholder='Buscar habitación...'
-            filterByStatus={1}
-            includeRoomIds={habitacionId ? [habitacionId] : []}
-            showTime={true}
-            disabled={hasRoomSelectedInOrder}
-            disabledReason={
-              hasRoomSelectedInOrder
-                ? 'Este pedido ya viene con una habitación seleccionada y no se puede cambiar.'
-                : undefined
-            }
-          />
-
+          <div>
+            <Label htmlFor='order-room' className={ORDER_FIELD_LABEL_CLASS}>
+              Habitación
+            </Label>
+            <Input
+              id='order-room'
+              className={ORDER_FIELD_INPUT_CLASS}
+              value={room?.name || room?.nombre || habitacionId}
+              readOnly
+            />
+          </div>
           <div>
             <Label htmlFor='tiempo-habitacion' className={ORDER_FIELD_LABEL_CLASS}>
               Tiempo de uso (minutos)
             </Label>
-            <Select
-              value={tiempoHabitacion.toString()}
-              onValueChange={(val: string) => setTiempoHabitacion(Number(val))}
-              disabled={!habitacionId}
-            >
-              <SelectTrigger id='tiempo-habitacion' className={ORDER_FIELD_TRIGGER_CLASS}>
-                <SelectValue placeholder='Seleccionar tiempo' />
-              </SelectTrigger>
-              <SelectContent className={ORDER_FIELD_POPOVER_CLASS}>
-                {['5', '10', '15', '20', '25', '30'].map(minutes => (
-                  <SelectItem
-                    key={minutes}
-                    value={minutes}
-                    className='text-gray-900 dark:text-white hover:bg-gray-100 dark:hover:bg-gray-700'
-                  >
-                    {minutes} minutos
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-            {!habitacionId && (
-              <p className='mt-1 text-xs text-muted-foreground'>
-                Seleccione una habitación para habilitar el tiempo de uso.
-              </p>
-            )}
+            <Input
+              id='tiempo-habitacion'
+              className={ORDER_FIELD_INPUT_CLASS}
+              type='number'
+              min={1}
+              max={1440}
+              step={1}
+              value={tiempoHabitacion}
+              onChange={e => setTiempoHabitacion(Number(e.target.value))}
+            />
           </div>
         </>
       )}
-
       <div>
         <Label htmlFor='propina-display' className={ORDER_FIELD_LABEL_CLASS}>
           Propina
         </Label>
-        <div className='flex items-center space-x-2'>
-          <div className='relative flex-1'>
-            <Coins className='absolute left-2 top-1/2 -translate-y-1/2 pointer-events-none h-3 w-3 sm:h-4 sm:w-4 text-muted-foreground' />
-            <Input
-              id='propina-display'
-              className={`${ORDER_FIELD_INPUT_CLASS} pl-8`}
-              placeholder='Sin propina'
-              type='text'
-              value={propinaDisplayValue}
-              readOnly
-            />
-          </div>
-          <div className='flex items-center space-x-2'>
-            <Checkbox
-              id='agregar-propina'
-              checked={agregarPropina}
-              onCheckedChange={checked => setAgregarPropina(checked === true)}
-            />
-            <label
-              htmlFor='agregar-propina'
-              className='cursor-pointer whitespace-nowrap text-xs text-gray-700 dark:text-zinc-300'
-            >
-              10%
-            </label>
-          </div>
-        </div>
-
-        {agregarPropina && (
-          <div className='text-xs text-green-600 mt-1'>
-            ✓ Propina calculada: {formatCurrencyCLP(propina)}
-          </div>
-        )}
+        <Input
+          id='propina-display'
+          className={ORDER_FIELD_INPUT_CLASS}
+          value={formatCurrencyCLP(propina)}
+          readOnly
+        />
       </div>
-
       <div>
         <Label htmlFor='order-total-comision' className={ORDER_FIELD_LABEL_CLASS}>
           Total Comisión
         </Label>
-        <div className='relative'>
-          <DollarSign className='absolute left-2 top-1/2 -translate-y-1/2 pointer-events-none h-3 w-3 sm:h-4 sm:w-4 text-muted-foreground' />
-          <Input
-            id='order-total-comision'
-            className={`${ORDER_FIELD_INPUT_WITH_ICON_CLASS} font-semibold`}
-            value={formatCurrencyCLP(orderTotalCommission)}
-            disabled
-          />
-        </div>
+        <Input
+          id='order-total-comision'
+          className={ORDER_FIELD_INPUT_CLASS}
+          value={formatCurrencyCLP(orderTotalCommission)}
+          readOnly
+        />
       </div>
-
       <Separator />
     </div>
   );

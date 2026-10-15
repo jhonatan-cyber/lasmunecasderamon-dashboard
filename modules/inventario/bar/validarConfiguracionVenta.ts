@@ -3,17 +3,28 @@ import { BusinessError } from '@/lib/errors/errors';
 import { parseOpcionesVenta } from '../helpers';
 import type { ConsumoInventarioDetalle } from '../contracts';
 
-/** Validate against persisted presentation settings, including callers from Expo. */
-export async function validarConfiguracionVenta(
+/** Datos inmutables mientras esta transacción conserva el bloqueo de la presentación. */
+export interface PresentacionVentaBloqueada {
+  id: string;
+  producto_id: string;
+  nombre: string;
+  precio_venta: number;
+  comision: number;
+  ml_botella: number | null;
+  opciones_venta: unknown;
+}
+
+/** Solo reutilizable dentro de la misma transacción que adquirió estos bloqueos. */
+export async function bloquearYValidarConfiguracionVenta(
   trx: TransactionQuery,
   detalles: ConsumoInventarioDetalle[]
-): Promise<void> {
+): Promise<Map<string, PresentacionVentaBloqueada>> {
   const ids = [
     ...new Set(detalles.map(d => d.presentacion_id).filter((id): id is string => Boolean(id)))
   ];
-  if (!ids.length) return;
-  const rows = await trx<{ id: string; opciones_venta: unknown }[]>(
-    `SELECT id, opciones_venta FROM inventario_presentaciones WHERE id IN (${ids.map(() => '?').join(',')}) ORDER BY id FOR UPDATE`,
+  if (!ids.length) return new Map();
+  const rows = await trx<PresentacionVentaBloqueada[]>(
+    `SELECT id, opciones_venta, producto_id, nombre, precio_venta, comision, ml_botella FROM inventario_presentaciones WHERE id IN (${ids.map(() => '?').join(',')}) ORDER BY id FOR UPDATE`,
     ids
   );
   const configs = new Map(rows.map(row => [row.id, parseOpcionesVenta(row.opciones_venta)]));
@@ -67,4 +78,13 @@ export async function validarConfiguracionVenta(
         );
     }
   }
+  return new Map(rows.map(row => [row.id, row]));
+}
+
+/** Validate against persisted presentation settings, including callers from Expo. */
+export async function validarConfiguracionVenta(
+  trx: TransactionQuery,
+  detalles: ConsumoInventarioDetalle[]
+): Promise<void> {
+  await bloquearYValidarConfiguracionVenta(trx, detalles);
 }

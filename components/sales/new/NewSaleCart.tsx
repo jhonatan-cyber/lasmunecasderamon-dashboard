@@ -1,4 +1,5 @@
 'use client';
+import { permiteAnfitrionaConComision } from '@/lib/sales/hostessShortPrices';
 
 import { Minus, Plus, Trash } from 'lucide-react';
 import { SaleProductPhoto } from '@/components/sales/product-modal/SaleProductPhoto';
@@ -73,6 +74,13 @@ export const NewSaleCart = ({
           </TableHeader>
           <TableBody>
             {productos.map((p, i) => {
+              const selectedHostesses = permiteAnfitrionaConComision(
+                p.tipo_venta === 'shot' ? 'shot' : 'botella',
+                p.comision ?? p.commission,
+                Boolean(p.shot_anfitriona)
+              )
+                ? p.selectedHostesses || []
+                : [];
               const mixer =
                 p.tipo_venta === 'shot' ? p.acompanamiento_corto : p.acompanamiento_botella;
               const quantity = Number(p.cantidad) || 0;
@@ -182,8 +190,8 @@ export const NewSaleCart = ({
                     className={`${CUENTA_TABLE_CELL_CLASS} text-center text-[11px] leading-tight font-medium text-gray-900 dark:text-neutral-100 min-w-[220px] w-[220px]`}
                   >
                     <div className='flex flex-wrap items-center justify-center gap-1.5'>
-                      {p.selectedHostesses?.length ? (
-                        p.selectedHostesses.map((id: string) => {
+                      {selectedHostesses.length ? (
+                        selectedHostesses.map((id: string) => {
                           const hostess = anfitrionas.find(
                             a => String(a.id ?? a.id_usuario) === String(id)
                           );
@@ -209,7 +217,7 @@ export const NewSaleCart = ({
                     <p className='mt-1 text-xs font-normal text-muted-foreground'>
                       Comisión total:{' '}
                       {formatCurrencyNoDecimals(
-                        p.selectedHostesses?.length ? (Number(p.comision) || 0) * quantity : 0
+                        selectedHostesses.length ? (Number(p.comision) || 0) * quantity : 0
                       )}
                     </p>
                   </TableCell>

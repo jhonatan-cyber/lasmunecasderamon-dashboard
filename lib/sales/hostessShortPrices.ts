@@ -11,3 +11,14 @@ export const esCortoAnfitriona = (value: string) =>
   value === 'shot_anfitriona' || value.startsWith('shot_anfitriona:');
 
 export const permiteAnfitriona = (value: string) => value === 'botella' || esCortoAnfitriona(value);
+
+/** La comisión corresponde al formato elegido, no a otro formato del producto. */
+export function permiteAnfitrionaConComision(
+  formato: string,
+  comision: unknown,
+  shotAnfitriona = false
+): boolean {
+  const monto = Number(comision);
+  const eleccion = formato === 'shot' && shotAnfitriona ? 'shot_anfitriona' : formato;
+  return Number.isFinite(monto) && monto > 0 && permiteAnfitriona(eleccion);
+}

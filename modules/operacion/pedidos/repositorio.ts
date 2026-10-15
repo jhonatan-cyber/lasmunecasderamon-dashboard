@@ -1,4 +1,16 @@
-import { validarConfiguracionVenta } from '@/modules/inventario';
+import { resolverTransaccion } from '@/lib/transaccion/infraestructura';
+import { enUnaUnidad, type ContextoOperacion } from '@/lib/transaccion/contrato';
+import {
+  validarAnfitrionasEnLocal,
+  comprobarAnfitrionasLibresParaServicio
+} from '@/modules/identidad';
+import {
+  validarAnfitrionasConfirmadas,
+  esHabitacionLibreIngreso
+} from '@/lib/business/registroOperacion';
+import { ventaDesdePedido } from './reglas';
+import { consultarHabitacion } from '../facturacion/repositorio';
+import { validarConfiguracionPedido } from '@/modules/inventario';
 import { saleInventoryFields, type SaleInventoryFields } from '@/lib/sales/saleInventoryFields';
 import { query, generateUUID, withTransaction, type TransactionQuery } from '@/lib/database/db';
 import {
@@ -20,7 +32,7 @@ import { sendNotificationToAll } from '@/lib/api/sseService';
 import { sendPushByRole } from '@/modules/comunicaciones';
 import { buildOrderPushBody } from '@/lib/notifications/notificationMessages';
 import { BaseRepository } from '@/lib/database/base-repository';
-import { DatabaseError } from '@/lib/errors/errors';
+import { BusinessError, DatabaseError } from '@/lib/errors/errors';
 import { logger } from '@/lib/utils/logger';
 import { z } from 'zod';
 
@@ -125,6 +137,12 @@ export class OrderRepository {
         selectedHostesses: d.selectedHostesses || []
       }));
 
+      usuarios = [
+        ...new Set(
+          detalles.flatMap(d => [...d.selectedHostesses, ...(d.hostessId ? [d.hostessId] : [])])
+        )
+      ].map(usuarioId => ({ usuarioId }));
+
       const subtotalNormalizado = Number(subtotal || 0);
       const propinaNormalizada = Number(propina || 0);
       const totalFinal = Number(total || 0);
@@ -167,85 +185,113 @@ export class OrderRepository {
       const pedidoId = generateUUID();
       const fechaCrea = getNowInBusinessTimezone(device_date || undefined);
 
-      await withTransaction(async trx => {
-        await validarConfiguracionVenta(trx, detalles);
-        await BaseRepository.insert(trx, 'pedidos', {
-          id_pedido: pedidoId,
-          codigo,
-          mesero_id: meseroId,
-          cliente_id: clienteId || null,
-          subtotal: totalBasePedido,
-          total: totalBasePedido,
-          total_comision: totalComision,
-          propina: propinaNormalizada,
-          metodo_pago: data.metodoPago ?? null,
-          estado: 1,
-          fecha_crea: fechaCrea
-        });
-
-        // OPTIMIZACIÓN: Batch coletor para detalle_pedidos_anfitrionas
-        const detalleAnfitrionaRows: Array<Record<string, unknown>> = [];
-
-        for (const d of detalles) {
-          const detallePedidoId = generateUUID();
-          await BaseRepository.insert(trx, 'detalle_pedidos', {
-            id_detalle_pedido: detallePedidoId,
-            pedido_id: pedidoId,
-            producto_id: d.productoId,
-            configuracion_venta: d.presentacion_id ? JSON.stringify(saleInventoryFields(d)) : null,
-            precio: d.precio,
-            comision: d.comision,
-            genera_comision: d.generaComision,
-            cantidad: d.cantidad,
-            subtotal: d.subtotal,
-            hostess_id: d.hostessId || null,
-            habitacion_id: d.roomId || null,
+      await enUnaUnidad(unidad =>
+        unidad.ejecutar(async contexto => {
+          const trx = resolverTransaccion(contexto);
+          await validarConfiguracionPedido(trx, detalles);
+          const hostIds = [
+            ...new Set(
+              detalles.flatMap(d => [...d.selectedHostesses, ...(d.hostessId ? [d.hostessId] : [])])
+            )
+          ];
+          if (hostIds.length) {
+            const confirmed = await validarAnfitrionasEnLocal(hostIds, contexto);
+            validarAnfitrionasConfirmadas(hostIds, confirmed);
+            await comprobarAnfitrionasLibresParaServicio(hostIds, contexto);
+          }
+          const roomIds = [...new Set(detalles.map(d => d.roomId).filter(Boolean))];
+          if (roomIds.length > 1)
+            throw new BusinessError('El pedido debe tener una sola habitacion');
+          if (roomIds.length) {
+            const rooms = await consultarHabitacion(String(roomIds[0]), contexto, true);
+            if (
+              !rooms.length ||
+              Number(rooms[0].estado) === 0 ||
+              ((Number(rooms[0].estado) !== 1 || rooms[0].actividad) &&
+                !esHabitacionLibreIngreso(rooms[0]))
+            )
+              throw new BusinessError('La habitacion no esta disponible');
+          }
+          await BaseRepository.insert(trx, 'pedidos', {
+            id_pedido: pedidoId,
+            codigo,
+            mesero_id: meseroId,
+            cliente_id: clienteId || null,
+            subtotal: totalBasePedido,
+            total: totalBasePedido,
+            total_comision: detalles.reduce((sum, d) => sum + d.comision, 0),
+            propina: propinaNormalizada,
+            metodo_pago: data.metodoPago ?? null,
+            estado: 1,
             fecha_crea: fechaCrea
           });
 
-          if (d.selectedHostesses && d.selectedHostesses.length > 0) {
-            for (const hostessId of d.selectedHostesses) {
-              detalleAnfitrionaRows.push({
-                id_detalle_anfitriona: generateUUID(),
-                detalle_pedido_id: detallePedidoId,
-                anfitriona_id: String(hostessId),
-                fecha_crea: fechaCrea
-              });
+          // OPTIMIZACIÓN: Batch coletor para detalle_pedidos_anfitrionas
+          const detalleAnfitrionaRows: Array<Record<string, unknown>> = [];
+
+          for (const d of detalles) {
+            const detallePedidoId = generateUUID();
+            await BaseRepository.insert(trx, 'detalle_pedidos', {
+              id_detalle_pedido: detallePedidoId,
+              pedido_id: pedidoId,
+              producto_id: d.productoId,
+              configuracion_venta: d.presentacion_id
+                ? JSON.stringify(saleInventoryFields(d))
+                : null,
+              precio: d.precio,
+              comision: d.comision,
+              genera_comision: d.generaComision,
+              cantidad: d.cantidad,
+              subtotal: d.subtotal,
+              hostess_id: d.hostessId || null,
+              habitacion_id: d.roomId || null,
+              fecha_crea: fechaCrea
+            });
+
+            if (d.selectedHostesses && d.selectedHostesses.length > 0) {
+              for (const hostessId of d.selectedHostesses) {
+                detalleAnfitrionaRows.push({
+                  id_detalle_anfitriona: generateUUID(),
+                  detalle_pedido_id: detallePedidoId,
+                  anfitriona_id: String(hostessId),
+                  fecha_crea: fechaCrea
+                });
+              }
             }
           }
-        }
 
-        // Batch insert detalle_pedidos_anfitrionas (antes D×H queries)
-        if (detalleAnfitrionaRows.length > 0) {
-          const columns = [
-            'id_detalle_anfitriona',
-            'detalle_pedido_id',
-            'anfitriona_id',
-            'fecha_crea'
-          ];
-          const placeholders = detalleAnfitrionaRows
-            .map(() => `(${columns.map(() => '?').join(', ')})`)
-            .join(', ');
-          const values = detalleAnfitrionaRows.flatMap(row => columns.map(col => row[col]));
-          await trx(
-            `INSERT INTO detalle_pedidos_anfitrionas (${columns.join(', ')}) VALUES ${placeholders}`,
-            values
-          );
-        }
+          // Batch insert detalle_pedidos_anfitrionas (antes D×H queries)
+          if (detalleAnfitrionaRows.length > 0) {
+            const columns = [
+              'id_detalle_anfitriona',
+              'detalle_pedido_id',
+              'anfitriona_id',
+              'fecha_crea'
+            ];
+            const placeholders = detalleAnfitrionaRows
+              .map(() => `(${columns.map(() => '?').join(', ')})`)
+              .join(', ');
+            const values = detalleAnfitrionaRows.flatMap(row => columns.map(col => row[col]));
+            await trx(
+              `INSERT INTO detalle_pedidos_anfitrionas (${columns.join(', ')}) VALUES ${placeholders}`,
+              values
+            );
+          }
 
-        // OPTIMIZACIÓN: Batch insert pedidos_usuarios (antes U queries)
-        if (usuarios.length > 0) {
-          const cols = ['id_pedido_usuario', 'usuario_id', 'pedido_id'];
-          const usuarioRows = usuarios.map(u => ({
-            id_pedido_usuario: generateUUID(),
-            usuario_id: u.usuarioId,
-            pedido_id: pedidoId
-          }));
-          const ph = usuarioRows.map(() => `(${cols.map(() => '?').join(', ')})`).join(', ');
-          const vals = usuarioRows.flatMap(row => cols.map(col => row[col as keyof typeof row]));
-          await trx(`INSERT INTO pedidos_usuarios (${cols.join(', ')}) VALUES ${ph}`, vals);
-        }
-      });
+          // OPTIMIZACIÓN: Batch insert pedidos_usuarios (antes U queries)
+          if (usuarios.length > 0) {
+            const cols = ['id_pedido_usuario', 'usuario_id', 'pedido_id'];
+            const usuarioRows = usuarios.map(u => ({
+              id_pedido_usuario: generateUUID(),
+              usuario_id: u.usuarioId,
+              pedido_id: pedidoId
+            }));
+            const ph = usuarioRows.map(() => `(${cols.map(() => '?').join(', ')})`).join(', ');
+            const vals = usuarioRows.flatMap(row => cols.map(col => row[col as keyof typeof row]));
+            await trx(`INSERT INTO pedidos_usuarios (${cols.join(', ')}) VALUES ${ph}`, vals);
+          }
+        })
+      );
 
       const notificationData = await buildOrderNotificationData({
         pedidoId,
@@ -270,7 +316,7 @@ export class OrderRepository {
         tiempo_auto_seleccionado: tiempoAutoSeleccionado
       };
     } catch (err) {
-      if (err instanceof z.ZodError) throw err;
+      if (err instanceof z.ZodError || err instanceof BusinessError) throw err;
       logger.error('[OrderRepository] Error en create:', { codigo: body.codigo, err });
       throw new DatabaseError('Error al crear pedido', err);
     }
@@ -297,9 +343,16 @@ export class OrderRepository {
     }
   }
 
-  static async getDetail(id: string): Promise<any[]> {
+  static async paraVenta(id: string, tiempo: number, contexto: ContextoOperacion) {
+    const trx = resolverTransaccion(contexto);
+    const rows = await trx<any[]>('SELECT * FROM pedidos WHERE id_pedido = ? FOR UPDATE', [id]);
+    const details = rows.length ? await this.getDetail(id, trx) : [];
+    return ventaDesdePedido(rows[0], details, tiempo);
+  }
+
+  static async getDetail(id: string, execute: TransactionQuery = query): Promise<any[]> {
     try {
-      const rows = await query<any[]>(
+      const rows = await execute<any[]>(
         `
       SELECT
         P.id_pedido, P.codigo, P.fecha_crea, P.subtotal, P.total, P.propina, P.total_comision, P.metodo_pago,

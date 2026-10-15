@@ -355,7 +355,7 @@ export default function AgregarProductosModal({
                   onChange={setHabitacionId}
                   label='Habitacion'
                   placeholder='Seleccionar habitacion'
-                  filterByStatus={1}
+                  excludeStatuses={[0]}
                   disabled={!requiresRoomTimeSelection}
                 />
                 <TimeSelect

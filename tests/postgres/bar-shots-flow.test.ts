@@ -437,7 +437,12 @@ it.each(['directo', 'cuenta'])(
           nombre: 'Soda'
         }
       };
+      await query('UPDATE inventario_presentaciones SET opciones_venta = ?::jsonb WHERE id = ?', [
+        JSON.stringify([{ tipo: 'shot', precio: 3000, comision: 0 }]),
+        licor.presentacionId
+      ]);
       const pedido = await OrderService.create({
+        metodoPago: 'efectivo',
         codigo: `PGORDER-${via}`,
         meseroId: licor.usuarioId,
         subtotal: 6000,
@@ -500,3 +505,61 @@ it.each(['directo', 'cuenta'])(
     }
   }
 );
+
+it('rechaza pedido sin stock acumulado, no guarda cabecera y no consume al aceptar', async () => {
+  const snapshot = await snapshotBarDatabase();
+  try {
+    const licor = await crearBar(750, 1);
+    const body = {
+      codigo: 'PGORDER-STOCK',
+      meseroId: licor.usuarioId,
+      metodoPago: 'efectivo' as const,
+      subtotal: 90000,
+      total: 90000,
+      detalles: [
+        {
+          productoId: licor.productoId,
+          presentacion_id: licor.presentacionId,
+          tipo_venta: 'botella' as const,
+          precio: 45000,
+          cantidad: 1,
+          subtotal: 45000,
+          generaComision: 0
+        },
+        {
+          productoId: licor.productoId,
+          presentacion_id: licor.presentacionId,
+          tipo_venta: 'botella' as const,
+          precio: 45000,
+          cantidad: 1,
+          subtotal: 45000,
+          generaComision: 0
+        }
+      ]
+    };
+    await expect(OrderService.create(body)).rejects.toMatchObject({
+      code: 'INSUFFICIENT_BAR_STOCK'
+    });
+    expect(
+      (await query('SELECT id_pedido FROM pedidos WHERE codigo = ?', [body.codigo])).length
+    ).toBe(0);
+    const before = await unidadesDe(licor.presentacionId);
+    await OrderService.create({
+      ...body,
+      codigo: 'PGSTOCKOK',
+      subtotal: 45000,
+      total: 45000,
+      detalles: [body.detalles[0]]
+    });
+    expect(await unidadesDe(licor.presentacionId)).toEqual(before);
+    expect(
+      (
+        await query('SELECT id FROM inventario_movimientos WHERE presentacion_id = ?', [
+          licor.presentacionId
+        ])
+      ).length
+    ).toBe(0);
+  } finally {
+    await restoreBarDatabase(snapshot);
+  }
+});

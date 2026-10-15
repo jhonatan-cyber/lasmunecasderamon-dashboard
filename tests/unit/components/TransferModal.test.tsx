@@ -58,7 +58,7 @@ it('actualiza la ficha al editar y al volver a la configuración guardada', asyn
   fireEvent.change(screen.getByLabelText('Unidades por botella'), { target: { value: '2' } });
   expect(summary).toHaveTextContent('2 unidades por botella');
   fireEvent.change(screen.getByLabelText('Comisión (opcional)'), { target: { value: '0' } });
-  expect(screen.getByText(/Config\. comisiones: máx\. 3 anf\./)).toBeInTheDocument();
+  expect(screen.getByText(/Config\. comisiones: máx\. 0 anf\./)).toBeInTheDocument();
   fireEvent.click(screen.getByRole('button', { name: 'Usar configuración guardada' }));
   expect(summary).toHaveTextContent('20.000');
   expect(summary).not.toHaveTextContent('35.000');
@@ -76,7 +76,9 @@ it('guarda el máximo de anfitrionas del producto antes de transferir', async ()
   fireEvent.change(screen.getByLabelText('Precio con 3 anfitrionas'), {
     target: { value: '50000' }
   });
-  fireEvent.change(screen.getByLabelText('Cantidad'), { target: { value: '1' } });
+  fireEvent.change(screen.getByLabelText('Unidades completas a transferir al bar'), {
+    target: { value: '1' }
+  });
   fireEvent.click(screen.getByRole('button', { name: 'Transferir' }));
   await waitFor(() => expect(done).toHaveBeenCalledOnce());
   const update = request.mock.calls.find(
@@ -105,8 +107,11 @@ it.each([0, 5000])('permite máximo opcional independiente de la comisión: %s',
       onDone={done}
     />
   );
-  expect(screen.getByLabelText('Máximo de anfitrionas')).toHaveValue(null);
-  fireEvent.change(screen.getByLabelText('Cantidad'), { target: { value: '1' } });
+  if (commission > 0) expect(screen.getByLabelText(/ximo de anfitrionas/)).toHaveValue(null);
+  else expect(screen.queryByLabelText(/ximo de anfitrionas/)).not.toBeInTheDocument();
+  fireEvent.change(screen.getByLabelText('Unidades completas a transferir al bar'), {
+    target: { value: '1' }
+  });
   fireEvent.click(screen.getByRole('button', { name: 'Transferir' }));
   await waitFor(() => expect(done).toHaveBeenCalledOnce());
   const update = request.mock.calls.find(
@@ -130,7 +135,9 @@ it('detiene la transferencia si no se puede guardar el máximo de anfitrionas', 
     />
   );
   fireEvent.change(screen.getByLabelText('Máximo de anfitrionas'), { target: { value: '3' } });
-  fireEvent.change(screen.getByLabelText('Cantidad'), { target: { value: '1' } });
+  fireEvent.change(screen.getByLabelText('Unidades completas a transferir al bar'), {
+    target: { value: '1' }
+  });
   fireEvent.click(screen.getByRole('button', { name: 'Transferir' }));
   await waitFor(() =>
     expect(request.mock.calls.some(([, options]) => options?.method === 'PUT')).toBe(true)
@@ -171,7 +178,9 @@ it('agrega y guarda varios precios de anfitriona con comisiones independientes',
   expect(summary).toHaveTextContent('Corto anfitriona 1: $6.000 · Comisión: $1.000');
   expect(summary).toHaveTextContent('Corto anfitriona 2: $8.000 · Comisión: $2.000');
   expect(summary).not.toHaveTextContent('Corto anfitriona 3:');
-  fireEvent.change(screen.getByLabelText('Cantidad'), { target: { value: '1' } });
+  fireEvent.change(screen.getByLabelText('Unidades completas a transferir al bar'), {
+    target: { value: '1' }
+  });
   fireEvent.click(screen.getByRole('button', { name: 'Transferir' }));
   await waitFor(() => expect(done).toHaveBeenCalledOnce());
   expect(
@@ -195,7 +204,9 @@ describe('tipos de venta al transferir', () => {
     render(<TransferModal open item={item} onOpenChange={vi.fn()} onDone={onDone} />);
     expect(screen.getByText('Configuración guardada')).toBeInTheDocument();
     expect(screen.queryByLabelText('Precio por botella')).not.toBeInTheDocument();
-    fireEvent.change(screen.getByLabelText('Cantidad'), { target: { value: '2' } });
+    fireEvent.change(screen.getByLabelText('Unidades completas a transferir al bar'), {
+      target: { value: '2' }
+    });
     fireEvent.click(screen.getByRole('button', { name: 'Transferir' }));
     await waitFor(() => expect(onDone).toHaveBeenCalledOnce());
     expect(postBody(request)).toEqual({
@@ -217,7 +228,9 @@ describe('tipos de venta al transferir', () => {
     fireEvent.change(screen.getByLabelText('Precio corto cliente'), {
       target: { value: '3000' }
     });
-    fireEvent.change(screen.getByLabelText('Cantidad'), { target: { value: '2' } });
+    fireEvent.change(screen.getByLabelText('Unidades completas a transferir al bar'), {
+      target: { value: '2' }
+    });
     fireEvent.click(screen.getByRole('button', { name: 'Transferir' }));
     await waitFor(() => expect(onDone).toHaveBeenCalledOnce());
     expect(postBody(request)).toEqual({
@@ -258,7 +271,9 @@ describe('tipos de venta al transferir', () => {
     fireEvent.change(screen.getByLabelText('Precio corto cliente'), {
       target: { value: '3000' }
     });
-    fireEvent.change(screen.getByLabelText('Cantidad'), { target: { value: '2' } });
+    fireEvent.change(screen.getByLabelText('Unidades completas a transferir al bar'), {
+      target: { value: '2' }
+    });
     fireEvent.click(screen.getByRole('button', { name: 'Transferir' }));
     await waitFor(() => expect(onDone).toHaveBeenCalledOnce());
     const putCall = request.mock.calls.find((args: any[]) => args[1]?.method === 'PUT');
@@ -314,7 +329,9 @@ describe('tipos de venta al transferir', () => {
     fireEvent.change(screen.getByLabelText('Precio corto anfitriona'), {
       target: { value: '5000' }
     });
-    fireEvent.change(screen.getByLabelText('Cantidad'), { target: { value: '1' } });
+    fireEvent.change(screen.getByLabelText('Unidades completas a transferir al bar'), {
+      target: { value: '1' }
+    });
     fireEvent.click(screen.getByRole('button', { name: 'Transferir' }));
     await waitFor(() => expect(onDone).toHaveBeenCalledOnce());
     // Precio único para ambas audiencias; ml distintos por audiencia.
@@ -350,7 +367,9 @@ describe('tipos de venta al transferir', () => {
       target: { value: '3000' }
     });
     fireEvent.change(screen.getByLabelText('Ml corto cliente'), { target: { value: '50' } });
-    fireEvent.change(screen.getByLabelText('Cantidad'), { target: { value: '1' } });
+    fireEvent.change(screen.getByLabelText('Unidades completas a transferir al bar'), {
+      target: { value: '1' }
+    });
     fireEvent.click(screen.getByRole('button', { name: 'Transferir' }));
     await waitFor(() => expect(onDone).toHaveBeenCalledOnce());
     const shot = postBody(request).opciones_venta.find((o: any) => o.tipo === 'shot');
@@ -385,7 +404,9 @@ describe('tipos de venta al transferir', () => {
     };
     render(<TransferModal open item={conAnfitriona} onOpenChange={vi.fn()} onDone={onDone} />);
     expect(screen.getByText('Anfitriona $2.000 · Comisión $0')).toBeInTheDocument();
-    fireEvent.change(screen.getByLabelText('Cantidad'), { target: { value: '1' } });
+    fireEvent.change(screen.getByLabelText('Unidades completas a transferir al bar'), {
+      target: { value: '1' }
+    });
     fireEvent.click(screen.getByRole('button', { name: 'Transferir' }));
     await waitFor(() => expect(onDone).toHaveBeenCalledOnce());
     expect(postBody(request).opciones_venta.find((option: any) => option.tipo === 'shot')).toEqual({
@@ -406,7 +427,9 @@ it('guarda y reutiliza unidades de bebida por botella', async () => {
   fireEvent.click(screen.getByRole('button', { name: 'Modificar precios' }));
   fireEvent.click(screen.getByLabelText('Bebida de la botella'));
   fireEvent.change(screen.getByLabelText('Unidades por botella'), { target: { value: '3' } });
-  fireEvent.change(screen.getByLabelText('Cantidad'), { target: { value: '1' } });
+  fireEvent.change(screen.getByLabelText('Unidades completas a transferir al bar'), {
+    target: { value: '1' }
+  });
   fireEvent.click(screen.getByRole('button', { name: 'Transferir' }));
   await waitFor(() => expect(done).toHaveBeenCalledOnce());
   const options = postBody(request).opciones_venta;
@@ -423,8 +446,77 @@ it('guarda y reutiliza unidades de bebida por botella', async () => {
     />
   );
   expect(screen.getByText('Incluye 3 unidades de bebida por botella')).toBeInTheDocument();
-  fireEvent.change(screen.getByLabelText('Cantidad'), { target: { value: '2' } });
+  fireEvent.change(screen.getByLabelText('Unidades completas a transferir al bar'), {
+    target: { value: '2' }
+  });
   fireEvent.click(screen.getByRole('button', { name: 'Transferir' }));
   await waitFor(() => expect(done).toHaveBeenCalledOnce());
   expect(postBody(request).opciones_venta).toEqual(options);
+});
+
+it.each([
+  [0, true],
+  [1000, true],
+  [0, false],
+  [1000, false]
+] as const)(
+  'oculta el limite sin comision de botella y aplica el defecto para corto: %s, botella %s',
+  async (commission, bottle) => {
+    const request = vi.fn().mockResolvedValue({ ok: true, json: async () => ({ success: true }) });
+    vi.stubGlobal('fetch', request);
+    const done = vi.fn();
+    render(
+      <TransferModal
+        open
+        item={{
+          ...item,
+          max_anfitrionas: 0,
+          opciones_venta: [
+            ...(bottle ? [{ tipo: 'botella' as const, precio: 20000, comision: 0 }] : []),
+            {
+              tipo: 'shot',
+              precio: 3000,
+              comision: 0,
+              precios_anfitriona: [{ precio: 6000, comision: commission }]
+            }
+          ]
+        }}
+        onOpenChange={vi.fn()}
+        onDone={done}
+      />
+    );
+    expect(screen.queryByLabelText(/ximo de anfitrionas/)).not.toBeInTheDocument();
+    fireEvent.change(screen.getByLabelText('Unidades completas a transferir al bar'), {
+      target: { value: '1' }
+    });
+    fireEvent.click(screen.getByRole('button', { name: 'Transferir' }));
+    await waitFor(() => expect(done).toHaveBeenCalledOnce());
+    const update = request.mock.calls.find(
+      (args: any[]) => args[0] === '/api/products/prod-1' && args[1]?.method === 'PUT'
+    );
+    if (commission > 0) expect(JSON.parse(update![1].body)).toEqual({ max_anfitrionas: 1 });
+    else expect(update).toBeUndefined();
+  }
+);
+
+it('ignora el limite anterior al quitar la comision de botella', async () => {
+  const request = vi.fn().mockResolvedValue({ ok: true, json: async () => ({ success: true }) });
+  vi.stubGlobal('fetch', request);
+  const done = vi.fn();
+  render(
+    <TransferModal open item={{ ...item, comision: 5000 }} onOpenChange={vi.fn()} onDone={done} />
+  );
+  fireEvent.click(screen.getByRole('button', { name: 'Modificar precios' }));
+  fireEvent.change(screen.getByLabelText(/ximo de anfitrionas/), { target: { value: '0' } });
+  fireEvent.change(screen.getByLabelText(/Comisi.*opcional/), { target: { value: '' } });
+  expect(screen.queryByLabelText(/ximo de anfitrionas/)).not.toBeInTheDocument();
+  fireEvent.change(screen.getByLabelText('Unidades completas a transferir al bar'), {
+    target: { value: '1' }
+  });
+  fireEvent.click(screen.getByRole('button', { name: 'Transferir' }));
+  await waitFor(() => expect(done).toHaveBeenCalledOnce());
+  expect(postBody(request).opciones_venta).toEqual([
+    { tipo: 'botella', precio: 20000, comision: 0 }
+  ]);
+  expect(request.mock.calls.some((args: any[]) => args[1]?.method === 'PUT')).toBe(false);
 });

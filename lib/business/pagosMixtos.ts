@@ -39,3 +39,24 @@ export function calcularDeltasCaja(pagosMixtos: MixedPayment[]) {
     { efectivo: 0, tarjeta: 0, transferencia: 0 }
   );
 }
+
+/** Distribuye un pago simple sin normalizar el método ni modificar el monto. */
+export function calcularDeltasPagoSimple(metodo: string | undefined, monto: number) {
+  return {
+    efectivo: metodo === 'efectivo' ? monto : 0,
+    tarjeta: metodo === 'tarjeta' ? monto : 0,
+    transferencia: metodo === 'transferencia' ? monto : 0
+  };
+}
+
+/** Se invoca en el punto de validación de cada caso de uso, antes de consumir saldo. */
+export function prepararPagoRegistro(metodo: string, total: number, pagosMixtos: MixedPayment[]) {
+  const esMixto = metodo === 'mixto';
+  const prepagoSolicitado = esMixto
+    ? pagosMixtos
+        .filter(pago => pago.metodo === 'prepago')
+        .reduce((sum, pago) => sum + pago.monto, 0)
+    : null;
+  if (esMixto) validatePagosMixtos(pagosMixtos, total);
+  return { esMixto, prepagoSolicitado };
+}

@@ -1,10 +1,11 @@
 import { beforeEach, afterEach, describe, expect, it, vi } from 'vitest';
 import { act, renderHook } from '@testing-library/react';
 import { activeTimers, serverOffsetSignal, TimerInstance } from '@/lib/store/timerStore';
+import { resetTimerClock } from '@/lib/utils/timerClock';
 import { useTimerActions } from '@/hooks/timer/useTimerActions';
 import { useServiceLogic } from '@/hooks/servicios/useServiceLogic';
 
-const fixture = vi.hoisted(() => ({ servicios: [] as any[] }));
+const fixture = vi.hoisted(() => ({ servicios: [] as any[], duration: 2 }));
 vi.mock('next/navigation', () => ({ useRouter: () => ({ push: vi.fn() }) }));
 vi.mock('@/hooks/servicios/useServicios', () => ({
   useServicios: () => ({
@@ -19,7 +20,41 @@ vi.mock('@/hooks/servicios/useServicios', () => ({
 beforeEach(() => {
   activeTimers.value = [];
   serverOffsetSignal.value = 0;
-  vi.stubGlobal('fetch', vi.fn().mockResolvedValue({ ok: true }));
+  resetTimerClock();
+  vi.stubGlobal(
+    'fetch',
+    vi.fn().mockImplementation(async (url: string) => ({
+      ok: true,
+      json: async () => ({
+        success: true,
+        serverTime: new Date(Date.now() + serverOffsetSignal.peek()).toISOString(),
+        data: [
+          ...activeTimers
+            .peek()
+            .filter(t => !t.isTemporary)
+            .map(t => ({
+              ...t.toPlainObject(),
+              codigo: 'MAIN',
+              isPaused: true,
+              remainingTime: t.remainingSeconds.peek()
+            })),
+          {
+            servicioId: 'adicional',
+            roomId: 'vip',
+            roomName: 'Vip',
+            startTime: new Date(Date.now() + serverOffsetSignal.peek()).toISOString(),
+            duration: fixture.duration,
+            isPaused: false,
+            isTemporary: true,
+            servicioOriginalId: 'original',
+            tipoTransaccion: 'servicio',
+            codigo: 'TEMP'
+          }
+        ]
+      })
+    }))
+  );
+  fixture.duration = 2;
   fixture.servicios = [
     { id: 'original', estado: 3 },
     { id: 'adicional', estado: 2, es_temporal: 1, servicio_original_id: 'original' },
@@ -28,6 +63,7 @@ beforeEach(() => {
 });
 afterEach(() => {
   activeTimers.value = [];
+  resetTimerClock();
   serverOffsetSignal.value = 0;
   vi.unstubAllGlobals();
   vi.restoreAllMocks();
@@ -113,11 +149,11 @@ describe('servicio adicional', () => {
 
   it.each([-708000, 708000])(
     'mantiene los 2 minutos aunque el reloj del servidor difiera %i ms',
-    offset => {
+    async offset => {
       vi.spyOn(Date, 'now').mockReturnValue(new Date('2026-10-13T15:00:00Z').getTime());
       serverOffsetSignal.value = offset;
       const { result } = renderHook(() => useTimerActions({ onNotificationExpira: vi.fn() }));
-      act(() =>
+      await act(() =>
         result.current.startTemporaryTimer(
           'original',
           'vip',
@@ -132,6 +168,7 @@ describe('servicio adicional', () => {
           }
         )
       );
+      resetTimerClock();
       const adicional = activeTimers.peek()[0];
       act(() => adicional.update(offset));
       expect(adicional.remainingSeconds.peek()).toBe(120);
@@ -142,7 +179,8 @@ describe('servicio adicional', () => {
     }
   );
 
-  it('inicia el adicional con su propio identificador y duración, conservando el tiempo principal', () => {
+  it('inicia el adicional con su propio identificador y duración, conservando el tiempo principal', async () => {
+    fixture.duration = 30;
     activeTimers.value = [
       new TimerInstance(
         {
@@ -161,7 +199,7 @@ describe('servicio adicional', () => {
       )
     ];
     const { result } = renderHook(() => useTimerActions({ onNotificationExpira: vi.fn() }));
-    act(() =>
+    await act(() =>
       result.current.startTemporaryTimer(
         'original',
         'vip',
@@ -183,7 +221,7 @@ describe('servicio adicional', () => {
     expect(adicional.isPaused.peek()).toBe(false);
     expect(adicional.remainingSeconds.peek()).toBe(1800);
     expect(adicional.datosTemporales.peek().servicio_original_id).toBe('original');
-    act(() =>
+    await act(() =>
       result.current.startTemporaryTimer(
         'original',
         'vip',

@@ -40,74 +40,107 @@ export const OrderSchema = z.object({
 
 export type OrderType = z.infer<typeof OrderSchema>;
 
-export const OrderCreateSchema = z.object({
-  codigo: z.string().min(1, 'Código es requerido'),
-  meseroId: z.string().min(1, 'Mesero es requerido'),
-  clienteId: z.string().nullable().optional(),
-  subtotal: z.number().min(0),
-  total: z.number().min(0),
-  totalComision: z.number().optional().default(0),
-  propina: z.number().optional().default(0),
-  metodoPago: z.enum(['efectivo', 'tarjeta', 'transferencia']).optional(),
-  device_date: z.string().optional(),
-  detalles: z
-    .array(
-      z
-        .object({
-          ...inventoryFields,
-          productoId: z.string().min(1),
-          precio: z.number().min(0),
-          comision: z.number().optional().default(0),
-          generaComision: z.number().optional().default(1),
-          cantidad: z.number().min(1),
-          subtotal: z.number().min(0),
-          hostessId: z.string().nullable().optional(),
-          roomId: z.string().nullable().optional(),
-          selectedHostesses: z.array(z.string()).optional().default([])
+export const OrderCreateSchema = z
+  .object({
+    codigo: z.string().min(1, 'Código es requerido'),
+    meseroId: z.string().min(1, 'Mesero es requerido'),
+    clienteId: z.string().nullable().optional(),
+    subtotal: z.number().min(0),
+    total: z.number().min(0),
+    totalComision: z.number().min(0).optional().default(0),
+    propina: z.number().min(0).optional().default(0),
+    metodoPago: z.enum(['efectivo', 'tarjeta', 'transferencia']),
+    device_date: z.string().optional(),
+    detalles: z
+      .array(
+        z
+          .object({
+            ...inventoryFields,
+            productoId: z.string().min(1),
+            precio: z.number().min(0),
+            comision: z.number().min(0).optional().default(0),
+            generaComision: z.number().optional().default(1),
+            cantidad: z.number().min(1),
+            subtotal: z.number().min(0),
+            hostessId: z.string().nullable().optional(),
+            roomId: z.string().nullable().optional(),
+            selectedHostesses: z.array(z.string()).optional().default([])
+          })
+          .refine(
+            d =>
+              d.tipo_venta !== 'shot' ||
+              (Boolean(d.presentacion_id) &&
+                Number.isInteger(d.cantidad) &&
+                d.cantidad <= 99 &&
+                d.presentacion_id !== d.acompanamiento_corto?.presentacion_id),
+            'El corto necesita soda o gaseosa y ml por corto'
+          )
+          .refine(
+            d => !d.acompanamiento_corto || d.tipo_venta === 'shot',
+            'El consumo por ml corresponde a cortos'
+          )
+          .refine(
+            d =>
+              !d.acompanamiento_botella ||
+              (d.tipo_venta !== 'shot' &&
+                Boolean(d.presentacion_id) &&
+                d.presentacion_id !== d.acompanamiento_botella.presentacion_id),
+            'Acompa\u00f1amiento de botella inv\u00e1lido'
+          )
+          .transform(d =>
+            d.tipo_venta === 'shot' && !d.shot_anfitriona
+              ? { ...d, comision: 0, generaComision: 0, selectedHostesses: [], hostessId: null }
+              : d
+          )
+          .refine(
+            d =>
+              d.tipo_venta !== 'shot' ||
+              new Set([...d.selectedHostesses, ...(d.hostessId ? [d.hostessId] : [])]).size <=
+                d.cantidad,
+            'Se permite una anfitriona por unidad de corto'
+          )
+      )
+      .min(1, 'Al menos un detalle es requerido'),
+    usuarios: z
+      .array(
+        z.object({
+          usuarioId: z.string()
         })
-        .refine(
-          d =>
-            d.tipo_venta !== 'shot' ||
-            (Boolean(d.presentacion_id) &&
-              Number.isInteger(d.cantidad) &&
-              d.cantidad <= 99 &&
-              d.presentacion_id !== d.acompanamiento_corto?.presentacion_id),
-          'El corto necesita soda o gaseosa y ml por corto'
-        )
-        .refine(
-          d => !d.acompanamiento_corto || d.tipo_venta === 'shot',
-          'El consumo por ml corresponde a cortos'
-        )
-        .refine(
-          d =>
-            !d.acompanamiento_botella ||
-            (d.tipo_venta !== 'shot' &&
-              Boolean(d.presentacion_id) &&
-              d.presentacion_id !== d.acompanamiento_botella.presentacion_id),
-          'Acompa\u00f1amiento de botella inv\u00e1lido'
-        )
-        .transform(d =>
-          d.tipo_venta === 'shot' && !d.shot_anfitriona
-            ? { ...d, comision: 0, generaComision: 0, selectedHostesses: [], hostessId: null }
-            : d
-        )
-        .refine(
-          d =>
-            d.tipo_venta !== 'shot' ||
-            new Set([...d.selectedHostesses, ...(d.hostessId ? [d.hostessId] : [])]).size <=
-              d.cantidad,
-          'Se permite una anfitriona por unidad de corto'
-        )
-    )
-    .min(1, 'Al menos un detalle es requerido'),
-  usuarios: z
-    .array(
-      z.object({
-        usuarioId: z.string()
-      })
-    )
-    .optional()
-    .default([])
-});
+      )
+      .optional()
+      .default([])
+  })
+  .superRefine((data, ctx) => {
+    for (const [index, d] of data.detalles.entries()) {
+      const hosts = new Set([...d.selectedHostesses, ...(d.hostessId ? [d.hostessId] : [])]);
+      if (
+        (d.comision > 0 && (!hosts.size || d.generaComision !== 1)) ||
+        (d.comision === 0 && hosts.size)
+      ) {
+        ctx.addIssue({
+          code: 'custom',
+          path: ['detalles', index, 'selectedHostesses'],
+          message: 'Asigna anfitrionas solamente a formatos con comision'
+        });
+      }
+      if (d.subtotal !== d.precio * d.cantidad)
+        ctx.addIssue({
+          code: 'custom',
+          path: ['detalles', index, 'subtotal'],
+          message: 'Subtotal del producto incorrecto'
+        });
+    }
+    const subtotal = data.detalles.reduce((sum, d) => sum + d.subtotal, 0);
+    if (
+      data.subtotal !== subtotal ||
+      (data.total !== subtotal && data.total !== subtotal + data.propina)
+    ) {
+      ctx.addIssue({
+        code: 'custom',
+        path: ['total'],
+        message: 'El total no coincide con los productos y la propina'
+      });
+    }
+  });
 
 export type OrderCreateType = z.infer<typeof OrderCreateSchema>;

@@ -56,6 +56,7 @@ describe('OrderService.create', () => {
     const input = {
       codigo: 'ORD-001',
       meseroId: 'user-1',
+      metodoPago: 'efectivo' as const,
       subtotal: 10000,
       total: 10000,
       detalles: [{ productoId: 'prod-1', precio: 5000, cantidad: 2, subtotal: 10000 }]

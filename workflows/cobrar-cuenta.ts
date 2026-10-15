@@ -12,7 +12,7 @@ export async function cobrarCuentaConVenta(id: string, body: CuentaCobrarBody, u
   const cuenta = await enUnaUnidad(unidad =>
     unidad.ejecutar(async contexto => {
       const venta = await cobrarYPrepararVenta(id, body, usuarioId, contexto, aplazar);
-      await registrarVenta(venta, usuarioId, contexto, aplazar);
+      await registrarVenta(venta, usuarioId, contexto, aplazar, { desdeCuenta: true });
       return consultarCuentaCobrada(id, contexto);
     })
   );

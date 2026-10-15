@@ -16,6 +16,81 @@ vi.mock('@/lib/utils/toastUtils', () => ({ showSuccessToast: vi.fn(), showErrorT
 beforeEach(() => vi.restoreAllMocks());
 
 describe('Crear pedido con configuración de venta', () => {
+  it.each([
+    ['botella', 0],
+    ['botella', 1000],
+    ['shot', 0],
+    ['shot', 1000]
+  ] as const)('asigna anfitriona solo con comisión de %s (%s)', async (tipo, comision) => {
+    const add = vi.fn();
+    const { result } = renderHook(() =>
+      useOrderForm({
+        productos: [],
+        selectedCliente: '',
+        setSelectedCliente: vi.fn(),
+        onAddProducto: add
+      })
+    );
+    await act(() =>
+      result.current.handleAgregarProducto({
+        id: 'bebida',
+        tipo_venta: tipo,
+        shot_anfitriona: tipo === 'shot',
+        precio: 5000,
+        comision,
+        cantidad: 1,
+        selectedHostesses: ['ana']
+      })
+    );
+    expect(add).toHaveBeenCalledWith(
+      expect.objectContaining({
+        selectedHostesses: comision > 0 ? ['ana'] : [],
+        comision: comision > 0 ? comision : 0,
+        generaComision: comision > 0 ? 1 : 0
+      })
+    );
+  });
+
+  it.each(['botella', 'shot'] as const)(
+    'limpia selecciones previas sin comisión al enviar pedido de %s',
+    async tipo => {
+      const fetch = vi
+        .spyOn(globalThis, 'fetch')
+        .mockResolvedValue({ status: 400, json: async () => ({ success: false }) } as Response);
+      const { result } = renderHook(() =>
+        useOrderForm({
+          productos: [
+            {
+              id: 'bebida',
+              nombre: 'Bebida',
+              tipo_venta: tipo,
+              shot_anfitriona: tipo === 'shot',
+              precio: 5000,
+              comision: 0,
+              cantidad: 1,
+              subtotal: 5000,
+              generaComision: 1,
+              selectedHostesses: ['ana']
+            }
+          ],
+          selectedCliente: '',
+          setSelectedCliente: vi.fn()
+        })
+      );
+      act(() => result.current.setMetodoPago('efectivo'));
+      await act(() => result.current.handleSubmitInternal());
+      const payload = JSON.parse(String(fetch.mock.calls[0][1]?.body));
+      expect(payload.usuarios).toEqual([]);
+      expect(payload.totalComision).toBe(0);
+      expect(payload.detalles[0]).toMatchObject({
+        comision: 0,
+        generaComision: 0,
+        hostessId: null,
+        selectedHostesses: []
+      });
+    }
+  );
+
   it('bloquea un pedido vacío sin hacer ninguna petición', async () => {
     const request = vi.fn();
     vi.stubGlobal('fetch', request);
@@ -125,4 +200,43 @@ describe('Crear pedido con configuración de venta', () => {
       acompanamiento_corto: { presentacion_id: 'sprite', ml_por_corto: 150 }
     });
   });
+});
+
+it('bloquea dos envios de pedido antes del render y conserva el codigo al reintentar', async () => {
+  let reject!: (error: Error) => void;
+  const request = vi
+    .spyOn(globalThis, 'fetch')
+    .mockImplementationOnce(
+      () =>
+        new Promise<Response>((_resolve, fail) => {
+          reject = fail;
+        })
+    )
+    .mockResolvedValue({ status: 400, json: async () => ({ success: false }) } as Response);
+  const { result } = renderHook(() =>
+    useOrderForm({
+      productos: [
+        { id: 'bebida', nombre: 'Bebida', precio: 5000, cantidad: 1, subtotal: 5000, comision: 0 }
+      ],
+      selectedCliente: '',
+      setSelectedCliente: vi.fn()
+    })
+  );
+  act(() => result.current.setMetodoPago('efectivo'));
+  let first!: Promise<void>;
+  let duplicate!: Promise<void>;
+  await act(async () => {
+    first = result.current.handleSubmitInternal();
+    duplicate = result.current.handleSubmitInternal();
+  });
+  expect(first).toBe(duplicate);
+  expect(request).toHaveBeenCalledTimes(1);
+  await act(async () => {
+    reject(new Error('Respuesta perdida'));
+    await first;
+  });
+  await act(() => result.current.handleSubmitInternal());
+  const codes = request.mock.calls.map(call => JSON.parse(String(call[1]?.body)).codigo);
+  expect(codes[0]).toBeTruthy();
+  expect(codes[0]).toBe(codes[1]);
 });

@@ -47,8 +47,14 @@ describe('anfitrionas en el carrito de nueva venta', () => {
       expect(screen.getByText('Licores')).toBeInTheDocument();
       expect(screen.getByText('Sprite 350 ml')).toBeInTheDocument();
       expect(screen.getByText(String(total))).toBeInTheDocument();
-      expect(screen.getByText('Ana')).toBeInTheDocument();
-      expect(screen.getByText('Comisión total: $2.000')).toBeInTheDocument();
+      if (tipo === 'botella' || hostess) {
+        expect(screen.getByText('Ana')).toBeInTheDocument();
+        expect(screen.getByText('Comisión total: $2.000')).toBeInTheDocument();
+      } else {
+        expect(screen.queryByText('Ana')).not.toBeInTheDocument();
+        expect(screen.getByText('Sin asignación')).toBeInTheDocument();
+        expect(screen.getByText('Comisión total: $0')).toBeInTheDocument();
+      }
       if (tipo === 'shot')
         expect(screen.getByText(`Consumo total: ${hostess ? 80 : 100} ml`)).toBeInTheDocument();
     }
@@ -60,6 +66,7 @@ describe('anfitrionas en el carrito de nueva venta', () => {
         productos={[
           {
             nombre: 'Hennessy',
+            comision: 1000,
             precio: 160000,
             cantidad: 1,
             subtotal: 160000,
@@ -79,6 +86,7 @@ describe('anfitrionas en el carrito de nueva venta', () => {
         productos={[
           {
             nombre: 'Absolut 750ml',
+            comision: 1000,
             categoria: 'Vodka',
             precio: 20000,
             cantidad: 1,

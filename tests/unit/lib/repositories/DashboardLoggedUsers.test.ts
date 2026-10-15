@@ -34,7 +34,18 @@ describe('Personal en local del dashboard', () => {
       usuarios: [{ id_usuario: 'ana', nick: 'Ana' }]
     });
     expect(result.garzones).toMatchObject({ logueadas: 0, usuarios: [] });
-    expect(result.cajeros.logueadas).toBe(2);
+    expect(result.cajeros).toEqual({
+      logueadas: 1,
+      total: 1,
+      porcentaje: 100,
+      usuarios: [{ id_usuario: 'caja', nick: 'Caja' }]
+    });
+    expect(result.barman).toEqual({
+      logueadas: 1,
+      total: 1,
+      porcentaje: 100,
+      usuarios: [{ id_usuario: 'bar', nick: 'Bar' }]
+    });
     const sql = mocks.query.mock.calls[1][0];
     expect(sql).toContain('CASE WHEN EXISTS');
     expect(sql).toContain('l.estado = 1 AND l.en_local = 1');

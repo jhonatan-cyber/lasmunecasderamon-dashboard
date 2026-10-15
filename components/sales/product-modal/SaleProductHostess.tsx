@@ -1,5 +1,6 @@
 'use client';
 
+import { permiteAnfitrionaConComision } from '@/lib/sales/hostessShortPrices';
 import { HostessMultiSelect } from '@/components/orders';
 import { getExplicitMaxAnfitrionas } from '@/components/orders';
 import { isExpensiveDrink } from '@/components/orders/productModalRules';
@@ -60,7 +61,12 @@ export function SaleProductHostess({
       .filter(opcion => opcion.value !== 'botella' && opcion.cantidad > 0)
       .map(opcion => opcion.cantidad)
   );
-  if (!item.muestraAnfitriona) {
+  if (
+    !item.muestraAnfitriona ||
+    !item.opcionesTipo.some(
+      opcion => opcion.cantidad > 0 && permiteAnfitrionaConComision(opcion.value, opcion.comision)
+    )
+  ) {
     return (
       <span className='inline-flex items-center rounded-full bg-neutral-100 px-3 py-1 text-xs text-gray-400 dark:bg-white/5 dark:text-neutral-500'>
         Sin comisión

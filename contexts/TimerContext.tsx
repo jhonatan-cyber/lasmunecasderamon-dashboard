@@ -27,6 +27,8 @@ import {
   setGlobalExpirationHandler
 } from '@/lib/store/timerStore';
 import logger from '@/lib/utils/logger';
+import { timerNow } from '@/lib/utils/timerClock';
+import { refreshTimerSnapshot } from '@/lib/store/timerSnapshot';
 
 export { saveTimersToStorage, loadTimersFromStorage } from '@/hooks/timer/useTimerPersistence';
 
@@ -41,6 +43,7 @@ export interface Timer {
   isPaused: boolean;
   pausedByTemp?: boolean;
   startTime: Date;
+  expiresAt?: string;
   servicioCode: string;
   clienteNombre: string;
   isTemporary?: boolean;
@@ -241,18 +244,12 @@ export const TimerProvider: React.FC<{ children: React.ReactNode }> = ({ childre
       ),
     [timers]
   );
-  const getAccurateNow = useCallback(() => new Date(Date.now() + serverOffset), [serverOffset]);
+  const getAccurateNow = useCallback(() => new Date(timerNow(serverOffset)), [serverOffset]);
 
   const updateTimerByServicioId = useCallback((sid: string, dur: number) => {
     const target = activeTimers.peek().find(t => t.servicioId === sid);
     if (target) {
-      activeTimers.value = activeTimers
-        .peek()
-        .map(t =>
-          t.servicioId === sid
-            ? new TimerInstance({ ...(t.toPlainObject() as any), duration: dur }, dur * 60)
-            : t
-        );
+      void refreshTimerSnapshot(true).catch(error => logger.captureException(error));
       toast.info(`Tiempo actualizado a ${dur} min`);
     }
   }, []);

@@ -1,4 +1,4 @@
-import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react';
+import { act, cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { PurchaseForm, type PurchaseCatalogItem } from '@/components/purchases/PurchaseForm';
 
@@ -112,4 +112,46 @@ describe('flujo guiado de compra', () => {
     expect(screen.getByText('Sin descripción')).toBeInTheDocument();
     expect(screen.getByText('Método de pago')).toBeInTheDocument();
   });
+});
+
+it('no registra al presionar Enter antes del paso de confirmacion', () => {
+  const request = vi.spyOn(global, 'fetch').mockResolvedValue(Response.json({ success: true }));
+  render(<PurchaseForm catalog={catalog} />);
+  fireEvent.click(screen.getByRole('button', { name: /Agregar/ }));
+  fireEvent.submit(
+    screen.getByRole('button', { name: 'Continuar' }).closest('section')!.querySelector('form')!
+  );
+  expect(request).not.toHaveBeenCalled();
+});
+it('agrega una sola linea y envia una compra ante dos submit inmediatos', async () => {
+  let release!: (response: Response) => void;
+  const request = vi.spyOn(global, 'fetch').mockImplementation(
+    () =>
+      new Promise<Response>(resolve => {
+        release = resolve;
+      })
+  );
+  render(<PurchaseForm catalog={catalog} />);
+  const add = screen.getByRole('button', { name: /Agregar/ });
+  act(() => {
+    add.click();
+    add.click();
+  });
+  fireEvent.click(screen.getByRole('button', { name: 'Continuar' }));
+  fireEvent.click(screen.getByRole('button', { name: 'Revisar compra' }));
+  const confirm = screen.getByRole('button', { name: 'Finalizar compra' });
+  const form = confirm.closest('form')!;
+  act(() => {
+    fireEvent.submit(form);
+    fireEvent.submit(form);
+  });
+  expect(request).toHaveBeenCalledTimes(1);
+  expect(confirm).toBeDisabled();
+  expect(JSON.parse(String(request.mock.calls[0][1]?.body)).detalles).toEqual([
+    expect.objectContaining({ presentacion_id: 'pres-1', cantidad: 1 })
+  ]);
+  await act(async () => {
+    release(Response.json({ success: false, message: 'Revisa datos' }, { status: 400 }));
+  });
+  expect(confirm).toBeEnabled();
 });

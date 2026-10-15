@@ -1,5 +1,6 @@
 'use client';
 
+import { useSingleFlight } from '@/hooks/shared/useSingleFlight';
 import { orderLineToSaleDetail } from '@/lib/sales/orderSale';
 import { useEffect, useCallback, useRef } from 'react';
 import logger from '@/lib/utils/logger';
@@ -23,9 +24,6 @@ interface OrderDetailModalState {
 
 interface OrderDetailModalSetters {
   setIsRegistering: (v: boolean) => void;
-  setMetodoPago: (v: string) => void;
-  setPropina: (v: number) => void;
-  setHabitacionId: (v: string) => void;
   setTiempoHabitacion: (v: number) => void;
   setShowMetodoPagoError: (v: boolean) => void;
   setConfirmVentaModalOpen: (v: boolean) => void;
@@ -69,35 +67,14 @@ export function useOrderDetailModal({
   rooms,
   createVenta,
   startTimer,
-  state: {
-    isRegistering,
-    metodoPago,
-    propina,
-    habitacionId,
-    tiempoHabitacion,
-    showMetodoPagoError
-  },
-  setters: {
-    setIsRegistering,
-    setMetodoPago,
-    setPropina,
-    setHabitacionId,
-    setTiempoHabitacion,
-    setShowMetodoPagoError,
-    setConfirmVentaModalOpen
-  },
-  derived: {
-    hasChampagneProducts,
-    cantidadAnfitrionas,
-    maxAnfitrionas,
-    otherCommissionQuantity,
-    champagneLimit,
-    recargoAnfitrionas,
-    anfitrionasFinal,
-    habitacionesActivas
-  }
+  state: { isRegistering, tiempoHabitacion },
+  setters: { setIsRegistering, setShowMetodoPagoError, setConfirmVentaModalOpen },
+  derived: { anfitrionasFinal, recargoAnfitrionas }
 }: UseOrderDetailModalParams) {
   const registeringSale = useRef(false);
+  const accountIntent = useRef<{ signature: string; code: string; confirmed: boolean } | undefined>(
+    undefined
+  );
   // --- Event listeners ---
   useEffect(() => {
     const handleCloseOrderModal = (eventDetail: { orderId: number | string }) => {
@@ -114,7 +91,10 @@ export function useOrderDetailModal({
   // --- Derived values ---
   const hasChampagne = detail.some((item: any) => isChampagneProduct(item));
   const hasExpensiveDrinks = detail.some((item: any) => isExpensiveDrink(item));
-  const shouldShowRoomSelector = hasChampagne || hasExpensiveDrinks;
+  const habitacionId = String(detail.find(item => item?.habitacion_id)?.habitacion_id || '');
+  const metodoPago = detail[0]?.metodo_pago || '';
+  const propina = Number(detail[0]?.propina || 0);
+  const shouldShowRoomSelector = Boolean(habitacionId);
   const hasRoomSelectedInOrder = detail.some((item: any) => Boolean(item?.habitacion_id));
 
   const isClienteRegistrado = useCallback(() => {
@@ -163,7 +143,9 @@ export function useOrderDetailModal({
       setShowMetodoPagoError(true);
 
       if (!metodoPago) {
-        toast.error('Selecciona un método de pago');
+        toast.error(
+          'El pedido no tiene un método de pago guardado. Debe volver a generarse completo.'
+        );
         return;
       }
 
@@ -172,21 +154,11 @@ export function useOrderDetailModal({
         return;
       }
 
-      if (hasChampagneProducts && cantidadAnfitrionas === 0) {
-        toast.error(
-          'Para productos de champaña es obligatorio tener al menos una anfitriona en el pedido'
-        );
-        return;
-      }
-
-      if (cantidadAnfitrionas > maxAnfitrionas) {
-        const extraText =
-          hasChampagneProducts && otherCommissionQuantity > 0
-            ? ` + ${otherCommissionQuantity} por ${otherCommissionQuantity === 1 ? 'trago' : 'tragos'} con comisión`
-            : '';
-        toast.error(
-          `El pedido excede el límite combinado de ${maxAnfitrionas} anfitriona${maxAnfitrionas !== 1 ? 's' : ''} (champaña: ${champagneLimit}${extraText})`
-        );
+      if (
+        habitacionId &&
+        (!Number.isInteger(tiempoHabitacion) || tiempoHabitacion < 1 || tiempoHabitacion > 1440)
+      ) {
+        toast.error('Indica un tiempo de uso entre 1 y 1440 minutos');
         return;
       }
 
@@ -195,11 +167,8 @@ export function useOrderDetailModal({
     [
       metodoPago,
       detail,
-      hasChampagneProducts,
-      cantidadAnfitrionas,
-      maxAnfitrionas,
-      otherCommissionQuantity,
-      champagneLimit,
+      habitacionId,
+      tiempoHabitacion,
       setShowMetodoPagoError,
       setConfirmVentaModalOpen
     ]
@@ -213,6 +182,12 @@ export function useOrderDetailModal({
       setIsRegistering(true);
       try {
         const pedido = detail[0];
+        if (!pedido || !orderId || !metodoPago) throw new Error('Pedido incompleto');
+        if (
+          habitacionId &&
+          (!Number.isInteger(tiempoHabitacion) || tiempoHabitacion < 1 || tiempoHabitacion > 1440)
+        )
+          throw new Error('Tiempo invalido');
 
         const sub_total = detail.reduce(
           (acc: number, item: any) => acc + item.precio * item.cantidad,
@@ -221,22 +196,13 @@ export function useOrderDetailModal({
 
         const usuariosIds = extractHostessIds(anfitrionasFinal);
 
-        if (usuariosIds.length === 0 && hasChampagneProducts) {
-          toast.error('No se pudieron obtener los IDs de las anfitrionas');
-          return;
-        }
-
-        const selectedRoom = habitacionId
-          ? rooms.find((room: any) => getOrderRoomId(room) === String(habitacionId))
-          : null;
-
         const ventaData = {
           cliente_id: pedido.cliente_id || null,
           pedido_id: orderId || null,
           metodo_pago: metodoPago as 'efectivo' | 'tarjeta' | 'transferencia',
           propina: propina,
           sub_total: sub_total,
-          total: sub_total + propina + recargoAnfitrionas,
+          total: sub_total + propina,
           detalles: detail.map(orderLineToSaleDetail),
           usuarios: usuariosIds,
           habitacion_id: shouldShowRoomSelector && habitacionId ? habitacionId : undefined,
@@ -260,31 +226,17 @@ export function useOrderDetailModal({
               (room: any) => getOrderRoomId(room) === String(habitacionId)
             );
             if (selectedRoom) {
-              try {
-                const roomUpdateResponse = await fetch(`/api/rooms/${habitacionId}`, {
-                  method: 'PATCH',
-                  headers: { 'Content-Type': 'application/json' },
-                  body: JSON.stringify({ action: 'occupy' })
-                });
-
-                if (roomUpdateResponse.ok) {
-                  startTimer(
-                    resultado.data?.id || resultado.data?.id_venta || orderId || 0,
-                    String(selectedRoom.id ?? selectedRoom.id_habitacion ?? ''),
-                    getOrderRoomName(selectedRoom),
-                    tiempoHabitacion,
-                    resultado.data?.codigo || `VENTA_${orderId}`,
-                    detail[0]?.cliente || 'cliente sin registrar',
-                    detail[0]?.anfitriona || '',
-                    'venta',
-                    detail[0]?.garzon || undefined
-                  );
-                } else {
-                  toast.error('Error al actualizar estado de habitación');
-                }
-              } catch {
-                toast.error('Error al actualizar estado de habitación');
-              }
+              startTimer(
+                resultado.data?.id || resultado.data?.id_venta || orderId,
+                String(selectedRoom.id ?? selectedRoom.id_habitacion ?? ''),
+                getOrderRoomName(selectedRoom),
+                tiempoHabitacion,
+                resultado.data?.codigo || `VENTA_${orderId}`,
+                detail[0]?.cliente || 'cliente sin registrar',
+                detail[0]?.anfitriona || '',
+                'venta',
+                detail[0]?.garzon || undefined
+              );
             }
           }
 
@@ -304,12 +256,10 @@ export function useOrderDetailModal({
     [
       detail,
       anfitrionasFinal,
-      hasChampagneProducts,
       habitacionId,
       rooms,
       metodoPago,
       propina,
-      recargoAnfitrionas,
       shouldShowRoomSelector,
       tiempoHabitacion,
       orderId,
@@ -357,7 +307,7 @@ export function useOrderDetailModal({
         const anfitrionasIds = extractHostessIds(anfitrionasFinal);
 
         const cuentaData = {
-          codigo: generateRandomCode(),
+          codigo: '',
           cliente_id: pedido.cliente_id || null,
           total_comision,
           sub_total,
@@ -367,6 +317,13 @@ export function useOrderDetailModal({
           usuarios: anfitrionasIds
         };
 
+        const signature = JSON.stringify({ orderId, cuentaData });
+        if (accountIntent.current?.signature !== signature) {
+          accountIntent.current = { signature, code: generateRandomCode(), confirmed: false };
+        }
+        const currentIntent = accountIntent.current;
+        if (currentIntent.confirmed) return;
+        cuentaData.codigo = currentIntent.code;
         const response = await fetch('/api/cuentas', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
@@ -381,6 +338,7 @@ export function useOrderDetailModal({
         const result = await response.json();
 
         if (result.success) {
+          currentIntent.confirmed = true;
           toast.success('Cuenta registrada exitosamente');
 
           try {
@@ -418,12 +376,14 @@ export function useOrderDetailModal({
     ]
   );
 
+  const registerAccount = useSingleFlight(handleRegistrarCuenta);
+
   return {
     handleRegistrarVenta,
     handleConfirmRegistrarVenta,
     handleCancelRegistrarVenta,
     handleRechazarPedido,
-    handleRegistrarCuenta,
+    handleRegistrarCuenta: registerAccount,
     actualizarEstadoPedido,
     hasChampagne,
     hasExpensiveDrinks,

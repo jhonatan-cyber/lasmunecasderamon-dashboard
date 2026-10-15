@@ -30,6 +30,8 @@ interface Habitacion {
   status?: number;
 }
 
+const EMPTY_STATUSES: number[] = [];
+
 interface RoomSelectProps {
   habitaciones?: Habitacion[];
   value: string;
@@ -44,6 +46,7 @@ interface RoomSelectProps {
   showPrice?: boolean;
   showTime?: boolean;
   filterByStatus?: number;
+  excludeStatuses?: number[];
   includeRoomIds?: Array<string>;
   requireCompleteConfig?: boolean;
 }
@@ -62,6 +65,7 @@ const RoomSelect: React.FC<RoomSelectProps> = ({
   showPrice = false,
   showTime = false,
   filterByStatus,
+  excludeStatuses = EMPTY_STATUSES,
   includeRoomIds = [],
   requireCompleteConfig = false
 }) => {
@@ -117,10 +121,23 @@ const RoomSelect: React.FC<RoomSelectProps> = ({
     if (filterByStatus !== undefined) {
       filtered = filtered.filter(habitacion => {
         const id = habitacion.id_habitacion || habitacion.id;
-        const estado = habitacion.estado || habitacion.status;
+        const estado = habitacion.estado ?? habitacion.status;
 
         return (
           estado === filterByStatus ||
+          (id !== undefined && includeRoomIds.some(roomId => String(roomId) === String(id)))
+        );
+      });
+    }
+
+    if (excludeStatuses.length > 0) {
+      filtered = filtered.filter(habitacion => {
+        const id = habitacion.id_habitacion || habitacion.id;
+        const estado = habitacion.estado ?? habitacion.status;
+
+        return (
+          estado === undefined ||
+          !excludeStatuses.includes(Number(estado)) ||
           (id !== undefined && includeRoomIds.some(roomId => String(roomId) === String(id)))
         );
       });
@@ -139,7 +156,14 @@ const RoomSelect: React.FC<RoomSelectProps> = ({
 
       return nombre.includes(searchLower) || numero.includes(searchLower);
     });
-  }, [habitaciones, searchTerm, filterByStatus, includeRoomIds, requireCompleteConfig]);
+  }, [
+    habitaciones,
+    searchTerm,
+    filterByStatus,
+    excludeStatuses,
+    includeRoomIds,
+    requireCompleteConfig
+  ]);
 
   const displayHabitaciones = (() => {
     if (!value) return filteredHabitaciones;
@@ -253,8 +277,9 @@ const RoomSelect: React.FC<RoomSelectProps> = ({
             displayHabitaciones.map(habitacion => {
               const id = getHabitacionId(habitacion);
               const displayName = getHabitacionDisplayName(habitacion);
-              const estado = habitacion.estado || habitacion.status;
+              const estado = habitacion.estado ?? habitacion.status;
               const isOcupada = estado === 2;
+              const isLibre = estado === 1;
               const isItemDisabled = disabledState || isOcupada;
               const stringId = id ? id.toString() : '';
               const isSelected = stringId === value;
@@ -283,6 +308,8 @@ const RoomSelect: React.FC<RoomSelectProps> = ({
                     <span className='text-xs font-medium text-red-500'>OCUPADA</span>
                   ) : isSelected ? (
                     <span className='text-xs font-semibold text-gray-500'>SELECCIONADA</span>
+                  ) : isLibre ? (
+                    <span className='text-xs font-medium text-emerald-600'>LIBRE</span>
                   ) : null}
                 </Button>
               );

@@ -1,9 +1,10 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { toast } from 'sonner';
 import { useCuentas } from '@/hooks/caja/useCuentas';
 import { CreateCuentaRequest, CreateDetalleCuentaRequest } from '@/types/cuenta';
+import { useSingleFlight } from '@/hooks/shared/useSingleFlight';
 import { generateRandomCode } from '@/lib/utils/codeUtils';
 import { useChampagneRule } from '@/hooks/shared';
 import logger from '@/lib/utils/logger';
@@ -16,6 +17,12 @@ export function useAccountForm() {
   const [selectedAnfitrionas, setSelectedAnfitrionas] = useState<string[]>([]);
   const [selectedHabitacion, setSelectedHabitacion] = useState('');
   const [productos, setProductos] = useState<any[]>([]);
+  const intent = useRef<{ signature: string; code: string; confirmed: boolean } | undefined>(
+    undefined
+  );
+  useEffect(() => {
+    if (!productos.length) intent.current = undefined;
+  }, [productos.length]);
   const [searchProducto, setSearchProducto] = useState('');
   const [searchResults, setSearchResults] = useState<any[]>([]);
   const [searchLoading, setSearchLoading] = useState(false);
@@ -197,7 +204,7 @@ export function useAccountForm() {
       }
 
       const cuentaData: CreateCuentaRequest = {
-        codigo: generateRandomCode(),
+        codigo: '',
         cliente_id: selectedCliente && selectedCliente !== 'none' ? selectedCliente : null,
         total_comision: totalComisionFinal,
         sub_total: subTotal,
@@ -208,7 +215,15 @@ export function useAccountForm() {
         usuarios: selectedAnfitrionas
       };
 
+      const signature = JSON.stringify(cuentaData);
+      if (intent.current?.signature !== signature) {
+        intent.current = { signature, code: generateRandomCode(), confirmed: false };
+      }
+      const currentIntent = intent.current;
+      if (currentIntent.confirmed) return;
+      cuentaData.codigo = currentIntent.code;
       const result = await createCuenta(cuentaData);
+      currentIntent.confirmed = true;
 
       if (habitacionSeleccionada && timerMinutes > 0) {
         startTimer(
@@ -232,6 +247,8 @@ export function useAccountForm() {
       setLoading(false);
     }
   };
+
+  const submit = useSingleFlight(handleSubmit);
 
   return {
     loading,
@@ -266,7 +283,7 @@ export function useAccountForm() {
     handleRemoveProducto,
     handleCantidadChangeTable,
     handleClearSearch,
-    handleSubmit,
+    handleSubmit: submit,
     calculateTotal
   };
 }

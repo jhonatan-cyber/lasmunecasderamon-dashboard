@@ -58,7 +58,6 @@ export default function OrderDetailModal({
     handleRechazarPedido,
     handleRegistrarCuenta,
     shouldShowRoomSelector,
-    hasRoomSelectedInOrder,
     isClienteRegistrado,
     isRegistering
   } = useOrderDetailModal({
@@ -124,18 +123,10 @@ export default function OrderDetailModal({
                   />
                   <OrderDetailPaymentPanel
                     metodoPago={state.metodoPago}
-                    setMetodoPago={setters.setMetodoPago}
-                    showMetodoPagoError={state.showMetodoPagoError}
-                    shouldShowRoomSelector={shouldShowRoomSelector}
                     habitacionesActivas={derived.habitacionesActivas}
                     habitacionId={state.habitacionId}
-                    setHabitacionId={setters.setHabitacionId}
-                    hasRoomSelectedInOrder={hasRoomSelectedInOrder}
                     tiempoHabitacion={state.tiempoHabitacion}
                     setTiempoHabitacion={setters.setTiempoHabitacion}
-                    propinaDisplayValue={state.propinaDisplayValue}
-                    agregarPropina={state.agregarPropina}
-                    setAgregarPropina={setters.setAgregarPropina}
                     propina={state.propina}
                     orderTotalCommission={detail[0]?.total_comision || 0}
                   />
@@ -215,8 +206,8 @@ export default function OrderDetailModal({
                 <>
                   <div>
                     <strong>Habitación:</strong>{' '}
-                    {rooms.find((r: any) => r.id === parseInt(state.habitacionId))?.name ||
-                      state.habitacionId}
+                    {rooms.find((r: any) => String(r.id_habitacion ?? r.id) === state.habitacionId)
+                      ?.name || state.habitacionId}
                   </div>
                   <div>
                     <strong>Tiempo:</strong> {state.tiempoHabitacion} minutos

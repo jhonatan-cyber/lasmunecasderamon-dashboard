@@ -4,6 +4,7 @@ type OrderLine = SaleInventoryFields & {
   configuracion_venta?: SaleInventoryFields | string | null;
   id_producto?: string;
   producto_id: string;
+  categoria?: string;
   precio: number;
   cantidad: number;
   comision?: number;
@@ -23,9 +24,19 @@ export function orderLineToSaleDetail(item: OrderLine) {
   ];
   if (item.hostess_id && !hostesses.includes(item.hostess_id)) hostesses.push(item.hostess_id);
   const hasCommission =
-    item.genera_comision !== 0 && !(inventory.tipo_venta === 'shot' && !inventory.shot_anfitriona);
+    Number(item.comision || 0) > 0 &&
+    item.genera_comision !== 0 &&
+    !(inventory.tipo_venta === 'shot' && !inventory.shot_anfitriona);
   return {
     ...inventory,
+    isChampagne:
+      inventory.tipo_venta !== 'shot' &&
+      /champagne|champana|shampana/.test(
+        String(item.categoria || '')
+          .normalize('NFD')
+          .replace(/[\u0300-\u036f]/g, '')
+          .toLowerCase()
+      ),
     producto_id: item.id_producto || item.producto_id,
     precio: Number(item.precio || 0),
     cantidad: Number(item.cantidad || 0),

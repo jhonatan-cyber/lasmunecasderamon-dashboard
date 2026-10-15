@@ -60,6 +60,7 @@ describe('Pedido listo para vender', () => {
     const input = {
       codigo: 'PEDIDO',
       meseroId: 'garzon',
+      metodoPago: 'efectivo',
       subtotal: 40000,
       total: 40000,
       detalles: [
@@ -71,6 +72,7 @@ describe('Pedido listo para vender', () => {
           precio: 20000,
           cantidad: 2,
           subtotal: 40000,
+          comision: 6000,
           selectedHostesses: ['ana', 'bea']
         }
       ]
@@ -113,4 +115,18 @@ describe('Pedido listo para vender', () => {
       ]).maxAnfitrionas
     ).toBe(0);
   });
+});
+
+it('conserva el reparto de botella de champana entre varias anfitrionas', () => {
+  expect(
+    orderLineToSaleDetail({ ...base, categoria: 'Champana', tipo_venta: 'botella', cantidad: 1 })
+  ).toMatchObject({ isChampagne: true, hostesses: ['ana', 'bea'], cantidad: 1, comision: 6000 });
+  expect(
+    orderLineToSaleDetail({
+      ...base,
+      categoria: 'Champana',
+      tipo_venta: 'shot',
+      shot_anfitriona: true
+    })
+  ).toMatchObject({ isChampagne: false });
 });

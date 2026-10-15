@@ -35,7 +35,7 @@ export function ServiceRequestModal({
   onProcessed
 }: ServiceRequestModalProps) {
   const { anfitrionas } = useAnfitrionas(false);
-  const { rooms: availableRooms, refetchRooms } = useAvailableRooms();
+  const { availableRooms, refetchRooms } = useAvailableRooms();
   const { startTimer } = useTimer();
   const ivaRate = useIvaRate();
 

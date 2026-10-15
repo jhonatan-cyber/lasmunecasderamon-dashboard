@@ -53,12 +53,11 @@ export function useRoomForm({ open, initialValues, onSubmit }: UseRoomFormProps)
     const newErrors: { [key: string]: string } = {};
     if (!form.name.trim()) newErrors.name = 'El nombre es requerido';
     if (
-      !form.price.trim() ||
       !Number.isFinite(Number(form.price.replace(/\./g, ''))) ||
       Number(form.price.replace(/\./g, '')) < 0
     )
       newErrors.price = 'Precio válido requerido';
-    if (!form.time.trim() || !Number.isFinite(Number(form.time)) || Number(form.time) < 0)
+    if (!Number.isFinite(Number(form.time)) || Number(form.time) < 0)
       newErrors.time = 'Tiempo válido requerido';
     if (
       form.comision_anfitriona &&
@@ -111,7 +110,15 @@ export function useRoomForm({ open, initialValues, onSubmit }: UseRoomFormProps)
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    if (validate()) onSubmit(form);
+    if (validate()) {
+      onSubmit({
+        ...form,
+        name: form.name.trim(),
+        price: form.price.trim() || '0',
+        time: form.time.trim() || '0',
+        comision_anfitriona: form.comision_anfitriona.trim() || '0'
+      });
+    }
   };
 
   return { form, errors, handleChange, handleFocus, handleBlur, handleSubmit };

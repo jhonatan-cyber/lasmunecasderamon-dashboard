@@ -1,4 +1,5 @@
 'use client';
+import { timerNow } from '@/lib/utils/timerClock';
 import { Button } from '@/components/ui/button';
 
 import { useState, useEffect, useCallback } from 'react';
@@ -115,7 +116,7 @@ export default function ServicioCard({
       let totalDurationToSave = editTiempo;
 
       if (displayTimer && displayTimer.isActive) {
-        const now = new Date();
+        const now = new Date(timerNow());
         const startTime = new Date(displayTimer.startTime || new Date());
         const elapsedMinutes = Math.floor((now.getTime() - startTime.getTime()) / 60000);
         totalDurationToSave = elapsedMinutes + editTiempo;

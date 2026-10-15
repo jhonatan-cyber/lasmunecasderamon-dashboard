@@ -191,7 +191,11 @@ export default function CuentaFormDialog({ open, onClose, onSuccess }: CuentaFor
                           type='number'
                           value={detalle.producto_id}
                           onChange={e =>
-                            handleUpdateDetalle(index, 'producto_id', parseInt(e.target.value))
+                            handleUpdateDetalle(
+                              index,
+                              'producto_id',
+                              parseInt(e.target.value, 10) || 0
+                            )
                           }
                           className='text-sm'
                         />
@@ -214,7 +218,11 @@ export default function CuentaFormDialog({ open, onClose, onSuccess }: CuentaFor
                           type='number'
                           value={detalle.cantidad}
                           onChange={e =>
-                            handleUpdateDetalle(index, 'cantidad', parseInt(e.target.value))
+                            handleUpdateDetalle(
+                              index,
+                              'cantidad',
+                              parseInt(e.target.value, 10) || 0
+                            )
                           }
                           className='text-sm'
                         />

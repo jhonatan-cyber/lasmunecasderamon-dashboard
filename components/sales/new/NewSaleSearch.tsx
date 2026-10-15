@@ -1,5 +1,5 @@
 'use client';
-import { esCortoAnfitriona, permiteAnfitriona } from '@/lib/sales/hostessShortPrices';
+import { esCortoAnfitriona, permiteAnfitrionaConComision } from '@/lib/sales/hostessShortPrices';
 
 import { Search, X, Plus } from 'lucide-react';
 import { useState } from 'react';
@@ -148,7 +148,9 @@ export const NewSaleSearch = (props: NewSaleSearchProps) => {
                     const champagneSelected = props.champagneHostessSelections[id] || [];
                     const otherSelected = props.otherProductHostessSelections[id] || [];
                     const muestraAnfitriona = options.some(
-                      option => option.cantidad > 0 && permiteAnfitriona(option.value)
+                      option =>
+                        option.cantidad > 0 &&
+                        permiteAnfitrionaConComision(option.value, option.comision)
                     );
                     const soloCortosAnfitriona =
                       options.some(o => o.cantidad > 0 && esCortoAnfitriona(o.value)) &&
@@ -172,7 +174,10 @@ export const NewSaleSearch = (props: NewSaleSearchProps) => {
                             precio: option.precio,
                             comision: option.comision,
                             cantidad: option.cantidad,
-                            selectedHostesses: permiteAnfitriona(option.value)
+                            selectedHostesses: permiteAnfitrionaConComision(
+                              option.value,
+                              option.comision
+                            )
                               ? selectedHostesses.slice(
                                   0,
                                   option.value !== 'botella' ? 1 : undefined

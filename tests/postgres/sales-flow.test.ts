@@ -21,7 +21,11 @@ it('creates an order, records its sale and posts the cash balance using the actu
   const snapshot = await snapshotDatabase();
   try {
     const [user] = await query('SELECT id_usuario FROM usuarios LIMIT 1');
-    const [product] = await query('SELECT id_producto FROM productos LIMIT 1');
+    const product = { id_producto: crypto.randomUUID() };
+    await query(
+      'INSERT INTO productos (id_producto, codigo, nombre, precio, comision, fecha_crea) VALUES (?, ?, ?, 6000, 0, now())',
+      [product.id_producto, 'PGORDERFIX', 'Producto pedido completo']
+    );
     // El volcado base puede no traer caja abierta: el test la abre para poder postular
     // los saldos (el snapshot la revierte al terminar).
     let [caja] = await query(
@@ -39,6 +43,7 @@ it('creates an order, records its sale and posts the cash balance using the actu
       caja = { id_caja: idCaja, efectivo: 0, venta: 0 };
     }
     const order = await OrderRepository.create({
+      metodoPago: 'efectivo',
       codigo: 'PGORDER',
       meseroId: user.id_usuario,
       subtotal: 12000,
@@ -57,19 +62,57 @@ it('creates an order, records its sale and posts the cash balance using the actu
     expect((await OrderRepository.getAll()).find(row => row.id === order.id)?.cliente_nombre).toBe(
       'Sin cliente registrado'
     );
-    const sale = await SaleService.createSale(
-      {
-        codigo: 'PGSALE',
-        pedido_id: order.id,
-        total: 12000,
-        sub_total: 12000,
-        metodo_pago: 'efectivo',
-        detalles: [
-          { producto_id: product.id_producto, precio: 6000, cantidad: 2, sub_total: 12000 }
-        ]
-      },
-      user.id_usuario
+    const payload = {
+      pedido_id: order.id,
+      cliente_id: null,
+      metodo_pago: 'tarjeta' as const,
+      propina: 99999,
+      total: 1,
+      sub_total: 1,
+      origen: 'cuenta',
+      skip_client_prepago: true,
+      habitacion_id: crypto.randomUUID(),
+      tiempo: 90,
+      detalles: [{ producto_id: crypto.randomUUID(), precio: 1, cantidad: 1, sub_total: 1 }]
+    };
+    // A failed confirmation leaves the order pending, without partial sales.
+    await query('UPDATE cajas SET estado = 0 WHERE estado = 1');
+    await expect(SaleService.createSale(payload, user.id_usuario)).rejects.toThrow('caja abierta');
+    expect(
+      (await query('SELECT estado FROM pedidos WHERE id_pedido = ?', [order.id]))[0].estado
+    ).toBe(1);
+    expect(
+      (await query('SELECT id_venta FROM ventas WHERE pedido_id = ?', [order.id])).length
+    ).toBe(0);
+    await query('UPDATE cajas SET estado = 1 WHERE id_caja = ?', [caja.id_caja]);
+    // Two concurrent confirmations consume the saved snapshot exactly once.
+    const attempts = await Promise.allSettled([
+      SaleService.createSale(payload, user.id_usuario),
+      SaleService.createSale(payload, user.id_usuario)
+    ]);
+    expect(attempts.filter(r => r.status === 'fulfilled')).toHaveLength(1);
+    expect(attempts.filter(r => r.status === 'rejected')).toHaveLength(1);
+    const sale = (attempts.find(r => r.status === 'fulfilled') as PromiseFulfilledResult<any>)
+      .value;
+    const [saved] = await query(
+      'SELECT metodo_pago, propina, habitacion_id, tiempo FROM ventas WHERE id_venta = ?',
+      [sale.id]
     );
+    expect(saved).toMatchObject({
+      metodo_pago: 'efectivo',
+      propina: 0,
+      habitacion_id: null,
+      tiempo: 0
+    });
+    const [savedDetail] = await query(
+      'SELECT producto_id, cantidad, precio FROM detalle_ventas WHERE venta_id = ?',
+      [sale.id]
+    );
+    expect(savedDetail).toMatchObject({
+      producto_id: product.id_producto,
+      cantidad: 2,
+      precio: 6000
+    });
     expect(sale.total).toBe(12000);
     const [stored] = await query(
       'SELECT total, pedido_id, caja_id FROM ventas WHERE id_venta = ?',
@@ -82,6 +125,67 @@ it('creates an order, records its sale and posts the cash balance using the actu
     expect(balance.efectivo).toBe(Number(caja.efectivo) + 12000);
     expect(balance.venta).toBe(Number(caja.venta) + 12000);
     expect(await SaleRepository.getById(sale.id)).not.toBeNull();
+  } finally {
+    await restoreDatabase(snapshot, 'test-only');
+  }
+});
+
+it('conserva la habitacion del pedido y permite al cajero ajustar solo su tiempo a 90 minutos', async () => {
+  const snapshot = await snapshotDatabase();
+  try {
+    const [user] = await query('SELECT id_usuario FROM usuarios LIMIT 1');
+    const roomId = crypto.randomUUID();
+    const productId = crypto.randomUUID();
+    await query(
+      'INSERT INTO productos (id_producto, codigo, nombre, precio, comision, fecha_crea) VALUES (?, ?, ?, 10000, 0, now())',
+      [productId, 'PGROOMORDER', 'Pedido habitacion']
+    );
+    await query(
+      'INSERT INTO habitaciones (id_habitacion, nombre, precio, tiempo, comision_anfitriona, estado, fecha_crea) VALUES (?, ?, 10000, 30, 1000, 1, now())',
+      [roomId, 'Privado pedido fijo']
+    );
+    let [caja] = await query('SELECT id_caja FROM cajas WHERE estado = 1 LIMIT 1');
+    if (!caja) {
+      caja = { id_caja: crypto.randomUUID() };
+      await query(
+        'INSERT INTO cajas (id_caja, fecha_apertura, usuario_id_apertura, monto_apertura, estado) VALUES (?, now(), ?, 0, 1)',
+        [caja.id_caja, user.id_usuario]
+      );
+    }
+    const order = await OrderRepository.create({
+      codigo: 'PGROOMORD',
+      meseroId: user.id_usuario,
+      metodoPago: 'efectivo',
+      subtotal: 10000,
+      total: 10000,
+      detalles: [
+        {
+          productoId: productId,
+          precio: 10000,
+          cantidad: 1,
+          subtotal: 10000,
+          roomId,
+          generaComision: 0
+        }
+      ]
+    });
+    const payload = {
+      pedido_id: order.id,
+      total: 1,
+      detalles: [{ producto_id: productId, precio: 1, cantidad: 1 }],
+      habitacion_id: crypto.randomUUID(),
+      tiempo: 0
+    };
+    await expect(SaleService.createSale(payload, user.id_usuario)).rejects.toThrow('tiempo');
+    const sale = await SaleService.createSale({ ...payload, tiempo: 90 }, user.id_usuario);
+    expect(
+      (
+        await query('SELECT habitacion_id, tiempo, total FROM ventas WHERE id_venta = ?', [sale.id])
+      )[0]
+    ).toMatchObject({ habitacion_id: roomId, tiempo: 90, total: 10000 });
+    expect(
+      (await query('SELECT estado FROM habitaciones WHERE id_habitacion = ?', [roomId]))[0].estado
+    ).toBe(2);
   } finally {
     await restoreDatabase(snapshot, 'test-only');
   }

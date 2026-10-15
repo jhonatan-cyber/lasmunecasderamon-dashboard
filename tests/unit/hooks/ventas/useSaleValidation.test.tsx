@@ -47,6 +47,36 @@ const setEnableTip = (result: any, enabled: boolean) => {
 };
 
 describe('concurrencia al generar ventas', () => {
+  it.each(['botella', 'shot'] as const)(
+    'el payload de %s sin comisión elimina selecciones anteriores',
+    async tipo => {
+      const { result } = renderSaleHook();
+      act(() =>
+        result.current.formState.setProductos([
+          {
+            id: 'bebida',
+            nombre: 'Bebida',
+            tipo_venta: tipo,
+            shot_anfitriona: tipo === 'shot',
+            precio: 5000,
+            comision: 0,
+            cantidad: 1,
+            subtotal: 5000,
+            selectedHostesses: ['ana']
+          }
+        ])
+      );
+      setMetodoPago(result, 'efectivo');
+      createVentaMock.mockResolvedValue({ success: false });
+      await act(() => result.current.handleSubmit([], []));
+      const payload = createVentaMock.mock.calls[0][0];
+      expect(payload.usuarios).toEqual([]);
+      expect(payload.detalles[0]).toMatchObject({ comision: 0 });
+      expect(payload.detalles[0].hostess_id).toBeUndefined();
+      expect(payload.detalles[0].hostesses).toBeUndefined();
+    }
+  );
+
   it('permite asignar anfitriona al corto con comisión desde el carrito y la envía en la venta', async () => {
     const { result } = renderSaleHook();
     act(() =>
@@ -442,7 +472,7 @@ describe('useSaleValidation totals (propina / total)', () => {
     );
   });
 
-  it('conserva la anfitriona opcional de botella aunque no tenga comisión', async () => {
+  it('descarta la anfitriona de botella sin comisión', async () => {
     const { result } = renderSaleHook();
     await act(async () => {
       await result.current.handleAddProducto({
@@ -454,7 +484,7 @@ describe('useSaleValidation totals (propina / total)', () => {
         selectedHostesses: ['hostess-1']
       });
     });
-    expect(result.current.formState.productos[0].selectedHostesses).toEqual(['hostess-1']);
+    expect(result.current.formState.productos[0].selectedHostesses).toEqual([]);
   });
   it('aplica la tabla personalizada de un producto con varias anfitrionas', async () => {
     window.localStorage.clear();

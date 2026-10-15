@@ -1,0 +1,714 @@
+{
+  "fechaUTC": "2026-10-15T16:55:55.925Z",
+  "orden": "A-B-B-A",
+  "metodo": "Percentil por rango más próximo. Bootstrap por lotes de 4 solicitudes, estratificado por ejecución; 2000 réplicas, xorshift32 con semilla 20261015. Intervalos descriptivos, sin corregir deriva temporal ni comparaciones múltiples.",
+  "limite": "Ráfagas cerradas de 4 solicitudes con setup y limpieza entre lotes, no carga sostenida ni tasa fija. La edad de pg_locks es una cota observada, no la duración exacta de espera. La ventana hasta COMMIT comienza al recibir la respuesta del bloqueo y no mide todo el tiempo real retenido.",
+  "ejecuciones": [
+    {
+      "archivo": "concurrencia-larga-antes-2026-10-15.json",
+      "formateador": "anterior real",
+      "fechaUTC": "2026-10-15T16:34:52.309Z",
+      "lotes": 100,
+      "concurrencia": [
+        {
+          "caso": "caja_compartida",
+          "ms": {
+            "n": 400,
+            "p50": 30.7523,
+            "p95": 39.8411,
+            "p99": 54.6308,
+            "max": 84.8002
+          }
+        },
+        {
+          "caso": "inventario_compartido",
+          "ms": {
+            "n": 400,
+            "p50": 34.3776,
+            "p95": 47.7213,
+            "p99": 55.1162,
+            "max": 67.5888
+          }
+        },
+        {
+          "caso": "cliente_compartido",
+          "ms": {
+            "n": 400,
+            "p50": 50.1049,
+            "p95": 75.8681,
+            "p99": 93.693,
+            "max": 122.0752
+          }
+        },
+        {
+          "caso": "servicios_caja_compartida",
+          "ms": {
+            "n": 400,
+            "p50": 37.8366,
+            "p95": 56.5216,
+            "p99": 67.3497,
+            "max": 121.0152
+          }
+        }
+      ]
+    },
+    {
+      "archivo": "concurrencia-larga-despues-2026-10-15.json",
+      "formateador": "actual",
+      "fechaUTC": "2026-10-15T16:40:21.491Z",
+      "lotes": 100,
+      "concurrencia": [
+        {
+          "caso": "caja_compartida",
+          "ms": {
+            "n": 400,
+            "p50": 27.0916,
+            "p95": 35.5529,
+            "p99": 44.3659,
+            "max": 48.797
+          }
+        },
+        {
+          "caso": "inventario_compartido",
+          "ms": {
+            "n": 400,
+            "p50": 30.8189,
+            "p95": 43.0923,
+            "p99": 49.5889,
+            "max": 56.7099
+          }
+        },
+        {
+          "caso": "cliente_compartido",
+          "ms": {
+            "n": 400,
+            "p50": 47.2228,
+            "p95": 71.1721,
+            "p99": 109.4526,
+            "max": 162.7974
+          }
+        },
+        {
+          "caso": "servicios_caja_compartida",
+          "ms": {
+            "n": 400,
+            "p50": 34.3549,
+            "p95": 46.5987,
+            "p99": 63.4538,
+            "max": 81.5531
+          }
+        }
+      ]
+    },
+    {
+      "archivo": "concurrencia-larga-despues-repeticion-2026-10-15.json",
+      "formateador": "actual",
+      "fechaUTC": "2026-10-15T16:42:35.561Z",
+      "lotes": 100,
+      "concurrencia": [
+        {
+          "caso": "caja_compartida",
+          "ms": {
+            "n": 400,
+            "p50": 27.3265,
+            "p95": 34.1382,
+            "p99": 38.523,
+            "max": 43.6367
+          }
+        },
+        {
+          "caso": "inventario_compartido",
+          "ms": {
+            "n": 400,
+            "p50": 31.4478,
+            "p95": 47.6776,
+            "p99": 65.5249,
+            "max": 83.2182
+          }
+        },
+        {
+          "caso": "cliente_compartido",
+          "ms": {
+            "n": 400,
+            "p50": 46.1179,
+            "p95": 68.3351,
+            "p99": 77.6306,
+            "max": 89.4186
+          }
+        },
+        {
+          "caso": "servicios_caja_compartida",
+          "ms": {
+            "n": 400,
+            "p50": 33.5796,
+            "p95": 41.2627,
+            "p99": 48.6141,
+            "max": 59.0961
+          }
+        }
+      ]
+    },
+    {
+      "archivo": "concurrencia-larga-referencia-repeticion-2026-10-15.json",
+      "formateador": "referencia",
+      "fechaUTC": "2026-10-15T16:44:03.362Z",
+      "lotes": 100,
+      "concurrencia": [
+        {
+          "caso": "caja_compartida",
+          "ms": {
+            "n": 400,
+            "p50": 29.6777,
+            "p95": 39.2945,
+            "p99": 54.9883,
+            "max": 95.189
+          }
+        },
+        {
+          "caso": "inventario_compartido",
+          "ms": {
+            "n": 400,
+            "p50": 33.7777,
+            "p95": 46.7735,
+            "p99": 54.2857,
+            "max": 71.3455
+          }
+        },
+        {
+          "caso": "cliente_compartido",
+          "ms": {
+            "n": 400,
+            "p50": 48.0517,
+            "p95": 72.4204,
+            "p99": 86.5532,
+            "max": 100.0928
+          }
+        },
+        {
+          "caso": "servicios_caja_compartida",
+          "ms": {
+            "n": 400,
+            "p50": 35.9528,
+            "p95": 52.6537,
+            "p99": 76.9126,
+            "max": 102.0839
+          }
+        }
+      ]
+    }
+  ],
+  "casos": [
+    {
+      "caso": "caja_compartida",
+      "mismoSqlYOrden": true,
+      "sqlSha256": "55d1993f102f24a4c842d947b94762036145ae70d66921105e876762ef8885c9",
+      "antes": {
+        "totalMs": {
+          "n": 800,
+          "p50": 30.1844,
+          "p95": 39.5803,
+          "p99": 54.9883,
+          "max": 95.189
+        },
+        "sentenciaRecursoClienteMs": {
+          "n": 800,
+          "p50": 5.2711,
+          "p95": 8.696,
+          "p99": 9.7574,
+          "max": 16.0375
+        },
+        "desdeRespuestaBloqueanteHastaCommitMs": {
+          "n": 800,
+          "p50": 1.8179,
+          "p95": 3.3455,
+          "p99": 4.5413,
+          "max": 12.733
+        },
+        "cpuZonaHorariaMs": {
+          "n": 800,
+          "p50": 0.673,
+          "p95": 0.8664,
+          "p99": 0.9861,
+          "max": 1.3864
+        },
+        "cpuLogMs": {
+          "n": 800,
+          "p50": 0.2598,
+          "p95": 0.3938,
+          "p99": 0.5604,
+          "max": 0.8564
+        },
+        "esperaObservadaMaxMs": {
+          "n": 800,
+          "p50": 0.382,
+          "p95": 3.057,
+          "p99": 4.176,
+          "max": 5.403
+        },
+        "solicitudesConBloqueoObservado": 477,
+        "retrasoMonitorPorLoteMaxMs": {
+          "n": 200,
+          "p50": 1.2158,
+          "p95": 2.576,
+          "p99": 6.477,
+          "max": 8.1179
+        },
+        "adquirirConexionMs": {
+          "n": 800,
+          "p50": 0.0376,
+          "p95": 0.0739,
+          "p99": 0.1591,
+          "max": 0.1976
+        }
+      },
+      "despues": {
+        "totalMs": {
+          "n": 800,
+          "p50": 27.1764,
+          "p95": 35.0407,
+          "p99": 41.7168,
+          "max": 48.797
+        },
+        "sentenciaRecursoClienteMs": {
+          "n": 800,
+          "p50": 4.9597,
+          "p95": 7.919,
+          "p99": 10.2221,
+          "max": 13.4514
+        },
+        "desdeRespuestaBloqueanteHastaCommitMs": {
+          "n": 800,
+          "p50": 1.5044,
+          "p95": 2.6053,
+          "p99": 3.8208,
+          "max": 7.808
+        },
+        "cpuZonaHorariaMs": {
+          "n": 800,
+          "p50": 0.1147,
+          "p95": 0.1659,
+          "p99": 0.2014,
+          "max": 0.2919
+        },
+        "cpuLogMs": {
+          "n": 800,
+          "p50": 0.2632,
+          "p95": 0.4135,
+          "p99": 0.5954,
+          "max": 0.9802
+        },
+        "esperaObservadaMaxMs": {
+          "n": 800,
+          "p50": 0.453,
+          "p95": 3.042,
+          "p99": 3.761,
+          "max": 7.483
+        },
+        "solicitudesConBloqueoObservado": 480,
+        "retrasoMonitorPorLoteMaxMs": {
+          "n": 200,
+          "p50": 0.8329,
+          "p95": 3.439,
+          "p99": 6.195,
+          "max": 7.6672
+        },
+        "adquirirConexionMs": {
+          "n": 800,
+          "p50": 0.0385,
+          "p95": 0.071,
+          "p99": 0.1196,
+          "max": 0.1627
+        }
+      },
+      "diferenciaP95DespuesMenosAntesIC95Ms": {
+        "replicas": 2000,
+        "inferior": -9.7331,
+        "superior": -1.5529
+      }
+    },
+    {
+      "caso": "inventario_compartido",
+      "mismoSqlYOrden": true,
+      "sqlSha256": "55d1993f102f24a4c842d947b94762036145ae70d66921105e876762ef8885c9",
+      "antes": {
+        "totalMs": {
+          "n": 800,
+          "p50": 34.0489,
+          "p95": 47.7213,
+          "p99": 55.1162,
+          "max": 71.3455
+        },
+        "sentenciaRecursoClienteMs": {
+          "n": 800,
+          "p50": 14.6237,
+          "p95": 25.4561,
+          "p99": 30.1314,
+          "max": 38.7925
+        },
+        "desdeRespuestaBloqueanteHastaCommitMs": {
+          "n": 800,
+          "p50": 7.3365,
+          "p95": 9.4864,
+          "p99": 12.1617,
+          "max": 14.7793
+        },
+        "cpuZonaHorariaMs": {
+          "n": 800,
+          "p50": 0.6715,
+          "p95": 0.8557,
+          "p99": 0.9431,
+          "max": 1.0193
+        },
+        "cpuLogMs": {
+          "n": 800,
+          "p50": 0.2359,
+          "p95": 0.3103,
+          "p99": 0.3909,
+          "max": 0.518
+        },
+        "esperaObservadaMaxMs": {
+          "n": 800,
+          "p50": 5.455,
+          "p95": 14.119,
+          "p99": 16.278,
+          "max": 23.708
+        },
+        "solicitudesConBloqueoObservado": 600,
+        "retrasoMonitorPorLoteMaxMs": {
+          "n": 200,
+          "p50": 0.7731,
+          "p95": 1.6009,
+          "p99": 2.9447,
+          "max": 5.6908
+        },
+        "adquirirConexionMs": {
+          "n": 800,
+          "p50": 0.0403,
+          "p95": 0.0667,
+          "p99": 0.1454,
+          "max": 0.1918
+        }
+      },
+      "despues": {
+        "totalMs": {
+          "n": 800,
+          "p50": 31.1234,
+          "p95": 44.9945,
+          "p99": 57.3971,
+          "max": 83.2182
+        },
+        "sentenciaRecursoClienteMs": {
+          "n": 800,
+          "p50": 13.8789,
+          "p95": 24.1684,
+          "p99": 33.0916,
+          "max": 51.3627
+        },
+        "desdeRespuestaBloqueanteHastaCommitMs": {
+          "n": 800,
+          "p50": 6.9147,
+          "p95": 9.088,
+          "p99": 16.5477,
+          "max": 21.9795
+        },
+        "cpuZonaHorariaMs": {
+          "n": 800,
+          "p50": 0.1078,
+          "p95": 0.1476,
+          "p99": 0.1852,
+          "max": 0.3222
+        },
+        "cpuLogMs": {
+          "n": 800,
+          "p50": 0.2339,
+          "p95": 0.3063,
+          "p99": 0.3796,
+          "max": 0.5171
+        },
+        "esperaObservadaMaxMs": {
+          "n": 800,
+          "p50": 5.698,
+          "p95": 13.766,
+          "p99": 17.77,
+          "max": 29.85
+        },
+        "solicitudesConBloqueoObservado": 599,
+        "retrasoMonitorPorLoteMaxMs": {
+          "n": 200,
+          "p50": 0.6243,
+          "p95": 4.3904,
+          "p99": 7.4608,
+          "max": 8.7822
+        },
+        "adquirirConexionMs": {
+          "n": 800,
+          "p50": 0.0418,
+          "p95": 0.0707,
+          "p99": 0.1259,
+          "max": 0.1786
+        }
+      },
+      "diferenciaP95DespuesMenosAntesIC95Ms": {
+        "replicas": 2000,
+        "inferior": -5.8418,
+        "superior": 0.6386
+      }
+    },
+    {
+      "caso": "cliente_compartido",
+      "mismoSqlYOrden": true,
+      "sqlSha256": "7205c7b15cd9effc7180388e849e6ed5d1a02a59fadce84d1c51f3e39517683a",
+      "antes": {
+        "totalMs": {
+          "n": 800,
+          "p50": 49.594,
+          "p95": 75.3163,
+          "p99": 88.7386,
+          "max": 122.0752
+        },
+        "sentenciaRecursoClienteMs": {
+          "n": 800,
+          "p50": 28.8551,
+          "p95": 52.3379,
+          "p99": 61.9289,
+          "max": 85.1624
+        },
+        "desdeRespuestaBloqueanteHastaCommitMs": {
+          "n": 800,
+          "p50": 15.6353,
+          "p95": 20.4415,
+          "p99": 23.5072,
+          "max": 28.405
+        },
+        "cpuZonaHorariaMs": {
+          "n": 800,
+          "p50": 0.6681,
+          "p95": 0.8466,
+          "p99": 0.9877,
+          "max": 1.8612
+        },
+        "cpuLogMs": {
+          "n": 800,
+          "p50": 0.2276,
+          "p95": 0.2949,
+          "p99": 0.3594,
+          "max": 0.5207
+        },
+        "esperaObservadaMaxMs": {
+          "n": 800,
+          "p50": 13.226,
+          "p95": 18.608,
+          "p99": 22.927,
+          "max": 26.371
+        },
+        "solicitudesConBloqueoObservado": 600,
+        "retrasoMonitorPorLoteMaxMs": {
+          "n": 200,
+          "p50": 0.8652,
+          "p95": 2.1505,
+          "p99": 4.1127,
+          "max": 4.436
+        },
+        "adquirirConexionMs": {
+          "n": 800,
+          "p50": 0.044,
+          "p95": 0.0745,
+          "p99": 0.0973,
+          "max": 0.2122
+        }
+      },
+      "despues": {
+        "totalMs": {
+          "n": 800,
+          "p50": 47.0992,
+          "p95": 69.499,
+          "p99": 89.1953,
+          "max": 162.7974
+        },
+        "sentenciaRecursoClienteMs": {
+          "n": 800,
+          "p50": 24.9974,
+          "p95": 50.5583,
+          "p99": 61.4582,
+          "max": 107.4454
+        },
+        "desdeRespuestaBloqueanteHastaCommitMs": {
+          "n": 800,
+          "p50": 15.1206,
+          "p95": 20.3283,
+          "p99": 29.2912,
+          "max": 80.4479
+        },
+        "cpuZonaHorariaMs": {
+          "n": 800,
+          "p50": 0.1104,
+          "p95": 0.1506,
+          "p99": 0.1798,
+          "max": 0.2664
+        },
+        "cpuLogMs": {
+          "n": 800,
+          "p50": 0.2262,
+          "p95": 0.2984,
+          "p99": 0.3952,
+          "max": 0.6883
+        },
+        "esperaObservadaMaxMs": {
+          "n": 800,
+          "p50": 12.885,
+          "p95": 18.499,
+          "p99": 22.61,
+          "max": 56.067
+        },
+        "solicitudesConBloqueoObservado": 600,
+        "retrasoMonitorPorLoteMaxMs": {
+          "n": 200,
+          "p50": 0.7861,
+          "p95": 3.9474,
+          "p99": 6.0557,
+          "max": 29.557
+        },
+        "adquirirConexionMs": {
+          "n": 800,
+          "p50": 0.0432,
+          "p95": 0.0718,
+          "p99": 0.0881,
+          "max": 0.1664
+        }
+      },
+      "diferenciaP95DespuesMenosAntesIC95Ms": {
+        "replicas": 2000,
+        "inferior": -8.5842,
+        "superior": -1.4892
+      }
+    },
+    {
+      "caso": "servicios_caja_compartida",
+      "mismoSqlYOrden": true,
+      "sqlSha256": "eac93f9e51ee8d20bee19471a9e961f345265d4c944f1e37c27fc25464cbc43b",
+      "antes": {
+        "totalMs": {
+          "n": 800,
+          "p50": 36.8856,
+          "p95": 54.2554,
+          "p99": 76.9126,
+          "max": 121.0152
+        },
+        "sentenciaRecursoClienteMs": {
+          "n": 800,
+          "p50": 3.3722,
+          "p95": 5.0677,
+          "p99": 6.6181,
+          "max": 8.8974
+        },
+        "desdeRespuestaBloqueanteHastaCommitMs": {
+          "n": 800,
+          "p50": 0.7455,
+          "p95": 1.9,
+          "p99": 2.8502,
+          "max": 4.9776
+        },
+        "cpuZonaHorariaMs": {
+          "n": 800,
+          "p50": 0.6614,
+          "p95": 0.9109,
+          "p99": 1.1566,
+          "max": 6.4752
+        },
+        "cpuLogMs": {
+          "n": 800,
+          "p50": 0.2067,
+          "p95": 0.334,
+          "p99": 0.4692,
+          "max": 0.6964
+        },
+        "esperaObservadaMaxMs": {
+          "n": 800,
+          "p50": 0,
+          "p95": 1.852,
+          "p99": 2.641,
+          "max": 3.84
+        },
+        "solicitudesConBloqueoObservado": 265,
+        "retrasoMonitorPorLoteMaxMs": {
+          "n": 200,
+          "p50": 1.0794,
+          "p95": 2.8944,
+          "p99": 5.1598,
+          "max": 32.1213
+        },
+        "adquirirConexionMs": {
+          "n": 800,
+          "p50": 0.0416,
+          "p95": 0.0656,
+          "p99": 0.0848,
+          "max": 0.1253
+        }
+      },
+      "despues": {
+        "totalMs": {
+          "n": 800,
+          "p50": 33.9074,
+          "p95": 43.7294,
+          "p99": 60.624,
+          "max": 81.5531
+        },
+        "sentenciaRecursoClienteMs": {
+          "n": 800,
+          "p50": 3.3926,
+          "p95": 4.9998,
+          "p99": 5.9219,
+          "max": 10.0107
+        },
+        "desdeRespuestaBloqueanteHastaCommitMs": {
+          "n": 800,
+          "p50": 0.7505,
+          "p95": 2.01,
+          "p99": 3.0773,
+          "max": 5.7889
+        },
+        "cpuZonaHorariaMs": {
+          "n": 800,
+          "p50": 0.1006,
+          "p95": 0.1522,
+          "p99": 0.1856,
+          "max": 0.3085
+        },
+        "cpuLogMs": {
+          "n": 800,
+          "p50": 0.2063,
+          "p95": 0.3315,
+          "p99": 0.4748,
+          "max": 0.6337
+        },
+        "esperaObservadaMaxMs": {
+          "n": 800,
+          "p50": 0,
+          "p95": 1.543,
+          "p99": 2.578,
+          "max": 5.673
+        },
+        "solicitudesConBloqueoObservado": 250,
+        "retrasoMonitorPorLoteMaxMs": {
+          "n": 200,
+          "p50": 0.7083,
+          "p95": 2.0645,
+          "p99": 4.2339,
+          "max": 5.5624
+        },
+        "adquirirConexionMs": {
+          "n": 800,
+          "p50": 0.0416,
+          "p95": 0.0677,
+          "p99": 0.091,
+          "max": 0.1496
+        }
+      },
+      "diferenciaP95DespuesMenosAntesIC95Ms": {
+        "replicas": 2000,
+        "inferior": -20.2462,
+        "superior": -2.0308
+      }
+    }
+  ]
+}

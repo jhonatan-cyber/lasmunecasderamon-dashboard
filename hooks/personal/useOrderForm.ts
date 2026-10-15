@@ -1,9 +1,11 @@
 'use client';
+import { permiteAnfitrionaConComision } from '@/lib/sales/hostessShortPrices';
 import { requiresShortMixer, bottleMixerUnits } from '@/lib/sales/productConfiguration';
 
-import { useState, useMemo, useCallback } from 'react';
+import { useState, useMemo, useCallback, useRef, useEffect } from 'react';
 import { mapForSaleToCartItem } from '@/lib/sales/forSaleMapper';
 import { saleInventoryFields, type SaleInventoryFields } from '@/lib/sales/saleInventoryFields';
+import { useSingleFlight } from '@/hooks/shared/useSingleFlight';
 import { generateRandomCode } from '@/lib/utils/codeUtils';
 import { useRouter } from 'next/navigation';
 import { useCurrentUser } from '@/hooks/auth/useCurrentUser';
@@ -36,6 +38,16 @@ export type OrderProducto = SaleInventoryFields & {
   category_name?: string;
   comisionUnitaria?: number;
 };
+
+function anfitrionasDelProducto(producto: OrderProducto) {
+  return permiteAnfitrionaConComision(
+    producto.tipo_venta === 'shot' ? 'shot' : 'botella',
+    producto.comisionUnitaria ?? producto.comision ?? producto.commission,
+    Boolean(producto.shot_anfitriona)
+  )
+    ? producto.selectedHostesses || []
+    : [];
+}
 
 export type OrderCategory = {
   id_categoria?: number;
@@ -80,6 +92,12 @@ export function useOrderForm({
   onToggleComision,
   onSubmit
 }: UseOrderFormProps) {
+  const intent = useRef<{ signature: string; code: string; confirmed: boolean } | undefined>(
+    undefined
+  );
+  useEffect(() => {
+    if (!productos.length) intent.current = undefined;
+  }, [productos.length]);
   const [modalOpen, setModalOpen] = useState(false);
   const [modalCategoria, setModalCategoria] = useState<OrderCategory | null>(null);
   const [productosCategoria, setProductosCategoria] = useState<OrderProducto[]>([]);
@@ -176,7 +194,7 @@ export function useOrderForm({
       const cantidad = producto.cantidad ?? cantidades[productKey] ?? 1;
       let comisionUnitaria =
         producto.comisionUnitaria ?? producto.comision ?? producto.commission ?? 0;
-      const selectedHostesses = producto.selectedHostesses || [];
+      let selectedHostesses = anfitrionasDelProducto(producto);
       let precio = Number(producto.precio ?? producto.price ?? 0);
       if (
         producto.presentacion_id &&
@@ -203,6 +221,14 @@ export function useOrderForm({
         }
       }
 
+      if (
+        !permiteAnfitrionaConComision(
+          producto.tipo_venta === 'shot' ? 'shot' : 'botella',
+          comisionUnitaria,
+          Boolean(producto.shot_anfitriona)
+        )
+      )
+        selectedHostesses = [];
       const commissionTotal = selectedHostesses.length > 0 ? comisionUnitaria * cantidad : 0;
       if (onAddProducto) {
         onAddProducto({
@@ -282,7 +308,13 @@ export function useOrderForm({
       return;
     }
 
-    const bebidasConComision = productos.filter(p => p.generaComision === 1);
+    const bebidasConComision = productos.filter(p =>
+      permiteAnfitrionaConComision(
+        p.tipo_venta === 'shot' ? 'shot' : 'botella',
+        p.comisionUnitaria ?? p.comision ?? p.commission,
+        Boolean(p.shot_anfitriona)
+      )
+    );
     for (const bebida of bebidasConComision) {
       if ((bebida.selectedHostesses || []).length === 0) {
         setError(
@@ -345,27 +377,32 @@ export function useOrderForm({
     setError('');
     try {
       const payload = {
-        codigo: generateRandomCode(),
+        codigo: '',
         meseroId,
         clienteId: toNullableStringId(selectedCliente),
         subtotal,
         total: subtotal,
         propina: tipAmount,
         metodoPago,
-        totalComision: productos.reduce((sum, item) => sum + (item.comision || 0), 0),
+        totalComision: productos.reduce(
+          (sum, item) => sum + (anfitrionasDelProducto(item).length ? item.comision || 0 : 0),
+          0
+        ),
         detalles: productos.map(item => ({
           ...saleInventoryFields(item),
           productoId: toNullableStringId(item.producto_id || item.id_producto || item.id),
           cantidad: Number(item.cantidad),
           precio: Number(item.precio || item.price),
           subtotal: Number(item.subtotal),
-          comision: Number(item.comision || 0),
-          generaComision: Number(item.generaComision ?? 1),
+          comision: anfitrionasDelProducto(item).length ? Number(item.comision || 0) : 0,
+          generaComision: anfitrionasDelProducto(item).length
+            ? Number(item.generaComision ?? 1)
+            : 0,
           hostessId:
-            (item.selectedHostesses || []).length === 1
-              ? toNullableStringId((item.selectedHostesses || [])[0])
+            anfitrionasDelProducto(item).length === 1
+              ? toNullableStringId(anfitrionasDelProducto(item)[0])
               : null,
-          selectedHostesses: (item.selectedHostesses || []).map(String),
+          selectedHostesses: anfitrionasDelProducto(item).map(String),
           roomId: toNullableStringId(
             roomSelections[String(item.id || item.id_producto)] ?? item.selectedRoom
           )
@@ -384,6 +421,14 @@ export function useOrderForm({
         return;
       }
 
+      const signature = JSON.stringify(payload);
+      if (intent.current?.signature !== signature) {
+        intent.current = { signature, code: generateRandomCode(), confirmed: false };
+      }
+      const currentIntent = intent.current;
+      if (currentIntent.confirmed) return;
+      payload.codigo = currentIntent.code;
+
       const res = await fetch('/api/orders', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -392,6 +437,7 @@ export function useOrderForm({
       const data = await res.json();
 
       if (res.status === 201 && data.success) {
+        currentIntent.confirmed = true;
         showSuccessToast('¡Pedido generado exitosamente!');
         if (data.habitacion_auto_seleccionada) {
           await fetchRooms();
@@ -412,6 +458,8 @@ export function useOrderForm({
       showErrorToast('Error inesperado al generar el pedido');
     }
   };
+
+  const submit = useSingleFlight(handleSubmitInternal);
 
   return {
     modalOpen,
@@ -439,6 +487,6 @@ export function useOrderForm({
     handleOtherProductHostessChange,
     handleRoomChange,
     handleAgregarProducto,
-    handleSubmitInternal
+    handleSubmitInternal: submit
   };
 }

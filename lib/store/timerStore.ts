@@ -8,6 +8,7 @@ export interface TimerData {
   roomName: string;
   duration: number;
   startTime: Date;
+  expiresAt?: string;
   servicioCode: string;
   clienteNombre: string;
   isActive: boolean;
@@ -19,7 +20,6 @@ export interface TimerData {
   onExpire?: (instance: TimerInstance) => void;
 }
 
-
 export class TimerInstance {
   readonly id: string;
   readonly servicioId: string;
@@ -30,10 +30,11 @@ export class TimerInstance {
   readonly clienteNombre = signal('');
   readonly duration = signal(0);
   readonly startTime = signal(new Date());
+  readonly expiresAt = signal<string | undefined>(undefined);
   readonly tipoTransaccion = signal<'servicio' | 'venta' | 'cuenta'>('servicio');
   readonly anfitrionas = signal('');
   readonly datosTemporales = signal<any>(undefined);
-  readonly onExpire: ((instance: TimerInstance) => void) | undefined;
+  onExpire: ((instance: TimerInstance) => void) | undefined;
   readonly remainingSeconds = signal(0);
   readonly isActive = signal(false);
   readonly isPaused = signal(false);
@@ -52,6 +53,7 @@ export class TimerInstance {
       this.clienteNombre.value = data.clienteNombre;
       this.duration.value = data.duration;
       this.startTime.value = data.startTime;
+      this.expiresAt.value = data.expiresAt;
       this.tipoTransaccion.value = data.tipoTransaccion || 'servicio';
       this.anfitrionas.value = data.anfitrionas || '';
       this.datosTemporales.value = data.datosTemporales;
@@ -62,16 +64,13 @@ export class TimerInstance {
     });
   }
 
-
   update(serverOffset: number) {
     if (this.isPaused.value || !this.isActive.value) return;
 
-    const now = new Date(Date.now() + serverOffset);
-    const start = this.startTime.peek();
-    const lifeSpanSeconds = Math.floor((Date.now() - start.getTime()) / 1000);
     const remaining = calculateRemainingTime(
       {
-        startTime: start,
+        startTime: this.startTime.peek(),
+        expiresAt: this.expiresAt.peek(),
         duration: this.duration.peek(),
         isPaused: this.isPaused.value,
         remainingTime: this.remainingSeconds.peek()
@@ -79,36 +78,19 @@ export class TimerInstance {
       serverOffset
     );
 
-
     if (remaining <= 0) {
-      const isVeryNew = lifeSpanSeconds <= 15;
-      const hasValidDuration = this.duration.peek() > 0;
-
-      if (!isVeryNew || !hasValidDuration) {
-
-        batch(() => {
-          this.remainingSeconds.value = 0;
-          this.isActive.value = false;
-        });
-
-        if (this.onExpire) this.onExpire(this);
-        if (globalOnExpire) globalOnExpire(this);
-      } else {
-
-        const originalSeconds = this.duration.peek() * 60;
-        if (this.remainingSeconds.peek() !== originalSeconds && originalSeconds > 0) {
-
-          this.remainingSeconds.value = originalSeconds;
-        }
-      }
+      batch(() => {
+        this.remainingSeconds.value = 0;
+        this.isActive.value = false;
+      });
+      if (this.onExpire) this.onExpire(this);
+      if (globalOnExpire) globalOnExpire(this);
     } else {
-
       if (this.remainingSeconds.peek() !== remaining) {
         this.remainingSeconds.value = remaining;
       }
     }
   }
-
 
   patch(data: Partial<TimerData>) {
     batch(() => {
@@ -118,6 +100,7 @@ export class TimerInstance {
       if (data.clienteNombre !== undefined) this.clienteNombre.value = data.clienteNombre;
       if (data.duration !== undefined) this.duration.value = data.duration;
       if (data.startTime !== undefined) this.startTime.value = data.startTime;
+      if (data.expiresAt !== undefined) this.expiresAt.value = data.expiresAt;
       if (data.tipoTransaccion !== undefined) this.tipoTransaccion.value = data.tipoTransaccion;
       if (data.anfitrionas !== undefined) this.anfitrionas.value = data.anfitrionas;
       if (data.datosTemporales !== undefined) this.datosTemporales.value = data.datosTemporales;
@@ -134,6 +117,7 @@ export class TimerInstance {
       roomName: this.roomName.peek(),
       duration: this.duration.peek(),
       startTime: this.startTime.peek(),
+      expiresAt: this.expiresAt.peek(),
       servicioCode: this.servicioCode.peek(),
       clienteNombre: this.clienteNombre.peek(),
       isActive: this.isActive.peek(),
@@ -178,7 +162,6 @@ export const stopGlobalTimerLoop = () => {
     tickInterval = null;
   }
 };
-
 
 export const syncTimersWithSignals = (plainTimers: any[]) => {
   batch(() => {

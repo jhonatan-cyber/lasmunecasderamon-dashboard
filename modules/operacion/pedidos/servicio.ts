@@ -31,3 +31,11 @@ export class OrderService {
     return await OrderRepository.updateStatus(id, estado);
   }
 }
+
+export function prepararVentaPedido(
+  id: string,
+  tiempo: number,
+  contexto: import('@/lib/transaccion/contrato').ContextoOperacion
+) {
+  return OrderRepository.paraVenta(id, tiempo, contexto);
+}

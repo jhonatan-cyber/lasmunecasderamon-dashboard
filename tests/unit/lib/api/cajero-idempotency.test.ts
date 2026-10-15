@@ -174,6 +174,26 @@ describe('POST /api/sales con idempotencia', () => {
     saleService.createSale.mockResolvedValue({ id_venta: 'v-1' });
   });
 
+  it('normaliza id_pedido de Expo para que la venta consulte el pedido guardado', async () => {
+    const response = await postSale(
+      new Request('http://localhost/api/sales', {
+        method: 'POST',
+        headers: { 'content-type': 'application/json' },
+        body: JSON.stringify({
+          total: 5000,
+          id_pedido: 'pedido-expo',
+          detalles: [{ producto_id: 'producto', precio: 5000, cantidad: 1 }]
+        })
+      }),
+      { params: Promise.resolve({}) }
+    );
+    expect(response.status).toBe(201);
+    expect(saleService.createSale).toHaveBeenCalledWith(
+      expect.objectContaining({ pedido_id: 'pedido-expo' }),
+      'u-cajero'
+    );
+  });
+
   it('debe cobrar la venta la primera vez que llega la clave', async () => {
     const response = await postVenta('sale-key-000001');
 

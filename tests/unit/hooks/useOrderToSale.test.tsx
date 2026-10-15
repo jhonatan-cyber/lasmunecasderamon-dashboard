@@ -24,6 +24,8 @@ it('vende el pedido completo una sola vez y no necesita otro cambio de estado po
       detail: [
         {
           producto_id: 'whisky',
+          metodo_pago: 'efectivo',
+          propina: 1000,
           precio: 20000,
           cantidad: 2,
           comision: 6000,
@@ -49,9 +51,6 @@ it('vende el pedido completo una sola vez y no necesita otro cambio de estado po
       },
       setters: {
         setIsRegistering: vi.fn(),
-        setMetodoPago: vi.fn(),
-        setPropina: vi.fn(),
-        setHabitacionId: vi.fn(),
         setTiempoHabitacion: vi.fn(),
         setShowMetodoPagoError: vi.fn(),
         setConfirmVentaModalOpen

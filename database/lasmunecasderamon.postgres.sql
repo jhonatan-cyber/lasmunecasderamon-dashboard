@@ -486,6 +486,9 @@ CREATE TABLE inventario_unidades (
 );
 CREATE INDEX idx_inventario_unidades_producto
   ON inventario_unidades (producto_id);
+CREATE INDEX idx_unidades_bar_presentacion
+  ON inventario_unidades (presentacion_id)
+  WHERE estado = 'almacen' AND ubicacion = 'bar';
 
 CREATE TABLE inventario_movimientos (
   id varchar(36) PRIMARY KEY,

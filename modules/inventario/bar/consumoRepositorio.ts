@@ -1,4 +1,4 @@
-import { validarConfiguracionVenta } from './validarConfiguracionVenta';
+import { bloquearYValidarConfiguracionVenta } from './validarConfiguracionVenta';
 import { generateUUID, type TransactionQuery } from '@/lib/database/db';
 import {
   DEFAULT_BOTTLE_ML,
@@ -38,10 +38,13 @@ interface UnidadConsumo {
 export async function consumirStock(
   trx: TransactionQuery,
   detalles: ConsumoInventarioDetalle[],
-  contextoVenta: ContextoVentaInventario
+  contextoVenta: ContextoVentaInventario,
+  soloValidar = false
 ): Promise<ShotAlert[]> {
   // El producto incluido consume una unidad completa sin reglas de precio de venta.
-  if (!contextoVenta.servicioId) await validarConfiguracionVenta(trx, detalles);
+  const presentacionesBloqueadas = contextoVenta.servicioId
+    ? undefined
+    : await bloquearYValidarConfiguracionVenta(trx, detalles);
   const alertas: ShotAlert[] = [];
   const requerido = new Map<string, PedidoPresentacion>();
 
@@ -138,16 +141,26 @@ export async function consumirStock(
 
   // Orden estable de bloqueo para ventas concurrentes que comparten bebidas.
   for (const [presentacionId, pedido] of [...requerido].sort(([a], [b]) => a.localeCompare(b))) {
-    const presentaciones = await trx<PresentacionConsumo[]>(
-      `SELECT p.id, p.producto_id, p.nombre, p.precio_venta, p.comision, p.ml_botella, pr.ml_shot,
+    // Para botellas completas los volúmenes de shot del producto no intervienen.
+    // La presentación ya está bloqueada por la validación; no hay otra lectura ni
+    // un bloqueo nuevo. Shots, acompañamientos e incluidos conservan su consulta.
+    const bloqueada = !pedido.tieneShots
+      ? presentacionesBloqueadas?.get(presentacionId)
+      : undefined;
+    const presentaciones = bloqueada
+      ? [{ ...bloqueada, ml_shot: null, ml_shot_anfitriona: null }]
+      : await trx<PresentacionConsumo[]>(
+          `SELECT p.id, p.producto_id, p.nombre, p.precio_venta, p.comision, p.ml_botella, pr.ml_shot,
         pr.ml_shot_anfitriona
        FROM inventario_presentaciones p
        INNER JOIN productos pr ON pr.id_producto = p.producto_id
        WHERE p.id = ? FOR UPDATE OF p`,
-      [presentacionId]
-    );
+          [presentacionId]
+        );
     const presentacion = presentaciones[0];
     if (!presentacion) {
+      if (soloValidar)
+        throw new BusinessError('La presentacion del pedido o su bebida no esta disponible');
       if (contextoVenta.servicioId) throw new BusinessError('El producto incluido ya no existe');
       if (
         pedido.mlAcompanamiento > 0 ||
@@ -238,6 +251,9 @@ export async function consumirStock(
         botellas_abiertas: abiertas
       });
     }
+
+    // El pedido comprueba el mismo plan, sin consumir, abrir botellas ni registrar movimientos.
+    if (soloValidar) continue;
 
     const vendidas: string[] = [];
     const vaciadasPorShots: string[] = [];
@@ -339,4 +355,12 @@ export async function consumirStock(
   }
 
   return alertas;
+}
+
+/** Valida botellas, cortos y bebidas acumulados sin reservar ni modificar existencias. */
+export async function validarStockPedido(
+  trx: TransactionQuery,
+  detalles: ConsumoInventarioDetalle[]
+) {
+  await consumirStock(trx, detalles, { usuarioId: null, fecha: '' }, true);
 }

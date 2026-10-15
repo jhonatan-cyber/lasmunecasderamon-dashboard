@@ -114,6 +114,7 @@ import { IDEMPOTENCY_HEADER } from '@/lib/api/idempotency';
 const PEDIDO = {
   codigo: 'ABC12345',
   meseroId: 'u-garzon',
+  metodoPago: 'efectivo',
   clienteId: null,
   subtotal: 5000,
   total: 5000,

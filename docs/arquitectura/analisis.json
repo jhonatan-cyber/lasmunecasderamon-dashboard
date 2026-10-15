@@ -1,36 +1,18 @@
 {
   "resumen": {
-    "commit": "8cfdc38c58372e33cd89d657ae356ec3ddc25c28",
-    "generado": "2026-10-13T21:40:55.211Z",
-    "archivos": 1857,
+    "commit": "30addc3e389c85889ad548245c63a7ddc48240b1",
+    "generado": "2026-10-15T20:30:05.654Z",
+    "archivos": 1956,
     "rutas": 217,
-    "sqlFueraDeRepositorio": 53,
+    "sqlFueraDeRepositorio": 55,
     "tablasConEscritoresMultiples": 0,
     "ciclos": 0,
     "procesosPeriodicos": 18,
     "caches": 21,
     "rutasApiConSqlDirecto": 0,
-    "rutasSinWrapper": 21
+    "rutasSinWrapper": 20
   },
   "rutas": [
-    {
-      "ruta": "/api/cleaning",
-      "archivo": "app/api/cleaning/route.ts",
-      "metodos": [],
-      "nivel": "authenticated",
-      "audit": true,
-      "moduloDominio": null,
-      "usaDriver": false
-    },
-    {
-      "ruta": "/api/servicios/:id/anfitrionas",
-      "archivo": "app/api/servicios/[id]/anfitrionas/route.ts",
-      "metodos": [],
-      "nivel": "private_rooms.write",
-      "audit": true,
-      "moduloDominio": null,
-      "usaDriver": false
-    },
     {
       "ruta": "/api/anfitrionas/:id/status",
       "archivo": "app/api/anfitrionas/[id]/status/route.ts",
@@ -71,7 +53,7 @@
       "ruta": "/api/anticipos/aprobar",
       "archivo": "app/api/anticipos/aprobar/route.ts",
       "metodos": [],
-      "nivel": "advances.process",
+      "nivel": "administrator",
       "audit": true,
       "moduloDominio": null,
       "usaDriver": false
@@ -125,7 +107,7 @@
       "ruta": "/api/anticipos/solicitudes",
       "archivo": "app/api/anticipos/solicitudes/route.ts",
       "metodos": [],
-      "nivel": "advances.read",
+      "nivel": "authenticated",
       "audit": true,
       "moduloDominio": null,
       "usaDriver": false
@@ -675,6 +657,15 @@
       "archivo": "app/api/categories/route.ts",
       "metodos": [],
       "nivel": "publico",
+      "audit": true,
+      "moduloDominio": null,
+      "usaDriver": false
+    },
+    {
+      "ruta": "/api/cleaning",
+      "archivo": "app/api/cleaning/route.ts",
+      "metodos": [],
+      "nivel": "authenticated",
       "audit": true,
       "moduloDominio": null,
       "usaDriver": false
@@ -1535,6 +1526,15 @@
       "usaDriver": false
     },
     {
+      "ruta": "/api/servicios/:id/anfitrionas",
+      "archivo": "app/api/servicios/[id]/anfitrionas/route.ts",
+      "metodos": [],
+      "nivel": "private_rooms.write",
+      "audit": true,
+      "moduloDominio": null,
+      "usaDriver": false
+    },
+    {
       "ruta": "/api/servicios/:id",
       "archivo": "app/api/servicios/[id]/route.ts",
       "metodos": [],
@@ -1582,9 +1582,9 @@
     {
       "ruta": "/api/servicios/solicitud-anulacion",
       "archivo": "app/api/servicios/solicitud-anulacion/route.ts",
-      "metodos": ["GET", "POST"],
-      "nivel": "SIN_WRAPPER",
-      "audit": false,
+      "metodos": ["GET"],
+      "nivel": "authenticated",
+      "audit": true,
       "moduloDominio": null,
       "usaDriver": false
     },
@@ -1969,6 +1969,12 @@
   ],
   "sqlFueraDeRepositorio": [
     {
+      "archivo": "scripts/benchmark-indice-inventario.mjs",
+      "capa": "scripts",
+      "modulo": null,
+      "escribe": ["pg_temp"]
+    },
+    {
       "archivo": "scripts/clean-sync-probes.js",
       "capa": "scripts",
       "modulo": null,
@@ -2041,20 +2047,10 @@
       "escribe": []
     },
     {
-      "archivo": "modules/inventario/bar/validarConfiguracionVenta.ts",
+      "archivo": "modules/inventario/bar/validarPedido.ts",
       "capa": "modules/aplicacion",
       "modulo": "inventario",
       "escribe": []
-    },
-    {
-      "archivo": "modules/inventario/limpieza/servicio.ts",
-      "capa": "modules/aplicacion",
-      "modulo": "inventario",
-      "escribe": [
-        "limpieza_articulos",
-        "limpieza_movimientos",
-        "limpieza_stock"
-      ]
     },
     {
       "archivo": "modules/asistencia/biometrico/avisosAudio.ts",
@@ -2189,10 +2185,26 @@
       "escribe": []
     },
     {
+      "archivo": "modules/inventario/bar/validarConfiguracionVenta.ts",
+      "capa": "modules/aplicacion",
+      "modulo": "inventario",
+      "escribe": []
+    },
+    {
       "archivo": "modules/inventario/compras/servicio.ts",
       "capa": "modules/aplicacion",
       "modulo": "inventario",
       "escribe": ["inventario_presentaciones"]
+    },
+    {
+      "archivo": "modules/inventario/limpieza/servicio.ts",
+      "capa": "modules/aplicacion",
+      "modulo": "inventario",
+      "escribe": [
+        "limpieza_articulos",
+        "limpieza_movimientos",
+        "limpieza_stock"
+      ]
     },
     {
       "archivo": "modules/inventario/productos/eliminarFotos.ts",
@@ -2294,16 +2306,6 @@
   "escriturasCruzadas": [],
   "transacciones": [
     {
-      "archivo": "modules/inventario/limpieza/servicio.ts",
-      "capa": "modules/aplicacion",
-      "modulo": "inventario"
-    },
-    {
-      "archivo": "modules/operacion/servicios/asignaciones.ts",
-      "capa": "modules/aplicacion",
-      "modulo": "operacion"
-    },
-    {
       "archivo": "lib/database/maintenance.ts",
       "capa": "lib/database",
       "modulo": null
@@ -2379,6 +2381,11 @@
       "modulo": "inventario"
     },
     {
+      "archivo": "modules/inventario/limpieza/servicio.ts",
+      "capa": "modules/aplicacion",
+      "modulo": "inventario"
+    },
+    {
       "archivo": "modules/inventario/presentaciones/infraestructura.ts",
       "capa": "modules/infraestructura",
       "modulo": "inventario"
@@ -2440,6 +2447,11 @@
     },
     {
       "archivo": "modules/operacion/servicios/anulaciones.ts",
+      "capa": "modules/aplicacion",
+      "modulo": "operacion"
+    },
+    {
+      "archivo": "modules/operacion/servicios/asignaciones.ts",
       "capa": "modules/aplicacion",
       "modulo": "operacion"
     },
@@ -2526,12 +2538,6 @@
   ],
   "procesos": [
     {
-      "archivo": "components/cleaning/CleaningInventory.tsx",
-      "linea": 83,
-      "tipo": "setInterval",
-      "texto": "const interval = window.setInterval(refresh, 30000);"
-    },
-    {
       "archivo": "app/api/notifications/kiosk/route.ts",
       "linea": 30,
       "tipo": "setInterval",
@@ -2562,6 +2568,12 @@
       "texto": "const timer = setInterval(() => {"
     },
     {
+      "archivo": "components/cleaning/CleaningInventory.tsx",
+      "linea": 93,
+      "tipo": "setInterval",
+      "texto": "const interval = window.setInterval(refresh, 30000);"
+    },
+    {
       "archivo": "components/clients/DevolucionSolicitudesModal.tsx",
       "linea": 55,
       "tipo": "setInterval",
@@ -2581,7 +2593,7 @@
     },
     {
       "archivo": "components/settings/SettingsWhatsAppTab.tsx",
-      "linea": 59,
+      "linea": 61,
       "tipo": "setInterval",
       "texto": "const timer = setInterval(() => {"
     },
@@ -2605,9 +2617,9 @@
     },
     {
       "archivo": "hooks/timer/useTimerSync.ts",
-      "linea": 342,
+      "linea": 101,
       "tipo": "setInterval",
-      "texto": "const interval = window.setInterval(() => {"
+      "texto": "const interval = window.setInterval(onVisible, 120_000);"
     },
     {
       "archivo": "lib/api/sseService.ts",
@@ -2617,7 +2629,7 @@
     },
     {
       "archivo": "lib/store/timerStore.ts",
-      "linea": 164,
+      "linea": 148,
       "tipo": "setInterval",
       "texto": "tickInterval = setInterval(() => {"
     },
@@ -2770,106 +2782,106 @@
   ],
   "ciclos": [],
   "matriz": {
+    "hooks": {
+      "lib/otros": 84,
+      "raiz": 36,
+      "components": 15,
+      "lib/api": 6,
+      "lib/business": 8,
+      "modules/aplicacion": 2
+    },
+    "raiz": {
+      "lib/api": 2,
+      "lib/otros": 11,
+      "hooks": 4,
+      "lib/identidad": 1,
+      "modules/aplicacion": 1
+    },
+    "lib/api": {
+      "lib/otros": 8,
+      "lib/identidad": 3,
+      "modules/aplicacion": 1,
+      "lib/business": 2,
+      "lib/database": 2
+    },
+    "lib/business": {
+      "lib/otros": 10,
+      "modules/aplicacion": 3,
+      "lib/api": 3,
+      "lib/database": 4,
+      "raiz": 2,
+      "components": 1
+    },
+    "lib/otros": {
+      "lib/database": 4,
+      "lib/api": 1,
+      "lib/business": 6,
+      "raiz": 6,
+      "components": 2
+    },
+    "modules/aplicacion": {
+      "lib/business": 35,
+      "lib/otros": 96,
+      "lib/database": 41,
+      "modules/infraestructura": 23,
+      "lib/api": 9,
+      "lib/identidad": 3,
+      "raiz": 5
+    },
+    "scripts": {},
+    "app/ui": {
+      "hooks": 50,
+      "components": 7,
+      "lib/otros": 52,
+      "lib/api": 7,
+      "lib/business": 3,
+      "modules/aplicacion": 1,
+      "raiz": 13
+    },
     "app/api": {
-      "lib/api": 251,
-      "lib/business": 23,
-      "lib/otros": 72,
-      "lib/identidad": 13,
+      "lib/api": 252,
+      "lib/identidad": 15,
+      "lib/otros": 69,
+      "lib/business": 30,
       "workflows": 20,
       "modules/aplicacion": 1,
       "lib/database": 3,
       "lib/integrations": 4
     },
-    "app/ui": {
-      "hooks": 50,
-      "lib/otros": 52,
-      "lib/api": 6,
-      "components": 6,
-      "lib/business": 3,
-      "modules/aplicacion": 1,
-      "raiz": 13
-    },
     "components": {
+      "lib/otros": 319,
+      "hooks": 131,
       "raiz": 87,
-      "lib/otros": 294,
-      "lib/business": 31,
-      "hooks": 130,
-      "modules/aplicacion": 4,
-      "lib/api": 1,
-      "app/ui": 1
-    },
-    "lib/business": {
-      "raiz": 2,
       "lib/api": 3,
-      "lib/otros": 7,
-      "lib/database": 4,
-      "modules/aplicacion": 2,
-      "components": 1
-    },
-    "lib/otros": {
-      "components": 3,
-      "lib/database": 4,
-      "lib/api": 1,
-      "lib/business": 6,
-      "raiz": 6
-    },
-    "modules/aplicacion": {
-      "lib/database": 40,
-      "lib/otros": 91,
-      "lib/business": 29,
-      "raiz": 5,
-      "lib/api": 9,
-      "modules/infraestructura": 23,
-      "lib/identidad": 3
-    },
-    "modules/infraestructura": {
-      "lib/otros": 140,
-      "lib/database": 102,
-      "lib/business": 53,
-      "modules/aplicacion": 24,
-      "lib/api": 7,
-      "lib/identidad": 2,
-      "raiz": 2
-    },
-    "raiz": {
-      "lib/otros": 9,
-      "hooks": 4,
-      "lib/api": 1,
-      "lib/identidad": 1,
-      "modules/aplicacion": 1
-    },
-    "hooks": {
-      "lib/otros": 80,
-      "raiz": 36,
-      "components": 16,
-      "lib/api": 6,
-      "lib/business": 9,
-      "modules/aplicacion": 2
-    },
-    "lib/api": {
-      "lib/otros": 7,
-      "lib/identidad": 3,
-      "modules/aplicacion": 1,
-      "lib/business": 2,
-      "lib/database": 2
+      "lib/business": 31,
+      "modules/aplicacion": 4,
+      "app/ui": 1
     },
     "lib/identidad": {
       "lib/otros": 5,
       "lib/business": 1
     },
     "lib/database": {
-      "lib/otros": 3,
+      "lib/otros": 4,
       "lib/business": 1
     },
     "lib/integrations": {
       "lib/business": 1
     },
-    "scripts": {},
+    "modules/infraestructura": {
+      "lib/database": 102,
+      "lib/otros": 141,
+      "lib/business": 53,
+      "modules/aplicacion": 24,
+      "lib/api": 7,
+      "lib/identidad": 2,
+      "raiz": 2
+    },
     "workflows": {
-      "lib/business": 6,
-      "lib/otros": 19,
+      "lib/business": 8,
+      "lib/otros": 18,
       "lib/api": 4,
-      "modules/aplicacion": 6
+      "modules/aplicacion": 4
     }
   },
   "ordenCapas": [

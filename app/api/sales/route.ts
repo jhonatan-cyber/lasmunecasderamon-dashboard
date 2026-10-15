@@ -30,6 +30,8 @@ export const POST = withRoute(
   async (request: Request, { user }: { params: any; user: any }) =>
     runIdempotent(request, { endpoint: 'sales.create', usuarioId: user?.id ?? null }, async () => {
       const body = await request.json();
+      // Expo also sends the order identifier under this legacy name.
+      if (!body.pedido_id && body.id_pedido) body.pedido_id = body.id_pedido;
       const validated = validateOrResponse(SaleCreateSchema, body);
       if (validated instanceof NextResponse) return validated;
       const result = await SaleService.createSale(validated, user.id.toString());

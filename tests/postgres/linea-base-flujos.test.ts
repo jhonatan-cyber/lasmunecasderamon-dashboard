@@ -301,8 +301,10 @@ describe('línea base de consultas por flujo', () => {
       const [user] = await query<{ id_usuario: string }[]>(
         'SELECT id_usuario FROM usuarios LIMIT 1'
       );
-      const [product] = await query<{ id_producto: string }[]>(
-        'SELECT id_producto FROM productos LIMIT 1'
+      const product = { id_producto: crypto.randomUUID() };
+      await query(
+        'INSERT INTO productos (id_producto, codigo, nombre, precio, comision, fecha_crea) VALUES (?, ?, ?, 6000, 0, now())',
+        [product.id_producto, 'PGBASEORDER', 'Pedido base']
       );
       const usuarioId = user.id_usuario;
 
@@ -388,8 +390,10 @@ describe('línea base de consultas por flujo', () => {
       const [user] = await query<{ id_usuario: string }[]>(
         'SELECT id_usuario FROM usuarios LIMIT 1'
       );
-      const [product] = await query<{ id_producto: string }[]>(
-        'SELECT id_producto FROM productos LIMIT 1'
+      const product = { id_producto: crypto.randomUUID() };
+      await query(
+        'INSERT INTO productos (id_producto, codigo, nombre, precio, comision, fecha_crea) VALUES (?, ?, ?, 5000, 0, now())',
+        [product.id_producto, 'PGBASEORDER', 'Pedido base']
       );
       const usuarioId = user.id_usuario;
       await asegurarCajaAbierta(usuarioId);
@@ -398,16 +402,18 @@ describe('línea base de consultas por flujo', () => {
       // justamente las dos cosas que la anulación parcial tiene que reponer de forma
       // proporcional. Medir una venta sin ellas dejaría fuera la mitad del trabajo.
       const order = await OrderRepository.create({
+        metodoPago: 'efectivo',
         codigo: 'PGLBANUL',
+        propina: 2000,
         meseroId: usuarioId,
-        subtotal: 12000,
+        subtotal: 10000,
         total: 12000,
         detalles: [
           {
             productoId: product.id_producto,
-            precio: 6000,
+            precio: 5000,
             cantidad: 2,
-            subtotal: 12000,
+            subtotal: 10000,
             generaComision: 0
           }
         ]

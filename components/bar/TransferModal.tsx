@@ -83,7 +83,7 @@ export function TransferModal({
                       htmlFor='transfer-quantity'
                       className='block text-xs font-bold uppercase tracking-wider text-gray-500 dark:text-gray-400 ml-1'
                     >
-                      Cantidad
+                      Unidades completas a transferir al bar
                     </label>
                     <Input
                       id='transfer-quantity'

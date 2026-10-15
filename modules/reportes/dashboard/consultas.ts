@@ -244,7 +244,11 @@ export class StatsQueries {
         this.runRankingQuery(now, yesterday),
         this.getDashboardAlerts(),
         this.getLoggedUsers().then(
-          users => users.anfitrionas.logueadas + users.garzones.logueadas + users.cajeros.logueadas
+          users =>
+            users.anfitrionas.logueadas +
+            users.garzones.logueadas +
+            users.cajeros.logueadas +
+            users.barman.logueadas
         )
       ]);
 
@@ -561,7 +565,8 @@ export class StatsQueries {
       return {
         anfitrionas: filterByRole('anfitriona'),
         garzones: filterByRole('garzon'),
-        cajeros: filterByRole('cajero', 'barman')
+        cajeros: filterByRole('cajero'),
+        barman: filterByRole('barman')
       };
     } catch (err) {
       logger.error('[StatsQueries] Error en getLoggedUsers:', { err });
@@ -742,9 +747,13 @@ export class StatsQueries {
       const totalLoggedUsers =
         loggedUsers.anfitrionas.logueadas +
         loggedUsers.garzones.logueadas +
-        loggedUsers.cajeros.logueadas;
+        loggedUsers.cajeros.logueadas +
+        loggedUsers.barman.logueadas;
       const totalTeamMembers =
-        loggedUsers.anfitrionas.total + loggedUsers.garzones.total + loggedUsers.cajeros.total;
+        loggedUsers.anfitrionas.total +
+        loggedUsers.garzones.total +
+        loggedUsers.cajeros.total +
+        loggedUsers.barman.total;
       const servicesActive = timers.filter(timer => timer.tipoTransaccion !== 'pedido').length;
       const movementToday =
         Number(comparisonBase.sales_today || 0) + Number(comparisonBase.services_today || 0);

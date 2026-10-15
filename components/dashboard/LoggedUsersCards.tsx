@@ -1,37 +1,17 @@
-﻿'use client';
+'use client';
 
 import { useQuery } from '@tanstack/react-query';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { Users, UserCheck, UserX } from 'lucide-react';
-
-interface UserStats {
-  anfitrionas: {
-    logueadas: number;
-    usuarios: Array<{ id_usuario: number; nick: string }>;
-    total: number;
-    porcentaje: number;
-  };
-  garzones: {
-    logueadas: number;
-    usuarios: Array<{ id_usuario: number; nick: string }>;
-    total: number;
-    porcentaje: number;
-  };
-  cajeros: {
-    logueadas: number;
-    usuarios: Array<{ id_usuario: number; nick: string }>;
-    total: number;
-    porcentaje: number;
-  };
-}
+import { Users, UserCheck, UserX, Martini } from 'lucide-react';
+import type { LoggedUsersStatsResponse } from '@/hooks/stats/useLoggedUsersStats';
 
 export default function LoggedUsersCards() {
   const {
     data: stats,
     isLoading: loading,
     error: queryError
-  } = useQuery<UserStats>({
+  } = useQuery<LoggedUsersStatsResponse>({
     queryKey: ['logged-users-stats'],
     queryFn: async () => {
       const response = await fetch('/api/stats/logged-users');
@@ -49,8 +29,8 @@ export default function LoggedUsersCards() {
 
   if (loading) {
     return (
-      <div className='grid gap-4 md:grid-cols-3'>
-        {[1, 2, 3].map(i => (
+      <div className='grid gap-4 md:grid-cols-2 xl:grid-cols-4'>
+        {[1, 2, 3, 4].map(i => (
           <Card
             key={i}
             className='animate-pulse rounded-3xl border border-slate-200/60 dark:border-slate-800/60'
@@ -73,8 +53,8 @@ export default function LoggedUsersCards() {
 
   if (error) {
     return (
-      <div className='grid gap-4 md:grid-cols-3'>
-        {[1, 2, 3].map(i => (
+      <div className='grid gap-4 md:grid-cols-2 xl:grid-cols-4'>
+        {[1, 2, 3, 4].map(i => (
           <Card
             key={i}
             className='rounded-3xl border border-rose-300/70 bg-rose-50/80 dark:bg-rose-900/20 dark:border-rose-800'
@@ -127,7 +107,7 @@ export default function LoggedUsersCards() {
       iconColor: 'text-blue-500 dark:text-blue-400'
     },
     {
-      title: 'Cajeros y barman',
+      title: 'Cajeros',
       logueadas: stats.cajeros.logueadas,
       total: stats.cajeros.total,
       porcentaje: stats.cajeros.porcentaje,
@@ -139,11 +119,22 @@ export default function LoggedUsersCards() {
       headerColor: 'bg-green-50/80 dark:bg-green-900/20',
       textColor: 'text-green-600 dark:text-green-400',
       iconColor: 'text-green-500 dark:text-green-400'
+    },
+    {
+      title: 'Barman',
+      ...stats.barman,
+      icon: Martini,
+      badgeColor:
+        'bg-amber-100 text-amber-800 dark:bg-amber-900 dark:text-amber-200 border-amber-200 dark:border-amber-700',
+      cardColor: 'bg-white dark:bg-slate-950/40 border-amber-200/70 dark:border-amber-800/60',
+      headerColor: 'bg-amber-50/80 dark:bg-amber-900/20',
+      textColor: 'text-amber-600 dark:text-amber-400',
+      iconColor: 'text-amber-500 dark:text-amber-400'
     }
   ];
 
   return (
-    <div className='grid gap-4 md:grid-cols-3'>
+    <div className='grid gap-4 md:grid-cols-2 xl:grid-cols-4'>
       {cards.map((card, index) => {
         const IconComponent = card.icon;
         return (

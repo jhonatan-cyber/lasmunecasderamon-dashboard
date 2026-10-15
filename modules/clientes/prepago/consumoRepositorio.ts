@@ -1,5 +1,5 @@
 import { generateUUID, type TransactionQuery } from '@/lib/database/db';
-import { BusinessError } from '@/lib/errors/errors';
+import { calcularConsumoPrepago } from './reglas';
 export async function procesarPrepago(
   trx: TransactionQuery,
   params: {
@@ -15,23 +15,14 @@ export async function procesarPrepago(
 ): Promise<number> {
   const { clienteId, total, prepagoSolicitado, ventaId, createdBy, now, codigo, concepto } = params;
 
-  const clients = await trx<any[]>('SELECT saldo FROM clientes WHERE id_cliente = ? FOR UPDATE', [
-    clienteId
-  ]);
+  const clients = await trx<{ saldo: number }[]>(
+    'SELECT saldo FROM clientes WHERE id_cliente = ? FOR UPDATE',
+    [clienteId]
+  );
   const saldoDisponible = Number(clients[0]?.saldo || 0);
 
-  if (saldoDisponible <= 0 || prepagoSolicitado === 0) return 0;
-
-  const prepagoMonto =
-    prepagoSolicitado === null ? Math.min(saldoDisponible, total) : prepagoSolicitado;
-
-  if (prepagoSolicitado !== null && prepagoSolicitado > saldoDisponible) {
-    throw new BusinessError(
-      'Saldo insuficiente para el monto de prepago seleccionado',
-      'SALDO_INSUFICIENTE',
-      { saldoDisponible, prepagoSolicitado }
-    );
-  }
+  const prepagoMonto = calcularConsumoPrepago(saldoDisponible, total, prepagoSolicitado);
+  if (prepagoMonto === null) return 0;
 
   await trx('UPDATE clientes SET saldo = GREATEST(0, saldo - ?) WHERE id_cliente = ?', [
     prepagoMonto,

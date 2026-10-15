@@ -2,6 +2,7 @@
 
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { toast } from 'sonner';
+import { useSingleFlight } from './useSingleFlight';
 
 export function useGenericMutations<T>(
   endpoint: string,
@@ -98,8 +99,10 @@ export function useGenericMutations<T>(
     }
   });
 
+  const create = useSingleFlight(createMutation.mutateAsync);
+
   return {
-    create: createMutation.mutateAsync,
+    create,
     update: updateMutation.mutateAsync,
     remove: removeMutation.mutateAsync,
     isLoading: createMutation.isPending || updateMutation.isPending || removeMutation.isPending,

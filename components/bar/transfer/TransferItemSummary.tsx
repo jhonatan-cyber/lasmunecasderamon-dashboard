@@ -82,9 +82,11 @@ export const TransferItemSummary = memo(function TransferItemSummary({
     : [];
   const bottle = options.find(option => option.tipo === 'botella');
   const maxHostesses = configuration
-    ? bottle
+    ? Number(bottle?.comision) > 0
       ? Number(configuration.maxAnfitrionas || 1)
-      : 0
+      : options.some(option => preciosCortoAnfitriona(option).some(row => Number(row.comision) > 0))
+        ? 1
+        : 0
     : item.max_anfitrionas;
 
   return (

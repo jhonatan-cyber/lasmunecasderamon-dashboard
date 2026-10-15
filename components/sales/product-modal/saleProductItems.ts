@@ -1,5 +1,5 @@
 import { parseSavedOptions } from '@/components/bar/transfer/transferOptions';
-import { esCortoAnfitriona, permiteAnfitriona } from '@/lib/sales/hostessShortPrices';
+import { esCortoAnfitriona, permiteAnfitrionaConComision } from '@/lib/sales/hostessShortPrices';
 import {
   bottleMixerUnits,
   hostessMixerMl,
@@ -135,13 +135,15 @@ export function buildSaleProductItem(producto: any, ctx: SaleProductItemContext)
     };
   });
 
-  // Cada tipo de venta lleva su propia comisión: sin comisión no se pide anfitriona.
+  // Cada formato usa su comisión; la comisión de otro formato no lo habilita.
+  const admiteAnfitriona = (opcion: SaleFormatQuantityOption) =>
+    permiteAnfitrionaConComision(opcion.value, opcion.comision);
   const pideAnfitriona = opcionesTipo.some(
-    opcion => opcion.cantidad > 0 && permiteAnfitriona(opcion.value)
+    opcion => opcion.cantidad > 0 && admiteAnfitriona(opcion)
   );
   const muestraAnfitriona = pideAnfitriona;
   const hostessFormats = opcionesTipo
-    .filter(option => option.cantidad > 0 && permiteAnfitriona(option.value))
+    .filter(option => option.cantidad > 0 && admiteAnfitriona(option))
     .flatMap(option =>
       Array.from({ length: option.value === 'botella' ? 1 : option.cantidad }, (_, unitIndex) => {
         const key =
@@ -297,7 +299,7 @@ export function buildSaleProductItem(producto: any, ctx: SaleProductItemContext)
           precio: opcion.precio,
           comision: opcion.comision,
           cantidad: opcion.value === 'botella' ? opcion.cantidad : 1,
-          selectedHostesses: permiteAnfitriona(opcion.value)
+          selectedHostesses: admiteAnfitriona(opcion)
             ? (
                 hostessFormats.find(
                   format => format.value === opcion.value && format.unitIndex === unitIndex

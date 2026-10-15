@@ -162,11 +162,24 @@ export function useTransferSubmit({
         return;
       }
     }
-    const hasBottle = options.some(option => option.tipo === 'botella');
+    const bottleCommission = options.some(
+      option => option.tipo === 'botella' && Number(option.comision) > 0
+    );
+    const shortCommission = options.some(option =>
+      preciosCortoAnfitriona(option).some(row => Number(row.comision) > 0)
+    );
     const maxText = form.maxAnfitrionas.trim();
-    const maxHostesses = maxText === '' ? null : Number(maxText);
+    // Sin comision de botella no se usa ni valida su campo oculto.
+    // Los cortos con comision admiten una anfitriona por defecto.
+    const maxHostesses = bottleCommission
+      ? maxText === ''
+        ? null
+        : Number(maxText)
+      : shortCommission
+        ? 1
+        : null;
     if (
-      hasBottle &&
+      bottleCommission &&
       maxHostesses !== null &&
       (!Number.isInteger(maxHostesses) || maxHostesses < 1 || maxHostesses > 20)
     ) {
@@ -177,7 +190,7 @@ export function useTransferSubmit({
     setSaving(true);
     try {
       if (
-        hasBottle &&
+        (bottleCommission || shortCommission) &&
         maxHostesses !== (Number(item.max_anfitrionas) > 0 ? Number(item.max_anfitrionas) : null)
       ) {
         const response = await fetch(`/api/products/${encodeURIComponent(item.producto_id)}`, {
@@ -231,7 +244,7 @@ export function useTransferSubmit({
         }
       }
       // Solo se reescribe la tabla de anfitrionas si el usuario editó precios manualmente.
-      if (hasBottle && maxHostesses !== null && maxHostesses >= 2 && form.tiers.length > 0) {
+      if (bottleCommission && maxHostesses !== null && maxHostesses >= 2 && form.tiers.length > 0) {
         const tiersRes = await fetch(`/api/products/${item.producto_id}/tiers`, {
           method: 'PUT',
           headers: { 'Content-Type': 'application/json' },

@@ -1,3 +1,4 @@
+import { permiteAnfitrionaConComision } from '@/lib/sales/hostessShortPrices';
 import { expect, it } from 'vitest';
 import { resolverVentaProducto } from '@/lib/sales/saleChoice';
 import { parseSavedOptions } from '@/components/bar/transfer/transferOptions';
@@ -59,4 +60,19 @@ it('conserva precio y comisión anteriores para la anfitriona y elimina la comis
     comision: 1000
   });
   expect(resolverVentaProducto(product, 'shot')).toMatchObject({ precio: 3000, comision: 0 });
+});
+
+it.each([
+  ['botella', 0, false, false],
+  ['botella', 1000, false, true],
+  ['shot', 0, true, false],
+  ['shot', 1000, true, true],
+  ['shot', 1000, false, false],
+  ['shot_anfitriona:1', 0, false, false],
+  ['shot_anfitriona:1', 2000, false, true],
+  ['botella', undefined, false, false],
+  ['botella', -1, false, false],
+  ['botella', NaN, false, false]
+])('condiciona la asignación al formato %s y comisión %s', (formato, comision, shot, esperado) => {
+  expect(permiteAnfitrionaConComision(String(formato), comision, Boolean(shot))).toBe(esperado);
 });

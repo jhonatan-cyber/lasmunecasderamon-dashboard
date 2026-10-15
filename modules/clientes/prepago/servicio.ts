@@ -1,24 +1,40 @@
+import type {
+  EntradaRecargaPrepago,
+  EntradaDevolucionSaldo,
+  EntradaRestitucionPrepago
+} from './tipos';
+import {
+  prepararRecargaPrepago,
+  validarConsumoCuenta,
+  prepararDevolucionSaldo,
+  validarSaldoDevolucion,
+  prepararRestitucionPrepago
+} from './reglas';
 import type { ContextoOperacion } from '@/lib/transaccion/contrato';
-import { saldoClienteAgotado } from './repositorio';
+import {
+  saldoClienteAgotado,
+  leerSaldoParaActualizar,
+  guardarConsumoCuenta,
+  descontarSaldoVenta,
+  guardarRecargaPrepago,
+  guardarDevolucionSaldo,
+  leerConsumoPrepagoVenta,
+  guardarRestitucionPrepago
+} from './repositorio';
+
 export function saldoPrepagoAgotado(clienteId: string, contexto: ContextoOperacion) {
   return saldoClienteAgotado(clienteId, contexto);
 }
-import { descontarSaldoCuenta } from './repositorio';
-export function consumirPrepagoCuenta(
+export async function consumirPrepagoCuenta(
   clienteId: string | null,
   monto: number,
   contexto: ContextoOperacion
 ) {
-  return descontarSaldoCuenta(clienteId, monto, contexto);
+  const cliente = await leerSaldoParaActualizar(clienteId, contexto);
+  validarConsumoCuenta(cliente ? Number(cliente.saldo ?? 0) : undefined, monto);
+  await guardarConsumoCuenta(clienteId, monto, contexto);
 }
 
-import { descontarSaldoVenta } from './repositorio';
-import {
-  cargarPrepagoRecarga,
-  devolverSaldoConCierre,
-  type EntradaRecargaPrepago,
-  type EntradaDevolucionSaldo
-} from './repositorio';
 export function consumirPrepagoVenta(
   entrada: Parameters<typeof descontarSaldoVenta>[0],
   contexto: ContextoOperacion
@@ -26,22 +42,27 @@ export function consumirPrepagoVenta(
   return descontarSaldoVenta(entrada, contexto);
 }
 
-export type { EntradaRecargaPrepago, EntradaDevolucionSaldo };
+export type { EntradaRecargaPrepago, EntradaDevolucionSaldo, EntradaRestitucionPrepago };
 
-export function registrarRecargaEnUnidad(
+export async function registrarRecargaEnUnidad(
   entrada: EntradaRecargaPrepago,
   contexto: ContextoOperacion
 ) {
-  return cargarPrepagoRecarga(entrada, contexto);
+  const preparada = prepararRecargaPrepago(entrada);
+  await guardarRecargaPrepago(entrada, preparada, contexto);
+  return preparada.deltas;
 }
 
-export function devolverSaldoEnUnidad(
+export async function devolverSaldoEnUnidad(
   entrada: EntradaDevolucionSaldo,
   contexto: ContextoOperacion
 ) {
-  return devolverSaldoConCierre(entrada, contexto);
+  const preparada = prepararDevolucionSaldo(entrada);
+  const cliente = await leerSaldoParaActualizar(entrada.cliente_id, contexto);
+  validarSaldoDevolucion(cliente ? Number(cliente.saldo || 0) : undefined, preparada.monto);
+  await guardarDevolucionSaldo(entrada, preparada, contexto);
+  return saldoClienteAgotado(entrada.cliente_id, contexto);
 }
-import { leerConsumoPrepagoVenta, restituirPrepagoAnulacion } from './repositorio';
 export function leerPrepagoConsumidoPorVenta(
   clienteId: string,
   ventaId: string,
@@ -49,9 +70,11 @@ export function leerPrepagoConsumidoPorVenta(
 ) {
   return leerConsumoPrepagoVenta(clienteId, ventaId, contexto);
 }
-export function restituirPrepagoPorAnulacion(
-  entrada: Parameters<typeof restituirPrepagoAnulacion>[0],
+export async function restituirPrepagoPorAnulacion(
+  entrada: EntradaRestitucionPrepago,
   contexto: ContextoOperacion
 ) {
-  return restituirPrepagoAnulacion(entrada, contexto);
+  const preparada = prepararRestitucionPrepago(entrada);
+  if (preparada === null) return;
+  await guardarRestitucionPrepago(preparada, contexto);
 }

@@ -47,7 +47,27 @@ describe('formulario de habitaciones', () => {
       comision_anfitriona: '0'
     });
   });
-  it.each(['', '-5', 'Infinity', 'NaN'])('rechaza una duración inválida: %s', time => {
+  it('envía cero para los campos numéricos vacíos', () => {
+    const submit = vi.fn();
+    const { result } = renderHook(() => useRoomForm({ open: true, onSubmit: submit }));
+    act(() => result.current.handleChange(change('name', 'Sala')));
+    act(() => result.current.handleSubmit(submitEvent));
+    expect(submit).toHaveBeenCalledWith({
+      name: 'Sala',
+      price: '0',
+      time: '0',
+      comision_anfitriona: '0'
+    });
+  });
+  it.each(['', '   '])('requiere un nombre: %s', name => {
+    const submit = vi.fn();
+    const { result } = renderHook(() => useRoomForm({ open: true, onSubmit: submit }));
+    act(() => result.current.handleChange(change('name', name)));
+    act(() => result.current.handleSubmit(submitEvent));
+    expect(submit).not.toHaveBeenCalled();
+    expect(result.current.errors.name).toBeDefined();
+  });
+  it.each(['-5', 'Infinity', 'NaN'])('rechaza una duración inválida: %s', time => {
     const submit = vi.fn();
     const { result } = renderHook(() => useRoomForm({ open: true, onSubmit: submit }));
     act(() => {

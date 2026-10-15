@@ -1,4 +1,5 @@
 import { ZodError } from 'zod';
+import { runRegistration } from './registration';
 import { NextResponse } from 'next/server';
 import { getAuth } from '@/lib/auth/auth-app';
 import { AuthenticatedUser, UserPermissions, isAdministrator } from '@/lib/middleware/auth';
@@ -278,7 +279,10 @@ export function withRoute<M extends PermissionModule>(
       const pedirPerfil = perfilActivo() && new URL(request.url).searchParams.get('perfil') === '1';
       if (pedirPerfil) reiniciarPerfil();
 
-      const response = await (handler as any)(request, handlerContext);
+      const invoke = (nextRequest: Request) => (handler as any)(nextRequest, handlerContext);
+      const response = user
+        ? await runRegistration(request, String(user.id), invoke)
+        : await invoke(request);
       const normalizada = await normalizeJsonResponseDates(response);
       // En desarrollo la respuesta dice cuántas consultas y cuántos ms de PostgreSQL lleva
       // acumulados: es lo que permite auditar un endpoint sin `pg_stat_statements`, que no

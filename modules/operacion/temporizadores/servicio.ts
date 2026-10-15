@@ -118,8 +118,8 @@ export async function cerrarTemporizadorEnUnidad(
     await liberarHabitacionPorAnulacion(
       habitacionId,
       contexto,
-      undefined,
-      item.type === 'cuenta' ? undefined : item.id
+      item.type === 'venta' ? item.id : undefined,
+      item.type === 'servicio' ? item.id : undefined
     );
   }
 

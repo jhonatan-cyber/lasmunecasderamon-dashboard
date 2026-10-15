@@ -36,7 +36,7 @@ export const ServicioSelectsRow = memo(function ServicioSelectsRow({
         required={true}
         showPrice={true}
         showTime={true}
-        filterByStatus={1}
+        excludeStatuses={[0]}
         requireCompleteConfig={true}
         className='w-full'
       />

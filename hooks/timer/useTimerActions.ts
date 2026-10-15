@@ -1,12 +1,11 @@
 'use client';
 
-import { useCallback, useRef } from 'react';
-import { Timer } from '@/contexts/TimerContext';
+import { useCallback } from 'react';
+import { refreshTimerSnapshot } from '@/lib/store/timerSnapshot';
 import { toast } from 'sonner';
-import { calculateRemainingTime } from '@/lib/utils/timeUtils';
 
 import logger from '@/lib/utils/logger';
-import { activeTimers, serverOffsetSignal, TimerInstance } from '@/lib/store/timerStore';
+import { activeTimers, TimerInstance } from '@/lib/store/timerStore';
 
 interface TimerActionsProps {
   onNotificationExpira: (timer: any) => void;
@@ -28,13 +27,15 @@ export function useTimerActions({ onNotificationExpira, onRefreshCaja }: TimerAc
 
   const updateServiceStatus = async (servicioId: string, estado: number) => {
     try {
-      await fetch(`/api/servicios/${servicioId}`, {
+      const response = await fetch(`/api/servicios/${servicioId}`, {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ estado })
       });
+      if (!response.ok) throw new Error('No se pudo actualizar el temporizador');
     } catch (e) {
       toast.error('Error actualizando servicio');
+      throw e;
     }
   };
 
@@ -52,27 +53,13 @@ export function useTimerActions({ onNotificationExpira, onRefreshCaja }: TimerAc
     ) => {
       if (!servicioId || !roomId || !duration || duration <= 0) return;
 
-      const currentOffset = serverOffsetSignal.peek();
-      const startTime = new Date(Date.now() + currentOffset);
-      const newT = new TimerInstance(
-        {
-          id: `timer_${roomId}_${servicioCode}_${Date.now()}`,
-          servicioId,
-          roomId,
-          roomName,
-          duration,
-          startTime,
-          isActive: true,
-          isPaused: false,
-          servicioCode,
-          clienteNombre,
-          tipoTransaccion,
-          anfitrionas: anfitrionas || ''
-        },
-        duration * 60
-      );
-
-      activeTimers.value = [...activeTimers.peek(), newT];
+      try {
+        await refreshTimerSnapshot(true);
+      } catch (error) {
+        logger.captureException(error, { context: 'useTimerActions:startTimer' });
+        toast.error('No se pudo sincronizar el temporizador');
+        return;
+      }
       if (tipoTransaccion !== 'venta') updateRoomStatus(roomId, 2);
       toast.success(`Temporizador iniciado para ${roomName}`);
     },
@@ -142,21 +129,24 @@ export function useTimerActions({ onNotificationExpira, onRefreshCaja }: TimerAc
   const pauseTimerByServicioId = useCallback((servicioId: string) => {
     const target = activeTimers.peek().find(t => t.servicioId === servicioId && !t.isTemporary);
     if (target) {
-      target.isPaused.value = true;
-      updateServiceStatus(servicioId, 3);
+      void updateServiceStatus(servicioId, 3)
+        .then(() => refreshTimerSnapshot(true))
+        .catch(error => logger.captureException(error));
     }
   }, []);
 
   const resumeTimerByServicioId = useCallback((servicioId: string) => {
     const target = activeTimers.peek().find(t => t.servicioId === servicioId && !t.isTemporary);
     if (target) {
-      target.isPaused.value = false;
-      updateServiceStatus(servicioId, 2);
+      // Reanudar solo con el vencimiento confirmado (incluye el tiempo pausado).
+      void updateServiceStatus(servicioId, 2)
+        .then(() => refreshTimerSnapshot(true))
+        .catch(error => logger.captureException(error));
     }
   }, []);
 
   const startTemporaryTimer = useCallback(
-    (
+    async (
       servicioId: string,
       roomId: string,
       roomName: string,
@@ -179,7 +169,6 @@ export function useTimerActions({ onNotificationExpira, onRefreshCaja }: TimerAc
         return;
 
       const normalizedServicioId = String(servicioId);
-      const normalizedRoomId = String(roomId);
       const main = current.find(
         t => String(t.servicioId) === normalizedServicioId && !t.isTemporary
       );
@@ -192,43 +181,25 @@ export function useTimerActions({ onNotificationExpira, onRefreshCaja }: TimerAc
         estado_principal: 'PAUSADO'
       };
 
-      const temporaryTimer = new TimerInstance(
-        {
-          id: `temp_timer_${servicioId}_${Date.now()}`,
-          servicioId: String(datosTemporales?.servicio_temporal_id || servicioId),
-          roomId,
-          roomName,
-          duration,
-          isActive: true,
-          isPaused: false,
-          startTime: new Date(Date.now() + serverOffsetSignal.peek()),
-          servicioCode: `${servicioCode}-TEMP`,
-          clienteNombre,
-          isTemporary: true,
-          datosTemporales: mergedDatosTemporales,
-          tipoTransaccion: 'servicio',
-          anfitrionas: anfitrionas || '',
-          onExpire: () => onComplete()
-        },
-        duration * 60
-      );
-
-      const roomMainTimers = current.filter(
-        t => String(t.roomId.peek()) === normalizedRoomId && !t.isTemporary
-      );
-      roomMainTimers.forEach(t => {
-        t.isPaused.value = true;
-        updateServiceStatus(String(t.servicioId), 3);
-      });
-
-      if (roomMainTimers.length === 0 && main) {
-        main.isPaused.value = true;
-        updateServiceStatus(String(main.servicioId), 3);
-      }
-
-      updateServiceStatus(normalizedServicioId, 3);
-
-      activeTimers.value = [...current, temporaryTimer];
+      await refreshTimerSnapshot(true)
+        .then(() => {
+          const temporary = activeTimers
+            .peek()
+            .find(
+              t =>
+                t.isTemporary &&
+                String(t.datosTemporales.peek()?.servicio_original_id) === normalizedServicioId
+            );
+          // El manejador global conserva las notificaciones y la reanudacion del principal.
+          if (temporary) {
+            temporary.onExpire = () => onComplete();
+            temporary.datosTemporales.value = {
+              ...mergedDatosTemporales,
+              ...temporary.datosTemporales.peek()
+            };
+          }
+        })
+        .catch(error => logger.captureException(error, { context: 'useTimerActions:temporary' }));
       toast.info(`Timer temporal: ${duration} mins`);
     },
     []

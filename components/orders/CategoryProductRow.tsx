@@ -143,7 +143,7 @@ export function CategoryProductRow({
               habitaciones={
                 habitaciones?.filter(
                   h =>
-                    (h.estado === 1 || h.status === 1) &&
+                    (h.estado ?? h.status) !== 0 &&
                     (h.comision_anfitriona === 0 || !h.comision_anfitriona)
                 ) || []
               }

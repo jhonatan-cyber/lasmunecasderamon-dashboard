@@ -37,21 +37,31 @@ export const getSQLTimezoneOffset = (): string => {
   }
 };
 
+let formateadorFecha: { zona: string; valor: Intl.DateTimeFormat } | undefined;
+
 export const getNowInBusinessTimezone = (inputDate?: Date | string | number): string => {
   const tz = getSystemTimezone();
   const dateToProcess = inputDate ? new Date(inputDate) : new Date();
   const finalDate = isNaN(dateToProcess.getTime()) ? new Date() : dateToProcess;
 
-  const formatter = new Intl.DateTimeFormat('en-GB', {
-    timeZone: tz,
-    year: 'numeric',
-    month: '2-digit',
-    day: '2-digit',
-    hour: '2-digit',
-    minute: '2-digit',
-    second: '2-digit',
-    hour12: false
-  });
+  // Solo se reutiliza el formateador: cada llamada procesa su propia fecha y
+  // aplica las reglas de horario de verano correspondientes a ese instante.
+  if (!formateadorFecha || formateadorFecha.zona !== tz) {
+    formateadorFecha = {
+      zona: tz,
+      valor: new Intl.DateTimeFormat('en-GB', {
+        timeZone: tz,
+        year: 'numeric',
+        month: '2-digit',
+        day: '2-digit',
+        hour: '2-digit',
+        minute: '2-digit',
+        second: '2-digit',
+        hour12: false
+      })
+    };
+  }
+  const formatter = formateadorFecha.valor;
 
   const parts = formatter.formatToParts(finalDate);
   const getVal = (type: string) => parts.find(p => p.type === type)?.value || '00';

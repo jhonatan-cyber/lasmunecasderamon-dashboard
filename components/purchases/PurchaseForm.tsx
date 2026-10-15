@@ -1,7 +1,7 @@
 'use client';
 
 import { matchesProductSearch } from '@/lib/utils/productSearch';
-import { useId, useMemo, useState } from 'react';
+import { useId, useMemo, useRef, useState } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
 import { useRouter } from 'next/navigation';
@@ -79,6 +79,7 @@ export function PurchaseForm({ catalog }: Props) {
     'efectivo'
   );
   const [saving, setSaving] = useState(false);
+  const submitting = useRef(false);
   const [result, setResult] = useState<PurchaseRegistered | null>(null);
 
   const total = useMemo(
@@ -97,18 +98,22 @@ export function PurchaseForm({ catalog }: Props) {
       toast.info('Esa presentación ya está en la compra');
       return;
     }
-    setLines(prev => [
-      ...prev,
-      {
-        presentacion_id: item.id,
-        producto_id: item.producto_id,
-        producto_nombre: item.producto_nombre,
-        presentacion_nombre: item.nombre,
-        foto: item.foto,
-        cantidad: '1',
-        precio_compra: formatMiles(String(item.precio_compra ?? 0))
-      }
-    ]);
+    setLines(prev =>
+      prev.some(line => line.presentacion_id === item.id)
+        ? prev
+        : [
+            ...prev,
+            {
+              presentacion_id: item.id,
+              producto_id: item.producto_id,
+              producto_nombre: item.producto_nombre,
+              presentacion_nombre: item.nombre,
+              foto: item.foto,
+              cantidad: '1',
+              precio_compra: formatMiles(String(item.precio_compra ?? 0))
+            }
+          ]
+    );
   };
 
   const removeItem = (presentacionId: string) =>
@@ -141,6 +146,7 @@ export function PurchaseForm({ catalog }: Props) {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (submitting.current || result || step !== 3) return;
     if (lines.length === 0) {
       toast.error('Selecciona al menos un producto');
       return;
@@ -164,6 +170,7 @@ export function PurchaseForm({ catalog }: Props) {
         precio_compra
       });
     }
+    submitting.current = true;
     setSaving(true);
     try {
       const res = await fetch('/api/purchases', {
@@ -188,6 +195,7 @@ export function PurchaseForm({ catalog }: Props) {
     } catch {
       toast.error('Error de red al registrar');
     } finally {
+      submitting.current = false;
       setSaving(false);
     }
   };

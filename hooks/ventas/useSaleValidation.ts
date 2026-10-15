@@ -1,4 +1,5 @@
 'use client';
+import { permiteAnfitrionaConComision } from '@/lib/sales/hostessShortPrices';
 import { requiresShortMixer, bottleMixerUnits } from '@/lib/sales/productConfiguration';
 
 import { useState, useEffect, useMemo, useRef } from 'react';
@@ -315,12 +316,16 @@ export function useSaleValidation({
 
     // Elegir anfitriona es opcional; si se eligieron más de las que permite el
     // producto, la línea entra al carro recortada al máximo.
-    const permiteAnfitriona = tipoVenta === 'botella' || shotAnfitriona;
+    const permiteAnfitriona = permiteAnfitrionaConComision(
+      tipoVenta,
+      producto.comision ?? producto.commission,
+      shotAnfitriona
+    );
     const elegidas = (permiteAnfitriona ? producto.selectedHostesses || [] : [])
       .filter((h: unknown) => h !== null && h !== undefined)
       .map((h: string | number) => String(h));
     const limite = elegidas.length ? await limiteAnfitrionasDe({ ...producto, cantidad }) : 0;
-    const hostessIds = elegidas.slice(0, limite);
+    let hostessIds = elegidas.slice(0, limite);
     if (hostessIds.length < elegidas.length) {
       toast.info(
         `Máximo ${limite} anfitrionas para ${producto.nombre || producto.name || 'este producto'}`
@@ -346,6 +351,8 @@ export function useSaleValidation({
         comision = tier.comision;
       }
     }
+
+    if (!permiteAnfitrionaConComision(tipoVenta, comision, shotAnfitriona)) hostessIds = [];
 
     const productoNormalizado = {
       ...producto,
@@ -496,7 +503,13 @@ export function useSaleValidation({
   const handleCartHostessesChange = (index: number, ids: string[]) => {
     const product = productos[index];
     if (!product || product.tipo_venta !== 'shot' || !product.shot_anfitriona) return;
-    const selected = [...new Set(ids)].slice(0, Number(product.cantidad));
+    const selected = permiteAnfitrionaConComision(
+      product.tipo_venta,
+      product.comision ?? product.commission,
+      Boolean(product.shot_anfitriona)
+    )
+      ? [...new Set(ids)].slice(0, Number(product.cantidad))
+      : [];
     handleServiceHostessChange(product.selectedHostesses || [], selected);
     setProductos(current =>
       current.map((p, i) => (i === index ? { ...p, selectedHostesses: selected } : p))
@@ -548,7 +561,15 @@ export function useSaleValidation({
     setLoading(true);
     try {
       for (const p of productos) {
-        if (!p.selectedHostesses?.length) continue;
+        if (
+          !permiteAnfitrionaConComision(
+            p.tipo_venta === 'shot' ? 'shot' : 'botella',
+            p.comision ?? p.commission,
+            Boolean(p.shot_anfitriona)
+          ) ||
+          !p.selectedHostesses?.length
+        )
+          continue;
         const max = await limiteAnfitrionasDe(p);
         if (p.selectedHostesses.length > max) {
           toast.error(`Producto ${p.nombre} permite máximo ${max} anfitrionas`);
@@ -558,7 +579,13 @@ export function useSaleValidation({
       const todasAnf = Array.from(
         new Set(
           productos.flatMap(p =>
-            p.tipo_venta !== 'shot' || p.shot_anfitriona ? p.selectedHostesses || [] : []
+            permiteAnfitrionaConComision(
+              p.tipo_venta === 'shot' ? 'shot' : 'botella',
+              p.comision ?? p.commission,
+              Boolean(p.shot_anfitriona)
+            )
+              ? p.selectedHostesses || []
+              : []
           )
         )
       );
@@ -581,7 +608,11 @@ export function useSaleValidation({
         total: totals.total,
         detalles: productos.map(p => {
           const selectedHostesses =
-            (p.tipo_venta !== 'shot' || p.shot_anfitriona) && Array.isArray(p.selectedHostesses)
+            permiteAnfitrionaConComision(
+              p.tipo_venta === 'shot' ? 'shot' : 'botella',
+              p.comision ?? p.commission,
+              Boolean(p.shot_anfitriona)
+            ) && Array.isArray(p.selectedHostesses)
               ? p.selectedHostesses
                   .filter((h: unknown) => h !== null && h !== undefined)
                   .map((h: string | number) => String(h))

@@ -145,6 +145,13 @@ it('no toca el servicio con tiempo vigente', async () => {
     await abrirCajaSiHaceFalta();
     const { id } = await crearServicioConTiempo(false);
 
+    const timer = (await TimerService.getActive()).find(t => t.servicioId === id);
+    expect(timer?.startTime).toMatch(/Z$/);
+    expect(timer?.expiresAt).toMatch(/Z$/);
+    expect(Date.parse(timer!.expiresAt) - Date.parse(timer!.startTime)).toBe(
+      timer!.duration * 60000
+    );
+    expect(timer!.remainingTime).toBeGreaterThan(0);
     await revisarTemporizadores(new Date());
 
     const [servicio] = await query<{ estado: number }[]>(

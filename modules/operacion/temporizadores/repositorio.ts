@@ -42,14 +42,14 @@ const TABLA_POR_TIPO: Record<TemporizadorActivo['type'], { tabla: string; id: st
 /** Servicio de temporary, venta o cuenta que todavía tiene tiempo por correr. */
 export async function listarTemporizadoresActivos(): Promise<TemporizadorActivo[]> {
   return await query<TemporizadorActivo[]>(`
-      SELECT s.id_servicio as id, s.codigo, s.tiempo, s.fecha_crea, s.created_by, s.push_notified_5m, s.push_notified_end, s.habitacion_id, h.nombre as room_name, 'servicio' as type
+      SELECT s.id_servicio as id, s.codigo, s.tiempo, (s.fecha_crea AT TIME ZONE 'America/Santiago') AS fecha_crea, s.created_by, s.push_notified_5m, s.push_notified_end, s.habitacion_id, h.nombre as room_name, 'servicio' as type
       FROM servicios s LEFT JOIN habitaciones h ON s.habitacion_id = h.id_habitacion WHERE s.estado = 2 AND s.paused_at IS NULL AND s.tiempo > 0
       UNION ALL
-      SELECT v.id_venta as id, v.codigo, v.tiempo, v.fecha_crea, v.created_by, v.push_notified_5m, v.push_notified_end, v.habitacion_id, h.nombre as room_name, 'venta' as type
+      SELECT v.id_venta as id, v.codigo, v.tiempo, (v.fecha_crea AT TIME ZONE 'America/Santiago') AS fecha_crea, v.created_by, v.push_notified_5m, v.push_notified_end, v.habitacion_id, h.nombre as room_name, 'venta' as type
       FROM ventas v LEFT JOIN habitaciones h ON v.habitacion_id = h.id_habitacion WHERE v.estado = 2 AND v.paused_at IS NULL AND v.tiempo > 0
       UNION ALL
-      SELECT c.id_cuenta as id, c.codigo, c.tiempo, c.fecha_crea, c.created_by, c.push_notified_5m, c.push_notified_end, c.habitacion_id, h.nombre as room_name, 'cuenta' as type
-      FROM cuentas c LEFT JOIN habitaciones h ON c.habitacion_id = h.id_habitacion WHERE c.estado = 1 AND c.tiempo > 0
+      SELECT c.id_cuenta as id, c.codigo, COALESCE(c.tiempo_actual, c.tiempo) AS tiempo, (COALESCE(c.tiempo_inicio_actual, c.fecha_crea) AT TIME ZONE 'America/Santiago') AS fecha_crea, c.created_by, c.push_notified_5m, c.push_notified_end, c.habitacion_id, h.nombre as room_name, 'cuenta' as type
+      FROM cuentas c LEFT JOIN habitaciones h ON c.habitacion_id = h.id_habitacion WHERE c.estado = 1 AND COALESCE(c.tiempo_actual, c.tiempo) > 0
     `);
 }
 

@@ -5,6 +5,11 @@ import { Slot } from '@radix-ui/react-slot';
 import { cva, type VariantProps } from 'class-variance-authority';
 
 import { cn } from '@/lib/utils/utils';
+import {
+  subscribeRegistrations,
+  getPendingRegistrations,
+  getServerPendingRegistrations
+} from '@/lib/store/registrationStore';
 
 const buttonVariants = cva(
   'inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-md text-sm font-medium ring-offset-background transition-colors focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 cursor-pointer [&_svg]:pointer-events-none [&_svg]:size-4 [&_svg]:shrink-0',
@@ -41,11 +46,54 @@ export interface ButtonProps
 }
 
 const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
-  ({ className, variant, size, asChild = false, ...props }, ref) => {
+  ({ className, variant, size, asChild = false, onClick, disabled, ...props }, ref) => {
+    const inFlight = React.useRef(false);
+    const [running, setRunning] = React.useState(false);
+    const registrations = React.useSyncExternalStore(
+      subscribeRegistrations,
+      getPendingRegistrations,
+      getServerPendingRegistrations
+    );
+    const blocked =
+      disabled ||
+      running ||
+      (!asChild && props.type !== 'button' && props.type !== 'reset' && registrations > 0);
+    const handleClick: React.MouseEventHandler<HTMLButtonElement> = event => {
+      if (blocked || inFlight.current) {
+        event.preventDefault();
+        return;
+      }
+      inFlight.current = true;
+      try {
+        const result = onClick?.(event) as unknown;
+        if (result && typeof (result as PromiseLike<unknown>).then === 'function') {
+          setRunning(true);
+          void Promise.resolve(result).then(
+            () => {
+              inFlight.current = false;
+              setRunning(false);
+            },
+            error => {
+              inFlight.current = false;
+              setRunning(false);
+              globalThis.reportError?.(error);
+            }
+          );
+        } else {
+          inFlight.current = false;
+        }
+      } catch (error) {
+        inFlight.current = false;
+        throw error;
+      }
+    };
     const Comp = asChild ? Slot : 'button';
     return (
       <Comp
         data-ui-button=''
+        disabled={blocked}
+        aria-busy={running || undefined}
+        onClick={handleClick}
         className={
           variant === 'unstyled'
             ? cn(

@@ -19,10 +19,7 @@ export function OrderDetailInfoPanel({
   code,
   hostessName,
   clientName,
-  garzonName,
-  hasChampagneProducts,
-  cantidadAnfitrionas,
-  maxAnfitrionas
+  garzonName
 }: OrderDetailInfoPanelProps) {
   return (
     <div className='space-y-3'>
@@ -54,23 +51,6 @@ export function OrderDetailInfoPanel({
         <span className='text-xs sm:text-sm text-muted-foreground'>Garzón:</span>
         <span className='text-xs sm:text-sm font-medium'>{garzonName || '-'}</span>
       </div>
-
-      {hasChampagneProducts && cantidadAnfitrionas === 0 && (
-        <>
-          <Separator />
-          <div className='text-xs text-red-500'>
-            ⚠️ Se requiere al menos una anfitriona para productos de champaña
-          </div>
-        </>
-      )}
-      {cantidadAnfitrionas > maxAnfitrionas && (
-        <>
-          <Separator />
-          <div className='text-xs text-red-500'>
-            ⚠️ Excede el límite combinado de {maxAnfitrionas} anfitriona(s)
-          </div>
-        </>
-      )}
     </div>
   );
 }

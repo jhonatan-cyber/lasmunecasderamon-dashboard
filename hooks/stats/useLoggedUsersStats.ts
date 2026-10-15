@@ -13,6 +13,7 @@ export interface LoggedUsersStatsResponse {
   anfitrionas: LoggedRoleStats;
   garzones: LoggedRoleStats;
   cajeros: LoggedRoleStats;
+  barman: LoggedRoleStats;
 }
 
 export const useLoggedUsersStats = () => {

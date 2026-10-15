@@ -26,14 +26,20 @@ vi.mock('@/components/shared/selects', () => ({
 }));
 afterEach(cleanup);
 
-it('permite elegir una anfitriona para un corto sin comision', () => {
-  const product = item(false);
-  product.opcionesTipo[0].comision = 0;
-  render(<SaleProductHostess item={product} availableHostesses={[{ id: 'ana' }]} />);
-  expect(screen.queryByTestId('multiple')).toBeNull();
-  fireEvent.change(screen.getByLabelText('Anfitriona'), { target: { value: 'ana' } });
-  expect(product.onOtherSelect).toHaveBeenCalledWith(['ana']);
-});
+it.each(['botella', 'shot_anfitriona'])(
+  'no permite elegir ni mostrar una anfitriona para %s sin comisión',
+  tipo => {
+    const product = item(false, tipo);
+    product.opcionesTipo[0].comision = 0;
+    product.otherSelected = ['ana'];
+    render(<SaleProductHostess item={product} availableHostesses={[{ id: 'ana' }]} />);
+    expect(screen.getByText('Sin comisión')).toBeInTheDocument();
+    expect(screen.queryByTestId('multiple')).toBeNull();
+    expect(screen.queryByLabelText('Anfitriona')).toBeNull();
+    expect(screen.queryByText(/Asignada:/)).toBeNull();
+    expect(product.onOtherSelect).not.toHaveBeenCalled();
+  }
+);
 
 function item(isChampagne: boolean, tipo = 'shot_anfitriona'): SaleProductItem {
   return {

@@ -3,6 +3,7 @@
 import { Input } from '@/components/ui/input';
 
 export function BottleExtras({
+  commission,
   maxHostesses,
   onMaxHostesses,
   accompaniment,
@@ -28,7 +29,8 @@ export function BottleExtras({
   context?: 'transfer' | 'settings';
 }) {
   const isSettings = context === 'settings';
-  const showHostesses = Boolean(onMaxHostesses);
+  const showHostesses =
+    Boolean(onMaxHostesses) && (isSettings || Number(commission.replace(/\./g, '')) > 0);
   return (
     <div className='sm:col-span-2 grid gap-4 sm:grid-cols-2'>
       {showHostesses && (

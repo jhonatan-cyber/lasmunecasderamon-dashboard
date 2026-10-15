@@ -12,11 +12,21 @@ import { ejecutarEfectosConfirmados } from '@/lib/transaccion/efectos';
 import { generateUUID } from '@/lib/database/db';
 import { getNowInBusinessTimezone } from '@/lib/business/timezoneService';
 import { ServiceCreateSchema } from '@/lib/business/schemas';
-import { BusinessError } from '@/lib/errors/errors';
+import {
+  validarReferenciaAdicional,
+  validarServicioOriginal,
+  validarAdicionalDisponible,
+  validarCajaServicio,
+  calcularCondicionesServicio,
+  calcularEstadoServicio,
+  prepararDetallesServicio,
+  obtenerClientesServicio,
+  calcularMovimientoCajaServicio
+} from './reglasCreacion';
+import { validarAnfitrionasConfirmadas } from '@/lib/business/registroOperacion';
 import {
   parsePagosMixtos,
-  validatePagosMixtos,
-  calcularDeltasCaja,
+  prepararPagoRegistro,
   type MixedPayment
 } from '@/lib/business/pagosMixtos';
 import { sendNotificationToAll } from '@/lib/api/sseService';
@@ -54,25 +64,12 @@ export async function crearServicioEnUnidad(
 ): Promise<{ id: string; codigo: string; tiempo: number | undefined; total: number }> {
   const v = ServiceCreateSchema.parse(body);
   if (v.es_temporal) {
-    if (!v.servicio_original_id) {
-      throw new BusinessError('Selecciona el servicio original para crear el adicional');
-    }
-    const original = await obtenerServicioParaConsumo(v.servicio_original_id, contexto);
-    if (Number(original.es_temporal) === 1)
-      throw new BusinessError('Crea el adicional desde el servicio principal');
-    if (String(original.habitacion_id) !== String(v.habitacion_id)) {
-      throw new BusinessError(
-        'El servicio adicional debe usar la habitación del servicio original'
-      );
-    }
-    if (await leerAdicionalActivo(v.servicio_original_id, contexto)) {
-      throw new BusinessError(
-        'Este servicio ya tiene un adicional activo',
-        'TEMPORARY_SERVICE_ACTIVE'
-      );
-    }
-    if (Number(original.estado) === 2) await marcarPausaServicio(v.servicio_original_id, contexto);
-    await cambiarAnfitrionasServicioEnUnidad(v.servicio_original_id, v.usuarios, contexto);
+    const originalId = validarReferenciaAdicional(v.servicio_original_id);
+    const original = await obtenerServicioParaConsumo(originalId, contexto);
+    validarServicioOriginal(original, v.habitacion_id);
+    validarAdicionalDisponible(await leerAdicionalActivo(originalId, contexto));
+    if (Number(original.estado) === 2) await marcarPausaServicio(originalId, contexto);
+    await cambiarAnfitrionasServicioEnUnidad(originalId, v.usuarios, contexto);
   }
   const servicioId = generateUUID();
   const codigo = Math.random().toString(36).substring(2, 10).toUpperCase();
@@ -92,22 +89,14 @@ export async function crearServicioEnUnidad(
   );
 
   const cajaId = await obtenerCajaActiva(contexto);
-  if (!cajaId)
-    throw new BusinessError('Abre una caja antes de registrar un servicio', 'CASH_REGISTER_CLOSED');
+  validarCajaServicio(cajaId);
 
   let prepagoMonto = 0;
-  const numAnfitrionas = Math.max(1, v.usuarios.length);
-  const precioServicioInput = Number(v.precio_servicio || 0);
-  const esMixto = v.metodo_pago === 'mixto';
-  const prepagoSolicitado = esMixto
-    ? pagosMixtos
-        .filter(pago => pago.metodo === 'prepago')
-        .reduce((sum, pago) => sum + pago.monto, 0)
-    : null;
-
-  if (esMixto) {
-    validatePagosMixtos(pagosMixtos, Number(v.total || 0));
-  }
+  const { prepagoSolicitado } = prepararPagoRegistro(
+    v.metodo_pago,
+    Number(v.total || 0),
+    pagosMixtos
+  );
 
   if (v.cliente_id) {
     prepagoMonto = await consumirPrepagoVenta(
@@ -128,36 +117,9 @@ export async function crearServicioEnUnidad(
   if (v.cliente_id && prepagoMonto > 0 && (await saldoPrepagoAgotado(v.cliente_id, contexto))) {
     await cerrarCuentasPrepagoSaldadas(v.cliente_id, contexto);
   }
-  let esLibreIngreso = false;
-  let comisionHabitacion = 0;
-  if (habitacion) {
-    const roomPrice = Number(habitacion.precio || 0);
-    const roomCommission = Number(habitacion.comision_anfitriona || 0);
-    comisionHabitacion = roomCommission;
-    esLibreIngreso = roomPrice <= 0 || roomCommission <= 0;
-  }
-
-  const tieneComisionHabitacion = comisionHabitacion > 0 && !v.es_temporal;
-  const requiereProducto = tieneComisionHabitacion && !v.es_temporal;
-  if (requiereProducto && !v.producto_incluido_presentacion_id) {
-    throw new BusinessError(
-      'Selecciona el producto incluido en la habitación',
-      'INCLUDED_PRODUCT_REQUIRED'
-    );
-  }
-  if (!requiereProducto && v.producto_incluido_presentacion_id) {
-    throw new BusinessError('Esta habitación o extensión no incluye un producto');
-  }
-  const comisionIndividualBase = tieneComisionHabitacion
-    ? Math.floor(comisionHabitacion / numAnfitrionas)
-    : v.es_temporal
-      ? Math.floor(precioServicioInput / numAnfitrionas)
-      : precioServicioInput;
-  const comisionTotal = tieneComisionHabitacion
-    ? comisionHabitacion
-    : v.es_temporal
-      ? precioServicioInput
-      : precioServicioInput * numAnfitrionas;
+  const condiciones = calcularCondicionesServicio(v, habitacion);
+  const { esLibreIngreso, requiereProducto, comisionTotal } = condiciones;
+  const estado = calcularEstadoServicio(v, esLibreIngreso);
 
   await insertarServicio(
     {
@@ -177,7 +139,7 @@ export async function crearServicioEnUnidad(
       metodo_pago: v.metodo_pago,
       caja_id: cajaId,
       created_by: creadoPor,
-      estado: esLibreIngreso && (!v.tiempo || v.tiempo <= 0) ? 1 : 2,
+      estado,
       es_temporal: v.es_temporal ? 1 : 0,
       servicio_original_id: v.servicio_original_id || null,
       fecha_crea: now,
@@ -205,110 +167,35 @@ export async function crearServicioEnUnidad(
   }
 
   const hostessIds = await validarAnfitrionasEnLocal(v.usuarios, contexto);
-  if (hostessIds.length !== v.usuarios.length) {
-    throw new BusinessError(
-      'Hay anfitrionas seleccionadas que no estan logueadas en el local',
-      'HOSTESS_NOT_LOGGED_IN'
-    );
-  }
+  validarAnfitrionasConfirmadas(v.usuarios, hostessIds);
 
   await pausarConflictosServicio(hostessIds, servicioId, contexto);
 
-  const commissionId = generateUUID();
-  const remainder = tieneComisionHabitacion || v.es_temporal ? comisionTotal % numAnfitrionas : 0;
-
-  const detalleComisionRows: Array<{
-    id_detalle_comision: string;
-    comision_id: string;
-    usuario_id: string;
-    comision: number;
-    estado: number;
-    fecha_crea: string;
-  }> = [];
-  const detalleServicioRows: Array<{
-    id_detalle_servicio: string;
-    usuario_id: string;
-    servicio_id: string;
-    comision: number;
-    fecha_crea: string;
-  }> = [];
-
-  for (const [index, uId] of hostessIds.entries()) {
-    const comisionIndividual = comisionIndividualBase + (index === 0 ? remainder : 0);
-    detalleComisionRows.push({
-      id_detalle_comision: generateUUID(),
-      comision_id: commissionId,
-      usuario_id: uId,
-      comision: comisionIndividual,
-      estado: 1,
-      fecha_crea: now
-    });
-    detalleServicioRows.push({
-      id_detalle_servicio: generateUUID(),
-      usuario_id: uId,
-      servicio_id: servicioId,
-      comision: comisionIndividual,
-      fecha_crea: now
-    });
-  }
+  const { comisiones, detalleComisionRows, detalleServicioRows } = prepararDetallesServicio(
+    hostessIds,
+    servicioId,
+    now,
+    v.es_temporal,
+    condiciones,
+    generateUUID
+  );
 
   if (detalleComisionRows.length > 0) {
-    await registrarComisionesServicio(
-      [
-        {
-          id_comision: commissionId,
-          servicio_id: servicioId,
-          monto: comisionTotal,
-          estado: 1,
-          fecha_crea: now
-        }
-      ],
-      detalleComisionRows,
-      contexto
-    );
+    await registrarComisionesServicio(comisiones, detalleComisionRows, contexto);
   }
   if (detalleServicioRows.length > 0) {
     await insertarDetallesServicio(detalleServicioRows, contexto);
-    if (!(esLibreIngreso && (!v.tiempo || v.tiempo <= 0)))
-      await ocuparAnfitrionasServicio(hostessIds, contexto);
+    if (estado !== 1) await ocuparAnfitrionasServicio(hostessIds, contexto);
   }
 
-  const clientesArray =
-    v.clientes && v.clientes.length > 0 ? v.clientes : v.cliente_id ? [v.cliente_id] : [];
-  await insertarClientesServicio(servicioId, clientesArray.filter(Boolean) as string[], contexto);
+  await insertarClientesServicio(servicioId, obtenerClientesServicio(v), contexto);
 
   if (cajaId) {
-    if (esMixto) {
-      const deltas = calcularDeltasCaja(pagosMixtos);
-      await registrarMovimientoCobro(
-        cajaId,
-        {
-          servicio: Number(v.total) - Number(v.iva || 0),
-          efectivo: deltas.efectivo,
-          tarjeta: deltas.tarjeta,
-          transferencia: deltas.transferencia,
-          prepago: prepagoMonto,
-          iva: v.iva,
-          comision: comisionTotal
-        },
-        contexto
-      );
-    } else {
-      const montoMetodoPrincipal = Number(v.total) - prepagoMonto;
-      await registrarMovimientoCobro(
-        cajaId,
-        {
-          servicio: Number(v.total) - Number(v.iva || 0),
-          efectivo: v.metodo_pago === 'efectivo' ? montoMetodoPrincipal : 0,
-          tarjeta: v.metodo_pago === 'tarjeta' ? montoMetodoPrincipal : 0,
-          transferencia: v.metodo_pago === 'transferencia' ? montoMetodoPrincipal : 0,
-          prepago: prepagoMonto,
-          iva: v.iva,
-          comision: comisionTotal
-        },
-        contexto
-      );
-    }
+    await registrarMovimientoCobro(
+      cajaId,
+      calcularMovimientoCajaServicio(v, pagosMixtos, prepagoMonto, comisionTotal),
+      contexto
+    );
   }
 
   aplazar(() => {

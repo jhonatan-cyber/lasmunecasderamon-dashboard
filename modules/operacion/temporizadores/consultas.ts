@@ -1,5 +1,5 @@
 import { query } from '@/lib/database/db';
-import { getNowInBusinessTimezone, parseBusinessDate } from '@/lib/business/timezoneService';
+import { parseBusinessDate } from '@/lib/business/timezoneService';
 
 import { finalizarSesionHabitacion } from '../cuentas/servicio';
 
@@ -16,7 +16,7 @@ export class TimerRepository {
       query(
         `
         SELECT s.id_servicio as id, s.codigo, s.id_servicio AS "servicioId", h.nombre AS "roomName",
-               s.tiempo as duration, s.fecha_crea AS "startTime", s.estado, s.paused_at AS "pausedAt",
+               s.tiempo as duration, (s.fecha_crea AT TIME ZONE 'America/Santiago') AS "startTime", s.estado, (s.paused_at AT TIME ZONE 'America/Santiago') AS "pausedAt",
                s.habitacion_id AS "roomId", 'servicio' AS "tipoTransaccion",
                s.es_temporal, s.servicio_original_id,
                h.comision_anfitriona as habitacion_comision,
@@ -34,15 +34,15 @@ export class TimerRepository {
         LEFT JOIN usuarios creator ON creator.id_usuario = s.created_by
         WHERE s.tiempo > 0
           AND s.estado IN (2, 3)
-          AND (s.estado = 3 OR TRUNC(EXTRACT(EPOCH FROM (CAST(? AS timestamp) - CAST(s.fecha_crea AS timestamp))) / 1) < (s.tiempo * 60))
+          AND (s.estado = 3 OR TRUNC(EXTRACT(EPOCH FROM (CAST(? AS timestamptz) - (s.fecha_crea AT TIME ZONE 'America/Santiago'))) / 1) < (s.tiempo * 60))
         GROUP BY s.id_servicio, h.id_habitacion, c.id_cliente, creator.id_usuario
       `,
-        [getNowInBusinessTimezone()]
+        [now.toISOString()]
       ),
       query(
         `
         SELECT v.id_venta as id, v.codigo, v.id_venta AS "servicioId", h.nombre AS "roomName",
-               v.tiempo as duration, v.fecha_crea AS "startTime", v.estado, v.paused_at AS "pausedAt",
+               v.tiempo as duration, (v.fecha_crea AT TIME ZONE 'America/Santiago') AS "startTime", v.estado, (v.paused_at AT TIME ZONE 'America/Santiago') AS "pausedAt",
                v.habitacion_id AS "roomId", 'venta' AS "tipoTransaccion",
                COALESCE(STRING_AGG(DISTINCT CASE WHEN u.nick IS NOT NULL AND u.nick != '' THEN u.nick ELSE (CAST(u.nombre AS text) || CAST(' ' AS text) || CAST(u.apellido AS text)) END, ', '), 'Sin asignar') as anfitrionas,
                STRING_AGG(DISTINCT vu.usuario_id, ',') as anfitrionas_ids,
@@ -56,15 +56,15 @@ export class TimerRepository {
         LEFT JOIN usuarios creator ON creator.id_usuario = v.created_by
         WHERE v.tiempo > 0
           AND v.estado IN (2, 3)
-          AND (v.estado = 3 OR TRUNC(EXTRACT(EPOCH FROM (CAST(? AS timestamp) - CAST(v.fecha_crea AS timestamp))) / 1) < (v.tiempo * 60))
+          AND (v.estado = 3 OR TRUNC(EXTRACT(EPOCH FROM (CAST(? AS timestamptz) - (v.fecha_crea AT TIME ZONE 'America/Santiago'))) / 1) < (v.tiempo * 60))
         GROUP BY v.id_venta, h.id_habitacion, c.id_cliente, creator.id_usuario
       `,
-        [getNowInBusinessTimezone()]
+        [now.toISOString()]
       ),
       query(
         `
         SELECT c.id_cuenta as id, c.codigo, c.id_cuenta AS "servicioId", COALESCE(h.nombre, 'Sin habitacion') AS "roomName",
-               COALESCE(c.tiempo_actual, c.tiempo) as duration, COALESCE(c.tiempo_inicio_actual, c.fecha_crea) AS "startTime", c.estado, NULL AS "pausedAt",
+               COALESCE(c.tiempo_actual, c.tiempo) as duration, (COALESCE(c.tiempo_inicio_actual, c.fecha_crea) AT TIME ZONE 'America/Santiago') AS "startTime", c.estado, NULL AS "pausedAt",
                c.habitacion_id AS "roomId", 'cuenta' AS "tipoTransaccion",
                COALESCE((CAST(cl.nombre AS text) || CAST(' ' AS text) || CAST(cl.apellido AS text)), 'Sin cliente registrado') AS "clienteNombre",
                c.total, creator.nick as waiter_name
@@ -74,9 +74,9 @@ export class TimerRepository {
         LEFT JOIN usuarios creator ON creator.id_usuario = c.created_by
         WHERE c.estado = 1
           AND COALESCE(c.tiempo_actual, c.tiempo) > 0
-          AND TRUNC(EXTRACT(EPOCH FROM (CAST(? AS timestamp) - CAST(COALESCE(c.tiempo_inicio_actual, c.fecha_crea) AS timestamp))) / 1) < (COALESCE(c.tiempo_actual, c.tiempo) * 60)
+          AND TRUNC(EXTRACT(EPOCH FROM (CAST(? AS timestamptz) - (COALESCE(c.tiempo_inicio_actual, c.fecha_crea) AT TIME ZONE 'America/Santiago'))) / 1) < (COALESCE(c.tiempo_actual, c.tiempo) * 60)
       `,
-        [getNowInBusinessTimezone()]
+        [now.toISOString()]
       )
     ]);
 
@@ -95,6 +95,9 @@ export class TimerRepository {
       return {
         ...item,
         servicioId: String(item.servicioId ?? item.id),
+        startTime: startTime.toISOString(),
+        pausedAt: pausedAt?.toISOString() ?? null,
+        expiresAt: new Date(startTime.getTime() + duration * 60000).toISOString(),
         duration,
         isActive: item.estado === 1 ? remainingTime > 0 : [2, 3, 4].includes(item.estado),
         isPaused,
@@ -117,9 +120,10 @@ export class TimerRepository {
   ) {
     const trx = resolverTransaccion(contexto);
     const roomsToResume = new Set<string>();
+    const nowISO = new Date().toISOString();
     const expiredV = await trx<{ id_venta: string; habitacion_id: string }[]>(
-      'SELECT id_venta, habitacion_id FROM ventas WHERE habitacion_id IS NOT NULL AND tiempo > 0 AND estado = 2 AND paused_at IS NULL AND TRUNC(EXTRACT(EPOCH FROM (CAST(? AS timestamp) - CAST(fecha_crea AS timestamp))) / 1) >= (tiempo * 60)',
-      [nowStr]
+      `SELECT id_venta, habitacion_id FROM ventas WHERE habitacion_id IS NOT NULL AND tiempo > 0 AND estado = 2 AND paused_at IS NULL AND TRUNC(EXTRACT(EPOCH FROM (CAST(? AS timestamptz) - (fecha_crea AT TIME ZONE 'America/Santiago'))) / 1) >= (tiempo * 60)`,
+      [nowISO]
     );
     await finalizarVentasTemporizadas(
       expiredV.map(venta => venta.id_venta),
@@ -130,8 +134,8 @@ export class TimerRepository {
       if (venta.habitacion_id) roomsToResume.add(venta.habitacion_id);
     }
     const expiredS = await trx<{ id_servicio: string; habitacion_id: string }[]>(
-      'SELECT id_servicio, habitacion_id FROM servicios WHERE habitacion_id IS NOT NULL AND tiempo > 0 AND estado = 2 AND paused_at IS NULL AND TRUNC(EXTRACT(EPOCH FROM (CAST(? AS timestamp) - CAST(fecha_crea AS timestamp))) / 1) >= (tiempo * 60)',
-      [nowStr]
+      `SELECT id_servicio, habitacion_id FROM servicios WHERE habitacion_id IS NOT NULL AND tiempo > 0 AND estado = 2 AND paused_at IS NULL AND TRUNC(EXTRACT(EPOCH FROM (CAST(? AS timestamptz) - (fecha_crea AT TIME ZONE 'America/Santiago'))) / 1) >= (tiempo * 60)`,
+      [nowISO]
     );
     if (expiredS.length) {
       const ids = expiredS.map(servicio => servicio.id_servicio);
@@ -149,8 +153,8 @@ export class TimerRepository {
         if (servicio.habitacion_id) roomsToResume.add(servicio.habitacion_id);
     }
     const expiredC = await trx<{ id_cuenta: string; habitacion_id: string }[]>(
-      'SELECT id_cuenta, habitacion_id FROM cuentas WHERE habitacion_id IS NOT NULL AND COALESCE(tiempo_actual, tiempo) > 0 AND estado = 1 AND TRUNC(EXTRACT(EPOCH FROM (CAST(? AS timestamp) - CAST(COALESCE(tiempo_inicio_actual, fecha_crea) AS timestamp))) / 1) >= (COALESCE(tiempo_actual, tiempo) * 60)',
-      [nowStr]
+      `SELECT id_cuenta, habitacion_id FROM cuentas WHERE habitacion_id IS NOT NULL AND COALESCE(tiempo_actual, tiempo) > 0 AND estado = 1 AND TRUNC(EXTRACT(EPOCH FROM (CAST(? AS timestamptz) - (COALESCE(tiempo_inicio_actual, fecha_crea) AT TIME ZONE 'America/Santiago'))) / 1) >= (COALESCE(tiempo_actual, tiempo) * 60)`,
+      [nowISO]
     );
     for (const cuenta of expiredC) {
       await finalizarSesionHabitacion(cuenta.id_cuenta, nowStr, contexto);
