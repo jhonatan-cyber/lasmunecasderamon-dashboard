@@ -43,17 +43,37 @@ async function abrirCajaSiHaceFalta(): Promise<void> {
 }
 
 async function fixtureAnfitriona(): Promise<string> {
-  const [usuario] = await query<{ id_usuario: string }[]>(
+  // La columna tiene DEFAULT 1: una anfitriona recién sembrada figura ocupada
+  // hasta liberarla. El fixture garantiza una libre sin importar la semilla.
+  const [libre] = await query<{ id_usuario: string }[]>(
+    `SELECT u.id_usuario FROM usuarios u
+      INNER JOIN roles r ON r.id_rol = u.rol_id
+     WHERE LOWER(r.nombre) = 'anfitriona' AND u.estado = 1
+       AND COALESCE(u.estado_servicio, 0) = 0
+       AND NOT EXISTS (
+         SELECT 1 FROM detalle_servicios ds
+         JOIN servicios s ON s.id_servicio = ds.servicio_id
+         WHERE ds.usuario_id = u.id_usuario AND ds.liberado_en IS NULL AND s.estado IN (2, 3)
+       )
+     LIMIT 1`
+  );
+  const [primera] = await query<{ id_usuario: string }[]>(
     `SELECT u.id_usuario FROM usuarios u
       INNER JOIN roles r ON r.id_rol = u.rol_id
      WHERE LOWER(r.nombre) = 'anfitriona' AND u.estado = 1 LIMIT 1`
   );
-  await query('DELETE FROM logins WHERE usuario_id = ?', [usuario.id_usuario]);
+  const id = libre?.id_usuario ?? primera.id_usuario;
+  await query('UPDATE usuarios SET estado_servicio = 0 WHERE id_usuario = ?', [id]);
+  await query(
+    'UPDATE detalle_servicios SET liberado_en = now() WHERE usuario_id = ? AND liberado_en IS NULL',
+    [id]
+  );
+  await query('DELETE FROM logins WHERE usuario_id = ?', [id]);
   await query(
     'INSERT INTO logins (id_login, usuario_id, last_login, estado, en_local) VALUES (?, ?, now(), 1, 1)',
-    [crypto.randomUUID(), usuario.id_usuario]
+    [crypto.randomUUID(), id]
   );
-  return usuario.id_usuario;
+  return id;
 }
 
 async function crearServicioConTiempo(

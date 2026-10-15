@@ -31,6 +31,14 @@ it('incluye una unidad sin aumentar el precio, conserva comisiones al liberar y 
           "SELECT u.id_usuario FROM usuarios u JOIN roles r ON r.id_rol = u.rol_id WHERE LOWER(r.nombre) = 'anfitriona' AND u.estado = 1 LIMIT 1"
         );
         expect(host).toBeTruthy();
+        // La columna tiene DEFAULT 1: liberar la sembrada antes de crear.
+        await trx('UPDATE usuarios SET estado_servicio = 0 WHERE id_usuario = ?', [
+          host.id_usuario
+        ]);
+        await trx(
+          'UPDATE detalle_servicios SET liberado_en = now() WHERE usuario_id = ? AND liberado_en IS NULL',
+          [host.id_usuario]
+        );
         await trx(
           'INSERT INTO logins (id_login, usuario_id, last_login, estado, en_local) VALUES (?, ?, now(), 1, 1)',
           [generateUUID(), host.id_usuario]
@@ -207,6 +215,10 @@ it('incluye una unidad sin aumentar el precio, conserva comisiones al liberar y 
           [generateUUID(), `TEST-${extraUnit}`, `Host-${extraUnit.slice(0, 8)}`, host.id_usuario]
         );
         expect(incoming).toBeTruthy();
+        // El clon hereda el DEFAULT 1: liberarla para poder asignarla.
+        await trx('UPDATE usuarios SET estado_servicio = 0 WHERE id_usuario = ?', [
+          incoming.id_usuario
+        ]);
         await trx(
           'INSERT INTO logins (id_login, usuario_id, last_login, estado, en_local) VALUES (?, ?, now(), 1, 1)',
           [generateUUID(), incoming.id_usuario]

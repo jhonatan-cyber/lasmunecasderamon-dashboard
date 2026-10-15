@@ -26,8 +26,8 @@ export default async function seedCiDatabase() {
     for (const role of roles) {
       await client.query(
         `INSERT INTO usuarios
-        (id_usuario, run, nick, nombre, apellido, direccion, telefono, estado_civil, afp, aporte, sueldo, password, rol_id, estado, fecha_crea)
-        SELECT $1, $2, $3, 'Prueba', $4, 'Fixture', '000000000', 'Fixture', 'Fixture', 5000, 50000, password, $5, 1, now()
+        (id_usuario, run, nick, nombre, apellido, direccion, telefono, estado_civil, afp, aporte, sueldo, password, rol_id, estado, estado_servicio, fecha_crea)
+        SELECT $1, $2, $3, 'Prueba', $4, 'Fixture', '000000000', 'Fixture', 'Fixture', 5000, 50000, password, $5, 1, 0, now()
         FROM usuarios WHERE nick = 'Admin' LIMIT 1
         ON CONFLICT (id_usuario) DO NOTHING`,
         [
