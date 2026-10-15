@@ -148,7 +148,9 @@ it('conserva la habitacion del pedido y permite al cajero ajustar solo su tiempo
     if (!caja) {
       caja = { id_caja: crypto.randomUUID() };
       await query(
-        'INSERT INTO cajas (id_caja, fecha_apertura, usuario_id_apertura, monto_apertura, estado) VALUES (?, now(), ?, 0, 1)',
+        `INSERT INTO cajas (id_caja, fecha_apertura, usuario_id_apertura, monto_apertura,
+             monto_cierre, efectivo, tarjeta, estado)
+           VALUES (?, now(), ?, 0, 0, 0, 0, 1)`,
         [caja.id_caja, user.id_usuario]
       );
     }
