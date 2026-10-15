@@ -3,7 +3,7 @@ import path from 'node:path';
 import { expect, it } from 'vitest';
 import { getEmployeeModules } from '@/lib/constants/employee-modules';
 const dashboard = process.cwd();
-const expo = path.resolve(dashboard, '../lasmunecasderamon-app');
+const expo = process.env.EXPO_PARITY_ROOT || path.resolve(dashboard, '../lasmunecasderamon-app');
 it.each(['cajero', 'barman', 'garzon', 'anfitriona'])(
   'mantiene los módulos personales de %s disponibles en ambas plataformas',
   role => {

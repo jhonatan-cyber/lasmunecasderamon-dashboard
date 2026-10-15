@@ -89,7 +89,8 @@ describe('formularios de personal', () => {
               amount: advance.handleMontoChange,
               send: advance.handleSubmit,
               busy: advance.isSubmitting,
-              setHours: (_value: string) => {}
+              setHours: (_value: string) => {},
+              setReason: advance.setMotivo
             }
           : {
               selectedUser: overtime.selectedUser,
@@ -97,13 +98,15 @@ describe('formularios de personal', () => {
               amount: overtime.handleMontoChange,
               send: overtime.handleSubmit,
               busy: overtime.isSubmitting,
-              setHours: overtime.setHora
+              setHours: overtime.setHora,
+              setReason: (_value: string) => {}
             };
       });
       act(() => {
         result.current.select('1');
         result.current.amount(amount('500'));
         result.current.setHours('2');
+        result.current.setReason('Adelanto de sueldo');
       });
       let pending!: Promise<void>;
       act(() => {

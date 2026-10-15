@@ -256,6 +256,17 @@ jobs:
           # run-affected-unit-tests compara BASE_SHA con HEAD_SHA.
           fetch-depth: 0
 
+      - name: Checkout Expo source for cross-platform contract tests
+        uses: actions/checkout@v7
+        with:
+          repository: jhonatan-cyber/lasmunecasderamon-app-expo
+          ref: f76000ff80a1a47017bbcfc61c1733b776aaefc6
+          path: .ci/expo
+          persist-credentials: false
+
+      - name: Configure cross-platform source location
+        run: echo "EXPO_PARITY_ROOT=$GITHUB_WORKSPACE/.ci/expo" >> "$GITHUB_ENV"
+
       - name: Setup pnpm
         uses: pnpm/action-setup@v6
         with:
