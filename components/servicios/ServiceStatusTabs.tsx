@@ -1,4 +1,5 @@
 'use client';
+import { Button } from '@/components/ui/button';
 
 interface ServiceStatusTabsProps {
   showAllServices: boolean;
@@ -13,7 +14,8 @@ export function ServiceStatusTabs({
 }: ServiceStatusTabsProps) {
   return (
     <div className='flex justify-center gap-3 border-b pb-1 mb-6'>
-      <button
+      <Button
+        variant='unstyled'
         onClick={onShowActiveServices}
         className={`flex items-center gap-2 px-5 py-2 text-sm font-semibold transition-all ${
           !showAllServices
@@ -22,8 +24,9 @@ export function ServiceStatusTabs({
         }`}
       >
         En Proceso
-      </button>
-      <button
+      </Button>
+      <Button
+        variant='unstyled'
         onClick={onShowAllServices}
         className={`flex items-center gap-2 px-5 py-2 text-sm font-semibold transition-all ${
           showAllServices
@@ -32,7 +35,7 @@ export function ServiceStatusTabs({
         }`}
       >
         Finalizados
-      </button>
+      </Button>
     </div>
   );
 }

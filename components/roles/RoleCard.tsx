@@ -1,4 +1,5 @@
-﻿import React from 'react';
+import { Button } from '@/components/ui/button';
+import React from 'react';
 import {
   Shield,
   Edit,
@@ -70,13 +71,14 @@ export function RoleCard({
           <div className='lg:hidden'>
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
-                <button
+                <Button
+                  variant='unstyled'
                   type='button'
                   className='inline-flex items-center justify-center p-2 rounded-full border border-zinc-200 dark:border-zinc-700'
                   aria-label='Acciones'
                 >
                   <MoreVertical className='h-4 w-4' />
-                </button>
+                </Button>
               </DropdownMenuTrigger>
               <DropdownMenuContent align='end' className='w-44'>
                 <DropdownMenuItem onClick={onViewPermissions}>

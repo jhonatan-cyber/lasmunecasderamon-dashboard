@@ -130,7 +130,8 @@ export function DevolucionesVentasPageClient() {
 
       {}
       <div className='flex justify-center gap-3 border-b pb-1 mb-4'>
-        <button
+        <Button
+          variant='unstyled'
           onClick={() => setActiveTab('pendientes')}
           className={`flex items-center gap-2 px-5 py-2 text-sm font-semibold transition-all ${
             activeTab === 'pendientes'
@@ -146,8 +147,9 @@ export function DevolucionesVentasPageClient() {
           >
             {solicitudes.length}
           </span>
-        </button>
-        <button
+        </Button>
+        <Button
+          variant='unstyled'
           onClick={() => setActiveTab('anuladas')}
           className={`flex items-center gap-2 px-5 py-2 text-sm font-semibold transition-all ${
             activeTab === 'anuladas'
@@ -163,7 +165,7 @@ export function DevolucionesVentasPageClient() {
           >
             {filteredVentas.length}
           </span>
-        </button>
+        </Button>
       </div>
 
       {}

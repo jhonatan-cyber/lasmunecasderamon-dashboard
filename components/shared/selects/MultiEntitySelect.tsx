@@ -1,4 +1,5 @@
 'use client';
+import { Button } from '@/components/ui/button';
 
 import React, { useMemo, useState } from 'react';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
@@ -7,13 +8,13 @@ import { Label } from '@/components/ui/label';
 import { Input } from '@/components/ui/input';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import {
-  ORDER_FIELD_LABEL_CLASS,
-  ORDER_FIELD_POPOVER_CLASS,
-  ORDER_FIELD_SEARCH_INPUT_CLASS,
-  ORDER_FIELD_SEARCH_WRAPPER_CLASS,
-  ORDER_MULTISELECT_TRIGGER_CLASS,
-  ORDER_SELECTED_TAG_CLASS
-} from '@/components/orders/orderFieldStyles';
+  SELECT_LABEL_CLASS,
+  SELECT_CONTENT_WIDE_CLASS,
+  SELECT_SEARCH_INPUT_CLASS,
+  SELECT_SEARCH_WRAPPER_CLASS,
+  SELECT_MULTI_TRIGGER_CLASS,
+  SELECT_TAG_CLASS
+} from '@/components/shared/selectStyles';
 
 type MultiEntitySelectItem = {
   id: string;
@@ -90,10 +91,11 @@ export const MultiEntitySelect: React.FC<MultiEntitySelectProps> = ({
   const selectNode = (
     <Popover open={open} onOpenChange={nextOpen => !disabledState && setOpen(nextOpen)}>
       <PopoverTrigger asChild>
-        <button
+        <Button
+          variant='unstyled'
           id={uniqueId}
           type='button'
-          className={`${ORDER_MULTISELECT_TRIGGER_CLASS} flex items-center gap-2 pr-10`}
+          className={`${SELECT_MULTI_TRIGGER_CLASS} flex items-center gap-2 pr-10`}
           onClick={() => !disabledState && setOpen(!open)}
           disabled={disabledState}
         >
@@ -103,17 +105,17 @@ export const MultiEntitySelect: React.FC<MultiEntitySelectProps> = ({
           ) : (
             <span className='flex flex-wrap gap-1'>
               {selectedItems.map((item, index) => (
-                <span key={`${item.id}-${index}`} className={ORDER_SELECTED_TAG_CLASS}>
+                <span key={`${item.id}-${index}`} className={SELECT_TAG_CLASS}>
                   {item.label}
                 </span>
               ))}
             </span>
           )}
-        </button>
+        </Button>
       </PopoverTrigger>
 
-      <PopoverContent align='start' className={ORDER_FIELD_POPOVER_CLASS} sideOffset={5}>
-        <div className={ORDER_FIELD_SEARCH_WRAPPER_CLASS}>
+      <PopoverContent align='start' className={SELECT_CONTENT_WIDE_CLASS} sideOffset={5}>
+        <div className={SELECT_SEARCH_WRAPPER_CLASS}>
           <label htmlFor={`${uniqueId}-search`} className='sr-only'>
             {searchPlaceholder}
           </label>
@@ -122,7 +124,7 @@ export const MultiEntitySelect: React.FC<MultiEntitySelectProps> = ({
             placeholder={searchPlaceholder}
             value={searchTerm}
             onChange={e => setSearchTerm(e.target.value)}
-            className={ORDER_FIELD_SEARCH_INPUT_CLASS}
+            className={SELECT_SEARCH_INPUT_CLASS}
             disabled={disabledState}
           />
         </div>
@@ -174,7 +176,7 @@ export const MultiEntitySelect: React.FC<MultiEntitySelectProps> = ({
   return (
     <div className={`flex flex-col ${className}`}>
       {label ? (
-        <Label htmlFor={uniqueId} className={ORDER_FIELD_LABEL_CLASS}>
+        <Label htmlFor={uniqueId} className={SELECT_LABEL_CLASS}>
           {label}
           {required && <span className='ml-1 text-red-500'>*</span>}
         </Label>

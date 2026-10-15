@@ -1,4 +1,4 @@
-import { Skeleton as BoneyardSkeleton } from 'boneyard-js/react';
+import { Skeleton as BoneyardSkeleton } from '@/components/shared/Skeleton';
 import { RoleCalendarPageClient } from '@/components/shared/RoleCalendarPageClient';
 
 export default function GarzonCalendarPage() {

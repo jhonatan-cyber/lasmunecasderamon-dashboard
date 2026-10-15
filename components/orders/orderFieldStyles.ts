@@ -5,6 +5,7 @@ import {
   SELECT_MULTI_TRIGGER_CLASS,
   SELECT_SEARCH_INPUT_CLASS,
   SELECT_SEARCH_WRAPPER_CLASS,
+  SELECT_TAG_CLASS,
   SELECT_TRIGGER_CLASS
 } from '@/components/shared/selectStyles';
 
@@ -24,5 +25,4 @@ export const ORDER_FIELD_SEARCH_WRAPPER_CLASS = SELECT_SEARCH_WRAPPER_CLASS;
 
 export const ORDER_FIELD_SEARCH_INPUT_CLASS = SELECT_SEARCH_INPUT_CLASS;
 
-export const ORDER_SELECTED_TAG_CLASS =
-  'rounded-full bg-black/5 text-gray-700 dark:bg-white/10 dark:text-zinc-100 px-2.5 py-1 text-xs font-medium';
+export const ORDER_SELECTED_TAG_CLASS = SELECT_TAG_CLASS;

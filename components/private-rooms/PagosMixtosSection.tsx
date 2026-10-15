@@ -1,4 +1,5 @@
 'use client';
+import { Input } from '@/components/ui/input';
 
 import { DollarSign, Split } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -63,7 +64,7 @@ export function PagosMixtosSection({
               <span className='absolute inset-y-0 left-3 flex items-center text-slate-400 dark:text-slate-500'>
                 <DollarSign className='h-4 w-4' />
               </span>
-              <input
+              <Input
                 type='text'
                 value={pago.display}
                 placeholder='0'

@@ -93,6 +93,21 @@ describe('withRoute middleware', () => {
   });
 
   describe('permission guard', () => {
+    it.each(['read', 'write', 'process'] as const)(
+      'bloquea advances.%s del barman con permisos antiguos',
+      async action => {
+        mockAuthUser = {
+          id: 'barman-1',
+          role: 'Barman',
+          permissions: { advances: { read: true, write: true, process: true } }
+        };
+        const handler = vi.fn();
+        const wrapped = withRoute({ auth: true, module: 'advances', action }, handler);
+        await wrapped(new Request('http://localhost/api/anticipos'), { params: {} });
+        expect(ApiResponse.forbidden).toHaveBeenCalled();
+        expect(handler).not.toHaveBeenCalled();
+      }
+    );
     it('rechaza ventas del barman aunque tenga permisos antiguos', async () => {
       mockAuthUser = { id: 'barman-1', role: 'Barman', permissions: { sales: { write: true } } };
       const handler = vi.fn().mockResolvedValue(Response.json({ success: true }));

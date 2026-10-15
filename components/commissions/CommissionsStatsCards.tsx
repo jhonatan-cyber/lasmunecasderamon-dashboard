@@ -1,4 +1,5 @@
 'use client';
+import { MetricCard } from '@/components/shared/MetricCard';
 
 import { Card, CardContent } from '@/components/ui/card';
 import { Skeleton } from '@/components/ui/skeleton';
@@ -51,138 +52,70 @@ export default function CommissionsStatsCards({
   return (
     <div className='grid gap-4 grid-cols-2 lg:grid-cols-4 mb-6'>
       {}
-      <Card
-        style={{
-          backgroundColor: 'rgba(16, 185, 129, 0.1)',
-          border: '1px solid rgba(16, 185, 129, 0.2)'
-        }}
-        className='shadow-xs border-none backdrop-blur-xs rounded-3xl overflow-hidden group hover:scale-[1.02] transition-all duration-300'
-      >
-        <CardContent className='p-5'>
-          <div className='flex items-center justify-between mb-4'>
-            <div className='p-2.5 bg-emerald-500/20 rounded-2xl'>
-              <DollarSign className='h-4 w-4 text-emerald-600' />
-            </div>
-            <span className='text-[8px] font-black uppercase tracking-[0.2em] text-emerald-700 bg-emerald-500/10 px-2 py-1 rounded-full'>
-              Total
+      <MetricCard
+        tone='emerald'
+        icon={<DollarSign className='h-4 w-4 text-emerald-600' />}
+        badge='Total'
+        label='Total Comisiones'
+        value={formatCurrencyCLP(totalComisiones)}
+        footer={
+          <div className='flex items-center gap-1.5 pt-1'>
+            <span className='text-[10px] text-emerald-700/50 font-medium uppercase tracking-tighter italic'>
+              Acumulado en caja activa
             </span>
           </div>
-          <div className='space-y-0.5'>
-            <p className='text-[10px] font-bold text-emerald-700/60 uppercase tracking-widest'>
-              Total Comisiones
-            </p>
-            <h3 className='text-xl font-black text-emerald-900 dark:text-emerald-100'>
-              {formatCurrencyCLP(totalComisiones)}
-            </h3>
-            <div className='flex items-center gap-1.5 pt-1'>
-              <span className='text-[10px] text-emerald-700/50 font-medium uppercase tracking-tighter italic'>
-                Acumulado en caja activa
-              </span>
-            </div>
-          </div>
-        </CardContent>
-      </Card>
+        }
+      />
 
       {}
-      <Card
-        style={{
-          backgroundColor: 'rgba(59, 130, 246, 0.1)',
-          border: '1px solid rgba(59, 130, 246, 0.2)'
-        }}
-        className='shadow-xs border-none backdrop-blur-xs rounded-3xl overflow-hidden group hover:scale-[1.02] transition-all duration-300'
-      >
-        <CardContent className='p-5'>
-          <div className='flex items-center justify-between mb-4'>
-            <div className='p-2.5 bg-blue-500/20 rounded-2xl'>
-              <TrendingUp className='h-4 w-4 text-blue-600' />
-            </div>
-            <span className='text-[8px] font-black uppercase tracking-[0.2em] text-blue-700 bg-blue-500/10 px-2 py-1 rounded-full'>
-              Ventas
+      <MetricCard
+        tone='blue'
+        icon={<TrendingUp className='h-4 w-4 text-blue-600' />}
+        badge='Ventas'
+        label='Por Ventas'
+        value={formatCurrencyCLP(comisionVentas)}
+        footer={
+          <div className='flex items-center gap-1.5 pt-1'>
+            <span className='text-blue-700 font-black text-sm'>{porcentajeVentas}%</span>
+            <span className='text-[10px] text-blue-700/50 font-medium uppercase tracking-tighter italic'>
+              del total
             </span>
           </div>
-          <div className='space-y-0.5'>
-            <p className='text-[10px] font-bold text-blue-700/60 uppercase tracking-widest'>
-              Por Ventas
-            </p>
-            <h3 className='text-xl font-black text-blue-900 dark:text-blue-100'>
-              {formatCurrencyCLP(comisionVentas)}
-            </h3>
-            <div className='flex items-center gap-1.5 pt-1'>
-              <span className='text-blue-700 font-black text-sm'>{porcentajeVentas}%</span>
-              <span className='text-[10px] text-blue-700/50 font-medium uppercase tracking-tighter italic'>
-                del total
-              </span>
-            </div>
-          </div>
-        </CardContent>
-      </Card>
+        }
+      />
 
       {}
-      <Card
-        style={{
-          backgroundColor: 'rgba(139, 92, 246, 0.1)',
-          border: '1px solid rgba(139, 92, 246, 0.2)'
-        }}
-        className='shadow-xs border-none backdrop-blur-xs rounded-3xl overflow-hidden group hover:scale-[1.02] transition-all duration-300'
-      >
-        <CardContent className='p-5'>
-          <div className='flex items-center justify-between mb-4'>
-            <div className='p-2.5 bg-violet-500/20 rounded-2xl'>
-              <Clock className='h-4 w-4 text-violet-600' />
-            </div>
-            <span className='text-[8px] font-black uppercase tracking-[0.2em] text-violet-700 bg-violet-500/10 px-2 py-1 rounded-full'>
-              Servicios
+      <MetricCard
+        tone='violet'
+        icon={<Clock className='h-4 w-4 text-violet-600' />}
+        badge='Servicios'
+        label='Por Servicios'
+        value={formatCurrencyCLP(comisionServicios)}
+        footer={
+          <div className='flex items-center gap-1.5 pt-1'>
+            <span className='text-violet-700 font-black text-sm'>{porcentajeServicios}%</span>
+            <span className='text-[10px] text-violet-700/50 font-medium uppercase tracking-tighter italic'>
+              del total
             </span>
           </div>
-          <div className='space-y-0.5'>
-            <p className='text-[10px] font-bold text-violet-700/60 uppercase tracking-widest'>
-              Por Servicios
-            </p>
-            <h3 className='text-xl font-black text-violet-900 dark:text-violet-100'>
-              {formatCurrencyCLP(comisionServicios)}
-            </h3>
-            <div className='flex items-center gap-1.5 pt-1'>
-              <span className='text-violet-700 font-black text-sm'>{porcentajeServicios}%</span>
-              <span className='text-[10px] text-violet-700/50 font-medium uppercase tracking-tighter italic'>
-                del total
-              </span>
-            </div>
-          </div>
-        </CardContent>
-      </Card>
+        }
+      />
 
       {}
-      <Card
-        style={{
-          backgroundColor: 'rgba(249, 115, 22, 0.1)',
-          border: '1px solid rgba(249, 115, 22, 0.2)'
-        }}
-        className='shadow-xs border-none backdrop-blur-xs rounded-3xl overflow-hidden group hover:scale-[1.02] transition-all duration-300'
-      >
-        <CardContent className='p-5'>
-          <div className='flex items-center justify-between mb-4'>
-            <div className='p-2.5 bg-orange-500/20 rounded-2xl'>
-              <Users className='h-4 w-4 text-orange-600' />
-            </div>
-            <span className='text-[8px] font-black uppercase tracking-[0.2em] text-orange-700 bg-orange-500/10 px-2 py-1 rounded-full'>
-              Personal
+      <MetricCard
+        tone='orange'
+        icon={<Users className='h-4 w-4 text-orange-600' />}
+        badge='Personal'
+        label='Anfitrionas'
+        value={cantidadComisiones}
+        footer={
+          <div className='flex items-center gap-1.5 pt-1'>
+            <span className='text-[10px] text-orange-700/50 font-medium uppercase tracking-tighter italic'>
+              Con comisiones registradas
             </span>
           </div>
-          <div className='space-y-0.5'>
-            <p className='text-[10px] font-bold text-orange-700/60 uppercase tracking-widest'>
-              Anfitrionas
-            </p>
-            <h3 className='text-xl font-black text-orange-900 dark:text-orange-100'>
-              {cantidadComisiones}
-            </h3>
-            <div className='flex items-center gap-1.5 pt-1'>
-              <span className='text-[10px] text-orange-700/50 font-medium uppercase tracking-tighter italic'>
-                Con comisiones registradas
-              </span>
-            </div>
-          </div>
-        </CardContent>
-      </Card>
+        }
+      />
     </div>
   );
 }

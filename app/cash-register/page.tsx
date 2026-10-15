@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card } from '@/components/ui/card';
 
 import { Skeleton as BoneyardSkeleton } from 'boneyard-js/react';
 import { Button } from '@/components/ui/button';
@@ -224,7 +224,8 @@ export default function CashRegister() {
         <div className='space-y-8'>
           {!isCajero && (
             <div className='flex justify-center gap-3 border-b pb-1'>
-              <button
+              <Button
+                variant='unstyled'
                 onClick={() => setCashierTab('cajas')}
                 className={`flex items-center gap-2 px-5 py-2 text-sm font-semibold transition-all ${
                   cashierTab === 'cajas'
@@ -233,8 +234,9 @@ export default function CashRegister() {
                 }`}
               >
                 Listado de Cajas
-              </button>
-              <button
+              </Button>
+              <Button
+                variant='unstyled'
                 onClick={() => setCashierTab('resumen')}
                 className={`flex items-center gap-2 px-5 py-2 text-sm font-semibold transition-all ${
                   cashierTab === 'resumen'
@@ -243,7 +245,7 @@ export default function CashRegister() {
                 }`}
               >
                 Análisis Global
-              </button>
+              </Button>
             </div>
           )}
 

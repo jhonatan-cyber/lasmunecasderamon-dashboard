@@ -1,4 +1,6 @@
 'use client';
+import { Input } from '@/components/ui/input';
+import { Button } from '@/components/ui/button';
 
 import { useState, useEffect, useCallback } from 'react';
 import { Building2, Save } from 'lucide-react';
@@ -93,7 +95,7 @@ export function SettingsCompanyTab() {
                 <label htmlFor='company-name' className='block text-sm font-medium mb-1'>
                   Nombre de la Empresa
                 </label>
-                <input
+                <Input
                   id='company-name'
                   type='text'
                   value={config.empresa_nombre}
@@ -106,7 +108,7 @@ export function SettingsCompanyTab() {
                 <label htmlFor='company-rut' className='block text-sm font-medium mb-1'>
                   RUT
                 </label>
-                <input
+                <Input
                   id='company-rut'
                   type='text'
                   value={config.empresa_rut}
@@ -119,7 +121,7 @@ export function SettingsCompanyTab() {
                 <label htmlFor='company-address' className='block text-sm font-medium mb-1'>
                   Dirección
                 </label>
-                <input
+                <Input
                   id='company-address'
                   type='text'
                   value={config.empresa_direccion}
@@ -136,7 +138,7 @@ export function SettingsCompanyTab() {
                 <label htmlFor='company-phone' className='block text-sm font-medium mb-1'>
                   Teléfono
                 </label>
-                <input
+                <Input
                   id='company-phone'
                   type='text'
                   value={config.empresa_telefono}
@@ -149,7 +151,7 @@ export function SettingsCompanyTab() {
                 <label htmlFor='company-email' className='block text-sm font-medium mb-1'>
                   Email
                 </label>
-                <input
+                <Input
                   id='company-email'
                   type='email'
                   value={config.empresa_email}
@@ -163,7 +165,7 @@ export function SettingsCompanyTab() {
                   <label htmlFor='company-whatsapp' className='block text-sm font-medium mb-1'>
                     WhatsApp público
                   </label>
-                  <input
+                  <Input
                     id='company-whatsapp'
                     type='text'
                     value={config.empresa_whatsapp}
@@ -178,7 +180,7 @@ export function SettingsCompanyTab() {
                   <label htmlFor='company-instagram' className='block text-sm font-medium mb-1'>
                     Instagram
                   </label>
-                  <input
+                  <Input
                     id='company-instagram'
                     type='text'
                     value={config.empresa_instagram}
@@ -193,7 +195,7 @@ export function SettingsCompanyTab() {
                   <label htmlFor='company-facebook' className='block text-sm font-medium mb-1'>
                     Facebook
                   </label>
-                  <input
+                  <Input
                     id='company-facebook'
                     type='text'
                     value={config.empresa_facebook}
@@ -208,7 +210,7 @@ export function SettingsCompanyTab() {
                   <label htmlFor='company-tiktok' className='block text-sm font-medium mb-1'>
                     TikTok
                   </label>
-                  <input
+                  <Input
                     id='company-tiktok'
                     type='text'
                     value={config.empresa_tiktok || ''}
@@ -223,14 +225,15 @@ export function SettingsCompanyTab() {
         )}
 
         <div className='mt-6 flex justify-end'>
-          <button
+          <Button
+            variant='unstyled'
             onClick={handleSave}
             disabled={saving}
             className='flex items-center gap-2 px-6 py-2 bg-black text-white rounded-full hover:bg-gray-800 disabled:opacity-50'
           >
             <Save className='h-4 w-4' />
             {saving ? 'Guardando...' : 'Guardar Configuración'}
-          </button>
+          </Button>
         </div>
       </CardContent>
     </Card>

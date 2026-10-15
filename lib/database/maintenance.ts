@@ -1,3 +1,4 @@
+import { DATABASE_CLEAN_PROTECTED_TABLES } from '@/lib/constants/database-maintenance';
 import { withTransaction, type TransactionQuery } from './db';
 import { quoteIdentifier } from './postgres.cjs';
 
@@ -11,25 +12,7 @@ const excluded = new Set([
   '_migrations',
   '_postgres_migrations'
 ]);
-const protectedFromCleaning = new Set([
-  ...excluded,
-  'habitaciones',
-  'productos',
-  'categorias',
-  'codigos',
-  'inventario_presentaciones',
-  'inventario_unidades',
-  'inventario_movimientos',
-  // `inventario_productos` e `inventario_movimiento_unidades` eran del diseno
-  // anterior a 84b61fd. Se retiraron en la migracion 023 y su DDL quedo en
-  // database/legacy/inventario-prerediseno.sql.
-  // Compras: inventario_unidades.compra_id apunta aqui, y las unidades se
-  // preservan, asi que las compras que las originaron tambien.
-  'compras',
-  'detalle_compras',
-  // Configuracion de precios por producto, no dato operativo.
-  'producto_champagne_tiers'
-]);
+const protectedFromCleaning = new Set<string>(DATABASE_CLEAN_PROTECTED_TABLES);
 
 async function tables(trx: TransactionQuery): Promise<string[]> {
   const rows = await trx<{ table_name: string }[]>(`SELECT table_name FROM information_schema.tables
@@ -49,7 +32,6 @@ export async function snapshotDatabase() {
 }
 
 export async function cleanDatabase() {
-  if (process.env.NODE_ENV === 'production') throw new Error('cleanDatabase blocked in production');
   return withTransaction(async trx => {
     const all = await tables(trx);
     const deletedTables = all.filter(table => !protectedFromCleaning.has(table));

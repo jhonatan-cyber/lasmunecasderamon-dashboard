@@ -1,4 +1,13 @@
 'use client';
+import {
+  Table,
+  TableHeader,
+  TableRow,
+  TableHead,
+  TableBody,
+  TableCell
+} from '@/components/ui/table';
+import { Input } from '@/components/ui/input';
 
 import { useState, useEffect, useImperativeHandle, type Ref } from 'react';
 import { CHAMPAGNE_DEFAULT_TIERS } from '@/lib/business/champagne';
@@ -155,33 +164,33 @@ export function SettingsChampagneTiers({
         </p>
       ) : (
         <div className='overflow-x-auto rounded-2xl border border-purple-200 dark:border-purple-900/40 bg-white dark:bg-neutral-950'>
-          <table className='w-full text-sm'>
-            <thead className='bg-purple-50 dark:bg-purple-900/20'>
-              <tr>
-                <th className='px-4 py-3 font-bold text-purple-700 dark:text-purple-300 uppercase tracking-wider text-xs text-center'>
+          <Table className='w-full'>
+            <TableHeader className='bg-purple-50 dark:bg-purple-900/20'>
+              <TableRow>
+                <TableHead className='font-bold text-purple-700 dark:text-purple-300 tracking-wider text-center'>
                   Anfitrionas
-                </th>
-                <th className='px-4 py-3 font-bold text-purple-700 dark:text-purple-300 uppercase tracking-wider text-xs text-right'>
+                </TableHead>
+                <TableHead className='font-bold text-purple-700 dark:text-purple-300 tracking-wider text-right'>
                   Precio
-                </th>
-                <th className='px-4 py-3 font-bold text-purple-700 dark:text-purple-300 uppercase tracking-wider text-xs text-right'>
+                </TableHead>
+                <TableHead className='font-bold text-purple-700 dark:text-purple-300 tracking-wider text-right'>
                   Comisión total
-                </th>
-              </tr>
-            </thead>
-            <tbody className='divide-y divide-purple-100 dark:divide-purple-900/30'>
+                </TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody className='divide-y divide-purple-100 dark:divide-purple-900/30'>
               {visibleRows.map((row, i) => (
-                <tr
+                <TableRow
                   key={row.anfitrionas}
                   className='hover:bg-purple-50/50 dark:hover:bg-purple-900/10'
                 >
-                  <td className='px-4 py-2.5 text-center'>
+                  <TableCell className='text-center'>
                     <span className='inline-flex items-center justify-center w-8 h-8 rounded-full bg-purple-100 dark:bg-purple-900/30 text-purple-700 dark:text-purple-300 font-bold text-sm'>
                       {row.anfitrionas}
                     </span>
-                  </td>
-                  <td className='px-4 py-2.5 text-right'>
-                    <input
+                  </TableCell>
+                  <TableCell className='text-right'>
+                    <Input
                       inputMode='numeric'
                       disabled={disabled}
                       aria-label={`Precio para ${row.anfitrionas} anfitrionas`}
@@ -194,9 +203,9 @@ export function SettingsChampagneTiers({
                       }}
                       className='w-32 px-3 py-1.5 text-right bg-white dark:bg-neutral-950 border border-neutral-300 dark:border-neutral-800 rounded-full text-sm'
                     />
-                  </td>
-                  <td className='px-4 py-2.5 text-right'>
-                    <input
+                  </TableCell>
+                  <TableCell className='text-right'>
+                    <Input
                       inputMode='numeric'
                       disabled={disabled}
                       aria-label={`Comisión para ${row.anfitrionas} anfitrionas`}
@@ -209,11 +218,11 @@ export function SettingsChampagneTiers({
                       }}
                       className='w-32 px-3 py-1.5 text-right bg-white dark:bg-neutral-950 border border-neutral-300 dark:border-neutral-800 rounded-full text-sm'
                     />
-                  </td>
-                </tr>
+                  </TableCell>
+                </TableRow>
               ))}
-            </tbody>
-          </table>
+            </TableBody>
+          </Table>
         </div>
       )}
     </div>

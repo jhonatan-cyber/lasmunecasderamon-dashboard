@@ -1,4 +1,5 @@
 'use client';
+import { Button } from '@/components/ui/button';
 
 import { Input } from '@/components/ui/input';
 import type { ChampagneTier } from '@/hooks/personal/useChampagneTiers';
@@ -26,14 +27,15 @@ export function ChampagneTiersTable({
         <label className='block text-xs font-bold uppercase tracking-wider text-gray-500 dark:text-gray-400'>
           Precios champagne por anfitrionas
         </label>
-        <button
+        <Button
+          variant='unstyled'
           type='button'
           onClick={onSave}
           disabled={isLoading || guardandoTiers || cargandoTiers}
           className='px-3 py-1.5 text-xs font-semibold rounded-full bg-black text-white dark:bg-white dark:text-black hover:scale-105 transition-all disabled:opacity-50'
         >
           {guardandoTiers ? 'Guardando...' : 'Guardar tabla'}
-        </button>
+        </Button>
       </div>
       {cargandoTiers ? (
         <p className='text-xs text-gray-400 ml-1'>Cargando tabla...</p>

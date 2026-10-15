@@ -4,7 +4,7 @@
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
-import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import {
   Table,
   TableBody,
@@ -168,47 +168,41 @@ export function CommissionsList({
   const DesktopTableView = () => (
     <div className='hidden lg:block bg-white dark:bg-slate-900/40 backdrop-blur-xs rounded-3xl border-none shadow-md overflow-hidden'>
       <div className='overflow-x-auto'>
-        <Table className='min-w-full text-base text-center'>
-          <TableHeader className='bg-gray-100 dark:bg-slate-900/50'>
-            <TableRow className='hover:bg-transparent border-gray-100 dark:border-gray-800'>
-              <TableHead className='py-4 px-5 text-xs uppercase text-gray-500 text-start'>
-                Nick / Anfitriona
-              </TableHead>
-              <TableHead className='py-4 px-5 text-xs uppercase text-gray-500'>Venta</TableHead>
-              <TableHead className='py-4 px-5 text-xs uppercase text-gray-500'>Servicio</TableHead>
-              <TableHead className='py-4 px-5 text-xs uppercase text-gray-500'>Total</TableHead>
-              <TableHead className='py-4 px-5 text-xs uppercase text-gray-500'>Estado</TableHead>
-              {canViewDetail && (
-                <TableHead className='py-4 px-5 text-xs uppercase text-gray-500'>
-                  Acciones
-                </TableHead>
-              )}
+        <Table className='min-w-full text-center'>
+          <TableHeader>
+            <TableRow className='hover:bg-transparent'>
+              <TableHead className='text-start'>Nick / Anfitriona</TableHead>
+              <TableHead>Venta</TableHead>
+              <TableHead>Servicio</TableHead>
+              <TableHead>Total</TableHead>
+              <TableHead>Estado</TableHead>
+              {canViewDetail && <TableHead>Acciones</TableHead>}
             </TableRow>
           </TableHeader>
           <TableBody>
             {loading
               ? Array.from({ length: 5 }, (_, i) => (
-                  <TableRow key={i} className='border-b border-gray-100 dark:border-gray-800'>
-                    <TableCell className='py-4 px-5'>
+                  <TableRow key={i} className='border-b'>
+                    <TableCell>
                       <div className='flex flex-col gap-1 items-start'>
                         <Skeleton className='h-4 w-24 rounded' />
                         <Skeleton className='h-3 w-36 rounded' />
                       </div>
                     </TableCell>
-                    <TableCell className='py-4 px-5'>
+                    <TableCell>
                       <Skeleton className='h-4 w-20 rounded mx-auto' />
                     </TableCell>
-                    <TableCell className='py-4 px-5'>
+                    <TableCell>
                       <Skeleton className='h-4 w-20 rounded mx-auto' />
                     </TableCell>
-                    <TableCell className='py-4 px-5'>
+                    <TableCell>
                       <Skeleton className='h-4 w-20 rounded mx-auto' />
                     </TableCell>
-                    <TableCell className='py-4 px-5'>
+                    <TableCell>
                       <Skeleton className='h-6 w-20 rounded-full mx-auto' />
                     </TableCell>
                     {canViewDetail && (
-                      <TableCell className='py-4 px-5'>
+                      <TableCell>
                         <Skeleton className='h-8 w-8 rounded-xl mx-auto' />
                       </TableCell>
                     )}
@@ -219,7 +213,7 @@ export function CommissionsList({
                     key={commission.id}
                     className={`border-b transition-colors hover:bg-gray-50 dark:hover:bg-slate-800/30 border-gray-100 dark:border-gray-800 ${idx === 0 ? 'first:rounded-t-xl' : ''} ${idx === paginatedCommissions.length - 1 ? 'last:rounded-b-xl' : ''}`}
                   >
-                    <TableCell className='font-medium text-start text-sm py-4 px-5'>
+                    <TableCell className='font-medium text-start'>
                       <div className='flex items-center gap-3'>
                         <Avatar className='h-8 w-8'>
                           {commission.empleado_foto && commission.empleado_foto !== '' ? (
@@ -243,16 +237,16 @@ export function CommissionsList({
                         </div>
                       </div>
                     </TableCell>
-                    <TableCell className='text-center text-sm py-4 px-5 font-semibold'>
+                    <TableCell className='text-center font-semibold'>
                       {formatCurrencyNoDecimals(commission.venta)}
                     </TableCell>
-                    <TableCell className='text-center text-sm py-4 px-5 font-semibold'>
+                    <TableCell className='text-center font-semibold'>
                       {formatCurrencyNoDecimals(commission.servicio)}
                     </TableCell>
-                    <TableCell className='text-center text-sm py-4 px-5 font-bold'>
+                    <TableCell className='text-center font-bold'>
                       {formatCurrencyNoDecimals(commission.total)}
                     </TableCell>
-                    <TableCell className='text-center py-4 px-5'>
+                    <TableCell className='text-center'>
                       <Badge
                         className={`${getStatusColor(commission.status)} text-xs rounded-full px-2 py-1 font-medium`}
                       >
@@ -260,7 +254,7 @@ export function CommissionsList({
                       </Badge>
                     </TableCell>
                     {canViewDetail && (
-                      <TableCell className='text-center py-4 px-5'>
+                      <TableCell className='text-center'>
                         <Button
                           onClick={() => onViewDetails(commission)}
                           size='sm'

@@ -1,4 +1,5 @@
 'use client';
+import { Button } from '@/components/ui/button';
 
 import {
   Activity,
@@ -149,7 +150,8 @@ export default function RecentActivityCompact() {
       </div>
 
       {hasMore && (
-        <button
+        <Button
+          variant='unstyled'
           type='button'
           onClick={() => setIsExpanded(!isExpanded)}
           className='mt-2 flex items-center justify-center gap-2 rounded-xl border border-slate-200 dark:border-slate-800 py-2.5 text-[10px] font-black uppercase tracking-widest text-slate-500 transition-all hover:bg-slate-50 dark:hover:bg-slate-900 dark:text-slate-400'
@@ -161,7 +163,7 @@ export default function RecentActivityCompact() {
               isExpanded && 'rotate-180'
             )}
           />
-        </button>
+        </Button>
       )}
     </div>
   );

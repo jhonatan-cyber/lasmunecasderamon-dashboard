@@ -1,4 +1,5 @@
 'use client';
+import { SortSelect } from '@/components/shared/selects/SortSelect';
 
 import React from 'react';
 import { Card, CardContent } from '@/components/ui/card';
@@ -11,7 +12,7 @@ import {
   SelectTrigger,
   SelectValue
 } from '@/components/ui/select';
-import { Trash2, SortAsc, SortDesc } from 'lucide-react';
+import { Trash2 } from 'lucide-react';
 import SearchInput from '@/components/shared/SearchInput';
 import SelectElements from '@/components/shared/SelectElements';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
@@ -107,40 +108,22 @@ export function RoomFilters({
 
             {}
             <div className='grid grid-cols-2 lg:flex gap-4 w-full lg:w-auto items-end'>
-              <div className='w-full'>
-                <Label className='mb-2 block text-xs font-bold uppercase tracking-wider text-gray-500 dark:text-gray-400 ml-1'>
-                  Ordenar por
-                </Label>
-                <div className='flex gap-1 min-w-0'>
-                  <div className='flex-1 min-w-0'>
-                    <Select value={sortBy} onValueChange={setSortBy}>
-                      <SelectTrigger className='rounded-r-none'>
-                        <SelectValue />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value='nombre'>Nombre</SelectItem>
-                        <SelectItem value='precio'>Precio</SelectItem>
-                        <SelectItem value='tiempo'>Tiempo</SelectItem>
-                        <SelectItem value='display_order'>Orden</SelectItem>
-                        <SelectItem value='created_at'>Fecha Creación</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </div>
-                  <Button
-                    variant='outline'
-                    size='icon'
-                    aria-label={sortOrder === 'asc' ? 'Ordenar descendente' : 'Ordenar ascendente'}
-                    onClick={() => setSortOrder(sortOrder === 'asc' ? 'desc' : 'asc')}
-                    className='h-10 w-10 rounded-full border border-gray-300 dark:border-gray-700 bg-gray-100 dark:bg-slate-900/50 text-gray-900 dark:text-gray-100 hover:bg-gray-200 dark:hover:bg-gray-700'
-                  >
-                    {sortOrder === 'asc' ? (
-                      <SortAsc className='h-4 w-4' />
-                    ) : (
-                      <SortDesc className='h-4 w-4' />
-                    )}
-                  </Button>
-                </div>
-              </div>
+              <SortSelect
+                className='w-full'
+                field={sortBy}
+                direction={sortOrder}
+                options={[
+                  { value: 'nombre', label: 'Nombre' },
+                  { value: 'precio', label: 'Precio' },
+                  { value: 'tiempo', label: 'Tiempo' },
+                  { value: 'display_order', label: 'Orden' },
+                  { value: 'created_at', label: 'Fecha Creación' }
+                ]}
+                onChange={(field, direction) => {
+                  setSortBy(field as typeof sortBy);
+                  setSortOrder(direction);
+                }}
+              />
 
               <div className='w-full flex items-end gap-2 min-w-0'>
                 <div className='flex-1 min-w-0'>

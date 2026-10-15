@@ -40,8 +40,6 @@ import {
   TableHeader,
   TableRow
 } from '@/components/ui/table';
-import { Card, CardContent } from '@/components/ui/card';
-import { Skeleton } from '@/components/ui/skeleton';
 
 interface RoomTableProps {
   rooms: Room[];
@@ -119,12 +117,8 @@ const SortableRow: React.FC<SortableRowProps> = ({
   };
 
   return (
-    <TableRow
-      ref={setNodeRef}
-      style={style}
-      className='border-b transition-colors hover:bg-gray-50 dark:hover:bg-slate-800/30'
-    >
-      <TableCell className='py-3 px-4 text-center'>
+    <TableRow ref={setNodeRef} style={style} className='border-b transition-colors'>
+      <TableCell className='text-center'>
         <div
           {...attributes}
           {...listeners}
@@ -133,27 +127,25 @@ const SortableRow: React.FC<SortableRowProps> = ({
           <GripVertical className='w-4 h-4 text-gray-400' />
         </div>
       </TableCell>
-      <TableCell className='py-3 px-4 text-center'>
+      <TableCell className='text-center'>
         <Badge className='bg-purple-100 text-purple-700 rounded-full px-3 py-1'>
           {absoluteIndex}
         </Badge>
       </TableCell>
-      <TableCell className='py-3 px-4 text-center font-medium'>{room.name}</TableCell>
-      <TableCell className='py-3 px-4 text-center font-medium'>
-        {formatCurrencyCLP(room.price)}
-      </TableCell>
-      <TableCell className='py-3 px-4 text-center'>
+      <TableCell className='text-center font-medium'>{room.name}</TableCell>
+      <TableCell className='text-center font-medium'>{formatCurrencyCLP(room.price)}</TableCell>
+      <TableCell className='text-center'>
         <span className='text-gray-600'>{room.time} min</span>
       </TableCell>
-      <TableCell className='py-3 px-4 text-center'>
+      <TableCell className='text-center'>
         {room.comision_anfitriona ? (
           <span className='text-gray-600'>{formatCurrencyCLP(room.comision_anfitriona)}</span>
         ) : (
           <span className='text-gray-400 italic text-sm'>sin comisión</span>
         )}
       </TableCell>
-      <TableCell className='py-3 px-4 text-center'>{getStatusBadge(room.status)}</TableCell>
-      <TableCell className='py-3 px-4 text-center'>
+      <TableCell className='text-center'>{getStatusBadge(room.status)}</TableCell>
+      <TableCell className='text-center'>
         {canEdit || canDelete || canActivate || canDeactivate || canOccupy || canLiberate ? (
           <DropdownMenu>
             <Tooltip>
@@ -332,34 +324,22 @@ const RoomTable: React.FC<RoomTableProps> = ({
               onDragEnd={handleDragEnd}
             >
               <Table>
-                <TableHeader className='bg-gray-100 dark:bg-slate-900/50'>
-                  <TableRow className='hover:bg-transparent border-gray-100 dark:border-gray-800'>
-                    <TableHead className='py-4 px-5 text-xs uppercase text-gray-500 w-12'></TableHead>
-                    <TableHead className='py-4 px-5 text-xs uppercase text-gray-500'>#</TableHead>
-                    <TableHead className='py-4 px-5 text-xs uppercase text-gray-500'>
-                      Nombre
-                    </TableHead>
-                    <TableHead className='py-4 px-5 text-xs uppercase text-gray-500'>
-                      Precio
-                    </TableHead>
-                    <TableHead className='py-4 px-5 text-xs uppercase text-gray-500'>
-                      Tiempo
-                    </TableHead>
-                    <TableHead className='py-4 px-5 text-xs uppercase text-gray-500'>
-                      Comisión
-                    </TableHead>
-                    <TableHead className='py-4 px-5 text-xs uppercase text-gray-500'>
-                      Estado
-                    </TableHead>
-                    <TableHead className='py-4 px-5 text-xs uppercase text-gray-500'>
-                      Acciones
-                    </TableHead>
+                <TableHeader>
+                  <TableRow className='hover:bg-transparent'>
+                    <TableHead className='w-12'></TableHead>
+                    <TableHead>#</TableHead>
+                    <TableHead>Nombre</TableHead>
+                    <TableHead>Precio</TableHead>
+                    <TableHead>Tiempo</TableHead>
+                    <TableHead>Comisión</TableHead>
+                    <TableHead>Estado</TableHead>
+                    <TableHead>Acciones</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
                   {localRooms.length === 0 ? (
                     <TableRow>
-                      <TableCell colSpan={8} className='py-8 text-center text-gray-500 text-sm'>
+                      <TableCell colSpan={8} className='text-center'>
                         No hay habitaciones disponibles
                       </TableCell>
                     </TableRow>

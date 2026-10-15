@@ -1,11 +1,11 @@
 ﻿'use client';
 
-import { Skeleton as BoneyardSkeleton } from 'boneyard-js/react';
+import { Skeleton as BoneyardSkeleton } from '@/components/shared/Skeleton';
 import { AttendanceEmployeeList } from '@/components/attendance/AttendanceEmployeeList';
 
 export default function CajeroAsistenciasPage() {
   return (
-    <BoneyardSkeleton name="cajero-asistencias-main" loading={false}>
+    <BoneyardSkeleton name='cajero-asistencias-main' loading={false}>
       <AttendanceEmployeeList allowedRole='cajero' />
     </BoneyardSkeleton>
   );

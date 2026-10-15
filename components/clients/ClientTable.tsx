@@ -314,32 +314,16 @@ const DesktopTableView = React.memo(
       <div className='hidden lg:block'>
         <div className='bg-white dark:bg-slate-900/40 backdrop-blur-xs rounded-3xl border-none shadow-md overflow-hidden'>
           <Table>
-            <TableHeader className='bg-gray-100 dark:bg-slate-900/50'>
-              <TableRow className='hover:bg-transparent border-gray-100 dark:border-gray-800'>
-                <TableHead className='py-4 px-5 text-xs uppercase font-bold text-gray-500 dark:text-gray-400 text-center'>
-                  #
-                </TableHead>
-                <TableHead className='py-4 px-5 text-xs uppercase font-bold text-gray-500 dark:text-gray-400 text-center'>
-                  RUT
-                </TableHead>
-                <TableHead className='py-4 px-5 text-xs uppercase font-bold text-gray-500 dark:text-gray-400 text-center'>
-                  Nombre
-                </TableHead>
-                <TableHead className='py-4 px-5 text-xs uppercase font-bold text-gray-500 dark:text-gray-400 text-center'>
-                  Apellido
-                </TableHead>
-                <TableHead className='py-4 px-5 text-xs uppercase font-bold text-gray-500 dark:text-gray-400 text-center'>
-                  Teléfono
-                </TableHead>
-                <TableHead className='py-4 px-5 text-xs uppercase font-bold text-gray-500 dark:text-gray-400 text-center'>
-                  Estado
-                </TableHead>
-                <TableHead className='py-4 px-5 text-xs uppercase font-bold text-gray-500 dark:text-gray-400 text-center'>
-                  Saldo Prepago
-                </TableHead>
-                <TableHead className='py-4 px-5 text-xs uppercase font-bold text-gray-500 dark:text-gray-400 text-center'>
-                  Acciones
-                </TableHead>
+            <TableHeader>
+              <TableRow className='hover:bg-transparent'>
+                <TableHead className='font-bold text-center'>#</TableHead>
+                <TableHead className='font-bold text-center'>RUT</TableHead>
+                <TableHead className='font-bold text-center'>Nombre</TableHead>
+                <TableHead className='font-bold text-center'>Apellido</TableHead>
+                <TableHead className='font-bold text-center'>Teléfono</TableHead>
+                <TableHead className='font-bold text-center'>Estado</TableHead>
+                <TableHead className='font-bold text-center'>Saldo Prepago</TableHead>
+                <TableHead className='font-bold text-center'>Acciones</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
@@ -377,22 +361,16 @@ const DesktopTableView = React.memo(
                       key={client.id}
                       className={`border-b transition-colors hover:bg-gray-50 dark:hover:bg-slate-800/30 ${idx === 0 ? 'first:rounded-t-xl' : ''} ${idx === clients.length - 1 ? 'last:rounded-b-xl' : ''}`}
                     >
-                      <TableCell className='py-3 px-4 text-center text-sm text-gray-600 font-medium'>
+                      <TableCell className='text-center font-medium'>
                         <Badge className='bg-purple-100 text-purple-700 rounded-full px-3 py-1'>
                           {(currentPage - 1) * pageSize + idx + 1}
                         </Badge>
                       </TableCell>
-                      <TableCell className='py-3 px-4 text-center'>
-                        {renderRun(client.run)}
-                      </TableCell>
-                      <TableCell className='py-3 px-4 text-center font-medium'>
-                        {client.name}
-                      </TableCell>
-                      <TableCell className='py-3 px-4 text-center'>{client.lastName}</TableCell>
-                      <TableCell className='py-3 px-4 text-center'>
-                        {renderPhone(client.phone)}
-                      </TableCell>
-                      <TableCell className='py-3 px-4 text-center'>
+                      <TableCell className='text-center'>{renderRun(client.run)}</TableCell>
+                      <TableCell className='text-center font-medium'>{client.name}</TableCell>
+                      <TableCell className='text-center'>{client.lastName}</TableCell>
+                      <TableCell className='text-center'>{renderPhone(client.phone)}</TableCell>
+                      <TableCell className='text-center'>
                         {client.status === 1 ? (
                           <Badge className='bg-green-100 text-green-700 rounded-full px-3 py-1'>
                             Activo
@@ -403,10 +381,10 @@ const DesktopTableView = React.memo(
                           </Badge>
                         )}
                       </TableCell>
-                      <TableCell className='py-3 px-4 text-center font-bold text-green-600'>
+                      <TableCell className='text-center font-bold text-green-600'>
                         ${(client.saldo || 0).toLocaleString('es-CL')}
                       </TableCell>
-                      <TableCell className='py-3 px-4 text-center'>
+                      <TableCell className='text-center'>
                         {hasAnyAction && (
                           <ClientActionsDropdown
                             client={client}

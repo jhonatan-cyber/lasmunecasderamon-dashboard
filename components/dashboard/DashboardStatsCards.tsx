@@ -1,4 +1,6 @@
 'use client';
+import { EmployeeModuleLinks } from '@/components/shared/EmployeeModuleLinks';
+import { ListLoadError } from '@/components/shared/ListLoadError';
 
 import { useCurrentUser } from '@/hooks/auth/useCurrentUser';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -12,7 +14,6 @@ export default function DashboardStatsCards() {
   const {
     data: dashboardData,
     isLoading: loadingSummary,
-    error: summaryError,
     refetch: refreshDashboard
   } = useDashboardSummary();
 
@@ -30,18 +31,13 @@ export default function DashboardStatsCards() {
     );
   }
 
-  if (summaryError || !dashboardData) {
+  if (!dashboardData)
     return (
-      <Card className='border-red-200 bg-red-50'>
-        <CardContent className='p-4 text-center text-red-600'>
-          Error al cargar datos del dashboard.{' '}
-          <button onClick={() => refreshDashboard()} className='underline font-bold'>
-            Reintentar
-          </button>
-        </CardContent>
-      </Card>
+      <ListLoadError
+        message='Error al cargar datos del dashboard.'
+        onRetry={() => refreshDashboard()}
+      />
     );
-  }
 
   const stats = [
     {
@@ -49,7 +45,7 @@ export default function DashboardStatsCards() {
       value: dashboardData.totalAsistencias,
       icon: Calendar,
       description: 'Total de registros',
-      href: '/attendance',
+      href: '/cajero-asistencias',
       color: 'text-blue-600'
     },
     {
@@ -57,7 +53,7 @@ export default function DashboardStatsCards() {
       value: dashboardData.totalAnticipos,
       icon: ArrowLeftRight,
       description: `${dashboardData.anticiposPendientes} pendientes`,
-      href: '/advances',
+      href: '/cajero-anticipos',
       color: 'text-orange-600'
     },
     {
@@ -65,7 +61,7 @@ export default function DashboardStatsCards() {
       value: dashboardData.totalPropinas,
       icon: DollarSign,
       description: `${dashboardData.propinasPendientes} por pagar`,
-      href: '/tips',
+      href: '/cajero-propinas',
       color: 'text-green-600'
     },
     {
@@ -73,7 +69,7 @@ export default function DashboardStatsCards() {
       value: dashboardData.totalHorasExtras,
       icon: Clock,
       description: `${dashboardData.horasExtrasPendientes} registradas`,
-      href: '/overtime',
+      href: '/cajero-horas-extras',
       color: 'text-purple-600'
     },
     {
@@ -88,6 +84,7 @@ export default function DashboardStatsCards() {
 
   return (
     <div className='space-y-6'>
+      <EmployeeModuleLinks role='cajero' />
       {}
       <Card className='bg-linear-to-br from-gray-900 to-gray-800 text-white border-none shadow-xl'>
         <CardHeader className='pb-2'>

@@ -41,16 +41,17 @@ export function RoleDashboard({
   const {
     data: dashboardData,
     isLoading: loadingSummary,
-    error: summaryError,
     refetch: refreshDashboard
   } = useDashboardSummary();
 
-  if (userLoading) {
+  if (userLoading || (loadingSummary && !dashboardData)) {
     return (
       <div className='p-6 flex items-center justify-center min-h-screen'>
         <div className='text-center'>
           <div className='animate-spin rounded-full h-32 w-32 border-b-2 border-blue-600 mx-auto'></div>
-          <p className='mt-4 text-gray-600'>Cargando...</p>
+          <p role='status' className='mt-4 text-gray-600'>
+            Cargando dashboard...
+          </p>
         </div>
       </div>
     );
@@ -67,7 +68,7 @@ export function RoleDashboard({
     );
   }
 
-  if (summaryError || !dashboardData) {
+  if (!dashboardData) {
     return (
       <div className='p-6'>
         <Card className='border-red-200 bg-red-50'>
@@ -116,7 +117,7 @@ export function RoleDashboard({
           </div>
         </div>
 
-        <MarcarAsistenciaCard />
+        {role !== 'anfitriona' && <MarcarAsistenciaCard />}
 
         <div className='grid gap-4 grid-cols-2 md:grid-cols-2 lg:grid-cols-3'>
           {dashboardItems.map((item, index) => (

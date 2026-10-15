@@ -1,4 +1,5 @@
 'use client';
+import { Button } from '@/components/ui/button';
 
 import { useCallback, useEffect, useState } from 'react';
 import { Loader2 } from 'lucide-react';
@@ -55,13 +56,14 @@ export default function NewPurchasePage() {
       ) : loadError ? (
         <div className='mx-auto max-w-xl space-y-4 p-6 text-center'>
           <p className='text-sm text-red-600'>No se pudo cargar el catálogo de productos.</p>
-          <button
+          <Button
+            variant='unstyled'
             type='button'
             onClick={() => void fetchCatalog()}
             className={`${PURCHASE_BUTTON_CLASS} px-5 py-2 text-sm font-medium`}
           >
             Reintentar
-          </button>
+          </Button>
         </div>
       ) : (
         <PurchaseForm catalog={catalog} />

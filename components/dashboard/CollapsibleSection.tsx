@@ -1,4 +1,5 @@
 'use client';
+import { Button } from '@/components/ui/button';
 
 import * as React from 'react';
 import { ChevronDown } from 'lucide-react';
@@ -30,7 +31,8 @@ export default function CollapsibleSection({
         className
       )}
     >
-      <button
+      <Button
+        variant='unstyled'
         id={triggerId}
         type='button'
         onClick={() => setIsOpen(!isOpen)}
@@ -49,7 +51,7 @@ export default function CollapsibleSection({
             isOpen && 'rotate-180'
           )}
         />
-      </button>
+      </Button>
 
       <div
         id={contentId}

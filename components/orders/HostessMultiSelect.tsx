@@ -1,4 +1,5 @@
 'use client';
+import { Button } from '@/components/ui/button';
 
 import { Users, ChevronDown } from 'lucide-react';
 import { Popover, PopoverTrigger, PopoverContent } from '@/components/ui/popover';
@@ -56,7 +57,8 @@ const HostessMultiSelect: React.FC<HostessMultiSelectProps> = ({
         <Users className='absolute left-2 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none z-10 h-4 w-4' />
         <Popover open={open} onOpenChange={setOpen}>
           <PopoverTrigger asChild>
-            <button
+            <Button
+              variant='unstyled'
               ref={triggerRef}
               type='button'
               className={`${ORDER_MULTISELECT_TRIGGER_CLASS} flex items-center gap-2 pl-8 pr-3 text-left`}
@@ -87,7 +89,7 @@ const HostessMultiSelect: React.FC<HostessMultiSelectProps> = ({
               <span className='shrink-0 text-gray-400'>
                 <ChevronDown className='h-4 w-4' aria-hidden='true' />
               </span>
-            </button>
+            </Button>
           </PopoverTrigger>
           <PopoverContent align='start' className={ORDER_FIELD_POPOVER_CLASS}>
             <div className='px-2 py-1 sticky top-0 z-10 bg-white dark:bg-zinc-950'>

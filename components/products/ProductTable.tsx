@@ -13,7 +13,7 @@ import {
   Eye,
   Image as ImageIcon
 } from 'lucide-react';
-import { Tooltip, TooltipProvider, TooltipTrigger, TooltipContent } from '@/components/ui/tooltip';
+import { TooltipProvider } from '@/components/ui/tooltip';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import {
@@ -127,7 +127,7 @@ const SortableRow: React.FC<SortableRowProps> = React.memo(
           isLastRow ? 'last:rounded-b-xl' : ''
         }`}
       >
-        <TableCell className='py-3 px-2 sm:px-4 text-center'>
+        <TableCell className='sm:px-4 text-center'>
           <div
             {...attributes}
             {...listeners}
@@ -136,7 +136,7 @@ const SortableRow: React.FC<SortableRowProps> = React.memo(
             <GripVertical className='w-4 h-4 text-gray-400' />
           </div>
         </TableCell>
-        <TableCell className='py-3 px-2 sm:px-4 text-center'>
+        <TableCell className='sm:px-4 text-center'>
           <InteractiveProductPhoto
             src={productFoto(presentation?.foto || product.foto)}
             alt={presentation ? `${product.name} ${presentation.nombre}` : product.name}
@@ -144,10 +144,10 @@ const SortableRow: React.FC<SortableRowProps> = React.memo(
             photoClassName='h-12 w-12 object-cover transition-transform duration-300 group-hover:scale-110'
           />
         </TableCell>
-        <TableCell className='py-3 px-2 sm:px-4 text-center font-mono text-xs sm:text-sm'>
+        <TableCell className='sm:px-4 text-center font-mono sm:text-sm'>
           {presentation?.codigo_barras || product.code}
         </TableCell>
-        <TableCell className='py-3 px-2 sm:px-4 text-center font-mono text-xs sm:text-sm'>
+        <TableCell className='sm:px-4 text-center font-mono sm:text-sm'>
           <div className='flex items-center justify-center gap-2'>
             <span>{product.name}</span>
             {presentation && (
@@ -157,15 +157,15 @@ const SortableRow: React.FC<SortableRowProps> = React.memo(
             )}
           </div>
         </TableCell>
-        <TableCell className='py-3 px-2 sm:px-4 text-center font-mono text-xs sm:text-sm'>
+        <TableCell className='sm:px-4 text-center font-mono sm:text-sm'>
           {formatCurrencyCLP(presentation?.precio_compra ?? product.price)}
         </TableCell>
-        <TableCell className='py-3 px-2 sm:px-4 text-center font-mono text-xs sm:text-sm'>
+        <TableCell className='sm:px-4 text-center font-mono sm:text-sm'>
           <Badge className='bg-blue-100 text-blue-700 rounded-full px-2 sm:px-3 py-1 text-xs sm:text-sm'>
             {presentation ? (presentation.stock ?? 0) : (product.stock_almacen ?? 0)}
           </Badge>
         </TableCell>
-        <TableCell className='py-3 px-2 sm:px-4 text-center font-mono'>
+        <TableCell className='sm:px-4 text-center font-mono'>
           {product.status === 1 ? (
             <Badge className='bg-green-100 text-green-700 rounded-full px-2 sm:px-3 py-1 font-mono text-xs sm:text-sm'>
               Activo
@@ -176,7 +176,7 @@ const SortableRow: React.FC<SortableRowProps> = React.memo(
             </Badge>
           )}
         </TableCell>
-        <TableCell className='py-3 px-2 sm:px-4 text-center font-mono'>
+        <TableCell className='sm:px-4 text-center font-mono'>
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
               <Button
@@ -363,42 +363,23 @@ const ProductTable: React.FC<ProductTableProps> = ({
             collisionDetection={closestCenter}
             onDragEnd={handleDragEnd}
           >
-            <Table className='min-w-full text-base text-center'>
-              <TableHeader className='bg-gray-100 dark:bg-slate-900/50'>
-                <TableRow className='hover:bg-transparent border-gray-100 dark:border-gray-800'>
-                  <TableHead className='py-4 px-5 text-xs uppercase text-gray-500 text-center w-12'>
-                    Orden
-                  </TableHead>
-                  <TableHead className='py-4 px-5 text-xs uppercase text-gray-500 text-center'>
-                    Foto
-                  </TableHead>
-                  <TableHead className='py-4 px-5 text-xs uppercase text-gray-500 text-center'>
-                    Código
-                  </TableHead>
-                  <TableHead className='py-4 px-5 text-xs uppercase text-gray-500 text-center'>
-                    Nombre
-                  </TableHead>
-                  <TableHead className='py-4 px-5 text-xs uppercase text-gray-500 text-center'>
-                    Precio compra
-                  </TableHead>
-                  <TableHead className='py-4 px-5 text-xs uppercase text-gray-500 text-center'>
-                    Stock
-                  </TableHead>
-                  <TableHead className='py-4 px-5 text-xs uppercase text-gray-500 text-center'>
-                    Estado
-                  </TableHead>
-                  <TableHead className='py-4 px-5 text-xs uppercase text-gray-500 text-center'>
-                    Acciones
-                  </TableHead>
+            <Table className='min-w-full text-center'>
+              <TableHeader>
+                <TableRow className='hover:bg-transparent'>
+                  <TableHead className='text-center w-12'>Orden</TableHead>
+                  <TableHead className='text-center'>Foto</TableHead>
+                  <TableHead className='text-center'>Código</TableHead>
+                  <TableHead className='text-center'>Nombre</TableHead>
+                  <TableHead className='text-center'>Precio compra</TableHead>
+                  <TableHead className='text-center'>Stock</TableHead>
+                  <TableHead className='text-center'>Estado</TableHead>
+                  <TableHead className='text-center'>Acciones</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
                 {localProducts.length === 0 && (
                   <TableRow key='empty'>
-                    <TableCell
-                      colSpan={8}
-                      className='text-center py-8 text-gray-400 bg-white text-sm sm:text-base'
-                    >
+                    <TableCell colSpan={8} className='text-center bg-white sm:text-base'>
                       No hay productos
                     </TableCell>
                   </TableRow>

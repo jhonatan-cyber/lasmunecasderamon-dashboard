@@ -156,7 +156,7 @@ export const AUTHENTICATED_ONLY_APIS = [
 
 /**
  * Permiso que exige cada página. Las páginas de rol (`/garzon-*`, `/anfitriona-*`,
- * `/cajero-*`) se declaran con el módulo `dashboard`, el único que no se comprueba: las
+ * `/cajero-*`, `/barman-*`) se declaran con el módulo `dashboard`, el único que no se comprueba: las
  * ve cualquier sesión válida y el contenido se filtra adentro. Es la lista completa de
  * páginas que el sistema conoce; una ruta que no esté acá solo exige sesión.
  */
@@ -195,7 +195,7 @@ export const ROUTE_PERMISSIONS: RoutePermissionMap = {
   '/garzon-asistencias': { module: 'dashboard', action: 'view' },
   '/garzon-anticipos': { module: 'dashboard', action: 'view' },
   '/garzon-propinas': { module: 'dashboard', action: 'view' },
-  '/garzon-horas-extras': { module: 'overtime', action: 'view' },
+  '/garzon-horas-extras': { module: 'dashboard', action: 'view' },
   '/garzon-pedidos': { module: 'dashboard', action: 'view' },
   '/anfitriona-dashboard': { module: 'dashboard', action: 'view' },
   '/anfitriona-calendar': { module: 'dashboard', action: 'view' },
@@ -203,11 +203,16 @@ export const ROUTE_PERMISSIONS: RoutePermissionMap = {
   '/anfitriona-anticipos': { module: 'dashboard', action: 'view' },
   '/anfitriona-comisiones': { module: 'dashboard', action: 'view' },
   '/anfitriona-servicios': { module: 'dashboard', action: 'view' },
+  '/barman-asistencias': { module: 'dashboard', action: 'view' },
+  '/barman-anticipos': { module: 'dashboard', action: 'view' },
+  '/barman-propinas': { module: 'dashboard', action: 'view' },
+  '/barman-horas-extras': { module: 'dashboard', action: 'view' },
+  '/barman-calendar': { module: 'dashboard', action: 'view' },
   '/cajero-calendar': { module: 'dashboard', action: 'view' },
   '/cajero-asistencias': { module: 'dashboard', action: 'view' },
   '/cajero-anticipos': { module: 'dashboard', action: 'view' },
   '/cajero-propinas': { module: 'dashboard', action: 'view' },
-  '/cajero-horas-extras': { module: 'overtime', action: 'view' }
+  '/cajero-horas-extras': { module: 'dashboard', action: 'view' }
 };
 
 /**
@@ -270,7 +275,12 @@ export const BARMAN_ROUTE_ALLOWLIST = [
   '/bar',
   '/orders',
   '/private-rooms',
-  '/cleaning'
+  '/cleaning',
+  '/barman-asistencias',
+  '/barman-anticipos',
+  '/barman-propinas',
+  '/barman-horas-extras',
+  '/barman-calendar'
 ];
 
 export const ACCESS_DENIED_PATH = '/access-denied';
@@ -316,7 +326,7 @@ export function findSidebarPermission(href: string): RoutePermission | null {
 }
 
 /**
- * Rutas de rol (`/garzon-*`, `/anfitriona-*`, `/cajero-*`): cualquier sesión válida entra y
+ * Rutas de rol (`/garzon-*`, `/anfitriona-*`, `/cajero-*`, `/barman-*`): cualquier sesión válida entra y
  * el contenido se filtra adentro. Es la única excepción a la comprobación de permisos.
  */
 export function isAnySessionRoute(permission: RoutePermission): boolean {

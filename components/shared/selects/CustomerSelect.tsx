@@ -1,4 +1,5 @@
 'use client';
+import { Button } from '@/components/ui/button';
 
 import React, { useMemo, useState } from 'react';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
@@ -6,12 +7,12 @@ import { Label } from '@/components/ui/label';
 import { Input } from '@/components/ui/input';
 import { User } from 'lucide-react';
 import {
-  ORDER_FIELD_LABEL_CLASS,
-  ORDER_FIELD_POPOVER_CLASS,
-  ORDER_FIELD_SEARCH_INPUT_CLASS,
-  ORDER_FIELD_SEARCH_WRAPPER_CLASS,
-  ORDER_MULTISELECT_TRIGGER_CLASS
-} from '@/components/orders/orderFieldStyles';
+  SELECT_LABEL_CLASS,
+  SELECT_CONTENT_WIDE_CLASS,
+  SELECT_SEARCH_INPUT_CLASS,
+  SELECT_SEARCH_WRAPPER_CLASS,
+  SELECT_MULTI_TRIGGER_CLASS
+} from '@/components/shared/selectStyles';
 
 interface Customer {
   id_cliente?: string | number;
@@ -131,7 +132,7 @@ const CustomerSelect: React.FC<CustomerSelectProps> = ({
 
   return (
     <div className={`flex flex-col ${className}`}>
-      <Label htmlFor={uniqueId} className={ORDER_FIELD_LABEL_CLASS}>
+      <Label htmlFor={uniqueId} className={SELECT_LABEL_CLASS}>
         {label}
         {required && <span className='ml-1 text-red-500'>*</span>}
       </Label>
@@ -139,10 +140,11 @@ const CustomerSelect: React.FC<CustomerSelectProps> = ({
       <div className='relative'>
         <Popover open={open} onOpenChange={nextOpen => !disabled && setOpen(nextOpen)}>
           <PopoverTrigger asChild>
-            <button
+            <Button
+              variant='unstyled'
               id={uniqueId}
               type='button'
-              className={`${ORDER_MULTISELECT_TRIGGER_CLASS} flex items-center gap-2 pr-10`}
+              className={`${SELECT_MULTI_TRIGGER_CLASS} flex items-center gap-2 pr-10`}
               onClick={() => !disabled && setOpen(!open)}
               disabled={disabled}
             >
@@ -154,10 +156,10 @@ const CustomerSelect: React.FC<CustomerSelectProps> = ({
               ) : (
                 <span className='text-sm text-gray-400 truncate'>{placeholder}</span>
               )}
-            </button>
+            </Button>
           </PopoverTrigger>
-          <PopoverContent align='start' className={ORDER_FIELD_POPOVER_CLASS} sideOffset={5}>
-            <div className={ORDER_FIELD_SEARCH_WRAPPER_CLASS}>
+          <PopoverContent align='start' className={SELECT_CONTENT_WIDE_CLASS} sideOffset={5}>
+            <div className={SELECT_SEARCH_WRAPPER_CLASS}>
               <label htmlFor={`${uniqueId}-search`} className='sr-only'>
                 Buscar cliente
               </label>
@@ -171,7 +173,7 @@ const CustomerSelect: React.FC<CustomerSelectProps> = ({
                     e.stopPropagation();
                   }
                 }}
-                className={ORDER_FIELD_SEARCH_INPUT_CLASS}
+                className={SELECT_SEARCH_INPUT_CLASS}
                 disabled={disabled}
                 onClick={e => e.stopPropagation()}
               />
@@ -179,13 +181,14 @@ const CustomerSelect: React.FC<CustomerSelectProps> = ({
 
             <div className='max-h-60 overflow-y-auto p-1'>
               {value && (
-                <button
+                <Button
+                  variant='unstyled'
                   type='button'
                   className='flex w-full items-center gap-3 rounded-md px-3 py-2 text-left text-sm italic text-gray-400 transition-colors hover:bg-gray-100'
                   onClick={() => handleValueChange('none')}
                 >
                   Sin cliente
-                </button>
+                </Button>
               )}
 
               {displayClientes.length === 0 ? (
@@ -200,7 +203,8 @@ const CustomerSelect: React.FC<CustomerSelectProps> = ({
                   const isSelected = stringId === value;
 
                   return (
-                    <button
+                    <Button
+                      variant='unstyled'
                       key={stringId}
                       type='button'
                       className={`flex w-full items-center justify-between gap-2 rounded-md px-3 py-2 text-left text-sm transition-colors hover:bg-gray-100 ${isSelected ? 'bg-gray-100' : ''}`}
@@ -211,7 +215,7 @@ const CustomerSelect: React.FC<CustomerSelectProps> = ({
                       {isSelected ? (
                         <span className='text-xs font-semibold text-gray-500'>SELECCIONADO</span>
                       ) : null}
-                    </button>
+                    </Button>
                   );
                 })
               )}

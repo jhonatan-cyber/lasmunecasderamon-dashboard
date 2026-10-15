@@ -1,17 +1,12 @@
-﻿import { Card, CardContent } from '@/components/ui/card';
+import { SortSelect } from '@/components/shared/selects/SortSelect';
+import { Card, CardContent } from '@/components/ui/card';
 import { Label } from '@/components/ui/label';
 import { Button } from '@/components/ui/button';
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue
-} from '@/components/ui/select';
+
 import SelectElements from '@/components/shared/SelectElements';
 import SearchInput from '@/components/shared/SearchInput';
 import { FilterSelect } from '@/components/shared/selects';
-import { Trash2, SortAsc, SortDesc } from 'lucide-react';
+import { Trash2 } from 'lucide-react';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 
 interface AttendanceFiltersProps {
@@ -84,43 +79,26 @@ export default function AttendanceFilters({
             </div>
 
             {}
-            <div className='col-span-3 sm:col-auto min-w-0 sm:min-w-[180px] order-4 sm:order-0'>
-              <FilterSelect
-                value={sortBy}
-                onChange={setSortBy}
-                label='Ordenar por'
-                placeholder='Nombre'
-                options={[
-                  { value: 'nombre_completo', label: 'Nombre' },
-                  { value: 'nick', label: 'Nick' },
-                  { value: 'total_asistencias', label: 'Asistencias' },
-                  { value: 'sueldo_total', label: 'Sueldo' },
-                  { value: 'aporte_total', label: 'Aporte' },
-                  { value: 'descuento_total', label: 'Descuento' },
-                  { value: 'total_final', label: 'Total' }
-                ]}
-              />
-            </div>
+            <SortSelect
+              className='col-span-3 sm:col-auto min-w-0 sm:min-w-[180px] order-4 sm:order-0'
+              field={sortBy}
+              direction={sortOrder}
+              options={[
+                { value: 'nombre_completo', label: 'Nombre' },
+                { value: 'nick', label: 'Nick' },
+                { value: 'total_asistencias', label: 'Asistencias' },
+                { value: 'sueldo_total', label: 'Sueldo' },
+                { value: 'aporte_total', label: 'Aporte' },
+                { value: 'descuento_total', label: 'Descuento' },
+                { value: 'total_final', label: 'Total' }
+              ]}
+              onChange={(field, direction) => {
+                setSortBy(field as typeof sortBy);
+                setSortOrder(direction);
+              }}
+            />
 
             {}
-            <div className='col-span-1 sm:col-auto flex items-end justify-center order-2 sm:order-0'>
-              <Label className='mb-2 block text-xs font-bold uppercase tracking-wider text-gray-500 dark:text-gray-400 ml-1'>
-                &nbsp;
-              </Label>
-              <Button
-                variant='outline'
-                size='icon'
-                aria-label={sortOrder === 'asc' ? 'Ordenar descendente' : 'Ordenar ascendente'}
-                onClick={() => setSortOrder(sortOrder === 'asc' ? 'desc' : 'asc')}
-                className='h-10 w-10 rounded-full border border-gray-300 dark:border-gray-700 bg-gray-100 dark:bg-slate-900/50 text-gray-900 dark:text-gray-100 hover:bg-gray-200 dark:hover:bg-gray-700'
-              >
-                {sortOrder === 'asc' ? (
-                  <SortAsc className='h-4 w-4' />
-                ) : (
-                  <SortDesc className='h-4 w-4' />
-                )}
-              </Button>
-            </div>
 
             {}
             <div className='col-span-2 sm:col-auto min-w-0 sm:min-w-[140px] order-5 sm:order-0'>

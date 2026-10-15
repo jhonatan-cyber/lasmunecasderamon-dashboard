@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server';
 import { withRoute } from '@/lib/api/withRoute';
-import { listarAnticipos, otorgarAnticipo, solicitarAnticipo } from '@/modules/personal';
-import { logger } from '@/lib/utils/logger';
+import { listarAnticipos, solicitarAnticipo } from '@/modules/personal';
+import { isAdministrator } from '@/lib/middleware/auth';
 
 export const GET = withRoute(
   { auth: true, audit: true, module: 'advances', action: 'read' },
@@ -31,7 +31,7 @@ export const POST = withRoute(
   { auth: true, audit: true, module: 'advances', action: 'write' },
   async (request: Request, { user }) => {
     const body = await request.json();
-    const { action, usuario_id, monto, device_date } = body;
+    const { action, usuario_id } = body;
 
     if (action === 'solicitar') {
       const id = await solicitarAnticipo(user.id.toString(), body);
@@ -41,24 +41,30 @@ export const POST = withRoute(
       );
     }
 
-    if (!usuario_id || !monto || isNaN(Number(monto))) {
+    if (!isAdministrator(user)) {
       return NextResponse.json(
-        { success: false, message: 'usuario_id y monto son requeridos' },
+        { success: false, message: 'Solo puedes solicitar tu propio anticipo desde Mis anticipos' },
+        { status: 403 }
+      );
+    }
+    if (!usuario_id) {
+      return NextResponse.json(
+        { success: false, message: 'Selecciona un usuario' },
         { status: 400 }
       );
     }
-
-    const { motivo } = body;
-    try {
-      const result = await otorgarAnticipo(usuario_id, Number(monto), motivo, device_date, user.id);
-      return NextResponse.json(
-        { success: true, message: 'Anticipo otorgado correctamente', ...result },
-        { status: 201 }
-      );
-    } catch (error: unknown) {
-      const msg = error instanceof Error ? error.message : 'Error al otorgar anticipo';
-      logger.error('Error granting advance:', { error });
-      return NextResponse.json({ success: false, message: msg }, { status: 400 });
-    }
+    const result = await solicitarAnticipo(
+      String(usuario_id),
+      { ...body, monto: Number(body.monto) },
+      user.id.toString()
+    );
+    return NextResponse.json(
+      {
+        success: true,
+        message: 'Solicitud creada. Debe aprobarse antes de que el cajero entregue el efectivo.',
+        data: result
+      },
+      { status: 201 }
+    );
   }
 );

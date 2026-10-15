@@ -1,4 +1,6 @@
 'use client';
+import { Input } from '@/components/ui/input';
+import { Button } from '@/components/ui/button';
 
 import { useState, useEffect } from 'react';
 import { Save, Users, BedDouble, ShoppingCart } from 'lucide-react';
@@ -118,7 +120,7 @@ export function SettingsServiceLevelsCard() {
               </div>
               <div className='flex items-center gap-2 shrink-0'>
                 <span className='text-sm text-neutral-500'>$</span>
-                <input
+                <Input
                   id='service-simple'
                   type='number'
                   min='0'
@@ -146,7 +148,7 @@ export function SettingsServiceLevelsCard() {
               </div>
               <div className='flex items-center gap-2 shrink-0'>
                 <span className='text-sm text-neutral-500'>$</span>
-                <input
+                <Input
                   id='service-hostess'
                   type='number'
                   min='0'
@@ -174,7 +176,7 @@ export function SettingsServiceLevelsCard() {
               </div>
               <div className='flex items-center gap-2 shrink-0'>
                 <span className='text-sm text-neutral-500'>$</span>
-                <input
+                <Input
                   id='service-habitacion'
                   type='number'
                   min='0'
@@ -188,14 +190,15 @@ export function SettingsServiceLevelsCard() {
         </div>
 
         <div className='flex justify-end pt-4'>
-          <button
+          <Button
+            variant='unstyled'
             onClick={handleSave}
             disabled={saving}
             className='flex items-center gap-2 px-6 py-2.5 bg-black dark:bg-white text-white dark:text-black border-2 border-black dark:border-white hover:scale-105 active:scale-95 transition-all duration-200 rounded-full font-bold disabled:opacity-50'
           >
             <Save className='h-4 w-4' />
             {saving ? 'Guardando...' : 'Guardar Cambios'}
-          </button>
+          </Button>
         </div>
       </CardContent>
     </Card>

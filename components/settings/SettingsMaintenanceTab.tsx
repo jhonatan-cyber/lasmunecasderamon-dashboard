@@ -1,4 +1,14 @@
 'use client';
+import { DATABASE_CLEAN_PROTECTED_TABLES } from '@/lib/constants/database-maintenance';
+import {
+  Table,
+  TableHeader,
+  TableRow,
+  TableHead,
+  TableBody,
+  TableCell
+} from '@/components/ui/table';
+import { Button } from '@/components/ui/button';
 
 import { useState, useEffect, useCallback } from 'react';
 import { AlertTriangle, Database, Download, HardDrive, RotateCcw } from 'lucide-react';
@@ -145,7 +155,7 @@ export function SettingsMaintenanceTab() {
       }
     } catch (error) {
       logger.captureException(error, { context: 'SettingsMaintenanceTab:cleanDatabase' });
-      toast.error('Error al limpiar la base de datos');
+      toast.error(error instanceof Error ? error.message : 'Error al limpiar la base de datos');
     } finally {
       setIsCleaning(false);
       setIsCleanModalOpen(false);
@@ -179,37 +189,35 @@ export function SettingsMaintenanceTab() {
               </div>
             ) : (
               <div className='overflow-x-auto'>
-                <table className='w-full text-sm'>
-                  <thead>
-                    <tr className='border-b'>
-                      <th className='text-left py-2 px-3 font-medium text-gray-500'>Nombre</th>
-                      <th className='text-left py-2 px-3 font-medium text-gray-500'>Fecha</th>
-                      <th className='text-left py-2 px-3 font-medium text-gray-500'>Registros</th>
-                      <th className='text-left py-2 px-3 font-medium text-gray-500'>Tamaño</th>
-                      <th className='text-right py-2 px-3 font-medium text-gray-500'>Acciones</th>
-                    </tr>
-                  </thead>
-                  <tbody>
+                <Table className='w-full'>
+                  <TableHeader>
+                    <TableRow className='border-b'>
+                      <TableHead className='text-left font-medium'>Nombre</TableHead>
+                      <TableHead className='text-left font-medium'>Fecha</TableHead>
+                      <TableHead className='text-left font-medium'>Registros</TableHead>
+                      <TableHead className='text-left font-medium'>Tamaño</TableHead>
+                      <TableHead className='text-right font-medium'>Acciones</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
                     {backups.map(backup => (
-                      <tr key={backup.id_backup} className='border-b hover:bg-gray-50'>
-                        <td className='py-2 px-3 font-medium'>{backup.nombre}</td>
-                        <td className='py-2 px-3 text-gray-600'>
-                          {new Date(backup.fecha_crea).toLocaleString('es-CL')}
-                        </td>
-                        <td className='py-2 px-3 text-gray-600'>{backup.registros_count}</td>
-                        <td className='py-2 px-3 text-gray-600'>
-                          {(backup.tamano_bytes / 1024).toFixed(1)} KB
-                        </td>
-                        <td className='py-2 px-3 text-right'>
+                      <TableRow key={backup.id_backup} className='border-b'>
+                        <TableCell className='font-medium'>{backup.nombre}</TableCell>
+                        <TableCell>{new Date(backup.fecha_crea).toLocaleString('es-CL')}</TableCell>
+                        <TableCell>{backup.registros_count}</TableCell>
+                        <TableCell>{(backup.tamano_bytes / 1024).toFixed(1)} KB</TableCell>
+                        <TableCell className='text-right'>
                           <div className='flex justify-end gap-2'>
-                            <button
+                            <Button
+                              variant='unstyled'
                               onClick={() => downloadBackup(backup.id_backup)}
                               className='p-1.5 text-blue-600 hover:bg-blue-50 rounded-full'
                               title='Descargar JSON'
                             >
                               <Download className='h-4 w-4' />
-                            </button>
-                            <button
+                            </Button>
+                            <Button
+                              variant='unstyled'
                               onClick={() => restoreBackup(backup.id_backup)}
                               disabled={restoringBackupId === backup.id_backup}
                               className='p-1.5 text-green-600 hover:bg-green-50 rounded-full disabled:opacity-50'
@@ -220,18 +228,19 @@ export function SettingsMaintenanceTab() {
                               ) : (
                                 <RotateCcw className='h-4 w-4' />
                               )}
-                            </button>
+                            </Button>
                           </div>
-                        </td>
-                      </tr>
+                        </TableCell>
+                      </TableRow>
                     ))}
-                  </tbody>
-                </table>
+                  </TableBody>
+                </Table>
               </div>
             )}
           </CardContent>
           <CardFooter className='flex justify-end border-t pt-4 mt-auto'>
-            <button
+            <Button
+              variant='unstyled'
               onClick={createBackup}
               disabled={isCreatingBackup}
               className='inline-flex items-center px-4 py-2 bg-blue-600 text-white rounded-full hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors text-sm'
@@ -247,7 +256,7 @@ export function SettingsMaintenanceTab() {
                   Crear Backup
                 </>
               )}
-            </button>
+            </Button>
           </CardFooter>
         </Card>
 
@@ -262,19 +271,15 @@ export function SettingsMaintenanceTab() {
             <div className='text-sm text-gray-600 dark:text-gray-300'>
               <p>Esta acción vaciará todas las tablas excepto:</p>
               <ul className='list-disc list-inside mt-1 text-gray-500'>
-                <li>usuarios</li>
-                <li>roles</li>
-                <li>permissions</li>
-                <li>configuraciones</li>
-                <li>habitaciones</li>
-                <li>productos</li>
-                <li>categorias</li>
-                <li>codigos</li>
+                {DATABASE_CLEAN_PROTECTED_TABLES.map(table => (
+                  <li key={table}>{table}</li>
+                ))}
               </ul>
             </div>
           </CardContent>
           <CardFooter className='flex justify-end border-t pt-4 mt-auto'>
-            <button
+            <Button
+              variant='unstyled'
               onClick={() => setIsCleanModalOpen(true)}
               disabled={isCleaning}
               className='inline-flex items-center px-4 py-2 bg-red-600 text-white rounded-full hover:bg-red-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors text-sm'
@@ -290,7 +295,7 @@ export function SettingsMaintenanceTab() {
                   Vaciar Base de Datos
                 </>
               )}
-            </button>
+            </Button>
           </CardFooter>
         </Card>
       </div>

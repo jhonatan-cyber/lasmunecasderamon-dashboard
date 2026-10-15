@@ -146,6 +146,7 @@ export function useAuthPermissions({
       const user = getUser();
       if (module === 'dashboard' || module === 'Dashboard') return true;
       if (user?.role?.toLowerCase() === 'administrador') return true;
+      if (user?.role?.toLowerCase() === 'barman' && module === 'advances') return false;
       if (!userPermissions || userPermissions.length === 0) {
         return false;
       }
@@ -160,6 +161,7 @@ export function useAuthPermissions({
       const user = getUser();
       if (module === 'dashboard' || module === 'Dashboard') return true;
       if (user?.role?.toLowerCase() === 'administrador') return true;
+      if (user?.role?.toLowerCase() === 'barman' && module === 'advances') return false;
       if (!userPermissions || userPermissions.length === 0) return false;
       return userPermissions.some(p => p.module === module);
     },
@@ -171,6 +173,7 @@ export function useAuthPermissions({
       const user = getUser();
       if (module === 'dashboard' || module === 'Dashboard') return true;
       if (user?.role?.toLowerCase() === 'administrador') return true;
+      if (user?.role?.toLowerCase() === 'barman' && module === 'advances') return false;
       if (!userPermissions || userPermissions.length === 0) return false;
       return actions.every(action =>
         userPermissions.some(p => p.module === module && p.action === action)

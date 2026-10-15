@@ -1,4 +1,5 @@
 'use client';
+import { StatusTabs } from '@/components/shared/StatusTabs';
 
 import { useEffect, useState, useMemo } from 'react';
 import { Clock, CheckCircle } from 'lucide-react';
@@ -82,50 +83,30 @@ export function AccountsPageClient() {
           />
 
           {}
-          <div className='flex justify-center gap-3 border-b pb-1'>
-            <button
-              onClick={() => {
-                setActiveTab('pending');
-                setPage(1);
-              }}
-              className={`flex items-center gap-2 px-5 py-2 text-sm font-semibold transition-all ${
-                activeTab === 'pending'
-                  ? 'bg-amber-100 text-amber-700 rounded-full shadow-xs'
-                  : 'text-gray-500 hover:bg-gray-100 rounded-full'
-              }`}
-            >
-              Abiertas
-              <span
-                className={`ml-1.5 px-2.5 py-0.5 rounded-full text-xs font-bold ${
-                  activeTab === 'pending'
-                    ? 'bg-amber-600 text-white'
-                    : 'bg-amber-100 text-amber-800'
-                }`}
-              >
-                {pendingCount}
-              </span>
-            </button>
-            <button
-              onClick={() => {
-                setActiveTab('paid');
-                setPage(1);
-              }}
-              className={`flex items-center gap-2 px-5 py-2 text-sm font-semibold transition-all ${
-                activeTab === 'paid'
-                  ? 'bg-green-100 text-green-700 rounded-full shadow-xs'
-                  : 'text-gray-500 hover:bg-gray-100 rounded-full'
-              }`}
-            >
-              Cerradas
-              <span
-                className={`ml-1.5 px-2.5 py-0.5 rounded-full text-xs font-bold ${
-                  activeTab === 'paid' ? 'bg-green-600 text-white' : 'bg-green-100 text-green-800'
-                }`}
-              >
-                {paidCount}
-              </span>
-            </button>
-          </div>
+          <StatusTabs
+            items={[
+              {
+                label: 'Abiertas',
+                count: pendingCount,
+                active: activeTab === 'pending',
+                onSelect: () => {
+                  setActiveTab('pending');
+                  setPage(1);
+                },
+                tone: 'warning'
+              },
+              {
+                label: 'Cerradas',
+                count: paidCount,
+                active: activeTab === 'paid',
+                onSelect: () => {
+                  setActiveTab('paid');
+                  setPage(1);
+                },
+                tone: 'success'
+              }
+            ]}
+          />
 
           <div className='overflow-x-auto'>
             <CuentaTable

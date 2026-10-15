@@ -142,7 +142,8 @@ export const LoginForm = ({
   if (view === 'recovery') {
     return (
       <div className='space-y-5'>
-        <button
+        <Button
+          variant='unstyled'
           type='button'
           onClick={() => {
             onResetRecovery();
@@ -152,7 +153,7 @@ export const LoginForm = ({
         >
           <ArrowLeft className='h-4 w-4' aria-hidden='true' />
           Volver al inicio de sesión
-        </button>
+        </Button>
 
         {recoveryComplete ? (
           <div className='space-y-3 text-center' role='status'>
@@ -274,7 +275,8 @@ export const LoginForm = ({
               onKeyDown={handlePasswordKeyDown}
               autoComplete='current-password'
             />
-            <button
+            <Button
+              variant='unstyled'
               type='button'
               onPointerDown={e => {
                 e.preventDefault();
@@ -293,7 +295,7 @@ export const LoginForm = ({
               style={{ WebkitTapHighlightColor: 'transparent' }}
             >
               {showPassword ? <EyeOff className='w-5 h-5' /> : <Eye className='w-5 h-5' />}
-            </button>
+            </Button>
           </div>
         </div>
 
@@ -308,13 +310,14 @@ export const LoginForm = ({
         </Button>
 
         <div className='text-center'>
-          <button
+          <Button
+            variant='unstyled'
             type='button'
             onClick={() => onSetView('recovery')}
             className='text-sm font-medium text-blue-600 underline-offset-4 hover:underline dark:text-blue-400'
           >
             ¿Olvidaste tu contraseña?
-          </button>
+          </Button>
         </div>
 
         {hasUsers === false && (
@@ -429,13 +432,14 @@ export const LoginForm = ({
       </Button>
 
       <div className='text-center'>
-        <button
+        <Button
+          variant='unstyled'
           type='button'
           onClick={() => onSetStep('login')}
           className='text-sm text-gray-500 hover:text-blue-600 flex items-center gap-1 mx-auto'
         >
           <span>← Volver al login</span>
-        </button>
+        </Button>
       </div>
     </form>
   );

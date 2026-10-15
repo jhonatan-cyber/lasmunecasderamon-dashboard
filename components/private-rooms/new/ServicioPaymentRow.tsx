@@ -1,4 +1,5 @@
 'use client';
+import { Input } from '@/components/ui/input';
 
 import { memo } from 'react';
 import { Coins, DollarSign } from 'lucide-react';
@@ -43,7 +44,7 @@ export const ServicioPaymentRow = memo(function ServicioPaymentRow({
           <span className='absolute inset-y-0 left-3 flex items-center text-gray-400'>
             <DollarSign className='w-4 h-4' />
           </span>
-          <input
+          <Input
             type='text'
             value={
               formData.precio_servicio === 0
@@ -96,7 +97,7 @@ export const ServicioPaymentRow = memo(function ServicioPaymentRow({
           <span className='absolute inset-y-0 left-3 flex items-center text-gray-400'>
             <Coins className='w-4 h-4' />
           </span>
-          <input
+          <Input
             type='text'
             value={formData.iva === 0 ? '' : formatNumberWithSeparators(formData.iva)}
             onChange={e => {

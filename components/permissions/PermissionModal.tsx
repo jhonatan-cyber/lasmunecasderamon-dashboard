@@ -1,4 +1,5 @@
 'use client';
+import { Textarea } from '@/components/ui/textarea';
 
 import { useState, useEffect } from 'react';
 import { Loader2, Key } from 'lucide-react';
@@ -181,7 +182,7 @@ export function PermissionModal({
             </Label>
             <span className='text-xs text-gray-500'> (Opcional)</span>
             <div className='relative'>
-              <textarea
+              <Textarea
                 id='permission-description'
                 value={formData.description}
                 onChange={e => setFormData(prev => ({ ...prev, description: e.target.value }))}

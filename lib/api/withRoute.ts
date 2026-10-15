@@ -90,7 +90,7 @@ function hasRequiredPermission(
   if (isAdministrator(user)) return true;
   if (
     user.role?.toLowerCase() === 'barman' &&
-    (module === 'sales' || (module === 'orders' && action === 'process'))
+    (module === 'sales' || module === 'advances' || (module === 'orders' && action === 'process'))
   )
     return false;
   const userPermissions = (user.permissions as any)?.[module];

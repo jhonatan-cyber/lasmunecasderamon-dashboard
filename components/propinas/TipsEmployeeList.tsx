@@ -1,9 +1,24 @@
 'use client';
+import { ListLoadError } from '@/components/shared/ListLoadError';
+import { SortSelect } from '@/components/shared/selects/SortSelect';
+
+import { FilterBar } from '@/components/shared/FilterBar';
+import { ModuleTableCard } from '@/components/shared/tables/ModuleTable';
+import { SELECT_LABEL_CLASS } from '@/components/shared/selectStyles';
+import { Input } from '@/components/ui/input';
+import {
+  Table,
+  TableHeader,
+  TableRow,
+  TableHead,
+  TableBody,
+  TableCell
+} from '@/components/ui/table';
 
 import { useState, useEffect } from 'react';
 import { useCurrentUser } from '@/hooks/auth/useCurrentUser';
 import { useRouter } from 'next/navigation';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { ArrowLeft } from 'lucide-react';
 import SelectElements from '@/components/shared/SelectElements';
@@ -37,11 +52,6 @@ const TIP_SORT_BY_OPTIONS = [
   { value: 'codigo_venta', label: 'Código' }
 ];
 
-const SORT_ORDER_OPTIONS = [
-  { value: 'desc', label: 'Descendente' },
-  { value: 'asc', label: 'Ascendente' }
-];
-
 interface Props {
   allowedRole: string;
 }
@@ -50,7 +60,8 @@ export function TipsEmployeeList({ allowedRole }: Props) {
   const { user, loading: userLoading } = useCurrentUser();
   const router = useRouter();
   const [tips, setTips] = useState<Tip[]>([]);
-  const [loading, setLoading] = useState(false);
+  const [loading, setLoading] = useState(true);
+  const [loadError, setLoadError] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState('all');
   const [sortBy, setSortBy] = useState('fecha_crea');
@@ -59,16 +70,26 @@ export function TipsEmployeeList({ allowedRole }: Props) {
   const [rowsPerPage, setRowsPerPage] = useState(10);
 
   const fetchTips = async () => {
+    setLoadError(false);
     setLoading(true);
     try {
       const res = await fetch('/api/tips/user');
       const data = await res.json();
+      if (!res.ok || !data.success || !Array.isArray(data.data))
+        throw new Error('No se pudieron cargar los propinas');
       if (data.success) {
-        setTips(data.data || []);
+        setTips(
+          data.data.map((row: Tip) => ({
+            ...row,
+            monto: Number(row.monto ?? 0),
+            estado: Number(row.estado ?? 0)
+          }))
+        );
       } else {
         logger.error('Error fetching tips:', data.message);
       }
     } catch (error) {
+      setLoadError(true);
       logger.captureException(error, { context: 'TipsEmployeeList:fetchTips' });
     } finally {
       setLoading(false);
@@ -76,10 +97,14 @@ export function TipsEmployeeList({ allowedRole }: Props) {
   };
 
   useEffect(() => {
-    if (user && !userLoading) {
+    if (user && !userLoading && user.role?.toLowerCase() === allowedRole) {
       fetchTips();
     }
-  }, [user, userLoading]);
+  }, [user, userLoading, allowedRole]);
+
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [searchTerm, statusFilter, sortBy, sortOrder, rowsPerPage]);
 
   if (userLoading) {
     return (
@@ -126,6 +151,7 @@ export function TipsEmployeeList({ allowedRole }: Props) {
       bValue = new Date(bValue || 0);
     }
 
+    if (aValue === bValue) return 0;
     if (sortOrder === 'asc') {
       return aValue > bValue ? 1 : -1;
     } else {
@@ -178,6 +204,9 @@ export function TipsEmployeeList({ allowedRole }: Props) {
     return '—';
   };
 
+  if (loadError)
+    return <ListLoadError message='No se pudieron cargar tus propinas.' onRetry={fetchTips} />;
+
   return (
     <div className='p-6 space-y-6'>
       {}
@@ -205,18 +234,17 @@ export function TipsEmployeeList({ allowedRole }: Props) {
       </div>
 
       {}
-      <div className='grid grid-cols-1 md:grid-cols-4 gap-4'>
+      <FilterBar>
         <div>
-          <label htmlFor='buscar-propinas' className='block text-sm font-medium text-gray-700 mb-1'>
+          <label htmlFor='buscar-propinas' className={SELECT_LABEL_CLASS}>
             Buscar
           </label>
-          <input
+          <Input
             id='buscar-propinas'
             type='text'
             placeholder='Buscar por código o monto...'
             value={searchTerm}
             onChange={e => setSearchTerm(e.target.value)}
-            className='w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-hidden focus:ring-2 focus:ring-blue-500'
           />
         </div>
         <FilterSelect
@@ -225,22 +253,15 @@ export function TipsEmployeeList({ allowedRole }: Props) {
           onChange={setStatusFilter}
           options={TIP_STATUS_OPTIONS}
         />
-        <FilterSelect
-          label='Ordenar por'
-          value={sortBy}
-          onChange={setSortBy}
+        <SortSelect
+          field={sortBy}
+          direction={sortOrder}
           options={TIP_SORT_BY_OPTIONS}
+          onChange={(field, direction) => {
+            setSortBy(field as typeof sortBy);
+            setSortOrder(direction);
+          }}
         />
-        <FilterSelect
-          label='Orden'
-          value={sortOrder}
-          onChange={value => setSortOrder(value as 'asc' | 'desc')}
-          options={SORT_ORDER_OPTIONS}
-        />
-      </div>
-
-      {}
-      <div className='flex justify-between items-center'>
         <SelectElements
           value={rowsPerPage}
           onChange={value => {
@@ -254,10 +275,10 @@ export function TipsEmployeeList({ allowedRole }: Props) {
             { value: 50, label: '50 por página' }
           ]}
         />
-      </div>
+      </FilterBar>
 
       {}
-      <Card>
+      <ModuleTableCard>
         <CardHeader>
           <CardTitle aria-live='polite'>Propinas ({filteredTips.length})</CardTitle>
         </CardHeader>
@@ -271,51 +292,49 @@ export function TipsEmployeeList({ allowedRole }: Props) {
             </div>
           ) : (
             <div className='overflow-x-auto'>
-              <table className='w-full'>
-                <thead>
-                  <tr className='border-b border-gray-200'>
-                    <th className='text-left py-3 px-4 font-medium text-gray-900'>#</th>
-                    <th className='text-left py-3 px-4 font-medium text-gray-900'>CODIGO VENTA</th>
-                    <th className='text-left py-3 px-4 font-medium text-gray-900'>PROPINA</th>
-                    <th className='text-left py-3 px-4 font-medium text-gray-900'>FECHA VENTA</th>
-                    <th className='text-left py-3 px-4 font-medium text-gray-900'>FECHA PAGO</th>
-                    <th className='text-left py-3 px-4 font-medium text-gray-900'>ESTADO</th>
-                  </tr>
-                </thead>
-                <tbody>
+              <Table className='w-full'>
+                <TableHeader>
+                  <TableRow className='border-b'>
+                    <TableHead className='text-left font-medium'>#</TableHead>
+                    <TableHead className='text-left font-medium'>CODIGO VENTA</TableHead>
+                    <TableHead className='text-left font-medium'>PROPINA</TableHead>
+                    <TableHead className='text-left font-medium'>FECHA VENTA</TableHead>
+                    <TableHead className='text-left font-medium'>FECHA PAGO</TableHead>
+                    <TableHead className='text-left font-medium'>ESTADO</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {paginatedTips.length === 0 && (
+                    <TableRow>
+                      <TableCell colSpan={6} className='py-12 text-center text-gray-500'>
+                        No se encontraron propinas
+                      </TableCell>
+                    </TableRow>
+                  )}
                   {paginatedTips.map((tip, index) => {
                     const creacionDate = formatDateTimeDmyLabel(tip.fecha_crea);
                     return (
-                      <tr
-                        key={`${tip.codigo_venta}-${index}`}
-                        className='border-b border-gray-100 hover:bg-gray-50'
-                      >
-                        <td className='py-3 px-4'>
-                          <div className='w-8 h-8 rounded-full bg-purple-300 flex items-center justify-center text-purple-800 font-medium text-sm'>
-                            {startIndex + index + 1}
-                          </div>
-                        </td>
-                        <td className='py-3 px-4 text-gray-900'>
-                          {tip.codigo_venta || 'Sin código'}
-                        </td>
-                        <td className='py-3 px-4 text-gray-900'>{formatCurrencyCLP(tip.monto)}</td>
-                        <td className='py-3 px-4'>
+                      <TableRow key={`${tip.codigo_venta}-${index}`} className='border-b'>
+                        <TableCell>{startIndex + index + 1}</TableCell>
+                        <TableCell>{tip.codigo_venta || 'Sin código'}</TableCell>
+                        <TableCell>{formatCurrencyCLP(tip.monto)}</TableCell>
+                        <TableCell>
                           <div>
                             <div className='font-medium text-gray-900'>{creacionDate.date}</div>
                             <div className='text-sm text-gray-500'>{creacionDate.time}</div>
                           </div>
-                        </td>
-                        <td className='py-3 px-4'>{renderFechaPago(tip)}</td>
-                        <td className='py-3 px-4'>{getStatusBadge(tip.estado)}</td>
-                      </tr>
+                        </TableCell>
+                        <TableCell>{renderFechaPago(tip)}</TableCell>
+                        <TableCell>{getStatusBadge(tip.estado)}</TableCell>
+                      </TableRow>
                     );
                   })}
-                </tbody>
-              </table>
+                </TableBody>
+              </Table>
             </div>
           )}
         </CardContent>
-      </Card>
+      </ModuleTableCard>
 
       {}
       {totalPages > 1 && (

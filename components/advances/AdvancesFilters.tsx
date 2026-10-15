@@ -1,9 +1,10 @@
 ﻿'use client';
+import { SortSelect } from '@/components/shared/selects/SortSelect';
 
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
-import { Trash2, SortAsc, SortDesc } from 'lucide-react';
+import { Trash2 } from 'lucide-react';
 import SearchInput from '@/components/shared/SearchInput';
 import { FilterSelect } from '@/components/shared/selects';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
@@ -69,19 +70,20 @@ export default function AdvancesFilters({
                 ]}
               />
             </div>
-            <div className='flex-1 min-w-0'>
-              <FilterSelect
-                value={sortBy}
-                onChange={setSortBy}
-                label='Ordenar por'
-                placeholder='Creación'
-                options={[
-                  { value: 'fecha_crea', label: 'Creación' },
-                  { value: 'monto', label: 'Monto' },
-                  { value: 'usuario', label: 'Usuario' }
-                ]}
-              />
-            </div>
+            <SortSelect
+              className='flex-1 min-w-0'
+              field={sortBy}
+              direction={sortOrder}
+              options={[
+                { value: 'fecha_crea', label: 'Creación' },
+                { value: 'monto', label: 'Monto' },
+                { value: 'usuario', label: 'Usuario' }
+              ]}
+              onChange={(field, direction) => {
+                setSortBy(field as typeof sortBy);
+                setSortOrder(direction);
+              }}
+            />
           </div>
           <div className='flex gap-2 items-end'>
             <div className='flex-1 min-w-0'>
@@ -98,24 +100,7 @@ export default function AdvancesFilters({
                 ]}
               />
             </div>
-            <div className='flex items-end'>
-              <Label className='mb-1 block text-[10px] font-black uppercase tracking-widest text-gray-400 invisible'>
-                Ord
-              </Label>
-              <Button
-                variant='outline'
-                size='icon'
-                onClick={() => setSortOrder(sortOrder === 'asc' ? 'desc' : 'asc')}
-                aria-label={sortOrder === 'asc' ? 'Ordenar descendente' : 'Ordenar ascendente'}
-                className='h-10 w-10 shrink-0 rounded-full border border-gray-300 dark:border-gray-700 bg-gray-100 dark:bg-slate-900/50 text-gray-900 dark:text-gray-100 hover:bg-gray-200 dark:hover:bg-gray-700'
-              >
-                {sortOrder === 'asc' ? (
-                  <SortAsc className='h-4 w-4' />
-                ) : (
-                  <SortDesc className='h-4 w-4' />
-                )}
-              </Button>
-            </div>
+
             <div className='flex items-end'>
               <Label className='mb-1 block text-[10px] font-black uppercase tracking-widest text-gray-400 invisible'>
                 Limp
@@ -170,38 +155,20 @@ export default function AdvancesFilters({
             />
           </div>
 
-          <div className='min-w-[180px]'>
-            <FilterSelect
-              value={sortBy}
-              onChange={setSortBy}
-              label='Ordenar por'
-              placeholder='Creación'
-              options={[
-                { value: 'fecha_crea', label: 'Creación' },
-                { value: 'monto', label: 'Monto' },
-                { value: 'usuario', label: 'Usuario' }
-              ]}
-            />
-          </div>
-
-          <div className='flex items-end'>
-            <Label className='mb-2 block text-[10px] font-black uppercase tracking-widest text-gray-400 invisible'>
-              Orden
-            </Label>
-            <Button
-              variant='outline'
-              size='icon'
-              onClick={() => setSortOrder(sortOrder === 'asc' ? 'desc' : 'asc')}
-              aria-label={sortOrder === 'asc' ? 'Ordenar descendente' : 'Ordenar ascendente'}
-              className='h-10 w-10 rounded-full border border-gray-300 dark:border-gray-700 bg-gray-100 dark:bg-slate-900/50 text-gray-900 dark:text-gray-100 hover:bg-gray-200 dark:hover:bg-gray-700'
-            >
-              {sortOrder === 'asc' ? (
-                <SortAsc className='h-4 w-4' />
-              ) : (
-                <SortDesc className='h-4 w-4' />
-              )}
-            </Button>
-          </div>
+          <SortSelect
+            className='min-w-[180px]'
+            field={sortBy}
+            direction={sortOrder}
+            options={[
+              { value: 'fecha_crea', label: 'Creación' },
+              { value: 'monto', label: 'Monto' },
+              { value: 'usuario', label: 'Usuario' }
+            ]}
+            onChange={(field, direction) => {
+              setSortBy(field as typeof sortBy);
+              setSortOrder(direction);
+            }}
+          />
 
           <div className='min-w-[100px]'>
             <FilterSelect

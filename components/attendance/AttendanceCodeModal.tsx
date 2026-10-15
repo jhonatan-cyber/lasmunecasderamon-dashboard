@@ -1,4 +1,5 @@
 'use client';
+import { Input } from '@/components/ui/input';
 
 import { useState, type KeyboardEvent } from 'react';
 import { QrCode, Loader2, CheckCircle2, XCircle, Clock } from 'lucide-react';
@@ -106,7 +107,7 @@ export function AttendanceCodeModal() {
         </DialogHeader>
 
         <div className='flex flex-col items-center gap-6 py-4'>
-          <input
+          <Input
             type='text'
             inputMode='numeric'
             pattern='[0-9]*'

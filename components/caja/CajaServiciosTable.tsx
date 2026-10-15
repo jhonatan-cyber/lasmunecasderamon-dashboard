@@ -1,7 +1,7 @@
 'use client';
 
 import { Badge } from '@/components/ui/badge';
-import { Button } from '@/components/ui/button';
+
 import Paginate from '@/components/shared/Paginate';
 import { Input } from '@/components/ui/input';
 import { Skeleton } from '@/components/ui/skeleton';
@@ -75,25 +75,25 @@ export function CajaServiciosTable({
             <div className='overflow-x-auto'>
               <Table>
                 <TableHeader>
-                  <TableRow className='bg-gray-50 dark:bg-gray-800/50'>
-                    <TableHead className='font-bold text-xs'>CLIENTE</TableHead>
-                    <TableHead className='font-bold text-xs'>ANFITRIONAS</TableHead>
-                    <TableHead className='font-bold text-xs'>HAB.</TableHead>
-                    <TableHead className='font-bold text-xs text-right'>SERVICIO</TableHead>
-                    <TableHead className='font-bold text-xs text-right'>HABITACION</TableHead>
-                    <TableHead className='font-bold text-xs text-right'>IVA</TableHead>
-                    <TableHead className='font-bold text-xs'>FECHA</TableHead>
-                    <TableHead className='font-bold text-xs'>PAGO</TableHead>
-                    <TableHead className='font-bold text-xs text-right'>TOTAL</TableHead>
+                  <TableRow>
+                    <TableHead className='font-bold'>CLIENTE</TableHead>
+                    <TableHead className='font-bold'>ANFITRIONAS</TableHead>
+                    <TableHead className='font-bold'>HAB.</TableHead>
+                    <TableHead className='font-bold text-right'>SERVICIO</TableHead>
+                    <TableHead className='font-bold text-right'>HABITACION</TableHead>
+                    <TableHead className='font-bold text-right'>IVA</TableHead>
+                    <TableHead className='font-bold'>FECHA</TableHead>
+                    <TableHead className='font-bold'>PAGO</TableHead>
+                    <TableHead className='font-bold text-right'>TOTAL</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
                   {getRows().map((servicio: any, idx: number) => (
-                    <TableRow key={idx} className='hover:bg-gray-50 dark:hover:bg-gray-800/50'>
-                      <TableCell className='font-medium text-sm'>
+                    <TableRow key={idx}>
+                      <TableCell className='font-medium'>
                         {servicio.cliente_nombre || 'N/A'}
                       </TableCell>
-                      <TableCell className='text-sm text-gray-600 italic'>
+                      <TableCell className='italic'>
                         {servicio.anfitrionas_nombres || 'Sin asignar'}
                       </TableCell>
                       <TableCell>
@@ -101,18 +101,16 @@ export function CajaServiciosTable({
                           {servicio.habitacion_nombre || 'N/A'}
                         </Badge>
                       </TableCell>
-                      <TableCell className='text-right text-sm font-semibold text-emerald-600'>
+                      <TableCell className='text-right font-semibold text-emerald-600'>
                         {formatCurrencyNoDecimals(servicio.precio_servicio || 0)}
                       </TableCell>
-                      <TableCell className='text-right text-sm font-semibold text-blue-600'>
+                      <TableCell className='text-right font-semibold text-blue-600'>
                         {formatCurrencyNoDecimals(servicio.precio_habitacion || 0)}
                       </TableCell>
-                      <TableCell className='text-right text-sm font-semibold text-purple-600'>
+                      <TableCell className='text-right font-semibold text-purple-600'>
                         {formatCurrencyNoDecimals(servicio.iva || 0)}
                       </TableCell>
-                      <TableCell className='text-sm text-gray-500'>
-                        {formatFechaLarga(servicio.fecha_crea)}
-                      </TableCell>
+                      <TableCell>{formatFechaLarga(servicio.fecha_crea)}</TableCell>
                       <TableCell>
                         <Badge variant='secondary' className='text-xs capitalize'>
                           {servicio.metodo_pago || 'efectivo'}

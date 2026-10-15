@@ -201,25 +201,25 @@ export default function GratificacionesTable({
         <Table>
           <TableHeader>
             <TableRow className='bg-zinc-50 dark:bg-neutral-800/50'>
-              <TableHead className='font-bold text-xs text-zinc-500 uppercase tracking-wider text-center py-4'>
+              <TableHead className='font-bold text-zinc-500 tracking-wider text-center'>
                 USUARIO
               </TableHead>
-              <TableHead className='font-bold text-xs text-zinc-500 uppercase tracking-wider text-center py-4'>
+              <TableHead className='font-bold text-zinc-500 tracking-wider text-center'>
                 SOLICITADO POR
               </TableHead>
-              <TableHead className='font-bold text-xs text-zinc-500 uppercase tracking-wider text-center py-4'>
+              <TableHead className='font-bold text-zinc-500 tracking-wider text-center'>
                 FECHA HORA
               </TableHead>
-              <TableHead className='font-bold text-xs text-zinc-500 uppercase tracking-wider text-center py-4'>
+              <TableHead className='font-bold text-zinc-500 tracking-wider text-center'>
                 MONTO
               </TableHead>
-              <TableHead className='font-bold text-xs text-zinc-500 uppercase tracking-wider text-center py-4'>
+              <TableHead className='font-bold text-zinc-500 tracking-wider text-center'>
                 ESTADO
               </TableHead>
-              <TableHead className='font-bold text-xs text-zinc-500 uppercase tracking-wider text-center py-4'>
+              <TableHead className='font-bold text-zinc-500 tracking-wider text-center'>
                 DESCRIPCIÓN
               </TableHead>
-              <TableHead className='font-bold text-xs text-zinc-500 uppercase tracking-wider text-center py-4'>
+              <TableHead className='font-bold text-zinc-500 tracking-wider text-center'>
                 ACCIONES
               </TableHead>
             </TableRow>
@@ -253,7 +253,7 @@ export default function GratificacionesTable({
                     key={gratificacion.id}
                     className='hover:bg-zinc-50/50 dark:hover:bg-neutral-800/30 transition-colors'
                   >
-                    <TableCell className='text-center font-medium text-sm'>
+                    <TableCell className='text-center font-medium'>
                       <div className='flex items-center justify-center gap-2'>
                         <Avatar className='h-8 w-8'>
                           {gratificacion.usuario_foto && gratificacion.usuario_foto !== '' ? (
@@ -271,19 +271,19 @@ export default function GratificacionesTable({
                         <span className='text-left'>{gratificacion.usuario}</span>
                       </div>
                     </TableCell>
-                    <TableCell className='text-center text-sm text-zinc-600 dark:text-zinc-400'>
+                    <TableCell className='text-center text-zinc-600 dark:text-zinc-400'>
                       {gratificacion.solicitante || '—'}
                     </TableCell>
-                    <TableCell className='text-center text-sm text-zinc-600 dark:text-zinc-400'>
+                    <TableCell className='text-center text-zinc-600 dark:text-zinc-400'>
                       {formatDateTime(gratificacion.fecha_crea)}
                     </TableCell>
-                    <TableCell className='text-center font-bold text-sm text-zinc-900 dark:text-zinc-100'>
+                    <TableCell className='text-center font-bold text-zinc-900 dark:text-zinc-100'>
                       {formatCurrencyNoDecimals(gratificacion.monto)}
                     </TableCell>
                     <TableCell className='text-center'>
                       <StatusBadge estado={gratificacion.estado} />
                     </TableCell>
-                    <TableCell className='text-center text-sm text-zinc-500 max-w-xs truncate'>
+                    <TableCell className='text-center text-zinc-500 max-w-xs truncate'>
                       {gratificacion.descripcion || '-'}
                     </TableCell>
                     <TableCell className='text-center'>

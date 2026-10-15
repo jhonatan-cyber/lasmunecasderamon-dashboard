@@ -1,4 +1,5 @@
 'use client';
+import { Button } from '@/components/ui/button';
 
 import { memo } from 'react';
 import { BarChart3, ChevronDown } from 'lucide-react';
@@ -25,7 +26,8 @@ export const CajaDetailsStatsBar = memo(function CajaDetailsStatsBar({
   return (
     <div className='sticky top-0 z-20 bg-white/95 dark:bg-slate-900/95 backdrop-blur-xs border-b border-gray-100 dark:border-gray-800 px-6 py-4 print:hidden'>
       <div className='flex items-center justify-between gap-4'>
-        <button
+        <Button
+          variant='unstyled'
           type='button'
           onClick={onToggle}
           className='flex items-center gap-2 text-xs font-black uppercase tracking-widest text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-slate-200 transition-colors'
@@ -38,7 +40,7 @@ export const CajaDetailsStatsBar = memo(function CajaDetailsStatsBar({
           <ChevronDown
             className={`w-4 h-4 transition-transform duration-200 ${statsOpen ? 'rotate-180' : ''}`}
           />
-        </button>
+        </Button>
 
         {!statsOpen && (
           <div className='flex items-center gap-4 sm:gap-6 text-sm'>

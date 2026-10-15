@@ -1,4 +1,12 @@
 'use client';
+import {
+  Table,
+  TableHeader,
+  TableRow,
+  TableHead,
+  TableBody,
+  TableCell
+} from '@/components/ui/table';
 
 import { Button } from '@/components/ui/button';
 import { FileSpreadsheet as FileXls, FileText as FilePdf } from 'lucide-react';
@@ -187,26 +195,26 @@ export function ExportButtons({ clients }: ExportButtonsProps) {
         <div className='p-6'>
           <h1 className='text-3xl font-bold mb-6'>Listado de Clientes</h1>
           <p className='text-base text-gray-600 mb-6'>Generado el {formatDateLabel(new Date())}</p>
-          <table className='w-full text-base border-collapse'>
-            <thead>
-              <tr className='bg-gray-100'>
-                <th className='py-3 px-4 text-center border w-16 text-lg'>#</th>
-                <th className='py-3 px-4 text-left border text-lg'>RUN</th>
-                <th className='py-3 px-4 text-left border text-lg'>Nombre</th>
-                <th className='py-3 px-4 text-left border text-lg'>Apellido</th>
-                <th className='py-3 px-4 text-left border text-lg'>Teléfono</th>
-                <th className='py-3 px-4 text-left border text-lg'>Estado</th>
-              </tr>
-            </thead>
-            <tbody>
+          <Table className='w-full border-collapse'>
+            <TableHeader>
+              <TableRow>
+                <TableHead className='text-center border w-16 text-lg'>#</TableHead>
+                <TableHead className='text-left border text-lg'>RUN</TableHead>
+                <TableHead className='text-left border text-lg'>Nombre</TableHead>
+                <TableHead className='text-left border text-lg'>Apellido</TableHead>
+                <TableHead className='text-left border text-lg'>Teléfono</TableHead>
+                <TableHead className='text-left border text-lg'>Estado</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
               {clients.map((client, index) => (
-                <tr key={client.id} className='border-b hover:bg-gray-50'>
-                  <td className='py-3 px-4 text-center border'>{index + 1}</td>
-                  <td className='py-3 px-4 border'>{client.run || 'Sin RUN'}</td>
-                  <td className='py-3 px-4 border'>{client.name || ''}</td>
-                  <td className='py-3 px-4 border'>{client.lastName || ''}</td>
-                  <td className='py-3 px-4 border'>{client.phone || 'Sin teléfono'}</td>
-                  <td className='py-3 px-4 border'>
+                <TableRow key={client.id} className='border-b'>
+                  <TableCell className='text-center border'>{index + 1}</TableCell>
+                  <TableCell className='border'>{client.run || 'Sin RUN'}</TableCell>
+                  <TableCell className='border'>{client.name || ''}</TableCell>
+                  <TableCell className='border'>{client.lastName || ''}</TableCell>
+                  <TableCell className='border'>{client.phone || 'Sin teléfono'}</TableCell>
+                  <TableCell className='border'>
                     <span
                       className={`px-3 py-1.5 rounded-full text-sm ${
                         client.status === 1
@@ -216,11 +224,11 @@ export function ExportButtons({ clients }: ExportButtonsProps) {
                     >
                       {client.status === 1 ? 'Activo' : 'Inactivo'}
                     </span>
-                  </td>
-                </tr>
+                  </TableCell>
+                </TableRow>
               ))}
-            </tbody>
-          </table>
+            </TableBody>
+          </Table>
         </div>
       </div>
     </div>

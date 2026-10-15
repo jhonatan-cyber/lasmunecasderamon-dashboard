@@ -14,7 +14,8 @@ interface AdvancesTableRowProps {
   idx: number;
   total: number;
   isAdmin: boolean;
-  onAction?: (id: string | number, action: 'approve' | 'reject') => Promise<any>;
+  canDeliver?: boolean;
+  onAction?: (id: string | number, action: 'approve' | 'reject' | 'deliver') => Promise<any>;
   statusBadge: React.ReactNode;
 }
 
@@ -23,6 +24,7 @@ export function AdvancesTableRow({
   idx,
   total,
   isAdmin,
+  canDeliver = false,
   onAction,
   statusBadge
 }: AdvancesTableRowProps) {
@@ -34,7 +36,7 @@ export function AdvancesTableRow({
         idx === 0 ? 'first:rounded-t-xl' : ''
       } ${idx === total - 1 ? 'last:rounded-b-xl' : ''}`}
     >
-      <TableCell className='py-3 px-4'>
+      <TableCell>
         <div className='flex items-center gap-3'>
           <div className='h-10 w-10 rounded-full bg-indigo-100 flex items-center justify-center text-indigo-700 font-bold overflow-hidden border-2 border-white dark:border-slate-800 shadow-xs relative group-hover:scale-110 transition-transform duration-200'>
             {a.foto ? (
@@ -63,13 +65,13 @@ export function AdvancesTableRow({
           </div>
         </div>
       </TableCell>
-      <TableCell className='py-3 px-4 text-center'>
+      <TableCell className='text-center'>
         <div className='flex flex-col'>
           <span className='font-bold text-sm text-gray-900 dark:text-white'>{creacion.date}</span>
           <span className='text-xs text-gray-400'>{creacion.time}</span>
         </div>
       </TableCell>
-      <TableCell className='py-3 px-4 text-center'>
+      <TableCell className='text-center'>
         {a.fecha_aprobacion ? (
           <div className='flex flex-col'>
             <span className='font-bold text-sm text-gray-900 dark:text-white'>
@@ -83,11 +85,11 @@ export function AdvancesTableRow({
           <span className='text-xs text-gray-400 italic'>-</span>
         )}
       </TableCell>
-      <TableCell className='py-3 px-4 text-center'>{statusBadge}</TableCell>
-      <TableCell className='py-3 px-4 text-right font-bold text-emerald-600'>
+      <TableCell className='text-center'>{statusBadge}</TableCell>
+      <TableCell className='text-right font-bold text-emerald-600'>
         {formatCurrencyCLP(a.monto)}
       </TableCell>
-      <TableCell className='py-3 px-4 text-center'>
+      <TableCell className='text-center'>
         {a.entregado_por_nombre ? (
           <span className='text-xs font-semibold text-gray-700 dark:text-gray-300'>
             {a.entregado_por_nombre} {a.entregado_por_apellido}
@@ -96,9 +98,9 @@ export function AdvancesTableRow({
           <span className='text-xs text-gray-400 italic'>-</span>
         )}
       </TableCell>
-      {isAdmin && (
-        <TableCell className='py-3 px-4 text-center'>
-          {Number(a.estado) === 2 && onAction ? (
+      {(isAdmin || canDeliver) && (
+        <TableCell className='text-center'>
+          {isAdmin && Number(a.estado) === 2 && onAction ? (
             <div className='flex items-center justify-center gap-2'>
               <Button
                 size='sm'
@@ -117,6 +119,10 @@ export function AdvancesTableRow({
                 <X className='h-3 w-3 mr-1' /> Rechazar
               </Button>
             </div>
+          ) : canDeliver && Number(a.estado) === 1 && !a.fecha_entrega && onAction ? (
+            <Button className='rounded-full' onClick={() => onAction(a.id_anticipo, 'deliver')}>
+              Entregar efectivo
+            </Button>
           ) : (
             <div className='flex justify-center'>
               <Badge className='rounded-full px-3 py-1 bg-gray-100 text-gray-400 border-none font-bold uppercase tracking-tighter text-[9px] italic'>

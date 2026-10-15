@@ -86,7 +86,7 @@ export function PendingApprovals({
                 <>
                   <Button
                     className='flex-1 rounded-full'
-                    disabled={resolvingId === record.id}
+                    disabled={resolvingId !== null}
                     onClick={event => {
                       event.stopPropagation();
                       onResolve(record.id, 'aprobar');
@@ -98,7 +98,7 @@ export function PendingApprovals({
                   <Button
                     variant='outline'
                     className='flex-1 rounded-full'
-                    disabled={resolvingId === record.id}
+                    disabled={resolvingId !== null}
                     onClick={event => {
                       event.stopPropagation();
                       onResolve(record.id, 'rechazar');
@@ -155,7 +155,7 @@ export function PendingApprovals({
                   <>
                     <Button
                       className='rounded-full'
-                      disabled={resolvingId === selected.id}
+                      disabled={resolvingId !== null}
                       onClick={() => onResolve(selected.id, 'aprobar')}
                     >
                       <Check aria-hidden='true' />
@@ -164,7 +164,7 @@ export function PendingApprovals({
                     <Button
                       variant='outline'
                       className='rounded-full'
-                      disabled={resolvingId === selected.id}
+                      disabled={resolvingId !== null}
                       onClick={() => onResolve(selected.id, 'rechazar')}
                     >
                       <X aria-hidden='true' />

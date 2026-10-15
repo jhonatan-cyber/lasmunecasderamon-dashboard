@@ -123,30 +123,28 @@ export const DevolucionTable = ({ ventas, loading, onVerDetalles }: DevolucionTa
       <Table>
         <TableHeader>
           <TableRow>
-            <TableHead className='text-sm'>Código</TableHead>
-            <TableHead className='text-sm'>Cliente</TableHead>
-            <TableHead className='text-sm'>Habitación</TableHead>
-            <TableHead className='text-sm'>Total</TableHead>
-            <TableHead className='text-sm'>Método Pago</TableHead>
-            <TableHead className='text-sm'>Fecha</TableHead>
-            <TableHead className='text-sm'>Acciones</TableHead>
+            <TableHead>Código</TableHead>
+            <TableHead>Cliente</TableHead>
+            <TableHead>Habitación</TableHead>
+            <TableHead>Total</TableHead>
+            <TableHead>Método Pago</TableHead>
+            <TableHead>Fecha</TableHead>
+            <TableHead>Acciones</TableHead>
           </TableRow>
         </TableHeader>
         <TableBody>
           {ventas.map(venta => (
             <TableRow key={venta.id}>
-              <TableCell className='font-medium text-sm'>{venta.codigo}</TableCell>
-              <TableCell className='text-sm'>{venta.cliente_nombre || 'Sin cliente'}</TableCell>
-              <TableCell className='text-sm'>
-                {venta.habitacion_numero || 'Sin habitación'}
-              </TableCell>
-              <TableCell className='text-sm'>{formatCurrency(venta.total)}</TableCell>
+              <TableCell className='font-medium'>{venta.codigo}</TableCell>
+              <TableCell>{venta.cliente_nombre || 'Sin cliente'}</TableCell>
+              <TableCell>{venta.habitacion_numero || 'Sin habitación'}</TableCell>
+              <TableCell>{formatCurrency(venta.total)}</TableCell>
               <TableCell>
                 <Badge variant='outline' className='text-xs'>
                   {metodoPagoLabels[venta.metodo_pago] || venta.metodo_pago}
                 </Badge>
               </TableCell>
-              <TableCell className='text-sm'>{formatLongDateEs(venta.fecha_crea)}</TableCell>
+              <TableCell>{formatLongDateEs(venta.fecha_crea)}</TableCell>
               <TableCell>
                 <div className='flex items-center gap-2'>
                   <TooltipProvider>

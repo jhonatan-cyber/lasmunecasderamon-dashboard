@@ -1,9 +1,11 @@
 ﻿'use client';
+import { FilterBar } from '@/components/shared/FilterBar';
+import { SortSelect } from '@/components/shared/selects/SortSelect';
 
 import { Card, CardContent } from '@/components/ui/card';
 import { Label } from '@/components/ui/label';
 import { Button } from '@/components/ui/button';
-import { Trash2, SortAsc, SortDesc } from 'lucide-react';
+import { Trash2 } from 'lucide-react';
 import SearchInput from '@/components/shared/SearchInput';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { FilterSelect } from '@/components/shared/selects';
@@ -34,7 +36,7 @@ const statusOptions = [
 const sortOptions = [
   { value: 'total', label: 'Total' },
   { value: 'subtotal', label: 'Subtotal' },
-  { value: 'cliente', label: 'Cliente' },
+  { value: 'cliente_nombre', label: 'Cliente' },
   { value: 'codigo', label: 'Código' }
 ];
 
@@ -62,7 +64,7 @@ export function OrdersFilters({
   return (
     <Card className='shadow-md border-none bg-white dark:bg-slate-900/40 backdrop-blur-xs rounded-3xl overflow-hidden mb-6 mx-4 sm:mx-8'>
       <CardContent className='p-6'>
-        <div className='flex flex-col lg:flex-row gap-4 items-end'>
+        <FilterBar>
           {}
           <div className='w-full lg:flex-1'>
             <Label className='mb-2 block text-[10px] font-black uppercase tracking-widest text-gray-400 ml-1'>
@@ -72,7 +74,7 @@ export function OrdersFilters({
               value={searchTerm}
               onChange={setSearchTerm}
               placeholder='Buscar por cliente, código, nicks...'
-              className='w-full rounded-2xl bg-gray-50/50 dark:bg-slate-900/50 border-gray-200 dark:border-gray-800 h-10'
+              className='w-full rounded-full bg-gray-50/50 dark:bg-slate-900/50 border-gray-200 dark:border-gray-800 h-11'
             />
           </div>
 
@@ -88,34 +90,16 @@ export function OrdersFilters({
           </div>
 
           {}
-          <div className='w-full lg:w-[180px]'>
-            <Label className='mb-2 block text-[10px] font-black uppercase tracking-widest text-gray-400 ml-1'>
-              Ordenar por
-            </Label>
-            <div className='flex gap-1'>
-              <FilterSelect
-                value={sortBy}
-                onChange={setSortBy}
-                label=''
-                placeholder='Ordenar'
-                options={sortOptions}
-                className='flex-1'
-              />
-              <Button
-                variant='outline'
-                size='icon'
-                aria-label={sortOrder === 'asc' ? 'Ordenar descendente' : 'Ordenar ascendente'}
-                onClick={() => setSortOrder(sortOrder === 'asc' ? 'desc' : 'asc')}
-                className='h-11 w-11 rounded-full border-gray-200 dark:border-gray-800 bg-gray-100 dark:bg-slate-900/50'
-              >
-                {sortOrder === 'asc' ? (
-                  <SortAsc className='h-4 w-4' />
-                ) : (
-                  <SortDesc className='h-4 w-4' />
-                )}
-              </Button>
-            </div>
-          </div>
+          <SortSelect
+            className='w-full lg:w-[180px]'
+            field={sortBy}
+            direction={sortOrder}
+            options={sortOptions}
+            onChange={(field, direction) => {
+              setSortBy(field as typeof sortBy);
+              setSortOrder(direction);
+            }}
+          />
 
           {}
           <div className='w-full lg:w-[100px]'>
@@ -140,7 +124,7 @@ export function OrdersFilters({
                   variant='outline'
                   size='icon'
                   aria-label='Limpiar filtros'
-                  className='w-10 h-10 flex items-center justify-center rounded-2xl border-gray-200 dark:border-gray-800 hover:scale-110 transition-all duration-200 hover:bg-black hover:text-white dark:hover:bg-white dark:hover:text-black shadow-xs'
+                  className='flex-none! w-11 h-11 flex items-center justify-center rounded-full border-gray-200 dark:border-gray-800 hover:scale-110 transition-all duration-200 hover:bg-black hover:text-white dark:hover:bg-white dark:hover:text-black shadow-xs'
                 >
                   <Trash2 className='w-4 h-4' />
                 </Button>
@@ -150,7 +134,7 @@ export function OrdersFilters({
               </TooltipContent>
             </Tooltip>
           </TooltipProvider>
-        </div>
+        </FilterBar>
       </CardContent>
     </Card>
   );

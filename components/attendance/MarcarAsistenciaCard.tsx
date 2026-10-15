@@ -1,4 +1,6 @@
 'use client';
+import { Input } from '@/components/ui/input';
+import { Button } from '@/components/ui/button';
 
 import { useState } from 'react';
 import { ShieldCheck, LogIn } from 'lucide-react';
@@ -67,7 +69,7 @@ export function MarcarAsistenciaCard() {
             </p>
           </div>
 
-          <input
+          <Input
             value={codigo}
             onChange={event => setCodigo(event.target.value.replace(/\D/g, '').slice(0, 4))}
             inputMode='numeric'
@@ -77,14 +79,15 @@ export function MarcarAsistenciaCard() {
             className='w-44 text-center text-4xl font-black font-mono tracking-[0.3em] rounded-2xl bg-white/15 border border-white/30 py-4 text-white placeholder-white/40 focus:outline-none focus:ring-2 focus:ring-white/60'
           />
 
-          <button
+          <Button
+            variant='unstyled'
             type='submit'
             disabled={enviando || codigo.length !== 4}
             className='w-full flex items-center justify-center gap-2 px-5 py-3 rounded-2xl bg-white/20 hover:bg-white/30 border border-white/30 text-sm font-bold transition-all disabled:opacity-50 disabled:cursor-not-allowed'
           >
             <LogIn className='h-4 w-4' />
             {enviando ? 'Registrando...' : 'Registrar asistencia'}
-          </button>
+          </Button>
 
           {ultimoMensaje && <p className='text-xs text-center text-indigo-100'>{ultimoMensaje}</p>}
         </form>

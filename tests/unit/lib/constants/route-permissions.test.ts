@@ -2,6 +2,7 @@
 import fs from 'node:fs';
 import path from 'node:path';
 import { describe, expect, it } from 'vitest';
+import { getEmployeeModules } from '@/lib/constants/employee-modules';
 import { PROJECT_ROOT } from '../api/_walk-helpers';
 import {
   API_ROUTE_PERMISSIONS,
@@ -141,31 +142,30 @@ describe('pares del mapa', () => {
     }
   });
 
-  it('las páginas de rol quedan abiertas salvo las horas extras', () => {
-    const deRol = Object.keys(ROUTE_PERMISSIONS).filter(route =>
-      /^\/(garzon|anfitriona|cajero)-/.test(route)
-    );
-
-    expect(deRol.length).toBeGreaterThan(0);
-    for (const route of deRol) {
-      const permission = ROUTE_PERMISSIONS[route];
-      // Las de rol las ve cualquier sesión válida (módulo `dashboard`). La excepción son
-      // las horas extras: dependen del permiso de overtime del propio trabajador.
-      if (isAnySessionRoute(permission)) continue;
-
-      expect(permission, `${route} quedó detrás de un permiso inesperado`).toEqual({
-        module: 'overtime',
-        action: 'view'
-      });
+  it('las páginas personales no exigen permisos administrativos', () => {
+    for (const role of ['cajero', 'barman', 'garzon', 'anfitriona']) {
+      for (const item of getEmployeeModules(role)) {
+        const permission = findRoutePermission(item.href);
+        expect(permission, item.href).toEqual({ module: 'dashboard', action: 'view' });
+        expect(
+          fs.existsSync(path.join(PROJECT_ROOT, 'app', item.href.slice(1), 'page.tsx')),
+          item.href
+        ).toBe(true);
+      }
     }
-
     expect(isAnySessionRoute({ module: 'payroll', action: 'view' })).toBe(false);
   });
 });
 
 describe('el menú lateral', () => {
   const sidebarSource = read('hooks/useSidebarNavigation.ts');
-  const hrefs = [...sidebarSource.matchAll(/href:\s*'([^']+)'/g)].map(match => match[1]);
+  const hrefs = [...sidebarSource.matchAll(/href:\s*'([^']+)'/g)]
+    .map(match => match[1])
+    .concat(
+      ['cajero', 'barman', 'garzon', 'anfitriona'].flatMap(role =>
+        getEmployeeModules(role).map(item => item.href)
+      )
+    );
 
   it('todos sus destinos declaran un permiso alcanzable', () => {
     // Si el conteo baja, el archivo cambió de forma y el resto del test no probaría nada.

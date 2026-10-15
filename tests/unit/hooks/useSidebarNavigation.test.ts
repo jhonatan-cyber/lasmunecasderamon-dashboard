@@ -1,5 +1,6 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { renderHook } from '@testing-library/react';
+import { getEmployeeModules } from '@/lib/constants/employee-modules';
 import { useSidebarNavigation } from '@/hooks/useSidebarNavigation';
 
 const state = vi.hoisted(() => ({ role: 'Barman', allowed: true }));
@@ -20,11 +21,16 @@ beforeEach(() => {
   state.allowed = true;
 });
 describe('menú del Barman', () => {
-  it('muestra inicio, bar, pedidos, servicios e insumos de limpieza', () => {
+  it('muestra operación de barra y los módulos personales del barman', () => {
     const { result } = renderHook(() => useSidebarNavigation());
     const items = result.current.sections.flatMap(section => section.items);
     expect(items.map(item => item.href).sort()).toEqual([
       '/bar',
+      '/barman-anticipos',
+      '/barman-asistencias',
+      '/barman-calendar',
+      '/barman-horas-extras',
+      '/barman-propinas',
       '/cleaning',
       '/dashboard',
       '/orders',
@@ -37,7 +43,7 @@ describe('menú del Barman', () => {
     const { result } = renderHook(() => useSidebarNavigation());
     expect(
       result.current.sections.flatMap(section => section.items).map(item => item.href)
-    ).toEqual(['/cleaning']);
+    ).toEqual([...getEmployeeModules('barman').map(item => item.href), '/cleaning']);
   });
   it('conserva los módulos del administrador', () => {
     state.role = 'Administrador';
@@ -49,3 +55,17 @@ describe('menú del Barman', () => {
     ).toBe(true);
   });
 });
+
+it.each(['cajero', 'barman', 'garzon', 'anfitriona'])(
+  'conserva la actividad propia de %s sin permisos administrativos',
+  role => {
+    state.role = role;
+    state.allowed = false;
+    const { result } = renderHook(() => useSidebarNavigation());
+    const own = result.current.sections.find(section => section.key === 'personal');
+    expect(own?.items.map(item => item.href)).toEqual(
+      getEmployeeModules(role).map(item => item.href)
+    );
+    expect(own?.items).toHaveLength(5);
+  }
+);

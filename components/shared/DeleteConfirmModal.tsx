@@ -1,7 +1,13 @@
 'use client';
 
 import { AlertTriangle, Fingerprint, Loader2 } from 'lucide-react';
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription
+} from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 
 export interface DeleteConfirmModalProps {
@@ -15,6 +21,8 @@ export interface DeleteConfirmModalProps {
   isLoading?: boolean;
   children?: React.ReactNode;
   confirmDisabled?: boolean;
+  closeOnConfirm?: boolean;
+  confirmationMessage?: string;
 }
 
 const capitalize = (s: string) => s.charAt(0).toUpperCase() + s.slice(1);
@@ -29,14 +37,16 @@ export function DeleteConfirmModal({
   action = 'delete',
   isLoading = false,
   children,
-  confirmDisabled = false
+  confirmDisabled = false,
+  closeOnConfirm = true,
+  confirmationMessage
 }: DeleteConfirmModalProps) {
   const isDeactivate = action === 'deactivate';
   const field = fieldName ?? capitalize(entityLabel);
 
   const handleConfirm = () => {
     onConfirm();
-    onOpenChange(false);
+    if (closeOnConfirm) onOpenChange(false);
   };
 
   return (
@@ -49,13 +59,20 @@ export function DeleteConfirmModal({
               Confirmar {isDeactivate ? 'Desactivación' : 'Eliminación'}
             </span>
           </DialogTitle>
+          <DialogDescription className='sr-only'>
+            Confirmar {isDeactivate ? 'desactivación' : 'eliminación'}: {entityValue}
+          </DialogDescription>
         </DialogHeader>
         <div className='flex-1 px-6 py-6'>
           <div className='text-left'>
             <p className='font-medium text-gray-900 dark:text-neutral-100 mb-4 text-center'>
-              ¿Estás seguro de que quieres {isDeactivate ? 'desactivar' : 'eliminar'}{' '}
-              {entityLabel === 'rol' ? 'este' : entityLabel.endsWith('a') ? 'la' : 'el'}{' '}
-              {entityLabel}?
+              {confirmationMessage || (
+                <>
+                  ¿Estás seguro de que quieres {isDeactivate ? 'desactivar' : 'eliminar'}{' '}
+                  {entityLabel === 'rol' ? 'este' : entityLabel.endsWith('a') ? 'la' : 'el'}{' '}
+                  {entityLabel}?
+                </>
+              )}
             </p>
             <div className='bg-red-50 dark:bg-red-950/40 p-4 rounded-xl border border-red-200 dark:border-red-800'>
               <div className='space-y-2 text-sm text-red-900 dark:text-red-100 text-center'>

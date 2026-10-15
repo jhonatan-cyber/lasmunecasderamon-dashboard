@@ -1,4 +1,7 @@
 'use client';
+import { fetchCollection } from '@/lib/api/fetchCollection';
+import { ListLoadError } from '@/components/shared/ListLoadError';
+import { SortSelect } from '@/components/shared/selects/SortSelect';
 import { parseSavedOptions } from '@/components/bar/transfer/transferOptions';
 
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
@@ -90,6 +93,13 @@ export default function BarPage() {
   const [items, setItems] = useState<BarStockItem[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [search, setSearch] = useState('');
+  const [sortField, setSortField] = useState('producto_nombre');
+  const [sortDirection, setSortDirection] = useState<'asc' | 'desc'>('asc');
+  const [stockError, setStockError] = useState(false);
+  const [movementsError, setMovementsError] = useState(false);
+  const [containersError, setContainersError] = useState(false);
+  const [pendingError, setPendingError] = useState(false);
+  const [summaryError, setSummaryError] = useState(false);
   const [stockFilter, setStockFilter] = useState('todos');
   const [showTableView, setShowTableView] = useState(false);
   const [tablePhoto, setTablePhoto] = useState<{ src: string; alt: string } | null>(null);
@@ -110,6 +120,7 @@ export default function BarPage() {
   const [codigoEnvase, setCodigoEnvase] = useState('');
   const inputEnvaseRef = useRef<HTMLInputElement>(null);
   const [resolvingId, setResolvingId] = useState<string | null>(null);
+  const resolvingRef = useRef<string | null>(null);
   const { user } = useCurrentUser();
   const { hasPermission } = useAuth();
   const puedeAprobar = ['barman'].includes((user?.role || '').toLowerCase());
@@ -118,43 +129,47 @@ export default function BarPage() {
 
   const fetchStock = useCallback(async () => {
     setIsLoading(true);
+    setStockError(false);
     try {
-      const res = await fetch('/api/bar');
-      const data = await res.json().catch(() => ({}));
-      if (data.success && Array.isArray(data.data)) setItems(data.data);
+      const rows = await fetchCollection<BarStockItem>('/api/bar', { cache: 'no-store' });
+      setItems(rows);
     } catch {
+      setStockError(true);
     } finally {
       setIsLoading(false);
     }
   }, []);
-
   useEffect(() => {
     fetchStock();
   }, [fetchStock]);
 
   const fetchMovimientos = useCallback(async () => {
     setLoadingMovs(true);
+    setMovementsError(false);
     try {
-      const res = await fetch('/api/bar/movements?limit=100');
-      const data = await res.json().catch(() => ({}));
-      if (data.success && Array.isArray(data.data)) setMovimientos(data.data);
+      const rows = await fetchCollection<Movimiento>('/api/bar/movements?limit=100', {
+        cache: 'no-store'
+      });
+      setMovimientos(rows);
     } catch {
+      setMovementsError(true);
     } finally {
       setLoadingMovs(false);
     }
   }, []);
-
   useEffect(() => {
     if (tab === 'historial') fetchMovimientos();
   }, [tab, fetchMovimientos]);
 
   const fetchResumen = useCallback(async () => {
+    setSummaryError(false);
     try {
       const res = await fetch('/api/bar/shots', { cache: 'no-store' });
       const data = await res.json().catch(() => ({}));
-      if (data.success && data.data) setResumen(data.data);
+      if (!res.ok || !data.success || !data.data) throw new Error('No se pudo cargar el resumen');
+      setResumen(data.data);
     } catch {
-      // el panel queda vacío y se reintenta al próximo refresco
+      setSummaryError(true);
     }
   }, []);
 
@@ -169,17 +184,18 @@ export default function BarPage() {
 
   const fetchDevoluciones = useCallback(async () => {
     setLoadingDevol(true);
+    setContainersError(false);
     try {
-      const res = await fetch('/api/bar/containers', { cache: 'no-store' });
-      const data = await res.json().catch(() => ({}));
-      if (data.success && Array.isArray(data.data)) setDevoluciones(data.data);
+      const rows = await fetchCollection<DevolucionEnvaseRegistro>('/api/bar/containers', {
+        cache: 'no-store'
+      });
+      setDevoluciones(rows);
     } catch {
-      // el historial queda vacío y se recarga al volver a entrar al tab
+      setContainersError(true);
     } finally {
       setLoadingDevol(false);
     }
   }, []);
-
   useEffect(() => {
     if (tab === 'envases') fetchDevoluciones();
   }, [tab, fetchDevoluciones]);
@@ -213,29 +229,26 @@ export default function BarPage() {
 
   const fetchPendientes = useCallback(async () => {
     setLoadingPend(true);
+    setPendingError(false);
     try {
-      const res = await fetch('/api/transfers/pending', { cache: 'no-store' });
-      const data = await res.json().catch(() => ({}));
-      if (!res.ok || !data.success)
-        throw new Error(data.message || 'No se pudieron cargar las recepciones');
-      const history = data.data;
-      setPendientes(
-        Array.isArray(history)
-          ? history.filter((h: TransferRecord) => h.estado === 'pendiente')
-          : []
-      );
+      const rows = await fetchCollection<TransferRecord>('/api/transfers/pending', {
+        cache: 'no-store'
+      });
+      setPendientes(rows.filter(row => row.estado === 'pendiente'));
     } catch {
+      setPendingError(true);
     } finally {
       setLoadingPend(false);
     }
   }, []);
-
   useEffect(() => {
     if (tab === 'pendientes') fetchPendientes();
   }, [tab, fetchPendientes]);
 
   const resolver = useCallback(
     async (id: string, accion: 'aprobar' | 'rechazar') => {
+      if (resolvingRef.current !== null) return;
+      resolvingRef.current = id;
       setResolvingId(id);
       try {
         const res = await fetch('/api/transfers', {
@@ -252,6 +265,7 @@ export default function BarPage() {
       } catch (err) {
         toast.error(err instanceof Error ? err.message : 'Error al resolver la solicitud');
       } finally {
+        resolvingRef.current = null;
         setResolvingId(null);
       }
     },
@@ -260,19 +274,31 @@ export default function BarPage() {
 
   const filtered = useMemo(() => {
     const term = search.trim().toLowerCase();
-    return items.filter(
-      i =>
-        (stockFilter !== 'abiertas' ||
-          Number(i.ml_abierta ?? 0) > 0 ||
-          Number(i.botellas_vacias_shots ?? 0) > 0) &&
-        (!term ||
-          i.producto_nombre.toLowerCase().includes(term) ||
-          (i.categoria_nombre ?? '').toLowerCase().includes(term) ||
-          i.nombre.toLowerCase().includes(term) ||
-          (i.codigo_barras || '').toLowerCase().includes(term) ||
-          (i.producto_codigo || '').toLowerCase().includes(term))
-    );
-  }, [items, search, stockFilter]);
+    return items
+      .filter(
+        i =>
+          (stockFilter !== 'abiertas' ||
+            Number(i.ml_abierta ?? 0) > 0 ||
+            Number(i.botellas_vacias_shots ?? 0) > 0) &&
+          (!term ||
+            i.producto_nombre.toLowerCase().includes(term) ||
+            (i.categoria_nombre ?? '').toLowerCase().includes(term) ||
+            i.nombre.toLowerCase().includes(term) ||
+            (i.codigo_barras || '').toLowerCase().includes(term) ||
+            (i.producto_codigo || '').toLowerCase().includes(term))
+      )
+      .sort((a, b) => {
+        const compared =
+          sortField === 'stock_bar'
+            ? Number(a.stock_bar ?? 0) - Number(b.stock_bar ?? 0)
+            : String(a[sortField as keyof BarStockItem] ?? '').localeCompare(
+                String(b[sortField as keyof BarStockItem] ?? ''),
+                'es',
+                { numeric: true, sensitivity: 'base' }
+              );
+        return sortDirection === 'asc' ? compared : -compared;
+      });
+  }, [items, search, stockFilter, sortField, sortDirection]);
 
   const botellasAbiertasDetalle = useMemo(
     () =>
@@ -304,7 +330,10 @@ export default function BarPage() {
     [items, shotMl]
   );
 
-  const totalBar = useMemo(() => items.reduce((acc, i) => acc + (i.stock_bar ?? 0), 0), [items]);
+  const totalBar = useMemo(
+    () => items.reduce((acc, i) => acc + Number(i.stock_bar ?? 0), 0),
+    [items]
+  );
 
   return (
     <PermissionGuard module='products' action='view'>
@@ -320,14 +349,22 @@ export default function BarPage() {
             </p>
           </div>
           <Badge variant='secondary' className='w-fit px-3 py-1.5'>
-            {isLoading ? 'Cargando stock…' : `${totalBar} unidades en bar`}
+            {stockError
+              ? 'Stock no disponible'
+              : isLoading
+                ? 'Cargando stock…'
+                : `${totalBar} unidades en bar`}
           </Badge>
         </div>
 
-        <BarStatsCards resumen={resumen} botellasAbiertas={botellasAbiertasDetalle} />
+        {summaryError ? (
+          <ListLoadError message='No se pudo cargar el resumen del bar.' onRetry={fetchResumen} />
+        ) : (
+          <BarStatsCards resumen={resumen} botellasAbiertas={botellasAbiertasDetalle} />
+        )}
 
         <Tabs value={tab} onValueChange={setTab} className='w-full'>
-          <div className='flex min-w-0 flex-wrap items-center gap-3'>
+          <div className='flex min-w-0 flex-nowrap items-end gap-3 overflow-x-auto pb-2'>
             <div className='max-w-full shrink-0 overflow-x-auto pb-1 lg:pb-0'>
               <TabsList className='h-auto w-max min-w-full justify-start gap-1 rounded-full p-1 sm:min-w-0'>
                 <TabsTrigger value='productos' className={barTabClassName}>
@@ -351,7 +388,22 @@ export default function BarPage() {
             </div>
 
             {tab === 'productos' && (
-              <div className='flex min-w-0 flex-[1_1_520px] flex-wrap items-center gap-2'>
+              <div className='flex min-w-[620px] flex-[1_1_620px] flex-nowrap items-end gap-2'>
+                <SortSelect
+                  className='w-48 shrink-0'
+                  field={sortField}
+                  direction={sortDirection}
+                  options={[
+                    { value: 'producto_nombre', label: 'Producto' },
+                    { value: 'nombre', label: 'Presentación' },
+                    { value: 'categoria_nombre', label: 'Categoría' },
+                    { value: 'stock_bar', label: 'Stock' }
+                  ]}
+                  onChange={(field, direction) => {
+                    setSortField(field);
+                    setSortDirection(direction);
+                  }}
+                />
                 <div className='relative min-w-0 flex-[1_1_220px]'>
                   <Search
                     className='pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground'
@@ -423,656 +475,647 @@ export default function BarPage() {
           </div>
 
           <TabsContent value='productos' className='mt-4'>
-            <div className='mb-4'>
-              <p className='text-xs text-muted-foreground' role='status'>
-                {isLoading
-                  ? 'Cargando productos…'
-                  : `${filtered.length} ${filtered.length === 1 ? 'presentación' : 'presentaciones'}`}
-              </p>
-            </div>
-            <BoneyardSkeleton name='bar-table' loading={isLoading}>
-              {showTableView ? (
-                <div className='overflow-hidden rounded-2xl border bg-card'>
-                  <div className='overflow-x-auto'>
-                    <Table className='min-w-full text-base text-center'>
-                      <TableHeader className='bg-gray-100 dark:bg-slate-900/50'>
-                        <TableRow className='hover:bg-transparent border-gray-100 dark:border-gray-800'>
-                          <TableHead className='py-4 px-5 text-xs uppercase text-gray-500'>
-                            Foto
-                          </TableHead>
-                          <TableHead className='py-4 px-5 text-xs uppercase text-gray-500'>
-                            Producto
-                          </TableHead>
-                          <TableHead className='py-4 px-5 text-xs uppercase text-gray-500'>
-                            Precio venta
-                          </TableHead>
-                          <TableHead className='py-4 px-5 text-xs uppercase text-gray-500'>
-                            Comisión
-                          </TableHead>
-                          <TableHead className='py-4 px-5 text-xs uppercase text-gray-500'>
-                            Anfitrionas
-                          </TableHead>
-                          <TableHead className='py-4 px-5 text-xs uppercase text-gray-500'>
-                            Stock bar
-                          </TableHead>
-                          <TableHead className='py-4 px-5 text-xs uppercase text-gray-500'>
-                            Stock bodega
-                          </TableHead>
-                        </TableRow>
-                      </TableHeader>
-                      <TableBody>
-                        {filtered.length === 0 ? (
-                          <TableRow key='empty'>
-                            <TableCell
-                              colSpan={7}
-                              className='py-10 text-center text-sm text-muted-foreground'
-                            >
-                              {isLoading
-                                ? 'Cargando...'
-                                : search || stockFilter !== 'todos'
-                                  ? 'No hay productos que coincidan con los filtros.'
-                                  : 'Sin productos en el bar.'}
-                              {(search || stockFilter !== 'todos') && (
-                                <Button
-                                  variant='link'
-                                  onClick={() => {
-                                    setSearch('');
-                                    setStockFilter('todos');
-                                  }}
-                                >
-                                  Limpiar filtros
-                                </Button>
-                              )}
-                            </TableCell>
-                          </TableRow>
-                        ) : (
-                          filtered.map(item => {
-                            const mlPorShot = resolveShotMl(item.ml_shot, shotMl);
-                            // Misma resolución de capacidad que usa el descuento de la
-                            // venta, para comparar lo que queda con lo que trae la botella.
-                            const capacidadBotella = resolveBotellaMl(
-                              item.ml_botella,
-                              item.nombre,
-                              botellaMl
-                            );
-                            return (
-                              <TableRow
-                                key={item.id}
-                                className='border-b transition-colors hover:bg-muted/50'
-                              >
-                                <TableCell className='py-3 px-2 sm:px-4 text-center'>
-                                  <button
-                                    type='button'
-                                    onClick={() =>
-                                      setTablePhoto({
-                                        src: imageUrl(item.foto || item.producto_foto),
-                                        alt: `${item.producto_nombre} ${item.nombre}`
-                                      })
-                                    }
-                                    aria-label={`Ver ${item.producto_nombre} ${item.nombre} en grande`}
-                                    className='mx-auto block cursor-zoom-in rounded-xl focus-visible:ring-2 focus-visible:ring-purple-500 focus-visible:outline-hidden'
-                                  >
-                                    <div
-                                      data-photo-surface
-                                      className='relative mx-auto flex h-12 w-12 items-center justify-center overflow-hidden rounded-xl border border-gray-100'
-                                    >
-                                      <ProductPhoto
-                                        src={imageUrl(item.foto || item.producto_foto)}
-                                        alt={`${item.producto_nombre} ${item.nombre}`}
-                                        width={48}
-                                        height={48}
-                                        className='h-12 w-12 object-contain p-0.5'
-                                      />
-                                    </div>
-                                  </button>
-                                </TableCell>
-                                <TableCell className='py-3 px-2 sm:px-4 text-center text-xs sm:text-sm font-medium'>
-                                  <div className='flex min-w-0 flex-col items-start gap-1.5 text-left'>
-                                    {item.categoria_nombre?.trim() && (
-                                      <Badge
-                                        variant='outline'
-                                        className='max-w-full break-words whitespace-normal'
-                                      >
-                                        {item.categoria_nombre}
-                                      </Badge>
-                                    )}
-                                    <span className='text-sm font-semibold leading-snug'>
-                                      {item.producto_nombre}
-                                    </span>
-                                    <span className='inline-flex shrink-0 rounded-full bg-gray-100 dark:bg-slate-800 px-2.5 py-0.5 font-medium whitespace-nowrap'>
-                                      {item.nombre}
-                                    </span>
-                                  </div>
-                                </TableCell>
-                                <TableCell className='py-3 px-2 sm:px-4 text-center font-mono text-xs sm:text-sm'>
-                                  {isTierPriced(item) ? (
-                                    <span className='text-muted-foreground'>Según N° anf.</span>
-                                  ) : (
-                                    <SalePrices
-                                      options={item.opciones_venta}
-                                      price={item.precio_venta}
-                                      commission={item.comision}
-                                      field='precio'
-                                      mlShot={item.ml_shot}
-                                      mlShotAnfitriona={item.ml_shot_anfitriona}
-                                    />
-                                  )}
-                                </TableCell>
-                                <TableCell className='py-3 px-2 sm:px-4 text-center font-mono text-xs sm:text-sm'>
-                                  {isTierPriced(item) ? (
-                                    <span className='text-muted-foreground'>Según N° anf.</span>
-                                  ) : (
-                                    <SalePrices
-                                      options={item.opciones_venta}
-                                      price={item.precio_venta}
-                                      commission={item.comision}
-                                      field='comision'
-                                      mlShot={item.ml_shot}
-                                      mlShotAnfitriona={item.ml_shot_anfitriona}
-                                    />
-                                  )}
-                                </TableCell>
-                                <TableCell className='py-3 px-2 sm:px-4 text-center'>
-                                  <BarAnfitrionas
-                                    productoId={item.producto_id}
-                                    categoriaNombre={item.categoria_nombre}
-                                    maxAnfitrionas={item.max_anfitrionas}
-                                    precio={item.precio_venta}
-                                    compact
-                                  />
-                                </TableCell>
-                                <TableCell className='py-3 px-2 sm:px-4 text-center'>
-                                  <Badge
-                                    className={`rounded-full px-2 sm:px-3 py-1 text-xs sm:text-sm ${Number(item.stock_bar ?? 0) > 0 ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'}`}
-                                  >
-                                    {Number(item.stock_bar ?? 0) > 0 ? item.stock_bar : 'Agotado'}
-                                  </Badge>
-                                  {Number(item.ml_abierta ?? 0) > 0 && (
-                                    <p className='mt-1 text-[10px] font-bold uppercase text-amber-600 dark:text-amber-400'>
-                                      Abierta: {Number(item.ml_abierta)} de {capacidadBotella} ml
-                                      {mlPorShot > 0
-                                        ? ` · ≈${Math.floor(Number(item.ml_abierta) / mlPorShot)} cortos`
-                                        : ''}
-                                    </p>
-                                  )}
-                                  {Number(item.botellas_vacias_shots ?? 0) > 0 && (
-                                    <p className='mt-1 text-[10px] font-bold uppercase text-amber-700 dark:text-amber-400'>
-                                      Vacías por cortos o dentro de tolerancia:{' '}
-                                      {Number(item.botellas_vacias_shots)} · pendientes de
-                                      devolución
-                                    </p>
-                                  )}
-                                  {Number(item.ml_servidos ?? 0) > 0 && (
-                                    <p className='mt-1 text-[10px] font-bold uppercase text-amber-700 dark:text-amber-500'>
-                                      Servido: {Number(item.ml_servidos)} ml
-                                    </p>
-                                  )}
-                                </TableCell>
-                                <TableCell className='py-3 px-2 sm:px-4 text-center'>
-                                  <Badge
-                                    className={`rounded-full px-2 sm:px-3 py-1 text-xs sm:text-sm ${Number(item.stock ?? 0) > 0 ? 'bg-blue-100 text-blue-700' : 'bg-red-100 text-red-700'}`}
-                                  >
-                                    {Number(item.stock ?? 0) > 0 ? item.stock : 'Agotado'}
-                                  </Badge>
-                                </TableCell>
-                              </TableRow>
-                            );
-                          })
-                        )}
-                      </TableBody>
-                    </Table>
-                  </div>
-                </div>
-              ) : (
-                <>
-                  {filtered.length === 0 ? (
-                    <div className='flex flex-col items-center gap-3 rounded-2xl border border-dashed bg-card px-6 py-12 text-center'>
-                      <Search className='size-8 text-muted-foreground' aria-hidden='true' />
-                      <p className='font-medium'>
-                        {isLoading
-                          ? 'Cargando...'
-                          : search || stockFilter !== 'todos'
-                            ? 'No encontramos coincidencias'
-                            : 'Sin productos en el bar'}
-                      </p>
-                      <p className='max-w-sm text-sm text-muted-foreground'>
-                        {search || stockFilter !== 'todos'
-                          ? 'Prueba con otro nombre o código, o limpia los filtros para ver todas las presentaciones.'
-                          : 'Los productos aparecerán aquí cuando se registren sus presentaciones.'}
-                      </p>
-                      {(search || stockFilter !== 'todos') && (
-                        <Button
-                          variant='outline'
-                          onClick={() => {
-                            setSearch('');
-                            setStockFilter('todos');
-                          }}
-                        >
-                          Limpiar filtros
-                        </Button>
-                      )}
-                    </div>
-                  ) : (
-                    <BarProductGrid items={filtered} />
-                  )}
-                </>
-              )}
-            </BoneyardSkeleton>
-            <ProductImageLightbox
-              open={Boolean(tablePhoto)}
-              onOpenChange={open => {
-                if (!open) setTablePhoto(null);
-              }}
-              src={tablePhoto?.src ?? ''}
-              alt={tablePhoto?.alt ?? ''}
-            />
-          </TabsContent>
-
-          <TabsContent value='pendientes' className='mt-4'>
-            <div className='space-y-2 mb-4'>
-              <p className='text-sm text-muted-foreground'>
-                Solicitudes pendientes de aprobación del bar.
-              </p>
-            </div>
-            <PendingApprovals
-              pendientes={pendientes}
-              puedeAprobar={puedeAprobar}
-              resolvingId={resolvingId}
-              loading={loadingPend}
-              onResolve={resolver}
-            />
-          </TabsContent>
-
-          <TabsContent value='historial' className='mt-4'>
-            <BoneyardSkeleton name='bar-history' loading={loadingMovs}>
-              <div className='overflow-hidden rounded-2xl border bg-card'>
-                <div className='overflow-x-auto'>
-                  <Table className='min-w-full text-base text-center'>
-                    <TableHeader className='bg-gray-100 dark:bg-slate-900/50'>
-                      <TableRow className='hover:bg-transparent border-gray-100 dark:border-gray-800'>
-                        <TableHead className='py-4 px-5 text-xs uppercase text-gray-500'>
-                          Fecha
-                        </TableHead>
-                        <TableHead className='py-4 px-5 text-xs uppercase text-gray-500'>
-                          Producto
-                        </TableHead>
-                        <TableHead className='py-4 px-5 text-xs uppercase text-gray-500'>
-                          Presentación
-                        </TableHead>
-                        <TableHead className='py-4 px-5 text-xs uppercase text-gray-500'>
-                          Cantidad
-                        </TableHead>
-                        <TableHead className='py-4 px-5 text-xs uppercase text-gray-500'>
-                          Precio venta
-                        </TableHead>
-                        <TableHead className='py-4 px-5 text-xs uppercase text-gray-500'>
-                          Comisión
-                        </TableHead>
-                        <TableHead className='py-4 px-5 text-xs uppercase text-gray-500'>
-                          Usuario
-                        </TableHead>
-                        <TableHead>Estado</TableHead>
-                        <TableHead>Recepción / resolución</TableHead>
-                      </TableRow>
-                    </TableHeader>
-                    <TableBody>
-                      {movimientos.length === 0 ? (
-                        <TableRow key='empty'>
-                          <TableCell
-                            colSpan={10}
-                            className='py-10 text-center text-sm text-muted-foreground'
-                          >
-                            {loadingMovs ? 'Cargando...' : 'Sin movimientos registrados.'}
-                          </TableCell>
-                        </TableRow>
-                      ) : (
-                        movimientos.map(m => (
-                          <TableRow
-                            key={m.id}
-                            className='border-b transition-colors hover:bg-muted/50'
-                          >
-                            <TableCell className='py-3 px-2 sm:px-4 text-center text-xs sm:text-sm whitespace-nowrap'>
-                              {m.fecha_crea
-                                ? (() => {
-                                    const f = new Date(m.fecha_crea);
-                                    const fecha = f.toLocaleDateString('es-CL', {
-                                      day: '2-digit',
-                                      month: '2-digit',
-                                      year: 'numeric'
-                                    });
-                                    const hora = f.toLocaleTimeString('es-CL', {
-                                      hour: '2-digit',
-                                      minute: '2-digit'
-                                    });
-                                    return (
-                                      <span>
-                                        {fecha}
-                                        <br />
-                                        <span className='text-gray-400'>{hora}</span>
-                                      </span>
-                                    );
-                                  })()
-                                : '—'}
-                            </TableCell>
-                            <TableCell className='py-3 px-2 sm:px-4 text-center text-xs sm:text-sm font-medium'>
-                              {m.producto_nombre || '—'}
-                            </TableCell>
-                            <TableCell className='py-3 px-2 sm:px-4 text-center text-xs sm:text-sm'>
-                              {m.presentacion_nombre || '—'}
-                            </TableCell>
-                            <TableCell className='py-3 px-2 sm:px-4 text-center font-mono text-xs sm:text-sm'>
-                              {m.cantidad}
-                              {Number(m.ml ?? 0) > 0 && (
-                                <p className='text-[10px] font-bold uppercase text-amber-600 dark:text-amber-400'>
-                                  {Number(m.ml)} ml
-                                </p>
-                              )}
-                            </TableCell>
-                            <TableCell className='py-3 px-2 sm:px-4 text-center font-mono text-xs sm:text-sm'>
-                              {isTierPricedItem(m) ? (
-                                <BarAnfitrionas
-                                  productoId={m.producto_id}
-                                  categoriaNombre={m.categoria_nombre}
-                                  precio={m.precio_venta}
-                                  compact
-                                />
-                              ) : m.opciones_venta ? (
-                                <SalePrices
-                                  options={m.opciones_venta}
-                                  field='precio'
-                                  mlShot={m.ml_shot}
-                                  mlShotAnfitriona={m.ml_shot_anfitriona}
-                                />
-                              ) : m.precio_venta !== null && m.precio_venta !== undefined ? (
-                                formatCurrencyCLP(Number(m.precio_venta))
-                              ) : (
-                                '—'
-                              )}
-                            </TableCell>
-                            <TableCell className='py-3 px-2 sm:px-4 text-center font-mono text-xs sm:text-sm'>
-                              {isTierPricedItem(m) ? (
-                                <span className='text-muted-foreground'>Según tabla</span>
-                              ) : m.opciones_venta ? (
-                                <SalePrices
-                                  options={m.opciones_venta}
-                                  field='comision'
-                                  mlShot={m.ml_shot}
-                                  mlShotAnfitriona={m.ml_shot_anfitriona}
-                                />
-                              ) : m.comision !== null && m.comision !== undefined ? (
-                                formatCurrencyCLP(Number(m.comision))
-                              ) : (
-                                '—'
-                              )}
-                            </TableCell>
-                            <TableCell className='py-3 px-2 sm:px-4 text-center text-xs sm:text-sm font-mono'>
-                              {m.usuario_nombre || m.usuario_nick || '—'}
-                            </TableCell>
-                            <TableCell>
-                              {m.tipo === 'venta'
-                                ? 'Vendida'
-                                : m.estado === 'aceptada'
-                                  ? 'Aceptada'
-                                  : m.estado === 'pendiente'
-                                    ? 'Pendiente'
-                                    : m.estado === 'rechazada'
-                                      ? 'Rechazada'
-                                      : 'Histórica'}
-                            </TableCell>
-                            <TableCell>
-                              {m.tipo === 'venta' ? (
-                                <span className='text-muted-foreground'>—</span>
-                              ) : (
-                                <>
-                                  <span>{m.aceptado_nombre || 'Sin recepción registrada'}</span>
-                                  {m.fecha_aceptacion && (
-                                    <p className='text-xs text-muted-foreground'>
-                                      {m.fecha_aceptacion.replace('T', ' ').slice(0, 16)}
-                                    </p>
-                                  )}
-                                </>
-                              )}
-                            </TableCell>
-                          </TableRow>
-                        ))
-                      )}
-                    </TableBody>
-                  </Table>
-                </div>
-              </div>
-            </BoneyardSkeleton>
-          </TabsContent>
-
-          <TabsContent value='envases' className='mt-4'>
-            <PermissionGuard
-              module='products'
-              action='return_container'
-              fallback={
-                <div className='text-center text-gray-500 text-sm sm:text-base py-8'>
-                  No tienes permiso para verificar la entrega de envases.
-                </div>
-              }
-            >
-              <div className='space-y-4'>
-                <p className='text-sm text-muted-foreground'>
-                  Escanea el envase vacío (EAN-13 o SKU LM-…) antes de entregarlo a la bodega: el
-                  sistema confirma que es nuestro, que está vacío y que no se entregó antes, y lo
-                  marca en el mismo paso. La recepción queda pendiente hasta que la bodega la
-                  confirme desde Bodega → Envases devueltos. Puedes escanear envases uno tras otro
-                  sin recargar: el contador y la lista de la sesión quedan abajo. Si no hay red, los
-                  escaneos se guardan localmente y se verifican solos al reconectar.
-                </p>
-
-                <form
-                  onSubmit={e => {
-                    e.preventDefault();
-                    enviarEscaneo(codigoEnvase);
-                  }}
-                  className='flex flex-col sm:flex-row gap-2'
-                >
-                  <Input
-                    autoFocus
-                    ref={inputEnvaseRef}
-                    value={codigoEnvase}
-                    onChange={e => setCodigoEnvase(e.target.value)}
-                    placeholder='Escanea o digita el código del envase'
-                    aria-label='Código del envase'
-                    className='rounded-full font-mono'
-                  />
-                  <Button
-                    type='submit'
-                    disabled={verificando || !codigoEnvase.trim()}
-                    className='rounded-full flex items-center gap-2'
-                  >
-                    <PackageCheck className='w-4 h-4' />
-                    {verificando ? 'Verificando...' : 'Verificar y marcar'}
-                  </Button>
-                </form>
-
-                {resultadoEnvase && (
-                  <div
-                    className={cn(
-                      'p-4 rounded-2xl border text-sm',
-                      resultadoEnvase.ok
-                        ? 'bg-green-50 border-green-200 text-green-800'
-                        : resultadoEnvase.motivo === 'ya_devuelto'
-                          ? 'bg-amber-50 border-amber-200 text-amber-800'
-                          : 'bg-red-50 border-red-200 text-red-800'
-                    )}
-                    role='status'
-                  >
-                    <p className='font-bold flex items-center gap-2'>
-                      {resultadoEnvase.ok ? (
-                        <>
-                          <PackageCheck className='w-4 h-4' />
-                          Envase entregado a la bodega
-                        </>
-                      ) : (
-                        <>
-                          <AlertTriangle className='w-4 h-4' />
-                          {MOTIVO_ENVASE[resultadoEnvase.motivo] ?? 'No es nuestro'}
-                        </>
-                      )}
-                    </p>
-                    <p className='mt-1'>{resultadoEnvase.mensaje}</p>
-                    {resultadoEnvase.unidad && (
-                      <p className='text-xs mt-1 font-mono'>
-                        {resultadoEnvase.unidad.producto_nombre || '—'} ·{' '}
-                        {resultadoEnvase.unidad.presentacion_nombre || '—'} · SKU{' '}
-                        {resultadoEnvase.unidad.codigo}
-                      </p>
-                    )}
-                  </div>
-                )}
-
-                <EscaneoLote
-                  aceptados={entregadosSesion}
-                  rechazados={rechazadosSesion}
-                  enCola={envasesEnCola}
-                  sesion={sesionEnvases}
-                  sincronizando={sincronizandoEnvases}
-                  sonido={avisoSonoro}
-                  onAlternarSonido={alternarAvisoSonoro}
-                  onLimpiar={limpiarSesionEnvases}
-                  onReintentar={reintentarEnvases}
-                  etiquetaAceptado='Entregado'
-                  tituloAceptados='Entregados a la bodega'
-                />
-
-                <div>
-                  <p className='text-xs font-medium text-muted-foreground mb-2'>
-                    Devoluciones registradas ({devoluciones.length})
+            {stockError ? (
+              <ListLoadError message='No se pudieron cargar los productos.' onRetry={fetchStock} />
+            ) : (
+              <>
+                <div className='mb-4'>
+                  <p className='text-xs text-muted-foreground' role='status'>
+                    {isLoading
+                      ? 'Cargando productos…'
+                      : `${filtered.length} ${filtered.length === 1 ? 'presentación' : 'presentaciones'}`}
                   </p>
-                  <BoneyardSkeleton name='bar-containers' loading={loadingDevol}>
-                    <div className='overflow-hidden rounded-2xl border bg-card'>
+                </div>
+                <BoneyardSkeleton name='bar-table' loading={isLoading}>
+                  {showTableView ? (
+                    <div className='overflow-hidden rounded-3xl border bg-card'>
                       <div className='overflow-x-auto'>
-                        <Table className='min-w-full text-base text-center'>
-                          <TableHeader className='bg-gray-100 dark:bg-slate-900/50'>
-                            <TableRow className='hover:bg-transparent border-gray-100 dark:border-gray-800'>
-                              <TableHead className='py-4 px-5 text-xs uppercase text-gray-500'>
-                                Fecha
-                              </TableHead>
-                              <TableHead className='py-4 px-5 text-xs uppercase text-gray-500'>
-                                SKU
-                              </TableHead>
-                              <TableHead className='py-4 px-5 text-xs uppercase text-gray-500'>
-                                Producto
-                              </TableHead>
-                              <TableHead className='py-4 px-5 text-xs uppercase text-gray-500'>
-                                Presentación
-                              </TableHead>
-                              <TableHead className='py-4 px-5 text-xs uppercase text-gray-500'>
-                                Compra
-                              </TableHead>
-                              <TableHead className='py-4 px-5 text-xs uppercase text-gray-500'>
-                                Merma
-                              </TableHead>
-                              <TableHead className='py-4 px-5 text-xs uppercase text-gray-500'>
-                                Entregado por
-                              </TableHead>
-                              <TableHead className='py-4 px-5 text-xs uppercase text-gray-500'>
-                                Recepción en bodega
-                              </TableHead>
+                        <Table className='min-w-full text-center'>
+                          <TableHeader>
+                            <TableRow className='hover:bg-transparent'>
+                              <TableHead>Foto</TableHead>
+                              <TableHead>Producto</TableHead>
+                              <TableHead>Precio venta</TableHead>
+                              <TableHead>Comisión</TableHead>
+                              <TableHead>Anfitrionas</TableHead>
+                              <TableHead>Stock bar</TableHead>
+                              <TableHead>Stock bodega</TableHead>
                             </TableRow>
                           </TableHeader>
                           <TableBody>
-                            {devoluciones.length === 0 ? (
+                            {filtered.length === 0 ? (
                               <TableRow key='empty'>
                                 <TableCell
-                                  colSpan={8}
-                                  className='py-10 text-center text-sm text-muted-foreground'
+                                  colSpan={7}
+                                  className='text-center text-muted-foreground'
                                 >
-                                  {loadingDevol ? 'Cargando...' : 'Sin envases entregados todavía.'}
+                                  {isLoading
+                                    ? 'Cargando...'
+                                    : search || stockFilter !== 'todos'
+                                      ? 'No hay productos que coincidan con los filtros.'
+                                      : 'Sin productos en el bar.'}
+                                  {(search || stockFilter !== 'todos') && (
+                                    <Button
+                                      variant='link'
+                                      onClick={() => {
+                                        setSearch('');
+                                        setStockFilter('todos');
+                                      }}
+                                    >
+                                      Limpiar filtros
+                                    </Button>
+                                  )}
                                 </TableCell>
                               </TableRow>
                             ) : (
-                              devoluciones.map(d => (
-                                <TableRow
-                                  key={d.id}
-                                  className='border-b transition-colors hover:bg-muted/50'
-                                >
-                                  <TableCell className='py-3 px-2 sm:px-4 text-center text-xs sm:text-sm whitespace-nowrap'>
-                                    {d.fecha_devolucion
-                                      ? (() => {
-                                          const f = new Date(d.fecha_devolucion);
-                                          return (
-                                            <span>
-                                              {f.toLocaleDateString('es-CL', {
-                                                day: '2-digit',
-                                                month: '2-digit',
-                                                year: 'numeric'
-                                              })}
-                                              <br />
-                                              <span className='text-gray-400'>
-                                                {f.toLocaleTimeString('es-CL', {
-                                                  hour: '2-digit',
-                                                  minute: '2-digit'
-                                                })}
-                                              </span>
-                                            </span>
-                                          );
-                                        })()
-                                      : '—'}
-                                  </TableCell>
-                                  <TableCell className='py-3 px-2 sm:px-4 text-center font-mono text-xs sm:text-sm'>
-                                    {d.codigo}
-                                  </TableCell>
-                                  <TableCell className='py-3 px-2 sm:px-4 text-center text-xs sm:text-sm font-medium'>
-                                    {d.producto_nombre || '—'}
-                                  </TableCell>
-                                  <TableCell className='py-3 px-2 sm:px-4 text-center text-xs sm:text-sm'>
-                                    {d.presentacion_nombre || '—'}
-                                  </TableCell>
-                                  <TableCell className='py-3 px-2 sm:px-4 text-center font-mono text-xs sm:text-sm'>
-                                    {d.compra_folio || '—'}
-                                  </TableCell>
-                                  <TableCell className='py-3 px-2 sm:px-4 text-center font-mono text-xs sm:text-sm'>
-                                    {Number(d.ml_merma ?? 0)} ml
-                                  </TableCell>
-                                  <TableCell className='py-3 px-2 sm:px-4 text-center text-xs sm:text-sm'>
-                                    {d.usuario_nombre || d.usuario_nick
-                                      ? `${d.usuario_nombre || ''} ${d.usuario_apellido || ''}`.trim() ||
-                                        d.usuario_nick
-                                      : '—'}
-                                  </TableCell>
-                                  <TableCell className='py-3 px-2 sm:px-4 text-center text-xs sm:text-sm'>
-                                    {d.pendiente_confirmacion ? (
-                                      <Badge className='bg-amber-100 text-amber-700 rounded-full px-2 sm:px-3 py-1 text-xs'>
-                                        Pendiente de bodega
+                              filtered.map(item => {
+                                const mlPorShot = resolveShotMl(item.ml_shot, shotMl);
+                                // Misma resolución de capacidad que usa el descuento de la
+                                // venta, para comparar lo que queda con lo que trae la botella.
+                                const capacidadBotella = resolveBotellaMl(
+                                  item.ml_botella,
+                                  item.nombre,
+                                  botellaMl
+                                );
+                                return (
+                                  <TableRow
+                                    key={item.id}
+                                    className='border-b transition-colors hover:bg-muted/50'
+                                  >
+                                    <TableCell className='sm:px-4 text-center'>
+                                      <Button
+                                        variant='unstyled'
+                                        type='button'
+                                        onClick={() =>
+                                          setTablePhoto({
+                                            src: imageUrl(item.foto || item.producto_foto),
+                                            alt: `${item.producto_nombre} ${item.nombre}`
+                                          })
+                                        }
+                                        aria-label={`Ver ${item.producto_nombre} ${item.nombre} en grande`}
+                                        className='mx-auto block cursor-zoom-in rounded-xl focus-visible:ring-2 focus-visible:ring-purple-500 focus-visible:outline-hidden'
+                                      >
+                                        <div
+                                          data-photo-surface
+                                          className='relative mx-auto flex h-12 w-12 items-center justify-center overflow-hidden rounded-xl border border-gray-100'
+                                        >
+                                          <ProductPhoto
+                                            src={imageUrl(item.foto || item.producto_foto)}
+                                            alt={`${item.producto_nombre} ${item.nombre}`}
+                                            width={48}
+                                            height={48}
+                                            className='h-12 w-12 object-contain p-0.5'
+                                          />
+                                        </div>
+                                      </Button>
+                                    </TableCell>
+                                    <TableCell className='sm:px-4 text-center sm:text-sm font-medium'>
+                                      <div className='flex min-w-0 flex-col items-start gap-1.5 text-left'>
+                                        {item.categoria_nombre?.trim() && (
+                                          <Badge
+                                            variant='outline'
+                                            className='max-w-full break-words whitespace-normal'
+                                          >
+                                            {item.categoria_nombre}
+                                          </Badge>
+                                        )}
+                                        <span className='text-sm font-semibold leading-snug'>
+                                          {item.producto_nombre}
+                                        </span>
+                                        <span className='inline-flex shrink-0 rounded-full bg-gray-100 dark:bg-slate-800 px-2.5 py-0.5 font-medium whitespace-nowrap'>
+                                          {item.nombre}
+                                        </span>
+                                      </div>
+                                    </TableCell>
+                                    <TableCell className='sm:px-4 text-center font-mono sm:text-sm'>
+                                      {isTierPriced(item) ? (
+                                        <span className='text-muted-foreground'>Según N° anf.</span>
+                                      ) : (
+                                        <SalePrices
+                                          options={item.opciones_venta}
+                                          price={item.precio_venta}
+                                          commission={item.comision}
+                                          field='precio'
+                                          mlShot={item.ml_shot}
+                                          mlShotAnfitriona={item.ml_shot_anfitriona}
+                                        />
+                                      )}
+                                    </TableCell>
+                                    <TableCell className='sm:px-4 text-center font-mono sm:text-sm'>
+                                      {isTierPriced(item) ? (
+                                        <span className='text-muted-foreground'>Según N° anf.</span>
+                                      ) : (
+                                        <SalePrices
+                                          options={item.opciones_venta}
+                                          price={item.precio_venta}
+                                          commission={item.comision}
+                                          field='comision'
+                                          mlShot={item.ml_shot}
+                                          mlShotAnfitriona={item.ml_shot_anfitriona}
+                                        />
+                                      )}
+                                    </TableCell>
+                                    <TableCell className='sm:px-4 text-center'>
+                                      <BarAnfitrionas
+                                        productoId={item.producto_id}
+                                        categoriaNombre={item.categoria_nombre}
+                                        maxAnfitrionas={item.max_anfitrionas}
+                                        precio={item.precio_venta}
+                                        compact
+                                      />
+                                    </TableCell>
+                                    <TableCell className='sm:px-4 text-center'>
+                                      <Badge
+                                        className={`rounded-full px-2 sm:px-3 py-1 text-xs sm:text-sm ${Number(item.stock_bar ?? 0) > 0 ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'}`}
+                                      >
+                                        {Number(item.stock_bar ?? 0) > 0
+                                          ? item.stock_bar
+                                          : 'Agotado'}
                                       </Badge>
-                                    ) : (
-                                      <>
-                                        <Badge className='bg-green-100 text-green-700 rounded-full px-2 sm:px-3 py-1 text-xs'>
-                                          Recibido
-                                        </Badge>
-                                        <p className='mt-1 text-[10px] text-gray-500'>
-                                          {d.confirmado_nombre || d.confirmado_nick || '—'}
-                                          {d.fecha_confirmacion
-                                            ? ` · ${new Date(d.fecha_confirmacion).toLocaleString(
-                                                'es-CL',
-                                                {
-                                                  day: '2-digit',
-                                                  month: '2-digit',
-                                                  hour: '2-digit',
-                                                  minute: '2-digit'
-                                                }
-                                              )}`
+                                      {Number(item.ml_abierta ?? 0) > 0 && (
+                                        <p className='mt-1 text-[10px] font-bold uppercase text-amber-600 dark:text-amber-400'>
+                                          Abierta: {Number(item.ml_abierta)} de {capacidadBotella}{' '}
+                                          ml
+                                          {mlPorShot > 0
+                                            ? ` · ≈${Math.floor(Number(item.ml_abierta) / mlPorShot)} cortos`
                                             : ''}
                                         </p>
-                                      </>
-                                    )}
-                                  </TableCell>
-                                </TableRow>
-                              ))
+                                      )}
+                                      {Number(item.botellas_vacias_shots ?? 0) > 0 && (
+                                        <p className='mt-1 text-[10px] font-bold uppercase text-amber-700 dark:text-amber-400'>
+                                          Vacías por cortos o dentro de tolerancia:{' '}
+                                          {Number(item.botellas_vacias_shots)} · pendientes de
+                                          devolución
+                                        </p>
+                                      )}
+                                      {Number(item.ml_servidos ?? 0) > 0 && (
+                                        <p className='mt-1 text-[10px] font-bold uppercase text-amber-700 dark:text-amber-500'>
+                                          Servido: {Number(item.ml_servidos)} ml
+                                        </p>
+                                      )}
+                                    </TableCell>
+                                    <TableCell className='sm:px-4 text-center'>
+                                      <Badge
+                                        className={`rounded-full px-2 sm:px-3 py-1 text-xs sm:text-sm ${Number(item.stock ?? 0) > 0 ? 'bg-blue-100 text-blue-700' : 'bg-red-100 text-red-700'}`}
+                                      >
+                                        {Number(item.stock ?? 0) > 0 ? item.stock : 'Agotado'}
+                                      </Badge>
+                                    </TableCell>
+                                  </TableRow>
+                                );
+                              })
                             )}
                           </TableBody>
                         </Table>
                       </div>
                     </div>
-                  </BoneyardSkeleton>
+                  ) : (
+                    <>
+                      {filtered.length === 0 ? (
+                        <div className='flex flex-col items-center gap-3 rounded-2xl border border-dashed bg-card px-6 py-12 text-center'>
+                          <Search className='size-8 text-muted-foreground' aria-hidden='true' />
+                          <p className='font-medium'>
+                            {isLoading
+                              ? 'Cargando...'
+                              : search || stockFilter !== 'todos'
+                                ? 'No encontramos coincidencias'
+                                : 'Sin productos en el bar'}
+                          </p>
+                          <p className='max-w-sm text-sm text-muted-foreground'>
+                            {search || stockFilter !== 'todos'
+                              ? 'Prueba con otro nombre o código, o limpia los filtros para ver todas las presentaciones.'
+                              : 'Los productos aparecerán aquí cuando se registren sus presentaciones.'}
+                          </p>
+                          {(search || stockFilter !== 'todos') && (
+                            <Button
+                              variant='outline'
+                              onClick={() => {
+                                setSearch('');
+                                setStockFilter('todos');
+                              }}
+                            >
+                              Limpiar filtros
+                            </Button>
+                          )}
+                        </div>
+                      ) : (
+                        <BarProductGrid items={filtered} />
+                      )}
+                    </>
+                  )}
+                </BoneyardSkeleton>
+                <ProductImageLightbox
+                  open={Boolean(tablePhoto)}
+                  onOpenChange={open => {
+                    if (!open) setTablePhoto(null);
+                  }}
+                  src={tablePhoto?.src ?? ''}
+                  alt={tablePhoto?.alt ?? ''}
+                />
+              </>
+            )}
+          </TabsContent>
+
+          <TabsContent value='pendientes' className='mt-4'>
+            {pendingError ? (
+              <ListLoadError
+                message='No se pudieron cargar las recepciones pendientes.'
+                onRetry={fetchPendientes}
+              />
+            ) : (
+              <>
+                <div className='space-y-2 mb-4'>
+                  <p className='text-sm text-muted-foreground'>
+                    Solicitudes pendientes de aprobación del bar.
+                  </p>
                 </div>
-              </div>
-            </PermissionGuard>
+                <PendingApprovals
+                  pendientes={pendientes}
+                  puedeAprobar={puedeAprobar}
+                  resolvingId={resolvingId}
+                  loading={loadingPend}
+                  onResolve={resolver}
+                />
+              </>
+            )}
+          </TabsContent>
+
+          <TabsContent value='historial' className='mt-4'>
+            {movementsError ? (
+              <ListLoadError
+                message='No se pudo cargar el historial de movimientos.'
+                onRetry={fetchMovimientos}
+              />
+            ) : (
+              <>
+                <BoneyardSkeleton name='bar-history' loading={loadingMovs}>
+                  <div className='overflow-hidden rounded-3xl border bg-card'>
+                    <div className='overflow-x-auto'>
+                      <Table className='min-w-full text-center'>
+                        <TableHeader>
+                          <TableRow className='hover:bg-transparent'>
+                            <TableHead>Fecha</TableHead>
+                            <TableHead>Producto</TableHead>
+                            <TableHead>Presentación</TableHead>
+                            <TableHead>Cantidad</TableHead>
+                            <TableHead>Precio venta</TableHead>
+                            <TableHead>Comisión</TableHead>
+                            <TableHead>Usuario</TableHead>
+                            <TableHead>Estado</TableHead>
+                            <TableHead>Recepción / resolución</TableHead>
+                          </TableRow>
+                        </TableHeader>
+                        <TableBody>
+                          {movimientos.length === 0 ? (
+                            <TableRow key='empty'>
+                              <TableCell colSpan={10} className='text-center text-muted-foreground'>
+                                {loadingMovs ? 'Cargando...' : 'Sin movimientos registrados.'}
+                              </TableCell>
+                            </TableRow>
+                          ) : (
+                            movimientos.map(m => (
+                              <TableRow
+                                key={m.id}
+                                className='border-b transition-colors hover:bg-muted/50'
+                              >
+                                <TableCell className='sm:px-4 text-center sm:text-sm whitespace-nowrap'>
+                                  {m.fecha_crea
+                                    ? (() => {
+                                        const f = new Date(m.fecha_crea);
+                                        const fecha = f.toLocaleDateString('es-CL', {
+                                          day: '2-digit',
+                                          month: '2-digit',
+                                          year: 'numeric'
+                                        });
+                                        const hora = f.toLocaleTimeString('es-CL', {
+                                          hour: '2-digit',
+                                          minute: '2-digit'
+                                        });
+                                        return (
+                                          <span>
+                                            {fecha}
+                                            <br />
+                                            <span className='text-gray-400'>{hora}</span>
+                                          </span>
+                                        );
+                                      })()
+                                    : '—'}
+                                </TableCell>
+                                <TableCell className='sm:px-4 text-center sm:text-sm font-medium'>
+                                  {m.producto_nombre || '—'}
+                                </TableCell>
+                                <TableCell className='sm:px-4 text-center sm:text-sm'>
+                                  {m.presentacion_nombre || '—'}
+                                </TableCell>
+                                <TableCell className='sm:px-4 text-center font-mono sm:text-sm'>
+                                  {m.cantidad}
+                                  {Number(m.ml ?? 0) > 0 && (
+                                    <p className='text-[10px] font-bold uppercase text-amber-600 dark:text-amber-400'>
+                                      {Number(m.ml)} ml
+                                    </p>
+                                  )}
+                                </TableCell>
+                                <TableCell className='sm:px-4 text-center font-mono sm:text-sm'>
+                                  {isTierPricedItem(m) ? (
+                                    <BarAnfitrionas
+                                      productoId={m.producto_id}
+                                      categoriaNombre={m.categoria_nombre}
+                                      precio={m.precio_venta}
+                                      compact
+                                    />
+                                  ) : m.opciones_venta ? (
+                                    <SalePrices
+                                      options={m.opciones_venta}
+                                      field='precio'
+                                      mlShot={m.ml_shot}
+                                      mlShotAnfitriona={m.ml_shot_anfitriona}
+                                    />
+                                  ) : m.precio_venta !== null && m.precio_venta !== undefined ? (
+                                    formatCurrencyCLP(Number(m.precio_venta))
+                                  ) : (
+                                    '—'
+                                  )}
+                                </TableCell>
+                                <TableCell className='sm:px-4 text-center font-mono sm:text-sm'>
+                                  {isTierPricedItem(m) ? (
+                                    <span className='text-muted-foreground'>Según tabla</span>
+                                  ) : m.opciones_venta ? (
+                                    <SalePrices
+                                      options={m.opciones_venta}
+                                      field='comision'
+                                      mlShot={m.ml_shot}
+                                      mlShotAnfitriona={m.ml_shot_anfitriona}
+                                    />
+                                  ) : m.comision !== null && m.comision !== undefined ? (
+                                    formatCurrencyCLP(Number(m.comision))
+                                  ) : (
+                                    '—'
+                                  )}
+                                </TableCell>
+                                <TableCell className='sm:px-4 text-center sm:text-sm font-mono'>
+                                  {m.usuario_nombre || m.usuario_nick || '—'}
+                                </TableCell>
+                                <TableCell>
+                                  {m.tipo === 'venta'
+                                    ? 'Vendida'
+                                    : m.estado === 'aceptada'
+                                      ? 'Aceptada'
+                                      : m.estado === 'pendiente'
+                                        ? 'Pendiente'
+                                        : m.estado === 'rechazada'
+                                          ? 'Rechazada'
+                                          : 'Histórica'}
+                                </TableCell>
+                                <TableCell>
+                                  {m.tipo === 'venta' ? (
+                                    <span className='text-muted-foreground'>—</span>
+                                  ) : (
+                                    <>
+                                      <span>{m.aceptado_nombre || 'Sin recepción registrada'}</span>
+                                      {m.fecha_aceptacion && (
+                                        <p className='text-xs text-muted-foreground'>
+                                          {m.fecha_aceptacion.replace('T', ' ').slice(0, 16)}
+                                        </p>
+                                      )}
+                                    </>
+                                  )}
+                                </TableCell>
+                              </TableRow>
+                            ))
+                          )}
+                        </TableBody>
+                      </Table>
+                    </div>
+                  </div>
+                </BoneyardSkeleton>
+              </>
+            )}
+          </TabsContent>
+
+          <TabsContent value='envases' className='mt-4'>
+            {containersError ? (
+              <ListLoadError
+                message='No se pudo cargar el historial de envases.'
+                onRetry={fetchDevoluciones}
+              />
+            ) : (
+              <>
+                <PermissionGuard
+                  module='products'
+                  action='return_container'
+                  fallback={
+                    <div className='text-center text-gray-500 text-sm sm:text-base py-8'>
+                      No tienes permiso para verificar la entrega de envases.
+                    </div>
+                  }
+                >
+                  <div className='space-y-4'>
+                    <p className='text-sm text-muted-foreground'>
+                      Escanea el envase vacío (EAN-13 o SKU LM-…) antes de entregarlo a la bodega:
+                      el sistema confirma que es nuestro, que está vacío y que no se entregó antes,
+                      y lo marca en el mismo paso. La recepción queda pendiente hasta que la bodega
+                      la confirme desde Bodega → Envases devueltos. Puedes escanear envases uno tras
+                      otro sin recargar: el contador y la lista de la sesión quedan abajo. Si no hay
+                      red, los escaneos se guardan localmente y se verifican solos al reconectar.
+                    </p>
+
+                    <form
+                      onSubmit={e => {
+                        e.preventDefault();
+                        enviarEscaneo(codigoEnvase);
+                      }}
+                      className='flex flex-col sm:flex-row gap-2'
+                    >
+                      <Input
+                        autoFocus
+                        ref={inputEnvaseRef}
+                        value={codigoEnvase}
+                        onChange={e => setCodigoEnvase(e.target.value)}
+                        placeholder='Escanea o digita el código del envase'
+                        aria-label='Código del envase'
+                        className='rounded-full font-mono'
+                      />
+                      <Button
+                        type='submit'
+                        disabled={verificando || !codigoEnvase.trim()}
+                        className='rounded-full flex items-center gap-2'
+                      >
+                        <PackageCheck className='w-4 h-4' />
+                        {verificando ? 'Verificando...' : 'Verificar y marcar'}
+                      </Button>
+                    </form>
+
+                    {resultadoEnvase && (
+                      <div
+                        className={cn(
+                          'p-4 rounded-2xl border text-sm',
+                          resultadoEnvase.ok
+                            ? 'bg-green-50 border-green-200 text-green-800'
+                            : resultadoEnvase.motivo === 'ya_devuelto'
+                              ? 'bg-amber-50 border-amber-200 text-amber-800'
+                              : 'bg-red-50 border-red-200 text-red-800'
+                        )}
+                        role='status'
+                      >
+                        <p className='font-bold flex items-center gap-2'>
+                          {resultadoEnvase.ok ? (
+                            <>
+                              <PackageCheck className='w-4 h-4' />
+                              Envase entregado a la bodega
+                            </>
+                          ) : (
+                            <>
+                              <AlertTriangle className='w-4 h-4' />
+                              {MOTIVO_ENVASE[resultadoEnvase.motivo] ?? 'No es nuestro'}
+                            </>
+                          )}
+                        </p>
+                        <p className='mt-1'>{resultadoEnvase.mensaje}</p>
+                        {resultadoEnvase.unidad && (
+                          <p className='text-xs mt-1 font-mono'>
+                            {resultadoEnvase.unidad.producto_nombre || '—'} ·{' '}
+                            {resultadoEnvase.unidad.presentacion_nombre || '—'} · SKU{' '}
+                            {resultadoEnvase.unidad.codigo}
+                          </p>
+                        )}
+                      </div>
+                    )}
+
+                    <EscaneoLote
+                      aceptados={entregadosSesion}
+                      rechazados={rechazadosSesion}
+                      enCola={envasesEnCola}
+                      sesion={sesionEnvases}
+                      sincronizando={sincronizandoEnvases}
+                      sonido={avisoSonoro}
+                      onAlternarSonido={alternarAvisoSonoro}
+                      onLimpiar={limpiarSesionEnvases}
+                      onReintentar={reintentarEnvases}
+                      etiquetaAceptado='Entregado'
+                      tituloAceptados='Entregados a la bodega'
+                    />
+
+                    <div>
+                      <p className='text-xs font-medium text-muted-foreground mb-2'>
+                        Devoluciones registradas ({devoluciones.length})
+                      </p>
+                      <BoneyardSkeleton name='bar-containers' loading={loadingDevol}>
+                        <div className='overflow-hidden rounded-3xl border bg-card'>
+                          <div className='overflow-x-auto'>
+                            <Table className='min-w-full text-center'>
+                              <TableHeader>
+                                <TableRow className='hover:bg-transparent'>
+                                  <TableHead>Fecha</TableHead>
+                                  <TableHead>SKU</TableHead>
+                                  <TableHead>Producto</TableHead>
+                                  <TableHead>Presentación</TableHead>
+                                  <TableHead>Compra</TableHead>
+                                  <TableHead>Merma</TableHead>
+                                  <TableHead>Entregado por</TableHead>
+                                  <TableHead>Recepción en bodega</TableHead>
+                                </TableRow>
+                              </TableHeader>
+                              <TableBody>
+                                {devoluciones.length === 0 ? (
+                                  <TableRow key='empty'>
+                                    <TableCell
+                                      colSpan={8}
+                                      className='text-center text-muted-foreground'
+                                    >
+                                      {loadingDevol
+                                        ? 'Cargando...'
+                                        : 'Sin envases entregados todavía.'}
+                                    </TableCell>
+                                  </TableRow>
+                                ) : (
+                                  devoluciones.map(d => (
+                                    <TableRow
+                                      key={d.id}
+                                      className='border-b transition-colors hover:bg-muted/50'
+                                    >
+                                      <TableCell className='sm:px-4 text-center sm:text-sm whitespace-nowrap'>
+                                        {d.fecha_devolucion
+                                          ? (() => {
+                                              const f = new Date(d.fecha_devolucion);
+                                              return (
+                                                <span>
+                                                  {f.toLocaleDateString('es-CL', {
+                                                    day: '2-digit',
+                                                    month: '2-digit',
+                                                    year: 'numeric'
+                                                  })}
+                                                  <br />
+                                                  <span className='text-gray-400'>
+                                                    {f.toLocaleTimeString('es-CL', {
+                                                      hour: '2-digit',
+                                                      minute: '2-digit'
+                                                    })}
+                                                  </span>
+                                                </span>
+                                              );
+                                            })()
+                                          : '—'}
+                                      </TableCell>
+                                      <TableCell className='sm:px-4 text-center font-mono sm:text-sm'>
+                                        {d.codigo}
+                                      </TableCell>
+                                      <TableCell className='sm:px-4 text-center sm:text-sm font-medium'>
+                                        {d.producto_nombre || '—'}
+                                      </TableCell>
+                                      <TableCell className='sm:px-4 text-center sm:text-sm'>
+                                        {d.presentacion_nombre || '—'}
+                                      </TableCell>
+                                      <TableCell className='sm:px-4 text-center font-mono sm:text-sm'>
+                                        {d.compra_folio || '—'}
+                                      </TableCell>
+                                      <TableCell className='sm:px-4 text-center font-mono sm:text-sm'>
+                                        {Number(d.ml_merma ?? 0)} ml
+                                      </TableCell>
+                                      <TableCell className='sm:px-4 text-center sm:text-sm'>
+                                        {d.usuario_nombre || d.usuario_nick
+                                          ? `${d.usuario_nombre || ''} ${d.usuario_apellido || ''}`.trim() ||
+                                            d.usuario_nick
+                                          : '—'}
+                                      </TableCell>
+                                      <TableCell className='sm:px-4 text-center sm:text-sm'>
+                                        {d.pendiente_confirmacion ? (
+                                          <Badge className='bg-amber-100 text-amber-700 rounded-full px-2 sm:px-3 py-1 text-xs'>
+                                            Pendiente de bodega
+                                          </Badge>
+                                        ) : (
+                                          <>
+                                            <Badge className='bg-green-100 text-green-700 rounded-full px-2 sm:px-3 py-1 text-xs'>
+                                              Recibido
+                                            </Badge>
+                                            <p className='mt-1 text-[10px] text-gray-500'>
+                                              {d.confirmado_nombre || d.confirmado_nick || '—'}
+                                              {d.fecha_confirmacion
+                                                ? ` · ${new Date(
+                                                    d.fecha_confirmacion
+                                                  ).toLocaleString('es-CL', {
+                                                    day: '2-digit',
+                                                    month: '2-digit',
+                                                    hour: '2-digit',
+                                                    minute: '2-digit'
+                                                  })}`
+                                                : ''}
+                                            </p>
+                                          </>
+                                        )}
+                                      </TableCell>
+                                    </TableRow>
+                                  ))
+                                )}
+                              </TableBody>
+                            </Table>
+                          </div>
+                        </div>
+                      </BoneyardSkeleton>
+                    </div>
+                  </div>
+                </PermissionGuard>
+              </>
+            )}
           </TabsContent>
         </Tabs>
       </div>

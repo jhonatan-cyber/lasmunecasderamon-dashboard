@@ -62,7 +62,7 @@ export function BottleExtras({
           htmlFor='bottle-mixer'
           className='flex cursor-pointer items-center gap-2 text-sm font-medium'
         >
-          <input
+          <Input
             id='bottle-mixer'
             type='checkbox'
             checked={accompaniment}

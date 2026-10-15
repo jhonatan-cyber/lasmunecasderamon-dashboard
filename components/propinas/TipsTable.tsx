@@ -56,31 +56,21 @@ export default function TipsTable({ loading, rows, rowsPerPage, onVerDetalle }: 
   return (
     <div className='bg-white dark:bg-slate-900/40 backdrop-blur-xs rounded-3xl border-none shadow-md overflow-hidden'>
       <div className='overflow-x-auto'>
-        <Table className='min-w-full text-base text-center'>
-          <TableHeader className='bg-gray-100 dark:bg-slate-900/50'>
-            <TableRow className='hover:bg-transparent border-gray-100 dark:border-gray-800'>
-              <TableHead className='py-4 px-5 text-xs uppercase text-gray-500 text-start'>
-                Usuario
-              </TableHead>
-              <TableHead className='py-4 px-5 text-xs uppercase text-gray-500'>
-                Total propinas
-              </TableHead>
-              <TableHead className='py-4 px-5 text-xs uppercase text-gray-500'>
-                Última propina
-              </TableHead>
-              <TableHead className='py-4 px-5 text-xs uppercase text-gray-500'>Estado</TableHead>
-              {canViewDetail && (
-                <TableHead className='py-4 px-5 text-xs uppercase text-gray-500'>
-                  Detalles
-                </TableHead>
-              )}
+        <Table className='min-w-full text-center'>
+          <TableHeader>
+            <TableRow className='hover:bg-transparent'>
+              <TableHead className='text-start'>Usuario</TableHead>
+              <TableHead>Total propinas</TableHead>
+              <TableHead>Última propina</TableHead>
+              <TableHead>Estado</TableHead>
+              {canViewDetail && <TableHead>Detalles</TableHead>}
             </TableRow>
           </TableHeader>
           <TableBody>
             {loading
               ? Array.from({ length: rowsPerPage }).map((_, i) => (
-                  <TableRow key={i} className='border-b border-gray-100 dark:border-gray-800'>
-                    <TableCell className='py-4 px-5'>
+                  <TableRow key={i} className='border-b'>
+                    <TableCell>
                       <div className='flex items-center gap-3'>
                         <Skeleton className='h-10 w-10 rounded-full' />
                         <div className='flex flex-col gap-1'>
@@ -89,17 +79,17 @@ export default function TipsTable({ loading, rows, rowsPerPage, onVerDetalle }: 
                         </div>
                       </div>
                     </TableCell>
-                    <TableCell className='py-4 px-5'>
+                    <TableCell>
                       <Skeleton className='h-4 w-24 rounded mx-auto' />
                     </TableCell>
-                    <TableCell className='py-4 px-5'>
+                    <TableCell>
                       <Skeleton className='h-4 w-28 rounded mx-auto' />
                     </TableCell>
-                    <TableCell className='py-4 px-5'>
+                    <TableCell>
                       <Skeleton className='h-6 w-20 rounded-full mx-auto' />
                     </TableCell>
                     {canViewDetail && (
-                      <TableCell className='py-4 px-5'>
+                      <TableCell>
                         <Skeleton className='h-8 w-8 rounded-xl mx-auto' />
                       </TableCell>
                     )}
@@ -110,7 +100,7 @@ export default function TipsTable({ loading, rows, rowsPerPage, onVerDetalle }: 
                     key={propina.id_usuario}
                     className={`border-b transition-colors hover:bg-gray-50 dark:hover:bg-slate-800/30 border-gray-100 dark:border-gray-800 ${idx === 0 ? 'first:rounded-t-xl' : ''} ${idx === rows.length - 1 ? 'last:rounded-b-xl' : ''}`}
                   >
-                    <TableCell className='font-medium text-start text-sm py-4 px-5'>
+                    <TableCell className='font-medium text-start'>
                       <div className='flex items-center gap-3'>
                         <div className='h-10 w-10 rounded-full bg-gray-200 dark:bg-slate-700 overflow-hidden flex items-center justify-center'>
                           {propina.usuario_foto && propina.usuario_foto !== '' ? (
@@ -136,13 +126,13 @@ export default function TipsTable({ loading, rows, rowsPerPage, onVerDetalle }: 
                         </div>
                       </div>
                     </TableCell>
-                    <TableCell className='text-center text-sm py-4 px-5 font-semibold'>
+                    <TableCell className='text-center font-semibold'>
                       {formatCurrencyNoDecimals(propina.total_propinas)}
                     </TableCell>
-                    <TableCell className='text-center text-sm py-4 px-5 text-gray-700 dark:text-gray-300'>
+                    <TableCell className='text-center'>
                       {formatFechaLarga(propina.fecha_crea)}
                     </TableCell>
-                    <TableCell className='text-center py-4 px-5'>
+                    <TableCell className='text-center'>
                       {toNumber(propina.propinas_pendientes) > 0 ? (
                         <Badge className='bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-300 rounded-full px-3 py-1 text-xs font-semibold'>
                           Pendiente
@@ -158,7 +148,7 @@ export default function TipsTable({ loading, rows, rowsPerPage, onVerDetalle }: 
                       )}
                     </TableCell>
                     {canViewDetail && (
-                      <TableCell className='text-center py-4 px-5'>
+                      <TableCell className='text-center'>
                         <Button
                           variant='ghost'
                           size='sm'

@@ -8,7 +8,7 @@ import {
   toDateKeys
 } from '@/lib/utils/calendarUtils';
 
-export type RoleType = 'garzon' | 'cajero' | 'anfitriona';
+export type RoleType = 'garzon' | 'cajero' | 'anfitriona' | 'barman';
 
 export type DataType =
   'asistencias' | 'anticipos' | 'propinas' | 'horasExtras' | 'comisiones' | 'servicios';
@@ -42,6 +42,11 @@ export interface UseRoleCalendarReturn {
   modalTotal: number;
   roleCategories: DataType[];
 
+  calendarError: string;
+  selectedDataError: string;
+  retryCalendar: () => Promise<void>;
+  retrySelectedData: () => Promise<void>;
+
   // Actions
   navigate: (direction: number) => void;
   goToToday: () => void;
@@ -66,6 +71,8 @@ export function useRoleCalendar({ role, userId }: UseRoleCalendarProps): UseRole
   const [dragStartDate, setDragStartDate] = useState<Date | null>(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
+  const [calendarError, setCalendarError] = useState('');
+  const [selectedDataError, setSelectedDataError] = useState('');
   const [calendarData, setCalendarData] = useState<CalendarData>({
     asistencias: [],
     anticipos: [],
@@ -268,6 +275,7 @@ export function useRoleCalendar({ role, userId }: UseRoleCalendarProps): UseRole
     if (!userId) return;
 
     setIsLoading(true);
+    setCalendarError('');
     try {
       const { startDate, endDate } = getMonthDateRange(currentDate);
 
@@ -337,6 +345,9 @@ export function useRoleCalendar({ role, userId }: UseRoleCalendarProps): UseRole
         fourthRes.json()
       ]);
 
+      const responses = [asistenciasRes, anticiposRes, thirdRes, fourthRes];
+      const results = [asistenciasData, anticiposData, thirdData, fourthData];
+      results.forEach((result, index) => validateCalendarResult(responses[index], result));
       const calendarDataToSet = {
         asistencias: asistenciasData.success ? asistenciasData.data || [] : [],
         anticipos: anticiposData.success ? anticiposData.data || [] : [],
@@ -348,6 +359,7 @@ export function useRoleCalendar({ role, userId }: UseRoleCalendarProps): UseRole
 
       setCalendarData(calendarDataToSet);
     } catch (error) {
+      setCalendarError('No se pudo cargar el calendario.');
       console.error('Error fetching calendar data:', error);
     } finally {
       setIsLoading(false);
@@ -373,6 +385,7 @@ export function useRoleCalendar({ role, userId }: UseRoleCalendarProps): UseRole
     }
 
     setIsLoadingSelectedData(true);
+    setSelectedDataError('');
     try {
       const dateKeys = toDateKeys(selectedDates);
       const datesParam = dateKeys.join(',');
@@ -402,12 +415,12 @@ export function useRoleCalendar({ role, userId }: UseRoleCalendarProps): UseRole
       }
 
       const fetchCountsPromises = [
-        fetch(`/api/attendance/by-dates?dates=${datesParam}`)
-          .then(res => res.json())
-          .catch(() => ({ success: false })),
-        fetch(`/api/anticipos/by-dates?dates=${datesParam}`)
-          .then(res => res.json())
-          .catch(() => ({ success: false })),
+        fetch(`/api/attendance/by-dates?dates=${datesParam}`).then(async res =>
+          validateCalendarResult(res, await res.json())
+        ),
+        fetch(`/api/anticipos/by-dates?dates=${datesParam}`).then(async res =>
+          validateCalendarResult(res, await res.json())
+        ),
         isAnfitriona
           ? Promise.resolve({
               success: true,
@@ -425,9 +438,7 @@ export function useRoleCalendar({ role, userId }: UseRoleCalendarProps): UseRole
           isAnfitriona
             ? `/api/servicios/by-dates?dates=${datesParam}`
             : `/api/overtime/by-dates?dates=${datesParam}`
-        )
-          .then(res => res.json())
-          .catch(() => ({ success: false }))
+        ).then(async res => validateCalendarResult(res, await res.json()))
       ];
 
       const [asistenciasRes, anticiposRes, thirdRes, fourthRes] =
@@ -447,47 +458,57 @@ export function useRoleCalendar({ role, userId }: UseRoleCalendarProps): UseRole
       let total = 0;
 
       if (asistenciasRes.success && asistenciasRes.data) {
-        const asistenciasEstado1 = asistenciasRes.data.filter((item: any) => item.estado === 1);
+        const asistenciasEstado1 = asistenciasRes.data.filter(
+          (item: any) => Number(item.estado) === 1
+        );
         total += asistenciasEstado1.reduce(
-          (sum: number, item: any) => sum + (item.sueldo_final || 0),
+          (sum: number, item: any) => sum + Number(item.sueldo_final || 0),
           0
         );
       }
 
       if (isAnfitriona) {
         if (thirdRes.success && thirdRes.data) {
-          const comisionesEstado1 = thirdRes.data.filter((item: any) => item.estado === 1);
+          const comisionesEstado1 = thirdRes.data.filter((item: any) => Number(item.estado) === 1);
           total += comisionesEstado1.reduce(
-            (sum: number, item: any) => sum + (item.comision || 0),
+            (sum: number, item: any) => sum + Number(item.comision || 0),
             0
           );
         }
         if (fourthRes.success && fourthRes.data) {
           const serviciosValidos = fourthRes.data.filter(
-            (item: any) => item.estado === 0 || item.estado === 4
+            (item: any) => Number(item.estado) === 0 || Number(item.estado) === 4
           );
           total += serviciosValidos.reduce(
-            (sum: number, item: any) => sum + (item.precio_servicio || 0),
+            (sum: number, item: any) => sum + Number(item.precio_servicio || 0),
             0
           );
         }
       } else {
         if (thirdRes.success && thirdRes.data) {
-          const propinasEstado1 = thirdRes.data.filter((item: any) => item.estado === 1);
-          total += propinasEstado1.reduce((sum: number, item: any) => sum + (item.monto || 0), 0);
+          const propinasEstado1 = thirdRes.data.filter((item: any) => Number(item.estado) === 1);
+          total += propinasEstado1.reduce(
+            (sum: number, item: any) => sum + Number(item.monto || 0),
+            0
+          );
         }
         if (fourthRes.success && fourthRes.data) {
-          const horasExtrasEstado1 = fourthRes.data.filter((item: any) => item.estado === 1);
+          const horasExtrasEstado1 = fourthRes.data.filter(
+            (item: any) => Number(item.estado) === 1
+          );
           total += horasExtrasEstado1.reduce(
-            (sum: number, item: any) => sum + (item.total || 0),
+            (sum: number, item: any) => sum + Number(item.total || 0),
             0
           );
         }
       }
 
       if (anticiposRes.success && anticiposRes.data) {
-        const anticiposEstado1 = anticiposRes.data.filter((item: any) => item.estado === 1);
-        total -= anticiposEstado1.reduce((sum: number, item: any) => sum + (item.monto || 0), 0);
+        const anticiposEstado1 = anticiposRes.data.filter((item: any) => Number(item.estado) === 1);
+        total -= anticiposEstado1.reduce(
+          (sum: number, item: any) => sum + Number(item.monto || 0),
+          0
+        );
       }
 
       setModalTotal(total);
@@ -511,6 +532,7 @@ export function useRoleCalendar({ role, userId }: UseRoleCalendarProps): UseRole
           setSelectedDateData([]);
       }
     } catch (error) {
+      setSelectedDataError('No se pudieron cargar los datos de las fechas seleccionadas.');
       console.error('Error fetching selected date data:', error);
       setSelectedDateData([]);
     } finally {
@@ -525,6 +547,10 @@ export function useRoleCalendar({ role, userId }: UseRoleCalendarProps): UseRole
   }, [selectedDates, selectedDataType, isModalOpen, fetchSelectedDateData, setSelectedDataType]);
 
   return {
+    calendarError,
+    selectedDataError,
+    retryCalendar: fetchCalendarData,
+    retrySelectedData: fetchSelectedDateData,
     currentDate,
     selectedDates,
     isDragging,
@@ -566,4 +592,10 @@ function getDateRange(startDate: Date, endDate: Date): Date[] {
   }
 
   return dates;
+}
+
+function validateCalendarResult(response: Response, result: any) {
+  if (!response.ok || !result.success || !Array.isArray(result.data))
+    throw new Error('No se pudo cargar el calendario');
+  return result;
 }

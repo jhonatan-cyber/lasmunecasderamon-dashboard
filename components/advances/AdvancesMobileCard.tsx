@@ -11,13 +11,15 @@ import { Anticipo } from '@/hooks/personal';
 interface AdvancesMobileCardProps {
   anticipo: Anticipo;
   isAdmin: boolean;
-  onAction?: (id: string | number, action: 'approve' | 'reject') => Promise<any>;
+  canDeliver?: boolean;
+  onAction?: (id: string | number, action: 'approve' | 'reject' | 'deliver') => Promise<any>;
   statusBadge: React.ReactNode;
 }
 
 export function AdvancesMobileCard({
   anticipo: a,
   isAdmin,
+  canDeliver = false,
   onAction,
   statusBadge
 }: AdvancesMobileCardProps) {
@@ -63,6 +65,11 @@ export function AdvancesMobileCard({
           <div className='text-lg font-black text-emerald-600'>{formatCurrencyCLP(a.monto)}</div>
         </div>
 
+        {canDeliver && Number(a.estado) === 1 && !a.fecha_entrega && onAction && (
+          <Button className='rounded-full' onClick={() => onAction(a.id_anticipo, 'deliver')}>
+            Entregar efectivo
+          </Button>
+        )}
         {isAdmin && Number(a.estado) === 2 && onAction && (
           <div className='flex gap-2 pt-2 border-t border-gray-50 dark:border-gray-800'>
             <Button

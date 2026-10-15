@@ -1,4 +1,5 @@
 'use client';
+import { Button } from '@/components/ui/button';
 
 import React, { useMemo, useState } from 'react';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
@@ -8,12 +9,12 @@ import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/comp
 import { Clock3, Home } from 'lucide-react';
 import { formatCurrencyCLP } from '@/lib/utils/formatters';
 import {
-  ORDER_FIELD_LABEL_CLASS,
-  ORDER_FIELD_POPOVER_CLASS,
-  ORDER_FIELD_SEARCH_INPUT_CLASS,
-  ORDER_FIELD_SEARCH_WRAPPER_CLASS,
-  ORDER_MULTISELECT_TRIGGER_CLASS
-} from '@/components/orders/orderFieldStyles';
+  SELECT_LABEL_CLASS,
+  SELECT_CONTENT_WIDE_CLASS,
+  SELECT_SEARCH_INPUT_CLASS,
+  SELECT_SEARCH_WRAPPER_CLASS,
+  SELECT_MULTI_TRIGGER_CLASS
+} from '@/components/shared/selectStyles';
 
 interface Habitacion {
   id_habitacion?: string | number;
@@ -187,10 +188,11 @@ const RoomSelect: React.FC<RoomSelectProps> = ({
   const selectNode = (
     <Popover open={open} onOpenChange={nextOpen => !disabledState && setOpen(nextOpen)}>
       <PopoverTrigger asChild>
-        <button
+        <Button
+          variant='unstyled'
           id={uniqueId}
           type='button'
-          className={`${ORDER_MULTISELECT_TRIGGER_CLASS} flex items-center gap-2 pr-10`}
+          className={`${SELECT_MULTI_TRIGGER_CLASS} flex items-center gap-2 pr-10`}
           onClick={() => !disabledState && setOpen(!open)}
           disabled={disabledState}
         >
@@ -200,10 +202,10 @@ const RoomSelect: React.FC<RoomSelectProps> = ({
           ) : (
             <span className='text-gray-400 text-sm truncate'>{placeholder}</span>
           )}
-        </button>
+        </Button>
       </PopoverTrigger>
-      <PopoverContent align='start' className={ORDER_FIELD_POPOVER_CLASS} sideOffset={5}>
-        <div className={ORDER_FIELD_SEARCH_WRAPPER_CLASS}>
+      <PopoverContent align='start' className={SELECT_CONTENT_WIDE_CLASS} sideOffset={5}>
+        <div className={SELECT_SEARCH_WRAPPER_CLASS}>
           <label htmlFor={`${uniqueId}-search`} className='sr-only'>
             Buscar habitación
           </label>
@@ -217,7 +219,7 @@ const RoomSelect: React.FC<RoomSelectProps> = ({
                 e.stopPropagation();
               }
             }}
-            className={ORDER_FIELD_SEARCH_INPUT_CLASS}
+            className={SELECT_SEARCH_INPUT_CLASS}
             disabled={disabledState}
             onClick={e => e.stopPropagation()}
           />
@@ -225,13 +227,14 @@ const RoomSelect: React.FC<RoomSelectProps> = ({
 
         <div className='max-h-60 overflow-y-auto p-1'>
           {value && (
-            <button
+            <Button
+              variant='unstyled'
               type='button'
               className='flex w-full items-center gap-3 rounded-md px-3 py-2 text-left text-sm text-gray-400 italic transition-colors hover:bg-gray-100'
               onClick={() => handleValueChange('__none__')}
             >
               Sin habitación
-            </button>
+            </Button>
           )}
 
           {displayHabitaciones.length === 0 ? (
@@ -249,7 +252,8 @@ const RoomSelect: React.FC<RoomSelectProps> = ({
               const isSelected = stringId === value;
 
               return (
-                <button
+                <Button
+                  variant='unstyled'
                   key={stringId}
                   type='button'
                   className={`flex w-full items-center justify-between gap-2 rounded-md px-3 py-2 text-left text-sm transition-colors ${
@@ -272,7 +276,7 @@ const RoomSelect: React.FC<RoomSelectProps> = ({
                   ) : isSelected ? (
                     <span className='text-xs font-semibold text-gray-500'>SELECCIONADA</span>
                   ) : null}
-                </button>
+                </Button>
               );
             })
           )}
@@ -283,7 +287,7 @@ const RoomSelect: React.FC<RoomSelectProps> = ({
 
   return (
     <div className={`flex flex-col ${className}`}>
-      <Label htmlFor={uniqueId} className={ORDER_FIELD_LABEL_CLASS}>
+      <Label htmlFor={uniqueId} className={SELECT_LABEL_CLASS}>
         {label}
         {required && <span className='text-red-500'>*</span>}
       </Label>

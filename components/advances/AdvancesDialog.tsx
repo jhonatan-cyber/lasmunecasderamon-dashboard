@@ -1,11 +1,11 @@
 'use client';
 
-import { 
-  Dialog, 
-  DialogContent, 
-  DialogDescription, 
-  DialogHeader, 
-  DialogTitle, 
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle
 } from '@/components/ui/dialog';
 import { Loader2, Banknote } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -20,11 +20,11 @@ interface AdvancesDialogProps {
   efectivoEnCaja?: number;
 }
 
-export function AdvancesDialog({ 
-  open, 
-  onOpenChange, 
-  onSubmit, 
-  isLoading, 
+export function AdvancesDialog({
+  open,
+  onOpenChange,
+  onSubmit,
+  isLoading,
   error,
   efectivoEnCaja = 0
 }: AdvancesDialogProps) {
@@ -38,13 +38,14 @@ export function AdvancesDialog({
         <DialogHeader className='p-6 pb-2 border-b'>
           <DialogTitle className='text-xl font-bold flex items-center gap-2'>
             <Banknote className='w-5 h-5 sm:w-6 sm:h-6 text-emerald-500' />
-            <span>Registrar Anticipo</span>
+            <span>Solicitar anticipo para un empleado</span>
           </DialogTitle>
           <DialogDescription className='sr-only'>
-            Formulario para registrar un nuevo anticipo
+            La solicitud requiere aprobación del administrador. El cajero entrega el efectivo
+            después de su aprobación.
           </DialogDescription>
         </DialogHeader>
-        
+
         <div className='flex-1 overflow-y-auto p-6'>
           <AdvanceForm
             open={open}

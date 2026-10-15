@@ -1,8 +1,21 @@
 'use client';
+import { ListLoadError } from '@/components/shared/ListLoadError';
+import { FilterBar } from '@/components/shared/FilterBar';
+import { SortSelect } from '@/components/shared/selects/SortSelect';
 
 import { useState, useEffect } from 'react';
+import { SELECT_INPUT_CLASS, SELECT_LABEL_CLASS } from '@/components/shared/selectStyles';
+import {
+  ModuleTable,
+  ModuleTableHeader,
+  ModuleTableRow,
+  ModuleTableHead,
+  ModuleTableBody,
+  ModuleTableCell,
+  ModuleTableCard
+} from '@/components/shared/tables/ModuleTable';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { CardContent } from '@/components/ui/card';
 import { useCurrentUser } from '@/hooks/auth/useCurrentUser';
 import { ArrowLeft, Search, ChevronUp, ChevronDown } from 'lucide-react';
 import { useRouter } from 'next/navigation';
@@ -60,6 +73,8 @@ export default function AnfitrionaServiciosPage() {
   const router = useRouter();
   const {
     loading,
+    error,
+    fetchServices,
     searchTerm,
     rowsPerPage,
     page,
@@ -79,8 +94,9 @@ export default function AnfitrionaServiciosPage() {
     setRowsPerPage,
     setPage,
     setStatusFilter,
-    handleSort
-  } = useAnfitrionaServicios();
+    handleSort,
+    setSort
+  } = useAnfitrionaServicios(!userLoading && user?.role?.toLowerCase() === 'anfitriona');
 
   if (userLoading) {
     return (
@@ -103,6 +119,8 @@ export default function AnfitrionaServiciosPage() {
       </div>
     );
   }
+
+  if (error) return <ListLoadError message={error} onRetry={fetchServices} />;
 
   return (
     <div className='p-6 space-y-6'>
@@ -158,33 +176,51 @@ export default function AnfitrionaServiciosPage() {
         </div>
       </div>
 
-      <div className='flex justify-center sm:justify-start'>
-        <Tabs
-          value={statusFilter}
-          onValueChange={value => {
-            setStatusFilter(value as 'proceso' | 'finalizados');
-            setPage(1);
-          }}
-          className='w-full sm:w-auto'
-        >
-          <TabsList className='grid w-full grid-cols-2 bg-white/50 dark:bg-black/20 p-1 rounded-xl border shadow-xs h-12'>
-            <TabsTrigger
-              value='proceso'
-              className='rounded-lg px-4 sm:px-12 py-2 data-[state=active]:bg-black data-[state=active]:text-white transition-all duration-200'
+      <FilterBar>
+        <div className='min-w-64'>
+          <span className={SELECT_LABEL_CLASS}>Estado</span>
+          <Tabs
+            value={statusFilter}
+            onValueChange={value => {
+              setStatusFilter(value as 'proceso' | 'finalizados');
+              setPage(1);
+            }}
+            className='w-full'
+          >
+            <TabsList
+              aria-label='Estado del servicio'
+              className='grid w-full grid-cols-2 bg-white/50 dark:bg-black/20 p-1 rounded-full border shadow-xs h-11'
             >
-              En Proceso
-            </TabsTrigger>
-            <TabsTrigger
-              value='finalizados'
-              className='rounded-lg px-4 sm:px-12 py-2 data-[state=active]:bg-black data-[state=active]:text-white transition-all duration-200'
-            >
-              Finalizados
-            </TabsTrigger>
-          </TabsList>
-        </Tabs>
-      </div>
-
-      <div className='flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4'>
+              <TabsTrigger
+                value='proceso'
+                className='rounded-full px-4 py-2 data-[state=active]:bg-black data-[state=active]:text-white transition-all duration-200'
+              >
+                En Proceso
+              </TabsTrigger>
+              <TabsTrigger
+                value='finalizados'
+                className='rounded-full px-4 py-2 data-[state=active]:bg-black data-[state=active]:text-white transition-all duration-200'
+              >
+                Finalizados
+              </TabsTrigger>
+            </TabsList>
+          </Tabs>
+        </div>
+        <SortSelect
+          field={sortField}
+          direction={sortDirection}
+          options={[
+            { value: 'fecha_crea', label: 'Fecha' },
+            { value: 'codigo', label: 'Código' },
+            { value: 'cliente', label: 'Cliente' },
+            { value: 'tiempo', label: 'Tiempo' },
+            { value: 'habitacion', label: 'Habitación' },
+            { value: 'comision_usuario', label: 'Mi comisión' },
+            { value: 'estado', label: 'Estado' },
+            { value: 'id_servicio', label: 'Número' }
+          ]}
+          onChange={(field, direction) => setSort(field as keyof Service, direction)}
+        />
         <SelectElements
           value={rowsPerPage}
           onChange={value => {
@@ -195,24 +231,27 @@ export default function AnfitrionaServiciosPage() {
           label='Listar'
         />
 
-        <div className='flex items-center gap-2'>
-          <span className='text-sm text-gray-600'>Buscar:</span>
+        <div className='min-w-60'>
+          <label htmlFor='buscar-servicios' className={SELECT_LABEL_CLASS}>
+            Buscar
+          </label>
           <Input
+            id='buscar-servicios'
             type='text'
             placeholder='Buscar servicios...'
             value={searchTerm}
             onChange={e => setSearchTerm(e.target.value)}
-            className='w-48'
+            className={SELECT_INPUT_CLASS}
           />
         </div>
-      </div>
+      </FilterBar>
 
-      <Card>
+      <ModuleTableCard>
         <CardContent className='p-0'>
           <div className='overflow-x-auto'>
-            <table className='w-full'>
-              <thead className='bg-gray-50'>
-                <tr>
+            <ModuleTable>
+              <ModuleTableHeader>
+                <ModuleTableRow>
                   {[
                     { field: 'id_servicio' as const, label: '#' },
                     { field: 'codigo' as const, label: 'CÓDIGO' },
@@ -223,13 +262,11 @@ export default function AnfitrionaServiciosPage() {
                     { field: 'fecha_crea' as const, label: 'FECHA HORA' },
                     { field: 'estado' as const, label: 'ESTADO' }
                   ].map(col => (
-                    <th
-                      key={col.field}
-                      className='px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider'
-                    >
-                      <button
+                    <ModuleTableHead key={col.field}>
+                      <Button
+                        variant='unstyled'
                         onClick={() => handleSort(col.field)}
-                        className='flex items-center gap-1 hover:text-gray-700'
+                        className='flex w-full items-center justify-center gap-1 hover:text-foreground'
                       >
                         {col.label}
                         {sortField === col.field ? (
@@ -241,49 +278,39 @@ export default function AnfitrionaServiciosPage() {
                         ) : (
                           <ChevronUp className='h-4 w-4 opacity-0' />
                         )}
-                      </button>
-                    </th>
+                      </Button>
+                    </ModuleTableHead>
                   ))}
-                </tr>
-              </thead>
-              <tbody className='bg-white divide-y divide-gray-200'>
+                </ModuleTableRow>
+              </ModuleTableHeader>
+              <ModuleTableBody>
                 {loading ? (
-                  <tr>
-                    <td colSpan={8} className='px-6 py-4 text-center'>
+                  <ModuleTableRow>
+                    <ModuleTableCell colSpan={8}>
                       <div className='animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto'></div>
                       <p className='mt-2 text-gray-600'>Cargando servicios...</p>
-                    </td>
-                  </tr>
+                    </ModuleTableCell>
+                  </ModuleTableRow>
                 ) : paginatedServices.length === 0 ? (
-                  <tr>
-                    <td colSpan={8} className='px-6 py-4 text-center text-gray-500'>
-                      No se encontraron servicios
-                    </td>
-                  </tr>
+                  <ModuleTableRow>
+                    <ModuleTableCell colSpan={8}>No se encontraron servicios</ModuleTableCell>
+                  </ModuleTableRow>
                 ) : (
                   paginatedServices.map((service, index) => (
-                    <tr key={service.id_servicio} className='hover:bg-gray-50'>
-                      <td className='px-6 py-4 whitespace-nowrap'>
+                    <ModuleTableRow key={service.id_servicio}>
+                      <ModuleTableCell>
                         <div className='w-8 h-8 bg-purple-300 text-white rounded-full flex items-center justify-center text-sm font-medium'>
                           {(page - 1) * rowsPerPage + index + 1}
                         </div>
-                      </td>
-                      <td className='px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900 dark:text-gray-100'>
-                        {service.codigo || 'N/A'}
-                      </td>
-                      <td className='px-6 py-4 whitespace-nowrap text-sm text-gray-500'>
-                        {service.cliente || 'N/A'}
-                      </td>
-                      <td className='px-6 py-4 whitespace-nowrap text-sm text-gray-500'>
-                        {service.tiempo || 'N/A'}
-                      </td>
-                      <td className='px-6 py-4 whitespace-nowrap text-sm text-gray-500'>
-                        {service.habitacion || 'N/A'}
-                      </td>
-                      <td className='px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900 dark:text-gray-100'>
+                      </ModuleTableCell>
+                      <ModuleTableCell>{service.codigo || 'N/A'}</ModuleTableCell>
+                      <ModuleTableCell>{service.cliente || 'N/A'}</ModuleTableCell>
+                      <ModuleTableCell>{service.tiempo || 'N/A'}</ModuleTableCell>
+                      <ModuleTableCell>{service.habitacion || 'N/A'}</ModuleTableCell>
+                      <ModuleTableCell>
                         {formatCurrencyCLP(service.comision_usuario)}
-                      </td>
-                      <td className='px-6 py-4 whitespace-nowrap'>
+                      </ModuleTableCell>
+                      <ModuleTableCell>
                         <div>
                           <div className='text-sm font-medium text-gray-900 dark:text-gray-100'>
                             {formatDateTimeDmyLabel(service.fecha_crea).date}
@@ -292,18 +319,16 @@ export default function AnfitrionaServiciosPage() {
                             {formatDateTimeDmyLabel(service.fecha_crea).time}
                           </div>
                         </div>
-                      </td>
-                      <td className='px-6 py-4 whitespace-nowrap'>
-                        {getStatusBadge(service.estado)}
-                      </td>
-                    </tr>
+                      </ModuleTableCell>
+                      <ModuleTableCell>{getStatusBadge(service.estado)}</ModuleTableCell>
+                    </ModuleTableRow>
                   ))
                 )}
-              </tbody>
-            </table>
+              </ModuleTableBody>
+            </ModuleTable>
           </div>
         </CardContent>
-      </Card>
+      </ModuleTableCard>
 
       <div className='flex justify-center'>
         <Paginate page={page} totalPages={totalPages} setPage={setPage} />

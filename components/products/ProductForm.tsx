@@ -1,4 +1,5 @@
 'use client';
+import { Textarea } from '@/components/ui/textarea';
 
 import { useState } from 'react';
 import { Button } from '@/components/ui/button';
@@ -235,7 +236,8 @@ export function ProductForm({
               : `Presentaciones${isEdit ? ` (Stock total: ${unidadesTotal})` : ''}`}
           </label>
           {!scoped && (
-            <button
+            <Button
+              variant='unstyled'
               type='button'
               onClick={addPresentacion}
               disabled={isLoading}
@@ -243,10 +245,11 @@ export function ProductForm({
             >
               <Plus className='w-3.5 h-3.5' />
               Agregar
-            </button>
+            </Button>
           )}
           {scoped && (
-            <button
+            <Button
+              variant='unstyled'
               type='button'
               onClick={addPresentacion}
               disabled={isLoading}
@@ -255,7 +258,7 @@ export function ProductForm({
             >
               <Plus className='w-3.5 h-3.5' />
               Otra presentación
-            </button>
+            </Button>
           )}
         </div>
 
@@ -356,7 +359,7 @@ export function ProductForm({
             <span className='absolute left-4 top-4 text-gray-400 group-focus-within:text-purple-500 transition-colors'>
               <FileText className='w-5 h-5' />
             </span>
-            <textarea
+            <Textarea
               id='prod-desc'
               name='description'
               value={form.description}

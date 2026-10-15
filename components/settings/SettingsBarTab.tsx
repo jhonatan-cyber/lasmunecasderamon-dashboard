@@ -1,4 +1,6 @@
 'use client';
+import { Input } from '@/components/ui/input';
+import { Button } from '@/components/ui/button';
 
 import { useState, useEffect } from 'react';
 import { Save, GlassWater, Wine, AlertTriangle } from 'lucide-react';
@@ -239,7 +241,7 @@ export function SettingsBarTab() {
                   {description}
                 </p>
                 <div className='relative mt-auto'>
-                  <input
+                  <Input
                     id={id}
                     type='number'
                     inputMode='numeric'
@@ -279,14 +281,15 @@ export function SettingsBarTab() {
                 ? 'Guardando configuración…'
                 : 'Guarda los cambios para aplicarlos al bar.'}
           </p>
-          <button
+          <Button
+            variant='unstyled'
             onClick={handleSave}
             disabled={saving || loading}
             className='inline-flex min-h-11 w-full items-center justify-center gap-2 rounded-full bg-black px-6 py-2.5 text-sm font-semibold text-white transition hover:bg-neutral-800 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-neutral-500 focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 sm:w-auto dark:bg-white dark:text-black dark:hover:bg-neutral-200 dark:focus-visible:ring-offset-neutral-900'
           >
             <Save className='h-4 w-4' aria-hidden='true' />
             {saving ? 'Guardando...' : 'Guardar cambios'}
-          </button>
+          </Button>
         </div>
       </CardContent>
     </Card>

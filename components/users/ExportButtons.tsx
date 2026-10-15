@@ -1,4 +1,12 @@
 'use client';
+import {
+  Table,
+  TableHeader,
+  TableRow,
+  TableHead,
+  TableBody,
+  TableCell
+} from '@/components/ui/table';
 
 import { Button } from '@/components/ui/button';
 import { FileText as FilePdf, FileSpreadsheet as FileXls } from 'lucide-react';
@@ -204,30 +212,30 @@ export function ExportButtons({ users }: ExportButtonsProps) {
         <div className='p-6'>
           <h1 className='text-3xl font-bold mb-6'>Listado de Usuarios</h1>
           <p className='text-base text-gray-600 mb-6'>Generado el {formatDateLabel(new Date())}</p>
-          <table className='w-full text-base border-collapse'>
-            <thead>
-              <tr className='bg-gray-100'>
-                <th className='py-3 px-4 text-center border w-16 text-lg'>#</th>
-                <th className='py-3 px-4 text-left border text-lg'>RUT</th>
-                <th className='py-3 px-4 text-left border text-lg'>Nombre</th>
-                <th className='py-3 px-4 text-left border text-lg'>Apellido</th>
-                <th className='py-3 px-4 text-left border text-lg'>Email</th>
-                <th className='py-3 px-4 text-left border text-lg'>Teléfono</th>
-                <th className='py-3 px-4 text-left border text-lg'>Rol</th>
-                <th className='py-3 px-4 text-left border text-lg'>Estado</th>
-              </tr>
-            </thead>
-            <tbody>
+          <Table className='w-full border-collapse'>
+            <TableHeader>
+              <TableRow>
+                <TableHead className='text-center border w-16 text-lg'>#</TableHead>
+                <TableHead className='text-left border text-lg'>RUT</TableHead>
+                <TableHead className='text-left border text-lg'>Nombre</TableHead>
+                <TableHead className='text-left border text-lg'>Apellido</TableHead>
+                <TableHead className='text-left border text-lg'>Email</TableHead>
+                <TableHead className='text-left border text-lg'>Teléfono</TableHead>
+                <TableHead className='text-left border text-lg'>Rol</TableHead>
+                <TableHead className='text-left border text-lg'>Estado</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
               {users.map((user, index) => (
-                <tr key={user.id} className='border-b hover:bg-gray-50'>
-                  <td className='py-3 px-4 text-center border'>{index + 1}</td>
-                  <td className='py-3 px-4 border'>{user.run || 'Sin RUN'}</td>
-                  <td className='py-3 px-4 border'>{user.name || ''}</td>
-                  <td className='py-3 px-4 border'>{user.lastName || ''}</td>
-                  <td className='py-3 px-4 border'>{user.email || 'Sin email'}</td>
-                  <td className='py-3 px-4 border'>{user.phone || 'Sin teléfono'}</td>
-                  <td className='py-3 px-4 border'>{user.role || 'Sin rol'}</td>
-                  <td className='py-3 px-4 border'>
+                <TableRow key={user.id} className='border-b'>
+                  <TableCell className='text-center border'>{index + 1}</TableCell>
+                  <TableCell className='border'>{user.run || 'Sin RUN'}</TableCell>
+                  <TableCell className='border'>{user.name || ''}</TableCell>
+                  <TableCell className='border'>{user.lastName || ''}</TableCell>
+                  <TableCell className='border'>{user.email || 'Sin email'}</TableCell>
+                  <TableCell className='border'>{user.phone || 'Sin teléfono'}</TableCell>
+                  <TableCell className='border'>{user.role || 'Sin rol'}</TableCell>
+                  <TableCell className='border'>
                     <span
                       className={`px-3 py-1.5 rounded-full text-sm ${
                         user.status === 1
@@ -237,11 +245,11 @@ export function ExportButtons({ users }: ExportButtonsProps) {
                     >
                       {user.status === 1 ? 'Activo' : 'Inactivo'}
                     </span>
-                  </td>
-                </tr>
+                  </TableCell>
+                </TableRow>
               ))}
-            </tbody>
-          </table>
+            </TableBody>
+          </Table>
         </div>
       </div>
     </div>

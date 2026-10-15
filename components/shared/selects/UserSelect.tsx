@@ -1,4 +1,5 @@
 'use client';
+import { Button } from '@/components/ui/button';
 
 import React, { useState, useMemo } from 'react';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
@@ -7,12 +8,12 @@ import { Input } from '@/components/ui/input';
 import { User as UserIcon } from 'lucide-react';
 import { User } from '@/types/user';
 import {
-  ORDER_FIELD_LABEL_CLASS,
-  ORDER_FIELD_POPOVER_CLASS,
-  ORDER_FIELD_SEARCH_INPUT_CLASS,
-  ORDER_FIELD_SEARCH_WRAPPER_CLASS,
-  ORDER_MULTISELECT_TRIGGER_CLASS
-} from '@/components/orders/orderFieldStyles';
+  SELECT_LABEL_CLASS,
+  SELECT_CONTENT_WIDE_CLASS,
+  SELECT_SEARCH_INPUT_CLASS,
+  SELECT_SEARCH_WRAPPER_CLASS,
+  SELECT_MULTI_TRIGGER_CLASS
+} from '@/components/shared/selectStyles';
 
 interface UserSelectProps {
   users: User[];
@@ -114,7 +115,7 @@ export default function UserSelect({
 
   return (
     <div className={`flex flex-col ${className}`}>
-      <Label htmlFor={uniqueId} className={ORDER_FIELD_LABEL_CLASS}>
+      <Label htmlFor={uniqueId} className={SELECT_LABEL_CLASS}>
         {label}
         {required && <span className='ml-1 text-red-500'>*</span>}
       </Label>
@@ -122,10 +123,11 @@ export default function UserSelect({
       <div className='relative'>
         <Popover open={open} onOpenChange={nextOpen => !disabled && setOpen(nextOpen)}>
           <PopoverTrigger asChild>
-            <button
+            <Button
+              variant='unstyled'
               id={uniqueId}
               type='button'
-              className={`${ORDER_MULTISELECT_TRIGGER_CLASS} flex items-center gap-2 pr-10`}
+              className={`${SELECT_MULTI_TRIGGER_CLASS} flex items-center gap-2 pr-10`}
               onClick={() => !disabled && setOpen(!open)}
               disabled={disabled}
             >
@@ -137,10 +139,10 @@ export default function UserSelect({
               ) : (
                 <span className='text-sm text-gray-400 truncate'>{placeholder}</span>
               )}
-            </button>
+            </Button>
           </PopoverTrigger>
-          <PopoverContent align='start' className={ORDER_FIELD_POPOVER_CLASS} sideOffset={5}>
-            <div className={ORDER_FIELD_SEARCH_WRAPPER_CLASS}>
+          <PopoverContent align='start' className={SELECT_CONTENT_WIDE_CLASS} sideOffset={5}>
+            <div className={SELECT_SEARCH_WRAPPER_CLASS}>
               <label htmlFor={`${uniqueId}-search`} className='sr-only'>
                 Buscar usuario
               </label>
@@ -154,7 +156,7 @@ export default function UserSelect({
                     e.stopPropagation();
                   }
                 }}
-                className={ORDER_FIELD_SEARCH_INPUT_CLASS}
+                className={SELECT_SEARCH_INPUT_CLASS}
                 disabled={disabled}
                 onClick={e => e.stopPropagation()}
               />
@@ -172,7 +174,8 @@ export default function UserSelect({
                   const displayName = `${u.name} ${u.lastName}${showNick && u.nick ? ` (${u.nick})` : ''}${u.role ? ` - ${u.role}` : ''}`;
 
                   return (
-                    <button
+                    <Button
+                      variant='unstyled'
                       key={stringId}
                       type='button'
                       className={`flex w-full items-center justify-between gap-2 rounded-md px-3 py-2 text-left text-sm transition-colors hover:bg-gray-100 ${isSelected ? 'bg-gray-100' : ''}`}
@@ -183,7 +186,7 @@ export default function UserSelect({
                       {isSelected ? (
                         <span className='text-xs font-semibold text-gray-500'>SELECCIONADO</span>
                       ) : null}
-                    </button>
+                    </Button>
                   );
                 })
               )}

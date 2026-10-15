@@ -1,4 +1,6 @@
 'use client';
+import { NativeSelect } from '@/components/ui/native-select';
+
 import { bottleMixerUnits } from '@/lib/sales/productConfiguration';
 
 import { useEffect, useState, type Dispatch, type SetStateAction } from 'react';
@@ -39,7 +41,7 @@ export function BottleMixerSelection({
             <span>
               {p.nombre} · {Number(p.cantidad) * Number(bottleMixerUnits(p))} unidades de bebida
             </span>
-            <select
+            <NativeSelect
               className='h-10 w-full rounded-md border bg-background px-3'
               aria-label={`Bebida para ${p.nombre}`}
               value={p.acompanamiento_botella?.presentacion_id ?? ''}
@@ -74,7 +76,7 @@ export function BottleMixerSelection({
                     {item.producto_nombre} · {item.nombre}
                   </option>
                 ))}
-            </select>
+            </NativeSelect>
           </label>
         ) : null
       )}

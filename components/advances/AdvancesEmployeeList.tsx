@@ -1,43 +1,31 @@
 'use client';
+import { SortSelect } from '@/components/shared/selects/SortSelect';
+import { FilterBar } from '@/components/shared/FilterBar';
+
+import { Input } from '@/components/ui/input';
+import { SELECT_INPUT_CLASS, SELECT_LABEL_CLASS } from '@/components/shared/selectStyles';
 
 import { useState, useEffect, useCallback } from 'react';
+
 import { useCurrentUser } from '@/hooks/auth/useCurrentUser';
 import { useRouter } from 'next/navigation';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+
 import { Button } from '@/components/ui/button';
 import { ArrowLeft } from 'lucide-react';
 import SelectElements from '@/components/shared/SelectElements';
-import { FilterSelect } from '@/components/shared/selects';
 import Paginate from '@/components/shared/Paginate';
-import { formatDateTimeDmyLabel } from '@/lib/utils/calendarUtils';
-import { formatCurrencyCLP } from '@/lib/utils/formatters';
 import logger from '@/lib/utils/logger';
 import { EmployeeAdvanceRequests } from './EmployeeAdvanceRequests';
+import { EmployeeAdvancesTable, type EmployeeAdvance } from './EmployeeAdvancesTable';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { ClipboardList, Wallet, AlertCircle } from 'lucide-react';
 
-interface Advance {
-  id_anticipo: number;
-  monto: number;
-  fecha_crea: string;
-  fecha_mod: string;
-  estado: number;
-  motivo: string;
-}
-
-const ADVANCE_STATUS_OPTIONS = [
-  { value: 'all', label: 'Todos' },
-  { value: 'por_pagar', label: 'Por pagar' },
-  { value: 'pagado', label: 'Pagado' }
-];
+type Advance = EmployeeAdvance;
 
 const ADVANCE_SORT_BY_OPTIONS = [
   { value: 'fecha_crea', label: 'Fecha solicitud' },
   { value: 'fecha_mod', label: 'Fecha pago' },
   { value: 'monto', label: 'Monto' }
-];
-
-const SORT_ORDER_OPTIONS = [
-  { value: 'desc', label: 'Descendente' },
-  { value: 'asc', label: 'Ascendente' }
 ];
 
 interface Props {
@@ -49,9 +37,10 @@ export function AdvancesEmployeeList({ allowedRole, title }: Props) {
   const { user, loading: userLoading } = useCurrentUser();
   const router = useRouter();
   const [advances, setAdvances] = useState<Advance[]>([]);
-  const [loading, setLoading] = useState(false);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState('');
+  const [activeTab, setActiveTab] = useState('listado');
   const [searchTerm, setSearchTerm] = useState('');
-  const [statusFilter, setStatusFilter] = useState('all');
   const [sortBy, setSortBy] = useState('fecha_crea');
   const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('desc');
   const [currentPage, setCurrentPage] = useState(1);
@@ -59,17 +48,14 @@ export function AdvancesEmployeeList({ allowedRole, title }: Props) {
 
   const fetchAdvances = useCallback(async () => {
     setLoading(true);
+    setError('');
     try {
       const res = await fetch('/api/anticipos/user');
       const data = await res.json();
-      if (data.success) {
+      if (res.ok && data.success) {
         setAdvances(
           (data.data || [])
-            .filter((row: Advance) =>
-              allowedRole === 'anfitriona'
-                ? Number(row.estado) === 0
-                : [0, 1].includes(Number(row.estado))
-            )
+            .filter((row: Advance) => Number(row.estado) === 0)
             .map((row: Advance) => ({
               ...row,
               estado: Number(row.estado),
@@ -77,20 +63,21 @@ export function AdvancesEmployeeList({ allowedRole, title }: Props) {
             }))
         );
       } else {
-        logger.error('Error fetching advances:', data.message);
+        throw new Error(data.message || 'No se pudieron cargar los anticipos.');
       }
     } catch (error) {
       logger.captureException(error, { context: `AdvancesEmployeeList:fetchAdvances` });
+      setError(error instanceof Error ? error.message : 'No se pudieron cargar los anticipos.');
     } finally {
       setLoading(false);
     }
-  }, [allowedRole]);
+  }, []);
 
   useEffect(() => {
-    if (user && !userLoading) {
+    if (user && !userLoading && user.role?.toLowerCase() === allowedRole) {
       fetchAdvances();
     }
-  }, [user, userLoading, fetchAdvances]);
+  }, [user, userLoading, fetchAdvances, allowedRole]);
 
   if (userLoading) {
     return (
@@ -115,13 +102,11 @@ export function AdvancesEmployeeList({ allowedRole, title }: Props) {
   }
 
   const filteredAdvances = advances.filter(advance => {
-    const matchesSearch = advance.monto.toString().includes(searchTerm);
-    const matchesStatus =
-      statusFilter === 'all' ||
-      (statusFilter === 'por_pagar' && advance.estado === 1) ||
-      (statusFilter === 'pagado' && advance.estado === 0);
-
-    return matchesSearch && matchesStatus;
+    const term = searchTerm.trim().toLowerCase();
+    const matchesSearch =
+      advance.monto.toString().includes(term) ||
+      (advance.motivo || '').toLowerCase().includes(term);
+    return matchesSearch;
   });
 
   const sortedAdvances = [...filteredAdvances].sort((a, b) => {
@@ -129,10 +114,11 @@ export function AdvancesEmployeeList({ allowedRole, title }: Props) {
     let bValue: any = b[sortBy as keyof Advance];
 
     if (sortBy === 'fecha_crea' || sortBy === 'fecha_mod') {
-      aValue = new Date(aValue || 0);
-      bValue = new Date(bValue || 0);
+      aValue = new Date(aValue || 0).getTime();
+      bValue = new Date(bValue || 0).getTime();
     }
 
+    if (aValue === bValue) return 0;
     if (sortOrder === 'asc') {
       return aValue > bValue ? 1 : -1;
     } else {
@@ -146,208 +132,138 @@ export function AdvancesEmployeeList({ allowedRole, title }: Props) {
   const totalPages = Math.ceil(sortedAdvances.length / rowsPerPage);
 
   const totalToPay = advances
-    .filter(advance => advance.estado === (allowedRole === 'anfitriona' ? 0 : 1))
+    .filter(advance => advance.estado === 0)
     .reduce((sum, advance) => sum + (advance.monto || 0), 0);
 
-  const getStatusBadge = (estado: number) => {
-    if (estado === 1) {
-      return (
-        <span className='inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-purple-100 text-purple-800'>
-          Por pagar
-        </span>
-      );
-    } else {
-      return (
-        <span className='inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-purple-50 text-purple-700'>
-          Pagado
-        </span>
-      );
-    }
-  };
-
-  return (
-    <div className='p-6 space-y-6'>
-      {allowedRole === 'anfitriona' && <EmployeeAdvanceRequests onRequested={fetchAdvances} />}
-      <div className='flex items-center justify-between'>
-        <div>
-          <h1 className='text-2xl font-bold text-gray-900 dark:text-white'>
-            {title || 'Listado de Anticipos'}
-          </h1>
-          <p className='text-gray-600'>
-            Anticipos de {user?.name} {user?.lastName}
-          </p>
-        </div>
-        <Button
-          variant='outline'
-          onClick={() => router.back()}
-          className='rounded-full bg-black text-white hover:scale-105 transition-all duration-200'
-        >
-          <ArrowLeft className='w-4 h-4 mr-2' />
-          Atrás
-        </Button>
-      </div>
-
-      {}
-      <div className='text-center'>
-        <p className='text-sm text-gray-500'>
-          {allowedRole === 'anfitriona' ? 'TOTAL ENTREGADO' : 'TOTAL A PAGAR'}
-        </p>
-        <p className='text-2xl font-bold text-gray-900 dark:text-white'>
-          {formatCurrencyCLP(totalToPay)}
-        </p>
-      </div>
-
-      {}
-      <div className='grid grid-cols-1 md:grid-cols-4 gap-4'>
-        <div>
-          <label
-            htmlFor='buscar-anticipos'
-            className='block text-sm font-medium text-gray-700 dark:text-gray-200 mb-1'
-          >
-            Buscar
-          </label>
-          <input
-            id='buscar-anticipos'
-            type='text'
-            placeholder='Buscar por monto...'
-            value={searchTerm}
-            onChange={e => setSearchTerm(e.target.value)}
-            className='w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-hidden focus:ring-2 focus:ring-blue-500'
-          />
-        </div>
-        <FilterSelect
-          label='Estado'
-          value={statusFilter}
-          onChange={setStatusFilter}
-          options={ADVANCE_STATUS_OPTIONS.filter(
-            option => allowedRole !== 'anfitriona' || option.value !== 'por_pagar'
-          )}
-        />
-        <FilterSelect
-          label='Ordenar por'
-          value={sortBy}
-          onChange={setSortBy}
-          options={ADVANCE_SORT_BY_OPTIONS}
-        />
-        <FilterSelect
-          label='Orden'
-          value={sortOrder}
-          onChange={value => setSortOrder(value as 'asc' | 'desc')}
-          options={SORT_ORDER_OPTIONS}
-        />
-      </div>
-
-      {}
-      <div className='flex justify-between items-center'>
-        <SelectElements
-          value={rowsPerPage}
-          onChange={value => {
-            setRowsPerPage(value);
+  const deliveredOnly = true;
+  const filterControls = (
+    <>
+      <div>
+        <label htmlFor='buscar-anticipos' className={SELECT_LABEL_CLASS}>
+          Buscar
+        </label>
+        <Input
+          id='buscar-anticipos'
+          type='search'
+          placeholder='Monto o motivo...'
+          value={searchTerm}
+          onChange={event => {
+            setSearchTerm(event.target.value);
             setCurrentPage(1);
           }}
-          options={[
-            { value: 5, label: '5 por página' },
-            { value: 10, label: '10 por página' },
-            { value: 20, label: '20 por página' },
-            { value: 50, label: '50 por página' }
-          ]}
+          className={SELECT_INPUT_CLASS}
         />
       </div>
-
-      {}
-      <Card>
-        <CardHeader>
-          <CardTitle aria-live='polite'>
-            {allowedRole === 'anfitriona' ? 'Anticipos entregados' : 'Anticipos'} (
-            {filteredAdvances.length})
-          </CardTitle>
-        </CardHeader>
-        <CardContent>
-          {loading ? (
-            <div className='text-center py-8'>
-              <div className='animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto'></div>
-              <p aria-live='polite' className='mt-2 text-gray-600'>
-                Cargando anticipos...
-              </p>
-            </div>
-          ) : (
-            <div className='overflow-x-auto'>
-              <table className='w-full'>
-                <thead>
-                  <tr className='border-b border-gray-200'>
-                    <th className='text-left py-3 px-4 font-medium text-gray-900 dark:text-gray-100'>
-                      #
-                    </th>
-                    <th className='text-left py-3 px-4 font-medium text-gray-900 dark:text-gray-100'>
-                      FECHA SOLICITUD
-                    </th>
-                    <th className='text-left py-3 px-4 font-medium text-gray-900 dark:text-gray-100'>
-                      FECHA PAGO
-                    </th>
-                    <th className='text-left py-3 px-4 font-medium text-gray-900 dark:text-gray-100'>
-                      MONTO
-                    </th>
-                    <th className='text-left py-3 px-4 font-medium text-gray-900 dark:text-gray-100'>
-                      ESTADO
-                    </th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {paginatedAdvances.map((advance, index) => {
-                    const solicitudDate = formatDateTimeDmyLabel(advance.fecha_crea);
-                    const pagoDate = formatDateTimeDmyLabel(advance.fecha_mod);
-                    return (
-                      <tr
-                        key={advance.id_anticipo}
-                        className='border-b border-gray-100 hover:bg-gray-50'
-                      >
-                        <td className='py-3 px-4'>
-                          <div className='w-8 h-8 rounded-full bg-purple-300 flex items-center justify-center text-purple-800 font-medium text-sm'>
-                            {startIndex + index + 1}
-                          </div>
-                        </td>
-                        <td className='py-3 px-4'>
-                          <div>
-                            <div className='font-medium text-gray-900 dark:text-gray-100'>
-                              {solicitudDate.date}
-                            </div>
-                            <div className='text-sm text-gray-500'>{solicitudDate.time}</div>
-                          </div>
-                        </td>
-                        <td className='py-3 px-4'>
-                          {advance.fecha_mod ? (
-                            <div>
-                              <div className='font-medium text-gray-900 dark:text-gray-100'>
-                                {pagoDate.date}
-                              </div>
-                              <div className='text-sm text-gray-500'>{pagoDate.time}</div>
-                            </div>
-                          ) : (
-                            <span className='inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-purple-100 text-purple-800'>
-                              Por pagar
-                            </span>
-                          )}
-                        </td>
-                        <td className='py-3 px-4 text-gray-900 dark:text-gray-100'>
-                          {formatCurrencyCLP(advance.monto)}
-                        </td>
-                        <td className='py-3 px-4'>{getStatusBadge(advance.estado)}</td>
-                      </tr>
-                    );
-                  })}
-                </tbody>
-              </table>
-            </div>
-          )}
-        </CardContent>
-      </Card>
-
-      {}
+      <SortSelect
+        field={sortBy}
+        direction={sortOrder}
+        options={ADVANCE_SORT_BY_OPTIONS}
+        onChange={(field, direction) => {
+          setSortBy(field);
+          setSortOrder(direction);
+          setCurrentPage(1);
+        }}
+      />
+      <SelectElements
+        value={rowsPerPage}
+        onChange={value => {
+          setRowsPerPage(value);
+          setCurrentPage(1);
+        }}
+        options={[5, 10, 20, 50]}
+        label='Elementos por página'
+      />
+    </>
+  );
+  const listContent = error ? (
+    <div
+      role='alert'
+      className='flex flex-wrap items-center justify-between gap-4 rounded-3xl border border-red-200 bg-red-50 p-5 text-red-700 dark:border-red-900 dark:bg-red-950/30 dark:text-red-300'
+    >
+      <p className='flex items-center gap-2'>
+        <AlertCircle className='h-4 w-4' aria-hidden='true' />
+        {error}
+      </p>
+      <Button
+        type='button'
+        variant='outline'
+        className='rounded-full'
+        onClick={() => void fetchAdvances()}
+      >
+        Reintentar
+      </Button>
+    </div>
+  ) : (
+    <div className='space-y-5'>
+      <EmployeeAdvancesTable
+        advances={paginatedAdvances}
+        count={filteredAdvances.length}
+        startIndex={startIndex}
+        total={totalToPay}
+        loading={loading}
+        deliveredOnly={deliveredOnly}
+      />
       {totalPages > 1 && (
         <div className='flex justify-center'>
           <Paginate page={currentPage} totalPages={totalPages} setPage={setCurrentPage} />
         </div>
       )}
+    </div>
+  );
+
+  return (
+    <div className='space-y-6 p-4 sm:p-6'>
+      <div className='flex flex-wrap items-start justify-between gap-4'>
+        <div className='space-y-1'>
+          <h1 className='text-2xl font-bold text-foreground'>{title || 'Mis anticipos'}</h1>
+          <p className='text-sm text-muted-foreground'>
+            {deliveredOnly
+              ? 'Consulta tus anticipos entregados y gestiona tus solicitudes.'
+              : 'Consulta el historial y el estado de tus anticipos.'}
+          </p>
+        </div>
+        <Button
+          type='button'
+          variant='outline'
+          onClick={() => router.back()}
+          className='rounded-full px-5'
+        >
+          <ArrowLeft className='mr-2 h-4 w-4' />
+          Atrás
+        </Button>
+      </div>
+      <Tabs value={activeTab} onValueChange={setActiveTab} className='space-y-5'>
+        <FilterBar>
+          <div className='min-w-72 flex-none!'>
+            <TabsList
+              aria-label='Mis anticipos'
+              className='grid h-11 w-full grid-cols-2 rounded-full bg-gray-100 p-1 dark:bg-slate-900/60'
+            >
+              <TabsTrigger
+                value='listado'
+                className='h-9 gap-2 rounded-full px-4 data-[state=active]:bg-black data-[state=active]:text-white dark:data-[state=active]:bg-white dark:data-[state=active]:text-black'
+              >
+                <Wallet className='h-4 w-4' aria-hidden='true' />
+                {deliveredOnly ? 'Entregados' : 'Anticipos'}
+              </TabsTrigger>
+              <TabsTrigger
+                value='solicitudes'
+                className='h-9 gap-2 rounded-full px-4 data-[state=active]:bg-black data-[state=active]:text-white dark:data-[state=active]:bg-white dark:data-[state=active]:text-black'
+              >
+                <ClipboardList className='h-4 w-4' aria-hidden='true' />
+                Solicitudes
+              </TabsTrigger>
+            </TabsList>
+          </div>
+          {activeTab === 'listado' && filterControls}
+        </FilterBar>
+        <TabsContent value='listado' className='mt-0'>
+          {listContent}
+        </TabsContent>
+        <TabsContent value='solicitudes' className='mt-0'>
+          <EmployeeAdvanceRequests onRequested={fetchAdvances} />
+        </TabsContent>
+      </Tabs>
     </div>
   );
 }

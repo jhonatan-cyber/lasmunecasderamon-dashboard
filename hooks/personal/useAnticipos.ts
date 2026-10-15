@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useMemo, useCallback, useEffect } from 'react';
+import { useState, useMemo, useCallback, useEffect, useRef } from 'react';
 import { useCurrentUser } from '../auth/useCurrentUser';
 import { useGenericFetch } from '../shared/useGenericFetch';
 
@@ -27,11 +27,13 @@ export interface Anticipo {
 }
 
 export default function useAnticipos() {
+  const processing = useRef(false);
   const { user } = useCurrentUser();
   const isAdmin = useMemo(() => {
     const role = user?.role?.toLowerCase();
-    return !['garzon', 'anfitriona', 'cajero'].includes(role || '');
+    return role === 'administrador';
   }, [user?.role]);
+  const canDeliver = ['cajero', 'cajera'].includes(user?.role?.toLowerCase() || '');
 
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState('all');
@@ -42,8 +44,8 @@ export default function useAnticipos() {
   const [pageSize, setPageSize] = useState(10);
 
   const endpoint = useMemo(() => {
-    return isAdmin ? '/api/anticipos' : '/api/anticipos/user';
-  }, [isAdmin]);
+    return isAdmin || canDeliver ? '/api/anticipos' : '/api/anticipos/user';
+  }, [isAdmin, canDeliver]);
 
   const {
     data: allAnticipos,
@@ -124,9 +126,12 @@ export default function useAnticipos() {
   }, []);
 
   const processAnticipo = useCallback(
-    async (id: string | number, action: 'approve' | 'reject') => {
+    async (id: string | number, action: 'approve' | 'reject' | 'deliver') => {
+      if (action === 'deliver' ? !canDeliver : !isAdmin) return false;
+      if (processing.current) return false;
+      processing.current = true;
       try {
-        const estado = action === 'approve' ? 1 : 3;
+        const estado = action === 'deliver' ? 0 : action === 'approve' ? 1 : 3;
         const res = await fetch(`/api/anticipos/${id}`, {
           method: 'PUT',
           headers: { 'Content-Type': 'application/json' },
@@ -144,12 +149,15 @@ export default function useAnticipos() {
       } catch (err) {
         toast.error('Error de red o servidor');
         return false;
+      } finally {
+        processing.current = false;
       }
     },
-    [refetch]
+    [refetch, canDeliver, isAdmin]
   );
 
   return {
+    canDeliver,
     anticipos: paginatedData,
     allAnticipos,
     filteredAnticipos: filteredData,

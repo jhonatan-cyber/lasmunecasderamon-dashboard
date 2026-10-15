@@ -1,6 +1,7 @@
 'use client';
 
 import React from 'react';
+import { ListLoadError } from '@/components/shared/ListLoadError';
 import { ArrowLeft, ChevronLeft, ChevronRight } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import Link from 'next/link';
@@ -19,6 +20,10 @@ const weekdays = ['Dom', 'Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb'];
 
 export default function RoleCalendar({ role, userId, backLink }: RoleCalendarProps) {
   const {
+    calendarError,
+    selectedDataError,
+    retryCalendar,
+    retrySelectedData,
     currentDate,
     selectedDates,
     isDragging,
@@ -51,7 +56,7 @@ export default function RoleCalendar({ role, userId, backLink }: RoleCalendarPro
 
   const renderMonthView = () => {
     return (
-      <div className='bg-white dark:bg-gray-800 rounded-lg shadow-xs border border-gray-200 dark:border-gray-700'>
+      <div className='bg-white dark:bg-gray-800 rounded-3xl overflow-hidden shadow-xs border border-gray-200 dark:border-gray-700'>
         <div className='flex items-center justify-between p-4 border-b border-gray-200 dark:border-gray-700'>
           <div className='flex items-center gap-4'>
             <Button variant='ghost' size='sm' onClick={() => navigate(-1)}>
@@ -156,9 +161,17 @@ export default function RoleCalendar({ role, userId, backLink }: RoleCalendarPro
         </div>
       </div>
 
-      <div className='flex-1'>{renderMonthView()}</div>
+      <div className='flex-1'>
+        {calendarError ? (
+          <ListLoadError message={calendarError} onRetry={retryCalendar} />
+        ) : (
+          renderMonthView()
+        )}
+      </div>
 
       <CalendarDayModal
+        loadError={selectedDataError}
+        onRetry={retrySelectedData}
         isOpen={isModalOpen}
         onClose={() => setIsModalOpen(false)}
         selectedDates={selectedDates}

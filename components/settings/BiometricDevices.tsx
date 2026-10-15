@@ -1,4 +1,5 @@
 'use client';
+import { NativeSelect } from '@/components/ui/native-select';
 
 import { useCallback, useEffect, useId, useState } from 'react';
 import { toast } from 'sonner';
@@ -347,7 +348,7 @@ export function BiometricDevices() {
             </div>
             <div className='flex flex-col gap-1.5'>
               <Label htmlFor={`${id}-marca`}>Marca</Label>
-              <select
+              <NativeSelect
                 id={`${id}-marca`}
                 value={marca}
                 onChange={e => setMarca(e.target.value as Marca)}
@@ -356,7 +357,7 @@ export function BiometricDevices() {
               >
                 <option value='zkteco'>ZKTeco (ADMS / iClock)</option>
                 <option value='dahua'>Dahua (push HTTP)</option>
-              </select>
+              </NativeSelect>
             </div>
             <div className='flex flex-col gap-1.5'>
               <Label htmlFor={`${id}-serial`}>Serial del equipo</Label>
@@ -670,7 +671,8 @@ export function BiometricDevices() {
         </div>
 
         <div className='rounded-2xl border border-neutral-200 dark:border-neutral-800'>
-          <button
+          <Button
+            variant='unstyled'
             type='button'
             onClick={() => setNotasAbiertas(v => !v)}
             aria-expanded={notasAbiertas}
@@ -680,7 +682,7 @@ export function BiometricDevices() {
             <ChevronDown
               className={`h-4 w-4 shrink-0 text-muted-foreground transition-transform duration-200 ${notasAbiertas ? 'rotate-180' : ''}`}
             />
-          </button>
+          </Button>
           {notasAbiertas && (
             <div className='space-y-2 border-t border-neutral-200 px-4 py-3 text-xs text-muted-foreground dark:border-neutral-800'>
               <p>

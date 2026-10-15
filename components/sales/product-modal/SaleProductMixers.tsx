@@ -1,4 +1,5 @@
 'use client';
+import { Button } from '@/components/ui/button';
 
 import { matchesProductSearch } from '@/lib/utils/productSearch';
 import { useState } from 'react';
@@ -128,9 +129,14 @@ export function SaleProductMixers({
       {item.mixerError && (
         <p role='alert' className='text-xs'>
           {item.mixerError}{' '}
-          <button type='button' className='underline' onClick={item.onMixerRetry}>
+          <Button
+            variant='unstyled'
+            type='button'
+            className='underline'
+            onClick={item.onMixerRetry}
+          >
             Reintentar
-          </button>
+          </Button>
         </p>
       )}
       {item.mixers.map(mixer => (

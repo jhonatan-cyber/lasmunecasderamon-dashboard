@@ -198,52 +198,30 @@ export default function PayrollTable({
       {}
       <div className='hidden lg:block mt-4 sm:mt-6 bg-white dark:bg-slate-900/40 backdrop-blur-xs rounded-3xl border-none shadow-md overflow-hidden'>
         <div className='overflow-x-auto'>
-          <Table className='min-w-full text-base text-center'>
-            <TableHeader className='bg-gray-100 dark:bg-slate-900/50'>
-              <TableRow className='hover:bg-transparent border-gray-100 dark:border-gray-800'>
-                <TableHead className='py-4 px-5 text-xs uppercase text-gray-500 text-start'>
-                  Nombre(s) / Apellido(s)
-                </TableHead>
-                <TableHead className='py-4 px-5 text-xs uppercase text-gray-500'>Rol</TableHead>
-                <TableHead className='py-4 px-5 text-xs uppercase text-gray-500'>Sueldos</TableHead>
-                <TableHead className='py-4 px-5 text-xs uppercase text-gray-500'>
-                  Desc. AFP
-                </TableHead>
-                <TableHead className='py-4 px-5 text-xs uppercase text-gray-500'>
-                  Com. Ventas
-                </TableHead>
-                <TableHead className='py-4 px-5 text-xs uppercase text-gray-500'>
-                  Servicios
-                </TableHead>
-                <TableHead className='py-4 px-5 text-xs uppercase text-gray-500'>
-                  Propinas
-                </TableHead>
-                <TableHead className='py-4 px-5 text-xs uppercase text-gray-500'>
-                  Desc. Hab.
-                </TableHead>
-                <TableHead className='py-4 px-5 text-xs uppercase text-gray-500'>
-                  Hs. Extras
-                </TableHead>
-                <TableHead className='py-4 px-5 text-xs uppercase text-gray-500'>Gratif.</TableHead>
-                <TableHead className='py-4 px-5 text-xs uppercase text-gray-500'>
-                  Anticipos
-                </TableHead>
-                <TableHead className='py-4 px-5 text-xs uppercase text-gray-500'>
-                  Total a Pagar
-                </TableHead>
-                {canPay && (
-                  <TableHead className='py-4 px-5 text-xs uppercase text-gray-500'>
-                    Acciones
-                  </TableHead>
-                )}
+          <Table className='min-w-full text-center'>
+            <TableHeader>
+              <TableRow className='hover:bg-transparent'>
+                <TableHead className='text-start'>Nombre(s) / Apellido(s)</TableHead>
+                <TableHead>Rol</TableHead>
+                <TableHead>Sueldos</TableHead>
+                <TableHead>Desc. AFP</TableHead>
+                <TableHead>Com. Ventas</TableHead>
+                <TableHead>Servicios</TableHead>
+                <TableHead>Propinas</TableHead>
+                <TableHead>Desc. Hab.</TableHead>
+                <TableHead>Hs. Extras</TableHead>
+                <TableHead>Gratif.</TableHead>
+                <TableHead>Anticipos</TableHead>
+                <TableHead>Total a Pagar</TableHead>
+                {canPay && <TableHead>Acciones</TableHead>}
               </TableRow>
             </TableHeader>
             <TableBody>
               {loading ? (
                 Array.from({ length: 5 }).map((_, i) => (
-                  <TableRow key={i} className='border-b border-gray-100 dark:border-gray-800'>
+                  <TableRow key={i} className='border-b'>
                     {Array.from({ length: canPay ? 13 : 12 }).map((_, j) => (
-                      <TableCell key={j} className='py-4 px-5'>
+                      <TableCell key={j}>
                         <Skeleton className='h-4 w-16 rounded mx-auto' />
                       </TableCell>
                     ))}
@@ -251,7 +229,7 @@ export default function PayrollTable({
                 ))
               ) : rows.length === 0 ? (
                 <TableRow>
-                  <TableCell colSpan={canPay ? 13 : 12} className='py-16 text-center'>
+                  <TableCell colSpan={canPay ? 13 : 12} className='text-center'>
                     <div className='flex flex-col items-center gap-3'>
                       <div className='w-14 h-14 bg-gray-100 dark:bg-slate-800 rounded-full flex items-center justify-center'>
                         <Wallet className='w-6 h-6 text-gray-400' />
@@ -266,7 +244,7 @@ export default function PayrollTable({
                     key={r.id_usuario}
                     className={`border-b transition-colors hover:bg-gray-50 dark:hover:bg-slate-800/30 border-gray-100 dark:border-gray-800 ${idx === 0 ? 'first:rounded-t-xl' : ''} ${idx === rows.length - 1 ? 'last:rounded-b-xl' : ''}`}
                   >
-                    <TableCell className='font-medium text-start text-sm py-4 px-5'>
+                    <TableCell className='font-medium text-start'>
                       <div className='flex items-center gap-3'>
                         <Avatar className='h-8 w-8'>
                           {r.usuario_foto && r.usuario_foto !== '' ? (
@@ -284,43 +262,43 @@ export default function PayrollTable({
                         <span className='font-medium'>{r.usuario}</span>
                       </div>
                     </TableCell>
-                    <TableCell className='text-center py-4 px-5'>
+                    <TableCell className='text-center'>
                       <Badge className='bg-purple-100 text-purple-700 dark:bg-purple-900/30 dark:text-purple-300 rounded-full px-2 py-1 text-xs font-medium'>
                         {r.rol}
                       </Badge>
                     </TableCell>
-                    <TableCell className='text-center text-sm py-4 px-5'>
+                    <TableCell className='text-center'>
                       {formatCurrencyNoDecimals(r.sueldos)}
                     </TableCell>
-                    <TableCell className='text-center text-sm py-4 px-5'>
+                    <TableCell className='text-center'>
                       {formatCurrencyNoDecimals(r.aportes)}
                     </TableCell>
-                    <TableCell className='text-center text-sm py-4 px-5'>
+                    <TableCell className='text-center'>
                       {formatCurrencyNoDecimals(r.ventas)}
                     </TableCell>
-                    <TableCell className='text-center text-sm py-4 px-5'>
+                    <TableCell className='text-center'>
                       {formatCurrencyNoDecimals(r.servicios)}
                     </TableCell>
-                    <TableCell className='text-center text-sm py-4 px-5'>
+                    <TableCell className='text-center'>
                       {formatCurrencyNoDecimals(r.propinas)}
                     </TableCell>
-                    <TableCell className='text-center text-sm py-4 px-5'>
+                    <TableCell className='text-center'>
                       {formatCurrencyNoDecimals(r.descuentos)}
                     </TableCell>
-                    <TableCell className='text-center text-sm py-4 px-5'>
+                    <TableCell className='text-center'>
                       {formatCurrencyNoDecimals(r.total_monto_horas)}
                     </TableCell>
-                    <TableCell className='text-center text-sm py-4 px-5'>
+                    <TableCell className='text-center'>
                       {formatCurrencyNoDecimals(r.gratificaciones)}
                     </TableCell>
-                    <TableCell className='text-center text-sm py-4 px-5'>
+                    <TableCell className='text-center'>
                       {formatCurrencyNoDecimals(r.anticipos)}
                     </TableCell>
-                    <TableCell className='text-center font-bold text-sm py-4 px-5'>
+                    <TableCell className='text-center font-bold'>
                       {formatCurrencyNoDecimals(r.total)}
                     </TableCell>
                     {canPay && (
-                      <TableCell className='text-center py-4 px-5'>
+                      <TableCell className='text-center'>
                         <Button
                           size='sm'
                           variant='ghost'

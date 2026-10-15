@@ -198,27 +198,25 @@ export const DevolucionTable = ({
       <Table>
         <TableHeader>
           <TableRow>
-            <TableHead className='text-sm'>Código</TableHead>
-            <TableHead className='text-sm'>Cliente</TableHead>
-            <TableHead className='text-sm'>Habitación</TableHead>
-            <TableHead className='text-sm'>Tiempo</TableHead>
-            <TableHead className='text-sm'>Total</TableHead>
-            <TableHead className='text-sm'>Método Pago</TableHead>
-            <TableHead className='text-sm'>Estado</TableHead>
-            <TableHead className='text-sm'>Fecha</TableHead>
-            <TableHead className='text-sm'>Acciones</TableHead>
+            <TableHead>Código</TableHead>
+            <TableHead>Cliente</TableHead>
+            <TableHead>Habitación</TableHead>
+            <TableHead>Tiempo</TableHead>
+            <TableHead>Total</TableHead>
+            <TableHead>Método Pago</TableHead>
+            <TableHead>Estado</TableHead>
+            <TableHead>Fecha</TableHead>
+            <TableHead>Acciones</TableHead>
           </TableRow>
         </TableHeader>
         <TableBody>
           {servicios.map(servicio => (
             <TableRow key={servicio.id_servicio}>
-              <TableCell className='font-medium text-sm'>{servicio.codigo}</TableCell>
-              <TableCell className='text-sm'>{servicio.cliente_nombre || 'Sin cliente'}</TableCell>
-              <TableCell className='text-sm'>
-                {servicio.habitacion_numero || 'Sin habitación'}
-              </TableCell>
-              <TableCell className='text-sm'>{servicio.tiempo} min</TableCell>
-              <TableCell className='text-sm'>{formatCurrency(servicio.total)}</TableCell>
+              <TableCell className='font-medium'>{servicio.codigo}</TableCell>
+              <TableCell>{servicio.cliente_nombre || 'Sin cliente'}</TableCell>
+              <TableCell>{servicio.habitacion_numero || 'Sin habitación'}</TableCell>
+              <TableCell>{servicio.tiempo} min</TableCell>
+              <TableCell>{formatCurrency(servicio.total)}</TableCell>
               <TableCell>
                 <Badge variant='outline' className='text-xs'>
                   {servicio.metodo_pago
@@ -228,7 +226,7 @@ export const DevolucionTable = ({
                 </Badge>
               </TableCell>
               <TableCell>{getEstadoBadge(servicio.estado)}</TableCell>
-              <TableCell className='text-sm'>{formatLongDateEs(servicio.fecha_crea)}</TableCell>
+              <TableCell>{formatLongDateEs(servicio.fecha_crea)}</TableCell>
               <TableCell>
                 <div className='flex items-center gap-2'>
                   <TooltipProvider>

@@ -1,4 +1,5 @@
 'use client';
+import { Button } from '@/components/ui/button';
 
 import { useSortable } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
@@ -34,7 +35,8 @@ export function SortableInventoryCategory({
     >
       <CategoryCard category={category} onClick={onClick} />
       {canReorder && (
-        <button
+        <Button
+          variant='unstyled'
           ref={setActivatorNodeRef}
           {...attributes}
           {...listeners}
@@ -44,7 +46,7 @@ export function SortableInventoryCategory({
           className='absolute right-2 top-2 z-10 rounded-lg border bg-white p-2 text-neutral-500 shadow-sm touch-none cursor-grab active:cursor-grabbing disabled:opacity-40 dark:bg-neutral-900 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500'
         >
           <GripVertical className='h-4 w-4' aria-hidden='true' />
-        </button>
+        </Button>
       )}
     </div>
   );

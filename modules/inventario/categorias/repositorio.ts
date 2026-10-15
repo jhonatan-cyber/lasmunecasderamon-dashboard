@@ -171,6 +171,17 @@ export class CategoryRepository {
         'SELECT IP.foto FROM inventario_presentaciones IP JOIN productos P ON P.id_producto = IP.producto_id WHERE P.categoria_id = ?',
         [id]
       )) as { foto: string | null }[];
+      // Los consumos por shot/corto referencian unidades sin ON DELETE CASCADE.
+      // Quitarlos antes de que el borrado del producto elimine sus unidades.
+      await trx(
+        `DELETE FROM inventario_movimiento_unidades
+         WHERE unidad_id IN (
+           SELECT IU.id FROM inventario_unidades IU
+           JOIN productos P ON P.id_producto = IU.producto_id
+           WHERE P.categoria_id = ?
+         )`,
+        [id]
+      );
       await trx('DELETE FROM productos WHERE categoria_id = ?', [id]);
       await BaseRepository.delete(trx, 'categorias', 'id_categoria', id);
       return [...products, ...presentations].map(p => p.foto);

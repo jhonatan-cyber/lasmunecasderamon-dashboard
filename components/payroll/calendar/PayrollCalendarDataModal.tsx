@@ -278,29 +278,15 @@ export function PayrollCalendarDataModal({
                   <div className='hidden sm:block'>
                     <div className='overflow-x-auto'>
                       <Table className='min-w-full'>
-                        <TableHeader className='bg-gray-100 dark:bg-slate-900/50'>
-                          <TableRow className='hover:bg-transparent border-gray-100 dark:border-gray-800'>
-                            <TableHead className='py-4 px-5 text-xs uppercase text-gray-500'>
-                              Código
-                            </TableHead>
-                            <TableHead className='py-4 px-5 text-xs uppercase text-gray-500'>
-                              Cliente
-                            </TableHead>
-                            <TableHead className='py-4 px-5 text-xs uppercase text-gray-500'>
-                              Habitación
-                            </TableHead>
-                            <TableHead className='py-4 px-5 text-xs uppercase text-gray-500 text-right'>
-                              Total
-                            </TableHead>
-                            <TableHead className='py-4 px-5 text-xs uppercase text-gray-500'>
-                              Fecha
-                            </TableHead>
-                            <TableHead className='py-4 px-5 text-xs uppercase text-gray-500'>
-                              Estado
-                            </TableHead>
-                            <TableHead className='py-4 px-5 text-xs uppercase text-gray-500 text-center'>
-                              Acciones
-                            </TableHead>
+                        <TableHeader>
+                          <TableRow className='hover:bg-transparent'>
+                            <TableHead>Código</TableHead>
+                            <TableHead>Cliente</TableHead>
+                            <TableHead>Habitación</TableHead>
+                            <TableHead className='text-right'>Total</TableHead>
+                            <TableHead>Fecha</TableHead>
+                            <TableHead>Estado</TableHead>
+                            <TableHead className='text-center'>Acciones</TableHead>
                           </TableRow>
                         </TableHeader>
                         <TableBody>
@@ -318,19 +304,15 @@ export function PayrollCalendarDataModal({
                             return (
                               <TableRow
                                 key={item.codigo}
-                                className='text-sm border-b transition-colors hover:bg-gray-50 dark:hover:bg-slate-800/30'
+                                className='text-sm border-b transition-colors'
                               >
-                                <TableCell className='py-3 px-4 font-medium'>
-                                  {item.codigo}
-                                </TableCell>
-                                <TableCell className='py-3 px-4'>{item.cliente}</TableCell>
-                                <TableCell className='py-3 px-4'>
-                                  {item.habitacion || 'N/A'}
-                                </TableCell>
-                                <TableCell className='py-3 px-4 text-right font-medium'>
+                                <TableCell className='font-medium'>{item.codigo}</TableCell>
+                                <TableCell>{item.cliente}</TableCell>
+                                <TableCell>{item.habitacion || 'N/A'}</TableCell>
+                                <TableCell className='text-right font-medium'>
                                   {formatCurrencyCLP(item.total)}
                                 </TableCell>
-                                <TableCell className='py-3 px-4'>
+                                <TableCell>
                                   {dateValue ? (
                                     <div className='text-center'>
                                       <div className='text-sm font-medium'>
@@ -344,14 +326,14 @@ export function PayrollCalendarDataModal({
                                     'N/A'
                                   )}
                                 </TableCell>
-                                <TableCell className='py-3 px-4'>
+                                <TableCell>
                                   <span
                                     className={`px-3 py-1 rounded-full text-xs font-medium ${statusClass}`}
                                   >
                                     {statusText}
                                   </span>
                                 </TableCell>
-                                <TableCell className='py-3 px-4 text-center'>
+                                <TableCell className='text-center'>
                                   <Button
                                     variant='ghost'
                                     size='sm'

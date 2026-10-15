@@ -1,5 +1,6 @@
 'use client';
 
+import { getEmployeeModules } from '@/lib/constants/employee-modules';
 import { useMemo, useCallback } from 'react';
 import { usePathname } from 'next/navigation';
 import type { LucideIcon } from 'lucide-react';
@@ -265,6 +266,8 @@ export function useSidebarNavigation(
 
   const hasModulePermission = useCallback(
     (item: SidebarItem) => {
+      const personal = getEmployeeModules(user?.role).some(module => module.href === item.href);
+      if (personal) return true;
       if (isBarman && !BARMAN_ROUTE_ALLOWLIST.includes(item.href)) return false;
       if (item.href === '/cleaning') return accesoLimpieza(user?.role || '').ubicaciones.length > 0;
       if (isAdmin) return true;
@@ -278,9 +281,23 @@ export function useSidebarNavigation(
 
   const normalizedSearch = (options?.searchTerm || '').toLowerCase().trim();
 
-  const sections = useMemo(
-    () =>
-      SIDEBAR_SECTIONS.map(section => ({
+  const sections = useMemo(() => {
+    const personalSection: SidebarSection = {
+      key: 'personal',
+      title: 'Mi actividad',
+      description: 'Tu jornada y tus pagos.',
+      items: getEmployeeModules(user?.role).map(item => ({
+        ...item,
+        icon:
+          item.key === 'calendar' || item.key === 'asistencias'
+            ? CalendarIcon
+            : item.key === 'horas-extras'
+              ? Clock
+              : DollarSign
+      }))
+    };
+    return [...SIDEBAR_SECTIONS.slice(0, 1), personalSection, ...SIDEBAR_SECTIONS.slice(1)]
+      .map(section => ({
         ...section,
         items: section.items
           .map(item =>
@@ -295,9 +312,9 @@ export function useSidebarNavigation(
               hasModulePermission(item) &&
               (!normalizedSearch || item.name.toLowerCase().includes(normalizedSearch))
           )
-      })).filter(section => section.items.length > 0),
-    [hasModulePermission, normalizedSearch, isBarman]
-  );
+      }))
+      .filter(section => section.items.length > 0);
+  }, [hasModulePermission, normalizedSearch, isBarman, user?.role]);
 
   return {
     sections,

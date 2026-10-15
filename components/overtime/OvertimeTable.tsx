@@ -11,7 +11,7 @@ import {
 import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Card, CardContent } from '@/components/ui/card';
-import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { formatCurrencyCLP } from '@/lib/utils/formatters';
 import { formatDateTimeDmyLabel } from '@/lib/utils/calendarUtils';
 import { Overtime } from '@/types/overtime';
@@ -144,30 +144,14 @@ export default function OvertimeTable({
     <div className='hidden lg:block'>
       <div className='bg-white dark:bg-slate-900/40 backdrop-blur-xs rounded-3xl border-none shadow-md overflow-hidden'>
         <Table>
-          <TableHeader className='bg-gray-100 dark:bg-slate-900/50'>
-            <TableRow className='hover:bg-transparent border-gray-100 dark:border-gray-800'>
-              {isAdmin && (
-                <TableHead className='py-5 px-6 font-bold text-xs uppercase text-gray-500'>
-                  Usuario
-                </TableHead>
-              )}
-              <TableHead className='py-5 px-6 font-bold text-xs uppercase text-gray-500 text-center'>
-                Última Actividad
-              </TableHead>
-              <TableHead className='py-5 px-6 font-bold text-xs uppercase text-gray-500 text-center'>
-                Estado
-              </TableHead>
-              <TableHead className='py-5 px-6 font-bold text-xs uppercase text-gray-500 text-center'>
-                Total Horas
-              </TableHead>
-              <TableHead className='py-5 px-6 font-bold text-xs uppercase text-gray-500 text-right'>
-                Total Pagar
-              </TableHead>
-              {onViewDetail && (
-                <TableHead className='py-5 px-6 font-bold text-xs uppercase text-gray-500 text-center'>
-                  Detalle
-                </TableHead>
-              )}
+          <TableHeader>
+            <TableRow className='hover:bg-transparent'>
+              {isAdmin && <TableHead className='font-bold'>Usuario</TableHead>}
+              <TableHead className='font-bold text-center'>Última Actividad</TableHead>
+              <TableHead className='font-bold text-center'>Estado</TableHead>
+              <TableHead className='font-bold text-center'>Total Horas</TableHead>
+              <TableHead className='font-bold text-right'>Total Pagar</TableHead>
+              {onViewDetail && <TableHead className='font-bold text-center'>Detalle</TableHead>}
             </TableRow>
           </TableHeader>
           <TableBody>
@@ -199,12 +183,9 @@ export default function OvertimeTable({
               : rows.map(overtime => {
                   const creacion = formatDateTimeDmyLabel(overtime.fecha_crea);
                   return (
-                    <TableRow
-                      key={overtime.id_hora_extra}
-                      className='border-b transition-colors hover:bg-gray-50 dark:hover:bg-slate-800/30'
-                    >
+                    <TableRow key={overtime.id_hora_extra} className='border-b transition-colors'>
                       {isAdmin && (
-                        <TableCell className='py-4 px-6'>
+                        <TableCell>
                           <div className='flex items-center gap-3'>
                             <Avatar className='h-8 w-8'>
                               {overtime.usuario_foto && overtime.usuario_foto !== '' ? (
@@ -228,7 +209,7 @@ export default function OvertimeTable({
                           </div>
                         </TableCell>
                       )}
-                      <TableCell className='py-4 px-6 text-center'>
+                      <TableCell className='text-center'>
                         <div className='flex flex-col'>
                           <span className='font-bold text-sm text-gray-900 dark:text-white'>
                             {creacion.date}
@@ -236,22 +217,22 @@ export default function OvertimeTable({
                           <span className='text-xs text-gray-400'>{creacion.time}</span>
                         </div>
                       </TableCell>
-                      <TableCell className='py-4 px-6 text-center'>
+                      <TableCell className='text-center'>
                         {getStatusBadge(overtime.estado)}
                       </TableCell>
-                      <TableCell className='py-4 px-6 text-center'>
+                      <TableCell className='text-center'>
                         <div className='flex items-center justify-center gap-1.5 font-bold text-sm text-gray-700 dark:text-gray-300'>
                           <Clock className='h-4 w-4 text-blue-500' />
                           {overtime.hora.toFixed(1)} hrs
                         </div>
                       </TableCell>
-                      <TableCell className='py-4 px-6 text-right'>
+                      <TableCell className='text-right'>
                         <span className='font-black text-base text-emerald-600'>
                           {formatCurrencyCLP(overtime.total)}
                         </span>
                       </TableCell>
                       {onViewDetail && (
-                        <TableCell className='py-4 px-6 text-center'>
+                        <TableCell className='text-center'>
                           <Button
                             variant='ghost'
                             size='icon'

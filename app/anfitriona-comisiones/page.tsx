@@ -1,8 +1,21 @@
 'use client';
+import { ListLoadError } from '@/components/shared/ListLoadError';
+import { FilterBar } from '@/components/shared/FilterBar';
+import { SortSelect } from '@/components/shared/selects/SortSelect';
 
 import { useState, useEffect } from 'react';
+import { SELECT_INPUT_CLASS, SELECT_LABEL_CLASS } from '@/components/shared/selectStyles';
+import {
+  ModuleTable,
+  ModuleTableHeader,
+  ModuleTableRow,
+  ModuleTableHead,
+  ModuleTableBody,
+  ModuleTableCell,
+  ModuleTableCard
+} from '@/components/shared/tables/ModuleTable';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { CardContent } from '@/components/ui/card';
 import { useCurrentUser } from '@/hooks/auth/useCurrentUser';
 import { ArrowLeft, Search } from 'lucide-react';
 import { SortableTh } from '@/components/shared/SortableTh';
@@ -29,7 +42,8 @@ export default function AnfitrionaComisionesPage() {
   const { user, loading: userLoading } = useCurrentUser();
   const router = useRouter();
   const [commissions, setCommissions] = useState<Commission[]>([]);
-  const [loading, setLoading] = useState(false);
+  const [loading, setLoading] = useState(true);
+  const [loadError, setLoadError] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
   const [rowsPerPage, setRowsPerPage] = useState(5);
   const [page, setPage] = useState(1);
@@ -37,12 +51,13 @@ export default function AnfitrionaComisionesPage() {
   const [sortDirection, setSortDirection] = useState<'asc' | 'desc'>('desc');
 
   const fetchCommissions = async () => {
+    setLoadError(false);
     setLoading(true);
     try {
       const res = await fetch('/api/commissions/user?tipo=detalle');
       const data = await res.json();
 
-      if (res.ok && data.success) {
+      if (res.ok && data.success && Array.isArray(data.data)) {
         setCommissions(
           (data.data || [])
             .filter((row: any) => row.tipo === 'venta')
@@ -55,20 +70,19 @@ export default function AnfitrionaComisionesPage() {
             }))
         );
       } else {
-        logger.error('API error:', data.message);
-        setCommissions([]);
+        throw new Error('No se pudieron cargar tus comisiones.');
       }
     } catch (error) {
       logger.captureException(error, { context: 'AnfitrionaComisiones:fetchCommissions' });
-      setCommissions([]);
+      setLoadError(true);
     } finally {
       setLoading(false);
     }
   };
 
   useEffect(() => {
-    fetchCommissions();
-  }, []);
+    if (!userLoading && user?.role?.toLowerCase() === 'anfitriona') void fetchCommissions();
+  }, [userLoading, user]);
 
   if (userLoading) {
     return (
@@ -140,6 +154,7 @@ export default function AnfitrionaComisionesPage() {
   const totalPages = Math.ceil(sortedCommissions.length / rowsPerPage) || 1;
 
   const handleSort = (field: keyof Commission) => {
+    setPage(1);
     if (sortField === field) {
       setSortDirection(sortDirection === 'asc' ? 'desc' : 'asc');
     } else {
@@ -164,6 +179,11 @@ export default function AnfitrionaComisionesPage() {
     }
   };
 
+  if (loadError)
+    return (
+      <ListLoadError message='No se pudieron cargar tus comisiones.' onRetry={fetchCommissions} />
+    );
+
   return (
     <div className='p-6 space-y-6'>
       <BoneyardSkeleton name='anfitriona-comisiones-main' loading={loading}>
@@ -171,7 +191,7 @@ export default function AnfitrionaComisionesPage() {
         <div className='flex justify-between items-center'>
           <div>
             <p className='text-sm text-gray-500'>LAS MUÑECAS DE RAMÓN</p>
-            <h1 className='text-2xl font-bold text-gray-900'>
+            <h1 className='text-2xl font-bold text-gray-900 dark:text-gray-100'>
               Listado de Comisiones {user?.name} {user?.lastName}
             </h1>
           </div>
@@ -190,19 +210,25 @@ export default function AnfitrionaComisionesPage() {
           <div className='flex justify-center flex-wrap gap-4 sm:gap-8'>
             <div>
               <p className='text-sm text-gray-500'>Total Comisiones:</p>
-              <p className='text-xl font-bold text-gray-900'>{totalCommissions}</p>
+              <p className='text-xl font-bold text-gray-900 dark:text-gray-100'>
+                {totalCommissions}
+              </p>
             </div>
             <div>
               <p className='text-sm text-gray-500'>Pendientes:</p>
-              <p className='text-xl font-bold text-gray-900'>{pendingCommissionsCount}</p>
+              <p className='text-xl font-bold text-gray-900 dark:text-gray-100'>
+                {pendingCommissionsCount}
+              </p>
             </div>
             <div>
               <p className='text-sm text-gray-500'>Total Ganado:</p>
-              <p className='text-xl font-bold text-gray-900'>{formatCurrencyCLP(totalAmount)}</p>
+              <p className='text-xl font-bold text-gray-900 dark:text-gray-100'>
+                {formatCurrencyCLP(totalAmount)}
+              </p>
             </div>
             <div>
               <p className='text-sm text-gray-500'>Por Cobrar:</p>
-              <p className='text-xl font-bold text-gray-900'>
+              <p className='text-xl font-bold text-gray-900 dark:text-gray-100'>
                 {formatCurrencyCLP(totalPendingAmount)}
               </p>
             </div>
@@ -219,7 +245,25 @@ export default function AnfitrionaComisionesPage() {
         </div>
 
         {}
-        <div className='flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4'>
+        <FilterBar>
+          <SortSelect
+            field={sortField}
+            direction={sortDirection}
+            options={[
+              { value: 'fecha_crea', label: 'Fecha' },
+              { value: 'fecha_mod', label: 'Fecha de cobro' },
+              { value: 'comision', label: 'Comisión' },
+              { value: 'codigo', label: 'Código' },
+              { value: 'tipo', label: 'Tipo' },
+              { value: 'estado', label: 'Estado' },
+              { value: 'id_comision', label: 'Número' }
+            ]}
+            onChange={(field, direction) => {
+              setSortField(field as keyof Commission);
+              setSortDirection(direction);
+              setPage(1);
+            }}
+          />
           <SelectElements
             value={rowsPerPage}
             onChange={value => {
@@ -230,26 +274,30 @@ export default function AnfitrionaComisionesPage() {
             label='Listar'
           />
 
-          <div className='flex items-center gap-2'>
-            <span className='text-sm text-gray-600'>Buscar:</span>
+          <div className='min-w-60'>
+            <label htmlFor='buscar-comisiones' className={SELECT_LABEL_CLASS}>
+              Buscar
+            </label>
             <Input
+              id='buscar-comisiones'
               type='text'
               placeholder='Buscar comisiones...'
               value={searchTerm}
               onChange={e => setSearchTerm(e.target.value)}
-              className='w-48'
+              className={SELECT_INPUT_CLASS}
             />
           </div>
-        </div>
+        </FilterBar>
 
         {}
-        <Card>
+        <ModuleTableCard>
           <CardContent className='p-0'>
             <div className='overflow-x-auto'>
-              <table className='w-full'>
-                <thead className='bg-gray-50'>
-                  <tr>
+              <ModuleTable>
+                <ModuleTableHeader>
+                  <ModuleTableRow>
                     <SortableTh
+                      variant='module'
                       field='id_comision'
                       sortField={sortField}
                       sortDirection={sortDirection}
@@ -258,6 +306,7 @@ export default function AnfitrionaComisionesPage() {
                       #
                     </SortableTh>
                     <SortableTh
+                      variant='module'
                       field='codigo'
                       sortField={sortField}
                       sortDirection={sortDirection}
@@ -266,6 +315,7 @@ export default function AnfitrionaComisionesPage() {
                       CÓDIGO (Venta/Serv.)
                     </SortableTh>
                     <SortableTh
+                      variant='module'
                       field='comision'
                       sortField={sortField}
                       sortDirection={sortDirection}
@@ -273,10 +323,9 @@ export default function AnfitrionaComisionesPage() {
                     >
                       COMISIÓN
                     </SortableTh>
-                    <th className='px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider'>
-                      TIPO
-                    </th>
+                    <ModuleTableHead>TIPO</ModuleTableHead>
                     <SortableTh
+                      variant='module'
                       field='fecha_crea'
                       sortField={sortField}
                       sortDirection={sortDirection}
@@ -284,10 +333,9 @@ export default function AnfitrionaComisionesPage() {
                     >
                       FECHA
                     </SortableTh>
-                    <th className='px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider'>
-                      FECHA COBRO
-                    </th>
+                    <ModuleTableHead>FECHA COBRO</ModuleTableHead>
                     <SortableTh
+                      variant='module'
                       field='estado'
                       sortField={sortField}
                       sortDirection={sortDirection}
@@ -295,47 +343,41 @@ export default function AnfitrionaComisionesPage() {
                     >
                       ESTADO
                     </SortableTh>
-                  </tr>
-                </thead>
-                <tbody className='bg-white divide-y divide-gray-200'>
+                  </ModuleTableRow>
+                </ModuleTableHeader>
+                <ModuleTableBody>
                   {paginatedCommissions.length === 0 ? (
-                    <tr>
-                      <td colSpan={7} className='px-6 py-4 text-center text-gray-500'>
-                        No se encontraron comisiones
-                      </td>
-                    </tr>
+                    <ModuleTableRow>
+                      <ModuleTableCell colSpan={7}>No se encontraron comisiones</ModuleTableCell>
+                    </ModuleTableRow>
                   ) : (
                     paginatedCommissions.map((commission, index) => {
                       return (
-                        <tr key={commission.id_comision} className='hover:bg-gray-50'>
-                          <td className='px-6 py-4 whitespace-nowrap'>
+                        <ModuleTableRow key={commission.id_comision}>
+                          <ModuleTableCell>
                             <div className='w-8 h-8 bg-purple-300 text-white rounded-full flex items-center justify-center text-sm font-medium'>
                               {(page - 1) * rowsPerPage + index + 1}
                             </div>
-                          </td>
-                          <td className='px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900'>
-                            {commission.codigo || 'N/A'}
-                          </td>
-                          <td className='px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900'>
+                          </ModuleTableCell>
+                          <ModuleTableCell>{commission.codigo || 'N/A'}</ModuleTableCell>
+                          <ModuleTableCell>
                             {formatCurrencyCLP(commission.comision)}
-                          </td>
-                          <td className='px-6 py-4 whitespace-nowrap text-sm capitalize'>
-                            {commission.tipo || 'venta'}
-                          </td>
-                          <td className='px-6 py-4 whitespace-nowrap'>
+                          </ModuleTableCell>
+                          <ModuleTableCell>{commission.tipo || 'venta'}</ModuleTableCell>
+                          <ModuleTableCell>
                             <div>
-                              <div className='text-sm font-medium text-gray-900'>
+                              <div className='text-sm font-medium text-gray-900 dark:text-gray-100'>
                                 {formatDateTimeDmyLabel(commission.fecha_crea).date}
                               </div>
                               <div className='text-sm text-gray-500'>
                                 {formatDateTimeDmyLabel(commission.fecha_crea).time}
                               </div>
                             </div>
-                          </td>
-                          <td className='px-6 py-4 whitespace-nowrap'>
+                          </ModuleTableCell>
+                          <ModuleTableCell>
                             {commission.fecha_mod ? (
                               <div>
-                                <div className='text-sm font-medium text-gray-900'>
+                                <div className='text-sm font-medium text-gray-900 dark:text-gray-100'>
                                   {formatDateTimeDmyLabel(commission.fecha_mod).date}
                                 </div>
                                 <div className='text-sm text-gray-500'>
@@ -347,19 +389,17 @@ export default function AnfitrionaComisionesPage() {
                                 Por cobrar
                               </span>
                             )}
-                          </td>
-                          <td className='px-6 py-4 whitespace-nowrap'>
-                            {getStatusBadge(commission.estado)}
-                          </td>
-                        </tr>
+                          </ModuleTableCell>
+                          <ModuleTableCell>{getStatusBadge(commission.estado)}</ModuleTableCell>
+                        </ModuleTableRow>
                       );
                     })
                   )}
-                </tbody>
-              </table>
+                </ModuleTableBody>
+              </ModuleTable>
             </div>
           </CardContent>
-        </Card>
+        </ModuleTableCard>
 
         {}
         <div className='flex justify-center'>

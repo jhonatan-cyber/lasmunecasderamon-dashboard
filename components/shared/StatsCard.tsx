@@ -1,6 +1,4 @@
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { BackgroundGradient } from '@/components/shared/background-gradient';
-import { Skeleton } from '@/components/ui/skeleton';
+import { MetricCard } from '@/components/shared/MetricCard';
 import { LucideIcon } from 'lucide-react';
 import { formatCurrencyNoDecimals, formatNumberCL } from '@/lib/utils/formatters';
 
@@ -70,28 +68,14 @@ export function StatsCard({
   return (
     <div className={`grid ${gridCols[columns]} gap-4 sm:gap-6 ${className}`}>
       {stats.map((stat, index) => (
-        <BackgroundGradient key={index}>
-          <Card className='shadow-xs hover:shadow-md transition-shadow bg-transparent border-0'>
-            <CardHeader className='flex flex-row items-center justify-between space-y-0 pb-2 p-4 sm:p-6'>
-              <CardTitle className='text-xs sm:text-sm font-medium'>{stat.title}</CardTitle>
-              <stat.icon className='h-4 w-4 sm:h-5 sm:w-5 text-muted-foreground' />
-            </CardHeader>
-            <CardContent className='p-4 sm:p-6 pt-0'>
-              {isLoading || stat.isLoading ? (
-                <Skeleton className='h-6 sm:h-8 w-20 sm:w-24' />
-              ) : (
-                <>
-                  <div className='text-lg sm:text-xl lg:text-2xl font-bold wrap-break-word'>
-                    {formatValue(stat)}
-                  </div>
-                  {stat.subtitle && (
-                    <p className='text-xs text-muted-foreground mt-1'>{stat.subtitle}</p>
-                  )}
-                </>
-              )}
-            </CardContent>
-          </Card>
-        </BackgroundGradient>
+        <MetricCard
+          key={index}
+          icon={<stat.icon className='h-4 w-4' />}
+          label={stat.title}
+          value={formatValue(stat)}
+          isLoading={Boolean(isLoading || stat.isLoading)}
+          footer={stat.subtitle && <p className='mt-1 text-xs opacity-70'>{stat.subtitle}</p>}
+        />
       ))}
     </div>
   );

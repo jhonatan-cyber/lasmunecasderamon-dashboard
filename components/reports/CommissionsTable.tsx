@@ -1,4 +1,12 @@
 'use client';
+import {
+  Table,
+  TableHeader,
+  TableRow,
+  TableHead,
+  TableBody,
+  TableCell
+} from '@/components/ui/table';
 
 import { CollapsibleCard } from '@/components/ui/collapsible-card';
 import { Button } from '@/components/ui/button';
@@ -63,85 +71,47 @@ export function CommissionsTable({
       }
     >
       <div className='overflow-x-auto'>
-        <table className='w-full'>
-          <thead>
-            <tr className='border-b border-gray-200 dark:border-gray-700'>
-              <th className='text-left py-3 px-4 font-medium text-gray-900 dark:text-gray-100'>
-                Anfitriona
-              </th>
-              <th className='text-left py-3 px-4 font-medium text-gray-900 dark:text-gray-100'>
-                Ventas
-              </th>
-              <th className='text-left py-3 px-4 font-medium text-gray-900 dark:text-gray-100'>
-                Servicios
-              </th>
-              <th className='text-left py-3 px-4 font-medium text-gray-900 dark:text-gray-100'>
-                Total Ventas
-              </th>
-              <th className='text-left py-3 px-4 font-medium text-gray-900 dark:text-gray-100'>
-                Total Servicios
-              </th>
-              <th className='text-left py-3 px-4 font-medium text-gray-900 dark:text-gray-100'>
-                Comisiones
-              </th>
-              <th className='text-left py-3 px-4 font-medium text-gray-900 dark:text-gray-100'>
-                Prom/Venta
-              </th>
-              <th className='text-left py-3 px-4 font-medium text-gray-900 dark:text-gray-100'>
-                Prom/Servicio
-              </th>
-              <th className='text-left py-3 px-4 font-medium text-gray-900 dark:text-gray-100'>
-                Días
-              </th>
-              <th className='text-left py-3 px-4 font-medium text-gray-900 dark:text-gray-100'>
-                Prom/Día
-              </th>
-              <th className='text-left py-3 px-4 font-medium text-gray-900 dark:text-gray-100'>
-                Rendimiento
-              </th>
-            </tr>
-          </thead>
-          <tbody>
+        <Table className='w-full'>
+          <TableHeader>
+            <TableRow className='border-b'>
+              <TableHead className='text-left font-medium'>Anfitriona</TableHead>
+              <TableHead className='text-left font-medium'>Ventas</TableHead>
+              <TableHead className='text-left font-medium'>Servicios</TableHead>
+              <TableHead className='text-left font-medium'>Total Ventas</TableHead>
+              <TableHead className='text-left font-medium'>Total Servicios</TableHead>
+              <TableHead className='text-left font-medium'>Comisiones</TableHead>
+              <TableHead className='text-left font-medium'>Prom/Venta</TableHead>
+              <TableHead className='text-left font-medium'>Prom/Servicio</TableHead>
+              <TableHead className='text-left font-medium'>Días</TableHead>
+              <TableHead className='text-left font-medium'>Prom/Día</TableHead>
+              <TableHead className='text-left font-medium'>Rendimiento</TableHead>
+            </TableRow>
+          </TableHeader>
+          <TableBody>
             {commissions
               .slice(tablePage * ITEMS_PER_PAGE, (tablePage + 1) * ITEMS_PER_PAGE)
               .map((commission, index) => (
-                <tr
+                <TableRow
                   key={getCommissionRowKey(commission, tablePage * ITEMS_PER_PAGE + index)}
-                  className='border-b border-gray-100 dark:border-gray-800 hover:bg-gray-50 dark:hover:bg-gray-800/50 transition-colors'
+                  className='border-b transition-colors'
                 >
-                  <td className='py-3 px-4'>
+                  <TableCell>
                     <p className='font-medium text-gray-900 dark:text-gray-100'>
                       {commission.nombre_completo}
                     </p>
-                  </td>
-                  <td className='py-3 px-4 text-gray-900 dark:text-gray-200'>
-                    {commission.total_ventas}
-                  </td>
-                  <td className='py-3 px-4 text-gray-900 dark:text-gray-200'>
-                    {commission.total_servicios}
-                  </td>
-                  <td className='py-3 px-4 text-gray-900 dark:text-gray-200'>
-                    $ {formatNumber(commission.total_ventas_monto)}
-                  </td>
-                  <td className='py-3 px-4 text-gray-900 dark:text-gray-200'>
-                    $ {formatNumber(commission.total_servicios_monto)}
-                  </td>
-                  <td className='py-3 px-4 font-semibold text-emerald-600 dark:text-emerald-400'>
+                  </TableCell>
+                  <TableCell>{commission.total_ventas}</TableCell>
+                  <TableCell>{commission.total_servicios}</TableCell>
+                  <TableCell>$ {formatNumber(commission.total_ventas_monto)}</TableCell>
+                  <TableCell>$ {formatNumber(commission.total_servicios_monto)}</TableCell>
+                  <TableCell className='font-semibold text-emerald-600 dark:text-emerald-400'>
                     $ {formatNumber(commission.total_comisiones)}
-                  </td>
-                  <td className='py-3 px-4 text-gray-900 dark:text-gray-200'>
-                    $ {formatNumber(commission.promedio_por_venta)}
-                  </td>
-                  <td className='py-3 px-4 text-gray-900 dark:text-gray-200'>
-                    $ {formatNumber(commission.promedio_por_servicio)}
-                  </td>
-                  <td className='py-3 px-4 text-gray-900 dark:text-gray-200'>
-                    {commission.dias_trabajados}
-                  </td>
-                  <td className='py-3 px-4 text-gray-900 dark:text-gray-200'>
-                    $ {formatNumber(commission.promedio_diario)}
-                  </td>
-                  <td className='py-3 px-4'>
+                  </TableCell>
+                  <TableCell>$ {formatNumber(commission.promedio_por_venta)}</TableCell>
+                  <TableCell>$ {formatNumber(commission.promedio_por_servicio)}</TableCell>
+                  <TableCell>{commission.dias_trabajados}</TableCell>
+                  <TableCell>$ {formatNumber(commission.promedio_diario)}</TableCell>
+                  <TableCell>
                     <Badge
                       className={getPerformanceBadge(
                         commission.total_comisiones,
@@ -153,11 +123,11 @@ export function CommissionsTable({
                         statistics.promedio_comision_por_anfitriona
                       )}
                     </Badge>
-                  </td>
-                </tr>
+                  </TableCell>
+                </TableRow>
               ))}
-          </tbody>
-        </table>
+          </TableBody>
+        </Table>
       </div>
 
       {commissions.length > ITEMS_PER_PAGE && (

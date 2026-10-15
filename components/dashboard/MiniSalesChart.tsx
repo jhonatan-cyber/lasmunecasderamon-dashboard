@@ -1,4 +1,5 @@
 'use client';
+import { Button } from '@/components/ui/button';
 
 import { useEffect, useState, useCallback, useMemo } from 'react';
 import logger from '@/lib/utils/logger';
@@ -313,7 +314,8 @@ export default function MiniSalesChart() {
         {}
         <div className='flex flex-wrap items-center gap-4'>
           {}
-          <button
+          <Button
+            variant='unstyled'
             onClick={refreshData}
             disabled={isRefreshing}
             aria-label='Actualizar datos del gráfico'
@@ -323,11 +325,12 @@ export default function MiniSalesChart() {
             )}
           >
             <RefreshCw className='h-5 w-5' />
-          </button>
+          </Button>
 
           {}
           <div className='flex items-center bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 p-1 shadow-xs'>
-            <button
+            <Button
+              variant='unstyled'
               onClick={() =>
                 viewMode === 'month'
                   ? setYearOffset(prev => prev + 1)
@@ -337,7 +340,7 @@ export default function MiniSalesChart() {
               className='p-2 hover:bg-slate-50 dark:hover:bg-slate-800 rounded-xl text-slate-400 hover:text-slate-900 dark:hover:text-white transition-colors'
             >
               <ChevronLeft className='h-5 w-5' />
-            </button>
+            </Button>
             <div className='px-4 flex flex-col items-center min-w-[80px]'>
               <span className='text-[8px] font-black text-slate-400 uppercase tracking-widest'>
                 Navegar
@@ -346,7 +349,8 @@ export default function MiniSalesChart() {
                 {viewMode === 'month' ? 'Año' : 'Semana'}
               </span>
             </div>
-            <button
+            <Button
+              variant='unstyled'
               onClick={() =>
                 viewMode === 'month'
                   ? setYearOffset(prev => Math.max(0, prev - 1))
@@ -357,11 +361,12 @@ export default function MiniSalesChart() {
               className='p-2 hover:bg-slate-50 dark:hover:bg-slate-800 rounded-xl text-slate-400 hover:text-slate-900 dark:hover:text-white transition-colors disabled:opacity-20'
             >
               <ChevronRight className='h-5 w-5' />
-            </button>
+            </Button>
           </div>
 
           {}
-          <button
+          <Button
+            variant='unstyled'
             onClick={() => {
               setYearOffset(0);
               setWeekOffset(0);
@@ -375,11 +380,12 @@ export default function MiniSalesChart() {
             )}
           >
             Hoy
-          </button>
+          </Button>
 
           {}
           <div className='flex p-1 bg-slate-950 dark:bg-slate-900 rounded-[1.25rem] border border-white/5 shadow-2xl'>
-            <button
+            <Button
+              variant='unstyled'
               onClick={() => setViewMode('month')}
               className={cn(
                 'px-8 py-3 rounded-xl text-[10px] font-black uppercase tracking-[0.2em] transition-all duration-500',
@@ -389,8 +395,9 @@ export default function MiniSalesChart() {
               )}
             >
               Mensual
-            </button>
-            <button
+            </Button>
+            <Button
+              variant='unstyled'
               onClick={() => setViewMode('week')}
               className={cn(
                 'px-8 py-3 rounded-xl text-[10px] font-black uppercase tracking-[0.2em] transition-all duration-500',
@@ -400,7 +407,7 @@ export default function MiniSalesChart() {
               )}
             >
               Semanal
-            </button>
+            </Button>
           </div>
         </div>
       </div>

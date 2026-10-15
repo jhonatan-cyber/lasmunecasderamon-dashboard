@@ -1,4 +1,6 @@
 'use client';
+import { NativeSelect } from '@/components/ui/native-select';
+import { Button } from '@/components/ui/button';
 
 import { useCallback, useEffect, useState } from 'react';
 import { ChevronDown, Clock, Loader2, Save, TriangleAlert } from 'lucide-react';
@@ -218,7 +220,7 @@ export function SettingsAttendanceTab() {
                       Hora de inicio (entrada)
                     </label>
                     <div className='relative'>
-                      <select
+                      <NativeSelect
                         id='attendance-hora-inicio'
                         value={inicio}
                         onChange={e =>
@@ -234,7 +236,7 @@ export function SettingsAttendanceTab() {
                             {h.label}
                           </option>
                         ))}
-                      </select>
+                      </NativeSelect>
                       <ChevronDown className='pointer-events-none absolute inset-y-0 right-4 my-auto h-4 w-4 text-neutral-500' />
                     </div>
                     <p className='text-xs text-neutral-500 dark:text-neutral-400'>
@@ -250,7 +252,7 @@ export function SettingsAttendanceTab() {
                       Hora de fin (salida / corte)
                     </label>
                     <div className='relative'>
-                      <select
+                      <NativeSelect
                         id='attendance-hora-fin'
                         value={fin}
                         onChange={e =>
@@ -266,7 +268,7 @@ export function SettingsAttendanceTab() {
                             {h.label}
                           </option>
                         ))}
-                      </select>
+                      </NativeSelect>
                       <ChevronDown className='pointer-events-none absolute inset-y-0 right-4 my-auto h-4 w-4 text-neutral-500' />
                     </div>
                     <p className='text-xs text-neutral-500 dark:text-neutral-400'>
@@ -322,7 +324,8 @@ export function SettingsAttendanceTab() {
                     Cambios sin guardar
                   </span>
                 )}
-                <button
+                <Button
+                  variant='unstyled'
                   onClick={handleSave}
                   disabled={saving || !sucio || !valida}
                   className='flex items-center gap-2 rounded-full border-2 border-black bg-black px-6 py-2.5 font-bold text-white transition-all duration-200 hover:scale-105 hover:bg-neutral-800 active:scale-95 disabled:pointer-events-none disabled:opacity-50 dark:border-white dark:bg-white dark:text-black dark:hover:bg-neutral-200'
@@ -333,7 +336,7 @@ export function SettingsAttendanceTab() {
                     <Save className='h-4 w-4' />
                   )}
                   {saving ? 'Guardando...' : 'Guardar Configuración'}
-                </button>
+                </Button>
               </div>
             </div>
           </div>

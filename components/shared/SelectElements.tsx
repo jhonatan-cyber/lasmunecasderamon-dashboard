@@ -36,6 +36,7 @@ const SelectElements: React.FC<SelectElementsProps> = props => {
   } = props;
 
   const effectiveValue = value ?? rowsPerPage ?? 5;
+  const id = React.useId();
   const effectiveOnChange = (v: number) => {
     if (onChange) onChange(v);
     if (setRowsPerPage) setRowsPerPage(v);
@@ -45,7 +46,7 @@ const SelectElements: React.FC<SelectElementsProps> = props => {
   return (
     <div>
       {label && (
-        <Label htmlFor='list' className={`${SELECT_LABEL_CLASS} ml-1`}>
+        <Label htmlFor={id} className={`${SELECT_LABEL_CLASS} ml-1`}>
           {label}
         </Label>
       )}
@@ -53,7 +54,7 @@ const SelectElements: React.FC<SelectElementsProps> = props => {
         value={String(effectiveValue)}
         onValueChange={(value: string) => effectiveOnChange(Number(value))}
       >
-        <SelectTrigger className={`${SELECT_TRIGGER_CLASS} h-10 text-xs font-semibold`}>
+        <SelectTrigger id={id} className={SELECT_TRIGGER_CLASS}>
           <SelectValue />
         </SelectTrigger>
         <SelectContent className={SELECT_CONTENT_CLASS}>

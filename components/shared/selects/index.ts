@@ -1,4 +1,5 @@
 export { default as FilterSelect } from './FilterSelect';
+export { SortSelect } from './SortSelect';
 export { default as PaymentMethodSelect } from './PaymentMethodSelect';
 export { default as RoomSelect } from './RoomSelect';
 export { default as TimeSelect } from './TimeSelect';

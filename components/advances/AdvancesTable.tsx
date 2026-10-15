@@ -7,7 +7,7 @@ import {
   TableBody,
   TableRow,
   TableHead,
-  TableCell,
+  TableCell
 } from '@/components/ui/table';
 import { Card, CardContent } from '@/components/ui/card';
 import { Wallet } from 'lucide-react';
@@ -21,7 +21,8 @@ interface AdvancesTableProps {
   advances: Anticipo[];
   pageSize?: number;
   isAdmin?: boolean;
-  onAction?: (id: string | number, action: 'approve' | 'reject') => Promise<any>;
+  canDeliver?: boolean;
+  onAction?: (id: string | number, action: 'approve' | 'reject' | 'deliver') => Promise<any>;
   activeTab?: 'pending' | 'paid';
 }
 
@@ -49,28 +50,40 @@ function DesktopSkeletons({ pageSize, isAdmin }: { pageSize: number; isAdmin: bo
   return (
     <div className='bg-white dark:bg-slate-900/40 backdrop-blur-xs rounded-3xl border-none shadow-md overflow-hidden'>
       <Table>
-        <TableHeader className='bg-gray-100 dark:bg-slate-900/50'>
-          <TableRow className='hover:bg-transparent border-gray-100 dark:border-gray-800'>
-            <TableHead className='py-4 px-5 text-xs uppercase text-gray-500'>Empleado</TableHead>
-            <TableHead className='py-4 px-5 text-xs uppercase text-gray-500 text-center'>Fecha Solic.</TableHead>
-            <TableHead className='py-4 px-5 text-xs uppercase text-gray-500 text-center'>Fecha Aprob.</TableHead>
-            <TableHead className='py-4 px-5 text-xs uppercase text-gray-500 text-center'>Estado</TableHead>
-            <TableHead className='py-4 px-5 text-xs uppercase text-gray-500 text-right'>Monto</TableHead>
-            <TableHead className='py-4 px-5 text-xs uppercase text-gray-500 text-center'>Entregado por</TableHead>
-            {isAdmin && (
-              <TableHead className='py-4 px-5 text-xs uppercase text-gray-500 text-center'>Acciones</TableHead>
-            )}
+        <TableHeader>
+          <TableRow className='hover:bg-transparent'>
+            <TableHead>Empleado</TableHead>
+            <TableHead className='text-center'>Fecha Solic.</TableHead>
+            <TableHead className='text-center'>Fecha Aprob.</TableHead>
+            <TableHead className='text-center'>Estado</TableHead>
+            <TableHead className='text-right'>Monto</TableHead>
+            <TableHead className='text-center'>Entregado por</TableHead>
+            {isAdmin && <TableHead className='text-center'>Acciones</TableHead>}
           </TableRow>
         </TableHeader>
         <TableBody>
           {Array.from({ length: pageSize }).map((_, i) => (
             <TableRow key={`loading-${i}`}>
-              <TableCell><Skeleton className='h-10 w-40 rounded-full' /></TableCell>
-              <TableCell><Skeleton className='h-4 w-24 mx-auto' /></TableCell>
-              <TableCell><Skeleton className='h-6 w-20 mx-auto rounded-full' /></TableCell>
-              <TableCell><Skeleton className='h-4 w-24 ml-auto' /></TableCell>
-              <TableCell><Skeleton className='h-4 w-24 mx-auto' /></TableCell>
-              {isAdmin && <TableCell><Skeleton className='h-8 w-20 mx-auto rounded-full' /></TableCell>}
+              <TableCell>
+                <Skeleton className='h-10 w-40 rounded-full' />
+              </TableCell>
+              <TableCell>
+                <Skeleton className='h-4 w-24 mx-auto' />
+              </TableCell>
+              <TableCell>
+                <Skeleton className='h-6 w-20 mx-auto rounded-full' />
+              </TableCell>
+              <TableCell>
+                <Skeleton className='h-4 w-24 ml-auto' />
+              </TableCell>
+              <TableCell>
+                <Skeleton className='h-4 w-24 mx-auto' />
+              </TableCell>
+              {isAdmin && (
+                <TableCell>
+                  <Skeleton className='h-8 w-20 mx-auto rounded-full' />
+                </TableCell>
+              )}
             </TableRow>
           ))}
         </TableBody>
@@ -85,15 +98,17 @@ function AdvancesSection({
   loading,
   pageSize,
   isAdmin,
+  canDeliver,
   onAction,
-  getStatusBadge,
+  getStatusBadge
 }: {
   title: string;
   advancesToRender: Anticipo[];
   loading: boolean;
   pageSize: number;
   isAdmin: boolean;
-  onAction?: (id: string | number, action: 'approve' | 'reject') => Promise<any>;
+  canDeliver: boolean;
+  onAction?: (id: string | number, action: 'approve' | 'reject' | 'deliver') => Promise<any>;
   getStatusBadge: (estado: number, a: Anticipo) => React.ReactNode;
 }) {
   return (
@@ -118,6 +133,7 @@ function AdvancesSection({
               key={a.id_anticipo}
               anticipo={a}
               isAdmin={isAdmin}
+              canDeliver={canDeliver}
               onAction={onAction}
               statusBadge={getStatusBadge(a.estado, a)}
             />
@@ -138,16 +154,16 @@ function AdvancesSection({
         ) : (
           <div className='bg-white dark:bg-slate-900/40 backdrop-blur-xs rounded-3xl border-none shadow-md overflow-hidden'>
             <Table>
-              <TableHeader className='bg-gray-100 dark:bg-slate-900/50'>
-                <TableRow className='hover:bg-transparent border-gray-100 dark:border-gray-800'>
-                  <TableHead className='py-4 px-5 text-xs uppercase text-gray-500'>Empleado</TableHead>
-                  <TableHead className='py-4 px-5 text-xs uppercase text-gray-500 text-center'>Fecha Solic.</TableHead>
-                  <TableHead className='py-4 px-5 text-xs uppercase text-gray-500 text-center'>Fecha Aprob.</TableHead>
-                  <TableHead className='py-4 px-5 text-xs uppercase text-gray-500 text-center'>Estado</TableHead>
-                  <TableHead className='py-4 px-5 text-xs uppercase text-gray-500 text-right'>Monto</TableHead>
-                  <TableHead className='py-4 px-5 text-xs uppercase text-gray-500 text-center'>Entregado por</TableHead>
-                  {isAdmin && (
-                    <TableHead className='py-4 px-5 text-xs uppercase text-gray-500 text-center'>Acciones</TableHead>
+              <TableHeader>
+                <TableRow className='hover:bg-transparent'>
+                  <TableHead>Empleado</TableHead>
+                  <TableHead className='text-center'>Fecha Solic.</TableHead>
+                  <TableHead className='text-center'>Fecha Aprob.</TableHead>
+                  <TableHead className='text-center'>Estado</TableHead>
+                  <TableHead className='text-right'>Monto</TableHead>
+                  <TableHead className='text-center'>Entregado por</TableHead>
+                  {(isAdmin || canDeliver) && (
+                    <TableHead className='text-center'>Acciones</TableHead>
                   )}
                 </TableRow>
               </TableHeader>
@@ -159,6 +175,7 @@ function AdvancesSection({
                     idx={idx}
                     total={advancesToRender.length}
                     isAdmin={isAdmin}
+                    canDeliver={canDeliver}
                     onAction={onAction}
                     statusBadge={getStatusBadge(a.estado, a)}
                   />
@@ -177,8 +194,9 @@ export default function AdvancesTable({
   advances,
   pageSize = 10,
   isAdmin = false,
+  canDeliver = false,
   onAction,
-  activeTab = 'pending',
+  activeTab = 'pending'
 }: AdvancesTableProps) {
   const { filteredAdvances, paidAdvances, pendingAdvances, getStatusBadge } = useAdvancesTable(
     advances,
@@ -207,6 +225,7 @@ export default function AdvancesTable({
           loading={loading}
           pageSize={pageSize}
           isAdmin={isAdmin}
+          canDeliver={canDeliver}
           onAction={onAction}
           getStatusBadge={getStatusBadge}
         />
@@ -219,6 +238,7 @@ export default function AdvancesTable({
           loading={loading}
           pageSize={pageSize}
           isAdmin={isAdmin}
+          canDeliver={canDeliver}
           onAction={onAction}
           getStatusBadge={getStatusBadge}
         />

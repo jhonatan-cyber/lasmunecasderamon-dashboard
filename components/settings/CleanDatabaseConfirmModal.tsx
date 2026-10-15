@@ -1,3 +1,4 @@
+import { DATABASE_CLEAN_PROTECTED_TABLES } from '@/lib/constants/database-maintenance';
 import { AlertTriangle, Loader2, Database } from 'lucide-react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
@@ -58,15 +59,9 @@ export function CleanDatabaseConfirmModal({
                 <span className='font-bold'>Se conservarán:</span>
               </p>
               <ul className='list-disc list-inside text-xs text-green-600 dark:text-green-400 mt-2'>
-                <li>Usuarios</li>
-                <li>Roles</li>
-                <li>Permissions</li>
-                <li>Configuraciones</li>
-                <li>Habitaciones</li>
-                <li>Productos</li>
-                <li>Categorias</li>
-                <li>Codigos</li>
-                <li>Relacion roles-permisos</li>
+                {DATABASE_CLEAN_PROTECTED_TABLES.map(table => (
+                  <li key={table}>{table}</li>
+                ))}
               </ul>
             </div>
 

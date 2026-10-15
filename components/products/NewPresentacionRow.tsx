@@ -1,4 +1,5 @@
 'use client';
+import { Button } from '@/components/ui/button';
 
 import { useEffect, useState } from 'react';
 import { Input } from '@/components/ui/input';
@@ -115,7 +116,7 @@ export function NewPresentacionRow({
             className='absolute inset-0 cursor-pointer'
             title='Arrastrar o elegir imagen'
           >
-            <input
+            <Input
               id={`pres-foto-new-${i}`}
               type='file'
               accept='image/*'
@@ -135,7 +136,8 @@ export function NewPresentacionRow({
           </p>
           <p className='text-[11px] text-gray-400'>Arrastra o toca la imagen</p>
         </div>
-        <button
+        <Button
+          variant='unstyled'
           type='button'
           onClick={onRemove}
           disabled={isLoading}
@@ -143,7 +145,7 @@ export function NewPresentacionRow({
           className='p-2.5 rounded-full text-gray-400 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors disabled:opacity-50 shrink-0'
         >
           <X className='w-4 h-4' />
-        </button>
+        </Button>
       </div>
       <div className='grid grid-cols-1 sm:grid-cols-2 gap-2'>
         <div className='flex h-11 items-stretch overflow-hidden rounded-full border border-gray-300 bg-gray-100 transition-colors hover:border-gray-400 focus-within:border-black dark:border-gray-700 dark:bg-slate-900/50 dark:hover:border-gray-500 dark:focus-within:border-white'>

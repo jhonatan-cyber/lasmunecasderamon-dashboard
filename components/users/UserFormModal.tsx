@@ -1,4 +1,6 @@
 'use client';
+import { Input } from '@/components/ui/input';
+import { NativeSelect } from '@/components/ui/native-select';
 
 import { useState, useEffect } from 'react';
 import { Loader2 } from 'lucide-react';
@@ -222,7 +224,7 @@ export function UserFormModal({
                     </label>
                     <div className='relative'>
                       <CreditCard className='absolute left-3 top-1/2 -translate-y-1/2 text-gray-500 dark:text-gray-400 w-3 h-3 sm:w-4 sm:h-4 pointer-events-none' />
-                      <input
+                      <Input
                         id='user-rut'
                         type='text'
                         value={runFormatted}
@@ -349,7 +351,7 @@ export function UserFormModal({
                 {!isEditing && dispositivos.length > 0 && (
                   <div className='rounded-2xl border border-emerald-200 dark:border-emerald-900/50 bg-emerald-50/60 dark:bg-emerald-900/10 p-4 space-y-3'>
                     <label className='flex items-center gap-2 text-sm font-medium text-emerald-900 dark:text-emerald-200 cursor-pointer'>
-                      <input
+                      <Input
                         type='checkbox'
                         className='h-4 w-4 rounded border-input'
                         checked={altaEquipo}
@@ -369,7 +371,7 @@ export function UserFormModal({
                           >
                             Equipo
                           </label>
-                          <select
+                          <NativeSelect
                             id='alta-dispositivo'
                             value={dispositivoAlta}
                             onChange={e => form.setValue('dispositivo_alta', e.target.value)}
@@ -380,7 +382,7 @@ export function UserFormModal({
                                 {d.nombre} · {d.ip}
                               </option>
                             ))}
-                          </select>
+                          </NativeSelect>
                         </div>
                         <p className='text-xs text-muted-foreground'>
                           Al guardar se genera su código biométrico, su foto queda como plantilla

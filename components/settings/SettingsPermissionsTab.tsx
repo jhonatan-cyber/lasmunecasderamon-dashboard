@@ -1,4 +1,5 @@
 'use client';
+import { Button } from '@/components/ui/button';
 
 import { useState, useEffect, useMemo, useCallback } from 'react';
 import { Key, Plus } from 'lucide-react';
@@ -196,13 +197,14 @@ export function SettingsPermissionsTab() {
             Crea, edita y elimina permisos del sistema
           </p>
         </div>
-        <button
+        <Button
+          variant='unstyled'
           className='whitespace-nowrap inline-flex items-center px-6 py-2 bg-black text-white rounded-full hover:bg-white/90 hover:text-black dark:hover:bg-white dark:hover:text-black hover:scale-105 transition-all duration-200 text-sm sm:text-base w-full sm:w-auto'
           onClick={handleCreatePermission}
         >
           <Plus className='h-4 w-4 mr-2' />
           Nuevo Permiso
-        </button>
+        </Button>
       </div>
 
       <PermissionStatsCards permissions={permissions} />
@@ -232,13 +234,14 @@ export function SettingsPermissionsTab() {
           <p className='text-xs sm:text-sm text-zinc-500 dark:text-neutral-400 mb-4'>
             Crea el primer permiso del sistema
           </p>
-          <button
+          <Button
+            variant='unstyled'
             onClick={handleCreatePermission}
             className='inline-flex items-center px-4 py-2 bg-blue-600 text-white rounded-full hover:bg-blue-700 transition-colors text-sm'
           >
             <Plus className='h-4 w-4 mr-2' />
             Crear Permiso
-          </button>
+          </Button>
         </div>
       ) : (
         <>

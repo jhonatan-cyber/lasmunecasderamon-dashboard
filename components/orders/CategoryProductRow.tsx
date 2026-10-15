@@ -1,4 +1,5 @@
 'use client';
+import { NativeSelect } from '@/components/ui/native-select';
 
 import { bottleMixerUnits } from '@/lib/sales/productConfiguration';
 import { useState } from 'react';
@@ -82,7 +83,7 @@ export function CategoryProductRow({
       <TableCell>
         {p.nombre || p.name}
         {venta.tieneShot && (
-          <select
+          <NativeSelect
             aria-label={`Formato de ${p.nombre || p.name}`}
             className='mt-2 block w-full rounded-md border bg-background p-2 text-sm'
             value={venta.tipoVenta}
@@ -96,7 +97,7 @@ export function CategoryProductRow({
                 {o.nombre} - {formatCurrencyNoDecimals(o.precio)}
               </option>
             ))}
-          </select>
+          </NativeSelect>
         )}
       </TableCell>
       <TableCell className='text-center'>{formatCurrencyNoDecimals(p.price || p.precio)}</TableCell>

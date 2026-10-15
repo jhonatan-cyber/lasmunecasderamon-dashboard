@@ -249,18 +249,14 @@ const DesktopTableView = React.memo(
       <div className='hidden lg:block'>
         <div className='bg-white dark:bg-slate-900/40 backdrop-blur-xs rounded-3xl border-none shadow-md overflow-hidden'>
           <Table>
-            <TableHeader className='bg-gray-100 dark:bg-slate-900/50'>
-              <TableRow className='hover:bg-transparent border-gray-100 dark:border-gray-800'>
-                <TableHead className='py-4 px-5 text-xs uppercase text-gray-500'>#</TableHead>
-                <TableHead className='py-4 px-5 text-xs uppercase text-gray-500'>Nombre</TableHead>
-                <TableHead className='py-4 px-5 text-xs uppercase text-gray-500'>Módulo</TableHead>
-                <TableHead className='py-4 px-5 text-xs uppercase text-gray-500'>Acción</TableHead>
-                <TableHead className='py-4 px-5 text-xs uppercase text-gray-500'>
-                  Descripción
-                </TableHead>
-                <TableHead className='py-4 px-5 text-xs uppercase text-gray-500'>
-                  Acciones
-                </TableHead>
+            <TableHeader>
+              <TableRow className='hover:bg-transparent'>
+                <TableHead>#</TableHead>
+                <TableHead>Nombre</TableHead>
+                <TableHead>Módulo</TableHead>
+                <TableHead>Acción</TableHead>
+                <TableHead>Descripción</TableHead>
+                <TableHead>Acciones</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
@@ -292,28 +288,24 @@ const DesktopTableView = React.memo(
                       key={permission.id}
                       className={`border-b transition-colors hover:bg-gray-50 dark:hover:bg-slate-800/30 ${idx === 0 ? 'first:rounded-t-xl' : ''} ${idx === permissions.length - 1 ? 'last:rounded-b-xl' : ''}`}
                     >
-                      <TableCell className='py-3 px-4 text-center text-sm text-gray-600 font-medium'>
+                      <TableCell className='text-center font-medium'>
                         <Badge className='bg-purple-100 text-purple-700 rounded-full px-3 py-1'>
                           {(currentPage - 1) * pageSize + idx + 1}
                         </Badge>
                       </TableCell>
-                      <TableCell className='py-3 px-4 text-center font-medium'>
-                        {permission.name}
-                      </TableCell>
-                      <TableCell className='py-3 px-4 text-center'>
+                      <TableCell className='text-center font-medium'>{permission.name}</TableCell>
+                      <TableCell className='text-center'>
                         <Badge variant='outline' className='text-xs rounded-full'>
                           {permission.module.replace('_', ' ').toUpperCase()}
                         </Badge>
                       </TableCell>
-                      <TableCell className='py-3 px-4 text-center'>
+                      <TableCell className='text-center'>
                         <Badge variant='secondary' className='text-xs rounded-full'>
                           {permission.action.toUpperCase()}
                         </Badge>
                       </TableCell>
-                      <TableCell className='py-3 px-4 text-center text-sm text-gray-500'>
-                        {permission.description || '-'}
-                      </TableCell>
-                      <TableCell className='py-3 px-4 text-center'>
+                      <TableCell className='text-center'>{permission.description || '-'}</TableCell>
+                      <TableCell className='text-center'>
                         <DropdownMenuWithTooltip
                           permission={permission}
                           onEdit={onEdit}

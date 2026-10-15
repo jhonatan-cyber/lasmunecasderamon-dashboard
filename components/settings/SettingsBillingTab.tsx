@@ -1,4 +1,6 @@
 'use client';
+import { Input } from '@/components/ui/input';
+import { Button } from '@/components/ui/button';
 
 import { useState, useEffect, useCallback } from 'react';
 import { Save, Settings as SettingsIcon } from 'lucide-react';
@@ -129,7 +131,7 @@ export function SettingsBillingTab() {
                 <label htmlFor='billing-iva' className='block text-sm font-medium mb-1'>
                   % IVA
                 </label>
-                <input
+                <Input
                   id='billing-iva'
                   type='number'
                   min='0'
@@ -145,7 +147,7 @@ export function SettingsBillingTab() {
                 <label htmlFor='billing-propina' className='block text-sm font-medium mb-1'>
                   % Propina de venta (reparto)
                 </label>
-                <input
+                <Input
                   id='billing-propina'
                   type='number'
                   min='0'
@@ -191,7 +193,7 @@ export function SettingsBillingTab() {
                     <label htmlFor='billing-split-venta' className='block text-xs font-medium mb-1'>
                       Venta %
                     </label>
-                    <input
+                    <Input
                       id='billing-split-venta'
                       type='number'
                       min='0'
@@ -210,7 +212,7 @@ export function SettingsBillingTab() {
                     >
                       Propina %
                     </label>
-                    <input
+                    <Input
                       id='billing-split-propina'
                       type='number'
                       min='0'
@@ -229,14 +231,15 @@ export function SettingsBillingTab() {
         )}
 
         <div className='mt-6 flex justify-end'>
-          <button
+          <Button
+            variant='unstyled'
             onClick={handleSave}
             disabled={saving}
             className='flex items-center gap-2 px-6 py-2 bg-black text-white rounded-full hover:bg-gray-800 disabled:opacity-50'
           >
             <Save className='h-4 w-4' />
             {saving ? 'Guardando...' : 'Guardar Configuración'}
-          </button>
+          </Button>
         </div>
       </CardContent>
     </Card>

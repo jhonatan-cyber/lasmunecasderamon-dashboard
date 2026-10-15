@@ -1,4 +1,14 @@
 'use client';
+import { NativeSelect } from '@/components/ui/native-select';
+import {
+  Table,
+  TableCaption,
+  TableHeader,
+  TableRow,
+  TableHead,
+  TableBody,
+  TableCell
+} from '@/components/ui/table';
 
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { Package, ArrowRightLeft, RefreshCw, Plus, AlertTriangle } from 'lucide-react';
@@ -241,7 +251,7 @@ export default function CleaningInventory() {
               </label>
               <label className='space-y-1 text-sm'>
                 Unidad de medida
-                <select
+                <NativeSelect
                   className={selectClass}
                   value={unidad}
                   onChange={e => setUnidad(e.target.value)}
@@ -251,7 +261,7 @@ export default function CleaningInventory() {
                       {u}
                     </option>
                   ))}
-                </select>
+                </NativeSelect>
               </label>
               <label className='space-y-1 text-sm'>
                 Stock mínimo en almacén
@@ -270,7 +280,7 @@ export default function CleaningInventory() {
             <>
               <label className='space-y-1 text-sm'>
                 Artículo
-                <select
+                <NativeSelect
                   required
                   className={selectClass}
                   value={articuloId}
@@ -282,7 +292,7 @@ export default function CleaningInventory() {
                       {a.nombre} ({a.unidad})
                     </option>
                   ))}
-                </select>
+                </NativeSelect>
               </label>
               <label className='space-y-1 text-sm'>
                 Cantidad{selected ? ` (${selected.unidad})` : ''}
@@ -299,7 +309,7 @@ export default function CleaningInventory() {
               {mode !== 'ingreso' && (
                 <label className='space-y-1 text-sm'>
                   Origen
-                  <select
+                  <NativeSelect
                     aria-label='Origen'
                     className={selectClass}
                     value={origen}
@@ -310,7 +320,7 @@ export default function CleaningInventory() {
                         {NOMBRES_UBICACION[u]}
                       </option>
                     ))}
-                  </select>
+                  </NativeSelect>
                   {selected && (
                     <span className='text-muted-foreground'>
                       Disponible: {numero(selected.stock[origen])} {selected.unidad}
@@ -321,7 +331,7 @@ export default function CleaningInventory() {
               {mode === 'traspaso' && (
                 <label className='space-y-1 text-sm'>
                   Destino
-                  <select
+                  <NativeSelect
                     className={selectClass}
                     value={destino}
                     onChange={e => setDestino(e.target.value as UbicacionLimpieza)}
@@ -331,7 +341,7 @@ export default function CleaningInventory() {
                         {NOMBRES_UBICACION[u]}
                       </option>
                     ))}
-                  </select>
+                  </NativeSelect>
                 </label>
               )}
               {mode === 'ingreso' && (
@@ -458,7 +468,7 @@ export default function CleaningInventory() {
                 value={search}
                 onChange={e => setSearch(e.target.value)}
               />
-              <select
+              <NativeSelect
                 aria-label='Filtrar ubicación'
                 className={cn(selectClass, 'sm:w-48')}
                 value={location}
@@ -470,7 +480,7 @@ export default function CleaningInventory() {
                     {NOMBRES_UBICACION[u]}
                   </option>
                 ))}
-              </select>
+              </NativeSelect>
             </div>
           )}
         </div>
@@ -478,27 +488,27 @@ export default function CleaningInventory() {
           <section className='space-y-3' aria-label='Existencias'>
             <h2 className='text-lg font-semibold'>Existencias</h2>
             <div className='overflow-x-auto rounded-xl border'>
-              <table className='w-full text-sm'>
-                <caption className='sr-only'>
+              <Table className='w-full'>
+                <TableCaption className='sr-only'>
                   Stock disponible por ubicación y cantidades en tránsito
-                </caption>
-                <thead className='bg-muted'>
-                  <tr>
-                    <th className='p-3 text-left'>Artículo</th>
+                </TableCaption>
+                <TableHeader className='bg-muted'>
+                  <TableRow>
+                    <TableHead className='text-left'>Artículo</TableHead>
                     {UBICACIONES_LIMPIEZA.filter(u => location === 'todas' || location === u).map(
                       u => (
-                        <th className='p-3 text-right' key={u}>
+                        <TableHead className='text-right' key={u}>
                           {NOMBRES_UBICACION[u]}
-                        </th>
+                        </TableHead>
                       )
                     )}
-                    <th className='p-3 text-right'>En tránsito</th>
-                  </tr>
-                </thead>
-                <tbody>
+                    <TableHead className='text-right'>En tránsito</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
                   {items.map(a => (
-                    <tr key={a.id} className='border-t'>
-                      <td className='p-3'>
+                    <TableRow key={a.id} className='border-t'>
+                      <TableCell>
                         <p className='font-medium'>{a.nombre}</p>
                         <p className='text-xs text-muted-foreground'>
                           {a.unidad} · mínimo almacén: {numero(a.minimo)}
@@ -509,28 +519,30 @@ export default function CleaningInventory() {
                             Reponer almacén
                           </Badge>
                         )}
-                      </td>
+                      </TableCell>
                       {UBICACIONES_LIMPIEZA.filter(u => location === 'todas' || location === u).map(
                         u => (
-                          <td className='p-3 text-right tabular-nums' key={u}>
+                          <TableCell className='text-right tabular-nums' key={u}>
                             {numero(a.stock[u])}
-                          </td>
+                          </TableCell>
                         )
                       )}
-                      <td className='p-3 text-right tabular-nums'>{numero(a.en_transito)}</td>
-                    </tr>
+                      <TableCell className='text-right tabular-nums'>
+                        {numero(a.en_transito)}
+                      </TableCell>
+                    </TableRow>
                   ))}
                   {!items.length && (
-                    <tr>
-                      <td colSpan={6} className='p-6 text-center text-muted-foreground'>
+                    <TableRow>
+                      <TableCell colSpan={6} className='text-center text-muted-foreground'>
                         {search
                           ? 'No hay coincidencias.'
                           : 'Registra el primer artículo para comenzar.'}
-                      </td>
-                    </tr>
+                      </TableCell>
+                    </TableRow>
                   )}
-                </tbody>
-              </table>
+                </TableBody>
+              </Table>
             </div>
           </section>
         </TabsContent>
@@ -542,9 +554,9 @@ export default function CleaningInventory() {
               consumos).
             </p>
             <div className='overflow-x-auto rounded-xl border'>
-              <table className='w-full text-sm'>
-                <thead className='bg-muted'>
-                  <tr>
+              <Table className='w-full'>
+                <TableHeader className='bg-muted'>
+                  <TableRow>
                     {[
                       'Fecha',
                       'Artículo',
@@ -554,31 +566,31 @@ export default function CleaningInventory() {
                       'Estado',
                       'Responsables / detalle'
                     ].map(t => (
-                      <th className='p-3 text-left' key={t}>
+                      <TableHead className='text-left' key={t}>
                         {t}
-                      </th>
+                      </TableHead>
                     ))}
-                  </tr>
-                </thead>
-                <tbody>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
                   {(data?.movimientos || []).map(m => (
-                    <tr key={m.id} className='border-t'>
-                      <td className='whitespace-nowrap p-3'>{fecha(m.fecha)}</td>
-                      <td className='p-3'>{m.articulo}</td>
-                      <td className='p-3 capitalize'>{m.tipo}</td>
-                      <td className='whitespace-nowrap p-3'>
+                    <TableRow key={m.id} className='border-t'>
+                      <TableCell className='whitespace-nowrap'>{fecha(m.fecha)}</TableCell>
+                      <TableCell>{m.articulo}</TableCell>
+                      <TableCell className='capitalize'>{m.tipo}</TableCell>
+                      <TableCell className='whitespace-nowrap'>
                         {numero(m.cantidad)} {m.unidad}
-                      </td>
-                      <td className='whitespace-nowrap p-3'>
+                      </TableCell>
+                      <TableCell className='whitespace-nowrap'>
                         {m.origen ? NOMBRES_UBICACION[m.origen] : 'Proveedor'} →{' '}
                         {m.destino ? NOMBRES_UBICACION[m.destino] : 'Consumo'}
-                      </td>
-                      <td className='p-3'>
+                      </TableCell>
+                      <TableCell>
                         <Badge variant={m.estado === 'pendiente' ? 'outline' : 'secondary'}>
                           {m.estado}
                         </Badge>
-                      </td>
-                      <td className='p-3'>
+                      </TableCell>
+                      <TableCell>
                         <p>
                           Envía/registra: {m.creador_nombre || m.creado_por}
                           {m.recibido_por
@@ -590,18 +602,18 @@ export default function CleaningInventory() {
                         {m.costo_unitario !== null && (
                           <p>Costo/unidad: {numero(m.costo_unitario)}</p>
                         )}
-                      </td>
-                    </tr>
+                      </TableCell>
+                    </TableRow>
                   ))}
                   {!data?.movimientos.length && (
-                    <tr>
-                      <td colSpan={7} className='p-6 text-center text-muted-foreground'>
+                    <TableRow>
+                      <TableCell colSpan={7} className='text-center text-muted-foreground'>
                         Todavía no hay movimientos.
-                      </td>
-                    </tr>
+                      </TableCell>
+                    </TableRow>
                   )}
-                </tbody>
-              </table>
+                </TableBody>
+              </Table>
             </div>
           </section>
         </TabsContent>

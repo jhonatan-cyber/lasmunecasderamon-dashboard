@@ -432,37 +432,22 @@ export function ContainerReturnsPanel() {
 
           <div className='bg-white dark:bg-slate-900/40 rounded-3xl shadow-md overflow-hidden'>
             <div className='overflow-x-auto'>
-              <Table className='min-w-full text-base text-center'>
-                <TableHeader className='bg-gray-100 dark:bg-slate-900/50'>
-                  <TableRow className='hover:bg-transparent border-gray-100 dark:border-gray-800'>
-                    <TableHead className='py-4 px-5 text-xs uppercase text-gray-500'>
-                      Entrega
-                    </TableHead>
-                    <TableHead className='py-4 px-5 text-xs uppercase text-gray-500'>SKU</TableHead>
-                    <TableHead className='py-4 px-5 text-xs uppercase text-gray-500'>
-                      Producto
-                    </TableHead>
-                    <TableHead className='py-4 px-5 text-xs uppercase text-gray-500'>
-                      Presentación
-                    </TableHead>
-                    <TableHead className='py-4 px-5 text-xs uppercase text-gray-500'>
-                      Entregado por
-                    </TableHead>
-                    <TableHead className='py-4 px-5 text-xs uppercase text-gray-500'>
-                      Recepción
-                    </TableHead>
-                    <TableHead className='py-4 px-5 text-xs uppercase text-gray-500'>
-                      Acción
-                    </TableHead>
+              <Table className='min-w-full text-center'>
+                <TableHeader>
+                  <TableRow className='hover:bg-transparent'>
+                    <TableHead>Entrega</TableHead>
+                    <TableHead>SKU</TableHead>
+                    <TableHead>Producto</TableHead>
+                    <TableHead>Presentación</TableHead>
+                    <TableHead>Entregado por</TableHead>
+                    <TableHead>Recepción</TableHead>
+                    <TableHead>Acción</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
                   {visibles.length === 0 ? (
                     <TableRow key='empty'>
-                      <TableCell
-                        colSpan={7}
-                        className='text-center py-8 text-gray-400 text-sm sm:text-base bg-white'
-                      >
+                      <TableCell colSpan={7} className='text-center sm:text-base bg-white'>
                         {loading
                           ? 'Cargando...'
                           : soloPendientes
@@ -472,30 +457,27 @@ export function ContainerReturnsPanel() {
                     </TableRow>
                   ) : (
                     visibles.map(d => (
-                      <TableRow
-                        key={d.id}
-                        className='border-b bg-white hover:bg-gray-50 transition-colors dark:bg-slate-900/40'
-                      >
-                        <TableCell className='py-3 px-2 sm:px-4 text-center text-xs sm:text-sm whitespace-nowrap'>
+                      <TableRow key={d.id} className='border-b transition-colors'>
+                        <TableCell className='sm:px-4 text-center sm:text-sm whitespace-nowrap'>
                           <span>{fechaHora(d.fecha_devolucion).split(',')[0]}</span>
                           <br />
                           <span className='text-gray-400'>
                             {fechaHora(d.fecha_devolucion).split(',')[1]?.trim() || ''}
                           </span>
                         </TableCell>
-                        <TableCell className='py-3 px-2 sm:px-4 text-center font-mono text-xs sm:text-sm'>
+                        <TableCell className='sm:px-4 text-center font-mono sm:text-sm'>
                           {d.codigo}
                         </TableCell>
-                        <TableCell className='py-3 px-2 sm:px-4 text-center text-xs sm:text-sm font-medium'>
+                        <TableCell className='sm:px-4 text-center sm:text-sm font-medium'>
                           {d.producto_nombre || '—'}
                         </TableCell>
-                        <TableCell className='py-3 px-2 sm:px-4 text-center text-xs sm:text-sm'>
+                        <TableCell className='sm:px-4 text-center sm:text-sm'>
                           {d.presentacion_nombre || '—'}
                         </TableCell>
-                        <TableCell className='py-3 px-2 sm:px-4 text-center text-xs sm:text-sm'>
+                        <TableCell className='sm:px-4 text-center sm:text-sm'>
                           {nombreDe(d.usuario_nombre, d.usuario_apellido, d.usuario_nick)}
                         </TableCell>
-                        <TableCell className='py-3 px-2 sm:px-4 text-center text-xs sm:text-sm'>
+                        <TableCell className='sm:px-4 text-center sm:text-sm'>
                           {d.pendiente_confirmacion ? (
                             <Badge className='bg-amber-100 text-amber-700 rounded-full px-2 sm:px-3 py-1 text-xs'>
                               Pendiente
@@ -518,7 +500,7 @@ export function ContainerReturnsPanel() {
                             </>
                           )}
                         </TableCell>
-                        <TableCell className='py-3 px-2 sm:px-4 text-center'>
+                        <TableCell className='sm:px-4 text-center'>
                           {d.pendiente_confirmacion ? (
                             <Button
                               type='button'

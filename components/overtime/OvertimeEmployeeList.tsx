@@ -1,4 +1,5 @@
 'use client';
+import { ListLoadError } from '@/components/shared/ListLoadError';
 
 import { useState, useMemo, useEffect } from 'react';
 import { useCurrentUser } from '@/hooks/auth/useCurrentUser';
@@ -19,7 +20,8 @@ export function OvertimeEmployeeList({ allowedRole }: Props) {
   const { user, loading: userLoading } = useCurrentUser();
   const router = useRouter();
   const [overtime, setOvertime] = useState<any[]>([]);
-  const [loading, setLoading] = useState(false);
+  const [loading, setLoading] = useState(true);
+  const [loadError, setLoadError] = useState(false);
 
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState('all');
@@ -29,14 +31,25 @@ export function OvertimeEmployeeList({ allowedRole }: Props) {
   const [page, setPage] = useState(1);
 
   const fetchOvertime = async () => {
+    setLoadError(false);
     setLoading(true);
     try {
       const res = await fetch('/api/overtime/user');
       const data = await res.json();
+      if (!res.ok || !data.success || !Array.isArray(data.data))
+        throw new Error('No se pudieron cargar los horas extras');
       if (data.success) {
-        setOvertime(data.data || []);
+        setOvertime(
+          data.data.map((row: any) => ({
+            ...row,
+            total: Number(row.total ?? 0),
+            hora: Number(row.hora ?? 0),
+            estado: Number(row.estado ?? 0)
+          }))
+        );
       }
     } catch (error) {
+      setLoadError(true);
       logger.captureException(error, { context: 'OvertimeEmployeeList:fetchOvertime' });
     } finally {
       setLoading(false);
@@ -44,10 +57,10 @@ export function OvertimeEmployeeList({ allowedRole }: Props) {
   };
 
   useEffect(() => {
-    if (user && !userLoading) {
+    if (user && !userLoading && user.role?.toLowerCase() === allowedRole) {
       fetchOvertime();
     }
-  }, [user, userLoading]);
+  }, [user, userLoading, allowedRole]);
 
   const processedOvertime = useMemo(() => {
     const data = overtime || [];
@@ -71,6 +84,7 @@ export function OvertimeEmployeeList({ allowedRole }: Props) {
         bValue = new Date(bValue || 0).getTime();
       }
 
+      if (aValue === bValue) return 0;
       if (sortOrder === 'asc') return aValue > bValue ? 1 : -1;
       return aValue < bValue ? 1 : -1;
     });
@@ -86,6 +100,10 @@ export function OvertimeEmployeeList({ allowedRole }: Props) {
     setSortOrder('desc');
     setPage(1);
   };
+
+  useEffect(() => {
+    setPage(1);
+  }, [searchTerm, statusFilter, sortBy, sortOrder, pageSize]);
 
   if (userLoading) {
     return (
@@ -114,6 +132,11 @@ export function OvertimeEmployeeList({ allowedRole }: Props) {
       </div>
     );
   }
+
+  if (loadError)
+    return (
+      <ListLoadError message='No se pudieron cargar tus horas extras.' onRetry={fetchOvertime} />
+    );
 
   return (
     <div className='p-6 space-y-6'>

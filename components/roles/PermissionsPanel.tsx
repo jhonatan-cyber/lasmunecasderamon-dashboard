@@ -1,4 +1,5 @@
 'use client';
+import { Input } from '@/components/ui/input';
 
 /* eslint-disable */
 import { useState, useEffect } from 'react';
@@ -262,7 +263,7 @@ export function PermissionsPanel({ selectedRole }: PermissionsPanelProps) {
                       >
                         <div className='flex-1'>
                           <div className='flex items-center gap-2'>
-                            <input
+                            <Input
                               type='checkbox'
                               checked={selectedPermissions.includes(permission.id.toString())}
                               onChange={() => handlePermissionToggle(permission.id.toString())}

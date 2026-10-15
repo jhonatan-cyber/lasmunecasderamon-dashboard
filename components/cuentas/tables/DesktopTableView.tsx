@@ -41,27 +41,19 @@ export const DesktopTableView = React.memo(function DesktopTableView({
     <div className='hidden lg:block'>
       <div className='bg-white dark:bg-slate-900/40 backdrop-blur-xs rounded-3xl border-none shadow-md overflow-hidden'>
         <div className='overflow-x-auto'>
-          <Table className='min-w-full text-base text-center'>
-            <TableHeader className='bg-gray-100 dark:bg-slate-900/50'>
-              <TableRow className='hover:bg-transparent border-gray-100 dark:border-gray-800'>
-                <TableHead className='py-4 px-5 text-xs uppercase text-gray-500'>Código</TableHead>
-                <TableHead className='py-4 px-5 text-xs uppercase text-gray-500'>Cliente</TableHead>
-                <TableHead className='py-4 px-5 text-xs uppercase text-gray-500'>
-                  Habitación
-                </TableHead>
-                <TableHead className='py-4 px-5 text-xs uppercase text-gray-500'>
-                  Sub Total
-                </TableHead>
-                <TableHead className='py-4 px-5 text-xs uppercase text-gray-500'>
-                  Comisión
-                </TableHead>
-                <TableHead className='py-4 px-5 text-xs uppercase text-gray-500'>Total</TableHead>
-                <TableHead className='py-4 px-5 text-xs uppercase text-gray-500'>Estado</TableHead>
-                <TableHead className='py-4 px-5 text-xs uppercase text-gray-500'>Tiempo</TableHead>
-                <TableHead className='py-4 px-5 text-xs uppercase text-gray-500'>Fecha</TableHead>
-                <TableHead className='py-4 px-5 text-xs uppercase text-gray-500'>
-                  Acciones
-                </TableHead>
+          <Table className='min-w-full text-center'>
+            <TableHeader>
+              <TableRow className='hover:bg-transparent'>
+                <TableHead>Código</TableHead>
+                <TableHead>Cliente</TableHead>
+                <TableHead>Habitación</TableHead>
+                <TableHead>Sub Total</TableHead>
+                <TableHead>Comisión</TableHead>
+                <TableHead>Total</TableHead>
+                <TableHead>Estado</TableHead>
+                <TableHead>Tiempo</TableHead>
+                <TableHead>Fecha</TableHead>
+                <TableHead>Acciones</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
@@ -70,20 +62,20 @@ export const DesktopTableView = React.memo(function DesktopTableView({
                   key={cuenta.id_cuenta}
                   className={`border-b transition-colors hover:bg-gray-50 dark:hover:bg-slate-800/30 border-gray-100 dark:border-gray-800 ${idx === 0 ? 'first:rounded-t-xl' : ''} ${idx === rows.length - 1 ? 'last:rounded-b-xl' : ''}`}
                 >
-                  <TableCell className='font-medium text-sm text-left'>{cuenta.codigo}</TableCell>
-                  <TableCell className='text-sm text-left'>
+                  <TableCell className='font-medium text-left'>{cuenta.codigo}</TableCell>
+                  <TableCell className='text-left'>
                     {cuenta.cliente_nombre || `Cliente ${cuenta.cliente_id}`}
                   </TableCell>
-                  <TableCell className='text-sm text-left'>
+                  <TableCell className='text-left'>
                     {cuenta.habitacion_numero || cuenta.habitacion_id || 'N/A'}
                   </TableCell>
-                  <TableCell className='text-sm text-left'>
+                  <TableCell className='text-left'>
                     {formatCurrencyNoDecimals(cuenta.sub_total)}
                   </TableCell>
-                  <TableCell className='text-sm text-left'>
+                  <TableCell className='text-left'>
                     {formatCurrencyNoDecimals(cuenta.total_comision)}
                   </TableCell>
-                  <TableCell className='font-bold text-sm text-left'>
+                  <TableCell className='font-bold text-left'>
                     {formatCurrencyNoDecimals(cuenta.total)}
                   </TableCell>
                   <TableCell>
@@ -92,10 +84,10 @@ export const DesktopTableView = React.memo(function DesktopTableView({
                       return <Badge variant={estadoBadge.variant}>{estadoBadge.label}</Badge>;
                     })()}
                   </TableCell>
-                  <TableCell className='text-sm text-left'>
+                  <TableCell className='text-left'>
                     <CuentaTimerStatus cuenta={cuenta} compact />
                   </TableCell>
-                  <TableCell className='text-sm text-gray-500 text-left'>
+                  <TableCell className='text-left'>
                     {formatShortDmyDateEs(cuenta.fecha_crea)}
                   </TableCell>
                   <TableCell>

@@ -132,46 +132,29 @@ export function CajaOperationsTables({
             <div className='overflow-x-auto'>
               <Table>
                 <TableHeader>
-                  <TableRow className='border-gray-200 dark:border-gray-700'>
-                    <TableHead className='text-xs sm:text-sm text-gray-700 dark:text-gray-300'>
-                      CLIENTE
-                    </TableHead>
-                    <TableHead className='text-xs sm:text-sm text-gray-700 dark:text-gray-300'>
-                      HABITACIÓN
-                    </TableHead>
-                    <TableHead className='text-xs sm:text-sm text-gray-700 dark:text-gray-300'>
-                      CATEGORÍA
-                    </TableHead>
-                    <TableHead className='text-right text-xs sm:text-sm text-gray-700 dark:text-gray-300'>
-                      CANTIDAD
-                    </TableHead>
-                    <TableHead className='text-right text-xs sm:text-sm text-gray-700 dark:text-gray-300'>
-                      PRECIO
-                    </TableHead>
-                    <TableHead className='text-right text-xs sm:text-sm text-gray-700 dark:text-gray-300 whitespace-nowrap'>
+                  <TableRow>
+                    <TableHead className='sm:text-sm'>CLIENTE</TableHead>
+                    <TableHead className='sm:text-sm'>HABITACIÓN</TableHead>
+                    <TableHead className='sm:text-sm'>CATEGORÍA</TableHead>
+                    <TableHead className='text-right sm:text-sm'>CANTIDAD</TableHead>
+                    <TableHead className='text-right sm:text-sm'>PRECIO</TableHead>
+                    <TableHead className='text-right sm:text-sm whitespace-nowrap'>
                       PROPINA ({propinaPct}%)
                     </TableHead>
-                    <TableHead className='text-xs sm:text-sm text-gray-700 dark:text-gray-300'>
-                      FECHA
-                    </TableHead>
-                    <TableHead className='text-xs sm:text-sm text-gray-700 dark:text-gray-300'>
-                      MÉTODO PAGO
-                    </TableHead>
-                    <TableHead className='text-right text-xs sm:text-sm text-gray-700 dark:text-gray-300 font-bold whitespace-nowrap'>
+                    <TableHead className='sm:text-sm'>FECHA</TableHead>
+                    <TableHead className='sm:text-sm'>MÉTODO PAGO</TableHead>
+                    <TableHead className='text-right sm:text-sm font-bold whitespace-nowrap'>
                       TOTAL VENTAS
                     </TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
                   {ventas.map((venta, index) => (
-                    <TableRow
-                      key={index}
-                      className='border-gray-100 dark:border-gray-800 hover:bg-white/50 dark:hover:bg-gray-900 transition-colors'
-                    >
-                      <TableCell className='text-xs sm:text-sm font-medium text-gray-900 dark:text-gray-100'>
+                    <TableRow key={index} className='hover:bg-white/50 transition-colors'>
+                      <TableCell className='sm:text-sm font-medium'>
                         {venta.cliente_nombre || 'Cliente General'}
                       </TableCell>
-                      <TableCell className='text-xs sm:text-sm'>
+                      <TableCell className='sm:text-sm'>
                         <Badge
                           variant='outline'
                           className='text-[10px] font-bold dark:border-gray-700'
@@ -179,22 +162,22 @@ export function CajaOperationsTables({
                           {venta.habitacion_nombre || 'Barra'}
                         </Badge>
                       </TableCell>
-                      <TableCell className='text-xs sm:text-sm capitalize dark:text-gray-300'>
+                      <TableCell className='sm:text-sm capitalize'>
                         {venta.categoria?.toLowerCase()}
                       </TableCell>
-                      <TableCell className='text-right text-xs sm:text-sm font-bold dark:text-gray-200'>
+                      <TableCell className='text-right sm:text-sm font-bold'>
                         {venta.cantidad}
                       </TableCell>
-                      <TableCell className='text-right text-xs sm:text-sm text-gray-600 dark:text-gray-400'>
+                      <TableCell className='text-right sm:text-sm'>
                         {formatCurrencyNoDecimals(venta.precio_unitario)}
                       </TableCell>
-                      <TableCell className='text-right text-xs sm:text-sm text-orange-600 font-medium'>
+                      <TableCell className='text-right sm:text-sm text-orange-600 font-medium'>
                         {formatCurrencyNoDecimals(venta.propina)}
                       </TableCell>
-                      <TableCell className='text-xs sm:text-sm text-gray-500 dark:text-gray-400'>
+                      <TableCell className='sm:text-sm'>
                         {formatSoloHora(venta.fecha_venta)}
                       </TableCell>
-                      <TableCell className='text-xs sm:text-sm capitalize'>
+                      <TableCell className='sm:text-sm capitalize'>
                         <Badge
                           variant='secondary'
                           className='text-[10px] py-0 dark:bg-gray-700 dark:text-gray-200'
@@ -202,7 +185,7 @@ export function CajaOperationsTables({
                           {venta.metodo_pago || 'efectivo'}
                         </Badge>
                       </TableCell>
-                      <TableCell className='text-right text-xs sm:text-sm font-black text-gray-900 dark:text-gray-100'>
+                      <TableCell className='text-right sm:text-sm font-black'>
                         {formatCurrencyNoDecimals(venta.total_venta)}
                       </TableCell>
                     </TableRow>
@@ -240,55 +223,32 @@ export function CajaOperationsTables({
             <div className='overflow-x-auto'>
               <Table>
                 <TableHeader>
-                  <TableRow className='border-gray-200 dark:border-gray-700'>
-                    <TableHead className='text-xs sm:text-sm text-gray-700 dark:text-gray-300'>
-                      CLIENTE
-                    </TableHead>
-                    <TableHead className='text-xs sm:text-sm text-gray-700 dark:text-gray-300'>
-                      ANFITRIONAS
-                    </TableHead>
-                    <TableHead className='text-xs sm:text-sm text-gray-700 dark:text-gray-300'>
-                      USUARIO
-                    </TableHead>
-                    <TableHead className='text-xs sm:text-sm text-gray-700 dark:text-gray-300'>
-                      HABITACIÓN
-                    </TableHead>
-                    <TableHead className='text-right text-xs sm:text-sm text-gray-700 dark:text-gray-300'>
-                      PRECIO SERVICIO
-                    </TableHead>
-                    <TableHead className='text-right text-xs sm:text-sm text-gray-700 dark:text-gray-300'>
-                      PRECIO HABITACIÓN
-                    </TableHead>
-                    <TableHead className='text-right text-xs sm:text-sm text-gray-700 dark:text-gray-300'>
-                      IVA
-                    </TableHead>
-                    <TableHead className='text-xs sm:text-sm text-gray-700 dark:text-gray-300'>
-                      FECHA
-                    </TableHead>
-                    <TableHead className='text-xs sm:text-sm text-gray-700 dark:text-gray-300'>
-                      MÉTODO PAGO
-                    </TableHead>
-                    <TableHead className='text-right text-xs sm:text-sm text-gray-700 dark:text-gray-300'>
-                      TOTAL
-                    </TableHead>
+                  <TableRow>
+                    <TableHead className='sm:text-sm'>CLIENTE</TableHead>
+                    <TableHead className='sm:text-sm'>ANFITRIONAS</TableHead>
+                    <TableHead className='sm:text-sm'>USUARIO</TableHead>
+                    <TableHead className='sm:text-sm'>HABITACIÓN</TableHead>
+                    <TableHead className='text-right sm:text-sm'>PRECIO SERVICIO</TableHead>
+                    <TableHead className='text-right sm:text-sm'>PRECIO HABITACIÓN</TableHead>
+                    <TableHead className='text-right sm:text-sm'>IVA</TableHead>
+                    <TableHead className='sm:text-sm'>FECHA</TableHead>
+                    <TableHead className='sm:text-sm'>MÉTODO PAGO</TableHead>
+                    <TableHead className='text-right sm:text-sm'>TOTAL</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
                   {servicios.map((servicio, index) => (
-                    <TableRow
-                      key={index}
-                      className='border-gray-100 dark:border-gray-800 hover:bg-white/50 dark:hover:bg-gray-900 transition-colors'
-                    >
-                      <TableCell className='text-xs sm:text-sm font-medium text-gray-900 dark:text-gray-100'>
+                    <TableRow key={index} className='hover:bg-white/50 transition-colors'>
+                      <TableCell className='sm:text-sm font-medium'>
                         {servicio.cliente_nombre || 'N/A'}
                       </TableCell>
-                      <TableCell className='text-xs sm:text-sm text-gray-600 dark:text-gray-400 italic'>
+                      <TableCell className='sm:text-sm italic'>
                         {servicio.anfitrionas_nombres || 'Sin asignar'}
                       </TableCell>
-                      <TableCell className='text-xs sm:text-sm text-gray-600 dark:text-gray-400'>
+                      <TableCell className='sm:text-sm'>
                         {servicio.usuario_nombre || 'Admin'}
                       </TableCell>
-                      <TableCell className='text-xs sm:text-sm'>
+                      <TableCell className='sm:text-sm'>
                         <Badge
                           variant='outline'
                           className='text-[10px] font-bold dark:border-gray-700'
@@ -296,7 +256,7 @@ export function CajaOperationsTables({
                           {servicio.habitacion_nombre || 'N/A'}
                         </Badge>
                       </TableCell>
-                      <TableCell className='text-right text-xs sm:text-sm font-semibold text-emerald-600 dark:text-emerald-400'>
+                      <TableCell className='text-right sm:text-sm font-semibold text-emerald-600 dark:text-emerald-400'>
                         <div className='flex flex-col items-end gap-1'>
                           <span>{formatCurrencyNoDecimals(servicio.precio_servicio || 0)}</span>
                           <span className='text-xs text-gray-500 dark:text-gray-400'>
@@ -306,7 +266,7 @@ export function CajaOperationsTables({
                           </span>
                         </div>
                       </TableCell>
-                      <TableCell className='text-right text-xs sm:text-sm font-semibold text-blue-600 dark:text-blue-400'>
+                      <TableCell className='text-right sm:text-sm font-semibold text-blue-600 dark:text-blue-400'>
                         <div className='flex flex-col items-end gap-1'>
                           <span>{formatCurrencyNoDecimals(servicio.precio_habitacion || 0)}</span>
                           <span className='text-xs text-gray-500 dark:text-gray-400'>
@@ -316,10 +276,10 @@ export function CajaOperationsTables({
                           </span>
                         </div>
                       </TableCell>
-                      <TableCell className='text-right text-xs sm:text-sm font-semibold text-purple-600 dark:text-purple-400'>
+                      <TableCell className='text-right sm:text-sm font-semibold text-purple-600 dark:text-purple-400'>
                         {formatCurrencyNoDecimals(servicio.iva || 0)}
                       </TableCell>
-                      <TableCell className='text-xs sm:text-sm text-gray-900 dark:text-gray-100'>
+                      <TableCell className='sm:text-sm'>
                         <div className='flex flex-col'>
                           <span>{formatFechaLarga(servicio.fecha_crea)}</span>
                           <span className='text-gray-500 dark:text-gray-400 text-xs'>
@@ -327,7 +287,7 @@ export function CajaOperationsTables({
                           </span>
                         </div>
                       </TableCell>
-                      <TableCell className='text-xs sm:text-sm capitalize'>
+                      <TableCell className='sm:text-sm capitalize'>
                         <Badge
                           variant='secondary'
                           className='text-xs px-2 py-0.5 dark:bg-gray-700 dark:text-gray-200'
@@ -335,7 +295,7 @@ export function CajaOperationsTables({
                           {servicio.metodo_pago || 'efectivo'}
                         </Badge>
                       </TableCell>
-                      <TableCell className='text-right text-xs sm:text-sm font-bold text-gray-900 dark:text-gray-100'>
+                      <TableCell className='text-right sm:text-sm font-bold'>
                         {formatCurrencyNoDecimals(servicio.total || 0)}
                       </TableCell>
                     </TableRow>

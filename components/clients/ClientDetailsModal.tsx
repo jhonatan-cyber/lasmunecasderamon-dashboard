@@ -152,32 +152,19 @@ function ClientDetails({ client, onClose }: { client: Client; onClose: () => voi
           ) : (
             <div className='rounded-xl border dark:border-gray-800 overflow-hidden bg-white dark:bg-gray-950 shadow-xs overflow-x-auto'>
               <Table>
-                <TableHeader className='bg-gray-50 dark:bg-gray-900/50'>
+                <TableHeader>
                   <TableRow>
-                    <TableHead className='w-35 text-xs uppercase font-bold text-gray-500 dark:text-gray-400'>
-                      FECHA
-                    </TableHead>
-                    <TableHead className='w-25 text-xs uppercase font-bold text-gray-500 dark:text-gray-400'>
-                      TIPO
-                    </TableHead>
-                    <TableHead className='text-xs uppercase font-bold text-gray-500 dark:text-gray-400'>
-                      DETALLES
-                    </TableHead>
-                    <TableHead className='text-xs uppercase font-bold text-gray-500 dark:text-gray-400'>
-                      PERSONAL
-                    </TableHead>
-                    <TableHead className='text-right text-xs uppercase font-bold text-gray-500 dark:text-gray-400'>
-                      MONTO
-                    </TableHead>
+                    <TableHead className='w-35 font-bold'>FECHA</TableHead>
+                    <TableHead className='w-25 font-bold'>TIPO</TableHead>
+                    <TableHead className='font-bold'>DETALLES</TableHead>
+                    <TableHead className='font-bold'>PERSONAL</TableHead>
+                    <TableHead className='text-right font-bold'>MONTO</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
                   {history.map(item => (
-                    <TableRow
-                      key={item.id}
-                      className='hover:bg-gray-50/50 dark:hover:bg-gray-900/30 transition-colors'
-                    >
-                      <TableCell className='text-xs font-mono text-gray-600 dark:text-gray-400'>
+                    <TableRow key={item.id} className='transition-colors'>
+                      <TableCell className='font-mono'>
                         {formatShortDate(item.fecha_crea)}
                       </TableCell>
                       <TableCell>

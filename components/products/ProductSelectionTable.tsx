@@ -35,22 +35,12 @@ export const ProductSelectionTable: React.FC<ProductSelectionTableProps> = ({
         <Table className={CUENTA_TABLE_CLASS}>
           <TableHeader className={CUENTA_TABLE_HEADER_CLASS}>
             <TableRow className={CUENTA_TABLE_HEADER_ROW_CLASS}>
-              <TableHead className='py-4 px-5 text-xs uppercase text-gray-500'>Producto</TableHead>
-              <TableHead className='py-4 px-5 text-xs uppercase text-gray-500 text-center'>
-                Precio
-              </TableHead>
-              <TableHead className='py-4 px-5 text-xs uppercase text-gray-500 text-center'>
-                Categoría
-              </TableHead>
-              <TableHead className='py-4 px-5 text-xs uppercase text-gray-500 text-center'>
-                Comisión
-              </TableHead>
-              <TableHead className='py-4 px-5 text-xs uppercase text-gray-500 text-center'>
-                Cantidad
-              </TableHead>
-              <TableHead className='py-4 px-5 text-xs uppercase text-gray-500 text-center'>
-                Acciones
-              </TableHead>
+              <TableHead>Producto</TableHead>
+              <TableHead className='text-center'>Precio</TableHead>
+              <TableHead className='text-center'>Categoría</TableHead>
+              <TableHead className='text-center'>Comisión</TableHead>
+              <TableHead className='text-center'>Cantidad</TableHead>
+              <TableHead className='text-center'>Acciones</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>

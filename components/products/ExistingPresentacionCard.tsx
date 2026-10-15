@@ -1,4 +1,5 @@
 'use client';
+import { Button } from '@/components/ui/button';
 
 import { useState } from 'react';
 import { Input } from '@/components/ui/input';
@@ -117,7 +118,8 @@ export function ExistingPresentacionCard({
                   disabled={isLoading || guardandoPres}
                 />
               </div>
-              <button
+              <Button
+                variant='unstyled'
                 type='button'
                 disabled={isLoading || guardandoPres || !urlInput.trim()}
                 onClick={() => {
@@ -127,7 +129,7 @@ export function ExistingPresentacionCard({
                 className='shrink-0 rounded-full border px-3 py-2 text-xs font-semibold disabled:opacity-50'
               >
                 Aplicar URL
-              </button>
+              </Button>
             </div>
             <p className='text-xs text-muted-foreground'>
               JPG, PNG, GIF o WEBP, hasta 5 MB. La imagen se guarda al seleccionar el archivo o
@@ -266,22 +268,24 @@ export function ExistingPresentacionCard({
             onToggle={toggleCodigoSeleccionado}
           />
           <div className='flex justify-end gap-2'>
-            <button
+            <Button
+              variant='unstyled'
               type='button'
               onClick={cancelEditPres}
               disabled={guardandoPres}
               className='px-3 py-1.5 text-xs font-semibold rounded-full border border-gray-300 dark:border-slate-600 disabled:opacity-50'
             >
               Cancelar
-            </button>
-            <button
+            </Button>
+            <Button
+              variant='unstyled'
               type='button'
               onClick={saveEditPres}
               disabled={guardandoPres}
               className='px-3 py-1.5 text-xs font-semibold rounded-full bg-black text-white dark:bg-white dark:text-black disabled:opacity-50'
             >
               {guardandoPres ? 'Guardando...' : 'Guardar'}
-            </button>
+            </Button>
           </div>
         </div>
       ) : (
@@ -337,7 +341,7 @@ export function ExistingPresentacionCard({
               title='Cambiar foto'
               className='p-2 rounded-full text-gray-400 hover:text-purple-600 hover:bg-purple-50 dark:hover:bg-purple-900/20 transition-colors cursor-pointer shrink-0'
             >
-              <input
+              <Input
                 id={`pres-foto-${p.id}`}
                 type='file'
                 accept='image/*'
@@ -351,7 +355,8 @@ export function ExistingPresentacionCard({
               />
               <Camera className='w-4 h-4' />
             </label>
-            <button
+            <Button
+              variant='unstyled'
               type='button'
               onClick={() => startEditPres(p)}
               disabled={isLoading}
@@ -359,8 +364,9 @@ export function ExistingPresentacionCard({
               className='p-2 rounded-full text-gray-400 hover:text-orange-600 hover:bg-orange-50 dark:hover:bg-orange-900/20 transition-colors disabled:opacity-50 shrink-0'
             >
               <Pencil className='w-4 h-4' />
-            </button>
-            <button
+            </Button>
+            <Button
+              variant='unstyled'
               type='button'
               onClick={() => deleteExistente(p.id)}
               disabled={isLoading}
@@ -368,7 +374,7 @@ export function ExistingPresentacionCard({
               className='p-2 rounded-full text-gray-400 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors disabled:opacity-50 shrink-0'
             >
               <Trash2 className='w-4 h-4' />
-            </button>
+            </Button>
           </div>
           <div className='flex items-center gap-2 pl-6'>
             <Input
@@ -379,7 +385,8 @@ export function ExistingPresentacionCard({
               inputMode='numeric'
               className='h-9 text-sm'
             />
-            <button
+            <Button
+              variant='unstyled'
               type='button'
               onClick={() => agregarStock(p.id)}
               disabled={isLoading || agregandoStock}
@@ -388,7 +395,7 @@ export function ExistingPresentacionCard({
             >
               <Plus className='w-3.5 h-3.5' />
               Stock
-            </button>
+            </Button>
           </div>
           <div className='flex items-center gap-2 pl-6'>
             <div className='relative flex-1'>
@@ -403,7 +410,8 @@ export function ExistingPresentacionCard({
                 className='h-9 pl-9 text-sm'
               />
             </div>
-            <button
+            <Button
+              variant='unstyled'
               type='button'
               onClick={() => {
                 updateExistenteFotoUrl(p.id, urlInput || '');
@@ -414,7 +422,7 @@ export function ExistingPresentacionCard({
               className='px-3 py-2 text-xs font-semibold rounded-full border border-gray-300 dark:border-slate-600 hover:scale-105 transition-all disabled:opacity-50 shrink-0'
             >
               Aplicar
-            </button>
+            </Button>
           </div>
         </>
       )}

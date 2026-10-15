@@ -1,4 +1,5 @@
 'use client';
+import { Button } from '@/components/ui/button';
 
 import { Card, CardContent } from '@/components/ui/card';
 import {
@@ -7,7 +8,7 @@ import {
   TableCell,
   TableHead,
   TableHeader,
-  TableRow,
+  TableRow
 } from '@/components/ui/table';
 import { Calendar, Clock } from 'lucide-react';
 import { formatCurrencyNoDecimals } from '@/lib/utils/formatters';
@@ -44,7 +45,7 @@ export function AttendanceTableSection({
   onPageSizeChange,
   formatDate,
   formatTime,
-  renderStatusBadge,
+  renderStatusBadge
 }: AttendanceTableSectionProps) {
   if (loading) {
     return (
@@ -91,7 +92,7 @@ export function AttendanceTableSection({
 
       {/* Mobile cards */}
       <div className='lg:hidden space-y-3'>
-        {paginatedAsistencias.map((asistencia) => (
+        {paginatedAsistencias.map(asistencia => (
           <Card key={asistencia.id_asistencia} className='shadow-xs'>
             <CardContent className='p-4'>
               <div className='space-y-2'>
@@ -142,14 +143,14 @@ export function AttendanceTableSection({
       <div className='hidden lg:block'>
         <div className='bg-white dark:bg-slate-900/40 backdrop-blur-xs rounded-3xl border-none shadow-md overflow-hidden'>
           <div className='overflow-x-auto'>
-            <Table className='min-w-full text-base text-center'>
-              <TableHeader className='bg-gray-100 dark:bg-slate-900/50'>
-                <TableRow className='hover:bg-transparent border-gray-100 dark:border-gray-800'>
-                  <TableHead className='py-4 px-5 text-xs uppercase text-gray-500 text-start'>Fecha</TableHead>
-                  <TableHead className='py-4 px-5 text-xs uppercase text-gray-500 text-start'>Hora</TableHead>
-                  <TableHead className='py-4 px-5 text-xs uppercase text-gray-500'>Sueldo</TableHead>
-                  <TableHead className='py-4 px-5 text-xs uppercase text-gray-500'>Aporte AFP</TableHead>
-                  <TableHead className='py-4 px-5 text-xs uppercase text-gray-500'>Estado</TableHead>
+            <Table className='min-w-full text-center'>
+              <TableHeader>
+                <TableRow className='hover:bg-transparent'>
+                  <TableHead className='text-start'>Fecha</TableHead>
+                  <TableHead className='text-start'>Hora</TableHead>
+                  <TableHead>Sueldo</TableHead>
+                  <TableHead>Aporte AFP</TableHead>
+                  <TableHead>Estado</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -160,19 +161,15 @@ export function AttendanceTableSection({
                       idx === 0 ? 'first:rounded-t-xl' : ''
                     } ${idx === paginatedAsistencias.length - 1 ? 'last:rounded-b-xl' : ''}`}
                   >
-                    <TableCell className='py-3 px-5 text-sm dark:text-gray-200 text-start'>
-                      {formatDate(asistencia.fecha)}
-                    </TableCell>
-                    <TableCell className='py-3 px-5 text-sm dark:text-gray-200 text-start'>
-                      {formatTime(asistencia.hora)}
-                    </TableCell>
-                    <TableCell className='py-3 px-5 text-sm text-center text-green-600 dark:text-green-400 font-medium'>
+                    <TableCell className='text-start'>{formatDate(asistencia.fecha)}</TableCell>
+                    <TableCell className='text-start'>{formatTime(asistencia.hora)}</TableCell>
+                    <TableCell className='text-center text-green-600 dark:text-green-400 font-medium'>
                       {formatCurrencyNoDecimals(asistencia.sueldo || 0)}
                     </TableCell>
-                    <TableCell className='py-3 px-5 text-sm text-center text-blue-600 dark:text-blue-400 font-medium'>
+                    <TableCell className='text-center text-blue-600 dark:text-blue-400 font-medium'>
                       {formatCurrencyNoDecimals(asistencia.aporte || 0)}
                     </TableCell>
-                    <TableCell className='py-3 px-5 text-center'>
+                    <TableCell className='text-center'>
                       {renderStatusBadge(asistencia.estado)}
                     </TableCell>
                   </TableRow>
@@ -196,7 +193,8 @@ export function AttendanceDetailFooter({ onClose }: { onClose: () => void }) {
   return (
     <div className='shrink-0 px-6 py-4 border-t dark:border-gray-700 bg-gray-50 dark:bg-slate-900/40'>
       <div className='flex justify-center'>
-        <button
+        <Button
+          variant='unstyled'
           onClick={onClose}
           className='rounded-full px-6 py-2 border border-gray-300 dark:border-gray-600 text-sm font-medium 
             text-gray-700 dark:text-gray-300 bg-white dark:bg-transparent
@@ -204,7 +202,7 @@ export function AttendanceDetailFooter({ onClose }: { onClose: () => void }) {
             transition-all hover:scale-105'
         >
           Cerrar
-        </button>
+        </Button>
       </div>
     </div>
   );

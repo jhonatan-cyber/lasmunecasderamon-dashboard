@@ -1,4 +1,5 @@
 'use client';
+import { Button } from '@/components/ui/button';
 
 import { memo } from 'react';
 import type { CajaDetailsTab } from '@/components/caja/hooks/useCajaDetailsView';
@@ -29,7 +30,8 @@ export const CajaDetailsTabs = memo(function CajaDetailsTabs({
   return (
     <div className='flex justify-center gap-2 mx-6 mt-4 border-b pb-1 print:hidden'>
       {TABS.map(({ value, label, countKey }) => (
-        <button
+        <Button
+          variant='unstyled'
           key={value}
           onClick={() => onTabChange(value)}
           className={`px-4 py-2 text-sm font-semibold transition-all rounded-full ${
@@ -40,7 +42,7 @@ export const CajaDetailsTabs = memo(function CajaDetailsTabs({
         >
           {label}
           {countKey ? ` (${counts[countKey]})` : ''}
-        </button>
+        </Button>
       ))}
     </div>
   );

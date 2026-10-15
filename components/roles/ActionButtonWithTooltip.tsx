@@ -1,12 +1,13 @@
-import React from "react";
-import { Tooltip, TooltipTrigger, TooltipContent } from "../ui/tooltip";
+import { Button } from '@/components/ui/button';
+import React from 'react';
+import { Tooltip, TooltipTrigger, TooltipContent } from '../ui/tooltip';
 
 interface ActionButtonWithTooltipProps {
   onClick: () => void;
   children: React.ReactNode;
   tooltip: string;
   className?: string;
-  type?: "button" | "submit";
+  type?: 'button' | 'submit';
   disabled?: boolean;
 }
 
@@ -15,22 +16,23 @@ export function ActionButtonWithTooltip({
   children,
   tooltip,
   className,
-  type = "button",
-  disabled,
+  type = 'button',
+  disabled
 }: ActionButtonWithTooltipProps) {
   return (
     <Tooltip>
       <TooltipTrigger asChild>
-        <button
+        <Button
+          variant='unstyled'
           type={type}
           className={className}
           onClick={onClick}
           disabled={disabled}
         >
           {children}
-        </button>
+        </Button>
       </TooltipTrigger>
       <TooltipContent>{tooltip}</TooltipContent>
     </Tooltip>
   );
-} 
+}

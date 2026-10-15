@@ -88,24 +88,22 @@ export function CajaVentasTable({
             <div className='overflow-x-auto'>
               <Table>
                 <TableHeader>
-                  <TableRow className='bg-gray-50 dark:bg-gray-800/50'>
-                    <TableHead className='font-bold text-xs'>CLIENTE</TableHead>
-                    <TableHead className='font-bold text-xs'>HAB.</TableHead>
-                    <TableHead className='font-bold text-xs'>CAT.</TableHead>
-                    <TableHead className='font-bold text-xs text-right'>CANT.</TableHead>
-                    <TableHead className='font-bold text-xs text-right'>PRECIO</TableHead>
-                    <TableHead className='font-bold text-xs text-right'>
-                      PROPINA ({propinaPct}%)
-                    </TableHead>
-                    <TableHead className='font-bold text-xs'>HORA</TableHead>
-                    <TableHead className='font-bold text-xs'>METODO</TableHead>
-                    <TableHead className='font-bold text-xs text-right'>TOTAL</TableHead>
+                  <TableRow>
+                    <TableHead className='font-bold'>CLIENTE</TableHead>
+                    <TableHead className='font-bold'>HAB.</TableHead>
+                    <TableHead className='font-bold'>CAT.</TableHead>
+                    <TableHead className='font-bold text-right'>CANT.</TableHead>
+                    <TableHead className='font-bold text-right'>PRECIO</TableHead>
+                    <TableHead className='font-bold text-right'>PROPINA ({propinaPct}%)</TableHead>
+                    <TableHead className='font-bold'>HORA</TableHead>
+                    <TableHead className='font-bold'>METODO</TableHead>
+                    <TableHead className='font-bold text-right'>TOTAL</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
                   {getRows().map((venta: any, idx: number) => (
-                    <TableRow key={idx} className='hover:bg-gray-50 dark:hover:bg-gray-800/50'>
-                      <TableCell className='font-medium text-sm'>
+                    <TableRow key={idx}>
+                      <TableCell className='font-medium'>
                         {venta.cliente_nombre || 'General'}
                       </TableCell>
                       <TableCell>
@@ -114,21 +112,17 @@ export function CajaVentasTable({
                             (venta.habitacion_id ? 'Habitacion' : 'Barra')}
                         </Badge>
                       </TableCell>
-                      <TableCell className='text-sm capitalize text-gray-600'>
-                        {venta.item_count || 0} items
-                      </TableCell>
+                      <TableCell className='capitalize'>{venta.item_count || 0} items</TableCell>
                       <TableCell className='text-right font-bold'>
                         {venta.item_count || 0}
                       </TableCell>
-                      <TableCell className='text-right text-sm text-gray-600'>
+                      <TableCell className='text-right'>
                         {formatCurrencyNoDecimals(venta.sub_total)}
                       </TableCell>
-                      <TableCell className='text-right text-sm text-amber-600'>
+                      <TableCell className='text-right text-amber-600'>
                         {formatCurrencyNoDecimals(venta.propina)}
                       </TableCell>
-                      <TableCell className='text-sm text-gray-500'>
-                        {formatSoloHora(venta.fecha_crea)}
-                      </TableCell>
+                      <TableCell>{formatSoloHora(venta.fecha_crea)}</TableCell>
                       <TableCell>
                         <Badge variant='secondary' className='text-xs capitalize'>
                           {venta.metodo_pago || 'efectivo'}

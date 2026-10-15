@@ -12,7 +12,7 @@
     "dev:lan": "node scripts/generate-sw.js --dev && node scripts/dev-lan-auto.js",
     "dev:lan:auto": "node scripts/generate-sw.js --dev && node scripts/dev-lan-auto.js",
     "postinstall": "node -e \"if (process.env.SKIP_SW_GENERATE) process.exit(0); require('child_process').execSync('node scripts/generate-sw.js --dev', { stdio: 'inherit' })\"",
-    "lint": "eslint app/layout.tsx app/page.tsx components/layout/LayoutContent.tsx components/providers/ProtectedAppProviders.tsx lib/api/site.ts --ignore-pattern .next --ignore-pattern node_modules",
+    "lint": "eslint app/layout.tsx app/page.tsx components/layout/LayoutContent.tsx components/providers/ProtectedAppProviders.tsx lib/api/site.ts --ignore-pattern .next --ignore-pattern node_modules && node scripts/check-ui-components.cjs",
     "lint:full": "eslint . --ext .js,.jsx,.ts,.tsx --ignore-pattern .next --ignore-pattern node_modules",
     "typecheck": "tsc --noEmit -p tsconfig.typecheck.json",
     "typecheck:strict": "tsc --noEmit -p tsconfig.typecheck.json --strict",
@@ -63,7 +63,8 @@
     "arquitectura": "node scripts/arquitectura/analisis.mjs",
     "arquitectura:json": "node scripts/arquitectura/analisis.mjs --json",
     "arquitectura:limites": "node scripts/arquitectura/limites.mjs",
-    "arquitectura:excepciones": "node scripts/arquitectura/limites.mjs --listar"
+    "arquitectura:excepciones": "node scripts/arquitectura/limites.mjs --listar",
+    "check:ui-components": "node scripts/check-ui-components.cjs"
   },
   "dependencies": {
     "@dnd-kit/core": "^6.3.1",

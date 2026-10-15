@@ -1,4 +1,5 @@
 'use client';
+import { Button } from '@/components/ui/button';
 
 import { useEffect, useState, useCallback } from 'react';
 import { logger } from '@/lib/utils/logger';
@@ -243,12 +244,13 @@ export default function ServiceWorkerRegister() {
               Actualiza para obtener los últimos cambios
             </p>
           </div>
-          <button
+          <Button
+            variant='unstyled'
             onClick={applyUpdate}
             className='rounded-lg bg-blue-500 px-3 py-1.5 text-xs font-medium text-white transition-all hover:bg-blue-400 active:scale-95'
           >
             Actualizar
-          </button>
+          </Button>
         </div>
       )}
     </>

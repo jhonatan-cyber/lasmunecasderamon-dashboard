@@ -1,9 +1,10 @@
 ﻿'use client';
+import { SortSelect } from '@/components/shared/selects/SortSelect';
 
 import { Card, CardContent } from '@/components/ui/card';
 import { Label } from '@/components/ui/label';
 import { Button } from '@/components/ui/button';
-import { Trash2, SortAsc, SortDesc } from 'lucide-react';
+import { Trash2 } from 'lucide-react';
 import SearchInput from '@/components/shared/SearchInput';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { FilterSelect } from '@/components/shared/selects';
@@ -78,34 +79,16 @@ export function AdminOrdersFilters({
           </div>
 
           {}
-          <div className='w-full lg:w-[180px]'>
-            <Label className='mb-2 block text-[10px] font-black uppercase tracking-widest text-gray-400 ml-1'>
-              Ordenar por
-            </Label>
-            <div className='flex gap-1'>
-              <FilterSelect
-                value={sortBy}
-                onChange={setSortBy}
-                label=''
-                placeholder='Ordenar'
-                options={sortOptions}
-                className='flex-1'
-              />
-              <Button
-                variant='outline'
-                size='icon'
-                aria-label={sortOrder === 'asc' ? 'Ordenar descendente' : 'Ordenar ascendente'}
-                onClick={() => setSortOrder(sortOrder === 'asc' ? 'desc' : 'asc')}
-                className='h-11 w-11 rounded-full border-gray-200 dark:border-gray-800 bg-gray-100 dark:bg-slate-900/50'
-              >
-                {sortOrder === 'asc' ? (
-                  <SortAsc className='h-4 w-4' />
-                ) : (
-                  <SortDesc className='h-4 w-4' />
-                )}
-              </Button>
-            </div>
-          </div>
+          <SortSelect
+            className='w-full lg:w-[180px]'
+            field={sortBy}
+            direction={sortOrder}
+            options={sortOptions}
+            onChange={(field, direction) => {
+              setSortBy(field as typeof sortBy);
+              setSortOrder(direction);
+            }}
+          />
 
           {}
           <div className='w-full lg:w-[140px] flex gap-1 items-end'>

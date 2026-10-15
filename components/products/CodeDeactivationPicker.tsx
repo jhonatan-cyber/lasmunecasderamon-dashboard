@@ -1,4 +1,5 @@
 'use client';
+import { Input } from '@/components/ui/input';
 
 import type { UnidadCodigoItem } from '@/hooks/personal/useProductForm';
 
@@ -46,7 +47,7 @@ export function CodeDeactivationPicker({
                   : 'bg-white dark:bg-slate-800 border-gray-200 dark:border-slate-700 text-gray-600 dark:text-gray-300'
               }`}
             >
-              <input
+              <Input
                 id={`codigo-${u.id}`}
                 type='checkbox'
                 checked={checked}

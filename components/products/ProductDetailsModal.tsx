@@ -1,4 +1,12 @@
 'use client';
+import {
+  Table,
+  TableHeader,
+  TableRow,
+  TableHead,
+  TableBody,
+  TableCell
+} from '@/components/ui/table';
 
 import React, { useEffect, useState } from 'react';
 import {
@@ -267,24 +275,24 @@ export function ProductDetailsModal({
                     <section className='flex flex-col gap-3' aria-label='Precios por anfitrionas'>
                       <h3 className='font-semibold'>Precios por anfitrionas</h3>
                       <div className='overflow-x-auto'>
-                        <table className='w-full text-left text-sm'>
-                          <thead>
-                            <tr className='border-b'>
-                              <th className='p-2'>Anfitrionas</th>
-                              <th className='p-2'>Precio</th>
-                              <th className='p-2'>Comisión</th>
-                            </tr>
-                          </thead>
-                          <tbody>
+                        <Table className='w-full text-left'>
+                          <TableHeader>
+                            <TableRow className='border-b'>
+                              <TableHead>Anfitrionas</TableHead>
+                              <TableHead>Precio</TableHead>
+                              <TableHead>Comisión</TableHead>
+                            </TableRow>
+                          </TableHeader>
+                          <TableBody>
                             {tiers.map(tier => (
-                              <tr key={tier.anfitrionas} className='border-b'>
-                                <td className='p-2'>{tier.anfitrionas}</td>
-                                <td className='p-2'>{formatCurrencyCLP(tier.precio)}</td>
-                                <td className='p-2'>{formatCurrencyCLP(tier.comision)}</td>
-                              </tr>
+                              <TableRow key={tier.anfitrionas} className='border-b'>
+                                <TableCell>{tier.anfitrionas}</TableCell>
+                                <TableCell>{formatCurrencyCLP(tier.precio)}</TableCell>
+                                <TableCell>{formatCurrencyCLP(tier.comision)}</TableCell>
+                              </TableRow>
                             ))}
-                          </tbody>
-                        </table>
+                          </TableBody>
+                        </Table>
                       </div>
                     </section>
                   )}

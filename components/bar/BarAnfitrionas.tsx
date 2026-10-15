@@ -1,4 +1,13 @@
 'use client';
+import { Button } from '@/components/ui/button';
+import {
+  Table,
+  TableHeader,
+  TableRow,
+  TableHead,
+  TableBody,
+  TableCell
+} from '@/components/ui/table';
 
 import { useEffect, useState } from 'react';
 import { Users, ChevronDown } from 'lucide-react';
@@ -110,7 +119,8 @@ export function BarAnfitrionas({
           {label}
         </span>
         {isChampagne && (
-          <button
+          <Button
+            variant='unstyled'
             type='button'
             onClick={() => setOpen(v => !v)}
             aria-expanded={open}
@@ -118,7 +128,7 @@ export function BarAnfitrionas({
           >
             {open ? 'Ocultar precios' : 'Ver precios x N'}
             <ChevronDown className={cn('h-3 w-3 transition-transform', open && 'rotate-180')} />
-          </button>
+          </Button>
         )}
       </div>
       {isChampagne && open && (
@@ -126,28 +136,28 @@ export function BarAnfitrionas({
           {loading || !tiers ? (
             <p className='text-xs text-gray-400 px-3 py-2'>Cargando precios...</p>
           ) : (
-            <table className='w-full text-xs'>
-              <thead className='bg-purple-50 dark:bg-purple-900/20'>
-                <tr>
-                  <th className='px-2 py-1 font-bold text-purple-600 text-center'>N°</th>
-                  <th className='px-2 py-1 font-bold text-purple-600 text-right'>Precio</th>
-                  <th className='px-2 py-1 font-bold text-purple-600 text-right'>Comisión</th>
-                </tr>
-              </thead>
-              <tbody className='divide-y divide-purple-50 dark:divide-purple-900/20'>
+            <Table className='w-full'>
+              <TableHeader className='bg-purple-50 dark:bg-purple-900/20'>
+                <TableRow>
+                  <TableHead className='font-bold text-purple-600 text-center'>N°</TableHead>
+                  <TableHead className='font-bold text-purple-600 text-right'>Precio</TableHead>
+                  <TableHead className='font-bold text-purple-600 text-right'>Comisión</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody className='divide-y divide-purple-50 dark:divide-purple-900/20'>
                 {tiers.map(t => (
-                  <tr key={t.anfitrionas}>
-                    <td className='px-2 py-1 text-center font-bold'>{t.anfitrionas}</td>
-                    <td className='px-2 py-1 text-right tabular-nums'>
+                  <TableRow key={t.anfitrionas}>
+                    <TableCell className='text-center font-bold'>{t.anfitrionas}</TableCell>
+                    <TableCell className='text-right tabular-nums'>
                       {formatCurrencyCLP(t.precio)}
-                    </td>
-                    <td className='px-2 py-1 text-right tabular-nums text-muted-foreground'>
+                    </TableCell>
+                    <TableCell className='text-right tabular-nums text-muted-foreground'>
                       {formatCurrencyCLP(t.comision)}
-                    </td>
-                  </tr>
+                    </TableCell>
+                  </TableRow>
                 ))}
-              </tbody>
-            </table>
+              </TableBody>
+            </Table>
           )}
           {!compact && (
             <p className='text-[10px] text-gray-400 px-3 py-1.5'>

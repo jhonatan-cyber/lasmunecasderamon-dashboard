@@ -1,4 +1,6 @@
 'use client';
+import { StatusTabs } from '@/components/shared/StatusTabs';
+import { Button } from '@/components/ui/button';
 
 import { useState, useMemo } from 'react';
 import { AlertCircle } from 'lucide-react';
@@ -178,12 +180,13 @@ export default function GratificacionesPage() {
         <AlertCircle className='h-12 w-12 text-red-500' />
         <h2 className='text-xl font-bold'>Lo sentimos, ocurrió un error</h2>
         <p className='text-zinc-500'>{error}</p>
-        <button
+        <Button
+          variant='unstyled'
           onClick={() => getGratificaciones()}
           className='px-6 py-2 bg-black text-white rounded-full'
         >
           Reintentar
-        </button>
+        </Button>
       </div>
     );
   }
@@ -209,7 +212,8 @@ export default function GratificacionesPage() {
 
       {/* Toggle Mis gratificaciones / Mis solicitudes (solo lectura) */}
       <div className='flex justify-center gap-3 border-b pb-1'>
-        <button
+        <Button
+          variant='unstyled'
           type='button'
           onClick={() => {
             setViewMode('mine');
@@ -222,8 +226,9 @@ export default function GratificacionesPage() {
           }`}
         >
           Mis gratificaciones
-        </button>
-        <button
+        </Button>
+        <Button
+          variant='unstyled'
           type='button'
           onClick={() => {
             setViewMode('requests');
@@ -243,54 +248,36 @@ export default function GratificacionesPage() {
           >
             {myRequests.length}
           </span>
-        </button>
+        </Button>
       </div>
 
       {/* Tabs Por Pagar / Pagadas (solo en Mis gratificaciones) */}
       {viewMode === 'mine' && (
-        <div className='flex justify-center gap-3 border-b pb-1'>
-          <button
-            onClick={() => {
-              setActiveTab('pending');
-              setCurrentPage(1);
-            }}
-            className={`flex items-center gap-1.5 px-5 py-2 text-sm font-semibold transition-all ${
-              activeTab === 'pending'
-                ? 'bg-amber-100 text-amber-700 rounded-full shadow-xs'
-                : 'text-gray-500 hover:bg-gray-100 rounded-full'
-            }`}
-          >
-            Por Pagar
-            <span
-              className={`ml-1.5 px-2.5 py-0.5 rounded-full text-xs font-bold ${
-                activeTab === 'pending' ? 'bg-amber-600 text-white' : 'bg-amber-100 text-amber-800'
-              }`}
-            >
-              {pendingCount}
-            </span>
-          </button>
-          <button
-            onClick={() => {
-              setViewMode('mine');
-              setActiveTab('paid');
-              setCurrentPage(1);
-            }}
-            className={`flex items-center gap-1.5 px-5 py-2 text-sm font-semibold transition-all ${
-              activeTab === 'paid'
-                ? 'bg-green-100 text-green-700 rounded-full shadow-xs'
-                : 'text-gray-500 hover:bg-gray-100 rounded-full'
-            }`}
-          >
-            Pagadas
-            <span
-              className={`ml-1.5 px-2.5 py-0.5 rounded-full text-xs font-bold ${
-                activeTab === 'paid' ? 'bg-green-600 text-white' : 'bg-green-100 text-green-800'
-              }`}
-            >
-              {paidCount}
-            </span>
-          </button>
-        </div>
+        <StatusTabs
+          items={[
+            {
+              label: 'Por Pagar',
+              count: pendingCount,
+              active: activeTab === 'pending',
+              onSelect: () => {
+                setActiveTab('pending');
+                setCurrentPage(1);
+              },
+              tone: 'warning'
+            },
+            {
+              label: 'Pagadas',
+              count: paidCount,
+              active: activeTab === 'paid',
+              onSelect: () => {
+                setViewMode('mine');
+                setActiveTab('paid');
+                setCurrentPage(1);
+              },
+              tone: 'success'
+            }
+          ]}
+        />
       )}
 
       {}

@@ -1,4 +1,5 @@
 'use client';
+import { Button } from '@/components/ui/button';
 
 import { useState } from 'react';
 import { ChevronDown } from 'lucide-react';
@@ -26,7 +27,8 @@ export function GeneratedCodesPanel({
 
   return (
     <div className='rounded-2xl border border-gray-200 dark:border-slate-700 overflow-hidden'>
-      <button
+      <Button
+        variant='unstyled'
         type='button'
         onClick={() => setMostrarCodigos(v => !v)}
         className='w-full flex items-center justify-between px-4 py-3 bg-gray-50 dark:bg-slate-800/50 hover:bg-gray-100 dark:hover:bg-slate-800 transition-colors'
@@ -38,7 +40,7 @@ export function GeneratedCodesPanel({
         <ChevronDown
           className={`w-4 h-4 text-gray-400 transition-transform ${mostrarCodigos ? 'rotate-180' : ''}`}
         />
-      </button>
+      </Button>
       {mostrarCodigos && (
         <div className='p-3'>
           {codigosVisibles.length === 0 ? (

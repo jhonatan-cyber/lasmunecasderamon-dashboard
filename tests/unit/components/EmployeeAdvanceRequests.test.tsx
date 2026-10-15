@@ -26,10 +26,12 @@ it('rechaza un monto superior al saldo y envía una solicitud propia válida', a
   const button = screen.getByRole('button', { name: 'Solicitar anticipo' });
   await waitFor(() => expect(button).toBeEnabled());
   fireEvent.change(screen.getByLabelText('Monto'), { target: { value: '15000' } });
+  expect(screen.getByLabelText('Monto')).toHaveValue('15.000');
   fireEvent.change(screen.getByLabelText('Motivo'), { target: { value: 'Transporte' } });
   fireEvent.submit(button.closest('form')!);
   expect(fetcher.mock.calls.some(([, options]) => options?.method === 'POST')).toBe(false);
-  fireEvent.change(screen.getByLabelText('Monto'), { target: { value: '8000' } });
+  fireEvent.change(screen.getByLabelText('Monto'), { target: { value: '8.000' } });
+  expect(screen.getByLabelText('Monto')).toHaveValue('8.000');
   fireEvent.submit(button.closest('form')!);
   await waitFor(() => expect(onRequested).toHaveBeenCalledOnce());
   const post = fetcher.mock.calls.find(([, options]) => options?.method === 'POST');

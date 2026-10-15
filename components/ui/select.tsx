@@ -34,7 +34,7 @@ SelectTrigger.displayName = SelectPrimitive.Trigger.displayName;
 
 const SelectScrollUpButton = (props: any) => (
   <SelectPrimitive.ScrollUpButton
-    className={cn('flex cursor-default items-center justify-center py-1', props.className)}
+    className={cn('flex cursor-pointer items-center justify-center py-1', props.className)}
     {...props}
   >
     <ChevronUp className='h-4 w-4' />
@@ -43,7 +43,7 @@ const SelectScrollUpButton = (props: any) => (
 
 const SelectScrollDownButton = (props: any) => (
   <SelectPrimitive.ScrollDownButton
-    className={cn('flex cursor-default items-center justify-center py-1', props.className)}
+    className={cn('flex cursor-pointer items-center justify-center py-1', props.className)}
     {...props}
   >
     <ChevronDown className='h-4 w-4' />

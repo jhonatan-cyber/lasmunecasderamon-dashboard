@@ -133,36 +133,21 @@ export function UserTable({
   const DesktopTableView = () => (
     <div className='hidden lg:block'>
       <div className='bg-white dark:bg-slate-900/40 backdrop-blur-xs rounded-3xl border-none shadow-md overflow-hidden'>
-        <Table className='min-w-full text-base text-center'>
-          <TableHeader className='border-b last:border-b-0 bg-gray-100 dark:bg-slate-900/50 group'>
+        <Table className='min-w-full text-center'>
+          <TableHeader className='border-b last:border-b-0 group'>
             <TableRow>
-              <TableHead className='py-3 px-2 sm:px-4 text-start text-xs sm:text-sm text-gray-600 dark:text-gray-300 font-bold uppercase'>
-                Usuario
-              </TableHead>
-              <TableHead className='py-3 px-2 sm:px-4 text-start text-xs sm:text-sm text-gray-600 dark:text-gray-300 font-bold uppercase'>
-                Información
-              </TableHead>
-              <TableHead className='py-3 px-2 sm:px-4 text-start text-xs sm:text-sm text-gray-600 dark:text-gray-300 font-bold uppercase'>
-                Finanzas
-              </TableHead>
-              <TableHead className='py-3 px-2 sm:px-4 text-center text-xs sm:text-sm text-gray-600 dark:text-gray-300 font-bold uppercase'>
-                Rol
-              </TableHead>
-              <TableHead className='py-3 px-2 sm:px-4 text-center text-xs sm:text-sm text-gray-600 dark:text-gray-300 font-bold uppercase'>
-                Estado
-              </TableHead>
-              <TableHead className='py-3 px-2 sm:px-4 text-center text-xs sm:text-sm text-gray-600 dark:text-gray-300 font-bold uppercase'>
-                Acciones
-              </TableHead>
+              <TableHead className='sm:px-4 text-start sm:text-sm font-bold'>Usuario</TableHead>
+              <TableHead className='sm:px-4 text-start sm:text-sm font-bold'>Información</TableHead>
+              <TableHead className='sm:px-4 text-start sm:text-sm font-bold'>Finanzas</TableHead>
+              <TableHead className='sm:px-4 text-center sm:text-sm font-bold'>Rol</TableHead>
+              <TableHead className='sm:px-4 text-center sm:text-sm font-bold'>Estado</TableHead>
+              <TableHead className='sm:px-4 text-center sm:text-sm font-bold'>Acciones</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
             {users.length === 0 && (
               <TableRow>
-                <TableCell
-                  colSpan={6}
-                  className='py-8 text-center text-gray-500 text-sm sm:text-base'
-                >
+                <TableCell colSpan={6} className='text-center sm:text-base'>
                   No se encontraron usuarios que coincidan con la búsqueda
                 </TableCell>
               </TableRow>
@@ -174,7 +159,7 @@ export function UserTable({
                   idx === 0 ? 'first:rounded-t-xl' : ''
                 } ${idx === users.length - 1 ? 'last:rounded-b-xl' : ''}`}
               >
-                <TableCell className='py-3 px-2 sm:px-4 text-start'>
+                <TableCell className='sm:px-4 text-start'>
                   <UserInfoDisplay
                     user={user}
                     formatDate={formatDate}
@@ -183,21 +168,21 @@ export function UserTable({
                   />
                 </TableCell>
 
-                <TableCell className='py-3 px-2 sm:px-4 text-start'>
+                <TableCell className='sm:px-4 text-start'>
                   <UserContactInfo user={user} />
                 </TableCell>
 
-                <TableCell className='py-3 px-2 sm:px-4 text-center'>
+                <TableCell className='sm:px-4 text-center'>
                   <UserFinancialInfo user={user} />
                 </TableCell>
 
-                <TableCell className='py-3 px-2 sm:px-4 text-center'>
+                <TableCell className='sm:px-4 text-center'>
                   <Badge className={`${getRoleBadgeColor(user.role)} text-xs sm:text-sm`}>
                     {user.role}
                   </Badge>
                 </TableCell>
 
-                <TableCell className='py-3 px-2 sm:px-4 text-center'>
+                <TableCell className='sm:px-4 text-center'>
                   <Badge
                     className={`text-xs sm:text-sm ${
                       user.status === 1 ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'
@@ -207,7 +192,7 @@ export function UserTable({
                   </Badge>
                 </TableCell>
 
-                <TableCell className='py-3 px-2 sm:px-4 text-center'>
+                <TableCell className='sm:px-4 text-center'>
                   <UserActionMenu
                     user={user}
                     onViewDetails={onViewDetails}

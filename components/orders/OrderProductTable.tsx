@@ -75,8 +75,8 @@ const ProductRow = memo(
     ];
 
     return (
-      <TableRow className='border-b bg-white transition-colors hover:bg-gray-50 dark:border-slate-800 dark:bg-slate-950/40 dark:hover:bg-slate-800/30'>
-        <TableCell className='px-3 py-3 text-center font-medium text-gray-800 dark:text-gray-100'>
+      <TableRow className='border-b transition-colors'>
+        <TableCell className='text-center font-medium'>
           <div className='flex items-center gap-2 text-left'>
             <SaleProductPhoto
               foto={producto.foto || producto.producto_foto}
@@ -102,7 +102,7 @@ const ProductRow = memo(
             </div>
           </div>
         </TableCell>
-        <TableCell className='px-3 py-3 text-center'>
+        <TableCell className='text-center'>
           <div className='flex items-center justify-center gap-2'>
             <Button
               size='sm'
@@ -134,10 +134,10 @@ const ProductRow = memo(
             </Button>
           </div>
         </TableCell>
-        <TableCell className='px-3 py-3 text-center text-gray-700 dark:text-gray-200'>
+        <TableCell className='text-center'>
           {formatCurrencyNoDecimals(producto.precio || producto.price)}
         </TableCell>
-        <TableCell className='px-3 py-3 text-center'>
+        <TableCell className='text-center'>
           <TooltipProvider>
             <Tooltip>
               <TooltipTrigger asChild>
@@ -164,7 +164,7 @@ const ProductRow = memo(
             </Tooltip>
           </TooltipProvider>
         </TableCell>
-        <TableCell className='px-3 py-3 text-center'>
+        <TableCell className='text-center'>
           {producto.tipo_venta === 'shot' && (
             <p className='mb-2 whitespace-nowrap text-left text-xs text-muted-foreground'>
               {shotMl} ml por corto · {shotMl * producto.cantidad} ml de trago
@@ -195,7 +195,7 @@ const ProductRow = memo(
             <span className='text-xs text-muted-foreground'>Sin bebida</span>
           )}
         </TableCell>
-        <TableCell className='px-3 py-3 text-center'>
+        <TableCell className='text-center'>
           {producto.generaComision === 1 && producto.comision > 0 ? (
             <span className='font-medium text-green-600 dark:text-green-400'>
               {formatCurrencyNoDecimals(producto.comision)}
@@ -204,7 +204,7 @@ const ProductRow = memo(
             <span className='text-gray-400'>-</span>
           )}
         </TableCell>
-        <TableCell className='px-3 py-3 text-center'>
+        <TableCell className='text-center'>
           {producto.tipo_venta === 'shot' &&
           producto.shot_anfitriona &&
           Number(producto.comisionUnitaria ?? producto.comision) > 0 &&
@@ -245,7 +245,7 @@ const ProductRow = memo(
             <span className='text-gray-400'>-</span>
           )}
         </TableCell>
-        <TableCell className='px-3 py-3 text-center'>
+        <TableCell className='text-center'>
           {producto.selectedRoom ? (
             (() => {
               const habitacion = habitaciones.find(
@@ -265,10 +265,10 @@ const ProductRow = memo(
             <span className='text-gray-400'>-</span>
           )}
         </TableCell>
-        <TableCell className='px-3 py-3 text-center font-semibold text-gray-800 dark:text-gray-100'>
+        <TableCell className='text-center font-semibold'>
           {formatCurrencyNoDecimals(producto.subtotal)}
         </TableCell>
-        <TableCell className='px-3 py-3 text-center'>
+        <TableCell className='text-center'>
           <Button
             variant='outline'
             className='h-7 w-7 rounded-full bg-red-500 p-0 text-white transition-all duration-200 hover:scale-110 hover:bg-red-600'
@@ -294,7 +294,7 @@ const OrderProductTable = memo(function OrderProductTable({
   return (
     <div className='mt-6 w-full min-w-0 max-w-full overflow-x-auto'>
       <div className='overflow-hidden rounded-3xl bg-white shadow-md dark:bg-slate-900/40 dark:shadow-black/20'>
-        <Table className='w-full min-w-[1470px] table-fixed text-center text-sm [&_td]:align-middle [&_th]:whitespace-nowrap [&_td]:break-normal'>
+        <Table className='w-full min-w-[1470px] table-fixed text-center [&_td]:align-middle [&_th]:whitespace-nowrap [&_td]:break-normal'>
           <colgroup>
             <col style={{ width: 240 }} />
             <col style={{ width: 110 }} />
@@ -307,47 +307,24 @@ const OrderProductTable = memo(function OrderProductTable({
             <col style={{ width: 110 }} />
             <col style={{ width: 80 }} />
           </colgroup>
-          <TableHeader className='border-b bg-gray-100 dark:border-slate-800 dark:bg-slate-900/50'>
+          <TableHeader className='border-b dark:border-slate-800'>
             <TableRow>
-              <TableHead className='px-3 py-3 text-center text-xs font-bold uppercase text-gray-600 dark:text-gray-300'>
-                Producto
-              </TableHead>
-              <TableHead className='px-3 py-3 text-center text-xs font-bold uppercase text-gray-600 dark:text-gray-300'>
-                Cantidad
-              </TableHead>
-              <TableHead className='px-3 py-3 text-center text-xs font-bold uppercase text-gray-600 dark:text-gray-300'>
-                Precio
-              </TableHead>
-              <TableHead className='px-3 py-3 text-center text-xs font-bold uppercase text-gray-600 dark:text-gray-300'>
-                Tipo
-              </TableHead>
-              <TableHead className='px-3 py-3 text-center text-xs font-bold uppercase text-gray-600 dark:text-gray-300'>
-                Bebida y consumo
-              </TableHead>
-              <TableHead className='px-3 py-3 text-center text-xs font-bold uppercase text-gray-600 dark:text-gray-300'>
-                Comisión
-              </TableHead>
-              <TableHead className='px-3 py-3 text-center text-xs font-bold uppercase text-gray-600 dark:text-gray-300'>
-                Anfitriona asignada
-              </TableHead>
-              <TableHead className='px-3 py-3 text-center text-xs font-bold uppercase text-gray-600 dark:text-gray-300'>
-                Habitación
-              </TableHead>
-              <TableHead className='px-3 py-3 text-center text-xs font-bold uppercase text-gray-600 dark:text-gray-300'>
-                Sub total
-              </TableHead>
-              <TableHead className='px-3 py-3 text-center text-xs font-bold uppercase text-gray-600 dark:text-gray-300'>
-                Eliminar
-              </TableHead>
+              <TableHead className='text-center font-bold'>Producto</TableHead>
+              <TableHead className='text-center font-bold'>Cantidad</TableHead>
+              <TableHead className='text-center font-bold'>Precio</TableHead>
+              <TableHead className='text-center font-bold'>Tipo</TableHead>
+              <TableHead className='text-center font-bold'>Bebida y consumo</TableHead>
+              <TableHead className='text-center font-bold'>Comisión</TableHead>
+              <TableHead className='text-center font-bold'>Anfitriona asignada</TableHead>
+              <TableHead className='text-center font-bold'>Habitación</TableHead>
+              <TableHead className='text-center font-bold'>Sub total</TableHead>
+              <TableHead className='text-center font-bold'>Eliminar</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
             {productos.length === 0 && (
-              <TableRow className='bg-white dark:bg-slate-950/40'>
-                <TableCell
-                  colSpan={10}
-                  className='py-8 text-center text-sm text-gray-500 dark:text-gray-400'
-                >
+              <TableRow>
+                <TableCell colSpan={10} className='text-center'>
                   No hay productos agregados
                 </TableCell>
               </TableRow>

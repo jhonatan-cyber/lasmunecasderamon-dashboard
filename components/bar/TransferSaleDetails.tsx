@@ -1,4 +1,12 @@
 'use client';
+import {
+  Table,
+  TableHeader,
+  TableRow,
+  TableHead,
+  TableBody,
+  TableCell
+} from '@/components/ui/table';
 
 import type { TransferRecord } from '@/types/transfer';
 import { formatCurrencyCLP } from '@/lib/utils/formatters';
@@ -6,28 +14,28 @@ import { preciosCortoAnfitriona } from '@/lib/sales/hostessShortPrices';
 
 function Prices({ rows }: { rows: { label: string; precio: number; comision: number }[] }) {
   return (
-    <table className='w-full text-sm'>
-      <thead className='border-b text-xs text-muted-foreground'>
-        <tr>
-          <th className='py-2 text-left font-medium'>Opción</th>
-          <th className='py-2 text-right font-medium'>Precio</th>
-          <th className='py-2 text-right font-medium'>Comisión</th>
-        </tr>
-      </thead>
-      <tbody className='divide-y'>
+    <Table className='w-full'>
+      <TableHeader className='border-b text-xs text-muted-foreground'>
+        <TableRow>
+          <TableHead className='text-left font-medium'>Opción</TableHead>
+          <TableHead className='text-right font-medium'>Precio</TableHead>
+          <TableHead className='text-right font-medium'>Comisión</TableHead>
+        </TableRow>
+      </TableHeader>
+      <TableBody className='divide-y'>
         {rows.map(row => (
-          <tr key={row.label}>
-            <th className='py-3 pr-2 text-left font-medium'>{row.label}</th>
-            <td className='py-3 text-right font-semibold tabular-nums'>
+          <TableRow key={row.label}>
+            <TableHead className='pr-2 text-left font-medium'>{row.label}</TableHead>
+            <TableCell className='text-right font-semibold tabular-nums'>
               {formatCurrencyCLP(row.precio)}
-            </td>
-            <td className='py-3 pl-3 text-right tabular-nums text-muted-foreground'>
+            </TableCell>
+            <TableCell className='pl-3 text-right tabular-nums text-muted-foreground'>
               {formatCurrencyCLP(row.comision)}
-            </td>
-          </tr>
+            </TableCell>
+          </TableRow>
         ))}
-      </tbody>
-    </table>
+      </TableBody>
+    </Table>
   );
 }
 

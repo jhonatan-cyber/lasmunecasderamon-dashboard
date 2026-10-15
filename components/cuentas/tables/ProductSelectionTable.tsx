@@ -1,4 +1,12 @@
 'use client';
+import {
+  Table,
+  TableHeader,
+  TableRow,
+  TableHead,
+  TableBody,
+  TableCell
+} from '@/components/ui/table';
 
 import { Minus, Plus, Trash } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -33,37 +41,22 @@ export default function ProductTable({
   return (
     <div className='bg-white dark:bg-slate-900/40 backdrop-blur-xs rounded-3xl border-none shadow-md overflow-hidden'>
       <div className='overflow-x-auto'>
-        <table className='min-w-full w-full'>
-          <thead className='bg-gray-100 dark:bg-slate-900/50'>
-            <tr>
-              <th className='px-5 py-4 text-left text-xs uppercase font-bold text-gray-500'>
-                PRODUCTO
-              </th>
-              <th className='px-5 py-4 text-left text-xs uppercase font-bold text-gray-500'>
-                CANTIDAD
-              </th>
-              <th className='px-5 py-4 text-left text-xs uppercase font-bold text-gray-500'>
-                PRECIO
-              </th>
-              <th className='px-5 py-4 text-left text-xs uppercase font-bold text-gray-500'>
-                COMISIÓN
-              </th>
-              <th className='px-5 py-4 text-left text-xs uppercase font-bold text-gray-500'>
-                SUB TOTAL
-              </th>
-              <th className='px-5 py-4 text-left text-xs uppercase font-bold text-gray-500'>
-                ACCIONES
-              </th>
-            </tr>
-          </thead>
-          <tbody>
+        <Table className='min-w-full w-full'>
+          <TableHeader>
+            <TableRow>
+              <TableHead className='text-left font-bold'>PRODUCTO</TableHead>
+              <TableHead className='text-left font-bold'>CANTIDAD</TableHead>
+              <TableHead className='text-left font-bold'>PRECIO</TableHead>
+              <TableHead className='text-left font-bold'>COMISIÓN</TableHead>
+              <TableHead className='text-left font-bold'>SUB TOTAL</TableHead>
+              <TableHead className='text-left font-bold'>ACCIONES</TableHead>
+            </TableRow>
+          </TableHeader>
+          <TableBody>
             {Array.isArray(productos) && productos.length > 0 ? (
               productos.map((producto, index) => (
-                <tr
-                  key={index}
-                  className='border-b border-gray-100 dark:border-gray-800 hover:bg-gray-50 dark:hover:bg-slate-800/30 transition-colors'
-                >
-                  <td className='px-5 py-4'>
+                <TableRow key={index} className='border-b transition-colors'>
+                  <TableCell>
                     <div className='flex flex-col gap-1'>
                       <span className='font-medium text-sm'>
                         {producto.nombre || producto.name || producto.product_name || 'Sin nombre'}
@@ -72,8 +65,8 @@ export default function ProductTable({
                         {producto.categoria}
                       </span>
                     </div>
-                  </td>
-                  <td className='px-5 py-4'>
+                  </TableCell>
+                  <TableCell>
                     <div className='flex items-center gap-1'>
                       <Button
                         variant='outline'
@@ -99,17 +92,15 @@ export default function ProductTable({
                         <Plus className='h-3 w-3' />
                       </Button>
                     </div>
-                  </td>
-                  <td className='px-5 py-4 text-sm'>
-                    {formatCurrencyCLP(producto.precio || producto.price || 0)}
-                  </td>
-                  <td className='px-5 py-4 text-sm'>
+                  </TableCell>
+                  <TableCell>{formatCurrencyCLP(producto.precio || producto.price || 0)}</TableCell>
+                  <TableCell>
                     {formatCurrencyCLP(producto.commission || producto.comision || 0)}
-                  </td>
-                  <td className='px-5 py-4 text-sm font-medium'>
+                  </TableCell>
+                  <TableCell className='font-medium'>
                     {formatCurrencyCLP(producto.subtotal || 0)}
-                  </td>
-                  <td className='px-5 py-4'>
+                  </TableCell>
+                  <TableCell>
                     <Button
                       variant='ghost'
                       size='sm'
@@ -119,18 +110,18 @@ export default function ProductTable({
                     >
                       <Trash className='h-4 w-4' />
                     </Button>
-                  </td>
-                </tr>
+                  </TableCell>
+                </TableRow>
               ))
             ) : (
-              <tr>
-                <td colSpan={6} className='px-5 py-12 text-center text-gray-500'>
+              <TableRow>
+                <TableCell colSpan={6} className='text-center'>
                   No hay productos agregados
-                </td>
-              </tr>
+                </TableCell>
+              </TableRow>
             )}
-          </tbody>
-        </table>
+          </TableBody>
+        </Table>
       </div>
     </div>
   );

@@ -369,9 +369,14 @@ export function SettingsBottleHostessCard() {
         {productsError && (
           <div role='alert' className='mb-4 text-sm text-red-600'>
             {productsError}{' '}
-            <button type='button' onClick={() => void refresh()} className='underline'>
+            <Button
+              variant='unstyled'
+              type='button'
+              onClick={() => void refresh()}
+              className='underline'
+            >
               Reintentar
-            </button>
+            </Button>
           </div>
         )}
         {loading || (presentaciones === null && !barError) ? (
@@ -386,13 +391,14 @@ export function SettingsBottleHostessCard() {
             <p className='text-sm text-neutral-500 dark:text-neutral-400'>
               No se pudo cargar el bar. Revisá la conexión e intentá de nuevo.
             </p>
-            <button
+            <Button
+              variant='unstyled'
               type='button'
               onClick={() => setBarNonce(n => n + 1)}
               className='px-6 py-2 rounded-full font-bold border-2 border-neutral-300 dark:border-neutral-700 hover:scale-105 active:scale-95 transition-all text-sm'
             >
               Reintentar
-            </button>
+            </Button>
           </div>
         ) : productos.length === 0 ? (
           <p className='text-center py-8 text-neutral-400 text-sm'>
@@ -508,7 +514,8 @@ export function SettingsBottleHostessCard() {
 
             <div className='flex flex-wrap justify-end gap-2 pt-2'>
               {vigente !== null && (
-                <button
+                <Button
+                  variant='unstyled'
                   type='button'
                   onClick={() => guardarMaximo(null)}
                   disabled={saving}
@@ -516,9 +523,10 @@ export function SettingsBottleHostessCard() {
                 >
                   <RotateCcw className='h-4 w-4' />
                   Volver al default
-                </button>
+                </Button>
               )}
-              <button
+              <Button
+                variant='unstyled'
                 type='button'
                 onClick={handleSave}
                 disabled={saving}
@@ -526,7 +534,7 @@ export function SettingsBottleHostessCard() {
               >
                 <Save className='h-4 w-4' />
                 {saving ? 'Guardando...' : 'Guardar Cambios'}
-              </button>
+              </Button>
             </div>
           </div>
         )}

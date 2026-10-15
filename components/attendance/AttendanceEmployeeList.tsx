@@ -1,9 +1,26 @@
 'use client';
+import { EmployeeGratifications } from './EmployeeGratifications';
+import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
+import { ListLoadError } from '@/components/shared/ListLoadError';
+import { SortSelect } from '@/components/shared/selects/SortSelect';
+import { FilterBar } from '@/components/shared/FilterBar';
+
+import { Input } from '@/components/ui/input';
+import { SELECT_INPUT_CLASS, SELECT_LABEL_CLASS } from '@/components/shared/selectStyles';
 
 import { useState, useEffect } from 'react';
+import {
+  ModuleTable,
+  ModuleTableHeader,
+  ModuleTableRow,
+  ModuleTableHead,
+  ModuleTableBody,
+  ModuleTableCell,
+  ModuleTableCard
+} from '@/components/shared/tables/ModuleTable';
 import { useCurrentUser } from '@/hooks/auth/useCurrentUser';
 import { useRouter } from 'next/navigation';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { ArrowLeft, Calendar, DollarSign, Users, Plus } from 'lucide-react';
 import { FilterSelect } from '@/components/shared/selects';
@@ -34,7 +51,9 @@ export function AttendanceEmployeeList({ allowedRole, showHousingSummary = false
   const { user, loading: userLoading } = useCurrentUser();
   const router = useRouter();
   const [asistencias, setAsistencias] = useState<Asistencia[]>([]);
-  const [loading, setLoading] = useState(false);
+  const [loading, setLoading] = useState(true);
+  const [loadError, setLoadError] = useState(false);
+  const [activeTab, setActiveTab] = useState('asistencias');
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState('all');
   const [sortBy, setSortBy] = useState('fecha');
@@ -47,13 +66,23 @@ export function AttendanceEmployeeList({ allowedRole, showHousingSummary = false
   const [discountPerWeek, setDiscountPerWeek] = useState<number>(0);
 
   const fetchAsistencias = async () => {
+    setLoadError(false);
     setLoading(true);
     try {
       const res = await fetch('/api/attendance/user?tipo=detalle');
       const data = await res.json();
 
+      if (!res.ok || !data.success || !Array.isArray(data.data))
+        throw new Error('No se pudieron cargar los asistencias');
       if (data.success) {
-        setAsistencias(data.data || []);
+        setAsistencias(
+          data.data.map((row: Asistencia) => ({
+            ...row,
+            sueldo: Number(row.sueldo ?? 0),
+            aporte: Number(row.aporte ?? 0),
+            estado: Number(row.estado ?? 0)
+          }))
+        );
       } else {
         logger.error('Error fetching asistencias:', data.message);
       }
@@ -94,6 +123,7 @@ export function AttendanceEmployeeList({ allowedRole, showHousingSummary = false
         }
       }
     } catch (error) {
+      setLoadError(true);
       logger.captureException(error, { context: 'AttendanceEmployeeList:fetchAsistencias' });
     } finally {
       setLoading(false);
@@ -101,11 +131,15 @@ export function AttendanceEmployeeList({ allowedRole, showHousingSummary = false
   };
 
   useEffect(() => {
-    if (user && !userLoading) {
+    if (user && !userLoading && user.role?.toLowerCase() === allowedRole) {
       fetchAsistencias();
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [user, userLoading, showHousingSummary]);
+  }, [user, userLoading, showHousingSummary, allowedRole]);
+
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [searchTerm, statusFilter, sortBy, sortOrder, rowsPerPage]);
 
   if (userLoading) {
     return (
@@ -152,6 +186,7 @@ export function AttendanceEmployeeList({ allowedRole, showHousingSummary = false
       bValue = new Date(b.fecha);
     }
 
+    if (aValue === bValue) return 0;
     if (sortOrder === 'asc') {
       return aValue > bValue ? 1 : -1;
     } else {
@@ -220,15 +255,17 @@ export function AttendanceEmployeeList({ allowedRole, showHousingSummary = false
           </p>
         </div>
         <div className='flex gap-2'>
-          <Button
-            variant='outline'
-            onClick={() => setAsistenciaFormOpen(true)}
-            size='sm'
-            className='rounded-full px-4 sm:px-6 py-2 bg-black text-white hover:bg-white hover:text-black hover:scale-105 transition-all duration-200 text-sm sm:text-base border-2 dark:bg-black dark:text-white dark:border-white dark:hover:bg-white dark:hover:text-black dark:hover:border-white'
-          >
-            <Plus className='w-3 h-3 sm:w-4 sm:h-4 mr-1 sm:mr-2' />
-            Registrar Manual
-          </Button>
+          {['garzon', 'cajero'].includes(allowedRole) && (
+            <Button
+              variant='outline'
+              onClick={() => setAsistenciaFormOpen(true)}
+              size='sm'
+              className='rounded-full px-4 sm:px-6 py-2 bg-black text-white hover:bg-white hover:text-black hover:scale-105 transition-all duration-200 text-sm sm:text-base border-2 dark:bg-black dark:text-white dark:border-white dark:hover:bg-white dark:hover:text-black dark:hover:border-white'
+            >
+              <Plus className='w-3 h-3 sm:w-4 sm:h-4 mr-1 sm:mr-2' />
+              Registrar Manual
+            </Button>
+          )}
           <Button
             variant='outline'
             onClick={() => router.back()}
@@ -242,211 +279,217 @@ export function AttendanceEmployeeList({ allowedRole, showHousingSummary = false
       </div>
 
       {}
-      <div className='text-center space-y-2'>
-        {showHousingSummary && (
-          <div className='flex justify-center gap-8 flex-wrap'>
-            <div>
-              <p className='text-sm text-gray-500'>Total Sueldo:</p>
-              <p className='text-xl font-bold text-gray-900 dark:text-white'>
-                {formatCurrencyCLP(totalSalary)}
-              </p>
-            </div>
-            <div>
-              <p className='text-sm text-gray-500'>Total Aporte:</p>
-              <p className='text-xl font-bold text-gray-900 dark:text-white'>
-                {formatCurrencyCLP(totalContribution)}
-              </p>
-            </div>
-            <div>
-              <p className='text-sm text-gray-500'>Descuento Habitación (semanal):</p>
-              <p className='text-sm text-gray-600 dark:text-gray-400'>
-                Semanas: {weeksWithDiscount} | Monto/semana: {formatCurrencyCLP(discountPerWeek)}
-              </p>
-              <p className='text-xl font-bold text-gray-900 dark:text-white'>
-                {formatCurrencyCLP(housingDiscountTotal)}
-              </p>
-            </div>
-          </div>
-        )}
-        <div>
-          <p className='text-sm text-gray-500'>TOTAL A COBRAR</p>
-          <p className='text-2xl font-bold text-gray-900 dark:text-white'>
-            {formatCurrencyCLP(totalToCollect)}
-          </p>
-        </div>
-      </div>
-
-      {}
-      <div className='grid grid-cols-1 md:grid-cols-4 gap-4 w-full'>
-        <div className='w-full'>
-          <label
-            htmlFor='buscar-asistencias'
-            className='block text-sm font-medium text-gray-700 dark:text-gray-200 mb-1'
-          >
-            Buscar
-          </label>
-          <input
-            id='buscar-asistencias'
-            type='text'
-            placeholder='Buscar por fecha u hora...'
-            value={searchTerm}
-            onChange={e => setSearchTerm(e.target.value)}
-            className='w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-hidden focus:ring-2 focus:ring-blue-500'
-          />
-        </div>
-        <FilterSelect
-          value={statusFilter}
-          onChange={setStatusFilter}
-          label='Estado'
-          placeholder='Todos'
-          options={[
-            { value: 'all', label: 'Todos' },
-            { value: 'pendiente', label: 'Por cobrar' },
-            { value: 'pagado', label: 'Cobrado' }
-          ]}
-        />
-        <FilterSelect
-          value={sortBy}
-          onChange={setSortBy}
-          label='Ordenar por'
-          placeholder='Fecha'
-          options={[
-            { value: 'fecha', label: 'Fecha' },
-            { value: 'sueldo', label: 'Sueldo' },
-            { value: 'aporte', label: 'Aporte' },
-            { value: 'total', label: 'Total' }
-          ]}
-        />
-        <FilterSelect
-          value={sortOrder}
-          onChange={value => setSortOrder(value as 'asc' | 'desc')}
-          label='Orden'
-          placeholder='Descendente'
-          options={[
-            { value: 'desc', label: 'Descendente' },
-            { value: 'asc', label: 'Ascendente' }
-          ]}
-        />
-      </div>
-
-      {}
-      <div className='flex justify-between items-center'>
-        <FilterSelect
-          value={rowsPerPage.toString()}
-          onChange={value => {
-            setRowsPerPage(parseInt(value));
-            setCurrentPage(1);
-          }}
-          label='Elementos por página'
-          placeholder='10'
-          options={[
-            { value: '5', label: '5 Datos' },
-            { value: '10', label: '10 Datos' },
-            { value: '20', label: '20 Datos' },
-            { value: '50', label: '50 Datos' }
-          ]}
-        />
-      </div>
-
-      {}
-      <Card>
-        <CardHeader>
-          <CardTitle aria-live='polite'>Asistencias ({filteredAsistencias.length})</CardTitle>
-        </CardHeader>
-        <CardContent>
-          {loading ? (
-            <div className='text-center py-8'>
-              <div className='animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto'></div>
-              <p aria-live='polite' className='mt-2 text-gray-600'>
-                Cargando asistencias...
-              </p>
-            </div>
+      <Tabs value={activeTab} onValueChange={setActiveTab}>
+        <TabsList aria-label='Mi jornada' className='h-11 rounded-full'>
+          <TabsTrigger value='asistencias' className='rounded-full'>
+            Asistencias
+          </TabsTrigger>
+          <TabsTrigger value='gratificaciones' className='rounded-full'>
+            Gratificaciones
+          </TabsTrigger>
+        </TabsList>
+        <TabsContent value='asistencias' className='space-y-6'>
+          {loadError ? (
+            <ListLoadError
+              message='No se pudieron cargar tus asistencias.'
+              onRetry={fetchAsistencias}
+            />
           ) : (
-            <div className='overflow-x-auto'>
-              <table className='w-full'>
-                <thead>
-                  <tr className='border-b border-gray-200'>
-                    <th className='text-left py-3 px-4 font-medium text-gray-900 dark:text-gray-100'>
-                      #
-                    </th>
-                    <th className='text-left py-3 px-4 font-medium text-gray-900 dark:text-gray-100'>
-                      FECHA
-                    </th>
-                    <th className='text-left py-3 px-4 font-medium text-gray-900 dark:text-gray-100'>
-                      SUELDO
-                    </th>
-                    <th className='text-left py-3 px-4 font-medium text-gray-900 dark:text-gray-100'>
-                      APORTE
-                    </th>
-                    <th className='text-left py-3 px-4 font-medium text-gray-900 dark:text-gray-100'>
-                      TOTAL
-                    </th>
-                    <th className='text-left py-3 px-4 font-medium text-gray-900 dark:text-gray-100'>
-                      FECHA DE PAGO
-                    </th>
-                    <th className='text-left py-3 px-4 font-medium text-gray-900 dark:text-gray-100'>
-                      ESTADO
-                    </th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {paginatedAsistencias.map((asistencia, index) => {
-                    const { date } = formatDateTimeDmyLabel(asistencia.fecha);
-                    const hora = asistencia.hora ? asistencia.hora.slice(0, 5) : '';
-                    return (
-                      <tr
-                        key={`${asistencia.id_asistencia}-${startIndex + index}`}
-                        className='border-b border-gray-100 hover:bg-gray-50'
-                      >
-                        <td className='py-3 px-4'>
-                          <div className='w-8 h-8 rounded-full bg-purple-300 flex items-center justify-center text-purple-800 font-medium text-sm'>
-                            {startIndex + index + 1}
-                          </div>
-                        </td>
-                        <td className='py-3 px-4'>
-                          <div>
-                            <div className='font-medium text-gray-900 dark:text-gray-100'>
-                              {date}
-                            </div>
-                            <div className='text-sm text-gray-500'>{hora || '—'}</div>
-                          </div>
-                        </td>
-                        <td className='py-3 px-4 text-gray-900 dark:text-gray-100'>
-                          {formatCurrencyCLP(asistencia.sueldo)}
-                        </td>
-                        <td className='py-3 px-4 text-gray-900 dark:text-gray-100'>
-                          {formatCurrencyCLP(asistencia.aporte)}
-                        </td>
-                        <td className='py-3 px-4 text-gray-900 dark:text-gray-100'>
-                          {formatCurrencyCLP(asistencia.total)}
-                        </td>
-                        <td className='py-3 px-4'>
-                          {getPaymentDateBadge(asistencia.fecha_pago ?? null, asistencia.estado)}
-                        </td>
-                        <td className='py-3 px-4'>{getStatusBadge(asistencia.estado)}</td>
-                      </tr>
-                    );
-                  })}
-                </tbody>
-              </table>
-            </div>
+            <>
+              <div className='text-center space-y-2'>
+                {showHousingSummary && (
+                  <div className='flex justify-center gap-8 flex-wrap'>
+                    <div>
+                      <p className='text-sm text-gray-500'>Total Sueldo:</p>
+                      <p className='text-xl font-bold text-gray-900 dark:text-white'>
+                        {formatCurrencyCLP(totalSalary)}
+                      </p>
+                    </div>
+                    <div>
+                      <p className='text-sm text-gray-500'>Total Aporte:</p>
+                      <p className='text-xl font-bold text-gray-900 dark:text-white'>
+                        {formatCurrencyCLP(totalContribution)}
+                      </p>
+                    </div>
+                    <div>
+                      <p className='text-sm text-gray-500'>Descuento Habitación (semanal):</p>
+                      <p className='text-sm text-gray-600 dark:text-gray-400'>
+                        Semanas: {weeksWithDiscount} | Monto/semana:{' '}
+                        {formatCurrencyCLP(discountPerWeek)}
+                      </p>
+                      <p className='text-xl font-bold text-gray-900 dark:text-white'>
+                        {formatCurrencyCLP(housingDiscountTotal)}
+                      </p>
+                    </div>
+                  </div>
+                )}
+                <div>
+                  <p className='text-sm text-gray-500'>TOTAL A COBRAR</p>
+                  <p className='text-2xl font-bold text-gray-900 dark:text-white'>
+                    {formatCurrencyCLP(totalToCollect)}
+                  </p>
+                </div>
+              </div>
+
+              {}
+              <FilterBar>
+                <div className='w-full'>
+                  <label htmlFor='buscar-asistencias' className={SELECT_LABEL_CLASS}>
+                    Buscar
+                  </label>
+                  <Input
+                    id='buscar-asistencias'
+                    type='text'
+                    placeholder='Buscar por fecha u hora...'
+                    value={searchTerm}
+                    onChange={e => setSearchTerm(e.target.value)}
+                    className={SELECT_INPUT_CLASS}
+                  />
+                </div>
+                <FilterSelect
+                  value={statusFilter}
+                  onChange={setStatusFilter}
+                  label='Estado'
+                  placeholder='Todos'
+                  options={[
+                    { value: 'all', label: 'Todos' },
+                    { value: 'pendiente', label: 'Por cobrar' },
+                    { value: 'pagado', label: 'Cobrado' }
+                  ]}
+                />
+                <SortSelect
+                  field={sortBy}
+                  direction={sortOrder}
+                  options={[
+                    { value: 'fecha', label: 'Fecha' },
+                    { value: 'sueldo', label: 'Sueldo' },
+                    { value: 'aporte', label: 'Aporte' },
+                    { value: 'total', label: 'Total' }
+                  ]}
+                  onChange={(field, direction) => {
+                    setSortBy(field);
+                    setSortOrder(direction);
+                    setCurrentPage(1);
+                  }}
+                />
+
+                <FilterSelect
+                  value={rowsPerPage.toString()}
+                  onChange={value => {
+                    setRowsPerPage(parseInt(value));
+                    setCurrentPage(1);
+                  }}
+                  label='Elementos por página'
+                  placeholder='10'
+                  options={[
+                    { value: '5', label: '5 Datos' },
+                    { value: '10', label: '10 Datos' },
+                    { value: '20', label: '20 Datos' },
+                    { value: '50', label: '50 Datos' }
+                  ]}
+                />
+              </FilterBar>
+
+              {}
+              <ModuleTableCard>
+                <CardHeader>
+                  <CardTitle aria-live='polite'>
+                    Asistencias ({filteredAsistencias.length})
+                  </CardTitle>
+                </CardHeader>
+                <CardContent className='p-0'>
+                  {loading ? (
+                    <div className='text-center py-8'>
+                      <div className='animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto'></div>
+                      <p aria-live='polite' className='mt-2 text-gray-600'>
+                        Cargando asistencias...
+                      </p>
+                    </div>
+                  ) : (
+                    <div className='overflow-x-auto'>
+                      <ModuleTable>
+                        <ModuleTableHeader>
+                          <ModuleTableRow>
+                            <ModuleTableHead>#</ModuleTableHead>
+                            <ModuleTableHead>FECHA</ModuleTableHead>
+                            <ModuleTableHead>SUELDO</ModuleTableHead>
+                            <ModuleTableHead>APORTE</ModuleTableHead>
+                            <ModuleTableHead>TOTAL</ModuleTableHead>
+                            <ModuleTableHead>FECHA DE PAGO</ModuleTableHead>
+                            <ModuleTableHead>ESTADO</ModuleTableHead>
+                          </ModuleTableRow>
+                        </ModuleTableHeader>
+                        <ModuleTableBody>
+                          {paginatedAsistencias.map((asistencia, index) => {
+                            const { date } = formatDateTimeDmyLabel(asistencia.fecha);
+                            const hora = asistencia.hora ? asistencia.hora.slice(0, 5) : '';
+                            return (
+                              <ModuleTableRow
+                                key={`${asistencia.id_asistencia}-${startIndex + index}`}
+                              >
+                                <ModuleTableCell>
+                                  <div className='w-8 h-8 rounded-full bg-purple-300 flex items-center justify-center text-purple-800 font-medium text-sm'>
+                                    {startIndex + index + 1}
+                                  </div>
+                                </ModuleTableCell>
+                                <ModuleTableCell>
+                                  <div>
+                                    <div className='font-medium text-gray-900 dark:text-gray-100'>
+                                      {date}
+                                    </div>
+                                    <div className='text-sm text-gray-500'>{hora || '—'}</div>
+                                  </div>
+                                </ModuleTableCell>
+                                <ModuleTableCell>
+                                  {formatCurrencyCLP(asistencia.sueldo)}
+                                </ModuleTableCell>
+                                <ModuleTableCell>
+                                  {formatCurrencyCLP(asistencia.aporte)}
+                                </ModuleTableCell>
+                                <ModuleTableCell>
+                                  {formatCurrencyCLP(asistencia.total)}
+                                </ModuleTableCell>
+                                <ModuleTableCell>
+                                  {getPaymentDateBadge(
+                                    asistencia.fecha_pago ?? null,
+                                    asistencia.estado
+                                  )}
+                                </ModuleTableCell>
+                                <ModuleTableCell>
+                                  {getStatusBadge(asistencia.estado)}
+                                </ModuleTableCell>
+                              </ModuleTableRow>
+                            );
+                          })}
+                        </ModuleTableBody>
+                      </ModuleTable>
+                    </div>
+                  )}
+                </CardContent>
+              </ModuleTableCard>
+
+              {}
+              {totalPages > 1 && (
+                <div className='flex justify-center'>
+                  <Paginate page={currentPage} totalPages={totalPages} setPage={setCurrentPage} />
+                </div>
+              )}
+
+              {}
+              {['garzon', 'cajero'].includes(allowedRole) && asistenciaFormOpen && (
+                <AsistenciaForm
+                  isOpen={asistenciaFormOpen}
+                  onOpenChange={setAsistenciaFormOpen}
+                  onSuccess={fetchAsistencias}
+                />
+              )}
+            </>
           )}
-        </CardContent>
-      </Card>
-
-      {}
-      {totalPages > 1 && (
-        <div className='flex justify-center'>
-          <Paginate page={currentPage} totalPages={totalPages} setPage={setCurrentPage} />
-        </div>
-      )}
-
-      {}
-      <AsistenciaForm
-        isOpen={asistenciaFormOpen}
-        onOpenChange={setAsistenciaFormOpen}
-        onSuccess={fetchAsistencias}
-      />
+        </TabsContent>
+        <TabsContent value='gratificaciones'>
+          <EmployeeGratifications />
+        </TabsContent>
+      </Tabs>
     </div>
   );
 }

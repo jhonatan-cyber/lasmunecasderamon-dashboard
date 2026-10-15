@@ -1,6 +1,6 @@
 'use client';
+import { MetricCard } from '@/components/shared/MetricCard';
 
-import { Card, CardContent } from '@/components/ui/card';
 import { CheckCircle2, Clock, Users, TrendingUp } from 'lucide-react';
 import { Overtime } from '@/types/overtime';
 import { formatCurrencyCLP } from '@/lib/utils/formatters';
@@ -27,149 +27,85 @@ export default function OvertimeStatsCards({ overtime }: OvertimeStatsCardsProps
   return (
     <div className='grid gap-4 grid-cols-2 lg:grid-cols-4 mb-6 [&>*:last-child:nth-child(odd)]:col-span-2 lg:[&>*:last-child:nth-child(odd)]:col-span-1'>
       {}
-      <Card
-        style={{
-          backgroundColor: 'rgba(16, 185, 129, 0.1)',
-          border: '1px solid rgba(16, 185, 129, 0.2)'
-        }}
-        className='shadow-xs border-none backdrop-blur-xs rounded-3xl overflow-hidden group hover:scale-[1.02] transition-all duration-300'
-      >
-        <CardContent className='p-5'>
-          <div className='flex items-center justify-between mb-4'>
-            <div className='p-2.5 bg-emerald-500/20 rounded-2xl'>
-              <CheckCircle2 className='h-4 w-4 text-emerald-600' />
-            </div>
-            <span className='text-[8px] font-black uppercase tracking-[0.2em] text-emerald-700 bg-emerald-500/10 px-2 py-1 rounded-full'>
-              Por Pagar
+      <MetricCard
+        tone='emerald'
+        icon={<CheckCircle2 className='h-4 w-4 text-emerald-600' />}
+        badge='Por Pagar'
+        label='Total Pendiente'
+        value={formatCurrencyCLP(stats.totalAPagar)}
+        footer={
+          <div className='flex items-center gap-1.5 pt-1'>
+            <span className='text-emerald-700 font-black text-sm'>{stats.porCobrar.length}</span>
+            <span className='text-[10px] text-emerald-700/50 font-medium uppercase tracking-tighter italic'>
+              Registros
+            </span>
+            <span className='text-emerald-700/40'>•</span>
+            <span className='text-emerald-700 font-black text-xs'>
+              {totalHorasPorCobrar.toFixed(1)} hrs
             </span>
           </div>
-          <div className='space-y-0.5'>
-            <p className='text-[10px] font-bold text-emerald-700/60 uppercase tracking-widest'>
-              Total Pendiente
-            </p>
-            <h3 className='text-xl font-black text-emerald-900 dark:text-emerald-100'>
-              {formatCurrencyCLP(stats.totalAPagar)}
-            </h3>
-            <div className='flex items-center gap-1.5 pt-1'>
-              <span className='text-emerald-700 font-black text-sm'>{stats.porCobrar.length}</span>
-              <span className='text-[10px] text-emerald-700/50 font-medium uppercase tracking-tighter italic'>
-                Registros
-              </span>
-              <span className='text-emerald-700/40'>•</span>
-              <span className='text-emerald-700 font-black text-xs'>
-                {totalHorasPorCobrar.toFixed(1)} hrs
-              </span>
-            </div>
-          </div>
-        </CardContent>
-      </Card>
+        }
+      />
 
       {}
-      <Card
-        style={{
-          backgroundColor: 'rgba(245, 158, 11, 0.1)',
-          border: '1px solid rgba(245, 158, 11, 0.2)'
-        }}
-        className='shadow-xs border-none backdrop-blur-xs rounded-3xl overflow-hidden group hover:scale-[1.02] transition-all duration-300'
-      >
-        <CardContent className='p-5'>
-          <div className='flex items-center justify-between mb-4'>
-            <div className='p-2.5 bg-amber-500/20 rounded-2xl'>
-              <Clock className='h-4 w-4 text-amber-600' />
-            </div>
-            <span className='text-[8px] font-black uppercase tracking-[0.2em] text-amber-700 bg-amber-500/10 px-2 py-1 rounded-full'>
-              Histórico
-            </span>
-          </div>
-          <div className='space-y-0.5'>
-            <p className='text-[10px] font-bold text-amber-700/60 uppercase tracking-widest'>
-              Total Horas
-            </p>
-            <h3 className='text-xl font-black text-amber-900 dark:text-amber-100'>
-              {stats.totalHoras.toFixed(1)}{' '}
-              <span className='text-sm font-normal text-amber-700/50'>hrs</span>
-            </h3>
-            <div className='flex items-center gap-1.5 pt-1'>
-              <span className='text-amber-700 font-black text-sm'>{stats.usuariosUnicos}</span>
-              <span className='text-[10px] text-amber-700/50 font-medium uppercase tracking-tighter italic'>
-                Personal
-              </span>
-            </div>
-          </div>
-        </CardContent>
-      </Card>
-
-      {}
-      <Card
-        style={{
-          backgroundColor: 'rgba(139, 92, 246, 0.1)',
-          border: '1px solid rgba(139, 92, 246, 0.2)'
-        }}
-        className='shadow-xs border-none backdrop-blur-xs rounded-3xl overflow-hidden group hover:scale-[1.02] transition-all duration-300'
-      >
-        <CardContent className='p-5'>
-          <div className='flex items-center justify-between mb-4'>
-            <div className='p-2.5 bg-purple-500/20 rounded-2xl'>
-              <Users className='h-4 w-4 text-purple-600' />
-            </div>
-            <span className='text-[8px] font-black uppercase tracking-[0.2em] text-purple-700 bg-purple-500/10 px-2 py-1 rounded-full'>
+      <MetricCard
+        tone='amber'
+        icon={<Clock className='h-4 w-4 text-amber-600' />}
+        badge='Histórico'
+        label='Total Horas'
+        value={
+          <>
+            {stats.totalHoras.toFixed(1)}{' '}
+            <span className='text-sm font-normal text-amber-700/50'>hrs</span>
+          </>
+        }
+        footer={
+          <div className='flex items-center gap-1.5 pt-1'>
+            <span className='text-amber-700 font-black text-sm'>{stats.usuariosUnicos}</span>
+            <span className='text-[10px] text-amber-700/50 font-medium uppercase tracking-tighter italic'>
               Personal
             </span>
           </div>
-          <div className='space-y-0.5'>
-            <p className='text-[10px] font-bold text-purple-700/60 uppercase tracking-widest'>
-              Con Horas
-            </p>
-            <h3 className='text-xl font-black text-purple-900 dark:text-purple-100'>
-              {stats.usuariosUnicos}
-            </h3>
-            <div className='flex items-center gap-1.5 pt-1'>
-              <span className='text-purple-700 font-black text-sm'>
-                {stats.totalHoras.toFixed(1)}
-              </span>
-              <span className='text-[10px] text-purple-700/50 font-medium uppercase tracking-tighter italic'>
-                Hrs Totales
-              </span>
-            </div>
-          </div>
-        </CardContent>
-      </Card>
+        }
+      />
 
       {}
-      <Card
-        style={{
-          backgroundColor: 'rgba(59, 130, 246, 0.1)',
-          border: '1px solid rgba(59, 130, 246, 0.2)'
-        }}
-        className='shadow-xs border-none backdrop-blur-xs rounded-3xl overflow-hidden group hover:scale-[1.02] transition-all duration-300'
-      >
-        <CardContent className='p-5'>
-          <div className='flex items-center justify-between mb-4'>
-            <div className='p-2.5 bg-blue-500/20 rounded-2xl'>
-              <TrendingUp className='h-4 w-4 text-blue-600' />
-            </div>
-            <span className='text-[8px] font-black uppercase tracking-[0.2em] text-blue-700 bg-blue-500/10 px-2 py-1 rounded-full'>
-              Promedio
+      <MetricCard
+        tone='purple'
+        icon={<Users className='h-4 w-4 text-purple-600' />}
+        badge='Personal'
+        label='Con Horas'
+        value={stats.usuariosUnicos}
+        footer={
+          <div className='flex items-center gap-1.5 pt-1'>
+            <span className='text-purple-700 font-black text-sm'>
+              {stats.totalHoras.toFixed(1)}
+            </span>
+            <span className='text-[10px] text-purple-700/50 font-medium uppercase tracking-tighter italic'>
+              Hrs Totales
             </span>
           </div>
-          <div className='space-y-0.5'>
-            <p className='text-[10px] font-bold text-blue-700/60 uppercase tracking-widest'>
-              Por Hora
-            </p>
-            <h3 className='text-xl font-black text-blue-900 dark:text-blue-100'>
-              {formatCurrencyCLP(promedioPorHora)}
-            </h3>
-            <div className='flex items-center gap-1.5 pt-1'>
-              <span className='text-blue-700 font-black text-sm'>
-                {formatCurrencyCLP(stats.totalMonto)}
-              </span>
-              <span className='text-[10px] text-blue-700/50 font-medium uppercase tracking-tighter italic'>
-                Monto Total
-              </span>
-            </div>
+        }
+      />
+
+      {}
+      <MetricCard
+        tone='blue'
+        icon={<TrendingUp className='h-4 w-4 text-blue-600' />}
+        badge='Promedio'
+        label='Por Hora'
+        value={formatCurrencyCLP(promedioPorHora)}
+        footer={
+          <div className='flex items-center gap-1.5 pt-1'>
+            <span className='text-blue-700 font-black text-sm'>
+              {formatCurrencyCLP(stats.totalMonto)}
+            </span>
+            <span className='text-[10px] text-blue-700/50 font-medium uppercase tracking-tighter italic'>
+              Monto Total
+            </span>
           </div>
-        </CardContent>
-      </Card>
+        }
+      />
     </div>
   );
 }

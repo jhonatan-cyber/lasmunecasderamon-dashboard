@@ -88,6 +88,7 @@ export function useAdvanceForm({ open, onSubmit }: UseAdvanceFormProps) {
     if (
       submitting.current ||
       !selectedUser ||
+      !motivo.trim() ||
       !Number.isFinite(Number(monto)) ||
       Number(monto) <= 0
     )

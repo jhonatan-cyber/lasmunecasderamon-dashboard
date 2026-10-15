@@ -6,13 +6,7 @@ export default [
   ...nextVitals,
   ...nextTypescript,
   {
-    ignores: [
-      '.next/**',
-      'node_modules/**',
-      'playwright-report/**',
-      'coverage/**',
-      '_tmp_real/**'
-    ]
+    ignores: ['.next/**', 'node_modules/**', 'playwright-report/**', 'coverage/**', '_tmp_real/**']
   },
   {
     rules: {
@@ -24,6 +18,21 @@ export default [
       '@typescript-eslint/no-unused-vars': 'off',
       '@typescript-eslint/no-require-imports': 'off',
       'react-hooks/set-state-in-effect': 'off'
+    }
+  },
+  {
+    files: ['app/**/*.tsx', 'components/**/*.tsx', 'hooks/**/*.tsx'],
+    ignores: ['components/ui/**'],
+    rules: {
+      'no-restricted-syntax': [
+        'error',
+        {
+          selector:
+            'JSXOpeningElement[name.name=/^(input|select|textarea|button|table|thead|tbody|tfoot|tr|th|td|caption)$/]',
+          message:
+            'Usa los componentes compartidos de components/ui. Los controles HTML y sus estilos base se definen únicamente allí.'
+        }
+      ]
     }
   },
   {

@@ -7,13 +7,13 @@ export default function GarzonDashboard() {
   return (
     <RoleDashboard
       role='garzon'
-      roleLabel='Garzon'
+      roleLabel='Garzón'
       subtitle='Panel de control para garzones'
       skeletonName='garzon-dashboard-main'
       items={[
         {
           title: 'Asistencia',
-          description: 'Se visualiza la asistencia del usuario',
+          description: 'Consulta tus asistencias y pagos',
           icon: Calendar,
           href: '/garzon-asistencias',
           color: 'text-blue-600',
@@ -21,7 +21,7 @@ export default function GarzonDashboard() {
         },
         {
           title: 'Anticipos',
-          description: 'Se visualiza la lista de anticipos obtenidos del usuario',
+          description: 'Consulta tus anticipos',
           icon: ArrowLeftRight,
           href: '/garzon-anticipos',
           color: 'text-orange-600',
@@ -29,7 +29,7 @@ export default function GarzonDashboard() {
         },
         {
           title: 'Propinas',
-          description: 'Se visualiza la lista de propinas obtenidos del usuario',
+          description: 'Consulta tus propinas y pagos',
           icon: DollarSign,
           href: '/garzon-propinas',
           color: 'text-green-600',
@@ -37,7 +37,7 @@ export default function GarzonDashboard() {
         },
         {
           title: 'Horas extras',
-          description: 'Se visualiza la lista de horas extras obtenidos del usuario',
+          description: 'Consulta tus horas extras y pagos',
           icon: Clock,
           href: '/garzon-horas-extras',
           color: 'text-purple-600',

@@ -1,4 +1,5 @@
 'use client';
+import { Button } from '@/components/ui/button';
 
 import { useState, useEffect, useCallback } from 'react';
 import { Card } from '@/components/ui/card';
@@ -318,20 +319,22 @@ export default function ServicioCard({
             </div>
             <div className='p-6 border-t shrink-0'>
               <div className='flex gap-3'>
-                <button
+                <Button
+                  variant='unstyled'
                   className='flex-1 rounded-full border px-4 py-2 text-sm'
                   onClick={() => setShowConfirm(false)}
                   disabled={stopping}
                 >
                   Cancelar
-                </button>
-                <button
+                </Button>
+                <Button
+                  variant='unstyled'
                   className='flex-1 rounded-full bg-red-600 px-4 py-2 text-sm text-white'
                   onClick={confirmStopTimer}
                   disabled={stopping}
                 >
                   Finalizar
-                </button>
+                </Button>
               </div>
             </div>
           </div>

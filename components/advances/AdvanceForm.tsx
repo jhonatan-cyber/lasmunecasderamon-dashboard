@@ -4,6 +4,7 @@ import { Button } from '@/components/ui/button';
 import { DollarSign, Loader2, AlertCircle } from 'lucide-react';
 import { useAdvanceForm } from '@/hooks/personal';
 import { UserSelect } from '@/components/shared/selects';
+import { formatCurrencyNoDecimals } from '@/lib/utils/formatters';
 
 interface AdvanceFormProps {
   open: boolean;
@@ -21,7 +22,6 @@ export function AdvanceForm({
   onCancel,
   isLoading: externalLoading = false,
   error,
-  efectivoEnCaja = 0,
   hideButtons = false
 }: AdvanceFormProps) {
   const {
@@ -40,18 +40,10 @@ export function AdvanceForm({
   const isLoading = externalLoading || isSubmitting;
 
   const rawMonto = Number(montoDisplay.replace(/\./g, ''));
-  const exceedsCaja = rawMonto > efectivoEnCaja;
   const exceedsBalance = balance !== null && rawMonto > balance;
 
-  const isFormValid = selectedUser && rawMonto > 0 && !exceedsBalance && !exceedsCaja && !isLoading;
-
-  const formatCurrency = (amount: number) => {
-    return new Intl.NumberFormat('es-CL', {
-      style: 'currency',
-      currency: 'CLP',
-      maximumFractionDigits: 0
-    }).format(amount);
-  };
+  const isFormValid =
+    selectedUser && rawMonto > 0 && motivo.trim() && !exceedsBalance && !isLoading;
 
   const isInputsDisabled = Boolean(
     !selectedUser || isLoading || loadingBalance || (balance !== null && balance <= 0)
@@ -102,7 +94,7 @@ export function AdvanceForm({
             ) : (
               <>
                 <DollarSign className='h-3 w-3 sm:h-4 sm:w-4' />
-                <span>Saldo disponible personal: {formatCurrency(balance || 0)}</span>
+                <span>Saldo disponible personal: {formatCurrencyNoDecimals(balance || 0)}</span>
               </>
             )}
           </div>
@@ -126,17 +118,11 @@ export function AdvanceForm({
               value={montoDisplay}
               onChange={handleMontoChange}
               placeholder='0'
-              className={`pl-10 sm:pl-12 rounded-full bg-gray-100 dark:bg-slate-900/50 border border-gray-300 dark:border-gray-700 text-gray-900 dark:text-gray-100 ${exceedsCaja || exceedsBalance ? 'border-red-500 ring-red-500' : ''}`}
+              className={`pl-10 sm:pl-12 rounded-full bg-gray-100 dark:bg-slate-900/50 border border-gray-300 dark:border-gray-700 text-gray-900 dark:text-gray-100 ${exceedsBalance ? 'border-red-500 ring-red-500' : ''}`}
               disabled={isInputsDisabled}
             />
           </div>
-          {exceedsCaja && (
-            <div className='flex items-center gap-1.5 text-xs text-red-600 dark:text-red-400 font-medium animate-in fade-in slide-in-from-top-1'>
-              <AlertCircle className='h-3.5 w-3.5' />
-              <span>El monto supera el efectivo en caja: {formatCurrency(efectivoEnCaja)}</span>
-            </div>
-          )}
-          {exceedsBalance && !exceedsCaja && (
+          {exceedsBalance && (
             <div className='flex items-center gap-1.5 text-xs text-red-600 dark:text-red-400 font-medium animate-in fade-in slide-in-from-top-1'>
               <AlertCircle className='h-3.5 w-3.5' />
               <span>El monto supera el saldo disponible del empleado</span>
@@ -147,7 +133,7 @@ export function AdvanceForm({
         {}
         <div className='space-y-2'>
           <Label htmlFor='motivo' className='text-sm sm:text-base'>
-            Motivo <span className='text-gray-500 text-xs'>(Opcional)</span>
+            Motivo <span className='text-red-500'>*</span>
           </Label>
           <div className='relative'>
             <Input

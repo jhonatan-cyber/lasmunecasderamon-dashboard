@@ -1,4 +1,5 @@
 'use client';
+import { Button } from '@/components/ui/button';
 
 import { Card, CardContent } from '@/components/ui/card';
 import { Inbox, Send } from 'lucide-react';
@@ -91,13 +92,14 @@ export default function MisSolicitudesSection({
                 </div>
                 <div className='flex items-center gap-2 self-start sm:self-center'>
                   <GratificacionStatusBadge estado={gratificacion.estado} />
-                  <button
+                  <Button
+                    variant='unstyled'
                     type='button'
                     onClick={() => onViewDetail(gratificacion)}
                     className='rounded-full px-3 py-1 text-xs font-semibold text-blue-600 transition-colors hover:bg-blue-50 dark:hover:bg-blue-900/20'
                   >
                     Ver detalle
-                  </button>
+                  </Button>
                 </div>
               </CardContent>
             </Card>

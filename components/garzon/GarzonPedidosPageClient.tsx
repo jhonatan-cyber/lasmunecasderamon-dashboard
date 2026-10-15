@@ -1,12 +1,21 @@
 'use client';
+import { ListLoadError } from '@/components/shared/ListLoadError';
+import {
+  Table,
+  TableHeader,
+  TableRow,
+  TableHead,
+  TableBody,
+  TableCell
+} from '@/components/ui/table';
 
 import { useState, useEffect } from 'react';
 import { useCurrentUser } from '@/hooks/auth/useCurrentUser';
 import { useRouter } from 'next/navigation';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { ArrowLeft } from 'lucide-react';
-import SelectElements from '@/components/shared/SelectElements';
+import { ModuleTableCard } from '@/components/shared/tables/ModuleTable';
 import Paginate from '@/components/shared/Paginate';
 import { useOrdersSSE } from '@/hooks/orders/useOrdersSSE';
 import { formatCurrencyCLP } from '@/lib/utils/formatters';
@@ -15,7 +24,8 @@ import { OrdersFilters } from './OrdersFilters';
 import logger from '@/lib/utils/logger';
 
 interface Order {
-  id_pedido: number;
+  id?: string | number;
+  id_pedido: string;
   cliente_nombre: string;
   codigo: string;
   mesero_nombre: string;
@@ -31,7 +41,8 @@ export default function GarzonPedidosPage() {
   const router = useRouter();
   const [orders, setOrders] = useState<Order[]>([]);
   const [filteredOrders, setFilteredOrders] = useState<Order[]>([]);
-  const [loading, setLoading] = useState(false);
+  const [loading, setLoading] = useState(true);
+  const [loadError, setLoadError] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState('all');
   const [sortBy, setSortBy] = useState('total');
@@ -40,6 +51,7 @@ export default function GarzonPedidosPage() {
   const [rowsPerPage, setRowsPerPage] = useState(10);
 
   const fetchOrders = async () => {
+    setLoadError(false);
     if (orders.length === 0) {
       setLoading(true);
     }
@@ -48,12 +60,23 @@ export default function GarzonPedidosPage() {
       const response = await fetch('/api/orders/user');
       const data = await response.json();
 
+      if (!response.ok || !data.success || !Array.isArray(data.data))
+        throw new Error('No se pudieron cargar los pedidos');
       if (data.success) {
-        setOrders(data.data || []);
+        setOrders(
+          data.data.map((row: Order) => ({
+            ...row,
+            id_pedido: String(row.id ?? row.id_pedido),
+            total: Number(row.total ?? 0),
+            subtotal: Number(row.subtotal ?? 0),
+            estado: Number(row.estado ?? 0)
+          }))
+        );
       } else {
         logger.error('Error fetching orders:', data.message);
       }
     } catch (error) {
+      setLoadError(true);
       logger.captureException(error, { context: 'GarzonPedidosPageClient:fetchOrders' });
     } finally {
       setLoading(false);
@@ -61,7 +84,7 @@ export default function GarzonPedidosPage() {
   };
 
   useEffect(() => {
-    if (user && !userLoading) {
+    if (user && !userLoading && user.role?.toLowerCase() === 'garzon') {
       fetchOrders();
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -71,11 +94,11 @@ export default function GarzonPedidosPage() {
     if (data.type === 'order-processed') {
       setOrders(prevOrders =>
         prevOrders.map(order =>
-          order.id_pedido === data.orderId ? { ...order, estado: 0 } : order
+          order.id_pedido === String(data.orderId) ? { ...order, estado: 0 } : order
         )
       );
     } else if (data.type === 'order-deleted') {
-      setOrders(prevOrders => prevOrders.filter(order => order.id_pedido !== data.orderId));
+      setOrders(prevOrders => prevOrders.filter(order => order.id_pedido !== String(data.orderId)));
     } else if (data.type === 'order-created') {
       fetchOrders();
     }
@@ -106,6 +129,7 @@ export default function GarzonPedidosPage() {
         bValue = parseFloat(bValue) || 0;
       }
 
+      if (aValue === bValue) return 0;
       if (sortOrder === 'asc') {
         return aValue > bValue ? 1 : -1;
       } else {
@@ -185,6 +209,9 @@ export default function GarzonPedidosPage() {
     );
   }
 
+  if (loadError)
+    return <ListLoadError message='No se pudieron cargar tus pedidos.' onRetry={fetchOrders} />;
+
   return (
     <div className='p-4 sm:p-6 lg:p-10 space-y-4 sm:space-y-6 mt-4 sm:mt-6 lg:mt-10'>
       {}
@@ -238,7 +265,7 @@ export default function GarzonPedidosPage() {
       />
 
       {}
-      <Card>
+      <ModuleTableCard>
         <CardHeader>
           <CardTitle>Pedidos ({filteredOrders.length})</CardTitle>
         </CardHeader>
@@ -252,101 +279,68 @@ export default function GarzonPedidosPage() {
             <div className='text-center py-8 text-gray-500'>No se encontraron pedidos</div>
           ) : (
             <div className='overflow-x-auto'>
-              <table className='min-w-full divide-y divide-gray-200'>
-                <thead className='bg-gray-50'>
-                  <tr>
-                    <th className='px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider'>
-                      #
-                    </th>
-                    <th className='px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider'>
-                      CÓDIGO
-                    </th>
-                    <th className='px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider'>
-                      CLIENTE
-                    </th>
-                    <th className='px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider'>
-                      GARZÓN
-                    </th>
-                    <th className='px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider'>
-                      NICKS
-                    </th>
-                    <th className='px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider'>
-                      SUBTOTAL
-                    </th>
-                    <th className='px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider'>
-                      TOTAL
-                    </th>
-                    <th className='px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider'>
-                      ESTADO
-                    </th>
-                  </tr>
-                </thead>
-                <tbody className='bg-white divide-y divide-gray-200'>
+              <Table className='min-w-full divide-y divide-gray-200'>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead className='text-left font-medium tracking-wider'>#</TableHead>
+                    <TableHead className='text-left font-medium tracking-wider'>CÓDIGO</TableHead>
+                    <TableHead className='text-left font-medium tracking-wider'>CLIENTE</TableHead>
+                    <TableHead className='text-left font-medium tracking-wider'>GARZÓN</TableHead>
+                    <TableHead className='text-left font-medium tracking-wider'>NICKS</TableHead>
+                    <TableHead className='text-left font-medium tracking-wider'>SUBTOTAL</TableHead>
+                    <TableHead className='text-left font-medium tracking-wider'>TOTAL</TableHead>
+                    <TableHead className='text-left font-medium tracking-wider'>ESTADO</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody className='divide-y divide-gray-200 dark:divide-gray-800'>
                   {currentOrders.map((order, index) => (
-                    <tr key={order.id_pedido} className='hover:bg-gray-50'>
-                      <td className='px-6 py-4 whitespace-nowrap'>
-                        <div className='flex items-center justify-center w-8 h-8 rounded-full bg-purple-300 text-purple-800 font-semibold text-sm'>
-                          {startIndex + index + 1}
-                        </div>
-                      </td>
-                      <td className='px-6 py-4 whitespace-nowrap'>
+                    <TableRow key={order.id_pedido}>
+                      <TableCell className='whitespace-nowrap'>{startIndex + index + 1}</TableCell>
+                      <TableCell className='whitespace-nowrap'>
                         <div className='text-sm font-medium text-gray-900 dark:text-gray-100'>
                           {order.codigo || 'N/A'}
                         </div>
-                      </td>
-                      <td className='px-6 py-4 whitespace-nowrap'>
+                      </TableCell>
+                      <TableCell className='whitespace-nowrap'>
                         <div className='text-sm font-medium text-gray-900 dark:text-gray-100'>
                           {order.cliente_nombre || 'N/A'}
                         </div>
-                      </td>
-                      <td className='px-6 py-4 whitespace-nowrap'>
+                      </TableCell>
+                      <TableCell className='whitespace-nowrap'>
                         <div className='text-sm text-gray-900 dark:text-gray-100'>
                           {order.mesero_nombre || 'N/A'}
                         </div>
-                      </td>
-                      <td className='px-6 py-4 whitespace-nowrap'>
+                      </TableCell>
+                      <TableCell className='whitespace-nowrap'>
                         <div className='text-sm text-gray-900 dark:text-gray-100'>
                           {order.nicks || 'N/A'}
                         </div>
-                      </td>
-                      <td className='px-6 py-4 whitespace-nowrap'>
+                      </TableCell>
+                      <TableCell className='whitespace-nowrap'>
                         <div className='text-sm font-medium text-gray-900 dark:text-gray-100'>
                           {formatCurrencyCLP(order.subtotal || 0)}
                         </div>
-                      </td>
-                      <td className='px-6 py-4 whitespace-nowrap'>
+                      </TableCell>
+                      <TableCell className='whitespace-nowrap'>
                         <div className='text-sm font-medium text-gray-900 dark:text-gray-100'>
                           {formatCurrencyCLP(order.total || 0)}
                         </div>
-                      </td>
-                      <td className='px-6 py-4 whitespace-nowrap'>
+                      </TableCell>
+                      <TableCell className='whitespace-nowrap'>
                         {getStatusBadge(order.estado)}
-                      </td>
-                    </tr>
+                      </TableCell>
+                    </TableRow>
                   ))}
-                </tbody>
-              </table>
+                </TableBody>
+              </Table>
             </div>
           )}
         </CardContent>
-      </Card>
+      </ModuleTableCard>
 
       {}
       {filteredOrders.length > 0 && (
         <div className='flex flex-col sm:flex-row items-center justify-between gap-4'>
-          <div className='flex items-center gap-2'>
-            <span className='text-sm text-gray-700 dark:text-gray-200'>Mostrar</span>
-            <SelectElements
-              value={rowsPerPage}
-              onChange={value => {
-                setRowsPerPage(value);
-                setCurrentPage(1);
-              }}
-              options={[5, 10, 20, 50]}
-            />
-            <span className='text-sm text-gray-700 dark:text-gray-200'>por página</span>
-          </div>
-
           <div className='flex justify-center'>
             <Paginate page={currentPage} totalPages={totalPages} setPage={setCurrentPage} />
           </div>

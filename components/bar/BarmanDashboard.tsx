@@ -1,12 +1,15 @@
 'use client';
 
+import { EmployeeModuleLinks } from '@/components/shared/EmployeeModuleLinks';
+import { MetricCard } from '@/components/shared/MetricCard';
+import { fetchCollection } from '@/lib/api/fetchCollection';
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { ArrowRight, CheckCircle2, ClipboardCheck, Package, Wine } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '@/components/ui/card';
-import { Alert, AlertTitle, AlertDescription } from '@/components/ui/alert';
+import { ListLoadError } from '@/components/shared/ListLoadError';
 import { Skeleton } from '@/components/ui/skeleton';
 import { PermissionGuard } from '@/components/auth/PermissionGuard';
 import type { BarStockItem } from './TransferModal';
@@ -25,21 +28,16 @@ export default function BarmanDashboard({ name }: { name: string }) {
       setLoading(true);
       setError('');
       try {
-        const read = async (url: string) => {
-          const response = await fetch(url, { cache: 'no-store', signal: controller.signal });
-          const result = await response.json();
-          if (!response.ok || !result.success || !Array.isArray(result.data)) {
-            throw new Error(result.message || 'No se pudo cargar el resumen de barra.');
-          }
-          return result.data;
-        };
+        const options = { cache: 'no-store' as const, signal: controller.signal };
         const [items, transfers] = await Promise.all([
-          read('/api/bar'),
-          read('/api/transfers/pending')
+          fetchCollection<BarStockItem>('/api/bar', options),
+          fetchCollection<TransferRecord>('/api/transfers/pending', options)
         ]);
         if (!controller.signal.aborted) {
-          setStock(items);
-          setPending(transfers);
+          setStock(items.map(item => ({ ...item, stock_bar: Number(item.stock_bar ?? 0) })));
+          setPending(
+            transfers.map(record => ({ ...record, cantidad: Number(record.cantidad ?? 0) }))
+          );
         }
       } catch (err) {
         if (!controller.signal.aborted)
@@ -115,18 +113,10 @@ export default function BarmanDashboard({ name }: { name: string }) {
         </PermissionGuard>
       </nav>
 
+      <EmployeeModuleLinks role='barman' />
+
       {error ? (
-        <Alert variant='destructive'>
-          <AlertTitle>No se pudo cargar el dashboard</AlertTitle>
-          <AlertDescription>{error}</AlertDescription>
-          <Button
-            variant='outline'
-            className='mt-3 rounded-full'
-            onClick={() => setRevision(value => value + 1)}
-          >
-            Reintentar
-          </Button>
-        </Alert>
+        <ListLoadError message={error} onRetry={() => setRevision(value => value + 1)} />
       ) : loading ? (
         <div
           role='status'
@@ -134,27 +124,25 @@ export default function BarmanDashboard({ name }: { name: string }) {
           className='grid grid-cols-2 gap-3 lg:grid-cols-4'
         >
           {metrics.map(metric => (
-            <Skeleton key={metric.label} className='h-28 rounded-2xl' />
+            <Skeleton key={metric.label} className='h-28 rounded-3xl' />
           ))}
         </div>
       ) : (
         <>
           <section aria-label='Resumen de barra' className='grid grid-cols-2 gap-3 lg:grid-cols-4'>
             {metrics.map(({ label, value, icon: Icon }) => (
-              <Card key={label} className='rounded-2xl'>
-                <CardHeader className='gap-2 p-4 pb-2'>
-                  <Icon className='size-5 text-muted-foreground' aria-hidden='true' />
-                  <CardDescription>{label}</CardDescription>
-                </CardHeader>
-                <CardContent className='px-4 pb-4'>
-                  <p className='text-3xl font-semibold tabular-nums'>{value}</p>
-                </CardContent>
-              </Card>
+              <MetricCard
+                key={label}
+                label={label}
+                value={value}
+                icon={<Icon className='size-5' aria-hidden='true' />}
+                tone='violet'
+              />
             ))}
           </section>
 
           <div className='grid items-start gap-6 lg:grid-cols-5'>
-            <Card className='rounded-2xl lg:col-span-3'>
+            <Card className='rounded-3xl lg:col-span-3'>
               <CardHeader>
                 <CardTitle>Por recibir</CardTitle>
                 <CardDescription>
@@ -200,7 +188,7 @@ export default function BarmanDashboard({ name }: { name: string }) {
               </CardContent>
             </Card>
 
-            <Card className='rounded-2xl lg:col-span-2'>
+            <Card className='rounded-3xl lg:col-span-2'>
               <CardHeader>
                 <CardTitle>Existencias en barra</CardTitle>
                 <CardDescription>

@@ -1,4 +1,5 @@
 'use client';
+import { SortSelect } from '@/components/shared/selects/SortSelect';
 
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -10,7 +11,7 @@ import {
   SelectTrigger,
   SelectValue
 } from '@/components/ui/select';
-import { Trash2, SortAsc, SortDesc } from 'lucide-react';
+import { Trash2 } from 'lucide-react';
 import SearchInput from '@/components/shared/SearchInput';
 import SelectElements from '@/components/shared/SelectElements';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
@@ -107,43 +108,23 @@ export function ClientFilters({
 
             {}
             <div className='w-full sm:w-auto grid grid-cols-2 gap-4 sm:flex sm:gap-4 sm:items-end'>
-              <div className='w-full sm:w-auto min-w-40'>
-                <Label className='mb-2 block text-xs font-bold uppercase tracking-wider text-gray-500 dark:text-gray-400 ml-1'>
-                  Ordenar por
-                </Label>
-                <div className='flex h-11 w-full items-stretch overflow-hidden rounded-full border border-gray-300 bg-gray-100 dark:border-gray-700 dark:bg-slate-900/50'>
-                  <Select value={sortBy} onValueChange={setSortBy}>
-                    <SelectTrigger
-                      id='sort-by'
-                      className='h-11 w-auto flex-1 rounded-none border-0 bg-transparent px-4 hover:border-0 focus:border-0 dark:bg-transparent'
-                    >
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value='name'>Nombre</SelectItem>
-                      <SelectItem value='lastName'>Apellido</SelectItem>
-                      <SelectItem value='run'>RUT</SelectItem>
-                      <SelectItem value='phone'>Teléfono</SelectItem>
-                      <SelectItem value='saldo_prepago'>Saldo Prepago</SelectItem>
-                      <SelectItem value='created_at'>Fecha Creación</SelectItem>
-                    </SelectContent>
-                  </Select>
-                  <Button
-                    type='button'
-                    variant='ghost'
-                    size='icon'
-                    aria-label={sortOrder === 'asc' ? 'Ordenar descendente' : 'Ordenar ascendente'}
-                    onClick={() => setSortOrder(sortOrder === 'asc' ? 'desc' : 'asc')}
-                    className='h-11 w-11 shrink-0 rounded-none border-l border-gray-300 bg-transparent text-gray-500 hover:bg-gray-200 dark:border-gray-700 dark:text-gray-400 dark:hover:bg-gray-700'
-                  >
-                    {sortOrder === 'asc' ? (
-                      <SortAsc className='h-4 w-4' />
-                    ) : (
-                      <SortDesc className='h-4 w-4' />
-                    )}
-                  </Button>
-                </div>
-              </div>
+              <SortSelect
+                className='w-full sm:w-auto min-w-40'
+                field={sortBy}
+                direction={sortOrder}
+                options={[
+                  { value: 'name', label: 'Nombre' },
+                  { value: 'lastName', label: 'Apellido' },
+                  { value: 'run', label: 'RUT' },
+                  { value: 'phone', label: 'Teléfono' },
+                  { value: 'saldo_prepago', label: 'Saldo Prepago' },
+                  { value: 'created_at', label: 'Fecha Creación' }
+                ]}
+                onChange={(field, direction) => {
+                  setSortBy(field as typeof sortBy);
+                  setSortOrder(direction);
+                }}
+              />
 
               <div className='flex items-end gap-2'>
                 <div>

@@ -101,46 +101,32 @@ export default function PurchasesPage() {
         <BoneyardSkeleton name='purchases-table' loading={loading}>
           <div className='bg-white dark:bg-slate-900/40 rounded-3xl shadow-md overflow-hidden'>
             <div className='overflow-x-auto'>
-              <Table className='min-w-full text-base text-center'>
-                <TableHeader className='bg-gray-100 dark:bg-slate-900/50'>
-                  <TableRow className='hover:bg-transparent border-gray-100 dark:border-gray-800'>
+              <Table className='min-w-full text-center'>
+                <TableHeader>
+                  <TableRow className='hover:bg-transparent'>
                     <TableHead className='w-10' />
-                    <TableHead className='py-4 px-5 text-xs uppercase text-gray-500'>
-                      Folio
-                    </TableHead>
-                    <TableHead className='py-4 px-5 text-xs uppercase text-gray-500'>
-                      Fecha
-                    </TableHead>
-                    <TableHead className='py-4 px-5 text-xs uppercase text-gray-500'>
-                      Proveedor
-                    </TableHead>
-                    <TableHead className='py-4 px-5 text-xs uppercase text-gray-500'>
-                      Registró
-                    </TableHead>
-                    <TableHead className='py-4 px-5 text-xs uppercase text-gray-500'>
-                      Ítems
-                    </TableHead>
-                    <TableHead className='py-4 px-5 text-xs uppercase text-gray-500'>
-                      Total
-                    </TableHead>
+                    <TableHead>Folio</TableHead>
+                    <TableHead>Fecha</TableHead>
+                    <TableHead>Proveedor</TableHead>
+                    <TableHead>Registró</TableHead>
+                    <TableHead>Ítems</TableHead>
+                    <TableHead>Total</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
                   {filtered.length === 0 ? (
                     <TableRow key='empty'>
-                      <TableCell
-                        colSpan={7}
-                        className='text-center py-8 text-gray-400 text-sm sm:text-base bg-white'
-                      >
+                      <TableCell colSpan={7} className='text-center sm:text-base bg-white'>
                         {loading ? 'Cargando...' : 'Sin compras registradas.'}
                       </TableCell>
                     </TableRow>
                   ) : (
                     filtered.map(h => (
                       <Fragment key={h.id}>
-                        <TableRow className='border-b bg-white hover:bg-gray-50 transition-colors'>
-                          <TableCell className='py-3 px-2 text-center'>
-                            <button
+                        <TableRow className='border-b transition-colors'>
+                          <TableCell className='text-center'>
+                            <Button
+                              variant='unstyled'
                               type='button'
                               onClick={() => setExpanded(v => (v === h.id ? null : h.id))}
                               className={`${PURCHASE_BUTTON_CLASS} p-1`}
@@ -152,36 +138,36 @@ export default function PurchasesPage() {
                                   expanded === h.id && 'rotate-180'
                                 )}
                               />
-                            </button>
+                            </Button>
                           </TableCell>
-                          <TableCell className='py-3 px-2 sm:px-4 font-bold'>{h.folio}</TableCell>
-                          <TableCell className='py-3 px-2 sm:px-4 text-xs sm:text-sm whitespace-nowrap'>
+                          <TableCell className='sm:px-4 font-bold'>{h.folio}</TableCell>
+                          <TableCell className='sm:px-4 sm:text-sm whitespace-nowrap'>
                             {h.fecha_crea
                               ? String(h.fecha_crea).replace('T', ' ').slice(0, 16)
                               : '—'}
                           </TableCell>
-                          <TableCell className='py-3 px-2 sm:px-4 text-xs sm:text-sm'>
+                          <TableCell className='sm:px-4 sm:text-sm'>
                             {h.proveedor || '—'}
                             {h.telefono && (
                               <span className='block text-gray-400'>{h.telefono}</span>
                             )}
                           </TableCell>
-                          <TableCell className='py-3 px-2 sm:px-4 text-xs sm:text-sm'>
+                          <TableCell className='sm:px-4 sm:text-sm'>
                             {h.usuario_nombre || '—'}
                           </TableCell>
-                          <TableCell className='py-3 px-2 sm:px-4'>
+                          <TableCell className='sm:px-4'>
                             <Badge className='bg-blue-100 text-blue-700 rounded-full px-3 py-1'>
                               {h.detalles.reduce((acc, d) => acc + Number(d.cantidad || 0), 0)} un.
                             </Badge>
                           </TableCell>
-                          <TableCell className='py-3 px-2 sm:px-4 font-mono font-semibold'>
+                          <TableCell className='sm:px-4 font-mono font-semibold'>
                             {formatCurrencyCLP(Number(h.total || 0))}
                           </TableCell>
                         </TableRow>
                         {expanded === h.id && (
-                          <TableRow key={`${h.id}-detail`} className='bg-gray-50'>
+                          <TableRow key={`${h.id}-detail`}>
                             <TableCell />
-                            <TableCell colSpan={6} className='py-3 px-4 text-left'>
+                            <TableCell colSpan={6} className='text-left'>
                               <div className='space-y-1'>
                                 {h.detalles.map(d => (
                                   <p key={d.id} className='text-xs sm:text-sm'>

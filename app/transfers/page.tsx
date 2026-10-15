@@ -557,7 +557,7 @@ function TransfersContent() {
                 <TableBody>
                   {historial.length === 0 ? (
                     <TableRow>
-                      <TableCell colSpan={8} className='py-10 text-center text-muted-foreground'>
+                      <TableCell colSpan={8} className='text-center text-muted-foreground'>
                         {loading
                           ? 'Cargando historial…'
                           : 'Todavía no hay transferencias registradas.'}

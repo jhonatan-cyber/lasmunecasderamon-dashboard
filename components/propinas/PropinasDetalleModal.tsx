@@ -79,52 +79,39 @@ export default function PropinasDetalleModal({
             </h3>
             <div className='bg-white dark:bg-slate-900/40 backdrop-blur-xs rounded-3xl border-none shadow-md overflow-hidden'>
               <Table className='min-w-full'>
-                <TableHeader className='bg-gray-100 dark:bg-slate-900/50'>
+                <TableHeader>
                   <TableRow className='hover:bg-transparent'>
-                    <TableHead className='py-4 px-5 text-xs uppercase text-gray-500 font-normal'>
-                      FECHA HORA
-                    </TableHead>
-                    <TableHead className='py-4 px-5 text-xs uppercase text-gray-500 font-normal'>
-                      CODIGO VENTA
-                    </TableHead>
-                    <TableHead className='py-4 px-5 text-xs uppercase text-gray-500 font-normal'>
-                      MONTO
-                    </TableHead>
-                    <TableHead className='py-4 px-5 text-xs uppercase text-gray-500 font-normal'>
-                      FECHA PAGO
-                    </TableHead>
-                    <TableHead className='py-4 px-5 text-xs uppercase text-gray-500 font-normal'>
-                      ESTADO
-                    </TableHead>
+                    <TableHead className='font-normal'>FECHA HORA</TableHead>
+                    <TableHead className='font-normal'>CODIGO VENTA</TableHead>
+                    <TableHead className='font-normal'>MONTO</TableHead>
+                    <TableHead className='font-normal'>FECHA PAGO</TableHead>
+                    <TableHead className='font-normal'>ESTADO</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
                   {loading ? (
                     Array.from({ length: 5 }).map((_, i) => (
                       <TableRow key={i}>
-                        <TableCell className='py-4 px-5'>
+                        <TableCell>
                           <Skeleton className='h-6 w-32' />
                         </TableCell>
-                        <TableCell className='py-4 px-5'>
+                        <TableCell>
                           <Skeleton className='h-6 w-24' />
                         </TableCell>
-                        <TableCell className='py-4 px-5'>
+                        <TableCell>
                           <Skeleton className='h-6 w-20 ml-auto' />
                         </TableCell>
-                        <TableCell className='py-4 px-5'>
+                        <TableCell>
                           <Skeleton className='h-6 w-24' />
                         </TableCell>
-                        <TableCell className='py-4 px-5'>
+                        <TableCell>
                           <Skeleton className='h-6 w-16 mx-auto' />
                         </TableCell>
                       </TableRow>
                     ))
                   ) : error ? (
                     <TableRow>
-                      <TableCell
-                        colSpan={5}
-                        className='text-center py-8 text-red-600 text-xs sm:text-sm'
-                      >
+                      <TableCell colSpan={5} className='text-center text-red-600 sm:text-sm'>
                         {error}
                         <Button
                           onClick={() => fetchDetalles(usuario.id_usuario)}
@@ -136,32 +123,26 @@ export default function PropinasDetalleModal({
                     </TableRow>
                   ) : detalles.length === 0 ? (
                     <TableRow>
-                      <TableCell
-                        colSpan={5}
-                        className='text-center py-8 text-gray-600 text-xs sm:text-sm'
-                      >
+                      <TableCell colSpan={5} className='text-center sm:text-sm'>
                         No hay detalles de tips para mostrar
                       </TableCell>
                     </TableRow>
                   ) : (
                     detalles.map((detalle, index) => (
-                      <TableRow
-                        key={index}
-                        className='transition-colors hover:bg-gray-50 dark:hover:bg-slate-800/30'
-                      >
-                        <TableCell className='py-4 px-5 text-left text-sm text-gray-700 dark:text-gray-300'>
+                      <TableRow key={index} className='transition-colors'>
+                        <TableCell className='text-left'>
                           <div>{formatSoloFecha(detalle.fecha_crea)}</div>
                           <div className='text-xs text-gray-500'>
                             {formatSoloHora(detalle.fecha_crea)}
                           </div>
                         </TableCell>
-                        <TableCell className='py-4 px-5 text-left text-sm font-mono text-gray-600 dark:text-gray-400'>
+                        <TableCell className='text-left font-mono'>
                           {detalle.codigo_venta}
                         </TableCell>
-                        <TableCell className='py-4 px-5 text-right text-sm text-green-600'>
+                        <TableCell className='text-right text-green-600'>
                           {formatCurrencyNoDecimals(detalle.monto)}
                         </TableCell>
-                        <TableCell className='py-4 px-5 text-left text-sm text-gray-700 dark:text-gray-300'>
+                        <TableCell className='text-left'>
                           {detalle.fecha_pago ? (
                             <div>{formatSoloFecha(detalle.fecha_pago)}</div>
                           ) : (
@@ -170,7 +151,7 @@ export default function PropinasDetalleModal({
                             </span>
                           )}
                         </TableCell>
-                        <TableCell className='py-4 px-5 text-center'>
+                        <TableCell className='text-center'>
                           <Badge
                             className={`${detalle.fecha_pago ? 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-300' : 'bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-300'} rounded-full px-3 py-1 text-xs font-semibold border-none shadow-none`}
                           >

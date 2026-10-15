@@ -11,11 +11,11 @@ import { Users } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import React, { useState, useMemo } from 'react';
 import {
-  ORDER_FIELD_POPOVER_CLASS,
-  ORDER_FIELD_SEARCH_INPUT_CLASS,
-  ORDER_FIELD_SEARCH_WRAPPER_CLASS,
-  ORDER_FIELD_TRIGGER_CLASS
-} from '@/components/orders/orderFieldStyles';
+  SELECT_CONTENT_WIDE_CLASS,
+  SELECT_SEARCH_INPUT_CLASS,
+  SELECT_SEARCH_WRAPPER_CLASS,
+  SELECT_TRIGGER_CLASS
+} from '@/components/shared/selectStyles';
 
 interface Hostess {
   id_usuario?: number;
@@ -86,19 +86,19 @@ const IndividualHostessSelect: React.FC<IndividualHostessSelectProps> = ({
         </span>
         <Select value={value || ''} onValueChange={onChange} disabled={disabled}>
           <SelectTrigger
-            className={`${ORDER_FIELD_TRIGGER_CLASS} pl-10 justify-center`}
+            className={`${SELECT_TRIGGER_CLASS} pl-10 justify-center`}
             disabled={disabled}
           >
             <SelectValue placeholder={placeholder} />
           </SelectTrigger>
-          <SelectContent className={`${ORDER_FIELD_POPOVER_CLASS} max-h-80`}>
+          <SelectContent className={`${SELECT_CONTENT_WIDE_CLASS} max-h-80`}>
             {}
-            <div className={ORDER_FIELD_SEARCH_WRAPPER_CLASS}>
+            <div className={SELECT_SEARCH_WRAPPER_CLASS}>
               <Input
                 placeholder={searchPlaceholder}
                 value={searchTerm}
                 onChange={e => setSearchTerm(e.target.value)}
-                className={ORDER_FIELD_SEARCH_INPUT_CLASS}
+                className={SELECT_SEARCH_INPUT_CLASS}
                 disabled={disabled}
               />
             </div>

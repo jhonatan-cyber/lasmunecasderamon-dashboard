@@ -110,26 +110,18 @@ export default function AttendanceTable({ data }: AttendanceTableProps) {
   const TableView = () => (
     <div className='hidden sm:block bg-white dark:bg-slate-900/40 backdrop-blur-xs rounded-3xl border-none shadow-md overflow-hidden'>
       <div className='overflow-x-auto'>
-        <Table className='min-w-full text-base text-center'>
-          <TableHeader className='bg-gray-100 dark:bg-slate-900/50'>
-            <TableRow className='hover:bg-transparent border-gray-100 dark:border-gray-800'>
-              <TableHead className='py-4 px-5 text-xs uppercase text-gray-500'>Empleado</TableHead>
-              <TableHead className='py-4 px-5 text-xs uppercase text-gray-500'>Nick</TableHead>
-              <TableHead className='py-4 px-5 text-xs uppercase text-gray-500'>Rol</TableHead>
-              <TableHead className='py-4 px-5 text-xs uppercase text-gray-500'>
-                Asistencias
-              </TableHead>
-              <TableHead className='py-4 px-5 text-xs uppercase text-gray-500'>Sueldo</TableHead>
-              <TableHead className='py-4 px-5 text-xs uppercase text-gray-500'>
-                Aporte AFP
-              </TableHead>
-              <TableHead className='py-4 px-5 text-xs uppercase text-gray-500'>Descuento</TableHead>
-              <TableHead className='py-4 px-5 text-xs uppercase text-gray-500'>Total</TableHead>
-              {canViewDetail && (
-                <TableHead className='py-4 px-5 text-xs uppercase text-gray-500'>
-                  Detalles
-                </TableHead>
-              )}
+        <Table className='min-w-full text-center'>
+          <TableHeader>
+            <TableRow className='hover:bg-transparent'>
+              <TableHead>Empleado</TableHead>
+              <TableHead>Nick</TableHead>
+              <TableHead>Rol</TableHead>
+              <TableHead>Asistencias</TableHead>
+              <TableHead>Sueldo</TableHead>
+              <TableHead>Aporte AFP</TableHead>
+              <TableHead>Descuento</TableHead>
+              <TableHead>Total</TableHead>
+              {canViewDetail && <TableHead>Detalles</TableHead>}
             </TableRow>
           </TableHeader>
           <TableBody>
@@ -138,7 +130,7 @@ export default function AttendanceTable({ data }: AttendanceTableProps) {
                 key={item.id_usuario}
                 className={`border-b transition-colors hover:bg-gray-50 dark:hover:bg-slate-800/30 border-gray-100 dark:border-gray-800 ${idx === 0 ? 'first:rounded-t-xl' : ''} ${idx === data.length - 1 ? 'last:rounded-b-xl' : ''}`}
               >
-                <TableCell className='font-medium text-start text-sm'>
+                <TableCell className='font-medium text-start'>
                   <div className='flex items-center gap-3'>
                     <Avatar className='h-8 w-8'>
                       {item.usuario_foto && item.usuario_foto !== '' ? (
@@ -162,8 +154,8 @@ export default function AttendanceTable({ data }: AttendanceTableProps) {
                     </span>
                   </div>
                 </TableCell>
-                <TableCell className='text-sm text-center'>{item.nick}</TableCell>
-                <TableCell className='text-sm text-center'>
+                <TableCell className='text-center'>{item.nick}</TableCell>
+                <TableCell className='text-center'>
                   <Badge className='bg-purple-100 text-purple-700 dark:bg-purple-900/30 dark:text-purple-300 rounded-full px-2 py-1 text-xs font-medium'>
                     {item.rol || 'Sin rol'}
                   </Badge>
@@ -173,16 +165,16 @@ export default function AttendanceTable({ data }: AttendanceTableProps) {
                     {item.total_asistencias} Días
                   </Badge>
                 </TableCell>
-                <TableCell className='text-center text-sm'>
+                <TableCell className='text-center'>
                   {formatCurrencyNoDecimals(item.sueldo_total)}
                 </TableCell>
-                <TableCell className='text-center text-sm'>
+                <TableCell className='text-center'>
                   {formatCurrencyNoDecimals(item.aporte_total)}
                 </TableCell>
-                <TableCell className='text-center text-sm'>
+                <TableCell className='text-center'>
                   {formatCurrencyNoDecimals(item.descuento_total)}
                 </TableCell>
-                <TableCell className='text-center font-bold text-sm'>
+                <TableCell className='text-center font-bold'>
                   {formatCurrencyNoDecimals(item.total_final)}
                 </TableCell>
                 {canViewDetail && (

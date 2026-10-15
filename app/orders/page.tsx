@@ -1,4 +1,5 @@
 'use client';
+import { Button } from '@/components/ui/button';
 
 import { useState, useEffect } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
@@ -171,7 +172,8 @@ export default function OrdersPage() {
           />
 
           <div className='flex justify-center gap-3 border-b pb-1 mb-8'>
-            <button
+            <Button
+              variant='unstyled'
               onClick={() => setActiveTab('productos')}
               className={`flex items-center gap-2 px-5 py-2 text-sm font-semibold transition-all ${
                 activeTab === 'productos'
@@ -189,8 +191,9 @@ export default function OrdersPage() {
               >
                 {filteredOrders.length}
               </span>
-            </button>
-            <button
+            </Button>
+            <Button
+              variant='unstyled'
               onClick={() => setActiveTab('servicios')}
               className={`flex items-center gap-2 px-5 py-2 text-sm font-semibold transition-all ${
                 activeTab === 'servicios'
@@ -208,7 +211,7 @@ export default function OrdersPage() {
               >
                 {filteredServicios.length}
               </span>
-            </button>
+            </Button>
           </div>
 
           {activeTab === 'productos' && (

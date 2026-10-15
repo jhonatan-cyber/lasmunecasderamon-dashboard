@@ -1,4 +1,7 @@
 'use client';
+import { Button } from '@/components/ui/button';
+import { NativeSelect } from '@/components/ui/native-select';
+
 import { matchesProductSearch } from '@/lib/utils/productSearch';
 import {
   hostessMixerMl,
@@ -65,9 +68,14 @@ export function ShotMixerSelection({
       {error && (
         <div role='alert'>
           {error}{' '}
-          <button type='button' className='underline' onClick={() => setReload(n => n + 1)}>
+          <Button
+            variant='unstyled'
+            type='button'
+            className='underline'
+            onClick={() => setReload(n => n + 1)}
+          >
             Reintentar
-          </button>
+          </Button>
         </div>
       )}
       {productos.map(
@@ -79,7 +87,7 @@ export function ShotMixerSelection({
               </p>
               <label className='space-y-1 text-sm'>
                 Producto o sabor
-                <select
+                <NativeSelect
                   aria-label={`Soda o gaseosa para ${p.nombre}`}
                   className='h-10 w-full rounded-md border bg-background px-3'
                   disabled={loading || (p.shot_anfitriona && hostessMixerMl(p) <= 0)}
@@ -116,7 +124,7 @@ export function ShotMixerSelection({
                         {Number(b.ml_abierta) > 0 ? ` · ${b.ml_abierta} ml abiertos` : ''}
                       </option>
                     ))}
-                </select>
+                </NativeSelect>
               </label>
               {p.shot_anfitriona && hostessMixerMl(p) <= 0 && (
                 <p className='text-sm text-amber-600 sm:col-span-2'>

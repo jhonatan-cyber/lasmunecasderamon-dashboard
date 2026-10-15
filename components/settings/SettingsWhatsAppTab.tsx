@@ -1,4 +1,6 @@
 'use client';
+import { Input } from '@/components/ui/input';
+import { Button } from '@/components/ui/button';
 
 import { useState, useEffect, useCallback, type ChangeEvent } from 'react';
 import { MessageCircle, Save, ShieldCheck, Send, RefreshCw } from 'lucide-react';
@@ -255,7 +257,7 @@ export function SettingsWhatsAppTab() {
                 >
                   {campo.etiqueta}
                 </label>
-                <input
+                <Input
                   id={campo.id}
                   type={campo.tipo || 'text'}
                   disabled={saving || testing}
@@ -276,14 +278,15 @@ export function SettingsWhatsAppTab() {
         {!loading && (
           <div className='mt-6 space-y-4 border-t border-neutral-200 dark:border-neutral-800 pt-4'>
             <div className='flex flex-wrap items-center gap-3'>
-              <button
+              <Button
+                variant='unstyled'
                 onClick={handleTest}
                 disabled={saving || testing || dirty}
                 className='flex items-center gap-2 rounded-full border px-4 py-2 text-sm font-semibold disabled:opacity-50'
               >
                 <Send className='h-4 w-4' />
                 {testing ? 'Enviando prueba...' : 'Enviar mensaje de prueba'}
-              </button>
+              </Button>
               <p className='text-xs text-neutral-500'>
                 {dirty
                   ? 'Guarda los cambios antes de probar.'
@@ -302,7 +305,7 @@ export function SettingsWhatsAppTab() {
                   <label htmlFor={`whatsapp-${key}`} className='text-xs text-neutral-500'>
                     {key === 'incomingUrl' ? 'When a message comes in' : 'Status callback URL'}
                   </label>
-                  <input
+                  <Input
                     id={`whatsapp-${key}`}
                     readOnly
                     value={url}
@@ -318,7 +321,8 @@ export function SettingsWhatsAppTab() {
             <div>
               <div className='flex items-center justify-between gap-2'>
                 <p className='text-sm font-semibold'>Estado de los últimos mensajes</p>
-                <button
+                <Button
+                  variant='unstyled'
                   aria-label='Actualizar estados de WhatsApp'
                   onClick={() => {
                     void loadHistory().catch(() =>
@@ -328,7 +332,7 @@ export function SettingsWhatsAppTab() {
                   className='rounded-full border p-2'
                 >
                   <RefreshCw className='h-4 w-4' />
-                </button>
+                </Button>
               </div>
               {history.length === 0 ? (
                 <p className='mt-2 text-sm text-neutral-500'>
@@ -379,14 +383,15 @@ export function SettingsWhatsAppTab() {
         </div>
 
         <div className='flex justify-end pt-4'>
-          <button
+          <Button
+            variant='unstyled'
             onClick={handleSave}
             disabled={saving || loading || testing}
             className='flex items-center gap-2 px-6 py-2.5 bg-black dark:bg-white text-white dark:text-black border-2 border-black dark:border-white hover:scale-105 active:scale-95 transition-all duration-200 rounded-full font-bold disabled:opacity-50'
           >
             <Save className='h-4 w-4' />
             {saving ? 'Guardando...' : 'Guardar Cambios'}
-          </button>
+          </Button>
         </div>
       </CardContent>
     </Card>

@@ -1,4 +1,5 @@
 'use client';
+import { Button } from '@/components/ui/button';
 
 import { useState, useEffect, useCallback } from 'react';
 import { useSales } from '@/hooks/caja/useSales';
@@ -184,7 +185,8 @@ export default function Sales() {
             />
 
             <div className='flex justify-center gap-3 border-b pb-1 mb-6'>
-              <button
+              <Button
+                variant='unstyled'
                 onClick={() => setSalesTab('all')}
                 className={`flex items-center gap-2 px-5 py-2 text-sm font-semibold transition-all ${
                   salesTab === 'all'
@@ -193,8 +195,9 @@ export default function Sales() {
                 }`}
               >
                 Todas las ventas
-              </button>
-              <button
+              </Button>
+              <Button
+                variant='unstyled'
                 onClick={() => setSalesTab('with-room')}
                 className={`flex items-center gap-2 px-5 py-2 text-sm font-semibold transition-all ${
                   salesTab === 'with-room'
@@ -203,7 +206,7 @@ export default function Sales() {
                 }`}
               >
                 Ventas con habitación
-              </button>
+              </Button>
             </div>
 
             {salesTab === 'all' && (

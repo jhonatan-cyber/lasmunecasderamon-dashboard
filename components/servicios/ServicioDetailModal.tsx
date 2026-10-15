@@ -201,7 +201,7 @@ export function ServicioDetailModal({
                       {formatCurrency(Number(selectedServicio.sub_total) || 0)}
                     </TableCell>
                   </TableRow>
-                  <TableRow className='font-bold bg-gray-50'>
+                  <TableRow className='font-bold'>
                     <TableCell className='text-black dark:text-neutral-100'>Total</TableCell>
                     <TableCell className='text-right text-lg text-black dark:text-neutral-100'>
                       {formatCurrency(Number(selectedServicio.total) || 0)}

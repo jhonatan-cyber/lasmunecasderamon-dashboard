@@ -1,4 +1,5 @@
 'use client';
+import { Input } from '@/components/ui/input';
 
 import { useId, useState } from 'react';
 import { Printer } from 'lucide-react';
@@ -257,7 +258,7 @@ export function UnitLabelSelector({
                   key={unit.id}
                   className='flex cursor-pointer items-center gap-3 rounded-lg border p-3'
                 >
-                  <input
+                  <Input
                     type='checkbox'
                     checked={selected.has(unit.id)}
                     aria-label={`Seleccionar código ${unit.codigo_barras || unit.codigo}`}

@@ -3,6 +3,7 @@
 import { useQuery } from '@tanstack/react-query';
 import { queryKeys } from '@/lib/api/queryClient';
 import { useDashboardSSE } from './useDashboardSSE';
+import { useCurrentUser } from '@/hooks/auth/useCurrentUser';
 
 export interface DashboardSummary {
   totalAsistencias: number;
@@ -20,14 +21,18 @@ export interface DashboardSummary {
 }
 
 export const useDashboardSummary = () => {
+  const { user, loading: userLoading } = useCurrentUser();
   useDashboardSSE();
 
   return useQuery<DashboardSummary>({
-    queryKey: queryKeys.dashboard.summary(),
+    queryKey: [...queryKeys.dashboard.summary(), user?.id, user?.role],
+    enabled: !userLoading && !!user?.id,
     queryFn: async ({ signal }) => {
       const response = await fetch('/api/stats/dashboard-summary', { signal });
       if (!response.ok) {
-        throw new Error('Error al obtener el resumen del dashboard');
+        throw Object.assign(new Error('Error al obtener el resumen del dashboard'), {
+          status: response.status
+        });
       }
       const result = await response.json();
       if (!result.success) {

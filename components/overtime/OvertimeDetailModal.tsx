@@ -186,34 +186,21 @@ export default function OvertimeDetailModal({
               <div className='space-y-6'>
                 <div className='bg-white dark:bg-slate-900/40 backdrop-blur-xs rounded-3xl border-none shadow-md overflow-hidden'>
                   <Table>
-                    <TableHeader className='bg-gray-100 dark:bg-slate-900/50'>
-                      <TableRow className='hover:bg-transparent border-gray-100 dark:border-gray-800'>
-                        <TableHead className='py-5 px-6 font-bold text-xs uppercase text-gray-500 text-center'>
-                          Fecha
-                        </TableHead>
-                        <TableHead className='py-5 px-6 font-bold text-xs uppercase text-gray-500 text-center'>
-                          Horas
-                        </TableHead>
-                        <TableHead className='py-5 px-6 font-bold text-xs uppercase text-gray-500 text-center'>
-                          Valor Hora
-                        </TableHead>
-                        <TableHead className='py-5 px-6 font-bold text-xs uppercase text-gray-500 text-right'>
-                          Total
-                        </TableHead>
-                        <TableHead className='py-5 px-6 font-bold text-xs uppercase text-gray-500 text-center'>
-                          Estado
-                        </TableHead>
+                    <TableHeader>
+                      <TableRow className='hover:bg-transparent'>
+                        <TableHead className='font-bold text-center'>Fecha</TableHead>
+                        <TableHead className='font-bold text-center'>Horas</TableHead>
+                        <TableHead className='font-bold text-center'>Valor Hora</TableHead>
+                        <TableHead className='font-bold text-right'>Total</TableHead>
+                        <TableHead className='font-bold text-center'>Estado</TableHead>
                       </TableRow>
                     </TableHeader>
                     <TableBody>
                       {paginatedDetails.map((detail, index) => {
                         const creacion = formatDateTimeDmyLabel(detail.fecha_crea);
                         return (
-                          <TableRow
-                            key={index}
-                            className='border-b transition-colors hover:bg-gray-50 dark:hover:bg-slate-800/30'
-                          >
-                            <TableCell className='py-4 px-6 text-center'>
+                          <TableRow key={index} className='border-b transition-colors'>
+                            <TableCell className='text-center'>
                               <div className='flex flex-col'>
                                 <span className='font-bold text-sm text-gray-900 dark:text-white'>
                                   {creacion.date}
@@ -221,21 +208,21 @@ export default function OvertimeDetailModal({
                                 <span className='text-xs text-gray-400'>{creacion.time}</span>
                               </div>
                             </TableCell>
-                            <TableCell className='py-4 px-6 text-center'>
+                            <TableCell className='text-center'>
                               <div className='flex items-center justify-center gap-1.5 font-bold text-sm text-gray-700 dark:text-gray-300'>
                                 <Clock className='h-4 w-4 text-blue-500' />
                                 {detail.hora.toFixed(1)} hrs
                               </div>
                             </TableCell>
-                            <TableCell className='py-4 px-6 text-center text-sm text-gray-500'>
+                            <TableCell className='text-center'>
                               {formatCurrencyCLP(detail.monto)}
                             </TableCell>
-                            <TableCell className='py-4 px-6 text-right'>
+                            <TableCell className='text-right'>
                               <span className='font-black text-base text-emerald-600'>
                                 {formatCurrencyCLP(detail.total)}
                               </span>
                             </TableCell>
-                            <TableCell className='py-4 px-6 text-center'>
+                            <TableCell className='text-center'>
                               {getStatusBadge(detail.estado)}
                             </TableCell>
                           </TableRow>

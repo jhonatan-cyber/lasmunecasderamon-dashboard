@@ -152,50 +152,48 @@ export default function CommissionsDetalleModal({
             </h3>
             <div className='bg-white dark:bg-slate-900/40 backdrop-blur-xs rounded-3xl border-none shadow-md overflow-hidden'>
               <div className='overflow-x-auto'>
-                <Table className='min-w-full text-base text-center'>
-                  <TableHeader className='bg-gray-100 dark:bg-slate-900/50'>
-                    <TableRow className='hover:bg-transparent border-gray-100 dark:border-gray-800 uppercase'>
-                      <TableHead className='py-4 px-5 text-xs text-gray-500 text-start'>
-                        CÓDIGO
-                      </TableHead>
-                      <TableHead className='py-4 px-5 text-xs text-gray-500'>FECHA</TableHead>
-                      <TableHead className='py-4 px-5 text-xs text-gray-500'>TIPO</TableHead>
-                      <TableHead className='py-4 px-5 text-xs text-gray-500'>PRODUCTO</TableHead>
-                      <TableHead className='py-4 px-5 text-xs text-gray-500'>COMISIÓN</TableHead>
-                      <TableHead className='py-4 px-5 text-xs text-gray-500'>ESTADO</TableHead>
-                      <TableHead className='py-4 px-5 text-xs text-gray-500'>FECHA PAGO</TableHead>
+                <Table className='min-w-full text-center'>
+                  <TableHeader>
+                    <TableRow className='hover:bg-transparent uppercase'>
+                      <TableHead className='text-start'>CÓDIGO</TableHead>
+                      <TableHead>FECHA</TableHead>
+                      <TableHead>TIPO</TableHead>
+                      <TableHead>PRODUCTO</TableHead>
+                      <TableHead>COMISIÓN</TableHead>
+                      <TableHead>ESTADO</TableHead>
+                      <TableHead>FECHA PAGO</TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
                     {loading ? (
                       Array.from({ length: 5 }).map((_, i) => (
-                        <TableRow key={i} className='border-b border-gray-100 dark:border-gray-800'>
-                          <TableCell className='py-4 px-5'>
+                        <TableRow key={i} className='border-b'>
+                          <TableCell>
                             <Skeleton className='h-4 w-20' />
                           </TableCell>
-                          <TableCell className='py-4 px-5'>
+                          <TableCell>
                             <Skeleton className='h-4 w-24' />
                           </TableCell>
-                          <TableCell className='py-4 px-5'>
+                          <TableCell>
                             <Skeleton className='h-4 w-16' />
                           </TableCell>
-                          <TableCell className='py-4 px-5'>
+                          <TableCell>
                             <Skeleton className='h-4 w-32' />
                           </TableCell>
-                          <TableCell className='py-4 px-5'>
+                          <TableCell>
                             <Skeleton className='h-4 w-20' />
                           </TableCell>
-                          <TableCell className='py-4 px-5'>
+                          <TableCell>
                             <Skeleton className='h-6 w-16 rounded-full mx-auto' />
                           </TableCell>
-                          <TableCell className='py-4 px-5'>
+                          <TableCell>
                             <Skeleton className='h-4 w-24' />
                           </TableCell>
                         </TableRow>
                       ))
                     ) : error ? (
                       <TableRow>
-                        <TableCell colSpan={7} className='text-center text-red-600 py-8'>
+                        <TableCell colSpan={7} className='text-center text-red-600'>
                           {error}
                           <Button
                             onClick={() => fetchDetalles(usuario.id_usuario)}
@@ -208,23 +206,17 @@ export default function CommissionsDetalleModal({
                       </TableRow>
                     ) : detalles.length === 0 ? (
                       <TableRow>
-                        <TableCell
-                          colSpan={7}
-                          className='text-center text-gray-600 dark:text-gray-400 py-8'
-                        >
+                        <TableCell colSpan={7} className='text-center'>
                           No hay detalles de comisiones para mostrar
                         </TableCell>
                       </TableRow>
                     ) : (
                       detalles.map((detalle, index) => (
-                        <TableRow
-                          key={index}
-                          className='border-b transition-colors hover:bg-gray-50 dark:hover:bg-slate-800/30 border-gray-100 dark:border-gray-800'
-                        >
-                          <TableCell className='py-4 px-5 font-mono text-sm font-bold text-start text-blue-600'>
+                        <TableRow key={index} className='border-b transition-colors'>
+                          <TableCell className='font-mono font-bold text-start text-blue-600'>
                             {detalle.codigo_venta || detalle.codigo_servicio || '-'}
                           </TableCell>
-                          <TableCell className='py-4 px-5 text-sm'>
+                          <TableCell>
                             <div className='flex flex-col items-center gap-1'>
                               <div className='font-medium'>
                                 {formatSoloFecha(detalle.fecha_hora)}
@@ -234,7 +226,7 @@ export default function CommissionsDetalleModal({
                               </div>
                             </div>
                           </TableCell>
-                          <TableCell className='py-4 px-5'>
+                          <TableCell>
                             <Badge
                               variant='outline'
                               className='capitalize bg-blue-50 text-blue-700 border-blue-100 dark:bg-blue-900/30 dark:text-blue-300 dark:border-blue-800 text-[10px]'
@@ -242,7 +234,7 @@ export default function CommissionsDetalleModal({
                               {detalle.tipo}
                             </Badge>
                           </TableCell>
-                          <TableCell className='py-4 px-5 text-sm max-w-[150px]'>
+                          <TableCell className='max-w-[150px]'>
                             <div
                               className='truncate font-medium dark:text-gray-300'
                               title={detalle.producto}
@@ -250,17 +242,17 @@ export default function CommissionsDetalleModal({
                               {detalle.producto || '-'}
                             </div>
                           </TableCell>
-                          <TableCell className='py-4 px-5 font-bold text-sm text-green-600 dark:text-green-400'>
+                          <TableCell className='font-bold text-green-600 dark:text-green-400'>
                             {formatCurrencyNoDecimals(detalle.monto)}
                           </TableCell>
-                          <TableCell className='py-4 px-5'>
+                          <TableCell>
                             <Badge
                               className={`${getEstadoColor(detalle.estado)} text-xs rounded-full px-2 py-1 font-medium mx-auto block w-fit`}
                             >
                               {detalle.estado}
                             </Badge>
                           </TableCell>
-                          <TableCell className='py-4 px-5 text-sm dark:text-gray-300'>
+                          <TableCell>
                             {detalle.fecha_pago ? (
                               formatSoloFecha(detalle.fecha_pago)
                             ) : (

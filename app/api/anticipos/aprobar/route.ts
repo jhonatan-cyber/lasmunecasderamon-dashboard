@@ -3,12 +3,12 @@ import { withRoute } from '@/lib/api/withRoute';
 import { procesarSolicitud } from '@/modules/personal';
 
 export const PUT = withRoute(
-  { auth: true, audit: true, module: 'advances', action: 'process' },
-  async (request: Request) => {
+  { auth: true, audit: true, access: 'administrator' },
+  async (request: Request, { user }) => {
     const body = await request.json();
     const { token, accion } = body;
 
-    if (!token || !accion) {
+    if (!token || !['aprobar', 'rechazar'].includes(accion)) {
       return NextResponse.json(
         { success: false, message: 'Token y acción son requeridos' },
         { status: 400 }
@@ -18,7 +18,7 @@ export const PUT = withRoute(
     const action = accion === 'aprobar' ? 'approve' : 'reject';
 
     try {
-      await procesarSolicitud(token, action);
+      await procesarSolicitud(token, action, user.id.toString());
       return NextResponse.json({
         success: true,
         message: accion === 'aprobar' ? 'Anticipo aprobado' : 'Anticipo rechazado'
