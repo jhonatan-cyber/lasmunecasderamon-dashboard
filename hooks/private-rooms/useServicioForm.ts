@@ -6,7 +6,7 @@ import { useQueryClient } from '@tanstack/react-query';
 import { toast } from 'sonner';
 import { useRefreshOnFocus } from '@/hooks/shared';
 import { useClients } from '@/hooks/clientes/useClients';
-import { useAnfitrionasDisponibles } from '@/hooks/personal';
+import { useAnfitrionas } from '@/hooks/personal';
 import { useHabitaciones } from '@/hooks/habitaciones/useHabitaciones';
 import { useTimer } from '@/contexts/TimerContext';
 import logger from '@/lib/utils/logger';
@@ -47,7 +47,7 @@ export function useServicioForm() {
   const queryClient = useQueryClient();
   const [loading, setLoading] = useState(false);
   const { allClients: clientes = [], fetchClients } = useClients();
-  const { anfitrionas, refetch: refetchAnfitrionas } = useAnfitrionasDisponibles();
+  const { anfitrionas, getAnfitrionas: refetchAnfitrionas } = useAnfitrionas();
   const { habitaciones, getHabitaciones } = useHabitaciones();
   const { startTimer } = useTimer();
   const ivaRate = useIvaRate();
@@ -258,6 +258,7 @@ export function useServicioForm() {
         router.push('/private-rooms');
       } else {
         toast.error(data.message || 'Error al crear servicio');
+        await refreshLookupData();
       }
     } catch (error) {
       logger.captureException(error, { context: 'NewPrivateRoomPageClient:createRoom' });

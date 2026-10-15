@@ -26,6 +26,15 @@ vi.mock('@/components/shared/selects', () => ({
 }));
 afterEach(cleanup);
 
+it('permite elegir una anfitriona para un corto sin comision', () => {
+  const product = item(false);
+  product.opcionesTipo[0].comision = 0;
+  render(<SaleProductHostess item={product} availableHostesses={[{ id: 'ana' }]} />);
+  expect(screen.queryByTestId('multiple')).toBeNull();
+  fireEvent.change(screen.getByLabelText('Anfitriona'), { target: { value: 'ana' } });
+  expect(product.onOtherSelect).toHaveBeenCalledWith(['ana']);
+});
+
 function item(isChampagne: boolean, tipo = 'shot_anfitriona'): SaleProductItem {
   return {
     product: { precio: 60000, max_anfitrionas: 5 },

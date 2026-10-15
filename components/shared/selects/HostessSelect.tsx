@@ -29,6 +29,7 @@ interface HostessSelectProps {
   disabledReason?: string;
   allowedOccupiedIds?: string[];
   showAvailability?: boolean;
+  showOccupied?: boolean;
 }
 
 const HostessSelect: React.FC<HostessSelectProps> = ({
@@ -44,7 +45,8 @@ const HostessSelect: React.FC<HostessSelectProps> = ({
   disabled = false,
   disabledReason,
   allowedOccupiedIds = [],
-  showAvailability = false
+  showAvailability = false,
+  showOccupied = false
 }) => {
   const normalizedHostesses = useMemo(() => {
     if (!Array.isArray(anfitrionas)) return [];
@@ -62,13 +64,15 @@ const HostessSelect: React.FC<HostessSelectProps> = ({
           extraLabel: showAvailability
             ? allowedOccupiedIds.includes(id)
               ? 'En este servicio'
-              : 'Libre'
+              : Number(a.estado_servicio) === 1
+                ? 'Ocupada'
+                : 'Libre'
             : undefined,
           disabled: Number(a.estado_servicio) === 1 && !allowedOccupiedIds.includes(id)
         };
       })
-      .filter(item => item.id !== '' && (!showAvailability || !item.disabled));
-  }, [anfitrionas, allowedOccupiedIds, showAvailability]);
+      .filter(item => item.id !== '' && (!showAvailability || showOccupied || !item.disabled));
+  }, [anfitrionas, allowedOccupiedIds, showAvailability, showOccupied]);
 
   return (
     <MultiEntitySelect

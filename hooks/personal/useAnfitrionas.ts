@@ -13,6 +13,7 @@ interface Anfitriona {
   nick?: string;
   estado?: number;
   status?: number;
+  estado_servicio?: number;
 }
 
 type UseAnfitrionasConfig =

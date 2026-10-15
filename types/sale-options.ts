@@ -4,8 +4,8 @@ export interface SaleOption {
   precio: number;
   comision: number;
   /**
-   * Precio del shot cuando lo pide una anfitriona (solo tipo 'shot'). Vacío o 0 =
-   * se cobra el mismo precio que a un cliente.
+   * Precio del corto para anfitriona, independiente del precio de cliente.
+   * Ausente o 0, sin precios_anfitriona, deshabilita esta audiencia.
    */
   precio_anfitriona?: number;
   ml_acompanamiento_cliente?: number;

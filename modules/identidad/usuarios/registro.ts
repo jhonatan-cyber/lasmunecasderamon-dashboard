@@ -85,7 +85,11 @@ export class UserRepository {
 
       const countSql = `SELECT COUNT(*) as total FROM usuarios u LEFT JOIN roles r ON u.rol_id = r.id_rol ${loginJoin} ${where}`;
 
-      const dataSql = `SELECT u.id_usuario, u.run, u.nick, u.nombre, u.apellido, u.foto, u.estado, u.estado_servicio, u.telefono, u.email, u.direccion, u.estado_civil, u.afp, u.sueldo, u.aporte, u.descuento, u.biometrico_codigo, u.biometrico_huella, u.biometrico_facial, u.fecha_crea, u.fecha_mod, r.nombre as rol_nombre, r.id_rol FROM usuarios u LEFT JOIN roles r ON u.rol_id = r.id_rol ${loginJoin} ${where} ORDER BY u.fecha_crea DESC${params?.limit !== undefined ? ' LIMIT ? OFFSET ?' : ''}`;
+      const ocupacion = `CASE WHEN u.estado_servicio = 1 OR EXISTS (
+        SELECT 1 FROM detalle_servicios ds JOIN servicios s ON s.id_servicio = ds.servicio_id
+        WHERE ds.usuario_id = u.id_usuario AND ds.liberado_en IS NULL AND s.estado IN (2, 3)
+      ) THEN 1 ELSE 0 END AS estado_servicio`;
+      const dataSql = `SELECT u.id_usuario, u.run, u.nick, u.nombre, u.apellido, u.foto, u.estado, ${ocupacion}, u.telefono, u.email, u.direccion, u.estado_civil, u.afp, u.sueldo, u.aporte, u.descuento, u.biometrico_codigo, u.biometrico_huella, u.biometrico_facial, u.fecha_crea, u.fecha_mod, r.nombre as rol_nombre, r.id_rol FROM usuarios u LEFT JOIN roles r ON u.rol_id = r.id_rol ${loginJoin} ${where} ORDER BY u.fecha_crea DESC${params?.limit !== undefined ? ' LIMIT ? OFFSET ?' : ''}`;
 
       const countRes = await query<any[]>(countSql, sqlParams);
       const total = countRes[0]?.total || 0;
@@ -397,6 +401,10 @@ export class UserRepository {
       WHERE LOWER(r.nombre) = 'anfitriona'
         AND u.estado = 1
         AND u.estado_servicio = 0
+        AND NOT EXISTS (
+          SELECT 1 FROM detalle_servicios ds JOIN servicios s ON s.id_servicio = ds.servicio_id
+          WHERE ds.usuario_id = u.id_usuario AND ds.liberado_en IS NULL AND s.estado IN (2, 3)
+        )
         AND l.en_local = 1
     `);
       return data.map(row => this.mapUserFromDB(row));

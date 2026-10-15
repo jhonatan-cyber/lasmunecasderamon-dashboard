@@ -215,12 +215,14 @@ describe('buscador rápido de Nueva Venta', () => {
     expect(screen.getByRole('button', { name: 'Agregar Black Label 750 ml' })).toBeEnabled();
   });
 
-  it('no permite seleccionar anfitrionas para formatos sin comisión aunque el producto sea caro', () => {
+  it('permite anfitrionas opcionales en botella sin comisión y las excluye del corto cliente', () => {
     const onAdd = vi.fn();
     renderSearch([conShotAnfitriona], { onAdd });
     const row = fila();
     expect(row.getByText('Sin comisión')).toBeInTheDocument();
     fireEvent.click(row.getByRole('button', { name: 'Botella: aumentar cantidad' }));
+    expect(row.queryByText('Sin comisión')).not.toBeInTheDocument();
+    fireEvent.click(row.getByRole('button', { name: 'Botella: disminuir cantidad' }));
     fireEvent.click(row.getByRole('button', { name: 'Corto cliente · 50 ml: aumentar cantidad' }));
     expect(row.getByText('Sin comisión')).toBeInTheDocument();
     fireEvent.click(row.getByRole('button', { name: 'Agregar Black Label 750 ml' }));

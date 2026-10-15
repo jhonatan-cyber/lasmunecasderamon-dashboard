@@ -15,6 +15,29 @@ const trx = vi.fn(async () => [
   { id: 'vodka', opciones_venta: config }
 ]) as unknown as TransactionQuery;
 describe('server configured consumption', () => {
+  it('rechaza corto cliente cuando solo existe precio de anfitriona', async () => {
+    const onlyHostess = vi.fn(async () => [
+      {
+        id: 'vodka',
+        opciones_venta: [
+          {
+            tipo: 'shot',
+            precio: 0,
+            comision: 0,
+            precios_anfitriona: [{ precio: 30000, comision: 0 }]
+          }
+        ]
+      }
+    ]) as unknown as TransactionQuery;
+    await expect(
+      validarConfiguracionVenta(onlyHostess, [{ presentacion_id: 'vodka', tipo_venta: 'shot' }])
+    ).rejects.toThrow('no está configurada');
+    await expect(
+      validarConfiguracionVenta(onlyHostess, [
+        { presentacion_id: 'vodka', tipo_venta: 'shot', shot_anfitriona: true }
+      ])
+    ).resolves.toBeUndefined();
+  });
   it('rejects accompaniment without configured ml for hostess shorts', async () => {
     const optionalTrx = vi.fn(async () => [
       {

@@ -48,7 +48,7 @@ export function parseSavedOptions(raw: unknown): SaleOption[] | undefined {
               ? undefined
               : Number(o.ml_acompanamiento_anfitriona);
         }
-        // Precio del shot para anfitrionas; 0 o ausente = igual que a un cliente.
+        // Precio independiente para anfitrionas; no hereda el precio de cliente.
         const anfitriona = Number(o.precio_anfitriona ?? 0);
         if (option.tipo === 'shot' && Number.isFinite(anfitriona) && anfitriona > 0) {
           option.precio_anfitriona = anfitriona;

@@ -207,7 +207,9 @@ export function SettingsBottleHostessCard() {
     category_name: seleccionado?.categoria
   });
   const vigente =
-    seleccionado?.max_anfitrionas !== null && seleccionado?.max_anfitrionas !== undefined
+    seleccionado?.max_anfitrionas !== null &&
+    seleccionado?.max_anfitrionas !== undefined &&
+    Number(seleccionado.max_anfitrionas) > 0
       ? Number(seleccionado.max_anfitrionas)
       : null;
   const maximo =

@@ -39,6 +39,8 @@ export async function validarConfiguracionVenta(
     if (!option)
       throw new BusinessError('El formato de venta no está habilitado para este producto');
     if (detalle.tipo_venta === 'shot') {
+      if (!detalle.shot_anfitriona && Number(option.precio) <= 0)
+        throw new BusinessError('La venta de corto al cliente no está configurada');
       if (detalle.shot_anfitriona && option.ml_acompanamiento_anfitriona !== undefined) {
         const ml = option.ml_acompanamiento_anfitriona;
         if (ml > 0 && detalle.acompanamiento_corto?.ml_por_corto !== ml)

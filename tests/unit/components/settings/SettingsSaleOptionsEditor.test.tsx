@@ -9,6 +9,51 @@ import {
 vi.mock('@/hooks/shared/useConfigValue', () => ({ useConfigValue: () => 50 }));
 afterEach(cleanup);
 
+it.each(['cliente', 'anfitriona'])(
+  'configura corto solo para %s sin habilitar la otra audiencia',
+  audiencia => {
+    const ref = createRef<SettingsSaleOptionsHandle>();
+    render(
+      <SettingsSaleOptionsEditor
+        ref={ref}
+        options={[{ tipo: 'shot', precio: 0, comision: 0 }]}
+        precio='10000'
+        comision=''
+        onPrecio={vi.fn()}
+        onComision={vi.fn()}
+        saving={false}
+      />
+    );
+    fireEvent.change(
+      screen.getByLabelText(
+        audiencia === 'cliente' ? 'Precio corto cliente' : 'Precio corto anfitriona'
+      ),
+      { target: { value: '5000' } }
+    );
+    const option = ref.current!.getConfig().opciones_venta[0];
+    expect(option.precio).toBe(audiencia === 'cliente' ? 5000 : 0);
+    expect(option.precios_anfitriona).toEqual(
+      audiencia === 'anfitriona' ? [{ precio: 5000, comision: 0 }] : []
+    );
+  }
+);
+
+it('conserva la comision opcional de botella incluso con precio bajo', () => {
+  const ref = createRef<SettingsSaleOptionsHandle>();
+  render(
+    <SettingsSaleOptionsEditor
+      ref={ref}
+      options={[{ tipo: 'botella', precio: 10000, comision: 500 }]}
+      precio='10000'
+      comision='500'
+      onPrecio={vi.fn()}
+      onComision={vi.fn()}
+      saving={false}
+    />
+  );
+  expect(ref.current!.getConfig().opciones_venta[0].comision).toBe(500);
+});
+
 it('edita todos los precios de corto, sus ml y la bebida de botella sin perder comisiones', () => {
   const ref = createRef<SettingsSaleOptionsHandle>();
   render(

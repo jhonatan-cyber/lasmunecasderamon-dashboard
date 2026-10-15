@@ -3,7 +3,7 @@ import {
   buildSaleProductItem,
   type SaleProductItemContext
 } from '@/components/sales/product-modal/saleProductItems';
-it('envia cada corto con su propia bebida, anfitriona y comision', async () => {
+it.each([0, 2000])('envia cada corto con su propia bebida y anfitriona (comision %s)', async comision => {
   const add = vi.fn();
   const context: SaleProductItemContext = {
     shotMl: 50,
@@ -41,7 +41,7 @@ it('envia cada corto con su propia bebida, anfitriona y comision', async () => {
         tipo: 'shot',
         precio: 5000,
         precio_anfitriona: 10000,
-        comision: 2000,
+        comision,
         ml_acompanamiento_anfitriona: 150
       }
     ]

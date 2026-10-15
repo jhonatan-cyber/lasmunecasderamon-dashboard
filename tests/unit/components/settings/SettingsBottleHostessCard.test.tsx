@@ -58,6 +58,30 @@ const productos = [
 ];
 
 describe('SettingsBottleHostessCard', () => {
+  it('interpreta el cero guardado como regla por defecto y permite guardar la presentacion', async () => {
+    invalidateSettingsProducts();
+    const request = vi.fn(async (url: string, init?: any) => {
+      if (init?.method) return { ok: true, json: async () => ({ success: true }) };
+      if (String(url).includes('/api/bar')) return {
+        ok: true,
+        json: async () => ({ success: true, data: [{
+          id: 'pres-p1', producto_id: 'p1', nombre: '350ml',
+          opciones_venta: [{ tipo: 'botella', precio: 10000, comision: 0 }]
+        }] })
+      };
+      return { ok: true, json: async () => ({ success: true, data: [{ ...productos[0], max_anfitrionas: 0 }] }) };
+    });
+    vi.stubGlobal('fetch', request);
+    render(<SettingsBottleHostessCard />);
+    const max = await screen.findByLabelText('Máximo de anfitrionas');
+    expect(max).toHaveValue(null);
+    expect(screen.getByText('regla por defecto')).toBeInTheDocument();
+    fireEvent.click(screen.getByRole('button', { name: /Guardar cambios/i }));
+    await waitFor(() => expect(request).toHaveBeenCalledWith(
+      '/api/products/presentations', expect.objectContaining({ method: 'PATCH' })
+    ));
+  });
+
   it('lista solo productos del bar que se venden por botella, guarda y vuelve al default', async () => {
     invalidateSettingsProducts();
     let getCount = 0;
@@ -109,7 +133,7 @@ describe('SettingsBottleHostessCard', () => {
       expect(screen.getByLabelText('Producto y presentación')).toBeInTheDocument()
     );
     // Solo botella del bar; el solo-shot y el solo-almacén no se listan.
-    expect(screen.getByText(/Solo shot/)).toBeInTheDocument();
+    expect(screen.getAllByText(/Solo shot/).length).toBeGreaterThan(0);
     expect(screen.queryByText(/Solo almacén/)).not.toBeInTheDocument();
     // El listado muestra el precio y al elegir se cargan precio y comisión.
     expect(screen.getByRole('button', { name: /Whisky.*200\.000/ })).toBeInTheDocument();

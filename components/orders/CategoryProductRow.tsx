@@ -4,7 +4,7 @@ import { NativeSelect } from '@/components/ui/native-select';
 import { bottleMixerUnits } from '@/lib/sales/productConfiguration';
 import { useState } from 'react';
 import { resolverVentaProducto, type SaleChoice } from '@/lib/sales/saleChoice';
-import { esCortoAnfitriona } from '@/lib/sales/hostessShortPrices';
+import { esCortoAnfitriona, permiteAnfitriona } from '@/lib/sales/hostessShortPrices';
 import { TableCell, TableRow } from '@/components/ui/table';
 import { Button } from '@/components/ui/button';
 import { Plus, Minus } from 'lucide-react';
@@ -12,7 +12,6 @@ import { formatCurrencyNoDecimals } from '@/lib/utils/formatters';
 import { HostessMultiSelect } from '@/components/orders';
 import { IndividualHostessSelect, RoomSelect } from '@/components/shared/selects';
 import {
-  hasCommission,
   isChampagneProduct,
   getHostessLimit,
   isExpensiveDrink
@@ -75,7 +74,7 @@ export function CategoryProductRow({
     : original;
   const id = String(p.id_producto || p.id);
   const isChampagne = isChampagneProduct(p);
-  const hasComm = hasCommission(p);
+  const hasComm = permiteAnfitriona(venta.tipoVenta);
   const needsRoom = !venta.esShot && requiresRoom(p);
 
   return (
@@ -215,15 +214,7 @@ export function CategoryProductRow({
               requiresRoom: needsRoom
             });
           }}
-          disabled={
-            (!venta.esShot && Number(p.stock_bar ?? 99) < (cantidades[id] || 1)) ||
-            (hasComm &&
-              ((isChampagne &&
-                (!champagneHostessSelections[id] || champagneHostessSelections[id].length === 0)) ||
-                (!isChampagne &&
-                  (!otherProductHostessSelections[id] ||
-                    otherProductHostessSelections[id].length === 0))))
-          }
+          disabled={!venta.esShot && Number(p.stock_bar ?? 99) < (cantidades[id] || 1)}
         >
           <Plus className='h-4 w-4' />
         </Button>

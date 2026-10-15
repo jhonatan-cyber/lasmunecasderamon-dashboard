@@ -48,6 +48,8 @@ export const ServicioSelectsRow = memo(function ServicioSelectsRow({
           setFormData(prev => ({ ...prev, usuarios: value }));
         }}
         label='ANFITRIONAS'
+        showAvailability={true}
+        showOccupied={true}
         placeholder='Seleccionar anfitrionas'
         required={true}
         maxSelection={maxHostesses}

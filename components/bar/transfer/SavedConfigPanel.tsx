@@ -88,7 +88,9 @@ export const SavedConfigPanel = memo(function SavedConfigPanel({
               )}
               {option.tipo === 'shot' ? (
                 <span className='font-semibold'>
-                  Cliente {formatCurrencyCLP(option.precio)} · Sin comisión
+                  {option.precio > 0
+                    ? `Cliente ${formatCurrencyCLP(option.precio)} · Sin comisión`
+                    : 'Corto cliente no habilitado'}
                   {preciosCortoAnfitriona(option).map((row, index) => (
                     <span key={index} className='block'>
                       Anfitriona {formatCurrencyCLP(row.precio)} · Comisión{' '}

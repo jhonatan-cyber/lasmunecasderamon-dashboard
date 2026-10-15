@@ -315,8 +315,8 @@ export function useSaleValidation({
 
     // Elegir anfitriona es opcional; si se eligieron más de las que permite el
     // producto, la línea entra al carro recortada al máximo.
-    const tieneComisionParaAnfitriona = Number(producto.comision ?? producto.commission ?? 0) > 0;
-    const elegidas = (tieneComisionParaAnfitriona ? producto.selectedHostesses || [] : [])
+    const permiteAnfitriona = tipoVenta === 'botella' || shotAnfitriona;
+    const elegidas = (permiteAnfitriona ? producto.selectedHostesses || [] : [])
       .filter((h: unknown) => h !== null && h !== undefined)
       .map((h: string | number) => String(h));
     const limite = elegidas.length ? await limiteAnfitrionasDe({ ...producto, cantidad }) : 0;
@@ -495,13 +495,7 @@ export function useSaleValidation({
 
   const handleCartHostessesChange = (index: number, ids: string[]) => {
     const product = productos[index];
-    if (
-      !product ||
-      product.tipo_venta !== 'shot' ||
-      !product.shot_anfitriona ||
-      Number(product.comision) <= 0
-    )
-      return;
+    if (!product || product.tipo_venta !== 'shot' || !product.shot_anfitriona) return;
     const selected = [...new Set(ids)].slice(0, Number(product.cantidad));
     handleServiceHostessChange(product.selectedHostesses || [], selected);
     setProductos(current =>
@@ -554,7 +548,7 @@ export function useSaleValidation({
     setLoading(true);
     try {
       for (const p of productos) {
-        if (!p.selectedHostesses?.length || Number(p.comision ?? p.commission ?? 0) <= 0) continue;
+        if (!p.selectedHostesses?.length) continue;
         const max = await limiteAnfitrionasDe(p);
         if (p.selectedHostesses.length > max) {
           toast.error(`Producto ${p.nombre} permite máximo ${max} anfitrionas`);
@@ -564,7 +558,7 @@ export function useSaleValidation({
       const todasAnf = Array.from(
         new Set(
           productos.flatMap(p =>
-            Number(p.comision ?? p.commission ?? 0) > 0 ? p.selectedHostesses || [] : []
+            p.tipo_venta !== 'shot' || p.shot_anfitriona ? p.selectedHostesses || [] : []
           )
         )
       );
@@ -587,7 +581,7 @@ export function useSaleValidation({
         total: totals.total,
         detalles: productos.map(p => {
           const selectedHostesses =
-            Number(p.comision ?? p.commission ?? 0) > 0 && Array.isArray(p.selectedHostesses)
+            (p.tipo_venta !== 'shot' || p.shot_anfitriona) && Array.isArray(p.selectedHostesses)
               ? p.selectedHostesses
                   .filter((h: unknown) => h !== null && h !== undefined)
                   .map((h: string | number) => String(h))

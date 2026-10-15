@@ -36,11 +36,11 @@ describe('mapForSaleToCartItem', () => {
     expect(item.stock_bar).toBe(5);
   });
 
-  it('anula la comisión en venta simple (precio bajo el umbral)', () => {
+  it('conserva la comisión configurada aunque el precio sea bajo', () => {
     const item = mapForSaleToCartItem({ ...base, precio_venta: 5000, comision: 500 });
     expect(item.precio).toBe(5000);
-    expect(item.comision).toBe(0);
-    expect(item.commission).toBe(0);
+    expect(item.comision).toBe(500);
+    expect(item.commission).toBe(500);
   });
 
   it('usa el código del producto si no hay barra y foto por defecto', () => {

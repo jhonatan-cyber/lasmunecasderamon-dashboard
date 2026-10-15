@@ -77,7 +77,7 @@ export function ShortSaleEditor(props: ShortSaleEditorProps) {
             props.onPrecioShotChange,
             '0',
             false,
-            true
+            false
           )}
           {field(
             'transfer-ml-shot-cliente',
@@ -89,7 +89,8 @@ export function ShortSaleEditor(props: ShortSaleEditorProps) {
           )}
 
           <p className='text-xs text-muted-foreground'>
-            En blanco se sirven {props.shotMl} ml por corto.
+            Sin precio no se vende corto al cliente. Con precio configurado y ml vacíos se sirven {props.shotMl}{' '}
+            ml.
           </p>
         </section>
         <section
@@ -103,7 +104,7 @@ export function ShortSaleEditor(props: ShortSaleEditorProps) {
               'Precio corto anfitriona',
               props.precioShotAnfitriona,
               props.onPrecioShotAnfitrionaChange,
-              'Igual que cliente'
+              'Sin venta a anfitriona'
             )}
             {field(
               'commission-shot',
@@ -196,7 +197,8 @@ export function ShortSaleEditor(props: ShortSaleEditorProps) {
             </Button>
           </div>
           <p className='text-xs text-muted-foreground'>
-            Precio y ml en blanco usan los valores de cliente.
+            Configura un precio para vender a anfitrionas. Permite una anfitriona por corto; la
+            comisión es opcional. Los ml vacíos usan los del cliente o el valor por defecto.
           </p>
         </section>
       </div>

@@ -9,3 +9,5 @@ export function preciosCortoAnfitriona(option?: SaleOption) {
 
 export const esCortoAnfitriona = (value: string) =>
   value === 'shot_anfitriona' || value.startsWith('shot_anfitriona:');
+
+export const permiteAnfitriona = (value: string) => value === 'botella' || esCortoAnfitriona(value);

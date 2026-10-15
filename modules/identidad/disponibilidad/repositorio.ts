@@ -1,21 +1,18 @@
 import type { ContextoOperacion } from '@/lib/transaccion/contrato';
 import { resolverTransaccion } from '@/lib/transaccion/infraestructura';
+import { BusinessError } from '@/lib/errors/errors';
 export async function actualizarDisponibilidadAnfitrionas(
   contexto: ContextoOperacion,
   hostessIds: string[],
   excludeServiceId?: string,
-  excludeVentaId?: string
+  _excludeVentaId?: string
 ) {
   const trx = resolverTransaccion(contexto);
   if (!hostessIds || hostessIds.length === 0) return;
 
   const uniqueIds = [...new Set(hostessIds)];
   const ph = uniqueIds.map(() => '?').join(',');
-  const params = [
-    ...uniqueIds,
-    ...(excludeServiceId ? [excludeServiceId] : []),
-    ...(excludeVentaId ? [excludeVentaId] : [])
-  ];
+  const params = [...uniqueIds, ...(excludeServiceId ? [excludeServiceId] : [])];
   const idle = await trx<{ id_usuario: string }[]>(
     `
       SELECT u.id_usuario
@@ -25,15 +22,8 @@ export async function actualizarDisponibilidadAnfitrionas(
           SELECT 1
           FROM servicios s
           JOIN detalle_servicios ds ON s.id_servicio = ds.servicio_id AND ds.liberado_en IS NULL
-          WHERE ds.usuario_id = u.id_usuario AND s.estado = 2
+          WHERE ds.usuario_id = u.id_usuario AND s.estado IN (2, 3)
             ${excludeServiceId ? 'AND s.id_servicio != ?' : ''}
-        )
-        AND NOT EXISTS (
-          SELECT 1
-          FROM ventas v
-          JOIN ventas_usuarios vu ON v.id_venta = vu.venta_id
-          WHERE vu.usuario_id = u.id_usuario AND v.estado = 2 AND v.tiempo > 0
-            ${excludeVentaId ? 'AND v.id_venta != ?' : ''}
         )
       `,
     params
@@ -45,6 +35,51 @@ export async function actualizarDisponibilidadAnfitrionas(
       ids
     );
   }
+}
+
+export async function comprobarAnfitrionasLibresParaServicio(
+  ids: string[],
+  contexto: ContextoOperacion,
+  servicioPropioId?: string
+) {
+  if (!ids.length) return;
+  const trx = resolverTransaccion(contexto);
+  const unicas = [...new Set(ids)].sort();
+  const ph = unicas.map(() => '?').join(',');
+  await trx(
+    `SELECT id_usuario FROM usuarios WHERE id_usuario IN (${ph}) ORDER BY id_usuario FOR UPDATE`,
+    unicas
+  );
+  const ocupadas = await trx<{ id_usuario: string }[]>(
+    `SELECT u.id_usuario FROM usuarios u WHERE u.id_usuario IN (${ph}) AND (
+      (u.estado_servicio = 1 ${
+        servicioPropioId
+          ? `AND NOT EXISTS (
+        SELECT 1 FROM detalle_servicios propio WHERE propio.usuario_id = u.id_usuario
+          AND (propio.servicio_id = ? OR propio.servicio_id IN (
+            SELECT id_servicio FROM servicios WHERE servicio_original_id = ?
+          )) AND propio.liberado_en IS NULL
+      )`
+          : ''
+      })
+      OR EXISTS (
+        SELECT 1 FROM detalle_servicios ds JOIN servicios s ON s.id_servicio = ds.servicio_id
+        WHERE ds.usuario_id = u.id_usuario AND ds.liberado_en IS NULL AND s.estado IN (2, 3)
+          ${servicioPropioId ? 'AND s.id_servicio <> ? AND (s.servicio_original_id IS NULL OR s.servicio_original_id <> ?)' : ''}
+      )
+    )`,
+    [
+      ...unicas,
+      ...(servicioPropioId
+        ? [servicioPropioId, servicioPropioId, servicioPropioId, servicioPropioId]
+        : [])
+    ]
+  );
+  if (ocupadas.length)
+    throw new BusinessError(
+      'Una anfitriona seleccionada está ocupada o ya tiene un servicio activo. Actualiza la lista y elige una libre.',
+      'HOSTESS_OCCUPIED'
+    );
 }
 
 /**

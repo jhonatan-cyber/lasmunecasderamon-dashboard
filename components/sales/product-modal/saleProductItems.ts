@@ -1,5 +1,5 @@
 import { parseSavedOptions } from '@/components/bar/transfer/transferOptions';
-import { esCortoAnfitriona } from '@/lib/sales/hostessShortPrices';
+import { esCortoAnfitriona, permiteAnfitriona } from '@/lib/sales/hostessShortPrices';
 import {
   bottleMixerUnits,
   hostessMixerMl,
@@ -136,10 +136,12 @@ export function buildSaleProductItem(producto: any, ctx: SaleProductItemContext)
   });
 
   // Cada tipo de venta lleva su propia comisión: sin comisión no se pide anfitriona.
-  const pideAnfitriona = opcionesTipo.some(opcion => opcion.cantidad > 0 && opcion.comision > 0);
+  const pideAnfitriona = opcionesTipo.some(
+    opcion => opcion.cantidad > 0 && permiteAnfitriona(opcion.value)
+  );
   const muestraAnfitriona = pideAnfitriona;
   const hostessFormats = opcionesTipo
-    .filter(option => option.cantidad > 0 && option.comision > 0)
+    .filter(option => option.cantidad > 0 && permiteAnfitriona(option.value))
     .flatMap(option =>
       Array.from({ length: option.value === 'botella' ? 1 : option.cantidad }, (_, unitIndex) => {
         const key =
@@ -295,14 +297,13 @@ export function buildSaleProductItem(producto: any, ctx: SaleProductItemContext)
           precio: opcion.precio,
           comision: opcion.comision,
           cantidad: opcion.value === 'botella' ? opcion.cantidad : 1,
-          selectedHostesses:
-            opcion.comision > 0
-              ? (
-                  hostessFormats.find(
-                    format => format.value === opcion.value && format.unitIndex === unitIndex
-                  )?.selected || []
-                ).slice(0, opcion.value === 'botella' ? undefined : opcion.cantidad)
-              : [],
+          selectedHostesses: permiteAnfitriona(opcion.value)
+            ? (
+                hostessFormats.find(
+                  format => format.value === opcion.value && format.unitIndex === unitIndex
+                )?.selected || []
+              ).slice(0, opcion.value === 'botella' ? undefined : opcion.cantidad)
+            : [],
           isChampagne
         });
       }

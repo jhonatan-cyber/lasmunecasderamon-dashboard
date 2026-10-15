@@ -53,11 +53,11 @@ export function SaleProductHostess({
     );
   }
   const esCorto = item.opcionesTipo.some(
-    opcion => opcion.value !== 'botella' && opcion.cantidad > 0 && opcion.comision > 0
+    opcion => opcion.value !== 'botella' && opcion.cantidad > 0
   );
   const limiteCortos = Math.min(
     ...item.opcionesTipo
-      .filter(opcion => opcion.value !== 'botella' && opcion.cantidad > 0 && opcion.comision > 0)
+      .filter(opcion => opcion.value !== 'botella' && opcion.cantidad > 0)
       .map(opcion => opcion.cantidad)
   );
   if (!item.muestraAnfitriona) {

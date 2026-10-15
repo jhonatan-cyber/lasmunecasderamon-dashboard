@@ -60,18 +60,18 @@ export const TransferItemSummary = memo(function TransferItemSummary({
             tipo === 'botella' ? configuration.comision : configuration.comisionShot
           ),
           precio_anfitriona:
-            tipo === 'shot'
-              ? amount(configuration.precioShotAnfitriona) || amount(configuration.precioShot)
-              : undefined,
+            tipo === 'shot' ? amount(configuration.precioShotAnfitriona) : undefined,
           precios_anfitriona:
             tipo === 'shot'
               ? [
-                  {
-                    precio:
-                      amount(configuration.precioShotAnfitriona) ||
-                      amount(configuration.precioShot),
-                    comision: amount(configuration.comisionShot)
-                  },
+                  ...(configuration.precioShotAnfitriona.trim()
+                    ? [
+                        {
+                          precio: amount(configuration.precioShotAnfitriona),
+                          comision: amount(configuration.comisionShot)
+                        }
+                      ]
+                    : []),
                   ...configuration.preciosAnfitrionaExtra.map(row => ({
                     precio: amount(row.precio),
                     comision: amount(row.comision)
@@ -82,7 +82,7 @@ export const TransferItemSummary = memo(function TransferItemSummary({
     : [];
   const bottle = options.find(option => option.tipo === 'botella');
   const maxHostesses = configuration
-    ? bottle && Number(bottle.comision) > 0
+    ? bottle
       ? Number(configuration.maxAnfitrionas || 1)
       : 0
     : item.max_anfitrionas;
@@ -136,17 +136,16 @@ export const TransferItemSummary = memo(function TransferItemSummary({
               <p>
                 {option.tipo === 'botella' ? 'Botella' : 'Corto cliente'}:{' '}
                 <span className='font-semibold text-foreground'>
-                  {formatCurrencyCLP(option.precio)}
+                  {option.tipo === 'shot' && option.precio <= 0
+                    ? 'No habilitado'
+                    : formatCurrencyCLP(option.precio)}
                 </span>
                 {option.tipo === 'botella' &&
                   ` · Comisión: ${formatCurrencyCLP(option.comision ?? 0)}`}
               </p>
               {option.tipo === 'shot' && (
                 <>
-                  {(preciosCortoAnfitriona(option).length
-                    ? preciosCortoAnfitriona(option)
-                    : [{ precio: option.precio, comision: option.comision ?? 0 }]
-                  ).map((row, index) => (
+                  {preciosCortoAnfitriona(option).map((row, index) => (
                     <p key={index}>
                       Corto anfitriona {index + 1}: {formatCurrencyCLP(row.precio)} · Comisión:{' '}
                       {formatCurrencyCLP(row.comision)}

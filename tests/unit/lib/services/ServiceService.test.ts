@@ -25,11 +25,12 @@ vi.mock('@/lib/api/sseService', () => ({
 }));
 
 vi.mock('@/lib/business/timezoneService', () => ({
-  getNowInBusinessTimezone: () => '2026-04-10 10:00:00',
+  getNowInBusinessTimezone: vi.fn(() => '2026-04-10 10:00:00'),
   getSystemTimezone: () => 'America/Santiago'
 }));
 
 import { ServiceService } from '@/modules/operacion/servicios/fachada';
+import { getNowInBusinessTimezone } from '@/lib/business/timezoneService';
 import { pausarConflictosServicio } from '@/modules/operacion/facturacion/servicio';
 
 beforeEach(() => {
@@ -37,7 +38,8 @@ beforeEach(() => {
   serviceHarness.queryMock.mockResolvedValue([{ comision_anfitriona: 0 }]);
   serviceHarness.transactionMock.mockImplementation(async (sql: string) => {
     if (sql.includes('FROM cajas')) return [{ id_caja: 'caja-1' }];
-    if (sql.includes('FROM habitaciones')) return [{ precio: 50000, comision_anfitriona: 0 }];
+    if (sql.includes('FROM habitaciones'))
+      return [{ precio: 50000, comision_anfitriona: 0, estado: 1 }];
     if (sql.includes('SELECT DISTINCT u.id_usuario')) {
       return [{ id_usuario: 'user-1' }];
     }
@@ -59,6 +61,96 @@ const validServiceBody = {
 };
 
 describe('ServiceService.createService', () => {
+  it('rechaza anfitrionas ocupadas antes de crear el servicio o cobrar', async () => {
+    const fallback = serviceHarness.transactionMock.getMockImplementation()!;
+    serviceHarness.transactionMock.mockImplementation(async (sql: string, params: unknown[]) =>
+      sql.includes('SELECT u.id_usuario FROM usuarios u')
+        ? [{ id_usuario: 'user-1' }]
+        : fallback(sql, params)
+    );
+    await expect(ServiceService.createService(validServiceBody, 'cajero-1')).rejects.toThrow(
+      'anfitriona seleccionada está ocupada'
+    );
+    expect(
+      serviceHarness.transactionMock.mock.calls.some(([sql]) =>
+        String(sql).includes('INSERT INTO servicios')
+      )
+    ).toBe(false);
+    expect(
+      serviceHarness.transactionMock.mock.calls.some(([sql]) =>
+        String(sql).startsWith('UPDATE cajas')
+      )
+    ).toBe(false);
+    const lock = serviceHarness.transactionMock.mock.calls.find(([sql]) =>
+      String(sql).includes('SELECT id_usuario FROM usuarios')
+    );
+    expect(lock?.[0]).toContain('FOR UPDATE');
+    const check = serviceHarness.transactionMock.mock.calls.find(([sql]) =>
+      String(sql).includes('SELECT u.id_usuario FROM usuarios u')
+    );
+    expect(check?.[0]).toContain('s.estado IN (2, 3)');
+    expect(check?.[0]).not.toContain('FROM ventas');
+  });
+
+  it.each([0, 2])(
+    'rechaza habitación no disponible (estado %s) antes de cobrar o insertar',
+    async estado => {
+      const fallback = serviceHarness.transactionMock.getMockImplementation()!;
+      serviceHarness.transactionMock.mockImplementation(async (sql: string, params: unknown[]) =>
+        sql.includes('FROM habitaciones')
+          ? [{ precio: 50000, comision_anfitriona: 0, estado }]
+          : fallback(sql, params)
+      );
+      await expect(ServiceService.createService(validServiceBody, 'cajero-1')).rejects.toThrow(
+        'ocupada'
+      );
+      expect(
+        serviceHarness.transactionMock.mock.calls.some(([sql]) =>
+          String(sql).includes('INSERT INTO servicios')
+        )
+      ).toBe(false);
+      expect(
+        serviceHarness.transactionMock.mock.calls.some(([sql]) =>
+          String(sql).startsWith('UPDATE cajas')
+        )
+      ).toBe(false);
+    }
+  );
+
+  it('rechaza un privado existente aunque la habitación esté marcada libre', async () => {
+    const fallback = serviceHarness.transactionMock.getMockImplementation()!;
+    serviceHarness.transactionMock.mockImplementation(async (sql: string, params: unknown[]) =>
+      sql.includes('SELECT 1 AS ocupada') ? [{ ocupada: 1 }] : fallback(sql, params)
+    );
+    await expect(ServiceService.createService(validServiceBody, 'cajero-1')).rejects.toThrow(
+      'privado activo'
+    );
+    const calls = serviceHarness.transactionMock.mock.calls;
+    const locked = calls.findIndex(
+      ([sql]) => String(sql).includes('FROM habitaciones') && String(sql).includes('FOR UPDATE')
+    );
+    expect(locked).toBeGreaterThanOrEqual(0);
+    expect(calls.findIndex(([sql]) => String(sql).includes('SELECT 1 AS ocupada'))).toBeGreaterThan(
+      locked
+    );
+    expect(calls.some(([sql]) => String(sql).includes('INSERT INTO servicios'))).toBe(false);
+  });
+
+  it('usa el reloj del servidor aunque el dispositivo envie una hora adelantada', async () => {
+    await ServiceService.createService(
+      { ...validServiceBody, device_date: '2099-10-15T04:18:48.000Z' },
+      'cajero-1'
+    );
+    expect(getNowInBusinessTimezone).toHaveBeenCalledWith();
+    expect(vi.mocked(getNowInBusinessTimezone).mock.calls.every(args => args.length === 0)).toBe(
+      true
+    );
+    expect(serviceHarness.transactionMock).toHaveBeenCalledWith(
+      expect.stringContaining('INSERT INTO servicios'),
+      expect.arrayContaining(['2026-04-10 10:00:00'])
+    );
+  });
+
   it('actualiza las anfitrionas originales al crear un servicio adicional y conserva su historial', async () => {
     const fallback = serviceHarness.transactionMock.getMockImplementation()!;
     serviceHarness.transactionMock.mockImplementation(async (sql: string, params: unknown[]) => {
@@ -179,7 +271,8 @@ describe('ServiceService.createService', () => {
   it('rechaza anfitrionas que no estan logueadas en el local', async () => {
     serviceHarness.transactionMock.mockImplementation(async (sql: string) => {
       if (sql.includes('FROM cajas')) return [{ id_caja: 'caja-1' }];
-      if (sql.includes('FROM habitaciones')) return [{ precio: 50000, comision_anfitriona: 0 }];
+      if (sql.includes('FROM habitaciones'))
+        return [{ precio: 50000, comision_anfitriona: 0, estado: 1 }];
       if (sql.includes('SELECT DISTINCT u.id_usuario')) {
         return [{ id_usuario: 'user-1' }];
       }
@@ -202,7 +295,7 @@ describe('ServiceService.createService', () => {
         return (params || []).map(id => ({ id_usuario: String(id) }));
       if (sql.includes('FROM cajas')) return [{ id_caja: 'caja-1' }];
       if (sql.includes('FROM habitaciones'))
-        return [{ comision_anfitriona: 100000, precio: 50000 }];
+        return [{ comision_anfitriona: 100000, precio: 50000, estado: 2 }];
       return [];
     });
     await ServiceService.createService(
@@ -233,7 +326,7 @@ describe('ServiceService.createService', () => {
       }
       if (sql.includes('FROM cajas')) return [{ id_caja: 'caja-1' }];
       if (sql.includes('FROM habitaciones')) {
-        return [{ comision_anfitriona: 101, precio: 50000 }];
+        return [{ comision_anfitriona: 101, precio: 50000, estado: 1 }];
       }
       return [];
     });

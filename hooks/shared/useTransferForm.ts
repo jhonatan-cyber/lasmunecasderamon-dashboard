@@ -117,7 +117,9 @@ export function useTransferForm({
     { tipo: 'botella', precio: item?.precio_venta ?? 0, comision: item?.comision ?? 0 }
   ];
   // Si ya tiene precio/comisión configurados, se reutilizan sin pedirlos manualmente.
-  const tieneConfig = opcionesGuardadas.some(option => Number(option.precio ?? 0) > 0);
+  const tieneConfig = opcionesGuardadas.some(
+    option => Number(option.precio ?? 0) > 0 || preciosCortoAnfitriona(option).length > 0
+  );
 
   useEffect(() => {
     let cancelado = false;
@@ -176,7 +178,11 @@ export function useTransferForm({
           : ''
       );
       // Con configuración existente se usa directo; solo la primera vez se pide manual.
-      setEditarPrecios(!options.some(option => Number(option.precio ?? 0) > 0));
+      setEditarPrecios(
+        !options.some(
+          option => Number(option.precio ?? 0) > 0 || preciosCortoAnfitriona(option).length > 0
+        )
+      );
       tiersEdited.current = false;
       setTiersState([]);
       if (options.some(option => option.tipo === 'botella')) {

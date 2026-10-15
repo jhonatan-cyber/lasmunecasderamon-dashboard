@@ -33,7 +33,7 @@ export function parseOpcionesVenta(
           precio: Number(o.precio ?? 0),
           comision: Number(o.comision ?? 0)
         };
-        // Precio del shot para anfitrionas: 0 o ausente = igual que a un cliente.
+        // Precio independiente para anfitrionas; no hereda el precio de cliente.
         const anfitriona = Number(o.precio_anfitriona ?? 0);
         if (o.tipo === 'shot') {
           if (o.ml_acompanamiento_cliente !== undefined)
@@ -80,19 +80,20 @@ export function parseOpcionesVenta(
 
 /**
  * Resuelve botella recorriendo niveles en orden (traspaso → … → producto)
- * y saltando ceros. Venta simple (precio ≤ tope): sin comisión.
+ * para datos antiguos. Una opción configurada conserva su comisión, incluido 0.
  */
 export function resolverBotella(
   opt: NivelPrecio,
   niveles: NivelPrecio[],
-  topeSimple = 10000
+  _topeSimple = 10000
 ): SaleOption {
   const precio = [opt.precio, ...niveles.map(l => l.precio)].find(v => v > 0) ?? 0;
-  const comisionBruta = [opt.comision, ...niveles.map(l => l.comision)].find(v => v > 0) ?? 0;
+  const comisionBruta =
+    opt.precio > 0 ? opt.comision : (niveles.find(l => l.precio > 0)?.comision ?? 0);
   return {
     tipo: 'botella',
     precio,
-    comision: precio > 0 && precio <= topeSimple ? 0 : comisionBruta
+    comision: comisionBruta
   };
 }
 

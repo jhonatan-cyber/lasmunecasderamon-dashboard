@@ -84,7 +84,7 @@ export function useCategoryProductsModal({
 
     setLoadingAnfitrionas(true);
     try {
-      const response = await fetch('/api/anfitrionas/disponibles');
+      const response = await fetch('/api/anfitrionas');
       const data = await response.json();
       if (data.success) {
         setAnfitrionasDisponibles(data.data);
@@ -173,7 +173,7 @@ export function useCategoryProductsModal({
   };
 
   const hasProductsWithCommission = useMemo(
-    () => !parentLoading && productosCategoria?.some(p => hasCommission(p)),
+    () => !parentLoading && Boolean(productosCategoria?.length),
     [parentLoading, productosCategoria]
   );
 

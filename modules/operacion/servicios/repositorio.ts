@@ -270,11 +270,45 @@ export async function leerServicioDeSolicitud(
 export async function leerHabitacionParaServicio(
   habitacionId: string,
   contexto: ContextoOperacion
-): Promise<{ precio: number; comision_anfitriona: number } | null> {
+): Promise<{ precio: number; comision_anfitriona: number; estado: number } | null> {
   const rows = await resolverTransaccion(contexto)<
-    { precio: number; comision_anfitriona: number }[]
-  >('SELECT precio, comision_anfitriona FROM habitaciones WHERE id_habitacion = ?', [habitacionId]);
+    { precio: number; comision_anfitriona: number; estado: number }[]
+  >(
+    'SELECT precio, comision_anfitriona, estado FROM habitaciones WHERE id_habitacion = ? FOR UPDATE',
+    [habitacionId]
+  );
   return rows[0] ?? null;
+}
+
+export async function validarHabitacionDisponibleParaServicio(
+  habitacionId: string,
+  contexto: ContextoOperacion,
+  servicioOriginalId?: string
+) {
+  // La fila de habitación serializa las altas concurrentes. La actividad se
+  // consulta después del bloqueo para ver el servicio que terminó de crearse.
+  const habitacion = await leerHabitacionParaServicio(habitacionId, contexto);
+  if (!habitacion) throw new BusinessError('La habitación ya no existe');
+  if (Number(habitacion.estado) !== 1 && !(servicioOriginalId && Number(habitacion.estado) === 2))
+    throw new BusinessError('La habitación está ocupada o no está disponible', 'ROOM_OCCUPIED');
+  const actividad = await resolverTransaccion(contexto)<{ ocupada: number }[]>(
+    `SELECT 1 AS ocupada WHERE EXISTS (
+      SELECT 1 FROM servicios WHERE habitacion_id = ? AND estado IN (2, 3)
+        ${servicioOriginalId ? 'AND id_servicio <> ?' : ''}
+    )${
+      servicioOriginalId
+        ? ''
+        : `
+      OR EXISTS (SELECT 1 FROM ventas WHERE habitacion_id = ? AND estado IN (2, 3) AND tiempo > 0)
+      OR EXISTS (SELECT 1 FROM cuentas WHERE habitacion_id = ? AND estado = 1 AND COALESCE(tiempo_actual, tiempo) > 0)`
+    }`,
+    servicioOriginalId
+      ? [habitacionId, servicioOriginalId]
+      : [habitacionId, habitacionId, habitacionId]
+  );
+  if (actividad.length)
+    throw new BusinessError('La habitación ya tiene un servicio o privado activo', 'ROOM_OCCUPIED');
+  return habitacion;
 }
 
 export async function insertarServicio(

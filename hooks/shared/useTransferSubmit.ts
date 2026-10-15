@@ -3,7 +3,6 @@
 import { useRef, useState } from 'react';
 import type { FormEvent } from 'react';
 import { toast } from 'sonner';
-import { isSimpleProduct } from '@/components/orders/productModalRules';
 import type { TransferForm } from '@/hooks/shared/useTransferForm';
 import type { SaleOption } from '@/types/sale-options';
 import type { BarStockItem } from '@/components/bar/transfer/transferOptions';
@@ -51,9 +50,9 @@ export function useTransferSubmit({
         };
         if (option.tipo === 'botella' && option.acompanamiento)
           reutilizada.acompanamiento = { ...option.acompanamiento };
-        if (option.tipo === 'shot' && reutilizada.precio > 0) {
+        if (option.tipo === 'shot') {
           reutilizada.ml_acompanamiento_anfitriona = option.ml_acompanamiento_anfitriona;
-          reutilizada.precio_anfitriona = Number(option.precio_anfitriona ?? reutilizada.precio);
+          reutilizada.precio_anfitriona = Number(option.precio_anfitriona ?? 0);
           reutilizada.precios_anfitriona = preciosCortoAnfitriona(option);
           reutilizada.comision = 0;
         }
@@ -65,7 +64,7 @@ export function useTransferSubmit({
       const pvShot = Number(form.precioShot.replace(/\./g, ''));
       const pvShotAnfitriona =
         form.precioShotAnfitriona.trim() === ''
-          ? pvShot
+          ? 0
           : Number(form.precioShotAnfitriona.replace(/\./g, ''));
       options = form.tipos.map(tipo => {
         if (tipo === 'botella')
@@ -90,14 +89,21 @@ export function useTransferSubmit({
               : Number(form.mlAcompanamientoAnfitriona),
           comision: 0,
           precios_anfitriona: [
-            { precio: pvShotAnfitriona, comision: Number(form.comisionShot.replace(/\./g, '')) },
+            ...(form.precioShotAnfitriona.trim()
+              ? [
+                  {
+                    precio: pvShotAnfitriona,
+                    comision: Number(form.comisionShot.replace(/\./g, ''))
+                  }
+                ]
+              : []),
             ...form.preciosAnfitrionaExtra.map(row => ({
               precio: Number(row.precio.replace(/\./g, '')),
               comision: Number(row.comision.replace(/\./g, ''))
             }))
           ]
         };
-        if (Number.isInteger(pvShot) && pvShot > 0) {
+        if (Number.isInteger(pvShotAnfitriona) && pvShotAnfitriona > 0) {
           option.precio_anfitriona = pvShotAnfitriona;
         }
         return option;
@@ -114,6 +120,10 @@ export function useTransferSubmit({
       }
       const anfitrionaRows =
         options.find(option => option.tipo === 'shot')?.precios_anfitriona ?? [];
+      if (form.tipos.includes('shot') && pvShot <= 0 && !anfitrionaRows.length) {
+        toast.error('Configura el precio de corto para cliente o anfitriona');
+        return;
+      }
       if (
         anfitrionaRows.length > 20 ||
         new Set(anfitrionaRows.map(row => row.precio)).size !== anfitrionaRows.length ||
@@ -152,21 +162,12 @@ export function useTransferSubmit({
         return;
       }
     }
-    // Venta simple (Ajustes → Comisiones): la botella no lleva comisión.
-    options = options.map(option =>
-      option.tipo === 'botella' && isSimpleProduct(option.precio)
-        ? { ...option, comision: 0 }
-        : option
-    );
     const hasBottle = options.some(option => option.tipo === 'botella');
     const maxText = form.maxAnfitrionas.trim();
-    const bottleCommission = Number(
-      options.find(option => option.tipo === 'botella')?.comision ?? 0
-    );
-    const maxHostesses = bottleCommission > 0 ? (maxText === '' ? 1 : Number(maxText)) : 0;
+    const maxHostesses = maxText === '' ? null : Number(maxText);
     if (
       hasBottle &&
-      bottleCommission > 0 &&
+      maxHostesses !== null &&
       (!Number.isInteger(maxHostesses) || maxHostesses < 1 || maxHostesses > 20)
     ) {
       toast.error('El máximo de anfitrionas debe ser un entero entre 1 y 20');
@@ -175,7 +176,10 @@ export function useTransferSubmit({
     submitting.current = true;
     setSaving(true);
     try {
-      if (hasBottle && maxHostesses !== (item.max_anfitrionas ?? null)) {
+      if (
+        hasBottle &&
+        maxHostesses !== (Number(item.max_anfitrionas) > 0 ? Number(item.max_anfitrionas) : null)
+      ) {
         const response = await fetch(`/api/products/${encodeURIComponent(item.producto_id)}`, {
           method: 'PUT',
           headers: { 'Content-Type': 'application/json' },
@@ -227,7 +231,7 @@ export function useTransferSubmit({
         }
       }
       // Solo se reescribe la tabla de anfitrionas si el usuario editó precios manualmente.
-      if (hasBottle && bottleCommission > 0 && maxHostesses >= 2 && form.tiers.length > 0) {
+      if (hasBottle && maxHostesses !== null && maxHostesses >= 2 && form.tiers.length > 0) {
         const tiersRes = await fetch(`/api/products/${item.producto_id}/tiers`, {
           method: 'PUT',
           headers: { 'Content-Type': 'application/json' },

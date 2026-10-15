@@ -53,8 +53,9 @@ export function resolverVentaProducto(producto: any, eleccion?: SaleChoice): Ven
   );
   const precioShotCliente = Number(opcionShot?.precio ?? 0);
   const preciosAnfitriona = preciosCortoAnfitriona(opcionShot);
-  const tieneShot = Boolean(opcionShot && precioShotCliente > 0);
-  const tieneShotAnfitriona = tieneShot && preciosAnfitriona.length > 0;
+  const tieneShotCliente = Boolean(opcionShot && precioShotCliente > 0);
+  const tieneShotAnfitriona = preciosAnfitriona.length > 0;
+  const tieneShot = tieneShotCliente || tieneShotAnfitriona;
 
   const opciones: OpcionVentaProducto[] = [
     ...(opcionBotella || !tieneShot
@@ -70,7 +71,7 @@ export function resolverVentaProducto(producto: any, eleccion?: SaleChoice): Ven
           }
         ]
       : []),
-    ...(tieneShot
+    ...(tieneShotCliente
       ? [
           {
             value: 'shot' as SaleChoice,
@@ -100,7 +101,7 @@ export function resolverVentaProducto(producto: any, eleccion?: SaleChoice): Ven
   const tipoVenta: SaleChoice =
     eleccion && esCortoAnfitriona(eleccion) && opciones.some(option => option.value === eleccion)
       ? eleccion
-      : (eleccion === 'shot' || (eleccion && esCortoAnfitriona(eleccion))) && tieneShot
+      : (eleccion === 'shot' || (eleccion && esCortoAnfitriona(eleccion))) && tieneShotCliente
         ? 'shot'
         : opciones[0].value;
 

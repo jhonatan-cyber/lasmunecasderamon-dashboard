@@ -4,6 +4,18 @@ import { resolverVentaProducto } from '@/lib/sales/saleChoice';
 const botella = { tipo: 'botella' as const, precio: 180000, comision: 20000 };
 const shot = { tipo: 'shot' as const, precio: 5000, comision: 0 };
 
+it('ofrece corto de anfitriona sin precio de cliente ni comision', () => {
+  const venta = resolverVentaProducto({
+    opciones_venta: [
+      { tipo: 'shot', precio: 0, comision: 0, precios_anfitriona: [{ precio: 30000, comision: 0 }] }
+    ]
+  });
+  expect(venta.opciones.map(o => o.value)).toEqual(['shot_anfitriona']);
+  expect(venta.tipoVenta).toBe('shot_anfitriona');
+  expect(venta.precio).toBe(30000);
+  expect(venta.tieneShot).toBe(true);
+});
+
 const soloBotella = {
   precio: 4000,
   comision: 0,

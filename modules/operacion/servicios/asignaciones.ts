@@ -3,7 +3,8 @@ import { bloquearServicioActivo, guardarAsignaciones } from './asignacionesRepos
 import {
   validarAnfitrionasEnLocal,
   actualizarDisponibilidad,
-  ocuparAnfitrionasServicio
+  ocuparAnfitrionasServicio,
+  comprobarAnfitrionasLibresParaServicio
 } from '@/modules/identidad';
 import { BusinessError } from '@/lib/errors/errors';
 import { getNowInBusinessTimezone } from '@/lib/business/timezoneService';
@@ -21,6 +22,7 @@ export async function cambiarAnfitrionasServicioEnUnidad(
 ) {
   const ids = [...new Set(solicitadas)];
   const servicio = await bloquearServicioActivo(id, contexto);
+  await comprobarAnfitrionasLibresParaServicio(ids, contexto, servicio.servicio_original_id || id);
   const validas = await validarAnfitrionasEnLocal(ids, contexto);
   if (validas.length !== ids.length)
     throw new BusinessError('Selecciona anfitrionas conectadas en el local');

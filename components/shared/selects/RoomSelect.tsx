@@ -161,7 +161,15 @@ const RoomSelect: React.FC<RoomSelectProps> = ({
     return selectedHabitacion
       ? [selectedHabitacion, ...filteredHabitaciones]
       : filteredHabitaciones;
-  })();
+  })()
+    .slice()
+    .sort((a, b) =>
+      String(a.nombre || a.name || a.numero || '').localeCompare(
+        String(b.nombre || b.name || b.numero || ''),
+        'es',
+        { numeric: true, sensitivity: 'base' }
+      )
+    );
 
   const selectedHabitacion = (Array.isArray(habitaciones) ? habitaciones : []).find(habitacion => {
     const id = getHabitacionId(habitacion);

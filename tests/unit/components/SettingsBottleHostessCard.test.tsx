@@ -113,6 +113,9 @@ describe('comisiones por presentación', () => {
 
   it('guarda únicamente la presentación seleccionada y conserva los precios por shot', async () => {
     render(<SettingsBottleHostessCard />);
+    await waitFor(() =>
+      expect(screen.getByLabelText('Producto y presentación')).toHaveTextContent(/Vodka Absolut/)
+    );
     fireEvent.click(await screen.findByRole('button', { name: /Vodka Absolut 750ml/ }));
     await screen.findByLabelText('Precio para 2 anfitrionas');
     expect(screen.queryByRole('button', { name: 'Guardar precios' })).not.toBeInTheDocument();

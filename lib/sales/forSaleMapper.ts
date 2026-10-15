@@ -2,7 +2,6 @@
 // Clave: el id del ítem es la presentación (única por formato); producto_id se
 // conserva para la FK de detalle_ventas y presentacion_id para trazabilidad.
 // Venta simple (ver Ajustes → Comisiones): sin comisión.
-import { isSimpleProduct } from '@/components/orders/productModalRules';
 import type { SaleOption } from '@/types/sale-options';
 export interface ForSaleItem {
   presentacion_id: string;
@@ -69,7 +68,7 @@ export function mapForSaleToCartItem(item: ForSaleItem): CartSaleItem {
   const codigo = item.codigo_barras || item.producto_codigo || '';
   const categoria = item.categoria_nombre || '';
   const precio = Number(item.precio_venta ?? 0);
-  const comision = isSimpleProduct(precio) ? 0 : Number(item.comision ?? 0);
+  const comision = Number(item.comision ?? 0);
   return {
     producto_nombre: item.producto_nombre,
     presentacion_nombre: item.presentacion_nombre,

@@ -1,7 +1,6 @@
 'use client';
 
 import { useState, useImperativeHandle, type Ref } from 'react';
-import { isSimpleProduct } from '@/components/orders/productModalRules';
 import { SaleTypeEditor } from '@/components/bar/transfer/SaleTypeEditor';
 import { SaleOptionsSchema } from '@/lib/business/schemas/sale-options';
 import { preciosCortoAnfitriona } from '@/lib/sales/hostessShortPrices';
@@ -50,7 +49,7 @@ export function SettingsSaleOptionsEditor({
   const [tipos, setTipos] = useState<SaleType[]>(
     options.length ? options.map(o => o.tipo) : ['botella']
   );
-  const [precioShot, setPrecioShot] = useState(String(shot?.precio ?? 0));
+  const [precioShot, setPrecioShot] = useState(shot?.precio ? String(shot.precio) : '');
   const [precioHost, setPrecioHost] = useState(hostPrices[0] ? String(hostPrices[0].precio) : '');
   const [comisionHost, setComisionHost] = useState(
     String(hostPrices[0]?.comision ?? shot?.comision ?? 0)
@@ -75,7 +74,7 @@ export function SettingsSaleOptionsEditor({
             ? {
                 tipo,
                 precio: numeric(precio),
-                comision: isSimpleProduct(numeric(precio)) ? 0 : numeric(comision),
+                comision: numeric(comision),
                 ...(mix !== 'ninguno' ? { acompanamiento: { unidades: Number(units) } } : {})
               }
             : {
@@ -83,9 +82,11 @@ export function SettingsSaleOptionsEditor({
                 precio: numeric(precioShot),
                 comision: 0,
                 ml_acompanamiento_anfitriona: Number(mlMixHost || 0),
-                precio_anfitriona: numeric(precioHost || precioShot),
+                precio_anfitriona: numeric(precioHost),
                 precios_anfitriona: [
-                  { precio: numeric(precioHost || precioShot), comision: numeric(comisionHost) },
+                  ...(precioHost.trim()
+                    ? [{ precio: numeric(precioHost), comision: numeric(comisionHost) }]
+                    : []),
                   ...extras.map(p => ({ precio: numeric(p.precio), comision: numeric(p.comision) }))
                 ]
               }
@@ -93,6 +94,13 @@ export function SettingsSaleOptionsEditor({
       );
       if (!parsed.success)
         throw new Error(parsed.error.issues[0]?.message || 'Configuración inválida');
+      if (
+        tipos.includes('shot') &&
+        numeric(precioShot) <= 0 &&
+        !precioHost.trim() &&
+        !extras.length
+      )
+        throw new Error('Configura el precio de corto para cliente o anfitriona');
       if (
         tipos.includes('shot') &&
         [ml, mlHost].some(

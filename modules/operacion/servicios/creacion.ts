@@ -22,7 +22,7 @@ import {
 import { sendNotificationToAll } from '@/lib/api/sseService';
 import type { z } from 'zod';
 import {
-  leerHabitacionParaServicio,
+  validarHabitacionDisponibleParaServicio,
   marcarPausaServicio,
   leerAdicionalActivo,
   insertarServicio,
@@ -36,7 +36,11 @@ import { consumirPrepagoVenta, saldoPrepagoAgotado } from '@/modules/clientes';
 import { cerrarCuentasPrepagoSaldadas } from '../cuentas/servicio';
 import { registrarComisionesServicio } from '@/modules/personal';
 import { consumirStockBar } from '@/modules/inventario';
-import { validarAnfitrionasEnLocal, ocuparAnfitrionasServicio } from '@/modules/identidad';
+import {
+  validarAnfitrionasEnLocal,
+  ocuparAnfitrionasServicio,
+  comprobarAnfitrionasLibresParaServicio
+} from '@/modules/identidad';
 import { ocuparHabitacionVenta, pausarConflictosServicio } from '../facturacion/servicio';
 
 type Tarea = () => void | Promise<void>;
@@ -72,8 +76,20 @@ export async function crearServicioEnUnidad(
   }
   const servicioId = generateUUID();
   const codigo = Math.random().toString(36).substring(2, 10).toUpperCase();
-  const now = getNowInBusinessTimezone(v.device_date);
+  const now = getNowInBusinessTimezone();
   const pagosMixtos: MixedPayment[] = parsePagosMixtos(v.pagos_mixtos);
+  const habitacion = v.habitacion_id
+    ? await validarHabitacionDisponibleParaServicio(
+        v.habitacion_id,
+        contexto,
+        v.es_temporal ? v.servicio_original_id! : undefined
+      )
+    : null;
+  await comprobarAnfitrionasLibresParaServicio(
+    v.usuarios,
+    contexto,
+    v.es_temporal ? v.servicio_original_id! : undefined
+  );
 
   const cajaId = await obtenerCajaActiva(contexto);
   if (!cajaId)
@@ -114,15 +130,11 @@ export async function crearServicioEnUnidad(
   }
   let esLibreIngreso = false;
   let comisionHabitacion = 0;
-  if (v.habitacion_id) {
-    const habitacion = await leerHabitacionParaServicio(v.habitacion_id, contexto);
-    if (!habitacion) throw new BusinessError('La habitación ya no existe');
-    if (habitacion) {
-      const roomPrice = Number(habitacion.precio || 0);
-      const roomCommission = Number(habitacion.comision_anfitriona || 0);
-      comisionHabitacion = roomCommission;
-      esLibreIngreso = roomPrice <= 0 || roomCommission <= 0;
-    }
+  if (habitacion) {
+    const roomPrice = Number(habitacion.precio || 0);
+    const roomCommission = Number(habitacion.comision_anfitriona || 0);
+    comisionHabitacion = roomCommission;
+    esLibreIngreso = roomPrice <= 0 || roomCommission <= 0;
   }
 
   const tieneComisionHabitacion = comisionHabitacion > 0 && !v.es_temporal;
@@ -188,7 +200,7 @@ export async function crearServicioEnUnidad(
     );
   }
 
-  if (v.habitacion_id && !esLibreIngreso) {
+  if (v.habitacion_id && (!esLibreIngreso || Number(v.tiempo) > 0)) {
     await ocuparHabitacionVenta(v.habitacion_id, contexto);
   }
 
@@ -329,7 +341,7 @@ export async function actualizarServicio(
   const ivaDelta = Object.prototype.hasOwnProperty.call(body, 'iva')
     ? Number(validated.iva || 0) - Number(ivaPrevio || 0)
     : 0;
-  const now = getNowInBusinessTimezone(validated.device_date);
+  const now = getNowInBusinessTimezone();
 
   await actualizarCamposServicio(
     id,

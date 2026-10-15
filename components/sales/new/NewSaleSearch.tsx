@@ -1,5 +1,5 @@
 'use client';
-import { esCortoAnfitriona } from '@/lib/sales/hostessShortPrices';
+import { esCortoAnfitriona, permiteAnfitriona } from '@/lib/sales/hostessShortPrices';
 
 import { Search, X, Plus } from 'lucide-react';
 import { useState } from 'react';
@@ -148,13 +148,18 @@ export const NewSaleSearch = (props: NewSaleSearchProps) => {
                     const champagneSelected = props.champagneHostessSelections[id] || [];
                     const otherSelected = props.otherProductHostessSelections[id] || [];
                     const muestraAnfitriona = options.some(
-                      option => option.cantidad > 0 && option.comision > 0
+                      option => option.cantidad > 0 && permiteAnfitriona(option.value)
                     );
-                    const maxHostesses = isChampagne
-                      ? champagneLimit
-                      : isExpensiveDrink(producto)
-                        ? Math.max(1, totalCantidad)
-                        : (getExplicitMaxAnfitrionas(producto) ?? 1);
+                    const soloCortosAnfitriona =
+                      options.some(o => o.cantidad > 0 && esCortoAnfitriona(o.value)) &&
+                      !options.some(o => o.cantidad > 0 && o.value === 'botella');
+                    const maxHostesses = soloCortosAnfitriona
+                      ? 1
+                      : isChampagne
+                        ? champagneLimit
+                        : isExpensiveDrink(producto)
+                          ? Math.max(1, totalCantidad)
+                          : (getExplicitMaxAnfitrionas(producto) ?? 1);
                     const selectedHostesses = isChampagne ? champagneSelected : otherSelected;
                     const onAdd = () =>
                       options
@@ -167,7 +172,12 @@ export const NewSaleSearch = (props: NewSaleSearchProps) => {
                             precio: option.precio,
                             comision: option.comision,
                             cantidad: option.cantidad,
-                            selectedHostesses: option.comision > 0 ? selectedHostesses : [],
+                            selectedHostesses: permiteAnfitriona(option.value)
+                              ? selectedHostesses.slice(
+                                  0,
+                                  option.value !== 'botella' ? 1 : undefined
+                                )
+                              : [],
                             isChampagne
                           });
                           setCantidadesPorFormato(prev => ({
@@ -222,7 +232,7 @@ export const NewSaleSearch = (props: NewSaleSearchProps) => {
                                     [id]: val
                                   }))
                                 }
-                                maxSelection={champagneLimit}
+                                maxSelection={maxHostesses}
                               />
                               <div className='text-xs text-gray-500'>
                                 {champagneSelected.length} de {champagneLimit} seleccionadas

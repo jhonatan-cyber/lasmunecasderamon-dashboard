@@ -442,7 +442,7 @@ describe('useSaleValidation totals (propina / total)', () => {
     );
   });
 
-  it('descarta anfitrionas si la forma de venta no tiene comisión, aunque el precio sea alto', async () => {
+  it('conserva la anfitriona opcional de botella aunque no tenga comisión', async () => {
     const { result } = renderSaleHook();
     await act(async () => {
       await result.current.handleAddProducto({
@@ -454,7 +454,7 @@ describe('useSaleValidation totals (propina / total)', () => {
         selectedHostesses: ['hostess-1']
       });
     });
-    expect(result.current.formState.productos[0].selectedHostesses).toEqual([]);
+    expect(result.current.formState.productos[0].selectedHostesses).toEqual(['hostess-1']);
   });
   it('aplica la tabla personalizada de un producto con varias anfitrionas', async () => {
     window.localStorage.clear();

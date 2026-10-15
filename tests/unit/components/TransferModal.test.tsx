@@ -58,7 +58,7 @@ it('actualiza la ficha al editar y al volver a la configuración guardada', asyn
   fireEvent.change(screen.getByLabelText('Unidades por botella'), { target: { value: '2' } });
   expect(summary).toHaveTextContent('2 unidades por botella');
   fireEvent.change(screen.getByLabelText('Comisión (opcional)'), { target: { value: '0' } });
-  expect(screen.getByText(/Config\. comisiones: máx\. 0 anf\./)).toBeInTheDocument();
+  expect(screen.getByText(/Config\. comisiones: máx\. 3 anf\./)).toBeInTheDocument();
   fireEvent.click(screen.getByRole('button', { name: 'Usar configuración guardada' }));
   expect(summary).toHaveTextContent('20.000');
   expect(summary).not.toHaveTextContent('35.000');
@@ -93,7 +93,7 @@ it('guarda el máximo de anfitrionas del producto antes de transferir', async ()
   });
 });
 
-it.each([0, 5000])('usa el máximo por defecto según la comisión: %s', async commission => {
+it.each([0, 5000])('permite máximo opcional independiente de la comisión: %s', async commission => {
   const request = vi.fn().mockResolvedValue({ ok: true, json: async () => ({ success: true }) });
   vi.stubGlobal('fetch', request);
   const done = vi.fn();
@@ -105,16 +105,14 @@ it.each([0, 5000])('usa el máximo por defecto según la comisión: %s', async c
       onDone={done}
     />
   );
-  if (commission === 0)
-    expect(screen.queryByLabelText('Máximo de anfitrionas')).not.toBeInTheDocument();
-  else expect(screen.getByLabelText('Máximo de anfitrionas')).toHaveValue(null);
+  expect(screen.getByLabelText('Máximo de anfitrionas')).toHaveValue(null);
   fireEvent.change(screen.getByLabelText('Cantidad'), { target: { value: '1' } });
   fireEvent.click(screen.getByRole('button', { name: 'Transferir' }));
   await waitFor(() => expect(done).toHaveBeenCalledOnce());
   const update = request.mock.calls.find(
     (args: any[]) => args[0] === '/api/products/prod-1' && args[1]?.method === 'PUT'
   );
-  expect(JSON.parse(update![1].body).max_anfitrionas).toBe(commission > 0 ? 1 : 0);
+  expect(update).toBeUndefined();
 });
 
 it('detiene la transferencia si no se puede guardar el máximo de anfitrionas', async () => {
@@ -232,8 +230,7 @@ describe('tipos de venta al transferir', () => {
           tipo: 'shot',
           precio: 3000,
           comision: 0,
-          precio_anfitriona: 3000,
-          precios_anfitriona: [{ precio: 3000, comision: 0 }]
+          precios_anfitriona: []
         }
       ]
     });
@@ -277,8 +274,7 @@ describe('tipos de venta al transferir', () => {
           tipo: 'shot',
           precio: 3000,
           comision: 0,
-          precio_anfitriona: 3000,
-          precios_anfitriona: [{ precio: 3000, comision: 0 }]
+          precios_anfitriona: []
         }
       ]
     });
@@ -362,8 +358,7 @@ describe('tipos de venta al transferir', () => {
       tipo: 'shot',
       precio: 3000,
       comision: 0,
-      precio_anfitriona: 3000,
-      precios_anfitriona: [{ precio: 3000, comision: 0 }]
+      precios_anfitriona: []
     });
     const putCall = request.mock.calls.find(
       (args: any[]) => args[1]?.method === 'PUT' && JSON.parse(args[1].body).ml_shot !== undefined

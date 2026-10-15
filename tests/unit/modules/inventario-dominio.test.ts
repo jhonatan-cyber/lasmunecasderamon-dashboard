@@ -173,7 +173,7 @@ describe('listBarStock hereda precio/comisión', () => {
       return [];
     });
 
-  it('muestra la comisión de la presentación aunque opciones_venta traiga 0 (caso Paceña)', async () => {
+  it('conserva la comisión cero configurada en la opción de botella', async () => {
     mockBar({
       ...baseRow,
       precio_venta: 20000,
@@ -181,7 +181,7 @@ describe('listBarStock hereda precio/comisión', () => {
       opciones_venta: [{ tipo: 'botella', precio: 20000, comision: 0 }]
     });
     const rows = await listarStockBar();
-    expect(rows[0].opciones_venta).toEqual([{ tipo: 'botella', precio: 20000, comision: 5000 }]);
+    expect(rows[0].opciones_venta).toEqual([{ tipo: 'botella', precio: 20000, comision: 0 }]);
   });
 
   it('usa la base del producto como último fallback', async () => {
@@ -203,7 +203,7 @@ describe('listBarStock hereda precio/comisión', () => {
     expect(rows[0].opciones_venta).toEqual([{ tipo: 'botella', precio: 0, comision: 0 }]);
   });
 
-  it('anula la comisión en venta simple aunque venga configurada (tope 10000)', async () => {
+  it('conserva la comisión opcional configurada aunque el precio sea bajo', async () => {
     mockBar({
       ...baseRow,
       precio_venta: 8000,
@@ -211,7 +211,7 @@ describe('listBarStock hereda precio/comisión', () => {
       opciones_venta: [{ tipo: 'botella', precio: 8000, comision: 3000 }]
     });
     const rows = await listarStockBar();
-    expect(rows[0].opciones_venta).toEqual([{ tipo: 'botella', precio: 8000, comision: 0 }]);
+    expect(rows[0].opciones_venta).toEqual([{ tipo: 'botella', precio: 8000, comision: 3000 }]);
   });
 
   it('no toca la comisión del shot en venta simple', async () => {
@@ -359,7 +359,7 @@ describe('listBarStock hereda precio/comisión', () => {
 });
 
 describe('listarTransferencias historial', () => {
-  it('muestra quién recibió y completa la comisión con la presentación actual', async () => {
+  it('muestra quién recibió y conserva la comisión cero de la transferencia', async () => {
     (query as any).mockImplementation(async (sql: string) => {
       if (sql.includes('FROM inventario_movimientos')) {
         return [
@@ -389,7 +389,7 @@ describe('listarTransferencias historial', () => {
     });
     const rows = await listarTransferencias();
     expect(rows[0].aceptado_nombre).toBe('barman');
-    expect(rows[0].opciones_venta).toEqual([{ tipo: 'botella', precio: 20000, comision: 5000 }]);
+    expect(rows[0].opciones_venta).toEqual([{ tipo: 'botella', precio: 20000, comision: 0 }]);
   });
 
   it('incluye precios de shots y resuelve los ml por defecto para cliente y anfitriona', async () => {

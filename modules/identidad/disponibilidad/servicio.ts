@@ -1,5 +1,12 @@
 import type { ContextoOperacion } from '@/lib/transaccion/contrato';
 import { actualizarDisponibilidadAnfitrionas, listarAnfitrionasEnLocal } from './repositorio';
+import { comprobarAnfitrionasLibresParaServicio as comprobarLibres } from './repositorio';
+
+export function comprobarAnfitrionasLibresParaServicio(
+  ...args: Parameters<typeof comprobarLibres>
+) {
+  return comprobarLibres(...args);
+}
 export function actualizarDisponibilidadTrasVenta(
   ids: string[],
   ventaId: string,

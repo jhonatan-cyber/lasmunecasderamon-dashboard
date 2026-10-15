@@ -42,6 +42,10 @@ describe('listado de usuarios con varias sesiones', () => {
       expect(sql).toContain('l.estado = 1 AND l.en_local = 1');
       expect(sql).not.toContain('INNER JOIN logins');
     }
+    const dataSql = repositoryHarness.queryMock.mock.calls[1][0];
+    expect(dataSql).toContain('ds.liberado_en IS NULL');
+    expect(dataSql).toContain('s.estado IN (2, 3)');
+    expect(dataSql).not.toContain('FROM ventas');
   });
 });
 

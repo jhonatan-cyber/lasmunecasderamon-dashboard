@@ -16,7 +16,7 @@ export const SaleOptionsSchema = z
         ml_acompanamiento_anfitriona: z.number().int().min(0).max(10000).optional(),
         precio: amount,
         comision: amount.optional().default(0),
-        // Precio del shot para anfitrionas; ausente = mismo precio que a un cliente.
+        // Precio independiente del corto para anfitrionas; sin precio no se ofrece.
         precio_anfitriona: amount.optional(),
         precios_anfitriona: z
           .array(z.object({ precio: amount.min(1), comision: amount }))
