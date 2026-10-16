@@ -151,7 +151,7 @@ it('crear un servicio postula caja, comisiones y habitación en una unidad', asy
   }
 });
 
-it('editar el iva ajusta la caja sin duplicar el servicio', async () => {
+it('editar el importe de un servicio cobrado se rechaza: exige anulación', async () => {
   const snapshot = await snapshotDatabase();
   try {
     await abrirCajaSiHaceFalta();
@@ -181,17 +181,29 @@ it('editar el iva ajusta la caja sin duplicar el servicio', async () => {
       'SELECT id_caja, iva FROM cajas WHERE estado = 1 LIMIT 1'
     );
 
-    await ServiceService.updateService(resultado.id, { iva: 3500 });
+    // Ya se cobró: cambiar su importe exige anular y registrar el servicio correcto.
+    await expect(ServiceService.updateService(resultado.id, { iva: 3500 })).rejects.toMatchObject({
+      code: 'SERVICIO_COBRO_INMUTABLE'
+    });
 
+    // La caja no se toca y sigue habiendo un solo servicio.
     const [despues] = await query<{ iva: number }[]>('SELECT iva FROM cajas WHERE id_caja = ?', [
       caja.id_caja
     ]);
-    expect(Number(despues.iva) - Number(caja.iva)).toBe(1500);
+    expect(Number(despues.iva)).toBe(Number(caja.iva));
     const conteo = await query<{ total: string }[]>(
       'SELECT COUNT(*) AS total FROM servicios WHERE id_servicio = ?',
       [resultado.id]
     );
     expect(Number(conteo[0].total)).toBe(1);
+
+    // El tiempo no es un importe: sigue siendo editable sobre el servicio cobrado.
+    await ServiceService.updateService(resultado.id, { tiempo: 90 });
+    const [servicio] = await query<{ tiempo: number }[]>(
+      'SELECT tiempo FROM servicios WHERE id_servicio = ?',
+      [resultado.id]
+    );
+    expect(Number(servicio.tiempo)).toBe(90);
   } finally {
     await restoreDatabase(snapshot, 'test-only');
   }

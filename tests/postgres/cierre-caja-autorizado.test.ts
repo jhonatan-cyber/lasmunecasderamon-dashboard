@@ -43,8 +43,8 @@ beforeEach(() => {
  * turno anterior y no está en el cajón.
  */
 
-const MONTO_ESPERADO = 100000 + 50000 + 20000 + 5000 - 3000; // 172.000
-const EFECTIVO_DISPONIBLE_PARA_CLIENTES = 100000 + 50000 - 3000; // 147.000
+const MONTO_ESPERADO = 100000 + 50000 + 20000 + 5000; // 175.000
+const EFECTIVO_DISPONIBLE_PARA_CLIENTES = 100000 + 50000; // 150.000
 const separarSaldoClientes = (saldo: number) => {
   const descontado = Math.min(EFECTIVO_DISPONIBLE_PARA_CLIENTES, saldo);
   return {
@@ -746,7 +746,7 @@ describe('el monto de cierre previsto cuadra con el detalle', () => {
       const monto = CashRegisterRepository.calcularMontoCierre(cajaRow, saldos);
 
       // Si el monto volviera a restar el retiro, quedaría 20.000 abajo del cajón.
-      expect(monto).toBe(100000 + 30000 + 20000 + 5000 - 3000 - saldoCierre.descontado);
+      expect(monto).toBe(100000 + 30000 + 20000 + 5000 - saldoCierre.descontado);
 
       // El detalle del dashboard tiene que dar exactamente el mismo número.
       const detalle = buildCajaDetailsNumbers(
@@ -769,9 +769,10 @@ describe('el monto de cierre previsto cuadra con el detalle', () => {
         [{ monto: 20000 }]
       );
       expect(detalle.totalReal).toBe(monto);
-      // Se descuentan los saldos prepago de la base además del retiro ya aplicado.
-      expect(detalle.efectivoNeto).toBe(Math.max(0, 127000 - saldoCierre.descontado));
-      expect(detalle.egresosCaja).toBe(3000 + saldoCierre.descontado);
+      // Se descuentan los saldos prepago de la base además del retiro ya aplicado:
+      // `efectivo` ya viene neto de retiros y devoluciones, así que no se resta de nuevo.
+      expect(detalle.efectivoNeto).toBe(Math.max(0, 130000 - saldoCierre.descontado));
+      expect(detalle.egresosCaja).toBe(saldoCierre.descontado);
       // El resumen del turno sí sigue mostrando el retiro: es otra vista.
       expect(detalle.totalEgresos).toBe(3000 + 20000 + saldoCierre.descontado);
 

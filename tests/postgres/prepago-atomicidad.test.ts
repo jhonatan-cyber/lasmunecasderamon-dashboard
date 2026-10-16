@@ -160,14 +160,15 @@ describe('bloqueo del saldo compartido', () => {
     });
     expect(await saldo()).toBe(300);
     const filas = await movimientos();
-    expect(filas).toHaveLength(caso.devoluciones);
+    // La primera operacion se confirma y escribe su movimiento; la segunda se rechaza.
+    // El consumo de cuentas ahora deja un movimiento CONSUMO dentro de la transaccion.
+    expect(filas).toHaveLength(1);
+    const tipoEsperado = caso.devoluciones === 1 ? 'DEVOLUCION' : 'CONSUMO';
     for (const fila of filas) {
-      expect(fila.tipo).toBe('DEVOLUCION');
+      expect(fila.tipo).toBe(tipoEsperado);
       expect(Number(fila.monto)).toBe(700);
-      expect(fila.metodo_pago).toBe('transferencia');
+      expect(fila.metodo_pago).toBe(tipoEsperado === 'DEVOLUCION' ? 'transferencia' : 'prepago');
     }
-    // El consumo de cuentas no generaba movimientos CONSUMO: se conserva.
-    expect(filas.some(fila => fila.tipo === 'CONSUMO')).toBe(false);
   });
 
   it.each([
@@ -178,7 +179,8 @@ describe('bloqueo del saldo compartido', () => {
     expect(resultados[0]).toMatchObject({ status: 'rejected', reason: falloTardio });
     expect(resultados[1].status).toBe('fulfilled');
     expect(await saldo()).toBe(300);
-    expect(await movimientos()).toHaveLength(caso.devoluciones);
+    // La operacion confirmada escribe su propio movimiento (CONSUMO o DEVOLUCION).
+    expect(await movimientos()).toHaveLength(1);
   });
 });
 
