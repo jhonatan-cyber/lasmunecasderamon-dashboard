@@ -1,4 +1,7 @@
-import { DATABASE_CLEAN_PROTECTED_TABLES } from '@/lib/constants/database-maintenance';
+import {
+  DATABASE_CLEAN_PROTECTED_TABLES,
+  DATABASE_MIGRATION_TABLES
+} from '@/lib/constants/database-maintenance';
 import { withTransaction, type TransactionQuery } from './db';
 import { quoteIdentifier } from './postgres.cjs';
 
@@ -7,12 +10,14 @@ const excluded = new Set([
   'roles',
   'role_permissions',
   'permissions',
-  'configuraciones',
   'backups',
   '_migrations',
   '_postgres_migrations'
 ]);
-const protectedFromCleaning = new Set<string>(DATABASE_CLEAN_PROTECTED_TABLES);
+const protectedFromCleaning = new Set<string>([
+  ...DATABASE_CLEAN_PROTECTED_TABLES,
+  ...DATABASE_MIGRATION_TABLES
+]);
 
 async function tables(trx: TransactionQuery): Promise<string[]> {
   const rows = await trx<{ table_name: string }[]>(`SELECT table_name FROM information_schema.tables

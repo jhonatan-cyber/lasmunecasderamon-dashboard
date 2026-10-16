@@ -30,7 +30,7 @@ export class WithdrawalService {
         );
 
       const cajaRows = await trx<any[]>(
-        'SELECT monto_apertura, efectivo FROM cajas WHERE id_caja = ? FOR UPDATE',
+        'SELECT monto_apertura, efectivo FROM cajas WHERE id_caja = ? AND estado = 1 FOR UPDATE',
         [cajaId]
       );
 
@@ -57,7 +57,7 @@ export class WithdrawalService {
         trx
       );
 
-      await trx('UPDATE cajas SET efectivo = efectivo - ? WHERE id_caja = ?', [
+      await trx('UPDATE cajas SET efectivo = efectivo - ? WHERE id_caja = ? AND estado = 1', [
         validated.monto,
         cajaId
       ]);

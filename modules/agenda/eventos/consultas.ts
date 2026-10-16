@@ -230,7 +230,7 @@ export class EventQueries {
           p.fecha_crea as date,
           dp.monto as amount,
           COALESCE(v.codigo, 'TIPS') as codigo,
-          p.estado as estado,
+          dp.estado as estado,
           'venta' AS "subType"
         FROM detalle_propinas dp
         INNER JOIN propinas p ON p.id_propina = dp.propina_id

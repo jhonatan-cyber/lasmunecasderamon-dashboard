@@ -45,12 +45,14 @@ export async function registrarHoraExtra(
   entrada: EntradaHoraExtra,
   contexto?: ContextoOperacion
 ): Promise<HoraExtraRegistrada | null> {
-  const validated = ExtraHoursSchema.parse(entrada);
+  const validated = ExtraHoursSchema.extend({
+    monto: z.number().finite().positive('La tarifa debe ser positiva')
+  }).parse(entrada);
   return repositorio.insertar(
     {
       usuario_id: validated.usuario_id,
       hora: validated.hora,
-      monto: entrada.monto,
+      monto: validated.monto,
       device_date: entrada.device_date
     },
     contexto

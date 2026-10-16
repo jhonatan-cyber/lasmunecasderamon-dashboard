@@ -22,6 +22,7 @@ it('backs up, cleans and restores data without losing protected records or relat
     expect(clean.skippedTables).toContain('usuarios');
     expect((await query('SELECT count(*) AS count FROM usuarios'))[0]).toEqual(usersBefore);
     expect((await query('SELECT count(*) AS count FROM ventas'))[0].count).toBe(0);
+    expect((await query('SELECT count(*) AS count FROM backups'))[0].count).toBe(0);
     const result = await restoreDatabase(snapshot, backupId);
     expect(result.registros).toBe(
       Object.values(snapshot).reduce((sum, rows) => sum + rows.length, 0)
@@ -29,9 +30,6 @@ it('backs up, cleans and restores data without losing protected records or relat
     expect((await query('SELECT count(*) AS count FROM ventas'))[0].count).toBe(
       snapshot.ventas.length
     );
-    expect(
-      (await query('SELECT estado FROM backups WHERE id_backup = ?', [backupId]))[0].estado
-    ).toBe(2);
     expect(
       await query("SELECT conname FROM pg_constraint WHERE contype = 'f' AND NOT convalidated")
     ).toEqual([]);

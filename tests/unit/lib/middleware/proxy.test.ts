@@ -2,6 +2,8 @@ import { describe, it, expect, beforeEach, vi } from 'vitest';
 import type { NextRequest } from 'next/server';
 
 const mockJwtVerify = vi.hoisted(() => vi.fn());
+const mockValidarSesion = vi.hoisted(() => vi.fn());
+vi.mock('@/lib/auth/auth', () => ({ validarSesionPayload: mockValidarSesion }));
 const mockSignJWT = vi.hoisted(() => vi.fn());
 const mockCheckRateLimit = vi.hoisted(() => vi.fn());
 
@@ -9,6 +11,9 @@ vi.mock('jose', () => ({
   jwtVerify: mockJwtVerify,
   SignJWT: class {
     setProtectedHeader() {
+      return this;
+    }
+    setIssuedAt() {
       return this;
     }
     setExpirationTime() {
@@ -87,8 +92,19 @@ const CAJERO_PAYLOAD = {
   nick: 'cajero'
 };
 
+it('rechaza una sesión revocada aunque la firma del JWT siga siendo válida', async () => {
+  mockJwtVerify.mockResolvedValue({ payload: ADMIN_PAYLOAD });
+  mockValidarSesion.mockResolvedValue(false);
+  const proxy = await loadProxy();
+  const response = await proxy(
+    createRequest({ pathname: '/api/sales', cookies: { token: 'jwt' } })
+  );
+  expect(response.status).toBe(401);
+});
+
 beforeEach(() => {
   vi.clearAllMocks();
+  mockValidarSesion.mockResolvedValue(true);
   vi.stubEnv('JWT_SECRET', 'test-secret');
   vi.stubEnv('JWT_REFRESH_SECRET', 'test-refresh');
   vi.stubEnv('NODE_ENV', 'test');

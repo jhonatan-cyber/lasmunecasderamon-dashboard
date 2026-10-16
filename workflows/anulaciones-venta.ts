@@ -190,6 +190,7 @@ export async function anularVentaParcialEnUnidad(
 ): Promise<void> {
   const venta = await leerVentaParaAnular(ventaId, contexto);
   if (!venta) throw new NotFoundError('Venta', ventaId);
+  if (Number(venta.estado) === 0) return;
   const currentTotal = Math.max(0, Math.round(Number(venta.total || 0)));
   const currentSubTotal = Math.max(0, Math.round(Number(venta.sub_total || 0)));
   const monto = Math.max(0, Math.round(Number(approvedAmount || 0)));
@@ -226,11 +227,13 @@ export async function anularVentaParcialEnUnidad(
 
   const mixedSourceRows =
     metodoPago === 'mixto'
-      ? pagosMixtos.map((payment, index) => ({
-          key: `${payment.metodo}_${index}`,
-          metodo: payment.metodo,
-          amount: Math.max(0, Math.round(Number(payment.monto || 0)))
-        }))
+      ? pagosMixtos
+          .filter(payment => payment.metodo !== 'prepago')
+          .map((payment, index) => ({
+            key: `${payment.metodo}_${index}`,
+            metodo: payment.metodo,
+            amount: Math.max(0, Math.round(Number(payment.monto || 0)))
+          }))
       : [
           {
             key: `${metodoPago || 'efectivo'}_principal`,
@@ -289,11 +292,14 @@ export async function anularVentaParcialEnUnidad(
       newSubTotal,
       newPropina,
       newComision,
-      pagosMixtosJson: JSON.stringify(
-        updatedMixedRows
+      pagosMixtosJson: JSON.stringify([
+        ...(metodoPago === 'mixto' && newPrepago > 0
+          ? [{ metodo: 'prepago', monto: newPrepago }]
+          : []),
+        ...updatedMixedRows
           .filter(row => Number(row.nextAmount || 0) > 0)
           .map(row => ({ metodo: row.metodo, monto: Number(row.nextAmount || 0) }))
-      ),
+      ]),
       nextState
     },
     contexto

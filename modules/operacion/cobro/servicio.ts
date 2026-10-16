@@ -7,9 +7,10 @@ export async function cobrarYPrepararVenta(
   body: CuentaCobrarBody,
   usuarioId: string,
   contexto: ContextoOperacion,
-  aplazar: (tarea: () => void | Promise<void>) => void
+  aplazar: (tarea: () => void | Promise<void>) => void,
+  ventaId?: string
 ) {
-  await cerrarCuenta(contexto, id, body, usuarioId, aplazar);
+  await cerrarCuenta(contexto, id, body, usuarioId, aplazar, ventaId);
   return prepararVentaCuenta(contexto, id, body);
 }
 export function consultarCuentaCobrada(id: string, contexto: ContextoOperacion) {

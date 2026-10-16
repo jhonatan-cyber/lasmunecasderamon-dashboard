@@ -31,7 +31,7 @@ interface ProductoCarrito {
   sub_total: number;
   categoria_nombre?: string;
   comision: number;
-  selectedHostesses?: number[];
+  selectedHostesses?: Array<string | number>;
   isChampagne?: boolean;
 }
 

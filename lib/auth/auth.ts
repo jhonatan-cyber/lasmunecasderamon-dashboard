@@ -1,5 +1,4 @@
 import { jwtVerify, SignJWT } from 'jose';
-import { getSystemTimezone } from '@/lib/business/timezoneService';
 import { env } from '@/lib/utils/env';
 
 export interface AuthenticatedUser {
@@ -11,6 +10,7 @@ export interface AuthenticatedUser {
   nick?: string;
   email: string;
   role: string;
+  sessionVersion: number;
   iat: number;
   exp: number;
 }
@@ -35,7 +35,8 @@ const TOKEN_PAYLOAD_FIELDS = {
   lastName: null as string | null,
   nick: null as string | null,
   email: null as string | null,
-  role: null as string | null
+  role: null as string | null,
+  sessionVersion: null as number | null
 };
 
 type TokenPayload = { [K in keyof typeof TOKEN_PAYLOAD_FIELDS]: string | number | null };
@@ -48,6 +49,7 @@ function buildPayload(userData: {
   nick?: string;
   email: string;
   role: string;
+  sessionVersion?: number;
 }): TokenPayload {
   return {
     id: userData.id,
@@ -57,14 +59,33 @@ function buildPayload(userData: {
     lastName: userData.lastName,
     nick: userData.nick || null,
     email: userData.email,
-    role: userData.role
+    role: userData.role,
+    sessionVersion: userData.sessionVersion ?? null
   };
+}
+
+export async function validarSesionPayload(payload: Record<string, unknown>): Promise<boolean> {
+  if (!payload.id || typeof payload.sessionVersion !== 'number') return false;
+  const { obtenerEstadoSesionToken } = await import('@/modules/identidad');
+  const current = await obtenerEstadoSesionToken(String(payload.id));
+  return (
+    !!current &&
+    Number(current.sessionVersion) === payload.sessionVersion &&
+    current.role.toLowerCase() === String(payload.role).toLowerCase()
+  );
+}
+
+async function payloadVigente(userData: Parameters<typeof buildPayload>[0]) {
+  const { obtenerEstadoSesionToken } = await import('@/modules/identidad');
+  const current = await obtenerEstadoSesionToken(String(userData.id));
+  if (!current) throw new Error('La cuenta no está activa');
+  return buildPayload({ ...current, nick: current.nick ?? undefined });
 }
 
 export async function verifyToken(token: string): Promise<AuthenticatedUser | null> {
   try {
     const { payload } = await jwtVerify(token, getSecretKey());
-    return payload as unknown as AuthenticatedUser;
+    return (await validarSesionPayload(payload)) ? (payload as unknown as AuthenticatedUser) : null;
   } catch {
     return null;
   }
@@ -74,7 +95,7 @@ export async function verifyToken(token: string): Promise<AuthenticatedUser | nu
 export async function verifyRefreshToken(token: string): Promise<TokenPayload | null> {
   try {
     const { payload } = await jwtVerify(token, getRefreshSecretKey());
-    return payload as TokenPayload;
+    return (await validarSesionPayload(payload)) ? (payload as TokenPayload) : null;
   } catch {
     return null;
   }
@@ -93,8 +114,9 @@ export async function generateAccessToken(userData: {
   email: string;
   role: string;
 }): Promise<string> {
-  return await new SignJWT(buildPayload(userData))
+  return await new SignJWT(await payloadVigente(userData))
     .setProtectedHeader({ alg: 'HS256' })
+    .setIssuedAt()
     .setExpirationTime('15m')
     .sign(getSecretKey());
 }
@@ -112,8 +134,9 @@ export async function generateRefreshToken(userData: {
   email: string;
   role: string;
 }): Promise<string> {
-  return await new SignJWT(buildPayload(userData))
+  return await new SignJWT(await payloadVigente(userData))
     .setProtectedHeader({ alg: 'HS256' })
+    .setIssuedAt()
     .setExpirationTime('7d')
     .sign(getRefreshSecretKey());
 }

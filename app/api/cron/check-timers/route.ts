@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server';
 import { withPublicRoute } from '@/lib/api/withRoute';
 import { sendNotificationToAll } from '@/lib/api/sseService';
-import { getNowInBusinessTimezone, getSystemTimezone } from '@/lib/business/timezoneService';
+import { getNowInBusinessTimezone, parseBusinessDate } from '@/lib/business/timezoneService';
 import { checkWarehouseContainerAlerts } from '@/lib/business/containerAlerts';
 import { reavisarCierresPendientes } from '@/lib/business/cierreCajaRecordatorios';
 import { revisarTemporizadores } from '@/modules/operacion';
@@ -27,7 +27,6 @@ export const GET = withPublicRoute(async () => {
   await reavisarCierresPendientes();
 
   const bizNow = getNowInBusinessTimezone();
-  const tz = getSystemTimezone();
   const localHour = parseInt(bizNow.substring(11, 13), 10);
   const todayStr = bizNow.substring(0, 10);
 
@@ -39,7 +38,7 @@ export const GET = withPublicRoute(async () => {
     });
   }
 
-  await revisarTemporizadores(new Date(bizNow.replace(' ', 'T')));
+  await revisarTemporizadores(parseBusinessDate(bizNow));
 
   return NextResponse.json({ success: true, timestamp: bizNow });
 });

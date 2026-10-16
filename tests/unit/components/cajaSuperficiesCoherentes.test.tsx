@@ -73,8 +73,8 @@ const balanceDeLaTarjeta = (caja: CajaWithUser): number => {
 
 describe('CajaCard · detalle · monto de cierre dan el mismo número', () => {
   it('para una misma fila, las tres superficies cuadran al peso', () => {
-    // 100.000 + 485.000 − 25.000 + 320.000 + 145.000 (sin volver a restar anticipo ni retiros)
-    const esperado = 1025000;
+    // Apertura y medios netos, sin volver a restar egresos ya aplicados.
+    const esperado = 1050000;
 
     const tarjeta = balanceDeLaTarjeta(fila);
     const detalle = buildCajaDetailsNumbers(fila, {}, fuentes, []).totalReal;
@@ -88,15 +88,15 @@ describe('CajaCard · detalle · monto de cierre dan el mismo número', () => {
     expect(monto).toBe(esperado);
   });
 
-  it('las devoluciones bajan las tres juntas, ni una más que otra', () => {
-    const conDevolucion: CajaWithUser = { ...fila, devoluciones: 90000 };
+  it('devolver efectivo baja las tres juntas mediante el movimiento neto', () => {
+    const conDevolucion: CajaWithUser = { ...fila, efectivo: 420000, devoluciones: 90000 };
 
     const tarjeta = balanceDeLaTarjeta(conDevolucion);
     const detalle = buildCajaDetailsNumbers(conDevolucion, {}, fuentes, []).totalReal;
     const monto = CashRegisterRepository.calcularMontoCierre(conDevolucion, 0);
 
-    // 100.000 + 485.000 − 90.000 + 320.000 + 145.000
-    expect(tarjeta).toBe(960000);
+    // Se devolvieron otros 65.000: 1.050.000 - 65.000.
+    expect(tarjeta).toBe(985000);
     expect(detalle).toBe(tarjeta);
     expect(monto).toBe(tarjeta);
   });
@@ -107,8 +107,8 @@ describe('CajaCard · detalle · monto de cierre dan el mismo número', () => {
     // El Total real de la tarjeta: ni el retiro de 120.000 ni el anticipo de 60.000
     // aparecen de nuevo en el cajón.
     expect(numeros.totalReal).toBe(totalCaja(fila));
-    expect(numeros.efectivoNeto).toBe(100000 + 485000 - 25000);
-    expect(numeros.egresosCaja).toBe(25000);
+    expect(numeros.efectivoNeto).toBe(100000 + 485000);
+    expect(numeros.egresosCaja).toBe(0);
   });
 
   it('cuando el cierre descuenta saldos, las tres bajan el mismo descuento', () => {
@@ -118,8 +118,8 @@ describe('CajaCard · detalle · monto de cierre dan el mismo número', () => {
     const detalle = buildCajaDetailsNumbers(cerrada, {}, fuentes, []).totalReal;
     const monto = CashRegisterRepository.calcularMontoCierre(cerrada, 300000);
 
-    // 1.025.000 − 300.000
-    expect(tarjeta).toBe(725000);
+    // 1.050.000 − 300.000
+    expect(tarjeta).toBe(750000);
     expect(detalle).toBe(tarjeta);
     expect(monto).toBe(tarjeta);
   });

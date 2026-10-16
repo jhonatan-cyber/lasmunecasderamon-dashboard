@@ -124,7 +124,7 @@ export async function leerFondoCaja(
   contexto: ContextoOperacion
 ): Promise<{ monto_apertura: number; efectivo: number } | null> {
   const rows = await resolverTransaccion(contexto)<{ monto_apertura: number; efectivo: number }[]>(
-    'SELECT monto_apertura, efectivo FROM cajas WHERE id_caja = ?',
+    'SELECT monto_apertura, efectivo FROM cajas WHERE id_caja = ? AND estado = 1 FOR UPDATE',
     [cajaId]
   );
   return rows[0] ?? null;

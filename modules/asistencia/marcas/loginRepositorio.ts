@@ -9,7 +9,7 @@ export async function registrarMarcaLogin(
   contexto: ContextoOperacion
 ) {
   await resolverTransaccion(contexto)(
-    'INSERT INTO asistencias (id_asistencia, usuario_id, fecha, hora, estado) VALUES (?, ?, ?, ?, 1)',
+    'INSERT INTO asistencias (id_asistencia, usuario_id, fecha, hora, estado) VALUES (?, ?, ?, ?, 1) ON CONFLICT (usuario_id, fecha) DO NOTHING',
     [generateUUID(), usuarioId, fecha, hora]
   );
 }

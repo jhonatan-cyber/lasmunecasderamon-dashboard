@@ -8,6 +8,9 @@ import { useSingleFlight } from '@/hooks/shared/useSingleFlight';
 import { generateRandomCode } from '@/lib/utils/codeUtils';
 import { useChampagneRule } from '@/hooks/shared';
 import logger from '@/lib/utils/logger';
+import { mapForSaleToCartItem } from '@/lib/sales/forSaleMapper';
+import { saleInventoryFields } from '@/lib/sales/saleInventoryFields';
+import { accountCartKey } from '@/lib/sales/accountCartKey';
 
 export function useAccountForm() {
   const { createCuenta } = useCuentas();
@@ -38,12 +41,14 @@ export function useAccountForm() {
 
       setSearchLoading(true);
       try {
-        const res = await fetch(`/api/products?term=${encodeURIComponent(searchProducto)}`);
+        const res = await fetch(
+          `/api/products?for_sale=1&term=${encodeURIComponent(searchProducto)}`
+        );
         if (!res.ok) {
           throw new Error(`HTTP error! status: ${res.status}`);
         }
         const data = await res.json();
-        setSearchResults(data.success ? data.data : []);
+        setSearchResults(data.success ? data.data.map(mapForSaleToCartItem) : []);
       } catch (error) {
         logger.captureException(error, { context: 'AccountForm:searchProducts' });
         setSearchResults([]);
@@ -79,12 +84,14 @@ export function useAccountForm() {
   };
 
   const handleAddProducto = (producto: any) => {
-    const cantidad = cantidades[producto.id_producto] || 1;
-    const precio = producto.precio || producto.price || 0;
-    const comision = producto.commission ?? producto.comision ?? 0;
+    const id = String(producto.id ?? producto.id_producto);
+    const cantidad = Number(producto.cantidad ?? cantidades[id] ?? 1);
+    if (!Number.isInteger(cantidad) || cantidad < 1) return;
+    const precio = producto.precio ?? producto.price ?? 0;
+    const comision = producto.comision ?? producto.commission ?? 0;
 
     setProductos(prev => {
-      const existente = prev.findIndex(p => p.id_producto === producto.id_producto);
+      const existente = prev.findIndex(p => accountCartKey(p) === accountCartKey(producto));
       if (existente !== -1) {
         return prev.map((p, i) =>
           i === existente
@@ -96,12 +103,27 @@ export function useAccountForm() {
             : p
         );
       }
-      return [...prev, { ...producto, cantidad, precio, comision, subtotal: precio * cantidad }];
+      return [
+        ...prev,
+        {
+          ...producto,
+          id_producto: producto.producto_id ?? producto.id_producto ?? producto.id,
+          cantidad,
+          precio,
+          comision,
+          subtotal: precio * cantidad
+        }
+      ];
     });
+    if (comision > 0 && producto.selectedHostesses?.length) {
+      setSelectedAnfitrionas(previous => [
+        ...new Set([...previous, ...producto.selectedHostesses.map(String)])
+      ]);
+    }
 
     setCantidades(prev => {
       const newCantidades = { ...prev };
-      delete newCantidades[producto.id_producto];
+      delete newCantidades[id];
       return newCantidades;
     });
 
@@ -184,11 +206,17 @@ export function useAccountForm() {
       const total = calculateTotal();
 
       const detalles: CreateDetalleCuentaRequest[] = productos.map(producto => ({
-        producto_id: producto.id_producto || producto.id,
+        ...saleInventoryFields(producto),
+        producto_id: producto.producto_id ?? producto.id_producto ?? producto.id,
         precio: producto.precio,
         cantidad: producto.cantidad,
         sub_total: producto.subtotal,
-        comision: producto.comision ?? 0
+        comision: producto.comision ?? 0,
+        hostesses: (producto.selectedHostesses?.length
+          ? producto.selectedHostesses
+          : selectedAnfitrionas
+        ).map(String),
+        isChampagne: Boolean(producto.isChampagne)
       }));
 
       let timerMinutes = 0;

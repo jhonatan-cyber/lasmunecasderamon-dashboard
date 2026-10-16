@@ -4,7 +4,9 @@ import { cleanDatabase } from '@/lib/database/maintenance';
 import { logger } from '@/lib/utils/logger';
 
 export const POST = withRoute(
-  { auth: true, audit: true, module: 'settings', action: 'write' },
+  // La auditoría en segundo plano podría volver a insertar datos tras el TRUNCATE.
+  // El resultado del vaciado queda registrado en el logger de archivos inferior.
+  { auth: true, audit: false, module: 'settings', action: 'write' },
   async () => {
     const { deletedTables, skippedTables } = await cleanDatabase();
 

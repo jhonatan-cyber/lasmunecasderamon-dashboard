@@ -8,8 +8,6 @@ import {
   TrendingUp,
   Activity
 } from 'lucide-react';
-import { Badge } from '@/components/ui/badge';
-import { Skeleton } from '@/components/ui/skeleton';
 import { type DashboardTrend, useDashboardComposite } from '@/hooks/stats/useDashboardComposite';
 import { cn } from '@/lib/utils/utils';
 import { formatCurrencyCLP } from '@/lib/utils/formatters';
@@ -51,7 +49,7 @@ function CriticalAlert({ count, label }: { count: number; label: string }) {
   if (count === 0) return null;
 
   return (
-    <div className='flex items-center gap-1 mt-2 px-2 py-1 rounded-lg bg-rose-500/10 border border-rose-500/20'>
+    <div className='flex items-center gap-1 mt-2'>
       <div className='relative'>
         <AlertTriangle className='h-3 w-3 text-rose-500' />
         <div className='absolute inset-0 bg-rose-500 blur-xs opacity-50 animate-pulse' />
@@ -71,18 +69,20 @@ export default function CriticalMetrics() {
 
   const sales = Number(businessStats?.total_ventas || 0);
   const services = Number(businessStats?.total_servicios || 0);
+  const openingAmount = Number(businessStats?.monto_apertura || 0);
   const movement =
     Number(businessStats?.total_efectivo || 0) +
     Number(businessStats?.total_tarjeta || 0) +
-    Number(businessStats?.total_transferencia || 0);
+    Number(businessStats?.total_transferencia || 0) -
+    openingAmount;
 
   const pendingOrders = insights?.localStatus.orders.open || 0;
   const expiringServices = insights?.localStatus.services.expiringSoon || 0;
 
   if (loading) {
     return (
-      <div className='grid grid-cols-1 md:grid-cols-3 gap-4 w-full'>
-        {Array.from({ length: 3 }).map((_, index) => (
+      <div className='grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4 w-full'>
+        {Array.from({ length: 4 }).map((_, index) => (
           <div
             key={index}
             className='h-28 rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-950/20 animate-pulse'
@@ -102,6 +102,15 @@ export default function CriticalMetrics() {
 
   const kpis = [
     {
+      label: 'Monto de apertura',
+      value: formatCurrencyCLP(openingAmount),
+      description: 'Fondo inicial de la caja',
+      icon: DollarSign,
+      color: 'amber',
+      trend: undefined,
+      alert: null
+    },
+    {
       label: 'Ventas Totales',
       value: formatCurrencyCLP(sales),
       icon: TrendingUp,
@@ -119,6 +128,7 @@ export default function CriticalMetrics() {
     },
     {
       label: 'Flujo de Caja',
+      description: 'Sin incluir el monto de apertura',
       value: formatCurrencyCLP(movement),
       icon: Activity,
       color: 'amber',
@@ -127,7 +137,7 @@ export default function CriticalMetrics() {
   ];
 
   return (
-    <div className='grid grid-cols-1 md:grid-cols-3 gap-4 w-full'>
+    <div className='grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4 w-full'>
       {kpis.map(kpi => {
         const Icon = kpi.icon;
         const colorClass =
@@ -168,6 +178,9 @@ export default function CriticalMetrics() {
               <h3 className='text-2xl font-black tracking-tighter text-slate-900 dark:text-white'>
                 {kpi.value}
               </h3>
+              {kpi.description && (
+                <p className='text-xs text-slate-500 dark:text-slate-400'>{kpi.description}</p>
+              )}
             </div>
 
             {kpi.alert && <CriticalAlert count={kpi.alert.count} label={kpi.alert.label} />}

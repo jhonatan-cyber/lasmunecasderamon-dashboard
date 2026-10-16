@@ -587,3 +587,11 @@ export async function leerAdicionalActivo(
   );
   return rows.length > 0;
 }
+
+export async function leerImportesServicio(servicioId: string, contexto: ContextoOperacion) {
+  const rows = await resolverTransaccion(contexto)<Array<Record<string, unknown>>>(
+    'SELECT precio_habitacion, precio_servicio, iva, sub_total, total FROM servicios WHERE id_servicio = ? FOR UPDATE',
+    [servicioId]
+  );
+  return rows[0] ?? null;
+}

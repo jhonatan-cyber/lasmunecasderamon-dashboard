@@ -21,7 +21,6 @@ export default function LoggedUsersCards() {
       return data.data;
     },
     staleTime: 60000,
-    refetchInterval: 30000,
     refetchOnWindowFocus: true
   });
 

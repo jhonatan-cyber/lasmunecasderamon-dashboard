@@ -100,7 +100,7 @@ describe('StatsQueries.getCajaGeneralStats', () => {
     expect(result.caja_id).toBe('caja-1');
     expect(result.cajaActiva).not.toBeNull();
     expect(result.cajaActiva.id).toBe('caja-1');
-    expect(result.balance_total).toBe(190000);
+    expect(result.balance_total).toBe(200000);
     expect(result.total_ventas).toBe(150000);
     expect(result.cantidad_servicios).toBe(5);
     expect(result.retiros).toBe(10000);

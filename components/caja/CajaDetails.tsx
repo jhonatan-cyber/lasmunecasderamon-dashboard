@@ -59,6 +59,7 @@ export default function CajaDetails({ caja, open, onOpenChange }: CajaDetailsPro
             statsOpen={view.statsOpen}
             onToggle={() => view.setStatsOpen(prev => !prev)}
             numeros={view.numeros}
+            montoApertura={Number(view.cajaActual?.monto_apertura || 0)}
             isLoadingSummary={view.isLoadingSummary}
           />
 
@@ -72,7 +73,7 @@ export default function CajaDetails({ caja, open, onOpenChange }: CajaDetailsPro
             <div className='flex-1 overflow-y-auto custom-scrollbar p-6 print:overflow-visible print:max-h-none'>
               {view.activeTab === 'resumen' && (
                 <CajaDetailsResumenTab
-                  caja={caja}
+                  caja={view.cajaActual}
                   imageVersion={imageVersion}
                   isLoadingSummary={view.isLoadingSummary}
                   numeros={view.numeros}

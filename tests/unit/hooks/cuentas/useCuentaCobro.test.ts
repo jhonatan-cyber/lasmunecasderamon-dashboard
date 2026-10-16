@@ -70,7 +70,7 @@ describe('useCuentaCobro — check de caja para el cobro de cuenta', () => {
     expect(posts).toEqual([]); // ni /cobrar ni /sales
   });
 
-  it('con caja abierta, el cobro procede hasta /cobrar y /sales', async () => {
+  it('con caja abierta, cobra y factura con una sola petición atómica', async () => {
     const posts: string[] = [];
     fetchMock.mockImplementation((url: string, init?: RequestInit) => {
       if (url === '/api/cashregister/status')
@@ -93,8 +93,7 @@ describe('useCuentaCobro — check de caja para el cobro de cuenta', () => {
       );
     });
 
-    expect(posts.some(u => u.includes('/cuentas/c1/cobrar'))).toBe(true);
-    expect(posts.some(u => u.endsWith('/api/sales'))).toBe(true);
+    expect(posts).toEqual(['/api/cuentas/c1/cobrar-con-venta']);
     expect(onSuccess).toHaveBeenCalled();
   });
 

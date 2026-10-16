@@ -3,7 +3,7 @@
 import { memo } from 'react';
 import Image from 'next/image';
 import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
-import { formatCurrencyNoDecimals, formatFechaLarga, formatSoloHora } from '@/lib/utils/formatters';
+import { formatFechaLarga, formatSoloHora } from '@/lib/utils/formatters';
 
 interface CajaDetailsUserCardsProps {
   caja: any;
@@ -51,7 +51,7 @@ export const CajaDetailsUserCards = memo(function CajaDetailsUserCards({
   imageVersion
 }: CajaDetailsUserCardsProps) {
   return (
-    <div className='grid grid-cols-1 md:grid-cols-2 gap-4 print:grid-cols-2'>
+    <div className='grid grid-cols-1 sm:grid-cols-2 gap-4 print:grid-cols-2'>
       <div className={cardShell}>
         <div className='mb-3'>
           <p className='text-xs font-bold text-gray-500 uppercase mb-2'>Abierta por</p>
@@ -68,12 +68,6 @@ export const CajaDetailsUserCards = memo(function CajaDetailsUserCards({
         <p className='text-sm text-gray-600 dark:text-gray-400'>
           {formatFechaLarga(caja.fecha_apertura)} • {formatSoloHora(caja.fecha_apertura)}
         </p>
-        <div className='mt-4 border-t border-gray-200 pt-3 dark:border-gray-700'>
-          <p className='text-xs font-bold text-gray-500 uppercase'>Monto de apertura</p>
-          <p className='mt-1 text-xl font-bold tabular-nums text-gray-900 dark:text-white'>
-            {formatCurrencyNoDecimals(caja.monto_apertura)}
-          </p>
-        </div>
       </div>
       {caja.fecha_cierre && (
         <div className={cardShell}>

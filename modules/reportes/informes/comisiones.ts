@@ -77,7 +77,7 @@ export async function getCommissionsReport(
     LEFT JOIN ventas v ON v.id_venta = c.venta_id
     LEFT JOIN servicios s ON s.id_servicio = c.servicio_id
     WHERE c.estado IN (1, 2)
-      AND dc.estado IN (1, 2)
+      AND dc.estado IN (0, 1, 2)
       AND LOWER(r.nombre) = 'anfitriona'
       AND ${range.clause}
     GROUP BY u.id_usuario, u.nombre, u.apellido
@@ -113,7 +113,7 @@ export async function getCommissionsReport(
     LEFT JOIN ventas v ON v.id_venta = c.venta_id
     LEFT JOIN servicios s ON s.id_servicio = c.servicio_id
     WHERE c.estado IN (1, 2)
-      AND dc.estado IN (1, 2)
+      AND dc.estado IN (0, 1, 2)
       AND LOWER(r.nombre) = 'anfitriona'
       AND ${range.clause}
     GROUP BY (EXTRACT(DOW FROM c.fecha_crea)::integer + 1), TO_CHAR(c.fecha_crea, 'FMDay')
@@ -123,7 +123,7 @@ export async function getCommissionsReport(
     );
 
     const normalizedCommissions = commissions.map(row => ({
-      id_usuario: Number(row.id_usuario),
+      id_usuario: String(row.id_usuario),
       nombre: row.nombre,
       apellido: row.apellido,
       nombre_completo: row.nombre_completo,

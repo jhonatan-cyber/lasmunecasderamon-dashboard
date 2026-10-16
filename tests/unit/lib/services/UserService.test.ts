@@ -1,3 +1,6 @@
+vi.mock('@/modules/identidad/autenticacion/sesionTokensRepositorio', () => ({
+  revocarSesionesUsuario: vi.fn()
+}));
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { UserService } from '@/modules/identidad/usuarios/fachada';
 import { ValidationError, NotFoundError } from '@/lib/errors/errors';
@@ -150,10 +153,12 @@ describe('UserService.updateUser', () => {
 
     expect(UserRepository.update).toHaveBeenCalledWith(
       'user-1',
-      expect.objectContaining({ password: 'hashed-password' }),
+      expect.not.objectContaining({ password: expect.anything() }),
       null
     );
     expect(result.user).toMatchObject({ name: 'New' });
+    expect(result.newTempPassword).toBeUndefined();
+    expect((await import('argon2')).hash).not.toHaveBeenCalled();
   });
 
   it('invalida el caché de permisos cuando cambia el rol', async () => {

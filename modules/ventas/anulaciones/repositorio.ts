@@ -118,7 +118,7 @@ export async function leerVentaParaAnular(
   const rows = await trx<VentaAnulacion[]>(
     `SELECT id_venta, estado, habitacion_id, cliente_id, caja_id, pedido_id, metodo_pago, total, sub_total,
             propina, total_comision, pagos_mixtos
-       FROM ventas WHERE id_venta = ? LIMIT 1`,
+       FROM ventas WHERE id_venta = ? LIMIT 1 FOR UPDATE`,
     [ventaId]
   );
   return rows[0] ?? null;
@@ -309,8 +309,12 @@ export async function actualizarEstadoSolicitud(
 ): Promise<'confirmada' | 'rechazada'> {
   const nextStatus = normalizeSolicitudStatus(status);
   const trx = resolverTransaccion(contexto);
-  const rows = await trx<Array<{estado: string}>>('SELECT estado FROM solicitudes_anulacion_ventas WHERE id = ? FOR UPDATE', [requestId]);
-  if (!rows[0] || rows[0].estado !== 'pendiente') throw new BusinessError('La solicitud ya fue procesada');
+  const rows = await trx<Array<{ estado: string }>>(
+    'SELECT estado FROM solicitudes_anulacion_ventas WHERE id = ? FOR UPDATE',
+    [requestId]
+  );
+  if (!rows[0] || rows[0].estado !== 'pendiente')
+    throw new BusinessError('La solicitud ya fue procesada');
   await resolverTransaccion(contexto)(
     'UPDATE solicitudes_anulacion_ventas SET estado = ? WHERE id = ?',
     [nextStatus, requestId]

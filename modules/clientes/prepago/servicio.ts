@@ -28,11 +28,12 @@ export function saldoPrepagoAgotado(clienteId: string, contexto: ContextoOperaci
 export async function consumirPrepagoCuenta(
   clienteId: string | null,
   monto: number,
-  contexto: ContextoOperacion
+  contexto: ContextoOperacion,
+  referencia?: { cuentaId: string; ventaId?: string; usuarioId: string }
 ) {
   const cliente = await leerSaldoParaActualizar(clienteId, contexto);
   validarConsumoCuenta(cliente ? Number(cliente.saldo ?? 0) : undefined, monto);
-  await guardarConsumoCuenta(clienteId, monto, contexto);
+  await guardarConsumoCuenta(clienteId, monto, contexto, referencia);
 }
 
 export function consumirPrepagoVenta(

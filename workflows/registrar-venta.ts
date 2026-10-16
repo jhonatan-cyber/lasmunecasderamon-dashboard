@@ -50,7 +50,7 @@ export async function registrarVenta(
   createdBy: string,
   contexto: ContextoOperacion,
   aplazar: (task: () => void | Promise<void>) => void,
-  options: { desdeCuenta?: boolean } = {}
+  options: { desdeCuenta?: boolean; ventaId?: string } = {}
 ) {
   const requestedOrder = body.pedido_id || body.id_pedido;
   if (requestedOrder && !options.desdeCuenta) {
@@ -71,7 +71,7 @@ export async function registrarVenta(
   }
   const clienteId = validated.cliente_id || servicio?.cliente_id || body.cliente_id;
 
-  const ventaId = generateUUID();
+  const ventaId = options.ventaId ?? generateUUID();
   const codigo = validated.codigo || Math.random().toString(36).substring(2, 10).toUpperCase();
   const now = getNowInBusinessTimezone(validated.device_date);
   const pagosMixtos: MixedPayment[] = parsePagosMixtos(validated.pagos_mixtos);

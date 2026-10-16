@@ -189,7 +189,7 @@ export class UserRepository {
 
   static async update(
     id: string,
-    data: Partial<UserType> & { password?: string; email?: string },
+    data: Partial<UserType> & { password?: string; email?: string; force_password_change?: number },
     fotoFilename: string | null = null
   ): Promise<UserType | null> {
     try {
@@ -209,6 +209,7 @@ export class UserRepository {
         foto: fotoFilename ?? data.foto,
         email: data.email,
         password: data.password,
+        force_password_change: data.force_password_change,
         biometrico_codigo: data.biometrico_codigo,
         biometrico_huella: data.biometrico_huella,
         biometrico_facial: data.biometrico_facial,
@@ -231,6 +232,10 @@ export class UserRepository {
         estado: newStatus,
         fecha_mod: getNowInBusinessTimezone()
       });
+      await query(
+        'UPDATE usuarios SET session_version = session_version + 1 WHERE id_usuario = ?',
+        [id]
+      );
       return await this.getById(id);
     } catch (err) {
       logger.error('[UserRepository] Error en updateStatus:', { id, action, err });

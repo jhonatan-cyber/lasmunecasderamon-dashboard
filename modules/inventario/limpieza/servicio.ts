@@ -1,5 +1,6 @@
 import { withTransaction, generateUUID, type TransactionQuery } from '@/lib/database/db';
 import { AppError, BusinessError, NotFoundError } from '@/lib/errors/errors';
+import { sendNotificationToAll } from '@/lib/api/sseService';
 import { accesoLimpieza, type OperacionLimpieza } from '@/lib/business/limpieza';
 import {
   UBICACIONES_LIMPIEZA,
@@ -81,7 +82,7 @@ export async function operarLimpieza(op: OperacionLimpieza, actor: Actor) {
       prohibido();
   }
   if (op.tipo === 'consumo' && !acceso.ubicaciones.includes(op.origen)) prohibido();
-  return withTransaction(async trx => {
+  const resultado = await withTransaction(async trx => {
     if (op.tipo === 'articulo') {
       // El índice único también impide duplicados entre peticiones concurrentes.
       const id = generateUUID();
@@ -161,4 +162,7 @@ export async function operarLimpieza(op: OperacionLimpieza, actor: Actor) {
     );
     return { id };
   });
+  // El inventario de limpieza cambió: las demás sesiones con la página abierta refrescan.
+  sendNotificationToAll('cleaning_updated', { tipo: op.tipo });
+  return resultado;
 }

@@ -62,6 +62,7 @@ export class VentasStatsRepository {
       FROM detalle_ventas dv
       INNER JOIN ventas v ON v.id_venta = dv.venta_id
       WHERE v.caja_id = ?
+        AND v.estado IN (1, 2)
         AND dv.tipo_venta = 'shot'
     `,
       [caja_id]
@@ -95,6 +96,7 @@ export class VentasStatsRepository {
       FROM ventas v
       LEFT JOIN comisiones c ON v.id_venta = c.venta_id
       WHERE v.caja_id = ?
+        AND v.estado IN (1, 2)
         AND c.id_comision IS NULL -- No commissions (not a trago chica)
         AND NOT EXISTS (
           -- Exclude champagne sales
@@ -141,6 +143,7 @@ export class VentasStatsRepository {
         ) as comisiones
       FROM ventas v
       WHERE v.caja_id = ?
+        AND v.estado IN (1, 2)
         AND EXISTS (
           SELECT 1 FROM detalle_ventas dv2
           INNER JOIN productos p2 ON p2.id_producto = dv2.producto_id
@@ -187,6 +190,7 @@ export class VentasStatsRepository {
       FROM ventas v
       INNER JOIN comisiones c ON c.venta_id = v.id_venta
       WHERE v.caja_id = ?
+        AND v.estado IN (1, 2)
         AND NOT EXISTS (
           -- Exclude champagne sales
           SELECT 1 FROM detalle_ventas dv2

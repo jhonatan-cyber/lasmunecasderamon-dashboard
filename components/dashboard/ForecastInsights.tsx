@@ -32,7 +32,9 @@ export default function ForecastInsights() {
               forecast.elapsedMinutesToday < 30
                 ? `La caja lleva ${Math.floor(forecast.elapsedMinutesToday)} minutos abierta; la estimación comienza a los 30 minutos.`
                 : ''
-            ].filter(Boolean).join(' ');
+            ]
+              .filter(Boolean)
+              .join(' ');
 
   if (isLoading) {
     return (
@@ -69,7 +71,7 @@ export default function ForecastInsights() {
           </div>
         </div>
 
-        <div className='flex flex-col gap-4 rounded-3xl border border-slate-200/60 bg-white dark:border-slate-800/60 dark:bg-slate-950/20 p-5'>
+        <div className='flex flex-col gap-4'>
           <div className='bg-slate-900 dark:bg-white rounded-2xl p-6 text-center space-y-1'>
             <span className='text-[10px] font-black uppercase tracking-widest text-slate-400 dark:text-slate-500'>
               Total Proyectado
@@ -81,18 +83,19 @@ export default function ForecastInsights() {
                   ? 'Sin caja abierta'
                   : 'Sin datos suficientes'}
             </p>
-            <p className='text-xs text-slate-400 dark:text-slate-500'>
-              {forecastExplanation}
-            </p>
+            <p className='text-xs text-slate-400 dark:text-slate-500'>{forecastExplanation}</p>
             {data.forecast.status === 'closed' || data.forecast.elapsedMinutesToday > 24 * 60 ? (
-              <Link href='/cash-register' className='inline-block text-xs font-bold underline text-white dark:text-slate-900'>
+              <Link
+                href='/cash-register'
+                className='inline-block text-xs font-bold underline text-white dark:text-slate-900'
+              >
                 Revisar caja
               </Link>
             ) : null}
           </div>
 
-          <div className='grid grid-cols-2 gap-3'>
-            <div className='flex flex-col p-3 rounded-2xl bg-slate-50 dark:bg-slate-900/50 border border-slate-100 dark:border-slate-800'>
+          <div className='grid grid-cols-2 gap-3 border-t border-slate-200 dark:border-slate-800 pt-4'>
+            <div className='flex min-w-0 flex-col'>
               <span className='text-[9px] font-black uppercase tracking-widest text-slate-400 mb-1'>
                 Turno actual
               </span>
@@ -100,7 +103,7 @@ export default function ForecastInsights() {
                 {formatCurrencyCLP(data.forecast.currentRevenue)}
               </span>
             </div>
-            <div className='flex flex-col p-3 rounded-2xl bg-slate-50 dark:bg-slate-900/50 border border-slate-100 dark:border-slate-800'>
+            <div className='flex min-w-0 flex-col'>
               <span className='text-[9px] font-black uppercase tracking-widest text-slate-400 mb-1'>
                 Último turno cerrado
               </span>

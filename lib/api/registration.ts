@@ -21,19 +21,20 @@ export async function runRegistration(
   const scope = createHash('sha256')
     .update(`${request.method} ${url.pathname}${url.search}`)
     .digest('hex');
-  const headers = new Headers(request.headers);
-  headers.delete(REGISTRATION_HEADER);
-  headers.delete('idempotency-key');
-  headers.set('x-idempotency-key', key);
-  const guarded = new Request(request, { headers });
+  // NextRequest puede pertenecer a otra implementación de Request. Su propio
+  // clone conserva el cuerpo sin pasar sus campos privados al constructor global.
+  const guarded = request.clone();
+  guarded.headers.delete(REGISTRATION_HEADER);
+  guarded.headers.delete('idempotency-key');
+  guarded.headers.set('x-idempotency-key', key);
   return runIdempotent(
     guarded,
     { endpoint: `web.${request.method}.${scope}`, usuarioId },
     async () => {
       // Evita reclamar dos veces la misma intencion en rutas que ya usan runIdempotent.
-      const cleanHeaders = new Headers(guarded.headers);
-      cleanHeaders.delete('x-idempotency-key');
-      return handler(new Request(guarded, { headers: cleanHeaders }));
+      const cleanRequest = guarded.clone();
+      cleanRequest.headers.delete('x-idempotency-key');
+      return handler(cleanRequest);
     }
   );
 }

@@ -86,8 +86,6 @@ export async function revertirStockPorAnulacion(
   const { botellaMl } = await getBarMlConfig(trx);
 
   for (const movimiento of movimientos) {
-    const porReponer = Math.max(0, Math.round(Number(movimiento.cantidad || 0) * fraccion));
-    const mlPorReponer = Math.max(0, Math.round(Number(movimiento.ml || 0) * fraccion));
     const unidadesDisponibles = Math.max(
       0,
       Number(movimiento.cantidad || 0) - Number(movimiento.unidades_revertidas || 0)
@@ -96,8 +94,8 @@ export async function revertirStockPorAnulacion(
       0,
       Number(movimiento.ml || 0) - Number(movimiento.ml_revertido || 0)
     );
-    const objetivoUnidades = Math.min(porReponer, unidadesDisponibles);
-    const objetivoMl = Math.min(mlPorReponer, mlDisponible);
+    const objetivoUnidades = Math.round(unidadesDisponibles * fraccion);
+    const objetivoMl = Math.round(mlDisponible * fraccion);
     if (objetivoUnidades === 0 && objetivoMl === 0) continue;
 
     const capacidad = resolveBotellaMl(

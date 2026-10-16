@@ -1,3 +1,4 @@
+import { insertarMarcaSiFalta } from '../marcas/marcaUnicaRepositorio';
 import { generateUUID, query } from '@/lib/database/db';
 import { marcarPresenciaLocal } from '@/modules/identidad';
 import { BaseRepository } from '@/lib/database/base-repository';
@@ -60,7 +61,7 @@ export async function procesarEventoBiometrico(
     return { resultado: 'fuera_ventana' };
   }
 
-  await BaseRepository.insert(query, 'asistencias', {
+  await insertarMarcaSiFalta(query, {
     id_asistencia: generateUUID(),
     usuario_id: usuario.id_usuario,
     fecha,
@@ -146,7 +147,7 @@ export async function atribuirAsistenciaIdentificada(
   const { startHour, endHour } = await getAttendanceConfigHours();
   if (isNaN(hora) || hora < startHour || hora >= endHour) return 'fuera_ventana';
 
-  await BaseRepository.insert(query, 'asistencias', {
+  await insertarMarcaSiFalta(query, {
     id_asistencia: generateUUID(),
     usuario_id: usuario.id_usuario,
     fecha,

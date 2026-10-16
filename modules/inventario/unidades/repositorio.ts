@@ -79,15 +79,27 @@ export async function contarUnidades(
 export async function cambiarEstadoUnidades(
   trx: TransactionQuery,
   unidadIds: string[],
-  estado: string
+  estado: string,
+  productoId: string
 ): Promise<void> {
   const ids = [...new Set(unidadIds.filter(Boolean))];
   if (ids.length === 0) return;
   const placeholders = ids.map(() => '?').join(',');
-  await trx(`UPDATE inventario_unidades SET estado = ? WHERE id IN (${placeholders})`, [
-    estado,
-    ...ids
-  ]);
+  await trx('SELECT id_producto FROM productos WHERE id_producto = ? FOR UPDATE', [productoId]);
+  const seleccionadas = await trx<Array<{ id: string; producto_id: string }>>(
+    `SELECT id, producto_id FROM inventario_unidades WHERE id IN (${placeholders}) FOR UPDATE`,
+    ids
+  );
+  if (
+    seleccionadas.length !== ids.length ||
+    seleccionadas.some(unidad => unidad.producto_id !== productoId)
+  ) {
+    throw new BusinessError('Los códigos seleccionados deben pertenecer al producto');
+  }
+  await trx(
+    `UPDATE inventario_unidades SET estado = ? WHERE producto_id = ? AND id IN (${placeholders})`,
+    [estado, productoId, ...ids]
+  );
 }
 
 export async function listarUnidades(

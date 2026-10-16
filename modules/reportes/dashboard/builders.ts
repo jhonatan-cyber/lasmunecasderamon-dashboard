@@ -1,3 +1,4 @@
+import { totalCaja } from '@/lib/business/cajaEfectivo';
 import { buildShiftForecast } from './forecast';
 import {
   buildAnomalies,
@@ -183,13 +184,7 @@ export function buildCajaStatsResult({ cajaId, cajaRow, cajaStats }: CajaStatsRe
     cantidad_ventas: parseInt(String(cajaStats.cantidad_ventas || '0')),
     total_servicios: parseFloat(String(cajaStats.total_servicios || '0')),
     cantidad_servicios: parseInt(String(cajaStats.cantidad_servicios || '0')),
-    balance_total:
-      parseFloat(cajaRow?.monto_apertura || '0') +
-      parseFloat(cajaRow?.efectivo || '0') +
-      parseFloat(cajaRow?.tarjeta || '0') +
-      parseFloat(cajaRow?.transferencia || '0') -
-      parseFloat(cajaRow?.anticipo || '0') -
-      parseFloat(cajaRow?.devolucion || '0'),
+    balance_total: totalCaja(cajaRow),
     tiempo_abierta_horas: cajaRow?.horas_abierta || 0,
     tiempo_abierta_minutos: cajaRow?.minutos_abierta || 0,
     fecha_apertura_raw: cajaRow?.fecha_apertura || null,

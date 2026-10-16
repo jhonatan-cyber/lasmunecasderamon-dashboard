@@ -118,16 +118,16 @@ export function CajaChartsSection({
           <Wallet className='w-4 h-4 text-emerald-500' />
           Distribución de Ingresos
         </h4>
-        <div className='grid grid-cols-2 gap-2 mb-3'>
-          <div className='bg-slate-50 dark:bg-slate-800 rounded-lg p-2'>
-            <p className='text-xs text-slate-500 dark:text-slate-400'>Ingresos Totales</p>
-            <p className='text-base font-bold text-slate-700 dark:text-slate-300'>
+        <div className='flex items-center justify-between gap-4 mb-3 pb-2 border-b border-gray-100 dark:border-gray-700/50'>
+          <div>
+            <p className='text-xs text-gray-500 dark:text-gray-400'>Ingresos Totales</p>
+            <p className='text-base font-bold text-emerald-600 dark:text-emerald-400'>
               {formatCurrencyNoDecimals(totalIngresos)}
             </p>
           </div>
-          <div className='bg-slate-50 dark:bg-slate-800 rounded-lg p-2'>
-            <p className='text-xs text-slate-500 dark:text-slate-400'>Egresos Totales</p>
-            <p className='text-base font-bold text-slate-700 dark:text-slate-300'>
+          <div className='text-right'>
+            <p className='text-xs text-gray-500 dark:text-gray-400'>Egresos Totales</p>
+            <p className='text-base font-bold text-rose-600 dark:text-rose-400'>
               {formatCurrencyNoDecimals(totalEgresos)}
             </p>
           </div>
@@ -184,16 +184,13 @@ export function CajaChartsSection({
                 Ya incluidos en las ventas
               </span>
             </div>
-            <div className='mt-2 space-y-1'>
+            <div className='mt-2 divide-y divide-gray-100 dark:divide-gray-700/50'>
               {shots.map(item => (
-                <div
-                  key={item.label}
-                  className='flex items-center justify-between rounded-lg bg-amber-50 px-3 py-1.5 dark:bg-amber-900/20'
-                >
-                  <span className='text-xs text-amber-700 dark:text-amber-300'>
+                <div key={item.label} className='flex items-center justify-between py-1.5'>
+                  <span className='text-xs text-gray-600 dark:text-gray-400'>
                     {item.label} · {Number(item.datos.cantidad || 0)} cortos
                   </span>
-                  <span className='text-sm font-bold text-amber-800 dark:text-amber-200'>
+                  <span className='text-sm font-bold text-amber-700 dark:text-amber-400 tabular-nums'>
                     {formatCurrencyNoDecimals(item.datos.monto || 0)}
                   </span>
                 </div>
@@ -211,15 +208,15 @@ export function CajaChartsSection({
           <Package className='w-4 h-4 text-blue-500' />
           Ventas por Producto
         </h4>
-        <div className='grid grid-cols-2 gap-2 mb-3'>
-          <div className='bg-blue-50 dark:bg-blue-900/20 rounded-lg p-2'>
-            <p className='text-xs text-blue-600 dark:text-blue-400'>Unidades Vendidas</p>
-            <p className='text-base font-bold text-blue-700 dark:text-blue-300'>{totalUnidades}</p>
+        <div className='flex items-center justify-between gap-4 mb-3 pb-2 border-b border-gray-100 dark:border-gray-700/50'>
+          <div>
+            <p className='text-xs text-gray-500 dark:text-gray-400'>Unidades Vendidas</p>
+            <p className='text-base font-bold text-blue-600 dark:text-blue-400'>{totalUnidades}</p>
           </div>
-          <div className='bg-emerald-50 dark:bg-emerald-900/20 rounded-lg p-2'>
-            <p className='text-xs text-emerald-600 dark:text-emerald-400'>Producto Top</p>
+          <div className='text-right min-w-0'>
+            <p className='text-xs text-gray-500 dark:text-gray-400'>Producto Top</p>
             <p
-              className='text-sm font-bold text-emerald-700 dark:text-emerald-300 truncate'
+              className='text-sm font-bold text-gray-900 dark:text-white truncate'
               title={topProducto?.producto}
             >
               {topProducto ? truncateName(topProducto.producto, 14) : '—'}

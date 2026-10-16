@@ -171,6 +171,8 @@ export async function obtenerHistorial(clientId: string): Promise<any[]> {
         metadatos as detalle
       FROM clientes_prepago_movimientos cpm
       WHERE cliente_id = ? AND tipo = 'CONSUMO'
+        AND NOT EXISTS (SELECT 1 FROM ventas v WHERE (v.id_venta = cpm.venta_id OR v.id_venta = cpm.metadatos::jsonb->>'venta_id') AND v.estado IN (1, 2, 3, 4))
+        AND NOT EXISTS (SELECT 1 FROM servicios s WHERE (s.id_servicio = cpm.venta_id OR s.id_servicio = cpm.metadatos::jsonb->>'venta_id') AND s.estado IN (1, 2, 3, 4))
 
       UNION ALL
 
@@ -203,7 +205,7 @@ export async function obtenerHistorial(clientId: string): Promise<any[]> {
         s.tiempo
       FROM servicios s
       LEFT JOIN habitaciones h ON h.id_habitacion = s.habitacion_id
-      WHERE s.cliente_id = ? AND s.estado = 1
+      WHERE s.cliente_id = ? AND s.estado IN (1, 2, 3, 4)
     `,
       [clientId]
     );
@@ -221,7 +223,7 @@ export async function obtenerHistorial(clientId: string): Promise<any[]> {
         h.nombre as habitacion_nombre
       FROM ventas v
       LEFT JOIN habitaciones h ON h.id_habitacion = v.habitacion_id
-      WHERE v.cliente_id = ? AND v.estado = 1
+      WHERE v.cliente_id = ? AND v.estado IN (1, 2, 3, 4)
     `,
       [clientId]
     );

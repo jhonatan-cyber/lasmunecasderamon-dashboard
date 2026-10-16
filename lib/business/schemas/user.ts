@@ -40,6 +40,20 @@ export const UserSchema = z.object({
 });
 
 export const UserCreateSchema = UserSchema.omit({ id: true });
-export const UserUpdateSchema = UserSchema.partial().extend({ id: z.string().or(z.number()) });
+export const UserUpdateSchema = UserSchema.partial().extend({
+  id: z.string().or(z.number()),
+  estado_servicio: z.coerce.number().optional()
+});
+
+/** Campos que una persona puede editar de su propia ficha. */
+export const UserProfileUpdateSchema = UserUpdateSchema.pick({
+  id: true,
+  name: true,
+  lastName: true,
+  phone: true,
+  address: true,
+  maritalStatus: true,
+  foto: true
+});
 
 export type UserType = z.infer<typeof UserSchema>;

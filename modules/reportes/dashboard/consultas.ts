@@ -411,7 +411,7 @@ export class StatsQueries {
 
       const cajaRows = await query<any[]>(
         `SELECT id_caja, fecha_apertura, usuario_id_apertura, monto_apertura, efectivo,
-              tarjeta, transferencia, comision, anticipo, devolucion, iva,
+              tarjeta, transferencia, comision, anticipo, devolucion, iva, propina,
               TRUNC(EXTRACT(EPOCH FROM (CAST(? AS timestamp) - CAST(fecha_apertura AS timestamp))) / 3600) as horas_abierta,
               TRUNC(EXTRACT(EPOCH FROM (CAST(? AS timestamp) - CAST(fecha_apertura AS timestamp))) / 60) % 60 as minutos_abierta
        FROM cajas WHERE estado = 1 ORDER BY fecha_apertura DESC LIMIT 1`,
@@ -472,12 +472,12 @@ export class StatsQueries {
 
       const balanceRow = await query<any[]>(
         `SELECT
-        COALESCE(SUM(monto_apertura + efectivo + tarjeta + transferencia - COALESCE(anticipo, 0) - COALESCE(devolucion, 0)), 0) as balance_total
+        COALESCE(SUM(monto_apertura + efectivo + tarjeta + transferencia), 0) as balance_total
        FROM cajas WHERE id_caja = ?`,
         [cajaId]
       );
 
-      const balanceTotal = Number(balanceRow[0]?.balance_total || 0) - totalWithdrawals;
+      const balanceTotal = Number(balanceRow[0]?.balance_total || 0);
 
       const cajaActiva = {
         id: String(cajaId),
@@ -630,7 +630,7 @@ export class StatsQueries {
 
   static async getPendingOrders(limit: number) {
     try {
-      const orders = await OrderService.getAll(20);
+      const orders = await OrderService.getPending(limit);
       return orders
         .filter(order => Number(order.estado) === 1)
         .slice(0, limit)
@@ -660,7 +660,7 @@ export class StatsQueries {
 
       const cajaRows = await query<any[]>(
         `SELECT id_caja, fecha_apertura, usuario_id_apertura, monto_apertura, efectivo,
-              tarjeta, transferencia, comision, anticipo, devolucion, iva,
+              tarjeta, transferencia, comision, anticipo, devolucion, iva, propina,
               TRUNC(EXTRACT(EPOCH FROM (CAST(? AS timestamp) - CAST(fecha_apertura AS timestamp))) / 3600) as horas_abierta,
               TRUNC(EXTRACT(EPOCH FROM (CAST(? AS timestamp) - CAST(fecha_apertura AS timestamp))) / 60) % 60 as minutos_abierta
        FROM cajas WHERE estado = 1 ORDER BY fecha_apertura DESC LIMIT 1`,
@@ -819,6 +819,10 @@ export class StatsQueries {
         ...shiftForecast,
         anomalies: [...shiftForecast.anomalies, ...insights.forecast.anomalies]
       };
+      const [pendingOrderItems, pendingServiceItems] = await Promise.all([
+        this.getPendingOrders(5),
+        ServiceRequestService.getPendingServiceRequests(5)
+      ]);
       return {
         insights,
         cajaStats: cajaStatsResult,
@@ -828,12 +832,12 @@ export class StatsQueries {
         recentActivity,
         pendingServiceRequestsCount,
         pendingItems: {
-          orders: await this.getPendingOrders(5),
-          serviceRequests: await ServiceRequestService.getPendingServiceRequests(5),
+          orders: pendingOrderItems,
+          serviceRequests: pendingServiceItems,
           summary: {
             totalPendingOrders: pendingOrders,
             totalPendingServiceRequests: pendingServiceRequestsCount,
-            totalVisibleItems: 5 + Math.min(pendingServiceRequestsCount, 5)
+            totalVisibleItems: pendingOrderItems.length + pendingServiceItems.length
           }
         }
       };
@@ -871,7 +875,7 @@ export class StatsQueries {
         query('SELECT * FROM anticipos WHERE usuario_id = ?', [userId]) as Promise<any[]>,
         query(
           `
-        SELECT P.id_propina, P.estado, DP.monto
+        SELECT P.id_propina, DP.estado, DP.monto
         FROM propinas P
         INNER JOIN detalle_propinas DP ON DP.propina_id = P.id_propina
         WHERE DP.usuario_id = ?`,
@@ -890,7 +894,13 @@ export class StatsQueries {
           'SELECT S.* FROM servicios S INNER JOIN detalle_servicios DS ON S.id_servicio = DS.servicio_id WHERE DS.usuario_id = ?',
           [userId]
         ) as Promise<any[]>,
-        query('SELECT * FROM detalle_comisiones WHERE usuario_id = ?', [userId]) as Promise<any[]>,
+        query(
+          `SELECT DC.*, C.venta_id, C.servicio_id, C.estado AS estado_cabecera
+           FROM detalle_comisiones DC
+           INNER JOIN comisiones C ON C.id_comision = DC.comision_id
+           WHERE DC.usuario_id = ?`,
+          [userId]
+        ) as Promise<any[]>,
         query(
           `
         SELECT COUNT(DISTINCT TO_CHAR(fecha, 'IYYY-IW')) as semanas
@@ -927,7 +937,7 @@ export class StatsQueries {
 
       if (roleLower === 'garzon') {
         const totalACobrarAsistencias =
-          totalSueldoAsistencias + totalAporteAsistencias - totalDescuentoAsistencias;
+          totalSueldoAsistencias - totalAporteAsistencias - totalDescuentoAsistencias;
         totalACobrar =
           totalACobrarAsistencias +
           totalPropinasPendientes +
@@ -939,10 +949,14 @@ export class StatsQueries {
           totalSueldoAsistencias - totalAporteAsistencias - totalDescuentoAsistencias
         );
 
-        const comisionesVentas = comisiones.filter(c => c.tipo === 'venta' && c.estado === 1);
+        const comisionesVentas = comisiones.filter(
+          c => c.venta_id != null && c.estado === 1 && c.estado_cabecera === 1
+        );
         const totalComisionesVentas = comisionesVentas.reduce((s, c) => s + (c.comision || 0), 0);
 
-        const comisionesServicios = comisiones.filter(c => c.tipo === 'servicio' && c.estado === 1);
+        const comisionesServicios = comisiones.filter(
+          c => c.servicio_id != null && c.estado === 1 && c.estado_cabecera === 1
+        );
         const totalGanadoServicios = comisionesServicios.reduce((s, c) => s + (c.comision || 0), 0);
 
         totalACobrar =
@@ -971,7 +985,8 @@ export class StatsQueries {
         anticiposPendientes: anticiposPendientesArr.length,
         propinasPendientes: propinasPendientesArr.length,
         horasExtrasPendientes: horasExtrasPendientesArr.length,
-        comisionesPendientes: comisiones.filter(c => c.estado === 1).length
+        comisionesPendientes: comisiones.filter(c => c.estado === 1 && c.estado_cabecera === 1)
+          .length
       };
     } catch (err) {
       logger.error('[StatsQueries] Error en getUserDashboardSummary:', { userId, role, err });

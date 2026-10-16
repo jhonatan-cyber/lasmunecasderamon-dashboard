@@ -167,7 +167,6 @@ export const useDashboardComposite = () => {
       return result.data;
     },
     staleTime: 30000,
-    refetchInterval: 60000,
     refetchOnWindowFocus: true
   });
 };

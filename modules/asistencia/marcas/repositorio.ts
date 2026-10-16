@@ -1,3 +1,4 @@
+import { insertarMarcaSiFalta } from './marcaUnicaRepositorio';
 import { query, generateUUID } from '@/lib/database/db';
 import { enUnaUnidad } from '@/lib/transaccion/contrato';
 import { resolverTransaccion } from '@/lib/transaccion/infraestructura';
@@ -233,7 +234,7 @@ export async function registerAttendance(
 
     const timeStr = nowStr.substring(11, 19);
     const id = generateUUID();
-    await BaseRepository.insert(query, 'asistencias', {
+    await insertarMarcaSiFalta(query, {
       id_asistencia: id,
       usuario_id: targetUser.id_usuario,
       fecha: fechaHoy,
@@ -422,7 +423,7 @@ export async function registerAttendanceManual(
     const id = generateUUID();
     const estadoNumerico = estado === 'presente' || estado === 'tardanza' ? 1 : 0;
 
-    await BaseRepository.insert(query, 'asistencias', {
+    await insertarMarcaSiFalta(query, {
       id_asistencia: id,
       usuario_id: usuarioId,
       fecha: fecha,
@@ -476,7 +477,7 @@ export async function registerMasivoHoy(ip?: string) {
 
         const registrados: string[] = [];
         for (const user of candidatos) {
-          await BaseRepository.insert(trx, 'asistencias', {
+          await insertarMarcaSiFalta(trx, {
             id_asistencia: generateUUID(),
             usuario_id: user.id_usuario,
             fecha: fechaHoy,

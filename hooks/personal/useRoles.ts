@@ -71,7 +71,7 @@ export function useRoles() {
   const updateRole = useCallback(
     async (id: number, name: string, description: string) => {
       try {
-        const response = await fetch('/api/roles', {
+        const response = await fetch(`/api/roles/${id}`, {
           method: 'PUT',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ id, name, description })

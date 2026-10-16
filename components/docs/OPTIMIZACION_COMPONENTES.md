@@ -439,8 +439,8 @@ performance, mantenibilidad y experiencia de desarrollo.
    `index.ts`):
    - `CajaDetailsHeader` - título con día + chip de estado + botones
      Imprimir/Exportar PDF
-   - `CajaDetailsStatsBar` - barra sticky colapsable (mini-resumen de 3 números
-     o desglose de pagos)
+   - `CajaDetailsStatsBar` - barra sticky colapsable (mini-resumen de 4 números
+     — apertura, efectivo, egresos, total real — o desglose de pagos)
    - `CajaDetailsTabs` - pestañas Resumen/Ventas/Servicios/Retiros con
      contadores
    - `CajaDetailsUserCards` - tarjetas «Abierta por» / «Cerrada por» con avatar

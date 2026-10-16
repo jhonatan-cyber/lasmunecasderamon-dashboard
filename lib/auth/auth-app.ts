@@ -2,6 +2,7 @@ import { cookies, headers } from 'next/headers';
 import { jwtVerify } from 'jose';
 import { cache } from 'react';
 import { AuthenticatedUser } from '@/lib/middleware/auth';
+import { validarSesionPayload } from './auth';
 import { env } from '@/lib/utils/env';
 
 const getSecretKey = () => new TextEncoder().encode(env.JWT_SECRET);
@@ -23,6 +24,7 @@ export const getAuth = cache(async (): Promise<AuthenticatedUser | null> => {
 
   try {
     const { payload } = await jwtVerify(token, getSecretKey());
+    if (!(await validarSesionPayload(payload))) return null;
 
     const { getUserPermissionsFromDB } = await import('@/lib/middleware/auth');
     (payload as any).permissions = await getUserPermissionsFromDB((payload as any).id as string);

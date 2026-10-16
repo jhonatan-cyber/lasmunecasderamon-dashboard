@@ -145,11 +145,24 @@ export function SettingsMaintenanceTab() {
 
     try {
       setIsCleaning(true);
-      await createAutomaticBackup();
+      const backup = await createAutomaticBackup();
+      if (!backup?.id) throw new Error('No se pudo crear el respaldo previo al vaciado');
+      const backupResponse = await fetch(`/api/settings/backup/${backup.id}/download`);
+      if (!backupResponse.ok) throw new Error('No se pudo descargar el respaldo previo al vaciado');
+      const backupBlob = await backupResponse.blob();
+      const backupUrl = URL.createObjectURL(backupBlob);
+      const downloadLink = document.createElement('a');
+      downloadLink.href = backupUrl;
+      downloadLink.download = `backup_${backup.id}.json`;
+      document.body.appendChild(downloadLink);
+      downloadLink.click();
+      downloadLink.remove();
+      setTimeout(() => URL.revokeObjectURL(backupUrl), 60000);
       const response = await fetch('/api/settings/database-clean', { method: 'POST' });
       const result = await response.json();
       if (result.success) {
         toast.success(`Base de datos limpiada. ${result.deletedCount} tablas vaciadas.`);
+        setBackups([]);
       } else {
         throw new Error(result.error || 'Error desconocido');
       }
@@ -275,6 +288,11 @@ export function SettingsMaintenanceTab() {
                   <li key={table}>{table}</li>
                 ))}
               </ul>
+              <p className='mt-2 text-xs'>
+                Se conservan las asignaciones de permisos y el historial técnico de migraciones.
+                También se eliminarán productos, inventario, compras, habitaciones, configuración y
+                respaldos guardados. Se descargará un respaldo antes del vaciado.
+              </p>
             </div>
           </CardContent>
           <CardFooter className='flex justify-end border-t pt-4 mt-auto'>

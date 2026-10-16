@@ -2,22 +2,28 @@
 
 import { useState, useCallback, useMemo } from 'react';
 import { toast } from 'sonner';
+import { saleInventoryFields, type SaleInventoryFields } from '@/lib/sales/saleInventoryFields';
+import { accountCartKey } from '@/lib/sales/accountCartKey';
 
-interface ProductoCarrito {
-  id_producto: number;
+interface ProductoCarrito extends SaleInventoryFields {
+  id?: string | number;
+  producto_id?: string | number;
+  id_producto: string | number;
   nombre: string;
   precio: number;
   cantidad: number;
   sub_total: number;
   categoria_nombre: string;
   comision: number;
-  selectedHostesses?: number[];
+  selectedHostesses?: Array<string | number>;
   isChampagne?: boolean;
 }
 
-interface ProductoInput {
-  id_producto?: number;
-  id?: number;
+interface ProductoInput extends SaleInventoryFields {
+  id_producto?: string | number;
+  producto_id?: string | number;
+  id?: string | number;
+  cantidad?: number;
   nombre?: string;
   name?: string;
   precio?: number;
@@ -27,7 +33,7 @@ interface ProductoInput {
   category?: string;
   comision?: number;
   commission?: number;
-  selectedHostesses?: number[];
+  selectedHostesses?: Array<string | number>;
   isChampagne?: boolean;
 }
 
@@ -40,24 +46,28 @@ export function useProductCart() {
   const agregarProducto = useCallback(
     (producto: ProductoInput, cantidadExtra?: number) => {
       const productoNormalizado = {
-        id_producto: producto.id_producto || producto.id || 0,
+        ...producto,
+        ...saleInventoryFields(producto),
+        id_producto: producto.producto_id ?? producto.id_producto ?? producto.id ?? 0,
         nombre: producto.nombre || producto.name || '',
-        precio: producto.precio || producto.price || 0,
-        comision: producto.commission ?? producto.comision ?? 0,
+        precio: producto.precio ?? producto.price ?? 0,
+        comision: producto.comision ?? producto.commission ?? 0,
         categoria_nombre:
           producto.categoria_nombre || producto.categoria || producto.category || 'Sin categoría',
         selectedHostesses: producto.selectedHostesses || [],
         isChampagne: producto.isChampagne || false
       };
 
-      const cantidad = cantidadExtra || cantidades[productoNormalizado.id_producto] || 1;
+      const quantityKey = String(producto.id ?? productoNormalizado.id_producto);
+      const cantidad = cantidadExtra ?? producto.cantidad ?? cantidades[quantityKey] ?? 1;
+      if (!Number.isInteger(cantidad) || cantidad < 1) return;
 
       setProductos(prev => {
-        const existente = prev.find(p => p.id_producto === productoNormalizado.id_producto);
+        const existente = prev.find(p => accountCartKey(p) === accountCartKey(productoNormalizado));
 
         if (existente) {
           return prev.map(p =>
-            p.id_producto === productoNormalizado.id_producto
+            accountCartKey(p) === accountCartKey(productoNormalizado)
               ? {
                   ...p,
                   cantidad: p.cantidad + cantidad,
@@ -69,6 +79,7 @@ export function useProductCart() {
           );
         } else {
           const nuevoProducto: ProductoCarrito = {
+            ...productoNormalizado,
             id_producto: productoNormalizado.id_producto,
             nombre: productoNormalizado.nombre,
             precio: productoNormalizado.precio,
@@ -84,7 +95,7 @@ export function useProductCart() {
       });
       setCantidades(prev => ({
         ...prev,
-        [productoNormalizado.id_producto]: 1
+        [quantityKey]: 1
       }));
 
       toast.success(`${productoNormalizado.nombre} agregado al carrito`);

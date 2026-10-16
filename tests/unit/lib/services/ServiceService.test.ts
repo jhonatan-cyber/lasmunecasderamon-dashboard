@@ -364,7 +364,7 @@ describe('ServiceService.createService', () => {
 
 it('editar el tiempo conserva cliente, precio e IVA cuando no están en el payload', async () => {
   serviceHarness.transactionMock.mockImplementation(async (sql: string) =>
-    sql.includes('SELECT iva') ? [{ iva: 2000 }] : []
+    sql.includes('FROM servicios WHERE') ? [{ iva: 2000 }] : []
   );
   await ServiceService.updateService('servicio-1', { tiempo: 90 });
   const update = serviceHarness.transactionMock.mock.calls.find(

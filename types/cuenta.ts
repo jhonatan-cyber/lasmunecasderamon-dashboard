@@ -1,3 +1,5 @@
+import type { SaleInventoryFields } from '@/lib/sales/saleInventoryFields';
+
 export interface Cuenta {
   id_cuenta: string | number;
   codigo: string;
@@ -88,12 +90,14 @@ export interface CreateCuentaRequest {
   usuarios?: Array<string | number>;
 }
 
-export interface CreateDetalleCuentaRequest {
+export interface CreateDetalleCuentaRequest extends SaleInventoryFields {
   producto_id: string | number;
   precio: number;
   cantidad: number;
   sub_total: number;
   comision: number;
+  hostesses?: string[];
+  isChampagne?: boolean;
 }
 
 export interface UpdateCuentaRequest {
@@ -101,4 +105,4 @@ export interface UpdateCuentaRequest {
   estado?: number;
   detalles?: CreateDetalleCuentaRequest[];
   usuarios?: Array<string | number>;
-} 
+}

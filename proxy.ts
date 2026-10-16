@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import type { NextRequest } from 'next/server';
 import { jwtVerify, SignJWT } from 'jose';
+import { validarSesionPayload } from '@/lib/auth/auth';
 import {
   AUTHENTICATED_ONLY_APIS,
   API_ROUTE_PERMISSIONS,
@@ -104,7 +105,7 @@ async function verifyToken(token: string) {
   try {
     const secret = new TextEncoder().encode(process.env.JWT_SECRET);
     const { payload } = await jwtVerify(token, secret);
-    return payload;
+    return (await validarSesionPayload(payload)) ? payload : null;
   } catch (error) {
     return null;
   }
@@ -116,7 +117,7 @@ async function verifyRefreshToken(token: string) {
       process.env.JWT_REFRESH_SECRET || process.env.JWT_SECRET
     );
     const { payload } = await jwtVerify(token, secret);
-    return payload;
+    return (await validarSesionPayload(payload)) ? payload : null;
   } catch {
     return null;
   }
@@ -131,9 +132,11 @@ async function generateAccessTokenFromPayload(payload: any): Promise<string> {
     lastName: payload.lastName,
     nick: payload.nick,
     email: payload.email,
-    role: payload.role
+    role: payload.role,
+    sessionVersion: payload.sessionVersion
   })
     .setProtectedHeader({ alg: 'HS256' })
+    .setIssuedAt()
     .setExpirationTime('15m')
     .sign(new TextEncoder().encode(process.env.JWT_SECRET));
 }

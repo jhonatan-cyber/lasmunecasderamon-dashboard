@@ -50,6 +50,8 @@ export function CleanDatabaseConfirmModal({
                   <li>Clientes y prepago</li>
                   <li>Cajas, anticipos y propinas</li>
                   <li>Asistencias y servicios</li>
+                  <li>Productos, categorías, inventario y compras</li>
+                  <li>Habitaciones, configuración y respaldos guardados</li>
                 </ul>
               </div>
             </div>
@@ -69,7 +71,7 @@ export function CleanDatabaseConfirmModal({
               Esta acción no se puede revertir
             </p>
             <p className='mt-2 text-xs text-blue-600 dark:text-blue-300 font-medium text-center'>
-              Se creará un backup automático antes de vaciar.
+              Se creará y descargará un backup antes de vaciar. Conservá el archivo descargado.
             </p>
           </div>
         </div>

@@ -6,11 +6,9 @@
  * detalle descontaban retiros y anticipos que `cajas.efectivo` **ya trae descontados**,
  * porque `WithdrawalService.addRetiro` y `grantAnticipo` lo restan al registrarlos.
  *
- * La regla de oro: `efectivo` es el movimiento del turno ya neta de lo que salió del
- * cajón (retiros y anticipos). Lo único que todavía falta descontar es:
- *
- *   - las **devoluciones**, que se registran en su propia columna y no restan `efectivo`, y
- *   - los **saldos prepago** que los clientes todavía tienen cargados: plata cobrada en un
+ * `efectivo` es el movimiento del turno neto de retiros, anticipos y devoluciones.
+ * Las anulaciones revierten cada medio de pago y dejan `devolucion` como histórico.
+ * Solo quedan por descontar los **saldos prepago** que los clientes tienen cargados: plata cobrada en un
  *     turno anterior que nunca entró a esta caja (se descuentan al autorizar el cierre).
  */
 
@@ -30,7 +28,7 @@ export interface CajaEfectivo {
 
 const num = (valor: unknown): number => Number(valor || 0);
 
-/** Devoluciones: lo devuelto todavía no está restado de `efectivo`. */
+/** Importe histórico devuelto; sus medios de pago ya están ajustados. */
 export function devolucionesDe(caja: CajaEfectivo | null): number {
   return num(caja?.devoluciones ?? caja?.devolucion);
 }
@@ -42,7 +40,7 @@ export function saldosClientesDe(caja: CajaEfectivo | null): number {
 
 /** Lo que falta por descontar del cajón. */
 export function egresosPendientesCaja(caja: CajaEfectivo | null): number {
-  return devolucionesDe(caja) + saldosClientesDe(caja);
+  return saldosClientesDe(caja);
 }
 
 /** Apertura + efectivo del turno: el cajón antes de descontar lo pendiente. */
@@ -70,7 +68,7 @@ export function calcularDevolucionSaldoClientes(
   saldosClientes: number | null | undefined
 ): { descontado: number; pendiente: number } {
   const saldo = Math.max(0, num(saldosClientes));
-  const efectivoDisponible = Math.max(0, efectivoBaseCaja(caja) - devolucionesDe(caja));
+  const efectivoDisponible = Math.max(0, efectivoBaseCaja(caja));
   const descontado = Math.min(efectivoDisponible, saldo);
   return { descontado, pendiente: saldo - descontado };
 }
@@ -79,11 +77,10 @@ export function calcularDevolucionSaldoClientes(
  * Cuánto se puede retirar ahora mismo.
  *
  * Los saldos prepago **no** se descuentan acá: no son plata de este cajón, el retiro no
- * puede tocarlos (los descuenta el cierre). Sí se descuentan las devoluciones, porque
- * esa plata ya salió y sigue contando dentro de `efectivo`.
+ * puede tocarlos (los descuenta el cierre). Las devoluciones ya ajustaron el efectivo.
  */
 export function disponibleParaRetiro(caja: CajaEfectivo | null): number {
-  return efectivoBaseCaja(caja) - devolucionesDe(caja);
+  return efectivoBaseCaja(caja);
 }
 
 /**

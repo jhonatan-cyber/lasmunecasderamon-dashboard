@@ -18,6 +18,15 @@ const sinRol: SseSubscriberContext = { channel: 'staff', userId: 'u-x', role: nu
 const kiosk: SseSubscriberContext = { channel: 'kiosk' };
 
 describe('catálogo de eventos SSE', () => {
+  it('el código de presencia solo se distribuye al kiosko', () => {
+    const data = { codigo: '123456', secreto: 'privado' };
+    for (const subscriber of [cajero, anfitriona, admin, sinRol]) {
+      expect(canReceive({ type: 'code_changed', data, subscriber })).toBe(false);
+    }
+    expect(resolvePayload({ type: 'code_changed', data, subscriber: kiosk })).toEqual({
+      codigo: '123456'
+    });
+  });
   describe('eventos operativos', () => {
     it('los recibe cualquier sesión válida, con su payload completo', () => {
       const data = { id: 'pedido-1', cliente: 'Ana', total: 25000 };

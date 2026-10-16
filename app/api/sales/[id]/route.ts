@@ -24,6 +24,15 @@ export const PATCH = withRoute(
     }
 
     const { estado } = body;
+    if (estado === 0) {
+      return NextResponse.json(
+        { success: false, message: 'Utiliza la solicitud de anulación y su aprobación.' },
+        { status: 409 }
+      );
+    }
+    if (![1, 2, 3, 4].includes(estado)) {
+      return NextResponse.json({ success: false, message: 'Estado inválido' }, { status: 400 });
+    }
     await SaleService.updateStatus(id, estado, user.id.toString());
     return NextResponse.json({ success: true, message: 'Estado actualizado' });
   }

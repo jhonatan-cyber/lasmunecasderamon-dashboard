@@ -5,6 +5,10 @@ vi.mock('@/lib/utils/env', () => ({
 }));
 
 vi.mock('@/modules/asistencia', () => ({ registrarMarcaLogin: vi.fn() }));
+vi.mock('@/lib/auth/auth', () => ({
+  generateRefreshToken: vi.fn().mockResolvedValue('jwt-refresh'),
+  verifyRefreshToken: vi.fn().mockResolvedValue(null)
+}));
 
 const jsonResponse = (body: unknown, init?: ResponseInit) => Response.json(body, init);
 
@@ -56,6 +60,7 @@ describe('auth route contract', () => {
     await expect(response.json()).resolves.toEqual({
       success: true,
       token: 'jwt-token',
+      refreshToken: 'jwt-refresh',
       user: { id: 'user-1', role: 'cajero' }
     });
   });
@@ -68,7 +73,7 @@ describe('auth route contract', () => {
       NextResponse: { json: jsonResponse }
     }));
     vi.doMock('next/headers', () => ({
-      cookies: vi.fn().mockResolvedValue({ delete: deleteCookie })
+      cookies: vi.fn().mockResolvedValue({ delete: deleteCookie, get: vi.fn() })
     }));
     vi.doMock('@/lib/api/withRoute', () => ({
       withPublicRoute: (handler: any) => handler

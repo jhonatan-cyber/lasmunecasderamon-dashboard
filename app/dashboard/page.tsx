@@ -122,7 +122,7 @@ function GeneralDashboard() {
                 Performance y Forecast
               </h2>
             </div>
-            <div className='grid grid-cols-1 lg:grid-cols-2 gap-10'>
+            <div className='grid grid-cols-1 gap-10'>
               <CollapsibleSection title='Top Performers' icon={Medal} defaultOpen={true}>
                 <TopPerformers />
               </CollapsibleSection>
@@ -156,7 +156,7 @@ function GeneralDashboard() {
                     </span>
                   </div>
                 </div>
-                <div className='rounded-3xl border border-slate-200/60 bg-white dark:border-slate-800/60 dark:bg-slate-950/40 p-6 shadow-xl shadow-slate-200/20 dark:shadow-none min-h-[300px]'>
+                <div className='min-w-0'>
                   <LocalAndPending />
                 </div>
               </div>

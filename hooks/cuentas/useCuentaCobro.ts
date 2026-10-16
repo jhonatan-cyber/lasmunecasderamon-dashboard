@@ -1,12 +1,13 @@
 'use client';
 
-import { saleInventoryFields } from '@/lib/sales/saleInventoryFields';
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { toast } from 'sonner';
 import logger from '@/lib/utils/logger';
 import { isChampagneProduct } from '@/components/orders/productModalRules';
 
 export function useCuentaCobro() {
+  const cobroEnCurso = useRef(false);
+  const clavesCobro = useRef(new Map<string, string>());
   const [rooms, setRooms] = useState<any[]>([]);
   const [searchRoom, setSearchRoom] = useState('');
   const [isCobrando, setIsCobrando] = useState(false);
@@ -92,12 +93,19 @@ export function useCuentaCobro() {
       return;
     }
 
+    if (cobroEnCurso.current) return;
+    cobroEnCurso.current = true;
+    const key =
+      clavesCobro.current.get(String(cuentaId)) ??
+      (globalThis.crypto?.randomUUID?.() ||
+        `cobro-${Date.now()}-${Math.random().toString(36).slice(2)}`);
+    clavesCobro.current.set(String(cuentaId), key);
     setIsCobrando(true);
 
     try {
-      const cobroRes = await fetch(`/api/cuentas/${cuentaId}/cobrar`, {
+      const cobroRes = await fetch(`/api/cuentas/${cuentaId}/cobrar-con-venta`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 'Content-Type': 'application/json', 'x-idempotency-key': key },
         body: JSON.stringify({
           metodoPago: metodoPagoSeleccionado,
           metodo_pago: metodoPagoSeleccionado,
@@ -110,6 +118,9 @@ export function useCuentaCobro() {
       });
 
       if (!cobroRes.ok) {
+        if (cobroRes.status >= 400 && cobroRes.status < 500 && cobroRes.status !== 409) {
+          clavesCobro.current.delete(String(cuentaId));
+        }
         let errorMessage = 'Error al cobrar la cuenta';
         try {
           const rawError = await cobroRes.text();
@@ -125,47 +136,7 @@ export function useCuentaCobro() {
 
       await cobroRes.json();
 
-      const ventaRes = await fetch('/api/sales', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          origen: 'cuenta',
-          skip_client_prepago: true,
-          cliente_id: cuenta?.cliente_id != null ? String(cuenta.cliente_id) : null,
-          pedido_id: cuenta?.pedido_id != null ? String(cuenta.pedido_id) : null,
-          metodo_pago: metodoPagoSeleccionado,
-          propina: propinaFinal,
-          sub_total: Number(cuenta?.sub_total ?? 0),
-          total: montoFinal + propinaFinal,
-          total_comision: Number(cuenta?.total_comision ?? 0),
-          codigo: cuenta?.codigo,
-          detalles:
-            cuenta.detalles?.map((d: any) => ({
-              ...saleInventoryFields(d),
-              producto_id: String(d.producto_id ?? d.id_producto),
-              precio: Number(d.precio ?? 0),
-              cantidad: Number(d.cantidad ?? 1),
-              sub_total: Number(d.sub_total ?? d.subtotal ?? 0),
-              comision: Number(d.comision ?? 0),
-              hostess_id: d.hostess_id != null ? String(d.hostess_id) : null
-            })) || [],
-          usuarios:
-            cuenta?.usuarios?.map((u: any) => String(u.usuario_id ?? u.id_usuario ?? u)) || []
-        })
-      });
-
-      if (!ventaRes.ok) {
-        let errorMessage = 'Error al registrar la venta';
-        try {
-          const errorData = await ventaRes.json();
-          errorMessage = errorData?.message || errorData?.error || errorMessage;
-          logger.error('[CobrarCuenta] Error del servidor:', errorData);
-        } catch {
-          logger.error('[CobrarCuenta] No se pudo parsear error:', ventaRes.status);
-        }
-        throw new Error(errorMessage);
-      }
-
+      clavesCobro.current.delete(String(cuentaId));
       toast.success('Cuenta cobrada exitosamente');
       resetStates();
       onSuccess();
@@ -174,6 +145,7 @@ export function useCuentaCobro() {
       toast.error(error instanceof Error ? error.message : 'Error al cobrar la cuenta');
       setShowError(true);
     } finally {
+      cobroEnCurso.current = false;
       setIsCobrando(false);
     }
   };

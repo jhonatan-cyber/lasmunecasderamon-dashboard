@@ -90,7 +90,7 @@ export async function listarPersonalActivo(): Promise<PersonalActivo[]> {
 /** Actualiza la contraseña y limpia la marca de cambio forzado. */
 export async function actualizarPassword(usuarioId: string, hash: string): Promise<void> {
   await query(
-    'UPDATE usuarios SET password = ?, force_password_change = 0, fecha_mod = ? WHERE id_usuario = ?',
+    'UPDATE usuarios SET password = ?, force_password_change = 0, session_version = session_version + 1, fecha_mod = ? WHERE id_usuario = ?',
     [hash, getNowInBusinessTimezone(), usuarioId]
   );
 }

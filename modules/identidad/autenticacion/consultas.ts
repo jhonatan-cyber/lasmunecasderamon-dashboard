@@ -20,6 +20,7 @@ import { resolverTransaccion } from '@/lib/transaccion/infraestructura';
 import { randomBytes } from 'node:crypto';
 import { enviarWhatsApp } from '@/modules/comunicaciones';
 import { normalizeWhatsAppPhone } from '@/lib/utils/whatsappPhone';
+import { sendNotificationToAll } from '@/lib/api/sseService';
 
 const ROLES_CON_CODIGO = ['cajero', 'garzon', 'anfitriona'];
 const SHIFT_START = 21 * 60;
@@ -256,10 +257,14 @@ export async function loginUser(
         await regenerateAttendanceCode();
       }
       asistenciaRegistrada = true;
+      // La marca encendió `en_local`: el personal presente cambió.
+      sendNotificationToAll('presence_updated', { userId: user.id_usuario, en_local: true });
     } else if (usoTicketDelLocal && !marksAsis) {
       await query('UPDATE logins SET en_local = 1 WHERE usuario_id = ? AND estado = 1', [
         user.id_usuario
       ]);
+      // Entró con el ticket del local: también pasa a estar presente.
+      sendNotificationToAll('presence_updated', { userId: user.id_usuario, en_local: true });
     }
 
     // Optimización: await del tokenPromise + mapAuthenticatedUser en paralelo
@@ -287,7 +292,13 @@ export async function loginUser(
 
 export async function logoutUser(userId: string) {
   try {
+    await query('UPDATE usuarios SET session_version = session_version + 1 WHERE id_usuario = ?', [
+      userId
+    ]);
     await query('DELETE FROM logins WHERE usuario_id = ?', [userId]);
+    // Sin fila de `logins` la persona deja de estar en el local: el resto de sesiones
+    // refresca contadores y selectores de personal presente.
+    sendNotificationToAll('presence_updated', { userId, en_local: false });
   } catch (err) {
     logger.error('[AuthQueries] Error en logoutUser:', { userId, err });
     throw new DatabaseError(`Error al cerrar sesión del usuario ${userId}`, err);
@@ -319,7 +330,7 @@ export async function resetPassword(run: string, modo: 'whatsapp' | 'usuarios' =
           const user = users[0];
           const hashedPassword = await argon2.hash(user.run.trim());
           await trx(
-            'UPDATE usuarios SET password = ?, force_password_change = 1, fecha_mod = ? WHERE id_usuario = ?',
+            'UPDATE usuarios SET password = ?, force_password_change = 1, session_version = session_version + 1, fecha_mod = ? WHERE id_usuario = ?',
             [hashedPassword, getNowInBusinessTimezone(), user.id_usuario]
           );
           await trx('DELETE FROM logins WHERE usuario_id = ?', [user.id_usuario]);
@@ -358,7 +369,7 @@ export async function resetPassword(run: string, modo: 'whatsapp' | 'usuarios' =
       unidad.ejecutar(async contexto => {
         const trx = resolverTransaccion(contexto);
         await trx(
-          'UPDATE usuarios SET password = ?, force_password_change = 1, fecha_mod = ? WHERE id_usuario = ?',
+          'UPDATE usuarios SET password = ?, force_password_change = 1, session_version = session_version + 1, fecha_mod = ? WHERE id_usuario = ?',
           [hashedPassword, getNowInBusinessTimezone(), user.id_usuario]
         );
         await trx('DELETE FROM logins WHERE usuario_id = ?', [user.id_usuario]);
@@ -387,6 +398,7 @@ export async function resetPassword(run: string, modo: 'whatsapp' | 'usuarios' =
 
 export async function cerrarTodasSesiones() {
   try {
+    await query('UPDATE usuarios SET session_version = session_version + 1');
     await query('DELETE FROM logins');
   } catch (err) {
     logger.error('[AuthQueries] Error en cerrarTodasSesiones:', { err });

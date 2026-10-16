@@ -148,6 +148,10 @@ const nextConfig = {
   },
 
   webpack: (config, { isServer, dev }) => {
+    // Production compilation can exceed the local heap while retaining the
+    // filesystem cache alongside the module graph. Development keeps its cache.
+    if (!dev) config.cache = false;
+
     config.module.rules.push({
       test: /\.svg$/,
       use: ['@svgr/webpack']

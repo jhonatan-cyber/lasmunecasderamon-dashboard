@@ -39,7 +39,7 @@ export async function revisarTemporizadores(ahora: Date): Promise<ResultadoTempo
     const startTime = parseBusinessDate(item.fecha_crea);
     const remainingMin = (startTime.getTime() + item.tiempo * 60000 - ahora.getTime()) / 60000;
 
-    if (remainingMin <= 5 && remainingMin > 4.5 && !item.push_notified_5m) {
+    if (remainingMin <= 5 && remainingMin > 0 && !item.push_notified_5m) {
       await repositorio.marcarAviso5m(item.type, item.id);
       avisos5m++;
       if (item.created_by)

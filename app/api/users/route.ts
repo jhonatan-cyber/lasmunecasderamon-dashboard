@@ -1,6 +1,7 @@
 import { eliminarUsuario } from '@/workflows/eliminar-usuario';
 import { NextResponse } from 'next/server';
 import { withRoute } from '@/lib/api/withRoute';
+import { sendNotificationToAll } from '@/lib/api/sseService';
 import { UserService } from '@/modules/identidad';
 import { imagenGuardadaABase64Jpeg, processAndSaveImage } from '@/lib/utils/image-utils';
 import { darDeAltaConFoto } from '@/modules/asistencia';
@@ -99,8 +100,14 @@ export const GET = withRoute(
       search: searchParams.get('search') || undefined,
       status: seleccionAnfitrionas ? 'active' : searchParams.get('status') || undefined,
       role: searchParams.get('role') || undefined,
-      loggedIn: seleccionAnfitrionas || searchParams.get('loggedIn') === '1' || searchParams.get('loggedIn') === 'true',
-      enLocal: seleccionAnfitrionas || searchParams.get('enLocal') === '1' || searchParams.get('enLocal') === 'true',
+      loggedIn:
+        seleccionAnfitrionas ||
+        searchParams.get('loggedIn') === '1' ||
+        searchParams.get('loggedIn') === 'true',
+      enLocal:
+        seleccionAnfitrionas ||
+        searchParams.get('enLocal') === '1' ||
+        searchParams.get('enLocal') === 'true',
       limit: searchParams.get('limit') ? parseInt(searchParams.get('limit')!) : undefined,
       offset: searchParams.get('offset') ? parseInt(searchParams.get('offset')!) : undefined
     };
@@ -283,11 +290,27 @@ export const PUT = withRoute(
     if (!id)
       return NextResponse.json({ success: false, message: 'El ID es requerido' }, { status: 400 });
 
-    if (user.id?.toString() !== id.toString() && !(user.permissions as any)?.users?.write) {
+    if (
+      user.id?.toString() !== id.toString() &&
+      user.role?.toLowerCase() !== 'administrador' &&
+      !(user.permissions as any)?.users?.write
+    ) {
       return NextResponse.json(
         { success: false, message: 'Permisos insuficientes' },
         { status: 403 }
       );
+    }
+
+    const canManageUsers =
+      user.role?.toLowerCase() === 'administrador' ||
+      (user.permissions as any)?.users?.write === true;
+    if (!canManageUsers) {
+      const { UserProfileUpdateSchema } = await import('@/lib/business/schemas/user');
+      body = UserProfileUpdateSchema.parse({
+        ...body,
+        id: String(id),
+        foto: typeof body.foto === 'string' ? body.foto : undefined
+      });
     }
 
     logger.info(`[USER API PUT] Actualizando usuario ${id}`, {
@@ -299,6 +322,9 @@ export const PUT = withRoute(
       body,
       fotoFilename
     );
+    // La ruta edita tanto el perfil propio como usuarios de otros: avisa al módulo `users`
+    // (lista de usuarios, roles, dashboard) igual que el CRUD con guard de permiso.
+    sendNotificationToAll('resource_updated', { module: 'users' });
 
     const response = NextResponse.json({
       success: true,

@@ -99,6 +99,18 @@ export const SSE_EVENTS = {
   check_attendance: { audiences: STAFF_ONLY },
   assistance_request: { audiences: STAFF_ONLY },
   staff_call_accepted: { audiences: STAFF_ONLY },
+  // Señal genérica de mutación auditada (`withRoute`): solo lleva `{ module }` e indica
+  // qué módulo cambió (productos, clientes, usuarios, roles, habitaciones...). El puente
+  // de React Query la traduce a invalidaciones, para que las vistas de administración que
+  // antes solo se refrescaban al montar queden vivas en todas las sesiones.
+  resource_updated: { audiences: STAFF_ONLY },
+  // Alta o baja del personal en el local (login, logout, marcaje de asistencia o la
+  // herramienta de pruebas): refresca contadores de personal presente y selectores de
+  // anfitrionas disponibles sin esperar al sondeo.
+  presence_updated: { audiences: STAFF_ONLY },
+  // Inventario de limpieza (artículos, stock y traspasos): refresca la página de limpieza
+  // abierta en otras sesiones cuando alguien mueve, ingresa o resuelve mercancía.
+  cleaning_updated: { audiences: STAFF_ONLY },
 
   // ─── Caché de autorización y sesión ────────────────────────────────────────
   // Los clientes no administradores refrescan sus permisos al recibirlo (cada uno
@@ -169,10 +181,7 @@ export const SSE_EVENTS = {
   // toast "el usuario ya tiene asistencia registrada".
   attendance_duplicate: { audiences: STAFF_ONLY },
   code_changed: {
-    audiences: [
-      { channel: 'staff' },
-      { channel: 'kiosk', project: data => ({ codigo: data?.codigo }) }
-    ]
+    audiences: [{ channel: 'kiosk', project: data => ({ codigo: data?.codigo }) }]
   }
 } as const satisfies Record<string, SseEventPolicy>;
 

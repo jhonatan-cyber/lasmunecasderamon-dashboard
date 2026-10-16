@@ -51,6 +51,35 @@ beforeEach(() => {
   state.user = { id: 'u1', role: 'administrador', permissions: {} };
 });
 describe('idempotencia general despues de permisos', () => {
+  it('conserva cuerpo y cabeceras cuando Request pertenece a otro runtime', async () => {
+    const incoming = request();
+    const NativeRequest = globalThis.Request;
+    class OtherRuntimeRequest extends NativeRequest {
+      constructor(input: RequestInfo | URL, init?: RequestInit) {
+        if (typeof input !== 'string' && !(input instanceof URL)) {
+          throw new TypeError('Request de otra implementación');
+        }
+        super(input, init);
+      }
+    }
+    vi.stubGlobal('Request', OtherRuntimeRequest);
+    try {
+      const handler = vi.fn(async (req: Request) => {
+        expect(req.headers.get('content-type')).toBe('application/json');
+        expect(req.headers.get('x-registration-key')).toBeNull();
+        expect(req.headers.get('x-idempotency-key')).toBeNull();
+        return Response.json(await req.json());
+      });
+      const route = withRoute({ auth: true, access: 'authenticated' }, handler);
+      const response = await route(incoming, context);
+      expect(response.status).toBe(200);
+      expect(await response.json()).toEqual({ cantidad: 3 });
+      expect(handler).toHaveBeenCalledTimes(1);
+      expect(incoming.headers.get('x-registration-key')).toBe('registration-key-one');
+    } finally {
+      vi.stubGlobal('Request', NativeRequest);
+    }
+  });
   it.each([
     '/api/purchases',
     '/api/sales',

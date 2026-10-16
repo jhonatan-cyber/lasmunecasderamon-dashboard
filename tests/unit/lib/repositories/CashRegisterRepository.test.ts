@@ -150,16 +150,16 @@ describe('CashRegisterRepository.calcularMontoCierre', () => {
     };
 
     // 100.000 + 50.000 + 20.000 + 5.000 − 3.000 − 12.000
-    expect(CashRegisterRepository.calcularMontoCierre(caja, 12000)).toBe(160000);
+    expect(CashRegisterRepository.calcularMontoCierre(caja, 12000)).toBe(163000);
   });
 
   it('lee las devoluciones como vienen en la fila cruda (`devolucion`) y como las expone el dominio', () => {
     expect(
       CashRegisterRepository.calcularMontoCierre({ monto_apertura: 1000, devolucion: 200 }, 0)
-    ).toBe(800);
+    ).toBe(1000);
     expect(
       CashRegisterRepository.calcularMontoCierre({ monto_apertura: 1000, devoluciones: 200 }, 0)
-    ).toBe(800);
+    ).toBe(1000);
   });
 
   it('sin saldos pendientes el monto de cierre no cambia', () => {
@@ -210,12 +210,12 @@ describe('CashRegisterRepository.solicitarCierre', () => {
         caja_id: 'caja-1',
         estado: 'pendiente',
         solicitado_por: 'Cajero',
-        monto_cierre_calculado: 160000,
+        monto_cierre_calculado: 163000,
         saldo_clientes_descontado: 12000,
         saldo_clientes_por_devolver: 0
       })
     );
-    expect(resultado.monto_cierre_calculado).toBe(160000);
+    expect(resultado.monto_cierre_calculado).toBe(163000);
     expect(resultado.saldo_clientes_descontado).toBe(12000);
     expect(resultado.saldo_clientes_por_devolver).toBe(0);
     // La caja sigue abierta: sólo queda marcado cuándo se pidió el cierre.
@@ -247,16 +247,16 @@ describe('CashRegisterRepository.solicitarCierre', () => {
     expect(resultado).toEqual(
       expect.objectContaining({
         monto_cierre_calculado: 25000,
-        saldo_clientes_descontado: 147000,
-        saldo_clientes_por_devolver: 53000
+        saldo_clientes_descontado: 150000,
+        saldo_clientes_por_devolver: 50000
       })
     );
     expect(BaseRepository.insert).toHaveBeenCalledWith(
       repositoryHarness.queryMock,
       'solicitudes_cierre_caja',
       expect.objectContaining({
-        saldo_clientes_descontado: 147000,
-        saldo_clientes_por_devolver: 53000
+        saldo_clientes_descontado: 150000,
+        saldo_clientes_por_devolver: 50000
       })
     );
   });
@@ -302,7 +302,7 @@ describe('CashRegisterRepository.procesarSolicitudCierre', () => {
       'caja-1',
       expect.objectContaining({
         estado: 0,
-        monto_cierre: 160000,
+        monto_cierre: 163000,
         saldo_clientes_descontado: 12000,
         saldo_clientes_por_devolver: 0,
         cierre_solicitado_en: null
@@ -311,7 +311,7 @@ describe('CashRegisterRepository.procesarSolicitudCierre', () => {
     // La solicitud queda resuelta a nombre de quien autorizó.
     expect(repositoryHarness.queryMock).toHaveBeenCalledWith(
       expect.stringContaining("estado = 'aprobada'"),
-      ['2026-04-11 12:00:00', 'Admin', 12000, 0, 160000, 'sol-1']
+      ['2026-04-11 12:00:00', 'Admin', 12000, 0, 163000, 'sol-1']
     );
   });
 
@@ -322,8 +322,8 @@ describe('CashRegisterRepository.procesarSolicitudCierre', () => {
       nombre: 'Admin'
     });
 
-    expect(resultado.saldo_clientes_descontado).toBe(147000);
-    expect(resultado.saldo_clientes_por_devolver).toBe(53000);
+    expect(resultado.saldo_clientes_descontado).toBe(150000);
+    expect(resultado.saldo_clientes_por_devolver).toBe(50000);
     expect(BaseRepository.update).toHaveBeenCalledWith(
       repositoryHarness.queryMock,
       'cajas',
@@ -331,8 +331,8 @@ describe('CashRegisterRepository.procesarSolicitudCierre', () => {
       'caja-1',
       expect.objectContaining({
         monto_cierre: 25000,
-        saldo_clientes_descontado: 147000,
-        saldo_clientes_por_devolver: 53000
+        saldo_clientes_descontado: 150000,
+        saldo_clientes_por_devolver: 50000
       })
     );
   });

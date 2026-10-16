@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import { withRoute } from '@/lib/api/withRoute';
 import { NotificationService } from '@/modules/comunicaciones';
+import { z } from 'zod';
 
 export const GET = withRoute(
   { auth: true, access: 'authenticated', audit: true },
@@ -27,5 +28,16 @@ export const POST = withRoute(
     const { token, deviceType } = await request.json();
     await NotificationService.registerToken(user.id.toString(), token, deviceType);
     return NextResponse.json({ success: true, message: 'Token registrado' });
+  }
+);
+
+export const PATCH = withRoute(
+  { auth: true, access: 'authenticated', audit: true },
+  async (request: Request, { user }: { params: any; user: any }) => {
+    const result = z.object({ id: z.string().uuid().optional() }).safeParse(await request.json());
+    if (!result.success)
+      return NextResponse.json({ error: 'Notificación inválida' }, { status: 400 });
+    await NotificationService.markAsReadForUser(user.id.toString(), result.data.id);
+    return NextResponse.json({ success: true });
   }
 );

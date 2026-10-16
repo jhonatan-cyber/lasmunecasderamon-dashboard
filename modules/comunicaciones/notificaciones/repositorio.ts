@@ -1,6 +1,10 @@
 import { query, generateUUID } from '@/lib/database/db';
 import { getNowInBusinessTimezone } from '@/lib/business/timezoneService';
 
+const destinatario = `(usuario_id = ? OR LOWER(rol_destinatario) = (
+  SELECT LOWER(r.nombre) FROM usuarios u JOIN roles r ON r.id_rol = u.rol_id WHERE u.id_usuario = ?
+))`;
+
 export class NotificationRepository {
   static async create(data: {
     usuario_id: string;
@@ -23,21 +27,24 @@ export class NotificationRepository {
     return await query(
       `
       SELECT * FROM notificaciones
-      WHERE (usuario_id = ? OR rol_destinatario IS NOT NULL)
+      WHERE ${destinatario}
       ORDER BY fecha_crea DESC LIMIT 50
     `,
-      [userId]
+      [userId, userId]
     );
   }
 
   static async getPending(userId: string) {
-    return await query('SELECT * FROM notificaciones WHERE usuario_id = ? AND leida = 0', [userId]);
+    return await query(
+      `SELECT * FROM notificaciones WHERE ${destinatario} AND leida = 0 ORDER BY fecha_crea DESC`,
+      [userId, userId]
+    );
   }
 
   static async getPendingCount(userId: string) {
     const res = await query<any[]>(
-      'SELECT COUNT(*) as count FROM notificaciones WHERE (usuario_id = ? OR rol_destinatario IS NOT NULL) AND leida = 0',
-      [userId]
+      `SELECT COUNT(*) as count FROM notificaciones WHERE ${destinatario} AND leida = 0`,
+      [userId, userId]
     );
     return res[0]?.count || 0;
   }
@@ -53,6 +60,15 @@ export class NotificationRepository {
       `INSERT INTO push_tokens (id, usuario_id, token, device_type) VALUES (?, ?, ?, ?)
       ON CONFLICT (token) DO UPDATE SET usuario_id = EXCLUDED.usuario_id, device_type = EXCLUDED.device_type`,
       [id, userId, token, deviceType || 'web']
+    );
+  }
+
+  static async markAsReadForUser(userId: string, id?: string) {
+    const now = getNowInBusinessTimezone();
+    await query(
+      `UPDATE notificaciones SET leida = 1, fecha_leida = ?
+       WHERE ${destinatario} AND leida = 0${id ? ' AND id = ?' : ''}`,
+      [now, userId, userId, ...(id ? [id] : [])]
     );
   }
 }

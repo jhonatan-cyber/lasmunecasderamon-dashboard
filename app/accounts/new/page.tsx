@@ -6,7 +6,9 @@ import { useTimer } from '@/contexts/TimerContext';
 import { useAccountForm } from '@/hooks/cuentas/useAccountForm';
 import { useMasterData, useRefreshOnFocus } from '@/hooks/shared';
 import CategoryCardList from '@/components/shared/CategoryCardList';
-import ProductModal from '@/components/products/ProductModal';
+import SaleProductModal from '@/components/sales/SaleProductModal';
+import { mapForSaleToCartItem } from '@/lib/sales/forSaleMapper';
+import { toast } from 'sonner';
 
 import {
   ProductSearch,
@@ -53,6 +55,7 @@ export default function NewCuentaPage() {
   const [modalCategoria, setModalCategoria] = useState<any>(null);
   const [productosCategoria, setProductosCategoria] = useState<any[]>([]);
   const [loadingProductos, setLoadingProductos] = useState(false);
+  const [hostessSelections, setHostessSelections] = useState<Record<string, string[]>>({});
 
   const clientes = clients;
   const anfitrionasFiltradas = useMemo(
@@ -75,13 +78,19 @@ export default function NewCuentaPage() {
     setModalCategoria(cat);
     setModalOpen(true);
     setLoadingProductos(true);
+    setProductosCategoria([]);
     try {
-      const res = await fetch(`/api/products?category_id=${cat.id_categoria || cat.id}`);
+      const res = await fetch(
+        `/api/products?for_sale=1&category_id=${encodeURIComponent(cat.id_categoria || cat.id)}`,
+        { cache: 'no-store' }
+      );
       const data = await res.json();
-      if (data.success) setProductosCategoria(data.data);
-      else setProductosCategoria([]);
+      if (!res.ok || !data.success)
+        throw Error(data.message || 'No se pudieron cargar los productos del bar');
+      setProductosCategoria(data.data.map(mapForSaleToCartItem));
     } catch {
       setProductosCategoria([]);
+      toast.error('No se pudieron cargar los productos del bar');
     } finally {
       setLoadingProductos(false);
     }
@@ -98,9 +107,14 @@ export default function NewCuentaPage() {
       <div className='p-4 sm:p-6 lg:p-10 space-y-4 sm:space-y-6 mt-4 sm:mt-6 lg:mt-10'>
         <NewAccountHeader />
         <ProductSearch
+          forSale
           searchProducto={searchProducto}
           onSearchChange={setSearchProducto}
-          onAddProduct={handleAddProducto}
+          onAddProduct={product => {
+            setModalCategoria(null);
+            setProductosCategoria([product]);
+            setModalOpen(true);
+          }}
           onClearSearch={handleClearSearch}
         />
 
@@ -156,7 +170,7 @@ export default function NewCuentaPage() {
         </div>
       </div>
 
-      <ProductModal
+      <SaleProductModal
         open={modalOpen}
         onClose={() => setModalOpen(false)}
         loading={loadingProductos}
@@ -165,6 +179,16 @@ export default function NewCuentaPage() {
         handleCantidadChange={handleCantidadChange}
         handleAgregarProducto={handleAddProducto}
         categoria={modalCategoria}
+        anfitrionas={anfitrionasFiltradas}
+        champagneHostessSelections={hostessSelections}
+        onChampagneHostessChange={(id, ids) =>
+          setHostessSelections(previous => ({ ...previous, [id]: ids }))
+        }
+        otherProductHostessSelections={hostessSelections}
+        onOtherProductHostessChange={(id, ids) =>
+          setHostessSelections(previous => ({ ...previous, [id]: ids }))
+        }
+        productosEnCarrito={productos}
       />
     </>
   );

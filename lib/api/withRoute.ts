@@ -8,6 +8,7 @@ import { AuditService } from '@/modules/auditoria';
 import { ApiResponse } from './api-response';
 import { normalizeJsonResponseDates } from './date-response';
 import { instantaneaPerfil, perfilActivo, reiniciarPerfil } from '@/lib/database/perfilConsultas';
+import { sendNotificationToAll } from './sseService';
 import logger from '@/lib/utils/logger';
 
 // ── Types ──────────────────────────────────────────────────────────────
@@ -284,6 +285,23 @@ export function withRoute<M extends PermissionModule>(
         ? await runRegistration(request, String(user.id), invoke)
         : await invoke(request);
       const normalizada = await normalizeJsonResponseDates(response);
+
+      // Toda mutación auditada y exitosa avisa qué módulo cambió: es la señal que permite
+      // refrescar en vivo las vistas de administración (productos, clientes, usuarios,
+      // roles, habitaciones...) sin emisores dedicados en cada endpoint. Fire-and-forget.
+      if (
+        user &&
+        requiredPermission &&
+        normalizada.ok &&
+        ['POST', 'PUT', 'PATCH', 'DELETE'].includes(request.method)
+      ) {
+        try {
+          sendNotificationToAll('resource_updated', { module: requiredPermission.module });
+        } catch (sseError) {
+          logger.captureException(sseError, { context: 'withRoute:sse' });
+        }
+      }
+
       // En desarrollo la respuesta dice cuántas consultas y cuántos ms de PostgreSQL lleva
       // acumulados: es lo que permite auditar un endpoint sin `pg_stat_statements`, que no
       // está disponible en esta instancia. En producción no se toca la respuesta.

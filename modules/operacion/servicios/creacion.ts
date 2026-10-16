@@ -1,3 +1,4 @@
+import { BusinessError, NotFoundError } from '@/lib/errors/errors';
 /**
  * Alta y edición de servicios — casos de uso del módulo Operación.
  *
@@ -39,9 +40,9 @@ import {
   insertarDetallesServicio,
   insertarClientesServicio,
   actualizarCamposServicio,
-  leerIvaServicio
+  leerImportesServicio
 } from './repositorio';
-import { obtenerCajaActiva, registrarMovimientoCobro, ajustarIvaCaja } from '@/modules/caja';
+import { obtenerCajaActiva, registrarMovimientoCobro } from '@/modules/caja';
 import { consumirPrepagoVenta, saldoPrepagoAgotado } from '@/modules/clientes';
 import { cerrarCuentasPrepagoSaldadas } from '../cuentas/servicio';
 import { registrarComisionesServicio } from '@/modules/personal';
@@ -224,10 +225,17 @@ export async function actualizarServicio(
   contexto: ContextoOperacion
 ): Promise<void> {
   const validated = ServiceCreateSchema.partial().parse(body);
-  const ivaPrevio = await leerIvaServicio(id, contexto);
-  const ivaDelta = Object.prototype.hasOwnProperty.call(body, 'iva')
-    ? Number(validated.iva || 0) - Number(ivaPrevio || 0)
-    : 0;
+  const previo = await leerImportesServicio(id, contexto);
+  if (!previo) throw new NotFoundError('Servicio', id);
+  const importes = ['precio_habitacion', 'precio_servicio', 'iva', 'sub_total', 'total'] as const;
+  if (
+    importes.some(key => body[key] !== undefined && Number(body[key]) !== Number(previo[key] ?? 0))
+  ) {
+    throw new BusinessError(
+      'El servicio ya está cobrado. Para cambiar su importe utiliza la anulación y registra el servicio correcto.',
+      'SERVICIO_COBRO_INMUTABLE'
+    );
+  }
   const now = getNowInBusinessTimezone();
 
   await actualizarCamposServicio(
@@ -251,10 +259,6 @@ export async function actualizarServicio(
     },
     contexto
   );
-
-  if (ivaDelta !== 0) {
-    await ajustarIvaCaja(ivaDelta, contexto);
-  }
 
   if (body.usuarios !== undefined && validated.usuarios) {
     await cambiarAnfitrionasServicioEnUnidad(id, validated.usuarios, contexto);

@@ -25,12 +25,24 @@ export async function leerSaldoParaActualizar(
 export async function guardarConsumoCuenta(
   clienteId: string | null,
   monto: number,
-  contexto: ContextoOperacion
+  contexto: ContextoOperacion,
+  referencia?: { cuentaId: string; ventaId?: string; usuarioId: string }
 ): Promise<void> {
   await resolverTransaccion(contexto)(
     'UPDATE clientes SET saldo = saldo - ? WHERE id_cliente = ?',
     [monto, clienteId]
   );
+  await BaseRepository.insert(resolverTransaccion(contexto), 'clientes_prepago_movimientos', {
+    id_movimiento: generateUUID(),
+    cliente_id: clienteId,
+    tipo: 'CONSUMO',
+    monto,
+    metodo_pago: 'prepago',
+    venta_id: referencia?.ventaId ?? null,
+    usuario_id: referencia?.usuarioId ?? null,
+    fecha_crea: getNowInBusinessTimezone(),
+    metadatos: JSON.stringify({ cuenta_id: referencia?.cuentaId, concepto: 'Pago de cuenta' })
+  });
 }
 
 import { procesarPrepago } from './consumoRepositorio';
@@ -55,10 +67,10 @@ export async function leerConsumoPrepagoVenta(
 ): Promise<number> {
   const trx = resolverTransaccion(contexto);
   const rows = await trx<{ total_prepago: number }[]>(
-    `SELECT COALESCE(SUM(monto), 0) as total_prepago
+    `SELECT COALESCE(SUM(CASE WHEN UPPER(tipo) = 'CONSUMO' THEN monto ELSE -monto END), 0) as total_prepago
        FROM clientes_prepago_movimientos
       WHERE cliente_id = ?
-        AND UPPER(tipo) = 'CONSUMO'
+        AND (UPPER(tipo) = 'CONSUMO' OR (UPPER(tipo) = 'DEVOLUCION' AND metodo_pago = 'prepago'))
         AND (venta_id = ? OR (metadatos::jsonb ->> 'venta_id') = ?)`,
     [clienteId, ventaId, ventaId]
   );

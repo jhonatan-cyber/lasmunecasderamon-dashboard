@@ -103,7 +103,7 @@ export async function cambiarEstadoUnidades(
   contexto?: ContextoOperacion
 ): Promise<number> {
   const ejecutar = async (trx: Parameters<typeof cambiarEstadoEnRepositorio>[0]) => {
-    await cambiarEstadoEnRepositorio(trx, unidadIds, estado);
+    await cambiarEstadoEnRepositorio(trx, unidadIds, estado, productoId);
     return await sincronizarEnRepositorio(trx, productoId);
   };
   if (contexto) return await ejecutar(resolverTransaccion(contexto));

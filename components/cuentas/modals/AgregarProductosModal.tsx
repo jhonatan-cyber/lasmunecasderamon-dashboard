@@ -18,6 +18,8 @@ import { TimeSelect } from '@/components/shared/selects';
 import { Badge } from '@/components/ui/badge';
 import { formatLongDateEs } from '@/lib/utils/calendarUtils';
 import logger from '@/lib/utils/logger';
+import { mapForSaleToCartItem } from '@/lib/sales/forSaleMapper';
+import { saleInventoryFields } from '@/lib/sales/saleInventoryFields';
 
 interface AgregarProductosModalProps {
   open: boolean;
@@ -39,14 +41,7 @@ interface Categoria {
   total_products?: number;
 }
 
-interface Producto {
-  id_producto: number;
-  nombre: string;
-  precio: number;
-  categoria_id: number;
-  categoria_nombre: string;
-  stock?: number;
-}
+type Producto = ReturnType<typeof mapForSaleToCartItem>;
 
 export default function AgregarProductosModal({
   open,
@@ -102,11 +97,15 @@ export default function AgregarProductosModal({
     setModalCategoria(cat);
     setModalOpen(true);
     setLoadingProductos(true);
+    setProductosCategoria([]);
     try {
-      const res = await fetch(`/api/products?category_id=${cat.id_categoria || cat.id}`);
+      const res = await fetch(
+        `/api/products?for_sale=1&category_id=${encodeURIComponent(cat.id_categoria || cat.id || '')}`,
+        { cache: 'no-store' }
+      );
       const data = await res.json();
       if (data.success) {
-        setProductosCategoria(data.data);
+        setProductosCategoria(data.data.map(mapForSaleToCartItem));
       } else {
         setProductosCategoria([]);
       }
@@ -152,12 +151,15 @@ export default function AgregarProductosModal({
       }
 
       const detalles = productosCarrito.map(producto => ({
+        ...saleInventoryFields(producto),
         producto_id: producto.id_producto,
         precio: producto.precio,
         cantidad: producto.cantidad,
         sub_total: producto.sub_total,
         comision: producto.comision * producto.cantidad,
-        hostesses: Array.isArray(producto.selectedHostesses) ? producto.selectedHostesses : [],
+        hostesses: Array.isArray(producto.selectedHostesses)
+          ? producto.selectedHostesses.map(String)
+          : [],
         isChampagne: Boolean(producto.isChampagne)
       }));
 
@@ -332,7 +334,12 @@ export default function AgregarProductosModal({
             <div className='space-y-6'>
               <div className='w-full'>
                 <ProductSearch
-                  onAddProduct={agregarProducto}
+                  forSale
+                  onAddProduct={product => {
+                    setModalCategoria(null);
+                    setProductosCategoria([product]);
+                    setModalOpen(true);
+                  }}
                   placeholder='Buscar productos...'
                   className=''
                   searchOnly={false}

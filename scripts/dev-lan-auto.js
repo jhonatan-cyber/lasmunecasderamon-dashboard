@@ -8,7 +8,7 @@ const { startRedis } = require('./redis-dev');
 
 const port = process.env.PORT || '3000';
 const publicHost = new URL(process.env.NEXT_PUBLIC_BASE_URL || 'http://localhost:3000').hostname;
-const host = publicHost === 'localhost' ? '0.0.0.0' : publicHost;
+const host = '0.0.0.0';
 
 async function start() {
   if (!/^\d+$/.test(port) || Number(port) < 1 || Number(port) > 65535) {

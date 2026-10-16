@@ -26,3 +26,24 @@ export class AuthService {
   static getSystemDateTime = AuthRepository.getSystemDateTime;
   static clearForcePasswordChange = AuthRepository.clearForcePasswordChange;
 }
+
+import * as tokens from './sesionTokensRepositorio';
+export function obtenerEstadoSesionToken(usuarioId: string) {
+  return tokens.obtenerEstadoSesionToken(usuarioId);
+}
+export function revocarSesionesUsuario(usuarioId: string) {
+  return tokens.revocarSesionesUsuario(usuarioId);
+}
+
+/** Herramienta de pruebas: lista y fuerza la presencia del personal en el local. */
+import * as presencia from './presenciaRepositorio';
+export function listarPersonalConPresencia() {
+  return presencia.listarPersonalConPresencia();
+}
+export function fijarPresenciaLocal(usuarioId: string, presente: boolean) {
+  return presencia.fijarPresenciaLocal(usuarioId, presente);
+}
+export function fijarPresenciaDeTodoElPersonal(presente: boolean) {
+  return presencia.fijarPresenciaDeTodoElPersonal(presente);
+}
+export type { PersonalPresencia } from './presenciaRepositorio';

@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import logger from '@/lib/utils/logger';
+import { mapForSaleToCartItem } from '@/lib/sales/forSaleMapper';
 
 interface SearchResult {
   id_producto?: string;
@@ -11,7 +12,7 @@ interface SearchResult {
   [key: string]: any;
 }
 
-export function useProductSearch(debounceMs: number = 300) {
+export function useProductSearch(debounceMs: number = 300, forSale = false) {
   const [internalSearchTerm, setInternalSearchTerm] = useState('');
   const [searchResults, setSearchResults] = useState<SearchResult[]>([]);
   const [searchLoading, setSearchLoading] = useState(false);
@@ -33,7 +34,7 @@ export function useProductSearch(debounceMs: number = 300) {
       setSearchLoading(true);
       try {
         const res = await fetch(
-          `/api/products?term=${encodeURIComponent(internalSearchTerm.trim())}`,
+          `/api/products?${forSale ? 'for_sale=1&' : ''}term=${encodeURIComponent(internalSearchTerm.trim())}`,
           { signal: controller.signal }
         );
         if (!res.ok) {
@@ -41,7 +42,13 @@ export function useProductSearch(debounceMs: number = 300) {
         }
         const data = await res.json();
         if (controller.signal.aborted) return;
-        setSearchResults(data.success && Array.isArray(data.data) ? data.data : []);
+        setSearchResults(
+          data.success && Array.isArray(data.data)
+            ? forSale
+              ? data.data.map(mapForSaleToCartItem)
+              : data.data
+            : []
+        );
         setCurrentPage(1);
       } catch (error) {
         if (controller.signal.aborted) return;
@@ -57,7 +64,7 @@ export function useProductSearch(debounceMs: number = 300) {
       clearTimeout(timeoutId);
       controller.abort();
     };
-  }, [internalSearchTerm, debounceMs]);
+  }, [internalSearchTerm, debounceMs, forSale]);
 
   const startIndex = (currentPage - 1) * itemsPerPage;
   const paginatedResults = searchResults.slice(startIndex, startIndex + itemsPerPage);

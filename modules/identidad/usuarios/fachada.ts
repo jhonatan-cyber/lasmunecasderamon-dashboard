@@ -1,3 +1,4 @@
+import { revocarSesionesUsuario } from '../autenticacion/sesionTokensRepositorio';
 import { UserCreateSchema, UserUpdateSchema, type UserType } from '@/lib/business/schemas';
 import { UserRepository } from '@/modules/identidad/usuarios/registro';
 import { ValidationError, NotFoundError, ConflictError } from '@/lib/errors/errors';
@@ -95,7 +96,7 @@ export class UserService {
       updateData.email = `${validated.nick}@lasmuñecasderamon.com`;
     }
     let newTempPassword: string | undefined;
-    if (validated.run) {
+    if (validated.run && validated.run !== existing.run) {
       // Al cambiar el RUN, la contraseña se reinicia al nuevo RUN (hasheado).
       newTempPassword = String(validated.run).trim();
       updateData.password = await argon2.hash(newTempPassword);
@@ -104,6 +105,12 @@ export class UserService {
 
     const result = await UserRepository.update(id.toString(), updateData, fotoFilename);
 
+    if (
+      newTempPassword ||
+      (validated.rol_id !== undefined && String(validated.rol_id) !== String(existing.rol_id))
+    ) {
+      await revocarSesionesUsuario(id.toString());
+    }
     if (validated.rol_id !== undefined) {
       await PermissionsCache.invalidate(id.toString());
     }

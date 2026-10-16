@@ -39,10 +39,16 @@ export { UserService } from './usuarios/fachada';
 
 export {
   AuthService,
+  obtenerEstadoSesionToken,
+  revocarSesionesUsuario,
   cerrarSesionesPorCierreCaja,
   marcarPresenciaLocal,
-  asegurarSesionPresente
+  asegurarSesionPresente,
+  listarPersonalConPresencia,
+  fijarPresenciaLocal,
+  fijarPresenciaDeTodoElPersonal
 } from './autenticacion/servicio';
+export type { PersonalPresencia } from './autenticacion/servicio';
 
 export { RoleService } from './roles/fachada';
 

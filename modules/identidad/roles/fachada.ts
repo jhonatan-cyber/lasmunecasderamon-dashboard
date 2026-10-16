@@ -25,6 +25,10 @@ export class RoleService {
     return await RoleRepository.delete(id);
   }
 
+  static async setStatus(id: string, estado: 0 | 1) {
+    return await RoleRepository.setStatus(id, estado);
+  }
+
   static async getAdminPermissions() {
     return await RoleRepository.getAdminPermissions();
   }

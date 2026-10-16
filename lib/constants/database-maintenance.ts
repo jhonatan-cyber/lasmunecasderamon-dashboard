@@ -3,20 +3,8 @@ export const DATABASE_CLEAN_PROTECTED_TABLES = [
   'usuarios',
   'roles',
   'role_permissions',
-  'permissions',
-  'configuraciones',
-  'backups',
-  '_migrations',
-  '_postgres_migrations',
-  'habitaciones',
-  'productos',
-  'categorias',
-  'codigos',
-  'inventario_presentaciones',
-  'inventario_unidades',
-  'inventario_movimientos',
-  // Las unidades conservadas referencian las compras que las originaron.
-  'compras',
-  'detalle_compras',
-  'producto_champagne_tiers'
+  'permissions'
 ] as const;
+
+// Metadatos del esquema: vaciarlos haría que se repitieran migraciones ya aplicadas.
+export const DATABASE_MIGRATION_TABLES = ['_migrations', '_postgres_migrations'] as const;

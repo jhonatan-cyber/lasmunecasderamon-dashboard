@@ -16,26 +16,27 @@ export const CajaDetailsStatsBar = memo(function CajaDetailsStatsBar({
   statsOpen,
   onToggle,
   numeros,
+  montoApertura,
   isLoadingSummary
 }: {
   statsOpen: boolean;
   onToggle: () => void;
   numeros: CajaDetailsNumbers;
+  montoApertura: number;
   isLoadingSummary: boolean;
 }) {
   return (
     <div className='sticky top-0 z-20 bg-white/95 dark:bg-slate-900/95 backdrop-blur-xs border-b border-gray-100 dark:border-gray-800 px-6 py-4 print:hidden'>
       <div className='flex items-center justify-between gap-4'>
         <Button
-          variant='unstyled'
           type='button'
+          variant='outline'
+          size='sm'
           onClick={onToggle}
-          className='flex items-center gap-2 text-xs font-black uppercase tracking-widest text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-slate-200 transition-colors'
+          className='shrink-0 rounded-full gap-2 font-bold'
           aria-expanded={statsOpen}
         >
-          <div className='p-1.5 bg-slate-100 dark:bg-white/10 rounded-lg'>
-            <BarChart3 className='w-4 h-4' />
-          </div>
+          <BarChart3 className='w-4 h-4 text-slate-500 dark:text-slate-400' />
           Estadísticas
           <ChevronDown
             className={`w-4 h-4 transition-transform duration-200 ${statsOpen ? 'rotate-180' : ''}`}
@@ -43,7 +44,13 @@ export const CajaDetailsStatsBar = memo(function CajaDetailsStatsBar({
         </Button>
 
         {!statsOpen && (
-          <div className='flex items-center gap-4 sm:gap-6 text-sm'>
+          <div className='flex items-center gap-3 sm:gap-5 text-sm'>
+            <div className='text-right'>
+              <p className='text-[10px] font-bold text-slate-400 uppercase'>Apertura</p>
+              <p className='font-black tabular-nums text-slate-700 dark:text-slate-200'>
+                {formatCurrencyNoDecimals(montoApertura)}
+              </p>
+            </div>
             <div className='text-right'>
               <p className='text-[10px] font-bold text-slate-400 uppercase'>Efectivo</p>
               <p className='font-black tabular-nums text-slate-700 dark:text-slate-200'>
@@ -70,6 +77,7 @@ export const CajaDetailsStatsBar = memo(function CajaDetailsStatsBar({
         <div className='space-y-4 mt-3'>
           <CajaPaymentSummary
             isLoading={isLoadingSummary}
+            montoApertura={montoApertura}
             efectivoNeto={numeros.efectivoNeto}
             tarjetaCaja={numeros.tarjetaCaja}
             transferenciaCaja={numeros.transferenciaCaja}

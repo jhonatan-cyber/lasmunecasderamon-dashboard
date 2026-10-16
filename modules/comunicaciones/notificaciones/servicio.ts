@@ -31,4 +31,8 @@ export class NotificationService {
   static async registerToken(userId: string, token: string, deviceType?: string) {
     return await NotificationRepository.registerToken(userId, token, deviceType);
   }
+
+  static async markAsReadForUser(userId: string, id?: string) {
+    return await NotificationRepository.markAsReadForUser(userId, id);
+  }
 }

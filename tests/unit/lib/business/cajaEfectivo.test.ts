@@ -29,19 +29,19 @@ const cajaBase = {
 
 describe('cajaEfectivo · efectivo neto', () => {
   it('no vuelve a descontar retiros ni anticipos', () => {
-    // 100.000 + 485.000 − 25.000 (solo las devoluciones siguen por descontar)
-    expect(efectivoNetoCaja(cajaBase)).toBe(560000);
-    expect(egresosPendientesCaja(cajaBase)).toBe(25000);
-    // 560.000 + 320.000 + 145.000
-    expect(totalCaja(cajaBase)).toBe(1025000);
+    // 100.000 + 485.000: los egresos ya están aplicados.
+    expect(efectivoNetoCaja(cajaBase)).toBe(585000);
+    expect(egresosPendientesCaja(cajaBase)).toBe(0);
+    // 585.000 + 320.000 + 145.000
+    expect(totalCaja(cajaBase)).toBe(1050000);
   });
 
   it('descuenta los saldos prepago una sola vez', () => {
     const conSaldos = { ...cajaBase, saldo_clientes_descontado: 550000 };
 
     expect(saldosClientesDe(conSaldos)).toBe(550000);
-    expect(egresosPendientesCaja(conSaldos)).toBe(575000); // 25.000 + 550.000
-    expect(efectivoNetoCaja(conSaldos)).toBe(10000); // 585.000 − 575.000
+    expect(egresosPendientesCaja(conSaldos)).toBe(550000); // Solo el saldo de clientes
+    expect(efectivoNetoCaja(conSaldos)).toBe(35000); // 585.000 − 550.000
   });
 
   it('lee las devoluciones como `devoluciones` (dominio) y como `devolucion` (fila cruda)', () => {
@@ -62,19 +62,19 @@ describe('cajaEfectivo · disponibleParaRetiro', () => {
 
     // Mismo disponible con y sin saldos: el retiro no puede tocarlos.
     expect(disponibleParaRetiro(conSaldos)).toBe(disponibleParaRetiro(cajaBase));
-    // 100.000 + 485.000 − 25.000
-    expect(disponibleParaRetiro(cajaBase)).toBe(560000);
+    // 100.000 + 485.000
+    expect(disponibleParaRetiro(cajaBase)).toBe(585000);
   });
 
-  it('sí descuenta las devoluciones', () => {
+  it('no vuelve a descontar las devoluciones aplicadas', () => {
     expect(disponibleParaRetiro({ ...cajaBase, devoluciones: 0 })).toBe(585000);
   });
 });
 
 describe('cajaEfectivo · montoCierreCaja', () => {
   it('es el total de la caja con los saldos leídos de clientes', () => {
-    // 1.025.000 − 300.000 de saldos pendientes
-    expect(montoCierreCaja(cajaBase, 300000)).toBe(725000);
+    // 1.050.000 − 300.000 de saldos pendientes
+    expect(montoCierreCaja(cajaBase, 300000)).toBe(750000);
   });
 
   it('coincide con totalCaja cuando los saldos ya vienen en la fila', () => {
@@ -95,13 +95,13 @@ describe('cajaEfectivo · montoCierreCaja', () => {
     const caja = { monto_apertura: 100, efectivo: 20, devoluciones: 10, tarjeta: 60 };
 
     expect(calcularDevolucionSaldoClientes(caja, 200)).toEqual({
-      descontado: 110,
-      pendiente: 90
+      descontado: 120,
+      pendiente: 80
     });
     expect(montoCierreCaja(caja, 200)).toBe(60);
   });
 
-  it('nunca calcula un cierre negativo aunque las devoluciones agoten el cajón', () => {
-    expect(montoCierreCaja({ monto_apertura: 100, efectivo: 20, devoluciones: 500 }, 100)).toBe(0);
+  it('conserva el efectivo neto aunque haya devoluciones históricas', () => {
+    expect(montoCierreCaja({ monto_apertura: 100, efectivo: 20, devoluciones: 500 }, 100)).toBe(20);
   });
 });

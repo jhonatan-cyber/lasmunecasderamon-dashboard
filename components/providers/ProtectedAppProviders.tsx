@@ -14,6 +14,7 @@ import { SyncProvider } from '@/contexts/SyncContext';
 import { TooltipProvider } from '@/components/ui/tooltip';
 import { IvaRateProvider } from '@/components/providers/IvaRateProvider';
 import { useCurrentUser } from '@/hooks/auth/useCurrentUser';
+import { useRealtimeInvalidation } from '@/hooks/realtime/useRealtimeInvalidation';
 
 const AnulacionNotificationModal = dynamic(
   () => import('@/components/notifications/AnulacionNotificationModal'),
@@ -25,6 +26,8 @@ const AnulacionNotificationModal = dynamic(
 function FeatureScopedProviders({ children }: { children: ReactNode }) {
   const pathname = usePathname();
   const { user } = useCurrentUser();
+
+  useRealtimeInvalidation();
 
   const role = user?.role?.toLowerCase();
   const isAdminOrCajero = role === 'administrador' || role === 'cajero';

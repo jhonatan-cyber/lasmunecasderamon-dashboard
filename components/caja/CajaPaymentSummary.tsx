@@ -1,12 +1,13 @@
 'use client';
 
-import { ArrowDownCircle, CreditCard, Wallet } from 'lucide-react';
+import { ArrowDownCircle, Banknote, CreditCard, Wallet } from 'lucide-react';
 import type { ReactNode } from 'react';
 import { Skeleton } from '@/components/ui/skeleton';
 import { formatCurrencyNoDecimals } from '@/lib/utils/formatters';
 
 interface CajaPaymentSummaryProps {
   isLoading: boolean;
+  montoApertura: number;
   efectivoNeto: number;
   tarjetaCaja: number;
   transferenciaCaja: number;
@@ -61,20 +62,29 @@ function PaymentSummaryCard({
 
 export function CajaPaymentSummary({
   isLoading,
+  montoApertura,
   efectivoNeto,
   tarjetaCaja,
   transferenciaCaja
 }: CajaPaymentSummaryProps) {
   return (
-    <div className='grid grid-cols-2 sm:grid-cols-2 xl:grid-cols-3 gap-4'>
+    <div className='grid grid-cols-2 xl:grid-cols-4 gap-4'>
       {isLoading ? (
         <>
+          <PaymentSummarySkeleton />
           <PaymentSummarySkeleton />
           <PaymentSummarySkeleton />
           <PaymentSummarySkeleton />
         </>
       ) : (
         <>
+          <PaymentSummaryCard
+            label='Apertura'
+            value={montoApertura}
+            accentClass='bg-slate-500/10'
+            icon={<Banknote className='w-5 h-5 text-slate-600 dark:text-slate-300' />}
+            note='Monto inicial del cajón'
+          />
           <PaymentSummaryCard
             label='Efectivo'
             value={efectivoNeto}
@@ -88,14 +98,12 @@ export function CajaPaymentSummary({
             accentClass='bg-sky-500/10'
             icon={<CreditCard className='w-5 h-5 text-sky-600 dark:text-sky-400' />}
           />
-          <div className='col-span-2 sm:col-span-1 xl:col-span-1'>
-            <PaymentSummaryCard
-              label='Transferencia'
-              value={transferenciaCaja}
-              accentClass='bg-violet-500/10'
-              icon={<ArrowDownCircle className='w-5 h-5 text-violet-600 dark:text-violet-400' />}
-            />
-          </div>
+          <PaymentSummaryCard
+            label='Transferencia'
+            value={transferenciaCaja}
+            accentClass='bg-violet-500/10'
+            icon={<ArrowDownCircle className='w-5 h-5 text-violet-600 dark:text-violet-400' />}
+          />
         </>
       )}
     </div>

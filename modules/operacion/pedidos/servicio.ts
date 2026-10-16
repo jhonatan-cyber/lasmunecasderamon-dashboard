@@ -9,6 +9,10 @@ export class OrderService {
     return await OrderRepository.getAll(limit);
   }
 
+  static async getPending(limit: number = 5) {
+    return await OrderRepository.getPending(limit);
+  }
+
   static async getByUser(userId: string) {
     return await OrderRepository.getByUser(userId);
   }

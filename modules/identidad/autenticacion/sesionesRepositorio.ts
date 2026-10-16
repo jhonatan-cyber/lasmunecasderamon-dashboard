@@ -4,6 +4,7 @@ import { getNowInBusinessTimezone } from '@/lib/business/timezoneService';
 import type { ContextoOperacion } from '@/lib/transaccion/contrato';
 import { resolverTransaccion } from '@/lib/transaccion/infraestructura';
 import { BaseRepository } from '@/lib/database/base-repository';
+import { sendNotificationToAll } from '@/lib/api/sseService';
 
 export async function marcarPresenciaLocal(
   usuarioId: string,
@@ -45,6 +46,8 @@ export async function asegurarSesionPresente(
 }
 
 export async function cerrarSesionesPorCierreCaja(contexto: ContextoOperacion) {
+  await resolverTransaccion(contexto)(`UPDATE usuarios u SET session_version = session_version + 1
+    WHERE NOT EXISTS (SELECT 1 FROM roles r WHERE r.id_rol = u.rol_id AND LOWER(BTRIM(r.nombre)) = 'administrador')`);
   // El administrador que autoriza el cierre debe conservar su sesión; todos los
   // registros de login del personal no administrador se invalidan atómicamente
   // con el cierre de caja. También se incluyen sesiones de usuarios desactivados.
@@ -62,6 +65,7 @@ export async function cerrarSesionesPorCierreCaja(contexto: ContextoOperacion) {
         )
     `
   );
+  sendNotificationToAll('presence_updated', { en_local: false, motivo: 'cierre_caja' });
 }
 const ROLES_PARA_REGISTRAR = ['cajero', 'garzon', 'anfitriona'];
 

@@ -10,6 +10,7 @@ import {
   Settings as SettingsIcon,
   ShieldAlert,
   Clock,
+  UserCheck,
   type LucideIcon
 } from 'lucide-react';
 import { SettingsCompanyTab } from '@/components/settings/SettingsCompanyTab';
@@ -25,6 +26,7 @@ import { SettingsBottleHostessCard } from '@/components/settings/SettingsBottleH
 import { SettingsServiceLevelsCard } from '@/components/settings/SettingsServiceLevelsCard';
 import { SettingsBarTab } from '@/components/settings/SettingsBarTab';
 import { SettingsWhatsAppTab } from '@/components/settings/SettingsWhatsAppTab';
+import { SettingsTestPresenceTab } from '@/components/settings/SettingsTestPresenceTab';
 import { usePersistentTab } from '@/hooks/shared/usePersistentTab';
 
 /**
@@ -40,7 +42,8 @@ const TABS: { value: string; label: string; icon: LucideIcon }[] = [
   { value: 'whatsapp', label: 'WhatsApp', icon: MessageCircle },
   { value: 'mantenimiento', label: 'Mantenimiento', icon: Database },
   { value: 'logs', label: 'Logs', icon: ShieldAlert },
-  { value: 'asistencia', label: 'Asistencia', icon: Clock }
+  { value: 'asistencia', label: 'Asistencia', icon: Clock },
+  { value: 'pruebas', label: 'Pruebas', icon: UserCheck }
 ];
 
 // Referencias estables: si cambiaran en cada render, el efecto que restaura el tab se
@@ -108,6 +111,10 @@ export default function Settings() {
           <BiometricStatus />
           <BiometricDevices />
           <KioskDevices />
+        </TabsContent>
+
+        <TabsContent value='pruebas'>
+          <SettingsTestPresenceTab />
         </TabsContent>
       </Tabs>
     </div>

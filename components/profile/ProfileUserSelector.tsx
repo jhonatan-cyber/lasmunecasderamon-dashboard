@@ -37,11 +37,11 @@ export function ProfileUserSelector({
         </CardDescription>
       </CardHeader>
       <CardContent>
-        <div className='flex items-center space-x-4'>
-          <div className='flex-1'>
+        <div className='flex flex-col gap-4 sm:flex-row sm:items-center'>
+          <div className='min-w-0 flex-1'>
             <Label htmlFor='user-select'>Usuario a editar</Label>
             <Select value={selectedUserId} onValueChange={onUserChange}>
-              <SelectTrigger className='rounded-full'>
+              <SelectTrigger id='user-select' className='w-full rounded-full'>
                 <SelectValue placeholder='Seleccioná un usuario' />
               </SelectTrigger>
               <SelectContent>
@@ -56,9 +56,9 @@ export function ProfileUserSelector({
                 ) : (
                   usersList.map(user => (
                     <SelectItem key={user.id} value={user.id.toString()}>
-                      <div className='flex items-center space-x-2'>
-                        <span>{`${user.name} ${user.lastName}`}</span>
-                        <span className='text-muted-foreground'>({user.role})</span>
+                      <div className='flex min-w-0 items-center gap-2'>
+                        <span className='truncate'>{`${user.name} ${user.lastName}`}</span>
+                        <span className='shrink-0 text-muted-foreground'>({user.role})</span>
                       </div>
                     </SelectItem>
                   ))

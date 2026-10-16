@@ -206,17 +206,16 @@ describe('CajaCard · balance sin doble descuento', () => {
   it('no vuelve a restar los retiros y los anticipos del turno', () => {
     const { container } = renderCard({ anticipo: 60000, retiro_total: 120000 });
 
-    // 100.000 de apertura + 50.000 de efectivo − 3.000 de devoluciones, más tarjeta y
-    // transferencia.
-    expect(container.textContent ?? '').toContain(formatCurrencyCLP(172000));
-    // Los 180.000 que salieron ya no están en `efectivo`: restarlos otra vez daría −8.000.
-    expect(container.textContent ?? '').not.toContain(formatCurrencyCLP(-8000));
+    // Apertura y medios netos: las devoluciones ya están aplicadas.
+    expect(container.textContent ?? '').toContain(formatCurrencyCLP(175000));
+    // Los 180.000 que salieron ya no están en `efectivo`.
+    expect(container.textContent ?? '').not.toContain(formatCurrencyCLP(-5000));
   });
 
-  it('las devoluciones sí siguen descontándose del efectivo', () => {
+  it('no vuelve a descontar las devoluciones del efectivo neto', () => {
     const { container } = renderCard({ devoluciones: 20000 });
 
-    // 100.000 + 50.000 − 20.000, más 20.000 de tarjeta y 5.000 de transferencia.
-    expect(container.textContent ?? '').toContain(formatCurrencyCLP(155000));
+    // 100.000 + 50.000, más 20.000 de tarjeta y 5.000 de transferencia.
+    expect(container.textContent ?? '').toContain(formatCurrencyCLP(175000));
   });
 });

@@ -26,7 +26,8 @@ export async function cerrarCuenta(
   id: string,
   body: CuentaCobrarBody,
   cobradoPor: string,
-  onAfterCommit?: (task: () => void | Promise<void>) => void
+  onAfterCommit?: (task: () => void | Promise<void>) => void,
+  ventaId?: string
 ): Promise<void> {
   const trx = resolverTransaccion(contexto);
   const emitir = onAfterCommit ?? ((tarea: () => void) => tarea());
@@ -80,7 +81,11 @@ export async function cerrarCuenta(
   );
 
   if (tipoPago === 'prepago') {
-    await consumirPrepagoCuenta(cuenta[0].cliente_id ?? null, montoCobrar, contexto);
+    await consumirPrepagoCuenta(cuenta[0].cliente_id ?? null, montoCobrar, contexto, {
+      cuentaId: id,
+      ventaId,
+      usuarioId: cobradoPor
+    });
   }
 
   // `idCajaCobro` se resolvió al inicio de la transacción (con validación

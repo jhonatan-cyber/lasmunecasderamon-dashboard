@@ -69,6 +69,7 @@ beforeEach(() => {
   db.queryMock.mockReset();
   db.queryMock.mockImplementation(async (sql: string, params?: any[]) => {
     if (sql.includes('FROM usuarios')) return [{ ...personaEnrolada, estado: estadoActual }];
+    if (sql.includes('SET session_version')) return [];
     // BaseRepository.update manda los valores primero: estado va en params[0].
     if (sql.includes('UPDATE usuarios SET')) estadoActual = Number(params?.[0]);
     if (sql.includes('FROM biometric_plantillas')) return [];

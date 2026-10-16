@@ -25,12 +25,7 @@ export default function CollapsibleSection({
   const triggerId = React.useId();
 
   return (
-    <div
-      className={cn(
-        'rounded-lg border border-slate-200/80 bg-white dark:border-slate-800 dark:bg-slate-950/30 overflow-hidden',
-        className
-      )}
-    >
+    <div className={cn('min-w-0 space-y-4', className)}>
       <Button
         variant='unstyled'
         id={triggerId}
@@ -38,7 +33,7 @@ export default function CollapsibleSection({
         onClick={() => setIsOpen(!isOpen)}
         aria-expanded={isOpen}
         aria-controls={contentId}
-        className='flex w-full items-center justify-between px-4 py-3 text-left transition-colors hover:bg-slate-50 dark:hover:bg-slate-900/30'
+        className='flex w-full items-center justify-between border-b border-slate-200 dark:border-slate-800 px-1 py-3 text-left transition-colors hover:text-emerald-600 dark:hover:text-emerald-400'
       >
         <div className='flex items-center gap-2'>
           {Icon && <Icon className='h-4 w-4 text-slate-600 dark:text-slate-400' />}
@@ -62,7 +57,7 @@ export default function CollapsibleSection({
           isOpen ? 'max-h-[2000px] opacity-100' : 'max-h-0 opacity-0'
         )}
       >
-        <div className='p-4 pt-0'>{children}</div>
+        {children}
       </div>
     </div>
   );

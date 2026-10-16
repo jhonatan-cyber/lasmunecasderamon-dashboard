@@ -74,6 +74,13 @@ export class RoleRepository {
     await BaseRepository.delete(query, this.TABLE, this.ID_COL, id);
   }
 
+  static async setStatus(id: string, estado: 0 | 1) {
+    await BaseRepository.update(query, this.TABLE, this.ID_COL, id, {
+      estado,
+      fecha_mod: getNowInBusinessTimezone()
+    });
+  }
+
   static async getAdminPermissions() {
     return await query(
       'SELECT * FROM role_permissions pr INNER JOIN roles r ON r.id_rol = pr.role_id'

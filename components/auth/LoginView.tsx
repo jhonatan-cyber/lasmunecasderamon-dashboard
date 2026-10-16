@@ -61,7 +61,7 @@ export const LoginView = () => {
             priority
           />
           <h1 className='text-2xl md:text-3xl font-bold text-center mb-2 text-gray-900 dark:text-white transition-colors duration-300'>
-            Bien venido, Las Muñecas de Ramón
+            Bienvenido, Las Muñecas de Ramón
           </h1>
           <p className='text-gray-600 dark:text-gray-300 text-center mb-2 transition-colors duration-300'>
             Nightclub exclusivo en la ciudad de Linares

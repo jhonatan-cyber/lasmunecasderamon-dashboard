@@ -135,13 +135,13 @@ describe('sseManager', () => {
       });
     });
 
-    it('el cambio de código va al kiosko y al personal con el mismo payload', () => {
+    it('el cambio de código llega al kiosko y no se difunde al personal', () => {
       const [cajeroClient, kioskClient] = withClients([cajero, kiosk]);
 
       sendNotificationToAll('code_changed', { codigo: '7391' });
 
       expect(kioskClient.frames[1].data).toEqual({ codigo: '7391' });
-      expect(cajeroClient.frames[1].data).toEqual({ codigo: '7391' });
+      expect(cajeroClient.frames).toHaveLength(1);
     });
   });
 

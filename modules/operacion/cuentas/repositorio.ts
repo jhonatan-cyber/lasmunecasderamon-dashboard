@@ -375,7 +375,7 @@ export async function actualizarTiempoCuenta(
   contexto: ContextoOperacion
 ): Promise<void> {
   await resolverTransaccion(contexto)(
-    'UPDATE cuentas SET tiempo = ?, tiempo_actual = ?, tiempo_inicio_actual = ?, habitaciones_historial = ?, fecha_mod = ? WHERE id_cuenta = ?',
+    'UPDATE cuentas SET tiempo = ?, tiempo_actual = ?, tiempo_inicio_actual = ?, habitaciones_historial = ?, fecha_mod = ?, push_notified_5m = 0, push_notified_end = 0 WHERE id_cuenta = ?',
     [
       campos.tiempo,
       campos.tiempo_actual,

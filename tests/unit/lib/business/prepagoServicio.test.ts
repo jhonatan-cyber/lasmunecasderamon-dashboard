@@ -71,7 +71,12 @@ describe('consumo de cuentas en la misma unidad', () => {
     vi.mocked(leerSaldoParaActualizar).mockResolvedValue({ saldo: 100 });
     await consumirPrepagoCuenta('cliente', 60, contexto);
     expect(leerSaldoParaActualizar).toHaveBeenCalledExactlyOnceWith('cliente', contexto);
-    expect(guardarConsumoCuenta).toHaveBeenCalledExactlyOnceWith('cliente', 60, contexto);
+    expect(guardarConsumoCuenta).toHaveBeenCalledExactlyOnceWith(
+      'cliente',
+      60,
+      contexto,
+      undefined
+    );
     expect(vi.mocked(leerSaldoParaActualizar).mock.invocationCallOrder[0]).toBeLessThan(
       vi.mocked(guardarConsumoCuenta).mock.invocationCallOrder[0]
     );
@@ -91,7 +96,12 @@ describe('consumo de cuentas en la misma unidad', () => {
   it.each([0, -10, 12.5])('no cambia la validacion historica del monto %s', async monto => {
     vi.mocked(leerSaldoParaActualizar).mockResolvedValue({ saldo: 100 });
     await consumirPrepagoCuenta('cliente', monto, contexto);
-    expect(guardarConsumoCuenta).toHaveBeenCalledExactlyOnceWith('cliente', monto, contexto);
+    expect(guardarConsumoCuenta).toHaveBeenCalledExactlyOnceWith(
+      'cliente',
+      monto,
+      contexto,
+      undefined
+    );
   });
   it('propaga un fallo del descuento a la unidad', async () => {
     vi.mocked(leerSaldoParaActualizar).mockResolvedValue({ saldo: 100 });

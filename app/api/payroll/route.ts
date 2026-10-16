@@ -9,7 +9,7 @@ export const GET = withPublicRoute(async () => {
 
 export const POST = withRoute(
   { auth: true, audit: true, module: 'payroll', action: 'write' },
-  async (request: Request) => {
+  async (request: Request, { user }) => {
     const { usuario_id } = await request.json();
     if (!usuario_id)
       return NextResponse.json(
@@ -17,7 +17,7 @@ export const POST = withRoute(
         { status: 400 }
       );
 
-    await PayrollService.pay(usuario_id, usuario_id);
+    await PayrollService.pay(usuario_id, String(user.id));
     return NextResponse.json({ success: true, message: 'Pago procesado correctamente' });
   }
 );

@@ -9,6 +9,7 @@ import { ProductSelectionTable } from '@/components/products/ProductSelectionTab
 import { useProductSearch } from '@/hooks/cuentas';
 
 interface ProductSearchProps {
+  forSale?: boolean;
   onAddProduct: (producto: any) => void;
   placeholder?: string;
   className?: string;
@@ -21,6 +22,7 @@ interface ProductSearchProps {
 }
 
 export default function ProductSearch({
+  forSale = false,
   onAddProduct,
   placeholder = 'Buscar Producto',
   className = '',
@@ -40,7 +42,7 @@ export default function ProductSearch({
     handleSearchChange,
     handleClearSearch: hookHandleClearSearch,
     goToPage
-  } = useProductSearch(300);
+  } = useProductSearch(300, forSale);
 
   const isControlled = externalSearchTerm !== undefined || searchProducto !== undefined;
   const searchTerm = externalSearchTerm ?? searchProducto ?? internalSearchTerm;

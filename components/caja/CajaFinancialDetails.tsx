@@ -134,15 +134,15 @@ export function CajaFinancialDetails({
               </div>
             </div>
 
-            <div className='rounded-xl border border-dashed border-slate-200 bg-slate-50 px-4 py-3 mt-4 text-xs text-slate-600 dark:border-slate-700 dark:bg-slate-900/40 dark:text-slate-300'>
-              <div className='flex justify-between gap-4'>
+            <div className='mt-4 pt-3 border-t border-gray-200 dark:border-gray-700 text-xs text-slate-600 dark:text-slate-300'>
+              <div className='flex justify-between gap-4 py-0.5'>
                 <span>Saldo prepago pendiente clientes</span>
                 <span className='font-bold'>
                   {formatCurrencyNoDecimals(prepagoPendienteClientes)}
                 </span>
               </div>
               {saldoClientesDescontado > 0 && (
-                <div className='flex justify-between gap-4 mt-1'>
+                <div className='flex justify-between gap-4 py-0.5'>
                   <span>De ese saldo, descontado en este cierre</span>
                   <span className='font-bold text-rose-600'>
                     {formatCurrencyNoDecimals(saldoClientesDescontado)}
@@ -150,7 +150,7 @@ export function CajaFinancialDetails({
                 </div>
               )}
               {saldoClientesPorDevolver > 0 && (
-                <div className='flex justify-between gap-4 mt-1'>
+                <div className='flex justify-between gap-4 py-0.5'>
                   <span>Saldo que falta devolver</span>
                   <span className='font-bold text-amber-600 dark:text-amber-400'>
                     {formatCurrencyNoDecimals(saldoClientesPorDevolver)}
@@ -160,7 +160,7 @@ export function CajaFinancialDetails({
             </div>
 
             {mostrarMontoCierre && (
-              <div className='flex justify-between items-center rounded-xl bg-emerald-50 px-4 py-3 mt-4 border border-emerald-200 dark:border-emerald-800 dark:bg-emerald-950/30'>
+              <div className='flex justify-between items-center mt-4 pt-3 border-t border-gray-200 dark:border-gray-700'>
                 <span className='text-sm font-bold text-emerald-900 dark:text-emerald-300'>
                   Monto de cierre
                 </span>
