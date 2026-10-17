@@ -12,6 +12,7 @@ import { ServicioSelectsRow } from './new/ServicioSelectsRow';
 import { ServicioPaymentRow } from './new/ServicioPaymentRow';
 import { ServicioIncludedProduct } from './new/ServicioIncludedProduct';
 import { ServicioConfirmModal } from './new/ServicioConfirmModal';
+import { PrepagoNotice } from '@/components/shared/PrepagoNotice';
 
 /**
  * Página «Datos Servicio» (salida a sala privada). Antes monolítica (603
@@ -82,6 +83,11 @@ export default function NuevoServicioPage() {
 
         {/* Total + Generar Servicio */}
         <div className='flex flex-col items-center justify-center mt-6 sm:mt-8 mb-4'>
+          <PrepagoNotice
+            saldo={form.selectedClientData?.saldo}
+            total={form.total}
+            className='mb-4 w-full max-w-md'
+          />
           <span className='uppercase text-xs sm:text-sm text-gray-400 tracking-widest font-semibold mb-1'>
             TOTAL
           </span>

@@ -3,6 +3,7 @@ import { Button } from '@/components/ui/button';
 import { formatCurrencyNoDecimals } from '@/lib/utils/formatters';
 import { useConfigValue } from '@/hooks/shared/useConfigValue';
 import { getCardSplit } from '@/components/orders/productModalRules';
+import { PrepagoNotice } from '@/components/shared/PrepagoNotice';
 
 interface NewSaleSummaryProps {
   subtotal: number;
@@ -12,6 +13,7 @@ interface NewSaleSummaryProps {
   loading: boolean;
   disabled: boolean;
   onSubmit: () => void;
+  saldo?: number;
 }
 
 export const NewSaleSummary = ({
@@ -21,7 +23,8 @@ export const NewSaleSummary = ({
   total,
   loading,
   disabled,
-  onSubmit
+  onSubmit,
+  saldo = 0
 }: NewSaleSummaryProps) => {
   const splitVentaPct = Number(useConfigValue('comisiones', 'split_tarjeta_venta', '51'));
   const splitPropinaPct = Number(useConfigValue('comisiones', 'split_tarjeta_propina', '49'));
@@ -61,6 +64,8 @@ export const NewSaleSummary = ({
           {formatCurrencyNoDecimals(total)}
         </div>
       </div>
+
+      <PrepagoNotice saldo={saldo} total={total} className='mb-4 w-full max-w-md' />
 
       {esTarjeta && total > 0 && (
         <div className='mb-4 flex items-center gap-3 rounded-xl border border-amber-200/70 bg-amber-50/80 px-3 py-2 dark:border-amber-500/20 dark:bg-amber-500/10'>

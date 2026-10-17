@@ -31,6 +31,7 @@ interface OrderFormProps {
   productos: Array<OrderProducto>;
   selectedCliente: string;
   setSelectedCliente: (v: string) => void;
+  clienteSaldo?: number;
   selectedAnfitrionas: string[];
   setSelectedAnfitrionas?: (v: string[]) => void;
   onAddProducto?: (producto: OrderProductoPayload) => void;
@@ -52,6 +53,7 @@ export default function OrderForm({
   productos,
   selectedCliente,
   setSelectedCliente,
+  clienteSaldo,
   selectedAnfitrionas,
   setSelectedAnfitrionas,
   onAddProducto,
@@ -114,6 +116,7 @@ export default function OrderForm({
         clientes={clientes}
         selectedCliente={selectedCliente}
         onClienteChange={setSelectedCliente}
+        clienteSaldo={clienteSaldo}
         total={total}
         subtotal={subtotal}
         tipPercentage={propina}

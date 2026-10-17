@@ -33,6 +33,7 @@ import {
 import { CustomersSelect } from '@/components/shared/selects';
 import { HostessSelect } from '@/components/shared/selects';
 import { RoomSelect } from '@/components/shared/selects';
+import { PrepagoNotice } from '@/components/shared/PrepagoNotice';
 
 interface ServiceOrderFormProps {
   clientes: any[];
@@ -295,6 +296,14 @@ export default function ServiceOrderForm({ clientes }: ServiceOrderFormProps) {
     tempForm.metodo_pago,
     calculateIVA
   ]);
+
+  const selectedClienteSaldo = useMemo(() => {
+    const cliente = clientesDB.find(
+      c => String(c.id ?? c.id_cliente ?? '') === String(tempForm.clientes_ids[0] ?? '')
+    );
+    return Number(cliente?.saldo ?? 0);
+  }, [clientesDB, tempForm.clientes_ids]);
+
   return (
     <div className='space-y-6'>
       {tieneComision && (
@@ -447,6 +456,13 @@ export default function ServiceOrderForm({ clientes }: ServiceOrderFormProps) {
       </div>
 
       {}
+      <PrepagoNotice
+        saldo={selectedClienteSaldo}
+        total={totalCalculado}
+        diferido
+        className='mb-4 mx-auto max-w-md text-left'
+      />
+
       <div className='text-center mb-6'>
         <div className='text-gray-600 dark:text-gray-400 text-sm mb-2'>TOTAL</div>
         <div className='text-gray-900 dark:text-white text-5xl font-bold'>

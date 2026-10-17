@@ -2,6 +2,7 @@
 
 import { CustomerSelect, PaymentMethodSelect } from '@/components/shared/selects';
 import OrderTotalHeader from '@/components/orders/OrderTotalHeader';
+import { PrepagoNotice } from '@/components/shared/PrepagoNotice';
 
 interface OrderFormHeaderProps {
   metodoPago: string;
@@ -9,6 +10,7 @@ interface OrderFormHeaderProps {
   clientes: Array<{ id_cliente?: string | number; id?: string | number }>;
   selectedCliente: string;
   onClienteChange: (v: string) => void;
+  clienteSaldo?: number;
   total: number;
   subtotal: number;
   tipPercentage: number;
@@ -22,6 +24,7 @@ export default function OrderFormHeader({
   clientes,
   selectedCliente,
   onClienteChange,
+  clienteSaldo = 0,
   total,
   subtotal,
   tipPercentage,
@@ -51,6 +54,7 @@ export default function OrderFormHeader({
           showPrepago={false}
           showMixto={false}
         />
+        <PrepagoNotice saldo={clienteSaldo} total={total} diferido />
       </div>
 
       <OrderTotalHeader
