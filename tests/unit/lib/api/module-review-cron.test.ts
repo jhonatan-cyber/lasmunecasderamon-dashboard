@@ -1,5 +1,5 @@
 import { expect, it, vi } from 'vitest';
-vi.mock('@/modules/inventario/reposicion/servicio', () => ({
+vi.mock('@/modules/inventario', () => ({
   revisarReposicion: vi.fn().mockResolvedValue([])
 }));
 const mocks = vi.hoisted(() => ({ revisar: vi.fn() }));

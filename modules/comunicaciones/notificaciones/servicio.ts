@@ -1,4 +1,5 @@
 import { NotificationRepository } from '@/modules/comunicaciones/notificaciones/repositorio';
+import type { TransactionQuery } from '@/lib/database/db';
 
 export class NotificationService {
   static async create(data: {
@@ -10,6 +11,19 @@ export class NotificationService {
     data?: string;
   }) {
     return await NotificationRepository.create(data);
+  }
+
+  static async crearParaRol(
+    data: {
+      rol: string;
+      tipo: string;
+      titulo: string;
+      mensaje: string;
+      data?: string;
+    },
+    trx?: TransactionQuery
+  ) {
+    return await NotificationRepository.createForRole(data, trx);
   }
 
   static async getHistory(userId: string) {

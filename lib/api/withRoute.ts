@@ -293,7 +293,7 @@ export function withRoute<M extends PermissionModule>(
         )
       ) {
         try {
-          const { revisarReposicion } = await import('@/modules/inventario/reposicion/servicio');
+          const { revisarReposicion } = await import('@/modules/inventario');
           await revisarReposicion();
         } catch (error) {
           logger.captureException(error, { context: 'stock:replenishment' });

@@ -14,6 +14,7 @@ vi.mock('@/components/sales/product-modal/SaleProductHostess', () => ({
 }));
 it('mantiene formato, bebida y anfitriona dentro de la misma fila', () => {
   const item = {
+    product: { unidades_acompanamiento: 12 },
     opcionesTipo: [
       { value: 'botella', label: 'Botella', cantidad: 1, comision: 100 },
       { value: 'shot_anfitriona:1', label: 'Corto anfitriona 2', cantidad: 1, comision: 200 }

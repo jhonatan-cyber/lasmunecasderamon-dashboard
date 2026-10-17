@@ -213,4 +213,24 @@ export interface ContextoVentaInventario {
   servicioId?: string;
 }
 
+/**
+ * Orden pendiente de reposición para una presentación que quedó bajo su
+ * `stock_minimo`. `stock_actual` es la suma de Bar y Bodega; `cantidad` es lo
+ * que falta para llegar al máximo sin superarlo.
+ */
+export interface OrdenReposicion {
+  id: string;
+  producto_id: string;
+  presentacion_id: string;
+  producto: string;
+  presentacion: string;
+  stock_bodega: number;
+  stock_bar: number;
+  stock_actual: number;
+  stock_minimo: number;
+  stock_maximo: number;
+  cantidad: number;
+  precio_compra: number;
+}
+
 export { CLAVES_INVENTARIO } from './configuracionClaves';

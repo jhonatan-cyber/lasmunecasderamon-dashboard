@@ -1,21 +1,8 @@
 import { withTransaction, generateUUID, type TransactionQuery } from '@/lib/database/db';
 import { cantidadReposicion } from '@/lib/business/stockLimits';
 import { sendNotificationToAll } from '@/lib/api/sseService';
-
-export interface OrdenReposicion {
-  id: string;
-  producto_id: string;
-  presentacion_id: string;
-  producto: string;
-  presentacion: string;
-  stock_bodega: number;
-  stock_bar: number;
-  stock_actual: number;
-  stock_minimo: number;
-  stock_maximo: number;
-  cantidad: number;
-  precio_compra: number;
-}
+import { NotificationService } from '@/modules/comunicaciones';
+import type { OrdenReposicion } from '@/modules/inventario/contracts';
 
 /** Después del commit de inventario; serializa comprobaciones y evita órdenes/avisos duplicados. */
 export async function sincronizarReposicion(
@@ -69,16 +56,16 @@ export async function sincronizarReposicion(
           [id, row.id, cantidad, stock, row.stock_maximo]
         );
         const mensaje = `${row.producto} · ${row.presentacion}: quedan ${stock} unidades (Bar + Bodega). Comprar ${cantidad} para llegar al máximo de ${row.stock_maximo}.`;
-        for (const role of ['administrador', 'almacen'])
-          await trx(
-            `INSERT INTO notificaciones(id, rol_destinatario, tipo, titulo, mensaje, datos)
-          VALUES (?, ?, 'stock_replenishment', 'Stock bajo: comprar productos', ?, ?)`,
-            [
-              generateUUID(),
-              role,
+        for (const rol of ['administrador', 'almacen'])
+          await NotificationService.crearParaRol(
+            {
+              rol,
+              tipo: 'stock_replenishment',
+              titulo: 'Stock bajo: comprar productos',
               mensaje,
-              JSON.stringify({ orden_id: id, url: '/purchases/replenishment' })
-            ]
+              data: JSON.stringify({ orden_id: id, url: '/purchases/replenishment' })
+            },
+            trx
           );
         nuevas++;
       }

@@ -24,7 +24,7 @@ import dynamic from 'next/dynamic';
 import { ServiceRequestModal } from './ServiceRequestModal';
 import { appEventBus, type AppEvents } from '@/lib/utils/eventBus';
 import { useGenericFetch } from '@/hooks/shared/useGenericFetch';
-import type { OrdenReposicion } from '@/modules/inventario/reposicion/servicio';
+import type { OrdenReposicion } from '@/modules/inventario/contracts';
 
 const OrderDetailModal = dynamic(() => import('@/components/orders/OrderDetailModal'), {
   loading: () => null,

@@ -6,6 +6,7 @@ import { useCashRegister } from '@/hooks/caja/useCashRegister';
 import { toast } from 'sonner';
 vi.unmock('@tanstack/react-query');
 vi.mock('sonner', () => ({ toast: { success: vi.fn(), error: vi.fn() } }));
+vi.mock('@/hooks/realtime/useRealtimeRefresh', () => ({ useRealtimeRefresh: vi.fn() }));
 const clients: QueryClient[] = [];
 function wrapper() {
   const client = new QueryClient({

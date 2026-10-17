@@ -72,7 +72,7 @@ export function mapServiceFromDB(row: any): ServiceType {
     habitacion_nombre: row.habitacion_numero || row.habitacion_nombre || row.habitacion_name,
     habitacion_numero: row.habitacion_numero || row.habitacion_nombre || row.habitacion_name,
     anfitrionas_nombres: row.anfitrionas_nombres || row.anfitrionas || '',
-    anfitrionas_ids: row.anfitrionas_ids,
+    anfitrionas_ids: row.anfitrionas_ids ?? undefined,
     total_usuarios: anfitrionasIds.length,
     created_by: row.created_by,
     creator_nick: row.creator_nick || null,

@@ -1,6 +1,7 @@
 import { afterEach, expect, it, vi } from 'vitest';
 import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { EmployeeAdvanceRequests } from '@/components/advances/EmployeeAdvanceRequests';
+vi.mock('@/hooks/realtime/useRealtimeRefresh', () => ({ useRealtimeRefresh: vi.fn() }));
 afterEach(() => {
   cleanup();
   vi.unstubAllGlobals();

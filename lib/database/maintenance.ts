@@ -19,6 +19,26 @@ const protectedFromCleaning = new Set<string>([
   ...DATABASE_MIGRATION_TABLES
 ]);
 
+/**
+ * Tablas cuyo borrado masivo protege un trigger. El mantenimiento limpia y
+ * restaura un respaldo completo, así que desactiva temporalmente esos triggers
+ * —de forma transaccional: si algo falla, el `ROLLBACK` los deja activos— y los
+ * reactiva al terminar. Sin esto, `cleanDatabase`/`restoreDatabase` no pueden
+ * vaciar `categorias` y la protección de la categoría predeterminada bloquea
+ * cualquier restauración, incluso desde QA.
+ */
+const TABLAS_CON_TRIGGER_DE_BORRADO = ['categorias'];
+
+async function desactivarTriggersDeBorrado(trx: TransactionQuery): Promise<void> {
+  for (const table of TABLAS_CON_TRIGGER_DE_BORRADO)
+    await trx(`ALTER TABLE ${quoteIdentifier(table)} DISABLE TRIGGER USER`);
+}
+
+async function reactivarTriggersDeBorrado(trx: TransactionQuery): Promise<void> {
+  for (const table of TABLAS_CON_TRIGGER_DE_BORRADO)
+    await trx(`ALTER TABLE ${quoteIdentifier(table)} ENABLE TRIGGER USER`);
+}
+
 async function tables(trx: TransactionQuery): Promise<string[]> {
   const rows = await trx<{ table_name: string }[]>(`SELECT table_name FROM information_schema.tables
     WHERE table_schema = current_schema() AND table_type = 'BASE TABLE' ORDER BY table_name`);
@@ -42,10 +62,13 @@ export async function cleanDatabase() {
     const deletedTables = all.filter(table => !protectedFromCleaning.has(table));
     const skippedTables = all.filter(table => protectedFromCleaning.has(table));
     // One statement checks all FK relationships. RESTRICT prevents deleting protected tables.
-    if (deletedTables.length)
+    if (deletedTables.length) {
+      await desactivarTriggersDeBorrado(trx);
       await trx(
         `TRUNCATE TABLE ${deletedTables.map(quoteIdentifier).join(', ')} RESTART IDENTITY RESTRICT`
       );
+      await reactivarTriggersDeBorrado(trx);
+    }
     return { deletedTables, skippedTables };
   });
 }
@@ -81,7 +104,9 @@ export async function restoreDatabase(data: unknown, backupId: string) {
       }
     }
     await trx('SET CONSTRAINTS ALL DEFERRED');
+    await desactivarTriggersDeBorrado(trx);
     for (const [table] of entries) await trx(`DELETE FROM ${quoteIdentifier(table)}`);
+    await reactivarTriggersDeBorrado(trx);
     let totalRecords = 0;
     for (const [table, records] of entries) {
       for (const row of records) {

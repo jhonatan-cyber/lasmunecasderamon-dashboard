@@ -16,10 +16,10 @@ import { logger } from '@/lib/utils/logger';
 export function mapClientFromDB(row: any): ClientType {
   return ClientSchema.parse({
     id: row.id_cliente,
-    run: row.run,
+    run: row.run ?? '',
     name: row.nombre,
     lastName: row.apellido,
-    phone: row.telefono,
+    phone: row.telefono ?? '',
     saldo: Number(row.saldo || 0),
     deuda: Number(row.deuda || 0),
     created_at: row.fecha_crea,

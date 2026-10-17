@@ -98,7 +98,7 @@ describe('servicio adicional', () => {
       120
     );
     activeTimers.value = [timer];
-    const request = vi.fn().mockResolvedValue({ ok: false });
+    const request = vi.fn().mockResolvedValue({ ok: false, json: async () => ({}) });
     vi.stubGlobal('fetch', request);
     const { result } = renderHook(() => useTimerActions({ onNotificationExpira: vi.fn() }));
     await expect(result.current.stopTimer('temp-timer', true)).rejects.toThrow(
@@ -107,7 +107,7 @@ describe('servicio adicional', () => {
     expect(activeTimers.peek()).toEqual([timer]);
     expect(request).toHaveBeenCalledTimes(1);
     request.mockClear();
-    request.mockResolvedValue({ ok: true });
+    request.mockResolvedValue({ ok: true, json: async () => ({}) });
     await act(() => result.current.stopTimer('temp-timer', true));
     expect(request).toHaveBeenCalledTimes(1);
     expect(activeTimers.peek()).toEqual([]);
@@ -131,7 +131,7 @@ describe('servicio adicional', () => {
       120
     );
     activeTimers.value = [timer];
-    const request = vi.fn().mockResolvedValue({ ok: false });
+    const request = vi.fn().mockResolvedValue({ ok: false, json: async () => ({}) });
     vi.stubGlobal('fetch', request);
     const { result } = renderHook(() => useTimerActions({ onNotificationExpira: vi.fn() }));
     await expect(result.current.stopTimer('sale-timer', true)).rejects.toThrow(
@@ -141,7 +141,7 @@ describe('servicio adicional', () => {
     expect(request).toHaveBeenCalledTimes(1);
     expect(request.mock.calls[0][0]).toBe('/api/sales/sale-1');
     request.mockClear();
-    request.mockResolvedValue({ ok: true });
+    request.mockResolvedValue({ ok: true, json: async () => ({}) });
     await act(() => result.current.stopTimer('sale-timer', true));
     expect(activeTimers.peek()).toEqual([]);
     expect(request).toHaveBeenCalledTimes(1);

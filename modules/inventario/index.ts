@@ -76,3 +76,6 @@ export { ProductService } from './productos/fachada';
 export { validarConfiguracionVenta } from './bar/validarConfiguracionVenta';
 
 export { validarConfiguracionPedido } from './bar/validarPedido';
+
+export { revisarReposicion } from './reposicion/servicio';
+export type { OrdenReposicion } from './contracts';

@@ -36,6 +36,7 @@ it('incluye productos activos e inactivos en la confirmación', async () => {
 });
 it('borra las fotos del producto y de sus presentaciones después del commit', async () => {
   mocks.trx
+    .mockResolvedValueOnce([{ system_key: null }])
     .mockResolvedValueOnce([{ foto: 'vino.webp' }])
     .mockResolvedValueOnce([{ foto: 'botella.webp' }])
     .mockResolvedValueOnce([]);
@@ -47,10 +48,10 @@ it('borra las fotos del producto y de sus presentaciones después del commit', a
   await CategoryRepository.delete('cat');
   expect(mocks.cleanup).toHaveBeenCalledWith(['vino.webp', 'botella.webp']);
   expect(mocks.delete).toHaveBeenCalledWith(mocks.trx, 'categorias', 'id_categoria', 'cat');
-  expect(mocks.trx.mock.calls[2][0]).toContain('DELETE FROM inventario_movimiento_unidades');
-  expect(mocks.trx.mock.calls[2][0]).toContain('WHERE P.categoria_id = ?');
-  expect(mocks.trx.mock.calls[2][1]).toEqual(['cat']);
-  expect(mocks.trx.mock.calls[3]).toEqual([
+  expect(mocks.trx.mock.calls[3][0]).toContain('DELETE FROM inventario_movimiento_unidades');
+  expect(mocks.trx.mock.calls[3][0]).toContain('WHERE P.categoria_id = ?');
+  expect(mocks.trx.mock.calls[3][1]).toEqual(['cat']);
+  expect(mocks.trx.mock.calls[4]).toEqual([
     'DELETE FROM productos WHERE categoria_id = ?',
     ['cat']
   ]);

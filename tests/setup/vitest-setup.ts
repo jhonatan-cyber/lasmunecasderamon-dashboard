@@ -64,11 +64,24 @@ vi.mock('@tanstack/react-query', () => ({
     mutate: vi.fn(),
     mutateAsync: vi.fn()
   })),
+  useQueryClient: vi.fn(() => ({
+    fetchQuery: vi.fn().mockResolvedValue(null),
+    setQueryData: vi.fn(),
+    getQueryData: vi.fn(),
+    invalidateQueries: vi.fn(),
+    cancelQueries: vi.fn(),
+    removeQueries: vi.fn()
+  })),
   QueryClient: vi.fn().mockImplementation(() => ({
     setDefaultOptions: vi.fn(),
-    clear: vi.fn()
+    clear: vi.fn(),
+    fetchQuery: vi.fn().mockResolvedValue(null),
+    setQueryData: vi.fn(),
+    invalidateQueries: vi.fn()
   })),
-  QueryClientProvider: ({ children }: { children: React.ReactNode }) => children
+  QueryClientProvider: ({ children }: { children: React.ReactNode }) => children,
+  keepPreviousData: vi.fn((previous: unknown) => previous),
+  isCancelledError: vi.fn(() => false)
 }));
 
 vi.mock('next/headers', () => ({

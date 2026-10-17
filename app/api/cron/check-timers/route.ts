@@ -1,4 +1,4 @@
-import { revisarReposicion } from '@/modules/inventario/reposicion/servicio';
+import { revisarReposicion } from '@/modules/inventario';
 import { NextResponse } from 'next/server';
 import { withPublicRoute } from '@/lib/api/withRoute';
 import { sendNotificationToAll } from '@/lib/api/sseService';

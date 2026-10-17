@@ -2,7 +2,7 @@
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
 import { useGenericFetch } from '@/hooks/shared/useGenericFetch';
-import type { OrdenReposicion } from '@/modules/inventario/reposicion/servicio';
+import type { OrdenReposicion } from '@/modules/inventario/contracts';
 import { PURCHASE_BUTTON_CLASS } from '@/components/purchases/buttonStyles';
 
 export function ReplenishmentNotice({

@@ -16,7 +16,11 @@ vi.mock('@/hooks/habitaciones/useHabitaciones', () => ({
 }));
 vi.mock('@/contexts/TimerContext', () => ({ useTimer: () => ({ startTimer: vi.fn() }) }));
 vi.mock('@/hooks/private-rooms/usePrivateRoomSummary', () => ({
-  usePrivateRoomSummary: () => ({ hasComision: false, disabledPaymentMethods: [] })
+  usePrivateRoomSummary: () => ({
+    hasComision: false,
+    disabledPaymentMethods: [],
+    clientesConSaldo: []
+  })
 }));
 vi.mock('@/components/providers/IvaRateProvider', () => ({ useIvaRate: () => 0 }));
 vi.mock('@/components/private-rooms/new/printBoleta', () => ({ printBoletaHabitacion: vi.fn() }));

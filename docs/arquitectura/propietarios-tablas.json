@@ -36,6 +36,7 @@
     "inventario_unidades",
     "inventario_movimientos",
     "inventario_movimiento_unidades",
+    "ordenes_reposicion",
     "limpieza_articulos",
     "limpieza_movimientos",
     "limpieza_stock"

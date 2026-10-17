@@ -29,7 +29,10 @@ it('permite limpiar en producción y conserva todas las excepciones designadas',
     ...DATABASE_MIGRATION_TABLES
   ]);
   expect(result.deletedTables).toEqual(['ventas', 'inventario_movimiento_unidades']);
-  expect(mocks.trx.mock.calls[1][0]).toBe(
+  const truncate = mocks.trx.mock.calls
+    .map(call => call[0])
+    .find((sql: string) => String(sql).startsWith('TRUNCATE'));
+  expect(truncate).toBe(
     'TRUNCATE TABLE "ventas", "inventario_movimiento_unidades" RESTART IDENTITY RESTRICT'
   );
 });
@@ -60,7 +63,9 @@ it('vacía catálogo, compras, configuración y respaldos, preservando solamente
   );
   const result = await cleanDatabase();
   expect(result.deletedTables).toEqual(business);
-  const sql = mocks.trx.mock.calls[1][0];
+  const sql = mocks.trx.mock.calls
+    .map(call => call[0])
+    .find((statement: string) => String(statement).startsWith('TRUNCATE'))!;
   for (const table of business) expect(sql).toContain(`"${table}"`);
   for (const table of result.skippedTables) expect(sql).not.toContain(`"${table}"`);
   expect(sql).toMatch(/RESTART IDENTITY RESTRICT$/);

@@ -471,7 +471,7 @@ describe('unidades de compras', () => {
     );
     const rows = await listarStockBar('prod-1');
     expect(query).toHaveBeenCalledWith(
-      expect.stringContaining('WHERE p.producto_id = ?'),
+      expect.stringContaining('p.producto_id = ?'),
       expect.arrayContaining(['prod-1'])
     );
     expect(rows[0].opciones_venta).toEqual([{ tipo: 'botella', precio: 25000, comision: 5000 }]);

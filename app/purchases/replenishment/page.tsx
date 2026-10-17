@@ -26,7 +26,7 @@ import {
 } from '@/components/ui/table';
 import { PermissionGuard } from '@/components/auth/PermissionGuard';
 import { useRealtimeRefresh } from '@/hooks/realtime/useRealtimeRefresh';
-import type { OrdenReposicion } from '@/modules/inventario/reposicion/servicio';
+import type { OrdenReposicion } from '@/modules/inventario/contracts';
 import { toast } from 'sonner';
 import { formatCurrencyCLP } from '@/lib/utils/formatters';
 import {

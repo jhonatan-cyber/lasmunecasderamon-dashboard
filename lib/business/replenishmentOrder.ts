@@ -1,4 +1,4 @@
-import type { OrdenReposicion } from '@/modules/inventario/reposicion/servicio';
+import type { OrdenReposicion } from '@/modules/inventario/contracts';
 import { formatCurrencyCLP } from '@/lib/utils/formatters';
 
 export const subtotalReposicion = (row: OrdenReposicion) => row.cantidad * row.precio_compra;

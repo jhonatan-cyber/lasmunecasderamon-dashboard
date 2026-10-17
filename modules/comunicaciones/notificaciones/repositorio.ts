@@ -1,4 +1,4 @@
-import { query, generateUUID } from '@/lib/database/db';
+import { query, generateUUID, type TransactionQuery } from '@/lib/database/db';
 import { getNowInBusinessTimezone } from '@/lib/business/timezoneService';
 
 const destinatario = `(usuario_id = ? OR LOWER(rol_destinatario) = (
@@ -20,6 +20,27 @@ export class NotificationRepository {
       'INSERT INTO notificaciones (id, usuario_id, tipo, titulo, mensaje, datos, leida, fecha_crea) VALUES (?, ?, ?, ?, ?, ?, ?, ?)',
       [id, data.usuario_id, data.tipo, data.titulo, data.mensaje, data.data || null, 0, now]
     );
+    return id;
+  }
+
+  /** Aviso dirigido a un rol; `trx` permite emitirlo dentro de la transacción del emisor. */
+  static async createForRole(
+    data: {
+      rol: string;
+      tipo: string;
+      titulo: string;
+      mensaje: string;
+      data?: string;
+    },
+    trx?: TransactionQuery
+  ) {
+    const id = generateUUID();
+    const now = getNowInBusinessTimezone();
+    const sql =
+      'INSERT INTO notificaciones (id, rol_destinatario, tipo, titulo, mensaje, datos, leida, fecha_crea) VALUES (?, ?, ?, ?, ?, ?, 0, ?)';
+    const params = [id, data.rol, data.tipo, data.titulo, data.mensaje, data.data || null, now];
+    if (trx) await trx(sql, params);
+    else await query(sql, params);
     return id;
   }
 

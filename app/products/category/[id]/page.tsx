@@ -30,7 +30,7 @@ import {
 } from '@dnd-kit/sortable';
 import { PermissionGuard } from '@/components/auth/PermissionGuard';
 import { useGenericFetch } from '@/hooks/shared/useGenericFetch';
-import type { OrdenReposicion } from '@/modules/inventario/reposicion/servicio';
+import type { OrdenReposicion } from '@/modules/inventario/contracts';
 import { Skeleton as BoneyardSkeleton } from 'boneyard-js/react';
 
 const tablePageSizes = [5, 10, 20, 40];

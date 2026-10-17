@@ -28,16 +28,25 @@ afterEach(() => {
 
 describe('actualización de estados', () => {
   it('conserva el orden nuevo de habitaciones y actualiza sus posiciones', async () => {
-    const request = vi.fn(async () => ({
-      ok: true,
-      json: async () => ({
-        success: true,
-        data: [
-          { id: 'a', name: 'Primera', display_order: 1 },
-          { id: 'b', name: 'Segunda', display_order: 2 }
-        ]
-      })
-    }));
+    let reordered = false;
+    const request = vi.fn(async (_url: string, options?: RequestInit) => {
+      if (options?.method === 'PUT') reordered = true;
+      return {
+        ok: true,
+        json: async () => ({
+          success: true,
+          data: reordered
+            ? [
+                { id: 'b', name: 'Segunda', display_order: 1 },
+                { id: 'a', name: 'Primera', display_order: 2 }
+              ]
+            : [
+                { id: 'a', name: 'Primera', display_order: 1 },
+                { id: 'b', name: 'Segunda', display_order: 2 }
+              ]
+        })
+      };
+    });
     vi.stubGlobal('fetch', request);
     const { result } = renderHook(useRooms, { wrapper: wrapper() });
     await waitFor(() => expect(result.current.rooms).toHaveLength(2));

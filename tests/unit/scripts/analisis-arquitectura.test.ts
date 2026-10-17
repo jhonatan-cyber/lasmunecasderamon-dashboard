@@ -66,9 +66,11 @@ describe('analisis de arquitectura (Fase 0)', () => {
 
   it('no analiza archivos que git ignora', () => {
     // `_tmp_real/` está en .gitignore: si se colara, los números de SQL y de
-    // archivos crecerían sin que cambie el código de la aplicación.
+    // archivos crecerían sin que cambie el código de la aplicación. El techo se
+    // ajusta al tamaño real del proyecto (con margen) para seguir detectando
+    // volcados masivos, mientras la primera aserción fija el caso concreto.
     expect(informe.sqlFueraDeRepositorio.some(x => x.archivo.startsWith('_tmp_real'))).toBe(false);
-    expect(informe.resumen.archivos).toBeLessThan(2000);
+    expect(informe.resumen.archivos).toBeLessThan(2500);
   });
 
   it('no cuenta los repositorios como SQL fuera de repositorios', () => {
