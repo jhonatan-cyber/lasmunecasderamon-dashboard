@@ -10,6 +10,7 @@ import { FormattedNumberInput as Input } from '@/components/shared/FormattedNumb
 import { ToggleGroup, ToggleGroupItem } from '@/components/ui/toggle-group';
 import { ChampagneTiersEditor } from '@/components/bar/transfer/ChampagneTiers';
 import { formatNumber } from '@/components/bar/transfer/transferOptions';
+import { Checkbox } from '@/components/ui/checkbox';
 import type { ChampagneTierRow } from '@/components/bar/transfer/transferOptions';
 import type { SaleType } from '@/types/sale-options';
 
@@ -26,6 +27,8 @@ export const SaleTypeEditor = memo(function SaleTypeEditor({
 
   maxAnfitrionas,
   onMaxAnfitrionasChange,
+  colacionHabilitada = false,
+  onColacionHabilitadaChange,
   unidadesAcompanamiento,
   onAcompanamientoBotellaChange,
   onUnidadesAcompanamientoChange,
@@ -60,6 +63,8 @@ export const SaleTypeEditor = memo(function SaleTypeEditor({
   onPrecioSinAnfitrionaChange?: (value: string) => void;
   maxAnfitrionas?: string;
   onMaxAnfitrionasChange?: (value: string) => void;
+  colacionHabilitada?: boolean;
+  onColacionHabilitadaChange?: (value: boolean) => void;
   acompanamientoBotella: 'ninguno' | 'gaseosa' | 'soda';
   unidadesAcompanamiento: string;
   onAcompanamientoBotellaChange: (value: 'ninguno' | 'gaseosa' | 'soda') => void;
@@ -282,6 +287,24 @@ export const SaleTypeEditor = memo(function SaleTypeEditor({
                     disabled={saving}
                   />
                 </section>
+                {onColacionHabilitadaChange && (
+                  <label className='flex cursor-pointer items-start gap-3 rounded-xl border p-4'>
+                    <Checkbox
+                      checked={colacionHabilitada}
+                      onCheckedChange={checked => onColacionHabilitadaChange(checked === true)}
+                      disabled={saving}
+                      aria-label='Habilitar bebida para colación'
+                    />
+                    <span className='space-y-1'>
+                      <span className='block text-sm font-medium'>
+                        Habilitar bebida para colación
+                      </span>
+                      <span className='block text-xs text-muted-foreground'>
+                        La bebida aparecerá en el módulo Colaciones para cobrarla al trabajador.
+                      </span>
+                    </span>
+                  </label>
+                )}
               </div>
             )}
           </fieldset>

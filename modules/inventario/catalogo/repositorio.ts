@@ -11,10 +11,17 @@ import { ESTADO_UNIDAD_ACTIVA } from '../estados';
 export interface FiltrosParaVenta {
   category_id?: string;
   term?: string;
+  solo_colaciones?: boolean;
 }
 
 export async function listarParaVenta(filters?: FiltrosParaVenta): Promise<any[]> {
   const params: any[] = [];
+  const whereColacion = filters?.solo_colaciones
+    ? `AND EXISTS (
+        SELECT 1 FROM jsonb_array_elements(COALESCE(p.opciones_venta::jsonb, '[]'::jsonb)) opcion
+        WHERE opcion->>'tipo' = 'botella' AND opcion->>'colacion_habilitada' = 'true'
+      )`
+    : '';
   let whereCategoria = '';
   if (filters?.category_id) {
     whereCategoria = 'AND pr.categoria_id = ?';
@@ -45,7 +52,7 @@ export async function listarParaVenta(filters?: FiltrosParaVenta): Promise<any[]
        SELECT 1 FROM inventario_unidades u WHERE u.presentacion_id = p.id
          AND u.estado = '${ESTADO_UNIDAD_ACTIVA}' AND u.ubicacion = 'bar'
      )
-     ${whereCategoria} ${whereTerm}
+     ${whereCategoria} ${whereTerm} ${whereColacion}
      ORDER BY pr.nombre ASC, p.fecha_crea ASC, p.id ASC`,
     params
   );

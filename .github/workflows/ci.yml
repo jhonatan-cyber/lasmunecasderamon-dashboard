@@ -352,7 +352,7 @@ jobs:
       - name: Setup database
         run: |
           node scripts/ci-setup-db.js
-          node scripts/ci-seed-auth.cjs
+          node seed/ci-seed-auth.cjs
 
       - name: Schema parity (fresh install and existing environment vs reference)
         shell: bash
@@ -428,7 +428,7 @@ jobs:
       - name: Setup database
         run: |
           node scripts/ci-setup-db.js
-          node scripts/ci-seed-auth.cjs
+          node seed/ci-seed-auth.cjs
 
       - name: Generate isolated build and runtime JWT keys
         run: |

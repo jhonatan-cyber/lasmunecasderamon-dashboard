@@ -45,6 +45,9 @@ export function SettingsSaleOptionsEditor({
 }) {
   const shot = options.find(o => o.tipo === 'shot');
   const bottle = options.find(o => o.tipo === 'botella');
+  const [colacionHabilitada, setColacionHabilitada] = useState(
+    bottle?.colacion_habilitada === true
+  );
   const [precioSinAnfitriona, setPrecioSinAnfitriona] = useState(
     bottle?.precio_sin_anfitriona ? String(bottle.precio_sin_anfitriona) : ''
   );
@@ -85,6 +88,7 @@ export function SettingsSaleOptionsEditor({
                   ? { precio_sin_anfitriona: numeric(precioSinAnfitriona) }
                   : {}),
                 comision: numeric(comision),
+                colacion_habilitada: colacionHabilitada,
                 acompanamiento: { unidades: Number(units || 0) }
               }
             : {
@@ -137,6 +141,8 @@ export function SettingsSaleOptionsEditor({
       context='settings'
       maxAnfitrionas={maxAnfitrionas}
       onMaxAnfitrionasChange={onMaxAnfitrionasChange}
+      colacionHabilitada={colacionHabilitada}
+      onColacionHabilitadaChange={setColacionHabilitada}
       tipos={tipos}
       onTiposChange={setTipos}
       etiquetaShot='Corto'

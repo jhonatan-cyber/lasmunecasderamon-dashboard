@@ -155,4 +155,16 @@ describe('payload del servicio con destinos prepago', () => {
     });
     expect(payload.prepago_destinos).toBeUndefined();
   });
+
+  it('envia arreglo vacio explicito cuando se decide no descontar saldo', () => {
+    const payload = buildServicioPayload({
+      formData,
+      precioHabitacion: 0,
+      subTotal: 10_000,
+      total: 10_000,
+      pagosMixtos: [],
+      prepagoDestinos: []
+    });
+    expect(payload.prepago_destinos).toEqual([]);
+  });
 });

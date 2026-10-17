@@ -80,6 +80,13 @@ export default function NewSale() {
   } = useMasterData({ soloAnfitrionasEnLocal: true, categoriasConStockBar: true });
   useRefreshOnFocus(refreshAll, { immediate: false });
 
+  const selectedClienteSaldo = useMemo(() => {
+    const cliente = clientes.find(
+      (c: any) => String(c.id ?? c.id_cliente ?? '') === String(selectedCliente)
+    );
+    return Number(cliente?.saldo ?? cliente?.saldo_prepago ?? 0);
+  }, [clientes, selectedCliente]);
+
   const defaultHostesses = useMemo(
     () =>
       Object.fromEntries(
@@ -240,6 +247,7 @@ export default function NewSale() {
           loading={loading}
           disabled={loading || !productos.length || !metodoPago || hasOpenCaja === false}
           onSubmit={handleHandleSubmit}
+          saldo={selectedClienteSaldo}
         />
 
         <NewSaleCart

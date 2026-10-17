@@ -16,6 +16,8 @@ vi.mock('@/hooks/productos/useCategories', () => ({
       { id: 'hidden', status: 0 },
       { id: 'b', status: 1 }
     ],
+    searchTerm: '',
+    setSearchTerm: vi.fn(),
     isLoading: false,
     reorderCategories: state.reorder
   })

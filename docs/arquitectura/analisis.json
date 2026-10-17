@@ -2161,7 +2161,7 @@
       "escribe": ["kiosk_devices"]
     },
     {
-      "archivo": "modules/asistencia/seed/seed-asistencia.mjs",
+      "archivo": "seed/seed-asistencia.mjs",
       "capa": "modules/aplicacion",
       "modulo": "asistencia",
       "escribe": ["asistencias"]

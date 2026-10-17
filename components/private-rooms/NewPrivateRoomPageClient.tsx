@@ -4,6 +4,7 @@ import { formatCurrencyCLP } from '@/lib/utils/formatters';
 import { Button } from '@/components/ui/button';
 import { ShoppingCart } from 'lucide-react';
 import type { PaymentMethod } from '@/components/shared/selects/PaymentMethodSelect';
+import { PrepagoNotice } from '@/components/shared/PrepagoNotice';
 import { useServicioForm } from '@/hooks/private-rooms/useServicioForm';
 import { PrivateRoomSummaryCard } from './PrivateRoomSummaryCard';
 import { PagosMixtosSection } from './PagosMixtosSection';
@@ -84,6 +85,11 @@ export default function NuevoServicioPage() {
 
         {/* Total + Generar Servicio */}
         <div className='flex flex-col items-center justify-center mt-6 sm:mt-8 mb-4'>
+          <PrepagoNotice
+            saldo={form.selectedClientData?.saldo}
+            total={form.total}
+            className='mb-4 w-full max-w-md'
+          />
           <span className='uppercase text-xs sm:text-sm text-gray-400 tracking-widest font-semibold mb-1'>
             TOTAL
           </span>

@@ -141,6 +141,9 @@ export function prepararDetallesVenta(
         presentacion_id: d.presentacion_id ?? null,
         tipo_venta: tipoVenta,
         shot_anfitriona: tipoVenta === 'shot' && Boolean(d.shot_anfitriona),
+        ...(tipoVenta === 'botella' && d.botella_anfitriona !== undefined
+          ? { botella_anfitriona: d.botella_anfitriona }
+          : {}),
         precio: d.precio,
         comision: commPart,
         cantidad: qtyPart,

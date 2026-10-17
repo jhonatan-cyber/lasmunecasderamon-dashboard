@@ -16,8 +16,11 @@ import {
   Clock,
   ScanLine,
   PackageCheck,
+  GlassWater,
   X,
-  AlertTriangle
+  AlertTriangle,
+  Bell,
+  BellOff
 } from 'lucide-react';
 import { PermissionGuard } from '@/components/auth/PermissionGuard';
 import { useAuth } from '@/contexts/AuthContext';
@@ -50,6 +53,8 @@ import type { DevolucionEnvaseRegistro, ShotsSummary } from '@/modules/inventari
 import { useContainerScan, MOTIVO_ENVASE } from '@/hooks/productos/useContainerScan';
 import { EscaneoLote } from '@/components/products/EscaneoLote';
 import { ProductImageLightbox } from '@/components/products/ProductImageLightbox';
+import { ColacionesTab } from '@/components/bar/ColacionesTab';
+import { MetricCard } from '@/components/shared/MetricCard';
 
 const isTierPriced = (item: BarStockItem) => isTierPricedItem(item);
 const barTabClassName =
@@ -93,6 +98,10 @@ export default function BarPage() {
   const [items, setItems] = useState<BarStockItem[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [search, setSearch] = useState('');
+  const [searchPendientes, setSearchPendientes] = useState('');
+  const [searchHistorial, setSearchHistorial] = useState('');
+  const [searchEnvases, setSearchEnvases] = useState('');
+  const [searchColaciones, setSearchColaciones] = useState('');
   const [sortField, setSortField] = useState('producto_nombre');
   const [sortDirection, setSortDirection] = useState<'asc' | 'desc'>('asc');
   const [stockError, setStockError] = useState(false);
@@ -117,7 +126,6 @@ export default function BarPage() {
   const [loadingPend, setLoadingPend] = useState(false);
   const [devoluciones, setDevoluciones] = useState<DevolucionEnvaseRegistro[]>([]);
   const [loadingDevol, setLoadingDevol] = useState(false);
-  const [codigoEnvase, setCodigoEnvase] = useState('');
   const inputEnvaseRef = useRef<HTMLInputElement>(null);
   const [resolvingId, setResolvingId] = useState<string | null>(null);
   const resolvingRef = useRef<string | null>(null);
@@ -216,7 +224,7 @@ export default function BarPage() {
   // código de barras escribe donde esté el cursor, así que el lote no se corta.
   const enviarEscaneo = useCallback(
     async (valor: string) => {
-      if (await escanearEnvase(valor)) setCodigoEnvase('');
+      if (await escanearEnvase(valor)) setSearchEnvases('');
       inputEnvaseRef.current?.focus();
     },
     [escanearEnvase]
@@ -339,6 +347,72 @@ export default function BarPage() {
     () => items.reduce((acc, i) => acc + Number(i.stock_bar ?? 0), 0),
     [items]
   );
+  const filteredPendientes = useMemo(() => {
+    const term = searchPendientes.trim().toLocaleLowerCase('es');
+    return pendientes.filter(
+      row =>
+        !term ||
+        [
+          row.producto_nombre,
+          row.presentacion_nombre,
+          row.usuario_nombre,
+          row.categoria_nombre
+        ].some(value =>
+          String(value ?? '')
+            .toLocaleLowerCase('es')
+            .includes(term)
+        )
+    );
+  }, [pendientes, searchPendientes]);
+  const filteredMovimientos = useMemo(() => {
+    const term = searchHistorial.trim().toLocaleLowerCase('es');
+    return movimientos.filter(
+      row =>
+        !term ||
+        [
+          row.producto_nombre,
+          row.presentacion_nombre,
+          row.usuario_nombre,
+          row.usuario_apellido,
+          row.usuario_nick
+        ].some(value =>
+          String(value ?? '')
+            .toLocaleLowerCase('es')
+            .includes(term)
+        )
+    );
+  }, [movimientos, searchHistorial]);
+  const filteredDevoluciones = useMemo(() => {
+    const term = searchEnvases.trim().toLocaleLowerCase('es');
+    return devoluciones.filter(
+      row =>
+        !term ||
+        [
+          row.codigo,
+          row.codigo_barras,
+          row.producto_nombre,
+          row.presentacion_nombre,
+          row.usuario_nombre,
+          row.usuario_apellido,
+          row.usuario_nick
+        ].some(value =>
+          String(value ?? '')
+            .toLocaleLowerCase('es')
+            .includes(term)
+        )
+    );
+  }, [devoluciones, searchEnvases]);
+  const codigoEnvaseNormalizado = searchEnvases.trim().toLocaleUpperCase('es');
+  const esCodigoEnvase =
+    /^\d{8,20}$/.test(codigoEnvaseNormalizado) || /^LM-\d+$/i.test(codigoEnvaseNormalizado);
+  const envaseYaDevuelto = devoluciones.some(row =>
+    [row.codigo, row.codigo_barras].some(
+      value =>
+        String(value ?? '')
+          .trim()
+          .toLocaleUpperCase('es') === codigoEnvaseNormalizado
+    )
+  );
 
   return (
     <PermissionGuard module='products' action='view'>
@@ -362,122 +436,285 @@ export default function BarPage() {
           </Badge>
         </div>
 
-        {summaryError ? (
+        {tab === 'envases' ? (
+          <div className='grid grid-cols-1 gap-4 sm:grid-cols-3'>
+            <MetricCard
+              label='Entregados en esta sesión'
+              badge='Envases'
+              value={entregadosSesion}
+              icon={<PackageCheck aria-hidden='true' />}
+              tone='emerald'
+            />
+            <MetricCard
+              label='Rechazados en esta sesión'
+              badge='Envases'
+              value={rechazadosSesion}
+              icon={<AlertTriangle aria-hidden='true' />}
+              tone='red'
+            />
+            <MetricCard
+              label='Pendientes de verificar'
+              badge='Sin conexión'
+              value={envasesEnCola}
+              icon={<Clock aria-hidden='true' />}
+              tone='amber'
+              footer={
+                <p>{sincronizandoEnvases ? 'Sincronizando con el servidor…' : 'En cola local'}</p>
+              }
+            />
+          </div>
+        ) : summaryError ? (
           <ListLoadError message='No se pudo cargar el resumen del bar.' onRetry={fetchResumen} />
         ) : (
           <BarStatsCards resumen={resumen} botellasAbiertas={botellasAbiertasDetalle} />
         )}
 
         <Tabs value={tab} onValueChange={setTab} className='w-full'>
-          <div className='flex min-w-0 flex-nowrap items-end gap-3 overflow-x-auto pb-2'>
-            <div className='max-w-full shrink-0 overflow-x-auto pb-1 lg:pb-0'>
-              <TabsList className='h-auto w-max min-w-full justify-start gap-1 rounded-full p-1 sm:min-w-0'>
-                <TabsTrigger value='productos' className={barTabClassName}>
-                  Productos
+          <div className='flex justify-center overflow-x-auto pb-2'>
+            <TabsList className='mx-auto h-auto w-max max-w-full justify-center gap-1 rounded-full p-1'>
+              <TabsTrigger value='productos' className={barTabClassName}>
+                Productos
+              </TabsTrigger>
+              <TabsTrigger value='pendientes' className={barTabClassName}>
+                <Clock className='w-3.5 h-3.5' />
+                Pendientes{pendientes.length > 0 ? ` (${pendientes.length})` : ''}
+              </TabsTrigger>
+              <TabsTrigger value='historial' className={barTabClassName}>
+                <History className='w-3.5 h-3.5' />
+                Historial
+              </TabsTrigger>
+              <TabsTrigger value='colaciones' className={barTabClassName}>
+                <GlassWater className='w-3.5 h-3.5' />
+                Colación
+              </TabsTrigger>
+              {puedeDevolver && (
+                <TabsTrigger value='envases' className={barTabClassName}>
+                  <ScanLine className='w-3.5 h-3.5' />
+                  Envases
                 </TabsTrigger>
-                <TabsTrigger value='pendientes' className={barTabClassName}>
-                  <Clock className='w-3.5 h-3.5' />
-                  Pendientes{pendientes.length > 0 ? ` (${pendientes.length})` : ''}
-                </TabsTrigger>
-                <TabsTrigger value='historial' className={barTabClassName}>
-                  <History className='w-3.5 h-3.5' />
-                  Historial
-                </TabsTrigger>
-                {puedeDevolver && (
-                  <TabsTrigger value='envases' className={barTabClassName}>
-                    <ScanLine className='w-3.5 h-3.5' />
-                    Envases
-                  </TabsTrigger>
-                )}
-              </TabsList>
-            </div>
-
-            {tab === 'productos' && (
-              <div className='flex min-w-[620px] flex-[1_1_620px] flex-nowrap items-end gap-2'>
-                <SortSelect
-                  className='w-48 shrink-0'
-                  field={sortField}
-                  direction={sortDirection}
-                  options={[
-                    { value: 'producto_nombre', label: 'Producto' },
-                    { value: 'nombre', label: 'Presentación' },
-                    { value: 'categoria_nombre', label: 'Categoría' },
-                    { value: 'stock_bar', label: 'Stock' }
-                  ]}
-                  onChange={(field, direction) => {
-                    setSortField(field);
-                    setSortDirection(direction);
-                  }}
-                />
-                <div className='relative min-w-0 flex-[1_1_220px]'>
-                  <Search
-                    className='pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground'
-                    aria-hidden='true'
-                  />
-                  <Input
-                    value={search}
-                    onChange={e => setSearch(e.target.value)}
-                    placeholder='Buscar producto, categoría, presentación o código'
-                    aria-label='Buscar productos del bar'
-                    className='h-11 rounded-full pl-9 pr-11'
-                  />
-                  {search && (
-                    <Tooltip>
-                      <TooltipTrigger asChild>
-                        <Button
-                          variant='ghost'
-                          size='icon'
-                          className='absolute right-0 top-0 size-11 rounded-full'
-                          aria-label='Limpiar búsqueda'
-                          onClick={() => setSearch('')}
-                        >
-                          <X />
-                        </Button>
-                      </TooltipTrigger>
-                      <TooltipContent>Limpiar búsqueda</TooltipContent>
-                    </Tooltip>
-                  )}
-                </div>
-                <Tooltip>
-                  <TooltipTrigger asChild>
-                    <Button
-                      variant={stockFilter === 'abiertas' ? 'secondary' : 'outline'}
-                      className='h-11 shrink-0 gap-2 rounded-full'
-                      onClick={() =>
-                        setStockFilter(value => (value === 'todos' ? 'abiertas' : 'todos'))
-                      }
-                      aria-label='Filtrar solo botellas abiertas'
-                      aria-pressed={stockFilter === 'abiertas'}
-                    >
-                      <Wine />
-                      {stockFilter === 'abiertas' ? 'Botellas abiertas' : 'Todos'}
-                    </Button>
-                  </TooltipTrigger>
-                  <TooltipContent>
-                    {stockFilter === 'abiertas'
-                      ? 'Mostrar todos'
-                      : 'Mostrar botellas abiertas y vacías por cortos'}
-                  </TooltipContent>
-                </Tooltip>
-                <Tooltip>
-                  <TooltipTrigger asChild>
-                    <Button
-                      variant='outline'
-                      className='h-11 shrink-0 gap-2 rounded-full'
-                      onClick={() => setShowTableView(value => !value)}
-                      aria-label={showTableView ? 'Cambiar a tarjetas' : 'Cambiar a tabla'}
-                    >
-                      {showTableView ? <Grid3X3 /> : <TableIcon />}
-                      {showTableView ? 'Tarjetas' : 'Tabla'}
-                    </Button>
-                  </TooltipTrigger>
-                  <TooltipContent>
-                    {showTableView ? 'Cambiar a tarjetas' : 'Cambiar a tabla'}
-                  </TooltipContent>
-                </Tooltip>
-              </div>
-            )}
+              )}
+            </TabsList>
           </div>
+
+          {tab === 'productos' && (
+            <div className='flex flex-wrap items-end gap-3 rounded-2xl border bg-card p-3'>
+              <SortSelect
+                className='w-full sm:w-48'
+                field={sortField}
+                direction={sortDirection}
+                options={[
+                  { value: 'producto_nombre', label: 'Producto' },
+                  { value: 'nombre', label: 'Presentación' },
+                  { value: 'categoria_nombre', label: 'Categoría' },
+                  { value: 'stock_bar', label: 'Stock' }
+                ]}
+                onChange={(field, direction) => {
+                  setSortField(field);
+                  setSortDirection(direction);
+                }}
+              />
+              <div className='relative min-w-0 flex-1 basis-full sm:basis-64'>
+                <Search
+                  className='pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground'
+                  aria-hidden='true'
+                />
+                <Input
+                  value={search}
+                  onChange={e => setSearch(e.target.value)}
+                  placeholder='Buscar producto, categoría, presentación o código'
+                  aria-label='Buscar productos del bar'
+                  className='h-11 rounded-full pl-9 pr-11'
+                />
+                {search && (
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <Button
+                        variant='ghost'
+                        size='icon'
+                        className='absolute right-0 top-0 size-11 rounded-full'
+                        aria-label='Limpiar búsqueda'
+                        onClick={() => setSearch('')}
+                      >
+                        <X />
+                      </Button>
+                    </TooltipTrigger>
+                    <TooltipContent>Limpiar búsqueda</TooltipContent>
+                  </Tooltip>
+                )}
+              </div>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Button
+                    variant={stockFilter === 'abiertas' ? 'secondary' : 'outline'}
+                    className='h-11 shrink-0 gap-2 rounded-full'
+                    onClick={() =>
+                      setStockFilter(value => (value === 'todos' ? 'abiertas' : 'todos'))
+                    }
+                    aria-label='Filtrar solo botellas abiertas'
+                    aria-pressed={stockFilter === 'abiertas'}
+                  >
+                    <Wine />
+                    {stockFilter === 'abiertas' ? 'Botellas abiertas' : 'Todos'}
+                  </Button>
+                </TooltipTrigger>
+                <TooltipContent>
+                  {stockFilter === 'abiertas'
+                    ? 'Mostrar todos'
+                    : 'Mostrar botellas abiertas y vacías por cortos'}
+                </TooltipContent>
+              </Tooltip>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Button
+                    variant='outline'
+                    className='h-11 shrink-0 gap-2 rounded-full'
+                    onClick={() => setShowTableView(value => !value)}
+                    aria-label={showTableView ? 'Cambiar a tarjetas' : 'Cambiar a tabla'}
+                  >
+                    {showTableView ? <Grid3X3 /> : <TableIcon />}
+                    {showTableView ? 'Tarjetas' : 'Tabla'}
+                  </Button>
+                </TooltipTrigger>
+                <TooltipContent>
+                  {showTableView ? 'Cambiar a tarjetas' : 'Cambiar a tabla'}
+                </TooltipContent>
+              </Tooltip>
+            </div>
+          )}
+          {tab === 'pendientes' && (
+            <div className='relative rounded-2xl border bg-card p-3'>
+              <Search className='pointer-events-none absolute left-6 top-1/2 size-4 -translate-y-1/2 text-muted-foreground' />
+              <Input
+                value={searchPendientes}
+                onChange={event => setSearchPendientes(event.target.value)}
+                placeholder='Buscar producto, presentación o solicitante'
+                aria-label='Buscar transferencias pendientes'
+                className='h-11 rounded-full pl-9 pr-12'
+              />
+              {searchPendientes && (
+                <Button
+                  type='button'
+                  variant='ghost'
+                  size='icon'
+                  className='absolute right-5 top-1/2 size-9 -translate-y-1/2 rounded-full'
+                  aria-label='Limpiar búsqueda de pendientes'
+                  onClick={() => setSearchPendientes('')}
+                >
+                  <X />
+                </Button>
+              )}
+            </div>
+          )}
+          {tab === 'historial' && (
+            <div className='relative rounded-2xl border bg-card p-3'>
+              <Search className='pointer-events-none absolute left-6 top-1/2 size-4 -translate-y-1/2 text-muted-foreground' />
+              <Input
+                value={searchHistorial}
+                onChange={event => setSearchHistorial(event.target.value)}
+                placeholder='Buscar producto, presentación o usuario'
+                aria-label='Buscar en el historial del bar'
+                className='h-11 rounded-full pl-9 pr-12'
+              />
+              {searchHistorial && (
+                <Button
+                  type='button'
+                  variant='ghost'
+                  size='icon'
+                  className='absolute right-5 top-1/2 size-9 -translate-y-1/2 rounded-full'
+                  aria-label='Limpiar búsqueda del historial'
+                  onClick={() => setSearchHistorial('')}
+                >
+                  <X />
+                </Button>
+              )}
+            </div>
+          )}
+          {tab === 'colaciones' && (
+            <div className='relative rounded-2xl border bg-card p-3'>
+              <Search className='pointer-events-none absolute left-6 top-1/2 size-4 -translate-y-1/2 text-muted-foreground' />
+              <Input
+                value={searchColaciones}
+                onChange={event => setSearchColaciones(event.target.value)}
+                placeholder='Buscar trabajador o bebida'
+                aria-label='Buscar colaciones'
+                className='h-11 rounded-full pl-9 pr-12'
+              />
+              {searchColaciones && (
+                <Button
+                  type='button'
+                  variant='ghost'
+                  size='icon'
+                  className='absolute right-5 top-1/2 size-9 -translate-y-1/2 rounded-full'
+                  aria-label='Limpiar búsqueda de colaciones'
+                  onClick={() => setSearchColaciones('')}
+                >
+                  <X />
+                </Button>
+              )}
+            </div>
+          )}
+          {tab === 'envases' && (
+            <form
+              className='flex flex-col gap-2 rounded-2xl border bg-card p-3 sm:flex-row sm:items-center sm:gap-3'
+              onSubmit={event => {
+                event.preventDefault();
+                if (puedeDevolver && esCodigoEnvase && !envaseYaDevuelto && !verificando) {
+                  void enviarEscaneo(codigoEnvaseNormalizado);
+                }
+              }}
+            >
+              <div className='relative min-w-0 flex-1'>
+                <Search className='pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground' />
+                <Input
+                  autoFocus
+                  ref={inputEnvaseRef}
+                  value={searchEnvases}
+                  onChange={event => setSearchEnvases(event.target.value)}
+                  placeholder='Busca devoluciones o escanea un código de envase'
+                  aria-label='Buscar devoluciones o escanear un envase'
+                  className='h-11 rounded-full pl-9 pr-12'
+                />
+                {searchEnvases && (
+                  <Button
+                    type='button'
+                    variant='ghost'
+                    size='icon'
+                    className='absolute right-1 top-1/2 size-9 -translate-y-1/2 rounded-full'
+                    aria-label='Limpiar búsqueda o código de envase'
+                    onClick={() => setSearchEnvases('')}
+                  >
+                    <X />
+                  </Button>
+                )}
+              </div>
+              {puedeDevolver && (
+                <Button
+                  type='submit'
+                  disabled={verificando || !esCodigoEnvase || envaseYaDevuelto}
+                  className='h-11 shrink-0 gap-2 rounded-full'
+                  title={envaseYaDevuelto ? 'Este envase ya figura en las devoluciones' : undefined}
+                >
+                  <PackageCheck className='size-4' />
+                  {verificando ? 'Verificando...' : 'Verificar y marcar'}
+                </Button>
+              )}
+              <Button
+                type='button'
+                variant='outline'
+                className='h-11 shrink-0 gap-2 rounded-full'
+                onClick={alternarAvisoSonoro}
+                aria-pressed={avisoSonoro}
+                aria-label={
+                  avisoSonoro ? 'Silenciar avisos de escaneo' : 'Activar avisos de escaneo'
+                }
+              >
+                {avisoSonoro ? <Bell className='size-4' /> : <BellOff className='size-4' />}
+                <span className='hidden sm:inline'>
+                  {avisoSonoro ? 'Aviso sonoro' : 'Sin aviso'}
+                </span>
+              </Button>
+            </form>
+          )}
 
           <TabsContent value='productos' className='mt-4'>
             {stockError ? (
@@ -735,7 +972,7 @@ export default function BarPage() {
                   </p>
                 </div>
                 <PendingApprovals
-                  pendientes={pendientes}
+                  pendientes={filteredPendientes}
                   puedeAprobar={puedeAprobar}
                   resolvingId={resolvingId}
                   loading={loadingPend}
@@ -771,14 +1008,14 @@ export default function BarPage() {
                           </TableRow>
                         </TableHeader>
                         <TableBody>
-                          {movimientos.length === 0 ? (
+                          {filteredMovimientos.length === 0 ? (
                             <TableRow key='empty'>
                               <TableCell colSpan={10} className='text-center text-muted-foreground'>
                                 {loadingMovs ? 'Cargando...' : 'Sin movimientos registrados.'}
                               </TableCell>
                             </TableRow>
                           ) : (
-                            movimientos.map(m => (
+                            filteredMovimientos.map(m => (
                               <TableRow
                                 key={m.id}
                                 className='border-b transition-colors hover:bg-muted/50'
@@ -897,6 +1134,10 @@ export default function BarPage() {
             )}
           </TabsContent>
 
+          <TabsContent value='colaciones' className='mt-4'>
+            <ColacionesTab searchTerm={searchColaciones} />
+          </TabsContent>
+
           <TabsContent value='envases' className='mt-4'>
             {containersError ? (
               <ListLoadError
@@ -915,41 +1156,6 @@ export default function BarPage() {
                   }
                 >
                   <div className='space-y-4'>
-                    <p className='text-sm text-muted-foreground'>
-                      Escanea el envase vacío (EAN-13 o SKU LM-…) antes de entregarlo a la bodega:
-                      el sistema confirma que es nuestro, que está vacío y que no se entregó antes,
-                      y lo marca en el mismo paso. La recepción queda pendiente hasta que la bodega
-                      la confirme desde Bodega → Envases devueltos. Puedes escanear envases uno tras
-                      otro sin recargar: el contador y la lista de la sesión quedan abajo. Si no hay
-                      red, los escaneos se guardan localmente y se verifican solos al reconectar.
-                    </p>
-
-                    <form
-                      onSubmit={e => {
-                        e.preventDefault();
-                        enviarEscaneo(codigoEnvase);
-                      }}
-                      className='flex flex-col sm:flex-row gap-2'
-                    >
-                      <Input
-                        autoFocus
-                        ref={inputEnvaseRef}
-                        value={codigoEnvase}
-                        onChange={e => setCodigoEnvase(e.target.value)}
-                        placeholder='Escanea o digita el código del envase'
-                        aria-label='Código del envase'
-                        className='rounded-full font-mono'
-                      />
-                      <Button
-                        type='submit'
-                        disabled={verificando || !codigoEnvase.trim()}
-                        className='rounded-full flex items-center gap-2'
-                      >
-                        <PackageCheck className='w-4 h-4' />
-                        {verificando ? 'Verificando...' : 'Verificar y marcar'}
-                      </Button>
-                    </form>
-
                     {resultadoEnvase && (
                       <div
                         className={cn(
@@ -998,11 +1204,14 @@ export default function BarPage() {
                       onReintentar={reintentarEnvases}
                       etiquetaAceptado='Entregado'
                       tituloAceptados='Entregados a la bodega'
+                      mostrarContadores={false}
+                      mostrarLimpiar={false}
+                      mostrarAvisoSonoro={false}
                     />
 
                     <div>
                       <p className='text-xs font-medium text-muted-foreground mb-2'>
-                        Devoluciones registradas ({devoluciones.length})
+                        Devoluciones registradas ({filteredDevoluciones.length})
                       </p>
                       <BoneyardSkeleton name='bar-containers' loading={loadingDevol}>
                         <div className='overflow-hidden rounded-3xl border bg-card'>
@@ -1021,7 +1230,7 @@ export default function BarPage() {
                                 </TableRow>
                               </TableHeader>
                               <TableBody>
-                                {devoluciones.length === 0 ? (
+                                {filteredDevoluciones.length === 0 ? (
                                   <TableRow key='empty'>
                                     <TableCell
                                       colSpan={8}
@@ -1033,7 +1242,7 @@ export default function BarPage() {
                                     </TableCell>
                                   </TableRow>
                                 ) : (
-                                  devoluciones.map(d => (
+                                  filteredDevoluciones.map(d => (
                                     <TableRow
                                       key={d.id}
                                       className='border-b transition-colors hover:bg-muted/50'

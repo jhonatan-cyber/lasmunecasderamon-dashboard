@@ -22,6 +22,8 @@ export interface TransferForm {
 
   maxAnfitrionas: string;
   setMaxAnfitrionas: (value: string) => void;
+  colacionHabilitada: boolean;
+  setColacionHabilitada: (value: boolean) => void;
   acompanamientoBotella: 'ninguno' | 'gaseosa' | 'soda';
   setAcompanamientoBotella: (value: 'ninguno' | 'gaseosa' | 'soda') => void;
   unidadesAcompanamiento: string;
@@ -80,6 +82,7 @@ export function useTransferForm({
 }): TransferForm {
   const [mlAcompanamientoAnfitriona, setMlAcompanamientoAnfitriona] = useState('');
   const [maxAnfitrionas, setMaxAnfitrionas] = useState('');
+  const [colacionHabilitada, setColacionHabilitada] = useState(false);
   const [acompanamientoBotella, setAcompanamientoBotella] = useState<
     'ninguno' | 'gaseosa' | 'soda'
   >('ninguno');
@@ -140,6 +143,7 @@ export function useTransferForm({
       ];
       setMaxAnfitrionas(Number(item.max_anfitrionas) > 0 ? String(item.max_anfitrionas) : '');
       const bottle = options.find(option => option.tipo === 'botella');
+      setColacionHabilitada(bottle?.colacion_habilitada === true);
       setAcompanamientoBotella(
         (bottle?.acompanamiento?.unidades ?? 0) > 0
           ? (bottle?.acompanamiento?.tipo ?? 'gaseosa')
@@ -258,6 +262,7 @@ export function useTransferForm({
 
   const reset = () => {
     setMaxAnfitrionas('');
+    setColacionHabilitada(false);
     setAcompanamientoBotella('ninguno');
     setUnidadesAcompanamiento('');
     setCantidad('');
@@ -286,6 +291,8 @@ export function useTransferForm({
     setMlAcompanamientoAnfitriona,
     maxAnfitrionas,
     setMaxAnfitrionas,
+    colacionHabilitada,
+    setColacionHabilitada,
     acompanamientoBotella,
     setAcompanamientoBotella,
     unidadesAcompanamiento,

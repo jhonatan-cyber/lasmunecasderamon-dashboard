@@ -102,7 +102,10 @@ export async function crearServicioEnUnidad(
   // Los destinos explícitos permiten repartir el descuento entre varios clientes
   // (el cliente con cuenta, otro o ambos — mitad y mitad). Cada monto se valida
   // contra el saldo real del cliente, con FOR UPDATE, dentro de la unidad.
+  // Un arreglo presente (aunque venga vacío) es decisión explícita del usuario:
+  // vacío = «no descontar saldo». Ausente = descuento automático del titular.
   const clientesServicio = obtenerClientesServicio(v);
+  const destinosExplicitos = Array.isArray(v.prepago_destinos);
   const destinosPrepago = (v.prepago_destinos ?? []).filter(
     destino => destino.cliente_id && Math.round(Number(destino.monto || 0)) > 0
   );
@@ -114,6 +117,8 @@ export async function crearServicioEnUnidad(
       );
     }
   }
+
+  const descuentoTitular = !destinosExplicitos && Boolean(v.cliente_id);
 
   if (destinosPrepago.length > 0) {
     for (const destino of destinosPrepago) {
@@ -131,10 +136,10 @@ export async function crearServicioEnUnidad(
         contexto
       );
     }
-  } else if (v.cliente_id) {
+  } else if (descuentoTitular) {
     prepagoMonto = await consumirPrepagoVenta(
       {
-        clienteId: v.cliente_id,
+        clienteId: v.cliente_id!,
         total: Number(v.total || 0),
         prepagoSolicitado,
         ventaId: servicioId,
@@ -149,8 +154,8 @@ export async function crearServicioEnUnidad(
 
   for (const destino of destinosPrepago.length > 0
     ? destinosPrepago
-    : v.cliente_id
-      ? [{ cliente_id: v.cliente_id }]
+    : descuentoTitular
+      ? [{ cliente_id: v.cliente_id! }]
       : []) {
     if (prepagoMonto > 0 && (await saldoPrepagoAgotado(destino.cliente_id, contexto))) {
       await cerrarCuentasPrepagoSaldadas(destino.cliente_id, contexto);

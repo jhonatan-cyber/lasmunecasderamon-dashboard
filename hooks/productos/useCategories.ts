@@ -1,8 +1,10 @@
 'use client';
 
 import { useState, useCallback, useMemo } from 'react';
+import { useQueryClient } from '@tanstack/react-query';
 import { useGenericFetch } from '../shared/useGenericFetch';
 import { useGenericMutations } from '../shared/useGenericMutations';
+import { queryKeys } from '@/lib/api/queryClient';
 import React from 'react';
 
 export interface Category {
@@ -47,6 +49,14 @@ export function useCategories(): UseCategoriesReturn {
   } = useGenericFetch<Category>('/api/categories', {
     transform: result => (result.success && Array.isArray(result.data) ? result.data : [])
   });
+
+  // El orden de las categorías también lo consumen ventas/pedidos (`useMasterData`,
+  // familia `queryKeys.categories`). Esa caché es distinta de la de esta pantalla,
+  // así que se invalida al cambiar el orden para que se refleje sin depender del SSE.
+  const queryClient = useQueryClient();
+  const syncSharedCategories = useCallback(() => {
+    void queryClient.invalidateQueries({ queryKey: queryKeys.categories.all });
+  }, [queryClient]);
 
   const refetchCategories = useCallback(async () => {
     await refetch();
@@ -257,6 +267,7 @@ export function useCategories(): UseCategoriesReturn {
           await refetchCategories();
         }
 
+        syncSharedCategories();
         const { showSuccessToast } = await import('@/lib/utils/toastUtils');
         showSuccessToast('Orden actualizado correctamente');
 
@@ -268,7 +279,7 @@ export function useCategories(): UseCategoriesReturn {
         return { success: false, message: e instanceof Error ? e.message : 'Error desconocido' };
       }
     },
-    [categories, setData, refetchCategories]
+    [categories, setData, refetchCategories, syncSharedCategories]
   );
 
   React.useEffect(() => {

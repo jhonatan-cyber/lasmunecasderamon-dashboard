@@ -88,6 +88,7 @@ export const NewSaleConfiguration = ({
           onChange={setMetodoPago}
           clientes={clientes}
           selectedClienteId={selectedCliente}
+          showPrepago={false}
         />
       </div>
       <div className={fieldWrapperClass}>

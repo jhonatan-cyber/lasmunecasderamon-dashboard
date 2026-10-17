@@ -22,6 +22,10 @@ interface EscaneoLoteProps {
   etiquetaAceptado: string;
   /** Título del contador de aceptados. */
   tituloAceptados: string;
+  /** Oculta solo las tarjetas de contadores cuando se muestran en la cabecera del módulo. */
+  mostrarContadores?: boolean;
+  mostrarLimpiar?: boolean;
+  mostrarAvisoSonoro?: boolean;
 }
 
 /**
@@ -42,7 +46,10 @@ export function EscaneoLote({
   onLimpiar,
   onReintentar,
   etiquetaAceptado,
-  tituloAceptados
+  tituloAceptados,
+  mostrarContadores = true,
+  mostrarLimpiar = true,
+  mostrarAvisoSonoro = true
 }: EscaneoLoteProps) {
   return (
     <div className='space-y-3'>
@@ -51,107 +58,113 @@ export function EscaneoLote({
           Escaneo continuo de esta sesión
         </p>
         <div className='flex items-center gap-2'>
-          <Button
-            variant='outline'
-            size='sm'
-            className='rounded-full flex items-center gap-1.5'
-            onClick={onAlternarSonido}
-            aria-pressed={sonido}
-          >
-            {sonido ? <Bell className='w-3.5 h-3.5' /> : <BellOff className='w-3.5 h-3.5' />}
-            {sonido ? 'Aviso sonoro' : 'Sin aviso'}
-          </Button>
-          <Button
-            variant='outline'
-            size='sm'
-            className='rounded-full flex items-center gap-1.5'
-            onClick={onLimpiar}
-            disabled={aceptados + rechazados === 0}
-            title='Los escaneos pendientes de sincronizar se conservan.'
-          >
-            <Eraser className='w-3.5 h-3.5' />
-            Limpiar
-          </Button>
+          {mostrarAvisoSonoro && (
+            <Button
+              variant='outline'
+              size='sm'
+              className='rounded-full flex items-center gap-1.5'
+              onClick={onAlternarSonido}
+              aria-pressed={sonido}
+            >
+              {sonido ? <Bell className='w-3.5 h-3.5' /> : <BellOff className='w-3.5 h-3.5' />}
+              {sonido ? 'Aviso sonoro' : 'Sin aviso'}
+            </Button>
+          )}
+          {mostrarLimpiar && (
+            <Button
+              variant='outline'
+              size='sm'
+              className='rounded-full flex items-center gap-1.5'
+              onClick={onLimpiar}
+              disabled={aceptados + rechazados === 0}
+              title='Los escaneos pendientes de sincronizar se conservan.'
+            >
+              <Eraser className='w-3.5 h-3.5' />
+              Limpiar
+            </Button>
+          )}
         </div>
       </div>
 
-      <div className='grid grid-cols-3 gap-3'>
-        <div className='p-3 rounded-2xl bg-green-50 border border-green-200'>
-          <p className='text-[10px] font-black uppercase tracking-widest text-green-700'>
-            {tituloAceptados}
-          </p>
-          <p className='mt-1 text-2xl font-bold text-green-800'>{aceptados}</p>
-        </div>
-        <div
-          className={cn(
-            'p-3 rounded-2xl border',
-            rechazados > 0
-              ? 'bg-red-50 border-red-200'
-              : 'bg-white border-gray-200 dark:bg-slate-900/40 dark:border-gray-800'
-          )}
-        >
-          <p
+      {mostrarContadores && (
+        <div className='grid grid-cols-3 gap-3'>
+          <div className='p-3 rounded-2xl bg-green-50 border border-green-200'>
+            <p className='text-[10px] font-black uppercase tracking-widest text-green-700'>
+              {tituloAceptados}
+            </p>
+            <p className='mt-1 text-2xl font-bold text-green-800'>{aceptados}</p>
+          </div>
+          <div
             className={cn(
-              'text-[10px] font-black uppercase tracking-widest',
-              rechazados > 0 ? 'text-red-700' : 'text-gray-500 dark:text-gray-400'
+              'p-3 rounded-2xl border',
+              rechazados > 0
+                ? 'bg-red-50 border-red-200'
+                : 'bg-white border-gray-200 dark:bg-slate-900/40 dark:border-gray-800'
             )}
           >
-            Rechazados
-          </p>
-          <p
-            className={cn(
-              'mt-1 text-2xl font-bold',
-              rechazados > 0 ? 'text-red-800' : 'text-gray-900 dark:text-white'
-            )}
-          >
-            {rechazados}
-          </p>
-        </div>
-        <div
-          className={cn(
-            'p-3 rounded-2xl border',
-            enCola > 0
-              ? 'bg-amber-50 border-amber-200'
-              : 'bg-white border-gray-200 dark:bg-slate-900/40 dark:border-gray-800'
-          )}
-        >
-          <p
-            className={cn(
-              'text-[10px] font-black uppercase tracking-widest',
-              enCola > 0 ? 'text-amber-700' : 'text-gray-500 dark:text-gray-400'
-            )}
-          >
-            En cola
-          </p>
-          <div className='mt-1 flex items-center justify-between gap-2'>
             <p
               className={cn(
-                'text-2xl font-bold',
-                enCola > 0 ? 'text-amber-800' : 'text-gray-900 dark:text-white'
+                'text-[10px] font-black uppercase tracking-widest',
+                rechazados > 0 ? 'text-red-700' : 'text-gray-500 dark:text-gray-400'
               )}
             >
-              {enCola}
+              Rechazados
             </p>
-            {enCola > 0 && (
-              <Button
-                variant='outline'
-                size='sm'
-                className='rounded-full flex items-center gap-1.5'
-                onClick={onReintentar}
-                disabled={sincronizando}
-              >
-                <RefreshCw className={cn('w-3.5 h-3.5', sincronizando && 'animate-spin')} />
-                {sincronizando ? 'Sincronizando' : 'Reintentar'}
-              </Button>
-            )}
+            <p
+              className={cn(
+                'mt-1 text-2xl font-bold',
+                rechazados > 0 ? 'text-red-800' : 'text-gray-900 dark:text-white'
+              )}
+            >
+              {rechazados}
+            </p>
           </div>
-          <p className='mt-1 text-[10px] text-amber-700'>
-            {sincronizando
-              ? 'Verificando contra el servidor...'
-              : 'Guardados sin conexión; se verifican al reconectar'}
-          </p>
+          <div
+            className={cn(
+              'p-3 rounded-2xl border',
+              enCola > 0
+                ? 'bg-amber-50 border-amber-200'
+                : 'bg-white border-gray-200 dark:bg-slate-900/40 dark:border-gray-800'
+            )}
+          >
+            <p
+              className={cn(
+                'text-[10px] font-black uppercase tracking-widest',
+                enCola > 0 ? 'text-amber-700' : 'text-gray-500 dark:text-gray-400'
+              )}
+            >
+              En cola
+            </p>
+            <div className='mt-1 flex items-center justify-between gap-2'>
+              <p
+                className={cn(
+                  'text-2xl font-bold',
+                  enCola > 0 ? 'text-amber-800' : 'text-gray-900 dark:text-white'
+                )}
+              >
+                {enCola}
+              </p>
+              {enCola > 0 && (
+                <Button
+                  variant='outline'
+                  size='sm'
+                  className='rounded-full flex items-center gap-1.5'
+                  onClick={onReintentar}
+                  disabled={sincronizando}
+                >
+                  <RefreshCw className={cn('w-3.5 h-3.5', sincronizando && 'animate-spin')} />
+                  {sincronizando ? 'Sincronizando' : 'Reintentar'}
+                </Button>
+              )}
+            </div>
+            <p className='mt-1 text-[10px] text-amber-700'>
+              {sincronizando
+                ? 'Verificando contra el servidor...'
+                : 'Guardados sin conexión; se verifican al reconectar'}
+            </p>
+          </div>
         </div>
-      </div>
+      )}
 
       {sesion.length === 0 ? (
         <p className='text-xs text-gray-500 dark:text-gray-400 text-center py-2'>

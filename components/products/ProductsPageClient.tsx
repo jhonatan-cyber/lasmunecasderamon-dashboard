@@ -1,6 +1,6 @@
 'use client';
 
-import { ReplenishmentNotice } from '@/components/purchases/ReplenishmentNotice';
+import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useCategories, Category } from '@/hooks/productos/useCategories';
 import { PermissionGuard } from '@/components/auth/PermissionGuard';
@@ -24,12 +24,19 @@ import {
 } from '@dnd-kit/sortable';
 import { useUserPermissions } from '@/hooks/auth/useUserPermissions';
 import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
 import { dragModifiers } from '@/components/shared/dragBounds';
-import { PackageCheck } from 'lucide-react';
+import { PackageCheck, ClipboardList, Search, X } from 'lucide-react';
 
 export function ProductsPageClient() {
   const router = useRouter();
-  const { filteredCategories, isLoading: categoriesLoading, reorderCategories } = useCategories();
+  const {
+    filteredCategories,
+    searchTerm,
+    setSearchTerm,
+    isLoading: categoriesLoading,
+    reorderCategories
+  } = useCategories();
   const { hasPermission } = useUserPermissions();
   const canReorder = hasPermission('categories', 'edit');
   const [savingOrder, setSavingOrder] = useState(false);
@@ -63,7 +70,6 @@ export function ProductsPageClient() {
     <PermissionGuard module='products' action='view'>
       <BoneyardSkeleton name='products-main' loading={categoriesLoading}>
         <div className='min-w-0 max-w-full overflow-x-clip p-4 sm:p-6 lg:p-10 space-y-4 sm:space-y-6 mt-4 sm:mt-6 lg:mt-10'>
-          <ReplenishmentNotice />
           <div className='flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3'>
             <div>
               <h1 className='text-xl sm:text-2xl lg:text-3xl font-bold text-gray-900 dark:text-white'>
@@ -73,16 +79,45 @@ export function ProductsPageClient() {
                 Selecciona una categoría para ver sus productos
               </p>
             </div>
-            <PermissionGuard module='products' action='confirm_container_return'>
-              <Button
-                variant='outline'
-                onClick={() => router.push('/products/containers')}
-                className='rounded-full flex items-center gap-2 self-start sm:self-auto'
-              >
-                <PackageCheck className='w-4 h-4' />
-                Envases devueltos
+            <div className='flex flex-wrap items-center gap-2 self-start sm:self-auto'>
+              <div className='relative w-full sm:w-60 lg:w-72'>
+                <Search className='absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400 pointer-events-none' />
+                <Input
+                  value={searchTerm}
+                  onChange={e => setSearchTerm(e.target.value)}
+                  placeholder='Buscar categoría...'
+                  aria-label='Buscar categoría'
+                  className='h-10 rounded-full pl-9 pr-10'
+                />
+                {searchTerm && (
+                  <Button
+                    variant='ghost'
+                    size='icon'
+                    className='absolute right-0 top-0 h-10 w-10 rounded-full'
+                    aria-label='Limpiar búsqueda'
+                    onClick={() => setSearchTerm('')}
+                  >
+                    <X />
+                  </Button>
+                )}
+              </div>
+              <PermissionGuard module='products' action='confirm_container_return'>
+                <Button
+                  variant='outline'
+                  onClick={() => router.push('/products/containers')}
+                  className='rounded-full flex items-center gap-2'
+                >
+                  <PackageCheck className='w-4 h-4' />
+                  Envases devueltos
+                </Button>
+              </PermissionGuard>
+              <Button asChild variant='outline' className='rounded-full flex items-center gap-2'>
+                <Link href='/purchases/replenishment'>
+                  <ClipboardList className='w-4 h-4' />
+                  Orden de compra
+                </Link>
               </Button>
-            </PermissionGuard>
+            </div>
           </div>
 
           {savingOrder && (
@@ -93,7 +128,9 @@ export function ProductsPageClient() {
 
           {activeCategories.length === 0 ? (
             <div className='text-center text-gray-500 text-sm sm:text-base'>
-              No hay categorías activas.
+              {searchTerm.trim()
+                ? 'No se encontraron categorías para esa búsqueda.'
+                : 'No hay categorías activas.'}
             </div>
           ) : (
             <DndContext

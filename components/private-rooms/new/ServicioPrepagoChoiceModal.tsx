@@ -9,7 +9,7 @@ import { formatNumberWithSeparators, type ClienteConSaldo } from './servicioForm
 export type PrepagoOpcion = 'uno' | 'ambos' | 'ninguno';
 
 /**
- * Pregunta «¿a quién descontamos el saldo?» cuando dos o más clientes del
+ * Pregunta «¿a quién descontamos el saldo?» cuando el o los clientes del
  * servicio tienen cuenta con saldo: a uno, a ambos (mitad y mitad) o a nadie.
  */
 export const ServicioPrepagoChoiceModal = memo(function ServicioPrepagoChoiceModal({

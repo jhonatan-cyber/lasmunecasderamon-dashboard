@@ -66,6 +66,13 @@ export default function NewOrder() {
     });
   }, [anfitrionas, searchAnfitriona]);
 
+  const selectedClienteSaldo = useMemo(() => {
+    const cliente = clientes.find(
+      c => String(c.id ?? c.id_cliente ?? '') === String(selectedCliente)
+    );
+    return Number(cliente?.saldo ?? cliente?.saldo_prepago ?? 0);
+  }, [clientes, selectedCliente]);
+
   const categoriasFiltradas = useMemo(() => {
     return categories.filter(cat => cat.status === 1 && (cat.total_products || 0) > 0);
   }, [categories]);
@@ -190,6 +197,7 @@ export default function NewOrder() {
               productos={productos}
               selectedCliente={selectedCliente}
               setSelectedCliente={setSelectedCliente}
+              clienteSaldo={selectedClienteSaldo}
               selectedAnfitrionas={selectedAnfitrionas}
               setSelectedAnfitrionas={setSelectedAnfitrionas}
               onAddProducto={handleAddProducto}

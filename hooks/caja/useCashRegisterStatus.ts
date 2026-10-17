@@ -7,7 +7,7 @@ import { useCallback, useEffect } from 'react';
 interface CashRegisterStatus {
   hasOpenCaja: boolean | null;
   cajaInfo: {
-    id_caja: number;
+    id_caja: string;
     usuario_id_apertura: number;
     fecha_apertura: string;
     efectivo_en_caja: number;

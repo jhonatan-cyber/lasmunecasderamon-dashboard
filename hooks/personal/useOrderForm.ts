@@ -196,6 +196,10 @@ export function useOrderForm({
         producto.comisionUnitaria ?? producto.comision ?? producto.commission ?? 0;
       let selectedHostesses = anfitrionasDelProducto(producto);
       let precio = Number(producto.precio ?? producto.price ?? 0);
+      if (producto.tipo_venta !== 'shot' && producto.botella_anfitriona === false) {
+        selectedHostesses = [];
+        comisionUnitaria = 0;
+      }
       if (
         producto.presentacion_id &&
         producto.tipo_venta !== 'shot' &&
@@ -239,6 +243,8 @@ export function useOrderForm({
           comisionUnitaria,
           cantidad,
           subtotal: precio * cantidad,
+          botella_anfitriona:
+            producto.tipo_venta === 'shot' ? undefined : producto.botella_anfitriona !== false,
           generaComision: comisionUnitaria > 0 && selectedHostesses.length > 0 ? 1 : 0,
           hostessId: '',
           selectedHostesses,
@@ -308,12 +314,14 @@ export function useOrderForm({
       return;
     }
 
-    const bebidasConComision = productos.filter(p =>
-      permiteAnfitrionaConComision(
-        p.tipo_venta === 'shot' ? 'shot' : 'botella',
-        p.comisionUnitaria ?? p.comision ?? p.commission,
-        Boolean(p.shot_anfitriona)
-      )
+    const bebidasConComision = productos.filter(
+      p =>
+        (p.tipo_venta === 'shot' || p.botella_anfitriona !== false) &&
+        permiteAnfitrionaConComision(
+          p.tipo_venta === 'shot' ? 'shot' : 'botella',
+          p.comisionUnitaria ?? p.comision ?? p.commission,
+          Boolean(p.shot_anfitriona)
+        )
     );
     for (const bebida of bebidasConComision) {
       if ((bebida.selectedHostesses || []).length === 0) {
@@ -390,6 +398,7 @@ export function useOrderForm({
         ),
         detalles: productos.map(item => ({
           ...saleInventoryFields(item),
+          tipo_venta: item.tipo_venta ?? 'botella',
           productoId: toNullableStringId(item.producto_id || item.id_producto || item.id),
           cantidad: Number(item.cantidad),
           precio: Number(item.precio || item.price),

@@ -356,7 +356,11 @@ export class ProductService {
     return await listarStockBar(productoId, soloAcompanamientos);
   }
 
-  static async listForSale(filters?: { category_id?: string; term?: string }) {
+  static async listForSale(filters?: {
+    category_id?: string;
+    term?: string;
+    solo_colaciones?: boolean;
+  }) {
     return await listarParaVenta(filters);
   }
 

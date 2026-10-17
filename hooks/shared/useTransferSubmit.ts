@@ -50,11 +50,13 @@ export function useTransferSubmit({
         };
         if (option.tipo === 'botella' && option.precio_sin_anfitriona)
           reutilizada.precio_sin_anfitriona = option.precio_sin_anfitriona;
-        if (option.tipo === 'botella')
+        if (option.tipo === 'botella') {
+          reutilizada.colacion_habilitada = form.colacionHabilitada;
           reutilizada.acompanamiento = {
             ...(option.acompanamiento ?? {}),
             unidades: Number(form.unidadesAcompanamiento || 0)
           };
+        }
         if (option.tipo === 'shot') {
           reutilizada.ml_acompanamiento_anfitriona = option.ml_acompanamiento_anfitriona;
           reutilizada.precio_anfitriona = Number(option.precio_anfitriona ?? 0);
@@ -80,6 +82,7 @@ export function useTransferSubmit({
               ? { precio_sin_anfitriona: Number(form.precioSinAnfitriona.replace(/\./g, '')) }
               : {}),
             comision: com,
+            colacion_habilitada: form.colacionHabilitada,
             acompanamiento: { unidades: Number(form.unidadesAcompanamiento || 0) }
           };
         const option: SaleOption = {

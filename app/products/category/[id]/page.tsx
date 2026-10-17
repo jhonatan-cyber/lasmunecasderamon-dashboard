@@ -67,7 +67,7 @@ const ProductCategoryPage = () => {
   const [openDialog, setOpenDialog] = useState(false);
   const [editProduct, setEditProduct] = useState<Product | null>(null);
   const [editPresentation, setEditPresentation] = useState<Presentacion | null>(null);
-  const [showTableView, setShowTableView] = useState(true);
+  const [showTableView, setShowTableView] = useState(false);
   const [onlyLowStock, setOnlyLowStock] = useState(false);
   const {
     data: lowStockOrders,

@@ -103,6 +103,25 @@ export function useServicioForm() {
 
   useRefreshOnFocus(refreshLookupData);
 
+  // Los topes de anfitrionas/clientes bajan según lo que se elija en el otro grupo
+  // (y al elegir una habitación con comisión). Si la selección vigente queda por
+  // encima del tope, se recorta para que nunca supere las 4 personas ni los 2
+  // clientes permitidos.
+  useEffect(() => {
+    if (!Number.isFinite(maxClients) || !Number.isFinite(maxHostesses)) return;
+
+    setFormData(prev => {
+      const clientes = prev.clientes.slice(0, maxClients);
+      const usuarios = prev.usuarios.slice(0, maxHostesses);
+
+      if (clientes.length === prev.clientes.length && usuarios.length === prev.usuarios.length) {
+        return prev;
+      }
+
+      return { ...prev, clientes, usuarios };
+    });
+  }, [maxClients, maxHostesses]);
+
   // Recalcula subtotal/IVA/total cuando cambian los insumos del cálculo.
   useEffect(() => {
     const {
@@ -187,18 +206,27 @@ export function useServicioForm() {
     setShowPrepagoChoiceModal(false);
   }, [claveClientesElegidos, formData.metodo_pago]);
 
-  /** ¿El método elegido consume saldo prepago? */
-  const prepagoEnJuego =
-    formData.metodo_pago === 'prepago' ||
-    (formData.metodo_pago === 'mixto' && pagosMixtos.some(pago => pago.metodo === 'prepago'));
+  /**
+   * El saldo del cliente se descuenta con cualquier método simple (efectivo,
+   * tarjeta, transferencia o prepago). En «mixto» el reparto es manual, así que
+   * solo se pregunta si hay una fila prepago explícita.
+   */
+  const saldoMetodoSimple = formData.metodo_pago !== '' && formData.metodo_pago !== 'mixto';
 
-  /** Monto que se intenta cubrir con saldo: total (simple prepago) o la fila prepago del mixto. */
+  /** ¿Corresponde preguntar a quién se le cobra el servicio desde el saldo? */
+  const preguntarDestinoSaldo =
+    clientesConSaldo.length > 0 &&
+    (formData.metodo_pago === 'mixto'
+      ? pagosMixtos.some(pago => pago.metodo === 'prepago')
+      : saldoMetodoSimple);
+
+  /** Monto que se intenta cubrir con saldo: total o la fila prepago del mixto. */
   const montoPrepagoBase =
-    formData.metodo_pago === 'prepago'
-      ? total
-      : pagosMixtos
+    formData.metodo_pago === 'mixto'
+      ? pagosMixtos
           .filter(pago => pago.metodo === 'prepago')
-          .reduce((sum, pago) => sum + Number(pago.monto || 0), 0);
+          .reduce((sum, pago) => sum + Number(pago.monto || 0), 0)
+      : total;
 
   const handleSubmit = (eleccionDesdeModal?: {
     opcion: 'uno' | 'ambos' | 'ninguno';
@@ -214,27 +242,20 @@ export function useServicioForm() {
       return;
     }
 
-    if (prepagoEnJuego) {
-      if (clientesConSaldo.length === 0) {
-        toast.error('Ninguno de los clientes seleccionados tiene saldo disponible');
-        return;
-      }
+    if (formData.metodo_pago === 'prepago' && clientesConSaldo.length === 0) {
+      toast.error('Ninguno de los clientes seleccionados tiene saldo disponible');
+      return;
+    }
+
+    if (preguntarDestinoSaldo) {
       const eleccionVigente = eleccionDesdeModal ?? {
         opcion: prepagoOpcion,
         clienteId: prepagoTitularId
       };
-      const multiSaldo = clientesConSaldo.length > 1 && prepagoEnJuego;
-      if (multiSaldo && !eleccionVigente.opcion && !eleccionDesdeModal) {
-        // Pregunta «¿a quién descontamos?» antes de confirmar.
-        setShowPrepagoChoiceModal(true);
-        return;
-      }
-      if (
-        multiSaldo &&
-        eleccionVigente.opcion === 'uno' &&
-        !eleccionVigente.clienteId &&
-        !eleccionDesdeModal
-      ) {
+      const faltaElegir =
+        !eleccionVigente.opcion || (eleccionVigente.opcion === 'uno' && !eleccionVigente.clienteId);
+      if (faltaElegir && !eleccionDesdeModal) {
+        // Pregunta «¿a quién cobramos desde el saldo?» antes de confirmar.
         setShowPrepagoChoiceModal(true);
         return;
       }
@@ -246,7 +267,9 @@ export function useServicioForm() {
       subTotal,
       total,
       pagosMixtos,
-      prepagoDestinos: resolverDestinosPrepago(eleccionDesdeModal)
+      prepagoDestinos: preguntarDestinoSaldo
+        ? resolverDestinosPrepago(eleccionDesdeModal)
+        : undefined
     });
 
     const signature = JSON.stringify({ ...servicioData, codigo: undefined });
@@ -262,25 +285,25 @@ export function useServicioForm() {
 
   /**
    * Destinos del descuento según la elección del modal:
-   *  - 1 cliente con saldo → se lo descontamos directo (equivale a «uno»).
-   *  - 2 o más con saldo → la opción elegida: uno, ambos (mitad y mitad) o ninguno.
+   *  - «uno»: a un cliente puntual (con uno solo, a ese).
+   *  - «ambos»: mitad y mitad entre los dos primeros.
+   *  - «ninguno»: arreglo vacío explícito para que el backend no descuente nada.
    */
   function resolverDestinosPrepago(eleccionDesdeModal?: {
     opcion: 'uno' | 'ambos' | 'ninguno';
     clienteId: string | null;
   }): PrepagoDestino[] {
-    if (!prepagoEnJuego) return [];
+    if (!preguntarDestinoSaldo) return [];
     const opcion = eleccionDesdeModal?.opcion ?? prepagoOpcion;
     const clienteId = eleccionDesdeModal?.clienteId ?? prepagoTitularId;
-    if (clientesConSaldo.length === 1) {
-      return calcularDistribucionPrepago(montoPrepagoBase, clientesConSaldo, 'uno').destinos;
-    }
-    if (opcion === 'uno' && clienteId) {
-      return calcularDistribucionPrepago(montoPrepagoBase, clientesConSaldo, 'uno', clienteId)
-        .destinos;
-    }
     if (opcion === 'ambos') {
       return calcularDistribucionPrepago(montoPrepagoBase, clientesConSaldo, 'ambos').destinos;
+    }
+    if (opcion === 'uno') {
+      const titular = clienteId ?? clientesConSaldo[0]?.clienteId ?? null;
+      if (!titular) return [];
+      return calcularDistribucionPrepago(montoPrepagoBase, clientesConSaldo, 'uno', titular)
+        .destinos;
     }
     return [];
   }

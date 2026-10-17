@@ -608,11 +608,13 @@ export function useSaleValidation({
         total: totals.total,
         detalles: productos.map(p => {
           const selectedHostesses =
+            (p.tipo_venta === 'shot' || p.botella_anfitriona !== false) &&
             permiteAnfitrionaConComision(
               p.tipo_venta === 'shot' ? 'shot' : 'botella',
               p.comision ?? p.commission,
               Boolean(p.shot_anfitriona)
-            ) && Array.isArray(p.selectedHostesses)
+            ) &&
+            Array.isArray(p.selectedHostesses)
               ? p.selectedHostesses
                   .filter((h: unknown) => h !== null && h !== undefined)
                   .map((h: string | number) => String(h))
@@ -626,6 +628,9 @@ export function useSaleValidation({
                   shot_anfitriona: Boolean(p.shot_anfitriona),
                   acompanamiento_corto: p.acompanamiento_corto
                 }
+              : {}),
+            ...(p.tipo_venta !== 'shot'
+              ? { botella_anfitriona: p.botella_anfitriona !== false }
               : {}),
             acompanamiento_botella: p.tipo_venta !== 'shot' ? p.acompanamiento_botella : undefined,
             precio: p.precio,

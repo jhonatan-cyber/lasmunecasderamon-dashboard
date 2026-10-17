@@ -24,6 +24,7 @@ export function orderLineToSaleDetail(item: OrderLine) {
   ];
   if (item.hostess_id && !hostesses.includes(item.hostess_id)) hostesses.push(item.hostess_id);
   const hasCommission =
+    (inventory.tipo_venta === 'shot' || inventory.botella_anfitriona !== false) &&
     Number(item.comision || 0) > 0 &&
     item.genera_comision !== 0 &&
     !(inventory.tipo_venta === 'shot' && !inventory.shot_anfitriona);

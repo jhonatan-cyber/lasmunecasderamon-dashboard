@@ -4,6 +4,7 @@ import { Button } from '@/components/ui/button';
 
 import { useState, useEffect } from 'react';
 import { Save, Users, BedDouble, ShoppingCart } from 'lucide-react';
+import { CollapsibleCard } from '@/components/ui/collapsible-card';
 import { toast } from 'sonner';
 import logger from '@/lib/utils/logger';
 import { useConfigValue } from '@/hooks/shared/useConfigValue';
@@ -89,112 +90,114 @@ export function SettingsServiceLevelsCard() {
   };
 
   return (
-    <section aria-label='Reglas de venta' className='space-y-6'>
-      <header className='space-y-2'>
-        <h2 className='flex items-center gap-2 text-xl font-bold dark:text-white'>
+    <CollapsibleCard
+      defaultOpen
+      aria-label='Reglas de venta'
+      title={
+        <>
           <Users className='h-5 w-5 text-neutral-500' />
           Reglas de venta
-        </h2>
-      </header>
-      <div>
-        <div className='grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4'>
-          <div className='p-4 bg-neutral-50 dark:bg-neutral-800/30 rounded-xl'>
-            <div className='flex items-center gap-3'>
-              <ShoppingCart className='h-5 w-5 text-neutral-500 shrink-0' />
-              <div className='flex-1'>
-                <label
-                  htmlFor='service-simple'
-                  className='text-sm font-bold text-neutral-700 dark:text-neutral-300'
-                >
-                  Venta simple hasta
-                </label>
-                <p className='text-xs text-neutral-500 dark:text-neutral-400 mt-0.5'>
-                  Sin comisión ni anfitriona hasta este precio.
-                </p>
-              </div>
-              <div className='flex items-center gap-2 shrink-0'>
-                <span className='text-sm text-neutral-500'>$</span>
-                <Input
-                  id='service-simple'
-                  type='number'
-                  min='0'
-                  value={simpleValue}
-                  onChange={e => setSimpleValue(e.target.value)}
-                  className='w-28 px-3 py-1.5 bg-white dark:bg-neutral-950 border border-neutral-300 dark:border-neutral-800 rounded-full focus:ring-2 focus:ring-black dark:focus:ring-white focus:border-transparent text-neutral-900 dark:text-white text-sm text-center'
-                />
-              </div>
+        </>
+      }
+      contentClassName='space-y-4'
+    >
+      <div className='grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4'>
+        <div className='p-4 bg-neutral-50 dark:bg-neutral-800/30 rounded-xl'>
+          <div className='flex items-center gap-3'>
+            <ShoppingCart className='h-5 w-5 text-neutral-500 shrink-0' />
+            <div className='flex-1'>
+              <label
+                htmlFor='service-simple'
+                className='text-sm font-bold text-neutral-700 dark:text-neutral-300'
+              >
+                Venta simple hasta
+              </label>
+              <p className='text-xs text-neutral-500 dark:text-neutral-400 mt-0.5'>
+                Sin comisión ni anfitriona hasta este precio.
+              </p>
             </div>
-          </div>
-
-          <div className='p-4 bg-neutral-50 dark:bg-neutral-800/30 rounded-xl'>
-            <div className='flex items-center gap-3'>
-              <Users className='h-5 w-5 text-neutral-500 shrink-0' />
-              <div className='flex-1'>
-                <label
-                  htmlFor='service-hostess'
-                  className='text-sm font-bold text-neutral-700 dark:text-neutral-300'
-                >
-                  Anfitriona desde
-                </label>
-                <p className='text-xs text-neutral-500 dark:text-neutral-400 mt-0.5'>
-                  Precio mínimo para asignar anfitriona.
-                </p>
-              </div>
-              <div className='flex items-center gap-2 shrink-0'>
-                <span className='text-sm text-neutral-500'>$</span>
-                <Input
-                  id='service-hostess'
-                  type='number'
-                  min='0'
-                  value={hostessValue}
-                  onChange={e => setHostessValue(e.target.value)}
-                  className='w-28 px-3 py-1.5 bg-white dark:bg-neutral-950 border border-neutral-300 dark:border-neutral-800 rounded-full focus:ring-2 focus:ring-black dark:focus:ring-white focus:border-transparent text-neutral-900 dark:text-white text-sm text-center'
-                />
-              </div>
-            </div>
-          </div>
-
-          <div className='p-4 bg-neutral-50 dark:bg-neutral-800/30 rounded-xl'>
-            <div className='flex items-center gap-3'>
-              <BedDouble className='h-5 w-5 text-neutral-500 shrink-0' />
-              <div className='flex-1'>
-                <label
-                  htmlFor='service-habitacion'
-                  className='text-sm font-bold text-neutral-700 dark:text-neutral-300'
-                >
-                  Habitación desde
-                </label>
-                <p className='text-xs text-neutral-500 dark:text-neutral-400 mt-0.5'>
-                  Precio mínimo para exigir habitación.
-                </p>
-              </div>
-              <div className='flex items-center gap-2 shrink-0'>
-                <span className='text-sm text-neutral-500'>$</span>
-                <Input
-                  id='service-habitacion'
-                  type='number'
-                  min='0'
-                  value={habitacionValue}
-                  onChange={e => setHabitacionValue(e.target.value)}
-                  className='w-28 px-3 py-1.5 bg-white dark:bg-neutral-950 border border-neutral-300 dark:border-neutral-800 rounded-full focus:ring-2 focus:ring-black dark:focus:ring-white focus:border-transparent text-neutral-900 dark:text-white text-sm text-center'
-                />
-              </div>
+            <div className='flex items-center gap-2 shrink-0'>
+              <span className='text-sm text-neutral-500'>$</span>
+              <Input
+                id='service-simple'
+                type='number'
+                min='0'
+                value={simpleValue}
+                onChange={e => setSimpleValue(e.target.value)}
+                className='w-28 px-3 py-1.5 bg-white dark:bg-neutral-950 border border-neutral-300 dark:border-neutral-800 rounded-full focus:ring-2 focus:ring-black dark:focus:ring-white focus:border-transparent text-neutral-900 dark:text-white text-sm text-center'
+              />
             </div>
           </div>
         </div>
 
-        <div className='flex justify-end pt-4'>
-          <Button
-            variant='unstyled'
-            onClick={handleSave}
-            disabled={saving}
-            className='flex items-center gap-2 px-6 py-2.5 bg-black dark:bg-white text-white dark:text-black border-2 border-black dark:border-white hover:scale-105 active:scale-95 transition-all duration-200 rounded-full font-bold disabled:opacity-50'
-          >
-            <Save className='h-4 w-4' />
-            {saving ? 'Guardando...' : 'Guardar Cambios'}
-          </Button>
+        <div className='p-4 bg-neutral-50 dark:bg-neutral-800/30 rounded-xl'>
+          <div className='flex items-center gap-3'>
+            <Users className='h-5 w-5 text-neutral-500 shrink-0' />
+            <div className='flex-1'>
+              <label
+                htmlFor='service-hostess'
+                className='text-sm font-bold text-neutral-700 dark:text-neutral-300'
+              >
+                Anfitriona desde
+              </label>
+              <p className='text-xs text-neutral-500 dark:text-neutral-400 mt-0.5'>
+                Precio mínimo para asignar anfitriona.
+              </p>
+            </div>
+            <div className='flex items-center gap-2 shrink-0'>
+              <span className='text-sm text-neutral-500'>$</span>
+              <Input
+                id='service-hostess'
+                type='number'
+                min='0'
+                value={hostessValue}
+                onChange={e => setHostessValue(e.target.value)}
+                className='w-28 px-3 py-1.5 bg-white dark:bg-neutral-950 border border-neutral-300 dark:border-neutral-800 rounded-full focus:ring-2 focus:ring-black dark:focus:ring-white focus:border-transparent text-neutral-900 dark:text-white text-sm text-center'
+              />
+            </div>
+          </div>
+        </div>
+
+        <div className='p-4 bg-neutral-50 dark:bg-neutral-800/30 rounded-xl'>
+          <div className='flex items-center gap-3'>
+            <BedDouble className='h-5 w-5 text-neutral-500 shrink-0' />
+            <div className='flex-1'>
+              <label
+                htmlFor='service-habitacion'
+                className='text-sm font-bold text-neutral-700 dark:text-neutral-300'
+              >
+                Habitación desde
+              </label>
+              <p className='text-xs text-neutral-500 dark:text-neutral-400 mt-0.5'>
+                Precio mínimo para exigir habitación.
+              </p>
+            </div>
+            <div className='flex items-center gap-2 shrink-0'>
+              <span className='text-sm text-neutral-500'>$</span>
+              <Input
+                id='service-habitacion'
+                type='number'
+                min='0'
+                value={habitacionValue}
+                onChange={e => setHabitacionValue(e.target.value)}
+                className='w-28 px-3 py-1.5 bg-white dark:bg-neutral-950 border border-neutral-300 dark:border-neutral-800 rounded-full focus:ring-2 focus:ring-black dark:focus:ring-white focus:border-transparent text-neutral-900 dark:text-white text-sm text-center'
+              />
+            </div>
+          </div>
         </div>
       </div>
-    </section>
+
+      <div className='flex justify-end pt-4'>
+        <Button
+          variant='unstyled'
+          onClick={handleSave}
+          disabled={saving}
+          className='flex items-center gap-2 px-6 py-2.5 bg-black dark:bg-white text-white dark:text-black border-2 border-black dark:border-white hover:scale-105 active:scale-95 transition-all duration-200 rounded-full font-bold disabled:opacity-50'
+        >
+          <Save className='h-4 w-4' />
+          {saving ? 'Guardando...' : 'Guardar Cambios'}
+        </Button>
+      </div>
+    </CollapsibleCard>
   );
 }

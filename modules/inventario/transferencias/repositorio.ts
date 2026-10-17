@@ -73,7 +73,9 @@ export async function traspasarAlBar(
         {
           tipo: 'botella' as const,
           precio: Number(precioVenta ?? 0),
-          comision: Number(comision ?? 0)
+          comision: Number(comision ?? 0),
+          colacion_habilitada:
+            guardadas?.find(option => option.tipo === 'botella')?.colacion_habilitada ?? false
         }
       ];
     }

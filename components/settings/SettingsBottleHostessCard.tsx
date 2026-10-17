@@ -3,6 +3,7 @@
 import { useState, useEffect, useMemo, useRef } from 'react';
 import { Save, Users, RotateCcw, Check, ChevronsUpDown } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { CollapsibleCard } from '@/components/ui/collapsible-card';
 import { ProductPhoto } from '@/components/shared/ProductPhoto';
 import { Popover, PopoverTrigger, PopoverContent } from '@/components/ui/popover';
 import {
@@ -353,180 +354,178 @@ export function SettingsBottleHostessCard() {
   };
 
   return (
-    <section aria-label='Precios y comisiones por producto' className='space-y-6'>
-      <header className='space-y-2'>
-        <h2 className='flex items-center gap-2 text-xl font-bold dark:text-white'>
+    <CollapsibleCard
+      defaultOpen
+      aria-label='Precios y comisiones por producto'
+      title={
+        <>
           <Users className='h-5 w-5 text-neutral-500' />
           Precios y comisiones por producto
-        </h2>
-      </header>
-      <div>
-        {productsError && (
-          <div role='alert' className='mb-4 text-sm text-red-600'>
-            {productsError}{' '}
-            <Button
-              variant='unstyled'
-              type='button'
-              onClick={() => void refresh()}
-              className='underline'
-            >
-              Reintentar
-            </Button>
-          </div>
-        )}
-        {loading || (presentaciones === null && !barError) ? (
-          <div className='text-center py-8'>
-            <div className='animate-spin rounded-full h-8 w-8 border-b-2 border-neutral-500 mx-auto' />
-            <p className='text-sm text-neutral-500 dark:text-neutral-400 mt-2'>
-              Cargando productos...
-            </p>
-          </div>
-        ) : barError ? (
-          <div className='text-center py-8 space-y-3'>
-            <p className='text-sm text-neutral-500 dark:text-neutral-400'>
-              No se pudo cargar el bar. Revisá la conexión e intentá de nuevo.
-            </p>
-            <Button
-              variant='unstyled'
-              type='button'
-              onClick={() => setBarNonce(n => n + 1)}
-              className='px-6 py-2 rounded-full font-bold border-2 border-neutral-300 dark:border-neutral-700 hover:scale-105 active:scale-95 transition-all text-sm'
-            >
-              Reintentar
-            </Button>
-          </div>
-        ) : productos.length === 0 ? (
-          <p className='text-center py-8 text-neutral-400 text-sm'>
-            No hay presentaciones del bar para configurar.
+        </>
+      }
+      headerClassName='gap-2'
+      contentClassName='space-y-4'
+    >
+      {productsError && (
+        <div role='alert' className='mb-4 text-sm text-red-600'>
+          {productsError}{' '}
+          <Button
+            variant='unstyled'
+            type='button'
+            onClick={() => void refresh()}
+            className='underline'
+          >
+            Reintentar
+          </Button>
+        </div>
+      )}
+      {loading || (presentaciones === null && !barError) ? (
+        <div className='text-center py-8'>
+          <div className='animate-spin rounded-full h-8 w-8 border-b-2 border-neutral-500 mx-auto' />
+          <p className='text-sm text-neutral-500 dark:text-neutral-400 mt-2'>
+            Cargando productos...
           </p>
-        ) : (
-          <div className='space-y-6'>
-            <div className='space-y-1'>
-              <label
-                htmlFor='botella-producto'
-                className='block text-xs font-bold uppercase tracking-wider text-neutral-500 ml-1'
-              >
-                Producto y presentación
-              </label>
-              <Popover open={productSelectorOpen} onOpenChange={setProductSelectorOpen}>
-                <PopoverTrigger asChild>
-                  <Button
-                    id='botella-producto'
-                    type='button'
-                    variant='outline'
-                    role='combobox'
-                    aria-expanded={productSelectorOpen}
-                    aria-controls='botella-productos-lista'
-                    disabled={saving}
-                    className='h-auto min-h-12 w-full justify-between rounded-full font-normal'
-                  >
-                    <span className='flex min-w-0 items-center gap-2'>
-                      {seleccionado && <ProductSelectorPhoto foto={seleccionado.foto} />}
-                      <span className='truncate'>
-                        {seleccionado ? etiquetaProducto(seleccionado) : 'Seleccionar producto'}
-                      </span>
-                    </span>
-                    <ChevronsUpDown className='opacity-50' />
-                  </Button>
-                </PopoverTrigger>
-                <PopoverContent
-                  align='start'
-                  className='w-[var(--radix-popover-trigger-width)] p-0'
-                >
-                  <Command>
-                    <CommandInput
-                      id='botella-producto-busqueda'
-                      placeholder='Buscar producto, categoría o presentación...'
-                      aria-label='Buscar producto, categoría o presentación'
-                      className='border-0 shadow-none focus-visible:outline-none focus-visible:ring-0 focus-visible:ring-offset-0'
-                    />
-                    <CommandList id='botella-productos-lista'>
-                      <CommandEmpty>No se encontraron productos.</CommandEmpty>
-                      <CommandGroup>
-                        {productos.map(p => (
-                          <CommandItem
-                            key={p.id}
-                            value={String(p.id)}
-                            keywords={[String(p.name), String(p.categoria ?? ''), p.presentacion]}
-                            onSelect={() => {
-                              if (String(p.id) !== selectedId) handleSelectChange(String(p.id));
-                              setProductSelectorOpen(false);
-                            }}
-                          >
-                            <Check
-                              className={cn(
-                                selectedId === String(p.id) ? 'opacity-100' : 'opacity-0'
-                              )}
-                            />
-                            <ProductSelectorPhoto foto={p.foto} />
-                            <span className='min-w-0 break-words'>{etiquetaProducto(p)}</span>
-                          </CommandItem>
-                        ))}
-                      </CommandGroup>
-                    </CommandList>
-                  </Command>
-                </PopoverContent>
-              </Popover>
-            </div>
-            {seleccionado && (
-              <SettingsSaleOptionsEditor
-                key={`${selectedId}:${barNonce}`}
-                ref={saleOptionsRef}
-                options={seleccionado.opciones_venta}
-                precio={precio}
-                comision={comision}
-                mlCliente={seleccionado.ml_shot}
-                mlAnfitriona={seleccionado.ml_shot_anfitriona}
-                onPrecio={setPrecioEdit}
-                onComision={setComisionEdit}
-                saving={saving}
-                maxAnfitrionas={maximo}
-                onMaxAnfitrionasChange={value =>
-                  setMaximoEdit(value.replace(/\D/g, '').slice(0, 2))
-                }
-              />
-            )}
-
-            {Number(maximo) >= 2 && Number(maximo) <= MAX_ANFITRIONAS && seleccionado && (
-              <SettingsChampagneTiers
-                key={selectedId}
-                ref={tiersRef}
-                disabled={saving}
-                productId={seleccionado.producto_id}
-                maxAnfitrionas={Number(maximo)}
-                champagne={esChampagne}
-                precioBase={Number(precio.replace(/\./g, '')) || 0}
-                comisionBase={Number(comision.replace(/\./g, '')) || 0}
-              />
-            )}
-
-            <div className='flex flex-wrap justify-end gap-2 pt-2'>
-              {vigente !== null && (
+        </div>
+      ) : barError ? (
+        <div className='text-center py-8 space-y-3'>
+          <p className='text-sm text-neutral-500 dark:text-neutral-400'>
+            No se pudo cargar el bar. Revisá la conexión e intentá de nuevo.
+          </p>
+          <Button
+            variant='unstyled'
+            type='button'
+            onClick={() => setBarNonce(n => n + 1)}
+            className='px-6 py-2 rounded-full font-bold border-2 border-neutral-300 dark:border-neutral-700 hover:scale-105 active:scale-95 transition-all text-sm'
+          >
+            Reintentar
+          </Button>
+        </div>
+      ) : productos.length === 0 ? (
+        <p className='text-center py-8 text-neutral-400 text-sm'>
+          No hay presentaciones del bar para configurar.
+        </p>
+      ) : (
+        <div className='space-y-6'>
+          <div className='space-y-1'>
+            <label
+              htmlFor='botella-producto'
+              className='block text-xs font-bold uppercase tracking-wider text-neutral-500 ml-1'
+            >
+              Producto y presentación
+            </label>
+            <Popover open={productSelectorOpen} onOpenChange={setProductSelectorOpen}>
+              <PopoverTrigger asChild>
                 <Button
-                  variant='unstyled'
+                  id='botella-producto'
                   type='button'
-                  onClick={() => guardarMaximo(null)}
+                  variant='outline'
+                  role='combobox'
+                  aria-expanded={productSelectorOpen}
+                  aria-controls='botella-productos-lista'
                   disabled={saving}
-                  className='flex items-center gap-2 px-6 py-2.5 rounded-full font-bold border-2 border-neutral-300 dark:border-neutral-700 hover:scale-105 active:scale-95 transition-all duration-200 disabled:opacity-50 text-sm'
+                  className='h-auto min-h-12 w-full justify-between rounded-full font-normal'
                 >
-                  <RotateCcw className='h-4 w-4' />
-                  Volver al default
+                  <span className='flex min-w-0 items-center gap-2'>
+                    {seleccionado && <ProductSelectorPhoto foto={seleccionado.foto} />}
+                    <span className='truncate'>
+                      {seleccionado ? etiquetaProducto(seleccionado) : 'Seleccionar producto'}
+                    </span>
+                  </span>
+                  <ChevronsUpDown className='opacity-50' />
                 </Button>
-              )}
+              </PopoverTrigger>
+              <PopoverContent align='start' className='w-[var(--radix-popover-trigger-width)] p-0'>
+                <Command>
+                  <CommandInput
+                    id='botella-producto-busqueda'
+                    placeholder='Buscar producto, categoría o presentación...'
+                    aria-label='Buscar producto, categoría o presentación'
+                    className='border-0 shadow-none focus-visible:outline-none focus-visible:ring-0 focus-visible:ring-offset-0'
+                  />
+                  <CommandList id='botella-productos-lista'>
+                    <CommandEmpty>No se encontraron productos.</CommandEmpty>
+                    <CommandGroup>
+                      {productos.map(p => (
+                        <CommandItem
+                          key={p.id}
+                          value={String(p.id)}
+                          keywords={[String(p.name), String(p.categoria ?? ''), p.presentacion]}
+                          onSelect={() => {
+                            if (String(p.id) !== selectedId) handleSelectChange(String(p.id));
+                            setProductSelectorOpen(false);
+                          }}
+                        >
+                          <Check
+                            className={cn(
+                              selectedId === String(p.id) ? 'opacity-100' : 'opacity-0'
+                            )}
+                          />
+                          <ProductSelectorPhoto foto={p.foto} />
+                          <span className='min-w-0 break-words'>{etiquetaProducto(p)}</span>
+                        </CommandItem>
+                      ))}
+                    </CommandGroup>
+                  </CommandList>
+                </Command>
+              </PopoverContent>
+            </Popover>
+          </div>
+          {seleccionado && (
+            <SettingsSaleOptionsEditor
+              key={`${selectedId}:${barNonce}`}
+              ref={saleOptionsRef}
+              options={seleccionado.opciones_venta}
+              precio={precio}
+              comision={comision}
+              mlCliente={seleccionado.ml_shot}
+              mlAnfitriona={seleccionado.ml_shot_anfitriona}
+              onPrecio={setPrecioEdit}
+              onComision={setComisionEdit}
+              saving={saving}
+              maxAnfitrionas={maximo}
+              onMaxAnfitrionasChange={value => setMaximoEdit(value.replace(/\D/g, '').slice(0, 2))}
+            />
+          )}
+
+          {Number(maximo) >= 2 && Number(maximo) <= MAX_ANFITRIONAS && seleccionado && (
+            <SettingsChampagneTiers
+              key={selectedId}
+              ref={tiersRef}
+              disabled={saving}
+              productId={seleccionado.producto_id}
+              maxAnfitrionas={Number(maximo)}
+              champagne={esChampagne}
+              precioBase={Number(precio.replace(/\./g, '')) || 0}
+              comisionBase={Number(comision.replace(/\./g, '')) || 0}
+            />
+          )}
+
+          <div className='flex flex-wrap justify-end gap-2 pt-2'>
+            {vigente !== null && (
               <Button
                 variant='unstyled'
                 type='button'
-                onClick={handleSave}
+                onClick={() => guardarMaximo(null)}
                 disabled={saving}
-                className='flex items-center gap-2 px-6 py-2.5 bg-black dark:bg-white text-white dark:text-black border-2 border-black dark:border-white hover:scale-105 active:scale-95 transition-all duration-200 rounded-full font-bold disabled:opacity-50'
+                className='flex items-center gap-2 px-6 py-2.5 rounded-full font-bold border-2 border-neutral-300 dark:border-neutral-700 hover:scale-105 active:scale-95 transition-all duration-200 disabled:opacity-50 text-sm'
               >
-                <Save className='h-4 w-4' />
-                {saving ? 'Guardando...' : 'Guardar Cambios'}
+                <RotateCcw className='h-4 w-4' />
+                Volver al default
               </Button>
-            </div>
+            )}
+            <Button
+              variant='unstyled'
+              type='button'
+              onClick={handleSave}
+              disabled={saving}
+              className='flex items-center gap-2 px-6 py-2.5 bg-black dark:bg-white text-white dark:text-black border-2 border-black dark:border-white hover:scale-105 active:scale-95 transition-all duration-200 rounded-full font-bold disabled:opacity-50'
+            >
+              <Save className='h-4 w-4' />
+              {saving ? 'Guardando...' : 'Guardar Cambios'}
+            </Button>
           </div>
-        )}
-      </div>
-    </section>
+        </div>
+      )}
+    </CollapsibleCard>
   );
 }

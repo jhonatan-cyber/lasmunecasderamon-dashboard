@@ -2,7 +2,7 @@
 import 'dotenv/config';
 import { createHash } from 'node:crypto';
 import pg from 'pg';
-import postgres from '../../../lib/database/postgres.cjs';
+import postgres from '../lib/database/postgres.cjs';
 
 // Herramienta local de desarrollo: las escrituras pertenecen al módulo Asistencia.
 const config = postgres.connectionConfig();

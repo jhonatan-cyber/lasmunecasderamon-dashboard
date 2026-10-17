@@ -75,6 +75,9 @@ export function usePrivateRoomSummary({
     return roomPrice > 0 && roomCommission > 0;
   }, [selectedRoom]);
 
+  // Habitación con comisión: máximo 4 personas en total y nunca más de 2 clientes
+  // (2 clientes + 2 anfitrionas, o 1 cliente + 3 anfitrionas). La selección de
+  // cliente sigue siendo opcional.
   const maxHostesses = useMemo(() => {
     if (!hasComision) return 10;
     return Math.min(3, 4 - formData.clientes.length);
@@ -82,7 +85,7 @@ export function usePrivateRoomSummary({
 
   const maxClients = useMemo(() => {
     if (!hasComision) return 4;
-    return 4 - formData.usuarios.length;
+    return Math.min(2, 4 - formData.usuarios.length);
   }, [hasComision, formData.usuarios.length]);
 
   const desgloseTarjeta = useMemo(() => getCardSplit(total), [total]);

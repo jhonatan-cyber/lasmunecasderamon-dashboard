@@ -60,6 +60,7 @@ export function CategoryProductRow({
 }: CategoryProductRowProps) {
   const [choice, setChoice] = useState<SaleChoice>('botella');
   const venta = resolverVentaProducto(original, choice);
+  const eleccionBotellaSinAnfitriona = venta.tipoVenta === 'botella_sin_anfitriona';
   const p = original.opciones_venta
     ? {
         ...original,
@@ -69,7 +70,10 @@ export function CategoryProductRow({
         comision: venta.comision,
         commission: venta.comision,
         tipo_venta: venta.esShot ? 'shot' : 'botella',
-        shot_anfitriona: esCortoAnfitriona(venta.tipoVenta)
+        shot_anfitriona: esCortoAnfitriona(venta.tipoVenta),
+        botella_anfitriona: !eleccionBotellaSinAnfitriona,
+        precio_botella_anfitriona: original.precio_botella_anfitriona,
+        precio_botella_sin_anfitriona: original.precio_botella_sin_anfitriona
       }
     : original;
   const id = String(p.id_producto || p.id);
@@ -91,11 +95,26 @@ export function CategoryProductRow({
               onCantidadChange(id, '1');
             }}
           >
-            {venta.opciones.map(o => (
-              <option key={o.value} value={o.value}>
-                {o.nombre} - {formatCurrencyNoDecimals(o.precio)}
-              </option>
-            ))}
+            {venta.opciones
+              .filter(o => o.esShot || o.value === 'botella')
+              .map(o => (
+                <option key={o.value} value={o.value}>
+                  {o.nombre} - {formatCurrencyNoDecimals(o.precio)}
+                </option>
+              ))}
+          </NativeSelect>
+        )}
+        {!venta.esShot && venta.opciones.some(o => o.value === 'botella_sin_anfitriona') && (
+          <NativeSelect
+            aria-label={`Anfitriona de botella ${p.nombre || p.name}`}
+            className='mt-2 block w-full rounded-md border bg-background p-2 text-sm'
+            value={eleccionBotellaSinAnfitriona ? 'sin' : 'con'}
+            onChange={e =>
+              setChoice(e.target.value === 'sin' ? 'botella_sin_anfitriona' : 'botella')
+            }
+          >
+            <option value='con'>Con anfitriona</option>
+            <option value='sin'>Sin anfitriona</option>
           </NativeSelect>
         )}
       </TableCell>
@@ -204,6 +223,11 @@ export function CategoryProductRow({
           onClick={() => {
             onAgregarProducto({
               ...p,
+              precio:
+                !venta.esShot && eleccionBotellaSinAnfitriona
+                  ? (venta.opciones.find(o => o.value === 'botella_sin_anfitriona')?.precio ??
+                    venta.precio)
+                  : venta.precio,
               cantidad: cantidades[id] || 1,
               selectedHostesses: !hasComm
                 ? []
@@ -211,6 +235,7 @@ export function CategoryProductRow({
                   ? champagneHostessSelections[id] || []
                   : otherProductHostessSelections[id] || [],
               isChampagne: isChampagne,
+              botella_anfitriona: !eleccionBotellaSinAnfitriona,
               selectedRoom: roomSelections[id] || null,
               requiresRoom: needsRoom
             });

@@ -8,6 +8,7 @@ import { ChampagneTiersReadonly } from '@/components/bar/transfer/ChampagneTiers
 import type { ChampagneTierRow } from '@/components/bar/transfer/transferOptions';
 import type { SaleOption } from '@/types/sale-options';
 import { preciosCortoAnfitriona } from '@/lib/sales/hostessShortPrices';
+import { Checkbox } from '@/components/ui/checkbox';
 
 /**
  * Bloque «Configuración guardada»: reutiliza precio/comisión/anfitrionas ya
@@ -24,6 +25,8 @@ export const SavedConfigPanel = memo(function SavedConfigPanel({
   onMlShotClienteChange,
   onMlShotAnfitrionaChange,
   onEditPrices,
+  colacionHabilitada,
+  onColacionHabilitadaChange,
   maxAnfitrionas,
   onMaxAnfitrionasChange,
   bottleExtras,
@@ -39,6 +42,8 @@ export const SavedConfigPanel = memo(function SavedConfigPanel({
   onMlShotClienteChange: (value: string) => void;
   onMlShotAnfitrionaChange: (value: string) => void;
   onEditPrices: () => void;
+  colacionHabilitada?: boolean;
+  onColacionHabilitadaChange?: (value: boolean) => void;
   maxAnfitrionas?: string;
   onMaxAnfitrionasChange?: (value: string) => void;
   bottleExtras?: ReactNode;
@@ -122,6 +127,22 @@ export const SavedConfigPanel = memo(function SavedConfigPanel({
             )}
             {bottleExtras}
           </section>
+          {onColacionHabilitadaChange && (
+            <label className='flex cursor-pointer items-start gap-3 rounded-xl border p-4'>
+              <Checkbox
+                checked={colacionHabilitada === true}
+                onCheckedChange={checked => onColacionHabilitadaChange(checked === true)}
+                disabled={saving}
+                aria-label='Habilitar bebida para colación'
+              />
+              <span className='space-y-1'>
+                <span className='block text-sm font-medium'>Habilitar bebida para colación</span>
+                <span className='block text-xs text-muted-foreground'>
+                  La bebida aparecerá en el módulo Colaciones para cobrarla al trabajador.
+                </span>
+              </span>
+            </label>
+          )}
         </>
       )}
       {opciones

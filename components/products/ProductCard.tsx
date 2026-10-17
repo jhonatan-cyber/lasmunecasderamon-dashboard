@@ -11,10 +11,9 @@ import {
   GripVertical,
   Info,
   Tag as TagIcon,
-  DollarSign,
   Eye
 } from 'lucide-react';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import {
@@ -52,6 +51,13 @@ interface ProductCardProps {
   entranceIndex?: number;
 }
 
+/** Returns a Tailwind colour+weight class for a stock value relative to its minimum. */
+const stockColorClass = (value: number, min?: number | null): string => {
+  if (value === 0) return 'text-red-600 font-bold';
+  if (min != null && value < min) return 'text-amber-600 font-semibold';
+  return 'text-emerald-600 font-medium';
+};
+
 const ProductCard: React.FC<ProductCardProps> = ({
   product,
   presentation = null,
@@ -67,10 +73,15 @@ const ProductCard: React.FC<ProductCardProps> = ({
   const [deleteModalOpen, setDeleteModalOpen] = useState(false);
   const [detailsOpen, setDetailsOpen] = useState(false);
   const { hasPermission } = useUserPermissions();
-  const totalStock =
-    Number(presentation ? (presentation.stock ?? 0) : (product.stock_almacen ?? 0)) +
-    Number(presentation?.stock_bar ?? 0);
-  const lowStock = presentation?.stock_minimo != null && totalStock < presentation.stock_minimo;
+
+  const stockBodega = Number(
+    presentation ? (presentation.stock ?? 0) : (product.stock_almacen ?? 0)
+  );
+  const stockBar = Number(presentation?.stock_bar ?? 0);
+  const totalStock = stockBodega + stockBar;
+  const stockMinimo = presentation?.stock_minimo ?? null;
+  const stockMaximo = presentation?.stock_maximo ?? null;
+  const lowStock = stockMinimo != null && totalStock < stockMinimo;
 
   const canEdit = hasPermission('products', 'edit');
   const canDelete = hasPermission('products', 'delete');
@@ -115,11 +126,19 @@ const ProductCard: React.FC<ProductCardProps> = ({
 
   const photoAlt = presentation ? `${product.name} ${presentation.nombre}` : product.name;
 
+  // Category: prefer presentation-level name, fall back to product-level
+  const categoriaLabel =
+    (presentation?.categoria_nombre && presentation.categoria_nombre.trim() !== ''
+      ? presentation.categoria_nombre
+      : null) ?? (product.categoria && product.categoria.trim() !== '' ? product.categoria : null);
+
+  const tooltipMinMax = `Mín: ${stockMinimo != null ? stockMinimo.toLocaleString('es-CL') : 'Sin configurar'} / Máx: ${stockMaximo != null ? stockMaximo.toLocaleString('es-CL') : 'Sin configurar'}`;
+
   return (
-    <>
+    <TooltipProvider>
       <StaggeredEntrance index={entranceIndex} className='h-full'>
         <Card
-          className={`group relative h-full border-none backdrop-blur-xs shadow-md hover:shadow-xl transition-all duration-300 rounded-4xl overflow-hidden ${lowStock ? 'bg-red-50 dark:bg-red-950/30 ring-2 ring-inset ring-red-400 dark:ring-red-700' : 'bg-white dark:bg-slate-900'}`}
+          className={`group relative h-full border border-gray-200 dark:border-slate-700 backdrop-blur-xs shadow-md hover:shadow-xl transition-all duration-300 rounded-4xl overflow-hidden ${lowStock ? 'bg-red-50 dark:bg-red-950/30 ring-2 ring-inset ring-red-400 dark:ring-red-700' : 'bg-white dark:bg-slate-900'}`}
           ref={isDraggable ? setNodeRef : undefined}
           style={style}
         >
@@ -230,12 +249,14 @@ const ProductCard: React.FC<ProductCardProps> = ({
 
           <CardContent className='p-6 space-y-4'>
             <div className='space-y-1.5'>
+              {/* Barcode / code row */}
               <div className='flex items-center gap-2 text-gray-400 dark:text-gray-500'>
                 <TagIcon className='h-3 w-3' />
                 <span className='text-[10px] uppercase font-bold tracking-widest font-mono'>
                   {presentation?.codigo_barras || product.code}
                 </span>
               </div>
+              {/* Name + presentation badge */}
               <div className='flex min-w-0 items-center gap-2'>
                 <Tooltip>
                   <TooltipTrigger asChild>
@@ -256,6 +277,13 @@ const ProductCard: React.FC<ProductCardProps> = ({
                   </Badge>
                 )}
               </div>
+              {/* Category badge */}
+              {categoriaLabel && (
+                <Badge variant='outline' className='text-xs gap-1'>
+                  <TagIcon className='h-3 w-3' />
+                  {categoriaLabel}
+                </Badge>
+              )}
               {lowStock && (
                 <Badge className='mt-2 rounded-full bg-red-100 text-red-700 dark:bg-red-900/50 dark:text-red-300'>
                   Stock bajo · Total: {totalStock.toLocaleString('es-CL')}
@@ -263,7 +291,9 @@ const ProductCard: React.FC<ProductCardProps> = ({
               )}
             </div>
 
+            {/* Stats grid: (Precio compra, Precio venta) | (Stock Bodega, Stock Bar) | (Total) */}
             <div className='grid grid-cols-2 gap-4 pb-4 border-b border-gray-100 dark:border-slate-800'>
+              {/* Precio compra */}
               <div className='space-y-1'>
                 <p className='text-[10px] uppercase font-bold text-gray-400 dark:text-gray-500 tracking-wider'>
                   Precio compra
@@ -278,35 +308,62 @@ const ProductCard: React.FC<ProductCardProps> = ({
                   </span>
                 </div>
               </div>
+
+              {/* Precio venta */}
+              <div className='space-y-1'>
+                <p className='text-[10px] uppercase font-bold text-gray-400 dark:text-gray-500 tracking-wider'>
+                  Precio venta
+                </p>
+                <div className='flex items-center gap-1 text-gray-900 dark:text-neutral-100 font-bold'>
+                  <span className='text-purple-500 text-xs'>$</span>
+                  <span className='text-base'>
+                    {presentation?.precio_venta != null
+                      ? formatCurrencyCLP(presentation.precio_venta).replace('$', '')
+                      : '—'}
+                  </span>
+                </div>
+              </div>
+
+              {/* Stock Bodega */}
               <div className='space-y-1'>
                 <p className='text-[10px] uppercase font-bold text-gray-400 dark:text-gray-500 tracking-wider'>
                   Stock Bodega
                 </p>
-                <div className='flex items-center gap-1 text-gray-900 dark:text-neutral-100 font-medium'>
-                  <Badge className='bg-blue-100 text-blue-700 rounded-full px-2 py-0.5 text-xs'>
-                    {presentation ? (presentation.stock ?? 0) : (product.stock_almacen ?? 0)} un.
-                  </Badge>
+                <div className='flex items-center gap-1'>
+                  <span className={`text-sm ${stockColorClass(stockBodega, stockMinimo)}`}>
+                    {stockBodega.toLocaleString('es-CL')} un.
+                  </span>
                 </div>
               </div>
-              {[
-                ['Stock Bar', presentation?.stock_bar ?? 0],
-                [
-                  'Total Bar + Bodega',
-                  Number(presentation ? (presentation.stock ?? 0) : (product.stock_almacen ?? 0)) +
-                    Number(presentation?.stock_bar ?? 0)
-                ],
-                ['Stock mínimo', presentation?.stock_minimo],
-                ['Stock máximo', presentation?.stock_maximo]
-              ].map(([label, value]) => (
-                <div key={String(label)} className='space-y-1'>
-                  <p className='text-[10px] uppercase font-bold text-gray-400 dark:text-gray-500 tracking-wider'>
-                    {label}
-                  </p>
-                  <p className='text-sm font-semibold'>
-                    {value == null ? 'Sin configurar' : Number(value).toLocaleString('es-CL')}
-                  </p>
-                </div>
-              ))}
+
+              {/* Stock Bar */}
+              <div className='space-y-1'>
+                <p className='text-[10px] uppercase font-bold text-gray-400 dark:text-gray-500 tracking-wider'>
+                  Stock Bar
+                </p>
+                <p className={`text-sm ${stockColorClass(stockBar, stockMinimo)}`}>
+                  {stockBar.toLocaleString('es-CL')} un.
+                </p>
+              </div>
+
+              {/* Total — spans both columns, with min/max tooltip */}
+              <div className='col-span-2 space-y-1'>
+                <p className='text-[10px] uppercase font-bold text-gray-400 dark:text-gray-500 tracking-wider'>
+                  Total Bar + Bodega
+                </p>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <p
+                      className={`text-sm cursor-default underline decoration-dotted decoration-gray-400 ${stockColorClass(totalStock, stockMinimo)}`}
+                    >
+                      {totalStock.toLocaleString('es-CL')} un.
+                    </p>
+                  </TooltipTrigger>
+                  <TooltipPortal>
+                    <TooltipContent>{tooltipMinMax}</TooltipContent>
+                  </TooltipPortal>
+                </Tooltip>
+              </div>
             </div>
 
             {product.description ? (
@@ -319,7 +376,7 @@ const ProductCard: React.FC<ProductCardProps> = ({
                 </p>
               </div>
             ) : (
-              <div className='h-10' />
+              <div className='min-h-[2.5rem]' />
             )}
           </CardContent>
         </Card>
@@ -341,7 +398,7 @@ const ProductCard: React.FC<ProductCardProps> = ({
         product={product}
         presentation={presentation}
       />
-    </>
+    </TooltipProvider>
   );
 };
 

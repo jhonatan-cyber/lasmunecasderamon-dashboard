@@ -70,7 +70,7 @@ tests/integration/backups/
 # Sondas y utilidades de diagnostico locales (no forman parte del proyecto)
 /_tmp_real/
 /_inspect_tmp.mjs
-/_seed_trans_tmp.mjs
+/seed/seed-traspasos.mjs
 /module-review-*.json
 /nested-report.txt
 .freebuff/

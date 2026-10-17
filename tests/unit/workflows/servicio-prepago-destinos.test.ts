@@ -242,4 +242,26 @@ describe('destinos prepago en la creacion de servicios', () => {
       'cliente-a'
     ]);
   });
+
+  it('destinos vacios explicitos no descuentan saldo aunque haya titular', async () => {
+    await crearServicioEnUnidad(
+      {
+        ...servicioBase,
+        cliente_id: 'cliente-a',
+        prepago_destinos: []
+      },
+      'cajero',
+      contexto,
+      aplazar
+    );
+
+    expect(consumirPrepagoVenta).not.toHaveBeenCalled();
+    expect(saldoPrepagoAgotado).not.toHaveBeenCalled();
+    expect(cerrarCuentasPrepagoSaldadas).not.toHaveBeenCalled();
+    expect(registrarMovimientoCobro).toHaveBeenCalledWith(
+      'caja-1',
+      expect.objectContaining({ prepago: 0 }),
+      contexto
+    );
+  });
 });

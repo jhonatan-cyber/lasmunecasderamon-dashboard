@@ -6,6 +6,7 @@ export const SaleOptionsSchema = z
     z
       .object({
         tipo: z.enum(['botella', 'shot']),
+        colacion_habilitada: z.boolean().optional(),
         acompanamiento: z
           .object({
             tipo: z.enum(['gaseosa', 'soda']).optional(),
@@ -50,6 +51,10 @@ export const SaleOptionsSchema = z
       .refine(
         option => option.tipo === 'botella' || option.acompanamiento === undefined,
         'La bebida solo corresponde a botellas'
+      )
+      .refine(
+        option => option.tipo === 'botella' || option.colacion_habilitada === undefined,
+        'La colación solo puede habilitarse para bebidas por botella'
       )
       .transform(option =>
         option.tipo === 'shot' && option.precios_anfitriona ? { ...option, comision: 0 } : option

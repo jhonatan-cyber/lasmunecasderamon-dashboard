@@ -1,6 +1,8 @@
 export type SaleType = 'botella' | 'shot';
 export interface SaleOption {
   tipo: SaleType;
+  /** Esta bebida se puede entregar como colación pagada. */
+  colacion_habilitada?: boolean;
   precio: number;
   precio_sin_anfitriona?: number;
   comision: number;

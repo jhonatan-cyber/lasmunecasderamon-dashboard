@@ -199,10 +199,9 @@ export function buildServicioPayload(args: {
     metodo_pago: formData.metodo_pago,
     usuarios: formData.usuarios.map(normalizeId),
     pagos_mixtos: formData.metodo_pago === 'mixto' ? pagosMixtos : null,
-    prepago_destinos:
-      prepagoDestinos && prepagoDestinos.length > 0
-        ? prepagoDestinos.map(d => ({ cliente_id: normalizeId(d.cliente_id), monto: d.monto }))
-        : undefined
+    prepago_destinos: prepagoDestinos
+      ? prepagoDestinos.map(d => ({ cliente_id: normalizeId(d.cliente_id), monto: d.monto }))
+      : undefined
   };
 }
 

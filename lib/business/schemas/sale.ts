@@ -67,6 +67,7 @@ export const SaleCreateSchema = z.object({
           // 'shot' descuenta ml de la botella abierta en el bar; por defecto, botella entera.
           tipo_venta: z.enum(['botella', 'shot']).optional(),
           // El shot puede cobrarse a precio de cliente (default) o de anfitriona.
+          botella_anfitriona: z.boolean().optional(),
           acompanamiento_botella: z
             .object({
               presentacion_id: z.string().min(1),

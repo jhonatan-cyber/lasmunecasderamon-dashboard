@@ -131,6 +131,8 @@ export function TransferModal({
                           disabled={saving}
                         />
                       }
+                      colacionHabilitada={form.colacionHabilitada}
+                      onColacionHabilitadaChange={form.setColacionHabilitada}
                       bottleTiers={
                         Number(form.comision.replace(/\./g, '')) > 0 &&
                         Number(form.maxAnfitrionas || 1) >= 2 ? (
@@ -159,6 +161,8 @@ export function TransferModal({
 
                       maxAnfitrionas={form.maxAnfitrionas}
                       onMaxAnfitrionasChange={form.setMaxAnfitrionas}
+                      colacionHabilitada={form.colacionHabilitada}
+                      onColacionHabilitadaChange={form.setColacionHabilitada}
                       acompanamientoBotella={form.acompanamientoBotella}
                       unidadesAcompanamiento={form.unidadesAcompanamiento}
                       onAcompanamientoBotellaChange={form.setAcompanamientoBotella}
