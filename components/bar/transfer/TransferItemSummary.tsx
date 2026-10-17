@@ -158,7 +158,7 @@ export const TransferItemSummary = memo(function TransferItemSummary({
                     {configuration.mlPorShotAnfitriona} ml
                   </p>
                   <p>
-                    Cliente: producto completo · Acompa{'\u00f1'}amiento anfitriona:{' '}
+                    Cliente: producto completo · Bebida analcohólica anfitriona:{' '}
                     {option.ml_acompanamiento_anfitriona ?? 0} ml
                   </p>
                 </>

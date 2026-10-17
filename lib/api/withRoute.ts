@@ -285,6 +285,20 @@ export function withRoute<M extends PermissionModule>(
         ? await runRegistration(request, String(user.id), invoke)
         : await invoke(request);
       const normalizada = await normalizeJsonResponseDates(response);
+      if (
+        normalizada.ok &&
+        ['POST', 'PUT', 'PATCH', 'DELETE'].includes(request.method) &&
+        /^\/api\/(products|bar|purchases|sales|transfers|orders|cuentas|servicios|returns)(\/|$)/.test(
+          new URL(request.url).pathname
+        )
+      ) {
+        try {
+          const { revisarReposicion } = await import('@/modules/inventario/reposicion/servicio');
+          await revisarReposicion();
+        } catch (error) {
+          logger.captureException(error, { context: 'stock:replenishment' });
+        }
+      }
 
       // Toda mutación auditada y exitosa avisa qué módulo cambió: es la señal que permite
       // refrescar en vivo las vistas de administración (productos, clientes, usuarios,

@@ -270,7 +270,7 @@ function ConfirmarAnulacionServicioContent() {
             </div>
 
             {}
-            <div className='bg-blue-50 p-4 rounded-lg border border-blue-200'>
+            <div className='bg-blue-50 p-4 rounded-xl'>
               <p className='text-sm text-blue-800 text-center'>
                 <strong>ℹ️ Información:</strong> Después de procesar la anulación, esta ventana se
                 cerrará automáticamente.

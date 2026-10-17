@@ -30,6 +30,7 @@ import { formatLongDateEs } from '@/lib/utils/calendarUtils';
 interface CategoryCardProps {
   category: {
     id: string;
+    system_key?: string | null;
     name: string;
     description: string;
     status: number;
@@ -105,7 +106,8 @@ export default function CategoryCard({
     return () => controller.abort();
   }, [showDeleteModal, category.id]);
 
-  const hasAnyAction = canEdit || canDelete || canActivate || canDeactivate;
+  const protectedCategory = category.system_key === 'bebidas_analcoholicas';
+  const hasAnyAction = !protectedCategory && (canEdit || canDelete || canActivate || canDeactivate);
 
   const slug = category.name
     .toLowerCase()
@@ -158,7 +160,7 @@ export default function CategoryCard({
                 </Button>
               </DropdownMenuTrigger>
               <DropdownMenuContent align='end'>
-                {canEdit && (
+                {canEdit && !protectedCategory && (
                   <TooltipProvider>
                     <Tooltip>
                       <TooltipTrigger asChild>
@@ -179,7 +181,7 @@ export default function CategoryCard({
                   </TooltipProvider>
                 )}
 
-                {category.status === 1 && canDeactivate ? (
+                {category.status === 1 && canDeactivate && !protectedCategory ? (
                   <TooltipProvider>
                     <Tooltip>
                       <TooltipTrigger asChild>
@@ -219,7 +221,7 @@ export default function CategoryCard({
                   </TooltipProvider>
                 ) : null}
 
-                {canDelete && (
+                {canDelete && category.system_key !== 'bebidas_analcoholicas' && (
                   <TooltipProvider>
                     <Tooltip>
                       <TooltipTrigger asChild>

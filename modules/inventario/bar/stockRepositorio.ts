@@ -39,7 +39,10 @@ export async function obtenerMaxAnfitrionasPorProducto(
   }
 }
 
-export async function listarStockBar(productoId?: string): Promise<
+export async function listarStockBar(
+  productoId?: string,
+  soloAcompanamientos = false
+): Promise<
   (PresentacionRow & {
     producto_nombre: string;
     stock_bar_cerrado: number;
@@ -73,7 +76,9 @@ export async function listarStockBar(productoId?: string): Promise<
      FROM inventario_presentaciones p
      INNER JOIN productos pr ON pr.id_producto = p.producto_id
      LEFT JOIN categorias c ON c.id_categoria = pr.categoria_id
-     ${productoId ? 'WHERE p.producto_id = ?' : ''}
+     WHERE 1 = 1
+     ${productoId ? 'AND p.producto_id = ?' : ''}
+     ${soloAcompanamientos ? "AND c.system_key = 'bebidas_analcoholicas' AND c.estado = 1 AND pr.estado = 1" : ''}
      ORDER BY pr.nombre ASC, p.fecha_crea ASC, p.id ASC`,
     productoId ? [mermaShotsMl, productoId] : [mermaShotsMl]
   );

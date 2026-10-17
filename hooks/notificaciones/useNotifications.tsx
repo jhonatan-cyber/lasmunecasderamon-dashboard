@@ -207,6 +207,15 @@ export function useNotifications() {
       });
     }
 
+    if (payload?.type === 'stock_replenishment') {
+      toast.warning('Stock bajo: hay productos por comprar', {
+        description: 'Revisa la orden automática de reposición.',
+        duration: 9000,
+        action: { label: 'Ver orden', onClick: () => router.push('/purchases/replenishment') }
+      });
+      void refetchCounts();
+    }
+
     if (payload?.type === 'new_order' && payload?.data) {
       showNotification(payload.data as NotificationData);
       setLastNotification({ type: 'new_order', data: payload.data, timestamp: Date.now() });

@@ -6,7 +6,11 @@ import { parseSavedOptions } from '@/components/bar/transfer/transferOptions';
 import { preciosCortoAnfitriona, esCortoAnfitriona } from './hostessShortPrices';
 
 /** Forma de venta elegida: botella entera o shot, a precio de cliente o de anfitriona. */
-export type SaleChoice = SaleType | 'shot_anfitriona' | `shot_anfitriona:${number}`;
+export type SaleChoice =
+  SaleType | 'botella_sin_anfitriona' | 'shot_anfitriona' | `shot_anfitriona:${number}`;
+
+export const esBotella = (value: string) =>
+  value === 'botella' || value === 'botella_sin_anfitriona';
 
 export interface OpcionVentaProducto {
   value: SaleChoice;
@@ -62,11 +66,23 @@ export function resolverVentaProducto(producto: any, eleccion?: SaleChoice): Ven
       ? [
           {
             value: 'botella' as SaleChoice,
-            nombre: opcionBotella?.acompanamiento
-              ? `Botella · ${opcionBotella.acompanamiento.unidades} ${opcionBotella.acompanamiento.tipo ? (opcionBotella.acompanamiento.tipo === 'gaseosa' ? 'gaseosas' : 'sodas') : 'bebidas'}`
-              : 'Botella',
+            nombre:
+              opcionBotella?.acompanamiento && opcionBotella.acompanamiento.unidades > 0
+                ? `Botella · ${opcionBotella.acompanamiento.unidades} ${opcionBotella.acompanamiento.tipo ? (opcionBotella.acompanamiento.tipo === 'gaseosa' ? 'gaseosas' : 'sodas') : 'bebidas'}`
+                : 'Botella',
             precio: precioBotella,
             comision: comisionBotella,
+            esShot: false
+          }
+        ]
+      : []),
+    ...(Number(opcionBotella?.precio_sin_anfitriona) > 0
+      ? [
+          {
+            value: 'botella_sin_anfitriona' as SaleChoice,
+            nombre: 'Botella sin anfitriona',
+            precio: Number(opcionBotella!.precio_sin_anfitriona),
+            comision: 0,
             esShot: false
           }
         ]
@@ -99,7 +115,9 @@ export function resolverVentaProducto(producto: any, eleccion?: SaleChoice): Ven
   ];
 
   const tipoVenta: SaleChoice =
-    eleccion && esCortoAnfitriona(eleccion) && opciones.some(option => option.value === eleccion)
+    eleccion &&
+    (esCortoAnfitriona(eleccion) || eleccion === 'botella_sin_anfitriona') &&
+    opciones.some(option => option.value === eleccion)
       ? eleccion
       : (eleccion === 'shot' || (eleccion && esCortoAnfitriona(eleccion))) && tieneShotCliente
         ? 'shot'

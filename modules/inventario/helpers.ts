@@ -33,6 +33,8 @@ export function parseOpcionesVenta(
           precio: Number(o.precio ?? 0),
           comision: Number(o.comision ?? 0)
         };
+        if (option.tipo === 'botella' && Number(o.precio_sin_anfitriona) > 0)
+          option.precio_sin_anfitriona = Number(o.precio_sin_anfitriona);
         // Precio independiente para anfitrionas; no hereda el precio de cliente.
         const anfitriona = Number(o.precio_anfitriona ?? 0);
         if (o.tipo === 'shot') {
@@ -56,7 +58,7 @@ export function parseOpcionesVenta(
           (o.acompanamiento.tipo === undefined ||
             ['gaseosa', 'soda'].includes(o.acompanamiento.tipo)) &&
           Number.isInteger(Number(o.acompanamiento.unidades)) &&
-          Number(o.acompanamiento.unidades) > 0 &&
+          Number(o.acompanamiento.unidades) >= 0 &&
           Number(o.acompanamiento.unidades) <= 1000
         ) {
           option.acompanamiento = {
@@ -135,6 +137,8 @@ export const mapPresentacion = (row: any, topeSimple = 10000): PresentacionRow =
     comision: Number(row.comision ?? 0),
     foto: row.foto ?? null,
     stock: Number(row.stock ?? 0),
+    stock_minimo: row.stock_minimo ?? null,
+    stock_maximo: row.stock_maximo ?? null,
     stock_bar: row.stock_bar !== undefined ? Number(row.stock_bar) : undefined,
     ml_botella:
       row.ml_botella === null || row.ml_botella === undefined ? null : Number(row.ml_botella),

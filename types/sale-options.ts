@@ -2,6 +2,7 @@ export type SaleType = 'botella' | 'shot';
 export interface SaleOption {
   tipo: SaleType;
   precio: number;
+  precio_sin_anfitriona?: number;
   comision: number;
   /**
    * Precio del corto para anfitriona, independiente del precio de cliente.

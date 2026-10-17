@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useCallback, useMemo } from 'react';
+import { useState, useCallback, useMemo, useRef } from 'react';
 import { Room } from '@/types/room';
 import { showSuccessToast, showErrorToast } from '@/lib/utils/toastUtils';
 import { useGenericFetch } from '../shared/useGenericFetch';
@@ -45,6 +45,8 @@ export default function useRooms(): UseRooms {
   });
 
   const [searchTerm, setSearchTerm] = useState('');
+  const reordering = useRef(false);
+  const [savingOrder, setSavingOrder] = useState(false);
   const {
     create,
     update,
@@ -173,6 +175,10 @@ export default function useRooms(): UseRooms {
 
   const reorderRooms = useCallback(
     async (reorderedRooms: Room[]) => {
+      if (reordering.current) return;
+      reordering.current = true;
+      setSavingOrder(true);
+      await queryClient.cancelQueries({ queryKey: ['/api/rooms'] });
       const previous = rooms || [];
       const ordered = reorderedRooms.map((room, index) => ({ ...room, display_order: index + 1 }));
       setData(ordered);
@@ -190,6 +196,10 @@ export default function useRooms(): UseRooms {
 
         const data = await res.json();
         if (res.ok && data.success) {
+          await Promise.all([
+            refetch(),
+            queryClient.invalidateQueries({ queryKey: queryKeys.rooms.all })
+          ]);
           showSuccessToast('Orden actualizado correctamente');
         } else {
           setData(previous);
@@ -200,16 +210,19 @@ export default function useRooms(): UseRooms {
         setData(previous);
         showErrorToast('Error de red al actualizar el orden');
         await refetch();
+      } finally {
+        reordering.current = false;
+        setSavingOrder(false);
       }
     },
-    [refetch, rooms, setData]
+    [refetch, rooms, setData, queryClient]
   );
 
   return {
     rooms: rooms || (EMPTY_ARRAY as Room[]),
     filteredRooms,
     isLoading,
-    isMutating: crudMutating || statusMutation.isPending,
+    isMutating: crudMutating || statusMutation.isPending || savingOrder,
     error,
     searchTerm,
     setSearchTerm,

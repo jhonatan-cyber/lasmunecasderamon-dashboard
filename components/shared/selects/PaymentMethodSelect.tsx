@@ -46,6 +46,8 @@ interface PaymentMethodSelectProps {
   disabledMethods?: PaymentMethod[];
   clientes?: Customer[];
   selectedClienteId?: string;
+  /** Todos los clientes seleccionados: el prepago está disponible si cualquiera tiene saldo. */
+  selectedClienteIds?: string[];
 }
 
 const BASE_PAYMENT_METHODS: PaymentMethodInfo[] = [
@@ -71,16 +73,26 @@ const PaymentMethodSelect: React.FC<PaymentMethodSelectProps> = ({
   showMixto = false,
   disabledMethods = [],
   clientes = [],
-  selectedClienteId
+  selectedClienteId,
+  selectedClienteIds
 }) => {
-  const selectedCustomer = useMemo(() => {
-    if (!selectedClienteId || !clientes.length) return null;
-    return clientes.find(
-      c => c.id_cliente?.toString() === selectedClienteId || c.id?.toString() === selectedClienteId
+  const customersSeleccionados = useMemo(() => {
+    const ids = selectedClienteIds?.length
+      ? selectedClienteIds
+      : selectedClienteId
+        ? [selectedClienteId]
+        : [];
+    if (!ids.length || !clientes.length) return [];
+    const idSet = new Set(ids.map(id => String(id)));
+    return clientes.filter(
+      c => idSet.has(String(c.id_cliente ?? '')) || idSet.has(String(c.id ?? ''))
     );
-  }, [clientes, selectedClienteId]);
+  }, [clientes, selectedClienteId, selectedClienteIds]);
 
-  const customerSaldo = selectedCustomer?.saldo ?? selectedCustomer?.saldo_prepago ?? 0;
+  const customerSaldo = customersSeleccionados.reduce(
+    (sum, c) => sum + Number(c.saldo ?? c.saldo_prepago ?? 0),
+    0
+  );
   const canUsePrepago = customerSaldo > 0;
   const [open, setOpen] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');

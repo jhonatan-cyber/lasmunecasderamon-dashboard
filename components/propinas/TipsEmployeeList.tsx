@@ -1,4 +1,5 @@
 'use client';
+import { useRealtimeRefresh } from '@/hooks/realtime/useRealtimeRefresh';
 import { ListLoadError } from '@/components/shared/ListLoadError';
 import { SortSelect } from '@/components/shared/selects/SortSelect';
 
@@ -95,6 +96,8 @@ export function TipsEmployeeList({ allowedRole }: Props) {
       setLoading(false);
     }
   };
+
+  useRealtimeRefresh('/api/tips', fetchTips);
 
   useEffect(() => {
     if (user && !userLoading && user.role?.toLowerCase() === allowedRole) {

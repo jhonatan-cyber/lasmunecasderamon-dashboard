@@ -1,3 +1,4 @@
+import { revisarReposicion } from '@/modules/inventario/reposicion/servicio';
 import { NextResponse } from 'next/server';
 import { withPublicRoute } from '@/lib/api/withRoute';
 import { sendNotificationToAll } from '@/lib/api/sseService';
@@ -20,6 +21,7 @@ export const GET = withPublicRoute(async () => {
   // recibir, avisa a la bodega (SSE en vivo + campana + push) y si no, no hace
   // ruido. Nunca lanza, así que no puede tumbar el resto del chequeo.
   await checkWarehouseContainerAlerts();
+  await revisarReposicion().catch(() => {});
 
   // Cierres de caja sin respuesta: vuelve a avisar al administrador por WhatsApp de los
   // que ya vencieron su último aviso y siguen dentro de la ventana de recordatorios, así

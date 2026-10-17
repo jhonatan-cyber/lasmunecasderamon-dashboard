@@ -69,6 +69,7 @@ export function CategoryGrid({
               key={category.id}
               category={{
                 id: String(category.id),
+                system_key: category.system_key,
                 name: category.name ?? '',
                 description: category.description ?? '',
                 status: category.status ?? 1,

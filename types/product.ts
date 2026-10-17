@@ -22,6 +22,8 @@ export interface Product {
 }
 
 export interface Presentacion {
+  stock_minimo?: number | null;
+  stock_maximo?: number | null;
   categoria_nombre?: string | null;
   stock_bar?: number;
   opciones_venta?: import('./sale-options').SaleOption[];

@@ -11,7 +11,15 @@ vi.mock('@/hooks/auth/useCurrentUser', () => ({ useCurrentUser: mocks.user }));
 vi.mock('next/navigation', () => ({ useRouter: () => ({ back: vi.fn() }) }));
 vi.mock('@/hooks/orders/useOrdersSSE', () => ({ useOrdersSSE: mocks.sse }));
 vi.mock('@/components/attendance/AsistenciaForm', () => ({ default: () => null }));
-vi.mock('@/lib/utils/logger', () => ({ default: { captureException: vi.fn(), error: vi.fn() } }));
+vi.mock('@/lib/utils/logger', () => ({
+  default: {
+    captureException: vi.fn(),
+    error: vi.fn(),
+    info: vi.fn(),
+    warn: vi.fn(),
+    debug: vi.fn()
+  }
+}));
 beforeEach(() => {
   mocks.user.mockReturnValue({ user: { id: 1, name: 'Juan', role: 'garzon' }, loading: false });
 });

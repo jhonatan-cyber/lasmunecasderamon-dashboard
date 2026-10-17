@@ -65,7 +65,7 @@ function ConfirmarAnulacionCuentaContent() {
       const response = await fetch('/api/cuentas/procesar-anulacion', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ token, action }),
+        body: JSON.stringify({ token, action })
       });
       const data = await response.json();
 
@@ -132,7 +132,7 @@ function ConfirmarAnulacionCuentaContent() {
           </CardHeader>
 
           <CardContent className='space-y-6'>
-            <div className='bg-blue-50 dark:bg-blue-950/30 p-4 rounded-lg border border-blue-200 dark:border-blue-800'>
+            <div className='bg-blue-50 dark:bg-blue-950/30 p-4 rounded-xl'>
               <h4 className='font-semibold text-blue-900 dark:text-blue-300 mb-3'>
                 Detalles de la Cuenta
               </h4>
@@ -143,16 +143,22 @@ function ConfirmarAnulacionCuentaContent() {
                 </div>
                 <div className='flex justify-between'>
                   <span className='font-medium text-gray-700 dark:text-gray-300'>Cliente:</span>
-                  <span className='text-gray-900 dark:text-gray-100'>{solicitud.cliente_nombre}</span>
+                  <span className='text-gray-900 dark:text-gray-100'>
+                    {solicitud.cliente_nombre}
+                  </span>
                 </div>
                 <div className='flex justify-between'>
-                  <span className='font-medium text-gray-700 dark:text-gray-300'>Total referencia:</span>
+                  <span className='font-medium text-gray-700 dark:text-gray-300'>
+                    Total referencia:
+                  </span>
                   <span className='font-bold text-green-600 dark:text-green-400'>
                     {formatCurrencyCLP(Number(solicitud.total || 0))}
                   </span>
                 </div>
                 <div className='flex justify-between'>
-                  <span className='font-medium text-gray-700 dark:text-gray-300'>Monto solicitado:</span>
+                  <span className='font-medium text-gray-700 dark:text-gray-300'>
+                    Monto solicitado:
+                  </span>
                   <span className='font-bold text-amber-600 dark:text-amber-400'>
                     {formatCurrencyCLP(Number(solicitud.monto || 0))}
                   </span>
@@ -166,7 +172,7 @@ function ConfirmarAnulacionCuentaContent() {
               </div>
             </div>
 
-            <div className='bg-yellow-50 dark:bg-yellow-950/30 p-4 rounded-lg border border-yellow-200 dark:border-yellow-800'>
+            <div className='bg-yellow-50 dark:bg-yellow-950/30 p-4 rounded-xl'>
               <h3 className='font-semibold text-yellow-900 dark:text-yellow-300 mb-2'>Motivo</h3>
               <p className='text-sm text-yellow-800 dark:text-yellow-200'>
                 {solicitud.motivo || 'No especificado'}

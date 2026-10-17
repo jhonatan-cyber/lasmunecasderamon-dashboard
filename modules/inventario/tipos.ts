@@ -25,6 +25,8 @@ export type {
 export type Queryable = TransactionQuery | typeof query;
 
 export interface PresentacionRow {
+  stock_minimo?: number | null;
+  stock_maximo?: number | null;
   opciones_venta?: SaleOption[];
   id: string;
   producto_id: string;

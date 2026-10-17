@@ -1,5 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { cleanup, fireEvent, render, screen } from '@testing-library/react';
+import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { SettingsChampagneTiers } from '@/components/settings/SettingsChampagneTiers';
 import { createRef } from 'react';
 import type { SettingsTiersHandle } from '@/components/settings/SettingsChampagneTiers';
@@ -27,6 +27,71 @@ afterEach(() => {
   vi.unstubAllGlobals();
 });
 describe('tabla controlada por el máximo de anfitrionas', () => {
+  it('inicia la primera fila con el precio y comisión actuales incluso para champagne y conserva las ediciones', async () => {
+    fetchMock.mockResolvedValue({ ok: true, json: async () => ({ success: true, data: [] }) });
+    const { rerender } = render(
+      <SettingsChampagneTiers
+        productId='new'
+        maxAnfitrionas={3}
+        champagne
+        precioBase={180000}
+        comisionBase={20000}
+      />
+    );
+    const price = await screen.findByLabelText('Precio para 1 anfitrionas');
+    expect(price).toHaveValue('180.000');
+    expect(screen.getByLabelText('Comisión para 1 anfitrionas')).toHaveValue('20.000');
+    fireEvent.change(screen.getByLabelText('Precio para 2 anfitrionas'), {
+      target: { value: '240000' }
+    });
+    rerender(
+      <SettingsChampagneTiers
+        productId='new'
+        maxAnfitrionas={3}
+        champagne
+        precioBase={190000}
+        comisionBase={25000}
+      />
+    );
+    await waitFor(() => expect(price).toHaveValue('190.000'));
+    expect(screen.getByLabelText('Comisión para 1 anfitrionas')).toHaveValue('25.000');
+    expect(screen.getByLabelText('Precio para 2 anfitrionas')).toHaveValue('240.000');
+    fireEvent.change(price, { target: { value: '195000' } });
+    rerender(
+      <SettingsChampagneTiers
+        productId='new'
+        maxAnfitrionas={3}
+        champagne
+        precioBase={200000}
+        comisionBase={30000}
+      />
+    );
+    expect(price).toHaveValue('195.000');
+    expect(screen.getByLabelText('Comisión para 1 anfitrionas')).toHaveValue('30.000');
+    expect(fetchMock).toHaveBeenCalledTimes(1);
+  });
+  it('respeta la primera fila guardada aunque cambien los precios base', async () => {
+    const { rerender } = render(
+      <SettingsChampagneTiers
+        productId='saved'
+        maxAnfitrionas={3}
+        precioBase={180000}
+        comisionBase={20000}
+      />
+    );
+    const price = await screen.findByLabelText('Precio para 1 anfitrionas');
+    rerender(
+      <SettingsChampagneTiers
+        productId='saved'
+        maxAnfitrionas={3}
+        precioBase={200000}
+        comisionBase={30000}
+      />
+    );
+    expect(price).toHaveValue('20.000');
+    expect(screen.getByLabelText('Comisión para 1 anfitrionas')).toHaveValue('4.000');
+    expect(fetchMock).toHaveBeenCalledTimes(1);
+  });
   it('ajusta las filas al máximo y conserva lo editado al reducir y aumentar', async () => {
     const { rerender } = render(<SettingsChampagneTiers productId='prod' maxAnfitrionas={2} />);
     await screen.findByLabelText('Precio para 2 anfitrionas');

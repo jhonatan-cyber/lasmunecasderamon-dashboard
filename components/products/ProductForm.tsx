@@ -372,7 +372,7 @@ export function ProductForm({
         </div>
       )}
 
-      {!scoped && (
+      {isEdit && !scoped && (
         <div className='space-y-2'>
           <label
             htmlFor='prod-ml-shot'

@@ -1,5 +1,6 @@
 'use client';
 
+import { useRealtimeRefresh } from '@/hooks/realtime/useRealtimeRefresh';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useSearchParams } from 'next/navigation';
 import { AlertTriangle, Check, PackageCheck, ScanLine } from 'lucide-react';
@@ -128,6 +129,10 @@ export function ContainerReturnsPanel() {
       // el contador se retoma en el siguiente ciclo
     }
   }, []);
+
+  useRealtimeRefresh('/api/bar/containers', () =>
+    Promise.all([fetchDevoluciones(), fetchResumen()])
+  );
 
   const confirmarPendiente = useCallback(
     async (devolucion: DevolucionEnvaseRegistro) => {

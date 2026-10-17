@@ -1,17 +1,17 @@
-import { RoomSchema } from '@/lib/business/schemas';
+import { RoomWriteSchema } from '@/lib/business/schemas';
 import { RoomRepository } from '@/modules/operacion/habitaciones/repositorio';
 import { z } from 'zod';
 
-type RoomInput = z.input<typeof RoomSchema>;
+type RoomInput = z.input<typeof RoomWriteSchema>;
 
 export class RoomService {
   static async createRoom(body: RoomInput) {
-    const validated = RoomSchema.omit({ id: true }).parse(body);
+    const validated = RoomWriteSchema.parse(body);
     return await RoomRepository.create(validated);
   }
 
   static async updateRoom(id: string, body: Partial<RoomInput>) {
-    const validated = RoomSchema.partial().omit({ id: true }).parse(body);
+    const validated = RoomWriteSchema.partial().parse(body);
     return await RoomRepository.update(id, validated);
   }
 
@@ -31,9 +31,17 @@ export class RoomService {
     return await RoomRepository.delete(id.toString());
   }
 
-  static async reorder(room_orders: Array<{ id: string; orden: number }>) {
-    return await RoomRepository.reorder(
-      room_orders.map(r => ({ id: r.id, display_order: r.orden }))
-    );
+  static async reorder(room_orders: Array<{ id: string; display_order: number }>) {
+    const items = z
+      .array(z.object({ id: z.string().min(1), display_order: z.number().int().positive() }))
+      .min(1)
+      .parse(room_orders);
+    if (
+      new Set(items.map(item => item.id)).size !== items.length ||
+      new Set(items.map(item => item.display_order)).size !== items.length
+    ) {
+      throw new Error('El orden de habitaciones contiene posiciones o habitaciones repetidas');
+    }
+    return await RoomRepository.reorder(items);
   }
 }

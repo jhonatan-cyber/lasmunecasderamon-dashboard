@@ -6,7 +6,8 @@ import { StaggeredEntrance } from '@/components/shared/StaggeredEntrance';
 import { ArrowRight, ArrowRightLeft, Check, Clock, Loader2, RefreshCw, X } from 'lucide-react';
 import { PermissionGuard } from '@/components/auth/PermissionGuard';
 import { useCurrentUser } from '@/hooks/auth/useCurrentUser';
-import { useRefreshOnFocus, useSharedSSE } from '@/hooks/shared';
+import { useRefreshOnFocus } from '@/hooks/shared';
+import { useRealtimeRefresh } from '@/hooks/realtime/useRealtimeRefresh';
 import { TransferModal, type BarStockItem } from '@/components/bar/TransferModal';
 import { SalePrices } from '@/components/bar/SalePrices';
 import { BarAnfitrionas, isTierPricedItem } from '@/components/bar/BarAnfitrionas';
@@ -216,9 +217,7 @@ function TransfersContent() {
   // En vivo: cuando otra sesión crea una transferencia o el Barman la aprueba/rechaza,
   // el listado se actualiza sin recargar. El foco de la pestaña cubre eventos perdidos.
   const refreshSilencioso = useCallback(() => void refresh({ silent: true }), [refresh]);
-  useSharedSSE('/api/notifications/sse', payload => {
-    if (payload?.type === 'transfers_updated') refreshSilencioso();
-  });
+  useRealtimeRefresh('/api/transfers', refreshSilencioso);
   useRefreshOnFocus(refreshSilencioso, { immediate: false });
 
   const filtered = useMemo(() => {

@@ -109,6 +109,10 @@ const SortableRow: React.FC<SortableRowProps> = React.memo(
     hasAnyAction
   }) => {
     const { product, presentation } = row;
+    const totalStock =
+      Number(presentation ? (presentation.stock ?? 0) : (product.stock_almacen ?? 0)) +
+      Number(presentation?.stock_bar ?? 0);
+    const lowStock = presentation?.stock_minimo != null && totalStock < presentation.stock_minimo;
     const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({
       id: row.rowId
     });
@@ -123,7 +127,7 @@ const SortableRow: React.FC<SortableRowProps> = React.memo(
       <TableRow
         ref={setNodeRef}
         style={style}
-        className={`border-b bg-white group hover:bg-gray-50 dark:hover:bg-slate-800/30 transition-colors ${
+        className={`border-b group transition-colors ${lowStock ? 'bg-red-50 hover:bg-red-100 dark:bg-red-950/30 dark:hover:bg-red-950/50' : 'bg-white hover:bg-gray-50 dark:hover:bg-slate-800/30'} ${
           isLastRow ? 'last:rounded-b-xl' : ''
         }`}
       >
@@ -156,6 +160,11 @@ const SortableRow: React.FC<SortableRowProps> = React.memo(
               </Badge>
             )}
           </div>
+          {lowStock && (
+            <Badge className='mt-2 rounded-full bg-red-100 text-red-700 dark:bg-red-900/50 dark:text-red-300'>
+              Stock bajo
+            </Badge>
+          )}
         </TableCell>
         <TableCell className='sm:px-4 text-center font-mono sm:text-sm'>
           {formatCurrencyCLP(presentation?.precio_compra ?? product.price)}
@@ -165,6 +174,20 @@ const SortableRow: React.FC<SortableRowProps> = React.memo(
             {presentation ? (presentation.stock ?? 0) : (product.stock_almacen ?? 0)}
           </Badge>
         </TableCell>
+        {[
+          presentation?.stock_bar ?? 0,
+          Number(presentation ? (presentation.stock ?? 0) : (product.stock_almacen ?? 0)) +
+            Number(presentation?.stock_bar ?? 0),
+          presentation?.stock_minimo,
+          presentation?.stock_maximo
+        ].map((value, index) => (
+          <TableCell
+            key={`stock-${index}`}
+            className={`sm:px-4 text-center font-mono sm:text-sm ${lowStock && index === 1 ? 'font-bold text-red-700 dark:text-red-300' : ''}`}
+          >
+            {value == null ? 'Sin configurar' : value.toLocaleString('es-CL')}
+          </TableCell>
+        ))}
         <TableCell className='sm:px-4 text-center font-mono'>
           {product.status === 1 ? (
             <Badge className='bg-green-100 text-green-700 rounded-full px-2 sm:px-3 py-1 font-mono text-xs sm:text-sm'>
@@ -371,7 +394,11 @@ const ProductTable: React.FC<ProductTableProps> = ({
                   <TableHead className='text-center'>Código</TableHead>
                   <TableHead className='text-center'>Nombre</TableHead>
                   <TableHead className='text-center'>Precio compra</TableHead>
-                  <TableHead className='text-center'>Stock</TableHead>
+                  <TableHead className='text-center'>Stock Bodega</TableHead>
+                  <TableHead className='text-center'>Stock Bar</TableHead>
+                  <TableHead className='text-center'>Total Bar + Bodega</TableHead>
+                  <TableHead className='text-center'>Stock mínimo</TableHead>
+                  <TableHead className='text-center'>Stock máximo</TableHead>
                   <TableHead className='text-center'>Estado</TableHead>
                   <TableHead className='text-center'>Acciones</TableHead>
                 </TableRow>
@@ -379,7 +406,7 @@ const ProductTable: React.FC<ProductTableProps> = ({
               <TableBody>
                 {localProducts.length === 0 && (
                   <TableRow key='empty'>
-                    <TableCell colSpan={8} className='text-center bg-white sm:text-base'>
+                    <TableCell colSpan={12} className='text-center bg-white sm:text-base'>
                       No hay productos
                     </TableCell>
                   </TableRow>

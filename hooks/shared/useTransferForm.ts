@@ -30,6 +30,8 @@ export interface TransferForm {
   setPreciosAnfitrionaExtra: Dispatch<SetStateAction<{ precio: string; comision: string }[]>>;
   cantidad: string;
   setCantidad: (value: string) => void;
+  precioSinAnfitriona: string;
+  setPrecioSinAnfitriona: (value: string) => void;
   precioVenta: string;
   setPrecioVenta: (value: string) => void;
   comision: string;
@@ -85,6 +87,7 @@ export function useTransferForm({
   const [cantidad, setCantidad] = useState('');
   const shotMl = useConfigValue<number>('bar', 'shot_ml', 50);
   const [precioVenta, setPrecioVenta] = useState('');
+  const [precioSinAnfitriona, setPrecioSinAnfitriona] = useState('');
   const [comision, setComision] = useState('');
   const [tipos, setTipos] = useState<SaleType[]>(['botella']);
   const [precioShot, setPrecioShot] = useState('');
@@ -138,10 +141,12 @@ export function useTransferForm({
       setMaxAnfitrionas(Number(item.max_anfitrionas) > 0 ? String(item.max_anfitrionas) : '');
       const bottle = options.find(option => option.tipo === 'botella');
       setAcompanamientoBotella(
-        bottle?.acompanamiento ? (bottle.acompanamiento.tipo ?? 'gaseosa') : 'ninguno'
+        (bottle?.acompanamiento?.unidades ?? 0) > 0
+          ? (bottle?.acompanamiento?.tipo ?? 'gaseosa')
+          : 'ninguno'
       );
       setUnidadesAcompanamiento(
-        bottle?.acompanamiento ? String(bottle.acompanamiento.unidades) : ''
+        bottle?.acompanamiento?.unidades ? String(bottle.acompanamiento.unidades) : ''
       );
       const shot = options.find(option => option.tipo === 'shot');
       setMlAcompanamientoAnfitriona(String(shot?.ml_acompanamiento_anfitriona ?? ''));
@@ -156,6 +161,9 @@ export function useTransferForm({
       const bottlePrecio = Number(bottle?.precio) > 0 ? Number(bottle?.precio) : presPrecio;
       const bottleComision =
         bottle?.comision !== undefined ? Number(bottle.comision) : presComision;
+      setPrecioSinAnfitriona(
+        bottle?.precio_sin_anfitriona ? formatNumber(String(bottle.precio_sin_anfitriona)) : ''
+      );
       setPrecioVenta(bottlePrecio > 0 ? formatNumber(String(bottlePrecio)) : '');
       setComision(bottleComision ? formatNumber(String(bottleComision)) : '');
       setPrecioShot(shot && Number(shot.precio) > 0 ? formatNumber(String(shot.precio)) : '');
@@ -254,6 +262,7 @@ export function useTransferForm({
     setUnidadesAcompanamiento('');
     setCantidad('');
     setPrecioVenta('');
+    setPrecioSinAnfitriona('');
     setComision('');
     setPrecioShot('');
     setPrecioShotAnfitriona('');
@@ -285,6 +294,8 @@ export function useTransferForm({
     setPreciosAnfitrionaExtra,
     cantidad,
     setCantidad,
+    precioSinAnfitriona,
+    setPrecioSinAnfitriona,
     precioVenta,
     setPrecioVenta,
     comision,

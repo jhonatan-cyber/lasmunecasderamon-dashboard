@@ -9,6 +9,78 @@ import {
 vi.mock('@/hooks/shared/useConfigValue', () => ({ useConfigValue: () => 50 }));
 afterEach(cleanup);
 
+it('exige comisión positiva al habilitar botella con anfitriona y permite solo sin anfitriona', () => {
+  const ref = createRef<SettingsSaleOptionsHandle>();
+  const props = {
+    ref,
+    options: [{ tipo: 'botella' as const, precio: 50000, comision: 0 }],
+    precio: '50000',
+    onPrecio: vi.fn(),
+    onComision: vi.fn(),
+    saving: false
+  };
+  const { rerender } = render(<SettingsSaleOptionsEditor {...props} comision='' />);
+  expect(screen.getByLabelText('Comisión (requerida)')).toBeRequired();
+  expect(() => ref.current!.getConfig()).toThrow(/comisión.*requerida/);
+  rerender(<SettingsSaleOptionsEditor {...props} comision='0' />);
+  expect(() => ref.current!.getConfig()).toThrow(/comisión.*requerida/);
+  rerender(<SettingsSaleOptionsEditor {...props} comision='5000' />);
+  expect(ref.current!.getConfig().opciones_venta[0].comision).toBe(5000);
+  rerender(<SettingsSaleOptionsEditor {...props} precio='0' comision='' />);
+  expect(screen.getByLabelText('Comisión')).not.toBeRequired();
+  expect(ref.current!.getConfig().opciones_venta[0].comision).toBe(0);
+});
+
+it('sin checkbox guarda cero si la cantidad queda vacía', () => {
+  const ref = createRef<SettingsSaleOptionsHandle>();
+  render(
+    <SettingsSaleOptionsEditor
+      ref={ref}
+      options={[{ tipo: 'botella', precio: 50000, comision: 500 }]}
+      precio='50000'
+      comision='500'
+      onPrecio={vi.fn()}
+      onComision={vi.fn()}
+      saving={false}
+    />
+  );
+  expect(screen.queryByRole('checkbox')).not.toBeInTheDocument();
+  expect(ref.current!.getConfig().opciones_venta[0].acompanamiento).toEqual({ unidades: 0 });
+  const units = screen.getByLabelText('Bebida analcohólica por botella');
+  fireEvent.change(units, { target: { value: '4' } });
+  expect(ref.current!.getConfig().opciones_venta[0].acompanamiento).toEqual({ unidades: 4 });
+  fireEvent.change(units, { target: { value: '' } });
+  expect(ref.current!.getConfig().opciones_venta[0].acompanamiento).toEqual({ unidades: 0 });
+});
+
+it('guarda el precio adicional sin anfitriona y la cantidad de bebidas por botella', () => {
+  const ref = createRef<SettingsSaleOptionsHandle>();
+  render(
+    <SettingsSaleOptionsEditor
+      ref={ref}
+      options={[{ tipo: 'botella', precio: 50000, comision: 5000 }]}
+      precio='50.000'
+      comision='5.000'
+      onPrecio={vi.fn()}
+      onComision={vi.fn()}
+      saving={false}
+    />
+  );
+  fireEvent.change(screen.getByLabelText('Precio de botella sin anfitriona'), {
+    target: { value: '35000' }
+  });
+  fireEvent.change(screen.getByLabelText('Bebida analcohólica por botella'), {
+    target: { value: '3' }
+  });
+  expect(ref.current!.getConfig().opciones_venta[0]).toMatchObject({
+    tipo: 'botella',
+    precio: 50000,
+    comision: 5000,
+    precio_sin_anfitriona: 35000,
+    acompanamiento: { unidades: 3 }
+  });
+});
+
 it.each(['cliente', 'anfitriona'])(
   'configura corto solo para %s sin habilitar la otra audiencia',
   audiencia => {
@@ -38,7 +110,7 @@ it.each(['cliente', 'anfitriona'])(
   }
 );
 
-it('conserva la comision opcional de botella incluso con precio bajo', () => {
+it('conserva la comisión positiva de botella incluso con precio bajo', () => {
   const ref = createRef<SettingsSaleOptionsHandle>();
   render(
     <SettingsSaleOptionsEditor
@@ -85,13 +157,15 @@ it('edita todos los precios de corto, sus ml y la bebida de botella sin perder c
       saving={false}
     />
   );
-  fireEvent.change(screen.getByLabelText('Unidades por botella'), { target: { value: '3' } });
+  fireEvent.change(screen.getByLabelText('Bebida analcohólica por botella'), {
+    target: { value: '3' }
+  });
   fireEvent.change(screen.getByLabelText('Precio corto anfitriona 2'), {
     target: { value: '7000' }
   });
   fireEvent.change(screen.getByLabelText('Ml corto cliente'), { target: { value: '60' } });
-  expect(screen.queryByLabelText('Ml acompa\u00f1amiento cliente')).not.toBeInTheDocument();
-  fireEvent.change(screen.getByLabelText('Ml acompa\u00f1amiento anfitriona'), {
+  expect(screen.queryByLabelText('Ml bebida analcohólica cliente')).not.toBeInTheDocument();
+  fireEvent.change(screen.getByLabelText('Ml bebida analcohólica anfitriona'), {
     target: { value: '150' }
   });
   expect(ref.current!.getConfig()).toEqual({

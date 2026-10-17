@@ -12,6 +12,7 @@ import { ServicioSelectsRow } from './new/ServicioSelectsRow';
 import { ServicioPaymentRow } from './new/ServicioPaymentRow';
 import { ServicioIncludedProduct } from './new/ServicioIncludedProduct';
 import { ServicioConfirmModal } from './new/ServicioConfirmModal';
+import { ServicioPrepagoChoiceModal, type PrepagoOpcion } from './new/ServicioPrepagoChoiceModal';
 
 /**
  * Página «Datos Servicio» (salida a sala privada). Antes monolítica (603
@@ -76,6 +77,7 @@ export default function NuevoServicioPage() {
             onUpdate={form.setPagosMixtos}
             total={form.total}
             selectedClientData={form.selectedClientData}
+            haySaldo={form.clientesConSaldo.length > 0}
             ivaRate={ivaRate}
           />
         )}
@@ -91,7 +93,7 @@ export default function NuevoServicioPage() {
           <Button
             type='button'
             size='sm'
-            onClick={form.handleSubmit}
+            onClick={() => form.handleSubmit()}
             disabled={form.loading}
             className='gap-2 rounded-full bg-stone-900 text-white font-bold transition-all duration-200 text-sm sm:text-base px-4 sm:px-6 py-2 w-full sm:w-auto h-[48px] hover:bg-stone-800 hover:shadow-lg hover:shadow-stone-900/20 hover:-translate-y-0.5 dark:bg-stone-100 dark:text-stone-900 dark:hover:bg-white dark:hover:text-stone-900 dark:hover:shadow-stone-100/20'
           >
@@ -100,6 +102,21 @@ export default function NuevoServicioPage() {
           </Button>
         </div>
       </div>
+
+      {form.showPrepagoChoiceModal && (
+        <ServicioPrepagoChoiceModal
+          clientesConSaldo={form.clientesConSaldo}
+          montoDescontar={form.montoPrepagoBase}
+          onCancel={() => form.setShowPrepagoChoiceModal(false)}
+          onConfirm={(opcion: PrepagoOpcion, clienteId: string | null) => {
+            form.setPrepagoOpcion(opcion);
+            form.setPrepagoTitularId(clienteId);
+            form.setShowPrepagoChoiceModal(false);
+            // Vuelve a pasar por la validación para llegar al modal de confirmación.
+            form.handleSubmit({ opcion, clienteId });
+          }}
+        />
+      )}
 
       {form.showConfirmModal && (
         <ServicioConfirmModal

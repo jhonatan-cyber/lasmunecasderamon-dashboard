@@ -6,9 +6,17 @@ import { synchronizeTimerClock } from '@/lib/utils/timerClock';
 let pending: Promise<void> | undefined;
 
 // Todas las vias (alta, SSE, reconexion y sondeo) usan el mismo estado confirmado.
-export function refreshTimerSnapshot(afterMutation = false): Promise<void> {
-  if (pending) return afterMutation ? pending.then(() => refreshTimerSnapshot()) : pending;
-  pending = fetch('/api/timers/active?source=web', { cache: 'no-store' })
+export function refreshTimerSnapshot(
+  afterMutation = false,
+  finalizeExpired = false
+): Promise<void> {
+  if (pending)
+    return afterMutation
+      ? pending.then(() => refreshTimerSnapshot(false, finalizeExpired))
+      : pending;
+  pending = fetch(`/api/timers/active?source=web${finalizeExpired ? '&cleanup=expired' : ''}`, {
+    cache: 'no-store'
+  })
     .then(async response => {
       if (!response.ok) throw new Error('No se pudieron sincronizar los temporizadores');
       const snapshot = await response.json();

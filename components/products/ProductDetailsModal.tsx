@@ -1,4 +1,5 @@
 'use client';
+import { useRealtimeRefresh } from '@/hooks/realtime/useRealtimeRefresh';
 import {
   Table,
   TableHeader,
@@ -92,6 +93,12 @@ export function ProductDetailsModal({
   const [attempt, setAttempt] = useState(0);
   const productId = product?.id;
   const presentationId = presentation?.id;
+
+  useRealtimeRefresh(
+    '/api/products',
+    () => setAttempt(value => value + 1),
+    open && Boolean(productId)
+  );
 
   useEffect(() => {
     if (!open || !productId) return;
@@ -263,6 +270,20 @@ export function ProductDetailsModal({
                     </Info>
                     <Info label='Stock en bodega'>{selectedPrices.stock ?? 0} unidades</Info>
                     <Info label='Stock en bar'>{selectedPrices.stock_bar ?? 0} unidades</Info>
+                    <Info label='Stock total (Bar + Bodega)'>
+                      {Number(selectedPrices.stock ?? 0) + Number(selectedPrices.stock_bar ?? 0)}{' '}
+                      unidades
+                    </Info>
+                    <Info label='Stock mínimo'>
+                      {selectedPrices.stock_minimo == null
+                        ? 'Sin configurar'
+                        : selectedPrices.stock_minimo.toLocaleString('es-CL')}
+                    </Info>
+                    <Info label='Stock máximo'>
+                      {selectedPrices.stock_maximo == null
+                        ? 'Sin configurar'
+                        : selectedPrices.stock_maximo.toLocaleString('es-CL')}
+                    </Info>
                   </dl>
                 </section>
                 {!!tiers.length &&

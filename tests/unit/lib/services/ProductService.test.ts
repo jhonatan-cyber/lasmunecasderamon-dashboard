@@ -145,6 +145,8 @@ describe('ProductService.createProduct', () => {
         nombre: '500 ml',
         codigo_barras: '7801111111111',
         precio_compra: 5000,
+        stock_minimo: null,
+        stock_maximo: null,
         foto: null,
         cantidad: 3
       },
@@ -152,6 +154,8 @@ describe('ProductService.createProduct', () => {
         nombre: '750 ml',
         codigo_barras: '7801234567890',
         precio_compra: 8000,
+        stock_minimo: null,
+        stock_maximo: null,
         foto: null,
         cantidad: 2
       }

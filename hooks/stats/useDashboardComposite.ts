@@ -2,7 +2,6 @@
 
 import { useQuery } from '@tanstack/react-query';
 import { queryKeys } from '@/lib/api/queryClient';
-import { useDashboardSSE } from './useDashboardSSE';
 import type { LoggedUsersStatsResponse } from './useLoggedUsersStats';
 import type { RoomType } from '@/lib/business/schemas/room';
 import type { TimerType } from '@/lib/business/schemas/timer';
@@ -149,8 +148,6 @@ export interface DashboardCompositeResponse {
 }
 
 export const useDashboardComposite = () => {
-  useDashboardSSE();
-
   return useQuery<DashboardCompositeResponse>({
     queryKey: queryKeys.dashboard.composite(),
     queryFn: async ({ signal }) => {

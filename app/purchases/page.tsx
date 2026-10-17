@@ -1,5 +1,7 @@
 'use client';
 
+import { useRealtimeRefresh } from '@/hooks/realtime/useRealtimeRefresh';
+import { ReplenishmentNotice } from '@/components/purchases/ReplenishmentNotice';
 import { Fragment, useCallback, useEffect, useMemo, useState } from 'react';
 import Link from 'next/link';
 import { ChevronDown, Plus, Search, ShoppingBag } from 'lucide-react';
@@ -20,12 +22,67 @@ import type { PurchaseRecord } from '@/types/purchase';
 import { formatCurrencyCLP } from '@/lib/utils/formatters';
 import { cn } from '@/lib/utils/utils';
 import { PURCHASE_BUTTON_CLASS } from '@/components/purchases/buttonStyles';
+import SelectElements from '@/components/shared/SelectElements';
+import Paginate from '@/components/shared/Paginate';
+import { Label } from '@/components/ui/label';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue
+} from '@/components/ui/select';
+import {
+  SELECT_TRIGGER_CLASS,
+  SELECT_CONTENT_CLASS,
+  SELECT_LABEL_CLASS
+} from '@/components/shared/selectStyles';
+
+const SORT_OPTIONS = [
+  { value: 'date-desc', label: 'Más recientes' },
+  { value: 'date-asc', label: 'Más antiguas' },
+  { value: 'total-desc', label: 'Total: mayor a menor' },
+  { value: 'total-asc', label: 'Total: menor a mayor' },
+  { value: 'supplier', label: 'Proveedor: A–Z' },
+  { value: 'folio', label: 'Folio: A–Z' }
+];
+const PAGE_SIZES = [5, 10, 20, 40];
+const PAGE_SIZE_STORAGE_KEY = 'purchases:page-size';
+const SORT_STORAGE_KEY = 'purchases:sort-by';
 
 export default function PurchasesPage() {
   const [history, setHistory] = useState<PurchaseRecord[]>([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState('');
   const [expanded, setExpanded] = useState<string | null>(null);
+  const [page, setPage] = useState(1);
+  const [pageSize, setPageSize] = useState(10);
+  const [sortBy, setSortBy] = useState('date-desc');
+  const [preferencesLoaded, setPreferencesLoaded] = useState(false);
+
+  useEffect(() => {
+    try {
+      const savedPageSize = Number(window.localStorage.getItem(PAGE_SIZE_STORAGE_KEY));
+      const savedSort = window.localStorage.getItem(SORT_STORAGE_KEY);
+      if (PAGE_SIZES.includes(savedPageSize)) setPageSize(savedPageSize);
+      if (savedSort && SORT_OPTIONS.some(option => option.value === savedSort))
+        setSortBy(savedSort);
+    } catch {
+      // El listado funciona también cuando el navegador bloquea el almacenamiento.
+    } finally {
+      setPreferencesLoaded(true);
+    }
+  }, []);
+
+  useEffect(() => {
+    if (!preferencesLoaded) return;
+    try {
+      window.localStorage.setItem(PAGE_SIZE_STORAGE_KEY, String(pageSize));
+      window.localStorage.setItem(SORT_STORAGE_KEY, sortBy);
+    } catch {
+      // Con almacenamiento bloqueado, las preferencias duran mientras se muestra el módulo.
+    }
+  }, [pageSize, sortBy, preferencesLoaded]);
 
   const fetchHistory = useCallback(async () => {
     setLoading(true);
@@ -38,6 +95,8 @@ export default function PurchasesPage() {
       setLoading(false);
     }
   }, []);
+
+  useRealtimeRefresh('/api/purchases', fetchHistory);
 
   useEffect(() => {
     void fetchHistory();
@@ -58,6 +117,42 @@ export default function PurchasesPage() {
         )
     );
   }, [history, search]);
+  const totalPages = Math.max(1, Math.ceil(filtered.length / pageSize));
+  const currentPage = Math.min(page, totalPages);
+  const sorted = useMemo(
+    () =>
+      [...filtered].sort((a, b) => {
+        const compareText = (a: string, b: string) =>
+          a.localeCompare(b, 'es', { numeric: true, sensitivity: 'base' });
+        const dateOrder = compareText(String(a.fecha_crea || ''), String(b.fecha_crea || ''));
+        let order = 0;
+        switch (sortBy) {
+          case 'date-asc':
+            order = dateOrder;
+            break;
+          case 'total-desc':
+            order = Number(b.total || 0) - Number(a.total || 0);
+            break;
+          case 'total-asc':
+            order = Number(a.total || 0) - Number(b.total || 0);
+            break;
+          case 'supplier':
+            order = compareText(a.proveedor || '', b.proveedor || '');
+            break;
+          case 'folio':
+            order = compareText(a.folio, b.folio);
+            break;
+          default:
+            order = -dateOrder;
+        }
+        return order || compareText(a.id, b.id);
+      }),
+    [filtered, sortBy]
+  );
+  const paginated = sorted.slice((currentPage - 1) * pageSize, currentPage * pageSize);
+  useEffect(() => {
+    setPage(current => Math.min(current, totalPages));
+  }, [totalPages]);
 
   const totalPeriodo = useMemo(
     () => history.reduce((acc, h) => acc + Number(h.total || 0), 0),
@@ -78,15 +173,6 @@ export default function PurchasesPage() {
             </p>
           </div>
           <div className='flex flex-col sm:flex-row gap-2 w-full sm:w-auto'>
-            <div className='relative w-full sm:w-72'>
-              <Search className='absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400 pointer-events-none' />
-              <Input
-                value={search}
-                onChange={e => setSearch(e.target.value)}
-                placeholder='Buscar folio, usuario, producto...'
-                className='pl-9 rounded-full'
-              />
-            </div>
             <PermissionGuard module='products' action='create' fallback={null}>
               <Button asChild className={`${PURCHASE_BUTTON_CLASS} flex items-center gap-2`}>
                 <Link href='/purchases/new'>
@@ -95,6 +181,59 @@ export default function PurchasesPage() {
                 </Link>
               </Button>
             </PermissionGuard>
+          </div>
+        </div>
+
+        <div className='flex flex-col sm:flex-row sm:items-end sm:justify-between gap-3'>
+          <div className='relative w-full sm:w-72'>
+            <Search className='absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400 pointer-events-none' />
+            <Input
+              value={search}
+              onChange={e => {
+                setSearch(e.target.value);
+                setPage(1);
+                setExpanded(null);
+              }}
+              placeholder='Buscar folio, usuario, producto...'
+              className='pl-9 rounded-full'
+            />
+          </div>
+          <div className='flex flex-wrap items-end gap-3'>
+            <div className='w-full sm:w-52'>
+              <Label htmlFor='purchase-sort' className={`${SELECT_LABEL_CLASS} ml-1`}>
+                Ordenar por
+              </Label>
+              <Select
+                value={sortBy}
+                onValueChange={(value: string) => {
+                  setSortBy(value);
+                  setPage(1);
+                  setExpanded(null);
+                }}
+              >
+                <SelectTrigger id='purchase-sort' className={SELECT_TRIGGER_CLASS}>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent className={SELECT_CONTENT_CLASS}>
+                  {SORT_OPTIONS.map(option => (
+                    <SelectItem key={option.value} value={option.value}>
+                      {option.label}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            <SelectElements
+              value={pageSize}
+              onChange={value => {
+                setPageSize(value);
+                setPage(1);
+                setExpanded(null);
+              }}
+              options={PAGE_SIZES}
+              label='Por página'
+            />
+            <ReplenishmentNotice compact />
           </div>
         </div>
 
@@ -121,7 +260,7 @@ export default function PurchasesPage() {
                       </TableCell>
                     </TableRow>
                   ) : (
-                    filtered.map(h => (
+                    paginated.map(h => (
                       <Fragment key={h.id}>
                         <TableRow className='border-b transition-colors'>
                           <TableCell className='text-center'>
@@ -199,6 +338,18 @@ export default function PurchasesPage() {
             </div>
           </div>
         </BoneyardSkeleton>
+        {!loading && filtered.length > 0 && (
+          <div className='flex justify-center'>
+            <Paginate
+              page={currentPage}
+              totalPages={totalPages}
+              setPage={value => {
+                setPage(value);
+                setExpanded(null);
+              }}
+            />
+          </div>
+        )}
       </div>
     </PermissionGuard>
   );

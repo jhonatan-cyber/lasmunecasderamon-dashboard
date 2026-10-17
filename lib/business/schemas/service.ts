@@ -60,7 +60,11 @@ export const ServiceCreateSchema = z.object({
   es_temporal: z.union([z.number(), z.boolean()]).optional().default(0),
   servicio_original_id: z.string().nullable().optional(),
   device_date: z.string().optional(),
-  pagos_mixtos: z.any().optional()
+  pagos_mixtos: z.any().optional(),
+  /** A quién se le descuenta saldo omitiendo el titular: [{ cliente_id, monto }]. */
+  prepago_destinos: z
+    .array(z.object({ cliente_id: z.string(), monto: z.number().min(0) }))
+    .optional()
 });
 
 export type ServiceType = z.infer<typeof ServiceSchema>;

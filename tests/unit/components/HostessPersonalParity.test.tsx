@@ -10,7 +10,15 @@ vi.mock('@/hooks/auth/useCurrentUser', () => ({
 vi.mock('boneyard-js/react', () => ({
   Skeleton: ({ children }: { children: ReactNode }) => children
 }));
-vi.mock('@/lib/utils/logger', () => ({ default: { captureException: vi.fn(), error: vi.fn() } }));
+vi.mock('@/lib/utils/logger', () => ({
+  default: {
+    captureException: vi.fn(),
+    error: vi.fn(),
+    info: vi.fn(),
+    warn: vi.fn(),
+    debug: vi.fn()
+  }
+}));
 const user = { id: 1, name: 'Ana', role: 'anfitriona' };
 afterEach(() => {
   cleanup();

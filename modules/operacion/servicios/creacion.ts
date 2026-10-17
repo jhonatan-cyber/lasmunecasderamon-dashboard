@@ -99,7 +99,39 @@ export async function crearServicioEnUnidad(
     pagosMixtos
   );
 
-  if (v.cliente_id) {
+  // Los destinos explícitos permiten repartir el descuento entre varios clientes
+  // (el cliente con cuenta, otro o ambos — mitad y mitad). Cada monto se valida
+  // contra el saldo real del cliente, con FOR UPDATE, dentro de la unidad.
+  const clientesServicio = obtenerClientesServicio(v);
+  const destinosPrepago = (v.prepago_destinos ?? []).filter(
+    destino => destino.cliente_id && Math.round(Number(destino.monto || 0)) > 0
+  );
+  for (const destino of destinosPrepago) {
+    if (!clientesServicio.includes(destino.cliente_id)) {
+      throw new BusinessError(
+        'El descuento de saldo solo puede aplicarse a clientes del servicio',
+        'PREPAGO_DESTINO_INVALIDO'
+      );
+    }
+  }
+
+  if (destinosPrepago.length > 0) {
+    for (const destino of destinosPrepago) {
+      prepagoMonto += await consumirPrepagoVenta(
+        {
+          clienteId: destino.cliente_id,
+          total: Number(v.total || 0),
+          prepagoSolicitado: Math.round(Number(destino.monto)),
+          ventaId: servicioId,
+          createdBy: creadoPor,
+          now,
+          codigo,
+          concepto: `Pago servicio ${codigo}`
+        },
+        contexto
+      );
+    }
+  } else if (v.cliente_id) {
     prepagoMonto = await consumirPrepagoVenta(
       {
         clienteId: v.cliente_id,
@@ -115,8 +147,14 @@ export async function crearServicioEnUnidad(
     );
   }
 
-  if (v.cliente_id && prepagoMonto > 0 && (await saldoPrepagoAgotado(v.cliente_id, contexto))) {
-    await cerrarCuentasPrepagoSaldadas(v.cliente_id, contexto);
+  for (const destino of destinosPrepago.length > 0
+    ? destinosPrepago
+    : v.cliente_id
+      ? [{ cliente_id: v.cliente_id }]
+      : []) {
+    if (prepagoMonto > 0 && (await saldoPrepagoAgotado(destino.cliente_id, contexto))) {
+      await cerrarCuentasPrepagoSaldadas(destino.cliente_id, contexto);
+    }
   }
   const condiciones = calcularCondicionesServicio(v, habitacion);
   const { esLibreIngreso, requiereProducto, comisionTotal } = condiciones;

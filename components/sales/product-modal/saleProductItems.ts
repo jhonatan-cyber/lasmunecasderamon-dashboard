@@ -1,3 +1,4 @@
+import { esBotella } from '@/lib/sales/saleChoice';
 import { parseSavedOptions } from '@/components/bar/transfer/transferOptions';
 import { esCortoAnfitriona, permiteAnfitrionaConComision } from '@/lib/sales/hostessShortPrices';
 import {
@@ -145,30 +146,29 @@ export function buildSaleProductItem(producto: any, ctx: SaleProductItemContext)
   const hostessFormats = opcionesTipo
     .filter(option => option.cantidad > 0 && admiteAnfitriona(option))
     .flatMap(option =>
-      Array.from({ length: option.value === 'botella' ? 1 : option.cantidad }, (_, unitIndex) => {
-        const key =
-          option.value === 'botella'
-            ? id
-            : `${id}:${option.value}${unitIndex > 0 ? `:unit:${unitIndex}` : ''}`;
+      Array.from({ length: esBotella(option.value) ? 1 : option.cantidad }, (_, unitIndex) => {
+        const key = esBotella(option.value)
+          ? id
+          : `${id}:${option.value}${unitIndex > 0 ? `:unit:${unitIndex}` : ''}`;
         return {
           unitIndex,
           value: option.value,
           label: option.label,
-          cantidad: option.value === 'botella' ? option.cantidad : 1,
+          cantidad: esBotella(option.value) ? option.cantidad : 1,
           comision: option.comision,
           selected:
-            option.value === 'botella' && isChampagne
+            esBotella(option.value) && isChampagne
               ? ctx.champagneHostessSelections[id] || []
               : (ctx.otherProductHostessSelections[key] || []).slice(
                   0,
-                  option.value === 'botella' ? undefined : 1
+                  esBotella(option.value) ? undefined : 1
                 ),
           onChange: (ids: string[]) =>
-            option.value === 'botella' && isChampagne
+            esBotella(option.value) && isChampagne
               ? ctx.onChampagneHostessChange(id, ids)
               : ctx.onOtherProductHostessChange(
                   key,
-                  option.value === 'botella' ? ids : ids.slice(0, 1)
+                  esBotella(option.value) ? ids : ids.slice(0, 1)
                 )
         };
       })
@@ -186,17 +186,15 @@ export function buildSaleProductItem(producto: any, ctx: SaleProductItemContext)
   const otherSelected = ctx.otherProductHostessSelections[id] || [];
   const mixers: SaleProductMixer[] = opcionesTipo
     .filter(
-      opcion =>
-        opcion.cantidad > 0 && (opcion.value !== 'botella' || bottleMixerUnits(producto) > 0)
+      opcion => opcion.cantidad > 0 && (!esBotella(opcion.value) || bottleMixerUnits(producto) > 0)
     )
     .flatMap(opcion =>
-      Array.from({ length: opcion.value === 'botella' ? 1 : opcion.cantidad }, (_, unitIndex) => {
-        const quantity = opcion.value === 'botella' ? opcion.cantidad : 1;
+      Array.from({ length: esBotella(opcion.value) ? 1 : opcion.cantidad }, (_, unitIndex) => {
+        const quantity = esBotella(opcion.value) ? opcion.cantidad : 1;
         const product = { ...producto, shot_anfitriona: esCortoAnfitriona(opcion.value) };
-        const consumption =
-          opcion.value === 'botella'
-            ? { unidades: bottleMixerUnits(producto) }
-            : shortMixerConsumption(product);
+        const consumption = esBotella(opcion.value)
+          ? { unidades: bottleMixerUnits(producto) }
+          : shortMixerConsumption(product);
         const needsConfiguration = esCortoAnfitriona(opcion.value) && hostessMixerMl(product) <= 0;
         const key = `${id}:${opcion.value}${unitIndex > 0 ? `:unit:${unitIndex}` : ''}`;
         const selected = ctx.mixers?.[key];
@@ -273,38 +271,34 @@ export function buildSaleProductItem(producto: any, ctx: SaleProductItemContext)
     for (const opcion of opcionesTipo.filter(opcion => opcion.cantidad > 0)) {
       for (
         let unitIndex = 0;
-        unitIndex < (opcion.value === 'botella' ? 1 : opcion.cantidad);
+        unitIndex < (esBotella(opcion.value) ? 1 : opcion.cantidad);
         unitIndex++
       ) {
         await ctx.onAgregarProducto({
           ...producto,
-          acompanamiento_corto:
-            opcion.value !== 'botella'
-              ? mixers.find(
-                  m =>
-                    m.value === opcion.value && m.unitIndex === unitIndex && !m.needsConfiguration
-                )?.selected
-              : undefined,
-          acompanamiento_botella:
-            opcion.value === 'botella'
-              ? mixers.find(m => m.value === opcion.value)?.selected
-              : undefined,
-          unidades_acompanamiento:
-            opcion.value === 'botella'
-              ? parseSavedOptions(producto.opciones_venta)?.find(o => o.tipo === 'botella')
-                  ?.acompanamiento?.unidades
-              : undefined,
-          tipo_venta: opcion.value === 'botella' ? 'botella' : 'shot',
+          acompanamiento_corto: !esBotella(opcion.value)
+            ? mixers.find(
+                m => m.value === opcion.value && m.unitIndex === unitIndex && !m.needsConfiguration
+              )?.selected
+            : undefined,
+          acompanamiento_botella: esBotella(opcion.value)
+            ? mixers.find(m => m.value === opcion.value)?.selected
+            : undefined,
+          unidades_acompanamiento: esBotella(opcion.value)
+            ? parseSavedOptions(producto.opciones_venta)?.find(o => o.tipo === 'botella')
+                ?.acompanamiento?.unidades
+            : undefined,
+          tipo_venta: esBotella(opcion.value) ? 'botella' : 'shot',
           shot_anfitriona: esCortoAnfitriona(opcion.value),
           precio: opcion.precio,
           comision: opcion.comision,
-          cantidad: opcion.value === 'botella' ? opcion.cantidad : 1,
+          cantidad: esBotella(opcion.value) ? opcion.cantidad : 1,
           selectedHostesses: admiteAnfitriona(opcion)
             ? (
                 hostessFormats.find(
                   format => format.value === opcion.value && format.unitIndex === unitIndex
                 )?.selected || []
-              ).slice(0, opcion.value === 'botella' ? undefined : opcion.cantidad)
+              ).slice(0, esBotella(opcion.value) ? undefined : opcion.cantidad)
             : [],
           isChampagne
         });

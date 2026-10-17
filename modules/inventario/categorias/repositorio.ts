@@ -10,6 +10,7 @@ export class CategoryRepository {
   private static mapCategoryFromDB(row: any) {
     return {
       id: row.id_categoria,
+      system_key: row.system_key ?? null,
       name: row.nombre,
       description: row.descripcion ?? '',
       status: row.estado,
@@ -23,7 +24,7 @@ export class CategoryRepository {
   static async getAll(forSale = false) {
     const results = (await query(`
       SELECT 
-        C.id_categoria, C.nombre, C.descripcion, C.estado, C.fecha_crea, C.display_order,
+        C.system_key, C.id_categoria, C.nombre, C.descripcion, C.estado, C.fecha_crea, C.display_order,
         (SELECT COUNT(DISTINCT P.id_producto)
          FROM productos P
          ${
@@ -63,7 +64,7 @@ export class CategoryRepository {
     const results = (await query(
       `
       SELECT 
-        C.id_categoria, C.nombre, C.descripcion, C.estado, C.fecha_crea, C.display_order,
+        C.system_key, C.id_categoria, C.nombre, C.descripcion, C.estado, C.fecha_crea, C.display_order,
         0 AS total_productos
       FROM categorias C
       WHERE C.id_categoria = ?
@@ -75,6 +76,14 @@ export class CategoryRepository {
   }
 
   static async update(id: string, name: string, description: string = '') {
+    const [current] = await query<{ system_key: string | null; nombre: string }[]>(
+      'SELECT system_key, nombre FROM categorias WHERE id_categoria = ?',
+      [id]
+    );
+    if (current?.system_key === 'bebidas_analcoholicas' && name !== current.nombre)
+      throw new ConflictError(
+        'La categoría predeterminada Bebidas analcohólicas no se puede renombrar'
+      );
     const dup = await query<any[]>(
       'SELECT id_categoria FROM categorias WHERE LOWER(nombre) = LOWER(?) AND id_categoria != ?',
       [name, id]
@@ -91,12 +100,12 @@ export class CategoryRepository {
     const results = (await query(
       `
       SELECT 
-        C.id_categoria, C.nombre, C.descripcion, C.estado, C.fecha_crea, C.fecha_mod, C.display_order,
+        C.system_key, C.id_categoria, C.nombre, C.descripcion, C.estado, C.fecha_crea, C.fecha_mod, C.display_order,
         COUNT(P.id_producto) AS total_productos
       FROM categorias C
       LEFT JOIN productos P ON P.categoria_id = C.id_categoria AND P.estado = 1
       WHERE C.id_categoria = ?
-      GROUP BY C.id_categoria, C.nombre, C.descripcion, C.estado, C.fecha_crea, C.fecha_mod, C.display_order
+      GROUP BY C.system_key, C.id_categoria, C.nombre, C.descripcion, C.estado, C.fecha_crea, C.fecha_mod, C.display_order
     `,
       [id]
     )) as any[];
@@ -122,6 +131,16 @@ export class CategoryRepository {
 
   static async updateStatus(id: string, action: string) {
     const newStatus = action === 'activate' ? 1 : 0;
+    if (newStatus === 0) {
+      const [current] = await query<{ system_key: string | null }[]>(
+        'SELECT system_key FROM categorias WHERE id_categoria = ?',
+        [id]
+      );
+      if (current?.system_key === 'bebidas_analcoholicas')
+        throw new ConflictError(
+          'La categoría predeterminada Bebidas analcohólicas no se puede desactivar'
+        );
+    }
     await withTransaction(async trx => {
       await BaseRepository.update(trx, 'categorias', 'id_categoria', id, {
         estado: newStatus,
@@ -137,12 +156,12 @@ export class CategoryRepository {
 
     const updatedRows = (await query(
       `
-      SELECT C.id_categoria, C.nombre, C.descripcion, C.estado, C.fecha_crea, C.display_order,
+      SELECT C.system_key, C.id_categoria, C.nombre, C.descripcion, C.estado, C.fecha_crea, C.display_order,
              COUNT(P.id_producto) AS total_productos
       FROM categorias C
       LEFT JOIN productos P ON P.categoria_id = C.id_categoria AND P.estado = 1
       WHERE C.id_categoria = ?
-      GROUP BY C.id_categoria, C.nombre, C.descripcion, C.estado, C.fecha_crea, C.display_order
+      GROUP BY C.system_key, C.id_categoria, C.nombre, C.descripcion, C.estado, C.fecha_crea, C.display_order
     `,
       [id]
     )) as any[];
@@ -164,6 +183,14 @@ export class CategoryRepository {
 
   static async delete(id: string) {
     const fotos = await withTransaction(async trx => {
+      const rows = await trx<{ system_key: string | null }[]>(
+        'SELECT system_key FROM categorias WHERE id_categoria = ? FOR UPDATE',
+        [id]
+      );
+      if (rows[0]?.system_key === 'bebidas_analcoholicas')
+        throw new ConflictError(
+          'La categoría predeterminada Bebidas analcohólicas no se puede eliminar'
+        );
       const products = (await trx('SELECT foto FROM productos WHERE categoria_id = ? FOR UPDATE', [
         id
       ])) as { foto: string | null }[];

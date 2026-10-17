@@ -2,7 +2,7 @@
 
 import { useState, useImperativeHandle, type Ref } from 'react';
 import { SaleTypeEditor } from '@/components/bar/transfer/SaleTypeEditor';
-import { SaleOptionsSchema } from '@/lib/business/schemas/sale-options';
+import { ConfiguredSaleOptionsSchema } from '@/lib/business/schemas/sale-options';
 import { preciosCortoAnfitriona } from '@/lib/sales/hostessShortPrices';
 import { useConfigValue } from '@/hooks/shared/useConfigValue';
 import type { SaleOption, SaleType } from '@/types/sale-options';
@@ -45,6 +45,9 @@ export function SettingsSaleOptionsEditor({
 }) {
   const shot = options.find(o => o.tipo === 'shot');
   const bottle = options.find(o => o.tipo === 'botella');
+  const [precioSinAnfitriona, setPrecioSinAnfitriona] = useState(
+    bottle?.precio_sin_anfitriona ? String(bottle.precio_sin_anfitriona) : ''
+  );
   const hostPrices = shot ? preciosCortoAnfitriona(shot) : [];
   const [tipos, setTipos] = useState<SaleType[]>(
     options.length ? options.map(o => o.tipo) : ['botella']
@@ -58,9 +61,13 @@ export function SettingsSaleOptionsEditor({
     hostPrices.slice(1).map(p => ({ precio: String(p.precio), comision: String(p.comision) }))
   );
   const [mix, setMix] = useState<'ninguno' | 'gaseosa' | 'soda'>(
-    bottle?.acompanamiento ? (bottle.acompanamiento.tipo ?? 'gaseosa') : 'ninguno'
+    (bottle?.acompanamiento?.unidades ?? 0) > 0
+      ? (bottle?.acompanamiento?.tipo ?? 'gaseosa')
+      : 'ninguno'
   );
-  const [units, setUnits] = useState(String(bottle?.acompanamiento?.unidades ?? 1));
+  const [units, setUnits] = useState(
+    bottle?.acompanamiento?.unidades ? String(bottle.acompanamiento.unidades) : ''
+  );
   const [ml, setMl] = useState(mlCliente ? String(mlCliente) : '');
   const [mlHost, setMlHost] = useState(mlAnfitriona ? String(mlAnfitriona) : '');
   const [mlMixHost, setMlMixHost] = useState(String(shot?.ml_acompanamiento_anfitriona ?? ''));
@@ -68,14 +75,17 @@ export function SettingsSaleOptionsEditor({
 
   useImperativeHandle(ref, () => ({
     getConfig() {
-      const parsed = SaleOptionsSchema.safeParse(
+      const parsed = ConfiguredSaleOptionsSchema.safeParse(
         tipos.map(tipo =>
           tipo === 'botella'
             ? {
                 tipo,
                 precio: numeric(precio),
+                ...(precioSinAnfitriona.trim()
+                  ? { precio_sin_anfitriona: numeric(precioSinAnfitriona) }
+                  : {}),
                 comision: numeric(comision),
-                ...(mix !== 'ninguno' ? { acompanamiento: { unidades: Number(units) } } : {})
+                acompanamiento: { unidades: Number(units || 0) }
               }
             : {
                 tipo,
@@ -130,6 +140,8 @@ export function SettingsSaleOptionsEditor({
       tipos={tipos}
       onTiposChange={setTipos}
       etiquetaShot='Corto'
+      precioSinAnfitriona={precioSinAnfitriona}
+      onPrecioSinAnfitrionaChange={setPrecioSinAnfitriona}
       precioVenta={precio}
       comision={comision}
       onPrecioVentaChange={onPrecio}

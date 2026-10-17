@@ -1,4 +1,5 @@
 'use client';
+import { useRealtimeRefresh } from '@/hooks/realtime/useRealtimeRefresh';
 import { useCallback, useEffect, useId, useState } from 'react';
 import { SELECT_INPUT_CLASS, SELECT_LABEL_CLASS } from '@/components/shared/selectStyles';
 import { ModuleTableCard } from '@/components/shared/tables/ModuleTable';
@@ -50,6 +51,8 @@ export function EmployeeAdvanceRequests({ onRequested }: { onRequested: () => vo
       setLoading(false);
     }
   }, []);
+  useRealtimeRefresh('/api/anticipos', load);
+
   useEffect(() => {
     void load();
   }, [load]);

@@ -4,7 +4,7 @@ import { Button } from '@/components/ui/button';
 
 import { useState, useEffect } from 'react';
 import { Save, GlassWater, Wine, AlertTriangle } from 'lucide-react';
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { toast } from 'sonner';
 import logger from '@/lib/utils/logger';
 import { categoriaDeClave, defaultDeClave } from '@/modules/configuracion/contracts';
@@ -196,10 +196,6 @@ export function SettingsBarTab() {
             Medidas y control del bar
           </CardTitle>
         </div>
-        <CardDescription className='max-w-3xl leading-relaxed text-neutral-500 dark:text-neutral-400'>
-          Define las medidas generales de servicio, las alertas de nivel bajo y la tolerancia al
-          devolver botellas abiertas.
-        </CardDescription>
       </CardHeader>
       <CardContent className='space-y-5 px-5 pb-5 sm:px-6 sm:pb-6'>
         <div className='grid grid-cols-1 gap-4 sm:grid-cols-2 2xl:grid-cols-4'>
@@ -219,7 +215,7 @@ export function SettingsBarTab() {
             }) => (
               <div
                 key={id}
-                className='flex min-w-0 flex-col rounded-xl border border-neutral-200 bg-neutral-50/60 p-5 dark:border-neutral-800 dark:bg-neutral-950/40'
+                className='flex min-w-0 flex-col rounded-xl bg-neutral-50/60 p-5 dark:bg-neutral-950/40'
               >
                 <div className='mb-4 flex items-center gap-3'>
                   <div
@@ -267,11 +263,6 @@ export function SettingsBarTab() {
               </div>
             )
           )}
-        </div>
-        <div className='rounded-xl border border-sky-100 bg-sky-50/70 px-4 py-3 text-sm leading-relaxed text-sky-900 dark:border-sky-900 dark:bg-sky-950/30 dark:text-sky-200'>
-          <span className='font-semibold'>Medidas por producto.</span> Puedes definir distintos ml
-          por corto para cliente y anfitriona en la ficha del producto o al traspasar. Esos valores
-          tienen prioridad sobre estas medidas generales.
         </div>
         <div className='flex flex-col gap-3 border-t border-neutral-200 pt-5 sm:flex-row sm:items-center sm:justify-between dark:border-neutral-800'>
           <p className='text-xs text-neutral-500 dark:text-neutral-400' role='status'>

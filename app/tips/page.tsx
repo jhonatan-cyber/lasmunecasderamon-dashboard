@@ -1,4 +1,5 @@
 'use client';
+import { useRealtimeRefresh } from '@/hooks/realtime/useRealtimeRefresh';
 import { StatusTabs } from '@/components/shared/StatusTabs';
 
 import { useState, useMemo, useEffect } from 'react';
@@ -47,6 +48,8 @@ export default function TipsPage() {
       setTipsCajaActiva([]);
     }
   };
+
+  useRealtimeRefresh('/api/tips', fetchTipsCajaActiva);
 
   const filteredTips = useMemo(() => {
     if (!tips) return [];

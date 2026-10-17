@@ -85,6 +85,7 @@ export const ServicioPaymentRow = memo(function ServicioPaymentRow({
           disabledMethods={[...disabledPaymentMethods]}
           clientes={clientes}
           selectedClienteId={formData.clientes[0] || ''}
+          selectedClienteIds={formData.clientes}
         />
       </div>
 

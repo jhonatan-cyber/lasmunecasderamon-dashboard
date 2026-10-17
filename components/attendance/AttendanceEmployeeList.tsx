@@ -1,4 +1,5 @@
 'use client';
+import { useRealtimeRefresh } from '@/hooks/realtime/useRealtimeRefresh';
 import { EmployeeGratifications } from './EmployeeGratifications';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
 import { ListLoadError } from '@/components/shared/ListLoadError';
@@ -129,6 +130,12 @@ export function AttendanceEmployeeList({ allowedRole, showHousingSummary = false
       setLoading(false);
     }
   };
+
+  useRealtimeRefresh(
+    '/api/attendance/user',
+    fetchAsistencias,
+    !!user && !userLoading && user.role?.toLowerCase() === allowedRole
+  );
 
   useEffect(() => {
     if (user && !userLoading && user.role?.toLowerCase() === allowedRole) {

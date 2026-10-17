@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useMemo, useCallback } from 'react';
 import logger from '@/lib/utils/logger';
+import { useRealtimeRefresh } from '@/hooks/realtime/useRealtimeRefresh';
 import { formatLongDateEs, formatShortTimeEs } from '@/lib/utils/calendarUtils';
 
 export interface AsistenciaDetalle {
@@ -31,12 +32,16 @@ export function useAttendanceDetail({ isOpen, userId }: UseAttendanceDetailParam
   const [currentPage, setCurrentPage] = useState(1);
   const [pageSize, setPageSize] = useState(5);
   const pageSizeOptions = [5, 10, 20, 40];
+  const [revision, setRevision] = useState(0);
+  useRealtimeRefresh(
+    '/api/attendance',
+    () => setRevision(value => value + 1),
+    isOpen && Boolean(userId)
+  );
 
   useEffect(() => {
     const controller = new AbortController();
-    setAsistencias([]);
     setError(null);
-    setCurrentPage(1);
     setLoading(false);
     if (!isOpen || !userId) return () => controller.abort();
     const fetchAsistenciasDetalle = async () => {
@@ -65,6 +70,11 @@ export function useAttendanceDetail({ isOpen, userId }: UseAttendanceDetailParam
     };
     void fetchAsistenciasDetalle();
     return () => controller.abort();
+  }, [isOpen, userId, revision]);
+
+  useEffect(() => {
+    setAsistencias([]);
+    setCurrentPage(1);
   }, [isOpen, userId]);
 
   const formatDate = useCallback((dateString: string) => {

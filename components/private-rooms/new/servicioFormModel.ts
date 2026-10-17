@@ -114,6 +114,66 @@ const normalizeId = (id: string) => {
   return Number.isNaN(parsed) ? id : parsed;
 };
 
+/** Cliente con cuenta y saldo, ya Normalizado para el modal de descuento. */
+export interface ClienteConSaldo {
+  clienteId: string;
+  nombre: string;
+  saldo: number;
+}
+
+/** Destino del descuento prepago que se envía al backend. */
+export interface PrepagoDestino {
+  cliente_id: string;
+  monto: number;
+}
+
+/**
+ * Reparte el monto prepago entre clientes con saldo.
+ *  - Cliente único: recibe todo lo posible (min(saldo, monto)).
+ *  - Ambos: mitad y mitad estricta — hasta la mitad para cada cliente capada por
+ *    su saldo, sin pasarse del monto total; el remanente queda para caja.
+ */
+export function calcularDistribucionPrepago(
+  montoDescontar: number,
+  clientesConSaldo: ClienteConSaldo[],
+  opcion: 'uno' | 'ambos' | 'ninguno',
+  titularId?: string
+): { destinos: PrepagoDestino[]; pagadoConSaldo: number; alCaja: number } {
+  const candidatos = (
+    opcion === 'uno' && titularId
+      ? clientesConSaldo.filter(c => c.clienteId === titularId)
+      : clientesConSaldo
+  ).slice(0, opcion === 'ambos' ? 2 : undefined);
+
+  if (opcion === 'ninguno' || candidatos.length === 0) {
+    return { destinos: [], pagadoConSaldo: 0, alCaja: Math.max(0, Math.round(montoDescontar)) };
+  }
+
+  let restante = Math.max(0, Math.round(montoDescontar));
+  const destinos: PrepagoDestino[] = [];
+
+  if (opcion === 'ambos' && candidatos.length === 2) {
+    const mitad = Math.round(restante / 2);
+    for (const cliente of candidatos) {
+      const monto = Math.min(Math.round(cliente.saldo), mitad, restante);
+      if (monto > 0) {
+        destinos.push({ cliente_id: cliente.clienteId, monto });
+        restante -= monto;
+      }
+    }
+  } else {
+    const cliente = candidatos[0];
+    const monto = Math.min(Math.round(cliente.saldo), restante);
+    if (monto > 0) {
+      destinos.push({ cliente_id: cliente.clienteId, monto });
+      restante -= monto;
+    }
+  }
+
+  const pagadoConSaldo = destinos.reduce((sum, d) => sum + d.monto, 0);
+  return { destinos, pagadoConSaldo, alCaja: restante };
+}
+
 /** Payload exacto de `POST /api/servicios` para el modal de confirmación. */
 export function buildServicioPayload(args: {
   formData: ServicioFormData;
@@ -121,8 +181,9 @@ export function buildServicioPayload(args: {
   subTotal: number;
   total: number;
   pagosMixtos: any[];
+  prepagoDestinos?: PrepagoDestino[];
 }) {
-  const { formData, precioHabitacion, subTotal, total, pagosMixtos } = args;
+  const { formData, precioHabitacion, subTotal, total, pagosMixtos, prepagoDestinos } = args;
   return {
     codigo: generateRandomCode(),
     cliente_id: formData.clientes.length > 0 ? normalizeId(formData.clientes[0]) : null,
@@ -137,7 +198,11 @@ export function buildServicioPayload(args: {
     tiempo: formData.tiempo,
     metodo_pago: formData.metodo_pago,
     usuarios: formData.usuarios.map(normalizeId),
-    pagos_mixtos: formData.metodo_pago === 'mixto' ? pagosMixtos : null
+    pagos_mixtos: formData.metodo_pago === 'mixto' ? pagosMixtos : null,
+    prepago_destinos:
+      prepagoDestinos && prepagoDestinos.length > 0
+        ? prepagoDestinos.map(d => ({ cliente_id: normalizeId(d.cliente_id), monto: d.monto }))
+        : undefined
   };
 }
 

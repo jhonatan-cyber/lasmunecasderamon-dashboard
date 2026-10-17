@@ -15,9 +15,12 @@ import { useIvaRate } from '@/components/providers/IvaRateProvider';
 import { printBoletaHabitacion } from '@/components/private-rooms/new/printBoleta';
 import {
   buildServicioPayload,
+  calcularDistribucionPrepago,
   calcularTotalesServicio,
   validateServicioForm,
   unirNombresAnfitrionas,
+  type ClienteConSaldo,
+  type PrepagoDestino,
   type ServicioFormData
 } from '@/components/private-rooms/new/servicioFormModel';
 
@@ -63,6 +66,14 @@ export function useServicioForm() {
   const [total, setTotal] = useState(0);
   const [pagosMixtos, setPagosMixtos] = useState<any[]>([]);
 
+  /**
+   * Pregunta «¿a quién descontamos?» cuando los clientes elegidos tienen cuenta
+   * y saldo: al primero, al segundo, a ambos (mitad y mitad) o a nadie.
+   */
+  const [showPrepagoChoiceModal, setShowPrepagoChoiceModal] = useState(false);
+  const [prepagoOpcion, setPrepagoOpcion] = useState<'uno' | 'ambos' | 'ninguno' | null>(null);
+  const [prepagoTitularId, setPrepagoTitularId] = useState<string | null>(null);
+
   const {
     selectedRoom,
     selectedClientData,
@@ -74,7 +85,8 @@ export function useServicioForm() {
     maxClients,
     desgloseTarjeta,
     precioHabitacionBoleta,
-    disabledPaymentMethods
+    disabledPaymentMethods,
+    clientesConSaldo
   } = usePrivateRoomSummary({
     formData,
     clientes,
@@ -155,28 +167,43 @@ export function useServicioForm() {
     setPagosMixtos(prev => prev.filter(pago => pago.metodo !== 'prepago'));
   }, [selectedClientData, formData.metodo_pago]);
 
-  // Cliente con saldo positivo: no puede pagar con prepago (su saldo cubre).
+  // Sin clientes con saldo no hay descuento posible: se resetea el método prepago
+  // y se sacan las filas prepago de los mixtos.
   useEffect(() => {
-    if (!selectedClientData) return;
-
-    const saldo = Number(selectedClientData.saldo || 0);
-    if (saldo > 0) {
-      if (formData.metodo_pago === 'prepago' || formData.metodo_pago === 'mixto') {
-        setFormData(prev => ({ ...prev, metodo_pago: '' }));
-      }
-
-      setPagosMixtos([]);
-      return;
-    }
+    if (clientesConSaldo.length > 0) return;
 
     if (formData.metodo_pago === 'prepago') {
       setFormData(prev => ({ ...prev, metodo_pago: '' }));
     }
 
     setPagosMixtos(prev => prev.filter(pago => pago.metodo !== 'prepago'));
-  }, [selectedClientData, formData.metodo_pago]);
+  }, [clientesConSaldo.length, formData.metodo_pago]);
 
-  const handleSubmit = () => {
+  // Al cambiar clientes o método cambia la pregunta: se reinicia la elección.
+  const claveClientesElegidos = formData.clientes.join('|');
+  useEffect(() => {
+    setPrepagoOpcion(null);
+    setPrepagoTitularId(null);
+    setShowPrepagoChoiceModal(false);
+  }, [claveClientesElegidos, formData.metodo_pago]);
+
+  /** ¿El método elegido consume saldo prepago? */
+  const prepagoEnJuego =
+    formData.metodo_pago === 'prepago' ||
+    (formData.metodo_pago === 'mixto' && pagosMixtos.some(pago => pago.metodo === 'prepago'));
+
+  /** Monto que se intenta cubrir con saldo: total (simple prepago) o la fila prepago del mixto. */
+  const montoPrepagoBase =
+    formData.metodo_pago === 'prepago'
+      ? total
+      : pagosMixtos
+          .filter(pago => pago.metodo === 'prepago')
+          .reduce((sum, pago) => sum + Number(pago.monto || 0), 0);
+
+  const handleSubmit = (eleccionDesdeModal?: {
+    opcion: 'uno' | 'ambos' | 'ninguno';
+    clienteId: string | null;
+  }) => {
     if (submitting.current) return;
     const validationError =
       hasComision && !formData.producto_incluido_presentacion_id
@@ -187,12 +214,39 @@ export function useServicioForm() {
       return;
     }
 
+    if (prepagoEnJuego) {
+      if (clientesConSaldo.length === 0) {
+        toast.error('Ninguno de los clientes seleccionados tiene saldo disponible');
+        return;
+      }
+      const eleccionVigente = eleccionDesdeModal ?? {
+        opcion: prepagoOpcion,
+        clienteId: prepagoTitularId
+      };
+      const multiSaldo = clientesConSaldo.length > 1 && prepagoEnJuego;
+      if (multiSaldo && !eleccionVigente.opcion && !eleccionDesdeModal) {
+        // Pregunta «¿a quién descontamos?» antes de confirmar.
+        setShowPrepagoChoiceModal(true);
+        return;
+      }
+      if (
+        multiSaldo &&
+        eleccionVigente.opcion === 'uno' &&
+        !eleccionVigente.clienteId &&
+        !eleccionDesdeModal
+      ) {
+        setShowPrepagoChoiceModal(true);
+        return;
+      }
+    }
+
     const servicioData = buildServicioPayload({
       formData,
       precioHabitacion,
       subTotal,
       total,
-      pagosMixtos
+      pagosMixtos,
+      prepagoDestinos: resolverDestinosPrepago(eleccionDesdeModal)
     });
 
     const signature = JSON.stringify({ ...servicioData, codigo: undefined });
@@ -205,6 +259,31 @@ export function useServicioForm() {
     setServicioDataToSubmit(servicioData);
     setShowConfirmModal(true);
   };
+
+  /**
+   * Destinos del descuento según la elección del modal:
+   *  - 1 cliente con saldo → se lo descontamos directo (equivale a «uno»).
+   *  - 2 o más con saldo → la opción elegida: uno, ambos (mitad y mitad) o ninguno.
+   */
+  function resolverDestinosPrepago(eleccionDesdeModal?: {
+    opcion: 'uno' | 'ambos' | 'ninguno';
+    clienteId: string | null;
+  }): PrepagoDestino[] {
+    if (!prepagoEnJuego) return [];
+    const opcion = eleccionDesdeModal?.opcion ?? prepagoOpcion;
+    const clienteId = eleccionDesdeModal?.clienteId ?? prepagoTitularId;
+    if (clientesConSaldo.length === 1) {
+      return calcularDistribucionPrepago(montoPrepagoBase, clientesConSaldo, 'uno').destinos;
+    }
+    if (opcion === 'uno' && clienteId) {
+      return calcularDistribucionPrepago(montoPrepagoBase, clientesConSaldo, 'uno', clienteId)
+        .destinos;
+    }
+    if (opcion === 'ambos') {
+      return calcularDistribucionPrepago(montoPrepagoBase, clientesConSaldo, 'ambos').destinos;
+    }
+    return [];
+  }
 
   const handleGenerarBoletaHabitacion = () => {
     printBoletaHabitacion({
@@ -307,7 +386,16 @@ export function useServicioForm() {
     setShowConfirmModal,
     handleSubmit,
     handleGenerarBoletaHabitacion,
-    confirmAndSubmit
+    confirmAndSubmit,
+    // Pregunta «¿a quién descontamos?» (clientes con cuenta y saldo)
+    showPrepagoChoiceModal,
+    setShowPrepagoChoiceModal,
+    prepagoOpcion,
+    setPrepagoOpcion,
+    prepagoTitularId,
+    setPrepagoTitularId,
+    clientesConSaldo,
+    montoPrepagoBase
   };
 }
 

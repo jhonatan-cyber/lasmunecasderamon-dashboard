@@ -32,9 +32,9 @@ export function QueryProvider({ children }: QueryProviderProps) {
 
             retryDelay: attemptIndex => Math.min(1000 * 2 ** attemptIndex, 30000),
 
-            refetchOnWindowFocus: false,
+            refetchOnWindowFocus: true,
             refetchOnReconnect: 'always',
-            refetchOnMount: false,
+            refetchOnMount: true,
             refetchInterval: false,
             structuralSharing: true,
 

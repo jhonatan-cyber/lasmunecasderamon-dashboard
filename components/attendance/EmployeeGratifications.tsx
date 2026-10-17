@@ -1,4 +1,5 @@
 'use client';
+import { useRealtimeRefresh } from '@/hooks/realtime/useRealtimeRefresh';
 import { useCallback, useEffect, useState } from 'react';
 import { fetchCollection } from '@/lib/api/fetchCollection';
 import { ListLoadError } from '@/components/shared/ListLoadError';
@@ -36,6 +37,8 @@ export function EmployeeGratifications() {
       setLoading(false);
     }
   }, []);
+  useRealtimeRefresh('/api/gratificaciones/me', load);
+
   useEffect(() => {
     void load();
   }, [load]);

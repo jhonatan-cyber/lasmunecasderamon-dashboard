@@ -71,6 +71,22 @@ export function useTimerActions({ onNotificationExpira, onRefreshCaja }: TimerAc
       const timer = timerObject || activeTimers.peek().find(t => t.id === timerId);
       if (!timer) return;
 
+      // El vencimiento lo resuelve el servidor, también para sesiones de solo lectura.
+      // Un PATCH manual desde cada navegador puede fallar por permisos o competir con el cron.
+      if (timerObject && !isManualStop) {
+        await refreshTimerSnapshot(true, true);
+        onRefreshCaja?.(timer.servicioId);
+        return;
+      }
+
+      const requireSuccess = async (response: Response, fallback: string) => {
+        const body = await response.json().catch(() => null);
+        if (!response.ok || body?.success === false)
+          throw new Error(
+            body?.error?.message || body?.message || `${fallback} (HTTP ${response.status})`
+          );
+      };
+
       const isInstance = timer instanceof TimerInstance;
       const tRoomId = isInstance ? (timer as TimerInstance).roomId.peek() : (timer as any).roomId;
       const tTipo = isInstance
@@ -88,9 +104,7 @@ export function useTimerActions({ onNotificationExpira, onRefreshCaja }: TimerAc
             method: 'PATCH',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ estado: 1 })
-          }).then(response => {
-            if (!response.ok) throw new Error('No se pudo finalizar el servicio');
-          })
+          }).then(response => requireSuccess(response, 'No se pudo finalizar el servicio'))
         );
       } else if (tTipo === 'venta') {
         updates.push(
@@ -98,12 +112,14 @@ export function useTimerActions({ onNotificationExpira, onRefreshCaja }: TimerAc
             method: 'PATCH',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ action: 'stop' })
-          }).then(response => {
-            if (!response.ok) throw new Error('No se pudo finalizar la venta');
-          })
+          }).then(response => requireSuccess(response, 'No se pudo finalizar la venta'))
         );
       } else if (tTipo === 'cuenta') {
-        updates.push(fetch(`/api/cuentas/${timer.servicioId}/stop`, { method: 'PATCH' }));
+        updates.push(
+          fetch(`/api/cuentas/${timer.servicioId}/stop`, { method: 'PATCH' }).then(response =>
+            requireSuccess(response, 'No se pudo finalizar la cuenta')
+          )
+        );
       }
 
       if (othersInRoom.length === 0 && tTipo !== 'servicio' && tTipo !== 'venta') {

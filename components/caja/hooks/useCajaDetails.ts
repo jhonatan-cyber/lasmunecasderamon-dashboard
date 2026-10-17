@@ -1,5 +1,6 @@
 'use client';
 
+import { useRealtimeRefresh } from '@/hooks/realtime/useRealtimeRefresh';
 import { useState, useEffect, useMemo } from 'react';
 import logger from '@/lib/utils/logger';
 
@@ -197,6 +198,21 @@ export function useCajaDetails({ caja, open }: UseCajaDetailsParams) {
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [open, cajaId]);
+
+  useRealtimeRefresh(
+    '/api/cashregister',
+    () =>
+      Promise.all([
+        fetchCajaInfo(),
+        fetchClientesSaldo(),
+        fetchRetiros(),
+        fetchVentas(),
+        fetchServicios(),
+        fetchResumenFinanciero(),
+        fetchVentasPorProducto()
+      ]),
+    open && Boolean(cajaId)
+  );
 
   const filteredVentas = useMemo(() => {
     if (!searchVentas.trim()) return ventas;

@@ -67,6 +67,10 @@ const ProductCard: React.FC<ProductCardProps> = ({
   const [deleteModalOpen, setDeleteModalOpen] = useState(false);
   const [detailsOpen, setDetailsOpen] = useState(false);
   const { hasPermission } = useUserPermissions();
+  const totalStock =
+    Number(presentation ? (presentation.stock ?? 0) : (product.stock_almacen ?? 0)) +
+    Number(presentation?.stock_bar ?? 0);
+  const lowStock = presentation?.stock_minimo != null && totalStock < presentation.stock_minimo;
 
   const canEdit = hasPermission('products', 'edit');
   const canDelete = hasPermission('products', 'delete');
@@ -115,7 +119,7 @@ const ProductCard: React.FC<ProductCardProps> = ({
     <>
       <StaggeredEntrance index={entranceIndex} className='h-full'>
         <Card
-          className='group relative h-full border-none bg-white dark:bg-slate-900 backdrop-blur-xs shadow-md hover:shadow-xl transition-all duration-300 rounded-4xl overflow-hidden'
+          className={`group relative h-full border-none backdrop-blur-xs shadow-md hover:shadow-xl transition-all duration-300 rounded-4xl overflow-hidden ${lowStock ? 'bg-red-50 dark:bg-red-950/30 ring-2 ring-inset ring-red-400 dark:ring-red-700' : 'bg-white dark:bg-slate-900'}`}
           ref={isDraggable ? setNodeRef : undefined}
           style={style}
         >
@@ -252,6 +256,11 @@ const ProductCard: React.FC<ProductCardProps> = ({
                   </Badge>
                 )}
               </div>
+              {lowStock && (
+                <Badge className='mt-2 rounded-full bg-red-100 text-red-700 dark:bg-red-900/50 dark:text-red-300'>
+                  Stock bajo · Total: {totalStock.toLocaleString('es-CL')}
+                </Badge>
+              )}
             </div>
 
             <div className='grid grid-cols-2 gap-4 pb-4 border-b border-gray-100 dark:border-slate-800'>
@@ -271,7 +280,7 @@ const ProductCard: React.FC<ProductCardProps> = ({
               </div>
               <div className='space-y-1'>
                 <p className='text-[10px] uppercase font-bold text-gray-400 dark:text-gray-500 tracking-wider'>
-                  Stock
+                  Stock Bodega
                 </p>
                 <div className='flex items-center gap-1 text-gray-900 dark:text-neutral-100 font-medium'>
                   <Badge className='bg-blue-100 text-blue-700 rounded-full px-2 py-0.5 text-xs'>
@@ -279,6 +288,25 @@ const ProductCard: React.FC<ProductCardProps> = ({
                   </Badge>
                 </div>
               </div>
+              {[
+                ['Stock Bar', presentation?.stock_bar ?? 0],
+                [
+                  'Total Bar + Bodega',
+                  Number(presentation ? (presentation.stock ?? 0) : (product.stock_almacen ?? 0)) +
+                    Number(presentation?.stock_bar ?? 0)
+                ],
+                ['Stock mínimo', presentation?.stock_minimo],
+                ['Stock máximo', presentation?.stock_maximo]
+              ].map(([label, value]) => (
+                <div key={String(label)} className='space-y-1'>
+                  <p className='text-[10px] uppercase font-bold text-gray-400 dark:text-gray-500 tracking-wider'>
+                    {label}
+                  </p>
+                  <p className='text-sm font-semibold'>
+                    {value == null ? 'Sin configurar' : Number(value).toLocaleString('es-CL')}
+                  </p>
+                </div>
+              ))}
             </div>
 
             {product.description ? (

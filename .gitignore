@@ -72,6 +72,7 @@ tests/integration/backups/
 /_inspect_tmp.mjs
 /_seed_trans_tmp.mjs
 /module-review-*.json
+/nested-report.txt
 .freebuff/
 
 # Configuracion MCP del cliente con credenciales del dashboard (nunca commitear)

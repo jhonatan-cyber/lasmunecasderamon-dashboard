@@ -2,7 +2,6 @@
 
 import { useQuery } from '@tanstack/react-query';
 import { queryKeys } from '@/lib/api/queryClient';
-import { useDashboardSSE } from './useDashboardSSE';
 import { useCurrentUser } from '@/hooks/auth/useCurrentUser';
 
 export interface DashboardSummary {
@@ -22,7 +21,6 @@ export interface DashboardSummary {
 
 export const useDashboardSummary = () => {
   const { user, loading: userLoading } = useCurrentUser();
-  useDashboardSSE();
 
   return useQuery<DashboardSummary>({
     queryKey: [...queryKeys.dashboard.summary(), user?.id, user?.role],

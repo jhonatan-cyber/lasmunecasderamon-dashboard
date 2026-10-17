@@ -186,7 +186,7 @@ export const CajaCard = ({
       </CardHeader>
 
       <CardContent className='space-y-6 px-6 pb-8'>
-        <div className='grid grid-cols-1 gap-3 p-4 bg-slate-50/50 dark:bg-white/5 rounded-2xl border border-slate-100 dark:border-white/5'>
+        <div className='grid grid-cols-1 gap-3 p-4 bg-slate-50/50 dark:bg-white/5 rounded-xl'>
           <div className='flex items-center justify-between'>
             <div className='flex items-center gap-2'>
               <User className='w-3.5 h-3.5 text-slate-400' />
@@ -237,7 +237,7 @@ export const CajaCard = ({
           </div>
 
           <div className='pt-2'>
-            <div className='flex flex-col items-center justify-center p-4 bg-black/2 dark:bg-white/2 rounded-2xl border border-black/5 dark:border-white/5'>
+            <div className='flex flex-col items-center justify-center p-4 bg-black/2 dark:bg-white/2 rounded-xl'>
               <span className='text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] mb-1'>
                 Balance Actual
               </span>

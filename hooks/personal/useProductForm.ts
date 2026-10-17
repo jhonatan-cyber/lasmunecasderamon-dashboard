@@ -1,5 +1,6 @@
 'use client';
 
+import { StockLimitsSchema } from '@/lib/business/stockLimits';
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { useQueryClient } from '@tanstack/react-query';
 import { toast } from 'sonner';
@@ -23,6 +24,8 @@ export interface PresentacionFormItem {
   codigo_barras: string;
   precio_compra: string;
   stock: string;
+  stock_minimo?: string;
+  stock_maximo?: string;
   foto: File | null;
   fotoPreview: string;
   fotoUrl: string;
@@ -46,6 +49,8 @@ const emptyPresentacion = (): PresentacionFormItem => ({
   nombre: '',
   codigo_barras: '',
   precio_compra: '',
+  stock_minimo: '',
+  stock_maximo: '',
   stock: '',
   foto: null,
   fotoPreview: '',
@@ -95,6 +100,8 @@ export function useProductForm({
     precio_venta: '',
     comision: '',
     ml_botella: '',
+    stock_minimo: '',
+    stock_maximo: '',
     stock: ''
   });
   const [guardandoPres, setGuardandoPres] = useState<boolean>(false);
@@ -231,6 +238,14 @@ export function useProductForm({
           (autoEditPresentation as any).ml_botella !== null
             ? String((autoEditPresentation as any).ml_botella)
             : '',
+        stock_minimo:
+          autoEditPresentation.stock_minimo == null
+            ? ''
+            : String(autoEditPresentation.stock_minimo),
+        stock_maximo:
+          autoEditPresentation.stock_maximo == null
+            ? ''
+            : String(autoEditPresentation.stock_maximo),
         stock:
           autoEditPresentation.stock !== undefined && autoEditPresentation.stock !== null
             ? formatNumber(String(autoEditPresentation.stock))
@@ -246,6 +261,8 @@ export function useProductForm({
         precio_venta: '',
         comision: '',
         ml_botella: '',
+        stock_minimo: '',
+        stock_maximo: '',
         stock: ''
       });
       setCodigosSeleccionados([]);
@@ -292,6 +309,13 @@ export function useProductForm({
         return `Precio de compra inválido en "${item.nombre.trim() || 'presentación'}"`;
       if (!/^\d*$/.test(getNumericValue(item.stock)))
         return `Stock inválido en "${item.nombre.trim() || 'presentación'}": entero mayor o igual a 0`;
+      if (
+        !StockLimitsSchema.safeParse({
+          stock_minimo: getNumericValue(item.stock_minimo || ''),
+          stock_maximo: getNumericValue(item.stock_maximo || '')
+        }).success
+      )
+        return 'Indica mínimo y máximo válidos, con máximo mayor o igual al mínimo';
       const codigo = item.codigo_barras.trim();
       if (codigo) {
         if (vistos.has(codigo)) return `Código de barras duplicado: ${codigo}`;
@@ -339,7 +363,10 @@ export function useProductForm({
 
   const updatePresentacion = (index: number, field: keyof PresentacionFormItem, value: string) => {
     const formatted =
-      field === 'precio_compra' || field === 'stock'
+      field === 'precio_compra' ||
+      field === 'stock' ||
+      field === 'stock_minimo' ||
+      field === 'stock_maximo'
         ? value.replace(/\D/g, '').replace(/\B(?=(\d{3})+(?!\d))/g, '.')
         : value;
     setPresentaciones(prev => prev.map((p, i) => (i === index ? { ...p, [field]: formatted } : p)));
@@ -516,6 +543,8 @@ export function useProductForm({
       comision:
         p.comision !== undefined && p.comision !== null ? formatNumber(String(p.comision)) : '',
       ml_botella: p.ml_botella !== undefined && p.ml_botella !== null ? String(p.ml_botella) : '',
+      stock_minimo: p.stock_minimo == null ? '' : String(p.stock_minimo),
+      stock_maximo: p.stock_maximo == null ? '' : String(p.stock_maximo),
       stock: p.stock !== undefined && p.stock !== null ? formatNumber(String(p.stock)) : ''
     });
   };
@@ -530,6 +559,8 @@ export function useProductForm({
       precio_venta: '',
       comision: '',
       ml_botella: '',
+      stock_minimo: '',
+      stock_maximo: '',
       stock: ''
     });
   };
@@ -538,7 +569,11 @@ export function useProductForm({
     setEditPresDraft(prev => ({
       ...prev,
       [field]:
-        field === 'precio_compra' || field === 'precio_venta' || field === 'comision'
+        field === 'precio_compra' ||
+        field === 'precio_venta' ||
+        field === 'comision' ||
+        field === 'stock_minimo' ||
+        field === 'stock_maximo'
           ? value.replace(/\D/g, '').replace(/\B(?=(\d{3})+(?!\d))/g, '.')
           : field === 'ml_botella'
             ? value.replace(/\D/g, '')
@@ -551,6 +586,15 @@ export function useProductForm({
     );
 
   const saveEditPres = async () => {
+    if (
+      !StockLimitsSchema.safeParse({
+        stock_minimo: getNumericValue(editPresDraft.stock_minimo),
+        stock_maximo: getNumericValue(editPresDraft.stock_maximo)
+      }).success
+    ) {
+      toast.error('Indica mínimo y máximo válidos, con máximo mayor o igual al mínimo');
+      return;
+    }
     if (!editingPresId || savingPresentation.current || addingStock.current) return;
     if (!editPresDraft.nombre.trim()) {
       toast.error('El nombre de la presentación es requerido');
@@ -584,6 +628,8 @@ export function useProductForm({
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           id: editingPresId,
+          stock_minimo: getNumericValue(editPresDraft.stock_minimo) || null,
+          stock_maximo: getNumericValue(editPresDraft.stock_maximo) || null,
           nombre: editPresDraft.nombre.trim(),
           codigo_barras: editPresDraft.codigo_barras.trim(),
           precio_compra: getNumericValue(editPresDraft.precio_compra) || '0',
@@ -695,6 +741,8 @@ export function useProductForm({
             nombre: p.nombre.trim(),
             codigo_barras: p.codigo_barras.trim() || undefined,
             precio_compra: getNumericValue(p.precio_compra) || '0',
+            stock_minimo: getNumericValue(p.stock_minimo || '') || null,
+            stock_maximo: getNumericValue(p.stock_maximo || '') || null,
             cantidad: getNumericValue(p.stock) || '0'
           }))
         )

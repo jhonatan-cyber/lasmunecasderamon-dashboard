@@ -1,6 +1,6 @@
-import { query, generateUUID } from '@/lib/database/db';
+import { query, generateUUID, withTransaction } from '@/lib/database/db';
 import { getNowInBusinessTimezone } from '@/lib/business/timezoneService';
-import { RoomSchema, type RoomType } from '@/lib/business/schemas';
+import { RoomSchema, RoomWriteSchema, type RoomType } from '@/lib/business/schemas';
 import { BaseRepository } from '@/lib/database/base-repository';
 import { ConflictError, ValidationError } from '@/lib/errors/errors';
 
@@ -80,7 +80,7 @@ export class RoomRepository {
   }
 
   static async create(data: any): Promise<RoomType | null> {
-    const validated = RoomSchema.parse(data);
+    const validated = RoomWriteSchema.parse(data);
 
     const dup = await query<any[]>(
       'SELECT id_habitacion FROM habitaciones WHERE LOWER(nombre) = LOWER(?)',
@@ -92,20 +92,27 @@ export class RoomRepository {
 
     const id = generateUUID();
     const now = getNowInBusinessTimezone();
-    await BaseRepository.insert(query, 'habitaciones', {
-      id_habitacion: id,
-      nombre: validated.name,
-      precio: validated.price,
-      tiempo: validated.time,
-      comision_anfitriona: validated.comision_anfitriona,
-      fecha_crea: now
+    await withTransaction(async trx => {
+      await trx('LOCK TABLE habitaciones IN SHARE ROW EXCLUSIVE MODE');
+      const [last] = await trx<{ last_order: number }[]>(
+        'SELECT COALESCE(MAX(display_order), 0) AS last_order FROM habitaciones'
+      );
+      await BaseRepository.insert(trx, 'habitaciones', {
+        id_habitacion: id,
+        nombre: validated.name,
+        precio: validated.price,
+        tiempo: validated.time,
+        comision_anfitriona: validated.comision_anfitriona,
+        fecha_crea: now,
+        display_order: Number(last.last_order) + 1
+      });
     });
 
     return await this.getById(id);
   }
 
   static async update(id: string, data: any): Promise<RoomType | null> {
-    const validated = RoomSchema.partial().parse(data);
+    const validated = RoomWriteSchema.partial().parse(data);
 
     if (validated.name) {
       const dup = await query<any[]>(
@@ -166,11 +173,14 @@ export class RoomRepository {
 
   static async reorder(items: { id: string; display_order: number }[]): Promise<void> {
     const now = getNowInBusinessTimezone();
-    for (const item of items) {
-      await BaseRepository.update(query, 'habitaciones', 'id_habitacion', item.id, {
-        display_order: item.display_order,
-        fecha_mod: now
-      });
-    }
+    await withTransaction(async trx => {
+      await trx('LOCK TABLE habitaciones IN SHARE ROW EXCLUSIVE MODE');
+      for (const item of items) {
+        await BaseRepository.update(trx, 'habitaciones', 'id_habitacion', item.id, {
+          display_order: item.display_order,
+          fecha_mod: now
+        });
+      }
+    });
   }
 }

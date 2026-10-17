@@ -65,6 +65,8 @@ export async function crearPresentacion(
     nombre: data.nombre,
     codigo_barras: data.codigo_barras?.trim() ? data.codigo_barras.trim() : null,
     precio_compra: data.precio_compra ?? 0,
+    stock_minimo: data.stock_minimo ?? null,
+    stock_maximo: data.stock_maximo ?? null,
     foto: data.foto || null,
     fecha_crea: getNowInBusinessTimezone()
   });
@@ -97,6 +99,8 @@ export async function actualizarPresentacion(
   fields: PresentacionCamposInput
 ): Promise<void> {
   const data: Record<string, unknown> = {};
+  if (fields.stock_minimo !== undefined) data.stock_minimo = fields.stock_minimo;
+  if (fields.stock_maximo !== undefined) data.stock_maximo = fields.stock_maximo;
   if (fields.nombre !== undefined) data.nombre = fields.nombre;
   if (fields.codigo_barras !== undefined)
     data.codigo_barras = fields.codigo_barras?.trim() ? fields.codigo_barras.trim() : null;

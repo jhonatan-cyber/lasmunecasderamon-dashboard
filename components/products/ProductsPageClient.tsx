@@ -1,5 +1,6 @@
 'use client';
 
+import { ReplenishmentNotice } from '@/components/purchases/ReplenishmentNotice';
 import { useRouter } from 'next/navigation';
 import { useCategories, Category } from '@/hooks/productos/useCategories';
 import { PermissionGuard } from '@/components/auth/PermissionGuard';
@@ -62,6 +63,7 @@ export function ProductsPageClient() {
     <PermissionGuard module='products' action='view'>
       <BoneyardSkeleton name='products-main' loading={categoriesLoading}>
         <div className='min-w-0 max-w-full overflow-x-clip p-4 sm:p-6 lg:p-10 space-y-4 sm:space-y-6 mt-4 sm:mt-6 lg:mt-10'>
+          <ReplenishmentNotice />
           <div className='flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3'>
             <div>
               <h1 className='text-xl sm:text-2xl lg:text-3xl font-bold text-gray-900 dark:text-white'>

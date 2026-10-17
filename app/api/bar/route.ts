@@ -3,8 +3,12 @@ import { withPublicRoute, withRoute } from '@/lib/api/withRoute';
 import { ProductService } from '@/modules/inventario';
 
 export const GET = withPublicRoute(async (request: Request) => {
-  const productoId = new URL(request.url).searchParams.get('producto_id') || undefined;
-  const data = await ProductService.listBarStock(productoId);
+  const params = new URL(request.url).searchParams;
+  const productoId = params.get('producto_id') || undefined;
+  const data =
+    params.get('acompanamientos') === '1'
+      ? await ProductService.listBarStock(productoId, true)
+      : await ProductService.listBarStock(productoId);
   return NextResponse.json({ success: true, data });
 });
 

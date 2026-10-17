@@ -6,6 +6,7 @@ import { useGenericMutations } from '../shared/useGenericMutations';
 import React from 'react';
 
 export interface Category {
+  system_key?: string | null;
   id: string;
   name: string;
   description: string;

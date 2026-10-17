@@ -85,7 +85,7 @@ export function useSaleProductModal({
     const controller = new AbortController();
     setMixerLoading(true);
     setMixerError('');
-    fetch('/api/bar', { cache: 'no-store', signal: controller.signal })
+    fetch('/api/bar?acompanamientos=1', { cache: 'no-store', signal: controller.signal })
       .then(async response => {
         const result = await response.json();
         if (!response.ok || !result.success || !Array.isArray(result.data)) throw new Error();

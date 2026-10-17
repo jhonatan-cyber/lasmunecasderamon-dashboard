@@ -2,13 +2,18 @@
 
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { toast } from 'sonner';
+import { useGenericFetch } from '@/hooks/shared/useGenericFetch';
+import { queryKeys } from '@/lib/api/queryClient';
 import logger from '@/lib/utils/logger';
 import { isChampagneProduct } from '@/components/orders/productModalRules';
 
 export function useCuentaCobro() {
   const cobroEnCurso = useRef(false);
   const clavesCobro = useRef(new Map<string, string>());
-  const [rooms, setRooms] = useState<any[]>([]);
+  const { data: rooms } = useGenericFetch<any>('/api/rooms', {
+    queryKey: queryKeys.rooms.all,
+    transform: result => (result.success ? result.data : [])
+  });
   const [searchRoom, setSearchRoom] = useState('');
   const [isCobrando, setIsCobrando] = useState(false);
   const [metodoPago, setMetodoPago] = useState('');
@@ -35,19 +40,6 @@ export function useCuentaCobro() {
   }, []);
 
   useEffect(() => {
-    const fetchRooms = async () => {
-      try {
-        const res = await fetch('/api/rooms');
-        const data = await res.json();
-        if (data.success) {
-          setRooms(data.data);
-        }
-      } catch (error) {
-        logger.captureException(error, { context: 'CuentaCobro:fetchRooms' });
-        toast.error('Error al cargar habitaciones');
-      }
-    };
-    fetchRooms();
     refreshCajaStatus();
   }, [refreshCajaStatus]);
 

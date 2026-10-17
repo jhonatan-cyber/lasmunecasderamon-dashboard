@@ -112,6 +112,98 @@ function Harness({
   );
 }
 
+it('vende botella sin anfitriona al precio adicional con las bebidas configuradas', async () => {
+  const add = vi.fn();
+  render(
+    <Harness
+      productos={[
+        {
+          ...product,
+          opciones_venta: [
+            {
+              tipo: 'botella',
+              precio: 50000,
+              comision: 5000,
+              precio_sin_anfitriona: 35000,
+              acompanamiento: { unidades: 3 }
+            }
+          ]
+        }
+      ]}
+      onAdd={add}
+    />
+  );
+  fireEvent.click(
+    screen.getByRole('button', { name: /Botella sin anfitriona.*aumentar cantidad/ })
+  );
+  fireEvent.click(
+    screen.getByRole('button', { name: /Botella sin anfitriona.*aumentar cantidad/ })
+  );
+  expect(screen.getByText('Consumo: 6 unidades')).toBeInTheDocument();
+  await selectMixer();
+  await act(async () => {
+    fireEvent.click(screen.getByRole('button', { name: 'Agregar producto' }));
+  });
+  expect(add).toHaveBeenCalledExactlyOnceWith(
+    expect.objectContaining({
+      tipo_venta: 'botella',
+      cantidad: 2,
+      precio: 35000,
+      comision: 0,
+      selectedHostesses: [],
+      acompanamiento_botella: expect.objectContaining({ presentacion_id: 'sprite', unidades: 3 }),
+      acompanamiento_corto: undefined
+    })
+  );
+});
+
+it.each(['botella', 'botella_sin_anfitriona'])(
+  'con bebida cero oculta selector y no agrega bebida: %s',
+  async format => {
+    const add = vi.fn();
+    render(
+      <Harness
+        productos={[
+          {
+            ...product,
+            unidades_acompanamiento: 9,
+            opciones_venta: [
+              {
+                tipo: 'botella',
+                precio: 50000,
+                comision: 5000,
+                precio_sin_anfitriona: 35000,
+                acompanamiento: { unidades: 0 }
+              }
+            ]
+          }
+        ]}
+        onAdd={add}
+      />
+    );
+    fireEvent.click(
+      screen.getByRole('button', {
+        name:
+          format === 'botella'
+            ? /^Botella(?! sin anfitriona).*aumentar cantidad/
+            : /Botella sin anfitriona.*aumentar cantidad/
+      })
+    );
+    expect(screen.queryByRole('combobox')).not.toBeInTheDocument();
+    await act(async () => {
+      fireEvent.click(screen.getByRole('button', { name: 'Agregar producto' }));
+    });
+    expect(add).toHaveBeenCalledWith(
+      expect.objectContaining({
+        tipo_venta: 'botella',
+        acompanamiento_botella: undefined,
+        unidades_acompanamiento: 0,
+        cantidad: 1
+      })
+    );
+  }
+);
+
 describe('vistas de productos en nueva venta', () => {
   it('cancelar limpia cantidades y bebidas sin agregar al carrito', async () => {
     const add = vi.fn();

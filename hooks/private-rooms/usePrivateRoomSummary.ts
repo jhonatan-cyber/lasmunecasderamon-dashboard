@@ -107,10 +107,22 @@ export function usePrivateRoomSummary({
     return precioHabitacion * multiplicadorHabitacion;
   }, [formData.usuarios.length, formData.clientes.length, precioHabitacion, selectedRoom]);
 
+  /** Clientes seleccionados con cuenta y saldo: candidatos al descuento. */
+  const clientesConSaldo = useMemo(() => {
+    return formData.clientes
+      .map(id => clientes.find(c => String(c.id_cliente ?? c.id ?? '') === String(id)))
+      .filter((c): c is any => !!c && Number(c.saldo || 0) > 0)
+      .map(c => ({
+        clienteId: String(c.id_cliente ?? c.id ?? ''),
+        nombre: `${c.nombre || c.name || ''} ${c.apellido || c.lastName || ''}`.trim() || 'Cliente',
+        saldo: Number(c.saldo || 0)
+      }));
+  }, [clientes, formData.clientes]);
+
+  /** Solo se bloquea el prepago cuando ninguno de los clientes elegidos tiene saldo. */
   const disabledPaymentMethods = useMemo(() => {
-    const saldo = Number(selectedClientData?.saldo || 0);
-    return saldo > 0 ? (['prepago', 'mixto'] as const) : (['prepago'] as const);
-  }, [selectedClientData]);
+    return clientesConSaldo.length > 0 ? ([] as const) : (['prepago'] as const);
+  }, [clientesConSaldo]);
 
   return {
     selectedRoom,
@@ -123,6 +135,7 @@ export function usePrivateRoomSummary({
     maxClients,
     desgloseTarjeta,
     precioHabitacionBoleta,
-    disabledPaymentMethods
+    disabledPaymentMethods,
+    clientesConSaldo
   };
 }

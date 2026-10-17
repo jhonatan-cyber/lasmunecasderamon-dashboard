@@ -103,11 +103,11 @@ describe('comisiones por presentación', () => {
     const botella750 = screen.getByRole('button', { name: /Vodka Absolut 750ml/ });
     expect(botella750).toHaveTextContent('20.000');
     fireEvent.click(botella750);
-    expect(screen.getByLabelText('Precio por botella')).toHaveValue('20.000');
-    expect(screen.getByLabelText('Comisión (opcional)')).toHaveValue('4.000');
+    expect(screen.getByLabelText('Precio de botella con anfitriona')).toHaveValue('20.000');
+    expect(screen.getByLabelText('Comisión (requerida)')).toHaveValue('4.000');
     fireEvent.click(screen.getByRole('button', { name: /Vodka Absolut 1000ml/ }));
-    expect(screen.getByLabelText('Precio por botella')).toHaveValue('30.000');
-    expect(screen.getByLabelText('Comisión (opcional)')).toHaveValue('6.000');
+    expect(screen.getByLabelText('Precio de botella con anfitriona')).toHaveValue('30.000');
+    expect(screen.getByLabelText('Comisión (requerida)')).toHaveValue('6.000');
     await screen.findByLabelText('Precio para 2 anfitrionas');
   });
 
@@ -122,7 +122,9 @@ describe('comisiones por presentación', () => {
     fireEvent.change(screen.getByLabelText('Precio para 2 anfitrionas'), {
       target: { value: '35000' }
     });
-    fireEvent.change(screen.getByLabelText('Precio por botella'), { target: { value: '22000' } });
+    fireEvent.change(screen.getByLabelText('Precio de botella con anfitriona'), {
+      target: { value: '22000' }
+    });
     fireEvent.click(screen.getByRole('button', { name: 'Guardar Cambios' }));
     await waitFor(() =>
       expect(fetchMock).toHaveBeenCalledWith(
@@ -138,7 +140,7 @@ describe('comisiones por presentación', () => {
       precio_venta: 22000,
       comision: 4000,
       opciones_venta: [
-        { tipo: 'botella', precio: 22000, comision: 4000 },
+        { tipo: 'botella', precio: 22000, comision: 4000, acompanamiento: { unidades: 0 } },
         {
           tipo: 'shot',
           precio: 2500,

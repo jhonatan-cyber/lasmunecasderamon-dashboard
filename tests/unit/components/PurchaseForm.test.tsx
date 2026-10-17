@@ -3,7 +3,11 @@ import { afterEach, describe, expect, it, vi } from 'vitest';
 import { PurchaseForm, type PurchaseCatalogItem } from '@/components/purchases/PurchaseForm';
 
 const push = vi.fn();
+const invalidateQueries = vi.fn();
 vi.mock('next/navigation', () => ({ useRouter: () => ({ push }) }));
+vi.mock('@tanstack/react-query', () => ({
+  useQueryClient: () => ({ invalidateQueries })
+}));
 vi.mock('next/image', () => ({
   default: ({ alt, src }: { alt: string; src: string }) => (
     <span role='img' aria-label={alt} data-src={src} />
@@ -91,6 +95,11 @@ describe('flujo guiado de compra', () => {
     await waitFor(() =>
       expect(fetchMock).toHaveBeenCalledWith('/api/purchases', expect.anything())
     );
+    await waitFor(() => expect(invalidateQueries).toHaveBeenCalled());
+    const { predicate } = invalidateQueries.mock.calls.at(-1)![0];
+    expect(predicate({ queryKey: ['product-presentations', 'prod-1'] })).toBe(true);
+    expect(predicate({ queryKey: ['/api/products?category_id=1'] })).toBe(true);
+    expect(predicate({ queryKey: ['/api/users'] })).toBe(false);
     const request = fetchMock.mock.calls[0][1];
     expect(JSON.parse(String(request?.body))).toMatchObject({
       proveedor: 'Distribuidora Sur',

@@ -1,4 +1,7 @@
 import { expect, it, vi } from 'vitest';
+vi.mock('@/modules/inventario/reposicion/servicio', () => ({
+  revisarReposicion: vi.fn().mockResolvedValue([])
+}));
 const mocks = vi.hoisted(() => ({ revisar: vi.fn() }));
 vi.mock('@/lib/api/withRoute', () => ({ withPublicRoute: (handler: unknown) => handler }));
 vi.mock('@/modules/operacion', () => ({ revisarTemporizadores: mocks.revisar }));

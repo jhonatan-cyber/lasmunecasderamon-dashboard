@@ -188,7 +188,7 @@ export function DevolucionesVentasPageClient() {
                 {solicitudes.map(sol => (
                   <div
                     key={sol.id}
-                    className='flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 p-4 border rounded-lg bg-gray-50 dark:bg-gray-900'
+                    className='flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 p-4 bg-muted/40 rounded-xl'
                   >
                     <div className='flex-1'>
                       <div className='font-bold text-lg'>Venta #{sol.codigo}</div>

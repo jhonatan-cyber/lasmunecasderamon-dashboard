@@ -52,7 +52,7 @@ export default function ServiceOrderForm({ clientes }: ServiceOrderFormProps) {
   const { allClients: clientesDB = [], fetchClients } = useClients();
   const ivaRate = useIvaRate();
 
-  const habitacionesDisponibles = habitaciones?.filter(h => (h.estado ?? h.status) !== 0) || [];
+  const habitacionesDisponibles = habitaciones || [];
 
   const [selectedClienteId, setSelectedClienteId] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);

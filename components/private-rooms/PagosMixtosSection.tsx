@@ -17,6 +17,8 @@ interface Props {
   onUpdate: (pagos: PagoMixto[]) => void;
   total: number;
   selectedClientData?: { saldo?: number } | null;
+  /** Algún cliente seleccionado tiene saldo: habilita la fila prepago del mixto. */
+  haySaldo?: boolean;
   ivaRate: number;
 }
 
@@ -27,6 +29,7 @@ export function PagosMixtosSection({
   onUpdate,
   total,
   selectedClientData,
+  haySaldo,
   ivaRate
 }: Props) {
   const calcularMontoPagoMixto = (metodo: string, montoBase: number) => {
@@ -109,8 +112,10 @@ export function PagosMixtosSection({
       <div className='mt-4 flex flex-wrap gap-2'>
         {FORMAT_METODOS.map(metodo => {
           if (pagosMixtos.some(pago => pago.metodo === metodo)) return null;
-
-          const sinSaldo = metodo === 'prepago' && Number(selectedClientData?.saldo || 0) <= 0;
+          const sinSaldo =
+            metodo === 'prepago' && haySaldo !== undefined
+              ? !haySaldo
+              : metodo === 'prepago' && Number(selectedClientData?.saldo || 0) <= 0;
 
           return (
             <Button

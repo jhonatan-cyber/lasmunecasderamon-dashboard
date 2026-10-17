@@ -6,6 +6,7 @@ import { useUserPermissions } from '@/hooks/auth/useUserPermissions';
 interface SortableCategoryCardProps {
   category: {
     id: string;
+    system_key?: string | null;
     name: string;
     description: string;
     status: number;

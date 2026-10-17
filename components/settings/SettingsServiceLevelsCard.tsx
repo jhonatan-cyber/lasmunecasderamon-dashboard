@@ -1,10 +1,9 @@
 'use client';
-import { Input } from '@/components/ui/input';
+import { FormattedNumberInput as Input } from '@/components/shared/FormattedNumberInput';
 import { Button } from '@/components/ui/button';
 
 import { useState, useEffect } from 'react';
 import { Save, Users, BedDouble, ShoppingCart } from 'lucide-react';
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { toast } from 'sonner';
 import logger from '@/lib/utils/logger';
 import { useConfigValue } from '@/hooks/shared/useConfigValue';
@@ -90,21 +89,16 @@ export function SettingsServiceLevelsCard() {
   };
 
   return (
-    <Card className='border-neutral-200 dark:border-neutral-800 bg-white dark:bg-neutral-900'>
-      <CardHeader>
-        <CardTitle className='flex items-center gap-2 text-xl font-bold dark:text-white'>
+    <section aria-label='Reglas de venta' className='space-y-6'>
+      <header className='space-y-2'>
+        <h2 className='flex items-center gap-2 text-xl font-bold dark:text-white'>
           <Users className='h-5 w-5 text-neutral-500' />
           Reglas de venta
-        </CardTitle>
-        <CardDescription className='text-neutral-500 dark:text-neutral-400'>
-          Fuente única de reglas por precio. Hasta el primer monto es venta simple (sin comisión ni
-          anfitriona); desde el segundo se puede asignar anfitriona; desde el tercero, además, se
-          exige habitación.
-        </CardDescription>
-      </CardHeader>
-      <CardContent>
+        </h2>
+      </header>
+      <div>
         <div className='grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4'>
-          <div className='p-4 bg-neutral-50 dark:bg-neutral-800/30 rounded-2xl border border-neutral-200 dark:border-neutral-700'>
+          <div className='p-4 bg-neutral-50 dark:bg-neutral-800/30 rounded-xl'>
             <div className='flex items-center gap-3'>
               <ShoppingCart className='h-5 w-5 text-neutral-500 shrink-0' />
               <div className='flex-1'>
@@ -132,7 +126,7 @@ export function SettingsServiceLevelsCard() {
             </div>
           </div>
 
-          <div className='p-4 bg-neutral-50 dark:bg-neutral-800/30 rounded-2xl border border-neutral-200 dark:border-neutral-700'>
+          <div className='p-4 bg-neutral-50 dark:bg-neutral-800/30 rounded-xl'>
             <div className='flex items-center gap-3'>
               <Users className='h-5 w-5 text-neutral-500 shrink-0' />
               <div className='flex-1'>
@@ -160,7 +154,7 @@ export function SettingsServiceLevelsCard() {
             </div>
           </div>
 
-          <div className='p-4 bg-neutral-50 dark:bg-neutral-800/30 rounded-2xl border border-neutral-200 dark:border-neutral-700'>
+          <div className='p-4 bg-neutral-50 dark:bg-neutral-800/30 rounded-xl'>
             <div className='flex items-center gap-3'>
               <BedDouble className='h-5 w-5 text-neutral-500 shrink-0' />
               <div className='flex-1'>
@@ -200,7 +194,7 @@ export function SettingsServiceLevelsCard() {
             {saving ? 'Guardando...' : 'Guardar Cambios'}
           </Button>
         </div>
-      </CardContent>
-    </Card>
+      </div>
+    </section>
   );
 }

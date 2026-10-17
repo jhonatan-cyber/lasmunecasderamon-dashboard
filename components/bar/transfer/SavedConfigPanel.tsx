@@ -1,6 +1,6 @@
 'use client';
 
-import { memo } from 'react';
+import { memo, type ReactNode } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { formatCurrencyCLP } from '@/lib/utils/formatters';
@@ -23,7 +23,11 @@ export const SavedConfigPanel = memo(function SavedConfigPanel({
   mlShotAnfitriona,
   onMlShotClienteChange,
   onMlShotAnfitrionaChange,
-  onEditPrices
+  onEditPrices,
+  maxAnfitrionas,
+  onMaxAnfitrionasChange,
+  bottleExtras,
+  bottleTiers
 }: {
   opciones: SaleOption[];
   esChampagne: boolean;
@@ -35,83 +39,170 @@ export const SavedConfigPanel = memo(function SavedConfigPanel({
   onMlShotClienteChange: (value: string) => void;
   onMlShotAnfitrionaChange: (value: string) => void;
   onEditPrices: () => void;
+  maxAnfitrionas?: string;
+  onMaxAnfitrionasChange?: (value: string) => void;
+  bottleExtras?: ReactNode;
+  bottleTiers?: ReactNode;
 }) {
+  const bottle = opciones.find(option => option.tipo === 'botella');
   return (
-    <div className='space-y-2 rounded-xl border border-emerald-200 bg-emerald-50/60 p-3 dark:border-emerald-900 dark:bg-emerald-950/20'>
+    <div className='space-y-4'>
       <p className='text-sm font-semibold'>Configuración guardada</p>
-      <p className='text-xs text-muted-foreground'>
-        Se usará el precio, la comisión y las anfitrionas ya configurados. Solo indica la cantidad.
-      </p>
-      <dl className='grid gap-2'>
-        {opciones.map(option => (
-          <div
-            key={option.tipo}
-            className='flex items-center justify-between rounded-lg bg-white/70 px-3 py-2 text-sm dark:bg-black/20'
+      {bottle && (
+        <>
+          <div className='grid grid-cols-1 gap-4 sm:grid-cols-2'>
+            <section
+              aria-label='Botella con anfitriona'
+              className='rounded-2xl border border-gray-200 dark:border-gray-800 p-4 sm:p-5 space-y-4'
+            >
+              <h3 className='font-semibold'>Con anfitriona</h3>
+              <dl className='space-y-3'>
+                <div>
+                  <dt className='text-xs text-muted-foreground'>
+                    Precio de botella con anfitriona
+                  </dt>
+                  <dd className='text-lg font-semibold tabular-nums'>
+                    {formatCurrencyCLP(bottle.precio)}
+                  </dd>
+                </div>
+                <div>
+                  <dt className='text-xs text-muted-foreground'>Comisión</dt>
+                  <dd className='font-semibold tabular-nums'>
+                    {formatCurrencyCLP(bottle.comision ?? 0)}
+                  </dd>
+                </div>
+              </dl>
+              {onMaxAnfitrionasChange && Number(bottle.comision) > 0 && (
+                <div className='space-y-2'>
+                  <label htmlFor='bottle-hostess-limit' className='text-sm font-medium'>
+                    Máximo de anfitrionas
+                  </label>
+                  <Input
+                    id='bottle-hostess-limit'
+                    type='number'
+                    min={1}
+                    max={20}
+                    step={1}
+                    value={maxAnfitrionas ?? ''}
+                    onChange={event => onMaxAnfitrionasChange(event.target.value)}
+                    placeholder='1'
+                    disabled={saving}
+                    className='h-12'
+                  />
+                </div>
+              )}
+              {bottleTiers}
+            </section>
+            <section
+              aria-label='Botella sin anfitriona'
+              className='rounded-2xl border border-gray-200 dark:border-gray-800 p-4 sm:p-5 space-y-4'
+            >
+              <h3 className='font-semibold'>Sin anfitriona</h3>
+              <dl>
+                <dt className='text-xs text-muted-foreground'>Precio de botella sin anfitriona</dt>
+                <dd className='text-lg font-semibold tabular-nums'>
+                  {Number(bottle.precio_sin_anfitriona) > 0
+                    ? formatCurrencyCLP(bottle.precio_sin_anfitriona!)
+                    : 'No configurado'}
+                </dd>
+              </dl>
+            </section>
+          </div>
+          <section
+            aria-label='Bebidas incluidas en ambas opciones'
+            className='rounded-2xl border border-gray-200 dark:border-gray-800 p-4 sm:p-5 space-y-4'
           >
-            <dt className='font-medium capitalize'>
-              {option.tipo === 'botella' ? 'Botella' : 'Corto'}
-            </dt>
-            <dd className='flex flex-wrap items-center justify-end gap-x-2 gap-y-1 text-right tabular-nums'>
-              {option.tipo === 'shot' && (
-                <span className='flex flex-wrap items-center gap-x-1.5 gap-y-1'>
-                  <span className='text-xs text-muted-foreground'>Cli.</span>
+            <div>
+              <h3 className='font-semibold'>Bebidas incluidas</h3>
+            </div>
+            {bottle.acompanamiento && (
+              <p className='text-xs text-muted-foreground'>
+                Incluye {bottle.acompanamiento.unidades} unidades de bebida por botella
+              </p>
+            )}
+            {bottleExtras}
+          </section>
+        </>
+      )}
+      {opciones
+        .filter(option => option.tipo === 'shot')
+        .map(option => (
+          <section
+            key={option.tipo}
+            aria-label='Configuración guardada de cortos'
+            className='space-y-3'
+          >
+            <h3 className='text-sm font-semibold'>Venta por cortos</h3>
+            <div className='grid grid-cols-1 gap-4 sm:grid-cols-2'>
+              <section
+                aria-label='Corto para cliente'
+                className='min-w-0 rounded-2xl border border-gray-200 dark:border-gray-800 p-4 sm:p-5 space-y-4'
+              >
+                <div className='flex items-center justify-between gap-2'>
+                  <h4 className='font-semibold'>Cliente</h4>
+                  <span className='text-xs text-muted-foreground'>Sin comisión</span>
+                </div>
+                <p className='font-semibold tabular-nums'>
+                  {option.precio > 0
+                    ? `Cliente ${formatCurrencyCLP(option.precio)} · Sin comisión`
+                    : 'Corto cliente no habilitado'}
+                </p>
+                <div className='space-y-2'>
+                  <label htmlFor='transfer-ml-shot' className='text-sm font-medium'>
+                    Ml por corto a cliente
+                  </label>
                   <Input
                     id='transfer-ml-shot'
-                    aria-label='Ml por corto a cliente'
                     value={mlShotCliente}
                     onChange={event => onMlShotClienteChange(event.target.value.replace(/\D/g, ''))}
                     placeholder={String(shotMl)}
                     inputMode='numeric'
                     disabled={saving}
-                    className='h-8 w-16 text-center'
+                    className='h-12 tabular-nums'
                   />
-                  <span className='text-xs text-muted-foreground'>ml · Anf.</span>
+                </div>
+              </section>
+              <section
+                aria-label='Corto para anfitriona'
+                className='min-w-0 rounded-2xl border border-gray-200 dark:border-gray-800 p-4 sm:p-5 space-y-4'
+              >
+                <h4 className='font-semibold'>Anfitriona</h4>
+                <div className='space-y-2'>
+                  {preciosCortoAnfitriona(option).length ? (
+                    preciosCortoAnfitriona(option).map((row, index) => (
+                      <p key={index} className='font-semibold tabular-nums'>
+                        Anfitriona {formatCurrencyCLP(row.precio)} · Comisión{' '}
+                        {formatCurrencyCLP(row.comision)}
+                      </p>
+                    ))
+                  ) : (
+                    <p className='text-sm text-muted-foreground'>Corto anfitriona no habilitado</p>
+                  )}
+                </div>
+                <div className='space-y-2'>
+                  <label htmlFor='transfer-ml-shot-anfitriona' className='text-sm font-medium'>
+                    Ml por corto a anfitriona
+                  </label>
                   <Input
                     id='transfer-ml-shot-anfitriona'
-                    aria-label='Ml por corto a anfitriona'
                     value={mlShotAnfitriona}
                     onChange={event =>
                       onMlShotAnfitrionaChange(event.target.value.replace(/\D/g, ''))
                     }
-                    placeholder='= cli.'
+                    placeholder={mlShotCliente || String(shotMl)}
                     inputMode='numeric'
                     disabled={saving}
-                    className='h-8 w-16 text-center'
+                    className='h-12 tabular-nums'
                   />
-                  <span className='text-xs text-muted-foreground'>ml</span>
-                </span>
-              )}
-              {option.acompanamiento && (
-                <span className='text-xs text-muted-foreground'>
-                  Incluye {option.acompanamiento.unidades} unidades de bebida por botella
-                </span>
-              )}
-              {option.tipo === 'shot' ? (
-                <span className='font-semibold'>
-                  {option.precio > 0
-                    ? `Cliente ${formatCurrencyCLP(option.precio)} · Sin comisión`
-                    : 'Corto cliente no habilitado'}
-                  {preciosCortoAnfitriona(option).map((row, index) => (
-                    <span key={index} className='block'>
-                      Anfitriona {formatCurrencyCLP(row.precio)} · Comisión{' '}
-                      {formatCurrencyCLP(row.comision)}
-                    </span>
-                  ))}
-                </span>
-              ) : (
-                <span className='font-semibold'>{formatCurrencyCLP(option.precio)}</span>
-              )}{' '}
-              {option.tipo !== 'shot' && (
-                <span className='text-xs text-muted-foreground'>
-                  {Number(option.comision) > 0
-                    ? `· Comisión ${formatCurrencyCLP(Number(option.comision))}`
-                    : '· Sin comisión'}
-                </span>
-              )}
-            </dd>
-          </div>
+                </div>
+                <p className='text-xs text-muted-foreground'>
+                  Ml de bebida analcohólica por corto: {option.ml_acompanamiento_anfitriona || 0}{' '}
+                  ml.
+                </p>
+              </section>
+            </div>
+          </section>
         ))}
-      </dl>
       {esChampagne && tiers.length > 0 && <ChampagneTiersReadonly tiers={tiers} />}
       <Button
         type='button'

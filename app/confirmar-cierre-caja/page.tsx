@@ -247,7 +247,7 @@ function ConfirmarCierreCajaContent() {
               </div>
             ) : (
               <>
-                <div className='bg-blue-50 dark:bg-blue-950/30 p-4 rounded-lg border border-blue-200 dark:border-blue-800'>
+                <div className='bg-blue-50 dark:bg-blue-950/30 p-4 rounded-xl'>
                   <h4 className='font-semibold text-blue-900 dark:text-blue-300 mb-3'>
                     Caja del turno
                   </h4>
@@ -266,7 +266,7 @@ function ConfirmarCierreCajaContent() {
                   </div>
                 </div>
 
-                <div className='bg-amber-50 dark:bg-amber-950/30 p-4 rounded-lg border border-amber-200 dark:border-amber-800'>
+                <div className='bg-amber-50 dark:bg-amber-950/30 p-4 rounded-xl'>
                   <h4 className='font-semibold text-amber-900 dark:text-amber-300 mb-3'>
                     Cierre sin respuesta
                   </h4>
@@ -297,7 +297,7 @@ function ConfirmarCierreCajaContent() {
                   </p>
                 </div>
 
-                <div className='bg-purple-50 dark:bg-purple-950/30 p-4 rounded-lg border border-purple-200 dark:border-purple-800'>
+                <div className='bg-purple-50 dark:bg-purple-950/30 p-4 rounded-xl'>
                   <h4 className='font-semibold text-purple-900 dark:text-purple-300 mb-3'>
                     Movimiento del turno
                   </h4>
@@ -320,7 +320,7 @@ function ConfirmarCierreCajaContent() {
                   </div>
                 </div>
 
-                <div className='bg-gray-50 dark:bg-neutral-900 p-4 rounded-lg border border-gray-200 dark:border-neutral-800'>
+                <div className='bg-gray-50 dark:bg-neutral-900 p-4 rounded-xl'>
                   <h4 className='font-semibold text-gray-900 dark:text-gray-100 mb-3'>
                     Dinero en caja
                   </h4>
@@ -365,7 +365,7 @@ function ConfirmarCierreCajaContent() {
                   </p>
                 </div>
 
-                <div className='bg-orange-50 dark:bg-orange-950/30 p-4 rounded-lg border border-orange-200 dark:border-orange-800'>
+                <div className='bg-orange-50 dark:bg-orange-950/30 p-4 rounded-xl'>
                   <h4 className='font-semibold text-orange-900 dark:text-orange-300 mb-3'>
                     Prepago de clientes
                   </h4>
@@ -385,7 +385,7 @@ function ConfirmarCierreCajaContent() {
                   </div>
                 </div>
 
-                <div className='bg-green-50 dark:bg-green-950/30 p-4 rounded-lg border border-green-200 dark:border-green-800'>
+                <div className='bg-green-50 dark:bg-green-950/30 p-4 rounded-xl'>
                   <div className='flex justify-between items-center'>
                     <span className='font-semibold text-green-900 dark:text-green-300'>
                       Monto de cierre previsto
@@ -402,7 +402,7 @@ function ConfirmarCierreCajaContent() {
                 </div>
 
                 {solicitud.motivo && (
-                  <div className='bg-yellow-50 dark:bg-yellow-950/30 p-4 rounded-lg border border-yellow-200 dark:border-yellow-800'>
+                  <div className='bg-yellow-50 dark:bg-yellow-950/30 p-4 rounded-xl'>
                     <h3 className='font-semibold text-yellow-900 dark:text-yellow-300 mb-2'>
                       Motivo
                     </h3>
@@ -438,7 +438,7 @@ function ConfirmarCierreCajaContent() {
                   </div>
                 </div>
 
-                <div className='bg-blue-50 dark:bg-blue-950/30 p-4 rounded-lg border border-blue-200 dark:border-blue-800'>
+                <div className='bg-blue-50 dark:bg-blue-950/30 p-4 rounded-xl'>
                   <p className='text-sm text-blue-800 dark:text-blue-200 text-center'>
                     <strong>Información:</strong> al autorizar, la caja se cierra y se descuentan
                     del efectivo los saldos que los clientes todavía tienen cargados.

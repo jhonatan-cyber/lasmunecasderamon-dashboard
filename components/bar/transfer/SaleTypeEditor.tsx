@@ -5,7 +5,8 @@ import { BottleExtras } from '@/components/bar/transfer/BottleExtras';
 import { memo } from 'react';
 import { Check } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
+import { Input as PlainInput } from '@/components/ui/input';
+import { FormattedNumberInput as Input } from '@/components/shared/FormattedNumberInput';
 import { ToggleGroup, ToggleGroupItem } from '@/components/ui/toggle-group';
 import { ChampagneTiersEditor } from '@/components/bar/transfer/ChampagneTiers';
 import { formatNumber } from '@/components/bar/transfer/transferOptions';
@@ -18,12 +19,13 @@ import type { SaleType } from '@/types/sale-options';
  */
 export const SaleTypeEditor = memo(function SaleTypeEditor({
   context = 'transfer',
+  precioSinAnfitriona = '',
+  onPrecioSinAnfitrionaChange,
   mlAcompanamientoAnfitriona,
   onMlAcompanamientoAnfitrionaChange,
 
   maxAnfitrionas,
   onMaxAnfitrionasChange,
-  acompanamientoBotella,
   unidadesAcompanamiento,
   onAcompanamientoBotellaChange,
   onUnidadesAcompanamientoChange,
@@ -54,6 +56,8 @@ export const SaleTypeEditor = memo(function SaleTypeEditor({
   onUseSavedConfig
 }: {
   context?: 'transfer' | 'settings';
+  precioSinAnfitriona?: string;
+  onPrecioSinAnfitrionaChange?: (value: string) => void;
   maxAnfitrionas?: string;
   onMaxAnfitrionasChange?: (value: string) => void;
   acompanamientoBotella: 'ninguno' | 'gaseosa' | 'soda';
@@ -122,18 +126,14 @@ export const SaleTypeEditor = memo(function SaleTypeEditor({
             {etiquetaShot}
           </ToggleGroupItem>
         </ToggleGroup>
-        <p className='text-xs text-muted-foreground'>
-          {context === 'settings'
-            ? 'Cliente: acompa\u00f1amiento completo. Anfitriona: ml de acompa\u00f1amiento configurados.'
-            : 'Puedes seleccionar uno o ambos tipos. La cantidad transferida corresponde a unidades completas de la presentaci\u00f3n.'}
-        </p>
         {tipos.map(tipo => (
-          <fieldset key={tipo} className='rounded-xl border bg-background p-4 sm:p-5'>
+          <fieldset key={tipo} className='min-w-0 space-y-3'>
             <legend className='px-1 text-sm font-semibold'>
               {tipo === 'botella' ? 'Venta por botella' : etiquetaShot}
             </legend>
             {tipo === 'shot' ? (
               <ShortSaleEditor
+                hideHelp={context === 'transfer'}
                 mlAcompanamientoAnfitriona={mlAcompanamientoAnfitriona}
                 onMlAcompanamientoAnfitrionaChange={onMlAcompanamientoAnfitrionaChange}
 
@@ -153,53 +153,127 @@ export const SaleTypeEditor = memo(function SaleTypeEditor({
                 onPreciosAnfitrionaExtraChange={onPreciosAnfitrionaExtraChange}
               />
             ) : (
-              <div className='grid grid-cols-1 items-end gap-4 sm:grid-cols-2'>
-                <div className='flex flex-col gap-2'>
-                  <label htmlFor={'price-' + tipo} className='text-sm font-medium'>
-                    {tipo === 'botella' ? 'Precio por botella' : 'Precio corto cliente'}
-                  </label>
-                  <Input
-                    id={'price-' + tipo}
-                    className={
-                      tipo === 'botella' ? 'h-12 text-lg font-semibold tabular-nums' : undefined
-                    }
-                    required
-                    inputMode='numeric'
-                    placeholder='0'
-                    disabled={saving}
-                    value={tipo === 'botella' ? precioVenta : precioShot}
-                    onChange={event =>
-                      (tipo === 'botella' ? onPrecioVentaChange : onPrecioShotChange)(
-                        formatNumber(event.target.value)
-                      )
-                    }
-                  />
+              <div className='space-y-5'>
+                <div className='grid grid-cols-1 gap-4 sm:grid-cols-2'>
+                  <section
+                    aria-label='Botella con anfitriona'
+                    className='rounded-2xl border border-gray-200 dark:border-gray-800 p-4 sm:p-5 space-y-4'
+                  >
+                    <div>
+                      <h3 className='font-semibold'>Con anfitriona</h3>
+                    </div>
+                    <div className='space-y-2'>
+                      <label htmlFor='price-botella' className='text-sm font-medium'>
+                        Precio de botella con anfitriona
+                      </label>
+                      <Input
+                        currency
+                        id='price-botella'
+                        required
+                        value={precioVenta}
+                        onChange={event => onPrecioVentaChange(formatNumber(event.target.value))}
+                        disabled={saving}
+                        placeholder='0'
+                        className='h-12 text-lg font-semibold tabular-nums'
+                      />
+                    </div>
+                    <div className='space-y-2'>
+                      <label htmlFor='commission-botella' className='text-sm font-medium'>
+                        {context === 'settings' && Number(precioVenta.replace(/\./g, '')) > 0
+                          ? 'Comisión (requerida)'
+                          : 'Comisión'}
+                      </label>
+                      <Input
+                        currency
+                        id='commission-botella'
+                        required={
+                          context === 'settings' && Number(precioVenta.replace(/\./g, '')) > 0
+                        }
+                        value={comision}
+                        onChange={event => onComisionChange(formatNumber(event.target.value))}
+                        disabled={saving}
+                        placeholder={
+                          context === 'settings' && Number(precioVenta.replace(/\./g, '')) > 0
+                            ? 'Ingresa la comisión'
+                            : 'Sin comisión'
+                        }
+                        className='h-12 tabular-nums'
+                      />
+                    </div>
+                    {onMaxAnfitrionasChange &&
+                      (context === 'settings' || Number(comision.replace(/\./g, '')) > 0) && (
+                        <div className='space-y-2'>
+                          <label htmlFor='bottle-hostess-limit' className='text-sm font-medium'>
+                            Máximo de anfitrionas
+                          </label>
+                          <PlainInput
+                            id='bottle-hostess-limit'
+                            type='number'
+                            min={1}
+                            max={20}
+                            step={1}
+                            value={maxAnfitrionas ?? ''}
+                            onChange={event => onMaxAnfitrionasChange(event.target.value)}
+                            disabled={saving}
+                            placeholder={context === 'settings' ? 'Default' : '1'}
+                            className='h-12'
+                          />
+                        </div>
+                      )}
+                    {context === 'transfer' &&
+                      Number(comision.replace(/\./g, '')) > 0 &&
+                      Number(maxAnfitrionas || 1) >= 2 && (
+                        <ChampagneTiersEditor
+                          tiers={tiers}
+                          saving={saving}
+                          onTierChange={onTierChange}
+                        />
+                      )}
+                  </section>
+                  <section
+                    aria-label='Botella sin anfitriona'
+                    className='rounded-2xl border border-gray-200 dark:border-gray-800 p-4 sm:p-5 space-y-4'
+                  >
+                    <div>
+                      <h3 className='font-semibold'>Sin anfitriona</h3>
+                    </div>
+                    {onPrecioSinAnfitrionaChange && (
+                      <div className='space-y-2'>
+                        <label htmlFor='bottle-price-no-hostess' className='text-sm font-medium'>
+                          Precio de botella sin anfitriona
+                        </label>
+                        <Input
+                          currency
+                          id='bottle-price-no-hostess'
+                          value={precioSinAnfitriona}
+                          onChange={event =>
+                            onPrecioSinAnfitrionaChange(formatNumber(event.target.value))
+                          }
+                          disabled={saving}
+                          placeholder='Sin precio adicional'
+                          className='h-12 text-lg font-semibold tabular-nums'
+                        />
+                      </div>
+                    )}
+                  </section>
                 </div>
-                <div className='flex flex-col gap-2'>
-                  <label htmlFor={'commission-' + tipo} className='text-sm'>
-                    Comisión (opcional)
-                  </label>
-                  <Input
-                    id={'commission-' + tipo}
-                    className={tipo === 'botella' ? 'h-12 tabular-nums' : undefined}
-                    inputMode='numeric'
-                    placeholder='Sin comisión'
-                    disabled={saving}
-                    value={tipo === 'botella' ? comision : comisionShot}
-                    onChange={event =>
-                      (tipo === 'botella' ? onComisionChange : onComisionShotChange)(
-                        formatNumber(event.target.value)
-                      )
-                    }
-                  />
-                </div>
-                {tipo === 'botella' && (
+                <section
+                  aria-label='Bebidas incluidas en ambas opciones'
+                  className='rounded-2xl border border-gray-200 dark:border-gray-800 p-4 sm:p-5 space-y-4'
+                >
+                  <div>
+                    <h3 className='font-semibold'>Bebidas incluidas</h3>
+                    {context === 'settings' && (
+                      <p className='mt-1 text-xs text-muted-foreground'>
+                        La misma cantidad de bebidas analcohólicas por botella, con o sin
+                        anfitriona.
+                      </p>
+                    )}
+                  </div>
                   <BottleExtras
                     context={context}
                     commission={comision}
-                    maxHostesses={maxAnfitrionas}
-                    onMaxHostesses={onMaxAnfitrionasChange}
-                    accompaniment={acompanamientoBotella !== 'ninguno'}
+
                     onAccompaniment={checked =>
                       onAcompanamientoBotellaChange(checked ? 'gaseosa' : 'ninguno')
                     }
@@ -207,31 +281,12 @@ export const SaleTypeEditor = memo(function SaleTypeEditor({
                     onUnits={onUnidadesAcompanamientoChange}
                     disabled={saving}
                   />
-                )}
-
-                {tipo === 'botella' &&
-                  context === 'transfer' &&
-                  Number(comision.replace(/\./g, '')) > 0 &&
-                  Number(maxAnfitrionas || 1) >= 2 && (
-                    <div className='sm:col-span-2'>
-                      <ChampagneTiersEditor
-                        tiers={tiers}
-                        saving={saving}
-                        onTierChange={onTierChange}
-                      />
-                    </div>
-                  )}
+                </section>
               </div>
             )}
           </fieldset>
         ))}
       </fieldset>
-
-      <p className='text-[11px] text-gray-400 ml-1'>
-        {context === 'settings'
-          ? 'La configuración se aplica a esta presentación en ventas y pedidos; guardar no traslada unidades.'
-          : 'Se trasladan las unidades más antiguas. El precio y la comisión quedan definidos para esta presentación.'}
-      </p>
 
       {context === 'settings' && esChampagne && tiers.length > 0 && (
         <ChampagneTiersEditor tiers={tiers} saving={saving} onTierChange={onTierChange} />

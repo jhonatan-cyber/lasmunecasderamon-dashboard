@@ -28,6 +28,7 @@ interface Habitacion {
   time?: number;
   estado?: number;
   status?: number;
+  display_order?: number | null;
 }
 
 const EMPTY_STATUSES: number[] = [];
@@ -49,6 +50,7 @@ interface RoomSelectProps {
   excludeStatuses?: number[];
   includeRoomIds?: Array<string>;
   requireCompleteConfig?: boolean;
+  eligibleRoomIds?: Array<string | number>;
 }
 
 const RoomSelect: React.FC<RoomSelectProps> = ({
@@ -67,7 +69,8 @@ const RoomSelect: React.FC<RoomSelectProps> = ({
   filterByStatus,
   excludeStatuses = EMPTY_STATUSES,
   includeRoomIds = [],
-  requireCompleteConfig = false
+  requireCompleteConfig = false,
+  eligibleRoomIds
 }) => {
   const [open, setOpen] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
@@ -116,36 +119,7 @@ const RoomSelect: React.FC<RoomSelectProps> = ({
       return [];
     }
 
-    let filtered = habitaciones;
-
-    if (filterByStatus !== undefined) {
-      filtered = filtered.filter(habitacion => {
-        const id = habitacion.id_habitacion || habitacion.id;
-        const estado = habitacion.estado ?? habitacion.status;
-
-        return (
-          estado === filterByStatus ||
-          (id !== undefined && includeRoomIds.some(roomId => String(roomId) === String(id)))
-        );
-      });
-    }
-
-    if (excludeStatuses.length > 0) {
-      filtered = filtered.filter(habitacion => {
-        const id = habitacion.id_habitacion || habitacion.id;
-        const estado = habitacion.estado ?? habitacion.status;
-
-        return (
-          estado === undefined ||
-          !excludeStatuses.includes(Number(estado)) ||
-          (id !== undefined && includeRoomIds.some(roomId => String(roomId) === String(id)))
-        );
-      });
-    }
-
-    if (requireCompleteConfig) {
-      filtered = filtered.filter(hasCompleteRoomConfig);
-    }
+    const filtered = habitaciones;
 
     if (!searchTerm) return filtered;
 
@@ -156,15 +130,7 @@ const RoomSelect: React.FC<RoomSelectProps> = ({
 
       return nombre.includes(searchLower) || numero.includes(searchLower);
     });
-  }, [
-    habitaciones,
-    searchTerm,
-    filterByStatus,
-    excludeStatuses,
-    includeRoomIds,
-    requireCompleteConfig
-  ]);
-
+  }, [habitaciones, searchTerm]);
   const displayHabitaciones = (() => {
     if (!value) return filteredHabitaciones;
 
@@ -187,13 +153,8 @@ const RoomSelect: React.FC<RoomSelectProps> = ({
       : filteredHabitaciones;
   })()
     .slice()
-    .sort((a, b) =>
-      String(a.nombre || a.name || a.numero || '').localeCompare(
-        String(b.nombre || b.name || b.numero || ''),
-        'es',
-        { numeric: true, sensitivity: 'base' }
-      )
-    );
+    // Comparte el orden manual del listado; los empates conservan el orden de la API.
+    .sort((a, b) => (a.display_order ?? 0) - (b.display_order ?? 0));
 
   const selectedHabitacion = (Array.isArray(habitaciones) ? habitaciones : []).find(habitacion => {
     const id = getHabitacionId(habitacion);
@@ -218,7 +179,7 @@ const RoomSelect: React.FC<RoomSelectProps> = ({
   const disabledState = disabled || showTooltip;
 
   const selectNode = (
-    <Popover open={open} onOpenChange={nextOpen => !disabledState && setOpen(nextOpen)}>
+    <Popover modal open={open} onOpenChange={nextOpen => !disabledState && setOpen(nextOpen)}>
       <PopoverTrigger asChild>
         <Button
           variant='unstyled'
@@ -236,8 +197,13 @@ const RoomSelect: React.FC<RoomSelectProps> = ({
           )}
         </Button>
       </PopoverTrigger>
-      <PopoverContent align='start' className={SELECT_CONTENT_WIDE_CLASS} sideOffset={5}>
-        <div className={SELECT_SEARCH_WRAPPER_CLASS}>
+      <PopoverContent
+        align='start'
+        className={`${SELECT_CONTENT_WIDE_CLASS} flex flex-col`}
+        style={{ maxHeight: 'min(24rem, var(--radix-popover-content-available-height, 24rem))' }}
+        sideOffset={5}
+      >
+        <div className={`${SELECT_SEARCH_WRAPPER_CLASS} shrink-0`}>
           <label htmlFor={`${uniqueId}-search`} className='sr-only'>
             Buscar habitación
           </label>
@@ -257,7 +223,19 @@ const RoomSelect: React.FC<RoomSelectProps> = ({
           />
         </div>
 
-        <div className='max-h-60 overflow-y-auto p-1'>
+        <div
+          role='region'
+          aria-label='Lista de habitaciones'
+          className='min-h-0 overscroll-contain touch-pan-y p-1'
+          style={{
+            maxHeight:
+              'min(15rem, calc(var(--radix-popover-content-available-height, 24rem) - 5rem))',
+            overflowY: 'scroll',
+            scrollbarGutter: 'stable',
+            touchAction: 'pan-y'
+          }}
+          onWheel={event => event.stopPropagation()}
+        >
           {value && (
             <Button
               variant='unstyled'
@@ -280,7 +258,16 @@ const RoomSelect: React.FC<RoomSelectProps> = ({
               const estado = habitacion.estado ?? habitacion.status;
               const isOcupada = estado === 2;
               const isLibre = estado === 1;
-              const isItemDisabled = disabledState || isOcupada;
+              const included = includeRoomIds.some(roomId => String(roomId) === String(id));
+              const unavailable =
+                !included &&
+                ((filterByStatus !== undefined && Number(estado) !== filterByStatus) ||
+                  excludeStatuses.includes(Number(estado)) ||
+                  (requireCompleteConfig && !hasCompleteRoomConfig(habitacion)) ||
+                  (eligibleRoomIds !== undefined &&
+                    !eligibleRoomIds.some(roomId => String(roomId) === String(id))));
+              const isItemDisabled =
+                disabledState || isOcupada || unavailable || Number(estado) === 0;
               const stringId = id ? id.toString() : '';
               const isSelected = stringId === value;
 
@@ -304,7 +291,9 @@ const RoomSelect: React.FC<RoomSelectProps> = ({
                       {formatTime(habitacion.tiempo || habitacion.time || 0)}
                     </span>
                   ) : null}
-                  {isOcupada ? (
+                  {isItemDisabled && !isOcupada ? (
+                    <span className='text-xs font-medium text-gray-500'>NO DISPONIBLE</span>
+                  ) : isOcupada ? (
                     <span className='text-xs font-medium text-red-500'>OCUPADA</span>
                   ) : isSelected ? (
                     <span className='text-xs font-semibold text-gray-500'>SELECCIONADA</span>

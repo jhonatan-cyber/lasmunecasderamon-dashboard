@@ -48,6 +48,8 @@ export function parseSavedOptions(raw: unknown): SaleOption[] | undefined {
               ? undefined
               : Number(o.ml_acompanamiento_anfitriona);
         }
+        if (option.tipo === 'botella' && Number(o.precio_sin_anfitriona) > 0)
+          option.precio_sin_anfitriona = Number(o.precio_sin_anfitriona);
         // Precio independiente para anfitrionas; no hereda el precio de cliente.
         const anfitriona = Number(o.precio_anfitriona ?? 0);
         if (option.tipo === 'shot' && Number.isFinite(anfitriona) && anfitriona > 0) {
@@ -65,7 +67,7 @@ export function parseSavedOptions(raw: unknown): SaleOption[] | undefined {
           (o.acompanamiento.tipo === undefined ||
             ['gaseosa', 'soda'].includes(o.acompanamiento.tipo)) &&
           Number.isInteger(Number(o.acompanamiento.unidades)) &&
-          Number(o.acompanamiento.unidades) > 0 &&
+          Number(o.acompanamiento.unidades) >= 0 &&
           Number(o.acompanamiento.unidades) <= 1000
         ) {
           option.acompanamiento = {

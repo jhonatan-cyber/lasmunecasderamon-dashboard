@@ -13,7 +13,15 @@ const mocks = vi.hoisted(() => ({ user: vi.fn(), summary: vi.fn(), refetch: vi.f
 vi.mock('@/hooks/auth/useCurrentUser', () => ({ useCurrentUser: mocks.user }));
 vi.mock('@/hooks/stats/useDashboardSummary', () => ({ useDashboardSummary: mocks.summary }));
 vi.mock('@/components/attendance/AsistenciaForm', () => ({ default: () => null }));
-vi.mock('@/lib/utils/logger', () => ({ default: { captureException: vi.fn(), error: vi.fn() } }));
+vi.mock('@/lib/utils/logger', () => ({
+  default: {
+    captureException: vi.fn(),
+    error: vi.fn(),
+    info: vi.fn(),
+    warn: vi.fn(),
+    debug: vi.fn()
+  }
+}));
 beforeEach(() => {
   mocks.user.mockReturnValue({ user: { id: 1, name: 'Cajero', role: 'cajero' }, loading: false });
   mocks.refetch.mockClear();

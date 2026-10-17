@@ -29,6 +29,8 @@ import {
   rectSortingStrategy
 } from '@dnd-kit/sortable';
 import { PermissionGuard } from '@/components/auth/PermissionGuard';
+import { useGenericFetch } from '@/hooks/shared/useGenericFetch';
+import type { OrdenReposicion } from '@/modules/inventario/reposicion/servicio';
 import { Skeleton as BoneyardSkeleton } from 'boneyard-js/react';
 
 const tablePageSizes = [5, 10, 20, 40];
@@ -47,7 +49,7 @@ const ProductCategoryPage = () => {
 
   const {
     products,
-    isLoading,
+    isLoading: productsLoading,
     isMutating,
     createProduct,
     updateProduct,
@@ -66,6 +68,24 @@ const ProductCategoryPage = () => {
   const [editProduct, setEditProduct] = useState<Product | null>(null);
   const [editPresentation, setEditPresentation] = useState<Presentacion | null>(null);
   const [showTableView, setShowTableView] = useState(true);
+  const [onlyLowStock, setOnlyLowStock] = useState(false);
+  const {
+    data: lowStockOrders,
+    isLoading: lowStockLoading,
+    error: lowStockError
+  } = useGenericFetch<OrdenReposicion>('/api/purchases/replenishment', {
+    initialFetch: onlyLowStock,
+    transform: result => (result.success ? result.data : [])
+  });
+  const lowStockPresentationIds = useMemo(
+    () => new Set(lowStockOrders.map(row => row.presentacion_id)),
+    [lowStockOrders]
+  );
+  const lowStockProductIds = useMemo(
+    () => new Set(lowStockOrders.map(row => row.producto_id)),
+    [lowStockOrders]
+  );
+  const isLoading = productsLoading || (onlyLowStock && lowStockLoading);
   const [page, setPage] = useState(1);
   const [pageSize, setPageSize] = useState(tablePageSizes[0]);
   const [pageCards, setPageCards] = useState(1);
@@ -93,8 +113,9 @@ const ProductCategoryPage = () => {
     if (filterStatus !== null) {
       result = result.filter(p => p.status === filterStatus);
     }
+    if (onlyLowStock) result = result.filter(p => lowStockProductIds.has(String(p.id)));
     return result;
-  }, [products, searchTerm, filterStatus]);
+  }, [products, searchTerm, filterStatus, onlyLowStock, lowStockProductIds]);
 
   React.useEffect(() => {
     setLocalProductsCards(previous =>
@@ -146,6 +167,11 @@ const ProductCategoryPage = () => {
 
   const totalPages = Math.ceil(filteredProducts.length / pageSize);
   const totalPagesCards = Math.ceil(localProductsCards.length / pageSizeCards);
+  React.useEffect(() => {
+    if (!onlyLowStock || isLoading) return;
+    setPage(current => Math.min(current, Math.max(1, totalPages)));
+    setPageCards(current => Math.min(current, Math.max(1, totalPagesCards)));
+  }, [onlyLowStock, isLoading, totalPages, totalPagesCards]);
   const isEmpty = !isLoading && filteredProducts.length === 0;
 
   const paginatedProducts = useMemo(() => {
@@ -166,7 +192,7 @@ const ProductCategoryPage = () => {
     .filter((id, i, arr) => arr.indexOf(id) === i)
     .join(',');
 
-  const { data: presentacionesMap = {}, isPending: presentacionesPending } = useQuery<
+  const { data: allPresentacionesMap = {}, isPending: presentacionesPending } = useQuery<
     Record<string, Presentacion[]>
   >({
     queryKey: ['product-presentations', paginatedIdsKey],
@@ -184,6 +210,18 @@ const ProductCategoryPage = () => {
       return result.data ?? {};
     }
   });
+  const presentacionesMap = useMemo(
+    () =>
+      onlyLowStock
+        ? Object.fromEntries(
+            Object.entries(allPresentacionesMap).map(([id, rows]) => [
+              id,
+              rows.filter(row => lowStockPresentationIds.has(row.id))
+            ])
+          )
+        : allPresentacionesMap,
+    [allPresentacionesMap, onlyLowStock, lowStockPresentationIds]
+  );
 
   // Las tarjetas se revelan recién cuando están las presentaciones: así la
   // entrada animada se reproduce una sola vez y con los datos finales.
@@ -238,6 +276,7 @@ const ProductCategoryPage = () => {
   );
 
   const handleClearFilters = useCallback(() => {
+    setOnlyLowStock(false);
     setSearchTerm('');
     setFilterStatus(null);
     setPage(1);
@@ -356,6 +395,12 @@ const ProductCategoryPage = () => {
         />
 
         <ProductFilters
+          onlyLowStock={onlyLowStock}
+          onLowStockChange={value => {
+            setOnlyLowStock(value);
+            setPage(1);
+            setPageCards(1);
+          }}
           searchTerm={searchTerm}
           setSearchTerm={setSearchTerm}
           filterStatus={filterStatus}
@@ -369,13 +414,21 @@ const ProductCategoryPage = () => {
           onToggleView={() => setShowTableView(!showTableView)}
         />
 
+        {onlyLowStock && lowStockError && (
+          <p role='alert' className='text-sm text-red-600'>
+            No se pudo comprobar el stock bajo. Intenta nuevamente.
+          </p>
+        )}
+
         {}
         <div className='hidden lg:block'>
           {showTableView ? (
             <>
               {isEmpty ? (
                 <div className='text-center text-gray-500 text-sm sm:text-base py-8'>
-                  No hay productos en esta categoría.
+                  {onlyLowStock
+                    ? 'No hay productos con stock bajo en esta categoría.'
+                    : 'No hay productos en esta categoría.'}
                 </div>
               ) : (
                 <>
@@ -442,7 +495,9 @@ const ProductCategoryPage = () => {
             <>
               {isEmpty ? (
                 <div className='text-center text-gray-500 text-sm sm:text-base py-8'>
-                  No hay productos en esta categoría.
+                  {onlyLowStock
+                    ? 'No hay productos con stock bajo en esta categoría.'
+                    : 'No hay productos en esta categoría.'}
                 </div>
               ) : (
                 <>
@@ -560,7 +615,9 @@ const ProductCategoryPage = () => {
         <div className='lg:hidden'>
           {isEmpty ? (
             <div className='text-center text-gray-500 text-sm sm:text-base py-8'>
-              No hay productos en esta categoría.
+              {onlyLowStock
+                ? 'No hay productos con stock bajo en esta categoría.'
+                : 'No hay productos en esta categoría.'}
             </div>
           ) : (
             <>

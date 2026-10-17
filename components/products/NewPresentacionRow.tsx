@@ -1,4 +1,5 @@
 'use client';
+import { StockLimitsFields } from './StockLimitsFields';
 import { Button } from '@/components/ui/button';
 
 import { useEffect, useState } from 'react';
@@ -18,17 +19,8 @@ import type { PresentacionFormItem } from '@/hooks/personal/useProductForm';
 
 const PRESENTACION_UNIDADES = [
   { value: 'ml', label: 'Mililitros' },
-  { value: 'cl', label: 'Centilitros' },
-  { value: 'l', label: 'Litros' },
-  { value: 'cm3', label: 'Centímetros cúbicos' },
-  { value: 'oz', label: 'Onzas' },
-  { value: 'g', label: 'Gramos' },
-  { value: 'kg', label: 'Kilogramos' },
-  { value: 'lb', label: 'Libras' },
-  { value: 'und', label: 'Unidad' },
-  { value: 'doc', label: 'Docena' },
-  { value: 'cx', label: 'Caja' },
-  { value: '%', label: 'Porcentaje' }
+  { value: 'cc', label: 'Centímetros cúbicos' },
+  { value: 'oz', label: 'Onzas' }
 ] as const;
 type PresentacionUnidad = (typeof PRESENTACION_UNIDADES)[number]['value'];
 
@@ -232,6 +224,14 @@ export function NewPresentacionRow({
           />
         </div>
       </div>
+      <StockLimitsFields
+        id={`new-${i}`}
+        minimo={p.stock_minimo}
+        maximo={p.stock_maximo}
+        total={Number(p.stock.replace(/\./g, '')) || 0}
+        disabled={isLoading}
+        onChange={onUpdate}
+      />
       <div className='relative group'>
         <span className='absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 z-10'>
           <LinkIcon className='w-4 h-4' />

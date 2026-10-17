@@ -101,7 +101,8 @@ export default function AccountFormData({
         />
 
         <RoomSelect
-          habitaciones={habitacionesFiltradas}
+          habitaciones={habitaciones}
+          eligibleRoomIds={habitacionesFiltradas.map(room => String(room.id ?? room.id_habitacion))}
           value={selectedHabitacion}
           onChange={onHabitacionChange}
           disabled={

@@ -21,6 +21,8 @@ import { crearPresentacion } from '../presentaciones/repositorio';
 import { generarUnidades, sincronizarStockTotal } from '../unidades/repositorio';
 
 export interface NuevaPresentacionProducto {
+  stock_minimo?: number | null;
+  stock_maximo?: number | null;
   nombre: string;
   codigo_barras?: string | null;
   precio_compra?: number;
@@ -153,6 +155,8 @@ export async function crearProducto(
       nombre: p.nombre,
       codigo_barras: p.codigo_barras,
       precio_compra: p.precio_compra,
+      stock_minimo: p.stock_minimo,
+      stock_maximo: p.stock_maximo,
       foto: p.foto
     });
     const cantidad = Math.max(0, Math.floor(p.cantidad ?? 0));
@@ -212,6 +216,8 @@ export async function actualizarProducto(
       nombre: p.nombre,
       codigo_barras: p.codigo_barras,
       precio_compra: p.precio_compra,
+      stock_minimo: p.stock_minimo,
+      stock_maximo: p.stock_maximo,
       foto: p.foto
     });
     const cantidad = Math.max(0, Math.floor(p.cantidad ?? 0));

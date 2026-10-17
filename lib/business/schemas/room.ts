@@ -13,3 +13,18 @@ export const RoomSchema = z.object({
 });
 
 export type RoomType = z.infer<typeof RoomSchema>;
+
+// La lectura conserva habitaciones históricas gratuitas; las altas y ediciones validan sus inputs.
+export const RoomWriteSchema = RoomSchema.omit({ id: true }).extend({
+  name: z
+    .string()
+    .trim()
+    .min(1, 'Nombre requerido')
+    .refine(value => !/^0+$/.test(value), 'Nombre inválido'),
+  price: z.preprocess(v => Number(v), z.number().positive('El precio debe ser mayor que cero')),
+  time: z.preprocess(v => Number(v), z.number().positive('El tiempo debe ser mayor que cero')),
+  comision_anfitriona: z.preprocess(
+    v => (v === undefined || v === null || v === '' ? undefined : Number(v)),
+    z.number().positive('La comisión debe ser mayor que cero').optional()
+  )
+});

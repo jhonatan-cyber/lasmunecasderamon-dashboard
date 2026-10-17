@@ -1,4 +1,5 @@
 'use client';
+import { useRealtimeRefresh } from '@/hooks/realtime/useRealtimeRefresh';
 import { Button } from '@/components/ui/button';
 
 import { useCallback, useEffect, useState } from 'react';
@@ -12,9 +13,11 @@ export default function NewPurchasePage() {
   const [loading, setLoading] = useState(true);
   const [loadError, setLoadError] = useState(false);
 
-  const fetchCatalog = useCallback(async () => {
-    setLoading(true);
-    setLoadError(false);
+  const fetchCatalog = useCallback(async (silent = false) => {
+    if (!silent) {
+      setLoading(true);
+      setLoadError(false);
+    }
     try {
       const response = await fetch('/api/purchases/catalog', { cache: 'no-store' });
       const data = await response.json().catch(() => ({}));
@@ -36,11 +39,13 @@ export default function NewPurchasePage() {
         }))
       );
     } catch {
-      setLoadError(true);
+      if (!silent) setLoadError(true);
     } finally {
-      setLoading(false);
+      if (!silent) setLoading(false);
     }
   }, []);
+
+  useRealtimeRefresh('/api/purchases/catalog', () => fetchCatalog(true));
 
   useEffect(() => {
     void fetchCatalog();

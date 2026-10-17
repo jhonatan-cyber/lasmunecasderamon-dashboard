@@ -45,6 +45,8 @@ export const POST = withRoute(
       nombre: payload.nombre,
       codigo_barras: payload.codigo_barras,
       precio_compra: payload.precio_compra,
+      stock_minimo: payload.stock_minimo,
+      stock_maximo: payload.stock_maximo,
       foto:
         typeof payload.foto === 'string' && payload.foto.startsWith('http')
           ? await processAndSaveImage(payload.foto, 'presentacion')
@@ -82,10 +84,13 @@ export const PATCH = withRoute(
         'precio_compra',
         'precio_venta',
         'comision',
+        'stock_minimo',
+        'stock_maximo',
         'ml_botella'
       ]) {
         const value = formData.get(key);
-        if (value !== null && String(value) !== '') fields[key] = value;
+        if (value !== null && (String(value) !== '' || key.startsWith('stock_')))
+          fields[key] = value;
       }
     } else {
       const payload = await request.json();
@@ -102,6 +107,8 @@ export const PATCH = withRoute(
         'precio_compra',
         'precio_venta',
         'comision',
+        'stock_minimo',
+        'stock_maximo',
         'ml_botella'
       ]) {
         // Se pasa '' para limpiar el código de barras o los ml de la botella.

@@ -131,6 +131,8 @@ export interface TraspasoResultado {
 
 /** Alta de una presentación de catálogo. */
 export interface NuevaPresentacionInput {
+  stock_minimo?: number | null;
+  stock_maximo?: number | null;
   producto_id: string;
   nombre: string;
   codigo_barras?: string | null;
@@ -140,6 +142,8 @@ export interface NuevaPresentacionInput {
 
 /** Campos editables de una presentación (los no enviados no se tocan). */
 export interface PresentacionCamposInput {
+  stock_minimo?: number | null;
+  stock_maximo?: number | null;
   opciones_venta?: SaleOption[];
   nombre?: string;
   codigo_barras?: string | null;

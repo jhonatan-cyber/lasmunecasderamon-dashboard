@@ -1,4 +1,5 @@
 'use client';
+import { esBotella } from '@/lib/sales/saleChoice';
 
 import { permiteAnfitrionaConComision } from '@/lib/sales/hostessShortPrices';
 import { HostessMultiSelect } from '@/components/orders';
@@ -34,7 +35,7 @@ export function SaleProductHostess({
                 ...item,
                 hostessFormats: undefined,
                 muestraAnfitriona: true,
-                isChampagne: format.value === 'botella' && item.isChampagne,
+                isChampagne: esBotella(format.value) && item.isChampagne,
                 opcionesTipo: [
                   {
                     ...item.opcionesTipo.find(option => option.value === format.value)!,
@@ -53,12 +54,10 @@ export function SaleProductHostess({
       </div>
     );
   }
-  const esCorto = item.opcionesTipo.some(
-    opcion => opcion.value !== 'botella' && opcion.cantidad > 0
-  );
+  const esCorto = item.opcionesTipo.some(opcion => !esBotella(opcion.value) && opcion.cantidad > 0);
   const limiteCortos = Math.min(
     ...item.opcionesTipo
-      .filter(opcion => opcion.value !== 'botella' && opcion.cantidad > 0)
+      .filter(opcion => !esBotella(opcion.value) && opcion.cantidad > 0)
       .map(opcion => opcion.cantidad)
   );
   if (

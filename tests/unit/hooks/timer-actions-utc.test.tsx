@@ -47,3 +47,51 @@ it('no inventa un inicio local si falla la sincronizacion del servidor', async (
   await act(() => result.current.startTimer('one', 'vip', 'Privado', 90, 'V1', 'Cliente'));
   expect(activeTimers.peek()).toEqual([]);
 });
+
+it('al vencer un servicio sincroniza el cierre del servidor sin ejecutar un PATCH manual', async () => {
+  const fetchMock = vi.fn().mockResolvedValue({
+    ok: true,
+    json: async () => ({ success: true, serverTime: new Date().toISOString(), data: [] })
+  });
+  vi.stubGlobal('fetch', fetchMock);
+  const refresh = vi.fn();
+  const { result } = renderHook(() =>
+    useTimerActions({ onNotificationExpira: vi.fn(), onRefreshCaja: refresh })
+  );
+  await act(() =>
+    result.current.stopTimer('servicio-one', false, {
+      id: 'servicio-one',
+      servicioId: 'one',
+      tipoTransaccion: 'servicio'
+    })
+  );
+  expect(fetchMock).toHaveBeenCalledExactlyOnceWith(
+    '/api/timers/active?source=web&cleanup=expired',
+    {
+      cache: 'no-store'
+    }
+  );
+  expect(refresh).toHaveBeenCalledWith('one');
+});
+
+it('conserva el error del servidor cuando falla una finalización manual', async () => {
+  vi.stubGlobal(
+    'fetch',
+    vi
+      .fn()
+      .mockResolvedValue(
+        new Response(
+          JSON.stringify({ success: false, message: 'No tienes permiso para finalizar' }),
+          { status: 403 }
+        )
+      )
+  );
+  const { result } = renderHook(() => useTimerActions({ onNotificationExpira: vi.fn() }));
+  await expect(
+    result.current.stopTimer('servicio-one', true, {
+      id: 'servicio-one',
+      servicioId: 'one',
+      tipoTransaccion: 'servicio'
+    })
+  ).rejects.toThrow('No tienes permiso para finalizar');
+});

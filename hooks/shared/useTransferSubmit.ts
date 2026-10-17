@@ -48,8 +48,13 @@ export function useTransferSubmit({
           precio: Number(option.precio ?? 0),
           comision: Number(option.comision ?? 0)
         };
-        if (option.tipo === 'botella' && option.acompanamiento)
-          reutilizada.acompanamiento = { ...option.acompanamiento };
+        if (option.tipo === 'botella' && option.precio_sin_anfitriona)
+          reutilizada.precio_sin_anfitriona = option.precio_sin_anfitriona;
+        if (option.tipo === 'botella')
+          reutilizada.acompanamiento = {
+            ...(option.acompanamiento ?? {}),
+            unidades: Number(form.unidadesAcompanamiento || 0)
+          };
         if (option.tipo === 'shot') {
           reutilizada.ml_acompanamiento_anfitriona = option.ml_acompanamiento_anfitriona;
           reutilizada.precio_anfitriona = Number(option.precio_anfitriona ?? 0);
@@ -71,14 +76,11 @@ export function useTransferSubmit({
           return {
             tipo,
             precio: pv,
+            ...(form.precioSinAnfitriona?.trim()
+              ? { precio_sin_anfitriona: Number(form.precioSinAnfitriona.replace(/\./g, '')) }
+              : {}),
             comision: com,
-            ...(form.acompanamientoBotella !== 'ninguno'
-              ? {
-                  acompanamiento: {
-                    unidades: Number(form.unidadesAcompanamiento)
-                  }
-                }
-              : {})
+            acompanamiento: { unidades: Number(form.unidadesAcompanamiento || 0) }
           };
         const option: SaleOption = {
           tipo,
@@ -112,10 +114,10 @@ export function useTransferSubmit({
       if (
         acompanamiento &&
         (!Number.isInteger(acompanamiento.unidades) ||
-          acompanamiento.unidades < 1 ||
+          acompanamiento.unidades < 0 ||
           acompanamiento.unidades > 1000)
       ) {
-        toast.error('Indica entre 1 y 1000 unidades de bebida por botella');
+        toast.error('Indica entre 0 y 1000 unidades de bebida por botella');
         return;
       }
       const anfitrionaRows =

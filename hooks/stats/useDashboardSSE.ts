@@ -1,7 +1,7 @@
 'use client';
 
 import { useSharedSSE } from '@/hooks/shared/useSharedSSE';
-import { invalidateQueries } from '@/lib/api/queryClient';
+import { useQueryClient } from '@tanstack/react-query';
 import { useCurrentUser } from '@/hooks/auth/useCurrentUser';
 
 const DASHBOARD_EVENTS = new Set([
@@ -28,6 +28,7 @@ const DASHBOARD_EVENTS = new Set([
  * when an operational event occurs, replacing the old refetchInterval polling.
  */
 export function useDashboardSSE() {
+  const queryClient = useQueryClient();
   const { user } = useCurrentUser();
 
   const isPublic =
@@ -38,7 +39,7 @@ export function useDashboardSSE() {
 
   useSharedSSE(sseUrl, (payload: any) => {
     if (payload?.type && DASHBOARD_EVENTS.has(payload.type)) {
-      invalidateQueries.dashboard();
+      void queryClient.invalidateQueries({ queryKey: ['dashboard'] });
     }
   });
 }

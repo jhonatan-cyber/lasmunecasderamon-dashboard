@@ -1,12 +1,12 @@
 'use client';
 
 import { Input } from '@/components/ui/input';
+import { FormattedNumberInput } from '@/components/shared/FormattedNumberInput';
 
 export function BottleExtras({
   commission,
   maxHostesses,
   onMaxHostesses,
-  accompaniment,
   onAccompaniment,
   units,
   onUnits,
@@ -16,7 +16,6 @@ export function BottleExtras({
   commission: string;
   maxHostesses?: string;
   onMaxHostesses?: (value: string) => void;
-  accompaniment: boolean;
   onAccompaniment: (checked: boolean) => void;
   units: string;
   onUnits: (value: string) => void;
@@ -50,47 +49,32 @@ export function BottleExtras({
             disabled={disabled}
             className='h-12'
           />
-          <p className='text-xs text-muted-foreground'>
-            {isSettings
-              ? 'En blanco se usa la regla por defecto del producto. Desde 2 puedes editar los precios por cantidad de anfitrionas.'
-              : 'En blanco se usa 1. Desde 2 puedes editar los precios por cantidad de anfitrionas.'}
-          </p>
         </div>
       )}
       <div className={`space-y-2 ${showHostesses ? '' : 'sm:col-span-2'}`}>
-        <label
-          htmlFor='bottle-mixer'
-          className='flex cursor-pointer items-center gap-2 text-sm font-medium'
-        >
-          <Input
-            id='bottle-mixer'
-            type='checkbox'
-            checked={accompaniment}
-            onChange={event => onAccompaniment(event.target.checked)}
-            disabled={disabled}
-            className='h-4 w-4 accent-sky-600'
-          />
-          Bebida de la botella
+        <label htmlFor='bottle-mixer-units' className='text-sm font-medium'>
+          Bebida analcohólica por botella
         </label>
-        <label htmlFor='bottle-mixer-units' className='sr-only'>
-          Unidades por botella
-        </label>
-        <Input
+        <FormattedNumberInput
           id='bottle-mixer-units'
           type='number'
-          min={1}
+          min={0}
           max={1000}
           step={1}
-          required={accompaniment}
-          disabled={disabled || !accompaniment}
+          disabled={disabled}
           value={units}
-          onChange={event => onUnits(event.target.value)}
-          placeholder='Unidades por botella'
+          onChange={event => {
+            onUnits(event.target.value);
+            onAccompaniment(Number(event.target.value) > 0);
+          }}
+          placeholder='0'
           className='h-12'
         />
-        <p className='text-xs text-muted-foreground'>
-          El producto se elige al vender; aquí defines las unidades por botella.
-        </p>
+        {isSettings && (
+          <p className='text-xs text-muted-foreground'>
+            Cantidad de bebidas analcohólicas incluidas por botella. La bebida se elige al vender.
+          </p>
+        )}
       </div>
     </div>
   );

@@ -247,10 +247,7 @@ export function SettingsWhatsAppTab() {
         ) : (
           <div className='grid grid-cols-1 sm:grid-cols-2 gap-4'>
             {campos.map(campo => (
-              <div
-                key={campo.id}
-                className='p-4 bg-neutral-50 dark:bg-neutral-800/30 rounded-2xl border border-neutral-200 dark:border-neutral-700'
-              >
+              <div key={campo.id} className='p-4 bg-neutral-50 dark:bg-neutral-800/30 rounded-xl'>
                 <label
                   htmlFor={campo.id}
                   className='text-sm font-bold text-neutral-700 dark:text-neutral-300'

@@ -4,7 +4,15 @@ import { AdvancesEmployeeList } from '@/components/advances/AdvancesEmployeeList
 
 const mocks = vi.hoisted(() => ({ user: vi.fn(), captureException: vi.fn() }));
 vi.mock('@/hooks/auth/useCurrentUser', () => ({ useCurrentUser: mocks.user }));
-vi.mock('@/lib/utils/logger', () => ({ default: { captureException: mocks.captureException } }));
+vi.mock('@/lib/utils/logger', () => ({
+  default: {
+    captureException: mocks.captureException,
+    info: vi.fn(),
+    warn: vi.fn(),
+    error: vi.fn(),
+    debug: vi.fn()
+  }
+}));
 
 const delivered = {
   id_anticipo: 1,

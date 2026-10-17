@@ -1,3 +1,4 @@
+import { stockLimit, StockLimitsSchema } from '@/lib/business/stockLimits';
 import { z } from 'zod';
 
 export const ProductSchema = z.object({
@@ -55,31 +56,35 @@ export const ProductSchema = z.object({
 
 export type ProductType = z.infer<typeof ProductSchema>;
 
-export const PresentacionSchema = z.object({
-  id: z.string().optional(),
-  nombre: z.string().trim().min(1, 'Nombre de presentación requerido').max(100),
-  codigo_barras: z
-    .string()
-    .trim()
-    .max(50)
-    .optional()
-    .transform(v => (v === '' ? undefined : v)),
-  precio_compra: z.preprocess(
-    v => (v === undefined || v === null || v === '' ? undefined : Number(v)),
-    z.number().int().min(0, 'El precio de compra no puede ser negativo').optional()
-  ),
-  cantidad: z
-    .preprocess(
-      v => (v === undefined || v === null || v === '' ? 0 : Number(v)),
-      z
-        .number()
-        .int()
-        .min(0, 'La cantidad no puede ser negativa')
-        .max(1000, 'Máximo 1000 unidades por carga')
-    )
-    .optional()
-    .default(0),
-  foto: z.string().max(255).nullable().optional()
-});
+export const PresentacionSchema = z
+  .object({
+    stock_minimo: stockLimit,
+    stock_maximo: stockLimit,
+    id: z.string().optional(),
+    nombre: z.string().trim().min(1, 'Nombre de presentación requerido').max(100),
+    codigo_barras: z
+      .string()
+      .trim()
+      .max(50)
+      .optional()
+      .transform(v => (v === '' ? undefined : v)),
+    precio_compra: z.preprocess(
+      v => (v === undefined || v === null || v === '' ? undefined : Number(v)),
+      z.number().int().min(0, 'El precio de compra no puede ser negativo').optional()
+    ),
+    cantidad: z
+      .preprocess(
+        v => (v === undefined || v === null || v === '' ? 0 : Number(v)),
+        z
+          .number()
+          .int()
+          .min(0, 'La cantidad no puede ser negativa')
+          .max(1000, 'Máximo 1000 unidades por carga')
+      )
+      .optional()
+      .default(0),
+    foto: z.string().max(255).nullable().optional()
+  })
+  .refine(value => StockLimitsSchema.safeParse(value).success, 'Indica mínimo y máximo válidos');
 
 export type PresentacionType = z.infer<typeof PresentacionSchema>;

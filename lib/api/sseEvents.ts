@@ -86,6 +86,7 @@ export const SSE_EVENTS = {
   // (payload { action: 'created' | 'accepted' | 'rejected', ... }).
   transfers_updated: { audiences: STAFF_ONLY },
   categories_updated: { audiences: STAFF_ONLY },
+  stock_replenishment: { audiences: WAREHOUSE_STAFF },
   timers_updated: { audiences: STAFF_ONLY },
   timer_started: { audiences: STAFF_ONLY },
   timer_updated: { audiences: STAFF_ONLY },

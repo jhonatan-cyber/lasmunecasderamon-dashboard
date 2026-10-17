@@ -1,10 +1,10 @@
 {
   "resumen": {
-    "commit": "dd5459b2436a759f5e29883634d6a27dab5ee709",
-    "generado": "2026-10-16T20:33:19.928Z",
-    "archivos": 1976,
-    "rutas": 218,
-    "sqlFueraDeRepositorio": 55,
+    "commit": "e8bb8b95ae585cacc3e7ed70c0f7cc0e65d84f4c",
+    "generado": "2026-10-17T05:41:11.456Z",
+    "archivos": 2001,
+    "rutas": 219,
+    "sqlFueraDeRepositorio": 56,
     "tablasConEscritoresMultiples": 0,
     "ciclos": 0,
     "procesosPeriodicos": 18,
@@ -14,11 +14,11 @@
   },
   "rutas": [
     {
-      "ruta": "/api/settings/presence",
-      "archivo": "app/api/settings/presence/route.ts",
+      "ruta": "/api/purchases/replenishment",
+      "archivo": "app/api/purchases/replenishment/route.ts",
       "metodos": [],
-      "nivel": "settings.read",
-      "audit": true,
+      "nivel": "products.read",
+      "audit": false,
       "moduloDominio": null,
       "usaDriver": false
     },
@@ -1652,6 +1652,15 @@
       "usaDriver": false
     },
     {
+      "ruta": "/api/settings/presence",
+      "archivo": "app/api/settings/presence/route.ts",
+      "metodos": [],
+      "nivel": "settings.read",
+      "audit": true,
+      "moduloDominio": null,
+      "usaDriver": false
+    },
+    {
       "ruta": "/api/solicitudes-servicios/:id/aprobar",
       "archivo": "app/api/solicitudes-servicios/[id]/aprobar/route.ts",
       "metodos": [],
@@ -2056,6 +2065,12 @@
       "escribe": []
     },
     {
+      "archivo": "modules/inventario/reposicion/servicio.ts",
+      "capa": "modules/aplicacion",
+      "modulo": "inventario",
+      "escribe": ["notificaciones", "ordenes_reposicion"]
+    },
+    {
       "archivo": "modules/asistencia/biometrico/avisosAudio.ts",
       "capa": "modules/aplicacion",
       "modulo": "asistencia",
@@ -2315,6 +2330,11 @@
   "escriturasCruzadas": [],
   "transacciones": [
     {
+      "archivo": "modules/inventario/reposicion/servicio.ts",
+      "capa": "modules/aplicacion",
+      "modulo": "inventario"
+    },
+    {
       "archivo": "lib/database/maintenance.ts",
       "capa": "lib/database",
       "modulo": null
@@ -2450,6 +2470,11 @@
       "modulo": "operacion"
     },
     {
+      "archivo": "modules/operacion/habitaciones/repositorio.ts",
+      "capa": "modules/infraestructura",
+      "modulo": "operacion"
+    },
+    {
       "archivo": "modules/operacion/pedidos/repositorio.ts",
       "capa": "modules/infraestructura",
       "modulo": "operacion"
@@ -2578,7 +2603,7 @@
     },
     {
       "archivo": "components/cleaning/CleaningInventory.tsx",
-      "linea": 93,
+      "linea": 100,
       "tipo": "setInterval",
       "texto": "const interval = window.setInterval(refresh, 30000);"
     },
@@ -2590,7 +2615,7 @@
     },
     {
       "archivo": "components/products/ContainerReturnsPanel.tsx",
-      "linea": 164,
+      "linea": 169,
       "tipo": "setInterval",
       "texto": "const intervalo = setInterval(fetchResumen, 60_000);"
     },
@@ -2792,37 +2817,46 @@
   "ciclos": [],
   "matriz": {
     "app/api": {
-      "lib/api": 255,
+      "lib/api": 256,
+      "modules/aplicacion": 3,
       "lib/identidad": 17,
       "lib/otros": 69,
       "lib/business": 32,
       "workflows": 20,
-      "modules/aplicacion": 1,
       "lib/database": 3,
       "lib/integrations": 4
     },
+    "app/ui": {
+      "components": 8,
+      "hooks": 56,
+      "modules/aplicacion": 2,
+      "lib/otros": 55,
+      "lib/business": 4,
+      "lib/api": 7,
+      "raiz": 13
+    },
     "components": {
-      "lib/otros": 322,
-      "hooks": 132,
+      "lib/otros": 327,
+      "hooks": 144,
+      "modules/aplicacion": 6,
       "raiz": 87,
       "lib/api": 3,
       "lib/business": 31,
-      "modules/aplicacion": 4,
       "app/ui": 1
     },
     "hooks": {
-      "lib/otros": 89,
+      "lib/otros": 92,
       "raiz": 36,
-      "components": 15,
       "lib/api": 6,
-      "lib/business": 8,
+      "components": 15,
+      "lib/business": 9,
       "modules/aplicacion": 2
     },
     "lib/business": {
+      "modules/aplicacion": 4,
+      "lib/otros": 11,
       "lib/api": 3,
-      "lib/otros": 10,
       "lib/database": 4,
-      "modules/aplicacion": 3,
       "raiz": 2,
       "components": 1
     },
@@ -2833,30 +2867,22 @@
       "raiz": 6,
       "components": 2
     },
-    "modules/infraestructura": {
-      "lib/database": 105,
-      "lib/business": 54,
-      "lib/otros": 143,
-      "modules/aplicacion": 24,
-      "lib/api": 9,
-      "lib/identidad": 2,
-      "raiz": 2
+    "modules/aplicacion": {
+      "lib/database": 42,
+      "lib/business": 38,
+      "lib/api": 11,
+      "modules/infraestructura": 23,
+      "lib/otros": 97,
+      "lib/identidad": 3,
+      "raiz": 5
     },
+    "scripts": {},
     "raiz": {
       "lib/otros": 12,
       "hooks": 4,
       "lib/api": 2,
       "lib/identidad": 2,
       "modules/aplicacion": 1
-    },
-    "app/ui": {
-      "hooks": 50,
-      "lib/otros": 54,
-      "components": 7,
-      "lib/api": 7,
-      "lib/business": 3,
-      "modules/aplicacion": 1,
-      "raiz": 13
     },
     "lib/api": {
       "lib/otros": 8,
@@ -2875,16 +2901,15 @@
     "lib/integrations": {
       "lib/business": 1
     },
-    "modules/aplicacion": {
-      "modules/infraestructura": 23,
-      "lib/otros": 97,
-      "lib/database": 41,
-      "lib/business": 36,
-      "lib/api": 10,
-      "lib/identidad": 3,
-      "raiz": 5
+    "modules/infraestructura": {
+      "lib/database": 105,
+      "lib/otros": 143,
+      "lib/business": 54,
+      "modules/aplicacion": 24,
+      "lib/api": 9,
+      "lib/identidad": 2,
+      "raiz": 2
     },
-    "scripts": {},
     "workflows": {
       "lib/business": 8,
       "lib/otros": 19,

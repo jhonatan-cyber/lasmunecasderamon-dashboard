@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect, useRef, useCallback } from 'react';
+import { useRouter } from 'next/navigation';
 import { Bell } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import {
@@ -22,6 +23,8 @@ import { toast } from 'sonner';
 import dynamic from 'next/dynamic';
 import { ServiceRequestModal } from './ServiceRequestModal';
 import { appEventBus, type AppEvents } from '@/lib/utils/eventBus';
+import { useGenericFetch } from '@/hooks/shared/useGenericFetch';
+import type { OrdenReposicion } from '@/modules/inventario/reposicion/servicio';
 
 const OrderDetailModal = dynamic(() => import('@/components/orders/OrderDetailModal'), {
   loading: () => null,
@@ -30,6 +33,7 @@ const OrderDetailModal = dynamic(() => import('@/components/orders/OrderDetailMo
 
 export function HeaderNotifications() {
   const { user } = useCurrentUser();
+  const router = useRouter();
   const {
     orders,
     refetch,
@@ -40,6 +44,17 @@ export function HeaderNotifications() {
     setOrders
   } = useOrders();
   const { hasPermission } = useUserPermissions();
+  const canSeeStock =
+    Boolean(user) &&
+    (user?.role?.toLowerCase() === 'administrador' || hasPermission('products', 'view'));
+  const { data: replenishments } = useGenericFetch<OrdenReposicion>(
+    '/api/purchases/replenishment',
+    {
+      initialFetch: canSeeStock,
+      transform: result => (result.success ? result.data : [])
+    }
+  );
+  const lowStockProducts = canSeeStock ? replenishments : [];
   const { hasOpenCaja } = useCashRegisterStatus();
 
   const [showDropdown, setShowDropdown] = useState(false);
@@ -55,7 +70,8 @@ export function HeaderNotifications() {
   const [serviceModalOpen, setServiceModalOpen] = useState(false);
 
   const { pendingOrdersCount = 0, pendingServiceRequestsCount = 0 } = useNotificationsContext();
-  const totalNotifications = pendingOrdersCount + pendingServiceRequestsCount;
+  const totalNotifications =
+    pendingOrdersCount + pendingServiceRequestsCount + lowStockProducts.length;
 
   const isAnfitriona = user?.role?.toLowerCase() === 'anfitriona';
   const isGarzon = user?.role?.toLowerCase() === 'garzon';
@@ -263,6 +279,40 @@ export function HeaderNotifications() {
         <DropdownMenuContent align='end' className='w-80 max-h-96 overflow-y-auto'>
           <DropdownMenuLabel>Notificaciones Pendientes</DropdownMenuLabel>
           <DropdownMenuSeparator />
+
+          {canSeeStock && (
+            <>
+              <DropdownMenuLabel>Stock bajo</DropdownMenuLabel>
+              {lowStockProducts.length === 0 ? (
+                <div className='text-xs text-gray-400 px-4 py-2'>
+                  No hay productos con stock bajo
+                </div>
+              ) : (
+                lowStockProducts.map(product => (
+                  <DropdownMenuItem
+                    key={`stock-${product.id}`}
+                    className='flex flex-col items-start gap-1 cursor-pointer'
+                    onSelect={() => {
+                      setShowDropdown(false);
+                      router.push('/purchases/replenishment');
+                    }}
+                  >
+                    <span className='font-semibold text-sm'>
+                      {product.producto} · {product.presentacion}
+                    </span>
+                    <span className='text-xs'>
+                      Stock Bar + Bodega: {product.stock_actual.toLocaleString('es-CL')} · Mínimo:{' '}
+                      {product.stock_minimo.toLocaleString('es-CL')}
+                    </span>
+                    <span className='text-xs font-semibold text-amber-600 dark:text-amber-400'>
+                      Comprar {product.cantidad.toLocaleString('es-CL')} · Ver orden de compra
+                    </span>
+                  </DropdownMenuItem>
+                ))
+              )}
+              <DropdownMenuSeparator />
+            </>
+          )}
 
           {}
           <div className='px-3 py-2 text-xs font-semibold text-gray-500'>Pedidos de Productos</div>

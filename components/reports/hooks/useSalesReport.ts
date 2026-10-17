@@ -1,5 +1,6 @@
 'use client';
 
+import { useRealtimeRefresh } from '@/hooks/realtime/useRealtimeRefresh';
 import { useState, useEffect, useMemo, useCallback } from 'react';
 import logger from '@/lib/utils/logger';
 import { formatShortDateEs } from '@/lib/utils/calendarUtils';
@@ -99,6 +100,8 @@ export function useSalesReport(): UseSalesReportReturn {
       setLoading(false);
     }
   }, [period, startDate, endDate]);
+
+  useRealtimeRefresh('/api/reports/sales', fetchSalesData);
 
   useEffect(() => {
     fetchSalesData();

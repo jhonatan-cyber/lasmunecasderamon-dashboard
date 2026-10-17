@@ -1,5 +1,6 @@
 'use client';
 
+import { useRealtimeRefresh } from '@/hooks/realtime/useRealtimeRefresh';
 import { useState, useEffect, useCallback, useMemo, useRef } from 'react';
 import { isCancelledError } from '@tanstack/react-query';
 import {
@@ -394,6 +395,10 @@ export const useCashRegister = (): UseCashRegisterReturn => {
     getResumen();
     checkCajaStatus();
   }, [getCajas, getResumen, checkCajaStatus]);
+
+  useRealtimeRefresh('/api/cashregister', () =>
+    Promise.all([getCajas(estadoFilter), getResumen(), checkCajaStatus()])
+  );
 
   return {
     cajas,

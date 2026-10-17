@@ -30,7 +30,7 @@ export function ShotMixerSelection({
     const controller = new AbortController();
     setLoading(true);
     setError('');
-    fetch('/api/bar', { cache: 'no-store', signal: controller.signal })
+    fetch('/api/bar?acompanamientos=1', { cache: 'no-store', signal: controller.signal })
       .then(async res => {
         const data = await res.json();
         if (!res.ok || !data.success || !Array.isArray(data.data)) throw new Error();

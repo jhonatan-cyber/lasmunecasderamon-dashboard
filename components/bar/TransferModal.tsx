@@ -66,7 +66,7 @@ export function TransferModal({
       <DialogContent className='flex max-h-[92dvh] w-[calc(100vw_-_2rem)] max-w-6xl flex-col gap-0 overflow-hidden rounded-2xl p-0 sm:max-w-6xl'>
         <DialogHeader className='shrink-0 border-b px-5 py-5 pr-12 sm:px-6'>
           <DialogTitle className='text-lg font-bold'>Transferir al bar</DialogTitle>
-          <DialogDescription>
+          <DialogDescription className='sr-only'>
             Transfiere unidades de esta presentación desde bodega al bar.
           </DialogDescription>
         </DialogHeader>
@@ -111,14 +111,14 @@ export function TransferModal({
                 <section className='min-w-0 space-y-4'>
                   <h2 className='text-sm font-semibold'>Configuración de venta</h2>
 
-                  {form.usarConfigGuardada &&
-                    form.opcionesGuardadas.some(option => option.tipo === 'botella') && (
-                      <div className='space-y-4'>
+                  {form.usarConfigGuardada ? (
+                    <SavedConfigPanel
+                      maxAnfitrionas={form.maxAnfitrionas}
+                      onMaxAnfitrionasChange={form.setMaxAnfitrionas}
+                      bottleExtras={
                         <BottleExtras
                           commission={form.comision}
-                          maxHostesses={form.maxAnfitrionas}
-                          onMaxHostesses={form.setMaxAnfitrionas}
-                          accompaniment={form.acompanamientoBotella !== 'ninguno'}
+
                           onAccompaniment={checked => {
                             form.setAcompanamientoBotella(checked ? 'gaseosa' : 'ninguno');
                             form.setEditarPrecios(true);
@@ -130,18 +130,17 @@ export function TransferModal({
                           }}
                           disabled={saving}
                         />
-                        {Number(form.comision.replace(/\./g, '')) > 0 &&
-                          Number(form.maxAnfitrionas || 1) >= 2 && (
-                            <ChampagneTiersEditor
-                              tiers={form.tiers}
-                              saving={saving}
-                              onTierChange={handleTierChange}
-                            />
-                          )}
-                      </div>
-                    )}
-                  {form.usarConfigGuardada ? (
-                    <SavedConfigPanel
+                      }
+                      bottleTiers={
+                        Number(form.comision.replace(/\./g, '')) > 0 &&
+                        Number(form.maxAnfitrionas || 1) >= 2 ? (
+                          <ChampagneTiersEditor
+                            tiers={form.tiers}
+                            saving={saving}
+                            onTierChange={handleTierChange}
+                          />
+                        ) : null
+                      }
                       opciones={form.opcionesGuardadas}
                       esChampagne={false}
                       tiers={form.tiers}
@@ -166,6 +165,8 @@ export function TransferModal({
                       onUnidadesAcompanamientoChange={form.setUnidadesAcompanamiento}
                       tipos={form.tipos}
                       etiquetaShot={form.etiquetaShot}
+                      precioSinAnfitriona={form.precioSinAnfitriona}
+                      onPrecioSinAnfitrionaChange={form.setPrecioSinAnfitriona}
                       precioVenta={form.precioVenta}
                       comision={form.comision}
                       precioShot={form.precioShot}

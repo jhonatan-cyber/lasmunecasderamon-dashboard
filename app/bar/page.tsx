@@ -45,7 +45,7 @@ import { SalePrices } from '@/components/bar/SalePrices';
 import { BarAnfitrionas, isTierPricedItem } from '@/components/bar/BarAnfitrionas';
 import { useConfig } from '@/hooks/shared/useConfigValue';
 import { resolveBotellaMl, resolveShotMl, resolveShotMlAnfitriona } from '@/lib/business/shotMl';
-import { useSharedSSE } from '@/hooks/shared';
+import { useRealtimeRefresh } from '@/hooks/realtime/useRealtimeRefresh';
 import type { DevolucionEnvaseRegistro, ShotsSummary } from '@/modules/inventario/contracts';
 import { useContainerScan, MOTIVO_ENVASE } from '@/hooks/productos/useContainerScan';
 import { EscaneoLote } from '@/components/products/EscaneoLote';
@@ -177,11 +177,6 @@ export default function BarPage() {
     fetchResumen();
   }, [fetchResumen]);
 
-  // Un shot que cruza el umbral dispara el aviso en vivo: el panel se refresca al toque.
-  useSharedSSE('/api/notifications/sse', payload => {
-    if (payload?.type === 'bar_shot_alert') fetchResumen();
-  });
-
   const fetchDevoluciones = useCallback(async () => {
     setLoadingDevol(true);
     setContainersError(false);
@@ -244,6 +239,16 @@ export default function BarPage() {
   useEffect(() => {
     if (tab === 'pendientes') fetchPendientes();
   }, [tab, fetchPendientes]);
+
+  useRealtimeRefresh('/api/bar', () =>
+    Promise.all([
+      fetchStock(),
+      fetchResumen(),
+      ...(tab === 'historial' ? [fetchMovimientos()] : []),
+      ...(tab === 'pendientes' ? [fetchPendientes()] : []),
+      ...(tab === 'envases' ? [fetchDevoluciones()] : [])
+    ])
+  );
 
   const resolver = useCallback(
     async (id: string, accion: 'aprobar' | 'rechazar') => {

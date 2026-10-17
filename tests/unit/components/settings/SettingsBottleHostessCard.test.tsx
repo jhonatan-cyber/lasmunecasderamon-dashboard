@@ -62,24 +62,38 @@ describe('SettingsBottleHostessCard', () => {
     invalidateSettingsProducts();
     const request = vi.fn(async (url: string, init?: any) => {
       if (init?.method) return { ok: true, json: async () => ({ success: true }) };
-      if (String(url).includes('/api/bar')) return {
+      if (String(url).includes('/api/bar'))
+        return {
+          ok: true,
+          json: async () => ({
+            success: true,
+            data: [
+              {
+                id: 'pres-p1',
+                producto_id: 'p1',
+                nombre: '350ml',
+                opciones_venta: [{ tipo: 'botella', precio: 10000, comision: 500 }]
+              }
+            ]
+          })
+        };
+      return {
         ok: true,
-        json: async () => ({ success: true, data: [{
-          id: 'pres-p1', producto_id: 'p1', nombre: '350ml',
-          opciones_venta: [{ tipo: 'botella', precio: 10000, comision: 0 }]
-        }] })
+        json: async () => ({ success: true, data: [{ ...productos[0], max_anfitrionas: 0 }] })
       };
-      return { ok: true, json: async () => ({ success: true, data: [{ ...productos[0], max_anfitrionas: 0 }] }) };
     });
     vi.stubGlobal('fetch', request);
     render(<SettingsBottleHostessCard />);
     const max = await screen.findByLabelText('Máximo de anfitrionas');
     expect(max).toHaveValue(null);
-    expect(screen.getByText('regla por defecto')).toBeInTheDocument();
+    expect(screen.queryByText('regla por defecto')).not.toBeInTheDocument();
     fireEvent.click(screen.getByRole('button', { name: /Guardar cambios/i }));
-    await waitFor(() => expect(request).toHaveBeenCalledWith(
-      '/api/products/presentations', expect.objectContaining({ method: 'PATCH' })
-    ));
+    await waitFor(() =>
+      expect(request).toHaveBeenCalledWith(
+        '/api/products/presentations',
+        expect.objectContaining({ method: 'PATCH' })
+      )
+    );
   });
 
   it('lista solo productos del bar que se venden por botella, guarda y vuelve al default', async () => {
@@ -138,15 +152,17 @@ describe('SettingsBottleHostessCard', () => {
     // El listado muestra el precio y al elegir se cargan precio y comisión.
     expect(screen.getByRole('button', { name: /Whisky.*200\.000/ })).toBeInTheDocument();
     fireEvent.click(screen.getByRole('button', { name: /Whisky.*200\.000/ }));
-    await waitFor(() => expect(screen.getByLabelText('Precio por botella')).toHaveValue('200.000'));
-    expect(screen.getByLabelText('Comisión (opcional)')).toHaveValue('10.000');
-    expect(screen.getByText(/Vigente:/).textContent).toMatch(/regla por defecto/);
+    await waitFor(() =>
+      expect(screen.getByLabelText('Precio de botella con anfitriona')).toHaveValue('200.000')
+    );
+    expect(screen.getByLabelText('Comisión (requerida)')).toHaveValue('10.000');
+    expect(screen.queryByText(/Vigente:/)).not.toBeInTheDocument();
 
     fireEvent.change(screen.getByLabelText('Máximo de anfitrionas'), { target: { value: '3' } });
     await screen.findByLabelText('Precio para 3 anfitrionas');
-    fireEvent.change(screen.getByLabelText('Comisión (opcional)'), { target: { value: '12000' } });
-    expect(screen.queryByLabelText('Ml acompa\u00f1amiento cliente')).not.toBeInTheDocument();
-    fireEvent.change(screen.getByLabelText('Ml acompa\u00f1amiento anfitriona'), {
+    fireEvent.change(screen.getByLabelText('Comisión (requerida)'), { target: { value: '12000' } });
+    expect(screen.queryByLabelText('Ml bebida analcohólica cliente')).not.toBeInTheDocument();
+    fireEvent.change(screen.getByLabelText('Ml bebida analcohólica anfitriona'), {
       target: { value: '150' }
     });
     fireEvent.click(screen.getByRole('button', { name: /Guardar Cambios/ }));
@@ -159,7 +175,7 @@ describe('SettingsBottleHostessCard', () => {
         precio_venta: 200000,
         comision: 12000,
         opciones_venta: [
-          { tipo: 'botella', precio: 200000, comision: 12000 },
+          { tipo: 'botella', precio: 200000, comision: 12000, acompanamiento: { unidades: 0 } },
           {
             tipo: 'shot',
             precio: 5000,
@@ -179,7 +195,7 @@ describe('SettingsBottleHostessCard', () => {
         ml_shot_anfitriona: null
       });
     });
-    await waitFor(() => expect(screen.getByText(/Vigente:/).textContent).toMatch(/Máx\. 3 anf\./));
+    await waitFor(() => expect(screen.getByLabelText('Máximo de anfitrionas')).toHaveValue(3));
 
     fireEvent.click(screen.getByRole('button', { name: /Volver al default/ }));
     await waitFor(() => {
@@ -274,7 +290,7 @@ describe('SettingsBottleHostessCard', () => {
     const max = await screen.findByLabelText('Máximo de anfitrionas');
     expect(max).toHaveValue(null);
     expect(max).toHaveAttribute('placeholder', 'Default');
-    expect(screen.getByText(/regla por defecto del producto/)).toBeInTheDocument();
+    expect(screen.queryByText(/regla por defecto del producto/)).not.toBeInTheDocument();
     fireEvent.change(max, { target: { value: '2' } });
     await screen.findByLabelText('Precio para 2 anfitrionas');
   });
@@ -344,7 +360,7 @@ describe('SettingsBottleHostessCard', () => {
       expect(put?.[0]).toBe('/api/products/p9/tiers');
       expect(JSON.parse(put![1].body)).toEqual({
         tiers: [
-          { anfitrionas: 1, precio: 120000, comision: 40000 },
+          { anfitrionas: 1, precio: 120000, comision: 20000 },
           { anfitrionas: 2, precio: 170000, comision: 20000 }
         ]
       });

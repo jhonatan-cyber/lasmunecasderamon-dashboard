@@ -1,4 +1,5 @@
 'use client';
+import { StockLimitsFields } from './StockLimitsFields';
 import { Button } from '@/components/ui/button';
 
 import { useState } from 'react';
@@ -17,6 +18,8 @@ interface EditPresDraft {
   comision: string;
   ml_botella: string;
   stock: string;
+  stock_minimo: string;
+  stock_maximo: string;
 }
 
 interface ExistingPresentacionCardProps {
@@ -188,40 +191,6 @@ export function ExistingPresentacionCard({
             </div>
             <div className='space-y-1'>
               <label
-                htmlFor='edit-pres-precio-venta'
-                className='block text-[10px] font-bold uppercase tracking-wider text-gray-400 ml-1'
-              >
-                Precio venta
-              </label>
-              <Input
-                id='edit-pres-precio-venta'
-                value={editPresDraft.precio_venta}
-                onChange={e => changeEditPresDraft('precio_venta', e.target.value)}
-                placeholder='Precio venta'
-                disabled={isLoading || guardandoPres}
-                inputMode='numeric'
-                className='h-10 bg-white dark:bg-slate-900'
-              />
-            </div>
-            <div className='space-y-1'>
-              <label
-                htmlFor='edit-pres-comision'
-                className='block text-[10px] font-bold uppercase tracking-wider text-gray-400 ml-1'
-              >
-                Comisión
-              </label>
-              <Input
-                id='edit-pres-comision'
-                value={editPresDraft.comision}
-                onChange={e => changeEditPresDraft('comision', e.target.value)}
-                placeholder='Comisión (0 = sin comisión)'
-                disabled={isLoading || guardandoPres}
-                inputMode='numeric'
-                className='h-10 bg-white dark:bg-slate-900'
-              />
-            </div>
-            <div className='space-y-1'>
-              <label
                 htmlFor='edit-pres-ml-botella'
                 className='block text-[10px] font-bold uppercase tracking-wider text-gray-400 ml-1'
               >
@@ -254,6 +223,15 @@ export function ExistingPresentacionCard({
                 className='h-10 bg-white dark:bg-slate-900'
               />
             </div>
+            <StockLimitsFields
+              editing
+              id={`edit-${p.id}`}
+              minimo={editPresDraft.stock_minimo}
+              maximo={editPresDraft.stock_maximo}
+              total={Number(p.stock || 0) + Number(p.stock_bar || 0)}
+              disabled={isLoading || guardandoPres}
+              onChange={changeEditPresDraft}
+            />
           </div>
           <p className='text-[11px] text-gray-400 ml-1'>
             Al subir se generan códigos nuevos. Al bajar, selecciona abajo los códigos a desactivar

@@ -1,4 +1,5 @@
 'use client';
+import { useRealtimeRefresh } from '@/hooks/realtime/useRealtimeRefresh';
 import { NativeSelect } from '@/components/ui/native-select';
 import {
   Table,
@@ -82,6 +83,12 @@ export default function CleaningInventory() {
       if (!signal?.aborted) setLoading(false);
     }
   }, []);
+
+  useRealtimeRefresh(
+    '/api/cleaning',
+    () => load(),
+    !!user && !userLoading && accesoLimpieza(user.role).ubicaciones.length > 0
+  );
 
   useEffect(() => {
     if (userLoading || !user || !accesoLimpieza(user.role).ubicaciones.length) return;

@@ -39,7 +39,7 @@ export function useRoomForm({ open, initialValues, onSubmit }: UseRoomFormProps)
             : '',
         time: initialValues.time != null ? String(initialValues.time) : '',
         comision_anfitriona:
-          initialValues.comision_anfitriona != null
+          initialValues.comision_anfitriona != null && initialValues.comision_anfitriona > 0
             ? formatNumberWithSeparators(String(initialValues.comision_anfitriona))
             : ''
       });
@@ -51,20 +51,21 @@ export function useRoomForm({ open, initialValues, onSubmit }: UseRoomFormProps)
 
   const validate = () => {
     const newErrors: { [key: string]: string } = {};
-    if (!form.name.trim()) newErrors.name = 'El nombre es requerido';
+    if (!form.name.trim() || /^0+$/.test(form.name.trim()))
+      newErrors.name = 'Ingresa un nombre válido';
     if (
       !Number.isFinite(Number(form.price.replace(/\./g, ''))) ||
-      Number(form.price.replace(/\./g, '')) < 0
+      Number(form.price.replace(/\./g, '')) <= 0
     )
-      newErrors.price = 'Precio válido requerido';
-    if (!Number.isFinite(Number(form.time)) || Number(form.time) < 0)
-      newErrors.time = 'Tiempo válido requerido';
+      newErrors.price = 'El precio debe ser mayor que cero';
+    if (!Number.isFinite(Number(form.time)) || Number(form.time) <= 0)
+      newErrors.time = 'El tiempo debe ser mayor que cero';
     if (
       form.comision_anfitriona &&
       (!Number.isFinite(Number(form.comision_anfitriona.replace(/\./g, ''))) ||
-        Number(form.comision_anfitriona.replace(/\./g, '')) < 0)
+        Number(form.comision_anfitriona.replace(/\./g, '')) <= 0)
     ) {
-      newErrors.comision_anfitriona = 'La comisión debe ser un monto válido mayor o igual a 0';
+      newErrors.comision_anfitriona = 'La comisión debe ser mayor que cero o quedar vacía';
     }
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
@@ -116,7 +117,7 @@ export function useRoomForm({ open, initialValues, onSubmit }: UseRoomFormProps)
         name: form.name.trim(),
         price: form.price.trim() || '0',
         time: form.time.trim() || '0',
-        comision_anfitriona: form.comision_anfitriona.trim() || '0'
+        comision_anfitriona: form.comision_anfitriona.trim()
       });
     }
   };

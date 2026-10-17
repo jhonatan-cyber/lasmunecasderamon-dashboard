@@ -257,14 +257,10 @@ export async function loginUser(
         await regenerateAttendanceCode();
       }
       asistenciaRegistrada = true;
-      // La marca encendió `en_local`: el personal presente cambió.
-      sendNotificationToAll('presence_updated', { userId: user.id_usuario, en_local: true });
     } else if (usoTicketDelLocal && !marksAsis) {
       await query('UPDATE logins SET en_local = 1 WHERE usuario_id = ? AND estado = 1', [
         user.id_usuario
       ]);
-      // Entró con el ticket del local: también pasa a estar presente.
-      sendNotificationToAll('presence_updated', { userId: user.id_usuario, en_local: true });
     }
 
     // Optimización: await del tokenPromise + mapAuthenticatedUser en paralelo
@@ -272,6 +268,8 @@ export async function loginUser(
       tokenPromise,
       mapAuthenticatedUser(user)
     ]);
+    // Todo login cambia los logueados, aunque no registre asistencia presencial.
+    sendNotificationToAll('presence_updated', { userId: user.id_usuario, motivo: 'login' });
 
     // S7: Forzar cambio de contraseña en primer login
     const forcePasswordChange =

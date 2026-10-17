@@ -5,6 +5,8 @@ import { useId, useMemo, useRef, useState } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
 import { useRouter } from 'next/navigation';
+import { useQueryClient } from '@tanstack/react-query';
+import { matchesInventoryQuery } from '@/lib/utils/inventoryQueries';
 import { toast } from 'sonner';
 import {
   ArrowLeft,
@@ -68,6 +70,7 @@ const metodoPagoLabel = (method: string) =>
 
 export function PurchaseForm({ catalog }: Props) {
   const router = useRouter();
+  const queryClient = useQueryClient();
   const formId = useId();
   const [step, setStep] = useState<1 | 2 | 3>(1);
   const [search, setSearch] = useState('');
@@ -192,6 +195,9 @@ export function PurchaseForm({ catalog }: Props) {
       toast.success(data.message || 'Compra registrada');
       reset();
       setResult(data.data as PurchaseRegistered);
+      void queryClient.invalidateQueries({
+        predicate: query => matchesInventoryQuery(query.queryKey)
+      });
     } catch {
       toast.error('Error de red al registrar');
     } finally {

@@ -34,6 +34,35 @@ const postBody = (request: any) => {
   return JSON.parse(call![1].body);
 };
 
+it('traspasa guardando el precio sin anfitriona y las bebidas por botella', async () => {
+  const request = vi.fn().mockResolvedValue({ ok: true, json: async () => ({ success: true }) });
+  vi.stubGlobal('fetch', request);
+  const done = vi.fn();
+  render(
+    <TransferModal open item={{ ...item, comision: 5000 }} onOpenChange={vi.fn()} onDone={done} />
+  );
+  fireEvent.click(screen.getByRole('button', { name: 'Modificar precios' }));
+  fireEvent.change(screen.getByLabelText('Precio de botella sin anfitriona'), {
+    target: { value: '15000' }
+  });
+
+  fireEvent.change(screen.getByLabelText('Bebida analcohólica por botella'), {
+    target: { value: '2' }
+  });
+  fireEvent.change(screen.getByLabelText('Unidades completas a transferir al bar'), {
+    target: { value: '1' }
+  });
+  fireEvent.click(screen.getByRole('button', { name: 'Transferir' }));
+  await waitFor(() => expect(done).toHaveBeenCalledOnce());
+  expect(postBody(request).opciones_venta).toContainEqual(
+    expect.objectContaining({
+      tipo: 'botella',
+      precio_sin_anfitriona: 15000,
+      acompanamiento: { unidades: 2 }
+    })
+  );
+});
+
 it('actualiza la ficha al editar y al volver a la configuración guardada', async () => {
   vi.stubGlobal(
     'fetch',
@@ -50,14 +79,18 @@ it('actualiza la ficha al editar y al volver a la configuración guardada', asyn
   fireEvent.change(screen.getByLabelText('Máximo de anfitrionas'), { target: { value: '3' } });
   expect(screen.getByText(/Config\. comisiones: máx\. 3 anf\./)).toBeInTheDocument();
   fireEvent.click(screen.getByRole('button', { name: 'Modificar precios' }));
-  fireEvent.change(screen.getByLabelText('Precio por botella'), { target: { value: '35000' } });
-  expect(screen.queryByLabelText('Ml acompa\u00f1amiento cliente')).not.toBeInTheDocument();
+  fireEvent.change(screen.getByLabelText('Precio de botella con anfitriona'), {
+    target: { value: '35000' }
+  });
+  expect(screen.queryByLabelText('Ml bebida analcohólica cliente')).not.toBeInTheDocument();
   const summary = screen.getByLabelText('Resumen de configuración');
   expect(summary).toHaveTextContent('35.000');
-  fireEvent.click(screen.getByLabelText('Bebida de la botella'));
-  fireEvent.change(screen.getByLabelText('Unidades por botella'), { target: { value: '2' } });
+
+  fireEvent.change(screen.getByLabelText('Bebida analcohólica por botella'), {
+    target: { value: '2' }
+  });
   expect(summary).toHaveTextContent('2 unidades por botella');
-  fireEvent.change(screen.getByLabelText('Comisión (opcional)'), { target: { value: '0' } });
+  fireEvent.change(screen.getByLabelText('Comisión'), { target: { value: '0' } });
   expect(screen.getByText(/Config\. comisiones: máx\. 0 anf\./)).toBeInTheDocument();
   fireEvent.click(screen.getByRole('button', { name: 'Usar configuración guardada' }));
   expect(summary).toHaveTextContent('20.000');
@@ -157,8 +190,8 @@ it('agrega y guarda varios precios de anfitriona con comisiones independientes',
     target: { value: '3000' }
   });
   fireEvent.change(screen.getByLabelText('Precio corto anfitriona'), { target: { value: '6000' } });
-  expect(screen.queryByLabelText('Ml acompa\u00f1amiento cliente')).not.toBeInTheDocument();
-  fireEvent.change(screen.getByLabelText('Ml acompa\u00f1amiento anfitriona'), {
+  expect(screen.queryByLabelText('Ml bebida analcohólica cliente')).not.toBeInTheDocument();
+  fireEvent.change(screen.getByLabelText('Ml bebida analcohólica anfitriona'), {
     target: { value: '150' }
   });
   fireEvent.change(screen.getByLabelText('Comisión corto anfitriona'), {
@@ -203,7 +236,7 @@ describe('tipos de venta al transferir', () => {
     const onDone = vi.fn();
     render(<TransferModal open item={item} onOpenChange={vi.fn()} onDone={onDone} />);
     expect(screen.getByText('Configuración guardada')).toBeInTheDocument();
-    expect(screen.queryByLabelText('Precio por botella')).not.toBeInTheDocument();
+    expect(screen.queryByLabelText('Precio de botella con anfitriona')).not.toBeInTheDocument();
     fireEvent.change(screen.getByLabelText('Unidades completas a transferir al bar'), {
       target: { value: '2' }
     });
@@ -213,7 +246,9 @@ describe('tipos de venta al transferir', () => {
       producto_id: 'prod-1',
       presentacion_id: 'pres-1',
       cantidad: 2,
-      opciones_venta: [{ tipo: 'botella', precio: 20000, comision: 0 }]
+      opciones_venta: [
+        { tipo: 'botella', precio: 20000, comision: 0, acompanamiento: { unidades: 0 } }
+      ]
     });
   });
 
@@ -238,7 +273,7 @@ describe('tipos de venta al transferir', () => {
       presentacion_id: 'pres-1',
       cantidad: 2,
       opciones_venta: [
-        { tipo: 'botella', precio: 20000, comision: 0 },
+        { tipo: 'botella', precio: 20000, comision: 0, acompanamiento: { unidades: 0 } },
         {
           tipo: 'shot',
           precio: 3000,
@@ -284,7 +319,7 @@ describe('tipos de venta al transferir', () => {
       presentacion_id: 'pres-1',
       cantidad: 2,
       opciones_venta: [
-        { tipo: 'botella', precio: 20000, comision: 0 },
+        { tipo: 'botella', precio: 20000, comision: 0, acompanamiento: { unidades: 0 } },
         {
           tipo: 'shot',
           precio: 3000,
@@ -303,7 +338,7 @@ describe('tipos de venta al transferir', () => {
       opciones_venta: undefined
     };
     render(<TransferModal open item={sinConfig} onOpenChange={vi.fn()} onDone={vi.fn()} />);
-    expect(screen.getByLabelText('Precio por botella')).toBeInTheDocument();
+    expect(screen.getByLabelText('Precio de botella con anfitriona')).toBeInTheDocument();
     expect(screen.queryByText('Configuración guardada')).not.toBeInTheDocument();
     fireEvent.click(screen.getByRole('button', { name: 'Botella' }));
     expect(screen.getByRole('button', { name: 'Transferir' })).toBeDisabled();
@@ -340,7 +375,7 @@ describe('tipos de venta al transferir', () => {
       presentacion_id: 'pres-1',
       cantidad: 1,
       opciones_venta: [
-        { tipo: 'botella', precio: 20000, comision: 0 },
+        { tipo: 'botella', precio: 20000, comision: 0, acompanamiento: { unidades: 0 } },
         {
           tipo: 'shot',
           precio: 3000,
@@ -392,7 +427,7 @@ describe('tipos de venta al transferir', () => {
     const conAnfitriona: BarStockItem = {
       ...item,
       opciones_venta: [
-        { tipo: 'botella', precio: 20000, comision: 0 },
+        { tipo: 'botella', precio: 20000, comision: 0, acompanamiento: { unidades: 0 } },
         {
           tipo: 'shot',
           precio: 3000,
@@ -425,8 +460,10 @@ it('guarda y reutiliza unidades de bebida por botella', async () => {
   const done = vi.fn();
   const view = render(<TransferModal open item={item} onOpenChange={vi.fn()} onDone={done} />);
   fireEvent.click(screen.getByRole('button', { name: 'Modificar precios' }));
-  fireEvent.click(screen.getByLabelText('Bebida de la botella'));
-  fireEvent.change(screen.getByLabelText('Unidades por botella'), { target: { value: '3' } });
+
+  fireEvent.change(screen.getByLabelText('Bebida analcohólica por botella'), {
+    target: { value: '3' }
+  });
   fireEvent.change(screen.getByLabelText('Unidades completas a transferir al bar'), {
     target: { value: '1' }
   });
@@ -508,7 +545,7 @@ it('ignora el limite anterior al quitar la comision de botella', async () => {
   );
   fireEvent.click(screen.getByRole('button', { name: 'Modificar precios' }));
   fireEvent.change(screen.getByLabelText(/ximo de anfitrionas/), { target: { value: '0' } });
-  fireEvent.change(screen.getByLabelText(/Comisi.*opcional/), { target: { value: '' } });
+  fireEvent.change(screen.getByLabelText('Comisión'), { target: { value: '' } });
   expect(screen.queryByLabelText(/ximo de anfitrionas/)).not.toBeInTheDocument();
   fireEvent.change(screen.getByLabelText('Unidades completas a transferir al bar'), {
     target: { value: '1' }
@@ -516,7 +553,7 @@ it('ignora el limite anterior al quitar la comision de botella', async () => {
   fireEvent.click(screen.getByRole('button', { name: 'Transferir' }));
   await waitFor(() => expect(done).toHaveBeenCalledOnce());
   expect(postBody(request).opciones_venta).toEqual([
-    { tipo: 'botella', precio: 20000, comision: 0 }
+    { tipo: 'botella', precio: 20000, comision: 0, acompanamiento: { unidades: 0 } }
   ]);
   expect(request.mock.calls.some((args: any[]) => args[1]?.method === 'PUT')).toBe(false);
 });

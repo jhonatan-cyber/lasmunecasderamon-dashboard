@@ -16,7 +16,7 @@ export function BottleMixerSelection({
   const [error, setError] = useState(false);
   useEffect(() => {
     const controller = new AbortController();
-    fetch('/api/bar', { signal: controller.signal, cache: 'no-store' })
+    fetch('/api/bar?acompanamientos=1', { signal: controller.signal, cache: 'no-store' })
       .then(async response => {
         const result = await response.json();
         if (!response.ok || !result.success || !Array.isArray(result.data)) throw new Error();

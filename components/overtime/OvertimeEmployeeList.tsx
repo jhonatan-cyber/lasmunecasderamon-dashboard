@@ -1,4 +1,5 @@
 'use client';
+import { useRealtimeRefresh } from '@/hooks/realtime/useRealtimeRefresh';
 import { ListLoadError } from '@/components/shared/ListLoadError';
 
 import { useState, useMemo, useEffect } from 'react';
@@ -55,6 +56,8 @@ export function OvertimeEmployeeList({ allowedRole }: Props) {
       setLoading(false);
     }
   };
+
+  useRealtimeRefresh('/api/overtime', fetchOvertime);
 
   useEffect(() => {
     if (user && !userLoading && user.role?.toLowerCase() === allowedRole) {

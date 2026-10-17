@@ -9,12 +9,13 @@ export const SaleOptionsSchema = z
         acompanamiento: z
           .object({
             tipo: z.enum(['gaseosa', 'soda']).optional(),
-            unidades: z.number().int().min(1).max(1000)
+            unidades: z.number().int().min(0).max(1000)
           })
           .optional(),
         ml_acompanamiento_cliente: z.number().int().min(0).max(10000).optional(),
         ml_acompanamiento_anfitriona: z.number().int().min(0).max(10000).optional(),
         precio: amount,
+        precio_sin_anfitriona: amount.min(1).optional(),
         comision: amount.optional().default(0),
         // Precio independiente del corto para anfitrionas; sin precio no se ofrece.
         precio_anfitriona: amount.optional(),
@@ -43,6 +44,10 @@ export const SaleOptionsSchema = z
         'Los precios de anfitriona solo corresponden a cortos'
       )
       .refine(
+        option => option.tipo === 'botella' || option.precio_sin_anfitriona === undefined,
+        'El precio sin anfitriona solo corresponde a botellas'
+      )
+      .refine(
         option => option.tipo === 'botella' || option.acompanamiento === undefined,
         'La bebida solo corresponde a botellas'
       )
@@ -56,3 +61,12 @@ export const SaleOptionsSchema = z
     options => new Set(options.map(option => option.tipo)).size === options.length,
     'No se puede repetir un tipo de venta'
   );
+
+/** Configuración nueva o editada; la lectura conserva configuraciones históricas. */
+export const ConfiguredSaleOptionsSchema = SaleOptionsSchema.refine(
+  options =>
+    options.every(
+      option => option.tipo !== 'botella' || option.precio <= 0 || Number(option.comision) > 0
+    ),
+  'La comisión de botella con anfitriona es requerida y debe ser mayor a cero cuando el precio es mayor a cero'
+);

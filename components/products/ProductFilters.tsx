@@ -29,6 +29,8 @@ interface ProductFiltersProps {
   showStatusFilter?: boolean;
   showTableView: boolean;
   onToggleView: () => void;
+  onlyLowStock?: boolean;
+  onLowStockChange?: (value: boolean) => void;
 }
 
 export function ProductFilters({
@@ -43,7 +45,9 @@ export function ProductFilters({
   viewMode,
   showStatusFilter = true,
   showTableView,
-  onToggleView
+  onToggleView,
+  onlyLowStock = false,
+  onLowStockChange
 }: ProductFiltersProps) {
   const tablePageSizes = [5, 10, 20, 40];
   const cardPageSizes = [8, 12, 24, 48];
@@ -126,6 +130,26 @@ export function ProductFilters({
                     <SelectItem value='0'>Inactivos</SelectItem>
                   </SelectContent>
                 </Select>
+              </div>
+            )}
+
+            {onLowStockChange && (
+              <div>
+                <Label className='mb-2 block text-xs font-bold uppercase tracking-wider text-gray-500 dark:text-gray-400 ml-1'>
+                  Stock
+                </Label>
+                <Button
+                  variant='outline'
+                  aria-pressed={onlyLowStock}
+                  onClick={() => onLowStockChange(!onlyLowStock)}
+                  className={cn(
+                    'rounded-full h-10 w-full whitespace-nowrap',
+                    onlyLowStock &&
+                      'bg-red-50 text-red-700 border-red-300 dark:bg-red-950/30 dark:text-red-300 dark:border-red-700'
+                  )}
+                >
+                  Solo stock bajo
+                </Button>
               </div>
             )}
 

@@ -1,6 +1,6 @@
 'use client';
 
-import { Input } from '@/components/ui/input';
+import { FormattedNumberInput as Input } from '@/components/shared/FormattedNumberInput';
 import { Button } from '@/components/ui/button';
 import { Plus, Trash2 } from 'lucide-react';
 import {
@@ -13,6 +13,7 @@ import {
 import { formatNumber } from '@/components/bar/transfer/transferOptions';
 
 interface ShortSaleEditorProps {
+  hideHelp?: boolean;
   mlAcompanamientoAnfitriona: string;
   onMlAcompanamientoAnfitrionaChange: (value: string) => void;
   precioShot: string;
@@ -47,6 +48,7 @@ export function ShortSaleEditor(props: ShortSaleEditorProps) {
         {label}
       </label>
       <Input
+        currency={!ml}
         id={id}
         value={value}
         disabled={saving}
@@ -62,8 +64,11 @@ export function ShortSaleEditor(props: ShortSaleEditorProps) {
   );
   return (
     <div className='space-y-5'>
-      <div className='grid gap-5 sm:grid-cols-[minmax(0,1fr)_minmax(0,3fr)]'>
-        <section className='min-w-0 space-y-4' aria-label='Corto para cliente'>
+      <div className='grid grid-cols-1 gap-4 sm:grid-cols-2'>
+        <section
+          className='min-w-0 rounded-2xl border border-gray-200 dark:border-gray-800 p-4 sm:p-5 space-y-4'
+          aria-label='Corto para cliente'
+        >
           <div className='flex items-center justify-between gap-2'>
             <h3 className='text-sm font-semibold'>Cliente</h3>
             <span className='rounded-full bg-muted px-2 py-1 text-xs text-muted-foreground'>
@@ -88,13 +93,15 @@ export function ShortSaleEditor(props: ShortSaleEditorProps) {
             true
           )}
 
-          <p className='text-xs text-muted-foreground'>
-            Sin precio no se vende corto al cliente. Con precio configurado y ml vacíos se sirven {props.shotMl}{' '}
-            ml.
-          </p>
+          {!props.hideHelp && (
+            <p className='text-xs text-muted-foreground'>
+              Sin precio no se vende corto al cliente. Con precio configurado y ml vacíos se sirven{' '}
+              {props.shotMl} ml.
+            </p>
+          )}
         </section>
         <section
-          className='min-w-0 space-y-4 sm:border-l sm:pl-5'
+          className='min-w-0 rounded-2xl border border-gray-200 dark:border-gray-800 p-4 sm:p-5 space-y-4'
           aria-label='Corto para anfitriona'
         >
           <h3 className='py-1 text-sm font-semibold'>Anfitriona</h3>
@@ -112,6 +119,24 @@ export function ShortSaleEditor(props: ShortSaleEditorProps) {
               props.comisionShot,
               props.onComisionShotChange,
               'Sin comisión'
+            )}
+          </div>
+          <div className='grid grid-cols-2 items-end gap-3'>
+            {field(
+              'transfer-ml-shot-anfitriona',
+              'Ml corto anfitriona',
+              props.mlShotAnfitriona,
+              props.onMlShotAnfitrionaChange,
+              props.mlShotCliente || String(props.shotMl),
+              true
+            )}
+            {field(
+              'shot-mixer-hostess',
+              'Ml bebida analcohólica anfitriona',
+              props.mlAcompanamientoAnfitriona,
+              props.onMlAcompanamientoAnfitrionaChange,
+              'Sin bebida analcohólica',
+              true
             )}
           </div>
           {rows.length > 0 && (
@@ -165,24 +190,6 @@ export function ShortSaleEditor(props: ShortSaleEditorProps) {
               ))}
             </section>
           )}
-          <div className='grid grid-cols-2 items-end gap-3'>
-            {field(
-              'transfer-ml-shot-anfitriona',
-              'Ml corto anfitriona',
-              props.mlShotAnfitriona,
-              props.onMlShotAnfitrionaChange,
-              props.mlShotCliente || String(props.shotMl),
-              true
-            )}
-            {field(
-              'shot-mixer-hostess',
-              'Ml acompa\u00f1amiento anfitriona',
-              props.mlAcompanamientoAnfitriona,
-              props.onMlAcompanamientoAnfitrionaChange,
-              'Sin acompa\u00f1amiento',
-              true
-            )}
-          </div>
           <div className='flex justify-center'>
             <Button
               type='button'
@@ -196,10 +203,12 @@ export function ShortSaleEditor(props: ShortSaleEditorProps) {
               Agregar
             </Button>
           </div>
-          <p className='text-xs text-muted-foreground'>
-            Configura un precio para vender a anfitrionas. Permite una anfitriona por corto; la
-            comisión es opcional. Los ml vacíos usan los del cliente o el valor por defecto.
-          </p>
+          {!props.hideHelp && (
+            <p className='text-xs text-muted-foreground'>
+              Configura un precio para vender a anfitrionas. Permite una anfitriona por corto; la
+              comisión es opcional. Los ml vacíos usan los del cliente o el valor por defecto.
+            </p>
+          )}
         </section>
       </div>
     </div>

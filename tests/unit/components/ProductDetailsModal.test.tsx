@@ -1,3 +1,4 @@
+vi.mock('@/hooks/realtime/useRealtimeRefresh', () => ({ useRealtimeRefresh: () => {} }));
 import React from 'react';
 import { render, screen, cleanup } from '@testing-library/react';
 import { afterEach, describe, expect, it, vi } from 'vitest';

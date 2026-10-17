@@ -7,9 +7,9 @@ import {
   TableBody,
   TableCell
 } from '@/components/ui/table';
-import { Input } from '@/components/ui/input';
+import { FormattedNumberInput as Input } from '@/components/shared/FormattedNumberInput';
 
-import { useState, useEffect, useImperativeHandle, type Ref } from 'react';
+import { useState, useEffect, useImperativeHandle, useRef, type Ref } from 'react';
 import { CHAMPAGNE_DEFAULT_TIERS } from '@/lib/business/champagne';
 
 interface ChampagneRow {
@@ -39,7 +39,8 @@ function defaultRows(
 ): ChampagneRow[] {
   const rows: ChampagneRow[] = [];
   for (let i = 1; i <= n; i++) {
-    const base = champagne ? CHAMPAGNE_DEFAULT_TIERS.find(t => t.anfitrionas === i) : undefined;
+    const base =
+      champagne && i > 1 ? CHAMPAGNE_DEFAULT_TIERS.find(t => t.anfitrionas === i) : undefined;
     rows.push({
       anfitrionas: i,
       precio: formatMiles(base?.precio ?? precio),
@@ -71,6 +72,22 @@ export function SettingsChampagneTiers({
   const [rows, setRows] = useState<ChampagneRow[]>([]);
   const [loadError, setLoadError] = useState(false);
   const [loadingTiers, setLoadingTiers] = useState(false);
+  const baseValues = useRef({ precio: precioBase, comision: comisionBase });
+  const firstRowDefaults = useRef({ precio: false, comision: false });
+  useEffect(() => {
+    baseValues.current = { precio: precioBase, comision: comisionBase };
+    setRows(previous =>
+      previous.map(row =>
+        row.anfitrionas !== 1
+          ? row
+          : {
+              ...row,
+              ...(firstRowDefaults.current.precio ? { precio: formatMiles(precioBase) } : {}),
+              ...(firstRowDefaults.current.comision ? { comision: formatMiles(comisionBase) } : {})
+            }
+      )
+    );
+  }, [precioBase, comisionBase]);
 
   useEffect(() => {
     if (!productId) {
@@ -78,6 +95,7 @@ export function SettingsChampagneTiers({
       return;
     }
     let cancelled = false;
+    firstRowDefaults.current = { precio: false, comision: false };
     setLoadingTiers(true);
     setLoadError(false);
     fetch(`/api/products/${productId}/tiers?configurados=1`)
@@ -89,7 +107,14 @@ export function SettingsChampagneTiers({
       .then(data => {
         if (cancelled) return;
         const saved = data.success && Array.isArray(data.data) ? data.data : [];
-        const defaults = defaultRows(MAX_TIERS, champagne, precioBase, comisionBase);
+        const firstSaved = saved.some((row: any) => Number(row.anfitrionas) === 1);
+        firstRowDefaults.current = { precio: !firstSaved, comision: !firstSaved };
+        const defaults = defaultRows(
+          MAX_TIERS,
+          champagne,
+          baseValues.current.precio,
+          baseValues.current.comision
+        );
         const merged: ChampagneRow[] = [];
         for (let i = 1; i <= MAX_TIERS; i++) {
           const found = saved.find((t: any) => Number(t.anfitrionas) === i);
@@ -111,7 +136,7 @@ export function SettingsChampagneTiers({
     return () => {
       cancelled = true;
     };
-  }, [productId, champagne, precioBase, comisionBase]);
+  }, [productId, champagne]);
   const visibleRows = rows.slice(0, maxN);
 
   useImperativeHandle(
@@ -145,9 +170,6 @@ export function SettingsChampagneTiers({
           <p className='text-sm font-bold text-purple-900 dark:text-purple-200'>
             Precios por cantidad de anfitrionas
           </p>
-          <p className='text-xs text-purple-700/70 dark:text-purple-300/70'>
-            Al elegir N anfitrionas en la venta, el precio se toma de esta tabla.
-          </p>
         </div>
         <p className='text-xs text-muted-foreground'>
           Máximo: {maxN} anfitrionas · tabla compartida por producto
@@ -170,10 +192,10 @@ export function SettingsChampagneTiers({
                 <TableHead className='font-bold text-purple-700 dark:text-purple-300 tracking-wider text-center'>
                   Anfitrionas
                 </TableHead>
-                <TableHead className='font-bold text-purple-700 dark:text-purple-300 tracking-wider text-right'>
+                <TableHead className='font-bold text-purple-700 dark:text-purple-300 tracking-wider text-center'>
                   Precio
                 </TableHead>
-                <TableHead className='font-bold text-purple-700 dark:text-purple-300 tracking-wider text-right'>
+                <TableHead className='font-bold text-purple-700 dark:text-purple-300 tracking-wider text-center'>
                   Comisión total
                 </TableHead>
               </TableRow>
@@ -189,35 +211,45 @@ export function SettingsChampagneTiers({
                       {row.anfitrionas}
                     </span>
                   </TableCell>
-                  <TableCell className='text-right'>
-                    <Input
-                      inputMode='numeric'
-                      disabled={disabled}
-                      aria-label={`Precio para ${row.anfitrionas} anfitrionas`}
-                      value={row.precio}
-                      onChange={e => {
-                        const v = e.target.value
-                          .replace(/\D/g, '')
-                          .replace(/\B(?=(\d{3})+(?!\d))/g, '.');
-                        setRows(prev => prev.map((r, j) => (j === i ? { ...r, precio: v } : r)));
-                      }}
-                      className='w-32 px-3 py-1.5 text-right bg-white dark:bg-neutral-950 border border-neutral-300 dark:border-neutral-800 rounded-full text-sm'
-                    />
+                  <TableCell className='text-center'>
+                    <div className='mx-auto w-36'>
+                      <Input
+                        currency
+                        inputMode='numeric'
+                        disabled={disabled}
+                        aria-label={`Precio para ${row.anfitrionas} anfitrionas`}
+                        value={row.precio}
+                        onChange={e => {
+                          if (row.anfitrionas === 1) firstRowDefaults.current.precio = false;
+                          const v = e.target.value
+                            .replace(/\D/g, '')
+                            .replace(/\B(?=(\d{3})+(?!\d))/g, '.');
+                          setRows(prev => prev.map((r, j) => (j === i ? { ...r, precio: v } : r)));
+                        }}
+                        className='w-full px-7 py-1.5 text-center bg-white dark:bg-neutral-950 border border-neutral-300 dark:border-neutral-800 rounded-full text-sm'
+                      />
+                    </div>
                   </TableCell>
-                  <TableCell className='text-right'>
-                    <Input
-                      inputMode='numeric'
-                      disabled={disabled}
-                      aria-label={`Comisión para ${row.anfitrionas} anfitrionas`}
-                      value={row.comision}
-                      onChange={e => {
-                        const v = e.target.value
-                          .replace(/\D/g, '')
-                          .replace(/\B(?=(\d{3})+(?!\d))/g, '.');
-                        setRows(prev => prev.map((r, j) => (j === i ? { ...r, comision: v } : r)));
-                      }}
-                      className='w-32 px-3 py-1.5 text-right bg-white dark:bg-neutral-950 border border-neutral-300 dark:border-neutral-800 rounded-full text-sm'
-                    />
+                  <TableCell className='text-center'>
+                    <div className='mx-auto w-36'>
+                      <Input
+                        currency
+                        inputMode='numeric'
+                        disabled={disabled}
+                        aria-label={`Comisión para ${row.anfitrionas} anfitrionas`}
+                        value={row.comision}
+                        onChange={e => {
+                          if (row.anfitrionas === 1) firstRowDefaults.current.comision = false;
+                          const v = e.target.value
+                            .replace(/\D/g, '')
+                            .replace(/\B(?=(\d{3})+(?!\d))/g, '.');
+                          setRows(prev =>
+                            prev.map((r, j) => (j === i ? { ...r, comision: v } : r))
+                          );
+                        }}
+                        className='w-full px-7 py-1.5 text-center bg-white dark:bg-neutral-950 border border-neutral-300 dark:border-neutral-800 rounded-full text-sm'
+                      />
+                    </div>
                   </TableCell>
                 </TableRow>
               ))}

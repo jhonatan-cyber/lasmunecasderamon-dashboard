@@ -1,3 +1,4 @@
+import { StockLimitsSchema, stockLimit } from '@/lib/business/stockLimits';
 import { ProductSchema, PresentacionSchema, type ProductType } from '@/lib/business/schemas';
 import {
   aceptarTransferencia,
@@ -47,7 +48,10 @@ import { listarParaVenta } from '@/modules/inventario/catalogo/servicio';
 import { listarStockBar, obtenerResumenShots } from '@/modules/inventario/bar/servicio';
 import { ConflictError, ValidationError, NotFoundError } from '@/lib/errors/errors';
 import { z } from 'zod';
-import { SaleOptionsSchema } from '@/lib/business/schemas/sale-options';
+import {
+  SaleOptionsSchema,
+  ConfiguredSaleOptionsSchema
+} from '@/lib/business/schemas/sale-options';
 
 type ProductInput = z.input<typeof ProductSchema>;
 
@@ -65,6 +69,8 @@ function parsePresentaciones(input: unknown, fotos?: (string | null)[]): NewPres
     nombre: p.nombre.trim(),
     codigo_barras: p.codigo_barras?.trim() ? p.codigo_barras.trim() : null,
     precio_compra: p.precio_compra ?? 0,
+    stock_minimo: p.stock_minimo,
+    stock_maximo: p.stock_maximo,
     foto: fotos?.[i] ?? p.foto ?? null,
     cantidad: p.cantidad ?? 0
   }));
@@ -214,6 +220,8 @@ export class ProductService {
       nombre,
       codigo_barras,
       precio_compra,
+      stock_minimo: parsed.data.stock_minimo,
+      stock_maximo: parsed.data.stock_maximo,
       foto
     });
   }
@@ -226,7 +234,9 @@ export class ProductService {
     const raw = typeof input === 'string' ? JSON.parse(input) : input;
     const parsed = z
       .object({
-        opciones_venta: SaleOptionsSchema.optional(),
+        opciones_venta: ConfiguredSaleOptionsSchema.optional(),
+        stock_minimo: stockLimit.optional(),
+        stock_maximo: stockLimit.optional(),
         nombre: z.string().trim().min(1, 'Nombre de presentación requerido').max(100).optional(),
         codigo_barras: z
           .string()
@@ -281,7 +291,9 @@ export class ProductService {
       !has('precio_venta') &&
       !has('comision') &&
       !has('opciones_venta') &&
-      !has('ml_botella')
+      !has('ml_botella') &&
+      !has('stock_minimo') &&
+      !has('stock_maximo')
     ) {
       throw new ValidationError('Nada que actualizar');
     }
@@ -291,7 +303,18 @@ export class ProductService {
         id
       );
     }
+    if (has('stock_minimo') || has('stock_maximo')) {
+      const current = await obtenerPresentacion(id);
+      StockLimitsSchema.parse({
+        stock_minimo:
+          parsed.data.stock_minimo !== undefined ? parsed.data.stock_minimo : current?.stock_minimo,
+        stock_maximo:
+          parsed.data.stock_maximo !== undefined ? parsed.data.stock_maximo : current?.stock_maximo
+      });
+    }
     await actualizarPresentacion(id, {
+      ...(has('stock_minimo') ? { stock_minimo: parsed.data.stock_minimo } : {}),
+      ...(has('stock_maximo') ? { stock_maximo: parsed.data.stock_maximo } : {}),
       ...(opciones_venta !== undefined ? { opciones_venta } : {}),
       ...(has('nombre') ? { nombre: nombre as string } : {}),
       ...(has('codigo_barras') ? { codigo_barras: codigo_barras ?? null } : {}),
@@ -329,8 +352,8 @@ export class ProductService {
     return await listarUnidades(productoId, 1000, undefined, presentacionId);
   }
 
-  static async listBarStock(productoId?: string) {
-    return await listarStockBar(productoId);
+  static async listBarStock(productoId?: string, soloAcompanamientos = false) {
+    return await listarStockBar(productoId, soloAcompanamientos);
   }
 
   static async listForSale(filters?: { category_id?: string; term?: string }) {

@@ -140,13 +140,14 @@ export function CategoryProductRow({
         {needsRoom ? (
           <div className='space-y-2'>
             <RoomSelect
-              habitaciones={
-                habitaciones?.filter(
+              habitaciones={habitaciones}
+              eligibleRoomIds={(habitaciones || [])
+                .filter(
                   h =>
                     (h.estado ?? h.status) !== 0 &&
                     (h.comision_anfitriona === 0 || !h.comision_anfitriona)
-                ) || []
-              }
+                )
+                .map(h => String(h.id ?? h.id_habitacion))}
               value={roomSelections[id] || ''}
               onChange={roomId => onRoomChange(id, roomId)}
               placeholder='Seleccionar habitación'

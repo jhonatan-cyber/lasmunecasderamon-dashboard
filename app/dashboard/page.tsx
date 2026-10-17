@@ -15,6 +15,8 @@ import CollapsibleSection from '@/components/dashboard/CollapsibleSection';
 import TopPerformers from '@/components/dashboard/TopPerformers';
 import ForecastInsights from '@/components/dashboard/ForecastInsights';
 import LoggedUsersCards from '@/components/dashboard/LoggedUsersCards';
+import { ReplenishmentNotice } from '@/components/purchases/ReplenishmentNotice';
+import { PermissionGuard } from '@/components/auth/PermissionGuard';
 
 const DashboardStatsCards = dynamic(() => import('@/components/dashboard/DashboardStatsCards'), {
   loading: () => <div className='h-32 bg-slate-100 dark:bg-slate-800 rounded-2xl animate-pulse' />
@@ -81,6 +83,9 @@ function GeneralDashboard() {
 
       <BoneyardSkeleton name='dashboard-main' loading={shouldShowSkeleton}>
         <div className='space-y-12 animate-in fade-in slide-in-from-bottom-4 duration-1000'>
+          <PermissionGuard module='products' action='view' fallback={null}>
+            <ReplenishmentNotice showProducts />
+          </PermissionGuard>
           {}
           <section className='space-y-6'>
             <div className='flex items-center gap-2 px-2'>

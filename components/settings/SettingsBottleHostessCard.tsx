@@ -14,7 +14,6 @@ import {
   CommandItem
 } from '@/components/ui/command';
 import { cn } from '@/lib/utils/utils';
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { toast } from 'sonner';
 import logger from '@/lib/utils/logger';
 import {
@@ -199,7 +198,7 @@ export function SettingsBottleHostessCard() {
 
   const seleccionado = productos.find(p => String(p.id) === selectedId);
   const etiquetaProducto = (p: (typeof productos)[number]) =>
-    [p.categoria, p.name, p.presentacion, p.codigo_barras, formatCurrencyCLP(Number(p.price ?? 0))]
+    [p.categoria, p.name, p.presentacion, formatCurrencyCLP(Number(p.price ?? 0))]
       .filter(Boolean)
       .join(' ');
   const esChampagne = isChampagneProduct({
@@ -354,20 +353,14 @@ export function SettingsBottleHostessCard() {
   };
 
   return (
-    <Card className='border-neutral-200 dark:border-neutral-800 bg-white dark:bg-neutral-900'>
-      <CardHeader>
-        <CardTitle className='flex items-center gap-2 text-xl font-bold dark:text-white'>
+    <section aria-label='Precios y comisiones por producto' className='space-y-6'>
+      <header className='space-y-2'>
+        <h2 className='flex items-center gap-2 text-xl font-bold dark:text-white'>
           <Users className='h-5 w-5 text-neutral-500' />
           Precios y comisiones por producto
-        </CardTitle>
-        <CardDescription className='text-neutral-500 dark:text-neutral-400'>
-          Configura los tipos de venta, precios de botella y cortos, comisiones de anfitrionas, ml
-          por corto y gaseosas o sodas incluidas por botella. El máximo de anfitrionas, los ml y la
-          tabla de precios se comparten entre las presentaciones del producto. Máximo vacío = regla
-          por defecto.
-        </CardDescription>
-      </CardHeader>
-      <CardContent>
+        </h2>
+      </header>
+      <div>
         {productsError && (
           <div role='alert' className='mb-4 text-sm text-red-600'>
             {productsError}{' '}
@@ -494,13 +487,6 @@ export function SettingsBottleHostessCard() {
               />
             )}
 
-            <p className='text-sm text-neutral-500 dark:text-neutral-400 ml-1'>
-              Vigente:{' '}
-              <span className='font-bold text-neutral-800 dark:text-neutral-100'>
-                {vigente !== null ? `Máx. ${vigente} anf. por botella` : 'regla por defecto'}
-              </span>
-            </p>
-
             {Number(maximo) >= 2 && Number(maximo) <= MAX_ANFITRIONAS && seleccionado && (
               <SettingsChampagneTiers
                 key={selectedId}
@@ -509,8 +495,8 @@ export function SettingsBottleHostessCard() {
                 productId={seleccionado.producto_id}
                 maxAnfitrionas={Number(maximo)}
                 champagne={esChampagne}
-                precioBase={precioVigente}
-                comisionBase={comisionVigente}
+                precioBase={Number(precio.replace(/\./g, '')) || 0}
+                comisionBase={Number(comision.replace(/\./g, '')) || 0}
               />
             )}
 
@@ -540,7 +526,7 @@ export function SettingsBottleHostessCard() {
             </div>
           </div>
         )}
-      </CardContent>
-    </Card>
+      </div>
+    </section>
   );
 }

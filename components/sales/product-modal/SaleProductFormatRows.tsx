@@ -1,4 +1,5 @@
 'use client';
+import { esBotella } from '@/lib/sales/saleChoice';
 import { formatCurrencyNoDecimals } from '@/lib/utils/formatters';
 import { bottleMixerUnits, hostessMixerMl } from '@/lib/sales/productConfiguration';
 import { esCortoAnfitriona } from '@/lib/sales/hostessShortPrices';
@@ -22,14 +23,13 @@ export function SaleProductFormatRows({
         <span>Anfitrionas</span>
       </div>
       {item.opcionesTipo.map(option => {
-        const multipleShorts = option.value !== 'botella' && option.cantidad > 1;
+        const multipleShorts = !esBotella(option.value) && option.cantidad > 1;
         const mixer = item.mixers?.find(m => m.value === option.value);
         const units = bottleMixerUnits(item.product ?? {});
         const drinkMl = hostessMixerMl({ ...item.product, shot_anfitriona: true });
-        const displayLabel =
-          option.value === 'botella'
-            ? `Botella${units > 0 ? ` · ${units} ${units === 1 ? 'unidad' : 'unidades'} de bebida` : ''}`
-            : `${option.label.replace(/ \u00b7 \$[\d.,]+/g, '')}${esCortoAnfitriona(option.value) ? (drinkMl > 0 ? ` y ${drinkMl} ml de bebida` : '') : ' y 1 unidad de bebida'}`;
+        const displayLabel = esBotella(option.value)
+          ? `${option.value === 'botella_sin_anfitriona' ? 'Botella sin anfitriona' : 'Botella'}${units > 0 ? ` · ${units} ${units === 1 ? 'unidad' : 'unidades'} de bebida` : ''}`
+          : `${option.label.replace(/ \u00b7 \$[\d.,]+/g, '')}${esCortoAnfitriona(option.value) ? (drinkMl > 0 ? ` y ${drinkMl} ml de bebida` : '') : ' y 1 unidad de bebida'}`;
         const hostess = item.hostessFormats?.find(h => h.value === option.value);
         const formatItem: SaleProductItem = {
           ...item,
@@ -38,7 +38,7 @@ export function SaleProductFormatRows({
           cantidadActual: option.cantidad,
           mixers: mixer ? [mixer] : [],
           muestraAnfitriona: !!hostess,
-          isChampagne: option.value === 'botella' && item.isChampagne,
+          isChampagne: esBotella(option.value) && item.isChampagne,
           champagneSelected: hostess?.selected || [],
           otherSelected: hostess?.selected || [],
           onChampagneSelect: hostess?.onChange || (() => {}),
@@ -62,11 +62,14 @@ export function SaleProductFormatRows({
             )}
             <div className={`space-y-3 ${multipleShorts ? 'md:col-span-3' : 'md:col-span-2'}`}>
               {Array.from(
-                { length: option.value === 'botella' ? 1 : Math.max(1, option.cantidad) },
+                { length: esBotella(option.value) ? 1 : Math.max(1, option.cantidad) },
                 (_, unitIndex) => {
-                  const unitMixer = item.mixers?.find(
-                    m => m.value === option.value && (m.unitIndex ?? 0) === unitIndex
-                  );
+                  const unitMixer =
+                    esBotella(option.value) && units <= 0
+                      ? undefined
+                      : item.mixers?.find(
+                          m => m.value === option.value && (m.unitIndex ?? 0) === unitIndex
+                        );
                   const unitHostess = item.hostessFormats?.find(
                     h => h.value === option.value && (h.unitIndex ?? 0) === unitIndex
                   );
@@ -75,19 +78,19 @@ export function SaleProductFormatRows({
                     opcionesTipo: [
                       {
                         ...option,
-                        cantidad:
-                          option.value === 'botella'
-                            ? option.cantidad
-                            : Math.min(1, option.cantidad)
+                        cantidad: esBotella(option.value)
+                          ? option.cantidad
+                          : Math.min(1, option.cantidad)
                       }
                     ],
-                    cantidadActual:
-                      option.value === 'botella' ? option.cantidad : Math.min(1, option.cantidad),
+                    cantidadActual: esBotella(option.value)
+                      ? option.cantidad
+                      : Math.min(1, option.cantidad),
                     mixers: unitMixer
                       ? [
                           {
                             ...unitMixer,
-                            label: `${option.label}${option.cantidad > 1 && option.value !== 'botella' ? ` - Corto ${unitIndex + 1}` : ''}`
+                            label: `${option.label}${option.cantidad > 1 && !esBotella(option.value) ? ` - Corto ${unitIndex + 1}` : ''}`
                           }
                         ]
                       : [],
