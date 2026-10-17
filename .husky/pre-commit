@@ -8,8 +8,11 @@ echo "🔍 Verificando directiva 'use client' en archivos con hooks..."
 pnpm run check:use-client || exit 1
 
 # 1. Lint and format staged files
+# --max-arg-length fuerza a lint-staged a trocear la lista de archivos: en Windows
+# la linea de comandos de cmd.exe se corta en 8191 caracteres y un commit con
+# muchos archivos fallaba con "La linea de comandos es demasiado larga".
 echo "🧐 Linting y formateo de archivos staged..."
-pnpm exec lint-staged || exit 1
+pnpm exec lint-staged --max-arg-length 7000 || exit 1
 
 # 2. Type check the whole project
 echo "Checking tipos con TypeScript..."
