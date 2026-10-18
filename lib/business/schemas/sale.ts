@@ -6,6 +6,7 @@ export const SaleSchema = z.object({
   cliente_id: z.string().nullable().optional(),
   pedido_id: z.string().nullable().optional(),
   servicio_id: z.string().min(1).nullable().optional(),
+  entrada_id: z.string().min(1).nullable().optional(),
   habitacion_id: z.string().nullable().optional(),
   metodo_pago: z
     .enum(['efectivo', 'tarjeta', 'transferencia', 'prepago', 'mixto'])

@@ -316,6 +316,7 @@ export interface VentaRow {
   codigo: string;
   cliente_id: string | null;
   pedido_id: string | null;
+  entrada_id?: string | null;
   habitacion_id: string | null;
   metodo_pago: string;
   propina: number;

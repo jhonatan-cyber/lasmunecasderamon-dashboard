@@ -22,7 +22,7 @@ export interface EstadoLector {
 export interface EstadoBiometrico {
   asistenciasBiometricasHoy: number;
   asistencias: { usuario: string; hora: string; recordId: string | null }[];
-  ventana: { inicio: number; fin: number };
+  ventana: { inicio: number; minutoInicio?: number; fin: number; minutoFin?: number };
   lectores: EstadoLector[];
   pollerActivo: boolean;
 }
@@ -43,7 +43,7 @@ export async function obtenerEstadoBiometrico(): Promise<EstadoBiometrico> {
     ),
     query<{ clave: string; valor: string }[]>(
       `SELECT clave, valor FROM configuraciones
-        WHERE clave IN ('asistencia_hora_inicio', 'asistencia_hora_fin')`
+        WHERE clave IN ('asistencia_hora_inicio', 'asistencia_minuto_inicio', 'asistencia_hora_fin', 'asistencia_minuto_fin')`
     ),
     query<
       {
@@ -73,12 +73,16 @@ export async function obtenerEstadoBiometrico(): Promise<EstadoBiometrico> {
   ]);
 
   let inicio = 21;
+  let minutoInicio = 0;
   let fin = 23;
+  let minutoFin = 0;
   for (const row of ventanaRows) {
     const val = parseInt(row.valor, 10);
     if (Number.isNaN(val)) continue;
     if (row.clave === 'asistencia_hora_inicio') inicio = val;
+    if (row.clave === 'asistencia_minuto_inicio') minutoInicio = val;
     if (row.clave === 'asistencia_hora_fin') fin = val;
+    if (row.clave === 'asistencia_minuto_fin') minutoFin = val;
   }
 
   const enVivo = new Set(conectadosEnVivo());
@@ -112,7 +116,7 @@ export async function obtenerEstadoBiometrico(): Promise<EstadoBiometrico> {
       hora: r.hora,
       recordId: r.record_id
     })),
-    ventana: { inicio, fin },
+    ventana: { inicio, minutoInicio, fin, minutoFin },
     lectores,
     pollerActivo: estaCorriendo()
   };

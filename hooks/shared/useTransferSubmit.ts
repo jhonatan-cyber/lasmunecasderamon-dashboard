@@ -52,6 +52,7 @@ export function useTransferSubmit({
           reutilizada.precio_sin_anfitriona = option.precio_sin_anfitriona;
         if (option.tipo === 'botella') {
           reutilizada.colacion_habilitada = form.colacionHabilitada;
+          reutilizada.cover_habilitado = form.coverHabilitado;
           reutilizada.acompanamiento = {
             ...(option.acompanamiento ?? {}),
             unidades: Number(form.unidadesAcompanamiento || 0)
@@ -83,6 +84,7 @@ export function useTransferSubmit({
               : {}),
             comision: com,
             colacion_habilitada: form.colacionHabilitada,
+            cover_habilitado: form.coverHabilitado,
             acompanamiento: { unidades: Number(form.unidadesAcompanamiento || 0) }
           };
         const option: SaleOption = {

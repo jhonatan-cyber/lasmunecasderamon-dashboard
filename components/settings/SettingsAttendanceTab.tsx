@@ -1,9 +1,9 @@
 'use client';
-import { NativeSelect } from '@/components/ui/native-select';
 import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
 
 import { useCallback, useEffect, useState } from 'react';
-import { ChevronDown, Clock, Loader2, Save, TriangleAlert } from 'lucide-react';
+import { Clock, Loader2, Save, TriangleAlert } from 'lucide-react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Skeleton } from '@/components/ui/skeleton';
 import { toast } from 'sonner';
@@ -11,22 +11,28 @@ import logger from '@/lib/utils/logger';
 
 interface Ventana {
   asistencia_hora_inicio: number;
+  asistencia_minuto_inicio: number;
   asistencia_hora_fin: number;
+  asistencia_minuto_fin: number;
 }
 
-const VENTANA_DEFECTO: Ventana = { asistencia_hora_inicio: 21, asistencia_hora_fin: 23 };
+const VENTANA_DEFECTO: Ventana = {
+  asistencia_hora_inicio: 21,
+  asistencia_minuto_inicio: 0,
+  asistencia_hora_fin: 23,
+  asistencia_minuto_fin: 0
+};
 
 const HORA_DEFECTO = { inicio: 21, fin: 23 };
 
 const pad = (h: number) => String(h).padStart(2, '0');
+const aMinutos = (hora: number, minuto: number) => hora * 60 + minuto;
 
-/** 0 → 12 AM · 12 → 12 PM · 13 → 1 PM */
-const etiqueta12 = (h: number) => `${h % 12 === 0 ? 12 : h % 12} ${h < 12 ? 'AM' : 'PM'}`;
-
-const HORAS = Array.from({ length: 24 }, (_, h) => ({
-  value: h,
-  label: `${pad(h)}:00 hrs (${etiqueta12(h)})`
-}));
+const formatoHora = (hora: number, minuto: number) => `${pad(hora)}:${pad(minuto)}`;
+const leerHora = (valor: string) => {
+  const [hora = '0', minuto = '0'] = valor.split(':');
+  return { hora: Number(hora), minuto: Number(minuto) };
+};
 
 const MARCAS_HORA = [0, 6, 12, 18, 24];
 
@@ -37,16 +43,23 @@ const MARCAS_HORA = [0, 6, 12, 18, 24];
  */
 function VentanaTimeline({
   inicio,
+  minutoInicio,
   fin,
+  minutoFin,
   valida
 }: {
   inicio: number;
+  minutoInicio: number;
   fin: number;
+  minutoFin: number;
   valida: boolean;
 }) {
-  const ahora = new Date().getHours();
-  const dentro = valida && ahora >= inicio && ahora < fin;
-  const pctAhora = ((ahora + 0.5) / 24) * 100;
+  const fechaAhora = new Date();
+  const ahora = fechaAhora.getHours() * 60 + fechaAhora.getMinutes();
+  const inicioMinutos = aMinutos(inicio, minutoInicio);
+  const finMinutos = aMinutos(fin, minutoFin);
+  const dentro = valida && ahora >= inicioMinutos && ahora < finMinutos;
+  const pctAhora = ((ahora + 0.5) / 1440) * 100;
   // Sin este tope la etiqueta se sale de la tarjeta cerca de las 00 o las 23.
   const pctEtiqueta = Math.min(Math.max(pctAhora, 4), 96);
 
@@ -65,8 +78,8 @@ function VentanaTimeline({
               <div
                 className='absolute inset-y-0 border-y border-emerald-600/40 bg-emerald-500/25 transition-all duration-300 dark:border-emerald-400/40 dark:bg-emerald-400/20 motion-reduce:transition-none'
                 style={{
-                  left: `${(inicio / 24) * 100}%`,
-                  width: `${((fin - inicio) / 24) * 100}%`
+                  left: `${(inicioMinutos / 1440) * 100}%`,
+                  width: `${((finMinutos - inicioMinutos) / 1440) * 100}%`
                 }}
               />
             ) : (
@@ -79,7 +92,7 @@ function VentanaTimeline({
             </div>
             <div
               className='absolute inset-y-0 w-0.5 -translate-x-1/2 bg-amber-500 ring-1 ring-background transition-all duration-300 motion-reduce:transition-none'
-              style={{ left: `${((ahora + 0.5) / 24) * 100}%` }}
+              style={{ left: `${((ahora + 0.5) / 1440) * 100}%` }}
               aria-hidden='true'
             />
           </div>
@@ -123,9 +136,13 @@ export function SettingsAttendanceTab() {
       if (result.success && result.data?.asistencia) {
         const inicio = Number(result.data.asistencia.asistencia_hora_inicio);
         const fin = Number(result.data.asistencia.asistencia_hora_fin);
+        const minutoInicio = Number(result.data.asistencia.asistencia_minuto_inicio ?? 0);
+        const minutoFin = Number(result.data.asistencia.asistencia_minuto_fin ?? 0);
         const siguiente: Ventana = {
           asistencia_hora_inicio: Number.isInteger(inicio) ? inicio : HORA_DEFECTO.inicio,
-          asistencia_hora_fin: Number.isInteger(fin) ? fin : HORA_DEFECTO.fin
+          asistencia_minuto_inicio: Number.isInteger(minutoInicio) ? minutoInicio : 0,
+          asistencia_hora_fin: Number.isInteger(fin) ? fin : HORA_DEFECTO.fin,
+          asistencia_minuto_fin: Number.isInteger(minutoFin) ? minutoFin : 0
         };
         setConfig(siguiente);
         setGuardado(siguiente);
@@ -142,13 +159,19 @@ export function SettingsAttendanceTab() {
   }, [fetchConfig]);
 
   const inicio = config.asistencia_hora_inicio;
+  const minutoInicio = config.asistencia_minuto_inicio;
   const fin = config.asistencia_hora_fin;
+  const minutoFin = config.asistencia_minuto_fin;
 
   // El servidor acepta `hora >= inicio && hora < fin`: con inicio >= fin no
   // entraría nunca ninguna marca, así que se corta acá antes de guardar.
-  const valida = inicio >= 0 && fin <= 23 && inicio < fin;
-  const duracion = valida ? fin - inicio : 0;
-  const sucio = inicio !== guardado.asistencia_hora_inicio || fin !== guardado.asistencia_hora_fin;
+  const inicioMinutos = aMinutos(inicio, minutoInicio);
+  const finMinutos = aMinutos(fin, minutoFin);
+  const valida = inicioMinutos >= 0 && finMinutos <= 1439 && inicioMinutos < finMinutos;
+  const duracion = valida ? finMinutos - inicioMinutos : 0;
+  const sucio = Object.keys(config).some(
+    clave => config[clave as keyof Ventana] !== guardado[clave as keyof Ventana]
+  );
 
   const handleSave = async () => {
     if (!valida) {
@@ -160,7 +183,9 @@ export function SettingsAttendanceTab() {
       setSaving(true);
       const configs = [
         { clave: 'asistencia_hora_inicio', valor: String(inicio) },
-        { clave: 'asistencia_hora_fin', valor: String(fin) }
+        { clave: 'asistencia_minuto_inicio', valor: String(minutoInicio) },
+        { clave: 'asistencia_hora_fin', valor: String(fin) },
+        { clave: 'asistencia_minuto_fin', valor: String(minutoFin) }
       ];
 
       const response = await fetch('/api/configurations', {
@@ -170,7 +195,7 @@ export function SettingsAttendanceTab() {
       });
       const result = await response.json();
       if (result.success) {
-        setGuardado({ asistencia_hora_inicio: inicio, asistencia_hora_fin: fin });
+        setGuardado({ ...config });
         toast.success('Ventana de asistencia guardada');
       } else {
         throw new Error(result.error || 'Error al guardar');
@@ -219,26 +244,21 @@ export function SettingsAttendanceTab() {
                     >
                       Hora de inicio (entrada)
                     </label>
-                    <div className='relative'>
-                      <NativeSelect
-                        id='attendance-hora-inicio'
-                        value={inicio}
-                        onChange={e =>
-                          setConfig(prev => ({
-                            ...prev,
-                            asistencia_hora_inicio: Number(e.target.value)
-                          }))
-                        }
-                        className='w-full appearance-none rounded-full border border-neutral-300 bg-white px-4 py-2 pr-10 text-neutral-900 focus:ring-2 focus:ring-black focus:border-transparent dark:border-neutral-800 dark:bg-neutral-950 dark:text-white dark:focus:ring-white cursor-pointer'
-                      >
-                        {HORAS.map(h => (
-                          <option key={h.value} value={h.value}>
-                            {h.label}
-                          </option>
-                        ))}
-                      </NativeSelect>
-                      <ChevronDown className='pointer-events-none absolute inset-y-0 right-4 my-auto h-4 w-4 text-neutral-500' />
-                    </div>
+                    <Input
+                      id='attendance-hora-inicio'
+                      type='time'
+                      step={60}
+                      value={formatoHora(inicio, minutoInicio)}
+                      onChange={e => {
+                        const valor = leerHora(e.target.value);
+                        setConfig(prev => ({
+                          ...prev,
+                          asistencia_hora_inicio: valor.hora,
+                          asistencia_minuto_inicio: valor.minuto
+                        }));
+                      }}
+                      className='max-w-48'
+                    />
                     <p className='text-xs text-neutral-500 dark:text-neutral-400'>
                       Primera hora en la que una marca cuenta como asistencia.
                     </p>
@@ -251,26 +271,21 @@ export function SettingsAttendanceTab() {
                     >
                       Hora de fin (salida / corte)
                     </label>
-                    <div className='relative'>
-                      <NativeSelect
-                        id='attendance-hora-fin'
-                        value={fin}
-                        onChange={e =>
-                          setConfig(prev => ({
-                            ...prev,
-                            asistencia_hora_fin: Number(e.target.value)
-                          }))
-                        }
-                        className='w-full appearance-none rounded-full border border-neutral-300 bg-white px-4 py-2 pr-10 text-neutral-900 focus:ring-2 focus:ring-black focus:border-transparent dark:border-neutral-800 dark:bg-neutral-950 dark:text-white dark:focus:ring-white cursor-pointer'
-                      >
-                        {HORAS.map(h => (
-                          <option key={h.value} value={h.value}>
-                            {h.label}
-                          </option>
-                        ))}
-                      </NativeSelect>
-                      <ChevronDown className='pointer-events-none absolute inset-y-0 right-4 my-auto h-4 w-4 text-neutral-500' />
-                    </div>
+                    <Input
+                      id='attendance-hora-fin'
+                      type='time'
+                      step={60}
+                      value={formatoHora(fin, minutoFin)}
+                      onChange={e => {
+                        const valor = leerHora(e.target.value);
+                        setConfig(prev => ({
+                          ...prev,
+                          asistencia_hora_fin: valor.hora,
+                          asistencia_minuto_fin: valor.minuto
+                        }));
+                      }}
+                      className='max-w-48'
+                    />
                     <p className='text-xs text-neutral-500 dark:text-neutral-400'>
                       Hora en que deja de aceptarse (no incluida).
                     </p>
@@ -287,11 +302,17 @@ export function SettingsAttendanceTab() {
                       }
                     >
                       {valida
-                        ? `${pad(inicio)}:00 → ${pad(fin)}:00 · ${duracion} h`
+                        ? `${pad(inicio)}:${pad(minutoInicio)} → ${pad(fin)}:${pad(minutoFin)} · ${Math.floor(duracion / 60)} h ${duracion % 60} min`
                         : 'Ventana vacía'}
                     </span>
                   </div>
-                  <VentanaTimeline inicio={inicio} fin={fin} valida={valida} />
+                  <VentanaTimeline
+                    inicio={inicio}
+                    minutoInicio={minutoInicio}
+                    fin={fin}
+                    minutoFin={minutoFin}
+                    valida={valida}
+                  />
                 </section>
               </div>
             </div>
@@ -305,7 +326,7 @@ export function SettingsAttendanceTab() {
                 <p className='text-xs text-amber-800 dark:text-amber-300'>
                   La hora de fin debe ser posterior a la hora de inicio. Con{' '}
                   <strong>
-                    {pad(inicio)}:00 → {pad(fin)}:00
+                    {pad(inicio)}:{pad(minutoInicio)} → {pad(fin)}:{pad(minutoFin)}
                   </strong>{' '}
                   no entraría ninguna marca y nadie podría registrar asistencia.
                 </p>

@@ -8,7 +8,8 @@ export const GET = withPublicRoute(async (request: Request) => {
   const data = await ProductService.listForSale({
     category_id: searchParams.get('category_id') || undefined,
     term: searchParams.get('term') || undefined,
-    solo_colaciones: searchParams.get('solo_colaciones') === 'true'
+    solo_colaciones: searchParams.get('solo_colaciones') === 'true',
+    solo_cover: searchParams.get('solo_cover') === 'true'
   });
   return NextResponse.json({ success: true, data });
 });

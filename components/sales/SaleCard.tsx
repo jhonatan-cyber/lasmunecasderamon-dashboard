@@ -83,6 +83,11 @@ export default function SaleCard({ venta, onRefresh, onVerDetalles }: SaleCardPr
             >
               Venta
             </Badge>
+            {venta.entrada_id && (
+              <Badge variant='outline' className='text-xs'>
+                Desde entrada
+              </Badge>
+            )}
           </div>
           <span className='text-xs text-gray-500 dark:text-gray-400 font-mono'>
             #{venta.codigo}

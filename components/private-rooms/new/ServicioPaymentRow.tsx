@@ -4,6 +4,13 @@ import { Input } from '@/components/ui/input';
 import { memo } from 'react';
 import { Coins, DollarSign } from 'lucide-react';
 import { Label } from '@/components/ui/label';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue
+} from '@/components/ui/select';
 import { PaymentMethodSelect } from '@/components/shared/selects';
 import type { PaymentMethod } from '@/components/shared/selects/PaymentMethodSelect';
 import {
@@ -23,7 +30,11 @@ export const ServicioPaymentRow = memo(function ServicioPaymentRow({
   isServicePriceLocked,
   disabledPaymentMethods,
   clientes,
-  selectedClientData
+  selectedClientData,
+  clientesConSaldo,
+  prepagoDestino,
+  pagosMixtos,
+  onPrepagoDestinoChange
 }: {
   formData: ServicioFormData;
   setFormData: React.Dispatch<React.SetStateAction<ServicioFormData>>;
@@ -32,9 +43,19 @@ export const ServicioPaymentRow = memo(function ServicioPaymentRow({
   disabledPaymentMethods: readonly PaymentMethod[];
   clientes: any[];
   selectedClientData: any;
+  clientesConSaldo: { clienteId: string; nombre: string; saldo: number }[];
+  prepagoDestino: string;
+  pagosMixtos: any[];
+  onPrepagoDestinoChange: (value: string) => void;
 }) {
+  const mostrarDestinoPrepago =
+    clientesConSaldo.length > 0 &&
+    (formData.metodo_pago === 'prepago' ||
+      (formData.metodo_pago === 'mixto' && pagosMixtos.some(pago => pago.metodo === 'prepago')));
   return (
-    <div className='grid grid-cols-1 sm:grid-cols-3 gap-3 sm:gap-4'>
+    <div
+      className={`grid grid-cols-1 gap-3 sm:gap-4 ${mostrarDestinoPrepago ? 'sm:grid-cols-4' : 'sm:grid-cols-3'}`}
+    >
       {/* Precio de servicio */}
       <div>
         <Label className='block text-xs font-medium text-gray-500 mb-1 uppercase'>
@@ -88,6 +109,32 @@ export const ServicioPaymentRow = memo(function ServicioPaymentRow({
           selectedClienteIds={formData.clientes}
         />
       </div>
+
+      {mostrarDestinoPrepago && (
+        <div>
+          <Label
+            htmlFor='servicio-prepago-destino'
+            className='mb-1 block text-xs font-medium uppercase text-gray-500'
+          >
+            COBRAR SALDO A
+          </Label>
+          <Select value={prepagoDestino} onValueChange={onPrepagoDestinoChange}>
+            <SelectTrigger id='servicio-prepago-destino' className='h-10 rounded-full'>
+              <SelectValue placeholder='Seleccionar cliente(s)' />
+            </SelectTrigger>
+            <SelectContent>
+              {clientesConSaldo.length === 2 && (
+                <SelectItem value='ambos'>Ambos clientes</SelectItem>
+              )}
+              {clientesConSaldo.map(cliente => (
+                <SelectItem key={cliente.clienteId} value={cliente.clienteId}>
+                  {cliente.nombre}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
+      )}
 
       {/* IVA */}
       <div>

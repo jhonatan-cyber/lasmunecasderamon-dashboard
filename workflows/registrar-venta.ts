@@ -50,7 +50,7 @@ export async function registrarVenta(
   createdBy: string,
   contexto: ContextoOperacion,
   aplazar: (task: () => void | Promise<void>) => void,
-  options: { desdeCuenta?: boolean; ventaId?: string } = {}
+  options: { desdeCuenta?: boolean; ventaId?: string; entradaId?: string } = {}
 ) {
   const requestedOrder = body.pedido_id || body.id_pedido;
   if (requestedOrder && !options.desdeCuenta) {
@@ -126,6 +126,7 @@ export async function registrarVenta(
     cliente_id: clienteId,
     pedido_id: pedidoId,
     servicio_id: validated.servicio_id || null,
+    entrada_id: options.entradaId || null,
     habitacion_id: validated.habitacion_id,
     metodo_pago: validated.metodo_pago,
     propina: validated.propina,

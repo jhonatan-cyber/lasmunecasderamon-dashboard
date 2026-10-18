@@ -193,9 +193,12 @@ export function SalesListItem({
 
         {/* Code + Total */}
         <div className='mb-4'>
-          <p className={`text-xs font-bold ${t.mutedColor} uppercase tracking-widest mb-0.5`}>
-            {venta?.codigo || '—'}
-          </p>
+          <div className='mb-0.5 flex items-center gap-2'>
+            <p className={`text-xs font-bold ${t.mutedColor} uppercase tracking-widest`}>
+              {venta?.codigo || '—'}
+            </p>
+            {venta.entrada_id && <Badge variant='outline'>Desde entrada</Badge>}
+          </div>
           <h3
             className={`text-3xl sm:text-4xl font-black ${t.titleColor} tabular-nums tracking-tight leading-none`}
           >

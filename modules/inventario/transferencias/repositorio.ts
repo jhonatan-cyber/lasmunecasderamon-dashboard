@@ -24,9 +24,13 @@ export async function traspasarAlBar(
   input: TraspasoInput
 ): Promise<TraspasoResultado> {
   // Serializa traspasos del mismo producto, incluso entre distintas presentaciones.
-  await trx('SELECT id_producto FROM productos WHERE id_producto = ? FOR UPDATE', [
-    input.producto_id
-  ]);
+  const producto = await trx<{ id_producto: string; system_key: string | null }[]>(
+    `SELECT pr.id_producto, c.system_key
+       FROM productos pr LEFT JOIN categorias c ON c.id_categoria = pr.categoria_id
+      WHERE pr.id_producto = ? FOR UPDATE OF pr`,
+    [input.producto_id]
+  );
+  if (!producto.length) throw new BusinessError('El producto no existe');
   const candidatas = await trx<any[]>(
     `SELECT id FROM inventario_unidades
      WHERE producto_id = ? AND presentacion_id = ?
@@ -75,7 +79,9 @@ export async function traspasarAlBar(
           precio: Number(precioVenta ?? 0),
           comision: Number(comision ?? 0),
           colacion_habilitada:
-            guardadas?.find(option => option.tipo === 'botella')?.colacion_habilitada ?? false
+            guardadas?.find(option => option.tipo === 'botella')?.colacion_habilitada ?? false,
+          cover_habilitado:
+            guardadas?.find(option => option.tipo === 'botella')?.cover_habilitado ?? false
         }
       ];
     }
@@ -86,6 +92,9 @@ export async function traspasarAlBar(
     );
   }
   const botella = opciones.find(o => o.tipo === 'botella');
+  if (botella?.cover_habilitado && producto[0].system_key !== 'bebidas_analcoholicas') {
+    throw new BusinessError('El cover solo puede habilitarse para bebidas analcohólicas');
+  }
   precioVenta = botella?.precio ?? opciones[0].precio ?? 0;
   comision = botella?.comision ?? opciones[0].comision ?? 0;
   if (

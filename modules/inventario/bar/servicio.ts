@@ -1,5 +1,9 @@
 import type { ContextoOperacion } from '@/lib/transaccion/contrato';
 import type { ContextoVentaInventario, ConsumoInventarioDetalle, ShotAlert } from '../contracts';
+import {
+  consumirCover as consumirCoverInterno,
+  consumirProductoCortesia as consumirProductoCortesiaInterno
+} from './consumoRepositorio';
 import { consumirStock } from './repositorio';
 
 // Lecturas de la barra (stock abierto y resumen del turno): no abren unidad ni
@@ -23,4 +27,14 @@ export function consumirStockBar(
   contexto: ContextoOperacion
 ): Promise<ShotAlert[]> {
   return consumirStock(detalles, contextoVenta, contexto);
+}
+
+export function consumirCoverBar(...args: Parameters<typeof consumirCoverInterno>) {
+  return consumirCoverInterno(...args);
+}
+
+export function consumirProductoCortesiaBar(
+  ...args: Parameters<typeof consumirProductoCortesiaInterno>
+) {
+  return consumirProductoCortesiaInterno(...args);
 }

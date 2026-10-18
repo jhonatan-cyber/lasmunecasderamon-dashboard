@@ -1,55 +1,51 @@
-'use client'
+'use client';
 
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
-import { formatCurrencyCLP } from '@/lib/utils/formatters'
+import { MetricCard } from '@/components/shared/MetricCard';
+import { DollarSign, TrendingDown, Wallet } from 'lucide-react';
+import { formatCurrencyCLP } from '@/lib/utils/formatters';
 
 interface PayrollSummaryStatsProps {
   totals: {
-    sueldo: number
-    descuento: number
-    total: number
-  }
-  isLoading?: boolean
+    sueldo: number;
+    descuento: number;
+    total: number;
+  };
+  isLoading?: boolean;
 }
 
-export default function PayrollSummaryStats({ 
-  totals, 
-  isLoading = false 
+export default function PayrollSummaryStats({
+  totals,
+  isLoading = false
 }: PayrollSummaryStatsProps) {
-  if (isLoading) {
-    return (
-      <Card>
-        <CardHeader>
-          <CardTitle>Resumen de Planilla</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <p>Cargando estadísticas...</p>
-        </CardContent>
-      </Card>
-    )
-  }
-
   return (
-    <Card>
-      <CardHeader>
-        <CardTitle>Resumen de Planilla</CardTitle>
-      </CardHeader>
-      <CardContent>
-        <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
-          <div className="flex flex-col">
-            <span className="text-sm font-medium text-muted-foreground">Total Sueldos</span>
-            <span className="text-2xl font-bold">{formatCurrencyCLP(totals.sueldo)}</span>
-          </div>
-          <div className="flex flex-col">
-            <span className="text-sm font-medium text-muted-foreground">Total Descuentos</span>
-            <span className="text-2xl font-bold text-red-600">{formatCurrencyCLP(totals.descuento)}</span>
-          </div>
-          <div className="flex flex-col">
-            <span className="text-sm font-medium text-muted-foreground">Total a Pagar</span>
-            <span className="text-2xl font-bold text-green-600">{formatCurrencyCLP(totals.total)}</span>
-          </div>
-        </div>
-      </CardContent>
-    </Card>
-  )
+    <section className='space-y-3'>
+      <h2 className='text-lg font-semibold'>Resumen de Planilla</h2>
+      <div className='grid grid-cols-1 gap-4 sm:grid-cols-3'>
+        <MetricCard
+          icon={<DollarSign />}
+          badge='Bruto'
+          label='Total Sueldos'
+          value={formatCurrencyCLP(totals.sueldo)}
+          tone='blue'
+          isLoading={isLoading}
+        />
+        <MetricCard
+          icon={<TrendingDown />}
+          badge='Descuentos'
+          label='Total Descuentos'
+          value={formatCurrencyCLP(totals.descuento)}
+          tone='rose'
+          isLoading={isLoading}
+        />
+        <MetricCard
+          icon={<Wallet />}
+          badge='Neto'
+          label='Total a Pagar'
+          value={formatCurrencyCLP(totals.total)}
+          tone='emerald'
+          isLoading={isLoading}
+        />
+      </div>
+    </section>
+  );
 }

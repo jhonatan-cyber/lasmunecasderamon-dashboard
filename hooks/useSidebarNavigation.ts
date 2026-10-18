@@ -31,7 +31,8 @@ import {
   ArrowRightLeft,
   Calendar as CalendarIcon,
   Trophy,
-  ReceiptText
+  ReceiptText,
+  Ticket
 } from 'lucide-react';
 import { useCurrentUser } from '@/hooks/auth/useCurrentUser';
 import { useUserPermissions } from '@/hooks/auth/useUserPermissions';
@@ -146,6 +147,11 @@ const SIDEBAR_SECTIONS: SidebarSection[] = [
         name: 'Colaciones',
         href: '/colaciones',
         icon: ReceiptText
+      },
+      {
+        name: 'Entradas',
+        href: '/entradas',
+        icon: Ticket
       },
       {
         name: 'Categorías',

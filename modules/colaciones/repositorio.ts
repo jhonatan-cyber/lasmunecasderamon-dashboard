@@ -10,6 +10,7 @@ export interface Colacion {
   nick: string | null;
   presentacion_id: string | null;
   nombre_bebida: string | null;
+  ml_bebida: number;
   acompanamiento: 'gaseosa' | 'soda' | null;
   caja_id: string;
   registrado_por: string;
@@ -25,7 +26,7 @@ export async function listarColaciones(
   return query<Colacion[]>(
     `SELECT c.id, c.usuario_id,
             (u.nombre || ' ' || u.apellido) AS trabajador, u.nick,
-            c.presentacion_id, c.nombre_bebida, c.acompanamiento, c.caja_id,
+            c.presentacion_id, c.nombre_bebida, c.ml_bebida, c.acompanamiento, c.caja_id,
             c.registrado_por, (r.nombre || ' ' || r.apellido) AS registrado_por_nombre,
             c.fecha, c.fecha_crea
        FROM colaciones c
@@ -41,6 +42,7 @@ export async function registrarColacion(input: {
   usuarioId: string;
   presentacionId: string;
   nombreBebida: string;
+  mlBebida: number;
   acompanamiento: 'gaseosa' | 'soda' | null;
   registradoPor: string;
 }) {
@@ -48,6 +50,8 @@ export async function registrarColacion(input: {
     throw new ValidationError('Selecciona un trabajador');
   if (!input.presentacionId || !input.nombreBebida?.trim())
     throw new ValidationError('Selecciona una bebida habilitada para colación');
+  if (!Number.isInteger(input.mlBebida) || input.mlBebida < 1 || input.mlBebida > 10000)
+    throw new ValidationError('Indica entre 1 y 10000 ml para la bebida');
   if (input.acompanamiento !== null && !['gaseosa', 'soda'].includes(input.acompanamiento))
     throw new ValidationError('Selecciona un acompañamiento válido');
 
@@ -110,14 +114,15 @@ export async function registrarColacion(input: {
 
     await trx(
       `INSERT INTO colaciones
-        (id, usuario_id, presentacion_id, nombre_bebida, acompanamiento, cantidad, precio, metodo_pago, caja_id, registrado_por, fecha, fecha_crea)
-       VALUES (?, ?, ?, ?, ?, 1, 0, 'efectivo', ?, ?, ?, ?)
+        (id, usuario_id, presentacion_id, nombre_bebida, ml_bebida, acompanamiento, cantidad, precio, metodo_pago, caja_id, registrado_por, fecha, fecha_crea)
+       VALUES (?, ?, ?, ?, ?, ?, 1, 0, 'efectivo', ?, ?, ?, ?)
        ON CONFLICT (usuario_id, caja_id) DO NOTHING`,
       [
         id,
         input.usuarioId,
         input.presentacionId,
         input.nombreBebida.trim(),
+        input.mlBebida,
         input.acompanamiento,
         caja[0].id_caja,
         input.registradoPor,

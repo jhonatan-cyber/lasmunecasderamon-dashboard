@@ -12,6 +12,7 @@ export interface FiltrosParaVenta {
   category_id?: string;
   term?: string;
   solo_colaciones?: boolean;
+  solo_cover?: boolean;
 }
 
 export async function listarParaVenta(filters?: FiltrosParaVenta): Promise<any[]> {
@@ -20,6 +21,12 @@ export async function listarParaVenta(filters?: FiltrosParaVenta): Promise<any[]
     ? `AND EXISTS (
         SELECT 1 FROM jsonb_array_elements(COALESCE(p.opciones_venta::jsonb, '[]'::jsonb)) opcion
         WHERE opcion->>'tipo' = 'botella' AND opcion->>'colacion_habilitada' = 'true'
+      )`
+    : '';
+  const whereCover = filters?.solo_cover
+    ? `AND c.system_key = 'bebidas_analcoholicas' AND EXISTS (
+        SELECT 1 FROM jsonb_array_elements(COALESCE(p.opciones_venta::jsonb, '[]'::jsonb)) opcion
+        WHERE opcion->>'tipo' = 'botella' AND opcion->>'cover_habilitado' = 'true'
       )`
     : '';
   let whereCategoria = '';
@@ -52,7 +59,7 @@ export async function listarParaVenta(filters?: FiltrosParaVenta): Promise<any[]
        SELECT 1 FROM inventario_unidades u WHERE u.presentacion_id = p.id
          AND u.estado = '${ESTADO_UNIDAD_ACTIVA}' AND u.ubicacion = 'bar'
      )
-     ${whereCategoria} ${whereTerm} ${whereColacion}
+     ${whereCategoria} ${whereTerm} ${whereColacion} ${whereCover}
      ORDER BY pr.nombre ASC, p.fecha_crea ASC, p.id ASC`,
     params
   );

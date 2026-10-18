@@ -11,6 +11,7 @@
   ],
   "auditoria": ["audit_logs", "error_logs"],
   "caja": ["cajas", "retiros_caja", "solicitudes_cierre_caja"],
+  "colaciones": ["colaciones"],
   "clientes": [
     "clientes",
     "clientes_prepago_movimientos",
@@ -41,6 +42,7 @@
     "limpieza_movimientos",
     "limpieza_stock"
   ],
+  "entradas": ["entradas_clientes"],
   "operacion": [
     "cuentas",
     "cuentas_usuarios",

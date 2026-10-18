@@ -14,6 +14,7 @@ import { ejecutarEfectosConfirmados } from '@/lib/transaccion/efectos';
 export interface CreateSaleOptions {
   contexto?: ContextoOperacion;
   onAfterCommit?: (task: () => void | Promise<void>) => void;
+  entradaId?: string;
 }
 export class SaleService {
   static async createSale(
@@ -27,7 +28,7 @@ export class SaleService {
     if (options.contexto && !options.onAfterCommit)
       throw new Error('Una transacción ajena requiere onAfterCommit');
     const ejecutar = (contexto: ContextoOperacion) =>
-      registrarVenta(body, createdBy, contexto, aplazar);
+      registrarVenta(body, createdBy, contexto, aplazar, { entradaId: options.entradaId });
     const resultado = options.contexto
       ? await ejecutar(options.contexto)
       : await enUnaUnidad(unidad => unidad.ejecutar(ejecutar));

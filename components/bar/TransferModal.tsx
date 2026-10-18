@@ -18,6 +18,13 @@ import { SavedConfigPanel } from '@/components/bar/transfer/SavedConfigPanel';
 import { SaleTypeEditor } from '@/components/bar/transfer/SaleTypeEditor';
 import { TransferFooter } from '@/components/bar/transfer/TransferFooter';
 import { formatNumber, type TransferModalProps } from '@/components/bar/transfer/transferOptions';
+import { Checkbox } from '@/components/ui/checkbox';
+
+const esBebidaAnalcoholica = (nombre?: string | null) =>
+  (nombre || '')
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .toLowerCase() === 'bebidas analcoholicas';
 
 // API pública intacta: los consumidores (bar/page, transfers/page, SalePrices,
 // BarAnfitrionas y el test) siguen importando desde aquí.
@@ -197,6 +204,22 @@ export function TransferModal({
                   )}
                 </section>
               </div>
+              {esBebidaAnalcoholica(item.categoria_nombre) && (
+                <label className='mt-5 flex cursor-pointer items-start gap-3 rounded-xl border p-4'>
+                  <Checkbox
+                    checked={form.coverHabilitado}
+                    onCheckedChange={checked => form.setCoverHabilitado(checked === true)}
+                    disabled={saving}
+                    aria-label='Habilitar bebida para cover'
+                  />
+                  <span className='space-y-1'>
+                    <span className='block text-sm font-medium'>Habilitar bebida para cover</span>
+                    <span className='block text-xs text-muted-foreground'>
+                      Aparecerá como opción al registrar entradas de clientes.
+                    </span>
+                  </span>
+                </label>
+              )}
             </div>
 
             <div className='shrink-0 border-t bg-background px-5 py-4 sm:px-6'>

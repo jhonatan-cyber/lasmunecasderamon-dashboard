@@ -3,6 +3,8 @@ export interface SaleOption {
   tipo: SaleType;
   /** Esta bebida se puede entregar como colación pagada. */
   colacion_habilitada?: boolean;
+  /** Esta bebida analcohólica puede entregarse como cover de una entrada. */
+  cover_habilitado?: boolean;
   precio: number;
   precio_sin_anfitriona?: number;
   comision: number;

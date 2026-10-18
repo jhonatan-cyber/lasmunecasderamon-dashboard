@@ -25,9 +25,7 @@ export const ServicioPrepagoChoiceModal = memo(function ServicioPrepagoChoiceMod
   onConfirm: (opcion: PrepagoOpcion, clienteId: string | null) => void;
 }) {
   const puedeAmbos = clientesConSaldo.length === 2;
-  const [opcionElegida, setOpcionElegida] = useState<PrepagoOpcion | null>(
-    puedeAmbos ? 'ambos' : null
-  );
+  const [opcionElegida, setOpcionElegida] = useState<PrepagoOpcion | null>(null);
   const [clienteElegido, setClienteElegido] = useState<string | null>(
     clientesConSaldo[0]?.clienteId ?? null
   );
@@ -64,6 +62,7 @@ export const ServicioPrepagoChoiceModal = memo(function ServicioPrepagoChoiceMod
         <p className='text-sm sm:text-base text-gray-500 mb-4 font-medium'>
           Los clientes seleccionados tienen cuenta con saldo. ¿A quién aplicamos el descuento?
         </p>
+        <p className='mb-3 text-xs text-muted-foreground'>Selecciona una opción para continuar.</p>
 
         <div className='space-y-2 mb-4'>
           {clientesConSaldo.map(cliente => {

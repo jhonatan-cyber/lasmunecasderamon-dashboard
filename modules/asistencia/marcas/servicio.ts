@@ -83,6 +83,11 @@ export async function consultarEstadisticasAsistencia() {
  * Ventana horaria de asistencia vigente (`asistencia_hora_inicio`/`fin` con
  * defaults 21–23). La leen el tablero del kiosko y las reglas de marcaje.
  */
-export async function consultarVentana(): Promise<{ startHour: number; endHour: number }> {
+export async function consultarVentana(): Promise<{
+  startHour: number;
+  startMinute?: number;
+  endHour: number;
+  endMinute?: number;
+}> {
   return repositorio.getAttendanceConfigHours();
 }

@@ -31,7 +31,9 @@ interface KioskUser {
 
 interface KioskConfig {
   asistencia_hora_inicio: number;
+  asistencia_minuto_inicio?: number;
   asistencia_hora_fin: number;
+  asistencia_minuto_fin?: number;
   timezone: string;
 }
 
@@ -53,7 +55,9 @@ export default function AsistenciaQrPage() {
   const [codigo, setCodigo] = useState<string | null>(null);
   const [config, setConfig] = useState<KioskConfig>({
     asistencia_hora_inicio: 21,
+    asistencia_minuto_inicio: 0,
     asistencia_hora_fin: 23,
+    asistencia_minuto_fin: 0,
     timezone: 'America/Santiago'
   });
 
@@ -232,8 +236,19 @@ export default function AsistenciaQrPage() {
   };
 
   const isWithinTimeWindow = () => {
-    const hora = getHourInTimezone(config.timezone);
-    return hora >= config.asistencia_hora_inicio && hora < config.asistencia_hora_fin;
+    const formatter = new Intl.DateTimeFormat('en-US', {
+      timeZone: config.timezone,
+      hour: '2-digit',
+      minute: '2-digit',
+      hour12: false
+    });
+    const parts = formatter.formatToParts(new Date());
+    const hora = Number(parts.find(part => part.type === 'hour')?.value ?? 0);
+    const minuto = Number(parts.find(part => part.type === 'minute')?.value ?? 0);
+    const actual = hora * 60 + minuto;
+    const inicio = config.asistencia_hora_inicio * 60 + (config.asistencia_minuto_inicio ?? 0);
+    const fin = config.asistencia_hora_fin * 60 + (config.asistencia_minuto_fin ?? 0);
+    return actual >= inicio && actual < fin;
   };
 
   const filteredUsers = useMemo(

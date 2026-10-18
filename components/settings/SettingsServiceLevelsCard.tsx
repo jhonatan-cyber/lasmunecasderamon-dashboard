@@ -3,20 +3,28 @@ import { FormattedNumberInput as Input } from '@/components/shared/FormattedNumb
 import { Button } from '@/components/ui/button';
 
 import { useState, useEffect } from 'react';
-import { Save, Users, BedDouble, ShoppingCart } from 'lucide-react';
+import { Save, Users, BedDouble, ShoppingCart, GlassWater, Ticket } from 'lucide-react';
 import { CollapsibleCard } from '@/components/ui/collapsible-card';
 import { toast } from 'sonner';
 import logger from '@/lib/utils/logger';
-import { useConfigValue } from '@/hooks/shared/useConfigValue';
+import { refrescarConfiguraciones, useConfigValue } from '@/hooks/shared/useConfigValue';
 import { setServiceLevels } from '@/components/orders/productModalRules';
 
 export function SettingsServiceLevelsCard() {
   const configSimple = useConfigValue('comisiones', 'umbral_simple_hasta', 10000);
   const configHostess = useConfigValue('comisiones', 'umbral_anfitriona_desde', 20000);
   const configHabitacion = useConfigValue('comisiones', 'umbral_habitacion_desde', 30000);
+  const configTragoCortesia = useConfigValue(
+    'comisiones',
+    'monto_base_trago_cortesia_cliente',
+    10000
+  );
+  const configCostoEntrada = useConfigValue('comisiones', 'costo_entrada', 10000);
   const [simpleValue, setSimpleValue] = useState('');
   const [hostessValue, setHostessValue] = useState('');
   const [habitacionValue, setHabitacionValue] = useState('');
+  const [tragoCortesiaValue, setTragoCortesiaValue] = useState('10000');
+  const [costoEntradaValue, setCostoEntradaValue] = useState('10000');
   const [saving, setSaving] = useState(false);
 
   useEffect(() => {
@@ -31,6 +39,14 @@ export function SettingsServiceLevelsCard() {
     setHabitacionValue(String(configHabitacion));
   }, [configHabitacion]);
 
+  useEffect(() => {
+    setTragoCortesiaValue(String(configTragoCortesia));
+  }, [configTragoCortesia]);
+
+  useEffect(() => {
+    setCostoEntradaValue(String(configCostoEntrada));
+  }, [configCostoEntrada]);
+
   // Aplica los valores guardados al runtime en cuanto cargan.
   useEffect(() => {
     setServiceLevels({
@@ -44,6 +60,8 @@ export function SettingsServiceLevelsCard() {
     const simple = Number(simpleValue.trim());
     const hostess = Number(hostessValue.trim());
     const habitacion = Number(habitacionValue.trim());
+    const tragoCortesia = Number(tragoCortesiaValue.trim());
+    const costoEntrada = Number(costoEntradaValue.trim());
     if (!Number.isInteger(simple) || simple < 0) {
       toast.error('La venta simple debe ser un entero mayor o igual a 0');
       return;
@@ -54,6 +72,14 @@ export function SettingsServiceLevelsCard() {
     }
     if (!Number.isInteger(habitacion) || habitacion < 0) {
       toast.error('El umbral de habitación debe ser un entero mayor o igual a 0');
+      return;
+    }
+    if (!Number.isInteger(tragoCortesia) || tragoCortesia < 0) {
+      toast.error('El monto base del trago de cortesía debe ser un entero mayor o igual a 0');
+      return;
+    }
+    if (!Number.isInteger(costoEntrada) || costoEntrada < 0) {
+      toast.error('El costo de entrada debe ser un entero mayor o igual a 0');
       return;
     }
     if (hostess < simple) {
@@ -73,14 +99,17 @@ export function SettingsServiceLevelsCard() {
           configs: [
             { clave: 'umbral_simple_hasta', valor: String(simple) },
             { clave: 'umbral_anfitriona_desde', valor: String(hostess) },
-            { clave: 'umbral_habitacion_desde', valor: String(habitacion) }
+            { clave: 'umbral_habitacion_desde', valor: String(habitacion) },
+            { clave: 'monto_base_trago_cortesia_cliente', valor: String(tragoCortesia) },
+            { clave: 'costo_entrada', valor: String(costoEntrada) }
           ]
         })
       });
       const result = await res.json().catch(() => ({}));
       if (!res.ok || !result.success) throw new Error(result.message || 'Error al guardar');
       setServiceLevels({ simpleHasta: simple, hostessDesde: hostess, habitacionDesde: habitacion });
-      toast.success('Reglas por precio actualizadas');
+      await refrescarConfiguraciones();
+      toast.success('Reglas actualizadas');
     } catch (error) {
       logger.captureException(error, { context: 'SettingsServiceLevelsCard:save' });
       toast.error('Error al guardar');
@@ -101,7 +130,7 @@ export function SettingsServiceLevelsCard() {
       }
       contentClassName='space-y-4'
     >
-      <div className='grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4'>
+      <div className='grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 2xl:grid-cols-5 gap-4'>
         <div className='p-4 bg-neutral-50 dark:bg-neutral-800/30 rounded-xl'>
           <div className='flex items-center gap-3'>
             <ShoppingCart className='h-5 w-5 text-neutral-500 shrink-0' />
@@ -180,6 +209,62 @@ export function SettingsServiceLevelsCard() {
                 min='0'
                 value={habitacionValue}
                 onChange={e => setHabitacionValue(e.target.value)}
+                className='w-28 px-3 py-1.5 bg-white dark:bg-neutral-950 border border-neutral-300 dark:border-neutral-800 rounded-full focus:ring-2 focus:ring-black dark:focus:ring-white focus:border-transparent text-neutral-900 dark:text-white text-sm text-center'
+              />
+            </div>
+          </div>
+        </div>
+
+        <div className='p-4 bg-neutral-50 dark:bg-neutral-800/30 rounded-xl'>
+          <div className='flex items-center gap-3'>
+            <GlassWater className='h-5 w-5 text-neutral-500 shrink-0' />
+            <div className='flex-1'>
+              <label
+                htmlFor='service-trago-cortesia-cliente'
+                className='text-sm font-bold text-neutral-700 dark:text-neutral-300'
+              >
+                Trago de cortesía para cliente
+              </label>
+              <p className='text-xs text-neutral-500 dark:text-neutral-400 mt-0.5'>
+                En Ventas, el cliente puede elegir como cortesía un corto de este precio o menos.
+              </p>
+            </div>
+            <div className='flex items-center gap-2 shrink-0'>
+              <span className='text-sm text-neutral-500'>$</span>
+              <Input
+                id='service-trago-cortesia-cliente'
+                type='number'
+                min='0'
+                value={tragoCortesiaValue}
+                onChange={e => setTragoCortesiaValue(e.target.value)}
+                className='w-28 px-3 py-1.5 bg-white dark:bg-neutral-950 border border-neutral-300 dark:border-neutral-800 rounded-full focus:ring-2 focus:ring-black dark:focus:ring-white focus:border-transparent text-neutral-900 dark:text-white text-sm text-center'
+              />
+            </div>
+          </div>
+        </div>
+
+        <div className='p-4 bg-neutral-50 dark:bg-neutral-800/30 rounded-xl'>
+          <div className='flex items-center gap-3'>
+            <Ticket className='h-5 w-5 text-neutral-500 shrink-0' />
+            <div className='flex-1'>
+              <label
+                htmlFor='service-costo-entrada'
+                className='text-sm font-bold text-neutral-700 dark:text-neutral-300'
+              >
+                Costo de entrada
+              </label>
+              <p className='text-xs text-neutral-500 dark:text-neutral-400 mt-0.5'>
+                Monto predeterminado al registrar una entrada.
+              </p>
+            </div>
+            <div className='flex items-center gap-2 shrink-0'>
+              <span className='text-sm text-neutral-500'>$</span>
+              <Input
+                id='service-costo-entrada'
+                type='number'
+                min='0'
+                value={costoEntradaValue}
+                onChange={e => setCostoEntradaValue(e.target.value)}
                 className='w-28 px-3 py-1.5 bg-white dark:bg-neutral-950 border border-neutral-300 dark:border-neutral-800 rounded-full focus:ring-2 focus:ring-black dark:focus:ring-white focus:border-transparent text-neutral-900 dark:text-white text-sm text-center'
               />
             </div>

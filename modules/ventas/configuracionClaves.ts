@@ -39,6 +39,18 @@ export const CLAVES_VENTAS: Record<string, DefinicionClave> = {
     alias: 'threshold_producto_caro',
     validar: enteroPositivo('umbral_habitacion_desde')
   },
+  monto_base_trago_cortesia_cliente: {
+    categoria: 'comisiones',
+    tipo: 'number',
+    default: 10000,
+    validar: enteroPositivo('monto_base_trago_cortesia_cliente')
+  },
+  costo_entrada: {
+    categoria: 'comisiones',
+    tipo: 'number',
+    default: 10000,
+    validar: enteroPositivo('costo_entrada')
+  },
   split_tarjeta_venta: {
     categoria: 'comisiones',
     tipo: 'number',

@@ -11,6 +11,7 @@ import {
 import { type DashboardTrend, useDashboardComposite } from '@/hooks/stats/useDashboardComposite';
 import { cn } from '@/lib/utils/utils';
 import { formatCurrencyCLP } from '@/lib/utils/formatters';
+import { MetricCard } from '@/components/shared/MetricCard';
 
 function TrendBadge({ trend }: { trend?: DashboardTrend }) {
   if (!trend) return null;
@@ -82,11 +83,8 @@ export default function CriticalMetrics() {
   if (loading) {
     return (
       <div className='grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4 w-full'>
-        {Array.from({ length: 4 }).map((_, index) => (
-          <div
-            key={index}
-            className='h-28 rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-950/20 animate-pulse'
-          />
+        {Array.from({ length: 4 }, (_, index) => (
+          <MetricCard key={index} icon={<Activity />} label='Cargando' value='' isLoading />
         ))}
       </div>
     );
@@ -106,7 +104,7 @@ export default function CriticalMetrics() {
       value: formatCurrencyCLP(openingAmount),
       description: 'Fondo inicial de la caja',
       icon: DollarSign,
-      color: 'amber',
+      color: 'amber' as const,
       trend: undefined,
       alert: null
     },
@@ -114,7 +112,7 @@ export default function CriticalMetrics() {
       label: 'Ventas Totales',
       value: formatCurrencyCLP(sales),
       icon: TrendingUp,
-      color: 'emerald',
+      color: 'emerald' as const,
       trend: insights.comparisons.salesToday,
       alert: pendingOrders > 0 ? { count: pendingOrders, label: 'pendientes' } : null
     },
@@ -122,7 +120,7 @@ export default function CriticalMetrics() {
       label: 'Servicios Realizados',
       value: formatCurrencyCLP(services),
       icon: Receipt,
-      color: 'indigo',
+      color: 'indigo' as const,
       trend: insights.comparisons.servicesToday,
       alert: expiringServices > 0 ? { count: expiringServices, label: 'por vencer' } : null
     },
@@ -131,7 +129,7 @@ export default function CriticalMetrics() {
       description: 'Sin incluir el monto de apertura',
       value: formatCurrencyCLP(movement),
       icon: Activity,
-      color: 'amber',
+      color: 'amber' as const,
       trend: insights.comparisons.movementToday
     }
   ];
@@ -140,65 +138,23 @@ export default function CriticalMetrics() {
     <div className='grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4 w-full'>
       {kpis.map(kpi => {
         const Icon = kpi.icon;
-        const colorClass =
-          kpi.color === 'emerald'
-            ? 'text-emerald-500 bg-emerald-500/10'
-            : kpi.color === 'indigo'
-              ? 'text-indigo-500 bg-indigo-500/10'
-              : 'text-amber-500 bg-amber-500/10';
-
         return (
-          <div
+          <MetricCard
             key={kpi.label}
-            className='group relative overflow-hidden rounded-2xl border border-slate-200/60 dark:border-slate-800/60 bg-white dark:bg-slate-950/40 p-5 shadow-lg shadow-slate-200/40 dark:shadow-none transition-all hover:border-slate-300 dark:hover:border-slate-700'
-          >
-            {}
-            <div
-              className={cn(
-                'absolute -right-4 -top-4 h-24 w-24 rounded-full blur-3xl opacity-5 dark:opacity-10',
-                kpi.color === 'emerald'
-                  ? 'bg-emerald-500'
-                  : kpi.color === 'indigo'
-                    ? 'bg-indigo-500'
-                    : 'bg-amber-500'
-              )}
-            />
-
-            <div className='flex items-start justify-between'>
-              <div className={cn('p-2.5 rounded-xl', colorClass)}>
-                <Icon className='h-5 w-5' />
-              </div>
-              <TrendBadge trend={kpi.trend} />
-            </div>
-
-            <div className='mt-4 space-y-1'>
-              <p className='text-[10px] font-black uppercase tracking-widest text-slate-400 dark:text-slate-500'>
-                {kpi.label}
-              </p>
-              <h3 className='text-2xl font-black tracking-tighter text-slate-900 dark:text-white'>
-                {kpi.value}
-              </h3>
-              {kpi.description && (
-                <p className='text-xs text-slate-500 dark:text-slate-400'>{kpi.description}</p>
-              )}
-            </div>
-
-            {kpi.alert && <CriticalAlert count={kpi.alert.count} label={kpi.alert.label} />}
-
-            {}
-            <div className='absolute bottom-0 left-0 h-1 bg-slate-100 dark:bg-slate-800 w-full overflow-hidden'>
-              <div
-                className={cn(
-                  'h-full w-1/3 rounded-full opacity-50',
-                  kpi.color === 'emerald'
-                    ? 'bg-emerald-500'
-                    : kpi.color === 'indigo'
-                      ? 'bg-indigo-500'
-                      : 'bg-amber-500'
+            icon={<Icon />}
+            badge={<TrendBadge trend={kpi.trend} />}
+            label={kpi.label}
+            value={kpi.value}
+            footer={
+              <>
+                {kpi.description && (
+                  <p className='pt-1 text-xs font-medium opacity-70'>{kpi.description}</p>
                 )}
-              />
-            </div>
-          </div>
+                {kpi.alert && <CriticalAlert count={kpi.alert.count} label={kpi.alert.label} />}
+              </>
+            }
+            tone={kpi.color}
+          />
         );
       })}
     </div>

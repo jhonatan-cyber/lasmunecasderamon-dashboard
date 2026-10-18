@@ -1,7 +1,7 @@
 import 'server-only';
 export { listarLimpieza, operarLimpieza } from './limpieza/servicio';
 
-export { consumirStockBar } from './bar/servicio';
+export { consumirStockBar, consumirCoverBar, consumirProductoCortesiaBar } from './bar/servicio';
 export { revertirStockAnulacion } from './anulaciones/servicio';
 export {
   actualizarProducto,

@@ -8,8 +8,10 @@ import { useUserPermissions } from '@/hooks/auth/useUserPermissions';
 import { CajaStatusBanner } from '@/components/sales/CajaStatusBanner';
 import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
+import { Input } from '@/components/ui/input';
 import { SearchableSelect } from '@/components/bar/ColacionesTab';
 import { cn } from '@/lib/utils/utils';
+import { MetricCard } from '@/components/shared/MetricCard';
 import {
   Table,
   TableBody,
@@ -26,6 +28,7 @@ type Colacion = {
   trabajador: string;
   nick?: string | null;
   nombre_bebida?: string | null;
+  ml_bebida: number;
   acompanamiento?: 'gaseosa' | 'soda' | null;
   registrado_por_nombre: string;
   fecha_crea: string;
@@ -36,6 +39,7 @@ type BebidaColacion = {
   presentacion_id: string;
   presentacion_nombre: string;
   producto_nombre: string;
+  ml_botella?: number | null;
   opciones_venta?: {
     tipo: string;
     colacion_habilitada?: boolean;
@@ -59,6 +63,7 @@ export default function ColacionesPage() {
   const [registros, setRegistros] = useState<Colacion[]>([]);
   const [bebidas, setBebidas] = useState<BebidaColacion[]>([]);
   const [presentacionId, setPresentacionId] = useState('');
+  const [mlBebida, setMlBebida] = useState('');
   const [usuarioId, setUsuarioId] = useState('');
   const [acompanamiento, setAcompanamiento] = useState<'ninguno' | 'gaseosa' | 'soda'>('ninguno');
   const [loading, setLoading] = useState(true);
@@ -124,12 +129,19 @@ export default function ColacionesPage() {
 
   useEffect(() => {
     setAcompanamiento('ninguno');
+    const capacidad = Number(
+      bebidas.find(item => item.presentacion_id === presentacionId)?.ml_botella ?? 0
+    );
+    setMlBebida(capacidad > 0 ? String(capacidad) : '');
   }, [presentacionId]);
 
   const registrar = async (event: FormEvent) => {
     event.preventDefault();
     if (!usuarioId) return toast.error('Selecciona un trabajador');
     if (!presentacionId) return toast.error('Selecciona una bebida habilitada');
+    const ml = Number(mlBebida);
+    if (!Number.isInteger(ml) || ml < 1 || ml > 10000)
+      return toast.error('Indica entre 1 y 10000 ml para la bebida');
     setSaving(true);
     try {
       const response = await fetch('/api/colaciones', {
@@ -138,6 +150,7 @@ export default function ColacionesPage() {
         body: JSON.stringify({
           usuario_id: usuarioId,
           presentacion_id: presentacionId,
+          ml_bebida: ml,
           nombre_bebida:
             `${bebidaSeleccionada?.producto_nombre} ${bebidaSeleccionada?.presentacion_nombre}`.trim(),
           acompanamiento: acompanamiento === 'ninguno' ? null : acompanamiento
@@ -178,33 +191,27 @@ export default function ColacionesPage() {
         aria-label='Resumen de colaciones'
         className='grid gap-3 sm:grid-cols-2 xl:grid-cols-3'
       >
-        <Card>
-          <CardHeader className='flex-row items-center justify-between space-y-0 pb-2'>
-            <CardTitle className='text-sm font-medium'>Atendidos en el turno</CardTitle>
-            <Users className='h-4 w-4 text-muted-foreground' />
-          </CardHeader>
-          <CardContent>
-            <div className='text-2xl font-bold tabular-nums'>{registros.length}</div>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardHeader className='flex-row items-center justify-between space-y-0 pb-2'>
-            <CardTitle className='text-sm font-medium'>Pendientes</CardTitle>
-            <ReceiptText className='h-4 w-4 text-muted-foreground' />
-          </CardHeader>
-          <CardContent>
-            <div className='text-2xl font-bold tabular-nums'>{disponibles}</div>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardHeader className='flex-row items-center justify-between space-y-0 pb-2'>
-            <CardTitle className='text-sm font-medium'>Bebidas habilitadas</CardTitle>
-            <Wine className='h-4 w-4 text-muted-foreground' />
-          </CardHeader>
-          <CardContent>
-            <div className='text-2xl font-bold tabular-nums'>{bebidas.length}</div>
-          </CardContent>
-        </Card>
+        <MetricCard
+          icon={<Users />}
+          badge='Turno'
+          label='Atendidos en el turno'
+          value={registros.length}
+          tone='blue'
+        />
+        <MetricCard
+          icon={<ReceiptText />}
+          badge='Por registrar'
+          label='Pendientes'
+          value={disponibles}
+          tone='amber'
+        />
+        <MetricCard
+          icon={<Wine />}
+          badge='Disponibles'
+          label='Bebidas habilitadas'
+          value={bebidas.length}
+          tone='purple'
+        />
       </section>
 
       {canCreate && isToday && (
@@ -234,6 +241,20 @@ export default function ColacionesPage() {
                     label: `${persona.name} ${persona.lastName}${persona.nick ? ` · ${persona.nick}` : ''}`,
                     keywords: [persona.nick ?? '']
                   }))}
+              />
+            </div>
+            <div className='space-y-2'>
+              <Label htmlFor='colacion-ml'>Ml de bebida analcohólica</Label>
+              <Input
+                id='colacion-ml'
+                type='number'
+                min={1}
+                max={10000}
+                step={1}
+                inputMode='numeric'
+                value={mlBebida}
+                onChange={event => setMlBebida(event.target.value.replace(/\D/g, ''))}
+                placeholder='Ej. 350'
               />
             </div>
             <div className='space-y-2'>
@@ -275,7 +296,7 @@ export default function ColacionesPage() {
           <div className='flex justify-center pt-1'>
             <Button
               type='submit'
-              disabled={saving || !hasOpenCaja || !usuarioId || !presentacionId}
+              disabled={saving || !hasOpenCaja || !usuarioId || !presentacionId || !mlBebida}
               className='w-full rounded-full sm:w-auto'
             >
               <ReceiptText className='mr-2 h-4 w-4' />
@@ -305,6 +326,7 @@ export default function ColacionesPage() {
                 <TableRow>
                   <TableHead>Trabajador</TableHead>
                   <TableHead>Colación</TableHead>
+                  <TableHead>Ml</TableHead>
                   <TableHead>Acompañamiento</TableHead>
                   <TableHead>Registró</TableHead>
                   <TableHead>Hora</TableHead>
@@ -320,6 +342,7 @@ export default function ColacionesPage() {
                       ) : null}
                     </TableCell>
                     <TableCell>{row.nombre_bebida || 'Corto'}</TableCell>
+                    <TableCell className='tabular-nums'>{row.ml_bebida} ml</TableCell>
                     <TableCell className='capitalize'>{row.acompanamiento || '—'}</TableCell>
                     <TableCell>{row.registrado_por_nombre}</TableCell>
                     <TableCell>

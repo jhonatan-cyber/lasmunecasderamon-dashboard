@@ -93,19 +93,19 @@ export function RolesContent({
       <div className='grid grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6 [&>*:last-child:nth-child(odd)]:col-span-2 lg:[&>*:last-child:nth-child(odd)]:col-span-1'>
         <StatsCard
           icon={<Shield className='h-5 w-5 sm:h-6 sm:w-6 text-white' />}
-          bgColor='bg-black'
+          tone='slate'
           title='Total Roles'
           value={totalRoles}
         />
         <StatsCard
           icon={<CheckCircle className='h-5 w-5 sm:h-6 sm:w-6 text-white' />}
-          bgColor='bg-green-600'
+          tone='emerald'
           title='Roles Activos'
           value={activeRoles}
         />
         <StatsCard
           icon={<UsersIcon className='h-5 w-5 sm:h-6 sm:w-6 text-white' />}
-          bgColor='bg-zinc-700'
+          tone='blue'
           title='Usuarios Asignados'
           value={totalUsersAssigned}
         />

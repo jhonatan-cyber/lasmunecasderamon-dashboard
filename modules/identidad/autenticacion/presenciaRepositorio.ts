@@ -23,11 +23,12 @@ export async function listarPersonalConPresencia(): Promise<PersonalPresencia[]>
   try {
     const rows = await query<any[]>(
       `SELECT u.id_usuario, u.nombre, u.apellido, u.nick, u.foto, r.nombre AS rol,
-              CASE WHEN l.usuario_id IS NULL THEN 0 ELSE 1 END AS en_local
+              CASE WHEN EXISTS (
+                SELECT 1 FROM logins l
+                 WHERE l.usuario_id = u.id_usuario AND l.estado = 1 AND l.en_local = 1
+              ) THEN 1 ELSE 0 END AS en_local
          FROM usuarios u
          INNER JOIN roles r ON r.id_rol = u.rol_id
-         LEFT JOIN logins l
-           ON l.usuario_id = u.id_usuario AND l.estado = 1 AND l.en_local = 1
         WHERE u.estado = 1
           AND LOWER(BTRIM(r.nombre)) <> 'administrador'
         ORDER BY r.nombre ASC, u.nombre ASC`

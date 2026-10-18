@@ -167,6 +167,7 @@ export const ROUTE_PERMISSIONS: RoutePermissionMap = {
   '/clients': { module: 'clients', action: 'view' },
   '/products': { module: 'products', action: 'view' },
   '/colaciones': { module: 'products', action: 'view' },
+  '/entradas': { module: 'products', action: 'view' },
   '/inventory': { module: 'products', action: 'view' },
   '/bar': { module: 'products', action: 'view' },
   '/transfers': { module: 'products', action: 'view' },

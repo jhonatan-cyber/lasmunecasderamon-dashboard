@@ -7,6 +7,7 @@ import { useCashRegisterStatus } from '@/hooks/caja/useCashRegisterStatus';
 import { useUserPermissions } from '@/hooks/auth/useUserPermissions';
 import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
+import { Input } from '@/components/ui/input';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import {
   Command,
@@ -31,6 +32,7 @@ type Drink = {
   presentacion_id: string;
   presentacion_nombre: string;
   producto_nombre: string;
+  ml_botella?: number | null;
   opciones_venta?: {
     tipo: string;
     acompanamiento?: { tipo?: 'gaseosa' | 'soda'; unidades: number };
@@ -42,6 +44,7 @@ type RecordRow = {
   trabajador: string;
   nick?: string | null;
   nombre_bebida?: string | null;
+  ml_bebida: number;
   acompanamiento?: 'gaseosa' | 'soda' | null;
   registrado_por_nombre: string;
   fecha_crea: string;
@@ -118,6 +121,7 @@ export function ColacionesTab({ searchTerm = '' }: { searchTerm?: string }) {
   const [records, setRecords] = useState<RecordRow[]>([]);
   const [workerId, setWorkerId] = useState('');
   const [drinkId, setDrinkId] = useState('');
+  const [mlBebida, setMlBebida] = useState('');
   const [accompaniment, setAccompaniment] = useState<'ninguno' | 'gaseosa' | 'soda'>('ninguno');
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -189,11 +193,18 @@ export function ColacionesTab({ searchTerm = '' }: { searchTerm?: string }) {
 
   useEffect(() => {
     setAccompaniment('ninguno');
-  }, [drinkId]);
+    const capacity = Number(
+      drinks.find(drink => drink.presentacion_id === drinkId)?.ml_botella ?? 0
+    );
+    setMlBebida(capacity > 0 ? String(capacity) : '');
+  }, [drinkId, drinks]);
 
   const register = async (event: FormEvent) => {
     event.preventDefault();
     if (!workerId || !selectedDrink) return toast.error('Selecciona trabajador y bebida');
+    const ml = Number(mlBebida);
+    if (!Number.isInteger(ml) || ml < 1 || ml > 10000)
+      return toast.error('Indica entre 1 y 10000 ml para la bebida');
     setSaving(true);
     try {
       const response = await fetch('/api/colaciones', {
@@ -202,6 +213,7 @@ export function ColacionesTab({ searchTerm = '' }: { searchTerm?: string }) {
         body: JSON.stringify({
           usuario_id: workerId,
           presentacion_id: drinkId,
+          ml_bebida: ml,
           nombre_bebida:
             `${selectedDrink.producto_nombre} ${selectedDrink.presentacion_nombre}`.trim(),
           acompanamiento: accompaniment === 'ninguno' ? null : accompaniment
@@ -257,6 +269,21 @@ export function ColacionesTab({ searchTerm = '' }: { searchTerm?: string }) {
             </div>
 
             <div className='space-y-2'>
+              <Label htmlFor='bar-colacion-ml'>Ml de bebida analcohólica</Label>
+              <Input
+                id='bar-colacion-ml'
+                type='number'
+                min={1}
+                max={10000}
+                step={1}
+                inputMode='numeric'
+                value={mlBebida}
+                onChange={event => setMlBebida(event.target.value.replace(/\D/g, ''))}
+                placeholder='Ej. 350'
+              />
+            </div>
+
+            <div className='space-y-2'>
               <Label htmlFor='bar-colacion-bebida'>Bebida</Label>
               <SearchableSelect
                 id='bar-colacion-bebida'
@@ -297,7 +324,7 @@ export function ColacionesTab({ searchTerm = '' }: { searchTerm?: string }) {
               <Button
                 type='submit'
                 className='w-full rounded-full sm:w-auto'
-                disabled={saving || loading || !hasOpenCaja || !workerId || !drinkId}
+                disabled={saving || loading || !hasOpenCaja || !workerId || !drinkId || !mlBebida}
               >
                 {saving ? (
                   <LoaderCircle className='mr-2 size-4 animate-spin' />
@@ -360,6 +387,7 @@ export function ColacionesTab({ searchTerm = '' }: { searchTerm?: string }) {
                 <TableRow>
                   <TableHead>Trabajador</TableHead>
                   <TableHead>Bebida</TableHead>
+                  <TableHead>Ml</TableHead>
                   <TableHead>Acompañamiento</TableHead>
                   <TableHead>Registró</TableHead>
                   <TableHead>Hora</TableHead>
@@ -375,6 +403,7 @@ export function ColacionesTab({ searchTerm = '' }: { searchTerm?: string }) {
                       ) : null}
                     </TableCell>
                     <TableCell>{row.nombre_bebida || 'Corto'}</TableCell>
+                    <TableCell className='tabular-nums'>{row.ml_bebida} ml</TableCell>
                     <TableCell className='capitalize'>{row.acompanamiento || '—'}</TableCell>
                     <TableCell>{row.registrado_por_nombre}</TableCell>
                     <TableCell>

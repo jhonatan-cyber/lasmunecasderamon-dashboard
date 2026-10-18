@@ -39,7 +39,8 @@ export async function procesarEventoBiometrico(
 
   const fechaHora = getNowInBusinessTimezone();
   const fecha = fechaHora.substring(0, 10);
-  const hora = parseInt(fechaHora.substring(11, 13), 10);
+  const minutoActual =
+    Number(fechaHora.substring(11, 13)) * 60 + Number(fechaHora.substring(14, 16));
 
   const yaMarcada = await query<{ id_asistencia: string }[]>(
     'SELECT id_asistencia FROM asistencias WHERE usuario_id = ? AND fecha = ?',
@@ -53,8 +54,12 @@ export async function procesarEventoBiometrico(
     return { resultado: 'duplicado' };
   }
 
-  const { startHour, endHour } = await getAttendanceConfigHours();
-  if (isNaN(hora) || hora < startHour || hora >= endHour) {
+  const { startHour, startMinute = 0, endHour, endMinute = 0 } = await getAttendanceConfigHours();
+  if (
+    isNaN(minutoActual) ||
+    minutoActual < startHour * 60 + startMinute ||
+    minutoActual >= endHour * 60 + endMinute
+  ) {
     await marcarEnLocal(usuario.id_usuario);
     await registrarEvento(device, evento, 'fuera_ventana', usuario.id_usuario);
     void avisarResultadoEnEquipo(device.id, 'fuera_ventana');
@@ -129,7 +134,8 @@ export async function atribuirAsistenciaIdentificada(
 
   const fechaHora = getNowInBusinessTimezone();
   const fecha = fechaHora.substring(0, 10);
-  const hora = parseInt(fechaHora.substring(11, 13), 10);
+  const minutoActual =
+    Number(fechaHora.substring(11, 13)) * 60 + Number(fechaHora.substring(14, 16));
 
   const yaMarcada = await query<{ id_asistencia: string }[]>(
     'SELECT id_asistencia FROM asistencias WHERE usuario_id = ? AND fecha = ?',
@@ -144,8 +150,13 @@ export async function atribuirAsistenciaIdentificada(
     return 'duplicado';
   }
 
-  const { startHour, endHour } = await getAttendanceConfigHours();
-  if (isNaN(hora) || hora < startHour || hora >= endHour) return 'fuera_ventana';
+  const { startHour, startMinute = 0, endHour, endMinute = 0 } = await getAttendanceConfigHours();
+  if (
+    isNaN(minutoActual) ||
+    minutoActual < startHour * 60 + startMinute ||
+    minutoActual >= endHour * 60 + endMinute
+  )
+    return 'fuera_ventana';
 
   await insertarMarcaSiFalta(query, {
     id_asistencia: generateUUID(),

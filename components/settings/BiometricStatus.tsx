@@ -28,7 +28,7 @@ interface EstadoLector {
 interface EstadoBiometrico {
   asistenciasBiometricasHoy: number;
   asistencias: { usuario: string; hora: string; recordId: string | null }[];
-  ventana: { inicio: number; fin: number };
+  ventana: { inicio: number; minutoInicio?: number; fin: number; minutoFin?: number };
   lectores: EstadoLector[];
   pollerActivo: boolean;
 }
@@ -157,7 +157,7 @@ export function BiometricStatus() {
   }
 
   const habilitados = estado.lectores.filter(l => l.habilitado);
-  const ventana = `${pad(estado.ventana.inicio)}:00 → ${pad(estado.ventana.fin)}:00`;
+  const ventana = `${pad(estado.ventana.inicio)}:${pad(estado.ventana.minutoInicio ?? 0)} → ${pad(estado.ventana.fin)}:${pad(estado.ventana.minutoFin ?? 0)}`;
 
   return (
     <Card>

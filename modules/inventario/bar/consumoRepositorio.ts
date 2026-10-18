@@ -10,6 +10,10 @@ import { ESTADO_UNIDAD_ACTIVA, ESTADO_UNIDAD_VENDIDA } from '../estados';
 import { BusinessError } from '@/lib/errors/errors';
 import { resolveBotellaMl, resolveShotMl, resolveShotMlAnfitriona } from '@/lib/business/shotMl';
 import type { ContextoVentaInventario, ConsumoInventarioDetalle, ShotAlert } from '../contracts';
+import type { ContextoOperacion } from '@/lib/transaccion/contrato';
+import { resolverTransaccion } from '@/lib/transaccion/infraestructura';
+import { sincronizarStockTotal } from '../unidades/repositorio';
+import { parseOpcionesVenta } from '../helpers';
 
 interface PedidoPresentacion {
   botellas: number;
@@ -363,4 +367,156 @@ export async function validarStockPedido(
   detalles: ConsumoInventarioDetalle[]
 ) {
   await consumirStock(trx, detalles, { usuarioId: null, fecha: '' }, true);
+}
+
+/** Descuenta del bar una botella analcohólica entregada como cover. */
+export async function consumirCover(
+  presentacionId: string,
+  usuarioId: string,
+  fecha: string,
+  contexto: ContextoOperacion
+): Promise<void> {
+  const trx = resolverTransaccion(contexto);
+  const presentaciones = await trx<{ id: string; producto_id: string }[]>(
+    `SELECT p.id, p.producto_id
+       FROM inventario_presentaciones p
+       JOIN productos pr ON pr.id_producto = p.producto_id
+       JOIN categorias c ON c.id_categoria = pr.categoria_id
+      WHERE p.id = ? AND c.system_key = 'bebidas_analcoholicas' AND EXISTS (
+        SELECT 1 FROM jsonb_array_elements(COALESCE(p.opciones_venta::jsonb, '[]'::jsonb)) opcion
+        WHERE opcion->>'tipo' = 'botella' AND opcion->>'cover_habilitado' = 'true'
+      ) FOR UPDATE OF p`,
+    [presentacionId]
+  );
+  const presentacion = presentaciones[0];
+  if (!presentacion) throw new BusinessError('La bebida no está habilitada para cover');
+  const unidades = await trx<{ id: string }[]>(
+    `SELECT id FROM inventario_unidades
+      WHERE presentacion_id = ? AND estado = '${ESTADO_UNIDAD_ACTIVA}' AND ubicacion = 'bar'
+      ORDER BY fecha_crea ASC, codigo ASC LIMIT 1 FOR UPDATE`,
+    [presentacionId]
+  );
+  if (!unidades.length) throw new BusinessError('No hay stock en el bar para entregar este cover');
+
+  const unidadId = unidades[0].id;
+  await trx(
+    `UPDATE inventario_unidades SET estado = '${ESTADO_UNIDAD_VENDIDA}', ml_restante = 0 WHERE id = ?`,
+    [unidadId]
+  );
+  const movimientoId = generateUUID();
+  await trx(
+    `INSERT INTO inventario_movimientos
+      (id, tipo, estado, producto_id, presentacion_id, cantidad, precio_venta, comision, usuario_id, ml, fecha_crea)
+     VALUES (?, 'cover', 'completada', ?, ?, 1, 0, 0, ?, 0, ?)`,
+    [movimientoId, presentacion.producto_id, presentacionId, usuarioId, fecha]
+  );
+  await trx(
+    `INSERT INTO inventario_movimiento_unidades (movimiento_id, unidad_id, ml_consumido)
+     VALUES (?, ?, 0)`,
+    [movimientoId, unidadId]
+  );
+  await sincronizarStockTotal(trx, presentacion.producto_id);
+}
+
+/** Descuenta una unidad de un producto elegido como cortesía en el registro de entradas. */
+export async function consumirProductoCortesia(
+  presentacionId: string,
+  usuarioId: string,
+  fecha: string,
+  contexto: ContextoOperacion,
+  montoMaximo?: number,
+  acompanamientoPresentacionId?: string | null
+): Promise<void> {
+  const trx = resolverTransaccion(contexto);
+  const configs = await trx<{ valor: string }[]>(
+    "SELECT valor FROM configuraciones WHERE clave = 'monto_base_trago_cortesia_cliente' LIMIT 1"
+  );
+  const valorBase = Number(configs[0]?.valor ?? 10000);
+  const montoBaseConfigurado =
+    Number.isFinite(valorBase) && valorBase >= 0 ? Math.floor(valorBase) : 10000;
+  const montoPermitido =
+    montoMaximo === undefined
+      ? montoBaseConfigurado
+      : Number.isFinite(montoMaximo) && montoMaximo >= 0
+        ? Math.floor(montoMaximo)
+        : -1;
+  const presentaciones = await trx<
+    {
+      id: string;
+      producto_id: string;
+      opciones_venta: unknown;
+    }[]
+  >(
+    `SELECT p.id, p.producto_id, p.opciones_venta
+       FROM inventario_presentaciones p
+      WHERE p.id = ? AND p.precio_venta <= ? FOR UPDATE OF p`,
+    [presentacionId, montoPermitido]
+  );
+  const presentacion = presentaciones[0];
+  if (!presentacion)
+    throw new BusinessError('El precio de la bebida supera el monto de entrada más el adicional');
+  const opciones = parseOpcionesVenta(presentacion.opciones_venta) ?? [];
+  const unidadesIncluidas = Number(
+    opciones.find(opcion => opcion.tipo === 'botella')?.acompanamiento?.unidades ?? 0
+  );
+  if (unidadesIncluidas > 0 && !acompanamientoPresentacionId)
+    throw new BusinessError('Selecciona el acompañamiento incluido en esta bebida');
+  if (unidadesIncluidas <= 0 && acompanamientoPresentacionId)
+    throw new BusinessError('La bebida seleccionada no tiene acompañamiento configurado');
+  if (acompanamientoPresentacionId === presentacionId)
+    throw new BusinessError('La bebida y su acompañamiento deben ser distintos');
+
+  let productoAcompanamientoId: string | null = null;
+  if (acompanamientoPresentacionId) {
+    const acompanamientos = await trx<{ id: string; producto_id: string }[]>(
+      `SELECT p.id, p.producto_id
+         FROM inventario_presentaciones p
+         JOIN productos pr ON pr.id_producto = p.producto_id
+         JOIN categorias c ON c.id_categoria = pr.categoria_id
+        WHERE p.id = ? AND c.system_key = 'bebidas_analcoholicas' AND pr.estado = 1
+        FOR UPDATE OF p`,
+      [acompanamientoPresentacionId]
+    );
+    if (!acompanamientos.length)
+      throw new BusinessError('Selecciona una bebida analcohólica válida como acompañamiento');
+    productoAcompanamientoId = acompanamientos[0].producto_id;
+  }
+
+  const consumirUnidades = async (idPresentacion: string, idProducto: string, cantidad: number) => {
+    const unidades = await trx<{ id: string }[]>(
+      `SELECT id FROM inventario_unidades
+        WHERE presentacion_id = ? AND estado = '${ESTADO_UNIDAD_ACTIVA}' AND ubicacion = 'bar'
+        ORDER BY fecha_crea ASC, codigo ASC LIMIT ? FOR UPDATE`,
+      [idPresentacion, cantidad]
+    );
+    if (unidades.length < cantidad)
+      throw new BusinessError('No hay suficiente stock en el bar para entregar la bebida');
+    for (const unidad of unidades) {
+      await trx(
+        `UPDATE inventario_unidades SET estado = '${ESTADO_UNIDAD_VENDIDA}', ml_restante = 0 WHERE id = ?`,
+        [unidad.id]
+      );
+      const movimientoId = generateUUID();
+      await trx(
+        `INSERT INTO inventario_movimientos
+          (id, tipo, estado, producto_id, presentacion_id, cantidad, precio_venta, comision, usuario_id, ml, fecha_crea)
+         VALUES (?, 'cortesia', 'completada', ?, ?, 1, 0, 0, ?, 0, ?)`,
+        [movimientoId, idProducto, idPresentacion, usuarioId, fecha]
+      );
+      await trx(
+        `INSERT INTO inventario_movimiento_unidades (movimiento_id, unidad_id, ml_consumido)
+         VALUES (?, ?, 0)`,
+        [movimientoId, unidad.id]
+      );
+    }
+    await sincronizarStockTotal(trx, idProducto);
+  };
+
+  await consumirUnidades(presentacionId, presentacion.producto_id, 1);
+  if (acompanamientoPresentacionId && productoAcompanamientoId)
+    await consumirUnidades(
+      acompanamientoPresentacionId,
+      productoAcompanamientoId,
+      unidadesIncluidas
+    );
 }

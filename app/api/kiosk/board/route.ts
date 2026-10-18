@@ -34,7 +34,7 @@ export async function GET() {
   const asistencias = await listarMarcasDelDia(fechaHoy);
   const marcaron = new Map(asistencias.map(row => [String(row.usuario_id), String(row.hora)]));
 
-  const { startHour, endHour } = await consultarVentana();
+  const { startHour, startMinute, endHour, endMinute } = await consultarVentana();
   const timezone = (await obtenerValorConfiguracion('timezone')) || 'America/Santiago';
 
   return NextResponse.json({
@@ -52,7 +52,9 @@ export async function GET() {
       codigo: await getOrCreateAttendanceCode(),
       config: {
         asistencia_hora_inicio: startHour,
+        asistencia_minuto_inicio: startMinute,
         asistencia_hora_fin: endHour,
+        asistencia_minuto_fin: endMinute,
         timezone
       },
       fecha: fechaHoy

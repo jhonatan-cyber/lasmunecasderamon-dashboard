@@ -13,7 +13,6 @@ import { ServicioSelectsRow } from './new/ServicioSelectsRow';
 import { ServicioPaymentRow } from './new/ServicioPaymentRow';
 import { ServicioIncludedProduct } from './new/ServicioIncludedProduct';
 import { ServicioConfirmModal } from './new/ServicioConfirmModal';
-import { ServicioPrepagoChoiceModal, type PrepagoOpcion } from './new/ServicioPrepagoChoiceModal';
 
 /**
  * Página «Datos Servicio» (salida a sala privada). Antes monolítica (603
@@ -58,6 +57,10 @@ export default function NuevoServicioPage() {
           disabledPaymentMethods={[...form.disabledPaymentMethods] as PaymentMethod[]}
           clientes={form.clientes}
           selectedClientData={form.selectedClientData}
+          clientesConSaldo={form.clientesConSaldo}
+          prepagoDestino={form.prepagoDestino}
+          pagosMixtos={form.pagosMixtos}
+          onPrepagoDestinoChange={form.setPrepagoDestino}
         />
 
         <PrivateRoomSummaryCard
@@ -108,21 +111,6 @@ export default function NuevoServicioPage() {
           </Button>
         </div>
       </div>
-
-      {form.showPrepagoChoiceModal && (
-        <ServicioPrepagoChoiceModal
-          clientesConSaldo={form.clientesConSaldo}
-          montoDescontar={form.montoPrepagoBase}
-          onCancel={() => form.setShowPrepagoChoiceModal(false)}
-          onConfirm={(opcion: PrepagoOpcion, clienteId: string | null) => {
-            form.setPrepagoOpcion(opcion);
-            form.setPrepagoTitularId(clienteId);
-            form.setShowPrepagoChoiceModal(false);
-            // Vuelve a pasar por la validación para llegar al modal de confirmación.
-            form.handleSubmit({ opcion, clienteId });
-          }}
-        />
-      )}
 
       {form.showConfirmModal && (
         <ServicioConfirmModal

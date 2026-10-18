@@ -19,6 +19,7 @@ export const POST = withRoute(
     const usuarioId = String(body.usuario_id || '');
     const presentacionId = String(body.presentacion_id || '');
     const nombreBebida = String(body.nombre_bebida || '');
+    const mlBebida = Number(body.ml_bebida);
     const acompanamiento = body.acompanamiento == null ? null : String(body.acompanamiento);
     if (acompanamiento !== null && !['gaseosa', 'soda'].includes(acompanamiento))
       throw new ValidationError('Selecciona un acompañamiento válido');
@@ -26,6 +27,7 @@ export const POST = withRoute(
       usuarioId,
       presentacionId,
       nombreBebida,
+      mlBebida,
       acompanamiento: acompanamiento as 'gaseosa' | 'soda' | null,
       registradoPor: user.id
     });

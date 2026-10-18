@@ -3,6 +3,7 @@ export interface Venta {
   codigo: string;
   cliente_id: string | number | null;
   pedido_id?: string | number | null;
+  entrada_id?: string | null;
   habitacion_id: string | number;
   metodo_pago: 'efectivo' | 'tarjeta' | 'transferencia' | 'prepago' | 'mixto';
   propina: number;

@@ -37,6 +37,8 @@ export function parseOpcionesVenta(
           option.precio_sin_anfitriona = Number(o.precio_sin_anfitriona);
         if (option.tipo === 'botella' && typeof o.colacion_habilitada === 'boolean')
           option.colacion_habilitada = o.colacion_habilitada;
+        if (option.tipo === 'botella' && typeof o.cover_habilitado === 'boolean')
+          option.cover_habilitado = o.cover_habilitado;
         // Precio independiente para anfitrionas; no hereda el precio de cliente.
         const anfitriona = Number(o.precio_anfitriona ?? 0);
         if (o.tipo === 'shot') {

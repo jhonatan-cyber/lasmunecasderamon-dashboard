@@ -3,6 +3,7 @@ import { EmployeeModuleLinks } from '@/components/shared/EmployeeModuleLinks';
 import { ListLoadError } from '@/components/shared/ListLoadError';
 
 import { useCurrentUser } from '@/hooks/auth/useCurrentUser';
+import { MetricCard } from '@/components/shared/MetricCard';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Calendar, DollarSign, Clock, ArrowLeftRight, ShoppingCart } from 'lucide-react';
 import Link from 'next/link';
@@ -24,8 +25,8 @@ export default function DashboardStatsCards() {
   if (loadingSummary && !dashboardData) {
     return (
       <div className='grid gap-4 grid-cols-2 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5'>
-        {Array.from({ length: 5 }).map((_, i) => (
-          <div key={i} className='h-32 bg-gray-200 dark:bg-gray-700 rounded-lg animate-pulse' />
+        {Array.from({ length: 5 }, (_, index) => (
+          <MetricCard key={index} icon={<Calendar />} label='Cargando' value='' isLoading />
         ))}
       </div>
     );
@@ -46,7 +47,7 @@ export default function DashboardStatsCards() {
       icon: Calendar,
       description: 'Total de registros',
       href: '/cajero-asistencias',
-      color: 'text-blue-600'
+      tone: 'blue' as const
     },
     {
       title: 'Anticipos',
@@ -54,7 +55,7 @@ export default function DashboardStatsCards() {
       icon: ArrowLeftRight,
       description: `${dashboardData.anticiposPendientes} pendientes`,
       href: '/cajero-anticipos',
-      color: 'text-orange-600'
+      tone: 'orange' as const
     },
     {
       title: 'Propinas',
@@ -62,7 +63,7 @@ export default function DashboardStatsCards() {
       icon: DollarSign,
       description: `${dashboardData.propinasPendientes} por pagar`,
       href: '/cajero-propinas',
-      color: 'text-green-600'
+      tone: 'emerald' as const
     },
     {
       title: 'Horas Extras',
@@ -70,7 +71,7 @@ export default function DashboardStatsCards() {
       icon: Clock,
       description: `${dashboardData.horasExtrasPendientes} registradas`,
       href: '/cajero-horas-extras',
-      color: 'text-purple-600'
+      tone: 'purple' as const
     },
     {
       title: 'Pedidos',
@@ -78,7 +79,7 @@ export default function DashboardStatsCards() {
       icon: ShoppingCart,
       description: 'Pedidos realizados',
       href: '/orders',
-      color: 'text-red-600'
+      tone: 'rose' as const
     }
   ];
 
@@ -102,19 +103,19 @@ export default function DashboardStatsCards() {
 
       <div className='grid gap-4 grid-cols-2 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5'>
         {stats.map((item, index) => (
-          <Link key={item.title} href={item.href}>
-            <Card
-              className={`hover:shadow-md transition-shadow cursor-pointer border-gray-200 h-full ${index === stats.length - 1 ? 'col-span-2 md:col-span-1' : ''}`}
-            >
-              <CardHeader className='flex flex-row items-center justify-between pb-2 space-y-0'>
-                <CardTitle className='text-sm font-medium'>{item.title}</CardTitle>
-                <item.icon className={`h-4 w-4 ${item.color}`} />
-              </CardHeader>
-              <CardContent>
-                <div className='text-2xl font-bold'>{item.value}</div>
-                <p className='text-xs text-gray-500'>{item.description}</p>
-              </CardContent>
-            </Card>
+          <Link
+            key={item.title}
+            href={item.href}
+            className={index === stats.length - 1 ? 'col-span-2 md:col-span-1' : ''}
+          >
+            <MetricCard
+              icon={<item.icon />}
+              badge={item.description}
+              label={item.title}
+              value={item.value}
+              tone={item.tone}
+              className='h-full'
+            />
           </Link>
         ))}
       </div>

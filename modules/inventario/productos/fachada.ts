@@ -360,6 +360,7 @@ export class ProductService {
     category_id?: string;
     term?: string;
     solo_colaciones?: boolean;
+    solo_cover?: boolean;
   }) {
     return await listarParaVenta(filters);
   }

@@ -29,6 +29,7 @@ import { useRealtimeRefresh } from '@/hooks/realtime/useRealtimeRefresh';
 import type { OrdenReposicion } from '@/modules/inventario/contracts';
 import { toast } from 'sonner';
 import { formatCurrencyCLP } from '@/lib/utils/formatters';
+import { MetricCard } from '@/components/shared/MetricCard';
 import {
   subtotalReposicion,
   totalReposicion,
@@ -133,40 +134,43 @@ export default function ReplenishmentPage() {
           </div>
         </div>
         {!loading && !error && (
-          <div className='grid gap-4 sm:grid-cols-3'>
-            {[
-              {
-                label: 'Presentaciones por reponer',
-                value: rows.length.toLocaleString('es-CL'),
-                Icon: ClipboardList,
-                color: 'bg-amber-500/10 text-amber-600 dark:text-amber-400'
-              },
-              {
-                label: 'Unidades a comprar',
-                value: rows.reduce((sum, row) => sum + row.cantidad, 0).toLocaleString('es-CL'),
-                Icon: PackagePlus,
-                color: 'bg-blue-500/10 text-blue-600 dark:text-blue-400'
-              },
-              {
-                label: 'Importe estimado de compra',
-                value: formatCurrencyCLP(totalReposicion(rows)),
-                Icon: Wallet,
-                color: 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400'
+          <div className='grid gap-4 sm:grid-cols-2 xl:grid-cols-3'>
+            <MetricCard
+              tone='amber'
+              icon={<ClipboardList className='text-amber-600' />}
+              badge='Stock bajo'
+              label='Presentaciones por reponer'
+              value={rows.length.toLocaleString('es-CL')}
+              footer={
+                <p className='pt-1 text-[10px] font-medium uppercase tracking-tighter text-amber-700/60 dark:text-amber-200/60'>
+                  Ítems en la orden
+                </p>
               }
-            ].map(({ label, value, Icon, color }) => (
-              <div
-                key={label}
-                className='rounded-3xl bg-white dark:bg-slate-900/40 p-5 shadow-md flex items-center gap-4'
-              >
-                <div className={`rounded-2xl p-3 ${color}`}>
-                  <Icon className='h-5 w-5' />
-                </div>
-                <div className='min-w-0'>
-                  <p className='text-xs text-muted-foreground'>{label}</p>
-                  <p className='text-2xl font-bold tabular-nums break-words'>{value}</p>
-                </div>
-              </div>
-            ))}
+            />
+            <MetricCard
+              tone='blue'
+              icon={<PackagePlus className='text-blue-600' />}
+              badge='Reposición'
+              label='Unidades a comprar'
+              value={rows.reduce((sum, row) => sum + row.cantidad, 0).toLocaleString('es-CL')}
+              footer={
+                <p className='pt-1 text-[10px] font-medium uppercase tracking-tighter text-blue-700/60 dark:text-blue-200/60'>
+                  Cantidad para completar el stock máximo
+                </p>
+              }
+            />
+            <MetricCard
+              tone='emerald'
+              icon={<Wallet className='text-emerald-600' />}
+              badge='Estimado'
+              label='Importe de compra'
+              value={formatCurrencyCLP(totalReposicion(rows))}
+              footer={
+                <p className='pt-1 text-[10px] font-medium uppercase tracking-tighter text-emerald-700/60 dark:text-emerald-200/60'>
+                  Calculado con precios de referencia
+                </p>
+              }
+            />
           </div>
         )}
         {error && (
@@ -186,11 +190,8 @@ export default function ReplenishmentPage() {
             Comprobando Bar y Bodega…
           </div>
         ) : (
-          <section
-            id='replenishment-order'
-            className='rounded-3xl bg-white dark:bg-slate-900/40 shadow-md overflow-hidden'
-          >
-            <div className='p-5 sm:p-6 flex flex-wrap items-center justify-between gap-3'>
+          <section id='replenishment-order' className='space-y-4'>
+            <div className='flex flex-wrap items-center justify-between gap-3'>
               <div>
                 <h2 className='text-lg font-semibold'>Orden de compra por reposición</h2>
                 <p className='mt-1 text-sm text-muted-foreground'>
@@ -218,10 +219,10 @@ export default function ReplenishmentPage() {
                 </p>
               </div>
             ) : (
-              <div className='overflow-x-auto [&>div:has(>table)]:border-y-0'>
-                <Table className='w-full text-sm'>
+              <div className='overflow-x-auto'>
+                <Table>
                   <TableHeader>
-                    <TableRow>
+                    <TableRow className='hover:bg-transparent'>
                       {[
                         'Producto / presentación',
                         'Bodega',
@@ -235,7 +236,9 @@ export default function ReplenishmentPage() {
                       ].map(title => (
                         <TableHead
                           key={title}
-                          className={`px-4 py-4 ${title === 'Producto / presentación' ? 'text-left min-w-48' : 'text-center'}`}
+                          className={
+                            title === 'Producto / presentación' ? 'min-w-48 text-left' : ''
+                          }
                         >
                           {title}
                         </TableHead>
@@ -244,8 +247,8 @@ export default function ReplenishmentPage() {
                   </TableHeader>
                   <TableBody>
                     {rows.map(row => (
-                      <TableRow key={row.id} className='border-t'>
-                        <TableCell className='px-4 py-4 text-left'>
+                      <TableRow key={row.id}>
+                        <TableCell className='text-left'>
                           <strong>{row.producto}</strong>
                           <br />
                           {row.presentacion}
@@ -263,36 +266,28 @@ export default function ReplenishmentPage() {
                         ].map((value, index) => (
                           <TableCell
                             key={index}
-                            className={`px-4 py-4 tabular-nums text-center ${index === 5 ? 'font-bold text-blue-700 dark:text-blue-400' : index === 2 ? 'font-semibold text-amber-700 dark:text-amber-400' : ''}`}
+                            className={`tabular-nums text-center ${index === 5 ? 'font-bold text-blue-700 dark:text-blue-400' : index === 2 ? 'font-semibold text-amber-700 dark:text-amber-400' : ''}`}
                           >
                             {value.toLocaleString('es-CL')}
                           </TableCell>
                         ))}
-                        <TableCell className='p-3 tabular-nums whitespace-nowrap'>
+                        <TableCell className='tabular-nums whitespace-nowrap'>
                           {formatCurrencyCLP(row.precio_compra)}
                         </TableCell>
-                        <TableCell className='p-3 tabular-nums whitespace-nowrap font-semibold'>
+                        <TableCell className='tabular-nums whitespace-nowrap font-semibold'>
                           {formatCurrencyCLP(subtotalReposicion(row))}
                         </TableCell>
                       </TableRow>
                     ))}
                   </TableBody>
                 </Table>
-                <div className='p-5 sm:p-6'>
+                <div className='pt-4'>
                   <p className='text-right text-xl font-bold'>
                     Total estimado: {formatCurrencyCLP(totalReposicion(rows))}
-                  </p>
-                  <p className='mt-1 text-right text-xs text-muted-foreground'>
-                    Precios de referencia sugeridos a partir del precio de compra registrado en
-                    Bodega. El importe final puede variar según el proveedor.
                   </p>
                 </div>
               </div>
             )}
-            <p className='px-5 sm:px-6 py-4 text-xs text-muted-foreground'>
-              El stock y los precios se verifican antes de imprimir o compartir. Al recibir la
-              mercadería, registra el ingreso en Compras.
-            </p>
           </section>
         )}
       </main>

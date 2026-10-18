@@ -120,14 +120,21 @@ export async function getAttendanceStats() {
   }
 }
 
-export async function getAttendanceConfigHours(): Promise<{ startHour: number; endHour: number }> {
+export async function getAttendanceConfigHours(): Promise<{
+  startHour: number;
+  startMinute?: number;
+  endHour: number;
+  endMinute?: number;
+}> {
   try {
     const configRows = await query<any[]>(
-      "SELECT clave, valor FROM configuraciones WHERE clave IN ('asistencia_hora_inicio', 'asistencia_hora_fin')"
+      "SELECT clave, valor FROM configuraciones WHERE clave IN ('asistencia_hora_inicio', 'asistencia_minuto_inicio', 'asistencia_hora_fin', 'asistencia_minuto_fin')"
     );
 
     let startHour = 21;
+    let startMinute = 0;
     let endHour = 23;
+    let endMinute = 0;
 
     for (const row of configRows) {
       if (row.clave === 'asistencia_hora_inicio') {
@@ -136,11 +143,17 @@ export async function getAttendanceConfigHours(): Promise<{ startHour: number; e
       } else if (row.clave === 'asistencia_hora_fin') {
         const val = parseInt(row.valor, 10);
         if (!isNaN(val)) endHour = val;
+      } else if (row.clave === 'asistencia_minuto_inicio') {
+        const val = parseInt(row.valor, 10);
+        if (!isNaN(val)) startMinute = val;
+      } else if (row.clave === 'asistencia_minuto_fin') {
+        const val = parseInt(row.valor, 10);
+        if (!isNaN(val)) endMinute = val;
       }
     }
-    return { startHour, endHour };
+    return { startHour, startMinute, endHour, endMinute };
   } catch {
-    return { startHour: 21, endHour: 23 };
+    return { startHour: 21, startMinute: 0, endHour: 23, endMinute: 0 };
   }
 }
 
@@ -226,8 +239,9 @@ export async function registerAttendance(
       };
     }
 
-    const { startHour, endHour } = await getAttendanceConfigHours();
-    if (hour < startHour || hour >= endHour) {
+    const { startHour, startMinute = 0, endHour, endMinute = 0 } = await getAttendanceConfigHours();
+    const minutoActual = hour * 60 + Number(nowStr.substring(14, 16));
+    if (minutoActual < startHour * 60 + startMinute || minutoActual >= endHour * 60 + endMinute) {
       await marcarPresenciaLocal(targetUser.id_usuario, ipLimpia);
       return { success: true, tipo: 'login', message: 'Ubicación registrada en el local.' };
     }
