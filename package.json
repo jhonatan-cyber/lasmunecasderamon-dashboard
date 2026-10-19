@@ -29,6 +29,7 @@
     "seed:asistencia": "node seed/seed-asistencia.mjs",
     "seed:categorias": "node seed/seed-categorias.mjs",
     "seed:clientes": "node seed/seed-clientes.mjs",
+    "seed:productos": "node seed/seed-productos.mjs",
     "db:migrate": "node scripts/run-migrations.mjs",
     "db:plan": "node scripts/run-migrations.mjs --plan",
     "db:dev": "node scripts/db-dev.js",

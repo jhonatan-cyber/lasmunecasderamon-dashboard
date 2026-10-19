@@ -412,6 +412,7 @@ const ESCRITORES_TECNICOS = new Set([
   'seed/seed-asistencia.mjs',
   'seed/seed-categorias.mjs',
   'seed/seed-clientes.mjs',
+  'seed/seed-productos.mjs',
   'seed/ci-seed-auth.cjs'
 ]);
 for (const escritura of escrituras) {
