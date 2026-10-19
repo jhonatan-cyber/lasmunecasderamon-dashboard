@@ -65,7 +65,6 @@ export async function conectarSdk(): Promise<NetSdk> {
         Buffer.alloc(4)
       ),
     setDeviceMode,
-    // GetLastError es local al hilo: abre Talk en el mismo hilo que consulta el error.
     startTalkEx: async h => Number(startTalk(h, callbackAudio, 0)),
     talkSendData: (talk, datos, tamano) => {
       const frame = Buffer.alloc(Math.max(800, tamano));

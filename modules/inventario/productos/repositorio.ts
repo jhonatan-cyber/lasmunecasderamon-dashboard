@@ -342,3 +342,16 @@ export async function productosPorIds(
     productoIds
   );
 }
+
+/** Presentaciones de la categoría analcohólicas o cigarrillos: venden sin comisión. */
+export async function esPresentacionSimple(id: string): Promise<boolean> {
+  const rows = await query<{ system_key: string | null }[]>(
+    `SELECT c.system_key
+       FROM inventario_presentaciones p
+      INNER JOIN productos pr ON pr.id_producto = p.producto_id
+      LEFT JOIN categorias c ON c.id_categoria = pr.categoria_id
+      WHERE p.id = ?`,
+    [id]
+  );
+  return ['bebidas_analcoholicas', 'cigarrillos'].includes(rows[0]?.system_key ?? '');
+}

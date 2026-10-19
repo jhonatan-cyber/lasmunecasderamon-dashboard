@@ -106,7 +106,9 @@ export default function CategoryCard({
     return () => controller.abort();
   }, [showDeleteModal, category.id]);
 
-  const protectedCategory = category.system_key === 'bebidas_analcoholicas';
+  const protectedCategory = ['bebidas_analcoholicas', 'cigarrillos'].includes(
+    category.system_key ?? ''
+  );
   const hasAnyAction = !protectedCategory && (canEdit || canDelete || canActivate || canDeactivate);
 
   const slug = category.name
@@ -221,7 +223,7 @@ export default function CategoryCard({
                   </TooltipProvider>
                 ) : null}
 
-                {canDelete && category.system_key !== 'bebidas_analcoholicas' && (
+                {canDelete && !protectedCategory && (
                   <TooltipProvider>
                     <Tooltip>
                       <TooltipTrigger asChild>

@@ -10,11 +10,21 @@ import {
   guardarMac
 } from '@/modules/asistencia/biometrico/ipDiscovery';
 import logger from '@/lib/utils/logger';
+import { recepcionAutomaticaHabilitada } from './recepcionConfig';
 
 const INTERVALO_DEFECTO_MS = 5 * 60_000;
 
-let timer: NodeJS.Timeout | null = null;
-let enVuelo = false;
+interface EstadoVigilanteIp {
+  timer: NodeJS.Timeout | null;
+  enVuelo: boolean;
+  activado: boolean;
+}
+
+const estado = ((globalThis as Record<string, unknown>).__biometricIpWatcher ??= {
+  timer: null,
+  enVuelo: false,
+  activado: true
+}) as EstadoVigilanteIp;
 
 function habilitado(): boolean {
   const flag = (process.env.BIOMETRIC_IP_WATCH ?? '').toLowerCase();
@@ -88,33 +98,43 @@ export async function vigilarUnaVez(): Promise<void> {
 }
 
 export function arrancarVigilanteIp(): void {
-  if (timer || !habilitado()) return;
+  if (estado.timer || !habilitado()) return;
   const arrancar = () => {
-    if (enVuelo) return;
-    enVuelo = true;
-    void vigilarUnaVez()
+    if (estado.enVuelo) return;
+    estado.enVuelo = true;
+    void recepcionAutomaticaHabilitada()
+      .then(habilitada => {
+        estado.activado = habilitada;
+        if (estado.activado) return vigilarUnaVez();
+      })
       .catch(error => {
         logger.warn('[biometric-ipwatch] Ciclo fallido', {
           error: error instanceof Error ? error.message : String(error)
         });
       })
       .finally(() => {
-        enVuelo = false;
+        estado.enVuelo = false;
       });
   };
-  timer = setInterval(arrancar, intervaloVigilanciaIp());
-  timer.unref?.();
+  estado.timer = setInterval(arrancar, intervaloVigilanciaIp());
+  estado.timer.unref?.();
   logger.info('[biometric-ipwatch] Vigilante de IP encendido', {
     intervaloMs: intervaloVigilanciaIp()
   });
 }
 
+/** Cambia la vigilancia en este proceso; la preferencia también se consulta en cada ciclo. */
+export function configurarVigilanteIp(encender: boolean): void {
+  estado.activado = encender;
+  arrancarVigilanteIp();
+}
+
 export function detenerVigilanteIp(): void {
-  if (!timer) return;
-  clearInterval(timer);
-  timer = null;
+  if (!estado.timer) return;
+  clearInterval(estado.timer);
+  estado.timer = null;
 }
 
 export function vigilanteCorriendo(): boolean {
-  return timer !== null;
+  return estado.timer !== null;
 }

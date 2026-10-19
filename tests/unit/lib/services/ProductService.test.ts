@@ -31,7 +31,8 @@ const productHarness = vi.hoisted(() => ({
   crearProducto: vi.fn(),
   actualizarProducto: vi.fn(),
   obtenerNivelesChampagne: vi.fn().mockResolvedValue([]),
-  guardarNivelesChampagne: vi.fn().mockResolvedValue(undefined)
+  guardarNivelesChampagne: vi.fn().mockResolvedValue(undefined),
+  esPresentacionSimple: vi.fn().mockResolvedValue(false)
 }));
 vi.mock('@/modules/inventario', () => productHarness);
 vi.mock('@/modules/inventario/transferencias/servicio', () => productHarness);

@@ -24,6 +24,7 @@ import {
   obtenerProductoPorCodigoONombre,
   obtenerProductoPorId,
   reordenarProductos,
+  esPresentacionSimple,
   type CodigoGenerado,
   type NuevaPresentacionProducto
 } from './repositorio';
@@ -37,9 +38,9 @@ export {
   obtenerNivelesChampagne,
   obtenerProductoPorCodigoONombre,
   obtenerProductoPorId,
-  reordenarProductos
+  reordenarProductos,
+  esPresentacionSimple
 };
-
 /** Alta de producto: devuelve el producto ya creado con sus códigos generados. */
 export async function crearProducto(
   data: Partial<ProductType>,

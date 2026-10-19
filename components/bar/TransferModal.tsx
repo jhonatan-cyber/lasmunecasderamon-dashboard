@@ -17,14 +17,13 @@ import { TransferItemSummary } from '@/components/bar/transfer/TransferItemSumma
 import { SavedConfigPanel } from '@/components/bar/transfer/SavedConfigPanel';
 import { SaleTypeEditor } from '@/components/bar/transfer/SaleTypeEditor';
 import { TransferFooter } from '@/components/bar/transfer/TransferFooter';
-import { formatNumber, type TransferModalProps } from '@/components/bar/transfer/transferOptions';
+import {
+  esBebidaAnalcoholica,
+  esCigarrillos,
+  formatNumber,
+  type TransferModalProps
+} from '@/components/bar/transfer/transferOptions';
 import { Checkbox } from '@/components/ui/checkbox';
-
-const esBebidaAnalcoholica = (nombre?: string | null) =>
-  (nombre || '')
-    .normalize('NFD')
-    .replace(/[\u0300-\u036f]/g, '')
-    .toLowerCase() === 'bebidas analcoholicas';
 
 // API pública intacta: los consumidores (bar/page, transfers/page, SalePrices,
 // BarAnfitrionas y el test) siguen importando desde aquí.
@@ -68,6 +67,12 @@ export function TransferModal({
   const handleTierChange = (index: number, field: 'precio' | 'comision', value: string) =>
     form.setTiers(prev => prev.map((row, i) => (i === index ? { ...row, [field]: value } : row)));
 
+  // Cigarrillos comparten el modo simple (sin anfitrionas ni cortos), pero sin
+  // colación ni cover y con textos «de cigarrillo».
+  const esAnalcoholica = esBebidaAnalcoholica(item?.categoria_nombre);
+  const esCig = esCigarrillos(item?.categoria_nombre);
+  const esVentaSimple = esAnalcoholica || esCig;
+
   return (
     <Dialog open={open} onOpenChange={handleOpenChange}>
       <DialogContent className='flex max-h-[92dvh] w-[calc(100vw_-_2rem)] max-w-6xl flex-col gap-0 overflow-hidden rounded-2xl p-0 sm:max-w-6xl'>
@@ -90,13 +95,23 @@ export function TransferModal({
                       htmlFor='transfer-quantity'
                       className='block text-xs font-bold uppercase tracking-wider text-gray-500 dark:text-gray-400 ml-1'
                     >
-                      Unidades completas a transferir al bar
+                      Unidades a transferir al bar
                     </label>
                     <Input
                       id='transfer-quantity'
                       required
                       value={form.cantidad}
-                      onChange={e => form.setCantidad(formatNumber(e.target.value))}
+                      onChange={e => {
+                        // Sin pasarse del stock disponible en bodega (en vuelo).
+                        const raw = formatNumber(e.target.value);
+                        if (raw !== '' && Number(raw.replace(/\./g, '')) > form.disponible) {
+                          form.setCantidad(
+                            form.disponible > 0 ? formatNumber(String(form.disponible)) : ''
+                          );
+                          return;
+                        }
+                        form.setCantidad(raw);
+                      }}
                       placeholder={`1 - ${form.disponible}`}
                       inputMode='numeric'
                       disabled={saving}
@@ -120,6 +135,10 @@ export function TransferModal({
 
                   {form.usarConfigGuardada ? (
                     <SavedConfigPanel
+                      esCigarrillos={esCig}
+                      mostrarBebidasIncluidas={!esVentaSimple}
+                      mostrarAnfitrionas={!esVentaSimple}
+                      mostrarCortos={!esVentaSimple}
                       maxAnfitrionas={form.maxAnfitrionas}
                       onMaxAnfitrionasChange={form.setMaxAnfitrionas}
                       bottleExtras={
@@ -139,7 +158,6 @@ export function TransferModal({
                         />
                       }
                       colacionHabilitada={form.colacionHabilitada}
-                      onColacionHabilitadaChange={form.setColacionHabilitada}
                       bottleTiers={
                         Number(form.comision.replace(/\./g, '')) > 0 &&
                         Number(form.maxAnfitrionas || 1) >= 2 ? (
@@ -163,13 +181,16 @@ export function TransferModal({
                     />
                   ) : (
                     <SaleTypeEditor
+                      esCigarrillos={esCig}
+                      mostrarBebidasIncluidas={!esVentaSimple}
+                      mostrarAnfitrionas={!esVentaSimple}
+                      mostrarCortos={!esVentaSimple}
                       mlAcompanamientoAnfitriona={form.mlAcompanamientoAnfitriona}
                       onMlAcompanamientoAnfitrionaChange={form.setMlAcompanamientoAnfitriona}
 
                       maxAnfitrionas={form.maxAnfitrionas}
                       onMaxAnfitrionasChange={form.setMaxAnfitrionas}
                       colacionHabilitada={form.colacionHabilitada}
-                      onColacionHabilitadaChange={form.setColacionHabilitada}
                       acompanamientoBotella={form.acompanamientoBotella}
                       unidadesAcompanamiento={form.unidadesAcompanamiento}
                       onAcompanamientoBotellaChange={form.setAcompanamientoBotella}
@@ -202,24 +223,44 @@ export function TransferModal({
                       onTierChange={handleTierChange}
                     />
                   )}
+                  <div className='mt-5 flex flex-wrap items-start gap-x-8 gap-y-3 border-t pt-4'>
+                    {!esCig && (
+                      <label className='flex cursor-pointer items-start gap-2'>
+                        <Checkbox
+                          checked={form.colacionHabilitada}
+                          onCheckedChange={checked => form.setColacionHabilitada(checked === true)}
+                          disabled={saving}
+                          aria-label='Habilitar bebida para colación'
+                        />
+                        <span>
+                          <span className='block text-sm font-medium'>Habilitar colación</span>
+                          <span className='block text-xs text-muted-foreground'>
+                            Aparecerá en el módulo Colaciones para cobrarla al trabajador.
+                          </span>
+                        </span>
+                      </label>
+                    )}
+                    {esAnalcoholica && (
+                      <label className='flex cursor-pointer items-start gap-2'>
+                        <Checkbox
+                          checked={form.coverHabilitado}
+                          onCheckedChange={checked => form.setCoverHabilitado(checked === true)}
+                          disabled={saving}
+                          aria-label='Habilitar bebida para cover de clientes'
+                        />
+                        <span>
+                          <span className='block text-sm font-medium'>
+                            Habilitar cover para clientes
+                          </span>
+                          <span className='block text-xs text-muted-foreground'>
+                            Aparecerá como opción al registrar entradas de clientes.
+                          </span>
+                        </span>
+                      </label>
+                    )}
+                  </div>
                 </section>
               </div>
-              {esBebidaAnalcoholica(item.categoria_nombre) && (
-                <label className='mt-5 flex cursor-pointer items-start gap-3 rounded-xl border p-4'>
-                  <Checkbox
-                    checked={form.coverHabilitado}
-                    onCheckedChange={checked => form.setCoverHabilitado(checked === true)}
-                    disabled={saving}
-                    aria-label='Habilitar bebida para cover'
-                  />
-                  <span className='space-y-1'>
-                    <span className='block text-sm font-medium'>Habilitar bebida para cover</span>
-                    <span className='block text-xs text-muted-foreground'>
-                      Aparecerá como opción al registrar entradas de clientes.
-                    </span>
-                  </span>
-                </label>
-              )}
             </div>
 
             <div className='shrink-0 border-t bg-background px-5 py-4 sm:px-6'>

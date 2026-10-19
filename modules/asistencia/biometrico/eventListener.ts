@@ -16,6 +16,7 @@ import logger from '@/lib/utils/logger';
 import { abrirAvisosSdk } from './eventSdkClient';
 import { crearLecturaPorAviso } from './eventRecordWakeup';
 import { pollEquipo } from './recordPoller';
+import { recepcionAutomaticaHabilitada } from './recepcionConfig';
 
 function esSalida(tipo: string | null): boolean {
   return (tipo || '').trim().toLowerCase() === 'exit';
@@ -31,7 +32,10 @@ interface Listener {
   reintentar?: ReturnType<typeof setTimeout>;
 }
 
-const listeners = new Map<string, Listener>();
+const listeners = ((globalThis as Record<string, unknown>).__biometricListeners ??= new Map<
+  string,
+  Listener
+>()) as Map<string, Listener>;
 const conectados = new Set<string>();
 
 export function listenersActivos(): string[] {
@@ -169,6 +173,10 @@ async function mantenerListener(dispositivoId: string, serial: string, abort: Ab
     }
   );
   while (!abort.signal.aborted) {
+    if (!(await recepcionAutomaticaHabilitada())) {
+      listeners.delete(dispositivoId);
+      return;
+    }
     const filas = await query<
       {
         id: string;

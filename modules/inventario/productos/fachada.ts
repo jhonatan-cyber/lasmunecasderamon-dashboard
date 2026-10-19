@@ -20,6 +20,7 @@ import {
   buscarProductos,
   crearProducto,
   eliminarProducto,
+  esPresentacionSimple,
   guardarNivelesChampagne,
   listarProductos,
   obtenerNivelesChampagne,
@@ -232,9 +233,12 @@ export class ProductService {
 
   static async updatePresentation(id: string, input: unknown): Promise<void> {
     const raw = typeof input === 'string' ? JSON.parse(input) : input;
+    // Analcohólicas y cigarrillos venden sin comisión: su configuración de
+    // opciones no exige comisión de botella con anfitriona.
+    const simple = await esPresentacionSimple(id);
     const parsed = z
       .object({
-        opciones_venta: ConfiguredSaleOptionsSchema.optional(),
+        opciones_venta: (simple ? SaleOptionsSchema : ConfiguredSaleOptionsSchema).optional(),
         stock_minimo: stockLimit.optional(),
         stock_maximo: stockLimit.optional(),
         nombre: z.string().trim().min(1, 'Nombre de presentación requerido').max(100).optional(),

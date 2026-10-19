@@ -204,6 +204,15 @@ export default async function proxy(request: NextRequest) {
     cspRequestHeaders = request.headers;
   }
 
+  // Chrome DevTools consulta este recurso de diagnóstico del navegador. No es una
+  // navegación de la app y no debe terminar en el login por el control de sesión.
+  if (
+    process.env.NODE_ENV === 'development' &&
+    pathname === '/.well-known/appspecific/com.chrome.devtools.json'
+  ) {
+    return NextResponse.next({ request: { headers: cspRequestHeaders } });
+  }
+
   const isProd = process.env.NODE_ENV === 'production' && process.env.SKIP_RATE_LIMIT !== 'true';
   if (isProd) {
     const isCredentialPath =

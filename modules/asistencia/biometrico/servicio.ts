@@ -72,8 +72,8 @@ export async function setRecolector(
   return {
     success: true,
     message: vivo
-      ? 'Recolector encendido: tiempo real activo + red de seguridad cada minuto.'
-      : 'Recolector encendido (sin listener en vivo en este proceso; queda el ciclo de 1 minuto).'
+      ? 'Recolector encendido: tiempo real activo + red de seguridad cada 15 segundos.'
+      : 'Recolector encendido (sin listener en vivo en este proceso; queda el ciclo de 15 segundos).'
   };
 }
 

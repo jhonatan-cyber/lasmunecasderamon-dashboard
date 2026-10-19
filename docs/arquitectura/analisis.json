@@ -1,18 +1,27 @@
 {
   "resumen": {
-    "commit": "c299596f5754147cb265def72262146c99397f1b",
-    "generado": "2026-10-17T10:57:00.615Z",
-    "archivos": 2001,
-    "rutas": 219,
-    "sqlFueraDeRepositorio": 57,
+    "commit": "ea7d158754d869b04a6db9008b15daf0dd73076c",
+    "generado": "2026-10-19T07:58:54.977Z",
+    "archivos": 2018,
+    "rutas": 222,
+    "sqlFueraDeRepositorio": 60,
     "tablasConEscritoresMultiples": 0,
     "ciclos": 0,
-    "procesosPeriodicos": 18,
-    "caches": 21,
+    "procesosPeriodicos": 19,
+    "caches": 22,
     "rutasApiConSqlDirecto": 0,
     "rutasSinWrapper": 20
   },
   "rutas": [
+    {
+      "ruta": "/api/biometric/reception",
+      "archivo": "app/api/biometric/reception/route.ts",
+      "metodos": [],
+      "nivel": "administrator",
+      "audit": true,
+      "moduloDominio": null,
+      "usaDriver": false
+    },
     {
       "ruta": "/api/anfitrionas/:id/status",
       "archivo": "app/api/anfitrionas/[id]/status/route.ts",
@@ -752,6 +761,15 @@
       "usaDriver": false
     },
     {
+      "ruta": "/api/colaciones",
+      "archivo": "app/api/colaciones/route.ts",
+      "metodos": [],
+      "nivel": "products.read",
+      "audit": false,
+      "moduloDominio": null,
+      "usaDriver": false
+    },
+    {
       "ruta": "/api/commissions/:id/details",
       "archivo": "app/api/commissions/[id]/details/route.ts",
       "metodos": [],
@@ -892,6 +910,15 @@
       "metodos": [],
       "nivel": "dashboard.read",
       "audit": true,
+      "moduloDominio": null,
+      "usaDriver": false
+    },
+    {
+      "ruta": "/api/entradas",
+      "archivo": "app/api/entradas/route.ts",
+      "metodos": [],
+      "nivel": "products.read",
+      "audit": false,
       "moduloDominio": null,
       "usaDriver": false
     },
@@ -2065,6 +2092,30 @@
       "escribe": []
     },
     {
+      "archivo": "seed/seed-asistencia.mjs",
+      "capa": "raiz",
+      "modulo": null,
+      "escribe": ["asistencias"]
+    },
+    {
+      "archivo": "seed/seed-categorias.mjs",
+      "capa": "raiz",
+      "modulo": null,
+      "escribe": ["categorias"]
+    },
+    {
+      "archivo": "seed/seed-clientes.mjs",
+      "capa": "raiz",
+      "modulo": null,
+      "escribe": ["clientes"]
+    },
+    {
+      "archivo": "modules/asistencia/biometrico/recepcionConfig.ts",
+      "capa": "modules/aplicacion",
+      "modulo": "asistencia",
+      "escribe": []
+    },
+    {
       "archivo": "modules/asistencia/biometrico/avisosAudio.ts",
       "capa": "modules/aplicacion",
       "modulo": "asistencia",
@@ -2159,12 +2210,6 @@
       "capa": "modules/aplicacion",
       "modulo": "asistencia",
       "escribe": ["kiosk_devices"]
-    },
-    {
-      "archivo": "seed/seed-asistencia.mjs",
-      "capa": "modules/aplicacion",
-      "modulo": "asistencia",
-      "escribe": ["asistencias"]
     },
     {
       "archivo": "modules/auditoria/alertas/servicio.ts",
@@ -2376,6 +2421,16 @@
       "modulo": "caja"
     },
     {
+      "archivo": "modules/colaciones/repositorio.ts",
+      "capa": "modules/infraestructura",
+      "modulo": "colaciones"
+    },
+    {
+      "archivo": "modules/entradas/repositorio.ts",
+      "capa": "modules/infraestructura",
+      "modulo": "entradas"
+    },
+    {
       "archivo": "modules/identidad/autenticacion/consultas.ts",
       "capa": "modules/infraestructura",
       "modulo": "identidad"
@@ -2585,15 +2640,21 @@
     },
     {
       "archivo": "app/asistencia-qr/page.tsx",
-      "linea": 143,
+      "linea": 147,
       "tipo": "setInterval",
       "texto": "const intervalo = setInterval(() => cargarTablero(true), 60_000);"
     },
     {
       "archivo": "app/asistencia-qr/page.tsx",
-      "linea": 150,
+      "linea": 154,
       "tipo": "setInterval",
       "texto": "const intervalo = setInterval(() => {"
+    },
+    {
+      "archivo": "app/entradas/page.tsx",
+      "linea": 341,
+      "tipo": "setInterval",
+      "texto": "const interval = window.setInterval(actualizarFechaHora, 60_000);"
     },
     {
       "archivo": "components/attendance/QrCodeDialog.tsx",
@@ -2675,13 +2736,13 @@
     },
     {
       "archivo": "modules/asistencia/biometrico/ipWatcher.ts",
-      "linea": 105,
+      "linea": 119,
       "tipo": "setInterval",
-      "texto": "timer = setInterval(arrancar, intervaloVigilanciaIp());"
+      "texto": "estado.timer = setInterval(arrancar, intervaloVigilanciaIp());"
     },
     {
       "archivo": "modules/asistencia/biometrico/recordPoller.ts",
-      "linea": 360,
+      "linea": 362,
       "tipo": "setInterval",
       "texto": "estado.timer = setInterval(() => {"
     }
@@ -2765,6 +2826,11 @@
       "texto": "const client = new Redis(url, {"
     },
     {
+      "archivo": "app/entradas/page.tsx",
+      "linea": 0,
+      "texto": "caché en memoria (new Map + cache)"
+    },
+    {
       "archivo": "components/shared/ProductPhoto.tsx",
       "linea": 0,
       "texto": "caché en memoria (new Map + cache)"
@@ -2822,28 +2888,37 @@
   ],
   "ciclos": [],
   "matriz": {
-    "app/ui": {
-      "hooks": 57,
-      "lib/otros": 55,
-      "components": 9,
-      "lib/api": 7,
-      "lib/business": 4,
-      "modules/aplicacion": 3,
-      "raiz": 13
-    },
     "app/api": {
-      "lib/api": 256,
+      "lib/api": 259,
       "lib/identidad": 17,
-      "lib/otros": 69,
+      "lib/otros": 71,
       "lib/business": 32,
       "workflows": 20,
       "modules/aplicacion": 1,
       "lib/database": 3,
       "lib/integrations": 4
     },
+    "modules/aplicacion": {
+      "lib/database": 44,
+      "modules/infraestructura": 23,
+      "lib/otros": 97,
+      "lib/business": 38,
+      "lib/api": 11,
+      "lib/identidad": 3,
+      "raiz": 5
+    },
+    "app/ui": {
+      "hooks": 62,
+      "lib/otros": 57,
+      "components": 9,
+      "lib/api": 7,
+      "lib/business": 5,
+      "modules/aplicacion": 3,
+      "raiz": 14
+    },
     "components": {
-      "lib/otros": 327,
-      "hooks": 144,
+      "lib/otros": 329,
+      "hooks": 146,
       "raiz": 87,
       "lib/api": 3,
       "lib/business": 31,
@@ -2860,7 +2935,7 @@
     "hooks": {
       "lib/otros": 92,
       "raiz": 36,
-      "lib/api": 6,
+      "lib/api": 7,
       "components": 15,
       "lib/business": 9,
       "modules/aplicacion": 2
@@ -2898,22 +2973,14 @@
       "lib/business": 1
     },
     "modules/infraestructura": {
-      "lib/database": 105,
-      "lib/otros": 143,
-      "lib/business": 54,
+      "lib/database": 107,
+      "lib/otros": 150,
+      "lib/business": 56,
       "modules/aplicacion": 24,
       "lib/api": 9,
+      "workflows": 1,
       "lib/identidad": 2,
       "raiz": 2
-    },
-    "modules/aplicacion": {
-      "modules/infraestructura": 23,
-      "lib/otros": 97,
-      "lib/database": 43,
-      "lib/business": 38,
-      "lib/api": 11,
-      "lib/identidad": 3,
-      "raiz": 5
     },
     "scripts": {},
     "workflows": {

@@ -2,7 +2,11 @@
 
 import { useState, useImperativeHandle, type Ref } from 'react';
 import { SaleTypeEditor } from '@/components/bar/transfer/SaleTypeEditor';
-import { ConfiguredSaleOptionsSchema } from '@/lib/business/schemas/sale-options';
+import {
+  ConfiguredSaleOptionsSchema,
+  SaleOptionsSchema
+} from '@/lib/business/schemas/sale-options';
+import { esBebidaAnalcoholica, esCigarrillos } from '@/components/bar/transfer/transferOptions';
 import { preciosCortoAnfitriona } from '@/lib/sales/hostessShortPrices';
 import { useConfigValue } from '@/hooks/shared/useConfigValue';
 import type { SaleOption, SaleType } from '@/types/sale-options';
@@ -19,6 +23,7 @@ export interface SettingsSaleOptionsHandle {
 /** Comparte el editor de transferencia; guardar ajustes no mueve inventario. */
 export function SettingsSaleOptionsEditor({
   options,
+  categoria,
   precio,
   comision,
   mlCliente,
@@ -31,6 +36,8 @@ export function SettingsSaleOptionsEditor({
   ref
 }: {
   options: SaleOption[];
+  /** Nombre de la categoría: analcohólicas y cigarrillos usan el modo simple. */
+  categoria?: string | null;
   precio: string;
   comision: string;
   mlCliente?: number | null;
@@ -45,15 +52,20 @@ export function SettingsSaleOptionsEditor({
 }) {
   const shot = options.find(o => o.tipo === 'shot');
   const bottle = options.find(o => o.tipo === 'botella');
+  // Cigarrillos comparten el modo simple; colación/cover solo en analcohólicas.
+  const esCig = esCigarrillos(categoria);
+  const esAnalcoholica = esBebidaAnalcoholica(categoria);
+  const esVentaSimple = esCig || esAnalcoholica;
   const [colacionHabilitada, setColacionHabilitada] = useState(
     bottle?.colacion_habilitada === true
   );
+  const [coverHabilitado, setCoverHabilitado] = useState(bottle?.cover_habilitado === true);
   const [precioSinAnfitriona, setPrecioSinAnfitriona] = useState(
     bottle?.precio_sin_anfitriona ? String(bottle.precio_sin_anfitriona) : ''
   );
   const hostPrices = shot ? preciosCortoAnfitriona(shot) : [];
   const [tipos, setTipos] = useState<SaleType[]>(
-    options.length ? options.map(o => o.tipo) : ['botella']
+    esVentaSimple ? ['botella'] : options.length ? options.map(o => o.tipo) : ['botella']
   );
   const [precioShot, setPrecioShot] = useState(shot?.precio ? String(shot.precio) : '');
   const [precioHost, setPrecioHost] = useState(hostPrices[0] ? String(hostPrices[0].precio) : '');
@@ -78,19 +90,27 @@ export function SettingsSaleOptionsEditor({
 
   useImperativeHandle(ref, () => ({
     getConfig() {
-      const parsed = ConfiguredSaleOptionsSchema.safeParse(
+      const baseBotella = {
+        tipo: 'botella' as const,
+        precio: numeric(precio),
+        comision: numeric(comision),
+        ...(esCig ? {} : { colacion_habilitada: colacionHabilitada }),
+        ...(esAnalcoholica ? { cover_habilitado: coverHabilitado } : {}),
+        ...(!esVentaSimple
+          ? {
+              ...(precioSinAnfitriona.trim()
+                ? { precio_sin_anfitriona: numeric(precioSinAnfitriona) }
+                : {}),
+              acompanamiento: { unidades: Number(units || 0) }
+            }
+          : bottle?.acompanamiento
+            ? { acompanamiento: bottle.acompanamiento }
+            : {})
+      };
+      const parsed = (esVentaSimple ? SaleOptionsSchema : ConfiguredSaleOptionsSchema).safeParse(
         tipos.map(tipo =>
           tipo === 'botella'
-            ? {
-                tipo,
-                precio: numeric(precio),
-                ...(precioSinAnfitriona.trim()
-                  ? { precio_sin_anfitriona: numeric(precioSinAnfitriona) }
-                  : {}),
-                comision: numeric(comision),
-                colacion_habilitada: colacionHabilitada,
-                acompanamiento: { unidades: Number(units || 0) }
-              }
+            ? baseBotella
             : {
                 tipo,
                 precio: numeric(precioShot),
@@ -139,10 +159,16 @@ export function SettingsSaleOptionsEditor({
       mlAcompanamientoAnfitriona={mlMixHost}
       onMlAcompanamientoAnfitrionaChange={setMlMixHost}
       context='settings'
+      esCigarrillos={esCig}
+      mostrarBebidasIncluidas={!esVentaSimple}
+      mostrarAnfitrionas={!esVentaSimple}
+      mostrarCortos={!esVentaSimple}
+      colacionHabilitada={colacionHabilitada}
+      onColacionHabilitadaChange={esCig ? undefined : setColacionHabilitada}
+      coverHabilitado={coverHabilitado}
+      onCoverHabilitadoChange={esAnalcoholica ? setCoverHabilitado : undefined}
       maxAnfitrionas={maxAnfitrionas}
       onMaxAnfitrionasChange={onMaxAnfitrionasChange}
-      colacionHabilitada={colacionHabilitada}
-      onColacionHabilitadaChange={setColacionHabilitada}
       tipos={tipos}
       onTiposChange={setTipos}
       etiquetaShot='Corto'

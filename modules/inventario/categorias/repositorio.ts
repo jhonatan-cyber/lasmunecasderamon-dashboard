@@ -80,10 +80,11 @@ export class CategoryRepository {
       'SELECT system_key, nombre FROM categorias WHERE id_categoria = ?',
       [id]
     );
-    if (current?.system_key === 'bebidas_analcoholicas' && name !== current.nombre)
-      throw new ConflictError(
-        'La categoría predeterminada Bebidas analcohólicas no se puede renombrar'
-      );
+    if (
+      ['bebidas_analcoholicas', 'cigarrillos'].includes(current?.system_key ?? '') &&
+      name !== current.nombre
+    )
+      throw new ConflictError('Esta categoría predeterminada no se puede renombrar');
     const dup = await query<any[]>(
       'SELECT id_categoria FROM categorias WHERE LOWER(nombre) = LOWER(?) AND id_categoria != ?',
       [name, id]
@@ -136,10 +137,8 @@ export class CategoryRepository {
         'SELECT system_key FROM categorias WHERE id_categoria = ?',
         [id]
       );
-      if (current?.system_key === 'bebidas_analcoholicas')
-        throw new ConflictError(
-          'La categoría predeterminada Bebidas analcohólicas no se puede desactivar'
-        );
+      if (['bebidas_analcoholicas', 'cigarrillos'].includes(current?.system_key ?? ''))
+        throw new ConflictError('Esta categoría predeterminada no se puede desactivar');
     }
     await withTransaction(async trx => {
       await BaseRepository.update(trx, 'categorias', 'id_categoria', id, {
@@ -187,10 +186,8 @@ export class CategoryRepository {
         'SELECT system_key FROM categorias WHERE id_categoria = ? FOR UPDATE',
         [id]
       );
-      if (rows[0]?.system_key === 'bebidas_analcoholicas')
-        throw new ConflictError(
-          'La categoría predeterminada Bebidas analcohólicas no se puede eliminar'
-        );
+      if (['bebidas_analcoholicas', 'cigarrillos'].includes(rows[0]?.system_key ?? ''))
+        throw new ConflictError('Esta categoría predeterminada no se puede eliminar');
       const products = (await trx('SELECT foto FROM productos WHERE categoria_id = ? FOR UPDATE', [
         id
       ])) as { foto: string | null }[];

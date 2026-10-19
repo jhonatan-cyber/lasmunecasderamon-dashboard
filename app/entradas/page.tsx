@@ -1,10 +1,25 @@
 'use client';
 
-import { useCallback, useEffect, useMemo, useState, type FormEvent } from 'react';
+import { Fragment, useCallback, useEffect, useMemo, useState, type FormEvent } from 'react';
+import { ProductPhoto } from '@/components/shared/ProductPhoto';
+import { FormattedNumberInput } from '@/components/shared/FormattedNumberInput';
 import { toast } from 'sonner';
-import { DollarSign, Ticket, UserRoundPlus } from 'lucide-react';
+import {
+  DollarSign,
+  ChevronLeft,
+  ChevronDown,
+  Eye,
+  GlassWater,
+  Minus,
+  Plus,
+  Ticket,
+  UserRoundPlus
+} from 'lucide-react';
 import { CajaStatusBanner } from '@/components/sales/CajaStatusBanner';
 import { MetricCard } from '@/components/shared/MetricCard';
+import { SalesDetailModal } from '@/components/sales';
+import { anfitrionaColors, metodoPagoLabels } from '@/lib/business/salesUtils';
+import type { VentaWithDetails } from '@/types/venta';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -24,6 +39,14 @@ import {
   TableHeader,
   TableRow
 } from '@/components/ui/table';
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle
+} from '@/components/ui/dialog';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { useCashRegisterStatus } from '@/hooks/caja/useCashRegisterStatus';
 import { useUserPermissions } from '@/hooks/auth/useUserPermissions';
 import { formatCurrencyCLP } from '@/lib/utils/formatters';
@@ -31,12 +54,16 @@ import { useConfigValue } from '@/hooks/shared/useConfigValue';
 
 type Entrada = {
   id: string;
+  grupo_registro_id: string | null;
+  cantidad_productos_cortesia: number;
   cliente_nombre: string | null;
   monto_entrada: number;
   monto_bebida_adicional: number;
   metodo_pago: 'efectivo' | 'tarjeta' | 'transferencia';
+  venta_id: string | null;
   bebida_cortesia_presentacion_id: string | null;
   bebida_cortesia: string | null;
+  productos_cortesia?: string | null;
   acompanamiento_bebida: string | null;
   fecha: string;
   hora: string;
@@ -50,6 +77,8 @@ type ProductoCortesia = {
   presentacion_nombre: string;
   precio_venta: number;
   stock_bar: number;
+  categoria_nombre: string | null;
+  foto: string | null;
   opciones_venta?: { tipo: string; acompanamiento?: { unidades: number } }[];
 };
 
@@ -59,6 +88,8 @@ type BebidaAcompanamiento = {
   nombre: string;
   stock_bar: number;
 };
+
+type SeleccionProducto = { presentacionId: string; cantidad: number; acompanamientoId: string };
 
 const unidadesAcompanamiento = (producto?: ProductoCortesia) =>
   Number(
@@ -95,14 +126,24 @@ const formatoFechaHora = ({ fecha, hora }: { fecha: string; hora: string }) => {
   return `${day}/${month}/${year} · ${hora}`;
 };
 
+const imageUrl = (foto?: string | null): string => {
+  if (!foto || foto === 'default.png' || foto === '') return '/api/images/products/default.png';
+  if (foto.startsWith('http')) return foto;
+  return `/api/images/products/${foto}`;
+};
+
 export default function EntradasPage() {
   const [fechaFiltro, setFechaFiltro] = useState(fechaLocal);
   const [fechaHoraEntrada, setFechaHoraEntrada] = useState(fechaHoraLocal);
+  const [cantidadEntradas, setCantidadEntradas] = useState(1);
   const [montoBebida, setMontoBebida] = useState('0');
   const [metodoPago, setMetodoPago] = useState<'efectivo' | 'tarjeta' | 'transferencia'>(
     'efectivo'
   );
   const [bebidaCortesiaId, setBebidaCortesiaId] = useState('');
+  const [productosSeleccionados, setProductosSeleccionados] = useState<SeleccionProducto[]>([]);
+  const [seleccionCover, setSeleccionCover] = useState<Record<string, number>>({});
+  const [categoriaSeleccionada, setCategoriaSeleccionada] = useState<string | null>(null);
   const [bebidaAcompanamientoId, setBebidaAcompanamientoId] = useState('');
   const [productosBar, setProductosBar] = useState<ProductoCortesia[]>([]);
   const [bebidasAcompanamiento, setBebidasAcompanamiento] = useState<BebidaAcompanamiento[]>([]);
@@ -111,17 +152,56 @@ export default function EntradasPage() {
   const [acompanamientosLoading, setAcompanamientosLoading] = useState(false);
   const [acompanamientosError, setAcompanamientosError] = useState('');
   const [entradas, setEntradas] = useState<Entrada[]>([]);
+  const [grupoDetalleId, setGrupoDetalleId] = useState<string | null>(null);
+  const [detalleVenta, setDetalleVenta] = useState<VentaWithDetails | null>(null);
+  const [detalleVentaCargando, setDetalleVentaCargando] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const { hasOpenCaja } = useCashRegisterStatus();
   const { hasPermission } = useUserPermissions();
   const canCreate = hasPermission('products', 'write');
   const costoEntradaPredeterminado = Number(useConfigValue('comisiones', 'costo_entrada', 10000));
-  const montoMaximoBebida = costoEntradaPredeterminado + Number(montoBebida || 0);
-  const productosCortesia = useMemo(
-    () => productosBar.filter(producto => producto.precio_venta <= montoMaximoBebida),
-    [productosBar, montoMaximoBebida]
+  const montoBaseTragoCortesia = Number(
+    useConfigValue('comisiones', 'monto_base_trago_cortesia_cliente', 10000)
   );
+  const adicionalNumero = Number(montoBebida || 0);
+  const montoTotalProductosPermitido =
+    costoEntradaPredeterminado * cantidadEntradas + adicionalNumero;
+  const topeCortesia =
+    adicionalNumero > 0
+      ? costoEntradaPredeterminado * cantidadEntradas + adicionalNumero
+      : montoBaseTragoCortesia;
+  const totalCoversSeleccionados = useMemo(
+    () => Object.values(seleccionCover).reduce((sum, n) => sum + n, 0),
+    [seleccionCover]
+  );
+  const productosCortesia = useMemo(
+    () => productosBar.filter(producto => producto.precio_venta <= topeCortesia),
+    [productosBar, topeCortesia]
+  );
+  const totalProductosSeleccionados = productosSeleccionados.reduce(
+    (sum, item) => sum + item.cantidad,
+    0
+  );
+  const valorProductosSeleccionados = productosSeleccionados.reduce((sum, item) => {
+    const producto = productosBar.find(
+      producto => producto.presentacion_id === item.presentacionId
+    );
+    return sum + (producto?.precio_venta ?? 0) * item.cantidad;
+  }, 0);
+  const maxProductosSeleccionables =
+    adicionalNumero === 0 ? cantidadEntradas : Number.POSITIVE_INFINITY;
+
+  // Agrupa los productos de cortesía por categoría
+  const categoriasCortesia = useMemo(() => {
+    const mapa = new Map<string, ProductoCortesia[]>();
+    for (const producto of productosCortesia) {
+      const cat = producto.categoria_nombre ?? 'Sin categoría';
+      if (!mapa.has(cat)) mapa.set(cat, []);
+      mapa.get(cat)!.push(producto);
+    }
+    return Array.from(mapa.entries()).map(([nombre, productos]) => ({ nombre, productos }));
+  }, [productosCortesia]);
 
   useEffect(() => {
     const controller = new AbortController();
@@ -141,6 +221,8 @@ export default function EntradasPage() {
             presentacion_nombre: String(producto.presentacion_nombre),
             precio_venta: Number(producto.precio_venta),
             stock_bar: Number(producto.stock_bar),
+            categoria_nombre: producto.categoria_nombre ? String(producto.categoria_nombre) : null,
+            foto: producto.foto ? String(producto.foto) : null,
             opciones_venta: Array.isArray(producto.opciones_venta) ? producto.opciones_venta : []
           }))
         );
@@ -161,7 +243,12 @@ export default function EntradasPage() {
   const unidadesAcompanamientoRequeridas = unidadesAcompanamiento(productoSeleccionado);
 
   useEffect(() => {
-    if (!bebidaCortesiaId || unidadesAcompanamientoRequeridas <= 0) {
+    if (
+      !productosSeleccionados.some(item => {
+        const producto = productosBar.find(p => p.presentacion_id === item.presentacionId);
+        return unidadesAcompanamiento(producto) > 0;
+      })
+    ) {
       setBebidaAcompanamientoId('');
       setAcompanamientosError('');
       setAcompanamientosLoading(false);
@@ -195,12 +282,84 @@ export default function EntradasPage() {
         if (!controller.signal.aborted) setAcompanamientosLoading(false);
       });
     return () => controller.abort();
-  }, [bebidaCortesiaId, unidadesAcompanamientoRequeridas]);
+  }, [productosSeleccionados, productosBar]);
 
   useEffect(() => {
     if (bebidaCortesiaId && !productosCortesia.some(p => p.presentacion_id === bebidaCortesiaId))
       setBebidaCortesiaId('');
   }, [bebidaCortesiaId, productosCortesia]);
+
+  useEffect(() => {
+    setProductosSeleccionados(actuales =>
+      actuales.filter(item =>
+        productosCortesia.some(producto => producto.presentacion_id === item.presentacionId)
+      )
+    );
+  }, [productosCortesia]);
+
+  const agregarProducto = (presentacionId: string) => {
+    const producto = productosBar.find(item => item.presentacion_id === presentacionId);
+    if (!producto) return;
+    setProductosSeleccionados(actuales => {
+      const actual = actuales.find(item => item.presentacionId === presentacionId);
+      const cantidadActual = actual?.cantidad ?? 0;
+      const totalActual = actuales.reduce((sum, item) => sum + item.cantidad, 0);
+      if (totalActual >= maxProductosSeleccionables) {
+        toast.error(`Selecciona como máximo ${cantidadEntradas} producto(s), uno por entrada`);
+        return actuales;
+      }
+      if (cantidadActual >= producto.stock_bar) {
+        toast.error(`Stock disponible: ${producto.stock_bar}`);
+        return actuales;
+      }
+      const valorActual = actuales.reduce((sum, item) => {
+        const seleccionado = productosBar.find(
+          producto => producto.presentacion_id === item.presentacionId
+        );
+        return sum + (seleccionado?.precio_venta ?? 0) * item.cantidad;
+      }, 0);
+      if (
+        adicionalNumero > 0 &&
+        valorActual + producto.precio_venta > montoTotalProductosPermitido
+      ) {
+        toast.error(
+          `El total de productos no puede superar ${formatCurrencyCLP(montoTotalProductosPermitido)}`
+        );
+        return actuales;
+      }
+      return actual
+        ? actuales.map(item =>
+            item.presentacionId === presentacionId ? { ...item, cantidad: item.cantidad + 1 } : item
+          )
+        : [...actuales, { presentacionId, cantidad: 1, acompanamientoId: '' }];
+    });
+  };
+
+  const cambiarCantidadProducto = (presentacionId: string, cantidad: number) => {
+    setProductosSeleccionados(actuales => {
+      if (cantidad <= 0) return actuales.filter(item => item.presentacionId !== presentacionId);
+      const otros = actuales.filter(item => item.presentacionId !== presentacionId);
+      const productoActual = productosBar.find(item => item.presentacion_id === presentacionId);
+      const topePorCantidad =
+        maxProductosSeleccionables - otros.reduce((sum, item) => sum + item.cantidad, 0);
+      const valorOtros = otros.reduce((sum, item) => {
+        const producto = productosBar.find(p => p.presentacion_id === item.presentacionId);
+        return sum + (producto?.precio_venta ?? 0) * item.cantidad;
+      }, 0);
+      const topePorMonto =
+        adicionalNumero > 0 && productoActual
+          ? Math.floor((montoTotalProductosPermitido - valorOtros) / productoActual.precio_venta)
+          : Number.POSITIVE_INFINITY;
+      const maximo = Math.min(productoActual?.stock_bar ?? 0, topePorCantidad, topePorMonto);
+      if (cantidad > maximo) {
+        toast.error(`Puedes seleccionar hasta ${Math.max(0, maximo)} unidad(es) más`);
+        return actuales;
+      }
+      return actuales.map(item =>
+        item.presentacionId === presentacionId ? { ...item, cantidad } : item
+      );
+    });
+  };
 
   useEffect(() => {
     const actualizarFechaHora = () => setFechaHoraEntrada(fechaHoraLocal());
@@ -232,13 +391,91 @@ export default function EntradasPage() {
     void cargar();
   }, [cargar]);
 
+  const gruposEntradas = useMemo(() => {
+    const grupos = new Map<
+      string,
+      {
+        id: string;
+        registros: Entrada[];
+        monto_entrada: number;
+        monto_bebida_adicional: number;
+        cantidad_productos_cortesia: number;
+        venta_id: string | null;
+      }
+    >();
+    for (const entrada of entradas) {
+      const id = entrada.grupo_registro_id || entrada.id;
+      let grupo = grupos.get(id);
+      if (!grupo) {
+        grupo = {
+          id,
+          registros: [],
+          monto_entrada: 0,
+          monto_bebida_adicional: 0,
+          cantidad_productos_cortesia: 0,
+          venta_id: null
+        };
+        grupos.set(id, grupo);
+      }
+      grupo.registros.push(entrada);
+      grupo.monto_entrada += Number(entrada.monto_entrada);
+      grupo.monto_bebida_adicional += Number(entrada.monto_bebida_adicional);
+      grupo.cantidad_productos_cortesia += Number(entrada.cantidad_productos_cortesia || 0);
+      if (!grupo.venta_id && entrada.venta_id) grupo.venta_id = entrada.venta_id;
+    }
+    return Array.from(grupos.values());
+  }, [entradas]);
   const total = useMemo(
-    () => entradas.reduce((sum, item) => sum + Number(item.monto_entrada), 0),
-    [entradas]
+    () =>
+      gruposEntradas.reduce(
+        (sum, grupo) => sum + (grupo.monto_bebida_adicional > 0 ? 0 : grupo.monto_entrada),
+        0
+      ),
+    [gruposEntradas]
   );
+  const grupoDetalle = gruposEntradas.find(grupo => grupo.id === grupoDetalleId) ?? null;
+  const abrirDetalle = async (grupo: (typeof gruposEntradas)[number]) => {
+    if (grupo.monto_bebida_adicional > 0 && grupo.venta_id) {
+      setDetalleVentaCargando(grupo.id);
+      try {
+        const response = await fetch(`/api/ventas/${grupo.venta_id}`, { cache: 'no-store' });
+        const result = await response.json();
+        if (!response.ok || !result.success || !result.data)
+          throw new Error(result.message || 'No se pudo cargar el detalle de la venta');
+        setDetalleVenta(result.data);
+      } catch (error) {
+        toast.error(
+          error instanceof Error ? error.message : 'Error al cargar el detalle de la venta'
+        );
+      } finally {
+        setDetalleVentaCargando(null);
+      }
+      return;
+    }
+    setGrupoDetalleId(grupo.id);
+  };
+  const productosDetalle = useMemo(() => {
+    if (!grupoDetalle) return [];
+    const productos = new Map<string, { nombre: string; cantidad: number }>();
+    for (const entrada of grupoDetalle.registros) {
+      const detalle = entrada.productos_cortesia || entrada.bebida_cortesia;
+      if (!detalle) continue;
+      for (const producto of detalle
+        .split(',')
+        .map(item => item.trim())
+        .filter(Boolean)) {
+        const match = producto.match(/^(.*?)\s×\s(\d+)(.*)$/);
+        const nombre = match ? `${match[1]}${match[3]}` : producto;
+        const cantidad = match ? Number(match[2]) : 1;
+        const actual = productos.get(nombre);
+        productos.set(nombre, { nombre, cantidad: cantidad + (actual?.cantidad ?? 0) });
+      }
+    }
+    return Array.from(productos.values());
+  }, [grupoDetalle]);
   const registrar = async (event: FormEvent) => {
     event.preventDefault();
-    const base = costoEntradaPredeterminado;
+    const base = costoEntradaPredeterminado * cantidadEntradas;
     const adicional = Number(montoBebida || 0);
     if (
       !Number.isInteger(base) ||
@@ -254,10 +491,27 @@ export default function EntradasPage() {
       toast.error('Selecciona la bebida para registrar el adicional como venta');
       return;
     }
-    if (unidadesAcompanamientoRequeridas > 0 && !bebidaAcompanamientoId) {
-      toast.error('Selecciona el acompañamiento configurado para esta bebida');
+    if (adicional === 0 && totalProductosSeleccionados !== cantidadEntradas) {
+      toast.error(`Selecciona exactamente ${cantidadEntradas} producto(s), uno por entrada`);
       return;
     }
+    if (adicional > 0 && valorProductosSeleccionados !== base + adicional) {
+      toast.error(`Los productos deben sumar exactamente ${formatCurrencyCLP(base + adicional)}`);
+      return;
+    }
+    const faltaAcompanamiento = productosSeleccionados.some(
+      item =>
+        unidadesAcompanamiento(
+          productosBar.find(producto => producto.presentacion_id === item.presentacionId)
+        ) > 0 && !item.acompanamientoId
+    );
+    if (faltaAcompanamiento) {
+      toast.error('Selecciona el acompañamiento configurado para cada producto');
+      return;
+    }
+    const acompanamientoBebidaAdicional =
+      productosSeleccionados.find(item => item.presentacionId === bebidaCortesiaId)
+        ?.acompanamientoId || bebidaAcompanamientoId;
     setSaving(true);
     try {
       const response = await fetch('/api/entradas', {
@@ -265,10 +519,30 @@ export default function EntradasPage() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           monto_entrada: base,
+          cantidad_entradas: cantidadEntradas,
           monto_bebida_adicional: adicional,
           metodo_pago: metodoPago,
-          bebida_cortesia_presentacion_id: bebidaCortesiaId || null,
-          bebida_acompanamiento_presentacion_id: bebidaAcompanamientoId || null,
+          bebida_cortesia_presentacion_id: adicional > 0 ? bebidaCortesiaId || null : null,
+          bebida_acompanamiento_presentacion_id: acompanamientoBebidaAdicional || null,
+          productos_cortesia:
+            productosSeleccionados.length > 0
+              ? productosSeleccionados
+              : adicional === 0 && bebidaCortesiaId
+                ? [
+                    {
+                      presentacionId: bebidaCortesiaId,
+                      cantidad: cantidadEntradas,
+                      acompanamientoId: bebidaAcompanamientoId
+                    }
+                  ]
+                : [],
+          partes: Array.from({ length: cantidadEntradas }, (_, index) => ({
+            monto_bebida_adicional: index === 0 ? adicional : 0,
+            bebida_cortesia_presentacion_id:
+              index === 0 && adicional > 0 ? bebidaCortesiaId || null : null,
+            bebida_acompanamiento_presentacion_id:
+              index === 0 && adicional > 0 ? acompanamientoBebidaAdicional || null : null
+          })),
           fecha: fechaHoraEntrada.fecha,
           hora: fechaHoraEntrada.hora
         })
@@ -276,9 +550,14 @@ export default function EntradasPage() {
       const result = await response.json();
       if (!response.ok || !result.success)
         throw new Error(result.message || 'No se pudo registrar la entrada');
-      toast.success('Entrada registrada');
+      toast.success(
+        cantidadEntradas > 1 ? `${cantidadEntradas} entradas registradas` : 'Entrada registrada'
+      );
+      setCantidadEntradas(1);
       setMontoBebida('0');
       setBebidaCortesiaId('');
+      setProductosSeleccionados([]);
+      setCategoriaSeleccionada(null);
       setBebidaAcompanamientoId('');
       setFechaHoraEntrada(fechaHoraLocal());
       await cargar();
@@ -309,6 +588,7 @@ export default function EntradasPage() {
           label='Entradas del día'
           value={entradas.length}
           tone='blue'
+          className='hover:scale-100'
         />
         <MetricCard
           icon={<DollarSign />}
@@ -316,6 +596,7 @@ export default function EntradasPage() {
           label='Total de entradas'
           value={formatCurrencyCLP(total)}
           tone='emerald'
+          className='hover:scale-100'
         />
       </section>
 
@@ -330,25 +611,65 @@ export default function EntradasPage() {
           <div className='grid gap-4 sm:grid-cols-2 xl:grid-cols-4'>
             <div className='space-y-2'>
               <Label htmlFor='entrada-monto'>Monto de entrada</Label>
-              <Input
-                id='entrada-monto'
-                type='text'
-                value={formatCurrencyCLP(costoEntradaPredeterminado)}
-                readOnly
-                aria-readonly='true'
-              />
+              <div className='flex items-center gap-1'>
+                <Button
+                  type='button'
+                  variant='outline'
+                  size='icon'
+                  aria-label='Disminuir cantidad de entradas'
+                  onClick={() =>
+                    setCantidadEntradas(prev => {
+                      const siguiente = Math.max(1, prev - 1);
+                      if (adicionalNumero === 0 && totalProductosSeleccionados > siguiente) {
+                        toast.error(
+                          `Quita productos hasta dejar ${siguiente} por entrada antes de reducir la cantidad`
+                        );
+                        return prev;
+                      }
+                      return siguiente;
+                    })
+                  }
+                  disabled={cantidadEntradas <= 1}
+                  className='rounded-full'
+                >
+                  <Minus className='h-4 w-4' />
+                </Button>
+                <Input
+                  id='entrada-monto'
+                  type='text'
+                  value={`${cantidadEntradas} × ${formatCurrencyCLP(costoEntradaPredeterminado)}`}
+                  readOnly
+                  aria-readonly='true'
+                  className='text-center'
+                />
+                <Button
+                  type='button'
+                  variant='outline'
+                  size='icon'
+                  aria-label='Aumentar cantidad de entradas'
+                  onClick={() => setCantidadEntradas(prev => prev + 1)}
+                  className='rounded-full'
+                >
+                  <Plus className='h-4 w-4' />
+                </Button>
+              </div>
+              {cantidadEntradas > 1 && (
+                <p className='text-xs text-muted-foreground'>
+                  Subtotal: {formatCurrencyCLP(costoEntradaPredeterminado * cantidadEntradas)}
+                </p>
+              )}
             </div>
             <div className='space-y-2'>
               <Label htmlFor='entrada-adicional'>Adicional por otra bebida</Label>
-              <Input
+              <FormattedNumberInput
                 id='entrada-adicional'
-                type='number'
                 min={0}
-                step={1}
-                inputMode='numeric'
                 value={montoBebida}
-                onChange={event => setMontoBebida(event.target.value || '0')}
+                onChange={event => setMontoBebida(event.target.value.replace(/^0+(\d)/, '$1'))}
+                onFocus={() => setMontoBebida(prev => (prev === '0' ? '' : prev))}
+                onBlur={() => setMontoBebida(prev => (prev === '' ? '0' : prev))}
                 placeholder='0'
+                currency
               />
             </div>
             <div className='space-y-2'>
@@ -377,86 +698,262 @@ export default function EntradasPage() {
                 aria-readonly='true'
               />
             </div>
-            <div className='space-y-2'>
-              <Label htmlFor='entrada-bebida-cortesia'>Bebida incluida</Label>
-              <SearchableSelect
-                id='entrada-bebida-cortesia'
-                value={bebidaCortesiaId}
-                onChange={value => {
-                  setBebidaCortesiaId(value);
-                  setBebidaAcompanamientoId('');
-                }}
-                placeholder={
-                  productosLoading
-                    ? 'Cargando productos…'
-                    : `Sin bebida (hasta ${formatCurrencyCLP(montoMaximoBebida)})`
-                }
-                searchPlaceholder='Buscar producto…'
-                options={[
-                  { value: '', label: 'Sin bebida' },
-                  ...productosCortesia.map(producto => ({
-                    value: producto.presentacion_id,
-                    label: `${producto.producto_nombre} · ${producto.presentacion_nombre} · ${formatCurrencyCLP(producto.precio_venta)} · ${producto.stock_bar} en bar`,
-                    keywords: [producto.producto_nombre, producto.presentacion_nombre]
-                  }))
-                ]}
-              />
-              {productosError ? (
-                <p className='text-xs text-destructive' role='alert'>
-                  {productosError}
-                </p>
-              ) : (
-                <p className='text-xs text-muted-foreground'>
-                  Se muestran bebidas con precio de venta hasta{' '}
-                  {formatCurrencyCLP(montoMaximoBebida)} (entrada + adicional).
-                </p>
+          </div>
+
+          {/* Sección de covers de entradas — ancho completo */}
+          <div className='space-y-3'>
+            <div className='flex items-center justify-between'>
+              <Label>Covers de entradas</Label>
+              {categoriaSeleccionada && (
+                <Button
+                  type='button'
+                  variant='ghost'
+                  size='sm'
+                  onClick={() => {
+                    setCategoriaSeleccionada(null);
+                    setBebidaCortesiaId('');
+                  }}
+                  className='flex items-center gap-1'
+                >
+                  <ChevronLeft className='h-4 w-4' />
+                  Volver
+                </Button>
               )}
             </div>
-            {unidadesAcompanamientoRequeridas > 0 && (
-              <div className='space-y-2'>
-                <Label htmlFor='entrada-bebida-acompanamiento'>Acompañamiento</Label>
-                <SearchableSelect
-                  id='entrada-bebida-acompanamiento'
-                  value={bebidaAcompanamientoId}
-                  onChange={setBebidaAcompanamientoId}
-                  placeholder={
-                    acompanamientosLoading
-                      ? 'Cargando acompañamientos…'
-                      : 'Seleccionar bebida acompañante'
-                  }
-                  searchPlaceholder='Buscar bebida…'
-                  options={[
-                    { value: '', label: 'Seleccionar acompañamiento' },
-                    ...bebidasAcompanamiento
-                      .filter(
-                        bebida =>
-                          bebida.id !== bebidaCortesiaId &&
-                          bebida.stock_bar >= unidadesAcompanamientoRequeridas
+
+            {productosLoading ? (
+              <p className='text-sm text-muted-foreground'>Cargando productos…</p>
+            ) : productosError ? (
+              <p className='text-xs text-destructive' role='alert'>
+                {productosError}
+              </p>
+            ) : categoriasCortesia.length === 0 ? (
+              <p className='text-sm text-muted-foreground'>
+                No hay productos disponibles hasta {formatCurrencyCLP(montoBaseTragoCortesia)}.
+              </p>
+            ) : !categoriaSeleccionada ? (
+              /* Vista de categorías */
+              <div className='grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4'>
+                {/* Cards de categoría */}
+                {categoriasCortesia.map(cat => (
+                  <Button
+                    key={cat.nombre}
+                    type='button'
+                    variant='unstyled'
+                    onClick={() => {
+                      setCategoriaSeleccionada(cat.nombre);
+                      setBebidaAcompanamientoId('');
+                    }}
+                    className={`flex flex-col items-center justify-center gap-2 rounded-xl border-2 border-dashed p-6 transition-colors hover:bg-muted ${
+                      productosSeleccionados.some(item =>
+                        categoriasCortesia
+                          .find(c => c.nombre === cat.nombre)
+                          ?.productos.some(p => p.presentacion_id === item.presentacionId)
                       )
-                      .map(bebida => ({
-                        value: bebida.id,
-                        label: `${bebida.producto_nombre} · ${bebida.nombre} · ${bebida.stock_bar} en bar`,
-                        keywords: [bebida.producto_nombre, bebida.nombre]
-                      }))
-                  ]}
-                />
-                {acompanamientosError ? (
-                  <p className='text-xs text-destructive' role='alert'>
-                    {acompanamientosError}
-                  </p>
-                ) : (
-                  <p className='text-xs text-muted-foreground'>
-                    Esta bebida incluye {unidadesAcompanamientoRequeridas} unidad(es) de
-                    acompañamiento.
-                  </p>
-                )}
+                        ? 'border-primary bg-primary/5 text-primary'
+                        : 'border-border text-foreground'
+                    }`}
+                  >
+                    <GlassWater className='h-8 w-8 opacity-60' />
+                    <span className='text-sm font-medium'>{cat.nombre}</span>
+                    <span className='text-xs text-muted-foreground'>
+                      {cat.productos.length} opción{cat.productos.length !== 1 ? 'es' : ''}
+                    </span>
+                  </Button>
+                ))}
+              </div>
+            ) : (
+              /* Vista de productos de la categoría */
+              <div className='grid grid-cols-3 gap-2 sm:grid-cols-4 lg:grid-cols-6 xl:grid-cols-8'>
+                {(
+                  categoriasCortesia.find(c => c.nombre === categoriaSeleccionada)?.productos ?? []
+                ).map(producto => (
+                  <Button
+                    key={producto.presentacion_id}
+                    type='button'
+                    variant='unstyled'
+                    disabled={producto.stock_bar <= 0}
+                    onClick={() => {
+                      setBebidaCortesiaId(producto.presentacion_id);
+                      agregarProducto(producto.presentacion_id);
+                    }}
+                    className={`flex flex-col overflow-hidden rounded-xl border-2 border-dashed transition-colors duration-200 disabled:cursor-not-allowed disabled:opacity-40 ${
+                      productosSeleccionados.some(
+                        item => item.presentacionId === producto.presentacion_id
+                      )
+                        ? 'border-primary bg-primary/5'
+                        : 'border-gray-200 bg-gray-50 hover:border-gray-400'
+                    }`}
+                  >
+                    {/* Foto — mismo estilo que inventario */}
+                    <div
+                      data-photo-surface
+                      className='relative h-20 w-full overflow-hidden bg-white dark:bg-white/[0.04]'
+                    >
+                      <ProductPhoto
+                        src={imageUrl(producto.foto)}
+                        alt={`${producto.producto_nombre} ${producto.presentacion_nombre}`}
+                        fill
+                        className='object-contain p-1.5'
+                      />
+                    </div>
+                    {/* Info */}
+                    <div className='flex flex-col gap-0.5 p-2 text-center'>
+                      <p className='truncate text-xs font-semibold leading-snug text-gray-700 dark:text-neutral-200'>
+                        {producto.producto_nombre}
+                      </p>
+                      <p className='truncate text-xs text-muted-foreground'>
+                        {producto.presentacion_nombre}
+                      </p>
+                      <p className='text-xs font-medium tabular-nums text-primary'>
+                        {formatCurrencyCLP(producto.precio_venta)}
+                      </p>
+                    </div>
+                  </Button>
+                ))}
               </div>
             )}
+
+            <p className='text-xs text-muted-foreground'>
+              Bebidas hasta {formatCurrencyCLP(topeCortesia)} incluidas en el cover
+              {adicionalNumero === 0 && (
+                <span className='ml-1'>
+                  · Selecciona un producto por entrada ({totalProductosSeleccionados}/
+                  {cantidadEntradas})
+                </span>
+              )}
+              {adicionalNumero > 0 && (
+                <span className='ml-1'>
+                  ({cantidadEntradas} × {formatCurrencyCLP(costoEntradaPredeterminado)} +{' '}
+                  {formatCurrencyCLP(adicionalNumero)} adicional)
+                </span>
+              )}
+              .
+            </p>
           </div>
+
+          {productosSeleccionados.length > 0 && (
+            <div className='space-y-3 rounded-xl border p-3'>
+              <div className='flex items-center justify-between gap-2'>
+                <Label>Productos seleccionados ({totalProductosSeleccionados})</Label>
+                <Button
+                  type='button'
+                  variant='ghost'
+                  size='sm'
+                  onClick={() => setProductosSeleccionados([])}
+                >
+                  Limpiar
+                </Button>
+              </div>
+              {adicionalNumero > 0 && (
+                <p className='text-xs text-muted-foreground'>
+                  Total de productos: {formatCurrencyCLP(valorProductosSeleccionados)} /{' '}
+                  {formatCurrencyCLP(montoTotalProductosPermitido)} requeridos
+                </p>
+              )}
+              {productosSeleccionados.map(item => {
+                const producto = productosBar.find(p => p.presentacion_id === item.presentacionId);
+                if (!producto) return null;
+                const unidades = unidadesAcompanamiento(producto);
+                return (
+                  <div
+                    key={item.presentacionId}
+                    className='flex flex-wrap items-center gap-3 border-t pt-3'
+                  >
+                    <div className='min-w-36 flex-1'>
+                      <p className='text-sm font-medium'>
+                        {producto.producto_nombre} · {producto.presentacion_nombre}
+                      </p>
+                      <p className='text-xs text-muted-foreground'>
+                        {formatCurrencyCLP(producto.precio_venta)} · {producto.stock_bar} en bar
+                      </p>
+                    </div>
+                    <div className='flex items-center gap-2'>
+                      <Button
+                        type='button'
+                        variant='outline'
+                        size='icon'
+                        aria-label={`Quitar una unidad de ${producto.producto_nombre}`}
+                        onClick={() =>
+                          cambiarCantidadProducto(item.presentacionId, item.cantidad - 1)
+                        }
+                      >
+                        <Minus className='h-4 w-4' />
+                      </Button>
+                      <span className='w-6 text-center tabular-nums'>{item.cantidad}</span>
+                      <Button
+                        type='button'
+                        variant='outline'
+                        size='icon'
+                        aria-label={`Agregar una unidad de ${producto.producto_nombre}`}
+                        disabled={
+                          item.cantidad >= producto.stock_bar ||
+                          totalProductosSeleccionados >= maxProductosSeleccionables
+                        }
+                        onClick={() =>
+                          cambiarCantidadProducto(item.presentacionId, item.cantidad + 1)
+                        }
+                      >
+                        <Plus className='h-4 w-4' />
+                      </Button>
+                    </div>
+                    {unidades > 0 && (
+                      <div className='w-full sm:w-72'>
+                        <Label htmlFor={`acompanamiento-${item.presentacionId}`}>
+                          Acompañamiento ({unidades} unidad{unidades === 1 ? '' : 'es'} por
+                          producto)
+                        </Label>
+                        <SearchableSelect
+                          id={`acompanamiento-${item.presentacionId}`}
+                          value={item.acompanamientoId}
+                          onChange={value =>
+                            setProductosSeleccionados(actuales =>
+                              actuales.map(actual =>
+                                actual.presentacionId === item.presentacionId
+                                  ? { ...actual, acompanamientoId: value }
+                                  : actual
+                              )
+                            )
+                          }
+                          placeholder={
+                            acompanamientosLoading
+                              ? 'Cargando acompañamientos…'
+                              : 'Seleccionar bebida acompañante'
+                          }
+                          searchPlaceholder='Buscar bebida…'
+                          options={[
+                            { value: '', label: 'Seleccionar acompañamiento' },
+                            ...bebidasAcompanamiento
+                              .filter(
+                                bebida =>
+                                  bebida.id !== item.presentacionId &&
+                                  bebida.stock_bar >= unidades * item.cantidad
+                              )
+                              .map(bebida => ({
+                                value: bebida.id,
+                                label: `${bebida.producto_nombre} · ${bebida.nombre} · ${bebida.stock_bar} en bar`,
+                                keywords: [bebida.producto_nombre, bebida.nombre]
+                              }))
+                          ]}
+                        />
+                        {acompanamientosError && (
+                          <p className='mt-1 text-xs text-destructive' role='alert'>
+                            {acompanamientosError}
+                          </p>
+                        )}
+                      </div>
+                    )}
+                  </div>
+                );
+              })}
+            </div>
+          )}
           <p className='text-right text-sm text-muted-foreground'>
             Total a cobrar:{' '}
             <span className='font-semibold text-foreground'>
-              {formatCurrencyCLP(costoEntradaPredeterminado + Number(montoBebida || 0))}
+              {formatCurrencyCLP(
+                costoEntradaPredeterminado * cantidadEntradas + Number(montoBebida || 0)
+              )}
             </span>
           </p>
           <div className='flex justify-center pt-1'>
@@ -466,14 +963,18 @@ export default function EntradasPage() {
               className='w-full rounded-full sm:w-auto'
             >
               <UserRoundPlus className='mr-2 h-4 w-4' />
-              {saving ? 'Registrando…' : 'Registrar entrada'}
+              {saving
+                ? 'Registrando…'
+                : cantidadEntradas > 1
+                  ? `Registrar ${cantidadEntradas} entradas`
+                  : 'Registrar entrada'}
             </Button>
           </div>
         </form>
       )}
 
-      <section className='overflow-hidden rounded-2xl border bg-card shadow-xs'>
-        <div className='flex flex-wrap items-center justify-between gap-3 border-b p-4'>
+      <section className='space-y-4'>
+        <div className='flex flex-wrap items-center justify-between gap-3'>
           <div>
             <h2 className='font-semibold'>Entradas registradas</h2>
             <p className='text-sm text-muted-foreground'>Detalle por fecha seleccionada.</p>
@@ -487,52 +988,181 @@ export default function EntradasPage() {
           />
         </div>
         {loading ? (
-          <p className='p-6 text-sm text-muted-foreground'>Cargando entradas…</p>
+          <p className='text-sm text-muted-foreground'>Cargando entradas…</p>
         ) : entradas.length === 0 ? (
-          <p className='p-6 text-sm text-muted-foreground'>
+          <p className='text-sm text-muted-foreground'>
             No hay entradas registradas para esta fecha.
           </p>
         ) : (
-          <div className='overflow-x-auto'>
-            <Table className='min-w-[1050px] text-sm'>
-              <TableHeader className='bg-muted/50 text-muted-foreground'>
-                <TableRow>
-                  <TableHead>Cliente</TableHead>
-                  <TableHead>Monto entrada</TableHead>
-                  <TableHead>Adicional bebida</TableHead>
-                  <TableHead>Método de pago</TableHead>
-                  <TableHead>Producto de cortesía</TableHead>
-                  <TableHead>Registró</TableHead>
-                  <TableHead>Hora</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {entradas.map(item => (
-                  <TableRow key={item.id}>
-                    <TableCell className='font-medium'>
-                      {item.cliente_nombre || 'Sin nombre'}
-                    </TableCell>
+          <Table className='w-full table-fixed text-sm'>
+            <TableHeader className='bg-muted/50 text-muted-foreground'>
+              <TableRow>
+                <TableHead>Monto entrada</TableHead>
+                <TableHead>Adicional bebida</TableHead>
+                <TableHead>Método de pago</TableHead>
+                <TableHead>Producto de cortesía</TableHead>
+                <TableHead>Registró</TableHead>
+                <TableHead>Hora</TableHead>
+                <TableHead className='text-right'>Ver detalle</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {gruposEntradas.map(grupo => {
+                const primero = grupo.registros[0];
+                const tieneVenta = grupo.monto_bebida_adicional > 0;
+                return (
+                  <TableRow key={grupo.id} className='transform-none hover:transform-none'>
                     <TableCell className='tabular-nums'>
-                      {formatCurrencyCLP(Number(item.monto_entrada))}
+                      {formatCurrencyCLP(tieneVenta ? 0 : grupo.monto_entrada)}
                     </TableCell>
-                    <TableCell className='tabular-nums'>
-                      {formatCurrencyCLP(Number(item.monto_bebida_adicional))}
+                    <TableCell
+                      className='tabular-nums'
+                      title={
+                        tieneVenta
+                          ? 'Incluye el monto de entrada; total registrado en Ventas'
+                          : undefined
+                      }
+                    >
+                      {formatCurrencyCLP(
+                        tieneVenta ? grupo.monto_entrada + grupo.monto_bebida_adicional : 0
+                      )}
+                      {tieneVenta && (
+                        <span className='ml-1 text-xs text-muted-foreground'>(Venta)</span>
+                      )}
                     </TableCell>
-                    <TableCell className='capitalize'>{item.metodo_pago}</TableCell>
+                    <TableCell className='capitalize'>{primero.metodo_pago}</TableCell>
                     <TableCell>
-                      {item.bebida_cortesia
-                        ? `${item.bebida_cortesia}${item.acompanamiento_bebida ? ` + ${item.acompanamiento_bebida}` : ''}`
-                        : 'No'}
+                      <span className='inline-flex items-center gap-2'>
+                        {grupo.cantidad_productos_cortesia > 0
+                          ? `${grupo.cantidad_productos_cortesia} producto(s) · ${grupo.registros.length} entrada(s)`
+                          : `${grupo.registros.length} entrada(s) · Sin productos`}
+                      </span>
                     </TableCell>
-                    <TableCell>{item.registrado_por_nombre}</TableCell>
-                    <TableCell className='tabular-nums'>{item.hora}</TableCell>
+                    <TableCell>{primero.registrado_por_nombre}</TableCell>
+                    <TableCell className='tabular-nums'>{primero.hora}</TableCell>
+                    <TableCell className='text-right'>
+                      <TooltipProvider>
+                        <Tooltip delayDuration={250}>
+                          <TooltipTrigger asChild>
+                            <Button
+                              type='button'
+                              variant='ghost'
+                              size='icon'
+                              disabled={detalleVentaCargando === grupo.id}
+                              aria-label={
+                                detalleVentaCargando === grupo.id
+                                  ? 'Cargando detalle…'
+                                  : `Ver detalle de ${grupo.registros.length} entrada(s)`
+                              }
+                              onClick={() => abrirDetalle(grupo)}
+                              className='rounded-full transition-all duration-200 hover:scale-110 hover:bg-primary/10 hover:text-primary hover:shadow-md active:scale-95'
+                            >
+                              <Eye className='h-4 w-4 transition-transform duration-200 group-hover:scale-110' />
+                            </Button>
+                          </TooltipTrigger>
+                          <TooltipContent className='rounded-xl border-none bg-black px-3 py-1.5 text-xs font-bold text-white shadow-xl dark:bg-white dark:text-black'>
+                            Ver detalle
+                          </TooltipContent>
+                        </Tooltip>
+                      </TooltipProvider>
+                    </TableCell>
                   </TableRow>
-                ))}
-              </TableBody>
-            </Table>
-          </div>
+                );
+              })}
+            </TableBody>
+          </Table>
         )}
       </section>
+      <Dialog open={Boolean(grupoDetalle)} onOpenChange={open => !open && setGrupoDetalleId(null)}>
+        <DialogContent className='max-h-[85vh] overflow-y-auto sm:max-w-2xl'>
+          <DialogHeader>
+            <DialogTitle>Detalle de entradas</DialogTitle>
+            <DialogDescription>
+              {grupoDetalle &&
+                `Registrado por ${grupoDetalle.registros[0]?.registrado_por_nombre || '—'} · ${grupoDetalle.registros[0]?.hora || ''}`}
+            </DialogDescription>
+          </DialogHeader>
+          {grupoDetalle && (
+            <div className='space-y-4'>
+              <div className='grid gap-3 rounded-lg border p-4 text-sm sm:grid-cols-2'>
+                <div>
+                  <p className='text-muted-foreground'>Monto de entrada</p>
+                  <p className='font-semibold'>
+                    {formatCurrencyCLP(
+                      grupoDetalle.monto_bebida_adicional > 0 ? 0 : grupoDetalle.monto_entrada
+                    )}
+                  </p>
+                </div>
+                <div>
+                  <p className='text-muted-foreground'>
+                    {grupoDetalle.monto_bebida_adicional > 0
+                      ? 'Adicional + entrada (Venta)'
+                      : 'Monto adicional'}
+                  </p>
+                  <p className='font-semibold'>
+                    {formatCurrencyCLP(
+                      grupoDetalle.monto_bebida_adicional > 0
+                        ? grupoDetalle.monto_entrada + grupoDetalle.monto_bebida_adicional
+                        : 0
+                    )}
+                  </p>
+                </div>
+              </div>
+              {grupoDetalle.monto_bebida_adicional > 0 ? (
+                <div className='rounded-lg border border-primary/30 bg-primary/5 p-4 text-sm'>
+                  <p className='font-semibold'>Registrado en Ventas</p>
+                  <p className='text-muted-foreground'>
+                    Total de la venta:{' '}
+                    {formatCurrencyCLP(
+                      grupoDetalle.monto_entrada + grupoDetalle.monto_bebida_adicional
+                    )}
+                    . El monto de entrada no se registró en los montos de Entradas.
+                  </p>
+                </div>
+              ) : (
+                <div className='rounded-lg border p-4 text-sm'>
+                  <p className='text-muted-foreground'>Total registrado en Entradas</p>
+                  <p className='font-semibold'>{formatCurrencyCLP(grupoDetalle.monto_entrada)}</p>
+                </div>
+              )}
+              <div className='space-y-2'>
+                <h3 className='text-sm font-semibold'>Productos y cantidades</h3>
+                {productosDetalle.length > 0 ? (
+                  <Table className='text-sm'>
+                    <TableHeader>
+                      <TableRow>
+                        <TableHead>Producto</TableHead>
+                        <TableHead className='w-28 text-right'>Cantidad</TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {productosDetalle.map(producto => (
+                        <TableRow key={producto.nombre}>
+                          <TableCell>{producto.nombre}</TableCell>
+                          <TableCell className='text-right tabular-nums'>
+                            {producto.cantidad}
+                          </TableCell>
+                        </TableRow>
+                      ))}
+                    </TableBody>
+                  </Table>
+                ) : (
+                  <p className='rounded-lg border px-4 py-3 text-sm text-muted-foreground'>
+                    Sin productos
+                  </p>
+                )}
+              </div>
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
+      <SalesDetailModal
+        open={Boolean(detalleVenta)}
+        onOpenChange={open => !open && setDetalleVenta(null)}
+        selectedVenta={detalleVenta}
+        anfitrionaColors={anfitrionaColors}
+        metodoPagoLabels={metodoPagoLabels}
+      />
     </main>
   );
 }

@@ -67,6 +67,8 @@ export { apagarListener, encenderListener } from './biometrico/eventListener';
 export { obtenerBytesDeFoto, setRecolector } from './biometrico/servicio';
 export type { RecolectorApagado, RecolectorEncendido } from './biometrico/servicio';
 export { obtenerEstadoBiometrico } from './biometrico/statusService';
+export { configurarRecepcionBiometrica } from './procesos';
+export { recepcionAutomaticaHabilitada } from './biometrico/recepcionConfig';
 export { openVideoStream } from './biometrico/videoStream';
 export { pollEquipo, pollTodos, estaCorriendo } from './biometrico/recordPoller';
 export { procesarEventoBiometrico } from './biometrico/processBiometricEvent';

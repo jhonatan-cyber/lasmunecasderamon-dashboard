@@ -29,6 +29,12 @@ export const SaleTypeEditor = memo(function SaleTypeEditor({
   onMaxAnfitrionasChange,
   colacionHabilitada = false,
   onColacionHabilitadaChange,
+  coverHabilitado = false,
+  onCoverHabilitadoChange,
+  mostrarBebidasIncluidas = true,
+  mostrarAnfitrionas = true,
+  mostrarCortos = true,
+  esCigarrillos = false,
   unidadesAcompanamiento,
   onAcompanamientoBotellaChange,
   onUnidadesAcompanamientoChange,
@@ -65,6 +71,17 @@ export const SaleTypeEditor = memo(function SaleTypeEditor({
   onMaxAnfitrionasChange?: (value: string) => void;
   colacionHabilitada?: boolean;
   onColacionHabilitadaChange?: (value: boolean) => void;
+  /** Solo settings: cover por botella para entradas de clientes (analgólicas). */
+  coverHabilitado?: boolean;
+  onCoverHabilitadoChange?: (value: boolean) => void;
+  /** Bebidas analcohólicas por botella: oculto si el producto ya es analcohólico. */
+  mostrarBebidasIncluidas?: boolean;
+  /** Anfitrionas/comisión: oculto si el producto es analcohólico. */
+  mostrarAnfitrionas?: boolean;
+  /** Venta por cortos: oculta si el producto es analcohólico. */
+  mostrarCortos?: boolean;
+  /** La presentación se vende como cigarrillo (textos «de botella» → «de cigarrillo»). */
+  esCigarrillos?: boolean;
   acompanamientoBotella: 'ninguno' | 'gaseosa' | 'soda';
   unidadesAcompanamiento: string;
   onAcompanamientoBotellaChange: (value: 'ninguno' | 'gaseosa' | 'soda') => void;
@@ -112,29 +129,37 @@ export const SaleTypeEditor = memo(function SaleTypeEditor({
         </Button>
       )}
       <fieldset className='flex flex-col gap-3'>
-        <legend className='mb-2 text-sm font-semibold'>Tipo de venta</legend>
-        <ToggleGroup
-          type='multiple'
-          variant='selection'
-          value={tipos}
-          onValueChange={value => onTiposChange(value as SaleType[])}
-          disabled={saving}
-          aria-label='Tipos de venta'
-          className='justify-start'
-        >
-          <ToggleGroupItem value='botella' className='flex-1 rounded-full'>
-            {tipos.includes('botella') && <Check aria-hidden='true' />}
-            Botella
-          </ToggleGroupItem>
-          <ToggleGroupItem value='shot' className='flex-1 rounded-full'>
-            {tipos.includes('shot') && <Check aria-hidden='true' />}
-            {etiquetaShot}
-          </ToggleGroupItem>
-        </ToggleGroup>
+        {mostrarCortos && (
+          <>
+            <legend className='mb-2 text-sm font-semibold'>Tipo de venta</legend>
+            <ToggleGroup
+              type='multiple'
+              variant='selection'
+              value={tipos}
+              onValueChange={value => onTiposChange(value as SaleType[])}
+              disabled={saving}
+              aria-label='Tipos de venta'
+              className='justify-start'
+            >
+              <ToggleGroupItem value='botella' className='flex-1 rounded-full'>
+                {tipos.includes('botella') && <Check aria-hidden='true' />}
+                Botella
+              </ToggleGroupItem>
+              <ToggleGroupItem value='shot' className='flex-1 rounded-full'>
+                {tipos.includes('shot') && <Check aria-hidden='true' />}
+                {etiquetaShot}
+              </ToggleGroupItem>
+            </ToggleGroup>
+          </>
+        )}
         {tipos.map(tipo => (
           <fieldset key={tipo} className='min-w-0 space-y-3'>
             <legend className='px-1 text-sm font-semibold'>
-              {tipo === 'botella' ? 'Venta por botella' : etiquetaShot}
+              {tipo === 'botella'
+                ? esCigarrillos
+                  ? 'Venta por cigarrillo'
+                  : 'Venta por botella'
+                : etiquetaShot}
             </legend>
             {tipo === 'shot' ? (
               <ShortSaleEditor
@@ -159,17 +184,121 @@ export const SaleTypeEditor = memo(function SaleTypeEditor({
               />
             ) : (
               <div className='space-y-5'>
-                <div className='grid grid-cols-1 gap-4 sm:grid-cols-2'>
+                {mostrarAnfitrionas ? (
+                  <div className='grid grid-cols-1 gap-4 sm:grid-cols-2'>
+                    <section
+                      aria-label='Botella con anfitriona'
+                      className='rounded-2xl border border-gray-200 dark:border-gray-800 p-4 sm:p-5 space-y-4'
+                    >
+                      <div>
+                        <h3 className='font-semibold'>Con anfitriona</h3>
+                      </div>
+                      <div className='space-y-2'>
+                        <label htmlFor='price-botella' className='text-sm font-medium'>
+                          Precio de botella con anfitriona
+                        </label>
+                        <Input
+                          currency
+                          id='price-botella'
+                          required
+                          value={precioVenta}
+                          onChange={event => onPrecioVentaChange(formatNumber(event.target.value))}
+                          disabled={saving}
+                          placeholder='0'
+                          className='h-12 text-lg font-semibold tabular-nums'
+                        />
+                      </div>
+                      <div className='space-y-2'>
+                        <label htmlFor='commission-botella' className='text-sm font-medium'>
+                          {context === 'settings' && Number(precioVenta.replace(/\./g, '')) > 0
+                            ? 'Comisión (requerida)'
+                            : 'Comisión'}
+                        </label>
+                        <Input
+                          currency
+                          id='commission-botella'
+                          required={
+                            context === 'settings' && Number(precioVenta.replace(/\./g, '')) > 0
+                          }
+                          value={comision}
+                          onChange={event => onComisionChange(formatNumber(event.target.value))}
+                          disabled={saving}
+                          placeholder={
+                            context === 'settings' && Number(precioVenta.replace(/\./g, '')) > 0
+                              ? 'Ingresa la comisión'
+                              : 'Sin comisión'
+                          }
+                          className='h-12 tabular-nums'
+                        />
+                      </div>
+                      {onMaxAnfitrionasChange &&
+                        (context === 'settings' || Number(comision.replace(/\./g, '')) > 0) && (
+                          <div className='space-y-2'>
+                            <label htmlFor='bottle-hostess-limit' className='text-sm font-medium'>
+                              Máximo de anfitrionas
+                            </label>
+                            <PlainInput
+                              id='bottle-hostess-limit'
+                              type='number'
+                              min={1}
+                              max={20}
+                              step={1}
+                              value={maxAnfitrionas ?? ''}
+                              onChange={event => onMaxAnfitrionasChange(event.target.value)}
+                              disabled={saving}
+                              placeholder={context === 'settings' ? 'Default' : '1'}
+                              className='h-12'
+                            />
+                          </div>
+                        )}
+                      {context === 'transfer' &&
+                        Number(comision.replace(/\./g, '')) > 0 &&
+                        Number(maxAnfitrionas || 1) >= 2 && (
+                          <ChampagneTiersEditor
+                            tiers={tiers}
+                            saving={saving}
+                            onTierChange={onTierChange}
+                          />
+                        )}
+                    </section>
+                    <section
+                      aria-label='Botella sin anfitriona'
+                      className='rounded-2xl border border-gray-200 dark:border-gray-800 p-4 sm:p-5 space-y-4'
+                    >
+                      <div>
+                        <h3 className='font-semibold'>Sin anfitriona</h3>
+                      </div>
+                      {onPrecioSinAnfitrionaChange && (
+                        <div className='space-y-2'>
+                          <label htmlFor='bottle-price-no-hostess' className='text-sm font-medium'>
+                            Precio de botella sin anfitriona
+                          </label>
+                          <Input
+                            currency
+                            id='bottle-price-no-hostess'
+                            value={precioSinAnfitriona}
+                            onChange={event =>
+                              onPrecioSinAnfitrionaChange(formatNumber(event.target.value))
+                            }
+                            disabled={saving}
+                            placeholder='Sin precio adicional'
+                            className='h-12 text-lg font-semibold tabular-nums'
+                          />
+                        </div>
+                      )}
+                    </section>
+                  </div>
+                ) : (
                   <section
-                    aria-label='Botella con anfitriona'
+                    aria-label='Botella sin anfitrionas'
                     className='rounded-2xl border border-gray-200 dark:border-gray-800 p-4 sm:p-5 space-y-4'
                   >
                     <div>
-                      <h3 className='font-semibold'>Con anfitriona</h3>
+                      <h3 className='font-semibold'>Precio</h3>
                     </div>
                     <div className='space-y-2'>
                       <label htmlFor='price-botella' className='text-sm font-medium'>
-                        Precio de botella con anfitriona
+                        {esCigarrillos ? 'Precio de cigarrillo' : 'Precio de botella'}
                       </label>
                       <Input
                         currency
@@ -182,112 +311,36 @@ export const SaleTypeEditor = memo(function SaleTypeEditor({
                         className='h-12 text-lg font-semibold tabular-nums'
                       />
                     </div>
-                    <div className='space-y-2'>
-                      <label htmlFor='commission-botella' className='text-sm font-medium'>
-                        {context === 'settings' && Number(precioVenta.replace(/\./g, '')) > 0
-                          ? 'Comisión (requerida)'
-                          : 'Comisión'}
-                      </label>
-                      <Input
-                        currency
-                        id='commission-botella'
-                        required={
-                          context === 'settings' && Number(precioVenta.replace(/\./g, '')) > 0
-                        }
-                        value={comision}
-                        onChange={event => onComisionChange(formatNumber(event.target.value))}
-                        disabled={saving}
-                        placeholder={
-                          context === 'settings' && Number(precioVenta.replace(/\./g, '')) > 0
-                            ? 'Ingresa la comisión'
-                            : 'Sin comisión'
-                        }
-                        className='h-12 tabular-nums'
-                      />
-                    </div>
-                    {onMaxAnfitrionasChange &&
-                      (context === 'settings' || Number(comision.replace(/\./g, '')) > 0) && (
-                        <div className='space-y-2'>
-                          <label htmlFor='bottle-hostess-limit' className='text-sm font-medium'>
-                            Máximo de anfitrionas
-                          </label>
-                          <PlainInput
-                            id='bottle-hostess-limit'
-                            type='number'
-                            min={1}
-                            max={20}
-                            step={1}
-                            value={maxAnfitrionas ?? ''}
-                            onChange={event => onMaxAnfitrionasChange(event.target.value)}
-                            disabled={saving}
-                            placeholder={context === 'settings' ? 'Default' : '1'}
-                            className='h-12'
-                          />
-                        </div>
-                      )}
-                    {context === 'transfer' &&
-                      Number(comision.replace(/\./g, '')) > 0 &&
-                      Number(maxAnfitrionas || 1) >= 2 && (
-                        <ChampagneTiersEditor
-                          tiers={tiers}
-                          saving={saving}
-                          onTierChange={onTierChange}
-                        />
-                      )}
                   </section>
+                )}
+                {mostrarBebidasIncluidas && (
                   <section
-                    aria-label='Botella sin anfitriona'
+                    aria-label='Bebidas incluidas en ambas opciones'
                     className='rounded-2xl border border-gray-200 dark:border-gray-800 p-4 sm:p-5 space-y-4'
                   >
                     <div>
-                      <h3 className='font-semibold'>Sin anfitriona</h3>
+                      <h3 className='font-semibold'>Bebidas incluidas</h3>
+                      {context === 'settings' && (
+                        <p className='mt-1 text-xs text-muted-foreground'>
+                          La misma cantidad de bebidas analcohólicas por botella, con o sin
+                          anfitriona.
+                        </p>
+                      )}
                     </div>
-                    {onPrecioSinAnfitrionaChange && (
-                      <div className='space-y-2'>
-                        <label htmlFor='bottle-price-no-hostess' className='text-sm font-medium'>
-                          Precio de botella sin anfitriona
-                        </label>
-                        <Input
-                          currency
-                          id='bottle-price-no-hostess'
-                          value={precioSinAnfitriona}
-                          onChange={event =>
-                            onPrecioSinAnfitrionaChange(formatNumber(event.target.value))
-                          }
-                          disabled={saving}
-                          placeholder='Sin precio adicional'
-                          className='h-12 text-lg font-semibold tabular-nums'
-                        />
-                      </div>
-                    )}
-                  </section>
-                </div>
-                <section
-                  aria-label='Bebidas incluidas en ambas opciones'
-                  className='rounded-2xl border border-gray-200 dark:border-gray-800 p-4 sm:p-5 space-y-4'
-                >
-                  <div>
-                    <h3 className='font-semibold'>Bebidas incluidas</h3>
-                    {context === 'settings' && (
-                      <p className='mt-1 text-xs text-muted-foreground'>
-                        La misma cantidad de bebidas analcohólicas por botella, con o sin
-                        anfitriona.
-                      </p>
-                    )}
-                  </div>
-                  <BottleExtras
-                    context={context}
-                    commission={comision}
+                    <BottleExtras
+                      context={context}
+                      commission={comision}
 
-                    onAccompaniment={checked =>
-                      onAcompanamientoBotellaChange(checked ? 'gaseosa' : 'ninguno')
-                    }
-                    units={unidadesAcompanamiento}
-                    onUnits={onUnidadesAcompanamientoChange}
-                    disabled={saving}
-                  />
-                </section>
-                {onColacionHabilitadaChange && (
+                      onAccompaniment={checked =>
+                        onAcompanamientoBotellaChange(checked ? 'gaseosa' : 'ninguno')
+                      }
+                      units={unidadesAcompanamiento}
+                      onUnits={onUnidadesAcompanamientoChange}
+                      disabled={saving}
+                    />
+                  </section>
+                )}
+                {context === 'settings' && mostrarAnfitrionas && onColacionHabilitadaChange && (
                   <label className='flex cursor-pointer items-start gap-3 rounded-xl border p-4'>
                     <Checkbox
                       checked={colacionHabilitada}
@@ -304,6 +357,44 @@ export const SaleTypeEditor = memo(function SaleTypeEditor({
                       </span>
                     </span>
                   </label>
+                )}
+                {context === 'settings' && !mostrarAnfitrionas && !esCigarrillos && (
+                  <div className='flex flex-wrap items-start gap-x-8 gap-y-3'>
+                    {onColacionHabilitadaChange && (
+                      <label className='flex cursor-pointer items-start gap-2'>
+                        <Checkbox
+                          checked={colacionHabilitada}
+                          onCheckedChange={checked => onColacionHabilitadaChange(checked === true)}
+                          disabled={saving}
+                          aria-label='Habilitar bebida para colación'
+                        />
+                        <span>
+                          <span className='block text-sm font-medium'>Habilitar colación</span>
+                          <span className='block text-xs text-muted-foreground'>
+                            Aparecerá en el módulo Colaciones para cobrarla al trabajador.
+                          </span>
+                        </span>
+                      </label>
+                    )}
+                    {onCoverHabilitadoChange && (
+                      <label className='flex cursor-pointer items-start gap-2'>
+                        <Checkbox
+                          checked={coverHabilitado}
+                          onCheckedChange={checked => onCoverHabilitadoChange(checked === true)}
+                          disabled={saving}
+                          aria-label='Habilitar bebida para cover de clientes'
+                        />
+                        <span>
+                          <span className='block text-sm font-medium'>
+                            Habilitar cover para clientes
+                          </span>
+                          <span className='block text-xs text-muted-foreground'>
+                            Aparecerá como opción al registrar entradas de clientes.
+                          </span>
+                        </span>
+                      </label>
+                    )}
+                  </div>
                 )}
               </div>
             )}

@@ -212,7 +212,7 @@ export function KioskDevices() {
               </Button>
             </div>
           ) : !devices.length ? (
-            <p className='rounded-2xl border border-dashed p-4 text-sm text-muted-foreground'>
+            <p className='py-2 text-sm text-muted-foreground'>
               Todavía no hay pantallas vinculadas. Activá esta pantalla como kiosko para usarla en
               la entrada.
             </p>
@@ -220,7 +220,7 @@ export function KioskDevices() {
             devices.map(device => (
               <div
                 key={device.id}
-                className='flex flex-wrap items-center justify-between gap-3 rounded-lg border p-3'
+                className='flex flex-wrap items-center justify-between gap-3 border-b py-3 last:border-b-0'
               >
                 <div className='min-w-0'>
                   <p className='font-medium'>{device.nombre}</p>

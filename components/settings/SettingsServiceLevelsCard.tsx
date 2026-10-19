@@ -223,10 +223,10 @@ export function SettingsServiceLevelsCard() {
                 htmlFor='service-trago-cortesia-cliente'
                 className='text-sm font-bold text-neutral-700 dark:text-neutral-300'
               >
-                Trago de cortesía para cliente
+                Covers de entradas
               </label>
               <p className='text-xs text-neutral-500 dark:text-neutral-400 mt-0.5'>
-                En Ventas, el cliente puede elegir como cortesía un corto de este precio o menos.
+                En Entradas, el cliente puede elegir como cover una bebida de este precio o menos.
               </p>
             </div>
             <div className='flex items-center gap-2 shrink-0'>

@@ -6,6 +6,8 @@ import { CHAMPAGNE_DEFAULT_TIERS, type ChampagneTier } from '@/lib/business/cham
 import { resolveShotMl, resolveShotMlAnfitriona } from '@/lib/business/shotMl';
 import { useConfigValue } from '@/hooks/shared/useConfigValue';
 import {
+  esBebidaAnalcoholica,
+  esCigarrillos,
   esChampagne,
   formatMiles,
   formatNumber,
@@ -62,6 +64,7 @@ export interface TransferForm {
   mlPorShotAnfitriona: number;
   etiquetaShot: string;
   esChampagneItem: boolean;
+  esAnalcoholicaItem: boolean;
   opcionesGuardadas: SaleOption[];
   tieneConfig: boolean;
   usarConfigGuardada: boolean;
@@ -122,9 +125,14 @@ export function useTransferForm({
       : `Corto · ${mlPorShot} ml`;
 
   const esChampagneItem = esChampagne(item?.categoria_nombre);
-  const opcionesGuardadas: SaleOption[] = parseSavedOptions(item?.opciones_venta) ?? [
-    { tipo: 'botella', precio: item?.precio_venta ?? 0, comision: item?.comision ?? 0 }
-  ];
+  // Bebidas analcohólicas y cigarrillos: sin cortos ni anfitrionas, solo venta por botella.
+  const esAnalcoholicaItem =
+    esBebidaAnalcoholica(item?.categoria_nombre) || esCigarrillos(item?.categoria_nombre);
+  const opcionesGuardadas: SaleOption[] = (
+    parseSavedOptions(item?.opciones_venta) ?? [
+      { tipo: 'botella', precio: item?.precio_venta ?? 0, comision: item?.comision ?? 0 }
+    ]
+  ).filter(option => !esAnalcoholicaItem || option.tipo === 'botella');
   // Si ya tiene precio/comisión configurados, se reutilizan sin pedirlos manualmente.
   const tieneConfig = opcionesGuardadas.some(
     option => Number(option.precio ?? 0) > 0 || preciosCortoAnfitriona(option).length > 0
@@ -165,7 +173,11 @@ export function useTransferForm({
           comision: formatNumber(String(row.comision))
         }))
       );
-      setTipos(options.map(option => option.tipo));
+      setTipos(
+        esBebidaAnalcoholica(item.categoria_nombre) || esCigarrillos(item.categoria_nombre)
+          ? ['botella']
+          : options.map(option => option.tipo)
+      );
       const bottlePrecio = Number(bottle?.precio) > 0 ? Number(bottle?.precio) : presPrecio;
       const bottleComision =
         bottle?.comision !== undefined ? Number(bottle.comision) : presComision;
@@ -287,11 +299,14 @@ export function useTransferForm({
 
   const usarConfigGuardada = tieneConfig && !editarPrecios;
   // El input de ml solo existe cuando el tipo de venta shot está activo.
-  const shotActivo = usarConfigGuardada
-    ? opcionesGuardadas.some(option => option.tipo === 'shot')
-    : tipos.includes('shot');
+  const shotActivo =
+    !esAnalcoholicaItem &&
+    (usarConfigGuardada
+      ? opcionesGuardadas.some(option => option.tipo === 'shot')
+      : tipos.includes('shot'));
 
   return {
+    esAnalcoholicaItem,
     mlAcompanamientoAnfitriona,
     setMlAcompanamientoAnfitriona,
     maxAnfitrionas,

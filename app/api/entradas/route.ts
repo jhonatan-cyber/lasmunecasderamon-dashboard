@@ -14,20 +14,56 @@ export const POST = withRoute(
   { auth: true, audit: true, module: 'products', action: 'write' },
   async (request, { user }) => {
     const body = await request.json();
+    const partes = Array.isArray(body.partes) ? body.partes : [];
     const result = await registrarEntrada({
       clienteNombre: String(body.cliente_nombre || ''),
       montoEntrada: Number(body.monto_entrada),
-      montoBebidaAdicional: Number(body.monto_bebida_adicional || 0),
       metodoPago: String(body.metodo_pago || 'efectivo'),
-      bebidaCortesiaPresentacionId: body.bebida_cortesia_presentacion_id
-        ? String(body.bebida_cortesia_presentacion_id)
-        : null,
-      bebidaAcompanamientoPresentacionId: body.bebida_acompanamiento_presentacion_id
-        ? String(body.bebida_acompanamiento_presentacion_id)
-        : null,
+      productosCortesia:
+        Array.isArray(body.productos_cortesia) && body.productos_cortesia.length > 0
+          ? body.productos_cortesia.map((item: Record<string, unknown>) => ({
+              presentacionId: String(item.presentacionId || item.presentacion_id || ''),
+              cantidad: Number(item.cantidad),
+              acompanamientoPresentacionId:
+                item.acompanamientoId || item.acompanamiento_presentacion_id
+                  ? String(item.acompanamientoId || item.acompanamiento_presentacion_id)
+                  : null
+            }))
+          : !Number(body.monto_bebida_adicional || 0) && body.bebida_cortesia_presentacion_id
+            ? [
+                {
+                  presentacionId: String(body.bebida_cortesia_presentacion_id),
+                  cantidad: Math.max(1, Number(body.cantidad_entradas) || partes.length || 1),
+                  acompanamientoPresentacionId: body.bebida_acompanamiento_presentacion_id
+                    ? String(body.bebida_acompanamiento_presentacion_id)
+                    : null
+                }
+              ]
+            : [],
       fecha: String(body.fecha || ''),
       hora: String(body.hora || ''),
-      registradoPor: user.id
+      registradoPor: user.id,
+      partes: partes.length
+        ? partes.map((parte: Record<string, unknown>) => ({
+            montoBebidaAdicional: Number(parte.monto_bebida_adicional || 0),
+            bebidaCortesiaPresentacionId: parte.bebida_cortesia_presentacion_id
+              ? String(parte.bebida_cortesia_presentacion_id)
+              : null,
+            bebidaAcompanamientoPresentacionId: parte.bebida_acompanamiento_presentacion_id
+              ? String(parte.bebida_acompanamiento_presentacion_id)
+              : null
+          }))
+        : [
+            {
+              montoBebidaAdicional: Number(body.monto_bebida_adicional || 0),
+              bebidaCortesiaPresentacionId: body.bebida_cortesia_presentacion_id
+                ? String(body.bebida_cortesia_presentacion_id)
+                : null,
+              bebidaAcompanamientoPresentacionId: body.bebida_acompanamiento_presentacion_id
+                ? String(body.bebida_acompanamiento_presentacion_id)
+                : null
+            }
+          ]
     });
     return NextResponse.json({ success: true, data: result }, { status: 201 });
   }

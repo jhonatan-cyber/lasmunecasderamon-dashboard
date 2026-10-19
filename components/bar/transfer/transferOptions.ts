@@ -9,6 +9,19 @@ import type { SaleOption, SaleType } from '@/types/sale-options';
 export const esChampagne = (categoria?: string | null) =>
   /champan|champagne/.test((categoria || '').normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase());
 
+export const esBebidaAnalcoholica = (nombre?: string | null) =>
+  (nombre || '')
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .toLowerCase() === 'bebidas analcoholicas';
+
+export const esCigarrillos = (nombre?: string | null) =>
+  (nombre || '')
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .toLowerCase()
+    .includes('cigarrillo');
+
 export const formatMiles = (v: string | number) =>
   String(v ?? '')
     .replace(/\D/g, '')

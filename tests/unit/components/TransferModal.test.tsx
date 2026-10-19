@@ -49,7 +49,7 @@ it('traspasa guardando el precio sin anfitriona y las bebidas por botella', asyn
   fireEvent.change(screen.getByLabelText('Bebida analcohólica por botella'), {
     target: { value: '2' }
   });
-  fireEvent.change(screen.getByLabelText('Unidades completas a transferir al bar'), {
+  fireEvent.change(screen.getByLabelText('Unidades a transferir al bar'), {
     target: { value: '1' }
   });
   fireEvent.click(screen.getByRole('button', { name: 'Transferir' }));
@@ -109,7 +109,7 @@ it('guarda el máximo de anfitrionas del producto antes de transferir', async ()
   fireEvent.change(screen.getByLabelText('Precio con 3 anfitrionas'), {
     target: { value: '50000' }
   });
-  fireEvent.change(screen.getByLabelText('Unidades completas a transferir al bar'), {
+  fireEvent.change(screen.getByLabelText('Unidades a transferir al bar'), {
     target: { value: '1' }
   });
   fireEvent.click(screen.getByRole('button', { name: 'Transferir' }));
@@ -142,7 +142,7 @@ it.each([0, 5000])('permite máximo opcional independiente de la comisión: %s',
   );
   if (commission > 0) expect(screen.getByLabelText(/ximo de anfitrionas/)).toHaveValue(null);
   else expect(screen.queryByLabelText(/ximo de anfitrionas/)).not.toBeInTheDocument();
-  fireEvent.change(screen.getByLabelText('Unidades completas a transferir al bar'), {
+  fireEvent.change(screen.getByLabelText('Unidades a transferir al bar'), {
     target: { value: '1' }
   });
   fireEvent.click(screen.getByRole('button', { name: 'Transferir' }));
@@ -168,7 +168,7 @@ it('detiene la transferencia si no se puede guardar el máximo de anfitrionas', 
     />
   );
   fireEvent.change(screen.getByLabelText('Máximo de anfitrionas'), { target: { value: '3' } });
-  fireEvent.change(screen.getByLabelText('Unidades completas a transferir al bar'), {
+  fireEvent.change(screen.getByLabelText('Unidades a transferir al bar'), {
     target: { value: '1' }
   });
   fireEvent.click(screen.getByRole('button', { name: 'Transferir' }));
@@ -211,7 +211,7 @@ it('agrega y guarda varios precios de anfitriona con comisiones independientes',
   expect(summary).toHaveTextContent('Corto anfitriona 1: $6.000 · Comisión: $1.000');
   expect(summary).toHaveTextContent('Corto anfitriona 2: $8.000 · Comisión: $2.000');
   expect(summary).not.toHaveTextContent('Corto anfitriona 3:');
-  fireEvent.change(screen.getByLabelText('Unidades completas a transferir al bar'), {
+  fireEvent.change(screen.getByLabelText('Unidades a transferir al bar'), {
     target: { value: '1' }
   });
   fireEvent.click(screen.getByRole('button', { name: 'Transferir' }));
@@ -237,7 +237,7 @@ describe('tipos de venta al transferir', () => {
     render(<TransferModal open item={item} onOpenChange={vi.fn()} onDone={onDone} />);
     expect(screen.getByText('Configuración guardada')).toBeInTheDocument();
     expect(screen.queryByLabelText('Precio de botella con anfitriona')).not.toBeInTheDocument();
-    fireEvent.change(screen.getByLabelText('Unidades completas a transferir al bar'), {
+    fireEvent.change(screen.getByLabelText('Unidades a transferir al bar'), {
       target: { value: '2' }
     });
     fireEvent.click(screen.getByRole('button', { name: 'Transferir' }));
@@ -247,7 +247,14 @@ describe('tipos de venta al transferir', () => {
       presentacion_id: 'pres-1',
       cantidad: 2,
       opciones_venta: [
-        { tipo: 'botella', precio: 20000, comision: 0, acompanamiento: { unidades: 0 } }
+        {
+          tipo: 'botella',
+          precio: 20000,
+          comision: 0,
+          colacion_habilitada: false,
+          cover_habilitado: false,
+          acompanamiento: { unidades: 0 }
+        }
       ]
     });
   });
@@ -263,7 +270,7 @@ describe('tipos de venta al transferir', () => {
     fireEvent.change(screen.getByLabelText('Precio corto cliente'), {
       target: { value: '3000' }
     });
-    fireEvent.change(screen.getByLabelText('Unidades completas a transferir al bar'), {
+    fireEvent.change(screen.getByLabelText('Unidades a transferir al bar'), {
       target: { value: '2' }
     });
     fireEvent.click(screen.getByRole('button', { name: 'Transferir' }));
@@ -273,7 +280,14 @@ describe('tipos de venta al transferir', () => {
       presentacion_id: 'pres-1',
       cantidad: 2,
       opciones_venta: [
-        { tipo: 'botella', precio: 20000, comision: 0, acompanamiento: { unidades: 0 } },
+        {
+          tipo: 'botella',
+          precio: 20000,
+          comision: 0,
+          colacion_habilitada: false,
+          cover_habilitado: false,
+          acompanamiento: { unidades: 0 }
+        },
         {
           tipo: 'shot',
           precio: 3000,
@@ -306,7 +320,7 @@ describe('tipos de venta al transferir', () => {
     fireEvent.change(screen.getByLabelText('Precio corto cliente'), {
       target: { value: '3000' }
     });
-    fireEvent.change(screen.getByLabelText('Unidades completas a transferir al bar'), {
+    fireEvent.change(screen.getByLabelText('Unidades a transferir al bar'), {
       target: { value: '2' }
     });
     fireEvent.click(screen.getByRole('button', { name: 'Transferir' }));
@@ -319,7 +333,14 @@ describe('tipos de venta al transferir', () => {
       presentacion_id: 'pres-1',
       cantidad: 2,
       opciones_venta: [
-        { tipo: 'botella', precio: 20000, comision: 0, acompanamiento: { unidades: 0 } },
+        {
+          tipo: 'botella',
+          precio: 20000,
+          comision: 0,
+          colacion_habilitada: false,
+          cover_habilitado: false,
+          acompanamiento: { unidades: 0 }
+        },
         {
           tipo: 'shot',
           precio: 3000,
@@ -364,7 +385,7 @@ describe('tipos de venta al transferir', () => {
     fireEvent.change(screen.getByLabelText('Precio corto anfitriona'), {
       target: { value: '5000' }
     });
-    fireEvent.change(screen.getByLabelText('Unidades completas a transferir al bar'), {
+    fireEvent.change(screen.getByLabelText('Unidades a transferir al bar'), {
       target: { value: '1' }
     });
     fireEvent.click(screen.getByRole('button', { name: 'Transferir' }));
@@ -375,7 +396,14 @@ describe('tipos de venta al transferir', () => {
       presentacion_id: 'pres-1',
       cantidad: 1,
       opciones_venta: [
-        { tipo: 'botella', precio: 20000, comision: 0, acompanamiento: { unidades: 0 } },
+        {
+          tipo: 'botella',
+          precio: 20000,
+          comision: 0,
+          colacion_habilitada: false,
+          cover_habilitado: false,
+          acompanamiento: { unidades: 0 }
+        },
         {
           tipo: 'shot',
           precio: 3000,
@@ -402,7 +430,7 @@ describe('tipos de venta al transferir', () => {
       target: { value: '3000' }
     });
     fireEvent.change(screen.getByLabelText('Ml corto cliente'), { target: { value: '50' } });
-    fireEvent.change(screen.getByLabelText('Unidades completas a transferir al bar'), {
+    fireEvent.change(screen.getByLabelText('Unidades a transferir al bar'), {
       target: { value: '1' }
     });
     fireEvent.click(screen.getByRole('button', { name: 'Transferir' }));
@@ -427,7 +455,14 @@ describe('tipos de venta al transferir', () => {
     const conAnfitriona: BarStockItem = {
       ...item,
       opciones_venta: [
-        { tipo: 'botella', precio: 20000, comision: 0, acompanamiento: { unidades: 0 } },
+        {
+          tipo: 'botella',
+          precio: 20000,
+          comision: 0,
+          colacion_habilitada: false,
+          cover_habilitado: false,
+          acompanamiento: { unidades: 0 }
+        },
         {
           tipo: 'shot',
           precio: 3000,
@@ -439,7 +474,7 @@ describe('tipos de venta al transferir', () => {
     };
     render(<TransferModal open item={conAnfitriona} onOpenChange={vi.fn()} onDone={onDone} />);
     expect(screen.getByText('Anfitriona $2.000 · Comisión $0')).toBeInTheDocument();
-    fireEvent.change(screen.getByLabelText('Unidades completas a transferir al bar'), {
+    fireEvent.change(screen.getByLabelText('Unidades a transferir al bar'), {
       target: { value: '1' }
     });
     fireEvent.click(screen.getByRole('button', { name: 'Transferir' }));
@@ -464,7 +499,7 @@ it('guarda y reutiliza unidades de bebida por botella', async () => {
   fireEvent.change(screen.getByLabelText('Bebida analcohólica por botella'), {
     target: { value: '3' }
   });
-  fireEvent.change(screen.getByLabelText('Unidades completas a transferir al bar'), {
+  fireEvent.change(screen.getByLabelText('Unidades a transferir al bar'), {
     target: { value: '1' }
   });
   fireEvent.click(screen.getByRole('button', { name: 'Transferir' }));
@@ -483,7 +518,7 @@ it('guarda y reutiliza unidades de bebida por botella', async () => {
     />
   );
   expect(screen.getByText('Incluye 3 unidades de bebida por botella')).toBeInTheDocument();
-  fireEvent.change(screen.getByLabelText('Unidades completas a transferir al bar'), {
+  fireEvent.change(screen.getByLabelText('Unidades a transferir al bar'), {
     target: { value: '2' }
   });
   fireEvent.click(screen.getByRole('button', { name: 'Transferir' }));
@@ -523,7 +558,7 @@ it.each([
       />
     );
     expect(screen.queryByLabelText(/ximo de anfitrionas/)).not.toBeInTheDocument();
-    fireEvent.change(screen.getByLabelText('Unidades completas a transferir al bar'), {
+    fireEvent.change(screen.getByLabelText('Unidades a transferir al bar'), {
       target: { value: '1' }
     });
     fireEvent.click(screen.getByRole('button', { name: 'Transferir' }));
@@ -547,13 +582,20 @@ it('ignora el limite anterior al quitar la comision de botella', async () => {
   fireEvent.change(screen.getByLabelText(/ximo de anfitrionas/), { target: { value: '0' } });
   fireEvent.change(screen.getByLabelText('Comisión'), { target: { value: '' } });
   expect(screen.queryByLabelText(/ximo de anfitrionas/)).not.toBeInTheDocument();
-  fireEvent.change(screen.getByLabelText('Unidades completas a transferir al bar'), {
+  fireEvent.change(screen.getByLabelText('Unidades a transferir al bar'), {
     target: { value: '1' }
   });
   fireEvent.click(screen.getByRole('button', { name: 'Transferir' }));
   await waitFor(() => expect(done).toHaveBeenCalledOnce());
   expect(postBody(request).opciones_venta).toEqual([
-    { tipo: 'botella', precio: 20000, comision: 0, acompanamiento: { unidades: 0 } }
+    {
+      tipo: 'botella',
+      precio: 20000,
+      comision: 0,
+      colacion_habilitada: false,
+      cover_habilitado: false,
+      acompanamiento: { unidades: 0 }
+    }
   ]);
   expect(request.mock.calls.some((args: any[]) => args[1]?.method === 'PUT')).toBe(false);
 });

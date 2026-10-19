@@ -3,7 +3,12 @@
 import { memo } from 'react';
 import { ProductPhoto } from '@/components/shared/ProductPhoto';
 import { formatCurrencyCLP } from '@/lib/utils/formatters';
-import type { BarStockItem } from '@/components/bar/transfer/transferOptions';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
+import {
+  esBebidaAnalcoholica,
+  esCigarrillos,
+  type BarStockItem
+} from '@/components/bar/transfer/transferOptions';
 import type { TransferForm } from '@/hooks/shared/useTransferForm';
 import { preciosCortoAnfitriona } from '@/lib/sales/hostessShortPrices';
 import type { SaleOption } from '@/types/sale-options';
@@ -47,6 +52,10 @@ export const TransferItemSummary = memo(function TransferItemSummary({
   >;
 }) {
   const disponible = item.stock ?? 0;
+  // Cigarrillos: sin anfitrionas ni bebidas; la etiqueta es «cajetilla».
+  const esCig = esCigarrillos(item.categoria_nombre);
+  // Analcohólicas: modo simple, tampoco muestran comisión ni bebida de cortesía.
+  const esAnalcoholica = esBebidaAnalcoholica(item.categoria_nombre);
   const amount = (value: string) => Number(value.replace(/\./g, '')) || 0;
   const options: SaleOption[] = configuration
     ? configuration.usarConfigGuardada
@@ -104,9 +113,22 @@ export const TransferItemSummary = memo(function TransferItemSummary({
           />
         </div>
         <p className='text-sm text-gray-600 dark:text-gray-400 min-w-0'>
-          <span className='font-semibold text-gray-900 dark:text-neutral-100 block truncate'>
-            {item.producto_nombre} — {item.nombre}
-          </span>
+          <TooltipProvider>
+            <Tooltip delayDuration={300}>
+              <TooltipTrigger asChild>
+                <span className='font-semibold text-gray-900 dark:text-neutral-100 block truncate cursor-help'>
+                  {item.categoria_nombre ? `${item.categoria_nombre} ` : ''}
+                  {item.producto_nombre} de {item.nombre}
+                </span>
+              </TooltipTrigger>
+              <TooltipContent className='bg-black text-white dark:bg-white dark:text-black rounded-xl border-none text-xs font-bold px-3 py-1.5 shadow-xl break-words max-w-xs'>
+                <p>
+                  {item.categoria_nombre ? `${item.categoria_nombre} ` : ''}
+                  {item.producto_nombre} de {item.nombre}
+                </p>
+              </TooltipContent>
+            </Tooltip>
+          </TooltipProvider>
           Disponibles en bodega: <span className='font-bold'>{disponible}</span>
           {' · '}En bar: <span className='font-bold'>{item.stock_bar ?? 0}</span>
           {item.precio_compra > 0 && (
@@ -117,12 +139,18 @@ export const TransferItemSummary = memo(function TransferItemSummary({
           )}
           <br />
           <span className='text-xs'>
-            Config. comisiones: máx.{' '}
-            {maxHostesses !== null && maxHostesses !== undefined
-              ? `${maxHostesses} anf.`
-              : 'default por precio'}
-            {' · '}
-            {item.categoria_nombre ?? 'sin categoría'}
+            {esCig ? (
+              (item.categoria_nombre ?? 'sin categoría')
+            ) : (
+              <>
+                Config. comisiones: máx.{' '}
+                {maxHostesses !== null && maxHostesses !== undefined
+                  ? `${maxHostesses} anf.`
+                  : 'default por precio'}
+                {' · '}
+                {item.categoria_nombre ?? 'sin categoría'}
+              </>
+            )}
           </span>
         </p>
       </div>
@@ -136,13 +164,15 @@ export const TransferItemSummary = memo(function TransferItemSummary({
           {options.map(option => (
             <div key={option.tipo} className='space-y-1'>
               <p>
-                {option.tipo === 'botella' ? 'Botella' : 'Corto cliente'}:{' '}
+                {esCig ? 'Cajetilla' : option.tipo === 'botella' ? 'Botella' : 'Corto cliente'}:{' '}
                 <span className='font-semibold text-foreground'>
                   {option.tipo === 'shot' && option.precio <= 0
                     ? 'No habilitado'
                     : formatCurrencyCLP(option.precio)}
                 </span>
-                {option.tipo === 'botella' &&
+                {!esCig &&
+                  !esAnalcoholica &&
+                  option.tipo === 'botella' &&
                   ` · Comisión: ${formatCurrencyCLP(option.comision ?? 0)}`}
               </p>
               {option.tipo === 'shot' && (
@@ -178,7 +208,7 @@ export const TransferItemSummary = memo(function TransferItemSummary({
                 ))}
             </div>
           )}
-          {bottle && (
+          {!esCig && !esAnalcoholica && bottle && (
             <p>
               Bebida:{' '}
               {configuration.acompanamientoBotella === 'ninguno'

@@ -3,13 +3,14 @@ import { NativeSelect } from '@/components/ui/native-select';
 
 import { useCallback, useEffect, useId, useState } from 'react';
 import { toast } from 'sonner';
-import { ChevronDown, Plus } from 'lucide-react';
+import { ChevronDown, Plus, Wifi } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Skeleton } from '@/components/ui/skeleton';
+import { Switch } from '@/components/ui/switch';
 import { DeleteConfirmModal } from '@/components/shared/DeleteConfirmModal';
 import { formatFechaConHora } from '@/lib/utils/formatters';
 
@@ -89,6 +90,9 @@ export function BiometricDevices() {
   const [altaAbierta, setAltaAbierta] = useState(false);
   const [notasAbiertas, setNotasAbiertas] = useState(false);
   const [revokeTarget, setRevokeTarget] = useState<BiometricDevice | null>(null);
+  const [recepcionActiva, setRecepcionActiva] = useState(true);
+  const [recepcionLoading, setRecepcionLoading] = useState(true);
+  const [recepcionSaving, setRecepcionSaving] = useState(false);
 
   // Credenciales CGI por equipo (lo que usa el SERVIDOR para conectarse al lector).
   const [credPorEquipo, setCredPorEquipo] = useState<
@@ -131,6 +135,47 @@ export function BiometricDevices() {
   useEffect(() => {
     void load();
   }, [load]);
+
+  useEffect(() => {
+    let activa = true;
+    void fetch('/api/biometric/reception', { cache: 'no-store' })
+      .then(leerRespuesta)
+      .then(result => {
+        if (activa && result.success) setRecepcionActiva(Boolean(result.data?.habilitado));
+      })
+      .catch(err => {
+        if (activa)
+          toast.error(err instanceof Error ? err.message : 'No se cargó la vigilancia IP.');
+      })
+      .finally(() => {
+        if (activa) setRecepcionLoading(false);
+      });
+    return () => {
+      activa = false;
+    };
+  }, []);
+
+  async function cambiarRecepcionAutomatica(habilitado: boolean) {
+    setRecepcionSaving(true);
+    try {
+      const response = await fetch('/api/biometric/reception', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ habilitado })
+      });
+      const result = await leerRespuesta(response);
+      if (!response.ok || !result.success)
+        throw new Error(result.message || 'No se pudo cambiar la recepción automática.');
+      setRecepcionActiva(habilitado);
+      toast.success(result.message);
+    } catch (err) {
+      toast.error(
+        err instanceof Error ? err.message : 'No se pudo cambiar la recepción automática.'
+      );
+    } finally {
+      setRecepcionSaving(false);
+    }
+  }
 
   async function create(event: React.FormEvent) {
     event.preventDefault();
@@ -317,6 +362,28 @@ export function BiometricDevices() {
         </CardDescription>
       </CardHeader>
       <CardContent className='flex flex-col gap-6'>
+        <div className='flex items-center justify-between gap-4 border-b pb-4'>
+          <div className='flex items-start gap-3'>
+            <Wifi className='mt-0.5 h-4 w-4 shrink-0 text-muted-foreground' />
+            <div className='space-y-1'>
+              <Label htmlFor={`${id}-vigilancia-ip`} className='font-semibold'>
+                Recepción automática del lector
+              </Label>
+              <p className='text-sm text-muted-foreground'>
+                Al apagarla, detiene las consultas y reconexiones automáticas del lector. Las marcas
+                biométricas no se registrarán hasta volver a activarla.
+              </p>
+            </div>
+          </div>
+          <Switch
+            id={`${id}-vigilancia-ip`}
+            checked={recepcionActiva}
+            onCheckedChange={cambiarRecepcionAutomatica}
+            disabled={recepcionLoading || recepcionSaving}
+            aria-label='Recepción automática del lector biométrico'
+          />
+        </div>
+
         {!loading && devices.length > 0 && (
           <div className='flex justify-end'>
             <Button
@@ -428,14 +495,14 @@ export function BiometricDevices() {
               </Button>
             </div>
           ) : !devices.length ? (
-            <p className='rounded-2xl border border-dashed p-4 text-sm text-muted-foreground'>
+            <p className='py-2 text-sm text-muted-foreground'>
               Todavía no hay equipos vinculados. Cargá el serial del lector arriba para que el sitio
               empiece a aceptar sus eventos.
             </p>
           ) : (
             devices.map(device => {
               return (
-                <div key={device.id} className='flex flex-col gap-3 rounded-lg border p-3'>
+                <div key={device.id} className='flex flex-col gap-3 border-b py-4 last:border-b-0'>
                   <div className='flex flex-wrap items-start justify-between gap-3'>
                     <div>
                       <p className='font-medium'>
@@ -474,7 +541,7 @@ export function BiometricDevices() {
                     )}
                   </div>
                   {device.marca === 'dahua' && (
-                    <div className='flex flex-col gap-2 rounded-lg border border-dashed border-gray-300 dark:border-gray-700 p-3'>
+                    <div className='flex flex-col gap-2 border-l-2 pl-3'>
                       <div className='flex flex-wrap items-center justify-between gap-2'>
                         <div>
                           <p className='text-sm font-medium'>Conexión del sistema al equipo</p>
@@ -640,7 +707,7 @@ export function BiometricDevices() {
                             disabled={pollAccion[device.id] === 'toggling'}
                             onCheckedChange={valor => toggleRecoger(device, valor === true)}
                           />
-                          Recoger registros para asistencia (cada minuto)
+                          Recoger registros para asistencia (cada 15 segundos)
                         </label>
                         <div className='flex flex-wrap gap-2'>
                           <Button
@@ -670,7 +737,7 @@ export function BiometricDevices() {
           )}
         </div>
 
-        <div className='rounded-2xl border border-neutral-200 dark:border-neutral-800'>
+        <div className='border-y border-neutral-200 dark:border-neutral-800'>
           <Button
             variant='unstyled'
             type='button'

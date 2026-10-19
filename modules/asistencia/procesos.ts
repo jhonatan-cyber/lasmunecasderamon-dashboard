@@ -5,11 +5,9 @@
  *
  *  - `recordPoller`: su estado vive en `globalThis.__biometricPoller`, así que
  *    sobrevive a la recarga de módulos; `arrancarPoller` es idempotente.
- *  - `ipWatcher`: guard de módulo (`if (timer) return`). Idempotente dentro
- *    del proceso, pero el timer NO sobrevive una recarga de módulos: el módulo
- *    recién cargado volvería a crear otro intervalo encima del viejo.
- *  - `eventListener`: su `Map` de listeners es de módulo; al recargar,
- *    `encenderTodos` re-registra sin ver si el anterior sigue vivo.
+ *  - `ipWatcher` y `eventListener`: timers, listeners y AbortControllers viven
+ *    en `globalThis`, así el control general puede detenerlos tras una recarga
+ *    de módulos del servidor de desarrollo.
  *
  * Esta API es el único punto de arranque (`instrumentation.ts` sólo la
  * llama): el guard vive en `globalThis`, sobrevive a la recarga de módulos —
@@ -24,6 +22,7 @@
 import { arrancarPoller, detenerPoller } from './biometrico/recordPoller';
 import { encenderTodos, apagarListener, listenersActivos } from './biometrico/eventListener';
 import { arrancarVigilanteIp, detenerVigilanteIp } from './biometrico/ipWatcher';
+import { recepcionAutomaticaHabilitada } from './biometrico/recepcionConfig';
 
 interface EstadoRecepcion {
   arrancada: boolean;
@@ -36,6 +35,7 @@ const estado = ((globalThis as Record<string, unknown>).__asistenciaRecepcion ??
 /** Enciende poller + listeners en vivo + vigilancia de IP. Idempotente. */
 export async function arrancarRecepcionBiometrica(): Promise<void> {
   if (estado.arrancada) return;
+  if (!(await recepcionAutomaticaHabilitada())) return;
   estado.arrancada = true;
   try {
     arrancarPoller();
@@ -47,9 +47,14 @@ export async function arrancarRecepcionBiometrica(): Promise<void> {
   }
 }
 
+/** Interruptor general de la recepción automática del lector. */
+export async function configurarRecepcionBiometrica(encender: boolean): Promise<void> {
+  if (encender) await arrancarRecepcionBiometrica();
+  else detenerRecepcionBiometrica();
+}
+
 /** Apaga los tres subsistemas. Idempotente. */
 export function detenerRecepcionBiometrica(): void {
-  if (!estado.arrancada) return;
   for (const dispositivoId of listenersActivos()) apagarListener(dispositivoId);
   detenerPoller();
   detenerVigilanteIp();

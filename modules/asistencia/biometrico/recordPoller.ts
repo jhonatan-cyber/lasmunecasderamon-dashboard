@@ -15,6 +15,7 @@ import { recuperarIdentificacionesPendientes } from '@/modules/asistencia/biomet
 import type { BiometricMetodo } from '@/modules/asistencia/biometrico/types';
 import logger from '@/lib/utils/logger';
 import { quizasSincronizarReloj } from '@/modules/asistencia/biometrico/clockSync';
+import { recepcionAutomaticaHabilitada } from '@/modules/asistencia/biometrico/recepcionConfig';
 export interface RecordDelEquipo {
   recNo: number;
   createTime: number;
@@ -327,6 +328,7 @@ async function leerEquipo(
 }
 
 export async function pollTodos(): Promise<ResumenPoll[]> {
+  if (!(await recepcionAutomaticaHabilitada())) return [];
   const equipos = await equiposParaPoller();
   const resumenes: ResumenPoll[] = [];
   for (const equipo of equipos) {

@@ -24,5 +24,23 @@ export const CLAVES_ASISTENCIA: Record<string, DefinicionClave> = {
     tipo: 'number',
     default: 0,
     validar: enteroEnRango('asistencia_minuto_fin', 0, 59)
+  },
+  biometric_ip_watch: {
+    categoria: 'asistencia',
+    tipo: 'boolean',
+    default: true,
+    validar: valor =>
+      ['true', 'false', '1', '0'].includes(valor.toLowerCase())
+        ? null
+        : 'biometric_ip_watch debe ser true o false'
+  },
+  biometric_recepcion_activa: {
+    categoria: 'asistencia',
+    tipo: 'boolean',
+    default: true,
+    validar: valor =>
+      ['true', 'false', '1', '0'].includes(valor.toLowerCase())
+        ? null
+        : 'biometric_recepcion_activa debe ser true o false'
   }
 };

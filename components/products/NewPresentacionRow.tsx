@@ -20,7 +20,8 @@ import type { PresentacionFormItem } from '@/hooks/personal/useProductForm';
 const PRESENTACION_UNIDADES = [
   { value: 'ml', label: 'Mililitros' },
   { value: 'cc', label: 'Centímetros cúbicos' },
-  { value: 'oz', label: 'Onzas' }
+  { value: 'oz', label: 'Onzas' },
+  { value: 'un', label: 'Unidades' }
 ] as const;
 type PresentacionUnidad = (typeof PRESENTACION_UNIDADES)[number]['value'];
 

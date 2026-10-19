@@ -17,6 +17,7 @@ import {
 import { cn } from '@/lib/utils/utils';
 import { toast } from 'sonner';
 import logger from '@/lib/utils/logger';
+import { esBebidaAnalcoholica, esCigarrillos } from '@/components/bar/transfer/transferOptions';
 import {
   useSettingsProducts,
   invalidateSettingsProducts
@@ -206,6 +207,9 @@ export function SettingsBottleHostessCard() {
     categoria: seleccionado?.categoria,
     category_name: seleccionado?.categoria
   });
+  // Analcohólicas y cigarrillos: sin anfitrionas ni cortos en settings.
+  const esVentaSimple =
+    esCigarrillos(seleccionado?.categoria) || esBebidaAnalcoholica(seleccionado?.categoria);
   const vigente =
     seleccionado?.max_anfitrionas !== null &&
     seleccionado?.max_anfitrionas !== undefined &&
@@ -475,6 +479,7 @@ export function SettingsBottleHostessCard() {
               key={`${selectedId}:${barNonce}`}
               ref={saleOptionsRef}
               options={seleccionado.opciones_venta}
+              categoria={seleccionado.categoria}
               precio={precio}
               comision={comision}
               mlCliente={seleccionado.ml_shot}
@@ -487,21 +492,24 @@ export function SettingsBottleHostessCard() {
             />
           )}
 
-          {Number(maximo) >= 2 && Number(maximo) <= MAX_ANFITRIONAS && seleccionado && (
-            <SettingsChampagneTiers
-              key={selectedId}
-              ref={tiersRef}
-              disabled={saving}
-              productId={seleccionado.producto_id}
-              maxAnfitrionas={Number(maximo)}
-              champagne={esChampagne}
-              precioBase={Number(precio.replace(/\./g, '')) || 0}
-              comisionBase={Number(comision.replace(/\./g, '')) || 0}
-            />
-          )}
+          {seleccionado &&
+            !esVentaSimple &&
+            Number(maximo) >= 2 &&
+            Number(maximo) <= MAX_ANFITRIONAS && (
+              <SettingsChampagneTiers
+                key={selectedId}
+                ref={tiersRef}
+                disabled={saving}
+                productId={seleccionado.producto_id}
+                maxAnfitrionas={Number(maximo)}
+                champagne={esChampagne}
+                precioBase={Number(precio.replace(/\./g, '')) || 0}
+                comisionBase={Number(comision.replace(/\./g, '')) || 0}
+              />
+            )}
 
           <div className='flex flex-wrap justify-end gap-2 pt-2'>
-            {vigente !== null && (
+            {vigente !== null && !esVentaSimple && (
               <Button
                 variant='unstyled'
                 type='button'

@@ -59,7 +59,7 @@ export async function listarParaVenta(filters?: FiltrosParaVenta): Promise<any[]
        SELECT 1 FROM inventario_unidades u WHERE u.presentacion_id = p.id
          AND u.estado = '${ESTADO_UNIDAD_ACTIVA}' AND u.ubicacion = 'bar'
      )
-     ${whereCategoria} ${whereTerm} ${whereColacion} ${whereCover}
+      ${whereCategoria} ${whereTerm} ${whereColacion} ${whereCover}
      ORDER BY pr.nombre ASC, p.fecha_crea ASC, p.id ASC`,
     params
   );
