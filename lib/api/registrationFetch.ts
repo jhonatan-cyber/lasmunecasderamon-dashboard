@@ -88,7 +88,11 @@ export function createRegistrationFetch(
           if (response.status < 500) {
             try {
               const result = await response.clone().json();
-              if (response.status !== 409 || result?.code === 'IDEMPOTENCY_OWNER_MISMATCH')
+              if (
+                response.status !== 409 ||
+                result?.code === 'IDEMPOTENCY_OWNER_MISMATCH' ||
+                result?.code === 'IDEMPOTENCY_FALLIDA'
+              )
                 saveKey(fingerprint);
             } catch {
               /* Respuesta incompleta. */
