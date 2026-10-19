@@ -38,6 +38,8 @@ export function ReplenishmentNotice({
       </div>
     );
 
+  if (showProducts && (isLoading || error || data.length === 0)) return null;
+
   return (
     <Card aria-labelledby={showProducts ? 'replenishment-notice-title' : undefined}>
       {showProducts && (
