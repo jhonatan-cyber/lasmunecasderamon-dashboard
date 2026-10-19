@@ -6,6 +6,7 @@ import { enUnaUnidad } from '@/lib/transaccion/contrato';
 import { resolverTransaccion } from '@/lib/transaccion/infraestructura';
 import { registrarMovimientoCobro } from '@/modules/caja';
 import { ejecutarEfectosConfirmados } from '@/lib/transaccion/efectos';
+import { defaultDeClave } from '@/modules/configuracion/contracts';
 
 /** Plan de la venta de cortesía: el adaptador HTTP la registra con SaleService. */
 export interface PlanVentaEntrada {
@@ -84,6 +85,23 @@ export interface ProductoCortesiaEntrada {
   acompanamientoPresentacionId?: string | null;
 }
 
+/**
+ * Precio de la entrada por persona.
+ *
+ * Se lee de `configuraciones` (tabla del módulo Configuración, sólo lectura aquí)
+ * igual que `consumirProductoCortesia` lee su tope. Si la fila no existe se usa
+ * el default del registro, que es el mismo que pinta la UI.
+ */
+async function leerCostoEntrada(): Promise<number> {
+  const filas = await query<{ valor: string }[]>(
+    "SELECT valor FROM configuraciones WHERE clave = 'costo_entrada' LIMIT 1"
+  );
+  const valor = Number(filas[0]?.valor ?? defaultDeClave<number>('costo_entrada') ?? 0);
+  if (!Number.isFinite(valor) || valor <= 0)
+    throw new ValidationError('El costo de entrada no está configurado');
+  return Math.floor(valor);
+}
+
 export async function registrarEntrada(
   input: {
     clienteNombre?: string;
@@ -121,11 +139,15 @@ export async function registrarEntrada(
   }
   if (!Array.isArray(partes) || partes.length < 1)
     throw new ValidationError('Indica al menos una entrada para registrar');
-  const montoPorEntrada = input.montoEntrada / partes.length;
-  if (!Number.isInteger(input.montoEntrada) || input.montoEntrada < 0)
-    throw new ValidationError('El monto de entrada debe ser un entero igual o mayor a cero');
-  if (partes.length > 1 && !Number.isInteger(montoPorEntrada))
-    throw new ValidationError('El monto base de entrada no se reparte en partes iguales');
+  // El precio lo fija la configuración, no el cliente (§5: el servidor valida el
+  // dinero). La UI manda el total del grupo; cada fila guarda su parte.
+  const costoEntrada = await leerCostoEntrada();
+  const montoEsperado = costoEntrada * partes.length;
+  if (!Number.isInteger(input.montoEntrada) || input.montoEntrada !== montoEsperado)
+    throw new ValidationError(
+      `El precio de la entrada no coincide: son ${costoEntrada} por persona (${montoEsperado} en total). Actualiza la página y vuelve a intentar.`
+    );
+  const montoPorEntrada = costoEntrada;
   for (const [index, parte] of partes.entries()) {
     const adicional = Number(parte?.montoBebidaAdicional);
     if (!Number.isInteger(adicional) || adicional < 0 || adicional > 2147483647)
@@ -176,6 +198,9 @@ export async function registrarEntrada(
   const tareasConfirmadas: Array<() => void | Promise<void>> = [];
   await enUnaUnidad(async unidad => {
     const trx = resolverTransaccion({ id: unidad.id });
+    // Misma regla que colaciones, personal, ventas y reportes: la caja abierta
+    // más reciente es la del turno actual. Con dos turnos abiertos, imputa a la
+    // última apertura.
     const caja = await trx<{ id_caja: string }[]>(
       'SELECT id_caja FROM cajas WHERE estado = 1 ORDER BY fecha_apertura DESC LIMIT 1 FOR UPDATE'
     );
@@ -216,11 +241,13 @@ export async function registrarEntrada(
           parte.bebidaAcompanamientoPresentacionId || null
         );
       }
+      // `fecha_crea` la pone el servidor (DEFAULT CURRENT_TIMESTAMP): es el
+      // registro de auditoría, no la hora de negocio que elige el cajero.
       await trx(
         `INSERT INTO entradas_clientes
           (id, grupo_registro_id, cliente_nombre, monto_entrada, monto_bebida_adicional, metodo_pago, cover_presentacion_id,
-           bebida_acompanamiento_presentacion_id, fecha, hora, caja_id, registrado_por, fecha_crea)
-         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+           bebida_acompanamiento_presentacion_id, fecha, hora, caja_id, registrado_por)
+         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
         [
           id,
           grupoRegistroId,
@@ -233,8 +260,7 @@ export async function registrarEntrada(
           input.fecha,
           input.hora,
           cajaId,
-          input.registradoPor,
-          fechaHora
+          input.registradoPor
         ]
       );
       const asignados = productosEnUnidades.filter(
@@ -338,6 +364,9 @@ export async function registrarEntrada(
         tarea => tareasConfirmadas.push(tarea)
       );
     }
+    // Invariante de cobro: con adicional el grupo entero se registró como venta
+    // (más arriba, vía onVenta) y esa venta mueve la caja; sin adicional, la
+    // entrada se cobra acá. Nunca ambas: duplicaría el ingreso.
     if (input.montoEntrada > 0 && totalAdicionales === 0) {
       const pagosEntrada = { efectivo: 0, tarjeta: 0, transferencia: 0 };
       pagosEntrada[input.metodoPago as keyof typeof pagosEntrada] = input.montoEntrada;
