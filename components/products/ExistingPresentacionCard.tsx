@@ -140,7 +140,7 @@ export function ExistingPresentacionCard({
             </p>
           </div>
           <div className='grid grid-cols-2 gap-2'>
-            <div className='col-span-2 space-y-1'>
+            <div className='space-y-1'>
               <label
                 htmlFor='edit-pres-nombre'
                 className='block text-[10px] font-bold uppercase tracking-wider text-gray-400 ml-1'
