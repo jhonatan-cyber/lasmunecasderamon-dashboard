@@ -2,12 +2,14 @@
 import { StockLimitsFields } from './StockLimitsFields';
 import { Button } from '@/components/ui/button';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Input } from '@/components/ui/input';
 import { formatCurrencyCLP } from '@/lib/utils/formatters';
-import { Camera, Pencil, Trash2, Plus, Link as LinkIcon } from 'lucide-react';
+import { Camera, Pencil, Trash2, Plus, Link as LinkIcon, ChevronDown } from 'lucide-react';
 import { CodeDeactivationPicker } from './CodeDeactivationPicker';
 import { PresentacionNombreInput } from './PresentacionNombreInput';
+import { Collapsible, CollapsibleTrigger, CollapsibleContent } from '@/components/ui/collapsible';
+import { cn } from '@/lib/utils/utils';
 import type { Presentacion } from '@/types/product';
 import type { UnidadCodigoItem } from '@/hooks/personal/useProductForm';
 
@@ -68,6 +70,26 @@ export function ExistingPresentacionCard({
   defaultFoto
 }: ExistingPresentacionCardProps) {
   const [urlInput, setUrlInput] = useState('');
+  const [isOpen, setIsOpen] = useState(false);
+
+  useEffect(() => {
+    if (isEditing) {
+      setIsOpen(true);
+    } else {
+      setIsOpen(false);
+    }
+  }, [isEditing]);
+
+  const fotoSrc =
+    p.foto && p.foto !== 'default.png'
+      ? p.foto.startsWith('http') || p.foto.startsWith('blob:')
+        ? p.foto
+        : `/api/images/products/${p.foto}`
+      : defaultFoto && defaultFoto !== 'default.png'
+        ? defaultFoto.startsWith('http')
+          ? defaultFoto
+          : `/api/images/products/${defaultFoto}`
+        : '/api/images/products/default.png';
 
   return (
     <div className='p-2.5 pl-4 rounded-2xl bg-gray-100 dark:bg-slate-800 space-y-2'>
@@ -77,17 +99,7 @@ export function ExistingPresentacionCard({
             <div className='flex items-center gap-3'>
               {/* eslint-disable-next-line @next/next/no-img-element -- Vista previa de la foto existente. */}
               <img
-                src={
-                  p.foto && p.foto !== 'default.png'
-                    ? p.foto.startsWith('http') || p.foto.startsWith('blob:')
-                      ? p.foto
-                      : `/api/images/products/${p.foto}`
-                    : defaultFoto && defaultFoto !== 'default.png'
-                      ? defaultFoto.startsWith('http')
-                        ? defaultFoto
-                        : `/api/images/products/${defaultFoto}`
-                      : '/api/images/products/default.png'
-                }
+                src={fotoSrc}
                 alt={`Imagen de ${p.nombre}`}
                 className='size-20 shrink-0 rounded-xl object-contain'
               />
@@ -248,142 +260,134 @@ export function ExistingPresentacionCard({
           </div>
         </div>
       ) : (
-        <>
-          <div className='flex items-center gap-2'>
-            {/* eslint-disable-next-line @next/next/no-img-element -- preview local/blob o ruta interna */}
-            <img
-              src={
-                p.foto && p.foto !== 'default.png'
-                  ? p.foto.startsWith('http') || p.foto.startsWith('blob:')
-                    ? p.foto
-                    : `/api/images/products/${p.foto}`
-                  : defaultFoto && defaultFoto !== 'default.png'
-                    ? defaultFoto.startsWith('http')
-                      ? defaultFoto
-                      : `/api/images/products/${defaultFoto}`
-                    : '/api/images/products/default.png'
-              }
-              alt={p.nombre}
-              className='w-11 h-11 rounded-xl object-cover border border-gray-200 dark:border-slate-700 shrink-0'
-            />
-            <div className='flex-1 min-w-0'>
-              <p className='text-sm font-semibold truncate'>{p.nombre}</p>
-              <p className='text-xs text-gray-500'>
-                {p.codigo_barras ? (
-                  <span className='font-mono'>Cód. barras: {p.codigo_barras}</span>
-                ) : (
-                  <span>Sin código de barras</span>
-                )}
-                <span className='mx-1'>•</span>
-                <span>Compra: {formatCurrencyCLP(p.precio_compra ?? 0)}</span>
-                {p.ml_botella ? (
-                  <>
-                    <span className='mx-1'>•</span>
-                    <span>{p.ml_botella} ml</span>
-                  </>
-                ) : null}
-                {Number(p.ml_abierta ?? 0) > 0 ? (
-                  <>
-                    <span className='mx-1'>•</span>
-                    <span className='text-amber-600 dark:text-amber-400 font-medium'>
-                      Abierta: {Number(p.ml_abierta)} ml
-                    </span>
-                  </>
-                ) : null}
-              </p>
-            </div>
-            <span className='px-2.5 py-1 rounded-full bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300 text-xs font-bold shrink-0'>
-              {p.stock ?? 0} un.
-            </span>
-            <label
-              htmlFor={`pres-foto-${p.id}`}
-              title='Cambiar foto'
-              className='p-2 rounded-full text-gray-400 hover:text-purple-600 hover:bg-purple-50 dark:hover:bg-purple-900/20 transition-colors cursor-pointer shrink-0'
+        <Collapsible open={isOpen} onOpenChange={setIsOpen}>
+          {/* Header row — always visible, acts as the trigger */}
+          <CollapsibleTrigger asChild>
+            <Button
+              variant='unstyled'
+              type='button'
+              className='w-full flex items-center gap-2 text-left'
             >
-              <Input
-                id={`pres-foto-${p.id}`}
-                type='file'
-                accept='image/*'
-                disabled={isLoading}
-                className='hidden'
-                onChange={e => {
-                  const file = e.target.files?.[0];
-                  if (file) updateExistenteFoto(p.id, file);
-                  e.target.value = '';
+              {/* eslint-disable-next-line @next/next/no-img-element -- preview local/blob o ruta interna */}
+              <img
+                src={fotoSrc}
+                alt={p.nombre}
+                className='w-9 h-9 rounded-xl object-cover border border-gray-200 dark:border-slate-700 shrink-0'
+              />
+              <div className='flex-1 min-w-0'>
+                <p className='text-sm font-semibold truncate'>{p.nombre}</p>
+                <p className='text-xs text-gray-500'>
+                  {formatCurrencyCLP(p.precio_venta ?? 0)} · {p.stock ?? 0} un.
+                </p>
+              </div>
+              {/* Action buttons — always reachable, outside CollapsibleContent */}
+              <label
+                htmlFor={`pres-foto-${p.id}`}
+                title='Cambiar foto'
+                className='p-2 rounded-full text-gray-400 hover:text-purple-600 hover:bg-purple-50 dark:hover:bg-purple-900/20 transition-colors cursor-pointer shrink-0'
+                onClick={e => e.stopPropagation()}
+              >
+                <Input
+                  id={`pres-foto-${p.id}`}
+                  type='file'
+                  accept='image/*'
+                  disabled={isLoading}
+                  className='hidden'
+                  onChange={e => {
+                    const file = e.target.files?.[0];
+                    if (file) updateExistenteFoto(p.id, file);
+                    e.target.value = '';
+                  }}
+                />
+                <Camera className='w-4 h-4' />
+              </label>
+              <Button
+                variant='unstyled'
+                type='button'
+                onClick={e => {
+                  e.stopPropagation();
+                  startEditPres(p);
                 }}
-              />
-              <Camera className='w-4 h-4' />
-            </label>
-            <Button
-              variant='unstyled'
-              type='button'
-              onClick={() => startEditPres(p)}
-              disabled={isLoading}
-              title='Editar presentación'
-              className='p-2 rounded-full text-gray-400 hover:text-orange-600 hover:bg-orange-50 dark:hover:bg-orange-900/20 transition-colors disabled:opacity-50 shrink-0'
-            >
-              <Pencil className='w-4 h-4' />
-            </Button>
-            <Button
-              variant='unstyled'
-              type='button'
-              onClick={() => deleteExistente(p.id)}
-              disabled={isLoading}
-              title='Eliminar presentación'
-              className='p-2 rounded-full text-gray-400 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors disabled:opacity-50 shrink-0'
-            >
-              <Trash2 className='w-4 h-4' />
-            </Button>
-          </div>
-          <div className='flex items-center gap-2 pl-6'>
-            <Input
-              value={stockExtra[p.id] || ''}
-              onChange={e => changeStockExtra(p.id, e.target.value)}
-              placeholder='Cantidad a agregar'
-              disabled={isLoading || agregandoStock}
-              inputMode='numeric'
-              className='h-9 text-sm'
-            />
-            <Button
-              variant='unstyled'
-              type='button'
-              onClick={() => agregarStock(p.id)}
-              disabled={isLoading || agregandoStock}
-              title='Generar códigos para esta presentación'
-              className='flex items-center gap-1 px-3 py-2 text-xs font-semibold rounded-full bg-blue-600 text-white hover:scale-105 transition-all disabled:opacity-50 shrink-0'
-            >
-              <Plus className='w-3.5 h-3.5' />
-              Stock
-            </Button>
-          </div>
-          <div className='flex items-center gap-2 pl-6'>
-            <div className='relative flex-1'>
-              <span className='absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 z-10'>
-                <LinkIcon className='w-3.5 h-3.5' />
-              </span>
-              <Input
-                value={urlInput}
-                onChange={e => setUrlInput(e.target.value)}
-                placeholder='URL de imagen'
                 disabled={isLoading}
-                className='h-9 pl-9 text-sm'
+                title='Editar presentación'
+                className='p-2 rounded-full text-gray-400 hover:text-orange-600 hover:bg-orange-50 dark:hover:bg-orange-900/20 transition-colors disabled:opacity-50 shrink-0'
+              >
+                <Pencil className='w-4 h-4' />
+              </Button>
+              <Button
+                variant='unstyled'
+                type='button'
+                onClick={e => {
+                  e.stopPropagation();
+                  deleteExistente(p.id);
+                }}
+                disabled={isLoading}
+                title='Eliminar presentación'
+                className='p-2 rounded-full text-gray-400 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors disabled:opacity-50 shrink-0'
+              >
+                <Trash2 className='w-4 h-4' />
+              </Button>
+              <ChevronDown
+                className={cn(
+                  'w-4 h-4 text-gray-400 transition-transform duration-200 shrink-0',
+                  isOpen && 'rotate-180'
+                )}
               />
-            </div>
-            <Button
-              variant='unstyled'
-              type='button'
-              onClick={() => {
-                updateExistenteFotoUrl(p.id, urlInput || '');
-                setUrlInput('');
-              }}
-              disabled={isLoading}
-              title='Aplicar URL como foto'
-              className='px-3 py-2 text-xs font-semibold rounded-full border border-gray-300 dark:border-slate-600 hover:scale-105 transition-all disabled:opacity-50 shrink-0'
-            >
-              Aplicar
             </Button>
-          </div>
-        </>
+          </CollapsibleTrigger>
+          <CollapsibleContent>
+            <div className='space-y-2 pt-2'>
+              <div className='flex items-center gap-2 pl-6'>
+                <Input
+                  value={stockExtra[p.id] || ''}
+                  onChange={e => changeStockExtra(p.id, e.target.value)}
+                  placeholder='Cantidad a agregar'
+                  disabled={isLoading || agregandoStock}
+                  inputMode='numeric'
+                  className='h-9 text-sm'
+                />
+                <Button
+                  variant='unstyled'
+                  type='button'
+                  onClick={() => agregarStock(p.id)}
+                  disabled={isLoading || agregandoStock}
+                  title='Generar códigos para esta presentación'
+                  className='flex items-center gap-1 px-3 py-2 text-xs font-semibold rounded-full bg-blue-600 text-white hover:scale-105 transition-all disabled:opacity-50 shrink-0'
+                >
+                  <Plus className='w-3.5 h-3.5' />
+                  Stock
+                </Button>
+              </div>
+              <div className='flex items-center gap-2 pl-6'>
+                <div className='relative flex-1'>
+                  <span className='absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 z-10'>
+                    <LinkIcon className='w-3.5 h-3.5' />
+                  </span>
+                  <Input
+                    value={urlInput}
+                    onChange={e => setUrlInput(e.target.value)}
+                    placeholder='URL de imagen'
+                    disabled={isLoading}
+                    className='h-9 pl-9 text-sm'
+                  />
+                </div>
+                <Button
+                  variant='unstyled'
+                  type='button'
+                  onClick={() => {
+                    updateExistenteFotoUrl(p.id, urlInput || '');
+                    setUrlInput('');
+                  }}
+                  disabled={isLoading}
+                  title='Aplicar URL como foto'
+                  className='px-3 py-2 text-xs font-semibold rounded-full border border-gray-300 dark:border-slate-600 hover:scale-105 transition-all disabled:opacity-50 shrink-0'
+                >
+                  Aplicar
+                </Button>
+              </div>
+            </div>
+          </CollapsibleContent>
+        </Collapsible>
       )}
     </div>
   );
