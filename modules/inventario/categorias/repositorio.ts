@@ -1,10 +1,102 @@
-import { query, generateUUID, withTransaction } from '@/lib/database/db';
+import { query, generateUUID, withTransaction, type TransactionQuery } from '@/lib/database/db';
 import { getNowInBusinessTimezone } from '@/lib/business/timezoneService';
 import { sendNotificationToAll } from '@/lib/api/sseService';
 import { BaseRepository } from '@/lib/database/base-repository';
 import { ConflictError, NotFoundError } from '@/lib/errors/errors';
 import { eliminarFotosProductosSinUso } from '../productos/eliminarFotos';
 import { ESTADO_UNIDAD_ACTIVA } from '@/modules/inventario/estados';
+
+type Ejecutor = TransactionQuery | typeof query;
+
+interface DependenciasCategoria {
+  unidades: number;
+  movimientos: number;
+  compras: number;
+  consumos: number;
+  colaciones: number;
+  entradas: number;
+  entradasProductos: number;
+  ventas: number;
+  reposicion: number;
+  servicios: number;
+  solicitudes: number;
+}
+
+/**
+ * Cuenta todo lo que impide borrar una categoría sin perder auditoría: stock,
+ * movimientos, compras, ventas, consumos y referencias a sus presentaciones.
+ * Se evalúa tanto en el preview como en el borrado real.
+ */
+async function contarDependenciasCategoria(
+  ejecutor: Ejecutor,
+  id: string
+): Promise<DependenciasCategoria> {
+  const [row] = await ejecutor<Record<keyof DependenciasCategoria, string | number | null>[]>(
+    `SELECT
+       (SELECT COUNT(*) FROM inventario_unidades u
+          INNER JOIN productos p ON p.id_producto = u.producto_id
+         WHERE p.categoria_id = ?) AS unidades,
+       (SELECT COUNT(*) FROM inventario_movimientos m
+          INNER JOIN productos p ON p.id_producto = m.producto_id
+         WHERE p.categoria_id = ?) AS movimientos,
+       (SELECT COUNT(*) FROM detalle_compras d
+          INNER JOIN productos p ON p.id_producto = d.producto_id
+         WHERE p.categoria_id = ?) AS compras,
+       (SELECT COUNT(*) FROM inventario_movimiento_unidades mu
+          INNER JOIN inventario_unidades u ON u.id = mu.unidad_id
+          INNER JOIN productos p ON p.id_producto = u.producto_id
+         WHERE p.categoria_id = ?) AS consumos,
+       (SELECT COUNT(*) FROM colaciones c
+          INNER JOIN inventario_presentaciones pr ON pr.id = c.presentacion_id
+          INNER JOIN productos p ON p.id_producto = pr.producto_id
+         WHERE p.categoria_id = ?) AS colaciones,
+       (SELECT COUNT(*) FROM entradas_clientes e
+          INNER JOIN inventario_presentaciones pr
+            ON pr.id IN (e.cover_presentacion_id, e.bebida_acompanamiento_presentacion_id)
+          INNER JOIN productos p ON p.id_producto = pr.producto_id
+         WHERE p.categoria_id = ?) AS entradas,
+       (SELECT COUNT(*) FROM entradas_clientes_productos ecp
+          INNER JOIN inventario_presentaciones pr
+            ON pr.id IN (ecp.presentacion_id, ecp.acompanamiento_presentacion_id)
+          INNER JOIN productos p ON p.id_producto = pr.producto_id
+         WHERE p.categoria_id = ?) AS entradasProductos,
+       (SELECT COUNT(*) FROM detalle_ventas dv
+          INNER JOIN inventario_presentaciones pr ON pr.id = dv.presentacion_id
+          INNER JOIN productos p ON p.id_producto = pr.producto_id
+         WHERE p.categoria_id = ?) AS ventas,
+       (SELECT COUNT(*) FROM ordenes_reposicion o
+          INNER JOIN inventario_presentaciones pr ON pr.id = o.presentacion_id
+          INNER JOIN productos p ON p.id_producto = pr.producto_id
+         WHERE p.categoria_id = ?) AS reposicion,
+       (SELECT COUNT(*) FROM servicios s
+          INNER JOIN inventario_presentaciones pr ON pr.id = s.producto_incluido_presentacion_id
+          INNER JOIN productos p ON p.id_producto = pr.producto_id
+         WHERE p.categoria_id = ?) AS servicios,
+       (SELECT COUNT(*) FROM solicitudes_servicios ss
+          INNER JOIN inventario_presentaciones pr ON pr.id = ss.producto_incluido_presentacion_id
+          INNER JOIN productos p ON p.id_producto = pr.producto_id
+         WHERE p.categoria_id = ?) AS solicitudes`,
+    [id, id, id, id, id, id, id, id, id, id, id]
+  );
+
+  return {
+    unidades: Number(row?.unidades ?? 0),
+    movimientos: Number(row?.movimientos ?? 0),
+    compras: Number(row?.compras ?? 0),
+    consumos: Number(row?.consumos ?? 0),
+    colaciones: Number(row?.colaciones ?? 0),
+    entradas: Number(row?.entradas ?? 0),
+    entradasProductos: Number(row?.entradasProductos ?? 0),
+    ventas: Number(row?.ventas ?? 0),
+    reposicion: Number(row?.reposicion ?? 0),
+    servicios: Number(row?.servicios ?? 0),
+    solicitudes: Number(row?.solicitudes ?? 0)
+  };
+}
+
+function tieneDependencias(dependencias: DependenciasCategoria): boolean {
+  return Object.values(dependencias).some(valor => valor > 0);
+}
 
 export class CategoryRepository {
   private static mapCategoryFromDB(row: any) {
@@ -141,11 +233,37 @@ export class CategoryRepository {
         throw new ConflictError('Esta categoría predeterminada no se puede desactivar');
     }
     await withTransaction(async trx => {
+      const now = getNowInBusinessTimezone();
       await BaseRepository.update(trx, 'categorias', 'id_categoria', id, {
         estado: newStatus,
-        fecha_mod: getNowInBusinessTimezone()
+        fecha_mod: now
       });
-      await trx('UPDATE productos SET estado = ? WHERE categoria_id = ?', [newStatus, id]);
+      if (newStatus === 0) {
+        // Marca solo los productos que estaban activos: los que un usuario ya
+        // había desactivado a mano conservan su estado y su marca previa.
+        await trx(
+          `UPDATE productos
+              SET estado = 0,
+                  desactivado_por_categoria = CASE
+                    WHEN estado = 1 THEN true
+                    ELSE desactivado_por_categoria
+                  END,
+                  fecha_mod = ?
+            WHERE categoria_id = ?`,
+          [now, id]
+        );
+      } else {
+        // Reactiva únicamente los que apagó esta categoría. Un producto
+        // desactivado manualmente no revive al activar la categoría.
+        await trx(
+          `UPDATE productos
+              SET estado = 1,
+                  desactivado_por_categoria = false,
+                  fecha_mod = ?
+            WHERE categoria_id = ? AND desactivado_por_categoria = true`,
+          [now, id]
+        );
+      }
     });
 
     sendNotificationToAll('categories_updated', {
@@ -177,7 +295,17 @@ export class CategoryRepository {
       'SELECT id_producto AS id, nombre AS name, estado AS status FROM productos WHERE categoria_id = ? ORDER BY nombre',
       [id]
     );
-    return { name: categories[0].nombre, products };
+    const dependencias = await contarDependenciasCategoria(query, id);
+    const canDelete = !tieneDependencias(dependencias);
+    return {
+      name: categories[0].nombre,
+      products,
+      canDelete,
+      blockedReason: canDelete
+        ? null
+        : 'La categoría tiene productos con stock o historial asociado. Desactivala en su lugar.',
+      dependencies: dependencias
+    };
   }
 
   static async delete(id: string) {
@@ -195,17 +323,14 @@ export class CategoryRepository {
         'SELECT IP.foto FROM inventario_presentaciones IP JOIN productos P ON P.id_producto = IP.producto_id WHERE P.categoria_id = ?',
         [id]
       )) as { foto: string | null }[];
-      // Los consumos por shot/corto referencian unidades sin ON DELETE CASCADE.
-      // Quitarlos antes de que el borrado del producto elimine sus unidades.
-      await trx(
-        `DELETE FROM inventario_movimiento_unidades
-         WHERE unidad_id IN (
-           SELECT IU.id FROM inventario_unidades IU
-           JOIN productos P ON P.id_producto = IU.producto_id
-           WHERE P.categoria_id = ?
-         )`,
-        [id]
-      );
+      // Borrar productos con stock o historial destruiría auditoría (y las
+      // referencias sin cascada fallarían). Se bloquea y se sugiere desactivar.
+      const dependencias = await contarDependenciasCategoria(trx, id);
+      if (tieneDependencias(dependencias)) {
+        throw new ConflictError(
+          'No se puede eliminar la categoría: tiene productos con stock o historial asociado. Desactivala en su lugar.'
+        );
+      }
       await trx('DELETE FROM productos WHERE categoria_id = ?', [id]);
       await BaseRepository.delete(trx, 'categorias', 'id_categoria', id);
       return [...products, ...presentations].map(p => p.foto);

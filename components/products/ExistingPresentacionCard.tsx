@@ -7,6 +7,7 @@ import { Input } from '@/components/ui/input';
 import { formatCurrencyCLP } from '@/lib/utils/formatters';
 import { Camera, Pencil, Trash2, Plus, Link as LinkIcon } from 'lucide-react';
 import { CodeDeactivationPicker } from './CodeDeactivationPicker';
+import { PresentacionNombreInput } from './PresentacionNombreInput';
 import type { Presentacion } from '@/types/product';
 import type { UnidadCodigoItem } from '@/hooks/personal/useProductForm';
 
@@ -147,13 +148,11 @@ export function ExistingPresentacionCard({
               >
                 Presentación
               </label>
-              <Input
+              <PresentacionNombreInput
                 id='edit-pres-nombre'
                 value={editPresDraft.nombre}
-                onChange={e => changeEditPresDraft('nombre', e.target.value)}
-                placeholder='Presentación (ej. 750 ml)'
+                onChange={value => changeEditPresDraft('nombre', value)}
                 disabled={isLoading || guardandoPres}
-                className='h-10 bg-white dark:bg-slate-900'
               />
             </div>
             <div className='space-y-1'>
