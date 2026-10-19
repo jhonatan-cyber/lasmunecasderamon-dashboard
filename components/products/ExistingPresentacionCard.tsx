@@ -17,7 +17,6 @@ interface EditPresDraft {
   precio_compra: string;
   precio_venta: string;
   comision: string;
-  ml_botella: string;
   stock: string;
   stock_minimo: string;
   stock_maximo: string;
@@ -183,23 +182,6 @@ export function ExistingPresentacionCard({
                 value={editPresDraft.precio_compra}
                 onChange={e => changeEditPresDraft('precio_compra', e.target.value)}
                 placeholder='Precio compra'
-                disabled={isLoading || guardandoPres}
-                inputMode='numeric'
-                className='h-10 bg-white dark:bg-slate-900'
-              />
-            </div>
-            <div className='space-y-1'>
-              <label
-                htmlFor='edit-pres-ml-botella'
-                className='block text-[10px] font-bold uppercase tracking-wider text-gray-400 ml-1'
-              >
-                Ml de la botella
-              </label>
-              <Input
-                id='edit-pres-ml-botella'
-                value={editPresDraft.ml_botella}
-                onChange={e => changeEditPresDraft('ml_botella', e.target.value)}
-                placeholder='Ej: 750 (vacío = el que dice el nombre)'
                 disabled={isLoading || guardandoPres}
                 inputMode='numeric'
                 className='h-10 bg-white dark:bg-slate-900'

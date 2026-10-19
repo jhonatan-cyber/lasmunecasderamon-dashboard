@@ -99,7 +99,6 @@ export function useProductForm({
     precio_compra: '',
     precio_venta: '',
     comision: '',
-    ml_botella: '',
     stock_minimo: '',
     stock_maximo: '',
     stock: ''
@@ -233,11 +232,6 @@ export function useProductForm({
           (autoEditPresentation as any).comision !== null
             ? formatNumber(String((autoEditPresentation as any).comision))
             : '',
-        ml_botella:
-          (autoEditPresentation as any).ml_botella !== undefined &&
-          (autoEditPresentation as any).ml_botella !== null
-            ? String((autoEditPresentation as any).ml_botella)
-            : '',
         stock_minimo:
           autoEditPresentation.stock_minimo == null
             ? ''
@@ -260,7 +254,6 @@ export function useProductForm({
         precio_compra: '',
         precio_venta: '',
         comision: '',
-        ml_botella: '',
         stock_minimo: '',
         stock_maximo: '',
         stock: ''
@@ -542,7 +535,6 @@ export function useProductForm({
           : '',
       comision:
         p.comision !== undefined && p.comision !== null ? formatNumber(String(p.comision)) : '',
-      ml_botella: p.ml_botella !== undefined && p.ml_botella !== null ? String(p.ml_botella) : '',
       stock_minimo: p.stock_minimo == null ? '' : String(p.stock_minimo),
       stock_maximo: p.stock_maximo == null ? '' : String(p.stock_maximo),
       stock: p.stock !== undefined && p.stock !== null ? formatNumber(String(p.stock)) : ''
@@ -558,7 +550,6 @@ export function useProductForm({
       precio_compra: '',
       precio_venta: '',
       comision: '',
-      ml_botella: '',
       stock_minimo: '',
       stock_maximo: '',
       stock: ''
@@ -575,9 +566,7 @@ export function useProductForm({
         field === 'stock_minimo' ||
         field === 'stock_maximo'
           ? value.replace(/\D/g, '').replace(/\B(?=(\d{3})+(?!\d))/g, '.')
-          : field === 'ml_botella'
-            ? value.replace(/\D/g, '')
-            : value
+          : value
     }));
 
   const toggleCodigoSeleccionado = (unidadId: string) =>
@@ -634,9 +623,7 @@ export function useProductForm({
           codigo_barras: editPresDraft.codigo_barras.trim(),
           precio_compra: getNumericValue(editPresDraft.precio_compra) || '0',
           precio_venta: getNumericValue(editPresDraft.precio_venta) || '0',
-          comision: getNumericValue(editPresDraft.comision) || '0',
-          // Vacío borra la capacidad: la presentación vuelve al default de Configuraciones.
-          ml_botella: getNumericValue(editPresDraft.ml_botella)
+          comision: getNumericValue(editPresDraft.comision) || '0'
         })
       });
       const result = await res.json().catch(() => ({}));
