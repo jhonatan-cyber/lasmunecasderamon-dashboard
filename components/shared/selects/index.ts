@@ -8,5 +8,4 @@ export { default as CustomerSelect } from './CustomerSelect';
 export { default as CustomersSelect } from './CustomersSelect';
 export { default as HostessSelect } from './HostessSelect';
 export { default as IndividualHostessSelect } from './IndividualHostessSelect';
-export { default as AttendanceStatusSelect } from './AttendanceStatusSelect';
 export { default as MultiEntitySelect } from './MultiEntitySelect';

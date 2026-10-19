@@ -14,7 +14,6 @@ export { default as AnfitrionaInfo } from './info/AnfitrionaInfo';
 export { default as AgregarProductosModal } from './modals/AgregarProductosModal';
 export { default as CobrarCuentaModal } from './modals/CobrarCuentaModal';
 export { default as CuentaDetailModal } from './modals/CuentaDetailModal';
-export { default as CuentaFormDialog } from './modals/CuentaFormDialog';
 
 export { default as AccountSummary } from './summary/AccountSummary';
 

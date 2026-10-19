@@ -2,9 +2,8 @@ import { beforeEach, expect, it, vi } from 'vitest';
 import { renderHook } from '@testing-library/react';
 import { useDashboardSummary } from '@/hooks/stats/useDashboardSummary';
 
-const mocks = vi.hoisted(() => ({ user: vi.fn(), query: vi.fn(), sse: vi.fn() }));
+const mocks = vi.hoisted(() => ({ user: vi.fn(), query: vi.fn() }));
 vi.mock('@/hooks/auth/useCurrentUser', () => ({ useCurrentUser: mocks.user }));
-vi.mock('@/hooks/stats/useDashboardSSE', () => ({ useDashboardSSE: mocks.sse }));
 vi.mock('@tanstack/react-query', () => ({ useQuery: mocks.query }));
 vi.mock('@/lib/api/queryClient', () => ({
   queryKeys: { dashboard: { summary: () => ['dashboard', 'summary'] } }

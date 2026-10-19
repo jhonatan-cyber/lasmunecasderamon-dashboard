@@ -1,7 +1,6 @@
 export { default as useAnticipos } from './useAnticipos';
 export { useAdvanceForm } from './useAdvanceForm';
 export { useAnfitrionas } from './useAnfitrionas';
-export { useAnfitrionasDisponibles } from './useAnfitrionasDisponibles';
 export { default as useAsistencias } from './useAsistencias';
 export { useAttendanceStats } from './useAttendanceStats';
 export { useCategoryForm } from './useCategoryForm';

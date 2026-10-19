@@ -26,7 +26,7 @@ como `div`, `section`, títulos y párrafos pueden usarse normalmente.
 | Texto de varias líneas                        | `Textarea`                                                                   |
 | Selector con opciones HTML y eventos nativos  | `NativeSelect`                                                               |
 | Opciones de filtro o listas fijas             | `OptionSelect` / `FilterSelect`                                              |
-| Tiempo y estado de asistencia                 | `TimeSelect` / `AttendanceStatusSelect`, adaptadores de `OptionSelect`       |
+| Tiempo y estado de asistencia                 | `TimeSelect`, adaptador de `OptionSelect`                                    |
 | Selección de entidades con reglas propias     | Los adaptadores de `shared/selects`                                          |
 | Acciones comunes                              | `Button` y sus variantes                                                     |
 | Control especializado con presentación propia | `Button variant="unstyled"`, conservando foco y estado deshabilitado comunes |

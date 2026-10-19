@@ -1,7 +1,3 @@
-export { FinancialCard } from './FinancialCard';
-export { CajaInfoCards } from './CajaInfoCards';
-export { CajaFinanceSummary } from './CajaFinanceSummary';
-export { CajaOperationsTables } from './CajaOperationsTables';
 export { CajaPaymentSummary } from '../CajaPaymentSummary';
 export { CajaSummaryMetrics } from '../CajaSummaryMetrics';
 export { CajaChartsSection } from '../CajaChartsSection';
