@@ -1,10 +1,10 @@
 # Entradas — endurecimiento
 
 Objetivo: validar el precio de la entrada en el servidor y cerrar los hallazgos
-de la auditoría del módulo. Branch: sin branch; cambios sobre el árbol actual,
-sin commits hasta que el usuario lo pida. Estrategia de entrega: un solo cambio
-revisable. Runner: `corepack pnpm test:unit` (y `corepack pnpm typecheck`,
-`corepack pnpm arquitectura:limites`).
+de la auditoría del módulo. Branch: `main`; la entrega quedó en los commits
+`03aceab0`, `0468500e`, `925eb799`, `71257bda` y `14c4bc1d` (ver L9). Estrategia
+de entrega: un solo cambio revisable. Runner: `corepack pnpm test:unit` (y
+`corepack pnpm typecheck`, `corepack pnpm arquitectura:limites`).
 
 ## Specs
 
@@ -94,3 +94,12 @@ con `pnpm db:migrate`. Antes: 0 duplicados en `ventas.entrada_id`. Después:
 `idx_ventas_entrada_id_unica` (único parcial, `WHERE entrada_id IS NOT NULL`)
 presente, `idx_ventas_entrada_id` eliminado, ledger con 091 y `db:plan` sin
 pendientes. El aviso de 011/014 huérfanas es pre-existente y no bloquea.
+
+L9: Entrega — commits en `main`: `03aceab0` (código muerto), `0468500e`
+(sidebar), `925eb799` (seed de productos), `71257bda` (endurecimiento de
+entradas) y `14c4bc1d` (docs y snapshot). El gate de arquitectura quedó en 0
+hallazgos al agregar `seed/seed-productos.mjs` a `ESCRITORES_TECNICOS`, igual
+que los otros seeds de desarrollo. La suite completa dio 2699 passed / 2 skipped
+y un timeout de worker en `auth-routes.test.ts`, que pasa aislado (4/4). El
+snapshot `analisis.json` lo regenera la propia suite con el hash de HEAD; se
+revirtió para no dejar el árbol sucio.
