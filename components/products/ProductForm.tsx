@@ -5,7 +5,7 @@ import { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Product, Presentacion } from '@/types/product';
-import { FileText, Loader2, Plus } from 'lucide-react';
+import { ChevronDown, FileText, Loader2, Plus } from 'lucide-react';
 import { useProductForm } from '@/hooks/personal';
 import { useChampagneTiers } from '@/hooks/personal/useChampagneTiers';
 import { ProductBasicFields } from './ProductBasicFields';
@@ -13,6 +13,7 @@ import { ExistingPresentacionCard } from './ExistingPresentacionCard';
 import { NewPresentacionRow } from './NewPresentacionRow';
 import { GeneratedCodesPanel } from './GeneratedCodesPanel';
 import { ChampagneTiersTable } from './ChampagneTiersTable';
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 import {
   Dialog,
   DialogContent,
@@ -20,6 +21,7 @@ import {
   DialogHeader,
   DialogTitle
 } from '@/components/ui/dialog';
+import { cn } from '@/lib/utils/utils';
 
 interface ProductFormModalProps {
   open: boolean;
@@ -91,27 +93,23 @@ export function ProductFormModal({
           >
             {initialValues && presentation ? 'Cerrar' : 'Cancelar'}
           </Button>
-          <Button
-            type='submit'
-            form='product-form'
-            className='bg-black text-white dark:bg-black dark:text-white  dark:hover:bg-white! dark:hover:text-black! rounded-full px-8 hover:bg-white! hover:text-black! transition-all hover:scale-105 border-2'
-            disabled={isMutating}
-          >
-            {isMutating ? (
-              <div className='flex items-center gap-2'>
-                <Loader2 className='w-4 h-4 animate-spin' />
-                <span>
-                  {initialValues
-                    ? presentation
-                      ? 'Guardando...'
-                      : 'Actualizando...'
-                    : 'Guardando...'}
-                </span>
-              </div>
-            ) : (
-              <span>{initialValues ? (presentation ? 'Guardar' : 'Actualizar') : 'Guardar'}</span>
-            )}
-          </Button>
+          {!(initialValues && presentation) && (
+            <Button
+              type='submit'
+              form='product-form'
+              className='bg-black text-white dark:bg-black dark:text-white  dark:hover:bg-white! dark:hover:text-black! rounded-full px-8 hover:bg-white! hover:text-black! transition-all hover:scale-105 border-2'
+              disabled={isMutating}
+            >
+              {isMutating ? (
+                <div className='flex items-center gap-2'>
+                  <Loader2 className='w-4 h-4 animate-spin' />
+                  <span>{initialValues ? 'Actualizando...' : 'Guardando...'}</span>
+                </div>
+              ) : (
+                <span>{initialValues ? 'Actualizar' : 'Guardar'}</span>
+              )}
+            </Button>
+          )}
         </div>
       </DialogContent>
     </Dialog>
@@ -184,6 +182,9 @@ export function ProductForm({
 
   const [dragRow, setDragRow] = useState<number | null>(null);
 
+  const defaultInfoOpen = !(isEdit && presentation !== null);
+  const [infoOpen, setInfoOpen] = useState(defaultInfoOpen);
+
   const scoped = isEdit && presentation !== null;
   const esChampagne = /champan|champagne/.test(
     (categoryName || '')
@@ -220,13 +221,35 @@ export function ProductForm({
 
   return (
     <form id='product-form' onSubmit={handleSubmit} className='space-y-6 py-2'>
-      <ProductBasicFields
-        form={form}
-        errors={errors}
-        handleChange={handleChange}
-        isLoading={isLoading}
-        isEdit={isEdit}
-      />
+      <Collapsible open={infoOpen} onOpenChange={setInfoOpen}>
+        <CollapsibleTrigger asChild>
+          <Button
+            type='button'
+            variant='unstyled'
+            className={cn(
+              'flex w-full items-center justify-between px-1 py-2 text-left',
+              'text-xs font-bold uppercase tracking-wider text-gray-500 dark:text-gray-400',
+              'hover:text-gray-700 dark:hover:text-gray-200 transition-colors'
+            )}
+          >
+            <span>Información del producto</span>
+            <ChevronDown
+              className={cn('h-4 w-4 transition-transform duration-200', infoOpen && 'rotate-180')}
+            />
+          </Button>
+        </CollapsibleTrigger>
+        <CollapsibleContent className='data-[state=closed]:animate-none'>
+          <div className='pt-2'>
+            <ProductBasicFields
+              form={form}
+              errors={errors}
+              handleChange={handleChange}
+              isLoading={isLoading}
+              isEdit={isEdit}
+            />
+          </div>
+        </CollapsibleContent>
+      </Collapsible>
 
       <div className='space-y-3'>
         <div className='flex items-center justify-between ml-1'>
