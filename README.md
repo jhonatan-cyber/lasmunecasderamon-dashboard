@@ -18,10 +18,11 @@ tests/            # Unit, integration, e2e
 types/            # Tipos TypeScript globales
 ```
 
-Los consumidores usan `modules/<dominio>/index.ts` o `contracts.ts`. El control
-`pnpm arquitectura:limites` bloquea imports privados, ciclos y escrituras en
-tablas ajenas. El estado y la validación están en
-[Consolidación del monolito modular](docs/arquitectura/CONSOLIDACION_FINAL.md).
+Los consumidores usan `modules/<dominio>/index.ts` y, cuando el dominio lo
+expone, `modules/<dominio>/contracts.ts`. El control `pnpm arquitectura:limites`
+bloquea imports privados, ciclos y escrituras en tablas ajenas. El detalle está
+en la [revisión de módulos](docs/REVISION_MODULOS_2026-10-07.md) y la
+[línea base de consultas por flujo](docs/arquitectura/LINEA_BASE_FLUJOS.md).
 
 ## Requisitos
 
@@ -48,6 +49,10 @@ corepack pnpm start
 corepack pnpm lint
 corepack pnpm lint:full
 corepack pnpm typecheck
+
+# Arquitectura y base de datos
+corepack pnpm arquitectura:limites
+corepack pnpm db:migrate
 
 # Testing
 corepack pnpm test:unit
@@ -150,12 +155,17 @@ Si tocas flujos heredados con DB:
 corepack pnpm test:integration:legacy-db
 ```
 
-## Documentacion
+## Documentación
 
-- [docs/POSTGRESQL.md](docs/POSTGRESQL.md)
-- [docs/INVENTARIO.md](docs/INVENTARIO.md)
+- [CI/CD](docs/CI_CD.md)
+- [Componentes de UI](docs/UI_COMPONENTS.md)
+- [Revisión de módulos](docs/REVISION_MODULOS_2026-10-07.md)
+- [Arquitectura: línea base de consultas](docs/arquitectura/LINEA_BASE_FLUJOS.md)
+- [Imágenes de productos](docs/imagenes-productos.md)
 
 ## PostgreSQL
 
-La aplicacion usa `pg`. Instalacion, migraciones, pruebas y recuperacion:
-[guia de PostgreSQL](docs/POSTGRESQL.md).
+La aplicacion usa `pg`. La conexion se configura en `.env` (`DB_HOST`,
+`DB_PORT`, `DB_NAME`, `DB_USER`, `DB_PASSWORD`) y las migraciones se aplican con
+`pnpm db:migrate` (`pnpm db:plan` para previsualizar). Las pruebas que necesitan
+base real estan descritas en [CI/CD](docs/CI_CD.md).

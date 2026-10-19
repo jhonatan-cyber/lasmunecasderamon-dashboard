@@ -1,14 +1,14 @@
 {
   "resumen": {
-    "commit": "1f2a4c491894c7fcb5a8716c4de27adc706f927b",
-    "generado": "2026-10-19T08:58:28.878Z",
-    "archivos": 2018,
+    "commit": "dee468025ccab04a70289deb2d0ec2e16f1ba1ca",
+    "generado": "2026-10-19T15:08:45.275Z",
+    "archivos": 1991,
     "rutas": 222,
     "sqlFueraDeRepositorio": 60,
     "tablasConEscritoresMultiples": 0,
     "ciclos": 0,
     "procesosPeriodicos": 19,
-    "caches": 22,
+    "caches": 23,
     "rutasApiConSqlDirecto": 0,
     "rutasSinWrapper": 20
   },
@@ -2068,12 +2068,6 @@
       "escribe": []
     },
     {
-      "archivo": "scripts/test-whatsapp.ts",
-      "capa": "scripts",
-      "modulo": null,
-      "escribe": []
-    },
-    {
       "archivo": "scripts/verify-migrations.mjs",
       "capa": "scripts",
       "modulo": null,
@@ -2084,6 +2078,16 @@
       "capa": "scripts",
       "modulo": null,
       "escribe": []
+    },
+    {
+      "archivo": "seed/seed-productos.mjs",
+      "capa": "raiz",
+      "modulo": null,
+      "escribe": [
+        "inventario_presentaciones",
+        "inventario_unidades",
+        "productos"
+      ]
     },
     {
       "archivo": "proxy.ts",
@@ -2652,7 +2656,7 @@
     },
     {
       "archivo": "app/entradas/page.tsx",
-      "linea": 366,
+      "linea": 367,
       "tipo": "setInterval",
       "texto": "const interval = window.setInterval(actualizarFechaHora, 60_000);"
     },
@@ -2831,6 +2835,11 @@
       "texto": "caché en memoria (new Map + cache)"
     },
     {
+      "archivo": "app/entradas/page.tsx",
+      "linea": 0,
+      "texto": "caché compartida en globalThis"
+    },
+    {
       "archivo": "components/shared/ProductPhoto.tsx",
       "linea": 0,
       "texto": "caché en memoria (new Map + cache)"
@@ -2888,6 +2897,13 @@
   ],
   "ciclos": [],
   "matriz": {
+    "raiz": {
+      "lib/otros": 12,
+      "hooks": 4,
+      "lib/api": 2,
+      "lib/identidad": 2,
+      "modules/aplicacion": 1
+    },
     "app/ui": {
       "hooks": 62,
       "lib/otros": 57,
@@ -2898,7 +2914,7 @@
       "raiz": 14
     },
     "app/api": {
-      "lib/api": 259,
+      "lib/api": 261,
       "lib/identidad": 17,
       "lib/otros": 71,
       "lib/business": 32,
@@ -2908,26 +2924,19 @@
       "lib/integrations": 4
     },
     "components": {
-      "lib/otros": 329,
-      "hooks": 146,
-      "raiz": 87,
+      "lib/otros": 322,
+      "hooks": 141,
+      "raiz": 86,
       "lib/api": 3,
       "lib/business": 31,
       "modules/aplicacion": 6,
       "app/ui": 1
     },
-    "raiz": {
-      "lib/otros": 12,
-      "hooks": 4,
-      "lib/api": 2,
-      "lib/identidad": 2,
-      "modules/aplicacion": 1
-    },
     "hooks": {
-      "lib/otros": 92,
+      "lib/otros": 91,
       "raiz": 36,
       "lib/api": 7,
-      "components": 15,
+      "components": 14,
       "lib/business": 9,
       "modules/aplicacion": 2
     },
@@ -2967,7 +2976,7 @@
       "lib/database": 107,
       "lib/otros": 150,
       "lib/business": 56,
-      "modules/aplicacion": 24,
+      "modules/aplicacion": 25,
       "lib/api": 9,
       "lib/identidad": 2,
       "raiz": 2
