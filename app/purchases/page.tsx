@@ -24,27 +24,13 @@ import { cn } from '@/lib/utils/utils';
 import { PURCHASE_BUTTON_CLASS } from '@/components/purchases/buttonStyles';
 import SelectElements from '@/components/shared/SelectElements';
 import Paginate from '@/components/shared/Paginate';
-import { Label } from '@/components/ui/label';
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue
-} from '@/components/ui/select';
-import {
-  SELECT_TRIGGER_CLASS,
-  SELECT_CONTENT_CLASS,
-  SELECT_LABEL_CLASS
-} from '@/components/shared/selectStyles';
+import { SortSelect } from '@/components/shared/selects/SortSelect';
 
 const SORT_OPTIONS = [
-  { value: 'date-desc', label: 'Más recientes' },
-  { value: 'date-asc', label: 'Más antiguas' },
-  { value: 'total-desc', label: 'Total: mayor a menor' },
-  { value: 'total-asc', label: 'Total: menor a mayor' },
-  { value: 'supplier', label: 'Proveedor: A–Z' },
-  { value: 'folio', label: 'Folio: A–Z' }
+  { value: 'date', label: 'Fecha' },
+  { value: 'total', label: 'Total' },
+  { value: 'supplier', label: 'Proveedor' },
+  { value: 'folio', label: 'Folio' }
 ];
 const PAGE_SIZES = [5, 10, 20, 40];
 const PAGE_SIZE_STORAGE_KEY = 'purchases:page-size';
@@ -58,6 +44,8 @@ export default function PurchasesPage() {
   const [page, setPage] = useState(1);
   const [pageSize, setPageSize] = useState(10);
   const [sortBy, setSortBy] = useState('date-desc');
+  // El token guarda campo y dirección; el select compartido los separa.
+  const [sortField, sortDirection = 'asc'] = sortBy.split('-');
   const [preferencesLoaded, setPreferencesLoaded] = useState(false);
 
   useEffect(() => {
@@ -65,8 +53,14 @@ export default function PurchasesPage() {
       const savedPageSize = Number(window.localStorage.getItem(PAGE_SIZE_STORAGE_KEY));
       const savedSort = window.localStorage.getItem(SORT_STORAGE_KEY);
       if (PAGE_SIZES.includes(savedPageSize)) setPageSize(savedPageSize);
-      if (savedSort && SORT_OPTIONS.some(option => option.value === savedSort))
-        setSortBy(savedSort);
+      if (savedSort) {
+        // Preferencias del formato anterior sin dirección ('supplier', 'folio').
+        const token =
+          savedSort.endsWith('-asc') || savedSort.endsWith('-desc')
+            ? savedSort
+            : `${savedSort}-asc`;
+        if (SORT_OPTIONS.some(option => option.value === token.split('-')[0])) setSortBy(token);
+      }
     } catch {
       // El listado funciona también cuando el navegador bloquea el almacenamiento.
     } finally {
@@ -125,29 +119,30 @@ export default function PurchasesPage() {
         const compareText = (a: string, b: string) =>
           a.localeCompare(b, 'es', { numeric: true, sensitivity: 'base' });
         const dateOrder = compareText(String(a.fecha_crea || ''), String(b.fecha_crea || ''));
+        const ascendente = sortDirection === 'asc';
         let order = 0;
-        switch (sortBy) {
-          case 'date-asc':
-            order = dateOrder;
+        switch (sortField) {
+          case 'total':
+            order = ascendente
+              ? Number(a.total || 0) - Number(b.total || 0)
+              : Number(b.total || 0) - Number(a.total || 0);
             break;
-          case 'total-desc':
-            order = Number(b.total || 0) - Number(a.total || 0);
+          case 'supplier': {
+            const porTexto = compareText(a.proveedor || '', b.proveedor || '');
+            order = ascendente ? porTexto : -porTexto;
             break;
-          case 'total-asc':
-            order = Number(a.total || 0) - Number(b.total || 0);
+          }
+          case 'folio': {
+            const porTexto = compareText(a.folio, b.folio);
+            order = ascendente ? porTexto : -porTexto;
             break;
-          case 'supplier':
-            order = compareText(a.proveedor || '', b.proveedor || '');
-            break;
-          case 'folio':
-            order = compareText(a.folio, b.folio);
-            break;
+          }
           default:
-            order = -dateOrder;
+            order = ascendente ? dateOrder : -dateOrder;
         }
         return order || compareText(a.id, b.id);
       }),
-    [filtered, sortBy]
+    [filtered, sortField, sortDirection]
   );
   const paginated = sorted.slice((currentPage - 1) * pageSize, currentPage * pageSize);
   useEffect(() => {
@@ -199,30 +194,18 @@ export default function PurchasesPage() {
             />
           </div>
           <div className='flex flex-wrap items-end gap-3'>
-            <div className='w-full sm:w-52'>
-              <Label htmlFor='purchase-sort' className={`${SELECT_LABEL_CLASS} ml-1`}>
-                Ordenar por
-              </Label>
-              <Select
-                value={sortBy}
-                onValueChange={(value: string) => {
-                  setSortBy(value);
-                  setPage(1);
-                  setExpanded(null);
-                }}
-              >
-                <SelectTrigger id='purchase-sort' className={SELECT_TRIGGER_CLASS}>
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent className={SELECT_CONTENT_CLASS}>
-                  {SORT_OPTIONS.map(option => (
-                    <SelectItem key={option.value} value={option.value}>
-                      {option.label}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
+            <SortSelect
+              id='purchase-sort'
+              field={sortField}
+              direction={sortDirection === 'desc' ? 'desc' : 'asc'}
+              options={SORT_OPTIONS}
+              onChange={(field, direction) => {
+                setSortBy(`${field}-${direction}`);
+                setPage(1);
+                setExpanded(null);
+              }}
+              className='w-full sm:w-52'
+            />
             <SelectElements
               value={pageSize}
               onChange={value => {

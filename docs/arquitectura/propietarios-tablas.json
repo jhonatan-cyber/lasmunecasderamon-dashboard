@@ -42,7 +42,7 @@
     "limpieza_movimientos",
     "limpieza_stock"
   ],
-  "entradas": ["entradas_clientes"],
+  "entradas": ["entradas_clientes", "entradas_clientes_productos"],
   "operacion": [
     "cuentas",
     "cuentas_usuarios",

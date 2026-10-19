@@ -1,4 +1,4 @@
-'use client';
+﻿'use client';
 
 import { useCallback, useEffect, useMemo, useState, type FormEvent } from 'react';
 import { toast } from 'sonner';
@@ -70,7 +70,7 @@ export default function ColacionesPage() {
   const [saving, setSaving] = useState(false);
   const { hasOpenCaja, cajaInfo } = useCashRegisterStatus();
   const { hasPermission } = useUserPermissions();
-  const canCreate = hasPermission('products', 'write');
+  const canCreate = hasPermission('products', 'create');
   const isToday = true;
 
   const cargar = useCallback(async () => {
@@ -158,12 +158,12 @@ export default function ColacionesPage() {
       });
       const result = await response.json();
       if (!response.ok || !result.success)
-        throw new Error(result.message || 'No se pudo registrar la colación');
-      toast.success('Colación registrada');
+        throw new Error(result.message || 'No se pudo registrar la colaciÃ³n');
+      toast.success('ColaciÃ³n registrada');
       setUsuarioId('');
       await cargar();
     } catch (error) {
-      toast.error(error instanceof Error ? error.message : 'Error al registrar la colación');
+      toast.error(error instanceof Error ? error.message : 'Error al registrar la colaciÃ³n');
       await cargar();
     } finally {
       setSaving(false);
@@ -220,7 +220,7 @@ export default function ColacionesPage() {
           className='space-y-4 rounded-2xl border bg-card p-4 shadow-xs sm:p-5'
         >
           <div className='flex flex-col gap-1'>
-            <h2 className='text-base font-semibold'>Registrar colación</h2>
+            <h2 className='text-base font-semibold'>Registrar colaciÃ³n</h2>
             <p className='text-sm text-muted-foreground'>
               Cada trabajador puede recibir un corto por turno.
             </p>
@@ -233,18 +233,18 @@ export default function ColacionesPage() {
                 value={usuarioId}
                 onChange={setUsuarioId}
                 placeholder='Seleccionar trabajador'
-                searchPlaceholder='Buscar trabajador…'
+                searchPlaceholder='Buscar trabajadorâ€¦'
                 options={trabajadores
                   .filter(persona => !atendidos.has(persona.id))
                   .map(persona => ({
                     value: persona.id,
-                    label: `${persona.name} ${persona.lastName}${persona.nick ? ` · ${persona.nick}` : ''}`,
+                    label: `${persona.name} ${persona.lastName}${persona.nick ? ` Â· ${persona.nick}` : ''}`,
                     keywords: [persona.nick ?? '']
                   }))}
               />
             </div>
             <div className='space-y-2'>
-              <Label htmlFor='colacion-ml'>Ml de bebida analcohólica</Label>
+              <Label htmlFor='colacion-ml'>Ml de bebida analcohÃ³lica</Label>
               <Input
                 id='colacion-ml'
                 type='number'
@@ -264,23 +264,23 @@ export default function ColacionesPage() {
                 value={presentacionId}
                 onChange={setPresentacionId}
                 placeholder='Seleccionar bebida'
-                searchPlaceholder='Buscar producto o presentación…'
+                searchPlaceholder='Buscar producto o presentaciÃ³nâ€¦'
                 options={bebidas.map(bebida => ({
                   value: bebida.presentacion_id,
-                  label: `${bebida.producto_nombre} · ${bebida.presentacion_nombre}`,
+                  label: `${bebida.producto_nombre} Â· ${bebida.presentacion_nombre}`,
                   keywords: [bebida.producto_nombre, bebida.presentacion_nombre]
                 }))}
               />
             </div>
             {presentacionId && unidadesAcompanamiento > 0 && (
               <div className='space-y-2'>
-                <Label htmlFor='colacion-acompanamiento'>Acompañamiento</Label>
+                <Label htmlFor='colacion-acompanamiento'>AcompaÃ±amiento</Label>
                 <SearchableSelect
                   id='colacion-acompanamiento'
                   value={acompanamiento}
                   onChange={value => setAcompanamiento(value as typeof acompanamiento)}
-                  placeholder='Seleccionar bebida analcohólica'
-                  searchPlaceholder='Buscar bebida analcohólica…'
+                  placeholder='Seleccionar bebida analcohÃ³lica'
+                  searchPlaceholder='Buscar bebida analcohÃ³licaâ€¦'
                   options={[
                     { value: 'gaseosa', label: 'Gaseosa' },
                     { value: 'soda', label: 'Soda' }
@@ -300,7 +300,7 @@ export default function ColacionesPage() {
               className='w-full rounded-full sm:w-auto'
             >
               <ReceiptText className='mr-2 h-4 w-4' />
-              {saving ? 'Registrando…' : 'Registrar corto'}
+              {saving ? 'Registrandoâ€¦' : 'Registrar corto'}
             </Button>
           </div>
         </form>
@@ -314,10 +314,10 @@ export default function ColacionesPage() {
           <p className='font-semibold tabular-nums'>{registros.length} cortos registrados</p>
         </div>
         {loading ? (
-          <p className='p-6 text-sm text-muted-foreground'>Cargando colaciones…</p>
+          <p className='p-6 text-sm text-muted-foreground'>Cargando colacionesâ€¦</p>
         ) : registros.length === 0 ? (
           <p className='p-6 text-sm text-muted-foreground'>
-            Todavía no hay colaciones registradas para este día.
+            TodavÃ­a no hay colaciones registradas para este dÃ­a.
           </p>
         ) : (
           <div className='overflow-x-auto'>
@@ -325,10 +325,10 @@ export default function ColacionesPage() {
               <TableHeader className='bg-muted/50 text-muted-foreground'>
                 <TableRow>
                   <TableHead>Trabajador</TableHead>
-                  <TableHead>Colación</TableHead>
+                  <TableHead>ColaciÃ³n</TableHead>
                   <TableHead>Ml</TableHead>
-                  <TableHead>Acompañamiento</TableHead>
-                  <TableHead>Registró</TableHead>
+                  <TableHead>AcompaÃ±amiento</TableHead>
+                  <TableHead>RegistrÃ³</TableHead>
                   <TableHead>Hora</TableHead>
                 </TableRow>
               </TableHeader>
@@ -343,7 +343,7 @@ export default function ColacionesPage() {
                     </TableCell>
                     <TableCell>{row.nombre_bebida || 'Corto'}</TableCell>
                     <TableCell className='tabular-nums'>{row.ml_bebida} ml</TableCell>
-                    <TableCell className='capitalize'>{row.acompanamiento || '—'}</TableCell>
+                    <TableCell className='capitalize'>{row.acompanamiento || 'â€”'}</TableCell>
                     <TableCell>{row.registrado_por_nombre}</TableCell>
                     <TableCell>
                       {new Date(row.fecha_crea).toLocaleTimeString('es-CL', {

@@ -140,7 +140,13 @@ describe('comisiones por presentación', () => {
       precio_venta: 22000,
       comision: 4000,
       opciones_venta: [
-        { tipo: 'botella', precio: 22000, comision: 4000, acompanamiento: { unidades: 0 } },
+        {
+          tipo: 'botella',
+          precio: 22000,
+          comision: 4000,
+          colacion_habilitada: false,
+          acompanamiento: { unidades: 0 }
+        },
         {
           tipo: 'shot',
           precio: 2500,

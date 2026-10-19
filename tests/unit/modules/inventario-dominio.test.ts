@@ -55,6 +55,7 @@ describe('transferencias de almacén al bar', () => {
 
   it('reserva las unidades en tránsito y deja la solicitud pendiente', async () => {
     const trx = vi.fn().mockImplementation(async (sql: string) => {
+      if (sql.includes('FROM productos pr')) return [{ id_producto: 'prod-1', system_key: null }];
       if (sql.includes('SELECT id FROM inventario_unidades'))
         return [{ id: 'unit-1' }, { id: 'unit-2' }];
       if (sql.includes('COUNT(*)')) return [{ total: 3 }];
@@ -92,6 +93,7 @@ describe('transferencias de almacén al bar', () => {
     vi.mocked(sendNotificationToAll).mockClear();
 
     const trx = vi.fn().mockImplementation(async (sql: string) => {
+      if (sql.includes('FROM productos pr')) return [{ id_producto: 'prod-1', system_key: null }];
       if (sql.includes('SELECT id FROM inventario_unidades'))
         return [{ id: 'unit-1' }, { id: 'unit-2' }];
       if (sql.includes('COUNT(*)')) return [{ total: 3 }];

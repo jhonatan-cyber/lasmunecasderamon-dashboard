@@ -4,9 +4,17 @@ import { ValidationError } from '@/lib/errors/errors';
 import { consumirProductoCortesiaBar } from '@/modules/inventario';
 import { enUnaUnidad } from '@/lib/transaccion/contrato';
 import { resolverTransaccion } from '@/lib/transaccion/infraestructura';
-import { SaleService } from '@/workflows/ventas';
 import { registrarMovimientoCobro } from '@/modules/caja';
 import { ejecutarEfectosConfirmados } from '@/lib/transaccion/efectos';
+
+/** Plan de la venta de cortesía: el adaptador HTTP la registra con SaleService. */
+export interface PlanVentaEntrada {
+  totalVenta: number;
+  metodoPago: 'efectivo' | 'tarjeta' | 'transferencia';
+  usuarioId: string;
+  entradaId: string;
+  detalles: Record<string, unknown>[];
+}
 
 export interface EntradaCliente {
   id: string;
@@ -76,16 +84,24 @@ export interface ProductoCortesiaEntrada {
   acompanamientoPresentacionId?: string | null;
 }
 
-export async function registrarEntrada(input: {
-  clienteNombre?: string;
-  montoEntrada: number;
-  metodoPago: string;
-  fecha: string;
-  hora: string;
-  registradoPor: string;
-  partes: ParteEntrada[];
-  productosCortesia?: ProductoCortesiaEntrada[];
-}) {
+export async function registrarEntrada(
+  input: {
+    clienteNombre?: string;
+    montoEntrada: number;
+    metodoPago: string;
+    fecha: string;
+    hora: string;
+    registradoPor: string;
+    partes: ParteEntrada[];
+    productosCortesia?: ProductoCortesiaEntrada[];
+  },
+  /** El adaptador HTTP registra la venta (SaleService) con el plan de este módulo. */
+  onVenta?: (
+    plan: PlanVentaEntrada,
+    contexto: { id: string },
+    asignarTarea: (tarea: () => void | Promise<void>) => void
+  ) => Promise<void>
+) {
   const partes = input.partes;
   if (!input.registradoPor) throw new ValidationError('No se pudo identificar al usuario');
   const productosCortesia = input.productosCortesia ?? [];
@@ -139,6 +155,10 @@ export async function registrarEntrada(input: {
     );
   if (input.montoEntrada + totalAdicionales <= 0)
     throw new ValidationError('Indica el monto de la entrada o de la bebida adicional');
+  // La venta de cortesías la registra el adaptador HTTP (SaleService, §5): sin
+  // adaptador no hay forma de dejar la venta y se cancela antes de escribir.
+  if (totalAdicionales > 0 && !onVenta)
+    throw new ValidationError('La bebida adicional requiere registrar una venta');
   if (!['efectivo', 'tarjeta', 'transferencia'].includes(input.metodoPago))
     throw new ValidationError('Selecciona un método de pago válido');
   if (!/^\d{4}-\d{2}-\d{2}$/.test(input.fecha) || isNaN(Date.parse(`${input.fecha}T00:00:00`)))
@@ -306,23 +326,16 @@ export async function registrarEntrada(input: {
         throw new ValidationError(
           'El total de los productos cambió. Actualiza y vuelve a intentar'
         );
-      await SaleService.createSale(
+      await onVenta!(
         {
-          total: totalVenta,
-          sub_total: totalVenta,
-          total_comision: 0,
-          metodo_pago: input.metodoPago as 'efectivo' | 'tarjeta' | 'transferencia',
-          propina: 0,
-          tiempo: 0,
-          usuarios: [],
+          totalVenta,
+          metodoPago: input.metodoPago as 'efectivo' | 'tarjeta' | 'transferencia',
+          usuarioId: input.registradoPor,
+          entradaId: ids[0],
           detalles
         },
-        input.registradoPor,
-        {
-          contexto: { id: unidad.id },
-          entradaId: ids[0],
-          onAfterCommit: tarea => tareasConfirmadas.push(tarea)
-        }
+        { id: unidad.id },
+        tarea => tareasConfirmadas.push(tarea)
       );
     }
     if (input.montoEntrada > 0 && totalAdicionales === 0) {

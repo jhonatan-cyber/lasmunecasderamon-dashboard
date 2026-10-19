@@ -31,7 +31,7 @@ it('exige comisión positiva al habilitar botella con anfitriona y permite solo 
   expect(ref.current!.getConfig().opciones_venta[0].comision).toBe(0);
 });
 
-it('sin checkbox guarda cero si la cantidad queda vacía', () => {
+it('con colación deshabilitada guarda cero si la cantidad queda vacía', () => {
   const ref = createRef<SettingsSaleOptionsHandle>();
   render(
     <SettingsSaleOptionsEditor
@@ -44,7 +44,9 @@ it('sin checkbox guarda cero si la cantidad queda vacía', () => {
       saving={false}
     />
   );
-  expect(screen.queryByRole('checkbox')).not.toBeInTheDocument();
+  // Settings ahora siempre ofrece el check de colación para productos clásicos.
+  const colacion = screen.getByLabelText('Habilitar bebida para colación');
+  expect(colacion).not.toBeChecked();
   expect(ref.current!.getConfig().opciones_venta[0].acompanamiento).toEqual({ unidades: 0 });
   const units = screen.getByLabelText('Bebida analcohólica por botella');
   fireEvent.change(units, { target: { value: '4' } });
@@ -174,6 +176,7 @@ it('edita todos los precios de corto, sus ml y la bebida de botella sin perder c
         tipo: 'botella',
         precio: 50000,
         comision: 5000,
+        colacion_habilitada: false,
         acompanamiento: { unidades: 3 }
       },
       {

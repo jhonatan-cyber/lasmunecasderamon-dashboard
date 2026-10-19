@@ -55,6 +55,8 @@ export async function configurarRecepcionBiometrica(encender: boolean): Promise<
 
 /** Apaga los tres subsistemas. Idempotente. */
 export function detenerRecepcionBiometrica(): void {
+  // Nada encendido: no toques los subsistemas (esto es un no-op real).
+  if (!estado.arrancada) return;
   for (const dispositivoId of listenersActivos()) apagarListener(dispositivoId);
   detenerPoller();
   detenerVigilanteIp();

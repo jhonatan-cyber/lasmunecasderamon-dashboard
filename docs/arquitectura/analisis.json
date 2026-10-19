@@ -1,7 +1,7 @@
 {
   "resumen": {
-    "commit": "ea7d158754d869b04a6db9008b15daf0dd73076c",
-    "generado": "2026-10-19T07:58:54.977Z",
+    "commit": "1f2a4c491894c7fcb5a8716c4de27adc706f927b",
+    "generado": "2026-10-19T08:58:28.878Z",
     "archivos": 2018,
     "rutas": 222,
     "sqlFueraDeRepositorio": 60,
@@ -13,15 +13,6 @@
     "rutasSinWrapper": 20
   },
   "rutas": [
-    {
-      "ruta": "/api/biometric/reception",
-      "archivo": "app/api/biometric/reception/route.ts",
-      "metodos": [],
-      "nivel": "administrator",
-      "audit": true,
-      "moduloDominio": null,
-      "usaDriver": false
-    },
     {
       "ruta": "/api/anfitrionas/:id/status",
       "archivo": "app/api/anfitrionas/[id]/status/route.ts",
@@ -448,6 +439,15 @@
     {
       "ruta": "/api/biometric/devices",
       "archivo": "app/api/biometric/devices/route.ts",
+      "metodos": [],
+      "nivel": "administrator",
+      "audit": true,
+      "moduloDominio": null,
+      "usaDriver": false
+    },
+    {
+      "ruta": "/api/biometric/reception",
+      "archivo": "app/api/biometric/reception/route.ts",
       "metodos": [],
       "nivel": "administrator",
       "audit": true,
@@ -2110,12 +2110,6 @@
       "escribe": ["clientes"]
     },
     {
-      "archivo": "modules/asistencia/biometrico/recepcionConfig.ts",
-      "capa": "modules/aplicacion",
-      "modulo": "asistencia",
-      "escribe": []
-    },
-    {
       "archivo": "modules/asistencia/biometrico/avisosAudio.ts",
       "capa": "modules/aplicacion",
       "modulo": "asistencia",
@@ -2168,6 +2162,12 @@
       "capa": "modules/aplicacion",
       "modulo": "asistencia",
       "escribe": ["biometric_events"]
+    },
+    {
+      "archivo": "modules/asistencia/biometrico/recepcionConfig.ts",
+      "capa": "modules/aplicacion",
+      "modulo": "asistencia",
+      "escribe": []
     },
     {
       "archivo": "modules/asistencia/biometrico/recordPhotos.ts",
@@ -2652,7 +2652,7 @@
     },
     {
       "archivo": "app/entradas/page.tsx",
-      "linea": 341,
+      "linea": 366,
       "tipo": "setInterval",
       "texto": "const interval = window.setInterval(actualizarFechaHora, 60_000);"
     },
@@ -2888,33 +2888,24 @@
   ],
   "ciclos": [],
   "matriz": {
+    "app/ui": {
+      "hooks": 62,
+      "lib/otros": 57,
+      "components": 8,
+      "lib/api": 7,
+      "lib/business": 5,
+      "modules/aplicacion": 3,
+      "raiz": 14
+    },
     "app/api": {
       "lib/api": 259,
       "lib/identidad": 17,
       "lib/otros": 71,
       "lib/business": 32,
-      "workflows": 20,
+      "workflows": 21,
       "modules/aplicacion": 1,
       "lib/database": 3,
       "lib/integrations": 4
-    },
-    "modules/aplicacion": {
-      "lib/database": 44,
-      "modules/infraestructura": 23,
-      "lib/otros": 97,
-      "lib/business": 38,
-      "lib/api": 11,
-      "lib/identidad": 3,
-      "raiz": 5
-    },
-    "app/ui": {
-      "hooks": 62,
-      "lib/otros": 57,
-      "components": 9,
-      "lib/api": 7,
-      "lib/business": 5,
-      "modules/aplicacion": 3,
-      "raiz": 14
     },
     "components": {
       "lib/otros": 329,
@@ -2978,9 +2969,17 @@
       "lib/business": 56,
       "modules/aplicacion": 24,
       "lib/api": 9,
-      "workflows": 1,
       "lib/identidad": 2,
       "raiz": 2
+    },
+    "modules/aplicacion": {
+      "modules/infraestructura": 23,
+      "lib/otros": 97,
+      "lib/database": 44,
+      "lib/business": 38,
+      "lib/api": 11,
+      "lib/identidad": 3,
+      "raiz": 5
     },
     "scripts": {},
     "workflows": {

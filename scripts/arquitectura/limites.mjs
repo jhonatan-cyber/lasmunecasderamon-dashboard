@@ -406,7 +406,13 @@ const ESCRITORES_TECNICOS = new Set([
   'lib/database/db.ts',
   'lib/database/query-log.ts',
   'lib/database/sync-operations.ts',
-  'lib/database/maintenance.ts'
+  'lib/database/maintenance.ts',
+  // Seeds de desarrollo: sólo corren contra PostgreSQL local (lo guardan a
+  // producción) y son mantenimiento de datos explícito, como las migraciones.
+  'seed/seed-asistencia.mjs',
+  'seed/seed-categorias.mjs',
+  'seed/seed-clientes.mjs',
+  'seed/ci-seed-auth.cjs'
 ]);
 for (const escritura of escrituras) {
   if (ESCRITORES_TECNICOS.has(escritura.desde)) continue;

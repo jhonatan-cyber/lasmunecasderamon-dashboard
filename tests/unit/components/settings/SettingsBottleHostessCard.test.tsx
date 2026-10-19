@@ -175,7 +175,13 @@ describe('SettingsBottleHostessCard', () => {
         precio_venta: 200000,
         comision: 12000,
         opciones_venta: [
-          { tipo: 'botella', precio: 200000, comision: 12000, acompanamiento: { unidades: 0 } },
+          {
+            tipo: 'botella',
+            precio: 200000,
+            comision: 12000,
+            colacion_habilitada: false,
+            acompanamiento: { unidades: 0 }
+          },
           {
             tipo: 'shot',
             precio: 5000,

@@ -1,4 +1,4 @@
-'use client';
+﻿'use client';
 
 import { Fragment, useCallback, useEffect, useMemo, useState, type FormEvent } from 'react';
 import { ProductPhoto } from '@/components/shared/ProductPhoto';
@@ -123,7 +123,7 @@ const fechaHoraLocal = () => {
 
 const formatoFechaHora = ({ fecha, hora }: { fecha: string; hora: string }) => {
   const [year, month, day] = fecha.split('-');
-  return `${day}/${month}/${year} · ${hora}`;
+  return `${day}/${month}/${year} Â· ${hora}`;
 };
 
 const imageUrl = (foto?: string | null): string => {
@@ -159,7 +159,7 @@ export default function EntradasPage() {
   const [saving, setSaving] = useState(false);
   const { hasOpenCaja } = useCashRegisterStatus();
   const { hasPermission } = useUserPermissions();
-  const canCreate = hasPermission('products', 'write');
+  const canCreate = hasPermission('products', 'create');
   const costoEntradaPredeterminado = Number(useConfigValue('comisiones', 'costo_entrada', 10000));
   const montoBaseTragoCortesia = Number(
     useConfigValue('comisiones', 'monto_base_trago_cortesia_cliente', 10000)
@@ -192,11 +192,11 @@ export default function EntradasPage() {
   const maxProductosSeleccionables =
     adicionalNumero === 0 ? cantidadEntradas : Number.POSITIVE_INFINITY;
 
-  // Agrupa los productos de cortesía por categoría
+  // Agrupa los productos de cortesÃ­a por categorÃ­a
   const categoriasCortesia = useMemo(() => {
     const mapa = new Map<string, ProductoCortesia[]>();
     for (const producto of productosCortesia) {
-      const cat = producto.categoria_nombre ?? 'Sin categoría';
+      const cat = producto.categoria_nombre ?? 'Sin categorÃ­a';
       if (!mapa.has(cat)) mapa.set(cat, []);
       mapa.get(cat)!.push(producto);
     }
@@ -261,7 +261,7 @@ export default function EntradasPage() {
       .then(async response => {
         const result = await response.json();
         if (!response.ok || !result.success || !Array.isArray(result.data))
-          throw new Error(result.message || 'No se pudieron cargar los acompañamientos');
+          throw new Error(result.message || 'No se pudieron cargar los acompaÃ±amientos');
         if (controller.signal.aborted) return;
         setBebidasAcompanamiento(
           result.data.map((bebida: any) => ({
@@ -275,7 +275,7 @@ export default function EntradasPage() {
       .catch(error => {
         if (!controller.signal.aborted)
           setAcompanamientosError(
-            error instanceof Error ? error.message : 'No se pudieron cargar los acompañamientos'
+            error instanceof Error ? error.message : 'No se pudieron cargar los acompaÃ±amientos'
           );
       })
       .finally(() => {
@@ -305,7 +305,7 @@ export default function EntradasPage() {
       const cantidadActual = actual?.cantidad ?? 0;
       const totalActual = actuales.reduce((sum, item) => sum + item.cantidad, 0);
       if (totalActual >= maxProductosSeleccionables) {
-        toast.error(`Selecciona como máximo ${cantidadEntradas} producto(s), uno por entrada`);
+        toast.error(`Selecciona como mÃ¡ximo ${cantidadEntradas} producto(s), uno por entrada`);
         return actuales;
       }
       if (cantidadActual >= producto.stock_bar) {
@@ -352,7 +352,7 @@ export default function EntradasPage() {
           : Number.POSITIVE_INFINITY;
       const maximo = Math.min(productoActual?.stock_bar ?? 0, topePorCantidad, topePorMonto);
       if (cantidad > maximo) {
-        toast.error(`Puedes seleccionar hasta ${Math.max(0, maximo)} unidad(es) más`);
+        toast.error(`Puedes seleccionar hasta ${Math.max(0, maximo)} unidad(es) mÃ¡s`);
         return actuales;
       }
       return actuales.map(item =>
@@ -464,7 +464,7 @@ export default function EntradasPage() {
         .split(',')
         .map(item => item.trim())
         .filter(Boolean)) {
-        const match = producto.match(/^(.*?)\s×\s(\d+)(.*)$/);
+        const match = producto.match(/^(.*?)\sÃ—\s(\d+)(.*)$/);
         const nombre = match ? `${match[1]}${match[3]}` : producto;
         const cantidad = match ? Number(match[2]) : 1;
         const actual = productos.get(nombre);
@@ -484,7 +484,7 @@ export default function EntradasPage() {
       adicional < 0 ||
       base + adicional <= 0
     ) {
-      toast.error('Indica montos enteros válidos y mayores a cero en total');
+      toast.error('Indica montos enteros vÃ¡lidos y mayores a cero en total');
       return;
     }
     if (adicional > 0 && !bebidaCortesiaId) {
@@ -506,7 +506,7 @@ export default function EntradasPage() {
         ) > 0 && !item.acompanamientoId
     );
     if (faltaAcompanamiento) {
-      toast.error('Selecciona el acompañamiento configurado para cada producto');
+      toast.error('Selecciona el acompaÃ±amiento configurado para cada producto');
       return;
     }
     const acompanamientoBebidaAdicional =
@@ -585,7 +585,7 @@ export default function EntradasPage() {
         <MetricCard
           icon={<Ticket />}
           badge='Registros'
-          label='Entradas del día'
+          label='Entradas del dÃ­a'
           value={entradas.length}
           tone='blue'
           className='hover:scale-100'
@@ -637,7 +637,7 @@ export default function EntradasPage() {
                 <Input
                   id='entrada-monto'
                   type='text'
-                  value={`${cantidadEntradas} × ${formatCurrencyCLP(costoEntradaPredeterminado)}`}
+                  value={`${cantidadEntradas} Ã— ${formatCurrencyCLP(costoEntradaPredeterminado)}`}
                   readOnly
                   aria-readonly='true'
                   className='text-center'
@@ -673,13 +673,13 @@ export default function EntradasPage() {
               />
             </div>
             <div className='space-y-2'>
-              <Label htmlFor='entrada-metodo-pago'>Método de pago</Label>
+              <Label htmlFor='entrada-metodo-pago'>MÃ©todo de pago</Label>
               <Select
                 value={metodoPago}
                 onValueChange={(value: string) => setMetodoPago(value as typeof metodoPago)}
               >
                 <SelectTrigger id='entrada-metodo-pago' className='w-full'>
-                  <SelectValue placeholder='Selecciona un método de pago' />
+                  <SelectValue placeholder='Selecciona un mÃ©todo de pago' />
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value='efectivo'>Efectivo</SelectItem>
@@ -700,7 +700,7 @@ export default function EntradasPage() {
             </div>
           </div>
 
-          {/* Sección de covers de entradas — ancho completo */}
+          {/* SecciÃ³n de covers de entradas â€” ancho completo */}
           <div className='space-y-3'>
             <div className='flex items-center justify-between'>
               <Label>Covers de entradas</Label>
@@ -722,7 +722,7 @@ export default function EntradasPage() {
             </div>
 
             {productosLoading ? (
-              <p className='text-sm text-muted-foreground'>Cargando productos…</p>
+              <p className='text-sm text-muted-foreground'>Cargando productosâ€¦</p>
             ) : productosError ? (
               <p className='text-xs text-destructive' role='alert'>
                 {productosError}
@@ -732,9 +732,9 @@ export default function EntradasPage() {
                 No hay productos disponibles hasta {formatCurrencyCLP(montoBaseTragoCortesia)}.
               </p>
             ) : !categoriaSeleccionada ? (
-              /* Vista de categorías */
+              /* Vista de categorÃ­as */
               <div className='grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4'>
-                {/* Cards de categoría */}
+                {/* Cards de categorÃ­a */}
                 {categoriasCortesia.map(cat => (
                   <Button
                     key={cat.nombre}
@@ -757,13 +757,13 @@ export default function EntradasPage() {
                     <GlassWater className='h-8 w-8 opacity-60' />
                     <span className='text-sm font-medium'>{cat.nombre}</span>
                     <span className='text-xs text-muted-foreground'>
-                      {cat.productos.length} opción{cat.productos.length !== 1 ? 'es' : ''}
+                      {cat.productos.length} opciÃ³n{cat.productos.length !== 1 ? 'es' : ''}
                     </span>
                   </Button>
                 ))}
               </div>
             ) : (
-              /* Vista de productos de la categoría */
+              /* Vista de productos de la categorÃ­a */
               <div className='grid grid-cols-3 gap-2 sm:grid-cols-4 lg:grid-cols-6 xl:grid-cols-8'>
                 {(
                   categoriasCortesia.find(c => c.nombre === categoriaSeleccionada)?.productos ?? []
@@ -785,7 +785,7 @@ export default function EntradasPage() {
                         : 'border-gray-200 bg-gray-50 hover:border-gray-400'
                     }`}
                   >
-                    {/* Foto — mismo estilo que inventario */}
+                    {/* Foto â€” mismo estilo que inventario */}
                     <div
                       data-photo-surface
                       className='relative h-20 w-full overflow-hidden bg-white dark:bg-white/[0.04]'
@@ -818,13 +818,13 @@ export default function EntradasPage() {
               Bebidas hasta {formatCurrencyCLP(topeCortesia)} incluidas en el cover
               {adicionalNumero === 0 && (
                 <span className='ml-1'>
-                  · Selecciona un producto por entrada ({totalProductosSeleccionados}/
+                  Â· Selecciona un producto por entrada ({totalProductosSeleccionados}/
                   {cantidadEntradas})
                 </span>
               )}
               {adicionalNumero > 0 && (
                 <span className='ml-1'>
-                  ({cantidadEntradas} × {formatCurrencyCLP(costoEntradaPredeterminado)} +{' '}
+                  ({cantidadEntradas} Ã— {formatCurrencyCLP(costoEntradaPredeterminado)} +{' '}
                   {formatCurrencyCLP(adicionalNumero)} adicional)
                 </span>
               )}
@@ -862,10 +862,10 @@ export default function EntradasPage() {
                   >
                     <div className='min-w-36 flex-1'>
                       <p className='text-sm font-medium'>
-                        {producto.producto_nombre} · {producto.presentacion_nombre}
+                        {producto.producto_nombre} Â· {producto.presentacion_nombre}
                       </p>
                       <p className='text-xs text-muted-foreground'>
-                        {formatCurrencyCLP(producto.precio_venta)} · {producto.stock_bar} en bar
+                        {formatCurrencyCLP(producto.precio_venta)} Â· {producto.stock_bar} en bar
                       </p>
                     </div>
                     <div className='flex items-center gap-2'>
@@ -900,7 +900,7 @@ export default function EntradasPage() {
                     {unidades > 0 && (
                       <div className='w-full sm:w-72'>
                         <Label htmlFor={`acompanamiento-${item.presentacionId}`}>
-                          Acompañamiento ({unidades} unidad{unidades === 1 ? '' : 'es'} por
+                          AcompaÃ±amiento ({unidades} unidad{unidades === 1 ? '' : 'es'} por
                           producto)
                         </Label>
                         <SearchableSelect
@@ -917,12 +917,12 @@ export default function EntradasPage() {
                           }
                           placeholder={
                             acompanamientosLoading
-                              ? 'Cargando acompañamientos…'
-                              : 'Seleccionar bebida acompañante'
+                              ? 'Cargando acompaÃ±amientosâ€¦'
+                              : 'Seleccionar bebida acompaÃ±ante'
                           }
-                          searchPlaceholder='Buscar bebida…'
+                          searchPlaceholder='Buscar bebidaâ€¦'
                           options={[
-                            { value: '', label: 'Seleccionar acompañamiento' },
+                            { value: '', label: 'Seleccionar acompaÃ±amiento' },
                             ...bebidasAcompanamiento
                               .filter(
                                 bebida =>
@@ -931,7 +931,7 @@ export default function EntradasPage() {
                               )
                               .map(bebida => ({
                                 value: bebida.id,
-                                label: `${bebida.producto_nombre} · ${bebida.nombre} · ${bebida.stock_bar} en bar`,
+                                label: `${bebida.producto_nombre} Â· ${bebida.nombre} Â· ${bebida.stock_bar} en bar`,
                                 keywords: [bebida.producto_nombre, bebida.nombre]
                               }))
                           ]}
@@ -964,7 +964,7 @@ export default function EntradasPage() {
             >
               <UserRoundPlus className='mr-2 h-4 w-4' />
               {saving
-                ? 'Registrando…'
+                ? 'Registrandoâ€¦'
                 : cantidadEntradas > 1
                   ? `Registrar ${cantidadEntradas} entradas`
                   : 'Registrar entrada'}
@@ -988,7 +988,7 @@ export default function EntradasPage() {
           />
         </div>
         {loading ? (
-          <p className='text-sm text-muted-foreground'>Cargando entradas…</p>
+          <p className='text-sm text-muted-foreground'>Cargando entradasâ€¦</p>
         ) : entradas.length === 0 ? (
           <p className='text-sm text-muted-foreground'>
             No hay entradas registradas para esta fecha.
@@ -999,9 +999,9 @@ export default function EntradasPage() {
               <TableRow>
                 <TableHead>Monto entrada</TableHead>
                 <TableHead>Adicional bebida</TableHead>
-                <TableHead>Método de pago</TableHead>
-                <TableHead>Producto de cortesía</TableHead>
-                <TableHead>Registró</TableHead>
+                <TableHead>MÃ©todo de pago</TableHead>
+                <TableHead>Producto de cortesÃ­a</TableHead>
+                <TableHead>RegistrÃ³</TableHead>
                 <TableHead>Hora</TableHead>
                 <TableHead className='text-right'>Ver detalle</TableHead>
               </TableRow>
@@ -1034,8 +1034,8 @@ export default function EntradasPage() {
                     <TableCell>
                       <span className='inline-flex items-center gap-2'>
                         {grupo.cantidad_productos_cortesia > 0
-                          ? `${grupo.cantidad_productos_cortesia} producto(s) · ${grupo.registros.length} entrada(s)`
-                          : `${grupo.registros.length} entrada(s) · Sin productos`}
+                          ? `${grupo.cantidad_productos_cortesia} producto(s) Â· ${grupo.registros.length} entrada(s)`
+                          : `${grupo.registros.length} entrada(s) Â· Sin productos`}
                       </span>
                     </TableCell>
                     <TableCell>{primero.registrado_por_nombre}</TableCell>
@@ -1051,7 +1051,7 @@ export default function EntradasPage() {
                               disabled={detalleVentaCargando === grupo.id}
                               aria-label={
                                 detalleVentaCargando === grupo.id
-                                  ? 'Cargando detalle…'
+                                  ? 'Cargando detalleâ€¦'
                                   : `Ver detalle de ${grupo.registros.length} entrada(s)`
                               }
                               onClick={() => abrirDetalle(grupo)}
@@ -1079,7 +1079,7 @@ export default function EntradasPage() {
             <DialogTitle>Detalle de entradas</DialogTitle>
             <DialogDescription>
               {grupoDetalle &&
-                `Registrado por ${grupoDetalle.registros[0]?.registrado_por_nombre || '—'} · ${grupoDetalle.registros[0]?.hora || ''}`}
+                `Registrado por ${grupoDetalle.registros[0]?.registrado_por_nombre || 'â€”'} Â· ${grupoDetalle.registros[0]?.hora || ''}`}
             </DialogDescription>
           </DialogHeader>
           {grupoDetalle && (
@@ -1116,7 +1116,7 @@ export default function EntradasPage() {
                     {formatCurrencyCLP(
                       grupoDetalle.monto_entrada + grupoDetalle.monto_bebida_adicional
                     )}
-                    . El monto de entrada no se registró en los montos de Entradas.
+                    . El monto de entrada no se registrÃ³ en los montos de Entradas.
                   </p>
                 </div>
               ) : (

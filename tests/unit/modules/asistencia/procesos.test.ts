@@ -33,6 +33,10 @@ vi.mock('@/modules/asistencia/biometrico/ipWatcher', () => ({
   arrancarVigilanteIp: arranque.arrancarVigilanteIp,
   detenerVigilanteIp: arranque.detenerVigilanteIp
 }));
+// El interruptor compartido lee configuraciones de la base: en tests se fija encendido.
+vi.mock('@/modules/asistencia/biometrico/recepcionConfig', () => ({
+  recepcionAutomaticaHabilitada: vi.fn(async () => true)
+}));
 
 import {
   arrancarRecepcionBiometrica,

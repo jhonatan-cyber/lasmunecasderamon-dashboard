@@ -119,9 +119,9 @@ describe('obtenerEstadoBiometrico', () => {
 
     const estado = await obtenerEstadoBiometrico();
 
-    expect(estado.ventana).toEqual({ inicio: 20, fin: 23 });
+    // La ventana ahora tiene precisión de minuto (minutos por defecto en 0).
+    expect(estado.ventana).toEqual({ inicio: 20, minutoInicio: 0, fin: 23, minutoFin: 0 });
   });
-
   it('estado por lector: switch y último evento', async () => {
     instalarEstado();
 

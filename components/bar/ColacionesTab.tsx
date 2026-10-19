@@ -128,7 +128,7 @@ export function ColacionesTab({ searchTerm = '' }: { searchTerm?: string }) {
   const { hasOpenCaja, cajaInfo } = useCashRegisterStatus();
   const cajaId = cajaInfo?.id_caja;
   const { hasPermission } = useUserPermissions();
-  const canCreate = hasPermission('products', 'write');
+  const canCreate = hasPermission('products', 'create');
 
   const load = useCallback(async () => {
     setLoading(true);
