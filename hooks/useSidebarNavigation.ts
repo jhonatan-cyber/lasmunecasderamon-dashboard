@@ -5,34 +5,37 @@ import { useMemo, useCallback } from 'react';
 import { usePathname } from 'next/navigation';
 import type { LucideIcon } from 'lucide-react';
 import {
-  Users,
+  ArrowRightLeft,
+  Banknote,
+  Bed,
+  Calculator,
+  Calendar as CalendarIcon,
+  CalendarRange,
+  Clock,
+  DollarSign,
+  FileText,
+  Gift,
+  HandCoins,
+  Home,
+  Lock,
+  Package,
+  PackageCheck,
+  Percent,
+  RotateCcw,
+  Settings,
+  Shield,
   ShoppingBag,
   ShoppingCart,
-  Package,
   SprayCan,
-  Settings,
-  Home,
-  FileText,
-  TrendingUp,
-  UserCheck,
   Tag,
-  Shield,
-  Clock,
-  CreditCard,
-  Calculator,
-  Bed,
-  Lock,
-  Gift,
-  Percent,
-  DollarSign,
-  RotateCcw,
-  PackageCheck,
-  Wine,
-  ArrowRightLeft,
-  Calendar as CalendarIcon,
+  Ticket,
+  Timer,
+  TrendingUp,
   Trophy,
-  ReceiptText,
-  Ticket
+  UserCheck,
+  Users,
+  UtensilsCrossed,
+  Wine
 } from 'lucide-react';
 import { useCurrentUser } from '@/hooks/auth/useCurrentUser';
 import { useUserPermissions } from '@/hooks/auth/useUserPermissions';
@@ -52,11 +55,17 @@ type SidebarSection = {
   items: SidebarItem[];
 };
 
+/**
+ * Orden pensado para el uso diario: primero el resumen, luego el servicio en
+ * piso, los canales de venta, el catálogo, los clientes, el dinero y por último
+ * la administración del sistema. Cada destino mantiene un ícono propio para que
+ * la barra se lea de un vistazo.
+ */
 const SIDEBAR_SECTIONS: SidebarSection[] = [
   {
     key: 'overview',
-    title: 'Vista General',
-    description: 'Seguimiento y decisiones del día.',
+    title: 'Vista general',
+    description: 'Resumen y reportes.',
     items: [
       {
         name: 'Dashboard',
@@ -73,7 +82,7 @@ const SIDEBAR_SECTIONS: SidebarSection[] = [
   {
     key: 'operation',
     title: 'Operación',
-    description: 'Ventas, pedidos y atención en piso.',
+    description: 'Servicio, caja y privados.',
     items: [
       {
         name: 'Pedidos',
@@ -86,14 +95,14 @@ const SIDEBAR_SECTIONS: SidebarSection[] = [
         icon: TrendingUp
       },
       {
-        name: 'Cajas',
-        href: '/cash-register',
-        icon: CreditCard
-      },
-      {
         name: 'Cuentas',
         href: '/accounts',
         icon: Calculator
+      },
+      {
+        name: 'Cajas',
+        href: '/cash-register',
+        icon: Banknote
       },
       {
         name: 'Crear Privado',
@@ -108,25 +117,41 @@ const SIDEBAR_SECTIONS: SidebarSection[] = [
     ]
   },
   {
-    key: 'commercial',
-    title: 'Catálogo y Clientes',
-    description: 'Base comercial y configuración del menú.',
+    key: 'sales-points',
+    title: 'Puntos de venta',
+    description: 'Barra y canales de venta.',
     items: [
       {
-        name: 'Clientes',
-        href: '/clients',
-        icon: UserCheck
+        name: 'Bar',
+        href: '/bar',
+        icon: Wine
       },
+      {
+        name: 'Colaciones',
+        href: '/colaciones',
+        icon: UtensilsCrossed
+      },
+      {
+        name: 'Entradas',
+        href: '/entradas',
+        icon: Ticket
+      }
+    ]
+  },
+  {
+    key: 'inventory',
+    title: 'Inventario',
+    description: 'Bodega y abastecimiento.',
+    items: [
       {
         name: 'Bodega',
         href: '/products',
         icon: Package
       },
-      { name: 'Insumos de limpieza', href: '/cleaning', icon: SprayCan },
       {
-        name: 'Envases devueltos',
-        href: '/products/containers',
-        icon: PackageCheck
+        name: 'Categorías',
+        href: '/categories',
+        icon: Tag
       },
       {
         name: 'Transferencia',
@@ -139,31 +164,38 @@ const SIDEBAR_SECTIONS: SidebarSection[] = [
         icon: ShoppingBag
       },
       {
-        name: 'Bar',
-        href: '/bar',
-        icon: Wine
+        name: 'Envases devueltos',
+        href: '/products/containers',
+        icon: PackageCheck
       },
       {
-        name: 'Colaciones',
-        href: '/colaciones',
-        icon: ReceiptText
+        name: 'Insumos de limpieza',
+        href: '/cleaning',
+        icon: SprayCan
+      }
+    ]
+  },
+  {
+    key: 'clients',
+    title: 'Clientes',
+    description: 'Fichas y devoluciones.',
+    items: [
+      {
+        name: 'Clientes',
+        href: '/clients',
+        icon: UserCheck
       },
       {
-        name: 'Entradas',
-        href: '/entradas',
-        icon: Ticket
-      },
-      {
-        name: 'Categorías',
-        href: '/categories',
-        icon: Tag
+        name: 'Devoluciones',
+        href: '/returns',
+        icon: RotateCcw
       }
     ]
   },
   {
     key: 'finance',
     title: 'Finanzas',
-    description: 'Control de pagos, incentivos y cierres.',
+    description: 'Pagos e incentivos.',
     items: [
       {
         name: 'Propinas',
@@ -183,29 +215,24 @@ const SIDEBAR_SECTIONS: SidebarSection[] = [
       {
         name: 'Detalle Planillas',
         href: '/payroll/calendar',
-        icon: CalendarIcon
+        icon: CalendarRange
       },
       {
         name: 'Anticipos',
         href: '/advances',
-        icon: DollarSign
+        icon: HandCoins
       },
       {
         name: 'Gratificaciones',
         href: '/gratificaciones',
         icon: Trophy
-      },
-      {
-        name: 'Devoluciones',
-        href: '/returns',
-        icon: RotateCcw
       }
     ]
   },
   {
     key: 'team',
     title: 'Equipo',
-    description: 'Personas, permisos y jornada laboral.',
+    description: 'Usuarios y jornada.',
     items: [
       {
         name: 'Usuarios',
@@ -225,14 +252,14 @@ const SIDEBAR_SECTIONS: SidebarSection[] = [
       {
         name: 'Horas Extras',
         href: '/overtime',
-        icon: Clock
+        icon: Timer
       }
     ]
   },
   {
     key: 'settings',
     title: 'Configuración',
-    description: 'Ajustes generales de la plataforma.',
+    description: 'Ajustes de la plataforma.',
     items: [
       {
         name: 'Configuración',
@@ -254,6 +281,7 @@ type VisibleSection = SidebarSection & {
 type UseSidebarNavigationReturn = {
   sections: VisibleSection[];
   isAdmin: boolean;
+  role: string | null;
   loading: boolean;
   hasModulePermission: (item: SidebarItem) => boolean;
   SIDEBAR_SECTIONS: SidebarSection[];
@@ -331,6 +359,7 @@ export function useSidebarNavigation(
   return {
     sections,
     isAdmin,
+    role: user?.role ?? null,
     loading,
     hasModulePermission,
     SIDEBAR_SECTIONS

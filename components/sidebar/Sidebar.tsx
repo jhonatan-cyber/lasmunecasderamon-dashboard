@@ -11,11 +11,26 @@ import { cn } from '@/lib/utils/utils';
 import { useSidebar } from '@/contexts/SidebarContext';
 import { Tooltip, TooltipTrigger, TooltipContent, TooltipProvider } from '@/components/ui/tooltip';
 import { useSidebarNavigation, type SidebarItem } from '@/hooks/useSidebarNavigation';
+import { matchesRoutePath } from '@/lib/constants/route-permissions';
 
 type SidebarShellProps = {
   isCollapsed: boolean;
   children: React.ReactNode;
 };
+
+/**
+ * Subtítulo del encabezado según el rol. `LayoutContent.canShowSidebar` solo
+ * monta el panel para estos roles, así que el resto cae en el genérico.
+ */
+const PANEL_SUBTITLES: Record<string, string> = {
+  administrador: 'Panel Administrativo',
+  cajero: 'Panel de Caja',
+  barman: 'Panel de Barra'
+};
+
+function panelSubtitleFor(role: string | null): string {
+  return PANEL_SUBTITLES[role?.toLowerCase() ?? ''] ?? 'Panel Operativo';
+}
 
 function SidebarShell({ isCollapsed, children }: SidebarShellProps) {
   return (
@@ -32,11 +47,12 @@ function SidebarShell({ isCollapsed, children }: SidebarShellProps) {
 
 type SidebarHeaderProps = {
   isCollapsed: boolean;
+  subtitle: string;
   onClose?: () => void;
   loading?: boolean;
 };
 
-function SidebarHeader({ isCollapsed, onClose, loading = false }: SidebarHeaderProps) {
+function SidebarHeader({ isCollapsed, subtitle, onClose, loading = false }: SidebarHeaderProps) {
   return (
     <div
       className={cn(
@@ -77,7 +93,7 @@ function SidebarHeader({ isCollapsed, onClose, loading = false }: SidebarHeaderP
                 Las Muñecas
               </p>
               <p className='truncate text-sm font-semibold text-gray-900 dark:text-neutral-100'>
-                Panel Administrativo
+                {subtitle}
               </p>
             </div>
           )}
@@ -97,10 +113,10 @@ function SidebarHeader({ isCollapsed, onClose, loading = false }: SidebarHeaderP
   );
 }
 
-function SidebarSkeleton({ isCollapsed }: { isCollapsed: boolean }) {
+function SidebarSkeleton({ isCollapsed, subtitle }: { isCollapsed: boolean; subtitle: string }) {
   return (
     <SidebarShell isCollapsed={isCollapsed}>
-      <SidebarHeader isCollapsed={isCollapsed} loading />
+      <SidebarHeader isCollapsed={isCollapsed} subtitle={subtitle} loading />
       <nav className='flex-1 px-4 py-6 space-y-2 overflow-y-auto [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden'>
         {!isCollapsed && (
           <>
@@ -119,8 +135,9 @@ type SidebarSectionBlockProps = {
   title: string;
   description: string;
   items: SidebarItem[];
-  pathname: string;
+  activeHref: string | null;
   isCollapsed: boolean;
+  showSeparator?: boolean;
   onNavigate: () => void;
 };
 
@@ -128,8 +145,9 @@ function SidebarSectionBlock({
   title,
   description,
   items,
-  pathname,
+  activeHref,
   isCollapsed,
+  showSeparator = false,
   onNavigate
 }: SidebarSectionBlockProps) {
   if (items.length === 0) {
@@ -138,7 +156,14 @@ function SidebarSectionBlock({
 
   return (
     <div className='space-y-2'>
-      {!isCollapsed && (
+      {isCollapsed ? (
+        showSeparator && (
+          <div
+            aria-hidden='true'
+            className='mx-2 my-1 border-t border-gray-200/80 dark:border-neutral-800'
+          />
+        )
+      ) : (
         <div className='px-3'>
           <h3 className='text-[11px] font-semibold text-gray-500 dark:text-neutral-400 uppercase tracking-[0.24em]'>
             {title}
@@ -148,14 +173,15 @@ function SidebarSectionBlock({
       )}
       <ul className='space-y-1.5'>
         {items.map(item => {
-          const isActive = pathname === item.href;
+          const isActive = item.href === activeHref;
 
           const linkContent = (
             <Link
               href={item.href}
               onClick={onNavigate}
+              aria-current={isActive ? 'page' : undefined}
               className={cn(
-                'flex items-center gap-3 px-3 py-2.5 text-sm font-medium rounded-xl group nav-item',
+                'flex items-center gap-3 px-3 py-2.5 text-sm font-medium rounded-xl group nav-item outline-hidden focus-visible:ring-2 focus-visible:ring-blue-500/50',
                 isActive
                   ? cn('nav-item-active', isCollapsed && 'nav-collapsed')
                   : 'text-gray-700 dark:text-neutral-300'
@@ -191,25 +217,38 @@ export function Sidebar() {
   const [mounted, setMounted] = React.useState(false);
   const { isSidebarOpen, isCollapsed, closeSidebar } = useSidebar();
   const [searchTerm, setSearchTerm] = React.useState('');
-  const { sections, loading } = useSidebarNavigation({ searchTerm: searchTerm || undefined });
+  const { sections, loading, role } = useSidebarNavigation({ searchTerm: searchTerm || undefined });
+  const subtitle = panelSubtitleFor(role);
 
   React.useEffect(() => {
     setMounted(true);
   }, []);
 
+  // Resalta el destino más específico: en `/payroll/calendar` manda "Detalle
+  // Planillas" y en `/products/containers` manda "Envases devueltos".
+  const activeHref = React.useMemo(() => {
+    const hrefs = sections.flatMap(section => section.items.map(item => item.href));
+    return (
+      hrefs
+        .filter(href => matchesRoutePath(pathname, href))
+        .sort((a, b) => b.length - a.length)[0] ?? null
+    );
+  }, [sections, pathname]);
+
   if (!mounted || loading) {
-    return <SidebarSkeleton isCollapsed={isCollapsed} />;
+    return <SidebarSkeleton isCollapsed={isCollapsed} subtitle={subtitle} />;
   }
 
   const content = (
     <SidebarShell isCollapsed={isCollapsed}>
-      <SidebarHeader isCollapsed={isCollapsed} onClose={closeSidebar} />
+      <SidebarHeader isCollapsed={isCollapsed} subtitle={subtitle} onClose={closeSidebar} />
       {!isCollapsed && (
         <div className='sticky top-0 z-10 border-b border-gray-200/80 bg-white px-7 py-4 dark:border-neutral-800 dark:bg-neutral-900'>
           <div className='relative'>
             <Search className='absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400 dark:text-neutral-500 pointer-events-none' />
             <Input
               type='text'
+              aria-label='Buscar opciones del menú'
               placeholder='Buscar opciones...'
               value={searchTerm}
               onChange={e => setSearchTerm(e.target.value)}
@@ -227,15 +266,19 @@ export function Sidebar() {
           </div>
         </div>
       )}
-      <nav className='flex-1 overflow-y-auto [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden px-4 py-5 space-y-7'>
-        {sections.map(section => (
+      <nav
+        aria-label='Menú principal'
+        className='flex-1 overflow-y-auto [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden px-4 py-5 space-y-7'
+      >
+        {sections.map((section, index) => (
           <SidebarSectionBlock
             key={section.key}
             title={section.title}
             description={section.description}
             items={section.items}
-            pathname={pathname}
+            activeHref={activeHref}
             isCollapsed={isCollapsed}
+            showSeparator={index > 0}
             onNavigate={closeSidebar}
           />
         ))}
