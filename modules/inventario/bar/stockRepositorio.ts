@@ -164,19 +164,30 @@ export async function listarStockBar(
  * Resumen para el panel de shots del bar: lo servido hoy, los ml que quedan en las
  * botellas abiertas y cuántas están por agotarse (≤ `shots_alerta` shots restantes).
  *
- * Los ml por shot pueden variar por producto (`productos.ml_shot`): los conteos se
- * calculan producto por producto y sólo se recurre al `shot_ml` global cuando el
- * producto no define los suyos.
+ * Los ml servidos salen de los movimientos (incluyen el acompañamiento), pero los
+ * cortos se cuentan desde `detalle_ventas`: dividir los ml por el shot no distingue
+ * un corto de una botella con bebida y además suma los ml del acompañamiento.
+ * `shotsServidosHoy` se deriva de `cortosHoy` para que el stat y su detalle coincidan.
  */
 export async function obtenerResumenShots(): Promise<ShotsSummary> {
   const { shotMl, shotsAlerta } = await getBarMlConfig();
   const inicioDia = `${getNowInBusinessTimezone().slice(0, 10)} 00:00:00`;
 
+  // Los ml servidos = lo que salió por ventas hoy menos lo que volvió al bar
+  // por una anulación de hoy. La reversión apunta a su movimiento de origen
+  // (`movimiento_origen`): si la venta anulada es de otro día, su ml no
+  // corresponde a la tarjeta de hoy y no tiene que restar.
   const [hoy] = await query<any[]>(
-    `SELECT COALESCE(SUM(m.ml), 0) AS ml_ventas
-       FROM inventario_movimientos m
-      WHERE m.tipo = 'venta' AND m.ml > 0 AND m.fecha_crea >= ?`,
-    [inicioDia]
+    `SELECT (SELECT COALESCE(SUM(m.ml), 0)
+                FROM inventario_movimientos m
+               WHERE m.tipo = 'venta' AND m.ml > 0 AND m.fecha_crea >= ?)
+           -
+           (SELECT COALESCE(SUM(r.ml), 0)
+              FROM inventario_movimientos r
+              JOIN inventario_movimientos o ON o.id = r.movimiento_origen
+             WHERE r.tipo = 'devolucion' AND r.ml > 0
+               AND o.tipo = 'venta' AND o.fecha_crea >= ?) AS ml_ventas`,
+    [inicioDia, inicioDia]
   );
   const [abiertas] = await query<any[]>(
     `SELECT COUNT(*) AS botellas,
