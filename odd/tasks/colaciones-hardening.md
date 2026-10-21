@@ -187,3 +187,19 @@ Verificación: test unitario por regla tocada (RED antes de implementar) y
   disparaba el duplicado — que es correcto. Restaurado el helper original
   (siempre crea una caja propia) y acotada la aserción de "no quedó colación" a
   la caja del caso.
+- **L13** (2026-10-21) — Revisión nativa (RDD): se intentó sobre la entrega
+  completa (171 archivos, 13.373 líneas) y la capa nativa la rechazó por
+  `lens_context_budget_exceeded` — con cuatro lentes no entra en su presupuesto
+  de contexto. Se redujo a los últimos cinco commits (19 archivos, 638 líneas)
+  y el consentimiento se respondió **omitir**; se reintentó con la entrega
+  completa y una sola lente enfocada en riesgo (las migraciones y los permisos)
+  y también se respondió **omitir**. No se creó autoridad de revisión ni
+  registro: `consent: declined_this_candidate` en ambos casos. La entrega sigue
+  sin revisión nativa, por decisión explícita.
+  Lo que no se pudo revisar de forma acotada: el endurecimiento de colaciones
+  vive dentro de un commit de 158 archivos que mezcla el trabajo en curso del
+  usuario con estos cambios, así que no se puede acotar como candidato. Para
+  revisarlo habría que separar ese commit (reescritura de historia).
+- **L14** (2026-10-21) — Verificación final de la entrega: unitarias 2884/2884,
+  PostgreSQL 232/232, `typecheck` y `lint:full` sin errores, arquitectura con 0
+  hallazgos, CI en verde y deploy a VPS en verde con las migraciones aplicadas.
