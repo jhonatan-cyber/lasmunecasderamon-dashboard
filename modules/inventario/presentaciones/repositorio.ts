@@ -75,6 +75,13 @@ export async function crearPresentacion(
   return mapPresentacion(row);
 }
 
+/**
+ * Cuenta las dependencias que impiden borrar una presentación sin perder
+ * auditoría. Son **contadores de dependencias**, no métricas de uso: `colaciones`
+ * dice cuántas colaciones apuntan a esta presentación, no cuánta bebida se
+ * sirvió. Un conteo es justo lo que la guarda necesita, así que no se cambia
+ * por una suma de ml.
+ */
 export async function eliminarPresentacion(id: string): Promise<void> {
   await withTransaction(async trx => {
     const [presentacion] = await trx<{ id: string }[]>(

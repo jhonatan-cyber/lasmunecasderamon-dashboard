@@ -1,3 +1,21 @@
+> **SUPERADO — no lo tomes como plan vigente.**
+>
+> Este plan describía el tab de colaciones de
+> `components/bar/ColacionesTab.tsx`. Ese archivo ya no existe: el módulo se
+> movió a `components/colaciones/ColacionesTab.tsx` y el diseño cambió. En vez
+> de un selector aparte de "bebida analcohólica", la regla es **rol →
+> catálogo**: la anfitriona recibe los productos habilitados para colación y los
+> roles de bar (cajero, garzón, barman) solo las bebidas analcohólicas, con el
+> catálogo duplicado en `lib/business/colacionRoles.ts` y validado en el
+> servidor.
+>
+> La especificación vigente está en:
+>
+> - `odd/tasks/colaciones-hardening.md` — el endurecimiento del módulo.
+> - `odd/tasks/bar-producto-desactivado-y-anulaciones.md` — reglas del bar.
+>
+> El texto original se conserva abajo como registro de la decisión.
+
 # Plan — Bar · Tab Colaciones: listado condicional de bebidas analcohólicas + eliminación de campos
 
 Alcance: el **tab de colaciones del módulo bar**, que vive en

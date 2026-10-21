@@ -301,6 +301,14 @@ export async function reordenarProductos(
   }
 }
 
+/**
+ * Cuenta las dependencias que impiden borrar un producto sin perder auditoría.
+ * Son **contadores de dependencias**, no métricas de uso: `colaciones` dice
+ * cuántas colaciones apuntan a este producto, no cuánta bebida se sirvió. Un
+ * conteo es justo lo que la guarda necesita —una sola colación, aunque no
+ * haya servido ni un ml, ya impide borrar sin perder el registro—, así que no
+ * se cambia por una suma de ml.
+ */
 export async function eliminarProducto(id: string): Promise<void> {
   await withTransaction(async trx => {
     const [producto] = await trx<{ id_producto: string }[]>(

@@ -27,6 +27,17 @@ interface DependenciasCategoria {
  * movimientos, compras, ventas, consumos y referencias a sus presentaciones.
  * Se evalúa tanto en el preview como en el borrado real.
  */
+/**
+ * Cuenta todo lo que impide borrar una categoría sin perder auditoría: stock,
+ * movimientos, compras, ventas, consumos y referencias a sus presentaciones.
+ * Se evalúa tanto en el preview como en el borrado real.
+ *
+ * Son **contadores de dependencias**, no métricas de uso: `colaciones` dice
+ * cuántas colaciones apuntan a esta categoría, no cuánta bebida se sirvió. Un
+ * conteo es justo lo que la guarda necesita —una sola colación, aunque no
+ * haya servido ni un ml, ya impide borrar sin perder el registro—, así que no
+ * se cambia por una suma de ml.
+ */
 async function contarDependenciasCategoria(
   ejecutor: Ejecutor,
   id: string
