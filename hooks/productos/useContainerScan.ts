@@ -5,7 +5,6 @@ import { toast } from 'sonner';
 import { playScanSound, prepareScanSound } from '@/lib/utils/audioUtils';
 import type { DevolucionEnvaseResultado } from '@/modules/inventario/contracts';
 
-/** Texto corto del motivo por el que un escaneo no se aceptó. */
 export const MOTIVO_ENVASE: Record<string, string> = {
   no_es_nuestro: 'No es nuestro',
   no_esta_vacia: 'No está vacío',
@@ -15,10 +14,6 @@ export const MOTIVO_ENVASE: Record<string, string> = {
   ya_confirmado: 'Ya confirmado'
 };
 
-/**
- * Un escaneo del lote en curso. `ok` es true/false cuando el servidor ya lo
- * verificó y null mientras esté en cola local sin verificar (sin conexión).
- */
 export interface EscaneoEnvase {
   id: string;
   codigo: string;
@@ -29,35 +24,21 @@ export interface EscaneoEnvase {
 }
 
 interface UseContainerScanOptions {
-  /** Endpoint del paso: entrega del bar o confirmación de la bodega. */
   endpoint: string;
-  /** Se llama con retardo tras un escaneo aceptado, para refrescar el historial. */
   onAceptado?: () => void;
-  /** Espera para agrupar ráfagas de escaneos en un solo refresco del historial. */
   refrescoMs?: number;
 }
 
 const CLAVE_SONIDO = 'envases_aviso_sonoro';
-/** Cuántos escaneos de la sesión se conservan; la cola pendiente nunca se recorta. */
 const MAXIMO_SESION = 50;
-
-/**
- * Clave propia por paso. No se comparte con `offline_request_queue`
- * (lib/utils/offlineStore.ts) porque la cola genérica solo limpia el ítem al
- * recibir 2xx y no devuelve el diagnóstico, y aquí cada escaneo necesita su
- * veredicto para los contadores del lote.
- */
 const claveColaDe = (endpoint: string) =>
   `envases_cola_escaneos_${endpoint.replace(/[^a-zA-Z0-9]+/g, '_')}`;
 
-/** Clave de localStorage donde un paso guarda su cola pendiente. */
 export const claveColaDeEscaneos = claveColaDe;
 
-/** Solo se reintenta lo que puede mejorar con el tiempo (red o servidor caído). */
 const esFalloTransitorio = (status: number | null) =>
   status === null || status >= 500 || status === 408 || status === 429;
 
-/** La cola guardada se recupera aunque la página se cierre a mitad del lote. */
 const leerCola = (clave: string): EscaneoEnvase[] => {
   if (typeof window === 'undefined') return [];
   try {
@@ -78,7 +59,7 @@ const leerCola = (clave: string): EscaneoEnvase[] => {
         : []
     );
   } catch {
-    return []; // dato corrupto: se arranca sin cola en vez de romper la página
+    return [];
   }
 };
 
@@ -87,16 +68,6 @@ type Envio =
   | { tipo: 'transitorio' }
   | { tipo: 'error' };
 
-/**
- * Escaneo continuo del control de envases con modo offline.
- *
- * En línea, cada lectura se verifica al instante (aceptado/rechazado) y suena
- * distinto. Sin conexión la lectura **no se pierde**: queda en cola local
- * (localStorage, por paso) con un tercer tono, se cuenta como "en cola" y se
- * verifica sola al reconectar —o al pulsar reintentar— devolviendo a cada
- * escaneo su veredicto y sus contadores. Nunca se descarta una lectura
- * pendiente, ni al limpiar el lote ni al recortar la lista.
- */
 export function useContainerScan({
   endpoint,
   onAceptado,
@@ -113,13 +84,9 @@ export function useContainerScan({
   const sincronizandoRef = useRef(false);
   const refresco = useRef<ReturnType<typeof setTimeout> | null>(null);
   const consecutivo = useRef(0);
-  // Prefijo estable y puro de esta sesión: evita chocar con los ids guardados
-  // en la cola de una sesión anterior (Math.random está prohibido en render).
   const sesionId = useId();
   const cargada = useRef(false);
   const claveCola = useMemo(() => claveColaDe(endpoint), [endpoint]);
-
-  /** Recorta los resueltos más antiguos; la cola pendiente no se pierde nunca. */
   const recortar = useCallback((lista: EscaneoEnvase[]): EscaneoEnvase[] => {
     if (lista.length <= MAXIMO_SESION) return lista;
     const excedente = lista.length - MAXIMO_SESION;
@@ -149,7 +116,6 @@ export function useContainerScan({
     }, refrescoMs);
   }, [onAceptado, refrescoMs]);
 
-  /** POST de un código; dice si hubo veredicto, si habría que reintentar o si es un error. */
   const enviar = useCallback(
     async (codigo: string): Promise<Envio> => {
       let res: Response;
@@ -178,15 +144,8 @@ export function useContainerScan({
     [endpoint]
   );
 
-  /**
-   * Vuelve a intentar la cola en orden de escaneo y le asigna a cada ítem su
-   * veredicto. Se detiene en el primer fallo de red para no mezclar el orden ni
-   * descartar nada: lo que quede pendiente se reintenta en el próximo trigger.
-   */
   const sincronizar = useCallback(async (): Promise<boolean> => {
     if (sincronizandoRef.current) return false;
-    // La sesión va de lo más reciente a lo más antiguo; la cola se reintenta en
-    // orden cronológico para que el primer veredicto sea el de la primera lectura.
     const pendientes = sesionRef.current.filter(e => e.ok === null).reverse();
     if (pendientes.length === 0) return false;
 
@@ -237,15 +196,8 @@ export function useContainerScan({
     [sesionId]
   );
 
-  /**
-   * Procesa un código escaneado. Devuelve false si lo ignoró (código vacío, ya
-   * había un escaneo en curso o un error del cliente), para que el llamador no
-   * borre el campo; devuelve true tanto si se verificó como si quedó en cola,
-   * porque el código ya quedó registrado.
-   */
   const escanear = useCallback(
     async (valor: string): Promise<boolean> => {
-      // Igual que el servidor: el código se compara mayúsculas y sin espacios.
       const codigo = valor.trim().toUpperCase();
       if (!codigo || enCurso.current) return false;
       enCurso.current = true;
@@ -262,8 +214,6 @@ export function useContainerScan({
         if (envio.tipo === 'transitorio') {
           const yaEnCola = sesionRef.current.some(e => e.ok === null && e.codigo === codigo);
           if (yaEnCola) {
-            // Mismo envase re-escaneado sin conexión: ya está guardado; duplicarlo
-            // haría que al sincronizar el segundo pasara por rechazo.
             if (sonido) playScanSound('cola');
             return true;
           }
@@ -304,7 +254,6 @@ export function useContainerScan({
           ...sesionRef.current
         ]);
         if (ok) programarRefresco();
-        // Si la red acaba de responder y queda cola, es el momento de drenarla.
         if (sesionRef.current.some(e => e.ok === null)) void sincronizar();
         return true;
       } finally {
@@ -315,7 +264,6 @@ export function useContainerScan({
     [enviar, sonido, aplicarSesion, nuevoId, programarRefresco, sincronizar]
   );
 
-  /** Reinicia el conteo del lote; los pendientes de sincronizar se conservan. */
   const limpiar = useCallback(() => {
     aplicarSesion(sesionRef.current.filter(e => e.ok === null));
     setResultado(null);
@@ -332,7 +280,6 @@ export function useContainerScan({
     });
   }, []);
 
-  // Al montar (post-hidratación) se recupera la cola y se escucha la reconexión.
   useEffect(() => {
     if (typeof window === 'undefined' || cargada.current) return;
     cargada.current = true;
@@ -351,15 +298,12 @@ export function useContainerScan({
     };
   }, [claveCola, aplicarSesion, sincronizar]);
 
-  // La cola pendiente se persiste en cada cambio; los resueltos no se guardan.
   useEffect(() => {
     if (typeof window === 'undefined' || !cargada.current) return;
     try {
       const cola = sesion.filter(e => e.ok === null);
       window.localStorage.setItem(claveCola, JSON.stringify(cola));
-    } catch {
-      // sin espacio o almacenamiento bloqueado: la cola sigue en memoria
-    }
+    } catch {}
   }, [sesion, claveCola]);
 
   const aceptados = useMemo(() => sesion.filter(e => e.ok === true).length, [sesion]);

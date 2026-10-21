@@ -3,7 +3,7 @@
 import { useEffect, useState, useRef } from 'react';
 import type { Dispatch, SetStateAction } from 'react';
 import { CHAMPAGNE_DEFAULT_TIERS, type ChampagneTier } from '@/lib/business/champagne';
-import { resolveShotMl, resolveShotMlAnfitriona } from '@/lib/business/shotMl';
+import { etiquetaCorto, resolveShotMl, resolveShotMlAnfitriona } from '@/lib/business/shotMl';
 import { useConfigValue } from '@/hooks/shared/useConfigValue';
 import {
   esBebidaAnalcoholica,
@@ -26,6 +26,16 @@ export interface TransferForm {
   setMaxAnfitrionas: (value: string) => void;
   colacionHabilitada: boolean;
   setColacionHabilitada: (value: boolean) => void;
+  /** Ml configurados para la colación (vacío = se usan los del corto de anfitriona). */
+  mlColacion: string;
+  setMlColacion: (value: string) => void;
+  /** Ml de bebida analcohólica por colación (vacío = se usa el del corto de anfitriona). */
+  mlAcompanamientoColacion: string;
+  setMlAcompanamientoColacion: (value: string) => void;
+  /** Ml que la colación hereda del corto de anfitriona; null si el producto no lo tiene. */
+  mlColacionSugerido: number | null;
+  /** Ml de acompañamiento heredado del corto de anfitriona; null si no lo define. */
+  mlAcompanamientoColacionSugerido: number | null;
   coverHabilitado: boolean;
   setCoverHabilitado: (value: boolean) => void;
   acompanamientoBotella: 'ninguno' | 'gaseosa' | 'soda';
@@ -88,6 +98,8 @@ export function useTransferForm({
   const [mlAcompanamientoAnfitriona, setMlAcompanamientoAnfitriona] = useState('');
   const [maxAnfitrionas, setMaxAnfitrionas] = useState('');
   const [colacionHabilitada, setColacionHabilitada] = useState(false);
+  const [mlColacion, setMlColacion] = useState('');
+  const [mlAcompanamientoColacion, setMlAcompanamientoColacion] = useState('');
   const [coverHabilitado, setCoverHabilitado] = useState(false);
   const [acompanamientoBotella, setAcompanamientoBotella] = useState<
     'ninguno' | 'gaseosa' | 'soda'
@@ -119,10 +131,7 @@ export function useTransferForm({
   // Lo que se muestra en los labels: lo que se está editando o el valor vigente.
   const mlPorShot = resolveShotMl(Number(mlShotCliente), shotMl);
   const mlPorShotAnfitriona = resolveShotMlAnfitriona(Number(mlShotAnfitriona), mlPorShot);
-  const etiquetaShot =
-    mlPorShotAnfitriona !== mlPorShot
-      ? `Corto · ${mlPorShot} ml · Anf ${mlPorShotAnfitriona} ml`
-      : `Corto · ${mlPorShot} ml`;
+  const etiquetaShot = etiquetaCorto(mlPorShot, mlPorShotAnfitriona);
 
   const esChampagneItem = esChampagne(item?.categoria_nombre);
   // Bebidas analcohólicas y cigarrillos: sin cortos ni anfitrionas, solo venta por botella.
@@ -155,6 +164,17 @@ export function useTransferForm({
       setMaxAnfitrionas(Number(item.max_anfitrionas) > 0 ? String(item.max_anfitrionas) : '');
       const bottle = options.find(option => option.tipo === 'botella');
       setColacionHabilitada(bottle?.colacion_habilitada === true);
+      setMlColacion(
+        bottle?.ml_colacion !== undefined && bottle?.ml_colacion !== null
+          ? String(bottle.ml_colacion)
+          : ''
+      );
+      setMlAcompanamientoColacion(
+        bottle?.acompanamiento_colacion?.ml !== undefined &&
+          bottle?.acompanamiento_colacion?.ml !== null
+          ? String(bottle.acompanamiento_colacion.ml)
+          : ''
+      );
       setCoverHabilitado(bottle?.cover_habilitado === true);
       setAcompanamientoBotella(
         (bottle?.acompanamiento?.unidades ?? 0) > 0
@@ -279,6 +299,8 @@ export function useTransferForm({
   const reset = () => {
     setMaxAnfitrionas('');
     setColacionHabilitada(false);
+    setMlColacion('');
+    setMlAcompanamientoColacion('');
     setCoverHabilitado(false);
     setAcompanamientoBotella('ninguno');
     setUnidadesAcompanamiento('');
@@ -305,6 +327,14 @@ export function useTransferForm({
       ? opcionesGuardadas.some(option => option.tipo === 'shot')
       : tipos.includes('shot'));
 
+  // La colación toma los ml del corto de anfitriona cuando el producto lo
+  // tiene; si falta alguno, el modal pide ese dato.
+  const mlColacionSugerido = shotActivo && mlPorShotAnfitriona > 0 ? mlPorShotAnfitriona : null;
+  const mlAcompanamientoColacionSugerido =
+    shotActivo && Number(mlAcompanamientoAnfitriona) > 0
+      ? Number(mlAcompanamientoAnfitriona)
+      : null;
+
   return {
     esAnalcoholicaItem,
     mlAcompanamientoAnfitriona,
@@ -313,6 +343,12 @@ export function useTransferForm({
     setMaxAnfitrionas,
     colacionHabilitada,
     setColacionHabilitada,
+    mlColacion,
+    setMlColacion,
+    mlAcompanamientoColacion,
+    setMlAcompanamientoColacion,
+    mlColacionSugerido,
+    mlAcompanamientoColacionSugerido,
     coverHabilitado,
     setCoverHabilitado,
     acompanamientoBotella,

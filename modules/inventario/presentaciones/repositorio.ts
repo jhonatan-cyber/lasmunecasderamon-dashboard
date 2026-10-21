@@ -5,13 +5,14 @@
  * importa este archivo (§5). Mismo SQL y mismas reglas que la capa heredada
  * (`PresentacionQueries`): este corte mueve código, no cambia comportamiento.
  */
-import { query, generateUUID, type TransactionQuery } from '@/lib/database/db';
+import { query, generateUUID, withTransaction, type TransactionQuery } from '@/lib/database/db';
 import { mapPresentacion } from '../helpers';
 import { ESTADO_UNIDAD_ACTIVA } from '../estados';
 import type { PresentacionRow } from '../tipos';
 import type { NuevaPresentacionInput, PresentacionCamposInput } from '../contracts';
 import { getNowInBusinessTimezone } from '@/lib/business/timezoneService';
 import { BaseRepository } from '@/lib/database/base-repository';
+import { ConflictError, NotFoundError } from '@/lib/errors/errors';
 
 type Ejecutor = TransactionQuery | typeof query;
 
@@ -75,7 +76,55 @@ export async function crearPresentacion(
 }
 
 export async function eliminarPresentacion(id: string): Promise<void> {
-  await BaseRepository.delete(query, 'inventario_presentaciones', 'id', id);
+  await withTransaction(async trx => {
+    const [presentacion] = await trx<{ id: string }[]>(
+      'SELECT id FROM inventario_presentaciones WHERE id = ? FOR UPDATE',
+      [id]
+    );
+    if (!presentacion) throw new NotFoundError('Presentación', id);
+
+    const [deps] = await trx<
+      {
+        unidades: string;
+        movimientos: string;
+        consumos: string;
+        compras: string;
+        ventas: string;
+        colaciones: string;
+        entradas: string;
+        entradas_productos: string;
+        reposicion: string;
+        servicios: string;
+        solicitudes: string;
+      }[]
+    >(
+      `SELECT
+         (SELECT COUNT(*) FROM inventario_unidades WHERE presentacion_id = ?) AS unidades,
+         (SELECT COUNT(*) FROM inventario_movimientos WHERE presentacion_id = ?) AS movimientos,
+         (SELECT COUNT(*) FROM inventario_movimiento_unidades mu
+            INNER JOIN inventario_unidades u ON u.id = mu.unidad_id
+           WHERE u.presentacion_id = ?) AS consumos,
+         (SELECT COUNT(*) FROM detalle_compras WHERE presentacion_id = ?) AS compras,
+         (SELECT COUNT(*) FROM detalle_ventas WHERE presentacion_id = ?) AS ventas,
+         (SELECT COUNT(*) FROM colaciones WHERE presentacion_id = ?) AS colaciones,
+         (SELECT COUNT(*) FROM entradas_clientes
+           WHERE cover_presentacion_id = ? OR bebida_acompanamiento_presentacion_id = ?) AS entradas,
+         (SELECT COUNT(*) FROM entradas_clientes_productos
+           WHERE presentacion_id = ? OR acompanamiento_presentacion_id = ?) AS entradas_productos,
+         (SELECT COUNT(*) FROM ordenes_reposicion WHERE presentacion_id = ?) AS reposicion,
+         (SELECT COUNT(*) FROM servicios WHERE producto_incluido_presentacion_id = ?) AS servicios,
+         (SELECT COUNT(*) FROM solicitudes_servicios WHERE producto_incluido_presentacion_id = ?) AS solicitudes`,
+      [id, id, id, id, id, id, id, id, id, id, id, id]
+    );
+
+    if (Object.values(deps ?? {}).some(valor => Number(valor) > 0)) {
+      throw new ConflictError(
+        'No se puede eliminar la presentación: tiene stock o historial asociado.'
+      );
+    }
+
+    await BaseRepository.delete(trx, 'inventario_presentaciones', 'id', id);
+  });
 }
 
 export async function obtenerPresentacion(id: string): Promise<PresentacionRow | null> {

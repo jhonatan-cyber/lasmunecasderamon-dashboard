@@ -4,6 +4,7 @@
  * SQL movido 1:1 desde `lib/repositories/inventory/CatalogoQueries.ts`.
  */
 import { query } from '@/lib/database/db';
+import { CATEGORIA_BEBIDAS_ANALCOHOLICAS } from '@/lib/business/colacionRoles';
 import { getTopeSimple } from '../bar/configuracion';
 import { completarOpciones } from '../helpers';
 import { ESTADO_UNIDAD_ACTIVA } from '../estados';
@@ -13,6 +14,7 @@ export interface FiltrosParaVenta {
   term?: string;
   solo_colaciones?: boolean;
   solo_cover?: boolean;
+  solo_colaciones_analcoholicas?: boolean;
 }
 
 export async function listarParaVenta(filters?: FiltrosParaVenta): Promise<any[]> {
@@ -29,6 +31,15 @@ export async function listarParaVenta(filters?: FiltrosParaVenta): Promise<any[]
         WHERE opcion->>'tipo' = 'botella' AND opcion->>'cover_habilitado' = 'true'
       )`
     : '';
+  // Bebidas analcohólicas habilitadas para colación: la categoría protegida
+  // compartida con la regla de roles, con una opción botella marcada para
+  // colación. Reutiliza el flag `colacion_habilitada` que valida el servidor.
+  const whereColacionAnalcoholica = filters?.solo_colaciones_analcoholicas
+    ? `AND c.system_key = ? AND EXISTS (
+        SELECT 1 FROM jsonb_array_elements(COALESCE(p.opciones_venta::jsonb, '[]'::jsonb)) opcion
+        WHERE opcion->>'tipo' = 'botella' AND opcion->>'colacion_habilitada' = 'true'
+      )`
+    : '';
   let whereCategoria = '';
   if (filters?.category_id) {
     whereCategoria = 'AND pr.categoria_id = ?';
@@ -42,6 +53,7 @@ export async function listarParaVenta(filters?: FiltrosParaVenta): Promise<any[]
       'AND (LOWER(pr.nombre) LIKE LOWER(?) OR LOWER(pr.codigo) LIKE LOWER(?) OR LOWER(p.nombre) LIKE LOWER(?) OR LOWER(p.codigo_barras) LIKE LOWER(?) OR LOWER(c.nombre) LIKE LOWER(?))';
     params.push(like, like, like, like, like);
   }
+  if (filters?.solo_colaciones_analcoholicas) params.push(CATEGORIA_BEBIDAS_ANALCOHOLICAS);
   const rows = await query<any[]>(
     `SELECT p.id AS presentacion_id, p.nombre AS presentacion_nombre,
       p.codigo_barras, p.foto AS presentacion_foto,
@@ -59,7 +71,7 @@ export async function listarParaVenta(filters?: FiltrosParaVenta): Promise<any[]
        SELECT 1 FROM inventario_unidades u WHERE u.presentacion_id = p.id
          AND u.estado = '${ESTADO_UNIDAD_ACTIVA}' AND u.ubicacion = 'bar'
      )
-      ${whereCategoria} ${whereTerm} ${whereColacion} ${whereCover}
+      ${whereCategoria} ${whereTerm} ${whereColacion} ${whereCover} ${whereColacionAnalcoholica}
      ORDER BY pr.nombre ASC, p.fecha_crea ASC, p.id ASC`,
     params
   );

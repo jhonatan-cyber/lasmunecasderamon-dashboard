@@ -2,7 +2,6 @@
 
 import { useRef } from 'react';
 
-/** El bloqueo se toma antes del primer await, incluso antes del siguiente render. */
 export function useSingleFlight<Args extends unknown[], Result>(
   operation: (...args: Args) => Promise<Result>
 ): (...args: Args) => Promise<Result> {

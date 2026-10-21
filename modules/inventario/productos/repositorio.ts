@@ -17,6 +17,7 @@ import { getNowInBusinessTimezone } from '@/lib/business/timezoneService';
 import { ProductSchema, type ProductType } from '@/lib/business/schemas';
 import { logger } from '@/lib/utils/logger';
 import { BaseRepository } from '@/lib/database/base-repository';
+import { ConflictError, NotFoundError } from '@/lib/errors/errors';
 import { crearPresentacion } from '../presentaciones/repositorio';
 import { generarUnidades, sincronizarStockTotal } from '../unidades/repositorio';
 
@@ -197,7 +198,12 @@ export async function actualizarProducto(
     updateData.ml_shot_anfitriona = data.ml_shot_anfitriona;
   if (data.stock_almacen !== undefined) updateData.stock_almacen = data.stock_almacen;
   if (data.description !== undefined) updateData.descripcion = data.description;
-  if (data.status !== undefined) updateData.estado = data.status;
+  if (data.status !== undefined) {
+    updateData.estado = data.status;
+    // Un cambio manual de estado manda sobre la marca de la categoría: si el
+    // usuario lo desactiva a mano, reactivar la categoría no debe revivirlo.
+    updateData.desactivado_por_categoria = false;
+  }
   if (foto !== undefined) {
     logger.debug('[inventario/productos] Updating foto:', foto);
     updateData.foto = foto;
@@ -296,7 +302,76 @@ export async function reordenarProductos(
 }
 
 export async function eliminarProducto(id: string): Promise<void> {
-  await BaseRepository.delete(query, 'productos', 'id_producto', id);
+  await withTransaction(async trx => {
+    const [producto] = await trx<{ id_producto: string }[]>(
+      'SELECT id_producto FROM productos WHERE id_producto = ? FOR UPDATE',
+      [id]
+    );
+    if (!producto) throw new NotFoundError('Producto', id);
+
+    const [deps] = await trx<
+      {
+        unidades: string;
+        movimientos: string;
+        compras: string;
+        consumos: string;
+        colaciones: string;
+        entradas: string;
+        entradas_productos: string;
+        ventas: string;
+        reposicion: string;
+        servicios: string;
+        solicitudes: string;
+      }[]
+    >(
+      `SELECT
+         (SELECT COUNT(*) FROM inventario_unidades WHERE producto_id = ?) AS unidades,
+         (SELECT COUNT(*) FROM inventario_movimientos WHERE producto_id = ?) AS movimientos,
+         (SELECT COUNT(*) FROM detalle_compras WHERE producto_id = ?) AS compras,
+         (SELECT COUNT(*) FROM inventario_movimiento_unidades mu
+            INNER JOIN inventario_unidades u ON u.id = mu.unidad_id
+           WHERE u.producto_id = ?) AS consumos,
+         (SELECT COUNT(*) FROM colaciones c
+           WHERE EXISTS (
+             SELECT 1 FROM inventario_presentaciones pr
+              WHERE pr.id = c.presentacion_id AND pr.producto_id = ?
+           )) AS colaciones,
+         (SELECT COUNT(*) FROM entradas_clientes e
+           WHERE EXISTS (
+             SELECT 1 FROM inventario_presentaciones pr
+              WHERE pr.id IN (e.cover_presentacion_id, e.bebida_acompanamiento_presentacion_id)
+                AND pr.producto_id = ?
+           )) AS entradas,
+         (SELECT COUNT(*) FROM entradas_clientes_productos ecp
+           WHERE EXISTS (
+             SELECT 1 FROM inventario_presentaciones pr
+              WHERE pr.id IN (ecp.presentacion_id, ecp.acompanamiento_presentacion_id)
+                AND pr.producto_id = ?
+           )) AS entradas_productos,
+         (SELECT COUNT(*) FROM detalle_ventas dv
+            INNER JOIN inventario_presentaciones pr ON pr.id = dv.presentacion_id
+           WHERE pr.producto_id = ?) AS ventas,
+         (SELECT COUNT(*) FROM ordenes_reposicion o
+            INNER JOIN inventario_presentaciones pr ON pr.id = o.presentacion_id
+           WHERE pr.producto_id = ?) AS reposicion,
+         (SELECT COUNT(*) FROM servicios s
+            INNER JOIN inventario_presentaciones pr ON pr.id = s.producto_incluido_presentacion_id
+           WHERE pr.producto_id = ?) AS servicios,
+         (SELECT COUNT(*) FROM solicitudes_servicios ss
+            INNER JOIN inventario_presentaciones pr ON pr.id = ss.producto_incluido_presentacion_id
+           WHERE pr.producto_id = ?) AS solicitudes`,
+      [id, id, id, id, id, id, id, id, id, id, id]
+    );
+
+    const tieneDependencias = Object.values(deps ?? {}).some(valor => Number(valor) > 0);
+    if (tieneDependencias) {
+      throw new ConflictError(
+        'No se puede eliminar el producto: tiene stock o historial asociado. Desactivalo en su lugar.'
+      );
+    }
+
+    await BaseRepository.delete(trx, 'productos', 'id_producto', id);
+  });
 }
 
 export async function obtenerNivelesChampagne(

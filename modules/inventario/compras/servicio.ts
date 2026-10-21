@@ -41,6 +41,9 @@ const CompraSchema = z.object({
   metodo_pago: z.enum(['efectivo', 'tarjeta', 'transferencia']).default('efectivo')
 });
 
+/** Límite de PostgreSQL `integer`: totales y subtotales se guardan en esa columna. */
+const MAX_INT4 = 2147483647;
+
 /**
  * Registra una compra: valida el payload, guarda cabecera y detalle e ingresa
  * las unidades a la bodega. O se guarda todo, o no se guarda nada.
@@ -60,6 +63,17 @@ export async function registrarCompra(
     subtotal: d.cantidad * d.precio_compra
   }));
   const total = detalles.reduce((acc, d) => acc + d.subtotal, 0);
+
+  // `detalle_compras.subtotal` y `compras.total` son `integer` en PostgreSQL.
+  // Se valida antes de abrir la transacción para no generar unidades a medias.
+  for (const detalle of detalles) {
+    if (detalle.subtotal > MAX_INT4) {
+      throw new ValidationError('El subtotal de una línea de compra supera el máximo permitido');
+    }
+  }
+  if (total > MAX_INT4) {
+    throw new ValidationError('El total de la compra supera el máximo permitido');
+  }
 
   let compra!: CompraRow;
   // Códigos generados en esta compra, listos para imprimir (agrupables por producto).

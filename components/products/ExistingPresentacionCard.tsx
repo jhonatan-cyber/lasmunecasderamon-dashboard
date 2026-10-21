@@ -92,9 +92,18 @@ export function ExistingPresentacionCard({
         : '/api/images/products/default.png';
 
   return (
-    <div className='p-2.5 pl-4 rounded-2xl bg-gray-100 dark:bg-slate-800 space-y-2'>
+    <div className='relative p-2.5 pl-4 rounded-2xl bg-gray-100 dark:bg-slate-800 space-y-2'>
       {isEditing ? (
         <div className='space-y-2'>
+          <Button
+            variant='unstyled'
+            type='button'
+            title='Contraer'
+            onClick={cancelEditPres}
+            className='absolute top-2 right-2 p-1.5 rounded-full text-gray-400 hover:text-gray-600 dark:hover:text-gray-200 hover:bg-gray-200 dark:hover:bg-slate-700 transition-colors z-10'
+          >
+            <ChevronDown className='w-4 h-4 rotate-180' />
+          </Button>
           <div className='flex flex-col gap-3 rounded-xl border p-3'>
             <div className='flex items-center gap-3'>
               {/* eslint-disable-next-line @next/next/no-img-element -- Vista previa de la foto existente. */}
@@ -262,12 +271,8 @@ export function ExistingPresentacionCard({
       ) : (
         <Collapsible open={isOpen} onOpenChange={setIsOpen}>
           {/* Header row — always visible, acts as the trigger */}
-          <CollapsibleTrigger asChild>
-            <Button
-              variant='unstyled'
-              type='button'
-              className='w-full flex items-center gap-2 text-left'
-            >
+          <div className='flex items-center gap-2 w-full'>
+            <CollapsibleTrigger className='flex flex-1 items-center gap-2 min-w-0 cursor-pointer'>
               {/* eslint-disable-next-line @next/next/no-img-element -- preview local/blob o ruta interna */}
               <img
                 src={fotoSrc}
@@ -280,63 +285,83 @@ export function ExistingPresentacionCard({
                   {formatCurrencyCLP(p.precio_venta ?? 0)} · {p.stock ?? 0} un.
                 </p>
               </div>
-              {/* Action buttons — always reachable, outside CollapsibleContent */}
-              <label
-                htmlFor={`pres-foto-${p.id}`}
-                title='Cambiar foto'
-                className='p-2 rounded-full text-gray-400 hover:text-purple-600 hover:bg-purple-50 dark:hover:bg-purple-900/20 transition-colors cursor-pointer shrink-0'
-                onClick={e => e.stopPropagation()}
-              >
-                <Input
-                  id={`pres-foto-${p.id}`}
-                  type='file'
-                  accept='image/*'
-                  disabled={isLoading}
-                  className='hidden'
-                  onChange={e => {
-                    const file = e.target.files?.[0];
-                    if (file) updateExistenteFoto(p.id, file);
-                    e.target.value = '';
-                  }}
-                />
-                <Camera className='w-4 h-4' />
-              </label>
-              <Button
-                variant='unstyled'
-                type='button'
-                onClick={e => {
-                  e.stopPropagation();
-                  startEditPres(p);
-                }}
+            </CollapsibleTrigger>
+            {/* Action buttons — fuera del trigger para evitar button anidado */}
+            <label
+              htmlFor={`pres-foto-${p.id}`}
+              title='Cambiar foto'
+              className='p-2 rounded-full text-gray-400 hover:text-purple-600 hover:bg-purple-50 dark:hover:bg-purple-900/20 transition-colors cursor-pointer shrink-0'
+              onClick={e => e.stopPropagation()}
+            >
+              <Input
+                id={`pres-foto-${p.id}`}
+                type='file'
+                accept='image/*'
                 disabled={isLoading}
-                title='Editar presentación'
-                className='p-2 rounded-full text-gray-400 hover:text-orange-600 hover:bg-orange-50 dark:hover:bg-orange-900/20 transition-colors disabled:opacity-50 shrink-0'
-              >
-                <Pencil className='w-4 h-4' />
-              </Button>
-              <Button
-                variant='unstyled'
-                type='button'
-                onClick={e => {
-                  e.stopPropagation();
-                  deleteExistente(p.id);
+                className='hidden'
+                onChange={e => {
+                  const file = e.target.files?.[0];
+                  if (file) updateExistenteFoto(p.id, file);
+                  e.target.value = '';
                 }}
-                disabled={isLoading}
-                title='Eliminar presentación'
-                className='p-2 rounded-full text-gray-400 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors disabled:opacity-50 shrink-0'
-              >
-                <Trash2 className='w-4 h-4' />
-              </Button>
-              <ChevronDown
-                className={cn(
-                  'w-4 h-4 text-gray-400 transition-transform duration-200 shrink-0',
-                  isOpen && 'rotate-180'
-                )}
               />
+              <Camera className='w-4 h-4' />
+            </label>
+            <Button
+              variant='unstyled'
+              type='button'
+              onClick={e => {
+                e.stopPropagation();
+                startEditPres(p);
+              }}
+              disabled={isLoading}
+              title='Editar presentación'
+              className='p-2 rounded-full text-gray-400 hover:text-orange-600 hover:bg-orange-50 dark:hover:bg-orange-900/20 transition-colors disabled:opacity-50 shrink-0'
+            >
+              <Pencil className='w-4 h-4' />
             </Button>
-          </CollapsibleTrigger>
+            <Button
+              variant='unstyled'
+              type='button'
+              onClick={e => {
+                e.stopPropagation();
+                deleteExistente(p.id);
+              }}
+              disabled={isLoading}
+              title='Eliminar presentación'
+              className='p-2 rounded-full text-gray-400 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors disabled:opacity-50 shrink-0'
+            >
+              <Trash2 className='w-4 h-4' />
+            </Button>
+            {/* Botón contraer/expandir — siempre visible en el header */}
+            <CollapsibleTrigger asChild>
+              <Button
+                variant='unstyled'
+                type='button'
+                title={isOpen ? 'Contraer' : 'Expandir'}
+                className='p-2 rounded-full text-gray-400 hover:text-gray-600 dark:hover:text-gray-200 hover:bg-gray-100 dark:hover:bg-slate-700 transition-colors shrink-0'
+              >
+                <ChevronDown
+                  className={cn(
+                    'w-4 h-4 transition-transform duration-200',
+                    isOpen && 'rotate-180'
+                  )}
+                />
+              </Button>
+            </CollapsibleTrigger>
+          </div>
           <CollapsibleContent>
-            <div className='space-y-2 pt-2'>
+            <div className='relative space-y-2 pt-2'>
+              <CollapsibleTrigger asChild>
+                <Button
+                  variant='unstyled'
+                  type='button'
+                  title='Contraer'
+                  className='absolute top-0 right-0 p-1.5 rounded-full text-gray-400 hover:text-gray-600 dark:hover:text-gray-200 hover:bg-gray-100 dark:hover:bg-slate-700 transition-colors shrink-0 z-10'
+                >
+                  <ChevronDown className={cn('w-4 h-4 rotate-180')} />
+                </Button>
+              </CollapsibleTrigger>
               <div className='flex items-center gap-2 pl-6'>
                 <Input
                   value={stockExtra[p.id] || ''}

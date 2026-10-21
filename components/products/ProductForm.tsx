@@ -5,7 +5,7 @@ import { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Product, Presentacion } from '@/types/product';
-import { ChevronDown, FileText, Loader2, Plus } from 'lucide-react';
+import { FileText, Loader2, Plus } from 'lucide-react';
 import { useProductForm } from '@/hooks/personal';
 import { useChampagneTiers } from '@/hooks/personal/useChampagneTiers';
 import { ProductBasicFields } from './ProductBasicFields';
@@ -13,7 +13,6 @@ import { ExistingPresentacionCard } from './ExistingPresentacionCard';
 import { NewPresentacionRow } from './NewPresentacionRow';
 import { GeneratedCodesPanel } from './GeneratedCodesPanel';
 import { ChampagneTiersTable } from './ChampagneTiersTable';
-import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 import {
   Dialog,
   DialogContent,
@@ -182,9 +181,6 @@ export function ProductForm({
 
   const [dragRow, setDragRow] = useState<number | null>(null);
 
-  const defaultInfoOpen = !(isEdit && presentation !== null);
-  const [infoOpen, setInfoOpen] = useState(defaultInfoOpen);
-
   const scoped = isEdit && presentation !== null;
   const esChampagne = /champan|champagne/.test(
     (categoryName || '')
@@ -221,35 +217,13 @@ export function ProductForm({
 
   return (
     <form id='product-form' onSubmit={handleSubmit} className='space-y-6 py-2'>
-      <Collapsible open={infoOpen} onOpenChange={setInfoOpen}>
-        <CollapsibleTrigger asChild>
-          <Button
-            type='button'
-            variant='unstyled'
-            className={cn(
-              'flex w-full items-center justify-between px-1 py-2 text-left',
-              'text-xs font-bold uppercase tracking-wider text-gray-500 dark:text-gray-400',
-              'hover:text-gray-700 dark:hover:text-gray-200 transition-colors'
-            )}
-          >
-            <span>Información del producto</span>
-            <ChevronDown
-              className={cn('h-4 w-4 transition-transform duration-200', infoOpen && 'rotate-180')}
-            />
-          </Button>
-        </CollapsibleTrigger>
-        <CollapsibleContent className='data-[state=closed]:animate-none'>
-          <div className='pt-2'>
-            <ProductBasicFields
-              form={form}
-              errors={errors}
-              handleChange={handleChange}
-              isLoading={isLoading}
-              isEdit={isEdit}
-            />
-          </div>
-        </CollapsibleContent>
-      </Collapsible>
+      <ProductBasicFields
+        form={form}
+        errors={errors}
+        handleChange={handleChange}
+        isLoading={isLoading}
+        isEdit={isEdit}
+      />
 
       <div className='space-y-3'>
         <div className='flex items-center justify-between ml-1'>
@@ -325,6 +299,7 @@ export function ProductForm({
             presentacion={p}
             index={i}
             isLoading={isLoading}
+            isEdit={isEdit}
             dragRow={dragRow}
             onDragRowChange={setDragRow}
             onUpdate={(field, value) => updatePresentacion(i, field as any, value)}

@@ -104,10 +104,10 @@ describe('comisiones por presentación', () => {
     expect(botella750).toHaveTextContent('20.000');
     fireEvent.click(botella750);
     expect(screen.getByLabelText('Precio de botella con anfitriona')).toHaveValue('20.000');
-    expect(screen.getByLabelText('Comisión (requerida)')).toHaveValue('4.000');
+    expect(screen.getByLabelText('Comisión')).toHaveValue('4.000');
     fireEvent.click(screen.getByRole('button', { name: /Vodka Absolut 1000ml/ }));
     expect(screen.getByLabelText('Precio de botella con anfitriona')).toHaveValue('30.000');
-    expect(screen.getByLabelText('Comisión (requerida)')).toHaveValue('6.000');
+    expect(screen.getByLabelText('Comisión')).toHaveValue('6.000');
     await screen.findByLabelText('Precio para 2 anfitrionas');
   });
 

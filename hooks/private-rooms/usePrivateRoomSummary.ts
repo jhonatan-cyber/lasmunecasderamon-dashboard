@@ -27,8 +27,7 @@ export function usePrivateRoomSummary({
   anfitrionas,
   habitaciones,
   precioHabitacion,
-  total,
-  pagosMixtos
+  total
 }: PrivateRoomSummaryParams) {
   const selectedRoom = useMemo(() => {
     return habitaciones.find(
@@ -82,9 +81,6 @@ export function usePrivateRoomSummary({
     return price > 0 && time > 0;
   }, [selectedRoom]);
 
-  // Habitación con comisión: máximo 4 personas en total y nunca más de 2 clientes
-  // (2 clientes + 2 anfitrionas, o 1 cliente + 3 anfitrionas). La selección de
-  // cliente sigue siendo opcional.
   const maxHostesses = useMemo(() => {
     if (roomWithPriceAndTime) return anfitrionas.length;
     if (!hasComision) return 10;
@@ -119,7 +115,6 @@ export function usePrivateRoomSummary({
     return precioHabitacion * multiplicadorHabitacion;
   }, [formData.usuarios.length, formData.clientes.length, precioHabitacion, selectedRoom]);
 
-  /** Clientes seleccionados con cuenta y saldo: candidatos al descuento. */
   const clientesConSaldo = useMemo(() => {
     return formData.clientes
       .map(id => clientes.find(c => String(c.id_cliente ?? c.id ?? '') === String(id)))
@@ -131,7 +126,6 @@ export function usePrivateRoomSummary({
       }));
   }, [clientes, formData.clientes]);
 
-  /** Solo se bloquea el prepago cuando ninguno de los clientes elegidos tiene saldo. */
   const disabledPaymentMethods = useMemo(() => {
     return clientesConSaldo.length > 0 ? ([] as const) : (['prepago'] as const);
   }, [clientesConSaldo]);

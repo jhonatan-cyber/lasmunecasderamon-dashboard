@@ -118,22 +118,26 @@ export async function listarUnidades(
         )[0]?.total ?? 0
       )
     : await contarUnidades(query, productoId);
-  const params: any[] = [productoId];
-  let whereUbicacion = '';
+  const filtrosParams: any[] = [productoId];
+  let whereFiltros = '';
   if (ubicacion) {
-    whereUbicacion = 'AND ubicacion = ?';
-    params.push(ubicacion);
+    whereFiltros = 'AND ubicacion = ?';
+    filtrosParams.push(ubicacion);
   }
   if (presentacionId) {
-    whereUbicacion += ' AND presentacion_id = ?';
-    params.push(presentacionId);
+    whereFiltros += ' AND presentacion_id = ?';
+    filtrosParams.push(presentacionId);
   }
-  params.push(limit);
+  const params = [...filtrosParams, limit];
   const rows = await query<any[]>(
-    `SELECT inventario_unidades.*, (SELECT c.folio FROM compras c WHERE c.id = inventario_unidades.compra_id) AS compra_folio FROM inventario_unidades WHERE producto_id = ? ${whereUbicacion} ORDER BY fecha_crea DESC, codigo DESC LIMIT ?`,
+    `SELECT inventario_unidades.*, (SELECT c.folio FROM compras c WHERE c.id = inventario_unidades.compra_id) AS compra_folio FROM inventario_unidades WHERE producto_id = ? ${whereFiltros} ORDER BY fecha_crea DESC, codigo DESC LIMIT ?`,
     params
   );
-  const inactivas = rows.filter(r => r.estado !== ESTADO_UNIDAD_ACTIVA).length;
+  const [inactivasRow] = await query<any[]>(
+    `SELECT COUNT(*) AS total FROM inventario_unidades WHERE producto_id = ? ${whereFiltros} AND estado <> '${ESTADO_UNIDAD_ACTIVA}'`,
+    filtrosParams
+  );
+  const inactivas = Number(inactivasRow?.total ?? 0);
   const unidades = rows.map(mapUnidad);
   // Backfill: unidades creadas antes de la migración 009 no tienen barra.
   let reparadas = false;
@@ -144,13 +148,9 @@ export async function listarUnidades(
     }
   }
   if (reparadas) {
-    const freshParams: any[] = [productoId];
-    if (ubicacion) freshParams.push(ubicacion);
-    if (presentacionId) freshParams.push(presentacionId);
-    freshParams.push(limit);
     const fresh = await query<any[]>(
-      `SELECT inventario_unidades.*, (SELECT c.folio FROM compras c WHERE c.id = inventario_unidades.compra_id) AS compra_folio FROM inventario_unidades WHERE producto_id = ? ${whereUbicacion} ORDER BY fecha_crea DESC, codigo DESC LIMIT ?`,
-      freshParams
+      `SELECT inventario_unidades.*, (SELECT c.folio FROM compras c WHERE c.id = inventario_unidades.compra_id) AS compra_folio FROM inventario_unidades WHERE producto_id = ? ${whereFiltros} ORDER BY fecha_crea DESC, codigo DESC LIMIT ?`,
+      [...filtrosParams, limit]
     );
     return { total, inactivas, unidades: fresh.map(mapUnidad) };
   }

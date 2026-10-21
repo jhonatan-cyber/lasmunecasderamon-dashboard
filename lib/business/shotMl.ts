@@ -11,6 +11,13 @@ export function resolveShotMlAnfitriona(
   return Number(mlShotAnfitriona ?? 0) > 0 ? Number(mlShotAnfitriona) : mlCliente;
 }
 
+/** Rótulo del tipo de venta por corto, igual en la transferencia y en Configuración. */
+export function etiquetaCorto(mlCliente: number, mlAnfitriona: number): string {
+  return mlAnfitriona !== mlCliente
+    ? `Corto · ${mlCliente} ml · Anf ${mlAnfitriona} ml`
+    : `Corto · ${mlCliente} ml`;
+}
+
 const FACTOR_UNIDAD_ML: Record<string, number> = {
   ml: 1,
   mililitro: 1,

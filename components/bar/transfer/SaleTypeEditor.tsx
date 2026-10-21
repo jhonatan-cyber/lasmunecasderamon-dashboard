@@ -11,6 +11,7 @@ import { ToggleGroup, ToggleGroupItem } from '@/components/ui/toggle-group';
 import { ChampagneTiersEditor } from '@/components/bar/transfer/ChampagneTiers';
 import { formatNumber } from '@/components/bar/transfer/transferOptions';
 import { Checkbox } from '@/components/ui/checkbox';
+import { optionPanelClass, optionPanelHeadingClass } from '@/components/bar/transfer/panelStyles';
 import type { ChampagneTierRow } from '@/components/bar/transfer/transferOptions';
 import type { SaleType } from '@/types/sale-options';
 
@@ -186,12 +187,9 @@ export const SaleTypeEditor = memo(function SaleTypeEditor({
               <div className='space-y-5'>
                 {mostrarAnfitrionas ? (
                   <div className='grid grid-cols-1 gap-4 sm:grid-cols-2'>
-                    <section
-                      aria-label='Botella con anfitriona'
-                      className='rounded-2xl border border-gray-200 dark:border-gray-800 p-4 sm:p-5 space-y-4'
-                    >
+                    <section aria-label='Botella con anfitriona' className={optionPanelClass}>
                       <div>
-                        <h3 className='font-semibold'>Con anfitriona</h3>
+                        <h3 className={optionPanelHeadingClass}>Con anfitriona</h3>
                       </div>
                       <div className='space-y-2'>
                         <label htmlFor='price-botella' className='text-sm font-medium'>
@@ -210,9 +208,7 @@ export const SaleTypeEditor = memo(function SaleTypeEditor({
                       </div>
                       <div className='space-y-2'>
                         <label htmlFor='commission-botella' className='text-sm font-medium'>
-                          {context === 'settings' && Number(precioVenta.replace(/\./g, '')) > 0
-                            ? 'Comisión (requerida)'
-                            : 'Comisión'}
+                          Comisión
                         </label>
                         <Input
                           currency
@@ -223,11 +219,7 @@ export const SaleTypeEditor = memo(function SaleTypeEditor({
                           value={comision}
                           onChange={event => onComisionChange(formatNumber(event.target.value))}
                           disabled={saving}
-                          placeholder={
-                            context === 'settings' && Number(precioVenta.replace(/\./g, '')) > 0
-                              ? 'Ingresa la comisión'
-                              : 'Sin comisión'
-                          }
+                          placeholder='Sin comisión'
                           className='h-12 tabular-nums'
                         />
                       </div>
@@ -261,12 +253,9 @@ export const SaleTypeEditor = memo(function SaleTypeEditor({
                           />
                         )}
                     </section>
-                    <section
-                      aria-label='Botella sin anfitriona'
-                      className='rounded-2xl border border-gray-200 dark:border-gray-800 p-4 sm:p-5 space-y-4'
-                    >
+                    <section aria-label='Botella sin anfitriona' className={optionPanelClass}>
                       <div>
-                        <h3 className='font-semibold'>Sin anfitriona</h3>
+                        <h3 className={optionPanelHeadingClass}>Sin anfitriona</h3>
                       </div>
                       {onPrecioSinAnfitrionaChange && (
                         <div className='space-y-2'>
@@ -289,12 +278,9 @@ export const SaleTypeEditor = memo(function SaleTypeEditor({
                     </section>
                   </div>
                 ) : (
-                  <section
-                    aria-label='Botella sin anfitrionas'
-                    className='rounded-2xl border border-gray-200 dark:border-gray-800 p-4 sm:p-5 space-y-4'
-                  >
+                  <section aria-label='Botella sin anfitrionas' className={optionPanelClass}>
                     <div>
-                      <h3 className='font-semibold'>Precio</h3>
+                      <h3 className={optionPanelHeadingClass}>Precio</h3>
                     </div>
                     <div className='space-y-2'>
                       <label htmlFor='price-botella' className='text-sm font-medium'>
@@ -316,10 +302,10 @@ export const SaleTypeEditor = memo(function SaleTypeEditor({
                 {mostrarBebidasIncluidas && (
                   <section
                     aria-label='Bebidas incluidas en ambas opciones'
-                    className='rounded-2xl border border-gray-200 dark:border-gray-800 p-4 sm:p-5 space-y-4'
+                    className={optionPanelClass}
                   >
                     <div>
-                      <h3 className='font-semibold'>Bebidas incluidas</h3>
+                      <h3 className={optionPanelHeadingClass}>Bebidas incluidas</h3>
                       {context === 'settings' && (
                         <p className='mt-1 text-xs text-muted-foreground'>
                           La misma cantidad de bebidas analcohólicas por botella, con o sin
@@ -341,7 +327,7 @@ export const SaleTypeEditor = memo(function SaleTypeEditor({
                   </section>
                 )}
                 {context === 'settings' && mostrarAnfitrionas && onColacionHabilitadaChange && (
-                  <label className='flex cursor-pointer items-start gap-3 rounded-xl border p-4'>
+                  <label className='flex cursor-pointer items-start gap-3'>
                     <Checkbox
                       checked={colacionHabilitada}
                       onCheckedChange={checked => onColacionHabilitadaChange(checked === true)}

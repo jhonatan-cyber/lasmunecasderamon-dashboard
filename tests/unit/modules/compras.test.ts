@@ -85,6 +85,29 @@ describe('registrarCompra (modulo inventario)', () => {
     ).rejects.toThrow(ValidationError);
   });
 
+  it('rechaza subtotales y totales que desbordan integer antes de tocar la base', async () => {
+    await expect(
+      registrarCompra(
+        { detalles: [{ ...detalle, cantidad: 1000, precio_compra: 2147483647 }] },
+        'u1'
+      )
+    ).rejects.toThrow('máximo permitido');
+
+    await expect(
+      registrarCompra(
+        {
+          detalles: [
+            { ...detalle, cantidad: 1000, precio_compra: 1100000 },
+            { ...detalle, presentacion_id: 'pres-2', cantidad: 1000, precio_compra: 1100000 }
+          ]
+        },
+        'u1'
+      )
+    ).rejects.toThrow('total de la compra');
+
+    expect(withTransaction).not.toHaveBeenCalled();
+  });
+
   it('solo acepta efectivo, tarjeta o transferencia como método de pago', async () => {
     const input = { detalles: [detalle], metodo_pago: 'otro' };
     // @ts-expect-error comprueba que el servidor también rechaza valores ajenos al tipo público

@@ -7,7 +7,6 @@ import { matchesTarget, realtimeTargets } from '@/lib/utils/realtimeTargets';
 import logger from '@/lib/utils/logger';
 import { useRefreshOnFocus } from '@/hooks/shared/useRefreshOnFocus';
 
-/** Para vistas que todavía cargan datos en estado local, usando el mismo catálogo de eventos. */
 export function useRealtimeRefresh(
   resource: string,
   refresh: () => unknown | Promise<unknown>,

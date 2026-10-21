@@ -8,6 +8,8 @@ import { getBarMlConfig, getTopeSimple } from '../bar/configuracion';
 import { mapPresentacion } from '../helpers';
 import { ESTADO_UNIDAD_ACTIVA, ESTADO_UNIDAD_VENDIDA } from '../estados';
 import type { ShotsSummary } from '../contracts';
+import { listarCortosServidosHoy } from './cortosRepositorio';
+import { listarColacionesServidasHoy } from './colacionesRepositorio';
 import type { PresentacionRow } from '../tipos';
 import { getNowInBusinessTimezone } from '@/lib/business/timezoneService';
 
@@ -171,12 +173,10 @@ export async function obtenerResumenShots(): Promise<ShotsSummary> {
   const inicioDia = `${getNowInBusinessTimezone().slice(0, 10)} 00:00:00`;
 
   const [hoy] = await query<any[]>(
-    `SELECT COALESCE(SUM(m.ml), 0) AS ml,
-            COALESCE(SUM(m.ml / COALESCE(NULLIF(pr.ml_shot, 0), ?)), 0) AS shots
+    `SELECT COALESCE(SUM(m.ml), 0) AS ml_ventas
        FROM inventario_movimientos m
-       LEFT JOIN productos pr ON pr.id_producto = m.producto_id
       WHERE m.tipo = 'venta' AND m.ml > 0 AND m.fecha_crea >= ?`,
-    [shotMl, inicioDia]
+    [inicioDia]
   );
   const [abiertas] = await query<any[]>(
     `SELECT COUNT(*) AS botellas,
@@ -189,12 +189,21 @@ export async function obtenerResumenShots(): Promise<ShotsSummary> {
     [shotMl, shotsAlerta]
   );
 
-  const mlServidosHoy = Number(hoy?.ml ?? 0);
+  const cortosHoy = await listarCortosServidosHoy(shotMl);
+  // Las colaciones salen de la misma fuente que sus ml: el detalle del stat
+  // explica exactamente los ml que muestra la tarjeta, sin cruzar el módulo
+  // Colaciones (que registra la colación, no el consumo de stock).
+  const colacionesHoy = await listarColacionesServidasHoy();
+  const mlColacionHoy = colacionesHoy.reduce((total, colacion) => total + colacion.ml, 0);
+  const mlServidosHoy = Number(hoy?.ml_ventas ?? 0) + mlColacionHoy;
   return {
     shotMl,
     shotsAlerta,
     mlServidosHoy,
-    shotsServidosHoy: Number(hoy?.shots ?? 0),
+    mlColacionHoy,
+    shotsServidosHoy: cortosHoy.reduce((total, corto) => total + corto.cantidad, 0),
+    cortosHoy,
+    colacionesHoy,
     mlRestantesTotales: Number(abiertas?.ml ?? 0),
     botellasAbiertas: Number(abiertas?.botellas ?? 0),
     botellasPorAgotarse: Number(abiertas?.por_agotarse ?? 0)

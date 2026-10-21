@@ -1,24 +1,27 @@
 import { NextResponse } from 'next/server';
-import { withPublicRoute, withRoute } from '@/lib/api/withRoute';
+import { withRoute } from '@/lib/api/withRoute';
 import { ProductService } from '@/modules/inventario';
 
-export const GET = withPublicRoute(async (request: Request) => {
-  const { searchParams } = new URL(request.url);
-  const productoId = searchParams.get('producto_id');
+export const GET = withRoute(
+  { auth: true, module: 'products', action: 'read' },
+  async (request: Request) => {
+    const { searchParams } = new URL(request.url);
+    const productoId = searchParams.get('producto_id');
 
-  if (!productoId) {
-    return NextResponse.json(
-      { success: false, message: 'producto_id es requerido' },
-      { status: 400 }
+    if (!productoId) {
+      return NextResponse.json(
+        { success: false, message: 'producto_id es requerido' },
+        { status: 400 }
+      );
+    }
+
+    const data = await ProductService.listUnits(
+      productoId,
+      searchParams.get('presentacion_id') || undefined
     );
+    return NextResponse.json({ success: true, data });
   }
-
-  const data = await ProductService.listUnits(
-    productoId,
-    searchParams.get('presentacion_id') || undefined
-  );
-  return NextResponse.json({ success: true, data });
-});
+);
 
 export const POST = withRoute(
   { auth: true, audit: true, module: 'products', action: 'write' },

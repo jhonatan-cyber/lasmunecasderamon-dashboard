@@ -67,7 +67,6 @@ export function useGenericFetch<T>(
     staleTime: options?.staleTime ?? 1000 * 60
   });
 
-  // Una consulta manual puede usar la URL nueva antes de que React actualice el estado.
   const fetchEndpoint = useCallback(
     (target: string) =>
       queryClient.fetchQuery({

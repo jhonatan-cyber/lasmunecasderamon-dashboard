@@ -42,6 +42,7 @@ import {
 } from '@/modules/inventario/envases/servicio';
 import { esEstadoUnidadValido } from '@/modules/inventario/estados';
 import {
+  buscarMovimientosRecientes,
   listarMovimientos,
   listarMovimientosRecientes
 } from '@/modules/inventario/movimientos/servicio';
@@ -55,6 +56,19 @@ import {
 } from '@/lib/business/schemas/sale-options';
 
 type ProductInput = z.input<typeof ProductSchema>;
+
+/**
+ * El stock de bodega es derivado: lo mantiene `sincronizarStockTotal` a partir
+ * de las unidades. Aceptarlo en una escritura pública permite que el cliente
+ * fije un número que se sobrescribe en la misma operación, así que se rechaza.
+ */
+function assertStockNoEditable(data: Record<string, unknown>) {
+  if ('stock_almacen' in data && data.stock_almacen !== undefined) {
+    throw new ValidationError(
+      'El stock de bodega se calcula desde las unidades y no se edita directamente'
+    );
+  }
+}
 
 function parsePresentaciones(input: unknown, fotos?: (string | null)[]): NewPresentacion[] {
   if (input === undefined || input === null || input === '') return [];
@@ -142,6 +156,7 @@ export class ProductService {
   }
 
   static async update(id: string | number, data: Record<string, unknown>) {
+    assertStockNoEditable(data);
     const validated = ProductSchema.partial().parse(data);
     return await actualizarProducto(id.toString(), validated as Record<string, unknown>);
   }
@@ -157,6 +172,7 @@ export class ProductService {
   }
 
   static async updateProduct(id: string, body: Partial<ProductInput>, fotoName?: string) {
+    assertStockNoEditable(body as Record<string, unknown>);
     const normalizedBody = {
       ...body,
       category_id:
@@ -365,6 +381,7 @@ export class ProductService {
     term?: string;
     solo_colaciones?: boolean;
     solo_cover?: boolean;
+    solo_colaciones_analcoholicas?: boolean;
   }) {
     return await listarParaVenta(filters);
   }
@@ -486,6 +503,22 @@ export class ProductService {
   static async listMovimientosRecientes(limit?: unknown) {
     const n = Math.floor(Number(limit));
     return await listarMovimientosRecientes(Number.isFinite(n) && n > 0 ? Math.min(n, 500) : 100);
+  }
+
+  /**
+   * Historial paginado del bar: filas del histórico con filtros de fecha, tipo
+   * y texto, más el total del mismo filtro para paginar más allá de los
+   * últimos movimientos.
+   */
+  static async buscarMovimientosRecientes(filtro: {
+    desde?: string;
+    hasta?: string;
+    tipo?: string;
+    q?: string;
+    page?: number;
+    limit?: number;
+  }) {
+    return await buscarMovimientosRecientes(filtro);
   }
 
   /** Resumen del panel de shots del bar (servidos hoy, restantes, por agotarse). */

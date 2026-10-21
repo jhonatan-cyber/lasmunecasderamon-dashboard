@@ -10,3 +10,4 @@ export { useRefreshOnFocus } from './useRefreshOnFocus';
 export { useServicePricing } from './useServicePricing';
 export { useSharedSSE } from './useSharedSSE';
 export { useSSE } from './useSSE';
+export { useTransferPermissions } from './useTransferPermissions';

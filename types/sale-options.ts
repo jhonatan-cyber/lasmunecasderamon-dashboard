@@ -5,6 +5,14 @@ export interface SaleOption {
   colacion_habilitada?: boolean;
   /** Esta bebida analcohólica puede entregarse como cover de una entrada de cliente. */
   cover_habilitado?: boolean;
+  /** Ml que recibe el trabajador cuando la bebida se entrega como colación. */
+  ml_colacion?: number;
+  /**
+   * Acompañamiento de la colación: unidades incluidas y ml de cada una. Se
+   * configura al transferir (hereda del corto de anfitriona cuando existe).
+   * `unidades: 0` = sin acompañamiento.
+   */
+  acompanamiento_colacion?: { unidades: number; ml?: number };
   precio: number;
   precio_sin_anfitriona?: number;
   comision: number;

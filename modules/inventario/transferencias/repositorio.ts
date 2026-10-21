@@ -18,6 +18,40 @@ import { BaseRepository } from '@/lib/database/base-repository';
 import { sincronizarStockTotal } from '../unidades/repositorio';
 import type { TraspasoInput, TraspasoResultado } from '../contracts';
 import type { TransferRecord } from '@/types/transfer';
+import { TRANSFER_RESOLVE_PERMISSION } from '@/lib/constants/transferPermissions';
+
+/**
+ * ¿Puede resolver traspasos este usuario? Mismo par que exigen las rutas de
+ * `/api/transfers` y que gobierna los botones de la UI
+ * (`useTransferPermissions`), leído de `lib/constants/transferPermissions`.
+ *
+ * El salto de administrador es el de `isAdministrator` del middleware: ese rol
+ * pasa todo aunque su fila en `role_permissions` no incluya el par (la semilla
+ * no lo concede). Antes acá se comparaba el nombre del rol
+ * (`IN ('barman','administrador')`), lo que hacía que un rol distinto con
+ * `products/accept_transfer` viera los botones y la API lo rechazara.
+ */
+async function puedeResolverTransferencia(
+  trx: TransactionQuery,
+  usuarioId: string
+): Promise<boolean> {
+  const filas = await trx<any[]>(
+    `SELECT LOWER(r.nombre) AS rol,
+            EXISTS (
+              SELECT 1 FROM role_permissions rp
+               INNER JOIN permissions p ON p.id = rp.permission_id
+               WHERE rp.role_id = r.id_rol
+                 AND p.module = ? AND p.action = ? AND p.deleted_at IS NULL
+            ) AS autorizado
+       FROM usuarios u
+       INNER JOIN roles r ON r.id_rol = u.rol_id
+      WHERE u.id_usuario = ? AND u.estado = 1 AND r.estado = 1`,
+    [TRANSFER_RESOLVE_PERMISSION.module, TRANSFER_RESOLVE_PERMISSION.action, usuarioId]
+  );
+  const fila = filas[0];
+  if (!fila) return false;
+  return fila.rol === 'administrador' || Boolean(fila.autorizado);
+}
 
 export async function traspasarAlBar(
   trx: TransactionQuery,
@@ -73,15 +107,18 @@ export async function traspasarAlBar(
     if (precioVenta === undefined && comision === undefined) {
       opciones = guardadas;
     } else {
+      const botellaGuardada = guardadas?.find(option => option.tipo === 'botella');
       opciones = [
         {
           tipo: 'botella' as const,
           precio: Number(precioVenta ?? 0),
           comision: Number(comision ?? 0),
-          colacion_habilitada:
-            guardadas?.find(option => option.tipo === 'botella')?.colacion_habilitada ?? false,
-          cover_habilitado:
-            guardadas?.find(option => option.tipo === 'botella')?.cover_habilitado ?? false
+          colacion_habilitada: botellaGuardada?.colacion_habilitada ?? false,
+          cover_habilitado: botellaGuardada?.cover_habilitado ?? false,
+          ...(botellaGuardada?.ml_colacion ? { ml_colacion: botellaGuardada.ml_colacion } : {}),
+          ...(botellaGuardada?.acompanamiento_colacion
+            ? { acompanamiento_colacion: botellaGuardada.acompanamiento_colacion }
+            : {})
         }
       ];
     }
@@ -143,13 +180,8 @@ export async function aceptarTransferencia(
   id: string,
   usuarioId: string
 ): Promise<void> {
-  const receivers = await trx<any[]>(
-    `SELECT u.id_usuario FROM usuarios u INNER JOIN roles r ON r.id_rol = u.rol_id
-     WHERE u.id_usuario = ? AND u.estado = 1 AND r.estado = 1 AND LOWER(r.nombre) IN ('barman', 'administrador')`,
-    [usuarioId]
-  );
-  if (!receivers.length)
-    throw new BusinessError('Solo Barman o Administrador puede aceptar la transferencia');
+  if (!(await puedeResolverTransferencia(trx, usuarioId)))
+    throw new BusinessError('No tienes permiso para aceptar la transferencia');
   const lookup = await trx<any[]>(
     "SELECT producto_id FROM inventario_movimientos WHERE id = ? AND tipo = 'traspaso'",
     [id]
@@ -195,13 +227,8 @@ export async function rechazarTransferencia(
   id: string,
   usuarioId: string
 ): Promise<void> {
-  const resolvers = await trx<any[]>(
-    `SELECT u.id_usuario FROM usuarios u INNER JOIN roles r ON r.id_rol = u.rol_id
-     WHERE u.id_usuario = ? AND u.estado = 1 AND r.estado = 1 AND LOWER(r.nombre) IN ('barman', 'administrador')`,
-    [usuarioId]
-  );
-  if (!resolvers.length)
-    throw new BusinessError('Solo Barman o Administrador puede rechazar la transferencia');
+  if (!(await puedeResolverTransferencia(trx, usuarioId)))
+    throw new BusinessError('No tienes permiso para rechazar la transferencia');
   const lookup = await trx<any[]>(
     "SELECT producto_id FROM inventario_movimientos WHERE id = ? AND tipo = 'traspaso'",
     [id]

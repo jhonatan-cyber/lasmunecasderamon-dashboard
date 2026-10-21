@@ -60,6 +60,39 @@ const instalarAudioContext = () => {
   (window as unknown as { AudioContext: unknown }).AudioContext = AudioContextFalso;
 };
 
+/** Deja pasar las microtareas de la promesa de `play()`. */
+const esperarPromesas = () => new Promise(resolve => setTimeout(resolve, 0));
+
+/** Audio falso: `play()` responde como decida cada caso de prueba. */
+const instalarAudioFalso = (alReproducir: () => Promise<void>) => {
+  const creados: InstanceType<typeof AudioFalso>[] = [];
+
+  class AudioFalso {
+    volume = 1;
+    preload = '';
+    currentTime = 0;
+    paused = true;
+    play = vi.fn(alReproducir);
+    pause = vi.fn(() => {
+      this.paused = true;
+    });
+
+    constructor(readonly src: string) {
+      creados.push(this);
+    }
+  }
+
+  const global = globalThis as { Audio?: unknown };
+  const original = global.Audio;
+  global.Audio = AudioFalso;
+  return {
+    creados,
+    restaurar: () => {
+      global.Audio = original;
+    }
+  };
+};
+
 describe('aviso sonoro del escaneo de envases', () => {
   beforeEach(() => {
     AudioContextFalso.creados = [];
@@ -128,5 +161,90 @@ describe('aviso sonoro del escaneo de envases', () => {
     const [contexto] = AudioContextFalso.creados;
     expect(contexto.resume).toHaveBeenCalled();
     expect(contexto.osciladores).toHaveLength(3);
+  });
+});
+
+describe('sonido de notificación', () => {
+  /** Error del navegador sin fallo real: aún no hubo gesto del usuario. */
+  const bloqueoDeAutoplay = () =>
+    Object.assign(new Error('No se permitió iniciar la reproducción'), {
+      name: 'NotAllowedError'
+    });
+
+  let restaurarAudio: () => void = () => {};
+
+  afterEach(() => {
+    restaurarAudio();
+    restaurarAudio = () => {};
+  });
+
+  it('no lo reporta como error cuando el navegador bloquea el autoplay y reintenta en el primer gesto', async () => {
+    const audio = instalarAudioFalso(() => Promise.reject(bloqueoDeAutoplay()));
+    restaurarAudio = audio.restaurar;
+    const { playNotificationSound } = await cargarAudioUtils();
+    const { logger } = await import('@/lib/utils/logger');
+
+    playNotificationSound();
+    await esperarPromesas();
+
+    // El bloqueo es comportamiento esperado: no es un fallo del audio.
+    expect(logger.error).not.toHaveBeenCalled();
+    expect(logger.debug).toHaveBeenCalled();
+
+    // El primer gesto del usuario vuelve a intentarlo con el mismo elemento.
+    window.dispatchEvent(new Event('pointerdown'));
+    await esperarPromesas();
+    expect(audio.creados[0].play).toHaveBeenCalledTimes(2);
+    expect(logger.error).not.toHaveBeenCalled();
+
+    // Si ese intento también se bloquea, no se encola de nuevo: el sonido no
+    // debe saltar en cada clic del operador.
+    window.dispatchEvent(new Event('pointerdown'));
+    await esperarPromesas();
+    expect(audio.creados[0].play).toHaveBeenCalledTimes(2);
+  });
+
+  it('reproduce a la primera cuando el navegador lo permite y vuelve a poder encolarse', async () => {
+    let permitido = true;
+    const audio = instalarAudioFalso(() =>
+      permitido ? Promise.resolve() : Promise.reject(bloqueoDeAutoplay())
+    );
+    restaurarAudio = audio.restaurar;
+    const { playNotificationSound } = await cargarAudioUtils();
+    const { logger } = await import('@/lib/utils/logger');
+
+    playNotificationSound();
+    await esperarPromesas();
+    expect(audio.creados[0].play).toHaveBeenCalledTimes(1);
+    expect(logger.error).not.toHaveBeenCalled();
+
+    // Como arrancó, un bloqueo posterior sí vuelve a tener reintento en gesto.
+    permitido = false;
+    playNotificationSound();
+    await esperarPromesas();
+    expect(logger.error).not.toHaveBeenCalled();
+    window.dispatchEvent(new Event('keydown'));
+    await esperarPromesas();
+    expect(audio.creados[0].play).toHaveBeenCalledTimes(3);
+    expect(logger.error).not.toHaveBeenCalled();
+  });
+
+  it('reporta el error con su motivo cuando el audio no se puede reproducir de verdad', async () => {
+    const audio = instalarAudioFalso(() =>
+      Promise.reject(
+        Object.assign(new Error('formato no soportado'), { name: 'NotSupportedError' })
+      )
+    );
+    restaurarAudio = audio.restaurar;
+    const { playNotificationSound } = await cargarAudioUtils();
+    const { logger } = await import('@/lib/utils/logger');
+
+    playNotificationSound();
+    await esperarPromesas();
+
+    expect(logger.error).toHaveBeenCalledWith(
+      'Error al reproducir sonido de notificación',
+      expect.objectContaining({ detalle: 'NotSupportedError: formato no soportado' })
+    );
   });
 });

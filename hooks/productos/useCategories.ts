@@ -50,9 +50,6 @@ export function useCategories(): UseCategoriesReturn {
     transform: result => (result.success && Array.isArray(result.data) ? result.data : [])
   });
 
-  // El orden de las categorías también lo consumen ventas/pedidos (`useMasterData`,
-  // familia `queryKeys.categories`). Esa caché es distinta de la de esta pantalla,
-  // así que se invalida al cambiar el orden para que se refleje sin depender del SSE.
   const queryClient = useQueryClient();
   const syncSharedCategories = useCallback(() => {
     void queryClient.invalidateQueries({ queryKey: queryKeys.categories.all });

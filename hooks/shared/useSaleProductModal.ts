@@ -41,19 +41,11 @@ export interface SaleProductModalState {
   totalPages: number;
   filteredCount: number;
   availableHostesses: any[];
-  /** Modelo de vista de la página actual (una entrada por presentación). */
   items: SaleProductItem[];
   selectedItems: SaleProductItem[];
   resetSelection: () => void;
 }
 
-/**
- * Estado completo del modal de productos de la venta: vista tabla/tarjetas,
- * búsqueda con paginación, tipo de venta elegido por presentación, selección
- * de anfitrionas por producto y el modelo de vista (`items`) de la página
- * actual. El modal solo compone esto con los subcomponentes de
- * `components/sales/product-modal/`.
- */
 export function useSaleProductModal({
   open,
   productos,
@@ -71,7 +63,6 @@ export function useSaleProductModal({
   const [currentPage, setCurrentPage] = useState(1);
   const [query, setQuery] = useState('');
   const [hostessSearchValues, setHostessSearchValues] = useState<{ [key: string]: string }>({});
-  // Cada formato conserva su propia cantidad por presentación.
   const [cantidadesPorTipo, setCantidadesPorTipo] = useState<{ [key: string]: number }>({});
   const [mixers, setMixers] = useState<Record<string, any>>({});
   const [bar, setBar] = useState<any[]>([]);
@@ -100,7 +91,6 @@ export function useSaleProductModal({
     return () => controller.abort();
   }, [open, mixerReload]);
 
-  // Cambiar de categoría o reabrir reinicia la vista.
   useEffect(() => {
     setCurrentPage(1);
     setQuery('');
@@ -172,7 +162,6 @@ export function useSaleProductModal({
       setQuery(value);
       setCurrentPage(1);
     },
-    // La X solo limpia el texto: la página en la que esté se conserva.
     clearQuery: () => setQuery(''),
     currentPage,
     setCurrentPage,

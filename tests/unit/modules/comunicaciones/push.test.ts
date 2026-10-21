@@ -15,7 +15,11 @@ vi.mock('expo-server-sdk', () => ({
     }
   }
 }));
-import { sendPushNotification, sendPushByRole } from '@/modules/comunicaciones/push/servicio';
+import {
+  sendPushNotification,
+  sendPushByRole,
+  sendPushByPermission
+} from '@/modules/comunicaciones/push/servicio';
 
 beforeEach(() => {
   vi.clearAllMocks();
@@ -42,6 +46,17 @@ describe('tokens de Comunicaciones', () => {
     expect(mocks.query.mock.calls[0][1]).toEqual(['administrador']);
     expect(mocks.query).toHaveBeenLastCalledWith('DELETE FROM push_tokens WHERE token = ?', [
       'ExponentPushToken[activo]'
+    ]);
+  });
+
+  it('filtra destinatarios por el par módulo/acción del catálogo, no por rol', async () => {
+    await sendPushByPermission('products', 'accept_transfer', 'Título', 'Mensaje');
+    const [sql, params] = mocks.query.mock.calls[0];
+    expect(sql).toContain('role_permissions');
+    expect(sql).toContain("LOWER(r.nombre) = 'administrador'");
+    expect(params).toEqual(['products', 'accept_transfer']);
+    expect(mocks.enviar).toHaveBeenCalledWith([
+      expect.objectContaining({ to: 'ExponentPushToken[activo]' })
     ]);
   });
 

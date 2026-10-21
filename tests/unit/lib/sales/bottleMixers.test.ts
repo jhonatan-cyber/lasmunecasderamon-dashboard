@@ -90,6 +90,25 @@ it('rechaza cantidades inválidas y bebida en cortos', () => {
   );
 });
 
+it('conserva los ml de colación configurados en la botella', () => {
+  const options = SaleOptionsSchema.parse([
+    {
+      tipo: 'botella',
+      precio: 2000,
+      colacion_habilitada: true,
+      ml_colacion: 250
+    }
+  ]);
+  expect(parseSavedOptions(options)).toEqual(options);
+  expect(parseOpcionesVenta(JSON.stringify(options))).toEqual(options);
+  expect(parseSavedOptions(JSON.stringify(completarOpciones(JSON.stringify(options), [])))).toEqual(
+    options
+  );
+  expect(
+    SaleOptionsSchema.safeParse([{ tipo: 'shot', precio: 1000, ml_colacion: 250 }]).success
+  ).toBe(false);
+});
+
 it('conserva cero bebidas en configuración y no pide bebida al vender', () => {
   const options = SaleOptionsSchema.parse([
     { tipo: 'botella', precio: 20000, acompanamiento: { unidades: 0 } }

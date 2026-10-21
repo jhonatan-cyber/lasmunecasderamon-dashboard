@@ -5,8 +5,7 @@ import { InteractiveProductPhoto } from '@/components/shared/InteractiveProductP
 import { StaggeredEntrance } from '@/components/shared/StaggeredEntrance';
 import { ArrowRight, ArrowRightLeft, Check, Clock, Loader2, RefreshCw, X } from 'lucide-react';
 import { PermissionGuard } from '@/components/auth/PermissionGuard';
-import { useCurrentUser } from '@/hooks/auth/useCurrentUser';
-import { useRefreshOnFocus } from '@/hooks/shared';
+import { useRefreshOnFocus, useTransferPermissions } from '@/hooks/shared';
 import { useRealtimeRefresh } from '@/hooks/realtime/useRealtimeRefresh';
 import { TransferModal, type BarStockItem } from '@/components/bar/TransferModal';
 import { SalePrices } from '@/components/bar/SalePrices';
@@ -189,8 +188,7 @@ function TransfersContent() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [resolvingId, setResolvingId] = useState<string | null>(null);
-  const { user } = useCurrentUser();
-  const puedeAprobar = ['barman'].includes((user?.role || '').toLowerCase());
+  const { puedeAprobar, puedeTransferir } = useTransferPermissions();
 
   const refresh = useCallback(async (options?: { silent?: boolean }) => {
     // En silencio (SSE o foco de la pestaña) no se oculta la lista: solo se repintan los datos.
@@ -392,13 +390,10 @@ function TransfersContent() {
                           </dl>
                         </CardContent>
                         <CardFooter className='px-3 pb-3'>
-                          <PermissionGuard
-                            module='products'
-                            action='accept_transfer'
-                            fallback={
-                              <span className='text-sm text-muted-foreground'>Solo consulta</span>
-                            }
-                          >
+                          {/* Mismo par que exige el POST (products.create → write en
+                              withRoute), leído de lib/constants/transferPermissions a
+                              través de useTransferPermissions: nada de comparar el rol. */}
+                          {puedeTransferir ? (
                             <Button
                               variant='outline'
                               className='w-full gap-1 rounded-full px-2 text-xs'
@@ -411,7 +406,9 @@ function TransfersContent() {
                               <ArrowRightLeft aria-hidden='true' />
                               {item.stock > 0 ? 'Transferir' : 'Sin stock'}
                             </Button>
-                          </PermissionGuard>
+                          ) : (
+                            <span className='text-sm text-muted-foreground'>Solo consulta</span>
+                          )}
                         </CardFooter>
                       </Card>
                     </StaggeredEntrance>
@@ -439,8 +436,8 @@ function TransfersContent() {
                   Pendientes de aprobación
                 </h2>
                 <p className='text-sm text-muted-foreground'>
-                  El encargado del bar (Barman) aprueba o rechaza. Al aprobar, las unidades quedan
-                  disponibles en el bar.
+                  Quien tenga el permiso de aprobación (Barman por defecto) aprueba o rechaza. Al
+                  aprobar, las unidades quedan disponibles en el bar.
                 </p>
               </div>
               <div className='shrink-0'>
@@ -498,7 +495,7 @@ function TransfersContent() {
                         </>
                       ) : (
                         <span className='text-sm text-muted-foreground'>
-                          Solo el Barman puede aprobar.
+                          No tienes permiso para aprobar.
                         </span>
                       )}
                     </CardFooter>

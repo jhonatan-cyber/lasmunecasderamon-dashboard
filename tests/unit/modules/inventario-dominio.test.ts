@@ -122,7 +122,7 @@ describe('transferencias de almacén al bar', () => {
       comision: 100
     };
     const trxAprobar = vi.fn().mockImplementation(async (sql: string) => {
-      if (sql.includes('FROM usuarios')) return [{ id_usuario: 'barman-1' }];
+      if (sql.includes('FROM usuarios')) return [{ rol: 'barman', autorizado: 1 }];
       if (sql.includes('SELECT producto_id FROM inventario_movimientos'))
         return [{ producto_id: 'prod-1' }];
       if (sql.includes('SELECT * FROM inventario_movimientos')) return [movimiento];
@@ -138,7 +138,7 @@ describe('transferencias de almacén al bar', () => {
 
     // Rechazo: mismavía de aviso, el historial y los pendientes cambian para todos.
     const trxRechazar = vi.fn().mockImplementation(async (sql: string) => {
-      if (sql.includes('FROM usuarios')) return [{ id_usuario: 'barman-1' }];
+      if (sql.includes('FROM usuarios')) return [{ rol: 'barman', autorizado: 1 }];
       if (sql.includes('SELECT producto_id FROM inventario_movimientos'))
         return [{ producto_id: 'prod-1' }];
       if (sql.includes('SELECT * FROM inventario_movimientos')) return [movimiento];
@@ -1077,7 +1077,48 @@ describe('resumen de shots del bar', () => {
           { clave: 'shot_ml', valor: '50' },
           { clave: 'shots_alerta', valor: '2' }
         ];
-      if (sql.includes('FROM inventario_movimientos')) return [{ ml: 350, shots: 7 }];
+      if (sql.includes("m.tipo = 'colacion'"))
+        return [
+          {
+            id: 'm-1',
+            ml: 150,
+            fecha_crea: '2026-10-20 11:09:00',
+            producto_nombre: 'Coca-Cola Original',
+            producto_foto: null,
+            presentacion_nombre: '1500 ml',
+            registrado_por: 'Jhonatan'
+          }
+        ];
+      if (sql.includes('FROM inventario_movimientos')) return [{ ml_ventas: 200 }];
+      if (sql.includes('FROM detalle_ventas'))
+        return [
+          {
+            id: 'dv-1',
+            venta_id: 'v-1',
+            venta_codigo: 'AB12',
+            fecha_crea: '2026-10-20 21:14:00',
+            cantidad: 7,
+            precio: 3000,
+            comision: 500,
+            sub_total: 21000,
+            shot_anfitriona: true,
+            producto_id: 'p-1',
+            producto_nombre: 'Whisky',
+            producto_foto: null,
+            presentacion_nombre: '750 ml',
+            anfitriona_nombre: 'Nico',
+            cliente_nombre: ' Juan Pérez ',
+            habitacion_nombre: '12',
+            vendido_por: 'Cami',
+            mesero_nombre: 'Sofi',
+            metodo_pago: 'efectivo',
+            servicio_id: null,
+            cuenta_id: null,
+            habitacion_id: 'h-1',
+            pedido_id: 'pe-1',
+            acompanamiento: { nombre: 'Soda PG shot 750 ml', ml_por_corto: 100 }
+          }
+        ];
       if (sql.includes('FROM inventario_unidades'))
         return [{ botellas: 3, ml: 400, por_agotarse: 2 }];
       return [];
@@ -1089,20 +1130,77 @@ describe('resumen de shots del bar', () => {
       shotMl: 50,
       shotsAlerta: 2,
       mlServidosHoy: 350,
+      mlColacionHoy: 150,
       shotsServidosHoy: 7,
+      cortosHoy: [
+        {
+          id: 'dv-1',
+          venta_id: 'v-1',
+          venta_codigo: 'AB12',
+          fecha: '2026-10-20 21:14:00',
+          cantidad: 7,
+          // 7 cortos de 50 ml (volumen global de Configuraciones).
+          ml: 350,
+          precio: 3000,
+          comision: 500,
+          subtotal: 21000,
+          anfitriona: true,
+          anfitriona_nombre: 'Nico',
+          producto_id: 'p-1',
+          producto_nombre: 'Whisky',
+          producto_foto: null,
+          presentacion_nombre: '750 ml',
+          origen: 'habitacion',
+          cliente_nombre: 'Juan Pérez',
+          habitacion_nombre: '12',
+          vendido_por: 'Cami',
+          mesero_nombre: 'Sofi',
+          metodo_pago: 'efectivo',
+          acompanamiento: {
+            nombre: 'Soda PG shot 750 ml',
+            ml_por_corto: 100,
+            unidades: null
+          }
+        }
+      ],
+      colacionesHoy: [
+        {
+          id: 'm-1',
+          producto_nombre: 'Coca-Cola Original',
+          producto_foto: null,
+          presentacion_nombre: '1500 ml',
+          ml: 150,
+          registrado_por: 'Jhonatan',
+          fecha: '2026-10-20 11:09:00'
+        }
+      ],
       mlRestantesTotales: 400,
       botellasAbiertas: 3,
       botellasPorAgotarse: 2
     });
+    // Los ml de colación entran al total servido pero no a los cortos contados.
+    expect(query).toHaveBeenCalledWith(
+      expect.stringContaining("m.tipo = 'colacion'"),
+      expect.anything()
+    );
+    // Los cortos salen de detalle_ventas, que distingue un corto de una botella.
+    expect(query).toHaveBeenCalledWith(
+      expect.stringContaining('FROM detalle_ventas dv'),
+      expect.anything()
+    );
+    expect(query).toHaveBeenCalledWith(
+      expect.stringContaining("dv.tipo_venta = 'shot' AND v.estado IN (1, 2)"),
+      expect.anything()
+    );
+    // El acompañamiento se resuelve desde el catálogo de la bebida, por línea.
+    expect(query).toHaveBeenCalledWith(
+      expect.stringContaining("dv.acompanamiento->>'presentacion_id'"),
+      expect.anything()
+    );
     // La alerta se compara en ml: shots_alerta x ml por shot (por producto o global).
     expect(query).toHaveBeenCalledWith(
       expect.stringContaining('ml_restante <= (COALESCE(NULLIF(pr.ml_shot, 0), ?) * ?)'),
       [50, 2]
-    );
-    // Los shots se dividen con el ml por shot de cada producto (fallback al global).
-    expect(query).toHaveBeenCalledWith(
-      expect.stringContaining('NULLIF(pr.ml_shot, 0)'),
-      expect.anything()
     );
     // "Hoy" se calcula desde el inicio del día en la zona horaria del negocio.
     expect(query).toHaveBeenCalledWith(
@@ -1114,7 +1212,8 @@ describe('resumen de shots del bar', () => {
   it('usa los defaults cuando Configuraciones no tiene las claves', async () => {
     (query as any).mockImplementation(async (sql: string) => {
       if (sql.includes('FROM configuraciones')) return [];
-      if (sql.includes('FROM inventario_movimientos')) return [{ ml: 0 }];
+      if (sql.includes("m.tipo = 'colacion'")) return [];
+      if (sql.includes('FROM inventario_movimientos')) return [{ ml_ventas: 0 }];
       if (sql.includes('FROM inventario_unidades'))
         return [{ botellas: 0, ml: 0, por_agotarse: 0 }];
       return [];

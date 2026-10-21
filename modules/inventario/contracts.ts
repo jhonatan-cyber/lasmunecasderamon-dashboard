@@ -29,12 +29,98 @@ export interface ShotAlert {
   shots_restantes: number;
 }
 
+/** De dónde salió un corto: la barra, una cuenta, una habitación, un servicio o un pedido. */
+export type OrigenCorto = 'barra' | 'cuenta' | 'habitacion' | 'servicio' | 'pedido';
+
+/**
+ * Bebida con la que se sirvió un corto: queda por línea en
+ * `detalle_ventas.acompanamiento` (migración 071), sin deducirla de la
+ * configuración vigente. El nombre sale del catálogo; si la presentación ya
+ * no existe, se conserva el que se guardó con la venta.
+ */
+export interface AcompanamientoCortoHoy {
+  nombre: string | null;
+  /** ml servidos por cada corto; `null` cuando el acompañamiento fue por unidades. */
+  ml_por_corto: number | null;
+  /** Unidades servidas por corto; `null` cuando fue por ml. */
+  unidades: number | null;
+}
+
+/** Un corto vendido hoy, con la venta que lo originó y a quién se le sirvió. */
+export interface CortoVendidoHoy {
+  id: string;
+  venta_id: string;
+  venta_codigo: string;
+  /** Fecha y hora del detalle en la zona del negocio. */
+  fecha: string;
+  cantidad: number;
+  precio: number;
+  comision: number;
+  subtotal: number;
+  /** `true` cuando se cobró al precio de anfitriona. */
+  anfitriona: boolean;
+  anfitriona_nombre: string | null;
+  producto_id: string;
+  producto_nombre: string;
+  producto_foto: string | null;
+  presentacion_nombre: string | null;
+  origen: OrigenCorto;
+  cliente_nombre: string | null;
+  habitacion_nombre: string | null;
+  /** Quién registró la venta. */
+  vendido_por: string | null;
+  /** Garzón del pedido, cuando el corto salió de uno. */
+  mesero_nombre: string | null;
+  metodo_pago: string | null;
+  /**
+   * ml que salió del bar con este corto: el volumen del trago (cliente o
+   * anfitriona, según el producto y su configuración) por la cantidad. No
+   * incluye el acompañamiento ni botellas enteras.
+   */
+  ml: number;
+  /** `null` cuando el trago salió sin acompañamiento. */
+  acompanamiento: AcompanamientoCortoHoy | null;
+}
+
+/**
+ * Colación servida hoy: los ml que salieron del bar para consumo del personal.
+ * No es un corto vendido, pero explica parte de `mlServidosHoy`.
+ */
+export interface ColacionServidaHoy {
+  id: string;
+  producto_nombre: string;
+  producto_foto: string | null;
+  presentacion_nombre: string | null;
+  ml: number;
+  /** Quién registró la colación. */
+  registrado_por: string | null;
+  fecha: string;
+}
+
 export interface ShotsSummary {
   shotMl: number;
   shotsAlerta: number;
-  /** ml servidos por shots desde el inicio del día (zona horaria del negocio). */
+  /**
+   * ml que salieron del bar en el día (zona horaria del negocio): ventas más
+   * colaciones. El acompañamiento de una colación también es ml servido.
+   */
   mlServidosHoy: number;
+  /**
+   * Parte de `mlServidosHoy` que vino de colaciones. No suma a
+   * `shotsServidosHoy`: una colación no es un corto vendido.
+   */
+  mlColacionHoy: number;
   shotsServidosHoy: number;
+  /**
+   * Cortos vendidos hoy, del más reciente al más antiguo. Es la fuente de
+   * `shotsServidosHoy`: el stat y su detalle no pueden discrepar.
+   */
+  cortosHoy: CortoVendidoHoy[];
+  /**
+   * Colaciones del día. Es la fuente de `mlColacionHoy`, así que el detalle del
+   * stat explica exactamente los ml que muestra la tarjeta.
+   */
+  colacionesHoy: ColacionServidaHoy[];
   /** ml que quedan en las botellas abiertas del bar. */
   mlRestantesTotales: number;
   botellasAbiertas: number;

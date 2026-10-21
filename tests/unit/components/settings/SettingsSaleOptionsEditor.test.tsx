@@ -1,10 +1,14 @@
 import { createRef } from 'react';
 import { cleanup, fireEvent, render, screen } from '@testing-library/react';
-import { afterEach, expect, it, vi } from 'vitest';
+import { afterEach, describe, expect, it, vi } from 'vitest';
 import {
   SettingsSaleOptionsEditor,
   type SettingsSaleOptionsHandle
 } from '@/components/settings/SettingsSaleOptionsEditor';
+import {
+  ConfiguredSaleOptionsSchema,
+  SaleOptionsSchema
+} from '@/lib/business/schemas/sale-options';
 
 vi.mock('@/hooks/shared/useConfigValue', () => ({ useConfigValue: () => 50 }));
 afterEach(cleanup);
@@ -20,7 +24,8 @@ it('exige comisión positiva al habilitar botella con anfitriona y permite solo 
     saving: false
   };
   const { rerender } = render(<SettingsSaleOptionsEditor {...props} comision='' />);
-  expect(screen.getByLabelText('Comisión (requerida)')).toBeRequired();
+  // Mismo rótulo que en la transferencia; la obligatoriedad va en el atributo.
+  expect(screen.getByLabelText('Comisión')).toBeRequired();
   expect(() => ref.current!.getConfig()).toThrow(/comisión.*requerida/);
   rerender(<SettingsSaleOptionsEditor {...props} comision='0' />);
   expect(() => ref.current!.getConfig()).toThrow(/comisión.*requerida/);
@@ -198,4 +203,107 @@ it('edita todos los precios de corto, sus ml y la bebida de botella sin perder c
     target: { value: '4000' }
   });
   expect(() => ref.current!.getConfig()).toThrow(/No repitas/);
+});
+
+describe('configuración de colación, igual que al transferir', () => {
+  it('hereda los ml del corto de anfitriona cuando el producto los tiene', () => {
+    const ref = createRef<SettingsSaleOptionsHandle>();
+    render(
+      <SettingsSaleOptionsEditor
+        ref={ref}
+        options={[
+          { tipo: 'botella', precio: 50000, comision: 5000 },
+          {
+            tipo: 'shot',
+            precio: 3000,
+            comision: 0,
+            ml_acompanamiento_anfitriona: 150,
+            precios_anfitriona: [{ precio: 4000, comision: 500 }]
+          }
+        ]}
+        precio='50.000'
+        comision='5.000'
+        mlCliente={50}
+        mlAnfitriona={120}
+        onPrecio={vi.fn()}
+        onComision={vi.fn()}
+        saving={false}
+      />
+    );
+    // Sin colación no se piden ml; al habilitarla se muestran los heredados.
+    expect(screen.queryByLabelText('Ml de la colación')).not.toBeInTheDocument();
+    fireEvent.click(screen.getByLabelText('Habilitar bebida para colación'));
+    expect(screen.getByLabelText('Colación configurada en el corto')).toBeInTheDocument();
+    expect(screen.getByText('120 ml')).toBeInTheDocument();
+    expect(screen.getByText('150 ml')).toBeInTheDocument();
+    const config = ref.current!.getConfig();
+    expect(config.opciones_venta[0]).toMatchObject({
+      colacion_habilitada: true,
+      ml_colacion: 120,
+      acompanamiento_colacion: { unidades: 1, ml: 150 }
+    });
+    // Lo que guardaría settings pasa la misma validación del endpoint.
+    expect(ConfiguredSaleOptionsSchema.safeParse(config.opciones_venta).success).toBe(true);
+  });
+
+  it('permite escribir los ml de la colación cuando no se heredan del corto', () => {
+    const ref = createRef<SettingsSaleOptionsHandle>();
+    render(
+      <SettingsSaleOptionsEditor
+        ref={ref}
+        options={[{ tipo: 'botella', precio: 50000, comision: 5000 }]}
+        precio='50.000'
+        comision='5.000'
+        onPrecio={vi.fn()}
+        onComision={vi.fn()}
+        saving={false}
+      />
+    );
+    fireEvent.click(screen.getByLabelText('Habilitar bebida para colación'));
+    expect(screen.getByLabelText('Ml de la colación')).toHaveValue('');
+    expect(screen.getByText('Vacío = capacidad de la botella.')).toBeInTheDocument();
+    fireEvent.change(screen.getByLabelText('Ml de la colación'), { target: { value: '350' } });
+    fireEvent.change(screen.getByLabelText('Ml de acompañamiento'), { target: { value: '150' } });
+    // Las unidades del acompañamiento siguen las bebidas incluidas por botella.
+    fireEvent.change(screen.getByLabelText('Bebida analcohólica por botella'), {
+      target: { value: '2' }
+    });
+    const config = ref.current!.getConfig();
+    expect(config.opciones_venta[0]).toMatchObject({
+      colacion_habilitada: true,
+      ml_colacion: 350,
+      acompanamiento_colacion: { unidades: 2, ml: 150 }
+    });
+    expect(ConfiguredSaleOptionsSchema.safeParse(config.opciones_venta).success).toBe(true);
+  });
+
+  it('en bebidas analcohólicas solo pide los ml de la colación', () => {
+    const ref = createRef<SettingsSaleOptionsHandle>();
+    render(
+      <SettingsSaleOptionsEditor
+        ref={ref}
+        options={[{ tipo: 'botella', precio: 10000, comision: 0 }]}
+        categoria='Bebidas analcohólicas'
+        precio='10000'
+        comision=''
+        onPrecio={vi.fn()}
+        onComision={vi.fn()}
+        saving={false}
+      />
+    );
+    fireEvent.click(screen.getByLabelText('Habilitar bebida para colación'));
+    expect(screen.getByLabelText('Ml de la colación')).toBeInTheDocument();
+    // Sin cortos ni anfitrionas no hay acompañamiento que heredar.
+    expect(screen.queryByLabelText('Ml de acompañamiento')).not.toBeInTheDocument();
+    fireEvent.change(screen.getByLabelText('Ml de la colación'), { target: { value: '250' } });
+    const config = ref.current!.getConfig();
+    expect(config.opciones_venta[0]).toMatchObject({
+      colacion_habilitada: true,
+      ml_colacion: 250,
+      cover_habilitado: false
+    });
+    // Analcohólicas validan con el esquema simple, como hace el endpoint.
+    expect(SaleOptionsSchema.safeParse(config.opciones_venta).success).toBe(true);
+    expect(screen.queryByLabelText('Ml de acompañamiento')).not.toBeInTheDocument();
+  });
 });

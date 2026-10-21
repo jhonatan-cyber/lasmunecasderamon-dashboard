@@ -1,4 +1,5 @@
 import type { SaleOption, SaleType } from '@/types/sale-options';
+import { copiarOpcionesDeBotella } from '@/lib/business/saleOptions';
 
 /**
  * Helpers y tipos puros del traspaso de bar. Extraídos de `TransferModal.tsx`
@@ -63,10 +64,10 @@ export function parseSavedOptions(raw: unknown): SaleOption[] | undefined {
         }
         if (option.tipo === 'botella' && Number(o.precio_sin_anfitriona) > 0)
           option.precio_sin_anfitriona = Number(o.precio_sin_anfitriona);
-        if (option.tipo === 'botella' && typeof o.colacion_habilitada === 'boolean')
-          option.colacion_habilitada = o.colacion_habilitada;
-        if (option.tipo === 'botella' && typeof o.cover_habilitado === 'boolean')
-          option.cover_habilitado = o.cover_habilitado;
+        // Flags de colación y de cover: la misma regla que aplica el servidor
+        // (`lib/business/saleOptions`), para que lo que la UI ofrezca sea
+        // exactamente lo que el catálogo y el registro aceptan.
+        copiarOpcionesDeBotella(option, o);
         // Precio independiente para anfitrionas; no hereda el precio de cliente.
         const anfitriona = Number(o.precio_anfitriona ?? 0);
         if (option.tipo === 'shot' && Number.isFinite(anfitriona) && anfitriona > 0) {

@@ -1,18 +1,27 @@
 {
   "resumen": {
-    "commit": "dee468025ccab04a70289deb2d0ec2e16f1ba1ca",
-    "generado": "2026-10-19T15:08:45.275Z",
-    "archivos": 1991,
-    "rutas": 222,
+    "commit": "5da0b36dc9b94f8b68b54dc7eb2ca709097de6dc",
+    "generado": "2026-10-21T01:37:00.348Z",
+    "archivos": 2030,
+    "rutas": 223,
     "sqlFueraDeRepositorio": 60,
     "tablasConEscritoresMultiples": 0,
     "ciclos": 0,
-    "procesosPeriodicos": 19,
+    "procesosPeriodicos": 20,
     "caches": 23,
     "rutasApiConSqlDirecto": 0,
     "rutasSinWrapper": 20
   },
   "rutas": [
+    {
+      "ruta": "/api/colaciones/regla",
+      "archivo": "app/api/colaciones/regla/route.ts",
+      "metodos": [],
+      "nivel": "authenticated",
+      "audit": false,
+      "moduloDominio": null,
+      "usaDriver": false
+    },
     {
       "ruta": "/api/anfitrionas/:id/status",
       "archivo": "app/api/anfitrionas/[id]/status/route.ts",
@@ -1340,8 +1349,8 @@
       "ruta": "/api/products/presentations",
       "archivo": "app/api/products/presentations/route.ts",
       "metodos": [],
-      "nivel": "publico",
-      "audit": true,
+      "nivel": "products.read",
+      "audit": false,
       "moduloDominio": null,
       "usaDriver": false
     },
@@ -1376,8 +1385,8 @@
       "ruta": "/api/products/units",
       "archivo": "app/api/products/units/route.ts",
       "metodos": [],
-      "nivel": "publico",
-      "audit": true,
+      "nivel": "products.read",
+      "audit": false,
       "moduloDominio": null,
       "usaDriver": false
     },
@@ -2080,16 +2089,6 @@
       "escribe": []
     },
     {
-      "archivo": "seed/seed-productos.mjs",
-      "capa": "raiz",
-      "modulo": null,
-      "escribe": [
-        "inventario_presentaciones",
-        "inventario_unidades",
-        "productos"
-      ]
-    },
-    {
       "archivo": "proxy.ts",
       "capa": "raiz",
       "modulo": null,
@@ -2112,6 +2111,16 @@
       "capa": "raiz",
       "modulo": null,
       "escribe": ["clientes"]
+    },
+    {
+      "archivo": "seed/seed-productos.mjs",
+      "capa": "raiz",
+      "modulo": null,
+      "escribe": [
+        "inventario_presentaciones",
+        "inventario_unidades",
+        "productos"
+      ]
     },
     {
       "archivo": "modules/asistencia/biometrico/avisosAudio.ts",
@@ -2480,6 +2489,16 @@
       "modulo": "inventario"
     },
     {
+      "archivo": "modules/inventario/presentaciones/repositorio.ts",
+      "capa": "modules/infraestructura",
+      "modulo": "inventario"
+    },
+    {
+      "archivo": "modules/inventario/productos/repositorio.ts",
+      "capa": "modules/infraestructura",
+      "modulo": "inventario"
+    },
+    {
       "archivo": "modules/inventario/productos/servicio.ts",
       "capa": "modules/aplicacion",
       "modulo": "inventario"
@@ -2637,6 +2656,12 @@
   ],
   "procesos": [
     {
+      "archivo": "components/colaciones/ColacionesTab.tsx",
+      "linea": 284,
+      "tipo": "setInterval",
+      "texto": "const id = setInterval(() => setAhora(Date.now()), 15_000);"
+    },
+    {
       "archivo": "app/api/notifications/kiosk/route.ts",
       "linea": 30,
       "tipo": "setInterval",
@@ -2656,7 +2681,7 @@
     },
     {
       "archivo": "app/entradas/page.tsx",
-      "linea": 367,
+      "linea": 368,
       "tipo": "setInterval",
       "texto": "const interval = window.setInterval(actualizarFechaHora, 60_000);"
     },
@@ -2704,13 +2729,13 @@
     },
     {
       "archivo": "hooks/shared/useSSE.ts",
-      "linea": 27,
+      "linea": 23,
       "tipo": "setInterval",
       "texto": "const interval = setInterval(() => {"
     },
     {
       "archivo": "hooks/shared/useSharedSSE.ts",
-      "linea": 28,
+      "linea": 25,
       "tipo": "setInterval",
       "texto": "const interval = setInterval(() => {"
     },
@@ -2897,15 +2922,59 @@
   ],
   "ciclos": [],
   "matriz": {
-    "raiz": {
+    "app/api": {
+      "lib/api": 262,
+      "lib/business": 34,
+      "lib/otros": 74,
+      "lib/identidad": 17,
+      "workflows": 21,
+      "modules/aplicacion": 1,
+      "lib/database": 3,
+      "lib/integrations": 4
+    },
+    "components": {
+      "hooks": 142,
+      "lib/business": 37,
+      "lib/otros": 330,
+      "raiz": 86,
+      "lib/api": 3,
+      "modules/aplicacion": 6,
+      "app/ui": 1
+    },
+    "hooks": {
+      "lib/otros": 92,
+      "raiz": 36,
+      "lib/api": 7,
+      "components": 14,
+      "lib/business": 9,
+      "modules/aplicacion": 2
+    },
+    "lib/business": {
       "lib/otros": 12,
-      "hooks": 4,
-      "lib/api": 2,
+      "raiz": 3,
+      "lib/api": 3,
+      "lib/database": 4,
+      "modules/aplicacion": 4,
+      "components": 1
+    },
+    "lib/otros": {
+      "lib/database": 4,
+      "lib/api": 1,
+      "lib/business": 6,
+      "raiz": 6,
+      "components": 2
+    },
+    "modules/infraestructura": {
+      "lib/database": 109,
+      "lib/business": 62,
+      "lib/otros": 156,
+      "modules/aplicacion": 25,
+      "lib/api": 9,
       "lib/identidad": 2,
-      "modules/aplicacion": 1
+      "raiz": 2
     },
     "app/ui": {
-      "hooks": 62,
+      "hooks": 59,
       "lib/otros": 57,
       "components": 8,
       "lib/api": 7,
@@ -2913,32 +2982,12 @@
       "modules/aplicacion": 3,
       "raiz": 14
     },
-    "app/api": {
-      "lib/api": 261,
-      "lib/identidad": 17,
-      "lib/otros": 71,
-      "lib/business": 32,
-      "workflows": 21,
-      "modules/aplicacion": 1,
-      "lib/database": 3,
-      "lib/integrations": 4
-    },
-    "components": {
-      "lib/otros": 322,
-      "hooks": 141,
-      "raiz": 86,
-      "lib/api": 3,
-      "lib/business": 31,
-      "modules/aplicacion": 6,
-      "app/ui": 1
-    },
-    "hooks": {
-      "lib/otros": 91,
-      "raiz": 36,
-      "lib/api": 7,
-      "components": 14,
-      "lib/business": 9,
-      "modules/aplicacion": 2
+    "raiz": {
+      "lib/otros": 12,
+      "hooks": 4,
+      "lib/api": 2,
+      "lib/identidad": 2,
+      "modules/aplicacion": 1
     },
     "lib/api": {
       "lib/otros": 8,
@@ -2950,21 +2999,6 @@
     "lib/identidad": {
       "lib/otros": 5
     },
-    "lib/business": {
-      "lib/api": 3,
-      "lib/otros": 11,
-      "lib/database": 4,
-      "modules/aplicacion": 4,
-      "raiz": 2,
-      "components": 1
-    },
-    "lib/otros": {
-      "lib/database": 4,
-      "lib/api": 1,
-      "lib/business": 6,
-      "raiz": 6,
-      "components": 2
-    },
     "lib/database": {
       "lib/otros": 4,
       "lib/business": 1
@@ -2972,20 +3006,11 @@
     "lib/integrations": {
       "lib/business": 1
     },
-    "modules/infraestructura": {
-      "lib/database": 107,
-      "lib/otros": 150,
-      "lib/business": 56,
-      "modules/aplicacion": 25,
-      "lib/api": 9,
-      "lib/identidad": 2,
-      "raiz": 2
-    },
     "modules/aplicacion": {
       "modules/infraestructura": 23,
       "lib/otros": 97,
       "lib/database": 44,
-      "lib/business": 38,
+      "lib/business": 39,
       "lib/api": 11,
       "lib/identidad": 3,
       "raiz": 5

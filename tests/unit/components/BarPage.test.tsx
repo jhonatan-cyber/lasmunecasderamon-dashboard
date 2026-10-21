@@ -116,6 +116,136 @@ it.each([
   ).toBeInTheDocument();
 });
 
+it('muestra en el historial los ml descontados por botella en una colación', async () => {
+  const colacion = {
+    id: 'col-1',
+    tipo: 'colacion',
+    estado: 'completada',
+    producto_id: 'prod-1',
+    producto_nombre: 'Whisky',
+    presentacion_nombre: '750 ml',
+    cantidad: 0,
+    ml: 150,
+    precio_venta: 0,
+    comision: 0,
+    usuario_nombre: 'barman',
+    fecha_crea: '2026-10-20 13:00:00',
+    unidades_consumidas: [
+      { unidad_id: 'u-1', codigo: 'LM-000123', codigo_barras: null, ml_consumido: 150 }
+    ]
+  };
+  vi.stubGlobal(
+    'fetch',
+    vi.fn(async (url: string) => {
+      if (url === '/api/bar') return response(stock);
+      if (url.startsWith('/api/bar/movements')) return response([colacion]);
+      if (url === '/api/bar/shots') return response({});
+      return response([]);
+    })
+  );
+  mount();
+  fireEvent.mouseDown(screen.getByRole('tab', { name: 'Historial' }), {
+    button: 0,
+    ctrlKey: false
+  });
+
+  expect(await screen.findByText('Colación')).toBeInTheDocument();
+  expect(screen.getByText('LM-000123: 150 ml')).toBeInTheDocument();
+  expect(screen.getByText('150 ml')).toBeInTheDocument();
+});
+
+it('filtra el historial por tipo de movimiento, incluidas las colaciones', async () => {
+  const venta = {
+    id: 'v-1',
+    tipo: 'venta',
+    estado: 'completada',
+    producto_id: 'prod-2',
+    producto_nombre: 'Ron',
+    presentacion_nombre: '700 ml',
+    cantidad: 2,
+    ml: 100,
+    precio_venta: 3000,
+    comision: 0,
+    usuario_nombre: 'caja',
+    fecha_crea: '2026-10-20 12:00:00',
+    unidades_consumidas: []
+  };
+  const colacion = {
+    id: 'col-1',
+    tipo: 'colacion',
+    estado: 'completada',
+    producto_id: 'prod-1',
+    producto_nombre: 'Whisky',
+    presentacion_nombre: '750 ml',
+    cantidad: 0,
+    ml: 150,
+    precio_venta: 0,
+    comision: 0,
+    usuario_nombre: 'barman',
+    fecha_crea: '2026-10-20 13:00:00',
+    unidades_consumidas: []
+  };
+  const traspaso = {
+    id: 't-1',
+    tipo: 'traspaso',
+    estado: 'aceptada',
+    producto_id: 'prod-1',
+    producto_nombre: 'Whisky',
+    presentacion_nombre: '750 ml',
+    cantidad: 1,
+    precio_venta: null,
+    comision: null,
+    usuario_nombre: 'jefe',
+    aceptado_nombre: 'recepcionista',
+    fecha_crea: '2026-10-19 22:00:00',
+    unidades_consumidas: []
+  };
+  const fetcher = vi.fn(async (url: string) => {
+    if (url === '/api/bar') return response(stock);
+    if (url.startsWith('/api/bar/movements')) return response([venta, colacion, traspaso]);
+    if (url === '/api/bar/shots') return response({});
+    return response([]);
+  });
+  vi.stubGlobal('fetch', fetcher);
+  mount();
+  fireEvent.mouseDown(screen.getByRole('tab', { name: 'Historial' }), {
+    button: 0,
+    ctrlKey: false
+  });
+
+  // Sin filtro se ven los tres tipos con su etiqueta de estado. Las
+  // consultas se acotan a la tabla: el tab «Colación» también lleva ese texto.
+  expect(await screen.findByText('Vendida')).toBeInTheDocument();
+  const tabla = screen.getByRole('table');
+  expect(within(tabla).getByText('Colación')).toBeInTheDocument();
+  expect(within(tabla).getByText('Aceptada')).toBeInTheDocument();
+
+  fireEvent.click(screen.getByRole('button', { name: 'Colaciones' }));
+  expect(within(tabla).getByText('Colación')).toBeInTheDocument();
+  expect(within(tabla).queryByText('Vendida')).not.toBeInTheDocument();
+  expect(within(tabla).queryByText('Aceptada')).not.toBeInTheDocument();
+  // El tipo también viaja al servidor, para que el total por página sea del filtro.
+  expect(fetcher.mock.calls.some(([url]) => String(url).includes('tipo=colacion'))).toBe(true);
+
+  fireEvent.click(screen.getByRole('button', { name: 'Traspasos' }));
+  expect(within(tabla).getByText('Aceptada')).toBeInTheDocument();
+  expect(within(tabla).queryByText('Colación')).not.toBeInTheDocument();
+
+  // Sin filas del tipo elegido se avisa que el filtro no coincide.
+  fireEvent.click(screen.getByRole('button', { name: 'Devoluciones' }));
+  expect(
+    within(tabla).getByText('Sin movimientos que coincidan con el filtro.')
+  ).toBeInTheDocument();
+
+  fireEvent.click(screen.getByRole('button', { name: 'Todos' }));
+  expect(within(tabla).getByText('Vendida')).toBeInTheDocument();
+  expect(within(tabla).getByText('Colación')).toBeInTheDocument();
+  expect(within(tabla).getByText('Aceptada')).toBeInTheDocument();
+
+  // Cada chip refiltra también en el servidor; se resuelven antes de cerrar.
+  await act(async () => {});
+});
+
 it('bloquea nuevas aprobaciones mientras una recepción se procesa', async () => {
   let complete!: (value: Response) => void;
   const pending = stock.map((item, index) => ({
@@ -167,4 +297,90 @@ it('permite recuperar el resumen de cortos después de un fallo', async () => {
   failed = false;
   fireEvent.click(screen.getByRole('button', { name: 'Reintentar' }));
   await waitFor(() => expect(screen.queryByRole('alert')).not.toBeInTheDocument());
+});
+
+const filaMovimiento = (id: string, fecha: string, tipo = 'venta') => ({
+  id,
+  tipo,
+  estado: 'completada',
+  producto_id: 'prod-1',
+  producto_nombre: 'Ron',
+  presentacion_nombre: '700 ml',
+  cantidad: 1,
+  precio_venta: 3000,
+  comision: 0,
+  usuario_nombre: 'caja',
+  fecha_crea: fecha,
+  unidades_consumidas: []
+});
+
+it('pagina el historial en el servidor más allá de los últimos movimientos', async () => {
+  const paginasPedidas: (string | null)[] = [];
+  vi.stubGlobal(
+    'fetch',
+    vi.fn(async (url: string) => {
+      if (url === '/api/bar') return response(stock);
+      if (url.startsWith('/api/bar/movements')) {
+        const params = new URL(url, 'http://localhost').searchParams;
+        const pagina = Number(params.get('page') ?? '1');
+        paginasPedidas.push(params.get('page'));
+        return Response.json({
+          success: true,
+          data: [filaMovimiento(`mov-${pagina}`, '2026-10-20 13:00:00')],
+          meta: { total: 250, pagina, paginas: 3, limite: 100 }
+        });
+      }
+      return response({});
+    })
+  );
+  mount();
+  fireEvent.mouseDown(screen.getByRole('tab', { name: 'Historial' }), {
+    button: 0,
+    ctrlKey: false
+  });
+
+  expect(await screen.findByText('Página 1 de 3')).toBeInTheDocument();
+  expect(screen.getByText('250 movimientos')).toBeInTheDocument();
+
+  fireEvent.click(screen.getByRole('button', { name: 'Siguiente' }));
+
+  expect(await screen.findByText('Página 2 de 3')).toBeInTheDocument();
+  expect(paginasPedidas).toContain('2');
+  await act(async () => {});
+});
+
+it('filtra el historial por fecha en el servidor y permite limpiar el rango', async () => {
+  const pedidos: URLSearchParams[] = [];
+  vi.stubGlobal(
+    'fetch',
+    vi.fn(async (url: string) => {
+      if (url === '/api/bar') return response(stock);
+      if (url.startsWith('/api/bar/movements')) {
+        pedidos.push(new URL(url, 'http://localhost').searchParams);
+        return Response.json({
+          success: true,
+          data: [filaMovimiento('mov-dia', '2026-10-19 21:00:00')],
+          meta: { total: 1, pagina: 1, paginas: 1, limite: 100 }
+        });
+      }
+      return response({});
+    })
+  );
+  mount();
+  fireEvent.mouseDown(screen.getByRole('tab', { name: 'Historial' }), {
+    button: 0,
+    ctrlKey: false
+  });
+  expect(await screen.findByText('Página 1 de 1')).toBeInTheDocument();
+
+  fireEvent.change(screen.getByLabelText('Fecha desde'), { target: { value: '2026-10-19' } });
+  await waitFor(() => expect(pedidos.some(p => p.get('desde') === '2026-10-19')).toBe(true));
+
+  fireEvent.change(screen.getByLabelText('Fecha hasta'), { target: { value: '2026-10-19' } });
+  await waitFor(() => expect(pedidos.some(p => p.get('hasta') === '2026-10-19')).toBe(true));
+
+  fireEvent.click(screen.getByRole('button', { name: 'Limpiar filtro de fecha' }));
+  await waitFor(() => expect(pedidos[pedidos.length - 1]?.get('desde')).toBeNull());
+  expect(pedidos[pedidos.length - 1]?.get('hasta')).toBeNull();
+  await act(async () => {});
 });

@@ -3,7 +3,6 @@
 import { useState } from 'react';
 import { ServicioWithDetails } from '@/types/servicio';
 import { showErrorToast } from '@/lib/utils/toastUtils';
-import { useTimer } from '@/contexts/TimerContext';
 
 export const useDevolucionLogic = () => {
   const [selectedServicio, setSelectedServicio] = useState<ServicioWithDetails | null>(null);

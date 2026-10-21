@@ -24,7 +24,7 @@ import {
 } from 'lucide-react';
 import { PermissionGuard } from '@/components/auth/PermissionGuard';
 import { useAuth } from '@/contexts/AuthContext';
-import { useCurrentUser } from '@/hooks/auth/useCurrentUser';
+import { useTransferPermissions } from '@/hooks/shared/useTransferPermissions';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
@@ -53,8 +53,9 @@ import type { DevolucionEnvaseRegistro, ShotsSummary } from '@/modules/inventari
 import { useContainerScan, MOTIVO_ENVASE } from '@/hooks/productos/useContainerScan';
 import { EscaneoLote } from '@/components/products/EscaneoLote';
 import { ProductImageLightbox } from '@/components/products/ProductImageLightbox';
-import { ColacionesTab } from '@/components/bar/ColacionesTab';
+import { ColacionesTab } from '@/components/colaciones/ColacionesTab';
 import { MetricCard } from '@/components/shared/MetricCard';
+import Paginate from '@/components/shared/Paginate';
 
 const isTierPriced = (item: BarStockItem) => isTierPricedItem(item);
 const barTabClassName =
@@ -92,7 +93,26 @@ interface Movimiento {
   usuario_nombre: string | null;
   usuario_apellido: string | null;
   usuario_nick: string | null;
+  /** Botellas que tocó una colación y los ml que salieron de cada una. */
+  unidades_consumidas?: {
+    unidad_id: string;
+    codigo: string;
+    codigo_barras: string | null;
+    ml_consumido: number;
+  }[];
 }
+
+type FiltroTipoMovimiento = 'todos' | 'venta' | 'colacion' | 'traspaso' | 'devolucion';
+
+// Tipos de `inventario_movimientos` que escribe el negocio (venta, colación,
+// traspaso y devolución por anulación); «Todos» muestra también los históricos.
+const TIPOS_MOVIMIENTO: { valor: FiltroTipoMovimiento; etiqueta: string }[] = [
+  { valor: 'todos', etiqueta: 'Todos' },
+  { valor: 'venta', etiqueta: 'Ventas' },
+  { valor: 'colacion', etiqueta: 'Colaciones' },
+  { valor: 'traspaso', etiqueta: 'Traspasos' },
+  { valor: 'devolucion', etiqueta: 'Devoluciones' }
+];
 
 export default function BarPage() {
   const [items, setItems] = useState<BarStockItem[]>([]);
@@ -100,6 +120,7 @@ export default function BarPage() {
   const [search, setSearch] = useState('');
   const [searchPendientes, setSearchPendientes] = useState('');
   const [searchHistorial, setSearchHistorial] = useState('');
+  const [filtroTipoMov, setFiltroTipoMov] = useState<FiltroTipoMovimiento>('todos');
   const [searchEnvases, setSearchEnvases] = useState('');
   const [searchColaciones, setSearchColaciones] = useState('');
   const [sortField, setSortField] = useState('producto_nombre');
@@ -121,6 +142,23 @@ export default function BarPage() {
   }, []);
   const [movimientos, setMovimientos] = useState<Movimiento[]>([]);
   const [loadingMovs, setLoadingMovs] = useState(false);
+  // Historial paginado en el servidor: fecha, tipo y texto mandan el filtro al
+  // backend y `metaMovs` trae el total del mismo filtro para paginar más allá de
+  // los últimos movimientos.
+  const [paginaMovs, setPaginaMovs] = useState(1);
+  const [desdeHistorial, setDesdeHistorial] = useState('');
+  const [hastaHistorial, setHastaHistorial] = useState('');
+  const [busquedaHistorial, setBusquedaHistorial] = useState('');
+  const [metaMovs, setMetaMovs] = useState<{
+    total: number;
+    pagina: number;
+    paginas: number;
+    limite: number;
+  } | null>(null);
+  // Cada petición lleva su número para descartar respuestas que llegaron tarde.
+  const movimientosRequestId = useRef(0);
+  // El esqueleto cubre la primera carga; después las filas se reemplazan en caliente.
+  const historialCargadoRef = useRef(false);
   const [pendientes, setPendientes] = useState<TransferRecord[]>([]);
   const [resumen, setResumen] = useState<ShotsSummary | null>(null);
   const [loadingPend, setLoadingPend] = useState(false);
@@ -129,9 +167,8 @@ export default function BarPage() {
   const inputEnvaseRef = useRef<HTMLInputElement>(null);
   const [resolvingId, setResolvingId] = useState<string | null>(null);
   const resolvingRef = useRef<string | null>(null);
-  const { user } = useCurrentUser();
   const { hasPermission } = useAuth();
-  const puedeAprobar = ['barman'].includes((user?.role || '').toLowerCase());
+  const { puedeAprobar } = useTransferPermissions();
   // Solo quien tiene products/return_container ve el tab de envases (admin pasa siempre).
   const puedeDevolver = hasPermission('products', 'return_container');
 
@@ -151,23 +188,59 @@ export default function BarPage() {
     fetchStock();
   }, [fetchStock]);
 
+  // El texto se aplica enseguida en la tabla y al servidor 300 ms después,
+  // para no pedir una página por cada tecla.
+  useEffect(() => {
+    const timer = setTimeout(() => setBusquedaHistorial(searchHistorial), 300);
+    return () => clearTimeout(timer);
+  }, [searchHistorial]);
+
   const fetchMovimientos = useCallback(async () => {
-    setLoadingMovs(true);
+    const requestId = ++movimientosRequestId.current;
+    if (!historialCargadoRef.current) setLoadingMovs(true);
     setMovementsError(false);
     try {
-      const rows = await fetchCollection<Movimiento>('/api/bar/movements?limit=100', {
-        cache: 'no-store'
+      const params = new URLSearchParams();
+      params.set('page', String(paginaMovs));
+      if (desdeHistorial) params.set('desde', desdeHistorial);
+      if (hastaHistorial) params.set('hasta', hastaHistorial);
+      if (filtroTipoMov !== 'todos') params.set('tipo', filtroTipoMov);
+      const texto = busquedaHistorial.trim();
+      if (texto) params.set('q', texto);
+      const response = await fetch(`/api/bar/movements?${params}`, { cache: 'no-store' });
+      const result = await response.json().catch(() => ({}));
+      if (!response.ok || !result.success || !Array.isArray(result.data))
+        throw new Error(result.message || 'No se pudo cargar el historial');
+      // Una respuesta vieja (el filtro cambió mientras volaba) no pisa la nueva.
+      if (requestId !== movimientosRequestId.current) return;
+      historialCargadoRef.current = true;
+      setMovimientos(result.data as Movimiento[]);
+      // Sin meta (respuesta legacy) la página única es el total.
+      const total = Number(result.meta?.total ?? result.data.length);
+      const paginas = Number(result.meta?.paginas ?? 1) || 1;
+      setMetaMovs({
+        total,
+        pagina: Number(result.meta?.pagina ?? paginaMovs),
+        paginas,
+        limite: Number(result.meta?.limite ?? 100)
       });
-      setMovimientos(rows);
+      // El filtro se estrechó: si la página actual ya no existe, se vuelve a la
+      // última válida en vez de quedar en un historial vacío.
+      if (paginaMovs > paginas) setPaginaMovs(paginas);
     } catch {
+      if (requestId !== movimientosRequestId.current) return;
       setMovementsError(true);
     } finally {
-      setLoadingMovs(false);
+      if (requestId === movimientosRequestId.current) setLoadingMovs(false);
     }
-  }, []);
+  }, [paginaMovs, desdeHistorial, hastaHistorial, filtroTipoMov, busquedaHistorial]);
   useEffect(() => {
     if (tab === 'historial') fetchMovimientos();
   }, [tab, fetchMovimientos]);
+  // Cualquier filtro nuevo vuelve a la primera página.
+  useEffect(() => {
+    setPaginaMovs(1);
+  }, [desdeHistorial, hastaHistorial, filtroTipoMov, busquedaHistorial]);
 
   const fetchResumen = useCallback(async () => {
     setSummaryError(false);
@@ -368,20 +441,29 @@ export default function BarPage() {
     const term = searchHistorial.trim().toLocaleLowerCase('es');
     return movimientos.filter(
       row =>
-        !term ||
-        [
-          row.producto_nombre,
-          row.presentacion_nombre,
-          row.usuario_nombre,
-          row.usuario_apellido,
-          row.usuario_nick
-        ].some(value =>
-          String(value ?? '')
-            .toLocaleLowerCase('es')
-            .includes(term)
-        )
+        (filtroTipoMov === 'todos' || row.tipo === filtroTipoMov) &&
+        (!term ||
+          [
+            row.producto_nombre,
+            row.presentacion_nombre,
+            row.usuario_nombre,
+            row.usuario_apellido,
+            row.usuario_nick,
+            // Los códigos de las botellas también son buscables en el historial.
+            (row.unidades_consumidas ?? []).map(unidad => unidad.codigo).join(' ')
+          ].some(value =>
+            String(value ?? '')
+              .toLocaleLowerCase('es')
+              .includes(term)
+          ))
     );
-  }, [movimientos, searchHistorial]);
+  }, [movimientos, searchHistorial, filtroTipoMov]);
+  /** Filtro que la interfaz aplica sobre la página ya recibida. */
+  const hayFiltroHistorial =
+    filtroTipoMov !== 'todos' ||
+    searchHistorial.trim() !== '' ||
+    desdeHistorial !== '' ||
+    hastaHistorial !== '';
   const filteredDevoluciones = useMemo(() => {
     const term = searchEnvases.trim().toLocaleLowerCase('es');
     return devoluciones.filter(
@@ -606,27 +688,98 @@ export default function BarPage() {
             </div>
           )}
           {tab === 'historial' && (
-            <div className='relative rounded-2xl border bg-card p-3'>
-              <Search className='pointer-events-none absolute left-6 top-1/2 size-4 -translate-y-1/2 text-muted-foreground' />
-              <Input
-                value={searchHistorial}
-                onChange={event => setSearchHistorial(event.target.value)}
-                placeholder='Buscar producto, presentación o usuario'
-                aria-label='Buscar en el historial del bar'
-                className='h-11 rounded-full pl-9 pr-12'
-              />
-              {searchHistorial && (
-                <Button
-                  type='button'
-                  variant='ghost'
-                  size='icon'
-                  className='absolute right-5 top-1/2 size-9 -translate-y-1/2 rounded-full'
-                  aria-label='Limpiar búsqueda del historial'
-                  onClick={() => setSearchHistorial('')}
-                >
-                  <X />
-                </Button>
-              )}
+            <div className='rounded-2xl border bg-card p-3'>
+              <div className='relative'>
+                <Search className='pointer-events-none absolute left-6 top-1/2 size-4 -translate-y-1/2 text-muted-foreground' />
+                <Input
+                  value={searchHistorial}
+                  onChange={event => setSearchHistorial(event.target.value)}
+                  placeholder='Buscar producto, presentación o usuario'
+                  aria-label='Buscar en el historial del bar'
+                  className='h-11 rounded-full pl-9 pr-12'
+                />
+                {searchHistorial && (
+                  <Button
+                    type='button'
+                    variant='ghost'
+                    size='icon'
+                    className='absolute right-5 top-1/2 size-9 -translate-y-1/2 rounded-full'
+                    aria-label='Limpiar búsqueda del historial'
+                    onClick={() => setSearchHistorial('')}
+                  >
+                    <X />
+                  </Button>
+                )}
+              </div>
+              <div
+                role='group'
+                aria-label='Filtrar por tipo de movimiento'
+                className='mt-3 flex flex-wrap gap-2'
+              >
+                {TIPOS_MOVIMIENTO.map(tipo => (
+                  <Button
+                    key={tipo.valor}
+                    type='button'
+                    size='sm'
+                    variant={filtroTipoMov === tipo.valor ? 'secondary' : 'outline'}
+                    aria-pressed={filtroTipoMov === tipo.valor}
+                    onClick={() => setFiltroTipoMov(tipo.valor)}
+                    className='h-8 rounded-full px-3 text-xs'
+                  >
+                    {tipo.etiqueta}
+                  </Button>
+                ))}
+              </div>
+              <div className='mt-3 flex flex-wrap items-end gap-3'>
+                <div className='space-y-1'>
+                  <label
+                    htmlFor='historial-desde'
+                    className='text-xs font-medium text-muted-foreground'
+                  >
+                    Fecha desde
+                  </label>
+                  <Input
+                    id='historial-desde'
+                    type='date'
+                    value={desdeHistorial}
+                    max={hastaHistorial || undefined}
+                    onChange={event => setDesdeHistorial(event.target.value)}
+                    className='h-11 w-[11rem] rounded-full px-4'
+                  />
+                </div>
+                <div className='space-y-1'>
+                  <label
+                    htmlFor='historial-hasta'
+                    className='text-xs font-medium text-muted-foreground'
+                  >
+                    Fecha hasta
+                  </label>
+                  <Input
+                    id='historial-hasta'
+                    type='date'
+                    value={hastaHistorial}
+                    min={desdeHistorial || undefined}
+                    onChange={event => setHastaHistorial(event.target.value)}
+                    className='h-11 w-[11rem] rounded-full px-4'
+                  />
+                </div>
+                {desdeHistorial || hastaHistorial ? (
+                  <Button
+                    type='button'
+                    variant='ghost'
+                    size='sm'
+                    aria-label='Limpiar filtro de fecha'
+                    onClick={() => {
+                      setDesdeHistorial('');
+                      setHastaHistorial('');
+                    }}
+                    className='h-11 gap-1 rounded-full px-3 text-xs'
+                  >
+                    <X className='size-3.5' aria-hidden='true' />
+                    Limpiar fechas
+                  </Button>
+                ) : null}
+              </div>
             </div>
           )}
           {tab === 'colaciones' && (
@@ -1011,7 +1164,11 @@ export default function BarPage() {
                           {filteredMovimientos.length === 0 ? (
                             <TableRow key='empty'>
                               <TableCell colSpan={10} className='text-center text-muted-foreground'>
-                                {loadingMovs ? 'Cargando...' : 'Sin movimientos registrados.'}
+                                {loadingMovs
+                                  ? 'Cargando...'
+                                  : hayFiltroHistorial
+                                    ? 'Sin movimientos que coincidan con el filtro.'
+                                    : 'Sin movimientos registrados.'}
                               </TableCell>
                             </TableRow>
                           ) : (
@@ -1045,16 +1202,45 @@ export default function BarPage() {
                                 </TableCell>
                                 <TableCell className='sm:px-4 text-center sm:text-sm font-medium'>
                                   {m.producto_nombre || '—'}
+                                  {(m.unidades_consumidas?.length ?? 0) > 0 ? (
+                                    <ul className='mt-1 space-y-0.5 text-[11px] font-normal text-muted-foreground'>
+                                      {(m.unidades_consumidas ?? []).map(unidad => (
+                                        <li key={unidad.unidad_id} className='tabular-nums'>
+                                          {unidad.codigo || 'Sin código'}: {unidad.ml_consumido} ml
+                                        </li>
+                                      ))}
+                                    </ul>
+                                  ) : null}
                                 </TableCell>
                                 <TableCell className='sm:px-4 text-center sm:text-sm'>
                                   {m.presentacion_nombre || '—'}
                                 </TableCell>
                                 <TableCell className='sm:px-4 text-center font-mono sm:text-sm'>
-                                  {m.cantidad}
-                                  {Number(m.ml ?? 0) > 0 && (
-                                    <p className='text-[10px] font-bold uppercase text-amber-600 dark:text-amber-400'>
-                                      {Number(m.ml)} ml
-                                    </p>
+                                  {m.tipo === 'colacion' ? (
+                                    <>
+                                      {Number(m.ml ?? 0) > 0 && (
+                                        <p className='text-[10px] font-bold uppercase text-amber-600 dark:text-amber-400'>
+                                          {Number(m.ml)} ml
+                                        </p>
+                                      )}
+                                      {Number(m.cantidad ?? 0) > 0 && (
+                                        <p className='text-[10px] uppercase text-muted-foreground'>
+                                          {m.cantidad} un.
+                                        </p>
+                                      )}
+                                      {Number(m.ml ?? 0) === 0 &&
+                                        Number(m.cantidad ?? 0) === 0 &&
+                                        '—'}
+                                    </>
+                                  ) : (
+                                    <>
+                                      {m.cantidad}
+                                      {Number(m.ml ?? 0) > 0 && (
+                                        <p className='text-[10px] font-bold uppercase text-amber-600 dark:text-amber-400'>
+                                          {Number(m.ml)} ml
+                                        </p>
+                                      )}
+                                    </>
                                   )}
                                 </TableCell>
                                 <TableCell className='sm:px-4 text-center font-mono sm:text-sm'>
@@ -1098,18 +1284,20 @@ export default function BarPage() {
                                   {m.usuario_nombre || m.usuario_nick || '—'}
                                 </TableCell>
                                 <TableCell>
-                                  {m.tipo === 'venta'
-                                    ? 'Vendida'
-                                    : m.estado === 'aceptada'
-                                      ? 'Aceptada'
-                                      : m.estado === 'pendiente'
-                                        ? 'Pendiente'
-                                        : m.estado === 'rechazada'
-                                          ? 'Rechazada'
-                                          : 'Histórica'}
+                                  {m.tipo === 'colacion'
+                                    ? 'Colación'
+                                    : m.tipo === 'venta'
+                                      ? 'Vendida'
+                                      : m.estado === 'aceptada'
+                                        ? 'Aceptada'
+                                        : m.estado === 'pendiente'
+                                          ? 'Pendiente'
+                                          : m.estado === 'rechazada'
+                                            ? 'Rechazada'
+                                            : 'Histórica'}
                                 </TableCell>
                                 <TableCell>
-                                  {m.tipo === 'venta' ? (
+                                  {m.tipo === 'venta' || m.tipo === 'colacion' ? (
                                     <span className='text-muted-foreground'>—</span>
                                   ) : (
                                     <>
@@ -1130,6 +1318,19 @@ export default function BarPage() {
                     </div>
                   </div>
                 </BoneyardSkeleton>
+                {metaMovs && metaMovs.total > 0 && (
+                  <div className='flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between'>
+                    <p role='status' className='text-sm text-muted-foreground'>
+                      {metaMovs.total} {metaMovs.total === 1 ? 'movimiento' : 'movimientos'}
+                      {hayFiltroHistorial ? ` · ${filteredMovimientos.length} en esta página` : ''}
+                    </p>
+                    <Paginate
+                      page={paginaMovs}
+                      totalPages={metaMovs.paginas}
+                      setPage={setPaginaMovs}
+                    />
+                  </div>
+                )}
               </>
             )}
           </TabsContent>

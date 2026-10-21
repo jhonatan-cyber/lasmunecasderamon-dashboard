@@ -109,7 +109,9 @@ export function PendingApprovals({
                   </Button>
                 </>
               ) : (
-                <span className='text-sm text-muted-foreground'>Solo el Barman puede aprobar.</span>
+                <span className='text-sm text-muted-foreground'>
+                  No tienes permiso para aprobar.
+                </span>
               )}
             </CardFooter>
           </Card>

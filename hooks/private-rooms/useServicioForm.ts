@@ -19,7 +19,6 @@ import {
   calcularTotalesServicio,
   validateServicioForm,
   unirNombresAnfitrionas,
-  type ClienteConSaldo,
   type PrepagoDestino,
   type ServicioFormData
 } from '@/components/private-rooms/new/servicioFormModel';
@@ -36,12 +35,6 @@ const INITIAL_FORM: ServicioFormData = {
   tiempo: 0
 };
 
-/**
- * Estado completo de la página «Datos Servicio»: datos de lookup, formulario,
- * totales derivados (con IVA/redondeo), efectos de habitación/cliente y el
- * flujo confirmar → POST `/api/servicios` → timer. El JSX vive en los
- * subcomponentes de `components/private-rooms/new/` y la página solo compone.
- */
 export function useServicioForm() {
   const router = useRouter();
   const submitKey = useRef<string>('');
@@ -97,10 +90,6 @@ export function useServicioForm() {
 
   useRefreshOnFocus(refreshLookupData);
 
-  // Los topes de anfitrionas/clientes bajan según lo que se elija en el otro grupo
-  // (y al elegir una habitación con comisión). Si la selección vigente queda por
-  // encima del tope, se recorta para que nunca supere las 4 personas ni los 2
-  // clientes permitidos.
   useEffect(() => {
     if (!Number.isFinite(maxClients) || !Number.isFinite(maxHostesses)) return;
 
@@ -116,7 +105,6 @@ export function useServicioForm() {
     });
   }, [maxClients, maxHostesses]);
 
-  // Recalcula subtotal/IVA/total cuando cambian los insumos del cálculo.
   useEffect(() => {
     const {
       subTotal: nuevoSubTotal,
@@ -146,7 +134,6 @@ export function useServicioForm() {
     ivaRate
   ]);
 
-  // Elegir habitación fija su precio/tiempo y bloquea la comisión si la sala la paga.
   useEffect(() => {
     if (formData.habitacion_id) {
       if (selectedRoom) {
@@ -169,7 +156,6 @@ export function useServicioForm() {
     }
   }, [formData.habitacion_id, selectedRoom]);
 
-  // Sin cliente elegido no hay prepago: se resetea el método y se saca de los mixtos.
   useEffect(() => {
     if (selectedClientData) return;
 
@@ -180,8 +166,6 @@ export function useServicioForm() {
     setPagosMixtos(prev => prev.filter(pago => pago.metodo !== 'prepago'));
   }, [selectedClientData, formData.metodo_pago]);
 
-  // Sin clientes con saldo no hay descuento posible: se resetea el método prepago
-  // y se sacan las filas prepago de los mixtos.
   useEffect(() => {
     if (clientesConSaldo.length > 0) return;
 
@@ -202,14 +186,12 @@ export function useServicioForm() {
     setPrepagoDestino(clientesConSaldo.length === 2 ? 'ambos' : clientesConSaldo[0].clienteId);
   }, [clientesConSaldo]);
 
-  /** El saldo se usa con Prepago, o con la fila prepago de un pago mixto. */
   const preguntarDestinoSaldo =
     clientesConSaldo.length > 0 &&
     (formData.metodo_pago === 'mixto'
       ? pagosMixtos.some(pago => pago.metodo === 'prepago')
       : formData.metodo_pago === 'prepago');
 
-  /** Monto que se intenta cubrir con saldo: total o la fila prepago del mixto. */
   const montoPrepagoBase =
     formData.metodo_pago === 'mixto'
       ? pagosMixtos
@@ -332,12 +314,10 @@ export function useServicioForm() {
   };
 
   return {
-    // Lookup
     clientes,
     anfitrionas,
     habitaciones,
     refreshLookupData,
-    // Formulario
     formData,
     setFormData,
     precioHabitacion,
@@ -347,7 +327,6 @@ export function useServicioForm() {
     pagosMixtos,
     setPagosMixtos,
     ivaRate,
-    // Resumen (de usePrivateRoomSummary)
     selectedRoom,
     selectedClientData,
     selectedClientName,
@@ -359,7 +338,6 @@ export function useServicioForm() {
     desgloseTarjeta,
     precioHabitacionBoleta,
     disabledPaymentMethods,
-    // Acciones
     loading,
     showConfirmModal,
     setShowConfirmModal,

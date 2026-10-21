@@ -17,14 +17,11 @@ export function useSharedSSE(
   useEffect(() => {
     if (!url || typeof window === 'undefined') return;
 
-    // Use a stable listener that forwards to the latest onMessageRef
     const listener = (payload: any) => {
       onMessageRef.current(payload);
     };
 
     const unsubscribe = sseManager.subscribe(url, listener);
-
-    // Poll connection state periodically (no event-driven way to detect it)
     const interval = setInterval(() => {
       setIsConnected(sseManager.getConnectionState(url).isConnected);
     }, 2000);

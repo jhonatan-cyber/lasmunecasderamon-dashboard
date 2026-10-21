@@ -610,11 +610,17 @@ export function useProductForm({
     }
     savingPresentation.current = true;
     const productId = initialValues?.id ? String(initialValues.id) : null;
+    // Una edición de inventario es un PATCH idempotente por recurso. Usa una
+    // clave nueva por intento para que un fallo anterior no lo deje bloqueado.
+    const registrationKey = crypto.randomUUID();
     setGuardandoPres(true);
     try {
       const res = await fetch('/api/products/presentations', {
         method: 'PATCH',
-        headers: { 'Content-Type': 'application/json' },
+        headers: {
+          'Content-Type': 'application/json',
+          'x-registration-key': registrationKey
+        },
         body: JSON.stringify({
           id: editingPresId,
           stock_minimo: getNumericValue(editPresDraft.stock_minimo) || null,

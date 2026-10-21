@@ -11,6 +11,7 @@ export function useGenericMutations<T>(
     showToasts?: boolean;
     entityName?: string;
     invalidateKey?: string;
+    requestHeaders?: () => Record<string, string>;
   }
 ) {
   const queryClient = useQueryClient();
@@ -33,7 +34,10 @@ export function useGenericMutations<T>(
   const request = async (method: 'POST' | 'PUT' | 'DELETE', path: string, body?: BodyInit) => {
     const response = await fetch(`${endpoint}${path}`, {
       method,
-      headers: body instanceof FormData ? {} : body ? { 'Content-Type': 'application/json' } : {},
+      headers: {
+        ...(body instanceof FormData ? {} : body ? { 'Content-Type': 'application/json' } : {}),
+        ...options?.requestHeaders?.()
+      },
       body
     });
 

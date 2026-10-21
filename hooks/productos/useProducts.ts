@@ -6,6 +6,8 @@ import { useGenericFetch } from '../shared/useGenericFetch';
 import { useGenericFilters } from '../shared/useGenericFilters';
 import { useGenericMutations } from '../shared/useGenericMutations';
 
+const registrationKey = () => crypto.randomUUID();
+
 const PRODUCT_SEARCH_FIELDS: (keyof Product)[] = ['name', 'code'];
 
 export default function useProducts(categoryId?: string) {
@@ -36,7 +38,8 @@ export default function useProducts(categoryId?: string) {
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ['product-presentations'] }),
     showToasts: true,
     entityName: 'Producto',
-    invalidateKey: endpoint
+    invalidateKey: endpoint,
+    requestHeaders: () => ({ 'x-registration-key': registrationKey() })
   });
 
   const { remove: deletePresentation, isLoading: isDeletingPresentation } = useGenericMutations(

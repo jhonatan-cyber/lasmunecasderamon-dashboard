@@ -2,12 +2,14 @@
 
 import { useState, useImperativeHandle, type Ref } from 'react';
 import { SaleTypeEditor } from '@/components/bar/transfer/SaleTypeEditor';
+import { ColacionFields } from '@/components/bar/transfer/ColacionFields';
 import {
   ConfiguredSaleOptionsSchema,
   SaleOptionsSchema
 } from '@/lib/business/schemas/sale-options';
 import { esBebidaAnalcoholica, esCigarrillos } from '@/components/bar/transfer/transferOptions';
 import { preciosCortoAnfitriona } from '@/lib/sales/hostessShortPrices';
+import { etiquetaCorto, resolveShotMl, resolveShotMlAnfitriona } from '@/lib/business/shotMl';
 import { useConfigValue } from '@/hooks/shared/useConfigValue';
 import type { SaleOption, SaleType } from '@/types/sale-options';
 
@@ -86,16 +88,72 @@ export function SettingsSaleOptionsEditor({
   const [ml, setMl] = useState(mlCliente ? String(mlCliente) : '');
   const [mlHost, setMlHost] = useState(mlAnfitriona ? String(mlAnfitriona) : '');
   const [mlMixHost, setMlMixHost] = useState(String(shot?.ml_acompanamiento_anfitriona ?? ''));
+  // Colación: mismos campos que al transferir; el estado nace con lo guardado.
+  const [mlColacion, setMlColacion] = useState(
+    bottle?.ml_colacion !== undefined && bottle?.ml_colacion !== null
+      ? String(bottle.ml_colacion)
+      : ''
+  );
+  const [mlColacionAcomp, setMlColacionAcomp] = useState(
+    bottle?.acompanamiento_colacion?.ml !== undefined &&
+      bottle?.acompanamiento_colacion?.ml !== null
+      ? String(bottle.acompanamiento_colacion.ml)
+      : ''
+  );
   const shotMl = useConfigValue<number>('bar', 'shot_ml', 50);
+
+  // La colación hereda los ml del corto de anfitriona cuando ese tipo de venta
+  // está activo; mismos cálculos que el modal de transferencia.
+  const shotActivo = !esVentaSimple && tipos.includes('shot');
+  const mlPorShot = resolveShotMl(numeric(ml), shotMl);
+  const mlPorShotAnfitriona = resolveShotMlAnfitriona(numeric(mlHost), mlPorShot);
+  const mlColacionSugerido = shotActivo && mlPorShotAnfitriona > 0 ? mlPorShotAnfitriona : null;
+  const mlAcompanamientoColacionSugerido =
+    shotActivo && numeric(mlMixHost) > 0 ? numeric(mlMixHost) : null;
+  const mostrarMlAcompanamiento = !esVentaSimple;
+  // Cigarrillos quedan fuera de la colación, igual que su check en settings.
+  const mostrarSeccionColacion = colacionHabilitada && !esCig && tipos.includes('botella');
 
   useImperativeHandle(ref, () => ({
     getConfig() {
+      // Colación: mismo criterio que al transferir. Vacío = ml heredados del
+      // corto de anfitriona; sin herencia y vacío = sin ml configurados.
+      const mlColacionTexto = mlColacion.replace(/\D/g, '');
+      const mlColacionValor = mlColacionTexto !== '' ? Number(mlColacionTexto) : mlColacionSugerido;
+      const mlAcompTexto = mlColacionAcomp.replace(/\D/g, '');
+      const mlAcompanamientoValor =
+        mlAcompTexto !== '' ? Number(mlAcompTexto) : mlAcompanamientoColacionSugerido;
+      const colacionAplica = colacionHabilitada && !esCig;
+      if (colacionAplica) {
+        if (
+          mlColacionValor !== null &&
+          (!Number.isInteger(mlColacionValor) || mlColacionValor < 1 || mlColacionValor > 10000)
+        )
+          throw new Error('Los ml de la colación deben estar entre 1 y 10000');
+        if (
+          mlAcompanamientoValor !== null &&
+          (!Number.isInteger(mlAcompanamientoValor) ||
+            mlAcompanamientoValor < 1 ||
+            mlAcompanamientoValor > 10000)
+        )
+          throw new Error('Los ml de acompañamiento deben estar entre 1 y 10000');
+      }
+      // Con ml de acompañamiento la colación incluye al menos una bebida, aunque
+      // la botella no tenga bebidas incluidas (misma regla que al transferir).
+      const acompanamientoColacion =
+        colacionAplica && mlAcompanamientoValor !== null
+          ? { unidades: Number(units || 0) || 1, ml: mlAcompanamientoValor }
+          : undefined;
       const baseBotella = {
         tipo: 'botella' as const,
         precio: numeric(precio),
         comision: numeric(comision),
         ...(esCig ? {} : { colacion_habilitada: colacionHabilitada }),
         ...(esAnalcoholica ? { cover_habilitado: coverHabilitado } : {}),
+        ...(colacionAplica && mlColacionValor !== null ? { ml_colacion: mlColacionValor } : {}),
+        ...(colacionAplica && acompanamientoColacion
+          ? { acompanamiento_colacion: acompanamientoColacion }
+          : {}),
         ...(!esVentaSimple
           ? {
               ...(precioSinAnfitriona.trim()
@@ -155,50 +213,65 @@ export function SettingsSaleOptionsEditor({
   }));
 
   return (
-    <SaleTypeEditor
-      mlAcompanamientoAnfitriona={mlMixHost}
-      onMlAcompanamientoAnfitrionaChange={setMlMixHost}
-      context='settings'
-      esCigarrillos={esCig}
-      mostrarBebidasIncluidas={!esVentaSimple}
-      mostrarAnfitrionas={!esVentaSimple}
-      mostrarCortos={!esVentaSimple}
-      colacionHabilitada={colacionHabilitada}
-      onColacionHabilitadaChange={esCig ? undefined : setColacionHabilitada}
-      coverHabilitado={coverHabilitado}
-      onCoverHabilitadoChange={esAnalcoholica ? setCoverHabilitado : undefined}
-      maxAnfitrionas={maxAnfitrionas}
-      onMaxAnfitrionasChange={onMaxAnfitrionasChange}
-      tipos={tipos}
-      onTiposChange={setTipos}
-      etiquetaShot='Corto'
-      precioSinAnfitriona={precioSinAnfitriona}
-      onPrecioSinAnfitrionaChange={setPrecioSinAnfitriona}
-      precioVenta={precio}
-      comision={comision}
-      onPrecioVentaChange={onPrecio}
-      onComisionChange={onComision}
-      precioShot={precioShot}
-      onPrecioShotChange={setPrecioShot}
-      precioShotAnfitriona={precioHost}
-      onPrecioShotAnfitrionaChange={setPrecioHost}
-      comisionShot={comisionHost}
-      onComisionShotChange={setComisionHost}
-      preciosAnfitrionaExtra={extras}
-      onPreciosAnfitrionaExtraChange={setExtras}
-      acompanamientoBotella={mix}
-      onAcompanamientoBotellaChange={setMix}
-      unidadesAcompanamiento={units}
-      onUnidadesAcompanamientoChange={setUnits}
-      shotMl={shotMl}
-      mlShotCliente={ml}
-      onMlShotClienteChange={setMl}
-      mlShotAnfitriona={mlHost}
-      onMlShotAnfitrionaChange={setMlHost}
-      esChampagne={false}
-      tiers={[]}
-      onTierChange={() => {}}
-      saving={saving}
-    />
+    <>
+      <SaleTypeEditor
+        mlAcompanamientoAnfitriona={mlMixHost}
+        onMlAcompanamientoAnfitrionaChange={setMlMixHost}
+        context='settings'
+        esCigarrillos={esCig}
+        mostrarBebidasIncluidas={!esVentaSimple}
+        mostrarAnfitrionas={!esVentaSimple}
+        mostrarCortos={!esVentaSimple}
+        colacionHabilitada={colacionHabilitada}
+        onColacionHabilitadaChange={esCig ? undefined : setColacionHabilitada}
+        coverHabilitado={coverHabilitado}
+        onCoverHabilitadoChange={esAnalcoholica ? setCoverHabilitado : undefined}
+        maxAnfitrionas={maxAnfitrionas}
+        onMaxAnfitrionasChange={onMaxAnfitrionasChange}
+        tipos={tipos}
+        onTiposChange={setTipos}
+        etiquetaShot={etiquetaCorto(mlPorShot, mlPorShotAnfitriona)}
+        precioSinAnfitriona={precioSinAnfitriona}
+        onPrecioSinAnfitrionaChange={setPrecioSinAnfitriona}
+        precioVenta={precio}
+        comision={comision}
+        onPrecioVentaChange={onPrecio}
+        onComisionChange={onComision}
+        precioShot={precioShot}
+        onPrecioShotChange={setPrecioShot}
+        precioShotAnfitriona={precioHost}
+        onPrecioShotAnfitrionaChange={setPrecioHost}
+        comisionShot={comisionHost}
+        onComisionShotChange={setComisionHost}
+        preciosAnfitrionaExtra={extras}
+        onPreciosAnfitrionaExtraChange={setExtras}
+        acompanamientoBotella={mix}
+        onAcompanamientoBotellaChange={setMix}
+        unidadesAcompanamiento={units}
+        onUnidadesAcompanamientoChange={setUnits}
+        shotMl={shotMl}
+        mlShotCliente={ml}
+        onMlShotClienteChange={setMl}
+        mlShotAnfitriona={mlHost}
+        onMlShotAnfitrionaChange={setMlHost}
+        esChampagne={false}
+        tiers={[]}
+        onTierChange={() => {}}
+        saving={saving}
+      />
+      {mostrarSeccionColacion && (
+        <ColacionFields
+          idPrefix='settings'
+          mlColacion={mlColacion}
+          onMlColacionChange={setMlColacion}
+          mlColacionSugerido={mlColacionSugerido}
+          mostrarAcompanamiento={mostrarMlAcompanamiento}
+          mlAcompanamiento={mlColacionAcomp}
+          onMlAcompanamientoChange={setMlColacionAcomp}
+          mlAcompanamientoSugerido={mlAcompanamientoColacionSugerido}
+          saving={saving}
+        />
+      )}
+    </>
   );
 }

@@ -8,11 +8,6 @@ import type { SaleOption } from '@/types/sale-options';
 import type { BarStockItem } from '@/components/bar/transfer/transferOptions';
 import { preciosCortoAnfitriona } from '@/lib/sales/hostessShortPrices';
 
-/**
- * Envío del traspaso: valida la cantidad, (opcionalmente) reescribe los ml por
- * shot y la tabla champagne del producto y finalmente hace el POST al backend.
- * Extraído de `TransferModal.tsx` — misma secuencia y mismos mensajes.
- */
 export function useTransferSubmit({
   item,
   form,
@@ -27,19 +22,60 @@ export function useTransferSubmit({
   onDone: () => void;
 }) {
   const [saving, setSaving] = useState(false);
-  // Bloquea el cierre del modal mientras hay un envío en vuelo (mismo guard que
-  // tenía el modal monolítico): el ref vive aquí, con el dueño de `setSaving`.
   const submitting = useRef(false);
 
   const handleSubmit = async (e: FormEvent) => {
     e.preventDefault();
     if (!item || submitting.current) return;
+    // Colación: manda lo ingresado en el modal; si está vacío se toman los ml
+    // del corto de anfitriona que expone el formulario.
+    const mlColacionTexto = form.mlColacion.replace(/\D/g, '');
+    const mlColacion =
+      mlColacionTexto !== '' ? Number(mlColacionTexto) : (form.mlColacionSugerido ?? null);
+    const mlAcompTexto = form.mlAcompanamientoColacion.replace(/\D/g, '');
+    const mlAcompanamientoColacion =
+      mlAcompTexto !== '' ? Number(mlAcompTexto) : (form.mlAcompanamientoColacionSugerido ?? null);
+    if (form.colacionHabilitada) {
+      if (
+        mlColacion !== null &&
+        (!Number.isInteger(mlColacion) || mlColacion < 1 || mlColacion > 10000)
+      ) {
+        toast.error('Los ml de la colación deben estar entre 1 y 10000');
+        return;
+      }
+      if (
+        mlAcompanamientoColacion !== null &&
+        (!Number.isInteger(mlAcompanamientoColacion) ||
+          mlAcompanamientoColacion < 1 ||
+          mlAcompanamientoColacion > 10000)
+      ) {
+        toast.error('Los ml de acompañamiento deben estar entre 1 y 10000');
+        return;
+      }
+    }
+    // Las unidades de Acompañamiento se guardan siempre que haya más de cero,
+    // con o sin ml: el campo explícito `acompanamiento_colacion` es el que
+    // gobierna la colación, y si solo quedara en el campo heredado la
+    // configuración dependería de que alguien lo leyera como "bebidas incluidas
+    // por botella".
+    //
+    // Con ml configurado (ingresado o heredado del corto de anfitriona) la
+    // colación incluye al menos una bebida, aunque no se indiquen unidades:
+    // una bebida de accompaniment es una unidad.
+    const unidadesAcompanamiento = Number(form.unidadesAcompanamiento || 0) || 0;
+    const acompanamientoColacion =
+      unidadesAcompanamiento > 0 || mlAcompanamientoColacion !== null
+        ? {
+            unidades: unidadesAcompanamiento > 0 ? unidadesAcompanamiento : 1,
+            ...(mlAcompanamientoColacion !== null ? { ml: mlAcompanamientoColacion } : {})
+          }
+        : undefined;
     const cant = Number(form.cantidad.replace(/\./g, ''));
     if (!Number.isInteger(cant) || cant < 1 || cant > Math.min(form.disponible, 1000)) {
       toast.error(`Cantidad debe estar entre 1 y ${Math.min(form.disponible, 1000)}`);
       return;
     }
-    // Con configuración existente se reutiliza precio, comisión y anfitrionas sin pedirlos.
+
     let options: SaleOption[];
     if (form.usarConfigGuardada) {
       options = form.opcionesGuardadas.map(option => {
@@ -53,6 +89,9 @@ export function useTransferSubmit({
         if (option.tipo === 'botella') {
           reutilizada.colacion_habilitada = form.colacionHabilitada;
           reutilizada.cover_habilitado = form.coverHabilitado;
+          if (form.colacionHabilitada && mlColacion !== null) reutilizada.ml_colacion = mlColacion;
+          if (form.colacionHabilitada && acompanamientoColacion)
+            reutilizada.acompanamiento_colacion = acompanamientoColacion;
           reutilizada.acompanamiento = {
             ...(option.acompanamiento ?? {}),
             unidades: Number(form.unidadesAcompanamiento || 0)
@@ -85,6 +124,10 @@ export function useTransferSubmit({
             comision: com,
             colacion_habilitada: form.colacionHabilitada,
             cover_habilitado: form.coverHabilitado,
+            ...(form.colacionHabilitada && mlColacion !== null ? { ml_colacion: mlColacion } : {}),
+            ...(form.colacionHabilitada && acompanamientoColacion
+              ? { acompanamiento_colacion: acompanamientoColacion }
+              : {}),
             acompanamiento: { unidades: Number(form.unidadesAcompanamiento || 0) }
           };
         const option: SaleOption = {
@@ -176,8 +219,6 @@ export function useTransferSubmit({
       preciosCortoAnfitriona(option).some(row => Number(row.comision) > 0)
     );
     const maxText = form.maxAnfitrionas.trim();
-    // Sin comision de botella no se usa ni valida su campo oculto.
-    // Los cortos con comision admiten una anfitriona por defecto.
     const maxHostesses = bottleCommission
       ? maxText === ''
         ? null
@@ -211,8 +252,7 @@ export function useTransferSubmit({
           return;
         }
       }
-      // Ml por shot: se guardan en el producto si cambiaron, solo con el shot activo
-      // (vacío anfitriona = igual que cliente; vacío cliente = valor global).
+
       const mlNuevo = form.mlShotCliente.replace(/\D/g, '');
       const mlAnfNuevo = form.mlShotAnfitriona.replace(/\D/g, '');
       const mlActual =
@@ -250,7 +290,7 @@ export function useTransferSubmit({
           }
         }
       }
-      // Solo se reescribe la tabla de anfitrionas si el usuario editó precios manualmente.
+
       if (bottleCommission && maxHostesses !== null && maxHostesses >= 2 && form.tiers.length > 0) {
         const tiersRes = await fetch(`/api/products/${item.producto_id}/tiers`, {
           method: 'PUT',
@@ -296,7 +336,6 @@ export function useTransferSubmit({
     }
   };
 
-  /** `true` mientras el POST está en vuelo (el modal no debe poder cerrarse). */
   const isSubmitting = () => submitting.current;
 
   return { saving, handleSubmit, isSubmitting };

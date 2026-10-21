@@ -8,6 +8,14 @@ export const SaleOptionsSchema = z
         tipo: z.enum(['botella', 'shot']),
         colacion_habilitada: z.boolean().optional(),
         cover_habilitado: z.boolean().optional(),
+        ml_colacion: z.number().int().min(1).max(10000).optional(),
+        // Acompañamiento propio de la colación: unidades 0 = sin acompañamiento.
+        acompanamiento_colacion: z
+          .object({
+            unidades: z.number().int().min(0).max(1000),
+            ml: z.number().int().min(1).max(10000).optional()
+          })
+          .optional(),
         acompanamiento: z
           .object({
             tipo: z.enum(['gaseosa', 'soda']).optional(),
@@ -60,6 +68,19 @@ export const SaleOptionsSchema = z
       .refine(
         option => option.tipo === 'botella' || option.cover_habilitado === undefined,
         'El cover solo puede habilitarse para bebidas por botella'
+      )
+      .refine(
+        option => option.tipo === 'botella' || option.ml_colacion === undefined,
+        'Los ml de colación solo corresponden a botellas'
+      )
+      .refine(
+        option => option.tipo === 'botella' || option.acompanamiento_colacion === undefined,
+        'El acompañamiento de la colación solo corresponde a botellas'
+      )
+      .refine(
+        option =>
+          option.acompanamiento_colacion === undefined || option.colacion_habilitada === true,
+        'El acompañamiento de la colación requiere habilitar la colación'
       )
       .transform(option =>
         option.tipo === 'shot' && option.precios_anfitriona ? { ...option, comision: 0 } : option

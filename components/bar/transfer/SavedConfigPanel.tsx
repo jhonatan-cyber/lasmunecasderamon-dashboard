@@ -8,6 +8,7 @@ import { ChampagneTiersReadonly } from '@/components/bar/transfer/ChampagneTiers
 import type { ChampagneTierRow } from '@/components/bar/transfer/transferOptions';
 import type { SaleOption } from '@/types/sale-options';
 import { preciosCortoAnfitriona } from '@/lib/sales/hostessShortPrices';
+import { optionPanelClass, optionPanelHeadingClass } from '@/components/bar/transfer/panelStyles';
 import { Checkbox } from '@/components/ui/checkbox';
 
 /**
@@ -72,11 +73,8 @@ export const SavedConfigPanel = memo(function SavedConfigPanel({
         <>
           {mostrarAnfitrionas ? (
             <div className='grid grid-cols-1 gap-4 sm:grid-cols-2'>
-              <section
-                aria-label='Botella con anfitriona'
-                className='rounded-2xl border border-gray-200 dark:border-gray-800 p-4 sm:p-5 space-y-4'
-              >
-                <h3 className='font-semibold'>Con anfitriona</h3>
+              <section aria-label='Botella con anfitriona' className={optionPanelClass}>
+                <h3 className={optionPanelHeadingClass}>Con anfitriona</h3>
                 <dl className='space-y-3'>
                   <div>
                     <dt className='text-xs text-muted-foreground'>
@@ -114,11 +112,8 @@ export const SavedConfigPanel = memo(function SavedConfigPanel({
                 )}
                 {bottleTiers}
               </section>
-              <section
-                aria-label='Botella sin anfitriona'
-                className='rounded-2xl border border-gray-200 dark:border-gray-800 p-4 sm:p-5 space-y-4'
-              >
-                <h3 className='font-semibold'>Sin anfitriona</h3>
+              <section aria-label='Botella sin anfitriona' className={optionPanelClass}>
+                <h3 className={optionPanelHeadingClass}>Sin anfitriona</h3>
                 <dl>
                   <dt className='text-xs text-muted-foreground'>
                     Precio de botella sin anfitriona
@@ -132,12 +127,9 @@ export const SavedConfigPanel = memo(function SavedConfigPanel({
               </section>
             </div>
           ) : (
-            <section
-              aria-label='Botella sin anfitrionas'
-              className='rounded-2xl border border-gray-200 dark:border-gray-800 p-4 sm:p-5'
-            >
-              <h3 className='font-semibold'>Precio</h3>
-              <dl className='mt-3 space-y-3'>
+            <section aria-label='Botella sin anfitrionas' className={optionPanelClass}>
+              <h3 className={optionPanelHeadingClass}>Precio</h3>
+              <dl className='space-y-3'>
                 <div>
                   <dt className='text-xs text-muted-foreground'>
                     {esCigarrillos ? 'Precio de cigarrillo' : 'Precio de botella'}
@@ -150,12 +142,9 @@ export const SavedConfigPanel = memo(function SavedConfigPanel({
             </section>
           )}
           {mostrarBebidasIncluidas && (
-            <section
-              aria-label='Bebidas incluidas en ambas opciones'
-              className='rounded-2xl border border-gray-200 dark:border-gray-800 p-4 sm:p-5 space-y-4'
-            >
+            <section aria-label='Bebidas incluidas en ambas opciones' className={optionPanelClass}>
               <div>
-                <h3 className='font-semibold'>Bebidas incluidas</h3>
+                <h3 className={optionPanelHeadingClass}>Bebidas incluidas</h3>
               </div>
               {bottle.acompanamiento && (
                 <p className='text-xs text-muted-foreground'>
@@ -166,7 +155,7 @@ export const SavedConfigPanel = memo(function SavedConfigPanel({
             </section>
           )}
           {mostrarColacion && onColacionHabilitadaChange && (
-            <label className='flex cursor-pointer items-start gap-3 rounded-xl border p-4'>
+            <label className='flex cursor-pointer items-start gap-3'>
               <Checkbox
                 checked={colacionHabilitada === true}
                 onCheckedChange={checked => onColacionHabilitadaChange(checked === true)}
@@ -192,14 +181,11 @@ export const SavedConfigPanel = memo(function SavedConfigPanel({
               aria-label='Configuración guardada de cortos'
               className='space-y-3'
             >
-              <h3 className='text-sm font-semibold'>Venta por cortos</h3>
+              <h3 className={optionPanelHeadingClass}>Venta por cortos</h3>
               <div className='grid grid-cols-1 gap-4 sm:grid-cols-2'>
-                <section
-                  aria-label='Corto para cliente'
-                  className='min-w-0 rounded-2xl border border-gray-200 dark:border-gray-800 p-4 sm:p-5 space-y-4'
-                >
+                <section aria-label='Corto para cliente' className={optionPanelClass}>
                   <div className='flex items-center justify-between gap-2'>
-                    <h4 className='font-semibold'>Cliente</h4>
+                    <h4 className={optionPanelHeadingClass}>Cliente</h4>
                     <span className='text-xs text-muted-foreground'>Sin comisión</span>
                   </div>
                   <p className='font-semibold tabular-nums'>
@@ -224,11 +210,8 @@ export const SavedConfigPanel = memo(function SavedConfigPanel({
                     />
                   </div>
                 </section>
-                <section
-                  aria-label='Corto para anfitriona'
-                  className='min-w-0 rounded-2xl border border-gray-200 dark:border-gray-800 p-4 sm:p-5 space-y-4'
-                >
-                  <h4 className='font-semibold'>Anfitriona</h4>
+                <section aria-label='Corto para anfitriona' className={optionPanelClass}>
+                  <h4 className={optionPanelHeadingClass}>Anfitriona</h4>
                   <div className='space-y-2'>
                     {preciosCortoAnfitriona(option).length ? (
                       preciosCortoAnfitriona(option).map((row, index) => (

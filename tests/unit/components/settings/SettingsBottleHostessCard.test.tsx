@@ -155,12 +155,12 @@ describe('SettingsBottleHostessCard', () => {
     await waitFor(() =>
       expect(screen.getByLabelText('Precio de botella con anfitriona')).toHaveValue('200.000')
     );
-    expect(screen.getByLabelText('Comisión (requerida)')).toHaveValue('10.000');
+    expect(screen.getByLabelText('Comisión')).toHaveValue('10.000');
     expect(screen.queryByText(/Vigente:/)).not.toBeInTheDocument();
 
     fireEvent.change(screen.getByLabelText('Máximo de anfitrionas'), { target: { value: '3' } });
     await screen.findByLabelText('Precio para 3 anfitrionas');
-    fireEvent.change(screen.getByLabelText('Comisión (requerida)'), { target: { value: '12000' } });
+    fireEvent.change(screen.getByLabelText('Comisión'), { target: { value: '12000' } });
     expect(screen.queryByLabelText('Ml bebida analcohólica cliente')).not.toBeInTheDocument();
     fireEvent.change(screen.getByLabelText('Ml bebida analcohólica anfitriona'), {
       target: { value: '150' }

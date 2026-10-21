@@ -9,7 +9,8 @@
  */
 import { withTransaction } from '@/lib/database/db';
 import { sendNotificationToAll } from '@/lib/api/sseService';
-import { sendPushByRole } from '@/modules/comunicaciones';
+import { sendPushByPermission } from '@/modules/comunicaciones';
+import { TRANSFER_RESOLVE_PERMISSION } from '@/lib/constants/transferPermissions';
 import { resolverTransaccion } from '@/lib/transaccion/infraestructura';
 import type { ContextoOperacion } from '@/lib/transaccion/contrato';
 import type { TraspasoInput, TraspasoResultado } from '../contracts';
@@ -39,10 +40,13 @@ export async function traspasarAlBar(
     presentacion_id: input.presentacion_id,
     cantidad: resultado.trasladadas
   });
-  void sendPushByRole(
-    'barman',
+  // Aviso a quien puede aprobarlo según el permiso (no según el nombre del rol):
+  // el mismo par que gobierna los botones de Aprobar en la UI.
+  void sendPushByPermission(
+    TRANSFER_RESOLVE_PERMISSION.module,
+    TRANSFER_RESOLVE_PERMISSION.action,
     'Nuevo traspaso pendiente',
-    `${resultado.trasladadas} unidad(es) esperan tu aprobación en el bar.`,
+    `${resultado.trasladadas} unidad(es) esperan aprobación en el bar.`,
     { type: 'transfer_created', id: resultado.transferencia_id }
   );
   return resultado;

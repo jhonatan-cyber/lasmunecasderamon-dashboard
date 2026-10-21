@@ -112,7 +112,7 @@ export const TransferItemSummary = memo(function TransferItemSummary({
             className='object-contain p-1.5'
           />
         </div>
-        <p className='text-sm text-gray-600 dark:text-gray-400 min-w-0'>
+        <div className='text-sm text-gray-600 dark:text-gray-400 min-w-0'>
           <TooltipProvider>
             <Tooltip delayDuration={300}>
               <TooltipTrigger asChild>
@@ -152,7 +152,7 @@ export const TransferItemSummary = memo(function TransferItemSummary({
               </>
             )}
           </span>
-        </p>
+        </div>
       </div>
       {configuration && (
         <div

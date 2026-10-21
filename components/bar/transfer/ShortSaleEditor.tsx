@@ -11,6 +11,7 @@ import {
   TooltipTrigger
 } from '@/components/ui/tooltip';
 import { formatNumber } from '@/components/bar/transfer/transferOptions';
+import { optionPanelClass, optionPanelHeadingClass } from '@/components/bar/transfer/panelStyles';
 
 interface ShortSaleEditorProps {
   hideHelp?: boolean;
@@ -64,13 +65,10 @@ export function ShortSaleEditor(props: ShortSaleEditorProps) {
   );
   return (
     <div className='space-y-5'>
-      <div className='grid grid-cols-1 gap-4 sm:grid-cols-2'>
-        <section
-          className='min-w-0 rounded-2xl border border-gray-200 dark:border-gray-800 p-4 sm:p-5 space-y-4'
-          aria-label='Corto para cliente'
-        >
+      <div className='grid grid-cols-1 gap-4 sm:grid-cols-[minmax(0,0.8fr)_minmax(0,1.2fr)]'>
+        <section className={optionPanelClass} aria-label='Corto para cliente'>
           <div className='flex items-center justify-between gap-2'>
-            <h3 className='text-sm font-semibold'>Cliente</h3>
+            <h3 className={optionPanelHeadingClass}>Cliente</h3>
             <span className='rounded-full bg-muted px-2 py-1 text-xs text-muted-foreground'>
               Sin comisión
             </span>
@@ -100,11 +98,8 @@ export function ShortSaleEditor(props: ShortSaleEditorProps) {
             </p>
           )}
         </section>
-        <section
-          className='min-w-0 rounded-2xl border border-gray-200 dark:border-gray-800 p-4 sm:p-5 space-y-4'
-          aria-label='Corto para anfitriona'
-        >
-          <h3 className='py-1 text-sm font-semibold'>Anfitriona</h3>
+        <section className={optionPanelClass} aria-label='Corto para anfitriona'>
+          <h3 className={optionPanelHeadingClass}>Anfitriona</h3>
           <div className='grid grid-cols-2 items-end gap-3'>
             {field(
               'price-shot-anfitriona',
@@ -119,24 +114,6 @@ export function ShortSaleEditor(props: ShortSaleEditorProps) {
               props.comisionShot,
               props.onComisionShotChange,
               'Sin comisión'
-            )}
-          </div>
-          <div className='grid grid-cols-2 items-end gap-3'>
-            {field(
-              'transfer-ml-shot-anfitriona',
-              'Ml corto anfitriona',
-              props.mlShotAnfitriona,
-              props.onMlShotAnfitrionaChange,
-              props.mlShotCliente || String(props.shotMl),
-              true
-            )}
-            {field(
-              'shot-mixer-hostess',
-              'Ml bebida analcohólica anfitriona',
-              props.mlAcompanamientoAnfitriona,
-              props.onMlAcompanamientoAnfitrionaChange,
-              'Sin bebida analcohólica',
-              true
             )}
           </div>
           {rows.length > 0 && (
@@ -202,6 +179,24 @@ export function ShortSaleEditor(props: ShortSaleEditorProps) {
               <Plus className='h-3.5 w-3.5' aria-hidden='true' />
               Agregar
             </Button>
+          </div>
+          <div className='grid grid-cols-2 items-end gap-3'>
+            {field(
+              'transfer-ml-shot-anfitriona',
+              'Ml corto anfitriona',
+              props.mlShotAnfitriona,
+              props.onMlShotAnfitrionaChange,
+              props.mlShotCliente || String(props.shotMl),
+              true
+            )}
+            {field(
+              'shot-mixer-hostess',
+              'Ml bebida analcohólica anfitriona',
+              props.mlAcompanamientoAnfitriona,
+              props.onMlAcompanamientoAnfitrionaChange,
+              'Sin bebida analcohólica',
+              true
+            )}
           </div>
           {!props.hideHelp && (
             <p className='text-xs text-muted-foreground'>

@@ -25,7 +25,7 @@ export function useRealtimeInvalidation(): void {
     (targets: readonly string[]) => {
       if (targets.length === 0) return;
       for (const target of targets) pending.current.add(target);
-      // Una ráfaga de eventos (temporizadores) se resuelve con una sola invalidación.
+
       if (flushTimer.current) return;
       flushTimer.current = setTimeout(flush, 250);
     },
@@ -49,7 +49,6 @@ export function useRealtimeInvalidation(): void {
     if (typeof payload?.type !== 'string') return;
 
     if (payload.type === 'connected') {
-      // Los eventos perdidos durante una desconexión no se reproducen en el stream.
       void queryClient.invalidateQueries();
       return;
     }

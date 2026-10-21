@@ -19,6 +19,7 @@ import { CajaStatusBanner } from '@/components/sales/CajaStatusBanner';
 import { MetricCard } from '@/components/shared/MetricCard';
 import { SalesDetailModal } from '@/components/sales';
 import { anfitrionaColors, metodoPagoLabels } from '@/lib/business/salesUtils';
+import { urlProductosParaVenta } from '@/lib/constants/api-endpoints';
 import type { VentaWithDetails } from '@/types/venta';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -30,7 +31,7 @@ import {
   SelectTrigger,
   SelectValue
 } from '@/components/ui/select';
-import { SearchableSelect } from '@/components/bar/ColacionesTab';
+import { SearchableSelect } from '@/components/shared/SearchableSelect';
 import {
   Table,
   TableBody,
@@ -208,7 +209,7 @@ export default function EntradasPage() {
     const controller = new AbortController();
     setProductosLoading(true);
     setProductosError('');
-    fetch('/api/products/for-sale', { cache: 'no-store', signal: controller.signal })
+    fetch(urlProductosParaVenta(), { cache: 'no-store', signal: controller.signal })
       .then(async response => {
         const result = await response.json();
         if (!response.ok || !result.success || !Array.isArray(result.data))

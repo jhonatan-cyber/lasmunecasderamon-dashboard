@@ -1,32 +1,35 @@
 import { NextResponse } from 'next/server';
-import { withPublicRoute, withRoute } from '@/lib/api/withRoute';
+import { withRoute } from '@/lib/api/withRoute';
 import { ProductService } from '@/modules/inventario';
 import { processAndSaveImage } from '@/lib/utils/image-utils';
 
-export const GET = withPublicRoute(async (request: Request) => {
-  const { searchParams } = new URL(request.url);
-  const productoId = searchParams.get('producto_id');
-  const productoIds = searchParams.get('producto_ids');
+export const GET = withRoute(
+  { auth: true, module: 'products', action: 'read' },
+  async (request: Request) => {
+    const { searchParams } = new URL(request.url);
+    const productoId = searchParams.get('producto_id');
+    const productoIds = searchParams.get('producto_ids');
 
-  if (productoIds) {
-    const ids = productoIds
-      .split(',')
-      .map(s => s.trim())
-      .filter(Boolean);
-    const data = await ProductService.listPresentationsMap(ids);
+    if (productoIds) {
+      const ids = productoIds
+        .split(',')
+        .map(s => s.trim())
+        .filter(Boolean);
+      const data = await ProductService.listPresentationsMap(ids);
+      return NextResponse.json({ success: true, data });
+    }
+
+    if (!productoId) {
+      return NextResponse.json(
+        { success: false, message: 'producto_id es requerido' },
+        { status: 400 }
+      );
+    }
+
+    const data = await ProductService.listPresentations(productoId);
     return NextResponse.json({ success: true, data });
   }
-
-  if (!productoId) {
-    return NextResponse.json(
-      { success: false, message: 'producto_id es requerido' },
-      { status: 400 }
-    );
-  }
-
-  const data = await ProductService.listPresentations(productoId);
-  return NextResponse.json({ success: true, data });
-});
+);
 
 export const POST = withRoute(
   { auth: true, audit: true, module: 'products', action: 'write' },
@@ -65,6 +68,7 @@ export const PATCH = withRoute(
     const contentType = request.headers.get('content-type') || '';
     let id: string | null = null;
     let fotoName: string | null = null;
+    let fotoError: string | null = null;
     let fields: Record<string, unknown> = {};
 
     if (contentType.includes('multipart/form-data')) {
@@ -76,7 +80,11 @@ export const PATCH = withRoute(
         const bytes = await fotoFile.arrayBuffer();
         fotoName = await processAndSaveImage(Buffer.from(bytes), 'presentacion');
       } else if (fotoUrl && (fotoUrl.startsWith('http') || fotoUrl.startsWith('data:'))) {
-        fotoName = await processAndSaveImage(fotoUrl, 'presentacion');
+        try {
+          fotoName = await processAndSaveImage(fotoUrl, 'presentacion');
+        } catch (error) {
+          fotoError = error instanceof Error ? error.message : 'No se pudo guardar la foto';
+        }
       }
       for (const key of [
         'nombre',
@@ -96,9 +104,15 @@ export const PATCH = withRoute(
       const payload = await request.json();
       id = payload.id || new URL(request.url).searchParams.get('id');
       if (typeof payload.foto === 'string' && payload.foto) {
-        fotoName = payload.foto.startsWith('http')
-          ? await processAndSaveImage(payload.foto, 'presentacion')
-          : payload.foto;
+        if (payload.foto.startsWith('http')) {
+          try {
+            fotoName = await processAndSaveImage(payload.foto, 'presentacion');
+          } catch (error) {
+            fotoError = error instanceof Error ? error.message : 'No se pudo guardar la foto';
+          }
+        } else {
+          fotoName = payload.foto;
+        }
       }
       for (const key of [
         'opciones_venta',
@@ -120,7 +134,8 @@ export const PATCH = withRoute(
       return NextResponse.json(
         {
           success: false,
-          message: 'ID y al menos un campo (foto, nombre, código o precio) son requeridos'
+          message:
+            fotoError ?? 'ID y al menos un campo (foto, nombre, código o precio) son requeridos'
         },
         { status: 400 }
       );
@@ -134,7 +149,9 @@ export const PATCH = withRoute(
     }
     return NextResponse.json({
       success: true,
-      message: 'Presentación actualizada correctamente',
+      message: fotoError
+        ? `Presentación actualizada, pero no se pudo cambiar la foto: ${fotoError}`
+        : 'Presentación actualizada correctamente',
       data: { id, ...(fotoName ? { foto: fotoName } : {}) }
     });
   }

@@ -178,9 +178,7 @@ const SESSION_WRAPPED_POLICY: Record<string, string> = {
   '/api/permissions': 'convención legacy: lectura operativa, sesión por middleware',
   '/api/products/[id]/tiers': 'convención legacy: lectura operativa, sesión por middleware',
   '/api/products/for-sale': 'convención legacy: lectura operativa, sesión por middleware',
-  '/api/products/presentations': 'convención legacy: lectura operativa, sesión por middleware',
   '/api/products': 'convención legacy: lectura operativa, sesión por middleware',
-  '/api/products/units': 'convención legacy: lectura operativa, sesión por middleware',
   '/api/reports/cash-register':
     'GET con reports.view en el middleware (handler solo arma la respuesta)',
   '/api/reports/commissions':

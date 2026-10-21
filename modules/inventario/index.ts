@@ -1,7 +1,12 @@
 import 'server-only';
 export { listarLimpieza, operarLimpieza } from './limpieza/servicio';
 
-export { consumirStockBar, consumirCoverBar, consumirProductoCortesiaBar } from './bar/servicio';
+export {
+  consumirStockBar,
+  consumirColacionBar,
+  consumirCoverBar,
+  consumirProductoCortesiaBar
+} from './bar/servicio';
 export { revertirStockAnulacion } from './anulaciones/servicio';
 export {
   actualizarProducto,
@@ -67,7 +72,11 @@ export {
 } from './estados';
 export { listarStockBar, obtenerResumenShots } from './bar/servicio';
 export { listarParaVenta } from './catalogo/servicio';
-export { listarMovimientos, listarMovimientosRecientes } from './movimientos/servicio';
+export {
+  buscarMovimientosRecientes,
+  listarMovimientos,
+  listarMovimientosRecientes
+} from './movimientos/servicio';
 
 export { CategoryService } from './categorias/servicio';
 

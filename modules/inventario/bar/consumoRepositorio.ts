@@ -369,6 +369,168 @@ export async function validarStockPedido(
   await consumirStock(trx, detalles, { usuarioId: null, fecha: '' }, true);
 }
 
+export interface ConsumoColacionDetalle {
+  presentacion_id: string;
+  /** Ml que se descuentan de la bebida servida (0 = no se descuenta ml). */
+  ml?: number;
+  /** Unidades completas que se descuentan del acompañamiento. */
+  unidades?: number;
+}
+
+/**
+ * Descuenta del bar lo que entregó una colación: los ml de la bebida servida y
+ * el acompañamiento (unidades completas o sus ml, según la configuración).
+ *
+ * Usa la misma mecánica que la venta —primero lo que queda en botellas
+ * abiertas, después abrir una cerrada y marcar vendida la que quedó vacía—,
+ * pero registra el movimiento como `colacion` y con precio 0, para que no
+ * cuente como venta ni como shot servido. Sin esto la colación solo dejaba una
+ * fila en `colaciones`: la botella seguía llena y el ml abierto nunca bajaba.
+ */
+export async function consumirColacion(
+  detalles: ConsumoColacionDetalle[],
+  usuarioId: string,
+  fecha: string,
+  contexto: ContextoOperacion
+): Promise<void> {
+  const trx = resolverTransaccion(contexto);
+  const pedidos = detalles
+    .map(detalle => ({
+      presentacionId: String(detalle.presentacion_id ?? '').trim(),
+      ml: Math.max(0, Math.floor(Number(detalle.ml ?? 0))),
+      unidades: Math.max(0, Math.floor(Number(detalle.unidades ?? 0)))
+    }))
+    .filter(pedido => pedido.presentacionId && (pedido.ml > 0 || pedido.unidades > 0));
+  if (pedidos.length === 0) return;
+
+  const { botellaMl } = await getBarMlConfig(trx);
+
+  // Orden estable de bloqueo: dos colaciones simultáneas que comparten la misma
+  // botella de acompañamiento no pueden planificar sobre las mismas unidades.
+  for (const pedido of [...pedidos].sort((a, b) =>
+    a.presentacionId.localeCompare(b.presentacionId)
+  )) {
+    const presentaciones = await trx<
+      { id: string; producto_id: string; nombre: string; ml_botella: number | null }[]
+    >(
+      `SELECT p.id, p.producto_id, p.nombre, p.ml_botella
+         FROM inventario_presentaciones p
+        WHERE p.id = ? FOR UPDATE OF p`,
+      [pedido.presentacionId]
+    );
+    const presentacion = presentaciones[0];
+    if (!presentacion) throw new BusinessError('La presentación de la colación ya no existe');
+
+    const capacidadMl = resolveBotellaMl(presentacion.ml_botella, presentacion.nombre, botellaMl);
+    const unidades = await trx<UnidadConsumo[]>(
+      `SELECT id, ml_restante FROM inventario_unidades
+        WHERE presentacion_id = ? AND estado = '${ESTADO_UNIDAD_ACTIVA}' AND ubicacion = 'bar'
+        ORDER BY CASE WHEN ml_restante > 0 THEN 0 ELSE 1 END, fecha_crea ASC, codigo ASC
+        FOR UPDATE`,
+      [pedido.presentacionId]
+    );
+
+    const plan: { id: string; ml_restante: number; ml_consumido: number }[] = [];
+    let mlPendiente = pedido.ml;
+    let unidadesPendientes = pedido.unidades;
+
+    for (const unidad of unidades) {
+      if (mlPendiente <= 0) break;
+      const restante = Math.floor(Number(unidad.ml_restante ?? 0));
+      if (restante <= 0) continue;
+      const consumido = Math.min(restante, mlPendiente);
+      mlPendiente -= consumido;
+      plan.push({ id: unidad.id, ml_restante: restante - consumido, ml_consumido: consumido });
+    }
+
+    for (const unidad of unidades) {
+      if (Number(unidad.ml_restante ?? 0) > 0) continue;
+      if (mlPendiente > 0) {
+        const consumido = Math.min(capacidadMl, mlPendiente);
+        mlPendiente -= consumido;
+        plan.push({ id: unidad.id, ml_restante: capacidadMl - consumido, ml_consumido: consumido });
+        continue;
+      }
+      if (unidadesPendientes > 0) {
+        unidadesPendientes -= 1;
+        // La unidad entera sale del bar: esos ml también salen, y hay que
+        // registrarlos o el stock desaparece del resumen.
+        plan.push({ id: unidad.id, ml_restante: 0, ml_consumido: capacidadMl });
+        continue;
+      }
+      break;
+    }
+
+    if (mlPendiente > 0 || unidadesPendientes > 0) {
+      throw new BusinessError(
+        `No alcanza el stock de "${presentacion.nombre}" en el bar: faltan ${
+          mlPendiente > 0 ? `${mlPendiente} ml` : `${unidadesPendientes} unidad(es)`
+        }`,
+        'INSUFFICIENT_BAR_STOCK',
+        {
+          presentacion_id: pedido.presentacionId,
+          ml_requeridos: pedido.ml,
+          ml_disponibles: unidades.reduce(
+            (total, unidad) =>
+              total +
+              (Number(unidad.ml_restante ?? 0) > 0
+                ? Math.floor(Number(unidad.ml_restante))
+                : capacidadMl),
+            0
+          ),
+          botellas_abiertas: unidades.filter(unidad => Number(unidad.ml_restante ?? 0) > 0).length
+        }
+      );
+    }
+
+    const vendidas: string[] = [];
+    for (const item of plan) {
+      if (item.ml_restante > 0) {
+        await trx(
+          'UPDATE inventario_unidades SET ml_restante = ?, abierta_por_shots = true WHERE id = ?',
+          [item.ml_restante, item.id]
+        );
+      } else {
+        vendidas.push(item.id);
+      }
+    }
+    if (vendidas.length > 0) {
+      const placeholders = vendidas.map(() => '?').join(',');
+      await trx(
+        `UPDATE inventario_unidades SET estado = '${ESTADO_UNIDAD_VENDIDA}', ml_restante = 0 WHERE id IN (${placeholders})`,
+        vendidas
+      );
+    }
+
+    const mlConsumido = plan.reduce((total, item) => total + item.ml_consumido, 0);
+    const movimientoId = generateUUID();
+    await trx(
+      `INSERT INTO inventario_movimientos
+        (id, tipo, estado, producto_id, presentacion_id, cantidad, precio_venta, comision, usuario_id, ml, fecha_crea)
+       VALUES (?, 'colacion', 'completada', ?, ?, ?, 0, 0, ?, ?, ?)`,
+      [
+        movimientoId,
+        presentacion.producto_id,
+        pedido.presentacionId,
+        vendidas.length,
+        usuarioId,
+        mlConsumido,
+        fecha
+      ]
+    );
+    if (plan.length > 0) {
+      const valores = plan.flatMap(item => [movimientoId, item.id, item.ml_consumido]);
+      const marcadores = plan.map(() => '(?, ?, ?)').join(',');
+      await trx(
+        `INSERT INTO inventario_movimiento_unidades (movimiento_id, unidad_id, ml_consumido)
+         VALUES ${marcadores}`,
+        valores
+      );
+    }
+    await sincronizarStockTotal(trx, presentacion.producto_id);
+  }
+}
+
 /** Descuenta del bar una botella analcohólica entregada como cover. */
 export async function consumirCover(
   presentacionId: string,
@@ -449,6 +611,7 @@ export async function consumirProductoCortesia(
   >(
     `SELECT p.id, p.producto_id, p.opciones_venta
        FROM inventario_presentaciones p
+       LEFT JOIN productos pr ON pr.id_producto = p.producto_id
       WHERE p.id = ? AND p.precio_venta <= ? FOR UPDATE OF p`,
     [presentacionId, montoPermitido]
   );

@@ -89,7 +89,44 @@ export const playScanSound = (tipo: AvisoEscaneo) => {
   }
 };
 
+/**
+ * `play()` se rechaza sin que haya un fallo cuando el navegador todavía no
+ * tuvo gesto del usuario (política de autoplay) o cuando una pausa interrumpe
+ * la reproducción en curso. Eso no es un error del audio.
+ */
+function esRechazoEsperadoDeAudio(error: unknown): boolean {
+  const nombre = error instanceof Error ? error.name : '';
+  return nombre === 'NotAllowedError' || nombre === 'AbortError';
+}
+
+/** Motivo del fallo para el log: `NotSupportedError: …` en vez de un objeto vacío. */
+function detalleDeError(error: unknown): string {
+  return error instanceof Error ? `${error.name}: ${error.message}` : String(error);
+}
+
+/**
+ * Un solo reintento automático: los oyentes se dan de baja en el primer gesto
+ * y, si ese intento también se bloquea, no se vuelve a encolar (así el sonido
+ * no salta en cada clic del operador).
+ */
+let notificacionEsperandoGesto = false;
+
+function reproducirEnPrimerGesto(): void {
+  if (notificacionEsperandoGesto || typeof window === 'undefined') return;
+  notificacionEsperandoGesto = true;
+  const alGestar = () => {
+    window.removeEventListener('pointerdown', alGestar);
+    window.removeEventListener('keydown', alGestar);
+    window.removeEventListener('touchend', alGestar);
+    playNotificationSound();
+  };
+  window.addEventListener('pointerdown', alGestar);
+  window.addEventListener('keydown', alGestar);
+  window.addEventListener('touchend', alGestar);
+}
+
 export const playNotificationSound = () => {
+  if (typeof window === 'undefined') return;
   try {
     if (!notificationAudio) {
       notificationAudio = new Audio('/notification.mp3');
@@ -102,11 +139,28 @@ export const playNotificationSound = () => {
       notificationAudio.currentTime = 0;
     }
 
-    notificationAudio.play().catch(() => {
-      logger.error('Error al reproducir sonido de notificación');
+    void Promise.resolve(notificationAudio.play()).then(
+      () => {
+        // Arrancó: el próximo bloqueo vuelve a poder encolarse en un gesto.
+        notificacionEsperandoGesto = false;
+      },
+      (error: unknown) => {
+        if (esRechazoEsperadoDeAudio(error)) {
+          logger.debug('Sonido de notificación pendiente del gesto del usuario');
+          reproducirEnPrimerGesto();
+          return;
+        }
+        notificacionEsperandoGesto = false;
+        logger.error('Error al reproducir sonido de notificación', {
+          detalle: detalleDeError(error)
+        });
+      }
+    );
+  } catch (error) {
+    notificacionEsperandoGesto = false;
+    logger.error('Error al reproducir sonido de notificación', {
+      detalle: detalleDeError(error)
     });
-  } catch {
-    logger.error('Error al reproducir sonido de notificación');
   }
 };
 

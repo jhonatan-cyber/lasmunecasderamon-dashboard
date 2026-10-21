@@ -94,3 +94,26 @@ export const getNowInBusinessTimezoneISO = (inputDate?: Date | string | number):
   const finalDate = isNaN(dateToProcess.getTime()) ? new Date() : dateToProcess;
   return finalDate.toISOString();
 };
+
+/**
+ * Hora (HH:mm) de una marca de tiempo del negocio.
+ *
+ * Las fechas que entrega la API son texto naive en la zona del negocio
+ * ("2026-10-20 21:10:00"), no un instante: convertirlas con `new Date` las
+ * mueve a la zona del navegador y ese formato con espacio ni siquiera lo
+ * parsea Safari. Un texto naive se lee tal cual; un instante (con zona) se
+ * traduce a la hora del negocio.
+ */
+export const horaDeNegocio = (fecha: string): string => {
+  const texto = (fecha ?? '').trim();
+  // Un texto con zona explícita es un instante: hay que traducirlo. Sin zona
+  // es la hora de pared del negocio y se lee tal cual.
+  const esInstante = /(?:Z|[+-]\d{2}:?\d{2})$/i.test(texto);
+  if (!esInstante) {
+    const naive = /^(\d{4}-\d{2}-\d{2})[ T](\d{2}):(\d{2})/.exec(texto);
+    if (naive) return `${naive[2]}:${naive[3]}`;
+  }
+  const instante = new Date(texto);
+  if (Number.isNaN(instante.getTime())) return '—';
+  return getNowInBusinessTimezone(instante).slice(11, 16);
+};

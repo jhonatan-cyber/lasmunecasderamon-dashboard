@@ -195,6 +195,23 @@ it('el shot descuenta ml de la botella y la deja abierta con su contenido en el 
     expect(resumen.mlRestantesTotales - base.mlRestantesTotales).toBe(-50);
     expect(resumen.botellasAbiertas - base.botellasAbiertas).toBe(0);
     expect(resumen.botellasPorAgotarse).toBe(base.botellasPorAgotarse);
+
+    // El detalle del stat lista el corto recién vendido y su venta de origen.
+    const vendido = resumen.cortosHoy.find(corto => corto.venta_codigo === 'PGSHOT-HISTORICO');
+    expect(vendido).toMatchObject({
+      producto_id: fixture.productoId,
+      cantidad: 1,
+      anfitriona: false,
+      origen: 'barra',
+      // 1 corto con el volumen global de Configuraciones (fijado en 50).
+      ml: 50,
+      // Este corto salió solo: el detalle lo dice explícitamente.
+      acompanamiento: null
+    });
+    // El stat no puede discrepar del listado que abre su modal.
+    expect(resumen.cortosHoy.reduce((total, corto) => total + corto.cantidad, 0)).toBe(
+      resumen.shotsServidosHoy
+    );
   } finally {
     await restoreBarDatabase(snapshot);
   }
@@ -386,6 +403,18 @@ it('consume la soda incluida por ml, reutiliza la botella y revierte la venta si
     await vender('PGMIX-2', 1);
     expect(Number((await unidadesDe(soda.presentacionId))[0].ml_restante)).toBe(200);
     expect(Number((await unidadesDe(licor.presentacionId))[0].ml_restante)).toBe(600);
+
+    // El detalle del stat dice con qué bebida y cuánto se acompañó cada corto.
+    const resumen = await obtenerResumenShots();
+    const corto = resumen.cortosHoy.find(corto => corto.venta_codigo === 'PGMIX-2');
+    expect(corto?.acompanamiento).toMatchObject({
+      nombre: expect.stringContaining('750 ml'),
+      ml_por_corto: 100,
+      unidades: null
+    });
+    // 1 corto de anfitriona: sin volumen propio usa el global de 50 ml.
+    expect(corto?.ml).toBe(50);
+
     const movimientos = await query(
       'SELECT m.ml, m.precio_venta, v.total FROM inventario_movimientos m JOIN ventas v ON v.id_venta = m.venta_id WHERE m.presentacion_id = ? AND v.codigo = ?',
       [soda.presentacionId, 'PGMIX-1']
@@ -495,6 +524,17 @@ it.each(['directo', 'cuenta'])(
         expect(payload.detalles[0]).toMatchObject(fields);
         await SaleService.createSale(payload, licor.usuarioId);
       }
+      // El detalle del stat muestra también el acompañamiento por unidad.
+      const resumen = await obtenerResumenShots();
+      // El producto nació en este test: su corto viene del pedido cobrado aquí.
+      const cortoPedido = resumen.cortosHoy.find(corto => corto.producto_id === licor.productoId);
+      expect(cortoPedido?.acompanamiento).toMatchObject({
+        nombre: expect.stringContaining('750 ml'),
+        ml_por_corto: null,
+        unidades: 1
+      });
+      // 2 cortos de cliente: 2 × 50 ml de Configuraciones.
+      expect(cortoPedido?.ml).toBe(100);
       expect(Number((await unidadesDe(licor.presentacionId))[0].ml_restante)).toBe(650);
       expect((await unidadesDe(soda.presentacionId)).map(unidad => unidad.estado)).toEqual([
         ESTADO_UNIDAD_VENDIDA,
