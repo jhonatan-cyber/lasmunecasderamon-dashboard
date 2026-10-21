@@ -30,15 +30,29 @@ async function insertarMovimiento(
   tipo: Movimiento['tipo'],
   ml: number,
   fecha_crea: string,
-  movimiento_origen?: string
+  movimiento_origen?: string,
+  producto_id?: string
 ): Promise<string> {
   const id = crypto.randomUUID();
   await query(
     `INSERT INTO inventario_movimientos
        (id, tipo, estado, producto_id, presentacion_id, cantidad, precio_venta, comision,
         usuario_id, ml, fecha_crea${movimiento_origen ? ', movimiento_origen' : ''})
-     VALUES (?, ?, 'completada', NULL, NULL, 0, 0, 0, NULL, ?, ?${movimiento_origen ? ', ?' : ''})`,
-    movimiento_origen ? [id, tipo, ml, fecha_crea, movimiento_origen] : [id, tipo, ml, fecha_crea]
+     VALUES (?, ?, 'completada', ?, NULL, 0, 0, 0, NULL, ?, ?${movimiento_origen ? ', ?' : ''})`,
+    movimiento_origen
+      ? [id, tipo, producto_id ?? null, ml, fecha_crea, movimiento_origen]
+      : [id, tipo, producto_id ?? null, ml, fecha_crea]
+  );
+  return id;
+}
+
+/** Producto de prueba, para colgar los movimientos. */
+async function crearProducto(nombre: string): Promise<string> {
+  const id = crypto.randomUUID();
+  await query(
+    `INSERT INTO productos (id_producto, codigo, nombre, precio, comision, fecha_crea)
+     VALUES (?, ?, ?, 45000, 0, now())`,
+    [id, `PRB${id.slice(0, 8)}`, nombre]
   );
   return id;
 }
@@ -100,6 +114,27 @@ it('una venta sin anular suma sus ml al resumen', async () => {
 
     const despues = await obtenerResumenShots();
     expect(despues.mlServidosHoy - antes.mlServidosHoy).toBe(250);
+  } finally {
+    await restoreDatabase(snapshot, 'test-only');
+  }
+});
+
+it('la anulación descuenta igual si el producto se desactivó después de vender', async () => {
+  const snapshot = await snapshotDatabase();
+  try {
+    const antes = await obtenerResumenShots();
+
+    const hoy = await inicioDelDia();
+    const producto = await crearProducto('Producto que se desactiva');
+    const venta = await insertarMovimiento('venta', 500, `${hoy} 10:00:00`, undefined, producto);
+
+    // La bebida se desactiva a mano después de la venta: ya no se vende, pero la
+    // venta que ya ocurrió sigue siendo la que hay que revertir.
+    await query('UPDATE productos SET estado = 0 WHERE id_producto = ?', [producto]);
+    await insertarMovimiento('devolucion', 200, `${hoy} 11:00:00`, venta, producto);
+
+    const despues = await obtenerResumenShots();
+    expect(despues.mlServidosHoy - antes.mlServidosHoy).toBe(300);
   } finally {
     await restoreDatabase(snapshot, 'test-only');
   }

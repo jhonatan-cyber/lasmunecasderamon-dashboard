@@ -19,7 +19,21 @@ export default defineConfig({
         lines: 48,
         statements: 48
       },
-      exclude: ['node_modules/', 'tests/', '**/*.d.ts', '**/*.config.*', '.next/', '**/types/**']
+      exclude: [
+        'node_modules/',
+        'tests/',
+        '**/*.d.ts',
+        '**/*.config.*',
+        '.next/',
+        '**/types/**',
+        // `lib/database/postgres.cjs` es un puente CommonJS: el conversor
+        // v8→Istanbul de @vitest/coverage-v8 se rompe con su mapa de fuentes
+        // ("Cannot read properties of undefined (reading 'endCol')") y aborta el
+        // informe entero. Sus pruebas viven en la suite de PostgreSQL
+        // (`tests/postgres/sql-compatibility.test.ts`), así que la lógica sigue
+        // cubierta aunque el archivo no entre en el reporte.
+        '**/*.cjs'
+      ]
     },
     testTimeout: 30000,
     hookTimeout: 30000
