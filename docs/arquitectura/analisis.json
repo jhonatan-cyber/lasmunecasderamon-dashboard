@@ -1,7 +1,7 @@
 {
   "resumen": {
-    "commit": "5da0b36dc9b94f8b68b54dc7eb2ca709097de6dc",
-    "generado": "2026-10-21T01:37:00.348Z",
+    "commit": "e2e07ac6d4a9386326d858af196a3081e7560c3b",
+    "generado": "2026-10-21T02:12:57.424Z",
     "archivos": 2030,
     "rutas": 223,
     "sqlFueraDeRepositorio": 60,
@@ -13,15 +13,6 @@
     "rutasSinWrapper": 20
   },
   "rutas": [
-    {
-      "ruta": "/api/colaciones/regla",
-      "archivo": "app/api/colaciones/regla/route.ts",
-      "metodos": [],
-      "nivel": "authenticated",
-      "audit": false,
-      "moduloDominio": null,
-      "usaDriver": false
-    },
     {
       "ruta": "/api/anfitrionas/:id/status",
       "archivo": "app/api/anfitrionas/[id]/status/route.ts",
@@ -766,6 +757,15 @@
       "metodos": [],
       "nivel": "authenticated",
       "audit": true,
+      "moduloDominio": null,
+      "usaDriver": false
+    },
+    {
+      "ruta": "/api/colaciones/regla",
+      "archivo": "app/api/colaciones/regla/route.ts",
+      "metodos": [],
+      "nivel": "authenticated",
+      "audit": false,
       "moduloDominio": null,
       "usaDriver": false
     },
@@ -2656,12 +2656,6 @@
   ],
   "procesos": [
     {
-      "archivo": "components/colaciones/ColacionesTab.tsx",
-      "linea": 284,
-      "tipo": "setInterval",
-      "texto": "const id = setInterval(() => setAhora(Date.now()), 15_000);"
-    },
-    {
       "archivo": "app/api/notifications/kiosk/route.ts",
       "linea": 30,
       "tipo": "setInterval",
@@ -2708,6 +2702,12 @@
       "linea": 55,
       "tipo": "setInterval",
       "texto": "const id = setInterval(fetchSolicitudes, 15000);"
+    },
+    {
+      "archivo": "components/colaciones/ColacionesTab.tsx",
+      "linea": 288,
+      "tipo": "setInterval",
+      "texto": "const id = setInterval(() => setAhora(Date.now()), 15_000);"
     },
     {
       "archivo": "components/products/ContainerReturnsPanel.tsx",
@@ -2922,57 +2922,6 @@
   ],
   "ciclos": [],
   "matriz": {
-    "app/api": {
-      "lib/api": 262,
-      "lib/business": 34,
-      "lib/otros": 74,
-      "lib/identidad": 17,
-      "workflows": 21,
-      "modules/aplicacion": 1,
-      "lib/database": 3,
-      "lib/integrations": 4
-    },
-    "components": {
-      "hooks": 142,
-      "lib/business": 37,
-      "lib/otros": 330,
-      "raiz": 86,
-      "lib/api": 3,
-      "modules/aplicacion": 6,
-      "app/ui": 1
-    },
-    "hooks": {
-      "lib/otros": 92,
-      "raiz": 36,
-      "lib/api": 7,
-      "components": 14,
-      "lib/business": 9,
-      "modules/aplicacion": 2
-    },
-    "lib/business": {
-      "lib/otros": 12,
-      "raiz": 3,
-      "lib/api": 3,
-      "lib/database": 4,
-      "modules/aplicacion": 4,
-      "components": 1
-    },
-    "lib/otros": {
-      "lib/database": 4,
-      "lib/api": 1,
-      "lib/business": 6,
-      "raiz": 6,
-      "components": 2
-    },
-    "modules/infraestructura": {
-      "lib/database": 109,
-      "lib/business": 62,
-      "lib/otros": 156,
-      "modules/aplicacion": 25,
-      "lib/api": 9,
-      "lib/identidad": 2,
-      "raiz": 2
-    },
     "app/ui": {
       "hooks": 59,
       "lib/otros": 57,
@@ -2982,12 +2931,39 @@
       "modules/aplicacion": 3,
       "raiz": 14
     },
+    "app/api": {
+      "lib/api": 262,
+      "lib/identidad": 17,
+      "lib/otros": 74,
+      "lib/business": 34,
+      "workflows": 21,
+      "modules/aplicacion": 1,
+      "lib/database": 3,
+      "lib/integrations": 4
+    },
+    "components": {
+      "lib/otros": 330,
+      "hooks": 142,
+      "raiz": 86,
+      "lib/api": 3,
+      "lib/business": 37,
+      "modules/aplicacion": 6,
+      "app/ui": 1
+    },
     "raiz": {
       "lib/otros": 12,
       "hooks": 4,
       "lib/api": 2,
       "lib/identidad": 2,
       "modules/aplicacion": 1
+    },
+    "hooks": {
+      "lib/otros": 92,
+      "raiz": 36,
+      "lib/api": 7,
+      "components": 14,
+      "lib/business": 9,
+      "modules/aplicacion": 2
     },
     "lib/api": {
       "lib/otros": 8,
@@ -2999,12 +2975,36 @@
     "lib/identidad": {
       "lib/otros": 5
     },
+    "lib/business": {
+      "lib/api": 3,
+      "lib/otros": 12,
+      "lib/database": 4,
+      "modules/aplicacion": 4,
+      "raiz": 3,
+      "components": 1
+    },
+    "lib/otros": {
+      "lib/database": 4,
+      "lib/api": 1,
+      "lib/business": 6,
+      "raiz": 6,
+      "components": 2
+    },
     "lib/database": {
       "lib/otros": 4,
       "lib/business": 1
     },
     "lib/integrations": {
       "lib/business": 1
+    },
+    "modules/infraestructura": {
+      "lib/database": 109,
+      "lib/otros": 156,
+      "lib/business": 62,
+      "modules/aplicacion": 25,
+      "lib/api": 9,
+      "lib/identidad": 2,
+      "raiz": 2
     },
     "modules/aplicacion": {
       "modules/infraestructura": 23,
