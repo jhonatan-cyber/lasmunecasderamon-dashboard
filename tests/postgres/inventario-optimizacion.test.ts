@@ -187,6 +187,7 @@ it('serializa dos consumos de la misma unidad sin sobreventa al reutilizar la pr
       )
       .toMatchObject({
         wait_event_type: 'Lock',
+        // El bloqueo sigue siendo sobre las presentaciones, en orden de id.
         query: expect.stringContaining('ORDER BY id FOR UPDATE')
       });
     liberar();

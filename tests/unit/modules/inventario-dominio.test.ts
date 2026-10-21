@@ -661,7 +661,10 @@ describe('descuento del bar al registrar una venta', () => {
         return sql;
       })
     ).toEqual(['configuracion', 'unidades', 'descuento', 'movimiento', 'trazabilidad']);
+    // El bloqueo sigue siendo sobre las presentaciones, en orden determinista,
+    // y solo sobre ellas (no sobre los productos).
     expect(trx.mock.calls[0][0]).toContain('ORDER BY id FOR UPDATE');
+    expect(trx.mock.calls[0][0]).not.toMatch(/FOR UPDATE OF p, pr/);
   });
 
   it('mantiene la lectura del producto al consumir shots', async () => {

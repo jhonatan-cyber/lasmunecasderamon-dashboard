@@ -28,9 +28,11 @@ function trx(
 ) {
   return vi.fn(async (sql: string) => {
     if (sql.includes('FROM inventario_unidades')) return [{ id: 'unit', ml_restante: null }];
-    if (sql.includes('FROM inventario_presentaciones p'))
+    // La lectura individual de una presentación (`WHERE p.id = ?`) y la
+    // validación por lote (`ORDER BY id FOR UPDATE`) se distinguen por su forma.
+    if (sql.includes('WHERE p.id = ?'))
       return [{ id: 'pres', producto_id: 'prod', nombre: '750 ml', ml_botella: 750 }];
-    if (sql.includes('FROM inventario_presentaciones') && !sql.includes('FROM productos'))
+    if (sql.includes('ORDER BY id FOR UPDATE'))
       return [
         {
           id: 'pres',

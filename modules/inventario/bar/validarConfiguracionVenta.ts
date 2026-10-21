@@ -3,7 +3,7 @@ import { BusinessError } from '@/lib/errors/errors';
 import { parseOpcionesVenta } from '../helpers';
 import type { ConsumoInventarioDetalle } from '../contracts';
 
-/** Datos inmutables mientras esta transacción conserva el bloqueo de la presentación. */
+/** Datos inmutables mientras esta transacciÃ³n conserva el bloqueo de la presentaciÃ³n. */
 export interface PresentacionVentaBloqueada {
   id: string;
   producto_id: string;
@@ -12,9 +12,14 @@ export interface PresentacionVentaBloqueada {
   comision: number;
   ml_botella: number | null;
   opciones_venta: unknown;
+  /** Estado del producto: 0 = desactivado, no se puede sacar del bar. */
+  estado: number | null;
 }
 
-/** Solo reutilizable dentro de la misma transacción que adquirió estos bloqueos. */
+/** Un producto desactivado a mano no se vende ni se consume del bar. */
+export const productoDesactivado = (estado: number | null | undefined) => estado === 0;
+
+/** Solo reutilizable dentro de la misma transacciÃ³n que adquiriÃ³ estos bloqueos. */
 export async function bloquearYValidarConfiguracionVenta(
   trx: TransactionQuery,
   detalles: ConsumoInventarioDetalle[]
@@ -24,12 +29,30 @@ export async function bloquearYValidarConfiguracionVenta(
   ];
   if (!ids.length) return new Map();
   const rows = await trx<PresentacionVentaBloqueada[]>(
-    `SELECT id, opciones_venta, producto_id, nombre, precio_venta, comision, ml_botella FROM inventario_presentaciones WHERE id IN (${ids.map(() => '?').join(',')}) ORDER BY id FOR UPDATE`,
+    // El estado del producto entra como subconsulta y no como `JOIN`: el
+    // `FROM` y el `FOR UPDATE` quedan exactamente como estaban, así que esta
+    // consulta sigue bloqueando las mismas filas y en el mismo orden.
+    `SELECT id, opciones_venta, producto_id, nombre, precio_venta, comision, ml_botella,
+            (SELECT pr.estado FROM productos pr WHERE pr.id_producto = inventario_presentaciones.producto_id) AS estado
+       FROM inventario_presentaciones
+      WHERE id IN (${ids.map(() => '?').join(',')}) ORDER BY id FOR UPDATE`,
     ids
   );
   const configs = new Map(rows.map(row => [row.id, parseOpcionesVenta(row.opciones_venta)]));
   for (const detalle of detalles) {
     if (!detalle.presentacion_id) continue;
+    // Un producto desactivado a mano no se saca del bar: ni la bebida ni su
+    // acompaÃ±amiento. Se comprueba antes de validar el formato de la venta.
+    for (const presentacionId of [
+      detalle.presentacion_id,
+      detalle.acompanamiento_botella?.presentacion_id,
+      detalle.acompanamiento_corto?.presentacion_id
+    ]) {
+      if (!presentacionId) continue;
+      const presentacion = rows.find(row => row.id === presentacionId);
+      if (presentacion && productoDesactivado(presentacion.estado))
+        throw new BusinessError('La bebida seleccionada no está disponible');
+    }
     const options = configs.get(detalle.presentacion_id) ?? [];
     if (detalle.tipo_venta === 'shot' && detalle.acompanamiento_corto) {
       const mixer = detalle.acompanamiento_corto;
@@ -74,7 +97,7 @@ export async function bloquearYValidarConfiguracionVenta(
         (units === 0 && detalle.acompanamiento_botella)
       )
         throw new BusinessError(
-          'La bebida de botella no coincide con la configuración del producto'
+          'La bebida de botella no coincide con la configuraciÃ³n del producto'
         );
     }
   }

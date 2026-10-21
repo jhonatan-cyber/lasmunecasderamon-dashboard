@@ -9,11 +9,13 @@ function database(
     if (!sql.trim().startsWith('SELECT')) throw new Error('El pedido no debe modificar inventario');
     if (sql.includes('FROM configuraciones')) return [];
     if (sql.includes('FROM inventario_unidades')) return stock[values[0]] || [];
-    if (sql.includes('FROM inventario_presentaciones p'))
+    // La lectura individual (`WHERE p.id = ?`) y la validación por lote
+    // (`ORDER BY id FOR UPDATE`) se distinguen por su forma.
+    if (sql.includes('WHERE p.id = ?'))
       return [
         { id: values[0], nombre: '750 ml', ml_botella: 750, ml_shot: 50, ml_shot_anfitriona: 25 }
       ];
-    if (sql.includes('FROM inventario_presentaciones'))
+    if (sql.includes('ORDER BY id FOR UPDATE'))
       return values.map(id => ({
         id,
         nombre: '750 ml',

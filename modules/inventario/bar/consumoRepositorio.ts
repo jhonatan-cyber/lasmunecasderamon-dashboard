@@ -1,4 +1,7 @@
-import { bloquearYValidarConfiguracionVenta } from './validarConfiguracionVenta';
+import {
+  bloquearYValidarConfiguracionVenta,
+  productoDesactivado
+} from './validarConfiguracionVenta';
 import { generateUUID, type TransactionQuery } from '@/lib/database/db';
 import {
   DEFAULT_BOTTLE_ML,
@@ -32,6 +35,8 @@ interface PresentacionConsumo {
   ml_botella: number | null;
   ml_shot: number | null;
   ml_shot_anfitriona: number | null;
+  /** Estado del producto: 0 = desactivado, no se consume del bar. */
+  estado: number | null;
 }
 
 interface UnidadConsumo {
@@ -155,7 +160,7 @@ export async function consumirStock(
       ? [{ ...bloqueada, ml_shot: null, ml_shot_anfitriona: null }]
       : await trx<PresentacionConsumo[]>(
           `SELECT p.id, p.producto_id, p.nombre, p.precio_venta, p.comision, p.ml_botella, pr.ml_shot,
-        pr.ml_shot_anfitriona
+        pr.ml_shot_anfitriona, pr.estado
        FROM inventario_presentaciones p
        INNER JOIN productos pr ON pr.id_producto = p.producto_id
        WHERE p.id = ? FOR UPDATE OF p`,
@@ -172,6 +177,13 @@ export async function consumirStock(
       )
         throw new BusinessError('El producto de acompa\u00f1amiento ya no existe');
       continue;
+    }
+    // Un producto desactivado a mano no se consume del bar, aunque conserve
+    // stock: la misma regla aplica al corto y a la botella.
+    if (productoDesactivado(presentacion.estado)) {
+      if (contextoVenta.servicioId)
+        throw new BusinessError('El producto incluido ya no esta disponible');
+      throw new BusinessError('La bebida seleccionada no esta disponible');
     }
 
     const capacidadMl = resolveBotellaMl(presentacion.ml_botella, presentacion.nombre, botellaMl);
@@ -539,8 +551,8 @@ export async function consumirCover(
   contexto: ContextoOperacion
 ): Promise<void> {
   const trx = resolverTransaccion(contexto);
-  const presentaciones = await trx<{ id: string; producto_id: string }[]>(
-    `SELECT p.id, p.producto_id
+  const presentaciones = await trx<{ id: string; producto_id: string; estado: number | null }[]>(
+    `SELECT p.id, p.producto_id, pr.estado
        FROM inventario_presentaciones p
        JOIN productos pr ON pr.id_producto = p.producto_id
        JOIN categorias c ON c.id_categoria = pr.categoria_id
@@ -552,6 +564,9 @@ export async function consumirCover(
   );
   const presentacion = presentaciones[0];
   if (!presentacion) throw new BusinessError('La bebida no está habilitada para cover');
+  // Un producto desactivado a mano no se consume del bar.
+  if (productoDesactivado(presentacion.estado))
+    throw new BusinessError('La bebida del cover no esta disponible');
   const unidades = await trx<{ id: string }[]>(
     `SELECT id FROM inventario_unidades
       WHERE presentacion_id = ? AND estado = '${ESTADO_UNIDAD_ACTIVA}' AND ubicacion = 'bar'
@@ -607,9 +622,10 @@ export async function consumirProductoCortesia(
       id: string;
       producto_id: string;
       opciones_venta: unknown;
+      estado: number | null;
     }[]
   >(
-    `SELECT p.id, p.producto_id, p.opciones_venta
+    `SELECT p.id, p.producto_id, p.opciones_venta, pr.estado
        FROM inventario_presentaciones p
        LEFT JOIN productos pr ON pr.id_producto = p.producto_id
       WHERE p.id = ? AND p.precio_venta <= ? FOR UPDATE OF p`,
@@ -618,6 +634,9 @@ export async function consumirProductoCortesia(
   const presentacion = presentaciones[0];
   if (!presentacion)
     throw new BusinessError('El precio de la bebida supera el monto de entrada más el adicional');
+  // Un producto desactivado a mano no se consume del bar.
+  if (productoDesactivado(presentacion.estado))
+    throw new BusinessError('La bebida de cortesia no esta disponible');
   const opciones = parseOpcionesVenta(presentacion.opciones_venta) ?? [];
   const unidadesIncluidas = Number(
     opciones.find(opcion => opcion.tipo === 'botella')?.acompanamiento?.unidades ?? 0
