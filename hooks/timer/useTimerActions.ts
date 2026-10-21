@@ -1,6 +1,6 @@
 'use client';
 
-import { useCallback } from 'react';
+import { useCallback, useEffect, useRef } from 'react';
 import { refreshTimerSnapshot } from '@/lib/store/timerSnapshot';
 import { toast } from 'sonner';
 
@@ -13,6 +13,17 @@ interface TimerActionsProps {
 }
 
 export function useTimerActions({ onNotificationExpira, onRefreshCaja }: TimerActionsProps) {
+  // El aviso de "ventas actualizadas" viaja con un temporizador corto. Si el
+  // componente se desmonta antes de que dispare, el temporizador queda vivo y
+  // revienta contra un `window` que ya no existe. Se limpia al desmontar.
+  const avisoDeVenta = useRef<ReturnType<typeof setTimeout> | null>(null);
+  useEffect(
+    () => () => {
+      if (avisoDeVenta.current) clearTimeout(avisoDeVenta.current);
+    },
+    []
+  );
+
   const updateRoomStatus = async (roomId: string, status: number) => {
     try {
       await fetch(`/api/rooms/${roomId}`, {
@@ -129,9 +140,13 @@ export function useTimerActions({ onNotificationExpira, onRefreshCaja }: TimerAc
       await Promise.all(updates);
       activeTimers.value = activeTimers.peek().filter(t => t.id !== timerId);
 
-      setTimeout(() => {
+      if (avisoDeVenta.current) clearTimeout(avisoDeVenta.current);
+      avisoDeVenta.current = setTimeout(() => {
+        avisoDeVenta.current = null;
         if (onRefreshCaja) onRefreshCaja(timer.servicioId);
-        window.dispatchEvent(new CustomEvent('updateSales'));
+        // El aviso es un efecto de la vista: fuera del navegador no hay
+        // `window` que despachar y no debe romper el proceso.
+        if (typeof window !== 'undefined') window.dispatchEvent(new CustomEvent('updateSales'));
       }, 100);
 
       const tRoomName = isInstance
