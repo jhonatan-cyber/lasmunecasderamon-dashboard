@@ -24,6 +24,12 @@ import {
   formatDateTimeDmyLabel
 } from '@/lib/utils/calendarUtils';
 
+/** Día local de un instante, sin pasar por UTC. */
+const diaLocal = (instante: Date) =>
+  `${instante.getFullYear()}-${String(instante.getMonth() + 1).padStart(2, '0')}-${String(
+    instante.getDate()
+  ).padStart(2, '0')}`;
+
 describe('calendarUtils', () => {
   beforeEach(() => {
     vi.clearAllMocks();
@@ -42,6 +48,22 @@ describe('calendarUtils', () => {
     it('recorta un string con hora a YYYY-MM-DD', () => {
       expect(toDateKey('2026-04-11T15:30:00')).toBe('2026-04-11');
       expect(toDateKey('2026-04-11 15:30:00')).toBe('2026-04-11');
+    });
+
+    it('trata un string con zona explícita como un instante y devuelve el día local', () => {
+      // 2026-04-12T02:30:00Z es el 11 de abril en cualquier zona al oeste de
+      // UTC-2: el día local no es el día UTC.
+      const instante = new Date('2026-04-12T02:30:00Z');
+
+      expect(toDateKey('2026-04-12T02:30:00Z')).toBe(diaLocal(instante));
+      expect(toDateKey('2026-04-12T02:30:00Z')).toBe(toDateKey(instante));
+      expect(toDateKey('2026-04-12T02:30:00+00:00')).toBe(diaLocal(instante));
+    });
+
+    it('un string con desplazamiento también es un instante', () => {
+      const instante = new Date('2026-04-11T23:30:00-03:00');
+
+      expect(toDateKey('2026-04-11T23:30:00-03:00')).toBe(diaLocal(instante));
     });
   });
 

@@ -13,15 +13,36 @@ const parseDatePreservingLocalDate = (value: string | Date) => {
   return new Date(value);
 };
 
+/** Día local de un instante, en `YYYY-MM-DD`. */
+const dateKeyDeInstante = (instante: Date) => {
+  const year = instante.getFullYear();
+  const month = String(instante.getMonth() + 1).padStart(2, '0');
+  const day = String(instante.getDate()).padStart(2, '0');
+  return `${year}-${month}-${day}`;
+};
+
+/** Un texto con zona explícita (`Z` o `±hh:mm`) es un instante. */
+const TIENE_ZONA_EXPLICITA = /(?:Z|[+-]\d{2}:?\d{2})$/i;
+
+/**
+ * Clave de día de un calendario, con un solo criterio.
+ *
+ * Un texto con zona explícita es un **instante**: se traduce al día local, como
+ * un `Date`. Un texto sin zona es la **hora de pared** (la que entrega la API)
+ * y se lee tal cual, sin convertirla. Antes el texto con zona se leía por sus
+ * primeros diez caracteres —el día UTC— y el `Date` por su día local: dos
+ * criterios para lo mismo, que solo coincidían cuando la zona del proceso
+ * era UTC.
+ */
 export const toDateKey = (value?: string | Date | null) => {
   if (!value) return '';
-  if (value instanceof Date) {
-    const year = value.getFullYear();
-    const month = String(value.getMonth() + 1).padStart(2, '0');
-    const day = String(value.getDate()).padStart(2, '0');
-    return `${year}-${month}-${day}`;
+  if (value instanceof Date) return dateKeyDeInstante(value);
+  const texto = value.trim();
+  if (TIENE_ZONA_EXPLICITA.test(texto)) {
+    const instante = new Date(texto);
+    if (!isNaN(instante.getTime())) return dateKeyDeInstante(instante);
   }
-  return value.substring(0, 10).replace('T', ' ');
+  return texto.substring(0, 10).replace('T', ' ');
 };
 
 export const toDateKeys = (dates: Date[]) => dates.map(date => toDateKey(date));
@@ -35,7 +56,7 @@ export const getMonthDateRange = (date: Date) => {
 
   return {
     startDate: toDateKey(new Date(year, month, 1)),
-    endDate: toDateKey(new Date(year, month + 1, 0)),
+    endDate: toDateKey(new Date(year, month + 1, 0))
   };
 };
 
@@ -54,7 +75,7 @@ export const getWeekDateRange = (offsetWeeks = 0) => {
 
   return {
     startDate: toDateKey(mondayTarget),
-    endDate: toDateKey(sundayTarget),
+    endDate: toDateKey(sundayTarget)
   };
 };
 
@@ -84,14 +105,19 @@ export const formatLongDateEs = (value: string | Date, locale = 'es-ES') => {
     weekday: 'long',
     year: 'numeric',
     month: 'long',
-    day: 'numeric',
+    day: 'numeric'
   });
 };
 
 export const formatShortTimeEs = (value: string | Date, locale = 'es-ES') => {
   if (!value) return '';
 
-  if (typeof value === 'string' && value.includes(':') && !value.includes('-') && !value.includes('T')) {
+  if (
+    typeof value === 'string' &&
+    value.includes(':') &&
+    !value.includes('-') &&
+    !value.includes('T')
+  ) {
     const parts = value.split(':');
     const hours = parseInt(parts[0], 10);
     const minutes = parseInt(parts[1], 10);
@@ -101,7 +127,7 @@ export const formatShortTimeEs = (value: string | Date, locale = 'es-ES') => {
       date.setHours(hours, minutes, 0, 0);
       return date.toLocaleTimeString(locale, {
         hour: '2-digit',
-        minute: '2-digit',
+        minute: '2-digit'
       });
     }
   }
@@ -111,7 +137,7 @@ export const formatShortTimeEs = (value: string | Date, locale = 'es-ES') => {
 
   return date.toLocaleTimeString(locale, {
     hour: '2-digit',
-    minute: '2-digit',
+    minute: '2-digit'
   });
 };
 
@@ -121,7 +147,7 @@ export const formatShortDateEs = (value: string | Date, locale = 'es-ES') => {
   if (isNaN(date.getTime())) return 'Fecha inválida';
   return date.toLocaleDateString(locale, {
     weekday: 'short',
-    day: 'numeric',
+    day: 'numeric'
   });
 };
 
@@ -131,7 +157,7 @@ export const formatDateLabel = (value: string | Date, locale = 'es-ES') =>
 export const formatShortDmyDateEs = (value: string | Date, locale = 'es-ES') => {
   const date = parseDatePreservingLocalDate(value);
   return `${date.getDate().toString().padStart(2, '0')} ${date.toLocaleDateString(locale, {
-    month: 'short',
+    month: 'short'
   })} ${date.getFullYear()}`;
 };
 
@@ -141,12 +167,12 @@ export const formatDateTimeLabel = (value: string | Date, locale = 'es-ES') => {
     date: date.toLocaleDateString(locale, {
       day: 'numeric',
       month: 'long',
-      year: 'numeric',
+      year: 'numeric'
     }),
     time: date.toLocaleTimeString(locale, {
       hour: '2-digit',
-      minute: '2-digit',
-    }),
+      minute: '2-digit'
+    })
   };
 };
 
@@ -157,8 +183,7 @@ export const formatDateTimeDmyLabel = (value: string | Date, locale = 'es-ES') =
     time: date.toLocaleTimeString(locale, {
       hour: '2-digit',
       minute: '2-digit',
-      second: '2-digit',
-    }),
+      second: '2-digit'
+    })
   };
 };
-
