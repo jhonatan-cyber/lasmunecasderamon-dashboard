@@ -136,6 +136,7 @@ export function mapSaleFromDB(row: VentaRawRow | VentaGetByIdRow | null): SaleTy
       cliente_id: row.cliente_id,
       pedido_id: row.pedido_id,
       entrada_id: row.entrada_id ?? null,
+      origen: row.origen ?? null,
       habitacion_id: row.habitacion_id,
       metodo_pago:
         typeof row.metodo_pago === 'string' ? row.metodo_pago.toLowerCase() : row.metodo_pago,

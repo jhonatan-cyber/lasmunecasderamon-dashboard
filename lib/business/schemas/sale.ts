@@ -1,5 +1,7 @@
 import { z } from 'zod';
 
+import { ORIGENES_VENTA } from '@/lib/business/ventasOrigen';
+
 export const SaleSchema = z.object({
   id: z.string().optional(),
   codigo: z.string().nullable().optional(),
@@ -7,6 +9,8 @@ export const SaleSchema = z.object({
   pedido_id: z.string().nullable().optional(),
   servicio_id: z.string().min(1).nullable().optional(),
   entrada_id: z.string().min(1).nullable().optional(),
+  /** De dónde nació la venta; lo decide el servidor, nunca el cliente. */
+  origen: z.enum(ORIGENES_VENTA).nullable().optional(),
   habitacion_id: z.string().nullable().optional(),
   metodo_pago: z
     .enum(['efectivo', 'tarjeta', 'transferencia', 'prepago', 'mixto'])

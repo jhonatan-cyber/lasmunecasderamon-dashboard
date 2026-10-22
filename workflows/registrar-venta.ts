@@ -21,6 +21,7 @@ import {
 } from '@/lib/business/registroVenta';
 import { validarAnfitrionasConfirmadas } from '@/lib/business/registroOperacion';
 import type { ContextoOperacion } from '@/lib/transaction/contract';
+import { resolverOrigenVenta } from '@/lib/business/ventasOrigen';
 import type { EntradaRegistroVenta } from '@/modules/ventas/contracts';
 import { consumirStockBar } from '@/modules/inventario';
 import { obtenerCajaActiva, registrarMovimientoCobro } from '@/modules/caja';
@@ -119,6 +120,16 @@ export async function registrarVenta(
 
   const estado = validated.habitacion_id && validated.tiempo > 0 ? 2 : 1;
 
+  // De dónde nació el cobro. Se decide acá, en el servidor, y viaja persistido:
+  // el cliente HTTP no puede etiquetar su propia venta (S5 de
+  // `odd/tasks/ventas-origen.md`).
+  const origen = resolverOrigenVenta({
+    entradaId: options.entradaId,
+    servicioId: validated.servicio_id,
+    habitacionId: validated.habitacion_id,
+    pedidoId
+  });
+
   // === INSERT VENTA PRINCIPAL ===
   await registrarCabeceraVenta(contexto, {
     id_venta: ventaId,
@@ -127,6 +138,7 @@ export async function registrarVenta(
     pedido_id: pedidoId,
     servicio_id: validated.servicio_id || null,
     entrada_id: options.entradaId || null,
+    origen,
     habitacion_id: validated.habitacion_id,
     metodo_pago: validated.metodo_pago,
     propina: validated.propina,

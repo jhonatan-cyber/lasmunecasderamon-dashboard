@@ -465,13 +465,17 @@ it('registra la venta del adicional con SaleService y deja la caja cuadrada', as
         entrada_id: string;
         metodo_pago: string;
         caja_id: string;
+        origen: string;
       }[]
-    >('SELECT id_venta, total, entrada_id, metodo_pago, caja_id FROM ventas WHERE id_venta = ?', [
-      entrega.ventaId
-    ]);
+    >(
+      'SELECT id_venta, total, entrada_id, metodo_pago, caja_id, origen FROM ventas WHERE id_venta = ?',
+      [entrega.ventaId]
+    );
     expect(venta).toBeTruthy();
     expect(Number(venta.total)).toBe(25000);
     expect(venta.entrada_id).toBe(entrada.id);
+    // La venta nació de la entrada: queda etiquetada así, no como venta de barra.
+    expect(venta.origen).toBe('entrada');
     expect(venta.metodo_pago).toBe('tarjeta');
     expect(venta.caja_id).toBe(cajaId);
 
