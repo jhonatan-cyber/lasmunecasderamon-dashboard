@@ -59,6 +59,23 @@ corepack pnpm build
 
 Si tocas flujos con base de datos: `corepack pnpm test:integration:legacy-db`.
 
+### CRLF: falso "modificado" después de un pull
+
+El repositorio fija LF con `* text=auto eol=lf` en `.gitattributes`, pero la
+instalación de Git en Windows trae `core.autocrlf=true` en su config global. Con
+esas dos cosas juntas, un archivo que alguna herramienta escribió con CRLF queda
+con el blob idéntico en el índice y aun así aparece como modificado, y `git add`
+avisa `CRLF will be replaced by LF`. No es trabajo perdido.
+
+```bash
+git config --local core.autocrlf false   # una vez por clon
+git add --renormalize .                  # sólo si el árbol ya quedó sucio
+```
+
+Si `git diff` sale vacío, el cambio no existe: comparalo con
+`git hash-object <archivo>` contra `git ls-files -s <archivo>` antes de tocar
+nada.
+
 ## Presupuesto por archivo de test
 
 Las tres suites fallan además si **un solo archivo se pasa del presupuesto de
