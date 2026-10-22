@@ -1,8 +1,8 @@
 {
   "resumen": {
-    "commit": "c12548feaf775236b48faf1a899cd098aaa4e314",
-    "generado": "2026-10-22T17:46:28.757Z",
-    "archivos": 2090,
+    "commit": "74a858cd13ffd3aea3e51a6eeb8655cfe11f9010",
+    "generado": "2026-10-22T19:42:37.642Z",
+    "archivos": 2094,
     "rutas": 225,
     "sqlFueraDeRepositorio": 60,
     "tablasConEscritoresMultiples": 0,
@@ -185,501 +185,6 @@
       "usaDriver": false
     },
     {
-      "ruta": "/api/attendance/today",
-      "archivo": "app/api/attendance/today/route.ts",
-      "metodos": [],
-      "nivel": "publico",
-      "audit": false,
-      "moduloDominio": null,
-      "usaDriver": false
-    },
-    {
-      "ruta": "/api/biometric/records/:id/photo",
-      "archivo": "app/api/biometric/records/[id]/photo/route.ts",
-      "metodos": [],
-      "nivel": "authenticated",
-      "audit": false,
-      "moduloDominio": null,
-      "usaDriver": false
-    },
-    {
-      "ruta": "/api/cash-register/bar-sales",
-      "archivo": "app/api/cash-register/bar-sales/route.ts",
-      "metodos": [],
-      "nivel": "publico",
-      "audit": false,
-      "moduloDominio": null,
-      "usaDriver": false
-    },
-    {
-      "ruta": "/api/cash-register/champagne-sales",
-      "archivo": "app/api/cash-register/champagne-sales/route.ts",
-      "metodos": [],
-      "nivel": "publico",
-      "audit": false,
-      "moduloDominio": null,
-      "usaDriver": false
-    },
-    {
-      "ruta": "/api/cash-register/hostess-drinks",
-      "archivo": "app/api/cash-register/hostess-drinks/route.ts",
-      "metodos": [],
-      "nivel": "publico",
-      "audit": false,
-      "moduloDominio": null,
-      "usaDriver": false
-    },
-    {
-      "ruta": "/api/cash-register/sales-by-product",
-      "archivo": "app/api/cash-register/sales-by-product/route.ts",
-      "metodos": [],
-      "nivel": "publico",
-      "audit": false,
-      "moduloDominio": null,
-      "usaDriver": false
-    },
-    {
-      "ruta": "/api/cash-register/stats",
-      "archivo": "app/api/cash-register/stats/route.ts",
-      "metodos": [],
-      "nivel": "publico",
-      "audit": false,
-      "moduloDominio": null,
-      "usaDriver": false
-    },
-    {
-      "ruta": "/api/cashregister/closing-pdf",
-      "archivo": "app/api/cashregister/closing-pdf/route.ts",
-      "metodos": [],
-      "nivel": "publico",
-      "audit": false,
-      "moduloDominio": null,
-      "usaDriver": false
-    },
-    {
-      "ruta": "/api/cashregister/closing-request",
-      "archivo": "app/api/cashregister/closing-request/route.ts",
-      "metodos": [],
-      "nivel": "publico",
-      "audit": false,
-      "moduloDominio": null,
-      "usaDriver": false
-    },
-    {
-      "ruta": "/api/cashregister/closing/resend",
-      "archivo": "app/api/cashregister/closing/resend/route.ts",
-      "metodos": [],
-      "nivel": "finances.write",
-      "audit": true,
-      "moduloDominio": null,
-      "usaDriver": false
-    },
-    {
-      "ruta": "/api/cashregister/closing",
-      "archivo": "app/api/cashregister/closing/route.ts",
-      "metodos": [],
-      "nivel": "finances.write",
-      "audit": true,
-      "moduloDominio": null,
-      "usaDriver": false
-    },
-    {
-      "ruta": "/api/cashregister/pdf-report",
-      "archivo": "app/api/cashregister/pdf-report/route.ts",
-      "metodos": [],
-      "nivel": "publico",
-      "audit": false,
-      "moduloDominio": null,
-      "usaDriver": false
-    },
-    {
-      "ruta": "/api/cashregister/process-closing",
-      "archivo": "app/api/cashregister/process-closing/route.ts",
-      "metodos": [],
-      "nivel": "publico",
-      "audit": false,
-      "moduloDominio": null,
-      "usaDriver": false
-    },
-    {
-      "ruta": "/api/cashregister/withdrawals",
-      "archivo": "app/api/cashregister/withdrawals/route.ts",
-      "metodos": [],
-      "nivel": "finances.read",
-      "audit": true,
-      "moduloDominio": null,
-      "usaDriver": false
-    },
-    {
-      "ruta": "/api/clients/prepaid",
-      "archivo": "app/api/clients/prepaid/route.ts",
-      "metodos": [],
-      "nivel": "clients.write",
-      "audit": true,
-      "moduloDominio": null,
-      "usaDriver": false
-    },
-    {
-      "ruta": "/api/clients/return/approve",
-      "archivo": "app/api/clients/return/approve/route.ts",
-      "metodos": [],
-      "nivel": "clients.write",
-      "audit": true,
-      "moduloDominio": null,
-      "usaDriver": false
-    },
-    {
-      "ruta": "/api/clients/return/reminder",
-      "archivo": "app/api/clients/return/reminder/route.ts",
-      "metodos": [],
-      "nivel": "clients.write",
-      "audit": true,
-      "moduloDominio": null,
-      "usaDriver": false
-    },
-    {
-      "ruta": "/api/clients/return/requests",
-      "archivo": "app/api/clients/return/requests/route.ts",
-      "metodos": [],
-      "nivel": "clients.read",
-      "audit": false,
-      "moduloDominio": null,
-      "usaDriver": false
-    },
-    {
-      "ruta": "/api/clients/return",
-      "archivo": "app/api/clients/return/route.ts",
-      "metodos": [],
-      "nivel": "clients.write",
-      "audit": true,
-      "moduloDominio": null,
-      "usaDriver": false
-    },
-    {
-      "ruta": "/api/code/current",
-      "archivo": "app/api/code/current/route.ts",
-      "metodos": [],
-      "nivel": "authenticated",
-      "audit": true,
-      "moduloDominio": null,
-      "usaDriver": false
-    },
-    {
-      "ruta": "/api/gratifications/:id",
-      "archivo": "app/api/gratifications/[id]/route.ts",
-      "metodos": [],
-      "nivel": "gratificaciones.delete",
-      "audit": true,
-      "moduloDominio": null,
-      "usaDriver": false
-    },
-    {
-      "ruta": "/api/gratifications/approve",
-      "archivo": "app/api/gratifications/approve/route.ts",
-      "metodos": ["PUT"],
-      "nivel": "SIN_WRAPPER",
-      "audit": false,
-      "moduloDominio": null,
-      "usaDriver": false
-    },
-    {
-      "ruta": "/api/gratifications/me",
-      "archivo": "app/api/gratifications/me/route.ts",
-      "metodos": [],
-      "nivel": "authenticated",
-      "audit": true,
-      "moduloDominio": null,
-      "usaDriver": false
-    },
-    {
-      "ruta": "/api/gratifications/request-details",
-      "archivo": "app/api/gratifications/request-details/route.ts",
-      "metodos": ["GET"],
-      "nivel": "SIN_WRAPPER",
-      "audit": false,
-      "moduloDominio": null,
-      "usaDriver": false
-    },
-    {
-      "ruta": "/api/gratifications",
-      "archivo": "app/api/gratifications/route.ts",
-      "metodos": [],
-      "nivel": "gratificaciones.write",
-      "audit": true,
-      "moduloDominio": null,
-      "usaDriver": false
-    },
-    {
-      "ruta": "/api/hostesses/:id/status",
-      "archivo": "app/api/hostesses/[id]/status/route.ts",
-      "metodos": [],
-      "nivel": "users.write",
-      "audit": true,
-      "moduloDominio": null,
-      "usaDriver": false
-    },
-    {
-      "ruta": "/api/hostesses/available",
-      "archivo": "app/api/hostesses/available/route.ts",
-      "metodos": [],
-      "nivel": "publico",
-      "audit": false,
-      "moduloDominio": null,
-      "usaDriver": false
-    },
-    {
-      "ruta": "/api/hostesses",
-      "archivo": "app/api/hostesses/route.ts",
-      "metodos": [],
-      "nivel": "publico",
-      "audit": false,
-      "moduloDominio": null,
-      "usaDriver": false
-    },
-    {
-      "ruta": "/api/mcp/admin/requests",
-      "archivo": "app/api/mcp/admin/requests/route.ts",
-      "metodos": [],
-      "nivel": "administrator",
-      "audit": true,
-      "moduloDominio": null,
-      "usaDriver": false
-    },
-    {
-      "ruta": "/api/meals",
-      "archivo": "app/api/meals/route.ts",
-      "metodos": [],
-      "nivel": "products.read",
-      "audit": false,
-      "moduloDominio": null,
-      "usaDriver": false
-    },
-    {
-      "ruta": "/api/meals/rule",
-      "archivo": "app/api/meals/rule/route.ts",
-      "metodos": [],
-      "nivel": "authenticated",
-      "audit": false,
-      "moduloDominio": null,
-      "usaDriver": false
-    },
-    {
-      "ruta": "/api/permissions/setup-cashier",
-      "archivo": "app/api/permissions/setup-cashier/route.ts",
-      "metodos": [],
-      "nivel": "administrator",
-      "audit": true,
-      "moduloDominio": null,
-      "usaDriver": false
-    },
-    {
-      "ruta": "/api/sales/cancellation-request",
-      "archivo": "app/api/sales/cancellation-request/route.ts",
-      "metodos": ["GET"],
-      "nivel": "SIN_WRAPPER",
-      "audit": false,
-      "moduloDominio": null,
-      "usaDriver": false
-    },
-    {
-      "ruta": "/api/sales/cancellation",
-      "archivo": "app/api/sales/cancellation/route.ts",
-      "metodos": [],
-      "nivel": "sales.anulate",
-      "audit": true,
-      "moduloDominio": null,
-      "usaDriver": false
-    },
-    {
-      "ruta": "/api/sales/process-cancellation",
-      "archivo": "app/api/sales/process-cancellation/route.ts",
-      "metodos": ["POST"],
-      "nivel": "SIN_WRAPPER",
-      "audit": false,
-      "moduloDominio": null,
-      "usaDriver": false
-    },
-    {
-      "ruta": "/api/service-requests/:id/approve",
-      "archivo": "app/api/service-requests/[id]/approve/route.ts",
-      "metodos": [],
-      "nivel": "orders.process",
-      "audit": true,
-      "moduloDominio": null,
-      "usaDriver": false
-    },
-    {
-      "ruta": "/api/service-requests/:id/reject",
-      "archivo": "app/api/service-requests/[id]/reject/route.ts",
-      "metodos": [],
-      "nivel": "orders.process",
-      "audit": true,
-      "moduloDominio": null,
-      "usaDriver": false
-    },
-    {
-      "ruta": "/api/service-requests/pending-count",
-      "archivo": "app/api/service-requests/pending-count/route.ts",
-      "metodos": [],
-      "nivel": "publico",
-      "audit": false,
-      "moduloDominio": null,
-      "usaDriver": false
-    },
-    {
-      "ruta": "/api/service-requests",
-      "archivo": "app/api/service-requests/route.ts",
-      "metodos": [],
-      "nivel": "publico",
-      "audit": true,
-      "moduloDominio": null,
-      "usaDriver": false
-    },
-    {
-      "ruta": "/api/services/:id/hostesses",
-      "archivo": "app/api/services/[id]/hostesses/route.ts",
-      "metodos": [],
-      "nivel": "private_rooms.write",
-      "audit": true,
-      "moduloDominio": null,
-      "usaDriver": false
-    },
-    {
-      "ruta": "/api/services/:id",
-      "archivo": "app/api/services/[id]/route.ts",
-      "metodos": [],
-      "nivel": "publico",
-      "audit": true,
-      "moduloDominio": null,
-      "usaDriver": false
-    },
-    {
-      "ruta": "/api/services/by-dates",
-      "archivo": "app/api/services/by-dates/route.ts",
-      "metodos": [],
-      "nivel": "publico",
-      "audit": false,
-      "moduloDominio": null,
-      "usaDriver": false
-    },
-    {
-      "ruta": "/api/services/cancellation-request",
-      "archivo": "app/api/services/cancellation-request/route.ts",
-      "metodos": ["GET"],
-      "nivel": "authenticated",
-      "audit": true,
-      "moduloDominio": null,
-      "usaDriver": false
-    },
-    {
-      "ruta": "/api/services/cancellation",
-      "archivo": "app/api/services/cancellation/route.ts",
-      "metodos": [],
-      "nivel": "authenticated",
-      "audit": true,
-      "moduloDominio": null,
-      "usaDriver": false
-    },
-    {
-      "ruta": "/api/services/process-cancellation",
-      "archivo": "app/api/services/process-cancellation/route.ts",
-      "metodos": ["POST"],
-      "nivel": "SIN_WRAPPER",
-      "audit": false,
-      "moduloDominio": null,
-      "usaDriver": false
-    },
-    {
-      "ruta": "/api/services",
-      "archivo": "app/api/services/route.ts",
-      "metodos": [],
-      "nivel": "publico",
-      "audit": true,
-      "moduloDominio": null,
-      "usaDriver": false
-    },
-    {
-      "ruta": "/api/services/temporary",
-      "archivo": "app/api/services/temporary/route.ts",
-      "metodos": [],
-      "nivel": "authenticated",
-      "audit": true,
-      "moduloDominio": null,
-      "usaDriver": false
-    },
-    {
-      "ruta": "/api/services/user",
-      "archivo": "app/api/services/user/route.ts",
-      "metodos": [],
-      "nivel": "authenticated",
-      "audit": true,
-      "moduloDominio": null,
-      "usaDriver": false
-    },
-    {
-      "ruta": "/api/tickets/:id/anular",
-      "archivo": "app/api/tickets/[id]/anular/route.ts",
-      "metodos": [],
-      "nivel": "entradas.deliver",
-      "audit": true,
-      "moduloDominio": null,
-      "usaDriver": false
-    },
-    {
-      "ruta": "/api/tickets/:id/entregar",
-      "archivo": "app/api/tickets/[id]/entregar/route.ts",
-      "metodos": [],
-      "nivel": "entradas.deliver",
-      "audit": true,
-      "moduloDominio": null,
-      "usaDriver": false
-    },
-    {
-      "ruta": "/api/tickets/pendientes",
-      "archivo": "app/api/tickets/pendientes/route.ts",
-      "metodos": [],
-      "nivel": "entradas.deliver",
-      "audit": false,
-      "moduloDominio": null,
-      "usaDriver": false
-    },
-    {
-      "ruta": "/api/tickets",
-      "archivo": "app/api/tickets/route.ts",
-      "metodos": [],
-      "nivel": "entradas.view",
-      "audit": false,
-      "moduloDominio": null,
-      "usaDriver": false
-    },
-    {
-      "ruta": "/api/users/:id/biometric/capture",
-      "archivo": "app/api/users/[id]/biometric/capture/route.ts",
-      "metodos": [],
-      "nivel": "users.write",
-      "audit": true,
-      "moduloDominio": null,
-      "usaDriver": false
-    },
-    {
-      "ruta": "/api/users/:id/biometric/verify",
-      "archivo": "app/api/users/[id]/biometric/verify/route.ts",
-      "metodos": [],
-      "nivel": "users.write",
-      "audit": true,
-      "moduloDominio": null,
-      "usaDriver": false
-    },
-    {
-      "ruta": "/api/waiters",
-      "archivo": "app/api/waiters/route.ts",
-      "metodos": [],
-      "nivel": "publico",
-      "audit": false,
-      "moduloDominio": null,
-      "usaDriver": false
-    },
-    {
       "ruta": "/api/attendance/by-dates",
       "archivo": "app/api/attendance/by-dates/route.ts",
       "metodos": [],
@@ -727,6 +232,15 @@
     {
       "ruta": "/api/attendance/stats",
       "archivo": "app/api/attendance/stats/route.ts",
+      "metodos": [],
+      "nivel": "publico",
+      "audit": false,
+      "moduloDominio": null,
+      "usaDriver": false
+    },
+    {
+      "ruta": "/api/attendance/today",
+      "archivo": "app/api/attendance/today/route.ts",
       "metodos": [],
       "nivel": "publico",
       "audit": false,
@@ -986,6 +500,15 @@
       "usaDriver": false
     },
     {
+      "ruta": "/api/biometric/records/:id/photo",
+      "archivo": "app/api/biometric/records/[id]/photo/route.ts",
+      "metodos": [],
+      "nivel": "authenticated",
+      "audit": false,
+      "moduloDominio": null,
+      "usaDriver": false
+    },
+    {
       "ruta": "/api/biometric/records/poll",
       "archivo": "app/api/biometric/records/poll/route.ts",
       "metodos": [],
@@ -1022,6 +545,51 @@
       "usaDriver": false
     },
     {
+      "ruta": "/api/cash-register/bar-sales",
+      "archivo": "app/api/cash-register/bar-sales/route.ts",
+      "metodos": [],
+      "nivel": "publico",
+      "audit": false,
+      "moduloDominio": null,
+      "usaDriver": false
+    },
+    {
+      "ruta": "/api/cash-register/champagne-sales",
+      "archivo": "app/api/cash-register/champagne-sales/route.ts",
+      "metodos": [],
+      "nivel": "publico",
+      "audit": false,
+      "moduloDominio": null,
+      "usaDriver": false
+    },
+    {
+      "ruta": "/api/cash-register/hostess-drinks",
+      "archivo": "app/api/cash-register/hostess-drinks/route.ts",
+      "metodos": [],
+      "nivel": "publico",
+      "audit": false,
+      "moduloDominio": null,
+      "usaDriver": false
+    },
+    {
+      "ruta": "/api/cash-register/sales-by-product",
+      "archivo": "app/api/cash-register/sales-by-product/route.ts",
+      "metodos": [],
+      "nivel": "publico",
+      "audit": false,
+      "moduloDominio": null,
+      "usaDriver": false
+    },
+    {
+      "ruta": "/api/cash-register/stats",
+      "archivo": "app/api/cash-register/stats/route.ts",
+      "metodos": [],
+      "nivel": "publico",
+      "audit": false,
+      "moduloDominio": null,
+      "usaDriver": false
+    },
+    {
       "ruta": "/api/cashregister/:id",
       "archivo": "app/api/cashregister/[id]/route.ts",
       "metodos": [],
@@ -1040,6 +608,60 @@
       "usaDriver": false
     },
     {
+      "ruta": "/api/cashregister/closing-pdf",
+      "archivo": "app/api/cashregister/closing-pdf/route.ts",
+      "metodos": [],
+      "nivel": "publico",
+      "audit": false,
+      "moduloDominio": null,
+      "usaDriver": false
+    },
+    {
+      "ruta": "/api/cashregister/closing-request",
+      "archivo": "app/api/cashregister/closing-request/route.ts",
+      "metodos": [],
+      "nivel": "publico",
+      "audit": false,
+      "moduloDominio": null,
+      "usaDriver": false
+    },
+    {
+      "ruta": "/api/cashregister/closing/resend",
+      "archivo": "app/api/cashregister/closing/resend/route.ts",
+      "metodos": [],
+      "nivel": "finances.write",
+      "audit": true,
+      "moduloDominio": null,
+      "usaDriver": false
+    },
+    {
+      "ruta": "/api/cashregister/closing",
+      "archivo": "app/api/cashregister/closing/route.ts",
+      "metodos": [],
+      "nivel": "finances.write",
+      "audit": true,
+      "moduloDominio": null,
+      "usaDriver": false
+    },
+    {
+      "ruta": "/api/cashregister/pdf-report",
+      "archivo": "app/api/cashregister/pdf-report/route.ts",
+      "metodos": [],
+      "nivel": "publico",
+      "audit": false,
+      "moduloDominio": null,
+      "usaDriver": false
+    },
+    {
+      "ruta": "/api/cashregister/process-closing",
+      "archivo": "app/api/cashregister/process-closing/route.ts",
+      "metodos": [],
+      "nivel": "publico",
+      "audit": false,
+      "moduloDominio": null,
+      "usaDriver": false
+    },
+    {
       "ruta": "/api/cashregister",
       "archivo": "app/api/cashregister/route.ts",
       "metodos": [],
@@ -1054,6 +676,15 @@
       "metodos": [],
       "nivel": "publico",
       "audit": false,
+      "moduloDominio": null,
+      "usaDriver": false
+    },
+    {
+      "ruta": "/api/cashregister/withdrawals",
+      "archivo": "app/api/cashregister/withdrawals/route.ts",
+      "metodos": [],
+      "nivel": "finances.read",
+      "audit": true,
       "moduloDominio": null,
       "usaDriver": false
     },
@@ -1112,10 +743,64 @@
       "usaDriver": false
     },
     {
+      "ruta": "/api/clients/prepaid",
+      "archivo": "app/api/clients/prepaid/route.ts",
+      "metodos": [],
+      "nivel": "clients.write",
+      "audit": true,
+      "moduloDominio": null,
+      "usaDriver": false
+    },
+    {
+      "ruta": "/api/clients/return/approve",
+      "archivo": "app/api/clients/return/approve/route.ts",
+      "metodos": [],
+      "nivel": "clients.write",
+      "audit": true,
+      "moduloDominio": null,
+      "usaDriver": false
+    },
+    {
+      "ruta": "/api/clients/return/reminder",
+      "archivo": "app/api/clients/return/reminder/route.ts",
+      "metodos": [],
+      "nivel": "clients.write",
+      "audit": true,
+      "moduloDominio": null,
+      "usaDriver": false
+    },
+    {
+      "ruta": "/api/clients/return/requests",
+      "archivo": "app/api/clients/return/requests/route.ts",
+      "metodos": [],
+      "nivel": "clients.read",
+      "audit": false,
+      "moduloDominio": null,
+      "usaDriver": false
+    },
+    {
+      "ruta": "/api/clients/return",
+      "archivo": "app/api/clients/return/route.ts",
+      "metodos": [],
+      "nivel": "clients.write",
+      "audit": true,
+      "moduloDominio": null,
+      "usaDriver": false
+    },
+    {
       "ruta": "/api/clients",
       "archivo": "app/api/clients/route.ts",
       "metodos": [],
       "nivel": "publico",
+      "audit": true,
+      "moduloDominio": null,
+      "usaDriver": false
+    },
+    {
+      "ruta": "/api/code/current",
+      "archivo": "app/api/code/current/route.ts",
+      "metodos": [],
+      "nivel": "authenticated",
       "audit": true,
       "moduloDominio": null,
       "usaDriver": false
@@ -1229,8 +914,80 @@
       "usaDriver": false
     },
     {
+      "ruta": "/api/gratifications/:id",
+      "archivo": "app/api/gratifications/[id]/route.ts",
+      "metodos": [],
+      "nivel": "gratificaciones.delete",
+      "audit": true,
+      "moduloDominio": null,
+      "usaDriver": false
+    },
+    {
+      "ruta": "/api/gratifications/approve",
+      "archivo": "app/api/gratifications/approve/route.ts",
+      "metodos": ["PUT"],
+      "nivel": "SIN_WRAPPER",
+      "audit": false,
+      "moduloDominio": null,
+      "usaDriver": false
+    },
+    {
+      "ruta": "/api/gratifications/me",
+      "archivo": "app/api/gratifications/me/route.ts",
+      "metodos": [],
+      "nivel": "authenticated",
+      "audit": true,
+      "moduloDominio": null,
+      "usaDriver": false
+    },
+    {
+      "ruta": "/api/gratifications/request-details",
+      "archivo": "app/api/gratifications/request-details/route.ts",
+      "metodos": ["GET"],
+      "nivel": "SIN_WRAPPER",
+      "audit": false,
+      "moduloDominio": null,
+      "usaDriver": false
+    },
+    {
+      "ruta": "/api/gratifications",
+      "archivo": "app/api/gratifications/route.ts",
+      "metodos": [],
+      "nivel": "gratificaciones.write",
+      "audit": true,
+      "moduloDominio": null,
+      "usaDriver": false
+    },
+    {
       "ruta": "/api/health",
       "archivo": "app/api/health/route.ts",
+      "metodos": [],
+      "nivel": "publico",
+      "audit": false,
+      "moduloDominio": null,
+      "usaDriver": false
+    },
+    {
+      "ruta": "/api/hostesses/:id/status",
+      "archivo": "app/api/hostesses/[id]/status/route.ts",
+      "metodos": [],
+      "nivel": "users.write",
+      "audit": true,
+      "moduloDominio": null,
+      "usaDriver": false
+    },
+    {
+      "ruta": "/api/hostesses/available",
+      "archivo": "app/api/hostesses/available/route.ts",
+      "metodos": [],
+      "nivel": "publico",
+      "audit": false,
+      "moduloDominio": null,
+      "usaDriver": false
+    },
+    {
+      "ruta": "/api/hostesses",
+      "archivo": "app/api/hostesses/route.ts",
       "metodos": [],
       "nivel": "publico",
       "audit": false,
@@ -1301,10 +1058,37 @@
       "usaDriver": false
     },
     {
+      "ruta": "/api/mcp/admin/requests",
+      "archivo": "app/api/mcp/admin/requests/route.ts",
+      "metodos": [],
+      "nivel": "administrator",
+      "audit": true,
+      "moduloDominio": null,
+      "usaDriver": false
+    },
+    {
       "ruta": "/api/mcp/admin/session",
       "archivo": "app/api/mcp/admin/session/route.ts",
       "metodos": [],
       "nivel": "administrator",
+      "audit": false,
+      "moduloDominio": null,
+      "usaDriver": false
+    },
+    {
+      "ruta": "/api/meals",
+      "archivo": "app/api/meals/route.ts",
+      "metodos": [],
+      "nivel": "products.read",
+      "audit": false,
+      "moduloDominio": null,
+      "usaDriver": false
+    },
+    {
+      "ruta": "/api/meals/rule",
+      "archivo": "app/api/meals/rule/route.ts",
+      "metodos": [],
+      "nivel": "authenticated",
       "audit": false,
       "moduloDominio": null,
       "usaDriver": false
@@ -1494,6 +1278,15 @@
       "archivo": "app/api/permissions/route.ts",
       "metodos": [],
       "nivel": "publico",
+      "audit": true,
+      "moduloDominio": null,
+      "usaDriver": false
+    },
+    {
+      "ruta": "/api/permissions/setup-cashier",
+      "archivo": "app/api/permissions/setup-cashier/route.ts",
+      "metodos": [],
+      "nivel": "administrator",
       "audit": true,
       "moduloDominio": null,
       "usaDriver": false
@@ -1742,6 +1535,33 @@
       "usaDriver": false
     },
     {
+      "ruta": "/api/sales/cancellation-request",
+      "archivo": "app/api/sales/cancellation-request/route.ts",
+      "metodos": ["GET"],
+      "nivel": "SIN_WRAPPER",
+      "audit": false,
+      "moduloDominio": null,
+      "usaDriver": false
+    },
+    {
+      "ruta": "/api/sales/cancellation",
+      "archivo": "app/api/sales/cancellation/route.ts",
+      "metodos": [],
+      "nivel": "sales.anulate",
+      "audit": true,
+      "moduloDominio": null,
+      "usaDriver": false
+    },
+    {
+      "ruta": "/api/sales/process-cancellation",
+      "archivo": "app/api/sales/process-cancellation/route.ts",
+      "metodos": ["POST"],
+      "nivel": "SIN_WRAPPER",
+      "audit": false,
+      "moduloDominio": null,
+      "usaDriver": false
+    },
+    {
       "ruta": "/api/sales",
       "archivo": "app/api/sales/route.ts",
       "metodos": [],
@@ -1756,6 +1576,123 @@
       "metodos": [],
       "nivel": "publico",
       "audit": false,
+      "moduloDominio": null,
+      "usaDriver": false
+    },
+    {
+      "ruta": "/api/service-requests/:id/approve",
+      "archivo": "app/api/service-requests/[id]/approve/route.ts",
+      "metodos": [],
+      "nivel": "orders.process",
+      "audit": true,
+      "moduloDominio": null,
+      "usaDriver": false
+    },
+    {
+      "ruta": "/api/service-requests/:id/reject",
+      "archivo": "app/api/service-requests/[id]/reject/route.ts",
+      "metodos": [],
+      "nivel": "orders.process",
+      "audit": true,
+      "moduloDominio": null,
+      "usaDriver": false
+    },
+    {
+      "ruta": "/api/service-requests/pending-count",
+      "archivo": "app/api/service-requests/pending-count/route.ts",
+      "metodos": [],
+      "nivel": "publico",
+      "audit": false,
+      "moduloDominio": null,
+      "usaDriver": false
+    },
+    {
+      "ruta": "/api/service-requests",
+      "archivo": "app/api/service-requests/route.ts",
+      "metodos": [],
+      "nivel": "publico",
+      "audit": true,
+      "moduloDominio": null,
+      "usaDriver": false
+    },
+    {
+      "ruta": "/api/services/:id/hostesses",
+      "archivo": "app/api/services/[id]/hostesses/route.ts",
+      "metodos": [],
+      "nivel": "private_rooms.write",
+      "audit": true,
+      "moduloDominio": null,
+      "usaDriver": false
+    },
+    {
+      "ruta": "/api/services/:id",
+      "archivo": "app/api/services/[id]/route.ts",
+      "metodos": [],
+      "nivel": "publico",
+      "audit": true,
+      "moduloDominio": null,
+      "usaDriver": false
+    },
+    {
+      "ruta": "/api/services/by-dates",
+      "archivo": "app/api/services/by-dates/route.ts",
+      "metodos": [],
+      "nivel": "publico",
+      "audit": false,
+      "moduloDominio": null,
+      "usaDriver": false
+    },
+    {
+      "ruta": "/api/services/cancellation-request",
+      "archivo": "app/api/services/cancellation-request/route.ts",
+      "metodos": ["GET"],
+      "nivel": "authenticated",
+      "audit": true,
+      "moduloDominio": null,
+      "usaDriver": false
+    },
+    {
+      "ruta": "/api/services/cancellation",
+      "archivo": "app/api/services/cancellation/route.ts",
+      "metodos": [],
+      "nivel": "authenticated",
+      "audit": true,
+      "moduloDominio": null,
+      "usaDriver": false
+    },
+    {
+      "ruta": "/api/services/process-cancellation",
+      "archivo": "app/api/services/process-cancellation/route.ts",
+      "metodos": ["POST"],
+      "nivel": "SIN_WRAPPER",
+      "audit": false,
+      "moduloDominio": null,
+      "usaDriver": false
+    },
+    {
+      "ruta": "/api/services",
+      "archivo": "app/api/services/route.ts",
+      "metodos": [],
+      "nivel": "publico",
+      "audit": true,
+      "moduloDominio": null,
+      "usaDriver": false
+    },
+    {
+      "ruta": "/api/services/temporary",
+      "archivo": "app/api/services/temporary/route.ts",
+      "metodos": [],
+      "nivel": "authenticated",
+      "audit": true,
+      "moduloDominio": null,
+      "usaDriver": false
+    },
+    {
+      "ruta": "/api/services/user",
+      "archivo": "app/api/services/user/route.ts",
+      "metodos": [],
+      "nivel": "authenticated",
+      "audit": true,
       "moduloDominio": null,
       "usaDriver": false
     },
@@ -1868,6 +1805,42 @@
       "usaDriver": false
     },
     {
+      "ruta": "/api/tickets/:id/anular",
+      "archivo": "app/api/tickets/[id]/anular/route.ts",
+      "metodos": [],
+      "nivel": "entradas.deliver",
+      "audit": true,
+      "moduloDominio": null,
+      "usaDriver": false
+    },
+    {
+      "ruta": "/api/tickets/:id/entregar",
+      "archivo": "app/api/tickets/[id]/entregar/route.ts",
+      "metodos": [],
+      "nivel": "entradas.deliver",
+      "audit": true,
+      "moduloDominio": null,
+      "usaDriver": false
+    },
+    {
+      "ruta": "/api/tickets/pendientes",
+      "archivo": "app/api/tickets/pendientes/route.ts",
+      "metodos": [],
+      "nivel": "entradas.deliver",
+      "audit": false,
+      "moduloDominio": null,
+      "usaDriver": false
+    },
+    {
+      "ruta": "/api/tickets",
+      "archivo": "app/api/tickets/route.ts",
+      "metodos": [],
+      "nivel": "entradas.view",
+      "audit": false,
+      "moduloDominio": null,
+      "usaDriver": false
+    },
+    {
       "ruta": "/api/timers/active",
       "archivo": "app/api/timers/active/route.ts",
       "metodos": [],
@@ -1931,6 +1904,15 @@
       "usaDriver": false
     },
     {
+      "ruta": "/api/users/:id/biometric/capture",
+      "archivo": "app/api/users/[id]/biometric/capture/route.ts",
+      "metodos": [],
+      "nivel": "users.write",
+      "audit": true,
+      "moduloDominio": null,
+      "usaDriver": false
+    },
+    {
       "ruta": "/api/users/:id/biometric/devices",
       "archivo": "app/api/users/[id]/biometric/devices/route.ts",
       "metodos": [],
@@ -1951,6 +1933,15 @@
     {
       "ruta": "/api/users/:id/biometric/sync",
       "archivo": "app/api/users/[id]/biometric/sync/route.ts",
+      "metodos": [],
+      "nivel": "users.write",
+      "audit": true,
+      "moduloDominio": null,
+      "usaDriver": false
+    },
+    {
+      "ruta": "/api/users/:id/biometric/verify",
+      "archivo": "app/api/users/[id]/biometric/verify/route.ts",
       "metodos": [],
       "nivel": "users.write",
       "audit": true,
@@ -2008,6 +1999,15 @@
       "metodos": [],
       "nivel": "authenticated",
       "audit": true,
+      "moduloDominio": null,
+      "usaDriver": false
+    },
+    {
+      "ruta": "/api/waiters",
+      "archivo": "app/api/waiters/route.ts",
+      "metodos": [],
+      "nivel": "publico",
+      "audit": false,
       "moduloDominio": null,
       "usaDriver": false
     },
@@ -2674,6 +2674,12 @@
   ],
   "procesos": [
     {
+      "archivo": "app/api/notifications/kiosk/route.ts",
+      "linea": 30,
+      "tipo": "setInterval",
+      "texto": "const interval = setInterval(() => {"
+    },
+    {
       "archivo": "app/attendance-qr/page.tsx",
       "linea": 147,
       "tipo": "setInterval",
@@ -2690,12 +2696,6 @@
       "linea": 164,
       "tipo": "setInterval",
       "texto": "const interval = window.setInterval(actualizarFechaHora, 60_000);"
-    },
-    {
-      "archivo": "app/api/notifications/kiosk/route.ts",
-      "linea": 30,
-      "tipo": "setInterval",
-      "texto": "const interval = setInterval(() => {"
     },
     {
       "archivo": "components/attendance/QrCodeDialog.tsx",
@@ -2940,6 +2940,23 @@
   ],
   "ciclos": [],
   "matriz": {
+    "lib/business": {
+      "lib/api": 3,
+      "lib/otros": 12,
+      "lib/database": 4,
+      "modules/aplicacion": 4,
+      "raiz": 3,
+      "components": 1
+    },
+    "app/ui": {
+      "hooks": 59,
+      "lib/otros": 56,
+      "lib/api": 7,
+      "components": 8,
+      "lib/business": 4,
+      "modules/aplicacion": 3,
+      "raiz": 13
+    },
     "app/api": {
       "lib/api": 266,
       "workflows": 20,
@@ -2950,46 +2967,29 @@
       "lib/database": 3,
       "lib/integrations": 4
     },
-    "app/ui": {
-      "lib/api": 7,
-      "lib/otros": 56,
-      "hooks": 59,
-      "raiz": 13,
-      "components": 8,
-      "lib/business": 4,
-      "modules/aplicacion": 3
-    },
     "components": {
-      "lib/otros": 334,
       "hooks": 144,
+      "lib/otros": 334,
       "raiz": 86,
       "lib/business": 37,
       "lib/api": 3,
       "modules/aplicacion": 6,
       "app/ui": 1
     },
-    "hooks": {
-      "lib/otros": 96,
-      "lib/business": 11,
-      "raiz": 38,
-      "components": 17,
-      "lib/api": 7,
-      "modules/aplicacion": 2
-    },
-    "lib/otros": {
-      "lib/database": 4,
-      "lib/api": 1,
-      "lib/business": 6,
-      "raiz": 6,
-      "components": 2
-    },
-    "scripts": {},
     "raiz": {
       "lib/otros": 13,
       "hooks": 4,
       "lib/api": 2,
       "lib/identidad": 2,
       "modules/aplicacion": 1
+    },
+    "hooks": {
+      "raiz": 38,
+      "lib/otros": 96,
+      "lib/api": 7,
+      "components": 17,
+      "lib/business": 11,
+      "modules/aplicacion": 2
     },
     "lib/api": {
       "lib/otros": 8,
@@ -3001,13 +3001,12 @@
     "lib/identidad": {
       "lib/otros": 5
     },
-    "lib/business": {
-      "lib/api": 3,
-      "lib/otros": 12,
+    "lib/otros": {
       "lib/database": 4,
-      "modules/aplicacion": 4,
-      "raiz": 3,
-      "components": 1
+      "lib/api": 1,
+      "lib/business": 6,
+      "raiz": 6,
+      "components": 2
     },
     "lib/database": {
       "lib/otros": 4,
@@ -3034,8 +3033,9 @@
       "lib/identidad": 3,
       "raiz": 5
     },
+    "scripts": {},
     "workflows": {
-      "lib/business": 8,
+      "lib/business": 9,
       "lib/otros": 19,
       "lib/api": 4,
       "modules/aplicacion": 4
