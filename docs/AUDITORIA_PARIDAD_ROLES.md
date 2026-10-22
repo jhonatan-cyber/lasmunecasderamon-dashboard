@@ -28,7 +28,7 @@ permisos específicos.
 - Asistencias: Expo inicia con el historial completo, como el dashboard. Cajero,
   barman y garzón conservan la consulta mensual como opción.
 - Gratificaciones: el dashboard incorpora una consulta personal dentro de
-  asistencias, mediante `/api/gratificaciones/me`.
+  asistencias, mediante `/api/gratifications/me`.
 - Propinas: Expo utiliza el endpoint personal también en la pantalla compartida
   de eventos financieros. Se unificaron las pantallas de cajero, barman y
   garzón.

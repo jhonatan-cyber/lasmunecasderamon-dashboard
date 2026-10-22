@@ -163,7 +163,7 @@ este negocio. **Pasos:**
    input `edit-pres-ml-botella` (líneas ~168-183) y su label.
 2. En `interface EditPresDraft` del mismo archivo: eliminar
    `ml_botella: string`.
-3. En `hooks/personal/useProductForm.ts`: eliminar `ml_botella` del estado del
+3. En `hooks/staff/useProductForm.ts`: eliminar `ml_botella` del estado del
    draft de edición (líneas ~102, ~236-240, ~263, ~545, ~578-580, ~639).
 4. El campo en la BD y en el código del motor **no se toca** —
    `resolveBotellaMl` sigue usando la columna cuando tiene valor (presentaciones
@@ -195,6 +195,6 @@ Innecesario ahora.
 | `modules/inventario/anulaciones/repositorio.ts:102`        | Uso en anulaciones                           |
 | `modules/inventario/productos/fachada.ts:280-343`          | Schema Zod y PATCH                           |
 | `components/products/ExistingPresentacionCard.tsx:168-183` | Input del formulario de edición              |
-| `hooks/personal/useProductForm.ts:102,236,545,639`         | Estado del draft + envío                     |
+| `hooks/staff/useProductForm.ts:102,236,545,639`            | Estado del draft + envío                     |
 | `components/products/NewPresentacionRow.tsx`               | **NO tiene `ml_botella`** (solo edición)     |
 | `types/product.ts:40`                                      | Tipo `Presentacion.ml_botella`               |

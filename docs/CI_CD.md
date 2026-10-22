@@ -25,9 +25,11 @@ usan servicios efímeros y credenciales ficticias; no requieren secretos de
 producción.
 
 La base `lasmunecasderamon_test` solo es aceptada por los runners con `CI=true`
-y host local. El seed de autenticación elimina el cambio obligatorio de
-contraseña del administrador ficticio para ejecutar los recorridos de
-Playwright.
+y host local. Playwright no necesita credenciales: su fixture crea un
+administrador desechable `e2e-admin-*` en PostgreSQL local, lo usa durante la
+ejecución y lo elimina al terminar. Si `TEST_USER` y `TEST_PASSWORD` están
+definidos, se respetan y no se crea ninguna cuenta. El fixture se niega a crear
+cuentas fuera de loopback o en bases cuyo nombre parezca de producción.
 
 ## Activación en GitHub
 

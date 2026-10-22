@@ -13,7 +13,7 @@ El costo se lee de `configuraciones` (`clave = 'costo_entrada'`) y, si falta la
 fila, del default del registro. Si no coincide, lanza `ValidationError` con el
 precio esperado antes de abrir la unidad y sin escribir nada.
 
-S2. `POST /api/entradas` envuelve el registro en `runIdempotent`
+S2. `POST /api/tickets` envuelve el registro en `runIdempotent`
 (`endpoint: 'entradas.create'`, `usuarioId`). La página envía
 `x-idempotency-key` estable por intención y lo regenera cuando cambia el
 payload.
@@ -45,16 +45,16 @@ invariante de cobro, idempotencia, partes legacy y mapeo de errores.
       (lectura del costo), `142-150` (validación), `244-265` (INSERT sin
       `fecha_crea`), `367-374` (invariante de cobro).
 - [x] T2 — Ruta: idempotencia y partes legacy (S2, S6) — inline. Evidencia:
-      `app/api/entradas/route.ts:18-82` (normalizadores), `84-140`
+      `app/api/tickets/route.ts:18-82` (normalizadores), `84-140`
       (`runIdempotent` + mapeo de `AppError`).
 - [x] T3 — UI: clave de idempotencia y conciliación por `venta_id` (S2, S5) —
-      inline. Evidencia: `app/entradas/page.tsx:160` (ref), `428-438` (total por
+      inline. Evidencia: `app/tickets/page.tsx:160` (ref), `428-438` (total por
       `venta_id`), `540-568` (firma + header), `584` (reset).
 - [x] T4 — Migración 091 (S7) — inline. Evidencia:
       `migrations/091_ventas_entrada_id_unica.sql`.
 - [x] T5 — Tests del módulo y de la ruta (S8) — inline. Evidencia:
       `tests/unit/modules/entradas/registrar-entrada.test.ts` (8),
-      `tests/unit/app/entradasRoute.test.ts` (5).
+      `tests/unit/app/ticketsRoute.test.ts` (5).
 - [x] T6 — Verificación: typecheck, lint, unit y gate de arquitectura. Evidencia
       en L6.
 

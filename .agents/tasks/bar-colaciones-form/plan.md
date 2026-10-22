@@ -2,12 +2,11 @@
 >
 > Este plan describía el tab de colaciones de
 > `components/bar/ColacionesTab.tsx`. Ese archivo ya no existe: el módulo se
-> movió a `components/colaciones/ColacionesTab.tsx` y el diseño cambió. En vez
-> de un selector aparte de "bebida analcohólica", la regla es **rol →
-> catálogo**: la anfitriona recibe los productos habilitados para colación y los
-> roles de bar (cajero, garzón, barman) solo las bebidas analcohólicas, con el
-> catálogo duplicado en `lib/business/colacionRoles.ts` y validado en el
-> servidor.
+> movió a `components/meals/ColacionesTab.tsx` y el diseño cambió. En vez de un
+> selector aparte de "bebida analcohólica", la regla es **rol → catálogo**: la
+> anfitriona recibe los productos habilitados para colación y los roles de bar
+> (cajero, garzón, barman) solo las bebidas analcohólicas, con el catálogo
+> duplicado en `lib/business/colacionRoles.ts` y validado en el servidor.
 >
 > La especificación vigente está en:
 >
@@ -171,7 +170,8 @@ comparte de forma segura.
 
 - [ ] 5. Agregar prueba de componente para el listado condicional por rol.
       **Qué**: crear `tests/unit/components/ColacionesTab.test.tsx` con
-      @testing-library/react. Mockear `@/hooks/caja/useCashRegisterStatus`
+      @testing-library/react. Mockear
+      `@/hooks/cash-register/useCashRegisterStatus`
       (`{ hasOpenCaja: true, cajaInfo: { id_caja: 'c1' } }`),
       `@/hooks/auth/useUserPermissions` (`{ hasPermission: () => true }`) y el
       `fetch` global (con `vi.stubGlobal('fetch', vi.fn())`) para devolver, en

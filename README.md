@@ -126,8 +126,8 @@ El workflow de CI/Deploy requiere estos secrets en el repositorio:
 
 | Secret                              | Uso                                                                          |
 | ----------------------------------- | ---------------------------------------------------------------------------- |
-| `TEST_PASSWORD`                     | Opcional. Si no está definida, los tests e2e de login se omiten (no fallan). |
-| `TEST_USER`                         | Opcional (default `admin`).                                                  |
+| `TEST_PASSWORD`                     | Opcional. Si no está definida, los E2E crean un administrador efímero local. |
+| `TEST_USER`                         | Opcional; solo aplica junto a `TEST_PASSWORD` (default `admin`).             |
 | `JWT_SECRET` / `JWT_REFRESH_SECRET` | Firma de tokens en CI/producción (≥64 chars).                                |
 | `NEXT_PUBLIC_BASE_URL` / `BASE_URL` | URLs del entorno.                                                            |
 | `SSH_PASSWORD`, `DB_*`, `TWILIO_*`  | Deploy al VPS (ver `deploy.yml`).                                            |

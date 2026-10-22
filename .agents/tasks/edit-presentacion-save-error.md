@@ -105,7 +105,7 @@ en la BD, y al reabrir el modal con el mismo usuario/sesión la clave aún esté
 
 ### 4. ¿Llega algún campo undefined o malformado al payload?
 
-Al analizar `saveEditPres` en `hooks/personal/useProductForm.ts:595-650`, el
+Al analizar `saveEditPres` en `hooks/staff/useProductForm.ts:595-650`, el
 payload JSON del PATCH es:
 
 ```ts
@@ -210,15 +210,15 @@ comportamiento de las operaciones críticas de dinero (ventas, cobros, pedidos).
 
 ## Archivos clave citados
 
-| Archivo                                    | Función                                                      |
-| ------------------------------------------ | ------------------------------------------------------------ |
-| `lib/api/idempotency.ts:68`                | Origen literal del mensaje de error                          |
-| `lib/api/idempotency.ts:88-112`            | `runIdempotent` — lógica de claim y replay                   |
-| `lib/api/registrationFetch.ts:87-99`       | Condición que preserva la clave en 409                       |
-| `lib/api/registrationFetch.ts:14`          | Instalación global sobre `window.fetch`                      |
-| `instrumentation-client.ts:14`             | Dónde se instala `registrationFetch`                         |
-| `lib/api/registration.ts:7-39`             | `runRegistration` — capa entre `withRoute` y `runIdempotent` |
-| `lib/api/withRoute.ts:219`                 | Punto donde se llama `runRegistration` para todo PATCH       |
-| `lib/database/sync-operations.ts:133-149`  | `resolve` y `fail` — estados del registro                    |
-| `app/api/products/presentations/route.ts`  | Ruta PATCH sin `runIdempotent` propio                        |
-| `hooks/personal/useProductForm.ts:595-650` | `saveEditPres` — construye y envía el PATCH                  |
+| Archivo                                   | Función                                                      |
+| ----------------------------------------- | ------------------------------------------------------------ |
+| `lib/api/idempotency.ts:68`               | Origen literal del mensaje de error                          |
+| `lib/api/idempotency.ts:88-112`           | `runIdempotent` — lógica de claim y replay                   |
+| `lib/api/registrationFetch.ts:87-99`      | Condición que preserva la clave en 409                       |
+| `lib/api/registrationFetch.ts:14`         | Instalación global sobre `window.fetch`                      |
+| `instrumentation-client.ts:14`            | Dónde se instala `registrationFetch`                         |
+| `lib/api/registration.ts:7-39`            | `runRegistration` — capa entre `withRoute` y `runIdempotent` |
+| `lib/api/withRoute.ts:219`                | Punto donde se llama `runRegistration` para todo PATCH       |
+| `lib/database/sync-operations.ts:133-149` | `resolve` y `fail` — estados del registro                    |
+| `app/api/products/presentations/route.ts` | Ruta PATCH sin `runIdempotent` propio                        |
+| `hooks/staff/useProductForm.ts:595-650`   | `saveEditPres` — construye y envía el PATCH                  |
