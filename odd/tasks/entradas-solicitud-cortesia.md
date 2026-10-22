@@ -87,6 +87,13 @@ refactor de nombres sin commitear: los archivos viven hoy en `app/tickets/` y
 - ✅ T9 · Tests: `tests/unit/modules/entradas/entradas-cortesia.test.ts` (13) y
   `tests/unit/app/ticketsRoute.test.ts` (9) verdes; se borraron los dos tests
   del flujo anterior y se alineó el fixture de `permissions-cache` (S1-S8).
+- ✅ T10 · Cobertura contra PostgreSQL:
+  `tests/postgres/entradas-cortesia.test.ts` (8 tests, ~15 s) con
+  `snapshotDatabase`/`restoreDatabase`. Cubre puerta sin posteo (S1), validación
+  del total (S1), cortesía (S4), umbral `max(tope, monto_entrada)` con el tope
+  por debajo de la entrada (S2), upgrade con el plan (S5), upgrade de punta a
+  punta con `SaleService` real (S5, S6), barrido del cierre idempotente (S7) y
+  anulación manual (S6, S7).
 
 Checks observados: `eslint` sin salida (exit 0) en todos los archivos tocados;
 `typecheck` sólo con el error ajeno preexistente
@@ -145,3 +152,23 @@ hallazgos.
 - L11 · Nota: nada commiteado todavía. El árbol de trabajo viene a mitad de un
   refactor grande de renombres (español → inglés) sin commitear, así que un
   commit de esta feature se mezclaría con trabajo ajeno.
+- L12 · Evidencia (cobertura DB): `tests/postgres/entradas-cortesia.test.ts`
+  creado con el arnés de `tests/postgres/colaciones-flow.test.ts`. La caja no
+  tiene tabla de movimientos: los saldos son columnas de `cajas` (`efectivo`,
+  `tarjeta`, `transferencia`, `venta`), así que "no posteó" se prueba comparando
+  esas columnas antes y después; la cubeta _entradas_ vs _ventas_ se distingue
+  por `venta` (la cortesía no la toca, el upgrade sí). Corrida completa:
+  `corepack pnpm test:postgres` → 38 archivos / 240 tests, exit 0; el archivo
+  tarda 11,5 s.
+- L13 · Evidencia (upgrade de punta a punta): el `onVenta` real de
+  `app/api/tickets/[id]/entregar/route.ts` se replica en el test con
+  `SaleService.createSale(body, createdBy, { contexto, entradaId, onAfterCommit })`.
+  Verifica venta con `total = precio` y `entrada_id`, la fila ligada por
+  `ventas.entrada_id`, `monto_bebida_adicional = precio − entrada`,
+  `cajas.venta` y `cajas.tarjeta` +25.000 (10.000 puerta + 15.000 barra) y la
+  unidad del bar en `vendida`. `corepack pnpm test:postgres` → 38 archivos / 241
+  tests, exit 0 (archivo: 13,2 s); `typecheck` 0, `eslint` 0.
+- L14 · Entrega: commits `aae858d7` (test postgres), `641fc880` (nota de CRLF en
+  `AGENTS.md`), `7e61649f` (upgrade con `SaleService`), pusheados a `main`.
+  `git config --local core.autocrlf false` + `git add --renormalize .` sin
+  cambios: los blobs ya estaban en LF.
