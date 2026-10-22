@@ -126,6 +126,11 @@ const nextConfig = {
   },
 
   experimental: {
+    // Política de upgrades del proyecto: seguimos los parches de seguridad de
+    // Next. Sin esta declaración el aviso de advisories no se evalúa; con
+    // `false` se apagaría del todo. Con `security`, una versión afectada se
+    // reporta al agente para que actualice en lugar de pasar desapercibida.
+    agentUpgrade: 'security',
     // Separate compiler workers release memory between the server and client builds.
     webpackBuildWorker: true,
     webpackMemoryOptimizations: true,
