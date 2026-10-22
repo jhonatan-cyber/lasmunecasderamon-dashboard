@@ -1,6 +1,6 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { act, cleanup, renderHook } from '@testing-library/react';
-import { useServiceAnulacionForm } from '@/hooks/personal/useServiceAnulacionForm';
+import { useServiceAnulacionForm } from '@/hooks/services/useServiceAnulacionForm';
 import type { ServicioWithDetails } from '@/types/servicio';
 import { showErrorToast, showSuccessToast } from '@/lib/utils/toastUtils';
 vi.mock('@/lib/utils/toastUtils', () => ({ showErrorToast: vi.fn(), showSuccessToast: vi.fn() }));

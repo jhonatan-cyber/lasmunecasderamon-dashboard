@@ -97,7 +97,7 @@ export interface UserPermissions {
     /**
      * Par `gratificaciones.edit` del catálogo. Existe separado de `write` a
      * propósito: `create` también colapsa a `write`, así que sin este flag el
-     * PUT de /api/gratificaciones/[id] le sería accesible a cualquiera que
+     * PUT de /api/gratifications/[id] le sería accesible a cualquiera que
      * pueda solo solicitar (el cajero).
      */
     edit: boolean;
@@ -125,6 +125,18 @@ export interface UserPermissions {
   private_rooms: {
     read: boolean;
     write: boolean;
+  };
+  /**
+   * Módulo `entradas` del catálogo (migración 097). `view` abre la pantalla,
+   * `create` cobra en la puerta y `deliver` sirve la bebida en la barra. Los tres
+   * flags son homónimos del par del catálogo porque la acción no colapsa a
+   * `read`/`write` de otro concepto: cobrar en la puerta y entregar en la barra
+   * son operaciones distintas.
+   */
+  entradas: {
+    view: boolean;
+    create: boolean;
+    deliver: boolean;
   };
 }
 
@@ -187,7 +199,8 @@ export function createEmptyPermissions(): UserPermissions {
     categories: { read: false, write: false, delete: false },
     returns: { read: false, write: false, delete: false },
     dashboard: { read: false },
-    private_rooms: { read: false, write: false }
+    private_rooms: { read: false, write: false },
+    entradas: { view: false, create: false, deliver: false }
   };
 }
 

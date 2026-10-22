@@ -35,7 +35,7 @@ it.each([
     ['logged-users-stats'],
     ['anfitrionas', 'en-local'],
     ['/api/attendance/stats'],
-    ['/api/attendance/usuario/detalle'],
+    ['/api/attendance/usuario/detail'],
     ['users']
   ];
   for (const key of keys) client.setQueryData(key, []);

@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { generatePrintContent, getPDFData } from '@/components/caja/cajaExportUtils';
+import { generatePrintContent, getPDFData } from '@/components/cash-register/cajaExportUtils';
 
 const baseContext = (overrides: Record<string, unknown> = {}) =>
   ({

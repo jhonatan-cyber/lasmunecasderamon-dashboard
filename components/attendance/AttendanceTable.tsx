@@ -15,7 +15,7 @@ import {
 } from '@/components/ui/table';
 import { Skeleton } from '@/components/ui/skeleton';
 import { formatCurrencyNoDecimals } from '@/lib/utils/formatters';
-import { useAsistencias } from '@/hooks/personal';
+import { useAsistencias } from '@/hooks/staff';
 import { Badge } from '../ui/badge';
 import { Eye, Calendar } from 'lucide-react';
 import { AsistenciaResumen } from '@/types/asistencia';

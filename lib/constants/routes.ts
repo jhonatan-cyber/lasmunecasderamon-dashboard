@@ -1,11 +1,11 @@
 export const ROUTES = {
-  CONFIRMAR_ANULACION: '/confirmar-anulacion',
-  CONFIRMAR_ANULACION_SERVICIO: '/confirmar-anulacion-servicio',
-  CONFIRMAR_ANULACION_CUENTA: '/confirmar-anulacion-cuenta',
-  CONFIRMAR_ANTICIPO: '/confirmar-anticipo',
-  CONFIRMAR_GRATIFICACION: '/confirmar-gratificacion',
+  CONFIRMAR_ANULACION: '/confirm-cancellation',
+  CONFIRMAR_ANULACION_SERVICIO: '/confirm-service-cancellation',
+  CONFIRMAR_ANULACION_CUENTA: '/confirm-account-cancellation',
+  CONFIRMAR_ANTICIPO: '/confirm-advance',
+  CONFIRMAR_GRATIFICACION: '/confirm-gratification',
   /** Autorizacion del cierre de caja que pide el cajero y aprueba el administrador. */
-  CONFIRMAR_CIERRE_CAJA: '/confirmar-cierre-caja'
+  CONFIRMAR_CIERRE_CAJA: '/confirm-cash-closing'
 } as const;
 
 export const PUBLIC_ROUTES = [

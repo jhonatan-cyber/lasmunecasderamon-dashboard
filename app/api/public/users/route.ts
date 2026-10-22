@@ -15,7 +15,7 @@ export const dynamic = 'force-dynamic';
  *
  * Lo que queda es información de contacto interna (quiénes trabajan y sus nicks), que
  * es la que la pantalla de la entrada muestra. Si no hace falta para nadie más, este
- * endpoint se puede retirar: hoy lo consume solamente /asistencia-qr.
+ * endpoint se puede retirar: hoy lo consume solamente /attendance-qr.
  */
 export async function GET() {
   try {

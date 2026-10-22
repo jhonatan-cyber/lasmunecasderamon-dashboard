@@ -7,7 +7,7 @@ import { query } from '@/lib/database/db';
 import { getBarMlConfig, getTopeSimple } from '../bar/configuracion';
 import { mapPresentacion } from '../helpers';
 import { ESTADO_UNIDAD_ACTIVA, ESTADO_UNIDAD_VENDIDA } from '../estados';
-import type { ShotsSummary } from '../contracts';
+import type { MlServidoPorProductoHoy, ShotsSummary } from '../contracts';
 import { listarCortosServidosHoy } from './cortosRepositorio';
 import { listarColacionesServidasHoy } from './colacionesRepositorio';
 import type { PresentacionRow } from '../tipos';
@@ -161,6 +161,53 @@ export async function listarStockBar(
 }
 
 /**
+ * Ml servidos hoy por producto: lo que salió por ventas (incluye los ml del
+ * acompañamiento) más las colaciones, menos lo que volvió al bar por una
+ * anulación. La reversión se imputa al producto de su movimiento de origen
+ * (`movimiento_origen`) y solo si esa venta es de hoy: una venta anulada de
+ * ayer no toca el resumen de hoy.
+ *
+ * Esta consulta es la fuente de `mlServidosHoy`, así que la suma del desglose
+ * por producto coincide siempre con el total que muestra la tarjeta.
+ */
+export async function listarMlServidoPorProductoHoy(): Promise<MlServidoPorProductoHoy[]> {
+  const inicioDia = `${getNowInBusinessTimezone().slice(0, 10)} 00:00:00`;
+  const rows = await query<any[]>(
+    `WITH consumos AS (
+        SELECT m.producto_id, m.ml, 0 AS ml_colacion
+          FROM inventario_movimientos m
+         WHERE m.tipo = 'venta' AND m.ml > 0 AND m.fecha_crea >= ?
+        UNION ALL
+        SELECT o.producto_id, -r.ml, 0
+          FROM inventario_movimientos r
+          INNER JOIN inventario_movimientos o ON o.id = r.movimiento_origen
+         WHERE r.tipo = 'devolucion' AND r.ml > 0
+           AND o.tipo = 'venta' AND o.fecha_crea >= ?
+        UNION ALL
+        SELECT m.producto_id, m.ml, m.ml
+          FROM inventario_movimientos m
+         WHERE m.tipo = 'colacion' AND m.ml > 0 AND m.fecha_crea >= ?
+     )
+     SELECT c.producto_id,
+            COALESCE(pr.nombre, 'Bebida sin nombre') AS producto_nombre,
+            SUM(c.ml)::int AS ml,
+            SUM(c.ml_colacion)::int AS ml_colacion
+       FROM consumos c
+       LEFT JOIN productos pr ON pr.id_producto = c.producto_id
+      GROUP BY c.producto_id, pr.nombre
+     HAVING SUM(c.ml) <> 0
+      ORDER BY SUM(c.ml) DESC, pr.nombre ASC`,
+    [inicioDia, inicioDia, inicioDia]
+  );
+  return rows.map(row => ({
+    producto_id: row.producto_id == null ? '' : String(row.producto_id),
+    producto_nombre: String(row.producto_nombre ?? 'Bebida sin nombre'),
+    ml: Number(row.ml ?? 0),
+    ml_colacion: Number(row.ml_colacion ?? 0)
+  }));
+}
+
+/**
  * Resumen para el panel de shots del bar: lo servido hoy, los ml que quedan en las
  * botellas abiertas y cuántas están por agotarse (≤ `shots_alerta` shots restantes).
  *
@@ -171,24 +218,9 @@ export async function listarStockBar(
  */
 export async function obtenerResumenShots(): Promise<ShotsSummary> {
   const { shotMl, shotsAlerta } = await getBarMlConfig();
-  const inicioDia = `${getNowInBusinessTimezone().slice(0, 10)} 00:00:00`;
-
-  // Los ml servidos = lo que salió por ventas hoy menos lo que volvió al bar
-  // por una anulación de hoy. La reversión apunta a su movimiento de origen
-  // (`movimiento_origen`): si la venta anulada es de otro día, su ml no
-  // corresponde a la tarjeta de hoy y no tiene que restar.
-  const [hoy] = await query<any[]>(
-    `SELECT (SELECT COALESCE(SUM(m.ml), 0)
-                FROM inventario_movimientos m
-               WHERE m.tipo = 'venta' AND m.ml > 0 AND m.fecha_crea >= ?)
-           -
-           (SELECT COALESCE(SUM(r.ml), 0)
-              FROM inventario_movimientos r
-              JOIN inventario_movimientos o ON o.id = r.movimiento_origen
-             WHERE r.tipo = 'devolucion' AND r.ml > 0
-               AND o.tipo = 'venta' AND o.fecha_crea >= ?) AS ml_ventas`,
-    [inicioDia, inicioDia]
-  );
+  // La suma de este desglose es, por construcción, `mlServidosHoy`.
+  const mlPorProductoHoy = await listarMlServidoPorProductoHoy();
+  const mlServidosHoy = mlPorProductoHoy.reduce((total, producto) => total + producto.ml, 0);
   const [abiertas] = await query<any[]>(
     `SELECT COUNT(*) AS botellas,
             COALESCE(SUM(u.ml_restante), 0) AS ml,
@@ -206,7 +238,6 @@ export async function obtenerResumenShots(): Promise<ShotsSummary> {
   // Colaciones (que registra la colación, no el consumo de stock).
   const colacionesHoy = await listarColacionesServidasHoy();
   const mlColacionHoy = colacionesHoy.reduce((total, colacion) => total + colacion.ml, 0);
-  const mlServidosHoy = Number(hoy?.ml_ventas ?? 0) + mlColacionHoy;
   return {
     shotMl,
     shotsAlerta,
@@ -215,6 +246,7 @@ export async function obtenerResumenShots(): Promise<ShotsSummary> {
     shotsServidosHoy: cortosHoy.reduce((total, corto) => total + corto.cantidad, 0),
     cortosHoy,
     colacionesHoy,
+    mlPorProductoHoy,
     mlRestantesTotales: Number(abiertas?.ml ?? 0),
     botellasAbiertas: Number(abiertas?.botellas ?? 0),
     botellasPorAgotarse: Number(abiertas?.por_agotarse ?? 0)

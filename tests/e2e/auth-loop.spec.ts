@@ -1,28 +1,9 @@
-import { test, expect, type Page } from '@playwright/test';
-
-const BASE = process.env.E2E_BASE_URL || 'http://localhost:3000';
-const TEST_USER = process.env.TEST_USER ?? 'admin';
-const TEST_PASSWORD = process.env.TEST_PASSWORD;
-
-/**
- * Abre /login y espera a que React esté hidratado: el fetch de montaje de la pantalla
- * (`check-users`) solo corre en el cliente, así que su respuesta garantiza que el
- * formulario ya responde a clics. Sin esta espera, en dev con compilación on-demand
- * el clic se pierde y el login nunca ocurre.
- */
-async function gotoLoginHydrated(page: Page) {
-  const usersLoaded = page.waitForResponse(
-    r => r.url().includes('/api/auth/check-users') && r.status() === 200,
-    { timeout: 30_000 }
-  );
-  await page.goto(`${BASE}/login`, { waitUntil: 'domcontentloaded' });
-  await usersLoaded;
-}
+import { expect, loginAsAdmin, requireAdmin, test } from './fixtures/admin';
 
 test('no auth loop: /api/auth/me no se llama más de 2 veces en 10 segundos tras login', async ({
-  page
+  page,
+  admin
 }) => {
-  test.skip(!TEST_PASSWORD, 'TEST_PASSWORD no definida — test omitido (opcional)');
   test.setTimeout(60_000);
   const authMeCalls: number[] = [];
   const loginRedirects: string[] = [];
@@ -37,12 +18,7 @@ test('no auth loop: /api/auth/me no se llama más de 2 veces en 10 segundos tras
     }
   });
 
-  // Login
-  await gotoLoginHydrated(page);
-  await page.locator('#nick').waitFor({ state: 'visible', timeout: 20_000 });
-  await page.locator('#nick').fill(TEST_USER);
-  await page.locator('#password').fill(TEST_PASSWORD!);
-  await page.locator('button[type="submit"]').first().click();
+  await loginAsAdmin(page, requireAdmin(admin));
 
   // Wait for redirect to dashboard
   await page.waitForURL(`**\/dashboard`, { timeout: 30_000, waitUntil: 'domcontentloaded' });

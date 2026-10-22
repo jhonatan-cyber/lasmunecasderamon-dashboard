@@ -5,7 +5,7 @@ import { getKioskDevice, isDeviceActive } from '@/modules/asistencia';
 export const dynamic = 'force-dynamic';
 
 /**
- * Canal de eventos de la pantalla de asistencia (`/asistencia-qr`).
+ * Canal de eventos de la pantalla de asistencia (`/attendance-qr`).
  *
  * Esa pantalla necesita enterarse en el momento de dos cosas: que alguien registró su
  * asistencia (para confirmarlo y para pedir un QR nuevo, porque el desafío es de un solo

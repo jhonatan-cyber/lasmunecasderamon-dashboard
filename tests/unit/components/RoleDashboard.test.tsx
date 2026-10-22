@@ -6,7 +6,7 @@ import { RoleDashboard } from '@/components/shared/RoleDashboard';
 
 const mocks = vi.hoisted(() => ({ user: vi.fn(), summary: vi.fn(), refetch: vi.fn() }));
 vi.mock('@/hooks/auth/useCurrentUser', () => ({ useCurrentUser: mocks.user }));
-vi.mock('@/hooks/stats/useDashboardSummary', () => ({ useDashboardSummary: mocks.summary }));
+vi.mock('@/hooks/statistics/useDashboardSummary', () => ({ useDashboardSummary: mocks.summary }));
 vi.mock('boneyard-js/react', () => ({
   Skeleton: ({ children }: { children: ReactNode }) => children
 }));
@@ -24,7 +24,7 @@ const props = {
       title: 'Asistencia',
       description: 'Mis asistencias',
       icon: Calendar,
-      href: '/anfitriona-asistencias',
+      href: '/hostess-attendance',
       color: 'text-blue-600',
       countKey: 'totalAsistencias' as const
     }

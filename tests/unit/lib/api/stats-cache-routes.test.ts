@@ -50,13 +50,13 @@ vi.mock('@/lib/cache/dashboardCache', async importOriginal => {
 });
 
 import { DASHBOARD_CACHE_KEYS, DASHBOARD_TTL } from '@/lib/cache/dashboardCache';
-import { GET as cajaStatsGET } from '@/app/api/caja/stats/route';
+import { GET as cajaStatsGET } from '@/app/api/cash-register/stats/route';
 import { GET as cashregisterStatusGET } from '@/app/api/cashregister/status/route';
 import { GET as salesStatsGET } from '@/app/api/sales/stats/route';
-import { GET as ventasBarrasGET } from '@/app/api/caja/ventas-barras/route';
-import { GET as ventasChampagneGET } from '@/app/api/caja/ventas-champagne/route';
-import { GET as ventasTragosGET } from '@/app/api/caja/ventas-tragos-chicas/route';
-import { GET as ventasPorProductoGET } from '@/app/api/caja/ventas-por-producto/route';
+import { GET as ventasBarrasGET } from '@/app/api/cash-register/bar-sales/route';
+import { GET as ventasChampagneGET } from '@/app/api/cash-register/champagne-sales/route';
+import { GET as ventasTragosGET } from '@/app/api/cash-register/hostess-drinks/route';
+import { GET as ventasPorProductoGET } from '@/app/api/cash-register/sales-by-product/route';
 
 const call = (handler: any, url: string) => handler(new Request(url), { params: {} });
 
@@ -106,7 +106,7 @@ beforeEach(() => {
 
 describe('caché de stats en caja, cashregister, sales y ventas por categoría', () => {
   it('caja/stats y cashregister/status comparten la entrada STATS', async () => {
-    const cajaRes = await call(cajaStatsGET, 'http://localhost/api/caja/stats');
+    const cajaRes = await call(cajaStatsGET, 'http://localhost/api/cash-register/stats');
     expect(cache.getOrFetch).toHaveBeenLastCalledWith(
       DASHBOARD_CACHE_KEYS.STATS,
       expect.any(Function),
@@ -144,19 +144,22 @@ describe('caché de stats en caja, cashregister, sales y ventas por categoría',
 
   it('marca los aciertos de caché con X-Cache: HIT', async () => {
     cache.getOrFetch.mockResolvedValue({ data: cajaStats, fromCache: true });
-    const res = await call(cajaStatsGET, 'http://localhost/api/caja/stats');
+    const res = await call(cajaStatsGET, 'http://localhost/api/cash-register/stats');
     expect(res.headers.get('X-Cache')).toBe('HIT');
   });
 
   it('ventas por categoría usa una clave por caja y tipo', async () => {
-    await call(ventasBarrasGET, 'http://localhost/api/caja/ventas-barras?caja_id=caja-7');
+    await call(ventasBarrasGET, 'http://localhost/api/cash-register/bar-sales?caja_id=caja-7');
     expect(cache.getOrFetch).toHaveBeenLastCalledWith(
       DASHBOARD_CACHE_KEYS.SALES_CHART_BY_CAJA('caja-7', 'barras'),
       expect.any(Function),
       DASHBOARD_TTL.SALES_CHART_BY_CAJA
     );
 
-    await call(ventasChampagneGET, 'http://localhost/api/caja/ventas-champagne?caja_id=caja-7');
+    await call(
+      ventasChampagneGET,
+      'http://localhost/api/cash-register/champagne-sales?caja_id=caja-7'
+    );
     expect(cache.getOrFetch).toHaveBeenLastCalledWith(
       DASHBOARD_CACHE_KEYS.SALES_CHART_BY_CAJA('caja-7', 'champagne'),
       expect.any(Function),
@@ -165,7 +168,7 @@ describe('caché de stats en caja, cashregister, sales y ventas por categoría',
 
     const res = await call(
       ventasTragosGET,
-      'http://localhost/api/caja/ventas-tragos-chicas?caja_id=caja-7'
+      'http://localhost/api/cash-register/hostess-drinks?caja_id=caja-7'
     );
     expect(cache.getOrFetch).toHaveBeenLastCalledWith(
       DASHBOARD_CACHE_KEYS.SALES_CHART_BY_CAJA('caja-7', 'tragos-chicas'),
@@ -178,7 +181,7 @@ describe('caché de stats en caja, cashregister, sales y ventas por categoría',
   it('ventas por producto usa la clave productos de la caja', async () => {
     const res = await call(
       ventasPorProductoGET,
-      'http://localhost/api/caja/ventas-por-producto?caja_id=caja-7'
+      'http://localhost/api/cash-register/sales-by-product?caja_id=caja-7'
     );
     expect(cache.getOrFetch).toHaveBeenLastCalledWith(
       DASHBOARD_CACHE_KEYS.SALES_CHART_BY_CAJA('caja-7', 'productos'),
@@ -192,7 +195,10 @@ describe('caché de stats en caja, cashregister, sales y ventas por categoría',
   });
 
   it('ventas-champagne sin caja_id responde 400 sin consultar la caché', async () => {
-    const res = await call(ventasChampagneGET, 'http://localhost/api/caja/ventas-champagne');
+    const res = await call(
+      ventasChampagneGET,
+      'http://localhost/api/cash-register/champagne-sales'
+    );
     expect(res.status).toBe(400);
     expect(cache.getOrFetch).not.toHaveBeenCalled();
   });

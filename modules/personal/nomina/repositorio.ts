@@ -1,6 +1,6 @@
 import { query } from '@/lib/database/db';
-import type { ContextoOperacion } from '@/lib/transaccion/contrato';
-import { resolverTransaccion } from '@/lib/transaccion/infraestructura';
+import type { ContextoOperacion } from '@/lib/transaction/contract';
+import { resolverTransaccion } from '@/lib/transaction/infrastructure';
 
 const PAYROLL_SQL = `
 SELECT * FROM (SELECT U.id_usuario, R.nombre AS rol, (CAST(U.nombre AS text) || CAST(' ' AS text) || CAST(U.apellido AS text)) AS usuario, U.foto AS usuario_foto,

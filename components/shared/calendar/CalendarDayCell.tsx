@@ -2,7 +2,7 @@
 
 import React from 'react';
 
-import type { DataType } from '@/hooks/shared/useRoleCalendar';
+import type { DataType } from '@/hooks/calendar/useRoleCalendar';
 
 type RoleType = 'garzon' | 'cajero' | 'anfitriona';
 

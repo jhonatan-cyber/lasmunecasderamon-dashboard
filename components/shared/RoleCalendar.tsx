@@ -6,7 +6,7 @@ import { ArrowLeft, ChevronLeft, ChevronRight } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import Link from 'next/link';
 import { formatMonthYearLabel } from '@/lib/utils/calendarUtils';
-import { useRoleCalendar, type RoleType, type DataType } from '@/hooks/shared/useRoleCalendar';
+import { useRoleCalendar, type RoleType, type DataType } from '@/hooks/calendar/useRoleCalendar';
 import CalendarDayCell from './calendar/CalendarDayCell';
 import CalendarDayModal from './calendar/CalendarDayModal';
 

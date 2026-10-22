@@ -1,6 +1,6 @@
 import { query, generateUUID } from '@/lib/database/db';
-import type { ContextoOperacion } from '@/lib/transaccion/contrato';
-import { resolverTransaccion } from '@/lib/transaccion/infraestructura';
+import type { ContextoOperacion } from '@/lib/transaction/contract';
+import { resolverTransaccion } from '@/lib/transaction/infrastructure';
 import { getNowInBusinessTimezone } from '@/lib/business/timezoneService';
 import { UserSchema, type UserType } from '@/lib/business/schemas';
 import { BaseRepository } from '@/lib/database/base-repository';

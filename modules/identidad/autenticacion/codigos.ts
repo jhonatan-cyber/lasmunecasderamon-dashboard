@@ -8,7 +8,7 @@ import { generateRandomCode4 } from '@/lib/utils/codeUtils';
  *
  * El codigo es la segunda via de la asistencia (y el segundo factor del login cuando
  * no se puede escanear): se muestra solo en pantallas del local y rota en cada uso.
- * Antes esta logica estaba duplicada en /api/public/users y /api/codigo/actual, lo
+ * Antes esta logica estaba duplicada en /api/public/users y /api/code/current, lo
  * que hacia que un endpoint publico pudiera rotarlo.
  */
 export async function getOrCreateAttendanceCode(): Promise<string> {

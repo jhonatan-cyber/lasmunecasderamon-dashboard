@@ -7,7 +7,7 @@ const mocks = vi.hoisted(() => ({
   cerrar: vi.fn(),
   events: [] as string[]
 }));
-vi.mock('@/lib/transaccion/contrato', () => ({
+vi.mock('@/lib/transaction/contract', () => ({
   enUnaUnidad: async (fn: any) => {
     mocks.events.push('begin');
     try {

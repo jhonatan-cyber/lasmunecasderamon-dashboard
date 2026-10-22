@@ -9,8 +9,8 @@
  *
  * Los avisos (auditoría) se aplazan hasta después del commit.
  */
-import { enUnaUnidad, type ContextoOperacion } from '@/lib/transaccion/contrato';
-import { ejecutarEfectosConfirmados } from '@/lib/transaccion/efectos';
+import { enUnaUnidad, type ContextoOperacion } from '@/lib/transaction/contract';
+import { ejecutarEfectosConfirmados } from '@/lib/transaction/effects';
 import { addServicioLog } from './logsServicio';
 import { BusinessError, NotFoundError } from '@/lib/errors/errors';
 import { parseMixedPayments } from '@/modules/operacion/servicios/mapeo';

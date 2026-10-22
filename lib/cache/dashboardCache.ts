@@ -24,7 +24,7 @@ export const DASHBOARD_CACHE_KEYS = {
   SALES_BY_WEEK: (offset: number) => `dashboard:sales-by-week:${offset}`,
   USER_SUMMARY: (userId: string, role: string) =>
     `dashboard:user-summary:${encodeURIComponent(userId)}:${encodeURIComponent(role)}`,
-  // Ventas por categoría dentro de una caja (/api/caja/ventas-*).
+  // Ventas por categoría dentro de una caja (/api/cash-register/ventas-*).
   SALES_CHART_BY_CAJA: (
     cajaId: string,
     tipo: 'barras' | 'champagne' | 'tragos-chicas' | 'productos'

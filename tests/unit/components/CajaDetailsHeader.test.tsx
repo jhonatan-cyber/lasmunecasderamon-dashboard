@@ -1,7 +1,7 @@
 import { cleanup, render } from '@testing-library/react';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { Dialog } from '@/components/ui/dialog';
-import { CajaDetailsHeader } from '@/components/caja/details/CajaDetailsHeader';
+import { CajaDetailsHeader } from '@/components/cash-register/details/CajaDetailsHeader';
 
 afterEach(cleanup);
 

@@ -20,7 +20,7 @@ const adminRoutes = [
   '/sales/new',
   '/private-rooms',
   '/private-rooms/new',
-  '/solicitudes-servicios',
+  '/service-requests',
   '/rooms',
   '/cash-register',
   '/products',
@@ -39,7 +39,7 @@ const adminRoutes = [
   '/commissions',
   '/tips',
   '/overtime',
-  '/gratificaciones',
+  '/gratifications',
   '/payroll',
   '/payroll/summary',
   '/payroll/calendar',
@@ -61,12 +61,12 @@ const personalRoutes =
         `/${role}-anticipos`,
         `/${role}-calendar`,
         ...(role === 'anfitriona'
-          ? ['/anfitriona-dashboard', '/anfitriona-comisiones', '/anfitriona-servicios']
+          ? ['/hostess-dashboard', '/hostess-commissions', '/hostess-services']
           : [
               `/${role}-propinas`,
               `/${role}-horas-extras`,
               ...(role === 'garzon'
-                ? ['/garzon-dashboard', '/garzon-pedidos']
+                ? ['/waiter-dashboard', '/waiter-orders']
                 : role === 'barman'
                   ? ['/bar']
                   : ['/cash-register'])
@@ -80,7 +80,10 @@ let activeBrowser;
 async function main() {
   const browser = await chromium.launch({ channel: 'chrome', headless: true });
   activeBrowser = browser;
-  const context = await browser.newContext({ viewport: { width: 1440, height: 1000 }, colorScheme: process.env.BROWSER_QA_DARK ? 'dark' : 'light' });
+  const context = await browser.newContext({
+    viewport: { width: 1440, height: 1000 },
+    colorScheme: process.env.BROWSER_QA_DARK ? 'dark' : 'light'
+  });
   const page = await context.newPage();
   page.setDefaultNavigationTimeout(120000);
   let current = null;
@@ -93,7 +96,9 @@ async function main() {
       current?.http.push({ status: response.status(), url: response.url().slice(base.length) });
   });
   await Promise.all([
-    page.waitForResponse(response => response.url().includes('/api/auth/check-users'), { timeout: 120000 }),
+    page.waitForResponse(response => response.url().includes('/api/auth/check-users'), {
+      timeout: 120000
+    }),
     page.goto(`${base}/login`)
   ]);
   await page.locator('#nick').fill(state.nick);

@@ -47,7 +47,7 @@ test('OAuth remoto: flujo real HTTP, aislamiento, rotación y persistencia', asy
       const user = token && JSON.parse(Buffer.from(token.split('.')[1], 'base64url')).sub;
       res.end(JSON.stringify({ success: true, data: { id: user, role: roles.get(user) ?? 'Administrador' } }));
     } else if (req.url === '/api/ping') res.end(JSON.stringify({ ok: true }));
-    else if (req.url === '/api/cuentas/denied/cobrar') {
+    else if (req.url === '/api/accounts/denied/charge') {
       res.statusCode = 403;
       res.end(JSON.stringify({ success: false, message: 'Sin permiso finances.write' }));
     } else {

@@ -5,9 +5,9 @@ import { Card } from '@/components/ui/card';
 
 import { Skeleton as BoneyardSkeleton } from 'boneyard-js/react';
 import { Button } from '@/components/ui/button';
-import { useCashRegister } from '@/hooks/caja/useCashRegister';
-import { useReenviarAvisoCierre } from '@/hooks/caja/useReenviarAvisoCierre';
-import { useReabrirCierre } from '@/hooks/caja/useReabrirCierre';
+import { useCashRegister } from '@/hooks/cash-register/useCashRegister';
+import { useReenviarAvisoCierre } from '@/hooks/cash-register/useReenviarAvisoCierre';
+import { useReabrirCierre } from '@/hooks/cash-register/useReabrirCierre';
 import { useCurrentUser } from '@/hooks/auth/useCurrentUser';
 import { useUserPermissions } from '@/hooks/auth/useUserPermissions';
 import dynamic from 'next/dynamic';
@@ -19,10 +19,13 @@ import {
   CerrarCajaDialog,
   RetiroDineroDialog,
   CajaFilters
-} from '@/components/caja';
-const DynamicCajaDetails = dynamic(() => import('@/components/caja').then(mod => mod.CajaDetails), {
-  ssr: false
-});
+} from '@/components/cash-register';
+const DynamicCajaDetails = dynamic(
+  () => import('@/components/cash-register').then(mod => mod.CajaDetails),
+  {
+    ssr: false
+  }
+);
 import { CashRegisterStatsCard, CashRegisterDetailedStats } from '@/components/cash-register';
 import { CajaWithUser, CajaCreate, CajaCierre, CajaRetiro } from '@/types/caja';
 import { AlertTriangle, RotateCcw, Wallet, Plus, Info } from 'lucide-react';

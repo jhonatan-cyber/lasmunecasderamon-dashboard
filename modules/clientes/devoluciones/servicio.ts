@@ -8,12 +8,14 @@
 import { logger } from '@/lib/utils/logger';
 import type { RecordatorioRegistrado, SolicitudDevolucionListada } from '../contracts';
 import * as repositorio from './repositorio';
-import type { ContextoOperacion } from '@/lib/transaccion/contrato';
+import type { ContextoOperacion } from '@/lib/transaction/contract';
 import { obtenerCliente } from '../fichas/servicio';
 import { BusinessError, NotFoundError, ValidationError } from '@/lib/errors/errors';
 
 /** Bandeja de solicitudes para la pantalla de aprobación del administrador. */
-export async function listarSolicitudes(limite?: number | null): Promise<SolicitudDevolucionListada[]> {
+export async function listarSolicitudes(
+  limite?: number | null
+): Promise<SolicitudDevolucionListada[]> {
   const filas = await repositorio.listarSolicitudes(limite);
   return filas.map(fila => ({
     ...fila,
@@ -25,12 +27,23 @@ export async function listarSolicitudes(limite?: number | null): Promise<Solicit
 }
 
 /** Alta estricta: nunca devolver un identificador ficticio si falla la persistencia. */
-export async function solicitarDevolucionSaldo(clienteId: string, monto: number, motivo: string, adminId: string) {
+export async function solicitarDevolucionSaldo(
+  clienteId: string,
+  monto: number,
+  motivo: string,
+  adminId: string
+) {
   if (!Number.isFinite(monto) || monto <= 0) throw new ValidationError('Monto positivo requerido');
   const cliente = await obtenerCliente(clienteId);
   if (!cliente) throw new NotFoundError('Cliente', clienteId);
-  if (monto > Number(cliente.saldo || 0)) throw new BusinessError('El monto supera el saldo disponible');
-  const id = await repositorio.registrarSolicitud({ clienteId, monto, motivo, solicitadoPor: adminId });
+  if (monto > Number(cliente.saldo || 0))
+    throw new BusinessError('El monto supera el saldo disponible');
+  const id = await repositorio.registrarSolicitud({
+    clienteId,
+    monto,
+    motivo,
+    solicitadoPor: adminId
+  });
   return { id, estado: 'pendiente' as const };
 }
 

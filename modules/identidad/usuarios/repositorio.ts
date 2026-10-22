@@ -9,8 +9,8 @@
  */
 import { query } from '@/lib/database/db';
 import { getNowInBusinessTimezone } from '@/lib/business/timezoneService';
-import type { ContextoOperacion } from '@/lib/transaccion/contrato';
-import { resolverTransaccion } from '@/lib/transaccion/infraestructura';
+import type { ContextoOperacion } from '@/lib/transaction/contract';
+import { resolverTransaccion } from '@/lib/transaction/infrastructure';
 
 export function listarDestinatariosAnulaciones() {
   return query<{ id_usuario: string; rol_nombre: string }[]>(

@@ -103,7 +103,7 @@ describe('withRoute middleware', () => {
         };
         const handler = vi.fn();
         const wrapped = withRoute({ auth: true, module: 'advances', action }, handler);
-        await wrapped(new Request('http://localhost/api/anticipos'), { params: {} });
+        await wrapped(new Request('http://localhost/api/advances'), { params: {} });
         expect(ApiResponse.forbidden).toHaveBeenCalled();
         expect(handler).not.toHaveBeenCalled();
       }

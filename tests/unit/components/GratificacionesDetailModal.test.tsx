@@ -1,7 +1,7 @@
 import React from 'react';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { cleanup, render, screen } from '@testing-library/react';
-import GratificacionesDetailModal from '@/components/gratificaciones/GratificacionesDetailModal';
+import GratificacionesDetailModal from '@/components/gratifications/GratificacionesDetailModal';
 import { Gratificacion } from '@/types/gratificacion';
 
 vi.mock('@/hooks/auth/useUserPermissions', () => ({

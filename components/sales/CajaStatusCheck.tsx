@@ -4,7 +4,7 @@ import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Button } from '@/components/ui/button';
 import { AlertTriangle, CreditCard } from 'lucide-react';
 import { useRouter } from 'next/navigation';
-import { useCashRegister } from '@/hooks/caja/useCashRegister';
+import { useCashRegister } from '@/hooks/cash-register/useCashRegister';
 import { useEffect } from 'react';
 
 interface CajaStatusCheckProps {

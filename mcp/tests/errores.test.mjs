@@ -115,7 +115,7 @@ test('POST nunca reintenta', async t => {
 
   await conSesion(sesionDelDashboard(token, ''), async () => {
     await assert.rejects(
-      () => api('POST', '/api/cuentas/x/cobrar', { cuerpo: {} }),
+      () => api('POST', '/api/accounts/x/charge', { cuerpo: {} }),
       /falló \(500\)/
     );
     assert.equal(llamadas.length, 1, 'un POST con 500 no se repite');

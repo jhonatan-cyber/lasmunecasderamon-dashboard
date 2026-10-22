@@ -17,7 +17,7 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { formatCurrencyNoDecimals } from '@/lib/utils/formatters';
 import { formatShortDmyDateEs, formatShortTimeEs } from '@/lib/utils/calendarUtils';
-import type { DataType } from '@/hooks/shared/useRoleCalendar';
+import type { DataType } from '@/hooks/calendar/useRoleCalendar';
 
 const months = [
   'Enero',

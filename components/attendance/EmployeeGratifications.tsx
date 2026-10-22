@@ -30,14 +30,14 @@ export function EmployeeGratifications() {
     setLoading(true);
     setError(false);
     try {
-      setRows(await fetchCollection<Gratification>('/api/gratificaciones/me'));
+      setRows(await fetchCollection<Gratification>('/api/gratifications/me'));
     } catch {
       setError(true);
     } finally {
       setLoading(false);
     }
   }, []);
-  useRealtimeRefresh('/api/gratificaciones/me', load);
+  useRealtimeRefresh('/api/gratifications/me', load);
 
   useEffect(() => {
     void load();

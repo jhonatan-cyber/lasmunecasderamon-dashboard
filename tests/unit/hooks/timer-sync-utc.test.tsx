@@ -6,7 +6,7 @@ vi.mock('@/hooks/shared', () => ({
     sse.callback = callback;
   }
 }));
-import { useTimerSync } from '@/hooks/timer/useTimerSync';
+import { useTimerSync } from '@/hooks/timers/useTimerSync';
 import { activeTimers } from '@/lib/store/timerStore';
 import { resetTimerClock } from '@/lib/utils/timerClock';
 const utc = '2026-10-15T17:00:00Z';

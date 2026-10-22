@@ -3,7 +3,7 @@
 import { Bell, BellOff, Clock, Eraser, PackageCheck, RefreshCw, XCircle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils/utils';
-import { MOTIVO_ENVASE, type EscaneoEnvase } from '@/hooks/productos/useContainerScan';
+import { MOTIVO_ENVASE, type EscaneoEnvase } from '@/hooks/products/useContainerScan';
 
 interface EscaneoLoteProps {
   aceptados: number;

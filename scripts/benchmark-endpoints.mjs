@@ -1,7 +1,7 @@
 /**
  * Benchmark de endpoints del Dashboard
  * Mide tiempo de respuesta de los endpoints clave, 3 iteraciones por endpoint
- * 
+ *
  * Uso: node scripts/benchmark-endpoints.mjs
  */
 
@@ -19,26 +19,26 @@ const CREDENTIALS = { email: BENCH_USER, password: BENCH_PASSWORD };
 const ITERATIONS = 3;
 
 const ENDPOINTS = [
-  { name: 'Health',        method: 'GET',  path: '/api/health',             isPublic: true },
-  { name: 'Login',         method: 'POST', path: '/api/auth/login',         isPublic: true, body: CREDENTIALS },
+  { name: 'Health', method: 'GET', path: '/api/health', isPublic: true },
+  { name: 'Login', method: 'POST', path: '/api/auth/login', isPublic: true, body: CREDENTIALS },
   { name: 'Dashboard Composite', method: 'GET', path: '/api/dashboard/composite' },
-  { name: 'Sales List',     method: 'GET', path: '/api/sales?limit=10' },
-  { name: 'Sales Summary',  method: 'GET', path: '/api/sales?tipo=resumen' },
-  { name: 'Servicios List', method: 'GET', path: '/api/servicios?limit=10' },
-  { name: 'Orders List',    method: 'GET', path: '/api/orders' },
-  { name: 'Tips Summary',   method: 'GET', path: '/api/tips' },
-  { name: 'Anticipos List', method: 'GET', path: '/api/anticipos' },
-  { name: 'Commissions',    method: 'GET', path: '/api/commissions' },
-  { name: 'Cash Register',  method: 'GET', path: '/api/cashregister/summary' },
-  { name: 'Users List',     method: 'GET', path: '/api/users' },
-  { name: 'Clients List',   method: 'GET', path: '/api/clients' },
-  { name: 'Products List',  method: 'GET', path: '/api/products' },
+  { name: 'Sales List', method: 'GET', path: '/api/sales?limit=10' },
+  { name: 'Sales Summary', method: 'GET', path: '/api/sales?tipo=resumen' },
+  { name: 'Servicios List', method: 'GET', path: '/api/services?limit=10' },
+  { name: 'Orders List', method: 'GET', path: '/api/orders' },
+  { name: 'Tips Summary', method: 'GET', path: '/api/tips' },
+  { name: 'Anticipos List', method: 'GET', path: '/api/advances' },
+  { name: 'Commissions', method: 'GET', path: '/api/commissions' },
+  { name: 'Cash Register', method: 'GET', path: '/api/cashregister/summary' },
+  { name: 'Users List', method: 'GET', path: '/api/users' },
+  { name: 'Clients List', method: 'GET', path: '/api/clients' },
+  { name: 'Products List', method: 'GET', path: '/api/products' },
   { name: 'Categories List', method: 'GET', path: '/api/categories' },
-  { name: 'Rooms List',     method: 'GET', path: '/api/rooms' },
-  { name: 'Attendance',     method: 'GET', path: '/api/attendance' },
-  { name: 'Overtime',       method: 'GET', path: '/api/overtime' },
-  { name: 'Gratificaciones', method: 'GET', path: '/api/gratificaciones' },
-  { name: 'Ping',           method: 'GET', path: '/api/ping',               isPublic: false },
+  { name: 'Rooms List', method: 'GET', path: '/api/rooms' },
+  { name: 'Attendance', method: 'GET', path: '/api/attendance' },
+  { name: 'Overtime', method: 'GET', path: '/api/overtime' },
+  { name: 'Gratificaciones', method: 'GET', path: '/api/gratifications' },
+  { name: 'Ping', method: 'GET', path: '/api/ping', isPublic: false }
 ];
 
 const results = [];
@@ -69,7 +69,11 @@ async function request(method, path, body = null, token = null) {
     const duration = performance.now() - start;
     const data = await res.text();
     let json;
-    try { json = JSON.parse(data); } catch { json = null; }
+    try {
+      json = JSON.parse(data);
+    } catch {
+      json = null;
+    }
     return { ok: res.ok, status: res.status, duration, data: json, raw: data.substring(0, 200) };
   } catch (err) {
     const duration = performance.now() - start;
@@ -87,8 +91,10 @@ async function login() {
     return true;
   }
 
-  console.log(`   ❌ Login falló: HTTP ${result.status} | ${result.data?.message || result.error || 'Respuesta inesperada'}`);
-  
+  console.log(
+    `   ❌ Login falló: HTTP ${result.status} | ${result.data?.message || result.error || 'Respuesta inesperada'}`
+  );
+
   // Intento alternativo: /api/login
   if (result.status === 404) {
     console.log('   ⚠️  Intentando /api/login...');
@@ -111,12 +117,20 @@ async function benchmark() {
   console.log(`   Fecha: ${new Date().toISOString()}`);
   console.log('='.repeat(100));
 
-  if (!await login()) {
+  if (!(await login())) {
     console.log('\n   No se pudo autenticar. Algunos endpoints requieren token.');
   }
 
   console.log('\n' + '-'.repeat(100));
-  console.log(pad('ENDPOINT', 32), pad('MET', 6), pad('ITER1', 12), pad('ITER2', 12), pad('ITER3', 12), pad('PROM', 12), pad('STATUS', 8));
+  console.log(
+    pad('ENDPOINT', 32),
+    pad('MET', 6),
+    pad('ITER1', 12),
+    pad('ITER2', 12),
+    pad('ITER3', 12),
+    pad('PROM', 12),
+    pad('STATUS', 8)
+  );
   console.log('-'.repeat(100));
 
   for (const ep of ENDPOINTS) {
@@ -134,7 +148,8 @@ async function benchmark() {
     const avg = times.reduce((a, b) => a + b, 0) / times.length;
     const allOk = times.every((_, i) => true); // just track
 
-    const statusColor = lastStatus >= 200 && lastStatus < 300 ? '✅' : lastStatus === 401 ? '⚠️' : '❌';
+    const statusColor =
+      lastStatus >= 200 && lastStatus < 300 ? '✅' : lastStatus === 401 ? '⚠️' : '❌';
 
     console.log(
       pad(ep.name, 32),

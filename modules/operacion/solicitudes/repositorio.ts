@@ -4,9 +4,9 @@ import { NotFoundError, BusinessError, DatabaseError } from '@/lib/errors/errors
 import { logger } from '@/lib/utils/logger';
 import { leerHabitacionParaServicio } from '../servicios/repositorio';
 import { crearServicioEnUnidad } from '../servicios/creacion';
-import { enUnaUnidad } from '@/lib/transaccion/contrato';
-import { resolverTransaccion } from '@/lib/transaccion/infraestructura';
-import { ejecutarEfectosConfirmados } from '@/lib/transaccion/efectos';
+import { enUnaUnidad } from '@/lib/transaction/contract';
+import { resolverTransaccion } from '@/lib/transaction/infrastructure';
+import { ejecutarEfectosConfirmados } from '@/lib/transaction/effects';
 import { obtenerServicioDetallado } from '../servicios/servicio';
 
 export class ServiceRequestRepository {

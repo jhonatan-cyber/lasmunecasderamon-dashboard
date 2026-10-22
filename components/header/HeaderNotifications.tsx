@@ -15,9 +15,9 @@ import {
 import { formatCurrencyCLP } from '@/lib/utils/formatters';
 import { formatShortTimeEs } from '@/lib/utils/calendarUtils';
 import { useCurrentUser } from '@/hooks/auth/useCurrentUser';
-import useOrders from '@/hooks/servicios/useOrders';
+import useOrders from '@/hooks/orders/useOrders';
 import { useUserPermissions } from '@/hooks/auth/useUserPermissions';
-import { useCashRegisterStatus } from '@/hooks/caja/useCashRegisterStatus';
+import { useCashRegisterStatus } from '@/hooks/cash-register/useCashRegisterStatus';
 import { useNotificationsContext } from '@/contexts/NotificationsContext';
 import { toast } from 'sonner';
 import dynamic from 'next/dynamic';
@@ -218,7 +218,7 @@ export function HeaderNotifications() {
 
   const fetchPendingServiceRequests = useCallback(async () => {
     try {
-      const response = await fetch('/api/solicitudes-servicios?estado=pendiente');
+      const response = await fetch('/api/service-requests?estado=pendiente');
       const data = await response.json();
       if (data.success) {
         setPendingServiceRequests(data.data || []);

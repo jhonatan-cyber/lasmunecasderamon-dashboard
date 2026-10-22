@@ -324,7 +324,7 @@ export function useOrderDetailModal({
         const currentIntent = accountIntent.current;
         if (currentIntent.confirmed) return;
         cuentaData.codigo = currentIntent.code;
-        const response = await fetch('/api/cuentas', {
+        const response = await fetch('/api/accounts', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify(cuentaData)

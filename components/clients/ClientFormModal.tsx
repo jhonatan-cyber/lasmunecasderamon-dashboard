@@ -12,8 +12,8 @@ import {
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { CreditCard, User, FileSignature, Phone } from 'lucide-react';
-import { useClientForm } from '@/hooks/personal';
-import { type ClientFormValues } from '@/hooks/personal';
+import { useClientForm } from '@/hooks/clients';
+import { type ClientFormValues } from '@/hooks/clients';
 import { useState, useEffect } from 'react';
 
 const formatRUT = (value: string): string => {

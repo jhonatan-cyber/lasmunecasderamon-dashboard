@@ -40,8 +40,8 @@ vi.mock('@/modules/operacion', () => ({
   cambiarAnfitrionasServicio: state.assign
 }));
 vi.mock('@/lib/api/sseService', () => ({ sendNotificationToAll: vi.fn() }));
-import { PUT, PATCH } from '@/app/api/servicios/[id]/route';
-import { PATCH as assign } from '@/app/api/servicios/[id]/anfitrionas/route';
+import { PUT, PATCH } from '@/app/api/services/[id]/route';
+import { PATCH as assign } from '@/app/api/services/[id]/hostesses/route';
 
 beforeEach(() => {
   vi.clearAllMocks();
@@ -57,7 +57,7 @@ describe('servicios de anfitrionas son de solo lectura', () => {
     'rechaza %s incluso si la sesión tiene permiso de escritura',
     async (method, handler, body) => {
       const response = await handler(
-        new Request('http://localhost/api/servicios/service-1', {
+        new Request('http://localhost/api/services/service-1', {
           method,
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify(body)
@@ -73,7 +73,7 @@ describe('servicios de anfitrionas son de solo lectura', () => {
   it('conserva la edición del cajero', async () => {
     state.role = 'Cajero';
     const response = await PUT(
-      new Request('http://localhost/api/servicios/service-1', {
+      new Request('http://localhost/api/services/service-1', {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ precio_servicio: 10000 })

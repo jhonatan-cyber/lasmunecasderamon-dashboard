@@ -1,4 +1,4 @@
-import type { ContextoOperacion } from '@/lib/transaccion/contrato';
+import type { ContextoOperacion } from '@/lib/transaction/contract';
 import { actualizarDisponibilidadAnfitrionas, listarAnfitrionasEnLocal } from './repositorio';
 import { comprobarAnfitrionasLibresParaServicio as comprobarLibres } from './repositorio';
 

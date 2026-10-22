@@ -8,7 +8,7 @@
 import * as argon2 from 'argon2';
 import type { PersonalActivo, ResumenUsuario, UsuarioPublico } from '../contracts';
 import * as repositorio from './repositorio';
-import type { ContextoOperacion } from '@/lib/transaccion/contrato';
+import type { ContextoOperacion } from '@/lib/transaction/contract';
 
 export function listarDestinatariosAnulaciones() {
   return repositorio.listarDestinatariosAnulaciones();

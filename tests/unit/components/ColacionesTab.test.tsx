@@ -1,10 +1,10 @@
 import React from 'react';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { act, cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react';
-import { ColacionesTab, antiguedadActualizacion } from '@/components/colaciones/ColacionesTab';
+import { ColacionesTab, antiguedadActualizacion } from '@/components/meals/ColacionesTab';
 
 vi.mock('sonner', () => ({ toast: { success: vi.fn(), error: vi.fn() } }));
-vi.mock('@/hooks/caja/useCashRegisterStatus', () => ({
+vi.mock('@/hooks/cash-register/useCashRegisterStatus', () => ({
   useCashRegisterStatus: () => ({ hasOpenCaja: true, cajaInfo: { id_caja: 'caja-1' } })
 }));
 // Permisos del usuario con el que se renderiza la pestaña. El vocabulario es
@@ -131,7 +131,7 @@ function stubFetch(onPost: (body: any) => void = () => {}) {
     if (url.includes('solo_colaciones_analcoholicas=true')) return ok(analcoholicas);
     if (url.includes('solo_colaciones=true')) return ok(productosColacion);
     if (url.startsWith('/api/bar')) return ok(acompanamientosBar);
-    if (url.startsWith('/api/colaciones')) {
+    if (url.startsWith('/api/meals')) {
       if (init?.method === 'POST') {
         onPost(JSON.parse(String(init.body)));
         return ok({});
@@ -256,7 +256,7 @@ describe('ColacionesTab por rol', () => {
           return ok([{ ...analcoholicas[0], ml_abierta: mlAbierta }]);
         if (url.includes('solo_colaciones=true')) return ok(productosColacion);
         if (url.startsWith('/api/bar')) return ok(acompanamientosBar);
-        if (url.startsWith('/api/colaciones')) return ok([]);
+        if (url.startsWith('/api/meals')) return ok([]);
         throw new Error(`URL inesperada: ${url}`);
       })
     );
@@ -351,7 +351,7 @@ describe('ColacionesTab por rol', () => {
         if (url.includes('solo_colaciones_analcoholicas=true')) return ok(analcoholicas);
         if (url.includes('solo_colaciones=true')) return ok(productosColacion);
         if (url.startsWith('/api/bar')) return ok(acompanamientosBar);
-        if (url.startsWith('/api/colaciones')) {
+        if (url.startsWith('/api/meals')) {
           return {
             ok: false,
             status: 403,
@@ -506,7 +506,7 @@ describe('antigüedad del ml abierto', () => {
         if (url.includes('solo_colaciones=true'))
           return ok([{ ...productosColacion[0], ml_abierta: mlAbierta }]);
         if (url.startsWith('/api/bar')) return ok(acompanamientosBar);
-        if (url.startsWith('/api/colaciones')) return ok([]);
+        if (url.startsWith('/api/meals')) return ok([]);
         throw new Error(`URL inesperada: ${url}`);
       })
     );

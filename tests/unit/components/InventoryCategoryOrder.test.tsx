@@ -9,7 +9,7 @@ const state = vi.hoisted(() => ({
   dragEnd: null as null | ((event: any) => Promise<void>)
 }));
 vi.mock('next/navigation', () => ({ useRouter: () => ({ push: vi.fn() }) }));
-vi.mock('@/hooks/productos/useCategories', () => ({
+vi.mock('@/hooks/products/useCategories', () => ({
   useCategories: () => ({
     filteredCategories: [
       { id: 'a', status: 1 },

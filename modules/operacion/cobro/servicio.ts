@@ -1,4 +1,4 @@
-import type { ContextoOperacion } from '@/lib/transaccion/contrato';
+import type { ContextoOperacion } from '@/lib/transaction/contract';
 import type { CuentaCobrarBody } from '../contracts';
 import { cerrarCuenta, prepararVentaCuenta } from './repositorio';
 import { leerCuentaCobrada } from './lecturaRepositorio';

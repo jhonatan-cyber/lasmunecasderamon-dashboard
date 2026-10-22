@@ -404,8 +404,6 @@ jobs:
       NEXT_PUBLIC_BASE_URL: http://localhost:3000
       NEXT_PUBLIC_API_URL: http://localhost:3000/api
       BASE_URL: http://localhost:3000
-      TEST_USER: Admin
-      TEST_PASSWORD: CI-Only-Password-2026!
       SKIP_RATE_LIMIT: 'true'
     steps:
       - name: Checkout repository

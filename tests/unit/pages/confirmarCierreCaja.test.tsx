@@ -8,7 +8,7 @@ vi.mock('next/navigation', () => ({
   useSearchParams: () => new URLSearchParams({ token: 'token-test' })
 }));
 
-import ConfirmarCierreCajaPage from '@/app/confirmar-cierre-caja/page';
+import ConfirmarCierreCajaPage from '@/app/confirm-cash-closing/page';
 
 const solicitud = {
   caja_id: 'caja-1',

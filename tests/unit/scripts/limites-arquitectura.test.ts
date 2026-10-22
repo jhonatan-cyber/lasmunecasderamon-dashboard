@@ -6,89 +6,15 @@
  *
  * También fijan el otro sentido: si una excepción registrada deja de aplicar, la
  * puerta falla. Una deuda pagada y no anotada es deuda que vuelve.
- */ import { describe, it, expect, beforeAll, afterAll } from 'vitest';
-import { execFileSync } from 'node:child_process';
-import {
-  mkdtempSync,
-  writeFileSync,
-  rmSync,
-  cpSync,
-  mkdirSync,
-  existsSync,
-  readFileSync,
-  symlinkSync
-} from 'node:fs';
-import { tmpdir } from 'node:os';
-import { join, resolve } from 'node:path';
-
-const RAIZ = resolve(__dirname, '..', '..', '..');
-const SCRIPT_REL = join('scripts', 'arquitectura', 'limites.mjs');
-
-/** Ejecuta la puerta en modo de validación y devuelve salida y código de salida. */
-function correr(raiz: string): { codigo: number; salida: string } {
-  try {
-    const salida = execFileSync('node', [SCRIPT_REL], {
-      cwd: raiz,
-      encoding: 'utf8',
-      maxBuffer: 32 * 1024 * 1024,
-      stdio: ['ignore', 'pipe', 'pipe']
-    });
-    return { codigo: 0, salida };
-  } catch (e: any) {
-    return { codigo: e.status ?? 1, salida: `${e.stdout ?? ''}${e.stderr ?? ''}` };
-  }
-}
-
-/** Enumera los hallazgos sin validar (para inspeccionar). */
-function listar(raiz: string): any {
-  const salida = execFileSync('node', [SCRIPT_REL, '--listar'], {
-    cwd: raiz,
-    encoding: 'utf8',
-    maxBuffer: 32 * 1024 * 1024
-  });
-  return JSON.parse(salida);
-}
-
-/**
- * Repositorio mínimo para el fixture. El control calcula su raíz dos niveles
- * arriba de su propia ubicación, así que la copia va en `scripts/arquitectura/`
- * y en ningún otro sitio: una copia suelta en la raíz haría que escaneara otro
- * árbol y los hallazgos no dirían relación con nada.
+ *
+ * La cobertura de ciclos y las excepciones del repositorio real viven en
+ * `limites-arquitectura-cobertura.test.ts`: juntas, las dos mitades tardaban más
+ * de 60 s por archivo y el worker de Vitest agotaba el timeout de su RPC.
  */
-function repoDePrueba(): string {
-  const dir = mkdtempSync(join(tmpdir(), 'lmr-limites-'));
-  execFileSync('git', ['init', '-q'], { cwd: dir });
-
-  mkdirSync(join(dir, 'components'), { recursive: true });
-  mkdirSync(join(dir, 'lib', 'database'), { recursive: true });
-  mkdirSync(join(dir, 'scripts', 'arquitectura'), { recursive: true });
-  mkdirSync(join(dir, 'docs', 'arquitectura'), { recursive: true });
-
-  writeFileSync(join(dir, 'lib', 'database', 'db.ts'), 'export function query() { return []; }\n');
-  writeFileSync(join(dir, 'components', 'util.ts'), 'export const formatMoney = 1;\n');
-  // Sano: la UI importa de la UI.
-  writeFileSync(
-    join(dir, 'components', 'Sano.tsx'),
-    "import { formatMoney } from './util';\nexport const a = formatMoney;\n"
-  );
-  cpSync(join(RAIZ, SCRIPT_REL), join(dir, SCRIPT_REL));
-  cpSync(
-    join(RAIZ, 'scripts/arquitectura/propiedad.mjs'),
-    join(dir, 'scripts/arquitectura/propiedad.mjs')
-  );
-  cpSync(
-    join(RAIZ, 'docs/arquitectura/propietarios-tablas.json'),
-    join(dir, 'docs/arquitectura/propietarios-tablas.json')
-  );
-  mkdirSync(join(dir, 'node_modules'), { recursive: true });
-  symlinkSync(
-    join(RAIZ, 'node_modules/typescript'),
-    join(dir, 'node_modules/typescript'),
-    'junction'
-  );
-  writeFileSync(join(dir, 'docs', 'arquitectura', 'excepciones.json'), '{}\n');
-  return dir;
-}
+import { describe, it, expect, beforeAll, afterAll } from 'vitest';
+import { writeFileSync, rmSync, mkdirSync } from 'node:fs';
+import { join } from 'node:path';
+import { correr, listar, repoDePrueba } from './limites-helpers';
 
 describe('control de límites entre módulos', () => {
   let raiz: string;
@@ -258,17 +184,17 @@ describe('control de límites entre módulos', () => {
   });
 
   it('sólo la infraestructura de los módulos resuelve el contexto transaccional', () => {
-    mkdirSync(join(raiz, 'lib', 'transaccion'), { recursive: true });
+    mkdirSync(join(raiz, 'lib', 'transaction'), { recursive: true });
     mkdirSync(join(raiz, 'lib', 'services'), { recursive: true });
     writeFileSync(
-      join(raiz, 'lib', 'transaccion', 'infraestructura.ts'),
+      join(raiz, 'lib', 'transaction', 'infrastructure.ts'),
       'export function resolverTransaccion() { return null; }\n'
     );
 
     // Sano: la infraestructura del módulo es la autorizada.
     writeFileSync(
       join(raiz, 'modules', 'personal', 'horas-extras', 'repositorio.ts'),
-      "import { resolverTransaccion } from '@/lib/transaccion/infraestructura';\nexport const r = resolverTransaccion;\n"
+      "import { resolverTransaccion } from '@/lib/transaction/infrastructure';\nexport const r = resolverTransaccion;\n"
     );
     expect(
       listar(raiz).hallazgos.filter((h: any) => h.regla === 'infra-transaccional-autorizada')
@@ -277,7 +203,7 @@ describe('control de límites entre módulos', () => {
     // Prohibido: un servicio resuelve el contexto por su cuenta.
     writeFileSync(
       join(raiz, 'lib', 'services', 'Malo.ts'),
-      "import { resolverTransaccion } from '@/lib/transaccion/infraestructura';\nexport const r = resolverTransaccion;\n"
+      "import { resolverTransaccion } from '@/lib/transaction/infrastructure';\nexport const r = resolverTransaccion;\n"
     );
     const malos = listar(raiz).hallazgos.filter(
       (h: any) => h.regla === 'infra-transaccional-autorizada'
@@ -287,15 +213,15 @@ describe('control de límites entre módulos', () => {
   });
 
   it('ningún servicio puede usar el puente transaccional heredado', () => {
-    mkdirSync(join(raiz, 'lib', 'transaccion'), { recursive: true });
+    mkdirSync(join(raiz, 'lib', 'transaction'), { recursive: true });
     mkdirSync(join(raiz, 'lib', 'services'), { recursive: true });
     writeFileSync(
-      join(raiz, 'lib', 'transaccion', 'compatibilidad.ts'),
+      join(raiz, 'lib', 'transaction', 'compatibility.ts'),
       'export function conContextoOperacionExistente() { return null; }\n'
     );
     writeFileSync(
       join(raiz, 'lib', 'services', 'SaleService.ts'),
-      "import { conContextoOperacionExistente } from '@/lib/transaccion/compatibilidad';\nexport const f = conContextoOperacionExistente;\n"
+      "import { conContextoOperacionExistente } from '@/lib/transaction/compatibility';\nexport const f = conContextoOperacionExistente;\n"
     );
     expect(
       listar(raiz).hallazgos.filter((h: any) => h.regla === 'puente-transaccional-heredado')
@@ -303,7 +229,7 @@ describe('control de límites entre módulos', () => {
 
     writeFileSync(
       join(raiz, 'lib', 'services', 'Malo.ts'),
-      "import { conContextoOperacionExistente } from '@/lib/transaccion/compatibilidad';\nexport const f = conContextoOperacionExistente;\n"
+      "import { conContextoOperacionExistente } from '@/lib/transaction/compatibility';\nexport const f = conContextoOperacionExistente;\n"
     );
     const malos = listar(raiz).hallazgos.filter(
       (h: any) => h.regla === 'puente-transaccional-heredado'
@@ -312,158 +238,4 @@ describe('control de límites entre módulos', () => {
     rmSync(join(raiz, 'lib', 'services', 'SaleService.ts'));
     rmSync(join(raiz, 'lib', 'services', 'Malo.ts'));
   });
-});
-
-describe('cobertura de los nuevos limites', () => {
-  it.each(['ventas', 'operacion', 'caja', 'clientes', 'configuracion', 'salud', 'futuro'])(
-    'detecta ciclos de %s aunque no exista en un mapa manual',
-    modulo => {
-      const raiz = repoDePrueba();
-      try {
-        for (const nombre of [modulo, 'contraparte'])
-          mkdirSync(join(raiz, 'modules', nombre), { recursive: true });
-        writeFileSync(
-          join(raiz, 'modules', modulo, 'index.ts'),
-          `export { x } from '@/modules/contraparte';`
-        );
-        writeFileSync(
-          join(raiz, 'modules', 'contraparte', 'index.ts'),
-          `export { x } from '@/modules/${modulo}';`
-        );
-        expect(correr(raiz).codigo).toBe(1);
-        expect(listar(raiz).hallazgos.some((h: any) => h.regla === 'sin-ciclos')).toBe(true);
-      } finally {
-        rmSync(raiz, { recursive: true, force: true });
-      }
-    }
-  );
-
-  it('permite HTTP a workflow, pero bloquea modulo a workflow y workflow a driver', () => {
-    const raiz = repoDePrueba();
-    try {
-      mkdirSync(join(raiz, 'workflows'), { recursive: true });
-      mkdirSync(join(raiz, 'app/api/cobrar'), { recursive: true });
-      mkdirSync(join(raiz, 'modules/ventas'), { recursive: true });
-      writeFileSync(join(raiz, 'workflows/cobrar.ts'), 'export const cobrar = 1;');
-      writeFileSync(
-        join(raiz, 'app/api/cobrar/route.ts'),
-        "export { cobrar } from '@/workflows/cobrar';"
-      );
-      expect(correr(raiz).codigo).toBe(0);
-      writeFileSync(
-        join(raiz, 'modules/ventas/index.ts'),
-        "export { cobrar } from '@/workflows/cobrar';"
-      );
-      expect(listar(raiz).hallazgos.some((h: any) => h.regla === 'modulos-sin-workflows')).toBe(
-        true
-      );
-      writeFileSync(
-        join(raiz, 'workflows/cobrar.ts'),
-        "import { query } from '@/lib/database/db'; export const cobrar = query;"
-      );
-      expect(listar(raiz).hallazgos.some((h: any) => h.regla === 'workflow-sin-persistencia')).toBe(
-        true
-      );
-    } finally {
-      rmSync(raiz, { recursive: true, force: true });
-    }
-  });
-});
-
-describe('excepciones del repositorio real', () => {
-  it('bloquea servidor transitivo en contratos y permite referencias sólo de tipos', () => {
-    const raiz = repoDePrueba();
-    try {
-      mkdirSync(join(raiz, 'modules/clientes'), { recursive: true });
-      writeFileSync(
-        join(raiz, 'modules/clientes/repositorio.ts'),
-        "import 'server-only'; export const dato = 1; export interface Dato { id: string }"
-      );
-      writeFileSync(
-        join(raiz, 'modules/clientes/puente.ts'),
-        "export { dato } from './repositorio';"
-      );
-      writeFileSync(
-        join(raiz, 'modules/clientes/contracts.ts'),
-        "export { dato } from './puente';"
-      );
-      expect(listar(raiz).hallazgos.some((h: any) => h.regla === 'contratos-sin-servidor')).toBe(
-        true
-      );
-      writeFileSync(
-        join(raiz, 'modules/clientes/contracts.ts'),
-        "export type { Dato } from './repositorio';"
-      );
-      expect(listar(raiz).hallazgos.some((h: any) => h.regla === 'contratos-sin-servidor')).toBe(
-        false
-      );
-    } finally {
-      rmSync(raiz, { recursive: true, force: true });
-    }
-  });
-
-  it('bloquea SQL y BaseRepository sobre tablas de otro propietario', () => {
-    const raiz = repoDePrueba();
-    try {
-      mkdirSync(join(raiz, 'modules/caja'), { recursive: true });
-      writeFileSync(
-        join(raiz, 'modules/caja/repositorio.ts'),
-        "export const sql = 'UPDATE usuarios SET estado = 0'; BaseRepository.insert(query, 'asistencias', {});"
-      );
-      const hallazgos = listar(raiz).hallazgos.filter(
-        (h: any) => h.regla === 'tabla-unico-propietario'
-      );
-      expect(hallazgos).toHaveLength(2);
-      expect(correr(raiz).codigo).toBe(1);
-      writeFileSync(
-        join(raiz, 'modules/caja/repositorio.ts'),
-        "export const sql = 'UPDATE cajas SET estado = 0';"
-      );
-      expect(correr(raiz).codigo).toBe(0);
-    } finally {
-      rmSync(raiz, { recursive: true, force: true });
-    }
-  });
-
-  it('no inventa ciclos a partir de rutas HTTP, comentarios o imports de tipos', () => {
-    const raiz = repoDePrueba();
-    try {
-      for (const ruta of ['modules/caja', 'modules/ventas', 'app/api/caja'])
-        mkdirSync(join(raiz, ruta), { recursive: true });
-      writeFileSync(
-        join(raiz, 'modules/caja/index.ts'),
-        "import type { Venta } from '@/modules/ventas/contracts'; // import { x } from '@/modules/ventas';\nexport const x = 1;"
-      );
-      writeFileSync(
-        join(raiz, 'modules/ventas/contracts.ts'),
-        'export interface Venta { id: string }'
-      );
-      writeFileSync(join(raiz, 'modules/ventas/index.ts'), "export { x } from '@/modules/caja';");
-      writeFileSync(join(raiz, 'app/api/caja/route.ts'), "export { x } from '@/modules/ventas';");
-      expect(correr(raiz).codigo).toBe(0);
-      writeFileSync(join(raiz, 'modules/caja/index.ts'), "export { x } from '@/modules/ventas';");
-      expect(listar(raiz).hallazgos.some((h: any) => h.regla === 'sin-ciclos')).toBe(true);
-    } finally {
-      rmSync(raiz, { recursive: true, force: true });
-    }
-  });
-
-  it('toda excepción registrada tiene motivo, responsable y condición', () => {
-    const ruta = join(RAIZ, 'docs', 'arquitectura', 'excepciones.json');
-    if (!existsSync(ruta)) throw new Error('falta docs/arquitectura/excepciones.json');
-    const exc = JSON.parse(readFileSync(ruta, 'utf8'));
-    const claves = Object.keys(exc);
-    expect(claves).toHaveLength(0);
-    for (const k of claves) {
-      expect(exc[k].motivo, `${k} sin motivo`).toBeTruthy();
-      expect(exc[k].responsable, `${k} sin responsable`).toBeTruthy();
-      expect(exc[k].condicion, `${k} sin condición de eliminación`).toBeTruthy();
-    }
-  });
-
-  it('la puerta pasa en el repositorio real', () => {
-    const r = correr(RAIZ);
-    expect(r.codigo).toBe(0);
-    expect(r.salida).toContain('Sin dependencias prohibidas nuevas');
-  }, 120_000);
 });

@@ -10,33 +10,28 @@ const EVENT_TARGETS: Record<string, readonly string[]> = {
   // ─── Servicios y habitaciones ───────────────────────────────────────────────
   new_service_request: [
     'servicios',
-    '/api/servicios',
-    '/api/solicitudes-servicios',
+    '/api/services',
+    '/api/service-requests',
     'rooms',
     '/api/rooms',
-    '/api/cuentas',
+    '/api/accounts',
     'dashboard',
     'notifications'
   ],
   service_request_processed: [
     'servicios',
-    '/api/servicios',
-    '/api/solicitudes-servicios',
+    '/api/services',
+    '/api/service-requests',
     'notifications'
   ],
-  service_request_deleted: [
-    'servicios',
-    '/api/servicios',
-    '/api/solicitudes-servicios',
-    'notifications'
-  ],
+  service_request_deleted: ['servicios', '/api/services', '/api/service-requests', 'notifications'],
   service_changed: [
     'servicios',
-    '/api/servicios',
+    '/api/services',
     'rooms',
     '/api/rooms',
     'timers',
-    '/api/cuentas',
+    '/api/accounts',
     'dashboard',
     'notifications'
   ],
@@ -47,8 +42,8 @@ const EVENT_TARGETS: Record<string, readonly string[]> = {
     'rooms',
     '/api/rooms',
     'servicios',
-    '/api/servicios',
-    '/api/cuentas',
+    '/api/services',
+    '/api/accounts',
     'dashboard'
   ],
   timer_started: [
@@ -56,8 +51,8 @@ const EVENT_TARGETS: Record<string, readonly string[]> = {
     'rooms',
     '/api/rooms',
     'servicios',
-    '/api/servicios',
-    '/api/cuentas',
+    '/api/services',
+    '/api/accounts',
     'dashboard'
   ],
   timer_updated: [
@@ -65,8 +60,8 @@ const EVENT_TARGETS: Record<string, readonly string[]> = {
     'rooms',
     '/api/rooms',
     'servicios',
-    '/api/servicios',
-    '/api/cuentas',
+    '/api/services',
+    '/api/accounts',
     'dashboard'
   ],
   timer_stopped: [
@@ -74,20 +69,20 @@ const EVENT_TARGETS: Record<string, readonly string[]> = {
     'rooms',
     '/api/rooms',
     'servicios',
-    '/api/servicios',
-    '/api/cuentas',
+    '/api/services',
+    '/api/accounts',
     'dashboard'
   ],
-  timer_warning_5m: ['/api/cuentas', 'notifications'],
+  timer_warning_5m: ['/api/accounts', 'notifications'],
   timer_ended_event: [
     'timers',
     'rooms',
     '/api/rooms',
     'servicios',
-    '/api/servicios',
+    '/api/services',
     'sales',
     '/api/sales',
-    '/api/cuentas',
+    '/api/accounts',
     'dashboard',
     'notifications'
   ],
@@ -96,8 +91,8 @@ const EVENT_TARGETS: Record<string, readonly string[]> = {
     '/api/rooms',
     '/api/available-rooms',
     'servicios',
-    '/api/servicios',
-    '/api/cuentas',
+    '/api/services',
+    '/api/accounts',
     'dashboard'
   ],
 
@@ -114,7 +109,7 @@ const EVENT_TARGETS: Record<string, readonly string[]> = {
     '/api/commissions',
     'tips',
     '/api/tips',
-    '/api/cuentas'
+    '/api/accounts'
   ],
   sale_cancelled: [
     'sales',
@@ -122,7 +117,7 @@ const EVENT_TARGETS: Record<string, readonly string[]> = {
     'orders',
     '/api/orders',
     'servicios',
-    '/api/servicios',
+    '/api/services',
     'dashboard',
     'reports',
     '/api/reports',
@@ -137,7 +132,7 @@ const EVENT_TARGETS: Record<string, readonly string[]> = {
     'sales',
     '/api/sales',
     'servicios',
-    '/api/servicios',
+    '/api/services',
     'orders',
     '/api/orders',
     'dashboard',
@@ -173,7 +168,7 @@ const EVENT_TARGETS: Record<string, readonly string[]> = {
   profile_updated: ['users', '/api/users', 'auth', '/api/users/profile'],
   presence_updated: [
     'anfitrionas',
-    '/api/anfitrionas',
+    '/api/hostesses',
     '/api/users/status',
     'logged-users-stats',
     'dashboard'
@@ -204,27 +199,27 @@ const EVENT_TARGETS: Record<string, readonly string[]> = {
   cash_register_closed: ['cashRegister', '/api/cashregister', 'dashboard'],
 
   // ─── Personal: anticipos, gratificaciones y nómina ─────────────────────────
-  ANTICIPO_PROCESSED: ['advances', '/api/anticipos', 'payroll', '/api/payroll', 'dashboard'],
-  anticipo_processed: ['advances', '/api/anticipos', 'payroll', '/api/payroll', 'dashboard'],
+  ANTICIPO_PROCESSED: ['advances', '/api/advances', 'payroll', '/api/payroll', 'dashboard'],
+  anticipo_processed: ['advances', '/api/advances', 'payroll', '/api/payroll', 'dashboard'],
   anticipo_delivered: [
     'advances',
-    '/api/anticipos',
+    '/api/advances',
     'payroll',
     '/api/payroll',
     'cashRegister',
     '/api/cashregister',
     'dashboard'
   ],
-  new_anticipo_request: ['advances', '/api/anticipos', 'notifications', 'dashboard'],
+  new_anticipo_request: ['advances', '/api/advances', 'notifications', 'dashboard'],
   new_gratificacion_request: [
     'gratifications',
-    '/api/gratificaciones',
+    '/api/gratifications',
     'notifications',
     'dashboard'
   ],
   gratificacion_processed: [
     'gratifications',
-    '/api/gratificaciones',
+    '/api/gratifications',
     'payroll',
     '/api/payroll',
     'dashboard'
@@ -248,7 +243,7 @@ const MODULE_TARGETS: Record<string, readonly string[]> = {
     '/api/users',
     'employees',
     'anfitrionas',
-    '/api/anfitrionas',
+    '/api/hostesses',
     'logged-users-stats',
     'dashboard',
     'roles',
@@ -271,7 +266,7 @@ const MODULE_TARGETS: Record<string, readonly string[]> = {
   clients: ['clients', '/api/clients'],
   finances: [
     'advances',
-    '/api/anticipos',
+    '/api/advances',
     'payroll',
     '/api/payroll',
     'cashRegister',
@@ -283,7 +278,7 @@ const MODULE_TARGETS: Record<string, readonly string[]> = {
   orders: ['orders', '/api/orders', 'dashboard'],
   advances: [
     'advances',
-    '/api/anticipos',
+    '/api/advances',
     'payroll',
     '/api/payroll',
     'cashRegister',
@@ -305,12 +300,12 @@ const MODULE_TARGETS: Record<string, readonly string[]> = {
   tips: ['tips', '/api/tips', 'dashboard'],
   gratificaciones: [
     'gratifications',
-    '/api/gratificaciones',
+    '/api/gratifications',
     'payroll',
     '/api/payroll',
     'dashboard'
   ],
-  accounts: ['/api/cuentas', '/api/accounts', 'dashboard'],
+  accounts: ['/api/accounts', '/api/accounts', 'dashboard'],
   categories: INVENTORY_QUERY_TARGETS,
   returns: [
     'returns',
@@ -321,16 +316,16 @@ const MODULE_TARGETS: Record<string, readonly string[]> = {
     'orders',
     '/api/orders',
     'servicios',
-    '/api/servicios',
+    '/api/services',
     'cuentas',
-    '/api/cuentas'
+    '/api/accounts'
   ],
   private_rooms: [
     'servicios',
-    '/api/servicios',
+    '/api/services',
     'rooms',
     '/api/rooms',
-    '/api/cuentas',
+    '/api/accounts',
     'dashboard'
   ],
   dashboard: ['dashboard']
@@ -351,7 +346,7 @@ const PRESENCE_TARGETS = [
   '/api/users',
   'employees',
   'anfitrionas',
-  '/api/anfitrionas',
+  '/api/hostesses',
   'logged-users-stats',
   '/api/stats/logged-users',
   'dashboard'
@@ -396,14 +391,14 @@ export function realtimeTargets(payload: {
     moduleKey === 'sales' ||
     moduleKey === 'orders'
   ) {
-    extra.push(...INVENTORY_QUERY_TARGETS, 'cuentas', '/api/cuentas');
+    extra.push(...INVENTORY_QUERY_TARGETS, 'cuentas', '/api/accounts');
   }
   if (moduleKey === 'payroll' || moduleKey === 'finances')
     extra.push(...ATTENDANCE_TARGETS, 'tips', '/api/tips', 'commissions', '/api/commissions');
   if (moduleKey === 'accounts' || moduleKey === 'private_rooms') extra.push('cuentas');
   if (moduleKey === 'settings') extra.push(...ATTENDANCE_TARGETS, 'configurations');
   if (type === 'presence_updated' && payload.data?.motivo === 'cierre_caja')
-    extra.push('cashRegister', '/api/cashregister', '/api/caja', 'tips', '/api/tips');
-  if (targets.includes('/api/cashregister')) extra.push('/api/caja');
+    extra.push('cashRegister', '/api/cashregister', '/api/cash-register', 'tips', '/api/tips');
+  if (targets.includes('/api/cashregister')) extra.push('/api/cash-register');
   return [...new Set([...targets, ...extra])];
 }

@@ -2,7 +2,7 @@
 
 import { useCurrentUser } from '@/hooks/auth/useCurrentUser';
 import RoleCalendar from '@/components/shared/RoleCalendar';
-import type { RoleType } from '@/hooks/shared/useRoleCalendar';
+import type { RoleType } from '@/hooks/calendar/useRoleCalendar';
 
 interface RoleCalendarPageClientProps {
   role: RoleType;

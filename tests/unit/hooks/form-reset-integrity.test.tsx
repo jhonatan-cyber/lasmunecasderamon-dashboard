@@ -1,8 +1,8 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { act, cleanup, renderHook } from '@testing-library/react';
-import { useRoleForm } from '@/hooks/personal/useRoleForm';
-import { useCategoryForm } from '@/hooks/personal/useCategoryForm';
-import { useClientForm } from '@/hooks/personal/useClientForm';
+import { useRoleForm } from '@/hooks/staff/useRoleForm';
+import { useCategoryForm } from '@/hooks/products/useCategoryForm';
+import { useClientForm } from '@/hooks/clients/useClientForm';
 afterEach(cleanup);
 describe('edición de formularios', () => {
   it.each(['rol', 'categoría', 'cliente'])(

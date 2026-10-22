@@ -5,7 +5,7 @@
  *
  * El contrato entrega a los participantes un contexto opaco sin SQL. La
  * resolución del contexto al ejecutor vive en
- * `lib/transaccion/infraestructura.ts` — la «infraestructura autorizada» del
+ * `lib/transaction/infrastructure.ts` — la «infraestructura autorizada» del
  * §6 — y la puerta `infra-transaccional-autorizada` restringe su import a la
  * infraestructura de los módulos. Este archivo prueba ambos lados: la forma y
  * el ciclo de vida del contrato, y que una escritura real del módulo se
@@ -19,8 +19,8 @@ vi.mock('@/modules/comunicaciones/push/servicio', () => ({
 }));
 
 import db, { query } from '@/lib/database/db';
-import { enUnaUnidad, type UnidadDeTrabajo } from '@/lib/transaccion/contrato';
-import { resolverTransaccion } from '@/lib/transaccion/infraestructura';
+import { enUnaUnidad, type UnidadDeTrabajo } from '@/lib/transaction/contract';
+import { resolverTransaccion } from '@/lib/transaction/infrastructure';
 import { registrarHoraExtra } from '@/modules/personal';
 
 const USUARIO_PRUEBA = 'lb-contrato-horas-extras';

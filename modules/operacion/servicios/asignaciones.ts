@@ -1,4 +1,4 @@
-import { enUnaUnidad, type ContextoOperacion } from '@/lib/transaccion/contrato';
+import { enUnaUnidad, type ContextoOperacion } from '@/lib/transaction/contract';
 import { bloquearServicioActivo, guardarAsignaciones } from './asignacionesRepositorio';
 import {
   validarAnfitrionasEnLocal,

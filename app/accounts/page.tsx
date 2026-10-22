@@ -1,7 +1,7 @@
 'use client';
 
 import { Skeleton as BoneyardSkeleton } from 'boneyard-js/react';
-import { AccountsPageClient } from '@/components/cuentas/AccountsPageClient';
+import { AccountsPageClient } from '@/components/accounts/AccountsPageClient';
 
 export default function AccountsPage() {
   return (

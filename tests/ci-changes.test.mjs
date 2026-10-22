@@ -4,7 +4,7 @@ import { classifyChanges } from '../scripts/ci-changes.mjs';
 import { selectUnitTests } from '../scripts/run-affected-unit-tests.mjs';
 
 test('UI del mismo dominio ejecuta unitarias y E2E, no jobs ajenos', () => {
-  const result = classifyChanges(['components/caja/CajaDetails.tsx']);
+  const result = classifyChanges(['components/cash-register/CajaDetails.tsx']);
   assert.equal(result.caja, true);
   assert.equal(result.unit, true);
   assert.equal(result.e2e, true);

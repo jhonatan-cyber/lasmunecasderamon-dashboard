@@ -12,7 +12,7 @@ import { Button } from '@/components/ui/button';
 import { Loader2 } from 'lucide-react';
 import { RoomForm } from './RoomForm';
 import { Room } from '@/types/room';
-import { RoomFormValues } from '@/hooks/personal';
+import { RoomFormValues } from '@/hooks/rooms';
 
 interface RoomFormDialogProps {
   open: boolean;
@@ -22,13 +22,7 @@ interface RoomFormDialogProps {
   isMutating: boolean;
 }
 
-export function RoomFormDialog({
-  open,
-  onClose,
-  onSubmit,
-  room,
-  isMutating
-}: RoomFormDialogProps) {
+export function RoomFormDialog({ open, onClose, onSubmit, room, isMutating }: RoomFormDialogProps) {
   return (
     <Dialog
       open={open}
@@ -86,4 +80,3 @@ export function RoomFormDialog({
     </Dialog>
   );
 }
-

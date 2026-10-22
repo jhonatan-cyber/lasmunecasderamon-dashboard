@@ -15,14 +15,14 @@ export const statusColors: Record<number, string> = {
   1: 'bg-green-100 text-green-800',
   2: 'bg-blue-100 text-blue-800',
   3: 'bg-yellow-100 text-yellow-800',
-  0: 'bg-red-100 text-red-800',
+  0: 'bg-red-100 text-red-800'
 };
 
 export const statusLabels: Record<number, string> = {
   1: 'Completado',
   2: 'En proceso',
   3: 'Pdte. Anulacion',
-  0: 'Anulado',
+  0: 'Anulado'
 };
 
 export const metodoPagoLabels = {
@@ -30,7 +30,7 @@ export const metodoPagoLabels = {
   tarjeta: 'Tarjeta',
   transferencia: 'Transferencia',
   prepago: 'Prepago',
-  mixto: 'Mixto',
+  mixto: 'Mixto'
 };
 
 export const anfitrionaColors = [
@@ -41,7 +41,7 @@ export const anfitrionaColors = [
   'bg-teal-100 text-teal-800',
   'bg-orange-100 text-orange-800',
   'bg-red-100 text-red-800',
-  'bg-green-100 text-green-800',
+  'bg-green-100 text-green-800'
 ];
 
 export const formatCurrency = (value: number): string => {
@@ -62,10 +62,8 @@ export const filterVentas = <T extends VentaSearchRow>(
       venta.habitacion_numero?.toLowerCase().includes(searchTerm.toLowerCase()) ||
       venta.usuarios?.some(user => user.nick?.toLowerCase().includes(searchTerm.toLowerCase()));
 
-    const matchesStatus =
-      filterStatus === 'all' || Number(venta.estado) === parseInt(filterStatus);
-    const matchesMetodoPago =
-      filterMetodoPago === 'all' || venta.metodo_pago === filterMetodoPago;
+    const matchesStatus = filterStatus === 'all' || Number(venta.estado) === parseInt(filterStatus);
+    const matchesMetodoPago = filterMetodoPago === 'all' || venta.metodo_pago === filterMetodoPago;
 
     return matchesSearch && matchesStatus && matchesMetodoPago;
   });
@@ -85,7 +83,7 @@ export const calculatePagination = <T extends VentaSearchRow>(
   return {
     totalItems,
     totalPages,
-    paginatedVentas,
+    paginatedVentas
   };
 };
 
@@ -95,16 +93,16 @@ export const solicitarAnulacionVenta = async (
   monto?: number
 ): Promise<{ success: boolean; error?: string }> => {
   try {
-    const response = await fetch('/api/ventas/anulacion', {
+    const response = await fetch('/api/sales/cancellation', {
       method: 'POST',
       headers: {
-        'Content-Type': 'application/json',
+        'Content-Type': 'application/json'
       },
       body: JSON.stringify({
         ventaId,
         motivo: motivo || 'Solicitud de anulacion',
-        monto: monto || 0,
-      }),
+        monto: monto || 0
+      })
     });
 
     if (!response.ok) {
@@ -124,7 +122,7 @@ export const solicitarAnulacionVenta = async (
 
       return {
         success: false,
-        error: errorMessage,
+        error: errorMessage
       };
     }
 
@@ -132,7 +130,7 @@ export const solicitarAnulacionVenta = async (
   } catch (error) {
     return {
       success: false,
-      error: error instanceof Error ? error.message : 'Error desconocido',
+      error: error instanceof Error ? error.message : 'Error desconocido'
     };
   }
 };
@@ -158,7 +156,9 @@ export const getVentaDetails = async <T extends VentaSearchRow>(
   return venta || null;
 };
 
-export const sortVentas = <T extends VentaSearchRow & { fecha_crea?: string; total?: number | string }>(
+export const sortVentas = <
+  T extends VentaSearchRow & { fecha_crea?: string; total?: number | string }
+>(
   ventas: T[],
   sortBy: string,
   sortOrder: 'asc' | 'desc'

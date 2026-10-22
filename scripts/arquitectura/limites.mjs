@@ -291,19 +291,19 @@ const REGLAS = [
   {
     id: 'infra-transaccional-autorizada',
     plan: '§6 — sólo la infraestructura autorizada resuelve el contexto al cliente PostgreSQL',
-    desc: 'lib/transaccion/infraestructura sólo lo importa la infraestructura de los módulos',
+    desc: 'lib/transaction/infrastructure sólo lo importa la infraestructura de los módulos',
     viola: d =>
-      d.hacia === 'lib/transaccion/infraestructura.ts' &&
+      d.hacia === 'lib/transaction/infrastructure.ts' &&
       !/^modules\/.*\/(?:repositorio|[^/]*Repositorio|consultas|registro|infraestructura)\.ts$/.test(
         d.desde
       ) &&
-      !d.desde.startsWith('lib/transaccion/')
+      !d.desde.startsWith('lib/transaction/')
   },
   {
     id: 'puente-transaccional-heredado',
     plan: 'Transición de Fase 4 — el puente al contexto opaco se retira al migrar la transacción de ventas',
     desc: 'ningún consumidor de producción usa el puente de transacción heredada',
-    viola: d => d.hacia === 'lib/transaccion/compatibilidad.ts' || d.hacia.startsWith('tests/')
+    viola: d => d.hacia === 'lib/transaction/compatibility.ts' || d.hacia.startsWith('tests/')
   }
 ];
 

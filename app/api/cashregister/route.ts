@@ -48,7 +48,7 @@ export const PUT = withRoute(
 /**
  * Cierre de caja (ruta histórica).
  *
- * Delega en el mismo flujo que `/api/cashregister/cierre`: el administrador cierra
+ * Delega en el mismo flujo que `/api/cashregister/closing`: el administrador cierra
  * en el acto y el resto pide autorización por WhatsApp. No se cierra directo para
  * que no quede un camino que se saltee la autorización.
  */

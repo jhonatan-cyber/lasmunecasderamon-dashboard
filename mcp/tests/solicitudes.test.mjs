@@ -27,7 +27,7 @@ test('solicitudes: confirmación, beneficiario, paginación y errores de negocio
     assert.equal(body.accion, 'crear_anticipo');
     assert.equal(body.usuario_id, 'empleado-1');
     assert.equal(body.operacion_id, entrada.operacion_id);
-    assert.equal(llamadas[0].url.pathname, '/api/mcp/admin/solicitudes');
+    assert.equal(llamadas[0].url.pathname, '/api/mcp/admin/requests');
     await consultas.solicitudes_pendientes.execute({ tipo: 'devolucion', limit: 20, offset: 40 });
     assert.equal(llamadas[1].url.searchParams.get('offset'), '40');
     assert.equal(llamadas[1].url.searchParams.get('tipo'), 'devolucion');

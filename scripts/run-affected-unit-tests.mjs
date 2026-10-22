@@ -16,7 +16,7 @@ const DOMAIN_TESTS = {
   ],
   compras: ['compras', 'Purchase', 'purchase'],
   inventario: ['inventario', 'products', 'Product', 'Category', 'category', 'containerScan'],
-  ventas: ['Sale', 'sales', 'venta', 'orders', 'Order', 'Service', 'cuenta'],
+  ventas: ['Sale', 'sales', 'venta', 'orders', 'Order', 'Service', 'cuenta', 'account'],
   personal: [
     'payroll',
     'attendance',
@@ -82,14 +82,18 @@ export function selectUnitTests(files, candidates = walk(path.join(ROOT, 'tests'
       addMatching([...routeParts, ...(DIRECT_TESTS[routeParts[0]] ?? [])]);
     }
 
-    if (/caja|cashregister|cierre-caja/i.test(file)) addMatching(DOMAIN_TESTS.caja);
+    if (/caja|cash-register|cashregister|cierre-caja/i.test(file)) addMatching(DOMAIN_TESTS.caja);
     else if (/compras|purchases/i.test(file)) addMatching(DOMAIN_TESTS.compras);
     else if (/inventario|products|categories|transfers|bar/i.test(file))
       addMatching(DOMAIN_TESTS.inventario);
-    else if (/ventas|sales|orders|servicios|cuentas/i.test(file)) addMatching(DOMAIN_TESTS.ventas);
-    else if (/personal|users|attendance|payroll|roles|permissions|advances|overtime/i.test(file))
+    else if (/ventas|sales|orders|servicios|services|cuentas|accounts/i.test(file))
+      addMatching(DOMAIN_TESTS.ventas);
+    else if (
+      /personal|staff|users|attendance|payroll|roles|permissions|advances|overtime/i.test(file)
+    )
       addMatching(DOMAIN_TESTS.personal);
-    else if (/reports|dashboard|stats|forecast/i.test(file)) addMatching(DOMAIN_TESTS.reportes);
+    else if (/reports|dashboard|stats|statistics|forecast/i.test(file))
+      addMatching(DOMAIN_TESTS.reportes);
     else if (/whatsapp|twilio|comunicaciones/i.test(file)) addMatching(DOMAIN_TESTS.whatsapp);
     else if (/auth|login|session|password/i.test(file)) addMatching(DOMAIN_TESTS.auth);
   }

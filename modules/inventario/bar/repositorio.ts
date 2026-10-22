@@ -1,6 +1,6 @@
-import { resolverTransaccion } from '@/lib/transaccion/infraestructura';
+import { resolverTransaccion } from '@/lib/transaction/infrastructure';
 import { consumirStock as consumirStockEnRepositorio } from './consumoRepositorio';
-import type { ContextoOperacion } from '@/lib/transaccion/contrato';
+import type { ContextoOperacion } from '@/lib/transaction/contract';
 import type { ContextoVentaInventario, ConsumoInventarioDetalle, ShotAlert } from '../contracts';
 
 export function consumirStock(

@@ -1,4 +1,4 @@
-import type { ContextoOperacion } from '@/lib/transaccion/contrato';
+import type { ContextoOperacion } from '@/lib/transaction/contract';
 import type { EntradaPropinaVenta, ComisionVenta, DetalleComisionVenta } from '../contracts';
 import {
   insertarComisiones,

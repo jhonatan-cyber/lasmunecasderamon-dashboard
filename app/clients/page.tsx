@@ -2,7 +2,7 @@
 
 import { useCallback } from 'react';
 import { toast } from 'sonner';
-import { useClients } from '@/hooks/clientes/useClients';
+import { useClients } from '@/hooks/clients/useClients';
 import { useRefreshOnFocus } from '@/hooks/shared';
 import { Client } from '@/types/client';
 import { ClientTable } from '@/components/clients/ClientTable';
@@ -10,11 +10,11 @@ import { ClientFilters } from '@/components/clients/ClientFilters';
 import { ClientHeader } from '@/components/clients/ClientHeader';
 import { ClientModals } from '@/components/clients/ClientModals';
 import { ClientStatsCards } from '@/components/clients/ClientStatsCards';
-import { useClientModals } from '@/hooks/clientes/useClientModals';
+import { useClientModals } from '@/hooks/clients/useClientModals';
 import Paginate from '@/components/shared/Paginate';
 import { PermissionGuard } from '@/components/auth/PermissionGuard';
 import { Skeleton as BoneyardSkeleton } from 'boneyard-js/react';
-import { type ClientFormValues } from '@/hooks/personal';
+import { type ClientFormValues } from '@/hooks/clients';
 import { useAuth } from '@/contexts/AuthContext';
 
 export default function Clients() {

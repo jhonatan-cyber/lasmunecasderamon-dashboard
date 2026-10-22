@@ -5,46 +5,47 @@
 El MCP está dirigido **únicamente a administradores activos**. OAuth verifica
 `/api/mcp/admin/session` antes de emitir la autorización; HTTP comprueba la
 identidad actual en cada petición y cada herramienta vuelve a verificarla. Stdio
-comprueba el administrador antes de abrir la conexión y en cada ejecución.
-Un cambio de rol o la desactivación bloquean el acceso aunque el token no haya
-expirado. El rol del JWT por sí solo no autoriza acceso. No se conecta directamente
-a PostgreSQL: consume la API autenticada del dashboard.
+comprueba el administrador antes de abrir la conexión y en cada ejecución. Un
+cambio de rol o la desactivación bloquean el acceso aunque el token no haya
+expirado. El rol del JWT por sí solo no autoriza acceso. No se conecta
+directamente a PostgreSQL: consume la API autenticada del dashboard.
 
 Hay **33 herramientas** en modo normal: 23 consultas y 10 operaciones. OAuth con
-`mcp:read` publica únicamente las 23 consultas. `mcp:write` habilita operaciones;
-no permite conectar a otros roles. Las cuatro herramientas de desarrollo siguen
-siendo exclusivas de stdio y requieren la misma identidad administradora.
+`mcp:read` publica únicamente las 23 consultas. `mcp:write` habilita
+operaciones; no permite conectar a otros roles. Las cuatro herramientas de
+desarrollo siguen siendo exclusivas de stdio y requieren la misma identidad
+administradora.
 
 Herramientas añadidas:
 
-| Herramienta | Uso |
-| --- | --- |
-| `solicitudes_pendientes` | Bandeja de nueve tipos: anticipos, devoluciones, gratificaciones, servicios, transferencias, cierres, anulaciones de ventas, servicios y cuentas. |
-| `detalle_solicitud` | Identificador, monto, estado y efecto de la aprobación. |
-| `limite_anticipo_empleado` | Máximo y balance del beneficiario; nunca del administrador por defecto. |
-| `buscar_personal` | Buscar empleados activos por nombre o nick; resolver coincidencias antes de operar. |
-| `solicitar_anticipo_empleado` | Crear un anticipo pendiente para el beneficiario indicado. |
-| `solicitar_devolucion_cliente` | Crear una devolución pendiente de saldo prepago. |
-| `solicitar_gratificacion_empleado` | Crear una gratificación pendiente de aprobación. |
-| `solicitar_transferencia_bar` | Reservar unidades y crear una transferencia pendiente al bar. |
-| `solicitar_anulacion` | Solicitar anulación de venta, servicio o cuenta. |
-| `solicitar_servicio` | Crear una solicitud pendiente con habitación, anfitrionas y valores explícitos. |
-| `resolver_solicitud` | Aprobar o rechazar una solicitud por tipo e identificador. |
-| `entregar_anticipo` | Registrar entrega real y descontar efectivo de caja, separado de aprobar. |
-| `cerrar_caja_administrador` | Cerrar directamente o resolver el cierre pendiente como administrador. |
+| Herramienta                        | Uso                                                                                                                                               |
+| ---------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `solicitudes_pendientes`           | Bandeja de nueve tipos: anticipos, devoluciones, gratificaciones, servicios, transferencias, cierres, anulaciones de ventas, servicios y cuentas. |
+| `detalle_solicitud`                | Identificador, monto, estado y efecto de la aprobación.                                                                                           |
+| `limite_anticipo_empleado`         | Máximo y balance del beneficiario; nunca del administrador por defecto.                                                                           |
+| `buscar_personal`                  | Buscar empleados activos por nombre o nick; resolver coincidencias antes de operar.                                                               |
+| `solicitar_anticipo_empleado`      | Crear un anticipo pendiente para el beneficiario indicado.                                                                                        |
+| `solicitar_devolucion_cliente`     | Crear una devolución pendiente de saldo prepago.                                                                                                  |
+| `solicitar_gratificacion_empleado` | Crear una gratificación pendiente de aprobación.                                                                                                  |
+| `solicitar_transferencia_bar`      | Reservar unidades y crear una transferencia pendiente al bar.                                                                                     |
+| `solicitar_anulacion`              | Solicitar anulación de venta, servicio o cuenta.                                                                                                  |
+| `solicitar_servicio`               | Crear una solicitud pendiente con habitación, anfitrionas y valores explícitos.                                                                   |
+| `resolver_solicitud`               | Aprobar o rechazar una solicitud por tipo e identificador.                                                                                        |
+| `entregar_anticipo`                | Registrar entrega real y descontar efectivo de caja, separado de aprobar.                                                                         |
+| `cerrar_caja_administrador`        | Cerrar directamente o resolver el cierre pendiente como administrador.                                                                            |
 
 Consultas de negocio (producto, almacén, caja, reportes y auditoría), todas de
 sólo lectura:
 
-| Herramienta | Uso |
-| --- | --- |
-| `buscar_producto` | Catálogo: `term` (tiene prioridad), `category_id` y `para_venta` para el stock del bar. |
-| `detalle_producto` | Producto por id con presentaciones, precios y stock. |
-| `listar_transferencias` | Stock del bar e historial de transferencias almacén → bar (`items`, `history`). |
-| `transferencias_pendientes` | Pendientes de aceptar o rechazar; resolverlas queda fuera del MCP. |
-| `historial_cajas` | Turnos de caja; `con_resumen` devuelve sólo el agregado. |
-| `reporte_ventas` | Totales por método de pago, ventas por día y shots; `period` y rango `custom`. |
-| `auditoria_reciente` | Últimos eventos de auditoría, `limit` 1–200 (por defecto 50). |
+| Herramienta                 | Uso                                                                                     |
+| --------------------------- | --------------------------------------------------------------------------------------- |
+| `buscar_producto`           | Catálogo: `term` (tiene prioridad), `category_id` y `para_venta` para el stock del bar. |
+| `detalle_producto`          | Producto por id con presentaciones, precios y stock.                                    |
+| `listar_transferencias`     | Stock del bar e historial de transferencias almacén → bar (`items`, `history`).         |
+| `transferencias_pendientes` | Pendientes de aceptar o rechazar; resolverlas queda fuera del MCP.                      |
+| `historial_cajas`           | Turnos de caja; `con_resumen` devuelve sólo el agregado.                                |
+| `reporte_ventas`            | Totales por método de pago, ventas por día y shots; `period` y rango `custom`.          |
+| `auditoria_reciente`        | Últimos eventos de auditoría, `limit` 1–200 (por defecto 50).                           |
 
 Ejemplos de solicitudes al asistente: «Muéstrame los anticipos pendientes»,
 «Busca a Ana y consulta su máximo de anticipo», «Solicita 200 para Ana por
@@ -56,10 +57,11 @@ perdida, se conserva el mismo UUID y payload; el backend replica el resultado
 sin repetir la operación. Si cambia el payload, se rechaza reutilizar la clave.
 Si una operación falla o queda en curso, no se reejecuta automáticamente:
 consultar el estado antes de decidir cómo continuar. La confirmación expresa la
-autorización del administrador; el cliente debe obtenerla, no rellenarla por
-su cuenta. `cobrar_cuenta` también exige `confirmar: true` y un `operacion_id`
+autorización del administrador; el cliente debe obtenerla, no rellenarla por su
+cuenta. `cobrar_cuenta` también exige `confirmar: true` y un `operacion_id`
 UUID, que sale como cabecera `x-idempotency-key`; reintentar con el mismo UUID
-replica la respuesta guardada en `/api/cuentas/{id}/cobrar` sin cobrar dos veces.
+replica la respuesta guardada en `/api/accounts/{id}/charge` sin cobrar dos
+veces.
 
 Antes de resolver, consultar `detalle_solicitud` y enviar su `monto` como
 `monto_esperado` (transferencias: 0; confirmar también producto y cantidad).
@@ -72,17 +74,20 @@ recepción debe hacerla una persona distinta de quien envió.
 La bandeja tiene paginación por grupo: `limit` (1–50, por defecto 20), `offset`,
 `total` y `hay_mas`. No sumar dinero de distintos tipos como si fueran egresos.
 Anticipos y devoluciones admiten detalle después de resolver; los demás tipos
-consultan solicitudes pendientes. Los tokens de enlaces públicos no se devuelven.
+consultan solicitudes pendientes. Los tokens de enlaces públicos no se
+devuelven.
 
-Todas las herramientas declaran `outputSchema` y devuelven resultados estructurados.
-Las consultas, solicitudes y cobros devuelven el mismo sobre en el texto JSON y en
-`structuredContent`. Los errores incluyen `structuredContent.error` e `isError`.
-`verificar_conexion` conserva su diagnóstico en crudo.
+Todas las herramientas declaran `outputSchema` y devuelven resultados
+estructurados. Las consultas, solicitudes y cobros devuelven el mismo sobre en
+el texto JSON y en `structuredContent`. Los errores incluyen
+`structuredContent.error` e `isError`. `verificar_conexion` conserva su
+diagnóstico en crudo.
 
 El límite de 20 000 caracteres se aplica al resultado serializado: si lo supera,
-ambos canales devuelven `resultado: null`, metadatos `truncado` y un `aviso` para
-reducir la página o usar filtros. Nunca se devuelve un prefijo incompleto como datos.
-Este aviso no indica que una escritura haya fallado: no repetirla con otra clave.
+ambos canales devuelven `resultado: null`, metadatos `truncado` y un `aviso`
+para reducir la página o usar filtros. Nunca se devuelve un prefijo incompleto
+como datos. Este aviso no indica que una escritura haya fallado: no repetirla
+con otra clave.
 
 `listar_cuentas`, `buscar_producto`, `listar_transferencias`,
 `transferencias_pendientes`, `historial_cajas` y `buscar_personal` admiten
@@ -90,19 +95,19 @@ Este aviso no indica que una escritura haya fallado: no repetirla con otra clave
 `{ items, total, limit, offset, hay_mas }`. En transferencias, `items` y
 `history` contienen cada uno ese sobre. El resumen de cajas conserva su formato.
 La paginación se aplica en el adaptador MCP: las APIs existentes todavía envían
-listas completas al servidor MCP; no reduce las consultas a la base de datos.
-La bandeja de solicitudes conserva su paginación en el backend por grupo (1–50).
+listas completas al servidor MCP; no reduce las consultas a la base de datos. La
+bandeja de solicitudes conserva su paginación en el backend por grupo (1–50).
 
-Las rutas `/api/mcp/admin/session` y `/api/mcp/admin/solicitudes` comprueban el
+Las rutas `/api/mcp/admin/session` y `/api/mcp/admin/requests` comprueban el
 administrador activo en la base de datos. La segunda registra la identidad
 autenticada como actor; el beneficiario es un campo separado. Usa servicios
 públicos de los módulos y las transacciones de negocio existentes. No requiere
 migraciones nuevas; la idempotencia utiliza `sync_operations` (migración 040).
 
-Después de actualizar, compilar con `pnpm --dir mcp build` y reiniciar el proceso
-MCP y el dashboard para cargar las nuevas rutas. Una instalación externa debe
-recibir un nuevo paquete generado con `npm pack`; los paquetes antiguos no cambian
-automáticamente.
+Después de actualizar, compilar con `pnpm --dir mcp build` y reiniciar el
+proceso MCP y el dashboard para cargar las nuevas rutas. Una instalación externa
+debe recibir un nuevo paquete generado con `npm pack`; los paquetes antiguos no
+cambian automáticamente.
 
 ## Conexión remota con OAuth 2.1
 
@@ -119,8 +124,8 @@ Ejemplo local en PowerShell desde la raíz del repositorio:
 
 Para uso local directo, ejecuta `node mcp/scripts/start-local.mjs`. Arranca en
 `http://127.0.0.1:3001/mcp`, conecta al dashboard en el puerto 3000 y genera una
-clave persistente en `mcp/.data/oauth.key` (excluida de Git). Reutiliza esa clave
-en los siguientes arranques. Después registra el servidor en Codex con
+clave persistente en `mcp/.data/oauth.key` (excluida de Git). Reutiliza esa
+clave en los siguientes arranques. Después registra el servidor en Codex con
 `codex mcp add lasmunecas --url http://127.0.0.1:3001/mcp --oauth-client-registration dcr`
 y completa el login OAuth en el navegador.
 
@@ -147,15 +152,15 @@ header **Host** original y reenvíe todas las rutas del servicio OAuth.
 loopback por defecto; `MCP_HOST` permite cambiarlo si el despliegue lo requiere.
 También se exige HTTPS para `MCP_BASE_URL`, excepto cuando apunta a loopback.
 
-| Variable               | Uso                                                                                                      |
-| ---------------------- | -------------------------------------------------------------------------------------------------------- |
-| `MCP_PUBLIC_URL`       | Origen público del MCP, sin `/mcp`; obligatorio.                                                         |
-| `MCP_BASE_URL`         | URL del dashboard que verifica las cuentas y los permisos.                                               |
-| `MCP_OAUTH_STORE_KEY`  | Clave AES de 32 bytes en base64; obligatoria y estable.                                                  |
-| `MCP_OAUTH_DB`         | Ruta de SQLite cifrado; por defecto `.data/mcp-oauth.sqlite` relativa al directorio de ejecución.        |
-| `MCP_HOST`, `MCP_PORT` | Dirección de escucha y puerto; `127.0.0.1:3001` por defecto.                                             |
-| `MCP_TRUSTED_PROXIES` | IPs/subredes de proxies confiables separadas por coma; vacío por defecto. Sólo esos proxies pueden aportar la IP del cliente mediante X-Forwarded-For. |
-| `MCP_ALLOWED_ORIGINS`  | Orígenes de clientes web separados por coma; sólo los configurados pueden llamar `/mcp` desde navegador. |
+| Variable               | Uso                                                                                                                                                    |
+| ---------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `MCP_PUBLIC_URL`       | Origen público del MCP, sin `/mcp`; obligatorio.                                                                                                       |
+| `MCP_BASE_URL`         | URL del dashboard que verifica las cuentas y los permisos.                                                                                             |
+| `MCP_OAUTH_STORE_KEY`  | Clave AES de 32 bytes en base64; obligatoria y estable.                                                                                                |
+| `MCP_OAUTH_DB`         | Ruta de SQLite cifrado; por defecto `.data/mcp-oauth.sqlite` relativa al directorio de ejecución.                                                      |
+| `MCP_HOST`, `MCP_PORT` | Dirección de escucha y puerto; `127.0.0.1:3001` por defecto.                                                                                           |
+| `MCP_TRUSTED_PROXIES`  | IPs/subredes de proxies confiables separadas por coma; vacío por defecto. Sólo esos proxies pueden aportar la IP del cliente mediante X-Forwarded-For. |
+| `MCP_ALLOWED_ORIGINS`  | Orígenes de clientes web separados por coma; sólo los configurados pueden llamar `/mcp` desde navegador.                                               |
 
 El login es individual, incluye el código de turno cuando corresponde, y
 requiere consentimiento explícito. `mcp:read` permite consultas; `mcp:write`
@@ -180,8 +185,12 @@ El estado se cifra con AES-256-GCM en SQLite. Conserva el archivo y su clave
 entre reinicios. SQLite y la caché de sesiones soportan **una sola instancia**
 del servidor; no despliegues múltiples procesos contra la misma base. Los tokens
 internos del dashboard permanecen en el servidor, separados de los tokens MCP.
-Se aplican límites de intentos por IP (20 por 15 minutos, con Retry-After), protección CSRF y controles de Host y Origin. Tras un proxy inverso, configura MCP_TRUSTED_PROXIES con su IP/subred exacta y haz que sobrescriba X-Forwarded-For. No se confía en cabeceras reenviadas de conexiones directas. La caché elimina sesiones expiradas al consultar o guardar sesiones. El
-cambio no añade OAuth al login de Expo: su autenticación existente continúa.
+Se aplican límites de intentos por IP (20 por 15 minutos, con Retry-After),
+protección CSRF y controles de Host y Origin. Tras un proxy inverso, configura
+MCP_TRUSTED_PROXIES con su IP/subred exacta y haz que sobrescriba
+X-Forwarded-For. No se confía en cabeceras reenviadas de conexiones directas. La
+caché elimina sesiones expiradas al consultar o guardar sesiones. El cambio no
+añade OAuth al login de Expo: su autenticación existente continúa.
 
 `pnpm --dir mcp test` prueba el protocolo HTTP real contra un dashboard
 simulado: consentimiento, PKCE, client/resource/redirect binding, aislamiento de
@@ -213,8 +222,8 @@ Reemplaza la URL y las credenciales por las del dashboard que quieres utilizar.
 Puedes agregar `MCP_CODIGO` si tu rol exige código del turno.
 
 Reinicia la conexión MCP del cliente y ejecuta `verificar_conexion`. En modo
-remoto aparecen 33 herramientas: consultas, solicitudes y cobro. Las operaciones conservan
-los permisos del usuario y el cobro requiere confirmación explícita.
+remoto aparecen 33 herramientas: consultas, solicitudes y cobro. Las operaciones
+conservan los permisos del usuario y el cobro requiere confirmación explícita.
 
 Para actualizar, instala el nuevo `.tgz` en la misma carpeta y reinicia la
 conexión. Para quitar el paquete:
@@ -252,16 +261,16 @@ registro. Al cambiar la versión, adapta el nombre del archivo.
 Cada error sale como JSON parseable en `content` y con el mismo objeto en
 `structuredContent.error`:
 
-| Campo | Significado |
-| --- | --- |
-| `codigo` | Taxonomía del MCP: `CREDENCIALES_INVALIDAS`, `SESION_RECHAZADA`, `PERMISOS_INSUFICIENTES`, `SOLO_ADMINISTRADOR`, `CONEXION_RECHAZADA`, `TIMEOUT`, `ERROR_RED`, `RESPUESTA_INVALIDA`, `ERROR_HTTP`, `OPERACION_RECHAZADA`, `ENTRADA_INVALIDA`, `ERROR_HERRAMIENTA`. |
-| `estado` | HTTP del dashboard, o `null` si nunca hubo respuesta. |
-| `mensaje` | Detalle legible del fallo. |
-| `siguientePaso` | Qué hacer ahora: derivado del `codigo`, y específico cuando el backend responde `IDEMPOTENCY_*`. |
-| `codigoNegocio` | `code` del backend cuando lo trae, p. ej. `IDEMPOTENCY_PENDIENTE`. |
+| Campo           | Significado                                                                                                                                                                                                                                                        |
+| --------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `codigo`        | Taxonomía del MCP: `CREDENCIALES_INVALIDAS`, `SESION_RECHAZADA`, `PERMISOS_INSUFICIENTES`, `SOLO_ADMINISTRADOR`, `CONEXION_RECHAZADA`, `TIMEOUT`, `ERROR_RED`, `RESPUESTA_INVALIDA`, `ERROR_HTTP`, `OPERACION_RECHAZADA`, `ENTRADA_INVALIDA`, `ERROR_HERRAMIENTA`. |
+| `estado`        | HTTP del dashboard, o `null` si nunca hubo respuesta.                                                                                                                                                                                                              |
+| `mensaje`       | Detalle legible del fallo.                                                                                                                                                                                                                                         |
+| `siguientePaso` | Qué hacer ahora: derivado del `codigo`, y específico cuando el backend responde `IDEMPOTENCY_*`.                                                                                                                                                                   |
+| `codigoNegocio` | `code` del backend cuando lo trae, p. ej. `IDEMPOTENCY_PENDIENTE`.                                                                                                                                                                                                 |
 
-`isError` sigue marcando el fallo. El `outputSchema` admite `error` en lugar
-de `resultado` porque el cliente MCP también valida el structuredContent de los
+`isError` sigue marcando el fallo. El `outputSchema` admite `error` en lugar de
+`resultado` porque el cliente MCP también valida el structuredContent de los
 errores: sin esa rama, un fallo reventaría con `-32602` en el lado del cliente.
 `verificar_conexion` aplica el mismo contrato dentro de su diagnóstico: sus
 `ping.error` y `autenticacion.error` también traen `codigo`, `estado`, `mensaje`
@@ -291,8 +300,8 @@ Variables de entorno del proceso MCP:
 | `MCP_BASE_URL`              | Dirección del dashboard; por defecto `http://127.0.0.1:3000`.                             |
 | `MCP_EMAIL`, `MCP_PASSWORD` | Credenciales de un usuario del dashboard. Sus permisos se aplican a las herramientas.     |
 | `MCP_CODIGO`                | Código del turno cuando el rol lo requiere.                                               |
-| `MCP_TIMEOUT_MS`            | Entero entre 1 y 300000 ms; por defecto 20000. Un valor inválido impide arrancar.                                      |
-| `MCP_REINTENTOS`            | Intentos máximos por petición GET; por defecto 3 y `1` los desactiva.                      |
+| `MCP_TIMEOUT_MS`            | Entero entre 1 y 300000 ms; por defecto 20000. Un valor inválido impide arrancar.         |
+| `MCP_REINTENTOS`            | Intentos máximos por petición GET; por defecto 3 y `1` los desactiva.                     |
 | `MCP_RETRY_MS`              | Espera base del backoff exponencial con jitter; por defecto 250 ms.                       |
 | `MCP_REPO_ROOT`             | Ruta absoluta del repositorio; obligatoria cuando se habilitan comandos de desarrollo.    |
 | `MCP_ENABLE_DEV_TOOLS`      | `1` habilita comandos de desarrollo y requiere `MCP_REPO_ROOT`; desactivados por defecto. |
@@ -317,12 +326,12 @@ configurada, ejecuta `node smoke.mjs` desde `mcp`.
 ## Ranking de asistencia
 
 `ranking_asistencia` consulta todo el historial sin argumentos. Los filtros
-opcionales `startDate` y `endDate` usan fechas `YYYY-MM-DD` y límites inclusivos.
-Ejemplo: `{ "startDate": "2026-01-01", "endDate": "2026-10-06" }`.
-Devuelve todos los usuarios empatados en más asistencias y más faltas.
-La jornada es de martes a domingo: cada día laboral sin presencia cuenta como falta.
-Cada usuario se evalúa desde su primera marca histórica o `startDate`, la fecha
-posterior, hasta `endDate` o ayer en America/La_Paz, la fecha anterior. No cuenta
-lunes, jornadas en curso ni fechas futuras. Cada usuario cuenta una sola vez por
-fecha y las asistencias pagadas cuentan como presencia. No descuenta permisos ni
-vacaciones. Requiere permiso de lectura del módulo attendance.
+opcionales `startDate` y `endDate` usan fechas `YYYY-MM-DD` y límites
+inclusivos. Ejemplo: `{ "startDate": "2026-01-01", "endDate": "2026-10-06" }`.
+Devuelve todos los usuarios empatados en más asistencias y más faltas. La
+jornada es de martes a domingo: cada día laboral sin presencia cuenta como
+falta. Cada usuario se evalúa desde su primera marca histórica o `startDate`, la
+fecha posterior, hasta `endDate` o ayer en America/La_Paz, la fecha anterior. No
+cuenta lunes, jornadas en curso ni fechas futuras. Cada usuario cuenta una sola
+vez por fecha y las asistencias pagadas cuentan como presencia. No descuenta
+permisos ni vacaciones. Requiere permiso de lectura del módulo attendance.

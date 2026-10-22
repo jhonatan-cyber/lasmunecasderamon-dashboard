@@ -41,7 +41,7 @@ export function setupFetchInterceptor() {
           currentPath === '/login' ||
           currentPath === '/api-docs' ||
           isPublicRoute(currentPath) ||
-          currentPath === '/asistencia-qr';
+          currentPath === '/attendance-qr';
 
         if (!isPublic && !url.includes('/login')) {
           isRedirecting = true;

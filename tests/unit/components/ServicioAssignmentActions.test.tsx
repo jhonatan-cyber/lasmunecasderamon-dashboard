@@ -1,6 +1,6 @@
 import { afterEach, expect, it, vi } from 'vitest';
 import { act, cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react';
-import { ServicioAssignmentActions } from '@/components/servicios/ServicioAssignmentActions';
+import { ServicioAssignmentActions } from '@/components/services/ServicioAssignmentActions';
 
 vi.mock('sonner', () => ({ toast: { success: vi.fn(), error: vi.fn() } }));
 afterEach(() => {
@@ -52,7 +52,7 @@ it('busca anfitrionas, muestra quién entra o sale y guarda la selección final'
     fireEvent.click(screen.getByRole('button', { name: 'Guardar cambios' }));
   });
   expect(fetchMock).toHaveBeenLastCalledWith(
-    '/api/servicios/servicio-1/anfitrionas',
+    '/api/services/servicio-1/hostesses',
     expect.objectContaining({ method: 'PATCH', body: JSON.stringify({ usuarios: ['bea'] }) })
   );
   expect(onUpdate).toHaveBeenCalledOnce();

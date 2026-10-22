@@ -27,11 +27,16 @@ beforeEach(() => {
   mocks.registrar.mockResolvedValue(undefined);
 });
 afterEach(() => vi.unstubAllEnvs());
-it.each(['failed', 'undelivered', 'canceled'])('no confirma como enviado un mensaje con estado %s', async status => {
-  mocks.create.mockResolvedValue({ sid: 'SM' + 'b'.repeat(32), status });
-  await expect(enviarWhatsApp('+59177712345', 'Clave temporal de prueba')).rejects.toThrow('WhatsApp rechazó el envío');
-  expect(mocks.registrar).toHaveBeenCalledWith(expect.objectContaining({ estado: status }));
-});
+it.each(['failed', 'undelivered', 'canceled'])(
+  'no confirma como enviado un mensaje con estado %s',
+  async status => {
+    mocks.create.mockResolvedValue({ sid: 'SM' + 'b'.repeat(32), status });
+    await expect(enviarWhatsApp('+59177712345', 'Clave temporal de prueba')).rejects.toThrow(
+      'WhatsApp rechazó el envío'
+    );
+    expect(mocks.registrar).toHaveBeenCalledWith(expect.objectContaining({ estado: status }));
+  }
+);
 it('usa el destino guardado e incluye el callback público al enviar la prueba', async () => {
   const result = await enviarPruebaWhatsApp();
   expect(mocks.create).toHaveBeenCalledWith(
@@ -63,7 +68,7 @@ it('adjunta el reporte PDF firmado en el mensaje de WhatsApp', async () => {
     expect.objectContaining({
       body: expect.stringContaining('Adjunto el informe PDF'),
       to: 'whatsapp:+59170000000',
-      mediaUrl: ['https://dashboard.example.com/api/cashregister/reporte-pdf?token=token-firmado']
+      mediaUrl: ['https://dashboard.example.com/api/cashregister/pdf-report?token=token-firmado']
     })
   );
 });

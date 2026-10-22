@@ -1,7 +1,7 @@
 import 'server-only';
 import { UserService } from '@/modules/identidad';
 import { eliminarPlantillasLocales } from '@/modules/asistencia';
-import { enUnaUnidad } from '@/lib/transaccion/contrato';
+import { enUnaUnidad } from '@/lib/transaction/contract';
 
 export async function eliminarUsuario(id: string | number) {
   const usuarioId = String(id);

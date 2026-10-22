@@ -1,7 +1,7 @@
 import { generateUUID } from '@/lib/utils/ids';
 import 'server-only';
-import { enUnaUnidad } from '@/lib/transaccion/contrato';
-import { ejecutarEfectosConfirmados } from '@/lib/transaccion/efectos';
+import { enUnaUnidad } from '@/lib/transaction/contract';
+import { ejecutarEfectosConfirmados } from '@/lib/transaction/effects';
 import { cobrarYPrepararVenta, consultarCuentaCobrada } from '@/modules/operacion';
 import type { CuentaCobrarBody } from '@/modules/operacion/contracts';
 import { registrarVenta } from '@/workflows/registrar-venta';

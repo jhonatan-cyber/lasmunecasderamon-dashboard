@@ -219,9 +219,9 @@ performance, mantenibilidad y experiencia de desarrollo.
 
 **Archivos creados**:
 
-- `components/cuentas/ProductCartTable.tsx`
-- `components/cuentas/CartSummary.tsx`
-- `hooks/shared/useProductCart.ts`
+- `components/accounts/ProductCartTable.tsx`
+- `components/accounts/CartSummary.tsx`
+- `hooks/accounts/useProductCart.ts`
 
 **API pública**: 100% compatible - sin breaking changes
 
@@ -260,9 +260,9 @@ performance, mantenibilidad y experiencia de desarrollo.
 
 **Archivos creados**:
 
-- `components/servicios/ServiceFormFields.tsx`
-- `components/servicios/ServicePriceSummary.tsx`
-- `hooks/shared/useServicePricing.ts`
+- `components/services/ServiceFormFields.tsx`
+- `components/services/ServicePriceSummary.tsx`
+- `hooks/services/useServicePricing.ts`
 
 **API pública**: 100% compatible - sin breaking changes
 
@@ -355,8 +355,8 @@ performance, mantenibilidad y experiencia de desarrollo.
 - `components/bar/transfer/SaleTypeEditor.tsx`
 - `components/bar/transfer/ChampagneTiers.tsx`
 - `components/bar/transfer/TransferFooter.tsx`
-- `hooks/shared/useTransferForm.ts`
-- `hooks/shared/useTransferSubmit.ts`
+- `hooks/transfers/useTransferForm.ts`
+- `hooks/transfers/useTransferSubmit.ts`
 
 ### 7. SaleProductModal.tsx ✅ (2026-09-28)
 
@@ -406,7 +406,7 @@ performance, mantenibilidad y experiencia de desarrollo.
 
 **Archivos creados**:
 
-- `hooks/shared/useSaleProductModal.ts`
+- `hooks/sales/useSaleProductModal.ts`
 - `components/sales/product-modal/saleProductItems.ts`
 - `components/sales/product-modal/SaleProductPhoto.tsx`
 - `components/sales/product-modal/SaleProductViewToggle.tsx`
@@ -435,8 +435,8 @@ performance, mantenibilidad y experiencia de desarrollo.
      números derivados de la caja + `distribucionDinero`), `getEstadoInfo`,
      `buildCajaExportContext` (shape de `CajaExportContext`), `retirosTotal`,
      `getDiaSemana` y `printHtml` (Blob URL CSP-safe; antes inline en el render)
-3. **Componentes extraídos** (en `components/caja/details/`, registrados en su
-   `index.ts`):
+3. **Componentes extraídos** (en `components/cash-register/details/`,
+   registrados en su `index.ts`):
    - `CajaDetailsHeader` - título con día + chip de estado + botones
      Imprimir/Exportar PDF
    - `CajaDetailsStatsBar` - barra sticky colapsable (mini-resumen de 4 números
@@ -451,7 +451,7 @@ performance, mantenibilidad y experiencia de desarrollo.
 
 **Notas**:
 
-- API pública intacta: `components/caja/index.ts` sigue exportando
+- API pública intacta: `components/cash-register/index.ts` sigue exportando
   `default as CajaDetails` y `app/cash-register/page.tsx` (carga dinámica) no
   cambia; el hook de datos `useCajaDetails` no se tocó.
 - El tab activo se tipa como unión (`CajaDetailsTab`) en la capa de vista;
@@ -461,14 +461,14 @@ performance, mantenibilidad y experiencia de desarrollo.
 
 **Archivos creados**:
 
-- `components/caja/hooks/useCajaDetailsView.ts`
-- `components/caja/details/cajaDetailsModel.ts`
-- `components/caja/details/cajaDetailsPrint.ts`
-- `components/caja/details/CajaDetailsHeader.tsx`
-- `components/caja/details/CajaDetailsStatsBar.tsx`
-- `components/caja/details/CajaDetailsTabs.tsx`
-- `components/caja/details/CajaDetailsUserCards.tsx`
-- `components/caja/details/CajaDetailsResumenTab.tsx`
+- `components/cash-register/hooks/useCajaDetailsView.ts`
+- `components/cash-register/details/cajaDetailsModel.ts`
+- `components/cash-register/details/cajaDetailsPrint.ts`
+- `components/cash-register/details/CajaDetailsHeader.tsx`
+- `components/cash-register/details/CajaDetailsStatsBar.tsx`
+- `components/cash-register/details/CajaDetailsTabs.tsx`
+- `components/cash-register/details/CajaDetailsUserCards.tsx`
+- `components/cash-register/details/CajaDetailsResumenTab.tsx`
 
 ### 9. NewPrivateRoomPageClient.tsx ✅ (2026-09-28)
 
@@ -482,13 +482,13 @@ performance, mantenibilidad y experiencia de desarrollo.
    - `useServicioForm` (289 líneas) - estado completo de «Datos Servicio»:
      lookup (clientes/anfitrionas/habitaciones + refresh al volver del foco),
      formData, totales vía modelo puro, los 4 efectos (habitación, prepago sin
-     cliente, prepago con saldo) y el flujo confirmar → POST `/api/servicios` →
+     cliente, prepago con saldo) y el flujo confirmar → POST `/api/services` →
      timer
 2. **Módulos puros**:
    - `servicioFormModel.ts` (153 líneas) - `calcularTotalesServicio`
      (multiplicadores por anfitrionas/clientes, IVA tarjeta con redondeo a 5000,
      IVA mixto desde `monto − baseMonto`), `validateServicioForm`,
-     `buildServicioPayload` (POST `/api/servicios`),
+     `buildServicioPayload` (POST `/api/services`),
      `formatNumberWithSeparators`/`parseMonto` y `unirNombresAnfitrionas`
    - `printBoleta.ts` (56 líneas) - impresión de la boleta de habitación
      (ventana + `generateReceiptHTML`)
@@ -659,7 +659,7 @@ const amount = useNumberFormatter(initialValue);
 
 ### 5. ServiceFormFields
 
-**Ubicación**: `components/servicios/ServiceFormFields.tsx`  
+**Ubicación**: `components/services/ServiceFormFields.tsx`  
 **Uso**: Campos completos de formulario de servicios  
 **Beneficio**: Elimina ~180 líneas de JSX repetitivo
 
@@ -676,7 +676,7 @@ const amount = useNumberFormatter(initialValue);
 
 ### 6. ServicePriceSummary
 
-**Ubicación**: `components/servicios/ServicePriceSummary.tsx`  
+**Ubicación**: `components/services/ServicePriceSummary.tsx`  
 **Uso**: Resumen de precios y totales de servicios  
 **Beneficio**: Elimina ~60 líneas de lógica de presentación
 
@@ -692,7 +692,7 @@ const amount = useNumberFormatter(initialValue);
 
 ### 7. useServicePricing
 
-**Ubicación**: `hooks/shared/useServicePricing.ts`  
+**Ubicación**: `hooks/services/useServicePricing.ts`  
 **Uso**: Cálculo completo de precios de servicios  
 **Beneficio**: Lógica centralizada de pricing con IVA
 

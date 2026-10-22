@@ -2,7 +2,7 @@
 import { Button } from '@/components/ui/button';
 
 import { Input } from '@/components/ui/input';
-import type { ChampagneTier } from '@/hooks/personal/useChampagneTiers';
+import type { ChampagneTier } from '@/hooks/staff/useChampagneTiers';
 
 interface ChampagneTiersTableProps {
   tiers: ChampagneTier[];

@@ -1,11 +1,12 @@
 'use client';
 import { Button } from '@/components/ui/button';
 
-import { useState } from 'react';
+import { useState, type ReactNode } from 'react';
 import { SaleProductPhoto } from '@/components/sales/product-modal/SaleProductPhoto';
 import { AlertTriangle, GlassWater, Wine, type LucideIcon } from 'lucide-react';
 import { MetricCard } from '@/components/shared/MetricCard';
 import { formatCurrencyCLP } from '@/lib/utils/formatters';
+import { cn } from '@/lib/utils/utils';
 import {
   Dialog,
   DialogContent,
@@ -35,6 +36,8 @@ interface StatCard {
   value: number | string;
   detail: string;
   icon: LucideIcon;
+  /** Contenido extra del pie, sin interacción propia. */
+  breakdown?: ReactNode;
   /** Los stats con detalle abren un modal desde toda la tarjeta. */
   onOpen?: () => void;
   overlayLabel?: string;
@@ -47,6 +50,21 @@ const ORIGEN_CORTO: Record<OrigenCorto, string> = {
   servicio: 'Servicio',
   pedido: 'Pedido'
 };
+
+/** Orden estable de los filtros: el mismo de `OrigenCorto`. */
+const ORIGENES = Object.keys(ORIGEN_CORTO) as OrigenCorto[];
+
+/** Color de cada origen en el mini desglose de la tarjeta. */
+const ORIGEN_COLOR: Record<OrigenCorto, string> = {
+  barra: 'bg-emerald-500',
+  habitacion: 'bg-violet-500',
+  cuenta: 'bg-amber-500',
+  servicio: 'bg-sky-500',
+  pedido: 'bg-rose-500'
+};
+
+/** «todos» muestra el día completo; el resto, un solo origen. */
+type FiltroOrigen = OrigenCorto | 'todos';
 
 /** «Habitación 12» cuando se conoce el nombre; el resto de orígenes, su etiqueta. */
 function etiquetaOrigen(corto: CortoVendidoHoy): string {
@@ -101,20 +119,58 @@ export function BarStatsCards({
 }) {
   const [detalleAbierto, setDetalleAbierto] = useState(false);
   const [cortosAbierto, setCortosAbierto] = useState(false);
+  const [origenElegido, setOrigenElegido] = useState<FiltroOrigen>('todos');
   const cortosHoy = resumen?.cortosHoy ?? [];
+
+  // Cortos del día por origen: es lo que muestran los filtros del modal.
+  const cortosPorOrigen: Record<OrigenCorto, number> = {
+    barra: 0,
+    cuenta: 0,
+    habitacion: 0,
+    servicio: 0,
+    pedido: 0
+  };
+  for (const corto of cortosHoy) cortosPorOrigen[corto.origen] += corto.cantidad;
+  const totalCortosDia = cortosHoy.reduce((total, corto) => total + corto.cantidad, 0);
+  // Mini desglose del día por origen, visible en la tarjeta sin abrir el modal.
+  const origenesDelDia = ORIGENES.map(origen => ({
+    origen,
+    cortos: cortosPorOrigen[origen]
+  })).filter(origen => origen.cortos > 0);
+
+  // Un origen que se quedó sin cortos no puede seguir filtrando: si el resumen
+  // se refresca, el modal vuelve al día completo en vez de quedar vacío.
+  const filtroOrigen: FiltroOrigen =
+    origenElegido !== 'todos' && cortosPorOrigen[origenElegido] > 0 ? origenElegido : 'todos';
+  const cortosFiltrados =
+    filtroOrigen === 'todos' ? cortosHoy : cortosHoy.filter(corto => corto.origen === filtroOrigen);
   // Un ticket por venta: el modal se lee como el ticket que lo originó.
-  const tickets = cortosPorVenta(cortosHoy);
-  // Resumen del día, siempre visible en el encabezado del modal.
-  const totalCortosHoy = cortosHoy.reduce((total, corto) => total + corto.cantidad, 0);
-  const cobradoCortos = cortosHoy.reduce((total, corto) => total + corto.subtotal, 0);
-  const mlCortosHoy = cortosHoy.reduce((total, corto) => total + corto.ml, 0);
-  const cortosAnfitriona = cortosHoy
+  const tickets = cortosPorVenta(cortosFiltrados);
+  const filtrosOrigen: { origen: FiltroOrigen; etiqueta: string; cortos: number }[] = [
+    { origen: 'todos', etiqueta: 'Todos', cortos: totalCortosDia },
+    ...ORIGENES.map(origen => ({
+      origen,
+      etiqueta: ORIGEN_CORTO[origen],
+      cortos: cortosPorOrigen[origen]
+    }))
+  ];
+
+  // Resumen del encabezado, siempre sobre lo que el filtro deja ver.
+  const totalCortos = cortosFiltrados.reduce((total, corto) => total + corto.cantidad, 0);
+  const cobradoCortos = cortosFiltrados.reduce((total, corto) => total + corto.subtotal, 0);
+  const mlCortos = cortosFiltrados.reduce((total, corto) => total + corto.ml, 0);
+  const cortosAnfitriona = cortosFiltrados
     .filter(corto => corto.anfitriona)
     .reduce((total, corto) => total + corto.cantidad, 0);
-  const cortosConAcompanamiento = cortosHoy
+  const cortosConAcompanamiento = cortosFiltrados
     .filter(corto => corto.acompanamiento)
     .reduce((total, corto) => total + corto.cantidad, 0);
-  const pluralCortos = totalCortosHoy === 1 ? 'corto' : 'cortos';
+  const pluralCortos = totalCortos === 1 ? 'corto' : 'cortos';
+  // Las bebidas que explican los ml servidos del día: el servidor agrupa los
+  // movimientos (cortos, acompañamientos y colaciones, menos anulaciones) y su
+  // suma es exactamente `mlServidosHoy`.
+  const desgloseMlProductos = resumen?.mlPorProductoHoy ?? [];
+  const mlMaximoProducto = desgloseMlProductos[0]?.ml ?? 0;
   // Misma fuente que `mlColacionHoy`: las colaciones explican los ml servidos
   // que no son cortos vendidos.
   const colacionesHoy = resumen?.colacionesHoy ?? [];
@@ -134,6 +190,45 @@ export function BarStatsCards({
             } · clic para ver detalle`
         : 'Cargando resumen del bar…',
       icon: GlassWater,
+      breakdown:
+        totalCortosDia > 0 ? (
+          <div className='space-y-1.5 pt-2'>
+            <div
+              aria-hidden='true'
+              className='flex h-1.5 gap-px overflow-hidden rounded-full bg-current/10'
+            >
+              {origenesDelDia.map(origen => (
+                <span
+                  key={origen.origen}
+                  className={cn(
+                    'h-full first:rounded-l-full last:rounded-r-full',
+                    ORIGEN_COLOR[origen.origen]
+                  )}
+                  // El ancho sale de la proporción de cortos, sin depender de
+                  // porcentajes que se desbordan con los separadores.
+                  style={{ flexGrow: origen.cortos, flexBasis: 0 }}
+                />
+              ))}
+            </div>
+            <ul
+              aria-label='Cortos por origen'
+              className='flex flex-wrap items-center gap-x-3 gap-y-1'
+            >
+              {origenesDelDia.map(origen => (
+                <li key={origen.origen} className='flex items-center gap-1 text-[11px]'>
+                  <span
+                    aria-hidden='true'
+                    className={cn('size-1.5 shrink-0 rounded-full', ORIGEN_COLOR[origen.origen])}
+                  />
+                  <span className='opacity-80'>
+                    {ORIGEN_CORTO[origen.origen]}{' '}
+                    <span className='font-semibold tabular-nums'>{origen.cortos}</span>
+                  </span>
+                </li>
+              ))}
+            </ul>
+          </div>
+        ) : undefined,
       onOpen: () => setCortosAbierto(true),
       overlayLabel: 'Ver los cortos servidos hoy y su origen'
     },
@@ -173,6 +268,7 @@ export function BarStatsCards({
           footer={
             <>
               <p>{stat.detail}</p>
+              {stat.breakdown}
               {stat.onOpen && (
                 <Button
                   variant='unstyled'
@@ -259,21 +355,72 @@ export function BarStatsCards({
           </div>
         </DialogContent>
       </Dialog>
-      <Dialog open={cortosAbierto} onOpenChange={setCortosAbierto}>
+      <Dialog
+        open={cortosAbierto}
+        onOpenChange={abierto => {
+          setCortosAbierto(abierto);
+          // Cada apertura empieza en el día completo.
+          if (!abierto) setOrigenElegido('todos');
+        }}
+      >
         <DialogContent className='flex max-h-[85dvh] flex-col gap-0 overflow-hidden rounded-2xl p-0 sm:max-w-2xl'>
-          <DialogHeader className='shrink-0 border-b px-5 py-5 sm:px-6'>
+          {/* En pantallas bajas el resumen (filtros, métricas y desglose) puede
+              crecer más que el modal: se desplaza él, no la lista de tickets. */}
+          <DialogHeader className='max-h-[55dvh] shrink-0 overflow-y-auto overscroll-contain border-b px-5 py-5 sm:px-6'>
             <DialogTitle>Cortos servidos hoy</DialogTitle>
             <DialogDescription>
               {resumen
-                ? `${resumen.shotsServidosHoy} ${
-                    resumen.shotsServidosHoy === 1 ? 'corto vendido' : 'cortos vendidos'
-                  }${
-                    resumen.mlColacionHoy > 0 ? ` y ${resumen.mlColacionHoy} ml de colaciones` : ''
-                  } hoy.`
+                ? filtroOrigen === 'todos'
+                  ? `${resumen.shotsServidosHoy} ${
+                      resumen.shotsServidosHoy === 1 ? 'corto vendido' : 'cortos vendidos'
+                    }${
+                      resumen.mlColacionHoy > 0
+                        ? ` y ${resumen.mlColacionHoy} ml de colaciones`
+                        : ''
+                    } hoy.`
+                  : `${ORIGEN_CORTO[filtroOrigen]} · ${totalCortos} ${pluralCortos} de ${totalCortosDia} vendidos hoy.`
                 : 'Detalle de los cortos y las colaciones de hoy.'}
             </DialogDescription>
-            {totalCortosHoy > 0 && (
-              <dl className='mt-4 grid grid-cols-2 gap-x-4 gap-y-3 sm:grid-cols-4'>
+            {cortosHoy.length > 0 && (
+              <div
+                role='group'
+                aria-label='Filtrar cortos por origen'
+                className='mt-4 flex flex-wrap gap-1.5'
+              >
+                {filtrosOrigen.map(filtro => {
+                  const activo = filtro.origen === filtroOrigen;
+                  const sinCortos = filtro.cortos === 0;
+                  return (
+                    <Button
+                      key={filtro.origen}
+                      type='button'
+                      variant='unstyled'
+                      aria-pressed={activo}
+                      disabled={sinCortos && filtro.origen !== 'todos'}
+                      onClick={() => setOrigenElegido(filtro.origen)}
+                      className={cn(
+                        'rounded-full border px-3 py-1 text-xs font-semibold tabular-nums transition-colors',
+                        activo
+                          ? 'border-transparent bg-primary text-primary-foreground shadow-xs'
+                          : 'border-border text-muted-foreground hover:bg-muted',
+                        sinCortos && filtro.origen !== 'todos' && 'opacity-50'
+                      )}
+                    >
+                      {`${filtro.etiqueta} · ${filtro.cortos}`}
+                    </Button>
+                  );
+                })}
+              </div>
+            )}
+            {totalCortos > 0 && (
+              <p className='mt-4 text-[11px] font-semibold uppercase tracking-wider text-muted-foreground'>
+                {filtroOrigen === 'todos'
+                  ? 'Resumen del día'
+                  : `Resumen · ${ORIGEN_CORTO[filtroOrigen]}`}
+              </p>
+            )}
+            {totalCortos > 0 && (
+              <dl className='mt-2 grid grid-cols-2 gap-x-4 gap-y-3 sm:grid-cols-4'>
                 <div>
                   <dt className='text-[11px] text-muted-foreground'>Cobrado en cortos</dt>
                   <dd className='text-sm font-semibold tabular-nums'>
@@ -283,25 +430,76 @@ export function BarStatsCards({
                 <div>
                   <dt className='text-[11px] text-muted-foreground'>Anfitriona / Cliente</dt>
                   <dd className='text-sm font-semibold tabular-nums'>
-                    {cortosAnfitriona} / {totalCortosHoy - cortosAnfitriona} {pluralCortos}
+                    {cortosAnfitriona} / {totalCortos - cortosAnfitriona} {pluralCortos}
                   </dd>
                 </div>
                 <div>
                   <dt className='text-[11px] text-muted-foreground'>Con acompañamiento</dt>
                   <dd className='text-sm font-semibold tabular-nums'>
-                    {cortosConAcompanamiento} de {totalCortosHoy} {pluralCortos}
+                    {cortosConAcompanamiento} de {totalCortos} {pluralCortos}
                   </dd>
                 </div>
                 <div>
                   <dt className='text-[11px] text-muted-foreground'>Servido en cortos</dt>
-                  <dd className='text-sm font-semibold tabular-nums'>{mlCortosHoy} ml</dd>
+                  <dd className='text-sm font-semibold tabular-nums'>{mlCortos} ml</dd>
                 </div>
               </dl>
+            )}
+            {resumen && desgloseMlProductos.length > 0 && (
+              <div className='mt-4 border-t pt-3'>
+                <div className='flex flex-wrap items-baseline justify-between gap-x-3 gap-y-1'>
+                  <p className='text-[11px] font-semibold uppercase tracking-wider text-muted-foreground'>
+                    Ml servidos hoy por producto
+                  </p>
+                  <p className='text-xs font-semibold tabular-nums'>
+                    Total {resumen.mlServidosHoy} ml
+                  </p>
+                </div>
+                <p className='mt-0.5 text-[11px] text-muted-foreground'>
+                  Incluye cortos, acompañamientos y colaciones.
+                </p>
+                <ul
+                  aria-label='Ml servidos hoy por producto'
+                  className='mt-2 grid max-h-36 gap-x-6 gap-y-2 overflow-y-auto overscroll-contain pr-1 sm:grid-cols-2'
+                >
+                  {desgloseMlProductos.map(producto => (
+                    <li key={`${producto.producto_id}-${producto.producto_nombre}`}>
+                      <div className='flex items-baseline justify-between gap-3'>
+                        <span className='flex min-w-0 items-center gap-1.5'>
+                          <span className='min-w-0 truncate text-xs font-medium'>
+                            {producto.producto_nombre}
+                          </span>
+                          {producto.ml_colacion > 0 && (
+                            <span className='shrink-0 rounded-full bg-muted px-1.5 py-0.5 text-[10px] font-medium text-muted-foreground'>
+                              Colación
+                            </span>
+                          )}
+                        </span>
+                        <span className='shrink-0 text-xs tabular-nums text-muted-foreground'>
+                          {producto.ml} ml
+                        </span>
+                      </div>
+                      <div
+                        aria-hidden='true'
+                        className='mt-1 h-1.5 overflow-hidden rounded-full bg-muted'
+                      >
+                        <div
+                          className='h-full rounded-full bg-primary'
+                          style={{
+                            width: `${(Math.max(producto.ml, 0) / (mlMaximoProducto || 1)) * 100}%`
+                          }}
+                        />
+                      </div>
+                    </li>
+                  ))}
+                </ul>
+              </div>
             )}
           </DialogHeader>
           <div className='min-h-0 flex-1 overflow-y-auto px-5 sm:px-6'>
             <h3 className='pb-2 pt-4 text-xs font-bold uppercase tracking-wider text-muted-foreground'>
               Cortos vendidos
+              {filtroOrigen !== 'todos' ? ` · ${ORIGEN_CORTO[filtroOrigen]}` : ''}
             </h3>
             <div className='divide-y divide-border'>
               {tickets.length === 0 ? (
@@ -313,8 +511,15 @@ export function BarStatsCards({
                   // La línea más antigua es la que abrió la venta.
                   const venta = cortos[cortos.length - 1];
                   const totalUnidades = cortos.reduce((total, corto) => total + corto.cantidad, 0);
-                  const totalVenta = cortos.reduce((total, corto) => total + corto.subtotal, 0);
                   const totalMl = cortos.reduce((total, corto) => total + corto.ml, 0);
+                  // Lo que suman los cortos listados y, aparte, el ticket entero:
+                  // la venta puede traer botellas que este modal no detalla.
+                  const totalCortosVenta = cortos.reduce(
+                    (total, corto) => total + corto.subtotal,
+                    0
+                  );
+                  const totalVenta = venta.venta_total;
+                  const hayMasQueCortos = totalVenta !== totalCortosVenta;
                   const detallesVenta = [
                     venta.cliente_nombre ? `Cliente ${venta.cliente_nombre}` : null,
                     venta.mesero_nombre ? `Mesero ${venta.mesero_nombre}` : null,
@@ -331,10 +536,15 @@ export function BarStatsCards({
                           Venta {venta.venta_codigo} · {horaDe(venta.fecha)}
                         </p>
                         <p className='text-sm font-semibold tabular-nums'>
-                          {totalUnidades} {totalUnidades === 1 ? 'corto' : 'cortos'} · {totalMl} ml
-                          · {formatCurrencyCLP(totalVenta)}
+                          Total venta {formatCurrencyCLP(totalVenta)}
                         </p>
                       </div>
+                      <p className='mt-0.5 text-xs text-muted-foreground tabular-nums'>
+                        {totalUnidades} {totalUnidades === 1 ? 'corto' : 'cortos'} · {totalMl} ml
+                        {hayMasQueCortos
+                          ? ` · ${formatCurrencyCLP(totalCortosVenta)} en cortos`
+                          : ''}
+                      </p>
                       <div className='mt-1.5 flex flex-wrap items-center gap-1.5'>
                         <span className='rounded-full bg-muted px-2 py-0.5 text-[11px] font-medium text-muted-foreground'>
                           {etiquetaOrigen(venta)}
@@ -401,48 +611,54 @@ export function BarStatsCards({
                 })
               )}
             </div>
-            <h3 className='border-t pb-2 pt-4 text-xs font-bold uppercase tracking-wider text-muted-foreground'>
-              Colaciones
-              {resumen && resumen.mlColacionHoy > 0 ? ` · ${resumen.mlColacionHoy} ml` : ''}
-            </h3>
-            <div className='divide-y divide-border'>
-              {colacionesHoy.length === 0 ? (
-                <p className='py-6 text-center text-sm text-muted-foreground'>
-                  No hay colaciones servidas hoy.
-                </p>
-              ) : (
-                colacionesHoy.map(colacion => (
-                  <div
-                    key={colacion.id}
-                    className='-mx-5 flex gap-3 px-5 py-4 transition-colors duration-200 hover:bg-muted/50 sm:-mx-6 sm:px-6'
-                  >
-                    <SaleProductPhoto
-                      foto={colacion.producto_foto ?? undefined}
-                      name={colacion.producto_nombre}
-                      large={false}
-                      compact
-                    />
-                    <div className='min-w-0 flex-1 space-y-1'>
-                      <div className='flex flex-wrap items-baseline justify-between gap-x-4 gap-y-1'>
-                        <p className='min-w-0 text-sm font-semibold leading-snug'>
-                          {colacion.producto_nombre}
-                          {colacion.presentacion_nombre && (
-                            <span className='font-normal text-muted-foreground'>
-                              {' '}
-                              · {colacion.presentacion_nombre}
-                            </span>
-                          )}
-                        </p>
-                        <p className='text-sm font-semibold tabular-nums'>{colacion.ml} ml</p>
+            {/* Las colaciones no tienen origen: con un filtro activo el modal
+                muestra solo los cortos de ese origen. */}
+            {filtroOrigen === 'todos' && (
+              <>
+                <h3 className='border-t pb-2 pt-4 text-xs font-bold uppercase tracking-wider text-muted-foreground'>
+                  Colaciones
+                  {resumen && resumen.mlColacionHoy > 0 ? ` · ${resumen.mlColacionHoy} ml` : ''}
+                </h3>
+                <div className='divide-y divide-border'>
+                  {colacionesHoy.length === 0 ? (
+                    <p className='py-6 text-center text-sm text-muted-foreground'>
+                      No hay colaciones servidas hoy.
+                    </p>
+                  ) : (
+                    colacionesHoy.map(colacion => (
+                      <div
+                        key={colacion.id}
+                        className='-mx-5 flex gap-3 px-5 py-4 transition-colors duration-200 hover:bg-muted/50 sm:-mx-6 sm:px-6'
+                      >
+                        <SaleProductPhoto
+                          foto={colacion.producto_foto ?? undefined}
+                          name={colacion.producto_nombre}
+                          large={false}
+                          compact
+                        />
+                        <div className='min-w-0 flex-1 space-y-1'>
+                          <div className='flex flex-wrap items-baseline justify-between gap-x-4 gap-y-1'>
+                            <p className='min-w-0 text-sm font-semibold leading-snug'>
+                              {colacion.producto_nombre}
+                              {colacion.presentacion_nombre && (
+                                <span className='font-normal text-muted-foreground'>
+                                  {' '}
+                                  · {colacion.presentacion_nombre}
+                                </span>
+                              )}
+                            </p>
+                            <p className='text-sm font-semibold tabular-nums'>{colacion.ml} ml</p>
+                          </div>
+                          <p className='text-xs text-muted-foreground'>
+                            Registró {colacion.registrado_por ?? '—'} · {horaDe(colacion.fecha)}
+                          </p>
+                        </div>
                       </div>
-                      <p className='text-xs text-muted-foreground'>
-                        Registró {colacion.registrado_por ?? '—'} · {horaDe(colacion.fecha)}
-                      </p>
-                    </div>
-                  </div>
-                ))
-              )}
-            </div>
+                    ))
+                  )}
+                </div>
+              </>
+            )}
           </div>
         </DialogContent>
       </Dialog>

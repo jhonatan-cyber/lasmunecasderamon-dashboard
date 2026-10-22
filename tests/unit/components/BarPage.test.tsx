@@ -13,7 +13,7 @@ vi.mock('@/hooks/auth/useCurrentUser', () => ({
 }));
 vi.mock('@/hooks/shared/useConfigValue', () => ({ useConfig: () => 50 }));
 vi.mock('@/hooks/shared', () => ({ useSharedSSE: vi.fn() }));
-vi.mock('@/hooks/productos/useContainerScan', () => ({
+vi.mock('@/hooks/products/useContainerScan', () => ({
   useContainerScan: () => ({ sesion: [], aceptados: 0, rechazados: 0, enCola: 0 }),
   MOTIVO_ENVASE: {}
 }));

@@ -13,7 +13,7 @@ import {
 } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import Paginate from '@/components/shared/Paginate';
-import { useSaleProductModal } from '@/hooks/shared/useSaleProductModal';
+import { useSaleProductModal } from '@/hooks/sales/useSaleProductModal';
 import { SaleProductViewToggle } from '@/components/sales/product-modal/SaleProductViewToggle';
 import { SaleProductSearch } from '@/components/sales/product-modal/SaleProductSearch';
 import { SaleProductTable } from '@/components/sales/product-modal/SaleProductTable';

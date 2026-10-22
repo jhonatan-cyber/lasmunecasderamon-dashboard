@@ -3,8 +3,8 @@
  *
  * No toca SQL ni el driver: eso vive en `./repositorio`, que es privado del módulo.
  */
-import type { ContextoOperacion } from '@/lib/transaccion/contrato';
-import { enUnaUnidad } from '@/lib/transaccion/contrato';
+import type { ContextoOperacion } from '@/lib/transaction/contract';
+import { enUnaUnidad } from '@/lib/transaction/contract';
 import { getNowInBusinessTimezone } from '@/lib/business/timezoneService';
 import * as repositorio from './repositorio';
 

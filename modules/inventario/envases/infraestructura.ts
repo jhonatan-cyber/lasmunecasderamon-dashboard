@@ -9,8 +9,8 @@
  * sólo marcas físicas sobre la unidad.
  */
 import { withTransaction } from '@/lib/database/db';
-import { resolverTransaccion } from '@/lib/transaccion/infraestructura';
-import type { ContextoOperacion } from '@/lib/transaccion/contrato';
+import { resolverTransaccion } from '@/lib/transaction/infrastructure';
+import type { ContextoOperacion } from '@/lib/transaction/contract';
 import type { DevolucionEnvaseRegistro, DevolucionEnvaseResultado } from '../contracts';
 export type { ResumenEnvases } from '../contracts';
 import {

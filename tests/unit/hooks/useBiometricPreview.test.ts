@@ -1,6 +1,6 @@
 import { act, renderHook } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { useBiometricPreview } from '@/hooks/useBiometricPreview';
+import { useBiometricPreview } from '@/hooks/attendance/useBiometricPreview';
 
 describe('useBiometricPreview', () => {
   const fetchMock = vi.fn();

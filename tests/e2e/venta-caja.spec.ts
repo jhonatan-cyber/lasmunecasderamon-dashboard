@@ -1,36 +1,7 @@
-import { test, expect, type Page } from '@playwright/test';
+import type { Page } from '@playwright/test';
+import { expect, loginAsAdmin, requireAdmin, test } from './fixtures/admin';
 
 const BASE = process.env.E2E_BASE_URL || 'http://localhost:3000';
-const TEST_USER = process.env.TEST_USER ?? 'admin';
-const TEST_PASSWORD = process.env.TEST_PASSWORD;
-
-function skipWithoutPassword() {
-  test.skip(!TEST_PASSWORD, 'TEST_PASSWORD no definida — e2e de venta/caja omitido (opcional)');
-}
-
-async function gotoLoginHydrated(page: Page) {
-  const usersLoaded = page.waitForResponse(
-    r => r.url().includes('/api/auth/check-users') && r.status() === 200,
-    { timeout: 30_000 }
-  );
-  await page.goto(`${BASE}/login`, { waitUntil: 'domcontentloaded' });
-  await usersLoaded;
-}
-
-async function login(page: Page) {
-  await gotoLoginHydrated(page);
-  await expect(page.locator('#nick')).toBeVisible({ timeout: 15_000 });
-  await page.locator('#nick').fill(TEST_USER);
-  await page.locator('#password').fill(TEST_PASSWORD!);
-  await page.locator('button[type="submit"]').first().click();
-
-  const codeStep = page.locator('input[placeholder="0000"]');
-  if (await codeStep.isVisible({ timeout: 3000 }).catch(() => false)) {
-    test.skip(true, 'Código 2FA detectado — requiere interacción manual');
-  }
-
-  await page.waitForURL(url => !url.toString().includes('/login'), { timeout: 30_000 });
-}
 
 function trackServerErrors(page: Page): string[] {
   const errors: string[] = [];
@@ -42,12 +13,11 @@ function trackServerErrors(page: Page): string[] {
 }
 
 test.describe('Flujo de venta — navegación y página', () => {
-  test('1. /sales carga sin errores de Server Component', async ({ page }) => {
-    skipWithoutPassword();
+  test('1. /sales carga sin errores de Server Component', async ({ page, admin }) => {
     test.setTimeout(60_000);
     const errors = trackServerErrors(page);
 
-    await login(page);
+    await loginAsAdmin(page, requireAdmin(admin));
     await page.goto(`${BASE}/sales`, { waitUntil: 'domcontentloaded' });
     await page.waitForTimeout(3000);
 
@@ -63,11 +33,10 @@ test.describe('Flujo de venta — navegación y página', () => {
     console.log('✓ /sales carga limpia');
   });
 
-  test('2. /sales/new muestra el formulario de nueva venta', async ({ page }) => {
-    skipWithoutPassword();
+  test('2. /sales/new muestra el formulario de nueva venta', async ({ page, admin }) => {
     test.setTimeout(60_000);
 
-    await login(page);
+    await loginAsAdmin(page, requireAdmin(admin));
     await page.goto(`${BASE}/sales/new`, { waitUntil: 'domcontentloaded' });
     await page.waitForTimeout(3000);
 
@@ -77,11 +46,10 @@ test.describe('Flujo de venta — navegación y página', () => {
     console.log('✓ /sales/new responde con contenido');
   });
 
-  test('3. Navegación dashboard → sales mantiene sesión', async ({ page }) => {
-    skipWithoutPassword();
+  test('3. Navegación dashboard → sales mantiene sesión', async ({ page, admin }) => {
     test.setTimeout(60_000);
 
-    await login(page);
+    await loginAsAdmin(page, requireAdmin(admin));
     await page.goto(`${BASE}/dashboard`, { waitUntil: 'domcontentloaded' });
     await page.waitForTimeout(2000);
 
@@ -95,12 +63,11 @@ test.describe('Flujo de venta — navegación y página', () => {
 });
 
 test.describe('Flujo de caja — navegación y página', () => {
-  test('4. /cash-register carga sin errores', async ({ page }) => {
-    skipWithoutPassword();
+  test('4. /cash-register carga sin errores', async ({ page, admin }) => {
     test.setTimeout(60_000);
     const errors = trackServerErrors(page);
 
-    await login(page);
+    await loginAsAdmin(page, requireAdmin(admin));
     await page.goto(`${BASE}/cash-register`, { waitUntil: 'domcontentloaded' });
     await page.waitForTimeout(3000);
 
@@ -116,11 +83,10 @@ test.describe('Flujo de caja — navegación y página', () => {
     console.log('✓ /cash-register carga limpia');
   });
 
-  test('5. API de caja responde autenticado', async ({ page }) => {
-    skipWithoutPassword();
+  test('5. API de caja responde autenticado', async ({ page, admin }) => {
     test.setTimeout(60_000);
 
-    await login(page);
+    await loginAsAdmin(page, requireAdmin(admin));
 
     const resp = await page.request.get(`${BASE}/api/cashregister/current`);
     // 200 con caja, 404 sin caja abierta, 422 negocio — todo menos 401/500
@@ -128,11 +94,10 @@ test.describe('Flujo de caja — navegación y página', () => {
     console.log(`✓ /api/cashregister/current → ${resp.status()}`);
   });
 
-  test('6. API de ventas responde autenticado (lista)', async ({ page }) => {
-    skipWithoutPassword();
+  test('6. API de ventas responde autenticado (lista)', async ({ page, admin }) => {
     test.setTimeout(60_000);
 
-    await login(page);
+    await loginAsAdmin(page, requireAdmin(admin));
 
     const resp = await page.request.get(`${BASE}/api/sales`);
     expect([200, 404]).toContain(resp.status());
@@ -185,11 +150,10 @@ test.describe('Flujo venta/caja — guards y permisos', () => {
 });
 
 test.describe('Flujo venta/caja — UI básica autenticada', () => {
-  test('11. Header y navegación visibles en /sales', async ({ page }) => {
-    skipWithoutPassword();
+  test('11. Header y navegación visibles en /sales', async ({ page, admin }) => {
     test.setTimeout(60_000);
 
-    await login(page);
+    await loginAsAdmin(page, requireAdmin(admin));
     await page.goto(`${BASE}/sales`, { waitUntil: 'domcontentloaded' });
     await page.waitForTimeout(3000);
 
@@ -198,11 +162,10 @@ test.describe('Flujo venta/caja — UI básica autenticada', () => {
     console.log('✓ Header visible en /sales');
   });
 
-  test('12. /sales muestra al menos un control de búsqueda o filtro', async ({ page }) => {
-    skipWithoutPassword();
+  test('12. /sales muestra al menos un control de búsqueda o filtro', async ({ page, admin }) => {
     test.setTimeout(60_000);
 
-    await login(page);
+    await loginAsAdmin(page, requireAdmin(admin));
     await page.goto(`${BASE}/sales`, { waitUntil: 'domcontentloaded' });
     await page.waitForTimeout(4000);
 

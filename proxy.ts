@@ -12,6 +12,7 @@ import {
   isAnySessionRoute,
   isPublicPath
 } from '@/lib/constants/route-permissions';
+import { legacyRedirectTarget } from '@/lib/constants/legacy-routes';
 import { siteConfig } from '@/lib/api/site';
 import {
   checkRateLimit,
@@ -211,6 +212,25 @@ export default async function proxy(request: NextRequest) {
     pathname === '/.well-known/appspecific/com.chrome.devtools.json'
   ) {
     return NextResponse.next({ request: { headers: cspRequestHeaders } });
+  }
+
+  // URLs retiradas (links de WhatsApp con token, QR impreso, marcadores y la app
+  // móvil). Se resuelven antes de mirar la sesión: si esto corriera después del
+  // control de acceso, un link viejo sin sesión terminaría en `/login` en lugar de
+  // llegar a la página nueva.
+  const destinoLegado = legacyRedirectTarget(pathname);
+  if (destinoLegado) {
+    const url = new URL(request.url);
+    url.pathname = destinoLegado;
+    const redirect = NextResponse.redirect(url, 308);
+    // Un 308 conserva método y cuerpo, pero el navegador igual exige CORS en la
+    // respuesta intermedia cuando el pedido es cross-origin.
+    if (isApi) {
+      redirect.headers.set('Access-Control-Allow-Origin', getCorsOrigin(origin));
+      redirect.headers.set('Access-Control-Allow-Credentials', 'true');
+      redirect.headers.set('Vary', 'Origin');
+    }
+    return redirect;
   }
 
   const isProd = process.env.NODE_ENV === 'production' && process.env.SKIP_RATE_LIMIT !== 'true';

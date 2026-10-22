@@ -8,8 +8,8 @@ import { BusinessError, NotFoundError } from '@/lib/errors/errors';
  * `ContextoOperacion`. El aviso a los temporizadores sale después del commit.
  */
 import { cambiarAnfitrionasServicioEnUnidad, obtenerServicioParaConsumo } from './asignaciones';
-import { enUnaUnidad, type ContextoOperacion } from '@/lib/transaccion/contrato';
-import { ejecutarEfectosConfirmados } from '@/lib/transaccion/efectos';
+import { enUnaUnidad, type ContextoOperacion } from '@/lib/transaction/contract';
+import { ejecutarEfectosConfirmados } from '@/lib/transaction/effects';
 import { generateUUID } from '@/lib/database/db';
 import { getNowInBusinessTimezone } from '@/lib/business/timezoneService';
 import { ServiceCreateSchema } from '@/lib/business/schemas';

@@ -1,7 +1,7 @@
 import { MetricCard } from '@/components/shared/MetricCard';
 import { DollarSign, TrendingUp, Activity, CreditCard, ArrowUpDown } from 'lucide-react';
 
-import { useCashRegister } from '@/hooks/caja/useCashRegister';
+import { useCashRegister } from '@/hooks/cash-register/useCashRegister';
 import { formatCurrencyNoDecimals } from '@/lib/utils/formatters';
 
 interface CashRegisterStatsCardProps {

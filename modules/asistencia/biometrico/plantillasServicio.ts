@@ -1,4 +1,4 @@
-import type { ContextoOperacion } from '@/lib/transaccion/contrato';
+import type { ContextoOperacion } from '@/lib/transaction/contract';
 import { eliminarPlantillasUsuario } from './unenrollmentRepositorio';
 
 export function eliminarPlantillasLocales(usuarioId: string, contexto: ContextoOperacion) {

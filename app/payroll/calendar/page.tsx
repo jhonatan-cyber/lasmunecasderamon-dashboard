@@ -2,7 +2,7 @@
 
 import React, { useEffect, useState } from 'react';
 import { ShoppingCart, Users, DollarSign, Clock, Gift, Zap } from 'lucide-react';
-import { useCalendarActions } from '@/hooks/calendario/useCalendarActions';
+import { useCalendarActions } from '@/hooks/calendar/useCalendarActions';
 import { PermissionGuard } from '@/components/auth/PermissionGuard';
 import { useUserPermissions } from '@/hooks/auth/useUserPermissions';
 import { getMonthDateRange, toDateKey } from '@/lib/utils/calendarUtils';

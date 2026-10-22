@@ -8,7 +8,7 @@ export interface PartitionedGratificaciones {
 }
 
 /**
- * Parte el resultado del GET /api/gratificaciones (lo suyo + lo que él solicitó)
+ * Parte el resultado del GET /api/gratifications (lo suyo + lo que él solicitó)
  * en las dos mitades que la página del cajero muestra en secciones distintas.
  * Sin sesión identificada devuelve todo como "propio" (comportamiento admin/común puro).
  */

@@ -2,8 +2,8 @@
  * Lecturas y registro de solicitudes de anulación de servicios. Infraestructura
  * privada del módulo: nadie fuera de `modules/operacion` importa este archivo (§5).
  *
- * Este SQL vivía dentro de tres rutas HTTP (`/api/servicios/anulacion`,
- * `/api/servicios/solicitud-anulacion` y `/api/servicios/procesar-anulacion`),
+ * Este SQL vivía dentro de tres rutas HTTP (`/api/services/cancellation`,
+ * `/api/services/cancellation-request` y `/api/services/process-cancellation`),
  * que mezclaban adaptación, consulta y validación. Mismo SQL y misma selección que
  * tenían las rutas: la primera casilla de la fase 5 pide sacarlo de ahí, y una ruta
  * autentica, valida el transporte, llama a un caso de uso y traduce la respuesta.
@@ -14,8 +14,8 @@
  */
 import { guardarAsignaciones } from './asignacionesRepositorio';
 import { generateUUID, query } from '@/lib/database/db';
-import type { ContextoOperacion } from '@/lib/transaccion/contrato';
-import { resolverTransaccion } from '@/lib/transaccion/infraestructura';
+import type { ContextoOperacion } from '@/lib/transaction/contract';
+import { resolverTransaccion } from '@/lib/transaction/infrastructure';
 import { getNowInBusinessTimezone } from '@/lib/business/timezoneService';
 import { BaseRepository } from '@/lib/database/base-repository';
 import { BusinessError, DatabaseError } from '@/lib/errors/errors';

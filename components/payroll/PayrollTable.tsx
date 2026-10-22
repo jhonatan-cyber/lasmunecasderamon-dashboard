@@ -14,7 +14,7 @@ import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import Paginate from '@/components/shared/Paginate';
-import type { PayrollRow } from '@/hooks/personal';
+import type { PayrollRow } from '@/hooks/staff';
 import { useConfirmModal } from '@/hooks/shared';
 import { ConfirmModal } from '@/components/shared/ConfirmModal';
 import { showSuccessToast, showErrorToast } from '@/lib/utils/toastUtils';

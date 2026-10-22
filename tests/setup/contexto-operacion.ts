@@ -1,6 +1,6 @@
 import type { TransactionQuery } from '@/lib/database/db';
-import { liberar, registrar } from '@/lib/transaccion/infraestructura';
-import type { ContextoOperacion } from '@/lib/transaccion/contrato';
+import { liberar, registrar } from '@/lib/transaction/infrastructure';
+import type { ContextoOperacion } from '@/lib/transaction/contract';
 
 /** Adaptador temporal para los consumidores heredados de una transacción opaca. */
 export async function conContextoOperacionExistente<T>(

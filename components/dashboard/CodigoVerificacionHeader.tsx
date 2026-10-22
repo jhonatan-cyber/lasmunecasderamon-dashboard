@@ -12,7 +12,7 @@ export function CodigoVerificacionHeader({ userRole }: CodigoVerificacionHeaderP
 
   const fetchCodigo = useCallback(async () => {
     try {
-      const res = await fetch('/api/codigo/actual', {
+      const res = await fetch('/api/code/current', {
         headers: {
           'x-user-role': userRole || ''
         }
@@ -38,7 +38,6 @@ export function CodigoVerificacionHeader({ userRole }: CodigoVerificacionHeaderP
       window.addEventListener('focus', handleFocus);
       return () => window.removeEventListener('focus', handleFocus);
     }
- 
   }, [userRole, fetchCodigo]);
 
   if (

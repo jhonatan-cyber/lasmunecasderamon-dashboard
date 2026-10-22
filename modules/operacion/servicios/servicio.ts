@@ -7,9 +7,10 @@
  * que sí lo registra.
  */
 import type { EntradaSolicitudAnulacionServicio } from '../contracts';
-import { enUnaUnidad } from '@/lib/transaccion/contrato';
+import { enUnaUnidad } from '@/lib/transaction/contract';
 import * as repositorio from './repositorio';
-export const listarSolicitudesAnulacionServiciosPendientes = repositorio.listarSolicitudesAnulacionServiciosPendientes;
+export const listarSolicitudesAnulacionServiciosPendientes =
+  repositorio.listarSolicitudesAnulacionServiciosPendientes;
 
 export async function obtenerSolicitudAnulacionServicioPorToken(token: string) {
   return repositorio.obtenerSolicitudAnulacionServicioPorToken(token);

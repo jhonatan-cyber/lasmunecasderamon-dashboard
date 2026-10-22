@@ -3,7 +3,15 @@ import { FormattedNumberInput as Input } from '@/components/shared/FormattedNumb
 import { Button } from '@/components/ui/button';
 
 import { useState, useEffect } from 'react';
-import { Save, Users, BedDouble, ShoppingCart, GlassWater, Ticket } from 'lucide-react';
+import {
+  Save,
+  Users,
+  BedDouble,
+  ShoppingCart,
+  GlassWater,
+  Ticket,
+  AlertTriangle
+} from 'lucide-react';
 import { CollapsibleCard } from '@/components/ui/collapsible-card';
 import { toast } from 'sonner';
 import logger from '@/lib/utils/logger';
@@ -117,6 +125,17 @@ export function SettingsServiceLevelsCard() {
       setSaving(false);
     }
   };
+
+  // El modelo de Entradas asume que el precio de la entrada y el tope del cover
+  // son el mismo dinero: el cliente paga la entrada en la puerta y esa plata se
+  // acredita a la bebida que elige en la barra. Si no coinciden, avisamos sin
+  // bloquear el guardado (es una decisión de negocio, no un error de datos).
+  const topeCortesia = Number(tragoCortesiaValue.trim());
+  const costoEntrada = Number(costoEntradaValue.trim());
+  const avisoTopeDistinto =
+    Number.isInteger(topeCortesia) &&
+    Number.isInteger(costoEntrada) &&
+    topeCortesia !== costoEntrada;
 
   return (
     <CollapsibleCard
@@ -271,6 +290,22 @@ export function SettingsServiceLevelsCard() {
           </div>
         </div>
       </div>
+
+      {avisoTopeDistinto && (
+        <div
+          role='status'
+          className='flex items-start gap-3 rounded-xl border border-amber-300 bg-amber-50 p-3 dark:border-amber-700/60 dark:bg-amber-950/30'
+        >
+          <AlertTriangle className='h-4 w-4 shrink-0 mt-0.5 text-amber-600 dark:text-amber-400' />
+          <p className='text-xs text-amber-800 dark:text-amber-200'>
+            Los covers de entradas ($ {topeCortesia.toLocaleString('es-CL')}) no coinciden con el
+            costo de entrada ($ {costoEntrada.toLocaleString('es-CL')}). En Entradas el precio de la
+            entrada se acredita a la bebida que el cliente elige en la barra: con un tope mayor la
+            diferencia la absorbe el negocio, y con un tope menor ninguna bebida puede costar menos
+            que la entrada y nunca se cobra adicional. Podés guardarlo igual.
+          </p>
+        </div>
+      )}
 
       <div className='flex justify-end pt-4'>
         <Button

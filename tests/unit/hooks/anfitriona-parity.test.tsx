@@ -1,7 +1,7 @@
 import { afterEach, expect, it, vi } from 'vitest';
 import { act, cleanup, renderHook, waitFor } from '@testing-library/react';
-import { useAnfitrionaServicios } from '@/hooks/anfitriona/useAnfitrionaServicios';
-import { useRoleCalendar } from '@/hooks/shared/useRoleCalendar';
+import { useAnfitrionaServicios } from '@/hooks/hostess/useAnfitrionaServicios';
+import { useRoleCalendar } from '@/hooks/calendar/useRoleCalendar';
 afterEach(() => {
   cleanup();
   vi.unstubAllGlobals();
@@ -48,5 +48,5 @@ it('consulta solo eventos propios y no suma servicios dos veces ni anulaciones',
   await waitFor(() => expect(result.current.modalTotal).toBe(4000));
   expect(request.mock.calls).toHaveLength(2);
   expect((request.mock.calls as unknown as string[][])[0][0]).toContain('/api/events/user?');
-  expect((request.mock.calls as unknown as string[][])[1][0]).toBe('/api/servicios/user');
+  expect((request.mock.calls as unknown as string[][])[1][0]).toBe('/api/services/user');
 });

@@ -1,6 +1,6 @@
 import { act, renderHook } from '@testing-library/react';
 import { afterEach, expect, it, vi } from 'vitest';
-import { useTimerActions } from '@/hooks/timer/useTimerActions';
+import { useTimerActions } from '@/hooks/timers/useTimerActions';
 import { activeTimers } from '@/lib/store/timerStore';
 import { resetTimerClock } from '@/lib/utils/timerClock';
 afterEach(() => {

@@ -2,8 +2,8 @@
  * Lecturas de solicitudes de anulación de ventas. Infraestructura privada del
  * módulo: nadie fuera de `modules/ventas` importa este archivo (§5).
  *
- * Este SQL vivía dentro de tres rutas HTTP (`/api/ventas/anulacion`,
- * `/api/ventas/solicitud-anulacion` y `/api/ventas/procesar-anulacion`), que
+ * Este SQL vivía dentro de tres rutas HTTP (`/api/sales/cancellation`,
+ * `/api/sales/cancellation-request` y `/api/sales/process-cancellation`), que
  * mezclaban adaptación, consulta y validación. La primera casilla de la fase 5
  * pide sacarlo de ahí: una ruta autenticada, valida el transporte, llama a un
  * caso de uso y traduce la respuesta.
@@ -13,8 +13,8 @@
  * adelante en la fase.
  */
 import { query } from '@/lib/database/db';
-import type { ContextoOperacion } from '@/lib/transaccion/contrato';
-import { resolverTransaccion } from '@/lib/transaccion/infraestructura';
+import type { ContextoOperacion } from '@/lib/transaction/contract';
+import { resolverTransaccion } from '@/lib/transaction/infrastructure';
 import { generateUUID } from '@/lib/database/db';
 import { getNowInBusinessTimezone } from '@/lib/business/timezoneService';
 import { BusinessError } from '@/lib/errors/errors';

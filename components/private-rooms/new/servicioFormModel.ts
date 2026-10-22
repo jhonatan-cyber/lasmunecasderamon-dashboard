@@ -174,7 +174,7 @@ export function calcularDistribucionPrepago(
   return { destinos, pagadoConSaldo, alCaja: restante };
 }
 
-/** Payload exacto de `POST /api/servicios` para el modal de confirmación. */
+/** Payload exacto de `POST /api/services` para el modal de confirmación. */
 export function buildServicioPayload(args: {
   formData: ServicioFormData;
   precioHabitacion: number;

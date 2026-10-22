@@ -1,7 +1,7 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { act, cleanup, renderHook } from '@testing-library/react';
 import type { ChangeEvent, FocusEvent, FormEvent } from 'react';
-import { useRoomForm } from '@/hooks/personal/useRoomForm';
+import { useRoomForm } from '@/hooks/rooms/useRoomForm';
 import type { Room } from '@/types/room';
 afterEach(cleanup);
 const change = (name: string, value: string) =>

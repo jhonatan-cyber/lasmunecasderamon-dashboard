@@ -8,8 +8,8 @@ vi.mock('@/modules/comunicaciones/push/servicio', () => ({
 }));
 
 import db, { query } from '@/lib/database/db';
-import { enUnaUnidad, type ContextoOperacion } from '@/lib/transaccion/contrato';
-import { resolverTransaccion } from '@/lib/transaccion/infraestructura';
+import { enUnaUnidad, type ContextoOperacion } from '@/lib/transaction/contract';
+import { resolverTransaccion } from '@/lib/transaction/infrastructure';
 import { consumirPrepagoCuenta, devolverSaldoEnUnidad } from '@/modules/clientes';
 import { cerrarCuentasPrepagoSaldadas, cobrarCuenta } from '@/modules/operacion';
 

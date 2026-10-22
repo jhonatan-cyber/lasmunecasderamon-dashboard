@@ -1,10 +1,10 @@
 import React from 'react';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react';
-import ColacionesPage from '@/app/colaciones/page';
+import ColacionesPage from '@/app/meals/page';
 
 vi.mock('sonner', () => ({ toast: { success: vi.fn(), error: vi.fn() } }));
-vi.mock('@/hooks/caja/useCashRegisterStatus', () => ({
+vi.mock('@/hooks/cash-register/useCashRegisterStatus', () => ({
   useCashRegisterStatus: () => ({ hasOpenCaja: true, cajaInfo: { id_caja: 'caja-1' } })
 }));
 vi.mock('@/hooks/auth/useUserPermissions', () => ({
@@ -65,7 +65,7 @@ function stubFetch(onPost: (body: any) => void = () => {}) {
       if (url.includes('solo_colaciones_analcoholicas=true')) return ok(analcoholicas);
       if (url.includes('solo_colaciones=true')) return ok(productosColacion);
       if (url.startsWith('/api/bar')) return ok(acompanamientosBar);
-      if (url.startsWith('/api/colaciones')) {
+      if (url.startsWith('/api/meals')) {
         if (init?.method === 'POST') onPost(JSON.parse(String(init.body)));
         return ok([]);
       }
@@ -80,7 +80,7 @@ async function elegirTrabajador(nombre: string) {
   fireEvent.click(await screen.findByRole('option', { name: new RegExp(nombre, 'i') }));
 }
 
-describe('módulo /colaciones con el panel del bar', () => {
+describe('módulo /meals con el panel del bar', () => {
   it('muestra los productos configurados para la anfitriona y registra el acompañamiento elegido', async () => {
     const bodies: any[] = [];
     stubFetch(body => bodies.push(body));

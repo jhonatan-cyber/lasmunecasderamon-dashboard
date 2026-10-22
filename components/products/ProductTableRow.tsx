@@ -8,7 +8,7 @@ import { QuantityControl } from './QuantityControl';
 import {
   CUENTA_TABLE_CELL_CLASS,
   CUENTA_TABLE_ROW_CLASS
-} from '@/components/cuentas/tables/cuentaTableStyles';
+} from '@/components/accounts/tables/cuentaTableStyles';
 
 interface ProductTableRowProps {
   producto: any;

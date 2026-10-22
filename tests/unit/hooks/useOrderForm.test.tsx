@@ -1,13 +1,13 @@
 import { act, renderHook } from '@testing-library/react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import { useOrderForm } from '@/hooks/personal/useOrderForm';
+import { useOrderForm } from '@/hooks/orders/useOrderForm';
 import { OrderCreateSchema } from '@/lib/business/schemas';
 
 vi.mock('next/navigation', () => ({ useRouter: () => ({ push: vi.fn() }) }));
 vi.mock('@/hooks/auth/useCurrentUser', () => ({
   useCurrentUser: () => ({ user: { id: 'garzon' } })
 }));
-vi.mock('@/hooks/habitaciones/useRooms', () => ({
+vi.mock('@/hooks/rooms/useRooms', () => ({
   default: () => ({ rooms: [], fetchRooms: vi.fn() })
 }));
 vi.mock('@/hooks/shared/useConfigValue', () => ({ useConfigValue: () => 10 }));

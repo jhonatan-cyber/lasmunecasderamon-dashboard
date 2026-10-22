@@ -5,7 +5,8 @@ import { InteractiveProductPhoto } from '@/components/shared/InteractiveProductP
 import { StaggeredEntrance } from '@/components/shared/StaggeredEntrance';
 import { ArrowRight, ArrowRightLeft, Check, Clock, Loader2, RefreshCw, X } from 'lucide-react';
 import { PermissionGuard } from '@/components/auth/PermissionGuard';
-import { useRefreshOnFocus, useTransferPermissions } from '@/hooks/shared';
+import { useRefreshOnFocus } from '@/hooks/shared';
+import { useTransferPermissions } from '@/hooks/transfers';
 import { useRealtimeRefresh } from '@/hooks/realtime/useRealtimeRefresh';
 import { TransferModal, type BarStockItem } from '@/components/bar/TransferModal';
 import { SalePrices } from '@/components/bar/SalePrices';

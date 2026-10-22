@@ -6,7 +6,7 @@ import {
   CUENTA_TABLE_CLASS,
   CUENTA_TABLE_HEADER_CLASS,
   CUENTA_TABLE_HEADER_ROW_CLASS
-} from '@/components/cuentas/tables/cuentaTableStyles';
+} from '@/components/accounts/tables/cuentaTableStyles';
 
 interface ProductSelectionTableProps {
   productos: any[];

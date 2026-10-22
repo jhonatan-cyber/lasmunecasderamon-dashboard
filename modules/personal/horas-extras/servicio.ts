@@ -8,7 +8,7 @@
  */
 import { z } from 'zod';
 import { ExtraHoursSchema } from '@/lib/business/schemas';
-import type { ContextoOperacion } from '@/lib/transaccion/contrato';
+import type { ContextoOperacion } from '@/lib/transaction/contract';
 import type {
   CambiosHoraExtra,
   EntradaHoraExtra,

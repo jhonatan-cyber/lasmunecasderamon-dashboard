@@ -16,8 +16,6 @@ export interface UserTemp {
   role: string;
 }
 
-// ponytail: client-side rate limit removed — server handles it in prod
-
 export const useLoginForm = () => {
   const router = useRouter();
   const [loading, setLoading] = useState(false);

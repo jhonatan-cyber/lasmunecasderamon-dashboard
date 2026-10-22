@@ -1080,6 +1080,13 @@ describe('resumen de shots del bar', () => {
           { clave: 'shot_ml', valor: '50' },
           { clave: 'shots_alerta', valor: '2' }
         ];
+      // El desglose por producto también menciona la colación: se reconoce por
+      // su CTE antes de caer en la consulta del listado de colaciones.
+      if (sql.includes('WITH consumos'))
+        return [
+          { producto_id: 'p-1', producto_nombre: 'Whisky', ml: 200, ml_colacion: 0 },
+          { producto_id: 'p-2', producto_nombre: 'Coca-Cola Original', ml: 150, ml_colacion: 150 }
+        ];
       if (sql.includes("m.tipo = 'colacion'"))
         return [
           {
@@ -1092,7 +1099,6 @@ describe('resumen de shots del bar', () => {
             registrado_por: 'Jhonatan'
           }
         ];
-      if (sql.includes('FROM inventario_movimientos')) return [{ ml_ventas: 200 }];
       if (sql.includes('FROM detalle_ventas'))
         return [
           {
@@ -1104,6 +1110,7 @@ describe('resumen de shots del bar', () => {
             precio: 3000,
             comision: 500,
             sub_total: 21000,
+            venta_total: 21000,
             shot_anfitriona: true,
             producto_id: 'p-1',
             producto_nombre: 'Whisky',
@@ -1147,6 +1154,7 @@ describe('resumen de shots del bar', () => {
           precio: 3000,
           comision: 500,
           subtotal: 21000,
+          venta_total: 21000,
           anfitriona: true,
           anfitriona_nombre: 'Nico',
           producto_id: 'p-1',
@@ -1177,10 +1185,18 @@ describe('resumen de shots del bar', () => {
           fecha: '2026-10-20 11:09:00'
         }
       ],
+      mlPorProductoHoy: [
+        { producto_id: 'p-1', producto_nombre: 'Whisky', ml: 200, ml_colacion: 0 },
+        { producto_id: 'p-2', producto_nombre: 'Coca-Cola Original', ml: 150, ml_colacion: 150 }
+      ],
       mlRestantesTotales: 400,
       botellasAbiertas: 3,
       botellasPorAgotarse: 2
     });
+    // El desglose por producto siempre suma el total servido del día.
+    expect(resumen.mlPorProductoHoy.reduce((total, producto) => total + producto.ml, 0)).toBe(
+      resumen.mlServidosHoy
+    );
     // Los ml de colación entran al total servido pero no a los cortos contados.
     expect(query).toHaveBeenCalledWith(
       expect.stringContaining("m.tipo = 'colacion'"),
@@ -1216,7 +1232,7 @@ describe('resumen de shots del bar', () => {
     (query as any).mockImplementation(async (sql: string) => {
       if (sql.includes('FROM configuraciones')) return [];
       if (sql.includes("m.tipo = 'colacion'")) return [];
-      if (sql.includes('FROM inventario_movimientos')) return [{ ml_ventas: 0 }];
+      if (sql.includes('WITH consumos')) return [];
       if (sql.includes('FROM inventario_unidades'))
         return [{ botellas: 0, ml: 0, por_agotarse: 0 }];
       return [];

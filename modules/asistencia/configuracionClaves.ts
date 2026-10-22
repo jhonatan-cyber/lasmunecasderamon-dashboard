@@ -1,5 +1,5 @@
-import type { DefinicionClave } from '@/lib/configuracion/definiciones';
-import { enteroEnRango, horaDelDia } from '@/lib/configuracion/definiciones';
+import type { DefinicionClave } from '@/lib/configuration/definitions';
+import { enteroEnRango, horaDelDia } from '@/lib/configuration/definitions';
 export const CLAVES_ASISTENCIA: Record<string, DefinicionClave> = {
   asistencia_hora_inicio: {
     categoria: 'asistencia',

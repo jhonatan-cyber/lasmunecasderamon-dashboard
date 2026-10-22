@@ -6,7 +6,7 @@ import { mapForSaleToCartItem } from '@/lib/sales/forSaleMapper';
 import { getHostessLimit } from '@/components/orders/productModalRules';
 import { resolverVentaProducto } from '@/lib/sales/saleChoice';
 import { esCortoAnfitriona } from '@/lib/sales/hostessShortPrices';
-import { useNewSaleForm } from '@/hooks/ventas/useNewSaleForm';
+import { useNewSaleForm } from '@/hooks/sales/useNewSaleForm';
 import { CajaStatusCheck } from '@/components/sales/CajaStatusCheck';
 import CategoryCardList from '@/components/shared/CategoryCardList';
 import SaleProductModal from '@/components/sales/SaleProductModal';

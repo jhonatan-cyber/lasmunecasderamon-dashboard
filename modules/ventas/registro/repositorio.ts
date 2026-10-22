@@ -1,6 +1,6 @@
 import { generateUUID, type TransactionQuery } from '@/lib/database/db';
-import { resolverTransaccion } from '@/lib/transaccion/infraestructura';
-import type { ContextoOperacion } from '@/lib/transaccion/contrato';
+import { resolverTransaccion } from '@/lib/transaction/infrastructure';
+import type { ContextoOperacion } from '@/lib/transaction/contract';
 import { BaseRepository } from '@/lib/database/base-repository';
 export class RegistroVenta {
   static async rawInsert(contexto: ContextoOperacion, data: Record<string, unknown>) {

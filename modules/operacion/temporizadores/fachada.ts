@@ -1,5 +1,5 @@
 import { TimerRepository } from '@/modules/operacion/temporizadores/consultas';
-import { enUnaUnidad } from '@/lib/transaccion/contrato';
+import { enUnaUnidad } from '@/lib/transaction/contract';
 import { getNowInBusinessTimezone } from '@/lib/business/timezoneService';
 import { sendNotificationToAll } from '@/lib/api/sseService';
 

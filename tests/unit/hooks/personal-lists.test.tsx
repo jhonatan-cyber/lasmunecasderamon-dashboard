@@ -2,9 +2,9 @@ import { afterEach, describe, expect, it, vi } from 'vitest';
 import { act, cleanup, renderHook, waitFor } from '@testing-library/react';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import type { ReactNode } from 'react';
-import { useTipsDetalle } from '@/hooks/personal/useTips';
-import { useCommissions } from '@/hooks/personal/useCommissions';
-import useAnticipos from '@/hooks/personal/useAnticipos';
+import { useTipsDetalle } from '@/hooks/staff/useTips';
+import { useCommissions } from '@/hooks/staff/useCommissions';
+import useAnticipos from '@/hooks/staff/useAnticipos';
 
 vi.unmock('@tanstack/react-query');
 vi.mock('@/hooks/auth/useCurrentUser', () => ({

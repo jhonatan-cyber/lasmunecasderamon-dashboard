@@ -19,7 +19,7 @@ it.each(['cajero', 'barman', 'garzon', 'anfitriona'])(
       Response.json({
         success: true,
         data:
-          url === '/api/gratificaciones/me'
+          url === '/api/gratifications/me'
             ? [
                 {
                   id: 'g1',
@@ -40,7 +40,7 @@ it.each(['cajero', 'barman', 'garzon', 'anfitriona'])(
     });
     const table = await screen.findByRole('table', { name: 'Mis gratificaciones' });
     expect(within(table).getByText('Bono propio')).toBeInTheDocument();
-    expect(fetcher.mock.calls.some(([url]) => url === '/api/gratificaciones/me')).toBe(true);
+    expect(fetcher.mock.calls.some(([url]) => url === '/api/gratifications/me')).toBe(true);
   }
 );
 it('reintenta un fallo de gratificaciones sin mostrar una tabla vacía', async () => {
@@ -48,7 +48,7 @@ it('reintenta un fallo de gratificaciones sin mostrar una tabla vacía', async (
   vi.stubGlobal(
     'fetch',
     vi.fn(async (url: string) =>
-      url.includes('gratificaciones') && failed
+      url.includes('gratifications') && failed
         ? Response.json({ success: false }, { status: 500 })
         : Response.json({ success: true, data: [] })
     )

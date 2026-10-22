@@ -32,7 +32,7 @@ import { ImageUploadField } from './ImageUploadField';
 import { NumberInputField } from './NumberInputField';
 import { MaritalStatusSelect, AfpInputField, HousingDiscountField } from './fields';
 import { RoleSelect } from '@/components/users/RoleSelect';
-import { useUserForm, type UserFormValues } from '@/hooks/personal';
+import { useUserForm, type UserFormValues } from '@/hooks/staff';
 export type { UserFormValues };
 
 const formatRUT = (value: string): string => {

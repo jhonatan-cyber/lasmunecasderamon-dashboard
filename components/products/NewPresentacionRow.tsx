@@ -16,7 +16,7 @@ import {
 import { PresentacionNombreInput } from './PresentacionNombreInput';
 import { Collapsible, CollapsibleTrigger, CollapsibleContent } from '@/components/ui/collapsible';
 import { cn } from '@/lib/utils/utils';
-import type { PresentacionFormItem } from '@/hooks/personal/useProductForm';
+import type { PresentacionFormItem } from '@/hooks/products/useProductForm';
 
 interface NewPresentacionRowProps {
   presentacion: PresentacionFormItem;

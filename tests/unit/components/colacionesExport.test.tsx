@@ -5,12 +5,12 @@ import {
   exportarColacionesExcel,
   filasColaciones,
   type ColacionDetalle
-} from '@/components/colaciones/colacionesExport';
-import { ColacionesTab } from '@/components/colaciones/ColacionesTab';
+} from '@/components/meals/colacionesExport';
+import { ColacionesTab } from '@/components/meals/ColacionesTab';
 import { horaDeNegocio } from '@/lib/business/timezoneService';
 
 vi.mock('sonner', () => ({ toast: { success: vi.fn(), error: vi.fn() } }));
-vi.mock('@/hooks/caja/useCashRegisterStatus', () => ({
+vi.mock('@/hooks/cash-register/useCashRegisterStatus', () => ({
   useCashRegisterStatus: () => ({ hasOpenCaja: true, cajaInfo: { id_caja: 'caja-1' } })
 }));
 vi.mock('@/hooks/auth/useUserPermissions', () => ({
@@ -240,7 +240,7 @@ describe('botón Excel de Colaciones del turno', () => {
         if (url.startsWith('/api/users')) return ok([]);
         if (url.includes('solo_colaciones_analcoholicas=true')) return ok([]);
         if (url.includes('solo_colaciones=true')) return ok([]);
-        if (url.startsWith('/api/colaciones')) return ok(registros);
+        if (url.startsWith('/api/meals')) return ok(registros);
         if (url.startsWith('/api/bar')) return ok([]);
         throw new Error(`URL inesperada: ${url}`);
       })

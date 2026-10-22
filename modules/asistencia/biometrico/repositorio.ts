@@ -4,7 +4,7 @@
  * (§5).
  *
  * Estas consultas vivían dentro de `/api/biometric/devices/[id]/poller` y
- * `/api/biometric/records/[id]/foto`, que mezclaban adaptación, consulta y el
+ * `/api/biometric/records/[id]/photo`, que mezclaban adaptación, consulta y el
  * arranque o apagado del listener.
  */
 import { query } from '@/lib/database/db';

@@ -31,8 +31,8 @@ export function EmployeeAdvanceRequests({ onRequested }: { onRequested: () => vo
     setLoadError('');
     try {
       const [requestResponse, balanceResponse] = await Promise.all([
-        fetch('/api/anticipos/solicitudes'),
-        fetch('/api/anticipos/maximo')
+        fetch('/api/advances/requests'),
+        fetch('/api/advances/max')
       ]);
       const [history, balance] = await Promise.all([
         requestResponse.json(),
@@ -51,7 +51,7 @@ export function EmployeeAdvanceRequests({ onRequested }: { onRequested: () => vo
       setLoading(false);
     }
   }, []);
-  useRealtimeRefresh('/api/anticipos', load);
+  useRealtimeRefresh('/api/advances', load);
 
   useEffect(() => {
     void load();
@@ -124,7 +124,7 @@ export function EmployeeAdvanceRequests({ onRequested }: { onRequested: () => vo
                 setSaving(true);
                 setMessage('');
                 try {
-                  const response = await fetch('/api/anticipos/solicitudes', {
+                  const response = await fetch('/api/advances/requests', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ monto: value, motivo: reason.trim() })

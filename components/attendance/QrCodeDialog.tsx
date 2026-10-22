@@ -63,7 +63,7 @@ export function QrCodeDialog({ selectedUser, onClose }: QrCodeDialogProps) {
   useEffect(() => {
     if (!selectedUser) return;
 
-    fetch('/api/codigo/actual')
+    fetch('/api/code/current')
       .then(res => res.json())
       .then(data => {
         if (data.success) setCodigoAsistencia(data.codigo);

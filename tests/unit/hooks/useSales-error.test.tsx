@@ -1,6 +1,6 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { act, renderHook } from '@testing-library/react';
-import { useSales } from '@/hooks/caja/useSales';
+import { useSales } from '@/hooks/cash-register/useSales';
 import { showErrorToast } from '@/lib/utils/toastUtils';
 
 vi.mock('@/hooks/shared/useGenericFetch', () => ({

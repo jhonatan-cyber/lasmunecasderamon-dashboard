@@ -3,7 +3,7 @@
 import { useEffect, useState } from 'react';
 import { Camera, Loader2, ScanFace, ShieldCheck } from 'lucide-react';
 import { toast } from 'sonner';
-import { useBiometricPreview } from '@/hooks/useBiometricPreview';
+import { useBiometricPreview } from '@/hooks/attendance/useBiometricPreview';
 import { Button } from '@/components/ui/button';
 import {
   Dialog,

@@ -1,8 +1,10 @@
 import { act, cleanup, renderHook } from '@testing-library/react';
 import { afterEach, beforeEach, expect, it, vi } from 'vitest';
 const mocks = vi.hoisted(() => ({ create: vi.fn() }));
-vi.mock('@/hooks/caja/useCuentas', () => ({ useCuentas: () => ({ createCuenta: mocks.create }) }));
-vi.mock('@/hooks/shared', () => ({
+vi.mock('@/hooks/cash-register/useCuentas', () => ({
+  useCuentas: () => ({ createCuenta: mocks.create })
+}));
+vi.mock('@/hooks/sales/useChampagneRule', () => ({
   useChampagneRule: () => ({
     isChampagneProduct: () => false,
     hasChampagneProducts: false,
@@ -11,7 +13,7 @@ vi.mock('@/hooks/shared', () => ({
   })
 }));
 vi.mock('@/lib/utils/logger', () => ({ default: { captureException: vi.fn() } }));
-import { useAccountForm } from '@/hooks/cuentas/useAccountForm';
+import { useAccountForm } from '@/hooks/accounts/useAccountForm';
 import { useSingleFlight } from '@/hooks/shared/useSingleFlight';
 beforeEach(() => mocks.create.mockReset());
 afterEach(cleanup);

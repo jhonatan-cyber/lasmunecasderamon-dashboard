@@ -2,7 +2,7 @@ import { afterAll, beforeAll, beforeEach, expect, it } from 'vitest';
 import type { PoolClient } from 'pg';
 import db, { type TransactionQuery } from '@/lib/database/db';
 import { prepareQuery } from '@/lib/database/postgres.cjs';
-import { registrar, liberar } from '@/lib/transaccion/infraestructura';
+import { registrar, liberar } from '@/lib/transaction/infrastructure';
 import {
   comprobarAnfitrionasLibresParaServicio,
   actualizarDisponibilidadAnfitrionas

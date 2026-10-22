@@ -82,8 +82,8 @@ export class SaldosCaja {
   }
 }
 
-import type { ContextoOperacion } from '@/lib/transaccion/contrato';
-import { resolverTransaccion } from '@/lib/transaccion/infraestructura';
+import type { ContextoOperacion } from '@/lib/transaction/contract';
+import { resolverTransaccion } from '@/lib/transaction/infrastructure';
 import type { MovimientoCobro } from '../contracts';
 export function obtenerCajaActiva(contexto?: ContextoOperacion) {
   return SaldosCaja.getCurrentCajaId(contexto ? resolverTransaccion(contexto) : undefined);

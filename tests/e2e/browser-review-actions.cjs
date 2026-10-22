@@ -72,7 +72,8 @@ async function main() {
     await page.keyboard.press('Escape');
   }
   async function save(label = 'Guardar') {
-    const response = nextResponse(page, 
+    const response = nextResponse(
+      page,
       r =>
         r.request().method() === 'POST' &&
         r.url().includes('/api/') &&
@@ -139,34 +140,52 @@ async function main() {
     await card.getByRole('button', { name: 'Acciones', exact: true }).click();
     await page.getByRole('menuitem', { name: 'Editar', exact: true }).click();
     await page.locator('#role-description').fill('Descripción actualizada desde navegador');
-    let response = nextResponse(page, r => r.request().method() === 'PUT' && r.url().includes('/api/roles/'));
+    let response = nextResponse(
+      page,
+      r => r.request().method() === 'PUT' && r.url().includes('/api/roles/')
+    );
     await page.getByRole('button', { name: 'Guardar Cambios', exact: true }).click();
     expect((await response).status()).toBeLessThan(300);
     for (const label of ['Desactivar', 'Activar']) {
       await card.getByRole('button', { name: 'Acciones', exact: true }).click();
-      response = nextResponse(page, r => r.request().method() === 'PUT' && r.url().includes('/api/roles/'));
+      response = nextResponse(
+        page,
+        r => r.request().method() === 'PUT' && r.url().includes('/api/roles/')
+      );
       await page.getByRole('menuitem', { name: label, exact: true }).click();
-      if (label === 'Desactivar') await page.getByRole('button', { name: label, exact: true }).click();
+      if (label === 'Desactivar')
+        await page.getByRole('button', { name: label, exact: true }).click();
       expect((await response).status()).toBeLessThan(300);
-      await expect(card.getByText(label === 'Desactivar' ? 'Inactivo' : 'Activo', { exact: true })).toBeVisible();
+      await expect(
+        card.getByText(label === 'Desactivar' ? 'Inactivo' : 'Activo', { exact: true })
+      ).toBeVisible();
     }
     await card.getByRole('button', { name: 'Acciones', exact: true }).click();
     await page.getByRole('menuitem', { name: 'Eliminar', exact: true }).click();
-    response = nextResponse(page, r => r.request().method() === 'DELETE' && r.url().includes('/api/roles/'));
+    response = nextResponse(
+      page,
+      r => r.request().method() === 'DELETE' && r.url().includes('/api/roles/')
+    );
     await page.getByRole('button', { name: 'Eliminar', exact: true }).click();
     expect((await response).status()).toBeLessThan(300);
     await expect(card).toHaveCount(0);
     await page.setViewportSize({ width: 1440, height: 1000 });
   });
   await run('product-create', '/products', async () => {
-    await page.getByText(/^QA Bebidas$/i).first().click();
+    await page
+      .getByText(/^QA Bebidas$/i)
+      .first()
+      .click();
     await page.getByRole('button', { name: 'Nuevo producto', exact: true }).click();
     await page.locator('#prod-name').fill('Bebida QA');
     await page.getByRole('button', { name: 'Agregar', exact: true }).click();
     await page.getByLabel('Cantidad de la presentación').fill('750');
     await page.getByPlaceholder('Precio compra', { exact: true }).fill('3000');
     await page.getByPlaceholder('Stock', { exact: true }).fill('10');
-    const response = nextResponse(page, r => r.request().method() === 'POST' && new URL(r.url()).pathname === '/api/products');
+    const response = nextResponse(
+      page,
+      r => r.request().method() === 'POST' && new URL(r.url()).pathname === '/api/products'
+    );
     await page.getByRole('button', { name: 'Guardar', exact: true }).click();
     const result = await response;
     expect(result.status(), await result.text()).toBeLessThan(300);
@@ -180,20 +199,30 @@ async function main() {
     await page.locator('input[id*="-cantidad-"]').fill('4');
     await page.getByPlaceholder('Nombre del proveedor').fill('Proveedor QA');
     await page.getByRole('button', { name: 'Revisar compra', exact: true }).click();
-    const response = nextResponse(page, r => r.request().method() === 'POST' && new URL(r.url()).pathname === '/api/purchases');
+    const response = nextResponse(
+      page,
+      r => r.request().method() === 'POST' && new URL(r.url()).pathname === '/api/purchases'
+    );
     await page.getByRole('button', { name: 'Finalizar compra', exact: true }).click();
     const result = await response;
     expect(result.status(), await result.text()).toBeLessThan(300);
-    await expect(page.getByText(/Compra registrada|Códigos generados|Imprimir códigos/).first()).toBeVisible();
+    await expect(
+      page.getByText(/Compra registrada|Códigos generados|Imprimir códigos/).first()
+    ).toBeVisible();
   });
   await run('attendance-bulk', '/attendance', async () => {
     page.once('dialog', dialog => dialog.accept());
-    const response = nextResponse(page, r => r.request().method() === 'POST' && r.url().includes('/api/attendance/'));
+    const response = nextResponse(
+      page,
+      r => r.request().method() === 'POST' && r.url().includes('/api/attendance/')
+    );
     await page.getByRole('button', { name: 'Entrada masiva hoy', exact: true }).click();
     const result = await response;
     expect(result.status(), await result.text()).toBeLessThan(300);
     await page.waitForTimeout(1000);
-    await expect(page.getByText(/asistencia registrada|ya tenían asistencia/i).first()).toBeVisible();
+    await expect(
+      page.getByText(/asistencia registrada|ya tenían asistencia/i).first()
+    ).toBeVisible();
   });
   await run('inventory-transfer', '/transfers', async () => {
     const pending = page.getByRole('tab', { name: /^Pendientes/ });
@@ -204,26 +233,41 @@ async function main() {
     }
     await page.getByText('Transferir', { exact: true }).first().click();
     await page.locator('#transfer-quantity').fill('3');
-    if (await page.locator('#price-botella').count()) await page.locator('#price-botella').fill('5000');
+    if (await page.locator('#price-botella').count())
+      await page.locator('#price-botella').fill('5000');
     await save('Transferir');
     await pending.click();
     await expect(page.getByText(/Bebida Qa/i).first()).toBeVisible();
   });
   await run('bar-receive', '/bar', async () => {
-    const receiverContext = await browser.newContext({ storageState: `${root}/role-barman/auth.json`, viewport: { width: 1440, height: 1000 } });
+    const receiverContext = await browser.newContext({
+      storageState: `${root}/role-barman/auth.json`,
+      viewport: { width: 1440, height: 1000 }
+    });
     try {
       const receiver = await receiverContext.newPage();
       receiver.setDefaultTimeout(15000);
       receiver.on('pageerror', error => current.errors.push(error.message));
       await receiver.goto(`http://127.0.0.1:${state.port}/bar`);
       await receiver.getByRole('tab', { name: /^Pendientes/ }).click();
-      await expect(receiver.getByRole('button', { name: 'Aprobar', exact: true }).or(receiver.getByText('No hay solicitudes pendientes.', { exact: true })).first()).toBeVisible();
-      if (await receiver.getByText('No hay solicitudes pendientes.', { exact: true }).isVisible()) return;
-      const response = nextResponse(receiver, r => r.request().method() === 'PATCH' && new URL(r.url()).pathname === '/api/transfers');
+      await expect(
+        receiver
+          .getByRole('button', { name: 'Aprobar', exact: true })
+          .or(receiver.getByText('No hay solicitudes pendientes.', { exact: true }))
+          .first()
+      ).toBeVisible();
+      if (await receiver.getByText('No hay solicitudes pendientes.', { exact: true }).isVisible())
+        return;
+      const response = nextResponse(
+        receiver,
+        r => r.request().method() === 'PATCH' && new URL(r.url()).pathname === '/api/transfers'
+      );
       await receiver.getByRole('button', { name: 'Aprobar', exact: true }).first().click();
       const result = await response;
       expect(result.status(), await result.text()).toBeLessThan(300);
-      await expect(receiver.getByText('No hay solicitudes pendientes.', { exact: true })).toBeVisible();
+      await expect(
+        receiver.getByText('No hay solicitudes pendientes.', { exact: true })
+      ).toBeVisible();
       await receiver.screenshot({ path: `${root}/action-bar-receive-barman.png`, fullPage: true });
     } finally {
       await receiverContext.close();
@@ -232,33 +276,58 @@ async function main() {
   });
   await run('private-service-create', '/private-rooms/new', async () => {
     await page.getByText('Seleccionar habitación', { exact: true }).click();
-    await page.getByText(/^Habitación QA/i).last().click();
+    await page
+      .getByText(/^Habitación QA/i)
+      .last()
+      .click();
     await page.getByText('Seleccionar anfitrionas', { exact: true }).click();
     await page.getByText('qa_anfitriona', { exact: true }).last().click();
     await page.keyboard.press('Escape');
     await page.getByText('Seleccionar método de pago', { exact: true }).click();
     await page.getByRole('button', { name: 'Efectivo', exact: true }).click();
-    await page.getByRole('combobox', { name: 'Producto incluido en la habitación', exact: true }).click();
-    await page.getByRole('option', { name: /Bebida Qa/i }).first().click();
+    await page
+      .getByRole('combobox', { name: 'Producto incluido en la habitación', exact: true })
+      .click();
+    await page
+      .getByRole('option', { name: /Bebida Qa/i })
+      .first()
+      .click();
     await page.getByRole('button', { name: 'Generar Servicio', exact: true }).click();
-    await expect(page.getByRole('heading', { name: 'Confirmar creación de servicio' })).toBeVisible();
-    const response = nextResponse(page, r => r.request().method() === 'POST' && new URL(r.url()).pathname === '/api/servicios');
+    await expect(
+      page.getByRole('heading', { name: 'Confirmar creación de servicio' })
+    ).toBeVisible();
+    const response = nextResponse(
+      page,
+      r => r.request().method() === 'POST' && new URL(r.url()).pathname === '/api/services'
+    );
     await page.getByRole('button', { name: 'Confirmar', exact: true }).click();
     const result = await response;
     expect(result.status(), await result.text()).toBeLessThan(300);
     await expect(page).toHaveURL(/\/private-rooms$/);
   });
   async function addBottle() {
-    await page.getByText(/^QA Bebidas$/i).first().click();
-    await page.getByRole('button', { name: /Botella: aumentar cantidad/i }).first().click();
+    await page
+      .getByText(/^QA Bebidas$/i)
+      .first()
+      .click();
+    await page
+      .getByRole('button', { name: /Botella: aumentar cantidad/i })
+      .first()
+      .click();
     await page.getByRole('button', { name: 'Agregar producto', exact: true }).click();
     await expect(page.getByRole('dialog')).toHaveCount(0);
   }
   await run('account-create', '/accounts/new', async () => {
     await addBottle();
     await page.getByText('Seleccione un cliente', { exact: true }).click();
-    await page.getByRole('button', { name: /Cliente Qa/i }).first().click();
-    const response = nextResponse(page, r => r.request().method() === 'POST' && new URL(r.url()).pathname === '/api/cuentas');
+    await page
+      .getByRole('button', { name: /Cliente Qa/i })
+      .first()
+      .click();
+    const response = nextResponse(
+      page,
+      r => r.request().method() === 'POST' && new URL(r.url()).pathname === '/api/accounts'
+    );
     await page.getByRole('button', { name: 'Generar Cuenta', exact: true }).click();
     const result = await response;
     expect(result.status(), await result.text()).toBeLessThan(300);
@@ -267,10 +336,19 @@ async function main() {
   await run('account-add', '/accounts', async () => {
     await page.setViewportSize({ width: 390, height: 844 });
     await page.getByRole('button', { name: 'Agregar', exact: true }).first().click();
-    await page.getByText(/^QA Bebidas$/i).first().click();
-    await page.getByRole('button', { name: /Botella: aumentar cantidad/i }).first().click();
+    await page
+      .getByText(/^QA Bebidas$/i)
+      .first()
+      .click();
+    await page
+      .getByRole('button', { name: /Botella: aumentar cantidad/i })
+      .first()
+      .click();
     await page.getByRole('button', { name: 'Agregar producto', exact: true }).click();
-    const response = nextResponse(page, r => ['POST', 'PUT'].includes(r.request().method()) && r.url().includes('/api/cuentas/'));
+    const response = nextResponse(
+      page,
+      r => ['POST', 'PUT'].includes(r.request().method()) && r.url().includes('/api/accounts/')
+    );
     await page.getByRole('button', { name: 'Agregar', exact: true }).last().click();
     const result = await response;
     expect(result.status(), await result.text()).toBeLessThan(300);
@@ -281,7 +359,10 @@ async function main() {
     await page.getByRole('button', { name: 'Cobrar', exact: true }).first().click();
     await page.locator('#cobrar-metodo-pago').click();
     await page.getByRole('option', { name: 'Efectivo', exact: true }).click();
-    const response = nextResponse(page, r => r.request().method() === 'POST' && r.url().includes('/api/cuentas/'));
+    const response = nextResponse(
+      page,
+      r => r.request().method() === 'POST' && r.url().includes('/api/accounts/')
+    );
     await page.getByRole('button', { name: 'Cobrar Cuenta', exact: true }).click();
     const result = await response;
     expect(result.status(), await result.text()).toBeLessThan(300);
@@ -292,7 +373,10 @@ async function main() {
     await addBottle();
     await page.getByText('Seleccione un método de pago', { exact: true }).click();
     await page.getByRole('button', { name: 'Efectivo', exact: true }).click();
-    const response = nextResponse(page, r => r.request().method() === 'POST' && new URL(r.url()).pathname === '/api/sales');
+    const response = nextResponse(
+      page,
+      r => r.request().method() === 'POST' && new URL(r.url()).pathname === '/api/sales'
+    );
     await page.getByRole('button', { name: 'GENERAR VENTA', exact: true }).click();
     const result = await response;
     expect(result.status(), await result.text()).toBeLessThan(300);
@@ -302,7 +386,10 @@ async function main() {
     await addBottle();
     await page.getByText('Seleccione un método de pago', { exact: true }).click();
     await page.getByRole('button', { name: 'Efectivo', exact: true }).click();
-    const response = nextResponse(page, r => r.request().method() === 'POST' && new URL(r.url()).pathname === '/api/orders');
+    const response = nextResponse(
+      page,
+      r => r.request().method() === 'POST' && new URL(r.url()).pathname === '/api/orders'
+    );
     await page.getByRole('button', { name: 'Generar pedido', exact: true }).click();
     const result = await response;
     expect(result.status(), await result.text()).toBeLessThan(300);
@@ -325,7 +412,8 @@ async function main() {
     await save();
   });
   async function cleaningSave(label = 'Guardar') {
-    const response = nextResponse(page, 
+    const response = nextResponse(
+      page,
       r => r.request().method() === 'POST' && r.url().includes('/api/cleaning')
     );
     await page.getByRole('button', { name: label, exact: true }).click();
@@ -438,5 +526,3 @@ main().catch(async error => {
   await activeBrowser?.close();
   process.exitCode = 1;
 });
-
-

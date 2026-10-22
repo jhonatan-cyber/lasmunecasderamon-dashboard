@@ -1,5 +1,5 @@
 import { AuthRepository } from '@/modules/identidad/autenticacion/repositorio';
-import type { ContextoOperacion } from '@/lib/transaccion/contrato';
+import type { ContextoOperacion } from '@/lib/transaction/contract';
 import * as sesiones from './sesionesRepositorio';
 export function cerrarSesionesPorCierreCaja(contexto: ContextoOperacion) {
   return sesiones.cerrarSesionesPorCierreCaja(contexto);

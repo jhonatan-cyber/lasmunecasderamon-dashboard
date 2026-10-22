@@ -40,7 +40,7 @@ export function KioskActivation() {
         throw new Error(result.message || 'No se pudo activar la pantalla.');
       localStorage.removeItem('auth_role_hint');
       localStorage.removeItem('userRole');
-      window.location.replace('/asistencia-qr');
+      window.location.replace('/attendance-qr');
     } catch (error) {
       toast.error(error instanceof Error ? error.message : 'No se pudo activar la pantalla.');
       setSaving(false);

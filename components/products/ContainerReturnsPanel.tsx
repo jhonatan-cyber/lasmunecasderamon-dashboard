@@ -20,7 +20,7 @@ import {
 import { cn } from '@/lib/utils/utils';
 import type { DevolucionEnvaseRegistro } from '@/modules/inventario/contracts';
 import { EscaneoLote } from '@/components/products/EscaneoLote';
-import { MOTIVO_ENVASE, useContainerScan } from '@/hooks/productos/useContainerScan';
+import { MOTIVO_ENVASE, useContainerScan } from '@/hooks/products/useContainerScan';
 import { useSharedSSE } from '@/hooks/shared';
 import type { ResumenEnvases } from '@/lib/business/containerAlerts';
 

@@ -20,11 +20,12 @@ import {
   X,
   AlertTriangle,
   Bell,
-  BellOff
+  BellOff,
+  Ticket
 } from 'lucide-react';
 import { PermissionGuard } from '@/components/auth/PermissionGuard';
 import { useAuth } from '@/contexts/AuthContext';
-import { useTransferPermissions } from '@/hooks/shared/useTransferPermissions';
+import { useTransferPermissions } from '@/hooks/transfers/useTransferPermissions';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
@@ -50,10 +51,11 @@ import { useConfig } from '@/hooks/shared/useConfigValue';
 import { resolveBotellaMl, resolveShotMl, resolveShotMlAnfitriona } from '@/lib/business/shotMl';
 import { useRealtimeRefresh } from '@/hooks/realtime/useRealtimeRefresh';
 import type { DevolucionEnvaseRegistro, ShotsSummary } from '@/modules/inventario/contracts';
-import { useContainerScan, MOTIVO_ENVASE } from '@/hooks/productos/useContainerScan';
+import { useContainerScan, MOTIVO_ENVASE } from '@/hooks/products/useContainerScan';
 import { EscaneoLote } from '@/components/products/EscaneoLote';
 import { ProductImageLightbox } from '@/components/products/ProductImageLightbox';
-import { ColacionesTab } from '@/components/colaciones/ColacionesTab';
+import { ColacionesTab } from '@/components/meals/ColacionesTab';
+import { CortesiasTab } from '@/components/bar/CortesiasTab';
 import { MetricCard } from '@/components/shared/MetricCard';
 import Paginate from '@/components/shared/Paginate';
 
@@ -123,6 +125,7 @@ export default function BarPage() {
   const [filtroTipoMov, setFiltroTipoMov] = useState<FiltroTipoMovimiento>('todos');
   const [searchEnvases, setSearchEnvases] = useState('');
   const [searchColaciones, setSearchColaciones] = useState('');
+  const [searchCortesias, setSearchCortesias] = useState('');
   const [sortField, setSortField] = useState('producto_nombre');
   const [sortDirection, setSortDirection] = useState<'asc' | 'desc'>('asc');
   const [stockError, setStockError] = useState(false);
@@ -569,6 +572,10 @@ export default function BarPage() {
                 <GlassWater className='w-3.5 h-3.5' />
                 Colación
               </TabsTrigger>
+              <TabsTrigger value='cortesias' className={barTabClassName}>
+                <Ticket className='w-3.5 h-3.5' />
+                Cortesías
+              </TabsTrigger>
               {puedeDevolver && (
                 <TabsTrigger value='envases' className={barTabClassName}>
                   <ScanLine className='w-3.5 h-3.5' />
@@ -800,6 +807,30 @@ export default function BarPage() {
                   className='absolute right-5 top-1/2 size-9 -translate-y-1/2 rounded-full'
                   aria-label='Limpiar búsqueda de colaciones'
                   onClick={() => setSearchColaciones('')}
+                >
+                  <X />
+                </Button>
+              )}
+            </div>
+          )}
+          {tab === 'cortesias' && (
+            <div className='relative rounded-2xl border bg-card p-3'>
+              <Search className='pointer-events-none absolute left-6 top-1/2 size-4 -translate-y-1/2 text-muted-foreground' />
+              <Input
+                value={searchCortesias}
+                onChange={event => setSearchCortesias(event.target.value)}
+                placeholder='Buscar cliente o quién registró la entrada'
+                aria-label='Buscar cortesías'
+                className='h-11 rounded-full pl-9 pr-12'
+              />
+              {searchCortesias && (
+                <Button
+                  type='button'
+                  variant='ghost'
+                  size='icon'
+                  className='absolute right-5 top-1/2 size-9 -translate-y-1/2 rounded-full'
+                  aria-label='Limpiar búsqueda de cortesías'
+                  onClick={() => setSearchCortesias('')}
                 >
                   <X />
                 </Button>
@@ -1337,6 +1368,10 @@ export default function BarPage() {
 
           <TabsContent value='colaciones' className='mt-4'>
             <ColacionesTab searchTerm={searchColaciones} />
+          </TabsContent>
+
+          <TabsContent value='cortesias' className='mt-4'>
+            <CortesiasTab searchTerm={searchCortesias} />
           </TabsContent>
 
           <TabsContent value='envases' className='mt-4'>

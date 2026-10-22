@@ -6,7 +6,7 @@ export default function robots(): MetadataRoute.Robots {
     rules: [
       {
         userAgent: '*',
-        allow: ['/login', '/asistencia-qr', '/access-denied', '/offline'],
+        allow: ['/login', '/attendance-qr', '/access-denied', '/offline'],
         disallow: [
           '/',
           '/dashboard',

@@ -10,7 +10,7 @@ import {
   type OrderProducto,
   type OrderCategory,
   type OrderProductoPayload
-} from '@/hooks/personal';
+} from '@/hooks/orders';
 
 const CategoryProductsModal = dynamic(() => import('@/components/sales/SaleProductModal'), {
   loading: () => (

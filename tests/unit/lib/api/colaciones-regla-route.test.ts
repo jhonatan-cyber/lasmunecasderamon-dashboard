@@ -5,7 +5,7 @@ vi.mock('@/lib/api/withRoute', () => ({
   withRoute: (_config: unknown, handler: unknown) => handler
 }));
 
-import { GET } from '@/app/api/colaciones/regla/route';
+import { GET } from '@/app/api/meals/rule/route';
 import { PRODUCTS_FOR_SALE_ENDPOINT } from '@/lib/constants/api-endpoints';
 
 const call = () =>
@@ -14,9 +14,9 @@ const call = () =>
       request: Request,
       context: { params: Record<string, never> }
     ) => Promise<Response>
-  )(new Request('http://localhost/api/colaciones/regla'), { params: {} });
+  )(new Request('http://localhost/api/meals/rule'), { params: {} });
 
-describe('GET /api/colaciones/regla', () => {
+describe('GET /api/meals/rule', () => {
   it('entrega roles, catálogos y categoría desde el helper compartido', async () => {
     const response = await call();
     expect(response.status).toBe(200);

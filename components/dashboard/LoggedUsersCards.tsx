@@ -3,7 +3,7 @@
 import { useQuery } from '@tanstack/react-query';
 import { MetricCard } from '@/components/shared/MetricCard';
 import { Users, UserCheck, UserX, Martini } from 'lucide-react';
-import type { LoggedUsersStatsResponse } from '@/hooks/stats/useLoggedUsersStats';
+import type { LoggedUsersStatsResponse } from '@/hooks/statistics/useLoggedUsersStats';
 
 export default function LoggedUsersCards() {
   const {

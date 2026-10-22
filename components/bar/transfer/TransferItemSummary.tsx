@@ -9,7 +9,7 @@ import {
   esCigarrillos,
   type BarStockItem
 } from '@/components/bar/transfer/transferOptions';
-import type { TransferForm } from '@/hooks/shared/useTransferForm';
+import type { TransferForm } from '@/hooks/transfers/useTransferForm';
 import { preciosCortoAnfitriona } from '@/lib/sales/hostessShortPrices';
 import type { SaleOption } from '@/types/sale-options';
 

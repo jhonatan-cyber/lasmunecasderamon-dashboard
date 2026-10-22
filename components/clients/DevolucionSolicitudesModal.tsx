@@ -37,7 +37,7 @@ export function DevolucionSolicitudesButton() {
   const fetchSolicitudes = async () => {
     setLoading(true);
     try {
-      const res = await fetch('/api/clients/devolucion/solicitudes');
+      const res = await fetch('/api/clients/return/requests');
       const data = await res.json();
       if (data.success) {
         setSolicitudes(data.data || []);
@@ -58,7 +58,7 @@ export function DevolucionSolicitudesButton() {
 
   const handleAccion = async (id: string, accion: 'aprobar' | 'rechazar') => {
     try {
-      const res = await fetch('/api/clients/devolucion/aprobar', {
+      const res = await fetch('/api/clients/return/approve', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ solicitud_id: id, accion })

@@ -8,7 +8,7 @@ import { PermissionGuard } from '@/components/auth/PermissionGuard';
 import dynamic from 'next/dynamic';
 import { useUserPermissions } from '@/hooks/auth/useUserPermissions';
 import { useCurrentUser } from '@/hooks/auth/useCurrentUser';
-import { useCashRegisterStatus } from '@/hooks/caja/useCashRegisterStatus';
+import { useCashRegisterStatus } from '@/hooks/cash-register/useCashRegisterStatus';
 import { useOrdersList, Order, SolicitudServicio } from '@/hooks/orders/useOrdersList';
 import { useOrderDetail } from '@/hooks/orders/useOrderDetail';
 import { Skeleton as BoneyardSkeleton } from 'boneyard-js/react';

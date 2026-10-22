@@ -10,7 +10,7 @@ import { RoleUsersList } from '@/components/roles/RoleUsersList';
 import { PermissionGuard } from '@/components/auth/PermissionGuard';
 import { FilterSelect } from '@/components/shared/selects';
 import { Tooltip, TooltipTrigger } from '@/components/ui/tooltip';
-import type { Role } from '@/hooks/personal';
+import type { Role } from '@/hooks/staff';
 
 const ROLE_STATUS_OPTIONS = [
   { value: 'all', label: 'Todos' },

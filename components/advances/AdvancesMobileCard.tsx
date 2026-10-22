@@ -6,7 +6,7 @@ import { Button } from '@/components/ui/button';
 import { Calendar, Check, X } from 'lucide-react';
 import { formatCurrencyCLP } from '@/lib/utils/formatters';
 import { formatDateTimeDmyLabel } from '@/lib/utils/calendarUtils';
-import { Anticipo } from '@/hooks/personal';
+import { Anticipo } from '@/hooks/staff';
 
 interface AdvancesMobileCardProps {
   anticipo: Anticipo;

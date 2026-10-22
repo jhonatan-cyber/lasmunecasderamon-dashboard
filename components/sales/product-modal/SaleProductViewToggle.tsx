@@ -2,7 +2,7 @@
 
 import { LayoutGrid, List } from 'lucide-react';
 import { ToggleGroup, ToggleGroupItem } from '@/components/ui/toggle-group';
-import type { SaleProductViewMode } from '@/hooks/shared/useSaleProductModal';
+import type { SaleProductViewMode } from '@/hooks/sales/useSaleProductModal';
 
 /** Conmutador Tabla/Tarjetas del encabezado del modal. */
 export function SaleProductViewToggle({

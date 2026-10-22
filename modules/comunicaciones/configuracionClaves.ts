@@ -1,5 +1,5 @@
-import type { DefinicionClave } from '@/lib/configuracion/definiciones';
-import { telefono } from '@/lib/configuracion/definiciones';
+import type { DefinicionClave } from '@/lib/configuration/definitions';
+import { telefono } from '@/lib/configuration/definitions';
 const ADMIN_WHATSAPP = telefono('admin_whatsapp', '59172419112');
 const TWILIO_WHATSAPP = telefono('twilio_whatsapp_number', 'whatsapp:+14155238886', true);
 export const CLAVES_COMUNICACIONES: Record<string, DefinicionClave> = {

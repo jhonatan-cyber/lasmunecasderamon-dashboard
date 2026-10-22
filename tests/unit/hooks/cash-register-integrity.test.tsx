@@ -2,7 +2,7 @@ import { afterEach, describe, expect, it, vi } from 'vitest';
 import { act, cleanup, renderHook, waitFor } from '@testing-library/react';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import type { ReactNode } from 'react';
-import { useCashRegister } from '@/hooks/caja/useCashRegister';
+import { useCashRegister } from '@/hooks/cash-register/useCashRegister';
 import { toast } from 'sonner';
 vi.unmock('@tanstack/react-query');
 vi.mock('sonner', () => ({ toast: { success: vi.fn(), error: vi.fn() } }));
@@ -130,7 +130,7 @@ describe('integridad de caja', () => {
     vi.stubGlobal(
       'fetch',
       vi.fn(async (url: string) =>
-        url.endsWith('/cierre')
+        url.endsWith('/closing')
           ? {
               ok: true,
               status: 202,
@@ -155,7 +155,7 @@ describe('integridad de caja', () => {
   it('no considera cerrada una respuesta sin el estado de cierre', async () => {
     vi.stubGlobal(
       'fetch',
-      vi.fn(async (url: string) => (url.endsWith('/cierre') ? response({}) : defaults(url)))
+      vi.fn(async (url: string) => (url.endsWith('/closing') ? response({}) : defaults(url)))
     );
     const { result } = renderHook(useCashRegister, { wrapper: wrapper() });
     await waitFor(() => expect(result.current.loading).toBe(false));
@@ -167,7 +167,7 @@ describe('integridad de caja', () => {
   it('bloquea retiros simultáneos y libera el bloqueo después de un fallo', async () => {
     let finish!: (value: ReturnType<typeof response>) => void;
     const request = vi.fn(async (url: string) =>
-      url.endsWith('/retiros')
+      url.endsWith('/withdrawals')
         ? new Promise<ReturnType<typeof response>>(resolve => {
             finish = resolve;
           })
@@ -183,7 +183,7 @@ describe('integridad de caja', () => {
     await act(async () => {
       expect(await result.current.retirarDinero(withdrawal)).toBe(false);
     });
-    expect(request.mock.calls.filter(([url]) => url.endsWith('/retiros'))).toHaveLength(1);
+    expect(request.mock.calls.filter(([url]) => url.endsWith('/withdrawals'))).toHaveLength(1);
     await act(async () => {
       finish(response({}, false));
       await pending;
@@ -192,7 +192,7 @@ describe('integridad de caja', () => {
     await act(async () => {
       expect(await result.current.retirarDinero(withdrawal)).toBe(true);
     });
-    expect(request.mock.calls.filter(([url]) => url.endsWith('/retiros'))).toHaveLength(2);
+    expect(request.mock.calls.filter(([url]) => url.endsWith('/withdrawals'))).toHaveLength(2);
   });
   it('mantiene la carga mientras otra consulta continúa pendiente', async () => {
     let finish!: (value: ReturnType<typeof response>) => void;

@@ -2,8 +2,8 @@ import { afterEach, describe, expect, it, vi } from 'vitest';
 import { act, cleanup, renderHook, waitFor } from '@testing-library/react';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import type { ReactNode } from 'react';
-import usePayroll from '@/hooks/personal/usePayroll';
-import { useCalendarActions } from '@/hooks/calendario/useCalendarActions';
+import usePayroll from '@/hooks/staff/usePayroll';
+import { useCalendarActions } from '@/hooks/calendar/useCalendarActions';
 vi.unmock('@tanstack/react-query');
 const clients: QueryClient[] = [];
 function wrapper() {

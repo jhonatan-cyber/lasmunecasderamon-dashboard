@@ -1,7 +1,7 @@
 import { query, generateUUID } from '@/lib/database/db';
 import { BaseRepository } from '@/lib/database/base-repository';
 import { getNowInBusinessTimezone } from '@/lib/business/timezoneService';
-import { resolverTransaccion } from '@/lib/transaccion/infraestructura';
+import { resolverTransaccion } from '@/lib/transaction/infrastructure';
 export async function guardarPlantilla(
   usuarioId: string,
   dispositivoId: string,
@@ -9,7 +9,7 @@ export async function guardarPlantilla(
   datos: string,
   opciones: {
     sincronizada?: boolean;
-    contexto?: import('@/lib/transaccion/contrato').ContextoOperacion;
+    contexto?: import('@/lib/transaction/contract').ContextoOperacion;
   } = {}
 ): Promise<void> {
   const queryFn = opciones.contexto ? resolverTransaccion(opciones.contexto) : query;

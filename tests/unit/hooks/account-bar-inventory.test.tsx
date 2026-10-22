@@ -3,10 +3,10 @@ import { beforeEach, expect, it, vi } from 'vitest';
 import { accountCartKey } from '@/lib/sales/accountCartKey';
 
 const mocks = vi.hoisted(() => ({ createCuenta: vi.fn() }));
-vi.mock('@/hooks/caja/useCuentas', () => ({
+vi.mock('@/hooks/cash-register/useCuentas', () => ({
   useCuentas: () => ({ createCuenta: mocks.createCuenta })
 }));
-vi.mock('@/hooks/shared', () => ({
+vi.mock('@/hooks/sales/useChampagneRule', () => ({
   useChampagneRule: () => ({
     isChampagneProduct: () => false,
     hasChampagneProducts: false,
@@ -19,8 +19,8 @@ vi.mock('@/hooks/shared/useSingleFlight', () => ({
 }));
 vi.mock('sonner', () => ({ toast: { success: vi.fn(), error: vi.fn() } }));
 vi.mock('@/lib/utils/logger', () => ({ default: { captureException: vi.fn() } }));
-import { useAccountForm } from '@/hooks/cuentas/useAccountForm';
-import { useProductCart } from '@/hooks/shared/useProductCart';
+import { useAccountForm } from '@/hooks/accounts/useAccountForm';
+import { useProductCart } from '@/hooks/accounts/useProductCart';
 
 const bottle = {
   id: 'presentacion-750',

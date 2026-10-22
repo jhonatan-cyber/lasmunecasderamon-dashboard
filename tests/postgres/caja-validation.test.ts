@@ -21,7 +21,7 @@ afterAll(async () => {
 
 /**
  * Validación server-side de caja abierta (paridad con el bloqueo de UI en
- * las 3 apps): `POST /api/sales` y `POST /cuentas/{id}/cobrar` rechazan con
+ * las 3 apps): `POST /api/sales` y `POST /api/accounts/{id}/charge-with-sale` rechazan con
  * `NO_CAJA_ABIERTA` cuando no hay caja con estado = 1. Antes de esto, la
  * venta se registraba con `caja_id` null descontando inventario sin rastro
  * en caja (hueco detectado en el smoke del 2026-09-26).

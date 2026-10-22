@@ -1,7 +1,7 @@
 'use client';
 
 import React, { createContext, useContext } from 'react';
-import { useNotifications } from '@/hooks/notificaciones/useNotifications';
+import { useNotifications } from '@/hooks/notifications/useNotifications';
 
 interface NotificationsContextType {
   isConnected: boolean;
@@ -17,9 +17,7 @@ export function NotificationsProvider({ children }: { children: React.ReactNode 
   const notifications = useNotifications();
 
   return (
-    <NotificationsContext.Provider value={notifications}>
-      {children}
-    </NotificationsContext.Provider>
+    <NotificationsContext.Provider value={notifications}>{children}</NotificationsContext.Provider>
   );
 }
 
@@ -30,4 +28,3 @@ export function useNotificationsContext() {
   }
   return context;
 }
-

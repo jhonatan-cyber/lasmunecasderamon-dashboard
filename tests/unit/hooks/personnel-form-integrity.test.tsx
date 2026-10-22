@@ -1,10 +1,10 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { act, cleanup, renderHook, waitFor } from '@testing-library/react';
 import type { ChangeEvent, FormEvent } from 'react';
-import { useAdvanceForm } from '@/hooks/personal/useAdvanceForm';
-import { useOvertimeForm } from '@/hooks/personal/useOvertimeForm';
+import { useAdvanceForm } from '@/hooks/staff/useAdvanceForm';
+import { useOvertimeForm } from '@/hooks/staff/useOvertimeForm';
 const mocks = vi.hoisted(() => ({ setPageSize: vi.fn(), setFilterStatus: vi.fn() }));
-vi.mock('@/hooks/personal', () => ({
+vi.mock('@/hooks/staff', () => ({
   useUsers: () => ({ users: [], isLoading: false, ...mocks }),
   useEmployees: () => ({ data: { data: [] } })
 }));

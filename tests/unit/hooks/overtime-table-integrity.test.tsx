@@ -1,6 +1,6 @@
 import { afterEach, describe, expect, it } from 'vitest';
 import { act, cleanup, renderHook } from '@testing-library/react';
-import { useOvertimeTable } from '@/hooks/personal/useOvertimeTable';
+import { useOvertimeTable } from '@/hooks/staff/useOvertimeTable';
 import type { Overtime } from '@/types/overtime';
 afterEach(cleanup);
 const row = (id: string, hours: number | string = 2, total: number | string = 10) =>

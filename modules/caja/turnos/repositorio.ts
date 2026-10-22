@@ -1,6 +1,6 @@
 import { query, generateUUID, withTransaction, type TransactionQuery } from '@/lib/database/db';
-import { enUnaUnidad, type ContextoOperacion } from '@/lib/transaccion/contrato';
-import { resolverTransaccion } from '@/lib/transaccion/infraestructura';
+import { enUnaUnidad, type ContextoOperacion } from '@/lib/transaction/contract';
+import { resolverTransaccion } from '@/lib/transaction/infrastructure';
 import { cerrarSesionesPorCierreCaja } from '@/modules/identidad';
 import { CajaSchema, type CajaType } from '@/lib/business/schemas';
 import { getNowInBusinessTimezone } from '@/lib/business/timezoneService';

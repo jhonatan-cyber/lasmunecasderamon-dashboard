@@ -1,6 +1,6 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { act, cleanup, renderHook } from '@testing-library/react';
-import { useDevolucionVentasLogic } from '@/hooks/servicios/useDevolucionVentasLogic';
+import { useDevolucionVentasLogic } from '@/hooks/services/useDevolucionVentasLogic';
 import type { VentaWithDetails } from '@/types/venta';
 import { showErrorToast, showSuccessToast } from '@/lib/utils/toastUtils';
 

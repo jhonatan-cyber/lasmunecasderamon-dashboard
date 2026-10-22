@@ -1,7 +1,7 @@
 import { query } from '@/lib/database/db';
 import { generateUUID } from '@/lib/database/db';
-import { enUnaUnidad } from '@/lib/transaccion/contrato';
-import { resolverTransaccion } from '@/lib/transaccion/infraestructura';
+import { enUnaUnidad } from '@/lib/transaction/contract';
+import { resolverTransaccion } from '@/lib/transaction/infrastructure';
 import { consumirColacionBar } from '@/modules/inventario';
 import { getNowInBusinessTimezone } from '@/lib/business/timezoneService';
 import { acompanamientoDeColacion, mlDeColacion } from '@/lib/business/colacionConfig';

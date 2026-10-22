@@ -23,7 +23,7 @@ import {
   CUENTA_TABLE_HEADER_CLASS,
   CUENTA_TABLE_HEADER_ROW_CLASS,
   CUENTA_TABLE_ROW_CLASS
-} from '@/components/cuentas/tables/cuentaTableStyles';
+} from '@/components/accounts/tables/cuentaTableStyles';
 import { formatCurrencyNoDecimals } from '@/lib/utils/formatters';
 import { esShot, etiquetaVentaDetalle } from '@/lib/sales/ventaDetalle';
 

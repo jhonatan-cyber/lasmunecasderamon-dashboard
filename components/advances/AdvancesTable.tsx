@@ -11,8 +11,8 @@ import {
 } from '@/components/ui/table';
 import { Card, CardContent } from '@/components/ui/card';
 import { Wallet } from 'lucide-react';
-import { Anticipo } from '@/hooks/personal';
-import { useAdvancesTable } from '@/hooks/personal/useAdvancesTable';
+import { Anticipo } from '@/hooks/staff';
+import { useAdvancesTable } from '@/hooks/staff/useAdvancesTable';
 import { AdvancesMobileCard } from './AdvancesMobileCard';
 import { AdvancesTableRow } from './AdvancesTableRow';
 

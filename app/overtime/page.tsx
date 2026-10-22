@@ -1,9 +1,9 @@
 'use client';
 
 import { useEffect, useState, useCallback } from 'react';
-import { useOvertime } from '@/hooks/personal';
-import { useCashRegisterStatus } from '@/hooks/caja/useCashRegisterStatus';
-import { useOvertimeTable } from '@/hooks/personal';
+import { useOvertime } from '@/hooks/staff';
+import { useCashRegisterStatus } from '@/hooks/cash-register/useCashRegisterStatus';
+import { useOvertimeTable } from '@/hooks/staff';
 
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';

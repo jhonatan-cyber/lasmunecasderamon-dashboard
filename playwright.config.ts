@@ -10,6 +10,14 @@ export default defineConfig({
   forbidOnly: !!process.env.CI,
   retries: 1,
   timeout: 30_000,
+  // `list` en local y `dot` en CI es el default de Playwright; se declara para
+  // poder sumar el reporter que falla el run si un spec supera el presupuesto
+  // de duración por archivo (ver scripts/playwright/duration-budget-reporter.ts).
+  // El reporter se carga por ruta porque `reporter` solo acepta tuplas.
+  reporter: [
+    [process.env.CI ? 'dot' : 'list'],
+    ['./scripts/playwright/duration-budget-reporter.ts']
+  ],
   use: {
     baseURL,
     trace: 'on-first-retry',

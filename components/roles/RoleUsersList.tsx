@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import { Users as UsersIcon, Loader2 } from 'lucide-react';
-import type { Role } from '@/hooks/personal';
+import type { Role } from '@/hooks/staff';
 
 interface RoleUser {
   id: string | number;

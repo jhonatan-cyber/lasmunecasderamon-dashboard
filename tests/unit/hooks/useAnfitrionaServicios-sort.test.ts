@@ -1,6 +1,6 @@
 import { afterEach, expect, it, vi } from 'vitest';
 import { act, cleanup, renderHook, waitFor } from '@testing-library/react';
-import { useAnfitrionaServicios } from '@/hooks/anfitriona/useAnfitrionaServicios';
+import { useAnfitrionaServicios } from '@/hooks/hostess/useAnfitrionaServicios';
 
 afterEach(() => {
   cleanup();

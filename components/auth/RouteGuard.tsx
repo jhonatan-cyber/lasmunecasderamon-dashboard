@@ -86,7 +86,7 @@ export function RouteGuard({ children }: RouteGuardProps) {
       const requiredPermission = currentPathname ? findRoutePermission(currentPathname) : null;
 
       // Sin entrada en la tabla la página solo exige sesión; las rutas de rol
-      // (`/garzon-*`, `/anfitriona-*`, `/cajero-*`) también pasan y filtran adentro.
+      // (`/waiter-*`, `/hostess-*`, `/cashier-*`) también pasan y filtran adentro.
       if (!requiredPermission || isAnySessionRoute(requiredPermission)) {
         setAuthorized(true);
         setChecking(false);

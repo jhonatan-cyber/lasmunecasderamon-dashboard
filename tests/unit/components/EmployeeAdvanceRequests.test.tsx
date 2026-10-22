@@ -17,7 +17,7 @@ it('rechaza un monto superior al saldo y envía una solicitud propia válida', a
     }
     return Response.json({
       success: true,
-      data: url.endsWith('/maximo')
+      data: url.endsWith('/max')
         ? { monto_maximo: 10000, tiene_solicitud_pendiente: requested }
         : []
     });
@@ -46,9 +46,7 @@ it('no permite enviar otra solicitud mientras espera aprobación', async () => {
     vi.fn(async (url: string) =>
       Response.json({
         success: true,
-        data: url.endsWith('/maximo')
-          ? { monto_maximo: 10000, tiene_solicitud_pendiente: true }
-          : []
+        data: url.endsWith('/max') ? { monto_maximo: 10000, tiene_solicitud_pendiente: true } : []
       })
     )
   );

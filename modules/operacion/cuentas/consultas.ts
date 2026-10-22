@@ -1,6 +1,6 @@
 import type { SaleInventoryFields } from '@/lib/sales/saleInventoryFields';
-import { enUnaUnidad } from '@/lib/transaccion/contrato';
-import { ejecutarEfectosConfirmados } from '@/lib/transaccion/efectos';
+import { enUnaUnidad } from '@/lib/transaction/contract';
+import { ejecutarEfectosConfirmados } from '@/lib/transaction/effects';
 import { cobrarCuenta, consultarCuentaCobrada } from '@/modules/operacion/cobro/servicio';
 import {
   detenerTemporizadorCuenta,

@@ -1,10 +1,6 @@
-export type {
-  CategoriaConfig,
-  DefinicionClave,
-  TipoConfig
-} from '@/lib/configuracion/definiciones';
-import type { DefinicionClave, CategoriaConfig } from '@/lib/configuracion/definiciones';
-import { texto } from '@/lib/configuracion/definiciones';
+export type { CategoriaConfig, DefinicionClave, TipoConfig } from '@/lib/configuration/definitions';
+import type { DefinicionClave, CategoriaConfig } from '@/lib/configuration/definitions';
+import { texto } from '@/lib/configuration/definitions';
 import { CLAVES_ASISTENCIA } from '@/modules/asistencia/contracts';
 import { CLAVES_INVENTARIO } from '@/modules/inventario/contracts';
 import { CLAVES_VENTAS } from '@/modules/ventas/contracts';

@@ -23,9 +23,9 @@ const CREDENTIALS = {
 
 const DASHBOARD_ENDPOINTS = [
   '/api/dashboard/composite',
-  '/api/anticipos?limit=10',
+  '/api/advances?limit=10',
   '/api/sales?limit=10',
-  '/api/servicios?limit=10',
+  '/api/services?limit=10',
   '/api/orders',
   '/api/cashregister?resumen=1',
   '/api/users',

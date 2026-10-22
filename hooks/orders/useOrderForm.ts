@@ -1,0 +1,501 @@
+'use client';
+import { permiteAnfitrionaConComision } from '@/lib/sales/hostessShortPrices';
+import { requiresShortMixer, bottleMixerUnits } from '@/lib/sales/productConfiguration';
+
+import { useState, useMemo, useCallback, useRef, useEffect } from 'react';
+import { mapForSaleToCartItem } from '@/lib/sales/forSaleMapper';
+import { saleInventoryFields, type SaleInventoryFields } from '@/lib/sales/saleInventoryFields';
+import { useSingleFlight } from '@/hooks/shared/useSingleFlight';
+import { generateRandomCode } from '@/lib/utils/codeUtils';
+import { useRouter } from 'next/navigation';
+import { useCurrentUser } from '@/hooks/auth/useCurrentUser';
+import useRooms from '@/hooks/rooms/useRooms';
+import { showSuccessToast, showErrorToast } from '@/lib/utils/toastUtils';
+import { formatCurrencyNoDecimals } from '@/lib/utils/formatters';
+import { appEventBus } from '@/lib/utils/eventBus';
+import { useConfigValue } from '@/hooks/shared/useConfigValue';
+import { isChampagneProduct, getHostessLimit } from '@/components/orders/productModalRules';
+
+export type OrderProducto = SaleInventoryFields & {
+  producto_id?: string;
+  id_producto?: string | number;
+  id?: string | number;
+  id_categoria?: string | number;
+  precio?: number;
+  price?: number;
+  comision?: number;
+  commission?: number;
+  cantidad?: number;
+  subtotal?: number;
+  generaComision?: number;
+  selectedHostesses?: (string | number)[];
+  isChampagne?: boolean;
+  selectedRoom?: string | null;
+  requiresRoom?: boolean;
+  nombre?: string;
+  name?: string;
+  categoria?: string;
+  category_name?: string;
+  comisionUnitaria?: number;
+};
+
+function anfitrionasDelProducto(producto: OrderProducto) {
+  return permiteAnfitrionaConComision(
+    producto.tipo_venta === 'shot' ? 'shot' : 'botella',
+    producto.comisionUnitaria ?? producto.comision ?? producto.commission,
+    Boolean(producto.shot_anfitriona)
+  )
+    ? producto.selectedHostesses || []
+    : [];
+}
+
+export type OrderCategory = {
+  id_categoria?: number;
+  id?: number;
+  nombre?: string;
+  name?: string;
+  status?: number;
+  total_products?: number | null;
+};
+
+export type OrderProductoPayload = OrderProducto & {
+  comision: number;
+  comisionUnitaria: number;
+  cantidad: number;
+  subtotal: number;
+  generaComision: number;
+  hostessId: string;
+  selectedHostesses: (string | number)[];
+  isChampagne: boolean;
+  selectedRoom: string | null;
+  requiresRoom: boolean;
+};
+
+interface UseOrderFormProps {
+  productos: Array<OrderProducto>;
+  selectedCliente: string;
+  setSelectedCliente: (v: string) => void;
+  onAddProducto?: (producto: OrderProductoPayload) => void;
+  onUpdateCantidad?: (index: number, nuevaCantidad: number) => void;
+  onAssignHostess?: (index: number, hostessId: string | string[]) => void;
+  onToggleComision?: (index: number) => void;
+  onSubmit?: () => void;
+}
+
+export function useOrderForm({
+  productos,
+  selectedCliente,
+  setSelectedCliente,
+  onAddProducto,
+  onUpdateCantidad,
+  onAssignHostess,
+  onToggleComision,
+  onSubmit
+}: UseOrderFormProps) {
+  const intent = useRef<{ signature: string; code: string; confirmed: boolean } | undefined>(
+    undefined
+  );
+  useEffect(() => {
+    if (!productos.length) intent.current = undefined;
+  }, [productos.length]);
+  const [modalOpen, setModalOpen] = useState(false);
+  const [modalCategoria, setModalCategoria] = useState<OrderCategory | null>(null);
+  const [productosCategoria, setProductosCategoria] = useState<OrderProducto[]>([]);
+  const [loadingProductos, setLoadingProductos] = useState(false);
+  const [cantidades, setCantidades] = useState<{ [key: string]: number }>({});
+  const [champagneHostessSelections, setChampagneHostessSelections] = useState<{
+    [key: string]: string[];
+  }>({});
+  const [otherProductHostessSelections, setOtherProductHostessSelections] = useState<{
+    [key: string]: string[];
+  }>({});
+  const [roomSelections, setRoomSelections] = useState<{ [key: string]: string }>({});
+  const configPropina = Number(useConfigValue('facturacion', 'propina_venta', '10'));
+  const [propina, setPropina] = useState(configPropina);
+  const [propinaHabilitada, setPropinaHabilitada] = useState(false);
+  const [error, setError] = useState('');
+  const [metodoPago, setMetodoPago] = useState('');
+
+  const router = useRouter();
+  const { user } = useCurrentUser();
+  const { rooms, fetchRooms } = useRooms();
+
+  const toNullableStringId = useCallback((value: unknown): string | null => {
+    if (value === null || value === undefined) return null;
+    const stringValue = String(value).trim();
+    if (
+      !stringValue ||
+      stringValue === 'NaN' ||
+      stringValue === 'undefined' ||
+      stringValue === 'null'
+    ) {
+      return null;
+    }
+    return stringValue;
+  }, []);
+
+  const subtotal = useMemo(
+    () => productos.reduce((acc, p) => acc + (p.subtotal || 0), 0),
+    [productos]
+  );
+  const tipAmount = useMemo(
+    () => (propinaHabilitada ? (subtotal * propina) / 100 : 0),
+    [propinaHabilitada, subtotal, propina]
+  );
+  const total = useMemo(() => subtotal + tipAmount, [subtotal, tipAmount]);
+
+  const handleTipChange = useCallback((enabled: boolean, percentage: number) => {
+    setPropinaHabilitada(enabled);
+    setPropina(percentage);
+  }, []);
+
+  const handleOpenCategoria = useCallback(async (cat: OrderCategory) => {
+    setModalCategoria(cat);
+    setModalOpen(true);
+    setLoadingProductos(true);
+    try {
+      const res = await fetch(`/api/products?for_sale=1&category_id=${cat.id_categoria || cat.id}`);
+      const data = await res.json();
+      if (data.success) setProductosCategoria(data.data.map(mapForSaleToCartItem));
+      else setProductosCategoria([]);
+    } catch {
+      setProductosCategoria([]);
+    } finally {
+      setLoadingProductos(false);
+    }
+  }, []);
+
+  const handleCantidadChange = useCallback((id: string, value: string) => {
+    const num = parseInt(value, 10);
+    const cantidad = isNaN(num) ? 1 : Math.max(1, num);
+    setCantidades(prev => ({ ...prev, [id]: cantidad }));
+    setOtherProductHostessSelections(prev => {
+      const seleccionadas = prev[id];
+      if (!seleccionadas || seleccionadas.length <= cantidad) return prev;
+      return { ...prev, [id]: seleccionadas.slice(0, cantidad) };
+    });
+  }, []);
+
+  const handleChampagneHostessChange = useCallback((productId: string, hostessIds: string[]) => {
+    setChampagneHostessSelections(prev => ({ ...prev, [productId]: hostessIds }));
+  }, []);
+
+  const handleOtherProductHostessChange = useCallback((productId: string, hostessIds: string[]) => {
+    setOtherProductHostessSelections(prev => ({ ...prev, [productId]: hostessIds }));
+  }, []);
+
+  const handleRoomChange = useCallback((productId: string, roomId: string) => {
+    setRoomSelections(prev => ({ ...prev, [productId]: roomId }));
+  }, []);
+
+  const handleAgregarProducto = useCallback(
+    async (producto: OrderProducto) => {
+      const productKey = String(producto.id_producto || producto.id || '');
+      const cantidad = producto.cantidad ?? cantidades[productKey] ?? 1;
+      let comisionUnitaria =
+        producto.comisionUnitaria ?? producto.comision ?? producto.commission ?? 0;
+      let selectedHostesses = anfitrionasDelProducto(producto);
+      let precio = Number(producto.precio ?? producto.price ?? 0);
+      if (producto.tipo_venta !== 'shot' && producto.botella_anfitriona === false) {
+        selectedHostesses = [];
+        comisionUnitaria = 0;
+      }
+      if (
+        producto.presentacion_id &&
+        producto.tipo_venta !== 'shot' &&
+        selectedHostesses.length > 0
+      ) {
+        try {
+          const pid = String(producto.producto_id || producto.id_producto || producto.id);
+          const response = await fetch(
+            `/api/products/${encodeURIComponent(pid)}/tiers?configurados=1`
+          );
+          const result = await response.json();
+          if (!response.ok || !result.success) throw new Error();
+          const tier = (result.data || []).find(
+            (row: any) => Number(row.anfitrionas) === selectedHostesses.length
+          );
+          if (tier) {
+            precio = Number(tier.precio);
+            comisionUnitaria = Number(tier.comision);
+          }
+        } catch {
+          setError('No se pudieron comprobar los precios por anfitriona. Reintenta.');
+          return;
+        }
+      }
+
+      if (
+        !permiteAnfitrionaConComision(
+          producto.tipo_venta === 'shot' ? 'shot' : 'botella',
+          comisionUnitaria,
+          Boolean(producto.shot_anfitriona)
+        )
+      )
+        selectedHostesses = [];
+      const commissionTotal = selectedHostesses.length > 0 ? comisionUnitaria * cantidad : 0;
+      if (onAddProducto) {
+        onAddProducto({
+          ...producto,
+          precio,
+          price: precio,
+          comision: commissionTotal,
+          comisionUnitaria,
+          cantidad,
+          subtotal: precio * cantidad,
+          botella_anfitriona:
+            producto.tipo_venta === 'shot' ? undefined : producto.botella_anfitriona !== false,
+          generaComision: comisionUnitaria > 0 && selectedHostesses.length > 0 ? 1 : 0,
+          hostessId: '',
+          selectedHostesses,
+          isChampagne: producto.isChampagne || false,
+          selectedRoom: producto.selectedRoom || null,
+          requiresRoom: producto.requiresRoom || false
+        });
+      }
+
+      setCantidades(prev => ({ ...prev, [productKey]: 1 }));
+      setChampagneHostessSelections(prev => {
+        const n = { ...prev };
+        delete n[productKey];
+        return n;
+      });
+      setOtherProductHostessSelections(prev => {
+        const n = { ...prev };
+        delete n[productKey];
+        return n;
+      });
+      setRoomSelections(prev => {
+        const n = { ...prev };
+        delete n[productKey];
+        return n;
+      });
+    },
+    [cantidades, onAddProducto]
+  );
+
+  const handleSubmitInternal = async () => {
+    if (productos.length === 0) {
+      setError('Selecciona al menos un producto para realizar el pedido');
+      return;
+    }
+    if (
+      productos.some(
+        p =>
+          p.tipo_venta !== 'shot' &&
+          bottleMixerUnits(p) > 0 &&
+          !p.acompanamiento_botella?.presentacion_id
+      )
+    ) {
+      setError('Selecciona el acompa\u00f1amiento de botella');
+      return;
+    }
+    if (!metodoPago) {
+      setError('Selecciona un método de pago');
+      return;
+    }
+    if (
+      productos.some(
+        p =>
+          requiresShortMixer(p) &&
+          (!p.acompanamiento_corto?.presentacion_id ||
+            !Number.isInteger(p.acompanamiento_corto.unidades ?? 1) ||
+            (p.acompanamiento_corto.unidades ?? 1) < 1 ||
+            Number(p.cantidad) > 99)
+      )
+    ) {
+      setError(
+        'Selecciona soda o gaseosa para entregar completo para cada producto (hasta 99 cortos)'
+      );
+      return;
+    }
+    if (productos.length === 0) {
+      setError('Debe agregar al menos un producto');
+      return;
+    }
+
+    const bebidasConComision = productos.filter(
+      p =>
+        (p.tipo_venta === 'shot' || p.botella_anfitriona !== false) &&
+        permiteAnfitrionaConComision(
+          p.tipo_venta === 'shot' ? 'shot' : 'botella',
+          p.comisionUnitaria ?? p.comision ?? p.commission,
+          Boolean(p.shot_anfitriona)
+        )
+    );
+    for (const bebida of bebidasConComision) {
+      if ((bebida.selectedHostesses || []).length === 0) {
+        setError(
+          `La bebida "${bebida.nombre || bebida.name}" debe tener al menos una anfitriona asignada`
+        );
+        return;
+      }
+    }
+
+    const anfitrionasUnicasBebidasNoChampagne = Array.from(
+      new Set(
+        bebidasConComision
+          .filter(p => !isChampagneProduct(p))
+          .flatMap(p => p.selectedHostesses || [])
+      )
+    );
+    const anfitrionasBebidasNoChampagne = bebidasConComision
+      .filter(p => !isChampagneProduct(p))
+      .flatMap(p => p.selectedHostesses || []);
+
+    if (anfitrionasBebidasNoChampagne.length !== anfitrionasUnicasBebidasNoChampagne.length) {
+      setError('Cada bebida (no champaña) debe tener anfitrionas únicas.');
+      return;
+    }
+
+    const anfitrionasChampagnes = bebidasConComision
+      .filter(isChampagneProduct)
+      .flatMap(p => p.selectedHostesses || []);
+    if (anfitrionasUnicasBebidasNoChampagne.some(id => anfitrionasChampagnes.includes(id))) {
+      setError(
+        'Las anfitrionas asignadas a bebidas no pueden estar asignadas también a champañas.'
+      );
+      return;
+    }
+
+    for (const producto of bebidasConComision) {
+      if (producto.tipo_venta !== 'shot' && isChampagneProduct(producto)) {
+        const limit = getHostessLimit(producto);
+        if ((producto.selectedHostesses || []).length > limit) {
+          setError(
+            `La champaña "${producto.nombre || producto.name}" excede el límite de ${limit}`
+          );
+          return;
+        }
+      } else {
+        const max = Number(producto.cantidad || 1);
+        if ((producto.selectedHostesses || []).length > max) {
+          setError(`La bebida "${producto.nombre || producto.name}" puede tener máximo ${max}`);
+          return;
+        }
+      }
+    }
+
+    const meseroId = toNullableStringId(user?.id);
+    if (!meseroId) {
+      setError('No se pudo identificar al mesero');
+      return;
+    }
+
+    setError('');
+    try {
+      const payload = {
+        codigo: '',
+        meseroId,
+        clienteId: toNullableStringId(selectedCliente),
+        subtotal,
+        total: subtotal,
+        propina: tipAmount,
+        metodoPago,
+        totalComision: productos.reduce(
+          (sum, item) => sum + (anfitrionasDelProducto(item).length ? item.comision || 0 : 0),
+          0
+        ),
+        detalles: productos.map(item => ({
+          ...saleInventoryFields(item),
+          tipo_venta: item.tipo_venta ?? 'botella',
+          productoId: toNullableStringId(item.producto_id || item.id_producto || item.id),
+          cantidad: Number(item.cantidad),
+          precio: Number(item.precio || item.price),
+          subtotal: Number(item.subtotal),
+          comision: anfitrionasDelProducto(item).length ? Number(item.comision || 0) : 0,
+          generaComision: anfitrionasDelProducto(item).length
+            ? Number(item.generaComision ?? 1)
+            : 0,
+          hostessId:
+            anfitrionasDelProducto(item).length === 1
+              ? toNullableStringId(anfitrionasDelProducto(item)[0])
+              : null,
+          selectedHostesses: anfitrionasDelProducto(item).map(String),
+          roomId: toNullableStringId(
+            roomSelections[String(item.id || item.id_producto)] ?? item.selectedRoom
+          )
+        })),
+        usuarios: Array.from(new Set(bebidasConComision.flatMap(p => p.selectedHostesses || [])))
+          .map(id => toNullableStringId(id))
+          .filter((id): id is string => Boolean(id))
+          .map(id => ({ usuarioId: id }))
+      };
+
+      const detallesInvalidos = payload.detalles.some(detalle => !detalle.productoId);
+      if (detallesInvalidos) {
+        setError(
+          'Hay productos sin identificador válido. Recargá la pantalla e intentá nuevamente.'
+        );
+        return;
+      }
+
+      const signature = JSON.stringify(payload);
+      if (intent.current?.signature !== signature) {
+        intent.current = { signature, code: generateRandomCode(), confirmed: false };
+      }
+      const currentIntent = intent.current;
+      if (currentIntent.confirmed) return;
+      payload.codigo = currentIntent.code;
+
+      const res = await fetch('/api/orders', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload)
+      });
+      const data = await res.json();
+
+      if (res.status === 201 && data.success) {
+        currentIntent.confirmed = true;
+        showSuccessToast('¡Pedido generado exitosamente!');
+        if (data.habitacion_auto_seleccionada) {
+          await fetchRooms();
+          appEventBus.emit('refreshRooms', { roomId: data.habitacion_auto_seleccionada });
+        }
+        appEventBus.emit('updatePendingOrders');
+        appEventBus.emit('refreshNotifications');
+        setSelectedCliente('');
+        setChampagneHostessSelections({});
+        setOtherProductHostessSelections({});
+        setRoomSelections({});
+        setTimeout(() => router.push('/orders'), 1500);
+        if (onSubmit) onSubmit();
+      } else {
+        showErrorToast(data.message || 'Error al generar el pedido');
+      }
+    } catch (err) {
+      showErrorToast('Error inesperado al generar el pedido');
+    }
+  };
+
+  const submit = useSingleFlight(handleSubmitInternal);
+
+  return {
+    modalOpen,
+    setModalOpen,
+    modalCategoria,
+    productosCategoria,
+    loadingProductos,
+    cantidades,
+    champagneHostessSelections,
+    otherProductHostessSelections,
+    roomSelections,
+    propina,
+    propinaHabilitada,
+    error,
+    metodoPago,
+    setMetodoPago,
+    subtotal,
+    tipAmount,
+    total,
+    rooms,
+    handleTipChange,
+    handleOpenCategoria,
+    handleCantidadChange,
+    handleChampagneHostessChange,
+    handleOtherProductHostessChange,
+    handleRoomChange,
+    handleAgregarProducto,
+    handleSubmitInternal: submit
+  };
+}

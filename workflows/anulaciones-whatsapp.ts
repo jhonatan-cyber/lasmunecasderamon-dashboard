@@ -1,5 +1,5 @@
 import 'server-only';
-import { enUnaUnidad } from '@/lib/transaccion/contrato';
+import { enUnaUnidad } from '@/lib/transaction/contract';
 import { estadoTrasSolicitud, marcarEstadoVenta } from '@/modules/ventas';
 import { listarDestinatariosAnulaciones } from '@/modules/identidad';
 import { procesarAnulacionCuentaCanal } from '@/modules/operacion';

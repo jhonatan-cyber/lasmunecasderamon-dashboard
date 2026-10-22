@@ -57,7 +57,7 @@ export function useAuthSession({
       pathname === '/login' ||
       pathname === '/api-docs' ||
       isPublicRoute(pathname) ||
-      pathname === '/asistencia-qr',
+      pathname === '/attendance-qr',
     [pathname]
   );
 
@@ -230,7 +230,7 @@ export function useAuthSession({
     }
     if (payload.type === 'check_attendance' && rolesAfectados.includes(rolUsuario)) {
       try {
-        const res = await fetch('/api/asistencias/hoy', { credentials: 'include' });
+        const res = await fetch('/api/attendance/today', { credentials: 'include' });
         const data = await res.json();
         if (!data.registrada) {
           doLogout('No registraste tu asistencia hoy. Ingresa nuevamente para registrarla.');

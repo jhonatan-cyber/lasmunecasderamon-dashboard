@@ -9,8 +9,8 @@ vi.mock('@/lib/database/db', () => ({
   query: vi.fn()
 }));
 
-import { CajaCard } from '@/components/caja/CajaCard';
-import { buildCajaDetailsNumbers } from '@/components/caja/details/cajaDetailsModel';
+import { CajaCard } from '@/components/cash-register/CajaCard';
+import { buildCajaDetailsNumbers } from '@/components/cash-register/details/cajaDetailsModel';
 import { CashRegisterRepository } from '@/modules/caja/turnos/repositorio';
 import { totalCaja } from '@/lib/business/cajaEfectivo';
 import type { CajaWithUser } from '@/types/caja';

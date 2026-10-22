@@ -2,7 +2,7 @@
 
 import { VentaWithDetails } from '@/types/venta';
 import { AnulacionModal } from './AnulacionModal';
-import { useSalesList } from '@/hooks/ventas/useSalesList';
+import { useSalesList } from '@/hooks/sales/useSalesList';
 import { SalesListItem } from './SalesListItem';
 import { SaleCardSkeleton, SalesListEmptyState } from './SalesListEmpty';
 

@@ -9,8 +9,8 @@
  * la inserción y su lectura de vuelta sean atómicas.
  */
 import { query, withTransaction } from '@/lib/database/db';
-import { resolverTransaccion } from '@/lib/transaccion/infraestructura';
-import type { ContextoOperacion } from '@/lib/transaccion/contrato';
+import { resolverTransaccion } from '@/lib/transaction/infrastructure';
+import type { ContextoOperacion } from '@/lib/transaction/contract';
 import type { PresentacionRow } from '../tipos';
 import type { NuevaPresentacionInput, PresentacionCamposInput } from '../contracts';
 import {

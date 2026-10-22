@@ -6,7 +6,7 @@ import { Skeleton as BoneyardSkeleton } from 'boneyard-js/react';
 import Link from 'next/link';
 import type { LucideIcon } from 'lucide-react';
 import { useCurrentUser } from '@/hooks/auth/useCurrentUser';
-import { useDashboardSummary, type DashboardSummary } from '@/hooks/stats/useDashboardSummary';
+import { useDashboardSummary, type DashboardSummary } from '@/hooks/statistics/useDashboardSummary';
 import { formatCurrencyCLP } from '@/lib/utils/formatters';
 import { MarcarAsistenciaCard } from '@/components/attendance/MarcarAsistenciaCard';
 

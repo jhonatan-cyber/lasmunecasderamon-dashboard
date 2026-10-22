@@ -14,9 +14,9 @@ import { useSignals } from '@preact/signals-react/runtime';
 import { toast } from 'sonner';
 import { TimerExpiredModal } from '@/components/notifications';
 
-import { useTimerActions } from '@/hooks/timer/useTimerActions';
-import { useTimerSync } from '@/hooks/timer/useTimerSync';
-import { useTimerExpiration } from '@/hooks/timer/useTimerExpiration';
+import { useTimerActions } from '@/hooks/timers/useTimerActions';
+import { useTimerSync } from '@/hooks/timers/useTimerSync';
+import { useTimerExpiration } from '@/hooks/timers/useTimerExpiration';
 import {
   activeTimers,
   startGlobalTimerLoop,
@@ -30,7 +30,7 @@ import logger from '@/lib/utils/logger';
 import { timerNow } from '@/lib/utils/timerClock';
 import { refreshTimerSnapshot } from '@/lib/store/timerSnapshot';
 
-export { saveTimersToStorage, loadTimersFromStorage } from '@/hooks/timer/useTimerPersistence';
+export { saveTimersToStorage, loadTimersFromStorage } from '@/hooks/timers/useTimerPersistence';
 
 export interface Timer {
   id: string;
@@ -214,7 +214,7 @@ export const TimerProvider: React.FC<{ children: React.ReactNode }> = ({ childre
       const t = timers.find(x => x.servicioId === sid);
       if (t) await stopTimer(t.id, true, t);
       else {
-        const response = await fetch(`/api/servicios/${sid}`, {
+        const response = await fetch(`/api/services/${sid}`, {
           method: 'PATCH',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ estado: 1 })

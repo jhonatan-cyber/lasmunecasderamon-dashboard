@@ -10,8 +10,8 @@
  * El cierre corre en una sola unidad con `ContextoOperacion`: la habitación se
  * libera por su propietario y la disponibilidad por Identidad.
  */
-import { enUnaUnidad, type ContextoOperacion } from '@/lib/transaccion/contrato';
-import { ejecutarEfectosConfirmados } from '@/lib/transaccion/efectos';
+import { enUnaUnidad, type ContextoOperacion } from '@/lib/transaction/contract';
+import { ejecutarEfectosConfirmados } from '@/lib/transaction/effects';
 import { sendPushByRole, sendPushNotification } from '@/modules/comunicaciones';
 import { sendNotificationToAll } from '@/lib/api/sseService';
 import { parseBusinessDate } from '@/lib/business/timezoneService';

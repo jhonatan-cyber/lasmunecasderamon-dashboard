@@ -1,8 +1,8 @@
 import { query, generateUUID } from '@/lib/database/db';
 import { logger } from '@/lib/utils/logger';
 import { getNowInBusinessTimezone } from '@/lib/business/timezoneService';
-import type { ContextoOperacion } from '@/lib/transaccion/contrato';
-import { resolverTransaccion } from '@/lib/transaccion/infraestructura';
+import type { ContextoOperacion } from '@/lib/transaction/contract';
+import { resolverTransaccion } from '@/lib/transaction/infrastructure';
 import { BaseRepository } from '@/lib/database/base-repository';
 import { sendNotificationToAll } from '@/lib/api/sseService';
 

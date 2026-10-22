@@ -2,9 +2,9 @@ import { afterEach, describe, expect, it, vi } from 'vitest';
 import { act, cleanup, renderHook, waitFor } from '@testing-library/react';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import type { ReactNode } from 'react';
-import { useClients } from '@/hooks/clientes/useClients';
-import useRooms from '@/hooks/habitaciones/useRooms';
-import { useCuentas } from '@/hooks/caja/useCuentas';
+import { useClients } from '@/hooks/clients/useClients';
+import useRooms from '@/hooks/rooms/useRooms';
+import { useCuentas } from '@/hooks/cash-register/useCuentas';
 
 vi.unmock('@tanstack/react-query');
 vi.mock('sonner', () => ({ toast: { success: vi.fn(), error: vi.fn() } }));
@@ -27,30 +27,31 @@ afterEach(() => {
 });
 
 describe('refresco después de guardar', () => {
-  it.each(['clients', 'rooms', 'cuentas'] as const)(
-    '%s hace una sola recarga después de crear',
-    async entity => {
-      const request = vi
-        .fn()
-        .mockResolvedValue({ ok: true, json: async () => ({ success: true, data: [] }) });
-      vi.stubGlobal('fetch', request);
-      const { result } = renderHook(
-        () => ({ clients: useClients(), rooms: useRooms(), cuentas: useCuentas() }),
-        { wrapper: wrapper() }
-      );
-      const reads = () =>
-        request.mock.calls.filter(
-          ([url, options]) => url === `/api/${entity}` && options?.method === 'GET'
-        );
-      await waitFor(() => expect(reads()).toHaveLength(1));
-      await act(async () => {
-        if (entity === 'clients') await result.current.clients.createClient({ name: 'Nuevo' });
-        if (entity === 'rooms') await result.current.rooms.createRoom({ name: 'Nueva' } as any);
-        if (entity === 'cuentas') await result.current.cuentas.createCuenta({} as any);
-      });
-      expect(reads()).toHaveLength(2);
-    }
-  );
+  // El endpoint de cada recurso no se deduce del nombre del hook: `useCuentas`
+  // vive en `/api/accounts` desde el renombrado de rutas.
+  it.each([
+    ['clients', '/api/clients'],
+    ['rooms', '/api/rooms'],
+    ['cuentas', '/api/accounts']
+  ] as const)('%s hace una sola recarga después de crear', async (entity, endpoint) => {
+    const request = vi
+      .fn()
+      .mockResolvedValue({ ok: true, json: async () => ({ success: true, data: [] }) });
+    vi.stubGlobal('fetch', request);
+    const { result } = renderHook(
+      () => ({ clients: useClients(), rooms: useRooms(), cuentas: useCuentas() }),
+      { wrapper: wrapper() }
+    );
+    const reads = () =>
+      request.mock.calls.filter(([url, options]) => url === endpoint && options?.method === 'GET');
+    await waitFor(() => expect(reads()).toHaveLength(1));
+    await act(async () => {
+      if (entity === 'clients') await result.current.clients.createClient({ name: 'Nuevo' });
+      if (entity === 'rooms') await result.current.rooms.createRoom({ name: 'Nueva' } as any);
+      if (entity === 'cuentas') await result.current.cuentas.createCuenta({} as any);
+    });
+    expect(reads()).toHaveLength(2);
+  });
 
   it('conserva los datos normalizados por el servidor después de editar un cliente', async () => {
     let saved = false;

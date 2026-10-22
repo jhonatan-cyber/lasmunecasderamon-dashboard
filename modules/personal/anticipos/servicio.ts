@@ -12,8 +12,8 @@
  */
 import { AnticipoRequestSchema } from '@/lib/business/schemas';
 import { ValidationError } from '@/lib/errors/errors';
-import { enUnaUnidad } from '@/lib/transaccion/contrato';
-import { ejecutarEfectosConfirmados } from '@/lib/transaccion/efectos';
+import { enUnaUnidad } from '@/lib/transaction/contract';
+import { ejecutarEfectosConfirmados } from '@/lib/transaction/effects';
 import type {
   AnticipoListado,
   AnticipoRegistrado,

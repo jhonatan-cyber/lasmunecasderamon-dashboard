@@ -7,7 +7,7 @@ import { FormField, FormItem, FormMessage } from '@/components/ui/form';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Image as ImageIcon, Trash2, UploadCloud, Link as LinkIcon } from 'lucide-react';
-import { type UserFormValues } from '@/hooks/personal';
+import { type UserFormValues } from '@/hooks/staff';
 import { cn } from '@/lib/utils/utils';
 
 interface ImageUploadFieldProps {

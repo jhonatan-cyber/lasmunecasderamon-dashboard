@@ -5,7 +5,7 @@ import Link from 'next/link';
 import { SwaggerUIWrapper } from '@/components/shared/SwaggerUIWrapper';
 import { EMAIL_DOMAIN } from '@/lib/constants/email';
 
-import { useSwaggerWarnings } from '@/hooks/docs/useSwaggerWarnings';
+import { useSwaggerWarnings } from '@/hooks/api-docs/useSwaggerWarnings';
 import './swagger-styles.css';
 
 dynamic(() => import('swagger-ui-react'), {

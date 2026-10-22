@@ -2,8 +2,8 @@
 
 import { useMemo, useState, useCallback } from 'react';
 import { toast } from 'sonner';
-import { useCategories, Category } from '@/hooks/productos/useCategories';
-import { useCategoryModals } from '@/hooks/categories/useCategoryModals';
+import { useCategories, Category } from '@/hooks/products/useCategories';
+import { useCategoryModals } from '@/hooks/products/useCategoryModals';
 import { CategoryHeader } from '@/components/categories/CategoryHeader';
 import { CategoryFilters } from '@/components/categories/CategoryFilters';
 import { CategoryGrid } from '@/components/categories/CategoryGrid';

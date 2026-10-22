@@ -15,10 +15,10 @@ import { Label } from '@/components/ui/label';
 import { Button } from '@/components/ui/button';
 import { formatCurrencyCLP } from '@/lib/utils/formatters';
 import { showSuccessToast, showErrorToast } from '@/lib/utils/toastUtils';
-import { useAnfitrionas } from '@/hooks/personal';
+import { useAnfitrionas } from '@/hooks/staff';
 import { useTimer } from '@/contexts/TimerContext';
 import { useRefreshOnFocus } from '@/hooks/shared';
-import { useAvailableRooms } from '@/hooks/habitaciones';
+import { useAvailableRooms } from '@/hooks/rooms';
 import { useIvaRate } from '@/components/providers/IvaRateProvider';
 
 interface ServiceRequestModalProps {
@@ -138,7 +138,7 @@ export function ServiceRequestModal({
       const habitacionIdFinal =
         (isRoomAvailable ? solicitud.habitacion_id : selectedRoomId) || solicitud.habitacion_id;
 
-      const url = `/api/solicitudes-servicios/${solicitud.id_solicitud}/aprobar`;
+      const url = `/api/service-requests/${solicitud.id_solicitud}/approve`;
       const response = await fetch(url, {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
@@ -199,7 +199,7 @@ export function ServiceRequestModal({
 
     setProcessing(true);
     try {
-      const url = `/api/solicitudes-servicios/${solicitud.id_solicitud}/rechazar`;
+      const url = `/api/service-requests/${solicitud.id_solicitud}/reject`;
       const response = await fetch(url, {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },

@@ -1,7 +1,7 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { renderHook } from '@testing-library/react';
 import { getEmployeeModules } from '@/lib/constants/employee-modules';
-import { useSidebarNavigation } from '@/hooks/useSidebarNavigation';
+import { useSidebarNavigation } from '@/hooks/shell/useSidebarNavigation';
 
 const state = vi.hoisted(() => ({ role: 'Barman', allowed: true }));
 vi.mock('next/navigation', () => ({ usePathname: () => '/bar' }));
@@ -26,11 +26,11 @@ describe('menú del Barman', () => {
     const items = result.current.sections.flatMap(section => section.items);
     expect(items.map(item => item.href).sort()).toEqual([
       '/bar',
-      '/barman-anticipos',
-      '/barman-asistencias',
-      '/barman-calendar',
-      '/barman-horas-extras',
-      '/barman-propinas',
+      '/bartender-advances',
+      '/bartender-attendance',
+      '/bartender-calendar',
+      '/bartender-overtime',
+      '/bartender-tips',
       '/cleaning',
       '/dashboard',
       '/orders',

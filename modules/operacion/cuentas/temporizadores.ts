@@ -8,8 +8,8 @@
  * del commit. La lógica pura de historial vive en
  * `lib/repositories/cuenta/CuentaRoomHistory` y se reusa sin duplicar.
  */
-import { enUnaUnidad, type ContextoOperacion } from '@/lib/transaccion/contrato';
-import { ejecutarEfectosConfirmados } from '@/lib/transaccion/efectos';
+import { enUnaUnidad, type ContextoOperacion } from '@/lib/transaction/contract';
+import { ejecutarEfectosConfirmados } from '@/lib/transaction/effects';
 import { getNowInBusinessTimezone, parseBusinessDate } from '@/lib/business/timezoneService';
 import { sendNotificationToAll } from '@/lib/api/sseService';
 import { NotFoundError, BusinessError } from '@/lib/errors/errors';

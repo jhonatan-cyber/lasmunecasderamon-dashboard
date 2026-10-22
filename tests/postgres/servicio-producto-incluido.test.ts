@@ -1,8 +1,8 @@
 import { afterAll, expect, it, vi } from 'vitest';
 vi.mock('@/lib/api/sseService', () => ({ sendNotificationToAll: vi.fn() }));
 import db, { generateUUID } from '@/lib/database/db';
-import { enUnaUnidad } from '@/lib/transaccion/contrato';
-import { resolverTransaccion } from '@/lib/transaccion/infraestructura';
+import { enUnaUnidad } from '@/lib/transaction/contract';
+import { resolverTransaccion } from '@/lib/transaction/infrastructure';
 import { anularServicioEnUnidad } from '@/modules/operacion/servicios/anulaciones';
 import { cambiarAnfitrionasServicioEnUnidad } from '@/modules/operacion/servicios/asignaciones';
 import { ServiceService } from '@/modules/operacion';

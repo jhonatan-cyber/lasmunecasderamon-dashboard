@@ -68,7 +68,7 @@ vi.mock('@/modules/comunicaciones', () => ({
 }));
 vi.mock('@/lib/business/shotAlerts', () => ({ notifyBarShotAlerts: vi.fn() }));
 import { query } from '@/lib/database/db';
-import { enUnaUnidad } from '@/lib/transaccion/contrato';
+import { enUnaUnidad } from '@/lib/transaction/contract';
 import { obtenerEstadoSesionToken, revocarSesionesUsuario } from '@/modules/identidad';
 import {
   generateAccessToken,

@@ -7,7 +7,7 @@ import {
   CUENTA_TABLE_CELL_CLASS,
   CUENTA_TABLE_CLASS,
   CUENTA_TABLE_ROW_CLASS
-} from '@/components/cuentas/tables/cuentaTableStyles';
+} from '@/components/accounts/tables/cuentaTableStyles';
 import { SaleProductPhoto } from '@/components/sales/product-modal/SaleProductPhoto';
 import { SaleProductSummary } from './SaleProductSummary';
 import { SaleProductDetails } from '@/components/sales/product-modal/SaleProductDetails';

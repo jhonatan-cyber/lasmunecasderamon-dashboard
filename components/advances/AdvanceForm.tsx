@@ -2,7 +2,7 @@
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { DollarSign, Loader2, AlertCircle } from 'lucide-react';
-import { useAdvanceForm } from '@/hooks/personal';
+import { useAdvanceForm } from '@/hooks/staff';
 import { UserSelect } from '@/components/shared/selects';
 import { formatCurrencyNoDecimals } from '@/lib/utils/formatters';
 

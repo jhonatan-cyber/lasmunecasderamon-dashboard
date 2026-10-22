@@ -47,7 +47,7 @@ test('cobrar_cuenta: confirmación, operacion_id y cabecera x-idempotency-key', 
     const cobro = await herramientas.cobrar_cuenta.execute({ ...operacion, confirmar: true });
     assert.equal(cobro.isError, undefined);
     assert.equal(llamadas.length, 1);
-    assert.equal(llamadas[0].url.pathname, '/api/cuentas/cuenta-1/cobrar');
+    assert.equal(llamadas[0].url.pathname, '/api/accounts/cuenta-1/charge');
     assert.equal(llamadas[0].opciones.headers['x-idempotency-key'], operacion.operacion_id);
     const cuerpo = JSON.parse(llamadas[0].opciones.body);
     assert.equal(cuerpo.metodoPago, 'efectivo');

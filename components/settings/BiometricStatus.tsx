@@ -214,7 +214,7 @@ export function BiometricStatus() {
                           // (cookie de sesión viaja sola en el <img>).
                           // eslint-disable-next-line @next/next/no-img-element
                           <img
-                            src={`/api/biometric/records/${a.recordId}/foto`}
+                            src={`/api/biometric/records/${a.recordId}/photo`}
                             alt={`Foto de ${a.usuario} al marcar`}
                             width={32}
                             height={32}

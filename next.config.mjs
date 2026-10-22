@@ -222,9 +222,9 @@ const nextConfig = {
               chunks: 'async',
               priority: 25
             },
-            caja: {
-              name: 'caja',
-              test: /[\\/]components[\\/]caja[\\/]/,
+            'cash-register': {
+              name: 'cash-register',
+              test: /[\\/]components[\\/]cash-register[\\/]/,
               chunks: 'async',
               priority: 25
             },
@@ -246,9 +246,9 @@ const nextConfig = {
               chunks: 'async',
               priority: 25
             },
-            cuentas: {
-              name: 'cuentas',
-              test: /[\\/]components[\\/]cuentas[\\/]/,
+            accounts: {
+              name: 'accounts',
+              test: /[\\/]components[\\/]accounts[\\/]/,
               chunks: 'async',
               priority: 25
             },

@@ -15,8 +15,8 @@ import { matrixFlagsFor, toMatrixModule } from '@/lib/constants/route-permission
 import { SecurityAlertService } from '@/modules/auditoria';
 import logger from '@/lib/utils/logger';
 import { regenerateAttendanceCode } from './codigos';
-import { enUnaUnidad, type ContextoOperacion } from '@/lib/transaccion/contrato';
-import { resolverTransaccion } from '@/lib/transaccion/infraestructura';
+import { enUnaUnidad, type ContextoOperacion } from '@/lib/transaction/contract';
+import { resolverTransaccion } from '@/lib/transaction/infrastructure';
 import { randomBytes } from 'node:crypto';
 import { enviarWhatsApp } from '@/modules/comunicaciones';
 import { normalizeWhatsAppPhone } from '@/lib/utils/whatsappPhone';
@@ -48,7 +48,8 @@ const ADMIN_PERMS: UserPermissions = {
   categories: { read: true, write: true, delete: true },
   returns: { read: true, write: true, delete: true },
   dashboard: { read: true },
-  private_rooms: { read: true, write: true }
+  private_rooms: { read: true, write: true },
+  entradas: { view: true, create: true, deliver: true }
 };
 
 export async function getUserPermissions(

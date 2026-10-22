@@ -1,8 +1,8 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { renderHook, cleanup } from '@testing-library/react';
-import { useServicioTimerSync } from '@/hooks/servicios/useServicioTimerSync';
+import { useServicioTimerSync } from '@/hooks/services/useServicioTimerSync';
 const fixture = vi.hoisted(() => ({ estado: 2, pause: vi.fn() }));
-vi.mock('@/hooks/servicios/useServicios', () => ({
+vi.mock('@/hooks/services/useServicios', () => ({
   useServicios: () => ({ servicios: [{ id: 'service-1', estado: fixture.estado }] })
 }));
 vi.mock('@/contexts/TimerContext', () => ({

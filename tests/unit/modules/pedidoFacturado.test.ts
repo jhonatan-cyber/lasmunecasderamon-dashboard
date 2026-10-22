@@ -1,8 +1,8 @@
 import { describe, expect, it, vi } from 'vitest';
 import { cerrarPedidoFacturado } from '@/modules/operacion/facturacion/repositorio';
-import { resolverTransaccion } from '@/lib/transaccion/infraestructura';
+import { resolverTransaccion } from '@/lib/transaction/infrastructure';
 
-vi.mock('@/lib/transaccion/infraestructura', () => ({ resolverTransaccion: vi.fn() }));
+vi.mock('@/lib/transaction/infrastructure', () => ({ resolverTransaccion: vi.fn() }));
 
 describe('Facturación del pedido dentro de la transacción de venta', () => {
   it('cierra únicamente un pedido pendiente', async () => {

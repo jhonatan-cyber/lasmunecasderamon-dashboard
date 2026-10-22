@@ -12,7 +12,7 @@ import {
   DialogHeader,
   DialogTitle
 } from '@/components/ui/dialog';
-import { useCategoryForm } from '@/hooks/personal';
+import { useCategoryForm } from '@/hooks/products';
 
 export interface CategoryFormValues {
   name: string;

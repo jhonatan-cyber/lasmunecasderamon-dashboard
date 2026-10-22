@@ -4,7 +4,7 @@ import { Button } from '@/components/ui/button';
 import { useState } from 'react';
 import { ChevronDown } from 'lucide-react';
 import { UnitLabelSelector } from './UnitLabelSelector';
-import type { UnidadCodigoItem } from '@/hooks/personal/useProductForm';
+import type { UnidadCodigoItem } from '@/hooks/products/useProductForm';
 
 interface GeneratedCodesPanelProps {
   isScoped: boolean;

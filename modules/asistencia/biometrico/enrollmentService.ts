@@ -1,5 +1,5 @@
 import { query, generateUUID } from '@/lib/database/db';
-import { enUnaUnidad } from '@/lib/transaccion/contrato';
+import { enUnaUnidad } from '@/lib/transaction/contract';
 import { guardarPlantilla } from './plantillasRepositorio';
 import { activarModalidadFacial, guardarFotoPerfil } from '@/modules/identidad';
 import { BaseRepository } from '@/lib/database/base-repository';

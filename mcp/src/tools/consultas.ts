@@ -1,13 +1,7 @@
 import { z } from 'zod';
 import { paginar, paginacion } from '../paginacion.js';
 import { api, diagnosticarConexion } from '../api-client.js';
-import {
-  acotar,
-  envolver,
-  esquemaDiagnostico,
-  esquemaSalida,
-  fallo
-} from '../formato.js';
+import { acotar, envolver, esquemaDiagnostico, esquemaSalida, fallo } from '../formato.js';
 
 type Esquema = Record<string, z.ZodTypeAny>;
 
@@ -77,19 +71,20 @@ export const herramientas = {
   ),
 
   listar_cuentas: consulta(
-    'Lista cuentas de mesas y salas: GET /api/cuentas. Parámetros opcionales tipo y estado (p. ej. ABIERTA, CERRADA, PREP).',
+    'Lista cuentas de mesas y salas: GET /api/accounts. Parámetros opcionales tipo y estado (p. ej. ABIERTA, CERRADA, PREP).',
     {
       tipo: z.string().optional(),
       estado: z.string().optional(),
       ...paginacion
     },
-    async a => paginar(await api('GET', '/api/cuentas', { query: { tipo: a.tipo, estado: a.estado } }), a)
+    async a =>
+      paginar(await api('GET', '/api/accounts', { query: { tipo: a.tipo, estado: a.estado } }), a)
   ),
 
   detalle_cuenta: consulta(
-    'Detalle completo de una cuenta por id (consumos y totales): GET /api/cuentas/{id}. Útil para verificar montos antes de cobrar.',
+    'Detalle completo de una cuenta por id (consumos y totales): GET /api/accounts/{id}. Útil para verificar montos antes de cobrar.',
     { id: z.string().min(1).describe('Identificador de la cuenta') },
-    async a => api('GET', `/api/cuentas/${encodeURIComponent(a.id)}`)
+    async a => api('GET', `/api/accounts/${encodeURIComponent(a.id)}`)
   ),
 
   estado_caja: consulta(
@@ -99,9 +94,9 @@ export const herramientas = {
   ),
 
   asistencia_hoy: consulta(
-    'Asistencias marcadas hoy por el personal: GET /api/attendance/hoy.',
+    'Asistencias marcadas hoy por el personal: GET /api/attendance/today.',
     undefined,
-    async () => api('GET', '/api/attendance/hoy')
+    async () => api('GET', '/api/attendance/today')
   ),
 
   ranking_asistencia: consulta(
@@ -119,14 +114,13 @@ export const herramientas = {
   agenda_rango: consulta(
     'Eventos de agenda en un rango: GET /api/calendar/data con startDate y endDate (YYYY-MM-DD) y type opcional (servicios|ventas).',
     {
-      startDate: z.iso.date()
-        .describe('Fecha inicial YYYY-MM-DD'),
-      endDate: z.iso.date()
-        .describe('Fecha final YYYY-MM-DD'),
+      startDate: z.iso.date().describe('Fecha inicial YYYY-MM-DD'),
+      endDate: z.iso.date().describe('Fecha final YYYY-MM-DD'),
       type: z.enum(['servicios', 'ventas']).optional()
     },
     async a => {
-      if (a.startDate > a.endDate) throw new Error('La fecha inicial debe ser anterior o igual a la final');
+      if (a.startDate > a.endDate)
+        throw new Error('La fecha inicial debe ser anterior o igual a la final');
       return api('GET', '/api/calendar/data', {
         query: { startDate: a.startDate, endDate: a.endDate, type: a.type }
       });
@@ -170,13 +164,17 @@ export const herramientas = {
         .describe('true = sólo presentaciones con stock en el bar (catálogo para vender)')
     },
     async a =>
-      paginar(await api('GET', '/api/products', {
-        query: {
-          term: a.term,
-          category_id: a.category_id,
-          for_sale: a.para_venta ? '1' : undefined
-        }
-      }), a, ['products', 'items'])
+      paginar(
+        await api('GET', '/api/products', {
+          query: {
+            term: a.term,
+            category_id: a.category_id,
+            for_sale: a.para_venta ? '1' : undefined
+          }
+        }),
+        a,
+        ['products', 'items']
+      )
   ),
 
   detalle_producto: consulta(
@@ -207,7 +205,9 @@ export const herramientas = {
         .describe('true = resumen agregado en vez del historial completo')
     },
     async a => {
-      const datos = await api('GET', '/api/cashregister', { query: { resumen: a.con_resumen ? '1' : undefined } });
+      const datos = await api('GET', '/api/cashregister', {
+        query: { resumen: a.con_resumen ? '1' : undefined }
+      });
       return a.con_resumen ? datos : paginar(datos, a);
     }
   ),
@@ -229,10 +229,12 @@ export const herramientas = {
         ])
         .optional()
         .describe('Rango del informe; por defecto today'),
-      startDate: z.iso.date()
+      startDate: z.iso
+        .date()
         .optional()
         .describe('Fecha inicial YYYY-MM-DD (requerida con period=custom)'),
-      endDate: z.iso.date()
+      endDate: z.iso
+        .date()
         .optional()
         .describe('Fecha final YYYY-MM-DD (requerida con period=custom)')
     },

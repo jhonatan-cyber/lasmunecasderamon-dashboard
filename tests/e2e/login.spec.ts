@@ -1,27 +1,6 @@
-import { test, expect, type Page } from '@playwright/test';
+import { expect, gotoLoginHydrated, loginAsAdmin, requireAdmin, test } from './fixtures/admin';
 
 const BASE = process.env.E2E_BASE_URL || 'http://localhost:3000';
-const TEST_USER = process.env.TEST_USER ?? 'admin';
-const TEST_PASSWORD = process.env.TEST_PASSWORD;
-
-function skipWithoutPassword() {
-  test.skip(!TEST_PASSWORD, 'TEST_PASSWORD no definida — test de login omitido (opcional)');
-}
-
-/**
- * Abre /login y espera a que React esté hidratado: el fetch de montaje de la pantalla
- * (`check-users`) solo corre en el cliente, así que su respuesta garantiza que el
- * formulario ya responde a clics. Sin esta espera, en dev con compilación on-demand
- * el clic se pierde y el login nunca ocurre.
- */
-async function gotoLoginHydrated(page: Page) {
-  const usersLoaded = page.waitForResponse(
-    r => r.url().includes('/api/auth/check-users') && r.status() === 200,
-    { timeout: 30_000 }
-  );
-  await page.goto(`${BASE}/login`, { waitUntil: 'domcontentloaded' });
-  await usersLoaded;
-}
 
 test.describe('Login flow', () => {
   test('1. /login carga sin errores de Server Component', async ({ page }) => {
@@ -73,45 +52,25 @@ test.describe('Login flow', () => {
     console.log('✓ Login inválido permanece en /login:', page.url());
   });
 
-  test('4. Login exitoso con credenciales válidas', async ({ page }) => {
-    skipWithoutPassword();
-    await gotoLoginHydrated(page);
+  test('4. Login exitoso con credenciales válidas', async ({ page, admin }) => {
+    await loginAsAdmin(page, requireAdmin(admin));
 
-    await expect(page.locator('#nick')).toBeVisible({ timeout: 15_000 });
-    await page.locator('#nick').fill(TEST_USER);
-    await page.locator('#password').fill(TEST_PASSWORD!);
-    await page.locator('button[type="submit"]').first().click();
-
-    // May require code verification step — handle both flows
-    const isCodeStep = await page
-      .locator('input[placeholder="0000"]')
-      .isVisible({ timeout: 5000 })
-      .catch(() => false);
-    if (isCodeStep) {
-      console.log(
-        '⚠  Paso de verificación de código detectado — omitiendo (requiere código manual)'
-      );
-      test.skip();
-      return;
-    }
-
-    await page.waitForURL(url => !url.toString().includes('/login'), { timeout: 30_000 });
     const finalUrl = page.url();
     console.log('✓ Login exitoso, redirigido a:', finalUrl);
     expect(finalUrl).not.toContain('/login');
   });
 
-  test('5. Navegación asistencia-qr → login sin error useRef', async ({ page }) => {
+  test('5. Navegación attendance-qr → login sin error useRef', async ({ page }) => {
     const serverErrors: string[] = [];
     page.on('pageerror', err => serverErrors.push(err.message));
     page.on('response', res => {
       if (res.status() === 500) serverErrors.push(`HTTP 500: ${res.url()}`);
     });
 
-    await page.goto(`${BASE}/asistencia-qr`, { waitUntil: 'load' });
+    await page.goto(`${BASE}/attendance-qr`, { waitUntil: 'load' });
     await page.waitForTimeout(2000);
-    expect(page.url()).toContain('asistencia-qr');
-    console.log('✓ En /asistencia-qr');
+    expect(page.url()).toContain('attendance-qr');
+    console.log('✓ En /attendance-qr');
 
     // Button renders as "Volver al Login" — could be <a> or <button> depending on hydration
     const backBtn = page
@@ -134,31 +93,15 @@ test.describe('Login flow', () => {
         e.includes('HTTP 500')
     );
     expect(fatal, `Errores en navegación: ${fatal.join(' | ')}`).toHaveLength(0);
-    console.log('✓ Sin errores useRef en navegación asistencia-qr → login');
+    console.log('✓ Sin errores useRef en navegación attendance-qr → login');
   });
 });
 
 test.describe('Session persistence', () => {
-  test('6. Sesión persiste después de recargar la página', async ({ page }) => {
+  test('6. Sesión persiste después de recargar la página', async ({ page, admin }) => {
     test.setTimeout(60_000);
-    skipWithoutPassword();
 
-    await gotoLoginHydrated(page);
-    await expect(page.locator('#nick')).toBeVisible({ timeout: 15_000 });
-    await page.locator('#nick').fill(TEST_USER);
-    await page.locator('#password').fill(TEST_PASSWORD!);
-    await page.locator('button[type="submit"]').first().click();
-
-    // Handle optional 2FA code step
-    const codeStep = page.locator('input[placeholder="0000"]');
-    if (await codeStep.isVisible({ timeout: 3000 }).catch(() => false)) {
-      console.log('⚠  Código 2FA detectado — saltando test');
-      test.skip();
-      return;
-    }
-
-    // Wait for redirect away from login
-    await page.waitForURL(url => !url.toString().includes('/login'), { timeout: 30_000 });
+    await loginAsAdmin(page, requireAdmin(admin));
     const dashboardUrl = page.url();
     console.log('✓ Dashboard tras login:', dashboardUrl);
 
@@ -172,24 +115,14 @@ test.describe('Session persistence', () => {
     expect(afterRefreshUrl).not.toContain('/login');
   });
 
-  test('7. Auto-refresh funciona cuando el access token expira', async ({ page, context }) => {
+  test('7. Auto-refresh funciona cuando el access token expira', async ({
+    page,
+    context,
+    admin
+  }) => {
     test.setTimeout(60_000);
-    skipWithoutPassword();
 
-    await gotoLoginHydrated(page);
-    await expect(page.locator('#nick')).toBeVisible({ timeout: 15_000 });
-    await page.locator('#nick').fill(TEST_USER);
-    await page.locator('#password').fill(TEST_PASSWORD!);
-    await page.locator('button[type="submit"]').first().click();
-
-    const codeStep = page.locator('input[placeholder="0000"]');
-    if (await codeStep.isVisible({ timeout: 3000 }).catch(() => false)) {
-      console.log('⚠  Código 2FA detectado — saltando test');
-      test.skip();
-      return;
-    }
-
-    await page.waitForURL(url => !url.toString().includes('/login'), { timeout: 30_000 });
+    await loginAsAdmin(page, requireAdmin(admin));
 
     // Ensure we have a refresh_token cookie (httpOnly — must check via context, not document.cookie)
     const refreshCookie = (await context.cookies()).find(c => c.name === 'refresh_token');
@@ -209,25 +142,10 @@ test.describe('Session persistence', () => {
     expect(finalUrl).toContain('/dashboard');
   });
 
-  test('8. Logout limpia la sesión y redirige al login', async ({ page }) => {
+  test('8. Logout limpia la sesión y redirige al login', async ({ page, admin }) => {
     test.setTimeout(60_000);
-    skipWithoutPassword();
 
-    // Login first
-    await gotoLoginHydrated(page);
-    await expect(page.locator('#nick')).toBeVisible({ timeout: 15_000 });
-    await page.locator('#nick').fill(TEST_USER);
-    await page.locator('#password').fill(TEST_PASSWORD!);
-    await page.locator('button[type="submit"]').first().click();
-
-    const codeStep = page.locator('input[placeholder="0000"]');
-    if (await codeStep.isVisible({ timeout: 3000 }).catch(() => false)) {
-      console.log('⚠  Código 2FA detectado — saltando test');
-      test.skip();
-      return;
-    }
-
-    await page.waitForURL(url => !url.toString().includes('/login'), { timeout: 30_000 });
+    await loginAsAdmin(page, requireAdmin(admin));
     console.log('✓ Login exitoso');
 
     // Logout via POST (route only handles POST)

@@ -11,7 +11,7 @@ import { PresentacionNombreInput } from './PresentacionNombreInput';
 import { Collapsible, CollapsibleTrigger, CollapsibleContent } from '@/components/ui/collapsible';
 import { cn } from '@/lib/utils/utils';
 import type { Presentacion } from '@/types/product';
-import type { UnidadCodigoItem } from '@/hooks/personal/useProductForm';
+import type { UnidadCodigoItem } from '@/hooks/products/useProductForm';
 
 interface EditPresDraft {
   nombre: string;

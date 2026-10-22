@@ -1,5 +1,5 @@
-import type { ContextoOperacion } from '@/lib/transaccion/contrato';
-import { resolverTransaccion } from '@/lib/transaccion/infraestructura';
+import type { ContextoOperacion } from '@/lib/transaction/contract';
+import { resolverTransaccion } from '@/lib/transaction/infrastructure';
 import { query } from '@/lib/database/db';
 export async function finalizarVentasTemporizadas(
   ventaIds: string[],

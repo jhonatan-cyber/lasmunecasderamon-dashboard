@@ -5,13 +5,13 @@ vi.mock('@tanstack/react-query', () => ({
   useQueryClient: () => ({ invalidateQueries: vi.fn() })
 }));
 vi.mock('@/hooks/shared', () => ({ useRefreshOnFocus: vi.fn() }));
-vi.mock('@/hooks/clientes/useClients', () => ({
+vi.mock('@/hooks/clients/useClients', () => ({
   useClients: () => ({ allClients: mocks.clients, fetchClients: vi.fn() })
 }));
-vi.mock('@/hooks/personal', () => ({
+vi.mock('@/hooks/staff', () => ({
   useAnfitrionas: () => ({ anfitrionas: mocks.hostesses, getAnfitrionas: vi.fn() })
 }));
-vi.mock('@/hooks/habitaciones/useHabitaciones', () => ({
+vi.mock('@/hooks/rooms/useHabitaciones', () => ({
   useHabitaciones: () => ({ habitaciones: mocks.rooms, getHabitaciones: vi.fn() })
 }));
 vi.mock('@/contexts/TimerContext', () => ({ useTimer: () => ({ startTimer: vi.fn() }) }));

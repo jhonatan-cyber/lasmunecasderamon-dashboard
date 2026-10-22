@@ -83,11 +83,11 @@ describe('idempotencia general despues de permisos', () => {
   it.each([
     '/api/purchases',
     '/api/sales',
-    '/api/servicios',
-    '/api/servicios/temporal',
+    '/api/services',
+    '/api/services/temporary',
     '/api/orders',
     '/api/bar',
-    '/api/cuentas',
+    '/api/accounts',
     '/api/clients'
   ])('ejecuta y responde una sola vez en %s', async path => {
     const handler = vi.fn(async (req: Request) =>

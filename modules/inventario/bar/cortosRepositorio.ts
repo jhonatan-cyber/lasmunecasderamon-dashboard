@@ -50,6 +50,9 @@ export async function listarCortosServidosHoy(shotMl: number): Promise<CortoVend
             uv.nick AS vendido_por,
             gm.nick AS mesero_nombre,
             v.metodo_pago,
+            -- Total del ticket completo: la venta puede incluir botellas que no
+            -- son cortos, y el encabezado del modal las suma.
+            v.total AS venta_total,
             v.servicio_id,
             v.cuenta_id,
             v.habitacion_id,
@@ -121,6 +124,7 @@ export async function listarCortosServidosHoy(shotMl: number): Promise<CortoVend
       vendido_por: row.vendido_por ?? null,
       mesero_nombre: row.mesero_nombre ?? null,
       metodo_pago: row.metodo_pago ?? null,
+      venta_total: Number(row.venta_total ?? 0),
       acompanamiento: mapAcompanamiento(row.acompanamiento)
     };
   });

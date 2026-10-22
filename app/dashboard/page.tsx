@@ -50,11 +50,11 @@ function GeneralDashboard() {
   useEffect(() => {
     if (!loading && user) {
       if (user.role?.toLowerCase() === 'anfitriona') {
-        router.replace('/anfitriona-dashboard');
+        router.replace('/hostess-dashboard');
         return;
       }
       if (user.role?.toLowerCase() === 'garzon') {
-        router.replace('/garzon-dashboard');
+        router.replace('/waiter-dashboard');
         return;
       }
     }

@@ -2,15 +2,15 @@
 
 import { Button } from '@/components/ui/button';
 import { Plus } from 'lucide-react';
-import { useHabitaciones } from '@/hooks/habitaciones/useHabitaciones';
-import ServicioCard from '@/components/servicios/ServicioCard';
+import { useHabitaciones } from '@/hooks/rooms/useHabitaciones';
+import ServicioCard from '@/components/services/ServicioCard';
 import Paginate from '@/components/shared/Paginate';
-import ServiceStats from '@/components/servicios/ServiceStats';
-import ServiceFilters from '@/components/servicios/ServiceFilters';
-import { ServiceStatusTabs } from '@/components/servicios/ServiceStatusTabs';
-import { ServiceDetailModal } from '@/components/servicios/ServiceDetailModal';
-import { useServiceLogic } from '@/hooks/servicios/useServiceLogic';
-import { useCashRegisterStatus } from '@/hooks/caja/useCashRegisterStatus';
+import ServiceStats from '@/components/services/ServiceStats';
+import ServiceFilters from '@/components/services/ServiceFilters';
+import { ServiceStatusTabs } from '@/components/services/ServiceStatusTabs';
+import { ServiceDetailModal } from '@/components/services/ServiceDetailModal';
+import { useServiceLogic } from '@/hooks/services/useServiceLogic';
+import { useCashRegisterStatus } from '@/hooks/cash-register/useCashRegisterStatus';
 import { useTimer } from '@/contexts/TimerContext';
 import { useEffect, useState, useCallback, useRef } from 'react';
 import { useRefreshOnFocus } from '@/hooks/shared';

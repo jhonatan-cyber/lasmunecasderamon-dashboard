@@ -49,7 +49,7 @@ export function useAttendanceDetail({ isOpen, userId }: UseAttendanceDetailParam
         setLoading(true);
         setError(null);
 
-        const response = await fetch(`/api/attendance/${userId}/detalle`, {
+        const response = await fetch(`/api/attendance/${userId}/detail`, {
           signal: controller.signal
         });
         if (!response.ok) throw new Error('Error al obtener el detalle de asistencias');

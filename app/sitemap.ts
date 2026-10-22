@@ -4,7 +4,7 @@ import { siteConfig } from '@/lib/api/site';
 export default function sitemap(): MetadataRoute.Sitemap {
   const now = new Date();
 
-  const publicPages = ['', '/login', '/asistencia-qr', '/offline'].map(path => ({
+  const publicPages = ['', '/login', '/attendance-qr', '/offline'].map(path => ({
     url: `${siteConfig.url}${path}`,
     lastModified: now,
     changeFrequency: 'weekly' as const,
@@ -12,11 +12,11 @@ export default function sitemap(): MetadataRoute.Sitemap {
   }));
 
   const confirmationPages = [
-    '/confirmar-anticipo',
-    '/confirmar-anulacion',
-    '/confirmar-anulacion-cuenta',
-    '/confirmar-anulacion-servicio',
-    '/confirmar-gratificacion'
+    '/confirm-advance',
+    '/confirm-cancellation',
+    '/confirm-account-cancellation',
+    '/confirm-service-cancellation',
+    '/confirm-gratification'
   ].map(path => ({
     url: `${siteConfig.url}${path}`,
     lastModified: now,

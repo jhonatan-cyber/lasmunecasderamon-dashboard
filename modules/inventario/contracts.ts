@@ -73,6 +73,11 @@ export interface CortoVendidoHoy {
   mesero_nombre: string | null;
   metodo_pago: string | null;
   /**
+   * Total de la venta completa que originó el corto (`ventas.total`): incluye
+   * las botellas y demás líneas del ticket, no solo los cortos listados.
+   */
+  venta_total: number;
+  /**
    * ml que salió del bar con este corto: el volumen del trago (cliente o
    * anfitriona, según el producto y su configuración) por la cantidad. No
    * incluye el acompañamiento ni botellas enteras.
@@ -95,6 +100,19 @@ export interface ColacionServidaHoy {
   /** Quién registró la colación. */
   registrado_por: string | null;
   fecha: string;
+}
+
+/**
+ * Ml que salieron del bar hoy, agrupados por producto. Sale de los mismos
+ * movimientos que `mlServidosHoy` (ventas, acompañamientos y colaciones, menos
+ * las anulaciones), así que la suma de `ml` coincide con ese total.
+ */
+export interface MlServidoPorProductoHoy {
+  producto_id: string;
+  producto_nombre: string;
+  ml: number;
+  /** Parte de `ml` que salió como colación. */
+  ml_colacion: number;
 }
 
 export interface ShotsSummary {
@@ -121,6 +139,11 @@ export interface ShotsSummary {
    * stat explica exactamente los ml que muestra la tarjeta.
    */
   colacionesHoy: ColacionServidaHoy[];
+  /**
+   * Desglose de `mlServidosHoy` por producto, de mayor a menor. Incluye
+   * cortos, acompañamientos y colaciones; su suma es exactamente el total.
+   */
+  mlPorProductoHoy: MlServidoPorProductoHoy[];
   /** ml que quedan en las botellas abiertas del bar. */
   mlRestantesTotales: number;
   botellasAbiertas: number;

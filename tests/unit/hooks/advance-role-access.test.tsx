@@ -11,7 +11,7 @@ vi.mock('@/hooks/auth/useCurrentUser', () => ({
 }));
 vi.mock('@/hooks/shared/useGenericFetch', () => ({ useGenericFetch: mocks.fetchData }));
 vi.mock('sonner', () => ({ toast: { success: vi.fn(), error: vi.fn() } }));
-import useAnticipos from '@/hooks/personal/useAnticipos';
+import useAnticipos from '@/hooks/staff/useAnticipos';
 beforeEach(() => {
   vi.clearAllMocks();
   mocks.fetchData.mockReturnValue({ data: [], isLoading: false, refetch: mocks.refetch });
@@ -24,7 +24,7 @@ describe('Acceso a la gestión de anticipos', () => {
     const { result } = renderHook(() => useAnticipos());
     expect(result.current.isAdmin).toBe(false);
     expect(result.current.canDeliver).toBe(false);
-    expect(mocks.fetchData).toHaveBeenCalledWith('/api/anticipos/user', expect.anything());
+    expect(mocks.fetchData).toHaveBeenCalledWith('/api/advances/user', expect.anything());
     for (const action of ['approve', 'reject', 'deliver'] as const)
       await act(async () => {
         expect(await result.current.processAnticipo('test', action)).toBe(false);
@@ -43,7 +43,7 @@ describe('Acceso a la gestión de anticipos', () => {
     });
     expect(mocks.request).toHaveBeenCalledOnce();
     expect(mocks.request).toHaveBeenCalledWith(
-      '/api/anticipos/test',
+      '/api/advances/test',
       expect.objectContaining({ body: '{"estado":0}' })
     );
   });
@@ -58,7 +58,7 @@ describe('Acceso a la gestión de anticipos', () => {
     });
     expect(mocks.request).toHaveBeenCalledOnce();
     expect(mocks.request).toHaveBeenCalledWith(
-      '/api/anticipos/test',
+      '/api/advances/test',
       expect.objectContaining({ body: '{"estado":1}' })
     );
   });

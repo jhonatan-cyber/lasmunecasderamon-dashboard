@@ -20,7 +20,7 @@ import {
   calcularMovimientoCajaVenta
 } from '@/lib/business/registroVenta';
 import { validarAnfitrionasConfirmadas } from '@/lib/business/registroOperacion';
-import type { ContextoOperacion } from '@/lib/transaccion/contrato';
+import type { ContextoOperacion } from '@/lib/transaction/contract';
 import type { EntradaRegistroVenta } from '@/modules/ventas/contracts';
 import { consumirStockBar } from '@/modules/inventario';
 import { obtenerCajaActiva, registrarMovimientoCobro } from '@/modules/caja';

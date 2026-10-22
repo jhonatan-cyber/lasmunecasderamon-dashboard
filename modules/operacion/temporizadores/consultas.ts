@@ -6,7 +6,7 @@ import { finalizarSesionHabitacion } from '../cuentas/servicio';
 import { finalizarVentasTemporizadas } from '@/modules/ventas';
 import { actualizarDisponibilidad } from '@/modules/identidad';
 import { liberarHabitacionPorAnulacion } from '../facturacion/servicio';
-import { resolverTransaccion } from '@/lib/transaccion/infraestructura';
+import { resolverTransaccion } from '@/lib/transaction/infrastructure';
 
 export class TimerRepository {
   static async getActive() {
@@ -115,7 +115,7 @@ export class TimerRepository {
   }
 
   static async limpiarEnUnidad(
-    contexto: import('@/lib/transaccion/contrato').ContextoOperacion,
+    contexto: import('@/lib/transaction/contract').ContextoOperacion,
     nowStr: string
   ) {
     const trx = resolverTransaccion(contexto);

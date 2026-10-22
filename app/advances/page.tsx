@@ -2,8 +2,8 @@
 import { StatusTabs } from '@/components/shared/StatusTabs';
 
 import { useState } from 'react';
-import { useCashRegisterStatus } from '@/hooks/caja/useCashRegisterStatus';
-import { useAnticipos } from '@/hooks/personal';
+import { useCashRegisterStatus } from '@/hooks/cash-register/useCashRegisterStatus';
+import { useAnticipos } from '@/hooks/staff';
 import AdvancesTable from '@/components/advances/AdvancesTable';
 import AdvancesFilters from '@/components/advances/AdvancesFilters';
 import AdvancesStatsCards from '@/components/advances/AdvancesStatsCards';
@@ -81,7 +81,7 @@ export default function AdvancesPage() {
 
     setAdvanceSaving(true);
     try {
-      const res = await fetch('/api/anticipos', {
+      const res = await fetch('/api/advances', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({

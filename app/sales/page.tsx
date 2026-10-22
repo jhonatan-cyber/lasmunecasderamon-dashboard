@@ -2,8 +2,8 @@
 import { Button } from '@/components/ui/button';
 
 import { useState, useEffect, useCallback } from 'react';
-import { useSales } from '@/hooks/caja/useSales';
-import { useHabitaciones } from '@/hooks/habitaciones/useHabitaciones';
+import { useSales } from '@/hooks/cash-register/useSales';
+import { useHabitaciones } from '@/hooks/rooms/useHabitaciones';
 import { useTimer } from '@/contexts/TimerContext';
 import { VentaWithDetails } from '@/types/venta';
 import { showErrorToast, showSuccessToast } from '@/lib/utils/toastUtils';
@@ -22,7 +22,7 @@ import {
   SalesError,
   CajaStatusBanner
 } from '@/components/sales';
-import { useCashRegisterStatus } from '@/hooks/caja/useCashRegisterStatus';
+import { useCashRegisterStatus } from '@/hooks/cash-register/useCashRegisterStatus';
 import {
   filterVentas,
   sortVentas,

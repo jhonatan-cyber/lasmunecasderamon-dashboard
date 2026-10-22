@@ -6,7 +6,7 @@ import {
   leerDetallePropinas,
   obtenerPropinaConParticipantes
 } from '@/modules/personal/conceptos/servicio';
-import { enUnaUnidad } from '@/lib/transaccion/contrato';
+import { enUnaUnidad } from '@/lib/transaction/contract';
 import { z } from 'zod';
 
 type TipRegisterInput = z.input<typeof TipRegisterSchema>;

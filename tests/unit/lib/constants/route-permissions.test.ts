@@ -40,7 +40,11 @@ import {
  */
 
 /** Consumidores que deben leer la tabla compartida en vez de repetirla. */
-const CONSUMERS = ['proxy.ts', 'components/auth/RouteGuard.tsx', 'hooks/useSidebarNavigation.ts'];
+const CONSUMERS = [
+  'proxy.ts',
+  'components/auth/RouteGuard.tsx',
+  'hooks/shell/useSidebarNavigation.ts'
+];
 
 const SHARED_MODULE = "from '@/lib/constants/route-permissions'";
 
@@ -82,7 +86,7 @@ describe('el mapa vive en un solo módulo', () => {
       '/roles',
       '/attendance',
       '/overtime',
-      '/gratificaciones',
+      '/gratifications',
       '/cash-register',
       '/accounts',
       '/tips',
@@ -158,7 +162,7 @@ describe('pares del mapa', () => {
 });
 
 describe('el menú lateral', () => {
-  const sidebarSource = read('hooks/useSidebarNavigation.ts');
+  const sidebarSource = read('hooks/shell/useSidebarNavigation.ts');
   const hrefs = [...sidebarSource.matchAll(/href:\s*'([^']+)'/g)]
     .map(match => match[1])
     .concat(
@@ -279,16 +283,16 @@ describe('rutas públicas y listas de acceso', () => {
     ).toEqual([]);
   });
 
-  it('la decisión sobre /api/gratificaciones quedó documentada', () => {
+  it('la decisión sobre /api/gratifications quedó documentada', () => {
     // Es deliberado que NO esté en API_ROUTE_PERMISSIONS: el GET limita a datos propios
     // en el handler, /me cubre a la app móvil y las escrituras piden su par con
     // withRoute (más fino que un gate por prefijo). Si un día cambia esa decisión,
     // actualizá este test y la documentación de las dos listas juntas.
     const fuente = read('lib/constants/route-permissions.ts');
 
-    expect(API_ROUTE_PERMISSIONS['/api/gratificaciones']).toBeUndefined();
-    expect(AUTHENTICATED_ONLY_APIS).toContain('/api/gratificaciones');
-    expect(fuente).toContain('/api/gratificaciones` NO está acá a propósito');
+    expect(API_ROUTE_PERMISSIONS['/api/gratifications']).toBeUndefined();
+    expect(AUTHENTICATED_ONLY_APIS).toContain('/api/gratifications');
+    expect(fuente).toContain('/api/gratifications` NO está acá a propósito');
   });
 });
 

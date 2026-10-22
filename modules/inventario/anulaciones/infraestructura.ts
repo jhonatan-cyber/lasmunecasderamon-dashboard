@@ -11,8 +11,8 @@
  * que esta operación confirme (§6).
  */
 import { withTransaction } from '@/lib/database/db';
-import { resolverTransaccion } from '@/lib/transaccion/infraestructura';
-import type { ContextoOperacion } from '@/lib/transaccion/contrato';
+import { resolverTransaccion } from '@/lib/transaction/infrastructure';
+import type { ContextoOperacion } from '@/lib/transaction/contract';
 import type { AnulacionStockEntrada, ReversaStockAnulacion } from '../contracts';
 import { revertirStockPorAnulacion } from './repositorio';
 

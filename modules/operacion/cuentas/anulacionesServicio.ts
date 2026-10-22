@@ -1,4 +1,4 @@
-import { enUnaUnidad } from '@/lib/transaccion/contrato';
+import { enUnaUnidad } from '@/lib/transaction/contract';
 import { procesarAnulacionCuentaCanal as procesarEnRepositorio } from './anulacionesRepositorio';
 
 export function procesarAnulacionCuentaCanal(

@@ -2,7 +2,7 @@
 
 import { useState, useMemo } from 'react';
 import dynamic from 'next/dynamic';
-import { useAsistencias, useAttendanceStats, useUsers } from '@/hooks/personal';
+import { useAsistencias, useAttendanceStats, useUsers } from '@/hooks/staff';
 import { PermissionGuard } from '@/components/auth/PermissionGuard';
 import { Skeleton as BoneyardSkeleton } from 'boneyard-js/react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
@@ -52,7 +52,7 @@ export default function AttendancePage() {
     }
     setMasivoLoading(true);
     try {
-      const res = await fetch('/api/attendance/masivo', { method: 'POST' });
+      const res = await fetch('/api/attendance/bulk', { method: 'POST' });
       const data = await res.json().catch(() => ({}));
       if (!res.ok || !data.success) {
         toast.error(data.message || 'No se pudo registrar');

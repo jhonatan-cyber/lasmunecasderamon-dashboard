@@ -62,14 +62,14 @@ vi.mock('@/lib/database/sync-operations', () => ({
   }
 }));
 
-import { GET, POST } from '@/app/api/mcp/admin/solicitudes/route';
+import { GET, POST } from '@/app/api/mcp/admin/requests/route';
 import { GET as session } from '@/app/api/mcp/admin/session/route';
 const contexto = { params: {} } as any;
 const consulta = (query = '') =>
-  GET(new Request(`http://localhost/api/mcp/admin/solicitudes${query}`), contexto);
+  GET(new Request(`http://localhost/api/mcp/admin/requests${query}`), contexto);
 const post = (body: unknown) =>
   POST(
-    new Request('http://localhost/api/mcp/admin/solicitudes', {
+    new Request('http://localhost/api/mcp/admin/requests', {
       method: 'POST',
       body: JSON.stringify(body),
       headers: { 'Content-Type': 'application/json' }

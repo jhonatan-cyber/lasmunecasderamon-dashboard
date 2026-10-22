@@ -11,7 +11,7 @@ import { Button } from '@/components/ui/button';
 import { RoleForm } from '@/components/roles/RoleForm';
 import { DeleteConfirmModal } from '@/components/shared/DeleteConfirmModal';
 import { PermissionsPanel } from '@/components/roles/PermissionsPanel';
-import type { Role } from '@/hooks/personal';
+import type { Role } from '@/hooks/staff';
 
 interface RolesDialogsProps {
   isAddRoleModalOpen: boolean;

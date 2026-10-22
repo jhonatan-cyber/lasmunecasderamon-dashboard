@@ -88,7 +88,7 @@ export const useOrdersList = () => {
   const fetchServicios = useCallback(async () => {
     try {
       setLoadingServicios(true);
-      const res = await fetch('/api/solicitudes-servicios?estado=pendiente');
+      const res = await fetch('/api/service-requests?estado=pendiente');
       const data = await res.json();
       if (res.ok && data.success) {
         setServicios(
@@ -166,7 +166,7 @@ export const useOrdersList = () => {
 
   const deleteServicio = async (servicioId: string) => {
     try {
-      const res = await fetch(`/api/solicitudes-servicios?id=${servicioId}`, { method: 'DELETE' });
+      const res = await fetch(`/api/service-requests?id=${servicioId}`, { method: 'DELETE' });
       const data = await res.json();
       if (res.ok && data.success) {
         setServicios(prev => prev.filter(s => s.id_solicitud !== servicioId));

@@ -1,4 +1,4 @@
-import { enUnaUnidad } from '@/lib/transaccion/contrato';
+import { enUnaUnidad } from '@/lib/transaction/contract';
 import { obtenerResumenUsuario, quitarModalidadesBiometricas } from '@/modules/identidad';
 import { eliminarPlantillasUsuario } from './unenrollmentRepositorio';
 import { NotFoundError } from '@/lib/errors/errors';

@@ -1,7 +1,7 @@
 'use client';
 import { Input } from '@/components/ui/input';
 
-import type { UnidadCodigoItem } from '@/hooks/personal/useProductForm';
+import type { UnidadCodigoItem } from '@/hooks/products/useProductForm';
 
 interface CodeDeactivationPickerProps {
   presentacionId: number | string;

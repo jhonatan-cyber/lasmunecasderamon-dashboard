@@ -1,6 +1,6 @@
 import { AuditRepository } from './repositorio';
 import type { AuditLog } from '../contracts';
-import type { ContextoOperacion } from '@/lib/transaccion/contrato';
+import type { ContextoOperacion } from '@/lib/transaction/contract';
 
 export class AuditService {
   static async log(data: AuditLog, contexto?: ContextoOperacion) {

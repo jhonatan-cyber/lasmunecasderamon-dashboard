@@ -102,7 +102,7 @@ export async function avisarCierreAlAdministrador(args: {
  * cajón.
  *
  * Vive en `lib/api` y no dentro de una ruta porque la usan las dos superficies de
- * cierre (`/api/cashregister/cierre` y el `PATCH /api/cashregister` legacy): así no
+ * cierre (`/api/cashregister/closing` y el `PATCH /api/cashregister` legacy): así no
  * queda ningún camino que cierre la caja saltándose la autorización.
  */
 export async function solicitarOProcesarCierreCaja(args: {

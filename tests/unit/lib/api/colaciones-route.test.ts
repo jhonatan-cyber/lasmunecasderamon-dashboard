@@ -22,7 +22,7 @@ vi.mock('@/lib/utils/logger', () => ({
   }
 }));
 
-import { POST } from '@/app/api/colaciones/route';
+import { POST } from '@/app/api/meals/route';
 
 /**
  * Los ml y el nombre de la colación los decide el servidor. La ruta no le
@@ -38,7 +38,7 @@ const call = (body: unknown) =>
       context: { params: Record<string, never>; user: { id: string } }
     ) => Promise<Response>
   )(
-    new Request('http://localhost/api/colaciones', {
+    new Request('http://localhost/api/meals', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(body)
@@ -57,7 +57,7 @@ beforeEach(() => {
   });
 });
 
-describe('POST /api/colaciones', () => {
+describe('POST /api/meals', () => {
   it('no le pasa al módulo los ml que declara el cliente', async () => {
     await call({
       usuario_id: 'w-1',

@@ -7,7 +7,7 @@ import { Button } from '@/components/ui/button';
 import { Check, X } from 'lucide-react';
 import { formatCurrencyCLP } from '@/lib/utils/formatters';
 import { formatDateTimeDmyLabel } from '@/lib/utils/calendarUtils';
-import { Anticipo } from '@/hooks/personal';
+import { Anticipo } from '@/hooks/staff';
 
 interface AdvancesTableRowProps {
   anticipo: Anticipo;

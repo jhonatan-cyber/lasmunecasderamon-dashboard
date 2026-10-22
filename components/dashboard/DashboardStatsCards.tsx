@@ -8,7 +8,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Calendar, DollarSign, Clock, ArrowLeftRight, ShoppingCart } from 'lucide-react';
 import Link from 'next/link';
 import { formatCurrencyCLP } from '@/lib/utils/formatters';
-import { useDashboardSummary } from '@/hooks/stats/useDashboardSummary';
+import { useDashboardSummary } from '@/hooks/statistics/useDashboardSummary';
 
 export default function DashboardStatsCards() {
   const { user, loading: userLoading } = useCurrentUser();
@@ -46,7 +46,7 @@ export default function DashboardStatsCards() {
       value: dashboardData.totalAsistencias,
       icon: Calendar,
       description: 'Total de registros',
-      href: '/cajero-asistencias',
+      href: '/cashier-attendance',
       tone: 'blue' as const
     },
     {
@@ -54,7 +54,7 @@ export default function DashboardStatsCards() {
       value: dashboardData.totalAnticipos,
       icon: ArrowLeftRight,
       description: `${dashboardData.anticiposPendientes} pendientes`,
-      href: '/cajero-anticipos',
+      href: '/cashier-advances',
       tone: 'orange' as const
     },
     {
@@ -62,7 +62,7 @@ export default function DashboardStatsCards() {
       value: dashboardData.totalPropinas,
       icon: DollarSign,
       description: `${dashboardData.propinasPendientes} por pagar`,
-      href: '/cajero-propinas',
+      href: '/cashier-tips',
       tone: 'emerald' as const
     },
     {
@@ -70,7 +70,7 @@ export default function DashboardStatsCards() {
       value: dashboardData.totalHorasExtras,
       icon: Clock,
       description: `${dashboardData.horasExtrasPendientes} registradas`,
-      href: '/cajero-horas-extras',
+      href: '/cashier-overtime',
       tone: 'purple' as const
     },
     {

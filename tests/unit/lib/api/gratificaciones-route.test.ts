@@ -47,9 +47,9 @@ vi.mock('@/modules/personal/gratificaciones/servicio', () => ({
   GratificacionService: gratificacionService
 }));
 
-import { GET, POST } from '@/app/api/gratificaciones/route';
-import { GET as GET_ME } from '@/app/api/gratificaciones/me/route';
-import { DELETE, PUT } from '@/app/api/gratificaciones/[id]/route';
+import { GET, POST } from '@/app/api/gratifications/route';
+import { GET as GET_ME } from '@/app/api/gratifications/me/route';
+import { DELETE, PUT } from '@/app/api/gratifications/[id]/route';
 
 const callGet = (search = '') =>
   GET(new Request(`http://localhost/api/gratificaciones${search}`), {
@@ -57,13 +57,13 @@ const callGet = (search = '') =>
   } as any);
 
 const callMe = (search = '') =>
-  GET_ME(new Request(`http://localhost/api/gratificaciones/me${search}`), {
+  GET_ME(new Request(`http://localhost/api/gratifications/me${search}`), {
     params: {}
   } as any);
 
 const callPost = (body: unknown) =>
   POST(
-    new Request('http://localhost/api/gratificaciones', {
+    new Request('http://localhost/api/gratifications', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(body)
@@ -73,7 +73,7 @@ const callPost = (body: unknown) =>
 
 const callPut = (id: string, body: unknown) =>
   PUT(
-    new Request(`http://localhost/api/gratificaciones/${id}`, {
+    new Request(`http://localhost/api/gratifications/${id}`, {
       method: 'PUT',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(body)
@@ -82,7 +82,7 @@ const callPut = (id: string, body: unknown) =>
   );
 
 const callDelete = (id: string) =>
-  DELETE(new Request(`http://localhost/api/gratificaciones/${id}`, { method: 'DELETE' }), {
+  DELETE(new Request(`http://localhost/api/gratifications/${id}`, { method: 'DELETE' }), {
     params: Promise.resolve({ id })
   } as any);
 
@@ -97,7 +97,7 @@ beforeEach(() => {
 });
 
 /**
- * GET /api/gratificaciones es "solo sesión" en el middleware
+ * GET /api/gratifications es "solo sesión" en el middleware
  * (AUTHENTICATED_ONLY_APIS): no hay gate de permiso en la capa de rutas. La
  * autorización real vive DENTRO del handler: solo el administrador consulta
  * listados ajenos; el resto —cajero incluido— ve lo suyo y lo que él mismo
@@ -105,7 +105,7 @@ beforeEach(() => {
  * si alguien vuelve a abrir el listado del cajero a todos los trabajadores, el
  * suite falla.
  */
-describe('GET /api/gratificaciones · el filtrado por rol vive en el handler', () => {
+describe('GET /api/gratifications · el filtrado por rol vive en el handler', () => {
   it('usuario común: solo los suyos, aunque pida otro userId en la query', async () => {
     const res = await callGet('?userId=otro-usuario');
     const body = await res.json();
@@ -177,13 +177,13 @@ describe('GET /api/gratificaciones · el filtrado por rol vive en el handler', (
 });
 
 /**
- * POST /api/gratificaciones: el prefijo vive en AUTHENTICATED_ONLY_APIS (solo sesión
+ * POST /api/gratifications: el prefijo vive en AUTHENTICATED_ONLY_APIS (solo sesión
  * en el middleware) y la autorización de escritura recae en
  * `withRoute({ module: 'gratificaciones', action: 'write' })`. La bifurcación de
  * negocio está en el handler: el cajero NO crea — solicita (pendingApproval, espera
  * aprobación del administrador) — y el administrador crea directo.
  */
-describe('POST /api/gratificaciones · la bifurcación cajero/admin vive en el handler', () => {
+describe('POST /api/gratifications · la bifurcación cajero/admin vive en el handler', () => {
   it('cajero: pide solicitud (pendingApproval) y nunca crea directo', async () => {
     // Es la asignación real del rol: gratificaciones.view + gratificaciones.create
     // (create se traduce a write en la matriz que verifica withRoute).
@@ -261,7 +261,7 @@ describe('POST /api/gratificaciones · la bifurcación cajero/admin vive en el h
 });
 
 /**
- * GET /api/gratificaciones/me es el endpoint del flujo móvil (app Expo): la lista
+ * GET /api/gratifications/me es el endpoint del flujo móvil (app Expo): la lista
  * "mis gratificaciones" del trabajador. A diferencia del GET del dashboard, NO
  * adopta la unión beneficiario/solicitante (migración 037): llama al servicio con
  * UN solo argumento, así que devuelve únicamente lo que el usuario RECIBE. Lo que
@@ -269,7 +269,7 @@ describe('POST /api/gratificaciones · la bifurcación cajero/admin vive en el h
  * móvil llegara a necesitarlo, merece su propio endpoint y no un cambio silencioso
  * de este contrato. Estos tests cortan si alguien propaga la unión a /me.
  */
-describe('GET /api/gratificaciones/me · el flujo móvil no adopta la unión del solicitante', () => {
+describe('GET /api/gratifications/me · el flujo móvil no adopta la unión del solicitante', () => {
   it('pasa SOLO el id de sesión al servicio: un argumento, sin solicitante', async () => {
     mockAuthUser = { id: 'movil-1', role: 'Garzon', permissions: {} };
 
@@ -319,13 +319,13 @@ describe('GET /api/gratificaciones/me · el flujo móvil no adopta la unión del
 });
 
 /**
- * PUT/DELETE /api/gratificaciones/[id]: el prefijo solo exige sesión en el
+ * PUT/DELETE /api/gratifications/[id]: el prefijo solo exige sesión en el
  * middleware (AUTHENTICATED_ONLY_APIS), así que el guard del handler ES la barrera.
  * `write` no sirve para el PUT porque la matriz colapsa `create` y `edit` en ese
  * flag: el cajero, que solo tiene `create` para solicitar, podría editar montos
  * ajenos. El PUT pide `edit` — el mismo par que la UI usa para mostrar el botón.
  */
-describe('PUT/DELETE /api/gratificaciones/[id] · editar exige el par edit', () => {
+describe('PUT/DELETE /api/gratifications/[id] · editar exige el par edit', () => {
   it('cajero con solo create: PUT 403 y no toca el servicio (el blindaje)', async () => {
     // La matriz real del cajero: create colapsa a write y edit queda en false.
     mockAuthUser = {

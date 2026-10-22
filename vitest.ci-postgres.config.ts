@@ -1,6 +1,8 @@
 import { defineConfig } from 'vitest/config';
 import { config } from 'dotenv';
 import path from 'node:path';
+import { DurationBudgetReporter } from './scripts/vitest/duration-budget-reporter';
+import { presupuestoDesdeEnv } from './scripts/duration-budget';
 
 config({ quiet: true });
 if (
@@ -24,6 +26,12 @@ export default defineConfig({
     environment: 'node',
     include: ['tests/postgres/**/*.test.ts'],
     exclude: ['tests/postgres/linea-base-flujos.test.ts'],
+    // Mismo presupuesto por archivo que la corrida local (ver
+    // vitest.postgres.config.ts); sin esto el gate no existiría en CI.
+    reporters: [
+      'default',
+      new DurationBudgetReporter(presupuestoDesdeEnv('POSTGRES_FILE_BUDGET_MS', 120_000))
+    ],
     fileParallelism: false,
     maxWorkers: 1,
     testTimeout: 30000,

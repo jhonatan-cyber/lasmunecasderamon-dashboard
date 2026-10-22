@@ -39,7 +39,7 @@ export class OrderService {
 export function prepararVentaPedido(
   id: string,
   tiempo: number,
-  contexto: import('@/lib/transaccion/contrato').ContextoOperacion
+  contexto: import('@/lib/transaction/contract').ContextoOperacion
 ) {
   return OrderRepository.paraVenta(id, tiempo, contexto);
 }

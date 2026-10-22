@@ -2,16 +2,16 @@
  * Lecturas de solicitudes de anulación de cuentas. Infraestructura privada del
  * módulo: nadie fuera de `modules/operacion` importa este archivo (§5).
  *
- * Este SQL vivía dentro de tres rutas HTTP (`/api/cuentas/anulacion`,
- * `/api/cuentas/solicitud-anulacion` y `/api/cuentas/procesar-anulacion`), que
+ * Este SQL vivía dentro de tres rutas HTTP (`/api/accounts/cancellation`,
+ * `/api/accounts/cancellation-request` y `/api/accounts/process-cancellation`), que
  * mezclaban adaptación, consulta y validación. Mismo SQL y misma selección que tenían
  * las rutas; el alta y el procesamiento siguen en `AccountService`.
  */
 import { saleInventoryFields, type SaleInventoryFields } from '@/lib/sales/saleInventoryFields';
 import { generateUUID, query } from '@/lib/database/db';
-import type { ContextoOperacion } from '@/lib/transaccion/contrato';
-import { enUnaUnidad } from '@/lib/transaccion/contrato';
-import { resolverTransaccion } from '@/lib/transaccion/infraestructura';
+import type { ContextoOperacion } from '@/lib/transaction/contract';
+import { enUnaUnidad } from '@/lib/transaction/contract';
+import { resolverTransaccion } from '@/lib/transaction/infrastructure';
 import { getNowInBusinessTimezone, parseBusinessDate } from '@/lib/business/timezoneService';
 import { BaseRepository } from '@/lib/database/base-repository';
 import { logger } from '@/lib/utils/logger';

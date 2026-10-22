@@ -8,7 +8,10 @@ import {
   TrendingUp,
   Activity
 } from 'lucide-react';
-import { type DashboardTrend, useDashboardComposite } from '@/hooks/stats/useDashboardComposite';
+import {
+  type DashboardTrend,
+  useDashboardComposite
+} from '@/hooks/statistics/useDashboardComposite';
 import { cn } from '@/lib/utils/utils';
 import { formatCurrencyCLP } from '@/lib/utils/formatters';
 import { MetricCard } from '@/components/shared/MetricCard';

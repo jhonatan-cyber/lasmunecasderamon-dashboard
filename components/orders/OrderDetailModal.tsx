@@ -10,9 +10,9 @@ import {
 } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { formatCurrencyCLP } from '@/lib/utils/formatters';
-import { useSales } from '@/hooks/caja/useSales';
+import { useSales } from '@/hooks/cash-register/useSales';
 import { useTimer } from '@/contexts/TimerContext';
-import { useAvailableRooms } from '@/hooks/habitaciones';
+import { useAvailableRooms } from '@/hooks/rooms';
 import { useRefreshOnFocus } from '@/hooks/shared';
 import { useConfigValue } from '@/hooks/shared/useConfigValue';
 import { formatLongDateEs, formatShortTimeEs } from '@/lib/utils/calendarUtils';

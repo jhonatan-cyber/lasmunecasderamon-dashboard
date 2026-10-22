@@ -13,10 +13,10 @@ vi.mock('@/lib/business/timezoneService', () => ({
 vi.mock('@/modules/auditoria', () => ({ SecurityAlertService: {} }));
 vi.mock('@/lib/utils/logger', () => ({ default: { error: vi.fn() } }));
 vi.mock('@/modules/identidad/autenticacion/codigos', () => ({ regenerateAttendanceCode: vi.fn() }));
-vi.mock('@/lib/transaccion/contrato', () => ({
+vi.mock('@/lib/transaction/contract', () => ({
   enUnaUnidad: (fn: any) => fn({ ejecutar: (work: any) => work({}) })
 }));
-vi.mock('@/lib/transaccion/infraestructura', () => ({ resolverTransaccion: () => mocks.trx }));
+vi.mock('@/lib/transaction/infrastructure', () => ({ resolverTransaccion: () => mocks.trx }));
 vi.mock('@/modules/comunicaciones', () => ({ enviarWhatsApp: mocks.whatsapp }));
 import { resetPassword } from '@/modules/identidad/autenticacion/consultas';
 

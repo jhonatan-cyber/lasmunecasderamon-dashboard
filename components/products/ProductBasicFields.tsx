@@ -2,7 +2,7 @@
 
 import { Input } from '@/components/ui/input';
 import { Barcode, Package } from 'lucide-react';
-import type { ProductFormValues } from '@/hooks/personal/useProductForm';
+import type { ProductFormValues } from '@/hooks/products/useProductForm';
 
 type ProductFormErrors = Partial<Record<keyof ProductFormValues, string>>;
 

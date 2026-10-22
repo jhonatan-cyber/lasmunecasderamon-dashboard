@@ -1,5 +1,5 @@
-import type { DefinicionClave } from '@/lib/configuracion/definiciones';
-import { enteroEnRango } from '@/lib/configuracion/definiciones';
+import type { DefinicionClave } from '@/lib/configuration/definitions';
+import { enteroEnRango } from '@/lib/configuration/definitions';
 export const CLAVES_INVENTARIO: Record<string, DefinicionClave> = {
   shot_ml: {
     categoria: 'bar',

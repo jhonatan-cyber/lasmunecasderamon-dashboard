@@ -119,11 +119,11 @@ vi.mock('@/modules/operacion', () => ({
   ServiceService: serviceService,
   AccountService: accountService
 }));
-import { POST as postTemporaryService } from '@/app/api/servicios/temporal/route';
+import { POST as postTemporaryService } from '@/app/api/services/temporary/route';
 
 import { POST as postSale } from '@/app/api/sales/route';
-import { PUT as putCuenta } from '@/app/api/cuentas/[id]/route';
-import { POST as postCobroConVenta } from '@/app/api/cuentas/[id]/cobrar-con-venta/route';
+import { PUT as putCuenta } from '@/app/api/accounts/[id]/route';
+import { POST as postCobroConVenta } from '@/app/api/accounts/[id]/charge-with-sale/route';
 import { IDEMPOTENCY_HEADER } from '@/lib/api/idempotency';
 
 const VENTA = {
@@ -156,7 +156,7 @@ const postVenta = (key?: string) =>
 
 const putConsumos = (key?: string, id = 'c-1') =>
   putCuenta(
-    new Request(`http://localhost/api/cuentas/${id}`, {
+    new Request(`http://localhost/api/accounts/${id}`, {
       method: 'PUT',
       headers: {
         'content-type': 'application/json',
@@ -238,7 +238,7 @@ const COBRO_CON_VENTA = {
 
 const postCobro = (key?: string, id = 'c-1') =>
   postCobroConVenta(
-    new Request(`http://localhost/api/cuentas/${id}/cobrar-con-venta`, {
+    new Request(`http://localhost/api/accounts/${id}/charge-with-sale`, {
       method: 'POST',
       headers: {
         'content-type': 'application/json',
@@ -249,7 +249,7 @@ const postCobro = (key?: string, id = 'c-1') =>
     { params: Promise.resolve({ id }) }
   );
 
-describe('POST /api/cuentas/[id]/cobrar-con-venta con idempotencia', () => {
+describe('POST /api/accounts/[id]/charge-with-sale con idempotencia', () => {
   beforeEach(() => {
     syncOperations.filas.clear();
     accountService.cobrarConVenta.mockReset();
@@ -304,7 +304,7 @@ describe('POST /api/cuentas/[id]/cobrar-con-venta con idempotencia', () => {
   });
 });
 
-describe('PUT /api/cuentas/[id] con idempotencia', () => {
+describe('PUT /api/accounts/[id] con idempotencia', () => {
   beforeEach(() => {
     syncOperations.filas.clear();
     accountService.updateCuenta.mockReset();
@@ -351,7 +351,7 @@ describe('PUT /api/cuentas/[id] con idempotencia', () => {
   });
 });
 
-describe('POST /api/servicios/temporal', () => {
+describe('POST /api/services/temporary', () => {
   it('normaliza el adicional de Expo y reintentar no registra otro cobro', async () => {
     syncOperations.filas.clear();
     serviceService.createService.mockReset();
@@ -363,7 +363,7 @@ describe('POST /api/servicios/temporal', () => {
     });
     const request = () =>
       postTemporaryService(
-        new Request('http://localhost/api/servicios/temporal', {
+        new Request('http://localhost/api/services/temporary', {
           method: 'POST',
           headers: {
             'content-type': 'application/json',

@@ -1,3 +1,22 @@
 import 'server-only';
 
-export { listarEntradas, registrarEntrada } from './servicio';
+export {
+  anularEntrada,
+  entregarEntrada,
+  listarEntradas,
+  listarPendientes,
+  postearPendientesDeCaja,
+  registrarEntrada
+} from './servicio';
+
+export type {
+  EntradaCliente,
+  EntradaPendiente,
+  EntregaEntradaInput,
+  EstadoCortesia,
+  MetodoPagoEntrada,
+  PlanVentaEntrada,
+  RegistradorVenta,
+  RegistroEntradaInput,
+  ResultadoEntrega
+} from './repositorio';

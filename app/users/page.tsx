@@ -18,7 +18,7 @@ import { Button } from '@/components/ui/button';
 import Paginate from '@/components/shared/Paginate';
 import { EMAIL_DOMAIN } from '@/lib/constants/email';
 
-import { useUsers } from '@/hooks/personal';
+import { useUsers } from '@/hooks/staff';
 import { useCurrentUser } from '@/hooks/auth/useCurrentUser';
 import { useUserImage } from '@/contexts/UserImageContext';
 
@@ -27,7 +27,7 @@ import { formatCurrency, formatDate } from '@/lib/utils/formatters';
 
 import { UserTable } from '@/components/users/UserTable';
 import { UserFilters } from '@/components/users/UserFilters';
-import { type UserFormValues } from '@/hooks/personal';
+import { type UserFormValues } from '@/hooks/staff';
 import { ExportButtons } from '@/components/users/ExportButtons';
 import { PermissionGuard } from '@/components/auth/PermissionGuard';
 import { Skeleton as BoneyardSkeleton } from 'boneyard-js/react';

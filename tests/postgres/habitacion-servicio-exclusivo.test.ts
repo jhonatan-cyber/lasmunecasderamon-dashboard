@@ -1,6 +1,6 @@
 import { afterAll, expect, it } from 'vitest';
 import db, { query } from '@/lib/database/db';
-import { enUnaUnidad } from '@/lib/transaccion/contrato';
+import { enUnaUnidad } from '@/lib/transaction/contract';
 import { validarHabitacionDisponibleParaServicio } from '@/modules/operacion/servicios/repositorio';
 import { ocuparHabitacionVenta } from '@/modules/operacion/facturacion/servicio';
 

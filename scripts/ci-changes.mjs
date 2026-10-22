@@ -80,17 +80,19 @@ export function classifyChanges(files) {
       flags.build = true;
     }
 
-    const domain = /caja|cashregister|cierre-caja/i.test(source)
+    const domain = /caja|cash-register|cashregister|cierre-caja/i.test(source)
       ? 'caja'
       : /compras|purchases/i.test(source)
         ? 'compras'
         : /inventario|products|categories|bar|transfers/i.test(source)
           ? 'inventario'
-          : /ventas|sales|orders|servicios/i.test(source)
+          : /ventas|sales|orders|servicios|services|cuentas|accounts/i.test(source)
             ? 'ventas'
-            : /personal|users|attendance|payroll|roles|permissions|advances|overtime/i.test(source)
+            : /personal|staff|users|attendance|payroll|roles|permissions|advances|overtime/i.test(
+                  source
+                )
               ? 'personal'
-              : /reports|dashboard|stats|forecast/i.test(source)
+              : /reports|dashboard|stats|statistics|forecast/i.test(source)
                 ? 'reportes'
                 : /whatsapp|twilio|comunicaciones/i.test(source)
                   ? 'whatsapp'

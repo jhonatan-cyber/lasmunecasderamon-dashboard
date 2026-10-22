@@ -31,7 +31,7 @@ const esquemaCobro = z
 export const herramientas = {
   cobrar_cuenta: {
     description:
-      'Cobra una cuenta cerrando su consumo: POST /api/cuentas/{id}/cobrar (flujo cobro-con-venta del backend). ' +
+      'Cobra una cuenta cerrando su consumo: POST /api/accounts/{id}/charge. ' +
       'OPERACIÓN DE DINERO: pide confirmación explícita al usuario antes de ejecutarla y verifica el id y el monto con detalle_cuenta. ' +
       'Requiere operacion_id: se envía como x-idempotency-key y el reintento con el mismo UUID replica la respuesta sin duplicar el cobro. ' +
       'Requiere credenciales con permiso finances.write.',
@@ -52,7 +52,7 @@ export const herramientas = {
         };
         if (resto.propinaFinal !== undefined) cuerpo.propinaFinal = resto.propinaFinal;
         if (resto.habitacion_id !== undefined) cuerpo.habitacion_id = resto.habitacion_id;
-        const r = await api('POST', `/api/cuentas/${encodeURIComponent(resto.id)}/cobrar`, {
+        const r = await api('POST', `/api/accounts/${encodeURIComponent(resto.id)}/charge`, {
           cuerpo,
           cabeceras: { 'x-idempotency-key': operacion_id }
         });

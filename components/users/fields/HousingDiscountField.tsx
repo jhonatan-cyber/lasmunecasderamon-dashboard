@@ -7,7 +7,7 @@ import { Switch } from '@/components/ui/switch';
 import { NumberInputField } from '@/components/users/NumberInputField';
 import { DollarSign } from 'lucide-react';
 
-import { type UserFormValues } from '@/hooks/personal';
+import { type UserFormValues } from '@/hooks/staff';
 
 interface HousingDiscountFieldProps {
   control: Control<UserFormValues>;

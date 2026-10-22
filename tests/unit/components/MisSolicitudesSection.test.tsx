@@ -1,7 +1,7 @@
 import React from 'react';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { cleanup, render, screen, fireEvent } from '@testing-library/react';
-import MisSolicitudesSection from '@/components/gratificaciones/MisSolicitudesSection';
+import MisSolicitudesSection from '@/components/gratifications/MisSolicitudesSection';
 import { Gratificacion } from '@/types/gratificacion';
 
 const row = (overrides: Partial<Gratificacion>): Gratificacion => ({

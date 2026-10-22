@@ -24,7 +24,8 @@ const mockPerms: UserPermissions = {
   categories: { read: false, write: false, delete: false },
   returns: { read: false, write: false, delete: false },
   dashboard: { read: false },
-  private_rooms: { read: false, write: false }
+  private_rooms: { read: false, write: false },
+  entradas: { view: false, create: false, deliver: false }
 };
 
 beforeEach(() => {

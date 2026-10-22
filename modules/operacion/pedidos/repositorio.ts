@@ -1,5 +1,5 @@
-import { resolverTransaccion } from '@/lib/transaccion/infraestructura';
-import { enUnaUnidad, type ContextoOperacion } from '@/lib/transaccion/contrato';
+import { resolverTransaccion } from '@/lib/transaction/infrastructure';
+import { enUnaUnidad, type ContextoOperacion } from '@/lib/transaction/contract';
 import {
   validarAnfitrionasEnLocal,
   comprobarAnfitrionasLibresParaServicio

@@ -41,7 +41,11 @@ export async function enviarWhatsAppConEstado(
     seguimientoGuardado = false;
     logger.error('No se pudo registrar el seguimiento de WhatsApp', { sid: result.sid });
   }
-  if (result.status === 'failed' || result.status === 'undelivered' || result.status === 'canceled') {
+  if (
+    result.status === 'failed' ||
+    result.status === 'undelivered' ||
+    result.status === 'canceled'
+  ) {
     throw new Error('WhatsApp rechazó el envío');
   }
   return {
@@ -79,7 +83,7 @@ export async function enviarPdfCierreCajaWhatsApp(datos: {
     process.env.TWILIO_WEBHOOK_BASE_URL || process.env.NEXT_PUBLIC_BASE_URL || process.env.BASE_URL;
   if (!baseUrl) throw new Error('Configura la URL pública HTTPS del dashboard');
   const url = new URL(
-    `/api/cashregister/cierre-pdf?token=${encodeURIComponent(datos.token)}`,
+    `/api/cashregister/closing-pdf?token=${encodeURIComponent(datos.token)}`,
     baseUrl
   );
   if (url.protocol !== 'https:') {
@@ -120,7 +124,7 @@ export async function enviarReporteCajaWhatsApp(datos: {
   }
 
   const pdfUrl = new URL(
-    `/api/cashregister/reporte-pdf?token=${encodeURIComponent(datos.token)}`,
+    `/api/cashregister/pdf-report?token=${encodeURIComponent(datos.token)}`,
     basePublica
   );
   const mensaje = `*REPORTE DE CAJA*\nCaja ${datos.cajaId.slice(0, 8)}. Adjunto el informe PDF con el resumen financiero y los gráficos del turno.`;

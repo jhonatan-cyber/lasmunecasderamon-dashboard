@@ -4,7 +4,7 @@ import { Button } from '@/components/ui/button';
 import { useSortable } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
 import { GripVertical } from 'lucide-react';
-import type { Category } from '@/hooks/productos/useCategories';
+import type { Category } from '@/hooks/products/useCategories';
 import CategoryCard from './CategoryCard';
 
 export function SortableInventoryCategory({

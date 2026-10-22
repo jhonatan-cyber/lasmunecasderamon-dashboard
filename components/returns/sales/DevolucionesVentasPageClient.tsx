@@ -1,9 +1,9 @@
 'use client';
 
 import React, { useEffect, useState } from 'react';
-import { useSales } from '@/hooks/caja/useSales';
-import { useDevolucionFilters } from '@/hooks/servicios/useDevolucionFilters';
-import { useDevolucionVentasLogic } from '@/hooks/servicios/useDevolucionVentasLogic';
+import { useSales } from '@/hooks/cash-register/useSales';
+import { useDevolucionFilters } from '@/hooks/services/useDevolucionFilters';
+import { useDevolucionVentasLogic } from '@/hooks/services/useDevolucionVentasLogic';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import Paginate from '@/components/shared/Paginate';
@@ -54,7 +54,7 @@ export function DevolucionesVentasPageClient() {
   useEffect(() => {
     const fetchSolicitudes = async () => {
       try {
-        const res = await fetch('/api/ventas/solicitud-anulacion?list=true');
+        const res = await fetch('/api/sales/cancellation-request?list=true');
         const data = await res.json();
         if (data.solicitudes) {
           setSolicitudes(data.solicitudes);
@@ -73,14 +73,14 @@ export function DevolucionesVentasPageClient() {
     status: 'confirmada' | 'rechazada'
   ) => {
     try {
-      const res = await fetch('/api/ventas/anulacion', {
+      const res = await fetch('/api/sales/cancellation', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ requestId: solicitudId, status })
       });
       const data = await res.json();
       if (data.success) {
-        const res2 = await fetch('/api/ventas/solicitud-anulacion?list=true');
+        const res2 = await fetch('/api/sales/cancellation-request?list=true');
         const data2 = await res2.json();
         if (data2.solicitudes) {
           setSolicitudes(data2.solicitudes);

@@ -2,12 +2,12 @@ import { beforeEach, afterEach, describe, expect, it, vi } from 'vitest';
 import { act, renderHook } from '@testing-library/react';
 import { activeTimers, serverOffsetSignal, TimerInstance } from '@/lib/store/timerStore';
 import { resetTimerClock } from '@/lib/utils/timerClock';
-import { useTimerActions } from '@/hooks/timer/useTimerActions';
-import { useServiceLogic } from '@/hooks/servicios/useServiceLogic';
+import { useTimerActions } from '@/hooks/timers/useTimerActions';
+import { useServiceLogic } from '@/hooks/services/useServiceLogic';
 
 const fixture = vi.hoisted(() => ({ servicios: [] as any[], duration: 2 }));
 vi.mock('next/navigation', () => ({ useRouter: () => ({ push: vi.fn() }) }));
-vi.mock('@/hooks/servicios/useServicios', () => ({
+vi.mock('@/hooks/services/useServicios', () => ({
   useServicios: () => ({
     servicios: fixture.servicios,
     getServicios: vi.fn(),

@@ -52,7 +52,7 @@ describe('pares de permisos de traspasos: fuente única', () => {
     expect(repositorio).toContain('TRANSFER_RESOLVE_PERMISSION');
     expect(repositorio).not.toContain("IN ('barman', 'administrador')");
 
-    const hook = leer('hooks/shared/useTransferPermissions.ts');
+    const hook = leer('hooks/transfers/useTransferPermissions.ts');
     expect(hook).toContain('TRANSFER_RESOLVE_PERMISSION');
     expect(hook).toContain('TRANSFER_CREATE_PERMISSION');
 

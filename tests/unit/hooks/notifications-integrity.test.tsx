@@ -2,7 +2,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { act, cleanup, renderHook, waitFor } from '@testing-library/react';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import type { ReactNode } from 'react';
-import { useNotifications } from '@/hooks/notificaciones/useNotifications';
+import { useNotifications } from '@/hooks/notifications/useNotifications';
 const session = vi.hoisted(() => ({
   user: { id: 1, role: 'cajero' } as { id: number; role: string } | null,
   pathname: '/orders',

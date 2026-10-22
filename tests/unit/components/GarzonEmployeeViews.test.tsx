@@ -1,9 +1,9 @@
 import { afterEach, beforeEach, expect, it, vi } from 'vitest';
 import { act, cleanup, fireEvent, render, screen, within } from '@testing-library/react';
-import { TipsEmployeeList } from '@/components/propinas/TipsEmployeeList';
+import { TipsEmployeeList } from '@/components/tips/TipsEmployeeList';
 import { OvertimeEmployeeList } from '@/components/overtime/OvertimeEmployeeList';
 import { AttendanceEmployeeList } from '@/components/attendance/AttendanceEmployeeList';
-import GarzonPedidosPage from '@/components/garzon/GarzonPedidosPageClient';
+import GarzonPedidosPage from '@/components/waiters/GarzonPedidosPageClient';
 import { formatCurrencyCLP } from '@/lib/utils/formatters';
 
 const mocks = vi.hoisted(() => ({ user: vi.fn(), sse: vi.fn() }));

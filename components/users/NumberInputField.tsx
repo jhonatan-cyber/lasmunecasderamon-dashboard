@@ -3,7 +3,7 @@ import { Control } from 'react-hook-form';
 import { FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
 import { LucideIcon } from 'lucide-react';
-import { type UserFormValues } from '@/hooks/personal';
+import { type UserFormValues } from '@/hooks/staff';
 
 interface NumberInputFieldProps {
   control: Control<UserFormValues>;

@@ -1,5 +1,5 @@
 import { PayrollRepository } from '@/modules/personal/nomina/repositorio';
-import { enUnaUnidad } from '@/lib/transaccion/contrato';
+import { enUnaUnidad } from '@/lib/transaction/contract';
 import { getNowInBusinessTimezone } from '@/lib/business/timezoneService';
 import { liquidarAsistencias } from '@/modules/asistencia';
 

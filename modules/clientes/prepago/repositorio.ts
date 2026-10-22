@@ -4,8 +4,8 @@ import type {
   EntradaRestitucionPrepago
 } from './tipos';
 import type { prepararRecargaPrepago, prepararDevolucionSaldo } from './reglas';
-import type { ContextoOperacion } from '@/lib/transaccion/contrato';
-import { resolverTransaccion } from '@/lib/transaccion/infraestructura';
+import type { ContextoOperacion } from '@/lib/transaction/contract';
+import { resolverTransaccion } from '@/lib/transaction/infrastructure';
 import { generateUUID } from '@/lib/database/db';
 import { getNowInBusinessTimezone } from '@/lib/business/timezoneService';
 import { BaseRepository } from '@/lib/database/base-repository';

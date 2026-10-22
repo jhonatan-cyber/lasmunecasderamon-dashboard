@@ -1,17 +1,17 @@
 'use client';
 
 import { useEffect, useState, useCallback } from 'react';
-import { useServicios } from '@/hooks/servicios/useServicios';
-import { useDevolucionFilters } from '@/hooks/servicios/useDevolucionFilters';
-import { useDevolucionLogic } from '@/hooks/servicios/useDevolucionLogic';
-import { useDevolucionResponse } from '@/hooks/servicios/useDevolucionResponse';
-import { useServicioTimerSync } from '@/hooks/servicios/useServicioTimerSync';
+import { useServicios } from '@/hooks/services/useServicios';
+import { useDevolucionFilters } from '@/hooks/services/useDevolucionFilters';
+import { useDevolucionLogic } from '@/hooks/services/useDevolucionLogic';
+import { useDevolucionResponse } from '@/hooks/services/useDevolucionResponse';
+import { useServicioTimerSync } from '@/hooks/services/useServicioTimerSync';
 import { useAnulacionContext } from '@/contexts/AnulacionContext';
 import { useTimer } from '@/contexts/TimerContext';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import Paginate from '@/components/shared/Paginate';
-import { ServicioDetailModal } from '@/components/servicios/ServicioDetailModal';
+import { ServicioDetailModal } from '@/components/services/ServicioDetailModal';
 import { anfitrionaColors, metodoPagoLabels } from '@/lib/business/salesUtils';
 import { DevolucionHeader } from '@/components/returns/services/DevolucionHeader';
 import { DevolucionFilters } from '@/components/returns/DevolucionFilters';

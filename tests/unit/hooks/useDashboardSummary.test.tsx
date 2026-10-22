@@ -1,6 +1,6 @@
 import { beforeEach, expect, it, vi } from 'vitest';
 import { renderHook } from '@testing-library/react';
-import { useDashboardSummary } from '@/hooks/stats/useDashboardSummary';
+import { useDashboardSummary } from '@/hooks/statistics/useDashboardSummary';
 
 const mocks = vi.hoisted(() => ({ user: vi.fn(), query: vi.fn() }));
 vi.mock('@/hooks/auth/useCurrentUser', () => ({ useCurrentUser: mocks.user }));

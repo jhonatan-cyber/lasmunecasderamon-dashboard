@@ -5,8 +5,8 @@
  * `ContextoOperacion`: cabecera, detalles, usuarios y ocupación de
  * habitación, con los avisos después del commit.
  */
-import { enUnaUnidad, type ContextoOperacion } from '@/lib/transaccion/contrato';
-import { ejecutarEfectosConfirmados } from '@/lib/transaccion/efectos';
+import { enUnaUnidad, type ContextoOperacion } from '@/lib/transaction/contract';
+import { ejecutarEfectosConfirmados } from '@/lib/transaction/effects';
 import { generateUUID } from '@/lib/database/db';
 import { getNowInBusinessTimezone } from '@/lib/business/timezoneService';
 import { sendNotificationToAll } from '@/lib/api/sseService';

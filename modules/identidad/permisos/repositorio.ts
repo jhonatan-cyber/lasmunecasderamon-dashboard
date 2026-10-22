@@ -3,7 +3,7 @@
  * nadie fuera de `modules/identidad` importa este archivo (§5).
  *
  * Estas consultas vivían dentro de rutas HTTP (`/api/roles/[id]/permissions`,
- * `/api/users/[id]/permissions` y `/api/permissions/setup-cajero`), que mezclaban
+ * `/api/users/[id]/permissions` y `/api/permissions/setup-cashier`), que mezclaban
  * adaptación, consulta, transacción y efectos. Mismo SQL y misma selección que tenían
  * las rutas.
  */

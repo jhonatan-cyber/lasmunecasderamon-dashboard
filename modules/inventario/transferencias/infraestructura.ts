@@ -11,8 +11,8 @@ import { withTransaction } from '@/lib/database/db';
 import { sendNotificationToAll } from '@/lib/api/sseService';
 import { sendPushByPermission } from '@/modules/comunicaciones';
 import { TRANSFER_RESOLVE_PERMISSION } from '@/lib/constants/transferPermissions';
-import { resolverTransaccion } from '@/lib/transaccion/infraestructura';
-import type { ContextoOperacion } from '@/lib/transaccion/contrato';
+import { resolverTransaccion } from '@/lib/transaction/infrastructure';
+import type { ContextoOperacion } from '@/lib/transaction/contract';
 import type { TraspasoInput, TraspasoResultado } from '../contracts';
 import {
   aceptarTransferencia as aceptarEnRepositorio,

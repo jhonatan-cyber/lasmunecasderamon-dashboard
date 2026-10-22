@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { buildCajaDetailsNumbers } from '@/components/caja/details/cajaDetailsModel';
+import { buildCajaDetailsNumbers } from '@/components/cash-register/details/cajaDetailsModel';
 
 /**
  * `cajas.efectivo` ya viene neto de retiros y anticipos: `WithdrawalService.addRetiro` y

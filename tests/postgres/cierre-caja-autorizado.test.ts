@@ -20,7 +20,7 @@ import { CashRegisterRepository } from '@/modules/caja/turnos/repositorio';
 import { getNowInBusinessTimezone } from '@/lib/business/timezoneService';
 import { reenviarAvisoCierreCaja, solicitarOProcesarCierreCaja } from '@/lib/api/cierreCaja';
 import { WithdrawalService } from '@/modules/caja/retiros/servicio';
-import { buildCajaDetailsNumbers } from '@/components/caja/details/cajaDetailsModel';
+import { buildCajaDetailsNumbers } from '@/components/cash-register/details/cajaDetailsModel';
 import { reavisarCierresPendientes } from '@/lib/business/cierreCajaRecordatorios';
 import { enviarMensajeSolicitudCierreCaja } from '@/modules/comunicaciones/whatsapp/adaptador';
 

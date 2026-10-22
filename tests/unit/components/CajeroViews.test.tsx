@@ -1,17 +1,17 @@
-import BarmanAttendance from '@/app/barman-asistencias/page';
-import BarmanAdvances from '@/app/barman-anticipos/page';
-import BarmanTips from '@/app/barman-propinas/page';
-import BarmanOvertime from '@/app/barman-horas-extras/page';
+import BarmanAttendance from '@/app/bartender-attendance/page';
+import BarmanAdvances from '@/app/bartender-advances/page';
+import BarmanTips from '@/app/bartender-tips/page';
+import BarmanOvertime from '@/app/bartender-overtime/page';
 import { afterEach, beforeEach, expect, it, vi } from 'vitest';
 import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react';
 import DashboardStatsCards from '@/components/dashboard/DashboardStatsCards';
-import { TipsEmployeeList } from '@/components/propinas/TipsEmployeeList';
+import { TipsEmployeeList } from '@/components/tips/TipsEmployeeList';
 import { OvertimeEmployeeList } from '@/components/overtime/OvertimeEmployeeList';
 import { AttendanceEmployeeList } from '@/components/attendance/AttendanceEmployeeList';
 import { AdvancesEmployeeList } from '@/components/advances/AdvancesEmployeeList';
 const mocks = vi.hoisted(() => ({ user: vi.fn(), summary: vi.fn(), refetch: vi.fn() }));
 vi.mock('@/hooks/auth/useCurrentUser', () => ({ useCurrentUser: mocks.user }));
-vi.mock('@/hooks/stats/useDashboardSummary', () => ({ useDashboardSummary: mocks.summary }));
+vi.mock('@/hooks/statistics/useDashboardSummary', () => ({ useDashboardSummary: mocks.summary }));
 vi.mock('@/components/attendance/AsistenciaForm', () => ({ default: () => null }));
 vi.mock('@/lib/utils/logger', () => ({
   default: {
@@ -93,6 +93,6 @@ it.each([BarmanAttendance, BarmanAdvances, BarmanTips, BarmanOvertime])(
     expect(screen.queryByText('Acceso Denegado')).not.toBeInTheDocument();
     expect(screen.queryByRole('button', { name: 'Registrar Manual' })).not.toBeInTheDocument();
     expect(screen.queryByRole('alert')).not.toBeInTheDocument();
-    expect(fetcher.mock.calls[0][0]).toMatch(/\/api\/(attendance|anticipos|tips|overtime)\/user/);
+    expect(fetcher.mock.calls[0][0]).toMatch(/\/api\/(attendance|advances|tips|overtime)\/user/);
   }
 );

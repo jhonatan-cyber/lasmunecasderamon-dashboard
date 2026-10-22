@@ -5,9 +5,9 @@ import { useRouter } from 'next/navigation';
 import { useQueryClient } from '@tanstack/react-query';
 import { toast } from 'sonner';
 import { useRefreshOnFocus } from '@/hooks/shared';
-import { useClients } from '@/hooks/clientes/useClients';
-import { useAnfitrionas } from '@/hooks/personal';
-import { useHabitaciones } from '@/hooks/habitaciones/useHabitaciones';
+import { useClients } from '@/hooks/clients/useClients';
+import { useAnfitrionas } from '@/hooks/staff';
+import { useHabitaciones } from '@/hooks/rooms/useHabitaciones';
 import { useTimer } from '@/contexts/TimerContext';
 import logger from '@/lib/utils/logger';
 import { usePrivateRoomSummary } from '@/hooks/private-rooms/usePrivateRoomSummary';
@@ -263,7 +263,7 @@ export function useServicioForm() {
     setLoading(true);
     setShowConfirmModal(false);
     try {
-      const response = await fetch('/api/servicios', {
+      const response = await fetch('/api/services', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -294,7 +294,7 @@ export function useServicioForm() {
           );
         }
 
-        queryClient.invalidateQueries({ queryKey: ['/api/servicios'] });
+        queryClient.invalidateQueries({ queryKey: ['/api/services'] });
 
         await refreshLookupData();
 

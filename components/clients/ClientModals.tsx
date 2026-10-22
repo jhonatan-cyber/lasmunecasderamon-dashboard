@@ -5,7 +5,7 @@ import { ClientDetailsModal } from './ClientDetailsModal';
 import { PrepagoModal } from './PrepagoModal';
 import { DevolucionModal } from './DevolucionModal';
 import { Client } from '@/types/client';
-import { type ClientFormValues } from '@/hooks/personal';
+import { type ClientFormValues } from '@/hooks/clients';
 
 interface ClientModalsProps {
   isFormModalOpen: boolean;

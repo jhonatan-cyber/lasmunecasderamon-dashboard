@@ -10,7 +10,7 @@ import {
   SelectValue
 } from '@/components/ui/select';
 import { Search, Trash2 } from 'lucide-react';
-import { DevolucionFilters as DevolucionFiltersType } from '@/hooks/servicios/useDevolucionFilters';
+import { DevolucionFilters as DevolucionFiltersType } from '@/hooks/services/useDevolucionFilters';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 
 interface DevolucionFiltersProps {

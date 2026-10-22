@@ -33,7 +33,7 @@ import {
 import { Button } from '@/components/ui/button';
 import { DeleteConfirmModal } from '@/components/shared/DeleteConfirmModal';
 import { Card, CardContent } from '@/components/ui/card';
-import { useClientTable } from '@/hooks/clientes/useClientTable';
+import { useClientTable } from '@/hooks/clients/useClientTable';
 
 interface ClientTableProps {
   clients: Client[];

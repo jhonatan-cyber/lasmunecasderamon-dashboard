@@ -31,11 +31,11 @@ describe('proteccion compartida de registros', () => {
   it.each([
     '/api/purchases',
     '/api/sales',
-    '/api/servicios',
+    '/api/services',
     '/api/orders',
-    '/api/cuentas',
+    '/api/accounts',
     '/api/bar',
-    '/api/anticipos',
+    '/api/advances',
     '/api/clients'
   ])('envia una sola solicitud ante dos envios simultaneos en %s', async path => {
     let release!: (response: Response) => void;

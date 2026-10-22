@@ -16,7 +16,7 @@ vi.mock('@/lib/database/db', () => ({
   generateUUID: () => 'mov-1'
 }));
 
-vi.mock('@/lib/transaccion/infraestructura', () => ({
+vi.mock('@/lib/transaction/infrastructure', () => ({
   resolverTransaccion: () => trx
 }));
 

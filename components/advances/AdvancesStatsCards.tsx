@@ -2,7 +2,7 @@
 import { MetricCard } from '@/components/shared/MetricCard';
 
 import { CheckCircle2, Clock, XCircle } from 'lucide-react';
-import { Anticipo } from '@/hooks/personal';
+import { Anticipo } from '@/hooks/staff';
 import { formatCurrencyCLP } from '@/lib/utils/formatters';
 
 interface AdvancesStatsCardsProps {

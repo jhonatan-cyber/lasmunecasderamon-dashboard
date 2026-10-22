@@ -89,21 +89,21 @@ const PUBLIC_API_POLICY: Record<string, string> = {
   '/api/whatsapp/status':
     'estado de entrega de WhatsApp; exige firma de Twilio y Account SID configurado',
   // Páginas de confirmación por enlace de un solo uso (token en la URL, sin sesión):
-  '/api/ventas/solicitud-anulacion': 'confirmación de anulación por token de un solo uso',
-  '/api/ventas/procesar-anulacion': 'confirmación de anulación por token de un solo uso',
-  '/api/servicios/solicitud-anulacion': 'confirmación de anulación por token de un solo uso',
-  '/api/servicios/procesar-anulacion': 'confirmación de anulación por token de un solo uso',
-  '/api/cuentas/solicitud-anulacion': 'confirmación de anulación por token de un solo uso',
-  '/api/cuentas/procesar-anulacion': 'confirmación de anulación por token de un solo uso',
-  '/api/cashregister/solicitud-cierre': 'confirmación de cierre de caja por token de un solo uso',
-  '/api/cashregister/cierre-pdf': 'PDF del cierre por el token impredecible de la solicitud',
-  '/api/cashregister/reporte-pdf':
+  '/api/sales/cancellation-request': 'confirmación de anulación por token de un solo uso',
+  '/api/sales/process-cancellation': 'confirmación de anulación por token de un solo uso',
+  '/api/services/cancellation-request': 'confirmación de anulación por token de un solo uso',
+  '/api/services/process-cancellation': 'confirmación de anulación por token de un solo uso',
+  '/api/accounts/cancellation-request': 'confirmación de anulación por token de un solo uso',
+  '/api/accounts/process-cancellation': 'confirmación de anulación por token de un solo uso',
+  '/api/cashregister/closing-request': 'confirmación de cierre de caja por token de un solo uso',
+  '/api/cashregister/closing-pdf': 'PDF del cierre por el token impredecible de la solicitud',
+  '/api/cashregister/pdf-report':
     'PDF de caja para Twilio mediante token firmado de corta duración',
-  '/api/cashregister/procesar-cierre':
+  '/api/cashregister/process-closing':
     'confirmación de cierre de caja por token de un solo uso (el administrador abre el link sin sesión)',
-  '/api/anticipos/solicitud-detalles': 'confirmación de anticipo por token de un solo uso',
-  '/api/gratificaciones/solicitud-detalles': 'confirmación de gratificación por token',
-  '/api/gratificaciones/aprobar': 'confirmación de gratificación por token',
+  '/api/advances/request-details': 'confirmación de anticipo por token de un solo uso',
+  '/api/gratifications/request-details': 'confirmación de gratificación por token',
+  '/api/gratifications/approve': 'confirmación de gratificación por token',
   // Públicos de producto:
   '/api/public/users': 'padrón para la pantalla del local (sin credenciales desde la 024)',
   '/api/timers/active': 'lectura de timers activos para pantallas del local',
@@ -143,21 +143,24 @@ const SESSION_WRAPPED_POLICY: Record<string, string> = {
   '/api/ping': 'telemetría de montaje del cliente; solo escribe un log',
   // Lecturas operativas para UI autenticada: el middleware exige token, el handler lee
   // la sesión para filtrar. Convención legacy documentada (ver encabezado).
-  '/api/anfitrionas/disponibles': 'convención legacy: lectura operativa, sesión por middleware',
-  '/api/anfitrionas': 'convención legacy: lectura operativa, sesión por middleware',
-  '/api/attendance/[id]/detalle': 'convención legacy: lectura operativa, sesión por middleware',
-  '/api/attendance/hoy': 'convención legacy: lectura operativa, sesión por middleware',
+  '/api/hostesses/available': 'convención legacy: lectura operativa, sesión por middleware',
+  '/api/hostesses': 'convención legacy: lectura operativa, sesión por middleware',
+  '/api/attendance/[id]/detail': 'convención legacy: lectura operativa, sesión por middleware',
+  '/api/attendance/today': 'convención legacy: lectura operativa, sesión por middleware',
   '/api/attendance': 'convención legacy: lectura operativa, sesión por middleware',
   '/api/attendance/stats': 'convención legacy: lectura operativa, sesión por middleware',
   '/api/audit-logs': 'convención legacy: lectura operativa, sesión por middleware',
   '/api/bar/movements': 'convención legacy: lectura operativa, sesión por middleware',
   '/api/bar/shots': 'convención legacy: lectura operativa, sesión por middleware',
   '/api/bar': 'convención legacy: lectura operativa, sesión por middleware',
-  '/api/caja/stats': 'convención legacy: lectura operativa, sesión por middleware',
-  '/api/caja/ventas-barras': 'convención legacy: lectura operativa, sesión por middleware',
-  '/api/caja/ventas-champagne': 'convención legacy: lectura operativa, sesión por middleware',
-  '/api/caja/ventas-por-producto': 'convención legacy: lectura operativa, sesión por middleware',
-  '/api/caja/ventas-tragos-chicas': 'convención legacy: lectura operativa, sesión por middleware',
+  '/api/cash-register/stats': 'convención legacy: lectura operativa, sesión por middleware',
+  '/api/cash-register/bar-sales': 'convención legacy: lectura operativa, sesión por middleware',
+  '/api/cash-register/champagne-sales':
+    'convención legacy: lectura operativa, sesión por middleware',
+  '/api/cash-register/sales-by-product':
+    'convención legacy: lectura operativa, sesión por middleware',
+  '/api/cash-register/hostess-drinks':
+    'convención legacy: lectura operativa, sesión por middleware',
   '/api/calendar/data': 'convención legacy: lectura operativa, sesión por middleware',
   '/api/calendar': 'convención legacy: lectura operativa, sesión por middleware',
   '/api/cashregister/[id]': 'convención legacy: lectura operativa, sesión por middleware',
@@ -169,9 +172,9 @@ const SESSION_WRAPPED_POLICY: Record<string, string> = {
   '/api/commissions/[id]/details': 'convención legacy: lectura operativa, sesión por middleware',
   '/api/commissions': 'convención legacy: lectura operativa, sesión por middleware',
   '/api/cron/check-timers': 'convención legacy: cron interno, sesión por middleware',
-  '/api/cuentas/[id]': 'convención legacy: lectura operativa, sesión por middleware',
-  '/api/cuentas': 'convención legacy: lectura operativa, sesión por middleware',
-  '/api/garzones': 'convención legacy: lectura operativa, sesión por middleware',
+  '/api/accounts/[id]': 'convención legacy: lectura operativa, sesión por middleware',
+  '/api/accounts': 'convención legacy: lectura operativa, sesión por middleware',
+  '/api/waiters': 'convención legacy: lectura operativa, sesión por middleware',
   '/api/orders/detail': 'convención legacy: lectura operativa, sesión por middleware',
   '/api/orders': 'convención legacy: lectura operativa, sesión por middleware',
   '/api/payroll': 'GET con payroll.view en el middleware; el POST usa withRoute payroll.write',
@@ -197,17 +200,16 @@ const SESSION_WRAPPED_POLICY: Record<string, string> = {
   '/api/sales/[id]': 'convención legacy: lectura operativa, sesión por middleware',
   '/api/sales': 'convención legacy: lectura operativa, sesión por middleware',
   '/api/sales/stats': 'convención legacy: lectura operativa, sesión por middleware',
-  '/api/servicios/[id]': 'convención legacy: lectura operativa, sesión por middleware',
-  '/api/servicios/by-dates': 'convención legacy: lectura operativa, sesión por middleware',
-  '/api/servicios': 'convención legacy: lectura operativa, sesión por middleware',
-  '/api/solicitudes-servicios/pending-count': 'convención legacy: sesión por middleware',
-  '/api/solicitudes-servicios': 'convención legacy: sesión por middleware',
+  '/api/services/[id]': 'convención legacy: lectura operativa, sesión por middleware',
+  '/api/services/by-dates': 'convención legacy: lectura operativa, sesión por middleware',
+  '/api/services': 'convención legacy: lectura operativa, sesión por middleware',
+  '/api/service-requests/pending-count': 'convención legacy: sesión por middleware',
+  '/api/service-requests': 'convención legacy: sesión por middleware',
   '/api/stats/logged-users': 'convención legacy: lectura operativa, sesión por middleware',
   '/api/stats/sales-by-month': 'convención legacy: lectura operativa, sesión por middleware',
   '/api/stats/sales-by-week': 'convención legacy: lectura operativa, sesión por middleware',
   '/api/tips/[id]': 'convención legacy: lectura operativa, sesión por middleware',
-  '/api/users/[id]/permissions': 'convención legacy: lectura operativa, sesión por middleware',
-  '/api/ventas/[id]': 'convención legacy: lectura operativa, sesión por middleware'
+  '/api/users/[id]/permissions': 'convención legacy: lectura operativa, sesión por middleware'
 };
 
 /** Toda la política pública sumada, para los tests de paridad con el middleware. */

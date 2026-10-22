@@ -15,7 +15,7 @@ export const useSessionCheck = () => {
     pathname === '/login' ||
     pathname === '/api-docs' ||
     isPublicRoute(pathname) ||
-    pathname === '/asistencia-qr';
+    pathname === '/attendance-qr';
 
   const checkSessionStatus = useCallback(async () => {
     if (isPublicPage || isCheckingRef.current) return;

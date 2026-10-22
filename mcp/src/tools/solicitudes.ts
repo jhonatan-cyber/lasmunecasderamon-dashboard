@@ -3,7 +3,7 @@ import { paginar, paginacion } from '../paginacion.js';
 import { api } from '../api-client.js';
 import { esquemaSalida, fallo, envolver } from '../formato.js';
 
-const ruta = '/api/mcp/admin/solicitudes';
+const ruta = '/api/mcp/admin/requests';
 const tipo = z.enum([
   'anticipo',
   'devolucion',

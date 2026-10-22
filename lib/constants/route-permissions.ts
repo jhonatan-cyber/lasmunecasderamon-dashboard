@@ -5,7 +5,7 @@ import { ROUTES } from '@/lib/constants/routes';
  *
  * Antes este mapa estaba copiado en cuatro lugares y las copias se desincronizaron:
  * `/payroll/calendar` pedía el módulo inexistente `payroll_details` en una tabla y
- * `payroll` en la otra, las páginas de rol (`/garzon-*`) existían en una sola tabla, y el
+ * `payroll` en la otra, las páginas de rol (`/waiter-*`) existían en una sola tabla, y el
  * sidebar gateaba destinos con pares que la guarda de la página nunca miró. Cuando dos
  * copias discrepan, middleware y cliente deciden distinto sobre la misma URL: la página
  * carga en la navegación SPA y rebota a /access-denied al recargar (o al revés).
@@ -13,7 +13,7 @@ import { ROUTES } from '@/lib/constants/routes';
  * Ahora la tabla vive acá y los tres consumidores la leen:
  *   - `proxy.ts` (middleware Edge) → redirect del servidor;
  *   - `components/auth/RouteGuard.tsx` → recarga completa y navegación SPA;
- *   - `hooks/useSidebarNavigation.ts` → qué ítems ve cada rol.
+ *   - `hooks/shell/useSidebarNavigation.ts` → qué ítems ve cada rol.
  *
  * Es un módulo de datos puros: sin React, sin `'use client'` y sin APIs de Node, para que
  * lo pueda importar tanto el runtime de Edge como el cliente.
@@ -42,7 +42,7 @@ export const PUBLIC_PATHS: string[] = [
   // esquema de la app apunta a /app/* en este dominio. Son solo un redirect
   // a '/' para cuando la app no está instalada; no requieren sesión.
   '/app',
-  '/asistencia-qr',
+  '/attendance-qr',
   '/api/public/users',
   ROUTES.CONFIRMAR_ANULACION,
   ROUTES.CONFIRMAR_ANULACION_SERVICIO,
@@ -50,13 +50,13 @@ export const PUBLIC_PATHS: string[] = [
   ROUTES.CONFIRMAR_ANTICIPO,
   ROUTES.CONFIRMAR_GRATIFICACION,
   // Cierre de caja: el administrador autoriza desde el link del WhatsApp. La
-  // creacion de la solicitud (POST /api/cashregister/cierre) NO es publica.
+  // creacion de la solicitud (POST /api/cashregister/closing) NO es publica.
   ROUTES.CONFIRMAR_CIERRE_CAJA,
-  '/api/cashregister/solicitud-cierre',
-  '/api/cashregister/cierre-pdf',
+  '/api/cashregister/closing-request',
+  '/api/cashregister/closing-pdf',
   // Twilio descarga el adjunto con un token firmado de corta duración; no hay sesión web.
-  '/api/cashregister/reporte-pdf',
-  '/api/cashregister/procesar-cierre',
+  '/api/cashregister/pdf-report',
+  '/api/cashregister/process-closing',
   '/api/auth/login',
   // Logout debe aceptar una sesión ya expirada para poder borrar las cookies.
   '/api/auth/logout',
@@ -71,20 +71,20 @@ export const PUBLIC_PATHS: string[] = [
   '/api/health',
   '/api/whatsapp/webhook',
   '/api/whatsapp/status',
-  '/api/ventas/solicitud-anulacion',
-  '/api/ventas/procesar-anulacion',
-  '/api/servicios/solicitud-anulacion',
-  '/api/servicios/procesar-anulacion',
-  '/api/cuentas/solicitud-anulacion',
-  '/api/cuentas/procesar-anulacion',
+  '/api/sales/cancellation-request',
+  '/api/sales/process-cancellation',
+  '/api/services/cancellation-request',
+  '/api/services/process-cancellation',
+  '/api/accounts/cancellation-request',
+  '/api/accounts/process-cancellation',
   '/api/timers/active',
-  '/api/anticipos/solicitud-detalles',
+  '/api/advances/request-details',
   // Confirmación de gratificación por enlace de un solo uso (página pública
-  // /confirmar-gratificacion, como sus hermanas de anticipo y anulación).
-  '/api/gratificaciones/solicitud-detalles',
-  '/api/gratificaciones/aprobar',
+  // /confirm-gratification, como sus hermanas de anticipo y anulación).
+  '/api/gratifications/request-details',
+  '/api/gratifications/approve',
   // ⚠️ Endpoints protegidos removidos de PUBLIC_PATHS por seguridad
-  // '/api/permissions/setup-cajero',
+  // '/api/permissions/setup-cashier',
   // '/api/permissions/setup-roles',
   // '/api/permissions/debug',
   // '/api/permissions/test-cajero',
@@ -126,38 +126,38 @@ export const PUBLIC_PATHS: string[] = [
 export const KIOSK_DEVICE_APIS = ['/api/kiosk', '/api/notifications/kiosk'];
 
 export const AUTHENTICATED_ONLY_APIS = [
-  '/api/codigo',
+  '/api/code',
   '/api/users',
   '/api/attendance',
-  '/api/anticipos',
+  '/api/advances',
   '/api/tips',
   '/api/overtime',
   '/api/orders',
   '/api/commissions',
-  '/api/servicios',
+  '/api/services',
   '/api/sales',
   '/api/cashregister',
-  '/api/caja',
-  '/api/cuentas',
-  '/api/gratificaciones',
+  '/api/cash-register',
+  '/api/accounts',
+  '/api/gratifications',
   '/api/stats/logged-users',
-  '/api/anfitrionas',
-  '/api/garzones',
+  '/api/hostesses',
+  '/api/waiters',
   '/api/products',
-  '/api/colaciones',
+  '/api/meals',
   '/api/purchases',
   '/api/categories',
   '/api/clients',
   '/api/rooms',
   // Decisión deliberada (ver API_ROUTE_PERMISSIONS): las gratificaciones se gatean en el
   // handler, no acá. El prefijo solo exige sesión.
-  '/api/gratificaciones',
-  '/api/gratificaciones/me'
+  '/api/gratifications',
+  '/api/gratifications/me'
 ];
 
 /**
- * Permiso que exige cada página. Las páginas de rol (`/garzon-*`, `/anfitriona-*`,
- * `/cajero-*`, `/barman-*`) se declaran con el módulo `dashboard`, el único que no se comprueba: las
+ * Permiso que exige cada página. Las páginas de rol (`/waiter-*`, `/hostess-*`,
+ * `/cashier-*`, `/bartender-*`) se declaran con el módulo `dashboard`, el único que no se comprueba: las
  * ve cualquier sesión válida y el contenido se filtra adentro. Es la lista completa de
  * páginas que el sistema conoce; una ruta que no esté acá solo exige sesión.
  */
@@ -167,8 +167,8 @@ export const ROUTE_PERMISSIONS: RoutePermissionMap = {
   '/users': { module: 'users', action: 'view' },
   '/clients': { module: 'clients', action: 'view' },
   '/products': { module: 'products', action: 'view' },
-  '/colaciones': { module: 'products', action: 'view' },
-  '/entradas': { module: 'products', action: 'view' },
+  '/meals': { module: 'products', action: 'view' },
+  '/tickets': { module: 'entradas', action: 'view' },
   '/inventory': { module: 'products', action: 'view' },
   '/bar': { module: 'products', action: 'view' },
   '/transfers': { module: 'products', action: 'view' },
@@ -179,7 +179,7 @@ export const ROUTE_PERMISSIONS: RoutePermissionMap = {
   '/roles': { module: 'roles', action: 'view' },
   '/attendance': { module: 'attendance', action: 'view' },
   '/overtime': { module: 'overtime', action: 'view' },
-  '/gratificaciones': { module: 'gratificaciones', action: 'view' },
+  '/gratifications': { module: 'gratificaciones', action: 'view' },
   '/cash-register': { module: 'cash_register', action: 'view' },
   '/accounts': { module: 'accounts', action: 'view' },
   '/tips': { module: 'tips', action: 'view' },
@@ -193,29 +193,29 @@ export const ROUTE_PERMISSIONS: RoutePermissionMap = {
   '/rooms': { module: 'rooms', action: 'view' },
   '/private-rooms': { module: 'private_rooms', action: 'view' },
   '/settings': { module: 'settings', action: 'view' },
-  '/garzon-dashboard': { module: 'dashboard', action: 'view' },
-  '/garzon-calendar': { module: 'dashboard', action: 'view' },
-  '/garzon-asistencias': { module: 'dashboard', action: 'view' },
-  '/garzon-anticipos': { module: 'dashboard', action: 'view' },
-  '/garzon-propinas': { module: 'dashboard', action: 'view' },
-  '/garzon-horas-extras': { module: 'dashboard', action: 'view' },
-  '/garzon-pedidos': { module: 'dashboard', action: 'view' },
-  '/anfitriona-dashboard': { module: 'dashboard', action: 'view' },
-  '/anfitriona-calendar': { module: 'dashboard', action: 'view' },
-  '/anfitriona-asistencias': { module: 'dashboard', action: 'view' },
-  '/anfitriona-anticipos': { module: 'dashboard', action: 'view' },
-  '/anfitriona-comisiones': { module: 'dashboard', action: 'view' },
-  '/anfitriona-servicios': { module: 'dashboard', action: 'view' },
-  '/barman-asistencias': { module: 'dashboard', action: 'view' },
-  '/barman-anticipos': { module: 'dashboard', action: 'view' },
-  '/barman-propinas': { module: 'dashboard', action: 'view' },
-  '/barman-horas-extras': { module: 'dashboard', action: 'view' },
-  '/barman-calendar': { module: 'dashboard', action: 'view' },
-  '/cajero-calendar': { module: 'dashboard', action: 'view' },
-  '/cajero-asistencias': { module: 'dashboard', action: 'view' },
-  '/cajero-anticipos': { module: 'dashboard', action: 'view' },
-  '/cajero-propinas': { module: 'dashboard', action: 'view' },
-  '/cajero-horas-extras': { module: 'dashboard', action: 'view' }
+  '/waiter-dashboard': { module: 'dashboard', action: 'view' },
+  '/waiter-calendar': { module: 'dashboard', action: 'view' },
+  '/waiter-attendance': { module: 'dashboard', action: 'view' },
+  '/waiter-advances': { module: 'dashboard', action: 'view' },
+  '/waiter-tips': { module: 'dashboard', action: 'view' },
+  '/waiter-overtime': { module: 'dashboard', action: 'view' },
+  '/waiter-orders': { module: 'dashboard', action: 'view' },
+  '/hostess-dashboard': { module: 'dashboard', action: 'view' },
+  '/hostess-calendar': { module: 'dashboard', action: 'view' },
+  '/hostess-attendance': { module: 'dashboard', action: 'view' },
+  '/hostess-advances': { module: 'dashboard', action: 'view' },
+  '/hostess-commissions': { module: 'dashboard', action: 'view' },
+  '/hostess-services': { module: 'dashboard', action: 'view' },
+  '/bartender-attendance': { module: 'dashboard', action: 'view' },
+  '/bartender-advances': { module: 'dashboard', action: 'view' },
+  '/bartender-tips': { module: 'dashboard', action: 'view' },
+  '/bartender-overtime': { module: 'dashboard', action: 'view' },
+  '/bartender-calendar': { module: 'dashboard', action: 'view' },
+  '/cashier-calendar': { module: 'dashboard', action: 'view' },
+  '/cashier-attendance': { module: 'dashboard', action: 'view' },
+  '/cashier-advances': { module: 'dashboard', action: 'view' },
+  '/cashier-tips': { module: 'dashboard', action: 'view' },
+  '/cashier-overtime': { module: 'dashboard', action: 'view' }
 };
 
 /**
@@ -223,10 +223,10 @@ export const ROUTE_PERMISSIONS: RoutePermissionMap = {
  * método HTTP a la acción (POST→create, PUT/PATCH→edit, DELETE→delete, resto→la acción
  * declarada) y el handler vuelve a comprobar con `withRoute`.
  *
- * `/api/gratificaciones` NO está acá a propósito: su GET ya limita los datos en
+ * `/api/gratifications` NO está acá a propósito: su GET ya limita los datos en
  * el handler (solo el administrador consulta ajenos; el resto —incluido el cajero—
  * ve lo suyo y lo que él mismo solicitó, migración 037) y la app móvil usa
- * `/gratificaciones/me` con sesión. Los WRITE_METHODS
+ * `/gratifications/me` con sesión. Los WRITE_METHODS
  * (POST/PUT/DELETE) exigen su par con `withRoute` (`gratificaciones.write/delete`), que
  * es una autorización más fina que lo que esta tabla podría dar. Poner el par acá sería
  * una entrada muerta: el middleware resuelve la ruta por AUTHENTICATED_ONLY_APIS antes de
@@ -279,11 +279,11 @@ export const BARMAN_ROUTE_ALLOWLIST = [
   '/orders',
   '/private-rooms',
   '/cleaning',
-  '/barman-asistencias',
-  '/barman-anticipos',
-  '/barman-propinas',
-  '/barman-horas-extras',
-  '/barman-calendar'
+  '/bartender-attendance',
+  '/bartender-advances',
+  '/bartender-tips',
+  '/bartender-overtime',
+  '/bartender-calendar'
 ];
 
 export const ACCESS_DENIED_PATH = '/access-denied';
@@ -329,7 +329,7 @@ export function findSidebarPermission(href: string): RoutePermission | null {
 }
 
 /**
- * Rutas de rol (`/garzon-*`, `/anfitriona-*`, `/cajero-*`, `/barman-*`): cualquier sesión válida entra y
+ * Rutas de rol (`/waiter-*`, `/hostess-*`, `/cashier-*`, `/bartender-*`): cualquier sesión válida entra y
  * el contenido se filtra adentro. Es la única excepción a la comprobación de permisos.
  */
 export function isAnySessionRoute(permission: RoutePermission): boolean {

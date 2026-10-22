@@ -1,8 +1,8 @@
 import type { ReactNode } from 'react';
 import { afterEach, expect, it, vi } from 'vitest';
 import { cleanup, fireEvent, render, screen, waitFor, within } from '@testing-library/react';
-import CommissionsPage from '@/app/anfitriona-comisiones/page';
-import ServicesPage from '@/components/anfitriona/AnfitrionaServiciosPageClient';
+import CommissionsPage from '@/app/hostess-commissions/page';
+import ServicesPage from '@/components/hostess/AnfitrionaServiciosPageClient';
 import { formatCurrencyCLP } from '@/lib/utils/formatters';
 vi.mock('@/hooks/auth/useCurrentUser', () => ({
   useCurrentUser: () => ({ user, loading: false })

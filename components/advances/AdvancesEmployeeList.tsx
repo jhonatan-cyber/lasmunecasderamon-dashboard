@@ -50,7 +50,7 @@ export function AdvancesEmployeeList({ allowedRole, title }: Props) {
     setLoading(true);
     setError('');
     try {
-      const res = await fetch('/api/anticipos/user');
+      const res = await fetch('/api/advances/user');
       const data = await res.json();
       if (res.ok && data.success) {
         setAdvances(

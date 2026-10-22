@@ -12,7 +12,7 @@ import {
 } from 'lucide-react';
 import { useState } from 'react';
 import { Skeleton } from '@/components/ui/skeleton';
-import { useDashboardComposite } from '@/hooks/stats/useDashboardComposite';
+import { useDashboardComposite } from '@/hooks/statistics/useDashboardComposite';
 import { formatCurrencyCLP } from '@/lib/utils/formatters';
 import { cn } from '@/lib/utils/utils';
 

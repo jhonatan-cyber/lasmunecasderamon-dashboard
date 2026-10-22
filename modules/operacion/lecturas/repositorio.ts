@@ -2,7 +2,7 @@
  * Lecturas de operación para otros flujos. Infraestructura privada del módulo:
  * nadie fuera de `modules/operacion` importa este archivo (§5).
  *
- * Este SQL vivía dentro de `/api/solicitudes-servicios/pending-count` y del webhook
+ * Este SQL vivía dentro de `/api/service-requests/pending-count` y del webhook
  * de WhatsApp, rutas que lo pedían sin ser dueñas de `servicios`, `cuentas` ni
  * `pedidos`.
  *

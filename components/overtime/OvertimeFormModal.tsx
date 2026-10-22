@@ -12,7 +12,7 @@ import { Label } from '@/components/ui/label';
 import { Input } from '@/components/ui/input';
 import { UserSelect } from '@/components/shared/selects';
 import { formatCurrencyCLP } from '@/lib/utils/formatters';
-import { useOvertimeForm } from '@/hooks/personal';
+import { useOvertimeForm } from '@/hooks/staff';
 import { Timer, Banknote, Calculator, Loader2 } from 'lucide-react';
 
 interface OvertimeFormModalProps {

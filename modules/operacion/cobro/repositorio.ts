@@ -1,5 +1,5 @@
-import type { ContextoOperacion } from '@/lib/transaccion/contrato';
-import { resolverTransaccion } from '@/lib/transaccion/infraestructura';
+import type { ContextoOperacion } from '@/lib/transaction/contract';
+import { resolverTransaccion } from '@/lib/transaction/infrastructure';
 import { obtenerCajaActiva, registrarMovimientoCobro } from '@/modules/caja';
 import { consumirPrepagoCuenta } from '@/modules/clientes';
 import { getNowInBusinessTimezone, parseBusinessDate } from '@/lib/business/timezoneService';

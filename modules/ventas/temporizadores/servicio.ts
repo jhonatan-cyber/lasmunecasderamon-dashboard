@@ -1,4 +1,4 @@
-import type { ContextoOperacion } from '@/lib/transaccion/contrato';
+import type { ContextoOperacion } from '@/lib/transaction/contract';
 import * as repositorio from './repositorio';
 export function finalizarVentasTemporizadas(
   ...args: Parameters<typeof repositorio.finalizarVentasTemporizadas>

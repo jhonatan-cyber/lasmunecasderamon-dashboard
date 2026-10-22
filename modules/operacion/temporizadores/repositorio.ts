@@ -10,8 +10,8 @@
  * habitación 3". El cierre de ventas y servicios pasa por sus propietarios.
  */
 import { query, type TransactionQuery } from '@/lib/database/db';
-import type { ContextoOperacion } from '@/lib/transaccion/contrato';
-import { resolverTransaccion } from '@/lib/transaccion/infraestructura';
+import type { ContextoOperacion } from '@/lib/transaction/contract';
+import { resolverTransaccion } from '@/lib/transaction/infrastructure';
 import { finalizarVentaTemporizada, marcarAvisoVenta } from '@/modules/ventas';
 import { finalizarCuentaTemporizada } from '../cuentas/repositorio';
 

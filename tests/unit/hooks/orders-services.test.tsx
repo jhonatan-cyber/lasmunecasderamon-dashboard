@@ -3,8 +3,8 @@ import { act, cleanup, renderHook, waitFor } from '@testing-library/react';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import type { ReactNode } from 'react';
 import { useOrderDetail } from '@/hooks/orders/useOrderDetail';
-import useOrders from '@/hooks/servicios/useOrders';
-import { useServicios } from '@/hooks/servicios/useServicios';
+import useOrders from '@/hooks/orders/useOrders';
+import { useServicios } from '@/hooks/services/useServicios';
 import { useOrdersList } from '@/hooks/orders/useOrdersList';
 import { showSuccessToast } from '@/lib/utils/toastUtils';
 
@@ -115,7 +115,7 @@ describe('pedidos y servicios', () => {
           ok: options?.method !== 'DELETE',
           json: async () => ({
             success: true,
-            data: url.includes('solicitudes')
+            data: url.includes('service-requests')
               ? [{ id_solicitud: '1', estado: 'pendiente' }]
               : [{ id_pedido: '1' }]
           })

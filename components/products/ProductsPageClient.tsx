@@ -2,7 +2,7 @@
 
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { useCategories, Category } from '@/hooks/productos/useCategories';
+import { useCategories, Category } from '@/hooks/products/useCategories';
 import { PermissionGuard } from '@/components/auth/PermissionGuard';
 import { Skeleton as BoneyardSkeleton } from 'boneyard-js/react';
 import { SortableInventoryCategory } from '@/components/products/SortableInventoryCategory';

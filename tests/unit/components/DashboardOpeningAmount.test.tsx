@@ -4,7 +4,7 @@ import CriticalMetrics from '@/components/dashboard/CriticalMetrics';
 import { buildCajaStatsResult } from '@/modules/reportes/dashboard/builders';
 
 const harness = vi.hoisted(() => ({ result: {} as any }));
-vi.mock('@/hooks/stats/useDashboardComposite', () => ({
+vi.mock('@/hooks/statistics/useDashboardComposite', () => ({
   useDashboardComposite: () => harness.result
 }));
 afterEach(cleanup);

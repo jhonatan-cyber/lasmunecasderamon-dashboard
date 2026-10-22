@@ -172,6 +172,68 @@ describe('proxy — rutas públicas', () => {
   });
 });
 
+describe('proxy — URLs retiradas en la migración a inglés', () => {
+  // Estos enlaces ya están circulando: el link con token que se envió por WhatsApp y
+  // el QR impreso de la puerta. El redirect tiene que resolverse ANTES del control de
+  // sesión; si no, un visitante sin sesión rebotaría a /login y el link quedaría roto.
+  it('redirige el QR impreso sin exigir sesión y conserva la query', async () => {
+    const proxy = await loadProxy();
+    const res = await proxy(createRequest({ pathname: '/asistencia-qr?kiosco=1' }));
+    expect(res.status).toBe(308);
+    expect(res.headers.get('location')).toBe('http://localhost:3000/attendance-qr?kiosco=1');
+  });
+
+  it.each([
+    ['/confirmar-anulacion', '/confirm-cancellation'],
+    ['/confirmar-anulacion-cuenta', '/confirm-account-cancellation'],
+    ['/confirmar-anulacion-servicio', '/confirm-service-cancellation'],
+    ['/confirmar-anticipo', '/confirm-advance'],
+    ['/confirmar-cierre-caja', '/confirm-cash-closing'],
+    ['/confirmar-gratificacion', '/confirm-gratification']
+  ])('el link con token %s sigue llegando a su página', async (viejo, nuevo) => {
+    const proxy = await loadProxy();
+    const res = await proxy(createRequest({ pathname: `${viejo}?token=abc123` }));
+    expect(res.status).toBe(308);
+    expect(res.headers.get('location')).toBe(`http://localhost:3000${nuevo}?token=abc123`);
+  });
+
+  it('redirige una API retirada antes de responder 401, con CORS', async () => {
+    const proxy = await loadProxy();
+    const res = await proxy(
+      createRequest({
+        pathname: '/api/cuentas/7/cobrar',
+        method: 'POST',
+        headers: { origin: 'http://localhost:8081' }
+      })
+    );
+    expect(res.status).toBe(308);
+    expect(res.headers.get('location')).toBe('http://localhost:3000/api/accounts/7/charge');
+    expect(res.headers.get('Access-Control-Allow-Origin')).toBe('http://localhost:8081');
+  });
+
+  it('usa 308 para no degradar un POST a GET', async () => {
+    const proxy = await loadProxy();
+    const res = await proxy(
+      createRequest({ pathname: '/api/ventas/solicitud-anulacion', method: 'POST' })
+    );
+    expect(res.status).toBe(308);
+    expect(res.headers.get('location')).toBe(
+      'http://localhost:3000/api/sales/cancellation-request'
+    );
+  });
+
+  it('no redirige las rutas actuales ni las que solo comparten prefijo de texto', async () => {
+    const proxy = await loadProxy();
+
+    const actual = await proxy(createRequest({ pathname: '/api/accounts' }));
+    expect(actual.status).toBe(401);
+
+    const corta = await proxy(createRequest({ pathname: '/colacionesx' }));
+    expect(corta.status).toBe(307);
+    expect(corta.headers.get('location')).toContain('/login');
+  });
+});
+
 describe('proxy — autenticación', () => {
   it('API sin token devuelve 401 NO_TOKEN', async () => {
     const proxy = await loadProxy();

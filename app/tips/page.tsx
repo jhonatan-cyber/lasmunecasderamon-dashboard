@@ -5,12 +5,12 @@ import { StatusTabs } from '@/components/shared/StatusTabs';
 import { useState, useMemo, useEffect } from 'react';
 
 import { TooltipProvider } from '@/components/ui/tooltip';
-import { useTipsResumen } from '@/hooks/personal';
-import PropinasDetalleModal from '@/components/propinas/PropinasDetalleModal';
+import { useTipsResumen } from '@/hooks/staff';
+import PropinasDetalleModal from '@/components/tips/PropinasDetalleModal';
 import { PropinaResumen } from '@/types/propina';
-import TipsTable from '@/components/propinas/TipsTable';
-import TipsFilters from '@/components/propinas/TipsFilters';
-import TipsStatsCards from '@/components/propinas/TipsStatsCards';
+import TipsTable from '@/components/tips/TipsTable';
+import TipsFilters from '@/components/tips/TipsFilters';
+import TipsStatsCards from '@/components/tips/TipsStatsCards';
 import Paginate from '@/components/shared/Paginate';
 import { PermissionGuard } from '@/components/auth/PermissionGuard';
 import { Clock, CheckCircle } from 'lucide-react';

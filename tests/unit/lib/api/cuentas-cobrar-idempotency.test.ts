@@ -107,7 +107,7 @@ vi.mock('@/lib/database/sync-operations', () => ({
 const accountService = vi.hoisted(() => ({ cobrar: vi.fn() }));
 vi.mock('@/modules/operacion/cuentas/fachada', () => ({ AccountService: accountService }));
 
-import { POST } from '@/app/api/cuentas/[id]/cobrar/route';
+import { POST } from '@/app/api/accounts/[id]/charge/route';
 import { IDEMPOTENCY_HEADER } from '@/lib/api/idempotency';
 
 const COBRO = { metodoPago: 'efectivo', montoFinal: 176000, propinaFinal: 16000 };
@@ -116,7 +116,7 @@ const CLAVE = 'mcp-00000000-0000-4000-8000-000000000001';
 
 const postCobro = (key?: string, cuerpo: unknown = COBRO) =>
   POST(
-    new Request('http://localhost/api/cuentas/cuenta-1/cobrar', {
+    new Request('http://localhost/api/accounts/cuenta-1/charge', {
       method: 'POST',
       headers: {
         'content-type': 'application/json',
@@ -127,7 +127,7 @@ const postCobro = (key?: string, cuerpo: unknown = COBRO) =>
     { params: Promise.resolve({ id: 'cuenta-1' }) }
   );
 
-describe('POST /api/cuentas/:id/cobrar con idempotencia', () => {
+describe('POST /api/accounts/:id/charge con idempotencia', () => {
   beforeEach(() => {
     syncOperations.filas.clear();
     accountService.cobrar.mockReset();

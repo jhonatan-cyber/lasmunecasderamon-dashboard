@@ -14,8 +14,8 @@ import { parseMixedPayments, allocateProportionally } from '@/lib/business/venta
  * Los avisos (auditoría y SSE) se aplazan hasta después del commit: un fallo
  * de envío no convierte una anulación confirmada en una respuesta fallida.
  */
-import { enUnaUnidad, type ContextoOperacion } from '@/lib/transaccion/contrato';
-import { ejecutarEfectosConfirmados } from '@/lib/transaccion/efectos';
+import { enUnaUnidad, type ContextoOperacion } from '@/lib/transaction/contract';
+import { ejecutarEfectosConfirmados } from '@/lib/transaction/effects';
 import { sendNotificationToAll } from '@/lib/api/sseService';
 import { addVentaLog } from '@/modules/ventas';
 import { logger } from '@/lib/utils/logger';

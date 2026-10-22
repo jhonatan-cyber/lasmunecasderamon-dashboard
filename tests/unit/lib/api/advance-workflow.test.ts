@@ -14,12 +14,12 @@ vi.mock('@/lib/api/withRoute', () => ({
 vi.mock('@/lib/middleware/auth', () => ({
   isAdministrator: (user: { role: string }) => user.role.toLowerCase() === 'administrador'
 }));
-import { PUT } from '@/app/api/anticipos/[id]/route';
-import { POST } from '@/app/api/anticipos/route';
+import { PUT } from '@/app/api/advances/[id]/route';
+import { POST } from '@/app/api/advances/route';
 
 async function process(role: string, estado?: number) {
   return PUT(
-    new Request('http://localhost/api/anticipos/test', {
+    new Request('http://localhost/api/advances/test', {
       method: 'PUT',
       body: JSON.stringify({ estado, entregado_por: 'forged' })
     }),
@@ -55,7 +55,7 @@ describe('Flujo de anticipos: solicitud, aprobación y entrega separadas', () =>
   it('el administrador crea solicitudes en vez de entregar dinero directamente', async () => {
     const body = { usuario_id: 'employee', monto: 1000, motivo: 'Adelanto' };
     const res = await POST(
-      new Request('http://localhost/api/anticipos', { method: 'POST', body: JSON.stringify(body) }),
+      new Request('http://localhost/api/advances', { method: 'POST', body: JSON.stringify(body) }),
       { params: Promise.resolve({}), user: { id: 'admin', role: 'administrador' } } as never
     );
     expect(res.status).toBe(201);

@@ -10,7 +10,7 @@ import { Search, X } from 'lucide-react';
 import { cn } from '@/lib/utils/utils';
 import { useSidebar } from '@/contexts/SidebarContext';
 import { Tooltip, TooltipTrigger, TooltipContent, TooltipProvider } from '@/components/ui/tooltip';
-import { useSidebarNavigation, type SidebarItem } from '@/hooks/useSidebarNavigation';
+import { useSidebarNavigation, type SidebarItem } from '@/hooks/shell/useSidebarNavigation';
 import { matchesRoutePath } from '@/lib/constants/route-permissions';
 
 type SidebarShellProps = {

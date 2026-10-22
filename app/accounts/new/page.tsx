@@ -3,7 +3,7 @@
 import { useState, useMemo } from 'react';
 import { useRouter } from 'next/navigation';
 import { useTimer } from '@/contexts/TimerContext';
-import { useAccountForm } from '@/hooks/cuentas/useAccountForm';
+import { useAccountForm } from '@/hooks/accounts/useAccountForm';
 import { useMasterData, useRefreshOnFocus } from '@/hooks/shared';
 import CategoryCardList from '@/components/shared/CategoryCardList';
 import SaleProductModal from '@/components/sales/SaleProductModal';
@@ -17,7 +17,7 @@ import {
   AccountSummary,
   ProductTable,
   NewAccountHeader
-} from '@/components/cuentas';
+} from '@/components/accounts';
 
 export default function NewCuentaPage() {
   const router = useRouter();

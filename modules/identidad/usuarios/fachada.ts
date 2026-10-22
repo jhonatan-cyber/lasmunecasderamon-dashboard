@@ -154,7 +154,7 @@ export class UserService {
   /** Elimina la cuenta y sus plantillas locales. */
   static async delete(
     id: string | number,
-    contexto: import('@/lib/transaccion/contrato').ContextoOperacion
+    contexto: import('@/lib/transaction/contract').ContextoOperacion
   ) {
     const usuarioId = id.toString();
     return await UserRepository.delete(usuarioId, contexto);

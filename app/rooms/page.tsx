@@ -1,8 +1,8 @@
 'use client';
 
 import React, { useState, useMemo, useEffect } from 'react';
-import useRooms from '@/hooks/habitaciones/useRooms';
-import { type RoomFormValues } from '@/hooks/personal';
+import useRooms from '@/hooks/rooms/useRooms';
+import { type RoomFormValues } from '@/hooks/rooms';
 import RoomTable from '@/components/rooms/RoomTable';
 import { RoomFilters } from '@/components/rooms/RoomFilters';
 import Paginate from '@/components/shared/Paginate';

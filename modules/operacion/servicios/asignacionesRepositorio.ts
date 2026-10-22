@@ -1,5 +1,5 @@
-import { resolverTransaccion } from '@/lib/transaccion/infraestructura';
-import type { ContextoOperacion } from '@/lib/transaccion/contrato';
+import { resolverTransaccion } from '@/lib/transaction/infrastructure';
+import type { ContextoOperacion } from '@/lib/transaction/contract';
 import { BusinessError } from '@/lib/errors/errors';
 import { generateUUID } from '@/lib/database/db';
 

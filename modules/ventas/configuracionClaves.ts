@@ -1,5 +1,5 @@
-import type { DefinicionClave } from '@/lib/configuracion/definiciones';
-import { porcentaje, enteroPositivo } from '@/lib/configuracion/definiciones';
+import type { DefinicionClave } from '@/lib/configuration/definitions';
+import { porcentaje, enteroPositivo } from '@/lib/configuration/definitions';
 export const CLAVES_VENTAS: Record<string, DefinicionClave> = {
   impuesto_iva: {
     categoria: 'facturacion',

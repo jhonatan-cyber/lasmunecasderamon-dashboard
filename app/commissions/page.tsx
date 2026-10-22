@@ -6,8 +6,8 @@ import { CommissionsFilters, CommissionsList } from '@/components/commissions';
 import CommissionsDetalleModal from '@/components/commissions/CommissionsDetalleModal';
 import CommissionsStatsCards from '@/components/commissions/CommissionsStatsCards';
 
-import { useCommissions } from '@/hooks/personal';
-import { useCommissionStats } from '@/hooks/personal';
+import { useCommissions } from '@/hooks/staff';
+import { useCommissionStats } from '@/hooks/staff';
 import { Commission } from '@/types/commission';
 import { formatCurrencyCLP } from '@/lib/utils/formatters';
 import { PermissionGuard } from '@/components/auth/PermissionGuard';

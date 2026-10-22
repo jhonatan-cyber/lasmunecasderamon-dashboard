@@ -2,7 +2,7 @@ const { chromium } = require('@playwright/test');
 (async () => {
   const browser = await chromium.launch({ headless: true });
   const page = await browser.newPage();
-  await page.goto('http://localhost:3000/asistencia-qr', { waitUntil: 'load' });
+  await page.goto('http://localhost:3000/attendance-qr', { waitUntil: 'load' });
   // Wait for any link to appear
   await page.waitForSelector('a', { timeout: 15000 }).catch(() => {});
   await page.waitForTimeout(3000);

@@ -9,9 +9,9 @@ import { Label } from '@/components/ui/label';
 import { showSuccessToast, showErrorToast } from '@/lib/utils/toastUtils';
 import { useCurrentUser } from '@/hooks/auth/useCurrentUser';
 import { appEventBus } from '@/lib/utils/eventBus';
-import { useAnfitrionas } from '@/hooks/personal';
-import { useAvailableRooms } from '@/hooks/habitaciones';
-import { useClients } from '@/hooks/clientes/useClients';
+import { useAnfitrionas } from '@/hooks/staff';
+import { useAvailableRooms } from '@/hooks/rooms';
+import { useClients } from '@/hooks/clients/useClients';
 import { useRefreshOnFocus } from '@/hooks/shared';
 import { formatCurrencyCLP, formatNumberCL } from '@/lib/utils/formatters';
 import { useIvaRate } from '@/components/providers/IvaRateProvider';
@@ -180,7 +180,7 @@ export default function ServiceOrderForm({ clientes }: ServiceOrderFormProps) {
 
     setIsSubmitting(true);
     try {
-      const response = await fetch('/api/solicitudes-servicios', {
+      const response = await fetch('/api/service-requests', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({

@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useCallback } from 'react';
 import { TooltipProvider } from '@/components/ui/tooltip';
-import { useRoles, Role } from '@/hooks/personal';
+import { useRoles, Role } from '@/hooks/staff';
 import { PermissionGuard } from '@/components/auth/PermissionGuard';
 import { RolesDialogs } from '@/components/roles/RolesDialogs';
 import { RolesContent } from '@/components/roles/RolesContent';

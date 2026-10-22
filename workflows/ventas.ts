@@ -9,8 +9,8 @@ import {
 } from '@/workflows/anulaciones-venta';
 import { listarVentas, obtenerVenta, obtenerVentaParaAlerta } from '@/modules/ventas';
 import type { EntradaRegistroVenta } from '@/modules/ventas/contracts';
-import { enUnaUnidad, type ContextoOperacion } from '@/lib/transaccion/contrato';
-import { ejecutarEfectosConfirmados } from '@/lib/transaccion/efectos';
+import { enUnaUnidad, type ContextoOperacion } from '@/lib/transaction/contract';
+import { ejecutarEfectosConfirmados } from '@/lib/transaction/effects';
 export interface CreateSaleOptions {
   contexto?: ContextoOperacion;
   onAfterCommit?: (task: () => void | Promise<void>) => void;

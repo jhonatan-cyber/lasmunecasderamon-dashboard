@@ -3,8 +3,8 @@ import { act, cleanup, renderHook, waitFor } from '@testing-library/react';
 import { QueryClient, QueryClientProvider, useQuery } from '@tanstack/react-query';
 import type { ReactNode } from 'react';
 import { toast } from 'sonner';
-import useProducts from '@/hooks/productos/useProducts';
-import useRooms from '@/hooks/habitaciones/useRooms';
+import useProducts from '@/hooks/products/useProducts';
+import useRooms from '@/hooks/rooms/useRooms';
 
 vi.unmock('@tanstack/react-query');
 vi.mock('sonner', () => ({ toast: { success: vi.fn(), error: vi.fn() } }));
