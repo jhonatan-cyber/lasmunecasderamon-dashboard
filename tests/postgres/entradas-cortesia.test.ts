@@ -10,7 +10,8 @@ import {
   registrarEntrada
 } from '@/modules/entradas';
 import type { PlanVentaEntrada, RegistradorVenta } from '@/modules/entradas';
-import { ESTADO_UNIDAD_ACTIVA } from '@/modules/inventario/estados';
+import { ESTADO_UNIDAD_ACTIVA, ESTADO_UNIDAD_VENDIDA } from '@/modules/inventario/estados';
+import { SaleService } from '@/workflows/ventas';
 
 /**
  * Flujo real de entradas contra PostgreSQL: el garzón cobra en la puerta y el
@@ -95,12 +96,14 @@ async function fijarConfiguracion(clave: string, valor: number): Promise<void> {
 interface Bebida {
   productoId: string;
   presentacionId: string;
+  unidadId: string;
 }
 
 /** Bebida con una unidad en el bar, al precio de lista indicado. */
 async function crearBebida(nombre: string, precio: number): Promise<Bebida> {
   const productoId = crypto.randomUUID();
   const presentacionId = crypto.randomUUID();
+  const unidadId = crypto.randomUUID();
   const codigo = `ENT${productoId.slice(0, 8)}`;
   const opcion = { tipo: 'botella', precio, comision: 0 };
 
@@ -120,10 +123,10 @@ async function crearBebida(nombre: string, precio: number): Promise<Bebida> {
     `INSERT INTO inventario_unidades
        (id, producto_id, presentacion_id, codigo, ubicacion, estado, fecha_crea)
      VALUES (?, ?, ?, ?, 'bar', ?, now())`,
-    [crypto.randomUUID(), productoId, presentacionId, `${codigo}U`, ESTADO_UNIDAD_ACTIVA]
+    [unidadId, productoId, presentacionId, `${codigo}U`, ESTADO_UNIDAD_ACTIVA]
   );
 
-  return { productoId, presentacionId };
+  return { productoId, presentacionId, unidadId };
 }
 
 async function filaEntrada(id: string) {
@@ -400,6 +403,97 @@ it('entrega con adicional: arma la venta por el precio de lista y no postea el d
       monto_bebida_adicional: 15000,
       cover_presentacion_id: bebida.presentacionId
     });
+  } finally {
+    await restoreDatabase(snapshot, 'test-only');
+  }
+});
+
+it('registra la venta del adicional con SaleService y deja la caja cuadrada', async () => {
+  const snapshot = await snapshotDatabase();
+  try {
+    const cajaId = await cajaAbierta();
+    const usuarioId = await primerUsuarioActivo();
+    await fijarConfiguracion('costo_entrada', 10000);
+    await fijarConfiguracion('monto_base_trago_cortesia_cliente', 10000);
+    const bebida = await crearBebida('Bebida premium con venta', 25000);
+
+    const entrada = await registrarEntrada({
+      cantidadEntradas: 1,
+      metodoPago: 'tarjeta',
+      fecha: FECHA,
+      hora: HORA,
+      registradoPor: usuarioId
+    });
+    const saldosAntes = await saldosCaja(cajaId);
+
+    // Mismo adaptador que `app/api/tickets/[id]/entregar/route.ts`: la venta se
+    // registra con `SaleService` sobre la misma transacción de la entrega.
+    const entrega = await entregarEntrada(
+      { entradaId: entrada.id, presentacionId: bebida.presentacionId, usuarioId },
+      async (plan, contexto, asignarTarea) => {
+        const venta = await SaleService.createSale(
+          {
+            total: plan.totalVenta,
+            sub_total: plan.totalVenta,
+            total_comision: 0,
+            metodo_pago: plan.metodoPago,
+            propina: 0,
+            tiempo: 0,
+            usuarios: [],
+            detalles: plan.detalles as never
+          },
+          plan.usuarioId,
+          { contexto, entradaId: plan.entradaId, onAfterCommit: asignarTarea }
+        );
+        const ventaId = venta?.id ?? venta?.id_venta ?? null;
+        return { ventaId: ventaId ? String(ventaId) : null };
+      }
+    );
+
+    expect(entrega).toMatchObject({
+      tipo: 'upgrade',
+      precio: 25000,
+      montoEntrada: 10000,
+      montoCobrarBarra: 15000
+    });
+    expect(entrega.ventaId).toBeTruthy();
+
+    const [venta] = await query<
+      {
+        id_venta: string;
+        total: number;
+        entrada_id: string;
+        metodo_pago: string;
+        caja_id: string;
+      }[]
+    >('SELECT id_venta, total, entrada_id, metodo_pago, caja_id FROM ventas WHERE id_venta = ?', [
+      entrega.ventaId
+    ]);
+    expect(venta).toBeTruthy();
+    expect(Number(venta.total)).toBe(25000);
+    expect(venta.entrada_id).toBe(entrada.id);
+    expect(venta.metodo_pago).toBe('tarjeta');
+    expect(venta.caja_id).toBe(cajaId);
+
+    // La fila de la entrada queda ligada a la venta que la cerró.
+    const fila = await filaEntrada(entrada.id);
+    expect(fila.venta_id).toBe(entrega.ventaId);
+    expect(Number(fila.monto_bebida_adicional)).toBe(15000);
+
+    // Cada peso entró una sola vez: la caja cobra el precio de lista completo
+    // (10.000 de la puerta + 15.000 de la barra) y la venta queda facturada.
+    const saldosDespues = await saldosCaja(cajaId);
+    expect(saldosDespues.tarjeta - saldosAntes.tarjeta).toBe(25000);
+    expect(saldosDespues.venta - saldosAntes.venta).toBe(25000);
+    expect(saldosDespues.efectivo).toBe(saldosAntes.efectivo);
+    expect(saldosDespues.transferencia).toBe(saldosAntes.transferencia);
+
+    // El stock del bar salió con la venta.
+    const [unidad] = await query<{ estado: string }[]>(
+      'SELECT estado FROM inventario_unidades WHERE id = ?',
+      [bebida.unidadId]
+    );
+    expect(unidad.estado).toBe(ESTADO_UNIDAD_VENDIDA);
   } finally {
     await restoreDatabase(snapshot, 'test-only');
   }
