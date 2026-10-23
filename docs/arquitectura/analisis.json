@@ -1,9 +1,9 @@
 {
   "resumen": {
-    "commit": "31e1ae7f409197d9c1a74cd2370a967600442345",
-    "generado": "2026-10-23T02:17:42.989Z",
-    "archivos": 2098,
-    "rutas": 225,
+    "commit": "63cc1f49250e9b5389f89a2aa4188bcd8313bfed",
+    "generado": "2026-10-23T11:19:25.582Z",
+    "archivos": 2133,
+    "rutas": 228,
     "sqlFueraDeRepositorio": 60,
     "tablasConEscritoresMultiples": 0,
     "ciclos": 0,
@@ -13,6 +13,33 @@
     "rutasSinWrapper": 20
   },
   "rutas": [
+    {
+      "ruta": "/api/bar/reorder",
+      "archivo": "app/api/bar/reorder/route.ts",
+      "metodos": [],
+      "nivel": "products.write",
+      "audit": true,
+      "moduloDominio": null,
+      "usaDriver": false
+    },
+    {
+      "ruta": "/api/quinchos/:id",
+      "archivo": "app/api/quinchos/[id]/route.ts",
+      "metodos": [],
+      "nivel": "quinchos.delete",
+      "audit": true,
+      "moduloDominio": null,
+      "usaDriver": false
+    },
+    {
+      "ruta": "/api/quinchos",
+      "archivo": "app/api/quinchos/route.ts",
+      "metodos": [],
+      "nivel": "quinchos.read",
+      "audit": false,
+      "moduloDominio": null,
+      "usaDriver": false
+    },
     {
       "ruta": "/api/accounts/:id/charge-with-sale",
       "archivo": "app/api/accounts/[id]/charge-with-sale/route.ts",
@@ -2412,6 +2439,11 @@
   "escriturasCruzadas": [],
   "transacciones": [
     {
+      "archivo": "workflows/reservas-quincho.ts",
+      "capa": "workflows",
+      "modulo": null
+    },
+    {
       "archivo": "lib/database/maintenance.ts",
       "capa": "lib/database",
       "modulo": null
@@ -2478,6 +2510,11 @@
     },
     {
       "archivo": "modules/inventario/anulaciones/infraestructura.ts",
+      "capa": "modules/infraestructura",
+      "modulo": "inventario"
+    },
+    {
+      "archivo": "modules/inventario/bar/stockRepositorio.ts",
       "capa": "modules/infraestructura",
       "modulo": "inventario"
     },
@@ -2940,67 +2977,41 @@
   ],
   "ciclos": [],
   "matriz": {
-    "modules/aplicacion": {
-      "modules/infraestructura": 23,
-      "lib/otros": 97,
-      "lib/database": 44,
-      "lib/business": 39,
-      "lib/api": 11,
-      "lib/identidad": 3,
-      "raiz": 5
-    },
-    "app/ui": {
-      "hooks": 59,
-      "lib/otros": 56,
-      "lib/api": 7,
-      "components": 8,
-      "lib/business": 4,
-      "modules/aplicacion": 3,
-      "raiz": 13
-    },
     "app/api": {
-      "lib/api": 266,
-      "workflows": 20,
-      "lib/otros": 77,
+      "lib/api": 271,
+      "workflows": 22,
+      "lib/otros": 78,
       "lib/identidad": 17,
       "lib/business": 34,
       "modules/aplicacion": 1,
       "lib/database": 3,
       "lib/integrations": 4
     },
+    "app/ui": {
+      "hooks": 62,
+      "lib/otros": 56,
+      "lib/api": 7,
+      "components": 9,
+      "lib/business": 4,
+      "modules/aplicacion": 3,
+      "raiz": 13
+    },
     "components": {
+      "lib/otros": 339,
+      "lib/business": 47,
+      "raiz": 89,
       "hooks": 144,
-      "lib/otros": 334,
-      "raiz": 86,
-      "lib/business": 37,
       "lib/api": 3,
       "modules/aplicacion": 6,
       "app/ui": 1
     },
-    "raiz": {
-      "lib/otros": 13,
-      "hooks": 4,
-      "lib/api": 2,
-      "lib/identidad": 2,
-      "modules/aplicacion": 1
-    },
     "hooks": {
-      "raiz": 38,
+      "raiz": 40,
       "lib/otros": 96,
       "lib/api": 7,
       "components": 17,
-      "lib/business": 11,
+      "lib/business": 13,
       "modules/aplicacion": 2
-    },
-    "lib/api": {
-      "lib/otros": 8,
-      "lib/identidad": 3,
-      "modules/aplicacion": 1,
-      "lib/business": 2,
-      "lib/database": 2
-    },
-    "lib/identidad": {
-      "lib/otros": 5
     },
     "lib/business": {
       "lib/api": 3,
@@ -3017,6 +3028,47 @@
       "raiz": 6,
       "components": 2
     },
+    "modules/aplicacion": {
+      "raiz": 7,
+      "lib/otros": 99,
+      "lib/business": 41,
+      "modules/infraestructura": 23,
+      "lib/database": 44,
+      "lib/api": 11,
+      "lib/identidad": 3
+    },
+    "modules/infraestructura": {
+      "lib/database": 110,
+      "lib/business": 67,
+      "lib/otros": 161,
+      "raiz": 3,
+      "modules/aplicacion": 27,
+      "lib/api": 9,
+      "lib/identidad": 2
+    },
+    "raiz": {
+      "lib/otros": 13,
+      "hooks": 4,
+      "lib/api": 2,
+      "lib/identidad": 2,
+      "modules/aplicacion": 1
+    },
+    "workflows": {
+      "lib/otros": 21,
+      "lib/business": 9,
+      "lib/api": 4,
+      "modules/aplicacion": 4
+    },
+    "lib/api": {
+      "lib/otros": 8,
+      "lib/identidad": 3,
+      "modules/aplicacion": 1,
+      "lib/business": 2,
+      "lib/database": 2
+    },
+    "lib/identidad": {
+      "lib/otros": 5
+    },
     "lib/database": {
       "lib/otros": 4,
       "lib/business": 1
@@ -3024,22 +3076,7 @@
     "lib/integrations": {
       "lib/business": 1
     },
-    "modules/infraestructura": {
-      "lib/database": 109,
-      "lib/otros": 156,
-      "lib/business": 62,
-      "modules/aplicacion": 27,
-      "lib/api": 9,
-      "lib/identidad": 2,
-      "raiz": 2
-    },
-    "scripts": {},
-    "workflows": {
-      "lib/business": 9,
-      "lib/otros": 19,
-      "lib/api": 4,
-      "modules/aplicacion": 4
-    }
+    "scripts": {}
   },
   "ordenCapas": [
     "modules/aplicacion",

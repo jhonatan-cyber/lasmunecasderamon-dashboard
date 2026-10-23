@@ -4,8 +4,8 @@ Generado por `scripts/arquitectura/analisis.mjs`. No modificar a mano.
 
 | Métrica                                    | Valor  |
 | ------------------------------------------ | ------ |
-| Archivos analizados                        | 2069   |
-| Rutas HTTP                                 | 222    |
+| Archivos analizados                        | 2133   |
+| Rutas HTTP                                 | 228    |
 | **Rutas con SQL directo**                  | **0**  |
 | **Archivos con SQL fuera de repositorios** | **60** |
 | Tablas con más de un escritor              | 0      |
@@ -111,6 +111,7 @@ _No se detectaron ciclos en el grafo de dominios._
 
 | Archivo con withTransaction/enUnaUnidad              | Capa                    |
 | ---------------------------------------------------- | ----------------------- |
+| workflows/reservas-quincho.ts                        | workflows               |
 | lib/database/maintenance.ts                          | lib/database            |
 | lib/transaction/contract.ts                          | lib/otros               |
 | modules/asistencia/biometrico/enrollmentService.ts   | modules/aplicacion      |
@@ -125,6 +126,7 @@ _No se detectaron ciclos en el grafo de dominios._
 | modules/identidad/permisos/repositorio.ts            | modules/infraestructura |
 | modules/identidad/roles/registro.ts                  | modules/infraestructura |
 | modules/inventario/anulaciones/infraestructura.ts    | modules/infraestructura |
+| modules/inventario/bar/stockRepositorio.ts           | modules/infraestructura |
 | modules/inventario/categorias/repositorio.ts         | modules/infraestructura |
 | modules/inventario/compras/servicio.ts               | modules/aplicacion      |
 | modules/inventario/envases/infraestructura.ts        | modules/infraestructura |
@@ -170,10 +172,10 @@ Deben pasar a tener un ciclo de vida explícito al migrar Asistencia (fase 3).
 
 | Archivo                                           | Línea | Código                                                            |
 | ------------------------------------------------- | ----- | ----------------------------------------------------------------- |
+| app/api/notifications/kiosk/route.ts              | 30    | const interval = setInterval(() => {                              |
 | app/attendance-qr/page.tsx                        | 147   | const intervalo = setInterval(() => cargarTablero(true), 60_000); |
 | app/attendance-qr/page.tsx                        | 154   | const intervalo = setInterval(() => {                             |
-| app/tickets/page.tsx                              | 368   | const interval = window.setInterval(actualizarFechaHora, 60_000); |
-| app/api/notifications/kiosk/route.ts              | 30    | const interval = setInterval(() => {                              |
+| app/tickets/page.tsx                              | 164   | const interval = window.setInterval(actualizarFechaHora, 60_000); |
 | components/attendance/QrCodeDialog.tsx            | 80    | const intervalo = setInterval(() => {                             |
 | components/cash-register/CajaFormDialog.tsx       | 46    | const timer = setInterval(() => {                                 |
 | components/cleaning/CleaningInventory.tsx         | 100   | const interval = window.setInterval(refresh, 30000);              |
@@ -226,6 +228,9 @@ migración no puede romper.
 
 | Ruta                                   | Métodos | Nivel                             | Driver | Audit |
 | -------------------------------------- | ------- | --------------------------------- | ------ | ----- |
+| /api/bar/reorder                       |         | products.write                    |        | audit |
+| /api/quinchos/:id                      |         | quinchos.delete                   |        | audit |
+| /api/quinchos                          |         | quinchos.read                     |        |       |
 | /api/accounts/:id/charge-with-sale     |         | finances.write                    |        | audit |
 | /api/accounts/:id/charge               |         | finances.write                    |        | audit |
 | /api/accounts/:id                      |         | publico                           |        | audit |
@@ -245,64 +250,13 @@ migración no puede romper.
 | /api/advances/user                     |         | authenticated                     |        | audit |
 | /api/attendance/:id/detail             |         | publico                           |        |       |
 | /api/attendance/bulk                   |         | attendance.write                  |        | audit |
-| /api/attendance/today                  |         | publico                           |        |       |
-| /api/biometric/records/:id/photo       |         | authenticated                     |        |       |
-| /api/cash-register/bar-sales           |         | publico                           |        |       |
-| /api/cash-register/champagne-sales     |         | publico                           |        |       |
-| /api/cash-register/hostess-drinks      |         | publico                           |        |       |
-| /api/cash-register/sales-by-product    |         | publico                           |        |       |
-| /api/cash-register/stats               |         | publico                           |        |       |
-| /api/cashregister/closing-pdf          |         | publico                           |        |       |
-| /api/cashregister/closing-request      |         | publico                           |        |       |
-| /api/cashregister/closing/resend       |         | finances.write                    |        | audit |
-| /api/cashregister/closing              |         | finances.write                    |        | audit |
-| /api/cashregister/pdf-report           |         | publico                           |        |       |
-| /api/cashregister/process-closing      |         | publico                           |        |       |
-| /api/cashregister/withdrawals          |         | finances.read                     |        | audit |
-| /api/clients/prepaid                   |         | clients.write                     |        | audit |
-| /api/clients/return/approve            |         | clients.write                     |        | audit |
-| /api/clients/return/reminder           |         | clients.write                     |        | audit |
-| /api/clients/return/requests           |         | clients.read                      |        |       |
-| /api/clients/return                    |         | clients.write                     |        | audit |
-| /api/code/current                      |         | authenticated                     |        | audit |
-| /api/gratifications/:id                |         | gratificaciones.delete            |        | audit |
-| /api/gratifications/approve            | PUT     | SIN_WRAPPER                       |        |       |
-| /api/gratifications/me                 |         | authenticated                     |        | audit |
-| /api/gratifications/request-details    | GET     | SIN_WRAPPER                       |        |       |
-| /api/gratifications                    |         | gratificaciones.write             |        | audit |
-| /api/hostesses/:id/status              |         | users.write                       |        | audit |
-| /api/hostesses/available               |         | publico                           |        |       |
-| /api/hostesses                         |         | publico                           |        |       |
-| /api/mcp/admin/requests                |         | administrator                     |        | audit |
-| /api/meals                             |         | products.read                     |        |       |
-| /api/meals/rule                        |         | authenticated                     |        |       |
-| /api/permissions/setup-cashier         |         | administrator                     |        | audit |
-| /api/sales/cancellation-request        | GET     | SIN_WRAPPER                       |        |       |
-| /api/sales/cancellation                |         | sales.anulate                     |        | audit |
-| /api/sales/process-cancellation        | POST    | SIN_WRAPPER                       |        |       |
-| /api/service-requests/:id/approve      |         | orders.process                    |        | audit |
-| /api/service-requests/:id/reject       |         | orders.process                    |        | audit |
-| /api/service-requests/pending-count    |         | publico                           |        |       |
-| /api/service-requests                  |         | publico                           |        | audit |
-| /api/services/:id/hostesses            |         | private_rooms.write               |        | audit |
-| /api/services/:id                      |         | publico                           |        | audit |
-| /api/services/by-dates                 |         | publico                           |        |       |
-| /api/services/cancellation-request     | GET     | authenticated                     |        | audit |
-| /api/services/cancellation             |         | authenticated                     |        | audit |
-| /api/services/process-cancellation     | POST    | SIN_WRAPPER                       |        |       |
-| /api/services                          |         | publico                           |        | audit |
-| /api/services/temporary                |         | authenticated                     |        | audit |
-| /api/services/user                     |         | authenticated                     |        | audit |
-| /api/tickets                           |         | products.read                     |        |       |
-| /api/users/:id/biometric/capture       |         | users.write                       |        | audit |
-| /api/users/:id/biometric/verify        |         | users.write                       |        | audit |
-| /api/waiters                           |         | publico                           |        |       |
 | /api/attendance/by-dates               |         | authenticated                     |        | audit |
 | /api/attendance/qr                     |         | attendance.write                  |        | audit |
 | /api/attendance/ranking                |         | attendance.read                   |        |       |
 | /api/attendance/register               |         | publico                           |        |       |
 | /api/attendance                        |         | publico                           |        | audit |
 | /api/attendance/stats                  |         | publico                           |        |       |
+| /api/attendance/today                  |         | publico                           |        |       |
 | /api/attendance/user                   |         | authenticated                     |        | audit |
 | /api/audit-logs                        |         | publico                           |        |       |
 | /api/auth/change-password              |         | authenticated                     |        | audit |
@@ -331,21 +285,40 @@ migración no puede romper.
 | /api/biometric/devices/:id/video       |         | administrator                     |        |       |
 | /api/biometric/devices                 |         | administrator                     |        | audit |
 | /api/biometric/reception               |         | administrator                     |        | audit |
+| /api/biometric/records/:id/photo       |         | authenticated                     |        |       |
 | /api/biometric/records/poll            |         | administrator                     |        | audit |
 | /api/biometric/status                  |         | administrator                     |        |       |
 | /api/calendar/data                     |         | publico                           |        |       |
 | /api/calendar                          |         | publico                           |        |       |
+| /api/cash-register/bar-sales           |         | publico                           |        |       |
+| /api/cash-register/champagne-sales     |         | publico                           |        |       |
+| /api/cash-register/hostess-drinks      |         | publico                           |        |       |
+| /api/cash-register/sales-by-product    |         | publico                           |        |       |
+| /api/cash-register/stats               |         | publico                           |        |       |
 | /api/cashregister/:id                  |         | publico                           |        | audit |
 | /api/cashregister/:id/whatsapp         |         | administrator                     |        | audit |
+| /api/cashregister/closing-pdf          |         | publico                           |        |       |
+| /api/cashregister/closing-request      |         | publico                           |        |       |
+| /api/cashregister/closing/resend       |         | finances.write                    |        | audit |
+| /api/cashregister/closing              |         | finances.write                    |        | audit |
+| /api/cashregister/pdf-report           |         | publico                           |        |       |
+| /api/cashregister/process-closing      |         | publico                           |        |       |
 | /api/cashregister                      |         | finances.read                     |        | audit |
 | /api/cashregister/status               |         | publico                           |        |       |
+| /api/cashregister/withdrawals          |         | finances.read                     |        | audit |
 | /api/categories/:id                    |         | categories.delete                 |        |       |
 | /api/categories/reorder                |         | categories.write                  |        | audit |
 | /api/categories                        |         | publico                           |        | audit |
 | /api/cleaning                          |         | authenticated                     |        | audit |
 | /api/clients/:id                       |         | publico                           |        | audit |
 | /api/clients/history                   |         | publico                           |        |       |
+| /api/clients/prepaid                   |         | clients.write                     |        | audit |
+| /api/clients/return/approve            |         | clients.write                     |        | audit |
+| /api/clients/return/reminder           |         | clients.write                     |        | audit |
+| /api/clients/return/requests           |         | clients.read                      |        |       |
+| /api/clients/return                    |         | clients.write                     |        | audit |
 | /api/clients                           |         | publico                           |        | audit |
+| /api/code/current                      |         | authenticated                     |        | audit |
 | /api/commissions/:id/details           |         | publico                           |        |       |
 | /api/commissions/:id                   |         | commissions.write                 |        | audit |
 | /api/commissions                       |         | publico                           |        | audit |
@@ -358,7 +331,15 @@ migración no puede romper.
 | /api/events/detail/:id                 |         | authenticated                     |        | audit |
 | /api/events/stats                      |         | authenticated                     |        | audit |
 | /api/events/user                       |         | authenticated                     |        | audit |
+| /api/gratifications/:id                |         | gratificaciones.delete            |        | audit |
+| /api/gratifications/approve            | PUT     | SIN_WRAPPER                       |        |       |
+| /api/gratifications/me                 |         | authenticated                     |        | audit |
+| /api/gratifications/request-details    | GET     | SIN_WRAPPER                       |        |       |
+| /api/gratifications                    |         | gratificaciones.write             |        | audit |
 | /api/health                            |         | publico                           |        |       |
+| /api/hostesses/:id/status              |         | users.write                       |        | audit |
+| /api/hostesses/available               |         | publico                           |        |       |
+| /api/hostesses                         |         | publico                           |        |       |
 | /api/images/products/:id               | GET     | SIN_WRAPPER                       |        |       |
 | /api/images/users/:id                  | GET     | SIN_WRAPPER                       |        |       |
 | /api/kiosk/attendance/challenge        | POST    | SIN_WRAPPER                       |        |       |
@@ -366,7 +347,10 @@ migración no puede romper.
 | /api/kiosk/devices/:id                 |         | administrator                     |        | audit |
 | /api/kiosk/devices                     |         | administrator                     |        |       |
 | /api/kiosk/session                     |         | publico                           |        | audit |
+| /api/mcp/admin/requests                |         | administrator                     |        | audit |
 | /api/mcp/admin/session                 |         | administrator                     |        |       |
+| /api/meals                             |         | products.read                     |        |       |
+| /api/meals/rule                        |         | authenticated                     |        |       |
 | /api/monitoring/slow-queries           |         | administrator                     |        | audit |
 | /api/notifications/assistance/accept   |         | authenticated                     |        | audit |
 | /api/notifications/assistance          |         | authenticated                     |        | audit |
@@ -388,6 +372,7 @@ migración no puede romper.
 | /api/permissions/:id                   |         | settings.write                    |        | audit |
 | /api/permissions/invalidate-cache      |         | administrator                     |        | audit |
 | /api/permissions                       |         | publico                           |        | audit |
+| /api/permissions/setup-cashier         |         | administrator                     |        | audit |
 | /api/ping                              |         | publico                           |        |       |
 | /api/products/:id                      |         | products.write                    |        | audit |
 | /api/products/:id/tiers                |         | publico                           |        | audit |
@@ -415,8 +400,24 @@ migración no puede romper.
 | /api/rooms/reorder                     |         | rooms.write                       |        | audit |
 | /api/rooms                             |         | publico                           |        | audit |
 | /api/sales/:id                         |         | publico                           |        | audit |
+| /api/sales/cancellation-request        | GET     | SIN_WRAPPER                       |        |       |
+| /api/sales/cancellation                |         | sales.anulate                     |        | audit |
+| /api/sales/process-cancellation        | POST    | SIN_WRAPPER                       |        |       |
 | /api/sales                             |         | publico                           |        | audit |
 | /api/sales/stats                       |         | publico                           |        |       |
+| /api/service-requests/:id/approve      |         | orders.process                    |        | audit |
+| /api/service-requests/:id/reject       |         | orders.process                    |        | audit |
+| /api/service-requests/pending-count    |         | publico                           |        |       |
+| /api/service-requests                  |         | publico                           |        | audit |
+| /api/services/:id/hostesses            |         | private_rooms.write               |        | audit |
+| /api/services/:id                      |         | publico                           |        | audit |
+| /api/services/by-dates                 |         | publico                           |        |       |
+| /api/services/cancellation-request     | GET     | authenticated                     |        | audit |
+| /api/services/cancellation             |         | authenticated                     |        | audit |
+| /api/services/process-cancellation     | POST    | SIN_WRAPPER                       |        |       |
+| /api/services                          |         | publico                           |        | audit |
+| /api/services/temporary                |         | authenticated                     |        | audit |
+| /api/services/user                     |         | authenticated                     |        | audit |
 | /api/settings/backup/:id/download      |         | settings.read                     |        | audit |
 | /api/settings/backup/:id/restore       |         | settings.write                    |        | audit |
 | /api/settings/backup                   |         | settings.write                    |        | audit |
@@ -429,6 +430,10 @@ migración no puede romper.
 | /api/swagger                           | GET     | SIN_WRAPPER                       |        |       |
 | /api/sync-operations                   |         | authenticated                     |        |       |
 | /api/test-auth                         |         | publico                           |        |       |
+| /api/tickets/:id/anular                |         | entradas.deliver                  |        | audit |
+| /api/tickets/:id/entregar              |         | entradas.deliver                  |        | audit |
+| /api/tickets/pendientes                |         | entradas.deliver                  |        |       |
+| /api/tickets                           |         | entradas.view                     |        |       |
 | /api/timers/active                     |         | publico                           |        |       |
 | /api/tips/:id                          |         | publico                           |        |       |
 | /api/tips                              |         | tips.read                         |        | audit |
@@ -436,15 +441,18 @@ migración no puede romper.
 | /api/transfers/:id/accept              |         | products.accept_transfer          |        | audit |
 | /api/transfers/pending                 |         | products.read                     |        |       |
 | /api/transfers                         |         | products.read                     |        |       |
+| /api/users/:id/biometric/capture       |         | users.write                       |        | audit |
 | /api/users/:id/biometric/devices       |         | users.read                        |        |       |
 | /api/users/:id/biometric               |         | users.write                       |        | audit |
 | /api/users/:id/biometric/sync          |         | users.write                       |        | audit |
+| /api/users/:id/biometric/verify        |         | users.write                       |        | audit |
 | /api/users/:id/permissions             |         | publico                           |        |       |
 | /api/users/:id                         |         | users.write                       |        | audit |
 | /api/users/me/stats                    |         | authenticated                     |        | audit |
 | /api/users/profile                     |         | authenticated                     |        | audit |
 | /api/users                             |         | users.write                       |        | audit |
 | /api/users/status                      |         | authenticated                     |        | audit |
+| /api/waiters                           |         | publico                           |        |       |
 | /api/whatsapp/status                   | POST    | SIN_WRAPPER                       |        |       |
 | /api/whatsapp/test                     |         | settings.read                     |        |       |
 | /api/whatsapp/webhook                  | POST    | SIN_WRAPPER                       |        |       |
@@ -456,13 +464,13 @@ poder restringir.
 
 | origen ↓ / destino →    | modules/aplicacion | modules/infraestructura | workflows | app/api | app/ui | components | hooks | lib/api | lib/business | lib/services | lib/repositories | lib/database | lib/identidad | lib/biometric | lib/integrations | lib/otros | scripts | raiz | tests |
 | ----------------------- | ------------------ | ----------------------- | --------- | ------- | ------ | ---------- | ----- | ------- | ------------ | ------------ | ---------------- | ------------ | ------------- | ------------- | ---------------- | --------- | ------- | ---- | ----- |
-| modules/aplicacion      |                    | 23                      |           |         |        |            |       | 11      | 39           |              |                  | 44           | 3             |               |                  | 97        |         | 5    |       |
-| modules/infraestructura | 25                 |                         |           |         |        |            |       | 9       | 62           |              |                  | 109          | 2             |               |                  | 156       |         | 2    |       |
-| workflows               | 4                  |                         |           |         |        |            |       | 4       | 8            |              |                  |              |               |               |                  | 19        |         |      |       |
-| app/api                 | 1                  |                         | 20        |         |        |            |       | 261     | 34           |              |                  | 3            | 17            |               | 4                | 74        |         |      |       |
-| app/ui                  | 3                  |                         |           |         |        | 8          | 59    | 7       | 5            |              |                  |              |               |               |                  | 57        |         | 14   |       |
-| components              | 6                  |                         |           |         | 1      |            | 142   | 3       | 37           |              |                  |              |               |               |                  | 331       |         | 86   |       |
-| hooks                   | 2                  |                         |           |         |        | 17         |       | 7       | 11           |              |                  |              |               |               |                  | 96        |         | 38   |       |
+| modules/aplicacion      |                    | 23                      |           |         |        |            |       | 11      | 41           |              |                  | 44           | 3             |               |                  | 99        |         | 7    |       |
+| modules/infraestructura | 27                 |                         |           |         |        |            |       | 9       | 67           |              |                  | 110          | 2             |               |                  | 161       |         | 3    |       |
+| workflows               | 4                  |                         |           |         |        |            |       | 4       | 9            |              |                  |              |               |               |                  | 21        |         |      |       |
+| app/api                 | 1                  |                         | 22        |         |        |            |       | 271     | 34           |              |                  | 3            | 17            |               | 4                | 78        |         |      |       |
+| app/ui                  | 3                  |                         |           |         |        | 9          | 62    | 7       | 4            |              |                  |              |               |               |                  | 56        |         | 13   |       |
+| components              | 6                  |                         |           |         | 1      |            | 144   | 3       | 47           |              |                  |              |               |               |                  | 339       |         | 89   |       |
+| hooks                   | 2                  |                         |           |         |        | 17         |       | 7       | 13           |              |                  |              |               |               |                  | 96        |         | 40   |       |
 | lib/api                 | 1                  |                         |           |         |        |            |       |         | 2            |              |                  | 2            | 3             |               |                  | 8         |         |      |       |
 | lib/business            | 4                  |                         |           |         |        | 1          |       | 3       |              |              |                  | 4            |               |               |                  | 12        |         | 3    |       |
 | lib/database            |                    |                         |           |         |        |            |       |         | 1            |              |                  |              |               |               |                  | 4         |         |      |       |
