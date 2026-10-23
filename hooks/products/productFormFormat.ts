@@ -8,7 +8,10 @@ export const initialFormState: ProductFormValues = {
   name: '',
   description: '',
   ml_shot: '',
-  ml_shot_anfitriona: ''
+  ml_shot_anfitriona: '',
+  fecha_elaboracion: '',
+  duracion_meses: '',
+  fecha_vencimiento: ''
 };
 
 export interface EditPresDraft {

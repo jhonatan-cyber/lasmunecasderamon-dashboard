@@ -1,6 +1,16 @@
 import { stockLimit, StockLimitsSchema } from '@/lib/business/stockLimits';
 import { z } from 'zod';
 
+/** Fecha de lote en ISO `YYYY-MM-DD`; '' o null borran la columna. */
+const fechaLote = z.preprocess(
+  v => (v === undefined || v === null || v === '' ? null : v),
+  z
+    .string()
+    .regex(/^\d{4}-\d{2}-\d{2}$/, 'Fecha inválida (YYYY-MM-DD)')
+    .nullable()
+    .optional()
+);
+
 export const ProductSchema = z.object({
   id: z.string().optional(),
   code: z.string().min(1, 'Código requerido'),
@@ -42,6 +52,20 @@ export const ProductSchema = z.object({
       .nullable()
       .optional()
   ),
+  // Fechas de lote del producto: con elaboración + duración (meses) se calcula
+  // el vencimiento; si el vencimiento viene informado, los otros dos no hacen falta.
+  fecha_elaboracion: fechaLote,
+  duracion_meses: z.preprocess(
+    v => (v === undefined || v === null || v === '' ? null : Number(v)),
+    z
+      .number()
+      .int('La duración debe ser un número de meses')
+      .min(1, 'La duración debe ser al menos 1 mes')
+      .max(1200, 'La duración no puede superar 1200 meses')
+      .nullable()
+      .optional()
+  ),
+  fecha_vencimiento: fechaLote,
   description: z.string().optional(),
   status: z.preprocess(v => Number(v), z.number()),
   stock_almacen: z.preprocess(

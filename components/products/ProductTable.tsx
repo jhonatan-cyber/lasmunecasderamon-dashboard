@@ -32,6 +32,7 @@ import {
 } from '@/components/ui/table';
 import { DeleteConfirmModal } from '@/components/shared/DeleteConfirmModal';
 import { ProductDetailsModal } from './ProductDetailsModal';
+import { VencimientoBadge } from './VencimientoBadge';
 import {
   DndContext,
   closestCenter,
@@ -188,6 +189,13 @@ const SortableRow: React.FC<SortableRowProps> = React.memo(
             {value == null ? 'Sin configurar' : value.toLocaleString('es-CL')}
           </TableCell>
         ))}
+        <TableCell className='sm:px-4 text-center'>
+          {product.fecha_vencimiento ? (
+            <VencimientoBadge fecha={product.fecha_vencimiento} />
+          ) : (
+            <span className='text-gray-400 dark:text-gray-500'>—</span>
+          )}
+        </TableCell>
         <TableCell className='sm:px-4 text-center font-mono'>
           {product.status === 1 ? (
             <Badge className='bg-green-100 text-green-700 rounded-full px-2 sm:px-3 py-1 font-mono text-xs sm:text-sm'>
@@ -399,6 +407,7 @@ const ProductTable: React.FC<ProductTableProps> = ({
                   <TableHead className='text-center'>Total Bar + Bodega</TableHead>
                   <TableHead className='text-center'>Stock mínimo</TableHead>
                   <TableHead className='text-center'>Stock máximo</TableHead>
+                  <TableHead className='text-center'>Vencimiento</TableHead>
                   <TableHead className='text-center'>Estado</TableHead>
                   <TableHead className='text-center'>Acciones</TableHead>
                 </TableRow>
@@ -406,7 +415,7 @@ const ProductTable: React.FC<ProductTableProps> = ({
               <TableBody>
                 {localProducts.length === 0 && (
                   <TableRow key='empty'>
-                    <TableCell colSpan={12} className='text-center bg-white sm:text-base'>
+                    <TableCell colSpan={13} className='text-center bg-white sm:text-base'>
                       No hay productos
                     </TableCell>
                   </TableRow>

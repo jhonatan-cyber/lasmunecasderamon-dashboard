@@ -16,6 +16,10 @@ export interface Product {
   commission: number;
   description: string;
   fecha_crea?: string;
+  /** Fechas de lote: con elaboración + duración se calcula el vencimiento. */
+  fecha_elaboracion?: string | null;
+  duracion_meses?: number | null;
+  fecha_vencimiento?: string | null;
   status: number;
   foto?: string;
   stock_almacen?: number;

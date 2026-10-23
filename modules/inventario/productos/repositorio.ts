@@ -15,6 +15,8 @@
 import { query, generateUUID, withTransaction, type TransactionQuery } from '@/lib/database/db';
 import { getNowInBusinessTimezone } from '@/lib/business/timezoneService';
 import { ProductSchema, type ProductType } from '@/lib/business/schemas';
+import { resolverVencimiento } from '@/lib/business/vencimiento';
+import { formatFechaISO } from '@/lib/utils/fechaSql';
 import { logger } from '@/lib/utils/logger';
 import { BaseRepository } from '@/lib/database/base-repository';
 import { ConflictError, NotFoundError } from '@/lib/errors/errors';
@@ -70,6 +72,10 @@ function mapProductFromDB(row: any): ProductType & {
       max_anfitrionas: row.max_anfitrionas ?? null,
       ml_shot: row.ml_shot ?? null,
       ml_shot_anfitriona: row.ml_shot_anfitriona ?? null,
+      // Las columnas date llegan como `Date`: se normalizan a `YYYY-MM-DD`.
+      fecha_elaboracion: formatFechaISO(row.fecha_elaboracion),
+      duracion_meses: row.duracion_meses ?? null,
+      fecha_vencimiento: formatFechaISO(row.fecha_vencimiento),
       created_at: row.fecha_crea,
       updated_at: row.fecha_mod
     }),
@@ -144,6 +150,10 @@ export async function crearProducto(
     stock_almacen: 0,
     ml_shot: data.ml_shot ?? null,
     ml_shot_anfitriona: data.ml_shot_anfitriona ?? null,
+    // Fechas de lote: si no viene el vencimiento, se calcula con elaboración + duración.
+    fecha_elaboracion: data.fecha_elaboracion ?? null,
+    duracion_meses: data.duracion_meses ?? null,
+    fecha_vencimiento: resolverVencimiento(data),
     foto: fotoProducto,
     fecha_crea: now
   });
@@ -196,6 +206,21 @@ export async function actualizarProducto(
   if (data.ml_shot !== undefined) updateData.ml_shot = data.ml_shot;
   if (data.ml_shot_anfitriona !== undefined)
     updateData.ml_shot_anfitriona = data.ml_shot_anfitriona;
+  // Fechas de lote: los tres campos viajan juntos y el vencimiento se guarda
+  // resuelto (el informado a mano manda; si no, el calculado con la duración).
+  if (data.fecha_elaboracion !== undefined) updateData.fecha_elaboracion = data.fecha_elaboracion;
+  if (data.duracion_meses !== undefined) updateData.duracion_meses = data.duracion_meses;
+  if (
+    data.fecha_elaboracion !== undefined ||
+    data.duracion_meses !== undefined ||
+    data.fecha_vencimiento !== undefined
+  ) {
+    updateData.fecha_vencimiento = resolverVencimiento({
+      fecha_elaboracion: data.fecha_elaboracion,
+      duracion_meses: data.duracion_meses,
+      fecha_vencimiento: data.fecha_vencimiento
+    });
+  }
   if (data.stock_almacen !== undefined) updateData.stock_almacen = data.stock_almacen;
   if (data.description !== undefined) updateData.descripcion = data.description;
   if (data.status !== undefined) {

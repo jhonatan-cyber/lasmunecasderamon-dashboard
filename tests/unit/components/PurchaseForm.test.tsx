@@ -111,6 +111,87 @@ describe('flujo guiado de compra', () => {
     await waitFor(() => expect(screen.getByText('Compra C-0001 registrada')).toBeInTheDocument());
   });
 
+  it('calcula el vencimiento con elaboración y duración y lo envía en la línea', async () => {
+    const fetchMock = vi.spyOn(globalThis, 'fetch').mockResolvedValue(
+      new Response(
+        JSON.stringify({
+          success: true,
+          data: {
+            id: 'compra-2',
+            folio: 'C-0002',
+            total: 120,
+            fecha_crea: '2026-10-09T12:00:00.000Z',
+            codigos_generados: []
+          }
+        }),
+        { status: 201, headers: { 'Content-Type': 'application/json' } }
+      )
+    );
+    render(<PurchaseForm catalog={catalog} />);
+    fireEvent.click(screen.getByRole('button', { name: /Agregar/ }));
+    fireEvent.click(screen.getByRole('button', { name: 'Continuar' }));
+
+    // Elaboración + duración completan el vencimiento automáticamente.
+    fireEvent.change(screen.getByLabelText('Fecha de elaboración'), {
+      target: { value: '2026-01-31' }
+    });
+    fireEvent.change(screen.getByLabelText('Duración (meses)'), { target: { value: '6' } });
+    expect(screen.getByLabelText('Fecha de vencimiento')).toHaveValue('2026-07-31');
+    // Una duración distinta recalcula: el día se recorta al fin del mes.
+    fireEvent.change(screen.getByLabelText('Duración (meses)'), { target: { value: '1' } });
+    expect(screen.getByLabelText('Fecha de vencimiento')).toHaveValue('2026-02-28');
+
+    fireEvent.click(screen.getByRole('button', { name: 'Revisar compra' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Finalizar compra' }));
+
+    await waitFor(() => expect(fetchMock).toHaveBeenCalled());
+    const body = JSON.parse(String(fetchMock.mock.calls[0][1]?.body));
+    expect(body.detalles[0]).toMatchObject({
+      fecha_elaboracion: '2026-01-31',
+      duracion_meses: 1,
+      fecha_vencimiento: '2026-02-28'
+    });
+  });
+
+  it('acepta solo la fecha de vencimiento, sin elaboración ni duración', async () => {
+    const fetchMock = vi.spyOn(globalThis, 'fetch').mockResolvedValue(
+      new Response(
+        JSON.stringify({
+          success: true,
+          data: {
+            id: 'compra-3',
+            folio: 'C-0003',
+            total: 120,
+            fecha_crea: '2026-10-09T12:00:00.000Z',
+            codigos_generados: []
+          }
+        }),
+        { status: 201, headers: { 'Content-Type': 'application/json' } }
+      )
+    );
+    render(<PurchaseForm catalog={catalog} />);
+    fireEvent.click(screen.getByRole('button', { name: /Agregar/ }));
+    fireEvent.click(screen.getByRole('button', { name: 'Continuar' }));
+
+    fireEvent.change(screen.getByLabelText('Fecha de vencimiento'), {
+      target: { value: '2026-12-01' }
+    });
+    expect(screen.getByLabelText('Fecha de elaboración')).toHaveValue('');
+    expect(screen.getByLabelText('Duración (meses)')).toHaveValue('');
+    expect(screen.getByLabelText('Fecha de vencimiento')).toHaveValue('2026-12-01');
+
+    fireEvent.click(screen.getByRole('button', { name: 'Revisar compra' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Finalizar compra' }));
+
+    await waitFor(() => expect(fetchMock).toHaveBeenCalled());
+    const body = JSON.parse(String(fetchMock.mock.calls[0][1]?.body));
+    expect(body.detalles[0]).toMatchObject({
+      fecha_elaboracion: null,
+      duracion_meses: null,
+      fecha_vencimiento: '2026-12-01'
+    });
+  });
+
   it('permite avanzar sin proveedor, teléfono ni descripción', () => {
     render(<PurchaseForm catalog={catalog} />);
     fireEvent.click(screen.getByRole('button', { name: /Agregar/ }));

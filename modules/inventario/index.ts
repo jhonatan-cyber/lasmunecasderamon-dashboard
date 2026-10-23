@@ -70,7 +70,7 @@ export {
   ESTADOS_UNIDAD_VALIDOS,
   esEstadoUnidadValido
 } from './estados';
-export { listarStockBar, obtenerResumenShots } from './bar/servicio';
+export { listarStockBar, obtenerResumenShots, reordenarStockBar } from './bar/servicio';
 export { listarParaVenta } from './catalogo/servicio';
 export {
   buscarMovimientosRecientes,

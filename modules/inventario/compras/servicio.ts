@@ -13,6 +13,7 @@
 import { withTransaction } from '@/lib/database/db';
 import { BaseRepository } from '@/lib/database/base-repository';
 import { ValidationError, NotFoundError } from '@/lib/errors/errors';
+import { resolverVencimiento } from '@/lib/business/vencimiento';
 import { z } from 'zod';
 import type { PurchaseCreate, PurchaseGeneratedCode } from '@/types/purchase';
 import { generarUnidades, sincronizarStockTotal } from '../unidades/repositorio';
@@ -30,6 +31,33 @@ const DetalleSchema = z.object({
   precio_compra: z.preprocess(
     v => (v === undefined || v === null || v === '' ? 0 : Number(v)),
     z.number().int().min(0, 'El precio de compra no puede ser negativo').max(2147483647)
+  ),
+  // Fechas de lote por línea, opcionales y en formato ISO.
+  fecha_elaboracion: z.preprocess(
+    v => (v === undefined || v === null || v === '' ? null : v),
+    z
+      .string()
+      .regex(/^\d{4}-\d{2}-\d{2}$/, 'Fecha de elaboración inválida')
+      .nullable()
+      .optional()
+  ),
+  duracion_meses: z.preprocess(
+    v => (v === undefined || v === null || v === '' ? null : Number(v)),
+    z
+      .number()
+      .int('La duración debe ser un número de meses')
+      .min(1, 'La duración debe ser al menos 1 mes')
+      .max(1200, 'La duración no puede superar 1200 meses')
+      .nullable()
+      .optional()
+  ),
+  fecha_vencimiento: z.preprocess(
+    v => (v === undefined || v === null || v === '' ? null : v),
+    z
+      .string()
+      .regex(/^\d{4}-\d{2}-\d{2}$/, 'Fecha de vencimiento inválida')
+      .nullable()
+      .optional()
   )
 });
 
@@ -60,7 +88,9 @@ export async function registrarCompra(
 
   const detalles = parsed.data.detalles.map(d => ({
     ...d,
-    subtotal: d.cantidad * d.precio_compra
+    subtotal: d.cantidad * d.precio_compra,
+    // Si no viene el vencimiento, se calcula con elaboración + duración.
+    fecha_vencimiento: resolverVencimiento(d)
   }));
   const total = detalles.reduce((acc, d) => acc + d.subtotal, 0);
 
@@ -69,6 +99,15 @@ export async function registrarCompra(
   for (const detalle of detalles) {
     if (detalle.subtotal > MAX_INT4) {
       throw new ValidationError('El subtotal de una línea de compra supera el máximo permitido');
+    }
+    if (
+      detalle.fecha_elaboracion &&
+      detalle.fecha_vencimiento &&
+      detalle.fecha_vencimiento < detalle.fecha_elaboracion
+    ) {
+      throw new ValidationError(
+        'La fecha de vencimiento no puede ser anterior a la de elaboración'
+      );
     }
   }
   if (total > MAX_INT4) {

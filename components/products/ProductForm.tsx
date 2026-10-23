@@ -225,6 +225,88 @@ export function ProductForm({
         isEdit={isEdit}
       />
 
+      {/* Fechas de lote: elaboración + duración calculan el vencimiento. */}
+      {!scoped && (
+        <div className='space-y-2'>
+          <label className='block text-xs font-bold uppercase tracking-wider text-gray-500 dark:text-gray-400 ml-1'>
+            Fechas del producto
+          </label>
+          <div className='grid grid-cols-1 gap-4 sm:grid-cols-3'>
+            <div className='space-y-2'>
+              <label
+                htmlFor='prod-fecha-elaboracion'
+                className='block text-xs font-semibold text-gray-500 dark:text-gray-400 ml-1'
+              >
+                Fecha de elaboración
+              </label>
+              <Input
+                id='prod-fecha-elaboracion'
+                name='fecha_elaboracion'
+                type='date'
+                value={form.fecha_elaboracion}
+                onChange={handleChange}
+                disabled={isLoading}
+                className='h-12 rounded-2xl'
+              />
+              {errors.fecha_elaboracion && (
+                <p role='alert' className='text-red-500 text-xs mt-1 ml-1 font-medium'>
+                  {errors.fecha_elaboracion}
+                </p>
+              )}
+            </div>
+            <div className='space-y-2'>
+              <label
+                htmlFor='prod-duracion'
+                className='block text-xs font-semibold text-gray-500 dark:text-gray-400 ml-1'
+              >
+                Duración (meses)
+              </label>
+              <Input
+                id='prod-duracion'
+                name='duracion_meses'
+                value={form.duracion_meses}
+                onChange={handleChange}
+                placeholder='Ej: 6'
+                disabled={isLoading}
+                inputMode='numeric'
+                className='h-12 rounded-2xl'
+              />
+              {errors.duracion_meses && (
+                <p role='alert' className='text-red-500 text-xs mt-1 ml-1 font-medium'>
+                  {errors.duracion_meses}
+                </p>
+              )}
+            </div>
+            <div className='space-y-2'>
+              <label
+                htmlFor='prod-fecha-vencimiento'
+                className='block text-xs font-semibold text-gray-500 dark:text-gray-400 ml-1'
+              >
+                Fecha de vencimiento
+              </label>
+              <Input
+                id='prod-fecha-vencimiento'
+                name='fecha_vencimiento'
+                type='date'
+                value={form.fecha_vencimiento}
+                onChange={handleChange}
+                disabled={isLoading}
+                className='h-12 rounded-2xl'
+              />
+              {errors.fecha_vencimiento && (
+                <p role='alert' className='text-red-500 text-xs mt-1 ml-1 font-medium'>
+                  {errors.fecha_vencimiento}
+                </p>
+              )}
+            </div>
+          </div>
+          <p className='text-[11px] text-gray-400 dark:text-gray-500 ml-1'>
+            Con la fecha de elaboración y la duración el vencimiento se calcula solo. Si ingresas la
+            fecha de vencimiento, elaboración y duración no son necesarias.
+          </p>
+        </div>
+      )}
+
       <div className='space-y-3'>
         <div className='flex items-center justify-between ml-1'>
           <label className='block text-xs font-bold uppercase tracking-wider text-gray-500 dark:text-gray-400'>

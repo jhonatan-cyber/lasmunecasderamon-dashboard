@@ -1,4 +1,5 @@
 import { StockLimitsSchema } from '@/lib/business/stockLimits';
+import { esFechaISO } from '@/lib/business/vencimiento';
 import type { PresentacionFormItem, ProductFormValues } from './productFormTypes';
 import { getNumericValue } from './productFormFormat';
 
@@ -8,6 +9,22 @@ export function validateProductForm(
   const newErrors: Partial<Record<keyof ProductFormValues, string>> = {};
   if (!form.code.trim()) newErrors.code = 'El código es requerido';
   if (!form.name.trim()) newErrors.name = 'El nombre es requerido';
+
+  // Fechas de lote: todas opcionales, pero coherentes entre sí.
+  if (form.fecha_elaboracion && !esFechaISO(form.fecha_elaboracion))
+    newErrors.fecha_elaboracion = 'Fecha de elaboración inválida';
+  if (form.fecha_vencimiento && !esFechaISO(form.fecha_vencimiento))
+    newErrors.fecha_vencimiento = 'Fecha de vencimiento inválida';
+  if (form.duracion_meses && !/^\d+$/.test(form.duracion_meses))
+    newErrors.duracion_meses = 'La duración debe ser un número de meses';
+  else if (form.duracion_meses && Number(form.duracion_meses) < 1)
+    newErrors.duracion_meses = 'La duración debe ser al menos 1 mes';
+  if (
+    esFechaISO(form.fecha_elaboracion) &&
+    esFechaISO(form.fecha_vencimiento) &&
+    form.fecha_vencimiento < form.fecha_elaboracion
+  )
+    newErrors.fecha_vencimiento = 'El vencimiento no puede ser anterior a la elaboración';
   return newErrors;
 }
 

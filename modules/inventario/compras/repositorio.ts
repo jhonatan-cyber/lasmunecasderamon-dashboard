@@ -61,7 +61,11 @@ export async function crearCompra(
       'presentacion_id',
       'cantidad',
       'precio_compra',
-      'subtotal'
+      'subtotal',
+      // Fechas de lote de la línea: el vencimiento llega ya resuelto.
+      'fecha_elaboracion',
+      'duracion_meses',
+      'fecha_vencimiento'
     ];
     const tuples = detalles.map(() => `(${columns.map(() => '?').join(', ')})`).join(', ');
     const values = detalles.flatMap(d => [
@@ -71,7 +75,10 @@ export async function crearCompra(
       d.presentacion_id,
       d.cantidad,
       d.precio_compra,
-      d.subtotal
+      d.subtotal,
+      d.fecha_elaboracion ?? null,
+      d.duracion_meses ?? null,
+      d.fecha_vencimiento ?? null
     ]);
     await trx(`INSERT INTO detalle_compras (${columns.join(', ')}) VALUES ${tuples}`, values);
   }

@@ -6,6 +6,12 @@ export interface ProductFormValues {
   ml_shot: string;
   /** Ml por shot a anfitriona (vacío = igual que a cliente). */
   ml_shot_anfitriona: string;
+  /** Fecha de elaboración del lote, ISO (vacío = sin dato). */
+  fecha_elaboracion: string;
+  /** Duración en meses desde la elaboración (vacío = sin dato). */
+  duracion_meses: string;
+  /** Fecha de vencimiento: se calcula con elaboración + duración o se ingresa a mano. */
+  fecha_vencimiento: string;
 }
 
 export interface PresentacionFormItem {

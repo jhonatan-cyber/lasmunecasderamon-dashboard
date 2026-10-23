@@ -31,6 +31,7 @@ import {
 } from '@/components/ui/tooltip';
 import { DeleteConfirmModal } from '@/components/shared/DeleteConfirmModal';
 import { ProductDetailsModal } from './ProductDetailsModal';
+import { VencimientoBadge } from './VencimientoBadge';
 import { useSortable } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
 import { useUserPermissions } from '@/hooks/auth/useUserPermissions';
@@ -288,6 +289,11 @@ const ProductCard: React.FC<ProductCardProps> = ({
                 <Badge className='mt-2 rounded-full bg-red-100 text-red-700 dark:bg-red-900/50 dark:text-red-300'>
                   Stock bajo · Total: {totalStock.toLocaleString('es-CL')}
                 </Badge>
+              )}
+              {product.fecha_vencimiento && (
+                <div className='mt-2 flex'>
+                  <VencimientoBadge fecha={product.fecha_vencimiento} />
+                </div>
               )}
             </div>
 

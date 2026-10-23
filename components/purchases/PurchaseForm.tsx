@@ -31,6 +31,7 @@ import {
 } from '@/components/ui/select';
 import { Card, CardContent } from '@/components/ui/card';
 import { formatCurrencyCLP } from '@/lib/utils/formatters';
+import { vencimientoCalculado } from '@/lib/business/vencimiento';
 import { PurchaseCodesPanel } from './PurchaseCodesPanel';
 import { PURCHASE_BUTTON_CLASS } from './buttonStyles';
 import type { PurchaseRegistered } from '@/types/purchase';
@@ -55,6 +56,10 @@ interface Line {
   foto: string;
   cantidad: string;
   precio_compra: string;
+  /** Fechas de lote de la línea, en ISO o vacío. */
+  fecha_elaboracion: string;
+  duracion_meses: string;
+  fecha_vencimiento: string;
 }
 
 interface Props {
@@ -113,7 +118,10 @@ export function PurchaseForm({ catalog }: Props) {
               presentacion_nombre: item.nombre,
               foto: item.foto,
               cantidad: '1',
-              precio_compra: formatMiles(String(item.precio_compra ?? 0))
+              precio_compra: formatMiles(String(item.precio_compra ?? 0)),
+              fecha_elaboracion: '',
+              duracion_meses: '',
+              fecha_vencimiento: ''
             }
           ]
     );
@@ -121,6 +129,32 @@ export function PurchaseForm({ catalog }: Props) {
 
   const removeItem = (presentacionId: string) =>
     setLines(prev => prev.filter(line => line.presentacion_id !== presentacionId));
+
+  /**
+   * Edita una fecha de lote de la línea. Con elaboración + duración el
+   * vencimiento se recalcula solo; el vencimiento ingresado a mano se respeta
+   * hasta que otra vez haya con qué calcular.
+   */
+  const changeLineFechas = (
+    presentacionId: string,
+    campo: 'fecha_elaboracion' | 'duracion_meses' | 'fecha_vencimiento',
+    valor: string
+  ) =>
+    setLines(prev =>
+      prev.map(item => {
+        if (item.presentacion_id !== presentacionId) return item;
+        const siguiente = {
+          ...item,
+          [campo]: campo === 'duracion_meses' ? valor.replace(/\D/g, '') : valor
+        };
+        const calculado = vencimientoCalculado(
+          siguiente.fecha_elaboracion,
+          siguiente.duracion_meses
+        );
+        if (campo !== 'fecha_vencimiento' && calculado) siguiente.fecha_vencimiento = calculado;
+        return siguiente;
+      })
+    );
 
   const adjustQuantity = (presentacionId: string, delta: number) => {
     setLines(prev =>
@@ -170,7 +204,10 @@ export function PurchaseForm({ catalog }: Props) {
         producto_id: l.producto_id,
         presentacion_id: l.presentacion_id,
         cantidad,
-        precio_compra
+        precio_compra,
+        fecha_elaboracion: l.fecha_elaboracion || null,
+        duracion_meses: l.duracion_meses ? Number(l.duracion_meses) : null,
+        fecha_vencimiento: l.fecha_vencimiento || null
       });
     }
     submitting.current = true;
@@ -366,6 +403,11 @@ export function PurchaseForm({ catalog }: Props) {
                   <p className='text-sm text-muted-foreground'>
                     Define cuántas unidades ingresan y su precio de compra.
                   </p>
+                  <p className='mt-1 text-xs text-muted-foreground'>
+                    Fechas de lote (opcional): con la elaboración y la duración el vencimiento se
+                    calcula solo; si ingresas el vencimiento, elaboración y duración no son
+                    necesarias.
+                  </p>
                 </div>
                 {lines.map(line => (
                   <div
@@ -467,6 +509,61 @@ export function PurchaseForm({ catalog }: Props) {
                     >
                       <Trash2 className='h-4 w-4 text-red-500' />
                     </Button>
+                    {/* Fechas de lote de esta línea. */}
+                    <div className='col-span-full grid grid-cols-1 gap-3 border-t pt-3 sm:grid-cols-3'>
+                      <div className='flex flex-col gap-1'>
+                        <Label htmlFor={`${formId}-elaboracion-${line.presentacion_id}`}>
+                          Fecha de elaboración
+                        </Label>
+                        <Input
+                          id={`${formId}-elaboracion-${line.presentacion_id}`}
+                          type='date'
+                          value={line.fecha_elaboracion}
+                          onChange={event =>
+                            changeLineFechas(
+                              line.presentacion_id,
+                              'fecha_elaboracion',
+                              event.target.value
+                            )
+                          }
+                        />
+                      </div>
+                      <div className='flex flex-col gap-1'>
+                        <Label htmlFor={`${formId}-duracion-${line.presentacion_id}`}>
+                          Duración (meses)
+                        </Label>
+                        <Input
+                          id={`${formId}-duracion-${line.presentacion_id}`}
+                          inputMode='numeric'
+                          placeholder='Ej: 6'
+                          value={line.duracion_meses}
+                          onChange={event =>
+                            changeLineFechas(
+                              line.presentacion_id,
+                              'duracion_meses',
+                              event.target.value
+                            )
+                          }
+                        />
+                      </div>
+                      <div className='flex flex-col gap-1'>
+                        <Label htmlFor={`${formId}-vencimiento-${line.presentacion_id}`}>
+                          Fecha de vencimiento
+                        </Label>
+                        <Input
+                          id={`${formId}-vencimiento-${line.presentacion_id}`}
+                          type='date'
+                          value={line.fecha_vencimiento}
+                          onChange={event =>
+                            changeLineFechas(
+                              line.presentacion_id,
+                              'fecha_vencimiento',
+                              event.target.value
+                            )
+                          }
+                        />
+                      </div>
+                    </div>
                   </div>
                 ))}
                 <p className='text-right text-sm text-muted-foreground'>
