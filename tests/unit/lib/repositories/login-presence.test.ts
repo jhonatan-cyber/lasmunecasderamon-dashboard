@@ -37,7 +37,7 @@ beforeEach(() => {
 
 it('avisa al dashboard después de un login sin marca de asistencia', async () => {
   const result = await loginUser({ email: 'garzon', password: 'password' });
-  expect(result).toMatchObject({ success: true, asistenciaRegistrada: false });
+  expect(result).toMatchObject({ success: true, token: 'token' });
   expect(mocks.login).toHaveBeenCalledWith('user', 'garzon');
   expect(mocks.emit).toHaveBeenCalledExactlyOnceWith('presence_updated', {
     userId: 'user',

@@ -1,7 +1,7 @@
 'use client';
 
 import { RoleDashboard } from '@/components/shared/RoleDashboard';
-import { Calendar, DollarSign, Clock, ArrowLeftRight, ShoppingCart } from 'lucide-react';
+import { Calendar, DollarSign, Clock, ArrowLeftRight, ShoppingCart, Ticket } from 'lucide-react';
 
 export default function GarzonDashboard() {
   return (
@@ -58,6 +58,14 @@ export default function GarzonDashboard() {
           href: '/orders',
           color: 'text-red-600',
           countKey: 'totalPedidos'
+        },
+        {
+          title: 'Entradas',
+          description: 'Registra las entradas de clientes',
+          icon: Ticket,
+          href: '/tickets',
+          color: 'text-sky-600',
+          staticCount: 0
         }
       ]}
     />

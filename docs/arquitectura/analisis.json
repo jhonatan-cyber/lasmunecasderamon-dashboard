@@ -1,8 +1,8 @@
 {
   "resumen": {
-    "commit": "74a858cd13ffd3aea3e51a6eeb8655cfe11f9010",
-    "generado": "2026-10-22T19:42:37.642Z",
-    "archivos": 2094,
+    "commit": "31e1ae7f409197d9c1a74cd2370a967600442345",
+    "generado": "2026-10-23T02:17:42.989Z",
+    "archivos": 2098,
     "rutas": 225,
     "sqlFueraDeRepositorio": 60,
     "tablasConEscritoresMultiples": 0,
@@ -2940,13 +2940,14 @@
   ],
   "ciclos": [],
   "matriz": {
-    "lib/business": {
-      "lib/api": 3,
-      "lib/otros": 12,
-      "lib/database": 4,
-      "modules/aplicacion": 4,
-      "raiz": 3,
-      "components": 1
+    "modules/aplicacion": {
+      "modules/infraestructura": 23,
+      "lib/otros": 97,
+      "lib/database": 44,
+      "lib/business": 39,
+      "lib/api": 11,
+      "lib/identidad": 3,
+      "raiz": 5
     },
     "app/ui": {
       "hooks": 59,
@@ -3001,6 +3002,14 @@
     "lib/identidad": {
       "lib/otros": 5
     },
+    "lib/business": {
+      "lib/api": 3,
+      "lib/otros": 12,
+      "lib/database": 4,
+      "modules/aplicacion": 4,
+      "raiz": 3,
+      "components": 1
+    },
     "lib/otros": {
       "lib/database": 4,
       "lib/api": 1,
@@ -3019,19 +3028,10 @@
       "lib/database": 109,
       "lib/otros": 156,
       "lib/business": 62,
-      "modules/aplicacion": 25,
+      "modules/aplicacion": 27,
       "lib/api": 9,
       "lib/identidad": 2,
       "raiz": 2
-    },
-    "modules/aplicacion": {
-      "modules/infraestructura": 23,
-      "lib/otros": 97,
-      "lib/database": 44,
-      "lib/business": 39,
-      "lib/api": 11,
-      "lib/identidad": 3,
-      "raiz": 5
     },
     "scripts": {},
     "workflows": {

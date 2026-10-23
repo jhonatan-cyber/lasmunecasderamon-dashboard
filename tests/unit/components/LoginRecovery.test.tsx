@@ -6,7 +6,6 @@ vi.mock('@/lib/utils/logger', () => ({ default: { info: vi.fn() } }));
 afterEach(cleanup);
 const props = (complete = false, modo: 'whatsapp' | 'usuarios' = 'whatsapp') => ({
   form: {
-    step: 'login' as const,
     view: 'recovery' as const,
     loading: false,
     recoveryLoading: false,
@@ -14,8 +13,6 @@ const props = (complete = false, modo: 'whatsapp' | 'usuarios' = 'whatsapp') => 
     recoveryMode: modo,
     recoveryRun: '12345678-9',
     setRecoveryRun: vi.fn(),
-    codigo: '',
-    setCodigo: vi.fn(),
     hasUsers: true
   },
   credentials: { loginData: { email: '', password: '' }, setLoginData: vi.fn() },
@@ -28,14 +25,12 @@ const props = (complete = false, modo: 'whatsapp' | 'usuarios' = 'whatsapp') => 
   handlers: {
     handleLogin: vi.fn(),
     handlePasswordRecovery: vi.fn(),
-    handleVerifyCode: vi.fn(),
     handleKeyDown: vi.fn(),
     handlePasswordKeyDown: vi.fn()
   },
   theme: { theme: 'system', toggleTheme: vi.fn(), setThemeMode: vi.fn() },
   callbacks: {
     onShowRegister: vi.fn(),
-    onSetStep: vi.fn(),
     onSetView: vi.fn(),
     onResetRecovery: vi.fn()
   }

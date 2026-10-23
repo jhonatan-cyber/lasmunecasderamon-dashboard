@@ -44,7 +44,7 @@ vi.mock('@/lib/database/db', () => {
     return [];
   });
   return {
-    query: vi.fn(),
+    query: vi.fn(async () => []),
     withTransaction: vi.fn(async (callback: (transaction: Trx) => unknown) => callback(trx)),
     generateUUID: () => 'col-1'
   };

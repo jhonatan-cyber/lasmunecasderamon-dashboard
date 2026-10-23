@@ -30,11 +30,15 @@ import { TRANSFER_RESOLVE_PERMISSION } from '@/lib/constants/transferPermissions
  * no lo concede). Antes acá se comparaba el nombre del rol
  * (`IN ('barman','administrador')`), lo que hacía que un rol distinto con
  * `products/accept_transfer` viera los botones y la API lo rechazara.
+ *
+ * Devuelve además si el usuario es administrador: ese rol puede aceptar un
+ * traspaso que él mismo envió (el guard de auto-recepción sólo rige para el
+ * resto de los roles).
  */
 async function puedeResolverTransferencia(
   trx: TransactionQuery,
   usuarioId: string
-): Promise<boolean> {
+): Promise<{ autorizado: boolean; esAdministrador: boolean }> {
   const filas = await trx<any[]>(
     `SELECT LOWER(r.nombre) AS rol,
             EXISTS (
@@ -49,8 +53,12 @@ async function puedeResolverTransferencia(
     [TRANSFER_RESOLVE_PERMISSION.module, TRANSFER_RESOLVE_PERMISSION.action, usuarioId]
   );
   const fila = filas[0];
-  if (!fila) return false;
-  return fila.rol === 'administrador' || Boolean(fila.autorizado);
+  if (!fila) return { autorizado: false, esAdministrador: false };
+  const esAdministrador = fila.rol === 'administrador';
+  return {
+    autorizado: esAdministrador || Boolean(fila.autorizado),
+    esAdministrador
+  };
 }
 
 export async function traspasarAlBar(
@@ -180,7 +188,8 @@ export async function aceptarTransferencia(
   id: string,
   usuarioId: string
 ): Promise<void> {
-  if (!(await puedeResolverTransferencia(trx, usuarioId)))
+  const resolucion = await puedeResolverTransferencia(trx, usuarioId);
+  if (!resolucion.autorizado)
     throw new BusinessError('No tienes permiso para aceptar la transferencia');
   const lookup = await trx<any[]>(
     "SELECT producto_id FROM inventario_movimientos WHERE id = ? AND tipo = 'traspaso'",
@@ -197,7 +206,7 @@ export async function aceptarTransferencia(
   const movement = movements[0];
   if (!movement || movement.estado !== 'pendiente')
     throw new BusinessError('La transferencia ya fue procesada o no está pendiente');
-  if (movement.usuario_id === usuarioId)
+  if (movement.usuario_id === usuarioId && !resolucion.esAdministrador)
     throw new BusinessError('La recepción debe confirmarla una persona distinta de quien envió');
   const units = await trx<any[]>(
     `SELECT id FROM inventario_unidades WHERE transferencia_id = ? AND ubicacion = 'transito'
@@ -227,7 +236,8 @@ export async function rechazarTransferencia(
   id: string,
   usuarioId: string
 ): Promise<void> {
-  if (!(await puedeResolverTransferencia(trx, usuarioId)))
+  const resolucion = await puedeResolverTransferencia(trx, usuarioId);
+  if (!resolucion.autorizado)
     throw new BusinessError('No tienes permiso para rechazar la transferencia');
   const lookup = await trx<any[]>(
     "SELECT producto_id FROM inventario_movimientos WHERE id = ? AND tipo = 'traspaso'",

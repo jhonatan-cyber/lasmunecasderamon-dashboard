@@ -32,34 +32,45 @@ describe('formulario de habitaciones', () => {
     for (const field of ['time', 'price', 'comision_anfitriona'])
       expect(result.current.errors[field]).toBeDefined();
   });
-  it('conserva los valores cero al editar', () => {
+  it('muestra los ceros heredados al editar como vacíos, igual que la comisión', () => {
     const room = { name: 'Sala', price: 0, time: 0, comision_anfitriona: 0 } as Room;
     const { result } = renderHook(() =>
       useRoomForm({ open: true, initialValues: room, onSubmit: vi.fn() })
     );
     expect(result.current.form).toEqual({
       name: 'Sala',
-      price: '0',
-      time: '0',
+      price: '',
+      time: '',
       comision_anfitriona: ''
     });
   });
-  it('requiere precio y tiempo, pero permite omitir la comisión', () => {
+  it('envía 0 por defecto en los tres campos cuando quedan vacíos', () => {
     const submit = vi.fn();
     const { result } = renderHook(() => useRoomForm({ open: true, onSubmit: submit }));
     act(() => result.current.handleChange(change('name', 'Sala')));
     act(() => result.current.handleSubmit(submitEvent));
-    expect(submit).not.toHaveBeenCalled();
+    expect(submit).toHaveBeenCalledWith({
+      name: 'Sala',
+      price: '0',
+      time: '0',
+      comision_anfitriona: '0'
+    });
+  });
+  it('conserva los valores escritos tal como están formateados', () => {
+    const submit = vi.fn();
+    const { result } = renderHook(() => useRoomForm({ open: true, onSubmit: submit }));
+    act(() => result.current.handleChange(change('name', 'Sala')));
     act(() => {
       result.current.handleChange(change('price', '1000'));
       result.current.handleChange(change('time', '30'));
+      result.current.handleChange(change('comision_anfitriona', '500'));
     });
     act(() => result.current.handleSubmit(submitEvent));
     expect(submit).toHaveBeenCalledWith({
       name: 'Sala',
       price: '1.000',
       time: '30',
-      comision_anfitriona: ''
+      comision_anfitriona: '500'
     });
   });
   it.each(['', '   '])('requiere un nombre: %s', name => {

@@ -14,17 +14,12 @@ import { createEmptyPermissions, type UserPermissions } from '@/lib/middleware/a
 import { matrixFlagsFor, toMatrixModule } from '@/lib/constants/route-permissions';
 import { SecurityAlertService } from '@/modules/auditoria';
 import logger from '@/lib/utils/logger';
-import { regenerateAttendanceCode } from './codigos';
-import { enUnaUnidad, type ContextoOperacion } from '@/lib/transaction/contract';
+import { enUnaUnidad } from '@/lib/transaction/contract';
 import { resolverTransaccion } from '@/lib/transaction/infrastructure';
 import { randomBytes } from 'node:crypto';
 import { enviarWhatsApp } from '@/modules/comunicaciones';
 import { normalizeWhatsAppPhone } from '@/lib/utils/whatsappPhone';
 import { sendNotificationToAll } from '@/lib/api/sseService';
-
-const ROLES_CON_CODIGO = ['cajero', 'garzon', 'anfitriona'];
-const SHIFT_START = 21 * 60;
-const SHIFT_END = 23 * 60;
 
 const ADMIN_PERMS: UserPermissions = {
   roles: { read: true, write: true, delete: true },
@@ -140,21 +135,17 @@ function getSystemDateTime() {
 /**
  * Inicio de sesión.
  *
- * Solo acepta identificador y contraseña. Antes también aceptaba `qr_token`: una
- * credencial estática y de vida larga, la misma que /api/public/users publicaba y que
- * /api/attendance/register usaba para marcar asistencia. Ese token se retiró (024), así
- * que no queda ningún camino de acceso por posesión de un token.
+ * Solo acepta identificador y contraseña: el acceso nunca exige el código del
+ * local. Registrar asistencia y quedar «en el local» (`logins.en_local`) es una
+ * decisión posterior que la persona toma desde dentro del dashboard con el
+ * código rotativo o los desafíos del kiosko (`/api/attendance/register`).
+ *
+ * Antes también aceptaba `qr_token` y obligaba al código del local en la
+ * ventana del turno. El token se retiró (024) y la exigencia del código en el
+ * login se repatrió al módulo de Asistencia: no queda ningún camino de acceso
+ * por posesión de un token.
  */
-export async function loginUser(
-  creds: { email?: string; password?: string; codigo?: string },
-  ip?: string,
-  registrarMarca?: (
-    usuarioId: string,
-    fecha: string,
-    hora: string,
-    contexto: ContextoOperacion
-  ) => Promise<void>
-) {
+export async function loginUser(creds: { email?: string; password?: string }, ip?: string) {
   try {
     let user: any = null;
 
@@ -201,31 +192,6 @@ export async function loginUser(
       throw new ValidationError('Proporcione credenciales');
     }
 
-    const { hora, totalMinutos, dateString, timeString } = getSystemDateTime();
-    const rol = user.rol_nombre?.toLowerCase() || '';
-    const isCajeroRole = rol === 'cajero' || rol === 'cajera';
-    const needsCode =
-      ROLES_CON_CODIGO.includes(rol) && totalMinutos >= SHIFT_START && totalMinutos <= SHIFT_END;
-    const hasAsis =
-      (
-        await query<any[]>(
-          'SELECT id_asistencia FROM asistencias WHERE usuario_id = ? AND fecha = ?',
-          [user.id_usuario, dateString]
-        )
-      ).length > 0;
-
-    if (needsCode && !hasAsis && !isCajeroRole) {
-      if (!creds.codigo)
-        return {
-          requiereCodigo: true,
-          user: { id: user.id_usuario, email: user.email, role: user.rol_nombre }
-        };
-      const valid = await query<any[]>('SELECT codigo FROM codigos WHERE codigo = ?', [
-        creds.codigo
-      ]);
-      if (valid.length === 0) throw new ValidationError('Código de verificación incorrecto');
-    }
-
     const tokenPromise = generateToken({
       id: user.id_usuario,
       username: user.username || user.nombre,
@@ -239,32 +205,6 @@ export async function loginUser(
     // Optimización: registrarLogin fire-and-forget (no bloqueante, tiene try/catch)
     await registrarLogin(user.id_usuario, user.rol_nombre);
 
-    const usoTicketDelLocal = !!creds.codigo;
-    const marksAsis = (isCajeroRole && needsCode) || (needsCode && usoTicketDelLocal);
-    let asistenciaRegistrada = false;
-    if (marksAsis && !hasAsis) {
-      if (!registrarMarca)
-        throw new Error('El inicio de sesión presencial requiere el coordinador de asistencia');
-      await enUnaUnidad(unidad =>
-        unidad.ejecutar(async contexto => {
-          await registrarMarca(user.id_usuario, dateString, timeString, contexto);
-          await resolverTransaccion(contexto)(
-            'UPDATE logins SET en_local = 1 WHERE usuario_id = ? AND estado = 1',
-            [user.id_usuario]
-          );
-        })
-      );
-      if (creds.codigo) {
-        await regenerateAttendanceCode();
-      }
-      asistenciaRegistrada = true;
-    } else if (usoTicketDelLocal && !marksAsis) {
-      await query('UPDATE logins SET en_local = 1 WHERE usuario_id = ? AND estado = 1', [
-        user.id_usuario
-      ]);
-    }
-
-    // Optimización: await del tokenPromise + mapAuthenticatedUser en paralelo
     const [resolvedToken, mappedUser] = await Promise.all([
       tokenPromise,
       mapAuthenticatedUser(user)
@@ -279,8 +219,7 @@ export async function loginUser(
     return {
       success: true,
       token: resolvedToken,
-      user: { ...mappedUser, forcePasswordChange },
-      asistenciaRegistrada
+      user: { ...mappedUser, forcePasswordChange }
     };
   } catch (err) {
     logger.error('[AuthQueries] Error en loginUser:', { err });
@@ -507,21 +446,9 @@ export async function checkSession(userId: string) {
       [userId]
     );
     if (users.length === 0) return { success: false, message: 'Usuario no encontrado' };
-    const user = users[0];
 
-    const { totalMinutos, dateString } = getSystemDateTime();
-    const rol = user.rol_nombre?.toLowerCase() || '';
-    const needsCode =
-      ROLES_CON_CODIGO.includes(rol) && totalMinutos >= SHIFT_START && totalMinutos <= SHIFT_END;
-    const hasAsis =
-      (
-        await query<any[]>(
-          'SELECT id_asistencia FROM asistencias WHERE usuario_id = ? AND fecha = ?',
-          [user.id_usuario, dateString]
-        )
-      ).length > 0;
-
-    if (needsCode && !hasAsis) return { success: true, debeDesconectar: true };
+    // El login ya no exige el código del local ni la asistencia previa: la
+    // sesión es válida mientras las credenciales y el token existan.
     return { success: true, debeDesconectar: false };
   } catch (err) {
     logger.error('[AuthQueries] Error en checkSession:', { userId, err });

@@ -22,12 +22,8 @@ export const LoginView = () => {
     theme,
     toggleTheme,
     setThemeMode,
-    codigo,
-    setCodigo,
     loginData,
     setLoginData,
-    step,
-    setStep,
     hasUsers,
     showRegisterModal,
     setShowRegisterModal,
@@ -37,7 +33,6 @@ export const LoginView = () => {
     setRegisterData,
     registerLoading,
     handleLogin,
-    handleVerifyCode,
     handleRegister,
     handleKeyDown,
     handlePasswordKeyDown,
@@ -91,17 +86,14 @@ export const LoginView = () => {
 
             <div className='w-full max-w-md p-6 sm:p-10'>
               <h2 className='text-2xl font-bold text-center mb-2 text-gray-900 dark:text-white transition-colors duration-300'>
-                {step === 'login' ? 'Iniciar sesión' : 'Verificación'}
+                Iniciar sesión
               </h2>
               <p className='text-gray-600 dark:text-gray-300 text-center mb-6 text-sm transition-colors duration-300'>
-                {step === 'login'
-                  ? 'Ingrese sus datos para iniciar sesión en su cuenta'
-                  : 'Complete la verificación de seguridad'}
+                Ingrese sus datos para iniciar sesión en su cuenta
               </p>
 
               <LoginForm
                 form={{
-                  step,
                   view,
                   loading,
                   recoveryLoading,
@@ -109,8 +101,6 @@ export const LoginView = () => {
                   recoveryMode,
                   recoveryRun,
                   setRecoveryRun,
-                  codigo,
-                  setCodigo,
                   hasUsers
                 }}
                 credentials={{ loginData, setLoginData }}
@@ -119,14 +109,12 @@ export const LoginView = () => {
                 handlers={{
                   handleLogin,
                   handlePasswordRecovery,
-                  handleVerifyCode,
                   handleKeyDown,
                   handlePasswordKeyDown
                 }}
                 theme={{ theme, toggleTheme, setThemeMode }}
                 callbacks={{
                   onShowRegister: () => setShowRegisterModal(true),
-                  onSetStep: setStep,
                   onSetView: setView,
                   onResetRecovery: resetRecovery
                 }}

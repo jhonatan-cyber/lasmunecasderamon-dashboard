@@ -171,6 +171,57 @@ it('un rol personalizado con products/accept_transfer aprueba el traspaso de pun
   }
 });
 
+it('el administrador puede aceptar el traspaso que él mismo envió', async () => {
+  try {
+    await withTransaction(async trx => {
+      const sufijo = randomUUID().slice(0, 8);
+      const rolId = await crearRol(trx, 'Administrador', false);
+      const admin = await crearUsuario(trx, rolId, `fixture-admin-auto-${sufijo}`);
+      const { productoId, presentacionId } = await crearProductoConStock(trx, 1);
+
+      const traspaso = await conContextoOperacionExistente(trx, contexto =>
+        traspasarAlBar(
+          {
+            producto_id: productoId,
+            presentacion_id: presentacionId,
+            cantidad: 1,
+            usuario_id: admin,
+            opciones_venta: opciones
+          },
+          contexto
+        )
+      );
+      const transferenciaId = traspaso.transferencia_id;
+      if (!transferenciaId) throw new Error('El traspaso no devolvió id');
+
+      await conContextoOperacionExistente(trx, contexto =>
+        aceptarTransferencia(transferenciaId, admin, contexto)
+      );
+
+      const [movimiento] = await trx<
+        Array<{ estado: string; aceptado_por: string; fecha_aceptacion: Date | null }>
+      >(
+        `SELECT estado, aceptado_por, fecha_aceptacion
+           FROM inventario_movimientos WHERE id = ?`,
+        [transferenciaId]
+      );
+      expect(movimiento.estado).toBe('aceptada');
+      expect(movimiento.aceptado_por).toBe(admin);
+
+      const unidades = await trx<Array<{ ubicacion: string }>>(
+        'SELECT ubicacion FROM inventario_unidades WHERE presentacion_id = ?',
+        [presentacionId]
+      );
+      expect(unidades).toHaveLength(1);
+      expect(unidades[0].ubicacion).toBe('bar');
+
+      throw new Error(ROLLBACK);
+    });
+  } catch (error) {
+    if (!(error instanceof Error) || error.message !== ROLLBACK) throw error;
+  }
+});
+
 it('el mismo rol sin el par no aprueba: el nombre del rol no concede nada', async () => {
   try {
     await withTransaction(async trx => {

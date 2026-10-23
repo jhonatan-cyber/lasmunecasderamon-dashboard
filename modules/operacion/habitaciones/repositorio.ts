@@ -10,18 +10,13 @@ export class RoomRepository {
     const tieneVentasActivas = row.ventas_activas > 0;
     const estadoHabitacion = tieneServiciosActivos || tieneVentasActivas ? 2 : row.estado;
 
-    const precio = Number(row.precio || 0);
-    const comision = Number(row.comision_anfitriona || 0);
-    const esLibreIngreso = precio <= 0 || comision <= 0;
-    const statusFinal = esLibreIngreso ? 1 : estadoHabitacion;
-
     return RoomSchema.parse({
       id: row.id_habitacion,
       name: row.nombre,
       price: row.precio,
       time: row.tiempo,
       comision_anfitriona: row.comision_anfitriona ?? null,
-      status: statusFinal,
+      status: estadoHabitacion,
       display_order: row.display_order,
       created_at: row.fecha_crea,
       updated_at: row.fecha_mod
@@ -37,17 +32,16 @@ export class RoomRepository {
             (SELECT COUNT(*) FROM servicios s WHERE s.habitacion_id = h.id_habitacion AND s.estado = 2) as servicios_activos,
             (SELECT COUNT(*) FROM ventas v WHERE v.habitacion_id = h.id_habitacion AND v.estado = 2) as ventas_activas
            FROM habitaciones h 
-           WHERE (COALESCE(h.precio, 0) = 0 AND COALESCE(h.comision_anfitriona, 0) = 0 AND COALESCE(h.tiempo, 0) = 0)
-           OR (h.estado = 1
+           WHERE h.estado = 1
            AND NOT EXISTS (
              SELECT 1 FROM servicios s 
              WHERE s.habitacion_id = h.id_habitacion AND s.estado = 2
            )
-           AND NOT EXISTS (
-             SELECT 1 FROM ventas v 
-             WHERE v.habitacion_id = h.id_habitacion AND v.estado = 2
-           ))
-           ORDER BY h.display_order ASC, h.id_habitacion ASC`,
+            AND NOT EXISTS (
+              SELECT 1 FROM ventas v 
+              WHERE v.habitacion_id = h.id_habitacion AND v.estado = 2
+            )
+            ORDER BY h.display_order ASC, h.id_habitacion ASC`,
           []
         );
       } else {
@@ -136,13 +130,13 @@ export class RoomRepository {
 
   static async updateStatus(id: string, action: string): Promise<RoomType | null> {
     let newStatus;
-    if (action === 'activate') newStatus = 1;
+    if (action === 'activate' || action === 'liberate') newStatus = 1;
     else if (action === 'deactivate') newStatus = 0;
     else if (action === 'occupy') newStatus = 2;
     else
       throw new ValidationError('Acción no válida', {
         action,
-        allowed: ['activate', 'deactivate', 'occupy']
+        allowed: ['activate', 'deactivate', 'occupy', 'liberate']
       });
 
     await BaseRepository.update(query, 'habitaciones', 'id_habitacion', id, {

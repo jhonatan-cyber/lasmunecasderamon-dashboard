@@ -3,7 +3,6 @@
 import React, { useState } from 'react';
 import { Room } from '@/types/room';
 import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -11,7 +10,6 @@ import {
   DropdownMenuTrigger
 } from '@/components/ui/dropdown-menu';
 import {
-  Bed,
   Clock,
   DollarSign,
   Percent,
@@ -21,7 +19,10 @@ import {
   Check,
   Power,
   Users,
-  GripVertical
+  GripVertical,
+  Home,
+  CalendarDays,
+  AlertTriangle
 } from 'lucide-react';
 import ConfirmDeleteRoomDialog from '@/components/rooms/ConfirmDeleteRoomDialog';
 import { useSortable } from '@dnd-kit/sortable';
@@ -62,6 +63,8 @@ const RoomCard: React.FC<{
 }) => {
   const [confirmOpen, setConfirmOpen] = useState(false);
 
+  const noVendible = room.price === 0 && !room.comision_anfitriona && room.time === 0;
+
   const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({
     id: room.id,
     disabled: !isDraggable
@@ -99,43 +102,60 @@ const RoomCard: React.FC<{
 
   return (
     <div className='group' ref={isDraggable ? setNodeRef : undefined} style={style}>
-      <div className='bg-white border border-gray-200 rounded-xl p-3 sm:p-4 hover:shadow-lg transition-all duration-300 hover:-translate-y-1 relative overflow-hidden'>
-        {}
+      {/* isolate: crea el stacking context que permite el watermark tras el contenido. */}
+      <div className='border border-gray-200 bg-white rounded-2xl p-4 shadow-sm transition-all duration-300 hover:-translate-y-1 hover:shadow-lg relative overflow-hidden isolate dark:border-slate-800 dark:bg-slate-900'>
+        {/* Barra de estado superior */}
         <div className={`absolute top-0 left-0 right-0 h-1 ${getStatusColor()}`} />
 
-        {}
-        <div className='flex items-start justify-between mb-3 sm:mb-4'>
-          <div className='flex items-center gap-2 min-w-0 flex-1'>
-            {}
-            {isDraggable ? (
-              <div
+        {/* Watermark decorativo: casa detrás del contenido del card. */}
+        <Home
+          aria-hidden
+          strokeWidth={1.25}
+          className='pointer-events-none absolute -right-8 -bottom-10 -z-10 h-36 w-36 text-gray-100/80 dark:text-slate-800/60'
+        />
+
+        <div className='flex items-start justify-between gap-2 mb-4'>
+          <div className='flex items-center gap-3 min-w-0'>
+            {isDraggable && (
+              <Button
+                type='button'
                 {...attributes}
                 {...listeners}
-                className='w-8 h-8 bg-gray-100 rounded-lg flex items-center justify-center shrink-0 cursor-grab active:cursor-grabbing hover:bg-gray-200 transition-colors'
+                aria-label='Reordenar habitación'
+                variant='ghost'
+                size='icon'
+                className='w-9 h-9 rounded-xl bg-gray-100 hover:bg-gray-200 dark:bg-slate-800 dark:hover:bg-slate-700 shrink-0 cursor-grab active:cursor-grabbing transition-colors'
               >
-                <GripVertical className='w-4 h-4 text-gray-600' />
-              </div>
-            ) : (
-              <div className='w-8 h-8 bg-gray-100 rounded-lg flex items-center justify-center shrink-0'>
-                <Bed className='w-4 h-4 text-gray-600' />
-              </div>
+                <GripVertical className='w-4 h-4 text-gray-500 dark:text-slate-400' />
+              </Button>
             )}
-            <div className='min-w-0 flex-1'>
-              <h3 className='font-semibold text-gray-900 text-sm sm:text-base truncate'>
+            <div
+              className={`w-9 h-9 rounded-xl flex items-center justify-center shrink-0 ${
+                room.status === 1
+                  ? 'bg-emerald-100 text-emerald-600 dark:bg-emerald-950/50 dark:text-emerald-400'
+                  : room.status === 2
+                    ? 'bg-amber-100 text-amber-600 dark:bg-amber-950/50 dark:text-amber-400'
+                    : 'bg-gray-100 text-gray-500 dark:bg-slate-800 dark:text-slate-400'
+              }`}
+            >
+              <Home className='w-4 h-4' />
+            </div>
+            <div className='min-w-0'>
+              <h3 className='font-semibold text-gray-900 dark:text-gray-100 text-sm sm:text-base truncate leading-tight'>
                 {room.name}
               </h3>
-              <Badge
-                variant='secondary'
-                className={`mt-1 text-xs font-medium ${
+              <span
+                className={`mt-1 inline-flex items-center gap-1.5 text-xs font-medium ${
                   room.status === 1
-                    ? 'bg-emerald-100 text-emerald-700'
+                    ? 'text-emerald-700 dark:text-emerald-400'
                     : room.status === 2
-                      ? 'bg-amber-100 text-amber-700'
-                      : 'bg-gray-100 text-gray-600'
+                      ? 'text-amber-700 dark:text-amber-400'
+                      : 'text-gray-500 dark:text-slate-400'
                 }`}
               >
+                <span className={`w-1.5 h-1.5 rounded-full ${getStatusColor()}`} />
                 {getStatusText()}
-              </Badge>
+              </span>
             </div>
           </div>
 
@@ -193,59 +213,71 @@ const RoomCard: React.FC<{
           )}
         </div>
 
-        {}
-        <div className='grid grid-cols-2 gap-2 sm:gap-3 mb-3 sm:mb-4'>
-          <div className='bg-gray-50 rounded-lg p-2 sm:p-3 min-w-0'>
-            <div className='flex items-center gap-1 text-gray-600 mb-1'>
+        <dl className='grid grid-cols-3 divide-x divide-gray-100 dark:divide-slate-800 mb-4'>
+          <div className='min-w-0 pr-2 sm:pr-3'>
+            <dt className='flex items-center gap-1 text-[11px] font-semibold uppercase tracking-wider text-gray-400 dark:text-slate-500'>
               <DollarSign className='w-3 h-3 shrink-0' />
-              <span className='text-xs font-medium truncate'>Precio</span>
-            </div>
-            <p className='text-sm sm:text-base font-bold text-gray-900 truncate'>
-              {formatCurrencyCLP(room.price)}
-            </p>
+              Precio
+            </dt>
+            <dd
+              className={`mt-1 text-sm font-bold truncate ${
+                room.price > 0
+                  ? 'text-gray-900 dark:text-gray-100'
+                  : 'text-gray-400 dark:text-slate-500'
+              }`}
+            >
+              {room.price > 0 ? formatCurrencyCLP(room.price) : '—'}
+            </dd>
           </div>
-
-          <div className='bg-gray-50 rounded-lg p-2 sm:p-3 min-w-0'>
-            <div className='flex items-center gap-1 text-gray-600 mb-1'>
+          <div className='min-w-0 px-2 sm:px-3'>
+            <dt className='flex items-center gap-1 text-[11px] font-semibold uppercase tracking-wider text-gray-400 dark:text-slate-500'>
               <Percent className='w-3 h-3 shrink-0' />
-              <span className='text-xs font-medium truncate'>Comisión</span>
-            </div>
-            <p className='text-sm sm:text-base font-bold text-gray-900 truncate'>
-              {room.comision_anfitriona ? (
-                formatCurrencyCLP(room.comision_anfitriona)
-              ) : (
-                <span className='text-gray-400 italic'>sin comisión</span>
-              )}
-            </p>
+              Comisión
+            </dt>
+            <dd
+              className={`mt-1 text-sm font-bold truncate ${
+                room.comision_anfitriona
+                  ? 'text-gray-900 dark:text-gray-100'
+                  : 'text-gray-400 dark:text-slate-500'
+              }`}
+            >
+              {room.comision_anfitriona ? formatCurrencyCLP(room.comision_anfitriona) : 'Sin'}
+            </dd>
           </div>
-        </div>
-
-        <div className='grid grid-cols-2 gap-2 sm:gap-3 mb-3 sm:mb-4'>
-          <div className='bg-gray-50 rounded-lg p-2 sm:p-3 min-w-0'>
-            <div className='flex items-center gap-1 text-gray-600 mb-1'>
+          <div className='min-w-0 pl-2 sm:pl-3'>
+            <dt className='flex items-center gap-1 text-[11px] font-semibold uppercase tracking-wider text-gray-400 dark:text-slate-500'>
               <Clock className='w-3 h-3 shrink-0' />
-              <span className='text-xs font-medium truncate'>Duración</span>
-            </div>
-            <p className='text-sm sm:text-base font-bold text-gray-900 truncate'>{room.time} min</p>
+              Duración
+            </dt>
+            <dd
+              className={`mt-1 text-sm font-bold truncate ${
+                room.time > 0
+                  ? 'text-gray-900 dark:text-gray-100'
+                  : 'text-gray-400 dark:text-slate-500'
+              }`}
+            >
+              {room.time > 0 ? `${room.time} min` : '—'}
+            </dd>
           </div>
+        </dl>
 
-          <div className='bg-gray-50 rounded-lg p-2 sm:p-3 min-w-0'>
-            <div className='flex items-center gap-1 text-gray-600 mb-1'>
-              <Bed className='w-3 h-3 shrink-0' />
-              <span className='text-xs font-medium truncate'>ID</span>
-            </div>
-            <p className='text-sm sm:text-base font-bold text-gray-900 truncate'>#{room.id}</p>
-          </div>
-        </div>
-
-        {}
-        {room.fecha_crea && (
-          <div className='pt-2 sm:pt-3 border-t border-gray-100'>
-            <p className='text-xs text-gray-500 text-center truncate'>
+        {/* Pie: aviso de habitación no vendible + fecha de alta */}
+        <div className='pt-3 border-t border-gray-100 dark:border-slate-800 flex items-center justify-between gap-2 min-h-[2rem]'>
+          {noVendible ? (
+            <span className='inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-amber-50 text-amber-700 dark:bg-amber-950/50 dark:text-amber-400 text-[10px] font-bold uppercase tracking-wide'>
+              <AlertTriangle className='w-3 h-3' />
+              No vendible
+            </span>
+          ) : (
+            <span />
+          )}
+          {room.fecha_crea && (
+            <span className='inline-flex items-center gap-1 text-xs text-gray-400 dark:text-slate-500 shrink-0'>
+              <CalendarDays className='w-3 h-3' />
               {formatShortDmyDateEs(room.fecha_crea)}
-            </p>
-          </div>
-        )}
+            </span>
+          )}
+        </div>
       </div>
 
       <ConfirmDeleteRoomDialog

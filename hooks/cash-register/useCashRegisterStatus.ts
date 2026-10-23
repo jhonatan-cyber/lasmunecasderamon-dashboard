@@ -3,6 +3,7 @@
 import { useGenericFetch } from '@/hooks/shared';
 import { CashRegisterStatusSchema } from '@/lib/business/schemas';
 import { useCallback, useEffect } from 'react';
+import { useRealtimeRefresh } from '@/hooks/realtime/useRealtimeRefresh';
 
 interface CashRegisterStatus {
   hasOpenCaja: boolean | null;
@@ -22,6 +23,10 @@ export function useCashRegisterStatus() {
       transform: res => (res.success ? res.data : { hasOpenCaja: false, cajaInfo: null })
     }
   );
+
+  // Refresco por SSE cuando se abre/cierra caja u otra mutación de caja/sales
+  // ocurre: el endpoint público siempre refleja el estado actual de la caja.
+  useRealtimeRefresh('/api/cashregister/status', refetch);
 
   useEffect(() => {
     const handleCajaChanged = () => refetch();
@@ -47,7 +52,7 @@ export function useCashRegisterStatus() {
   };
 
   return {
-    hasOpenCaja: statusData.hasOpenCaja,
+    hasOpenCaja: statusData.hasOpenCaja ?? false,
     cajaInfo: statusData.cajaInfo,
     efectivoEnCaja: statusData.cajaInfo?.efectivo_en_caja || 0,
     loading: isLoading,

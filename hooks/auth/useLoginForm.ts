@@ -10,12 +10,6 @@ export interface LoginFormData {
   password: string;
 }
 
-export interface UserTemp {
-  id: string | number;
-  email: string;
-  role: string;
-}
-
 export const useLoginForm = () => {
   const router = useRouter();
   const [loading, setLoading] = useState(false);
@@ -26,10 +20,7 @@ export const useLoginForm = () => {
   const [recoveryMode, setRecoveryMode] = useState<'whatsapp' | 'usuarios'>('whatsapp');
   const recoveryBusyRef = useRef(false);
   const [theme, setTheme] = useState('system');
-  const [codigo, setCodigo] = useState('');
   const [loginData, setLoginData] = useState<LoginFormData>({ email: '', password: '' });
-  const [userTmp, setUserTmp] = useState<UserTemp | null>(null);
-  const [step, setStep] = useState<'login' | 'codigo'>('login');
   const [hasUsers, setHasUsers] = useState<boolean | null>(null);
   const [showRegisterModal, setShowRegisterModal] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
@@ -142,21 +133,6 @@ export const useLoginForm = () => {
   }, [theme, setThemeMode]);
 
   useEffect(() => {
-    if (step === 'login') {
-      setCodigo('');
-    }
-  }, [step]);
-
-  useEffect(() => {
-    if (step === 'codigo') {
-      const input = document.querySelector('input[placeholder="0000"]') as HTMLInputElement;
-      if (input) {
-        setTimeout(() => input.focus(), 100);
-      }
-    }
-  }, [step]);
-
-  useEffect(() => {
     const saved = typeof window !== 'undefined' ? localStorage.getItem('theme') : null;
     const initialTheme =
       saved === 'dark' || saved === 'light' || saved === 'system' ? saved : 'system';
@@ -209,73 +185,12 @@ export const useLoginForm = () => {
 
       const data = await res.json();
 
-      if (data.requiereCodigo === true) {
-        setUserTmp(data.user);
-        if (data.user?.role) {
-          localStorage.setItem('userRole', data.user.role);
-          localStorage.setItem('auth_role_hint', data.user.role);
-        }
-        setStep('codigo');
-        setLoading(false);
-        return;
-      }
-
       if (!data.success) {
         toast.error(data.message || 'Error de autenticación');
         setLoading(false);
         return;
       }
 
-      // S7: Redirigir a cambio forzado de contraseña si aplica
-      if (data.user?.forcePasswordChange) {
-        toast.info('Debés cambiar tu contraseña antes de continuar', { duration: 5000 });
-        setLoading(false);
-        router.replace('/change-password');
-        return;
-      }
-
-      toast.success('¡Bienvenido al sistema!');
-      if (data.user?.role) {
-        localStorage.setItem('userRole', data.user.role);
-        localStorage.setItem('auth_role_hint', data.user.role);
-      }
-      setLoading(false);
-      await redirectAfterLogin();
-    } catch (err) {
-      toast.error('Error de red o servidor');
-      setLoading(false);
-    }
-  };
-
-  const handleVerifyCode = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (codigo.length !== 4) {
-      toast.error('El código debe tener 4 dígitos');
-      return;
-    }
-    setLoading(true);
-    try {
-      let emailToSend = loginData.email.trim();
-      if (!emailToSend.includes('@')) {
-        emailToSend = `${emailToSend}${EMAIL_DOMAIN}`;
-      }
-
-      const res = await fetch('/api/auth/login', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        credentials: 'include',
-        body: JSON.stringify({
-          email: emailToSend,
-          password: loginData.password,
-          codigo
-        })
-      });
-      const data = await res.json();
-      if (!data.success) {
-        toast.error(data.message || 'Código incorrecto');
-        setLoading(false);
-        return;
-      }
       // S7: Redirigir a cambio forzado de contraseña si aplica
       if (data.user?.forcePasswordChange) {
         toast.info('Debés cambiar tu contraseña antes de continuar', { duration: 5000 });
@@ -386,13 +301,8 @@ export const useLoginForm = () => {
     theme,
     toggleTheme,
     setThemeMode,
-    codigo,
-    setCodigo,
     loginData,
     setLoginData,
-    userTmp,
-    step,
-    setStep,
     hasUsers,
     showRegisterModal,
     setShowRegisterModal,
@@ -402,7 +312,6 @@ export const useLoginForm = () => {
     setRegisterData,
     registerLoading,
     handleLogin,
-    handleVerifyCode,
     handleRegister,
     handleKeyDown,
     handlePasswordKeyDown,

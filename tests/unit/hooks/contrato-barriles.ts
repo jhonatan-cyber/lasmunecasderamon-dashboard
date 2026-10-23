@@ -337,7 +337,6 @@ export type ContratoDeTiposPublicos = [
   AsistenciaDetalle,
   // auth
   LoginFormData,
-  UserTemp,
   Permission,
   UserPermission,
   // calendar
@@ -422,7 +421,7 @@ export type ContratoDeTiposPublicos = [
 ];
 
 import type { AsistenciaDetalle } from '@/hooks/attendance';
-import type { LoginFormData, Permission, UserPermission, UserTemp } from '@/hooks/auth';
+import type { LoginFormData, Permission, UserPermission } from '@/hooks/auth';
 import type {
   CalendarData,
   DataType,

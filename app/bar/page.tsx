@@ -501,7 +501,7 @@ export default function BarPage() {
 
   return (
     <PermissionGuard module='products' action='view'>
-      <div className='mx-auto flex w-full max-w-[1600px] min-w-0 flex-col gap-6 p-4 sm:p-6 lg:p-10'>
+      <div className='flex w-full min-w-0 flex-col gap-6 p-4 sm:p-6 lg:p-10'>
         <div className='flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4'>
           <div>
             <h1 className='flex items-center gap-3 text-2xl font-bold tracking-tight text-foreground sm:text-3xl'>

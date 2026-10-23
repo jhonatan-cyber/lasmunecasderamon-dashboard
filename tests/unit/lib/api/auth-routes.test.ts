@@ -49,8 +49,7 @@ describe('auth route contract', () => {
 
     expect(loginMock).toHaveBeenCalledWith(
       { email: 'user@test.com', password: 'secret123' },
-      '10.0.0.1',
-      expect.any(Function)
+      '10.0.0.1'
     );
     expect(setCookie).toHaveBeenCalledWith(
       'token',

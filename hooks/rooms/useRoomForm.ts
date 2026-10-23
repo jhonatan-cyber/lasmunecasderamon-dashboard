@@ -33,11 +33,13 @@ export function useRoomForm({ open, initialValues, onSubmit }: UseRoomFormProps)
     if (open && initialValues) {
       setForm({
         name: initialValues.name || '',
+        // Los ceros heredados se muestran vacíos: el submit los reenvía como 0 por defecto.
         price:
-          initialValues.price != null
+          initialValues.price != null && initialValues.price > 0
             ? formatNumberWithSeparators(String(initialValues.price))
             : '',
-        time: initialValues.time != null ? String(initialValues.time) : '',
+        time:
+          initialValues.time != null && initialValues.time > 0 ? String(initialValues.time) : '',
         comision_anfitriona:
           initialValues.comision_anfitriona != null && initialValues.comision_anfitriona > 0
             ? formatNumberWithSeparators(String(initialValues.comision_anfitriona))
@@ -49,16 +51,16 @@ export function useRoomForm({ open, initialValues, onSubmit }: UseRoomFormProps)
     setErrors({});
   }, [open, initialValues]);
 
+  // Regla del módulo: 0 no se escribe; un campo vacío se envía como 0 por defecto.
+  // El vacío es válido, pero un 0 tipeado se rechaza igual que los valores inválidos.
   const validate = () => {
     const newErrors: { [key: string]: string } = {};
     if (!form.name.trim() || /^0+$/.test(form.name.trim()))
       newErrors.name = 'Ingresa un nombre válido';
-    if (
-      !Number.isFinite(Number(form.price.replace(/\./g, ''))) ||
-      Number(form.price.replace(/\./g, '')) <= 0
-    )
+    const precio = Number(form.price.replace(/\./g, ''));
+    if (form.price.trim() && (!Number.isFinite(precio) || precio <= 0))
       newErrors.price = 'El precio debe ser mayor que cero';
-    if (!Number.isFinite(Number(form.time)) || Number(form.time) <= 0)
+    if (form.time.trim() && (!Number.isFinite(Number(form.time)) || Number(form.time) <= 0))
       newErrors.time = 'El tiempo debe ser mayor que cero';
     if (
       form.comision_anfitriona &&
@@ -117,7 +119,7 @@ export function useRoomForm({ open, initialValues, onSubmit }: UseRoomFormProps)
         name: form.name.trim(),
         price: form.price.trim() || '0',
         time: form.time.trim() || '0',
-        comision_anfitriona: form.comision_anfitriona.trim()
+        comision_anfitriona: form.comision_anfitriona.trim() || '0'
       });
     }
   };

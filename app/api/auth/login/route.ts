@@ -51,10 +51,6 @@ export const POST = async (request: Request) => {
       return NextResponse.json(refreshToken ? { ...result, refreshToken } : result);
     }
 
-    if (result.requiereCodigo) {
-      return NextResponse.json({ success: false, ...result });
-    }
-
     return NextResponse.json(result);
   } catch (error) {
     return ApiResponse.error(error);

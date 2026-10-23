@@ -5,6 +5,12 @@ import { resolverTransaccion } from '@/lib/transaction/infrastructure';
 import { consumirColacionBar } from '@/modules/inventario';
 import { getNowInBusinessTimezone } from '@/lib/business/timezoneService';
 import { acompanamientoDeColacion, mlDeColacion } from '@/lib/business/colacionConfig';
+import { defaultDeClave } from '@/modules/configuracion/contracts';
+import {
+  claveColacionesPorRol,
+  excesoColacionesPorRol,
+  interpretarColacionesPorRol
+} from '@/modules/colaciones/topePorTurno';
 import {
   CATEGORIA_BEBIDAS_ANALCOHOLICAS,
   productoPermitidoParaRol,
@@ -55,6 +61,21 @@ export async function listarColaciones(
   );
 }
 
+/**
+ * Regla "colaciones por rol y turno de caja": los topes guardados en la clave
+ * (`{"<rol_id>": n}`; vacío o clave inexistente = regla vigente de 1 por
+ * trabajador). Fallo abierto: una config corrupta deja correr el tope vigente
+ * en lugar de bloquear el módulo.
+ */
+async function leerTopesColaciones() {
+  const filas = await query<{ valor: string | null }[]>(
+    'SELECT valor FROM configuraciones WHERE clave = ? LIMIT 1',
+    [claveColacionesPorRol()]
+  );
+  const crudo = filas[0]?.valor ?? defaultDeClave(claveColacionesPorRol()) ?? '';
+  return interpretarColacionesPorRol(crudo);
+}
+
 export async function registrarColacion(input: {
   usuarioId: string;
   presentacionId: string;
@@ -76,8 +97,10 @@ export async function registrarColacion(input: {
 
   return enUnaUnidad(async unidad => {
     const trx = resolverTransaccion({ id: unidad.id });
-    const workers = await trx<{ id_usuario: string; rol: string | null }[]>(
-      `SELECT u.id_usuario, LOWER(r.nombre) AS rol FROM usuarios u
+    const workers = await trx<
+      { id_usuario: string; rol_id: number | string | null; rol: string | null }[]
+    >(
+      `SELECT u.id_usuario, r.id_rol AS rol_id, LOWER(r.nombre) AS rol FROM usuarios u
        LEFT JOIN roles r ON r.id_rol = u.rol_id
        WHERE u.id_usuario = ? AND u.estado = 1
          AND (r.nombre IS NULL OR LOWER(r.nombre) <> 'administrador')
@@ -91,19 +114,25 @@ export async function registrarColacion(input: {
     const regla = reglaColacionPorRol(workers[0].rol);
     if (!regla) throw new ValidationError('Este rol no recibe colación');
 
-    // El derecho del trabajador a una colación en este turno se comprueba antes
-    // que el stock: si ya la recibió, ese es el motivo por el que no puede
-    // registrar otra, aunque la bebida se haya agotado. La comprobación
-    // definitiva se repite más abajo, con la caja bloqueada.
-    const duplicadoPreliminar = await trx<{ id: string }[]>(
-      `SELECT id FROM colaciones
+    // El tope de colaciones del rol para este turno (default: 1 por trabajador).
+    const topes = await leerTopesColaciones();
+
+    // El derecho del trabajador a colaciones en este turno se comprueba antes
+    // que el stock: si ya alcanzó las que su rol permite, ese es el motivo por
+    // el que no puede registrar otra, aunque la bebida se haya agotado. La
+    // comprobación definitiva se repite más abajo, con la caja bloqueada.
+    const yaRecibidas = await trx<{ total: number }[]>(
+      `SELECT COUNT(*)::int AS total FROM colaciones
         WHERE usuario_id = ?
-          AND caja_id = (SELECT id_caja FROM cajas WHERE estado = 1 ORDER BY fecha_apertura DESC LIMIT 1)
-        LIMIT 1`,
+          AND caja_id = (SELECT id_caja FROM cajas WHERE estado = 1 ORDER BY fecha_apertura DESC LIMIT 1)`,
       [input.usuarioId]
     );
-    if (duplicadoPreliminar.length)
-      throw new ConflictError('Este trabajador ya recibió su colación durante este turno de caja');
+    const excesoPreliminar = excesoColacionesPorRol(
+      topes,
+      workers[0].rol_id,
+      Number(yaRecibidas[0]?.total ?? 0)
+    );
+    if (excesoPreliminar) throw new ConflictError(excesoPreliminar);
 
     const bebidas = await trx<
       {
@@ -196,21 +225,29 @@ export async function registrarColacion(input: {
     );
     if (!caja.length) throw new ValidationError('Abre una caja antes de registrar colaciones');
 
-    const duplicate = await trx<{ id: string }[]>(
-      'SELECT id FROM colaciones WHERE usuario_id = ? AND caja_id = ? LIMIT 1',
+    // El trabajador está bloqueado por el SELECT ... FOR UPDATE, así que el
+    // conteo definitivo no puede cambiar bajo nuestros pies: con el turno y el
+    // trabajador fijos, "recibidas < tope" en la base equivale al visto arriba.
+    const conteoFinal = await trx<{ total: number }[]>(
+      'SELECT COUNT(*)::int AS total FROM colaciones WHERE usuario_id = ? AND caja_id = ?',
       [input.usuarioId, caja[0].id_caja]
     );
-    if (duplicate.length)
-      throw new ConflictError('Este trabajador ya recibió su colación durante este turno de caja');
+    const excesoFinal = excesoColacionesPorRol(
+      topes,
+      workers[0].rol_id,
+      Number(conteoFinal[0]?.total ?? 0)
+    );
+    if (excesoFinal) throw new ConflictError(excesoFinal);
 
     // La colación es gratuita para el trabajador: no tiene columnas de precio
     // ni de método de pago (la migración 096 las eliminó) y no escribe
     // movimientos de caja; lo vigila
     // tests/unit/modules/colaciones-sin-ingreso.test.ts.
     //
-    // La unicidad por turno la garantiza el SELECT ... FOR UPDATE del trabajador
-    // más la comprobación de duplicado; además la migración 095 la deja
-    // garantizada en la base con un índice único (usuario_id, caja_id).
+    // La carrera entre dos registros del mismo trabajador la impide el
+    // `SELECT ... FOR UPDATE` del trabajador más la comprobación de conteo con
+    // `caja_id` ya elegida; el tope > 1 exige que el índice ya no sea único
+    // (migración 099).
     await trx(
       `INSERT INTO colaciones
         (id, usuario_id, presentacion_id, nombre_bebida, ml_bebida, acompanamiento,

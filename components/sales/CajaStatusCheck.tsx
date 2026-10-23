@@ -4,7 +4,7 @@ import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Button } from '@/components/ui/button';
 import { AlertTriangle, CreditCard } from 'lucide-react';
 import { useRouter } from 'next/navigation';
-import { useCashRegister } from '@/hooks/cash-register/useCashRegister';
+import { useCashRegisterStatus } from '@/hooks/cash-register/useCashRegisterStatus';
 import { useEffect } from 'react';
 
 interface CajaStatusCheckProps {
@@ -12,14 +12,16 @@ interface CajaStatusCheckProps {
 }
 
 export function CajaStatusCheck({ onStatusChange }: CajaStatusCheckProps) {
-  const { hasOpenCaja, loading, error } = useCashRegister();
+  // Solo el estado público: el listado/resumen exige `finances.read`, que roles
+  // como garzon no tienen y produce 403 falsos en el formulario de ventas.
+  const { hasOpenCaja, loading, error } = useCashRegisterStatus();
   const router = useRouter();
 
   useEffect(() => {
-    if (hasOpenCaja !== null) {
+    if (!loading && !error) {
       onStatusChange?.(hasOpenCaja);
     }
-  }, [hasOpenCaja, onStatusChange]);
+  }, [loading, error, hasOpenCaja, onStatusChange]);
 
   if (loading || hasOpenCaja === null) {
     return null;

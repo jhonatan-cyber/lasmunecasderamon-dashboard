@@ -4,14 +4,16 @@ import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Button } from '@/components/ui/button';
 import { AlertTriangle } from 'lucide-react';
 import { useRouter } from 'next/navigation';
-import { useCashRegister } from '@/hooks/cash-register/useCashRegister';
+import { useCashRegisterStatus } from '@/hooks/cash-register/useCashRegisterStatus';
 
 interface CajaStatusBannerProps {
   entityName?: string;
 }
 
 export function CajaStatusBanner({ entityName = 'ventas' }: CajaStatusBannerProps) {
-  const { hasOpenCaja, loading, error } = useCashRegister();
+  // Solo el estado público: el listado/resumen exige `finances.read`, que roles
+  // como garzon no tienen y produce 403 falsos en cada página con este banner.
+  const { hasOpenCaja, loading, error } = useCashRegisterStatus();
   const router = useRouter();
 
   if (loading || hasOpenCaja === null) {

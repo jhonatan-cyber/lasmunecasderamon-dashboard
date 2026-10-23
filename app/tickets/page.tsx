@@ -317,7 +317,7 @@ export default function EntradasPage() {
   };
 
   return (
-    <main className='mx-auto w-full max-w-[1600px] space-y-6 p-4 sm:p-6 lg:p-8'>
+    <main className='w-full space-y-6 p-4 sm:p-6 lg:p-8'>
       <CajaStatusBanner entityName='entradas' />
       <header className='flex items-center gap-3'>
         <div className='rounded-xl border bg-card p-3 text-primary shadow-xs'>

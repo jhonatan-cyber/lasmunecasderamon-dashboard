@@ -68,10 +68,68 @@ it('rechaza el formato incorrecto antes de modificar posiciones', async () => {
 });
 
 it.each(['price', 'time', 'comision_anfitriona'])(
-  'rechaza ceros en %s también en el servidor',
+  'acepta el 0 por defecto del modal en %s',
   field => {
     expect(
-      RoomWriteSchema.safeParse({ name: 'Sala', price: 1000, time: 30, [field]: '000' }).success
-    ).toBe(false);
+      RoomWriteSchema.safeParse({ name: 'Sala', price: 1000, time: 30, [field]: '0' }).success
+    ).toBe(true);
   }
 );
+
+it('rechaza valores negativos en los campos numéricos', () => {
+  expect(RoomWriteSchema.safeParse({ name: 'Sala', price: -1, time: 30 }).success).toBe(false);
+  expect(RoomWriteSchema.safeParse({ name: 'Sala', price: 1000, time: -1 }).success).toBe(false);
+  expect(
+    RoomWriteSchema.safeParse({ name: 'Sala', price: 1000, time: 30, comision_anfitriona: -1 })
+      .success
+  ).toBe(false);
+});
+
+it('preserva el estado guardado en lecturas de habitaciones de ingreso libre', async () => {
+  // Zustand 0 (desactivada) de una habitación sin precio: la lectura no la reactiva.
+  mocks.query.mockImplementation(async (sql: string) =>
+    sql.includes('SELECT *')
+      ? [
+          {
+            id_habitacion: 'new-room',
+            nombre: 'Vip',
+            precio: 0,
+            tiempo: 0,
+            comision_anfitriona: 0,
+            estado: 0,
+            display_order: 9
+          }
+        ]
+      : []
+  );
+  const inactiva = await RoomRepository.getById('new-room');
+  expect(inactiva?.status).toBe(0);
+
+  // Zustand 2 (ocupada por venta/servicio real) tampoco se fuerza a disponible.
+  mocks.query.mockImplementation(async (sql: string) =>
+    sql.includes('SELECT *')
+      ? [
+          {
+            id_habitacion: 'new-room',
+            nombre: 'Vip',
+            precio: 0,
+            tiempo: 0,
+            comision_anfitriona: 0,
+            estado: 2,
+            display_order: 9
+          }
+        ]
+      : []
+  );
+  const ocupada = await RoomRepository.getById('new-room');
+  expect(ocupada?.status).toBe(2);
+});
+
+it('acepta liberar una habitación ocupada', async () => {
+  await expect(RoomRepository.updateStatus('new-room', 'liberate')).resolves.toEqual(
+    expect.anything()
+  );
+  const update = mocks.query.mock.calls.find(([sql]) => sql.startsWith('UPDATE'))!;
+  expect(update[0]).toContain('estado');
+  expect(update[1]).toContain(1);
+});

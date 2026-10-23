@@ -91,6 +91,14 @@ describe('aceptación de transferencias', () => {
     expect(trx).toHaveBeenCalledWith(expect.stringContaining("SET ubicacion = 'bar'"), ['t1']);
   });
 
+  it('el administrador puede aceptar su propia transferencia', async () => {
+    const trx = connection({ role: 'administrador', sender: 'admin-1' });
+    await conContextoOperacionExistente(trx, contexto =>
+      aceptarTransferencia('t1', 'admin-1', contexto)
+    );
+    expect(trx).toHaveBeenCalledWith(expect.stringContaining("SET ubicacion = 'bar'"), ['t1']);
+  });
+
   it('un Barman sin el permiso tampoco resuelve', async () => {
     const trx = connection({ role: 'barman', authorized: false });
     await expect(
