@@ -19,6 +19,15 @@ import logger from '@/lib/utils/logger';
 import { refrescarConfiguraciones, useConfig, useConfigValue } from '@/hooks/shared/useConfigValue';
 import { setServiceLevels } from '@/components/orders/productModalRules';
 
+/**
+ * El rol administrador no recibe colaciones, así que no aparece en la regla por
+ * rol ni se puede configurar. Se compara normalizado porque es el mismo nombre
+ * reservado que valida el alta de roles en `/api/roles`.
+ */
+function esRolAdministrador(nombre: string): boolean {
+  return nombre.trim().toLowerCase() === 'administrador';
+}
+
 export function SettingsServiceLevelsCard() {
   const configSimple = useConfigValue('comisiones', 'umbral_simple_hasta', 10000);
   const configHostess = useConfigValue('comisiones', 'umbral_anfitriona_desde', 20000);
@@ -34,7 +43,7 @@ export function SettingsServiceLevelsCard() {
   // trabajador por turno) y 0 significa que el rol no recibe colación.
   const configTopesColaciones = useConfig<string>('colaciones_por_rol_y_turno', '');
   const [topesColaciones, setTopesColaciones] = useState<Record<string, string>>({});
-  const [rolesActivos, setRolesActivos] = useState<Array<{ id: number; nombre: string }>>([]);
+  const [rolesActivos, setRolesActivos] = useState<Array<{ id: string; nombre: string }>>([]);
   const [simpleValue, setSimpleValue] = useState('');
   const [hostessValue, setHostessValue] = useState('');
   const [habitacionValue, setHabitacionValue] = useState('');
@@ -73,11 +82,15 @@ export function SettingsServiceLevelsCard() {
           : [];
         const activos = filas
           .map(fila => ({
-            id: Number(fila.id_rol ?? fila.id),
+            // `roles.id_rol` es varchar(36): conservarlo como texto, nunca como número.
+            id: String(fila.id_rol ?? fila.id ?? ''),
             nombre: String(fila.nombre ?? fila.name ?? ''),
             estado: Number(fila.estado ?? fila.status ?? 1)
           }))
-          .filter(rol => Number.isFinite(rol.id) && rol.nombre && rol.estado === 1)
+          .filter(
+            rol =>
+              rol.id !== '' && rol.nombre && rol.estado === 1 && !esRolAdministrador(rol.nombre)
+          )
           .map(({ id, nombre }) => ({ id, nombre }));
         if (activo) setRolesActivos(activos);
       })
