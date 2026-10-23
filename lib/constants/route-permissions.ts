@@ -192,6 +192,7 @@ export const ROUTE_PERMISSIONS: RoutePermissionMap = {
   '/returns': { module: 'returns', action: 'view' },
   '/rooms': { module: 'rooms', action: 'view' },
   '/private-rooms': { module: 'private_rooms', action: 'view' },
+  '/quinchos': { module: 'quinchos', action: 'view' },
   '/settings': { module: 'settings', action: 'view' },
   '/waiter-dashboard': { module: 'dashboard', action: 'view' },
   '/waiter-calendar': { module: 'dashboard', action: 'view' },

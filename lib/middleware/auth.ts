@@ -138,6 +138,16 @@ export interface UserPermissions {
     create: boolean;
     deliver: boolean;
   };
+  /**
+   * Módulo `quinchos` (migración 102): `read` lista las reservas, `write` cobra
+   * una reserva acreditando el total al prepago y `delete` la anula devolviendo
+   * ese monto al cliente.
+   */
+  quinchos: {
+    read: boolean;
+    write: boolean;
+    delete: boolean;
+  };
 }
 
 export interface AuthenticatedUser {
@@ -200,7 +210,8 @@ export function createEmptyPermissions(): UserPermissions {
     returns: { read: false, write: false, delete: false },
     dashboard: { read: false },
     private_rooms: { read: false, write: false },
-    entradas: { view: false, create: false, deliver: false }
+    entradas: { view: false, create: false, deliver: false },
+    quinchos: { read: false, write: false, delete: false }
   };
 }
 

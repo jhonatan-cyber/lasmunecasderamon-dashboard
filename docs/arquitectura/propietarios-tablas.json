@@ -71,6 +71,7 @@
     "gratificaciones"
   ],
   "mcp-oauth": ["oauth_state"],
+  "quinchos": ["reservas_quincho"],
   "ventas": [
     "ventas",
     "detalle_ventas",

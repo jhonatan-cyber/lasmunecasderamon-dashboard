@@ -18,3 +18,4 @@ export * from './withdrawal';
 export * from './extra-hours';
 export * from './annulment';
 export * from './category';
+export * from './quincho';

@@ -44,7 +44,8 @@ const ADMIN_PERMS: UserPermissions = {
   returns: { read: true, write: true, delete: true },
   dashboard: { read: true },
   private_rooms: { read: true, write: true },
-  entradas: { view: true, create: true, deliver: true }
+  entradas: { view: true, create: true, deliver: true },
+  quinchos: { read: true, write: true, delete: true }
 };
 
 export async function getUserPermissions(

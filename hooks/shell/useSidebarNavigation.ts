@@ -14,6 +14,7 @@ import {
   Clock,
   DollarSign,
   FileText,
+  Flame,
   Gift,
   HandCoins,
   Home,
@@ -113,6 +114,11 @@ const SIDEBAR_SECTIONS: SidebarSection[] = [
         name: 'Vender Privado',
         href: '/private-rooms',
         icon: Lock
+      },
+      {
+        name: 'Reservas Quincho',
+        href: '/quinchos',
+        icon: Flame
       }
     ]
   },
