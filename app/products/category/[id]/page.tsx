@@ -10,6 +10,7 @@ import { ProductFormModal } from '@/components/products/ProductForm';
 import { CategoryProductsHeader } from '@/components/products/CategoryProductsHeader';
 import { ProductFilters } from '@/components/products/ProductFilters';
 import ProductTable from '@/components/products/ProductTable';
+import { VencimientoAlert } from '@/components/products/VencimientoAlert';
 import { useRouter } from 'next/navigation';
 import { Product, Presentacion } from '@/types/product';
 import Paginate from '@/components/shared/Paginate';
@@ -49,6 +50,7 @@ const ProductCategoryPage = () => {
 
   const {
     products,
+    allProducts,
     isLoading: productsLoading,
     isMutating,
     createProduct,
@@ -419,6 +421,8 @@ const ProductCategoryPage = () => {
             No se pudo comprobar el stock bajo. Intenta nuevamente.
           </p>
         )}
+
+        <VencimientoAlert fechas={allProducts.map(p => p.fecha_vencimiento)} />
 
         {}
         <div className='hidden lg:block'>
