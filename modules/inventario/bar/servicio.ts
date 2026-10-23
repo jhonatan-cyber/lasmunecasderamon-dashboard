@@ -11,7 +11,8 @@ import { consumirStock } from './repositorio';
 // emiten efectos, por eso el servicio las reexporta tal cual.
 import {
   listarStockBar as listarStockBarInterno,
-  obtenerResumenShots as obtenerResumenShotsInterno
+  obtenerResumenShots as obtenerResumenShotsInterno,
+  reordenarStockBar as reordenarStockBarInterno
 } from './stockRepositorio';
 
 export function listarStockBar(...args: Parameters<typeof listarStockBarInterno>) {
@@ -20,6 +21,12 @@ export function listarStockBar(...args: Parameters<typeof listarStockBarInterno>
 
 export function obtenerResumenShots(...args: Parameters<typeof obtenerResumenShotsInterno>) {
   return obtenerResumenShotsInterno(...args);
+}
+
+// El orden manual es una escritura del listado del bar, no del catálogo: se
+// expone junto a sus lecturas para que la ruta no importe persistencia privada.
+export function reordenarStockBar(...args: Parameters<typeof reordenarStockBarInterno>) {
+  return reordenarStockBarInterno(...args);
 }
 
 export function consumirStockBar(

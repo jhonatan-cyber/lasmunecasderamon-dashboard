@@ -19,6 +19,8 @@ interface BarCardProps {
   item: BarStockItem;
   /** Posición en la grilla: retardo de la entrada escalonada. */
   entranceIndex?: number;
+  /** Manilla de arrastre; la arma quien puede reordenar el listado. */
+  dragHandle?: React.ReactNode;
 }
 
 function imageUrl(foto?: string | null): string {
@@ -27,7 +29,7 @@ function imageUrl(foto?: string | null): string {
   return `/api/images/products/${foto}`;
 }
 
-export function BarCard({ item, entranceIndex }: BarCardProps) {
+export function BarCard({ item, entranceIndex, dragHandle }: BarCardProps) {
   const [detailsOpen, setDetailsOpen] = useState(false);
   // Categoría y default salen del registro de claves, no de literales repetidos.
   const shotMlGlobal = useConfig<number>('shot_ml');
@@ -59,6 +61,7 @@ export function BarCard({ item, entranceIndex }: BarCardProps) {
     <StaggeredEntrance index={entranceIndex} className='w-full min-w-0'>
       <Card className='flex w-full min-w-0 flex-col overflow-hidden rounded-3xl'>
         <div className='flex flex-wrap items-center justify-between gap-2 px-4 pt-4 pb-2'>
+          {dragHandle && <div className='shrink-0'>{dragHandle}</div>}
           <div
             className={`max-w-full rounded-full px-3 py-1 text-[11px] font-bold text-white break-words ${agotadoBar ? 'bg-red-600' : 'bg-green-500/90'}`}
           >

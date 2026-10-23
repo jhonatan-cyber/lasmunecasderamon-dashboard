@@ -3,7 +3,7 @@
  * privada del módulo (§5): nada fuera de `modules/inventario` importa este
  * archivo. SQL movido 1:1 desde `lib/repositories/inventory/BarQueries.ts`.
  */
-import { query } from '@/lib/database/db';
+import { query, withTransaction } from '@/lib/database/db';
 import { getBarMlConfig, getTopeSimple } from '../bar/configuracion';
 import { mapPresentacion } from '../helpers';
 import { ESTADO_UNIDAD_ACTIVA, ESTADO_UNIDAD_VENDIDA } from '../estados';
@@ -81,7 +81,8 @@ export async function listarStockBar(
      WHERE 1 = 1
      ${productoId ? 'AND p.producto_id = ?' : ''}
      ${soloAcompanamientos ? "AND c.system_key = 'bebidas_analcoholicas' AND c.estado = 1 AND pr.estado = 1" : ''}
-     ORDER BY pr.nombre ASC, p.fecha_crea ASC, p.id ASC`,
+     ORDER BY CASE WHEN p.bar_display_order = 0 THEN 1 ELSE 0 END,
+              p.bar_display_order ASC, pr.nombre ASC, p.fecha_crea ASC, p.id ASC`,
     productoId ? [mermaShotsMl, productoId] : [mermaShotsMl]
   );
   const maxMap = await obtenerMaxAnfitrionasPorProducto([
@@ -158,6 +159,27 @@ export async function listarStockBar(
     botellas_abiertas: botellasPorPresentacion.get(String(row.id)) ?? [],
     botellas_por_devolver: botellasPendientesPorPresentacion.get(String(row.id)) ?? []
   }));
+}
+
+/**
+ * Guarda el orden manual del listado del bar. Se escribe completo y dentro de
+ * una transacción: si se cortara a mitad, cada puesto vería una barra distinta.
+ * El último valor de un id repetido gana, así una petición con duplicados no
+ * deja filas a medio mover.
+ */
+export async function reordenarStockBar(
+  presentaciones: { id: string; orden: number }[]
+): Promise<void> {
+  const ordenPorPresentacion = new Map(presentaciones.map(p => [p.id, p.orden]));
+  if (ordenPorPresentacion.size === 0) return;
+  await withTransaction(async trx => {
+    for (const [id, orden] of ordenPorPresentacion) {
+      await trx('UPDATE inventario_presentaciones SET bar_display_order = ? WHERE id = ?', [
+        orden,
+        id
+      ]);
+    }
+  });
 }
 
 /**

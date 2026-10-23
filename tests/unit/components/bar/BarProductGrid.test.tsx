@@ -40,13 +40,14 @@ it('mantiene cada producto en su columna al desplegar una tarjeta', () => {
   const { container } = render(<BarProductGrid items={items} />);
   const columns = container.querySelectorAll('[data-product-column]');
   expect(columns).toHaveLength(3);
-  expect(screen.getByTestId('p3').parentElement).toBe(columns[0]);
-  expect(screen.getByTestId('p4').parentElement).toBe(columns[1]);
-  expect(screen.getByTestId('p5').parentElement).toBe(columns[2]);
+  // La tarjeta vive dentro de su columna (con el contenedor de arrastre en medio).
+  expect(screen.getByTestId('p3').closest('[data-product-column]')).toBe(columns[0]);
+  expect(screen.getByTestId('p4').closest('[data-product-column]')).toBe(columns[1]);
+  expect(screen.getByTestId('p5').closest('[data-product-column]')).toBe(columns[2]);
   fireEvent.click(screen.getByRole('button', { name: 'Producto 0' }));
   expect(screen.getByText('Detalle p0')).toBeInTheDocument();
-  expect(screen.getByTestId('p4').parentElement).toBe(columns[1]);
-  expect(screen.getByTestId('p5').parentElement).toBe(columns[2]);
+  expect(screen.getByTestId('p4').closest('[data-product-column]')).toBe(columns[1]);
+  expect(screen.getByTestId('p5').closest('[data-product-column]')).toBe(columns[2]);
   expect(columns[1]).not.toHaveTextContent('Detalle');
   expect(columns[2]).not.toHaveTextContent('Detalle');
 });

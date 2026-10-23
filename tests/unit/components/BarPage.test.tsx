@@ -27,6 +27,22 @@ vi.mock('@/components/bar/BarProductGrid', () => ({
     </ul>
   )
 }));
+// El contexto de arrastre se reemplaza por su callback: así se prueba el
+// guardado del orden sin simular punteros sobre la tabla.
+const reorderGroup = vi.hoisted(() => ({
+  enabled: false,
+  onMove: null as null | ((activeId: string, overId: string) => void)
+}));
+vi.mock('@/components/bar/BarReorderGroup', () => ({
+  BarReorderGroup: ({ enabled, onMove, children }: any) => {
+    reorderGroup.enabled = enabled;
+    reorderGroup.onMove = onMove;
+    return children;
+  }
+}));
+vi.mock('@/components/bar/BarReorderRow', () => ({
+  BarReorderRow: ({ children }: any) => <tr>{children}</tr>
+}));
 vi.mock('@/components/bar/BarStatsCards', () => ({ BarStatsCards: () => null }));
 vi.mock('@/components/bar/SalePrices', () => ({ SalePrices: () => null }));
 vi.mock('@/components/bar/BarAnfitrionas', () => ({
@@ -37,8 +53,11 @@ vi.mock('@/components/products/EscaneoLote', () => ({ EscaneoLote: () => null })
 vi.mock('@/components/products/ProductImageLightbox', () => ({ ProductImageLightbox: () => null }));
 vi.mock('@/components/shared/ProductPhoto', () => ({ ProductPhoto: () => null }));
 vi.mock('@/components/shared/selects/SortSelect', () => ({
-  SortSelect: ({ onChange }: any) => (
-    <button onClick={() => onChange('stock_bar', 'asc')}>Ordenar stock ascendente</button>
+  SortSelect: ({ field, onChange }: any) => (
+    <>
+      <p>Orden: {field}</p>
+      <button onClick={() => onChange('stock_bar', 'asc')}>Ordenar stock ascendente</button>
+    </>
   )
 }));
 afterEach(() => {
@@ -278,6 +297,66 @@ it('bloquea nuevas aprobaciones mientras una recepción se procesa', async () =>
     complete(response({}));
   });
   await waitFor(() => expect(screen.getAllByRole('button', { name: 'Aprobar' })[0]).toBeEnabled());
+});
+
+it('guarda el orden manual de las presentaciones del bar', async () => {
+  const fetcher = vi.fn(async (url: string, options?: RequestInit) => {
+    if (url === '/api/bar') return response(stock);
+    if (url === '/api/bar/reorder') return response({});
+    return response({});
+  });
+  vi.stubGlobal('fetch', fetcher);
+  mount();
+  expect(await screen.findByText('Ron')).toBeInTheDocument();
+
+  // En la tabla se expone el mismo callback que usan las tarjetas.
+  fireEvent.click(screen.getByRole('button', { name: 'Cambiar a tabla' }));
+  await act(async () => {
+    await reorderGroup.onMove?.('b', 'a');
+  });
+
+  const put = fetcher.mock.calls.find(([, options]) => options?.method === 'PUT');
+  expect(put?.[0]).toBe('/api/bar/reorder');
+  expect(JSON.parse(String(put?.[1]?.body))).toEqual({
+    presentation_orders: [
+      { id: 'b', orden: 1 },
+      { id: 'a', orden: 2 }
+    ]
+  });
+});
+
+it('permite arrastrar con otro orden y pasa a orden manual al soltar', async () => {
+  const fetcher = vi.fn(async (url: string, options?: RequestInit) => {
+    if (url === '/api/bar') return response(stock);
+    if (url === '/api/bar/reorder') return response({});
+    return response({});
+  });
+  vi.stubGlobal('fetch', fetcher);
+  mount();
+  expect(await screen.findByText('Ron')).toBeInTheDocument();
+  fireEvent.click(screen.getByRole('button', { name: 'Cambiar a tabla' }));
+
+  // Con el listado ordenado por stock el arrastre sigue habilitado.
+  fireEvent.click(screen.getByRole('button', { name: 'Ordenar stock ascendente' }));
+  expect(screen.getByText('Orden: stock_bar')).toBeInTheDocument();
+  expect(reorderGroup.enabled).toBe(true);
+
+  await act(async () => {
+    await reorderGroup.onMove?.('a', 'b');
+  });
+
+  // Al soltar, el listado pasa a orden manual con lo que el usuario movió y se
+  // avisa brevemente por qué se reacomodó.
+  expect(screen.getByText('Orden: orden')).toBeInTheDocument();
+  expect(screen.getByText(/El listado pasó a orden manual/)).toBeInTheDocument();
+  const put = fetcher.mock.calls.find(([, options]) => options?.method === 'PUT');
+  expect(put?.[0]).toBe('/api/bar/reorder');
+  expect(JSON.parse(String(put?.[1]?.body))).toEqual({
+    presentation_orders: [
+      { id: 'a', orden: 1 },
+      { id: 'b', orden: 2 }
+    ]
+  });
 });
 
 it('permite recuperar el resumen de cortos después de un fallo', async () => {
