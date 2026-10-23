@@ -29,6 +29,7 @@ import { useSortable } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
 import { formatCurrencyCLP } from '@/lib/utils/formatters';
 import { formatShortDmyDateEs } from '@/lib/utils/calendarUtils';
+import { esHabitacionSoloVentas } from '@/lib/business/habitaciones';
 
 const RoomCard: React.FC<{
   room: Room;
@@ -63,7 +64,9 @@ const RoomCard: React.FC<{
 }) => {
   const [confirmOpen, setConfirmOpen] = useState(false);
 
-  const noVendible = room.price === 0 && !room.comision_anfitriona && room.time === 0;
+  // Habitación sin precio, comisión ni duración: solo se usa en ventas con
+  // habitación, así que no se ofrece para ocupar.
+  const soloVentas = esHabitacionSoloVentas(room);
 
   const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({
     id: room.id,
@@ -180,7 +183,7 @@ const RoomCard: React.FC<{
                   </DropdownMenuItem>
                 )}
 
-                {room.status === 1 && canOccupy && (
+                {room.status === 1 && canOccupy && !soloVentas && (
                   <DropdownMenuItem onClick={() => onOccupy(room)} className='text-xs'>
                     <Users className='mr-2 h-3 w-3' />
                     Ocupar
@@ -261,12 +264,12 @@ const RoomCard: React.FC<{
           </div>
         </dl>
 
-        {/* Pie: aviso de habitación no vendible + fecha de alta */}
+        {/* Pie: aviso de habitación solo para ventas + fecha de alta */}
         <div className='pt-3 border-t border-gray-100 dark:border-slate-800 flex items-center justify-between gap-2 min-h-[2rem]'>
-          {noVendible ? (
+          {soloVentas ? (
             <span className='inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-amber-50 text-amber-700 dark:bg-amber-950/50 dark:text-amber-400 text-[10px] font-bold uppercase tracking-wide'>
               <AlertTriangle className='w-3 h-3' />
-              No vendible
+              Solo ventas
             </span>
           ) : (
             <span />

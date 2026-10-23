@@ -85,8 +85,8 @@ it('rechaza valores negativos en los campos numéricos', () => {
   ).toBe(false);
 });
 
-it('preserva el estado guardado en lecturas de habitaciones de ingreso libre', async () => {
-  // Zustand 0 (desactivada) de una habitación sin precio: la lectura no la reactiva.
+it('reporta libre una habitación sin precio, comisión ni duración aunque tenga un 2 guardado', async () => {
+  // Zustand 0 (desactivada) de una habitación sin configuración: se conserva.
   mocks.query.mockImplementation(async (sql: string) =>
     sql.includes('SELECT *')
       ? [
@@ -105,7 +105,8 @@ it('preserva el estado guardado en lecturas de habitaciones de ingreso libre', a
   const inactiva = await RoomRepository.getById('new-room');
   expect(inactiva?.status).toBe(0);
 
-  // Zustand 2 (ocupada por venta/servicio real) tampoco se fuerza a disponible.
+  // Un 2 heredado de cuando la regla no existía no la deja ocupada: la
+  // habitación solo sirve para ventas, así que siempre se reporta libre.
   mocks.query.mockImplementation(async (sql: string) =>
     sql.includes('SELECT *')
       ? [
@@ -122,7 +123,18 @@ it('preserva el estado guardado en lecturas de habitaciones de ingreso libre', a
       : []
   );
   const ocupada = await RoomRepository.getById('new-room');
-  expect(ocupada?.status).toBe(2);
+  expect(ocupada?.status).toBe(1);
+});
+
+it('no deja ocupar una habitación sin precio, comisión ni duración', async () => {
+  mocks.query.mockImplementation(async (sql: string) =>
+    sql.includes('SELECT precio') ? [{ precio: 0, comision_anfitriona: 0, tiempo: 0 }] : []
+  );
+
+  await expect(RoomRepository.updateStatus('new-room', 'occupy')).rejects.toThrow(
+    'no puede ocuparse'
+  );
+  expect(mocks.query.mock.calls.some(([sql]) => sql.startsWith('UPDATE'))).toBe(false);
 });
 
 it('acepta liberar una habitación ocupada', async () => {

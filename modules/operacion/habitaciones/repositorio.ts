@@ -1,14 +1,26 @@
 import { query, generateUUID, withTransaction } from '@/lib/database/db';
 import { getNowInBusinessTimezone } from '@/lib/business/timezoneService';
 import { RoomSchema, RoomWriteSchema, type RoomType } from '@/lib/business/schemas';
+import { esHabitacionSoloVentas } from '@/lib/business/habitaciones';
 import { BaseRepository } from '@/lib/database/base-repository';
 import { ConflictError, ValidationError } from '@/lib/errors/errors';
+
+/**
+ * Condición SQL de habitación "solo ventas": sin precio, sin comisión y sin
+ * duración. No admite privados y nunca se ocupa.
+ */
+const SQL_SOLO_VENTAS =
+  '(COALESCE(h.precio, 0) <= 0 AND COALESCE(h.comision_anfitriona, 0) <= 0 AND COALESCE(h.tiempo, 0) <= 0)';
 
 export class RoomRepository {
   private static mapRoomFromDB(row: any): RoomType {
     const tieneServiciosActivos = row.servicios_activos > 0;
     const tieneVentasActivas = row.ventas_activas > 0;
-    const estadoHabitacion = tieneServiciosActivos || tieneVentasActivas ? 2 : row.estado;
+    let estadoHabitacion = row.estado;
+    // Una habitación sin configuración nunca se ocupa: siempre se reporta libre.
+    // Solo la desactivación (0) se conserva.
+    if (esHabitacionSoloVentas(row)) estadoHabitacion = Number(row.estado) === 0 ? 0 : 1;
+    else if (tieneServiciosActivos || tieneVentasActivas) estadoHabitacion = 2;
 
     return RoomSchema.parse({
       id: row.id_habitacion,
@@ -32,16 +44,32 @@ export class RoomRepository {
             (SELECT COUNT(*) FROM servicios s WHERE s.habitacion_id = h.id_habitacion AND s.estado = 2) as servicios_activos,
             (SELECT COUNT(*) FROM ventas v WHERE v.habitacion_id = h.id_habitacion AND v.estado = 2) as ventas_activas
            FROM habitaciones h 
-           WHERE h.estado = 1
-           AND NOT EXISTS (
-             SELECT 1 FROM servicios s 
-             WHERE s.habitacion_id = h.id_habitacion AND s.estado = 2
+           WHERE h.estado <> 0
+           AND (
+             ${SQL_SOLO_VENTAS}
+             OR (
+               NOT EXISTS (
+                 SELECT 1 FROM servicios s 
+                 WHERE s.habitacion_id = h.id_habitacion AND s.estado = 2
+               )
+               AND NOT EXISTS (
+                 SELECT 1 FROM ventas v 
+                 WHERE v.habitacion_id = h.id_habitacion AND v.estado = 2
+               )
+             )
            )
-            AND NOT EXISTS (
-              SELECT 1 FROM ventas v 
-              WHERE v.habitacion_id = h.id_habitacion AND v.estado = 2
-            )
-            ORDER BY h.display_order ASC, h.id_habitacion ASC`,
+           ORDER BY h.display_order ASC, h.id_habitacion ASC`,
+          []
+        );
+      } else if (status === '2') {
+        results = await query<any[]>(
+          `SELECT h.*, 
+            (SELECT COUNT(*) FROM servicios s WHERE s.habitacion_id = h.id_habitacion AND s.estado = 2) as servicios_activos,
+            (SELECT COUNT(*) FROM ventas v WHERE v.habitacion_id = h.id_habitacion AND v.estado = 2) as ventas_activas
+           FROM habitaciones h 
+           WHERE h.estado = 2
+           AND NOT ${SQL_SOLO_VENTAS}
+           ORDER BY h.display_order ASC, h.id_habitacion ASC`,
           []
         );
       } else {
@@ -132,8 +160,20 @@ export class RoomRepository {
     let newStatus;
     if (action === 'activate' || action === 'liberate') newStatus = 1;
     else if (action === 'deactivate') newStatus = 0;
-    else if (action === 'occupy') newStatus = 2;
-    else
+    else if (action === 'occupy') {
+      // Una habitación sin precio, comisión ni duración no admite privados.
+      const [habitacion] = await query<
+        { precio: number | null; comision_anfitriona: number | null; tiempo: number | null }[]
+      >('SELECT precio, comision_anfitriona, tiempo FROM habitaciones WHERE id_habitacion = ?', [
+        id
+      ]);
+      if (esHabitacionSoloVentas(habitacion))
+        throw new ValidationError(
+          'Una habitación sin precio, comisión ni duración no puede ocuparse',
+          { id, motivo: 'ROOM_SALES_ONLY' }
+        );
+      newStatus = 2;
+    } else
       throw new ValidationError('Acción no válida', {
         action,
         allowed: ['activate', 'deactivate', 'occupy', 'liberate']

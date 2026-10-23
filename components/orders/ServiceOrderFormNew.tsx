@@ -15,6 +15,7 @@ import { useClients } from '@/hooks/clients/useClients';
 import { useRefreshOnFocus } from '@/hooks/shared';
 import { formatCurrencyCLP, formatNumberCL } from '@/lib/utils/formatters';
 import { useIvaRate } from '@/components/providers/IvaRateProvider';
+import { habitacionesParaServicio } from '@/lib/business/habitaciones';
 
 import {
   ORDER_FIELD_INPUT_WITH_ICON_CLASS,
@@ -53,7 +54,12 @@ export default function ServiceOrderForm({ clientes }: ServiceOrderFormProps) {
   const { allClients: clientesDB = [], fetchClients } = useClients();
   const ivaRate = useIvaRate();
 
-  const habitacionesDisponibles = habitaciones || [];
+  // Las habitaciones sin precio, comisión ni duración solo sirven para ventas:
+  // no se ofrecen al abrir un privado o servicio.
+  const habitacionesDisponibles = useMemo(
+    () => habitacionesParaServicio(habitaciones || []),
+    [habitaciones]
+  );
 
   const [selectedClienteId, setSelectedClienteId] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);

@@ -32,6 +32,7 @@ import {
 } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
 import { formatCurrencyCLP } from '@/lib/utils/formatters';
+import { esHabitacionSoloVentas } from '@/lib/business/habitaciones';
 import {
   Table,
   TableBody,
@@ -109,6 +110,9 @@ const SortableRow: React.FC<SortableRowProps> = ({
   const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({
     id: room.id
   });
+
+  // Una habitación sin precio, comisión ni duración solo se usa en ventas.
+  const soloVentas = esHabitacionSoloVentas(room);
 
   const style = {
     transform: CSS.Transform.toString(transform),
@@ -191,7 +195,7 @@ const SortableRow: React.FC<SortableRowProps> = ({
                 </Tooltip>
               ) : room.status === 1 ? (
                 <>
-                  {canOccupy && (
+                  {canOccupy && !soloVentas && (
                     <Tooltip>
                       <TooltipTrigger asChild>
                         <DropdownMenuItem onClick={() => onOccupy(room)}>

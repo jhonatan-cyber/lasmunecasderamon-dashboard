@@ -1,7 +1,7 @@
 'use client';
 
 import { ServicioIncludedProduct } from '@/components/private-rooms/new/ServicioIncludedProduct';
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useMemo } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import {
   Select,
@@ -20,6 +20,7 @@ import { useTimer } from '@/contexts/TimerContext';
 import { useRefreshOnFocus } from '@/hooks/shared';
 import { useAvailableRooms } from '@/hooks/rooms';
 import { useIvaRate } from '@/components/providers/IvaRateProvider';
+import { habitacionesParaServicio } from '@/lib/business/habitaciones';
 
 interface ServiceRequestModalProps {
   open: boolean;
@@ -36,6 +37,12 @@ export function ServiceRequestModal({
 }: ServiceRequestModalProps) {
   const { anfitrionas } = useAnfitrionas(false);
   const { availableRooms, refetchRooms } = useAvailableRooms();
+  // Una habitación sin precio, comisión ni duración no admite privados: no se
+  // ofrece al procesar la solicitud ni cuenta como disponible.
+  const habitacionesDisponibles = useMemo(
+    () => habitacionesParaServicio(availableRooms),
+    [availableRooms]
+  );
   const { startTimer } = useTimer();
   const ivaRate = useIvaRate();
 
@@ -60,13 +67,13 @@ export function ServiceRequestModal({
 
     setProductoIncluido(solicitud.producto_incluido_presentacion_id || '');
     const currentRoomId = solicitud?.habitacion_id;
-    const currentIsAvailable = availableRooms.some(
+    const currentIsAvailable = habitacionesDisponibles.some(
       (r: any) => String(r.id_habitacion || r.id) === String(currentRoomId)
     );
 
     setIsRoomAvailable(currentIsAvailable);
     setSelectedRoomId(currentIsAvailable ? String(currentRoomId) : '');
-  }, [availableRooms, solicitud]);
+  }, [habitacionesDisponibles, solicitud]);
 
   const getAnfitrionasNicks = (ids: any): string => {
     let finalIds = ids;
@@ -230,7 +237,7 @@ export function ServiceRequestModal({
         </DialogHeader>
 
         {Number(
-          availableRooms.find(
+          habitacionesDisponibles.find(
             (r: any) => String(r.id_habitacion || r.id) === String(selectedRoomId)
           )?.comision_anfitriona ?? solicitud.comision_anfitriona
         ) > 0 && (
@@ -261,7 +268,7 @@ export function ServiceRequestModal({
                   <SelectValue placeholder='Seleccionar habitación' />
                 </SelectTrigger>
                 <SelectContent className='bg-white dark:bg-[#2a2a2a] border-gray-300 dark:border-gray-700'>
-                  {availableRooms.map((room: any) => (
+                  {habitacionesDisponibles.map((room: any) => (
                     <SelectItem
                       key={room.id_habitacion || room.id}
                       value={String(room.id_habitacion || room.id)}

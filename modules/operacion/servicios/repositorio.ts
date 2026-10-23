@@ -17,6 +17,7 @@ import { generateUUID, query } from '@/lib/database/db';
 import type { ContextoOperacion } from '@/lib/transaction/contract';
 import { resolverTransaccion } from '@/lib/transaction/infrastructure';
 import { getNowInBusinessTimezone } from '@/lib/business/timezoneService';
+import { esHabitacionSoloVentas } from '@/lib/business/habitaciones';
 import { BaseRepository } from '@/lib/database/base-repository';
 import { BusinessError, DatabaseError } from '@/lib/errors/errors';
 import { logger } from '@/lib/utils/logger';
@@ -270,11 +271,11 @@ export async function leerServicioDeSolicitud(
 export async function leerHabitacionParaServicio(
   habitacionId: string,
   contexto: ContextoOperacion
-): Promise<{ precio: number; comision_anfitriona: number; estado: number } | null> {
+): Promise<{ precio: number; comision_anfitriona: number; tiempo: number; estado: number } | null> {
   const rows = await resolverTransaccion(contexto)<
-    { precio: number; comision_anfitriona: number; estado: number }[]
+    { precio: number; comision_anfitriona: number; tiempo: number; estado: number }[]
   >(
-    'SELECT precio, comision_anfitriona, estado FROM habitaciones WHERE id_habitacion = ? FOR UPDATE',
+    'SELECT precio, comision_anfitriona, tiempo, estado FROM habitaciones WHERE id_habitacion = ? FOR UPDATE',
     [habitacionId]
   );
   return rows[0] ?? null;
@@ -289,6 +290,13 @@ export async function validarHabitacionDisponibleParaServicio(
   // consulta después del bloqueo para ver el servicio que terminó de crearse.
   const habitacion = await leerHabitacionParaServicio(habitacionId, contexto);
   if (!habitacion) throw new BusinessError('La habitación ya no existe');
+  // Sin precio, comisión ni duración la habitación es solo para ventas con
+  // habitación. Un servicio original (edición de uno heredado) se conserva.
+  if (!servicioOriginalId && esHabitacionSoloVentas(habitacion))
+    throw new BusinessError(
+      'Esta habitación solo está disponible para ventas con habitación',
+      'ROOM_SALES_ONLY'
+    );
   if (Number(habitacion.estado) !== 1 && !(servicioOriginalId && Number(habitacion.estado) === 2))
     throw new BusinessError('La habitación está ocupada o no está disponible', 'ROOM_OCCUPIED');
   const actividad = await resolverTransaccion(contexto)<{ ocupada: number }[]>(

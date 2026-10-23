@@ -2,6 +2,7 @@ import { query, generateUUID } from '@/lib/database/db';
 import { getNowInBusinessTimezone } from '@/lib/business/timezoneService';
 import { NotFoundError, BusinessError, DatabaseError } from '@/lib/errors/errors';
 import { logger } from '@/lib/utils/logger';
+import { esHabitacionSoloVentas } from '@/lib/business/habitaciones';
 import { leerHabitacionParaServicio } from '../servicios/repositorio';
 import { crearServicioEnUnidad } from '../servicios/creacion';
 import { enUnaUnidad } from '@/lib/transaction/contract';
@@ -39,6 +40,21 @@ export class ServiceRequestRepository {
   }
 
   static async create(data: any, solicitadoPor: string) {
+    // Una solicitud es el primer paso de un privado/servicio: no puede nacer
+    // sobre una habitación que solo sirve para ventas.
+    if (data.habitacion_id) {
+      const [habitacion] = await query<
+        { precio: number | null; comision_anfitriona: number | null; tiempo: number | null }[]
+      >('SELECT precio, comision_anfitriona, tiempo FROM habitaciones WHERE id_habitacion = ?', [
+        data.habitacion_id
+      ]);
+      if (!habitacion) throw new NotFoundError('Habitación', String(data.habitacion_id));
+      if (esHabitacionSoloVentas(habitacion))
+        throw new BusinessError(
+          'Esta habitación solo está disponible para ventas con habitación',
+          'ROOM_SALES_ONLY'
+        );
+    }
     try {
       const id = generateUUID();
       const fecha = getNowInBusinessTimezone(data.device_date);

@@ -3,6 +3,7 @@
 import { memo } from 'react';
 import { CustomersSelect, HostessSelect, RoomSelect } from '@/components/shared/selects';
 import type { ServicioFormData } from '@/components/private-rooms/new/servicioFormModel';
+import { habitacionesParaServicio } from '@/lib/business/habitaciones';
 
 /** Fila superior de selects: habitación, anfitrionas y clientes. */
 export const ServicioSelectsRow = memo(function ServicioSelectsRow({
@@ -22,11 +23,14 @@ export const ServicioSelectsRow = memo(function ServicioSelectsRow({
   maxHostesses: number;
   maxClients: number;
 }) {
+  // Una habitación sin precio, comisión ni duración no se ofrece para privados.
+  const habitacionesDisponibles = habitacionesParaServicio(habitaciones);
+
   return (
     <div className='grid grid-cols-1 sm:grid-cols-3 gap-3 sm:gap-4'>
       {/* Habitación */}
       <RoomSelect
-        habitaciones={habitaciones}
+        habitaciones={habitacionesDisponibles}
         value={formData.habitacion_id ? formData.habitacion_id.toString() : ''}
         onChange={value => {
           setFormData(prev => ({ ...prev, habitacion_id: value }));

@@ -3,11 +3,15 @@ import { resolverTransaccion } from '@/lib/transaction/infrastructure';
 import { getNowInBusinessTimezone } from '@/lib/business/timezoneService';
 import { BusinessError } from '@/lib/errors/errors';
 
+/**
+ * Ocupar exige configuración: una habitación sin precio, comisión ni duración es
+ * solo para ventas y debe quedar siempre libre.
+ */
+const SQL_OCUPAR_HABITACION =
+  'UPDATE habitaciones SET estado = 2 WHERE id_habitacion = ? AND (COALESCE(precio, 0) > 0 OR COALESCE(comision_anfitriona, 0) > 0 OR COALESCE(tiempo, 0) > 0)';
+
 export async function ocuparHabitacionVenta(id: string, contexto: ContextoOperacion) {
-  await resolverTransaccion(contexto)(
-    'UPDATE habitaciones SET estado = 2 WHERE id_habitacion = ?',
-    [id]
-  );
+  await resolverTransaccion(contexto)(SQL_OCUPAR_HABITACION, [id]);
 }
 export async function cerrarPedidoFacturado(id: string, contexto: ContextoOperacion) {
   const rows = await resolverTransaccion(contexto)(
@@ -45,7 +49,8 @@ export async function marcarPedidoPorAnulacion(
 /**
  * Ocupa la habitación cuando corresponde (`updateCuenta` lo hacía al extender
  * tiempo o al cambiar de habitación configurada). La condición se evalúa con
- * la fila ya leída, igual que el `AND (precio > 0 OR tiempo > 0)` heredado.
+ * la fila ya leída, igual que el `AND (precio > 0 OR comisión OR tiempo > 0)`
+ * heredado.
  */
 export async function ocuparHabitacionSiCorresponde(
   habitacionId: string,
@@ -53,10 +58,7 @@ export async function ocuparHabitacionSiCorresponde(
   contexto: ContextoOperacion
 ): Promise<void> {
   if (!corresponde) return;
-  await resolverTransaccion(contexto)(
-    'UPDATE habitaciones SET estado = 2 WHERE id_habitacion = ?',
-    [habitacionId]
-  );
+  await resolverTransaccion(contexto)(SQL_OCUPAR_HABITACION, [habitacionId]);
 }
 
 export async function consultarHabitacion(
