@@ -137,7 +137,7 @@ export function OrderDetailPaymentPanel({
                 checked={agregarPropina}
                 onCheckedChange={checked => setAgregarPropina(checked === true)}
               />
-              <label
+              <Label
                 htmlFor='propina-checkbox'
                 className='text-sm text-gray-700 cursor-pointer select-none dark:text-zinc-300'
               >
@@ -147,7 +147,7 @@ export function OrderDetailPaymentPanel({
                     ({formatCurrencyCLP(propina)})
                   </span>
                 )}
-              </label>
+              </Label>
             </div>
           </>
         )}

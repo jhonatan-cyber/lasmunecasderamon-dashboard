@@ -2,6 +2,7 @@ import React from 'react';
 import { cleanup, fireEvent, render, screen } from '@testing-library/react';
 import { afterEach, expect, it, vi } from 'vitest';
 import { ProductForm } from '@/components/products/ProductForm';
+import { fechaCorta, seleccionarFecha } from '../helpers/datePicker';
 
 // El mock global de react-query devuelve un cliente nuevo en cada llamada; con
 // `useProductForm` eso re-dispara su efecto en bucle. Acá se fija uno solo.
@@ -57,13 +58,11 @@ it('calcula el vencimiento con elaboración y duración y los tres datos viajan 
   mount(onSubmit);
   completarProducto();
 
-  fireEvent.change(screen.getByLabelText('Fecha de elaboración'), {
-    target: { value: '2026-01-31' }
-  });
+  seleccionarFecha('Fecha de elaboración', '2026-01-31');
   fireEvent.change(screen.getByLabelText('Duración (meses)'), { target: { value: '6' } });
 
   // El vencimiento se completa solo (el día se recorta al fin del mes).
-  expect(screen.getByLabelText('Fecha de vencimiento')).toHaveValue('2026-07-31');
+  expect(screen.getByLabelText('Fecha de vencimiento')).toHaveTextContent(fechaCorta('2026-07-31'));
 
   fireEvent.submit(document.getElementById('product-form')!);
 
@@ -79,12 +78,10 @@ it('acepta solo la fecha de vencimiento, sin elaboración ni duración', () => {
   mount(onSubmit);
   completarProducto();
 
-  fireEvent.change(screen.getByLabelText('Fecha de vencimiento'), {
-    target: { value: '2026-11-20' }
-  });
-  expect(screen.getByLabelText('Fecha de elaboración')).toHaveValue('');
+  seleccionarFecha('Fecha de vencimiento', '2026-11-20');
+  expect(screen.getByLabelText('Fecha de elaboración')).toHaveTextContent('dd/mm/aaaa');
   expect(screen.getByLabelText('Duración (meses)')).toHaveValue('');
-  expect(screen.getByLabelText('Fecha de vencimiento')).toHaveValue('2026-11-20');
+  expect(screen.getByLabelText('Fecha de vencimiento')).toHaveTextContent(fechaCorta('2026-11-20'));
 
   fireEvent.submit(document.getElementById('product-form')!);
 
@@ -100,12 +97,8 @@ it('rechaza un vencimiento anterior a la elaboración', () => {
   mount(onSubmit);
   completarProducto();
 
-  fireEvent.change(screen.getByLabelText('Fecha de elaboración'), {
-    target: { value: '2026-05-01' }
-  });
-  fireEvent.change(screen.getByLabelText('Fecha de vencimiento'), {
-    target: { value: '2026-04-01' }
-  });
+  seleccionarFecha('Fecha de elaboración', '2026-05-01');
+  seleccionarFecha('Fecha de vencimiento', '2026-04-01');
 
   fireEvent.submit(document.getElementById('product-form')!);
 

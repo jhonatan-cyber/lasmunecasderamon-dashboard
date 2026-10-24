@@ -4,6 +4,7 @@ import { Bed, DollarSign, Clock } from 'lucide-react';
 import { Room } from '@/types/room';
 import { useRoomForm } from '@/hooks/rooms';
 import { type RoomFormValues } from '@/hooks/rooms';
+import { Label } from '@/components/ui/label';
 
 interface RoomFormProps {
   open: boolean;
@@ -31,9 +32,9 @@ export function RoomForm({
   return (
     <form id='room-form' onSubmit={handleSubmit} className='space-y-4'>
       <div>
-        <label htmlFor='room-name' className='block text-sm sm:text-base font-medium mb-2'>
+        <Label htmlFor='room-name' className='block text-sm sm:text-base font-medium mb-2'>
           Nombre
-        </label>
+        </Label>
         <div className='relative'>
           <Bed className='absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400 pointer-events-none' />
           <Input
@@ -50,9 +51,9 @@ export function RoomForm({
         {errors.name && <span className='text-red-500 text-xs mt-1 block'>{errors.name}</span>}
       </div>
       <div>
-        <label htmlFor='room-price' className='block text-sm sm:text-base font-medium mb-2'>
+        <Label htmlFor='room-price' className='block text-sm sm:text-base font-medium mb-2'>
           Precio
-        </label>
+        </Label>
         <div className='relative'>
           <DollarSign className='absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400 pointer-events-none' />
           <Input
@@ -71,9 +72,9 @@ export function RoomForm({
         {errors.price && <span className='text-red-500 text-xs mt-1 block'>{errors.price}</span>}
       </div>
       <div>
-        <label htmlFor='room-time' className='block text-sm sm:text-base font-medium mb-2'>
+        <Label htmlFor='room-time' className='block text-sm sm:text-base font-medium mb-2'>
           Tiempo (minutos)
-        </label>
+        </Label>
         <div className='relative'>
           <Clock className='absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400 pointer-events-none' />
           <Input
@@ -92,9 +93,9 @@ export function RoomForm({
         {errors.time && <span className='text-red-500 text-xs mt-1 block'>{errors.time}</span>}
       </div>
       <div>
-        <label htmlFor='room-comm' className='block text-sm sm:text-base font-medium mb-2'>
+        <Label htmlFor='room-comm' className='block text-sm sm:text-base font-medium mb-2'>
           Comision Anfitriona (Monto)
-        </label>
+        </Label>
         <div className='relative'>
           <DollarSign className='absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400 pointer-events-none' />
           <Input

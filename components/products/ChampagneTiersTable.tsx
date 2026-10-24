@@ -3,6 +3,7 @@ import { Button } from '@/components/ui/button';
 
 import { Input } from '@/components/ui/input';
 import type { ChampagneTier } from '@/hooks/staff/useChampagneTiers';
+import { Label } from '@/components/ui/label';
 
 interface ChampagneTiersTableProps {
   tiers: ChampagneTier[];
@@ -24,9 +25,9 @@ export function ChampagneTiersTable({
   return (
     <div className='space-y-3'>
       <div className='flex items-center justify-between ml-1'>
-        <label className='block text-xs font-bold uppercase tracking-wider text-gray-500 dark:text-gray-400'>
+        <Label className='block text-xs font-bold uppercase tracking-wider text-gray-500 dark:text-gray-400'>
           Precios champagne por anfitrionas
-        </label>
+        </Label>
         <Button
           variant='unstyled'
           type='button'

@@ -17,6 +17,7 @@ import { PresentacionNombreInput } from './PresentacionNombreInput';
 import { Collapsible, CollapsibleTrigger, CollapsibleContent } from '@/components/ui/collapsible';
 import { cn } from '@/lib/utils/utils';
 import type { PresentacionFormItem } from '@/hooks/products/useProductForm';
+import { Label } from '@/components/ui/label';
 
 interface NewPresentacionRowProps {
   presentacion: PresentacionFormItem;
@@ -133,7 +134,7 @@ export function NewPresentacionRow({
                     <Image className='w-5 h-5' aria-hidden='true' />
                   </div>
                 )}
-                <label
+                <Label
                   htmlFor={`pres-foto-new-${i}`}
                   className='absolute inset-0 cursor-pointer'
                   title='Arrastrar o elegir imagen'
@@ -150,7 +151,7 @@ export function NewPresentacionRow({
                       e.target.value = '';
                     }}
                   />
-                </label>
+                </Label>
               </div>
               <div className='flex-1 min-w-0'>
                 <p className='text-xs font-bold uppercase tracking-wider text-gray-400'>

@@ -8,6 +8,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { toast } from 'sonner';
 import type { CompanyConfig } from './settings-types';
 import logger from '@/lib/utils/logger';
+import { Label } from '@/components/ui/label';
 
 export function SettingsCompanyTab() {
   const [config, setConfig] = useState<CompanyConfig>({
@@ -92,9 +93,9 @@ export function SettingsCompanyTab() {
           <div className='grid grid-cols-1 md:grid-cols-2 gap-6'>
             <div className='space-y-4'>
               <div>
-                <label htmlFor='company-name' className='block text-sm font-medium mb-1'>
+                <Label htmlFor='company-name' className='block text-sm font-medium mb-1'>
                   Nombre de la Empresa
-                </label>
+                </Label>
                 <Input
                   id='company-name'
                   type='text'
@@ -105,9 +106,9 @@ export function SettingsCompanyTab() {
                 />
               </div>
               <div>
-                <label htmlFor='company-rut' className='block text-sm font-medium mb-1'>
+                <Label htmlFor='company-rut' className='block text-sm font-medium mb-1'>
                   RUT
-                </label>
+                </Label>
                 <Input
                   id='company-rut'
                   type='text'
@@ -118,9 +119,9 @@ export function SettingsCompanyTab() {
                 />
               </div>
               <div>
-                <label htmlFor='company-address' className='block text-sm font-medium mb-1'>
+                <Label htmlFor='company-address' className='block text-sm font-medium mb-1'>
                   Dirección
-                </label>
+                </Label>
                 <Input
                   id='company-address'
                   type='text'
@@ -135,9 +136,9 @@ export function SettingsCompanyTab() {
             </div>
             <div className='space-y-4'>
               <div>
-                <label htmlFor='company-phone' className='block text-sm font-medium mb-1'>
+                <Label htmlFor='company-phone' className='block text-sm font-medium mb-1'>
                   Teléfono
-                </label>
+                </Label>
                 <Input
                   id='company-phone'
                   type='text'
@@ -148,9 +149,9 @@ export function SettingsCompanyTab() {
                 />
               </div>
               <div>
-                <label htmlFor='company-email' className='block text-sm font-medium mb-1'>
+                <Label htmlFor='company-email' className='block text-sm font-medium mb-1'>
                   Email
-                </label>
+                </Label>
                 <Input
                   id='company-email'
                   type='email'
@@ -162,9 +163,9 @@ export function SettingsCompanyTab() {
               </div>
               <div className='grid grid-cols-2 gap-4'>
                 <div>
-                  <label htmlFor='company-whatsapp' className='block text-sm font-medium mb-1'>
+                  <Label htmlFor='company-whatsapp' className='block text-sm font-medium mb-1'>
                     WhatsApp público
-                  </label>
+                  </Label>
                   <Input
                     id='company-whatsapp'
                     type='text'
@@ -177,9 +178,9 @@ export function SettingsCompanyTab() {
                   />
                 </div>
                 <div>
-                  <label htmlFor='company-instagram' className='block text-sm font-medium mb-1'>
+                  <Label htmlFor='company-instagram' className='block text-sm font-medium mb-1'>
                     Instagram
-                  </label>
+                  </Label>
                   <Input
                     id='company-instagram'
                     type='text'
@@ -192,9 +193,9 @@ export function SettingsCompanyTab() {
                   />
                 </div>
                 <div>
-                  <label htmlFor='company-facebook' className='block text-sm font-medium mb-1'>
+                  <Label htmlFor='company-facebook' className='block text-sm font-medium mb-1'>
                     Facebook
-                  </label>
+                  </Label>
                   <Input
                     id='company-facebook'
                     type='text'
@@ -207,9 +208,9 @@ export function SettingsCompanyTab() {
                   />
                 </div>
                 <div>
-                  <label htmlFor='company-tiktok' className='block text-sm font-medium mb-1'>
+                  <Label htmlFor='company-tiktok' className='block text-sm font-medium mb-1'>
                     TikTok
-                  </label>
+                  </Label>
                   <Input
                     id='company-tiktok'
                     type='text'

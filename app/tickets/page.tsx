@@ -4,6 +4,7 @@ import { useCallback, useEffect, useMemo, useRef, useState, type FormEvent } fro
 import { toast } from 'sonner';
 import { DollarSign, Eye, Minus, Plus, Ticket, UserRoundPlus } from 'lucide-react';
 import { CajaStatusBanner } from '@/components/sales/CajaStatusBanner';
+import { DatePicker } from '@/components/shared/DatePicker';
 import { MetricCard } from '@/components/shared/MetricCard';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -474,12 +475,12 @@ export default function EntradasPage() {
             <h2 className='font-semibold'>Entradas registradas</h2>
             <p className='text-sm text-muted-foreground'>Detalle por fecha seleccionada.</p>
           </div>
-          <Input
-            aria-label='Filtrar entradas por fecha'
-            type='date'
+          <DatePicker
+            ariaLabel='Filtrar entradas por fecha'
+            displayFormat='short'
             className='w-auto'
             value={fechaFiltro}
-            onChange={event => setFechaFiltro(event.target.value)}
+            onChange={setFechaFiltro}
           />
         </div>
         {loading ? (

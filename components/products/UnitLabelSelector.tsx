@@ -254,7 +254,7 @@ export function UnitLabelSelector({
             </div>
             <div className='grid grid-cols-1 gap-2 sm:grid-cols-2'>
               {group.units.map(unit => (
-                <label
+                <Label
                   key={unit.id}
                   className='flex cursor-pointer items-center gap-3 rounded-lg border p-3'
                 >
@@ -289,7 +289,7 @@ export function UnitLabelSelector({
                       {unit.estado && unit.estado !== 'almacen' ? ' · Inactivo' : ''}
                     </span>
                   </span>
-                </label>
+                </Label>
               ))}
             </div>
           </section>

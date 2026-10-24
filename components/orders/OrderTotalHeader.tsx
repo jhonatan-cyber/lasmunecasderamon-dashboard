@@ -1,10 +1,11 @@
 'use client';
 
 import { Button } from '@/components/ui/button';
-import { Coins, ReceiptText, ShoppingCart } from 'lucide-react';
+import { ReceiptText, ShoppingCart } from 'lucide-react';
 import React, { useState } from 'react';
 import { formatCurrencyNoDecimals } from '@/lib/utils/formatters';
 import { Label } from '@/components/ui/label';
+import { TipToggle } from '@/components/shared/TipToggle';
 
 interface OrderTotalHeaderProps {
   total: number;
@@ -30,11 +31,10 @@ const OrderTotalHeader: React.FC<OrderTotalHeaderProps> = ({
 
   const tipAmount = tipEnabled && subtotal ? (subtotal * tipPercentage) / 100 : 0;
 
-  const handleTipToggle = () => {
-    const newEnabled = !tipEnabled;
-    setTipEnabled(newEnabled);
+  const handleTipToggle = (nextEnabled: boolean) => {
+    setTipEnabled(nextEnabled);
     if (onTipChange) {
-      onTipChange(newEnabled, tipPercentage);
+      onTipChange(nextEnabled, tipPercentage);
     }
   };
 
@@ -64,35 +64,7 @@ const OrderTotalHeader: React.FC<OrderTotalHeaderProps> = ({
         <Label className='block text-xs font-medium uppercase tracking-wide text-gray-500 dark:text-gray-400'>
           Propina sugerida ({tipPercentage}%)
         </Label>
-        <div
-          role='button'
-          tabIndex={0}
-          aria-label='Activar propina'
-          aria-pressed={tipEnabled}
-          onClick={handleTipToggle}
-          onKeyDown={event => {
-            if (
-              event.target === event.currentTarget &&
-              (event.key === 'Enter' || event.key === ' ')
-            ) {
-              event.preventDefault();
-              handleTipToggle();
-            }
-          }}
-          className='flex h-11 items-center justify-between gap-3 rounded-full border border-gray-200 bg-gray-50/80 px-3 text-left transition-colors hover:bg-gray-100 dark:border-neutral-700 dark:bg-neutral-800/80 dark:hover:bg-neutral-800'
-        >
-          <div className='flex min-w-0 items-center gap-2'>
-            <Coins className='h-4 w-4 shrink-0 text-gray-400' />
-            <span className='text-sm font-bold text-gray-800 dark:text-neutral-100'>
-              {formatCurrencyNoDecimals(tipAmount)}
-            </span>
-          </div>
-          <div className='flex items-center gap-2'>
-            <span className='text-[11px] font-semibold uppercase tracking-wide text-gray-500 dark:text-neutral-400'>
-              {tipEnabled ? 'Activa' : 'Inactiva'}
-            </span>
-          </div>
-        </div>
+        <TipToggle amount={tipAmount} enabled={tipEnabled} onToggle={handleTipToggle} />
       </div>
 
       <Button

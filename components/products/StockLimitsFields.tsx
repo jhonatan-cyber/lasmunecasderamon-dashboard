@@ -1,6 +1,7 @@
 'use client';
 import { FormattedNumberInput } from '@/components/shared/FormattedNumberInput';
 import { Package } from 'lucide-react';
+import { Label } from '@/components/ui/label';
 
 export function StockLimitsFields({
   id,
@@ -24,7 +25,7 @@ export function StockLimitsFields({
       <div className='grid grid-cols-2 gap-2'>
         {(['stock_minimo', 'stock_maximo'] as const).map(field => (
           <div className='space-y-1' key={field}>
-            <label
+            <Label
               htmlFor={`${id}-${field}`}
               className={
                 editing
@@ -33,7 +34,7 @@ export function StockLimitsFields({
               }
             >
               {field === 'stock_minimo' ? 'Stock mínimo' : 'Stock máximo'}
-            </label>
+            </Label>
             <div className='relative group'>
               {!editing && (
                 <span

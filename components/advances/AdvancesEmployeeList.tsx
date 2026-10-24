@@ -19,6 +19,7 @@ import { EmployeeAdvanceRequests } from './EmployeeAdvanceRequests';
 import { EmployeeAdvancesTable, type EmployeeAdvance } from './EmployeeAdvancesTable';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { ClipboardList, Wallet, AlertCircle } from 'lucide-react';
+import { Label } from '@/components/ui/label';
 
 type Advance = EmployeeAdvance;
 
@@ -139,9 +140,9 @@ export function AdvancesEmployeeList({ allowedRole, title }: Props) {
   const filterControls = (
     <>
       <div>
-        <label htmlFor='buscar-anticipos' className={SELECT_LABEL_CLASS}>
+        <Label htmlFor='buscar-anticipos' className={SELECT_LABEL_CLASS}>
           Buscar
-        </label>
+        </Label>
         <Input
           id='buscar-anticipos'
           type='search'

@@ -27,6 +27,7 @@ import {
   type TransferModalProps
 } from '@/components/bar/transfer/transferOptions';
 import { Checkbox } from '@/components/ui/checkbox';
+import { Label } from '@/components/ui/label';
 
 // API pública intacta: los consumidores (bar/page, transfers/page, SalePrices,
 // BarAnfitrionas y el test) siguen importando desde aquí.
@@ -117,12 +118,12 @@ export function TransferModal({
                   <TransferItemSummary item={item} configuration={form} />
 
                   <div className='space-y-2'>
-                    <label
+                    <Label
                       htmlFor='transfer-quantity'
                       className='block text-xs font-bold uppercase tracking-wider text-gray-500 dark:text-gray-400 ml-1'
                     >
                       Unidades a transferir al bar
-                    </label>
+                    </Label>
                     <div className='flex items-center gap-2'>
                       <Button
                         type='button'
@@ -290,7 +291,7 @@ export function TransferModal({
                   )}
                   <div className='mt-5 flex flex-wrap items-start gap-x-8 gap-y-3 border-t pt-4'>
                     {!esCig && guardarBotella && (
-                      <label className='flex cursor-pointer items-start gap-2'>
+                      <Label className='flex cursor-pointer items-start gap-2'>
                         <Checkbox
                           checked={form.colacionHabilitada}
                           onCheckedChange={checked => form.setColacionHabilitada(checked === true)}
@@ -303,10 +304,10 @@ export function TransferModal({
                             Aparecerá en el módulo Colaciones para cobrarla al trabajador.
                           </span>
                         </span>
-                      </label>
+                      </Label>
                     )}
                     {esAnalcoholica && (
-                      <label className='flex cursor-pointer items-start gap-2'>
+                      <Label className='flex cursor-pointer items-start gap-2'>
                         <Checkbox
                           checked={form.coverHabilitado}
                           onCheckedChange={checked => form.setCoverHabilitado(checked === true)}
@@ -321,7 +322,7 @@ export function TransferModal({
                             Aparecerá como opción al registrar entradas de clientes.
                           </span>
                         </span>
-                      </label>
+                      </Label>
                     )}
                   </div>
                   {form.colacionHabilitada && guardarBotella && (

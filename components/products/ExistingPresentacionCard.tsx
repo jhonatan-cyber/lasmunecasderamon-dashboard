@@ -12,6 +12,7 @@ import { Collapsible, CollapsibleTrigger, CollapsibleContent } from '@/component
 import { cn } from '@/lib/utils/utils';
 import type { Presentacion } from '@/types/product';
 import type { UnidadCodigoItem } from '@/hooks/products/useProductForm';
+import { Label } from '@/components/ui/label';
 
 interface EditPresDraft {
   nombre: string;
@@ -113,9 +114,9 @@ export function ExistingPresentacionCard({
                 className='size-20 shrink-0 rounded-xl object-contain'
               />
               <div className='flex min-w-0 flex-1 flex-col gap-1'>
-                <label htmlFor={`edit-pres-foto-${p.id}`} className='text-xs font-semibold'>
+                <Label htmlFor={`edit-pres-foto-${p.id}`} className='text-xs font-semibold'>
                   Imagen de la presentación
-                </label>
+                </Label>
                 <Input
                   id={`edit-pres-foto-${p.id}`}
                   type='file'
@@ -131,9 +132,9 @@ export function ExistingPresentacionCard({
             </div>
             <div className='flex items-end gap-2'>
               <div className='flex min-w-0 flex-1 flex-col gap-1'>
-                <label htmlFor={`edit-pres-foto-url-${p.id}`} className='text-xs font-semibold'>
+                <Label htmlFor={`edit-pres-foto-url-${p.id}`} className='text-xs font-semibold'>
                   URL de imagen
-                </label>
+                </Label>
                 <Input
                   id={`edit-pres-foto-url-${p.id}`}
                   value={urlInput}
@@ -162,12 +163,12 @@ export function ExistingPresentacionCard({
           </div>
           <div className='grid grid-cols-2 gap-2'>
             <div className='space-y-1'>
-              <label
+              <Label
                 htmlFor='edit-pres-nombre'
                 className='block text-[10px] font-bold uppercase tracking-wider text-gray-400 ml-1'
               >
                 Presentación
-              </label>
+              </Label>
               <PresentacionNombreInput
                 id='edit-pres-nombre'
                 value={editPresDraft.nombre}
@@ -176,12 +177,12 @@ export function ExistingPresentacionCard({
               />
             </div>
             <div className='space-y-1'>
-              <label
+              <Label
                 htmlFor='edit-pres-codigo'
                 className='block text-[10px] font-bold uppercase tracking-wider text-gray-400 ml-1'
               >
                 Código de barras
-              </label>
+              </Label>
               <Input
                 id='edit-pres-codigo'
                 value={editPresDraft.codigo_barras}
@@ -192,12 +193,12 @@ export function ExistingPresentacionCard({
               />
             </div>
             <div className='space-y-1'>
-              <label
+              <Label
                 htmlFor='edit-pres-precio-compra'
                 className='block text-[10px] font-bold uppercase tracking-wider text-gray-400 ml-1'
               >
                 Precio compra
-              </label>
+              </Label>
               <Input
                 id='edit-pres-precio-compra'
                 value={editPresDraft.precio_compra}
@@ -209,12 +210,12 @@ export function ExistingPresentacionCard({
               />
             </div>
             <div className='space-y-1'>
-              <label
+              <Label
                 htmlFor='edit-pres-stock'
                 className='block text-[10px] font-bold uppercase tracking-wider text-gray-400 ml-1'
               >
                 Stock (actual: {p.stock ?? 0})
-              </label>
+              </Label>
               <Input
                 id='edit-pres-stock'
                 value={editPresDraft.stock}
@@ -287,7 +288,7 @@ export function ExistingPresentacionCard({
               </div>
             </CollapsibleTrigger>
             {/* Action buttons — fuera del trigger para evitar button anidado */}
-            <label
+            <Label
               htmlFor={`pres-foto-${p.id}`}
               title='Cambiar foto'
               className='p-2 rounded-full text-gray-400 hover:text-purple-600 hover:bg-purple-50 dark:hover:bg-purple-900/20 transition-colors cursor-pointer shrink-0'
@@ -306,7 +307,7 @@ export function ExistingPresentacionCard({
                 }}
               />
               <Camera className='w-4 h-4' />
-            </label>
+            </Label>
             <Button
               variant='unstyled'
               type='button'

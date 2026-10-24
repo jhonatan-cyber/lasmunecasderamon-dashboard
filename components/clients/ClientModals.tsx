@@ -3,7 +3,7 @@
 import { ClientFormModal } from './ClientFormModal';
 import { ClientDetailsModal } from './ClientDetailsModal';
 import { PrepagoModal } from './PrepagoModal';
-import { DevolucionModal } from './DevolucionModal';
+import { DevolucionSaldoModal } from './DevolucionSaldoModal';
 import { Client } from '@/types/client';
 import { type ClientFormValues } from '@/hooks/clients';
 
@@ -127,7 +127,7 @@ export function ClientModals({
         cajaCerrada={prepagoCajaCerrada}
       />
 
-      <DevolucionModal
+      <DevolucionSaldoModal
         isOpen={isDevolucionModalOpen}
         onOpenChange={onDevolucionModalChange}
         client={devolucionClient}

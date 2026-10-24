@@ -12,6 +12,7 @@ import {
 import { useEffect, useState } from 'react';
 import { Input } from '@/components/ui/input';
 import type { Dispatch, SetStateAction } from 'react';
+import { Label } from '@/components/ui/label';
 
 /** La bebida se incluye en el corto y conserva su propio consumo en ml. */
 export function ShotMixerSelection({
@@ -85,7 +86,7 @@ export function ShotMixerSelection({
               <p className='sm:col-span-2 font-medium'>
                 {p.nombre} · {p.cantidad} cortos
               </p>
-              <label className='space-y-1 text-sm'>
+              <Label className='space-y-1 text-sm'>
                 Producto o sabor
                 <NativeSelect
                   aria-label={`Soda o gaseosa para ${p.nombre}`}
@@ -125,7 +126,7 @@ export function ShotMixerSelection({
                       </option>
                     ))}
                 </NativeSelect>
-              </label>
+              </Label>
               {p.shot_anfitriona && hostessMixerMl(p) <= 0 && (
                 <p className='text-sm text-amber-600 sm:col-span-2'>
                   Configura los ml de bebida para corto anfitriona en este producto.

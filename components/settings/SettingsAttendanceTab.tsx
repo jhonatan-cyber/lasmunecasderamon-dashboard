@@ -8,6 +8,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Skeleton } from '@/components/ui/skeleton';
 import { toast } from 'sonner';
 import logger from '@/lib/utils/logger';
+import { Label } from '@/components/ui/label';
 
 interface Ventana {
   asistencia_hora_inicio: number;
@@ -238,12 +239,12 @@ export function SettingsAttendanceTab() {
               <div className='grid min-w-[760px] grid-cols-[minmax(380px,0.9fr)_minmax(340px,1.1fr)] items-center gap-6'>
                 <div className='grid min-w-0 grid-cols-2 items-start gap-4'>
                   <div className='space-y-2'>
-                    <label
+                    <Label
                       htmlFor='attendance-hora-inicio'
                       className='block text-sm font-medium text-neutral-700 dark:text-neutral-300'
                     >
                       Hora de inicio (entrada)
-                    </label>
+                    </Label>
                     <Input
                       id='attendance-hora-inicio'
                       type='time'
@@ -265,12 +266,12 @@ export function SettingsAttendanceTab() {
                   </div>
 
                   <div className='space-y-2'>
-                    <label
+                    <Label
                       htmlFor='attendance-hora-fin'
                       className='block text-sm font-medium text-neutral-700 dark:text-neutral-300'
                     >
                       Hora de fin (salida / corte)
-                    </label>
+                    </Label>
                     <Input
                       id='attendance-hora-fin'
                       type='time'

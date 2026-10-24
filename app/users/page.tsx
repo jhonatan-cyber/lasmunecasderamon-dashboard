@@ -28,7 +28,7 @@ import { formatCurrency, formatDate } from '@/lib/utils/formatters';
 import { UserTable } from '@/components/users/UserTable';
 import { UserFilters } from '@/components/users/UserFilters';
 import { type UserFormValues } from '@/hooks/staff';
-import { ExportButtons } from '@/components/users/ExportButtons';
+import { UserExportButtons } from '@/components/users/UserExportButtons';
 import { PermissionGuard } from '@/components/auth/PermissionGuard';
 import { Skeleton as BoneyardSkeleton } from 'boneyard-js/react';
 import dynamic from 'next/dynamic';
@@ -281,7 +281,7 @@ export default function Users() {
         <div className='flex flex-col w-full sm:w-auto items-stretch sm:items-end gap-2'>
           <PermissionGuard module='users' action='view' fallback={null}>
             <div className='w-full sm:w-auto flex justify-center sm:justify-end'>
-              <ExportButtons users={users || []} />
+              <UserExportButtons users={users || []} />
             </div>
           </PermissionGuard>
           <PermissionGuard module='users' action='create' fallback={null}>

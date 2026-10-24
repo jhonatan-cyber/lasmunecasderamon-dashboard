@@ -33,6 +33,7 @@ import { NumberInputField } from './NumberInputField';
 import { MaritalStatusSelect, AfpInputField, HousingDiscountField } from './fields';
 import { RoleSelect } from '@/components/users/RoleSelect';
 import { useUserForm, type UserFormValues } from '@/hooks/staff';
+import { Label } from '@/components/ui/label';
 export type { UserFormValues };
 
 const formatRUT = (value: string): string => {
@@ -216,12 +217,12 @@ export function UserFormModal({
                 <div className='flex flex-col gap-4 sm:gap-6'>
                   {}
                   <div>
-                    <label
+                    <Label
                       htmlFor='user-rut'
                       className='block text-sm sm:text-base font-medium text-gray-700 dark:text-gray-200 mb-1'
                     >
                       RUT
-                    </label>
+                    </Label>
                     <div className='relative'>
                       <CreditCard className='absolute left-3 top-1/2 -translate-y-1/2 text-gray-500 dark:text-gray-400 w-3 h-3 sm:w-4 sm:h-4 pointer-events-none' />
                       <Input
@@ -350,7 +351,7 @@ export function UserFormModal({
 
                 {!isEditing && dispositivos.length > 0 && (
                   <div className='rounded-2xl border border-emerald-200 dark:border-emerald-900/50 bg-emerald-50/60 dark:bg-emerald-900/10 p-4 space-y-3'>
-                    <label className='flex items-center gap-2 text-sm font-medium text-emerald-900 dark:text-emerald-200 cursor-pointer'>
+                    <Label className='flex items-center gap-2 text-sm font-medium text-emerald-900 dark:text-emerald-200 cursor-pointer'>
                       <Input
                         type='checkbox'
                         className='h-4 w-4 rounded border-input'
@@ -361,16 +362,16 @@ export function UserFormModal({
                       />
                       <ScanFace className='w-4 h-4' />
                       Dar de alta en el lector de asistencia al crear
-                    </label>
+                    </Label>
                     {altaEquipo && (
                       <>
                         <div className='space-y-1'>
-                          <label
+                          <Label
                             htmlFor='alta-dispositivo'
                             className='block text-xs font-medium text-emerald-900 dark:text-emerald-200'
                           >
                             Equipo
-                          </label>
+                          </Label>
                           <NativeSelect
                             id='alta-dispositivo'
                             value={dispositivoAlta}

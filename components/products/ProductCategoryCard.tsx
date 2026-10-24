@@ -51,7 +51,7 @@ const generateColor = (id: string) => {
   return colors[index];
 };
 
-export default function CategoryCard({ category, onClick }: CategoryCardProps) {
+export default function ProductCategoryCard({ category, onClick }: CategoryCardProps) {
   const categoryColor = generateColor(category.id);
 
   const createdAt = category.created_at

@@ -14,6 +14,7 @@ import {
   EmployeeAdvanceRequestsHistory,
   type AdvanceRequest
 } from './EmployeeAdvanceRequestsHistory';
+import { Label } from '@/components/ui/label';
 export function EmployeeAdvanceRequests({ onRequested }: { onRequested: () => void }) {
   const formId = useId();
   const [requests, setRequests] = useState<AdvanceRequest[]>([]);
@@ -147,9 +148,9 @@ export function EmployeeAdvanceRequests({ onRequested }: { onRequested: () => vo
               }}
             >
               <div>
-                <label htmlFor={`${formId}-amount`} className={SELECT_LABEL_CLASS}>
+                <Label htmlFor={`${formId}-amount`} className={SELECT_LABEL_CLASS}>
                   Monto
-                </label>
+                </Label>
                 <Input
                   id={`${formId}-amount`}
                   type='text'
@@ -164,9 +165,9 @@ export function EmployeeAdvanceRequests({ onRequested }: { onRequested: () => vo
                 />
               </div>
               <div>
-                <label htmlFor={`${formId}-reason`} className={SELECT_LABEL_CLASS}>
+                <Label htmlFor={`${formId}-reason`} className={SELECT_LABEL_CLASS}>
                   Motivo
-                </label>
+                </Label>
                 <Input
                   id={`${formId}-reason`}
                   value={reason}

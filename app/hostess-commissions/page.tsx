@@ -27,6 +27,7 @@ import { formatDateLabel, formatDateTimeDmyLabel } from '@/lib/utils/calendarUti
 import { formatCurrencyCLP } from '@/lib/utils/formatters';
 import { Skeleton as BoneyardSkeleton } from 'boneyard-js/react';
 import logger from '@/lib/utils/logger';
+import { Label } from '@/components/ui/label';
 
 interface Commission {
   id_comision: number;
@@ -275,9 +276,9 @@ export default function AnfitrionaComisionesPage() {
           />
 
           <div className='min-w-60'>
-            <label htmlFor='buscar-comisiones' className={SELECT_LABEL_CLASS}>
+            <Label htmlFor='buscar-comisiones' className={SELECT_LABEL_CLASS}>
               Buscar
-            </label>
+            </Label>
             <Input
               id='buscar-comisiones'
               type='text'

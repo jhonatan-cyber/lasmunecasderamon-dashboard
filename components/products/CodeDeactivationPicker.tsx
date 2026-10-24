@@ -2,6 +2,7 @@
 import { Input } from '@/components/ui/input';
 
 import type { UnidadCodigoItem } from '@/hooks/products/useProductForm';
+import { Label } from '@/components/ui/label';
 
 interface CodeDeactivationPickerProps {
   presentacionId: number | string;
@@ -38,7 +39,7 @@ export function CodeDeactivationPicker({
         {activas.map(u => {
           const checked = codigosSeleccionados.includes(u.id);
           return (
-            <label
+            <Label
               key={u.id}
               htmlFor={`codigo-${u.id}`}
               className={`flex items-center gap-1.5 px-2 py-1 rounded-lg font-mono text-xs cursor-pointer border transition-colors ${
@@ -58,7 +59,7 @@ export function CodeDeactivationPicker({
               <span className='ml-2 font-sans text-xs'>
                 {u.compra_folio ? `Compra ${u.compra_folio}` : 'Sin compra asociada'}
               </span>
-            </label>
+            </Label>
           );
         })}
       </div>

@@ -13,10 +13,10 @@ import { Button } from '@/components/ui/button';
 import Paginate from '@/components/shared/Paginate';
 import { ServicioDetailModal } from '@/components/services/ServicioDetailModal';
 import { anfitrionaColors, metodoPagoLabels } from '@/lib/business/salesUtils';
-import { DevolucionHeader } from '@/components/returns/services/DevolucionHeader';
+import { DevolucionHeader } from '@/components/returns/DevolucionHeader';
 import { DevolucionFilters } from '@/components/returns/DevolucionFilters';
-import { DevolucionTable } from '@/components/returns/services/DevolucionTable';
-import { AnulacionModal } from '@/components/returns/services/AnulacionModal';
+import { DevolucionServiciosTable } from '@/components/returns/services/DevolucionServiciosTable';
+import { AnulacionServicioModal } from '@/components/returns/services/AnulacionServicioModal';
 import logger from '@/lib/utils/logger';
 
 export default function DevolucionesServiciosPage() {
@@ -94,7 +94,7 @@ export default function DevolucionesServiciosPage() {
 
   return (
     <div className='p-4 sm:p-6 lg:p-10 space-y-4 sm:space-y-6 mt-4 sm:mt-6 lg:mt-10'>
-      <DevolucionHeader />
+      <DevolucionHeader title='Devoluciones de Servicios' variant='solid' />
 
       <DevolucionFilters
         filters={filters}
@@ -121,7 +121,7 @@ export default function DevolucionesServiciosPage() {
         </CardHeader>
         <CardContent className='p-4 sm:p-6'>
           <div className='overflow-x-auto'>
-            <DevolucionTable
+            <DevolucionServiciosTable
               servicios={paginatedServicios}
               loading={loading}
               showAnularButton={!showAnulados}
@@ -153,7 +153,7 @@ export default function DevolucionesServiciosPage() {
       />
 
       {}
-      <AnulacionModal
+      <AnulacionServicioModal
         open={isAnulacionModalOpen}
         onOpenChange={setIsAnulacionModalOpen}
         servicio={selectedServicio}

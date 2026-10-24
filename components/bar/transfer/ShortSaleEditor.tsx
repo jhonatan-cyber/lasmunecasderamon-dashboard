@@ -12,6 +12,7 @@ import {
 } from '@/components/ui/tooltip';
 import { formatNumber } from '@/components/bar/transfer/transferOptions';
 import { optionPanelClass, optionPanelHeadingClass } from '@/components/bar/transfer/panelStyles';
+import { Label } from '@/components/ui/label';
 
 interface ShortSaleEditorProps {
   hideHelp?: boolean;
@@ -45,9 +46,9 @@ export function ShortSaleEditor(props: ShortSaleEditorProps) {
     required = false
   ) => (
     <div className='space-y-2'>
-      <label htmlFor={id} className='text-sm font-medium'>
+      <Label htmlFor={id} className='text-sm font-medium'>
         {label}
-      </label>
+      </Label>
       <Input
         currency={!ml}
         id={id}

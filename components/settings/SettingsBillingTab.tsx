@@ -17,6 +17,7 @@ import type { BillingConfig } from './settings-types';
 import logger from '@/lib/utils/logger';
 import { categoriaDeClave, defaultDeClave } from '@/modules/configuracion/contracts';
 import { refrescarConfiguraciones } from '@/hooks/shared/useConfigValue';
+import { Label } from '@/components/ui/label';
 
 // Defaults y categorías salen del registro de claves: el mismo que valida el endpoint, así
 // el formulario no abre con un número distinto del que el servidor usaría.
@@ -128,9 +129,9 @@ export function SettingsBillingTab() {
           <div className='grid grid-cols-1 md:grid-cols-2 gap-6'>
             <div className='space-y-4'>
               <div>
-                <label htmlFor='billing-iva' className='block text-sm font-medium mb-1'>
+                <Label htmlFor='billing-iva' className='block text-sm font-medium mb-1'>
                   % IVA
-                </label>
+                </Label>
                 <Input
                   id='billing-iva'
                   type='number'
@@ -144,9 +145,9 @@ export function SettingsBillingTab() {
                 />
               </div>
               <div>
-                <label htmlFor='billing-propina' className='block text-sm font-medium mb-1'>
+                <Label htmlFor='billing-propina' className='block text-sm font-medium mb-1'>
                   % Propina de venta (reparto)
-                </label>
+                </Label>
                 <Input
                   id='billing-propina'
                   type='number'
@@ -164,9 +165,9 @@ export function SettingsBillingTab() {
                 </p>
               </div>
               <div>
-                <label htmlFor='billing-moneda' className='block text-sm font-medium mb-1'>
+                <Label htmlFor='billing-moneda' className='block text-sm font-medium mb-1'>
                   Moneda
-                </label>
+                </Label>
                 <Select
                   value={config.moneda}
                   onValueChange={(value: string) => setConfig(prev => ({ ...prev, moneda: value }))}
@@ -190,9 +191,9 @@ export function SettingsBillingTab() {
                 </p>
                 <div className='mt-3 grid grid-cols-2 gap-3'>
                   <div>
-                    <label htmlFor='billing-split-venta' className='block text-xs font-medium mb-1'>
+                    <Label htmlFor='billing-split-venta' className='block text-xs font-medium mb-1'>
                       Venta %
-                    </label>
+                    </Label>
                     <Input
                       id='billing-split-venta'
                       type='number'
@@ -206,12 +207,12 @@ export function SettingsBillingTab() {
                     />
                   </div>
                   <div>
-                    <label
+                    <Label
                       htmlFor='billing-split-propina'
                       className='block text-xs font-medium mb-1'
                     >
                       Propina %
-                    </label>
+                    </Label>
                     <Input
                       id='billing-split-propina'
                       type='number'

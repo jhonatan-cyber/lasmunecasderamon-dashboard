@@ -116,9 +116,9 @@ export const MultiEntitySelect: React.FC<MultiEntitySelectProps> = ({
 
       <PopoverContent align='start' className={SELECT_CONTENT_WIDE_CLASS} sideOffset={5}>
         <div className={SELECT_SEARCH_WRAPPER_CLASS}>
-          <label htmlFor={`${uniqueId}-search`} className='sr-only'>
+          <Label htmlFor={`${uniqueId}-search`} className='sr-only'>
             {searchPlaceholder}
-          </label>
+          </Label>
           <Input
             id={`${uniqueId}-search`}
             placeholder={searchPlaceholder}
@@ -139,7 +139,7 @@ export const MultiEntitySelect: React.FC<MultiEntitySelectProps> = ({
                 (!isSelected && value.length >= maxSelection) || Boolean(item.disabled);
 
               return (
-                <label
+                <Label
                   key={item.id}
                   htmlFor={`${uniqueId}-opt-${item.id}`}
                   className={`flex items-center gap-3 rounded-md px-3 py-2 text-left transition-colors hover:bg-gray-100 ${
@@ -158,7 +158,7 @@ export const MultiEntitySelect: React.FC<MultiEntitySelectProps> = ({
                       <span className='truncate text-xs text-gray-400'>{item.extraLabel}</span>
                     ) : null}
                   </div>
-                </label>
+                </Label>
               );
             })
           )}

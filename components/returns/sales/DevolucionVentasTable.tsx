@@ -22,7 +22,7 @@ interface DevolucionTableProps {
   onVerDetalles: (venta: VentaWithDetails) => void;
 }
 
-export const DevolucionTable = ({ ventas, loading, onVerDetalles }: DevolucionTableProps) => {
+export const DevolucionVentasTable = ({ ventas, loading, onVerDetalles }: DevolucionTableProps) => {
   if (loading) {
     return (
       <div className='space-y-4'>

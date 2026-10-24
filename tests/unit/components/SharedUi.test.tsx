@@ -9,6 +9,7 @@ import { ReportToolbar, DAILY_REPORT_PERIODS } from '@/components/shared/ReportT
 import { FilterSelect } from '@/components/shared/selects';
 import { DeleteConfirmModal } from '@/components/shared/DeleteConfirmModal';
 import { SortSelect } from '@/components/shared/selects/SortSelect';
+import { seleccionarFecha } from '../helpers/datePicker';
 
 afterEach(cleanup);
 
@@ -122,8 +123,8 @@ it('conecta periodo, fechas y exportación en los tres adaptadores de reportes',
     />
   );
   fireEvent.click(screen.getByRole('button', { name: 'Hoy' }));
-  fireEvent.change(screen.getByLabelText('Fecha inicial'), { target: { value: '2026-10-02' } });
-  fireEvent.change(screen.getByLabelText('Fecha final'), { target: { value: '2026-10-15' } });
+  seleccionarFecha(/^Fecha inicial/, '2026-10-02');
+  seleccionarFecha(/^Fecha final/, '2026-10-15');
   fireEvent.click(screen.getByRole('button', { name: 'Exportar' }));
   expect(onPeriodChange).toHaveBeenCalledWith('today');
   expect(onStartDateChange).toHaveBeenCalledWith('2026-10-02');

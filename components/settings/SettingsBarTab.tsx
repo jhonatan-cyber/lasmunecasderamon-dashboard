@@ -9,6 +9,7 @@ import { toast } from 'sonner';
 import logger from '@/lib/utils/logger';
 import { categoriaDeClave, defaultDeClave } from '@/modules/configuracion/contracts';
 import { refrescarConfiguraciones } from '@/hooks/shared/useConfigValue';
+import { Label } from '@/components/ui/label';
 
 // Defaults y categoría salen del registro de claves: la misma lista que valida el endpoint,
 // así el formulario y el servidor no pueden discrepar sobre 50/750/3.
@@ -215,12 +216,12 @@ export function SettingsBarTab() {
                 >
                   <Icon className='h-4 w-4' aria-hidden='true' />
                 </div>
-                <label
+                <Label
                   htmlFor={id}
                   className='text-sm font-semibold leading-snug text-neutral-900 dark:text-neutral-100'
                 >
                   {title}
-                </label>
+                </Label>
               </div>
               <p
                 id={`${id}-description`}

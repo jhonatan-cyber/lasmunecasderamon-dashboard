@@ -1,6 +1,7 @@
 'use client';
 
 import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
 
 /**
  * Ml de la colación de una botella. Lo comparten la ficha de Configuración y el
@@ -62,9 +63,9 @@ export function ColacionFields({
       ) : (
         <div className='grid gap-4 sm:grid-cols-2'>
           <div className='space-y-2'>
-            <label htmlFor={`${idPrefix}-ml-colacion`} className='text-sm font-medium'>
+            <Label htmlFor={`${idPrefix}-ml-colacion`} className='text-sm font-medium'>
               Ml de la colación
-            </label>
+            </Label>
             <Input
               id={`${idPrefix}-ml-colacion`}
               value={mlColacion}
@@ -84,12 +85,12 @@ export function ColacionFields({
           </div>
           {mostrarAcompanamiento && (
             <div className='space-y-2'>
-              <label
+              <Label
                 htmlFor={`${idPrefix}-ml-acompanamiento-colacion`}
                 className='text-sm font-medium'
               >
                 Ml de acompañamiento
-              </label>
+              </Label>
               <Input
                 id={`${idPrefix}-ml-acompanamiento-colacion`}
                 value={mlAcompanamiento}

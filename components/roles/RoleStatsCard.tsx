@@ -8,6 +8,6 @@ interface StatsCardProps {
   value: string | number;
 }
 
-export const StatsCard: React.FC<StatsCardProps> = ({ icon, tone, title, value }) => (
+export const RoleStatsCard: React.FC<StatsCardProps> = ({ icon, tone, title, value }) => (
   <MetricCard icon={icon} badge='Roles' label={title} value={value} tone={tone} />
 );

@@ -1,6 +1,7 @@
 import { act, cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { PurchaseForm, type PurchaseCatalogItem } from '@/components/purchases/PurchaseForm';
+import { fechaCorta, seleccionarFecha } from '../helpers/datePicker';
 
 const push = vi.fn();
 const invalidateQueries = vi.fn();
@@ -132,14 +133,16 @@ describe('flujo guiado de compra', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Continuar' }));
 
     // Elaboración + duración completan el vencimiento automáticamente.
-    fireEvent.change(screen.getByLabelText('Fecha de elaboración'), {
-      target: { value: '2026-01-31' }
-    });
+    seleccionarFecha('Fecha de elaboración', '2026-01-31');
     fireEvent.change(screen.getByLabelText('Duración (meses)'), { target: { value: '6' } });
-    expect(screen.getByLabelText('Fecha de vencimiento')).toHaveValue('2026-07-31');
+    expect(screen.getByLabelText('Fecha de vencimiento')).toHaveTextContent(
+      fechaCorta('2026-07-31')
+    );
     // Una duración distinta recalcula: el día se recorta al fin del mes.
     fireEvent.change(screen.getByLabelText('Duración (meses)'), { target: { value: '1' } });
-    expect(screen.getByLabelText('Fecha de vencimiento')).toHaveValue('2026-02-28');
+    expect(screen.getByLabelText('Fecha de vencimiento')).toHaveTextContent(
+      fechaCorta('2026-02-28')
+    );
 
     fireEvent.click(screen.getByRole('button', { name: 'Revisar compra' }));
     fireEvent.click(screen.getByRole('button', { name: 'Finalizar compra' }));
@@ -173,12 +176,12 @@ describe('flujo guiado de compra', () => {
     fireEvent.click(screen.getByRole('button', { name: /Agregar/ }));
     fireEvent.click(screen.getByRole('button', { name: 'Continuar' }));
 
-    fireEvent.change(screen.getByLabelText('Fecha de vencimiento'), {
-      target: { value: '2026-12-01' }
-    });
-    expect(screen.getByLabelText('Fecha de elaboración')).toHaveValue('');
+    seleccionarFecha('Fecha de vencimiento', '2026-12-01');
+    expect(screen.getByLabelText('Fecha de elaboración')).toHaveTextContent('dd/mm/aaaa');
     expect(screen.getByLabelText('Duración (meses)')).toHaveValue('');
-    expect(screen.getByLabelText('Fecha de vencimiento')).toHaveValue('2026-12-01');
+    expect(screen.getByLabelText('Fecha de vencimiento')).toHaveTextContent(
+      fechaCorta('2026-12-01')
+    );
 
     fireEvent.click(screen.getByRole('button', { name: 'Revisar compra' }));
     fireEvent.click(screen.getByRole('button', { name: 'Finalizar compra' }));

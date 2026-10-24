@@ -9,10 +9,10 @@ import { Button } from '@/components/ui/button';
 import Paginate from '@/components/shared/Paginate';
 import { SalesDetailModal } from '@/components/sales';
 import { anfitrionaColors, metodoPagoLabels } from '@/lib/business/salesUtils';
-import { DevolucionHeader } from '@/components/returns/sales/DevolucionHeader';
+import { DevolucionHeader } from '@/components/returns/DevolucionHeader';
 import { DevolucionFilters } from '@/components/returns/DevolucionFilters';
-import { DevolucionTable } from '@/components/returns/sales/DevolucionTable';
-import { DevolucionModal } from '@/components/returns/sales/DevolucionModal';
+import { DevolucionVentasTable } from '@/components/returns/sales/DevolucionVentasTable';
+import { DevolucionVentaModal } from '@/components/returns/sales/DevolucionVentaModal';
 import { formatCurrencyCLP } from '@/lib/utils/formatters';
 
 import logger from '@/lib/utils/logger';
@@ -126,7 +126,7 @@ export function DevolucionesVentasPageClient() {
 
   return (
     <div className='p-4 sm:p-6 lg:p-10 space-y-4 sm:space-y-6 mt-4 sm:mt-6 lg:mt-10'>
-      <DevolucionHeader />
+      <DevolucionHeader title='Devoluciones de Ventas' />
 
       {}
       <div className='flex justify-center gap-3 border-b pb-1 mb-4'>
@@ -248,7 +248,7 @@ export function DevolucionesVentasPageClient() {
             </CardHeader>
             <CardContent className='p-4 sm:p-6'>
               <div className='overflow-x-auto'>
-                <DevolucionTable
+                <DevolucionVentasTable
                   ventas={paginatedVentas}
                   loading={loading}
                   onVerDetalles={handleVerDetalles}
@@ -277,7 +277,7 @@ export function DevolucionesVentasPageClient() {
         metodoPagoLabels={metodoPagoLabels}
       />
 
-      <DevolucionModal
+      <DevolucionVentaModal
         isOpen={isDevolucionModalOpen}
         onOpenChange={setIsDevolucionModalOpen}
         selectedVenta={selectedVenta}

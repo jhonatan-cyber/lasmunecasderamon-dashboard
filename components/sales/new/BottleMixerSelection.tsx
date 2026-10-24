@@ -4,6 +4,7 @@ import { NativeSelect } from '@/components/ui/native-select';
 import { bottleMixerUnits } from '@/lib/sales/productConfiguration';
 
 import { useEffect, useState, type Dispatch, type SetStateAction } from 'react';
+import { Label } from '@/components/ui/label';
 
 export function BottleMixerSelection({
   productos,
@@ -37,7 +38,7 @@ export function BottleMixerSelection({
       {error && <p role='alert'>No se pudieron cargar las bebidas. Recarga para reintentar.</p>}
       {productos.map((p, index) =>
         p.tipo_venta !== 'shot' && bottleMixerUnits(p) ? (
-          <label key={index} className='block space-y-2 text-sm'>
+          <Label key={index} className='block space-y-2 text-sm'>
             <span>
               {p.nombre} · {Number(p.cantidad) * Number(bottleMixerUnits(p))} unidades de bebida
             </span>
@@ -77,7 +78,7 @@ export function BottleMixerSelection({
                   </option>
                 ))}
             </NativeSelect>
-          </label>
+          </Label>
         ) : null
       )}
     </section>

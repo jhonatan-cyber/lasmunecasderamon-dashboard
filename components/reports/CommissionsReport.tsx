@@ -3,7 +3,7 @@
 import logger from '@/lib/utils/logger';
 import { useCommissionsReport } from './hooks/useCommissionsReport';
 import { CommissionsReportFilters } from './CommissionsReportFilters';
-import { CommissionsStatsCards } from './CommissionsStatsCards';
+import { CommissionsReportStatsCards } from './CommissionsReportStatsCards';
 import { TopPerformersChart } from './TopPerformersChart';
 import { CommissionsTable } from './CommissionsTable';
 import { DailyCommissionsChart } from './DailyCommissionsChart';
@@ -69,7 +69,7 @@ export function CommissionsReport() {
         onExport={exportReport}
       />
 
-      <CommissionsStatsCards statistics={data.statistics} />
+      <CommissionsReportStatsCards statistics={data.statistics} />
 
       <TopPerformersChart data={topPerformerChartData} />
 

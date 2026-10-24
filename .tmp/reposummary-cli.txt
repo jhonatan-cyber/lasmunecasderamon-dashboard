@@ -1,0 +1,59 @@
+Tema: subir todo a GitHub
+Resumen por área (todo sin commitear):
+
+🧹 Componentes reutilizables extraídos de app/bar/page.tsx
+- components/bar/BarPageHeader.tsx
+- components/bar/BarTabsNav.tsx
+- components/bar/BarTabToolbars.tsx
+- components/bar/BarProductosTab.tsx
+- components/bar/BarPendientesTab.tsx
+- components/bar/BarHistorialTab.tsx
+- components/bar/BarEnvasesTab.tsx
+- app/bar/page.tsx quedó casi todo inline extraído (header, resumen, tabs, toolbar, tabs content)
+
+📅 DatePicker shadcn compartido
+- components/shared/DatePicker.tsx
+- components/ui/calendar.tsx
+- app/quinc...
+
+Modificados más aparte:
+- app/hostess-commissions/page.tsx
+- app/quinchos/page.tsx
+- app/returns/services/page.tsx
+- app/tickets/page.tsx
+- app/users/page.tsx
+- componentes de facturación, ventas, quinchos, reportes, settings, users, products, attendance...
+
+Eliminados / renombrados duplicados
+- components/clients/ExportButtons.tsx → compartido components/shared/ExportButtons.tsx + wrapper ClientExportButtons
+- components/users/ExportButtons.tsx → wrapper UserExportButtons
+- components/clients/DevolucionModal.tsx, components/returns/sales/DevolucionModal / Table / DevolucionHeader, components/returns/services/..., components/sales/AnulacionModal, components/reports/CommissionsStatsCards, components/products/CategoryCard
+- Nuevos: components/returns/DevolucionHeader (unificado), components/sales/AnulacionVentaModal, components/returns/sales/DevolucionVentaModal, components/returns/services/AnulacionServicioModal, components/products/ProductCategoryCard, etc.
+
+🔧 Cambios de infraestructura
+- eslint.config.mjs: regla de <label>
+- scripts/check-ui-components.cjs: label como elemento no permitido fuera de UI
+- package.json: react-day-picker
+- pnpm-lock.yaml actualizado
+- docs/arquitectura/analisis.json regenerado
+
+🧪 Tests
+- tests/unit/components/BarPage.test.tsx
+- tests/unit/components/ProductFormFechas.test.tsx
+- tests/unit/components/PurchaseForm.test.tsx
+- tests/unit/components/QuinchosPage.test.tsx
+- tests/unit/components/SharedUi.test.tsx
+- tests/unit/components/quinchos/QuinchosCalendar.test.tsx
+- tests/unit/components/quinchos/ReservaQuinchoModal.test.tsx
+- tests/unit/components/shared/...
+- tests/unit/helpers/datePicker.ts
+
+Estado actual de checks:
+- typecheck: verde (ya verificad...
+- lint: 0 errores, 24 warnings (solo e2e/browser-review.cjs, que fue pre-existente)
+- tests: 3136 pasaron / 2 skip
+- prettier formatado sobre los archivos tocados
+
+Usuario git configurado: jhonatan-cyber <jhonatanacasi@gmail.com>
+
+Si querés que te pida confirms antes de cada commit masivo, o que los agrupe en varios commits temáticos (por ejemplo uno solo para bar, otro para fechas/datepicker, otro para duplicados eliminados, etc.), avisame y lo parto.

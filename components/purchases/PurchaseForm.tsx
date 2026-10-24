@@ -19,6 +19,7 @@ import {
   Trash2
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { DatePicker } from '@/components/shared/DatePicker';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
@@ -515,17 +516,13 @@ export function PurchaseForm({ catalog }: Props) {
                         <Label htmlFor={`${formId}-elaboracion-${line.presentacion_id}`}>
                           Fecha de elaboración
                         </Label>
-                        <Input
+                        <DatePicker
                           id={`${formId}-elaboracion-${line.presentacion_id}`}
-                          type='date'
                           value={line.fecha_elaboracion}
-                          onChange={event =>
-                            changeLineFechas(
-                              line.presentacion_id,
-                              'fecha_elaboracion',
-                              event.target.value
-                            )
+                          onChange={fecha =>
+                            changeLineFechas(line.presentacion_id, 'fecha_elaboracion', fecha)
                           }
+                          displayFormat='short'
                         />
                       </div>
                       <div className='flex flex-col gap-1'>
@@ -550,17 +547,13 @@ export function PurchaseForm({ catalog }: Props) {
                         <Label htmlFor={`${formId}-vencimiento-${line.presentacion_id}`}>
                           Fecha de vencimiento
                         </Label>
-                        <Input
+                        <DatePicker
                           id={`${formId}-vencimiento-${line.presentacion_id}`}
-                          type='date'
                           value={line.fecha_vencimiento}
-                          onChange={event =>
-                            changeLineFechas(
-                              line.presentacion_id,
-                              'fecha_vencimiento',
-                              event.target.value
-                            )
+                          onChange={fecha =>
+                            changeLineFechas(line.presentacion_id, 'fecha_vencimiento', fecha)
                           }
+                          displayFormat='short'
                         />
                       </div>
                     </div>

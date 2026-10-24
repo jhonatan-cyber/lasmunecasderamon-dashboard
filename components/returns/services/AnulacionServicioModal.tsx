@@ -13,7 +13,12 @@ interface AnulacionModalProps {
   onConfirm: () => void | Promise<void>;
 }
 
-export function AnulacionModal({ open, onOpenChange, servicio, onConfirm }: AnulacionModalProps) {
+export function AnulacionServicioModal({
+  open,
+  onOpenChange,
+  servicio,
+  onConfirm
+}: AnulacionModalProps) {
   const { motivo, setMotivo, isLoading, handleSubmit, handleCancel } = useServiceAnulacionForm({
     onOpenChange,
     servicio,

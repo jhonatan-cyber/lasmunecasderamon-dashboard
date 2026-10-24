@@ -16,6 +16,7 @@ import {
 import { Checkbox } from '@/components/ui/checkbox';
 import { toast } from 'sonner';
 import type { ServicioWithDetails } from '@/types/servicio';
+import { Label } from '@/components/ui/label';
 export function ServicioAssignmentActions({
   servicio,
   onUpdate
@@ -179,7 +180,7 @@ export function ServicioAssignmentActions({
               </p>
             ) : (
               visibleOptions.map(a => (
-                <label
+                <Label
                   key={a.id}
                   className={`flex cursor-pointer items-center gap-3 border-b px-2 py-3 transition-colors last:border-0 ${seleccion.includes(a.id) ? 'bg-primary/5' : 'hover:bg-muted/50'}`}
                 >
@@ -210,7 +211,7 @@ export function ServicioAssignmentActions({
                           : 'Disponible'}
                     </span>
                   </span>
-                </label>
+                </Label>
               ))
             )}
           </div>

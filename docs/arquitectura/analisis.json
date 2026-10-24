@@ -1,8 +1,8 @@
 {
   "resumen": {
-    "commit": "58397970369517bf9c8960c15a24a55a9bc9e0b1",
-    "generado": "2026-10-24T02:46:23.176Z",
-    "archivos": 2176,
+    "commit": "0299703e736551235b204f3326af2c968b1576c4",
+    "generado": "2026-10-24T09:54:43.014Z",
+    "archivos": 2163,
     "rutas": 228,
     "sqlFueraDeRepositorio": 61,
     "tablasConEscritoresMultiples": 0,
@@ -2736,7 +2736,7 @@
     },
     {
       "archivo": "app/tickets/page.tsx",
-      "linea": 164,
+      "linea": 165,
       "tipo": "setInterval",
       "texto": "const interval = window.setInterval(actualizarFechaHora, 60_000);"
     },
@@ -2754,7 +2754,7 @@
     },
     {
       "archivo": "components/cleaning/CleaningInventory.tsx",
-      "linea": 100,
+      "linea": 101,
       "tipo": "setInterval",
       "texto": "const interval = window.setInterval(refresh, 30000);"
     },
@@ -2784,7 +2784,7 @@
     },
     {
       "archivo": "components/settings/SettingsWhatsAppTab.tsx",
-      "linea": 61,
+      "linea": 62,
       "tipo": "setInterval",
       "texto": "const timer = setInterval(() => {"
     },
@@ -2808,7 +2808,7 @@
     },
     {
       "archivo": "hooks/timers/useTimerSync.ts",
-      "linea": 102,
+      "linea": 98,
       "tipo": "setInterval",
       "texto": "const interval = window.setInterval(onVisible, 120_000);"
     },
@@ -2984,34 +2984,17 @@
   "ciclos": [],
   "matriz": {
     "components": {
-      "hooks": 145,
-      "lib/otros": 343,
-      "raiz": 90,
-      "lib/business": 49,
+      "hooks": 146,
+      "lib/otros": 349,
+      "modules/aplicacion": 8,
+      "raiz": 91,
+      "lib/business": 51,
       "lib/api": 3,
-      "modules/aplicacion": 6,
       "app/ui": 1
-    },
-    "lib/business": {
-      "lib/otros": 14,
-      "lib/api": 3,
-      "lib/database": 4,
-      "modules/aplicacion": 4,
-      "raiz": 3,
-      "components": 1
-    },
-    "modules/aplicacion": {
-      "lib/otros": 101,
-      "lib/business": 42,
-      "modules/infraestructura": 23,
-      "lib/database": 44,
-      "lib/api": 11,
-      "lib/identidad": 3,
-      "raiz": 7
     },
     "app/ui": {
       "hooks": 62,
-      "lib/otros": 57,
+      "lib/otros": 55,
       "lib/api": 7,
       "components": 9,
       "lib/business": 4,
@@ -3053,6 +3036,14 @@
     "lib/identidad": {
       "lib/otros": 5
     },
+    "lib/business": {
+      "lib/api": 3,
+      "lib/otros": 14,
+      "lib/database": 4,
+      "modules/aplicacion": 4,
+      "raiz": 3,
+      "components": 1
+    },
     "lib/otros": {
       "lib/database": 4,
       "lib/api": 1,
@@ -3075,6 +3066,15 @@
       "lib/api": 9,
       "lib/identidad": 2,
       "raiz": 3
+    },
+    "modules/aplicacion": {
+      "modules/infraestructura": 23,
+      "lib/otros": 101,
+      "lib/database": 44,
+      "lib/business": 42,
+      "lib/api": 11,
+      "lib/identidad": 3,
+      "raiz": 7
     },
     "scripts": {},
     "workflows": {

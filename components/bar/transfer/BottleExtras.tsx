@@ -2,6 +2,7 @@
 
 import { Input } from '@/components/ui/input';
 import { FormattedNumberInput } from '@/components/shared/FormattedNumberInput';
+import { Label } from '@/components/ui/label';
 
 export function BottleExtras({
   commission,
@@ -34,9 +35,9 @@ export function BottleExtras({
     <div className='sm:col-span-2 grid gap-4 sm:grid-cols-2'>
       {showHostesses && (
         <div className='space-y-2'>
-          <label htmlFor='bottle-hostess-limit' className='text-sm font-medium'>
+          <Label htmlFor='bottle-hostess-limit' className='text-sm font-medium'>
             Máximo de anfitrionas
-          </label>
+          </Label>
           <Input
             id='bottle-hostess-limit'
             type='number'
@@ -52,9 +53,9 @@ export function BottleExtras({
         </div>
       )}
       <div className={`space-y-2 ${showHostesses ? '' : 'sm:col-span-2'}`}>
-        <label htmlFor='bottle-mixer-units' className='text-sm font-medium'>
+        <Label htmlFor='bottle-mixer-units' className='text-sm font-medium'>
           Bebida analcohólica por botella
-        </label>
+        </Label>
         <FormattedNumberInput
           id='bottle-mixer-units'
           type='number'

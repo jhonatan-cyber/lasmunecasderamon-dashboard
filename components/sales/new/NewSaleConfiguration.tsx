@@ -1,14 +1,12 @@
 ﻿import { Label } from '@/components/ui/label';
-import { Checkbox } from '@/components/ui/checkbox';
 import { Button } from '@/components/ui/button';
 import { X } from 'lucide-react';
 import { CustomerSelect } from '@/components/shared/selects';
 import { RoomSelect } from '@/components/shared/selects';
 import { PaymentMethodSelect } from '@/components/shared/selects';
 import { Input } from '@/components/ui/input';
-import { formatCurrencyNoDecimals } from '@/lib/utils/formatters';
 import { useConfigValue } from '@/hooks/shared/useConfigValue';
-import { Coins } from 'lucide-react';
+import { TipToggle } from '@/components/shared/TipToggle';
 
 interface NewSaleConfigurationProps {
   clientes: any[];
@@ -138,36 +136,7 @@ export const NewSaleConfiguration = ({
       )}
       <div className={fieldWrapperClass}>
         <Label className={fieldLabelClass}>Propina Sugerida ({propinaPct}%)</Label>
-        <div
-          role='button'
-          onClick={() => setEnableTip(!enableTip)}
-          onKeyDown={event => {
-            if (event.key === 'Enter' || event.key === ' ') {
-              event.preventDefault();
-              setEnableTip(!enableTip);
-            }
-          }}
-          className='flex h-11 items-center justify-between gap-3 rounded-full border border-gray-200 bg-gray-50/80 px-3 text-left transition-colors hover:bg-gray-100 dark:border-neutral-700 dark:bg-neutral-800/80 dark:hover:bg-neutral-800'
-          aria-pressed={enableTip}
-        >
-          <div className='flex items-center gap-2 min-w-0'>
-            <Coins className='w-4 h-4 text-gray-400 shrink-0' />
-            <span className='block text-sm font-bold text-gray-800 dark:text-neutral-100'>
-              {formatCurrencyNoDecimals(propina)}
-            </span>
-          </div>
-          <div className='flex items-center gap-2'>
-            <span className='text-[11px] font-semibold uppercase tracking-wide text-gray-500 dark:text-neutral-400'>
-              {enableTip ? 'Activa' : 'Inactiva'}
-            </span>
-            <Checkbox
-              checked={enableTip}
-              onClick={event => event.stopPropagation()}
-              onCheckedChange={c => setEnableTip(c === true)}
-              className='h-5 w-5 rounded-md border-gray-300 dark:border-neutral-500 data-[state=checked]:border-black data-[state=checked]:bg-black dark:data-[state=checked]:border-white dark:data-[state=checked]:bg-white dark:data-[state=checked]:text-black'
-            />
-          </div>
-        </div>
+        <TipToggle amount={propina} enabled={enableTip} onToggle={setEnableTip} showCheckbox />
       </div>
     </div>
   );

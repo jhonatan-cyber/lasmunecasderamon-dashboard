@@ -25,7 +25,7 @@ interface DevolucionTableProps {
   onAnularServicio: (servicio: ServicioWithDetails) => void;
 }
 
-export const DevolucionTable = ({
+export const DevolucionServiciosTable = ({
   servicios,
   loading,
   showAnularButton = true,

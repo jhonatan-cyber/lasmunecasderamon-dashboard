@@ -5,7 +5,7 @@ import { useSortable } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
 import { GripVertical } from 'lucide-react';
 import type { Category } from '@/hooks/products/useCategories';
-import CategoryCard from './CategoryCard';
+import ProductCategoryCard from './ProductCategoryCard';
 
 export function SortableInventoryCategory({
   category,
@@ -33,7 +33,7 @@ export function SortableInventoryCategory({
       style={{ transform: CSS.Transform.toString(transform), transition }}
       className={`relative min-w-0 ${isDragging ? 'z-20 opacity-70' : ''}`}
     >
-      <CategoryCard category={category} onClick={onClick} />
+      <ProductCategoryCard category={category} onClick={onClick} />
       {canReorder && (
         <Button
           variant='unstyled'

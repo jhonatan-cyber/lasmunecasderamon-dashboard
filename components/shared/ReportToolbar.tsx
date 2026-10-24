@@ -1,8 +1,8 @@
 'use client';
 
 import { Download } from 'lucide-react';
+import { DatePicker } from '@/components/shared/DatePicker';
 import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
 import { cn } from '@/lib/utils/utils';
 
 export interface ReportToolbarProps<T extends string = string> {
@@ -62,20 +62,22 @@ export function ReportToolbar<T extends string>({
       <div className='flex flex-wrap items-center gap-3'>
         {period === 'custom' && (
           <div className='flex items-center gap-2'>
-            <Input
-              type='date'
-              aria-label='Fecha inicial'
+            <DatePicker
+              ariaLabel='Fecha inicial'
+              displayFormat='short'
+              className='w-[9.5rem]'
               value={startDate}
-              onChange={event => onStartDateChange(event.target.value)}
+              onChange={onStartDateChange}
             />
             <span aria-hidden='true' className='text-gray-400'>
               →
             </span>
-            <Input
-              type='date'
-              aria-label='Fecha final'
+            <DatePicker
+              ariaLabel='Fecha final'
+              displayFormat='short'
+              className='w-[9.5rem]'
               value={endDate}
-              onChange={event => onEndDateChange(event.target.value)}
+              onChange={onEndDateChange}
             />
           </div>
         )}

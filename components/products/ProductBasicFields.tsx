@@ -3,6 +3,7 @@
 import { Input } from '@/components/ui/input';
 import { Barcode, Package } from 'lucide-react';
 import type { ProductFormValues } from '@/hooks/products/useProductForm';
+import { Label } from '@/components/ui/label';
 
 type ProductFormErrors = Partial<Record<keyof ProductFormValues, string>>;
 
@@ -23,12 +24,12 @@ export function ProductBasicFields({
   return (
     <div className='grid grid-cols-1 sm:grid-cols-2 gap-4'>
       <div className='space-y-2'>
-        <label
+        <Label
           htmlFor='prod-code'
           className='block text-xs font-bold uppercase tracking-wider text-gray-500 dark:text-gray-400 ml-1'
         >
           Código
-        </label>
+        </Label>
         <div className='relative group'>
           <span className='absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 group-focus-within:text-purple-500 transition-colors'>
             <Barcode className='w-5 h-5' />
@@ -49,12 +50,12 @@ export function ProductBasicFields({
       </div>
 
       <div className='space-y-2'>
-        <label
+        <Label
           htmlFor='prod-name'
           className='block text-xs font-bold uppercase tracking-wider text-gray-500 dark:text-gray-400 ml-1'
         >
           Nombre del Producto
-        </label>
+        </Label>
         <div className='relative group'>
           <span className='absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 group-focus-within:text-purple-500 transition-colors'>
             <Package className='w-5 h-5' />

@@ -21,7 +21,7 @@ interface DevolucionModalProps {
   isSubmitting?: boolean;
 }
 
-export const DevolucionModal = ({
+export const DevolucionVentaModal = ({
   isOpen,
   onOpenChange,
   selectedVenta,

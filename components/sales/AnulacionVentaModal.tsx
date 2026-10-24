@@ -35,7 +35,7 @@ const formatMontoInput = (value: string) => {
   return new Intl.NumberFormat('es-CL').format(Number(digits));
 };
 
-export function AnulacionModal({
+export function AnulacionVentaModal({
   open,
   onOpenChange,
   onConfirm,

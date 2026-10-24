@@ -3,6 +3,7 @@ import { afterEach, expect, it, vi } from 'vitest';
 import { act, cleanup, fireEvent, render, screen, waitFor, within } from '@testing-library/react';
 import BarPage from '@/app/bar/page';
 import { TooltipProvider } from '@/components/ui/tooltip';
+import { seleccionarFecha } from '../helpers/datePicker';
 vi.mock('@/components/auth/PermissionGuard', () => ({
   PermissionGuard: ({ children }: any) => children
 }));
@@ -452,10 +453,10 @@ it('filtra el historial por fecha en el servidor y permite limpiar el rango', as
   });
   expect(await screen.findByText('Página 1 de 1')).toBeInTheDocument();
 
-  fireEvent.change(screen.getByLabelText('Fecha desde'), { target: { value: '2026-10-19' } });
+  seleccionarFecha('Fecha desde', '2026-10-19');
   await waitFor(() => expect(pedidos.some(p => p.get('desde') === '2026-10-19')).toBe(true));
 
-  fireEvent.change(screen.getByLabelText('Fecha hasta'), { target: { value: '2026-10-19' } });
+  seleccionarFecha('Fecha hasta', '2026-10-19');
   await waitFor(() => expect(pedidos.some(p => p.get('hasta') === '2026-10-19')).toBe(true));
 
   fireEvent.click(screen.getByRole('button', { name: 'Limpiar filtro de fecha' }));

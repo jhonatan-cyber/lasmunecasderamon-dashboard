@@ -9,6 +9,7 @@ import { Input } from '@/components/ui/input';
 import { Image as ImageIcon, Trash2, UploadCloud, Link as LinkIcon } from 'lucide-react';
 import { type UserFormValues } from '@/hooks/staff';
 import { cn } from '@/lib/utils/utils';
+import { Label } from '@/components/ui/label';
 
 interface ImageUploadFieldProps {
   control: Control<UserFormValues>;
@@ -295,12 +296,12 @@ function ImageUploadFieldComponent({
             )}
 
             <div className='flex flex-col justify-center w-full'>
-              <label
+              <Label
                 htmlFor='image-url-input'
                 className='block text-xs font-medium text-gray-500 dark:text-gray-400 mb-2 ml-1'
               >
                 URL de imagen
-              </label>
+              </Label>
               <div className='relative'>
                 <span className='absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 z-10'>
                   <LinkIcon className='w-4 h-4' />

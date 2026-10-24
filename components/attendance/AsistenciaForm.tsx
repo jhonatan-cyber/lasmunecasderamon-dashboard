@@ -17,9 +17,11 @@ import { useForm } from 'react-hook-form';
 import { getTodayDateKey, getCurrentTimeKey } from '@/lib/utils/calendarUtils';
 import { toast } from 'sonner';
 import { Loader2 } from 'lucide-react';
+import { DatePicker } from '@/components/shared/DatePicker';
 import { UserSelect } from '@/components/shared/selects';
 import { ORDER_FIELD_INPUT_CLASS } from '@/components/orders/orderFieldStyles';
 import { useRefreshOnFocus } from '@/hooks/shared';
+import { Label } from '@/components/ui/label';
 
 interface AsistenciaFormProps {
   isOpen?: boolean;
@@ -159,17 +161,20 @@ export default function AsistenciaForm({ isOpen, onOpenChange, onSuccess }: Asis
                     <FormItem>
                       <FormControl>
                         <div className='flex flex-col'>
-                          <label
+                          <Label
                             htmlFor='asistencia-fecha'
                             className='block text-xs font-medium text-gray-500 dark:text-gray-400 mb-1 uppercase tracking-wide'
                           >
                             Fecha
                             <span className='ml-1 text-red-500'>*</span>
-                          </label>
-                          <Input
+                          </Label>
+                          <DatePicker
                             id='asistencia-fecha'
-                            type='date'
-                            {...field}
+                            value={field.value}
+                            onChange={field.onChange}
+                            onBlur={field.onBlur}
+                            disabled={loading}
+                            displayFormat='short'
                             className={ORDER_FIELD_INPUT_CLASS}
                           />
                         </div>
@@ -185,13 +190,13 @@ export default function AsistenciaForm({ isOpen, onOpenChange, onSuccess }: Asis
                     <FormItem>
                       <FormControl>
                         <div className='flex flex-col'>
-                          <label
+                          <Label
                             htmlFor='asistencia-hora'
                             className='block text-xs font-medium text-gray-500 dark:text-gray-400 mb-1 uppercase tracking-wide'
                           >
                             Hora
                             <span className='ml-1 text-red-500'>*</span>
-                          </label>
+                          </Label>
                           <Input
                             id='asistencia-hora'
                             type='time'

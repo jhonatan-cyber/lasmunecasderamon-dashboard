@@ -8,7 +8,12 @@ import type { ReservaQuincho } from '@/types/quincho';
 const hoy = getTodayDateKey();
 const periodo = hoy.slice(0, 7);
 const fechaConReserva = `${periodo}-15`;
-const fechaLibre = `${periodo}-16`;
+const ultimoDiaDelMes = new Date(
+  Number(periodo.slice(0, 4)),
+  Number(periodo.slice(5, 7)),
+  0
+).getDate();
+const fechaLibre = `${periodo}-${String(ultimoDiaDelMes).padStart(2, '0')}`;
 
 function reserva(overrides: Partial<ReservaQuincho> = {}): ReservaQuincho {
   return {
@@ -34,6 +39,7 @@ function reserva(overrides: Partial<ReservaQuincho> = {}): ReservaQuincho {
 
 afterEach(() => {
   cleanup();
+  vi.useRealTimers();
 });
 
 const dia = (fecha: string) =>
@@ -66,6 +72,21 @@ describe('QuinchosCalendar', () => {
     fireEvent.click(dia(fechaLibre));
 
     expect(onSelectDay).toHaveBeenCalledWith(fechaLibre, []);
+  });
+
+  it('no abre el registro en un día pasado sin reservas', () => {
+    vi.useFakeTimers({ toFake: ['Date'] });
+    vi.setSystemTime(new Date('2026-10-23T15:00:00.000Z'));
+    const hoyMock = getTodayDateKey();
+    const [anio, mes, diaDelMes] = hoyMock.split('-').map(Number);
+    const fechaPasada = `${anio}-${String(mes).padStart(2, '0')}-${String(diaDelMes - 1).padStart(2, '0')}`;
+    const onSelectDay = vi.fn();
+
+    render(<QuinchosCalendar reservas={[]} isLoading={false} onSelectDay={onSelectDay} />);
+    fireEvent.click(dia(fechaPasada));
+
+    expect(dia(fechaPasada)).toBeDisabled();
+    expect(onSelectDay).not.toHaveBeenCalled();
   });
 
   it('entrega las reservas del día al tocar un día ocupado', () => {
@@ -127,7 +148,7 @@ describe('QuinchosCalendar', () => {
     expect(desglose().getAllByText('$0')).toHaveLength(3);
   });
 
-  it('no cuenta las reservas anuladas al anunciar el día', () => {
+  it('no cuenta las reservas anuladas como activas al anunciar el día', () => {
     render(
       <QuinchosCalendar
         reservas={[reserva({ estado: 'anulada' })]}
@@ -136,6 +157,22 @@ describe('QuinchosCalendar', () => {
       />
     );
 
-    expect(dia(fechaConReserva)).toHaveAccessibleName(/sin reservas/);
+    expect(dia(fechaConReserva)).toHaveAccessibleName(/solo reservas anuladas/);
+  });
+
+  it('permite abrir el detalle de un día pasado que solo tiene reservas anuladas', () => {
+    vi.useFakeTimers({ toFake: ['Date'] });
+    vi.setSystemTime(new Date('2026-10-23T15:00:00.000Z'));
+    const [anio, mes, diaDelMes] = getTodayDateKey().split('-').map(Number);
+    const ayer = new Date(anio, mes - 1, diaDelMes - 1);
+    const fechaPasada = `${ayer.getFullYear()}-${String(ayer.getMonth() + 1).padStart(2, '0')}-${String(ayer.getDate()).padStart(2, '0')}`;
+    const anulada = reserva({ fecha_reserva: fechaPasada, estado: 'anulada' });
+    const onSelectDay = vi.fn();
+
+    render(<QuinchosCalendar reservas={[anulada]} isLoading={false} onSelectDay={onSelectDay} />);
+    fireEvent.click(dia(fechaPasada));
+
+    expect(dia(fechaPasada)).not.toBeDisabled();
+    expect(onSelectDay).toHaveBeenCalledWith(fechaPasada, [anulada]);
   });
 });

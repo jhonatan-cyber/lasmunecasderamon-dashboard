@@ -105,10 +105,11 @@ describe('ReservaQuinchoModal', () => {
     });
   });
 
-  it('precarga la fecha del día elegido en el calendario', () => {
+  it('muestra como texto fijo la fecha elegida en el calendario', () => {
     mount(vi.fn().mockResolvedValue(true), { fechaInicial: '2026-12-24' });
 
-    expect(screen.getByLabelText('Fecha de reserva')).toHaveValue('2026-12-24');
+    expect(screen.getByText(/24 de diciembre de 2026/i)).toBeInTheDocument();
+    expect(screen.queryByLabelText('Fecha de reserva')).not.toBeInTheDocument();
   });
 
   it('pide elegir un cliente antes de guardar', () => {

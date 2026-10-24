@@ -194,18 +194,24 @@ export function QuinchosCalendar({ reservas, isLoading, onSelectDay }: QuinchosC
           const activas = delDia.filter(reserva => reserva.estado === 'activa');
           const totalDelDia = activas.reduce((suma, reserva) => suma + reserva.total, 0);
           const esHoy = clave === hoy;
+          const esPasado = clave < hoy;
+          // Un día pasado sin historial no abre el registro: la fecha ya no es válida.
+          const bloqueaRegistro = esPasado && delDia.length === 0;
 
           return (
             <Button
               key={clave}
               type='button'
               variant='unstyled'
+              disabled={bloqueaRegistro}
               onClick={() => onSelectDay(clave, delDia)}
               aria-label={`${formatLongDateEs(clave)}${
                 activas.length > 0
                   ? `, ${activas.length} ${activas.length === 1 ? 'reserva' : 'reservas'}`
-                  : ', sin reservas'
-              }`}
+                  : delDia.length > 0
+                    ? ', solo reservas anuladas'
+                    : ', sin reservas'
+              }${bloqueaRegistro ? ', fecha pasada' : ''}`}
               className={cn(
                 'group flex min-h-[96px] flex-col items-stretch gap-1 rounded-none border-b border-r border-gray-200 p-1.5 text-left transition-colors last:border-r-0 hover:bg-orange-50 dark:border-slate-800 dark:hover:bg-orange-950/20 sm:p-2',
                 !dia.isCurrentMonth && 'bg-gray-50/70 dark:bg-slate-950/40'
@@ -249,8 +255,13 @@ export function QuinchosCalendar({ reservas, isLoading, onSelectDay }: QuinchosC
                 <span className='mt-auto truncate text-[11px] font-semibold text-emerald-700 dark:text-emerald-300'>
                   {formatCurrencyCLP(totalDelDia)}
                 </span>
+              ) : dia.isCurrentMonth && esPasado && delDia.length > 0 ? (
+                <span className='mt-auto truncate text-[11px] font-medium text-gray-500 dark:text-neutral-400'>
+                  Ver anuladas
+                </span>
               ) : (
-                dia.isCurrentMonth && (
+                dia.isCurrentMonth &&
+                !esPasado && (
                   <span className='mt-auto hidden text-[11px] text-gray-400 opacity-0 transition-opacity group-hover:opacity-100 sm:block'>
                     + Reservar
                   </span>

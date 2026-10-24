@@ -10,6 +10,7 @@ import type { SaleOption } from '@/types/sale-options';
 import { preciosCortoAnfitriona } from '@/lib/sales/hostessShortPrices';
 import { optionPanelClass, optionPanelHeadingClass } from '@/components/bar/transfer/panelStyles';
 import { Checkbox } from '@/components/ui/checkbox';
+import { Label } from '@/components/ui/label';
 
 /**
  * Bloque «Configuración guardada»: reutiliza precio/comisión/anfitrionas ya
@@ -93,9 +94,9 @@ export const SavedConfigPanel = memo(function SavedConfigPanel({
                 </dl>
                 {onMaxAnfitrionasChange && Number(bottle.comision) > 0 && (
                   <div className='space-y-2'>
-                    <label htmlFor='bottle-hostess-limit' className='text-sm font-medium'>
+                    <Label htmlFor='bottle-hostess-limit' className='text-sm font-medium'>
                       Máximo de anfitrionas
-                    </label>
+                    </Label>
                     <Input
                       id='bottle-hostess-limit'
                       type='number'
@@ -155,7 +156,7 @@ export const SavedConfigPanel = memo(function SavedConfigPanel({
             </section>
           )}
           {mostrarColacion && onColacionHabilitadaChange && (
-            <label className='flex cursor-pointer items-start gap-3'>
+            <Label className='flex cursor-pointer items-start gap-3'>
               <Checkbox
                 checked={colacionHabilitada === true}
                 onCheckedChange={checked => onColacionHabilitadaChange(checked === true)}
@@ -168,7 +169,7 @@ export const SavedConfigPanel = memo(function SavedConfigPanel({
                   La bebida aparecerá en el módulo Colaciones para cobrarla al trabajador.
                 </span>
               </span>
-            </label>
+            </Label>
           )}
         </>
       )}
@@ -194,9 +195,9 @@ export const SavedConfigPanel = memo(function SavedConfigPanel({
                       : 'Corto cliente no habilitado'}
                   </p>
                   <div className='space-y-2'>
-                    <label htmlFor='transfer-ml-shot' className='text-sm font-medium'>
+                    <Label htmlFor='transfer-ml-shot' className='text-sm font-medium'>
                       Ml por corto a cliente
-                    </label>
+                    </Label>
                     <Input
                       id='transfer-ml-shot'
                       value={mlShotCliente}
@@ -227,9 +228,9 @@ export const SavedConfigPanel = memo(function SavedConfigPanel({
                     )}
                   </div>
                   <div className='space-y-2'>
-                    <label htmlFor='transfer-ml-shot-anfitriona' className='text-sm font-medium'>
+                    <Label htmlFor='transfer-ml-shot-anfitriona' className='text-sm font-medium'>
                       Ml por corto a anfitriona
-                    </label>
+                    </Label>
                     <Input
                       id='transfer-ml-shot-anfitriona'
                       value={mlShotAnfitriona}

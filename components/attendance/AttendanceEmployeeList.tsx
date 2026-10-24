@@ -30,6 +30,7 @@ import { formatDateTimeDmyLabel } from '@/lib/utils/calendarUtils';
 import { formatCurrencyCLP } from '@/lib/utils/formatters';
 import AsistenciaForm from '@/components/attendance/AsistenciaForm';
 import logger from '@/lib/utils/logger';
+import { Label } from '@/components/ui/label';
 
 interface Asistencia {
   id_asistencia: number;
@@ -341,9 +342,9 @@ export function AttendanceEmployeeList({ allowedRole, showHousingSummary = false
               {}
               <FilterBar>
                 <div className='w-full'>
-                  <label htmlFor='buscar-asistencias' className={SELECT_LABEL_CLASS}>
+                  <Label htmlFor='buscar-asistencias' className={SELECT_LABEL_CLASS}>
                     Buscar
-                  </label>
+                  </Label>
                   <Input
                     id='buscar-asistencias'
                     type='text'

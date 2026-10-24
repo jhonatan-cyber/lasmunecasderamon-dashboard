@@ -27,6 +27,7 @@ import {
   type ResumenLimpieza,
   type UbicacionLimpieza
 } from '@/types/limpieza';
+import { Label } from '@/components/ui/label';
 
 const numero = (value: number) =>
   Number(value).toLocaleString('es-BO', { maximumFractionDigits: 3 });
@@ -244,7 +245,7 @@ export default function CleaningInventory() {
         <form onSubmit={submit} className='grid gap-4 sm:grid-cols-2 lg:grid-cols-3'>
           {mode === 'articulo' ? (
             <>
-              <label className='space-y-1 text-sm'>
+              <Label className='space-y-1 text-sm'>
                 Nombre
                 <Input
                   aria-label='Nombre'
@@ -255,8 +256,8 @@ export default function CleaningInventory() {
                   onChange={e => setNombre(e.target.value)}
                   placeholder='Ej.: Detergente'
                 />
-              </label>
-              <label className='space-y-1 text-sm'>
+              </Label>
+              <Label className='space-y-1 text-sm'>
                 Unidad de medida
                 <NativeSelect
                   className={selectClass}
@@ -269,8 +270,8 @@ export default function CleaningInventory() {
                     </option>
                   ))}
                 </NativeSelect>
-              </label>
-              <label className='space-y-1 text-sm'>
+              </Label>
+              <Label className='space-y-1 text-sm'>
                 Stock mínimo en almacén
                 <Input
                   aria-label='Stock mínimo en almacén'
@@ -281,11 +282,11 @@ export default function CleaningInventory() {
                   value={minimo}
                   onChange={e => setMinimo(e.target.value)}
                 />
-              </label>
+              </Label>
             </>
           ) : (
             <>
-              <label className='space-y-1 text-sm'>
+              <Label className='space-y-1 text-sm'>
                 Artículo
                 <NativeSelect
                   required
@@ -300,8 +301,8 @@ export default function CleaningInventory() {
                     </option>
                   ))}
                 </NativeSelect>
-              </label>
-              <label className='space-y-1 text-sm'>
+              </Label>
+              <Label className='space-y-1 text-sm'>
                 Cantidad{selected ? ` (${selected.unidad})` : ''}
                 <Input
                   aria-label='Cantidad'
@@ -312,9 +313,9 @@ export default function CleaningInventory() {
                   value={cantidad}
                   onChange={e => setCantidad(e.target.value)}
                 />
-              </label>
+              </Label>
               {mode !== 'ingreso' && (
-                <label className='space-y-1 text-sm'>
+                <Label className='space-y-1 text-sm'>
                   Origen
                   <NativeSelect
                     aria-label='Origen'
@@ -333,10 +334,10 @@ export default function CleaningInventory() {
                       Disponible: {numero(selected.stock[origen])} {selected.unidad}
                     </span>
                   )}
-                </label>
+                </Label>
               )}
               {mode === 'traspaso' && (
-                <label className='space-y-1 text-sm'>
+                <Label className='space-y-1 text-sm'>
                   Destino
                   <NativeSelect
                     className={selectClass}
@@ -349,11 +350,11 @@ export default function CleaningInventory() {
                       </option>
                     ))}
                   </NativeSelect>
-                </label>
+                </Label>
               )}
               {mode === 'ingreso' && (
                 <>
-                  <label className='space-y-1 text-sm'>
+                  <Label className='space-y-1 text-sm'>
                     Proveedor
                     <Input
                       aria-label='Proveedor'
@@ -361,8 +362,8 @@ export default function CleaningInventory() {
                       value={proveedor}
                       onChange={e => setProveedor(e.target.value)}
                     />
-                  </label>
-                  <label className='space-y-1 text-sm'>
+                  </Label>
+                  <Label className='space-y-1 text-sm'>
                     Costo por unidad
                     <Input
                       aria-label='Costo por unidad'
@@ -373,10 +374,10 @@ export default function CleaningInventory() {
                       value={costo}
                       onChange={e => setCosto(e.target.value)}
                     />
-                  </label>
+                  </Label>
                 </>
               )}
-              <label className='space-y-1 text-sm sm:col-span-2'>
+              <Label className='space-y-1 text-sm sm:col-span-2'>
                 Detalle / motivo{mode === 'consumo' ? ' (obligatorio)' : ''}
                 <Input
                   aria-label='Detalle / motivo'
@@ -389,7 +390,7 @@ export default function CleaningInventory() {
                     mode === 'consumo' ? 'Ej.: Limpieza de baños' : 'Referencia o comentario'
                   }
                 />
-              </label>
+              </Label>
             </>
           )}
           <div className='flex items-end'>

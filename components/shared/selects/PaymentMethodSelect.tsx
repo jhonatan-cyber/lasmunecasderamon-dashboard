@@ -176,9 +176,9 @@ const PaymentMethodSelect: React.FC<PaymentMethodSelectProps> = ({
           </PopoverTrigger>
           <PopoverContent align='start' className={SELECT_CONTENT_WIDE_CLASS} sideOffset={5}>
             <div className={SELECT_SEARCH_WRAPPER_CLASS}>
-              <label htmlFor={`${uniqueId}-search`} className='sr-only'>
+              <Label htmlFor={`${uniqueId}-search`} className='sr-only'>
                 Buscar método de pago
-              </label>
+              </Label>
               <Input
                 id={`${uniqueId}-search`}
                 placeholder={searchPlaceholder}

@@ -2,7 +2,7 @@
 
 import { Plus } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { ExportButtons } from '@/components/clients/ExportButtons';
+import { ClientExportButtons } from '@/components/clients/ClientExportButtons';
 import { PermissionGuard } from '@/components/auth/PermissionGuard';
 import { Client } from '@/types/client';
 
@@ -21,7 +21,7 @@ export function ClientHeader({ allClients, onCreateClick }: ClientHeaderProps) {
         </p>
       </div>
       <div className='flex flex-col sm:flex-row gap-2 w-full sm:w-auto'>
-        <ExportButtons clients={allClients || []} />
+        <ClientExportButtons clients={allClients || []} />
         <PermissionGuard module='clients' action='create' fallback={null}>
           <Button
             onClick={onCreateClick}

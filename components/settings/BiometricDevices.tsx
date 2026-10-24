@@ -701,14 +701,14 @@ export function BiometricDevices() {
                         </p>
                       )}
                       <div className='flex flex-wrap items-center justify-between gap-2 border-t border-dashed border-gray-300 dark:border-gray-700 pt-2'>
-                        <label className='flex cursor-pointer items-center gap-2 text-sm'>
+                        <Label className='flex cursor-pointer items-center gap-2 text-sm'>
                           <Checkbox
                             checked={recoger[device.id] ?? false}
                             disabled={pollAccion[device.id] === 'toggling'}
                             onCheckedChange={valor => toggleRecoger(device, valor === true)}
                           />
                           Recoger registros para asistencia (cada 15 segundos)
-                        </label>
+                        </Label>
                         <div className='flex flex-wrap gap-2'>
                           <Button
                             className='rounded-full'

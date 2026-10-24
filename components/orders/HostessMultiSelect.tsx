@@ -11,6 +11,7 @@ import {
   ORDER_MULTISELECT_TRIGGER_CLASS,
   ORDER_SELECTED_TAG_CLASS
 } from '@/components/orders/orderFieldStyles';
+import { Label } from '@/components/ui/label';
 
 interface HostessMultiSelectProps {
   anfitrionas: any[];
@@ -117,7 +118,7 @@ const HostessMultiSelect: React.FC<HostessMultiSelectProps> = ({
                 const canSelect = isSelected || !hasReachedLimit;
 
                 return (
-                  <label
+                  <Label
                     key={id}
                     htmlFor={`hostess-${id}`}
                     className={`flex items-center gap-2 px-2 py-1.5 cursor-pointer rounded-md text-sm text-gray-700 transition-colors hover:bg-gray-100 dark:text-zinc-100 dark:hover:bg-white/10 ${!canSelect ? 'opacity-50 cursor-not-allowed' : ''}`}
@@ -135,7 +136,7 @@ const HostessMultiSelect: React.FC<HostessMultiSelectProps> = ({
                       }}
                     />
                     <span className='text-sm font-medium'>{a.nick || a.nombre}</span>
-                  </label>
+                  </Label>
                 );
               })}
             </div>

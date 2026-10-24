@@ -1,7 +1,7 @@
 'use client';
 
 import { VentaWithDetails } from '@/types/venta';
-import { AnulacionModal } from './AnulacionModal';
+import { AnulacionVentaModal } from './AnulacionVentaModal';
 import { useSalesList } from '@/hooks/sales/useSalesList';
 import { SalesListItem } from './SalesListItem';
 import { SaleCardSkeleton, SalesListEmptyState } from './SalesListEmpty';
@@ -77,7 +77,7 @@ export function SalesList({
         )}
       </div>
 
-      <AnulacionModal
+      <AnulacionVentaModal
         open={anulacionModal.open}
         onOpenChange={(open: boolean) => setAnulacionModal((prev: any) => ({ ...prev, open }))}
         onConfirm={handleConfirmarAnulacion}

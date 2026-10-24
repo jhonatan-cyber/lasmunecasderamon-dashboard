@@ -14,6 +14,7 @@ import { Checkbox } from '@/components/ui/checkbox';
 import { optionPanelClass, optionPanelHeadingClass } from '@/components/bar/transfer/panelStyles';
 import type { ChampagneTierRow } from '@/components/bar/transfer/transferOptions';
 import type { SaleType } from '@/types/sale-options';
+import { Label } from '@/components/ui/label';
 
 /**
  * Modo «editar precios»: toggle de tipos de venta (botella/shot), campos de
@@ -192,9 +193,9 @@ export const SaleTypeEditor = memo(function SaleTypeEditor({
                         <h3 className={optionPanelHeadingClass}>Con anfitriona</h3>
                       </div>
                       <div className='space-y-2'>
-                        <label htmlFor='price-botella' className='text-sm font-medium'>
+                        <Label htmlFor='price-botella' className='text-sm font-medium'>
                           Precio de botella con anfitriona
-                        </label>
+                        </Label>
                         <Input
                           currency
                           id='price-botella'
@@ -207,9 +208,9 @@ export const SaleTypeEditor = memo(function SaleTypeEditor({
                         />
                       </div>
                       <div className='space-y-2'>
-                        <label htmlFor='commission-botella' className='text-sm font-medium'>
+                        <Label htmlFor='commission-botella' className='text-sm font-medium'>
                           Comisión
-                        </label>
+                        </Label>
                         <Input
                           currency
                           id='commission-botella'
@@ -226,9 +227,9 @@ export const SaleTypeEditor = memo(function SaleTypeEditor({
                       {onMaxAnfitrionasChange &&
                         (context === 'settings' || Number(comision.replace(/\./g, '')) > 0) && (
                           <div className='space-y-2'>
-                            <label htmlFor='bottle-hostess-limit' className='text-sm font-medium'>
+                            <Label htmlFor='bottle-hostess-limit' className='text-sm font-medium'>
                               Máximo de anfitrionas
-                            </label>
+                            </Label>
                             <PlainInput
                               id='bottle-hostess-limit'
                               type='number'
@@ -259,9 +260,9 @@ export const SaleTypeEditor = memo(function SaleTypeEditor({
                       </div>
                       {onPrecioSinAnfitrionaChange && (
                         <div className='space-y-2'>
-                          <label htmlFor='bottle-price-no-hostess' className='text-sm font-medium'>
+                          <Label htmlFor='bottle-price-no-hostess' className='text-sm font-medium'>
                             Precio de botella sin anfitriona
-                          </label>
+                          </Label>
                           <Input
                             currency
                             id='bottle-price-no-hostess'
@@ -283,9 +284,9 @@ export const SaleTypeEditor = memo(function SaleTypeEditor({
                       <h3 className={optionPanelHeadingClass}>Precio</h3>
                     </div>
                     <div className='space-y-2'>
-                      <label htmlFor='price-botella' className='text-sm font-medium'>
+                      <Label htmlFor='price-botella' className='text-sm font-medium'>
                         {esCigarrillos ? 'Precio de cigarrillo' : 'Precio de botella'}
-                      </label>
+                      </Label>
                       <Input
                         currency
                         id='price-botella'
@@ -327,7 +328,7 @@ export const SaleTypeEditor = memo(function SaleTypeEditor({
                   </section>
                 )}
                 {context === 'settings' && mostrarAnfitrionas && onColacionHabilitadaChange && (
-                  <label className='flex cursor-pointer items-start gap-3'>
+                  <Label className='flex cursor-pointer items-start gap-3'>
                     <Checkbox
                       checked={colacionHabilitada}
                       onCheckedChange={checked => onColacionHabilitadaChange(checked === true)}
@@ -342,12 +343,12 @@ export const SaleTypeEditor = memo(function SaleTypeEditor({
                         La bebida aparecerá en el módulo Colaciones para cobrarla al trabajador.
                       </span>
                     </span>
-                  </label>
+                  </Label>
                 )}
                 {context === 'settings' && !mostrarAnfitrionas && !esCigarrillos && (
                   <div className='flex flex-wrap items-start gap-x-8 gap-y-3'>
                     {onColacionHabilitadaChange && (
-                      <label className='flex cursor-pointer items-start gap-2'>
+                      <Label className='flex cursor-pointer items-start gap-2'>
                         <Checkbox
                           checked={colacionHabilitada}
                           onCheckedChange={checked => onColacionHabilitadaChange(checked === true)}
@@ -360,10 +361,10 @@ export const SaleTypeEditor = memo(function SaleTypeEditor({
                             Aparecerá en el módulo Colaciones para cobrarla al trabajador.
                           </span>
                         </span>
-                      </label>
+                      </Label>
                     )}
                     {onCoverHabilitadoChange && (
-                      <label className='flex cursor-pointer items-start gap-2'>
+                      <Label className='flex cursor-pointer items-start gap-2'>
                         <Checkbox
                           checked={coverHabilitado}
                           onCheckedChange={checked => onCoverHabilitadoChange(checked === true)}
@@ -378,7 +379,7 @@ export const SaleTypeEditor = memo(function SaleTypeEditor({
                             Aparecerá como opción al registrar entradas de clientes.
                           </span>
                         </span>
-                      </label>
+                      </Label>
                     )}
                   </div>
                 )}

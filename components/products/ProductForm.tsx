@@ -3,6 +3,7 @@ import { Textarea } from '@/components/ui/textarea';
 
 import { useState } from 'react';
 import { Button } from '@/components/ui/button';
+import { DatePicker } from '@/components/shared/DatePicker';
 import { Input } from '@/components/ui/input';
 import { Product, Presentacion } from '@/types/product';
 import { FileText, Loader2, Plus } from 'lucide-react';
@@ -21,6 +22,7 @@ import {
   DialogTitle
 } from '@/components/ui/dialog';
 import { cn } from '@/lib/utils/utils';
+import { Label } from '@/components/ui/label';
 
 interface ProductFormModalProps {
   open: boolean;
@@ -228,24 +230,25 @@ export function ProductForm({
       {/* Fechas de lote: elaboración + duración calculan el vencimiento. */}
       {!scoped && (
         <div className='space-y-2'>
-          <label className='block text-xs font-bold uppercase tracking-wider text-gray-500 dark:text-gray-400 ml-1'>
+          <Label className='block text-xs font-bold uppercase tracking-wider text-gray-500 dark:text-gray-400 ml-1'>
             Fechas del producto
-          </label>
+          </Label>
           <div className='grid grid-cols-1 gap-4 sm:grid-cols-3'>
             <div className='space-y-2'>
-              <label
+              <Label
                 htmlFor='prod-fecha-elaboracion'
                 className='block text-xs font-semibold text-gray-500 dark:text-gray-400 ml-1'
               >
                 Fecha de elaboración
-              </label>
-              <Input
+              </Label>
+              <DatePicker
                 id='prod-fecha-elaboracion'
-                name='fecha_elaboracion'
-                type='date'
                 value={form.fecha_elaboracion}
-                onChange={handleChange}
+                onChange={fecha =>
+                  handleChange({ target: { name: 'fecha_elaboracion', value: fecha } })
+                }
                 disabled={isLoading}
+                displayFormat='short'
                 className='h-12 rounded-2xl'
               />
               {errors.fecha_elaboracion && (
@@ -255,12 +258,12 @@ export function ProductForm({
               )}
             </div>
             <div className='space-y-2'>
-              <label
+              <Label
                 htmlFor='prod-duracion'
                 className='block text-xs font-semibold text-gray-500 dark:text-gray-400 ml-1'
               >
                 Duración (meses)
-              </label>
+              </Label>
               <Input
                 id='prod-duracion'
                 name='duracion_meses'
@@ -278,19 +281,20 @@ export function ProductForm({
               )}
             </div>
             <div className='space-y-2'>
-              <label
+              <Label
                 htmlFor='prod-fecha-vencimiento'
                 className='block text-xs font-semibold text-gray-500 dark:text-gray-400 ml-1'
               >
                 Fecha de vencimiento
-              </label>
-              <Input
+              </Label>
+              <DatePicker
                 id='prod-fecha-vencimiento'
-                name='fecha_vencimiento'
-                type='date'
                 value={form.fecha_vencimiento}
-                onChange={handleChange}
+                onChange={fecha =>
+                  handleChange({ target: { name: 'fecha_vencimiento', value: fecha } })
+                }
                 disabled={isLoading}
+                displayFormat='short'
                 className='h-12 rounded-2xl'
               />
               {errors.fecha_vencimiento && (
@@ -309,11 +313,11 @@ export function ProductForm({
 
       <div className='space-y-3'>
         <div className='flex items-center justify-between ml-1'>
-          <label className='block text-xs font-bold uppercase tracking-wider text-gray-500 dark:text-gray-400'>
+          <Label className='block text-xs font-bold uppercase tracking-wider text-gray-500 dark:text-gray-400'>
             {scoped
               ? 'Presentación'
               : `Presentaciones${isEdit ? ` (Stock total: ${unidadesTotal})` : ''}`}
-          </label>
+          </Label>
           {!scoped && (
             <Button
               variant='unstyled'
@@ -429,12 +433,12 @@ export function ProductForm({
 
       {!scoped && (
         <div className='space-y-2'>
-          <label
+          <Label
             htmlFor='prod-desc'
             className='block text-xs font-bold uppercase tracking-wider text-gray-500 dark:text-gray-400 ml-1'
           >
             Descripción
-          </label>
+          </Label>
           <div className='relative group'>
             <span className='absolute left-4 top-4 text-gray-400 group-focus-within:text-purple-500 transition-colors'>
               <FileText className='w-5 h-5' />
@@ -454,12 +458,12 @@ export function ProductForm({
 
       {isEdit && !scoped && (
         <div className='space-y-2'>
-          <label
+          <Label
             htmlFor='prod-ml-shot'
             className='block text-xs font-bold uppercase tracking-wider text-gray-500 dark:text-gray-400 ml-1'
           >
             Ml por corto
-          </label>
+          </Label>
           <div className='grid grid-cols-1 sm:grid-cols-2 gap-2'>
             <Input
               id='prod-ml-shot'

@@ -2,7 +2,7 @@ const fs = require('node:fs');
 const path = require('node:path');
 const ts = require('typescript');
 
-const nativeControls = new Set([
+const nativeElements = new Set([
   'input',
   'select',
   'textarea',
@@ -14,7 +14,8 @@ const nativeControls = new Set([
   'tr',
   'th',
   'td',
-  'caption'
+  'caption',
+  'label'
 ]);
 const violations = [];
 let checked = 0;
@@ -91,7 +92,7 @@ function checkDirectory(directory) {
         }
         if (
           (ts.isJsxOpeningElement(node) || ts.isJsxSelfClosingElement(node)) &&
-          nativeControls.has(node.tagName.getText(source))
+          nativeElements.has(node.tagName.getText(source))
         ) {
           const { line } = source.getLineAndCharacterOfPosition(node.getStart(source));
           violations.push(
@@ -111,6 +112,6 @@ if (violations.length) {
   process.exitCode = 1;
 } else {
   console.log(
-    `UI compartida: ${checked} archivos verificados, sin controles HTML fuera de components/ui.`
+    `UI compartida: ${checked} archivos verificados, sin controles ni etiquetas HTML fuera de components/ui.`
   );
 }

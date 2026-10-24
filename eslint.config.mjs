@@ -31,6 +31,10 @@ export default [
             'JSXOpeningElement[name.name=/^(input|select|textarea|button|table|thead|tbody|tfoot|tr|th|td|caption)$/]',
           message:
             'Usa los componentes compartidos de components/ui. Los controles HTML y sus estilos base se definen únicamente allí.'
+        },
+        {
+          selector: "JSXOpeningElement[name.name='label']",
+          message: 'Usa <Label> de components/ui/label en lugar de <label>.'
         }
       ]
     }

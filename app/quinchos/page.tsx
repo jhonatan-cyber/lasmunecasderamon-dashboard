@@ -10,7 +10,7 @@ import { ReservaQuinchoModal } from '@/components/quinchos/ReservaQuinchoModal';
 import { useCashRegisterStatus } from '@/hooks/cash-register/useCashRegisterStatus';
 import { useQuinchos } from '@/hooks/quinchos/useQuinchos';
 import { useUserPermissions } from '@/hooks/auth/useUserPermissions';
-import { toDateKey } from '@/lib/utils/calendarUtils';
+import { getTodayDateKey, toDateKey } from '@/lib/utils/calendarUtils';
 import type { ReservaQuincho } from '@/types/quincho';
 
 export default function QuinchosPage() {
@@ -37,15 +37,20 @@ export default function QuinchosPage() {
   const puedeCrear = permisosCargando || hasPermission('quinchos', 'create');
 
   /**
-   * Un día ocupado abre el detalle de sus reservas; un día libre abre el
-   * registro con esa fecha ya cargada.
+   * Un día con historial abre el detalle de sus reservas; un día libre abre el
+   * registro con esa fecha ya cargada. En días pasados no se registra nada.
    */
   const handleSelectDay = (fecha: string, reservasDelDia: ReservaQuincho[]) => {
     const activas = reservasDelDia.filter(reserva => reserva.estado === 'activa');
-    if (activas.length > 0 || !puedeCrear) {
+    const esPasado = fecha < getTodayDateKey();
+    const verDetalle = activas.length > 0 || (esPasado && reservasDelDia.length > 0);
+
+    if (verDetalle || !puedeCrear) {
       setFechaDetalle(fecha);
       return;
     }
+    if (esPasado) return;
+
     setFechaSeleccionada(fecha);
     setModalOpen(true);
   };

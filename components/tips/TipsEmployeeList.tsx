@@ -28,6 +28,7 @@ import Paginate from '@/components/shared/Paginate';
 import { formatDateTimeDmyLabel } from '@/lib/utils/calendarUtils';
 import { formatCurrencyCLP } from '@/lib/utils/formatters';
 import logger from '@/lib/utils/logger';
+import { Label } from '@/components/ui/label';
 
 interface Tip {
   id_detalle_propina: number;
@@ -239,9 +240,9 @@ export function TipsEmployeeList({ allowedRole }: Props) {
       {}
       <FilterBar>
         <div>
-          <label htmlFor='buscar-propinas' className={SELECT_LABEL_CLASS}>
+          <Label htmlFor='buscar-propinas' className={SELECT_LABEL_CLASS}>
             Buscar
-          </label>
+          </Label>
           <Input
             id='buscar-propinas'
             type='text'

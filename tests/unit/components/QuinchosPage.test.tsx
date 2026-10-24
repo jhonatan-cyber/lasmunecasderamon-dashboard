@@ -7,7 +7,15 @@ import type { ReservaQuincho } from '@/types/quincho';
 
 const periodo = getTodayDateKey().slice(0, 7);
 const fechaConReserva = `${periodo}-15`;
-const fechaLibre = `${periodo}-16`;
+const ultimoDiaDelMes = new Date(
+  Number(periodo.slice(0, 4)),
+  Number(periodo.slice(5, 7)),
+  0
+).getDate();
+const fechaLibre = `${periodo}-${String(ultimoDiaDelMes).padStart(2, '0')}`;
+const [anioHoy, mesHoy, diaHoy] = getTodayDateKey().split('-').map(Number);
+const ayer = new Date(anioHoy, mesHoy - 1, diaHoy - 1);
+const fechaPasada = `${ayer.getFullYear()}-${String(ayer.getMonth() + 1).padStart(2, '0')}-${String(ayer.getDate()).padStart(2, '0')}`;
 
 const reservaDelDia: ReservaQuincho = {
   id: 'r-1',
@@ -28,6 +36,17 @@ const reservaDelDia: ReservaQuincho = {
   anulada_por: null
 };
 
+const reservaAnulada: ReservaQuincho = {
+  ...reservaDelDia,
+  id: 'r-anulada',
+  cliente_nombre: 'Beto',
+  cliente_apellido: 'Anulado',
+  fecha_reserva: fechaPasada,
+  estado: 'anulada',
+  fecha_anulacion: '2026-10-02T10:00:00.000Z',
+  anulada_por: null
+};
+
 vi.mock('@/components/auth/PermissionGuard', () => ({
   PermissionGuard: ({ children }: { children: React.ReactNode }) => <>{children}</>
 }));
@@ -42,7 +61,7 @@ const { anularReserva } = vi.hoisted(() => ({ anularReserva: vi.fn() }));
 
 vi.mock('@/hooks/quinchos/useQuinchos', () => ({
   useQuinchos: () => ({
-    reservas: [reservaDelDia],
+    reservas: [reservaDelDia, reservaAnulada],
     clientes: [],
     isLoading: false,
     isSaving: false,
@@ -68,7 +87,7 @@ describe('página de reservas de quincho', () => {
     fireEvent.click(dia(fechaLibre));
 
     expect(screen.getByRole('heading', { name: /Nueva reserva de quincho/i })).toBeInTheDocument();
-    expect(screen.getByLabelText('Fecha de reserva')).toHaveValue(fechaLibre);
+    expect(screen.getByText(formatLongDateEs(fechaLibre, 'es-CL'))).toBeInTheDocument();
   });
 
   it('muestra el detalle en vez del registro cuando el día ya tiene reserva', () => {
@@ -80,7 +99,9 @@ describe('página de reservas de quincho', () => {
     expect(screen.getByRole('heading', { name: /Reservas del quincho/i })).toBeInTheDocument();
     expect(detalle.getByText(/Ana Pérez/)).toBeInTheDocument();
     expect(detalle.getByText('$50.000')).toBeInTheDocument();
-    expect(screen.queryByLabelText('Fecha de reserva')).not.toBeInTheDocument();
+    expect(
+      screen.queryByRole('heading', { name: /Nueva reserva de quincho/i })
+    ).not.toBeInTheDocument();
   });
 
   it('anula la reserva desde el detalle del día', async () => {
@@ -91,6 +112,22 @@ describe('página de reservas de quincho', () => {
     fireEvent.click(screen.getByRole('button', { name: /Anular y devolver/i }));
 
     await waitFor(() => expect(anularReserva).toHaveBeenCalledWith(reservaDelDia));
+  });
+
+  it('abre el detalle de una reserva anulada en un día pasado', () => {
+    render(<QuinchosPage />);
+
+    if (fechaPasada.slice(0, 7) !== periodo) {
+      fireEvent.click(screen.getByRole('button', { name: 'Mes anterior' }));
+    }
+    fireEvent.click(dia(fechaPasada));
+
+    const detalle = within(screen.getByRole('dialog'));
+    expect(detalle.getByText(/Beto Anulado/)).toBeInTheDocument();
+    expect(detalle.getByText('Anulada')).toBeInTheDocument();
+    expect(
+      screen.queryByRole('heading', { name: /Nueva reserva de quincho/i })
+    ).not.toBeInTheDocument();
   });
 
   it('muestra solo el calendario, sin botón de nueva reserva ni pestañas', () => {

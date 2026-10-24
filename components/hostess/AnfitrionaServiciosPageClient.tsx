@@ -26,6 +26,7 @@ import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { formatDateLabel, formatDateTimeDmyLabel } from '@/lib/utils/calendarUtils';
 import { formatCurrencyCLP } from '@/lib/utils/formatters';
 import { useAnfitrionaServicios, type Service } from '@/hooks/hostess/useAnfitrionaServicios';
+import { Label } from '@/components/ui/label';
 
 function getStatusBadge(estado: number) {
   switch (estado) {
@@ -232,9 +233,9 @@ export default function AnfitrionaServiciosPage() {
         />
 
         <div className='min-w-60'>
-          <label htmlFor='buscar-servicios' className={SELECT_LABEL_CLASS}>
+          <Label htmlFor='buscar-servicios' className={SELECT_LABEL_CLASS}>
             Buscar
-          </label>
+          </Label>
           <Input
             id='buscar-servicios'
             type='text'

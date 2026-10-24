@@ -311,7 +311,7 @@ export default function CobrarCuentaModal({
                           setPropina(calcularPropina(cuentaActual?.total || 0, propinaPct, activa));
                         }}
                       />
-                      <label
+                      <Label
                         htmlFor='propina-checkbox'
                         className='text-sm text-gray-700 cursor-pointer select-none'
                       >
@@ -321,7 +321,7 @@ export default function CobrarCuentaModal({
                             ({formatCurrencyNoDecimals(currentPropina)})
                           </span>
                         )}
-                      </label>
+                      </Label>
                     </div>
                   </div>
 

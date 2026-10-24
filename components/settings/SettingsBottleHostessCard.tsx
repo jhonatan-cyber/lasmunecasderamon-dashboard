@@ -29,6 +29,7 @@ import {
   type SettingsSaleOptionsHandle
 } from './SettingsSaleOptionsEditor';
 import type { SaleOption } from '@/types/sale-options';
+import { Label } from '@/components/ui/label';
 
 type PresentacionComisiones = {
   codigo_barras?: string | null;
@@ -406,12 +407,12 @@ export function SettingsBottleHostessCard() {
       ) : (
         <div className='space-y-6'>
           <div className='space-y-1'>
-            <label
+            <Label
               htmlFor='botella-producto'
               className='block text-xs font-bold uppercase tracking-wider text-neutral-500 ml-1'
             >
               Producto y presentación
-            </label>
+            </Label>
             <Popover open={productSelectorOpen} onOpenChange={setProductSelectorOpen}>
               <PopoverTrigger asChild>
                 <Button

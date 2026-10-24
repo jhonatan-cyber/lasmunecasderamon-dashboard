@@ -16,7 +16,7 @@ interface CommissionsStatsCardsProps {
   statistics: Statistics;
 }
 
-export function CommissionsStatsCards({ statistics }: CommissionsStatsCardsProps) {
+export function CommissionsReportStatsCards({ statistics }: CommissionsStatsCardsProps) {
   const stats = [
     {
       title: 'Anfitrionas Activas',

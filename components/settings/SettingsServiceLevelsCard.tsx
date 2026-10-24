@@ -18,6 +18,7 @@ import { toast } from 'sonner';
 import logger from '@/lib/utils/logger';
 import { refrescarConfiguraciones, useConfig, useConfigValue } from '@/hooks/shared/useConfigValue';
 import { setServiceLevels } from '@/components/orders/productModalRules';
+import { Label } from '@/components/ui/label';
 
 /**
  * El rol administrador no recibe colaciones, así que no aparece en la regla por
@@ -234,12 +235,12 @@ export function SettingsServiceLevelsCard() {
           <div className='flex items-center gap-3'>
             <ShoppingCart className='h-5 w-5 text-neutral-500 shrink-0' />
             <div className='flex-1'>
-              <label
+              <Label
                 htmlFor='service-simple'
                 className='text-sm font-bold text-neutral-700 dark:text-neutral-300'
               >
                 Venta simple hasta
-              </label>
+              </Label>
               <p className='text-xs text-neutral-500 dark:text-neutral-400 mt-0.5'>
                 Sin comisión ni anfitriona hasta este precio.
               </p>
@@ -262,12 +263,12 @@ export function SettingsServiceLevelsCard() {
           <div className='flex items-center gap-3'>
             <Users className='h-5 w-5 text-neutral-500 shrink-0' />
             <div className='flex-1'>
-              <label
+              <Label
                 htmlFor='service-hostess'
                 className='text-sm font-bold text-neutral-700 dark:text-neutral-300'
               >
                 Anfitriona desde
-              </label>
+              </Label>
               <p className='text-xs text-neutral-500 dark:text-neutral-400 mt-0.5'>
                 Precio mínimo para asignar anfitriona.
               </p>
@@ -290,12 +291,12 @@ export function SettingsServiceLevelsCard() {
           <div className='flex items-center gap-3'>
             <BedDouble className='h-5 w-5 text-neutral-500 shrink-0' />
             <div className='flex-1'>
-              <label
+              <Label
                 htmlFor='service-habitacion'
                 className='text-sm font-bold text-neutral-700 dark:text-neutral-300'
               >
                 Habitación desde
-              </label>
+              </Label>
               <p className='text-xs text-neutral-500 dark:text-neutral-400 mt-0.5'>
                 Precio mínimo para exigir habitación.
               </p>
@@ -318,12 +319,12 @@ export function SettingsServiceLevelsCard() {
           <div className='flex items-center gap-3'>
             <GlassWater className='h-5 w-5 text-neutral-500 shrink-0' />
             <div className='flex-1'>
-              <label
+              <Label
                 htmlFor='service-trago-cortesia-cliente'
                 className='text-sm font-bold text-neutral-700 dark:text-neutral-300'
               >
                 Covers de entradas
-              </label>
+              </Label>
               <p className='text-xs text-neutral-500 dark:text-neutral-400 mt-0.5'>
                 En Entradas, el cliente puede elegir como cover una bebida de este precio o menos.
               </p>
@@ -346,12 +347,12 @@ export function SettingsServiceLevelsCard() {
           <div className='flex items-center gap-3'>
             <Ticket className='h-5 w-5 text-neutral-500 shrink-0' />
             <div className='flex-1'>
-              <label
+              <Label
                 htmlFor='service-costo-entrada'
                 className='text-sm font-bold text-neutral-700 dark:text-neutral-300'
               >
                 Costo de entrada
-              </label>
+              </Label>
               <p className='text-xs text-neutral-500 dark:text-neutral-400 mt-0.5'>
                 Monto predeterminado al registrar una entrada.
               </p>

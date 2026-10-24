@@ -2,6 +2,7 @@
 
 import { useEffect, useMemo, useState } from 'react';
 import { CalendarDays, Flame, Loader2, UserPlus, Users, Wallet } from 'lucide-react';
+import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import {
   Dialog,
@@ -16,6 +17,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { CustomerSelect, PaymentMethodSelect } from '@/components/shared/selects';
 import { calcularTotalReserva, MAX_TOTAL_RESERVA } from '@/lib/business/quinchos';
 import { esFechaISO, hoyDelNegocio } from '@/lib/business/vencimiento';
+import { formatLongDateEs } from '@/lib/utils/calendarUtils';
 import {
   capitalizeFirst,
   formatCurrencyCLP,
@@ -54,12 +56,16 @@ export function ReservaQuinchoModal({
   const [apellido, setApellido] = useState('');
   const [run, setRun] = useState('');
   const [telefono, setTelefono] = useState('');
-  const [fechaReserva, setFechaReserva] = useState(hoyDelNegocio());
   const [personas, setPersonas] = useState('');
   const [montoPorPersona, setMontoPorPersona] = useState('');
   const [metodoPago, setMetodoPago] = useState<MetodoPagoReservaQuincho>('efectivo');
   const [observaciones, setObservaciones] = useState('');
   const [error, setError] = useState('');
+
+  // La fecha la elige el calendario: acá solo se conserva la selección vigente.
+  const hoy = hoyDelNegocio();
+  const fechaReserva =
+    fechaInicial && esFechaISO(fechaInicial) && fechaInicial >= hoy ? fechaInicial : hoy;
 
   useEffect(() => {
     if (!open) return;
@@ -69,13 +75,12 @@ export function ReservaQuinchoModal({
     setApellido('');
     setRun('');
     setTelefono('');
-    setFechaReserva(fechaInicial && esFechaISO(fechaInicial) ? fechaInicial : hoyDelNegocio());
     setPersonas('');
     setMontoPorPersona('');
     setMetodoPago('efectivo');
     setObservaciones('');
     setError('');
-  }, [open, fechaInicial]);
+  }, [open]);
 
   const clienteSeleccionado = useMemo(
     () => clientes.find(cliente => String(cliente.id) === clienteId) ?? null,
@@ -105,6 +110,10 @@ export function ReservaQuinchoModal({
     }
     if (!esFechaISO(fechaReserva)) {
       setError('Selecciona la fecha de la reserva');
+      return;
+    }
+    if (fechaReserva < hoyDelNegocio()) {
+      setError('La fecha de la reserva no puede ser anterior a hoy');
       return;
     }
 
@@ -150,6 +159,15 @@ export function ReservaQuinchoModal({
           <DialogDescription>
             El total se acredita al saldo prepago del cliente con el método de pago elegido.
           </DialogDescription>
+          <Badge
+            variant='outline'
+            className='mt-2 w-fit max-w-full gap-2 rounded-full border-orange-200 bg-orange-50 px-3 py-1.5 text-sm font-medium text-orange-800 dark:border-orange-900/40 dark:bg-orange-950/30 dark:text-orange-200'
+          >
+            <CalendarDays className='h-4 w-4 shrink-0' aria-hidden='true' />
+            <span className='truncate first-letter:uppercase'>
+              {formatLongDateEs(fechaReserva, 'es-CL')}
+            </span>
+          </Badge>
         </DialogHeader>
 
         <div className='flex-1 overflow-y-auto p-6'>
@@ -254,18 +272,7 @@ export function ReservaQuinchoModal({
               )}
             </section>
 
-            <section className='grid grid-cols-1 gap-4 sm:grid-cols-3'>
-              <div className='space-y-1.5'>
-                <Label htmlFor='reserva-fecha'>Fecha de reserva</Label>
-                <Input
-                  id='reserva-fecha'
-                  type='date'
-                  value={fechaReserva}
-                  onChange={e => setFechaReserva(e.target.value)}
-                  disabled={isSaving}
-                  required
-                />
-              </div>
+            <section className='grid grid-cols-1 gap-4 sm:grid-cols-2'>
               <div className='space-y-1.5'>
                 <Label htmlFor='reserva-personas'>Cantidad de personas</Label>
                 <Input

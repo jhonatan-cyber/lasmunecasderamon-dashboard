@@ -204,9 +204,9 @@ const RoomSelect: React.FC<RoomSelectProps> = ({
         sideOffset={5}
       >
         <div className={`${SELECT_SEARCH_WRAPPER_CLASS} shrink-0`}>
-          <label htmlFor={`${uniqueId}-search`} className='sr-only'>
+          <Label htmlFor={`${uniqueId}-search`} className='sr-only'>
             Buscar habitación
-          </label>
+          </Label>
           <Input
             id={`${uniqueId}-search`}
             placeholder={searchPlaceholder}
