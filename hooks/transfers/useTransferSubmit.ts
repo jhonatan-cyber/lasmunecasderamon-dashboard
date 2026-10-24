@@ -27,8 +27,7 @@ export function useTransferSubmit({
   const handleSubmit = async (e: FormEvent) => {
     e.preventDefault();
     if (!item || submitting.current) return;
-    // Colación: manda lo ingresado en el modal; si está vacío se toman los ml
-    // del corto de anfitriona que expone el formulario.
+
     const mlColacionTexto = form.mlColacion.replace(/\D/g, '');
     const mlColacion =
       mlColacionTexto !== '' ? Number(mlColacionTexto) : (form.mlColacionSugerido ?? null);
@@ -53,15 +52,7 @@ export function useTransferSubmit({
         return;
       }
     }
-    // Las unidades de Acompañamiento se guardan siempre que haya más de cero,
-    // con o sin ml: el campo explícito `acompanamiento_colacion` es el que
-    // gobierna la colación, y si solo quedara en el campo heredado la
-    // configuración dependería de que alguien lo leyera como "bebidas incluidas
-    // por botella".
-    //
-    // Con ml configurado (ingresado o heredado del corto de anfitriona) la
-    // colación incluye al menos una bebida, aunque no se indiquen unidades:
-    // una bebida de accompaniment es una unidad.
+
     const unidadesAcompanamiento = Number(form.unidadesAcompanamiento || 0) || 0;
     const acompanamientoColacion =
       unidadesAcompanamiento > 0 || mlAcompanamientoColacion !== null

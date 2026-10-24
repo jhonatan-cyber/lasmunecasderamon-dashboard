@@ -19,6 +19,7 @@ import {
   guardarRecargaPrepago,
   guardarDevolucionSaldo,
   leerConsumoPrepagoVenta,
+  listarConsumosPrepagoVenta,
   guardarRestitucionPrepago
 } from './repositorio';
 
@@ -64,6 +65,14 @@ export async function devolverSaldoEnUnidad(
   await guardarDevolucionSaldo(entrada, preparada, contexto);
   return saldoClienteAgotado(entrada.cliente_id, contexto);
 }
+/** Consumo prepago de la venta repartido por cliente (uno o dos). */
+export function listarPrepagoConsumidoPorVenta(
+  ventaId: string,
+  contexto: ContextoOperacion
+): Promise<{ cliente_id: string; monto: number }[]> {
+  return listarConsumosPrepagoVenta(ventaId, contexto);
+}
+
 export function leerPrepagoConsumidoPorVenta(
   clienteId: string,
   ventaId: string,

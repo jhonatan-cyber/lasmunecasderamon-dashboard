@@ -1,7 +1,11 @@
 import type { TransactionQuery } from '@/lib/database/db';
 import type { OrderCreateType } from '@/lib/business/schemas/order';
 import { BusinessError } from '@/lib/errors/errors';
-import { CHAMPAGNE_DEFAULT_TIERS } from '@/lib/business/champagne';
+import {
+  esCategoriaChampagne,
+  faltaConfiguracionChampagne,
+  MENSAJE_CHAMPAGNE_SIN_CONFIGURAR
+} from '@/lib/business/champagne';
 import { parseOpcionesVenta } from '../helpers';
 import { preciosCortoAnfitriona } from '@/lib/sales/hostessShortPrices';
 import { validarStockPedido } from './consumoRepositorio';
@@ -68,31 +72,18 @@ export async function validarConfiguracionPedido(
       throw new BusinessError('Selecciona anfitriona para cada producto con comision');
     if (Number(price.comision) === 0 && hosts.length)
       throw new BusinessError('Un producto sin comision no admite anfitriona');
-    const champagne =
-      d.tipo_venta !== 'shot' &&
-      /champagne|champana|shampana/.test(
-        String(product.categoria || '')
-          .normalize('NFD')
-          .replace(/[\u0300-\u036f]/g, '')
-          .toLowerCase()
-      );
+    const champagne = d.tipo_venta !== 'shot' && esCategoriaChampagne(product.categoria);
+    const productTiers = tiers.filter(t => t.producto_id === d.productoId);
+    if (champagne && faltaConfiguracionChampagne(product.max_anfitrionas, productTiers))
+      throw new BusinessError(MENSAJE_CHAMPAGNE_SIN_CONFIGURAR);
     const limit =
       d.tipo_venta === 'shot'
         ? d.cantidad
         : Number(product.max_anfitrionas) > 0
           ? Number(product.max_anfitrionas)
-          : Math.max(
-              1,
-              champagne
-                ? Math.max(
-                    1,
-                    ...CHAMPAGNE_DEFAULT_TIERS.filter(t => t.precio <= d.precio).map(
-                      t => t.anfitrionas
-                    )
-                  )
-                : d.cantidad,
-              ...tiers.filter(t => t.producto_id === d.productoId).map(t => Number(t.anfitrionas))
-            );
+          : champagne
+            ? Math.max(1, ...productTiers.map(t => Number(t.anfitrionas)))
+            : Math.max(1, d.cantidad, ...productTiers.map(t => Number(t.anfitrionas)));
     if (hosts.length > limit)
       throw new BusinessError('El producto excede el maximo de anfitrionas');
     for (const id of hosts) {

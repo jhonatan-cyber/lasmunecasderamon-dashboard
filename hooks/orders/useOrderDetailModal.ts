@@ -16,6 +16,7 @@ interface OrderDetailModalState {
   isRegistering: boolean;
   metodoPago: string;
   propina: number;
+  clienteSaldo: number | null;
   habitacionId: string;
   tiempoHabitacion: number;
   showMetodoPagoError: boolean;
@@ -24,6 +25,8 @@ interface OrderDetailModalState {
 
 interface OrderDetailModalSetters {
   setIsRegistering: (v: boolean) => void;
+  setMetodoPago: (v: string) => void;
+  setAgregarPropina: (v: boolean) => void;
   setTiempoHabitacion: (v: number) => void;
   setShowMetodoPagoError: (v: boolean) => void;
   setConfirmVentaModalOpen: (v: boolean) => void;
@@ -67,7 +70,7 @@ export function useOrderDetailModal({
   rooms,
   createVenta,
   startTimer,
-  state: { isRegistering, tiempoHabitacion },
+  state: { isRegistering, metodoPago, propina, clienteSaldo, tiempoHabitacion },
   setters: { setIsRegistering, setShowMetodoPagoError, setConfirmVentaModalOpen },
   derived: { anfitrionasFinal, recargoAnfitrionas }
 }: UseOrderDetailModalParams) {
@@ -88,12 +91,9 @@ export function useOrderDetailModal({
     return () => unsubscribe();
   }, [open, orderId, onClose]);
 
-  // --- Derived values ---
   const hasChampagne = detail.some((item: any) => isChampagneProduct(item));
   const hasExpensiveDrinks = detail.some((item: any) => isExpensiveDrink(item));
   const habitacionId = String(detail.find(item => item?.habitacion_id)?.habitacion_id || '');
-  const metodoPago = detail[0]?.metodo_pago || '';
-  const propina = Number(detail[0]?.propina || 0);
   const shouldShowRoomSelector = Boolean(habitacionId);
   const hasRoomSelectedInOrder = detail.some((item: any) => Boolean(item?.habitacion_id));
 
@@ -142,10 +142,15 @@ export function useOrderDetailModal({
       e?.preventDefault();
       setShowMetodoPagoError(true);
 
+      // El pago lo elige el cajero al cobrar; el pedido puede venir sin método.
       if (!metodoPago) {
-        toast.error(
-          'El pedido no tiene un método de pago guardado. Debe volver a generarse completo.'
-        );
+        toast.error('Selecciona el método de pago con el que cobra el pedido');
+        return;
+      }
+
+      // Un prepago sin saldo descontaría nada y dejaría la venta sin pagar.
+      if (metodoPago === 'prepago' && !(Number(clienteSaldo || 0) > 0)) {
+        toast.error('El cliente del pedido no tiene saldo prepago disponible');
         return;
       }
 
@@ -166,6 +171,7 @@ export function useOrderDetailModal({
     },
     [
       metodoPago,
+      clienteSaldo,
       detail,
       habitacionId,
       tiempoHabitacion,
@@ -183,6 +189,8 @@ export function useOrderDetailModal({
       try {
         const pedido = detail[0];
         if (!pedido || !orderId || !metodoPago) throw new Error('Pedido incompleto');
+        if (metodoPago === 'prepago' && !(Number(clienteSaldo || 0) > 0))
+          throw new Error('Sin saldo prepago disponible');
         if (
           habitacionId &&
           (!Number.isInteger(tiempoHabitacion) || tiempoHabitacion < 1 || tiempoHabitacion > 1440)
@@ -199,7 +207,7 @@ export function useOrderDetailModal({
         const ventaData = {
           cliente_id: pedido.cliente_id || null,
           pedido_id: orderId || null,
-          metodo_pago: metodoPago as 'efectivo' | 'tarjeta' | 'transferencia',
+          metodo_pago: metodoPago as 'efectivo' | 'tarjeta' | 'transferencia' | 'prepago',
           propina: propina,
           sub_total: sub_total,
           total: sub_total + propina,
@@ -260,6 +268,7 @@ export function useOrderDetailModal({
       rooms,
       metodoPago,
       propina,
+      clienteSaldo,
       shouldShowRoomSelector,
       tiempoHabitacion,
       orderId,

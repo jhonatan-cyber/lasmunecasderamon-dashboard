@@ -48,9 +48,6 @@ export const userFormSchema = z.object({
     .regex(/^[a-zA-Z0-9._:-]*$/, 'Solo letras, números y . _ : -'),
   biometrico_huella: z.boolean(),
   biometrico_facial: z.boolean(),
-  // Alta en el lector al CREAR: el backend genera el código, guarda la foto
-  // como plantilla maestra y crea la persona con su cara en el equipo elegido.
-  // El resultado vuelve en `altaEquipo` de la respuesta (nunca rompe la creación).
   alta_equipo: z.boolean(),
   dispositivo_alta: z.string()
 });
@@ -125,8 +122,6 @@ export function useUserForm({ user, onSubmit, isEditMode }: UseUserFormProps) {
         biometrico_codigo: user?.biometrico_codigo || '',
         biometrico_huella: !!user?.biometrico_huella,
         biometrico_facial: !!user?.biometrico_facial,
-        // Al crear se propone dar de alta en el lector; al editar no aplica
-        // (para eso está el diálogo de enrolamiento de la ficha).
         alta_equipo: !user,
         dispositivo_alta: ''
       }),

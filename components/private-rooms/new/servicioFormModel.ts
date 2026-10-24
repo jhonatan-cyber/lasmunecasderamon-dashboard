@@ -1,4 +1,5 @@
 import { generateRandomCode } from '@/lib/utils/codeUtils';
+import type { PrepagoDestino } from '@/lib/business/prepagoDistribucion';
 
 /** Estado del formulario de «Datos Servicio» (salida a sala privada). */
 export interface ServicioFormData {
@@ -114,65 +115,13 @@ const normalizeId = (id: string) => {
   return Number.isNaN(parsed) ? id : parsed;
 };
 
-/** Cliente con cuenta y saldo, ya Normalizado para el modal de descuento. */
-export interface ClienteConSaldo {
-  clienteId: string;
-  nombre: string;
-  saldo: number;
-}
-
-/** Destino del descuento prepago que se envía al backend. */
-export interface PrepagoDestino {
-  cliente_id: string;
-  monto: number;
-}
-
-/**
- * Reparte el monto prepago entre clientes con saldo.
- *  - Cliente único: recibe todo lo posible (min(saldo, monto)).
- *  - Ambos: mitad y mitad estricta — hasta la mitad para cada cliente capada por
- *    su saldo, sin pasarse del monto total; el remanente queda para caja.
- */
-export function calcularDistribucionPrepago(
-  montoDescontar: number,
-  clientesConSaldo: ClienteConSaldo[],
-  opcion: 'uno' | 'ambos' | 'ninguno',
-  titularId?: string
-): { destinos: PrepagoDestino[]; pagadoConSaldo: number; alCaja: number } {
-  const candidatos = (
-    opcion === 'uno' && titularId
-      ? clientesConSaldo.filter(c => c.clienteId === titularId)
-      : clientesConSaldo
-  ).slice(0, opcion === 'ambos' ? 2 : undefined);
-
-  if (opcion === 'ninguno' || candidatos.length === 0) {
-    return { destinos: [], pagadoConSaldo: 0, alCaja: Math.max(0, Math.round(montoDescontar)) };
-  }
-
-  let restante = Math.max(0, Math.round(montoDescontar));
-  const destinos: PrepagoDestino[] = [];
-
-  if (opcion === 'ambos' && candidatos.length === 2) {
-    const mitad = Math.round(restante / 2);
-    for (const cliente of candidatos) {
-      const monto = Math.min(Math.round(cliente.saldo), mitad, restante);
-      if (monto > 0) {
-        destinos.push({ cliente_id: cliente.clienteId, monto });
-        restante -= monto;
-      }
-    }
-  } else {
-    const cliente = candidatos[0];
-    const monto = Math.min(Math.round(cliente.saldo), restante);
-    if (monto > 0) {
-      destinos.push({ cliente_id: cliente.clienteId, monto });
-      restante -= monto;
-    }
-  }
-
-  const pagadoConSaldo = destinos.reduce((sum, d) => sum + d.monto, 0);
-  return { destinos, pagadoConSaldo, alCaja: restante };
-}
+// El reparto entre clientes vive en `lib/business` porque también lo usa la
+// venta de bar. Se reexporta para no romper a los consumidores del formulario.
+export {
+  calcularDistribucionPrepago,
+  type ClienteConSaldo,
+  type PrepagoDestino
+} from '@/lib/business/prepagoDistribucion';
 
 /** Payload exacto de `POST /api/services` para el modal de confirmación. */
 export function buildServicioPayload(args: {

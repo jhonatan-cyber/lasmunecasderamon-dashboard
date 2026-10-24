@@ -5,19 +5,22 @@ import { SaleService } from '@/workflows/ventas';
 import { SaleCreateSchema } from '@/lib/business/schemas/sale';
 import { validateOrResponse } from '@/lib/api/validate';
 
-export const GET = withPublicRoute(async (request: Request) => {
-  const { searchParams } = new URL(request.url);
-  const params = {
-    tipo: searchParams.get('tipo') || undefined,
-    page: searchParams.get('page') || '1',
-    limit: searchParams.get('limit') || '10',
-    estado: searchParams.get('estado') || undefined,
-    caja_id: searchParams.get('caja_id') || undefined,
-    search: searchParams.get('search') || undefined
-  };
-  const data = await SaleService.getAll(params);
-  return NextResponse.json({ success: true, data });
-});
+export const GET = withRoute(
+  { auth: true, audit: true, module: 'sales', action: 'read' },
+  async (request: Request) => {
+    const { searchParams } = new URL(request.url);
+    const params = {
+      tipo: searchParams.get('tipo') || undefined,
+      page: searchParams.get('page') || '1',
+      limit: searchParams.get('limit') || '10',
+      estado: searchParams.get('estado') || undefined,
+      caja_id: searchParams.get('caja_id') || undefined,
+      search: searchParams.get('search') || undefined
+    };
+    const data = await SaleService.getAll(params);
+    return NextResponse.json({ success: true, data });
+  }
+);
 
 /**
  * La venta puede registrarse sin red: el cajero la encola en el dispositivo y

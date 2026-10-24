@@ -212,8 +212,6 @@ export async function fetchSelectionData({
     );
   }
 
-  // Misma correspondencia que el selector de pestañas: propinas y comisiones
-  // comparten la tercera consulta, horas extras y servicios la cuarta.
   const rowsFor = (category: DataType): CalendarRow[] => {
     switch (category) {
       case 'asistencias':

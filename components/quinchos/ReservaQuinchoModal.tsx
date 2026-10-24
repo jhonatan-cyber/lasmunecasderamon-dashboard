@@ -16,7 +16,13 @@ import { Textarea } from '@/components/ui/textarea';
 import { CustomerSelect, PaymentMethodSelect } from '@/components/shared/selects';
 import { calcularTotalReserva, MAX_TOTAL_RESERVA } from '@/lib/business/quinchos';
 import { esFechaISO, hoyDelNegocio } from '@/lib/business/vencimiento';
-import { formatCurrencyCLP, formatNumberInput, parseNumberInput } from '@/lib/utils/formatters';
+import {
+  capitalizeFirst,
+  formatCurrencyCLP,
+  formatNumberInput,
+  parseNumberInput,
+  toTitleCase
+} from '@/lib/utils/formatters';
 import type { Client } from '@/types/client';
 import type { MetodoPagoReservaQuincho, ReservaQuinchoDraft } from '@/types/quincho';
 
@@ -26,6 +32,8 @@ interface ReservaQuinchoModalProps {
   clientes: Client[];
   cajaCerrada: boolean;
   isSaving: boolean;
+  /** Fecha elegida en el calendario (`YYYY-MM-DD`); por defecto, hoy. */
+  fechaInicial?: string;
   onSubmit: (draft: ReservaQuinchoDraft) => Promise<boolean>;
 }
 
@@ -37,6 +45,7 @@ export function ReservaQuinchoModal({
   clientes,
   cajaCerrada,
   isSaving,
+  fechaInicial,
   onSubmit
 }: ReservaQuinchoModalProps) {
   const [modoCliente, setModoCliente] = useState<ModoCliente>('existente');
@@ -60,13 +69,13 @@ export function ReservaQuinchoModal({
     setApellido('');
     setRun('');
     setTelefono('');
-    setFechaReserva(hoyDelNegocio());
+    setFechaReserva(fechaInicial && esFechaISO(fechaInicial) ? fechaInicial : hoyDelNegocio());
     setPersonas('');
     setMontoPorPersona('');
     setMetodoPago('efectivo');
     setObservaciones('');
     setError('');
-  }, [open]);
+  }, [open, fechaInicial]);
 
   const clienteSeleccionado = useMemo(
     () => clientes.find(cliente => String(cliente.id) === clienteId) ?? null,
@@ -206,7 +215,7 @@ export function ReservaQuinchoModal({
                     <Input
                       id='reserva-cliente-nombre'
                       value={nombre}
-                      onChange={e => setNombre(e.target.value)}
+                      onChange={e => setNombre(toTitleCase(e.target.value))}
                       disabled={isSaving}
                       placeholder='Ej: Ana'
                     />
@@ -216,7 +225,7 @@ export function ReservaQuinchoModal({
                     <Input
                       id='reserva-cliente-apellido'
                       value={apellido}
-                      onChange={e => setApellido(e.target.value)}
+                      onChange={e => setApellido(toTitleCase(e.target.value))}
                       disabled={isSaving}
                       placeholder='Ej: Pérez'
                     />
@@ -311,7 +320,7 @@ export function ReservaQuinchoModal({
                 <Textarea
                   id='reserva-observaciones'
                   value={observaciones}
-                  onChange={e => setObservaciones(e.target.value)}
+                  onChange={e => setObservaciones(capitalizeFirst(e.target.value))}
                   disabled={isSaving}
                   rows={3}
                   maxLength={500}

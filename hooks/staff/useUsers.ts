@@ -10,9 +10,7 @@ interface ApiResponse<T> {
   data?: T;
   total?: number;
   message: string;
-  /** Alta en el lector pedida al crear: resultado del intento (nunca bloquea). */
   altaEquipo?: AltaEquipoInfo;
-  /** Sincronía con el lector al activar/desactivar (qué se quitó/restauró). */
   lector?: LectorSyncInfo;
   errors?: Array<{
     field: string;
@@ -29,17 +27,12 @@ async function readUsersResponse<T>(response: Response): Promise<ApiResponse<T>>
   };
 }
 
-/** Lo que PATCH /api/users?action=… devuelve sobre el lector de la puerta. */
 export interface LectorSyncInfo {
-  /** Hubo algo que sincronizar (la persona tenía código y plantillas). */
   intentado: boolean;
-  /** Equipos donde la persona quedó quitada/restaurada. */
   equiposOk: string[];
-  /** Equipos que no respondieron o rechazaron: quedan pendientes. */
   equiposFallo: string[];
 }
 
-/** Lo que `POST /api/users` devuelve sobre la alta automática en el lector. */
 export interface AltaEquipoInfo {
   ok: boolean;
   mensaje: string;

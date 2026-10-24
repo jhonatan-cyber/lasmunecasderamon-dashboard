@@ -111,6 +111,7 @@ it('cuenta desde un pedido bloquea el doble envio y conserva el codigo al reinte
         isRegistering: false,
         metodoPago: 'efectivo',
         propina: 0,
+        clienteSaldo: null,
         habitacionId: '',
         tiempoHabitacion: 0,
         showMetodoPagoError: false,
@@ -118,6 +119,8 @@ it('cuenta desde un pedido bloquea el doble envio y conserva el codigo al reinte
       },
       setters: {
         setIsRegistering: vi.fn(),
+        setMetodoPago: vi.fn(),
+        setAgregarPropina: vi.fn(),
         setTiempoHabitacion: vi.fn(),
         setShowMetodoPagoError: vi.fn(),
         setConfirmVentaModalOpen: vi.fn()

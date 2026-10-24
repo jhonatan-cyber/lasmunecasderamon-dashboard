@@ -191,7 +191,6 @@ export const useLoginForm = () => {
         return;
       }
 
-      // S7: Redirigir a cambio forzado de contraseña si aplica
       if (data.user?.forcePasswordChange) {
         toast.info('Debés cambiar tu contraseña antes de continuar', { duration: 5000 });
         setLoading(false);

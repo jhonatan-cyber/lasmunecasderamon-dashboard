@@ -76,6 +76,41 @@ describe('ReservaQuinchoModal', () => {
     });
   });
 
+  it('capitaliza en tiempo real nombre, apellido y observaciones', async () => {
+    const onSubmit = mount();
+
+    fireEvent.click(screen.getByRole('button', { name: /Nuevo/i }));
+    const nombre = screen.getByLabelText('Nombre');
+    const apellido = screen.getByLabelText('Apellido');
+    const observaciones = screen.getByLabelText('Observaciones (opcional)');
+
+    fireEvent.change(nombre, { target: { value: 'bruno alejandro' } });
+    fireEvent.change(apellido, { target: { value: 'díaz muñoz' } });
+    fireEvent.change(observaciones, { target: { value: 'cumpleaños, requiere mesas extra' } });
+
+    expect(nombre).toHaveValue('Bruno Alejandro');
+    expect(apellido).toHaveValue('Díaz Muñoz');
+    expect(observaciones).toHaveValue('Cumpleaños, requiere mesas extra');
+
+    fireEvent.change(nombre, { target: { value: 'bruno ' } });
+    expect(nombre).toHaveValue('Bruno ');
+
+    completarDatos();
+    enviar();
+
+    await waitFor(() => expect(onSubmit).toHaveBeenCalledTimes(1));
+    expect(onSubmit.mock.calls[0][0]).toMatchObject({
+      cliente_nuevo: { name: 'Bruno', lastName: 'Díaz Muñoz' },
+      observaciones: 'Cumpleaños, requiere mesas extra'
+    });
+  });
+
+  it('precarga la fecha del día elegido en el calendario', () => {
+    mount(vi.fn().mockResolvedValue(true), { fechaInicial: '2026-12-24' });
+
+    expect(screen.getByLabelText('Fecha de reserva')).toHaveValue('2026-12-24');
+  });
+
   it('pide elegir un cliente antes de guardar', () => {
     const onSubmit = mount();
     completarDatos();

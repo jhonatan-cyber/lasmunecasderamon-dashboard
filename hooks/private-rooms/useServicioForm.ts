@@ -13,6 +13,8 @@ import logger from '@/lib/utils/logger';
 import { usePrivateRoomSummary } from '@/hooks/private-rooms/usePrivateRoomSummary';
 import { useIvaRate } from '@/components/providers/IvaRateProvider';
 import { printBoletaHabitacion } from '@/components/private-rooms/new/printBoleta';
+import { imprimirComprobantesPrepago } from '@/components/shared/printComprobantePrepago';
+import { construirComprobantesDeConsumo } from '@/lib/business/comprobantePrepago';
 import {
   buildServicioPayload,
   calcularDistribucionPrepago,
@@ -256,6 +258,48 @@ export function useServicioForm() {
     });
   };
 
+  const emitirComprobantesServicio = (servicio: any) => {
+    const destinos: PrepagoDestino[] = Array.isArray(servicio?.prepago_destinos)
+      ? servicio.prepago_destinos.filter(
+          (destino: PrepagoDestino) => destino.cliente_id && Number(destino.monto) > 0
+        )
+      : [];
+    if (destinos.length === 0) return;
+
+    const totalServicio = Number(servicio.total ?? 0);
+    const habitacion = selectedRoom?.nombre || selectedRoom?.name || 'Habitación';
+    const atendidoPor = unirNombresAnfitrionas(anfitrionas, servicio.usuarios || []);
+    const fecha = new Date().toLocaleString('es-CL');
+
+    imprimirComprobantesPrepago(
+      construirComprobantesDeConsumo({
+        destinos,
+        clientes: clientes.map(cliente => ({
+          id: String(cliente.id),
+          nombre: `${cliente.name ?? ''} ${cliente.lastName ?? ''}`.trim(),
+          run: cliente.run ?? null,
+          saldo: Number(cliente.saldo ?? 0)
+        })),
+        base: {
+          movimiento: 'consumo',
+          titulo: 'Servicio de habitación',
+          fecha,
+          codigo: servicio.codigo ? String(servicio.codigo) : null,
+          lineas: [
+            {
+              concepto: habitacion,
+              detalle: `${servicio.tiempo ?? formData.tiempo} minutos`,
+              monto: totalServicio
+            }
+          ],
+          total: totalServicio,
+          atendidoPor: atendidoPor || null,
+          nota: 'Consumo cobrado con el saldo prepago del cliente.'
+        }
+      })
+    );
+  };
+
   const confirmAndSubmit = async () => {
     if (!servicioDataToSubmit || submitting.current) return;
     submitting.current = true;
@@ -293,6 +337,11 @@ export function useServicioForm() {
             anfitrionasSeleccionadas
           );
         }
+
+        emitirComprobantesServicio({
+          ...servicioDataToSubmit,
+          codigo: data.codigo ?? servicioDataToSubmit.codigo
+        });
 
         queryClient.invalidateQueries({ queryKey: ['/api/services'] });
 

@@ -1,6 +1,5 @@
 'use client';
 
-/* eslint-disable react-hooks/exhaustive-deps */
 import { useCallback, useEffect, useState } from 'react';
 import { usePathname, useRouter } from 'next/navigation';
 import { toast } from 'sonner';
@@ -22,7 +21,6 @@ interface NotificationData {
   createdBy?: number;
 }
 
-/** `nombre + apellido` de un payload de asistencia, o undefined si no viene. */
 function nombreDe(user?: { nombre?: string; apellido?: string } | null): string | undefined {
   const nombre = [user?.nombre, user?.apellido].filter(Boolean).join(' ').trim();
   return nombre || undefined;
@@ -179,10 +177,6 @@ export function useNotifications() {
     const userRole =
       (user?.role as any)?.name?.toLowerCase() || (user?.role as string)?.toLowerCase();
 
-    // Asistencia biométrica: el lector cotejó y el sistema registró (o ya
-    // estaba registrada, que es la regla de una por día). Solo el lector: el
-    // registro manual ya avisa con su propio toast. El `id` fijo hace que un
-    // escaneo largo no apile toasts: se reemplaza en lugar de acumular.
     if (
       payload?.type === 'attendance_registered' &&
       payload?.data?.origen === 'biometrico' &&

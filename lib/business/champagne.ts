@@ -1,7 +1,7 @@
 // Tabla de precios del champagne por cantidad de anfitrionas.
-// Regla del club: base 40.000 de comisión con 1-2 anfitrionas y +20.000
-// por cada anfitriona extra. Precios: 1-2 → 120.000, 3 → 160.000,
-// 4 → 180.000, 5 → 200.000.
+// Los tramos viven por producto en `producto_champagne_tiers` (configuración
+// dinámica). No hay tabla por defecto: un producto de champaña sin tramos y sin
+// máximo explícito no tiene cómo cobrarse y la venta se bloquea.
 
 export interface ChampagneTier {
   anfitrionas: number;
@@ -9,15 +9,29 @@ export interface ChampagneTier {
   comision: number;
 }
 
-export const CHAMPAGNE_DEFAULT_TIERS: ChampagneTier[] = [
-  { anfitrionas: 1, precio: 120000, comision: 40000 },
-  { anfitrionas: 2, precio: 120000, comision: 40000 },
-  { anfitrionas: 3, precio: 160000, comision: 60000 },
-  { anfitrionas: 4, precio: 180000, comision: 80000 },
-  { anfitrionas: 5, precio: 200000, comision: 100000 }
-];
+/** Categoría de champaña, sin acentos ni mayúsculas. */
+export function esCategoriaChampagne(categoria: unknown): boolean {
+  const texto = String(categoria ?? '')
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .toLowerCase();
+  return texto.includes('champagne') || texto.includes('champana') || texto.includes('shampana');
+}
 
-export const CHAMPAGNE_MAX_ANFITRIONAS = 5;
+/** Mensaje único para el bloqueo, en UI y en validación de servidor. */
+export const MENSAJE_CHAMPAGNE_SIN_CONFIGURAR =
+  'El producto de champaña no tiene configurada la tabla de precios por anfitrionas';
+
+/**
+ * Sin máximo explícito ni tramos propios el producto no tiene precio por
+ * cantidad de anfitrionas: hay que configurarlo antes de venderlo.
+ */
+export function faltaConfiguracionChampagne(
+  maxAnfitrionas: unknown,
+  tiers: Array<{ anfitrionas: number }>
+): boolean {
+  return !(Number(maxAnfitrionas) > 0) && tiers.length === 0;
+}
 
 /** Devuelve el tier aplicable a N anfitrionas (tope: último tier). */
 export function champagneTierFor(n: number, tiers: ChampagneTier[]): ChampagneTier {

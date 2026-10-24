@@ -21,6 +21,7 @@ import {
   type DetalleCuentaNuevo
 } from './repositorio';
 import { ocuparHabitacionSiCorresponde } from '../facturacion/servicio';
+import { validarChampanaConfigurada } from '@/modules/inventario';
 
 type Tarea = () => void | Promise<void>;
 
@@ -35,6 +36,10 @@ export async function crearCuentaEnUnidad(
   contexto: ContextoOperacion,
   aplazar: (tarea: Tarea) => void
 ): Promise<string> {
+  // Una champaña sin tabla de precios por anfitrionas no tiene cómo cobrarse:
+  // la cuenta se rechaza antes de escribir la cabecera.
+  await validarChampanaConfigurada(body.detalles, contexto);
+
   const id = generateUUID();
   const now = getNowInBusinessTimezone();
 

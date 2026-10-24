@@ -552,12 +552,10 @@ export class ProductService {
     return await listarDevoluciones(limite);
   }
 
-  static async getChampagneTiers(productoId: string, usarPredeterminados = true) {
+  /** Tramos de precio configurados del producto; sin tabla, arreglo vacío. */
+  static async getChampagneTiers(productoId: string) {
     if (!productoId) throw new ValidationError('ID de producto es requerido');
-    const rows = await obtenerNivelesChampagne(String(productoId));
-    if (rows.length > 0 || !usarPredeterminados) return rows;
-    const { CHAMPAGNE_DEFAULT_TIERS } = await import('@/lib/business/champagne');
-    return CHAMPAGNE_DEFAULT_TIERS;
+    return await obtenerNivelesChampagne(String(productoId));
   }
 
   static async saveChampagneTiers(productoId: string, tiers: unknown) {

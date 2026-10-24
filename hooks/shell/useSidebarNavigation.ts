@@ -56,12 +56,6 @@ type SidebarSection = {
   items: SidebarItem[];
 };
 
-/**
- * Orden pensado para el uso diario: primero el resumen, luego el servicio en
- * piso, los canales de venta, el catálogo, los clientes, el dinero y por último
- * la administración del sistema. Cada destino mantiene un ícono propio para que
- * la barra se lea de un vistazo.
- */
 const SIDEBAR_SECTIONS: SidebarSection[] = [
   {
     key: 'overview',

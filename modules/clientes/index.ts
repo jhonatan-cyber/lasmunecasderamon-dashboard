@@ -16,13 +16,18 @@ export {
   rechazarSolicitud,
   registrarRecordatorio
 } from './devoluciones/servicio';
-export { solicitarDevolucionSaldo, reclamarDevolucionSaldo, resolverDevolucionEnUnidad } from './devoluciones/servicio';
+export {
+  solicitarDevolucionSaldo,
+  reclamarDevolucionSaldo,
+  resolverDevolucionEnUnidad
+} from './devoluciones/servicio';
 
 export { consumirPrepagoCuenta } from './prepago/servicio';
 
 export {
   consumirPrepagoVenta,
   leerPrepagoConsumidoPorVenta,
+  listarPrepagoConsumidoPorVenta,
   restituirPrepagoPorAnulacion,
   registrarRecargaEnUnidad,
   devolverSaldoEnUnidad

@@ -1,4 +1,4 @@
-import { act, renderHook } from '@testing-library/react';
+import { act, renderHook, waitFor } from '@testing-library/react';
 import { describe, expect, it, vi } from 'vitest';
 import { useOrderDetailModalState } from '@/hooks/orders/useOrderDetailModalState';
 import { getOrderHostessIds } from '@/components/orders/orderDetailUtils';
@@ -15,7 +15,7 @@ describe('Aceptación de pedidos', () => {
       getOrderHostessIds([{ anfitrionaIds: ids.join(','), anfitrionas_asignadas_ids: ids[0] }])
     ).toEqual(ids);
   });
-  it('recupera pago y propina y conserva la propina original', () => {
+  it('parte del pago guardado en el pedido y el cajero puede reemplazarlo al cobrar', () => {
     const detail = [
       {
         anfitrionaIds: ids.join(','),
@@ -31,10 +31,55 @@ describe('Aceptación de pedidos', () => {
     expect(result.current.derived.anfitrionasFinal).toEqual(ids);
     expect(result.current.state.metodoPago).toBe('tarjeta');
     expect(result.current.state.propina).toBe(2500);
-    expect(result.current.setters).not.toHaveProperty('setAgregarPropina');
-    expect(result.current.setters).not.toHaveProperty('setMetodoPago');
+    expect(result.current.state.agregarPropina).toBe(true);
+    expect(result.current.setters).toHaveProperty('setMetodoPago');
+    expect(result.current.setters).toHaveProperty('setAgregarPropina');
     expect(result.current.setters).not.toHaveProperty('setHabitacionId');
+
+    act(() => result.current.setters.setMetodoPago('efectivo'));
+    expect(result.current.state.metodoPago).toBe('efectivo');
+    // La propina que eligió el garzón se conserva aunque cambie el método.
+    expect(result.current.state.propina).toBe(2500);
   });
+});
+
+it('sin propina del pedido, el cajero la activa con el 10% sobre los productos', () => {
+  const detail = [
+    { id_pedido: 'pedido', metodo_pago: 'efectivo', propina: 0, precio: 10000, cantidad: 2 }
+  ];
+  const { result } = renderHook(() =>
+    useOrderDetailModalState({ open: true, detail, rooms: [], onClose: vi.fn() })
+  );
+  expect(result.current.state.propina).toBe(0);
+  act(() => result.current.setters.setAgregarPropina(true));
+  expect(result.current.state.propina).toBe(2000);
+  act(() => result.current.setters.setAgregarPropina(false));
+  expect(result.current.state.propina).toBe(0);
+});
+
+it('consulta el saldo del cliente del pedido para decidir si ofrece prepago', async () => {
+  const fetchMock = vi.fn(async (_url: string) => ({
+    ok: true,
+    json: async () => ({ success: true, data: { id_cliente: 'c1', saldo: 8000 } })
+  }));
+  vi.stubGlobal('fetch', fetchMock);
+  const detail = [
+    {
+      id_pedido: 'pedido',
+      metodo_pago: 'efectivo',
+      propina: 0,
+      cliente_id: 'c1',
+      precio: 5000,
+      cantidad: 1
+    }
+  ];
+  const { result } = renderHook(() =>
+    useOrderDetailModalState({ open: true, detail, rooms: [], onClose: vi.fn() })
+  );
+  await waitFor(() => expect(result.current.state.clienteSaldo).toBe(8000));
+  expect(String(fetchMock.mock.calls[0][0])).toContain('/api/clients?id=c1');
+  expect(result.current.state.clienteId).toBe('c1');
+  vi.unstubAllGlobals();
 });
 
 it('no busca ni agrega una habitacion al abrir un pedido sin habitacion y conserva propina cero', () => {

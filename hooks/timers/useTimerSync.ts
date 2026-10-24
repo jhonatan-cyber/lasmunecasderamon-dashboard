@@ -48,7 +48,7 @@ export function useTimerSync({
     syncTimers()
       .catch(() => {
         if (cancelled) return;
-        // Solo recuperar cache con vencimiento UTC; descartar fechas antiguas ambiguas.
+
         try {
           activeTimers.value = loadTimersFromStorage()
             .filter(t => t.expiresAt && hasSynchronizedTimerClock())
@@ -57,7 +57,7 @@ export function useTimerSync({
               return remaining > 0 ? [new TimerInstance(t, remaining)] : [];
             });
         } catch {
-          /* Una cache corrupta no impide la proxima sincronizacion. */
+          activeTimers.value = [];
         }
       })
       .finally(() => {
@@ -66,13 +66,10 @@ export function useTimerSync({
     return () => {
       cancelled = true;
     };
-    // La carga inicial se ejecuta una vez; los eventos usan la funcion actual.
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   useEffect(() => {
     if (isInitialized) saveTimersToStorage(activeTimers.value.map(t => t.toPlainObject()));
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [activeTimers.value, isInitialized]);
 
   const sseUrl =

@@ -3,6 +3,9 @@
 import { useCallback, useState } from 'react';
 import { toast } from 'sonner';
 import { useGenericFetch } from '@/hooks/shared';
+import { imprimirComprobantesPrepago } from '@/components/shared/printComprobantePrepago';
+import { construirComprobantesDeConsumo } from '@/lib/business/comprobantePrepago';
+import { formatCurrencyCLP } from '@/lib/utils/formatters';
 import type { Client } from '@/types/client';
 import type { NuevoClienteQuincho, ReservaQuincho, ReservaQuinchoDraft } from '@/types/quincho';
 
@@ -100,6 +103,40 @@ export function useQuinchos() {
           throw new Error(mensajeDeError(payload, 'No se pudo registrar la reserva'));
         }
 
+        const reserva = payload.data as ReservaQuincho | undefined;
+        if (reserva) {
+          const saldoAnterior = Number(
+            clientes?.find(c => String(c.id) === String(reserva.cliente_id))?.saldo ?? 0
+          );
+          imprimirComprobantesPrepago(
+            construirComprobantesDeConsumo({
+              destinos: [{ cliente_id: reserva.cliente_id, monto: reserva.total }],
+              clientes: [
+                {
+                  id: reserva.cliente_id,
+                  nombre: `${reserva.cliente_nombre} ${reserva.cliente_apellido}`.trim(),
+                  run: reserva.cliente_run ?? null,
+                  saldo: saldoAnterior
+                }
+              ],
+              base: {
+                movimiento: 'carga',
+                titulo: 'Reserva de quincho',
+                fecha: new Date().toLocaleString('es-CL'),
+                lineas: [
+                  {
+                    concepto: 'Reserva de quincho',
+                    detalle: `${reserva.fecha_reserva} · ${reserva.cantidad_personas} personas × ${formatCurrencyCLP(reserva.monto_por_persona)}`,
+                    monto: reserva.total
+                  }
+                ],
+                total: reserva.total,
+                nota: 'El total de la reserva se acreditó al saldo prepago del cliente.'
+              }
+            })
+          );
+        }
+
         toast.success(payload.message || 'Reserva registrada y saldo cargado al cliente');
         await Promise.all([refetchReservas(), refetchClientes()]);
         return true;
@@ -110,7 +147,7 @@ export function useQuinchos() {
         setIsSaving(false);
       }
     },
-    [crearCliente, refetchClientes, refetchReservas]
+    [clientes, crearCliente, refetchClientes, refetchReservas]
   );
 
   const anularReserva = useCallback(

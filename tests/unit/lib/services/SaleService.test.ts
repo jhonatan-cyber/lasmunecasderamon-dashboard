@@ -15,7 +15,8 @@ vi.mock('@/lib/database/db', () => ({
 }));
 
 vi.mock('@/modules/inventario', () => ({
-  consumirStockBar: vi.fn().mockResolvedValue([])
+  consumirStockBar: vi.fn().mockResolvedValue([]),
+  validarChampanaConfigurada: vi.fn().mockResolvedValue(undefined)
 }));
 
 vi.mock('@/lib/business/shotAlerts', () => ({

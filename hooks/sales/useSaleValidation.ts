@@ -25,6 +25,10 @@ import {
   cambiarCantidadEnCarro
 } from './saleCart';
 import { buildVentaPayload } from './salePayload';
+import { calcularDistribucionPrepago } from '@/lib/business/prepagoDistribucion';
+import { construirComprobantesDeConsumo } from '@/lib/business/comprobantePrepago';
+import { imprimirComprobantesPrepago } from '@/components/shared/printComprobantePrepago';
+import { formatCurrencyCLP } from '@/lib/utils/formatters';
 import {
   clearSaleDraft,
   persistSaleDraft,
@@ -38,6 +42,8 @@ export interface SaleFormState {
   servicioAnfitrionas: string[];
   selectedCliente: string;
   setSelectedCliente: (v: string) => void;
+  selectedSegundoCliente: string;
+  setSelectedSegundoCliente: (v: string) => void;
   selectedHabitacion: string;
   setSelectedHabitacion: (v: string) => void;
   metodoPago: string;
@@ -85,14 +91,13 @@ export function useSaleValidation({
   const router = useRouter();
   const { createVenta } = useSales();
   const { startTimer } = useTimer();
-
-  // ── Form state ──────────────────────────────────────────────────────
   const [servicioId, setServicioId] = useState<string | null>(null);
   const [servicioNombre, setServicioNombre] = useState('');
   const [servicioAnfitrionas, setServicioAnfitrionas] = useState<string[]>([]);
   const servicioAnfitrionasIniciales = useRef<string[]>([]);
   const [servicioListo, setServicioListo] = useState(false);
   const [selectedCliente, setSelectedCliente] = useState('none');
+  const [selectedSegundoCliente, setSelectedSegundoCliente] = useState('none');
   const [selectedHabitacion, setSelectedHabitacion] = useState('');
   const [metodoPago, setMetodoPago] = useState('');
   const [productos, setProductos] = useState<any[]>([]);
@@ -106,12 +111,15 @@ export function useSaleValidation({
   const [manualTime, setManualTime] = useState<string>('30');
   const [cantidades, setCantidades] = useState<{ [key: string]: number }>({});
   const { results: searchResults, loading: searchLoading } = useSaleProductSearch(searchProducto);
-
-  // Una instancia de caché por formulario abierto: cerrar la pantalla revalida.
   const [champagne] = useState(createChampagneTierLookup);
   const hostessLimits = useMemo(() => createHostessLimiter(champagne.getMax), [champagne]);
 
-  // ── Derived product rules ───────────────────────────────────────────
+  useEffect(() => {
+    if (selectedSegundoCliente !== 'none' && selectedSegundoCliente === selectedCliente) {
+      setSelectedSegundoCliente('none');
+    }
+  }, [selectedCliente, selectedSegundoCliente]);
+
   const configSimpleHasta = useConfigValue('comisiones', 'umbral_simple_hasta', 10000);
   const configHostessDesde = useConfigValue('comisiones', 'umbral_anfitriona_desde', 20000);
   const configHabitacionDesde = useConfigValue('comisiones', 'umbral_habitacion_desde', 30000);
@@ -129,7 +137,6 @@ export function useSaleValidation({
     !servicioId &&
     (hasChampagneProducts || productos.some(p => roomRequiredForPrice(p.precio ?? p.price)));
 
-  // ── Borrador persistido ─────────────────────────────────────────────
   useEffect(() => {
     if (typeof window === 'undefined') return;
 
@@ -190,8 +197,6 @@ export function useSaleValidation({
     metodoPago,
     productos
   ]);
-
-  // ── Room info fetch ─────────────────────────────────────────────────
   useEffect(() => () => roomRequest.current?.abort(), []);
 
   const handleHabitacionChange = async (habitacionId: string) => {
@@ -222,7 +227,6 @@ export function useSaleValidation({
     onClearSearch();
   };
 
-  // ── Product cart handlers ───────────────────────────────────────────
   const handleAddProducto = async (producto: any) => {
     const prepared = await prepareCartLine({
       producto,
@@ -259,7 +263,6 @@ export function useSaleValidation({
     );
   };
 
-  // ── Derived values ──────────────────────────────────────────────────
   const propinaPct = Number(useConfigValue('facturacion', 'propina_venta', '10'));
   const totals = useMemo(
     () => calcularTotales(productos, propinaPct, enableTip),
@@ -267,8 +270,6 @@ export function useSaleValidation({
   );
 
   const commissionTotal = useMemo(() => calcularComisionTotal(productos), [productos]);
-
-  // ── Submit handler ──────────────────────────────────────────────────
   const handleServiceHostessChange = (previous: string[], next: string[]) => {
     if (!servicioId) return;
     setServicioAnfitrionas(current => [
@@ -325,12 +326,30 @@ export function useSaleValidation({
       toast.info('Completa todos los campos requeridos');
       return;
     }
+    let prepagoDestinos: { cliente_id: string; monto: number }[] = [];
     if (metodoPago === 'prepago') {
-      const cliente = clientes.find(c => String(c.id || c.id_cliente) === String(selectedCliente));
-      if (!cliente || (cliente.saldo || 0) < totals.total) {
-        toast.error('Saldo insuficiente o cliente no seleccionado');
+      const ids = [selectedCliente, selectedSegundoCliente].filter(id => id && id !== 'none');
+      const conSaldo = ids
+        .map(id => clientes.find(c => String(c.id || c.id_cliente) === String(id)))
+        .filter(Boolean)
+        .map(cliente => ({
+          clienteId: String(cliente.id || cliente.id_cliente),
+          nombre: `${cliente.name ?? cliente.nombre ?? ''} ${
+            cliente.lastName ?? cliente.apellido ?? ''
+          }`.trim(),
+          saldo: Number(cliente.saldo ?? cliente.saldo_prepago ?? 0)
+        }));
+      const distribucion = calcularDistribucionPrepago(
+        totals.total,
+        conSaldo,
+        conSaldo.length === 2 ? 'ambos' : 'uno',
+        conSaldo[0]?.clienteId
+      );
+      if (distribucion.pagadoConSaldo < totals.total) {
+        toast.error('Saldo insuficiente: el prepago no cubre el total de la venta');
         return;
       }
+      prepagoDestinos = distribucion.destinos;
     }
 
     submitting.current = true;
@@ -389,12 +408,47 @@ export function useSaleValidation({
         requiresRoom,
         selectedHabitacion,
         manualTime,
-        selectedRoomInfo
+        selectedRoomInfo,
+        prepagoDestinos
       });
 
       const res = await createVenta(ventaData);
       if (res && (res.success || res.data)) {
         const data = res.data || res;
+
+        if (prepagoDestinos.length > 0) {
+          imprimirComprobantesPrepago(
+            construirComprobantesDeConsumo({
+              destinos: prepagoDestinos,
+              clientes: clientes.map(cliente => ({
+                id: String(cliente.id || cliente.id_cliente),
+                nombre: `${cliente.name ?? cliente.nombre ?? ''} ${
+                  cliente.lastName ?? cliente.apellido ?? ''
+                }`.trim(),
+                run: cliente.run ?? null,
+                saldo: Number(cliente.saldo ?? cliente.saldo_prepago ?? 0)
+              })),
+              base: {
+                movimiento: 'consumo',
+                titulo: 'Venta de bar',
+                fecha: new Date().toLocaleString('es-CL'),
+                codigo: data.codigo ? String(data.codigo) : null,
+                lineas: productos.map(producto => ({
+                  concepto: producto.nombre || 'Producto',
+                  detalle: `${producto.cantidad} × ${formatCurrencyCLP(
+                    Number(producto.precio ?? 0)
+                  )}`,
+                  monto: Number(
+                    producto.subtotal ??
+                      Number(producto.precio ?? 0) * Number(producto.cantidad ?? 1)
+                  )
+                })),
+                total: totals.total,
+                nota: 'Consumo cobrado con el saldo prepago del cliente.'
+              }
+            })
+          );
+        }
         if (requiresRoom && selectedHabitacion && !servicioId && Number(data.estado) === 2) {
           const duration = requiresRoom ? parseInt(manualTime) : selectedRoomInfo?.time || 60;
 
@@ -444,6 +498,8 @@ export function useSaleValidation({
       servicioAnfitrionas,
       selectedCliente,
       setSelectedCliente,
+      selectedSegundoCliente,
+      setSelectedSegundoCliente,
       selectedHabitacion,
       setSelectedHabitacion,
       metodoPago,

@@ -69,7 +69,6 @@ export function useEditServiceForm({
         });
       }
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [servicio?.id_servicio, servicio?.id, open]);
 
   return {

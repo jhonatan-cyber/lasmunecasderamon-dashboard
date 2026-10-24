@@ -146,7 +146,6 @@ export function useCuentaAnulacion({
   };
 
   return {
-    // Anulación state
     anulacionDialogOpen,
     setAnulacionDialogOpen,
     cuentaParaAnular,
@@ -155,17 +154,11 @@ export function useCuentaAnulacion({
     montoAnulacion,
     setMontoAnulacion,
     anulandoCuenta,
-
-    // Anulación actions
     handleSolicitarAnulacion,
     handleConfirmarSolicitudAnulacion,
     closeAnulacionDialog,
-
-    // Timer actions
     handleFinalizarTemporizador,
     getTimerByServicioId,
-
-    // Utils
     formatMontoInput,
     parseMontoInput
   };

@@ -212,3 +212,6 @@ export const formatCurrencyAbbreviated = (value: number | string | null | undefi
 export const toTitleCase = (str: string): string => {
   return str.replace(/\w\S*/g, txt => txt.charAt(0).toUpperCase() + txt.substr(1).toLowerCase());
 };
+export const capitalizeFirst = (str: string): string => {
+  return str.charAt(0).toUpperCase() + str.slice(1);
+};

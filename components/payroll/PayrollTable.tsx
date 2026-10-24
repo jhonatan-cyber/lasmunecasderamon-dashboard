@@ -8,7 +8,7 @@ import {
   TableRow
 } from '@/components/ui/table';
 
-import { formatCurrencyNoDecimals } from '@/lib/utils/formatters';
+import { formatCurrencyNoDecimals, formatDate } from '@/lib/utils/formatters';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';
@@ -63,7 +63,9 @@ export default function PayrollTable({
         const res = await fetch('/api/payroll', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ usuario_id: row.id_usuario })
+          // El total que se muestra es el que el servidor vuelve a calcular y
+          // compara: si cambió entre la lista y el click, no se liquida igual.
+          body: JSON.stringify({ usuario_id: row.id_usuario, total_esperado: row.total })
         });
         const data = await res.json();
         if (!res.ok || !data.success) throw new Error(data.message || 'Error al procesar pago');
@@ -75,6 +77,14 @@ export default function PayrollTable({
       }
     }
   };
+  /** Última liquidación registrada del trabajador, si alguna vez se pagó. */
+  const liquidacionPrevia = (r: PayrollRow) =>
+    r.ultima_liquidacion_fecha ? (
+      <p className='text-[11px] text-gray-400'>
+        Última liquidación: {formatDate(r.ultima_liquidacion_fecha)} ·{' '}
+        {formatCurrencyNoDecimals(r.ultima_liquidacion_monto)}
+      </p>
+    ) : null;
   const rowToCard = (r: PayrollRow) => (
     <div
       key={r.id_usuario}
@@ -145,6 +155,7 @@ export default function PayrollTable({
           <span className='font-medium'>{formatCurrencyNoDecimals(r.anticipos)}</span>
         </div>
       </div>
+      {liquidacionPrevia(r)}
       {canPay && (
         <Button
           size='sm'
@@ -259,7 +270,15 @@ export default function PayrollTable({
                             </AvatarFallback>
                           )}
                         </Avatar>
-                        <span className='font-medium'>{r.usuario}</span>
+                        <div className='flex flex-col text-start'>
+                          <span className='font-medium'>{r.usuario}</span>
+                          {r.ultima_liquidacion_fecha && (
+                            <span className='text-[10px] text-gray-400'>
+                              Liquidado {formatDate(r.ultima_liquidacion_fecha)} ·{' '}
+                              {formatCurrencyNoDecimals(r.ultima_liquidacion_monto)}
+                            </span>
+                          )}
+                        </div>
                       </div>
                     </TableCell>
                     <TableCell className='text-center'>

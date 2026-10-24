@@ -29,16 +29,21 @@ it('la edición de perfil descarta rol, sueldo, descuentos, RUN y estado', () =>
 });
 
 it('la nómina registra al cajero autenticado como entregador', async () => {
+  mocks.pay.mockResolvedValueOnce({ total: 15000, componentes: [] });
   const { POST } = await import('@/app/api/payroll/route');
   const response = await POST(
     new Request('http://localhost/api/payroll', {
       method: 'POST',
-      body: JSON.stringify({ usuario_id: 'beneficiario', entregado_por: 'falso' })
+      body: JSON.stringify({
+        usuario_id: 'beneficiario',
+        entregado_por: 'falso',
+        total_esperado: 15000
+      })
     }) as any,
     {} as any
   );
   expect(response.status).toBe(200);
-  expect(mocks.pay).toHaveBeenCalledWith('beneficiario', 'cajero-real');
+  expect(mocks.pay).toHaveBeenCalledWith('beneficiario', 'cajero-real', 15000);
 });
 
 it.each([0, '0', null, -1, {}])(

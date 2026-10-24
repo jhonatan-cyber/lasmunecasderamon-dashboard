@@ -33,7 +33,6 @@ export function useRoomForm({ open, initialValues, onSubmit }: UseRoomFormProps)
     if (open && initialValues) {
       setForm({
         name: initialValues.name || '',
-        // Los ceros heredados se muestran vacíos: el submit los reenvía como 0 por defecto.
         price:
           initialValues.price != null && initialValues.price > 0
             ? formatNumberWithSeparators(String(initialValues.price))
@@ -50,9 +49,6 @@ export function useRoomForm({ open, initialValues, onSubmit }: UseRoomFormProps)
     }
     setErrors({});
   }, [open, initialValues]);
-
-  // Regla del módulo: 0 no se escribe; un campo vacío se envía como 0 por defecto.
-  // El vacío es válido, pero un 0 tipeado se rechaza igual que los valores inválidos.
   const validate = () => {
     const newErrors: { [key: string]: string } = {};
     if (!form.name.trim() || /^0+$/.test(form.name.trim()))

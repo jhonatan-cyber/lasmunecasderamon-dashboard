@@ -1,3 +1,5 @@
+import { esCategoriaChampagne } from '@/lib/business/champagne';
+
 export type ProductLike = {
   categoria?: string;
   category_name?: string;
@@ -19,20 +21,8 @@ export type SelectedHostessSource = {
   selectedHostesses?: (number | null)[] | null;
 };
 
-const normalizeText = (value: string) =>
-  value
-    .normalize('NFD')
-    .replace(/[\u0300-\u036f]/g, '')
-    .toLowerCase();
-
-export const isChampagneProduct = (producto: ProductLike) => {
-  const categoria = normalizeText(String(producto.categoria || producto.category_name || ''));
-  return (
-    categoria.includes('champagne') ||
-    categoria.includes('champana') ||
-    categoria.includes('shampana')
-  );
-};
+export const isChampagneProduct = (producto: ProductLike) =>
+  esCategoriaChampagne(producto.categoria || producto.category_name);
 
 export const hasCommission = (producto: ProductLike) =>
   Number(producto.comision || producto.commission || 0) > 0;
@@ -134,24 +124,14 @@ export const getCardSplit = (total: number) => {
 };
 
 /**
- * Fallback síncrono para champagne cuando no hay tiers de BD a mano.
- * Derivado de la tabla canónica (ver `lib/business/champagne.ts`):
- * 1-2 → 120k, 3 → 160k, 4 → 180k, 5 → 200k.
- * Prioridad real: `max_anfitrionas` explícito > tiers por producto (API) > este fallback.
+ * Tope de anfitrionas del producto: el máximo explícito manda. Un producto de
+ * champaña sin máximo no tiene tramos a mano en la UI, así que no admite
+ * anfitrionas hasta que se configure; el resto admite una.
  */
-const getChampagneTierLimit = (precio: number) => {
-  if (precio >= 200000) return 5;
-  if (precio >= 180000) return 4;
-  if (precio >= 160000) return 3;
-  if (precio >= 120000) return 2;
-  return 1;
-};
-
 export const getHostessLimit = (producto: ProductLike) => {
   const max = producto.max_anfitrionas;
   if (max !== null && max !== undefined && Number(max) > 0) return Math.floor(Number(max));
-  const precio = Number(producto.precio || producto.price || 0);
-  return isChampagneProduct(producto) ? getChampagneTierLimit(precio) : 1;
+  return isChampagneProduct(producto) ? 0 : 1;
 };
 
 /** @deprecated Usá `getHostessLimit` en su lugar */

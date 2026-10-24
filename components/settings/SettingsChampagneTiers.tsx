@@ -10,7 +10,6 @@ import {
 import { FormattedNumberInput as Input } from '@/components/shared/FormattedNumberInput';
 
 import { useState, useEffect, useImperativeHandle, useRef, type Ref } from 'react';
-import { CHAMPAGNE_DEFAULT_TIERS } from '@/lib/business/champagne';
 
 interface ChampagneRow {
   anfitrionas: number;
@@ -31,20 +30,13 @@ const formatMiles = (v: string | number) =>
     .replace(/\B(?=(\d{3})+(?!\d))/g, '.');
 const toNumber = (v: string) => Number(String(v).replace(/\./g, '')) || 0;
 
-function defaultRows(
-  n: number,
-  champagne: boolean,
-  precio: number,
-  comision: number
-): ChampagneRow[] {
+function defaultRows(n: number, precio: number, comision: number): ChampagneRow[] {
   const rows: ChampagneRow[] = [];
   for (let i = 1; i <= n; i++) {
-    const base =
-      champagne && i > 1 ? CHAMPAGNE_DEFAULT_TIERS.find(t => t.anfitrionas === i) : undefined;
     rows.push({
       anfitrionas: i,
-      precio: formatMiles(base?.precio ?? precio),
-      comision: formatMiles(base?.comision ?? comision)
+      precio: formatMiles(precio),
+      comision: formatMiles(comision)
     });
   }
   return rows;
@@ -54,7 +46,6 @@ function defaultRows(
 export function SettingsChampagneTiers({
   productId,
   maxAnfitrionas,
-  champagne = false,
   precioBase = 0,
   comisionBase = 0,
   ref,
@@ -62,7 +53,6 @@ export function SettingsChampagneTiers({
 }: {
   productId: string;
   maxAnfitrionas: number;
-  champagne?: boolean;
   precioBase?: number;
   comisionBase?: number;
   ref?: Ref<SettingsTiersHandle>;
@@ -98,7 +88,7 @@ export function SettingsChampagneTiers({
     firstRowDefaults.current = { precio: false, comision: false };
     setLoadingTiers(true);
     setLoadError(false);
-    fetch(`/api/products/${productId}/tiers?configurados=1`)
+    fetch(`/api/products/${productId}/tiers`)
       .then(async res => {
         const data = await res.json();
         if (!res.ok || !data.success) throw new Error('No se pudo cargar la tabla');
@@ -111,7 +101,6 @@ export function SettingsChampagneTiers({
         firstRowDefaults.current = { precio: !firstSaved, comision: !firstSaved };
         const defaults = defaultRows(
           MAX_TIERS,
-          champagne,
           baseValues.current.precio,
           baseValues.current.comision
         );
@@ -136,7 +125,7 @@ export function SettingsChampagneTiers({
     return () => {
       cancelled = true;
     };
-  }, [productId, champagne]);
+  }, [productId]);
   const visibleRows = rows.slice(0, maxN);
 
   useImperativeHandle(

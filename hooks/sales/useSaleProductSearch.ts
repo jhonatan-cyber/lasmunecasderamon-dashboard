@@ -4,7 +4,6 @@ import { useEffect, useState } from 'react';
 import { mapForSaleToCartItem } from '@/lib/sales/forSaleMapper';
 import logger from '@/lib/utils/logger';
 
-/** Búsqueda del bar con debounce y protección contra respuestas de consultas anteriores. */
 export function useSaleProductSearch(search: string) {
   const [results, setResults] = useState<ReturnType<typeof mapForSaleToCartItem>[]>([]);
   const [loading, setLoading] = useState(false);

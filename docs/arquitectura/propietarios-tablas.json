@@ -68,7 +68,8 @@
     "propinas",
     "detalle_propinas",
     "horas_extras",
-    "gratificaciones"
+    "gratificaciones",
+    "pagos_nomina"
   ],
   "mcp-oauth": ["oauth_state"],
   "quinchos": ["reservas_quincho"],

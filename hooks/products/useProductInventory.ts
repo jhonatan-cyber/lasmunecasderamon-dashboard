@@ -14,9 +14,7 @@ export function useProductInventory({
   addingStockRef,
   savingPresentationRef
 }: {
-  /** Producto en edición; null en alta. */
   productId: string | null;
-  /** Producto realmente abierto: descarta respuestas de un formulario anterior. */
   activeProductIdRef: React.RefObject<string | null>;
   addingStockRef: React.RefObject<boolean>;
   savingPresentationRef: React.RefObject<boolean>;
@@ -87,8 +85,6 @@ export function useProductInventory({
   );
 
   const resetInventario = useCallback(() => {
-    // Cerrar o cambiar de producto apaga la carga: la petición anterior quedó
-    // abortada y su `finally` no puede volver a tocar este flag.
     setCargandoInventario(false);
     setExistentes([]);
     setUnidadesTotal(0);

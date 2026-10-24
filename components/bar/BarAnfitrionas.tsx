@@ -16,7 +16,7 @@ import {
   getHostessLimit,
   isSimpleProduct
 } from '@/components/orders/productModalRules';
-import { CHAMPAGNE_DEFAULT_TIERS, type ChampagneTier } from '@/lib/business/champagne';
+import { type ChampagneTier } from '@/lib/business/champagne';
 import { formatCurrencyCLP } from '@/lib/utils/formatters';
 import { cn } from '@/lib/utils/utils';
 import type { SaleOption } from '@/types/sale-options';
@@ -67,14 +67,10 @@ export function BarAnfitrionas({
       .then(res => res.json().catch(() => ({})))
       .then(data => {
         if (!alive) return;
-        setTiers(
-          data.success && Array.isArray(data.data) && data.data.length > 0
-            ? data.data
-            : CHAMPAGNE_DEFAULT_TIERS
-        );
+        setTiers(data.success && Array.isArray(data.data) ? data.data : []);
       })
       .catch(() => {
-        if (alive) setTiers(CHAMPAGNE_DEFAULT_TIERS);
+        if (alive) setTiers([]);
       })
       .finally(() => {
         if (alive) setLoading(false);

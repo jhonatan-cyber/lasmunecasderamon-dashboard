@@ -9,7 +9,8 @@ import {
   formatFechaConHora,
   formatSoloHora,
   formatCurrencyAbbreviated,
-  toTitleCase
+  toTitleCase,
+  capitalizeFirst
 } from '@/lib/utils/formatters';
 
 vi.mock('@/lib/business/timezoneService', () => ({
@@ -156,5 +157,15 @@ describe('toTitleCase', () => {
     expect(toTitleCase('hola mundo')).toBe('Hola Mundo');
     expect(toTitleCase('EL PERRO')).toBe('El Perro');
     expect(toTitleCase('juan')).toBe('Juan');
+  });
+});
+
+describe('capitalizeFirst', () => {
+  it('debería capitalizar sólo la primera letra', () => {
+    expect(capitalizeFirst('cumpleaños, requiere mesas extra')).toBe(
+      'Cumpleaños, requiere mesas extra'
+    );
+    expect(capitalizeFirst('ya Mayúscula')).toBe('Ya Mayúscula');
+    expect(capitalizeFirst('')).toBe('');
   });
 });

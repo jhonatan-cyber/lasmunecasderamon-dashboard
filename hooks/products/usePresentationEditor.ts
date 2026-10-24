@@ -114,8 +114,6 @@ export function usePresentationEditor({
       return;
     }
     savingPresentationRef.current = true;
-    // Una edición de inventario es un PATCH idempotente por recurso. Usa una
-    // clave nueva por intento para que un fallo anterior no lo deje bloqueado.
     const registrationKey = crypto.randomUUID();
     setGuardandoPres(true);
     try {

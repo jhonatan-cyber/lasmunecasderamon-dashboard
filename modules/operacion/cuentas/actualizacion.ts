@@ -37,6 +37,7 @@ import {
   liberarHabitacionPorAnulacion,
   ocuparHabitacionSiCorresponde
 } from '../facturacion/servicio';
+import { validarChampanaConfigurada } from '@/modules/inventario';
 
 type Tarea = () => void | Promise<void>;
 
@@ -63,6 +64,9 @@ export async function actualizarCuentaEnUnidad(
     await marcarEstadoCuenta(id, body.estado, contexto);
   }
   if (body.detalles?.length) {
+    // Los consumos se suman a la cuenta: una champaña sin tabla de precios por
+    // anfitrionas se rechaza antes de acumular totales o insertar detalles.
+    await validarChampanaConfigurada(body.detalles, contexto);
     const nuevoSubTotal = body.detalles.reduce((acc, d) => acc + d.sub_total, 0);
     const nuevaComision = body.detalles.reduce((acc, d) => acc + d.comision, 0);
     await acumularTotalesCuenta(id, nuevoSubTotal, nuevaComision, bizNow, contexto);

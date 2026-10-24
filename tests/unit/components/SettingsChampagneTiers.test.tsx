@@ -27,13 +27,12 @@ afterEach(() => {
   vi.unstubAllGlobals();
 });
 describe('tabla controlada por el máximo de anfitrionas', () => {
-  it('inicia la primera fila con el precio y comisión actuales incluso para champagne y conserva las ediciones', async () => {
+  it('inicia la primera fila con el precio y comisión actuales y conserva las ediciones', async () => {
     fetchMock.mockResolvedValue({ ok: true, json: async () => ({ success: true, data: [] }) });
     const { rerender } = render(
       <SettingsChampagneTiers
         productId='new'
         maxAnfitrionas={3}
-        champagne
         precioBase={180000}
         comisionBase={20000}
       />
@@ -48,7 +47,6 @@ describe('tabla controlada por el máximo de anfitrionas', () => {
       <SettingsChampagneTiers
         productId='new'
         maxAnfitrionas={3}
-        champagne
         precioBase={190000}
         comisionBase={25000}
       />
@@ -61,7 +59,6 @@ describe('tabla controlada por el máximo de anfitrionas', () => {
       <SettingsChampagneTiers
         productId='new'
         maxAnfitrionas={3}
-        champagne
         precioBase={200000}
         comisionBase={30000}
       />

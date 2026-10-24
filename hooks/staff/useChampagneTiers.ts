@@ -11,14 +11,6 @@ export interface ChampagneTier {
 
 const formatMiles = (v: string) => v.replace(/\D/g, '').replace(/\B(?=(\d{3})+(?!\d))/g, '.');
 
-const DEFAULT_TIERS: Array<{ anfitrionas: number; precio: number; comision: number }> = [
-  { anfitrionas: 1, precio: 120000, comision: 40000 },
-  { anfitrionas: 2, precio: 120000, comision: 40000 },
-  { anfitrionas: 3, precio: 160000, comision: 60000 },
-  { anfitrionas: 4, precio: 180000, comision: 80000 },
-  { anfitrionas: 5, precio: 200000, comision: 100000 }
-];
-
 interface UseChampagneTiersOptions {
   open: boolean;
   mostrarTiers: boolean;
@@ -39,9 +31,8 @@ export function useChampagneTiers({ open, mostrarTiers, productId }: UseChampagn
       .then(data => {
         if (cancelled) return;
         const rows = data.success && Array.isArray(data.data) ? data.data : [];
-        const base = rows.length > 0 ? rows : DEFAULT_TIERS;
         setTiers(
-          base.map((t: any) => ({
+          rows.map((t: any) => ({
             anfitrionas: Number(t.anfitrionas),
             precio: formatMiles(String(t.precio ?? '')),
             comision: formatMiles(String(t.comision ?? ''))

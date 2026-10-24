@@ -18,7 +18,6 @@ export interface UseRoleCalendarProps {
 }
 
 export interface UseRoleCalendarReturn {
-  // State
   currentDate: Date;
   selectedDates: Date[];
   isDragging: boolean;
@@ -36,8 +35,6 @@ export interface UseRoleCalendarReturn {
   selectedDataError: string;
   retryCalendar: () => Promise<void>;
   retrySelectedData: () => Promise<void>;
-
-  // Actions
   navigate: (direction: number) => void;
   goToToday: () => void;
   isToday: (date: Date) => boolean;

@@ -21,9 +21,6 @@ export function useCuentaCobro() {
   const [propinaActiva, setPropinaActiva] = useState(false);
   const [habitacionId, setHabitacionId] = useState<string | null>(null);
   const [showError, setShowError] = useState(false);
-
-  // Estado de caja para el cobro (paridad con las apps: el cobro registra una
-  // venta y escribe en caja). `null` = desconocido => no bloquea.
   const [hasOpenCaja, setHasOpenCaja] = useState<boolean | null>(null);
 
   const refreshCajaStatus = useCallback(async () => {
@@ -35,7 +32,6 @@ export function useCuentaCobro() {
       }
     } catch (error) {
       logger.captureException(error, { context: 'CuentaCobro:refreshCajaStatus' });
-      // Silencioso: estado desconocido no bloquea.
     }
   }, []);
 
@@ -79,7 +75,6 @@ export function useCuentaCobro() {
       return;
     }
 
-    // Guard de caja cerrada (paridad con las apps y nueva venta).
     if (hasOpenCaja === false) {
       toast.error('No hay caja abierta. No se pueden realizar ventas sin una caja abierta.');
       return;

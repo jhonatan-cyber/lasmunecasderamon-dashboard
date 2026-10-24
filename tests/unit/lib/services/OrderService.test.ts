@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { OrderService } from '@/modules/operacion/pedidos/servicio';
+import { OrderService, prepararVentaPedido } from '@/modules/operacion/pedidos/servicio';
 
 vi.mock('@/modules/operacion/pedidos/repositorio', () => ({
   OrderRepository: {
@@ -8,7 +8,8 @@ vi.mock('@/modules/operacion/pedidos/repositorio', () => ({
     create: vi.fn(),
     delete: vi.fn(),
     getDetail: vi.fn(),
-    updateStatus: vi.fn()
+    updateStatus: vi.fn(),
+    paraVenta: vi.fn()
   }
 }));
 
@@ -67,6 +68,35 @@ describe('OrderService.create', () => {
       expect.objectContaining({ codigo: 'ORD-001', meseroId: 'user-1' })
     );
     expect(result).toMatchObject({ id: 'new-1' });
+  });
+});
+
+describe('prepararVentaPedido', () => {
+  it('compone el pago del cobro con lo que se vendió en el pedido', async () => {
+    vi.mocked(OrderRepository.paraVenta).mockResolvedValue({
+      pedido_id: 'pedido',
+      cliente_id: 'cliente',
+      metodo_pago: 'efectivo',
+      propina: 1000,
+      sub_total: 10000,
+      total: 11000,
+      usuarios: ['ana'],
+      detalles: [{ producto_id: 'producto', precio: 10000, cantidad: 1, comision: 0 }]
+    } as any);
+
+    const venta = await prepararVentaPedido('pedido', 0, { id: 'tx' } as any, {
+      metodo_pago: 'prepago',
+      propina: 0,
+      monto_prepago: 5000
+    });
+
+    expect(OrderRepository.paraVenta).toHaveBeenCalledWith('pedido', 0, { id: 'tx' });
+    expect(venta).toMatchObject({
+      metodo_pago: 'prepago',
+      propina: 0,
+      total: 10000,
+      monto_prepago: 5000
+    });
   });
 });
 

@@ -57,7 +57,6 @@ export function useRoleCalendar({ role, userId }: UseRoleCalendarProps): UseRole
   const [modalCounts, setModalCounts] = useState(emptyCounts);
   const [modalTotal, setModalTotal] = useState<number>(0);
 
-  // La categoría por defecto sigue al rol: al cambiar de rol cambia el conjunto.
   useEffect(() => {
     setSelectedDataType(roleCategories[0]);
   }, [role, roleCategories, setSelectedDataType]);

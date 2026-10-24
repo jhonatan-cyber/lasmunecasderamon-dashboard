@@ -1,5 +1,6 @@
 import { OrderCreateSchema } from '@/lib/business/schemas';
 import { OrderRepository } from '@/modules/operacion/pedidos/repositorio';
+import { aplicarCobroAPedido } from './reglas';
 import { z } from 'zod';
 
 type OrderCreateInput = z.input<typeof OrderCreateSchema>;
@@ -36,10 +37,18 @@ export class OrderService {
   }
 }
 
-export function prepararVentaPedido(
+export { aplicarCobroAPedido } from './reglas';
+
+/**
+ * Prepara la venta del pedido: lo vendido sale del pedido y el pago del cobro
+ * que manda la caja. Sin cobro se usa el método guardado en el pedido.
+ */
+export async function prepararVentaPedido(
   id: string,
   tiempo: number,
-  contexto: import('@/lib/transaction/contract').ContextoOperacion
+  contexto: import('@/lib/transaction/contract').ContextoOperacion,
+  cobro: Record<string, any> = {}
 ) {
-  return OrderRepository.paraVenta(id, tiempo, contexto);
+  const venta = await OrderRepository.paraVenta(id, tiempo, contexto);
+  return aplicarCobroAPedido(venta, cobro);
 }

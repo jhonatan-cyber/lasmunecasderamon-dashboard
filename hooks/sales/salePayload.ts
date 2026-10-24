@@ -1,11 +1,6 @@
 import { permiteAnfitrionaConComision } from '@/lib/sales/hostessShortPrices';
 import type { VentaCreate } from '@/types/venta';
 
-/**
- * Línea del payload. La comisión se imputa solo cuando la línea lleva
- * beneficiarias; la champaña siempre viaja como lista y el resto como
- * `hostess_id` cuando hay una sola.
- */
 export function buildSaleDetail(p: any) {
   const selectedHostesses =
     (p.tipo_venta === 'shot' || p.botella_anfitriona !== false) &&
@@ -59,6 +54,7 @@ export interface VentaPayloadInput {
   selectedHabitacion: string;
   manualTime: string;
   selectedRoomInfo: any;
+  prepagoDestinos?: { cliente_id: string; monto: number }[];
 }
 
 export function buildVentaPayload({
@@ -73,7 +69,8 @@ export function buildVentaPayload({
   requiresRoom,
   selectedHabitacion,
   manualTime,
-  selectedRoomInfo
+  selectedRoomInfo,
+  prepagoDestinos
 }: VentaPayloadInput): VentaCreate {
   return {
     cliente_id: selectedCliente !== 'none' ? selectedCliente : null,
@@ -84,7 +81,6 @@ export function buildVentaPayload({
     detalles: productos.map(buildSaleDetail),
     usuarios: todasAnf,
     ...(servicioId && { servicio_id: servicioId }),
-    // Solo se envían las anfitrionas del servicio cuando la selección cambió.
     ...(servicioId &&
       [...servicioAnfitrionas].sort().join(',') !==
         [...servicioAnfitrionasIniciales].sort().join(',') && {
@@ -95,6 +91,9 @@ export function buildVentaPayload({
     ...((servicioId || requiresRoom) &&
       selectedHabitacion && {
         tiempo: servicioId ? 0 : requiresRoom ? parseInt(manualTime) : selectedRoomInfo?.time || 60
-      })
+      }),
+    ...(metodoPago === 'prepago' && prepagoDestinos?.length
+      ? { prepago_destinos: prepagoDestinos }
+      : {})
   };
 }

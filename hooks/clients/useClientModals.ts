@@ -18,9 +18,6 @@ type PrepagoMixedPayment = {
 
 export function useClientModals() {
   const { user } = useAuth();
-  // El prepago descuenta de caja en el backend (`deductFromCaja`): se expone
-  // el estado de caja para bloquear la carga si está cerrada (paridad con
-  // las apps). `hasOpenCaja === null` = desconocido => no bloquea.
   const { hasOpenCaja, checkCajaStatus } = useCashRegister();
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isDetailsOpen, setIsDetailsOpen] = useState(false);

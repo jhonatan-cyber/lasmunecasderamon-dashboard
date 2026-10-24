@@ -22,7 +22,6 @@ import {
   useSettingsProducts,
   invalidateSettingsProducts
 } from '@/hooks/settings/useSettingsProducts';
-import { isChampagneProduct } from '@/components/orders/productModalRules';
 import { SettingsChampagneTiers, type SettingsTiersHandle } from './SettingsChampagneTiers';
 import { formatCurrencyCLP } from '@/lib/utils/formatters';
 import {
@@ -203,10 +202,6 @@ export function SettingsBottleHostessCard() {
     [p.categoria, p.name, p.presentacion, formatCurrencyCLP(Number(p.price ?? 0))]
       .filter(Boolean)
       .join(' ');
-  const esChampagne = isChampagneProduct({
-    categoria: seleccionado?.categoria,
-    category_name: seleccionado?.categoria
-  });
   // Analcohólicas y cigarrillos: sin anfitrionas ni cortos en settings.
   const esVentaSimple =
     esCigarrillos(seleccionado?.categoria) || esBebidaAnalcoholica(seleccionado?.categoria);
@@ -502,7 +497,6 @@ export function SettingsBottleHostessCard() {
                 disabled={saving}
                 productId={seleccionado.producto_id}
                 maxAnfitrionas={Number(maximo)}
-                champagne={esChampagne}
                 precioBase={Number(precio.replace(/\./g, '')) || 0}
                 comisionBase={Number(comision.replace(/\./g, '')) || 0}
               />

@@ -23,7 +23,6 @@ interface CommissionRow {
 }
 
 interface UseCuentaDetailModalReturn {
-  // From useCuentaDetail
   cuenta: any;
   loading: boolean;
   hasFetched: boolean;
@@ -33,7 +32,6 @@ interface UseCuentaDetailModalReturn {
     variant: 'default' | 'secondary' | 'destructive' | 'success' | 'outline';
   };
 
-  // Computed
   detalleResumen: ReturnType<typeof summarizeCuentaDetalles>;
   estadoBadge: {
     label: string;

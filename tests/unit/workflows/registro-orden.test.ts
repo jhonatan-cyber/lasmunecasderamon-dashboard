@@ -44,7 +44,10 @@ vi.mock('@/modules/identidad', () => ({
   comprobarAnfitrionasLibresParaServicio: h.operacion('comprobar-libres')
 }));
 vi.mock('@/modules/auditoria', () => ({ AuditService: { log: h.operacion('auditoria') } }));
-vi.mock('@/modules/inventario', () => ({ consumirStockBar: h.operacion('stock', []) }));
+vi.mock('@/modules/inventario', () => ({
+  consumirStockBar: h.operacion('stock', []),
+  validarChampanaConfigurada: h.operacion('validar-champana')
+}));
 vi.mock('@/modules/caja', () => ({
   obtenerCajaActiva: h.operacion('caja', 'caja-1'),
   registrarMovimientoCobro: h.operacion('movimiento-caja'),
@@ -95,10 +98,11 @@ vi.mock('@/modules/operacion/facturacion/servicio', () => ({
 }));
 
 import { registrarVenta } from '@/workflows/registrar-venta';
+import { prepararVentaPedido } from '@/modules/operacion';
 import { crearServicioEnUnidad } from '@/modules/operacion/servicios/creacion';
 import { registrarDetallesVenta } from '@/modules/ventas';
 import { registrarMovimientoCobro, obtenerCajaActiva } from '@/modules/caja';
-import { consumirStockBar } from '@/modules/inventario';
+import { consumirStockBar, validarChampanaConfigurada } from '@/modules/inventario';
 import { registrarComisionesServicio } from '@/modules/personal';
 import { obtenerServicioParaConsumo } from '@/modules/operacion/servicios/asignaciones';
 import { sendNotificationToAll } from '@/lib/api/sseService';
@@ -142,6 +146,7 @@ const servicio = {
   ]
 };
 const ordenVenta = [
+  'validar-champana',
   'caja',
   'prepago',
   'saldo-agotado',
@@ -234,6 +239,19 @@ describe('orden transaccional de ventas', () => {
       expect.objectContaining({ id: 'id-1' })
     );
   });
+  it('prepara la venta del pedido con el pago que elige la caja', async () => {
+    const cobro = {
+      pedido_id: 'pedido',
+      metodo_pago: 'prepago' as const,
+      monto_prepago: 5000,
+      total: 31,
+      detalles: [{ producto_id: 'producto', precio: 10, cantidad: 3, sub_total: 30 }]
+    };
+
+    await registrarVenta(cobro, 'cajero', contexto, aplazar);
+
+    expect(prepararVentaPedido).toHaveBeenCalledWith('pedido', 0, contexto, cobro);
+  });
   it('el cobro con origen cuenta evita el segundo descuento y la segunda postulacion a caja', async () => {
     await registrarVenta({ ...venta, origen: 'cuenta' }, 'cajero', contexto, aplazar, {
       desdeCuenta: true
@@ -241,9 +259,21 @@ describe('orden transaccional de ventas', () => {
     expect(h.eventos).toEqual(
       ordenVenta.filter(
         nombre =>
-          !['prepago', 'saldo-agotado', 'cerrar-prepago-venta', 'movimiento-caja'].includes(nombre)
+          ![
+            'validar-champana',
+            'prepago',
+            'saldo-agotado',
+            'cerrar-prepago-venta',
+            'movimiento-caja'
+          ].includes(nombre)
       )
     );
+  });
+  it('una champaña sin configuración corta antes de escribir la cabecera', async () => {
+    const error = new Error('sin configuracion de champana');
+    vi.mocked(validarChampanaConfigurada).mockRejectedValueOnce(error);
+    await expect(registrarVenta(venta, 'cajero', contexto, aplazar)).rejects.toBe(error);
+    expect(h.eventos).toEqual([]);
   });
   it('un fallo de stock corta antes de comisiones, caja, auditoria y avisos', async () => {
     const error = new Error('sin stock');
@@ -360,7 +390,7 @@ describe('prioridad de validaciones respecto a las escrituras', () => {
     await expect(
       registrarVenta({ ...venta, pagos_mixtos: [] }, 'cajero', contexto, aplazar)
     ).rejects.toMatchObject({ code: 'NO_CAJA_ABIERTA' });
-    expect(h.eventos).toEqual(['caja']);
+    expect(h.eventos).toEqual(['validar-champana', 'caja']);
   });
   it('servicio sin caja conserva las comprobaciones previas de habitacion y disponibilidad', async () => {
     vi.mocked(obtenerCajaActiva).mockImplementationOnce(async () => {

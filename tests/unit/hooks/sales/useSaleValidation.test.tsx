@@ -4,6 +4,10 @@ import { renderHook, act, waitFor } from '@testing-library/react';
 // ── Mocks ────────────────────────────────────────────────────────────────
 const configValues = vi.hoisted(() => new Map<string, string>());
 const createVentaMock = vi.hoisted(() => vi.fn());
+const imprimirMock = vi.hoisted(() => vi.fn());
+vi.mock('@/components/shared/printComprobantePrepago', () => ({
+  imprimirComprobantesPrepago: imprimirMock
+}));
 const startTimerMock = vi.hoisted(() => vi.fn());
 const routerPush = vi.hoisted(() => vi.fn());
 vi.mock('next/navigation', () => ({ useRouter: () => ({ push: routerPush }) }));
@@ -513,7 +517,7 @@ describe('useSaleValidation totals (propina / total)', () => {
         precio: 42000,
         comision: 9000
       });
-      expect(fetchSpy).toHaveBeenCalledWith('/api/products/prod-1/tiers?configurados=1');
+      expect(fetchSpy).toHaveBeenCalledWith('/api/products/prod-1/tiers');
     } finally {
       fetchSpy.mockRestore();
     }
@@ -540,6 +544,30 @@ describe('useSaleValidation totals (propina / total)', () => {
         });
       });
       expect(result.current.formState.productos[0].selectedHostesses).toEqual(['a1', 'a2']);
+    } finally {
+      fetchSpy.mockRestore();
+    }
+  });
+
+  it('no agrega champaña sin tabla de precios configurada', async () => {
+    const fetchSpy = vi.spyOn(globalThis, 'fetch').mockResolvedValue({
+      json: async () => ({ success: true, data: [] })
+    } as Response);
+    try {
+      const { result } = renderSaleHook();
+      await act(async () => {
+        await result.current.handleAddProducto({
+          id: 'pres-champ',
+          producto_id: 'prod-champ',
+          nombre: 'Champagne Brut',
+          categoria: 'Champagne',
+          precio: 120000,
+          comision: 40000,
+          stock_bar: 5,
+          tipo_venta: 'botella'
+        });
+      });
+      expect(result.current.formState.productos).toEqual([]);
     } finally {
       fetchSpy.mockRestore();
     }
@@ -918,4 +946,80 @@ it('permite cargar el formulario si el borrador guardado no es JSON válido', ()
   localStorage.setItem('productos', '{invalid');
   const { result } = renderSaleHook();
   expect(result.current.formState.productos).toEqual([]);
+});
+
+describe('venta de bar pagada con prepago', () => {
+  const clientes = [
+    { id: 'c-1', name: 'Ana', lastName: 'Pérez', saldo: 30000 },
+    { id: 'c-2', name: 'Bruno', lastName: 'Díaz', saldo: 25000 }
+  ];
+
+  beforeEach(() => {
+    vi.clearAllMocks();
+    createVentaMock.mockResolvedValue({
+      success: true,
+      data: { id: 'v-prepago', codigo: 'ABC123' }
+    });
+  });
+
+  it('reparte el total entre dos clientes y emite un comprobante por cada uno', async () => {
+    const { result, unmount } = renderSaleHook();
+    addProduct(result, 20000);
+    setMetodoPago(result, 'prepago');
+    act(() => {
+      result.current.formState.setSelectedCliente('c-1');
+      result.current.formState.setSelectedSegundoCliente('c-2');
+    });
+
+    await act(async () => {
+      await result.current.handleSubmit(clientes, []);
+    });
+
+    const payload = createVentaMock.mock.calls[0][0];
+    expect(payload.metodo_pago).toBe('prepago');
+    expect(payload.prepago_destinos).toEqual([
+      { cliente_id: 'c-1', monto: 10000 },
+      { cliente_id: 'c-2', monto: 10000 }
+    ]);
+
+    const tickets = imprimirMock.mock.calls[0][0];
+    expect(tickets).toHaveLength(2);
+    expect(tickets[0]).toMatchObject({
+      clienteNombre: 'Ana Pérez',
+      saldoAnterior: 30000,
+      montoPrepago: 10000,
+      saldoResultante: 20000
+    });
+    expect(tickets[1]).toMatchObject({
+      clienteNombre: 'Bruno Díaz',
+      saldoAnterior: 25000,
+      montoPrepago: 10000,
+      saldoResultante: 15000
+    });
+    unmount();
+  });
+
+  it('no registra la venta cuando los saldos no cubren el total', async () => {
+    const { result, unmount } = renderSaleHook();
+    addProduct(result, 10000);
+    setMetodoPago(result, 'prepago');
+    act(() => {
+      result.current.formState.setSelectedCliente('c-1');
+      result.current.formState.setSelectedSegundoCliente('c-2');
+    });
+
+    await act(async () => {
+      await result.current.handleSubmit(
+        [
+          { id: 'c-1', name: 'Ana', lastName: 'Pérez', saldo: 3000 },
+          { id: 'c-2', name: 'Bruno', lastName: 'Díaz', saldo: 2000 }
+        ],
+        []
+      );
+    });
+
+    expect(createVentaMock).not.toHaveBeenCalled();
+    expect(imprimirMock).not.toHaveBeenCalled();
+    unmount();
+  });
 });

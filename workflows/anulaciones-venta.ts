@@ -37,7 +37,8 @@ import {
   eliminarVentaFisica
 } from '@/modules/ventas';
 import { registrarMovimientoCobro } from '@/modules/caja';
-import { leerPrepagoConsumidoPorVenta, restituirPrepagoPorAnulacion } from '@/modules/clientes';
+import { listarPrepagoConsumidoPorVenta, restituirPrepagoPorAnulacion } from '@/modules/clientes';
+import { calcularDevolucionesPrepago } from '@/lib/business/prepagoDistribucion';
 import {
   revertirComisionesPorAnulacion,
   revertirPropinasPorAnulacion,
@@ -93,15 +94,18 @@ export async function anularVentaTotalEnUnidad(
   if (estadoAnterior === 0) return { total, cajaId };
 
   const detailRows = await leerDetallesParaDevolucion(ventaId, contexto);
-  const prepagoMonto =
-    clienteId != null ? await leerPrepagoConsumidoPorVenta(clienteId, ventaId, contexto) : 0;
+  // La venta pudo pagarse con el prepago de dos clientes: se devuelve a cada
+  // uno lo que aportó, no solo al titular.
+  const consumosPrepago = await listarPrepagoConsumidoPorVenta(ventaId, contexto);
+  const prepagoMonto = consumosPrepago.reduce((suma, consumo) => suma + consumo.monto, 0);
 
-  if (clienteId && prepagoMonto > 0) {
+  for (const consumo of consumosPrepago) {
+    if (consumo.monto <= 0) continue;
     await restituirPrepagoPorAnulacion(
       {
-        clienteId,
+        clienteId: consumo.cliente_id,
         ventaId,
-        monto: prepagoMonto,
+        monto: consumo.monto,
         usuarioId: userId || null,
         concepto: `Anulacion venta ${ventaId}`
       },
@@ -208,8 +212,8 @@ export async function anularVentaParcialEnUnidad(
   const metodoPago = String(venta.metodo_pago || '').toLowerCase();
   const pagosMixtos = parseMixedPayments(venta.pagos_mixtos);
 
-  const currentPrepago =
-    clienteId != null ? await leerPrepagoConsumidoPorVenta(clienteId, ventaId, contexto) : 0;
+  const consumosPrepago = await listarPrepagoConsumidoPorVenta(ventaId, contexto);
+  const currentPrepago = consumosPrepago.reduce((suma, consumo) => suma + consumo.monto, 0);
   const newTotal = Math.max(0, currentTotal - monto);
   const newPropina =
     currentTotal > 0 ? Math.max(0, Math.round((currentPropina * newTotal) / currentTotal)) : 0;
@@ -254,17 +258,24 @@ export async function anularVentaParcialEnUnidad(
     if (row.metodo === 'transferencia') methodRefunds.transferencia += refundAmount;
   }
 
-  if (clienteId && prepagoRefund > 0) {
-    await restituirPrepagoPorAnulacion(
-      {
-        clienteId,
-        ventaId,
-        monto: prepagoRefund,
-        usuarioId: approvedBy || null,
-        concepto: `Anulacion parcial venta ${ventaId}`
-      },
-      contexto
-    );
+  if (prepagoRefund > 0 && consumosPrepago.length > 0) {
+    // La devolución parcial se reparte entre los clientes en proporción a lo
+    // que cada uno consumió.
+    for (const devolucion of calcularDevolucionesPrepago(
+      consumosPrepago,
+      Math.max(0, currentPrepago - prepagoRefund)
+    )) {
+      await restituirPrepagoPorAnulacion(
+        {
+          clienteId: devolucion.cliente_id,
+          ventaId,
+          monto: devolucion.monto,
+          usuarioId: approvedBy || null,
+          concepto: `Anulacion parcial venta ${ventaId}`
+        },
+        contexto
+      );
+    }
   }
 
   if (cajaId) {

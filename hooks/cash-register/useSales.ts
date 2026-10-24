@@ -224,8 +224,6 @@ export const useSales = () => {
     }
   }, []);
 
-  // ponytail: removed cancelarVenta and devolverVenta — both pointed to non-existent routes
-
   const clearError = useCallback(() => {
     setError(null);
   }, []);

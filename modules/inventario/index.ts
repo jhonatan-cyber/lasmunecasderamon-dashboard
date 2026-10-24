@@ -86,5 +86,7 @@ export { validarConfiguracionVenta } from './bar/validarConfiguracionVenta';
 
 export { validarConfiguracionPedido } from './bar/validarPedido';
 
+export { validarChampanaConfigurada } from './bar/validarChampana';
+
 export { revisarReposicion } from './reposicion/servicio';
 export type { OrdenReposicion } from './contracts';

@@ -77,6 +77,32 @@ export async function leerConsumoPrepagoVenta(
   return Math.max(0, Math.round(Number(rows[0]?.total_prepago || 0)));
 }
 
+/**
+ * Consumo prepago vivo de una venta, por cliente. Incluye el reparto entre
+ * dos clientes y descuenta las devoluciones ya hechas, para que una anulación
+ * posterior no devuelva dos veces.
+ */
+export async function listarConsumosPrepagoVenta(
+  ventaId: string,
+  contexto: ContextoOperacion
+): Promise<{ cliente_id: string; monto: number }[]> {
+  const rows = await resolverTransaccion(contexto)<{ cliente_id: string; total: number }[]>(
+    `SELECT cliente_id,
+            COALESCE(SUM(CASE WHEN UPPER(tipo) = 'CONSUMO' THEN monto ELSE -monto END), 0) as total
+       FROM clientes_prepago_movimientos
+      WHERE (venta_id = ? OR (metadatos::jsonb ->> 'venta_id') = ?)
+        AND (UPPER(tipo) = 'CONSUMO' OR (UPPER(tipo) = 'DEVOLUCION' AND metodo_pago = 'prepago'))
+      GROUP BY cliente_id
+     HAVING COALESCE(SUM(CASE WHEN UPPER(tipo) = 'CONSUMO' THEN monto ELSE -monto END), 0) > 0`,
+    [ventaId, ventaId]
+  );
+
+  return rows.map(row => ({
+    cliente_id: String(row.cliente_id),
+    monto: Math.round(Number(row.total || 0))
+  }));
+}
+
 export async function guardarRestitucionPrepago(
   entrada: EntradaRestitucionPrepago,
   contexto: ContextoOperacion

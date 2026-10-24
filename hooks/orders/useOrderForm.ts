@@ -1,7 +1,6 @@
 'use client';
 import { permiteAnfitrionaConComision } from '@/lib/sales/hostessShortPrices';
 import { requiresShortMixer, bottleMixerUnits } from '@/lib/sales/productConfiguration';
-
 import { useState, useMemo, useCallback, useRef, useEffect } from 'react';
 import { mapForSaleToCartItem } from '@/lib/sales/forSaleMapper';
 import { saleInventoryFields, type SaleInventoryFields } from '@/lib/sales/saleInventoryFields';
@@ -207,9 +206,7 @@ export function useOrderForm({
       ) {
         try {
           const pid = String(producto.producto_id || producto.id_producto || producto.id);
-          const response = await fetch(
-            `/api/products/${encodeURIComponent(pid)}/tiers?configurados=1`
-          );
+          const response = await fetch(`/api/products/${encodeURIComponent(pid)}/tiers`);
           const result = await response.json();
           if (!response.ok || !result.success) throw new Error();
           const tier = (result.data || []).find(

@@ -24,8 +24,6 @@ export function useCashRegisterStatus() {
     }
   );
 
-  // Refresco por SSE cuando se abre/cierra caja u otra mutación de caja/sales
-  // ocurre: el endpoint público siempre refleja el estado actual de la caja.
   useRealtimeRefresh('/api/cashregister/status', refetch);
 
   useEffect(() => {

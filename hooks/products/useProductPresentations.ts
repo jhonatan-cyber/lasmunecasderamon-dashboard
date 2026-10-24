@@ -4,7 +4,6 @@ import { useCallback, useState } from 'react';
 import type { PresentacionFormItem } from './productFormTypes';
 import { emptyPresentacion, validarArchivoFoto } from './productFormFormat';
 
-/** Filas de presentación que se envían con el alta del producto. */
 export function useProductPresentations() {
   const [presentaciones, setPresentaciones] = useState<PresentacionFormItem[]>([]);
   const [presentacionesError, setPresentacionesError] = useState<string>('');

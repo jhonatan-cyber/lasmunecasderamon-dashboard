@@ -75,6 +75,21 @@ tests/integration/backups/
 /nested-report.txt
 .freebuff/
 
+# Sondas de base de datos de una sola corrida y salidas de consola
+/tests/postgres/check-*.ts
+/tests/postgres/check-*.sql
+/tests/postgres/check-*.mjs
+/tests/postgres/fix-*.ts
+/tests/postgres/apply-*.ts
+/tests/postgres/seed-*.ts
+/tests/postgres/seed-*.sql
+/tests/postgres/summary-pg-tests.*
+/ci-pg.js
+/ci-setup-log.txt
+/ci-setup-out.txt
+/pg-test.txt
+/tsc.out
+
 # Configuracion MCP del cliente con credenciales del dashboard (nunca commitear)
 /.agents/mcp.json
 

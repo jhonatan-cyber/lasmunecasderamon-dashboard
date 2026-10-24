@@ -13,7 +13,7 @@ export function getMonthDays(date: Date): CalendarDay[] {
   const firstDayOfWeek = firstDay.getDay();
   const days: CalendarDay[] = [];
 
-  const prevMonth = new Date(year, month - 1, 0);
+  const prevMonth = new Date(year, month, 0);
   for (let i = firstDayOfWeek - 1; i >= 0; i--) {
     days.push({
       date: new Date(year, month - 1, prevMonth.getDate() - i),

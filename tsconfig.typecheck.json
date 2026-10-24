@@ -6,5 +6,12 @@
     "strictNullChecks": true
   },
   "include": ["next-env.d.ts", "**/*.ts", "**/*.tsx", ".next/types/**/*.ts"],
-  "exclude": ["node_modules", ".next/dev/types/**/*.ts"]
+  "exclude": [
+    "node_modules",
+    ".next/dev/types/**/*.ts",
+    "tests/postgres/check-*.ts",
+    "tests/postgres/fix-*.ts",
+    "tests/postgres/apply-*.ts",
+    "tests/postgres/seed-*.ts"
+  ]
 }

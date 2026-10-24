@@ -72,7 +72,7 @@ export { AccountService } from './cuentas/fachada';
 
 export { RoomService } from './habitaciones/servicio';
 
-export { OrderService, prepararVentaPedido } from './pedidos/servicio';
+export { OrderService, prepararVentaPedido, aplicarCobroAPedido } from './pedidos/servicio';
 
 export { TimerService } from './temporizadores/fachada';
 

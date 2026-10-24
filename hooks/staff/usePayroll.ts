@@ -4,7 +4,8 @@ import { useEffect, useMemo, useState } from 'react';
 import { useGenericFetch } from '../shared/useGenericFetch';
 
 export interface PayrollRow {
-  id_usuario: number;
+  /** uuid del trabajador (`usuarios.id_usuario`). */
+  id_usuario: string;
   rol: string;
   usuario: string;
   usuario_foto?: string;
@@ -15,9 +16,12 @@ export interface PayrollRow {
   anticipos: number;
   propinas: number;
   descuentos: number;
-  total_horas: number;
   total_monto_horas: number;
   gratificaciones: number;
+  /** Última liquidación registrada en `pagos_nomina`; null si nunca se pagó. */
+  ultima_liquidacion_fecha?: string | null;
+  ultima_liquidacion_monto?: number | null;
+  ultima_liquidacion_por?: string | null;
   total: number;
 }
 

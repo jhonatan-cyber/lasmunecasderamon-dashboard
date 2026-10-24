@@ -9,10 +9,8 @@ export function validateProductForm(
   const newErrors: Partial<Record<keyof ProductFormValues, string>> = {};
   if (!form.code.trim()) newErrors.code = 'El código es requerido';
   if (!form.name.trim()) newErrors.name = 'El nombre es requerido';
-
-  // Fechas de lote: todas opcionales, pero coherentes entre sí.
   if (form.fecha_elaboracion && !esFechaISO(form.fecha_elaboracion))
-    newErrors.fecha_elaboracion = 'Fecha de elaboración inválida';
+    newErrors.fecha_elaboracion = 'Fece elaboración inválida';
   if (form.fecha_vencimiento && !esFechaISO(form.fecha_vencimiento))
     newErrors.fecha_vencimiento = 'Fecha de vencimiento inválida';
   if (form.duracion_meses && !/^\d+$/.test(form.duracion_meses))
@@ -28,10 +26,6 @@ export function validateProductForm(
   return newErrors;
 }
 
-/**
- * Devuelve el primer problema de las presentaciones del formulario, o '' si
- * todas son válidas. En edición no se exige al menos una fila.
- */
 export function validatePresentaciones(
   items: PresentacionFormItem[],
   { isEdit, existentes }: { isEdit: boolean; existentes: { codigo_barras?: string | null }[] }

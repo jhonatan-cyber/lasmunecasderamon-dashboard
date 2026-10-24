@@ -3,7 +3,6 @@
 import { useState } from 'react';
 import { isChampagneProduct } from '@/components/orders/productModalRules';
 
-// ── Hostess selection state ─────────────────────────────────────────
 export interface HostessSelections {
   champagneHostessSelections: { [key: string]: string[] };
   setChampagneHostessSelections: React.Dispatch<React.SetStateAction<{ [key: string]: string[] }>>;

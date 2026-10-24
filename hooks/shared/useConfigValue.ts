@@ -48,7 +48,6 @@ export function valorDeConfig<T = string>(clave: string, porDefecto?: T): T | un
   return definicion ? (definicion.default as T) : porDefecto;
 }
 
-/** Promesa de la descarga en curso o de la que falta: reutiliza la que ya esté en vuelo. */
 export function cargarConfiguraciones(): Promise<void> {
   return ensureConfigs();
 }

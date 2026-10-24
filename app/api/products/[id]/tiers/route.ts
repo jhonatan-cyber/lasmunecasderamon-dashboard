@@ -3,12 +3,9 @@ import { withPublicRoute, withRoute } from '@/lib/api/withRoute';
 import { ProductService } from '@/modules/inventario';
 
 export const GET = withPublicRoute(
-  async (request: Request, { params }: { params: Promise<{ id: string }> }) => {
+  async (_request: Request, { params }: { params: Promise<{ id: string }> }) => {
     const { id } = await params;
-    const data = await ProductService.getChampagneTiers(
-      id,
-      new URL(request.url).searchParams.get('configurados') !== '1'
-    );
+    const data = await ProductService.getChampagneTiers(id);
     return NextResponse.json({ success: true, data });
   }
 );

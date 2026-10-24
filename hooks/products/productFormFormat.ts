@@ -48,7 +48,6 @@ export const emptyEditDraft = (): EditPresDraft => ({
   stock: ''
 });
 
-/** Miles con punto para los campos de importe mientras se edita. */
 export const formatNumber = (value: string) =>
   value.replace(/\D/g, '').replace(/\B(?=(\d{3})+(?!\d))/g, '.');
 

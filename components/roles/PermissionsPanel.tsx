@@ -152,13 +152,9 @@ export function PermissionsPanel({ selectedRole }: PermissionsPanelProps) {
       tips: 'Propinas',
       users: 'Usuarios',
       caja: 'Caja',
-      pagos_trabajadores: 'Pagos a Trabajadores',
-      detalle_planillas: 'Detalle Planillas',
       privados: 'Privados',
       reportes: 'Reportes',
       cash_box: 'Caja',
-      worker_payments: 'Pagos a Trabajadores',
-      payroll_details: 'Detalle Planillas',
       private: 'Privados'
     };
 

@@ -1,7 +1,5 @@
 'use client';
 
-/* eslint-disable */
-import { useMemo } from 'react';
 import { useGenericFetch } from '../shared/useGenericFetch';
 
 interface UseStatsOptions {
@@ -22,15 +20,17 @@ export function useStats<T = any>({
   params = {},
   autoFetch = true
 }: UseStatsOptions): UseStatsReturn<T> {
-  const fullEndpoint = useMemo(() => {
-    if (Object.keys(params).length === 0) return endpoint;
-
+  // `params` es un objeto nuevo en cada render (el default `{}`), así que
+  // memoizar por identidad no serviría; la cadena resultante se compara por
+  // valor en la queryKey de TanStack Query, que es lo que importa.
+  let fullEndpoint = endpoint;
+  if (Object.keys(params).length > 0) {
     const url = new URL(endpoint, window.location.origin);
     Object.entries(params).forEach(([key, value]) => {
       url.searchParams.append(key, String(value));
     });
-    return url.pathname + url.search;
-  }, [endpoint, JSON.stringify(params)]);
+    fullEndpoint = url.pathname + url.search;
+  }
 
   const {
     data: rawData,

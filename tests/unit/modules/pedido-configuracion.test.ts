@@ -24,7 +24,13 @@ const bottle = {
   selectedHostesses: [] as string[]
 };
 function trx(
-  config: { categoria?: string; max?: number | null; opciones?: unknown; estado?: number } = {}
+  config: {
+    categoria?: string;
+    max?: number | null;
+    opciones?: unknown;
+    estado?: number;
+    tiers?: Array<{ producto_id: string; anfitrionas: number; precio: number; comision: number }>;
+  } = {}
 ) {
   return vi.fn(async (sql: string) => {
     if (sql.includes('FROM inventario_unidades')) return [{ id: 'unit', ml_restante: null }];
@@ -42,6 +48,7 @@ function trx(
           opciones_venta: config.opciones ?? options
         }
       ];
+    if (sql.includes('FROM producto_champagne_tiers')) return config.tiers ?? [];
     if (sql.includes('FROM productos'))
       return [
         {
@@ -94,7 +101,7 @@ describe('Configuracion del pedido verificada en servidor', () => {
   });
 });
 
-it('permite el limite de champana por precio cuando no hay tiers ni maximo explicito', async () => {
+it('bloquea la champana sin tramos ni maximo explicito', async () => {
   const d = {
     ...bottle,
     precio: 120000,
@@ -107,6 +114,27 @@ it('permite el limite de champana por precio cuando no hay tiers ni maximo expli
     categoria: 'Champana',
     max: null,
     opciones: [{ tipo: 'botella', precio: 120000, comision: 40000 }]
+  };
+  await expect(validarConfiguracionPedido(trx(config), [d])).rejects.toThrow('tabla de precios');
+});
+
+it('usa los tramos guardados como limite de champana', async () => {
+  const d = {
+    ...bottle,
+    precio: 120000,
+    subtotal: 120000,
+    comision: 40000,
+    generaComision: 1,
+    selectedHostesses: ['ana', 'bea']
+  };
+  const config = {
+    categoria: 'Champana',
+    max: null,
+    opciones: [{ tipo: 'botella', precio: 120000, comision: 40000 }],
+    tiers: [
+      { producto_id: 'prod', anfitrionas: 1, precio: 120000, comision: 40000 },
+      { producto_id: 'prod', anfitrionas: 2, precio: 120000, comision: 40000 }
+    ]
   };
   await expect(validarConfiguracionPedido(trx(config), [d])).resolves.toBeUndefined();
   await expect(

@@ -1,5 +1,7 @@
 ﻿import { Label } from '@/components/ui/label';
 import { Checkbox } from '@/components/ui/checkbox';
+import { Button } from '@/components/ui/button';
+import { X } from 'lucide-react';
 import { CustomerSelect } from '@/components/shared/selects';
 import { RoomSelect } from '@/components/shared/selects';
 import { PaymentMethodSelect } from '@/components/shared/selects';
@@ -12,6 +14,10 @@ interface NewSaleConfigurationProps {
   clientes: any[];
   selectedCliente: string;
   setSelectedCliente: (val: string) => void;
+  /** Segundo cliente con saldo para repartir el prepago (opcional). */
+  selectedSegundoCliente: string;
+  setSelectedSegundoCliente: (val: string) => void;
+  clientesConSaldo: any[];
   requiresRoom: boolean;
   habitaciones: any[];
   selectedHabitacion: string;
@@ -33,6 +39,9 @@ export const NewSaleConfiguration = ({
   clientes,
   selectedCliente,
   setSelectedCliente,
+  selectedSegundoCliente,
+  setSelectedSegundoCliente,
+  clientesConSaldo,
   requiresRoom,
   habitaciones,
   selectedHabitacion,
@@ -88,9 +97,45 @@ export const NewSaleConfiguration = ({
           onChange={setMetodoPago}
           clientes={clientes}
           selectedClienteId={selectedCliente}
-          showPrepago={false}
+          selectedClienteIds={[selectedCliente, selectedSegundoCliente].filter(
+            id => id && id !== 'none'
+          )}
         />
       </div>
+
+      {clientesConSaldo.length > 0 && (
+        <div className='flex flex-col gap-1.5 sm:col-span-2 lg:col-span-4'>
+          <div className='flex items-end gap-2'>
+            <div className='flex-1'>
+              <CustomerSelect
+                clientes={clientesConSaldo}
+                value={selectedSegundoCliente}
+                onChange={setSelectedSegundoCliente}
+                label='Segundo cliente (opcional, solo para repartir prepago)'
+                placeholder='Sin segundo cliente'
+              />
+            </div>
+            {selectedSegundoCliente !== 'none' && (
+              <Button
+                type='button'
+                variant='outline'
+                size='sm'
+                className='h-11 rounded-full px-4 text-xs'
+                onClick={() => setSelectedSegundoCliente('none')}
+              >
+                <X className='mr-1 h-3.5 w-3.5' />
+                Quitar
+              </Button>
+            )}
+          </div>
+          {metodoPago === 'prepago' && selectedSegundoCliente !== 'none' && (
+            <p className='text-[11px] text-gray-500 dark:text-neutral-400'>
+              El prepago se reparte mitad y mitad entre los dos clientes y cada uno recibe su
+              comprobante.
+            </p>
+          )}
+        </div>
+      )}
       <div className={fieldWrapperClass}>
         <Label className={fieldLabelClass}>Propina Sugerida ({propinaPct}%)</Label>
         <div

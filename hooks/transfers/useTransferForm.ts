@@ -2,7 +2,7 @@
 
 import { useEffect, useState, useRef } from 'react';
 import type { Dispatch, SetStateAction } from 'react';
-import { CHAMPAGNE_DEFAULT_TIERS, type ChampagneTier } from '@/lib/business/champagne';
+import { type ChampagneTier } from '@/lib/business/champagne';
 import { etiquetaCorto, resolveShotMl, resolveShotMlAnfitriona } from '@/lib/business/shotMl';
 import { useConfigValue } from '@/hooks/shared/useConfigValue';
 import {
@@ -26,15 +26,11 @@ export interface TransferForm {
   setMaxAnfitrionas: (value: string) => void;
   colacionHabilitada: boolean;
   setColacionHabilitada: (value: boolean) => void;
-  /** Ml configurados para la colación (vacío = se usan los del corto de anfitriona). */
   mlColacion: string;
   setMlColacion: (value: string) => void;
-  /** Ml de bebida analcohólica por colación (vacío = se usa el del corto de anfitriona). */
   mlAcompanamientoColacion: string;
   setMlAcompanamientoColacion: (value: string) => void;
-  /** Ml que la colación hereda del corto de anfitriona; null si el producto no lo tiene. */
   mlColacionSugerido: number | null;
-  /** Ml de acompañamiento heredado del corto de anfitriona; null si no lo define. */
   mlAcompanamientoColacionSugerido: number | null;
   coverHabilitado: boolean;
   setCoverHabilitado: (value: boolean) => void;
@@ -68,7 +64,6 @@ export interface TransferForm {
   setTiers: Dispatch<SetStateAction<ChampagneTierRow[]>>;
   editarPrecios: boolean;
   setEditarPrecios: (value: boolean) => void;
-  /** Ml por shot vigentes (lo que se edita o el valor del producto/global). */
   shotMl: number;
   mlPorShot: number;
   mlPorShotAnfitriona: number;
@@ -83,11 +78,6 @@ export interface TransferForm {
   reset: () => void;
 }
 
-/**
- * Estado completo del modal de traspaso: inputs, carga de la configuración
- * guardada (y de los precios champagne) al abrir, valores derivados de shot y
- * el ciclo de apertura/cierre. La parte de envío vive en `useTransferSubmit`.
- */
 export function useTransferForm({
   item,
   open
@@ -117,7 +107,7 @@ export function useTransferForm({
   const [preciosAnfitrionaExtra, setPreciosAnfitrionaExtra] = useState<
     { precio: string; comision: string }[]
   >([]);
-  // Ml por shot para cada audiencia (anfitriona vacío = igual que cliente).
+
   const [mlShotCliente, setMlShotCliente] = useState('');
   const [mlShotAnfitriona, setMlShotAnfitriona] = useState('');
   const [tiers, setTiersState] = useState<ChampagneTierRow[]>([]);
@@ -127,14 +117,11 @@ export function useTransferForm({
     setTiersState(updater);
   };
   const [editarPrecios, setEditarPrecios] = useState(false);
-
-  // Lo que se muestra en los labels: lo que se está editando o el valor vigente.
   const mlPorShot = resolveShotMl(Number(mlShotCliente), shotMl);
   const mlPorShotAnfitriona = resolveShotMlAnfitriona(Number(mlShotAnfitriona), mlPorShot);
   const etiquetaShot = etiquetaCorto(mlPorShot, mlPorShotAnfitriona);
 
   const esChampagneItem = esChampagne(item?.categoria_nombre);
-  // Bebidas analcohólicas y cigarrillos: sin cortos ni anfitrionas, solo venta por botella.
   const esAnalcoholicaItem =
     esBebidaAnalcoholica(item?.categoria_nombre) || esCigarrillos(item?.categoria_nombre);
   const opcionesGuardadas: SaleOption[] = (
@@ -142,7 +129,6 @@ export function useTransferForm({
       { tipo: 'botella', precio: item?.precio_venta ?? 0, comision: item?.comision ?? 0 }
     ]
   ).filter(option => !esAnalcoholicaItem || option.tipo === 'botella');
-  // Si ya tiene precio/comisión configurados, se reutilizan sin pedirlos manualmente.
   const tieneConfig = opcionesGuardadas.some(
     option => Number(option.precio ?? 0) > 0 || preciosCortoAnfitriona(option).length > 0
   );
@@ -151,7 +137,6 @@ export function useTransferForm({
     let cancelado = false;
     if (open && item) {
       setCantidad('');
-      // Cadena: traspaso guardado → presentación → producto (un 0 intermedio se salta).
       const presPrecio =
         Number(item.precio_venta) > 0
           ? Number(item.precio_venta)
@@ -225,7 +210,6 @@ export function useTransferForm({
           ? String(item.ml_shot_anfitriona)
           : ''
       );
-      // Con configuración existente se usa directo; solo la primera vez se pide manual.
       setEditarPrecios(
         !options.some(
           option => Number(option.precio ?? 0) > 0 || preciosCortoAnfitriona(option).length > 0
@@ -234,18 +218,11 @@ export function useTransferForm({
       tiersEdited.current = false;
       setTiersState([]);
       if (options.some(option => option.tipo === 'botella')) {
-        fetch(
-          `/api/products/${item.producto_id}/tiers${esChampagne(item.categoria_nombre) ? '' : '?configurados=1'}`
-        )
+        fetch(`/api/products/${item.producto_id}/tiers`)
           .then(res => res.json().catch(() => ({})))
           .then(data => {
             if (cancelado || tiersEdited.current) return;
-            const rows =
-              data.success && Array.isArray(data.data) && data.data.length > 0
-                ? data.data
-                : esChampagne(item.categoria_nombre)
-                  ? CHAMPAGNE_DEFAULT_TIERS
-                  : [];
+            const rows: ChampagneTier[] = data.success && Array.isArray(data.data) ? data.data : [];
             if (!rows.length) return;
             setTiersState(
               rows.map((t: ChampagneTier) => ({
@@ -257,14 +234,6 @@ export function useTransferForm({
           })
           .catch(() => {
             if (cancelado || tiersEdited.current) return;
-            if (!esChampagne(item.categoria_nombre)) return;
-            setTiersState(
-              (esChampagne(item.categoria_nombre) ? CHAMPAGNE_DEFAULT_TIERS : []).map(t => ({
-                anfitrionas: t.anfitrionas,
-                precio: formatMiles(t.precio),
-                comision: formatMiles(t.comision)
-              }))
-            );
           });
       }
     }
@@ -320,15 +289,11 @@ export function useTransferForm({
   };
 
   const usarConfigGuardada = tieneConfig && !editarPrecios;
-  // El input de ml solo existe cuando el tipo de venta shot está activo.
   const shotActivo =
     !esAnalcoholicaItem &&
     (usarConfigGuardada
       ? opcionesGuardadas.some(option => option.tipo === 'shot')
       : tipos.includes('shot'));
-
-  // La colación toma los ml del corto de anfitriona cuando el producto lo
-  // tiene; si falta alguno, el modal pide ese dato.
   const mlColacionSugerido = shotActivo && mlPorShotAnfitriona > 0 ? mlPorShotAnfitriona : null;
   const mlAcompanamientoColacionSugerido =
     shotActivo && Number(mlAcompanamientoAnfitriona) > 0

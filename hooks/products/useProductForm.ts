@@ -32,16 +32,11 @@ export function useProductForm({
 }: UseProductFormProps) {
   const [form, setForm] = useState<ProductFormValues>(initialFormState);
   const [errors, setErrors] = useState<Partial<Record<keyof ProductFormValues, string>>>({});
-
-  // Refs que coordinan los tres sub-hooks: qué producto está abierto y qué
-  // operación de inventario está en curso (evita envíos dobles cruzados).
   const activeProductIdRef = useRef<string | null>(null);
   const addingStockRef = useRef(false);
   const savingPresentationRef = useRef(false);
-
   const isEdit = Boolean(initialValues?.id);
   const productId = initialValues?.id != null ? String(initialValues.id) : null;
-
   const presentacionesState = useProductPresentations();
   const inventory = useProductInventory({
     productId,
@@ -103,7 +98,6 @@ export function useProductForm({
     resetPresentaciones();
 
     if (autoEditPresentation?.id) {
-      // Apertura directa en modo edición de la presentación.
       startEditPres(autoEditPresentation);
     } else {
       cancelEditPres();
@@ -174,7 +168,6 @@ export function useProductForm({
         };
       });
     } else if (name === 'fecha_elaboracion') {
-      // Con la elaboración a la vista y una duración cargada se calcula solo.
       setForm(prev => {
         const siguiente = { ...prev, fecha_elaboracion: String(value) };
         return {
@@ -213,12 +206,8 @@ export function useProductForm({
 
     data.append('description', form.description);
     data.append('status', '1');
-    // Vacío = borrar: el producto vuelve al `shot_ml` global de Configuraciones.
     data.append('ml_shot', form.ml_shot);
-    // Vacío = borrar: el shot de anfitriona vuelve a servirse igual que el de cliente.
     data.append('ml_shot_anfitriona', form.ml_shot_anfitriona);
-    // Fechas de lote: '' borra la columna; el servidor calcula el vencimiento
-    // si viene vacío y hay elaboración + duración.
     data.append('fecha_elaboracion', form.fecha_elaboracion);
     data.append('duracion_meses', form.duracion_meses);
     data.append('fecha_vencimiento', form.fecha_vencimiento);
@@ -237,7 +226,6 @@ export function useProductForm({
         )
       );
       presentaciones.forEach((p, i) => {
-        // Siempre se envían las claves para mantener el índice alineado con la fila.
         if (p.foto) data.append(`presentacion_foto_${i}`, p.foto);
         else data.append(`presentacion_foto_${i}`, '');
         data.append(`presentacion_fotourl_${i}`, p.fotoUrl.trim());

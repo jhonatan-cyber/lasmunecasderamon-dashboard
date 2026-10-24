@@ -12,20 +12,17 @@ export interface AddLineContext {
   normalizado: any;
   tipoVenta: TipoVenta;
   shotAnfitriona: boolean;
-  /** Cantidad pedida, antes de recortarla por stock. */
   cantidad: number;
   precio: number;
   comision: number;
   id: string;
 }
 
-/** Dos líneas son la misma solo si comparten producto, cobro y beneficiarias. */
 export function crearComparadorLinea(ctx: AddLineContext) {
   const { producto, normalizado, tipoVenta, shotAnfitriona, precio, comision } = ctx;
   return (p: any) =>
     p.id === normalizado.id &&
     (p.tipo_venta === 'shot' ? 'shot' : 'botella') === tipoVenta &&
-    // Shot de cliente y shot de anfitriona son líneas distintas: no se suman.
     Boolean(p.shot_anfitriona) === shotAnfitriona &&
     JSON.stringify(p.acompanamiento_botella ?? null) ===
       JSON.stringify(producto?.acompanamiento_botella ?? null) &&
@@ -38,7 +35,6 @@ export function crearComparadorLinea(ctx: AddLineContext) {
       JSON.stringify([...(normalizado.selectedHostesses || [])].sort());
 }
 
-/** Forma canónica de la línea que entra al carro. */
 export function normalizarProducto(
   producto: any,
   {
@@ -80,10 +76,6 @@ export function normalizarProducto(
   };
 }
 
-/**
- * Fusiona la línea con el carro. Los shots comparten un tope de 99 y las
- * botellas descuentan el stock de la presentación ya reservada por otras líneas.
- */
 export function agregarLineaAlCarro(prev: any[], ctx: AddLineContext): any[] {
   const { producto, normalizado, tipoVenta, cantidad, precio, id } = ctx;
   const isMatch = crearComparadorLinea(ctx);
@@ -93,7 +85,6 @@ export function agregarLineaAlCarro(prev: any[], ctx: AddLineContext): any[] {
   if (tipoVenta === 'shot') {
     agregar = Math.min(agregar, Math.max(0, 99 - Number(existing?.cantidad ?? 0)));
   } else if (producto.stock_bar != null) {
-    // Distintas anfitrionas o precios siguen consumiendo la misma presentación.
     const reservadas = prev.reduce((total, p) => {
       const mismaPresentacion = (p.presentacion_id || p.id) === (normalizado.presentacion_id || id);
       return mismaPresentacion && p.tipo_venta !== 'shot' ? total + Number(p.cantidad) : total;
@@ -118,7 +109,6 @@ export function agregarLineaAlCarro(prev: any[], ctx: AddLineContext): any[] {
   return [...prev, { ...normalizado, cantidad: agregar, subtotal: precio * agregar }];
 }
 
-/** Cambia la cantidad de una línea respetando el stock del resto del carro. */
 export function cambiarCantidadEnCarro(
   prev: any[],
   index: number,
@@ -170,7 +160,6 @@ export function calcularTotales(productos: any[], propinaPct: number, enableTip:
   return { subtotal, propina, total };
 }
 
-/** Comisión devengada: solo líneas con anfitrionas y comisión positiva. */
 export function calcularComisionTotal(productos: any[]): number {
   return productos.reduce(
     (acc, p) =>

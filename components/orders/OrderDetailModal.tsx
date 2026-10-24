@@ -123,11 +123,19 @@ export default function OrderDetailModal({
                   />
                   <OrderDetailPaymentPanel
                     metodoPago={state.metodoPago}
+                    setMetodoPago={setters.setMetodoPago}
                     habitacionesActivas={derived.habitacionesActivas}
                     habitacionId={state.habitacionId}
                     tiempoHabitacion={state.tiempoHabitacion}
                     setTiempoHabitacion={setters.setTiempoHabitacion}
                     propina={state.propina}
+                    propinaOriginal={state.propinaOriginal}
+                    propinaPct={state.propinaPct}
+                    agregarPropina={state.agregarPropina}
+                    setAgregarPropina={setters.setAgregarPropina}
+                    clienteId={state.clienteId}
+                    clienteSaldo={state.clienteSaldo}
+                    totalFinal={totalConfirmar}
                     orderTotalCommission={detail[0]?.total_comision || 0}
                   />
                 </div>

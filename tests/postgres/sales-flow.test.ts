@@ -29,7 +29,7 @@ it('creates an order, records its sale and posts the cash balance using the actu
     // El volcado base puede no traer caja abierta: el test la abre para poder postular
     // los saldos (el snapshot la revierte al terminar).
     let [caja] = await query(
-      'SELECT id_caja, efectivo, venta FROM cajas WHERE estado = 1 ORDER BY fecha_apertura DESC LIMIT 1'
+      'SELECT id_caja, efectivo, tarjeta, propina, venta FROM cajas WHERE estado = 1 ORDER BY fecha_apertura DESC LIMIT 1'
     );
     if (!caja) {
       const idCaja = crypto.randomUUID();
@@ -40,7 +40,7 @@ it('creates an order, records its sale and posts the cash balance using the actu
            VALUES (?, now(), ?, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1)`,
         [idCaja, user.id_usuario]
       );
-      caja = { id_caja: idCaja, efectivo: 0, venta: 0 };
+      caja = { id_caja: idCaja, efectivo: 0, tarjeta: 0, propina: 0, venta: 0 };
     }
     const order = await OrderRepository.create({
       metodoPago: 'efectivo',
@@ -62,11 +62,14 @@ it('creates an order, records its sale and posts the cash balance using the actu
     expect((await OrderRepository.getAll()).find(row => row.id === order.id)?.cliente_nombre).toBe(
       'Sin cliente registrado'
     );
+    // El cajero cobra con tarjeta y una propina distinta a la guardada en el
+    // pedido: el pago y los importes que manda la caja no se descartan, pero lo
+    // vendido (productos, cantidades y precios) sigue saliendo del pedido.
     const payload = {
       pedido_id: order.id,
       cliente_id: null,
       metodo_pago: 'tarjeta' as const,
-      propina: 99999,
+      propina: 2000,
       total: 1,
       sub_total: 1,
       origen: 'cuenta',
@@ -99,8 +102,8 @@ it('creates an order, records its sale and posts the cash balance using the actu
       [sale.id]
     );
     expect(saved).toMatchObject({
-      metodo_pago: 'efectivo',
-      propina: 0,
+      metodo_pago: 'tarjeta',
+      propina: 2000,
       habitacion_id: null,
       tiempo: 0
     });
@@ -113,16 +116,19 @@ it('creates an order, records its sale and posts the cash balance using the actu
       cantidad: 2,
       precio: 6000
     });
-    expect(sale.total).toBe(12000);
+    expect(sale.total).toBe(14000);
     const [stored] = await query(
       'SELECT total, pedido_id, caja_id FROM ventas WHERE id_venta = ?',
       [sale.id]
     );
-    expect(stored).toEqual({ total: 12000, pedido_id: order.id, caja_id: caja.id_caja });
-    const [balance] = await query('SELECT efectivo, venta FROM cajas WHERE id_caja = ?', [
-      caja.id_caja
-    ]);
-    expect(balance.efectivo).toBe(Number(caja.efectivo) + 12000);
+    expect(stored).toEqual({ total: 14000, pedido_id: order.id, caja_id: caja.id_caja });
+    const [balance] = await query(
+      'SELECT efectivo, tarjeta, propina, venta FROM cajas WHERE id_caja = ?',
+      [caja.id_caja]
+    );
+    expect(balance.efectivo).toBe(Number(caja.efectivo));
+    expect(balance.tarjeta).toBe(Number(caja.tarjeta) + 14000);
+    expect(balance.propina).toBe(Number(caja.propina) + 2000);
     expect(balance.venta).toBe(Number(caja.venta) + 12000);
     expect(await SaleRepository.getById(sale.id)).not.toBeNull();
   } finally {

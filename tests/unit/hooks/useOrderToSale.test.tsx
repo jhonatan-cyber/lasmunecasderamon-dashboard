@@ -44,6 +44,7 @@ it('vende el pedido completo una sola vez y no necesita otro cambio de estado po
         isRegistering: false,
         metodoPago: 'efectivo',
         propina: 1000,
+        clienteSaldo: null,
         habitacionId: '',
         tiempoHabitacion: 0,
         showMetodoPagoError: false,
@@ -51,6 +52,8 @@ it('vende el pedido completo una sola vez y no necesita otro cambio de estado po
       },
       setters: {
         setIsRegistering: vi.fn(),
+        setMetodoPago: vi.fn(),
+        setAgregarPropina: vi.fn(),
         setTiempoHabitacion: vi.fn(),
         setShowMetodoPagoError: vi.fn(),
         setConfirmVentaModalOpen

@@ -13,9 +13,6 @@ interface TimerActionsProps {
 }
 
 export function useTimerActions({ onNotificationExpira, onRefreshCaja }: TimerActionsProps) {
-  // El aviso de "ventas actualizadas" viaja con un temporizador corto. Si el
-  // componente se desmonta antes de que dispare, el temporizador queda vivo y
-  // revienta contra un `window` que ya no existe. Se limpia al desmontar.
   const avisoDeVenta = useRef<ReturnType<typeof setTimeout> | null>(null);
   useEffect(
     () => () => {
@@ -82,8 +79,6 @@ export function useTimerActions({ onNotificationExpira, onRefreshCaja }: TimerAc
       const timer = timerObject || activeTimers.peek().find(t => t.id === timerId);
       if (!timer) return;
 
-      // El vencimiento lo resuelve el servidor, también para sesiones de solo lectura.
-      // Un PATCH manual desde cada navegador puede fallar por permisos o competir con el cron.
       if (timerObject && !isManualStop) {
         await refreshTimerSnapshot(true, true);
         onRefreshCaja?.(timer.servicioId);
@@ -144,8 +139,6 @@ export function useTimerActions({ onNotificationExpira, onRefreshCaja }: TimerAc
       avisoDeVenta.current = setTimeout(() => {
         avisoDeVenta.current = null;
         if (onRefreshCaja) onRefreshCaja(timer.servicioId);
-        // El aviso es un efecto de la vista: fuera del navegador no hay
-        // `window` que despachar y no debe romper el proceso.
         if (typeof window !== 'undefined') window.dispatchEvent(new CustomEvent('updateSales'));
       }, 100);
 
@@ -221,7 +214,7 @@ export function useTimerActions({ onNotificationExpira, onRefreshCaja }: TimerAc
                 t.isTemporary &&
                 String(t.datosTemporales.peek()?.servicio_original_id) === normalizedServicioId
             );
-          // El manejador global conserva las notificaciones y la reanudacion del principal.
+
           if (temporary) {
             temporary.onExpire = () => onComplete();
             temporary.datosTemporales.value = {

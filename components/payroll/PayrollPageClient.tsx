@@ -11,7 +11,7 @@ import { Skeleton as BoneyardSkeleton } from 'boneyard-js/react';
 
 export function PayrollPageClient() {
   const {
-    paginated,
+    filtered,
     loading,
     error,
     roleFilter,
@@ -31,8 +31,10 @@ export function PayrollPageClient() {
   const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('asc');
   const { userPermissions } = useUserPermissions();
 
+  // Se ordena sobre el conjunto filtrado y recién después se corta la página:
+  // ordenar la página ya cortada sólo reordenaba lo que se ve en pantalla.
   const sortedRows = useMemo(() => {
-    return [...paginated].sort((a: any, b: any) => {
+    const ordered = [...filtered].sort((a: any, b: any) => {
       let aVal = a[sortBy];
       let bVal = b[sortBy];
       if (typeof aVal === 'string') aVal = aVal.toLowerCase();
@@ -41,7 +43,9 @@ export function PayrollPageClient() {
       if (aVal > bVal) return sortOrder === 'asc' ? 1 : -1;
       return 0;
     });
-  }, [paginated, sortBy, sortOrder]);
+    const inicio = (page - 1) * rowsPerPage;
+    return ordered.slice(inicio, inicio + rowsPerPage);
+  }, [filtered, sortBy, sortOrder, page, rowsPerPage]);
 
   return (
     <PermissionGuard module='payroll' action='view'>

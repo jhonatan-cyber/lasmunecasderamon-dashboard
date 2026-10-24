@@ -31,5 +31,11 @@
     ".next/types/**/*.ts",
     ".next/dev/types/**/*.ts"
   ],
-  "exclude": ["node_modules"]
+  "exclude": [
+    "node_modules",
+    "tests/postgres/check-*.ts",
+    "tests/postgres/fix-*.ts",
+    "tests/postgres/apply-*.ts",
+    "tests/postgres/seed-*.ts"
+  ]
 }

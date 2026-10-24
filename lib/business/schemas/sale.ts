@@ -58,6 +58,16 @@ export const SaleCreateSchema = z.object({
   monto_prepago: z.number().optional().default(0),
   monto_adicional: z.number().optional().default(0),
   pagos_mixtos: z.any().optional(),
+  // Reparto explícito del prepago entre clientes: cada entrada descuenta su
+  // monto del saldo de ese cliente (permite pagar entre dos).
+  prepago_destinos: z
+    .array(
+      z.object({
+        cliente_id: z.union([z.string().min(1), z.number()]),
+        monto: z.number().min(0)
+      })
+    )
+    .optional(),
   propina: z.number().optional().default(0),
   usuarios: z.array(z.string()).optional().default([]),
   tiempo: z.number().optional().default(0),

@@ -289,13 +289,10 @@ describe('ProductService champagne tiers', () => {
     await expect(ProductService.getChampagneTiers('prod-1')).resolves.toEqual(rows);
   });
 
-  it('usa los valores por defecto si no hay tramos', async () => {
+  it('devuelve arreglo vacío si no hay tramos configurados', async () => {
     vi.mocked(obtenerNivelesChampagne).mockResolvedValue([]);
 
-    const tiers = await ProductService.getChampagneTiers('prod-1');
-
-    expect(tiers).toHaveLength(5);
-    expect(tiers[2]).toMatchObject({ anfitrionas: 3, precio: 160000, comision: 60000 });
+    await expect(ProductService.getChampagneTiers('prod-1')).resolves.toEqual([]);
   });
 
   it('guarda tramos válidos y rechaza duplicados', async () => {

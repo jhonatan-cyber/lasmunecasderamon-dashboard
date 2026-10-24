@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { ventaDesdePedido } from '@/modules/operacion/pedidos/reglas';
+import { aplicarCobroAPedido, ventaDesdePedido } from '@/modules/operacion/pedidos/reglas';
 import { OrderCreateSchema } from '@/lib/business/schemas/order';
 const pedido = {
   id_pedido: 'pedido',
@@ -54,7 +54,6 @@ describe('Venta desde datos guardados del pedido', () => {
   });
   it('rechaza pedidos procesados o incompletos', () => {
     expect(() => ventaDesdePedido({ ...pedido, estado: 0 }, [line], 90)).toThrow('procesado');
-    expect(() => ventaDesdePedido({ ...pedido, metodo_pago: null }, [line], 90)).toThrow('pago');
     expect(() => ventaDesdePedido(pedido, [line, { ...line, habitacion_id: 'otra' }], 90)).toThrow(
       'habitacion'
     );
@@ -67,6 +66,90 @@ describe('Venta desde datos guardados del pedido', () => {
     });
   });
 });
+
+describe('Cobro del pedido con el pago que elige la caja', () => {
+  const snapshot = () => ventaDesdePedido(pedido, [line], 90);
+
+  it('toma el método y la propina del cobro y recalcula el total', () => {
+    expect(
+      aplicarCobroAPedido(snapshot(), { metodo_pago: 'prepago', propina: 5000 })
+    ).toMatchObject({
+      pedido_id: 'pedido',
+      cliente_id: 'cliente',
+      metodo_pago: 'prepago',
+      propina: 5000,
+      sub_total: 20000,
+      total: 25000
+    });
+  });
+
+  it('conserva lo vendido aunque el cobro mande otros productos o importes', () => {
+    const venta = aplicarCobroAPedido(snapshot(), {
+      metodo_pago: 'tarjeta',
+      detalles: [],
+      sub_total: 1,
+      total: 1,
+      usuarios: []
+    });
+    expect(venta).toMatchObject({
+      sub_total: 20000,
+      total: 22000,
+      usuarios: ['ana', 'bea'],
+      detalles: [expect.objectContaining({ precio: 10000, cantidad: 2, comision: 4000 })]
+    });
+  });
+
+  it('mantiene la propina del pedido si el cobro no la manda', () => {
+    expect(aplicarCobroAPedido(snapshot(), { metodo_pago: 'efectivo' })).toMatchObject({
+      propina: 2000,
+      total: 22000
+    });
+  });
+
+  it('traslada el reparto del prepago que elige el cajero', () => {
+    expect(
+      aplicarCobroAPedido(snapshot(), {
+        metodo_pago: 'prepago',
+        monto_prepago: 5000,
+        prepago_destinos: [{ cliente_id: 'cliente', monto: 5000 }]
+      })
+    ).toMatchObject({
+      monto_prepago: 5000,
+      prepago_destinos: [{ cliente_id: 'cliente', monto: 5000 }]
+    });
+  });
+
+  it('permite cobrar un pedido antiguo sin método guardado', () => {
+    const sinMetodo = ventaDesdePedido({ ...pedido, metodo_pago: null }, [line], 90);
+    expect(aplicarCobroAPedido(sinMetodo, { metodo_pago: 'efectivo' }).metodo_pago).toBe(
+      'efectivo'
+    );
+  });
+
+  it('cobra con el saldo del cliente que elige la caja', () => {
+    expect(
+      aplicarCobroAPedido(snapshot(), { metodo_pago: 'prepago', cliente_id: 'otro' })
+    ).toMatchObject({ metodo_pago: 'prepago', cliente_id: 'otro' });
+  });
+
+  it('conserva el cliente del pedido si el cobro no elige uno', () => {
+    expect(
+      aplicarCobroAPedido(snapshot(), { metodo_pago: 'efectivo', cliente_id: null }).cliente_id
+    ).toBe('cliente');
+  });
+
+  it('exige un método de pago al cobrar', () => {
+    const sinMetodo = ventaDesdePedido({ ...pedido, metodo_pago: null }, [line], 90);
+    expect(() => aplicarCobroAPedido(sinMetodo, {})).toThrow('metodo de pago');
+  });
+
+  it('rechaza propinas negativas', () => {
+    expect(() => aplicarCobroAPedido(snapshot(), { metodo_pago: 'efectivo', propina: -1 })).toThrow(
+      'propina'
+    );
+  });
+});
+
 const input = {
   codigo: 'PED',
   meseroId: 'user',

@@ -1,11 +1,3 @@
-/**
- * Infraestructura genérica reutilizable por cualquier dominio.
- *
- * Solo entra aquí lo que no pertenece a un dominio concreto: acceso a
- * configuración, primitivas de datos, mutaciones, estado de UI y transporte
- * en tiempo real. Los hooks con reglas de negocio viven en la carpeta de su
- * dominio (`ventas/`, `servicios/`, `cuentas/`, `traspasos/`, `calendario/`).
- */
 export {
   cargarConfiguraciones,
   refrescarConfiguraciones,

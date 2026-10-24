@@ -4,7 +4,6 @@ import { useRealtimeRefresh } from '@/hooks/realtime/useRealtimeRefresh';
 import { useState, useEffect, useCallback, useMemo, useRef } from 'react';
 import { isCancelledError } from '@tanstack/react-query';
 import {
-  Caja,
   CajaWithUser,
   CajaCreate,
   CajaUpdate,
@@ -15,18 +14,10 @@ import {
 import { toast } from 'sonner';
 import { useGenericFetch } from '../shared/useGenericFetch';
 
-/**
- * Resultado de pedir el cierre.
- *
- * `pendiente` no es un error: el cajero no cierra la caja, pide autorización y la
- * caja queda abierta hasta que el administrador responda el link del WhatsApp.
- * `null` sí es un fracaso (ya avisado por toast).
- */
 export interface CierreCajaResultado {
   estado: 'cerrada' | 'pendiente';
   caja: CajaWithUser | null;
   mensaje: string;
-  /** Saldos de clientes que se descuentan del efectivo al cerrar. */
   saldoClientesDescontado: number;
   saldoClientesPorDevolver: number;
   montoCierre: number;
@@ -266,8 +257,6 @@ export const useCashRegister = (): UseCashRegisterReturn => {
       setPendingOperations(count => count + 1);
       setMutationError(null);
       try {
-        // Nunca cierra directo: el endpoint decide. El administrador cierra en el
-        // acto; cualquier otro rol genera la solicitud y avisa por WhatsApp.
         const response = await fetch('/api/cashregister/closing', {
           method: 'POST',
           headers: {
@@ -278,8 +267,6 @@ export const useCashRegister = (): UseCashRegisterReturn => {
 
         const result = await response.json().catch(() => ({}));
 
-        // 202: la solicitud quedó creada pero el WhatsApp no salió. Sigue pendiente
-        // de autorización igual, así que no se trata como error.
         if (
           !response.ok ||
           (result.success === false &&

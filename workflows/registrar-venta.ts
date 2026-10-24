@@ -7,6 +7,7 @@ import {
 } from '@/modules/operacion';
 import { validarAnfitrionasEnLocal } from '@/modules/identidad';
 import { AuditService } from '@/modules/auditoria';
+import { normalizarDestinosPrepago } from '@/lib/business/prepagoDistribucion';
 import { generateUUID } from '@/lib/utils/ids';
 import { getNowInBusinessTimezone } from '@/lib/business/timezoneService';
 import { SaleCreateSchema } from '@/lib/business/schemas';
@@ -23,7 +24,7 @@ import { validarAnfitrionasConfirmadas } from '@/lib/business/registroOperacion'
 import type { ContextoOperacion } from '@/lib/transaction/contract';
 import { resolverOrigenVenta } from '@/lib/business/ventasOrigen';
 import type { EntradaRegistroVenta } from '@/modules/ventas/contracts';
-import { consumirStockBar } from '@/modules/inventario';
+import { consumirStockBar, validarChampanaConfigurada } from '@/modules/inventario';
 import { obtenerCajaActiva, registrarMovimientoCobro } from '@/modules/caja';
 import { registrarComisionesVenta, registrarPropinaVenta } from '@/modules/personal';
 import { actualizarDisponibilidadTrasVenta } from '@/modules/identidad';
@@ -55,10 +56,21 @@ export async function registrarVenta(
 ) {
   const requestedOrder = body.pedido_id || body.id_pedido;
   if (requestedOrder && !options.desdeCuenta) {
-    body = await prepararVentaPedido(requestedOrder, Number(body.tiempo || 0), contexto);
+    // Lo vendido lo fija el pedido; el pago lo elige quien cobra. Antes se
+    // descartaba el método del cajero y el pedido se cobraba siempre con el que
+    // guardó el garzón, aunque en caja se hubiera cobrado con tarjeta o
+    // prepago.
+    body = await prepararVentaPedido(requestedOrder, Number(body.tiempo || 0), contexto, body);
   }
   const validated = SaleCreateSchema.parse(body);
   validarCambioAnfitrionasVenta(validated);
+  // La UI ya no deja agregar champaña sin tabla de precios; esto cierra la API,
+  // que aceptaba cualquier precio para un producto sin configurar. El cobro de
+  // una cuenta (`desdeCuenta`) factura un consumo ya registrado, no una venta
+  // nueva: bloquearlo ahí dejaría cuentas abiertas sin poder cerrarse.
+  if (!options.desdeCuenta) {
+    await validarChampanaConfigurada(validated.detalles, contexto);
+  }
   const skipClientPrepago = Boolean(body?.skip_client_prepago || body?.origen === 'cuenta');
   const skipCashRegisterPosting = body?.origen === 'cuenta';
 
@@ -93,7 +105,35 @@ export async function registrarVenta(
     pagosMixtos
   );
 
-  if (clienteId && !skipClientPrepago) {
+  // El reparto explícito permite pagar la misma venta con el saldo de dos
+  // clientes: cada destino se descuenta con su propia validación de saldo.
+  const destinosPrepago = skipClientPrepago
+    ? []
+    : normalizarDestinosPrepago(validated.prepago_destinos, Number(validated.total || 0));
+
+  if (destinosPrepago.length > 0) {
+    for (const destino of destinosPrepago) {
+      prepagoMonto += await consumirPrepagoVenta(
+        {
+          clienteId: destino.cliente_id,
+          total: Number(validated.total || 0),
+          prepagoSolicitado: destino.monto,
+          ventaId,
+          createdBy,
+          now,
+          codigo,
+          concepto: `Pago venta ${codigo}`
+        },
+        contexto
+      );
+    }
+
+    for (const destino of destinosPrepago) {
+      if (await saldoPrepagoAgotado(destino.cliente_id, contexto)) {
+        await cerrarCuentasPrepagoSaldadas(destino.cliente_id, contexto);
+      }
+    }
+  } else if (clienteId && !skipClientPrepago) {
     prepagoMonto = await consumirPrepagoVenta(
       {
         clienteId,
@@ -107,10 +147,10 @@ export async function registrarVenta(
       },
       contexto
     );
-  }
 
-  if (clienteId && prepagoMonto > 0 && (await saldoPrepagoAgotado(clienteId, contexto))) {
-    await cerrarCuentasPrepagoSaldadas(clienteId, contexto);
+    if (prepagoMonto > 0 && (await saldoPrepagoAgotado(clienteId, contexto))) {
+      await cerrarCuentasPrepagoSaldadas(clienteId, contexto);
+    }
   }
   let esLibreIngreso = false;
   if (validated.habitacion_id) {

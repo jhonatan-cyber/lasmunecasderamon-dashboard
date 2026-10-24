@@ -25,6 +25,8 @@ export default function NewSale() {
     servicioAnfitrionas,
     selectedCliente,
     setSelectedCliente,
+    selectedSegundoCliente,
+    setSelectedSegundoCliente,
     selectedHabitacion,
     metodoPago,
     setMetodoPago,
@@ -86,6 +88,17 @@ export default function NewSale() {
     );
     return Number(cliente?.saldo ?? cliente?.saldo_prepago ?? 0);
   }, [clientes, selectedCliente]);
+
+  const clientesConSaldo = useMemo(
+    () =>
+      clientes.filter(cliente => {
+        const id = String(cliente.id ?? cliente.id_cliente ?? '');
+        return (
+          id !== String(selectedCliente) && Number(cliente.saldo ?? cliente.saldo_prepago ?? 0) > 0
+        );
+      }),
+    [clientes, selectedCliente]
+  );
 
   const defaultHostesses = useMemo(
     () =>
@@ -226,6 +239,9 @@ export default function NewSale() {
           clientes={clientes}
           selectedCliente={selectedCliente}
           setSelectedCliente={setSelectedCliente}
+          selectedSegundoCliente={selectedSegundoCliente}
+          setSelectedSegundoCliente={setSelectedSegundoCliente}
+          clientesConSaldo={clientesConSaldo}
           requiresRoom={requiresRoom}
           habitaciones={habitaciones}
           selectedHabitacion={selectedHabitacion}
