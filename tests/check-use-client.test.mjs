@@ -118,6 +118,69 @@ test('lee imports multilínea, alias y el modificador type por especificador', (
   assert.equal(usaHooksSinDirectiva("import { type ReactNode, useId } from 'react';\n"), true);
 });
 
+test('detecta hooks invocados por espacio de nombres o por el default', () => {
+  assert.equal(
+    usaHooksSinDirectiva(
+      ["import * as React from 'react';", '', 'export const id = React.useId();'].join('\n')
+    ),
+    true
+  );
+  assert.equal(
+    usaHooksSinDirectiva(
+      [
+        "import React from 'react';",
+        '',
+        'export function C() {',
+        '  const ref = React.useRef(0);',
+        '  return ref.current;',
+        '}'
+      ].join('\n')
+    ),
+    true
+  );
+  assert.equal(
+    usaHooksSinDirectiva(
+      [
+        "import * as Query from '@tanstack/react-query';",
+        '',
+        'export const cliente = Query.useQueryClient();'
+      ].join('\n')
+    ),
+    true
+  );
+
+  // Con la directiva, el mismo uso deja de ser violación.
+  assert.equal(
+    usaHooksSinDirectiva(
+      [
+        "'use client';",
+        '',
+        "import * as React from 'react';",
+        '',
+        'export const id = React.useId();'
+      ].join('\n')
+    ),
+    false
+  );
+});
+
+test('no confunde con hooks los métodos del espacio de nombres ajeno', () => {
+  assert.equal(
+    usaHooksSinDirectiva(
+      ["import * as React from 'react';", '', "export const el = React.createElement('div');"].join(
+        '\n'
+      )
+    ),
+    false
+  );
+  assert.equal(
+    usaHooksSinDirectiva(
+      ["import * as UI from 'fiction-ui';", '', 'export const x = UI.useSomething();'].join('\n')
+    ),
+    false
+  );
+});
+
 test('no marca exports que no son hooks ni paquetes ajenos', () => {
   assert.equal(usaHooksSinDirectiva("import { createContext, Component } from 'react';\n"), false);
   assert.equal(usaHooksSinDirectiva("import { useMemo } from 'fiction-ui';\n"), false);

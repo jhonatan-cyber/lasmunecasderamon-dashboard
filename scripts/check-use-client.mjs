@@ -11,6 +11,10 @@
  * useSyncExternalStore, useActionState, useFormStatus y useQueryClient, así que
  * un archivo que sólo usaba esos pasaba el chequeo sin directiva.
  *
+ * También cuenta el uso por espacio de nombres: con `import * as React from
+ * 'react'` los hooks se llaman `React.useId(...)` y no aparecen en ninguna
+ * cláusula con nombres.
+ *
  * Sin dependencias ni shell aparte: el mismo comando corre en Windows, en Linux
  * y en CI. Antes esto era un .ps1 y por eso el escaneo completo solo podía
  * ejecutarse en una máquina con PowerShell.
@@ -65,31 +69,50 @@ export function tieneDirectiva(lineas) {
   return false;
 }
 
-/** Nombres de hook importados desde react, react-dom o TanStack Query. */
-export function hooksImportados(contenido) {
+const escaparRegex = texto => texto.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+
+/** Alias con el que el archivo puede invocar hooks: `* as React` o el default. */
+function aliasDePaquete(clausula) {
+  const primera = clausula.split(/[{,]/)[0].trim();
+  const espacioDeNombres = primera.match(/\*\s+as\s+([A-Za-z_$][\w$]*)/);
+  if (espacioDeNombres) return espacioDeNombres[1];
+  return /^[A-Za-z_$][\w$]*$/.test(primera) ? primera : null;
+}
+
+/** Hooks de cliente del archivo: los importados por nombre y los `Alias.useX`. */
+export function hooksDeCliente(contenido) {
   const hooks = new Set();
   for (const [, clausula, modulo] of contenido.matchAll(IMPORTACION)) {
     if (!PAQUETES_CON_HOOKS.has(modulo)) continue;
+
     const conLlaves = clausula.match(/\{([\s\S]*?)\}/);
-    if (!conLlaves) continue;
-    for (const especificador of conLlaves[1].split(',')) {
-      // Cuenta el nombre importado, no el alias; `type X` no es un hook.
-      const nombre = especificador
-        .trim()
-        .replace(/^type\s+/, '')
-        .split(/\s+as\s+/)[0]
-        .trim();
-      if (NOMBRE_DE_HOOK.test(nombre)) hooks.add(nombre);
+    if (conLlaves) {
+      for (const especificador of conLlaves[1].split(',')) {
+        // Cuenta el nombre importado, no el alias; `type X` no es un hook.
+        const nombre = especificador
+          .trim()
+          .replace(/^type\s+/, '')
+          .split(/\s+as\s+/)[0]
+          .trim();
+        if (NOMBRE_DE_HOOK.test(nombre)) hooks.add(nombre);
+      }
+    }
+
+    const alias = aliasDePaquete(clausula);
+    if (!alias) continue;
+    const uso = new RegExp(`\\b${escaparRegex(alias)}\\.(use[A-Za-z0-9_$]*|use)\\b`, 'g');
+    for (const coincidencia of contenido.matchAll(uso)) {
+      if (NOMBRE_DE_HOOK.test(coincidencia[1])) hooks.add(`${alias}.${coincidencia[1]}`);
     }
   }
   return [...hooks];
 }
 
-/** Importa al menos un hook de cliente y no declara la directiva. */
+/** Importa o invoca al menos un hook de cliente y no declara la directiva. */
 export function usaHooksSinDirectiva(contenido) {
   const lineas = contenido.replace(/^\uFEFF/, '').split(/\r?\n/);
   if (tieneDirectiva(lineas)) return false;
-  return hooksImportados(contenido).length > 0;
+  return hooksDeCliente(contenido).length > 0;
 }
 
 /** Recorre el árbol podando directorios excluidos (no los visita). */
