@@ -1,8 +1,8 @@
 'use client';
 import { Button } from '@/components/ui/button';
 
-import { useEffect, useState, useCallback, useMemo } from 'react';
-import logger from '@/lib/utils/logger';
+import { useEffect, useState, useMemo } from 'react';
+import { useSalesByMonth, useSalesByWeek } from '@/hooks/statistics/useSalesChart';
 
 import {
   BarChart3,
@@ -41,39 +41,6 @@ interface SalesChartPoint {
   dia_espanol?: string;
   orden?: number;
   total?: number;
-}
-
-interface MonthSalesData {
-  mes: string;
-  mes_num: number;
-  total: number;
-  cantidad_ventas: number;
-}
-
-interface WeekSalesData {
-  dia_semana: string;
-  dia_espanol: string;
-  orden: number;
-  total: number;
-}
-
-interface MonthlyResponse {
-  year: number;
-  data: MonthSalesData[];
-  summary: {
-    totalVentas: number;
-    promedioMensual: number;
-  };
-}
-
-interface WeeklyResponse {
-  startDate: string;
-  endDate: string;
-  data: WeekSalesData[];
-  summary: {
-    totalVentas: number;
-    promedioDiario: number;
-  };
 }
 
 const formatNumber = (amount: number) => {
@@ -125,14 +92,18 @@ const CustomTooltip = ({ active, payload, label, viewMode }: any) => {
 
 export default function MiniSalesChart() {
   const [viewMode, setViewMode] = useState<ViewMode>('month');
-  const [monthData, setMonthData] = useState<MonthlyResponse | null>(null);
-  const [weekData, setWeekData] = useState<WeeklyResponse | null>(null);
-  const [loading, setLoading] = useState(true);
   const [yearOffset, setYearOffset] = useState(0);
   const [weekOffset, setWeekOffset] = useState(0);
-  const [isRefreshing, setIsRefreshing] = useState(false);
   const [isMobile, setIsMobile] = useState(false);
   const [mounted, setMounted] = useState(false);
+
+  const monthQuery = useSalesByMonth(yearOffset);
+  const weekQuery = useSalesByWeek(weekOffset);
+
+  const monthData = monthQuery.data ?? null;
+  const weekData = weekQuery.data ?? null;
+  const loading = monthQuery.isLoading || weekQuery.isLoading;
+  const isRefreshing = monthQuery.isFetching || weekQuery.isFetching;
 
   useEffect(() => {
     setMounted(true);
@@ -142,40 +113,10 @@ export default function MiniSalesChart() {
     return () => window.removeEventListener('resize', checkMobile);
   }, []);
 
-  const fetchMonthData = useCallback(async (offset: number) => {
-    try {
-      const response = await fetch(`/api/stats/sales-by-month?offset=${offset}`);
-      if (!response.ok) throw new Error('Error al obtener datos');
-      const result = await response.json();
-      if (result.success) setMonthData(result.data);
-    } catch (e) {
-      logger.captureException(e, { context: 'MiniSalesChart:fetchMonthData' });
-    }
-  }, []);
-
-  const fetchWeekData = useCallback(async (offset: number) => {
-    try {
-      const response = await fetch(`/api/stats/sales-by-week?offset=${offset}`);
-      if (!response.ok) throw new Error('Error al obtener datos');
-      const result = await response.json();
-      if (result.success) setWeekData(result.data);
-    } catch (e) {
-      logger.captureException(e, { context: 'MiniSalesChart:fetchWeekData' });
-    }
-  }, []);
-
-  const refreshData = async () => {
-    setIsRefreshing(true);
-    await Promise.all([fetchMonthData(yearOffset), fetchWeekData(weekOffset)]);
-    setTimeout(() => setIsRefreshing(false), 500);
+  const refreshData = () => {
+    void monthQuery.refetch();
+    void weekQuery.refetch();
   };
-
-  useEffect(() => {
-    setLoading(true);
-    Promise.all([fetchMonthData(yearOffset), fetchWeekData(weekOffset)]).finally(() =>
-      setLoading(false)
-    );
-  }, [yearOffset, weekOffset, fetchMonthData, fetchWeekData]);
 
   const chartData = useMemo<SalesChartPoint[]>(() => {
     const promedio =

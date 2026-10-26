@@ -201,6 +201,12 @@ export const queryKeys = {
     composite: () => [...queryKeys.dashboard.all, 'composite'] as const
   },
 
+  stats: {
+    all: ['stats'] as const,
+    salesByMonth: (offset: number) => [...queryKeys.stats.all, 'sales-by-month', offset] as const,
+    salesByWeek: (offset: number) => [...queryKeys.stats.all, 'sales-by-week', offset] as const
+  },
+
   returns: {
     all: ['returns'] as const,
     services: () => [...queryKeys.returns.all, 'services'] as const,
