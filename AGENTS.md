@@ -84,6 +84,44 @@ Saltarse un hook no salta la compuerta: el job `directivas` de CI corre el
 escaneo del **árbol completo** (no solo el índice) y el typecheck en cada PR y
 cada push a `main`.
 
+## CI (GitHub Actions)
+
+`.github/workflows/ci.yml` tiene diez jobs. `changes` corre siempre y decide
+cuáles de los demás hacen falta según el diff, así que un PR pequeño no paga
+Redis, Postgres ni Playwright.
+
+| Job           | Cuándo corre                      | Qué verifica                                                                               |
+| ------------- | --------------------------------- | ------------------------------------------------------------------------------------------ |
+| `changes`     | siempre                           | Clasifica el diff y publica los flags que consumen los otros jobs                          |
+| `directivas`  | siempre                           | `use client` en todo el árbol + `pnpm typecheck`                                           |
+| `quality`     | diff de build o completo          | eslint de lo cambiado (todo el repo en diff completo), arquitectura y `pnpm build`         |
+| `coverage`    | unit o diff completo              | suite unitaria con el umbral de cobertura                                                  |
+| `integration` | integration o diff completo       | Postgres efímero: paridad de esquema, repositorios y flujos                                |
+| `e2e`         | e2e o diff completo               | build y Playwright contra una base sembrada                                                |
+| `redis`       | cambios de caché, seguridad o SSE | limitador, caché, permisos y SSE contra Redis real                                         |
+| `migrations`  | cambios en `migrations/`          | `pnpm db:verify` sobre una base recién creada                                              |
+| `mcp`         | cambios en `mcp/`                 | tests del paquete MCP                                                                      |
+| `security`    | siempre                           | `pnpm audit --audit-level high` (el informe de dependencias de producción solo se imprime) |
+
+Un push nuevo al mismo PR cancela la corrida anterior (`concurrency` con
+`cancel-in-progress`), así que la última es la que cuenta.
+
+### Qué bloquea el deploy
+
+`.github/workflows/deploy.yml` no despliega desde un PR: se dispara con
+`workflow_run` cuando termina `CI - Quality & Tests`, y su `if` exige cuatro
+cosas a la vez: que el evento haya sido un `push` a `main` (los PR nunca
+despliegan), que la corrida completa haya terminado en `success`, que la
+variable de repositorio `ENABLE_PRODUCTION_DEPLOY` valga `true` y que la corrida
+venga del mismo repositorio y no de un fork. Después, el primer paso del job
+aborta si el SHA de la corrida ya no es el HEAD de `main`, para no pisar
+producción con un build viejo.
+
+Cualquier job en rojo bloquea el deploy, incluido `directivas`. Lo que no
+bloquea es un job **omitido**: sus `if` dieron falso y solo un `failure` cambia
+la conclusión de la corrida. Por eso `directivas` no depende del diff — es la
+única compuerta de código que atraviesa todos los push.
+
 ### CRLF: falso "modificado" después de un pull
 
 El repositorio fija LF con `* text=auto eol=lf` en `.gitattributes`, pero la
