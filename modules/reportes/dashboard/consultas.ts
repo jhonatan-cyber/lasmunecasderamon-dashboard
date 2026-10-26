@@ -109,7 +109,9 @@ export class StatsQueries {
           activeServices,
           expiringServices,
           pendingOrders,
-          pendingServiceRequests
+          pendingServiceRequests,
+          // Misma definición que getDashboardComposite: todas las cajas con estado = 1.
+          openRegisters: activeCaja
         }
       };
     } catch (err) {
@@ -295,7 +297,8 @@ export class StatsQueries {
         totalLoggedUsers,
         totalTeamMembers: 0,
         teamCoverageRate: 0,
-        openCashRegisters: 0,
+        // Alerts ya cuenta las cajas con estado = 1: misma cifra que el composite.
+        openCashRegisters: alerts.summary.openRegisters,
         rankingRows,
         openingAmount: 0,
         sales: 0,
@@ -667,9 +670,11 @@ export class StatsQueries {
               tarjeta, transferencia, comision, anticipo, devolucion, iva, propina,
               TRUNC(EXTRACT(EPOCH FROM (CAST(? AS timestamp) - CAST(fecha_apertura AS timestamp))) / 3600) as horas_abierta,
               TRUNC(EXTRACT(EPOCH FROM (CAST(? AS timestamp) - CAST(fecha_apertura AS timestamp))) / 60) % 60 as minutos_abierta
-       FROM cajas WHERE estado = 1 ORDER BY fecha_apertura DESC LIMIT 1`,
+       FROM cajas WHERE estado = 1 ORDER BY fecha_apertura DESC`,
         [now, now]
       );
+      // Sin LIMIT: la primera fila (la más reciente) manda los montos, y la cantidad
+      // total es la misma que reporta getDashboardAlerts.
       const cajaRow = cajaRows[0] || null;
       const cajaId = cajaRow?.id_caja;
 
@@ -757,7 +762,7 @@ export class StatsQueries {
         return remaining > 0 && remaining <= 15 * 60;
       }).length;
 
-      const openCashRegisters = cajaId ? 1 : 0;
+      const openCashRegisters = cajaRows.length;
       const pendingOrders = Number(pendingOrdersResult[0]?.total || 0);
 
       const comparisonBase = comparisonsRows[0] || {};

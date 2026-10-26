@@ -104,4 +104,41 @@ describe('Regresiones del dashboard', () => {
       expect(result.pendingItems.summary.totalVisibleItems).toBe(count ? 3 : 0);
     }
   );
+
+  it('reporta la misma cantidad de cajas abiertas en alerts, composite e insights', async () => {
+    mocks.query.mockImplementation(async (sql: string) => {
+      if (sql.includes('FROM cajas') && sql.includes('COUNT(*)')) return [{ total: 2 }];
+      if (sql.includes('SELECT id_caja, fecha_apertura')) {
+        return [
+          { id_caja: 'c2', propina: 0, monto_apertura: 0 },
+          { id_caja: 'c1', propina: 0, monto_apertura: 0 }
+        ];
+      }
+      return [{ total: 0 }];
+    });
+    const group = { logueadas: 0, total: 0, porcentaje: 0, usuarios: [] };
+    vi.spyOn(StatsQueries, 'getLoggedUsers').mockResolvedValue({
+      anfitrionas: group,
+      garzones: group,
+      cajeros: group,
+      barman: group
+    });
+    vi.spyOn(StatsQueries, 'getRecentActivity').mockResolvedValue([]);
+    vi.spyOn(StatsQueries, 'getShiftForecast').mockResolvedValue({ anomalies: [] } as any);
+    mocks.pending.mockResolvedValue([]);
+    mocks.requests.mockResolvedValue([]);
+
+    const alerts = await StatsQueries.getDashboardAlerts();
+    const composite = await StatsQueries.getDashboardComposite();
+    const insights = await StatsQueries.getDashboardInsights();
+
+    expect(alerts.summary.openRegisters).toBe(2);
+    expect(composite.insights.localStatus.cash.openRegisters).toBe(2);
+    expect(insights.localStatus.cash.openRegisters).toBe(2);
+    expect(composite.insights.localStatus.cash.openRegisters).toBe(alerts.summary.openRegisters);
+    expect(insights.localStatus.cash.openRegisters).toBe(alerts.summary.openRegisters);
+    expect(
+      mocks.query.mock.calls.find(([sql]) => sql.includes('SELECT id_caja, fecha_apertura'))?.[0]
+    ).not.toContain('LIMIT 1');
+  });
 });
