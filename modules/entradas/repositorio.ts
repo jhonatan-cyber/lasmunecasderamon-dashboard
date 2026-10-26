@@ -50,6 +50,8 @@ export interface EntradaCliente {
   monto_entrada: number;
   monto_bebida_adicional: number;
   metodo_pago: MetodoPagoEntrada;
+  /** Caja (turno) en la que se cobró la entrada. */
+  caja_id: string | null;
   venta_id: string | null;
   bebida_cortesia_presentacion_id: string | null;
   bebida_cortesia: string | null;
@@ -154,6 +156,7 @@ export async function listarEntradas(fecha?: string): Promise<EntradaCliente[]> 
   const fechaFiltro = fecha || getNowInBusinessTimezone().slice(0, 10);
   return query<EntradaCliente[]>(
     `SELECT e.id, e.grupo_registro_id, e.cliente_nombre, e.monto_entrada, e.monto_bebida_adicional, e.metodo_pago,
+            e.caja_id,
             v.id_venta AS venta_id,
             e.cover_presentacion_id AS bebida_cortesia_presentacion_id,
             CASE WHEN e.cover_presentacion_id IS NULL THEN NULL
