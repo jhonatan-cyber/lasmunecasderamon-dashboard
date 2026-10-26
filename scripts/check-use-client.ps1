@@ -1,4 +1,4 @@
-<#
+﻿<#
 .SYNOPSIS
   Checks that all files using React hooks have 'use client' directive.
   Fails if any file imports hooks from 'react' or '@tanstack/react-query'
@@ -14,9 +14,24 @@
 
 .EXAMPLE
   .\scripts\check-use-client.ps1
+
+  # Solo los .ts/.tsx del índice (lo que usa el pre-commit)
+  .\scripts\check-use-client.ps1 -Staged
 #>
 
+param(
+    # Revisar solo los archivos staged en vez de recorrer el árbol completo.
+    # El pre-commit lo usa para no pagar el escaneo de ~1685 archivos.
+    [switch]$Staged
+)
+
 $ErrorActionPreference = 'Stop'
+
+# La salida también termina en hooks y logs redirigidos: fijar UTF-8 evita que
+# PowerShell vuelque 'índice' o ✅ con la code page OEM de la consola.
+[Console]::OutputEncoding = [System.Text.Encoding]::UTF8
+
+$alcance = if ($Staged) { 'del índice' } else { 'del árbol' }
 
 # Patterns for React hooks and TanStack Query imports
 $hookPattern = '\buse(State|Effect|Ref|Callback|Memo|Context|Reducer|LayoutEffect|ImperativeHandle|DebugValue|InsertionEffect)\b'
@@ -26,9 +41,24 @@ $errors = @()
 $checked = 0
 $skipped = 0
 
-# Get all .ts and .tsx files
-$files = Get-ChildItem -Recurse -Include '*.ts', '*.tsx' | Where-Object {
-    $_.FullName -notmatch 'node_modules|\.next|\.git|tests[\\/]e2e|tests[\\/]unit|\.agents'
+# Con -Staged se revisa solo el índice: los .ts/.tsx que van en este commit.
+# Sin el flag se recorre el árbol completo (CI, antes de cerrar una rama).
+if ($Staged) {
+    $raiz = (git rev-parse --show-toplevel).Trim() -replace '\\', '/'
+    $relativos = @(git -C $raiz diff --cached --name-only --diff-filter=ACMR -- '*.ts' '*.tsx')
+    $files = @(
+        foreach ($relativo in $relativos) {
+            $relativo = $relativo.Trim()
+            if ([string]::IsNullOrWhiteSpace($relativo)) { continue }
+            if (($relativo -replace '\\', '/') -match 'node_modules|\.next|\.git|tests/e2e|tests/unit|\.agents') { continue }
+            $completo = Join-Path $raiz $relativo
+            if (Test-Path -LiteralPath $completo) { Get-Item -LiteralPath $completo }
+        }
+    )
+} else {
+    $files = Get-ChildItem -Recurse -Include '*.ts', '*.tsx' | Where-Object {
+        $_.FullName -notmatch 'node_modules|\.next|\.git|tests[\\/]e2e|tests[\\/]unit|\.agents'
+    }
 }
 
 foreach ($file in $files) {
@@ -80,10 +110,10 @@ if ($errors.Count -gt 0) {
         Write-Host "  ❌ $err" -ForegroundColor Red
     }
     Write-Host "`nAgregá 'use client' al inicio de cada archivo." -ForegroundColor Yellow
-    Write-Host "Revisados: $checked | Omitidos: $skipped | Errores: $($errors.Count)`n" -ForegroundColor Yellow
+    Write-Host "Revisados $alcance`: $checked | Omitidos: $skipped | Errores: $($errors.Count)`n" -ForegroundColor Yellow
     exit 1
 } else {
     Write-Host "✅ Todos los archivos revisados tienen 'use client'" -ForegroundColor Green
-    Write-Host "   Revisados: $checked | Omitidos (vacíos): $skipped`n" -ForegroundColor Green
+    Write-Host "   Revisados $alcance`: $checked | Omitidos (vacíos): $skipped`n" -ForegroundColor Green
     exit 0
 }

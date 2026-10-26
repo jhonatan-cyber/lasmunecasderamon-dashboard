@@ -23,6 +23,7 @@
     "prepare": "husky",
     "lint:fix": "eslint app/layout.tsx app/page.tsx components/layout/LayoutContent.tsx components/providers/ProtectedAppProviders.tsx lib/api/site.ts --fix --ignore-pattern .next --ignore-pattern node_modules",
     "check:use-client": "powershell -NoProfile -ExecutionPolicy Bypass -File scripts/check-use-client.ps1",
+    "check:use-client:staged": "powershell -NoProfile -ExecutionPolicy Bypass -File scripts/check-use-client.ps1 -Staged",
     "format": "prettier --write .",
     "format:check": "prettier --check .",
     "db:setup": "node scripts/ci-setup-db.js",

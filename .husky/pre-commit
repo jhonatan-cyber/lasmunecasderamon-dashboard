@@ -3,9 +3,11 @@
 
 echo "🚀 Ejecutando pre-commit hooks..."
 
-# 0. Check all files have 'use client' where needed
-echo "🔍 Verificando directiva 'use client' en archivos con hooks..."
-pnpm run check:use-client || exit 1
+# 0. Check 'use client' where needed, solo en los .ts/.tsx staged.
+# Antes recorría los ~1685 archivos del árbol (~28 s por commit) y podía fallar
+# por archivos del otro frente; ahora cuesta lo mismo que abrir PowerShell (<1 s).
+echo "🔍 Verificando directiva 'use client' en archivos staged..."
+pnpm run check:use-client:staged || exit 1
 
 # 1. Lint y formato SOLO de los archivos staged.
 # --max-arg-length fuerza a lint-staged a trocear la lista de archivos: en Windows
