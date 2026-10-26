@@ -19,8 +19,7 @@
 import { execFileSync } from 'node:child_process';
 import { existsSync, readFileSync, readdirSync } from 'node:fs';
 import { join, relative, sep } from 'node:path';
-
-const STAGED = process.argv.includes('--staged');
+import { pathToFileURL } from 'node:url';
 
 /** Directorios que nunca se revisan, a cualquier profundidad. */
 const DIRECTORIOS_EXCLUIDOS = new Set(['node_modules', '.next', '.git', '.agents']);
@@ -38,6 +37,7 @@ const IMPORTA_QUERY = /from\s+['"]@tanstack\/react-query['"]/i;
 /** 'use client' en la primera o segunda línea (con o sin comentario de ESLint). */
 const DIRECTIVA = /^['"]use client['"]/i;
 
+/** Raíz del repo según git, para que el escaneo funcione desde un subdirectorio. */
 function raizDelRepo() {
   try {
     return execFileSync('git', ['rev-parse', '--show-toplevel'], {
@@ -49,49 +49,10 @@ function raizDelRepo() {
   }
 }
 
-const RAIZ = raizDelRepo();
+const aRelativa = (raiz, absoluta) => relative(raiz, absoluta).split(sep).join('/');
 
-const aRelativa = absoluta => relative(RAIZ, absoluta).split(sep).join('/');
-
-/** Recorre el árbol podando directorios excluidos (no los visita). */
-function archivosDelArbol() {
-  const encontrados = [];
-  const recorrer = directorio => {
-    for (const entrada of readdirSync(directorio, { withFileTypes: true })) {
-      const completo = join(directorio, entrada.name);
-      const relativa = aRelativa(completo);
-      if (entrada.isDirectory()) {
-        if (DIRECTORIOS_EXCLUIDOS.has(entrada.name)) continue;
-        if (RUTA_EXCLUIDA.test(`${relativa}/`)) continue;
-        recorrer(completo);
-      } else if (/\.tsx?$/i.test(entrada.name)) {
-        encontrados.push({ completo, relativa });
-      }
-    }
-  };
-  recorrer(RAIZ);
-  return encontrados.sort((a, b) => a.relativa.localeCompare(b.relativa));
-}
-
-/** Solo los .ts/.tsx del índice, como los ve `git commit`. */
-function archivosDelIndice() {
-  const salida = execFileSync(
-    'git',
-    ['diff', '--cached', '--name-only', '--diff-filter=ACMR', '--', '*.ts', '*.tsx'],
-    { encoding: 'utf8', cwd: RAIZ }
-  );
-  return salida
-    .split('\n')
-    .map(linea => linea.trim().replace(/\\/g, '/'))
-    .filter(Boolean)
-    .filter(relativa => !relativa.split('/').some(segmento => DIRECTORIOS_EXCLUIDOS.has(segmento)))
-    .filter(relativa => !RUTA_EXCLUIDA.test(relativa))
-    .map(relativa => ({ completo: join(RAIZ, relativa), relativa }))
-    .filter(({ completo }) => existsSync(completo))
-    .sort((a, b) => a.relativa.localeCompare(b.relativa));
-}
-
-function tieneDirectiva(lineas) {
+/** `'use client'` como primera sentencia, admitiendo un comentario de ESLint. */
+export function tieneDirectiva(lineas) {
   const primera = lineas[0] ?? '';
   if (DIRECTIVA.test(primera)) return true;
   const segunda = lineas[1] ?? '';
@@ -101,7 +62,8 @@ function tieneDirectiva(lineas) {
   return false;
 }
 
-function usaHooksSinDirectiva(contenido) {
+/** Importa hooks de React o de TanStack Query y no declara la directiva. */
+export function usaHooksSinDirectiva(contenido) {
   const lineas = contenido.replace(/^\uFEFF/, '').split(/\r?\n/);
   if (tieneDirectiva(lineas)) return false;
 
@@ -114,46 +76,97 @@ function usaHooksSinDirectiva(contenido) {
   return usaReact || usaQuery;
 }
 
-const archivos = STAGED ? archivosDelIndice() : archivosDelArbol();
-const alcance = STAGED ? 'del índice' : 'del árbol';
-
-const violaciones = [];
-let revisados = 0;
-let omitidos = 0;
-
-for (const { completo, relativa } of archivos) {
-  revisados++;
-  let contenido;
-  try {
-    contenido = readFileSync(completo, 'utf8');
-  } catch {
-    omitidos++;
-    continue;
-  }
-  if (contenido === '') {
-    omitidos++;
-    continue;
-  }
-  if (usaHooksSinDirectiva(contenido)) violaciones.push(relativa);
+/** Recorre el árbol podando directorios excluidos (no los visita). */
+export function archivosDelArbol(raiz) {
+  const encontrados = [];
+  const recorrer = directorio => {
+    for (const entrada of readdirSync(directorio, { withFileTypes: true })) {
+      const completo = join(directorio, entrada.name);
+      const relativa = aRelativa(raiz, completo);
+      if (entrada.isDirectory()) {
+        if (DIRECTORIOS_EXCLUIDOS.has(entrada.name)) continue;
+        if (RUTA_EXCLUIDA.test(`${relativa}/`)) continue;
+        recorrer(completo);
+      } else if (/\.tsx?$/i.test(entrada.name)) {
+        encontrados.push({ completo, relativa });
+      }
+    }
+  };
+  recorrer(raiz);
+  return encontrados.sort((a, b) => a.relativa.localeCompare(b.relativa));
 }
 
-if (violaciones.length > 0) {
-  console.error('');
-  console.error('========================================');
-  console.error("  ERROR: Archivos sin 'use client'");
-  console.error('========================================');
-  console.error('Los siguientes archivos usan React hooks');
-  console.error("pero NO tienen 'use client' en la primera línea:");
-  console.error('');
-  for (const violacion of violaciones) console.error(`  ❌ ${violacion}`);
-  console.error('');
-  console.error("Agregá 'use client' al inicio de cada archivo.");
-  console.error(
-    `Revisados ${alcance}: ${revisados} | Omitidos: ${omitidos} | Errores: ${violaciones.length}`
+/** Solo los .ts/.tsx del índice, como los ve `git commit`. */
+export function archivosDelIndice(raiz) {
+  const salida = execFileSync(
+    'git',
+    ['diff', '--cached', '--name-only', '--diff-filter=ACMR', '--', '*.ts', '*.tsx'],
+    { encoding: 'utf8', cwd: raiz }
   );
-  process.exit(1);
+  return salida
+    .split('\n')
+    .map(linea => linea.trim().replace(/\\/g, '/'))
+    .filter(Boolean)
+    .filter(relativa => !relativa.split('/').some(segmento => DIRECTORIOS_EXCLUIDOS.has(segmento)))
+    .filter(relativa => !RUTA_EXCLUIDA.test(relativa))
+    .map(relativa => ({ completo: join(raiz, relativa), relativa }))
+    .filter(({ completo }) => existsSync(completo))
+    .sort((a, b) => a.relativa.localeCompare(b.relativa));
 }
 
-console.log("✅ Todos los archivos revisados tienen 'use client'");
-console.log(`   Revisados ${alcance}: ${revisados} | Omitidos (vacíos): ${omitidos}`);
-process.exit(0);
+/**
+ * Revisa los archivos del árbol o del índice y devuelve el veredicto, sin
+ * imprimir nada: así los tests pueden comprobarlo sin capturar stdout.
+ */
+export function analizar({ raiz = raizDelRepo(), staged = false } = {}) {
+  const archivos = staged ? archivosDelIndice(raiz) : archivosDelArbol(raiz);
+  const violaciones = [];
+  let revisados = 0;
+  let omitidos = 0;
+
+  for (const { completo, relativa } of archivos) {
+    revisados++;
+    let contenido;
+    try {
+      contenido = readFileSync(completo, 'utf8');
+    } catch {
+      omitidos++;
+      continue;
+    }
+    if (contenido === '') {
+      omitidos++;
+      continue;
+    }
+    if (usaHooksSinDirectiva(contenido)) violaciones.push(relativa);
+  }
+
+  return { alcance: staged ? 'del índice' : 'del árbol', revisados, omitidos, violaciones };
+}
+
+function main() {
+  const { alcance, revisados, omitidos, violaciones } = analizar({
+    staged: process.argv.includes('--staged')
+  });
+
+  if (violaciones.length > 0) {
+    console.error('');
+    console.error('========================================');
+    console.error("  ERROR: Archivos sin 'use client'");
+    console.error('========================================');
+    console.error('Los siguientes archivos usan React hooks');
+    console.error("pero NO tienen 'use client' en la primera línea:");
+    console.error('');
+    for (const violacion of violaciones) console.error(`  ❌ ${violacion}`);
+    console.error('');
+    console.error("Agregá 'use client' al inicio de cada archivo.");
+    console.error(
+      `Revisados ${alcance}: ${revisados} | Omitidos: ${omitidos} | Errores: ${violaciones.length}`
+    );
+    process.exit(1);
+  }
+
+  console.log("✅ Todos los archivos revisados tienen 'use client'");
+  console.log(`   Revisados ${alcance}: ${revisados} | Omitidos (vacíos): ${omitidos}`);
+}
+
+if (process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href) main();

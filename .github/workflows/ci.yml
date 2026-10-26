@@ -79,6 +79,11 @@ jobs:
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
 
+      # El escáner es parte del gate, así que sus tests corren antes que él:
+      # cubren las rutas con corchetes que el .ps1 anterior se saltaba.
+      - name: Tests del escáner de 'use client'
+        run: node --test tests/check-use-client.test.mjs
+
       # Árbol completo a propósito: el pre-commit solo mira el índice, así que
       # acá es donde se detecta una violación del resto del árbol.
       - name: "'use client' en todo el árbol"
