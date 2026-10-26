@@ -140,7 +140,7 @@ Postgres y tu Redis locales.
 | `mcp`         | `pnpm --dir mcp test`                                                                                      | —                                                                                                       |
 | `security`    | `pnpm audit --audit-level high`                                                                            | Red                                                                                                     |
 
-Tres avisos, medidos en local:
+Tres notas, medidas en local:
 
 - `pnpm db:setup` **no borra nada**: ejecuta el dump dentro de una transacción,
   así que sobre una base ya armada aborta en la primera `CREATE TABLE`
@@ -150,11 +150,10 @@ Tres avisos, medidos en local:
   así que en local necesita el entorno:
   `DB_NAME=<base_vacia> node --import dotenv/config scripts/ci-setup-db.js`. Con
   `pnpm db:setup` y las `DB_*` sin exportar falla con «client password must be a
-  string».
-- Hoy ese script termina en **1** aun con la base vacía: después del esquema y
-  las migraciones, su tercer paso choca con `unique_permission` (ya existe
-  `(module, action)=(products, return_container)`). La base queda armada, pero
-  el comando sale en rojo.
+  string».- Con una base vacía sale en **0** en ~4 s: esquema, 105 migraciones y
+  la semilla de permisos completa. Los permisos se buscan por `(module, action)`
+  y no sólo por `id`, porque la migración 032 siembra `return_container` con
+  otro id: buscarlo por id hacía chocar el INSERT con `unique_permission`.
 
 `pnpm db:verify` sí es seguro: trabaja sobre `<DB_NAME>_migcheck` y la elimina
 al terminar (medido: 15 s, exit 0).

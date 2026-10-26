@@ -126,7 +126,13 @@ async function sembrarPermisosFaltantes(cliente) {
   ];
 
   for (const s of seeds) {
-    const existe = await cliente.query('SELECT 1 FROM permissions WHERE id = $1', [s.id]);
+    // La restricción es unique_permission sobre (module, action), no sobre el id:
+    // la migración 032 ya siembra return_container con otro id, así que buscar
+    // sólo por id no lo ve y el INSERT revienta la semilla con 23505.
+    const existe = await cliente.query(
+      'SELECT 1 FROM permissions WHERE id = $1 OR (module = $2 AND action = $3)',
+      [s.id, s.module, s.action]
+    );
     if (!existe.rows.length) {
       await cliente.query(
         `INSERT INTO permissions (id, name, description, module, action, created_at, updated_at)
