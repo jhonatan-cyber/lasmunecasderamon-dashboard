@@ -1,0 +1,133 @@
+{
+  "fecha": "2026-10-26",
+  "comando": "pnpm benchmark:dashboard",
+  "entorno": "PostgreSQL local (lasmunecasderamon), Redis local 127.0.0.1:6379, 3 corridas por lado, 3 lecturas sin cache + 3 hits por endpoint",
+  "commit": "8768a608",
+  "corridas": [
+    {
+      "corrida": 1,
+      "resultados": [
+        {
+          "endpoint": "composite",
+          "missMs": [538.13, 82.87, 76.68],
+          "hitMs": [1.06, 0.54, 0.75]
+        },
+        {
+          "endpoint": "sales-by-month",
+          "missMs": [3.3, 1.88, 2.53],
+          "hitMs": [0.31, 0.38, 0.76]
+        },
+        {
+          "endpoint": "sales-by-week",
+          "missMs": [5.22, 3.7, 4],
+          "hitMs": [0.45, 0.43, 0.55]
+        },
+        {
+          "endpoint": "logged-users",
+          "missMs": [7.39, 2.51, 3.47],
+          "hitMs": [0.48, 0.4, 0.46]
+        }
+      ]
+    },
+    {
+      "corrida": 2,
+      "resultados": [
+        {
+          "endpoint": "composite",
+          "missMs": [491.8, 88.04, 85.33],
+          "hitMs": [1.21, 0.89, 0.81]
+        },
+        {
+          "endpoint": "sales-by-month",
+          "missMs": [4.48, 2.51, 2.28],
+          "hitMs": [0.67, 0.59, 0.71]
+        },
+        {
+          "endpoint": "sales-by-week",
+          "missMs": [5.49, 3.94, 4.18],
+          "hitMs": [0.87, 0.42, 0.46]
+        },
+        {
+          "endpoint": "logged-users",
+          "missMs": [3.43, 3.09, 2.69],
+          "hitMs": [0.58, 0.41, 0.46]
+        }
+      ]
+    },
+    {
+      "corrida": 3,
+      "resultados": [
+        {
+          "endpoint": "composite",
+          "missMs": [393.8, 74.41, 88.42],
+          "hitMs": [0.58, 0.56, 0.65]
+        },
+        {
+          "endpoint": "sales-by-month",
+          "missMs": [4.72, 3.31, 2.92],
+          "hitMs": [0.68, 0.62, 0.72]
+        },
+        {
+          "endpoint": "sales-by-week",
+          "missMs": [7.21, 4.59, 5.8],
+          "hitMs": [0.8, 0.81, 1.33]
+        },
+        {
+          "endpoint": "logged-users",
+          "missMs": [4.61, 3.19, 4.13],
+          "hitMs": [0.51, 0.67, 0.66]
+        }
+      ]
+    }
+  ],
+  "resumen": {
+    "composite": {
+      "frioMedianaMs": 491.8,
+      "estableMedianaMs": 84.1,
+      "estableMinMs": 74.41,
+      "estableMaxMs": 88.42,
+      "hitMedianaMs": 0.75,
+      "muestras": {
+        "frio": [538.13, 491.8, 393.8],
+        "estable": [82.87, 76.68, 88.04, 85.33, 74.41, 88.42],
+        "hits": [1.06, 0.54, 0.75, 1.21, 0.89, 0.81, 0.58, 0.56, 0.65]
+      }
+    },
+    "sales-by-month": {
+      "frioMedianaMs": 4.48,
+      "estableMedianaMs": 2.52,
+      "estableMinMs": 1.88,
+      "estableMaxMs": 3.31,
+      "hitMedianaMs": 0.67,
+      "muestras": {
+        "frio": [3.3, 4.48, 4.72],
+        "estable": [1.88, 2.53, 2.51, 2.28, 3.31, 2.92],
+        "hits": [0.31, 0.38, 0.76, 0.67, 0.59, 0.71, 0.68, 0.62, 0.72]
+      }
+    },
+    "sales-by-week": {
+      "frioMedianaMs": 5.49,
+      "estableMedianaMs": 4.09,
+      "estableMinMs": 3.7,
+      "estableMaxMs": 5.8,
+      "hitMedianaMs": 0.55,
+      "muestras": {
+        "frio": [5.22, 5.49, 7.21],
+        "estable": [3.7, 4, 3.94, 4.18, 4.59, 5.8],
+        "hits": [0.45, 0.43, 0.55, 0.87, 0.42, 0.46, 0.8, 0.81, 1.33]
+      }
+    },
+    "logged-users": {
+      "frioMedianaMs": 4.61,
+      "estableMedianaMs": 3.14,
+      "estableMinMs": 2.51,
+      "estableMaxMs": 4.13,
+      "hitMedianaMs": 0.48,
+      "muestras": {
+        "frio": [7.39, 3.43, 4.61],
+        "estable": [2.51, 3.47, 3.09, 2.69, 3.19, 4.13],
+        "hits": [0.48, 0.4, 0.46, 0.58, 0.41, 0.46, 0.51, 0.67, 0.66]
+      }
+    }
+  }
+}
