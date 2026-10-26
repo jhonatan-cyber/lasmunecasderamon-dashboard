@@ -1,6 +1,6 @@
-#!/usr/bin/env sh
-. "$(dirname -- "$0")/_/husky.sh"
-
+# Husky ejecuta este archivo con `sh -e` desde .husky/_/h, así que no hacen
+# falta el shebang ni el source de husky.sh: son las dos líneas que husky v10
+# rechaza (el aviso DEPRECATED lo imprimía _/husky.sh al sourcearse).
 echo "🚀 Ejecutando pre-commit hooks..."
 
 # 0. Check 'use client' where needed, solo en los .ts/.tsx staged.
