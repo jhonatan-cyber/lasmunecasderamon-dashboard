@@ -3,9 +3,13 @@
  * Verifica que todo archivo que usa hooks de React tenga 'use client'.
  *
  * Next.js 16 con Turbopack exige la directiva en cualquier archivo que importe
- * hooks de React (useState, useEffect, useRef, useCallback, useMemo, useContext,
- * ...), y también en los que importan hooks de TanStack Query (useQuery,
- * useMutation) porque esos envuelven useRef.
+ * hooks de cliente: los de React (react y react-dom) y los de TanStack Query.
+ *
+ * La regla no enumera nombres: cualquier import de esos paquetes que empiece por
+ * `use` más mayúscula (o el `use` suelto de React 19) es un hook. La lista fija
+ * anterior dejaba fuera useId, useTransition, useOptimistic, useDeferredValue,
+ * useSyncExternalStore, useActionState, useFormStatus y useQueryClient, así que
+ * un archivo que sólo usaba esos pasaba el chequeo sin directiva.
  *
  * Sin dependencias ni shell aparte: el mismo comando corre en Windows, en Linux
  * y en CI. Antes esto era un .ps1 y por eso el escaneo completo solo podía
@@ -26,13 +30,12 @@ const DIRECTORIOS_EXCLUIDOS = new Set(['node_modules', '.next', '.git', '.agents
 /** Más exclusiones por ruta: los tests levantan hooks sin ser componentes. */
 const RUTA_EXCLUIDA = /(^|\/)tests\/(unit|e2e)(\/|$)/;
 
-/** Hooks de React; el `\s*[,}]` exige que vengan de una lista de imports. */
-const HOOKS_REACT =
-  /\buse(State|Effect|Ref|Callback|Memo|Context|Reducer|LayoutEffect|ImperativeHandle|DebugValue|InsertionEffect)\b\s*[,}]/i;
-/** Hooks de TanStack Query (índice propio). */
-const HOOKS_QUERY = /\buse(Mutation|Query)\b\s*[,}]/i;
-const IMPORTA_REACT = /from\s+['"]react['"]/i;
-const IMPORTA_QUERY = /from\s+['"]@tanstack\/react-query['"]/i;
+/** Paquetes cuyos hooks sólo existen en el cliente. */
+const PAQUETES_CON_HOOKS = new Set(['react', 'react-dom', '@tanstack/react-query']);
+/** `useState`, `useTransition` o el `use` suelto de React 19; no `user` ni `useful`. */
+const NOMBRE_DE_HOOK = /^use($|[A-Z])/;
+/** Import con nombres; el `[^;]` evita saltar de una sentencia a la siguiente. */
+const IMPORTACION = /import\s+(?!type\b)([^;]*?)\s+from\s+['"]([^'"]+)['"]/g;
 
 /** 'use client' en la primera o segunda línea (con o sin comentario de ESLint). */
 const DIRECTIVA = /^['"]use client['"]/i;
@@ -62,18 +65,31 @@ export function tieneDirectiva(lineas) {
   return false;
 }
 
-/** Importa hooks de React o de TanStack Query y no declara la directiva. */
+/** Nombres de hook importados desde react, react-dom o TanStack Query. */
+export function hooksImportados(contenido) {
+  const hooks = new Set();
+  for (const [, clausula, modulo] of contenido.matchAll(IMPORTACION)) {
+    if (!PAQUETES_CON_HOOKS.has(modulo)) continue;
+    const conLlaves = clausula.match(/\{([\s\S]*?)\}/);
+    if (!conLlaves) continue;
+    for (const especificador of conLlaves[1].split(',')) {
+      // Cuenta el nombre importado, no el alias; `type X` no es un hook.
+      const nombre = especificador
+        .trim()
+        .replace(/^type\s+/, '')
+        .split(/\s+as\s+/)[0]
+        .trim();
+      if (NOMBRE_DE_HOOK.test(nombre)) hooks.add(nombre);
+    }
+  }
+  return [...hooks];
+}
+
+/** Importa al menos un hook de cliente y no declara la directiva. */
 export function usaHooksSinDirectiva(contenido) {
   const lineas = contenido.replace(/^\uFEFF/, '').split(/\r?\n/);
   if (tieneDirectiva(lineas)) return false;
-
-  const importaReact = IMPORTA_REACT.test(contenido);
-  const importaQuery = IMPORTA_QUERY.test(contenido);
-  if (!importaReact && !importaQuery) return false;
-
-  const usaReact = HOOKS_REACT.test(contenido);
-  const usaQuery = HOOKS_QUERY.test(contenido);
-  return usaReact || usaQuery;
+  return hooksImportados(contenido).length > 0;
 }
 
 /** Recorre el árbol podando directorios excluidos (no los visita). */

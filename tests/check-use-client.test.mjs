@@ -81,6 +81,48 @@ test('detecta hooks de React y de TanStack Query sin directiva', () => {
   );
 });
 
+test('detecta los hooks que la lista fija anterior dejaba pasar', () => {
+  for (const hook of [
+    'useId',
+    'useTransition',
+    'useOptimistic',
+    'useDeferredValue',
+    'useSyncExternalStore',
+    'useActionState',
+    'useInsertionEffect'
+  ]) {
+    assert.equal(
+      usaHooksSinDirectiva(`import { ${hook} } from 'react';\n`),
+      true,
+      `${hook} debería exigir 'use client'`
+    );
+  }
+
+  // El `use` suelto de React 19, los de react-dom y los de TanStack Query.
+  assert.equal(usaHooksSinDirectiva("import { use } from 'react';\n"), true);
+  assert.equal(usaHooksSinDirectiva("import { useFormStatus } from 'react-dom';\n"), true);
+  assert.equal(
+    usaHooksSinDirectiva(
+      "import { useQueryClient, useInfiniteQuery } from '@tanstack/react-query';\n"
+    ),
+    true
+  );
+});
+
+test('lee imports multilínea, alias y el modificador type por especificador', () => {
+  assert.equal(
+    usaHooksSinDirectiva(['import {', '  useId,', '  useMemo', "} from 'react';", ''].join('\n')),
+    true
+  );
+  assert.equal(usaHooksSinDirectiva("import { useState as useEstado } from 'react';\n"), true);
+  assert.equal(usaHooksSinDirectiva("import { type ReactNode, useId } from 'react';\n"), true);
+});
+
+test('no marca exports que no son hooks ni paquetes ajenos', () => {
+  assert.equal(usaHooksSinDirectiva("import { createContext, Component } from 'react';\n"), false);
+  assert.equal(usaHooksSinDirectiva("import { useMemo } from 'fiction-ui';\n"), false);
+});
+
 test('no marca archivos que solo importan tipos de react', () => {
   assert.equal(
     usaHooksSinDirectiva(

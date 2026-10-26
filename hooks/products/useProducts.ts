@@ -1,3 +1,5 @@
+'use client';
+
 import { matchesProductSearch } from '@/lib/utils/productSearch';
 import { Product } from '@/types/product';
 import { useQueryClient } from '@tanstack/react-query';
