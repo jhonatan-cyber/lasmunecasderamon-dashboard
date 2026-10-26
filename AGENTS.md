@@ -59,6 +59,31 @@ corepack pnpm build
 
 Si tocas flujos con base de datos: `corepack pnpm test:integration:legacy-db`.
 
+## Hooks de git
+
+Husky corre dos hooks en `.husky/`, y cada uno hace solo lo que el otro no puede
+resolver en segundos.
+
+| Hook         | Qué corre                                                                  |  Tiempo | Saltarlo                 |
+| ------------ | -------------------------------------------------------------------------- | ------: | ------------------------ |
+| `pre-commit` | `use client` en los `.ts/.tsx` del índice + eslint y prettier de lo staged |    ~5 s | `git commit --no-verify` |
+| `pre-push`   | `pnpm typecheck` del proyecto entero                                       | 20-28 s | `git push --no-verify`   |
+
+Los ~5 s del commit son casi todo arranque de `pnpm`: el escaneo cuesta 0.3 s y
+lint-staged arranca en ~2 s para luego sumar el eslint de cada archivo staged.
+El push tarda 20-28 s con la caché de `tsc` y ~97 s si no existe (`pnpm clean`).
+Con `HUSKY=0` se apagan los dos (lo usan CI y `deploy.yml`).
+
+El reparto sigue una regla: el commit paga lo que se resuelve en segundos y el
+push paga lo que compila el árbol. `tsc` no compila subconjuntos, así que en
+`pre-commit` costaría ~25 s por commit y rompería por errores de otro frente que
+todavía no commiteó; en `pre-push` bloquea todo, que es lo correcto porque
+publica el árbol tal como está.
+
+Saltarse un hook no salta la compuerta: el job `directivas` de CI corre el
+escaneo del **árbol completo** (no solo el índice) y el typecheck en cada PR y
+cada push a `main`.
+
 ### CRLF: falso "modificado" después de un pull
 
 El repositorio fija LF con `* text=auto eol=lf` en `.gitattributes`, pero la
