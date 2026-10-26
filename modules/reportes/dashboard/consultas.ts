@@ -147,10 +147,10 @@ export class StatsQueries {
           COALESCE((SELECT SUM(v.total - COALESCE(v.cargo_tarjeta, 0)) FROM ventas v WHERE v.estado IN (1, 2) AND v.fecha_crea >= DATE(?) AND v.fecha_crea < (CAST(DATE(?) AS timestamp) + make_interval(days => CAST(1 AS integer)))), 0) AS sales_yesterday,
           COALESCE((SELECT SUM(s.total) FROM servicios s WHERE s.estado IN (1, 2) AND s.fecha_crea >= DATE(?) AND s.fecha_crea < (CAST(DATE(?) AS timestamp) + make_interval(days => CAST(1 AS integer)))), 0) AS services_today,
           COALESCE((SELECT SUM(s.total) FROM servicios s WHERE s.estado IN (1, 2) AND s.fecha_crea >= DATE(?) AND s.fecha_crea < (CAST(DATE(?) AS timestamp) + make_interval(days => CAST(1 AS integer)))), 0) AS services_yesterday,
-          COALESCE((SELECT COUNT(*) FROM ventas v WHERE v.estado IN (1, 2) AND TO_CHAR(v.fecha_crea, 'IYYY-IW') = TO_CHAR(DATE(?), 'IYYY-IW')), 0) AS sales_count_week,
-          COALESCE((SELECT COUNT(*) FROM ventas v WHERE v.estado IN (1, 2) AND TO_CHAR(v.fecha_crea, 'IYYY-IW') = TO_CHAR((CAST(DATE(?) AS timestamp) - make_interval(days => CAST(7 AS integer))), 'IYYY-IW')), 0) AS sales_count_previous_week,
-          COALESCE((SELECT SUM(v.total - COALESCE(v.cargo_tarjeta, 0)) FROM ventas v WHERE v.estado IN (1, 2) AND TO_CHAR(v.fecha_crea, 'IYYY-IW') = TO_CHAR(DATE(?), 'IYYY-IW')), 0) AS sales_total_week,
-          COALESCE((SELECT SUM(v.total - COALESCE(v.cargo_tarjeta, 0)) FROM ventas v WHERE v.estado IN (1, 2) AND TO_CHAR(v.fecha_crea, 'IYYY-IW') = TO_CHAR((CAST(DATE(?) AS timestamp) - make_interval(days => CAST(7 AS integer))), 'IYYY-IW')), 0) AS sales_total_previous_week,
+          COALESCE((SELECT COUNT(*) FROM ventas v WHERE v.estado IN (1, 2) AND v.fecha_crea >= date_trunc('week', CAST(DATE(?) AS timestamp)) AND v.fecha_crea < (date_trunc('week', CAST(DATE(?) AS timestamp)) + make_interval(days => CAST(7 AS integer)))), 0) AS sales_count_week,
+          COALESCE((SELECT COUNT(*) FROM ventas v WHERE v.estado IN (1, 2) AND v.fecha_crea >= (date_trunc('week', CAST(DATE(?) AS timestamp)) - make_interval(days => CAST(7 AS integer))) AND v.fecha_crea < date_trunc('week', CAST(DATE(?) AS timestamp))), 0) AS sales_count_previous_week,
+          COALESCE((SELECT SUM(v.total - COALESCE(v.cargo_tarjeta, 0)) FROM ventas v WHERE v.estado IN (1, 2) AND v.fecha_crea >= date_trunc('week', CAST(DATE(?) AS timestamp)) AND v.fecha_crea < (date_trunc('week', CAST(DATE(?) AS timestamp)) + make_interval(days => CAST(7 AS integer)))), 0) AS sales_total_week,
+          COALESCE((SELECT SUM(v.total - COALESCE(v.cargo_tarjeta, 0)) FROM ventas v WHERE v.estado IN (1, 2) AND v.fecha_crea >= (date_trunc('week', CAST(DATE(?) AS timestamp)) - make_interval(days => CAST(7 AS integer))) AND v.fecha_crea < date_trunc('week', CAST(DATE(?) AS timestamp))), 0) AS sales_total_previous_week,
           COALESCE((SELECT SUM(v.total - COALESCE(v.cargo_tarjeta, 0)) FROM ventas v WHERE v.estado IN (1, 2) AND v.fecha_crea >= DATE(?) AND v.fecha_crea < (CAST(DATE(?) AS timestamp) + make_interval(days => CAST(1 AS integer))) AND CAST(v.fecha_crea AS time) <= CAST(? AS time)), 0) AS sales_same_time_today,
           COALESCE((SELECT SUM(v.total - COALESCE(v.cargo_tarjeta, 0)) FROM ventas v WHERE v.estado IN (1, 2) AND v.fecha_crea >= DATE(?) AND v.fecha_crea < (CAST(DATE(?) AS timestamp) + make_interval(days => CAST(1 AS integer))) AND CAST(v.fecha_crea AS time) <= CAST(? AS time)), 0) AS sales_same_time_yesterday
         `,
@@ -163,6 +163,10 @@ export class StatsQueries {
           now,
           yesterday,
           yesterday,
+          now,
+          now,
+          now,
+          now,
           now,
           now,
           now,
@@ -678,7 +682,11 @@ export class StatsQueries {
         rooms,
         pendingServiceRequestsCount,
         pendingOrdersResult,
-        withdrawalsRows
+        withdrawalsRows,
+        recentActivity,
+        shiftForecast,
+        pendingOrderItems,
+        pendingServiceItems
       ] = await Promise.all([
         cajaId
           ? query<any[]>(
@@ -728,7 +736,16 @@ export class StatsQueries {
               `SELECT COALESCE(SUM(monto), 0) AS total FROM retiros_caja WHERE caja_id = ?`,
               [cajaId]
             )
-          : Promise.resolve([{ total: 0 }])
+          : Promise.resolve([{ total: 0 }]),
+
+        // Ninguno depende de cajaId: se lanzan junto al lote principal en vez de en serie.
+        this.getRecentActivity(8),
+
+        this.getShiftForecast(),
+
+        this.getPendingOrders(5),
+
+        ServiceRequestService.getPendingServiceRequests(5)
       ]);
 
       const cajaStats = cajaStatsRows[0] || {};
@@ -805,24 +822,17 @@ export class StatsQueries {
 
       insights.localStatus.orders.open = pendingOrders;
 
-      const recentActivity = await this.getRecentActivity(8);
-
       const cajaStatsResult = buildCajaStatsResult({
         cajaId,
         cajaRow,
         cajaStats
       });
 
-      const shiftForecast = await this.getShiftForecast();
       insights.forecast = {
         ...insights.forecast,
         ...shiftForecast,
         anomalies: [...shiftForecast.anomalies, ...insights.forecast.anomalies]
       };
-      const [pendingOrderItems, pendingServiceItems] = await Promise.all([
-        this.getPendingOrders(5),
-        ServiceRequestService.getPendingServiceRequests(5)
-      ]);
       return {
         insights,
         cajaStats: cajaStatsResult,
