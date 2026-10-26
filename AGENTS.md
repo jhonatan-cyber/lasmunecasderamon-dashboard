@@ -122,6 +122,39 @@ bloquea es un job **omitido**: sus `if` dieron falso y solo un `failure` cambia
 la conclusión de la corrida. Por eso `directivas` no depende del diff — es la
 única compuerta de código que atraviesa todos los push.
 
+### Reproducir un job en local
+
+Cada job tiene su equivalente en la máquina. Los que piden servicios usan tu
+Postgres y tu Redis locales.
+
+| Job           | Comando local                                                                                              | Requisitos                                                                                              |
+| ------------- | ---------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------- |
+| `changes`     | `CI_DIFF_BASE=origin/main CI_DIFF_HEAD=HEAD node scripts/ci-changes.mjs`                                   | Historial de git                                                                                        |
+| `directivas`  | `node --test tests/check-use-client.test.mjs && pnpm check:use-client && pnpm typecheck`                   | —                                                                                                       |
+| `quality`     | `pnpm lint:full && pnpm arquitectura:limites && pnpm build`                                                | —                                                                                                       |
+| `coverage`    | `pnpm test:unit:coverage`, o `BASE_SHA=origin/main HEAD_SHA=HEAD node scripts/run-affected-unit-tests.mjs` | —                                                                                                       |
+| `integration` | `pnpm test:postgres && pnpm test:integration:all`                                                          | Postgres local; la suite exige `DB_NAME=lasmunecasderamon`                                              |
+| `e2e`         | `pnpm build && pnpm test:e2e`                                                                              | Postgres sembrado y Chromium (`pnpm exec playwright install chromium`); reusa el `:3000` que ya escuche |
+| `redis`       | `pnpm redis:start && pnpm test:redis`                                                                      | Redis local (`pnpm redis:check` responde `PONG`)                                                        |
+| `migrations`  | `pnpm db:verify`                                                                                           | Postgres local                                                                                          |
+| `mcp`         | `pnpm --dir mcp test`                                                                                      | —                                                                                                       |
+| `security`    | `pnpm audit --audit-level high`                                                                            | Red                                                                                                     |
+
+Dos avisos:
+
+- `pnpm db:setup` —el paso con el que `integration` rearma la base en CI—
+  **borra y recrea** la base a la que apunte `DB_NAME`. Para repetir ese camino
+  apuntalo a otra base (`DB_NAME=lasmunecasderamon_test pnpm db:setup`), nunca a
+  la de desarrollo.
+- `pnpm db:verify` no toca la base operativa: trabaja sobre `<DB_NAME>_migcheck`
+  y la elimina al terminar.
+
+El job `integration` también compara el esquema contra el commit base
+(`pnpm db:parity --base-ref origin/main`); en local solo hace falta si tocaste
+`migrations/`. Y el checkout del repo de Expo que hace `coverage` para los tests
+de contrato entre plataformas no se reproduce sin `EXPO_PARITY_ROOT` apuntando a
+un clon de la app.
+
 ### CRLF: falso "modificado" después de un pull
 
 El repositorio fija LF con `* text=auto eol=lf` en `.gitattributes`, pero la
