@@ -55,6 +55,38 @@ jobs:
           CI_DIFF_BASE: ${{ github.event.pull_request.base.sha || github.event.before || github.event.workflow_run.head_sha }}
           CI_DIFF_HEAD: ${{ github.event.pull_request.head.sha || github.sha }}
 
+  # Gate siempre activo: no depende del diff, así también lo atraviesa lo que
+  # entra por merge, rebase o edición directa sin pasar por un commit local.
+  directivas:
+    name: Directivas y typecheck
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v7
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v6
+        with:
+          run_install: false
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v7
+        with:
+          node-version: 24
+          cache: pnpm
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      # Árbol completo a propósito: el pre-commit solo mira el índice, así que
+      # acá es donde se detecta una violación del resto del árbol.
+      - name: "'use client' en todo el árbol"
+        run: pnpm check:use-client
+
+      - name: Typecheck del proyecto
+        run: pnpm typecheck
+
   quality:
     needs: changes
     if: needs.changes.outputs.build == 'true' || needs.changes.outputs.full == 'true'
@@ -102,8 +134,7 @@ jobs:
         if: needs.changes.outputs.full == 'true' || needs.changes.outputs.integration == 'true'
         run: pnpm arquitectura:limites
 
-      - name: Typecheck
-        run: pnpm typecheck
+      # El typecheck vive en el job `directivas`, que corre siempre.
 
       # El job coverage ya ejecuta toda la suite unitaria y exige sus umbrales.
       - name: Restore Next.js compiler cache

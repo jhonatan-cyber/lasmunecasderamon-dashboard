@@ -5,7 +5,8 @@ echo "🚀 Ejecutando pre-commit hooks..."
 
 # 0. Check 'use client' where needed, solo en los .ts/.tsx staged.
 # Antes recorría los ~1685 archivos del árbol (~28 s por commit) y podía fallar
-# por archivos del otro frente; ahora cuesta lo mismo que abrir PowerShell (<1 s).
+# por archivos del otro frente; con --staged cuesta ~0.2 s. El barrido del
+# árbol completo (sin --staged) ahora corre en CI: job "Directivas y typecheck".
 echo "🔍 Verificando directiva 'use client' en archivos staged..."
 pnpm run check:use-client:staged || exit 1
 
