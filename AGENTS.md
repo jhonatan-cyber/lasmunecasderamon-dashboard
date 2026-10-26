@@ -140,14 +140,24 @@ Postgres y tu Redis locales.
 | `mcp`         | `pnpm --dir mcp test`                                                                                      | —                                                                                                       |
 | `security`    | `pnpm audit --audit-level high`                                                                            | Red                                                                                                     |
 
-Dos avisos:
+Tres avisos, medidos en local:
 
-- `pnpm db:setup` —el paso con el que `integration` rearma la base en CI—
-  **borra y recrea** la base a la que apunte `DB_NAME`. Para repetir ese camino
-  apuntalo a otra base (`DB_NAME=lasmunecasderamon_test pnpm db:setup`), nunca a
-  la de desarrollo.
-- `pnpm db:verify` no toca la base operativa: trabaja sobre `<DB_NAME>_migcheck`
-  y la elimina al terminar.
+- `pnpm db:setup` **no borra nada**: ejecuta el dump dentro de una transacción,
+  así que sobre una base ya armada aborta en la primera `CREATE TABLE`
+  (`la relación «anticipos» ya existe`) y deja los datos como estaban. Solo
+  sirve con una base vacía, que hay que crear antes: el script no la crea.
+- `db:setup` **no carga `.env`** (`scripts/ci-setup-db.js` no importa dotenv),
+  así que en local necesita el entorno:
+  `DB_NAME=<base_vacia> node --import dotenv/config scripts/ci-setup-db.js`. Con
+  `pnpm db:setup` y las `DB_*` sin exportar falla con «client password must be a
+  string».
+- Hoy ese script termina en **1** aun con la base vacía: después del esquema y
+  las migraciones, su tercer paso choca con `unique_permission` (ya existe
+  `(module, action)=(products, return_container)`). La base queda armada, pero
+  el comando sale en rojo.
+
+`pnpm db:verify` sí es seguro: trabaja sobre `<DB_NAME>_migcheck` y la elimina
+al terminar (medido: 15 s, exit 0).
 
 El job `integration` también compara el esquema contra el commit base
 (`pnpm db:parity --base-ref origin/main`); en local solo hace falta si tocaste
