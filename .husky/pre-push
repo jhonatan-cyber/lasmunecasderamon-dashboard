@@ -1,0 +1,17 @@
+# Husky ejecuta este archivo con `sh -e` desde .husky/_/h (sin shebang ni source).
+#
+# Typecheck completo del proyecto: acá sí bloquea cualquier error del árbol,
+# porque el push publica el árbol tal como está. En pre-commit no corre porque
+# tsc compila el proyecto entero (~28 s) y frenaría commits por errores de otro
+# frente que todavía no commiteó.
+echo "🔍 Typecheck completo del proyecto antes del push..."
+
+if pnpm typecheck; then
+  echo "✅ Typecheck limpio."
+  exit 0
+fi
+
+echo ""
+echo "❌ El typecheck del proyecto falló: el push no se hizo."
+echo "   Arreglá los errores de arriba, o saltá el hook con: git push --no-verify"
+exit 1

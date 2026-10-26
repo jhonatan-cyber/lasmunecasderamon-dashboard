@@ -20,10 +20,8 @@ pnpm run check:use-client:staged || exit 1
 echo "🧐 Linting y formateo de archivos staged..."
 pnpm exec lint-staged --max-arg-length 7000 --no-stash || exit 1
 
-# 2. Typecheck acotado al indice: tsc compila el proyecto completo (no admite
-# subconjuntos), pero solo bloquean los errores que caen en archivos staged.
-# Un error del otro frente en rojo no frena este commit; se informa igual.
-echo "🔍 TypeScript sobre los archivos staged..."
-node scripts/precommit-typecheck.mjs || exit 1
+# 2. Sin typecheck acá: tsc compila el proyecto entero (~28 s) y en el commit
+# solo entra lo que se resuelve en segundos sobre el índice. El typecheck
+# completo corre en pre-push (.husky/pre-push), al publicar el árbol.
 
 echo "✅ Todo listo para el commit!"
