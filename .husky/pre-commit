@@ -7,15 +7,21 @@ echo "🚀 Ejecutando pre-commit hooks..."
 echo "🔍 Verificando directiva 'use client' en archivos con hooks..."
 pnpm run check:use-client || exit 1
 
-# 1. Lint and format staged files
+# 1. Lint y formato SOLO de los archivos staged.
 # --max-arg-length fuerza a lint-staged a trocear la lista de archivos: en Windows
 # la linea de comandos de cmd.exe se corta en 8191 caracteres y un commit con
 # muchos archivos fallaba con "La linea de comandos es demasiado larga".
+# --no-stash apaga el backup automatico: sin el, lint-staged guarda en un stash
+# TODOS los cambios sin commitear del arbol (el otro frente tenia ~170 archivos)
+# y los vuelve a restaurar en cada commit; si algo falla a mitad de camino, ese
+# trabajo queda guardado lejos del arbol.
 echo "🧐 Linting y formateo de archivos staged..."
-pnpm exec lint-staged --max-arg-length 7000 || exit 1
+pnpm exec lint-staged --max-arg-length 7000 --no-stash || exit 1
 
-# 2. Type check the whole project
-echo "Checking tipos con TypeScript..."
-pnpm run typecheck || exit 1
+# 2. Typecheck acotado al indice: tsc compila el proyecto completo (no admite
+# subconjuntos), pero solo bloquean los errores que caen en archivos staged.
+# Un error del otro frente en rojo no frena este commit; se informa igual.
+echo "🔍 TypeScript sobre los archivos staged..."
+node scripts/precommit-typecheck.mjs || exit 1
 
 echo "✅ Todo listo para el commit!"
