@@ -11,6 +11,7 @@ export * from './order';
 export * from './attendance';
 export * from './tip';
 export * from './stats';
+export * from './dashboard';
 export * from './anticipo';
 export * from './cuenta';
 export * from './prepago';

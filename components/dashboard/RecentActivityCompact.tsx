@@ -12,7 +12,10 @@ import {
 } from 'lucide-react';
 import { useState } from 'react';
 import { Skeleton } from '@/components/ui/skeleton';
-import { useDashboardComposite } from '@/hooks/statistics/useDashboardComposite';
+import {
+  type RecentActivityItem,
+  useDashboardComposite
+} from '@/hooks/statistics/useDashboardComposite';
 import { formatCurrencyCLP } from '@/lib/utils/formatters';
 import { cn } from '@/lib/utils/utils';
 
@@ -40,14 +43,7 @@ function ActivityLine({
   activity,
   isExpanded
 }: {
-  activity: {
-    id: string;
-    type: string;
-    description: string;
-    metadata?: string | null;
-    amount: number | null;
-    createdAt: string;
-  };
+  activity: RecentActivityItem;
   isExpanded: boolean;
 }) {
   const style =
@@ -73,11 +69,11 @@ function ActivityLine({
       <div className='flex flex-1 flex-col min-w-0'>
         <div className='flex items-center justify-between gap-2'>
           <span className='truncate text-sm font-bold text-slate-800 dark:text-slate-200'>
-            {activity.description}
+            {activity.code}
           </span>
           <div className='flex items-center gap-1 text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase'>
             <Clock className='h-3 w-3' />
-            {formatRelativeTime(activity.createdAt)}
+            {formatRelativeTime(activity.date)}
           </div>
         </div>
 
@@ -85,19 +81,13 @@ function ActivityLine({
           <span className='text-[11px] font-medium text-slate-500 dark:text-slate-400'>
             {activity.type.toUpperCase()}
           </span>
-          {(activity.metadata || activity.amount !== null) && (
-            <>
-              <div className='h-1 w-1 rounded-full bg-slate-300 dark:bg-slate-700' />
-              <span className='truncate text-[11px] font-bold text-slate-600 dark:text-slate-400 italic'>
-                {activity.metadata}
-                {activity.amount !== null && (
-                  <span className='ml-1 text-emerald-600 dark:text-emerald-400 not-italic font-black'>
-                    ({formatCurrencyCLP(activity.amount)})
-                  </span>
-                )}
-              </span>
-            </>
-          )}
+          <div className='h-1 w-1 rounded-full bg-slate-300 dark:bg-slate-700' />
+          <span className='truncate text-[11px] font-bold text-slate-600 dark:text-slate-400 italic'>
+            {activity.user.name}
+            <span className='ml-1 text-emerald-600 dark:text-emerald-400 not-italic font-black'>
+              ({formatCurrencyCLP(activity.amount)})
+            </span>
+          </span>
         </div>
       </div>
     </div>
