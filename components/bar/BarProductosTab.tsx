@@ -1,5 +1,6 @@
 'use client';
 
+import { EmptyState } from '@/components/shared/EmptyState';
 import { BarAnfitrionas, isTierPricedItem } from '@/components/bar/BarAnfitrionas';
 import { BarProductGrid } from '@/components/bar/BarProductGrid';
 import { BarReorderGroup } from '@/components/bar/BarReorderGroup';
@@ -22,14 +23,9 @@ import { resolveBotellaMl, resolveShotMl } from '@/lib/business/shotMl';
 import type { BarStockItem } from '@/components/bar/TransferModal';
 import { Skeleton as BoneyardSkeleton } from 'boneyard-js/react';
 import { Search } from 'lucide-react';
+import { productImageUrl } from '@/lib/utils/productImage';
 
 const isTierPriced = (item: BarStockItem) => isTierPricedItem(item);
-
-function imageUrl(foto?: string | null): string {
-  if (!foto || foto === 'default.png' || foto === '') return '/api/images/products/default.png';
-  if (foto.startsWith('http')) return foto;
-  return `/api/images/products/${foto}`;
-}
 
 interface BarProductosTabProps {
   stockError: boolean;
@@ -108,16 +104,23 @@ export function BarProductosTab({
                     {filtered.length === 0 ? (
                       <TableRow key='empty'>
                         <TableCell colSpan={8} className='text-center text-muted-foreground'>
-                          {isLoading
-                            ? 'Cargando...'
-                            : search || stockFilter !== 'todos'
-                              ? 'No hay productos que coincidan con los filtros.'
-                              : 'Sin productos en el bar.'}
-                          {(search || stockFilter !== 'todos') && (
-                            <Button variant='link' onClick={onClearFilters}>
-                              Limpiar filtros
-                            </Button>
-                          )}
+                          <EmptyState
+                            variant='text'
+                            title={
+                              isLoading
+                                ? 'Cargando...'
+                                : search || stockFilter !== 'todos'
+                                  ? 'No hay productos que coincidan con los filtros.'
+                                  : 'Sin productos en el bar.'
+                            }
+                            action={
+                              (search || stockFilter !== 'todos') && (
+                                <Button variant='link' onClick={onClearFilters}>
+                                  Limpiar filtros
+                                </Button>
+                              )
+                            }
+                          />
                         </TableCell>
                       </TableRow>
                     ) : (
@@ -144,7 +147,7 @@ export function BarProductosTab({
                                 type='button'
                                 onClick={() =>
                                   onTablePhotoChange({
-                                    src: imageUrl(item.foto || item.producto_foto),
+                                    src: productImageUrl(item.foto, item.producto_foto),
                                     alt: `${item.producto_nombre} ${item.nombre}`
                                   })
                                 }
@@ -156,7 +159,7 @@ export function BarProductosTab({
                                   className='relative mx-auto flex h-12 w-12 items-center justify-center overflow-hidden rounded-xl border border-gray-100'
                                 >
                                   <ProductPhoto
-                                    src={imageUrl(item.foto || item.producto_foto)}
+                                    src={productImageUrl(item.foto, item.producto_foto)}
                                     alt={`${item.producto_nombre} ${item.nombre}`}
                                     width={48}
                                     height={48}

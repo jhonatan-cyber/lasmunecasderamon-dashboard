@@ -14,6 +14,7 @@ import { BarAnfitrionas, isTierPricedItem } from './BarAnfitrionas';
 import { useConfig } from '@/hooks/shared/useConfigValue';
 import { parseSavedOptions } from './transfer/transferOptions';
 import { resolveBotellaMl, resolveShotMl } from '@/lib/business/shotMl';
+import { productImageUrl } from '@/lib/utils/productImage';
 
 interface BarCardProps {
   item: BarStockItem;
@@ -21,12 +22,6 @@ interface BarCardProps {
   entranceIndex?: number;
   /** Manilla de arrastre; la arma quien puede reordenar el listado. */
   dragHandle?: React.ReactNode;
-}
-
-function imageUrl(foto?: string | null): string {
-  if (!foto || foto === 'default.png' || foto === '') return '/api/images/products/default.png';
-  if (foto.startsWith('http')) return foto;
-  return `/api/images/products/${foto}`;
 }
 
 export function BarCard({ item, entranceIndex, dragHandle }: BarCardProps) {
@@ -75,7 +70,7 @@ export function BarCard({ item, entranceIndex, dragHandle }: BarCardProps) {
         </div>
         {/* Imagen */}
         <InteractiveProductPhoto
-          src={imageUrl(item.foto || item.producto_foto)}
+          src={productImageUrl(item.foto, item.producto_foto)}
           alt={`${item.producto_nombre} ${item.nombre}`}
           containerClassName='relative mx-4 h-36 overflow-hidden rounded-2xl bg-muted/40'
           photoClassName='object-contain p-4'

@@ -26,8 +26,11 @@ import {
 } from '@/components/ui/table';
 import { urlProductosParaVenta } from '@/lib/constants/api-endpoints';
 import { useUserPermissions } from '@/hooks/auth/useUserPermissions';
+import { useRealtimeRefresh } from '@/hooks/realtime/useRealtimeRefresh';
 import { useConfigValue } from '@/hooks/shared/useConfigValue';
 import { formatCurrencyCLP } from '@/lib/utils/formatters';
+import { fechaDeNegocio } from '@/lib/business/timezoneService';
+import { productImageUrl } from '@/lib/utils/productImage';
 import { cn } from '@/lib/utils/utils';
 
 type JsonRecord = Record<string, unknown>;
@@ -81,24 +84,6 @@ const texto = (valor: unknown, respaldo = ''): string =>
 const numero = (valor: unknown, respaldo = 0): number => {
   const convertido = Number(valor);
   return Number.isFinite(convertido) ? convertido : respaldo;
-};
-
-/** Fecha de negocio en Chile: la cola del bar se pide por día local. */
-const fechaLocal = (date = new Date()) => {
-  const parts = new Intl.DateTimeFormat('en-CA', {
-    timeZone: 'America/Santiago',
-    year: 'numeric',
-    month: '2-digit',
-    day: '2-digit'
-  }).formatToParts(date);
-  const get = (key: string) => parts.find(part => part.type === key)?.value || '';
-  return `${get('year')}-${get('month')}-${get('day')}`;
-};
-
-const imageUrl = (foto?: string | null): string => {
-  if (!foto || foto === 'default.png' || foto === '') return '/api/images/products/default.png';
-  if (foto.startsWith('http')) return foto;
-  return `/api/images/products/${foto}`;
 };
 
 /** `data` de la respuesta o null cuando la forma no es la esperada. */
@@ -222,12 +207,12 @@ export function CortesiasTab({ searchTerm = '' }: { searchTerm?: string }) {
     useConfigValue('comisiones', 'monto_base_trago_cortesia_cliente', 10000)
   );
 
-  const cargarCola = useCallback(async () => {
-    setLoading(true);
+  const cargarCola = useCallback(async (silent = false) => {
+    if (!silent) setLoading(true);
     setErrorCola(null);
     try {
       const respuesta = await fetch(
-        `/api/tickets/pendientes?fecha=${encodeURIComponent(fechaLocal())}`,
+        `/api/tickets/pendientes?fecha=${encodeURIComponent(fechaDeNegocio())}`,
         { cache: 'no-store' }
       );
       const json: unknown = await respuesta.json().catch(() => null);
@@ -241,13 +226,17 @@ export function CortesiasTab({ searchTerm = '' }: { searchTerm?: string }) {
       );
       setEntradas([]);
     } finally {
-      setLoading(false);
+      if (!silent) setLoading(false);
     }
   }, []);
 
   useEffect(() => {
     void cargarCola();
   }, [cargarCola]);
+
+  // El garzón sigue registrando entradas en la puerta: la cola se actualiza
+  // sola sin reemplazar la tabla por el mensaje de carga.
+  useRealtimeRefresh('tickets', () => cargarCola(true));
 
   /** Recarga manual de la cola: el garzón sigue registrando entradas en la puerta. */
   const recargar = useCallback(async () => {
@@ -579,7 +568,7 @@ export function CortesiasTab({ searchTerm = '' }: { searchTerm?: string }) {
                   >
                     <span className='relative block h-20 w-full bg-muted/40'>
                       <ProductPhoto
-                        src={imageUrl(bebida.foto)}
+                        src={productImageUrl(bebida.foto)}
                         alt={nombreBebida}
                         fill
                         className='object-contain p-2'

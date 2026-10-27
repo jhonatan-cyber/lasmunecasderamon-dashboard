@@ -11,6 +11,7 @@ import {
 import { Check, Clock, X } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
+import { EmptyState } from '@/components/shared/EmptyState';
 import {
   Card,
   CardContent,
@@ -41,9 +42,10 @@ export function PendingApprovals({
   const selected = pendientes.find(record => record.id === selectedId);
   if (pendientes.length === 0) {
     return (
-      <p className='rounded-2xl border border-dashed py-12 text-center text-muted-foreground'>
-        {loading ? 'Cargando…' : 'No hay solicitudes pendientes.'}
-      </p>
+      <EmptyState
+        title={loading ? 'Cargando…' : 'No hay solicitudes pendientes.'}
+        className='rounded-2xl border py-12'
+      />
     );
   }
 

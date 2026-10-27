@@ -68,8 +68,9 @@ export default function BarPage() {
   const shotMl = useConfig<number>('shot_ml');
   const botellaMl = useConfig<number>('botella_ml');
   useEffect(() => {
-    if (new URLSearchParams(window.location.search).get('tab') === 'pendientes')
-      setTab('pendientes');
+    // El aviso de una entrada en la puerta abre directo la cola de cortesías.
+    const tabUrl = new URLSearchParams(window.location.search).get('tab');
+    if (tabUrl === 'pendientes' || tabUrl === 'cortesias') setTab(tabUrl);
   }, []);
   useEffect(
     () => () => {

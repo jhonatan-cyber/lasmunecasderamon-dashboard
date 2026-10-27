@@ -1,5 +1,6 @@
 'use client';
 
+import { EmptyState } from '@/components/shared/EmptyState';
 import { BarAnfitrionas, isTierPricedItem } from '@/components/bar/BarAnfitrionas';
 import { SalePrices } from '@/components/bar/SalePrices';
 import { ListLoadError } from '@/components/shared/ListLoadError';
@@ -105,11 +106,16 @@ export function BarHistorialTab({
                 {movimientos.length === 0 ? (
                   <TableRow key='empty'>
                     <TableCell colSpan={10} className='text-center text-muted-foreground'>
-                      {loading
-                        ? 'Cargando...'
-                        : hayFiltro
-                          ? 'Sin movimientos que coincidan con el filtro.'
-                          : 'Sin movimientos registrados.'}
+                      <EmptyState
+                        variant='text'
+                        title={
+                          loading
+                            ? 'Cargando...'
+                            : hayFiltro
+                              ? 'Sin movimientos que coincidan con el filtro.'
+                              : 'Sin movimientos registrados.'
+                        }
+                      />
                     </TableCell>
                   </TableRow>
                 ) : (

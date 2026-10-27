@@ -1,5 +1,6 @@
 'use client';
 
+import { EmptyState } from '@/components/shared/EmptyState';
 import { ProductImageLightbox } from '@/components/products/ProductImageLightbox';
 import { EscaneoLote } from '@/components/products/EscaneoLote';
 import { MOTIVO_ENVASE } from '@/hooks/products/useContainerScan';
@@ -147,7 +148,10 @@ export function BarEnvasesTab({
                     {devoluciones.length === 0 ? (
                       <TableRow key='empty'>
                         <TableCell colSpan={8} className='text-center text-muted-foreground'>
-                          {loadingDevol ? 'Cargando...' : 'Sin envases entregados todavía.'}
+                          <EmptyState
+                            variant='text'
+                            title={loadingDevol ? 'Cargando...' : 'Sin envases entregados todavía.'}
+                          />
                         </TableCell>
                       </TableRow>
                     ) : (
