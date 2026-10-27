@@ -33,6 +33,7 @@ import { BusinessError } from '@/lib/errors/errors';
 import {
   IMAGE_FETCH_TIMEOUT_MS,
   MAX_IMAGE_BYTES,
+  eliminarFotoBaucher,
   imagenGuardadaABase64Jpeg,
   processAndSaveImage
 } from '@/lib/utils/image-utils';
@@ -298,5 +299,40 @@ describe('imagenGuardadaABase64Jpeg (foto guardada → JPEG para el lector)', ()
 
     expect(b64).toBe(JPEG_RESULTADO);
     expect(Buffer.from(sharpMock.input).toString()).toBe('descargada');
+  });
+});
+
+describe('eliminarFotoBaucher (constancia de un pedido que no se creó)', () => {
+  const directorio = path.join(process.cwd(), 'public', 'img', 'orders');
+  const nombre = `test_baucher_${Date.now()}.webp`;
+  const archivo = path.join(directorio, nombre);
+
+  beforeEach(() => {
+    vi.mocked(logger.warn).mockClear();
+  });
+
+  afterEach(async () => {
+    await fs.rm(archivo, { force: true });
+  });
+
+  it('borra la foto de la carpeta de su tipo', async () => {
+    await fs.mkdir(directorio, { recursive: true });
+    await fs.writeFile(archivo, 'bytes');
+
+    await eliminarFotoBaucher(nombre, 'order');
+
+    await expect(fs.stat(archivo)).rejects.toMatchObject({ code: 'ENOENT' });
+    expect(logger.warn).not.toHaveBeenCalled();
+  });
+
+  it('no lanza ni avisa si el archivo ya no está', async () => {
+    await expect(eliminarFotoBaucher('order_0000000000000.webp', 'order')).resolves.toBeUndefined();
+
+    expect(logger.warn).not.toHaveBeenCalled();
+  });
+
+  it('ignora un nombre que intente salir del directorio', async () => {
+    await expect(eliminarFotoBaucher('../../users/foto.webp', 'order')).resolves.toBeUndefined();
+    await expect(eliminarFotoBaucher('', 'order')).resolves.toBeUndefined();
   });
 });

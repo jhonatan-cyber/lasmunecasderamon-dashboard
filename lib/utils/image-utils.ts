@@ -6,6 +6,8 @@ import logger from '@/lib/utils/logger';
 
 const PRODUCT_UPLOAD_DIR = path.join(process.cwd(), 'public', 'img', 'products');
 const USER_UPLOAD_DIR = path.join(process.cwd(), 'public', 'img', 'users');
+const ORDER_UPLOAD_DIR = path.join(process.cwd(), 'public', 'img', 'orders');
+const TICKET_UPLOAD_DIR = path.join(process.cwd(), 'public', 'img', 'tickets');
 
 type ImageProcessingOptions = {
   width?: number;
@@ -22,6 +24,11 @@ function resolveUploadDir(baseName: string, options?: ImageProcessingOptions): s
   // La ruta de usuarios guarda con baseName 'user' (no 'user_'): si se pide el
   // prefijo exacto 'user_', las fotos de las personas caían en products/ y la
   // UI (que lee /img/users/) las rompía — y también el alta en el lector.
+  // Las fotos de baucher usan baseName 'order' o 'ticket' y caen en su propia
+  // carpeta: cada constancia de pago queda separada del catálogo y de las
+  // personas.
+  if (baseName.startsWith('order')) return ORDER_UPLOAD_DIR;
+  if (baseName.startsWith('ticket')) return TICKET_UPLOAD_DIR;
   return baseName.startsWith('user') ? USER_UPLOAD_DIR : PRODUCT_UPLOAD_DIR;
 }
 
@@ -209,6 +216,54 @@ export async function processAndSaveImage(
     .toFile(filePath);
 
   return fileName;
+}
+
+/**
+ * Guarda la foto del baucher de un pago con transferencia y devuelve el nombre
+ * del archivo (lo único que se guarda en la fila de la operación).
+ *
+ * Es la constancia del pago: quien llama debe abortar si esto falla, porque un
+ * pago sin comprobante no se puede auditar después.
+ */
+export async function guardarFotoBaucher(
+  dataUrl: string,
+  tipo: 'order' | 'ticket',
+  contexto: Record<string, unknown> = {}
+): Promise<string> {
+  try {
+    return await processAndSaveImage(dataUrl, tipo, {
+      width: 1600,
+      height: 1600,
+      fit: 'inside',
+      quality: 85
+    });
+  } catch (error) {
+    logger.error(`[ImageUtils] No se pudo guardar el baucher (${tipo}):`, { ...contexto, error });
+    throw new BusinessError('No se pudo guardar la foto del baucher', 'BAUCHER_SAVE_FAILED');
+  }
+}
+
+/**
+ * Borra un baucher que ya no tiene dueño.
+ *
+ * La foto se escribe **antes** de la transacción del pedido (la fila guarda su
+ * nombre), y un archivo no se revierte con el `ROLLBACK`: si el alta falla, la
+ * imagen queda huérfana y nadie puede verla desde la UI, porque no hay fila que
+ * la referencie. La limpia el `catch` del repositorio, que sabe si el pedido
+ * llegó a crearse.
+ */
+export async function eliminarFotoBaucher(
+  filename: string,
+  tipo: 'order' | 'ticket',
+  contexto: Record<string, unknown> = {}
+): Promise<void> {
+  if (!filename || path.basename(filename) !== filename) return;
+  try {
+    await fs.rm(path.join(resolveUploadDir(tipo), filename), { force: true });
+  } catch (error) {
+    // Fallar acá no debe tapar el error real que trajo hasta acá.
+    logger.warn(`[ImageUtils] No se pudo borrar el baucher (${tipo}):`, { ...contexto, error });
+  }
 }
 
 // ponytail: convenience for product images (keeps existing defaults)
