@@ -4,6 +4,7 @@ import { ApiResponse } from '@/lib/api/api-response';
 import { entregarEntrada } from '@/modules/entradas';
 import { SaleService } from '@/workflows/ventas';
 import { AppError, ValidationError } from '@/lib/errors/errors';
+import { notificarEntradaActualizada } from '@/lib/notifications/entradaNotificationUtils';
 
 type JsonRecord = Record<string, unknown>;
 
@@ -49,6 +50,15 @@ export const POST = withRoute(
           return { ventaId: ventaId ? String(ventaId) : null };
         }
       );
+      // La puerta y la caja ven el cambio de estado sin recargar.
+      notificarEntradaActualizada({
+        entradaId: id,
+        accion: 'entregada',
+        clienteNombre: null,
+        tipo: data.tipo,
+        montoCobrarBarra: data.montoCobrarBarra,
+        entregadaPorNombre: `${user.name} ${user.lastName}`.trim()
+      });
       return NextResponse.json({ success: true, data });
     } catch (error) {
       if (error instanceof AppError) return ApiResponse.error(error);

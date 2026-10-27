@@ -3,6 +3,7 @@ import { withRoute } from '@/lib/api/withRoute';
 import { ApiResponse } from '@/lib/api/api-response';
 import { anularEntrada } from '@/modules/entradas';
 import { AppError, ValidationError } from '@/lib/errors/errors';
+import { notificarEntradaActualizada } from '@/lib/notifications/entradaNotificationUtils';
 
 /**
  * Anula una entrada que nunca se sirvió (el cliente se fue).
@@ -17,6 +18,13 @@ export const POST = withRoute(
     if (!id) throw new ValidationError('Indica la entrada a anular');
     try {
       const data = await anularEntrada({ entradaId: id, usuarioId: user.id });
+      // La entrada deja de estar pendiente en la barra de todas las sesiones.
+      notificarEntradaActualizada({
+        entradaId: id,
+        accion: 'anulada',
+        clienteNombre: null,
+        entregadaPorNombre: `${user.name} ${user.lastName}`.trim()
+      });
       return NextResponse.json({ success: true, data });
     } catch (error) {
       if (error instanceof AppError) return ApiResponse.error(error);
