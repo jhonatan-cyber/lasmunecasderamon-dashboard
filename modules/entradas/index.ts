@@ -5,6 +5,7 @@ export {
   entregarEntrada,
   listarEntradas,
   listarPendientes,
+  obtenerBaucherEntrada,
   postearPendientesDeCaja,
   registrarEntrada
 } from './servicio';

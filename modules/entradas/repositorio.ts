@@ -7,6 +7,8 @@ import { resolverTransaccion } from '@/lib/transaction/infrastructure';
 import { registrarMovimientoCobro } from '@/modules/caja';
 import { ejecutarEfectosConfirmados } from '@/lib/transaction/effects';
 import { defaultDeClave } from '@/modules/configuracion/contracts';
+import { esBaucherDataUrlValido } from '@/lib/business/baucher';
+import { eliminarFotoBaucher, guardarFotoBaucher } from '@/lib/utils/image-utils';
 
 /**
  * Entradas de clientes con solicitud de cortesía diferida.
@@ -50,6 +52,8 @@ export interface EntradaCliente {
   monto_entrada: number;
   monto_bebida_adicional: number;
   metodo_pago: MetodoPagoEntrada;
+  /** Nombre del archivo del baucher en `public/img/tickets` (solo transferencia). */
+  baucher_foto: string | null;
   /** Caja (turno) en la que se cobró la entrada. */
   caja_id: string | null;
   venta_id: string | null;
@@ -156,6 +160,7 @@ export async function listarEntradas(fecha?: string): Promise<EntradaCliente[]> 
   const fechaFiltro = fecha || getNowInBusinessTimezone().slice(0, 10);
   return query<EntradaCliente[]>(
     `SELECT e.id, e.grupo_registro_id, e.cliente_nombre, e.monto_entrada, e.monto_bebida_adicional, e.metodo_pago,
+            e.baucher_foto,
             e.caja_id,
             v.id_venta AS venta_id,
             e.cover_presentacion_id AS bebida_cortesia_presentacion_id,
@@ -211,12 +216,27 @@ export async function listarPendientes(fecha?: string): Promise<EntradaPendiente
   );
 }
 
+/**
+ * Nombre del archivo del baucher de una entrada, o `null` si no tiene.
+ *
+ * La ruta que sirve la foto no consulta la tabla: el SQL vive acá.
+ */
+export async function obtenerBaucherEntrada(id: string): Promise<string | null> {
+  const filas = await query<{ baucher_foto: string | null }[]>(
+    'SELECT baucher_foto FROM entradas_clientes WHERE id = ?',
+    [id]
+  );
+  return filas[0]?.baucher_foto ?? null;
+}
+
 export interface RegistroEntradaInput {
   clienteNombre?: string;
   /** Si viene, se valida contra la configuración; el precio lo fija el servidor. */
   montoEntrada?: number;
   cantidadEntradas: number;
   metodoPago: string;
+  /** Foto del baucher en data URL: obligatoria con transferencia (la exige la ruta). */
+  baucherFoto?: string;
   fecha: string;
   hora: string;
   registradoPor: string;
@@ -236,6 +256,10 @@ export async function registrarEntrada(input: RegistroEntradaInput) {
     throw new ValidationError('Indica entre 1 y 100 entradas para registrar');
   const metodoPago = validarMetodoPago(input.metodoPago);
   validarFechaHora(input.fecha, input.hora);
+  // El baucher es la constancia del pago con transferencia: la ruta lo exige,
+  // acá se valida el formato por si otro llamador del módulo lo manda mal.
+  if (input.baucherFoto && !esBaucherDataUrlValido(input.baucherFoto))
+    throw new ValidationError('La foto del baucher no es una imagen válida');
   // El precio lo fija la configuración, no el cliente (§5: el servidor valida el
   // dinero). La UI manda el total del grupo; cada fila guarda su parte.
   const costoEntrada = await leerCostoEntrada();
@@ -248,41 +272,60 @@ export async function registrarEntrada(input: RegistroEntradaInput) {
       `El precio de la entrada no coincide: son ${costoEntrada} por persona (${montoTotal} en total). Actualiza la página y vuelve a intentar.`
     );
   const grupoRegistroId = generateUUID();
+  const baucherFoto = input.baucherFoto
+    ? await guardarFotoBaucher(input.baucherFoto, 'ticket', {
+        grupoRegistroId,
+        registradoPor: input.registradoPor
+      })
+    : null;
   const ids: string[] = [];
   let cajaId = '';
-  await enUnaUnidad(async unidad => {
-    const trx = resolverTransaccion({ id: unidad.id });
-    // Misma regla que colaciones, ventas y reportes: la caja abierta más reciente
-    // es la del turno actual. Se guarda para saber dónde se cobró la entrada.
-    const caja = await trx<{ id_caja: string }[]>(
-      'SELECT id_caja FROM cajas WHERE estado = 1 ORDER BY fecha_apertura DESC LIMIT 1 FOR UPDATE'
-    );
-    if (!caja.length) throw new ValidationError('Abre una caja antes de registrar entradas');
-    cajaId = caja[0].id_caja;
-    for (let indice = 0; indice < cantidad; indice += 1) {
-      const id = generateUUID();
-      ids.push(id);
-      // `fecha_crea` la pone el servidor (DEFAULT CURRENT_TIMESTAMP): es el
-      // registro de auditoría, no la hora de negocio que elige el cajero.
-      await trx(
-        `INSERT INTO entradas_clientes
-          (id, grupo_registro_id, cliente_nombre, monto_entrada, monto_bebida_adicional, metodo_pago,
-           fecha, hora, caja_id, registrado_por, cortesia_estado)
-         VALUES (?, ?, ?, ?, 0, ?, ?, ?, ?, ?, 'pendiente')`,
-        [
-          id,
-          grupoRegistroId,
-          input.clienteNombre?.trim() || null,
-          costoEntrada,
-          metodoPago,
-          input.fecha,
-          input.hora,
-          cajaId,
-          input.registradoPor
-        ]
+  try {
+    await enUnaUnidad(async unidad => {
+      const trx = resolverTransaccion({ id: unidad.id });
+      // Misma regla que colaciones, ventas y reportes: la caja abierta más reciente
+      // es la del turno actual. Se guarda para saber dónde se cobró la entrada.
+      const caja = await trx<{ id_caja: string }[]>(
+        'SELECT id_caja FROM cajas WHERE estado = 1 ORDER BY fecha_apertura DESC LIMIT 1 FOR UPDATE'
       );
-    }
-  });
+      if (!caja.length) throw new ValidationError('Abre una caja antes de registrar entradas');
+      cajaId = caja[0].id_caja;
+      for (let indice = 0; indice < cantidad; indice += 1) {
+        const id = generateUUID();
+        ids.push(id);
+        // `fecha_crea` la pone el servidor (DEFAULT CURRENT_TIMESTAMP): es el
+        // registro de auditoría, no la hora de negocio que elige el cajero.
+        await trx(
+          `INSERT INTO entradas_clientes
+          (id, grupo_registro_id, cliente_nombre, monto_entrada, monto_bebida_adicional, metodo_pago,
+           baucher_foto, fecha, hora, caja_id, registrado_por, cortesia_estado)
+         VALUES (?, ?, ?, ?, 0, ?, ?, ?, ?, ?, ?, 'pendiente')`,
+          [
+            id,
+            grupoRegistroId,
+            input.clienteNombre?.trim() || null,
+            costoEntrada,
+            metodoPago,
+            baucherFoto,
+            input.fecha,
+            input.hora,
+            cajaId,
+            input.registradoPor
+          ]
+        );
+      }
+    });
+  } catch (err) {
+    // La foto se escribe antes de la transacción (las filas guardan su nombre):
+    // un ROLLBACK no borra el archivo, así que si el registro no llegó a la base
+    // hay que borrarlo o queda huérfano en public/img/tickets.
+    if (baucherFoto)
+      await eliminarFotoBaucher(baucherFoto, 'ticket', {
+        grupoRegistroId,
+        registradoPor: input.registradoPor
+      });
+    throw err;
+  }
   return {
     ids,
     id: ids[0],

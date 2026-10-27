@@ -21,6 +21,10 @@ const estado = vi.hoisted(() => ({
   updates: [] as Array<{ sql: string; params: unknown[] }>
 }));
 const trx = vi.hoisted(() => vi.fn());
+const baucher = vi.hoisted(() => ({
+  guardarFotoBaucher: vi.fn(),
+  eliminarFotoBaucher: vi.fn()
+}));
 
 vi.mock('@/lib/database/db', () => ({
   query: db.query,
@@ -52,6 +56,11 @@ vi.mock('@/lib/transaction/effects', () => ({
   ejecutarEfectosConfirmados: vi.fn(async (tareas: Array<() => unknown>) => {
     for (const tarea of tareas) await tarea();
   })
+}));
+
+vi.mock('@/lib/utils/image-utils', () => ({
+  guardarFotoBaucher: baucher.guardarFotoBaucher,
+  eliminarFotoBaucher: baucher.eliminarFotoBaucher
 }));
 
 import { entregarEntrada, postearPendientesDeCaja, registrarEntrada } from '@/modules/entradas';
@@ -90,6 +99,9 @@ beforeEach(() => {
   estado.pendientes = [];
   estado.inserts = [];
   estado.updates = [];
+  baucher.guardarFotoBaucher.mockReset();
+  baucher.guardarFotoBaucher.mockResolvedValue('ticket_1718.webp');
+  baucher.eliminarFotoBaucher.mockReset();
   db.query.mockImplementation(async (sql: string) =>
     String(sql).includes('monto_base_trago_cortesia_cliente')
       ? [{ valor: String(estado.tope) }]
@@ -143,6 +155,59 @@ describe('registro en la puerta', () => {
     expect(consumirProductoCortesiaBar).not.toHaveBeenCalled();
   });
 
+  it('guarda la foto del baucher y la deja en cada fila del grupo', async () => {
+    const resultado = await registrarEntrada({
+      ...registroBase,
+      cantidadEntradas: 2,
+      montoEntrada: 20000,
+      metodoPago: 'transferencia',
+      baucherFoto: 'data:image/jpeg;base64,SG9sYQ=='
+    });
+
+    expect(baucher.guardarFotoBaucher).toHaveBeenCalledWith(
+      'data:image/jpeg;base64,SG9sYQ==',
+      'ticket',
+      { grupoRegistroId: resultado.grupo_registro_id, registradoPor: 'user-1' }
+    );
+    expect(estado.inserts).toHaveLength(2);
+    for (const insert of estado.inserts) {
+      expect(insert.sql).toContain('baucher_foto');
+      expect(insert.params).toContain('ticket_1718.webp');
+    }
+  });
+
+  it('no guarda foto cuando el pago no la trae', async () => {
+    await registrarEntrada(registroBase);
+
+    expect(baucher.guardarFotoBaucher).not.toHaveBeenCalled();
+  });
+
+  it('rechaza un baucher que no es una imagen antes de tocar la base', async () => {
+    await expect(
+      registrarEntrada({
+        ...registroBase,
+        metodoPago: 'transferencia',
+        baucherFoto: 'baucher'
+      })
+    ).rejects.toThrow(/imagen válida/);
+
+    expect(baucher.guardarFotoBaucher).not.toHaveBeenCalled();
+    expect(trx).not.toHaveBeenCalled();
+  });
+
+  it('rechaza una foto que supera el tope de 3 MB antes de tocar la base', async () => {
+    await expect(
+      registrarEntrada({
+        ...registroBase,
+        metodoPago: 'transferencia',
+        baucherFoto: `data:image/jpeg;base64,${'A'.repeat(4_000_001)}`
+      })
+    ).rejects.toThrow(/imagen válida/);
+
+    expect(baucher.guardarFotoBaucher).not.toHaveBeenCalled();
+    expect(trx).not.toHaveBeenCalled();
+  });
+
   it('rechaza un total distinto de costo_entrada × entradas sin abrir la unidad', async () => {
     await expect(registrarEntrada({ ...registroBase, montoEntrada: 9000 })).rejects.toThrow(
       /precio de la entrada no coincide/
@@ -175,6 +240,38 @@ describe('registro en la puerta', () => {
     await expect(registrarEntrada({ ...registroBase, metodoPago: 'bitcoin' })).rejects.toThrow(
       /método de pago válido/
     );
+  });
+
+  it('borra la foto si el registro no llega a la base', async () => {
+    // La foto se escribe antes de la transacción: con la caja cerrada el alta
+    // falla después de guardarla y el archivo quedaría huérfano.
+    trx.mockImplementationOnce(async () => []);
+
+    await expect(
+      registrarEntrada({
+        ...registroBase,
+        metodoPago: 'transferencia',
+        baucherFoto: 'data:image/jpeg;base64,SG9sYQ=='
+      })
+    ).rejects.toThrow(/caja/);
+
+    expect(baucher.guardarFotoBaucher).toHaveBeenCalled();
+    expect(baucher.eliminarFotoBaucher).toHaveBeenCalledWith(
+      'ticket_1718.webp',
+      'ticket',
+      expect.objectContaining({ registradoPor: 'user-1' })
+    );
+  });
+
+  it('no borra la foto cuando el registro se confirma', async () => {
+    await registrarEntrada({
+      ...registroBase,
+      metodoPago: 'transferencia',
+      baucherFoto: 'data:image/jpeg;base64,SG9sYQ=='
+    });
+
+    expect(baucher.guardarFotoBaucher).toHaveBeenCalled();
+    expect(baucher.eliminarFotoBaucher).not.toHaveBeenCalled();
   });
 });
 

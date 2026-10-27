@@ -1,4 +1,20 @@
-import { afterAll, expect, it } from 'vitest';
+import { afterAll, expect, it, vi } from 'vitest';
+
+import fs from 'node:fs/promises';
+import path from 'node:path';
+import sharp from 'sharp';
+
+// Se espía sin romper el camino real: el test necesita el nombre del archivo que
+// se creó para comprobar que el `catch` lo borró.
+const guardarBaucher = vi.hoisted(() => vi.fn());
+
+vi.mock('@/lib/utils/image-utils', async importOriginal => {
+  const original = await importOriginal<typeof import('@/lib/utils/image-utils')>();
+  guardarBaucher.mockImplementation((...args: Parameters<typeof original.guardarFotoBaucher>) =>
+    original.guardarFotoBaucher(...args)
+  );
+  return { ...original, guardarFotoBaucher: guardarBaucher };
+});
 
 import db, { query } from '@/lib/database/db';
 import { restoreDatabase, snapshotDatabase } from '@/lib/database/maintenance';
@@ -129,6 +145,67 @@ async function crearBebida(nombre: string, precio: number): Promise<Bebida> {
   return { productoId, presentacionId, unidadId };
 }
 
+/** Bebida de bar cuya opción botella exige acompañamiento. */
+async function crearBebidaConAcompanamiento(
+  nombre: string,
+  precio: number,
+  unidades: number
+): Promise<Bebida> {
+  const bebida = await crearBebida(nombre, precio);
+  await query(
+    `UPDATE inventario_presentaciones
+        SET opciones_venta = ?::jsonb
+      WHERE id = ?`,
+    [
+      JSON.stringify([{ tipo: 'botella', precio, comision: 0, acompanamiento: { unidades } }]),
+      bebida.presentacionId
+    ]
+  );
+  return bebida;
+}
+
+/** Acompañamiento: solo la categoría protegida de analcohólicas vale como tal. */
+async function crearAcompanamiento(
+  nombre: string,
+  unidades: number
+): Promise<{ productoId: string; presentacionId: string; unidadIds: string[] }> {
+  const [categoria] = await query<{ id_categoria: string }[]>(
+    "SELECT id_categoria FROM categorias WHERE system_key = 'bebidas_analcoholicas' LIMIT 1"
+  );
+  if (!categoria) throw new Error('La base de pruebas no tiene la categoría de analcohólicas');
+
+  const productoId = crypto.randomUUID();
+  const presentacionId = crypto.randomUUID();
+  const codigo = `ANA${productoId.slice(0, 8)}`;
+
+  await query(
+    `INSERT INTO productos
+       (id_producto, codigo, nombre, categoria_id, precio, comision, fecha_crea)
+     VALUES (?, ?, ?, ?, 0, 0, now())`,
+    [productoId, codigo, nombre, categoria.id_categoria]
+  );
+  await query(
+    `INSERT INTO inventario_presentaciones
+       (id, producto_id, nombre, precio_venta, comision, ml_botella)
+     VALUES (?, ?, '355 ml', 0, 0, 355)`,
+    [presentacionId, productoId]
+  );
+
+  const unidadIds: string[] = [];
+  for (let i = 0; i < unidades; i++) {
+    const unidadId = crypto.randomUUID();
+    unidadIds.push(unidadId);
+    await query(
+      `INSERT INTO inventario_unidades
+         (id, producto_id, presentacion_id, codigo, ubicacion, estado, fecha_crea)
+       VALUES (?, ?, ?, ?, 'bar', ?, now())`,
+      [unidadId, productoId, presentacionId, `${codigo}U${i}`, ESTADO_UNIDAD_ACTIVA]
+    );
+  }
+
+  return { productoId, presentacionId, unidadIds };
+}
+
 async function filaEntrada(id: string) {
   const [fila] = await query<
     {
@@ -150,6 +227,23 @@ async function filaEntrada(id: string) {
     [id]
   );
   return fila;
+}
+
+/** Fotos de baucher guardadas en public/img/tickets, ordenadas. */
+const DIRECTORIO_BAUCHERS = path.join(process.cwd(), 'public', 'img', 'tickets');
+
+async function leerBauchersTickets(): Promise<string[]> {
+  return (await fs.readdir(DIRECTORIO_BAUCHERS).catch(() => [] as string[])).sort();
+}
+
+/** PNG real y mínimo: `guardarFotoBaucher` lo pasa por sharp. */
+async function fotoBaucher(): Promise<string> {
+  const png = await sharp({
+    create: { width: 8, height: 8, channels: 3, background: { r: 180, g: 40, b: 40 } }
+  })
+    .png()
+    .toBuffer();
+  return `data:image/png;base64,${png.toString('base64')}`;
 }
 
 it('registra la entrada en la puerta sin postear caja, stock ni venta', async () => {
@@ -206,6 +300,44 @@ it('registra la entrada en la puerta sin postear caja, stock ni venta', async ()
     const pendientes = await listarPendientes(FECHA);
     expect(pendientes.filter(pendiente => resultado.ids.includes(pendiente.id))).toHaveLength(2);
   } finally {
+    await restoreDatabase(snapshot, 'test-only');
+  }
+});
+
+it('si el registro falla, la foto del baucher no queda huérfana en disco', async () => {
+  const snapshot = await snapshotDatabase();
+  const antes = await leerBauchersTickets();
+  try {
+    const usuarioId = await primerUsuarioActivo();
+    await fijarConfiguracion('costo_entrada', 10000);
+    // Sin caja abierta el alta falla dentro de la transacción, ya con la foto
+    // escrita en disco: se guarda antes del INSERT porque las filas guardan su nombre.
+    await query('UPDATE cajas SET estado = 0 WHERE estado = 1');
+    guardarBaucher.mockClear();
+
+    await expect(
+      registrarEntrada({
+        cantidadEntradas: 1,
+        metodoPago: 'transferencia',
+        baucherFoto: await fotoBaucher(),
+        fecha: FECHA,
+        hora: HORA,
+        registradoPor: usuarioId
+      })
+    ).rejects.toThrow(/caja/i);
+
+    // La foto llegó a escribirse…
+    const nombre = String(await guardarBaucher.mock.results[0].value);
+    expect(nombre).toMatch(/^ticket_\d+\.webp$/);
+    await expect(fs.stat(path.join(DIRECTORIO_BAUCHERS, nombre))).rejects.toMatchObject({
+      code: 'ENOENT'
+    });
+    // …y nada nuevo sobrevivió en public/img/tickets: lo borró el `catch`.
+    expect(await leerBauchersTickets()).toEqual(antes);
+  } finally {
+    for (const archivo of await leerBauchersTickets())
+      if (!antes.includes(archivo))
+        await fs.rm(path.join(DIRECTORIO_BAUCHERS, archivo), { force: true });
     await restoreDatabase(snapshot, 'test-only');
   }
 });
@@ -581,6 +713,197 @@ it('anula a mano una entrada que nunca se sirvió y postea su monto', async () =
       'Esta entrada ya fue entregada o anulada'
     );
     expect((await saldosCaja(cajaId)).transferencia - saldosAntes.transferencia).toBe(10000);
+  } finally {
+    await restoreDatabase(snapshot, 'test-only');
+  }
+});
+
+it('recorre el ciclo completo de la cortesía: cola, entrega y anulación sin postear dos veces', async () => {
+  const snapshot = await snapshotDatabase();
+  try {
+    const cajaId = await cajaAbierta();
+    const usuarioId = await primerUsuarioActivo();
+    await fijarConfiguracion('costo_entrada', 10000);
+    await fijarConfiguracion('monto_base_trago_cortesia_cliente', 10000);
+    const bebida = await crearBebida('Ciclo de cortesía', 8000);
+
+    // La puerta cobra dos personas: ambas aparecen en la cola de la barra.
+    const porEntregar = await registrarEntrada({
+      clienteNombre: 'Ciclo entrega',
+      cantidadEntradas: 1,
+      metodoPago: 'efectivo',
+      fecha: FECHA,
+      hora: HORA,
+      registradoPor: usuarioId
+    });
+    const porAnular = await registrarEntrada({
+      clienteNombre: 'Ciclo anulación',
+      cantidadEntradas: 1,
+      metodoPago: 'efectivo',
+      fecha: FECHA,
+      hora: HORA,
+      registradoPor: usuarioId
+    });
+    const saldosAntes = await saldosCaja(cajaId);
+    const cola = async () => (await listarPendientes(FECHA)).map(fila => fila.id);
+    expect(await cola()).toEqual(expect.arrayContaining([porEntregar.id, porAnular.id]));
+
+    // 1) La barra entrega la primera: sale de la cola y postea su monto a caja.
+    const entrega = await entregarEntrada({
+      entradaId: porEntregar.id,
+      presentacionId: bebida.presentacionId,
+      usuarioId
+    });
+    expect(entrega.tipo).toBe('cortesia');
+
+    const colaTrasEntrega = await cola();
+    expect(colaTrasEntrega).not.toContain(porEntregar.id);
+    // La otra persona sigue esperando su bebida.
+    expect(colaTrasEntrega).toContain(porAnular.id);
+    expect((await saldosCaja(cajaId)).efectivo - saldosAntes.efectivo).toBe(10000);
+
+    // Lo entregado no admite anular: volver a postear el monto duplicaría el
+    // dinero de esa entrada en caja.
+    await expect(anularEntrada({ entradaId: porEntregar.id, usuarioId })).rejects.toThrow(
+      'Esta entrada ya fue entregada o anulada'
+    );
+    expect((await saldosCaja(cajaId)).efectivo - saldosAntes.efectivo).toBe(10000);
+
+    // 2) La segunda se anula desde la cola: también sale y postea su monto.
+    const anulacion = await anularEntrada({ entradaId: porAnular.id, usuarioId });
+    expect(anulacion.monto).toBe(10000);
+    expect(await cola()).not.toContain(porAnular.id);
+
+    // Lo anulado no admite entrega: ni bebida ni dinero extra.
+    await expect(
+      entregarEntrada({ entradaId: porAnular.id, presentacionId: bebida.presentacionId, usuarioId })
+    ).rejects.toThrow('Esta entrada ya fue entregada o anulada');
+
+    // Cada entrada postó su monto exactamente una vez (20.000 en total) y la
+    // bebida salió del bar una sola vez.
+    const saldosFinales = await saldosCaja(cajaId);
+    expect(saldosFinales.efectivo - saldosAntes.efectivo).toBe(20000);
+    expect(saldosFinales.venta - saldosAntes.venta).toBe(0);
+    const [movimientos] = await query<{ total: number }[]>(
+      'SELECT COUNT(*)::int AS total FROM inventario_movimientos WHERE presentacion_id = ?',
+      [bebida.presentacionId]
+    );
+    expect(movimientos.total).toBe(1);
+  } finally {
+    await restoreDatabase(snapshot, 'test-only');
+  }
+});
+
+it('exige y entrega el acompañamiento incluido en la botella de cortesía', async () => {
+  const snapshot = await snapshotDatabase();
+  try {
+    const cajaId = await cajaAbierta();
+    const usuarioId = await primerUsuarioActivo();
+    await fijarConfiguracion('costo_entrada', 10000);
+    await fijarConfiguracion('monto_base_trago_cortesia_cliente', 10000);
+    // La botella exige 2 unidades de acompañamiento (lo pide la opción botella).
+    const bebida = await crearBebidaConAcompanamiento('Botella con acompañamiento', 8000, 2);
+    const acompanamiento = await crearAcompanamiento('Analcohólica de cortesía', 2);
+
+    const entrada = await registrarEntrada({
+      clienteNombre: 'Botella con acompañamiento',
+      cantidadEntradas: 1,
+      metodoPago: 'efectivo',
+      fecha: FECHA,
+      hora: HORA,
+      registradoPor: usuarioId
+    });
+    const saldosAntes = await saldosCaja(cajaId);
+
+    // Sin el acompañamiento no se entrega: la fila sigue en la cola.
+    await expect(
+      entregarEntrada({ entradaId: entrada.id, presentacionId: bebida.presentacionId, usuarioId })
+    ).rejects.toThrow('Selecciona el acompañamiento incluido en esta bebida');
+    expect(await filaEntrada(entrada.id)).toMatchObject({ cortesia_estado: 'pendiente' });
+    expect(await saldosCaja(cajaId)).toEqual(saldosAntes);
+    expect((await listarPendientes(FECHA)).map(fila => fila.id)).toContain(entrada.id);
+
+    // Con el acompañamiento la entrega es cortesía y sale de la cola.
+    const entrega = await entregarEntrada({
+      entradaId: entrada.id,
+      presentacionId: bebida.presentacionId,
+      acompanamientoPresentacionId: acompanamiento.presentacionId,
+      usuarioId
+    });
+    expect(entrega).toMatchObject({ tipo: 'cortesia', montoCobrarBarra: 0 });
+    expect((await listarPendientes(FECHA)).map(fila => fila.id)).not.toContain(entrada.id);
+
+    // La fila guarda qué se acompañó y el detalle lo registra por separado.
+    const [fila] = await query<{ bebida_acompanamiento_presentacion_id: string | null }[]>(
+      'SELECT bebida_acompanamiento_presentacion_id FROM entradas_clientes WHERE id = ?',
+      [entrada.id]
+    );
+    expect(fila.bebida_acompanamiento_presentacion_id).toBe(acompanamiento.presentacionId);
+    const [detalle] = await query<{ acompanamiento_presentacion_id: string | null }[]>(
+      'SELECT acompanamiento_presentacion_id FROM entradas_clientes_productos WHERE entrada_id = ?',
+      [entrada.id]
+    );
+    expect(detalle.acompanamiento_presentacion_id).toBe(acompanamiento.presentacionId);
+
+    // Salieron del bar la botella y las 2 unidades de acompañamiento.
+    const unidades = await query<{ estado: string }[]>(
+      `SELECT estado FROM inventario_unidades WHERE presentacion_id IN (?)`,
+      [[bebida.presentacionId, acompanamiento.presentacionId]]
+    );
+    expect(unidades).toHaveLength(3);
+    for (const unidad of unidades) expect(unidad.estado).toBe(ESTADO_UNIDAD_VENDIDA);
+
+    // Una cortesía por unidad entregada: 1 de la bebida + 2 del acompañamiento.
+    const [movimientos] = await query<{ total: number }[]>(
+      `SELECT COUNT(*)::int AS total FROM inventario_movimientos
+        WHERE tipo = 'cortesia' AND presentacion_id IN (?)`,
+      [[bebida.presentacionId, acompanamiento.presentacionId]]
+    );
+    expect(movimientos.total).toBe(3);
+
+    // La caja postea la entrada una sola vez; la cortesía no genera venta.
+    const saldosFinales = await saldosCaja(cajaId);
+    expect(saldosFinales.efectivo - saldosAntes.efectivo).toBe(10000);
+    expect(saldosFinales.venta - saldosAntes.venta).toBe(0);
+  } finally {
+    await restoreDatabase(snapshot, 'test-only');
+  }
+});
+
+it('no admite acompañamiento en una bebida que no lo tiene configurado', async () => {
+  const snapshot = await snapshotDatabase();
+  try {
+    const usuarioId = await primerUsuarioActivo();
+    await fijarConfiguracion('costo_entrada', 10000);
+    await fijarConfiguracion('monto_base_trago_cortesia_cliente', 10000);
+    const bebida = await crearBebida('Botella sin acompañamiento', 8000);
+    const acompanamiento = await crearAcompanamiento('Analcohólica que sobra', 1);
+
+    const entrada = await registrarEntrada({
+      clienteNombre: 'Botella sin acompañamiento',
+      cantidadEntradas: 1,
+      metodoPago: 'efectivo',
+      fecha: FECHA,
+      hora: HORA,
+      registradoPor: usuarioId
+    });
+
+    await expect(
+      entregarEntrada({
+        entradaId: entrada.id,
+        presentacionId: bebida.presentacionId,
+        acompanamientoPresentacionId: acompanamiento.presentacionId,
+        usuarioId
+      })
+    ).rejects.toThrow('La bebida seleccionada no tiene acompañamiento configurado');
+
+    expect(await filaEntrada(entrada.id)).toMatchObject({ cortesia_estado: 'pendiente' });
+    // El acompañamiento que sobra sigue en el bar.
+    const [unidad] = await query<{ estado: string }[]>(
+      'SELECT estado FROM inventario_unidades WHERE id = ?',
+      [acompanamiento.unidadIds[0]]
+    );
+    expect(unidad.estado).toBe(ESTADO_UNIDAD_ACTIVA);
   } finally {
     await restoreDatabase(snapshot, 'test-only');
   }

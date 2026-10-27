@@ -12,6 +12,12 @@ export function registrarEntrada(...args: Parameters<typeof repositorio.registra
   return repositorio.registrarEntrada(...args);
 }
 
+export function obtenerBaucherEntrada(
+  ...args: Parameters<typeof repositorio.obtenerBaucherEntrada>
+) {
+  return repositorio.obtenerBaucherEntrada(...args);
+}
+
 export function entregarEntrada(...args: Parameters<typeof repositorio.entregarEntrada>) {
   return repositorio.entregarEntrada(...args);
 }
