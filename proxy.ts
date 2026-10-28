@@ -14,11 +14,7 @@ import {
 } from '@/lib/constants/route-permissions';
 import { legacyRedirectTarget } from '@/lib/constants/legacy-routes';
 import { siteConfig } from '@/lib/api/site';
-import {
-  checkRateLimit,
-  RATE_LIMIT_CONFIGS,
-  type RateLimitConfig
-} from '@/lib/middleware/redisRateLimit';
+import type { RateLimitConfig } from '@/lib/middleware/redisRateLimit';
 
 // Orígenes permitidos para CORS
 const ALLOWED_ORIGINS = [
@@ -235,6 +231,9 @@ export default async function proxy(request: NextRequest) {
 
   const isProd = process.env.NODE_ENV === 'production' && process.env.SKIP_RATE_LIMIT !== 'true';
   if (isProd) {
+    // En desarrollo no se carga ioredis ni el limitador: es código que sólo se
+    // usa en producción y sumaba ~1,9 s al compilar el middleware al arrancar.
+    const { checkRateLimit, RATE_LIMIT_CONFIGS } = await import('@/lib/middleware/redisRateLimit');
     const isCredentialPath =
       pathname === '/login' ||
       pathname.startsWith('/login/') ||

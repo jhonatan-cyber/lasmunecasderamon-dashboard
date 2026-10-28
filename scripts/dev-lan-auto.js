@@ -19,7 +19,20 @@ async function start() {
     probe.once('error', reject);
     probe.listen({ host, port: Number(port), exclusive: true }, () => probe.close(resolve));
   });
-  const stopRedis = await startRedis();
+  // Redis no bloquea el arranque: el limitador cae a memoria mientras la
+  // conexión no esté lista. Se inicia en paralelo con Next y se detiene al
+  // salir; así una WSL apagada no demora el servidor hasta 15 s.
+  let stopRedis = () => {};
+  let saliendo = false;
+  startRedis()
+    .then(stop => {
+      stopRedis = stop;
+      if (saliendo) stop();
+    })
+    .catch(error => {
+      console.warn(`[redis] No se pudo iniciar: ${error.message}`);
+    });
+
   console.log(`[dev] Servidor: http://${publicHost}:${port}`);
 
   const child = spawn(
@@ -31,20 +44,74 @@ async function start() {
     }
   );
 
-  child.on('error', error => {
+  // El warmup se lanza recién cuando Next ya escucha. Si arranca antes, sus
+  // requests compiten con la compilación inicial y demoran la primera
+  // respuesta; esperar el puerto no compila nada y no bloquea el servidor.
+  let warmup = null;
+  const iniciarWarmup = async () => {
+    if (process.env.DASHBOARD_WARMUP === '0') return;
+    const abierto = await esperarPuerto(Number(port), 90_000, () => saliendo);
+    if (!abierto || saliendo || warmup) return;
+    warmup = spawn(process.execPath, [require.resolve('./warmup.mjs')], {
+      stdio: 'inherit',
+      windowsHide: true,
+      env: { ...process.env, BASE_URL: `http://127.0.0.1:${port}` }
+    });
+    warmup.on('error', error => {
+      console.warn(`[warmup] ${error.message}`);
+    });
+    warmup.on('exit', () => {
+      warmup = null;
+    });
+  };
+  void iniciarWarmup();
+
+  const detener = () => {
+    saliendo = true;
     stopRedis();
+    warmup?.kill();
+  };
+
+  child.on('error', error => {
+    detener();
     console.error(`[dev] ${error.message}`);
     process.exitCode = 1;
   });
   child.on('exit', code => {
-    stopRedis();
+    detener();
     process.exitCode = code ?? 1;
   });
   for (const signal of ['SIGINT', 'SIGTERM']) {
     process.on(signal, () => {
       child.kill(signal);
+      detener();
     });
   }
+}
+
+async function esperarPuerto(port, timeoutMs, cancelado) {
+  const deadline = Date.now() + timeoutMs;
+  while (Date.now() < deadline) {
+    if (cancelado()) return false;
+    const abierto = await new Promise(resolve => {
+      const socket = net.connect({ host: '127.0.0.1', port }, () => {
+        socket.end();
+        resolve(true);
+      });
+      socket.setTimeout(500, () => {
+        socket.destroy();
+        resolve(false);
+      });
+      socket.on('error', () => {
+        socket.destroy();
+        resolve(false);
+      });
+    });
+    if (abierto) return true;
+    if (cancelado()) return false;
+    await new Promise(resolve => setTimeout(resolve, 300));
+  }
+  return false;
 }
 
 start().catch(error => {

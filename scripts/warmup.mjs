@@ -1,18 +1,19 @@
 /**
  * Warmup del Dashboard
  *
- * Prefetch de endpoints del dashboard para compilar rutas y llenar caché
- * al iniciar el servidor, evitando el "cold start" en la primera request real.
+ * Prefetch de rutas y endpoints para compilar páginas y llenar caché al
+ * iniciar el servidor, evitando el "cold start" en la primera visita real.
  *
- * Se ejecuta automáticamente desde dev-lan-auto.js.
- * También se puede ejecutar manualmente: node scripts/warmup.mjs
+ * Se ejecuta automáticamente desde dev-lan-auto.js al levantar `pnpm dev`
+ * (DASHBOARD_WARMUP=0 lo desactiva). También se puede ejecutar manualmente:
+ * node scripts/warmup.mjs
  */
 
 import dotenv from 'dotenv';
 
 dotenv.config({ quiet: true });
 
-const BASE_URL = process.env.BASE_URL || 'http://localhost:3000';
+const BASE_URL = process.env.BASE_URL || 'http://127.0.0.1:3000';
 const TIMEOUT_MS = 30_000;
 const MAX_WAIT_MS = 60_000;
 
@@ -20,6 +21,11 @@ const CREDENTIALS = {
   email: process.env.WARMUP_USER || process.env.TEST_USER,
   password: process.env.WARMUP_PASSWORD || process.env.TEST_PASSWORD
 };
+
+// Rutas HTML que se compilan en la primera visita. Las públicas no necesitan
+// sesión; las privadas se suman sólo cuando hay credenciales configuradas.
+const PUBLIC_PAGES = ['/login'];
+const AUTHENTICATED_PAGES = ['/dashboard', '/tickets'];
 
 const DASHBOARD_ENDPOINTS = [
   '/api/dashboard/composite',
@@ -65,12 +71,50 @@ async function login() {
       console.warn(
         '[warmup] Login sin token; comprueba las credenciales y los requisitos de acceso de la cuenta.'
       );
+      return null;
     }
-    return data?.token || null;
+    // Las páginas autentican por cookie (httpOnly); el Bearer sólo sirve para
+    // las rutas API. Sin reenviar la cookie, /dashboard y /tickets redirigen.
+    const cookie = (res.headers.getSetCookie?.() ?? [])
+      .map(value => value.split(';')[0])
+      .join('; ');
+    return { token: data.token, cookie };
   } catch (error) {
     console.warn(`[warmup] No se pudo completar el login: ${error.message}`);
     return null;
   }
+}
+
+async function warmPath(path, headers) {
+  const start = Date.now();
+  try {
+    const res = await fetch(`${BASE_URL}${path}`, {
+      signal: AbortSignal.timeout(TIMEOUT_MS),
+      headers,
+      keepalive: true
+    });
+    return { endpoint: path, status: res.status, duration: Date.now() - start, ok: res.ok };
+  } catch (error) {
+    return {
+      endpoint: path,
+      status: 0,
+      duration: Date.now() - start,
+      ok: false,
+      error: error.message
+    };
+  }
+}
+
+function logResult(result) {
+  const icon = result.ok ? '✅' : result.status === 401 ? '⚠️' : '❌';
+  const extra = result.error ? `: ${result.error}` : '';
+  console.log(`  ${icon} ${result.endpoint} → ${result.status} (${result.duration}ms)${extra}`);
+}
+
+function summary(results, startTime) {
+  const ok = results.filter(r => r.ok).length;
+  const elapsed = ((Date.now() - startTime) / 1000).toFixed(1);
+  console.log(`\n[warmup] 📊 ${ok}/${results.length} rutas precalentadas en ${elapsed}s`);
 }
 
 async function warmup() {
@@ -84,61 +128,48 @@ async function warmup() {
   }
   console.log(`[warmup] ✅ Server ready (${Date.now() - startTime}ms)`);
 
+  const results = [];
+
+  for (const page of PUBLIC_PAGES) {
+    const result = await warmPath(page, {});
+    results.push(result);
+    logResult(result);
+  }
+
   if (!CREDENTIALS.email || !CREDENTIALS.password) {
     console.log(
-      '[warmup] Salud pública verificada. Para precargar el dashboard, configura WARMUP_USER y WARMUP_PASSWORD en .env.'
+      '[warmup] Salud y páginas públicas verificadas. Para precargar el resto, configura WARMUP_USER y WARMUP_PASSWORD en .env.'
     );
+    summary(results, startTime);
     return;
   }
 
   // Login para obtener token (necesario para endpoints protegidos)
-  const token = await login();
-  if (!token) {
+  const session = await login();
+  if (!session) {
+    summary(results, startTime);
     return;
-  } else {
-    console.log('[warmup] ✅ Token obtenido');
   }
+  console.log('[warmup] ✅ Token obtenido');
 
-  const headers = { 'User-Agent': 'Dashboard-Warmup/1.0' };
-  if (token) headers['Authorization'] = `Bearer ${token}`;
-
-  const results = [];
+  const headers = {
+    'User-Agent': 'Dashboard-Warmup/1.0',
+    Authorization: `Bearer ${session.token}`
+  };
+  if (session.cookie) headers.Cookie = session.cookie;
+  const targets = [...DASHBOARD_ENDPOINTS, ...AUTHENTICATED_PAGES];
   const concurrency = 4;
-  for (let i = 0; i < DASHBOARD_ENDPOINTS.length; i += concurrency) {
-    const batch = DASHBOARD_ENDPOINTS.slice(i, i + concurrency);
-    const batchResults = await Promise.allSettled(
-      batch.map(async endpoint => {
-        const reqStart = Date.now();
-        try {
-          const res = await fetch(`${BASE_URL}${endpoint}`, {
-            signal: AbortSignal.timeout(TIMEOUT_MS),
-            headers,
-            keepalive: true
-          });
-          const duration = Date.now() - reqStart;
-          return { endpoint, status: res.status, duration, ok: res.ok };
-        } catch (err) {
-          const duration = Date.now() - reqStart;
-          return { endpoint, status: 0, duration, ok: false, error: err.message };
-        }
-      })
-    );
-    for (const r of batchResults) {
-      const result =
-        r.status === 'fulfilled'
-          ? r.value
-          : { endpoint: 'unknown', status: 0, duration: 0, ok: false };
+
+  for (let i = 0; i < targets.length; i += concurrency) {
+    const batch = targets.slice(i, i + concurrency);
+    const batchResults = await Promise.all(batch.map(path => warmPath(path, headers)));
+    for (const result of batchResults) {
       results.push(result);
-      const icon = result.ok ? '✅' : result.status === 401 ? '⚠️' : '❌';
-      const extra = result.error ? `: ${result.error}` : '';
-      console.log(`  ${icon} ${result.endpoint} → ${result.status} (${result.duration}ms)${extra}`);
+      logResult(result);
     }
   }
 
-  const ok = results.filter(r => r.ok).length;
-  const total = results.length;
-  const elapsed = ((Date.now() - startTime) / 1000).toFixed(1);
-  console.log(`\n[warmup] 📊 ${ok}/${total} endpoints warmed up in ${elapsed}s`);
+  summary(results, startTime);
 }
 
 warmup().catch(err => {

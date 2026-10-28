@@ -1,5 +1,7 @@
 /** @type {import('next').NextConfig} */
-import CompressionPlugin from 'compression-webpack-plugin';
+import { createRequire } from 'node:module';
+
+const require = createRequire(import.meta.url);
 
 const nextConfig = {
   serverExternalPackages: ['pg', 'koffi', 'ffmpeg-static', 'onnxruntime-node'],
@@ -301,6 +303,10 @@ const nextConfig = {
       };
 
       if (!dev) {
+        // El plugin de compresión sólo se usa en build: importarlo al cargar
+        // la config sumaba ~300 ms también a `next dev`.
+        const CompressionPlugin = require('compression-webpack-plugin');
+
         config.plugins.push(
           new CompressionPlugin({
             filename: '[path][base].gz',
