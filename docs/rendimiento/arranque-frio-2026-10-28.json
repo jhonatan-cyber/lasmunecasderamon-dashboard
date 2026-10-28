@@ -1,0 +1,175 @@
+{
+  "fecha": "2026-10-28T09:32:24.939Z",
+  "commit": "d6bdab88",
+  "arbolSucio": true,
+  "cambios": [
+    " M .env.example",
+    " M instrumentation.ts",
+    " M next.config.mjs",
+    " M package.json",
+    " M proxy.ts",
+    " M scripts/arquitectura/limites.mjs",
+    " M scripts/dev-lan-auto.js",
+    " M scripts/warmup.mjs",
+    "?? docs/rendimiento/arranque-frio-2026-10-28.json",
+    "?? modules/asistencia/recepcion.ts",
+    "?? scripts/benchmark-arranque.mjs",
+    "?? tests/unit/instrumentation.test.ts"
+  ],
+  "entorno": {
+    "node": "v24.20.0",
+    "next": "16.4.2",
+    "plataforma": "win32 10.0.26300",
+    "arquitectura": "x64",
+    "cpu": "AMD Ryzen 5 7520U with Radeon Graphics         ",
+    "nucleos": 8,
+    "memoriaGB": 7.2
+  },
+  "metodo": {
+    "comando": "node scripts/dev-lan-auto.js",
+    "warmup": "DASHBOARD_WARMUP=0",
+    "frio": "se elimina .next antes de cada corrida",
+    "templado": "se conserva .next de la última corrida fría",
+    "puerto": 3000,
+    "metricas": {
+      "readyMs": "spawn → línea \"Ready in\" de Next",
+      "healthMs": "spawn → primer GET /api/health con HTTP 200",
+      "loginMs": "spawn → primer GET /login con HTTP 200 (incluye health)",
+      "loginPageMs": "loginMs - healthMs",
+      "instrumentationMs": "spawn → primera línea [instrumentation]"
+    },
+    "timeoutListoMs": 120000,
+    "timeoutRutaMs": 120000,
+    "timeoutSolicitudMs": 60000
+  },
+  "muestras": [
+    {
+      "tipo": "frio",
+      "corrida": 1,
+      "readyMs": 3490,
+      "nextReadyMs": 2800,
+      "healthMs": 32643,
+      "healthStatus": 200,
+      "loginMs": 46148,
+      "loginStatus": 200,
+      "loginPageMs": 13505,
+      "instrumentationMs": 26506
+    },
+    {
+      "tipo": "frio",
+      "corrida": 2,
+      "readyMs": 2730,
+      "nextReadyMs": 1926,
+      "healthMs": 35542,
+      "healthStatus": 200,
+      "loginMs": 49886,
+      "loginStatus": 200,
+      "loginPageMs": 14344,
+      "instrumentationMs": 26839
+    },
+    {
+      "tipo": "frio",
+      "corrida": 3,
+      "readyMs": 2425,
+      "nextReadyMs": 1694,
+      "healthMs": 25564,
+      "healthStatus": 200,
+      "loginMs": 41979,
+      "loginStatus": 200,
+      "loginPageMs": 16415,
+      "instrumentationMs": 17218
+    },
+    {
+      "tipo": "templado",
+      "corrida": 1,
+      "readyMs": 2927,
+      "nextReadyMs": 1827,
+      "healthMs": 24670,
+      "healthStatus": 200,
+      "loginMs": 37993,
+      "loginStatus": 200,
+      "loginPageMs": 13323,
+      "instrumentationMs": 17829
+    },
+    {
+      "tipo": "templado",
+      "corrida": 2,
+      "readyMs": 2715,
+      "nextReadyMs": 1894,
+      "healthMs": 16638,
+      "healthStatus": 200,
+      "loginMs": 29588,
+      "loginStatus": 200,
+      "loginPageMs": 12950,
+      "instrumentationMs": 9398
+    }
+  ],
+  "resumen": {
+    "frio": {
+      "muestras": 3,
+      "ready": {
+        "n": 3,
+        "minMs": 2425,
+        "medianaMs": 2730,
+        "maxMs": 3490
+      },
+      "health": {
+        "n": 3,
+        "minMs": 25564,
+        "medianaMs": 32643,
+        "maxMs": 35542
+      },
+      "login": {
+        "n": 3,
+        "minMs": 41979,
+        "medianaMs": 46148,
+        "maxMs": 49886
+      },
+      "loginPage": {
+        "n": 3,
+        "minMs": 13505,
+        "medianaMs": 14344,
+        "maxMs": 16415
+      },
+      "instrumentation": {
+        "n": 3,
+        "minMs": 17218,
+        "medianaMs": 26506,
+        "maxMs": 26839
+      }
+    },
+    "templado": {
+      "muestras": 2,
+      "ready": {
+        "n": 2,
+        "minMs": 2715,
+        "medianaMs": 2821,
+        "maxMs": 2927
+      },
+      "health": {
+        "n": 2,
+        "minMs": 16638,
+        "medianaMs": 20654,
+        "maxMs": 24670
+      },
+      "login": {
+        "n": 2,
+        "minMs": 29588,
+        "medianaMs": 33790.5,
+        "maxMs": 37993
+      },
+      "loginPage": {
+        "n": 2,
+        "minMs": 12950,
+        "medianaMs": 13136.5,
+        "maxMs": 13323
+      },
+      "instrumentation": {
+        "n": 2,
+        "minMs": 9398,
+        "medianaMs": 13613.5,
+        "maxMs": 17829
+      }
+    }
+  }
+}
