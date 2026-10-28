@@ -145,6 +145,10 @@ const EVENT_TARGETS: Record<string, readonly string[]> = {
     'notifications'
   ],
 
+  // ─── Entradas de clientes (puerta → barra) ─────────────────────────────────
+  entrada_registrada: ['tickets', '/api/tickets', 'notifications'],
+  entrada_actualizada: ['tickets', '/api/tickets', 'notifications'],
+
   // ─── Inventario, bar y bodega ───────────────────────────────────────────────
   categories_updated: INVENTORY_QUERY_TARGETS,
   transfers_updated: INVENTORY_QUERY_TARGETS,
@@ -307,6 +311,7 @@ const MODULE_TARGETS: Record<string, readonly string[]> = {
   ],
   accounts: ['/api/accounts', '/api/accounts', 'dashboard'],
   categories: INVENTORY_QUERY_TARGETS,
+  entradas: ['tickets', '/api/tickets'],
   returns: [
     'returns',
     '/api/returns',

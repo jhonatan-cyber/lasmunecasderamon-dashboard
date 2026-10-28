@@ -1,7 +1,7 @@
 'use client';
 
+import { ErrorState } from '@/components/shared/ErrorState';
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import { Button } from '@/components/ui/button';
 import { useCurrentUser } from '@/hooks/auth/useCurrentUser';
 import { useUserImage } from '@/contexts/UserImageContext';
 import { toast } from 'sonner';
@@ -407,15 +407,11 @@ export default function ProfilePage() {
     return (
       <div className='container mx-auto p-6'>
         <div className='flex items-center justify-center h-64'>
-          <div className='text-center'>
-            <p className='text-red-600'>Error al cargar los datos del usuario</p>
-            <Button
-              onClick={() => currentUser && loadUserData(currentUser.id.toString())}
-              className='mt-4 whitespace-nowrap inline-flex items-center bg-black text-white rounded-full hover:scale-105 transition-all duration-200 text-xs sm:text-sm px-2 sm:px-3'
-            >
-              Reintentar
-            </Button>
-          </div>
+          <ErrorState
+            className='text-center'
+            message='Error al cargar los datos del usuario'
+            onRetry={() => currentUser && loadUserData(currentUser.id.toString())}
+          />
         </div>
       </div>
     );

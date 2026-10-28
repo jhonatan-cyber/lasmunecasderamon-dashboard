@@ -20,16 +20,10 @@ import { getNowInBusinessTimezone } from '@/lib/business/timezoneService';
 import { useUsers } from '@/hooks/staff';
 import { useCurrentUser } from '@/hooks/auth/useCurrentUser';
 import type { CierreCajaResultado } from '@/hooks/cash-register/useCashRegister';
-import { formatCurrencyCLP } from '@/lib/utils/formatters';
+import { formatCurrencyCLP, getDiaSemana } from '@/lib/utils/formatters';
 import { ClientesSaldoList } from '@/components/cash-register/ClientesSaldoList';
 import { calcularDevolucionSaldoClientes, montoCierreCaja } from '@/lib/business/cajaEfectivo';
 import { Loader2, Users, Clock } from 'lucide-react';
-
-const getDiaSemana = (fecha: string): string => {
-  const dias = ['Domingo', 'Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado'];
-  const fechaObj = new Date(fecha);
-  return dias[fechaObj.getDay()];
-};
 
 interface CerrarCajaDialogProps {
   caja: CajaWithUser | null;

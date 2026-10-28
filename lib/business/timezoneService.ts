@@ -69,6 +69,19 @@ export const getNowInBusinessTimezone = (inputDate?: Date | string | number): st
   return `${getVal('year')}-${getVal('month')}-${getVal('day')} ${getVal('hour')}:${getVal('minute')}:${getVal('second')}`;
 };
 
+/** Fecha de negocio en formato YYYY-MM-DD (por defecto, hoy). */
+export const fechaDeNegocio = (inputDate: Date = new Date()): string => {
+  const formatter = new Intl.DateTimeFormat('en-CA', {
+    timeZone: getSystemTimezone(),
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit'
+  });
+  const parts = formatter.formatToParts(inputDate);
+  const get = (type: string) => parts.find(part => part.type === type)?.value || '';
+  return `${get('year')}-${get('month')}-${get('day')}`;
+};
+
 export const parseBusinessDate = (dateStr: string | Date | null | undefined): Date => {
   if (!dateStr) return new Date();
   if (dateStr instanceof Date) return dateStr;

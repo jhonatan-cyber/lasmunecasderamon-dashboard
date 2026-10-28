@@ -3,6 +3,7 @@ import { libreriaNet, type LibreriaNet } from './audioSdk';
 import { direccionDe } from './netSdk';
 import { credencialesDeFila, type CredencialesEquipo } from './deviceClient';
 import { encolarIdentificacionDeRecord } from './identificacionFacial';
+import { encolarPendiente } from './comun';
 import logger from '@/lib/utils/logger';
 
 const ESPERA_MS = 8_000;
@@ -190,11 +191,14 @@ function bombear(): void {
 }
 
 export function encolarFotoDeRecord(pendiente: Pendiente): void {
-  if (enVuelo.has(pendiente.recordId)) return;
-  if ((intentos.get(pendiente.recordId) ?? 0) >= MAX_INTENTOS) return;
-  enVuelo.add(pendiente.recordId);
-  cola.push(pendiente);
-  bombear();
+  encolarPendiente({
+    pendiente,
+    enVuelo,
+    intentos,
+    maxIntentos: MAX_INTENTOS,
+    cola,
+    bombear
+  });
 }
 
 export async function recuperarFotosPendientes(limite = 3): Promise<number> {

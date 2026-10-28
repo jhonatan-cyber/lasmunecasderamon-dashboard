@@ -3,21 +3,33 @@
 import Link from 'next/link';
 import {
   Activity,
-  AlertTriangle,
   ArrowRight,
   BellRing,
   DoorOpen,
   Receipt,
   Wallet,
-  Clock
+  Clock,
+  type LucideIcon
 } from 'lucide-react';
-import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';
-import { useDashboardComposite } from '@/hooks/statistics/useDashboardComposite';
+import {
+  type DashboardPendingItem,
+  useDashboardComposite
+} from '@/hooks/statistics/useDashboardComposite';
 import { useCurrentUser } from '@/hooks/auth/useCurrentUser';
 import { useUserPermissions } from '@/hooks/auth/useUserPermissions';
 import { formatCurrencyCLP } from '@/lib/utils/formatters';
 import { cn } from '@/lib/utils/utils';
+import { DashboardEmpty, DashboardError } from '@/components/dashboard/DashboardFeedback';
+
+type ChipVariant = 'default' | 'success' | 'warning' | 'critical';
+
+interface StatusItem {
+  icon: LucideIcon;
+  label: string;
+  badge: string;
+  badgeVariant: ChipVariant;
+}
 
 function StatusChip({
   icon: Icon,
@@ -25,10 +37,10 @@ function StatusChip({
   badge,
   badgeVariant = 'default'
 }: {
-  icon: React.ComponentType<{ className?: string }>;
+  icon: LucideIcon;
   label: string;
   badge: string;
-  badgeVariant?: 'default' | 'success' | 'warning' | 'critical';
+  badgeVariant?: ChipVariant;
 }) {
   const variants = {
     default:
@@ -53,19 +65,7 @@ function StatusChip({
   );
 }
 
-function PendingRow({
-  item
-}: {
-  item: {
-    id: string;
-    code: string;
-    title: string;
-    subtitle: string;
-    amount: number;
-    createdAt: string;
-    href: string;
-  };
-}) {
+function PendingRow({ item }: { item: DashboardPendingItem }) {
   return (
     <Link
       href={item.href}
@@ -137,14 +137,10 @@ export default function LocalAndPending() {
   }
 
   if (error || !insights) {
-    return (
-      <div className='rounded-xl border border-rose-200 bg-rose-50 px-4 py-3 text-xs font-bold text-rose-700 dark:border-rose-900/40 dark:bg-rose-950/20 dark:text-rose-200'>
-        Error al cargar estado operativo.
-      </div>
-    );
+    return <DashboardError>Error al cargar estado operativo.</DashboardError>;
   }
 
-  const statusItems = [
+  const statusItems: StatusItem[] = [
     {
       icon: DoorOpen,
       label: 'Salas',
@@ -185,7 +181,7 @@ export default function LocalAndPending() {
     <div className='flex flex-col gap-4'>
       <div className='flex flex-wrap gap-2'>
         {statusItems.map(item => (
-          <StatusChip key={item.label} {...(item as any)} />
+          <StatusChip key={item.label} {...item} />
         ))}
       </div>
 
@@ -196,14 +192,7 @@ export default function LocalAndPending() {
           ))}
         </div>
       ) : (
-        <div className='flex flex-col items-center justify-center py-6 rounded-2xl border-2 border-dashed border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-950/10'>
-          <div className='p-2 bg-white dark:bg-slate-800 rounded-full mb-2 shadow-xs'>
-            <Activity className='h-4 w-4 text-slate-300' />
-          </div>
-          <p className='text-[10px] font-black uppercase tracking-widest text-slate-400'>
-            Todo bajo control
-          </p>
-        </div>
+        <DashboardEmpty icon={Activity}>Todo bajo control</DashboardEmpty>
       )}
     </div>
   );

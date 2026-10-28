@@ -1,4 +1,5 @@
 'use client';
+import { EmptyState } from '@/components/shared/EmptyState';
 import {
   Table,
   TableHeader,
@@ -116,7 +117,7 @@ export default function ProductTable({
             ) : (
               <TableRow>
                 <TableCell colSpan={6} className='text-center'>
-                  No hay productos agregados
+                  <EmptyState variant='text' title='No hay productos agregados' />
                 </TableCell>
               </TableRow>
             )}

@@ -23,6 +23,7 @@ import {
   ServiceRequestCard
 } from '@/components/orders/list';
 import { CajaStatusBanner } from '@/components/sales/CajaStatusBanner';
+import { EmptyState } from '@/components/shared/EmptyState';
 
 const OrderDetailModal = dynamic(
   () => import('@/components/orders').then(mod => mod.OrderDetailModal),
@@ -217,11 +218,10 @@ export default function OrdersPage() {
           {activeTab === 'productos' && (
             <div className='space-y-4 animate-in fade-in slide-in-from-bottom-2 duration-300'>
               {filteredOrders.length === 0 ? (
-                <div className='text-center py-20 rounded-2xl border border-dashed border-gray-200 bg-white dark:border-zinc-800 dark:bg-zinc-900/70'>
-                  <p className='font-medium text-gray-400 dark:text-zinc-500'>
-                    No se encontraron órdenes de productos
-                  </p>
-                </div>
+                <EmptyState
+                  title='No se encontraron órdenes de productos'
+                  className='rounded-2xl border border-gray-200 bg-white py-20 dark:border-zinc-800 dark:bg-zinc-900/70'
+                />
               ) : (
                 <div className='grid grid-cols-1 xl:grid-cols-2 gap-4'>
                   {filteredOrders.map(order => (

@@ -3,14 +3,7 @@
 import { MetricCard } from '@/components/shared/MetricCard';
 import { TrendingUp, Users, DollarSign, Award, Target } from 'lucide-react';
 import type { Statistics } from './hooks/useCommissionsReport';
-
-export const formatNumber = (amount: number) => {
-  if (!amount || isNaN(amount) || amount === Infinity || amount === -Infinity) {
-    return '0';
-  }
-  const roundedAmount = Math.round(amount);
-  return roundedAmount.toString().replace(/\B(?=(\d{3})+(?!\d))/g, '.');
-};
+import { formatNumber } from './reportFormatters';
 
 interface CommissionsStatsCardsProps {
   statistics: Statistics;

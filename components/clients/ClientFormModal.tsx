@@ -15,20 +15,7 @@ import { CreditCard, User, FileSignature, Phone } from 'lucide-react';
 import { useClientForm } from '@/hooks/clients';
 import { type ClientFormValues } from '@/hooks/clients';
 import { useState, useEffect } from 'react';
-
-const formatRUT = (value: string): string => {
-  const clean = value.replace(/[^0-9kK]/gi, '').toUpperCase();
-  if (!clean) return '';
-
-  if (clean.length <= 1) return clean;
-
-  const cuerpo = clean.slice(0, -1);
-  const dv = clean.slice(-1);
-
-  const formattedCuerpo = cuerpo.replace(/\B(?=(\d{3})+(?!\d))/g, '.');
-
-  return `${formattedCuerpo}-${dv}`;
-};
+import { formatRut as formatRUT } from '@/lib/utils/rut';
 
 interface ClientFormProps {
   clientData: ClientFormValues;

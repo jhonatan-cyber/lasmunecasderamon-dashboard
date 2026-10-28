@@ -1,4 +1,5 @@
 'use client';
+import { EmptyState } from '@/components/shared/EmptyState';
 import { useRealtimeRefresh } from '@/hooks/realtime/useRealtimeRefresh';
 import { useCallback, useEffect, useState } from 'react';
 import { fetchCollection } from '@/lib/api/fetchCollection';
@@ -66,7 +67,7 @@ export function EmployeeGratifications() {
               {rows.length === 0 ? (
                 <ModuleTableRow>
                   <ModuleTableCell colSpan={4} className='py-12 text-center'>
-                    No hay gratificaciones para mostrar
+                    <EmptyState variant='text' title='No hay gratificaciones para mostrar' />
                   </ModuleTableCell>
                 </ModuleTableRow>
               ) : (

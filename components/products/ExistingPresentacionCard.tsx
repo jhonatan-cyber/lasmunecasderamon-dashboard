@@ -5,6 +5,7 @@ import { Button } from '@/components/ui/button';
 import { useState, useEffect } from 'react';
 import { Input } from '@/components/ui/input';
 import { formatCurrencyCLP } from '@/lib/utils/formatters';
+import { productImageUrl } from '@/lib/utils/productImage';
 import { Camera, Pencil, Trash2, Plus, Link as LinkIcon, ChevronDown } from 'lucide-react';
 import { CodeDeactivationPicker } from './CodeDeactivationPicker';
 import { PresentacionNombreInput } from './PresentacionNombreInput';
@@ -81,16 +82,7 @@ export function ExistingPresentacionCard({
     }
   }, [isEditing]);
 
-  const fotoSrc =
-    p.foto && p.foto !== 'default.png'
-      ? p.foto.startsWith('http') || p.foto.startsWith('blob:')
-        ? p.foto
-        : `/api/images/products/${p.foto}`
-      : defaultFoto && defaultFoto !== 'default.png'
-        ? defaultFoto.startsWith('http')
-          ? defaultFoto
-          : `/api/images/products/${defaultFoto}`
-        : '/api/images/products/default.png';
+  const fotoSrc = productImageUrl(p.foto, defaultFoto);
 
   return (
     <div className='relative p-2.5 pl-4 rounded-2xl bg-gray-100 dark:bg-slate-800 space-y-2'>

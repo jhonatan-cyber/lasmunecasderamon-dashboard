@@ -1,5 +1,6 @@
 'use client';
 
+import { ErrorState } from '@/components/shared/ErrorState';
 import { useState } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { Bell, Check, RefreshCw } from 'lucide-react';
@@ -82,7 +83,10 @@ export default function Notifications() {
       {history.isPending ? (
         <p role='status'>Cargando notificaciones...</p>
       ) : history.isError ? (
-        <p role='alert'>{history.error.message}. Pulsa Actualizar para reintentar.</p>
+        <ErrorState
+          size='sm'
+          message={`${history.error.message}. Pulsa Actualizar para reintentar.`}
+        />
       ) : visible.length === 0 ? (
         <Card>
           <CardContent className='flex flex-col items-center gap-3 py-12'>

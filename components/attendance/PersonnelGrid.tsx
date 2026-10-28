@@ -3,6 +3,7 @@
 import Image from 'next/image';
 import { Card } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
+import { EmptyState } from '@/components/shared/EmptyState';
 
 interface PersonnelItem {
   id: string | number;
@@ -22,9 +23,10 @@ interface PersonnelGridProps {
 export function PersonnelGrid({ personnel, onSelect }: PersonnelGridProps) {
   if (personnel.length === 0) {
     return (
-      <div className='text-center py-20 bg-slate-50 dark:bg-slate-900/50 rounded-2xl border-2 border-dashed border-slate-200 dark:border-slate-700'>
-        <p className='text-slate-500'>No se encontró personal activo registrado.</p>
-      </div>
+      <EmptyState
+        title='No se encontró personal activo registrado.'
+        className='bg-slate-50 py-20 border-slate-200 dark:bg-slate-900/50 dark:border-slate-700'
+      />
     );
   }
 

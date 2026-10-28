@@ -1,27 +1,11 @@
 'use client';
 
-import { useQuery } from '@tanstack/react-query';
 import { MetricCard } from '@/components/shared/MetricCard';
 import { Users, UserCheck, UserX, Martini } from 'lucide-react';
-import type { LoggedUsersStatsResponse } from '@/hooks/statistics/useLoggedUsersStats';
+import { useLoggedUsersStats } from '@/hooks/statistics/useLoggedUsersStats';
 
 export default function LoggedUsersCards() {
-  const {
-    data: stats,
-    isLoading: loading,
-    error: queryError
-  } = useQuery<LoggedUsersStatsResponse>({
-    queryKey: ['logged-users-stats'],
-    queryFn: async () => {
-      const response = await fetch('/api/stats/logged-users');
-      if (!response.ok) throw new Error('Error al obtener estadísticas');
-      const data = await response.json();
-      if (!data.success) throw new Error(data.message || 'Error en la respuesta');
-      return data.data;
-    },
-    staleTime: 60000,
-    refetchOnWindowFocus: true
-  });
+  const { data: stats, isLoading: loading, error: queryError } = useLoggedUsersStats();
 
   const error = queryError instanceof Error ? queryError.message : null;
 
@@ -113,7 +97,7 @@ export default function LoggedUsersCards() {
                       Usuarios ({card.usuarios.length})
                     </p>
                     <div className='flex max-h-24 flex-wrap gap-1.5 overflow-y-auto pr-1'>
-                      {card.usuarios.map((user: any, userIndex: number) => (
+                      {card.usuarios.map((user, userIndex) => (
                         <span
                           key={`${index}-${user.id_usuario}-${userIndex}`}
                           className='inline-flex max-w-full items-center rounded-lg border border-current/15 bg-current/5 px-2 py-1 text-xs font-medium'

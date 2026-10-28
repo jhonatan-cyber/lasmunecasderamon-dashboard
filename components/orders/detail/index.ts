@@ -1,3 +1,4 @@
+export { OrderBaucherPanel } from '../OrderBaucherPanel';
 export { OrderDetailInfoPanel } from '../OrderDetailInfoPanel';
 export { OrderDetailPaymentPanel } from '../OrderDetailPaymentPanel';
 export { OrderDetailTotalsSummary } from '../OrderDetailTotalsSummary';

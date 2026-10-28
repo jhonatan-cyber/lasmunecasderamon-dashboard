@@ -240,3 +240,64 @@ it('bloquea dos envios de pedido antes del render y conserva el codigo al reinte
   expect(codes[0]).toBeTruthy();
   expect(codes[0]).toBe(codes[1]);
 });
+
+describe('Baucher del pedido con transferencia', () => {
+  const productos = [
+    {
+      id: 'bebida',
+      producto_id: 'bebida',
+      nombre: 'Bebida',
+      precio: 5000,
+      cantidad: 1,
+      subtotal: 5000,
+      comision: 0
+    }
+  ];
+
+  it('no genera el pedido sin la foto del baucher', async () => {
+    const request = vi.spyOn(globalThis, 'fetch');
+    const { result } = renderHook(() =>
+      useOrderForm({ productos, selectedCliente: '', setSelectedCliente: vi.fn() })
+    );
+    act(() => result.current.setMetodoPago('transferencia'));
+
+    await act(async () => result.current.handleSubmitInternal());
+
+    expect(request).not.toHaveBeenCalled();
+    expect(result.current.error).toMatch(/baucher/);
+  });
+
+  it('adjunta la foto y la manda en el payload', async () => {
+    const request = vi
+      .spyOn(globalThis, 'fetch')
+      .mockResolvedValue({ status: 400, json: async () => ({ success: false }) } as Response);
+    const baucher = 'data:image/jpeg;base64,SG9sYQ==';
+    const { result } = renderHook(() =>
+      useOrderForm({ productos, selectedCliente: '', setSelectedCliente: vi.fn() })
+    );
+    act(() => result.current.setMetodoPago('transferencia'));
+    act(() => result.current.setBaucherFoto(baucher));
+
+    await act(async () => result.current.handleSubmitInternal());
+
+    const payload = JSON.parse(String(request.mock.calls[0][1]?.body));
+    expect(payload.baucher_foto).toBe(baucher);
+    expect(OrderCreateSchema.safeParse(payload).success).toBe(true);
+  });
+
+  it('no adjunta el baucher cuando el pago no es transferencia', async () => {
+    const request = vi
+      .spyOn(globalThis, 'fetch')
+      .mockResolvedValue({ status: 400, json: async () => ({ success: false }) } as Response);
+    const { result } = renderHook(() =>
+      useOrderForm({ productos, selectedCliente: '', setSelectedCliente: vi.fn() })
+    );
+    act(() => result.current.setMetodoPago('efectivo'));
+    act(() => result.current.setBaucherFoto('data:image/jpeg;base64,SG9sYQ=='));
+
+    await act(async () => result.current.handleSubmitInternal());
+
+    const payload = JSON.parse(String(request.mock.calls[0][1]?.body));
+    expect(payload).not.toHaveProperty('baucher_foto');
+  });
+});

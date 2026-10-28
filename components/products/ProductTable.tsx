@@ -1,5 +1,6 @@
 'use client';
 
+import { EmptyState } from '@/components/shared/EmptyState';
 import React, { useState } from 'react';
 import { Product, Presentacion } from '@/types/product';
 import { InteractiveProductPhoto } from '@/components/shared/InteractiveProductPhoto';
@@ -52,6 +53,7 @@ import {
 import { CSS } from '@dnd-kit/utilities';
 import { useUserPermissions } from '@/hooks/auth/useUserPermissions';
 import { formatCurrencyCLP } from '@/lib/utils/formatters';
+import { productImageUrl } from '@/lib/utils/productImage';
 
 interface ProductTableProps {
   products: Product[];
@@ -86,12 +88,6 @@ interface SortableRowProps {
   canActivate: boolean;
   canDeactivate: boolean;
   hasAnyAction: boolean;
-}
-
-function productFoto(foto?: string | null): string {
-  if (!foto || foto === 'default.png' || foto === '') return '/api/images/products/default.png';
-  if (foto.startsWith('http')) return foto;
-  return `/api/images/products/${foto}`;
 }
 
 const SortableRow: React.FC<SortableRowProps> = React.memo(
@@ -143,7 +139,7 @@ const SortableRow: React.FC<SortableRowProps> = React.memo(
         </TableCell>
         <TableCell className='sm:px-4 text-center'>
           <InteractiveProductPhoto
-            src={productFoto(presentation?.foto || product.foto)}
+            src={productImageUrl(presentation?.foto, product.foto)}
             alt={presentation ? `${product.name} ${presentation.nombre}` : product.name}
             containerClassName='relative mx-auto h-12 w-12 shrink-0 overflow-hidden rounded-xl border border-gray-100 bg-gray-50 shadow-xs transition-all group-hover:shadow-sm dark:border-slate-800 dark:bg-slate-800/40'
             photoClassName='h-12 w-12 object-cover transition-transform duration-300 group-hover:scale-110'
@@ -416,7 +412,7 @@ const ProductTable: React.FC<ProductTableProps> = ({
                 {localProducts.length === 0 && (
                   <TableRow key='empty'>
                     <TableCell colSpan={13} className='text-center bg-white sm:text-base'>
-                      No hay productos
+                      <EmptyState variant='text' title='No hay productos' />
                     </TableCell>
                   </TableRow>
                 )}

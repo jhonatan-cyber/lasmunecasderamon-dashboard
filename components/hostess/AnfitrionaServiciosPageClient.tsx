@@ -1,4 +1,5 @@
 'use client';
+import { EmptyState } from '@/components/shared/EmptyState';
 import { ListLoadError } from '@/components/shared/ListLoadError';
 import { FilterBar } from '@/components/shared/FilterBar';
 import { SortSelect } from '@/components/shared/selects/SortSelect';
@@ -294,7 +295,9 @@ export default function AnfitrionaServiciosPage() {
                   </ModuleTableRow>
                 ) : paginatedServices.length === 0 ? (
                   <ModuleTableRow>
-                    <ModuleTableCell colSpan={8}>No se encontraron servicios</ModuleTableCell>
+                    <ModuleTableCell colSpan={8}>
+                      <EmptyState variant='text' title='No se encontraron servicios' />
+                    </ModuleTableCell>
                   </ModuleTableRow>
                 ) : (
                   paginatedServices.map((service, index) => (

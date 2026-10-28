@@ -9,6 +9,7 @@ import {
   DialogFooter
 } from '@/components/ui/dialog';
 import { useOvertime } from '@/hooks/staff';
+import { EmptyState } from '@/components/shared/EmptyState';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import {
@@ -177,11 +178,10 @@ export default function OvertimeDetailModal({
                 </p>
               </div>
             ) : details.length === 0 ? (
-              <div className='text-center py-12 bg-gray-50 dark:bg-slate-800/30 rounded-3xl border-2 border-dashed border-gray-100 dark:border-gray-800'>
-                <p className='text-gray-400 font-medium tracking-tight'>
-                  No se encontraron registros de horas extras
-                </p>
-              </div>
+              <EmptyState
+                title='No se encontraron registros de horas extras'
+                className='rounded-3xl border-gray-100 bg-gray-50 py-12 dark:border-gray-800 dark:bg-slate-800/30'
+              />
             ) : (
               <div className='space-y-6'>
                 <div className='bg-white dark:bg-slate-900/40 backdrop-blur-xs rounded-3xl border-none shadow-md overflow-hidden'>

@@ -1,5 +1,7 @@
 'use client';
 
+import { EmptyState } from '@/components/shared/EmptyState';
+import { ErrorState } from '@/components/shared/ErrorState';
 import { useEffect, useState } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
@@ -193,21 +195,21 @@ export default function CommissionsDetalleModal({
                       ))
                     ) : error ? (
                       <TableRow>
-                        <TableCell colSpan={7} className='text-center text-red-600'>
-                          {error}
-                          <Button
-                            onClick={() => fetchDetalles(usuario.id_usuario)}
-                            className='mt-2 ml-4'
+                        <TableCell colSpan={7}>
+                          <ErrorState
                             size='sm'
-                          >
-                            Reintentar
-                          </Button>
+                            message={error}
+                            onRetry={() => fetchDetalles(usuario.id_usuario)}
+                          />
                         </TableCell>
                       </TableRow>
                     ) : detalles.length === 0 ? (
                       <TableRow>
                         <TableCell colSpan={7} className='text-center'>
-                          No hay detalles de comisiones para mostrar
+                          <EmptyState
+                            variant='text'
+                            title='No hay detalles de comisiones para mostrar'
+                          />
                         </TableCell>
                       </TableRow>
                     ) : (

@@ -15,6 +15,7 @@ import {
 import { cn } from '@/lib/utils/utils';
 import { formatCurrencyCLP } from '@/lib/utils/formatters';
 import { MetricCard } from '@/components/shared/MetricCard';
+import { DashboardError } from '@/components/dashboard/DashboardFeedback';
 
 function TrendBadge({ trend }: { trend?: DashboardTrend }) {
   if (!trend) return null;
@@ -94,11 +95,7 @@ export default function CriticalMetrics() {
   }
 
   if (error || !businessStats || !insights) {
-    return (
-      <div className='rounded-xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm text-rose-700 dark:border-rose-900/40 dark:bg-rose-950/20 dark:text-rose-200'>
-        Error al cargar métricas críticas.
-      </div>
-    );
+    return <DashboardError>Error al cargar métricas críticas.</DashboardError>;
   }
 
   const kpis = [

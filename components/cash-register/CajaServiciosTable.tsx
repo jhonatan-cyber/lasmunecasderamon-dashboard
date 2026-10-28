@@ -4,7 +4,7 @@ import { Badge } from '@/components/ui/badge';
 
 import Paginate from '@/components/shared/Paginate';
 import { Input } from '@/components/ui/input';
-import { Skeleton } from '@/components/ui/skeleton';
+import { TableSkeleton } from '@/components/shared/TableSkeleton';
 import {
   Table,
   TableHeader,
@@ -26,17 +26,6 @@ interface CajaServiciosTableProps {
   page: number;
   totalPages: number;
   onPageChange: (page: number) => void;
-}
-
-function TableSkeleton({ rows = 5 }: { rows?: number }) {
-  return (
-    <div className='space-y-3'>
-      <Skeleton className='h-8 w-full' />
-      {Array.from({ length: rows }).map((_, i) => (
-        <Skeleton key={i} className='h-12 w-full' />
-      ))}
-    </div>
-  );
 }
 
 export function CajaServiciosTable({

@@ -66,6 +66,19 @@ const WAREHOUSE_STAFF: readonly SseAudience[] = [
   { channel: 'role', roles: ['administrador', 'almacen'] }
 ];
 
+/**
+ * La puerta avisa a la barra: quien cobró la entrada no necesita el aviso, pero
+ * administración, caja y barra sí para preparar la bebida de cortesía.
+ */
+const ENTRADA_STAFF: readonly SseAudience[] = [
+  { channel: 'role', roles: ['administrador', 'cajero', 'barman'] }
+];
+
+/** El estado de la entrada también lo ve la puerta, que la registró. */
+const ENTRADA_ESTADO: readonly SseAudience[] = [
+  { channel: 'role', roles: ['administrador', 'cajero', 'barman', 'garzon'] }
+];
+
 /** Aprobación de entregas físicas: administración y caja revisan cada lote. */
 const CONTAINER_APPROVERS: readonly SseAudience[] = [
   { channel: 'role', roles: ['administrador', 'cajero'] }
@@ -142,6 +155,15 @@ export const SSE_EVENTS = {
   // Lo dispara la venta que cruza el umbral; lo ven quienes sirven y quienes
   // administran (payload { alertas, mensaje }).
   bar_shot_alert: { audiences: BAR_STAFF },
+
+  // ─── Entradas de clientes: la puerta avisa a la barra ─────────────────────
+  // El garzón cobra en la puerta y la cortesía queda pendiente; administración,
+  // caja y barra reciben el aviso para entregar la bebida (payload
+  // { id, grupo_registro_id, cliente_nombre, cantidad, monto_total, hora, ... }).
+  entrada_registrada: { audiences: ENTRADA_STAFF },
+  // La barra entregó o anuló una entrada: la puerta y la caja ven el cambio de
+  // estado en vivo (payload { entradaId, accion: 'entregada' | 'anulada', ... }).
+  entrada_actualizada: { audiences: ENTRADA_ESTADO },
 
   // ─── Bodega: un envase entregado lleva más de 2 horas sin recibir ─────────
   // Lo dispara el chequeo periódico del control de envases (cron y contador del

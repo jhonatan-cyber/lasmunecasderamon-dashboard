@@ -1,6 +1,4 @@
-import { NextResponse } from 'next/server';
-import { getAuth } from '@/lib/auth/auth-app';
-import { createSseStream } from '@/lib/api/sseStream';
+import { createStaffSseResponse } from '@/lib/api/staffSseStream';
 
 export const dynamic = 'force-dynamic';
 
@@ -9,18 +7,5 @@ export const dynamic = 'force-dynamic';
  * decidir qué eventos le llegan (ver `lib/api/sseEvents.ts`).
  */
 export async function GET(request: Request) {
-  const user = await getAuth();
-
-  if (!user) {
-    return NextResponse.json(
-      { success: false, message: 'No autenticado', code: 'NO_TOKEN' },
-      { status: 401 }
-    );
-  }
-
-  return createSseStream(request, {
-    channel: 'staff',
-    userId: user.id,
-    role: user.role
-  });
+  return createStaffSseResponse(request);
 }

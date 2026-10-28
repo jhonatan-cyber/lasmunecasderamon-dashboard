@@ -82,6 +82,8 @@ export default function OrderForm({
     error,
     metodoPago,
     setMetodoPago,
+    baucherFoto,
+    setBaucherFoto,
     subtotal,
     total,
     rooms,
@@ -126,6 +128,8 @@ export default function OrderForm({
         onTipChange={handleTipChange}
         metodoPago={metodoPago}
         onMetodoPagoChange={setMetodoPago}
+        baucherFoto={baucherFoto}
+        onBaucherChange={setBaucherFoto}
       />
 
       <CategoryProductsModal

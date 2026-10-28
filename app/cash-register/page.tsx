@@ -1,5 +1,6 @@
 'use client';
 
+import { EmptyState } from '@/components/shared/EmptyState';
 import { useState, useEffect } from 'react';
 import { Card } from '@/components/ui/card';
 
@@ -266,21 +267,19 @@ export default function CashRegister() {
             <BoneyardSkeleton name='cash-register-main' loading={loading}>
               {filteredCajas.length === 0 ? (
                 <div className='flex flex-col items-center justify-center py-20 text-center space-y-6'>
-                  <div className='w-24 h-24 bg-slate-100 dark:bg-white/5 rounded-[2.5rem] flex items-center justify-center'>
-                    <Wallet className='h-12 w-12 text-slate-300' />
-                  </div>
-                  <div className='space-y-2'>
-                    <h3 className='text-2xl font-black text-slate-900 dark:text-white uppercase tracking-tighter'>
-                      {searchTerm || filterStatus !== 'all'
+                  <EmptyState
+                    icon={Wallet}
+                    title={
+                      searchTerm || filterStatus !== 'all'
                         ? 'Sin coincidencias'
-                        : 'Sin cajas activas'}
-                    </h3>
-                    <p className='text-slate-500 font-medium max-w-sm mx-auto'>
-                      {searchTerm || filterStatus !== 'all'
+                        : 'Sin cajas activas'
+                    }
+                    description={
+                      searchTerm || filterStatus !== 'all'
                         ? 'No encontramos lo que buscas con los filtros actuales.'
-                        : 'Todavía no hay registros en el sistema. ¡Abre una nueva caja para empezar!'}
-                    </p>
-                  </div>
+                        : 'Todavía no hay registros en el sistema. ¡Abre una nueva caja para empezar!'
+                    }
+                  />
                 </div>
               ) : (
                 <div className='grid gap-6 grid-cols-1 md:grid-cols-2 xl:grid-cols-3'>

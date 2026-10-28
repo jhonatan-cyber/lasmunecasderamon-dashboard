@@ -1,4 +1,5 @@
 import { formatCurrencyCLP } from '@/lib/utils/formatters';
+import { escaparHtml } from '@/lib/utils/htmlEscape';
 
 interface ReceiptParams {
   logoUrl: string;
@@ -44,18 +45,18 @@ export function generateReceiptHTML({
         <body>
           <div class="card">
             <div class="header">
-              <img src="${logoUrl}" alt="Las Muñecas de Ramón" class="logo" />
+              <img src="${escaparHtml(logoUrl)}" alt="Las Muñecas de Ramón" class="logo" />
               <p class="brand">Las Muñecas de Ramón</p>
               <p class="subtitle">Boleta habitación</p>
             </div>
 
             <div class="section">
               <div class="section-title">Detalle de atención</div>
-              <div class="row"><span class="label">Cliente</span><span class="value">${clienteNombre}</span></div>
-              <div class="row"><span class="label">Habitación</span><span class="value">${habitacionNombre}</span></div>
-              <div class="row"><span class="label">Método de pago</span><span class="value">${metodoPago}</span></div>
-              <div class="row"><span class="label">Fecha</span><span class="value">${fecha}</span></div>
-              <div class="row"><span class="label">Atendido por</span><span class="value">${anfitrionasAtendiendo || 'Sin anfitriona asignada'}</span></div>
+              <div class="row"><span class="label">Cliente</span><span class="value">${escaparHtml(clienteNombre)}</span></div>
+              <div class="row"><span class="label">Habitación</span><span class="value">${escaparHtml(habitacionNombre)}</span></div>
+              <div class="row"><span class="label">Método de pago</span><span class="value">${escaparHtml(metodoPago)}</span></div>
+              <div class="row"><span class="label">Fecha</span><span class="value">${escaparHtml(fecha)}</span></div>
+              <div class="row"><span class="label">Atendido por</span><span class="value">${escaparHtml(anfitrionasAtendiendo || 'Sin anfitriona asignada')}</span></div>
             </div>
 
             <div class="service-box">

@@ -114,3 +114,98 @@ describe('cajaExportUtils · egresos ya descontados', () => {
     );
   });
 });
+
+/**
+ * El cierre se imprime desde un Blob URL, que hereda el origen de quien lo crea.
+ * Los nombres vienen de la base y los carga una persona en recepción, así que no
+ * pueden viajar crudos al documento.
+ */
+describe('cajaExportUtils · escape de los datos del cierre', () => {
+  it('escapa el cliente y la habitación en el listado de ventas', () => {
+    const html = generatePrintContent(
+      baseContext({
+        activeTab: 'ventas',
+        filteredVentas: [
+          {
+            cliente_nombre: '<script>alert(1)</script>',
+            habitacion_nombre: 'Sala <b>2</b>',
+            item_count: 1,
+            sub_total: 1000,
+            propina: 0,
+            total: 1000,
+            fecha_crea: '2026-09-28 10:00:00',
+            metodo_pago: 'efectivo'
+          }
+        ]
+      })
+    );
+
+    expect(html).not.toContain('<script>alert(1)</script>');
+    expect(html).not.toContain('<b>2</b>');
+    expect(html).toContain('&lt;script&gt;alert(1)&lt;/script&gt;');
+    expect(html).toContain('Sala &lt;b&gt;2&lt;/b&gt;');
+  });
+
+  it('escapa el cliente, las anfitrionas y la habitación en servicios', () => {
+    const html = generatePrintContent(
+      baseContext({
+        activeTab: 'servicios',
+        filteredServicios: [
+          {
+            cliente_nombre: '<i>Ana</i>',
+            anfitrionas_nombres: 'Rosa & <b>Eva</b>',
+            habitacion_nombre: '<script>x</script>',
+            total_habitacion: 0,
+            iva: 0,
+            total: 1000,
+            fecha_crea: '2026-09-28 10:00:00',
+            metodo_pago: 'efectivo'
+          }
+        ]
+      })
+    );
+
+    expect(html).not.toContain('<i>Ana</i>');
+    expect(html).not.toContain('<b>Eva</b>');
+    expect(html).not.toContain('<script>x</script>');
+    expect(html).toContain('Rosa &amp; &lt;b&gt;Eva&lt;/b&gt;');
+  });
+
+  it('escapa el motivo de un retiro', () => {
+    const html = generatePrintContent(
+      baseContext({
+        activeTab: 'retiros',
+        retiros: [
+          { fecha_crea: '2026-09-28 10:00:00', motivo: '<img src=x onerror=1>', monto: 5000 }
+        ]
+      })
+    );
+
+    expect(html).not.toContain('<img src=x');
+    expect(html).toContain('&lt;img src=x onerror=1&gt;');
+  });
+
+  it('escapa el método de pago mixto, que también viene de la base', () => {
+    const html = generatePrintContent(
+      baseContext({
+        activeTab: 'ventas',
+        filteredVentas: [
+          {
+            cliente_nombre: 'Ana',
+            habitacion_nombre: 'Barra',
+            item_count: 1,
+            sub_total: 1000,
+            propina: 0,
+            total: 1000,
+            fecha_crea: '2026-09-28 10:00:00',
+            metodo_pago: 'mixto',
+            pagos_mixtos: [{ metodo: '<b>efectivo</b>', monto: 1000 }]
+          }
+        ]
+      })
+    );
+
+    expect(html).not.toContain('<b>efectivo</b>');
+    expect(html).toContain('&lt;b&gt;efectivo&lt;/b&gt;');
+  });
+});

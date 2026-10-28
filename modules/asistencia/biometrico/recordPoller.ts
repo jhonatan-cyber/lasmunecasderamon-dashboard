@@ -16,6 +16,7 @@ import type { BiometricMetodo } from '@/modules/asistencia/biometrico/types';
 import logger from '@/lib/utils/logger';
 import { quizasSincronizarReloj } from '@/modules/asistencia/biometrico/clockSync';
 import { recepcionAutomaticaHabilitada } from '@/modules/asistencia/biometrico/recepcionConfig';
+import { metodoBiometricoDesdeCodigo as metodoDesdeRecords } from './comun';
 export interface RecordDelEquipo {
   recNo: number;
   createTime: number;
@@ -40,21 +41,6 @@ export interface ResumenPoll {
   usuarioInactivo: number;
   errores: number;
   hasta: number | null;
-}
-
-function metodoDesdeRecords(method: number | null): BiometricMetodo {
-  switch (method) {
-    case 0:
-      return 'clave';
-    case 1:
-      return 'tarjeta';
-    case 6:
-      return 'huella';
-    case 15:
-      return 'cara';
-    default:
-      return 'otro';
-  }
 }
 
 function epochAHoraNegocio(epochSegundos: number): string {

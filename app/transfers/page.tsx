@@ -1,5 +1,7 @@
 'use client';
 
+import { ErrorState } from '@/components/shared/ErrorState';
+import { EmptyState } from '@/components/shared/EmptyState';
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { InteractiveProductPhoto } from '@/components/shared/InteractiveProductPhoto';
 import { StaggeredEntrance } from '@/components/shared/StaggeredEntrance';
@@ -24,7 +26,6 @@ import {
   CardContent,
   CardFooter
 } from '@/components/ui/card';
-import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import {
   Table,
   TableBody,
@@ -284,12 +285,7 @@ function TransfersContent() {
         </div>
       </header>
 
-      {error && (
-        <Alert variant='destructive' role='alert'>
-          <AlertTitle>No se pudo actualizar</AlertTitle>
-          <AlertDescription>{error}</AlertDescription>
-        </Alert>
-      )}
+      {error && <ErrorState size='sm' title='No se pudo actualizar' message={error} />}
 
       <Tabs value={tab} onValueChange={setTab} className='flex flex-col gap-4'>
         <div className='flex flex-wrap items-center justify-between gap-3'>
@@ -555,9 +551,14 @@ function TransfersContent() {
                   {historial.length === 0 ? (
                     <TableRow>
                       <TableCell colSpan={8} className='text-center text-muted-foreground'>
-                        {loading
-                          ? 'Cargando historial…'
-                          : 'Todavía no hay transferencias registradas.'}
+                        <EmptyState
+                          variant='text'
+                          title={
+                            loading
+                              ? 'Cargando historial…'
+                              : 'Todavía no hay transferencias registradas.'
+                          }
+                        />
                       </TableCell>
                     </TableRow>
                   ) : (

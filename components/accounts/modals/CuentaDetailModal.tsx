@@ -1,5 +1,6 @@
 'use client';
 
+import { EmptyState } from '@/components/shared/EmptyState';
 import { useEffect } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
@@ -419,9 +420,7 @@ export default function CuentaDetailModal({
               </div>
             </div>
           ) : (
-            <div className='text-center py-8'>
-              <p className='text-gray-600'>No se encontraron detalles de la cuenta</p>
-            </div>
+            <EmptyState variant='text' title='No se encontraron detalles de la cuenta' />
           )}
         </div>
 

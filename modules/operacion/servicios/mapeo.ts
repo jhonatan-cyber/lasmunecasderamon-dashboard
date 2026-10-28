@@ -1,26 +1,8 @@
 import { ServiceSchema, type ServiceType } from '@/lib/business/schemas';
+import { parseMixedPayments } from '@/lib/business/ventaRepartos';
 
-export function parseMixedPayments(raw: unknown): Array<{ metodo: string; monto: number }> {
-  if (!raw) return [];
-
-  let parsed = raw;
-  if (typeof raw === 'string') {
-    try {
-      parsed = JSON.parse(raw);
-    } catch {
-      return [];
-    }
-  }
-
-  if (!Array.isArray(parsed)) return [];
-
-  return parsed
-    .map((item: any) => ({
-      metodo: String(item?.metodo || ''),
-      monto: Number(item?.monto || 0)
-    }))
-    .filter(item => item.metodo && item.monto > 0);
-}
+// Se reexporta la implementación compartida para no mantener dos copias.
+export { parseMixedPayments };
 
 export function mapServiceFromDB(row: any): ServiceType {
   if (!row) return null as any;

@@ -1,5 +1,5 @@
 'use client';
-import { Button } from '@/components/ui/button';
+import { ErrorState } from '@/components/shared/ErrorState';
 import { NativeSelect } from '@/components/ui/native-select';
 
 import { matchesProductSearch } from '@/lib/utils/productSearch';
@@ -66,19 +66,7 @@ export function ShotMixerSelection({
         onChange={e => setSearch(e.target.value)}
       />
       {loading && <p role='status'>Cargando productos del bar...</p>}
-      {error && (
-        <div role='alert'>
-          {error}{' '}
-          <Button
-            variant='unstyled'
-            type='button'
-            className='underline'
-            onClick={() => setReload(n => n + 1)}
-          >
-            Reintentar
-          </Button>
-        </div>
-      )}
+      {error && <ErrorState message={error} onRetry={() => setReload(n => n + 1)} />}
       {productos.map(
         (p, index) =>
           p.tipo_venta === 'shot' && (

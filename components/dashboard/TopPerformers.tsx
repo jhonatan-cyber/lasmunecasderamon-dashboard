@@ -5,7 +5,8 @@ import { Medal, Music2, Sofa, Sparkles } from 'lucide-react';
 import { Skeleton } from '@/components/ui/skeleton';
 import { useDashboardComposite } from '@/hooks/statistics/useDashboardComposite';
 import { formatCurrencyCLP } from '@/lib/utils/formatters';
-import { cn } from '@/lib/utils/utils';
+import { DashboardError, DashboardEmpty } from '@/components/dashboard/DashboardFeedback';
+import { PanelHeading } from '@/components/dashboard/DashboardHeading';
 
 const rankingConfig = [
   {
@@ -52,48 +53,26 @@ export default function TopPerformers() {
   }
 
   if (error || !data) {
-    return (
-      <div className='rounded-2xl border border-rose-200 bg-rose-50 p-4 text-sm text-rose-700 dark:border-rose-900/40 dark:bg-rose-950/20 dark:text-rose-200'>
-        No se pudieron cargar los rankings del dashboard.
-      </div>
-    );
+    return <DashboardError>No se pudieron cargar los rankings del dashboard.</DashboardError>;
   }
 
   return (
     <div className='grid gap-6 grid-cols-1 sm:grid-cols-2 xl:grid-cols-3'>
       {rankingConfig.map(section => {
-        const Icon = section.icon;
         const items = data.rankings[section.key];
-        const colorClass =
-          section.color === 'emerald'
-            ? 'text-emerald-500 bg-emerald-500/10'
-            : section.color === 'indigo'
-              ? 'text-indigo-500 bg-indigo-500/10'
-              : 'text-amber-500 bg-amber-500/10';
 
         return (
           <div key={section.key} className='flex flex-col gap-4'>
-            <div className='flex items-center gap-3 px-1'>
-              <div className={cn('p-2 rounded-xl', colorClass)}>
-                <Icon className='h-4 w-4' />
-              </div>
-              <div className='flex flex-col'>
-                <span className='text-xs font-black uppercase tracking-widest text-slate-900 dark:text-white'>
-                  {section.title}
-                </span>
-                <span className='text-[10px] font-bold text-slate-400 uppercase tracking-tighter'>
-                  {section.description}
-                </span>
-              </div>
-            </div>
+            <PanelHeading
+              icon={section.icon}
+              title={section.title}
+              description={section.description}
+              tone={section.color}
+            />
 
             <div className='space-y-2'>
               {items.length === 0 ? (
-                <div className='rounded-2xl border border-dashed border-slate-200 dark:border-slate-800 p-4 text-center'>
-                  <p className='text-[10px] font-black uppercase tracking-widest text-slate-400'>
-                    Sin datos hoy
-                  </p>
-                </div>
+                <DashboardEmpty className='border p-4'>Sin datos hoy</DashboardEmpty>
               ) : (
                 items.map((item, index) => (
                   <Link

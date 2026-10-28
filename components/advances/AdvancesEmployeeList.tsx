@@ -17,6 +17,7 @@ import Paginate from '@/components/shared/Paginate';
 import logger from '@/lib/utils/logger';
 import { EmployeeAdvanceRequests } from './EmployeeAdvanceRequests';
 import { EmployeeAdvancesTable, type EmployeeAdvance } from './EmployeeAdvancesTable';
+import { ErrorState } from '@/components/shared/ErrorState';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { ClipboardList, Wallet, AlertCircle } from 'lucide-react';
 import { Label } from '@/components/ui/label';
@@ -177,23 +178,7 @@ export function AdvancesEmployeeList({ allowedRole, title }: Props) {
     </>
   );
   const listContent = error ? (
-    <div
-      role='alert'
-      className='flex flex-wrap items-center justify-between gap-4 rounded-3xl border border-red-200 bg-red-50 p-5 text-red-700 dark:border-red-900 dark:bg-red-950/30 dark:text-red-300'
-    >
-      <p className='flex items-center gap-2'>
-        <AlertCircle className='h-4 w-4' aria-hidden='true' />
-        {error}
-      </p>
-      <Button
-        type='button'
-        variant='outline'
-        className='rounded-full'
-        onClick={() => void fetchAdvances()}
-      >
-        Reintentar
-      </Button>
-    </div>
+    <ErrorState size='lg' icon={AlertCircle} message={error} onRetry={() => void fetchAdvances()} />
   ) : (
     <div className='space-y-5'>
       <EmployeeAdvancesTable

@@ -1,5 +1,6 @@
 'use client';
 
+import { EmptyState } from '@/components/shared/EmptyState';
 import { useRealtimeRefresh } from '@/hooks/realtime/useRealtimeRefresh';
 import { ReplenishmentNotice } from '@/components/purchases/ReplenishmentNotice';
 import { Fragment, useCallback, useEffect, useMemo, useState } from 'react';
@@ -239,7 +240,10 @@ export default function PurchasesPage() {
                   {filtered.length === 0 ? (
                     <TableRow key='empty'>
                       <TableCell colSpan={7} className='text-center sm:text-base bg-white'>
-                        {loading ? 'Cargando...' : 'Sin compras registradas.'}
+                        <EmptyState
+                          variant='text'
+                          title={loading ? 'Cargando...' : 'Sin compras registradas.'}
+                        />
                       </TableCell>
                     </TableRow>
                   ) : (

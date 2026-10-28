@@ -1,6 +1,7 @@
 /* eslint-disable */
 'use client';
 
+import { ErrorState } from '@/components/shared/ErrorState';
 import { useEffect } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
@@ -111,14 +112,12 @@ export default function PropinasDetalleModal({
                     ))
                   ) : error ? (
                     <TableRow>
-                      <TableCell colSpan={5} className='text-center text-red-600 sm:text-sm'>
-                        {error}
-                        <Button
-                          onClick={() => fetchDetalles(usuario.id_usuario)}
-                          className='mt-2 ml-4 text-xs sm:text-sm'
-                        >
-                          Reintentar
-                        </Button>
+                      <TableCell colSpan={5}>
+                        <ErrorState
+                          size='sm'
+                          message={error}
+                          onRetry={() => fetchDetalles(usuario.id_usuario)}
+                        />
                       </TableCell>
                     </TableRow>
                   ) : detalles.length === 0 ? (

@@ -1,4 +1,5 @@
 import { MetricCard } from '@/components/shared/MetricCard';
+import { ErrorState } from '@/components/shared/ErrorState';
 import { LucideIcon } from 'lucide-react';
 import { formatCurrencyNoDecimals, formatNumberCL } from '@/lib/utils/formatters';
 
@@ -58,11 +59,7 @@ export function StatsCard({
   };
 
   if (error) {
-    return (
-      <div className='text-red-500 p-4 bg-red-50 border border-red-200 rounded-lg text-sm sm:text-base'>
-        Error al cargar las estadísticas: {error}
-      </div>
-    );
+    return <ErrorState size='sm' message={`Error al cargar las estadísticas: ${error}`} />;
   }
 
   return (

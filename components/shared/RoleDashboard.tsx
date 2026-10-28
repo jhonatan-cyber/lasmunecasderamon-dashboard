@@ -1,7 +1,7 @@
 'use client';
 
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
+import { ErrorState } from '@/components/shared/ErrorState';
 import { Skeleton as BoneyardSkeleton } from 'boneyard-js/react';
 import Link from 'next/link';
 import type { LucideIcon } from 'lucide-react';
@@ -71,17 +71,11 @@ export function RoleDashboard({
   if (!dashboardData) {
     return (
       <div className='p-6'>
-        <Card className='border-red-200 bg-red-50'>
-          <CardContent className='p-8 text-center text-red-600'>
-            <h2 className='text-xl font-bold mb-2'>Error al cargar el dashboard</h2>
-            <p className='mb-4'>
-              No pudimos conectar con el servidor para obtener tus estadísticas.
-            </p>
-            <Button onClick={() => refreshDashboard()} variant='destructive'>
-              Reintentar
-            </Button>
-          </CardContent>
-        </Card>
+        <ErrorState
+          title='Error al cargar el dashboard'
+          message='No pudimos conectar con el servidor para obtener tus estadísticas.'
+          onRetry={() => refreshDashboard()}
+        />
       </div>
     );
   }

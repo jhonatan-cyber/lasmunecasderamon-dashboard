@@ -1,5 +1,7 @@
 'use client';
 
+import { ErrorState } from '@/components/shared/ErrorState';
+import { EmptyState } from '@/components/shared/EmptyState';
 import { useCallback, useEffect, useMemo, useState, type FormEvent } from 'react';
 import {
   Check,
@@ -25,6 +27,7 @@ import {
 } from '@/lib/business/colacionConfig';
 import { reglaColacionPorRol, urlCatalogoColacion } from '@/lib/business/colacionRoles';
 import { cn } from '@/lib/utils/utils';
+import { productImageUrl } from '@/lib/utils/productImage';
 import { horaDeNegocio } from '@/lib/business/timezoneService';
 import logger from '@/lib/utils/logger';
 import {
@@ -76,12 +79,6 @@ type AcompanamientoOption = {
   ml_abierta: number;
   ml_botella: number | null;
 };
-
-function imageUrl(foto?: string | null): string {
-  if (!foto || foto === 'default.png' || foto === '') return '/api/images/products/default.png';
-  if (foto.startsWith('http')) return foto;
-  return `/api/images/products/${foto}`;
-}
 
 function opcionBotella(drink: Drink) {
   return Array.isArray(drink.opciones_venta)
@@ -161,7 +158,12 @@ function ColacionProductCard({
       )}
     >
       <span className='relative block h-24 w-full bg-muted/40'>
-        <ProductPhoto src={imageUrl(drink.foto)} alt={nombre} fill className='object-contain p-3' />
+        <ProductPhoto
+          src={productImageUrl(drink.foto)}
+          alt={nombre}
+          fill
+          className='object-contain p-3'
+        />
         <span
           className={cn(
             'absolute right-2 top-2 flex size-5 items-center justify-center rounded-full',
@@ -803,19 +805,16 @@ export function ColacionesTab({ searchTerm = '' }: { searchTerm?: string }) {
             <LoaderCircle className='size-4 animate-spin' /> Cargando colaciones…
           </div>
         ) : errorRegistros ? (
-          <div className='p-6 text-sm text-destructive'>{errorRegistros}</div>
+          <ErrorState size='sm' message={errorRegistros} />
         ) : visibleRecords.length === 0 ? (
-          <div className='p-8 text-center'>
-            <GlassWater className='mx-auto mb-2 size-7 text-muted-foreground' />
-            <p className='font-medium'>
-              {searchTerm
-                ? 'No hay colaciones que coincidan'
-                : 'Aún no hay colaciones en este turno'}
-            </p>
-            <p className='mt-1 text-sm text-muted-foreground'>
-              Los registros aparecerán aquí al entregar un corto.
-            </p>
-          </div>
+          <EmptyState
+            variant='text'
+            icon={GlassWater}
+            title={
+              searchTerm ? 'No hay colaciones que coincidan' : 'Aún no hay colaciones en este turno'
+            }
+            description='Los registros aparecerán aquí al entregar un corto.'
+          />
         ) : (
           <div className='overflow-x-auto'>
             <Table className='min-w-[640px]'>

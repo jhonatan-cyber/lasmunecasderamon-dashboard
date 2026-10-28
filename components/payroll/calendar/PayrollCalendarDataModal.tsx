@@ -1,5 +1,6 @@
 'use client';
 
+import { EmptyState } from '@/components/shared/EmptyState';
 import { Eye } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
@@ -203,12 +204,15 @@ export function PayrollCalendarDataModal({
             <div className='mt-6'>
               {currentData.length === 0 ? (
                 <div className='bg-white dark:bg-slate-900/40 backdrop-blur-xs rounded-3xl border-none shadow-md overflow-hidden p-8 text-center'>
-                  <div className='text-gray-500 dark:text-gray-400 text-lg font-medium mb-2'>
-                    No hay datos de {currentLabel}
-                  </div>
-                  <div className='text-gray-400 dark:text-gray-500 text-sm'>
-                    No se encontraron {currentLabel} para {formattedDates.toLowerCase()}
-                  </div>
+                  <EmptyState
+                    variant='text'
+                    title={<>No hay datos de {currentLabel}</>}
+                    description={
+                      <>
+                        No se encontraron {currentLabel} para {formattedDates.toLowerCase()}
+                      </>
+                    }
+                  />
                 </div>
               ) : (
                 <div className='bg-white dark:bg-slate-900/40 backdrop-blur-xs rounded-3xl border-none shadow-md overflow-hidden'>

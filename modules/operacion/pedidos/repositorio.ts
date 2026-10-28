@@ -32,6 +32,7 @@ import { sendNotificationToAll } from '@/lib/api/sseService';
 import { sendPushByRole } from '@/modules/comunicaciones';
 import { buildOrderPushBody } from '@/lib/notifications/notificationMessages';
 import { BaseRepository } from '@/lib/database/base-repository';
+import { eliminarFotoBaucher, guardarFotoBaucher } from '@/lib/utils/image-utils';
 import { BusinessError, DatabaseError } from '@/lib/errors/errors';
 import { logger } from '@/lib/utils/logger';
 import { z } from 'zod';
@@ -49,6 +50,7 @@ export class OrderRepository {
       total: row.total,
       total_comision: row.total_comision,
       propina: row.propina,
+      baucher_foto: row.baucher_foto ?? null,
       estado: row.estado,
       fecha_crea: row.fecha_crea,
       cliente_nombre: row.cliente || row.cliente_nombre,
@@ -106,6 +108,10 @@ export class OrderRepository {
   }
 
   static async create(body: OrderCreateInput): Promise<any> {
+    // Nombre de la foto del baucher y si el pedido llegó a la base: sirven en el
+    // `catch` para borrar la imagen cuando el alta quedó sin pedido.
+    let baucherFilename: string | null = null;
+    let pedidoCreado = false;
     try {
       const data = OrderCreateSchema.parse(body);
       let {
@@ -189,6 +195,14 @@ export class OrderRepository {
       const pedidoId = generateUUID();
       const fechaCrea = getNowInBusinessTimezone(device_date || undefined);
 
+      // El pago con transferencia viaja con la foto del baucher: se guarda como
+      // archivo (misma rutina que usuarios y productos) y en la fila solo queda
+      // el nombre. Si no se puede guardar, el pedido no se crea: perder la foto
+      // significaría perder la constancia del pago.
+      baucherFilename = data.baucher_foto
+        ? await guardarFotoBaucher(data.baucher_foto, 'order', { codigo })
+        : null;
+
       await enUnaUnidad(unidad =>
         unidad.ejecutar(async contexto => {
           const trx = resolverTransaccion(contexto);
@@ -226,6 +240,7 @@ export class OrderRepository {
             total_comision: detalles.reduce((sum, d) => sum + d.comision, 0),
             propina: propinaNormalizada,
             metodo_pago: data.metodoPago ?? null,
+            baucher_foto: baucherFilename,
             estado: 1,
             fecha_crea: fechaCrea
           });
@@ -296,6 +311,7 @@ export class OrderRepository {
           }
         })
       );
+      pedidoCreado = true;
 
       const notificationData = await buildOrderNotificationData({
         pedidoId,
@@ -320,6 +336,12 @@ export class OrderRepository {
         tiempo_auto_seleccionado: tiempoAutoSeleccionado
       };
     } catch (err) {
+      // La foto se escribe antes de la transacción (la fila guarda su nombre):
+      // si el pedido no llegó a la base, el archivo queda huérfano y hay que
+      // borrarlo. Con el pedido creado se conserva, aunque falle la notificación:
+      // el archivo sí tiene fila que lo referencie desde la UI.
+      if (baucherFilename && !pedidoCreado)
+        await eliminarFotoBaucher(baucherFilename, 'order', { codigo: body.codigo });
       if (err instanceof z.ZodError || err instanceof BusinessError) throw err;
       logger.error('[OrderRepository] Error en create:', { codigo: body.codigo, err });
       throw new DatabaseError('Error al crear pedido', err);
@@ -347,6 +369,25 @@ export class OrderRepository {
     }
   }
 
+  /**
+   * Nombre del archivo del baucher del pedido, o `null` si no tiene.
+   *
+   * La ruta que sirve la foto no puede consultar la tabla: el SQL vive acá y
+   * ella solo traduce el resultado a una respuesta HTTP.
+   */
+  static async getBaucherFoto(id: string): Promise<string | null> {
+    try {
+      const rows = await query<Array<{ baucher_foto: string | null }>>(
+        'SELECT baucher_foto FROM pedidos WHERE id_pedido = ?',
+        [id]
+      );
+      return rows[0]?.baucher_foto ?? null;
+    } catch (err) {
+      logger.error('[OrderRepository] Error en getBaucherFoto:', { id, err });
+      throw new DatabaseError(`Error al obtener el baucher del pedido ${id}`, err);
+    }
+  }
+
   static async paraVenta(id: string, tiempo: number, contexto: ContextoOperacion) {
     const trx = resolverTransaccion(contexto);
     const rows = await trx<any[]>('SELECT * FROM pedidos WHERE id_pedido = ? FOR UPDATE', [id]);
@@ -360,6 +401,7 @@ export class OrderRepository {
         `
       SELECT
         P.id_pedido, P.codigo, P.fecha_crea, P.subtotal, P.total, P.propina, P.total_comision, P.metodo_pago,
+        P.baucher_foto,
         COALESCE((CAST(CL.nombre AS text) || CAST(' ' AS text) || CAST(CL.apellido AS text)), 'Sin cliente registrado') AS cliente,
         P.cliente_id,
         (CAST(U.nombre AS text) || CAST(' ' AS text) || CAST(U.apellido AS text)) AS garzon,

@@ -1,5 +1,6 @@
 'use client';
 /* eslint-disable */
+import { EmptyState } from '@/components/shared/EmptyState';
 import { permiteAnfitrionaConComision } from '@/lib/sales/hostessShortPrices';
 import { Button } from '@/components/ui/button';
 import { Trash2, Plus, Minus } from 'lucide-react';
@@ -331,7 +332,7 @@ const OrderProductTable = memo(function OrderProductTable({
             {productos.length === 0 && (
               <TableRow>
                 <TableCell colSpan={10} className='text-center'>
-                  No hay productos agregados
+                  <EmptyState variant='text' title='No hay productos agregados' />
                 </TableCell>
               </TableRow>
             )}

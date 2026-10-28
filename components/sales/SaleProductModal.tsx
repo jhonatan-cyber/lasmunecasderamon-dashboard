@@ -1,4 +1,5 @@
 'use client';
+import { EmptyState } from '@/components/shared/EmptyState';
 import { useRef, useState } from 'react';
 import { Plus, Loader2 } from 'lucide-react';
 import { toast } from 'sonner';
@@ -146,13 +147,17 @@ export default function SaleProductModal({
                 onClear={modal.clearQuery}
               />
               {!Array.isArray(productos) || productos.length === 0 ? (
-                <div className='text-center text-gray-400 py-8 w-full'>
-                  No hay productos con stock disponible en el bar para esta categoría.
-                </div>
+                <EmptyState
+                  variant='text'
+                  className='w-full'
+                  title='No hay productos con stock disponible en el bar para esta categoría.'
+                />
               ) : modal.filteredCount === 0 ? (
-                <div className='w-full py-8 text-center text-gray-400'>
-                  Sin resultados para “{modal.query.trim()}”.
-                </div>
+                <EmptyState
+                  variant='text'
+                  className='w-full'
+                  title={<>Sin resultados para “{modal.query.trim()}”.</>}
+                />
               ) : (
                 <>
                   {modal.viewMode === 'table' ? (

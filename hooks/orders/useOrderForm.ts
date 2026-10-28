@@ -114,6 +114,8 @@ export function useOrderForm({
   const [propinaHabilitada, setPropinaHabilitada] = useState(false);
   const [error, setError] = useState('');
   const [metodoPago, setMetodoPago] = useState('');
+  /** Foto del baucher en data URL: obligatoria cuando el pago es transferencia. */
+  const [baucherFoto, setBaucherFoto] = useState<string | null>(null);
 
   const router = useRouter();
   const { user } = useCurrentUser();
@@ -291,6 +293,10 @@ export function useOrderForm({
       setError('Selecciona un método de pago');
       return;
     }
+    if (metodoPago === 'transferencia' && !baucherFoto) {
+      setError('Toma la foto del baucher para el pago con transferencia');
+      return;
+    }
     if (
       productos.some(
         p =>
@@ -389,6 +395,7 @@ export function useOrderForm({
         total: subtotal,
         propina: tipAmount,
         metodoPago,
+        ...(metodoPago === 'transferencia' && baucherFoto ? { baucher_foto: baucherFoto } : {}),
         totalComision: productos.reduce(
           (sum, item) => sum + (anfitrionasDelProducto(item).length ? item.comision || 0 : 0),
           0
@@ -452,6 +459,7 @@ export function useOrderForm({
         appEventBus.emit('updatePendingOrders');
         appEventBus.emit('refreshNotifications');
         setSelectedCliente('');
+        setBaucherFoto(null);
         setChampagneHostessSelections({});
         setOtherProductHostessSelections({});
         setRoomSelections({});
@@ -482,6 +490,8 @@ export function useOrderForm({
     error,
     metodoPago,
     setMetodoPago,
+    baucherFoto,
+    setBaucherFoto,
     subtotal,
     tipAmount,
     total,

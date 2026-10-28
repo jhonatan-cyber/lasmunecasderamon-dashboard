@@ -4,6 +4,7 @@
 
 'use client';
 
+import { EmptyState } from '@/components/shared/EmptyState';
 import { useState } from 'react';
 import {
   Table,
@@ -90,19 +91,11 @@ export default function AttendanceTable({ data }: AttendanceTableProps) {
   if (!data || data.length === 0) {
     return (
       <div className='text-center py-8'>
-        <div className='flex flex-col items-center space-y-4'>
-          <div className='w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center'>
-            <Calendar className='w-8 h-8 text-gray-400' />
-          </div>
-          <div>
-            <h3 className='text-lg font-medium text-gray-900 dark:text-white mb-2'>
-              No hay asistencias
-            </h3>
-            <p className='text-sm text-gray-500'>
-              No se encontraron registros de asistencia para mostrar
-            </p>
-          </div>
-        </div>
+        <EmptyState
+          icon={Calendar}
+          title='No hay asistencias'
+          description='No se encontraron registros de asistencia para mostrar'
+        />
       </div>
     );
   }

@@ -1,5 +1,6 @@
 'use client';
 
+import { EmptyState } from '@/components/shared/EmptyState';
 import {
   Dialog,
   DialogContent,
@@ -263,10 +264,8 @@ export function SalesDetailModal({
                 </div>
               </div>
             ) : (
-              <div className='text-center py-8 border-y border-border'>
-                <p className='text-gray-400 font-medium tracking-tight'>
-                  No se encontraron productos
-                </p>
+              <div className='border-y border-border'>
+                <EmptyState variant='text' title='No se encontraron productos' />
               </div>
             )}
           </div>

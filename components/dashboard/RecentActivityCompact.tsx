@@ -18,6 +18,7 @@ import {
 } from '@/hooks/statistics/useDashboardComposite';
 import { formatCurrencyCLP } from '@/lib/utils/formatters';
 import { cn } from '@/lib/utils/utils';
+import { DashboardEmpty, DashboardError } from '@/components/dashboard/DashboardFeedback';
 
 const activityStyles = {
   venta: { icon: DollarSign, color: 'text-emerald-500', bg: 'bg-emerald-500/10' },
@@ -39,13 +40,7 @@ function formatRelativeTime(dateString: string) {
   return `${diffDays}d`;
 }
 
-function ActivityLine({
-  activity,
-  isExpanded
-}: {
-  activity: RecentActivityItem;
-  isExpanded: boolean;
-}) {
+function ActivityLine({ activity }: { activity: RecentActivityItem }) {
   const style =
     activityStyles[activity.type as keyof typeof activityStyles] || activityStyles.default;
   const Icon = style.icon;
@@ -116,15 +111,12 @@ export default function RecentActivityCompact() {
     );
   }
 
-  if (error || activities.length === 0) {
-    return (
-      <div className='flex flex-col items-center justify-center py-8 opacity-40'>
-        <Activity className='h-8 w-8 text-slate-400 mb-2' />
-        <p className='text-xs font-black uppercase tracking-widest text-slate-500'>
-          Sin actividad reciente
-        </p>
-      </div>
-    );
+  if (error) {
+    return <DashboardError>No se pudo cargar la actividad reciente.</DashboardError>;
+  }
+
+  if (activities.length === 0) {
+    return <DashboardEmpty icon={Activity}>Sin actividad reciente</DashboardEmpty>;
   }
 
   const MAX_ITEMS_COLLAPSED = 5;
@@ -135,7 +127,7 @@ export default function RecentActivityCompact() {
     <div className='flex flex-col gap-2'>
       <div className='flex flex-col gap-1'>
         {displayItems.map(activity => (
-          <ActivityLine key={activity.id} activity={activity} isExpanded={isExpanded} />
+          <ActivityLine key={activity.id} activity={activity} />
         ))}
       </div>
 

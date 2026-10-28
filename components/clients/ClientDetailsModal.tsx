@@ -6,6 +6,7 @@ import { Badge } from '@/components/ui/badge';
 import { format } from 'date-fns';
 import { es } from 'date-fns/locale';
 import { useGenericFetch } from '@/hooks/shared/useGenericFetch';
+import { EmptyState } from '@/components/shared/EmptyState';
 import {
   Table,
   TableBody,
@@ -146,9 +147,10 @@ function ClientDetails({ client, onClose }: { client: Client; onClose: () => voi
               <p>Cargando historial...</p>
             </div>
           ) : history.length === 0 ? (
-            <div className='text-center py-10 bg-gray-50 dark:bg-gray-900/30 rounded-xl border border-dashed dark:border-gray-800 text-gray-500 dark:text-gray-400 text-sm'>
-              No hay movimientos registrados para este cliente.
-            </div>
+            <EmptyState
+              title='No hay movimientos registrados para este cliente.'
+              className='rounded-xl border border-gray-200 bg-gray-50 py-10 dark:border-gray-800 dark:bg-gray-900/30'
+            />
           ) : (
             <div className='rounded-xl border dark:border-gray-800 overflow-hidden bg-white dark:bg-gray-950 shadow-xs overflow-x-auto'>
               <Table>

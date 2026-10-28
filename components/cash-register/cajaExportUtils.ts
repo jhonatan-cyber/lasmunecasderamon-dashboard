@@ -1,4 +1,10 @@
-import { formatCurrencyNoDecimals, formatFechaLarga, formatSoloHora } from '@/lib/utils/formatters';
+import {
+  formatCurrencyNoDecimals,
+  formatFechaLarga,
+  formatSoloHora,
+  getDiaSemana
+} from '@/lib/utils/formatters';
+import { escaparHtml } from '@/lib/utils/htmlEscape';
 
 export interface CajaExportContext {
   caja: any;
@@ -69,7 +75,7 @@ const generateDistribucionDineroHTML = (ctx: CajaExportContext) => {
     .map(
       row => `
       <tr>
-        <td>${row.concepto}</td>
+        <td>${escaparHtml(row.concepto)}</td>
         <td class="text-right font-bold">${formatCurrencyNoDecimals(row.monto)}</td>
       </tr>
     `
@@ -96,13 +102,13 @@ const generateVentasTableHTML = (ctx: CajaExportContext) => {
     .map(
       venta => `
       <tr>
-        <td>${venta.cliente_nombre || 'General'}</td>
-        <td>${venta.habitacion_nombre || (venta.habitacion_id ? 'Habitación' : 'Barra')}</td>
+        <td>${escaparHtml(venta.cliente_nombre || 'General')}</td>
+        <td>${escaparHtml(venta.habitacion_nombre || (venta.habitacion_id ? 'Habitación' : 'Barra'))}</td>
         <td class="text-center">${venta.item_count || 0} items</td>
         <td class="text-right">${formatCurrencyNoDecimals(venta.sub_total)}</td>
         <td class="text-right">${formatCurrencyNoDecimals(venta.propina)}</td>
         <td class="text-center">${formatSoloHora(venta.fecha_crea)}</td>
-        <td>${formatMetodoPagoDetalle(venta.metodo_pago, venta.pagos_mixtos)}</td>
+        <td>${escaparHtml(formatMetodoPagoDetalle(venta.metodo_pago, venta.pagos_mixtos))}</td>
         <td class="text-right font-bold">${formatCurrencyNoDecimals(venta.total)}</td>
       </tr>
     `
@@ -150,13 +156,13 @@ const generateServiciosTableHTML = (ctx: CajaExportContext) => {
     .map(
       serv => `
       <tr>
-        <td>${serv.cliente_nombre || 'Particular'}</td>
-        <td>${serv.anfitrionas_nombres || 'Sin asignar'}</td>
-        <td>${serv.habitacion_nombre || 'N/A'}</td>
+        <td>${escaparHtml(serv.cliente_nombre || 'Particular')}</td>
+        <td>${escaparHtml(serv.anfitrionas_nombres || 'Sin asignar')}</td>
+        <td>${escaparHtml(serv.habitacion_nombre || 'N/A')}</td>
         <td class="text-right">${formatCurrencyNoDecimals(serv.total_habitacion || 0)}</td>
         <td class="text-right">${formatCurrencyNoDecimals(serv.iva || 0)}</td>
         <td class="text-center">${formatFechaLarga(serv.fecha_crea)}</td>
-        <td>${formatMetodoPagoDetalle(serv.metodo_pago, serv.pagos_mixtos)}</td>
+        <td>${escaparHtml(formatMetodoPagoDetalle(serv.metodo_pago, serv.pagos_mixtos))}</td>
         <td class="text-right font-bold">${formatCurrencyNoDecimals(serv.total)}</td>
       </tr>
     `
@@ -199,7 +205,7 @@ const generateRetirosTableHTML = (ctx: CajaExportContext) => {
       ret => `
       <tr>
         <td class="text-center">${formatSoloHora(ret.fecha_crea)}</td>
-        <td>${ret.motivo}</td>
+        <td>${escaparHtml(ret.motivo)}</td>
         <td class="text-right font-bold">${formatCurrencyNoDecimals(ret.monto)}</td>
       </tr>
     `
@@ -333,7 +339,7 @@ export const generatePrintContent = (ctx: CajaExportContext) => {
     <!DOCTYPE html>
     <html>
       <head>
-        <title>${getTitle(ctx)}</title>
+        <title>${escaparHtml(getTitle(ctx))}</title>
         <style>
           @page { margin: 1cm; size: A4; }
           body { font-family: Arial, sans-serif; font-size: 12px; line-height: 1.4; color: #333; margin: 0; padding: 20px; }
@@ -361,8 +367,8 @@ export const generatePrintContent = (ctx: CajaExportContext) => {
         <div class="header">
           <img src="/img/system/logo2.png" alt="Las Muñecas de Ramón" class="logo" />
           <div class="header-content">
-            <div class="title">${getTitle(ctx)}</div>
-            <div class="subtitle">Estado: ${ctx.estadoInfo.label}</div>
+            <div class="title">${escaparHtml(getTitle(ctx))}</div>
+            <div class="subtitle">Estado: ${escaparHtml(ctx.estadoInfo.label)}</div>
           </div>
         </div>
         ${ctx.activeTab !== 'resumen' ? generateDistribucionDineroHTML(ctx) : ''}
@@ -509,11 +515,6 @@ export const exportToPDF = async (exportContext: CajaExportContext) => {
 
     doc.setFontSize(10);
     doc.setTextColor(80, 80, 80);
-    const getDiaSemana = (fecha: string | Date): string => {
-      const date = new Date(fecha);
-      const dias = ['Domingo', 'Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado'];
-      return dias[date.getDay()];
-    };
     doc.text(
       `Fecha: ${getDiaSemana(exportContext.caja.fecha_apertura)}, ${formatFechaLarga(exportContext.caja.fecha_apertura)}`,
       14,

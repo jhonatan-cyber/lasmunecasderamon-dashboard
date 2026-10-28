@@ -1,5 +1,6 @@
 'use client';
 
+import { EmptyState } from '@/components/shared/EmptyState';
 import { Receipt } from 'lucide-react';
 import { CuentaWithDetails } from '@/types/cuenta';
 import { useUserPermissions } from '@/hooks/auth/useUserPermissions';
@@ -106,11 +107,11 @@ export default function CuentaTable({
     return (
       <div className='bg-white dark:bg-slate-900/40 backdrop-blur-xs rounded-3xl border-none shadow-md overflow-hidden p-8'>
         <div className='text-center py-12'>
-          <div className='w-16 h-16 bg-gray-100 dark:bg-gray-800 rounded-full flex items-center justify-center mx-auto mb-4'>
-            <Receipt className='w-8 h-8 text-gray-400' />
-          </div>
-          <h3 className='text-lg font-medium text-gray-900 dark:text-white mb-2'>No hay cuentas</h3>
-          <p className='text-sm text-gray-500'>No se encontraron cuentas para mostrar</p>
+          <EmptyState
+            icon={Receipt}
+            title='No hay cuentas'
+            description='No se encontraron cuentas para mostrar'
+          />
         </div>
       </div>
     );

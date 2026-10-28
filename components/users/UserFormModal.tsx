@@ -34,21 +34,8 @@ import { MaritalStatusSelect, AfpInputField, HousingDiscountField } from './fiel
 import { RoleSelect } from '@/components/users/RoleSelect';
 import { useUserForm, type UserFormValues } from '@/hooks/staff';
 import { Label } from '@/components/ui/label';
+import { formatRut as formatRUT } from '@/lib/utils/rut';
 export type { UserFormValues };
-
-const formatRUT = (value: string): string => {
-  const clean = value.replace(/[^0-9kK]/gi, '').toUpperCase();
-  if (!clean) return '';
-
-  if (clean.length <= 1) return clean;
-
-  const cuerpo = clean.slice(0, -1);
-  const dv = clean.slice(-1);
-
-  const formattedCuerpo = cuerpo.replace(/\B(?=(\d{3})+(?!\d))/g, '.');
-
-  return `${formattedCuerpo}-${dv}`;
-};
 
 const isValidRUT = (rut: string): boolean => {
   const clean = rut.replace(/[^0-9kK]/gi, '');

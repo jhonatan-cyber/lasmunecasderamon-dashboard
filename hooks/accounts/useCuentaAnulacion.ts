@@ -4,17 +4,10 @@ import { useState } from 'react';
 import { toast } from 'sonner';
 import { CuentaWithDetails } from '@/types/cuenta';
 import { useTimer } from '@/contexts/TimerContext';
-
-const formatMontoInput = (value: string) => {
-  const digits = value.replace(/\D/g, '');
-  if (!digits) return '';
-  return new Intl.NumberFormat('es-CL').format(Number(digits));
-};
-
-const parseMontoInput = (value: string) => {
-  const digits = value.replace(/\D/g, '');
-  return digits ? Number(digits) : 0;
-};
+import {
+  formatNumberInputOrEmpty as formatMontoInput,
+  parseNumberInput as parseMontoInput
+} from '@/lib/utils/formatters';
 
 interface UseCuentaAnulacionProps {
   onRefresh?: () => void;

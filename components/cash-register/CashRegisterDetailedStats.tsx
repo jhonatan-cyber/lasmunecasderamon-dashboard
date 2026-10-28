@@ -1,4 +1,5 @@
 import { MetricCard } from '@/components/shared/MetricCard';
+import { ErrorState } from '@/components/shared/ErrorState';
 import {
   DollarSign,
   TrendingUp,
@@ -77,11 +78,7 @@ export function CashRegisterDetailedStats() {
   const cardTones = ['emerald', 'blue', 'amber', 'purple', 'rose'] as const;
 
   if (error) {
-    return (
-      <div className='text-red-600 dark:text-red-300 p-4 bg-red-50 dark:bg-red-950/40 border border-red-200 dark:border-red-900 rounded-lg text-sm sm:text-base'>
-        Error al cargar las estadísticas: {error}
-      </div>
-    );
+    return <ErrorState size='sm' message={`Error al cargar las estadísticas: ${error}`} />;
   }
 
   const renderCard = (stat: (typeof detailedStatsCards)[number], index: number) => (

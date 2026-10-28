@@ -4,6 +4,8 @@ import {
   formatCurrencyNoDecimals,
   formatCurrencyCLP,
   formatNumberCL,
+  formatNumberInputOrEmpty,
+  getDiaSemana,
   formatDate,
   formatFechaLarga,
   formatFechaConHora,
@@ -86,6 +88,31 @@ describe('formatNumberCL', () => {
     expect(formatNumberCL(undefined)).toBe('0');
     expect(formatNumberCL(null)).toBe('0');
     expect(formatNumberCL(NaN)).toBe('0');
+  });
+});
+
+describe('formatNumberInputOrEmpty', () => {
+  it('formatea números con separador de miles', () => {
+    expect(formatNumberInputOrEmpty(1234567)).toBe('1.234.567');
+    expect(formatNumberInputOrEmpty('1234567')).toBe('1.234.567');
+  });
+
+  it('deja vacío un input sin dígitos', () => {
+    expect(formatNumberInputOrEmpty('')).toBe('');
+    expect(formatNumberInputOrEmpty('abc')).toBe('');
+    expect(formatNumberInputOrEmpty(undefined)).toBe('');
+    expect(formatNumberInputOrEmpty(null)).toBe('');
+  });
+});
+
+describe('getDiaSemana', () => {
+  it('devuelve el día en español', () => {
+    expect(getDiaSemana(new Date(2026, 9, 24))).toBe('Sábado');
+  });
+
+  it('devuelve vacío para fechas inválidas', () => {
+    expect(getDiaSemana('invalid')).toBe('');
+    expect(getDiaSemana(null)).toBe('');
   });
 });
 

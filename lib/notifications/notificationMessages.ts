@@ -71,8 +71,20 @@ export function buildAnticipoNotFoundMessage(anticipoId: string) {
   return `No se encontró la solicitud de anticipo #${anticipoId}. Verifica el número e intenta de nuevo.`;
 }
 
+type EntradaPushBodyInput = {
+  cantidad: number;
+  clienteNombre?: string | null;
+  total: number;
+};
+
 export function buildOrderPushBody({ codigo, clienteNombre, total }: OrderPushBodyInput) {
   return `Pedido #${codigo} de ${clienteNombre} por ${formatCurrencyCLP(total)}`;
+}
+
+export function buildEntradaPushBody({ cantidad, clienteNombre, total }: EntradaPushBodyInput) {
+  const personas = cantidad === 1 ? '1 entrada' : `${cantidad} entradas`;
+  const cliente = clienteNombre?.trim() || 'cliente sin nombre';
+  return `${personas} · ${cliente} · ${formatCurrencyCLP(total)}`;
 }
 
 export function buildAnticipoRequestMessage({
@@ -87,9 +99,10 @@ export function buildAnticipoRequestMessage({
   anticipoId,
   fecha = getNowDate(),
   baseUrl,
-  token,
+  token
 }: AnticipoRequestMessageInput) {
-  const confirmUrl = baseUrl && token ? `${baseUrl}${ROUTES.CONFIRMAR_ANTICIPO}?token=${token}` : null;
+  const confirmUrl =
+    baseUrl && token ? `${baseUrl}${ROUTES.CONFIRMAR_ANTICIPO}?token=${token}` : null;
 
   return `💰 *NUEVA SOLICITUD DE ANTICIPO*
 
@@ -105,16 +118,19 @@ export function buildAnticipoRequestMessage({
 • Total: ${formatCurrencyCLP(montoMaximo)}
 
 ⏰ *Fecha:* ${formatLongDateEs(fecha)}
-${confirmUrl ? `
+${
+  confirmUrl
+    ? `
 ✅ *Para procesar:* ${confirmUrl}
 
 _Haz clic en el link para aprobar o rechazar la solicitud_
-` : `
+`
+    : `
 ✅ *Para aprobar:* Responde "APROBAR ${anticipoId}"
 ❌ *Para rechazar:* Responde "RECHAZAR ${anticipoId}"
 
 _O también puedes aprobar/rechazar desde el panel administrativo_`
-    }`;
+}`;
 }
 
 export function buildServicioAnulacionMessage({
@@ -122,7 +138,7 @@ export function buildServicioAnulacionMessage({
   codigo,
   cliente,
   habitacion,
-  total,
+  total
 }: ServicioAnulacionMessageInput) {
   const emoji = action === 'confirmar' ? '✅' : '❌';
   const titulo = action === 'confirmar' ? 'SERVICIO ANULADO' : 'ANULACIÓN RECHAZADA';
@@ -140,7 +156,7 @@ export function buildVentaAnulacionMessage({
   action,
   codigo,
   cliente,
-  total,
+  total
 }: VentaAnulacionMessageInput) {
   const emoji = action === 'confirmar' ? '✅' : '❌';
   const titulo = action === 'confirmar' ? 'CONFIRMADA' : 'RECHAZADA';
@@ -157,7 +173,7 @@ export function buildAnticipoProcessedMessages({
   action,
   empleadoNombre,
   monto,
-  fecha = getNowDate(),
+  fecha = getNowDate()
 }: AnticipoProcessedMessageInput) {
   const approved = action === 'approved';
   const emoji = approved ? '✅' : '❌';
@@ -177,7 +193,7 @@ ${approved ? 'El monto será descontado de tu próxima liquidación.' : 'Por fav
 👤 *Empleado:* ${empleadoNombre}
 💵 *Monto:* ${formatCurrencyCLP(monto)}
 
-_El empleado ha sido notificado._`,
+_El empleado ha sido notificado._`
   };
 }
 
@@ -207,7 +223,7 @@ export function buildSolicitudRespuestaMessage({
   clienteNombre,
   total,
   action,
-  estadoTexto,
+  estadoTexto
 }: SolicitudRespuestaInput) {
   const emoji = action === 'confirmar' ? 'OK' : 'NO';
   const titulo =
@@ -232,16 +248,17 @@ export function buildSolicitudRespuestaMessage({
 - Cliente: ${clienteNombre}
 - Total: ${formatCurrencyCLP(total)}
 
-${action === 'confirmar'
-      ? tipo === 'venta'
-        ? '_La venta ha sido anulada exitosamente._'
-        : tipo === 'cuenta'
-          ? '_La cuenta ha sido anulada exitosamente._'
-          : '_El servicio ha sido devuelto exitosamente. Habitacion liberada y caja actualizada._'
-      : tipo === 'venta'
-        ? '_La venta ha sido mantenida activa._'
-        : tipo === 'cuenta'
-          ? '_La cuenta ha sido mantenida activa._'
-          : '_El servicio ha sido mantenido activo. Temporizador reanudado._'
-    }`;
+${
+  action === 'confirmar'
+    ? tipo === 'venta'
+      ? '_La venta ha sido anulada exitosamente._'
+      : tipo === 'cuenta'
+        ? '_La cuenta ha sido anulada exitosamente._'
+        : '_El servicio ha sido devuelto exitosamente. Habitacion liberada y caja actualizada._'
+    : tipo === 'venta'
+      ? '_La venta ha sido mantenida activa._'
+      : tipo === 'cuenta'
+        ? '_La cuenta ha sido mantenida activa._'
+        : '_El servicio ha sido mantenido activo. Temporizador reanudado._'
+}`;
 }

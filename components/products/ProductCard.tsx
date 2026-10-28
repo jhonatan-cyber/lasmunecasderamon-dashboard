@@ -2,6 +2,7 @@
 
 import React, { useState } from 'react';
 import { Product, Presentacion } from '@/types/product';
+import { productImageUrl } from '@/lib/utils/productImage';
 import {
   Pencil,
   Trash2,
@@ -114,16 +115,7 @@ const ProductCard: React.FC<ProductCardProps> = ({
     setDeleteModalOpen(false);
   };
 
-  const photoSrc =
-    !presentation?.foto || presentation.foto === 'default.png' || presentation.foto === ''
-      ? !product.foto || product.foto === 'default.png' || product.foto === ''
-        ? '/api/images/products/default.png'
-        : product.foto.startsWith('http')
-          ? product.foto
-          : `/api/images/products/${product.foto}`
-      : presentation.foto.startsWith('http')
-        ? presentation.foto
-        : `/api/images/products/${presentation.foto}`;
+  const photoSrc = productImageUrl(presentation?.foto, product.foto);
 
   const photoAlt = presentation ? `${product.name} ${presentation.nombre}` : product.name;
 

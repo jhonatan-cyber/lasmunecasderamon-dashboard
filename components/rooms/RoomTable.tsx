@@ -1,5 +1,6 @@
 'use client';
 
+import { EmptyState } from '@/components/shared/EmptyState';
 import React, { useState, useMemo } from 'react';
 import { dragModifiers } from '@/components/shared/dragBounds';
 import { Room } from '@/types/room';
@@ -344,7 +345,7 @@ const RoomTable: React.FC<RoomTableProps> = ({
                   {localRooms.length === 0 ? (
                     <TableRow>
                       <TableCell colSpan={8} className='text-center'>
-                        No hay habitaciones disponibles
+                        <EmptyState variant='text' title='No hay habitaciones disponibles' />
                       </TableCell>
                     </TableRow>
                   ) : (

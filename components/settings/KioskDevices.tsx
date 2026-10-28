@@ -1,5 +1,7 @@
 'use client';
 
+import { ErrorState } from '@/components/shared/ErrorState';
+import { EmptyState } from '@/components/shared/EmptyState';
 import { useCallback, useEffect, useId, useState } from 'react';
 import { toast } from 'sonner';
 import { Loader2, MonitorSmartphone } from 'lucide-react';
@@ -196,26 +198,12 @@ export function KioskDevices() {
               <span className='sr-only'>Cargando pantallas...</span>
             </div>
           ) : error ? (
-            <div
-              role='alert'
-              className='flex flex-col items-start gap-3 rounded-2xl border border-amber-300 bg-amber-50 p-4 dark:border-amber-900/50 dark:bg-amber-900/10'
-            >
-              <p className='text-sm text-amber-800 dark:text-amber-300'>{error}</p>
-              <Button
-                className='rounded-full'
-                type='button'
-                variant='outline'
-                size='sm'
-                onClick={load}
-              >
-                Reintentar
-              </Button>
-            </div>
+            <ErrorState message={error} onRetry={load} />
           ) : !devices.length ? (
-            <p className='py-2 text-sm text-muted-foreground'>
-              Todavía no hay pantallas vinculadas. Activá esta pantalla como kiosko para usarla en
-              la entrada.
-            </p>
+            <EmptyState
+              variant='text'
+              title='Todavía no hay pantallas vinculadas. Activá esta pantalla como kiosko para usarla en la entrada.'
+            />
           ) : (
             devices.map(device => (
               <div

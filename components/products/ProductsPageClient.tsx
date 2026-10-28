@@ -1,5 +1,6 @@
 'use client';
 
+import { EmptyState } from '@/components/shared/EmptyState';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useCategories, Category } from '@/hooks/products/useCategories';
@@ -127,11 +128,14 @@ export function ProductsPageClient() {
           )}
 
           {activeCategories.length === 0 ? (
-            <div className='text-center text-gray-500 text-sm sm:text-base'>
-              {searchTerm.trim()
-                ? 'No se encontraron categorías para esa búsqueda.'
-                : 'No hay categorías activas.'}
-            </div>
+            <EmptyState
+              variant='text'
+              title={
+                searchTerm.trim()
+                  ? 'No se encontraron categorías para esa búsqueda.'
+                  : 'No hay categorías activas.'
+              }
+            />
           ) : (
             <DndContext
               sensors={sensors}

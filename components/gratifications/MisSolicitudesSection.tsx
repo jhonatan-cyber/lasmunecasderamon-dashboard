@@ -6,6 +6,7 @@ import { Inbox, Send } from 'lucide-react';
 import { formatCurrencyNoDecimals } from '@/lib/utils/formatters';
 import { formatLongDateEs, formatShortTimeEs } from '@/lib/utils/calendarUtils';
 import { Gratificacion } from '@/types/gratificacion';
+import { EmptyState } from '@/components/shared/EmptyState';
 import GratificacionStatusBadge from './GratificacionStatusBadge';
 
 interface MisSolicitudesSectionProps {
@@ -52,10 +53,11 @@ export default function MisSolicitudesSection({
           ))}
         </div>
       ) : rows.length === 0 ? (
-        <div className='rounded-xl border border-dashed border-gray-200 bg-zinc-50/50 py-6 text-center text-sm text-gray-500 dark:border-neutral-800 dark:bg-neutral-900/40'>
-          <Inbox className='mx-auto mb-2 h-5 w-5 text-zinc-300' />
-          No has solicitado gratificaciones para otros
-        </div>
+        <EmptyState
+          icon={Inbox}
+          title='No has solicitado gratificaciones para otros'
+          className='rounded-xl border border-gray-200 bg-zinc-50/50 py-6 dark:border-neutral-800 dark:bg-neutral-900/40'
+        />
       ) : (
         <div className='space-y-2'>
           {rows.map(gratificacion => (

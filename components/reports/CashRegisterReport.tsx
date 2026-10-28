@@ -20,14 +20,9 @@ import { CashRegisterHeader } from './CashRegisterHeader';
 import { CashRegisterSummary } from './CashRegisterSummary';
 import { CashRegisterTable } from './CashRegisterTable';
 import logger from '@/lib/utils/logger';
+import { formatCompact } from './reportFormatters';
 
 const PAYMENT_COLORS = ['#10B981', '#3B82F6', '#8B5CF6'];
-
-const formatCompact = (value: number) => {
-  if (value >= 1000000) return `$${(value / 1000000).toFixed(1)}M`;
-  if (value >= 1000) return `$${(value / 1000).toFixed(0)}k`;
-  return `$${value}`;
-};
 
 interface GenericTooltipProps {
   active?: boolean;

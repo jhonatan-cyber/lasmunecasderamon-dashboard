@@ -3,6 +3,8 @@
 import { useCallback, useEffect, useMemo, useRef, useState, type FormEvent } from 'react';
 import { toast } from 'sonner';
 import { DollarSign, Eye, Minus, Plus, Ticket, UserRoundPlus } from 'lucide-react';
+import { BaucherFileInput } from '@/components/shared/BaucherFileInput';
+import { BaucherFoto } from '@/components/shared/BaucherFoto';
 import { CajaStatusBanner } from '@/components/sales/CajaStatusBanner';
 import { DatePicker } from '@/components/shared/DatePicker';
 import { MetricCard } from '@/components/shared/MetricCard';
@@ -32,9 +34,12 @@ import {
   DialogHeader,
   DialogTitle
 } from '@/components/ui/dialog';
+import { EntregaEntradaDialog } from '@/components/entradas/EntregaEntradaDialog';
 import { useCashRegisterStatus } from '@/hooks/cash-register/useCashRegisterStatus';
 import { useUserPermissions } from '@/hooks/auth/useUserPermissions';
+import { useRealtimeRefresh } from '@/hooks/realtime/useRealtimeRefresh';
 import { formatCurrencyCLP } from '@/lib/utils/formatters';
+import { fechaDeNegocio } from '@/lib/business/timezoneService';
 import { useConfigValue } from '@/hooks/shared/useConfigValue';
 
 type EstadoCortesia = 'pendiente' | 'entregada' | 'anulada';
@@ -46,6 +51,8 @@ type Entrada = {
   monto_entrada: number;
   monto_bebida_adicional: number;
   metodo_pago: 'efectivo' | 'tarjeta' | 'transferencia';
+  /** Nombre del archivo en `public/img/tickets`; sólo lo tienen las de transferencia. */
+  baucher_foto: string | null;
   venta_id: string | null;
   bebida_cortesia_presentacion_id: string | null;
   bebida_cortesia: string | null;
@@ -72,17 +79,6 @@ type GrupoEntrada = {
   anuladas: number;
 };
 
-const fechaLocal = (date = new Date()) => {
-  const parts = new Intl.DateTimeFormat('en-CA', {
-    timeZone: 'America/Santiago',
-    year: 'numeric',
-    month: '2-digit',
-    day: '2-digit'
-  }).formatToParts(date);
-  const get = (key: string) => parts.find(part => part.type === key)?.value || '';
-  return `${get('year')}-${get('month')}-${get('day')}`;
-};
-
 const horaLocal = () =>
   new Intl.DateTimeFormat('en-GB', {
     timeZone: 'America/Santiago',
@@ -93,7 +89,7 @@ const horaLocal = () =>
 
 const fechaHoraLocal = () => {
   const ahora = new Date();
-  return { fecha: fechaLocal(ahora), hora: horaLocal() };
+  return { fecha: fechaDeNegocio(ahora), hora: horaLocal() };
 };
 
 const formatoFechaHora = ({ fecha, hora }: { fecha: string; hora: string }) => {
@@ -140,15 +136,18 @@ const varianteGrupo = (grupo: GrupoEntrada): 'success' | 'secondary' | 'destruct
 };
 
 export default function EntradasPage() {
-  const [fechaFiltro, setFechaFiltro] = useState(fechaLocal);
+  const [fechaFiltro, setFechaFiltro] = useState(fechaDeNegocio);
   const [fechaHoraEntrada, setFechaHoraEntrada] = useState(fechaHoraLocal);
   const [clienteNombre, setClienteNombre] = useState('');
   const [cantidadEntradas, setCantidadEntradas] = useState(1);
   const [metodoPago, setMetodoPago] = useState<'efectivo' | 'tarjeta' | 'transferencia'>(
     'efectivo'
   );
+  /** Foto del baucher en data URL: obligatoria cuando el pago es transferencia. */
+  const [baucherFoto, setBaucherFoto] = useState<string | null>(null);
   const [entradas, setEntradas] = useState<Entrada[]>([]);
   const [grupoDetalleId, setGrupoDetalleId] = useState<string | null>(null);
+  const [entradaAEntregar, setEntradaAEntregar] = useState<Entrada | null>(null);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [anulandoGrupoId, setAnulandoGrupoId] = useState<string | null>(null);
@@ -166,26 +165,36 @@ export default function EntradasPage() {
     return () => window.clearInterval(interval);
   }, []);
 
-  const cargar = useCallback(async () => {
-    setLoading(true);
-    try {
-      const entriesResponse = await fetch(`/api/tickets?fecha=${encodeURIComponent(fechaFiltro)}`, {
-        cache: 'no-store'
-      });
-      const entriesJson = await entriesResponse.json();
-      if (!entriesResponse.ok || !entriesJson.success)
-        throw new Error(entriesJson.message || 'No se pudieron cargar las entradas');
-      setEntradas(entriesJson.data || []);
-    } catch (error) {
-      toast.error(error instanceof Error ? error.message : 'Error al cargar entradas');
-    } finally {
-      setLoading(false);
-    }
-  }, [fechaFiltro]);
+  const cargar = useCallback(
+    async (silent = false) => {
+      if (!silent) setLoading(true);
+      try {
+        const entriesResponse = await fetch(
+          `/api/tickets?fecha=${encodeURIComponent(fechaFiltro)}`,
+          {
+            cache: 'no-store'
+          }
+        );
+        const entriesJson = await entriesResponse.json();
+        if (!entriesResponse.ok || !entriesJson.success)
+          throw new Error(entriesJson.message || 'No se pudieron cargar las entradas');
+        setEntradas(entriesJson.data || []);
+      } catch (error) {
+        toast.error(error instanceof Error ? error.message : 'Error al cargar entradas');
+      } finally {
+        if (!silent) setLoading(false);
+      }
+    },
+    [fechaFiltro]
+  );
 
   useEffect(() => {
     void cargar();
   }, [cargar]);
+
+  // La puerta y la barra mueven la misma lista: se refresca en vivo sin
+  // reemplazar la tabla por el mensaje de carga.
+  useRealtimeRefresh('tickets', () => cargar(true));
 
   const gruposEntradas = useMemo(() => {
     const grupos = new Map<string, GrupoEntrada>();
@@ -222,11 +231,24 @@ export default function EntradasPage() {
     [entradas]
   );
   const grupoDetalle = gruposEntradas.find(grupo => grupo.id === grupoDetalleId) ?? null;
+  // El baucher se guarda una vez por grupo: las filas del registro comparten el archivo.
+  const baucherDetalle = grupoDetalle?.registros.find(registro => registro.baucher_foto) ?? null;
+  const baucherDescripcion =
+    grupoDetalle && baucherDetalle
+      ? `${grupoDetalle.registros[0].cliente_nombre || 'Entrada'} · ${formatoFechaHora({
+          fecha: grupoDetalle.registros[0].fecha,
+          hora: grupoDetalle.registros[0].hora
+        })}`
+      : '';
 
   const registrar = async (event: FormEvent) => {
     event.preventDefault();
     if (!Number.isInteger(cantidadEntradas) || cantidadEntradas < 1 || cantidadEntradas > 100) {
       toast.error('Indica entre 1 y 100 entradas para registrar');
+      return;
+    }
+    if (metodoPago === 'transferencia' && !baucherFoto) {
+      toast.error('Adjunta la foto del baucher de la transferencia');
       return;
     }
     const montoEntrada = costoEntradaPredeterminado * cantidadEntradas;
@@ -239,6 +261,7 @@ export default function EntradasPage() {
       cliente_nombre: clienteNombre.trim(),
       cantidad_entradas: cantidadEntradas,
       metodo_pago: metodoPago,
+      ...(metodoPago === 'transferencia' && baucherFoto ? { baucher_foto: baucherFoto } : {}),
       fecha,
       hora,
       monto_entrada: montoEntrada
@@ -280,6 +303,7 @@ export default function EntradasPage() {
       setClienteNombre('');
       setCantidadEntradas(1);
       setFechaHoraEntrada(fechaHoraLocal());
+      setBaucherFoto(null);
       operacionEntrada.current = null;
       await cargar();
     } catch (error) {
@@ -456,6 +480,17 @@ export default function EntradasPage() {
               />
             </div>
           </div>
+          {metodoPago === 'transferencia' && (
+            <div className='rounded-xl border border-dashed border-amber-400/70 bg-amber-50/70 p-3 dark:border-amber-500/30 dark:bg-amber-500/10'>
+              <BaucherFileInput
+                id='entrada-baucher'
+                label='Foto del baucher (obligatoria)'
+                hint='Es la constancia del pago: sin la foto no se registra la entrada.'
+                value={baucherFoto}
+                onChange={setBaucherFoto}
+              />
+            </div>
+          )}
           <div className='flex justify-center pt-1'>
             <Button
               type='submit'
@@ -541,6 +576,25 @@ export default function EntradasPage() {
                         {canDeliver && grupo.pendientes.length > 0 && (
                           <Button
                             type='button'
+                            size='sm'
+                            disabled={anulandoGrupoId === grupo.id}
+                            onClick={() => {
+                              // Una sola pendiente: se entrega directo. Varias: el
+                              // detalle deja elegir a qué persona se le sirve.
+                              if (grupo.pendientes.length === 1)
+                                setEntradaAEntregar(grupo.pendientes[0]);
+                              else setGrupoDetalleId(grupo.id);
+                            }}
+                            className='rounded-full'
+                          >
+                            {grupo.pendientes.length > 1
+                              ? `Entregar (${grupo.pendientes.length})`
+                              : 'Entregar'}
+                          </Button>
+                        )}
+                        {canDeliver && grupo.pendientes.length > 0 && (
+                          <Button
+                            type='button'
                             variant='outline'
                             size='sm'
                             disabled={anulandoGrupoId === grupo.id}
@@ -607,6 +661,12 @@ export default function EntradasPage() {
                   <p className='font-semibold'>{grupoDetalle.registros[0].registrado_por_nombre}</p>
                 </div>
               </div>
+              {baucherDetalle && (
+                <BaucherFoto
+                  src={`/api/tickets/${baucherDetalle.id}/baucher`}
+                  descripcion={baucherDescripcion}
+                />
+              )}
               <div className='space-y-2'>
                 <h3 className='text-sm font-semibold'>Estado por entrada</h3>
                 {grupoDetalle.registros.map((registro, indice) => (
@@ -618,6 +678,19 @@ export default function EntradasPage() {
                     <Badge variant={varianteEstado(registro.cortesia_estado)}>
                       {estadoEtiqueta(registro.cortesia_estado)}
                     </Badge>
+                    {registro.cortesia_estado === 'pendiente' && canDeliver && (
+                      <Button
+                        type='button'
+                        size='sm'
+                        className='rounded-full'
+                        onClick={() => {
+                          setGrupoDetalleId(null);
+                          setEntradaAEntregar(registro);
+                        }}
+                      >
+                        Entregar bebida
+                      </Button>
+                    )}
                     {registro.cortesia_estado === 'entregada' && (
                       <span className='text-xs text-muted-foreground'>
                         {formatoEntrega(registro.cortesia_entregada_at)}
@@ -643,6 +716,12 @@ export default function EntradasPage() {
           )}
         </DialogContent>
       </Dialog>
+
+      <EntregaEntradaDialog
+        entrada={entradaAEntregar}
+        onClose={() => setEntradaAEntregar(null)}
+        onEntregada={() => cargar(true)}
+      />
     </main>
   );
 }

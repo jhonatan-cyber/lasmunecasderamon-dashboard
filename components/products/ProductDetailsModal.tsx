@@ -1,5 +1,7 @@
 'use client';
+import { ErrorState } from '@/components/shared/ErrorState';
 import { useRealtimeRefresh } from '@/hooks/realtime/useRealtimeRefresh';
+import { productImageUrl } from '@/lib/utils/productImage';
 import {
   Table,
   TableHeader,
@@ -18,7 +20,6 @@ import {
   DialogDescription
 } from '@/components/ui/dialog';
 import { Badge } from '@/components/ui/badge';
-import { Button } from '@/components/ui/button';
 import { UnitLabelSelector } from './UnitLabelSelector';
 import { SalePrices } from '@/components/bar/SalePrices';
 import { isTierPricedItem } from '@/components/bar/BarAnfitrionas';
@@ -61,12 +62,6 @@ function PresentationPrices({
       mlShotAnfitriona={mlShotAnfitriona}
     />
   );
-}
-
-function imageUrl(foto?: string | null): string {
-  if (!foto || foto === 'default.png') return '/api/images/products/default.png';
-  if (foto.startsWith('http') || foto.startsWith('blob:') || foto.startsWith('/')) return foto;
-  return `/api/images/products/${foto}`;
 }
 
 function Info({ label, children }: { label: string; children: React.ReactNode }) {
@@ -185,7 +180,7 @@ export function ProductDetailsModal({
                 className='relative size-32 shrink-0 overflow-hidden rounded-xl border border-gray-200 dark:border-slate-800 bg-gray-100 dark:bg-slate-800/40'
               >
                 <ProductPhoto
-                  src={imageUrl(displayPresentation?.foto || item.foto)}
+                  src={productImageUrl(displayPresentation?.foto, item.foto)}
                   alt={`${item.name} ${displayPresentation?.nombre ?? ''}`}
                   fill
                   className='object-contain'
@@ -223,16 +218,10 @@ export function ProductDetailsModal({
                 Cargando información actualizada...
               </div>
             ) : error || !selectedPrices ? (
-              <div role='alert' className='flex flex-col items-start gap-3 rounded-xl border p-4'>
-                <p>{error || 'No se encontró la presentación seleccionada.'}</p>
-                <Button
-                  variant='outline'
-                  className='rounded-full'
-                  onClick={() => setAttempt(v => v + 1)}
-                >
-                  Reintentar
-                </Button>
-              </div>
+              <ErrorState
+                message={error || 'No se encontró la presentación seleccionada.'}
+                onRetry={() => setAttempt(v => v + 1)}
+              />
             ) : (
               <>
                 <section className='flex flex-col gap-3' aria-label='Información general'>

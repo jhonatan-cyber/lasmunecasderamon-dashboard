@@ -14,7 +14,10 @@ import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
 import { AlertTriangle } from 'lucide-react';
-import { formatCurrencyCLP } from '@/lib/utils/formatters';
+import {
+  formatCurrencyCLP,
+  formatNumberInputOrEmpty as formatMontoInput
+} from '@/lib/utils/formatters';
 import { useSaleAnulacionForm } from '@/hooks/sales';
 
 interface AnulacionModalProps {
@@ -28,12 +31,6 @@ interface AnulacionModalProps {
     cliente_nombre: string;
   };
 }
-
-const formatMontoInput = (value: string) => {
-  const digits = value.replace(/\D/g, '');
-  if (!digits) return '';
-  return new Intl.NumberFormat('es-CL').format(Number(digits));
-};
 
 export function AnulacionVentaModal({
   open,

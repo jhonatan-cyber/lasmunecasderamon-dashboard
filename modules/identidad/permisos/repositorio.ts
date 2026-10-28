@@ -81,12 +81,6 @@ export async function obtenerRolPorNombre(nombre: string): Promise<{ id_rol: str
   );
 }
 
-/** ¿Hay ya roles? Los seeds sólo escriben cuando la tabla está vacía. */
-export async function contarRoles(): Promise<number> {
-  const rows = await query<{ count: number }[]>(`SELECT COUNT(*)::int AS count FROM roles`);
-  return rows?.[0]?.count ?? 0;
-}
-
 /** Permiso vivo con ese par módulo/acción, si existe. */
 export async function buscarPermiso(modulo: string, accion: string): Promise<{ id: string }[]> {
   return await query<{ id: string }[]>(

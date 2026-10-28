@@ -1,5 +1,6 @@
 'use client';
 
+import { EmptyState } from '@/components/shared/EmptyState';
 import { useState } from 'react';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -54,11 +55,10 @@ export function HelpAccordion({ faqData }: HelpAccordionProps) {
         </CardHeader>
         <CardContent>
           {filteredFAQ.length === 0 ? (
-            <div className='text-center py-8'>
-              <p aria-live='polite' className='text-gray-500'>
-                No se encontraron resultados para &ldquo;{searchTerm}&rdquo;
-              </p>
-            </div>
+            <EmptyState
+              variant='text'
+              title={<>No se encontraron resultados para &ldquo;{searchTerm}&rdquo;</>}
+            />
           ) : (
             <Accordion type='single' collapsible className='w-full'>
               {filteredFAQ.map(item => (

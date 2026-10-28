@@ -1,4 +1,5 @@
 'use client';
+import { ErrorState } from '@/components/shared/ErrorState';
 import { NativeSelect } from '@/components/ui/native-select';
 
 import { bottleMixerUnits } from '@/lib/sales/productConfiguration';
@@ -35,7 +36,12 @@ export function BottleMixerSelection({
       <p className='text-sm text-muted-foreground'>
         Selecciona el producto incluido. Se descontarán sus unidades del bar.
       </p>
-      {error && <p role='alert'>No se pudieron cargar las bebidas. Recarga para reintentar.</p>}
+      {error && (
+        <ErrorState
+          size='sm'
+          message='No se pudieron cargar las bebidas. Recarga para reintentar.'
+        />
+      )}
       {productos.map((p, index) =>
         p.tipo_venta !== 'shot' && bottleMixerUnits(p) ? (
           <Label key={index} className='block space-y-2 text-sm'>

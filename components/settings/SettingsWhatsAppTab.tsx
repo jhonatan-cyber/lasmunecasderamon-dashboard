@@ -1,4 +1,5 @@
 'use client';
+import { EmptyState } from '@/components/shared/EmptyState';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 
@@ -333,9 +334,11 @@ export function SettingsWhatsAppTab() {
                 </Button>
               </div>
               {history.length === 0 ? (
-                <p className='mt-2 text-sm text-neutral-500'>
-                  Todavía no hay mensajes registrados.
-                </p>
+                <EmptyState
+                  variant='text'
+                  className='mt-2'
+                  title='Todavía no hay mensajes registrados.'
+                />
               ) : (
                 <ul className='mt-2 divide-y divide-neutral-200 dark:divide-neutral-800'>
                   {history.map(message => (

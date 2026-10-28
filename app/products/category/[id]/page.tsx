@@ -1,4 +1,5 @@
 'use client';
+import { ErrorState } from '@/components/shared/ErrorState';
 import { matchesProductSearch } from '@/lib/utils/productSearch';
 import React, { useState, useMemo, useCallback } from 'react';
 import { useQuery, keepPreviousData } from '@tanstack/react-query';
@@ -417,9 +418,7 @@ const ProductCategoryPage = () => {
         />
 
         {onlyLowStock && lowStockError && (
-          <p role='alert' className='text-sm text-red-600'>
-            No se pudo comprobar el stock bajo. Intenta nuevamente.
-          </p>
+          <ErrorState size='sm' message='No se pudo comprobar el stock bajo. Intenta nuevamente.' />
         )}
 
         <VencimientoAlert fechas={allProducts.map(p => p.fecha_vencimiento)} />

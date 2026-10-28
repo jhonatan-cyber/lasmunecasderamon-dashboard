@@ -1,5 +1,6 @@
 'use client';
 
+import { ErrorState } from '@/components/shared/ErrorState';
 import {
   Dialog,
   DialogContent,
@@ -17,7 +18,11 @@ import { useRefreshOnFocus } from '@/hooks/shared';
 import { useConfigValue } from '@/hooks/shared/useConfigValue';
 import { formatLongDateEs, formatShortTimeEs } from '@/lib/utils/calendarUtils';
 import { getCardSplit } from '@/components/orders/productModalRules';
-import { OrderDetailInfoPanel, OrderDetailPaymentPanel } from '@/components/orders/detail';
+import {
+  OrderBaucherPanel,
+  OrderDetailInfoPanel,
+  OrderDetailPaymentPanel
+} from '@/components/orders/detail';
 import { useOrderDetailModalState } from '@/hooks/orders/useOrderDetailModalState';
 import { useOrderDetailModal } from '@/hooks/orders/useOrderDetailModal';
 import { OrderProducts } from './OrderProducts';
@@ -101,9 +106,7 @@ export default function OrderDetailModal({
           </div>
         ) : error ? (
           <div className='py-8 text-center text-gray-700 dark:text-zinc-300 sm:py-12'>
-            <div role='alert' className='text-red-500 text-sm sm:text-base'>
-              {error}
-            </div>
+            <ErrorState message={error} />
           </div>
         ) : detail && detail.length > 0 ? (
           <>
@@ -139,6 +142,14 @@ export default function OrderDetailModal({
                     orderTotalCommission={detail[0]?.total_comision || 0}
                   />
                 </div>
+
+                {/* Baucher del pedido: sólo existe cuando se cobró con transferencia */}
+                {detail[0]?.baucher_foto && (
+                  <OrderBaucherPanel
+                    orderId={String(detail[0].id_pedido)}
+                    codigo={detail[0]?.codigo}
+                  />
+                )}
 
                 {/* Products Table */}
                 <OrderProducts

@@ -1,5 +1,6 @@
 'use client';
 
+import { ErrorState } from '@/components/shared/ErrorState';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { Fingerprint, RefreshCw, UserRound, Wifi } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -134,23 +135,10 @@ export function BiometricStatus() {
           </CardTitle>
         </CardHeader>
         <CardContent>
-          <div
-            role='alert'
-            className='flex flex-col items-start gap-3 rounded-2xl border border-amber-300 bg-amber-50 p-4 dark:border-amber-900/50 dark:bg-amber-900/10'
-          >
-            <p className='text-sm text-amber-800 dark:text-amber-300'>
-              {error || 'No se pudo cargar el estado.'}
-            </p>
-            <Button
-              className='rounded-full'
-              type='button'
-              variant='outline'
-              size='sm'
-              onClick={() => void load()}
-            >
-              Reintentar
-            </Button>
-          </div>
+          <ErrorState
+            message={error || 'No se pudo cargar el estado.'}
+            onRetry={() => void load()}
+          />
         </CardContent>
       </Card>
     );

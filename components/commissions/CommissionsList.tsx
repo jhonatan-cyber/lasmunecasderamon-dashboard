@@ -1,6 +1,7 @@
 /* eslint-disable */
 'use client';
 
+import { EmptyState } from '@/components/shared/EmptyState';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
@@ -51,17 +52,11 @@ export function CommissionsList({
   if (!loading && paginatedCommissions.length === 0) {
     return (
       <div className='text-center py-8'>
-        <div className='flex flex-col items-center space-y-4'>
-          <div className='w-16 h-16 bg-gray-100 dark:bg-slate-800 rounded-full flex items-center justify-center'>
-            <DollarSign className='w-8 h-8 text-gray-400' />
-          </div>
-          <div>
-            <h3 className='text-lg font-medium text-gray-900 dark:text-gray-100 mb-2'>
-              No se encontraron comisiones
-            </h3>
-            <p className='text-sm text-gray-500'>Intenta ajustar los filtros de búsqueda</p>
-          </div>
-        </div>
+        <EmptyState
+          icon={DollarSign}
+          title='No se encontraron comisiones'
+          description='Intenta ajustar los filtros de búsqueda'
+        />
       </div>
     );
   }

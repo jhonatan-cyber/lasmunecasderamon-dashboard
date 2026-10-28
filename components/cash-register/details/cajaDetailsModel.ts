@@ -192,8 +192,4 @@ export function printHtml(printContent: string): void {
 }
 
 /** Día de la semana en español para el título del modal. */
-export const getDiaSemana = (fecha: string | Date): string => {
-  const date = new Date(fecha);
-  const dias = ['Domingo', 'Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado'];
-  return dias[date.getDay()];
-};
+export { getDiaSemana } from '@/lib/utils/formatters';

@@ -1,5 +1,6 @@
 'use client';
 
+import { EmptyState } from '@/components/shared/EmptyState';
 import {
   Table,
   TableBody,
@@ -38,7 +39,10 @@ export default function PayrollSummaryTable({
           {data.length === 0 ? (
             <TableRow>
               <TableCell colSpan={6} className='h-24 text-center'>
-                {isLoading ? 'Cargando...' : 'No hay datos disponibles'}
+                <EmptyState
+                  variant='text'
+                  title={isLoading ? 'Cargando...' : 'No hay datos disponibles'}
+                />
               </TableCell>
             </TableRow>
           ) : (

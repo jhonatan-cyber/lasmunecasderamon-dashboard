@@ -17,6 +17,7 @@ import { abrirAvisosSdk } from './eventSdkClient';
 import { crearLecturaPorAviso } from './eventRecordWakeup';
 import { pollEquipo } from './recordPoller';
 import { recepcionAutomaticaHabilitada } from './recepcionConfig';
+import { metodoBiometricoDesdeCodigo as metodoDesdeEvento } from './comun';
 
 function esSalida(tipo: string | null): boolean {
   return (tipo || '').trim().toLowerCase() === 'exit';
@@ -44,21 +45,6 @@ export function listenersActivos(): string[] {
 
 export function conectadosEnVivo(): string[] {
   return [...conectados];
-}
-
-function metodoDesdeEvento(method: number | null): BiometricMetodo {
-  switch (method) {
-    case 0:
-      return 'clave';
-    case 1:
-      return 'tarjeta';
-    case 6:
-      return 'huella';
-    case 15:
-      return 'cara';
-    default:
-      return 'otro';
-  }
 }
 
 async function equipoCargado(dispositivoId: string): Promise<{

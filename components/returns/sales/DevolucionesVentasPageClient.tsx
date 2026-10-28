@@ -13,6 +13,7 @@ import { DevolucionHeader } from '@/components/returns/DevolucionHeader';
 import { DevolucionFilters } from '@/components/returns/DevolucionFilters';
 import { DevolucionVentasTable } from '@/components/returns/sales/DevolucionVentasTable';
 import { DevolucionVentaModal } from '@/components/returns/sales/DevolucionVentaModal';
+import { ErrorState } from '@/components/shared/ErrorState';
 import { formatCurrencyCLP } from '@/lib/utils/formatters';
 
 import logger from '@/lib/utils/logger';
@@ -117,9 +118,7 @@ export function DevolucionesVentasPageClient() {
   if (error) {
     return (
       <div className='p-4 sm:p-6 lg:p-10 space-y-4 sm:space-y-6 mt-4 sm:mt-6 lg:mt-10'>
-        <div className='bg-red-50 border border-red-200 rounded-lg p-4'>
-          <p className='text-red-800 text-sm sm:text-base'>Error al cargar las ventas: {error}</p>
-        </div>
+        <ErrorState size='sm' message={`Error al cargar las ventas: ${error}`} />
       </div>
     );
   }

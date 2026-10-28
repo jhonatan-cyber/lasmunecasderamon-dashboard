@@ -1,4 +1,5 @@
 'use client';
+import { EmptyState } from '@/components/shared/EmptyState';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 
@@ -142,27 +143,28 @@ export function RolesContent({
 
           <div className='space-y-4 overflow-y-auto max-h-[500px] pr-3 pl-3 pt-3'>
             {filteredRoles.length === 0 ? (
-              <div className='text-center py-8'>
-                <Shield className='h-8 w-8 sm:h-12 sm:w-12 text-zinc-400 mx-auto mb-4' />
-                <h3 className='text-base sm:text-lg font-medium text-zinc-600 dark:text-neutral-300 mb-2'>
-                  No se encontraron roles
-                </h3>
-                <p className='text-xs sm:text-sm text-zinc-500 dark:text-neutral-400 mb-4'>
-                  {searchTerm || filterStatus !== 'all'
+              <EmptyState
+                icon={Shield}
+                title='No se encontraron roles'
+                description={
+                  searchTerm || filterStatus !== 'all'
                     ? 'Intenta ajustar los filtros de búsqueda'
-                    : 'No hay roles registrados en el sistema'}
-                </p>
-                {!searchTerm && filterStatus === 'all' && (
-                  <Button
-                    variant='unstyled'
-                    onClick={onSetupRoles}
-                    className='inline-flex items-center px-4 py-2 bg-blue-600 text-white rounded-full hover:bg-blue-700 transition-colors text-sm'
-                  >
-                    <Shield className='h-4 w-4 mr-2' />
-                    Configurar Roles del Sistema
-                  </Button>
-                )}
-              </div>
+                    : 'No hay roles registrados en el sistema'
+                }
+                action={
+                  !searchTerm &&
+                  filterStatus === 'all' && (
+                    <Button
+                      variant='unstyled'
+                      onClick={onSetupRoles}
+                      className='inline-flex items-center px-4 py-2 bg-blue-600 text-white rounded-full hover:bg-blue-700 transition-colors text-sm'
+                    >
+                      <Shield className='h-4 w-4 mr-2' />
+                      Configurar Roles del Sistema
+                    </Button>
+                  )
+                }
+              />
             ) : (
               filteredRoles.map(role => (
                 <RoleCard

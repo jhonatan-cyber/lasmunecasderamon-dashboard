@@ -215,6 +215,32 @@ export function useNotifications() {
       setLastNotification({ type: 'new_order', data: payload.data, timestamp: Date.now() });
     }
 
+    // La puerta registró una entrada: caja, barra y administración tienen que
+    // entregar la bebida de cortesía. El aviso lleva a la cola del rol.
+    if (payload?.type === 'entrada_registrada' && payload?.data) {
+      const data = payload.data as {
+        id?: string;
+        cliente_nombre?: string | null;
+        cantidad?: number;
+        monto_total?: number;
+      };
+      const cantidad = Number(data.cantidad || 1);
+      const cliente = data.cliente_nombre || 'Cliente sin nombre';
+      const destino = userRole?.toLowerCase() === 'barman' ? '/bar?tab=cortesias' : '/tickets';
+      playNotificationSound();
+      toast.success(
+        cantidad === 1 ? 'Nueva entrada en la puerta' : `${cantidad} entradas en la puerta`,
+        {
+          description: `${cliente}${
+            data.monto_total ? ` · ${formatCurrencyCLP(Number(data.monto_total))}` : ''
+          }`,
+          duration: 7000,
+          action: { label: 'Entregar', onClick: () => router.push(destino) }
+        }
+      );
+      setLastNotification({ type: 'entrada_registrada', data, timestamp: Date.now() });
+    }
+
     if (payload?.type === 'new_service_request' && payload?.data) {
       showServiceNotification(payload.data);
 

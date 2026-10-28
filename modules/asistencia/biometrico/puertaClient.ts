@@ -4,22 +4,13 @@ import {
   DeviceConnectionError,
   type CredencialesEquipo
 } from './deviceClient';
+import { parsearParametrosDigest } from './comun';
 
 const TIMEOUT_APERTURA_MS = 5000;
 
 export interface AperturaPuerta {
   canal?: number;
   usuarioId?: string | null;
-}
-
-function parsearChallenge(header: string): Record<string, string> {
-  const params: Record<string, string> = {};
-  const re = /(\w+)=(?:"([^"]*)"|([^,]*))/g;
-  let match: RegExpExecArray | null;
-  while ((match = re.exec(header)) !== null) {
-    params[match[1].toLowerCase()] = match[2] ?? match[3] ?? '';
-  }
-  return params;
 }
 
 export async function abrirPuerta(
@@ -63,7 +54,7 @@ export async function abrirPuerta(
     }
     await response.body?.cancel().catch(() => undefined);
     response = await pedir(
-      construirAuthorizationDigest('GET', path, credenciales, parsearChallenge(header))
+      construirAuthorizationDigest('GET', path, credenciales, parsearParametrosDigest(header))
     );
   }
   if (response.status === 401) {

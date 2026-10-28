@@ -1,5 +1,6 @@
 'use client';
 
+import { ErrorState } from '@/components/shared/ErrorState';
 import { useCallback } from 'react';
 import { useSettingsLogs } from '@/hooks/settings/useSettingsLogs';
 import { SettingsLogsTabHeader } from '@/components/settings/SettingsLogsTabHeader';
@@ -37,11 +38,7 @@ export function SettingsLogsTab() {
   return (
     <div className='space-y-4 sm:space-y-6'>
       <SettingsLogsTabHeader refreshing={refreshing} onRefresh={handleRefresh} />
-      {error && (
-        <p role='alert' className='text-sm text-red-600'>
-          {error}
-        </p>
-      )}
+      {error && <ErrorState size='sm' message={error} />}
 
       <SettingsAuditLogsCard
         auditLogs={auditLogs}

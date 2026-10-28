@@ -1,3 +1,5 @@
+import { EmptyState } from '@/components/shared/EmptyState';
+import { ErrorState } from '@/components/shared/ErrorState';
 import { ClipboardList } from 'lucide-react';
 import { CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import {
@@ -56,8 +58,8 @@ export function EmployeeAdvanceRequestsHistory({
               </ModuleTableRow>
             ) : error ? (
               <ModuleTableRow>
-                <ModuleTableCell colSpan={4} className='py-12 text-muted-foreground'>
-                  No se pudo cargar el historial.
+                <ModuleTableCell colSpan={4} className='py-12'>
+                  <ErrorState size='sm' message='No se pudo cargar el historial.' />
                 </ModuleTableCell>
               </ModuleTableRow>
             ) : requests.length ? (
@@ -82,16 +84,12 @@ export function EmployeeAdvanceRequestsHistory({
             ) : (
               <ModuleTableRow>
                 <ModuleTableCell colSpan={4} className='py-12'>
-                  <div className='flex flex-col items-center gap-2'>
-                    <ClipboardList
-                      className='h-8 w-8 text-muted-foreground/60'
-                      aria-hidden='true'
-                    />
-                    <p className='font-medium'>Todavía no tienes solicitudes</p>
-                    <p className='text-sm text-muted-foreground'>
-                      Tus solicitudes y sus estados aparecerán aquí.
-                    </p>
-                  </div>
+                  <EmptyState
+                    variant='text'
+                    icon={ClipboardList}
+                    title='Todavía no tienes solicitudes'
+                    description='Tus solicitudes y sus estados aparecerán aquí.'
+                  />
                 </ModuleTableCell>
               </ModuleTableRow>
             )}

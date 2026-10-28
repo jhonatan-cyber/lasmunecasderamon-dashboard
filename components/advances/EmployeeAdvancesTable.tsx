@@ -1,3 +1,4 @@
+import { EmptyState } from '@/components/shared/EmptyState';
 import { Inbox } from 'lucide-react';
 import { CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import {
@@ -107,14 +108,12 @@ export function EmployeeAdvancesTable({
             ) : (
               <ModuleTableRow>
                 <ModuleTableCell colSpan={6} className='py-12'>
-                  <div className='flex flex-col items-center gap-2'>
-                    <Inbox className='h-8 w-8 text-muted-foreground/60' aria-hidden='true' />
-                    <p className='font-medium text-foreground'>No hay anticipos para mostrar</p>
-                    <p className='text-sm text-muted-foreground'>
-                      Los anticipos aparecerán aquí cuando sean entregados. Si aplicaste filtros,
-                      prueba cambiarlos.
-                    </p>
-                  </div>
+                  <EmptyState
+                    variant='text'
+                    icon={Inbox}
+                    title='No hay anticipos para mostrar'
+                    description='Los anticipos aparecerán aquí cuando sean entregados. Si aplicaste filtros, prueba cambiarlos.'
+                  />
                 </ModuleTableCell>
               </ModuleTableRow>
             )}

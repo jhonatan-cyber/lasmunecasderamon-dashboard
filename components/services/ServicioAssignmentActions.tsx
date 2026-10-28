@@ -1,4 +1,6 @@
 'use client';
+import { ErrorState } from '@/components/shared/ErrorState';
+import { EmptyState } from '@/components/shared/EmptyState';
 import { useState } from 'react';
 import Link from 'next/link';
 import { ShoppingCart, Users, Search, UserRoundMinus, Loader2, Check } from 'lucide-react';
@@ -171,13 +173,9 @@ export function ServicioAssignmentActions({
                 Cargando anfitrionas...
               </div>
             ) : error ? (
-              <p role='alert' className='py-4 text-sm text-destructive'>
-                {error}
-              </p>
+              <ErrorState size='sm' message={error} />
             ) : visibleOptions.length === 0 ? (
-              <p className='py-6 text-center text-sm text-muted-foreground'>
-                No hay anfitrionas para esta búsqueda.
-              </p>
+              <EmptyState variant='text' title='No hay anfitrionas para esta búsqueda.' />
             ) : (
               visibleOptions.map(a => (
                 <Label

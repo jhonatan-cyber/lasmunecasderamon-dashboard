@@ -1,12 +1,11 @@
 'use client';
 
-import { Suspense, useEffect, useState } from 'react';
+import { useEffect } from 'react';
 import dynamic from 'next/dynamic';
-import { useCurrentUser } from '@/hooks/auth/useCurrentUser';
+import { type CurrentUser, useCurrentUser } from '@/hooks/auth/useCurrentUser';
 import { useRouter } from 'next/navigation';
 import { Skeleton as BoneyardSkeleton } from 'boneyard-js/react';
 import { Medal, TrendingUp, BarChart3, Activity, Clock, ShieldCheck } from 'lucide-react';
-import { toast } from 'sonner';
 
 import CriticalMetrics from '@/components/dashboard/CriticalMetrics';
 import LocalAndPending from '@/components/dashboard/LocalAndPending';
@@ -15,6 +14,7 @@ import CollapsibleSection from '@/components/dashboard/CollapsibleSection';
 import TopPerformers from '@/components/dashboard/TopPerformers';
 import ForecastInsights from '@/components/dashboard/ForecastInsights';
 import LoggedUsersCards from '@/components/dashboard/LoggedUsersCards';
+import { PanelHeading, SectionHeading } from '@/components/dashboard/DashboardHeading';
 import { ReplenishmentNotice } from '@/components/purchases/ReplenishmentNotice';
 import { PermissionGuard } from '@/components/auth/PermissionGuard';
 
@@ -40,33 +40,28 @@ export default function Dashboard() {
     );
   if (user.role?.toLowerCase() === 'barman')
     return <BarmanDashboard name={user.name || 'Barman'} />;
-  return <GeneralDashboard />;
+  return <GeneralDashboard user={user} />;
 }
 
-function GeneralDashboard() {
-  const { user, loading, refetch } = useCurrentUser();
+function GeneralDashboard({ user }: { user: CurrentUser }) {
   const router = useRouter();
+  const role = user.role?.toLowerCase();
 
   useEffect(() => {
-    if (!loading && user) {
-      if (user.role?.toLowerCase() === 'anfitriona') {
-        router.replace('/hostess-dashboard');
-        return;
-      }
-      if (user.role?.toLowerCase() === 'garzon') {
-        router.replace('/waiter-dashboard');
-        return;
-      }
+    if (role === 'anfitriona') {
+      router.replace('/hostess-dashboard');
+      return;
     }
-  }, [user, loading, router]);
+    if (role === 'garzon') {
+      router.replace('/waiter-dashboard');
+    }
+  }, [role, router]);
 
-  const isCajero = user?.role?.toLowerCase() === 'cajero';
-  const shouldShowSkeleton =
-    loading || user?.role?.toLowerCase() === 'anfitriona' || user?.role?.toLowerCase() === 'garzon';
+  const isCajero = role === 'cajero';
+  const shouldShowSkeleton = role === 'anfitriona' || role === 'garzon';
 
   return (
     <div className='p-4 md:p-8 space-y-10 bg-slate-50/50 dark:bg-transparent min-h-screen pb-20'>
-      {}
       <div className='flex flex-col md:flex-row md:items-end justify-between gap-4'>
         <div className='flex flex-col gap-1'>
           <h1 className='text-3xl md:text-6xl font-black tracking-tighter text-slate-900 dark:text-white uppercase'>
@@ -86,47 +81,23 @@ function GeneralDashboard() {
           <PermissionGuard module='products' action='view' fallback={null}>
             <ReplenishmentNotice showProducts />
           </PermissionGuard>
-          {}
           <section className='space-y-6'>
-            <div className='flex items-center gap-2 px-2'>
-              <ShieldCheck className='h-4 w-4 text-emerald-500' />
-              <h2 className='text-xs font-black uppercase tracking-widest text-slate-400'>
-                Personal en Local (Login Activo)
-              </h2>
-            </div>
+            <SectionHeading icon={ShieldCheck} title='Personal en Local (Login Activo)' />
             <LoggedUsersCards />
           </section>
 
-          {}
           <section className='space-y-6'>
-            <div className='flex items-center gap-2 px-2'>
-              <BarChart3 className='h-4 w-4 text-emerald-500' />
-              <h2 className='text-xs font-black uppercase tracking-widest text-slate-400'>
-                Tendencias de Venta Diaria
-              </h2>
-            </div>
+            <SectionHeading icon={BarChart3} title='Tendencias de Venta Diaria' />
             <MiniSalesChart />
           </section>
 
-          {}
           <section className='space-y-6'>
-            <div className='flex items-center gap-2 px-2'>
-              <TrendingUp className='h-4 w-4 text-emerald-500' />
-              <h2 className='text-xs font-black uppercase tracking-widest text-slate-400'>
-                Métricas Críticas de Operación
-              </h2>
-            </div>
+            <SectionHeading icon={TrendingUp} title='Métricas Críticas de Operación' />
             <CriticalMetrics />
           </section>
 
-          {}
           <section className='space-y-6'>
-            <div className='flex items-center gap-2 px-2'>
-              <Medal className='h-4 w-4 text-amber-400' />
-              <h2 className='text-xs font-black uppercase tracking-widest text-slate-400'>
-                Performance y Forecast
-              </h2>
-            </div>
+            <SectionHeading icon={Medal} title='Performance y Forecast' tone='amber' />
             <div className='grid grid-cols-1 gap-10'>
               <CollapsibleSection title='Top Performers' icon={Medal} defaultOpen={true}>
                 <TopPerformers />
@@ -138,48 +109,27 @@ function GeneralDashboard() {
             </div>
           </section>
 
-          {}
           <section className='space-y-6'>
-            <div className='flex items-center gap-2 px-2'>
-              <Activity className='h-4 w-4 text-indigo-500' />
-              <h2 className='text-xs font-black uppercase tracking-widest text-slate-400'>
-                Operación en Tiempo Real
-              </h2>
-            </div>
+            <SectionHeading icon={Activity} title='Operación en Tiempo Real' tone='indigo' />
             <div className='grid grid-cols-1 lg:grid-cols-2 gap-10 items-start'>
               <div className='flex flex-col gap-4'>
-                <div className='flex items-center gap-3 px-1'>
-                  <div className='p-2 rounded-xl bg-emerald-500/10 text-emerald-500'>
-                    <Activity className='h-4 w-4' />
-                  </div>
-                  <div className='flex flex-col'>
-                    <span className='text-xs font-black uppercase tracking-widest text-slate-900 dark:text-white'>
-                      Estado Operativo
-                    </span>
-                    <span className='text-[10px] font-bold text-slate-400 uppercase tracking-tighter'>
-                      Monitoreo Local
-                    </span>
-                  </div>
-                </div>
+                <PanelHeading
+                  icon={Activity}
+                  title='Estado Operativo'
+                  description='Monitoreo Local'
+                />
                 <div className='min-w-0'>
                   <LocalAndPending />
                 </div>
               </div>
 
               <div className='flex flex-col gap-4'>
-                <div className='flex items-center gap-3 px-1'>
-                  <div className='p-2 rounded-xl bg-slate-500/10 text-slate-500'>
-                    <Clock className='h-4 w-4' />
-                  </div>
-                  <div className='flex flex-col'>
-                    <span className='text-xs font-black uppercase tracking-widest text-slate-900 dark:text-white'>
-                      Flujo de Actividad
-                    </span>
-                    <span className='text-[10px] font-bold text-slate-400 uppercase tracking-tighter'>
-                      Logs de Turno
-                    </span>
-                  </div>
-                </div>
+                <PanelHeading
+                  icon={Clock}
+                  title='Flujo de Actividad'
+                  description='Logs de Turno'
+                  tone='slate'
+                />
                 <div className='rounded-3xl border border-slate-200/60 bg-white dark:border-slate-800/60 dark:bg-slate-950/40 p-6 shadow-xl shadow-slate-200/20 dark:shadow-none min-h-[300px]'>
                   <RecentActivityCompact />
                 </div>
@@ -190,12 +140,7 @@ function GeneralDashboard() {
           {isCajero && (
             <section className='grid grid-cols-1 lg:grid-cols-3 gap-10 items-start'>
               <div className='lg:col-span-2'>
-                <div className='flex items-center gap-2 px-2 mb-6'>
-                  <BarChart3 className='h-4 w-4 text-emerald-500' />
-                  <h2 className='text-xs font-black uppercase tracking-widest text-slate-400'>
-                    Reportes del Cajero
-                  </h2>
-                </div>
+                <SectionHeading icon={BarChart3} title='Reportes del Cajero' className='mb-6' />
                 <DashboardStatsCards />
               </div>
             </section>

@@ -6,6 +6,7 @@
  * módulo de UI solo abre la impresora con el HTML que se genera acá.
  */
 import { formatCurrencyCLP } from '@/lib/utils/formatters';
+import { escaparHtml } from '@/lib/utils/htmlEscape';
 
 /** Sentido del movimiento: descuenta saldo o lo acredita. */
 export type MovimientoPrepago = 'consumo' | 'carga';
@@ -51,18 +52,6 @@ const ETIQUETAS: Record<
     saldoFinal: 'Saldo después de la carga'
   }
 };
-
-const ESCAPES: Record<string, string> = {
-  '&': '&amp;',
-  '<': '&lt;',
-  '>': '&gt;',
-  '"': '&quot;',
-  "'": '&#39;'
-};
-
-function escapar(texto: string): string {
-  return texto.replace(/[&<>"']/g, caracter => ESCAPES[caracter]);
-}
 
 /** Cliente con su saldo al momento de emitir el comprobante. */
 export interface ClientePrepagoComprobante {
@@ -121,7 +110,7 @@ export function calcularSaldoResultante(
 
 function fila(etiqueta: string, valor: string, clase = ''): string {
   const claseValor = clase ? ` ${clase}` : '';
-  return `<div class="row"><span class="label">${escapar(etiqueta)}</span><span class="value${claseValor}">${escapar(valor)}</span></div>`;
+  return `<div class="row"><span class="label">${escaparHtml(etiqueta)}</span><span class="value${claseValor}">${escaparHtml(valor)}</span></div>`;
 }
 
 function lineasHTML(lineas: LineaComprobantePrepago[]): string {
@@ -131,8 +120,8 @@ function lineasHTML(lineas: LineaComprobantePrepago[]): string {
       linea => `
         <div class="row item">
           <span class="label">
-            ${escapar(linea.concepto)}
-            ${linea.detalle ? `<br /><span class="sublabel">${escapar(linea.detalle)}</span>` : ''}
+            ${escaparHtml(linea.concepto)}
+            ${linea.detalle ? `<br /><span class="sublabel">${escaparHtml(linea.detalle)}</span>` : ''}
           </span>
           <span class="value">${formatCurrencyCLP(linea.monto)}</span>
         </div>`
@@ -151,10 +140,10 @@ export function generarComprobantePrepagoHTML(
   return `
     <div class="ticket">
       <div class="header">
-        <img src="${escapar(logoUrl)}" alt="Las Muñecas de Ramón" class="logo" />
+        <img src="${escaparHtml(logoUrl)}" alt="Las Muñecas de Ramón" class="logo" />
         <p class="brand">Las Muñecas de Ramón</p>
-        <p class="doc">${escapar(etiquetas.documento)}</p>
-        <p class="tipo">${escapar(datos.titulo)}</p>
+        <p class="doc">${escaparHtml(etiquetas.documento)}</p>
+        <p class="tipo">${escaparHtml(datos.titulo)}</p>
       </div>
 
       <div class="section">
@@ -170,20 +159,20 @@ export function generarComprobantePrepagoHTML(
         ${lineasHTML(datos.lineas)}
       </div>
 
-      <div class="total"><span>Total ${escapar(datos.titulo.toLowerCase())}</span><span>${formatCurrencyCLP(datos.total)}</span></div>
+      <div class="total"><span>Total ${escaparHtml(datos.titulo.toLowerCase())}</span><span>${formatCurrencyCLP(datos.total)}</span></div>
 
       <div class="prepago-box">
         ${fila('Saldo antes', formatCurrencyCLP(datos.saldoAnterior))}
         ${fila(etiquetas.accion, formatCurrencyCLP(datos.montoPrepago), 'movimiento')}
         ${otroMedio > 0 ? fila('Cubierto con otro medio', formatCurrencyCLP(otroMedio)) : ''}
         <div class="row saldo-final">
-          <span class="label">${escapar(etiquetas.saldoFinal)}</span>
+          <span class="label">${escaparHtml(etiquetas.saldoFinal)}</span>
           <span class="value">${formatCurrencyCLP(datos.saldoResultante)}</span>
         </div>
       </div>
 
       <p class="footer">
-        ${datos.nota ? `${escapar(datos.nota)}<br />` : ''}
+        ${datos.nota ? `${escaparHtml(datos.nota)}<br />` : ''}
         Documento generado automáticamente al mover el saldo prepago.
       </p>
     </div>`;

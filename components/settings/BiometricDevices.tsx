@@ -1,4 +1,6 @@
 'use client';
+import { ErrorState } from '@/components/shared/ErrorState';
+import { EmptyState } from '@/components/shared/EmptyState';
 import { NativeSelect } from '@/components/ui/native-select';
 
 import { useCallback, useEffect, useId, useState } from 'react';
@@ -488,17 +490,12 @@ export function BiometricDevices() {
               <span className='sr-only'>Cargando equipos...</span>
             </div>
           ) : error ? (
-            <div role='alert'>
-              <p>{error}</p>
-              <Button className='rounded-full' type='button' variant='outline' onClick={load}>
-                Reintentar
-              </Button>
-            </div>
+            <ErrorState message={error} onRetry={load} />
           ) : !devices.length ? (
-            <p className='py-2 text-sm text-muted-foreground'>
-              Todavía no hay equipos vinculados. Cargá el serial del lector arriba para que el sitio
-              empiece a aceptar sus eventos.
-            </p>
+            <EmptyState
+              variant='text'
+              title='Todavía no hay equipos vinculados. Cargá el serial del lector arriba para que el sitio empiece a aceptar sus eventos.'
+            />
           ) : (
             devices.map(device => {
               return (

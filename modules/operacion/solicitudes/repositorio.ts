@@ -2,6 +2,7 @@ import { query, generateUUID } from '@/lib/database/db';
 import { getNowInBusinessTimezone } from '@/lib/business/timezoneService';
 import { NotFoundError, BusinessError, DatabaseError } from '@/lib/errors/errors';
 import { logger } from '@/lib/utils/logger';
+import { eliminarFotoBaucher, guardarFotoBaucher } from '@/lib/utils/image-utils';
 import { esHabitacionSoloVentas } from '@/lib/business/habitaciones';
 import { leerHabitacionParaServicio } from '../servicios/repositorio';
 import { crearServicioEnUnidad } from '../servicios/creacion';
@@ -55,15 +56,27 @@ export class ServiceRequestRepository {
           'ROOM_SALES_ONLY'
         );
     }
+    let baucherFilename: string | null = null;
+    let solicitudCreada = false;
     try {
       const id = generateUUID();
       const fecha = getNowInBusinessTimezone(data.device_date);
+
+      // El pago con transferencia viaja con la foto del baucher: se guarda como
+      // archivo (misma rutina que pedidos y entradas) y en la fila solo queda el
+      // nombre. Si no se puede guardar, la solicitud no se crea: perder la foto
+      // significaría perder la constancia del pago.
+      baucherFilename = data.baucher_foto
+        ? await guardarFotoBaucher(data.baucher_foto, 'order', { codigo: data.codigo })
+        : null;
+
       await query(
         `
       INSERT INTO solicitudes_servicios
       (id_solicitud, cliente_id, habitacion_id, precio_servicio, precio_habitacion, comision_anfitriona, anfitrionas_ids,
-       num_clientes, metodo_pago, tiempo, total, iva, solicitado_por, codigo, fecha_solicitud, producto_incluido_presentacion_id)
-      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+       num_clientes, metodo_pago, tiempo, total, iva, solicitado_por, codigo, fecha_solicitud, producto_incluido_presentacion_id,
+       baucher_foto)
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
     `,
         [
           id,
@@ -81,9 +94,11 @@ export class ServiceRequestRepository {
           solicitadoPor,
           data.codigo || null,
           fecha,
-          data.producto_incluido_presentacion_id || null
+          data.producto_incluido_presentacion_id || null,
+          baucherFilename
         ]
       );
+      solicitudCreada = true;
 
       const info = await query<any[]>(
         `SELECT h.nombre as habitacion_nombre, (CAST(c.nombre AS text) || CAST(' ' AS text) || CAST(c.apellido AS text)) as cliente_nombre FROM habitaciones h LEFT JOIN clientes c ON ? = c.id_cliente WHERE h.id_habitacion = ?`,
@@ -91,6 +106,14 @@ export class ServiceRequestRepository {
       );
       return { id, ...info[0] };
     } catch (err) {
+      // La foto se escribe antes que la fila: si el alta no llegó a la base, el
+      // archivo queda huérfano y hay que borrarlo. Con la solicitud creada se
+      // conserva, aunque falle la lectura posterior: el archivo sí tiene fila
+      // que lo referencie. Si la falla fue guardar la foto, no hay nada que borrar.
+      if (baucherFilename && !solicitudCreada)
+        await eliminarFotoBaucher(baucherFilename, 'order', { codigo: data.codigo });
+      // El dominio explica mejor el error que el envoltorio de base de datos.
+      if (err instanceof BusinessError) throw err;
       logger.error('[ServiceRequestRepository] Error en create:', { err });
       throw new DatabaseError('Error al crear solicitud de servicio', err);
     }

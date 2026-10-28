@@ -122,9 +122,7 @@ export function withRoute<M extends PermissionModule>(
 
   const handler = (
     typeof configOrHandler === 'function' ? configOrHandler : maybeHandler!
-  ) as RouteHandler;
-
-  // ponytail: max request body size — 10 MB
+  ) as RouteHandler; // ponytail: max request body size — 10 MB
   const MAX_BODY_SIZE = 10 * 1024 * 1024;
 
   function sanitizeValue(value: unknown): unknown {

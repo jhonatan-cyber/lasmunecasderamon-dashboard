@@ -1,7 +1,7 @@
 'use client';
 
+import { ErrorState } from '@/components/shared/ErrorState';
 import { useState } from 'react';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { usePayrollSummary } from '@/hooks/staff';
 import PayrollSummaryStats from '@/components/payroll/PayrollSummaryStats';
 import PayrollSummaryList from '@/components/payroll/PayrollSummaryList';
@@ -18,15 +18,7 @@ export function PayrollSummaryPageClient() {
       </div>
 
       {error ? (
-        <Card>
-          <CardHeader>
-            <CardTitle>Error</CardTitle>
-            <CardDescription>Ocurrió un error al cargar los datos</CardDescription>
-          </CardHeader>
-          <CardContent>
-            <p className='text-sm text-red-500'>{error}</p>
-          </CardContent>
-        </Card>
+        <ErrorState title='Error' message={error} />
       ) : (
         <>
           <PayrollSummaryStats totals={totals} isLoading={isLoading} />

@@ -1,6 +1,7 @@
 'use client';
 
 /* eslint-disable */
+import { EmptyState } from '@/components/shared/EmptyState';
 import { useMemo } from 'react';
 import { User as UserType } from '@/types/user';
 import { Badge } from '@/components/ui/badge';
@@ -148,7 +149,10 @@ export function UserTable({
             {users.length === 0 && (
               <TableRow>
                 <TableCell colSpan={6} className='text-center sm:text-base'>
-                  No se encontraron usuarios que coincidan con la búsqueda
+                  <EmptyState
+                    variant='text'
+                    title='No se encontraron usuarios que coincidan con la búsqueda'
+                  />
                 </TableCell>
               </TableRow>
             )}

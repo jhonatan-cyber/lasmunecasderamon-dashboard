@@ -1,6 +1,6 @@
 import { useAuth } from '@/contexts/AuthContext';
 
-interface CurrentUser {
+export interface CurrentUser {
   id: number;
   name: string;
   lastName: string;

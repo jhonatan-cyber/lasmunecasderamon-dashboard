@@ -9,14 +9,8 @@ import { Textarea } from '@/components/ui/textarea';
 import { CajaWithUser, CajaRetiro } from '@/types/caja';
 import { useCurrentUser } from '@/hooks/auth/useCurrentUser';
 import { Loader2, Wallet, Info } from 'lucide-react';
-import { formatCurrencyCLP } from '@/lib/utils/formatters';
+import { formatCurrencyCLP, getDiaSemana } from '@/lib/utils/formatters';
 import { disponibleParaRetiro } from '@/lib/business/cajaEfectivo';
-
-const getDiaSemana = (fecha: string): string => {
-  const dias = ['Domingo', 'Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado'];
-  const fechaObj = new Date(fecha);
-  return dias[fechaObj.getDay()];
-};
 
 interface RetiroDineroDialogProps {
   caja: CajaWithUser | null;

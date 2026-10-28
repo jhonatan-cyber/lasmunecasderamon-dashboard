@@ -99,6 +99,13 @@ export const formatNumberInput = (value: string | number | null | undefined): st
   return Number.isFinite(numValue) ? Math.round(numValue).toLocaleString('es-CL') : '';
 };
 
+/** Como `formatNumberInput`, pero conserva vacío el campo sin dígitos. */
+export const formatNumberInputOrEmpty = (value: string | number | null | undefined): string => {
+  if (value === undefined || value === null || value === '') return '';
+  if (typeof value === 'string' && value.replace(/\D/g, '') === '') return '';
+  return formatNumberInput(value);
+};
+
 export const SYSTEM_TIMEZONE = getSystemTimezone();
 
 export const formatDate = (dateString: string | null | undefined): string => {
@@ -209,6 +216,16 @@ export const formatCurrencyAbbreviated = (value: number | string | null | undefi
     .toString()
     .replace(/\B(?=(\d{3})+(?!\d))/g, '.')}`;
 };
+const DIAS_SEMANA = ['Domingo', 'Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado'];
+
+/** Día de la semana en español ("Domingo"…"Sábado") para una fecha local. */
+export const getDiaSemana = (fecha: string | Date | null | undefined): string => {
+  if (!fecha) return '';
+  const date = new Date(fecha);
+  if (Number.isNaN(date.getTime())) return '';
+  return DIAS_SEMANA[date.getDay()] ?? '';
+};
+
 export const toTitleCase = (str: string): string => {
   return str.replace(/\w\S*/g, txt => txt.charAt(0).toUpperCase() + txt.substr(1).toLowerCase());
 };

@@ -1,5 +1,6 @@
 'use client';
 
+import { ErrorState } from '@/components/shared/ErrorState';
 import { useState, useEffect, useCallback, useRef, useMemo } from 'react';
 import { Search, ArrowLeft, QrCode, ShieldCheck, RefreshCw } from 'lucide-react';
 import {
@@ -17,6 +18,7 @@ import { useRouter } from 'next/navigation';
 import { useSharedSSE } from '@/hooks/shared';
 import { toast } from 'sonner';
 import { KioskActivation } from '@/components/settings/KioskDevices';
+import { EmptyState } from '@/components/shared/EmptyState';
 import ThemeSwitcher from '@/components/shared/ThemeSwitcher';
 
 interface KioskUser {
@@ -283,10 +285,10 @@ export default function AsistenciaQrPage() {
           </div>
 
           {estado === 'error' ? (
-            <div role='alert' className='flex flex-col gap-3'>
-              <p>No se pudo conectar con el servidor.</p>
-              <Button onClick={() => window.location.reload()}>Reintentar</Button>
-            </div>
+            <ErrorState
+              message='No se pudo conectar con el servidor.'
+              onRetry={() => window.location.reload()}
+            />
           ) : puedeActivar ? (
             <KioskActivation />
           ) : (
@@ -374,11 +376,12 @@ export default function AsistenciaQrPage() {
         </div>
 
         {filteredUsers.length === 0 ? (
-          <div className='text-center py-16 bg-white dark:bg-neutral-900/20 border border-dashed border-neutral-200 dark:border-neutral-800 rounded-3xl'>
-            <QrCode className='h-12 w-12 text-neutral-400 dark:text-neutral-600 mx-auto mb-4' />
-            <h3 className='text-lg font-bold'>No se encontraron trabajadores</h3>
-            <p className='text-neutral-500 text-sm mt-1'>Ajustá los términos de tu búsqueda.</p>
-          </div>
+          <EmptyState
+            icon={QrCode}
+            title='No se encontraron trabajadores'
+            description='Ajustá los términos de tu búsqueda.'
+            className='rounded-3xl border border-neutral-200 bg-white py-16 dark:border-neutral-800 dark:bg-neutral-900/20'
+          />
         ) : (
           <div className='grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-6'>
             {filteredUsers.map(user => (

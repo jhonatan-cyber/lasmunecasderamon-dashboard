@@ -101,6 +101,86 @@ describe('registro en la puerta', () => {
     });
   });
 
+  it('exige la foto del baucher cuando el pago es transferencia', async () => {
+    const response = await (POST as unknown as Handler)(
+      pedido({
+        cantidad_entradas: 1,
+        metodo_pago: 'transferencia',
+        fecha: '2026-10-19',
+        hora: '20:30'
+      })
+    );
+
+    expect(response.status).toBe(400);
+    const body = await response.json();
+    expect(body.success).toBe(false);
+    expect(body.message).toMatch(/necesita la foto del baucher/);
+    expect(entradas.registrarEntrada).not.toHaveBeenCalled();
+  });
+
+  it('manda la foto del baucher al módulo cuando el pago es transferencia', async () => {
+    await (POST as unknown as Handler)(
+      pedido({
+        cantidad_entradas: 1,
+        metodo_pago: 'transferencia',
+        baucher_foto: 'data:image/jpeg;base64,SG9sYQ==',
+        fecha: '2026-10-19',
+        hora: '20:30'
+      })
+    );
+
+    const [input] = entradas.registrarEntrada.mock.calls[0];
+    expect(input.metodoPago).toBe('transferencia');
+    expect(input.baucherFoto).toBe('data:image/jpeg;base64,SG9sYQ==');
+  });
+
+  it('rechaza un baucher que no es una imagen', async () => {
+    const response = await (POST as unknown as Handler)(
+      pedido({
+        cantidad_entradas: 1,
+        metodo_pago: 'transferencia',
+        baucher_foto: 'https://cdn.example.com/baucher.jpg',
+        fecha: '2026-10-19',
+        hora: '20:30'
+      })
+    );
+
+    expect(response.status).toBe(400);
+    expect(entradas.registrarEntrada).not.toHaveBeenCalled();
+  });
+
+  it('rechaza una foto que supera el tope de 3 MB', async () => {
+    const response = await (POST as unknown as Handler)(
+      pedido({
+        cantidad_entradas: 1,
+        metodo_pago: 'transferencia',
+        baucher_foto: `data:image/jpeg;base64,${'A'.repeat(4_000_001)}`,
+        fecha: '2026-10-19',
+        hora: '20:30'
+      })
+    );
+
+    expect(response.status).toBe(400);
+    const body = await response.json();
+    expect(body.message).toMatch(/imagen válida/);
+    expect(entradas.registrarEntrada).not.toHaveBeenCalled();
+  });
+
+  it('rechaza un baucher en un formato que no está admitido', async () => {
+    const response = await (POST as unknown as Handler)(
+      pedido({
+        cantidad_entradas: 1,
+        metodo_pago: 'transferencia',
+        baucher_foto: 'data:application/pdf;base64,SG9sYQ==',
+        fecha: '2026-10-19',
+        hora: '20:30'
+      })
+    );
+
+    expect(response.status).toBe(400);
+    expect(entradas.registrarEntrada).not.toHaveBeenCalled();
+  });
+
   it('valida monto_entrada cuando viene en el payload', async () => {
     await (POST as unknown as Handler)(
       pedido({ cantidad_entradas: 2, monto_entrada: 20000, fecha: '2026-10-19', hora: '20:30' })

@@ -12,6 +12,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { formatCurrencyNoDecimals } from '@/lib/utils/formatters';
 import { formatLongDateEs } from '@/lib/utils/calendarUtils';
+import { formatCompact } from './reportFormatters';
 import { BarChart3 } from 'lucide-react';
 import {
   BarChart,
@@ -45,12 +46,6 @@ interface CajaBarItem {
   Cierre: number;
   Diferencia: number;
 }
-
-const formatCompact = (value: number) => {
-  if (value >= 1000000) return `$${(value / 1000000).toFixed(1)}M`;
-  if (value >= 1000) return `$${(value / 1000).toFixed(0)}k`;
-  return `$${value}`;
-};
 
 interface GenericTooltipProps {
   active?: boolean;

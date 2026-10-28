@@ -1,4 +1,6 @@
 'use client';
+import { EmptyState } from '@/components/shared/EmptyState';
+import { ErrorState } from '@/components/shared/ErrorState';
 import { useRealtimeRefresh } from '@/hooks/realtime/useRealtimeRefresh';
 import { NativeSelect } from '@/components/ui/native-select';
 import {
@@ -200,11 +202,7 @@ export default function CleaningInventory() {
           Actualizar
         </Button>
       </header>
-      {error && (
-        <div role='alert' className='rounded-lg border border-destructive p-4 text-destructive'>
-          {error}
-        </div>
-      )}
+      {error && <ErrorState size='sm' message={error} />}
       {loading && <p role='status'>Cargando inventario…</p>}
       <div className='grid gap-3 sm:grid-cols-3'>
         <div className='rounded-xl border p-4'>
@@ -543,9 +541,14 @@ export default function CleaningInventory() {
                   {!items.length && (
                     <TableRow>
                       <TableCell colSpan={6} className='text-center text-muted-foreground'>
-                        {search
-                          ? 'No hay coincidencias.'
-                          : 'Registra el primer artículo para comenzar.'}
+                        <EmptyState
+                          variant='text'
+                          title={
+                            search
+                              ? 'No hay coincidencias.'
+                              : 'Registra el primer artículo para comenzar.'
+                          }
+                        />
                       </TableCell>
                     </TableRow>
                   )}
@@ -616,7 +619,7 @@ export default function CleaningInventory() {
                   {!data?.movimientos.length && (
                     <TableRow>
                       <TableCell colSpan={7} className='text-center text-muted-foreground'>
-                        Todavía no hay movimientos.
+                        <EmptyState variant='text' title='Todavía no hay movimientos.' />
                       </TableCell>
                     </TableRow>
                   )}

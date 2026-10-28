@@ -1,5 +1,6 @@
 'use client';
 
+import { ErrorState } from '@/components/shared/ErrorState';
 import { useState, useEffect, useMemo, useRef } from 'react';
 import { Save, Users, RotateCcw, Check, ChevronsUpDown } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -367,17 +368,7 @@ export function SettingsBottleHostessCard() {
       contentClassName='space-y-4'
     >
       {productsError && (
-        <div role='alert' className='mb-4 text-sm text-red-600'>
-          {productsError}{' '}
-          <Button
-            variant='unstyled'
-            type='button'
-            onClick={() => void refresh()}
-            className='underline'
-          >
-            Reintentar
-          </Button>
-        </div>
+        <ErrorState className='mb-4' message={productsError} onRetry={() => void refresh()} />
       )}
       {loading || (presentaciones === null && !barError) ? (
         <div className='text-center py-8'>

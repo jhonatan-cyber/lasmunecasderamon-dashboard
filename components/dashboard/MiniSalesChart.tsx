@@ -28,6 +28,7 @@ import {
   Cell
 } from 'recharts';
 import { cn } from '@/lib/utils/utils';
+import { formatNumberCL } from '@/lib/utils/formatters';
 
 type ViewMode = 'month' | 'week';
 
@@ -43,11 +44,40 @@ interface SalesChartPoint {
   total?: number;
 }
 
-const formatNumber = (amount: number) => {
-  return amount.toString().replace(/\B(?=(\d{3})+(?!\d))/g, '.');
+interface TooltipPayloadItem {
+  value: number;
+  payload: SalesChartPoint;
+}
+
+interface CustomTooltipProps {
+  active?: boolean;
+  payload?: TooltipPayloadItem[];
+  label?: string;
+}
+
+const gridProps = {
+  strokeDasharray: '4 4',
+  vertical: false,
+  stroke: '#94a3b8',
+  opacity: 0.05
 };
 
-const CustomTooltip = ({ active, payload, label, viewMode }: any) => {
+const xAxisProps = {
+  axisLine: false,
+  tickLine: false,
+  tick: { fill: '#64748b', fontSize: 10, fontWeight: 900, letterSpacing: '0.1em' },
+  dy: 20,
+  interval: 0
+};
+
+const yAxisProps = {
+  axisLine: false,
+  tickLine: false,
+  tick: { fill: '#64748b', fontSize: 10, fontWeight: 700 },
+  tickFormatter: (value: number) => `$${value / 1000}k`
+};
+
+const CustomTooltip = ({ active, payload, label }: CustomTooltipProps) => {
   if (active && payload && payload.length) {
     const value = payload[0].value;
     const isHigh = value > (payload[0].payload.promedio || 0);
@@ -69,7 +99,7 @@ const CustomTooltip = ({ active, payload, label, viewMode }: any) => {
           <div className='flex items-baseline gap-1'>
             <span className='text-emerald-500 text-sm font-black'>$</span>
             <span className='text-white text-2xl font-black tracking-tighter'>
-              {formatNumber(value)}
+              {formatNumberCL(value)}
             </span>
           </div>
 
@@ -170,6 +200,10 @@ export default function MiniSalesChart() {
   }, [viewMode, monthData, weekData]);
 
   const summary = viewMode === 'month' ? monthData?.summary : weekData?.summary;
+  const summaryAverage =
+    viewMode === 'month'
+      ? (monthData?.summary.promedioMensual ?? 0)
+      : (weekData?.summary.promedioDiario ?? 0);
   const currentPeriod =
     viewMode === 'month'
       ? `AÑO ${monthData?.year || new Date().getFullYear()}`
@@ -199,7 +233,6 @@ export default function MiniSalesChart() {
 
   return (
     <div className='w-full space-y-10 group'>
-      {}
       <div className='flex flex-col lg:flex-row lg:items-center justify-between gap-8'>
         <div className='flex flex-col gap-4'>
           <div className='flex items-center gap-4'>
@@ -228,7 +261,7 @@ export default function MiniSalesChart() {
                 <div className='flex items-baseline gap-1'>
                   <span className='text-emerald-500 text-lg font-black'>$</span>
                   <span className='text-4xl font-black text-slate-900 dark:text-white tracking-tighter italic'>
-                    {formatNumber(summary.totalVentas)}
+                    {formatNumberCL(summary.totalVentas)}
                   </span>
                 </div>
               </div>
@@ -238,23 +271,14 @@ export default function MiniSalesChart() {
                   Promedio {viewMode === 'month' ? 'Mensual' : 'Diario'}
                 </span>
                 <span className='text-3xl font-black text-emerald-500 tracking-tighter'>
-                  ${' '}
-                  {formatNumber(
-                    Math.round(
-                      viewMode === 'month'
-                        ? (summary as any).promedioMensual
-                        : (summary as any).promedioDiario
-                    )
-                  )}
+                  $ {formatNumberCL(summaryAverage)}
                 </span>
               </div>
             </div>
           )}
         </div>
 
-        {}
         <div className='flex flex-wrap items-center gap-4'>
-          {}
           <Button
             variant='unstyled'
             onClick={refreshData}
@@ -268,7 +292,6 @@ export default function MiniSalesChart() {
             <RefreshCw className='h-5 w-5' />
           </Button>
 
-          {}
           <div className='flex items-center bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 p-1 shadow-xs'>
             <Button
               variant='unstyled'
@@ -305,7 +328,6 @@ export default function MiniSalesChart() {
             </Button>
           </div>
 
-          {}
           <Button
             variant='unstyled'
             onClick={() => {
@@ -323,7 +345,6 @@ export default function MiniSalesChart() {
             Hoy
           </Button>
 
-          {}
           <div className='flex p-1 bg-slate-950 dark:bg-slate-900 rounded-[1.25rem] border border-white/5 shadow-2xl'>
             <Button
               variant='unstyled'
@@ -353,7 +374,6 @@ export default function MiniSalesChart() {
         </div>
       </div>
 
-      {}
       <div className='relative h-[450px] w-full bg-white/40 dark:bg-slate-900/20 backdrop-blur-xs rounded-[3rem] p-8 border border-slate-200/60 dark:border-slate-800/60 shadow-inner overflow-hidden'>
         <div className='absolute top-0 left-0 w-full h-1 bg-linear-to-r from-transparent via-emerald-500/20 to-transparent' />
 
@@ -385,28 +405,11 @@ export default function MiniSalesChart() {
                   </feMerge>
                 </filter>
               </defs>
-              <CartesianGrid
-                strokeDasharray='4 4'
-                vertical={false}
-                stroke='#94a3b8'
-                opacity={0.05}
-              />
-              <XAxis
-                dataKey='label'
-                axisLine={false}
-                tickLine={false}
-                tick={{ fill: '#64748b', fontSize: 10, fontWeight: 900, letterSpacing: '0.1em' }}
-                dy={20}
-                interval={0}
-              />
-              <YAxis
-                axisLine={false}
-                tickLine={false}
-                tick={{ fill: '#64748b', fontSize: 10, fontWeight: 700 }}
-                tickFormatter={value => `$${value / 1000}k`}
-              />
+              <CartesianGrid {...gridProps} />
+              <XAxis dataKey='label' {...xAxisProps} />
+              <YAxis {...yAxisProps} />
               <Tooltip
-                content={<CustomTooltip viewMode={viewMode} />}
+                content={<CustomTooltip />}
                 cursor={{ fill: 'currentColor', opacity: 0.03, radius: 20 }}
               />
               <Bar
@@ -434,27 +437,10 @@ export default function MiniSalesChart() {
                   <stop offset='95%' stopColor='#10B981' stopOpacity={0} />
                 </linearGradient>
               </defs>
-              <CartesianGrid
-                strokeDasharray='4 4'
-                vertical={false}
-                stroke='#94a3b8'
-                opacity={0.05}
-              />
-              <XAxis
-                dataKey='label'
-                axisLine={false}
-                tickLine={false}
-                tick={{ fill: '#64748b', fontSize: 10, fontWeight: 900, letterSpacing: '0.1em' }}
-                dy={20}
-                interval={0}
-              />
-              <YAxis
-                axisLine={false}
-                tickLine={false}
-                tick={{ fill: '#64748b', fontSize: 10, fontWeight: 700 }}
-                tickFormatter={value => `$${value / 1000}k`}
-              />
-              <Tooltip content={<CustomTooltip viewMode={viewMode} />} />
+              <CartesianGrid {...gridProps} />
+              <XAxis dataKey='label' {...xAxisProps} />
+              <YAxis {...yAxisProps} />
+              <Tooltip content={<CustomTooltip />} />
               <Area
                 type='monotone'
                 dataKey='ventas'

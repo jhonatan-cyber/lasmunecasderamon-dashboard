@@ -1,4 +1,5 @@
 'use client';
+import { EmptyState } from '@/components/shared/EmptyState';
 import { permiteAnfitrionaConComision } from '@/lib/sales/hostessShortPrices';
 
 import { Minus, Plus, Trash } from 'lucide-react';
@@ -238,12 +239,7 @@ export const NewSaleCart = ({
             {!productos.length && (
               <TableRow>
                 <TableCell colSpan={7} className={`${CUENTA_TABLE_CELL_CLASS} text-center py-12`}>
-                  <div className='flex flex-col items-center gap-2'>
-                    <div className='bg-gray-50 p-3 rounded-full'>
-                      <Trash className='w-6 h-6 text-gray-200' />
-                    </div>
-                    <span className='text-gray-400 text-sm'>Tu carrito está vacío</span>
-                  </div>
+                  <EmptyState variant='text' icon={Trash} title='Tu carrito está vacío' />
                 </TableCell>
               </TableRow>
             )}

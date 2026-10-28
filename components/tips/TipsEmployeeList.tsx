@@ -1,4 +1,5 @@
 'use client';
+import { EmptyState } from '@/components/shared/EmptyState';
 import { useRealtimeRefresh } from '@/hooks/realtime/useRealtimeRefresh';
 import { ListLoadError } from '@/components/shared/ListLoadError';
 import { SortSelect } from '@/components/shared/selects/SortSelect';
@@ -311,7 +312,7 @@ export function TipsEmployeeList({ allowedRole }: Props) {
                   {paginatedTips.length === 0 && (
                     <TableRow>
                       <TableCell colSpan={6} className='py-12 text-center text-gray-500'>
-                        No se encontraron propinas
+                        <EmptyState variant='text' title='No se encontraron propinas' />
                       </TableCell>
                     </TableRow>
                   )}

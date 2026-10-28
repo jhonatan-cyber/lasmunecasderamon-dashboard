@@ -3,6 +3,7 @@ import { useRealtimeRefresh } from '@/hooks/realtime/useRealtimeRefresh';
 import { useCallback, useEffect, useId, useState } from 'react';
 import { SELECT_INPUT_CLASS, SELECT_LABEL_CLASS } from '@/components/shared/selectStyles';
 import { ModuleTableCard } from '@/components/shared/tables/ModuleTable';
+import { ErrorState } from '@/components/shared/ErrorState';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Skeleton } from '@/components/ui/skeleton';
@@ -62,23 +63,7 @@ export function EmployeeAdvanceRequests({ onRequested }: { onRequested: () => vo
   return (
     <div className='space-y-5'>
       {loadError && (
-        <div
-          role='alert'
-          className='flex flex-wrap items-center justify-between gap-3 rounded-3xl border border-red-200 bg-red-50 p-4 text-red-700 dark:border-red-900 dark:bg-red-950/30 dark:text-red-300'
-        >
-          <p className='flex items-center gap-2'>
-            <AlertCircle className='h-4 w-4' aria-hidden='true' />
-            {loadError}
-          </p>
-          <Button
-            type='button'
-            variant='outline'
-            className='rounded-full'
-            onClick={() => void load()}
-          >
-            Reintentar
-          </Button>
-        </div>
+        <ErrorState size='lg' icon={AlertCircle} message={loadError} onRetry={() => void load()} />
       )}
       <div className='grid items-start gap-6 xl:grid-cols-[340px_minmax(0,1fr)]'>
         <ModuleTableCard className='min-w-0'>

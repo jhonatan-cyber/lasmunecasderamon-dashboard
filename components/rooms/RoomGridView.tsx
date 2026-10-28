@@ -1,5 +1,6 @@
 'use client';
 
+import { EmptyState } from '@/components/shared/EmptyState';
 import React, { useRef, useState } from 'react';
 import { dragModifiers } from '@/components/shared/dragBounds';
 import {
@@ -102,26 +103,26 @@ export function RoomGridView({
   if (rooms.length === 0) {
     return (
       <div className='flex flex-col items-center justify-center py-20'>
-        <div className='w-16 h-16 bg-gray-100 rounded-2xl flex items-center justify-center mb-4'>
-          <Bed className='w-8 h-8 text-gray-400' />
-        </div>
-        <h3 aria-live='polite' className='text-lg font-medium text-gray-900 mb-2'>
-          {localRooms.length === 0 ? 'No hay habitaciones' : 'Sin resultados'}
-        </h3>
-        <p className='text-gray-500 text-center mb-6 max-w-sm'>
-          {localRooms.length === 0
-            ? 'Crea tu primera habitación para comenzar'
-            : 'Ajusta los filtros para ver más resultados'}
-        </p>
-        {localRooms.length === 0 && (
-          <Button
-            onClick={onNew}
-            className='bg-black text-white hover:bg-gray-800 rounded-xl px-6 py-2'
-          >
-            <Plus className='w-4 h-4 mr-2' />
-            Nueva habitación
-          </Button>
-        )}
+        <EmptyState
+          icon={Bed}
+          title={localRooms.length === 0 ? 'No hay habitaciones' : 'Sin resultados'}
+          description={
+            localRooms.length === 0
+              ? 'Crea tu primera habitación para comenzar'
+              : 'Ajusta los filtros para ver más resultados'
+          }
+          action={
+            localRooms.length === 0 && (
+              <Button
+                onClick={onNew}
+                className='bg-black text-white hover:bg-gray-800 rounded-xl px-6 py-2'
+              >
+                <Plus className='w-4 h-4 mr-2' />
+                Nueva habitación
+              </Button>
+            )
+          }
+        />
       </div>
     );
   }

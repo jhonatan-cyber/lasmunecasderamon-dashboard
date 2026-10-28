@@ -1,5 +1,6 @@
 'use client';
 
+import { EmptyState } from '@/components/shared/EmptyState';
 import { useRealtimeRefresh } from '@/hooks/realtime/useRealtimeRefresh';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useSearchParams } from 'next/navigation';
@@ -453,11 +454,16 @@ export function ContainerReturnsPanel() {
                   {visibles.length === 0 ? (
                     <TableRow key='empty'>
                       <TableCell colSpan={7} className='text-center sm:text-base bg-white'>
-                        {loading
-                          ? 'Cargando...'
-                          : soloPendientes
-                            ? 'No hay envases pendientes de recepción.'
-                            : 'Sin envases entregados por el bar.'}
+                        <EmptyState
+                          variant='text'
+                          title={
+                            loading
+                              ? 'Cargando...'
+                              : soloPendientes
+                                ? 'No hay envases pendientes de recepción.'
+                                : 'Sin envases entregados por el bar.'
+                          }
+                        />
                       </TableCell>
                     </TableRow>
                   ) : (

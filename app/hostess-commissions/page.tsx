@@ -1,4 +1,5 @@
 'use client';
+import { EmptyState } from '@/components/shared/EmptyState';
 import { ListLoadError } from '@/components/shared/ListLoadError';
 import { FilterBar } from '@/components/shared/FilterBar';
 import { SortSelect } from '@/components/shared/selects/SortSelect';
@@ -349,7 +350,9 @@ export default function AnfitrionaComisionesPage() {
                 <ModuleTableBody>
                   {paginatedCommissions.length === 0 ? (
                     <ModuleTableRow>
-                      <ModuleTableCell colSpan={7}>No se encontraron comisiones</ModuleTableCell>
+                      <ModuleTableCell colSpan={7}>
+                        <EmptyState variant='text' title='No se encontraron comisiones' />
+                      </ModuleTableCell>
                     </ModuleTableRow>
                   ) : (
                     paginatedCommissions.map((commission, index) => {

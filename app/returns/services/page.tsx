@@ -17,6 +17,7 @@ import { DevolucionHeader } from '@/components/returns/DevolucionHeader';
 import { DevolucionFilters } from '@/components/returns/DevolucionFilters';
 import { DevolucionServiciosTable } from '@/components/returns/services/DevolucionServiciosTable';
 import { AnulacionServicioModal } from '@/components/returns/services/AnulacionServicioModal';
+import { ErrorState } from '@/components/shared/ErrorState';
 import logger from '@/lib/utils/logger';
 
 export default function DevolucionesServiciosPage() {
@@ -83,11 +84,7 @@ export default function DevolucionesServiciosPage() {
   if (error) {
     return (
       <div className='p-4 sm:p-6 lg:p-10 space-y-4 sm:space-y-6 mt-4 sm:mt-6 lg:mt-10'>
-        <div className='bg-red-50 border border-red-200 rounded-lg p-4'>
-          <p className='text-red-800 text-sm sm:text-base'>
-            Error al cargar los servicios: {error}
-          </p>
-        </div>
+        <ErrorState message={`Error al cargar los servicios: ${error}`} size='sm' />
       </div>
     );
   }

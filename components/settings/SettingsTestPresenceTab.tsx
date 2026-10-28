@@ -1,7 +1,8 @@
 'use client';
 
+import { ErrorState } from '@/components/shared/ErrorState';
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import { Loader2, LogIn, LogOut, RefreshCw, TriangleAlert, UserCheck } from 'lucide-react';
+import { Loader2, LogIn, LogOut, RefreshCw, UserCheck } from 'lucide-react';
 import { toast } from 'sonner';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -138,24 +139,7 @@ export function SettingsTestPresenceTab() {
             <span className='sr-only'>Cargando personal...</span>
           </div>
         ) : error ? (
-          <div
-            role='alert'
-            className='flex items-start gap-2 rounded-xl border border-amber-300 bg-amber-50 p-3 dark:border-amber-900/50 dark:bg-amber-900/10'
-          >
-            <TriangleAlert className='mt-0.5 h-4 w-4 shrink-0 text-amber-600 dark:text-amber-400' />
-            <div className='flex flex-col gap-2'>
-              <p className='text-xs text-amber-800 dark:text-amber-300'>{error}</p>
-              <Button
-                variant='outline'
-                size='sm'
-                onClick={cargar}
-                className='w-fit rounded-full gap-2'
-              >
-                <RefreshCw className='h-4 w-4' />
-                Reintentar
-              </Button>
-            </div>
-          </div>
+          <ErrorState size='sm' message={error} onRetry={cargar} />
         ) : (
           <>
             <div className='flex flex-wrap items-center justify-between gap-3 border-b border-border pb-4'>

@@ -25,6 +25,7 @@ import {
   TableCell
 } from '@/components/ui/table';
 import { PermissionGuard } from '@/components/auth/PermissionGuard';
+import { ErrorState } from '@/components/shared/ErrorState';
 import { useRealtimeRefresh } from '@/hooks/realtime/useRealtimeRefresh';
 import type { OrdenReposicion } from '@/modules/inventario/contracts';
 import { toast } from 'sonner';
@@ -173,14 +174,7 @@ export default function ReplenishmentPage() {
             />
           </div>
         )}
-        {error && (
-          <p
-            role='alert'
-            className='rounded-2xl border border-red-200 bg-red-50 p-4 text-sm text-red-700 dark:border-red-900 dark:bg-red-950/30 dark:text-red-400'
-          >
-            {error}
-          </p>
-        )}
+        {error && <ErrorState message={error} />}
         {loading ? (
           <div
             role='status'

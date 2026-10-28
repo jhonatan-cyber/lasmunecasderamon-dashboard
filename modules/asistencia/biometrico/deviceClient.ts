@@ -1,6 +1,7 @@
 import crypto from 'crypto';
 import { descifrarSecreto } from '@/modules/asistencia/biometrico/credencialesCrypto';
 import { normalizarMac } from '@/modules/asistencia/biometrico/discovery';
+import { parsearParametrosDigest } from './comun';
 export interface CredencialesEquipo {
   ip: string;
   usuario: string;
@@ -23,16 +24,6 @@ export class DeviceAuthError extends DeviceConnectionError {
     super(mensaje, causa);
     this.name = 'DeviceAuthError';
   }
-}
-
-function parsearAuthHeader(header: string): Record<string, string> {
-  const params: Record<string, string> = {};
-  const re = /(\w+)=(?:"([^"]*)"|([^,]*))/g;
-  let match: RegExpExecArray | null;
-  while ((match = re.exec(header)) !== null) {
-    params[match[1].toLowerCase()] = match[2] ?? match[3] ?? '';
-  }
-  return params;
 }
 
 function md5Hex(valor: string): string {
@@ -117,7 +108,7 @@ async function cgi(
     if (!header || !header.toLowerCase().startsWith('digest')) {
       throw new DeviceConnectionError('El equipo no acepta autenticación Digest');
     }
-    const challenge = parsearAuthHeader(header);
+    const challenge = parsearParametrosDigest(header);
     const auth = construirAuthorizationDigest(metodo, pathConQuery, credenciales, challenge);
     try {
       response = await pedido(auth);

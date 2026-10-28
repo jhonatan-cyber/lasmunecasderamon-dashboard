@@ -1,4 +1,5 @@
 'use client';
+import { EmptyState } from '@/components/shared/EmptyState';
 import { esBotella } from '@/lib/sales/saleChoice';
 import { esCortoAnfitriona, permiteAnfitrionaConComision } from '@/lib/sales/hostessShortPrices';
 
@@ -123,7 +124,7 @@ export const NewSaleSearch = (props: NewSaleSearchProps) => {
                       colSpan={4}
                       className={`${CUENTA_TABLE_CELL_CLASS} py-4 text-center text-gray-400`}
                     >
-                      No hay resultados
+                      <EmptyState variant='text' title='No hay resultados' />
                     </TableCell>
                   </TableRow>
                 ) : (

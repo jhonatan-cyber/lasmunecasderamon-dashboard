@@ -1,5 +1,6 @@
 'use client';
 
+import { EmptyState } from '@/components/shared/EmptyState';
 import { MODULE_TABLE_CARD_CLASS } from '@/components/shared/tables/moduleTableStyles';
 import {
   ModuleTable,
@@ -189,13 +190,17 @@ export default function CalendarDayModal({
                   </div>
                 ) : selectedDateData.length === 0 ? (
                   <div className='p-8 text-center'>
-                    <div className='text-gray-500 dark:text-gray-400 text-lg font-medium mb-2'>
-                      No hay datos
-                    </div>
-                    <div className='text-gray-400 dark:text-gray-500 text-sm'>
-                      No se encontraron {allDataTypeConfig[selectedDataType].title.toLowerCase()}{' '}
-                      para las fechas seleccionadas
-                    </div>
+                    <EmptyState
+                      variant='text'
+                      title='No hay datos'
+                      description={
+                        <>
+                          No se encontraron{' '}
+                          {allDataTypeConfig[selectedDataType].title.toLowerCase()} para las fechas
+                          seleccionadas
+                        </>
+                      }
+                    />
                   </div>
                 ) : (
                   <div className='overflow-x-auto'>

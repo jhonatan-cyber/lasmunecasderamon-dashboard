@@ -1,4 +1,5 @@
 'use client';
+import { ErrorState } from '@/components/shared/ErrorState';
 import {
   Table,
   TableHeader,
@@ -170,9 +171,7 @@ export function SettingsChampagneTiers({
           <div className='animate-spin rounded-full h-6 w-6 border-b-2 border-purple-500 mx-auto' />
         </div>
       ) : loadError ? (
-        <p role='alert'>
-          No se pudo cargar la tabla. Volvé a seleccionar el producto para reintentar.
-        </p>
+        <ErrorState message='No se pudo cargar la tabla. Volvé a seleccionar el producto para reintentar.' />
       ) : (
         <div className='overflow-x-auto rounded-2xl border border-purple-200 dark:border-purple-900/40 bg-white dark:bg-neutral-950'>
           <Table className='w-full'>

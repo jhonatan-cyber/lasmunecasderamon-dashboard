@@ -35,6 +35,11 @@ export class OrderService {
   static async updateStatus(id: string, estado: number) {
     return await OrderRepository.updateStatus(id, estado);
   }
+
+  /** Nombre del archivo del baucher guardado, o `null` si el pedido no tiene. */
+  static async getBaucherFoto(id: string) {
+    return await OrderRepository.getBaucherFoto(id);
+  }
 }
 
 export { aplicarCobroAPedido } from './reglas';

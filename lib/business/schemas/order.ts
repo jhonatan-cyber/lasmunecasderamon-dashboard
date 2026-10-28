@@ -1,4 +1,6 @@
 import { z } from 'zod';
+import { BAUCHER_FOTO_MAX_CHARS, esBaucherDataUrlValido } from '@/lib/business/baucher';
+
 const inventoryFields = {
   presentacion_id: z.string().nullable().optional(),
   tipo_venta: z.enum(['botella', 'shot']).optional(),
@@ -30,6 +32,8 @@ export const OrderSchema = z.object({
   total_comision: z.number().optional().default(0),
   propina: z.number().optional().default(0),
   metodo_pago: z.enum(['efectivo', 'tarjeta', 'transferencia']).nullable().optional(),
+  /** Nombre del archivo del baucher guardado en `public/img/orders`. */
+  baucher_foto: z.string().nullable().optional(),
   estado: z.number().optional().default(1),
   fecha_crea: z.string().or(z.date()).optional(),
   cliente_nombre: z.string().nullable().optional(),
@@ -50,6 +54,22 @@ export const OrderCreateSchema = z
     totalComision: z.number().min(0).optional().default(0),
     propina: z.number().min(0).optional().default(0),
     metodoPago: z.enum(['efectivo', 'tarjeta', 'transferencia']),
+    /**
+     * Foto del baucher en data URL (`data:image/jpeg;base64,…`): única constancia
+     * del pago cuando el pedido es con transferencia. La app del garzón la saca
+     * con la cámara y el formulario del dashboard la adjunta con el mismo campo
+     * compartido; el servidor la guarda en `public/img/orders` y en
+     * `pedidos.baucher_foto` solo queda el nombre del archivo.
+     *
+     * Es obligatoria con transferencia: el `superRefine` de abajo rechaza el
+     * pedido sin ella, así ningún cliente (app, dashboard u otro) deja un pago
+     * con transferencia sin constancia.
+     */
+    baucher_foto: z
+      .string()
+      .max(BAUCHER_FOTO_MAX_CHARS, 'La foto del baucher supera el tamaño máximo')
+      .refine(esBaucherDataUrlValido, 'La foto del baucher no es una imagen válida')
+      .optional(),
     device_date: z.string().optional(),
     detalles: z
       .array(
@@ -111,6 +131,13 @@ export const OrderCreateSchema = z
       .default([])
   })
   .superRefine((data, ctx) => {
+    if (data.metodoPago === 'transferencia' && !data.baucher_foto) {
+      ctx.addIssue({
+        code: 'custom',
+        path: ['baucher_foto'],
+        message: 'El pago con transferencia necesita la foto del baucher'
+      });
+    }
     for (const [index, d] of data.detalles.entries()) {
       const hosts = new Set([...d.selectedHostesses, ...(d.hostessId ? [d.hostessId] : [])]);
       if (
