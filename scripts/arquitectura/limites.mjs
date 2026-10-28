@@ -214,6 +214,16 @@ for (const abs of archivosDelProyecto()) {
 /** ¿Es este import el driver de PostgreSQL o un repositorio? */
 const ES_DRIVER = h => /^lib\/database\/(db|postgres)/.test(h) || h.startsWith('lib/repositories/');
 
+/**
+ * Fachadas públicas adicionales al index/contracts de cada módulo.
+ *
+ * Son entradas mínimas y explícitas, no "cualquier archivo suelto en la raíz":
+ * `modules/asistencia/recepcion.ts` existe para que `instrumentation.ts` no
+ * tenga que importar el barrel completo y arrastrar facial, video y kioscos al
+ * arranque del servidor.
+ */
+const ENTRADAS_PUBLICAS_EXTRA = new Set(['modules/asistencia/recepcion.ts']);
+
 const REGLAS = [
   {
     id: 'api-sin-reexportar-persistencia',
@@ -268,8 +278,12 @@ const REGLAS = [
       if (d.desde.startsWith(`modules/${modulo}/`)) return false;
       // La API pública es `modules/<mod>` (el directorio, que resuelve a su
       // index.ts) o `modules/<mod>/index.ts`; `contracts.ts` para los tipos
-      // aptos para cliente. Todo lo demás es interior.
-      return !/^(modules\/[^/]+|modules\/[^/]+\/(index|contracts)\.ts)$/.test(d.hacia);
+      // aptos para cliente, y las fachadas mínimas declaradas arriba. Todo lo
+      // demás es interior.
+      return !(
+        /^(modules\/[^/]+|modules\/[^/]+\/(index|contracts)\.ts)$/.test(d.hacia) ||
+        ENTRADAS_PUBLICAS_EXTRA.has(d.hacia)
+      );
     }
   },
   {
