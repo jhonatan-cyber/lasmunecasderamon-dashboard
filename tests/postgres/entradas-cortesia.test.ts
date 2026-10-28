@@ -874,6 +874,7 @@ it('no admite acompañamiento en una bebida que no lo tiene configurado', async 
   const snapshot = await snapshotDatabase();
   try {
     const usuarioId = await primerUsuarioActivo();
+    await cajaAbierta();
     await fijarConfiguracion('costo_entrada', 10000);
     await fijarConfiguracion('monto_base_trago_cortesia_cliente', 10000);
     const bebida = await crearBebida('Botella sin acompañamiento', 8000);

@@ -2,6 +2,7 @@ import { afterAll, expect, it } from 'vitest';
 
 import db, { query } from '@/lib/database/db';
 import { restoreDatabase, snapshotDatabase } from '@/lib/database/maintenance';
+import { fechaDeNegocio } from '@/lib/business/timezoneService';
 import { obtenerResumenShots } from '@/modules/inventario';
 
 /**
@@ -57,19 +58,23 @@ async function crearProducto(nombre: string): Promise<string> {
   return id;
 }
 
-const inicioDelDia = async () => {
-  const [dia] = await query<{ dia: string }[]>(`SELECT to_char(now(), 'YYYY-MM-DD') AS dia`);
-  return dia.dia;
-};
+/**
+ * Día de negocio, el mismo que usa la consulta del resumen. No sirve `now()`:
+ * el runner y la zona del negocio pueden estar en días distintos y el corte
+ * quedaría en el día equivocado.
+ */
+const inicioDelDia = () => fechaDeNegocio();
 
-/** Marca de tiempo de ayer, en la misma hora del día que el resto del caso. */
+/**
+ * Marca de tiempo de ayer **según el día de negocio**, en la misma hora del
+ * caso. Se calcula sobre el texto de la fecha, sin `new Date()` local, para que
+ * la zona del runner no mueva el día.
+ */
 const ayerA = (hora: string) => {
-  const fecha = new Date();
-  fecha.setDate(fecha.getDate() - 1);
-  const dia = `${fecha.getFullYear()}-${String(fecha.getMonth() + 1).padStart(2, '0')}-${String(
-    fecha.getDate()
-  ).padStart(2, '0')}`;
-  return `${dia} ${hora}`;
+  const [anio, mes, dia] = fechaDeNegocio().split('-').map(Number);
+  const fecha = new Date(Date.UTC(anio, mes - 1, dia));
+  fecha.setUTCDate(fecha.getUTCDate() - 1);
+  return `${fecha.toISOString().slice(0, 10)} ${hora}`;
 };
 
 it('el resumen descuenta los ml devueltos por una venta anulada de hoy', async () => {
@@ -77,7 +82,7 @@ it('el resumen descuenta los ml devueltos por una venta anulada de hoy', async (
   try {
     const antes = await obtenerResumenShots();
 
-    const hoy = await inicioDelDia();
+    const hoy = inicioDelDia();
     const venta = await insertarMovimiento('venta', 500, `${hoy} 10:00:00`);
     await insertarMovimiento('devolucion', 200, `${hoy} 11:00:00`, venta);
 
@@ -93,7 +98,7 @@ it('la anulación de una venta de ayer no baja los ml de hoy', async () => {
   try {
     const antes = await obtenerResumenShots();
 
-    const hoy = await inicioDelDia();
+    const hoy = inicioDelDia();
     const ventaAyer = await insertarMovimiento('venta', 700, ayerA('10:00:00'));
     await insertarMovimiento('devolucion', 300, `${hoy} 11:00:00`, ventaAyer);
 
@@ -109,7 +114,7 @@ it('una venta sin anular suma sus ml al resumen', async () => {
   try {
     const antes = await obtenerResumenShots();
 
-    const hoy = await inicioDelDia();
+    const hoy = inicioDelDia();
     await insertarMovimiento('venta', 250, `${hoy} 10:00:00`);
 
     const despues = await obtenerResumenShots();
@@ -124,7 +129,7 @@ it('la anulación descuenta igual si el producto se desactivó después de vende
   try {
     const antes = await obtenerResumenShots();
 
-    const hoy = await inicioDelDia();
+    const hoy = inicioDelDia();
     const producto = await crearProducto('Producto que se desactiva');
     const venta = await insertarMovimiento('venta', 500, `${hoy} 10:00:00`, undefined, producto);
 

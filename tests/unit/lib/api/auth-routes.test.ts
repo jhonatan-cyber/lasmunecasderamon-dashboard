@@ -141,7 +141,10 @@ describe('auth route contract', () => {
         nick: 'ana',
         phone: '70000000',
         address: 'Centro',
-        estado_civil: 'soltera'
+        estado_civil: 'soltera',
+        biometrico_codigo: null,
+        biometrico_huella: 0,
+        biometrico_facial: 0
       }
     });
   });

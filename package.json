@@ -132,7 +132,7 @@
     "twilio": "^6.1.2",
     "use-debounce": "^10.1.0",
     "winston": "^3.17.0",
-    "zod": "^4.6.5"
+    "zod": "^4.6.7"
   },
   "lint-staged": {
     "*.{js,jsx,ts,tsx}": [
