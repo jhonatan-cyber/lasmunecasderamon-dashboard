@@ -100,6 +100,17 @@ export interface PruebaConexion {
   macs?: string[];
 }
 
+async function obtenerEquipoActivo(): Promise<EquipoEnrolable | null> {
+  const filas = await query<EquipoEnrolable[]>(
+    `SELECT id, nombre, marca, serial, ip, usuario_equipo, clave_cifrada, mac
+       FROM biometric_devices
+      WHERE revocado_en IS NULL AND ip IS NOT NULL
+      ORDER BY fecha_crea ASC
+      LIMIT 1`
+  );
+  return filas[0] ?? null;
+}
+
 export async function probarConexion(
   dispositivoId: string,
   credencialesNuevas?: { ip: string; usuario: string; clave: string }
@@ -917,6 +928,94 @@ export async function verificarCoincidenciaFacial(
     mensaje: coincide
       ? `La cara frente al lector coincide con la foto de ${persona.nombre} (${porcentaje}% de similitud).`
       : `¡Atención! La cara frente al lector NO parece ser la de ${persona.nombre}: ${porcentaje}% de similitud (mínimo ${porcentajeUmbral}%). Revisá quién está frente al equipo antes de guardar.`
+  };
+}
+
+/**
+ * Verifica contra la plantilla guardada (p. ej. la captura frontal que llegó
+ * desde el teléfono) una captura viva ya resuelta: extrae el vector de ambas
+ * fotos con el motor del equipo y decide por similitud coseno. Es la vía del
+ * enrolamiento telefonico: la captura vive la manda el cliente y la plantilla
+ * maestra la dejó guardada el flujo de telefono.
+ */
+export async function verificarCoincidenciaConFoto(
+  persona: DatosPersona,
+  capturaBase64: string,
+  dispositivoId?: string
+): Promise<ResultadoVerificacionFacial> {
+  const filas = await query<{ datos: string }[]>(
+    `SELECT datos FROM biometric_plantillas
+      WHERE usuario_id = ? AND tipo = 'cara'
+      ORDER BY fecha_captura DESC NULLS LAST
+      LIMIT 1`,
+    [persona.usuarioId]
+  );
+  const plantilla = filas[0]?.datos?.trim();
+  if (!plantilla) {
+    return {
+      ok: false,
+      motivo: 'sin_plantilla',
+      mensaje: `${persona.nombre} todavía no tiene una foto de referencia: capturá una con "Capturar foto" y volvé a verificar.`
+    };
+  }
+
+  const captura = bufferDesdeBase64(capturaBase64);
+  if (!captura || captura.length === 0) {
+    return { ok: false, motivo: 'foto_invalida', mensaje: 'La captura recibida llega vacía.' };
+  }
+
+  const equipo = dispositivoId ? await obtenerEquipo(dispositivoId) : await obtenerEquipoActivo();
+  const credenciales = equipo ? credencialesDe(equipo) : null;
+  if (!credenciales) {
+    throw new DeviceConnectionError(
+      'El equipo no tiene IP/credenciales para extraer el vector facial.'
+    );
+  }
+
+  let vectorPlantilla: Float32Array;
+  try {
+    vectorPlantilla = await extraerVectorFacial(credenciales, bufferDesdeBase64(plantilla));
+  } catch (error) {
+    if (error instanceof ErrorFacial) {
+      return {
+        ok: false,
+        motivo: error.motivo,
+        mensaje: `No pude leer la cara de la foto guardada de ${persona.nombre}: ${error.message}`
+      };
+    }
+    throw error;
+  }
+
+  let vectorCaptura: Float32Array;
+  try {
+    vectorCaptura = await extraerVectorFacial(credenciales, captura);
+  } catch (error) {
+    if (error instanceof ErrorFacial) {
+      return {
+        ok: false,
+        motivo: error.motivo,
+        mensaje: `No pude analizar la captura recibida de ${persona.nombre}: ${error.message}`
+      };
+    }
+    throw error;
+  }
+
+  const similitud = similitudCoseno(vectorPlantilla, vectorCaptura);
+  const umbral = umbralCoincidenciaFacial();
+  const coincide = similitud >= umbral;
+  const porcentaje = Math.round(similitud * 100);
+  const porcentajeUmbral = Math.round(umbral * 100);
+
+  return {
+    ok: true,
+    coincide,
+    similitud,
+    umbral,
+    captura: capturaBase64,
+    plantilla,
+    mensaje: coincide
+      ? `La captura coincide con la foto de ${persona.nombre} (${porcentaje}% de similitud).`
+      : `¡Atención! La captura NO parece ser la de ${persona.nombre}: ${porcentaje}% de similitud (mínimo ${porcentajeUmbral}%). Revisá quién está frente al equipo antes de guardar.`
   };
 }
 

@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server';
 import { withRoute } from '@/lib/api/withRoute';
 import { UserService } from '@/modules/identidad';
-import { verificarCoincidenciaFacial } from '@/modules/asistencia';
+import { verificarCoincidenciaConFoto, verificarCoincidenciaFacial } from '@/modules/asistencia';
 import { NotFoundError } from '@/lib/errors/errors';
 
 /**
@@ -12,6 +12,10 @@ import { NotFoundError } from '@/lib/errors/errors';
  * del equipo el vector de ambas fotos (NetSDK `CLIENT_FaceInfoOpreate` →
  * GETFACEEIGEN) y compara con similitud coseno. Si no coincide, el diálogo de
  * enrolamiento avisa antes de guardar.
+ *
+ * Con `foto` en el body la captura viva la manda el cliente (p. ej. el
+ * teléfono): se compara contra la plantilla guardada con similitud coseno, sin
+ * pasar por el lector.
  */
 export const POST = withRoute(
   { auth: true, module: 'users', action: 'write', audit: true },
@@ -19,21 +23,31 @@ export const POST = withRoute(
     const { id } = await params;
     const body = await request.json().catch(() => ({}));
     const deviceId = String(body?.deviceId || '').trim();
-    if (!deviceId) {
-      return NextResponse.json(
-        { success: false, message: 'deviceId es requerido', code: 'VALIDATION' },
-        { status: 400 }
-      );
-    }
+    const foto = typeof body?.foto === 'string' && body.foto.trim() ? body.foto : null;
 
     const usuario = await UserService.getById(id);
     if (!usuario) throw new NotFoundError('Usuario', id);
 
-    const resultado = await verificarCoincidenciaFacial(deviceId, {
+    const persona = {
       usuarioId: id,
       nombre: usuario.name,
       codigo: String(usuario.biometrico_codigo || '')
-    });
+    };
+
+    let resultado: Awaited<ReturnType<typeof verificarCoincidenciaFacial>>;
+    if (foto) {
+      // Con `foto` la captura vive la manda el cliente (p. ej. el teléfono del
+      // trabajador): se compara contra la plantilla guardada con similitud.
+      resultado = await verificarCoincidenciaConFoto(persona, foto);
+    } else {
+      if (!deviceId) {
+        return NextResponse.json(
+          { success: false, message: 'deviceId es requerido', code: 'VALIDATION' },
+          { status: 400 }
+        );
+      }
+      resultado = await verificarCoincidenciaFacial(deviceId, persona);
+    }
 
     if (!resultado.ok) {
       // SDK ausente es un problema del servidor (503); el resto son condiciones

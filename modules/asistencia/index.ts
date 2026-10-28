@@ -59,7 +59,8 @@ export {
   guardarFotoCapturada,
   guardarCredenciales,
   probarConexion,
-  verificarCoincidenciaFacial
+  verificarCoincidenciaFacial,
+  verificarCoincidenciaConFoto
 } from './biometrico/enrollmentService';
 export { desenrolarUsuario } from './biometrico/unenrollmentService';
 export { guardarEnrolamientoDesdeTelefono } from './biometrico/enrollmentService';

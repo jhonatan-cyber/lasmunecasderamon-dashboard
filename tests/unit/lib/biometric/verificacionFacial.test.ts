@@ -37,7 +37,10 @@ vi.mock('@/modules/asistencia/biometrico/faceSdk', async importOriginal => {
   return { ...actual, extraerVectorFacial: facial.extraerVectorFacial };
 });
 
-import { verificarCoincidenciaFacial } from '@/modules/asistencia/biometrico/enrollmentService';
+import {
+  verificarCoincidenciaConFoto,
+  verificarCoincidenciaFacial
+} from '@/modules/asistencia/biometrico/enrollmentService';
 import { ErrorFacial } from '@/modules/asistencia/biometrico/faceSdk';
 
 const equipo = {
@@ -159,5 +162,71 @@ describe('verificarCoincidenciaFacial', () => {
     const plantillaEnviada = facial.extraerVectorFacial.mock.calls[0][1] as Buffer;
     expect(plantillaEnviada.toString()).toBe('foto-jpeg-de-prueba');
     expect(r.ok).toBe(true);
+  });
+});
+
+describe('verificarCoincidenciaConFoto', () => {
+  it('compara la captura contra la plantilla guardada con similitud coseno', async () => {
+    equiparPlantilla([{ datos: FOTO_BASE64 }]);
+    facial.extraerVectorFacial.mockResolvedValueOnce(vector(1, 0, 0));
+    facial.extraerVectorFacial.mockResolvedValueOnce(vector(1, 0, 0));
+
+    const r = await verificarCoincidenciaConFoto(persona, FOTO_BASE64, 'dev-1');
+
+    expect(r.ok).toBe(true);
+    expect(r.coincide).toBe(true);
+    expect(r.similitud).toBeCloseTo(1, 6);
+    expect(r.umbral).toBe(0.7);
+    expect(facial.extraerVectorFacial).toHaveBeenCalledTimes(2);
+  });
+
+  it('avisa cuando la captura no coincide con la plantilla (similitud baja)', async () => {
+    equiparPlantilla([{ datos: FOTO_BASE64 }]);
+    facial.extraerVectorFacial.mockResolvedValueOnce(vector(1, 0, 0));
+    facial.extraerVectorFacial.mockResolvedValueOnce(vector(0, 1, 0));
+
+    const r = await verificarCoincidenciaConFoto(persona, FOTO_BASE64, 'dev-1');
+
+    expect(r.ok).toBe(true);
+    expect(r.coincide).toBe(false);
+    expect(r.similitud).toBeCloseTo(0, 6);
+    expect(r.mensaje).toContain('NO parece ser');
+    expect(r.mensaje).toContain('Sebas');
+  });
+
+  it('sin plantilla guardada no consulta al equipo ni al SDK', async () => {
+    equiparPlantilla([]);
+
+    const r = await verificarCoincidenciaConFoto(persona, FOTO_BASE64, 'dev-1');
+
+    expect(r.ok).toBe(false);
+    expect(r.motivo).toBe('sin_plantilla');
+    expect(r.mensaje).toContain('foto de referencia');
+    expect(cliente.capturarFotoDelEquipo).not.toHaveBeenCalled();
+    expect(facial.extraerVectorFacial).not.toHaveBeenCalled();
+  });
+
+  it('captura vacía responde foto_invalida sin tocar el SDK', async () => {
+    equiparPlantilla([{ datos: FOTO_BASE64 }]);
+
+    const r = await verificarCoincidenciaConFoto(persona, '', 'dev-1');
+
+    expect(r.ok).toBe(false);
+    expect(r.motivo).toBe('foto_invalida');
+    expect(facial.extraerVectorFacial).not.toHaveBeenCalled();
+  });
+
+  it('si el SDK no detecta la cara en la captura explica el motivo', async () => {
+    equiparPlantilla([{ datos: FOTO_BASE64 }]);
+    facial.extraerVectorFacial.mockResolvedValueOnce(vector(1, 0, 0));
+    facial.extraerVectorFacial.mockRejectedValueOnce(
+      new ErrorFacial('sin_cara', 'El equipo no detectó ninguna cara en la foto.')
+    );
+
+    const r = await verificarCoincidenciaConFoto(persona, FOTO_BASE64, 'dev-1');
+
+    expect(r.ok).toBe(false);
+    expect(r.motivo).toBe('sin_cara');
+    expect(r.mensaje).toContain('ninguna cara');
   });
 });
