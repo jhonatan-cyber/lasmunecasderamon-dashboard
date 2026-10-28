@@ -3,7 +3,7 @@ import CompressionPlugin from 'compression-webpack-plugin';
 
 const nextConfig = {
   serverExternalPackages: ['pg', 'koffi', 'ffmpeg-static', 'onnxruntime-node'],
-  allowedDevOrigins: ['127.0.0.1', '192.168.0.7', 'dashboard.xn--lasmuecasderamon-bub.com'],
+  allowedDevOrigins: ['127.0.0.1', '192.168.0.2', 'dashboard.xn--lasmuecasderamon-bub.com'],
   images: {
     formats: ['image/avif', 'image/webp'],
     localPatterns: [

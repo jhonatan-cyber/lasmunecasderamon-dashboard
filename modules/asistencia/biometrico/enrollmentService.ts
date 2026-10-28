@@ -293,6 +293,62 @@ export async function guardarFotoCapturada(
   };
 }
 
+export const LADOS_CAPTURA_FACIAL = ['frente', 'izquierda', 'derecha'] as const;
+export type LadoCapturaFacial = (typeof LADOS_CAPTURA_FACIAL)[number];
+
+export interface DatosCapturaEnrolamiento {
+  lado: string;
+  foto: string;
+}
+
+export interface ResultadoEnrolamientoTelefono {
+  ok: boolean;
+  mensaje: string;
+  facial: boolean;
+  muestras: number;
+  ladoPlantilla?: string;
+}
+
+/**
+ * Enrolamiento facial desde el teléfono del trabajador: recibe el set de
+ * capturas (frente / izquierda / derecha) y deja la plantilla maestra en la
+ * base para la persona. La captura frontal es la muestra que el motor de
+ * comparación usa como plantilla del usuario.
+ */
+export async function guardarEnrolamientoDesdeTelefono(
+  usuarioId: string,
+  fotos: DatosCapturaEnrolamiento[],
+  dispositivoId: string
+): Promise<ResultadoEnrolamientoTelefono> {
+  const capturas = (fotos ?? [])
+    .map(c => ({ lado: String(c?.lado ?? ''), foto: String(c?.foto ?? '') }))
+    .filter(
+      c => (LADOS_CAPTURA_FACIAL as readonly string[]).includes(c.lado) && c.foto.trim().length > 0
+    );
+
+  if (capturas.length === 0) {
+    return {
+      ok: false,
+      mensaje: 'No hay capturas faciales validas para guardar.',
+      facial: false,
+      muestras: 0
+    };
+  }
+
+  const frontal = capturas.find(c => c.lado === 'frente') ?? capturas[0];
+  await guardarPlantilla(usuarioId, dispositivoId, 'cara', frontal.foto, {
+    sincronizada: false
+  });
+
+  return {
+    ok: true,
+    mensaje: `Captura facial guardada (lado: ${frontal.lado}).`,
+    facial: true,
+    muestras: capturas.length,
+    ladoPlantilla: frontal.lado
+  };
+}
+
 export async function usarFotoDelLectorComoPerfil(
   usuarioId: string,
   fotoBase64: string

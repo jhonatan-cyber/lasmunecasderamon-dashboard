@@ -62,6 +62,11 @@ export {
   verificarCoincidenciaFacial
 } from './biometrico/enrollmentService';
 export { desenrolarUsuario } from './biometrico/unenrollmentService';
+export { guardarEnrolamientoDesdeTelefono } from './biometrico/enrollmentService';
+export type {
+  DatosCapturaEnrolamiento,
+  ResultadoEnrolamientoTelefono
+} from './biometrico/enrollmentService';
 export { descubrirIpDispositivo } from './biometrico/ipDiscovery';
 export { apagarListener, encenderListener } from './biometrico/eventListener';
 export { obtenerBytesDeFoto, setRecolector } from './biometrico/servicio';

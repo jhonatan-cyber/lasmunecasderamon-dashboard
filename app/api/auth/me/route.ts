@@ -25,7 +25,10 @@ export const GET = withRoute(
         nick: fullUser.nick,
         phone: fullUser.phone,
         address: fullUser.address,
-        estado_civil: fullUser.maritalStatus
+        estado_civil: fullUser.maritalStatus,
+        biometrico_codigo: fullUser.biometrico_codigo ?? null,
+        biometrico_huella: fullUser.biometrico_huella ?? 0,
+        biometrico_facial: fullUser.biometrico_facial ?? 0
       }
     });
   }
