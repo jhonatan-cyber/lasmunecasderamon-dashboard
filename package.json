@@ -38,6 +38,7 @@
     "redis:check": "node scripts/redis-dev.js --check",
     "test:redis": "vitest run --config vitest.redis.config.ts",
     "benchmark:dashboard": "vitest run --config vitest.dashboard-benchmark.config.ts",
+    "benchmark:arranque": "node scripts/benchmark-arranque.mjs",
     "audit:web:quality": "node ./.agents/skills/web-quality-audit/scripts/analyze.mjs --format=markdown",
     "audit:web:quality:json": "node ./.agents/skills/web-quality-audit/scripts/analyze.mjs --format=json",
     "audit:web:quality:ci": "node ./.agents/skills/web-quality-audit/scripts/analyze.mjs --format=json \"--fail-rules=Accessibility:high,SEO:high,Best Practices:high\"",
