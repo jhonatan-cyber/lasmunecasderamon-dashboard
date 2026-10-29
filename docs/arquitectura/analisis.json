@@ -1,9 +1,9 @@
 {
   "resumen": {
-    "commit": "8768a608429284683e82809f83d1a584c4e9a239",
-    "generado": "2026-10-26T16:02:20.266Z",
-    "archivos": 2195,
-    "rutas": 230,
+    "commit": "8e0790ae6cd4ce5340f7d83a647270e35495e3eb",
+    "generado": "2026-10-29T14:18:37.606Z",
+    "archivos": 2206,
+    "rutas": 231,
     "sqlFueraDeRepositorio": 61,
     "tablasConEscritoresMultiples": 0,
     "ciclos": 0,
@@ -13,24 +13,6 @@
     "rutasSinWrapper": 20
   },
   "rutas": [
-    {
-      "ruta": "/api/orders/:id/baucher",
-      "archivo": "app/api/orders/[id]/baucher/route.ts",
-      "metodos": [],
-      "nivel": "orders.read",
-      "audit": false,
-      "moduloDominio": null,
-      "usaDriver": false
-    },
-    {
-      "ruta": "/api/tickets/:id/baucher",
-      "archivo": "app/api/tickets/[id]/baucher/route.ts",
-      "metodos": [],
-      "nivel": "entradas.view",
-      "audit": false,
-      "moduloDominio": null,
-      "usaDriver": false
-    },
     {
       "ruta": "/api/accounts/:id/charge-with-sale",
       "archivo": "app/api/accounts/[id]/charge-with-sale/route.ts",
@@ -1193,6 +1175,15 @@
       "usaDriver": false
     },
     {
+      "ruta": "/api/orders/:id/baucher",
+      "archivo": "app/api/orders/[id]/baucher/route.ts",
+      "metodos": [],
+      "nivel": "orders.read",
+      "audit": false,
+      "moduloDominio": null,
+      "usaDriver": false
+    },
+    {
       "ruta": "/api/orders/:id",
       "archivo": "app/api/orders/[id]/route.ts",
       "metodos": [],
@@ -1859,6 +1850,15 @@
       "usaDriver": false
     },
     {
+      "ruta": "/api/tickets/:id/baucher",
+      "archivo": "app/api/tickets/[id]/baucher/route.ts",
+      "metodos": [],
+      "nivel": "entradas.view",
+      "audit": false,
+      "moduloDominio": null,
+      "usaDriver": false
+    },
+    {
       "ruta": "/api/tickets/:id/entregar",
       "archivo": "app/api/tickets/[id]/entregar/route.ts",
       "metodos": [],
@@ -1951,6 +1951,15 @@
     {
       "ruta": "/api/users/:id/biometric/capture",
       "archivo": "app/api/users/[id]/biometric/capture/route.ts",
+      "metodos": [],
+      "nivel": "users.write",
+      "audit": true,
+      "moduloDominio": null,
+      "usaDriver": false
+    },
+    {
+      "ruta": "/api/users/:id/biometric/captures",
+      "archivo": "app/api/users/[id]/biometric/captures/route.ts",
       "metodos": [],
       "nivel": "users.write",
       "audit": true,
@@ -2754,7 +2763,7 @@
     },
     {
       "archivo": "app/tickets/page.tsx",
-      "linea": 161,
+      "linea": 164,
       "tipo": "setInterval",
       "texto": "const interval = window.setInterval(actualizarFechaHora, 60_000);"
     },
@@ -2862,7 +2871,7 @@
     },
     {
       "archivo": "scripts/dev-lan-auto.js",
-      "linea": 44,
+      "linea": 85,
       "texto": "process.on(signal, () => {"
     },
     {
@@ -2995,39 +3004,58 @@
   ],
   "ciclos": [],
   "matriz": {
+    "app/ui": {
+      "hooks": 63,
+      "lib/otros": 55,
+      "lib/api": 7,
+      "components": 9,
+      "lib/business": 5,
+      "modules/aplicacion": 3,
+      "raiz": 14
+    },
     "app/api": {
-      "lib/api": 273,
-      "lib/otros": 80,
+      "lib/api": 274,
       "workflows": 22,
+      "lib/otros": 83,
       "lib/identidad": 15,
-      "lib/business": 35,
+      "lib/business": 36,
       "modules/aplicacion": 1,
       "lib/database": 3,
       "lib/integrations": 4
     },
     "components": {
-      "lib/otros": 366,
-      "lib/business": 53,
-      "hooks": 147,
+      "hooks": 149,
+      "lib/otros": 370,
       "raiz": 91,
+      "lib/business": 53,
       "lib/api": 3,
       "modules/aplicacion": 8,
       "app/ui": 1
     },
+    "raiz": {
+      "lib/otros": 13,
+      "hooks": 4,
+      "lib/api": 2,
+      "lib/identidad": 2,
+      "modules/aplicacion": 1
+    },
     "hooks": {
-      "lib/api": 8,
-      "lib/otros": 100,
       "raiz": 40,
+      "lib/otros": 100,
+      "lib/api": 8,
       "components": 20,
       "lib/business": 17,
       "modules/aplicacion": 2
     },
     "lib/api": {
-      "lib/identidad": 4,
       "lib/otros": 8,
+      "lib/identidad": 4,
       "modules/aplicacion": 1,
       "lib/business": 2,
       "lib/database": 2
+    },
+    "lib/identidad": {
+      "lib/otros": 5
     },
     "lib/business": {
       "lib/api": 3,
@@ -3039,38 +3067,10 @@
     },
     "lib/otros": {
       "lib/database": 4,
-      "lib/api": 1,
-      "lib/business": 6,
+      "lib/api": 2,
+      "lib/business": 7,
       "raiz": 6,
       "components": 2
-    },
-    "modules/aplicacion": {
-      "modules/infraestructura": 23,
-      "lib/otros": 101,
-      "lib/database": 44,
-      "lib/business": 44,
-      "lib/api": 11,
-      "lib/identidad": 3,
-      "raiz": 7
-    },
-    "app/ui": {
-      "hooks": 62,
-      "lib/otros": 55,
-      "lib/api": 7,
-      "components": 9,
-      "lib/business": 5,
-      "modules/aplicacion": 3,
-      "raiz": 14
-    },
-    "raiz": {
-      "lib/otros": 13,
-      "hooks": 4,
-      "lib/api": 2,
-      "lib/identidad": 2,
-      "modules/aplicacion": 1
-    },
-    "lib/identidad": {
-      "lib/otros": 5
     },
     "lib/database": {
       "lib/otros": 4,
@@ -3081,12 +3081,21 @@
     },
     "modules/infraestructura": {
       "lib/database": 110,
-      "lib/otros": 164,
+      "lib/otros": 165,
       "lib/business": 69,
       "modules/aplicacion": 27,
       "lib/api": 9,
       "lib/identidad": 2,
       "raiz": 3
+    },
+    "modules/aplicacion": {
+      "modules/infraestructura": 23,
+      "lib/otros": 101,
+      "lib/database": 44,
+      "lib/business": 44,
+      "lib/api": 11,
+      "lib/identidad": 3,
+      "raiz": 7
     },
     "scripts": {},
     "workflows": {
