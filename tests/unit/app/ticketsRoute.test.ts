@@ -250,6 +250,7 @@ describe('entrega en la barra', () => {
       entradaId: 'e1',
       presentacionId: 'pres-1',
       acompanamientoPresentacionId: null,
+      montoAdicional: null,
       usuarioId: 'user-1'
     });
     const [venta] = ventas.createSale.mock.calls[0];
@@ -258,6 +259,36 @@ describe('entrega en la barra', () => {
       success: true,
       data: { tipo: 'upgrade', ventaId: 'venta-1' }
     });
+  });
+
+  it('envía el monto adicional que decide el mostrador', async () => {
+    entradas.entregarEntrada.mockResolvedValue({ tipo: 'upgrade', montoCobrarBarra: 20000 });
+
+    await (POST_ENTREGAR as unknown as Handler)(
+      pedido(
+        { presentacion_id: 'pres-1', monto_adicional: 20000 },
+        'http://localhost/api/tickets/e1/entregar'
+      )
+    );
+
+    const [input] = entradas.entregarEntrada.mock.calls[0];
+    expect(input).toMatchObject({
+      entradaId: 'e1',
+      presentacionId: 'pres-1',
+      montoAdicional: 20000
+    });
+  });
+
+  it('rechaza un monto adicional que no es número', async () => {
+    const response = await (POST_ENTREGAR as unknown as Handler)(
+      pedido(
+        { presentacion_id: 'pres-1', monto_adicional: 'mucho' },
+        'http://localhost/api/tickets/e1/entregar'
+      )
+    );
+
+    expect(response.status).toBe(400);
+    expect(entradas.entregarEntrada).not.toHaveBeenCalled();
   });
 
   it('exige la presentación a entregar', async () => {

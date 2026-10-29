@@ -5,6 +5,7 @@ import { Check, LoaderCircle } from 'lucide-react';
 import { toast } from 'sonner';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { ProductPhoto } from '@/components/shared/ProductPhoto';
 import { SearchableSelect } from '@/components/shared/SearchableSelect';
@@ -43,7 +44,6 @@ type Acompanamiento = {
   stock_bar: number;
 };
 
-/** Entrada pendiente de entrega (una persona del grupo registrado en la puerta). */
 export type EntradaEntregable = {
   id: string;
   cliente_nombre: string | null;
@@ -54,7 +54,6 @@ export type EntradaEntregable = {
 type Props = {
   entrada: EntradaEntregable | null;
   onClose: () => void;
-  /** Se llama después de una entrega confirmada para refrescar el listado. */
   onEntregada?: () => void | Promise<void>;
 };
 
@@ -117,36 +116,26 @@ function aAcompanamiento(valor: unknown): Acompanamiento | null {
   };
 }
 
-/** Unidades de acompañamiento que exige la opción botella de la bebida. */
 function unidadesAcompanamiento(bebida: Bebida | null | undefined): number {
   const botella = bebida?.opciones_venta.find(opcion => opcion.tipo === 'botella');
   const unidades = Number(botella?.acompanamiento?.unidades ?? 0);
   return Number.isFinite(unidades) && unidades > 0 ? Math.floor(unidades) : 0;
 }
 
-/**
- * Previsualización de la rama que va a tomar el servidor: la cortesía se decide
- * con `max(tope, monto_entrada)` y el adicional se cobra por la diferencia con
- * lo ya pagado en la puerta.
- */
 function previsionDeCobro(
   precio: number,
   umbral: number,
   montoEntrada: number
-): { etiqueta: string; esCortesia: boolean } {
-  if (precio <= umbral) return { etiqueta: 'Cortesía', esCortesia: true };
+): { etiqueta: string; esCortesia: boolean; montoAdicional: number } {
+  if (precio <= umbral) return { etiqueta: 'Cortesía', esCortesia: true, montoAdicional: 0 };
+  const montoAdicional = Math.max(0, precio - montoEntrada);
   return {
-    etiqueta: `Cobra ${formatCurrencyCLP(Math.max(0, precio - montoEntrada))}`,
-    esCortesia: false
+    etiqueta: `Cobra ${formatCurrencyCLP(montoAdicional)}`,
+    esCortesia: false,
+    montoAdicional
   };
 }
 
-/**
- * Entrega de la bebida de una entrada desde la puerta.
- *
- * El cajero (o el barman) elige la bebida del catálogo con su precio ya
- * configurado; el servidor decide si es cortesía o si se cobra la diferencia.
- */
 export function EntregaEntradaDialog({ entrada, onClose, onEntregada }: Props) {
   const [presentacionId, setPresentacionId] = useState('');
   const [acompanamientoId, setAcompanamientoId] = useState('');
@@ -157,6 +146,7 @@ export function EntregaEntradaDialog({ entrada, onClose, onEntregada }: Props) {
   const [acompanamientosLoading, setAcompanamientosLoading] = useState(false);
   const [acompanamientosError, setAcompanamientosError] = useState<string | null>(null);
   const [entregando, setEntregando] = useState(false);
+  const [montoAdicional, setMontoAdicional] = useState('');
 
   const topeCortesia = Number(
     useConfigValue('comisiones', 'monto_base_trago_cortesia_cliente', 10000)
@@ -170,7 +160,6 @@ export function EntregaEntradaDialog({ entrada, onClose, onEntregada }: Props) {
     setAcompanamientoId('');
   }, [dialogoAbierto, entrada?.id]);
 
-  // Catálogo de bebidas del bar: se pide al abrir para traer stock fresco.
   useEffect(() => {
     if (!dialogoAbierto) return;
     const controller = new AbortController();
@@ -205,7 +194,22 @@ export function EntregaEntradaDialog({ entrada, onClose, onEntregada }: Props) {
   const requiereAcompanamiento = unidadesRequeridas > 0;
   const umbral = Math.max(topeCortesia, entrada?.monto_entrada ?? 0);
 
-  // Acompañamiento: solo se ofrece cuando la bebida lo exige, igual que en la puerta.
+  const previsionSeleccion = useMemo(
+    () =>
+      previsionDeCobro(bebidaSeleccionada?.precio_venta ?? 0, umbral, entrada?.monto_entrada ?? 0),
+    [bebidaSeleccionada, umbral, entrada?.monto_entrada]
+  );
+  const montoAdicionalNumero = useMemo(() => {
+    const limpio = montoAdicional.replace(/[^\d]/g, '');
+    if (!limpio) return previsionSeleccion.montoAdicional;
+    const numero = Number(limpio);
+    return Number.isFinite(numero) ? numero : previsionSeleccion.montoAdicional;
+  }, [montoAdicional, previsionSeleccion.montoAdicional]);
+
+  useEffect(() => {
+    setMontoAdicional(bebidaSeleccionada ? String(previsionSeleccion.montoAdicional) : '');
+  }, [bebidaSeleccionada, previsionSeleccion.montoAdicional]);
+
   useEffect(() => {
     if (!requiereAcompanamiento) {
       setAcompanamientos([]);
@@ -256,7 +260,8 @@ export function EntregaEntradaDialog({ entrada, onClose, onEntregada }: Props) {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           presentacion_id: bebidaSeleccionada.presentacion_id,
-          acompanamiento_presentacion_id: requiereAcompanamiento ? acompanamientoId : null
+          acompanamiento_presentacion_id: requiereAcompanamiento ? acompanamientoId : null,
+          monto_adicional: montoAdicionalNumero
         })
       });
       const json: unknown = await respuesta.json().catch(() => null);
@@ -276,7 +281,15 @@ export function EntregaEntradaDialog({ entrada, onClose, onEntregada }: Props) {
     } finally {
       setEntregando(false);
     }
-  }, [acompanamientoId, bebidaSeleccionada, entrada, onClose, onEntregada, requiereAcompanamiento]);
+  }, [
+    acompanamientoId,
+    bebidaSeleccionada,
+    entrada,
+    montoAdicionalNumero,
+    onClose,
+    onEntregada,
+    requiereAcompanamiento
+  ]);
 
   return (
     <Dialog
@@ -394,8 +407,8 @@ export function EntregaEntradaDialog({ entrada, onClose, onEntregada }: Props) {
         )}
 
         <p className='text-xs text-muted-foreground'>
-          El precio ya está configurado en el catálogo. Al confirmar, el servidor decide si la
-          bebida es cortesía o si se cobra la diferencia en la barra.
+          El precio ya está configurado en el catálogo. Al confirmar, el servidor registra la bebida
+          como cortesía o cobra el adicional en la barra.
         </p>
 
         {requiereAcompanamiento && bebidaSeleccionada ? (
@@ -434,6 +447,35 @@ export function EntregaEntradaDialog({ entrada, onClose, onEntregada }: Props) {
             ) : null}
           </div>
         ) : null}
+
+        <div className='space-y-2'>
+          <Label htmlFor='entrega-entrada-adicional'>Adicional a cobrar en barra</Label>
+          <Input
+            id='entrega-entrada-adicional'
+            inputMode='numeric'
+            autoComplete='off'
+            value={montoAdicional}
+            disabled={!bebidaSeleccionada || entregando}
+            onChange={evento => setMontoAdicional(evento.target.value.replace(/[^\d]/g, ''))}
+            placeholder={bebidaSeleccionada ? '0' : 'Elige una bebida'}
+          />
+          <p className='text-xs text-muted-foreground'>
+            {bebidaSeleccionada
+              ? `Sugerido ${formatCurrencyCLP(
+                  previsionSeleccion.montoAdicional
+                )} (precio ${formatCurrencyCLP(
+                  bebidaSeleccionada.precio_venta
+                )} − entrada ${formatCurrencyCLP(
+                  entrada?.monto_entrada ?? 0
+                )}). Súbelo si el cliente agrega plata para otra bebida.`
+              : 'Elige una bebida para calcular el monto sugerido.'}
+          </p>
+          {bebidaSeleccionada ? (
+            <p className='text-sm font-medium'>
+              Se cobrará en barra: {formatCurrencyCLP(montoAdicionalNumero)}
+            </p>
+          ) : null}
+        </div>
 
         <DialogFooter className='gap-2'>
           <Button

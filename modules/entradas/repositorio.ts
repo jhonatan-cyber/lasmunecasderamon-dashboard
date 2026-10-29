@@ -10,22 +10,11 @@ import { defaultDeClave } from '@/modules/configuracion/contracts';
 import { esBaucherDataUrlValido } from '@/lib/business/baucher';
 import { eliminarFotoBaucher, guardarFotoBaucher } from '@/lib/utils/image-utils';
 
-/**
- * Entradas de clientes con solicitud de cortesía diferida.
- *
- * El garzón cobra en la puerta y NO se postea nada: el precio de la entrada
- * pertenece a la cubeta que el cliente decide en la barra. Si toma la cortesía
- * el monto se postea como entrada (`registrarMovimientoCobro`); si pide una
- * bebida más cara se registra una venta por el precio de lista de la bebida y el
- * cliente completa la diferencia en la barra. Cada peso entra una sola vez.
- */
-
 export type MetodoPagoEntrada = 'efectivo' | 'tarjeta' | 'transferencia';
 export type EstadoCortesia = 'pendiente' | 'entregada' | 'anulada';
 
 const METODOS: readonly MetodoPagoEntrada[] = ['efectivo', 'tarjeta', 'transferencia'];
 
-/** Plan de la venta del adicional: el adaptador HTTP la registra con SaleService. */
 export interface PlanVentaEntrada {
   totalVenta: number;
   metodoPago: MetodoPagoEntrada;
@@ -34,10 +23,6 @@ export interface PlanVentaEntrada {
   detalles: Record<string, unknown>[];
 }
 
-/**
- * El adaptador HTTP registra la venta y devuelve su id, para dejarlo en la
- * fila de la entrada (trazabilidad entrada ↔ venta).
- */
 export type RegistradorVenta = (
   plan: PlanVentaEntrada,
   contexto: { id: string },
@@ -52,9 +37,7 @@ export interface EntradaCliente {
   monto_entrada: number;
   monto_bebida_adicional: number;
   metodo_pago: MetodoPagoEntrada;
-  /** Nombre del archivo del baucher en `public/img/tickets` (solo transferencia). */
   baucher_foto: string | null;
-  /** Caja (turno) en la que se cobró la entrada. */
   caja_id: string | null;
   venta_id: string | null;
   bebida_cortesia_presentacion_id: string | null;
@@ -85,17 +68,13 @@ export interface ResultadoEntrega {
   entradaId: string;
   tipo: 'cortesia' | 'upgrade';
   presentacionId: string;
-  /** Precio de lista de la bebida entregada. */
   precio: number;
-  /** Lo que el cliente ya pagó en la puerta. */
   montoEntrada: number;
-  /** Lo que el cliente entrega en la barra (0 en la cortesía). */
   montoCobrarBarra: number;
   ventaId: string | null;
   cajaId: string;
 }
 
-/** Lee una clave numérica de `configuraciones` (tabla del módulo Configuración, sólo lectura). */
 async function leerConfiguracion(clave: string, respaldo: number): Promise<number> {
   const filas = await query<{ valor: string }[]>(
     'SELECT valor FROM configuraciones WHERE clave = ? LIMIT 1',
@@ -106,18 +85,12 @@ async function leerConfiguracion(clave: string, respaldo: number): Promise<numbe
   return Number.isFinite(valor) ? Math.floor(valor) : respaldo;
 }
 
-/** Precio de la entrada por persona (lo que cobra el garzón en la puerta). */
 async function leerCostoEntrada(): Promise<number> {
   const valor = await leerConfiguracion('costo_entrada', 0);
   if (valor <= 0) throw new ValidationError('El costo de entrada no está configurado');
   return valor;
 }
 
-/**
- * Tope de la bebida de cortesía: el campo "Covers de entradas" de
- * Configuraciones → Bar y comisiones, la misma clave que usa
- * `consumirProductoCortesia` cuando no recibe un máximo explícito.
- */
 async function leerTopeCortesia(): Promise<number> {
   const valor = await leerConfiguracion('monto_base_trago_cortesia_cliente', 10000);
   return valor >= 0 ? valor : 10000;
@@ -201,7 +174,6 @@ export async function listarEntradas(fecha?: string): Promise<EntradaCliente[]> 
   );
 }
 
-/** Cola de la barra: una fila por persona que todavía no recibió su bebida. */
 export async function listarPendientes(fecha?: string): Promise<EntradaPendiente[]> {
   const fechaFiltro = fecha || getNowInBusinessTimezone().slice(0, 10);
   return query<EntradaPendiente[]>(
@@ -216,11 +188,6 @@ export async function listarPendientes(fecha?: string): Promise<EntradaPendiente
   );
 }
 
-/**
- * Nombre del archivo del baucher de una entrada, o `null` si no tiene.
- *
- * La ruta que sirve la foto no consulta la tabla: el SQL vive acá.
- */
 export async function obtenerBaucherEntrada(id: string): Promise<string | null> {
   const filas = await query<{ baucher_foto: string | null }[]>(
     'SELECT baucher_foto FROM entradas_clientes WHERE id = ?',
@@ -231,24 +198,15 @@ export async function obtenerBaucherEntrada(id: string): Promise<string | null> 
 
 export interface RegistroEntradaInput {
   clienteNombre?: string;
-  /** Si viene, se valida contra la configuración; el precio lo fija el servidor. */
   montoEntrada?: number;
   cantidadEntradas: number;
   metodoPago: string;
-  /** Foto del baucher en data URL: obligatoria con transferencia (la exige la ruta). */
   baucherFoto?: string;
   fecha: string;
   hora: string;
   registradoPor: string;
 }
 
-/**
- * Registro en la puerta: sólo cobra la entrada y deja la cortesía pendiente.
- *
- * No consume stock, no crea venta y no mueve la caja: el dinero entra a la caja
- * recién cuando el cliente se sirve en la barra (cortesía) o cuando su bebida se
- * registra como venta (adicional).
- */
 export async function registrarEntrada(input: RegistroEntradaInput) {
   if (!input.registradoPor) throw new ValidationError('No se pudo identificar al usuario');
   const cantidad = Number(input.cantidadEntradas);
@@ -256,12 +214,8 @@ export async function registrarEntrada(input: RegistroEntradaInput) {
     throw new ValidationError('Indica entre 1 y 100 entradas para registrar');
   const metodoPago = validarMetodoPago(input.metodoPago);
   validarFechaHora(input.fecha, input.hora);
-  // El baucher es la constancia del pago con transferencia: la ruta lo exige,
-  // acá se valida el formato por si otro llamador del módulo lo manda mal.
   if (input.baucherFoto && !esBaucherDataUrlValido(input.baucherFoto))
     throw new ValidationError('La foto del baucher no es una imagen válida');
-  // El precio lo fija la configuración, no el cliente (§5: el servidor valida el
-  // dinero). La UI manda el total del grupo; cada fila guarda su parte.
   const costoEntrada = await leerCostoEntrada();
   const montoTotal = costoEntrada * cantidad;
   if (
@@ -283,8 +237,6 @@ export async function registrarEntrada(input: RegistroEntradaInput) {
   try {
     await enUnaUnidad(async unidad => {
       const trx = resolverTransaccion({ id: unidad.id });
-      // Misma regla que colaciones, ventas y reportes: la caja abierta más reciente
-      // es la del turno actual. Se guarda para saber dónde se cobró la entrada.
       const caja = await trx<{ id_caja: string }[]>(
         'SELECT id_caja FROM cajas WHERE estado = 1 ORDER BY fecha_apertura DESC LIMIT 1 FOR UPDATE'
       );
@@ -293,8 +245,6 @@ export async function registrarEntrada(input: RegistroEntradaInput) {
       for (let indice = 0; indice < cantidad; indice += 1) {
         const id = generateUUID();
         ids.push(id);
-        // `fecha_crea` la pone el servidor (DEFAULT CURRENT_TIMESTAMP): es el
-        // registro de auditoría, no la hora de negocio que elige el cajero.
         await trx(
           `INSERT INTO entradas_clientes
           (id, grupo_registro_id, cliente_nombre, monto_entrada, monto_bebida_adicional, metodo_pago,
@@ -316,9 +266,6 @@ export async function registrarEntrada(input: RegistroEntradaInput) {
       }
     });
   } catch (err) {
-    // La foto se escribe antes de la transacción (las filas guardan su nombre):
-    // un ROLLBACK no borra el archivo, así que si el registro no llegó a la base
-    // hay que borrarlo o queda huérfano en public/img/tickets.
     if (baucherFoto)
       await eliminarFotoBaucher(baucherFoto, 'ticket', {
         grupoRegistroId,
@@ -342,16 +289,17 @@ export interface EntregaEntradaInput {
   presentacionId: string;
   acompanamientoPresentacionId?: string | null;
   usuarioId: string;
+  montoAdicional?: number | null;
 }
 
-/**
- * Entrega en la barra: cortesía o adicional, según el precio de la bebida.
- *
- * Umbral = `max(tope, monto_entrada)`. Con la configuración prevista
- * (tope = costo de entrada) equivale a "la bebida cuesta más que la entrada".
- * El `max` evita una diferencia negativa si alguien configura un tope menor que
- * la entrada: ninguna bebida más barata que lo ya pagado puede cobrarse extra.
- */
+function normalizarMontoAdicional(valor: unknown, respaldo: number): number {
+  const derivado = Number.isFinite(respaldo) ? Math.max(0, Math.floor(respaldo)) : 0;
+  if (valor === null || valor === undefined || valor === '') return derivado;
+  const numero = Number(valor);
+  if (!Number.isFinite(numero)) return derivado;
+  return Math.max(0, Math.floor(numero));
+}
+
 export async function entregarEntrada(
   input: EntregaEntradaInput,
   onVenta?: RegistradorVenta
@@ -383,8 +331,6 @@ export async function entregarEntrada(
     );
     const entrada = filas[0];
     if (!entrada) throw new ValidationError('La entrada ya no existe');
-    // El candado de la fila es el que impide que dos baristas entreguen la misma
-    // entrada (y que se cobre dos veces).
     if (entrada.cortesia_estado !== 'pendiente')
       throw new ValidationError('Esta entrada ya fue entregada o anulada');
 
@@ -411,7 +357,9 @@ export async function entregarEntrada(
     const precio = Number(presentacion.precio_venta);
     const montoEntrada = Number(entrada.monto_entrada);
     const umbral = Math.max(tope, montoEntrada);
-    const esCortesia = precio <= umbral;
+    const adicionalPorPrecio = precio <= umbral ? 0 : precio - montoEntrada;
+    const montoAdicional = normalizarMontoAdicional(input.montoAdicional, adicionalPorPrecio);
+    const esCortesia = montoAdicional <= 0;
 
     const opciones = parseOpcionesVenta(presentacion.opciones_venta);
     const unidades = unidadesAcompanamiento(opciones);
@@ -428,9 +376,6 @@ export async function entregarEntrada(
 
     let ventaId: string | null = null;
     if (esCortesia) {
-      // Movimiento de inventario tipo `cortesia` + el precio de la entrada a la
-      // caja: la cubeta "entradas". El tope va explícito para que el motor de
-      // inventario valide el mismo precio que decidió la rama.
       await consumirProductoCortesiaBar(
         input.presentacionId,
         input.usuarioId,
@@ -443,11 +388,9 @@ export async function entregarEntrada(
       pagos[entrada.metodo_pago] = montoEntrada;
       await registrarMovimientoCobro(cajaId, pagos, { id: unidad.id });
     } else {
-      // La venta lleva el precio de lista completo de la bebida: el precio de la
-      // entrada ya se cobró en la puerta y se acredita a esta bebida, así que el
-      // total posteado (entradas + ventas) es lo que pagaron los clientes.
       if (!onVenta)
         throw new ValidationError('La bebida con adicional requiere registrar una venta');
+      const totalVenta = montoEntrada + montoAdicional;
       const detalle: Record<string, unknown> = {
         producto_id: presentacion.producto_id,
         presentacion_id: input.presentacionId,
@@ -455,7 +398,7 @@ export async function entregarEntrada(
         precio,
         comision: 0,
         cantidad: 1,
-        sub_total: precio
+        sub_total: totalVenta
       };
       if (unidades > 0 && input.acompanamientoPresentacionId)
         detalle.acompanamiento_botella = {
@@ -464,7 +407,7 @@ export async function entregarEntrada(
         };
       const creada = await onVenta(
         {
-          totalVenta: precio,
+          totalVenta,
           metodoPago: entrada.metodo_pago,
           usuarioId: input.usuarioId,
           entradaId: entrada.id,
@@ -490,12 +433,11 @@ export async function entregarEntrada(
         fechaHora,
         input.presentacionId,
         input.acompanamientoPresentacionId || null,
-        esCortesia ? 0 : precio - montoEntrada,
+        montoAdicional,
         entrada.id
       ]
     );
     if (esCortesia) {
-      // Detalle de lo entregado como cortesía (la venta ya guarda su detalle).
       await trx(
         `INSERT INTO entradas_clientes_productos
           (entrada_id, presentacion_id, cantidad, acompanamiento_presentacion_id)
@@ -510,7 +452,7 @@ export async function entregarEntrada(
       presentacionId: input.presentacionId,
       precio,
       montoEntrada,
-      montoCobrarBarra: esCortesia ? 0 : precio - montoEntrada,
+      montoCobrarBarra: montoAdicional,
       ventaId,
       cajaId
     };
@@ -519,12 +461,6 @@ export async function entregarEntrada(
   return resultado as unknown as ResultadoEntrega;
 }
 
-/**
- * Anula una entrada pendiente que nunca se sirvió.
- *
- * El dinero se cobró en la puerta: se postea como entrada a la caja del turno
- * actual y la fila queda cerrada. No toca el stock (la bebida no se entregó).
- */
 export async function anularEntrada(input: {
   entradaId: string;
   usuarioId: string;
@@ -569,12 +505,6 @@ export async function anularEntrada(input: {
   return { entradaId: input.entradaId, monto };
 }
 
-/**
- * Barrido del cierre de caja: las entradas pendientes de esa caja se postean
- * como entradas (el dinero se cobró; la cortesía no se entregó) y quedan
- * `anulada`. Sin esto el conteo físico del cierre no coincidiría con el saldo
- * del sistema, porque el garzón cobró dinero que todavía no estaba posteado.
- */
 export async function postearPendientesDeCaja(input: {
   cajaId: string;
   usuarioId: string;

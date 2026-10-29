@@ -22,6 +22,11 @@ export const POST = withRoute(
     if (!id) throw new ValidationError('Indica la entrada a entregar');
     const body = (await request.json().catch(() => ({}))) as JsonRecord;
     try {
+      // El mostrador puede ajustar lo que paga el cliente en la barra; sin valor
+      // el módulo deriva la diferencia por precio.
+      const montoAdicional = body.monto_adicional == null ? null : Number(body.monto_adicional);
+      if (montoAdicional !== null && !Number.isFinite(montoAdicional))
+        throw new ValidationError('Indica un monto adicional válido');
       const data = await entregarEntrada(
         {
           entradaId: id,
@@ -29,6 +34,7 @@ export const POST = withRoute(
           acompanamientoPresentacionId: body.acompanamiento_presentacion_id
             ? String(body.acompanamiento_presentacion_id)
             : null,
+          montoAdicional,
           usuarioId: user.id
         },
         async (plan, contexto, asignarTarea) => {

@@ -339,6 +339,33 @@ describe('entrega con adicional', () => {
     expect(estado.updates[0].params[4]).toBe(6000);
   });
 
+  it('respeta el monto que decide el mostrador y lo deja en la entrada', async () => {
+    estado.precio = 16000;
+    const onVenta = vi.fn(async () => ({ ventaId: 'venta-1' }));
+
+    const resultado = await entregarEntrada({ ...entregaBase, montoAdicional: 20000 }, onVenta);
+
+    const [plan] = onVenta.mock.calls[0] as unknown as [{ totalVenta: number }];
+    // Lo posteado es lo cobrado: la entrada de la puerta más el adicional.
+    expect(plan.totalVenta).toBe(30000);
+    expect(resultado).toMatchObject({ tipo: 'upgrade', montoCobrarBarra: 20000 });
+    expect(estado.updates[0].params[4]).toBe(20000);
+    expect(consumirProductoCortesiaBar).not.toHaveBeenCalled();
+  });
+
+  it('cobra el adicional aunque la bebida no supere el tope de cortesía', async () => {
+    estado.tope = 10000;
+    estado.precio = 8000;
+    const onVenta = vi.fn(async () => ({ ventaId: 'venta-1' }));
+
+    const resultado = await entregarEntrada({ ...entregaBase, montoAdicional: 5000 }, onVenta);
+
+    const [plan] = onVenta.mock.calls[0] as unknown as [{ totalVenta: number }];
+    expect(plan.totalVenta).toBe(15000);
+    expect(resultado).toMatchObject({ tipo: 'upgrade', montoCobrarBarra: 5000 });
+    expect(consumirProductoCortesiaBar).not.toHaveBeenCalled();
+  });
+
   it('rechaza el adicional si el adaptador no puede registrar la venta', async () => {
     estado.precio = 16000;
 
