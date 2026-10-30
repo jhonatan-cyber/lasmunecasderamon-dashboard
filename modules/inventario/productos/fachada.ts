@@ -1,4 +1,5 @@
 import { StockLimitsSchema, stockLimit } from '@/lib/business/stockLimits';
+import { resolverVencimiento } from '@/lib/business/vencimiento';
 import { ProductSchema, PresentacionSchema, type ProductType } from '@/lib/business/schemas';
 import {
   aceptarTransferencia,
@@ -87,7 +88,12 @@ function parsePresentaciones(input: unknown, fotos?: (string | null)[]): NewPres
     stock_minimo: p.stock_minimo,
     stock_maximo: p.stock_maximo,
     foto: fotos?.[i] ?? p.foto ?? null,
-    cantidad: p.cantidad ?? 0
+    cantidad: p.cantidad ?? 0,
+    // Sólo viajan si el usuario las informó: un alta sin fechas de lote deja
+    // el payload igual que antes de esta funcionalidad.
+    ...(p.fecha_elaboracion ? { fecha_elaboracion: p.fecha_elaboracion } : {}),
+    ...(p.duracion_meses ? { duracion_meses: p.duracion_meses } : {}),
+    ...(p.fecha_vencimiento ? { fecha_vencimiento: p.fecha_vencimiento } : {})
   }));
 }
 
@@ -239,7 +245,10 @@ export class ProductService {
       precio_compra,
       stock_minimo: parsed.data.stock_minimo,
       stock_maximo: parsed.data.stock_maximo,
-      foto
+      foto,
+      fecha_elaboracion: parsed.data.fecha_elaboracion ?? null,
+      duracion_meses: parsed.data.duracion_meses ?? null,
+      fecha_vencimiento: parsed.data.fecha_vencimiento ?? null
     });
   }
 
@@ -287,6 +296,33 @@ export class ProductService {
             .max(10000)
             .nullable()
             .optional()
+        ),
+        // Fechas del lote de esta presentación; '' las borra.
+        fecha_elaboracion: z.preprocess(
+          v => (v === undefined ? undefined : v === null || v === '' ? null : v),
+          z
+            .string()
+            .regex(/^\d{4}-\d{2}-\d{2}$/, 'Fecha de elaboración inválida')
+            .nullable()
+            .optional()
+        ),
+        duracion_meses: z.preprocess(
+          v => (v === undefined ? undefined : v === null || v === '' ? null : Number(v)),
+          z
+            .number()
+            .int('La duración debe ser un número de meses')
+            .min(1, 'La duración debe ser al menos 1 mes')
+            .max(1200, 'La duración no puede superar 1200 meses')
+            .nullable()
+            .optional()
+        ),
+        fecha_vencimiento: z.preprocess(
+          v => (v === undefined ? undefined : v === null || v === '' ? null : v),
+          z
+            .string()
+            .regex(/^\d{4}-\d{2}-\d{2}$/, 'Fecha de vencimiento inválida')
+            .nullable()
+            .optional()
         )
       })
       .safeParse(raw);
@@ -300,7 +336,10 @@ export class ProductService {
       precio_venta,
       comision,
       ml_botella,
-      opciones_venta
+      opciones_venta,
+      fecha_elaboracion,
+      duracion_meses,
+      fecha_vencimiento
     } = parsed.data;
     const rawObj = (typeof raw === 'object' && raw !== null ? raw : {}) as Record<string, unknown>;
     const has = (k: string) => rawObj[k] !== undefined;
@@ -313,7 +352,10 @@ export class ProductService {
       !has('opciones_venta') &&
       !has('ml_botella') &&
       !has('stock_minimo') &&
-      !has('stock_maximo')
+      !has('stock_maximo') &&
+      !has('fecha_elaboracion') &&
+      !has('duracion_meses') &&
+      !has('fecha_vencimiento')
     ) {
       throw new ValidationError('Nada que actualizar');
     }
@@ -332,6 +374,27 @@ export class ProductService {
           parsed.data.stock_maximo !== undefined ? parsed.data.stock_maximo : current?.stock_maximo
       });
     }
+    if (has('fecha_elaboracion') || has('duracion_meses') || has('fecha_vencimiento')) {
+      const current = await obtenerPresentacion(id);
+      const elaboracion = has('fecha_elaboracion')
+        ? fecha_elaboracion
+        : (current?.fecha_elaboracion ?? null);
+      // El vencimiento efectivo es el informado a mano o, si no, el calculado
+      // con elaboración + duración: se compara contra ese y no contra el que
+      // quedó guardado, que puede ser el de un lote anterior.
+      const vencimiento = resolverVencimiento({
+        fecha_elaboracion: elaboracion,
+        duracion_meses: has('duracion_meses') ? duracion_meses : (current?.duracion_meses ?? null),
+        fecha_vencimiento: has('fecha_vencimiento')
+          ? fecha_vencimiento
+          : (current?.fecha_vencimiento ?? null)
+      });
+      if (elaboracion && vencimiento && vencimiento < elaboracion) {
+        throw new ValidationError(
+          'La fecha de vencimiento no puede ser anterior a la de elaboración'
+        );
+      }
+    }
     await actualizarPresentacion(id, {
       ...(has('stock_minimo') ? { stock_minimo: parsed.data.stock_minimo } : {}),
       ...(has('stock_maximo') ? { stock_maximo: parsed.data.stock_maximo } : {}),
@@ -341,7 +404,10 @@ export class ProductService {
       ...(has('precio_compra') && precio_compra !== undefined ? { precio_compra } : {}),
       ...(has('precio_venta') && precio_venta !== undefined ? { precio_venta } : {}),
       ...(has('comision') && comision !== undefined ? { comision } : {}),
-      ...(has('ml_botella') ? { ml_botella: ml_botella ?? null } : {})
+      ...(has('ml_botella') ? { ml_botella: ml_botella ?? null } : {}),
+      ...(has('fecha_elaboracion') ? { fecha_elaboracion: fecha_elaboracion ?? null } : {}),
+      ...(has('duracion_meses') ? { duracion_meses: duracion_meses ?? null } : {}),
+      ...(has('fecha_vencimiento') ? { fecha_vencimiento: fecha_vencimiento ?? null } : {})
     });
   }
 

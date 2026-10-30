@@ -39,6 +39,13 @@ export interface PresentacionRow {
   stock: number;
   stock_bar?: number;
   /**
+   * Fechas del lote de esta presentación (`YYYY-MM-DD`): con elaboración +
+   * duración se calcula el vencimiento, y el vencimiento informado a mano manda.
+   */
+  fecha_elaboracion?: string | null;
+  duracion_meses?: number | null;
+  fecha_vencimiento?: string | null;
+  /**
    * Capacidad de la botella en ml (null = la que declara el nombre de la presentación y,
    * si tampoco dice un volumen, el default de Configuraciones).
    */

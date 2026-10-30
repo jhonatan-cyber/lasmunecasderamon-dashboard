@@ -247,6 +247,10 @@ export interface NuevaPresentacionInput {
   codigo_barras?: string | null;
   precio_compra?: number;
   foto?: string | null;
+  /** Fechas del lote de esta presentación (ISO `YYYY-MM-DD`; la duración en meses). */
+  fecha_elaboracion?: string | null;
+  duracion_meses?: number | null;
+  fecha_vencimiento?: string | null;
 }
 
 /** Campos editables de una presentación (los no enviados no se tocan). */
@@ -260,6 +264,9 @@ export interface PresentacionCamposInput {
   precio_venta?: number;
   comision?: number;
   ml_botella?: number | null;
+  fecha_elaboracion?: string | null;
+  duracion_meses?: number | null;
+  fecha_vencimiento?: string | null;
 }
 
 /** Generación de unidades (botellas) de una presentación. */
