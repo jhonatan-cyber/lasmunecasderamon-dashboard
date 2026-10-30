@@ -251,6 +251,8 @@ describe('entrega en la barra', () => {
       presentacionId: 'pres-1',
       acompanamientoPresentacionId: null,
       montoAdicional: null,
+      // La web sin `tipo_entrega` conserva la entrega por botella.
+      tipoEntrega: 'botella',
       usuarioId: 'user-1'
     });
     const [venta] = ventas.createSale.mock.calls[0];
