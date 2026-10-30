@@ -48,6 +48,8 @@ export interface TransferForm {
   setPrecioVenta: (value: string) => void;
   comision: string;
   setComision: (value: string) => void;
+  venderConAnfitriona: boolean;
+  setVenderConAnfitriona: (value: boolean) => void;
   tipos: SaleType[];
   setTipos: (value: SaleType[]) => void;
   precioShot: string;
@@ -100,6 +102,7 @@ export function useTransferForm({
   const [precioVenta, setPrecioVenta] = useState('');
   const [precioSinAnfitriona, setPrecioSinAnfitriona] = useState('');
   const [comision, setComision] = useState('');
+  const [venderConAnfitriona, setVenderConAnfitriona] = useState(true);
   const [tipos, setTipos] = useState<SaleType[]>(['botella']);
   const [precioShot, setPrecioShot] = useState('');
   const [precioShotAnfitriona, setPrecioShotAnfitriona] = useState('');
@@ -191,6 +194,11 @@ export function useTransferForm({
       );
       setPrecioVenta(bottlePrecio > 0 ? formatNumber(String(bottlePrecio)) : '');
       setComision(bottleComision ? formatNumber(String(bottleComision)) : '');
+      // Guardado con precio 0 significa que la bebida no se vende con anfitriona.
+      const botellaGuardada = parseSavedOptions(item.opciones_venta)?.find(
+        option => option.tipo === 'botella'
+      );
+      setVenderConAnfitriona(botellaGuardada ? Number(botellaGuardada.precio ?? 0) > 0 : true);
       setPrecioShot(shot && Number(shot.precio) > 0 ? formatNumber(String(shot.precio)) : '');
       setPrecioShotAnfitriona(
         preciosAnfitriona[0]?.precio != null
@@ -277,6 +285,7 @@ export function useTransferForm({
     setPrecioVenta('');
     setPrecioSinAnfitriona('');
     setComision('');
+    setVenderConAnfitriona(true);
     setPrecioShot('');
     setPrecioShotAnfitriona('');
     setComisionShot('');
@@ -330,6 +339,8 @@ export function useTransferForm({
     setPrecioVenta,
     comision,
     setComision,
+    venderConAnfitriona,
+    setVenderConAnfitriona,
     tipos,
     setTipos,
     precioShot,

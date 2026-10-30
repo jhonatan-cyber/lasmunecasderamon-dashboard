@@ -99,6 +99,8 @@ export function useTransferSubmit({
     } else {
       const pv = Number(form.precioVenta.replace(/\./g, ''));
       const com = form.comision.trim() === '' ? 0 : Number(form.comision.replace(/\./g, ''));
+      const pvBottle = form.venderConAnfitriona ? pv : 0;
+      const comBottle = form.venderConAnfitriona ? com : 0;
       const pvShot = Number(form.precioShot.replace(/\./g, ''));
       const pvShotAnfitriona =
         form.precioShotAnfitriona.trim() === ''
@@ -108,11 +110,11 @@ export function useTransferSubmit({
         if (tipo === 'botella')
           return {
             tipo,
-            precio: pv,
+            precio: pvBottle,
             ...(form.precioSinAnfitriona?.trim()
               ? { precio_sin_anfitriona: Number(form.precioSinAnfitriona.replace(/\./g, '')) }
               : {}),
-            comision: com,
+            comision: comBottle,
             colacion_habilitada: form.colacionHabilitada,
             cover_habilitado: form.coverHabilitado,
             ...(form.colacionHabilitada && mlColacion !== null ? { ml_colacion: mlColacion } : {}),

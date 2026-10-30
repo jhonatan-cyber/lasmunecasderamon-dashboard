@@ -25,7 +25,13 @@ import { cn } from '@/lib/utils/utils';
 
 type JsonRecord = Record<string, unknown>;
 
-type OpcionVenta = { tipo: string; acompanamiento?: { unidades: number } };
+type OpcionVenta = {
+  tipo: string;
+  precio?: number;
+  acompanamiento?: { unidades: number };
+};
+
+type Formato = 'corte' | 'botella';
 
 type Bebida = {
   presentacion_id: string;
@@ -33,6 +39,7 @@ type Bebida = {
   presentacion_nombre: string;
   precio_venta: number;
   stock_bar: number;
+  categoria_nombre: string | null;
   foto: string | null;
   opciones_venta: OpcionVenta[];
 };
@@ -83,6 +90,7 @@ function opcionesDeVenta(valor: unknown): OpcionVenta[] {
   if (!Array.isArray(valor)) return [];
   return valor.filter(esRegistro).map(opcion => ({
     tipo: texto(opcion.tipo),
+    precio: numero(opcion.precio),
     acompanamiento: esRegistro(opcion.acompanamiento)
       ? { unidades: numero(opcion.acompanamiento.unidades) }
       : undefined
@@ -99,6 +107,10 @@ function aBebida(valor: unknown): Bebida | null {
     presentacion_nombre: texto(valor.presentacion_nombre),
     precio_venta: numero(valor.precio_venta),
     stock_bar: numero(valor.stock_bar),
+    categoria_nombre:
+      typeof valor.categoria_nombre === 'string' && valor.categoria_nombre.trim()
+        ? valor.categoria_nombre
+        : null,
     foto: typeof valor.foto === 'string' && valor.foto ? valor.foto : null,
     opciones_venta: opcionesDeVenta(valor.opciones_venta)
   };
@@ -106,20 +118,62 @@ function aBebida(valor: unknown): Bebida | null {
 
 function aAcompanamiento(valor: unknown): Acompanamiento | null {
   if (!esRegistro(valor)) return null;
-  const id = texto(valor.id);
+  const id = texto(valor.presentacion_id) || texto(valor.id);
   if (!id) return null;
   return {
     id,
     producto_nombre: texto(valor.producto_nombre),
-    nombre: texto(valor.nombre),
+    nombre: texto(valor.presentacion_nombre) || texto(valor.nombre),
     stock_bar: numero(valor.stock_bar)
   };
+}
+
+const normalizar = (valor: string) =>
+  valor
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .toLowerCase()
+    .trim();
+
+/** Analcohólicas y cigarrillos no son cover de una entrada. */
+function categoriaFueraDeCortesia(categoria: string | null | undefined): boolean {
+  const normalizada = normalizar(categoria || '');
+  return normalizada.includes('analcohol') || normalizada.includes('cigarr');
 }
 
 function unidadesAcompanamiento(bebida: Bebida | null | undefined): number {
   const botella = bebida?.opciones_venta.find(opcion => opcion.tipo === 'botella');
   const unidades = Number(botella?.acompanamiento?.unidades ?? 0);
   return Number.isFinite(unidades) && unidades > 0 ? Math.floor(unidades) : 0;
+}
+
+/** Precio del corte (shot) para cliente; `null` si no se vende por corte. */
+function precioCorte(bebida: Bebida | null | undefined): number | null {
+  const shot = bebida?.opciones_venta.find(opcion => opcion.tipo === 'shot');
+  const precio = numero(shot?.precio);
+  return precio > 0 ? precio : null;
+}
+
+function precioFormato(bebida: Bebida, formato: Formato): number {
+  return formato === 'corte' ? (precioCorte(bebida) ?? 0) : bebida.precio_venta;
+}
+
+function unidadesAcompanamientoFormato(bebida: Bebida, formato: Formato): number {
+  return formato === 'corte' ? 1 : unidadesAcompanamiento(bebida);
+}
+
+/** Un corte cliente siempre lleva una unidad; la botella, si está configurada. */
+function llevaAcompanamiento(bebida: Bebida, formato: Formato): boolean {
+  return formato === 'corte' || unidadesAcompanamiento(bebida) > 0;
+}
+
+/**
+ * Formato sugerido al elegir la bebida: corte si su shot entra en el tope de la
+ * entrada; botella en caso contrario (ahí el adicional cubre la diferencia).
+ */
+function formatoInicial(bebida: Bebida, umbral: number): Formato {
+  const corte = precioCorte(bebida);
+  return corte !== null && corte <= umbral ? 'corte' : 'botella';
 }
 
 function previsionDeCobro(
@@ -138,6 +192,7 @@ function previsionDeCobro(
 
 export function EntregaEntradaDialog({ entrada, onClose, onEntregada }: Props) {
   const [presentacionId, setPresentacionId] = useState('');
+  const [formatoSeleccionado, setFormatoSeleccionado] = useState<Formato | null>(null);
   const [acompanamientoId, setAcompanamientoId] = useState('');
   const [productos, setProductos] = useState<Bebida[]>([]);
   const [productosLoading, setProductosLoading] = useState(false);
@@ -157,6 +212,7 @@ export function EntregaEntradaDialog({ entrada, onClose, onEntregada }: Props) {
   useEffect(() => {
     if (!dialogoAbierto) return;
     setPresentacionId('');
+    setFormatoSeleccionado(null);
     setAcompanamientoId('');
   }, [dialogoAbierto, entrada?.id]);
 
@@ -186,18 +242,27 @@ export function EntregaEntradaDialog({ entrada, onClose, onEntregada }: Props) {
     return () => controller.abort();
   }, [dialogoAbierto]);
 
+  const umbral = Math.max(topeCortesia, entrada?.monto_entrada ?? 0);
   const bebidaSeleccionada = useMemo(
     () => productos.find(bebida => bebida.presentacion_id === presentacionId),
     [productos, presentacionId]
   );
-  const unidadesRequeridas = unidadesAcompanamiento(bebidaSeleccionada);
-  const requiereAcompanamiento = unidadesRequeridas > 0;
-  const umbral = Math.max(topeCortesia, entrada?.monto_entrada ?? 0);
+  const unidadesRequeridas =
+    bebidaSeleccionada && formatoSeleccionado
+      ? unidadesAcompanamientoFormato(bebidaSeleccionada, formatoSeleccionado)
+      : 0;
+  const requiereAcompanamiento =
+    bebidaSeleccionada !== undefined &&
+    formatoSeleccionado !== null &&
+    llevaAcompanamiento(bebidaSeleccionada, formatoSeleccionado);
 
+  const precioSeleccionado =
+    bebidaSeleccionada && formatoSeleccionado
+      ? precioFormato(bebidaSeleccionada, formatoSeleccionado)
+      : 0;
   const previsionSeleccion = useMemo(
-    () =>
-      previsionDeCobro(bebidaSeleccionada?.precio_venta ?? 0, umbral, entrada?.monto_entrada ?? 0),
-    [bebidaSeleccionada, umbral, entrada?.monto_entrada]
+    () => previsionDeCobro(precioSeleccionado, umbral, entrada?.monto_entrada ?? 0),
+    [precioSeleccionado, umbral, entrada?.monto_entrada]
   );
   const montoAdicionalNumero = useMemo(() => {
     const limpio = montoAdicional.replace(/[^\d]/g, '');
@@ -220,7 +285,10 @@ export function EntregaEntradaDialog({ entrada, onClose, onEntregada }: Props) {
     const controller = new AbortController();
     setAcompanamientosLoading(true);
     setAcompanamientosError(null);
-    fetch('/api/bar?acompanamientos=1', { cache: 'no-store', signal: controller.signal })
+    fetch(urlProductosParaVenta({ solo_cover: true }), {
+      cache: 'no-store',
+      signal: controller.signal
+    })
       .then(async respuesta => {
         const json: unknown = await respuesta.json().catch(() => null);
         const lista = listaDe(json);
@@ -243,6 +311,47 @@ export function EntregaEntradaDialog({ entrada, onClose, onEntregada }: Props) {
     return () => controller.abort();
   }, [requiereAcompanamiento]);
 
+  const bebidasDisponibles = useMemo(
+    () => productos.filter(bebida => !categoriaFueraDeCortesia(bebida.categoria_nombre)),
+    [productos]
+  );
+
+  const opcionesAcompanamiento = useMemo(
+    () =>
+      acompanamientos.filter(
+        opcion =>
+          opcion.id !== bebidaSeleccionada?.presentacion_id &&
+          opcion.stock_bar >= unidadesRequeridas
+      ),
+    [acompanamientos, bebidaSeleccionada, unidadesRequeridas]
+  );
+
+  const faltaAcompanamiento = useMemo(() => {
+    if (
+      !bebidaSeleccionada ||
+      formatoSeleccionado === null ||
+      !llevaAcompanamiento(bebidaSeleccionada, formatoSeleccionado)
+    )
+      return false;
+    // El corte puede salir sin cover si el bar no tiene; la botella con
+    // acompañamiento configurado no: el servidor la exige.
+    if (opcionesAcompanamiento.length === 0) return formatoSeleccionado === 'botella';
+    return !opcionesAcompanamiento.some(opcion => opcion.id === acompanamientoId);
+  }, [bebidaSeleccionada, formatoSeleccionado, opcionesAcompanamiento, acompanamientoId]);
+
+  const seleccionarBebida = (bebida: Bebida) => {
+    setPresentacionId(bebida.presentacion_id);
+    setFormatoSeleccionado(formatoInicial(bebida, umbral));
+    setAcompanamientoId('');
+  };
+
+  const cambiarFormato = (formato: Formato) => {
+    if (!bebidaSeleccionada) return;
+    if (formato === 'corte' && precioCorte(bebidaSeleccionada) === null) return;
+    setFormatoSeleccionado(formato);
+    setAcompanamientoId('');
+  };
+
   const cerrar = useCallback(() => {
     if (entregando) return;
     onClose();
@@ -250,8 +359,9 @@ export function EntregaEntradaDialog({ entrada, onClose, onEntregada }: Props) {
 
   const entregar = useCallback(async () => {
     if (!entrada) return;
-    if (!bebidaSeleccionada) return toast.error('Selecciona la bebida que se entrega');
-    if (requiereAcompanamiento && !acompanamientoId)
+    if (!bebidaSeleccionada || !formatoSeleccionado)
+      return toast.error('Selecciona la bebida que se entrega');
+    if (faltaAcompanamiento)
       return toast.error('Selecciona el acompañamiento incluido en esta bebida');
     setEntregando(true);
     try {
@@ -260,7 +370,9 @@ export function EntregaEntradaDialog({ entrada, onClose, onEntregada }: Props) {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           presentacion_id: bebidaSeleccionada.presentacion_id,
-          acompanamiento_presentacion_id: requiereAcompanamiento ? acompanamientoId : null,
+          tipo_entrega: formatoSeleccionado,
+          acompanamiento_presentacion_id:
+            requiereAcompanamiento && acompanamientoId ? acompanamientoId : null,
           monto_adicional: montoAdicionalNumero
         })
       });
@@ -285,6 +397,8 @@ export function EntregaEntradaDialog({ entrada, onClose, onEntregada }: Props) {
     acompanamientoId,
     bebidaSeleccionada,
     entrada,
+    faltaAcompanamiento,
+    formatoSeleccionado,
     montoAdicionalNumero,
     onClose,
     onEntregada,
@@ -318,9 +432,9 @@ export function EntregaEntradaDialog({ entrada, onClose, onEntregada }: Props) {
           <p className='rounded-xl border border-dashed p-4 text-sm text-destructive'>
             {productosError}
           </p>
-        ) : productos.length === 0 ? (
+        ) : bebidasDisponibles.length === 0 ? (
           <p className='rounded-xl border border-dashed p-4 text-sm text-muted-foreground'>
-            No hay bebidas con stock en el bar.
+            No hay bebidas disponibles en el bar.
           </p>
         ) : (
           <div
@@ -328,14 +442,15 @@ export function EntregaEntradaDialog({ entrada, onClose, onEntregada }: Props) {
             aria-label='Bebidas del bar'
             className='grid grid-cols-2 gap-3 sm:grid-cols-3'
           >
-            {productos.map(bebida => {
+            {bebidasDisponibles.map(bebida => {
               const seleccionada = bebida.presentacion_id === presentacionId;
               const sinStock = bebida.stock_bar <= 0;
-              const prevision = previsionDeCobro(
-                bebida.precio_venta,
-                umbral,
-                entrada?.monto_entrada ?? 0
-              );
+              const formato =
+                seleccionada && formatoSeleccionado
+                  ? formatoSeleccionado
+                  : formatoInicial(bebida, umbral);
+              const precio = precioFormato(bebida, formato);
+              const prevision = previsionDeCobro(precio, umbral, entrada?.monto_entrada ?? 0);
               const nombreBebida = `${bebida.producto_nombre} ${bebida.presentacion_nombre}`.trim();
               return (
                 <Button
@@ -344,10 +459,7 @@ export function EntregaEntradaDialog({ entrada, onClose, onEntregada }: Props) {
                   variant='unstyled'
                   disabled={sinStock}
                   aria-pressed={seleccionada}
-                  onClick={() => {
-                    setPresentacionId(bebida.presentacion_id);
-                    setAcompanamientoId('');
-                  }}
+                  onClick={() => seleccionarBebida(bebida)}
                   className={cn(
                     'flex min-w-0 flex-col overflow-hidden rounded-2xl border bg-background text-left font-normal whitespace-normal transition disabled:cursor-not-allowed disabled:opacity-40',
                     'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2',
@@ -383,7 +495,10 @@ export function EntregaEntradaDialog({ entrada, onClose, onEntregada }: Props) {
                       {bebida.presentacion_nombre}
                     </span>
                     <span className='text-sm font-medium tabular-nums text-primary'>
-                      {formatCurrencyCLP(bebida.precio_venta)}
+                      {formatCurrencyCLP(precio)}
+                    </span>
+                    <span className='text-[11px] text-muted-foreground'>
+                      {formato === 'corte' ? 'Corte' : 'Botella'}
                     </span>
                     <span className='mt-auto flex flex-wrap items-center gap-1.5 pt-1'>
                       <span className='text-[11px] text-muted-foreground'>
@@ -407,38 +522,81 @@ export function EntregaEntradaDialog({ entrada, onClose, onEntregada }: Props) {
         )}
 
         <p className='text-xs text-muted-foreground'>
-          El precio ya está configurado en el catálogo. Al confirmar, el servidor registra la bebida
-          como cortesía o cobra el adicional en la barra.
+          Elige corte o botella. El servidor valida el precio, el cover y el stock; si hay
+          adicional, registra la venta en la barra.
         </p>
+
+        {bebidaSeleccionada && precioCorte(bebidaSeleccionada) !== null ? (
+          <div className='space-y-2'>
+            <Label>Servir como</Label>
+            <div className='flex flex-wrap gap-2'>
+              <Button
+                type='button'
+                size='sm'
+                className='rounded-full'
+                variant={formatoSeleccionado === 'corte' ? 'default' : 'outline'}
+                onClick={() => cambiarFormato('corte')}
+              >
+                Corte · {formatCurrencyCLP(precioFormato(bebidaSeleccionada, 'corte'))}
+              </Button>
+              <Button
+                type='button'
+                size='sm'
+                className='rounded-full'
+                variant={formatoSeleccionado === 'botella' ? 'default' : 'outline'}
+                onClick={() => cambiarFormato('botella')}
+              >
+                Botella · {formatCurrencyCLP(bebidaSeleccionada.precio_venta)}
+              </Button>
+            </div>
+            <p className='text-xs text-muted-foreground'>
+              El corte lleva una unidad de cover; la botella cobra la diferencia si supera la
+              entrada.
+            </p>
+          </div>
+        ) : null}
 
         {requiereAcompanamiento && bebidaSeleccionada ? (
           <div className='space-y-2'>
-            <Label htmlFor='entrega-entrada-acompanamiento'>Acompañamiento</Label>
-            <SearchableSelect
-              id='entrega-entrada-acompanamiento'
-              value={acompanamientoId}
-              onChange={setAcompanamientoId}
-              placeholder={
-                acompanamientosLoading ? 'Cargando acompañamientos…' : 'Seleccionar acompañamiento'
-              }
-              searchPlaceholder='Buscar bebida…'
-              options={[
-                { value: '', label: 'Seleccionar acompañamiento' },
-                ...acompanamientos
-                  .filter(
-                    bebida =>
-                      bebida.id !== bebidaSeleccionada.presentacion_id &&
-                      bebida.stock_bar >= unidadesRequeridas
-                  )
-                  .map(bebida => ({
+            <Label htmlFor='entrega-entrada-acompanamiento'>
+              {formatoSeleccionado === 'corte'
+                ? 'Acompañamiento del corte'
+                : 'Acompañamiento incluido'}
+            </Label>
+            {acompanamientosLoading ? (
+              <p className='flex items-center gap-2 rounded-xl border border-dashed p-3 text-sm text-muted-foreground'>
+                <LoaderCircle className='size-4 animate-spin' /> Cargando bebidas cover…
+              </p>
+            ) : opcionesAcompanamiento.length === 0 ? (
+              <p className='rounded-xl border border-dashed p-3 text-sm text-muted-foreground'>
+                No hay bebidas cover habilitadas con stock en el bar.
+                {formatoSeleccionado === 'botella'
+                  ? ' Esta botella exige acompañamiento para entregarse.'
+                  : ''}
+              </p>
+            ) : (
+              <SearchableSelect
+                id='entrega-entrada-acompanamiento'
+                value={acompanamientoId}
+                onChange={setAcompanamientoId}
+                placeholder='Seleccionar acompañamiento'
+                searchPlaceholder='Buscar bebida…'
+                options={[
+                  { value: '', label: 'Seleccionar acompañamiento' },
+                  ...opcionesAcompanamiento.map(bebida => ({
                     value: bebida.id,
                     label: `${bebida.producto_nombre} · ${bebida.nombre} · ${bebida.stock_bar} en bar`,
                     keywords: [bebida.producto_nombre, bebida.nombre]
                   }))
-              ]}
-            />
+                ]}
+              />
+            )}
             <p className='text-xs text-muted-foreground'>
-              Incluye {unidadesRequeridas} bebida{unidadesRequeridas === 1 ? '' : 's'} por botella.
+              {formatoSeleccionado === 'corte'
+                ? 'Incluye 1 bebida analcohólica habilitada para cover por corte.'
+                : `Incluye ${unidadesRequeridas} bebida${
+                    unidadesRequeridas === 1 ? '' : 's'
+                  } por botella.`}
             </p>
             {acompanamientosError ? (
               <p className='text-xs text-destructive' role='alert'>
@@ -463,9 +621,7 @@ export function EntregaEntradaDialog({ entrada, onClose, onEntregada }: Props) {
             {bebidaSeleccionada
               ? `Sugerido ${formatCurrencyCLP(
                   previsionSeleccion.montoAdicional
-                )} (precio ${formatCurrencyCLP(
-                  bebidaSeleccionada.precio_venta
-                )} − entrada ${formatCurrencyCLP(
+                )} (precio ${formatCurrencyCLP(precioSeleccionado)} − entrada ${formatCurrencyCLP(
                   entrada?.monto_entrada ?? 0
                 )}). Súbelo si el cliente agrega plata para otra bebida.`
               : 'Elige una bebida para calcular el monto sugerido.'}
@@ -494,7 +650,8 @@ export function EntregaEntradaDialog({ entrada, onClose, onEntregada }: Props) {
               entregando ||
               productosLoading ||
               !bebidaSeleccionada ||
-              (requiereAcompanamiento && !acompanamientoId)
+              !formatoSeleccionado ||
+              faltaAcompanamiento
             }
             onClick={() => void entregar()}
           >

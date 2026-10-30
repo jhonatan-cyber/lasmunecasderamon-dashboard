@@ -29,8 +29,6 @@ import {
 import { Checkbox } from '@/components/ui/checkbox';
 import { Label } from '@/components/ui/label';
 
-// API pública intacta: los consumidores (bar/page, transfers/page, SalePrices,
-// BarAnfitrionas y el test) siguen importando desde aquí.
 export {
   esChampagne,
   formatMiles,
@@ -39,12 +37,6 @@ export {
 } from '@/components/bar/transfer/transferOptions';
 export type { BarStockItem, TransferModalProps } from '@/components/bar/transfer/transferOptions';
 
-/**
- * Modal de traspaso al bar. Antes monolítico (802 líneas); ahora compone:
- *  - `useTransferForm`    → estado, valores derivados y ciclo de apertura
- *  - `useTransferSubmit`  → validación y envío (ml por shot, champagne, POST)
- *  - subcomponentes presentacionales en `components/bar/transfer/`
- */
 export function TransferModal({
   open,
   onOpenChange,
@@ -61,7 +53,6 @@ export function TransferModal({
     onDone
   });
 
-  // El modal no se cierra ni resetea mientras hay un traspaso en vuelo.
   const handleOpenChange = (value: boolean) => {
     if (isSubmitting()) return;
     if (!value) form.reset();
@@ -71,22 +62,21 @@ export function TransferModal({
   const handleTierChange = (index: number, field: 'precio' | 'comision', value: string) =>
     form.setTiers(prev => prev.map((row, i) => (i === index ? { ...row, [field]: value } : row)));
 
-  // Cigarrillos comparten el modo simple (sin anfitrionas ni cortos), pero sin
-  // colación ni cover y con textos «de cigarrillo».
   const esAnalcoholica = esBebidaAnalcoholica(item?.categoria_nombre);
   const esCig = esCigarrillos(item?.categoria_nombre);
-  const esVentaSimple = esAnalcoholica || esCig; // Solo las bebidas con anfitriona pueden incluir acompañamiento en la colación.
+  const esVentaSimple = esAnalcoholica || esCig;
   const mostrarMlAcompanamiento = !esVentaSimple;
-  // La colación se guarda en la opción botella: sin ella no hay dónde persistirla.
   const guardarBotella = form.usarConfigGuardada
     ? form.opcionesGuardadas.some(option => option.tipo === 'botella')
     : form.tipos.includes('botella');
-  // Resumen del traspaso para el pie: unidades y valor por la vía botella.
+
   const unidades = Number(form.cantidad.replace(/\./g, '')) || 0;
   const precioBotella = form.usarConfigGuardada
     ? Number(form.opcionesGuardadas.find(option => option.tipo === 'botella')?.precio ?? 0)
-    : Number(form.precioVenta.replace(/\./g, '')) || 0;
-  // Inventarios resultantes si se confirma el traspaso.
+    : form.venderConAnfitriona
+      ? Number(form.precioVenta.replace(/\./g, '')) || 0
+      : 0;
+
   const stockBodegaFinal = Math.max(form.disponible - unidades, 0);
   const stockBarFinal = (item?.stock_bar ?? 0) + unidades;
   const ajustarCantidad = (delta: number) => {
@@ -140,7 +130,6 @@ export function TransferModal({
                         required
                         value={form.cantidad}
                         onChange={e => {
-                          // Sin pasarse del stock disponible en bodega (en vuelo).
                           const raw = formatNumber(e.target.value);
                           if (raw !== '' && Number(raw.replace(/\./g, '')) > form.disponible) {
                             form.setCantidad(
@@ -251,6 +240,8 @@ export function TransferModal({
                       mostrarBebidasIncluidas={!esVentaSimple}
                       mostrarAnfitrionas={!esVentaSimple}
                       mostrarCortos={!esVentaSimple}
+                      venderConAnfitriona={form.venderConAnfitriona}
+                      onVenderConAnfitrionaChange={form.setVenderConAnfitriona}
                       mlAcompanamientoAnfitriona={form.mlAcompanamientoAnfitriona}
                       onMlAcompanamientoAnfitrionaChange={form.setMlAcompanamientoAnfitriona}
 

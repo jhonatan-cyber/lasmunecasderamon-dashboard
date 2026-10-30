@@ -55,6 +55,14 @@ function opcionesDe(raiz: HTMLElement): string[] {
     .sort();
 }
 
+/**
+ * Controles exclusivos de la transferencia. El check «Vender con anfitriona»
+ * decide si la bebida se ofrece con anfitriona al mover stock; en la ficha de
+ * Configuración esa decisión se expresa dejando el precio en 0, por lo que no
+ * se replica allí.
+ */
+const SOLO_TRANSFERENCIA = ['Vender con anfitriona'];
+
 /** Rótulos del selector «Tipo de venta» tal como los lee el usuario. */
 function tiposDeVenta(raiz: HTMLElement): string[] {
   const grupo = raiz.querySelector('[aria-label="Tipos de venta"]');
@@ -144,7 +152,9 @@ function comparar(escenario: Escenario): { campos: string[]; tipos: string[] } {
     .getByRole('heading', { name: 'Configuración de venta' })
     .closest('section');
   if (!seccion) throw new Error('El modal no tiene la sección Configuración de venta');
-  const enTransferencia = opcionesDe(seccion as HTMLElement);
+  const enTransferencia = opcionesDe(seccion as HTMLElement).filter(
+    campo => !SOLO_TRANSFERENCIA.includes(campo)
+  );
   const tiposTransferencia = tiposDeVenta(seccion as HTMLElement);
 
   expect({

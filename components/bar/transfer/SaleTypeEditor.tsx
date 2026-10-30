@@ -36,6 +36,8 @@ export const SaleTypeEditor = memo(function SaleTypeEditor({
   mostrarBebidasIncluidas = true,
   mostrarAnfitrionas = true,
   mostrarCortos = true,
+  venderConAnfitriona = true,
+  onVenderConAnfitrionaChange,
   esCigarrillos = false,
   unidadesAcompanamiento,
   onAcompanamientoBotellaChange,
@@ -73,16 +75,13 @@ export const SaleTypeEditor = memo(function SaleTypeEditor({
   onMaxAnfitrionasChange?: (value: string) => void;
   colacionHabilitada?: boolean;
   onColacionHabilitadaChange?: (value: boolean) => void;
-  /** Solo settings: cover por botella para entradas de clientes (analgólicas). */
   coverHabilitado?: boolean;
   onCoverHabilitadoChange?: (value: boolean) => void;
-  /** Bebidas analcohólicas por botella: oculto si el producto ya es analcohólico. */
   mostrarBebidasIncluidas?: boolean;
-  /** Anfitrionas/comisión: oculto si el producto es analcohólico. */
   mostrarAnfitrionas?: boolean;
-  /** Venta por cortos: oculta si el producto es analcohólico. */
   mostrarCortos?: boolean;
-  /** La presentación se vende como cigarrillo (textos «de botella» → «de cigarrillo»). */
+  venderConAnfitriona?: boolean;
+  onVenderConAnfitrionaChange?: (value: boolean) => void;
   esCigarrillos?: boolean;
   acompanamientoBotella: 'ninguno' | 'gaseosa' | 'soda';
   unidadesAcompanamiento: string;
@@ -189,70 +188,92 @@ export const SaleTypeEditor = memo(function SaleTypeEditor({
                 {mostrarAnfitrionas ? (
                   <div className='grid grid-cols-1 gap-4 sm:grid-cols-2'>
                     <section aria-label='Botella con anfitriona' className={optionPanelClass}>
-                      <div>
+                      <div className='flex items-center gap-2'>
                         <h3 className={optionPanelHeadingClass}>Con anfitriona</h3>
-                      </div>
-                      <div className='space-y-2'>
-                        <Label htmlFor='price-botella' className='text-sm font-medium'>
-                          Precio de botella con anfitriona
-                        </Label>
-                        <Input
-                          currency
-                          id='price-botella'
-                          required
-                          value={precioVenta}
-                          onChange={event => onPrecioVentaChange(formatNumber(event.target.value))}
-                          disabled={saving}
-                          placeholder='0'
-                          className='h-12 text-lg font-semibold tabular-nums'
-                        />
-                      </div>
-                      <div className='space-y-2'>
-                        <Label htmlFor='commission-botella' className='text-sm font-medium'>
-                          Comisión
-                        </Label>
-                        <Input
-                          currency
-                          id='commission-botella'
-                          required={
-                            context === 'settings' && Number(precioVenta.replace(/\./g, '')) > 0
-                          }
-                          value={comision}
-                          onChange={event => onComisionChange(formatNumber(event.target.value))}
-                          disabled={saving}
-                          placeholder='Sin comisión'
-                          className='h-12 tabular-nums'
-                        />
-                      </div>
-                      {onMaxAnfitrionasChange &&
-                        (context === 'settings' || Number(comision.replace(/\./g, '')) > 0) && (
-                          <div className='space-y-2'>
-                            <Label htmlFor='bottle-hostess-limit' className='text-sm font-medium'>
-                              Máximo de anfitrionas
-                            </Label>
-                            <PlainInput
-                              id='bottle-hostess-limit'
-                              type='number'
-                              min={1}
-                              max={20}
-                              step={1}
-                              value={maxAnfitrionas ?? ''}
-                              onChange={event => onMaxAnfitrionasChange(event.target.value)}
-                              disabled={saving}
-                              placeholder={context === 'settings' ? 'Default' : '1'}
-                              className='h-12'
-                            />
-                          </div>
-                        )}
-                      {context === 'transfer' &&
-                        Number(comision.replace(/\./g, '')) > 0 &&
-                        Number(maxAnfitrionas || 1) >= 2 && (
-                          <ChampagneTiersEditor
-                            tiers={tiers}
-                            saving={saving}
-                            onTierChange={onTierChange}
+                        {onVenderConAnfitrionaChange && (
+                          <Checkbox
+                            checked={venderConAnfitriona}
+                            onCheckedChange={checked =>
+                              onVenderConAnfitrionaChange(checked === true)
+                            }
+                            disabled={saving}
+                            aria-label='Vender con anfitriona'
                           />
                         )}
+                      </div>
+                      {venderConAnfitriona ? (
+                        <>
+                          <div className='space-y-2'>
+                            <Label htmlFor='price-botella' className='text-sm font-medium'>
+                              Precio de botella con anfitriona
+                            </Label>
+                            <Input
+                              currency
+                              id='price-botella'
+                              value={precioVenta}
+                              onChange={event =>
+                                onPrecioVentaChange(formatNumber(event.target.value))
+                              }
+                              disabled={saving}
+                              placeholder='0'
+                              className='h-12 text-lg font-semibold tabular-nums'
+                            />
+                          </div>
+                          <div className='space-y-2'>
+                            <Label htmlFor='commission-botella' className='text-sm font-medium'>
+                              Comisión
+                            </Label>
+                            <Input
+                              currency
+                              id='commission-botella'
+                              required={
+                                context === 'settings' && Number(precioVenta.replace(/\./g, '')) > 0
+                              }
+                              value={comision}
+                              onChange={event => onComisionChange(formatNumber(event.target.value))}
+                              disabled={saving}
+                              placeholder='Sin comisión'
+                              className='h-12 tabular-nums'
+                            />
+                          </div>
+                          {onMaxAnfitrionasChange &&
+                            (context === 'settings' || Number(comision.replace(/\./g, '')) > 0) && (
+                              <div className='space-y-2'>
+                                <Label
+                                  htmlFor='bottle-hostess-limit'
+                                  className='text-sm font-medium'
+                                >
+                                  Máximo de anfitrionas
+                                </Label>
+                                <PlainInput
+                                  id='bottle-hostess-limit'
+                                  type='number'
+                                  min={1}
+                                  max={20}
+                                  step={1}
+                                  value={maxAnfitrionas ?? ''}
+                                  onChange={event => onMaxAnfitrionasChange(event.target.value)}
+                                  disabled={saving}
+                                  placeholder={context === 'settings' ? 'Default' : '1'}
+                                  className='h-12'
+                                />
+                              </div>
+                            )}
+                          {context === 'transfer' &&
+                            Number(comision.replace(/\./g, '')) > 0 &&
+                            Number(maxAnfitrionas || 1) >= 2 && (
+                              <ChampagneTiersEditor
+                                tiers={tiers}
+                                saving={saving}
+                                onTierChange={onTierChange}
+                              />
+                            )}
+                        </>
+                      ) : (
+                        <p className='text-xs text-muted-foreground'>
+                          Esta bebida no se ofrece con anfitriona.
+                        </p>
+                      )}
                     </section>
                     <section aria-label='Botella sin anfitriona' className={optionPanelClass}>
                       <div>

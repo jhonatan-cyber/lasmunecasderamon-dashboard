@@ -909,3 +909,214 @@ it('no admite acompañamiento en una bebida que no lo tiene configurado', async 
     await restoreDatabase(snapshot, 'test-only');
   }
 });
+
+it('entrega 3 entradas de una compra con productos y cover distintos, y verifica stock y venta', async () => {
+  const snapshot = await snapshotDatabase();
+  try {
+    const cajaId = await cajaAbierta();
+    const usuarioId = await primerUsuarioActivo();
+    await fijarConfiguracion('costo_entrada', 10000);
+    await fijarConfiguracion('monto_base_trago_cortesia_cliente', 10000);
+
+    // Tres productos distintos con su cover. La tercera bebida supera el tope
+    // para que la entrega genere una venta real con adicional.
+    const bebidas = [
+      await crearBebidaConAcompanamiento('Cortesía de tres A', 8000, 1),
+      await crearBebidaConAcompanamiento('Cortesía de tres B', 9000, 1),
+      await crearBebidaConAcompanamiento('Venta de tres C', 25000, 1)
+    ];
+    const covers = [
+      await crearAcompanamiento('Cover de tres A', 1),
+      await crearAcompanamiento('Cover de tres B', 1),
+      await crearAcompanamiento('Cover de tres C', 1)
+    ];
+    const presentaciones = [
+      ...bebidas.map(bebida => bebida.presentacionId),
+      ...covers.map(cover => cover.presentacionId)
+    ];
+
+    const compra = await registrarEntrada({
+      clienteNombre: 'Compra de tres entradas',
+      cantidadEntradas: 3,
+      metodoPago: 'efectivo',
+      fecha: FECHA,
+      hora: HORA,
+      registradoPor: usuarioId
+    });
+    expect(compra.ids).toHaveLength(3);
+    expect(compra.monto_total).toBe(30000);
+
+    const stockInicial = await query<{ presentacion_id: string; estado: string }[]>(
+      'SELECT presentacion_id, estado FROM inventario_unidades WHERE presentacion_id IN (?)',
+      [presentaciones]
+    );
+    expect(stockInicial).toHaveLength(6);
+    for (const unidad of stockInicial) expect(unidad.estado).toBe(ESTADO_UNIDAD_ACTIVA);
+
+    const saldosAntes = await saldosCaja(cajaId);
+
+    const primera = await entregarEntrada({
+      entradaId: compra.ids[0],
+      presentacionId: bebidas[0].presentacionId,
+      acompanamientoPresentacionId: covers[0].presentacionId,
+      usuarioId
+    });
+    const segunda = await entregarEntrada({
+      entradaId: compra.ids[1],
+      presentacionId: bebidas[1].presentacionId,
+      acompanamientoPresentacionId: covers[1].presentacionId,
+      usuarioId
+    });
+    const tercera = await entregarEntrada(
+      {
+        entradaId: compra.ids[2],
+        presentacionId: bebidas[2].presentacionId,
+        acompanamientoPresentacionId: covers[2].presentacionId,
+        usuarioId
+      },
+      // Mismo adaptador que `app/api/tickets/[id]/entregar/route.ts`.
+      async (plan, contexto, asignarTarea) => {
+        const venta = await SaleService.createSale(
+          {
+            total: plan.totalVenta,
+            sub_total: plan.totalVenta,
+            total_comision: 0,
+            metodo_pago: plan.metodoPago,
+            propina: 0,
+            tiempo: 0,
+            usuarios: [],
+            detalles: plan.detalles as never
+          },
+          plan.usuarioId,
+          { contexto, entradaId: plan.entradaId, onAfterCommit: asignarTarea }
+        );
+        const ventaId = venta?.id ?? venta?.id_venta ?? null;
+        return { ventaId: ventaId ? String(ventaId) : null };
+      }
+    );
+
+    expect(primera).toMatchObject({ tipo: 'cortesia', montoCobrarBarra: 0, ventaId: null });
+    expect(segunda).toMatchObject({ tipo: 'cortesia', montoCobrarBarra: 0, ventaId: null });
+    expect(tercera).toMatchObject({
+      tipo: 'upgrade',
+      precio: 25000,
+      montoEntrada: 10000,
+      montoCobrarBarra: 15000
+    });
+    expect(tercera.ventaId).toBeTruthy();
+
+    // Cada entrada quedó con su producto, su cover y el importe del adicional.
+    const filas = await query<
+      {
+        id: string;
+        cortesia_estado: string;
+        cover_presentacion_id: string | null;
+        bebida_acompanamiento_presentacion_id: string | null;
+        monto_bebida_adicional: number;
+        venta_id: string | null;
+      }[]
+    >(
+      `SELECT e.id, e.cortesia_estado, e.cover_presentacion_id,
+              e.bebida_acompanamiento_presentacion_id, e.monto_bebida_adicional,
+              v.id_venta AS venta_id
+         FROM entradas_clientes e
+         LEFT JOIN ventas v ON v.entrada_id = e.id
+        WHERE e.grupo_registro_id = ?`,
+      [compra.grupo_registro_id]
+    );
+    expect(filas).toHaveLength(3);
+    const porEntrada = new Map(filas.map(fila => [fila.id, fila]));
+    for (let indice = 0; indice < compra.ids.length; indice += 1) {
+      const fila = porEntrada.get(compra.ids[indice]);
+      expect(fila).toBeTruthy();
+      expect(fila).toMatchObject({
+        cortesia_estado: 'entregada',
+        cover_presentacion_id: bebidas[indice].presentacionId,
+        bebida_acompanamiento_presentacion_id: covers[indice].presentacionId
+      });
+      expect(Number(fila?.monto_bebida_adicional)).toBe(indice === 2 ? 15000 : 0);
+    }
+    expect(porEntrada.get(compra.ids[0])?.venta_id).toBeNull();
+    expect(porEntrada.get(compra.ids[1])?.venta_id).toBeNull();
+    expect(porEntrada.get(compra.ids[2])?.venta_id).toBe(tercera.ventaId);
+
+    // Salieron del bar los 3 productos y los 3 covers.
+    const stockFinal = await query<{ presentacion_id: string; estado: string }[]>(
+      'SELECT presentacion_id, estado FROM inventario_unidades WHERE presentacion_id IN (?)',
+      [presentaciones]
+    );
+    expect(stockFinal).toHaveLength(6);
+    for (const unidad of stockFinal) expect(unidad.estado).toBe(ESTADO_UNIDAD_VENDIDA);
+
+    // Dos cortesías (producto + cover) y una venta (producto + cover).
+    const movimientos = await query<{ tipo: string; presentacion_id: string }[]>(
+      'SELECT tipo, presentacion_id FROM inventario_movimientos WHERE presentacion_id IN (?)',
+      [presentaciones]
+    );
+    expect(movimientos).toHaveLength(6);
+    expect(movimientos.filter(movimiento => movimiento.tipo === 'cortesia')).toHaveLength(4);
+    expect(movimientos.filter(movimiento => movimiento.tipo === 'venta')).toHaveLength(2);
+
+    // La venta del adicional queda facturada por el precio de lista completo.
+    const [venta] = await query<
+      {
+        id_venta: string;
+        total: number;
+        entrada_id: string;
+        metodo_pago: string;
+        caja_id: string;
+        origen: string;
+      }[]
+    >(
+      'SELECT id_venta, total, entrada_id, metodo_pago, caja_id, origen FROM ventas WHERE id_venta = ?',
+      [tercera.ventaId]
+    );
+    expect(venta).toBeTruthy();
+    expect(Number(venta.total)).toBe(25000);
+    expect(venta.entrada_id).toBe(compra.ids[2]);
+    expect(venta.metodo_pago).toBe('efectivo');
+    expect(venta.caja_id).toBe(cajaId);
+    expect(venta.origen).toBe('entrada');
+
+    const detallesVenta = await query<
+      {
+        presentacion_id: string;
+        precio: number;
+        cantidad: number;
+        sub_total: number;
+        acompanamiento: unknown;
+      }[]
+    >(
+      'SELECT presentacion_id, precio, cantidad, sub_total, acompanamiento FROM detalle_ventas WHERE venta_id = ?',
+      [tercera.ventaId]
+    );
+    expect(detallesVenta).toHaveLength(1);
+    expect(detallesVenta[0].presentacion_id).toBe(bebidas[2].presentacionId);
+    expect(Number(detallesVenta[0].precio)).toBe(25000);
+    expect(Number(detallesVenta[0].cantidad)).toBe(1);
+    expect(Number(detallesVenta[0].sub_total)).toBe(25000);
+    // JSONB vuelve como objeto; el driver solo lo entrega como texto si cambia.
+    const acompanamientoVenta =
+      typeof detallesVenta[0].acompanamiento === 'string'
+        ? JSON.parse(detallesVenta[0].acompanamiento)
+        : detallesVenta[0].acompanamiento;
+    expect(acompanamientoVenta).toMatchObject({
+      presentacion_id: covers[2].presentacionId,
+      unidades: 1
+    });
+
+    // Dos cortesías postean la entrada (20.000) y la venta el precio completo
+    // (25.000): la caja sube 45.000 y la columna de ventas 25.000.
+    const saldosDespues = await saldosCaja(cajaId);
+    expect(saldosDespues.efectivo - saldosAntes.efectivo).toBe(45000);
+    expect(saldosDespues.venta - saldosAntes.venta).toBe(25000);
+    expect(saldosDespues.tarjeta).toBe(saldosAntes.tarjeta);
+    expect(saldosDespues.transferencia).toBe(saldosAntes.transferencia);
+
+    // Las tres entradas salieron de la cola de la barra.
+    const pendientes = await listarPendientes(FECHA);
+    expect(pendientes.some(pendiente => compra.ids.includes(pendiente.id))).toBe(false);
+  } finally {
+    await restoreDatabase(snapshot, 'test-only');
+  }
+});

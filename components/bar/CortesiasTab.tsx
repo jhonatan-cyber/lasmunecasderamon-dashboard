@@ -1,21 +1,9 @@
 'use client';
 
-import { useCallback, useEffect, useMemo, useState } from 'react';
-import { Check, LoaderCircle, RefreshCw, Ticket } from 'lucide-react';
-import { toast } from 'sonner';
+import { Fragment, useCallback, useEffect, useMemo, useState } from 'react';
+import { ChevronDown, ChevronRight, LoaderCircle, RefreshCw, Ticket } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { Label } from '@/components/ui/label';
-import { ProductPhoto } from '@/components/shared/ProductPhoto';
-import { SearchableSelect } from '@/components/shared/SearchableSelect';
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle
-} from '@/components/ui/dialog';
 import {
   Table,
   TableBody,
@@ -24,13 +12,12 @@ import {
   TableHeader,
   TableRow
 } from '@/components/ui/table';
-import { urlProductosParaVenta } from '@/lib/constants/api-endpoints';
+import { EntregaCortesiasDialog } from '@/components/bar/EntregaCortesiasDialog';
 import { useUserPermissions } from '@/hooks/auth/useUserPermissions';
 import { useRealtimeRefresh } from '@/hooks/realtime/useRealtimeRefresh';
 import { useConfigValue } from '@/hooks/shared/useConfigValue';
 import { formatCurrencyCLP } from '@/lib/utils/formatters';
 import { fechaDeNegocio } from '@/lib/business/timezoneService';
-import { productImageUrl } from '@/lib/utils/productImage';
 import { cn } from '@/lib/utils/utils';
 
 type JsonRecord = Record<string, unknown>;
@@ -48,25 +35,17 @@ type EntradaPendiente = {
   registrado_por_nombre: string;
 };
 
-type OpcionVenta = { tipo: string; acompanamiento?: { unidades: number } };
-
-type Bebida = {
-  presentacion_id: string;
-  producto_id: string;
-  producto_nombre: string;
-  presentacion_nombre: string;
-  precio_venta: number;
-  stock_bar: number;
-  categoria_nombre: string | null;
-  foto: string | null;
-  opciones_venta: OpcionVenta[];
-};
-
-type Acompanamiento = {
+/** Compra con al menos una cortesía pendiente: la barra la atiende completa. */
+type GrupoPendiente = {
   id: string;
-  producto_nombre: string;
-  nombre: string;
-  stock_bar: number;
+  filas: EntradaPendiente[];
+  cliente: string | null;
+  cantidad: number;
+  total: number;
+  montoUnitario: number;
+  metodo: string;
+  hora: string;
+  registradoPor: string;
 };
 
 const ETIQUETAS_METODO: Record<string, string> = {
@@ -104,7 +83,10 @@ function aEntrada(valor: unknown): EntradaPendiente | null {
   if (!id) return null;
   return {
     id,
-    grupo_registro_id: typeof valor.grupo_registro_id === 'string' ? valor.grupo_registro_id : null,
+    grupo_registro_id:
+      typeof valor.grupo_registro_id === 'string' && valor.grupo_registro_id.trim()
+        ? valor.grupo_registro_id
+        : null,
     cliente_nombre:
       typeof valor.cliente_nombre === 'string' && valor.cliente_nombre.trim()
         ? valor.cliente_nombre
@@ -118,88 +100,13 @@ function aEntrada(valor: unknown): EntradaPendiente | null {
   };
 }
 
-function opcionesDeVenta(valor: unknown): OpcionVenta[] {
-  if (!Array.isArray(valor)) return [];
-  return valor.filter(esRegistro).map(opcion => ({
-    tipo: texto(opcion.tipo),
-    acompanamiento: esRegistro(opcion.acompanamiento)
-      ? { unidades: numero(opcion.acompanamiento.unidades) }
-      : undefined
-  }));
-}
-
-function aBebida(valor: unknown): Bebida | null {
-  if (!esRegistro(valor)) return null;
-  const presentacionId = texto(valor.presentacion_id);
-  if (!presentacionId) return null;
-  return {
-    presentacion_id: presentacionId,
-    producto_id: texto(valor.producto_id),
-    producto_nombre: texto(valor.producto_nombre),
-    presentacion_nombre: texto(valor.presentacion_nombre),
-    precio_venta: numero(valor.precio_venta),
-    stock_bar: numero(valor.stock_bar),
-    categoria_nombre:
-      typeof valor.categoria_nombre === 'string' && valor.categoria_nombre.trim()
-        ? valor.categoria_nombre
-        : null,
-    foto: typeof valor.foto === 'string' && valor.foto ? valor.foto : null,
-    opciones_venta: opcionesDeVenta(valor.opciones_venta)
-  };
-}
-
-function aAcompanamiento(valor: unknown): Acompanamiento | null {
-  if (!esRegistro(valor)) return null;
-  const id = texto(valor.id);
-  if (!id) return null;
-  return {
-    id,
-    producto_nombre: texto(valor.producto_nombre),
-    nombre: texto(valor.nombre),
-    stock_bar: numero(valor.stock_bar)
-  };
-}
-
-/** Unidades de acompañamiento que exige la opción botella de la bebida. */
-function unidadesAcompanamiento(bebida: Bebida | null | undefined): number {
-  const botella = bebida?.opciones_venta.find(opcion => opcion.tipo === 'botella');
-  const unidades = Number(botella?.acompanamiento?.unidades ?? 0);
-  return Number.isFinite(unidades) && unidades > 0 ? Math.floor(unidades) : 0;
-}
-
-/**
- * Previsualización de la rama que va a tomar el servidor: la cortesía se decide
- * con `max(tope, monto_entrada)` y el adicional se cobra por la diferencia con
- * lo ya pagado en la puerta. El servidor vuelve a decidirlo al confirmar.
- */
-function previsionDeCobro(
-  precio: number,
-  umbral: number,
-  montoEntrada: number
-): { etiqueta: string; esCortesia: boolean } {
-  if (precio <= umbral) return { etiqueta: 'Cortesía', esCortesia: true };
-  return {
-    etiqueta: `Cobra ${formatCurrencyCLP(Math.max(0, precio - montoEntrada))}`,
-    esCortesia: false
-  };
-}
-
 export function CortesiasTab({ searchTerm = '' }: { searchTerm?: string }) {
   const [entradas, setEntradas] = useState<EntradaPendiente[]>([]);
   const [loading, setLoading] = useState(true);
   const [errorCola, setErrorCola] = useState<string | null>(null);
   const [recargando, setRecargando] = useState(false);
-
-  const [entradaSeleccionada, setEntradaSeleccionada] = useState<EntradaPendiente | null>(null);
-  const [presentacionId, setPresentacionId] = useState('');
-  const [acompanamientoId, setAcompanamientoId] = useState('');
-  const [productos, setProductos] = useState<Bebida[]>([]);
-  const [productosLoading, setProductosLoading] = useState(false);
-  const [productosError, setProductosError] = useState<string | null>(null);
-  const [acompanamientos, setAcompanamientos] = useState<Acompanamiento[]>([]);
-  const [acompanamientosLoading, setAcompanamientosLoading] = useState(false);
-  const [acompanamientosError, setAcompanamientosError] = useState<string | null>(null);
-  const [entregando, setEntregando] = useState(false);
+  const [grupoSeleccionado, setGrupoSeleccionado] = useState<GrupoPendiente | null>(null);
+  const [comprasExpandidas, setComprasExpandidas] = useState<Set<string>>(() => new Set());
 
   const { hasPermission } = useUserPermissions();
   const puedeEntregar = hasPermission('entradas', 'deliver');
@@ -249,147 +156,65 @@ export function CortesiasTab({ searchTerm = '' }: { searchTerm?: string }) {
     }
   }, [recargando, cargarCola]);
 
-  const dialogoAbierto = entradaSeleccionada !== null;
-
-  // Catálogo de bebidas del bar: se pide al abrir el diálogo para traer stock fresco.
-  useEffect(() => {
-    if (!dialogoAbierto) return;
-    const controller = new AbortController();
-    setProductosLoading(true);
-    setProductosError(null);
-    fetch(urlProductosParaVenta(), { cache: 'no-store', signal: controller.signal })
-      .then(async respuesta => {
-        const json: unknown = await respuesta.json().catch(() => null);
-        const lista = listaDe(json);
-        if (!respuesta.ok || lista === null)
-          throw new Error(mensajeDe(json, 'No se pudieron cargar las bebidas del bar'));
-        if (controller.signal.aborted) return;
-        setProductos(lista.map(aBebida).filter((bebida): bebida is Bebida => bebida !== null));
-      })
-      .catch(error => {
-        if (!controller.signal.aborted)
-          setProductosError(
-            error instanceof Error ? error.message : 'No se pudieron cargar las bebidas del bar'
-          );
-      })
-      .finally(() => {
-        if (!controller.signal.aborted) setProductosLoading(false);
-      });
-    return () => controller.abort();
-  }, [dialogoAbierto]);
-
-  const bebidaSeleccionada = productos.find(bebida => bebida.presentacion_id === presentacionId);
-  const unidadesRequeridas = unidadesAcompanamiento(bebidaSeleccionada);
-  const requiereAcompanamiento = unidadesRequeridas > 0;
-  const umbral = Math.max(topeCortesia, entradaSeleccionada?.monto_entrada ?? 0);
-
-  // Acompañamiento: solo se ofrece cuando la bebida lo exige, igual que en la puerta.
-  useEffect(() => {
-    if (!requiereAcompanamiento) {
-      setAcompanamientos([]);
-      setAcompanamientosError(null);
-      setAcompanamientosLoading(false);
-      return;
+  // La cola trae una persona por fila; la barra atiende la compra completa.
+  const grupos = useMemo<GrupoPendiente[]>(() => {
+    const porGrupo = new Map<string, EntradaPendiente[]>();
+    for (const fila of entradas) {
+      const clave = fila.grupo_registro_id ?? fila.id;
+      const actual = porGrupo.get(clave);
+      if (actual) actual.push(fila);
+      else porGrupo.set(clave, [fila]);
     }
-    const controller = new AbortController();
-    setAcompanamientosLoading(true);
-    setAcompanamientosError(null);
-    fetch('/api/bar?acompanamientos=1', { cache: 'no-store', signal: controller.signal })
-      .then(async respuesta => {
-        const json: unknown = await respuesta.json().catch(() => null);
-        const lista = listaDe(json);
-        if (!respuesta.ok || lista === null)
-          throw new Error(mensajeDe(json, 'No se pudieron cargar los acompañamientos'));
-        if (controller.signal.aborted) return;
-        setAcompanamientos(
-          lista.map(aAcompanamiento).filter((bebida): bebida is Acompanamiento => bebida !== null)
-        );
-      })
-      .catch(error => {
-        if (!controller.signal.aborted)
-          setAcompanamientosError(
-            error instanceof Error ? error.message : 'No se pudieron cargar los acompañamientos'
-          );
-      })
-      .finally(() => {
-        if (!controller.signal.aborted) setAcompanamientosLoading(false);
-      });
-    return () => controller.abort();
-  }, [requiereAcompanamiento]);
+    return Array.from(porGrupo.entries()).map(([id, filas]) => {
+      const primera = filas[0];
+      return {
+        id,
+        filas,
+        cliente: filas.find(fila => fila.cliente_nombre)?.cliente_nombre ?? null,
+        cantidad: filas.length,
+        total: filas.reduce((suma, fila) => suma + fila.monto_entrada, 0),
+        montoUnitario: primera.monto_entrada,
+        metodo: primera.metodo_pago,
+        hora: primera.hora,
+        registradoPor: primera.registrado_por_nombre
+      };
+    });
+  }, [entradas]);
 
-  const visibles = useMemo(() => {
+  const gruposVisibles = useMemo(() => {
     const term = searchTerm.trim().toLocaleLowerCase('es');
-    return entradas.filter(
-      fila =>
-        !term ||
-        [
-          fila.cliente_nombre,
-          fila.registrado_por_nombre,
-          ETIQUETAS_METODO[fila.metodo_pago] ?? fila.metodo_pago,
-          fila.hora
-        ].some(value =>
-          String(value ?? '')
-            .toLocaleLowerCase('es')
-            .includes(term)
-        )
+    if (!term) return grupos;
+    return grupos.filter(grupo =>
+      [
+        grupo.cliente,
+        grupo.registradoPor,
+        ETIQUETAS_METODO[grupo.metodo] ?? grupo.metodo,
+        grupo.hora
+      ].some(valor =>
+        String(valor ?? '')
+          .toLocaleLowerCase('es')
+          .includes(term)
+      )
     );
-  }, [entradas, searchTerm]);
+  }, [grupos, searchTerm]);
 
-  const abrirDialogo = (entrada: EntradaPendiente) => {
-    setEntradaSeleccionada(entrada);
-    setPresentacionId('');
-    setAcompanamientoId('');
-  };
+  const totalVisible = useMemo(
+    () => gruposVisibles.reduce((suma, grupo) => suma + grupo.cantidad, 0),
+    [gruposVisibles]
+  );
 
-  const cerrarDialogo = () => {
-    if (entregando) return;
-    setEntradaSeleccionada(null);
-    setPresentacionId('');
-    setAcompanamientoId('');
-  };
+  const abrirDialogo = (grupo: GrupoPendiente) => setGrupoSeleccionado(grupo);
 
-  const seleccionarBebida = (id: string) => {
-    setPresentacionId(id);
-    setAcompanamientoId('');
-  };
+  const cerrarDialogo = () => setGrupoSeleccionado(null);
 
-  const entregar = async () => {
-    if (!entradaSeleccionada || !bebidaSeleccionada)
-      return toast.error('Selecciona la bebida que se entrega');
-    if (requiereAcompanamiento && !acompanamientoId)
-      return toast.error('Selecciona el acompañamiento incluido en esta bebida');
-    setEntregando(true);
-    try {
-      const respuesta = await fetch(
-        `/api/tickets/${encodeURIComponent(entradaSeleccionada.id)}/entregar`,
-        {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            presentacion_id: bebidaSeleccionada.presentacion_id,
-            acompanamiento_presentacion_id: requiereAcompanamiento ? acompanamientoId : null
-          })
-        }
-      );
-      const json: unknown = await respuesta.json().catch(() => null);
-      if (!respuesta.ok || !esRegistro(json) || json.success !== true || !esRegistro(json.data))
-        throw new Error(mensajeDe(json, 'No se pudo entregar la bebida'));
-      const tipo = texto(json.data.tipo);
-      const montoCobrarBarra = numero(json.data.montoCobrarBarra);
-      toast.success(
-        tipo === 'cortesia'
-          ? 'Cortesía entregada'
-          : `Adicional registrado: cobrar ${formatCurrencyCLP(montoCobrarBarra)}`
-      );
-      setEntradaSeleccionada(null);
-      setPresentacionId('');
-      setAcompanamientoId('');
-      await cargarCola();
-    } catch (error) {
-      toast.error(error instanceof Error ? error.message : 'No se pudo entregar la bebida');
-    } finally {
-      setEntregando(false);
-    }
+  /** Despliega el desglose de entradas de una compra sin salir de la cola. */
+  const alternarDetalle = (id: string) => {
+    setComprasExpandidas(previas => {
+      const siguientes = new Set(previas);
+      if (siguientes.has(id)) siguientes.delete(id);
+      else siguientes.add(id);
+      return siguientes;
+    });
   };
 
   return (
@@ -403,13 +228,14 @@ export function CortesiasTab({ searchTerm = '' }: { searchTerm?: string }) {
             <div>
               <h2 className='font-semibold'>Cortesías pendientes</h2>
               <p className='text-sm text-muted-foreground'>
-                Entradas cobradas en la puerta que esperan su bebida en la barra.
+                Compras cobradas en la puerta que esperan sus bebidas en la barra.
               </p>
             </div>
           </div>
           <div className='flex items-center gap-2'>
             <span className='text-sm font-medium tabular-nums'>
-              {visibles.length} {visibles.length === 1 ? 'pendiente' : 'pendientes'}
+              {gruposVisibles.length} {gruposVisibles.length === 1 ? 'compra' : 'compras'} ·{' '}
+              {totalVisible} {totalVisible === 1 ? 'entrada' : 'entradas'}
             </span>
             <Button
               type='button'
@@ -435,24 +261,29 @@ export function CortesiasTab({ searchTerm = '' }: { searchTerm?: string }) {
           </div>
         ) : errorCola ? (
           <div className='p-6 text-sm text-destructive'>{errorCola}</div>
-        ) : visibles.length === 0 ? (
+        ) : gruposVisibles.length === 0 ? (
           <div className='p-8 text-center'>
             <Ticket className='mx-auto mb-2 size-7 text-muted-foreground' aria-hidden='true' />
             <p className='font-medium'>
               {searchTerm ? 'No hay cortesías que coincidan' : 'No hay cortesías pendientes'}
             </p>
             <p className='mt-1 text-sm text-muted-foreground'>
-              Las entradas registradas en la puerta aparecerán aquí hasta entregar la bebida.
+              Las compras registradas en la puerta aparecerán aquí hasta entregar sus bebidas.
             </p>
           </div>
         ) : (
           <div className='overflow-x-auto'>
-            <Table className='min-w-[760px]'>
+            <Table className='min-w-[900px]'>
               <TableHeader>
                 <TableRow>
+                  <TableHead className='w-10'>
+                    <span className='sr-only'>Ver entradas</span>
+                  </TableHead>
                   <TableHead>Hora</TableHead>
                   <TableHead>Cliente</TableHead>
-                  <TableHead>Monto entrada</TableHead>
+                  <TableHead>Entradas</TableHead>
+                  <TableHead>Costo unitario</TableHead>
+                  <TableHead>Total</TableHead>
                   <TableHead>Método de pago</TableHead>
                   <TableHead>Registró</TableHead>
                   <TableHead>Estado</TableHead>
@@ -460,39 +291,113 @@ export function CortesiasTab({ searchTerm = '' }: { searchTerm?: string }) {
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {visibles.map(fila => (
-                  <TableRow key={fila.id}>
-                    <TableCell className='tabular-nums'>{fila.hora || '—'}</TableCell>
-                    <TableCell className='font-medium'>
-                      {fila.cliente_nombre || 'Sin nombre'}
-                    </TableCell>
-                    <TableCell className='tabular-nums'>
-                      {formatCurrencyCLP(fila.monto_entrada)}
-                    </TableCell>
-                    <TableCell>{ETIQUETAS_METODO[fila.metodo_pago] ?? fila.metodo_pago}</TableCell>
-                    <TableCell>{fila.registrado_por_nombre || '—'}</TableCell>
-                    <TableCell>
-                      <Badge variant='outline'>Pendiente</Badge>
-                    </TableCell>
-                    <TableCell className='text-right'>
-                      {puedeEntregar ? (
-                        <Button
-                          type='button'
-                          size='sm'
-                          className='rounded-full'
-                          onClick={() => abrirDialogo(fila)}
-                          aria-label={`Entregar la cortesía de ${
-                            fila.cliente_nombre || 'cliente sin nombre'
-                          }`}
-                        >
-                          Entregar
-                        </Button>
-                      ) : (
-                        <span className='text-xs text-muted-foreground'>Sin permiso</span>
-                      )}
-                    </TableCell>
-                  </TableRow>
-                ))}
+                {gruposVisibles.map(grupo => {
+                  const abierto = comprasExpandidas.has(grupo.id);
+                  const idDetalle = `detalle-compra-${grupo.id}`;
+                  return (
+                    <Fragment key={grupo.id}>
+                      <TableRow>
+                        <TableCell className='w-10'>
+                          <Button
+                            type='button'
+                            variant='ghost'
+                            size='icon'
+                            className='size-7 rounded-full'
+                            onClick={() => alternarDetalle(grupo.id)}
+                            aria-expanded={abierto}
+                            aria-controls={idDetalle}
+                            aria-label={`${abierto ? 'Ocultar' : 'Mostrar'} las entradas de ${
+                              grupo.cliente || 'la compra'
+                            }`}
+                          >
+                            {abierto ? (
+                              <ChevronDown className='size-4' aria-hidden='true' />
+                            ) : (
+                              <ChevronRight className='size-4' aria-hidden='true' />
+                            )}
+                          </Button>
+                        </TableCell>
+                        <TableCell className='tabular-nums'>{grupo.hora || '—'}</TableCell>
+                        <TableCell className='font-medium'>
+                          {grupo.cliente || 'Sin nombre'}
+                        </TableCell>
+                        <TableCell className='tabular-nums'>{grupo.cantidad}</TableCell>
+                        <TableCell className='tabular-nums'>
+                          {formatCurrencyCLP(grupo.montoUnitario)}
+                        </TableCell>
+                        <TableCell className='font-medium tabular-nums'>
+                          {formatCurrencyCLP(grupo.total)}
+                        </TableCell>
+                        <TableCell>{ETIQUETAS_METODO[grupo.metodo] ?? grupo.metodo}</TableCell>
+                        <TableCell>{grupo.registradoPor || '—'}</TableCell>
+                        <TableCell>
+                          <Badge variant='outline'>Pendiente</Badge>
+                        </TableCell>
+                        <TableCell className='text-right'>
+                          {puedeEntregar ? (
+                            <Button
+                              type='button'
+                              size='sm'
+                              className='rounded-full'
+                              onClick={() => abrirDialogo(grupo)}
+                              aria-label={`Entregar ${grupo.cantidad} ${
+                                grupo.cantidad === 1 ? 'cortesía' : 'cortesías'
+                              } de ${grupo.cliente || 'cliente sin nombre'}`}
+                            >
+                              Entregar
+                            </Button>
+                          ) : (
+                            <span className='text-xs text-muted-foreground'>Sin permiso</span>
+                          )}
+                        </TableCell>
+                      </TableRow>
+                      {abierto ? (
+                        <TableRow className='bg-muted/30 hover:bg-muted/30'>
+                          <TableCell colSpan={10} className='p-0'>
+                            <div id={idDetalle} className='space-y-2 px-4 py-3'>
+                              <p className='text-xs font-semibold tracking-wide text-muted-foreground uppercase'>
+                                Entradas individuales ({grupo.cantidad})
+                              </p>
+                              <ul className='divide-y rounded-lg border bg-background'>
+                                {grupo.filas.map((fila, indice) => (
+                                  <li
+                                    key={fila.id}
+                                    className='flex flex-wrap items-center gap-x-5 gap-y-1 px-3 py-2 text-sm'
+                                  >
+                                    <span className='inline-flex min-w-6 justify-center rounded-md border px-1.5 py-0.5 text-xs font-medium tabular-nums'>
+                                      {fila.id}
+                                    </span>
+                                    <span className='font-medium'>
+                                      {fila.cliente_nombre || grupo.cliente || 'Sin nombre'}
+                                    </span>
+                                    <span className='text-xs text-muted-foreground'>
+                                      Hora{' '}
+                                      <span className='text-foreground tabular-nums'>
+                                        {fila.hora || '—'}
+                                      </span>
+                                    </span>
+                                    <span className='text-xs text-muted-foreground'>
+                                      Costo{' '}
+                                      <span className='text-foreground tabular-nums'>
+                                        {formatCurrencyCLP(fila.monto_entrada)}
+                                      </span>
+                                    </span>
+                                    <span className='text-xs text-muted-foreground'>
+                                      Registró{' '}
+                                      <span className='text-foreground'>
+                                        {fila.registrado_por_nombre || '—'}
+                                      </span>
+                                    </span>
+                                  </li>
+                                ))}
+                              </ul>
+                            </div>
+                          </TableCell>
+                        </TableRow>
+                      ) : null}
+                    </Fragment>
+                  );
+                })}
               </TableBody>
             </Table>
           </div>
@@ -504,190 +409,12 @@ export function CortesiasTab({ searchTerm = '' }: { searchTerm?: string }) {
         ) : null}
       </section>
 
-      <Dialog
-        open={dialogoAbierto}
-        onOpenChange={open => {
-          if (!open) cerrarDialogo();
-        }}
-      >
-        <DialogContent className='max-h-[85vh] overflow-y-auto sm:max-w-2xl'>
-          <DialogHeader>
-            <DialogTitle>Entregar cortesía</DialogTitle>
-            <DialogDescription>
-              {entradaSeleccionada
-                ? `${entradaSeleccionada.cliente_nombre || 'Sin nombre'} · entrada de ${formatCurrencyCLP(
-                    entradaSeleccionada.monto_entrada
-                  )} · ${entradaSeleccionada.hora}`
-                : ''}
-            </DialogDescription>
-          </DialogHeader>
-
-          {productosLoading ? (
-            <div className='flex items-center gap-2 rounded-xl border border-dashed p-4 text-sm text-muted-foreground'>
-              <LoaderCircle className='size-4 animate-spin' /> Cargando bebidas…
-            </div>
-          ) : productosError ? (
-            <p className='rounded-xl border border-dashed p-4 text-sm text-destructive'>
-              {productosError}
-            </p>
-          ) : productos.length === 0 ? (
-            <p className='rounded-xl border border-dashed p-4 text-sm text-muted-foreground'>
-              No hay bebidas con stock en el bar.
-            </p>
-          ) : (
-            <div
-              role='group'
-              aria-label='Bebidas del bar'
-              className='grid grid-cols-2 gap-3 sm:grid-cols-3'
-            >
-              {productos.map(bebida => {
-                const seleccionada = bebida.presentacion_id === presentacionId;
-                const sinStock = bebida.stock_bar <= 0;
-                const prevision = previsionDeCobro(
-                  bebida.precio_venta,
-                  umbral,
-                  entradaSeleccionada?.monto_entrada ?? 0
-                );
-                const nombreBebida =
-                  `${bebida.producto_nombre} ${bebida.presentacion_nombre}`.trim();
-                return (
-                  <Button
-                    key={bebida.presentacion_id}
-                    type='button'
-                    variant='unstyled'
-                    disabled={sinStock}
-                    aria-pressed={seleccionada}
-                    onClick={() => seleccionarBebida(bebida.presentacion_id)}
-                    className={cn(
-                      'flex min-w-0 flex-col overflow-hidden rounded-2xl border bg-background text-left font-normal whitespace-normal transition disabled:cursor-not-allowed disabled:opacity-40',
-                      'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2',
-                      seleccionada
-                        ? 'border-primary ring-2 ring-primary/25'
-                        : 'hover:border-primary/40 hover:bg-muted/30'
-                    )}
-                  >
-                    <span className='relative block h-20 w-full bg-muted/40'>
-                      <ProductPhoto
-                        src={productImageUrl(bebida.foto)}
-                        alt={nombreBebida}
-                        fill
-                        className='object-contain p-2'
-                      />
-                      <span
-                        className={cn(
-                          'absolute right-2 top-2 flex size-5 items-center justify-center rounded-full',
-                          seleccionada
-                            ? 'bg-primary text-primary-foreground'
-                            : 'bg-background/80 text-transparent'
-                        )}
-                        aria-hidden='true'
-                      >
-                        <Check className='size-3.5' />
-                      </span>
-                    </span>
-                    <span className='flex flex-1 flex-col gap-1 border-t p-3'>
-                      <span className='line-clamp-2 text-sm font-semibold leading-snug'>
-                        {bebida.producto_nombre}
-                      </span>
-                      <span className='line-clamp-1 text-xs text-muted-foreground'>
-                        {bebida.presentacion_nombre}
-                      </span>
-                      <span className='text-sm font-medium tabular-nums text-primary'>
-                        {formatCurrencyCLP(bebida.precio_venta)}
-                      </span>
-                      <span className='mt-auto flex flex-wrap items-center gap-1.5 pt-1'>
-                        <span className='text-[11px] text-muted-foreground'>
-                          {sinStock ? 'Sin stock' : `${bebida.stock_bar} en bar`}
-                        </span>
-                        <Badge
-                          variant={prevision.esCortesia ? 'secondary' : 'outline'}
-                          className={cn(
-                            'rounded-full px-2 py-0 text-[11px]',
-                            !prevision.esCortesia && 'text-amber-600 dark:text-amber-400'
-                          )}
-                        >
-                          {prevision.etiqueta}
-                        </Badge>
-                      </span>
-                    </span>
-                  </Button>
-                );
-              })}
-            </div>
-          )}
-
-          <p className='text-xs text-muted-foreground'>
-            La previsualización es referencial: al confirmar, el servidor decide si la bebida es
-            cortesía o si se cobra la diferencia en la barra.
-          </p>
-
-          {requiereAcompanamiento && bebidaSeleccionada ? (
-            <div className='space-y-2'>
-              <Label htmlFor='cortesia-acompanamiento'>Acompañamiento</Label>
-              <SearchableSelect
-                id='cortesia-acompanamiento'
-                value={acompanamientoId}
-                onChange={setAcompanamientoId}
-                placeholder={
-                  acompanamientosLoading
-                    ? 'Cargando acompañamientos…'
-                    : 'Seleccionar acompañamiento'
-                }
-                searchPlaceholder='Buscar bebida…'
-                options={[
-                  { value: '', label: 'Seleccionar acompañamiento' },
-                  ...acompanamientos
-                    .filter(
-                      bebida =>
-                        bebida.id !== bebidaSeleccionada.presentacion_id &&
-                        bebida.stock_bar >= unidadesRequeridas
-                    )
-                    .map(bebida => ({
-                      value: bebida.id,
-                      label: `${bebida.producto_nombre} · ${bebida.nombre} · ${bebida.stock_bar} en bar`,
-                      keywords: [bebida.producto_nombre, bebida.nombre]
-                    }))
-                ]}
-              />
-              <p className='text-xs text-muted-foreground'>
-                Incluye {unidadesRequeridas} bebida{unidadesRequeridas === 1 ? '' : 's'} por
-                botella.
-              </p>
-              {acompanamientosError ? (
-                <p className='text-xs text-destructive' role='alert'>
-                  {acompanamientosError}
-                </p>
-              ) : null}
-            </div>
-          ) : null}
-
-          <DialogFooter className='gap-2'>
-            <Button
-              type='button'
-              variant='outline'
-              className='rounded-full'
-              disabled={entregando}
-              onClick={cerrarDialogo}
-            >
-              Cancelar
-            </Button>
-            <Button
-              type='button'
-              className='rounded-full'
-              disabled={
-                entregando ||
-                productosLoading ||
-                !bebidaSeleccionada ||
-                (requiereAcompanamiento && !acompanamientoId)
-              }
-              onClick={() => void entregar()}
-            >
-              {entregando ? <LoaderCircle className='mr-2 size-4 animate-spin' /> : null}
-              Confirmar entrega
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
+      <EntregaCortesiasDialog
+        grupo={grupoSeleccionado}
+        tope={topeCortesia}
+        onClose={cerrarDialogo}
+        onEntregado={() => cargarCola(true)}
+      />
     </div>
   );
 }

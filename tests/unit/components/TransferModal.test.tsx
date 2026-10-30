@@ -487,6 +487,54 @@ describe('tipos de venta al transferir', () => {
       precios_anfitriona: [{ precio: 2000, comision: 0 }]
     });
   });
+
+  it('envía precio 0 cuando el precio de botella con anfitriona queda en blanco', async () => {
+    const request = vi.fn().mockResolvedValue({ ok: true, json: async () => ({ success: true }) });
+    vi.stubGlobal('fetch', request);
+    const onDone = vi.fn();
+    render(
+      <TransferModal
+        open
+        item={{ ...item, precio_venta: 0, comision: 0, opciones_venta: undefined }}
+        onOpenChange={vi.fn()}
+        onDone={onDone}
+      />
+    );
+    expect(screen.getByLabelText('Precio de botella con anfitriona')).toHaveValue('');
+    fireEvent.change(screen.getByLabelText('Unidades a transferir al bar'), {
+      target: { value: '1' }
+    });
+    fireEvent.click(screen.getByRole('button', { name: 'Transferir' }));
+    await waitFor(() => expect(onDone).toHaveBeenCalledOnce());
+    expect(postBody(request).opciones_venta).toContainEqual(
+      expect.objectContaining({ tipo: 'botella', precio: 0, comision: 0 })
+    );
+  });
+
+  it('transfiere sin anfitriona al desactivar el check', async () => {
+    const request = vi.fn().mockResolvedValue({ ok: true, json: async () => ({ success: true }) });
+    vi.stubGlobal('fetch', request);
+    const onDone = vi.fn();
+    render(
+      <TransferModal
+        open
+        item={{ ...item, comision: 5000 }}
+        onOpenChange={vi.fn()}
+        onDone={onDone}
+      />
+    );
+    fireEvent.click(screen.getByRole('button', { name: 'Modificar precios' }));
+    fireEvent.click(screen.getByLabelText('Vender con anfitriona'));
+    expect(screen.queryByLabelText('Precio de botella con anfitriona')).not.toBeInTheDocument();
+    fireEvent.change(screen.getByLabelText('Unidades a transferir al bar'), {
+      target: { value: '1' }
+    });
+    fireEvent.click(screen.getByRole('button', { name: 'Transferir' }));
+    await waitFor(() => expect(onDone).toHaveBeenCalledOnce());
+    expect(postBody(request).opciones_venta).toContainEqual(
+      expect.objectContaining({ tipo: 'botella', precio: 0, comision: 0 })
+    );
+  });
 });
 
 it('pide los ml de la colación cuando el producto no tiene corto de anfitriona', async () => {

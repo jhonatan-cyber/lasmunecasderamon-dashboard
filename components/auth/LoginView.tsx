@@ -64,7 +64,13 @@ export const LoginView = () => {
             &quot;Un lugar para caballeros&quot;
           </p>
           <div className='flex justify-center mt-8'>
-            <Image src='/img/system/presentation.png' alt='Presentación' width={600} height={200} />
+            <Image
+              src='/img/system/presentation.png'
+              alt='Presentación'
+              width={600}
+              height={200}
+              priority
+            />
           </div>
         </div>
 

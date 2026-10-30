@@ -4,6 +4,7 @@ export { listarLimpieza, operarLimpieza } from './limpieza/servicio';
 export {
   consumirStockBar,
   consumirColacionBar,
+  consumirCorteCortesiaBar,
   consumirCoverBar,
   consumirProductoCortesiaBar
 } from './bar/servicio';

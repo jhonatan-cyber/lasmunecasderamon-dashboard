@@ -1,7 +1,7 @@
 import { generateUUID, query } from '@/lib/database/db';
 import { getNowInBusinessTimezone } from '@/lib/business/timezoneService';
 import { ValidationError } from '@/lib/errors/errors';
-import { consumirProductoCortesiaBar } from '@/modules/inventario';
+import { consumirCorteCortesiaBar, consumirProductoCortesiaBar } from '@/modules/inventario';
 import { enUnaUnidad } from '@/lib/transaction/contract';
 import { resolverTransaccion } from '@/lib/transaction/infrastructure';
 import { registrarMovimientoCobro } from '@/modules/caja';
@@ -290,6 +290,12 @@ export interface EntregaEntradaInput {
   acompanamientoPresentacionId?: string | null;
   usuarioId: string;
   montoAdicional?: number | null;
+  /**
+   * Formato con el que sale la cortesía: la botella completa (comportamiento
+   * histórico) o un corte. El corte se cobra/valida con el precio del shot de
+   * `opciones_venta` y consume ml en vez de una botella entera.
+   */
+  tipoEntrega?: 'botella' | 'corte';
 }
 
 function normalizarMontoAdicional(valor: unknown, respaldo: number): number {
@@ -354,19 +360,30 @@ export async function entregarEntrada(
     if (Number(presentacion.estado) !== 1)
       throw new ValidationError('La bebida seleccionada no está disponible');
 
-    const precio = Number(presentacion.precio_venta);
+    const opciones = parseOpcionesVenta(presentacion.opciones_venta);
+    const esCorte = input.tipoEntrega === 'corte';
+    const opcionCorte = opciones.find(opcion => opcion?.tipo === 'shot') as
+      { precio?: unknown } | undefined;
+    const precioCorte = Number(opcionCorte?.precio ?? 0);
+    if (esCorte && (!Number.isFinite(precioCorte) || precioCorte <= 0))
+      throw new ValidationError('La bebida seleccionada no se vende por corte');
+
+    // La cortesía por corte usa el precio del shot; la botella sigue usando el
+    // precio de venta de la presentación, que es el que valida el inventario.
+    const precio = esCorte ? Math.floor(precioCorte) : Number(presentacion.precio_venta);
     const montoEntrada = Number(entrada.monto_entrada);
     const umbral = Math.max(tope, montoEntrada);
     const adicionalPorPrecio = precio <= umbral ? 0 : precio - montoEntrada;
     const montoAdicional = normalizarMontoAdicional(input.montoAdicional, adicionalPorPrecio);
     const esCortesia = montoAdicional <= 0;
 
-    const opciones = parseOpcionesVenta(presentacion.opciones_venta);
-    const unidades = unidadesAcompanamiento(opciones);
-    if (unidades > 0 && !input.acompanamientoPresentacionId)
-      throw new ValidationError('Selecciona el acompañamiento incluido en esta bebida');
-    if (unidades <= 0 && input.acompanamientoPresentacionId)
-      throw new ValidationError('La bebida seleccionada no tiene acompañamiento configurado');
+    const unidades = esCorte ? 0 : unidadesAcompanamiento(opciones);
+    if (!esCorte) {
+      if (unidades > 0 && !input.acompanamientoPresentacionId)
+        throw new ValidationError('Selecciona el acompañamiento incluido en esta bebida');
+      if (unidades <= 0 && input.acompanamientoPresentacionId)
+        throw new ValidationError('La bebida seleccionada no tiene acompañamiento configurado');
+    }
 
     const caja = await trx<{ id_caja: string }[]>(
       'SELECT id_caja FROM cajas WHERE estado = 1 ORDER BY fecha_apertura DESC LIMIT 1 FOR UPDATE'
@@ -376,14 +393,24 @@ export async function entregarEntrada(
 
     let ventaId: string | null = null;
     if (esCortesia) {
-      await consumirProductoCortesiaBar(
-        input.presentacionId,
-        input.usuarioId,
-        fechaHora,
-        { id: unidad.id },
-        umbral,
-        input.acompanamientoPresentacionId || null
-      );
+      if (esCorte) {
+        await consumirCorteCortesiaBar(
+          input.presentacionId,
+          input.usuarioId,
+          fechaHora,
+          { id: unidad.id },
+          input.acompanamientoPresentacionId || null
+        );
+      } else {
+        await consumirProductoCortesiaBar(
+          input.presentacionId,
+          input.usuarioId,
+          fechaHora,
+          { id: unidad.id },
+          umbral,
+          input.acompanamientoPresentacionId || null
+        );
+      }
       const pagos = { efectivo: 0, tarjeta: 0, transferencia: 0 };
       pagos[entrada.metodo_pago] = montoEntrada;
       await registrarMovimientoCobro(cajaId, pagos, { id: unidad.id });
@@ -394,13 +421,18 @@ export async function entregarEntrada(
       const detalle: Record<string, unknown> = {
         producto_id: presentacion.producto_id,
         presentacion_id: input.presentacionId,
-        tipo_venta: 'botella',
+        tipo_venta: esCorte ? 'shot' : 'botella',
         precio,
         comision: 0,
         cantidad: 1,
         sub_total: totalVenta
       };
-      if (unidades > 0 && input.acompanamientoPresentacionId)
+      if (esCorte && input.acompanamientoPresentacionId)
+        detalle.acompanamiento_corto = {
+          presentacion_id: input.acompanamientoPresentacionId,
+          unidades: 1
+        };
+      if (!esCorte && unidades > 0 && input.acompanamientoPresentacionId)
         detalle.acompanamiento_botella = {
           presentacion_id: input.acompanamientoPresentacionId,
           unidades

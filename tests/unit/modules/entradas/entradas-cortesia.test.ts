@@ -36,7 +36,8 @@ vi.mock('@/lib/business/timezoneService', () => ({
 }));
 
 vi.mock('@/modules/inventario', () => ({
-  consumirProductoCortesiaBar: vi.fn()
+  consumirProductoCortesiaBar: vi.fn(),
+  consumirCorteCortesiaBar: vi.fn()
 }));
 
 vi.mock('@/modules/caja', () => ({
@@ -64,7 +65,7 @@ vi.mock('@/lib/utils/image-utils', () => ({
 }));
 
 import { entregarEntrada, postearPendientesDeCaja, registrarEntrada } from '@/modules/entradas';
-import { consumirProductoCortesiaBar } from '@/modules/inventario';
+import { consumirCorteCortesiaBar, consumirProductoCortesiaBar } from '@/modules/inventario';
 import { registrarMovimientoCobro } from '@/modules/caja';
 
 const registroBase = {
@@ -312,6 +313,94 @@ describe('entrega como cortesía', () => {
 
     expect(resultado.tipo).toBe('cortesia');
     expect(registrarMovimientoCobro).toHaveBeenCalledTimes(1);
+  });
+
+  it('sirve un corte con el precio del shot y descuenta ml, no la botella', async () => {
+    // La botella supera el tope, pero el corte del mismo producto entra como
+    // cortesía: es el caso de los destilados de la carta real.
+    estado.precio = 10500;
+    estado.opciones = [
+      { tipo: 'botella', precio: 10500 },
+      { tipo: 'shot', precio: 3000 }
+    ];
+
+    const resultado = await entregarEntrada({ ...entregaBase, tipoEntrega: 'corte' });
+
+    expect(consumirCorteCortesiaBar).toHaveBeenCalledWith(
+      'pres-1',
+      'user-1',
+      '2026-10-19 12:00:00',
+      { id: 'unidad-1' },
+      null
+    );
+    expect(consumirProductoCortesiaBar).not.toHaveBeenCalled();
+    expect(resultado).toMatchObject({
+      tipo: 'cortesia',
+      precio: 3000,
+      montoEntrada: 10000,
+      montoCobrarBarra: 0
+    });
+    expect(estado.updates[0].params[4]).toBe(0);
+  });
+
+  it('cobra el corte sobre el tope como venta al precio del shot', async () => {
+    estado.precio = 10500;
+    estado.opciones = [
+      { tipo: 'botella', precio: 10500 },
+      { tipo: 'shot', precio: 12000 }
+    ];
+    const onVenta = vi.fn(async () => ({ ventaId: 'venta-1' }));
+
+    const resultado = await entregarEntrada({ ...entregaBase, tipoEntrega: 'corte' }, onVenta);
+
+    expect(consumirCorteCortesiaBar).not.toHaveBeenCalled();
+    expect(consumirProductoCortesiaBar).not.toHaveBeenCalled();
+    const [plan] = onVenta.mock.calls[0] as unknown as [
+      { totalVenta: number; detalles: Array<Record<string, unknown>> }
+    ];
+    expect(plan.totalVenta).toBe(12000);
+    expect(plan.detalles[0]).toMatchObject({
+      tipo_venta: 'shot',
+      precio: 12000,
+      cantidad: 1
+    });
+    expect(resultado).toMatchObject({
+      tipo: 'upgrade',
+      precio: 12000,
+      montoCobrarBarra: 2000
+    });
+  });
+
+  it('acompaña el corte con una unidad de bebida analcohólica', async () => {
+    estado.precio = 10500;
+    estado.opciones = [
+      { tipo: 'botella', precio: 10500 },
+      { tipo: 'shot', precio: 3000 }
+    ];
+
+    await entregarEntrada({
+      ...entregaBase,
+      tipoEntrega: 'corte',
+      acompanamientoPresentacionId: 'mix-1'
+    });
+
+    expect(consumirCorteCortesiaBar).toHaveBeenCalledWith(
+      'pres-1',
+      'user-1',
+      '2026-10-19 12:00:00',
+      { id: 'unidad-1' },
+      'mix-1'
+    );
+    expect(estado.updates[0].params[3]).toBe('mix-1');
+  });
+
+  it('rechaza un corte si el producto no tiene precio de shot', async () => {
+    estado.opciones = [{ tipo: 'botella', precio: 9000 }];
+
+    await expect(entregarEntrada({ ...entregaBase, tipoEntrega: 'corte' })).rejects.toThrow(
+      /no se vende por corte/
+    );
+    expect(consumirCorteCortesiaBar).not.toHaveBeenCalled();
   });
 });
 

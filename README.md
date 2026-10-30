@@ -155,6 +155,80 @@ Si tocas flujos heredados con DB:
 corepack pnpm test:integration:legacy-db
 ```
 
+## Flujo de cortesías (cajero y barman)
+
+La entrada se cobra en la puerta y la bebida se entrega en la barra. Mientras la
+cortesía está pendiente, la compra aparece en **Bar → Cortesías**; al confirmar
+la entrega sale de la cola y el listado de **Entradas** muestra quién la entregó
+y cuándo.
+
+**Barman:** entrega desde **Bar → Cortesías**. **Cajero:** usa la misma cola o
+el detalle de **Entradas** cuando el cliente cambia de bebida y hay que cobrar
+un adicional.
+
+### Ruta rápida
+
+1. Abre **Bar → Cortesías**. La cola del día está agrupada por compra, no por
+   persona.
+2. Revisa cliente, cantidad de entradas, costo unitario y total.
+3. Pulsa **Entregar** en la compra.
+4. Elige la bebida de cada entrada. Puedes repetir el mismo producto o combinar
+   varios; el total no puede superar las entradas pendientes.
+5. Si la bebida es un **corte**, elige una analcohólica de cover. Si es una
+   **botella**, elige las unidades de acompañamiento configuradas.
+6. Confirma **Entregar N en la barra**. La cola se recarga y la compra
+   desaparece si no quedan entradas pendientes.
+
+### Qué permite cada pantalla
+
+| Pantalla                  | Para qué                                                                   | Límite                                                                                                                         |
+| ------------------------- | -------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------ |
+| **Bar → Cortesías**       | Cola del día agrupada por compra; entrega varias entradas de una sola vez. | Solo productos dentro del tope de cortesía. No cobra adicional.                                                                |
+| **Entradas (`/tickets`)** | Detalle de una compra: entrega individual o todas las pendientes juntas.   | La entrega múltiple usa el tope de cortesía y no cobra adicional. La individual propone corte y permite botella con adicional. |
+
+### Reglas de elegibilidad
+
+| Tema             | Regla                                                                                                                                                                                                        |
+| ---------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| Tope             | `monto_base_trago_cortesia_cliente` (Configuraciones → **Bar y comisiones** → **Reglas de venta** → **Covers de entradas**). Se usa el mayor entre ese tope y el monto pagado en la entrada.                 |
+| Corte            | En **Bar → Cortesías** se ofrece si el precio del shot entra en el tope. Se prefiere sobre la botella cuando la bebida se vende por corte.                                                                   |
+| Botella          | En **Bar → Cortesías** se ofrece solo si el precio sin anfitriona **y** el precio de venta que valida el servidor entran en el tope. En **Entradas** puedes elegir una botella mayor y cobrar la diferencia. |
+| Bebida principal | No puede ser analcohólica ni cigarrillo; esas categorías se excluyen del listado de la cortesía.                                                                                                             |
+| Cover            | Solo analcohólicas con `cover_habilitado` y stock. Un corte lleva **1 unidad**; una botella, las unidades configuradas en su opción de acompañamiento.                                                       |
+| Sin cover        | Un corte puede entregarse sin cover si no hay stock. Una botella con acompañamiento configurado **no** se puede entregar sin cover.                                                                          |
+| Varias unidades  | Si seleccionas 2 cortes del mismo producto, el cover debe tener stock para 2; si son 2 botellas con 2 acompañamientos, para 4.                                                                               |
+| Pago             | Dentro del tope no se cobra en la barra. Con adicional, el total (entrada + adicional) queda como venta; el adicional se cobra en la barra.                                                                  |
+| Inventario       | La cortesía descuenta stock como un movimiento `cortesia` a precio 0: ml del shot o una botella, más el cover. La venta con adicional descuenta como venta.                                                  |
+| Estado           | `pendiente` → `entregada`; se guarda usuario y hora. `anulada` si la compra se anula.                                                                                                                        |
+| Permiso          | `Entradas → Entregar` (`entradas:deliver`). Sin permiso el botón aparece como **Sin permiso**.                                                                                                               |
+
+**Costo de entrada vs tope.** `costo_entrada` es lo que paga el cliente en la
+puerta; el tope de la cortesía es `monto_base_trago_cortesia_cliente` ("Covers
+de entradas"). Si ambos valores no coinciden, **Reglas de venta** muestra un
+aviso: confírmalo con administración antes de operar.
+
+### Errores frecuentes
+
+- **No aparece un producto**: en **Bar → Cortesías** solo se listan los que
+  están dentro del tope y con stock. También se excluyen analcohólicas y
+  cigarrillos porque no son la bebida de la entrada.
+- **No hay bebidas cover**: revisa el stock y que la analcohólica tenga
+  `cover_habilitado`. Si es una botella que exige acompañamiento, no se puede
+  cerrar la entrega sin cover.
+- **"No se pudo entregar"**: la entrada pudo haber sido entregada o anulada por
+  otra persona. Actualiza la cola; el servidor rechaza entregas duplicadas.
+- **El adicional no aparece**: solo se registra como venta cuando es mayor
+  que 0. Verifica el listado de Entradas y la caja.
+
+### Antes de cerrar la entrega
+
+- [ ] Cliente y cantidad de entradas coinciden con la compra.
+- [ ] Cada producto está dentro del tope y tiene stock.
+- [ ] Cada corte o botella que lo requiere tiene cover suficiente.
+- [ ] La compra desapareció de **Bar → Cortesías** (o quedan solo las entradas
+      que no se entregaron).
+- [ ] Si hubo adicional, la venta quedó registrada.
+
 ## Documentación
 
 - [CI/CD](docs/CI_CD.md)

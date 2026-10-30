@@ -2,6 +2,7 @@ import type { ContextoOperacion } from '@/lib/transaction/contract';
 import type { ContextoVentaInventario, ConsumoInventarioDetalle, ShotAlert } from '../contracts';
 import {
   consumirColacion as consumirColacionInterno,
+  consumirCorteCortesia as consumirCorteCortesiaInterno,
   consumirCover as consumirCoverInterno,
   consumirProductoCortesia as consumirProductoCortesiaInterno
 } from './consumoRepositorio';
@@ -49,4 +50,8 @@ export function consumirProductoCortesiaBar(
   ...args: Parameters<typeof consumirProductoCortesiaInterno>
 ) {
   return consumirProductoCortesiaInterno(...args);
+}
+
+export function consumirCorteCortesiaBar(...args: Parameters<typeof consumirCorteCortesiaInterno>) {
+  return consumirCorteCortesiaInterno(...args);
 }

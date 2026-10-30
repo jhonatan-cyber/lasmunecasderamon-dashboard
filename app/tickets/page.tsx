@@ -34,6 +34,10 @@ import {
   DialogHeader,
   DialogTitle
 } from '@/components/ui/dialog';
+import {
+  EntregaCortesiasDialog,
+  type GrupoCortesia
+} from '@/components/bar/EntregaCortesiasDialog';
 import { EntregaEntradaDialog } from '@/components/entradas/EntregaEntradaDialog';
 import { useCashRegisterStatus } from '@/hooks/cash-register/useCashRegisterStatus';
 import { useUserPermissions } from '@/hooks/auth/useUserPermissions';
@@ -148,6 +152,7 @@ export default function EntradasPage() {
   const [entradas, setEntradas] = useState<Entrada[]>([]);
   const [grupoDetalleId, setGrupoDetalleId] = useState<string | null>(null);
   const [entradaAEntregar, setEntradaAEntregar] = useState<Entrada | null>(null);
+  const [grupoAEntregar, setGrupoAEntregar] = useState<GrupoCortesia | null>(null);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [anulandoGrupoId, setAnulandoGrupoId] = useState<string | null>(null);
@@ -157,6 +162,9 @@ export default function EntradasPage() {
   const canCreate = hasPermission('entradas', 'create');
   const canDeliver = hasPermission('entradas', 'deliver');
   const costoEntradaPredeterminado = Number(useConfigValue('comisiones', 'costo_entrada', 10000));
+  const topeCortesia = Number(
+    useConfigValue('comisiones', 'monto_base_trago_cortesia_cliente', 10000)
+  );
   const totalPuerta = costoEntradaPredeterminado * cantidadEntradas;
 
   useEffect(() => {
@@ -339,6 +347,31 @@ export default function EntradasPage() {
     } finally {
       setAnulandoGrupoId(null);
     }
+  };
+
+  const abrirEntregaMultiple = (grupo: GrupoEntrada) => {
+    const pendientes = grupo.pendientes;
+    if (pendientes.length === 0) return;
+    const primero = pendientes[0];
+    setGrupoAEntregar({
+      id: grupo.id,
+      cliente:
+        pendientes.find(fila => fila.cliente_nombre)?.cliente_nombre ??
+        grupo.registros[0]?.cliente_nombre ??
+        null,
+      filas: pendientes.map(fila => ({
+        id: fila.id,
+        monto_entrada: Number(fila.monto_entrada),
+        hora: fila.hora
+      })),
+      cantidad: pendientes.length,
+      total: pendientes.reduce((suma, fila) => suma + Number(fila.monto_entrada), 0),
+      montoUnitario: Number(primero.monto_entrada),
+      metodo: primero.metodo_pago,
+      hora: primero.hora,
+      registradoPor: primero.registrado_por_nombre
+    });
+    setGrupoDetalleId(null);
   };
 
   return (
@@ -579,11 +612,12 @@ export default function EntradasPage() {
                             size='sm'
                             disabled={anulandoGrupoId === grupo.id}
                             onClick={() => {
-                              // Una sola pendiente: se entrega directo. Varias: el
-                              // detalle deja elegir a qué persona se le sirve.
+                              // Una sola pendiente: se entrega directo. Varias: la
+                              // entrega múltiple reparte los productos en el acto;
+                              // el detalle sigue disponible desde el ojo.
                               if (grupo.pendientes.length === 1)
                                 setEntradaAEntregar(grupo.pendientes[0]);
-                              else setGrupoDetalleId(grupo.id);
+                              else abrirEntregaMultiple(grupo);
                             }}
                             className='rounded-full'
                           >
@@ -661,6 +695,15 @@ export default function EntradasPage() {
                   <p className='font-semibold'>{grupoDetalle.registros[0].registrado_por_nombre}</p>
                 </div>
               </div>
+              {canDeliver && grupoDetalle.pendientes.length > 1 ? (
+                <Button
+                  type='button'
+                  className='w-full rounded-full'
+                  onClick={() => abrirEntregaMultiple(grupoDetalle)}
+                >
+                  Entregar todas las pendientes ({grupoDetalle.pendientes.length})
+                </Button>
+              ) : null}
               {baucherDetalle && (
                 <BaucherFoto
                   src={`/api/tickets/${baucherDetalle.id}/baucher`}
@@ -721,6 +764,12 @@ export default function EntradasPage() {
         entrada={entradaAEntregar}
         onClose={() => setEntradaAEntregar(null)}
         onEntregada={() => cargar(true)}
+      />
+      <EntregaCortesiasDialog
+        grupo={grupoAEntregar}
+        tope={topeCortesia}
+        onClose={() => setGrupoAEntregar(null)}
+        onEntregado={() => cargar(true)}
       />
     </main>
   );

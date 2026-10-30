@@ -44,11 +44,25 @@ interface UnidadConsumo {
   ml_restante: number | null;
 }
 
+/**
+ * Sobrescribe lo que el movimiento de inventario registra. La cortesía por
+ * corte consume igual que una venta (ml de la botella, unidades del
+ * acompañamiento) pero no es una venta: queda como `cortesia` y a precio 0.
+ */
+export interface OpcionesConsumoStock {
+  tipo?: 'venta' | 'cortesia';
+  /** Importe a registrar; 0 para una cortesía. */
+  precio?: number;
+  /** Comisión a registrar; 0 para una cortesía. */
+  comision?: number;
+}
+
 export async function consumirStock(
   trx: TransactionQuery,
   detalles: ConsumoInventarioDetalle[],
   contextoVenta: ContextoVentaInventario,
-  soloValidar = false
+  soloValidar = false,
+  opciones?: OpcionesConsumoStock
 ): Promise<ShotAlert[]> {
   // El producto incluido consume una unidad completa sin reglas de precio de venta.
   const presentacionesBloqueadas = contextoVenta.servicioId
@@ -317,7 +331,7 @@ export async function consumirStock(
 
     const movimiento = {
       id: generateUUID(),
-      tipo: 'venta',
+      tipo: opciones?.tipo ?? 'venta',
       estado: 'completada',
       producto_id: presentacion.producto_id,
       presentacion_id: presentacionId,
@@ -328,22 +342,26 @@ export async function consumirStock(
             pedido.shotsAnfitriona * shotMlAnfitriona +
             pedido.mlAcompanamiento
           : null,
-      precio_venta: contextoVenta.servicioId
-        ? 0
-        : pedido.mlAcompanamiento > 0 &&
-            pedido.botellas === 0 &&
-            pedido.shotsCliente === 0 &&
-            pedido.shotsAnfitriona === 0
+      precio_venta:
+        opciones?.precio ??
+        (contextoVenta.servicioId
           ? 0
-          : Math.floor(Number(presentacion.precio_venta ?? 0)),
-      comision: contextoVenta.servicioId
-        ? 0
-        : pedido.mlAcompanamiento > 0 &&
-            pedido.botellas === 0 &&
-            pedido.shotsCliente === 0 &&
-            pedido.shotsAnfitriona === 0
+          : pedido.mlAcompanamiento > 0 &&
+              pedido.botellas === 0 &&
+              pedido.shotsCliente === 0 &&
+              pedido.shotsAnfitriona === 0
+            ? 0
+            : Math.floor(Number(presentacion.precio_venta ?? 0))),
+      comision:
+        opciones?.comision ??
+        (contextoVenta.servicioId
           ? 0
-          : Math.floor(Number(presentacion.comision ?? 0)),
+          : pedido.mlAcompanamiento > 0 &&
+              pedido.botellas === 0 &&
+              pedido.shotsCliente === 0 &&
+              pedido.shotsAnfitriona === 0
+            ? 0
+            : Math.floor(Number(presentacion.comision ?? 0))),
       usuario_id: contextoVenta.usuarioId,
       venta_id: contextoVenta.ventaId ?? null,
       ...(contextoVenta.servicioId ? { servicio_id: contextoVenta.servicioId } : {}),
@@ -701,4 +719,71 @@ export async function consumirProductoCortesia(
       productoAcompanamientoId,
       unidadesIncluidas
     );
+}
+
+/**
+ * Descuenta del bar la cortesía servida como corte (trago), no como botella.
+ *
+ * Un corte cliente sale con una unidad completa de bebida analcohólica, igual
+ * que en una venta (`shortMixerConsumption`): por eso el acompañamiento viaja
+ * como `acompanamiento_corto` y no como `acompanamiento_botella`. Se reutiliza
+ * `consumirStock` para que el plan de ml (botellas abiertas primero, abrir una
+ * cerrada si hace falta) y la trazabilidad por unidad sean idénticos a los de
+ * una venta; solo cambia el tipo y el precio del movimiento, que quedan en 0.
+ */
+export async function consumirCorteCortesia(
+  presentacionId: string,
+  usuarioId: string,
+  fecha: string,
+  contexto: ContextoOperacion,
+  acompanamientoPresentacionId?: string | null
+): Promise<void> {
+  if (!presentacionId) throw new BusinessError('Selecciona la bebida a entregar');
+  if (acompanamientoPresentacionId === presentacionId)
+    throw new BusinessError('La bebida y su acompañamiento deben ser distintos');
+  const trx = resolverTransaccion(contexto);
+  if (acompanamientoPresentacionId) {
+    const acompanamientos = await trx<{ id: string }[]>(
+      `SELECT p.id
+         FROM inventario_presentaciones p
+         JOIN productos pr ON pr.id_producto = p.producto_id
+         JOIN categorias c ON c.id_categoria = pr.categoria_id
+        WHERE p.id = ? AND c.system_key = 'bebidas_analcoholicas' AND pr.estado = 1`,
+      [acompanamientoPresentacionId]
+    );
+    if (!acompanamientos.length)
+      throw new BusinessError('Selecciona una bebida analcohólica válida como acompañamiento');
+  }
+  await consumirStock(
+    trx,
+    [
+      {
+        presentacion_id: presentacionId,
+        tipo_venta: 'shot',
+        cantidad: 1,
+        ...(acompanamientoPresentacionId
+          ? {
+              acompanamiento_corto: {
+                presentacion_id: acompanamientoPresentacionId,
+                unidades: 1
+              }
+            }
+          : {})
+      }
+    ],
+    { usuarioId, fecha },
+    false,
+    { tipo: 'cortesia', precio: 0, comision: 0 }
+  );
+  // El stock total del producto se recalcula como en la cortesía por botella:
+  // `consumirStock` mueve unidades, no el contador agregado de `productos`.
+  const ids = [presentacionId, acompanamientoPresentacionId].filter((id): id is string =>
+    Boolean(id)
+  );
+  const productos = await trx<{ producto_id: string }[]>(
+    `SELECT DISTINCT producto_id FROM inventario_presentaciones
+      WHERE id IN (${ids.map(() => '?').join(',')})`,
+    ids
+  );
+  for (const fila of productos) await sincronizarStockTotal(trx, fila.producto_id);
 }

@@ -35,6 +35,8 @@ export const POST = withRoute(
             ? String(body.acompanamiento_presentacion_id)
             : null,
           montoAdicional,
+          // El cliente Expo entrega cortes; la web mantiene la botella histórica.
+          tipoEntrega: body.tipo_entrega === 'corte' ? 'corte' : 'botella',
           usuarioId: user.id
         },
         async (plan, contexto, asignarTarea) => {
