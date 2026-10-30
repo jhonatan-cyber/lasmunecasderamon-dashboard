@@ -7,4 +7,9 @@ export { default as useProducts } from './useProducts';
 
 export type { Category } from './useCategories';
 export type { EscaneoEnvase } from './useContainerScan';
-export type { PresentacionFormItem, ProductFormValues, UnidadCodigoItem } from './useProductForm';
+export type {
+  EditPresDraft,
+  PresentacionFormItem,
+  ProductFormValues,
+  UnidadCodigoItem
+} from './useProductForm';

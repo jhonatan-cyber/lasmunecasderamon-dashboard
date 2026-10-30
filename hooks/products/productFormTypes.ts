@@ -4,9 +4,6 @@ export interface ProductFormValues {
   description: string;
   ml_shot: string;
   ml_shot_anfitriona: string;
-  fecha_elaboracion: string;
-  duracion_meses: string;
-  fecha_vencimiento: string;
 }
 
 export interface PresentacionFormItem {
@@ -16,6 +13,10 @@ export interface PresentacionFormItem {
   stock: string;
   stock_minimo?: string;
   stock_maximo?: string;
+  /** Fechas del lote de esta presentación (ISO `YYYY-MM-DD`; duración en meses). */
+  fecha_elaboracion: string;
+  duracion_meses: string;
+  fecha_vencimiento: string;
   foto: File | null;
   fotoPreview: string;
   fotoUrl: string;

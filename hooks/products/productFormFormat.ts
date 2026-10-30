@@ -1,4 +1,5 @@
 import type { PresentacionFormItem, ProductFormValues } from './productFormTypes';
+import { vencimientoCalculado } from '@/lib/business/vencimiento';
 
 export const FOTOS_PERMITIDAS = ['image/jpeg', 'image/jpg', 'image/png', 'image/gif', 'image/webp'];
 export const FOTO_MAX_BYTES = 5 * 1024 * 1024;
@@ -8,10 +9,7 @@ export const initialFormState: ProductFormValues = {
   name: '',
   description: '',
   ml_shot: '',
-  ml_shot_anfitriona: '',
-  fecha_elaboracion: '',
-  duracion_meses: '',
-  fecha_vencimiento: ''
+  ml_shot_anfitriona: ''
 };
 
 export interface EditPresDraft {
@@ -23,6 +21,9 @@ export interface EditPresDraft {
   stock_minimo: string;
   stock_maximo: string;
   stock: string;
+  fecha_elaboracion: string;
+  duracion_meses: string;
+  fecha_vencimiento: string;
 }
 
 export const emptyPresentacion = (): PresentacionFormItem => ({
@@ -32,6 +33,9 @@ export const emptyPresentacion = (): PresentacionFormItem => ({
   stock_minimo: '',
   stock_maximo: '',
   stock: '',
+  fecha_elaboracion: '',
+  duracion_meses: '',
+  fecha_vencimiento: '',
   foto: null,
   fotoPreview: '',
   fotoUrl: ''
@@ -45,11 +49,31 @@ export const emptyEditDraft = (): EditPresDraft => ({
   comision: '',
   stock_minimo: '',
   stock_maximo: '',
-  stock: ''
+  stock: '',
+  fecha_elaboracion: '',
+  duracion_meses: '',
+  fecha_vencimiento: ''
 });
 
 export const formatNumber = (value: string) =>
   value.replace(/\D/g, '').replace(/\B(?=(\d{3})+(?!\d))/g, '.');
+
+/** Campos que, al cambiar, recalculan el vencimiento del lote de la presentación. */
+export const CAMPOS_RECALCULAN_VENCIMIENTO = ['fecha_elaboracion', 'duracion_meses'];
+
+/**
+ * Recalcula el vencimiento de una presentación cuando cambian su elaboración o
+ * su duración: el día se recorta al fin del mes. Misma regla que el servidor
+ * (`resolverVencimiento`), y si el cálculo no es posible se conserva el valor
+ * que ya tenía (el vencimiento informado a mano manda).
+ */
+export function recalcularVencimiento<
+  T extends { fecha_elaboracion: string; duracion_meses: string; fecha_vencimiento: string }
+>(item: T, campo: string): T {
+  if (!CAMPOS_RECALCULAN_VENCIMIENTO.includes(campo)) return item;
+  const calculado = vencimientoCalculado(item.fecha_elaboracion, item.duracion_meses);
+  return calculado ? { ...item, fecha_vencimiento: calculado } : item;
+}
 
 /** Valor plano que espera la API: sin separadores de miles. */
 export const getNumericValue = (value: string) => value.replace(/\./g, '');

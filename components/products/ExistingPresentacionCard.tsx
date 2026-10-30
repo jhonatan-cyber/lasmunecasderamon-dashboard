@@ -9,22 +9,12 @@ import { productImageUrl } from '@/lib/utils/productImage';
 import { Camera, Pencil, Trash2, Plus, Link as LinkIcon, ChevronDown } from 'lucide-react';
 import { CodeDeactivationPicker } from './CodeDeactivationPicker';
 import { PresentacionNombreInput } from './PresentacionNombreInput';
+import { DatePicker } from '@/components/shared/DatePicker';
 import { Collapsible, CollapsibleTrigger, CollapsibleContent } from '@/components/ui/collapsible';
 import { cn } from '@/lib/utils/utils';
 import type { Presentacion } from '@/types/product';
-import type { UnidadCodigoItem } from '@/hooks/products/useProductForm';
+import type { EditPresDraft, UnidadCodigoItem } from '@/hooks/products/useProductForm';
 import { Label } from '@/components/ui/label';
-
-interface EditPresDraft {
-  nombre: string;
-  codigo_barras: string;
-  precio_compra: string;
-  precio_venta: string;
-  comision: string;
-  stock: string;
-  stock_minimo: string;
-  stock_maximo: string;
-}
 
 interface ExistingPresentacionCardProps {
   presentacion: Presentacion;
@@ -228,6 +218,62 @@ export function ExistingPresentacionCard({
               onChange={changeEditPresDraft}
             />
           </div>
+          {/* Fechas del lote de esta presentación. */}
+          <div className='grid grid-cols-1 sm:grid-cols-3 gap-2'>
+            <div className='space-y-1'>
+              <Label
+                htmlFor={`edit-pres-fecha-elaboracion-${p.id}`}
+                className='block text-[10px] font-bold uppercase tracking-wider text-gray-400 ml-1'
+              >
+                Fecha de elaboración
+              </Label>
+              <DatePicker
+                id={`edit-pres-fecha-elaboracion-${p.id}`}
+                value={editPresDraft.fecha_elaboracion}
+                onChange={fecha => changeEditPresDraft('fecha_elaboracion', fecha)}
+                disabled={isLoading || guardandoPres}
+                displayFormat='short'
+                className='h-10 bg-white dark:bg-slate-900'
+              />
+            </div>
+            <div className='space-y-1'>
+              <Label
+                htmlFor={`edit-pres-duracion-${p.id}`}
+                className='block text-[10px] font-bold uppercase tracking-wider text-gray-400 ml-1'
+              >
+                Duración (meses)
+              </Label>
+              <Input
+                id={`edit-pres-duracion-${p.id}`}
+                value={editPresDraft.duracion_meses}
+                onChange={e => changeEditPresDraft('duracion_meses', e.target.value)}
+                placeholder='Ej: 6'
+                disabled={isLoading || guardandoPres}
+                inputMode='numeric'
+                className='h-10 bg-white dark:bg-slate-900'
+              />
+            </div>
+            <div className='space-y-1'>
+              <Label
+                htmlFor={`edit-pres-fecha-vencimiento-${p.id}`}
+                className='block text-[10px] font-bold uppercase tracking-wider text-gray-400 ml-1'
+              >
+                Fecha de vencimiento
+              </Label>
+              <DatePicker
+                id={`edit-pres-fecha-vencimiento-${p.id}`}
+                value={editPresDraft.fecha_vencimiento}
+                onChange={fecha => changeEditPresDraft('fecha_vencimiento', fecha)}
+                disabled={isLoading || guardandoPres}
+                displayFormat='short'
+                className='h-10 bg-white dark:bg-slate-900'
+              />
+            </div>
+          </div>
+          <p className='text-[11px] text-gray-400 ml-1'>
+            Con elaboración y duración el vencimiento se calcula solo. Si informas el vencimiento,
+            las otras dos no hacen falta.
+          </p>
           <p className='text-[11px] text-gray-400 ml-1'>
             Al subir se generan códigos nuevos. Al bajar, selecciona abajo los códigos a desactivar
             (no se eliminan).

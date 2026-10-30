@@ -14,6 +14,7 @@ import {
   ChevronDown
 } from 'lucide-react';
 import { PresentacionNombreInput } from './PresentacionNombreInput';
+import { DatePicker } from '@/components/shared/DatePicker';
 import { Collapsible, CollapsibleTrigger, CollapsibleContent } from '@/components/ui/collapsible';
 import { cn } from '@/lib/utils/utils';
 import type { PresentacionFormItem } from '@/hooks/products/useProductForm';
@@ -215,6 +216,62 @@ export function NewPresentacionRow({
               disabled={isLoading}
               onChange={onUpdate}
             />
+            {/* Fechas del lote de esta presentación. */}
+            <div className='grid grid-cols-1 sm:grid-cols-3 gap-2'>
+              <div className='space-y-1'>
+                <Label
+                  htmlFor={`new-fecha-elaboracion-${i}`}
+                  className='block text-[10px] font-bold uppercase tracking-wider text-gray-400 ml-1'
+                >
+                  Fecha de elaboración
+                </Label>
+                <DatePicker
+                  id={`new-fecha-elaboracion-${i}`}
+                  value={p.fecha_elaboracion}
+                  onChange={fecha => onUpdate('fecha_elaboracion', fecha)}
+                  disabled={isLoading}
+                  displayFormat='short'
+                  className='h-10'
+                />
+              </div>
+              <div className='space-y-1'>
+                <Label
+                  htmlFor={`new-duracion-${i}`}
+                  className='block text-[10px] font-bold uppercase tracking-wider text-gray-400 ml-1'
+                >
+                  Duración (meses)
+                </Label>
+                <Input
+                  id={`new-duracion-${i}`}
+                  value={p.duracion_meses}
+                  onChange={e => onUpdate('duracion_meses', e.target.value)}
+                  placeholder='Ej: 6'
+                  disabled={isLoading}
+                  inputMode='numeric'
+                  className='h-10'
+                />
+              </div>
+              <div className='space-y-1'>
+                <Label
+                  htmlFor={`new-fecha-vencimiento-${i}`}
+                  className='block text-[10px] font-bold uppercase tracking-wider text-gray-400 ml-1'
+                >
+                  Fecha de vencimiento
+                </Label>
+                <DatePicker
+                  id={`new-fecha-vencimiento-${i}`}
+                  value={p.fecha_vencimiento}
+                  onChange={fecha => onUpdate('fecha_vencimiento', fecha)}
+                  disabled={isLoading}
+                  displayFormat='short'
+                  className='h-10'
+                />
+              </div>
+            </div>
+            <p className='text-[11px] text-gray-400 ml-1'>
+              Con elaboración y duración el vencimiento se calcula solo. Si informas el vencimiento,
+              las otras dos no hacen falta.
+            </p>
             <div className='relative group'>
               <span className='absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 z-10'>
                 <LinkIcon className='w-4 h-4' />
