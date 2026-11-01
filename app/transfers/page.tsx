@@ -288,7 +288,7 @@ function TransfersContent() {
       {error && <ErrorState size='sm' title='No se pudo actualizar' message={error} />}
 
       <Tabs value={tab} onValueChange={setTab} className='flex flex-col gap-4'>
-        <div className='flex flex-wrap items-center justify-between gap-3'>
+        <div className='flex flex-wrap items-end justify-between gap-3'>
           <TabsList
             aria-label='Listados de transferencias'
             className='grid h-auto w-full shrink-0 grid-cols-3 rounded-full sm:w-fit'
@@ -300,11 +300,11 @@ function TransfersContent() {
               Pendientes{pendientes.length > 0 ? ` (${pendientes.length})` : ''}
             </TabsTrigger>
             <TabsTrigger value='history' className='rounded-full whitespace-normal text-center'>
-              Historial de transferencias
+              Historial
             </TabsTrigger>
           </TabsList>
-          {tab === 'products' && (
-            <div className='flex min-w-0 flex-1 items-center justify-end gap-3'>
+          <div className='flex min-w-0 flex-1 items-center justify-end gap-3'>
+            {tab === 'products' && (
               <Input
                 aria-label='Buscar producto, categoría, presentación o código'
                 placeholder='Buscar producto, categoría, presentación o código'
@@ -315,17 +315,31 @@ function TransfersContent() {
                 }}
                 className='h-10 min-w-0 flex-1 rounded-full sm:max-w-80'
               />
-              <div className='shrink-0'>
-                <SelectElements
-                  value={pageSize}
-                  onChange={setPageSize}
-                  setPage={setPage}
-                  options={PAGE_SIZE_OPTIONS}
-                  label={PAGE_SIZE_LABEL}
-                />
-              </div>
+            )}
+            <div className='shrink-0'>
+              <SelectElements
+                value={
+                  tab === 'products'
+                    ? pageSize
+                    : tab === 'pending'
+                      ? pendingPageSize
+                      : historyPageSize
+                }
+                onChange={
+                  tab === 'products'
+                    ? setPageSize
+                    : tab === 'pending'
+                      ? setPendingPageSize
+                      : setHistoryPageSize
+                }
+                setPage={
+                  tab === 'products' ? setPage : tab === 'pending' ? setPendingPage : setHistoryPage
+                }
+                options={PAGE_SIZE_OPTIONS}
+                label={PAGE_SIZE_LABEL}
+              />
             </div>
-          )}
+          </div>
         </div>
         <TabsContent value='products'>
           <section
@@ -426,27 +440,7 @@ function TransfersContent() {
           </section>
         </TabsContent>
         <TabsContent value='pending'>
-          <section aria-labelledby='pending-title' className='flex flex-col gap-4'>
-            <div className='flex flex-wrap items-end justify-between gap-3'>
-              <div className='flex flex-col gap-1'>
-                <h2 id='pending-title' className='text-lg font-semibold'>
-                  Pendientes de aprobación
-                </h2>
-                <p className='text-sm text-muted-foreground'>
-                  Quien tenga el permiso de aprobación (Barman por defecto) aprueba o rechaza. Al
-                  aprobar, las unidades quedan disponibles en el bar.
-                </p>
-              </div>
-              <div className='shrink-0'>
-                <SelectElements
-                  value={pendingPageSize}
-                  onChange={setPendingPageSize}
-                  setPage={setPendingPage}
-                  options={PAGE_SIZE_OPTIONS}
-                  label={PAGE_SIZE_LABEL}
-                />
-              </div>
-            </div>
+          <section aria-label='Solicitudes pendientes' className='flex flex-col gap-4'>
             {pendientes.length === 0 ? (
               <p className='rounded-2xl border border-dashed py-12 text-center text-muted-foreground'>
                 {loading ? 'Cargando…' : 'No hay solicitudes pendientes.'}
@@ -513,112 +507,91 @@ function TransfersContent() {
           </section>
         </TabsContent>
         <TabsContent value='history'>
-          <section aria-labelledby='history-title' className='flex flex-col gap-4'>
-            <div className='flex flex-wrap items-end justify-between gap-3'>
-              <div className='flex flex-col gap-1'>
-                <h2 id='history-title' className='text-lg font-semibold'>
-                  Historial de transferencias
-                </h2>
-                <p className='text-sm text-muted-foreground'>
-                  Últimos 100 movimientos de bodega a bar.
-                </p>
-              </div>
-              <div className='shrink-0'>
-                <SelectElements
-                  value={historyPageSize}
-                  onChange={setHistoryPageSize}
-                  setPage={setHistoryPage}
-                  options={PAGE_SIZE_OPTIONS}
-                  label={PAGE_SIZE_LABEL}
-                />
-              </div>
-            </div>
-            <div className='overflow-hidden rounded-2xl border bg-card'>
-              <Table>
-                <TableHeader>
+          <section aria-label='Historial de transferencias' className='flex flex-col gap-4'>
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>Fecha</TableHead>
+                  <TableHead>Producto</TableHead>
+                  <TableHead>Presentación</TableHead>
+                  <TableHead>Tipos de venta</TableHead>
+                  <TableHead className='text-right'>Cantidad</TableHead>
+                  <TableHead>Estado</TableHead>
+                  <TableHead>Solicitada por</TableHead>
+                  <TableHead>Recepción / resolución</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {historial.length === 0 ? (
                   <TableRow>
-                    <TableHead>Fecha</TableHead>
-                    <TableHead>Producto</TableHead>
-                    <TableHead>Presentación</TableHead>
-                    <TableHead>Tipos de venta</TableHead>
-                    <TableHead className='text-right'>Cantidad</TableHead>
-                    <TableHead>Estado</TableHead>
-                    <TableHead>Solicitada por</TableHead>
-                    <TableHead>Recepción / resolución</TableHead>
+                    <TableCell colSpan={8} className='text-center text-muted-foreground'>
+                      <EmptyState
+                        variant='text'
+                        title={
+                          loading
+                            ? 'Cargando historial…'
+                            : 'Todavía no hay transferencias registradas.'
+                        }
+                      />
+                    </TableCell>
                   </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {historial.length === 0 ? (
-                    <TableRow>
-                      <TableCell colSpan={8} className='text-center text-muted-foreground'>
-                        <EmptyState
-                          variant='text'
-                          title={
-                            loading
-                              ? 'Cargando historial…'
-                              : 'Todavía no hay transferencias registradas.'
-                          }
-                        />
+                ) : (
+                  visibleHistory.map(record => (
+                    <TableRow key={record.id}>
+                      <TableCell className='whitespace-nowrap'>
+                        {record.fecha_crea.replace('T', ' ').slice(0, 16)}
+                      </TableCell>
+                      <TableCell>{record.producto_nombre}</TableCell>
+                      <TableCell>{record.presentacion_nombre}</TableCell>
+                      <TableCell>
+                        {isTierPricedItem({
+                          categoria_nombre: record.categoria_nombre,
+                          opciones_venta: record.opciones_venta,
+                          precio_venta: record.precio_venta
+                        }) ? (
+                          <BarAnfitrionas
+                            productoId={record.producto_id}
+                            categoriaNombre={record.categoria_nombre}
+                            precio={record.precio_venta}
+                            compact
+                          />
+                        ) : (
+                          <SalePrices
+                            options={record.opciones_venta}
+                            price={record.precio_venta}
+                            commission={record.comision}
+                            mlShot={record.ml_shot}
+                            mlShotAnfitriona={record.ml_shot_anfitriona}
+                          />
+                        )}
+                      </TableCell>
+                      <TableCell className='text-right tabular-nums'>{record.cantidad}</TableCell>
+                      <TableCell>
+                        <Badge
+                          variant={record.estado === 'aceptada' ? 'default' : 'secondary'}
+                          className='whitespace-nowrap'
+                        >
+                          {record.estado === 'aceptada'
+                            ? 'Aprobada'
+                            : record.estado === 'rechazada'
+                              ? 'Rechazada'
+                              : record.estado}
+                        </Badge>
+                      </TableCell>
+                      <TableCell>{record.usuario_nombre}</TableCell>
+                      <TableCell>
+                        {record.aceptado_nombre || 'Sin recepción registrada'}
+                        {record.fecha_aceptacion && (
+                          <p className='text-xs text-muted-foreground'>
+                            {record.fecha_aceptacion.replace('T', ' ').slice(0, 16)}
+                          </p>
+                        )}
                       </TableCell>
                     </TableRow>
-                  ) : (
-                    visibleHistory.map(record => (
-                      <TableRow key={record.id}>
-                        <TableCell className='whitespace-nowrap'>
-                          {record.fecha_crea.replace('T', ' ').slice(0, 16)}
-                        </TableCell>
-                        <TableCell>{record.producto_nombre}</TableCell>
-                        <TableCell>{record.presentacion_nombre}</TableCell>
-                        <TableCell>
-                          {isTierPricedItem({
-                            categoria_nombre: record.categoria_nombre,
-                            opciones_venta: record.opciones_venta,
-                            precio_venta: record.precio_venta
-                          }) ? (
-                            <BarAnfitrionas
-                              productoId={record.producto_id}
-                              categoriaNombre={record.categoria_nombre}
-                              precio={record.precio_venta}
-                              compact
-                            />
-                          ) : (
-                            <SalePrices
-                              options={record.opciones_venta}
-                              price={record.precio_venta}
-                              commission={record.comision}
-                              mlShot={record.ml_shot}
-                              mlShotAnfitriona={record.ml_shot_anfitriona}
-                            />
-                          )}
-                        </TableCell>
-                        <TableCell className='text-right tabular-nums'>{record.cantidad}</TableCell>
-                        <TableCell>
-                          <Badge
-                            variant={record.estado === 'aceptada' ? 'default' : 'secondary'}
-                            className='whitespace-nowrap'
-                          >
-                            {record.estado === 'aceptada'
-                              ? 'Aprobada'
-                              : record.estado === 'rechazada'
-                                ? 'Rechazada'
-                                : record.estado}
-                          </Badge>
-                        </TableCell>
-                        <TableCell>{record.usuario_nombre}</TableCell>
-                        <TableCell>
-                          {record.aceptado_nombre || 'Sin recepción registrada'}
-                          {record.fecha_aceptacion && (
-                            <p className='text-xs text-muted-foreground'>
-                              {record.fecha_aceptacion.replace('T', ' ').slice(0, 16)}
-                            </p>
-                          )}
-                        </TableCell>
-                      </TableRow>
-                    ))
-                  )}
-                </TableBody>
-              </Table>
-            </div>
+                  ))
+                )}
+              </TableBody>
+            </Table>
             {!loading && historial.length > 0 && (
               <TransferPagination
                 page={historyCurrentPage}

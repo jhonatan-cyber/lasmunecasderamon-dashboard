@@ -61,16 +61,8 @@ export default function AttendanceStatsCard({
         badge='Asistencia'
         label='Presentes'
         value={stats.presentes}
-        footer={
-          <div className='flex items-center gap-1.5 pt-1'>
-            <span className='text-emerald-700 font-black text-sm'>
-              {stats.porcentajeAsistencia}%
-            </span>
-            <span className='text-[10px] text-emerald-700/50 font-medium uppercase tracking-tighter italic'>
-              Tasa de asistencia
-            </span>
-          </div>
-        }
+        footerValue={`${stats.porcentajeAsistencia}%`}
+        footerLabel='Tasa de asistencia'
       />
 
       {}
@@ -80,16 +72,8 @@ export default function AttendanceStatsCard({
         badge='Faltas'
         label='Ausentes'
         value={stats.ausentes}
-        footer={
-          <div className='flex items-center gap-1.5 pt-1'>
-            <span className='text-rose-700 font-black text-sm'>
-              {100 - stats.porcentajeAsistencia}%
-            </span>
-            <span className='text-[10px] text-rose-700/50 font-medium uppercase tracking-tighter italic'>
-              Tasa de inasistencia
-            </span>
-          </div>
-        }
+        footerValue={`${100 - stats.porcentajeAsistencia}%`}
+        footerLabel='Tasa de inasistencia'
       />
 
       {}

@@ -18,11 +18,8 @@ import type { ReservaQuincho } from '@/types/quincho';
 interface ReservaQuinchoDetalleModalProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  /** Fecha elegida en el calendario, `YYYY-MM-DD`. */
   fecha: string | null;
-  /** Todas las reservas de esa fecha, activas y anuladas. */
   reservas: ReservaQuincho[];
-  /** El permiso `quinchos.delete` habilita anular y devolver el prepago. */
   canCancel: boolean;
   isCancelling: boolean;
   onCancel: (reserva: ReservaQuincho) => Promise<boolean>;
@@ -39,7 +36,6 @@ function DatoReserva({ etiqueta, valor }: { etiqueta: string; valor: string }) {
   );
 }
 
-/** Detalle de las reservas de un día, con la anulación bajo confirmación. */
 export function ReservaQuinchoDetalleModal({
   open,
   onOpenChange,

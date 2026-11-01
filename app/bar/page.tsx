@@ -302,18 +302,29 @@ export default function BarPage() {
   const filtered = useMemo(() => {
     const term = search.trim().toLowerCase();
     return items
-      .filter(
-        i =>
-          (stockFilter !== 'abiertas' ||
-            Number(i.ml_abierta ?? 0) > 0 ||
-            Number(i.botellas_vacias_shots ?? 0) > 0) &&
-          (!term ||
-            i.producto_nombre.toLowerCase().includes(term) ||
-            (i.categoria_nombre ?? '').toLowerCase().includes(term) ||
-            i.nombre.toLowerCase().includes(term) ||
-            (i.codigo_barras || '').toLowerCase().includes(term) ||
-            (i.producto_codigo || '').toLowerCase().includes(term))
-      )
+      .filter(i => {
+        // El bar solo lista lo que tiene existencia: stock en barra, botellas
+        // abiertas o vacías por cortos pendientes de devolución.
+        const disponible =
+          Number(i.stock_bar ?? 0) > 0 ||
+          Number(i.ml_abierta ?? 0) > 0 ||
+          Number(i.botellas_vacias_shots ?? 0) > 0;
+        if (!disponible) return false;
+        if (
+          stockFilter === 'abiertas' &&
+          Number(i.ml_abierta ?? 0) <= 0 &&
+          Number(i.botellas_vacias_shots ?? 0) <= 0
+        )
+          return false;
+        return (
+          !term ||
+          i.producto_nombre.toLowerCase().includes(term) ||
+          (i.categoria_nombre ?? '').toLowerCase().includes(term) ||
+          i.nombre.toLowerCase().includes(term) ||
+          (i.codigo_barras || '').toLowerCase().includes(term) ||
+          (i.producto_codigo || '').toLowerCase().includes(term)
+        );
+      })
       .sort((a, b) => {
         // Orden manual: el arreglo ya viene en el orden guardado por el bar.
         if (sortField === 'orden') return 0;

@@ -34,14 +34,8 @@ export default function AdvancesStatsCards({ advances }: AdvancesStatsCardsProps
         badge='Aceptados'
         label='Total Aprobado'
         value={formatCurrencyCLP(totals.montoAceptados)}
-        footer={
-          <div className='flex items-center gap-1.5 pt-1'>
-            <span className='text-emerald-700 font-black text-sm'>{totals.countAceptados}</span>
-            <span className='text-[10px] text-emerald-700/50 font-medium uppercase tracking-tighter italic'>
-              Solicitudes
-            </span>
-          </div>
-        }
+        footerValue={totals.countAceptados}
+        footerLabel='Solicitudes'
       />
 
       {}
@@ -51,14 +45,8 @@ export default function AdvancesStatsCards({ advances }: AdvancesStatsCardsProps
         badge='Pendientes'
         label='En Espera'
         value={formatCurrencyCLP(totals.montoPendientes)}
-        footer={
-          <div className='flex items-center gap-1.5 pt-1'>
-            <span className='text-amber-700 font-black text-sm'>{totals.countPendientes}</span>
-            <span className='text-[10px] text-amber-700/50 font-medium uppercase tracking-tighter italic'>
-              Solicitudes
-            </span>
-          </div>
-        }
+        footerValue={totals.countPendientes}
+        footerLabel='Solicitudes'
       />
 
       {}
@@ -69,14 +57,8 @@ export default function AdvancesStatsCards({ advances }: AdvancesStatsCardsProps
         badge='Rechazados'
         label='Rechazado'
         value={formatCurrencyCLP(totals.montoRechazados)}
-        footer={
-          <div className='flex items-center gap-1.5 pt-1'>
-            <span className='text-rose-700 font-black text-sm'>{totals.countRechazados}</span>
-            <span className='text-[10px] text-rose-700/50 font-medium uppercase tracking-tighter italic'>
-              Solicitudes
-            </span>
-          </div>
-        }
+        footerValue={totals.countRechazados}
+        footerLabel='Solicitudes'
       />
     </div>
   );

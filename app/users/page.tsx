@@ -18,7 +18,7 @@ import { Button } from '@/components/ui/button';
 import Paginate from '@/components/shared/Paginate';
 import { EMAIL_DOMAIN } from '@/lib/constants/email';
 
-import { useUsers } from '@/hooks/staff';
+import { useUsers, useRoles, type UserFormValues } from '@/hooks/staff';
 import { useCurrentUser } from '@/hooks/auth/useCurrentUser';
 import { useUserImage } from '@/contexts/UserImageContext';
 
@@ -27,7 +27,6 @@ import { formatCurrency, formatDate } from '@/lib/utils/formatters';
 
 import { UserTable } from '@/components/users/UserTable';
 import { UserFilters } from '@/components/users/UserFilters';
-import { type UserFormValues } from '@/hooks/staff';
 import { UserExportButtons } from '@/components/users/UserExportButtons';
 import { PermissionGuard } from '@/components/auth/PermissionGuard';
 import { Skeleton as BoneyardSkeleton } from 'boneyard-js/react';
@@ -91,6 +90,7 @@ export default function Users() {
     deactivateUser,
     deleteUser
   } = useUsers();
+  const { roles } = useRoles();
 
   const handleClearFilters = () => {
     setSearchTerm('');
@@ -278,11 +278,9 @@ export default function Users() {
           <h1 className='text-3xl font-bold'>Gestión de Usuarios</h1>
           <p className='text-gray-600'>Control de plataforma.</p>
         </div>
-        <div className='flex flex-col w-full sm:w-auto items-stretch sm:items-end gap-2'>
+        <div className='flex flex-col sm:flex-row w-full sm:w-auto items-stretch sm:items-center gap-2'>
           <PermissionGuard module='users' action='view' fallback={null}>
-            <div className='w-full sm:w-auto flex justify-center sm:justify-end'>
-              <UserExportButtons users={users || []} />
-            </div>
+            <UserExportButtons users={users || []} />
           </PermissionGuard>
           <PermissionGuard module='users' action='create' fallback={null}>
             <Button
@@ -312,6 +310,7 @@ export default function Users() {
             pageSize={pageSize}
             setPageSize={setPageSize}
             setPage={setPage}
+            roles={roles}
           />
 
           <div className='mt-6 lg:overflow-x-auto'>

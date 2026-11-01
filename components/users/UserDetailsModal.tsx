@@ -1,5 +1,6 @@
 'use client';
 
+import { useEffect, useState } from 'react';
 import {
   Dialog,
   DialogContent,
@@ -22,13 +23,33 @@ import {
   Coins,
   CreditCard,
   Building,
-  Heart
+  Heart,
+  Fingerprint,
+  ScanFace,
+  FileImage
 } from 'lucide-react';
 
 interface UserDetailsModalProps {
   user: User | null;
   isOpen: boolean;
   onClose: () => void;
+}
+
+interface PlantillaBiometrica {
+  tipo: string;
+  sincronizada?: number;
+  fecha_captura?: string | null;
+}
+
+interface BiometricStatus {
+  codigo: string | null;
+  huella: number;
+  facial: number;
+  ultima_verificacion: string | null;
+  ultimo_resultado: string | null;
+  cara_base64: string | null;
+  huella_hex: string | null;
+  plantillas?: PlantillaBiometrica[];
 }
 
 const formatDate = (dateString: string | undefined) => {
@@ -53,7 +74,35 @@ const getRoleBadgeColor = (role: string) => {
 };
 
 export function UserDetailsModal({ user, isOpen, onClose }: UserDetailsModalProps) {
+  const [biometricStatus, setBiometricStatus] = useState<BiometricStatus | null>(null);
+
+  useEffect(() => {
+    if (!isOpen || !user?.id) {
+      setBiometricStatus(null);
+      return;
+    }
+    const fetchBiometric = async () => {
+      try {
+        const res = await fetch(`/api/users/${user.id}/biometric`);
+        if (res.ok) {
+          const json = await res.json();
+          setBiometricStatus(json.data || null);
+        }
+      } catch (error) {
+        console.error('Error fetching biometric status:', error);
+      }
+    };
+    fetchBiometric();
+  }, [isOpen, user?.id]);
+
   if (!user) return null;
+
+  const facialEnrolado = Number(biometricStatus?.facial ?? user.biometrico_facial) === 1;
+  const huellaEnrolada = Number(biometricStatus?.huella ?? user.biometrico_huella) === 1;
+  const plantillas = biometricStatus?.plantillas || [];
+  const plantillasCara = plantillas.filter(p => p.tipo === 'cara').length;
+  const plantillasHuella = plantillas.filter(p => p.tipo === 'huella').length;
+  const totalPlantillas = plantillasCara + plantillasHuella;
 
   const formatCurrency = (
     value: number | string | undefined,
@@ -117,11 +166,10 @@ export function UserDetailsModal({ user, isOpen, onClose }: UserDetailsModalProp
                   </div>
                 </div>
               </div>
-              <div className='flex flex-col sm:flex-row gap-2' />
             </div>
+
             <div className='space-y-4 sm:space-y-6'>
               <div className='grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6'>
-                {}
                 <div className='space-y-3 sm:space-y-4'>
                   <h3 className='font-semibold text-gray-700 dark:text-gray-200 text-sm sm:text-base'>
                     Información Personal
@@ -136,7 +184,6 @@ export function UserDetailsModal({ user, isOpen, onClose }: UserDetailsModalProp
                         </p>
                       </div>
                     </div>
-
                     <div className='flex items-start'>
                       <CreditCard className='h-3 w-3 sm:h-4 sm:w-4 mt-1 mr-2 text-gray-400 shrink-0' />
                       <div>
@@ -146,7 +193,6 @@ export function UserDetailsModal({ user, isOpen, onClose }: UserDetailsModalProp
                         </p>
                       </div>
                     </div>
-
                     <div className='flex items-start'>
                       <AtSign className='h-3 w-3 sm:h-4 sm:w-4 mt-1 mr-2 text-gray-400 shrink-0' />
                       <div>
@@ -156,7 +202,6 @@ export function UserDetailsModal({ user, isOpen, onClose }: UserDetailsModalProp
                         </p>
                       </div>
                     </div>
-
                     <div className='flex items-start'>
                       <Phone className='h-3 w-3 sm:h-4 sm:w-4 mt-1 mr-2 text-gray-400 shrink-0' />
                       <div>
@@ -166,7 +211,6 @@ export function UserDetailsModal({ user, isOpen, onClose }: UserDetailsModalProp
                         </p>
                       </div>
                     </div>
-
                     <div className='flex items-start'>
                       <MapPin className='h-3 w-3 sm:h-4 sm:w-4 mt-1 mr-2 text-gray-400 shrink-0' />
                       <div>
@@ -176,7 +220,6 @@ export function UserDetailsModal({ user, isOpen, onClose }: UserDetailsModalProp
                         </p>
                       </div>
                     </div>
-
                     <div className='flex items-start'>
                       <Heart className='h-3 w-3 sm:h-4 sm:w-4 mt-1 mr-2 text-gray-400 shrink-0' />
                       <div>
@@ -194,7 +237,6 @@ export function UserDetailsModal({ user, isOpen, onClose }: UserDetailsModalProp
                         </Badge>
                       </div>
                     </div>
-
                     <div className='flex items-start'>
                       <Building className='h-3 w-3 sm:h-4 sm:w-4 mt-1 mr-2 text-gray-400 shrink-0' />
                       <div>
@@ -207,7 +249,6 @@ export function UserDetailsModal({ user, isOpen, onClose }: UserDetailsModalProp
                   </div>
                 </div>
 
-                {}
                 <div className='space-y-3 sm:space-y-4'>
                   <h3 className='font-semibold text-gray-700 dark:text-gray-200 text-sm sm:text-base'>
                     Información Financiera
@@ -222,7 +263,6 @@ export function UserDetailsModal({ user, isOpen, onClose }: UserDetailsModalProp
                         </p>
                       </div>
                     </div>
-
                     <div className='flex items-start'>
                       <DollarSign className='h-4 w-4 mt-1 mr-2 text-gray-400 shrink-0' />
                       <div>
@@ -232,7 +272,6 @@ export function UserDetailsModal({ user, isOpen, onClose }: UserDetailsModalProp
                         </p>
                       </div>
                     </div>
-
                     <div className='flex items-start'>
                       <Coins className='h-4 w-4 mt-1 mr-2 text-gray-400 shrink-0' />
                       <div>
@@ -246,7 +285,64 @@ export function UserDetailsModal({ user, isOpen, onClose }: UserDetailsModalProp
                 </div>
               </div>
 
-              {}
+              <div className='space-y-4'>
+                <h3 className='font-semibold text-gray-700 dark:text-gray-200 text-md flex items-center gap-2'>
+                  <Fingerprint className='h-4 w-4' />
+                  Biometría
+                </h3>
+                <div className='grid grid-cols-1 md:grid-cols-2 gap-4'>
+                  <div>
+                    <p className='text-sm font-medium text-gray-500'>Reconocimiento facial</p>
+                    <div className='flex items-center gap-2 mt-1'>
+                      <ScanFace className='h-4 w-4 text-gray-400' />
+                      <Badge
+                        className={`text-xs ${
+                          facialEnrolado
+                            ? 'bg-green-100 text-green-700'
+                            : 'bg-gray-100 text-gray-700 dark:bg-gray-800 dark:text-gray-100'
+                        }`}
+                      >
+                        {facialEnrolado ? 'Enrolado' : 'No enrolado'}
+                      </Badge>
+                    </div>
+                  </div>
+                  <div>
+                    <p className='text-sm font-medium text-gray-500'>Huella dactilar</p>
+                    <div className='flex items-center gap-2 mt-1'>
+                      <Fingerprint className='h-4 w-4 text-gray-400' />
+                      <Badge
+                        className={`text-xs ${
+                          huellaEnrolada
+                            ? 'bg-green-100 text-green-700'
+                            : 'bg-gray-100 text-gray-700 dark:bg-gray-800 dark:text-gray-100'
+                        }`}
+                      >
+                        {huellaEnrolada ? 'Enrolado' : 'No enrolado'}
+                      </Badge>
+                    </div>
+                  </div>
+                  {totalPlantillas > 0 ? (
+                    <div className='md:col-span-2'>
+                      <p className='text-sm font-medium text-gray-500 flex items-center gap-1'>
+                        <FileImage className='h-3 w-3' />
+                        Plantillas guardadas
+                      </p>
+                      <div className='flex items-center gap-3 mt-1 text-xs text-gray-600'>
+                        <span>Faciales: {plantillasCara}</span>
+                        <span>Huellas: {plantillasHuella}</span>
+                        <span className='font-medium'>Total: {totalPlantillas}</span>
+                      </div>
+                    </div>
+                  ) : null}
+                </div>
+                {facialEnrolado ? (
+                  <p className='text-xs text-gray-500'>
+                    La plantilla facial se guarda en el sistema/lector según el flujo. El vector no
+                    se muestra aquí por seguridad/tamaño.
+                  </p>
+                ) : null}
+              </div>
+
               <div className='space-y-4'>
                 <h3 className='font-semibold text-gray-700 dark:text-gray-200 text-md'>Registro</h3>
                 <div className='grid grid-cols-1 md:grid-cols-3 gap-4'>

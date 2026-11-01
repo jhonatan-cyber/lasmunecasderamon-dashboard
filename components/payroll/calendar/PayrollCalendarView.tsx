@@ -1,5 +1,7 @@
 'use client';
 
+import type { CalendarAction } from '@/hooks/calendar/useCalendarActions';
+
 interface PayrollCalendarViewProps {
   currentDate: Date;
   currentView: string;
@@ -14,7 +16,7 @@ interface PayrollCalendarViewProps {
   handleMouseEnter: (date: Date) => void;
   handleMouseUp: () => void;
   renderDateActions: (date: Date) => React.ReactNode;
-  getActionsForDate: (date: Date) => any[];
+  getActionsForDate: (date: Date) => CalendarAction[];
 }
 
 function getActionDotClass(tipo: string) {
@@ -94,7 +96,7 @@ export function PayrollCalendarView({
                     const isSelected = isDateSelected(day.date);
                     const actions = getActionsForDate(day.date);
                     const uniqueActions = Object.values(
-                      actions.reduce((acc: Record<string, any>, action: any) => {
+                      actions.reduce<Record<string, CalendarAction>>((acc, action) => {
                         if (!acc[action.tipo]) acc[action.tipo] = action;
                         return acc;
                       }, {})
@@ -133,7 +135,7 @@ export function PayrollCalendarView({
                         </div>
                         {day.isCurrentMonth && (
                           <div className='flex flex-wrap gap-0.5 mt-0.5'>
-                            {uniqueActions.slice(0, 4).map((action: any, index: number) => (
+                            {uniqueActions.slice(0, 4).map((action, index) => (
                               <div
                                 key={index}
                                 className={`w-1.5 h-1.5 rounded-full ${getActionDotClass(

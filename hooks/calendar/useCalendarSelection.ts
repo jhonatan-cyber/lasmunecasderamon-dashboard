@@ -4,7 +4,20 @@ import { useCallback, useState } from 'react';
 import { getDateRange, isSameDay } from './roleCalendarGrid';
 import type { DataType } from './calendarTypes';
 
-export function useCalendarSelection(defaultCategory: DataType) {
+export interface UseCalendarSelectionOptions {
+  /** Cuando es false los handlers de arrastre no hacen nada (p. ej. sin permiso de vista). */
+  enabled?: boolean;
+  /**
+   * Se invoca al soltar el arrastre con fechas seleccionadas.
+   * Si se omite, se abre el modal propio del hook (comportamiento por defecto).
+   */
+  onSelectionComplete?: () => void;
+}
+
+export function useCalendarSelection(
+  defaultCategory: DataType,
+  { enabled = true, onSelectionComplete }: UseCalendarSelectionOptions = {}
+) {
   const [selectedDates, setSelectedDates] = useState<Date[]>([]);
   const [isDragging, setIsDragging] = useState(false);
   const [dragStartDate, setDragStartDate] = useState<Date | null>(null);
@@ -25,31 +38,41 @@ export function useCalendarSelection(defaultCategory: DataType) {
     [defaultCategory]
   );
 
-  const handleMouseDown = useCallback((date: Date) => {
-    setIsDragging(true);
-    setDragStartDate(date);
-    setSelectedDates([date]);
-  }, []);
+  const handleMouseDown = useCallback(
+    (date: Date) => {
+      if (!enabled) return;
+      setIsDragging(true);
+      setDragStartDate(date);
+      setSelectedDates([date]);
+    },
+    [enabled]
+  );
 
   const handleMouseEnter = useCallback(
     (date: Date) => {
-      if (isDragging && dragStartDate) {
+      if (enabled && isDragging && dragStartDate) {
         setSelectedDates(getDateRange(dragStartDate, date));
       }
     },
-    [isDragging, dragStartDate]
+    [enabled, isDragging, dragStartDate]
   );
 
   const handleMouseUp = useCallback(() => {
+    if (!enabled) return;
+
     const wasDragging = isDragging;
     setIsDragging(false);
     setDragStartDate(null);
 
     if (wasDragging && selectedDates.length > 0) {
-      setIsModalOpen(true);
-      setSelectedDataType(defaultCategory);
+      if (onSelectionComplete) {
+        onSelectionComplete();
+      } else {
+        setIsModalOpen(true);
+        setSelectedDataType(defaultCategory);
+      }
     }
-  }, [isDragging, selectedDates.length, defaultCategory]);
+  }, [enabled, isDragging, selectedDates.length, defaultCategory, onSelectionComplete]);
 
   const clearSelection = useCallback(() => {
     setSelectedDates([]);

@@ -1,7 +1,7 @@
 'use client';
 import { MetricCard } from '@/components/shared/MetricCard';
 
-import { CheckCircle2, Clock, XCircle, TrendingUp, AlertCircle, ShoppingCart } from 'lucide-react';
+import { Clock, XCircle, TrendingUp, AlertCircle } from 'lucide-react';
 import { VentaWithDetails } from '@/types/venta';
 import { formatCurrency } from '@/lib/business/salesUtils';
 
@@ -45,14 +45,9 @@ export default function SalesStatsCards({ ventas }: SalesStatsCardsProps) {
         badge='Ingresos'
         label='Total Completado'
         value={<>${formatCurrency(totals.montoCompletadas)}</>}
-        footer={
-          <div className='flex items-center justify-center sm:justify-start gap-1.5 pt-1'>
-            <span className='text-emerald-700 font-black text-sm'>{totals.countCompletadas}</span>
-            <span className='text-[10px] text-emerald-700/50 font-medium uppercase tracking-tighter italic'>
-              Ventas
-            </span>
-          </div>
-        }
+        footerValue={totals.countCompletadas}
+        footerLabel='Ventas'
+        footerAlign='center-sm'
       />
 
       {}
@@ -62,14 +57,9 @@ export default function SalesStatsCards({ ventas }: SalesStatsCardsProps) {
         badge='En Proceso'
         label='Sin Cerrar'
         value={<>${formatCurrency(totals.montoPendientes)}</>}
-        footer={
-          <div className='flex items-center justify-center sm:justify-start gap-1.5 pt-1'>
-            <span className='text-blue-700 font-black text-sm'>{totals.countPendientes}</span>
-            <span className='text-[10px] text-blue-700/50 font-medium uppercase tracking-tighter italic'>
-              Cuentas Abiertas
-            </span>
-          </div>
-        }
+        footerValue={totals.countPendientes}
+        footerLabel='Cuentas Abiertas'
+        footerAlign='center-sm'
       />
 
       {}
@@ -79,13 +69,8 @@ export default function SalesStatsCards({ ventas }: SalesStatsCardsProps) {
         badge='Alertas'
         label='Por Anular'
         value={totals.countAnulacion}
-        footer={
-          <div className='flex items-center justify-center sm:justify-start gap-1.5 pt-1'>
-            <span className='text-amber-700 font-bold text-sm'>
-              Total: ${formatCurrency(totals.montoAnulacion)}
-            </span>
-          </div>
-        }
+        footerValue={`Total: $${formatCurrency(totals.montoAnulacion)}`}
+        footerAlign='center-sm'
       />
 
       {}
@@ -95,14 +80,9 @@ export default function SalesStatsCards({ ventas }: SalesStatsCardsProps) {
         badge='Anulado'
         label='Total Cancelado'
         value={<>${formatCurrency(totals.montoAnuladas)}</>}
-        footer={
-          <div className='flex items-center justify-center sm:justify-start gap-1.5 pt-1'>
-            <span className='text-rose-700 font-black text-sm'>{totals.countAnuladas}</span>
-            <span className='text-[10px] text-rose-700/50 font-medium uppercase tracking-tighter italic'>
-              Ventas
-            </span>
-          </div>
-        }
+        footerValue={totals.countAnuladas}
+        footerLabel='Ventas'
+        footerAlign='center-sm'
       />
     </div>
   );

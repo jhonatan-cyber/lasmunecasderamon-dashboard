@@ -59,14 +59,8 @@ export default function OvertimeStatsCards({ overtime }: OvertimeStatsCardsProps
             <span className='text-sm font-normal text-amber-700/50'>hrs</span>
           </>
         }
-        footer={
-          <div className='flex items-center gap-1.5 pt-1'>
-            <span className='text-amber-700 font-black text-sm'>{stats.usuariosUnicos}</span>
-            <span className='text-[10px] text-amber-700/50 font-medium uppercase tracking-tighter italic'>
-              Personal
-            </span>
-          </div>
-        }
+        footerValue={stats.usuariosUnicos}
+        footerLabel='Personal'
       />
 
       {}
@@ -76,16 +70,8 @@ export default function OvertimeStatsCards({ overtime }: OvertimeStatsCardsProps
         badge='Personal'
         label='Con Horas'
         value={stats.usuariosUnicos}
-        footer={
-          <div className='flex items-center gap-1.5 pt-1'>
-            <span className='text-purple-700 font-black text-sm'>
-              {stats.totalHoras.toFixed(1)}
-            </span>
-            <span className='text-[10px] text-purple-700/50 font-medium uppercase tracking-tighter italic'>
-              Hrs Totales
-            </span>
-          </div>
-        }
+        footerValue={stats.totalHoras.toFixed(1)}
+        footerLabel='Hrs Totales'
       />
 
       {}
@@ -95,16 +81,8 @@ export default function OvertimeStatsCards({ overtime }: OvertimeStatsCardsProps
         badge='Promedio'
         label='Por Hora'
         value={formatCurrencyCLP(promedioPorHora)}
-        footer={
-          <div className='flex items-center gap-1.5 pt-1'>
-            <span className='text-blue-700 font-black text-sm'>
-              {formatCurrencyCLP(stats.totalMonto)}
-            </span>
-            <span className='text-[10px] text-blue-700/50 font-medium uppercase tracking-tighter italic'>
-              Monto Total
-            </span>
-          </div>
-        }
+        footerValue={formatCurrencyCLP(stats.totalMonto)}
+        footerLabel='Monto Total'
       />
     </div>
   );

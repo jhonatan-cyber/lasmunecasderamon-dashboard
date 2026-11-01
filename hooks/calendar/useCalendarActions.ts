@@ -3,7 +3,7 @@
 import { useState, useEffect, useMemo, useCallback } from 'react';
 import { useGenericFetch } from '../shared/useGenericFetch';
 
-interface CalendarAction {
+export interface CalendarAction {
   tipo: string;
   fecha: string;
   codigo: string;

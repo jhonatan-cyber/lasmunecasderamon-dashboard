@@ -2,7 +2,9 @@
 
 import React, { useEffect, useState } from 'react';
 import { ShoppingCart, Users, DollarSign, Clock, Gift, Zap } from 'lucide-react';
-import { useCalendarActions } from '@/hooks/calendar/useCalendarActions';
+import { useCalendarActions, type CalendarAction } from '@/hooks/calendar/useCalendarActions';
+import { getMonthDays, isToday as isTodayDate } from '@/hooks/calendar/roleCalendarGrid';
+import { useCalendarSelection } from '@/hooks/calendar/useCalendarSelection';
 import { PermissionGuard } from '@/components/auth/PermissionGuard';
 import { useUserPermissions } from '@/hooks/auth/useUserPermissions';
 import { getMonthDateRange, toDateKey } from '@/lib/utils/calendarUtils';
@@ -35,9 +37,6 @@ export default function PayrollCalendarPage() {
   const canViewDetails = hasPermission('payroll', 'view_details');
 
   const [currentDate, setCurrentDate] = useState(new Date());
-  const [selectedDates, setSelectedDates] = useState<Date[]>([]);
-  const [isDragging, setIsDragging] = useState(false);
-  const [dragStartDate, setDragStartDate] = useState<Date | null>(null);
   const [currentView, setCurrentView] = useState('month');
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [showVentasTable, setShowVentasTable] = useState(true);
@@ -51,40 +50,28 @@ export default function PayrollCalendarPage() {
   const [rowsPerPage, setRowsPerPage] = useState(5);
   const [currentPage, setCurrentPage] = useState(1);
 
+  const {
+    selectedDates,
+    isDragging,
+    isSelected,
+    handleMouseDown,
+    handleMouseEnter,
+    handleMouseUp,
+    clearSelection: clearCalendarSelection
+  } = useCalendarSelection('servicios', {
+    enabled: canViewDetails,
+    onSelectionComplete: () => {
+      setIsModalOpen(true);
+      setTimeout(() => fetchCalendarData('ventas'), 100);
+    }
+  });
+
   const { startDate, endDate } = getMonthDateRange(currentDate);
   const { actions: calendarActions } = useCalendarActions(startDate, endDate);
 
   useEffect(() => {
     setCurrentPage(1);
   }, [searchTerm]);
-
-  const getDaysInMonth = (date: Date) => {
-    const year = date.getFullYear();
-    const month = date.getMonth();
-    const firstDay = new Date(year, month, 1);
-    const lastDay = new Date(year, month + 1, 0);
-    const daysInMonth = lastDay.getDate();
-    const days = [];
-
-    for (let i = firstDay.getDay() - 1; i >= 0; i--) {
-      const prevMonth = new Date(year, month - 1, 0);
-      days.push({
-        date: new Date(year, month - 1, prevMonth.getDate() - i),
-        isCurrentMonth: false
-      });
-    }
-
-    for (let day = 1; day <= daysInMonth; day++) {
-      days.push({ date: new Date(year, month, day), isCurrentMonth: true });
-    }
-
-    const remainingDays = 42 - days.length;
-    for (let day = 1; day <= remainingDays; day++) {
-      days.push({ date: new Date(year, month + 1, day), isCurrentMonth: false });
-    }
-
-    return days;
-  };
 
   const navigate = (direction: number) => {
     const newDate = new Date(currentDate);
@@ -100,12 +87,8 @@ export default function PayrollCalendarPage() {
 
   const goToToday = () => setCurrentDate(new Date());
 
-  const isToday = (date: Date) => date.toDateString() === new Date().toDateString();
-
-  const isDateSelected = (date: Date) =>
-    selectedDates.some(selectedDate => selectedDate.toDateString() === date.toDateString());
-
-  const getActionsForDate = (date: Date) => calendarActions[toDateKey(date)] || [];
+  const getActionsForDate = (date: Date): CalendarAction[] =>
+    calendarActions[toDateKey(date)] || [];
 
   const getActionIcon = (tipo: string) => {
     switch (tipo) {
@@ -131,7 +114,7 @@ export default function PayrollCalendarPage() {
     if (actions.length === 0) return null;
 
     const uniqueActions = Object.values(
-      actions.reduce((acc: Record<string, any>, action: any) => {
+      actions.reduce<Record<string, CalendarAction>>((acc, action) => {
         if (!acc[action.tipo]) acc[action.tipo] = action;
         return acc;
       }, {})
@@ -139,7 +122,7 @@ export default function PayrollCalendarPage() {
 
     return (
       <div className='flex flex-col gap-1 mt-1'>
-        {uniqueActions.map((action: any, index) => (
+        {uniqueActions.map((action, index) => (
           <div key={index} className='flex items-center gap-1 text-xs'>
             {getActionIcon(action.tipo)}
             <span className='truncate text-gray-600'>
@@ -159,48 +142,8 @@ export default function PayrollCalendarPage() {
     );
   };
 
-  const getDateRange = (startDateValue: Date, endDateValue: Date): Date[] => {
-    const dates: Date[] = [];
-    const start = new Date(Math.min(startDateValue.getTime(), endDateValue.getTime()));
-    const end = new Date(Math.max(startDateValue.getTime(), endDateValue.getTime()));
-
-    const current = new Date(start);
-    while (current <= end) {
-      dates.push(new Date(current));
-      current.setDate(current.getDate() + 1);
-    }
-
-    return dates;
-  };
-
-  const handleMouseDown = (date: Date) => {
-    if (!canViewDetails) return;
-    setIsDragging(true);
-    setDragStartDate(date);
-    setSelectedDates([date]);
-  };
-
-  const handleMouseEnter = (date: Date) => {
-    if (!canViewDetails || !isDragging || !dragStartDate) return;
-    setSelectedDates(getDateRange(dragStartDate, date));
-  };
-
-  const handleMouseUp = () => {
-    if (!canViewDetails) return;
-
-    const wasDragging = isDragging;
-    setIsDragging(false);
-    setDragStartDate(null);
-
-    if (wasDragging && selectedDates.length > 0) {
-      setIsModalOpen(true);
-      setTimeout(() => fetchCalendarData('ventas'), 100);
-    }
-  };
-
   const clearSelection = () => {
-    setSelectedDates([]);
-    setIsModalOpen(false);
+    clearCalendarSelection();
     setRealVentasData([]);
     setRealServiciosData([]);
     setSearchTerm('');
@@ -337,9 +280,9 @@ export default function PayrollCalendarPage() {
               weekdays={weekdays}
               canViewDetails={canViewDetails}
               isDragging={isDragging}
-              getDaysInMonth={getDaysInMonth}
-              isToday={isToday}
-              isDateSelected={isDateSelected}
+              getDaysInMonth={getMonthDays}
+              isToday={isTodayDate}
+              isDateSelected={isSelected}
               handleMouseDown={handleMouseDown}
               handleMouseEnter={handleMouseEnter}
               handleMouseUp={handleMouseUp}

@@ -29,17 +29,14 @@ const METODOS_PAGO: {
 interface QuinchosCalendarProps {
   reservas: ReservaQuincho[];
   isLoading: boolean;
-  /** Recibe la fecha (`YYYY-MM-DD`) y todas las reservas de ese día. */
   onSelectDay: (fecha: string, reservasDelDia: ReservaQuincho[]) => void;
 }
 
-/** `2026-11-20` → `new Date(2026, 10, 1)`, sin pasar por zonas horarias. */
 function mesDeFecha(fecha: string): Date {
   const [anio, mes] = fecha.split('-').map(Number);
   return new Date(anio, mes - 1, 1);
 }
 
-/** Reservas agrupadas por fecha, tal como las devuelve el API. */
 export function agruparReservasPorFecha(reservas: ReservaQuincho[]): Map<string, ReservaQuincho[]> {
   const porFecha = new Map<string, ReservaQuincho[]>();
   for (const reserva of reservas) {
@@ -51,19 +48,12 @@ export function agruparReservasPorFecha(reservas: ReservaQuincho[]): Map<string,
   return porFecha;
 }
 
-/**
- * Calendario mensual de reservas de quincho. Cada día muestra las reservas
- * activas y avisa al padre qué fecha se eligió: un día libre abre el registro
- * y un día ocupado abre el detalle.
- */
 export function QuinchosCalendar({ reservas, isLoading, onSelectDay }: QuinchosCalendarProps) {
   const hoy = getTodayDateKey();
   const [mes, setMes] = useState<Date>(() => mesDeFecha(hoy));
 
   const reservasPorFecha = useMemo(() => agruparReservasPorFecha(reservas), [reservas]);
   const dias = useMemo(() => getMonthDays(mes), [mes]);
-
-  // Resumen del mes visible: solo las reservas activas, que son las que cobran.
   const resumen = useMemo(() => {
     const periodo = `${mes.getFullYear()}-${String(mes.getMonth() + 1).padStart(2, '0')}`;
     const activas = reservas.filter(

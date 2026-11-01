@@ -24,10 +24,37 @@ interface MetricCardProps {
   label: ReactNode;
   value: ReactNode;
   footer?: ReactNode;
+  /**
+   * Pie canónico (valor + etiqueta atenuada). Es la variante que usan los
+   * módulos de métricas; si necesitas un pie arbitrario pasa `footer`.
+   */
+  footerValue?: ReactNode;
+  footerLabel?: ReactNode;
+  /**
+   * Alineación del pie canónico. `center-sm` centra el contenido en móvil y lo
+   * alinea a la izquierda desde `sm` (variante de ventas y pedidos).
+   */
+  footerAlign?: 'start' | 'center-sm';
   tone?: keyof typeof tones;
   className?: string;
   isLoading?: boolean;
 }
+
+/** Etiqueta atenuada del pie; su color sigue al `tone` de la tarjeta. */
+const footerLabelTone: Record<keyof typeof tones, string> = {
+  violet: 'text-violet-700/50',
+  rose: 'text-rose-700/50',
+  emerald: 'text-emerald-700/50',
+  amber: 'text-amber-700/50',
+  blue: 'text-blue-700/50',
+  red: 'text-red-700/50',
+  purple: 'text-purple-700/50',
+  indigo: 'text-indigo-700/50',
+  orange: 'text-orange-700/50',
+  pink: 'text-pink-700/50',
+  cyan: 'text-cyan-700/50',
+  slate: 'text-slate-700/50'
+};
 
 /** Summary card used across modules; callers provide data and domain-specific details. */
 export function MetricCard({
@@ -36,6 +63,9 @@ export function MetricCard({
   label,
   value,
   footer,
+  footerValue,
+  footerLabel,
+  footerAlign = 'start',
   tone = 'slate',
   className,
   isLoading
@@ -65,6 +95,26 @@ export function MetricCard({
             <h3 className='text-xl font-black'>{value}</h3>
           )}
           {footer}
+          {(footerValue != null || footerLabel) && (
+            <div
+              className={cn(
+                'flex items-center gap-1.5 pt-1',
+                footerAlign === 'center-sm' && 'justify-center sm:justify-start'
+              )}
+            >
+              {footerValue != null && <span className='font-black text-sm'>{footerValue}</span>}
+              {footerLabel && (
+                <span
+                  className={cn(
+                    'text-[10px] font-medium uppercase tracking-tighter italic',
+                    footerLabelTone[tone]
+                  )}
+                >
+                  {footerLabel}
+                </span>
+              )}
+            </div>
+          )}
         </div>
       </CardContent>
     </Card>

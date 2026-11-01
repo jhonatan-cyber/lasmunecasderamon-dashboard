@@ -40,6 +40,8 @@ export interface Movimiento {
   usuario_nombre: string | null;
   usuario_apellido: string | null;
   usuario_nick: string | null;
+  /** Motivo del movimiento: lo usa la merma por vencimiento (migración 111). */
+  nota?: string | null;
   /** Botellas que tocó una colación y los ml que salieron de cada una. */
   unidades_consumidas?: {
     unidad_id: string;
@@ -230,17 +232,21 @@ export function BarHistorialTab({
                           ? 'Colación'
                           : m.tipo === 'venta'
                             ? 'Vendida'
-                            : m.estado === 'aceptada'
-                              ? 'Aceptada'
-                              : m.estado === 'pendiente'
-                                ? 'Pendiente'
-                                : m.estado === 'rechazada'
-                                  ? 'Rechazada'
-                                  : 'Histórica'}
+                            : m.tipo === 'merma'
+                              ? 'Merma por vencimiento'
+                              : m.estado === 'aceptada'
+                                ? 'Aceptada'
+                                : m.estado === 'pendiente'
+                                  ? 'Pendiente'
+                                  : m.estado === 'rechazada'
+                                    ? 'Rechazada'
+                                    : 'Histórica'}
                       </TableCell>
                       <TableCell>
                         {m.tipo === 'venta' || m.tipo === 'colacion' ? (
                           <span className='text-muted-foreground'>—</span>
+                        ) : m.tipo === 'merma' ? (
+                          <span>{m.nota || 'Stock vencido dado de baja'}</span>
                         ) : (
                           <>
                             <span>{m.aceptado_nombre || 'Sin recepción registrada'}</span>

@@ -144,7 +144,7 @@ const RoomCard: React.FC<{
               <Home className='w-4 h-4' />
             </div>
             <div className='min-w-0'>
-              <h3 className='font-semibold text-gray-900 dark:text-gray-100 text-sm sm:text-base truncate leading-tight'>
+              <h3 className='font-semibold text-gray-900 dark:text-gray-100 text-sm sm:text-base line-clamp-2 leading-tight'>
                 {room.name}
               </h3>
               <span
@@ -216,14 +216,17 @@ const RoomCard: React.FC<{
           )}
         </div>
 
-        <dl className='grid grid-cols-3 divide-x divide-gray-100 dark:divide-slate-800 mb-4'>
-          <div className='min-w-0 pr-2 sm:pr-3'>
-            <dt className='flex items-center gap-1 text-[11px] font-semibold uppercase tracking-wider text-gray-400 dark:text-slate-500'>
+        {/* Datos en columnas verticales: con 3 bloques apretados en línea
+            (hasta 5 cards por fila) el precio y la comisión quedaban cortados;
+            apilados, cada valor cabe sin truncate. */}
+        <dl className='flex flex-col divide-y divide-gray-100 dark:divide-slate-800 mb-3'>
+          <div className='flex items-center justify-between gap-2 py-1.5 min-w-0'>
+            <dt className='flex items-center gap-1.5 text-[11px] font-semibold uppercase tracking-wider text-gray-400 dark:text-slate-500 shrink-0'>
               <DollarSign className='w-3 h-3 shrink-0' />
               Precio
             </dt>
             <dd
-              className={`mt-1 text-sm font-bold truncate ${
+              className={`text-sm font-bold whitespace-nowrap ${
                 room.price > 0
                   ? 'text-gray-900 dark:text-gray-100'
                   : 'text-gray-400 dark:text-slate-500'
@@ -232,13 +235,13 @@ const RoomCard: React.FC<{
               {room.price > 0 ? formatCurrencyCLP(room.price) : '—'}
             </dd>
           </div>
-          <div className='min-w-0 px-2 sm:px-3'>
-            <dt className='flex items-center gap-1 text-[11px] font-semibold uppercase tracking-wider text-gray-400 dark:text-slate-500'>
+          <div className='flex items-center justify-between gap-2 py-1.5 min-w-0'>
+            <dt className='flex items-center gap-1.5 text-[11px] font-semibold uppercase tracking-wider text-gray-400 dark:text-slate-500 shrink-0'>
               <Percent className='w-3 h-3 shrink-0' />
               Comisión
             </dt>
             <dd
-              className={`mt-1 text-sm font-bold truncate ${
+              className={`text-sm font-bold whitespace-nowrap ${
                 room.comision_anfitriona
                   ? 'text-gray-900 dark:text-gray-100'
                   : 'text-gray-400 dark:text-slate-500'
@@ -247,13 +250,13 @@ const RoomCard: React.FC<{
               {room.comision_anfitriona ? formatCurrencyCLP(room.comision_anfitriona) : 'Sin'}
             </dd>
           </div>
-          <div className='min-w-0 pl-2 sm:pl-3'>
-            <dt className='flex items-center gap-1 text-[11px] font-semibold uppercase tracking-wider text-gray-400 dark:text-slate-500'>
+          <div className='flex items-center justify-between gap-2 py-1.5 min-w-0'>
+            <dt className='flex items-center gap-1.5 text-[11px] font-semibold uppercase tracking-wider text-gray-400 dark:text-slate-500 shrink-0'>
               <Clock className='w-3 h-3 shrink-0' />
               Duración
             </dt>
             <dd
-              className={`mt-1 text-sm font-bold truncate ${
+              className={`text-sm font-bold whitespace-nowrap ${
                 room.time > 0
                   ? 'text-gray-900 dark:text-gray-100'
                   : 'text-gray-400 dark:text-slate-500'

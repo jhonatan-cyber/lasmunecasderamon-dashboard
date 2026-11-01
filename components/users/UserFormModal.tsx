@@ -37,31 +37,6 @@ import { Label } from '@/components/ui/label';
 import { formatRut as formatRUT } from '@/lib/utils/rut';
 export type { UserFormValues };
 
-const isValidRUT = (rut: string): boolean => {
-  const clean = rut.replace(/[^0-9kK]/gi, '');
-  if (clean.length < 2) return false;
-
-  const cuerpo = clean.slice(0, -1);
-  const dv = clean.slice(-1).toUpperCase();
-
-  let sum = 0;
-  let mul = 2;
-
-  for (let i = cuerpo.length - 1; i >= 0; i--) {
-    sum += parseInt(cuerpo[i]) * mul;
-    mul = mul === 7 ? 2 : mul + 1;
-  }
-
-  let result = 11 - (sum % 11);
-  let expectedDv = '';
-
-  if (result === 11) expectedDv = '0';
-  else if (result === 10) expectedDv = 'K';
-  else expectedDv = result.toString();
-
-  return dv === expectedDv;
-};
-
 interface UserFormModalProps {
   user: UserType | null;
   isOpen: boolean;
@@ -101,7 +76,6 @@ export function UserFormModal({
   } = useUserForm({ user: user || undefined, onSubmit, isEditMode: isEditing });
 
   const [runFormatted, setRunFormatted] = useState(user?.run || '');
-  const [runError, setRunError] = useState('');
 
   // ── Alta en el lector al crear ──────────────────────────────────────────
   // Los equipos operativos (con IP y credenciales) se ofrecen en el formulario:
@@ -148,33 +122,12 @@ export function UserFormModal({
     }
   }, [user?.run]);
 
+  // Solo formateo visual (12.345.678-K): sin validación de formato ni dígito
+  // verificador; el RUT es la fuente de la contraseña inicial nada más.
   const handleRunChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const value = e.target.value;
-    const formatted = formatRUT(value);
+    const formatted = formatRUT(e.target.value);
     setRunFormatted(formatted);
     form.setValue('run', formatted);
-
-    const clean = value.replace(/[^0-9kK]/gi, '');
-    if (clean && clean.length >= 2) {
-      if (!isValidRUT(clean)) {
-        setRunError('RUT inválido');
-      } else {
-        setRunError('');
-      }
-    } else {
-      setRunError('');
-    }
-  };
-
-  const handleRunBlur = () => {
-    const clean = runFormatted.replace(/[^0-9kK]/gi, '');
-    if (clean && clean.length >= 2) {
-      if (!isValidRUT(clean)) {
-        setRunError('RUT inválido');
-      } else {
-        setRunError('');
-      }
-    }
   };
 
   return (
@@ -217,16 +170,10 @@ export function UserFormModal({
                         type='text'
                         value={runFormatted}
                         onChange={handleRunChange}
-                        onBlur={handleRunBlur}
                         placeholder='12.345.678-5'
                         className='flex h-10 w-full rounded-full border border-input bg-gray-100 pl-10 sm:pl-12 py-2 text-base ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 md:text-sm dark:bg-gray-800 dark:text-gray-100 dark:border-gray-700 dark:focus-visible:ring-gray-400'
                       />
                     </div>
-                    {runError && (
-                      <p role='alert' className='text-red-500 text-xs mt-1'>
-                        {runError}
-                      </p>
-                    )}
                   </div>
 
                   {}

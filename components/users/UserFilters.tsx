@@ -15,6 +15,7 @@ import { Trash2 } from 'lucide-react';
 import SearchInput from '@/components/shared/SearchInput';
 import SelectElements from '@/components/shared/SelectElements';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
+import { type Role } from '@/hooks/staff';
 
 interface UserFiltersProps {
   searchTerm: string;
@@ -27,6 +28,8 @@ interface UserFiltersProps {
   pageSize: number;
   setPageSize: (size: number) => void;
   setPage: (page: number) => void;
+  /** Roles reales de la DB (via /api/roles). Mientras cargan, sólo "Todos". */
+  roles?: Role[];
 }
 
 export function UserFilters({
@@ -39,8 +42,14 @@ export function UserFilters({
   onClearFilters,
   pageSize,
   setPageSize,
-  setPage
+  setPage,
+  roles
 }: UserFiltersProps) {
+  // Si dos roles compartieran nombre, el value repetido rompería el Select.
+  const uniqueRoles = (roles ?? []).filter(
+    (role, i, all) => all.findIndex(r => r.name.toLowerCase() === role.name.toLowerCase()) === i
+  );
+
   const handlePageSizeChange = (value: number) => {
     setPageSize(value);
     setPage(1);
@@ -69,7 +78,7 @@ export function UserFilters({
 
           <div className='flex flex-wrap sm:flex-nowrap gap-4 w-full lg:w-auto items-end'>
             {}
-            <div className='w-[calc(50%-0.5rem)] sm:w-auto min-w-0 sm:min-w-[140px] order-1'>
+            <div className='w-[calc(50%-0.5rem)] sm:w-auto min-w-0 order-2 sm:order-2'>
               <Label
                 htmlFor='status'
                 className='mb-2 block text-xs font-bold uppercase tracking-wider text-gray-500 dark:text-gray-400 ml-1'
@@ -89,7 +98,7 @@ export function UserFilters({
             </div>
 
             {}
-            <div className='w-[70%] sm:w-auto min-w-0 sm:min-w-[160px] order-3 sm:order-0'>
+            <div className='w-[calc(50%-0.5rem)] sm:w-auto min-w-0 sm:min-w-[160px] order-1 sm:order-1'>
               <Label
                 htmlFor='role'
                 className='mb-2 block text-xs font-bold uppercase tracking-wider text-gray-500 dark:text-gray-400 ml-1'
@@ -102,16 +111,20 @@ export function UserFilters({
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value='all'>Todos los roles</SelectItem>
-                  <SelectItem value='administrador'>Administrador</SelectItem>
-                  <SelectItem value='cajero'>Cajero</SelectItem>
-                  <SelectItem value='garzon'>Garzón</SelectItem>
-                  <SelectItem value='anfitriona'>Anfitriona</SelectItem>
+                  {/* Nombres desde la DB: el filtro del server compara
+                      LOWER(r.nombre) = LOWER(rol), así que el value debe ser el
+                      nombre real del rol y no una etiqueta hardcodeada. */}
+                  {uniqueRoles.map(role => (
+                    <SelectItem key={role.id} value={role.name}>
+                      {role.name}
+                    </SelectItem>
+                  ))}
                 </SelectContent>
               </Select>
             </div>
 
             {}
-            <div className='w-[calc(50%-0.5rem)] sm:w-auto order-2 sm:order-0'>
+            <div className='w-[calc(50%-0.5rem)] sm:w-auto order-3 sm:order-3'>
               <SelectElements
                 value={pageSize}
                 onChange={handlePageSizeChange}
@@ -121,7 +134,7 @@ export function UserFilters({
             </div>
 
             {}
-            <div className='w-[20%] sm:w-auto order-4 sm:order-0'>
+            <div className='w-[20%] sm:w-auto order-4 sm:order-4'>
               <TooltipProvider>
                 <Tooltip delayDuration={300}>
                   <TooltipTrigger asChild>

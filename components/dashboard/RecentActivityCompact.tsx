@@ -16,7 +16,7 @@ import {
   type RecentActivityItem,
   useDashboardComposite
 } from '@/hooks/statistics/useDashboardComposite';
-import { formatCurrencyCLP } from '@/lib/utils/formatters';
+import { formatCurrencyCLP, formatRelativeTime } from '@/lib/utils/formatters';
 import { cn } from '@/lib/utils/utils';
 import { DashboardEmpty, DashboardError } from '@/components/dashboard/DashboardFeedback';
 
@@ -27,18 +27,6 @@ const activityStyles = {
   login: { icon: LogIn, color: 'text-sky-500', bg: 'bg-sky-500/10' },
   default: { icon: Activity, color: 'text-slate-500', bg: 'bg-slate-500/10' }
 } as const;
-
-function formatRelativeTime(dateString: string) {
-  const diffMs = Date.now() - new Date(dateString).getTime();
-  const diffMinutes = Math.round(diffMs / (1000 * 60));
-
-  if (diffMinutes < 1) return 'ahora';
-  if (diffMinutes < 60) return `${diffMinutes}m`;
-  const diffHours = Math.round(diffMinutes / 60);
-  if (diffHours < 24) return `${diffHours}h`;
-  const diffDays = Math.round(diffHours / 24);
-  return `${diffDays}d`;
-}
 
 function ActivityLine({ activity }: { activity: RecentActivityItem }) {
   const style =
