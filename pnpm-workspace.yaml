@@ -21,6 +21,7 @@ overrides:
   dompurify: 3.4.17
   fast-uri: 3.1.8
   fast-xml-parser: 5.4.0
+  follow-redirects: ^1.16.2
   glob: 10.5.0
   immutable: 3.8.4
   js-yaml: 4.3.2
