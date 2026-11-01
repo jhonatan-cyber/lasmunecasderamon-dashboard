@@ -95,21 +95,27 @@ export function usePurchaseFormState(
         toast.info('Esa presentación ya está en la compra');
         return;
       }
-      setLines(prev => [
-        ...prev,
-        {
-          presentacion_id: item.id,
-          producto_id: item.producto_id,
-          producto_nombre: item.producto_nombre,
-          presentacion_nombre: item.nombre,
-          foto: item.foto,
-          cantidad: '1',
-          precio_compra: formatMiles(String(item.precio_compra ?? 0)),
-          fecha_elaboracion: '',
-          duracion_meses: '',
-          fecha_vencimiento: ''
-        }
-      ]);
+      // La verificación también va dentro del setter: dos clics seguidos antes
+      // de re-renderizar comparten el mismo closure y agregarían la línea dos
+      // veces si solo se validara contra `lines`.
+      setLines(prev => {
+        if (prev.some(l => l.presentacion_id === item.id)) return prev;
+        return [
+          ...prev,
+          {
+            presentacion_id: item.id,
+            producto_id: item.producto_id,
+            producto_nombre: item.producto_nombre,
+            presentacion_nombre: item.nombre,
+            foto: item.foto,
+            cantidad: '1',
+            precio_compra: formatMiles(String(item.precio_compra ?? 0)),
+            fecha_elaboracion: '',
+            duracion_meses: '',
+            fecha_vencimiento: ''
+          }
+        ];
+      });
     },
     [lines]
   );

@@ -1,6 +1,6 @@
 import React from 'react';
 import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react';
-import { afterEach, expect, it, vi } from 'vitest';
+import { afterEach, beforeEach, expect, it, vi } from 'vitest';
 import { ProductForm } from '@/components/products/ProductForm';
 import type { Product } from '@/types/product';
 import { fechaCorta, seleccionarFecha } from '../helpers/datePicker';
@@ -29,8 +29,17 @@ vi.mock('sonner', () => ({
   toast: { success: vi.fn(), error: vi.fn() }
 }));
 
+// Hoy fijo (2026-05-05): las fechas de este archivo son de 2026 y la validación
+// rechaza una elaboración futura o un vencimiento ya pasado. Se falsifica solo
+// `Date` para no romper `waitFor`/`findBy*` (usan setTimeout real).
+beforeEach(() => {
+  vi.useFakeTimers({ toFake: ['Date'] });
+  vi.setSystemTime(new Date('2026-05-05T15:00:00.000Z'));
+});
+
 afterEach(() => {
   cleanup();
+  vi.useRealTimers();
   vi.restoreAllMocks();
   vi.unstubAllGlobals();
 });

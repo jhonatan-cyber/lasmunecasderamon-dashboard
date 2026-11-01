@@ -50,15 +50,15 @@ export function validatePresentaciones(
     if (item.fecha_vencimiento && !esFechaISO(item.fecha_vencimiento))
       return `Fecha de vencimiento inválida en "${etiqueta}"`;
 
-    if (item.fecha_vencimiento && item.fecha_vencimiento < hoy)
-      return `La fecha de vencimiento no puede ser anterior a hoy en "${etiqueta}"`;
-
     if (
       esFechaISO(item.fecha_elaboracion) &&
       esFechaISO(item.fecha_vencimiento) &&
       item.fecha_vencimiento < item.fecha_elaboracion
     )
       return 'El vencimiento no puede ser anterior a la elaboración';
+
+    if (item.fecha_vencimiento && item.fecha_vencimiento < hoy)
+      return `La fecha de vencimiento no puede ser anterior a hoy en "${etiqueta}"`;
     const codigo = item.codigo_barras.trim();
     if (codigo) {
       if (vistos.has(codigo)) return `Código de barras duplicado: ${codigo}`;

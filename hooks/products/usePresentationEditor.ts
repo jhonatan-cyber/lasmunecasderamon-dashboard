@@ -108,17 +108,16 @@ export function usePresentationEditor({
       toast.error('La fecha de elaboración no puede ser futura');
       return;
     }
-    if (editPresDraft.fecha_vencimiento && editPresDraft.fecha_vencimiento < hoy) {
-      toast.error('La fecha de vencimiento no puede ser anterior a hoy');
-      return;
-    }
-
     if (
       esFechaISO(editPresDraft.fecha_elaboracion) &&
       esFechaISO(editPresDraft.fecha_vencimiento) &&
       editPresDraft.fecha_vencimiento < editPresDraft.fecha_elaboracion
     ) {
       toast.error('El vencimiento no puede ser anterior a la elaboración');
+      return;
+    }
+    if (editPresDraft.fecha_vencimiento && editPresDraft.fecha_vencimiento < hoy) {
+      toast.error('La fecha de vencimiento no puede ser anterior a hoy');
       return;
     }
     const actual = existentes.find(e => e.id === editingPresId);

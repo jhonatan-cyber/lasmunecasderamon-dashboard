@@ -959,8 +959,33 @@ export async function verificarCoincidenciaConFoto(
     if (!(error instanceof DeviceConnectionError)) throw error;
   }
 
-  const vectorPlantilla = await extraerVectorFacial(credenciales, bufferDesdeBase64(plantilla));
-  const vectorCaptura = await extraerVectorFacial(credenciales, captura);
+  let vectorPlantilla: Float32Array;
+  try {
+    vectorPlantilla = await extraerVectorFacial(credenciales, bufferDesdeBase64(plantilla));
+  } catch (error) {
+    if (error instanceof ErrorFacial) {
+      return {
+        ok: false,
+        motivo: error.motivo,
+        mensaje: `No pude leer la cara de la foto guardada de ${persona.nombre}: ${error.message}`
+      };
+    }
+    throw error;
+  }
+
+  let vectorCaptura: Float32Array;
+  try {
+    vectorCaptura = await extraerVectorFacial(credenciales, captura);
+  } catch (error) {
+    if (error instanceof ErrorFacial) {
+      const mensaje =
+        error.motivo === 'sin_cara'
+          ? 'El lector no ve ninguna cara enfrente: pedile a la persona que se ponga de frente a la cámara y volvé a verificar.'
+          : `No pude analizar la foto del lector: ${error.message}`;
+      return { ok: false, motivo: error.motivo, mensaje };
+    }
+    throw error;
+  }
 
   const similitud = similitudCoseno(vectorPlantilla, vectorCaptura);
   const umbral = umbralCoincidenciaFacial();

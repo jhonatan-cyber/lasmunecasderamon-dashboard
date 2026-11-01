@@ -45,7 +45,7 @@ it('vuelve a consultar y usa la cantidad actualizada antes de imprimir', async (
   const print = vi.spyOn(window, 'print').mockImplementation(() => {});
   render(<Page />);
   await screen.findByText('Agua');
-  fireEvent.click(screen.getByRole('button', { name: 'Imprimir orden' }));
+  fireEvent.click(screen.getByRole('button', { name: 'Imprimir' }));
   await waitFor(() => expect(print).toHaveBeenCalledOnce());
   expect(fetchMock).toHaveBeenCalledTimes(2);
   expect(screen.getByRole('cell', { name: '8' })).toBeInTheDocument();
@@ -76,7 +76,7 @@ it('no imprime si una reposición ya cubrió el mínimo', async () => {
   const print = vi.spyOn(window, 'print').mockImplementation(() => {});
   render(<Page />);
   await screen.findByText('Agua');
-  fireEvent.click(screen.getByRole('button', { name: 'Imprimir orden' }));
+  fireEvent.click(screen.getByRole('button', { name: 'Imprimir' }));
   await screen.findByText('No hay productos que necesiten reposición.');
   expect(print).not.toHaveBeenCalled();
 });

@@ -95,6 +95,7 @@ export function DetailsStep({
                   variant='outline'
                   size='icon'
                   className='rounded-full'
+                  aria-label={`Disminuir cantidad de ${line.producto_nombre}`}
                   disabled={toNumber(line.cantidad) <= 1}
                   onClick={() => adjustQuantity(line.presentacion_id, -1)}
                 >
@@ -120,6 +121,7 @@ export function DetailsStep({
                   variant='outline'
                   size='icon'
                   className='rounded-full'
+                  aria-label={`Aumentar cantidad de ${line.producto_nombre}`}
                   disabled={toNumber(line.cantidad) >= 1000}
                   onClick={() => adjustQuantity(line.presentacion_id, 1)}
                 >
@@ -150,6 +152,7 @@ export function DetailsStep({
               variant='ghost'
               size='icon'
               className='rounded-full'
+              aria-label={`Quitar ${line.producto_nombre}`}
               onClick={() => removeItem(line.presentacion_id)}
             >
               <Trash2 className='h-4 w-4 text-red-500' />
