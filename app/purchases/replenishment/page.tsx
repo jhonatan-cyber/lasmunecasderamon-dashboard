@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useState } from 'react';
 import { flushSync } from 'react-dom';
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 import {
   ArrowLeft,
   ClipboardList,
@@ -11,11 +12,11 @@ import {
   Printer,
   RefreshCw,
   MessageCircle,
+  ShoppingCart,
   Wallet
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { PURCHASE_BUTTON_CLASS } from '@/components/purchases/buttonStyles';
 import {
   Table,
   TableHeader,
@@ -32,12 +33,14 @@ import { toast } from 'sonner';
 import { formatCurrencyCLP } from '@/lib/utils/formatters';
 import { MetricCard } from '@/components/shared/MetricCard';
 import {
+  guardarBorradorCompraReposicion,
   subtotalReposicion,
   totalReposicion,
   textoOrdenReposicion
 } from '@/lib/business/replenishmentOrder';
 
 export default function ReplenishmentPage() {
+  const router = useRouter();
   const [rows, setRows] = useState<OrdenReposicion[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
@@ -85,6 +88,15 @@ export default function ReplenishmentPage() {
     }
   };
 
+  const registrarCompra = () => {
+    if (!rows.length) {
+      toast.info('El stock ya no requiere reposición');
+      return;
+    }
+    guardarBorradorCompraReposicion(rows);
+    router.push('/purchases/new');
+  };
+
   return (
     <PermissionGuard module='products' action='view'>
       <style>{`@media print { body * { visibility: hidden; } #replenishment-order, #replenishment-order * { visibility: visible; } #replenishment-order { position: absolute; left: 0; top: 0; width: 100%; padding: 0; background: white; color: black; } #replenishment-order * { color: black !important; background: transparent !important; overflow: visible !important; } #replenishment-order tr { break-inside: avoid; } #replenishment-order table { width: 100%; border-collapse: collapse; } #replenishment-order th, #replenishment-order td { border-bottom: 1px solid #aaa; padding: 5px; font-size: 9px; } @page { size: A4 landscape; margin: 10mm; } }`}</style>
@@ -109,29 +121,31 @@ export default function ReplenishmentPage() {
             <Button
               variant='outline'
               className='rounded-full'
-              onClick={() => void load().catch(() => {})}
-              disabled={busy || loading}
-            >
-              <RefreshCw className={`h-4 w-4 ${busy ? 'animate-spin' : ''}`} />
-              Actualizar
-            </Button>
-            <Button
-              variant='outline'
-              className='rounded-full'
               onClick={() => void exportOrder(false)}
               disabled={busy || !rows.length || Boolean(error)}
             >
               <Printer className='h-4 w-4' />
-              Imprimir orden
+              Imprimir
             </Button>
             <Button
-              className={PURCHASE_BUTTON_CLASS}
+              variant='outline'
+              className='rounded-full'
               onClick={() => void exportOrder(true)}
               disabled={busy || !rows.length || Boolean(error)}
             >
               <MessageCircle className='h-4 w-4' />
-              Compartir por WhatsApp
+              WhatsApp
             </Button>
+            <PermissionGuard module='products' action='create' fallback={null}>
+              <Button
+                className='rounded-full'
+                onClick={registrarCompra}
+                disabled={busy || !rows.length || Boolean(error)}
+              >
+                <ShoppingCart className='h-4 w-4' />
+                Registrar compra
+              </Button>
+            </PermissionGuard>
           </div>
         </div>
         {!loading && !error && (

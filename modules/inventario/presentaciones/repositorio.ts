@@ -11,8 +11,10 @@ import { ESTADO_UNIDAD_ACTIVA } from '../estados';
 import type { PresentacionRow } from '../tipos';
 import type { NuevaPresentacionInput, PresentacionCamposInput } from '../contracts';
 import { getNowInBusinessTimezone } from '@/lib/business/timezoneService';
+import { resolverVencimiento } from '@/lib/business/vencimiento';
 import { BaseRepository } from '@/lib/database/base-repository';
 import { ConflictError, NotFoundError } from '@/lib/errors/errors';
+import { sincronizarVencimientoProducto } from '../vencimientoProducto';
 
 type Ejecutor = TransactionQuery | typeof query;
 
@@ -69,8 +71,14 @@ export async function crearPresentacion(
     stock_minimo: data.stock_minimo ?? null,
     stock_maximo: data.stock_maximo ?? null,
     foto: data.foto || null,
+    // Fechas de lote de esta presentación: si no viene el vencimiento, se
+    // calcula con elaboración + duración.
+    fecha_elaboracion: data.fecha_elaboracion ?? null,
+    duracion_meses: data.duracion_meses ?? null,
+    fecha_vencimiento: resolverVencimiento(data),
     fecha_crea: getNowInBusinessTimezone()
   });
+  await sincronizarVencimientoProducto(trx, data.producto_id);
   const row = await BaseRepository.findOne<any>(trx, 'inventario_presentaciones', 'id', id);
   return mapPresentacion(row);
 }
@@ -84,8 +92,8 @@ export async function crearPresentacion(
  */
 export async function eliminarPresentacion(id: string): Promise<void> {
   await withTransaction(async trx => {
-    const [presentacion] = await trx<{ id: string }[]>(
-      'SELECT id FROM inventario_presentaciones WHERE id = ? FOR UPDATE',
+    const [presentacion] = await trx<{ id: string; producto_id: string }[]>(
+      'SELECT id, producto_id FROM inventario_presentaciones WHERE id = ? FOR UPDATE',
       [id]
     );
     if (!presentacion) throw new NotFoundError('Presentación', id);
@@ -131,6 +139,7 @@ export async function eliminarPresentacion(id: string): Promise<void> {
     }
 
     await BaseRepository.delete(trx, 'inventario_presentaciones', 'id', id);
+    await sincronizarVencimientoProducto(trx, presentacion.producto_id);
   });
 }
 
@@ -166,8 +175,35 @@ export async function actualizarPresentacion(
   if (fields.opciones_venta !== undefined)
     data.opciones_venta = JSON.stringify(fields.opciones_venta);
   if (fields.ml_botella !== undefined) data.ml_botella = fields.ml_botella;
+
+  // Fechas de lote: las que no llegan conservan su valor actual para poder
+  // resolver el vencimiento con lo que ya estaba guardado.
+  const tocaFechas =
+    fields.fecha_elaboracion !== undefined ||
+    fields.duracion_meses !== undefined ||
+    fields.fecha_vencimiento !== undefined;
+  let productoId: string | null = null;
+  if (tocaFechas) {
+    const actual = await obtenerPresentacion(id);
+    if (!actual) throw new NotFoundError('Presentación', id);
+    productoId = actual.producto_id;
+    if (fields.fecha_elaboracion !== undefined) data.fecha_elaboracion = fields.fecha_elaboracion;
+    if (fields.duracion_meses !== undefined) data.duracion_meses = fields.duracion_meses;
+    data.fecha_vencimiento = resolverVencimiento({
+      fecha_elaboracion:
+        fields.fecha_elaboracion !== undefined
+          ? fields.fecha_elaboracion
+          : actual.fecha_elaboracion,
+      duracion_meses:
+        fields.duracion_meses !== undefined ? fields.duracion_meses : actual.duracion_meses,
+      fecha_vencimiento:
+        fields.fecha_vencimiento !== undefined ? fields.fecha_vencimiento : actual.fecha_vencimiento
+    });
+  }
+
   if (Object.keys(data).length === 0) return;
   await BaseRepository.update(query, 'inventario_presentaciones', 'id', id, data);
+  if (productoId) await sincronizarVencimientoProducto(query, productoId);
 }
 
 export async function buscarPresentacionPorCodigo(

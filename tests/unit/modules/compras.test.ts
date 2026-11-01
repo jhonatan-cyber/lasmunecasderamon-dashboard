@@ -156,7 +156,8 @@ describe('registrarCompra (modulo inventario)', () => {
       'prod-1',
       3,
       'pres-1',
-      'comp-1'
+      'comp-1',
+      null
     );
     expect(generarUnidades).toHaveBeenNthCalledWith(
       2,
@@ -164,7 +165,8 @@ describe('registrarCompra (modulo inventario)', () => {
       'prod-1',
       2,
       'pres-2',
-      'comp-1'
+      'comp-1',
+      null
     );
     expect(sincronizarStockTotal).toHaveBeenCalledTimes(1);
     expect(sincronizarStockTotal).toHaveBeenCalledWith(expect.anything(), 'prod-1');
@@ -210,5 +212,42 @@ describe('registrarCompra (modulo inventario)', () => {
     vi.mocked(generarUnidades).mockResolvedValue([]);
     const compra = await registrarCompra({ detalles: [detalle] }, 'u1');
     expect(compra.codigos_generados).toEqual([]);
+  });
+
+  it('hereda el vencimiento del lote a las unidades que genera', async () => {
+    // El lote de la compra es el vencimiento de las botellas que entran: así
+    // comprar un lote nuevo no renueva el vencimiento de las botellas viejas.
+    await registrarCompra({ detalles: [{ ...detalle, fecha_vencimiento: '2027-12-01' }] }, 'u1');
+
+    expect(generarUnidades).toHaveBeenCalledWith(
+      expect.anything(),
+      'prod-1',
+      3,
+      'pres-1',
+      'comp-1',
+      '2027-12-01'
+    );
+  });
+
+  it('deja la unidad sin fecha propia cuando el lote no informa fecha', async () => {
+    // Sin lote no hay fecha que congelar: la unidad sigue a su presentación,
+    // que es el mismo comportamiento de antes de la migración 111.
+    vi.mocked(listarPresentacionesPorProductos).mockResolvedValue({
+      'prod-1': [
+        { id: 'pres-1', nombre: 'Botella 750ml', fecha_vencimiento: '2026-12-01' },
+        { id: 'pres-2', nombre: 'Six pack', fecha_vencimiento: '2026-12-01' }
+      ]
+    } as any);
+
+    await registrarCompra({ detalles: [detalle] }, 'u1');
+
+    expect(generarUnidades).toHaveBeenCalledWith(
+      expect.anything(),
+      'prod-1',
+      3,
+      'pres-1',
+      'comp-1',
+      null
+    );
   });
 });

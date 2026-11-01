@@ -22,7 +22,6 @@ import { Skeleton as BoneyardSkeleton } from 'boneyard-js/react';
 import type { PurchaseRecord } from '@/types/purchase';
 import { formatCurrencyCLP } from '@/lib/utils/formatters';
 import { cn } from '@/lib/utils/utils';
-import { PURCHASE_BUTTON_CLASS } from '@/components/purchases/buttonStyles';
 import SelectElements from '@/components/shared/SelectElements';
 import Paginate from '@/components/shared/Paginate';
 import { SortSelect } from '@/components/shared/selects/SortSelect';
@@ -170,7 +169,7 @@ export default function PurchasesPage() {
           </div>
           <div className='flex flex-col sm:flex-row gap-2 w-full sm:w-auto'>
             <PermissionGuard module='products' action='create' fallback={null}>
-              <Button asChild className={`${PURCHASE_BUTTON_CLASS} flex items-center gap-2`}>
+              <Button asChild className='flex items-center gap-2 rounded-full'>
                 <Link href='/purchases/new'>
                   <Plus className='w-4 h-4' />
                   Nueva compra
@@ -255,7 +254,7 @@ export default function PurchasesPage() {
                               variant='unstyled'
                               type='button'
                               onClick={() => setExpanded(v => (v === h.id ? null : h.id))}
-                              className={`${PURCHASE_BUTTON_CLASS} p-1`}
+                              className='rounded-full p-1'
                               aria-label='Ver detalle'
                             >
                               <ChevronDown

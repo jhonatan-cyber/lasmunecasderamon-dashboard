@@ -5,6 +5,50 @@ export const subtotalReposicion = (row: OrdenReposicion) => row.cantidad * row.p
 export const totalReposicion = (rows: OrdenReposicion[]) =>
   rows.reduce((total, row) => total + subtotalReposicion(row), 0);
 
+export const REPLENISHMENT_PURCHASE_DRAFT_KEY = 'purchases:replenishment-draft';
+export interface CompraPresetReposicion {
+  presentacion_id: string;
+  cantidad: number;
+}
+
+export function guardarBorradorCompraReposicion(rows: OrdenReposicion[]): void {
+  const presets: CompraPresetReposicion[] = rows.map(row => ({
+    presentacion_id: row.presentacion_id,
+    cantidad: row.cantidad
+  }));
+  try {
+    if (presets.length) {
+      window.sessionStorage.setItem(REPLENISHMENT_PURCHASE_DRAFT_KEY, JSON.stringify(presets));
+    } else {
+      window.sessionStorage.removeItem(REPLENISHMENT_PURCHASE_DRAFT_KEY);
+    }
+  } catch {}
+}
+
+export function leerBorradorCompraReposicion(): CompraPresetReposicion[] {
+  try {
+    const raw = window.sessionStorage.getItem(REPLENISHMENT_PURCHASE_DRAFT_KEY);
+    if (!raw) return [];
+    const parsed: unknown = JSON.parse(raw);
+    if (!Array.isArray(parsed)) return [];
+    return parsed.filter(
+      (item): item is CompraPresetReposicion =>
+        Boolean(item) &&
+        typeof (item as CompraPresetReposicion).presentacion_id === 'string' &&
+        Number.isInteger((item as CompraPresetReposicion).cantidad) &&
+        (item as CompraPresetReposicion).cantidad > 0
+    );
+  } catch {
+    return [];
+  }
+}
+
+export function limpiarBorradorCompraReposicion(): void {
+  try {
+    window.sessionStorage.removeItem(REPLENISHMENT_PURCHASE_DRAFT_KEY);
+  } catch {}
+}
+
 export function textoOrdenReposicion(rows: OrdenReposicion[]): string {
   return [
     'ORDEN DE COMPRA · REPOSICIÓN',

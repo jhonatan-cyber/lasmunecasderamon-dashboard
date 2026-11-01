@@ -4,7 +4,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 
 import { Search, Shield, Plus, CheckCircle, Users as UsersIcon } from 'lucide-react';
-import { RoleStatsCard } from '@/components/roles/RoleStatsCard';
+import { MetricCard } from '@/components/shared/MetricCard';
 import { RoleCard } from '@/components/roles/RoleCard';
 import { PermissionsPanel } from '@/components/roles/PermissionsPanel';
 import { RoleUsersList } from '@/components/roles/RoleUsersList';
@@ -92,22 +92,25 @@ export function RolesContent({
       </div>
 
       <div className='grid grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6 [&>*:last-child:nth-child(odd)]:col-span-2 lg:[&>*:last-child:nth-child(odd)]:col-span-1'>
-        <RoleStatsCard
+        <MetricCard
           icon={<Shield className='h-5 w-5 sm:h-6 sm:w-6 text-white' />}
+          badge='Roles'
           tone='slate'
-          title='Total Roles'
+          label='Total Roles'
           value={totalRoles}
         />
-        <RoleStatsCard
+        <MetricCard
           icon={<CheckCircle className='h-5 w-5 sm:h-6 sm:w-6 text-white' />}
+          badge='Roles'
           tone='emerald'
-          title='Roles Activos'
+          label='Roles Activos'
           value={activeRoles}
         />
-        <RoleStatsCard
+        <MetricCard
           icon={<UsersIcon className='h-5 w-5 sm:h-6 sm:w-6 text-white' />}
+          badge='Roles'
           tone='blue'
-          title='Usuarios Asignados'
+          label='Usuarios Asignados'
           value={totalUsersAssigned}
         />
       </div>

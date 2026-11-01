@@ -31,6 +31,10 @@ export interface NuevaPresentacionProducto {
   precio_compra?: number;
   foto?: string | null;
   cantidad?: number;
+  /** Fechas del lote de esta presentación (ISO `YYYY-MM-DD`). */
+  fecha_elaboracion?: string | null;
+  duracion_meses?: number | null;
+  fecha_vencimiento?: string | null;
 }
 
 /** Código generado para imprimir, que la respuesta de alta devuelve agrupado. */
@@ -168,11 +172,25 @@ export async function crearProducto(
       precio_compra: p.precio_compra,
       stock_minimo: p.stock_minimo,
       stock_maximo: p.stock_maximo,
-      foto: p.foto
+      foto: p.foto,
+      fecha_elaboracion: p.fecha_elaboracion,
+      duracion_meses: p.duracion_meses,
+      fecha_vencimiento: p.fecha_vencimiento
     });
     const cantidad = Math.max(0, Math.floor(p.cantidad ?? 0));
     if (cantidad > 0) {
-      codigos.push(...(await generarUnidades(trx, id, cantidad, creada.id)));
+      codigos.push(
+        ...(await generarUnidades(
+          trx,
+          id,
+          cantidad,
+          creada.id,
+          null,
+          // Stock inicial del alta de producto: no hay lote, así que las
+          // unidades siguen a la fecha de su presentación.
+          null
+        ))
+      );
     }
   }
 
@@ -249,11 +267,14 @@ export async function actualizarProducto(
       precio_compra: p.precio_compra,
       stock_minimo: p.stock_minimo,
       stock_maximo: p.stock_maximo,
-      foto: p.foto
+      foto: p.foto,
+      fecha_elaboracion: p.fecha_elaboracion,
+      duracion_meses: p.duracion_meses,
+      fecha_vencimiento: p.fecha_vencimiento
     });
     const cantidad = Math.max(0, Math.floor(p.cantidad ?? 0));
     if (cantidad > 0) {
-      await generarUnidades(trx, id, cantidad, creada.id);
+      await generarUnidades(trx, id, cantidad, creada.id, null, null);
     }
   }
 

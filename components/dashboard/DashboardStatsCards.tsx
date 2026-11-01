@@ -2,7 +2,6 @@
 import { EmployeeModuleLinks } from '@/components/shared/EmployeeModuleLinks';
 import { ListLoadError } from '@/components/shared/ListLoadError';
 
-import { useCurrentUser } from '@/hooks/auth/useCurrentUser';
 import { MetricCard } from '@/components/shared/MetricCard';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Calendar, DollarSign, Clock, ArrowLeftRight, ShoppingCart } from 'lucide-react';
@@ -11,16 +10,11 @@ import { formatCurrencyCLP } from '@/lib/utils/formatters';
 import { useDashboardSummary } from '@/hooks/statistics/useDashboardSummary';
 
 export default function DashboardStatsCards() {
-  const { user, loading: userLoading } = useCurrentUser();
   const {
     data: dashboardData,
     isLoading: loadingSummary,
     refetch: refreshDashboard
   } = useDashboardSummary();
-
-  if (userLoading || !user || user?.role?.toLowerCase() !== 'cajero') {
-    return null;
-  }
 
   if (loadingSummary && !dashboardData) {
     return (

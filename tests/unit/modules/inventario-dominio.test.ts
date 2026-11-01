@@ -45,18 +45,22 @@ describe('transferencias de almacén al bar', () => {
     const trx = vi
       .fn()
       .mockResolvedValueOnce([{ id_producto: 'prod-1' }])
-      .mockResolvedValueOnce([{ id: 'unit-1' }]);
+      .mockResolvedValueOnce([{ id: 'unit-1' }])
+      // Conteo de las botellas vencidas que no bajan al bar.
+      .mockResolvedValueOnce([{ total: 2 }]);
     await expect(
       conContextoOperacionExistente(trx, contexto => traspasarAlBar(input, contexto))
     ).rejects.toThrow('Stock insuficiente');
-    expect(trx).toHaveBeenCalledTimes(2);
+    // Sólo consultas: nada se modificó ni se registró.
+    expect(trx).toHaveBeenCalledTimes(3);
     expect(trx.mock.calls.every(([sql]) => sql.trim().startsWith('SELECT'))).toBe(true);
   });
 
   it('reserva las unidades en tránsito y deja la solicitud pendiente', async () => {
     const trx = vi.fn().mockImplementation(async (sql: string) => {
       if (sql.includes('FROM productos pr')) return [{ id_producto: 'prod-1', system_key: null }];
-      if (sql.includes('SELECT id FROM inventario_unidades'))
+      // Candidatas al traspaso: las que vencen después o no tienen vencimiento.
+      if (sql.includes('COALESCE(u.fecha_vencimiento, p.fecha_vencimiento) >= ?'))
         return [{ id: 'unit-1' }, { id: 'unit-2' }];
       if (sql.includes('COUNT(*)')) return [{ total: 3 }];
       return [];
@@ -94,7 +98,8 @@ describe('transferencias de almacén al bar', () => {
 
     const trx = vi.fn().mockImplementation(async (sql: string) => {
       if (sql.includes('FROM productos pr')) return [{ id_producto: 'prod-1', system_key: null }];
-      if (sql.includes('SELECT id FROM inventario_unidades'))
+      // Candidatas al traspaso: las que vencen después o no tienen vencimiento.
+      if (sql.includes('COALESCE(u.fecha_vencimiento, p.fecha_vencimiento) >= ?'))
         return [{ id: 'unit-1' }, { id: 'unit-2' }];
       if (sql.includes('COUNT(*)')) return [{ total: 3 }];
       return [];
@@ -723,7 +728,8 @@ describe('descuento del bar al registrar una venta', () => {
 
     const seleccion = trx.mock.calls.find(([sql]) => sql.includes('FROM inventario_unidades'));
     expect(seleccion![0]).toContain('FOR UPDATE');
-    expect(seleccion![1]).toEqual(['pres-1']);
+    // La presentación viaja como respaldo del vencimiento del lote.
+    expect(seleccion![1]).toEqual(['pres-1', null]);
     expect(movimiento(trx)![1]).toEqual(expect.arrayContaining([3]));
   });
 

@@ -6,12 +6,27 @@ import { useCallback, useEffect, useState } from 'react';
 import { Loader2 } from 'lucide-react';
 import { PermissionGuard } from '@/components/auth/PermissionGuard';
 import { PurchaseForm, type PurchaseCatalogItem } from '@/components/purchases/PurchaseForm';
-import { PURCHASE_BUTTON_CLASS } from '@/components/purchases/buttonStyles';
+import {
+  limpiarBorradorCompraReposicion,
+  leerBorradorCompraReposicion,
+  type CompraPresetReposicion
+} from '@/lib/business/replenishmentOrder';
 
 export default function NewPurchasePage() {
   const [catalog, setCatalog] = useState<PurchaseCatalogItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [loadError, setLoadError] = useState(false);
+  const [draftItems, setDraftItems] = useState<CompraPresetReposicion[]>([]);
+  const [draftReady, setDraftReady] = useState(false);
+
+  useEffect(() => {
+    const data = leerBorradorCompraReposicion();
+    if (data.length > 0) {
+      setDraftItems(data);
+      limpiarBorradorCompraReposicion();
+    }
+    setDraftReady(true);
+  }, []);
 
   const fetchCatalog = useCallback(async (silent = false) => {
     if (!silent) {
@@ -53,7 +68,7 @@ export default function NewPurchasePage() {
 
   return (
     <PermissionGuard module='products' action='create'>
-      {loading ? (
+      {loading || !draftReady ? (
         <div className='flex min-h-[50vh] items-center justify-center gap-3 text-gray-500'>
           <Loader2 className='h-5 w-5 animate-spin' aria-hidden='true' />
           Cargando productos...
@@ -61,17 +76,12 @@ export default function NewPurchasePage() {
       ) : loadError ? (
         <div className='mx-auto max-w-xl space-y-4 p-6 text-center'>
           <p className='text-sm text-red-600'>No se pudo cargar el catálogo de productos.</p>
-          <Button
-            variant='unstyled'
-            type='button'
-            onClick={() => void fetchCatalog()}
-            className={`${PURCHASE_BUTTON_CLASS} px-5 py-2 text-sm font-medium`}
-          >
+          <Button type='button' onClick={() => void fetchCatalog()} className='rounded-full px-5'>
             Reintentar
           </Button>
         </div>
       ) : (
-        <PurchaseForm catalog={catalog} />
+        <PurchaseForm catalog={catalog} initialItems={draftItems} />
       )}
     </PermissionGuard>
   );

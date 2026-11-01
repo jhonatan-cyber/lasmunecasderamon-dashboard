@@ -40,6 +40,10 @@ export interface Presentacion {
   comision?: number;
   foto?: string | null;
   stock?: number;
+  /** Fechas del lote de esta presentación (`YYYY-MM-DD`; la duración en meses). */
+  fecha_elaboracion?: string | null;
+  duracion_meses?: number | null;
+  fecha_vencimiento?: string | null;
   /** Capacidad de la botella en ml para la venta por shot (null = default de Configuraciones). */
   ml_botella?: number | null;
   /** ml que quedan en las botellas abiertas de esta presentación en el bar. */

@@ -180,7 +180,8 @@ export async function generarUnidades(
   productoId: string,
   count: number,
   presentacionId?: string | null,
-  compraId?: string | null
+  compraId?: string | null,
+  fechaVencimiento?: string | null
 ): Promise<{ id: string; codigo: string; codigo_barras: string }[]> {
   if (count <= 0) return [];
   const [codigos, barcodes] = await Promise.all([
@@ -195,6 +196,9 @@ export async function generarUnidades(
     codigo,
     codigo_barras: barcodes[i],
     ...(compraId ? { compra_id: compraId } : {}),
+    // Vencimiento del lote: la compra lo informa por línea. Sin él, la unidad
+    // no tiene fecha propia y hereda la de su presentación.
+    fecha_vencimiento: fechaVencimiento ?? null,
     ubicacion: 'almacen',
     estado: 'almacen',
     fecha_crea: fechaCrea

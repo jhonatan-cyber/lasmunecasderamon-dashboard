@@ -3,7 +3,6 @@ import { Textarea } from '@/components/ui/textarea';
 
 import { useState } from 'react';
 import { Button } from '@/components/ui/button';
-import { DatePicker } from '@/components/shared/DatePicker';
 import { Input } from '@/components/ui/input';
 import { Product, Presentacion } from '@/types/product';
 import { FileText, Loader2, Plus } from 'lucide-react';
@@ -226,90 +225,6 @@ export function ProductForm({
         isLoading={isLoading}
         isEdit={isEdit}
       />
-
-      {/* Fechas de lote: elaboración + duración calculan el vencimiento. */}
-      {!scoped && (
-        <div className='space-y-2'>
-          <Label className='block text-xs font-bold uppercase tracking-wider text-gray-500 dark:text-gray-400 ml-1'>
-            Fechas del producto
-          </Label>
-          <div className='grid grid-cols-1 gap-4 sm:grid-cols-3'>
-            <div className='space-y-2'>
-              <Label
-                htmlFor='prod-fecha-elaboracion'
-                className='block text-xs font-semibold text-gray-500 dark:text-gray-400 ml-1'
-              >
-                Fecha de elaboración
-              </Label>
-              <DatePicker
-                id='prod-fecha-elaboracion'
-                value={form.fecha_elaboracion}
-                onChange={fecha =>
-                  handleChange({ target: { name: 'fecha_elaboracion', value: fecha } })
-                }
-                disabled={isLoading}
-                displayFormat='short'
-                className='h-12 rounded-2xl'
-              />
-              {errors.fecha_elaboracion && (
-                <p role='alert' className='text-red-500 text-xs mt-1 ml-1 font-medium'>
-                  {errors.fecha_elaboracion}
-                </p>
-              )}
-            </div>
-            <div className='space-y-2'>
-              <Label
-                htmlFor='prod-duracion'
-                className='block text-xs font-semibold text-gray-500 dark:text-gray-400 ml-1'
-              >
-                Duración (meses)
-              </Label>
-              <Input
-                id='prod-duracion'
-                name='duracion_meses'
-                value={form.duracion_meses}
-                onChange={handleChange}
-                placeholder='Ej: 6'
-                disabled={isLoading}
-                inputMode='numeric'
-                className='h-12 rounded-2xl'
-              />
-              {errors.duracion_meses && (
-                <p role='alert' className='text-red-500 text-xs mt-1 ml-1 font-medium'>
-                  {errors.duracion_meses}
-                </p>
-              )}
-            </div>
-            <div className='space-y-2'>
-              <Label
-                htmlFor='prod-fecha-vencimiento'
-                className='block text-xs font-semibold text-gray-500 dark:text-gray-400 ml-1'
-              >
-                Fecha de vencimiento
-              </Label>
-              <DatePicker
-                id='prod-fecha-vencimiento'
-                value={form.fecha_vencimiento}
-                onChange={fecha =>
-                  handleChange({ target: { name: 'fecha_vencimiento', value: fecha } })
-                }
-                disabled={isLoading}
-                displayFormat='short'
-                className='h-12 rounded-2xl'
-              />
-              {errors.fecha_vencimiento && (
-                <p role='alert' className='text-red-500 text-xs mt-1 ml-1 font-medium'>
-                  {errors.fecha_vencimiento}
-                </p>
-              )}
-            </div>
-          </div>
-          <p className='text-[11px] text-gray-400 dark:text-gray-500 ml-1'>
-            Con la fecha de elaboración y la duración el vencimiento se calcula solo. Si ingresas la
-            fecha de vencimiento, elaboración y duración no son necesarias.
-          </p>
-        </div>
-      )}
 
       <div className='space-y-3'>
         <div className='flex items-center justify-between ml-1'>

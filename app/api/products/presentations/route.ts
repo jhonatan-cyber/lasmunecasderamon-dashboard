@@ -50,6 +50,9 @@ export const POST = withRoute(
       precio_compra: payload.precio_compra,
       stock_minimo: payload.stock_minimo,
       stock_maximo: payload.stock_maximo,
+      fecha_elaboracion: payload.fecha_elaboracion,
+      duracion_meses: payload.duracion_meses,
+      fecha_vencimiento: payload.fecha_vencimiento,
       foto:
         typeof payload.foto === 'string' && payload.foto.startsWith('http')
           ? await processAndSaveImage(payload.foto, 'presentacion')
@@ -94,11 +97,16 @@ export const PATCH = withRoute(
         'comision',
         'stock_minimo',
         'stock_maximo',
-        'ml_botella'
+        'ml_botella',
+        'fecha_elaboracion',
+        'duracion_meses',
+        'fecha_vencimiento'
       ]) {
         const value = formData.get(key);
-        if (value !== null && (String(value) !== '' || key.startsWith('stock_')))
-          fields[key] = value;
+        // Las fechas y los límites de stock viajan vacíos para poder borrarse.
+        const limpiable =
+          key.startsWith('stock_') || key.startsWith('fecha_') || key === 'duracion_meses';
+        if (value !== null && (String(value) !== '' || limpiable)) fields[key] = value;
       }
     } else {
       const payload = await request.json();
@@ -123,9 +131,12 @@ export const PATCH = withRoute(
         'comision',
         'stock_minimo',
         'stock_maximo',
-        'ml_botella'
+        'ml_botella',
+        'fecha_elaboracion',
+        'duracion_meses',
+        'fecha_vencimiento'
       ]) {
-        // Se pasa '' para limpiar el código de barras o los ml de la botella.
+        // Se pasa '' para limpiar el código de barras, los ml de la botella o las fechas.
         if (payload[key] !== undefined) fields[key] = payload[key];
       }
     }

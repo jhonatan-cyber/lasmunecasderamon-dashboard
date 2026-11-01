@@ -3,6 +3,7 @@
 # dependencies
 /node_modules
 /.cache/product-photos/
+/.cache/biometric-models/
 /mcp/node_modules
 /mcp/dist
 /mcp/releases

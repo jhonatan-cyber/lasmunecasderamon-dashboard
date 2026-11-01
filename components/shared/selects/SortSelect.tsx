@@ -4,6 +4,7 @@ import { useId } from 'react';
 import { ArrowDownWideNarrow, ArrowUpNarrowWide } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { cn } from '@/lib/utils/utils';
 import { SELECT_INPUT_CLASS, SELECT_LABEL_CLASS } from '@/components/shared/selectStyles';
 import { OptionSelect, type OptionSelectProps } from './OptionSelect';
@@ -60,21 +61,29 @@ export function SortSelect({
           triggerClassName='h-full rounded-none border-0 bg-transparent shadow-none hover:border-0 focus:border-0 dark:bg-transparent'
           onChange={value => onChange(value, direction)}
         />
-        <Button
-          type='button'
-          variant='unstyled'
-          disabled={disabled}
-          className='flex h-full w-10 shrink-0 items-center justify-center rounded-none border-0 border-l border-gray-300 bg-transparent p-0 text-current hover:bg-black/5 focus-visible:ring-inset dark:border-gray-700 dark:hover:bg-white/5'
-          aria-label={
-            descending
-              ? 'Orden descendente. Cambiar a ascendente'
-              : 'Orden ascendente. Cambiar a descendente'
-          }
-          title={descending ? 'Descendente' : 'Ascendente'}
-          onClick={() => onChange(field, descending ? 'asc' : 'desc')}
-        >
-          <DirectionIcon className='h-4 w-4' aria-hidden='true' />
-        </Button>
+        <TooltipProvider delayDuration={200}>
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <Button
+                type='button'
+                variant='unstyled'
+                disabled={disabled}
+                className='flex h-full w-10 shrink-0 items-center justify-center rounded-none border-0 border-l border-gray-300 bg-transparent p-0 text-current hover:bg-black/5 focus-visible:ring-inset dark:border-gray-700 dark:hover:bg-white/5'
+                aria-label={
+                  descending
+                    ? 'Orden descendente. Cambiar a ascendente'
+                    : 'Orden ascendente. Cambiar a descendente'
+                }
+                onClick={() => onChange(field, descending ? 'asc' : 'desc')}
+              >
+                <DirectionIcon className='h-4 w-4' aria-hidden='true' />
+              </Button>
+            </TooltipTrigger>
+            <TooltipContent className='bg-black text-white dark:bg-white dark:text-black rounded-xl border-none text-xs font-bold px-3 py-1.5 shadow-xl'>
+              <p>{descending ? 'Descendente' : 'Ascendente'}</p>
+            </TooltipContent>
+          </Tooltip>
+        </TooltipProvider>
       </div>
     </div>
   );

@@ -4,7 +4,7 @@ import { useState, useEffect, useRef } from 'react';
 import { Product, Presentacion } from '@/types/product';
 
 import { generateRandomCode } from '@/lib/utils/codeUtils';
-import { vencimientoCalculado } from '@/lib/business/vencimiento';
+import { resolverVencimiento } from '@/lib/business/vencimiento';
 import logger from '@/lib/utils/logger';
 import { getNumericValue, initialFormState } from './productFormFormat';
 import type { ProductFormValues } from './productFormTypes';
@@ -14,6 +14,7 @@ import { useProductInventory } from './useProductInventory';
 import { usePresentationEditor } from './usePresentationEditor';
 
 export type { PresentacionFormItem, ProductFormValues, UnidadCodigoItem } from './productFormTypes';
+export type { EditPresDraft } from './productFormFormat';
 
 interface UseProductFormProps {
   open: boolean;
@@ -76,19 +77,7 @@ export function useProductForm({
           initialValues.ml_shot_anfitriona !== undefined &&
           initialValues.ml_shot_anfitriona !== null
             ? String(initialValues.ml_shot_anfitriona)
-            : '',
-        // Las fechas de la base llegan como `YYYY-MM-DD`; recortamos por si
-        // vienen con hora para que el input date las acepte.
-        fecha_elaboracion: initialValues.fecha_elaboracion
-          ? String(initialValues.fecha_elaboracion).slice(0, 10)
-          : '',
-        duracion_meses:
-          initialValues.duracion_meses !== undefined && initialValues.duracion_meses !== null
-            ? String(initialValues.duracion_meses)
-            : '',
-        fecha_vencimiento: initialValues.fecha_vencimiento
-          ? String(initialValues.fecha_vencimiento).slice(0, 10)
-          : ''
+            : ''
       });
     } else if (open) {
       setForm({ ...initialFormState, code: generateRandomCode() });
@@ -155,28 +144,6 @@ export function useProductForm({
       }));
     } else if (name === 'ml_shot' || name === 'ml_shot_anfitriona') {
       setForm(prev => ({ ...prev, [name]: String(value).replace(/\D/g, '') }));
-    } else if (name === 'duracion_meses') {
-      // La duración va en meses enteros y recalcula el vencimiento.
-      const duracion = String(value).replace(/\D/g, '');
-      setForm(prev => {
-        const siguiente = { ...prev, duracion_meses: duracion };
-        return {
-          ...siguiente,
-          fecha_vencimiento:
-            vencimientoCalculado(siguiente.fecha_elaboracion, duracion) ??
-            siguiente.fecha_vencimiento
-        };
-      });
-    } else if (name === 'fecha_elaboracion') {
-      setForm(prev => {
-        const siguiente = { ...prev, fecha_elaboracion: String(value) };
-        return {
-          ...siguiente,
-          fecha_vencimiento:
-            vencimientoCalculado(String(value), siguiente.duracion_meses) ??
-            siguiente.fecha_vencimiento
-        };
-      });
     } else {
       setForm(prev => ({ ...prev, [name]: value }));
     }
@@ -208,9 +175,6 @@ export function useProductForm({
     data.append('status', '1');
     data.append('ml_shot', form.ml_shot);
     data.append('ml_shot_anfitriona', form.ml_shot_anfitriona);
-    data.append('fecha_elaboracion', form.fecha_elaboracion);
-    data.append('duracion_meses', form.duracion_meses);
-    data.append('fecha_vencimiento', form.fecha_vencimiento);
     if (presentaciones.length > 0) {
       data.append(
         'presentaciones',
@@ -221,7 +185,16 @@ export function useProductForm({
             precio_compra: getNumericValue(p.precio_compra) || '0',
             stock_minimo: getNumericValue(p.stock_minimo || '') || null,
             stock_maximo: getNumericValue(p.stock_maximo || '') || null,
-            cantidad: getNumericValue(p.stock) || '0'
+            cantidad: getNumericValue(p.stock) || '0',
+            // Las fechas del lote viajan en la presentación, ya resueltas: el
+            // vencimiento informado manda y si no se calcula con la duración.
+            fecha_elaboracion: p.fecha_elaboracion || null,
+            duracion_meses: p.duracion_meses ? Number(p.duracion_meses) : null,
+            fecha_vencimiento: resolverVencimiento({
+              fecha_elaboracion: p.fecha_elaboracion,
+              duracion_meses: p.duracion_meses,
+              fecha_vencimiento: p.fecha_vencimiento
+            })
           }))
         )
       );

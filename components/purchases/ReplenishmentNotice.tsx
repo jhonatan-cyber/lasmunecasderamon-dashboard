@@ -3,7 +3,6 @@ import Link from 'next/link';
 import { Button } from '@/components/ui/button';
 import { useGenericFetch } from '@/hooks/shared/useGenericFetch';
 import type { OrdenReposicion } from '@/modules/inventario/contracts';
-import { PURCHASE_BUTTON_CLASS } from '@/components/purchases/buttonStyles';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 
 export function ReplenishmentNotice({
@@ -22,10 +21,10 @@ export function ReplenishmentNotice({
   if (compact)
     return (
       <div className='flex flex-col items-start gap-1'>
-        <Button asChild className={`${PURCHASE_BUTTON_CLASS} shrink-0`}>
+        <Button asChild className='shrink-0 rounded-full'>
           <Link href='/purchases/replenishment'>
             Órdenes de compra
-            <span className='inline-flex min-w-6 h-6 items-center justify-center rounded-full bg-white/20 px-1.5 text-xs tabular-nums'>
+            <span className='inline-flex min-w-6 h-6 items-center justify-center rounded-full bg-primary-foreground/20 px-1.5 text-xs tabular-nums'>
               {isLoading ? '…' : error ? '—' : data.length}
             </span>
           </Link>
@@ -107,7 +106,7 @@ export function ReplenishmentNotice({
         </CardContent>
       )}
       <CardContent className={showProducts ? 'pt-0' : ''}>
-        <Button asChild className={PURCHASE_BUTTON_CLASS}>
+        <Button asChild className='rounded-full'>
           <Link href='/purchases/replenishment'>Ver orden de compra</Link>
         </Button>
       </CardContent>

@@ -9,6 +9,7 @@
 import type { SaleOption } from '@/types/sale-options';
 import { randomInt } from 'crypto';
 import { copiarOpcionesDeBotella } from '@/lib/business/saleOptions';
+import { formatFechaISO } from '@/lib/utils/fechaSql';
 import type { DevolucionEnvaseUnidad, NivelPrecio, PresentacionRow, UnidadRow } from './tipos';
 
 export function parseOpcionesVenta(
@@ -145,6 +146,13 @@ export const mapPresentacion = (row: any, topeSimple = 10000): PresentacionRow =
     stock_minimo: row.stock_minimo ?? null,
     stock_maximo: row.stock_maximo ?? null,
     stock_bar: row.stock_bar !== undefined ? Number(row.stock_bar) : undefined,
+    // Las columnas date llegan como `Date`: se normalizan a `YYYY-MM-DD`.
+    fecha_elaboracion: formatFechaISO(row.fecha_elaboracion),
+    duracion_meses:
+      row.duracion_meses === null || row.duracion_meses === undefined
+        ? null
+        : Number(row.duracion_meses),
+    fecha_vencimiento: formatFechaISO(row.fecha_vencimiento),
     ml_botella:
       row.ml_botella === null || row.ml_botella === undefined ? null : Number(row.ml_botella),
     ml_shot: row.ml_shot === null || row.ml_shot === undefined ? null : Number(row.ml_shot),
@@ -166,6 +174,7 @@ export const mapPresentacion = (row: any, topeSimple = 10000): PresentacionRow =
 export const mapUnidad = (row: any): UnidadRow => ({
   fecha_crea: row.fecha_crea ?? null,
   fecha_impresion: row.fecha_impresion ?? null,
+  fecha_vencimiento: formatFechaISO(row.fecha_vencimiento),
   fecha_devolucion: row.fecha_devolucion ?? null,
   devuelto_por: row.devuelto_por ?? null,
   compra_id: row.compra_id ?? null,

@@ -2,7 +2,7 @@
 
 import { useCallback, useState } from 'react';
 import type { PresentacionFormItem } from './productFormTypes';
-import { emptyPresentacion, validarArchivoFoto } from './productFormFormat';
+import { emptyPresentacion, recalcularVencimiento, validarArchivoFoto } from './productFormFormat';
 
 export function useProductPresentations() {
   const [presentaciones, setPresentaciones] = useState<PresentacionFormItem[]>([]);
@@ -32,13 +32,21 @@ export function useProductPresentations() {
 
   const updatePresentacion = (index: number, field: keyof PresentacionFormItem, value: string) => {
     const formatted =
-      field === 'precio_compra' ||
-      field === 'stock' ||
-      field === 'stock_minimo' ||
-      field === 'stock_maximo'
-        ? value.replace(/\D/g, '').replace(/\B(?=(\d{3})+(?!\d))/g, '.')
-        : value;
-    setPresentaciones(prev => prev.map((p, i) => (i === index ? { ...p, [field]: formatted } : p)));
+      field === 'fecha_elaboracion' || field === 'fecha_vencimiento'
+        ? value
+        : field === 'duracion_meses'
+          ? value.replace(/\D/g, '')
+          : field === 'precio_compra' ||
+              field === 'stock' ||
+              field === 'stock_minimo' ||
+              field === 'stock_maximo'
+            ? value.replace(/\D/g, '').replace(/\B(?=(\d{3})+(?!\d))/g, '.')
+            : value;
+    setPresentaciones(prev =>
+      prev.map((p, i) =>
+        i === index ? recalcularVencimiento({ ...p, [field]: formatted }, field) : p
+      )
+    );
   };
 
   const setPresentacionFoto = (index: number, file: File | null) => {

@@ -14,16 +14,8 @@ const cleanRUT = (rut: string): string => {
 };
 
 export const userFormSchema = z.object({
-  run: z
-    .string()
-    .min(7, 'El RUT es requerido')
-    .refine(
-      val => {
-        const cleaned = cleanRUT(val);
-        return cleaned.length >= 7 && cleaned.length <= 9;
-      },
-      { message: 'El RUT debe tener entre 7 y 9 dígitos' }
-    ),
+  // Sin validación de formato: el RUT solo alimenta la contraseña inicial.
+  run: z.string().min(1, 'El RUT es requerido'),
   nick: z.string().min(3, 'El nick debe tener al menos 3 caracteres'),
   name: z.string().min(2, 'El nombre es requerido'),
   lastName: z.string().min(2, 'El apellido es requerido'),

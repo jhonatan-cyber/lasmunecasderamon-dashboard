@@ -16,11 +16,8 @@ import { legacyRedirectTarget } from '@/lib/constants/legacy-routes';
 import { siteConfig } from '@/lib/api/site';
 import type { RateLimitConfig } from '@/lib/middleware/redisRateLimit';
 
-// Orígenes permitidos para CORS
 const ALLOWED_ORIGINS = [
   siteConfig.url,
-  // Dashboard en ejecución: en local se accede por IP y el navegador envía esa
-  // dirección como Origin para las peticiones mutables (por ejemplo, cerrar caja).
   ...(process.env.NEXT_PUBLIC_BASE_URL ? [new URL(process.env.NEXT_PUBLIC_BASE_URL).origin] : []),
   'http://localhost:3000',
   'http://localhost:8081',
@@ -185,6 +182,7 @@ async function localCheckUserPermission(
 
 export default async function proxy(request: NextRequest) {
   const { pathname } = request.nextUrl;
+  const method = request.method;
   const isApi = pathname.startsWith('/api/');
   const forwarded = request.headers.get('x-forwarded-for');
   const ip = forwarded ? forwarded.split(',')[0] : 'unknown';
@@ -201,8 +199,6 @@ export default async function proxy(request: NextRequest) {
     cspRequestHeaders = request.headers;
   }
 
-  // Chrome DevTools consulta este recurso de diagnóstico del navegador. No es una
-  // navegación de la app y no debe terminar en el login por el control de sesión.
   if (
     process.env.NODE_ENV === 'development' &&
     pathname === '/.well-known/appspecific/com.chrome.devtools.json'
@@ -210,17 +206,11 @@ export default async function proxy(request: NextRequest) {
     return NextResponse.next({ request: { headers: cspRequestHeaders } });
   }
 
-  // URLs retiradas (links de WhatsApp con token, QR impreso, marcadores y la app
-  // móvil). Se resuelven antes de mirar la sesión: si esto corriera después del
-  // control de acceso, un link viejo sin sesión terminaría en `/login` en lugar de
-  // llegar a la página nueva.
   const destinoLegado = legacyRedirectTarget(pathname);
   if (destinoLegado) {
     const url = new URL(request.url);
     url.pathname = destinoLegado;
     const redirect = NextResponse.redirect(url, 308);
-    // Un 308 conserva método y cuerpo, pero el navegador igual exige CORS en la
-    // respuesta intermedia cuando el pedido es cross-origin.
     if (isApi) {
       redirect.headers.set('Access-Control-Allow-Origin', getCorsOrigin(origin));
       redirect.headers.set('Access-Control-Allow-Credentials', 'true');
@@ -231,8 +221,6 @@ export default async function proxy(request: NextRequest) {
 
   const isProd = process.env.NODE_ENV === 'production' && process.env.SKIP_RATE_LIMIT !== 'true';
   if (isProd) {
-    // En desarrollo no se carga ioredis ni el limitador: es código que sólo se
-    // usa en producción y sumaba ~1,9 s al compilar el middleware al arrancar.
     const { checkRateLimit, RATE_LIMIT_CONFIGS } = await import('@/lib/middleware/redisRateLimit');
     const isCredentialPath =
       pathname === '/login' ||
@@ -370,8 +358,6 @@ export default async function proxy(request: NextRequest) {
     }
   }
 
-  // Una app con Bearer puede compartir origen con otra sesión del dashboard.
-  // Su credencial explícita debe prevalecer sobre las cookies del navegador.
   let token = tokenFromHeader || tokenFromCookie;
   let payload: any = null;
 

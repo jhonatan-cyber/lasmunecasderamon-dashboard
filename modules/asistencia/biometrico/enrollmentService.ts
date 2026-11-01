@@ -320,12 +320,6 @@ export interface ResultadoEnrolamientoTelefono {
   ladoPlantilla?: string;
 }
 
-/**
- * Enrolamiento facial desde el teléfono del trabajador: recibe el set de
- * capturas (frente / izquierda / derecha) y deja la plantilla maestra en la
- * base para la persona. La captura frontal es la muestra que el motor de
- * comparación usa como plantilla del usuario.
- */
 export async function guardarEnrolamientoDesdeTelefono(
   usuarioId: string,
   fotos: DatosCapturaEnrolamiento[],
@@ -931,13 +925,6 @@ export async function verificarCoincidenciaFacial(
   };
 }
 
-/**
- * Verifica contra la plantilla guardada (p. ej. la captura frontal que llegó
- * desde el teléfono) una captura viva ya resuelta: extrae el vector de ambas
- * fotos con el motor del equipo y decide por similitud coseno. Es la vía del
- * enrolamiento telefonico: la captura vive la manda el cliente y la plantilla
- * maestra la dejó guardada el flujo de telefono.
- */
 export async function verificarCoincidenciaConFoto(
   persona: DatosPersona,
   capturaBase64: string,
@@ -965,11 +952,11 @@ export async function verificarCoincidenciaConFoto(
   }
 
   const equipo = dispositivoId ? await obtenerEquipo(dispositivoId) : await obtenerEquipoActivo();
-  const credenciales = equipo ? credencialesDe(equipo) : null;
-  if (!credenciales) {
-    throw new DeviceConnectionError(
-      'El equipo no tiene IP/credenciales para extraer el vector facial.'
-    );
+  let credenciales: CredencialesEquipo | null = null;
+  try {
+    credenciales = equipo ? credencialesDe(equipo) : null;
+  } catch (error) {
+    if (!(error instanceof DeviceConnectionError)) throw error;
   }
 
   let vectorPlantilla: Float32Array;
@@ -991,11 +978,11 @@ export async function verificarCoincidenciaConFoto(
     vectorCaptura = await extraerVectorFacial(credenciales, captura);
   } catch (error) {
     if (error instanceof ErrorFacial) {
-      return {
-        ok: false,
-        motivo: error.motivo,
-        mensaje: `No pude analizar la captura recibida de ${persona.nombre}: ${error.message}`
-      };
+      const mensaje =
+        error.motivo === 'sin_cara'
+          ? 'El lector no ve ninguna cara enfrente: pedile a la persona que se ponga de frente a la cámara y volvé a verificar.'
+          : `No pude analizar la foto del lector: ${error.message}`;
+      return { ok: false, motivo: error.motivo, mensaje };
     }
     throw error;
   }
@@ -1019,7 +1006,6 @@ export async function verificarCoincidenciaConFoto(
   };
 }
 
-/** Acepta base64 puro o data URL ("data:image/jpeg;base64,..."). */
 function bufferDesdeBase64(datos: string): Buffer {
   const limpio = datos.includes(',') ? datos.slice(datos.indexOf(',') + 1) : datos;
   return Buffer.from(limpio.replace(/\s+/g, ''), 'base64');

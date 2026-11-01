@@ -14,6 +14,11 @@ export interface PresentacionVentaBloqueada {
   opciones_venta: unknown;
   /** Estado del producto: 0 = desactivado, no se puede sacar del bar. */
   estado: number | null;
+  /**
+   * Vencimiento de la presentación. Es el respaldo de las unidades que no
+   * tienen fecha de lote propia (las anteriores a la migración 111).
+   */
+  fecha_vencimiento: string | null;
 }
 
 /** Un producto desactivado a mano no se vende ni se consume del bar. */
@@ -33,6 +38,7 @@ export async function bloquearYValidarConfiguracionVenta(
     // `FROM` y el `FOR UPDATE` quedan exactamente como estaban, así que esta
     // consulta sigue bloqueando las mismas filas y en el mismo orden.
     `SELECT id, opciones_venta, producto_id, nombre, precio_venta, comision, ml_botella,
+            fecha_vencimiento,
             (SELECT pr.estado FROM productos pr WHERE pr.id_producto = inventario_presentaciones.producto_id) AS estado
        FROM inventario_presentaciones
       WHERE id IN (${ids.map(() => '?').join(',')}) ORDER BY id FOR UPDATE`,

@@ -1,6 +1,8 @@
 import { completarPerfilAsistencia } from './attendanceUserProfile';
 import type { CredencialesEquipo } from '@/modules/asistencia/biometrico/deviceClient';
 import { cargarSdkNet, type SdkNet } from './netSdk';
+import { extraerVectorFacialSoftware } from './softwareFaceSdk';
+import logger from '@/lib/utils/logger';
 
 const PUERTO_NETSDK = 37777;
 const GETFACEEIGEN = 5;
@@ -260,12 +262,21 @@ async function conSesionFacial<T>(
 }
 
 export async function extraerVectorFacial(
-  credenciales: CredencialesEquipo,
+  credenciales: CredencialesEquipo | null,
   foto: Buffer
 ): Promise<Float32Array> {
   if (!foto || foto.length === 0) {
     throw new ErrorFacial('foto_invalida', 'La foto llegó vacía.');
   }
+  if (!credenciales || process.env.BIOMETRIC_ENGINE === 'software') {
+    try {
+      return await extraerVectorFacialSoftware(foto);
+    } catch (error) {
+      logger.error('[biometric-face] Error en extracción por software:', error);
+      if (!credenciales) throw error;
+    }
+  }
+
   if (foto.length > MAXIMO_BYTES_FOTO) {
     throw new ErrorFacial(
       'foto_invalida',

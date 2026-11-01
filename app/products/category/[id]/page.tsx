@@ -12,6 +12,7 @@ import { CategoryProductsHeader } from '@/components/products/CategoryProductsHe
 import { ProductFilters } from '@/components/products/ProductFilters';
 import ProductTable from '@/components/products/ProductTable';
 import { VencimientoAlert } from '@/components/products/VencimientoAlert';
+import { estadoVencimiento } from '@/lib/business/vencimiento';
 import { useRouter } from 'next/navigation';
 import { Product, Presentacion } from '@/types/product';
 import Paginate from '@/components/shared/Paginate';
@@ -62,9 +63,7 @@ const ProductCategoryPage = () => {
     deactivateProduct,
     reorderProducts,
     searchTerm,
-    setSearchTerm,
-    filterStatus,
-    setFilterStatus
+    setSearchTerm
   } = useProducts(categoryId || '');
 
   const [openDialog, setOpenDialog] = useState(false);
@@ -72,6 +71,7 @@ const ProductCategoryPage = () => {
   const [editPresentation, setEditPresentation] = useState<Presentacion | null>(null);
   const [showTableView, setShowTableView] = useState(false);
   const [onlyLowStock, setOnlyLowStock] = useState(false);
+  const [onlyVencidos, setOnlyVencidos] = useState(false);
   const {
     data: lowStockOrders,
     isLoading: lowStockLoading,
@@ -113,12 +113,15 @@ const ProductCategoryPage = () => {
     if (term) {
       result = result.filter(p => matchesProductSearch(p, term));
     }
-    if (filterStatus !== null) {
-      result = result.filter(p => p.status === filterStatus);
-    }
     if (onlyLowStock) result = result.filter(p => lowStockProductIds.has(String(p.id)));
+    if (onlyVencidos) {
+      result = result.filter(p => {
+        const info = estadoVencimiento(p.fecha_vencimiento);
+        return info != null && (info.estado === 'vencido' || info.estado === 'por_vencer');
+      });
+    }
     return result;
-  }, [products, searchTerm, filterStatus, onlyLowStock, lowStockProductIds]);
+  }, [products, searchTerm, onlyLowStock, lowStockProductIds, onlyVencidos]);
 
   React.useEffect(() => {
     setLocalProductsCards(previous =>
@@ -229,33 +232,38 @@ const ProductCategoryPage = () => {
   // Las tarjetas se revelan recién cuando están las presentaciones: así la
   // entrada animada se reproduce una sola vez y con los datos finales.
   const cardsReady = !isLoading && !(Boolean(paginatedIdsKey) && presentacionesPending);
-  const cardsGridKey = [
-    cardsReady ? 'ready' : 'loading',
-    pageCards,
-    pageSizeCards,
-    filterStatus ?? 'all'
-  ].join('-');
+  const cardsGridKey = [cardsReady ? 'ready' : 'loading', pageCards, pageSizeCards].join('-');
 
   const flatCards: { rowId: string; product: Product; presentation: Presentacion | null }[] =
     useMemo(
       () =>
         paginatedProductsCards.flatMap(product => {
           const pres = presentacionesMap[String(product.id)] ?? [];
-          if (pres.length === 0) {
-            return [{ rowId: String(product.id), product, presentation: null }] as {
-              rowId: string;
-              product: Product;
-              presentation: Presentacion | null;
-            }[];
-          }
-          return pres.map(p => ({
-            rowId: `${product.id}::${p.id}`,
-            product,
-            presentation: p as Presentacion | null
-          }));
+          const rows: { rowId: string; product: Product; presentation: Presentacion | null }[] =
+            pres.length === 0
+              ? [
+                  {
+                    rowId: String(product.id),
+                    product,
+                    presentation: null
+                  }
+                ]
+              : pres.map(p => ({
+                  rowId: `${product.id}::${p.id}`,
+                  product,
+                  presentation: p as Presentacion | null
+                }));
+          if (!onlyVencidos) return rows;
+          // Filtro por presentación: se descartan los lotes que no están vencidos ni por vencer.
+          return rows.filter(({ product, presentation }) => {
+            const info = estadoVencimiento(
+              presentation?.fecha_vencimiento ?? product.fecha_vencimiento
+            );
+            return info != null && (info.estado === 'vencido' || info.estado === 'por_vencer');
+          });
         }),
 
-      [paginatedProductsCards, presentacionesMap]
+      [paginatedProductsCards, presentacionesMap, onlyVencidos]
     );
 
   const handleDragEndCards = useCallback(
@@ -280,11 +288,11 @@ const ProductCategoryPage = () => {
 
   const handleClearFilters = useCallback(() => {
     setOnlyLowStock(false);
+    setOnlyVencidos(false);
     setSearchTerm('');
-    setFilterStatus(null);
     setPage(1);
     setPageCards(1);
-  }, [setSearchTerm, setFilterStatus]);
+  }, [setSearchTerm, setOnlyVencidos]);
 
   const handleCreate = useCallback(
     async (form: FormData) => {
@@ -404,10 +412,14 @@ const ProductCategoryPage = () => {
             setPage(1);
             setPageCards(1);
           }}
+          onlyVencidos={onlyVencidos}
+          onOnlyVencidosChange={value => {
+            setOnlyVencidos(value);
+            setPage(1);
+            setPageCards(1);
+          }}
           searchTerm={searchTerm}
           setSearchTerm={setSearchTerm}
-          filterStatus={filterStatus}
-          setFilterStatus={setFilterStatus}
           onClearFilters={handleClearFilters}
           pageSize={showTableView ? pageSize : pageSizeCards}
           setPageSize={showTableView ? setPageSize : setPageSizeCards}
@@ -431,7 +443,9 @@ const ProductCategoryPage = () => {
                 <div className='text-center text-gray-500 text-sm sm:text-base py-8'>
                   {onlyLowStock
                     ? 'No hay productos con stock bajo en esta categoría.'
-                    : 'No hay productos en esta categoría.'}
+                    : onlyVencidos
+                      ? 'No hay productos vencidos o por vencer en esta categoría.'
+                      : 'No hay productos en esta categoría.'}
                 </div>
               ) : (
                 <>
@@ -483,6 +497,7 @@ const ProductCategoryPage = () => {
                         currentPage={page}
                         pageSize={pageSize}
                         presentacionesPorProducto={presentacionesMap}
+                        onlyVencidos={onlyVencidos}
                       />
                     </BoneyardSkeleton>
                   </div>
@@ -500,7 +515,9 @@ const ProductCategoryPage = () => {
                 <div className='text-center text-gray-500 text-sm sm:text-base py-8'>
                   {onlyLowStock
                     ? 'No hay productos con stock bajo en esta categoría.'
-                    : 'No hay productos en esta categoría.'}
+                    : onlyVencidos
+                      ? 'No hay productos vencidos o por vencer en esta categoría.'
+                      : 'No hay productos en esta categoría.'}
                 </div>
               ) : (
                 <>
@@ -620,7 +637,9 @@ const ProductCategoryPage = () => {
             <div className='text-center text-gray-500 text-sm sm:text-base py-8'>
               {onlyLowStock
                 ? 'No hay productos con stock bajo en esta categoría.'
-                : 'No hay productos en esta categoría.'}
+                : onlyVencidos
+                  ? 'No hay productos vencidos o por vencer en esta categoría.'
+                  : 'No hay productos en esta categoría.'}
             </div>
           ) : (
             <>

@@ -14,6 +14,7 @@ import { completarOpciones, parseOpcionesVenta, resolverBotella } from '../helpe
 import { ESTADO_UNIDAD_ACTIVA } from '../estados';
 import { BusinessError, NotFoundError } from '@/lib/errors/errors';
 import { getNowInBusinessTimezone } from '@/lib/business/timezoneService';
+import { hoyDelNegocio } from '@/lib/business/vencimiento';
 import { BaseRepository } from '@/lib/database/base-repository';
 import { sincronizarStockTotal } from '../unidades/repositorio';
 import type { TraspasoInput, TraspasoResultado } from '../contracts';
@@ -73,18 +74,37 @@ export async function traspasarAlBar(
     [input.producto_id]
   );
   if (!producto.length) throw new BusinessError('El producto no existe');
+  // Un lote vencido no baja al bar: se queda en bodega hasta que se le da de
+  // baja. Entre las que sí bajan sale primero la que vence antes, que es la que
+  // hay que consumir antes de que se estropee.
   const candidatas = await trx<any[]>(
-    `SELECT id FROM inventario_unidades
-     WHERE producto_id = ? AND presentacion_id = ?
-       AND estado = '${ESTADO_UNIDAD_ACTIVA}' AND ubicacion = 'almacen'
-     ORDER BY fecha_crea ASC, codigo ASC
+    `SELECT u.id FROM inventario_unidades u
+     LEFT JOIN inventario_presentaciones p ON p.id = u.presentacion_id
+     WHERE u.producto_id = ? AND u.presentacion_id = ?
+       AND u.estado = '${ESTADO_UNIDAD_ACTIVA}' AND u.ubicacion = 'almacen'
+       AND (COALESCE(u.fecha_vencimiento, p.fecha_vencimiento) IS NULL
+            OR COALESCE(u.fecha_vencimiento, p.fecha_vencimiento) >= ?)
+     ORDER BY COALESCE(u.fecha_vencimiento, p.fecha_vencimiento) ASC NULLS LAST, u.fecha_crea ASC, u.codigo ASC
      LIMIT ?
-     FOR UPDATE`,
-    [input.producto_id, input.presentacion_id, input.cantidad]
+     FOR UPDATE OF u`,
+    [input.producto_id, input.presentacion_id, hoyDelNegocio(), input.cantidad]
   );
   if (candidatas.length < input.cantidad) {
+    const vencidas = await trx<any[]>(
+      `SELECT COUNT(*)::int AS total FROM inventario_unidades uv
+       LEFT JOIN inventario_presentaciones pv ON pv.id = uv.presentacion_id
+       WHERE uv.producto_id = ? AND uv.presentacion_id = ?
+         AND uv.estado = '${ESTADO_UNIDAD_ACTIVA}' AND uv.ubicacion = 'almacen'
+         AND COALESCE(uv.fecha_vencimiento, pv.fecha_vencimiento) IS NOT NULL
+         AND COALESCE(uv.fecha_vencimiento, pv.fecha_vencimiento) < ?`,
+      [input.producto_id, input.presentacion_id, hoyDelNegocio()]
+    );
+    const totalVencidas = Number(vencidas?.[0]?.total ?? 0);
     throw new BusinessError(
-      `Stock insuficiente en bodega: hay ${candidatas.length} y se pidieron ${input.cantidad}`
+      `Stock insuficiente en bodega: hay ${candidatas.length} y se pidieron ${input.cantidad}` +
+        (totalVencidas > 0
+          ? ` (${totalVencidas} botella(s) vencida(s) no se trasladan al bar)`
+          : '')
     );
   }
   const ids = candidatas.map(r => String(r.id));

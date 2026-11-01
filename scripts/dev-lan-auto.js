@@ -1,12 +1,14 @@
-#!/usr/bin/env node
 const { spawn } = require('child_process');
 const net = require('net');
+const os = require('node:os');
+const path = require('node:path');
+const fs = require('node:fs');
 require(
   require.resolve('@next/env', { paths: [require.resolve('next/package.json')] })
 ).loadEnvConfig(process.cwd(), true);
 const { startRedis } = require('./redis-dev');
-
-const port = process.env.PORT || '3000';
+const portSolicitado = (process.env.PORT ?? '').trim();
+const port = portSolicitado === '' || portSolicitado === '0' ? '3000' : portSolicitado;
 const publicHost = new URL(process.env.NEXT_PUBLIC_BASE_URL || 'http://localhost:3000').hostname;
 const host = '0.0.0.0';
 
@@ -19,9 +21,9 @@ async function start() {
     probe.once('error', reject);
     probe.listen({ host, port: Number(port), exclusive: true }, () => probe.close(resolve));
   });
-  // Redis no bloquea el arranque: el limitador cae a memoria mientras la
-  // conexión no esté lista. Se inicia en paralelo con Next y se detiene al
-  // salir; así una WSL apagada no demora el servidor hasta 15 s.
+
+  asegurarTunelBd();
+
   let stopRedis = () => {};
   let saliendo = false;
   startRedis()
@@ -34,22 +36,33 @@ async function start() {
     });
 
   console.log(`[dev] Servidor: http://${publicHost}:${port}`);
+  const logFile = path.join(os.tmpdir(), 'lasmunecas-dashboard-dev.log');
+  fs.mkdirSync(path.dirname(logFile), { recursive: true });
+  const logStream = fs.createWriteStream(logFile, { flags: 'a' });
+  console.log(`[dev] Log: ${logFile}`);
 
   const child = spawn(
     process.execPath,
     [require.resolve('next/dist/bin/next'), 'dev', '--hostname', host, '--port', String(port)],
     {
-      stdio: 'inherit',
+      stdio: ['inherit', 'pipe', 'pipe'],
       windowsHide: true
     }
   );
 
-  // El warmup se lanza recién cuando Next ya escucha. Si arranca antes, sus
-  // requests compiten con la compilación inicial y demoran la primera
-  // respuesta; esperar el puerto no compila nada y no bloquea el servidor.
+  child.stdout.on('data', data => {
+    process.stdout.write(data);
+    logStream.write(data);
+  });
+
+  child.stderr.on('data', data => {
+    process.stderr.write(data);
+    logStream.write(data);
+  });
+
   let warmup = null;
   const iniciarWarmup = async () => {
-    if (process.env.DASHBOARD_WARMUP === '0') return;
+    if (process.env.DASHBOARD_WARMUP !== '1') return;
     const abierto = await esperarPuerto(Number(port), 90_000, () => saliendo);
     if (!abierto || saliendo || warmup) return;
     warmup = spawn(process.execPath, [require.resolve('./warmup.mjs')], {
@@ -87,6 +100,55 @@ async function start() {
       detener();
     });
   }
+}
+
+function asegurarTunelBd() {
+  const host = process.env.DB_HOST || '127.0.0.1';
+  const puerto = Number(process.env.DB_PORT || 5432);
+  const loopback = ['127.0.0.1', 'localhost', '::1'].includes(host);
+  if (process.platform !== 'win32' || !loopback || puerto === 5432) return;
+
+  const tarea = process.env.DB_TUNNEL_TASK || 'LasMunecas DB Tunnel';
+  const escucha = () =>
+    new Promise(resolve => {
+      const socket = net.connect({ host: '127.0.0.1', port: puerto }, () => {
+        socket.end();
+        resolve(true);
+      });
+      socket.setTimeout(500, () => {
+        socket.destroy();
+        resolve(false);
+      });
+      socket.on('error', () => {
+        socket.destroy();
+        resolve(false);
+      });
+    });
+
+  void (async () => {
+    if (await escucha()) return;
+
+    const nombre = tarea.replace(/'/g, "''");
+    const script =
+      `$t = Get-ScheduledTask -TaskName '${nombre}' -ErrorAction SilentlyContinue; ` +
+      `if (-not $t) { exit 2 }; ` +
+      `if ($t.State -ne 'Running') { Start-ScheduledTask -TaskName '${nombre}' }`;
+    console.log(`[túnel] Arrancando "${tarea}" para ${host}:${puerto}...`);
+    spawn('powershell.exe', ['-NoProfile', '-NonInteractive', '-Command', script], {
+      stdio: 'ignore',
+      windowsHide: true
+    });
+
+    const deadline = Date.now() + 20000;
+    while (Date.now() < deadline) {
+      await new Promise(resolve => setTimeout(resolve, 500));
+      if (await escucha()) {
+        console.log(`[túnel] PostgreSQL disponible en ${host}:${puerto}.`);
+        return;
+      }
+    }
+    console.warn(`[túnel] ${host}:${puerto} no responde. Revisa la tarea "${tarea}".`);
+  })();
 }
 
 async function esperarPuerto(port, timeoutMs, cancelado) {

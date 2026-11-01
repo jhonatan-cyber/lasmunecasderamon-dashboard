@@ -27,7 +27,7 @@ import { useUserPermissions } from '@/hooks/auth/useUserPermissions';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { dragModifiers } from '@/components/shared/dragBounds';
-import { PackageCheck, ClipboardList, Search, X } from 'lucide-react';
+import { PackageCheck, ClipboardList, Search, X, AlertTriangle } from 'lucide-react';
 
 export function ProductsPageClient() {
   const router = useRouter();
@@ -112,6 +112,12 @@ export function ProductsPageClient() {
                   Envases devueltos
                 </Button>
               </PermissionGuard>
+              <Button asChild variant='outline' className='rounded-full flex items-center gap-2'>
+                <Link href='/products/expired'>
+                  <AlertTriangle className='w-4 h-4' />
+                  Lotes vencidos
+                </Link>
+              </Button>
               <Button asChild variant='outline' className='rounded-full flex items-center gap-2'>
                 <Link href='/purchases/replenishment'>
                   <ClipboardList className='w-4 h-4' />

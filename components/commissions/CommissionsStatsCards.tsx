@@ -51,70 +51,42 @@ export default function CommissionsStatsCards({
 
   return (
     <div className='grid gap-4 grid-cols-2 lg:grid-cols-4 mb-6'>
-      {}
       <MetricCard
         tone='emerald'
         icon={<DollarSign className='h-4 w-4 text-emerald-600' />}
         badge='Total'
         label='Total Comisiones'
         value={formatCurrencyCLP(totalComisiones)}
-        footer={
-          <div className='flex items-center gap-1.5 pt-1'>
-            <span className='text-[10px] text-emerald-700/50 font-medium uppercase tracking-tighter italic'>
-              Acumulado en caja activa
-            </span>
-          </div>
-        }
+        footerLabel='Acumulado en caja activa'
       />
 
-      {}
       <MetricCard
         tone='blue'
         icon={<TrendingUp className='h-4 w-4 text-blue-600' />}
         badge='Ventas'
         label='Por Ventas'
         value={formatCurrencyCLP(comisionVentas)}
-        footer={
-          <div className='flex items-center gap-1.5 pt-1'>
-            <span className='text-blue-700 font-black text-sm'>{porcentajeVentas}%</span>
-            <span className='text-[10px] text-blue-700/50 font-medium uppercase tracking-tighter italic'>
-              del total
-            </span>
-          </div>
-        }
+        footerValue={`${porcentajeVentas}%`}
+        footerLabel='del total'
       />
 
-      {}
       <MetricCard
         tone='violet'
         icon={<Clock className='h-4 w-4 text-violet-600' />}
         badge='Servicios'
         label='Por Servicios'
         value={formatCurrencyCLP(comisionServicios)}
-        footer={
-          <div className='flex items-center gap-1.5 pt-1'>
-            <span className='text-violet-700 font-black text-sm'>{porcentajeServicios}%</span>
-            <span className='text-[10px] text-violet-700/50 font-medium uppercase tracking-tighter italic'>
-              del total
-            </span>
-          </div>
-        }
+        footerValue={`${porcentajeServicios}%`}
+        footerLabel='del total'
       />
 
-      {}
       <MetricCard
         tone='orange'
         icon={<Users className='h-4 w-4 text-orange-600' />}
         badge='Personal'
         label='Anfitrionas'
         value={cantidadComisiones}
-        footer={
-          <div className='flex items-center gap-1.5 pt-1'>
-            <span className='text-[10px] text-orange-700/50 font-medium uppercase tracking-tighter italic'>
-              Con comisiones registradas
-            </span>
-          </div>
-        }
+        footerLabel='Con comisiones registradas'
       />
     </div>
   );

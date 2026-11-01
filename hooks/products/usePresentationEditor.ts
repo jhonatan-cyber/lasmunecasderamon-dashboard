@@ -3,11 +3,13 @@
 import { useCallback, useState } from 'react';
 import { toast } from 'sonner';
 import { StockLimitsSchema } from '@/lib/business/stockLimits';
+import { esFechaISO, resolverVencimiento } from '@/lib/business/vencimiento';
 import type { Presentacion } from '@/types/product';
 import {
   emptyEditDraft,
   formatNumber,
   getNumericValue,
+  recalcularVencimiento,
   type EditPresDraft
 } from './productFormFormat';
 
@@ -51,7 +53,11 @@ export function usePresentationEditor({
         p.comision !== undefined && p.comision !== null ? formatNumber(String(p.comision)) : '',
       stock_minimo: p.stock_minimo == null ? '' : String(p.stock_minimo),
       stock_maximo: p.stock_maximo == null ? '' : String(p.stock_maximo),
-      stock: p.stock !== undefined && p.stock !== null ? formatNumber(String(p.stock)) : ''
+      stock: p.stock !== undefined && p.stock !== null ? formatNumber(String(p.stock)) : '',
+      fecha_elaboracion: p.fecha_elaboracion ? String(p.fecha_elaboracion).slice(0, 10) : '',
+      duracion_meses:
+        p.duracion_meses === null || p.duracion_meses === undefined ? '' : String(p.duracion_meses),
+      fecha_vencimiento: p.fecha_vencimiento ? String(p.fecha_vencimiento).slice(0, 10) : ''
     });
   }, []);
 
@@ -62,17 +68,19 @@ export function usePresentationEditor({
   }, []);
 
   const changeEditPresDraft = (field: keyof EditPresDraft, value: string) =>
-    setEditPresDraft(prev => ({
-      ...prev,
-      [field]:
+    setEditPresDraft(prev => {
+      const formatted =
         field === 'precio_compra' ||
         field === 'precio_venta' ||
         field === 'comision' ||
         field === 'stock_minimo' ||
         field === 'stock_maximo'
           ? value.replace(/\D/g, '').replace(/\B(?=(\d{3})+(?!\d))/g, '.')
-          : value
-    }));
+          : field === 'duracion_meses'
+            ? value.replace(/\D/g, '')
+            : value;
+      return recalcularVencimiento({ ...prev, [field]: formatted }, field);
+    });
 
   const toggleCodigoSeleccionado = (unidadId: string) =>
     setCodigosSeleccionados(prev =>
@@ -92,6 +100,24 @@ export function usePresentationEditor({
     if (!editingPresId || savingPresentationRef.current || addingStockRef.current) return;
     if (!editPresDraft.nombre.trim()) {
       toast.error('El nombre de la presentación es requerido');
+      return;
+    }
+
+    const hoy = new Date().toISOString().slice(0, 10);
+    if (editPresDraft.fecha_elaboracion && editPresDraft.fecha_elaboracion > hoy) {
+      toast.error('La fecha de elaboración no puede ser futura');
+      return;
+    }
+    if (
+      esFechaISO(editPresDraft.fecha_elaboracion) &&
+      esFechaISO(editPresDraft.fecha_vencimiento) &&
+      editPresDraft.fecha_vencimiento < editPresDraft.fecha_elaboracion
+    ) {
+      toast.error('El vencimiento no puede ser anterior a la elaboración');
+      return;
+    }
+    if (editPresDraft.fecha_vencimiento && editPresDraft.fecha_vencimiento < hoy) {
+      toast.error('La fecha de vencimiento no puede ser anterior a hoy');
       return;
     }
     const actual = existentes.find(e => e.id === editingPresId);
@@ -131,7 +157,16 @@ export function usePresentationEditor({
           codigo_barras: editPresDraft.codigo_barras.trim(),
           precio_compra: getNumericValue(editPresDraft.precio_compra) || '0',
           precio_venta: getNumericValue(editPresDraft.precio_venta) || '0',
-          comision: getNumericValue(editPresDraft.comision) || '0'
+          comision: getNumericValue(editPresDraft.comision) || '0',
+          fecha_elaboracion: editPresDraft.fecha_elaboracion || null,
+          duracion_meses: editPresDraft.duracion_meses
+            ? Number(editPresDraft.duracion_meses)
+            : null,
+          fecha_vencimiento: resolverVencimiento({
+            fecha_elaboracion: editPresDraft.fecha_elaboracion,
+            duracion_meses: editPresDraft.duracion_meses,
+            fecha_vencimiento: editPresDraft.fecha_vencimiento
+          })
         })
       });
       const result = await res.json().catch(() => ({}));

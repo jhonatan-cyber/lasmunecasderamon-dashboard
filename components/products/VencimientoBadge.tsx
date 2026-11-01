@@ -2,6 +2,7 @@
 
 import { CalendarClock } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { cn } from '@/lib/utils/utils';
 import { estadoVencimiento, type VencimientoInfo } from '@/lib/business/vencimiento';
 
@@ -47,21 +48,35 @@ export function VencimientoBadge({ fecha, className }: VencimientoBadgeProps) {
   if (!info) return null;
 
   return (
-    <span
-      title={detalle(info)}
-      className={cn('inline-flex flex-wrap items-center justify-center gap-1.5', className)}
-    >
-      <CalendarClock className='h-3.5 w-3.5 text-gray-400 dark:text-gray-500' aria-hidden='true' />
-      <span className='font-mono text-xs text-gray-600 dark:text-gray-300'>
-        {fechaCorta(info.fecha)}
-      </span>
-      {info.estado !== 'vigente' && (
-        <Badge
-          className={cn('rounded-full px-2 py-0.5 text-[10px] font-semibold', ESTILO[info.estado])}
-        >
-          {etiqueta(info)}
-        </Badge>
-      )}
-    </span>
+    <TooltipProvider delayDuration={200}>
+      <Tooltip>
+        <TooltipTrigger asChild>
+          <span
+            className={cn('inline-flex flex-wrap items-center justify-center gap-1.5', className)}
+          >
+            <CalendarClock
+              className='h-3.5 w-3.5 text-gray-400 dark:text-gray-500'
+              aria-hidden='true'
+            />
+            <span className='font-mono text-xs text-gray-600 dark:text-gray-300'>
+              {fechaCorta(info.fecha)}
+            </span>
+            {info.estado !== 'vigente' && (
+              <Badge
+                className={cn(
+                  'rounded-full px-2 py-0.5 text-[10px] font-semibold',
+                  ESTILO[info.estado]
+                )}
+              >
+                {etiqueta(info)}
+              </Badge>
+            )}
+          </span>
+        </TooltipTrigger>
+        <TooltipContent className='bg-black text-white dark:bg-white dark:text-black rounded-xl border-none text-xs font-bold px-3 py-1.5 shadow-xl'>
+          {detalle(info)}
+        </TooltipContent>
+      </Tooltip>
+    </TooltipProvider>
   );
 }

@@ -12,7 +12,8 @@ import {
   Power,
   GripVertical,
   Eye,
-  Image as ImageIcon
+  Image as ImageIcon,
+  Tag
 } from 'lucide-react';
 import { TooltipProvider } from '@/components/ui/tooltip';
 import { Button } from '@/components/ui/button';
@@ -54,6 +55,7 @@ import { CSS } from '@dnd-kit/utilities';
 import { useUserPermissions } from '@/hooks/auth/useUserPermissions';
 import { formatCurrencyCLP } from '@/lib/utils/formatters';
 import { productImageUrl } from '@/lib/utils/productImage';
+import { estadoVencimiento } from '@/lib/business/vencimiento';
 
 interface ProductTableProps {
   products: Product[];
@@ -67,6 +69,7 @@ interface ProductTableProps {
   currentPage: number;
   pageSize: number;
   presentacionesPorProducto?: Record<string, Presentacion[]>;
+  onlyVencidos?: boolean;
 }
 
 interface FlatRow {
@@ -110,6 +113,12 @@ const SortableRow: React.FC<SortableRowProps> = React.memo(
       Number(presentation ? (presentation.stock ?? 0) : (product.stock_almacen ?? 0)) +
       Number(presentation?.stock_bar ?? 0);
     const lowStock = presentation?.stock_minimo != null && totalStock < presentation.stock_minimo;
+    const categoriaLabel =
+      (presentation?.categoria_nombre && presentation.categoria_nombre.trim() !== ''
+        ? presentation.categoria_nombre
+        : null) ??
+      (product.categoria && product.categoria.trim() !== '' ? product.categoria : null);
+    const vencimientoFecha = presentation?.fecha_vencimiento ?? product.fecha_vencimiento;
     const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({
       id: row.rowId
     });
@@ -144,9 +153,6 @@ const SortableRow: React.FC<SortableRowProps> = React.memo(
             containerClassName='relative mx-auto h-12 w-12 shrink-0 overflow-hidden rounded-xl border border-gray-100 bg-gray-50 shadow-xs transition-all group-hover:shadow-sm dark:border-slate-800 dark:bg-slate-800/40'
             photoClassName='h-12 w-12 object-cover transition-transform duration-300 group-hover:scale-110'
           />
-        </TableCell>
-        <TableCell className='sm:px-4 text-center font-mono sm:text-sm'>
-          {presentation?.codigo_barras || product.code}
         </TableCell>
         <TableCell className='sm:px-4 text-center font-mono sm:text-sm'>
           <div className='flex items-center justify-center gap-2'>
@@ -186,22 +192,33 @@ const SortableRow: React.FC<SortableRowProps> = React.memo(
           </TableCell>
         ))}
         <TableCell className='sm:px-4 text-center'>
-          {product.fecha_vencimiento ? (
-            <VencimientoBadge fecha={product.fecha_vencimiento} />
+          {vencimientoFecha ? (
+            <VencimientoBadge fecha={vencimientoFecha} />
           ) : (
             <span className='text-gray-400 dark:text-gray-500'>—</span>
           )}
         </TableCell>
         <TableCell className='sm:px-4 text-center font-mono'>
-          {product.status === 1 ? (
-            <Badge className='bg-green-100 text-green-700 rounded-full px-2 sm:px-3 py-1 font-mono text-xs sm:text-sm'>
-              Activo
-            </Badge>
-          ) : (
-            <Badge className='bg-red-200 text-red-600 rounded-full px-2 sm:px-3 py-1 font-mono text-xs sm:text-sm'>
-              Inactivo
-            </Badge>
-          )}
+          <div className='flex flex-wrap items-center justify-center gap-2'>
+            {categoriaLabel && (
+              <Badge
+                variant='outline'
+                className='text-xs gap-1 bg-white/90 text-gray-700 border-gray-200 dark:bg-slate-800/90 dark:text-gray-200 dark:border-slate-700 rounded-full px-2 sm:px-3 py-1 font-mono'
+              >
+                <Tag className='h-3 w-3' />
+                {categoriaLabel}
+              </Badge>
+            )}
+            {product.status === 1 ? (
+              <Badge className='bg-green-100 text-green-700 rounded-full px-2 sm:px-3 py-1 font-mono text-xs sm:text-sm'>
+                Activo
+              </Badge>
+            ) : (
+              <Badge className='bg-red-200 text-red-600 rounded-full px-2 sm:px-3 py-1 font-mono text-xs sm:text-sm'>
+                Inactivo
+              </Badge>
+            )}
+          </div>
         </TableCell>
         <TableCell className='sm:px-4 text-center font-mono'>
           <DropdownMenu>
@@ -278,7 +295,8 @@ const ProductTable: React.FC<ProductTableProps> = ({
   isMutating,
   currentPage,
   pageSize,
-  presentacionesPorProducto = {}
+  presentacionesPorProducto = {},
+  onlyVencidos = false
 }) => {
   const [deleteModalOpen, setDeleteModalOpen] = useState(false);
   const [productToDelete, setProductToDelete] = useState<Product | null>(null);
@@ -320,30 +338,34 @@ const ProductTable: React.FC<ProductTableProps> = ({
 
   const rowIdToProductId = (rowId: string | number) => String(rowId).split('::')[0];
 
-  const flatRows: FlatRow[] = React.useMemo(
-    () =>
-      localProducts.flatMap(product => {
-        const pres = presentacionesPorProducto[String(product.id)] ?? [];
-        if (pres.length === 0) {
-          return [
-            {
-              rowId: String(product.id),
-              product,
-              presentation: null
-            } as FlatRow
-          ];
-        }
-        return pres.map(
-          p =>
-            ({
-              rowId: `${product.id}::${p.id}`,
-              product,
-              presentation: p
-            }) as FlatRow
-        );
-      }),
-    [localProducts, presentacionesPorProducto]
-  );
+  const flatRows: FlatRow[] = React.useMemo(() => {
+    const rows = localProducts.flatMap(product => {
+      const pres = presentacionesPorProducto[String(product.id)] ?? [];
+      if (pres.length === 0) {
+        return [
+          {
+            rowId: String(product.id),
+            product,
+            presentation: null
+          } as FlatRow
+        ];
+      }
+      return pres.map(
+        p =>
+          ({
+            rowId: `${product.id}::${p.id}`,
+            product,
+            presentation: p
+          }) as FlatRow
+      );
+    });
+    if (!onlyVencidos) return rows;
+    // Filtro por presentación: se descartan los lotes que no están vencidos ni por vencer.
+    return rows.filter(({ product, presentation }) => {
+      const info = estadoVencimiento(presentation?.fecha_vencimiento ?? product.fecha_vencimiento);
+      return info != null && (info.estado === 'vencido' || info.estado === 'por_vencer');
+    });
+  }, [localProducts, presentacionesPorProducto, onlyVencidos]);
 
   const handleDragEnd = (event: DragEndEvent) => {
     const { active, over } = event;
@@ -395,7 +417,6 @@ const ProductTable: React.FC<ProductTableProps> = ({
                 <TableRow className='hover:bg-transparent'>
                   <TableHead className='text-center w-12'>Orden</TableHead>
                   <TableHead className='text-center'>Foto</TableHead>
-                  <TableHead className='text-center'>Código</TableHead>
                   <TableHead className='text-center'>Nombre</TableHead>
                   <TableHead className='text-center'>Precio compra</TableHead>
                   <TableHead className='text-center'>Stock Bodega</TableHead>
@@ -411,7 +432,7 @@ const ProductTable: React.FC<ProductTableProps> = ({
               <TableBody>
                 {localProducts.length === 0 && (
                   <TableRow key='empty'>
-                    <TableCell colSpan={13} className='text-center bg-white sm:text-base'>
+                    <TableCell colSpan={12} className='text-center bg-white sm:text-base'>
                       <EmptyState variant='text' title='No hay productos' />
                     </TableCell>
                   </TableRow>

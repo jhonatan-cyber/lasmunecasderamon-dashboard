@@ -107,6 +107,20 @@ export const PresentacionSchema = z
       )
       .optional()
       .default(0),
+    // Fechas del lote de esta presentación: con elaboración + duración se
+    // calcula el vencimiento; el vencimiento informado manda.
+    fecha_elaboracion: fechaLote,
+    duracion_meses: z.preprocess(
+      v => (v === undefined || v === null || v === '' ? null : Number(v)),
+      z
+        .number()
+        .int('La duración debe ser un número de meses')
+        .min(1, 'La duración debe ser al menos 1 mes')
+        .max(1200, 'La duración no puede superar 1200 meses')
+        .nullable()
+        .optional()
+    ),
+    fecha_vencimiento: fechaLote,
     foto: z.string().max(255).nullable().optional()
   })
   .refine(value => StockLimitsSchema.safeParse(value).success, 'Indica mínimo y máximo válidos');

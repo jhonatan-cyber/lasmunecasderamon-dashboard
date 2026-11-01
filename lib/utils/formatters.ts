@@ -232,3 +232,16 @@ export const toTitleCase = (str: string): string => {
 export const capitalizeFirst = (str: string): string => {
   return str.charAt(0).toUpperCase() + str.slice(1);
 };
+
+/** Tiempo transcurrido compacto en español: "ahora", "12m", "3h", "2d". */
+export const formatRelativeTime = (dateString: string): string => {
+  const diffMs = Date.now() - new Date(dateString).getTime();
+  const diffMinutes = Math.round(diffMs / (1000 * 60));
+
+  if (diffMinutes < 1) return 'ahora';
+  if (diffMinutes < 60) return `${diffMinutes}m`;
+  const diffHours = Math.round(diffMinutes / 60);
+  if (diffHours < 24) return `${diffHours}h`;
+  const diffDays = Math.round(diffHours / 24);
+  return `${diffDays}d`;
+};

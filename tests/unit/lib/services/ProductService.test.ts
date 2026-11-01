@@ -343,7 +343,9 @@ describe('ProductService.addUnits', () => {
     expect(registrarUnidades).toHaveBeenCalledWith({
       producto_id: 'prod-1',
       cantidad: 2,
-      presentacion_id: 'pres-1'
+      presentacion_id: 'pres-1',
+      // Alta manual: no hay lote, así que las unidades siguen a la presentación.
+      fecha_vencimiento: null
     });
     expect(result).toEqual([
       { id: 'u3', codigo: 'LM-000003', codigo_barras: '2900000000034' },

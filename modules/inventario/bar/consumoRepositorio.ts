@@ -12,6 +12,7 @@ import {
 import { ESTADO_UNIDAD_ACTIVA, ESTADO_UNIDAD_VENDIDA } from '../estados';
 import { BusinessError } from '@/lib/errors/errors';
 import { resolveBotellaMl, resolveShotMl, resolveShotMlAnfitriona } from '@/lib/business/shotMl';
+import { hoyDelNegocio, unidadVencida } from '@/lib/business/vencimiento';
 import type { ContextoVentaInventario, ConsumoInventarioDetalle, ShotAlert } from '../contracts';
 import type { ContextoOperacion } from '@/lib/transaction/contract';
 import { resolverTransaccion } from '@/lib/transaction/infrastructure';
@@ -37,11 +38,18 @@ interface PresentacionConsumo {
   ml_shot_anfitriona: number | null;
   /** Estado del producto: 0 = desactivado, no se consume del bar. */
   estado: number | null;
+  /**
+   * Vencimiento de la presentación: el respaldo de las unidades sin fecha de
+   * lote propia (las anteriores a la migración 111).
+   */
+  fecha_vencimiento: string | null;
 }
 
 interface UnidadConsumo {
   id: string;
   ml_restante: number | null;
+  /** Vencimiento del lote de esta botella; null = hereda el de la presentación. */
+  fecha_vencimiento: string | null;
 }
 
 /**
@@ -55,6 +63,26 @@ export interface OpcionesConsumoStock {
   precio?: number;
   /** Comisión a registrar; 0 para una cortesía. */
   comision?: number;
+}
+
+/**
+ * Separa las botellas que se pueden vender de las que ya vencieron. Manda la
+ * fecha del lote de la unidad; si no la tiene, se aplica la de la presentación
+ * (las unidades anteriores a la migración 111 sólo conocen esa).
+ *
+ * Vencido no significa "no existe": la botella sigue occupying stock hasta que
+ * se le da de baja. Por eso el consumo la aparta del grupo y el resto de los
+ * flujos (merma, reposición) son los que la sacan del inventario.
+ */
+function separarVencidas(
+  unidades: UnidadConsumo[],
+  fechaPresentacion: string | null,
+  hoy: string
+): { vigentes: UnidadConsumo[]; vencidas: number } {
+  const vigentes = unidades.filter(
+    unidad => !unidadVencida(unidad.fecha_vencimiento, fechaPresentacion, hoy)
+  );
+  return { vigentes, vencidas: unidades.length - vigentes.length };
 }
 
 export async function consumirStock(
@@ -174,7 +202,7 @@ export async function consumirStock(
       ? [{ ...bloqueada, ml_shot: null, ml_shot_anfitriona: null }]
       : await trx<PresentacionConsumo[]>(
           `SELECT p.id, p.producto_id, p.nombre, p.precio_venta, p.comision, p.ml_botella, pr.ml_shot,
-        pr.ml_shot_anfitriona, pr.estado
+        pr.ml_shot_anfitriona, pr.estado, p.fecha_vencimiento
        FROM inventario_presentaciones p
        INNER JOIN productos pr ON pr.id_producto = p.producto_id
        WHERE p.id = ? FOR UPDATE OF p`,
@@ -208,13 +236,31 @@ export async function consumirStock(
     );
     const umbralAlertaPresentacion = shotMlPresentacion * shotsAlerta;
 
+    // Las botellas vencidas salen del grupo: el pedido se resuelve con las que
+    // siguen vigentes y el consumo no toca un lote vencido. El orden prioriza
+    // las abiertas (para no dejar una botella a medias) y, dentro de cada
+    // grupo, la que vence antes.
     const unidades = await trx<UnidadConsumo[]>(
-      `SELECT id, ml_restante FROM inventario_unidades
+      `SELECT id, ml_restante, fecha_vencimiento FROM inventario_unidades
         WHERE presentacion_id = ? AND estado = '${ESTADO_UNIDAD_ACTIVA}' AND ubicacion = 'bar'
-        ORDER BY CASE WHEN ml_restante > 0 THEN 0 ELSE 1 END, fecha_crea ASC, codigo ASC
+        ORDER BY CASE WHEN ml_restante > 0 THEN 0 ELSE 1 END,
+                 COALESCE(fecha_vencimiento, ?) ASC NULLS LAST, fecha_crea ASC, codigo ASC
         FOR UPDATE`,
-      [presentacionId]
+      [presentacionId, presentacion.fecha_vencimiento ?? null]
     );
+    const hoy = hoyDelNegocio();
+    const { vigentes, vencidas } = separarVencidas(unidades, presentacion.fecha_vencimiento, hoy);
+
+    // Todo el stock del bar está vencido: no hay nada vendible para esta
+    // presentación. Se dice con su propio mensaje para que quede claro que el
+    // problema es la fecha y no el stock.
+    if (vigentes.length === 0 && vencidas > 0) {
+      throw new BusinessError(
+        `"${presentacion.nombre}" está vencido: no se puede vender`,
+        'PRODUCTO_VENCIDO',
+        { presentacion_id: presentacionId, vencidas }
+      );
+    }
 
     // `ml_consumido` es lo que este movimiento le quitó a la unidad, no la
     // diferencia con lo que tenía: si la venta abrió una botella cerrada, la
@@ -226,7 +272,7 @@ export async function consumirStock(
       pedido.mlAcompanamiento;
     let botellasPendientes = pedido.botellas;
 
-    for (const unidad of unidades) {
+    for (const unidad of vigentes) {
       if (mlPendiente <= 0) break;
       const restante = Math.floor(Number(unidad.ml_restante ?? 0));
       if (restante <= 0) continue;
@@ -235,7 +281,7 @@ export async function consumirStock(
       plan.push({ id: unidad.id, ml_restante: restante - consumido, ml_consumido: consumido });
     }
 
-    for (const unidad of unidades) {
+    for (const unidad of vigentes) {
       if (Number(unidad.ml_restante ?? 0) > 0) continue;
       if (mlPendiente > 0) {
         const consumido = Math.min(capacidadMl, mlPendiente);
@@ -253,24 +299,26 @@ export async function consumirStock(
     }
 
     if (mlPendiente > 0 || botellasPendientes > 0) {
-      const abiertas = unidades.filter(unidad => Number(unidad.ml_restante ?? 0) > 0).length;
+      const abiertas = vigentes.filter(unidad => Number(unidad.ml_restante ?? 0) > 0).length;
       const totalShots = pedido.shotsCliente + pedido.shotsAnfitriona;
       const mlRequeridos =
         pedido.shotsCliente * shotMlPresentacion +
         pedido.shotsAnfitriona * shotMlAnfitriona +
         pedido.mlAcompanamiento;
+      const avisoVencidas = vencidas > 0 ? ` (${vencidas} botella(s) vencida(s) no se usan)` : '';
       const mensaje =
         totalShots === 0 && pedido.mlAcompanamiento === 0
-          ? `Quedan ${unidades.length} de ${pedido.botellas} botellas de "${presentacion.nombre}" en el bar`
+          ? `Quedan ${vigentes.length} de ${pedido.botellas} botellas de "${presentacion.nombre}" en el bar${avisoVencidas}`
           : `No alcanza el stock de "${presentacion.nombre}" en el bar: faltan ${
               mlPendiente > 0 ? `${mlPendiente} ml` : `${botellasPendientes} botella(s)`
-            }`;
+            }${avisoVencidas}`;
       throw new BusinessError(mensaje, 'INSUFFICIENT_BAR_STOCK', {
         presentacion_id: presentacionId,
-        disponibles: unidades.length,
+        disponibles: vigentes.length,
+        vencidas,
         requeridas: pedido.botellas + totalShots,
         ml_requeridos: mlRequeridos,
-        ml_disponibles: unidades.reduce(
+        ml_disponibles: vigentes.reduce(
           (total, unidad) =>
             total +
             (Number(unidad.ml_restante ?? 0) > 0
@@ -441,9 +489,15 @@ export async function consumirColacion(
     a.presentacionId.localeCompare(b.presentacionId)
   )) {
     const presentaciones = await trx<
-      { id: string; producto_id: string; nombre: string; ml_botella: number | null }[]
+      {
+        id: string;
+        producto_id: string;
+        nombre: string;
+        ml_botella: number | null;
+        fecha_vencimiento: string | null;
+      }[]
     >(
-      `SELECT p.id, p.producto_id, p.nombre, p.ml_botella
+      `SELECT p.id, p.producto_id, p.nombre, p.ml_botella, p.fecha_vencimiento
          FROM inventario_presentaciones p
         WHERE p.id = ? FOR UPDATE OF p`,
       [pedido.presentacionId]
@@ -453,18 +507,32 @@ export async function consumirColacion(
 
     const capacidadMl = resolveBotellaMl(presentacion.ml_botella, presentacion.nombre, botellaMl);
     const unidades = await trx<UnidadConsumo[]>(
-      `SELECT id, ml_restante FROM inventario_unidades
+      `SELECT id, ml_restante, fecha_vencimiento FROM inventario_unidades
         WHERE presentacion_id = ? AND estado = '${ESTADO_UNIDAD_ACTIVA}' AND ubicacion = 'bar'
-        ORDER BY CASE WHEN ml_restante > 0 THEN 0 ELSE 1 END, fecha_crea ASC, codigo ASC
+        ORDER BY CASE WHEN ml_restante > 0 THEN 0 ELSE 1 END,
+                 COALESCE(fecha_vencimiento, ?) ASC NULLS LAST, fecha_crea ASC, codigo ASC
         FOR UPDATE`,
-      [pedido.presentacionId]
+      [pedido.presentacionId, presentacion.fecha_vencimiento ?? null]
     );
+    const { vigentes, vencidas } = separarVencidas(
+      unidades,
+      presentacion.fecha_vencimiento,
+      hoyDelNegocio()
+    );
+    // Una colación tampoco se sirve con un lote vencido.
+    if (vigentes.length === 0 && vencidas > 0) {
+      throw new BusinessError(
+        `"${presentacion.nombre}" está vencido: no se puede servir`,
+        'PRODUCTO_VENCIDO',
+        { presentacion_id: pedido.presentacionId, vencidas }
+      );
+    }
 
     const plan: { id: string; ml_restante: number; ml_consumido: number }[] = [];
     let mlPendiente = pedido.ml;
     let unidadesPendientes = pedido.unidades;
 
-    for (const unidad of unidades) {
+    for (const unidad of vigentes) {
       if (mlPendiente <= 0) break;
       const restante = Math.floor(Number(unidad.ml_restante ?? 0));
       if (restante <= 0) continue;
@@ -473,7 +541,7 @@ export async function consumirColacion(
       plan.push({ id: unidad.id, ml_restante: restante - consumido, ml_consumido: consumido });
     }
 
-    for (const unidad of unidades) {
+    for (const unidad of vigentes) {
       if (Number(unidad.ml_restante ?? 0) > 0) continue;
       if (mlPendiente > 0) {
         const consumido = Math.min(capacidadMl, mlPendiente);
@@ -492,15 +560,17 @@ export async function consumirColacion(
     }
 
     if (mlPendiente > 0 || unidadesPendientes > 0) {
+      const avisoVencidas = vencidas > 0 ? ` (${vencidas} unidad(es) vencida(s) no se usan)` : '';
       throw new BusinessError(
         `No alcanza el stock de "${presentacion.nombre}" en el bar: faltan ${
           mlPendiente > 0 ? `${mlPendiente} ml` : `${unidadesPendientes} unidad(es)`
-        }`,
+        }${avisoVencidas}`,
         'INSUFFICIENT_BAR_STOCK',
         {
           presentacion_id: pedido.presentacionId,
+          vencidas,
           ml_requeridos: pedido.ml,
-          ml_disponibles: unidades.reduce(
+          ml_disponibles: vigentes.reduce(
             (total, unidad) =>
               total +
               (Number(unidad.ml_restante ?? 0) > 0
@@ -508,7 +578,7 @@ export async function consumirColacion(
                 : capacidadMl),
             0
           ),
-          botellas_abiertas: unidades.filter(unidad => Number(unidad.ml_restante ?? 0) > 0).length
+          botellas_abiertas: vigentes.filter(unidad => Number(unidad.ml_restante ?? 0) > 0).length
         }
       );
     }
@@ -569,8 +639,15 @@ export async function consumirCover(
   contexto: ContextoOperacion
 ): Promise<void> {
   const trx = resolverTransaccion(contexto);
-  const presentaciones = await trx<{ id: string; producto_id: string; estado: number | null }[]>(
-    `SELECT p.id, p.producto_id, pr.estado
+  const presentaciones = await trx<
+    {
+      id: string;
+      producto_id: string;
+      estado: number | null;
+      fecha_vencimiento: string | null;
+    }[]
+  >(
+    `SELECT p.id, p.producto_id, pr.estado, p.fecha_vencimiento
        FROM inventario_presentaciones p
        JOIN productos pr ON pr.id_producto = p.producto_id
        JOIN categorias c ON c.id_categoria = pr.categoria_id
@@ -585,11 +662,20 @@ export async function consumirCover(
   // Un producto desactivado a mano no se consume del bar.
   if (productoDesactivado(presentacion.estado))
     throw new BusinessError('La bebida del cover no esta disponible');
+  // El cover entrega una botella: no se entrega un lote vencido. La botella que
+  // caduca primero es la primera que sale.
   const unidades = await trx<{ id: string }[]>(
     `SELECT id FROM inventario_unidades
       WHERE presentacion_id = ? AND estado = '${ESTADO_UNIDAD_ACTIVA}' AND ubicacion = 'bar'
-      ORDER BY fecha_crea ASC, codigo ASC LIMIT 1 FOR UPDATE`,
-    [presentacionId]
+        AND (COALESCE(fecha_vencimiento, ?) IS NULL OR COALESCE(fecha_vencimiento, ?) >= ?)
+      ORDER BY COALESCE(fecha_vencimiento, ?) ASC NULLS LAST, fecha_crea ASC, codigo ASC LIMIT 1 FOR UPDATE`,
+    [
+      presentacionId,
+      presentacion.fecha_vencimiento ?? null,
+      presentacion.fecha_vencimiento ?? null,
+      hoyDelNegocio(),
+      presentacion.fecha_vencimiento ?? null
+    ]
   );
   if (!unidades.length) throw new BusinessError('No hay stock en el bar para entregar este cover');
 
@@ -641,9 +727,10 @@ export async function consumirProductoCortesia(
       producto_id: string;
       opciones_venta: unknown;
       estado: number | null;
+      fecha_vencimiento: string | null;
     }[]
   >(
-    `SELECT p.id, p.producto_id, p.opciones_venta, pr.estado
+    `SELECT p.id, p.producto_id, p.opciones_venta, pr.estado, p.fecha_vencimiento
        FROM inventario_presentaciones p
        LEFT JOIN productos pr ON pr.id_producto = p.producto_id
       WHERE p.id = ? AND p.precio_venta <= ? FOR UPDATE OF p`,
@@ -667,9 +754,12 @@ export async function consumirProductoCortesia(
     throw new BusinessError('La bebida y su acompañamiento deben ser distintos');
 
   let productoAcompanamientoId: string | null = null;
+  let vencimientoAcompanamiento: string | null = null;
   if (acompanamientoPresentacionId) {
-    const acompanamientos = await trx<{ id: string; producto_id: string }[]>(
-      `SELECT p.id, p.producto_id
+    const acompanamientos = await trx<
+      { id: string; producto_id: string; fecha_vencimiento: string | null }[]
+    >(
+      `SELECT p.id, p.producto_id, p.fecha_vencimiento
          FROM inventario_presentaciones p
          JOIN productos pr ON pr.id_producto = p.producto_id
          JOIN categorias c ON c.id_categoria = pr.categoria_id
@@ -680,14 +770,30 @@ export async function consumirProductoCortesia(
     if (!acompanamientos.length)
       throw new BusinessError('Selecciona una bebida analcohólica válida como acompañamiento');
     productoAcompanamientoId = acompanamientos[0].producto_id;
+    vencimientoAcompanamiento = acompanamientos[0].fecha_vencimiento;
   }
 
-  const consumirUnidades = async (idPresentacion: string, idProducto: string, cantidad: number) => {
+  const consumirUnidades = async (
+    idPresentacion: string,
+    idProducto: string,
+    cantidad: number,
+    fechaPresentacion: string | null
+  ) => {
+    // La cortesía tampoco entrega un lote vencido: se sirven las botellas
+    // vigentes, empezando por la que caduca antes.
     const unidades = await trx<{ id: string }[]>(
       `SELECT id FROM inventario_unidades
         WHERE presentacion_id = ? AND estado = '${ESTADO_UNIDAD_ACTIVA}' AND ubicacion = 'bar'
-        ORDER BY fecha_crea ASC, codigo ASC LIMIT ? FOR UPDATE`,
-      [idPresentacion, cantidad]
+          AND (COALESCE(fecha_vencimiento, ?) IS NULL OR COALESCE(fecha_vencimiento, ?) >= ?)
+        ORDER BY COALESCE(fecha_vencimiento, ?) ASC NULLS LAST, fecha_crea ASC, codigo ASC LIMIT ? FOR UPDATE`,
+      [
+        idPresentacion,
+        fechaPresentacion ?? null,
+        fechaPresentacion ?? null,
+        hoyDelNegocio(),
+        fechaPresentacion ?? null,
+        cantidad
+      ]
     );
     if (unidades.length < cantidad)
       throw new BusinessError('No hay suficiente stock en el bar para entregar la bebida');
@@ -712,12 +818,18 @@ export async function consumirProductoCortesia(
     await sincronizarStockTotal(trx, idProducto);
   };
 
-  await consumirUnidades(presentacionId, presentacion.producto_id, 1);
+  await consumirUnidades(
+    presentacionId,
+    presentacion.producto_id,
+    1,
+    presentacion.fecha_vencimiento
+  );
   if (acompanamientoPresentacionId && productoAcompanamientoId)
     await consumirUnidades(
       acompanamientoPresentacionId,
       productoAcompanamientoId,
-      unidadesIncluidas
+      unidadesIncluidas,
+      vencimientoAcompanamiento
     );
 }
 

@@ -377,7 +377,7 @@ describe('extracción de vectores de plantillas', () => {
     expect(guarda?.params?.[1]).toBe('plantilla-0');
   });
 
-  it('nada de dónde extraer (sin ningún equipo activo): no marca ni intenta', async () => {
+  it('sin equipo activo extrae el vector por software y lo guarda', async () => {
     db.queryMock.mockImplementation(async (sql: string) => {
       const s = String(sql);
       if (s.includes('SELECT DISTINCT ON (usuario_id)') && s.includes('datos')) {
@@ -397,13 +397,14 @@ describe('extracción de vectores de plantillas', () => {
       if (s.includes('UPDATE biometric_plantillas')) return [];
       return [];
     });
+    sdk.extraerVectorFacial.mockResolvedValue(unitario(0));
 
     const listas = await actualizarVectoresPlantillas();
 
-    expect(listas).toBe(0);
-    expect(sdk.extraerVectorFacial).not.toHaveBeenCalled();
+    expect(listas).toBe(1);
+    expect(sdk.extraerVectorFacial).toHaveBeenCalledWith(null, expect.any(Buffer));
     const sqls = db.queryMock.mock.calls.map(c => String(c[0]));
-    expect(sqls.some(s => s.includes('UPDATE biometric_plantillas'))).toBe(false);
+    expect(sqls.some(s => s.includes('SET vector = ?'))).toBe(true);
   });
 });
 
@@ -533,7 +534,7 @@ describe('identificarImagen', () => {
     await expect(identificarImagen(FOTO, DISPOSITIVO)).rejects.toThrow('no hay cara');
   });
 
-  it('sin credenciales de extracción lanza en vez de decidir a ciegas', async () => {
+  it('sin credenciales de equipo usa el motor por software y sigue identificando', async () => {
     const cara = unitario(0);
     instalarConsultas({
       plantillas: [{ usuario_id: USUARIO_A, vector: cara }],
@@ -544,7 +545,11 @@ describe('identificarImagen', () => {
       if (String(sql).includes('FROM biometric_devices')) return [];
       return previa(sql, params);
     });
+    sdk.extraerVectorFacial.mockResolvedValue(cara);
 
-    await expect(identificarImagen(FOTO, DISPOSITIVO)).rejects.toThrow('Sin credenciales');
+    const identificacion = await identificarImagen(FOTO, DISPOSITIVO);
+
+    expect(sdk.extraerVectorFacial).toHaveBeenCalledWith(null, FOTO);
+    expect(identificacion?.usuarioId).toBe(USUARIO_A);
   });
 });

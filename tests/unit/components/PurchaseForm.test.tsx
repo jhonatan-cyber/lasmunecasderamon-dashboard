@@ -1,5 +1,5 @@
 import { act, cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react';
-import { afterEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { PurchaseForm, type PurchaseCatalogItem } from '@/components/purchases/PurchaseForm';
 import { fechaCorta, seleccionarFecha } from '../helpers/datePicker';
 
@@ -16,8 +16,17 @@ vi.mock('next/image', () => ({
 }));
 vi.mock('sonner', () => ({ toast: { error: vi.fn(), success: vi.fn(), info: vi.fn() } }));
 
+// Hoy fijo (2026-02-01): las fechas de lote de este archivo son de 2026 y la
+// validación rechaza una elaboración futura o un vencimiento ya pasado. Se
+// falsifica solo `Date` para no romper `waitFor` (usa setTimeout real).
+beforeEach(() => {
+  vi.useFakeTimers({ toFake: ['Date'] });
+  vi.setSystemTime(new Date('2026-02-01T15:00:00.000Z'));
+});
+
 afterEach(() => {
   cleanup();
+  vi.useRealTimers();
   vi.restoreAllMocks();
   global.IntersectionObserver = vi.fn().mockImplementation(() => ({
     observe: vi.fn(),
@@ -201,7 +210,8 @@ describe('flujo guiado de compra', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Continuar' }));
     fireEvent.click(screen.getByRole('button', { name: 'Revisar compra' }));
 
-    expect(screen.getByText('No indicado')).toBeInTheDocument();
+    // Proveedor y teléfono son opcionales: ambos caen en el mismo texto.
+    expect(screen.getAllByText('No indicado')).toHaveLength(2);
     expect(screen.getByText('Sin descripción')).toBeInTheDocument();
     expect(screen.getByText('Método de pago')).toBeInTheDocument();
   });

@@ -107,9 +107,9 @@ export function RoomFilters({
             </div>
 
             {}
-            <div className='grid grid-cols-2 lg:flex gap-4 w-full lg:w-auto items-end'>
+            <div className='flex flex-wrap sm:flex-nowrap gap-4 w-full sm:w-auto items-end'>
               <SortSelect
-                className='w-full'
+                className='w-full sm:w-auto sm:min-w-[200px]'
                 field={sortBy}
                 direction={sortOrder}
                 options={[
@@ -125,7 +125,7 @@ export function RoomFilters({
                 }}
               />
 
-              <div className='w-full flex items-end gap-2 min-w-0'>
+              <div className='w-full sm:w-auto flex items-end gap-2 min-w-0'>
                 <div className='flex-1 min-w-0'>
                   <SelectElements
                     value={pageSize}
