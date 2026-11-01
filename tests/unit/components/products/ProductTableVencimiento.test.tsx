@@ -2,7 +2,7 @@ import React from 'react';
 import { cleanup, render, screen } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import ProductTable from '@/components/products/ProductTable';
-import type { Product } from '@/types/product';
+import type { Product, Presentacion } from '@/types/product';
 
 vi.mock('@/hooks/auth/useUserPermissions', () => ({
   useUserPermissions: () => ({ hasPermission: () => false })
@@ -66,7 +66,11 @@ const producto = (overrides: Partial<Product> = {}): Product => ({
   ...overrides
 });
 
-const mount = (products: Product[]) =>
+const mount = (
+  products: Product[],
+  presentacionesPorProducto: Record<string, Presentacion[]> = {},
+  onlyVencidos = false
+) =>
   render(
     <ProductTable
       products={products}
@@ -78,6 +82,8 @@ const mount = (products: Product[]) =>
       isMutating={false}
       currentPage={1}
       pageSize={5}
+      presentacionesPorProducto={presentacionesPorProducto}
+      onlyVencidos={onlyVencidos}
     />
   );
 
@@ -109,5 +115,59 @@ describe('ProductTable · vencimiento', () => {
 
     expect(screen.queryByText('Vencido')).not.toBeInTheDocument();
     expect(screen.getByText('—')).toBeInTheDocument();
+  });
+
+  it('filtra por presentación cuando onlyVencidos está activo', () => {
+    mount(
+      [producto()],
+      {
+        'p-1': [
+          {
+            id: 'p-1::pres-1',
+            producto_id: 'p-1',
+            nombre: '750 ml',
+            fecha_vencimiento: '2026-10-20'
+          },
+          {
+            id: 'p-1::pres-2',
+            producto_id: 'p-1',
+            nombre: '1.5 L',
+            fecha_vencimiento: '2027-01-01'
+          }
+        ]
+      },
+      true
+    );
+
+    // La presentación vencida entra en el listado; la que vence en el futuro no.
+    expect(screen.getByText('20-10-2026')).toBeInTheDocument();
+    expect(screen.getByText('Vencido')).toBeInTheDocument();
+    expect(screen.queryByText('01-01-2027')).not.toBeInTheDocument();
+  });
+
+  it('no filtra por presentación cuando onlyVencidos está desactivado', () => {
+    mount(
+      [producto()],
+      {
+        'p-1': [
+          {
+            id: 'p-1::pres-1',
+            producto_id: 'p-1',
+            nombre: '750 ml',
+            fecha_vencimiento: '2026-10-20'
+          },
+          {
+            id: 'p-1::pres-2',
+            producto_id: 'p-1',
+            nombre: '1.5 L',
+            fecha_vencimiento: '2027-01-01'
+          }
+        ]
+      },
+      false
+    );
+
+    expect(screen.getByText('20-10-2026')).toBeInTheDocument();
+    expect(screen.getByText('01-01-2027')).toBeInTheDocument();
   });
 });

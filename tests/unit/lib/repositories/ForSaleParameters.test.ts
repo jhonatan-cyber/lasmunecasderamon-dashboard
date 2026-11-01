@@ -2,6 +2,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { createRequire } from 'node:module';
 import { listarParaVenta } from '@/modules/inventario';
 import { CATEGORIA_BEBIDAS_ANALCOHOLICAS } from '@/lib/business/colacionRoles';
+import { hoyDelNegocio } from '@/lib/business/vencimiento';
 import { query } from '@/lib/database/db';
 
 vi.mock('@/lib/database/db', () => ({
@@ -11,6 +12,14 @@ vi.mock('@/lib/database/db', () => ({
 }));
 const require = createRequire(import.meta.url);
 const { prepareQuery } = require('../../../../lib/database/postgres.cjs');
+
+/**
+ * El catálogo filtra por vencimiento: los tres contadores y el `EXISTS` del
+ * `WHERE` reciben el día del negocio, y van antes que los filtros del
+ * operador porque así aparecen en el SQL.
+ */
+const HOY = hoyDelNegocio();
+const VENCIMIENTO = [HOY, HOY, HOY];
 
 beforeEach(() => {
   vi.mocked(query).mockReset();
@@ -23,12 +32,15 @@ beforeEach(() => {
 
 describe('parámetros del catálogo del bar', () => {
   it.each([
-    { filters: undefined, params: [] },
-    { filters: { category_id: 'cat1' }, params: ['cat1'] },
-    { filters: { term: ' ron ' }, params: ['%ron%', '%ron%', '%ron%', '%ron%', '%ron%'] },
+    { filters: undefined, params: [...VENCIMIENTO] },
+    { filters: { category_id: 'cat1' }, params: [...VENCIMIENTO, 'cat1'] },
+    {
+      filters: { term: ' ron ' },
+      params: [...VENCIMIENTO, '%ron%', '%ron%', '%ron%', '%ron%', '%ron%']
+    },
     {
       filters: { category_id: 'cat1', term: 'ron' },
-      params: ['cat1', '%ron%', '%ron%', '%ron%', '%ron%', '%ron%']
+      params: [...VENCIMIENTO, 'cat1', '%ron%', '%ron%', '%ron%', '%ron%', '%ron%']
     }
   ])('enlaza los filtros $filters con el adaptador PostgreSQL', async ({ filters, params }) => {
     await expect(listarParaVenta(filters)).resolves.toEqual([]);
@@ -79,6 +91,6 @@ describe('parámetros del catálogo del bar', () => {
     const sql = String(call?.[0] ?? '');
     expect(sql).toContain('c.system_key = ?');
     expect(sql).toContain('colacion_habilitada');
-    expect(call?.[1]).toEqual([CATEGORIA_BEBIDAS_ANALCOHOLICAS]);
+    expect(call?.[1]).toEqual([...VENCIMIENTO, CATEGORIA_BEBIDAS_ANALCOHOLICAS]);
   });
 });

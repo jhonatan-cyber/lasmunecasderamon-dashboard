@@ -1,18 +1,36 @@
 {
   "resumen": {
-    "commit": "a56866d2126d765598287d6e11719e09a3271084",
-    "generado": "2026-10-29T18:26:23.736Z",
-    "archivos": 2206,
-    "rutas": 231,
-    "sqlFueraDeRepositorio": 61,
+    "commit": "5add35f667234834ce60353776554e37f9501dbd",
+    "generado": "2026-11-01T11:33:38.670Z",
+    "archivos": 2226,
+    "rutas": 233,
+    "sqlFueraDeRepositorio": 64,
     "tablasConEscritoresMultiples": 0,
     "ciclos": 0,
-    "procesosPeriodicos": 19,
-    "caches": 23,
+    "procesosPeriodicos": 20,
+    "caches": 26,
     "rutasApiConSqlDirecto": 0,
     "rutasSinWrapper": 20
   },
   "rutas": [
+    {
+      "ruta": "/api/biometrico/identificar",
+      "archivo": "app/api/biometrico/identificar/route.ts",
+      "metodos": [],
+      "nivel": "users.read",
+      "audit": false,
+      "moduloDominio": null,
+      "usaDriver": false
+    },
+    {
+      "ruta": "/api/products/expired",
+      "archivo": "app/api/products/expired/route.ts",
+      "metodos": [],
+      "nivel": "products.read",
+      "audit": false,
+      "moduloDominio": null,
+      "usaDriver": false
+    },
     {
       "ruta": "/api/accounts/:id/charge-with-sale",
       "archivo": "app/api/accounts/[id]/charge-with-sale/route.ts",
@@ -2201,6 +2219,18 @@
       ]
     },
     {
+      "archivo": "modules/asistencia/biometrico/pruebaIdentificacion.ts",
+      "capa": "modules/aplicacion",
+      "modulo": "asistencia",
+      "escribe": []
+    },
+    {
+      "archivo": "modules/inventario/mermas/servicio.ts",
+      "capa": "modules/aplicacion",
+      "modulo": "inventario",
+      "escribe": []
+    },
+    {
       "archivo": "modules/asistencia/biometrico/avisosAudio.ts",
       "capa": "modules/aplicacion",
       "modulo": "asistencia",
@@ -2391,6 +2421,12 @@
       "escribe": []
     },
     {
+      "archivo": "modules/inventario/vencimientoProducto.ts",
+      "capa": "modules/aplicacion",
+      "modulo": "inventario",
+      "escribe": ["productos"]
+    },
+    {
       "archivo": "modules/operacion/cuentas/alta.ts",
       "capa": "modules/aplicacion",
       "modulo": "operacion",
@@ -2471,6 +2507,11 @@
   ],
   "escriturasCruzadas": [],
   "transacciones": [
+    {
+      "archivo": "modules/inventario/mermas/servicio.ts",
+      "capa": "modules/aplicacion",
+      "modulo": "inventario"
+    },
     {
       "archivo": "lib/database/maintenance.ts",
       "capa": "lib/database",
@@ -2744,6 +2785,12 @@
   ],
   "procesos": [
     {
+      "archivo": "app/biometrico/prueba/page.tsx",
+      "linea": 122,
+      "tipo": "setInterval",
+      "texto": "const id = window.setInterval(() => {"
+    },
+    {
       "archivo": "app/api/notifications/kiosk/route.ts",
       "linea": 30,
       "tipo": "setInterval",
@@ -2763,7 +2810,7 @@
     },
     {
       "archivo": "app/tickets/page.tsx",
-      "linea": 164,
+      "linea": 172,
       "tipo": "setInterval",
       "texto": "const interval = window.setInterval(actualizarFechaHora, 60_000);"
     },
@@ -2871,7 +2918,7 @@
     },
     {
       "archivo": "scripts/dev-lan-auto.js",
-      "linea": 85,
+      "linea": 98,
       "texto": "process.on(signal, () => {"
     },
     {
@@ -2937,6 +2984,16 @@
       "texto": "const client = new Redis(url, {"
     },
     {
+      "archivo": "modules/asistencia/biometrico/pruebaIdentificacion.ts",
+      "linea": 0,
+      "texto": "caché en memoria (new Map + cache)"
+    },
+    {
+      "archivo": "modules/asistencia/biometrico/softwareFaceSdk.ts",
+      "linea": 0,
+      "texto": "caché compartida en globalThis"
+    },
+    {
       "archivo": "app/tickets/page.tsx",
       "linea": 0,
       "texto": "caché en memoria (new Map + cache)"
@@ -2945,6 +3002,11 @@
       "archivo": "app/tickets/page.tsx",
       "linea": 0,
       "texto": "caché compartida en globalThis"
+    },
+    {
+      "archivo": "components/bar/CortesiasTab.tsx",
+      "linea": 0,
+      "texto": "caché en memoria (new Map + cache)"
     },
     {
       "archivo": "components/shared/ProductPhoto.tsx",
@@ -3004,17 +3066,8 @@
   ],
   "ciclos": [],
   "matriz": {
-    "app/ui": {
-      "hooks": 63,
-      "lib/otros": 55,
-      "lib/api": 7,
-      "components": 9,
-      "lib/business": 5,
-      "modules/aplicacion": 3,
-      "raiz": 14
-    },
     "app/api": {
-      "lib/api": 274,
+      "lib/api": 276,
       "workflows": 22,
       "lib/otros": 83,
       "lib/identidad": 15,
@@ -3023,15 +3076,43 @@
       "lib/database": 3,
       "lib/integrations": 4
     },
+    "app/ui": {
+      "hooks": 65,
+      "lib/otros": 55,
+      "lib/api": 7,
+      "components": 6,
+      "lib/business": 7,
+      "modules/aplicacion": 3,
+      "raiz": 14
+    },
     "components": {
-      "hooks": 149,
-      "lib/otros": 370,
-      "raiz": 91,
+      "hooks": 151,
+      "modules/aplicacion": 9,
+      "lib/otros": 376,
       "lib/business": 53,
+      "raiz": 91,
       "lib/api": 3,
-      "modules/aplicacion": 8,
       "app/ui": 1
     },
+    "modules/aplicacion": {
+      "lib/database": 47,
+      "lib/otros": 105,
+      "modules/infraestructura": 23,
+      "lib/business": 46,
+      "lib/api": 11,
+      "lib/identidad": 3,
+      "raiz": 7
+    },
+    "modules/infraestructura": {
+      "lib/database": 111,
+      "lib/business": 75,
+      "lib/otros": 166,
+      "modules/aplicacion": 27,
+      "lib/api": 9,
+      "lib/identidad": 2,
+      "raiz": 3
+    },
+    "scripts": {},
     "raiz": {
       "lib/otros": 13,
       "hooks": 4,
@@ -3044,7 +3125,7 @@
       "lib/otros": 100,
       "lib/api": 8,
       "components": 20,
-      "lib/business": 17,
+      "lib/business": 19,
       "modules/aplicacion": 2
     },
     "lib/api": {
@@ -3079,25 +3160,6 @@
     "lib/integrations": {
       "lib/business": 1
     },
-    "modules/infraestructura": {
-      "lib/database": 110,
-      "lib/otros": 165,
-      "lib/business": 69,
-      "modules/aplicacion": 27,
-      "lib/api": 9,
-      "lib/identidad": 2,
-      "raiz": 3
-    },
-    "modules/aplicacion": {
-      "modules/infraestructura": 23,
-      "lib/otros": 101,
-      "lib/database": 44,
-      "lib/business": 44,
-      "lib/api": 11,
-      "lib/identidad": 3,
-      "raiz": 7
-    },
-    "scripts": {},
     "workflows": {
       "lib/business": 11,
       "lib/otros": 21,

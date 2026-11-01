@@ -5,7 +5,10 @@ import {
   resolverVencimiento,
   resumenVencimientos,
   sumarMeses,
-  vencimientoCalculado
+  vencimientoCalculado,
+  fechaVencimientoUnidad,
+  hoyDelNegocio,
+  unidadVencida
 } from '@/lib/business/vencimiento';
 
 describe('esFechaISO', () => {
@@ -53,8 +56,13 @@ describe('vencimientoCalculado', () => {
     expect(vencimientoCalculado('2026-01-01', '6')).toBe('2026-07-01');
     expect(vencimientoCalculado('2026-01-01', '')).toBeNull();
     expect(vencimientoCalculado('2026-01-01', null)).toBeNull();
-    expect(vencimientoCalculado('', 6)).toBeNull();
-    expect(vencimientoCalculado(null, 6)).toBeNull();
+    expect(vencimientoCalculado('2026-02-31', 1)).toBeNull();
+  });
+
+  it('calcula la duración desde la fecha actual cuando no hay elaboración', () => {
+    expect(vencimientoCalculado('', 6)).toBe(sumarMeses(hoyDelNegocio(), 6));
+    expect(vencimientoCalculado(null, 3)).toBe(sumarMeses(hoyDelNegocio(), 3));
+    expect(vencimientoCalculado('', '')).toBeNull();
   });
 });
 
@@ -87,7 +95,6 @@ describe('resolverVencimiento', () => {
 
   it('queda en null cuando no hay con qué calcular', () => {
     expect(resolverVencimiento({ fecha_elaboracion: '2026-01-01' })).toBeNull();
-    expect(resolverVencimiento({ duracion_meses: 6 })).toBeNull();
     expect(resolverVencimiento({})).toBeNull();
     // Vencimiento ilegible no tapa el cálculo cuando sí hay datos.
     expect(
@@ -97,6 +104,11 @@ describe('resolverVencimiento', () => {
         fecha_vencimiento: 'ayer'
       })
     ).toBe('2026-07-01');
+  });
+
+  it('calcula la duración desde la fecha actual si no hay elaboración', () => {
+    expect(resolverVencimiento({ duracion_meses: 6 })).toBe(sumarMeses(hoyDelNegocio(), 6));
+    expect(resolverVencimiento({ duracion_meses: '6' })).toBe(sumarMeses(hoyDelNegocio(), 6));
   });
 });
 
@@ -157,5 +169,55 @@ describe('resumenVencimientos', () => {
       vencidos: 0,
       porVencer: 0
     });
+  });
+});
+
+describe('fechaVencimientoUnidad', () => {
+  it('manda la fecha del lote y cae en la de la presentación', () => {
+    // El lote es el dato más fino: dos lotes de la misma presentación pueden
+    // tener vencimientos distintos.
+    expect(fechaVencimientoUnidad('2026-10-01', '2027-10-01')).toBe('2026-10-01');
+    expect(fechaVencimientoUnidad(null, '2027-10-01')).toBe('2027-10-01');
+    expect(fechaVencimientoUnidad('', '2027-10-01')).toBe('2027-10-01');
+    expect(fechaVencimientoUnidad('2026-10-01', null)).toBe('2026-10-01');
+  });
+
+  it('devuelve null cuando no hay ninguna fecha', () => {
+    expect(fechaVencimientoUnidad(null, null)).toBeNull();
+    expect(fechaVencimientoUnidad(undefined, undefined)).toBeNull();
+  });
+
+  it('ignora fechas mal formadas', () => {
+    expect(fechaVencimientoUnidad('ayer', '2027-10-01')).toBe('2027-10-01');
+    expect(fechaVencimientoUnidad('2026-13-01', '2027-10-01')).toBe('2027-10-01');
+    expect(fechaVencimientoUnidad('2026-10-01', 'tampoco')).toBe('2026-10-01');
+  });
+});
+
+describe('unidadVencida', () => {
+  const HOY = '2026-10-23';
+
+  it('detecta el lote vencido aunque la presentación siga vigente', () => {
+    expect(unidadVencida('2026-10-01', '2027-10-01', HOY)).toBe(true);
+  });
+
+  it('no marca vencida una botella de lote nuevo aunque la presentación esté vencida', () => {
+    // Es el caso de comprar un lote nuevo: el lote viejo conserva su fecha y
+    // el nuevo no hereda la del lote vencido.
+    expect(unidadVencida('2027-10-01', '2026-10-01', HOY)).toBe(false);
+  });
+
+  it('usa la presentación cuando la unidad no tiene fecha de lote', () => {
+    expect(unidadVencida(null, '2026-10-01', HOY)).toBe(true);
+    expect(unidadVencida(null, '2027-10-01', HOY)).toBe(false);
+  });
+
+  it('el día del vencimiento todavía se puede vender', () => {
+    expect(unidadVencida('2026-10-23', null, HOY)).toBe(false);
+  });
+
+  it('sin fecha no hay vencimiento que aplicar', () => {
+    expect(unidadVencida(null, null, HOY)).toBe(false);
+    expect(unidadVencida(undefined, undefined, HOY)).toBe(false);
   });
 });

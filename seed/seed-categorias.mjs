@@ -17,20 +17,18 @@ const client = new pg.Client(config);
 
 // Categorías de producto del bar/discoteca. "Bebidas analcohólicas" se omite:
 // la crea y protege la migración 076/078 (system_key = 'bebidas_analcoholicas').
-// Las 10 primeras coinciden con CANTIDAD_POR_CATEGORIA de seed-traspasos.mjs.
 const CATEGORIAS = [
   { nombre: 'Cerveza', descripcion: 'Cervezas nacionales e importadas', display_order: 1 },
-  { nombre: 'Bebidas Sin Alcohol', descripcion: 'Bebidas sin alcohol y acompañamientos', display_order: 2 },
-  { nombre: 'Snacks', descripcion: 'Snacks y pasabocas', display_order: 3 },
-  { nombre: 'Vinos', descripcion: 'Vinos tintos y blancos', display_order: 4 },
-  { nombre: 'Champagne', descripcion: 'Champañas y espumantes', display_order: 5 },
-  { nombre: 'Pisco', descripcion: 'Piscos', display_order: 6 },
-  { nombre: 'Tequila', descripcion: 'Tequilas', display_order: 7 },
-  { nombre: 'Ron', descripcion: 'Rones', display_order: 8 },
-  { nombre: 'Vodka', descripcion: 'Vodkas', display_order: 9 },
-  { nombre: 'Whisky', descripcion: 'Whiskys', display_order: 10 },
-  { nombre: 'Energizantes', descripcion: 'Bebidas energizantes para mezclas', display_order: 11 },
-  { nombre: 'Cigarrillos', descripcion: 'Cigarrillos y tabaco', display_order: 12 }
+  { nombre: 'Snacks', descripcion: 'Snacks y pasabocas', display_order: 2 },
+  { nombre: 'Vinos', descripcion: 'Vinos tintos y blancos', display_order: 3 },
+  { nombre: 'Champagne', descripcion: 'Champañas y espumantes', display_order: 4 },
+  { nombre: 'Pisco', descripcion: 'Piscos', display_order: 5 },
+  { nombre: 'Tequila', descripcion: 'Tequilas', display_order: 6 },
+  { nombre: 'Ron', descripcion: 'Rones', display_order: 7 },
+  { nombre: 'Vodka', descripcion: 'Vodkas', display_order: 8 },
+  { nombre: 'Whisky', descripcion: 'Whiskys', display_order: 9 },
+  { nombre: 'Energizantes', descripcion: 'Bebidas energizantes para mezclas', display_order: 10 },
+  { nombre: 'Cigarrillos', descripcion: 'Cigarrillos y tabaco', display_order: 11 }
 ];
 
 function idPara(nombre) {

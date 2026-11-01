@@ -174,6 +174,7 @@ export const mapPresentacion = (row: any, topeSimple = 10000): PresentacionRow =
 export const mapUnidad = (row: any): UnidadRow => ({
   fecha_crea: row.fecha_crea ?? null,
   fecha_impresion: row.fecha_impresion ?? null,
+  fecha_vencimiento: formatFechaISO(row.fecha_vencimiento),
   fecha_devolucion: row.fecha_devolucion ?? null,
   devuelto_por: row.devuelto_por ?? null,
   compra_id: row.compra_id ?? null,

@@ -46,17 +46,21 @@ export function sumarMeses(fecha?: string | null, meses?: number | string | null
 }
 
 /**
- * Vencimiento calculado desde elaboración + duración. Si falta cualquiera de
- * las dos (o no es válida) devuelve null: en ese caso el vencimiento es el que
+ * Vencimiento calculado desde elaboración + duración. Si no hay fecha de
+ * elaboración válida, la base es la fecha actual del negocio: la duración puede
+ * correr desde hoy (un lote nuevo sin fecha de elaboración). Si falta la
+ * duración (o no es válida) devuelve null: en ese caso el vencimiento es el que
  * se haya ingresado a mano, o ninguno.
  */
 export function vencimientoCalculado(
   fechaElaboracion?: string | null,
   duracionMeses?: number | string | null
 ): string | null {
-  if (duracionMeses === null || duracionMeses === undefined || String(duracionMeses).trim() === '')
-    return null;
-  return sumarMeses(fechaElaboracion, duracionMeses);
+  if (fechaElaboracion && !esFechaISO(fechaElaboracion)) return null;
+  const base = esFechaISO(fechaElaboracion) ? (fechaElaboracion as string) : hoyDelNegocio();
+  const cantidad = Number(duracionMeses);
+  if (!Number.isInteger(cantidad) || cantidad <= 0) return null;
+  return sumarMeses(base, cantidad);
 }
 
 /** Fecha de hoy en la zona del negocio, `YYYY-MM-DD`. */
@@ -115,6 +119,38 @@ export function resumenVencimientos(
     else if (info?.estado === 'por_vencer') porVencer++;
   }
   return { vencidos, porVencer };
+}
+
+/**
+ * Fecha de vencimiento que aplica a una unidad concreta: la de su lote si la
+ * tiene; si no, la de su presentación (unidades anteriores a la migración 111,
+ * que sólo conocían la fecha de la presentación).
+ *
+ * La del lote manda porque es la más fina: dos lotes de la misma presentación
+ * pueden tener vencimientos distintos y conviven en el mismo producto.
+ */
+export function fechaVencimientoUnidad(
+  fechaUnidad?: string | null,
+  fechaPresentacion?: string | null
+): string | null {
+  if (esFechaISO(fechaUnidad)) return fechaUnidad as string;
+  if (esFechaISO(fechaPresentacion)) return fechaPresentacion as string;
+  return null;
+}
+
+/**
+ * true cuando la unidad ya venció. Sin fecha no hay vencimiento que aplicar:
+ * un producto sin lote conocido se puede seguir vendiendo (no hay evidencia
+ * de que esté vencido), que es como se ha comportado el sistema siempre.
+ */
+export function unidadVencida(
+  fechaUnidad?: string | null,
+  fechaPresentacion?: string | null,
+  hoy: string = hoyDelNegocio()
+): boolean {
+  const fecha = fechaVencimientoUnidad(fechaUnidad, fechaPresentacion);
+  if (!fecha) return false;
+  return estadoVencimiento(fecha, hoy)?.estado === 'vencido';
 }
 
 /**

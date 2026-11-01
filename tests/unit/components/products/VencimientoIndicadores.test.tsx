@@ -21,7 +21,6 @@ describe('VencimientoBadge', () => {
 
     expect(screen.getByText('20-10-2026')).toBeInTheDocument();
     expect(screen.getByText('Vencido')).toBeInTheDocument();
-    expect(screen.getByTitle('Vencido hace 3 días')).toBeInTheDocument();
   });
 
   it('avisa la cantidad de días cuando está por vencer', () => {

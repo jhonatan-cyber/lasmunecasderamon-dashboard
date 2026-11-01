@@ -38,12 +38,21 @@ export function validatePresentaciones(
       return 'Indica mínimo y máximo válidos, con máximo mayor o igual al mínimo';
     if (item.fecha_elaboracion && !esFechaISO(item.fecha_elaboracion))
       return `Fecha de elaboración inválida en "${etiqueta}"`;
+
+    const hoy = new Date().toISOString().slice(0, 10);
+    if (item.fecha_elaboracion && item.fecha_elaboracion > hoy)
+      return `La fecha de elaboración no puede ser futura en "${etiqueta}"`;
+
     if (item.duracion_meses) {
       if (!/^\d+$/.test(item.duracion_meses) || Number(item.duracion_meses) < 1)
         return `La duración debe ser al menos 1 mes en "${etiqueta}"`;
     }
     if (item.fecha_vencimiento && !esFechaISO(item.fecha_vencimiento))
       return `Fecha de vencimiento inválida en "${etiqueta}"`;
+
+    if (item.fecha_vencimiento && item.fecha_vencimiento < hoy)
+      return `La fecha de vencimiento no puede ser anterior a hoy en "${etiqueta}"`;
+
     if (
       esFechaISO(item.fecha_elaboracion) &&
       esFechaISO(item.fecha_vencimiento) &&

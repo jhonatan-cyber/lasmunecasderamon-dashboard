@@ -179,7 +179,18 @@ export async function crearProducto(
     });
     const cantidad = Math.max(0, Math.floor(p.cantidad ?? 0));
     if (cantidad > 0) {
-      codigos.push(...(await generarUnidades(trx, id, cantidad, creada.id)));
+      codigos.push(
+        ...(await generarUnidades(
+          trx,
+          id,
+          cantidad,
+          creada.id,
+          null,
+          // Stock inicial del alta de producto: no hay lote, así que las
+          // unidades siguen a la fecha de su presentación.
+          null
+        ))
+      );
     }
   }
 
@@ -263,7 +274,7 @@ export async function actualizarProducto(
     });
     const cantidad = Math.max(0, Math.floor(p.cantidad ?? 0));
     if (cantidad > 0) {
-      await generarUnidades(trx, id, cantidad, creada.id);
+      await generarUnidades(trx, id, cantidad, creada.id, null, null);
     }
   }
 

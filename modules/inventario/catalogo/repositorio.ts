@@ -5,6 +5,7 @@
  */
 import { query } from '@/lib/database/db';
 import { CATEGORIA_BEBIDAS_ANALCOHOLICAS } from '@/lib/business/colacionRoles';
+import { hoyDelNegocio } from '@/lib/business/vencimiento';
 import { getTopeSimple } from '../bar/configuracion';
 import { completarOpciones } from '../helpers';
 import { ESTADO_UNIDAD_ACTIVA } from '../estados';
@@ -19,6 +20,13 @@ export interface FiltrosParaVenta {
 
 export async function listarParaVenta(filters?: FiltrosParaVenta): Promise<any[]> {
   const params: any[] = [];
+  // Día del negocio: un lote que venció hoy todavía se puede servir, uno que
+  // venció ayer no. Se pasa como parámetro para no depender de la zona horaria
+  // del servidor de PostgreSQL.
+  const hoy = hoyDelNegocio();
+  // El orden sigue el de los `?` en la consulta: primero los dos contadores de
+  // la lista y después el `EXISTS` del `WHERE`.
+  params.push(hoy, hoy, hoy);
   const whereColacion = filters?.solo_colaciones
     ? `AND EXISTS (
         SELECT 1 FROM jsonb_array_elements(COALESCE(p.opciones_venta::jsonb, '[]'::jsonb)) opcion
@@ -59,8 +67,8 @@ export async function listarParaVenta(filters?: FiltrosParaVenta): Promise<any[]
       p.codigo_barras, p.foto AS presentacion_foto,
       p.precio_venta, p.comision AS presentacion_comision,
       p.opciones_venta, p.ml_botella,
-      (SELECT COUNT(*) FROM inventario_unidades u WHERE u.presentacion_id = p.id AND u.estado = '${ESTADO_UNIDAD_ACTIVA}' AND u.ubicacion = 'bar') AS stock_bar,
-      (SELECT COALESCE(SUM(u.ml_restante), 0) FROM inventario_unidades u WHERE u.presentacion_id = p.id AND u.estado = '${ESTADO_UNIDAD_ACTIVA}' AND u.ubicacion = 'bar') AS ml_abierta,
+      (SELECT COUNT(*) FROM inventario_unidades u WHERE u.presentacion_id = p.id AND u.estado = '${ESTADO_UNIDAD_ACTIVA}' AND u.ubicacion = 'bar' AND (COALESCE(u.fecha_vencimiento, p.fecha_vencimiento) IS NULL OR COALESCE(u.fecha_vencimiento, p.fecha_vencimiento) >= ?)) AS stock_bar,
+      (SELECT COALESCE(SUM(u.ml_restante), 0) FROM inventario_unidades u WHERE u.presentacion_id = p.id AND u.estado = '${ESTADO_UNIDAD_ACTIVA}' AND u.ubicacion = 'bar' AND (COALESCE(u.fecha_vencimiento, p.fecha_vencimiento) IS NULL OR COALESCE(u.fecha_vencimiento, p.fecha_vencimiento) >= ?)) AS ml_abierta,
       pr.id_producto AS producto_id, pr.codigo AS producto_codigo, pr.nombre AS producto_nombre,
       pr.foto AS producto_foto, pr.categoria_id, c.nombre AS categoria_nombre, pr.ml_shot,
       pr.ml_shot_anfitriona, pr.max_anfitrionas
@@ -70,6 +78,8 @@ export async function listarParaVenta(filters?: FiltrosParaVenta): Promise<any[]
      WHERE EXISTS (
        SELECT 1 FROM inventario_unidades u WHERE u.presentacion_id = p.id
          AND u.estado = '${ESTADO_UNIDAD_ACTIVA}' AND u.ubicacion = 'bar'
+         AND (COALESCE(u.fecha_vencimiento, p.fecha_vencimiento) IS NULL
+              OR COALESCE(u.fecha_vencimiento, p.fecha_vencimiento) >= ?)
      )
       ${whereCategoria} ${whereTerm} ${whereColacion} ${whereCover} ${whereColacionAnalcoholica}
      ORDER BY pr.nombre ASC, p.fecha_crea ASC, p.id ASC`,

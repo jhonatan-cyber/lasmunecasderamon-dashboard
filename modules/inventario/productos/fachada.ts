@@ -415,15 +415,12 @@ export class ProductService {
     if (!foto || typeof foto !== 'string') {
       throw new ValidationError('Foto es requerida');
     }
+    // Escribir sólo la foto de ESTA presentación. Antes el valor se "adoptaba"
+    // también para productos.foto cuando el producto seguía sin imagen, y el
+    // fallback de render (presentacion -> producto) hacía ver la misma foto
+    // en todas las presentaciones del producto. La foto del catálogo se
+    // gestiona desde el propio formulario del producto.
     await actualizarFotoPresentacion(id, foto);
-    // Si el producto aún usa la imagen por defecto, adopta esta foto para el catálogo.
-    const presentacion = await obtenerPresentacion(id);
-    if (presentacion) {
-      const producto = await obtenerProductoPorId(presentacion.producto_id);
-      if (producto && (!producto.foto || producto.foto === 'default.png')) {
-        await actualizarProducto(presentacion.producto_id, {}, foto);
-      }
-    }
   }
 
   static async listPresentations(productoId: string) {
@@ -693,7 +690,11 @@ export class ProductService {
     return await registrarUnidades({
       producto_id: productoId,
       cantidad: unidades,
-      presentacion_id: presentacionId
+      presentacion_id: presentacionId,
+      // Alta manual desde el catálogo: no hay línea de compra que informe el
+      // lote, así que las unidades quedan sin fecha propia y siguen a la de su
+      // presentación.
+      fecha_vencimiento: null
     });
   }
 }

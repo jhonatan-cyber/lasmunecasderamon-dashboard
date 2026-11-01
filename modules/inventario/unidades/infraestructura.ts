@@ -36,7 +36,8 @@ export async function generarUnidades(
       input.producto_id,
       input.cantidad,
       input.presentacion_id,
-      input.compra_id
+      input.compra_id,
+      input.fecha_vencimiento
     );
   if (contexto) return await ejecutar(resolverTransaccion(contexto));
   let generadas: { id: string; codigo: string; codigo_barras: string }[] = [];
@@ -61,7 +62,8 @@ export async function registrarUnidades(
       input.producto_id,
       input.cantidad,
       input.presentacion_id,
-      input.compra_id
+      input.compra_id,
+      input.fecha_vencimiento
     );
     await sincronizarEnRepositorio(trx, input.producto_id);
     return generadas;
@@ -73,7 +75,8 @@ export async function registrarUnidades(
       input.producto_id,
       input.cantidad,
       input.presentacion_id,
-      input.compra_id
+      input.compra_id,
+      input.fecha_vencimiento
     );
     await sincronizarEnRepositorio(trx, input.producto_id);
   });

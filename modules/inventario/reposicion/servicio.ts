@@ -1,5 +1,6 @@
 import { withTransaction, generateUUID, type TransactionQuery } from '@/lib/database/db';
 import { cantidadReposicion } from '@/lib/business/stockLimits';
+import { hoyDelNegocio } from '@/lib/business/vencimiento';
 import { sendNotificationToAll } from '@/lib/api/sseService';
 import { NotificationService } from '@/modules/comunicaciones';
 import type { OrdenReposicion } from '@/modules/inventario/contracts';
@@ -11,14 +12,24 @@ export async function sincronizarReposicion(
   let nuevas = 0;
   const result = await (async () => {
     await trx('SELECT pg_advisory_xact_lock(7942079)');
-    const rows = await trx<any[]>(`SELECT p.id, p.stock_minimo, p.stock_maximo,
+    // Un lote vencido no se puede vender: no cuenta como stock disponible para
+    // la reposición, pero sí se reporta para que se le dé de baja.
+    const hoy = hoyDelNegocio();
+    const vigente = `COALESCE(u.fecha_vencimiento, p.fecha_vencimiento) IS NULL
+             OR COALESCE(u.fecha_vencimiento, p.fecha_vencimiento) >= ?`;
+    const rows = await trx<any[]>(
+      `SELECT p.id, p.stock_minimo, p.stock_maximo,
       p.precio_compra, p.producto_id, pr.nombre AS producto, p.nombre AS presentacion,
-      COUNT(u.id) FILTER (WHERE u.ubicacion = 'almacen')::int AS stock_bodega,
-      COUNT(u.id) FILTER (WHERE u.ubicacion = 'bar')::int AS stock_bar
+      COUNT(u.id) FILTER (WHERE u.ubicacion = 'almacen' AND ${vigente})::int AS stock_bodega,
+      COUNT(u.id) FILTER (WHERE u.ubicacion = 'bar' AND ${vigente})::int AS stock_bar,
+      COUNT(u.id) FILTER (WHERE COALESCE(u.fecha_vencimiento, p.fecha_vencimiento) IS NOT NULL
+             AND COALESCE(u.fecha_vencimiento, p.fecha_vencimiento) < ?)::int AS unidades_vencidas
       FROM inventario_presentaciones p JOIN productos pr ON pr.id_producto = p.producto_id
       LEFT JOIN inventario_unidades u ON u.presentacion_id = p.id AND u.estado = 'almacen' AND u.ubicacion IN ('almacen', 'bar')
       WHERE pr.estado = 1 AND p.stock_minimo IS NOT NULL
-      GROUP BY p.id, pr.nombre ORDER BY p.id`);
+      GROUP BY p.id, pr.nombre ORDER BY p.id`,
+      [hoy, hoy, hoy]
+    );
     const pendientes = await trx<{ id: string; presentacion_id: string }[]>(
       "SELECT id, presentacion_id FROM ordenes_reposicion WHERE estado = 'pendiente'"
     );
@@ -81,7 +92,8 @@ export async function sincronizarReposicion(
         stock_minimo: row.stock_minimo,
         stock_maximo: row.stock_maximo,
         cantidad,
-        precio_compra: Number(row.precio_compra) || 0
+        precio_compra: Number(row.precio_compra) || 0,
+        unidades_vencidas: Number(row.unidades_vencidas) || 0
       });
     }
     return output;

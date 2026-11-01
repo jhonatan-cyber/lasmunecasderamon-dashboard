@@ -18,6 +18,7 @@ import { z } from 'zod';
 import type { PurchaseCreate, PurchaseGeneratedCode } from '@/types/purchase';
 import { generarUnidades, sincronizarStockTotal } from '../unidades/repositorio';
 import { listarPresentacionesPorProductos } from '../presentaciones/repositorio';
+import type { PresentacionRow } from '../tipos';
 import { crearCompra, listarCompras, type CompraRow } from './repositorio';
 import { productosPorIds } from '../productos/repositorio';
 
@@ -122,7 +123,7 @@ export async function registrarCompra(
     // Valida pertenencia antes de mover stock (consultas batch por IN).
     const productoIds = [...new Set(detalles.map(d => d.producto_id))];
     const nombresProducto = new Map<string, string>();
-    let presentacionesMap: Record<string, { id: string; nombre: string }[]> = {};
+    let presentacionesMap: Record<string, PresentacionRow[]> = {};
     if (productoIds.length > 0) {
       const productoRows = await productosPorIds(trx, productoIds);
       const found = new Set(productoRows.map(r => String(r.id_producto)));
@@ -155,15 +156,20 @@ export async function registrarCompra(
     );
 
     for (const d of detalles) {
+      const presentacion = (presentacionesMap[d.producto_id] ?? []).find(
+        p => String(p.id) === String(d.presentacion_id)
+      );
+      // El lote de la línea de compra es el vencimiento de las botellas que
+      // entran: es el único dato de lote real que existe. Si la línea no
+      // informa fecha, la unidad queda sin fecha propia y sigue a su
+      // presentación, que es el mismo comportamiento de siempre.
       const generadas = await generarUnidades(
         trx,
         d.producto_id,
         d.cantidad,
         d.presentacion_id,
-        compra.id
-      );
-      const presentacion = (presentacionesMap[d.producto_id] ?? []).find(
-        p => String(p.id) === String(d.presentacion_id)
+        compra.id,
+        d.fecha_vencimiento ?? null
       );
       for (const unidad of generadas) {
         codigosGenerados.push({

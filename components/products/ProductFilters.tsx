@@ -8,46 +8,37 @@ import { Trash2, Table, Grid3X3 } from 'lucide-react';
 import SelectElements from '@/components/shared/SelectElements';
 import { cn } from '@/lib/utils/utils';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue
-} from '@/components/ui/select';
 
 interface ProductFiltersProps {
   searchTerm: string;
   setSearchTerm: (term: string) => void;
-  filterStatus: number | null;
-  setFilterStatus: (status: number | null) => void;
   onClearFilters: () => void;
   pageSize: number;
   setPageSize: (value: number) => void;
   setPage: (value: number) => void;
   viewMode: 'table' | 'cards';
-  showStatusFilter?: boolean;
   showTableView: boolean;
   onToggleView: () => void;
   onlyLowStock?: boolean;
   onLowStockChange?: (value: boolean) => void;
+  onlyVencidos?: boolean;
+  onOnlyVencidosChange?: (value: boolean) => void;
 }
 
 export function ProductFilters({
   searchTerm,
   setSearchTerm,
-  filterStatus,
-  setFilterStatus,
   onClearFilters,
   pageSize,
   setPageSize,
   setPage,
   viewMode,
-  showStatusFilter = true,
   showTableView,
   onToggleView,
   onlyLowStock = false,
-  onLowStockChange
+  onLowStockChange,
+  onlyVencidos = false,
+  onOnlyVencidosChange
 }: ProductFiltersProps) {
   const tablePageSizes = [5, 10, 20, 40];
   const cardPageSizes = [8, 12, 24, 48];
@@ -107,32 +98,6 @@ export function ProductFilters({
             </div>
 
             {}
-            {showStatusFilter && (
-              <div className='min-w-[160px]'>
-                <Label
-                  htmlFor='status'
-                  className='mb-2 block text-xs font-bold uppercase tracking-wider text-gray-500 dark:text-gray-400 ml-1'
-                >
-                  Estado
-                </Label>
-                <Select
-                  value={filterStatus === null ? 'all' : String(filterStatus)}
-                  onValueChange={(value: string) =>
-                    setFilterStatus(value === 'all' ? null : Number(value))
-                  }
-                >
-                  <SelectTrigger id='status'>
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value='all'>Todos los estados</SelectItem>
-                    <SelectItem value='1'>Activos</SelectItem>
-                    <SelectItem value='0'>Inactivos</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-            )}
-
             {onLowStockChange && (
               <div>
                 <Label className='mb-2 block text-xs font-bold uppercase tracking-wider text-gray-500 dark:text-gray-400 ml-1'>
@@ -149,6 +114,26 @@ export function ProductFilters({
                   )}
                 >
                   Solo stock bajo
+                </Button>
+              </div>
+            )}
+
+            {onOnlyVencidosChange && (
+              <div>
+                <Label className='mb-2 block text-xs font-bold uppercase tracking-wider text-gray-500 dark:text-gray-400 ml-1'>
+                  Vencimientos
+                </Label>
+                <Button
+                  variant='outline'
+                  aria-pressed={onlyVencidos}
+                  onClick={() => onOnlyVencidosChange(!onlyVencidos)}
+                  className={cn(
+                    'rounded-full h-10 w-full whitespace-nowrap',
+                    onlyVencidos &&
+                      'bg-red-50 text-red-700 border-red-300 dark:bg-red-950/30 dark:text-red-300 dark:border-red-700'
+                  )}
+                >
+                  Vencidos / por vencer
                 </Button>
               </div>
             )}

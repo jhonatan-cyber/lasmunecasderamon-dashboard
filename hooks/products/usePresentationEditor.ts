@@ -54,8 +54,6 @@ export function usePresentationEditor({
       stock_minimo: p.stock_minimo == null ? '' : String(p.stock_minimo),
       stock_maximo: p.stock_maximo == null ? '' : String(p.stock_maximo),
       stock: p.stock !== undefined && p.stock !== null ? formatNumber(String(p.stock)) : '',
-      // Fechas del lote: la base las entrega como `YYYY-MM-DD`; recortamos por
-      // si llegan con hora.
       fecha_elaboracion: p.fecha_elaboracion ? String(p.fecha_elaboracion).slice(0, 10) : '',
       duracion_meses:
         p.duracion_meses === null || p.duracion_meses === undefined ? '' : String(p.duracion_meses),
@@ -104,6 +102,17 @@ export function usePresentationEditor({
       toast.error('El nombre de la presentación es requerido');
       return;
     }
+
+    const hoy = new Date().toISOString().slice(0, 10);
+    if (editPresDraft.fecha_elaboracion && editPresDraft.fecha_elaboracion > hoy) {
+      toast.error('La fecha de elaboración no puede ser futura');
+      return;
+    }
+    if (editPresDraft.fecha_vencimiento && editPresDraft.fecha_vencimiento < hoy) {
+      toast.error('La fecha de vencimiento no puede ser anterior a hoy');
+      return;
+    }
+
     if (
       esFechaISO(editPresDraft.fecha_elaboracion) &&
       esFechaISO(editPresDraft.fecha_vencimiento) &&
@@ -150,7 +159,6 @@ export function usePresentationEditor({
           precio_compra: getNumericValue(editPresDraft.precio_compra) || '0',
           precio_venta: getNumericValue(editPresDraft.precio_venta) || '0',
           comision: getNumericValue(editPresDraft.comision) || '0',
-          // Fechas del lote de esta presentación; `null` las borra.
           fecha_elaboracion: editPresDraft.fecha_elaboracion || null,
           duracion_meses: editPresDraft.duracion_meses
             ? Number(editPresDraft.duracion_meses)

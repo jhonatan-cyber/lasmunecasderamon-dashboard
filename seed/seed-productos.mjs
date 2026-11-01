@@ -104,7 +104,6 @@ const CATALOGOS = [
   },
   {
     categoria: 'Bebidas analcohólicas',
-    alias: ['Bebidas Sin Alcohol'],
     prefijo: 'ANA',
     comisionPorcentaje: 0,
     productos: [

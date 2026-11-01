@@ -68,6 +68,11 @@ export type {
   DatosCapturaEnrolamiento,
   ResultadoEnrolamientoTelefono
 } from './biometrico/enrollmentService';
+export { identificarPersonaEnPlantillas } from './biometrico/pruebaIdentificacion';
+export type {
+  CandidatoPrueba,
+  ResultadoPruebaIdentificacion
+} from './biometrico/pruebaIdentificacion';
 export { descubrirIpDispositivo } from './biometrico/ipDiscovery';
 export { apagarListener, encenderListener } from './biometrico/eventListener';
 export { obtenerBytesDeFoto, setRecolector } from './biometrico/servicio';

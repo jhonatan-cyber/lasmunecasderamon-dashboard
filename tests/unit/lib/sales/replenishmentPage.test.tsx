@@ -27,7 +27,8 @@ const row = {
   stock_minimo: 5,
   stock_maximo: 12,
   cantidad: 9,
-  precio_compra: 10
+  precio_compra: 10,
+  unidades_vencidas: 0
 };
 const response = (rows: any[]) => ({ ok: true, json: async () => ({ success: true, data: rows }) });
 afterEach(() => {

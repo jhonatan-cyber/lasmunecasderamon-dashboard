@@ -275,6 +275,11 @@ export interface UnidadesGenerarInput {
   cantidad: number;
   presentacion_id?: string | null;
   compra_id?: string | null;
+  /**
+   * Vencimiento del lote al que pertenecen las unidades generadas (`YYYY-MM-DD`).
+   * Sin esta fecha la unidad hereda la de su presentación.
+   */
+  fecha_vencimiento?: string | null;
 }
 
 /**
@@ -347,6 +352,46 @@ export interface OrdenReposicion {
   stock_maximo: number;
   cantidad: number;
   precio_compra: number;
+  /**
+   * Unidades vencidas que hay en bodega o bar. No cuentan para `stock_actual`
+   * (no se pueden vender), pero siguen ocupando lugar: hay que darlas de baja
+   * antes de que la reposición se note en el stock real.
+   */
+  unidades_vencidas: number;
 }
 
 export { CLAVES_INVENTARIO } from './configuracionClaves';
+
+/**
+ * Lote vencido pendiente de baja: una presentación que tiene unidades cuyo
+ * vencimiento ya pasó. Es stock que no se puede vender y que sigue ocupando
+ * lugar hasta que se le da de baja.
+ */
+export interface LoteVencido {
+  presentacion_id: string;
+  producto_id: string;
+  producto: string;
+  presentacion: string;
+  /** Vencimiento más próximo entre las unidades vencidas de la presentación. */
+  fecha_vencimiento: string | null;
+  /** Unidades vencidas en total (bodega + bar). */
+  unidades_vencidas: number;
+  unidades_bodega: number;
+  unidades_bar: number;
+  /** ml que quedaban abiertos en las botellas vencidas del bar. */
+  ml_abiertos: number;
+}
+
+/** Qué salió del inventario en una baja por vencimiento. */
+export interface BajaVencidoResultado {
+  presentacion_id: string;
+  producto_id: string;
+  producto: string;
+  presentacion: string;
+  /** Unidades dadas de baja. */
+  unidades: number;
+  /** ml que se perdieron (los que quedaban abiertos). */
+  ml: number;
+  /** Vencimiento más próximo de las unidades dadas de baja. */
+  fecha_vencimiento: string | null;
+}

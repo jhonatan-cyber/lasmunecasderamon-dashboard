@@ -127,6 +127,10 @@ const ProductCard: React.FC<ProductCardProps> = ({
 
   const tooltipMinMax = `Mín: ${stockMinimo != null ? stockMinimo.toLocaleString('es-CL') : 'Sin configurar'} / Máx: ${stockMaximo != null ? stockMaximo.toLocaleString('es-CL') : 'Sin configurar'}`;
 
+  // Fechas de lote por presentación: la presentación activa manda, el producto
+  // solo guarda el valor agregado por si la presentación todavía no tiene lote.
+  const vencimientoFecha = presentation?.fecha_vencimiento ?? product.fecha_vencimiento ?? null;
+
   return (
     <TooltipProvider>
       <StaggeredEntrance index={entranceIndex} className='h-full'>
@@ -227,6 +231,15 @@ const ProductCard: React.FC<ProductCardProps> = ({
             photoClassName='object-contain p-4'
           >
             <div className='pointer-events-none absolute bottom-3 left-3 z-10 flex gap-2'>
+              {categoriaLabel && (
+                <Badge
+                  variant='outline'
+                  className='inline-flex items-center gap-1.5 rounded-full bg-white/90 text-gray-700 dark:bg-slate-900/90 dark:text-gray-200 border border-gray-200 dark:border-slate-700 px-3 py-1 text-[10px] font-bold uppercase tracking-wider shadow-lg'
+                >
+                  <TagIcon className='h-3 w-3' />
+                  {categoriaLabel}
+                </Badge>
+              )}
               {product.status === 1 ? (
                 <div className='flex items-center gap-1.5 px-3 py-1 bg-green-500/90 backdrop-blur-md text-white rounded-full text-[10px] font-bold uppercase tracking-wider shadow-lg'>
                   <div className='w-1.5 h-1.5 rounded-full bg-white animate-pulse' />
@@ -242,50 +255,33 @@ const ProductCard: React.FC<ProductCardProps> = ({
 
           <CardContent className='p-6 space-y-4'>
             <div className='space-y-1.5'>
-              {/* Barcode / code row */}
-              <div className='flex items-center gap-2 text-gray-400 dark:text-gray-500'>
-                <TagIcon className='h-3 w-3' />
-                <span className='text-[10px] uppercase font-bold tracking-widest font-mono'>
-                  {presentation?.codigo_barras || product.code}
-                </span>
-              </div>
-              {/* Name + presentation badge */}
-              <div className='flex min-w-0 items-center gap-2'>
-                <Tooltip>
-                  <TooltipTrigger asChild>
-                    <h3
-                      tabIndex={0}
-                      className='min-w-0 text-lg font-bold text-gray-900 dark:text-neutral-100 line-clamp-1 group-hover:text-purple-600 transition-colors'
-                    >
-                      {product.name}
-                    </h3>
-                  </TooltipTrigger>
-                  <TooltipPortal>
-                    <TooltipContent className='max-w-xs break-words'>{product.name}</TooltipContent>
-                  </TooltipPortal>
-                </Tooltip>
+              {/* Nombre del producto */}
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <h3
+                    tabIndex={0}
+                    className='min-w-0 text-lg font-bold text-gray-900 dark:text-neutral-100 line-clamp-1 group-hover:text-purple-600 transition-colors'
+                  >
+                    {product.name}
+                  </h3>
+                </TooltipTrigger>
+                <TooltipPortal>
+                  <TooltipContent className='max-w-xs break-words'>{product.name}</TooltipContent>
+                </TooltipPortal>
+              </Tooltip>
+              {/* Badge de presentación + fecha de vencimiento en la misma línea. */}
+              <div className='flex min-w-0 flex-wrap items-center gap-2'>
                 {presentation && (
                   <Badge variant='secondary' className='shrink-0'>
                     {presentation.nombre}
                   </Badge>
                 )}
+                {vencimientoFecha && <VencimientoBadge fecha={vencimientoFecha} />}
               </div>
-              {/* Category badge */}
-              {categoriaLabel && (
-                <Badge variant='outline' className='text-xs gap-1'>
-                  <TagIcon className='h-3 w-3' />
-                  {categoriaLabel}
-                </Badge>
-              )}
               {lowStock && (
                 <Badge className='mt-2 rounded-full bg-red-100 text-red-700 dark:bg-red-900/50 dark:text-red-300'>
                   Stock bajo · Total: {totalStock.toLocaleString('es-CL')}
                 </Badge>
-              )}
-              {product.fecha_vencimiento && (
-                <div className='mt-2 flex'>
-                  <VencimientoBadge fecha={product.fecha_vencimiento} />
-                </div>
               )}
             </div>
 
@@ -294,7 +290,7 @@ const ProductCard: React.FC<ProductCardProps> = ({
               {/* Precio compra */}
               <div className='space-y-1'>
                 <p className='text-[10px] uppercase font-bold text-gray-400 dark:text-gray-500 tracking-wider'>
-                  Precio compra
+                  P. Compra
                 </p>
                 <div className='flex items-center gap-1 text-gray-900 dark:text-neutral-100 font-bold'>
                   <span className='text-purple-500 text-xs'>$</span>
@@ -310,7 +306,7 @@ const ProductCard: React.FC<ProductCardProps> = ({
               {/* Precio venta */}
               <div className='space-y-1'>
                 <p className='text-[10px] uppercase font-bold text-gray-400 dark:text-gray-500 tracking-wider'>
-                  Precio venta
+                  P. Venta
                 </p>
                 <div className='flex items-center gap-1 text-gray-900 dark:text-neutral-100 font-bold'>
                   <span className='text-purple-500 text-xs'>$</span>

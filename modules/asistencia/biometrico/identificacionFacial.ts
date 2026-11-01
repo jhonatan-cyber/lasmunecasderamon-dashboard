@@ -1,4 +1,4 @@
-﻿import { query } from '@/lib/database/db';
+import { query } from '@/lib/database/db';
 import logger from '@/lib/utils/logger';
 import { atribuirAsistenciaIdentificada } from '@/modules/asistencia/biometrico/processBiometricEvent';
 import { credencialesDeFila, type CredencialesEquipo } from './deviceClient';
@@ -101,13 +101,6 @@ export async function actualizarVectoresPlantillas(): Promise<number> {
   for (const fila of pendientes) {
     try {
       const credenciales = await credencialesParaExtraer(fila.dispositivo_id);
-      if (!credenciales) {
-        logger.warn('[biometric-ident] Sin equipo activo para extraer el vector', {
-          usuarioId: fila.usuario_id,
-          dispositivoId: fila.dispositivo_id
-        });
-        continue;
-      }
 
       const vector = await extraerVectorFacial(credenciales, bufferDesdeBase64(fila.datos));
       await query(
@@ -231,7 +224,6 @@ export async function identificarRecord(
     [dispositivoId]
   );
   const credenciales = credencialesFilas[0] ? credencialesDeFila(credencialesFilas[0]) : null;
-  if (!credenciales) throw new Error(`Sin credenciales del equipo ${dispositivoId}`);
 
   let captura: Float32Array;
   try {
@@ -276,8 +268,6 @@ export async function identificarRecord(
   await guardarResultado(recordId, estado, mejor.usuarioId, mejorSimilitud);
 
   if (estado === 'identificado') {
-    // Acredita la asistencia si la persona no tenía hoy: entra sin código y
-    // el servidor igual sabe quién es. Un fallo acá no invalida la identificación.
     try {
       const atribucion = await atribuirAsistenciaIdentificada(
         mejor.usuarioId,
@@ -338,7 +328,6 @@ export async function identificarImagen(
     [dispositivoId]
   );
   const credenciales = credencialesFilas[0] ? credencialesDeFila(credencialesFilas[0]) : null;
-  if (!credenciales) throw new Error(`Sin credenciales del equipo ${dispositivoId}`);
 
   const captura = await extraerVectorFacial(credenciales, foto);
 
@@ -419,9 +408,6 @@ export function encolarIdentificacionDeRecord(pendiente: Pendiente): void {
 export async function recuperarIdentificacionesPendientes(
   limite: number = LIMITE_BARRIDO
 ): Promise<number> {
-  // Los que ya gastaron sus intentos en ESTE proceso no vuelven a entrar:
-  // si no, el barrido (siempre los más recientes) se atasca con los mismos y
-  // nunca alcanza al resto. Tras un reinicio el mapa se vacía y prueban de nuevo.
   const agotados = [...intentos.entries()]
     .filter(([, n]) => n >= MAX_INTENTOS)
     .map(([id]) => id)
