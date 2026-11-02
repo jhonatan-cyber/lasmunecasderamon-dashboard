@@ -134,8 +134,8 @@ importers:
         specifier: ^4.1.0
         version: 4.4.0
       expo-server-sdk:
-        specifier: ^7.2.0
-        version: 7.2.0
+        specifier: ^8.0.0
+        version: 8.0.0
       ffmpeg-static:
         specifier: ^5.3.0
         version: 5.3.0
@@ -3608,8 +3608,8 @@ packages:
     resolution: {integrity: sha512-KfYbmpRm0VbLjEvVa9yGwCi9GI34xvi7A/HXYWQO65CSD2u3MczUJSuwXKFIxlGsgBQizV9q5J9NHj4VG0n+pA==}
     engines: {node: '>=12.0.0'}
 
-  expo-server-sdk@7.2.0:
-    resolution: {integrity: sha512-np157Ylo2X+aX3VYazXoXNc/akSskzEzHmVkxlGlkzOTVkSRgzBk93BX/8fjl6+O7KfimyWx5JJmoa+D5KgXdQ==}
+  expo-server-sdk@8.0.0:
+    resolution: {integrity: sha512-AN0JuacmrO32hxv95EPqPfPIRqj0neCnh0ooxQFAd3lkJXu4ytWduvxzawzHEOSn4jV/1vx8xbtOXpuVV9Tg3Q==}
     engines: {node: '>=22.12.0'}
 
   express-rate-limit@8.7.1:
@@ -5927,8 +5927,8 @@ packages:
     engines: {node: '>= 10.13.0'}
     hasBin: true
 
-  webpack-sources@3.6.0:
-    resolution: {integrity: sha512-EIMmPVvNI0CYXyRPp34F2Qk7W37/BZVZIofS6LAUnrNjCVahS+hO4mxwFJDjQjODTGZDtVzLYoN2+1dYkhk9qA==}
+  webpack-sources@3.7.0:
+    resolution: {integrity: sha512-PdUhbCycwEgiS1hB/FBDksWKg/ashAIuJKqwdbPn8/dFVgU5LxQiBvG0js6VRRIzPujMrStYCczywp82P0KWng==}
     engines: {node: '>=10.13.0'}
 
   webpack@5.108.4:
@@ -9602,11 +9602,10 @@ snapshots:
 
   expect-type@1.4.0: {}
 
-  expo-server-sdk@7.2.0:
+  expo-server-sdk@8.0.0:
     dependencies:
       promise-limit: 2.7.0
       promise-retry: 2.0.1
-      undici: 7.30.1
 
   express-rate-limit@8.7.1(express@5.3.0):
     dependencies:
@@ -12126,7 +12125,7 @@ snapshots:
       - bufferutil
       - utf-8-validate
 
-  webpack-sources@3.6.0: {}
+  webpack-sources@3.7.0: {}
 
   webpack@5.108.4(lightningcss@1.32.0)(postcss@8.5.32)(sharp@0.35.5(@types/node@24.19.2)):
     dependencies:
@@ -12151,7 +12150,7 @@ snapshots:
       schema-utils: 4.8.1(webpack@5.108.4(lightningcss@1.32.0)(postcss@8.5.32)(sharp@0.35.5(@types/node@24.19.2)))
       tapable: 2.3.3
       watchpack: 2.6.3
-      webpack-sources: 3.6.0
+      webpack-sources: 3.7.0
     transitivePeerDependencies:
       - '@minify-html/node'
       - '@napi-rs/image'
