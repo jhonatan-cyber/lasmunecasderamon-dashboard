@@ -45,8 +45,8 @@ export function PurchaseCodesPanel({
           <p className='font-semibold text-emerald-900'>Compra {folio} registrada</p>
           <p className='text-sm text-emerald-800'>
             {codigos.length === 1
-              ? '1 código generado, agrupado por producto.'
-              : `${codigos.length} códigos generados, agrupados por producto.`}{' '}
+              ? '1 unidad recién ingresada y 1 código generado.'
+              : `${codigos.length} unidades recién ingresadas con sus códigos generados.`}{' '}
             Imprímelos y pégalos en los envases.
           </p>
         </div>

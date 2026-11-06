@@ -1,6 +1,10 @@
+'use client';
+
 import { Label } from '@/components/ui/label';
 import { Button } from '@/components/ui/button';
+import { Checkbox } from '@/components/ui/checkbox';
 import { X } from 'lucide-react';
+import { useEffect, useState } from 'react';
 import { CustomerSelect } from '@/components/shared/selects';
 import { RoomSelect } from '@/components/shared/selects';
 import { PaymentMethodSelect } from '@/components/shared/selects';
@@ -65,6 +69,19 @@ export const NewSaleConfiguration = ({
   setEnableTip
 }: NewSaleConfigurationProps) => {
   const propinaPct = Number(useConfigValue('facturacion', 'propina_venta', '10'));
+  const [mostrarSegundoCliente, setMostrarSegundoCliente] = useState(
+    selectedSegundoCliente !== 'none'
+  );
+
+  useEffect(() => {
+    if (metodoPago !== 'prepago') {
+      setMostrarSegundoCliente(false);
+      if (selectedSegundoCliente !== 'none') setSelectedSegundoCliente('none');
+      return;
+    }
+    if (selectedSegundoCliente !== 'none') setMostrarSegundoCliente(true);
+  }, [metodoPago, selectedSegundoCliente, setSelectedSegundoCliente]);
+
   return (
     <div className='grid grid-cols-1 items-end gap-6 px-2 sm:grid-cols-2 lg:grid-cols-4'>
       <div className={fieldWrapperClass}>
@@ -126,32 +143,54 @@ export const NewSaleConfiguration = ({
         </div>
       )}
 
-      {clientesConSaldo.length > 0 && (
+      {metodoPago === 'prepago' && clientesConSaldo.length > 0 && (
         <div className='flex flex-col gap-1.5 sm:col-span-2 lg:col-span-4'>
-          <div className='flex items-end gap-2'>
-            <div className='flex-1'>
-              <CustomerSelect
-                clientes={clientesConSaldo}
-                value={selectedSegundoCliente}
-                onChange={setSelectedSegundoCliente}
-                label='Segundo cliente (opcional, solo para repartir prepago)'
-                placeholder='Sin segundo cliente'
-              />
-            </div>
-            {selectedSegundoCliente !== 'none' && (
-              <Button
-                type='button'
-                variant='outline'
-                size='sm'
-                className='h-11 rounded-full px-4 text-xs'
-                onClick={() => setSelectedSegundoCliente('none')}
-              >
-                <X className='mr-1 h-3.5 w-3.5' />
-                Quitar
-              </Button>
-            )}
+          <div className='flex items-center gap-2'>
+            <Checkbox
+              id='split-prepaid-sale'
+              checked={mostrarSegundoCliente}
+              onCheckedChange={checked => {
+                const enabled = checked === true;
+                setMostrarSegundoCliente(enabled);
+                if (!enabled) setSelectedSegundoCliente('none');
+              }}
+            />
+            <Label
+              htmlFor='split-prepaid-sale'
+              className='cursor-pointer text-sm font-medium text-gray-700 dark:text-neutral-300'
+            >
+              Repartir prepago con otro cliente
+            </Label>
           </div>
-          {metodoPago === 'prepago' && selectedSegundoCliente !== 'none' && (
+          {mostrarSegundoCliente && (
+            <div className='flex items-end gap-2'>
+              <div className='flex-1'>
+                <CustomerSelect
+                  clientes={clientesConSaldo}
+                  value={selectedSegundoCliente}
+                  onChange={setSelectedSegundoCliente}
+                  label='Segundo cliente'
+                  placeholder='Selecciona otro cliente'
+                />
+              </div>
+              {selectedSegundoCliente !== 'none' && (
+                <Button
+                  type='button'
+                  variant='outline'
+                  size='sm'
+                  className='h-11 rounded-full px-4 text-xs'
+                  onClick={() => {
+                    setSelectedSegundoCliente('none');
+                    setMostrarSegundoCliente(false);
+                  }}
+                >
+                  <X className='mr-1 h-3.5 w-3.5' />
+                  Quitar
+                </Button>
+              )}
+            </div>
+          )}
+          {mostrarSegundoCliente && selectedSegundoCliente !== 'none' && (
             <p className='text-[11px] text-gray-500 dark:text-neutral-400'>
               El prepago se reparte mitad y mitad entre los dos clientes y cada uno recibe su
               comprobante.

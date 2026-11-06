@@ -199,7 +199,7 @@ export function TransferModal({
                       bottleExtras={
                         <BottleExtras
                           commission={form.comision}
-
+                          checked={form.acompanamientoBotella !== 'ninguno'}
                           onAccompaniment={checked => {
                             form.setAcompanamientoBotella(checked ? 'gaseosa' : 'ninguno');
                             form.setEditarPrecios(true);
@@ -240,6 +240,8 @@ export function TransferModal({
                       mostrarBebidasIncluidas={!esVentaSimple}
                       mostrarAnfitrionas={!esVentaSimple}
                       mostrarCortos={!esVentaSimple}
+                      enVenta={form.enVenta}
+                      onEnVentaChange={form.setEnVenta}
                       venderConAnfitriona={form.venderConAnfitriona}
                       onVenderConAnfitrionaChange={form.setVenderConAnfitriona}
                       mlAcompanamientoAnfitriona={form.mlAcompanamientoAnfitriona}
@@ -335,7 +337,7 @@ export function TransferModal({
                       </Label>
                     )}
                   </div>
-                  {form.colacionHabilitada && guardarBotella && (
+                  {form.colacionHabilitada && guardarBotella && !esVentaSimple && (
                     <ColacionFields
                       idPrefix='transfer'
                       mlColacion={form.mlColacion}

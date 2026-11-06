@@ -117,10 +117,16 @@ export function completarOpciones(
   if (!parsed) return undefined;
   return parsed.map(o =>
     o.tipo === 'botella'
-      ? {
-          ...o,
-          ...resolverBotella({ precio: o.precio, comision: o.comision }, niveles, topeSimple)
-        }
+      ? o.vender_con_anfitriona === false || Number(o.precio ?? 0) === 0
+        ? {
+            ...o,
+            precio: 0,
+            comision: 0
+          }
+        : {
+            ...o,
+            ...resolverBotella({ precio: o.precio, comision: o.comision }, niveles, topeSimple)
+          }
       : o
   );
 }
@@ -176,6 +182,7 @@ export const mapPresentacion = (row: any, topeSimple = 10000): PresentacionRow =
 export const mapUnidad = (row: any): UnidadRow => ({
   fecha_crea: row.fecha_crea ?? null,
   fecha_impresion: row.fecha_impresion ?? null,
+  ubicacion: row.ubicacion ?? null,
   fecha_vencimiento: formatFechaISO(row.fecha_vencimiento),
   fecha_devolucion: row.fecha_devolucion ?? null,
   devuelto_por: row.devuelto_por ?? null,

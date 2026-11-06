@@ -1,12 +1,22 @@
 import { NextResponse } from 'next/server';
 import { withRoute } from '@/lib/api/withRoute';
-import { darDeBajaVencidos, listarVencidos } from '@/modules/inventario';
+import { darDeBajaVencidos, listarVencidos, listarVencidosRetirados } from '@/modules/inventario';
 
 /** Lotes vencidos: qué presentations tienen stock que ya no se puede vender. */
-export const GET = withRoute({ auth: true, module: 'products', action: 'read' }, async () => {
-  const data = await listarVencidos();
-  return NextResponse.json({ success: true, data });
-});
+export const GET = withRoute(
+  { auth: true, module: 'products', action: 'read' },
+  async (request: Request) => {
+    const { searchParams } = new URL(request.url);
+    const origen = searchParams.get('origen');
+    const data =
+      searchParams.get('historial') === '1'
+        ? await listarVencidosRetirados(
+            origen === 'almacen' || origen === 'bar' ? origen : undefined
+          )
+        : await listarVencidos();
+    return NextResponse.json({ success: true, data });
+  }
+);
 
 /**
  * Da de baja el stock vencido de una presentación. Las unidades salen del
@@ -26,7 +36,8 @@ export const POST = withRoute(
     const data = await darDeBajaVencidos(
       presentacionId,
       String(user.id),
-      payload?.nota ? String(payload.nota) : null
+      payload?.nota ? String(payload.nota) : null,
+      payload?.origen === 'almacen' || payload?.origen === 'bar' ? payload.origen : 'ambos'
     );
     return NextResponse.json({
       success: true,

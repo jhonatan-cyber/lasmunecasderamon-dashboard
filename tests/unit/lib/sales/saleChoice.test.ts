@@ -63,6 +63,35 @@ describe('resolverVentaProducto', () => {
     expect(venta.comisionBotella).toBe(20000);
   });
 
+  it('oculta la opción de botella cuando fue deshabilitada o quedó en precio cero', () => {
+    const deshabilitada = resolverVentaProducto({
+      stock_bar: 10,
+      opciones_venta: [
+        {
+          tipo: 'botella',
+          precio: 0,
+          comision: 0,
+          vender_con_anfitriona: false,
+          precio_sin_anfitriona: 10000
+        }
+      ]
+    });
+
+    expect(deshabilitada.opciones.map(opcion => opcion.value)).toEqual(['botella_sin_anfitriona']);
+    expect(deshabilitada.tipoVenta).toBe('botella_sin_anfitriona');
+    expect(deshabilitada.precio).toBe(10000);
+  });
+
+  it('oculta todas las opciones cuando la botella está fuera de venta y no tiene alternativa', () => {
+    const fueraDeVenta = resolverVentaProducto({
+      stock_bar: 10,
+      opciones_venta: [{ tipo: 'botella', precio: 15000, comision: 0, en_venta: false }]
+    });
+
+    expect(fueraDeVenta.opciones).toEqual([]);
+    expect(fueraDeVenta.precio).toBe(0);
+  });
+
   it('con precio de shot ofrece las dos formas de venta, cada una con su precio', () => {
     const venta = resolverVentaProducto(conShot);
 

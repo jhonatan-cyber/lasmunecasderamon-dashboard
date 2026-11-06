@@ -49,6 +49,7 @@ export const TransferItemSummary = memo(function TransferItemSummary({
     | 'unidadesAcompanamiento'
     | 'mlPorShot'
     | 'mlPorShotAnfitriona'
+    | 'venderConAnfitriona'
   >;
 }) {
   const disponible = item.stock ?? 0;
@@ -62,11 +63,19 @@ export const TransferItemSummary = memo(function TransferItemSummary({
       ? configuration.opcionesGuardadas
       : configuration.tipos.map(tipo => ({
           tipo,
+          vender_con_anfitriona: tipo === 'botella' ? configuration.venderConAnfitriona : undefined,
           ml_acompanamiento_anfitriona:
             tipo === 'shot' ? Number(configuration.mlAcompanamientoAnfitriona || 0) : undefined,
-          precio: amount(tipo === 'botella' ? configuration.precioVenta : configuration.precioShot),
+          precio:
+            tipo === 'botella' && !configuration.venderConAnfitriona
+              ? 0
+              : amount(tipo === 'botella' ? configuration.precioVenta : configuration.precioShot),
           comision: amount(
-            tipo === 'botella' ? configuration.comision : configuration.comisionShot
+            tipo === 'botella' && configuration.venderConAnfitriona
+              ? configuration.comision
+              : tipo === 'shot'
+                ? configuration.comisionShot
+                : '0'
           ),
           precio_anfitriona:
             tipo === 'shot' ? amount(configuration.precioShotAnfitriona) : undefined,

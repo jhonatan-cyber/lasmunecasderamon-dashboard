@@ -78,6 +78,7 @@ export interface PresentacionRow {
 export interface UnidadRow {
   fecha_crea?: string | null;
   fecha_impresion?: string | null;
+  ubicacion?: string | null;
   /**
    * Vencimiento del lote al que pertenece esta botella (`YYYY-MM-DD`). La escribe
    * la compra; las unidades anteriores a la migración 111 lo heredan de su

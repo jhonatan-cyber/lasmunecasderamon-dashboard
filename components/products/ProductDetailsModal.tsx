@@ -25,8 +25,22 @@ import { SalePrices } from '@/components/bar/SalePrices';
 import { isTierPricedItem } from '@/components/bar/BarAnfitrionas';
 import { Product, Presentacion, UnidadProducto } from '@/types/product';
 import { formatCurrencyCLP } from '@/lib/utils/formatters';
-import { Loader2 } from 'lucide-react';
+import { AlertTriangle, Clock3, Loader2, ShieldCheck, Trash2 } from 'lucide-react';
 import { ProductPhoto } from '@/components/shared/ProductPhoto';
+import { estadoVencimiento, fechaVencimientoUnidad } from '@/lib/business/vencimiento';
+import { PermissionGuard } from '@/components/auth/PermissionGuard';
+import { Button } from '@/components/ui/button';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle
+} from '@/components/ui/alert-dialog';
+import { toast } from 'sonner';
 
 interface ProductDetailsModalProps {
   open: boolean;
@@ -70,6 +84,162 @@ function Info({ label, children }: { label: string; children: React.ReactNode })
       <dt className='text-xs text-muted-foreground'>{label}</dt>
       <dd className='mt-1 break-words text-sm font-medium'>{children}</dd>
     </div>
+  );
+}
+
+function StockCodeSummary({
+  unidades,
+  fechaPresentacion,
+  presentationId,
+  onRetired
+}: {
+  unidades: UnidadProducto[];
+  fechaPresentacion?: string | null;
+  presentationId: string;
+  onRetired: () => void;
+}) {
+  const [confirmarRetiro, setConfirmarRetiro] = useState(false);
+  const [retirando, setRetirando] = useState(false);
+  const grupos = {
+    vencidas: [] as UnidadProducto[],
+    por_vencer: [] as UnidadProducto[],
+    buen_estado: [] as UnidadProducto[]
+  };
+
+  for (const unidad of unidades) {
+    if (unidad.estado !== 'almacen' || unidad.ubicacion !== 'almacen') continue;
+    const fecha = fechaVencimientoUnidad(
+      unidad.fecha_vencimiento ?? null,
+      fechaPresentacion ?? null
+    );
+    const estado = estadoVencimiento(fecha)?.estado;
+    if (estado === 'vencido') grupos.vencidas.push(unidad);
+    else if (estado === 'por_vencer') grupos.por_vencer.push(unidad);
+    else grupos.buen_estado.push(unidad);
+  }
+
+  const tarjetas = [
+    {
+      key: 'vencidas' as const,
+      titulo: 'Vencidos',
+      icono: AlertTriangle,
+      clases:
+        'border-red-200 bg-red-50 text-red-700 dark:border-red-900 dark:bg-red-950/30 dark:text-red-300'
+    },
+    {
+      key: 'por_vencer' as const,
+      titulo: 'Por vencer (30 días)',
+      icono: Clock3,
+      clases:
+        'border-amber-200 bg-amber-50 text-amber-700 dark:border-amber-900 dark:bg-amber-950/30 dark:text-amber-300'
+    },
+    {
+      key: 'buen_estado' as const,
+      titulo: 'Buen estado',
+      icono: ShieldCheck,
+      clases:
+        'border-emerald-200 bg-emerald-50 text-emerald-700 dark:border-emerald-900 dark:bg-emerald-950/30 dark:text-emerald-300'
+    }
+  ];
+
+  const retirarVencidos = async () => {
+    if (!presentationId || grupos.vencidas.length === 0) return;
+    setRetirando(true);
+    try {
+      const response = await fetch('/api/products/expired', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          presentacion_id: presentationId,
+          origen: 'almacen',
+          nota: 'Retiro desde el detalle de producto en Inventario'
+        })
+      });
+      const result = await response.json().catch(() => ({}));
+      if (!response.ok || !result?.success) {
+        toast.error(result?.message || 'No se pudieron retirar los productos vencidos');
+        return;
+      }
+      toast.success(result.message || 'Productos vencidos retirados correctamente');
+      setConfirmarRetiro(false);
+      onRetired();
+    } catch {
+      toast.error('No se pudieron retirar los productos vencidos');
+    } finally {
+      setRetirando(false);
+    }
+  };
+
+  return (
+    <>
+      <section className='flex flex-col gap-3' aria-label='Estado de unidades en bodega'>
+        <h3 className='font-semibold'>Estado de unidades en bodega</h3>
+        <div className='grid gap-2 sm:grid-cols-3'>
+          {tarjetas.map(({ key, titulo, icono: Icono, clases }) => (
+            <div key={key} className={`rounded-lg border p-3 ${clases}`}>
+              <div className='flex items-center justify-between gap-2'>
+                <span className='flex items-center gap-1 text-xs font-semibold'>
+                  <Icono className='h-3.5 w-3.5' /> {titulo}
+                </span>
+                <strong className='text-lg'>{grupos[key].length}</strong>
+              </div>
+              <div className='mt-2 flex flex-wrap gap-1'>
+                {grupos[key].length === 0 ? (
+                  <span className='text-xs opacity-70'>Sin códigos</span>
+                ) : (
+                  grupos[key].map(unidad => (
+                    <code
+                      key={unidad.id}
+                      className='rounded-md border border-current/20 bg-background px-1.5 py-0.5 text-[11px] font-semibold text-foreground'
+                    >
+                      {unidad.codigo}
+                    </code>
+                  ))
+                )}
+              </div>
+              {key === 'vencidas' && grupos.vencidas.length > 0 && (
+                <PermissionGuard module='products' action='edit' fallback={null}>
+                  <Button
+                    type='button'
+                    variant='outline'
+                    size='sm'
+                    className='mt-3 w-full rounded-full border-red-300 text-red-700 hover:bg-red-100 dark:border-red-800 dark:text-red-300 dark:hover:bg-red-950'
+                    onClick={() => setConfirmarRetiro(true)}
+                  >
+                    <Trash2 className='h-4 w-4' />
+                    Retirar vencidos
+                  </Button>
+                </PermissionGuard>
+              )}
+            </div>
+          ))}
+        </div>
+      </section>
+      <AlertDialog open={confirmarRetiro} onOpenChange={setConfirmarRetiro}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Retirar productos vencidos</AlertDialogTitle>
+            <AlertDialogDescription>
+              Se retirarán {grupos.vencidas.length} unidad(es) vencida(s) desde Inventario. Las
+              unidades pasarán al historial de vencidos retirados y saldrán del stock activo. Esta
+              acción no se puede deshacer.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={retirando} className='rounded-full'>
+              Cancelar
+            </AlertDialogCancel>
+            <AlertDialogAction
+              onClick={retirarVencidos}
+              disabled={retirando}
+              className='rounded-full'
+            >
+              {retirando ? 'Retirando…' : 'Retirar vencidos'}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+    </>
   );
 }
 
@@ -162,6 +332,9 @@ export function ProductDetailsModal({
     producto_nombre: item?.name ?? null,
     presentacion_nombre: displayPresentation?.nombre ?? null
   }));
+  const unidadesImprimibles = unidadesConEtiqueta.filter(
+    unit => !unit.estado || unit.estado === 'almacen'
+  );
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -275,6 +448,12 @@ export function ProductDetailsModal({
                     </Info>
                   </dl>
                 </section>
+                <StockCodeSummary
+                  unidades={visibleUnits}
+                  fechaPresentacion={selectedPrices.fecha_vencimiento}
+                  presentationId={selectedPrices.id}
+                  onRetired={() => setAttempt(value => value + 1)}
+                />
                 {!!tiers.length &&
                   /champan|champagne/.test(
                     `${item.name} ${item.categoria ?? ''}`
@@ -308,14 +487,14 @@ export function ProductDetailsModal({
                   )}
                 <section className='flex flex-col gap-3' aria-label='Códigos y etiquetas'>
                   <h3 className='font-semibold'>
-                    Códigos y etiquetas ({visibleUnits.length} cargados)
+                    Códigos y etiquetas ({unidadesImprimibles.length} disponibles)
                   </h3>
                   <p className='text-xs text-muted-foreground'>
-                    Se muestran hasta 1000 códigos recientes de esta presentación, incluidos los
-                    inactivos.
+                    Se muestran códigos activos disponibles para imprimir. Los retirados y vendidos
+                    quedan excluidos.
                   </p>
-                  {visibleUnits.length ? (
-                    <UnitLabelSelector key={selectedPrices.id} units={unidadesConEtiqueta} />
+                  {unidadesImprimibles.length ? (
+                    <UnitLabelSelector key={selectedPrices.id} units={unidadesImprimibles} />
                   ) : (
                     <p className='text-sm text-muted-foreground'>Sin códigos generados.</p>
                   )}

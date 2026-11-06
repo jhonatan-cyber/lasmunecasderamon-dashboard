@@ -71,59 +71,69 @@ export function ProductsPageClient() {
     <PermissionGuard module='products' action='view'>
       <BoneyardSkeleton name='products-main' loading={categoriesLoading}>
         <div className='min-w-0 max-w-full overflow-x-clip p-4 sm:p-6 lg:p-10 space-y-4 sm:space-y-6 mt-4 sm:mt-6 lg:mt-10'>
-          <div className='flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3'>
-            <div>
-              <h1 className='text-xl sm:text-2xl lg:text-3xl font-bold text-gray-900 dark:text-white'>
-                Bodega
-              </h1>
-              <p className='text-sm sm:text-base text-gray-600'>
-                Selecciona una categoría para ver sus productos
-              </p>
-            </div>
-            <div className='flex flex-wrap items-center gap-2 self-start sm:self-auto'>
-              <div className='relative w-full sm:w-60 lg:w-72'>
-                <Search className='absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400 pointer-events-none' />
-                <Input
-                  value={searchTerm}
-                  onChange={e => setSearchTerm(e.target.value)}
-                  placeholder='Buscar categoría...'
-                  aria-label='Buscar categoría'
-                  className='h-10 rounded-full pl-9 pr-10'
-                />
-                {searchTerm && (
-                  <Button
-                    variant='ghost'
-                    size='icon'
-                    className='absolute right-0 top-0 h-10 w-10 rounded-full'
-                    aria-label='Limpiar búsqueda'
-                    onClick={() => setSearchTerm('')}
-                  >
-                    <X />
-                  </Button>
-                )}
+          <div className='flex flex-col gap-3'>
+            <div className='flex flex-col lg:flex-row lg:items-center lg:justify-between gap-3 overflow-visible'>
+              <div className='shrink-0'>
+                <h1 className='text-xl sm:text-2xl lg:text-3xl font-bold text-gray-900 dark:text-white'>
+                  Bodega
+                </h1>
+                <p className='text-sm sm:text-base text-gray-600'>
+                  Selecciona una categoría para ver sus productos
+                </p>
               </div>
-              <PermissionGuard module='products' action='confirm_container_return'>
+              <div className='flex flex-wrap items-center gap-2 lg:flex-nowrap lg:justify-end'>
+                <PermissionGuard module='products' action='confirm_container_return'>
+                  <Button
+                    variant='outline'
+                    onClick={() => router.push('/products/containers')}
+                    className='rounded-full flex items-center gap-2 whitespace-nowrap'
+                  >
+                    <PackageCheck className='w-4 h-4' />
+                    Envases devueltos
+                  </Button>
+                </PermissionGuard>
                 <Button
+                  asChild
                   variant='outline'
-                  onClick={() => router.push('/products/containers')}
-                  className='rounded-full flex items-center gap-2'
+                  className='rounded-full flex items-center gap-2 whitespace-nowrap'
                 >
-                  <PackageCheck className='w-4 h-4' />
-                  Envases devueltos
+                  <Link href='/products/expired'>
+                    <AlertTriangle className='w-4 h-4' />
+                    Lotes vencidos
+                  </Link>
                 </Button>
-              </PermissionGuard>
-              <Button asChild variant='outline' className='rounded-full flex items-center gap-2'>
-                <Link href='/products/expired'>
-                  <AlertTriangle className='w-4 h-4' />
-                  Lotes vencidos
-                </Link>
-              </Button>
-              <Button asChild variant='outline' className='rounded-full flex items-center gap-2'>
-                <Link href='/purchases/replenishment'>
-                  <ClipboardList className='w-4 h-4' />
-                  Orden de compra
-                </Link>
-              </Button>
+                <Button
+                  asChild
+                  variant='outline'
+                  className='rounded-full flex items-center gap-2 whitespace-nowrap'
+                >
+                  <Link href='/purchases/replenishment'>
+                    <ClipboardList className='w-4 h-4' />
+                    Orden de compra
+                  </Link>
+                </Button>
+              </div>
+            </div>
+            <div className='relative w-full'>
+              <Search className='absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400 pointer-events-none' />
+              <Input
+                value={searchTerm}
+                onChange={e => setSearchTerm(e.target.value)}
+                placeholder='Buscar categoría...'
+                aria-label='Buscar categoría'
+                className='h-10 rounded-full pl-9 pr-10'
+              />
+              {searchTerm && (
+                <Button
+                  variant='ghost'
+                  size='icon'
+                  className='absolute right-0 top-0 h-10 w-10 rounded-full'
+                  aria-label='Limpiar búsqueda'
+                  onClick={() => setSearchTerm('')}
+                >
+                  <X />
+                </Button>
+              )}
             </div>
           </div>
 

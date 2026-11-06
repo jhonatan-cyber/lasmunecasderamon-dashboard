@@ -15,6 +15,7 @@ import { SalePrices } from '@/components/bar/SalePrices';
 import { BarAnfitrionas, isTierPricedItem } from '@/components/bar/BarAnfitrionas';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
 import SelectElements from '@/components/shared/SelectElements';
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
@@ -305,16 +306,25 @@ function TransfersContent() {
           </TabsList>
           <div className='flex min-w-0 flex-1 items-center justify-end gap-3'>
             {tab === 'products' && (
-              <Input
-                aria-label='Buscar producto, categoría, presentación o código'
-                placeholder='Buscar producto, categoría, presentación o código'
-                value={search}
-                onChange={event => {
-                  setSearch(event.target.value);
-                  setPage(1);
-                }}
-                className='h-10 min-w-0 flex-1 rounded-full sm:max-w-80'
-              />
+              <div className='flex min-w-0 flex-1 flex-col gap-1 sm:max-w-80'>
+                <Label
+                  htmlFor='transfer-search'
+                  className='text-xs font-medium text-muted-foreground'
+                >
+                  Buscar producto
+                </Label>
+                <Input
+                  id='transfer-search'
+                  aria-label='Buscar producto, categoría, presentación o código'
+                  placeholder='Producto, categoría, presentación o código'
+                  value={search}
+                  onChange={event => {
+                    setSearch(event.target.value);
+                    setPage(1);
+                  }}
+                  className='h-10 min-w-0 w-full rounded-full'
+                />
+              </div>
             )}
             <div className='shrink-0'>
               <SelectElements

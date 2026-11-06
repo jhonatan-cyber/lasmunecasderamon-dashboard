@@ -31,6 +31,9 @@ function esRegistro(valor: unknown): valor is Record<string, unknown> {
 export function copiarOpcionesDeBotella(option: SaleOption, origen: unknown): void {
   if (option.tipo !== 'botella' || !esRegistro(origen)) return;
 
+  if (typeof origen.vender_con_anfitriona === 'boolean') {
+    option.vender_con_anfitriona = origen.vender_con_anfitriona;
+  }
   if (typeof origen.colacion_habilitada === 'boolean') {
     option.colacion_habilitada = origen.colacion_habilitada;
   }

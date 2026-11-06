@@ -41,6 +41,36 @@ afterEach(async () => {
  * `./sale-product-modal-harness` y existen separados para no superar el
  * presupuesto de 30 s por archivo (ver `DurationBudgetReporter`).
  */
+it('duplica el acompañamiento requerido al seleccionar dos botellas', () => {
+  render(
+    <Harness
+      productos={[
+        {
+          ...product,
+          opciones_venta: [
+            {
+              tipo: 'botella',
+              precio: 50000,
+              comision: 5000,
+              acompanamiento: { unidades: 4 }
+            }
+          ]
+        }
+      ]}
+      onAdd={vi.fn()}
+    />
+  );
+
+  fireEvent.click(
+    screen.getByRole('button', { name: /^Botella(?! sin anfitriona).*aumentar cantidad/ })
+  );
+  fireEvent.click(
+    screen.getByRole('button', { name: /^Botella(?! sin anfitriona).*aumentar cantidad/ })
+  );
+
+  expect(screen.getByText('Reparte 8 unidades para 2 botellas · asignado 0/8')).toBeInTheDocument();
+});
+
 it('vende botella sin anfitriona al precio adicional con las bebidas configuradas', async () => {
   const add = vi.fn();
   render(
@@ -68,9 +98,11 @@ it('vende botella sin anfitriona al precio adicional con las bebidas configurada
   fireEvent.click(
     screen.getByRole('button', { name: /Botella sin anfitriona.*aumentar cantidad/ })
   );
-  expect(screen.getByText('Reparte 3 unidades por botella · asignado 0/3')).toBeInTheDocument();
+  expect(screen.getByText('Reparte 6 unidades para 2 botellas · asignado 0/6')).toBeInTheDocument();
   await distributeMixer();
-  expect(screen.getByText('Reparto completo · 3 unidades por botella')).toBeInTheDocument();
+  expect(
+    screen.getByText('Reparto completo · 6 unidades para 2 botellas (3 por botella)')
+  ).toBeInTheDocument();
   await act(async () => {
     fireEvent.click(screen.getByRole('button', { name: 'Agregar producto' }));
   });
@@ -262,7 +294,7 @@ it.each([
     'Botella · 3 bebidas',
     'acompanamiento_botella',
     { unidades: 3 },
-    'Reparto completo · 3 unidades por botella',
+    'Reparto completo · 6 unidades para 2 botellas (3 por botella)',
     1
   ],
   ['Corto cliente · 50 ml', 'acompanamiento_corto', { unidades: 1 }, 'Consumo: 1 unidades', 2],

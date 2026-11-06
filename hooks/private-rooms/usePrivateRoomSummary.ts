@@ -74,45 +74,29 @@ export function usePrivateRoomSummary({
     return roomPrice > 0 && roomCommission > 0;
   }, [selectedRoom]);
 
-  const roomWithPriceAndTime = useMemo(() => {
-    if (!selectedRoom) return false;
-    const price = Number(selectedRoom.precio ?? selectedRoom.price ?? 0);
-    const time = Number(selectedRoom.tiempo ?? selectedRoom.time ?? 0);
-    return price > 0 && time > 0;
-  }, [selectedRoom]);
-
   const maxHostesses = useMemo(() => {
-    if (roomWithPriceAndTime) return anfitrionas.length;
     if (!hasComision) return 10;
     return Math.min(3, 4 - formData.clientes.length);
-  }, [roomWithPriceAndTime, anfitrionas.length, hasComision, formData.clientes.length]);
+  }, [hasComision, formData.clientes.length]);
 
   const maxClients = useMemo(() => {
-    if (roomWithPriceAndTime) return 4;
     if (!hasComision) return 4;
-    return Math.min(2, 4 - formData.usuarios.length);
-  }, [roomWithPriceAndTime, hasComision, formData.usuarios.length]);
+    return 4 - formData.usuarios.length;
+  }, [hasComision, formData.usuarios.length]);
 
   const desgloseTarjeta = useMemo(() => getCardSplit(total), [total]);
 
   const precioHabitacionBoleta = useMemo(() => {
     const cantidadAnfitrionas = formData.usuarios.length || 1;
     const cantidadClientes = formData.clientes.length || 1;
-    let multiplicadorHabitacion = cantidadAnfitrionas;
+    const tieneComision = selectedRoom && Number(selectedRoom.comision_anfitriona ?? 0) > 0;
+    const multiplicadorHabitacion = tieneComision
+      ? 1
+      : Math.max(cantidadAnfitrionas, cantidadClientes);
+    const multiplicadorTiempo =
+      Number(selectedRoom?.tiempo ?? selectedRoom?.time ?? 0) === 60 ? 2 : 1;
 
-    if (
-      cantidadClientes > cantidadAnfitrionas &&
-      selectedRoom &&
-      (selectedRoom.comision_anfitriona ?? 0) === 0
-    ) {
-      multiplicadorHabitacion = cantidadClientes;
-    }
-
-    if (selectedRoom && (selectedRoom.comision_anfitriona ?? 0) > 0) {
-      multiplicadorHabitacion = 1;
-    }
-
-    return precioHabitacion * multiplicadorHabitacion;
+    return precioHabitacion * multiplicadorTiempo * multiplicadorHabitacion;
   }, [formData.usuarios.length, formData.clientes.length, precioHabitacion, selectedRoom]);
 
   const clientesConSaldo = useMemo(() => {

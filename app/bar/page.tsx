@@ -32,6 +32,7 @@ import type { DevolucionEnvaseRegistro, ShotsSummary } from '@/modules/inventari
 import { useContainerScan } from '@/hooks/products/useContainerScan';
 import { ColacionesTab } from '@/components/meals/ColacionesTab';
 import { CortesiasTab } from '@/components/bar/CortesiasTab';
+import { ExpiredStockPanel } from '@/components/products/ExpiredStockPanel';
 
 import type { TransferRecord } from '@/types/transfer';
 
@@ -70,7 +71,7 @@ export default function BarPage() {
   useEffect(() => {
     // El aviso de una entrada en la puerta abre directo la cola de cortesías.
     const tabUrl = new URLSearchParams(window.location.search).get('tab');
-    if (tabUrl === 'pendientes' || tabUrl === 'cortesias') setTab(tabUrl);
+    if (tabUrl === 'pendientes' || tabUrl === 'cortesias' || tabUrl === 'vencidos') setTab(tabUrl);
   }, []);
   useEffect(
     () => () => {
@@ -637,6 +638,10 @@ export default function BarPage() {
               page={paginaMovs}
               onPageChange={setPaginaMovs}
             />
+          </TabsContent>
+
+          <TabsContent value='vencidos' className='mt-4'>
+            <ExpiredStockPanel origenPredeterminado='bar' />
           </TabsContent>
 
           <TabsContent value='colaciones' className='mt-4'>

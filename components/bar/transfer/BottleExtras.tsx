@@ -3,12 +3,14 @@
 import { Input } from '@/components/ui/input';
 import { FormattedNumberInput } from '@/components/shared/FormattedNumberInput';
 import { Label } from '@/components/ui/label';
+import { Checkbox } from '@/components/ui/checkbox';
 
 export function BottleExtras({
   commission,
   maxHostesses,
   onMaxHostesses,
   onAccompaniment,
+  checked,
   units,
   onUnits,
   disabled,
@@ -18,6 +20,7 @@ export function BottleExtras({
   maxHostesses?: string;
   onMaxHostesses?: (value: string) => void;
   onAccompaniment: (checked: boolean) => void;
+  checked?: boolean;
   units: string;
   onUnits: (value: string) => void;
   disabled: boolean;
@@ -31,6 +34,7 @@ export function BottleExtras({
   const isSettings = context === 'settings';
   const showHostesses =
     Boolean(onMaxHostesses) && (isSettings || Number(commission.replace(/\./g, '')) > 0);
+  const hasAccompaniment = checked ?? Number(units || 0) > 0;
   return (
     <div className='sm:col-span-2 grid gap-4 sm:grid-cols-2'>
       {showHostesses && (
@@ -53,24 +57,46 @@ export function BottleExtras({
         </div>
       )}
       <div className={`space-y-2 ${showHostesses ? '' : 'sm:col-span-2'}`}>
-        <Label htmlFor='bottle-mixer-units' className='text-sm font-medium'>
-          Bebida analcohólica por botella
+        <Label className='flex cursor-pointer items-start gap-3'>
+          <Checkbox
+            checked={hasAccompaniment}
+            onCheckedChange={checked => {
+              if (checked === true) {
+                onAccompaniment(true);
+                if (Number(units || 0) <= 0) onUnits('1');
+              } else {
+                onAccompaniment(false);
+                onUnits('0');
+              }
+            }}
+            disabled={disabled}
+            aria-label='Incluir bebidas o acompañamiento'
+          />
+          <span className='text-sm font-medium'>Incluir bebidas o acompañamiento</span>
         </Label>
-        <FormattedNumberInput
-          id='bottle-mixer-units'
-          type='number'
-          min={0}
-          max={1000}
-          step={1}
-          disabled={disabled}
-          value={units}
-          onChange={event => {
-            onUnits(event.target.value);
-            onAccompaniment(Number(event.target.value) > 0);
-          }}
-          placeholder='0'
-          className='h-12'
-        />
+        {hasAccompaniment && (
+          <div className='space-y-2'>
+            <Label htmlFor='bottle-mixer-units' className='text-sm font-medium'>
+              Cantidad por botella
+            </Label>
+            <FormattedNumberInput
+              id='bottle-mixer-units'
+              type='number'
+              min={1}
+              max={1000}
+              step={1}
+              disabled={disabled}
+              value={units}
+              onChange={event => {
+                const value = event.target.value;
+                const amount = Number(value.replace(/\./g, '').replace(/\D/g, '') || 0);
+                onUnits(amount > 0 ? String(amount) : '');
+              }}
+              placeholder='1'
+              className='h-12'
+            />
+          </div>
+        )}
         {isSettings && (
           <p className='text-xs text-muted-foreground'>
             Cantidad de bebidas analcohólicas incluidas por botella. La bebida se elige al vender.

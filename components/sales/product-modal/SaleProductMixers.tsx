@@ -129,11 +129,12 @@ function MixerDistribute({
 }) {
   const [search, setSearch] = useState('');
   const sabores: AcompanamientoBotellaItem[] = Array.isArray(mixer.selected) ? mixer.selected : [];
-  const requerido = Number(mixer.unidades ?? 0);
+  const unidadesPorBotella = Number(mixer.unidades ?? 0);
   const asignado = sabores.reduce((sum, sabor) => sum + (Number(sabor.unidades) || 0), 0);
+  const botellas = Math.max(1, Number(mixer.cantidad) || 1);
+  const requerido = unidadesPorBotella * botellas;
   const restante = Math.max(0, requerido - asignado);
   const chosen = new Set(sabores.map(sabor => String(sabor.presentacion_id)));
-  const botellas = Math.max(1, Number(mixer.cantidad) || 1);
   const stockOf = (sabor: AcompanamientoBotellaItem) =>
     Number(
       (sabor as { stock_bar?: number }).stock_bar ??
@@ -143,7 +144,7 @@ function MixerDistribute({
     );
   const maxFor = (sabor: AcompanamientoBotellaItem) => {
     const otros = asignado - Number(sabor.unidades);
-    return Math.max(1, Math.min(requerido - otros, Math.floor(stockOf(sabor) / botellas)));
+    return Math.max(1, Math.min(requerido - otros, stockOf(sabor)));
   };
   const apply = (next: AcompanamientoBotellaItem[]) => mixer.onDistribute?.(next);
   const addFlavor = (presentacionId: string) => {
@@ -167,9 +168,13 @@ function MixerDistribute({
     <div className='space-y-2 text-xs'>
       {showLabel && <p>{mixer.label}</p>}
       <p className='text-muted-foreground'>
-        {restante > 0
-          ? `Reparte ${requerido} unidades por botella · asignado ${asignado}/${requerido}`
-          : `Reparto completo · ${requerido} unidades por botella`}
+        {botellas === 1
+          ? restante > 0
+            ? `Reparte ${requerido} unidades por botella · asignado ${asignado}/${requerido}`
+            : `Reparto completo · ${requerido} unidades por botella`
+          : restante > 0
+            ? `Reparte ${requerido} unidades para ${botellas} botellas · asignado ${asignado}/${requerido}`
+            : `Reparto completo · ${requerido} unidades para ${botellas} botellas (${unidadesPorBotella} por botella)`}
       </p>
       <Select
         value=''

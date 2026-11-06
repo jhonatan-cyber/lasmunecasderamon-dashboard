@@ -133,8 +133,16 @@ export function useSaleProductModal({
     hostessSearchValues,
     productosEnCarrito,
     availableHostesses,
-    onSaleTypeChange: (id, value, cantidad) =>
-      setCantidadesPorTipo(prev => ({ ...prev, [`${id}:${value}`]: cantidad })),
+    onSaleTypeChange: (id, value, cantidad) => {
+      setCantidadesPorTipo(prev => ({ ...prev, [`${id}:${value}`]: cantidad }));
+      if (value === 'botella' || value === 'botella_sin_anfitriona') {
+        setMixers(prev => {
+          const next = { ...prev };
+          delete next[`${id}:${value}`];
+          return next;
+        });
+      }
+    },
     onCantidadChange: handleCantidadChange,
     onChampagneHostessChange,
     onOtherProductHostessChange,

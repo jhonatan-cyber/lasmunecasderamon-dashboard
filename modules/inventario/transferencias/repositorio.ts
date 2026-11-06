@@ -239,8 +239,11 @@ export async function aceptarTransferencia(
     "UPDATE inventario_unidades SET ubicacion = 'bar', transferencia_id = NULL WHERE transferencia_id = ?",
     [id]
   );
+  const opcionesAceptadas = parseOpcionesVenta(movement.opciones_venta);
+  if (!opcionesAceptadas || opcionesAceptadas.length === 0)
+    throw new BusinessError('La transferencia no contiene una configuración de venta válida');
   await BaseRepository.update(trx, 'inventario_presentaciones', 'id', movement.presentacion_id, {
-    opciones_venta: JSON.stringify(movement.opciones_venta),
+    opciones_venta: JSON.stringify(opcionesAceptadas),
     precio_venta: movement.precio_venta,
     comision: movement.comision
   });

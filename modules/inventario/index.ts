@@ -49,7 +49,7 @@ export {
   listarPresentacionesPorProductos,
   obtenerPresentacion
 } from './presentaciones/servicio';
-export { darDeBajaVencidos, listarVencidos } from './mermas/servicio';
+export { darDeBajaVencidos, listarVencidos, listarVencidosRetirados } from './mermas/servicio';
 export {
   cambiarEstadoUnidades,
   generarUnidades,
